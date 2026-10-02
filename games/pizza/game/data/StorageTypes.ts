@@ -357,7 +357,10 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
         },
         "solid": 1,
         "view": "trashcanView",
-        "price": {},
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 25
+        },
         "resourceCost": []
     },
     "storage5": {

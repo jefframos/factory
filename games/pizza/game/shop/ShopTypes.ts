@@ -184,6 +184,11 @@ export const SHOP_CONFIG_BY_ID: Partial<Record<string, ShopConfig>> = {
     "shopBackpack": {
         mesh: DEFAULT_SHOP_MESH,
         "name": "Carrier Shop",
+        "appearRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 2
+        },
         "tool": "carrier",
         "totalLevels": 10,
         "baseCost": 0,

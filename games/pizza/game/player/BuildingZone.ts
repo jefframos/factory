@@ -51,7 +51,7 @@ import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer, isFloorFrame } from '../ui/PopupConfig';
-import FloorLabelComponent, { createConfiguredFloorLabel } from '../components/FloorLabelComponent';
+import FloorLabelComponent, { createConfiguredFloorLabel, DEFAULT_FLOOR_LABEL_SIZE } from '../components/FloorLabelComponent';
 import { createIconSlot, createResourceSlot } from '../ui/ResourceSlotVisual';
 import { CameraFocusHost } from '../camera/CameraFocusHost';
 import { WorldProgressionHost } from '../camera/WorldProgressionHost';
@@ -102,8 +102,12 @@ const FLY_IN_STAGGER_SEC = 0.12;
 const MESH_DROP_DURATION_SEC = 0.7;
 /** How long awaitingReentry stays true after a level clears before auto-clearing on its own — see that field's own doc. A player who stays standing in the zone through the whole level-up beat can resume depositing toward the NEXT level after this, without having to walk out and back in. */
 const REENTRY_TIMEOUT_SEC = 3;
-/** Construction-site view a store section shows before it's built when its own config sets no baseView — see the constructor's `isSection` param doc. */
-const SECTION_SITE_VIEW = 'baseBuildingSite';
+/** How long a piece shrinks away when a built store section removes it — see removePiecesCoveredBy(). */
+const PIECE_REMOVE_DURATION_SEC = 0.35;
+/** A store section's cost label fills at most this fraction of its dropper — same as StoragePurchaseZone's FLOOR_LABEL_AREA_FILL. */
+const SECTION_LABEL_AREA_FILL = 0.9;
+/** Where a section's deposits land — just above its floor cost label, same as StoragePurchaseZone's FLOOR_COIN_TARGET_HEIGHT. */
+const SECTION_FLY_IN_HEIGHT = 0.3;
 /** Fallback for BuildingConfig.updateParticleCount when a building sets updateParticleEffectId but not its own count. */
 const DEFAULT_UPDATE_PARTICLE_COUNT = 24;
 
@@ -191,6 +195,8 @@ export default class BuildingZone extends Entity {
     private currentForceOwnMesh = false;
     /** BuildingConfig.solidFromMap's per-piece colliders — see addSolidAreasFromMap()'s own doc. Built/torn down in lockstep with `buildingVisuals` (createBuildingMesh()/disposeBuildingMesh()), NOT once in awake(), so a piece never collides while its own mesh isn't actually visible. Always empty for a building that doesn't set `solidFromMap`. */
     private solidColliders: RigidBody[] = [];
+    /** Each currently-shown own-mesh piece's visual + collider — so a built store section can remove just the pieces it covers (see removePiecesCoveredBy()). Rebuilt with the mesh (createBuildingMesh()/disposeBuildingMesh()). */
+    private readonly ownMeshParts = new Map<OwnMeshPlacement, { visual?: GlbVisualComponent; collider?: RigidBody }>();
 
     private readonly handleProgressChanged = (id: BuildingId): void => {
         if (id === this.buildingId) {
@@ -207,6 +213,9 @@ export default class BuildingZone extends Entity {
 
     private readonly handleLevelUp = (id: BuildingId, level: number): void => {
         if (id !== this.buildingId) {
+            // Another building leveled — if it's a store section some of this building's pieces
+            // overlap, those pieces go now (see removePiecesCoveredBy()).
+            this.removePiecesCoveredBy(id);
             return;
         }
 
@@ -308,9 +317,10 @@ export default class BuildingZone extends Entity {
          * True when this building is a store SECTION — a "storeSection" area on the map's
          * sections layer (see WorldObjectRegistry.SECTIONS_LAYER_NAME), whose `ownMeshes` are
          * every model drawn inside that area. Sections get sensible defaults so the Buildings tab
-         * only needs a cost + appear requirement: the site view (baseView, else SECTION_SITE_VIEW)
-         * until built, the drawn pieces once built, always at full fill, solidFromMap and
-         * baseAtDropper on unless set — see viewIdForLevel()/forcesOwnMesh() and friends.
+         * only needs a cost + appear requirement. Until built a section looks like a for-sale
+         * storage — no mesh at all, just its dropper's outline with the cost list painted inside
+         * it (see awake()); once built, its drawn pieces at full fill, solidFromMap on unless
+         * set — see viewIdForLevel()/forcesOwnMesh() and friends.
          */
         isSection = false,
     ) {
@@ -432,7 +442,8 @@ export default class BuildingZone extends Entity {
             halfExtents.x * 2,
             halfExtents.z * 2,
             DROPPER_ZONE_CORNER_RADIUS,
-            { color: getZoneColor(ZoneColorKind.BuildingDropper) },
+            // A section's outline matches a for-sale storage's (see this.isSection's own doc).
+            { color: getZoneColor(this.isSection ? ZoneColorKind.Farm : ZoneColorKind.BuildingDropper) },
             centerOffset,
         ));
         // The zone's actual visible structure — starts at whatever level it's already at (e.g.
@@ -485,9 +496,21 @@ export default class BuildingZone extends Entity {
         // 'Floor' frame: the requirements are painted on the ground beside the deposit area
         // (the dropper, or the building's own footprint without one) instead of a floating
         // popup — labelFrame is still built/refreshed but never put on screen.
-        if (isFloorFrame(BUILDING_CONFIG[this.buildingId].frame)) {
+        if (this.isSection) {
+            // A store section reads like a for-sale storage (StoragePurchaseZone): its cost list
+            // painted INSIDE the dropper, centered, one part per line, shrunk to fit the area.
+            this.floorLabel = this.addComponent(new FloorLabelComponent({
+                items: [],
+                stack: 'column',
+                size: BUILDING_CONFIG[this.buildingId].floorLabelSize ?? DEFAULT_FLOOR_LABEL_SIZE,
+                offset: centerOffset,
+                maxWidth: halfExtents.x * 2 * SECTION_LABEL_AREA_FILL,
+                maxDepth: halfExtents.z * 2 * SECTION_LABEL_AREA_FILL,
+            }));
+        } else if (isFloorFrame(BUILDING_CONFIG[this.buildingId].frame)) {
+            // One requirement per line — the standard cost-list look (same as StoragePurchaseZone).
             this.floorLabel = this.addComponent(createConfiguredFloorLabel(
-                BUILDING_CONFIG[this.buildingId], centerOffset, halfExtents.x * 2, halfExtents.z * 2,
+                BUILDING_CONFIG[this.buildingId], centerOffset, halfExtents.x * 2, halfExtents.z * 2, [], 'column',
             ));
         } else {
             this.labelScreenAnchor = this.addComponent(new ScreenAnchorComponent(
@@ -539,7 +562,7 @@ export default class BuildingZone extends Entity {
      */
     private addSolidAreasFromMap(): void {
         for (const entry of this.ownMeshes) {
-            if (entry.solid <= 0) {
+            if (entry.solid <= 0 || this.isPieceRemoved(entry)) {
                 continue;
             }
 
@@ -561,8 +584,57 @@ export default class BuildingZone extends Entity {
 
             const solidArea = buildSolidArea(pieceHalfExtents, pieceCenterOffset, entry.solid);
             if (solidArea) {
-                this.solidColliders.push(this.addComponent(solidArea));
+                const collider = this.addComponent(solidArea);
+                this.solidColliders.push(collider);
+                this.pieceParts(entry).collider = collider;
             }
+        }
+    }
+
+    // ---- Pieces removed by a built store section (OwnMeshPlacement.coveredBySections)
+
+    /** True once any store section this piece overlaps has been built — the piece no longer belongs (e.g. a wall where that section's room opens up). */
+    private isPieceRemoved(entry: OwnMeshPlacement): boolean {
+        return entry.coveredBySections?.some(sectionId =>
+            BUILDING_CONFIG[sectionId as BuildingId] !== undefined && BuildingStorage.getLevel(sectionId as BuildingId) >= 1) ?? false;
+    }
+
+    private pieceParts(entry: OwnMeshPlacement): { visual?: GlbVisualComponent; collider?: RigidBody } {
+        let parts = this.ownMeshParts.get(entry);
+        if (!parts) {
+            parts = {};
+            this.ownMeshParts.set(entry, parts);
+        }
+        return parts;
+    }
+
+    /** A section (`sectionId`) just got built — shrink away and drop every currently-shown piece it covers, plus that piece's collider. Nothing else is rebuilt. */
+    private removePiecesCoveredBy(sectionId: string): void {
+        for (const [entry, parts] of this.ownMeshParts) {
+            if (!entry.coveredBySections?.includes(sectionId)) {
+                continue;
+            }
+            this.ownMeshParts.delete(entry);
+
+            if (parts.collider) {
+                parts.collider.destroy();
+                this.solidColliders = this.solidColliders.filter(collider => collider !== parts.collider);
+            }
+            const visual = parts.visual;
+            if (!visual) {
+                continue;
+            }
+            this.buildingVisuals = this.buildingVisuals.filter(other => other !== visual);
+            if (!visual.isReady) {
+                visual.destroy();
+                continue;
+            }
+            gsap.to(visual.mesh.scale, {
+                x: 0, y: 0, z: 0,
+                duration: PIECE_REMOVE_DURATION_SEC,
+                ease: 'back.in(1.7)',
+                onComplete: () => visual.destroy(),
+            });
         }
     }
 
@@ -634,8 +706,8 @@ export default class BuildingZone extends Entity {
             if (this.solidFromMap) {
                 this.addSolidAreasFromMap();
             }
-            for (const { resolved, footprint, rotationY } of ownMeshViews) {
-                this.createBuildingView(resolved, dropIn, targetFraction, footprint, rotationY);
+            for (const { entry, resolved, footprint, rotationY } of ownMeshViews) {
+                this.pieceParts(entry).visual = this.createBuildingView(resolved, dropIn, targetFraction, footprint, rotationY);
             }
             return;
         }
@@ -668,10 +740,14 @@ export default class BuildingZone extends Entity {
      * decoded to a usable model) — createBuildingMesh() falls through to the plain box
      * placeholder in that case.
      */
-    private resolveOwnMeshFallbacks(): { resolved: NonNullable<ReturnType<typeof resolveEntityView>>; footprint: { width: number; depth: number }; rotationY: number }[] {
-        const results: { resolved: NonNullable<ReturnType<typeof resolveEntityView>>; footprint: { width: number; depth: number }; rotationY: number }[] = [];
+    private resolveOwnMeshFallbacks(): { entry: OwnMeshPlacement; resolved: NonNullable<ReturnType<typeof resolveEntityView>>; footprint: { width: number; depth: number }; rotationY: number }[] {
+        const results: { entry: OwnMeshPlacement; resolved: NonNullable<ReturnType<typeof resolveEntityView>>; footprint: { width: number; depth: number }; rotationY: number }[] = [];
 
         for (const entry of this.ownMeshes) {
+            // A piece a built store section replaced — see isPieceRemoved().
+            if (this.isPieceRemoved(entry)) {
+                continue;
+            }
             const model = ModelSnapshotTool.resolveModelDef(entry.modelRef);
             if (!model) {
                 continue;
@@ -689,6 +765,7 @@ export default class BuildingZone extends Entity {
             const rotatedOffset = new THREE.Vector3(entry.offsetX, 0, entry.offsetZ).applyAxisAngle(UP_AXIS, entry.rotationY);
 
             results.push({
+                entry,
                 resolved: {
                     model,
                     scale: 1,
@@ -710,9 +787,12 @@ export default class BuildingZone extends Entity {
     // ---- Store sections (see the constructor's `isSection` param doc). Each of these is the
     // plain BuildingTypes.ts helper/field for a normal building, with the section default on top.
 
-    /** getViewIdForLevel(), but a section with no baseView still shows SECTION_SITE_VIEW before it's built. */
+    /** getViewIdForLevel(), but a section shows NO view before it's built (even with a baseView set) — just its dropper outline + cost label, like a for-sale storage. */
     private viewIdForLevel(level: number): string | undefined {
-        return getViewIdForLevel(this.buildingId, level) ?? (this.isSection && level === 0 ? SECTION_SITE_VIEW : undefined);
+        if (this.isSection && level === 0) {
+            return undefined;
+        }
+        return getViewIdForLevel(this.buildingId, level);
     }
 
     /** isOwnMeshForcedForLevel(), but a section's built levels always use its drawn pieces unless that level sets its own `view`. */
@@ -793,7 +873,7 @@ export default class BuildingZone extends Entity {
         targetFraction: number,
         fitFootprint?: { width: number; depth: number },
         rotationY?: number,
-    ): void {
+    ): GlbVisualComponent {
         const [offsetX, offsetY, offsetZ] = resolved.offset;
 
         const visual = new GlbVisualComponent(
@@ -841,6 +921,7 @@ export default class BuildingZone extends Entity {
             STRUCTURE_OCCLUSION_FADE,
         );
         this.buildingVisuals.push(this.addComponent(visual));
+        return visual;
     }
 
     /** Shared by every material a reveal sweep is applied to (see playRevealEffect()) — kept as an instance field so disposeBuildingMesh() can kill an in-flight sweep, and so replaceBuildingMesh()'s same-view branch can grow an ALREADY-applied sweep further without re-touching any material. */
@@ -910,6 +991,7 @@ export default class BuildingZone extends Entity {
             visual.destroy();
         }
         this.buildingVisuals = [];
+        this.ownMeshParts.clear();
 
         for (const collider of this.solidColliders) {
             collider.destroy();
@@ -1144,6 +1226,10 @@ export default class BuildingZone extends Entity {
      */
     private getFlyInTarget(target: THREE.Vector3): THREE.Vector3 {
         const config = BUILDING_CONFIG[this.buildingId];
+        // A section's cost is painted inside its dropper — deposits land on it, like a storage's.
+        if (this.isSection && this.triggerArea) {
+            return target.copy(this.triggerArea.position).setY(this.triggerArea.position.y + SECTION_FLY_IN_HEIGHT);
+        }
         if (this.baseAtDropper && this.triggerArea && BuildingStorage.getLevel(this.buildingId) === 0) {
             return target.copy(this.triggerArea.position).add(resolvePopupAnchorOffset(config.popupBobOffset));
         }

@@ -96,6 +96,9 @@ import { getNpcConfig, hatSpecOf, NpcLook, rollNpcLook } from '../data/NpcTypes'
 import StoreCashierWorker, { StoreCashierHost } from './StoreCashierWorker';
 import StoreRestockerWorker, { RestockJob, StoreRestockerHost } from './StoreRestockerWorker';
 import StoreCleanerWorker, { StoreCleanerHost, TrashTarget } from './StoreCleanerWorker';
+
+/** A trash storage's TrashTarget plus which storage it is — see Store.trashTargets. */
+type StoreTrashSpot = TrashTarget & { storageId: string };
 import { SavedStoreWorker, StoreWorkerStorage } from './StoreWorkerStorage';
 import FarmPlotTile from '../world/FarmPlotTile';
 import StoreGarbage from './StoreGarbage';
@@ -207,8 +210,8 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     private readonly claimedTiles = new Map<FarmPlotTile, StoreRestockerWorker>();
     /** Garbage claimed by a cleaner — see claimNearestGarbage(). */
     private readonly claimedGarbage = new Map<StoreGarbage, StoreCleanerWorker>();
-    /** Every trash storage on the map — where cleaners throw garbage (see getTrashTarget()). */
-    private readonly trashTargets: TrashTarget[];
+    /** Every trash storage on the map — where cleaners throw garbage (see getTrashTarget()). Only the AVAILABLE ones count (bought, store level reached — StoreUnlocks.isStorageAvailable()), checked live since a trash bin can be for sale. */
+    private readonly trashTargets: StoreTrashSpot[];
     private readonly handleWorkerLevelChanged = (storeId: string): void => {
         if (storeId === this.layout.id) {
             this.applyWorkerLevels();
@@ -255,7 +258,7 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         getWalletOverlayPosition: () => { x: number; y: number },
         farmIds: string[] = [],
         farmRects: StoreRect[] = [],
-        trashTargets: TrashTarget[] = [],
+        trashTargets: StoreTrashSpot[] = [],
     ) {
         super();
         this.farmIds = farmIds;
@@ -1147,6 +1150,9 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         let best: TrashTarget | undefined;
         let bestDistance = Infinity;
         for (const target of this.trashTargets) {
+            if (!StoreUnlocks.isStorageAvailable(target.storageId, getStorageConfig(target.storageId))) {
+                continue;
+            }
             const distance = target.dropPoint.distanceToSquared(near);
             if (distance < bestDistance) {
                 best = target;
@@ -1369,7 +1375,7 @@ export function spawnStores(deps: SpawnStoresDeps): Store[] {
         }
 
         // Every trash storage on the map (stores never sell from one — see above) — where cleaners throw garbage.
-        const trashTargets: TrashTarget[] = [];
+        const trashTargets: StoreTrashSpot[] = [];
         for (const [id, placement] of deps.worldObjects.getAllOfType('storage')) {
             const storageConfig = getStorageConfig(id);
             if (storageConfig.disabled || !storageConfig.trash) {
@@ -1377,6 +1383,7 @@ export function spawnStores(deps: SpawnStoresDeps): Store[] {
             }
             const dropper = deps.worldObjects.getDropperFor(id);
             trashTargets.push({
+                storageId: id,
                 dropPoint: new THREE.Vector3(dropper?.x ?? placement.x, 0, dropper?.z ?? placement.z),
                 // Its drop point (StorageZone: dropOffset, default y 0.4) — the bin's opening.
                 binPosition: new THREE.Vector3(placement.x + (storageConfig.dropOffset?.x ?? 0), storageConfig.dropOffset?.y ?? 0.4, placement.z + (storageConfig.dropOffset?.z ?? 0)),

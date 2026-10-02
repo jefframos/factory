@@ -36,8 +36,8 @@ import {
     loadTiledMap,
     objectToWorldRect,
 } from '../world/TileMapConfig';
+import { getStoreLayers } from '../world/StoreLayerNames';
 
-export const STORES_LAYER_NAME = 'stores';
 
 /** A world-space point (x/z). */
 export interface StorePoint {
@@ -80,8 +80,9 @@ export function readStoreLayouts(
 ): StoreLayout[] {
     const map = loadTiledMap(mapAlias);
     const tileSize = loadTileDefs(tilesAlias).tileSize;
-    const layer = map.layers.find(l => l.type === 'objectgroup' && l.name === STORES_LAYER_NAME);
-    if (!layer?.objects) {
+    // "--store--*" layers (plus the legacy "stores" one) — see StoreLayerNames.ts.
+    const objects = getStoreLayers(map).flatMap(layer => layer.objects ?? []);
+    if (objects.length === 0) {
         return [];
     }
 
@@ -93,7 +94,7 @@ export function readStoreLayouts(
     /** "npcPoint" objects, keyed by their target part id — resolved to a store once every part id is known. */
     const npcPoints = new Map<string, StorePoint>();
 
-    for (const obj of layer.objects) {
+    for (const obj of objects) {
         const type = getObjectProperty(obj, 'type');
         const { x, z, width, depth } = objectToWorldRect(obj, tileSize, WORLD_UNITS_PER_TILE);
         const rect: StoreRect = { x, z, width, depth };

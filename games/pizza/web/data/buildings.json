@@ -174,7 +174,7 @@
         "appearRequirement": {
             "type": "store",
             "storeId": "farmStore1",
-            "level": 1
+            "level": 3
         },
         "baseView": "baseBuildingSite",
         "updateParticleEffectId": "craftingMyst",

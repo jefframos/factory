@@ -35,6 +35,11 @@
     },
     "shopBackpack": {
         "name": "Carrier Shop",
+        "appearRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 2
+        },
         "tool": "carrier",
         "totalLevels": 10,
         "baseCost": 0,

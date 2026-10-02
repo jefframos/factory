@@ -104,10 +104,19 @@ export function floorLabelEdgeOffset(side: FloorLabelSide, center: THREE.Vector3
  * `floorLabelSide` (default south) of the footprint (`center`/`width`/`depth`, relative to the
  * owning entity), `floorLabelGap` out, `floorLabelSize` tall. Add it with addComponent().
  */
-export function createConfiguredFloorLabel(config: FloorLabelConfig, center: THREE.Vector3, width: number, depth: number, items: FloorLabelItem[] = []): FloorLabelComponent {
+export function createConfiguredFloorLabel(
+    config: FloorLabelConfig,
+    center: THREE.Vector3,
+    width: number,
+    depth: number,
+    items: FloorLabelItem[] = [],
+    /** 'column' for a cost/requirements list (one part per line — the standard look StoragePurchaseZone set). Default 'row'. */
+    stack: FloorLabelOptions['stack'] = 'row',
+): FloorLabelComponent {
     const side = config.floorLabelSide ?? 'south';
     return new FloorLabelComponent({
         items,
+        stack,
         size: config.floorLabelSize ?? DEFAULT_FLOOR_LABEL_SIZE,
         side,
         offset: floorLabelEdgeOffset(side, center, width, depth, config.floorLabelGap ?? DEFAULT_FLOOR_LABEL_GAP),

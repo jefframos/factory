@@ -74,12 +74,14 @@ import {
     WORLD_UNITS_PER_TILE,
 } from './TileMapConfig';
 import { decodeObjectModel, DecodedObjectModel } from './MeshLayerSpawner';
+import { getStoreSectionLayers, getStoreViewLayers } from './StoreLayerNames';
 
 /** Tiled layer name holding hand-placed building/gate/etc. spawn points — see this file's own doc. */
 export const OBJECTS_LAYER_NAME = 'mapSettings';
 
 /**
- * Tiled layer(s) (name CONTAINS this, like mapSettings) holding buildable STORE SECTIONS — see
+ * Tiled layer(s) holding buildable STORE SECTIONS — named "--storeSection--<store>" (see
+ * StoreLayerNames.ts), or legacy layers whose name contains this — see
  * readSectionLayers(). Authoring: draw one "storeSection" rect (custom props `id` = a building id
  * from the editor's Buildings tab, `target` = its store id), then drop any model tiles inside it
  * with NO properties — every one becomes part of what appears once that building is built (solid
@@ -88,6 +90,8 @@ export const OBJECTS_LAYER_NAME = 'mapSettings';
  * stands, and a dropper with `target` = that desk id is where the player stands to hire.
  */
 export const SECTIONS_LAYER_NAME = 'sections';
+/** World units a store-view piece must reach INTO a section's area to count as overlapping it — so a piece merely touching the area's edge (drawn snapped against it) isn't removed. */
+const SECTION_OVERLAP_EPSILON = 0.05;
 /** The "type" of a section's own area rect — see SECTIONS_LAYER_NAME. */
 const STORE_SECTION_TYPE = 'storeSection';
 /** The "type" of a hire desk spot — see SECTIONS_LAYER_NAME / HireDeskZone.ts. */
@@ -194,6 +198,8 @@ export interface OwnMeshPlacement extends DecodedObjectModel {
     width: number;
     depth: number;
     solid: number;
+    /** Store-view pieces only: the store sections (building ids) whose area this piece overlaps — once any of them is built, the piece is removed (e.g. a wall where the new room opens up). See WorldObjectRegistry.readStoreViewLayers() / BuildingZone.isPieceRemoved(). */
+    coveredBySections?: string[];
 }
 
 /**
@@ -523,10 +529,89 @@ export default class WorldObjectRegistry {
         }
 
         this.readSectionLayers(map, tileDefs.tileSize, worldUnitsPerTile);
+        this.readStoreViewLayers(map, tileDefs.tileSize, worldUnitsPerTile);
 
         // Sorted ONCE here rather than on every getWaypoints() call — see that method's own doc.
         for (const waypoints of this.waypointsByTarget.values()) {
             waypoints.sort((a, b) => a.order - b.order);
+        }
+    }
+
+    /**
+     * "--storeView--<buildingId>" layers (see StoreLayerNames.ts): every model on the layer
+     * becomes one of that building's own-mesh pieces — same as a mapSettings object with
+     * type=building, id=<buildingId>, useOwnMesh checked, minus the per-piece props (solid still
+     * comes from the object's/tile's own "solid"). If no mapSettings object already places the
+     * building, its placement is the bounding rect of all its pieces. Anything without a model
+     * (a rect/point) is warned about and skipped — droppers etc. stay on mapSettings.
+     */
+    private readStoreViewLayers(map: TiledMapData, tileSizePx: number, worldUnitsPerTile: number): void {
+        // One box per building across ALL its view layers ("--storeView--stall1", "...-2", ...).
+        const boundsByBuilding = new Map<string, { minX: number; minZ: number; maxX: number; maxZ: number }>();
+
+        for (const { buildingId, layer } of getStoreViewLayers(map)) {
+            const key = `building:${buildingId}`;
+            let entries = this.ownMeshesByKey.get(key);
+            if (!entries) {
+                entries = [];
+                this.ownMeshesByKey.set(key, entries);
+            }
+            let bounds = boundsByBuilding.get(buildingId);
+            if (!bounds) {
+                bounds = { minX: Infinity, minZ: Infinity, maxX: -Infinity, maxZ: -Infinity };
+                boundsByBuilding.set(buildingId, bounds);
+            }
+            let added = 0;
+
+            for (const obj of layer.objects ?? []) {
+                const decoded = obj.gid ? decodeObjectModel(obj, map) : undefined;
+                if (!decoded) {
+                    console.warn(`[WorldObjectRegistry] object #${obj.id} on "${layer.name}" isn't a known model — only models belong on a storeView layer, skipping`);
+                    continue;
+                }
+                const placement = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+                // Footprint as laid on the floor — a 90°/270° piece's width/depth swap (same
+                // bounding-box math BuildingZone.addSolidAreasFromMap() uses for its collider).
+                const cos = Math.abs(Math.cos(decoded.rotationY));
+                const sin = Math.abs(Math.sin(decoded.rotationY));
+                const halfX = (placement.width * cos + placement.depth * sin) / 2;
+                const halfZ = (placement.width * sin + placement.depth * cos) / 2;
+                const coveredBySections = this.storeSections
+                    .filter(({ placement: s }) =>
+                        Math.abs(placement.x - s.x) < halfX + s.width / 2 - SECTION_OVERLAP_EPSILON
+                        && Math.abs(placement.z - s.z) < halfZ + s.depth / 2 - SECTION_OVERLAP_EPSILON)
+                    .map(section => section.id);
+                entries.push({
+                    ...decoded,
+                    x: placement.x,
+                    z: placement.z,
+                    width: placement.width,
+                    depth: placement.depth,
+                    solid: readOwnMeshSolid(obj, map),
+                    ...(coveredBySections.length > 0 ? { coveredBySections } : {}),
+                });
+                if (coveredBySections.length > 0) {
+                    console.log(`  - "${layer.name}" piece #${obj.id} overlaps section(s) ${coveredBySections.join(', ')} — removed once built`);
+                }
+                bounds.minX = Math.min(bounds.minX, placement.x - halfX);
+                bounds.maxX = Math.max(bounds.maxX, placement.x + halfX);
+                bounds.minZ = Math.min(bounds.minZ, placement.z - halfZ);
+                bounds.maxZ = Math.max(bounds.maxZ, placement.z + halfZ);
+                added++;
+            }
+            console.log(`  - "${layer.name}" -> building "${buildingId}": ${added} model piece(s)`);
+        }
+
+        // Placed once every view layer is in, so the building's position covers all of them.
+        let buildings = this.byType.get('building');
+        if (!buildings) {
+            buildings = new Map();
+            this.byType.set('building', buildings);
+        }
+        for (const [buildingId, { minX, minZ, maxX, maxZ }] of boundsByBuilding) {
+            if (Number.isFinite(minX) && !buildings.has(buildingId)) {
+                buildings.set(buildingId, { x: (minX + maxX) / 2, z: (minZ + maxZ) / 2, width: maxX - minX, depth: maxZ - minZ, rotationDeg: 0 });
+            }
         }
     }
 
@@ -537,9 +622,7 @@ export default class WorldObjectRegistry {
      * join whichever section rect contains their center.
      */
     private readSectionLayers(map: TiledMapData, tileSizePx: number, worldUnitsPerTile: number): void {
-        const objects = map.layers
-            .filter(l => l.type === 'objectgroup' && l.name.includes(SECTIONS_LAYER_NAME))
-            .flatMap(l => l.objects ?? []);
+        const objects = getStoreSectionLayers(map).flatMap(l => l.objects ?? []);
         if (objects.length === 0) {
             return;
         }

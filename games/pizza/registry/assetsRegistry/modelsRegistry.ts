@@ -8359,6 +8359,16 @@ const RestaurantWallWindowOpen = {
 }
 } as const;
 
+const StoreCouchPillows = {
+  id: 'couch_pillows',
+  path: 'store/couch_pillows',
+  fullPath: 'pizza/models/store/couch_pillows.gltf',
+  format: 'gltf',
+  nodes: {
+  "CouchPillows": "couch_pillows"
+}
+} as const;
+
 const StoreDeskDecorated = {
   id: 'desk_decorated',
   path: 'store/desk_decorated',
@@ -8366,6 +8376,16 @@ const StoreDeskDecorated = {
   format: 'gltf',
   nodes: {
   "DeskDecorated": "desk_decorated"
+}
+} as const;
+
+const StorePillarB = {
+  id: 'pillar_B',
+  path: 'store/pillar_B',
+  fullPath: 'pizza/models/store/pillar_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "PillarB": "pillar_B"
 }
 } as const;
 
@@ -10448,7 +10468,9 @@ export const MODELS = {
     WallWindowOpen: RestaurantWallWindowOpen
   },
   Store: {
+    CouchPillows: StoreCouchPillows,
     DeskDecorated: StoreDeskDecorated,
+    PillarB: StorePillarB,
     Wall: StoreWall,
     WallHalf: StoreWallHalf,
     WallWindowClosed: StoreWallWindowClosed,

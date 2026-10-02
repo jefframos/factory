@@ -114,6 +114,7 @@ import Store, { spawnStores } from '../store/Store';
 import { StoreUnlocks } from '../store/StoreUnlocks';
 import { getStoreConfig, WORKER_NPC_ID, type StoreWorkerRole } from '../store/StoreTypes';
 import HireDeskZone from '../store/HireDeskZone';
+import { StoreProgressStorage } from '../store/StoreProgressStorage';
 import StoragePurchaseZone from '../store/StoragePurchaseZone';
 import { FLOOR_FRAME } from '../ui/PopupConfig';
 import { getCarrierCapacity, getCarrierLevel, getCarrierShopIds } from '../data/CarrierCapacity';
@@ -466,6 +467,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupHireDesks();
         this.setupTriggers();
         this.setupCraftTables();
+        StoreProgressStorage.onLevelChanged.add(this.handleStoreLevelChanged);
         this.setupDebugGui();
         this.threeScene.add(this.mainPlayer.transform);
 
@@ -2383,6 +2385,16 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupCraftTables();
     }
 
+    /**
+     * A store level-up can meet a {type:'store'} appear requirement. RequirementRegistry already
+     * re-tries its own spawn gates on this signal (buildings/shops/queues/farms/marts/crafting
+     * tables/hire desks); craft tables check theirs inline (see setupCraftTables()), so they're
+     * re-tried here. Zones poll every frame on their own (WorldManager.checkZoneRequirements()).
+     */
+    private readonly handleStoreLevelChanged = (): void => {
+        this.setupCraftTables();
+    };
+
     public override update(delta: number): void {
         // Game time gained while sped up — see GameClock.ts.
         GameClock.tick(delta);
@@ -2416,6 +2428,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.movementTutorialOverlay.destroy();
         this.loadingSpinner?.destroy();
         this.uiService.destroy();
+        StoreProgressStorage.onLevelChanged.remove(this.handleStoreLevelChanged);
         super.destroy();
     }
 }

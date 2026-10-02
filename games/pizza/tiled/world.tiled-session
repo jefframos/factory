@@ -10,13 +10,14 @@
         },
         "testMap1.tmx": {
             "expandedObjectLayers": [
-                9
+                3,
+                11
             ],
-            "scale": 1.5,
-            "selectedLayer": 7,
+            "scale": 3,
+            "selectedLayer": 9,
             "viewCenter": {
-                "x": 326.33333333333326,
-                "y": 867
+                "x": 437.3333333333333,
+                "y": 484.8333333333333
             }
         },
         "testMap1.tmx#models": {
@@ -60,8 +61,8 @@
     "project": "world.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "testMap1Old.tmx",
-        "testMap1.tmx"
+        "testMap1.tmx",
+        "testMap1Old.tmx"
     ],
     "tileset.embedInMap": true,
     "tileset.type": 1

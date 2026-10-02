@@ -278,7 +278,8 @@ export default class ShopZone extends Entity {
         // 'Floor' frame: the cost/cooldown is painted on the ground beside the deposit area
         // instead of a floating popup — labelFrame is still built/refreshed but never put on screen.
         if (isFloorFrame(this.config.frame)) {
-            this.floorLabel = this.addComponent(createConfiguredFloorLabel(this.config, centerOffset, halfExtents.x * 2, halfExtents.z * 2));
+            // One cost per line — the standard cost-list look (same as StoragePurchaseZone).
+            this.floorLabel = this.addComponent(createConfiguredFloorLabel(this.config, centerOffset, halfExtents.x * 2, halfExtents.z * 2, [], 'column'));
         }
 
         this.createShopMesh();

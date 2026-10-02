@@ -160,7 +160,10 @@
             },
             "solid": 1,
             "view": "trashcanView",
-            "price": {},
+            "price": {
+                "currency": "money",
+                "amount": 25
+            },
             "resourceCost": []
         },
         "storage5": {

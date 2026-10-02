@@ -30,6 +30,14 @@ function readMapSettingsObjects(map) {
 const STORES_LAYER_NAME = 'stores';
 /** Matches WorldObjectRegistry.SECTIONS_LAYER_NAME — a "storeSection" there IS a building (its id is a Buildings tab id), so readMapObjectIds() buckets it under "building" too. */
 const SECTIONS_LAYER_NAME = 'sections';
+/** Match game/world/StoreLayerNames.ts — "--store--x" / "--storeView--<buildingId>" / "--storeSection--x". The legacy names above still work. */
+const STORE_LAYER_PREFIX = '--store--';
+const STORE_VIEW_LAYER_PREFIX = '--storeView--';
+const STORE_SECTION_LAYER_PREFIX = '--storeSection--';
+
+function objectLayersNamed(map, matches) {
+    return (map.layers ?? []).filter(l => l.type === 'objectgroup' && typeof l.name === 'string' && matches(l.name));
+}
 
 /**
  * Reads `mapFilePath` and buckets every object on its "mapSettings" layer by
@@ -69,8 +77,9 @@ export function readMapObjectIds(mapFilePath) {
     // what opens the store in-game (see store/Store.ts's isOpen()). Map-only data the editor
     // can show but not edit.
     const storeStarters = {};
-    const storesLayer = map.layers?.find(l => l.type === 'objectgroup' && l.name === STORES_LAYER_NAME);
-    for (const obj of [...mapSettingsObjects, ...(storesLayer?.objects ?? [])]) {
+    const storeObjects = objectLayersNamed(map, name => name.startsWith(STORE_LAYER_PREFIX) || name === STORES_LAYER_NAME)
+        .flatMap(l => l.objects ?? []);
+    for (const obj of [...mapSettingsObjects, ...storeObjects]) {
         const props = Object.fromEntries((obj.properties ?? []).map(p => [p.name, p.value]));
         const type = props.type;
         const id = props.id;
@@ -82,12 +91,20 @@ export function readMapObjectIds(mapFilePath) {
             storeStarters[String(id)] = props.starter ? String(props.starter) : null;
         }
     }
-    const sectionLayers = (map.layers ?? []).filter(l => l.type === 'objectgroup' && typeof l.name === 'string' && l.name.includes(SECTIONS_LAYER_NAME));
+    const sectionLayers = objectLayersNamed(map, name => name.startsWith(STORE_SECTION_LAYER_PREFIX) || name.includes(SECTIONS_LAYER_NAME));
     for (const obj of sectionLayers.flatMap(l => l.objects ?? [])) {
         const props = Object.fromEntries((obj.properties ?? []).map(p => [p.name, p.value]));
         if (props.type === 'storeSection' && props.id) {
             (byType.storeSection ??= new Set()).add(String(props.id));
             (byType.building ??= new Set()).add(String(props.id));
+        }
+    }
+    // "--storeView--<buildingId>" — the layer name itself places that building (see WorldObjectRegistry.readStoreViewLayers()).
+    for (const layer of objectLayersNamed(map, name => name.startsWith(STORE_VIEW_LAYER_PREFIX))) {
+        // Up to the first "-" — "--storeView--stall1-2" is building "stall1" too (StoreLayerNames.storeViewBuildingId()).
+        const buildingId = layer.name.slice(STORE_VIEW_LAYER_PREFIX.length).split('-')[0];
+        if (buildingId && (layer.objects ?? []).some(obj => obj.gid)) {
+            (byType.building ??= new Set()).add(buildingId);
         }
     }
 
