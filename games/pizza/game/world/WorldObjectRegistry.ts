@@ -102,6 +102,10 @@ const STORE_FLOOR_TYPE = 'floor';
 const STORE_WALL_TYPE = 'polyWall';
 /** Rects on a "--storeView--" layer that cut a hole in any wall of the same building they overlap — see StoreWallPlacement.openings. */
 const STORE_OPENING_TYPES: Record<string, StoreWallOpening['kind']> = { polyWindow: 'window', polyDoor: 'door' };
+/** A rect on a section layer marking the stretch of OTHER walls that section removes once built — see StoreWallSectionCut. */
+const WALL_EXCLUSION_TYPE = 'polyWallExclusion';
+/** An exclusion with no "target" joins the nearest section rect — if it's within this many world units (else it needs a "target"). */
+const WALL_EXCLUSION_MAX_SECTION_DISTANCE = 4;
 
 /**
  * Custom BOOL property (Tiled's "Custom Properties" panel, type "bool"), set on a "building"
@@ -221,28 +225,61 @@ export interface StoreFloorPlacement {
     depth: number;
     rotationY: number;
     tileSize: number;
-    /** Same as OwnMeshPlacement.coveredBySections — the whole rect is removed once any of them is built. */
-    coveredBySections?: string[];
 }
 
-/** A "polyWindow" / "polyDoor" rect — world-space bounds (rotation ignored: drawn axis-aligned). Sizes come from StoreViewTypes.WALL_SETUP. */
-export interface StoreWallOpening {
-    kind: 'window' | 'door';
-    rect: { minX: number; maxX: number; minZ: number; maxZ: number };
+/** World-space axis-aligned rect. */
+export interface WorldRect {
+    minX: number;
+    maxX: number;
+    minZ: number;
+    maxZ: number;
 }
 
 /**
- * A "type"="polyWall" polyline (open) or polygon (closed loop) on a "--storeView--" layer —
- * drawn as ONE wall mesh following its vertices (see PolyWallBuilder). `points` are world-space.
- * Just the line: size is StoreViewTypes.WALL_SETUP, the look is the store's wall style.
+ * A hole in a wall — PolyWallBuilder cuts it along the stretch of wall `rect` overlaps:
+ *   - 'window' / 'door': a "polyWindow" / "polyDoor" rect (rotation ignored: drawn axis-aligned);
+ *     sizes from StoreViewTypes.WALL_SETUP.
+ *   - 'gap': full height, no collider — where a BUILT store section's area crosses the wall
+ *     (see StoreWallPlacement.sectionCuts), so the new room opens into the store.
+ */
+export interface StoreWallOpening {
+    kind: 'window' | 'door' | 'gap';
+    rect: WorldRect;
+    /** Doors only — the "isDouble" bool prop: two leaves, hinged on both sides (StoreDoor.ts). */
+    double?: boolean;
+    /** Doors only — the "isHigh" bool prop: WALL_SETUP.tallDoorHeight instead of doorHeight. */
+    high?: boolean;
+    /** Doors only — the "isSliding" bool prop: the leaf (or both halves, with isDouble) slides into the wall instead of swinging. */
+    sliding?: boolean;
+    /** Doors only — the "fitToCeiling" bool prop: the opening (and door) goes the wall's full height, no wall left above it. Wins over `high`. */
+    fitToCeiling?: boolean;
+}
+
+/**
+ * A "polyWallExclusion" rect drawn on a section's layer, crossing a wall that isn't that
+ * section's own — once the section is built, the wall gets a 'gap' opening over `rect` (the
+ * stretch of wall inside it is removed). Lets a section replace part of the store's wall with
+ * its own walls.
+ */
+export interface StoreWallSectionCut {
+    sectionId: string;
+    rect: WorldRect;
+}
+
+/**
+ * A "type"="polyWall" polyline (open) or polygon (closed loop) on a "--storeView--" layer — or
+ * on a store section's layer, where it's that section's wall, shown once the section is built
+ * (see readSectionLayers()). Drawn as ONE wall mesh following its vertices (see
+ * PolyWallBuilder). `points` are world-space. Just the line: size is StoreViewTypes.WALL_SETUP,
+ * the look is the store's wall style.
  */
 export interface StoreWallPlacement {
     points: { x: number; z: number }[];
     closed: boolean;
     /** Every window/door rect drawn for the same building — PolyWallBuilder cuts the ones that actually overlap this wall. */
     openings?: StoreWallOpening[];
-    /** Same as OwnMeshPlacement.coveredBySections — the whole wall is removed once any of them is built. */
-    coveredBySections?: string[];
+    /** "polyWallExclusion" rects (of other sections) crossing this wall — each cuts its stretch out once its section is built (never the whole wall). */
+    sectionCuts?: StoreWallSectionCut[];
 }
 
 /**
@@ -442,6 +479,8 @@ export default class WorldObjectRegistry {
     private readonly floorsByBuilding = new Map<string, StoreFloorPlacement[]>();
     /** building id -> its "polyWall" lines from the "--storeView--" layers — see StoreWallPlacement / getWalls(). */
     private readonly wallsByBuilding = new Map<string, StoreWallPlacement[]>();
+    /** Every "polyWallExclusion" rect from the section layers — see assignWallExclusions(). */
+    private readonly wallExclusions: StoreWallSectionCut[] = [];
 
     public constructor(
         mapAlias: string = DEFAULT_TILE_MAP_ALIASES.map,
@@ -577,6 +616,7 @@ export default class WorldObjectRegistry {
 
         this.readSectionLayers(map, tileDefs.tileSize, worldUnitsPerTile);
         this.readStoreViewLayers(map, tileDefs.tileSize, worldUnitsPerTile);
+        this.assignWallExclusions();
 
         // Sorted ONCE here rather than on every getWaypoints() call — see that method's own doc.
         for (const waypoints of this.waypointsByTarget.values()) {
@@ -617,28 +657,19 @@ export default class WorldObjectRegistry {
                 floors = [];
                 this.floorsByBuilding.set(buildingId, floors);
             }
-            let walls = this.wallsByBuilding.get(buildingId);
-            if (!walls) {
-                walls = [];
-                this.wallsByBuilding.set(buildingId, walls);
-            }
             let added = 0;
             let addedFloors = 0;
             let addedWalls = 0;
 
             for (const obj of layer.objects ?? []) {
-                const openingKind = obj.gid ? undefined : STORE_OPENING_TYPES[getObjectProperty(obj, 'type') ?? ''];
-                if (openingKind) {
-                    const rect = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+                const opening = this.readWallOpening(obj, tileSizePx, worldUnitsPerTile);
+                if (opening) {
                     let openings = openingsByBuilding.get(buildingId);
                     if (!openings) {
                         openings = [];
                         openingsByBuilding.set(buildingId, openings);
                     }
-                    openings.push({
-                        kind: openingKind,
-                        rect: { minX: rect.x - rect.width / 2, maxX: rect.x + rect.width / 2, minZ: rect.z - rect.depth / 2, maxZ: rect.z + rect.depth / 2 },
-                    });
+                    openings.push(opening);
                     continue;
                 }
                 const wallVertices = obj.polyline ?? obj.polygon;
@@ -650,8 +681,9 @@ export default class WorldObjectRegistry {
                         bounds.minZ = Math.min(bounds.minZ, point.z);
                         bounds.maxZ = Math.max(bounds.maxZ, point.z);
                     }
-                    walls.push(wall);
-                    addedWalls++;
+                    if (this.addWall(buildingId, wall, obj.id)) {
+                        addedWalls++;
+                    }
                     continue;
                 }
                 const isFloor = !obj.gid && getObjectProperty(obj, 'type') === STORE_FLOOR_TYPE;
@@ -669,20 +701,13 @@ export default class WorldObjectRegistry {
                 const sin = Math.abs(Math.sin(rotationY));
                 const halfX = (placement.width * cos + placement.depth * sin) / 2;
                 const halfZ = (placement.width * sin + placement.depth * cos) / 2;
-                const coveredBySections = this.storeSections
-                    .filter(({ placement: s }) =>
-                        Math.abs(placement.x - s.x) < halfX + s.width / 2 - SECTION_OVERLAP_EPSILON
-                        && Math.abs(placement.z - s.z) < halfZ + s.depth / 2 - SECTION_OVERLAP_EPSILON)
-                    .map(section => section.id);
                 bounds.minX = Math.min(bounds.minX, placement.x - halfX);
                 bounds.maxX = Math.max(bounds.maxX, placement.x + halfX);
                 bounds.minZ = Math.min(bounds.minZ, placement.z - halfZ);
                 bounds.maxZ = Math.max(bounds.maxZ, placement.z + halfZ);
-                if (coveredBySections.length > 0) {
-                    console.log(`  - "${layer.name}" ${isFloor ? 'floor' : 'piece'} #${obj.id} overlaps section(s) ${coveredBySections.join(', ')} — removed once built`);
-                }
-
                 if (!decoded) {
+                    // A floor is never removed by a section (the section brings its own floor) —
+                    // it stays even where a built section's area overlaps it.
                     floors.push({
                         x: placement.x,
                         z: placement.z,
@@ -690,7 +715,6 @@ export default class WorldObjectRegistry {
                         depth: placement.depth,
                         rotationY,
                         tileSize: worldUnitsPerTile,
-                        ...(coveredBySections.length > 0 ? { coveredBySections } : {}),
                     });
                     addedFloors++;
                     continue;
@@ -702,7 +726,7 @@ export default class WorldObjectRegistry {
                     width: placement.width,
                     depth: placement.depth,
                     solid: readOwnMeshSolid(obj, map),
-                    ...(coveredBySections.length > 0 ? { coveredBySections } : {}),
+                    ...this.sectionsCovering(placement.x, placement.z, halfX, halfZ, layer.name, obj.id),
                 });
                 added++;
             }
@@ -711,7 +735,7 @@ export default class WorldObjectRegistry {
 
         for (const [buildingId, openings] of openingsByBuilding) {
             for (const wall of this.wallsByBuilding.get(buildingId) ?? []) {
-                wall.openings = openings;
+                wall.openings = [...(wall.openings ?? []), ...openings];
             }
             console.log(`  - building "${buildingId}": ${openings.length} wall opening(s)`);
         }
@@ -729,7 +753,7 @@ export default class WorldObjectRegistry {
         }
     }
 
-    /** One "polyWall" object -> world-space StoreWallPlacement (Tiled rotation applied to the vertices, same as readSpawnerShape()). */
+    /** One "polyWall" object -> world-space StoreWallPlacement (Tiled rotation applied to the vertices, same as readSpawnerShape()). Section cuts come later — see assignWallExclusions(). */
     private readStoreWall(obj: TiledObject, vertices: { x: number; y: number }[], tileSizePx: number, worldUnitsPerTile: number): StoreWallPlacement {
         const scale = worldUnitsPerTile / tileSizePx;
         const rotationRad = (obj.rotation * Math.PI) / 180;
@@ -739,24 +763,94 @@ export default class WorldObjectRegistry {
             x: (obj.x + v.x * cos - v.y * sin) * scale,
             z: (obj.y + v.x * sin + v.y * cos) * scale,
         }));
-        // A section overlapping ANY segment's box removes the whole wall (same rule as a piece).
-        const coveredBySections = this.storeSections
-            .filter(({ placement: s }) => points.some((p, i) => {
-                const q = points[i + 1] ?? (obj.polygon ? points[0] : undefined);
-                if (!q) {
-                    return false;
-                }
-                const halfX = Math.abs(q.x - p.x) / 2;
-                const halfZ = Math.abs(q.z - p.z) / 2;
-                return Math.abs((p.x + q.x) / 2 - s.x) < halfX + s.width / 2 - SECTION_OVERLAP_EPSILON
-                    && Math.abs((p.z + q.z) / 2 - s.z) < halfZ + s.depth / 2 - SECTION_OVERLAP_EPSILON;
-            }))
-            .map(section => section.id);
+        // A polyline drawn back to its first point is a closed loop — drop the repeated point so
+        // that corner is mitered like the others instead of two end caps overlapping.
+        const first = points[0];
+        const last = points[points.length - 1];
+        const loopsBack = points.length > 3 && Math.hypot(last.x - first.x, last.z - first.z) < 1e-3;
         return {
-            points,
-            closed: obj.polygon !== undefined,
-            ...(coveredBySections.length > 0 ? { coveredBySections } : {}),
+            points: loopsBack ? points.slice(0, -1) : points,
+            closed: obj.polygon !== undefined || loopsBack,
         };
+    }
+
+    /**
+     * Hands every "polyWallExclusion" (see StoreWallSectionCut) to each wall it crosses —
+     * store-view walls and other sections' walls alike, never its own section's. Runs once every
+     * wall and exclusion has been read (they live on different layers).
+     */
+    private assignWallExclusions(): void {
+        for (const [ownerId, walls] of this.wallsByBuilding) {
+            for (const wall of walls) {
+                const { points, closed } = wall;
+                const cuts = this.wallExclusions.filter(({ sectionId, rect }) => sectionId !== ownerId && points.some((p, i) => {
+                    const q = points[i + 1] ?? (closed ? points[0] : undefined);
+                    return q !== undefined
+                        && Math.max(p.x, q.x) >= rect.minX && Math.min(p.x, q.x) <= rect.maxX
+                        && Math.max(p.z, q.z) >= rect.minZ && Math.min(p.z, q.z) <= rect.maxZ;
+                }));
+                if (cuts.length > 0) {
+                    wall.sectionCuts = cuts;
+                    console.log(`  - a "${ownerId}" wall is cut by section(s) ${[...new Set(cuts.map(cut => cut.sectionId))].join(', ')} once built (polyWallExclusion)`);
+                }
+            }
+        }
+        for (const exclusion of this.wallExclusions) {
+            if (![...this.wallsByBuilding].some(([ownerId, walls]) => ownerId !== exclusion.sectionId && walls.some(wall => wall.sectionCuts?.includes(exclusion)))) {
+                console.warn(`[WorldObjectRegistry] a polyWallExclusion of section "${exclusion.sectionId}" doesn't cross any other wall — it does nothing`);
+            }
+        }
+    }
+
+    /** A store-view model piece's `coveredBySections` — every section whose area it reaches into (it's removed once any is built, e.g. a wall model where the room opens up). */
+    private sectionsCovering(x: number, z: number, halfX: number, halfZ: number, layerName: string, objectId: number): { coveredBySections?: string[] } {
+        const coveredBySections = this.storeSections
+            .filter(({ placement: s }) =>
+                Math.abs(x - s.x) < halfX + s.width / 2 - SECTION_OVERLAP_EPSILON
+                && Math.abs(z - s.z) < halfZ + s.depth / 2 - SECTION_OVERLAP_EPSILON)
+            .map(section => section.id);
+        if (coveredBySections.length === 0) {
+            return {};
+        }
+        console.log(`  - "${layerName}" piece #${objectId} overlaps section(s) ${coveredBySections.join(', ')} — removed once built`);
+        return { coveredBySections };
+    }
+
+    /** A "polyWindow" / "polyDoor" object -> StoreWallOpening, or undefined if it isn't one. */
+    private readWallOpening(obj: TiledObject, tileSizePx: number, worldUnitsPerTile: number): StoreWallOpening | undefined {
+        const kind = obj.gid ? undefined : STORE_OPENING_TYPES[getObjectProperty(obj, 'type') ?? ''];
+        if (!kind) {
+            return undefined;
+        }
+        const rect = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+        const double = kind === 'door' && getObjectBooleanProperty(obj, 'isDouble');
+        const high = kind === 'door' && getObjectBooleanProperty(obj, 'isHigh');
+        const sliding = kind === 'door' && getObjectBooleanProperty(obj, 'isSliding');
+        const fitToCeiling = kind === 'door' && getObjectBooleanProperty(obj, 'fitToCeiling');
+        return {
+            kind,
+            rect: { minX: rect.x - rect.width / 2, maxX: rect.x + rect.width / 2, minZ: rect.z - rect.depth / 2, maxZ: rect.z + rect.depth / 2 },
+            ...(double ? { double } : {}),
+            ...(high ? { high } : {}),
+            ...(sliding ? { sliding } : {}),
+            ...(fitToCeiling ? { fitToCeiling } : {}),
+        };
+    }
+
+    /** Adds `wall` to `buildingId`'s walls unless an identical one (same points) is already there — two copies would z-fight and double the colliders. */
+    private addWall(buildingId: string, wall: StoreWallPlacement, objectId: number): boolean {
+        let walls = this.wallsByBuilding.get(buildingId);
+        if (!walls) {
+            walls = [];
+            this.wallsByBuilding.set(buildingId, walls);
+        }
+        const key = JSON.stringify(wall.points.map(p => [p.x.toFixed(3), p.z.toFixed(3)]));
+        if (walls.some(other => JSON.stringify(other.points.map(p => [p.x.toFixed(3), p.z.toFixed(3)])) === key)) {
+            console.warn(`[WorldObjectRegistry] wall #${objectId} for "${buildingId}" is an exact copy of another one — skipping the duplicate`);
+            return false;
+        }
+        walls.push(wall);
+        return true;
     }
 
     /**
@@ -797,12 +891,97 @@ export default class WorldObjectRegistry {
         const sectionAt = (x: number, z: number): StoreSectionPlacement | undefined => this.storeSections.find(({ placement: p }) =>
             Math.abs(x - p.x) <= p.width / 2 && Math.abs(z - p.z) <= p.depth / 2);
 
+        // Window/door rects per section, handed to that section's walls after the loop.
+        const sectionOpenings = new Map<string, StoreWallOpening[]>();
+
         for (const obj of objects) {
             const type = getObjectProperty(obj, 'type');
             if (type === STORE_SECTION_TYPE) {
                 continue;
             }
             const placement = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+
+            // The section's own walls — a "polyWall" line inside the section rect. Shown once the
+            // section is built; cut by OTHER sections' exclusions only.
+            const wallVertices = obj.polyline ?? obj.polygon;
+            if (wallVertices && !type) {
+                console.warn(`[WorldObjectRegistry] polyline #${obj.id} on a section layer has no "type" — set type="${STORE_WALL_TYPE}" to make it a wall; skipping`);
+                continue;
+            }
+            if (wallVertices && wallVertices.length >= 2 && type === STORE_WALL_TYPE) {
+                const scale = worldUnitsPerTile / tileSizePx;
+                const cx = (obj.x + wallVertices.reduce((sum, v) => sum + v.x, 0) / wallVertices.length) * scale;
+                const cz = (obj.y + wallVertices.reduce((sum, v) => sum + v.y, 0) / wallVertices.length) * scale;
+                const owner = sectionAt(cx, cz);
+                if (!owner) {
+                    console.warn(`[WorldObjectRegistry] wall #${obj.id} on a section layer isn't inside any storeSection rect — it won't appear`);
+                    continue;
+                }
+                this.addWall(owner.id, this.readStoreWall(obj, wallVertices, tileSizePx, worldUnitsPerTile), obj.id);
+                continue;
+            }
+            // The section's own floor — a "floor" rect inside the section rect, one checker plane
+            // (the building's/store's checker), shown once the section is built.
+            if (type === STORE_FLOOR_TYPE && !obj.gid) {
+                const owner = sectionAt(placement.x, placement.z);
+                if (!owner) {
+                    console.warn(`[WorldObjectRegistry] floor #${obj.id} on a section layer isn't inside any storeSection rect — it won't appear`);
+                    continue;
+                }
+                let floors = this.floorsByBuilding.get(owner.id);
+                if (!floors) {
+                    floors = [];
+                    this.floorsByBuilding.set(owner.id, floors);
+                }
+                floors.push({
+                    x: placement.x,
+                    z: placement.z,
+                    width: placement.width,
+                    depth: placement.depth,
+                    rotationY: -(placement.rotationDeg * Math.PI) / 180,
+                    tileSize: worldUnitsPerTile,
+                });
+                continue;
+            }
+            if (type === WALL_EXCLUSION_TYPE && !obj.gid) {
+                // Its section: "target" if set, else the nearest section rect (0 = touching or
+                // inside) — the wall being replaced often runs just outside the section's area.
+                const target = getObjectProperty(obj, DROPPER_TARGET_PROPERTY);
+                const halfW = placement.width / 2;
+                const halfD = placement.depth / 2;
+                const gapTo = ({ placement: p }: StoreSectionPlacement): number => Math.hypot(
+                    Math.max(0, Math.abs(placement.x - p.x) - halfW - p.width / 2),
+                    Math.max(0, Math.abs(placement.z - p.z) - halfD - p.depth / 2),
+                );
+                const nearest = [...this.storeSections].sort((a, b) => gapTo(a) - gapTo(b))[0];
+                const owner = target
+                    ? this.storeSections.find(section => section.id === target)
+                    : nearest && gapTo(nearest) <= WALL_EXCLUSION_MAX_SECTION_DISTANCE ? nearest : undefined;
+                if (!owner) {
+                    console.warn(`[WorldObjectRegistry] polyWallExclusion #${obj.id} ${target ? `targets unknown section "${target}"` : `has no "${DROPPER_TARGET_PROPERTY}" and no storeSection rect is within ${WALL_EXCLUSION_MAX_SECTION_DISTANCE} units`} — skipping`);
+                    continue;
+                }
+                this.wallExclusions.push({
+                    sectionId: owner.id,
+                    rect: { minX: placement.x - halfW, maxX: placement.x + halfW, minZ: placement.z - halfD, maxZ: placement.z + halfD },
+                });
+                continue;
+            }
+            const opening = this.readWallOpening(obj, tileSizePx, worldUnitsPerTile);
+            if (opening) {
+                const owner = sectionAt(placement.x, placement.z);
+                if (!owner) {
+                    console.warn(`[WorldObjectRegistry] ${type} #${obj.id} on a section layer isn't inside any storeSection rect — skipping`);
+                    continue;
+                }
+                let openings = sectionOpenings.get(owner.id);
+                if (!openings) {
+                    openings = [];
+                    sectionOpenings.set(owner.id, openings);
+                }
+                openings.push(opening);
+                continue;
+            }
 
             if (type === DROPPER_TYPE) {
                 const target = getObjectProperty(obj, DROPPER_TARGET_PROPERTY);
@@ -862,8 +1041,14 @@ export default class WorldObjectRegistry {
             });
         }
 
+        for (const [sectionId, openings] of sectionOpenings) {
+            for (const wall of this.wallsByBuilding.get(sectionId) ?? []) {
+                wall.openings = openings;
+            }
+        }
+
         for (const section of this.storeSections) {
-            console.log(`  - section "${section.id}" has ${this.getOwnMeshes('building', section.id).length} model piece(s)`);
+            console.log(`  - section "${section.id}" has ${this.getOwnMeshes('building', section.id).length} model piece(s), ${this.getFloors(section.id).length} floor(s), ${this.getWalls(section.id).length} wall(s)`);
         }
     }
 

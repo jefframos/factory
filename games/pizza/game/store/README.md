@@ -132,6 +132,34 @@ picks another. Runtime: `getStoreWallStyle(storeId)`; `BuildingZone.setWallStyle
 `--storeView--` layers, overlapping the wall. The wall gets a hole along the stretch of wall the rect
 overlaps. A door goes from the floor up to Wall Setup `doorHeight` and has **no collider** (walkable). A window
 is `windowHeight` tall, centered on the wall's height, and keeps its collider. Don't overlap two openings.
+Door toggles (bool custom properties on the `polyDoor` rect): **`isDouble`** hangs two half-width leaves, one hinged on
+each side, which swing together to the same side. **`isHigh`** uses Wall Setup `tallDoorHeight` instead of `doorHeight`.
+**`isSliding`** slides the door along the wall line into the wall (a pocket door) instead of swinging, and always clears
+the whole doorway without poking past the straight wall beside it. If it fits the wall on one side, it's one panel
+sliding that way. If it's too big, it becomes an automatic door: two halves parting sideways (the same as adding
+`isDouble`). A half still wider than its wall splits into telescoping panels that stack inside the wall's thickness.
+A wall polyline drawn back to its first point is treated as a closed loop.
+Every door opening also gets a door (`store/StoreDoor.ts`), hinged on
+the opening's start side. It swings open away from whoever comes near (the player, store clients and workers:
+any entity with `opensDoors`) and closes once the doorway has been clear for a moment. It's visual only, with no collider.
+
+**Sections and walls/floors:** building a store section never removes a floor, and never removes a wall on its
+own. The section's own walls are drawn on its `--storeSection--` layer, as a `type` = `polyWall` polyline/polygon
+inside the section rect (a polyline with no type is ignored, with a warning), with optional `polyWindow`/`polyDoor` rects. A `floor` rect inside the section
+rect is the section's floor (one checker plane). Walls and floor appear when the section is built. Which checker or
+wall style a section uses is set on its **Buildings** tab entry (`floorChecker` / `wallStyle`, blank = the store's).
+To remove part of an existing wall (the store's, or another section's) when the section is built, draw a
+**`polyWallExclusion`** rect on the section layer over that stretch: it's cut out full height, with no collider (any
+window or door in it goes too). An exclusion belongs to the section named in its `target` property, else to the
+nearest section rect within 4 world units. It never cuts its own section's walls. Exact duplicate walls are skipped.
+
+### Store View tab → Door → `game/store/StoreViewTypes.ts`
+
+How every door looks: a **model** (first entry, stretched over each leaf, × `scale`), or with no model, a plain
+panel in `color` at `opacity` (below 1 = see-through glass). **Default** is the solid wood door. A building's
+`doorStyle` (Buildings tab, e.g. a store section) wins, then the store's `doorStyle` (Stores tab), then Default.
+`storeRoom1` uses **Glass** (light blue, opacity 0.35). Runtime: `getDoorStyle()` / `getStoreDoorStyle()`;
+`BuildingZone.setDoorStyle()` restyles shown doors.
 
 ### Storages tab → `game/data/StorageTypes.ts` (fields that matter for stores)
 

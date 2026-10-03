@@ -183,6 +183,8 @@
         "baseFillFull": true,
         "frame": "Floor",
         "floorLabelSide": "south",
-        "baseAtDropper": true
+        "baseAtDropper": true,
+        "floorChecker": "roomTiles",
+        "doorStyle": "glass"
     }
 }

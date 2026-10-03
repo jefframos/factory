@@ -74,6 +74,8 @@ const TOOL_ACTION_ANIMATIONS: Partial<Record<ItemType, { trigger: string; modelP
 );
 
 export default class MainPlayer extends Entity {
+    /** Swings store doors open when near one — see StoreDoor.ts. */
+    public readonly opensDoors = true;
     private readonly inputHost: MovementInputHost;
     /** Only needed for loadCharacter() to parent the loaded rig's container directly into the 3D scene — CharacterVisualComponent itself deliberately doesn't do this (see its own doc: ThirdPersonCharacter.update() sets the container's position in WORLD space, so it can't be a child of entity.transform without double-applying that offset). */
     private readonly threeScene: THREE.Scene;

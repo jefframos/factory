@@ -191,6 +191,16 @@ export interface BuildingConfig extends FloorLabelConfig {
      * existed) keeps normal behavior.
      */
     disabled?: boolean;
+    /**
+     * Store look overrides for THIS building's own "floor" rects / "polyWall" lines — e.g. a
+     * store section with its own tiling (StoreViewTypes.ts FLOOR_CHECKER_BY_ID /
+     * WALL_STYLE_BY_ID ids, Store View tab). Unset = the store's own (StoreConfig.floorChecker /
+     * wallStyle), and then the default.
+     */
+    floorChecker?: string;
+    wallStyle?: string;
+    /** Same, for the doors in this building's own walls (DOOR_STYLE_BY_ID id). */
+    doorStyle?: string;
 }
 
 export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
@@ -358,6 +368,8 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         "baseAtDropper": true
     },
     "storeRoom1": {
+        "floorChecker": "roomTiles",
+        "doorStyle": "glass",
         baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
         "name": "StoreRoom1",
         "appearRequirement": {

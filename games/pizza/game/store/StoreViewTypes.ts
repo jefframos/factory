@@ -12,9 +12,12 @@
 // through the same getStoreFloorChecker() and just takes priority over it. Edited from the
 // pizza web editor's Store View tab -> Floor (games/pizza/web). Walls work the same way:
 // DEFAULT_WALL_STYLE / WALL_STYLE_BY_ID, StoreConfig.wallStyle, getStoreWallStyle() — Store View
-// tab -> Wall, whose shared "Wall Setup" card is WALL_SETUP.
+// tab -> Wall, whose shared "Wall Setup" card is WALL_SETUP. And doors: DEFAULT_DOOR_STYLE /
+// DOOR_STYLE_BY_ID (Store View tab -> Door) — picked per building (BuildingConfig.doorStyle,
+// e.g. a store section), else per store (StoreConfig.doorStyle), else the default.
 
 import { getStoreConfig } from './StoreTypes';
+import { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
 
 export interface FloorCheckerConfig {
     /** Display name — shown in the web editor (and later, in a floor shop). Optional. */
@@ -35,7 +38,14 @@ export const DEFAULT_FLOOR_CHECKER: FloorCheckerConfig = {
 };
 
 /** Named checkers a store can pick instead of the default (StoreConfig.floorChecker). */
-export const FLOOR_CHECKER_BY_ID: Partial<Record<string, FloorCheckerConfig>> = {};
+export const FLOOR_CHECKER_BY_ID: Partial<Record<string, FloorCheckerConfig>> = {
+    "roomTiles": {
+        "name": "Room Tiles",
+        "colorA": "#e9dcc0",
+        "colorB": "#b48b5e",
+        "scale": 0.5
+    }
+};
 
 /** The checker with id `id` — the default when unset or unknown (warns on unknown). */
 export function getFloorChecker(id?: string): FloorCheckerConfig {
@@ -63,6 +73,8 @@ export interface WallSetupConfig {
     thickness: number;
     /** A "polyDoor" opening's height, from the floor up (world units) — walkable, no collider. */
     doorHeight: number;
+    /** Same, for a door with the "isHigh" prop. */
+    tallDoorHeight: number;
     /** A "polyWindow" opening's height (world units), centered on the wall's height. */
     windowHeight: number;
 }
@@ -78,9 +90,10 @@ export interface WallStyleConfig {
 }
 
 export const WALL_SETUP: WallSetupConfig = {
-    "height": 4,
+    "height": 6,
     "thickness": 0.35,
     "doorHeight": 3,
+    "tallDoorHeight": 5,
     "windowHeight": 1.5
 };
 
@@ -111,4 +124,55 @@ export function getWallStyle(id?: string): WallStyleConfig {
 /** The wall style store `storeId`'s walls show — the one place a future bought wall plugs in. No store = the default. */
 export function getStoreWallStyle(storeId?: string): WallStyleConfig {
     return getWallStyle(storeId ? getStoreConfig(storeId).wallStyle : undefined);
+}
+
+/**
+ * How the door in a "polyDoor" opening looks (StoreDoor.ts): a model, or — with no model — a
+ * plain panel in `color` at `opacity` (below 1 = see-through, e.g. glass).
+ */
+export interface DoorStyleConfig {
+    /** Display name — shown in the web editor (and later, in a shop). Optional. */
+    name?: string;
+    /** First entry used: stretched to each leaf's width/height, then × `scale`. Unset/empty = the plain panel. */
+    models?: ModelDefinition[];
+    /** Multiplier on the model's fitted size (1 = exactly the leaf). Model only. */
+    scale?: number;
+    /** Plain panel only. */
+    color: string;
+    /** Plain panel only — 1 = solid, 0 = invisible. */
+    opacity: number;
+}
+
+/** Every door unless its building or store picks another style by id — see this file's own doc. */
+export const DEFAULT_DOOR_STYLE: DoorStyleConfig = {
+    "name": "Wood",
+    "color": "#6b4a32",
+    "opacity": 1
+};
+
+/** Named door styles a building (BuildingConfig.doorStyle) or store (StoreConfig.doorStyle) can pick. */
+export const DOOR_STYLE_BY_ID: Partial<Record<string, DoorStyleConfig>> = {
+    "glass": {
+        "name": "Glass",
+        "color": "#9fd8ff",
+        "opacity": 0.35
+    }
+};
+
+/** The door style with id `id` — the default when unset or unknown (warns on unknown). */
+export function getDoorStyle(id?: string): DoorStyleConfig {
+    if (!id) {
+        return DEFAULT_DOOR_STYLE;
+    }
+    const style = DOOR_STYLE_BY_ID[id];
+    if (!style) {
+        console.warn(`[StoreViewTypes] door style "${id}" doesn't exist — using the default`);
+        return DEFAULT_DOOR_STYLE;
+    }
+    return style;
+}
+
+/** The door style store `storeId`'s doors use. No store = the default. */
+export function getStoreDoorStyle(storeId?: string): DoorStyleConfig {
+    return getDoorStyle(storeId ? getStoreConfig(storeId).doorStyle : undefined);
 }

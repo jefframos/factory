@@ -177,6 +177,8 @@ const SHOPPING_STATES: ReadonlySet<ClientState> = new Set<ClientState>(['toShelf
 const MOOD_STATES: ReadonlySet<ClientState> = new Set<ClientState>([...SHOPPING_STATES, 'toCashier', 'cashierQueue', 'readyToPay']);
 
 export default class StoreClient extends Entity implements NavNeighbor {
+    /** Swings store doors open when near one — see StoreDoor.ts. */
+    public readonly opensDoors = true;
     public readonly npcId: string;
     /** Its rolled color/face/scale (see NpcConfig.colors) — kept so a saved client looks the same after a reload. */
     public readonly look: NpcLook;

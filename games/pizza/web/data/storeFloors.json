@@ -5,5 +5,12 @@
         "colorB": "#bdbcbc",
         "scale": 1
     },
-    "byId": {}
+    "byId": {
+        "roomTiles": {
+            "name": "Room Tiles",
+            "colorA": "#e9dcc0",
+            "colorB": "#b48b5e",
+            "scale": 0.5
+        }
+    }
 }

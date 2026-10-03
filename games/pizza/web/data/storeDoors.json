@@ -1,0 +1,14 @@
+{
+    "default": {
+        "name": "Wood",
+        "color": "#6b4a32",
+        "opacity": 1
+    },
+    "byId": {
+        "glass": {
+            "name": "Glass",
+            "color": "#9fd8ff",
+            "opacity": 0.35
+        }
+    }
+}

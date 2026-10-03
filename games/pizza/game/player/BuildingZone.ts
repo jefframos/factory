@@ -47,8 +47,9 @@ import { resolveEntityView } from '../world/EntityViewRegistry';
 import { OwnMeshPlacement, StoreFloorPlacement, StoreWallPlacement } from '../world/WorldObjectRegistry';
 import { CheckerFloorBuilder } from '../builders/CheckerFloorBuilder';
 import { PolyWallBuilder } from '../builders/PolyWallBuilder';
+import StoreDoor from '../store/StoreDoor';
 import { FloorLayers } from '../world/FloorLayers';
-import { DEFAULT_FLOOR_CHECKER, DEFAULT_WALL_STYLE, FloorCheckerConfig, WALL_SETUP, WallStyleConfig } from '../store/StoreViewTypes';
+import { DEFAULT_DOOR_STYLE, DEFAULT_FLOOR_CHECKER, DEFAULT_WALL_STYLE, DoorStyleConfig, FloorCheckerConfig, WALL_SETUP, WallStyleConfig } from '../store/StoreViewTypes';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
@@ -207,6 +208,8 @@ export default class BuildingZone extends Entity {
     private readonly wallMeshes = new Map<StoreWallPlacement, THREE.Mesh>();
     /** Each shown wall's collider boxes (PolyWallBuilder.colliderBoxes()) — also in `solidColliders`, so they're torn down with the rest; kept per wall so a built section can drop just its own. */
     private readonly wallColliders = new Map<StoreWallPlacement, RigidBody[]>();
+    /** Each shown wall's swinging doors (one per "polyDoor" opening — see StoreDoor.ts), ticked from update(). */
+    private readonly wallDoors = new Map<StoreWallPlacement, StoreDoor[]>();
 
     private readonly handleProgressChanged = (id: BuildingId): void => {
         if (id === this.buildingId) {
@@ -257,6 +260,8 @@ export default class BuildingZone extends Entity {
     private readonly walls: readonly StoreWallPlacement[];
     /** What `walls` are painted with — see the constructor's `wallStyle` param / setWallStyle(). */
     private wallStyle: WallStyleConfig;
+    /** How the walls' doors look — see the constructor's `doorStyle` param / setDoorStyle(). */
+    private doorStyle: DoorStyleConfig;
     /** What `floors` are painted with — see the constructor's `floorChecker` param / setFloorChecker(). */
     private floorChecker: FloorCheckerConfig;
     /** See the constructor's `npc` param doc. Undefined means "no NPC assigned," same as before this existed. */
@@ -353,6 +358,8 @@ export default class BuildingZone extends Entity {
         walls: readonly StoreWallPlacement[] = [],
         /** The style `walls` are painted with — the owning store's (StoreViewTypes.getStoreWallStyle()). Swap later with setWallStyle(). */
         wallStyle: WallStyleConfig = DEFAULT_WALL_STYLE,
+        /** The style of the doors in `walls` — the building's own pick, else its store's (StoreViewTypes.getDoorStyle()). Swap later with setDoorStyle(). */
+        doorStyle: DoorStyleConfig = DEFAULT_DOOR_STYLE,
     ) {
         super();
         this.cameraTarget = cameraTarget;
@@ -368,6 +375,7 @@ export default class BuildingZone extends Entity {
         this.floors = floors;
         this.walls = walls;
         this.wallStyle = wallStyle;
+        this.doorStyle = doorStyle;
         this.floorChecker = floorChecker;
         this.npc = npc;
         this.transform.position.copy(position);
@@ -629,8 +637,11 @@ export default class BuildingZone extends Entity {
 
     /** True once any store section this piece overlaps has been built — the piece no longer belongs (e.g. a wall where that section's room opens up). */
     private isPieceRemoved(entry: { coveredBySections?: string[] }): boolean {
-        return entry.coveredBySections?.some(sectionId =>
-            BUILDING_CONFIG[sectionId as BuildingId] !== undefined && BuildingStorage.getLevel(sectionId as BuildingId) >= 1) ?? false;
+        return entry.coveredBySections?.some(sectionId => BuildingZone.isSectionBuilt(sectionId)) ?? false;
+    }
+
+    private static isSectionBuilt(sectionId: string): boolean {
+        return BUILDING_CONFIG[sectionId as BuildingId] !== undefined && BuildingStorage.getLevel(sectionId as BuildingId) >= 1;
     }
 
     private pieceParts(entry: OwnMeshPlacement): { visual?: GlbVisualComponent; collider?: RigidBody } {
@@ -644,22 +655,12 @@ export default class BuildingZone extends Entity {
 
     /** A section (`sectionId`) just got built — shrink away and drop every currently-shown piece (and floor) it covers, plus that piece's collider. Nothing else is rebuilt. */
     private removePiecesCoveredBy(sectionId: string): void {
-        for (const meshes of [this.floorMeshes, this.wallMeshes] as Map<{ coveredBySections?: string[] }, THREE.Mesh>[]) {
-            for (const [placement, mesh] of meshes) {
-                if (!placement.coveredBySections?.includes(sectionId)) {
-                    continue;
-                }
-                meshes.delete(placement);
-                const colliders = this.wallColliders.get(placement as StoreWallPlacement) ?? [];
-                this.wallColliders.delete(placement as StoreWallPlacement);
-                colliders.forEach(collider => collider.destroy());
-                this.solidColliders = this.solidColliders.filter(collider => !colliders.includes(collider));
-                gsap.to(mesh.scale, {
-                    x: 0, y: 0, z: 0,
-                    duration: PIECE_REMOVE_DURATION_SEC,
-                    ease: 'back.in(1.7)',
-                    onComplete: () => BuildingZone.disposeFloorMesh(mesh),
-                });
+        // Floors stay. A shown wall this section crosses is rebuilt with that stretch cut out
+        // (see buildWall()) — the rest of the wall, its windows and doors stay.
+        for (const wall of [...this.wallMeshes.keys()]) {
+            if (wall.sectionCuts?.some(cut => cut.sectionId === sectionId)) {
+                this.disposeWall(wall);
+                this.buildWall(wall);
             }
         }
 
@@ -688,6 +689,15 @@ export default class BuildingZone extends Entity {
                 ease: 'back.in(1.7)',
                 onComplete: () => visual.destroy(),
             });
+        }
+    }
+
+    public override update(delta: number): void {
+        super.update(delta);
+        for (const doors of this.wallDoors.values()) {
+            for (const door of doors) {
+                door.update(delta, this.world);
+            }
         }
     }
 
@@ -895,9 +905,6 @@ export default class BuildingZone extends Entity {
      */
     private createFloorMeshes(): void {
         for (const floor of this.floors) {
-            if (this.isPieceRemoved(floor)) {
-                continue;
-            }
             // restY, not transform.position.y — the zone may still be mid rise-in (ZoneVisibilityManager).
             const origin = new THREE.Vector3(this.transform.position.x, this.restY, this.transform.position.z);
             const mesh = CheckerFloorBuilder.build(floor, origin, this.floorChecker);
@@ -905,15 +912,45 @@ export default class BuildingZone extends Entity {
             this.floorMeshes.set(floor, mesh);
         }
         for (const wall of this.walls) {
-            if (this.isPieceRemoved(wall)) {
-                continue;
-            }
-            const origin = new THREE.Vector3(this.transform.position.x, this.restY, this.transform.position.z);
-            const mesh = PolyWallBuilder.build(wall, origin, WALL_SETUP, this.wallStyle);
-            this.transform.add(mesh);
-            this.wallMeshes.set(wall, mesh);
-            this.addWallColliders(wall);
+            this.buildWall(wall);
         }
+    }
+
+    /**
+     * Shows `wall` — mesh, colliders, doors — with a full-height 'gap' cut over every
+     * "polyWallExclusion" of an already-BUILT store section that crosses it
+     * (StoreWallPlacement.sectionCuts), so the section's own walls can take over. Gaps go last: over a shared stretch they win over a window/door.
+     */
+    private buildWall(wall: StoreWallPlacement): void {
+        const builtCuts = (wall.sectionCuts ?? []).filter(cut => BuildingZone.isSectionBuilt(cut.sectionId));
+        const shown: StoreWallPlacement = builtCuts.length === 0 ? wall : {
+            ...wall,
+            openings: [...(wall.openings ?? []), ...builtCuts.map(cut => ({ kind: 'gap' as const, rect: cut.rect }))],
+        };
+        // restY, not transform.position.y — the zone may still be mid rise-in (ZoneVisibilityManager).
+        const origin = new THREE.Vector3(this.transform.position.x, this.restY, this.transform.position.z);
+        const mesh = PolyWallBuilder.build(shown, origin, WALL_SETUP, this.wallStyle);
+        this.transform.add(mesh);
+        this.wallMeshes.set(wall, mesh);
+        this.addWallColliders(wall, shown);
+        const doors = PolyWallBuilder.doorFrames(shown, WALL_SETUP).map(frame => new StoreDoor(frame, origin, FloorLayers.baseY, this.doorStyle));
+        doors.forEach(door => this.transform.add(door.object));
+        this.wallDoors.set(wall, doors);
+    }
+
+    /** Takes down everything buildWall() made for `wall`. */
+    private disposeWall(wall: StoreWallPlacement): void {
+        const mesh = this.wallMeshes.get(wall);
+        if (mesh) {
+            BuildingZone.disposeFloorMesh(mesh);
+        }
+        this.wallMeshes.delete(wall);
+        this.wallDoors.get(wall)?.forEach(door => door.dispose());
+        this.wallDoors.delete(wall);
+        const colliders = this.wallColliders.get(wall) ?? [];
+        this.wallColliders.delete(wall);
+        colliders.forEach(collider => collider.destroy());
+        this.solidColliders = this.solidColliders.filter(collider => !colliders.includes(collider));
     }
 
     /**
@@ -922,9 +959,9 @@ export default class BuildingZone extends Entity {
      * zone like addSolidAreasFromMap()'s pieces. Store clients path around them too (Store's nav
      * grid picks up every static solid).
      */
-    private addWallColliders(wall: StoreWallPlacement): void {
+    private addWallColliders(wall: StoreWallPlacement, shown: StoreWallPlacement): void {
         const colliders: RigidBody[] = [];
-        for (const box of PolyWallBuilder.colliderBoxes(wall, WALL_SETUP)) {
+        for (const box of PolyWallBuilder.colliderBoxes(shown, WALL_SETUP)) {
             const halfExtents = new THREE.Vector3(box.halfX, WALL_SETUP.height / 2, box.halfZ);
             const centerOffset = new THREE.Vector3(
                 box.x - this.transform.position.x,
@@ -945,6 +982,14 @@ export default class BuildingZone extends Entity {
         this.wallStyle = style;
         for (const mesh of this.wallMeshes.values()) {
             PolyWallBuilder.applyStyle(mesh, WALL_SETUP, style);
+        }
+    }
+
+    /** Restyles every shown door in place — doors built later use it too. */
+    public setDoorStyle(style: DoorStyleConfig): void {
+        this.doorStyle = style;
+        for (const doors of this.wallDoors.values()) {
+            doors.forEach(door => door.setStyle(style));
         }
     }
 
@@ -1130,6 +1175,10 @@ export default class BuildingZone extends Entity {
         this.wallMeshes.clear();
         // The colliders themselves are in solidColliders, destroyed below.
         this.wallColliders.clear();
+        for (const doors of this.wallDoors.values()) {
+            doors.forEach(door => door.dispose());
+        }
+        this.wallDoors.clear();
 
         for (const collider of this.solidColliders) {
             collider.destroy();

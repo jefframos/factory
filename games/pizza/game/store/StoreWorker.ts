@@ -52,6 +52,8 @@ export interface StoreWorkerBaseOptions {
 }
 
 export default abstract class StoreWorker extends Entity implements NavNeighbor {
+    /** Swings store doors open when near one — see StoreDoor.ts. */
+    public readonly opensDoors = true;
     public readonly workerId: string;
     public abstract readonly role: StoreWorkerRole;
 

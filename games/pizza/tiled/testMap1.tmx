@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="14" nextobjectid="359">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="14" nextobjectid="369">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -1584,7 +1584,7 @@
 </chunk>
   </data>
  </layer>
- <objectgroup id="3" name="mapSettings1">
+ <objectgroup id="3" name="mapSettings1" visible="0" locked="1">
   <object id="3" x="1056" y="512" width="32" height="128">
    <properties>
     <property name="id" value="queue1"/>
@@ -1780,16 +1780,7 @@
    </properties>
   </object>
  </objectgroup>
- <objectgroup draworder="index" id="12" name="--storeView--stall1">
-  <object id="250" gid="45" x="224" y="448" width="128" height="16"/>
-  <object id="262" gid="45" x="352" y="608" width="128" height="16"/>
-  <object id="263" gid="45" x="448" y="608" width="128" height="16"/>
-  <object id="252" gid="45" x="-32" y="448" width="128" height="16"/>
-  <object id="255" gid="43" x="96" y="448" width="128" height="16"/>
-  <object id="256" gid="43" x="-27" y="571" width="128" height="16" rotation="270"/>
-  <object id="257" gid="43" x="356" y="608" width="128" height="16" rotation="270"/>
-  <object id="259" gid="47" x="339.515" y="421.939" width="64" height="16" rotation="90"/>
- </objectgroup>
+ <objectgroup draworder="index" id="12" name="--storeView--stall1" locked="1"/>
  <objectgroup id="13" name="--storeView--stall1-2">
   <object id="353" x="-32" y="448" width="384" height="576">
    <properties>
@@ -1805,44 +1796,68 @@
    <properties>
     <property name="type" value="polyWall"/>
    </properties>
-   <polyline points="0,0 -2,-194 -86,-190 -88,-270 10,-278"/>
+   <polyline points="706,8 66,8 66,-568 450,-568 450,-408 642,-408"/>
   </object>
-  <object id="357" x="-111" y="907" width="24" height="29">
+  <object id="357" x="66.3333" y="431" width="80" height="29">
    <properties>
     <property name="type" value="polyWindow"/>
    </properties>
   </object>
-  <object id="358" x="-199" y="767" width="26" height="36">
+  <object id="360" x="227.667" y="432.333" width="80" height="29">
    <properties>
+    <property name="type" value="polyWindow"/>
+   </properties>
+  </object>
+  <object id="358" x="-45.6667" y="653.667" width="26" height="36">
+   <properties>
+    <property name="type" value="polyDoor"/>
+   </properties>
+  </object>
+  <object id="366" x="-28" y="434.5" width="92" height="31.5">
+   <properties>
+    <property name="isDouble" type="bool" value="true"/>
+    <property name="isHigh" type="bool" value="true"/>
+    <property name="type" value="polyDoor"/>
+   </properties>
+  </object>
+  <object id="367" x="287.333" y="1008.25" width="116" height="31.5">
+   <properties>
+    <property name="fitToCeiling" type="bool" value="true"/>
+    <property name="isHigh" type="bool" value="true"/>
+    <property name="isSliding" type="bool" value="true"/>
+    <property name="type" value="polyDoor"/>
+   </properties>
+  </object>
+  <object id="368" x="27.3333" y="1008.25" width="116" height="31.5">
+   <properties>
+    <property name="fitToCeiling" type="bool" value="true"/>
+    <property name="isHigh" type="bool" value="true"/>
+    <property name="isSliding" type="bool" value="true"/>
     <property name="type" value="polyDoor"/>
    </properties>
   </object>
  </objectgroup>
  <objectgroup draworder="index" id="11" name="--storeSection--stall1" opacity="0.8">
-  <object id="230" gid="42" x="353" y="480" width="64" height="64"/>
-  <object id="210" x="356.25" y="401" width="204.75" height="195">
+  <object id="363" x="352" y="416" width="192" height="160">
+   <properties>
+    <property name="type" value="floor"/>
+   </properties>
+  </object>
+  <object id="210" x="348.3" y="412.048" width="201.65" height="202.905">
    <properties>
     <property name="id" value="storeRoom1"/>
     <property name="target" value="farmStore1"/>
     <property name="type" value="storeSection"/>
    </properties>
   </object>
-  <object id="231" gid="42" x="417" y="480" width="64" height="64"/>
-  <object id="232" gid="42" x="481" y="480" width="64" height="64"/>
-  <object id="233" gid="42" x="481" y="544" width="64" height="64"/>
-  <object id="234" gid="42" x="481" y="608" width="64" height="64"/>
-  <object id="235" gid="42" x="417" y="608" width="64" height="64"/>
-  <object id="236" gid="42" x="353" y="608" width="64" height="64"/>
-  <object id="237" gid="42" x="353" y="544" width="64" height="64"/>
-  <object id="238" gid="42" x="417" y="544" width="64" height="64"/>
-  <object id="226" gid="40" x="441.409" y="503.068" width="13.7727" height="12.8636"/>
-  <object id="227" x="437.583" y="493.644" width="21.3333" height="21.3333">
+  <object id="226" gid="40" x="441.409" y="459.068" width="13.7727" height="12.8636"/>
+  <object id="227" x="437.583" y="449.644" width="21.3333" height="21.3333">
    <properties>
     <property name="id" value="hireDesk1"/>
     <property name="type" value="hireDesk"/>
    </properties>
   </object>
-  <object id="228" x="402.917" y="527.333" width="96" height="48">
+  <object id="228" x="402.917" y="483.333" width="96" height="48">
    <properties>
     <property name="target" value="hireDesk1"/>
     <property name="type" value="dropper"/>
@@ -1854,12 +1869,27 @@
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="239" gid="45" x="353" y="426" width="128" height="16"/>
-  <object id="240" gid="45" x="545" y="480" width="128" height="16" rotation="90"/>
-  <object id="241" gid="46" x="481" y="512" width="64" height="32" rotation="180"/>
-  <object id="242" gid="47" x="481" y="426" width="64" height="16"/>
-  <object id="258" gid="47" x="544.333" y="422.333" width="64" height="16" rotation="90"/>
-  <object id="264" gid="50" x="410.75" y="465" width="72.604" height="38.5709"/>
+  <object id="241" gid="46" x="481" y="468" width="64" height="32" rotation="180"/>
+  <object id="264" gid="50" x="356.75" y="459" width="72.604" height="38.5709"/>
+  <object id="361" x="354" y="448">
+   <properties>
+    <property name="type" value="polyWall"/>
+   </properties>
+   <polyline points="190,128 -2,128 -2,-32 190,-32 190,128"/>
+  </object>
+  <object id="364" x="344" y="576" width="208" height="40">
+   <properties>
+    <property name="type" value="polyWallExclusion"/>
+   </properties>
+  </object>
+  <object id="365" x="391" y="569" width="116" height="31.5">
+   <properties>
+    <property name="fitToCeiling" type="bool" value="true"/>
+    <property name="isHigh" type="bool" value="true"/>
+    <property name="isSliding" type="bool" value="true"/>
+    <property name="type" value="polyDoor"/>
+   </properties>
+  </object>
  </objectgroup>
  <objectgroup id="9" name="--store--stall1" locked="1">
   <object id="153" x="-61" y="444.333" width="717.667" height="577">
@@ -1929,7 +1959,7 @@
   <object id="98" gid="27" x="1184" y="1248" width="80" height="80"/>
   <object id="183" gid="27" x="320" y="1024" width="80" height="80" rotation="90"/>
  </objectgroup>
- <objectgroup id="8" name="backup" visible="0">
+ <objectgroup id="8" name="backup" visible="0" locked="1">
   <object id="24" gid="27" x="32.25" y="516.75" width="48" height="40.5"/>
   <object id="25" gid="27" x="80.125" y="516.5" width="48" height="40.5"/>
   <object id="26" x="33" y="464.5" width="64" height="32" rotation="90">

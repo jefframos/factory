@@ -35,6 +35,13 @@ export default class World {
 
     private readonly entities: Entity[] = [];
 
+    /** Visits every live entity (read-only — don't add/remove entities from inside `visit`). */
+    public forEachEntity(visit: (entity: Entity) => void): void {
+        for (const entity of this.entities) {
+            visit(entity);
+        }
+    }
+
     public spawn(): Entity {
         const entity = Pool.instance.getElement(Entity);
         return this.activate(entity);

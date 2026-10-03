@@ -7,9 +7,10 @@
     },
     "byId": {},
     "setup": {
-        "height": 4,
+        "height": 6,
         "thickness": 0.35,
         "doorHeight": 3,
+        "tallDoorHeight": 5,
         "windowHeight": 1.5
     }
 }

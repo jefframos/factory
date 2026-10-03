@@ -536,6 +536,10 @@ const QUEUES_SECTION_LABELS = {
         default: 'Default style — the walls every store uses unless its Stores-tab "Wall Style" picks one below',
         byId: 'Other styles — pick one per store on the Stores tab (Wall Style)',
     },
+    storeDoors: {
+        default: 'Default style — every door unless its building (Buildings tab) or store (Stores tab) "Door Style" picks one below',
+        byId: 'Other styles — pick one per building on the Buildings tab, or per store on the Stores tab (Door Style)',
+    },
 };
 
 function renderActiveTab() {
@@ -1494,7 +1498,7 @@ function onAddEntry() {
             return;
         }
         // A floor checker's fields are all required — start from the default's look, not blank.
-        container[id] = activeId === 'storeFloors' || activeId === 'storeWalls' ? { ...structuredClone(data.default), name: id } : {};
+        container[id] = ['storeFloors', 'storeWalls', 'storeDoors'].includes(activeId) ? { ...structuredClone(data.default), name: id } : {};
     }
     markDirty();
     renderActiveTab();
@@ -1754,13 +1758,13 @@ function renderEntryCard(container, key, value, schema, removable, renamable, mi
     // Store View -> Floor / Wall: a live preview, in the card header and above the fields
     // (not on the shared Wall Setup card — `key` 'setup').
     let onDirty = markDirty;
-    const previewDraw = { storeFloors: drawCheckerPreview, storeWalls: drawWallPreview }[activeId];
+    const previewDraw = { storeFloors: drawCheckerPreview, storeWalls: drawWallPreview, storeDoors: drawDoorPreview }[activeId];
     if (previewDraw && value && key !== 'setup') {
         const swatch = makePreviewCanvas(28, 28);
         swatch.classList.add('entry-icon-thumb');
         summary.insertBefore(swatch, summary.firstChild);
-        const preview = activeId === 'storeWalls' ? makePreviewCanvas(240, 120) : makePreviewCanvas(160, 160);
-        const { row, control } = fieldRow(activeId === 'storeWalls' ? 'Preview (side view — full Wall Setup height)' : 'Preview (one map tile = 32px here)');
+        const preview = activeId === 'storeWalls' ? makePreviewCanvas(240, 120) : activeId === 'storeDoors' ? makePreviewCanvas(120, 160) : makePreviewCanvas(160, 160);
+        const { row, control } = fieldRow({ storeWalls: 'Preview (side view — full Wall Setup height)', storeDoors: 'Preview (plain panel over a checker, to show its transparency — a model isn\'t previewed)' }[activeId] ?? 'Preview (one map tile = 32px here)');
         control.appendChild(preview);
         body.appendChild(row);
         const redraw = () => {
@@ -1787,6 +1791,30 @@ function makePreviewCanvas(width, height) {
     canvas.style.borderRadius = '4px';
     canvas.style.border = '1px solid #0006';
     return canvas;
+}
+
+/** A door style's plain panel (color at opacity) over a light/dark checker, so its see-through-ness shows. A model is only named, not drawn. */
+function drawDoorPreview(canvas, style) {
+    const ctx = canvas.getContext('2d');
+    const cell = Math.max(4, Math.round(canvas.width / 8));
+    for (let y = 0, j = 0; y < canvas.height; y += cell, j++) {
+        for (let x = 0, i = 0; x < canvas.width; x += cell, i++) {
+            ctx.fillStyle = (i + j) % 2 === 0 ? '#d8d8d8' : '#5a5a5a';
+            ctx.fillRect(x, y, cell, cell);
+        }
+    }
+    const inset = Math.round(canvas.width * 0.12);
+    ctx.globalAlpha = Math.min(1, Math.max(0, Number(style.opacity ?? 1)));
+    ctx.fillStyle = style.color || '#ffffff';
+    ctx.fillRect(inset, inset, canvas.width - inset * 2, canvas.height - inset);
+    ctx.globalAlpha = 1;
+    if (style.models?.length && canvas.width >= 64) {
+        ctx.fillStyle = '#000a';
+        ctx.fillRect(0, canvas.height - 18, canvas.width, 18);
+        ctx.fillStyle = '#fff';
+        ctx.font = '11px sans-serif';
+        ctx.fillText(`model: ${style.models[0]}`, 4, canvas.height - 5);
+    }
 }
 
 /** A wall style seen from the side, same bands the game paints (PolyWallBuilder.ts): bottomColor up to bottomHeight, topColor above — against the shared Wall Setup height. */

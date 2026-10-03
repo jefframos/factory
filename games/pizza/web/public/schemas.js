@@ -297,6 +297,9 @@ const ENTITY_SCHEMAS = {
         { key: 'npcOffset', type: 'vector3', label: 'NPC Offset (x, y, z — nudges off the building\'s own mesh position; only used when NPC is set)', optional: true },
         ...POPUP_FIELDS,
         { key: 'disabled', type: 'boolean', label: 'Disabled (takes this building out of the game entirely — never built, and any OTHER entity waiting on {type:\'building\'} referencing it treats it as already met instead of blocking forever)', optional: true },
+        { key: 'floorChecker', type: 'select', label: 'Floor Checker (store sections / store buildings: the checker for THIS building\'s own floor rects — Store View tab -> Floor; blank = the store\'s)', source: 'storeFloors', optional: true },
+        { key: 'wallStyle', type: 'select', label: 'Wall Style (store sections / store buildings: the style for THIS building\'s own walls — Store View tab -> Wall; blank = the store\'s)', source: 'storeWalls', optional: true },
+        { key: 'doorStyle', type: 'select', label: 'Door Style (store sections / store buildings: the style for the doors in THIS building\'s own walls — Store View tab -> Door; blank = the store\'s)', source: 'storeDoors', optional: true },
     ],
     shops: [
         { key: 'name', type: 'text', label: 'Name' },
@@ -786,6 +789,7 @@ const ENTITY_SCHEMAS = {
         { key: 'workerColor', type: 'color', label: 'Staff Color (every worker of this store — blank = the NPCs tab\'s "worker" look)', optional: true },
         { key: 'floorChecker', type: 'select', label: 'Floor Checker (Store View tab -> Floor — blank = the default checker)', source: 'storeFloors', optional: true },
         { key: 'wallStyle', type: 'select', label: 'Wall Style (Store View tab -> Wall — blank = the default style)', source: 'storeWalls', optional: true },
+        { key: 'doorStyle', type: 'select', label: 'Door Style (Store View tab -> Door — blank = the default style)', source: 'storeDoors', optional: true },
         {
             key: 'workerHat', type: 'group', label: 'Staff Hat (every worker of this store wears it — no model = none)',
             fields: [
@@ -887,10 +891,19 @@ const ENTITY_SCHEMAS = {
         { key: 'topColor', type: 'color', label: 'Top Color' },
         { key: 'bottomHeight', type: 'number', label: 'Bottom Band Height (world units from the floor — where Bottom Color ends)' },
     ],
+    // Store View tab -> Door — see game/store/StoreViewTypes.ts's DoorStyleConfig.
+    storeDoors: [
+        { key: 'name', type: 'text', label: 'Name (shown in the editor — later in a shop)', optional: true },
+        { key: 'models', type: 'modelList', label: 'Model (optional — first entry used, stretched over each door leaf; empty = a plain panel in Color/Opacity below)' },
+        { key: 'scale', type: 'number', label: 'Model Scale (× the size fitted to the leaf — blank = 1; model only)', optional: true },
+        { key: 'color', type: 'color', label: 'Color (plain panel, when there is no model)' },
+        { key: 'opacity', type: 'number', label: 'Opacity (plain panel: 1 = solid, 0.3 = see-through glass)' },
+    ],
     storeWallSetup: [
         { key: 'height', type: 'number', label: 'Height (world units, from the floor up)' },
         { key: 'thickness', type: 'number', label: 'Thickness (world units, centered on the drawn line — also the collider thickness)' },
         { key: 'doorHeight', type: 'number', label: 'Door Height (a "polyDoor" rect over a wall cuts a hole from the floor up to this — no collider, walkable)' },
+        { key: 'tallDoorHeight', type: 'number', label: 'Tall Door Height (a "polyDoor" with the isHigh bool prop uses this instead of Door Height — keep it a bit under Height so a strip of wall stays above)' },
         { key: 'windowHeight', type: 'number', label: 'Window Height (a "polyWindow" rect over a wall cuts a hole this tall, centered on the wall height)' },
     ],
     farms: [

@@ -116,7 +116,7 @@ import { getStoreConfig, WORKER_NPC_ID, type StoreWorkerRole } from '../store/St
 import HireDeskZone from '../store/HireDeskZone';
 import { StoreProgressStorage } from '../store/StoreProgressStorage';
 import StoragePurchaseZone from '../store/StoragePurchaseZone';
-import { getStoreFloorChecker, getStoreWallStyle } from '../store/StoreViewTypes';
+import { getDoorStyle, getFloorChecker, getStoreDoorStyle, getStoreFloorChecker, getStoreWallStyle, getWallStyle } from '../store/StoreViewTypes';
 import { readStoreLayouts } from '../store/StoreLayout';
 import { FloorLayers, onFloor } from '../world/FloorLayers';
 import { FLOOR_FRAME } from '../ui/PopupConfig';
@@ -1269,9 +1269,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     () => this.uiService.economyUi.getIconAnchorPosition(CurrencyType.Money),
                     this.worldObjects.getStoreSection(buildingId) !== undefined,
                     this.worldObjects.getFloors(buildingId),
-                    getStoreFloorChecker(viewStoreId),
+                    // The building's own pick (e.g. a section's tiling), else its store's.
+                    BUILDING_CONFIG[buildingId].floorChecker ? getFloorChecker(BUILDING_CONFIG[buildingId].floorChecker) : getStoreFloorChecker(viewStoreId),
                     this.worldObjects.getWalls(buildingId),
-                    getStoreWallStyle(viewStoreId),
+                    BUILDING_CONFIG[buildingId].wallStyle ? getWallStyle(BUILDING_CONFIG[buildingId].wallStyle) : getStoreWallStyle(viewStoreId),
+                    BUILDING_CONFIG[buildingId].doorStyle ? getDoorStyle(BUILDING_CONFIG[buildingId].doorStyle) : getStoreDoorStyle(viewStoreId),
                 ));
                 this.threeScene.add(buildingZone.transform);
                 this.registerZoneVisibility(buildingZone.transform, position.x, position.z, placement.width, placement.depth);

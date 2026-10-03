@@ -17,7 +17,9 @@
 // Openings: a "polyWindow" / "polyDoor" rect overlapping the wall (StoreWallPlacement.openings)
 // cuts a hole along the stretch of wall it overlaps — a door from the floor up to
 // WALL_SETUP.doorHeight (and no collider there, so it can be walked through), a window
-// WALL_SETUP.windowHeight tall, centered on the wall's height (collider kept). See openingSpans().
+// WALL_SETUP.windowHeight tall, centered on the wall's height (collider kept). A 'gap' (a built
+// store section crossing the wall) removes that stretch entirely — full height, no collider.
+// See openingSpans().
 //
 // Camera occlusion: every one of those ~1-unit slices is its own occlusion part
 // (BendService.applyOcclusionFadeToParts()), so only the stretch of wall between the camera and
@@ -26,7 +28,7 @@
 import * as THREE from 'three';
 import { BendService, OcclusionPart, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 import { FloorLayers } from '../world/FloorLayers';
-import type { StoreWallPlacement } from '../world/WorldObjectRegistry';
+import type { StoreWallOpening, StoreWallPlacement } from '../world/WorldObjectRegistry';
 import type { WallSetupConfig, WallStyleConfig } from '../store/StoreViewTypes';
 
 /** A miter longer than this many half-thicknesses (very sharp corner) is clamped. */
@@ -108,7 +110,10 @@ function miterOffsets(points: Vec2[], closed: boolean, halfThickness: number): V
 
 /** A hole cut along the wall: distance range along the line [u0, u1] and height range [y0, y1] (from the floor). */
 interface WallOpeningSpan {
-    kind: 'window' | 'door';
+    kind: 'window' | 'door' | 'gap';
+    /** Doors only — see StoreWallOpening.double / .sliding. */
+    double?: boolean;
+    sliding?: boolean;
     u0: number;
     u1: number;
     y0: number;
@@ -150,7 +155,8 @@ function clipSegmentToRect(a: Vec2, b: Vec2, rect: { minX: number; maxX: number;
 function openingSpans(wall: StoreWallPlacement, setup: WallSetupConfig): WallOpeningSpan[] {
     const { points, closed } = wall;
     const segmentCount = closed ? points.length : points.length - 1;
-    const doorTop = Math.min(setup.doorHeight, setup.height);
+    const doorTop = (opening: StoreWallOpening): number =>
+        opening.fitToCeiling ? setup.height : Math.min(opening.high ? setup.tallDoorHeight : setup.doorHeight, setup.height);
     const windowHeight = Math.min(setup.windowHeight, setup.height);
     const windowBottom = (setup.height - windowHeight) / 2;
 
@@ -166,10 +172,12 @@ function openingSpans(wall: StoreWallPlacement, setup: WallSetupConfig): WallOpe
             if (clip) {
                 pieces.push({
                     kind: opening.kind,
+                    ...(opening.double ? { double: true } : {}),
+                    ...(opening.sliding ? { sliding: true } : {}),
                     u0: distance + clip[0] * length,
                     u1: distance + clip[1] * length,
-                    y0: opening.kind === 'door' ? 0 : windowBottom,
-                    y1: opening.kind === 'door' ? doorTop : windowBottom + windowHeight,
+                    y0: opening.kind === 'window' ? windowBottom : 0,
+                    y1: opening.kind === 'window' ? windowBottom + windowHeight : opening.kind === 'door' ? doorTop(opening) : setup.height,
                 });
             }
             distance += length;
@@ -177,14 +185,19 @@ function openingSpans(wall: StoreWallPlacement, setup: WallSetupConfig): WallOpe
         pieces.sort((a, b) => a.u0 - b.u0);
         for (const piece of pieces) {
             const last = spans[spans.length - 1];
-            if (last && last.kind === piece.kind && last.y0 === piece.y0 && Math.abs(last.u1 - piece.u0) < 1e-4) {
+            if (last && last.kind === piece.kind && last.y0 === piece.y0 && last.y1 === piece.y1 && last.double === piece.double && last.sliding === piece.sliding && Math.abs(last.u1 - piece.u0) < 1e-4) {
                 last.u1 = piece.u1;
             } else {
                 spans.push(piece);
             }
         }
     }
-    return spans.filter(span => span.u1 - span.u0 >= MIN_OPENING_LENGTH).sort((a, b) => a.u0 - b.u0);
+    // A window/door that a gap (a built section opening the wall up) overlaps is gone with it.
+    const gaps = spans.filter(span => span.kind === 'gap');
+    return spans
+        .filter(span => span.u1 - span.u0 >= MIN_OPENING_LENGTH)
+        .filter(span => span.kind === 'gap' || !gaps.some(gap => span.u0 < gap.u1 && span.u1 > gap.u0))
+        .sort((a, b) => a.u0 - b.u0);
 }
 
 /** The opening covering distance `u` along the wall, if any. */
@@ -198,6 +211,42 @@ function openingAt(spans: readonly WallOpeningSpan[], u: number): WallOpeningSpa
     return found;
 }
 
+/** Where a door hangs in a "polyDoor" opening — world-space centerline points at the opening's start (hinge side) and end, and its height. See StoreDoor.ts. */
+export interface DoorFrame {
+    hinge: Vec2;
+    end: Vec2;
+    height: number;
+    /** Two leaves, one hinged at each side — see StoreWallOpening.double. */
+    double: boolean;
+    /** Leaves slide into the wall instead of swinging — see StoreWallOpening.sliding. */
+    sliding: boolean;
+    /**
+     * Straight wall (world units) beside the opening on the hinge side / the far side, before
+     * the next corner or the line's end, minus half a thickness (the corner's miter). How far a
+     * sliding leaf can go into the wall without poking out past the corner.
+     */
+    roomBefore: number;
+    roomAfter: number;
+}
+
+/** The world-space centerline point at distance `u` along the wall. */
+function pointAlong(wall: StoreWallPlacement, u: number): Vec2 {
+    const { points, closed } = wall;
+    const segmentCount = closed ? points.length : points.length - 1;
+    let distance = 0;
+    for (let s = 0; s < segmentCount; s++) {
+        const p0 = points[s];
+        const p1 = points[(s + 1) % points.length];
+        const length = Math.hypot(p1.x - p0.x, p1.z - p0.z);
+        if (u <= distance + length || s === segmentCount - 1) {
+            const t = length > 0 ? THREE.MathUtils.clamp((u - distance) / length, 0, 1) : 0;
+            return { x: p0.x + (p1.x - p0.x) * t, z: p0.z + (p1.z - p0.z) * t };
+        }
+        distance += length;
+    }
+    return points[0];
+}
+
 /** One axis-aligned collider box, world-space center (XZ) and half extents (XZ). */
 export interface WallColliderBox {
     x: number;
@@ -207,21 +256,52 @@ export interface WallColliderBox {
 }
 
 export class PolyWallBuilder {
+    /** One DoorFrame per door opening in `wall` — a door around a corner hangs straight across from its start to its end. */
+    public static doorFrames(wall: StoreWallPlacement, setup: WallSetupConfig): DoorFrame[] {
+        // Where each segment starts/ends along the line — for roomBefore/roomAfter.
+        const { points, closed } = wall;
+        const segmentCount = closed ? points.length : points.length - 1;
+        const bounds: [number, number][] = [];
+        let distance = 0;
+        for (let s = 0; s < segmentCount; s++) {
+            const p0 = points[s];
+            const p1 = points[(s + 1) % points.length];
+            const length = Math.hypot(p1.x - p0.x, p1.z - p0.z);
+            bounds.push([distance, distance + length]);
+            distance += length;
+        }
+        const segmentAt = (u: number): [number, number] => bounds.find(([a, b]) => u >= a - 1e-6 && u <= b + 1e-6) ?? [0, distance];
+        const margin = setup.thickness / 2;
+
+        return openingSpans(wall, setup)
+            .filter(span => span.kind === 'door')
+            .map(span => ({
+                hinge: pointAlong(wall, span.u0),
+                end: pointAlong(wall, span.u1),
+                height: span.y1 - span.y0,
+                double: span.double ?? false,
+                sliding: span.sliding ?? false,
+                roomBefore: Math.max(0, span.u0 - segmentAt(span.u0 + 1e-4)[0] - margin),
+                roomAfter: Math.max(0, segmentAt(span.u1 - 1e-4)[1] - span.u1 - margin),
+            }));
+    }
+
     /**
      * Axis-aligned boxes covering `wall` for collision (the physics only has AABBs — see
      * RigidBody.ts). An axis-aligned (or nearly) segment is ONE box: its extent padded by half
      * the thickness. A slanted segment is cut into short chunks so each chunk's box stays about
      * `thickness` across on its short side — a staircase hugging the line instead of one huge
      * box filling the whole diagonal. Neighbouring boxes overlap at the corners, so there's no
-     * gap to slip through. A DOOR opening is left out (walk-through); its neighbours stop half a
-     * thickness short of it so their padding doesn't narrow the doorway. Windows keep their box.
+     * gap to slip through. A DOOR or GAP opening is left out (walk-through); its neighbours stop
+     * half a thickness short of it so their padding doesn't narrow the doorway. Windows keep their box.
      */
     public static colliderBoxes(wall: StoreWallPlacement, setup: WallSetupConfig): WallColliderBox[] {
         const { points, closed } = wall;
         const { thickness } = setup;
         const half = thickness / 2;
         const segmentCount = closed ? points.length : points.length - 1;
-        const doors = openingSpans(wall, setup).filter(span => span.kind === 'door');
+        // Doors and gaps are walk-through.
+        const doors = openingSpans(wall, setup).filter(span => span.kind !== 'window');
         const boxes: WallColliderBox[] = [];
         let distance = 0;
         for (let s = 0; s < segmentCount; s++) {
