@@ -52,6 +52,16 @@ export interface OcclusionFadeConfig {
     test?: 'point' | 'bounds';
 }
 
+/** Per-vertex alpha read by a material patched for BendService.applyOcclusionFadeToParts(). */
+const OCCLUSION_ALPHA_ATTRIBUTE = 'aOccAlpha';
+
+/** One part of a mesh for BendService.applyOcclusionFadeToParts(): vertices [start, start + count) and their LOCAL bounding box. */
+export interface OcclusionPart {
+    start: number;
+    count: number;
+    box: THREE.Box3;
+}
+
 /** A ready-made 'bounds' config for buildings, walls, gates, shops and big map props — see OcclusionFadeConfig.test. */
 export const STRUCTURE_OCCLUSION_FADE: OcclusionFadeConfig = {
     test: 'bounds',
@@ -323,13 +333,18 @@ export class BendService {
         return THREE.MathUtils.lerp(minOpacity, maxOpacity, t);
     }
 
-    /** Adds the occlusion cutout to one material (once — see occludedMaterials): its alpha (or dither threshold) reads `uOccAlpha`, a uniform the caller updates every frame. */
-    private static patchOcclusionMaterial(material: THREE.Material, uOccAlpha: { value: number }, dither: boolean): void {
+    /**
+     * Adds the occlusion cutout to one material (once — see occludedMaterials): its alpha (or
+     * dither threshold) reads `uOccAlpha`, a uniform the caller updates every frame — or, with
+     * `perVertex`, the geometry's own OCCLUSION_ALPHA_ATTRIBUTE (see applyOcclusionFadeToParts()),
+     * so different parts of ONE mesh can fade differently.
+     */
+    private static patchOcclusionMaterial(material: THREE.Material, uOccAlpha: { value: number }, dither: boolean, perVertex = false): void {
         if (BendService.occludedMaterials.has(material)) {
             return;
         }
         BendService.occludedMaterials.add(material);
-        BendService.tagProgramCacheKey(material, `occlusion:${dither ? 'dither' : 'blend'}`);
+        BendService.tagProgramCacheKey(material, `occlusion:${dither ? 'dither' : 'blend'}${perVertex ? ':vertex' : ''}`);
 
         // Dithered discard needs no blending at all — leave the material opaque. The smooth
         // path still needs alpha blending, same as every other *Fade method in this file.
@@ -368,9 +383,16 @@ export class BendService {
                 }
             ` : '';
             shader.fragmentShader = [
-                'uniform float uOccAlpha;',
+                perVertex ? 'varying float vOccAlpha;\n#define uOccAlpha vOccAlpha' : 'uniform float uOccAlpha;',
                 bayerFn,
             ].join('\n') + '\n' + shader.fragmentShader;
+            if (perVertex) {
+                shader.vertexShader = `attribute float ${OCCLUSION_ALPHA_ATTRIBUTE};\nvarying float vOccAlpha;\n` + shader.vertexShader;
+                shader.vertexShader = shader.vertexShader.replace(
+                    '#include <begin_vertex>',
+                    `#include <begin_vertex>\nvOccAlpha = ${OCCLUSION_ALPHA_ATTRIBUTE};`,
+                );
+            }
             // uOccAlpha is now the SAME value for every fragment of this mesh (computed once
             // per frame below, from the mesh's own world position rather than each pixel's) —
             // so the whole object fades or dithers together instead of a hole opening up
@@ -519,6 +541,80 @@ export class BendService {
                 update(renderer);
             };
         }
+    }
+
+    /**
+     * The 'bounds' test (see applyOcclusionFadeToObject()), run separately for each PART of ONE
+     * mesh — for a long structure like a PolyWallBuilder wall, whose single bounding box would
+     * cover a whole store (so the whole wall would fade whenever the player is inside). Each
+     * part is a vertex range of the mesh's (non-indexed or ordered) geometry plus its own LOCAL
+     * box; every frame each part's alpha is written into those vertices'
+     * OCCLUSION_ALPHA_ATTRIBUTE, so only the stretch of wall actually between the camera and the
+     * player fades — like a window following the player — while the rest stays solid.
+     */
+    public static applyOcclusionFadeToParts(mesh: THREE.Mesh, parts: readonly OcclusionPart[], config: OcclusionFadeConfig = {}): void {
+        const radius = config.radius ?? 0.2;
+        const fadeWidth = Math.max(config.fadeWidth ?? 0.8, 0.001);
+        const minOpacity = config.minOpacity ?? 0.15;
+        const maxOpacity = config.maxOpacity ?? 1.0;
+        const dither = config.dither ?? false;
+        const minOccluderHeight = config.minOccluderHeight ?? 1.5;
+        const playerPointOffset = new THREE.Vector3(
+            config.playerPointOffset?.x ?? 0,
+            config.playerPointOffset?.y ?? 0,
+            config.playerPointOffset?.z ?? 0,
+        );
+
+        const vertexCount = mesh.geometry.attributes.position.count;
+        const alphas = new Float32Array(vertexCount).fill(maxOpacity);
+        const alphaAttribute = new THREE.BufferAttribute(alphas, 1);
+        alphaAttribute.setUsage(THREE.DynamicDrawUsage);
+        mesh.geometry.setAttribute(OCCLUSION_ALPHA_ATTRIBUTE, alphaAttribute);
+
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        materials.forEach(material => BendService.patchOcclusionMaterial(material, { value: maxOpacity }, dither, true));
+
+        const partAlphas = new Float32Array(parts.length).fill(maxOpacity);
+        const worldBox = new THREE.Box3();
+        const size = new THREE.Vector3();
+        const player = new THREE.Vector3();
+        const samples = Array.from({ length: BOUNDS_SAMPLES + 1 }, () => new THREE.Vector3());
+        let lastFrame = -1;
+
+        const prevOnBeforeRender = mesh.onBeforeRender;
+        mesh.onBeforeRender = function (renderer, scene, camera, geometry, material, group) {
+            prevOnBeforeRender.call(this, renderer, scene, camera, geometry, material, group);
+            const frame = renderer.info.render.frame;
+            if (frame === lastFrame) {
+                return;
+            }
+            lastFrame = frame;
+
+            const cam = BendService.uniforms.uOccCameraPos.value;
+            player.addVectors(BendService.uniforms.uOccPlayerPos.value, playerPointOffset);
+            samples.forEach((sample, i) => sample.lerpVectors(cam, player, (i / BOUNDS_SAMPLES) * BOUNDS_SAMPLE_END));
+
+            let changed = false;
+            parts.forEach((part, index) => {
+                worldBox.copy(part.box).applyMatrix4(mesh.matrixWorld);
+                let alpha = maxOpacity;
+                if (worldBox.getSize(size).y >= minOccluderHeight) {
+                    let closest = Infinity;
+                    for (let i = 0; i < samples.length && closest > 0; i++) {
+                        closest = Math.min(closest, worldBox.distanceToPoint(samples[i]));
+                    }
+                    alpha = THREE.MathUtils.lerp(minOpacity, maxOpacity, THREE.MathUtils.smoothstep(closest, radius, radius + fadeWidth));
+                }
+                if (Math.abs(alpha - partAlphas[index]) > 1e-3) {
+                    partAlphas[index] = alpha;
+                    alphas.fill(alpha, part.start, part.start + part.count);
+                    changed = true;
+                }
+            });
+            if (changed) {
+                alphaAttribute.needsUpdate = true;
+            }
+        };
     }
 
     /**

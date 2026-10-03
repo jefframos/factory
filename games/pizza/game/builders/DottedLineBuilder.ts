@@ -27,13 +27,14 @@
 //     without building (and discarding) two throwaway meshes just to get at
 //     them.
 //
-// Both meshes render with depthTest disabled and a high renderOrder — a
-// floor decal a few centimeters above the ground should never flicker
-// against (or get hidden behind) the floor plane itself; it should just
-// always draw on top of whatever's beneath it.
+// Both meshes render with depthWrite off and a high renderOrder, at the
+// FloorLayers.ts "decals" height (above the ground layers and the store
+// floor) — `y` defaults to that layer relative to an entity standing at
+// FloorLayers.baseY; an owner that doesn't stand there passes its own `y`.
 
 import * as THREE from 'three';
 import { BendService } from '../services/BendService';
+import { FloorLayers } from '../world/FloorLayers';
 
 export interface DottedLineStyle {
     color?: number;
@@ -54,7 +55,7 @@ const DEFAULT_STYLE: Required<DottedLineStyle> = {
     dashLength: 0.25,
     gapLength: 0.2,
     lineWidth: 0.15,
-    y: 0.1,
+    y: FloorLayers.decalLocalY,
 };
 
 /** Texels per world unit for baked canvas textures — high enough that dashes/corners stay crisp at normal play-camera distance without the canvas ballooning for a big zone. */

@@ -24,6 +24,7 @@ import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import Component from '../ecs/Component';
 import { BendService } from '../services/BendService';
+import { FloorLayers } from '../world/FloorLayers';
 import { pixiTextureToCanvas } from '../builders/PixiIconToThree';
 import { DEFAULT_FLOOR_LABEL_GAP, type FloorLabelConfig, type FloorLabelSide } from '../ui/PopupConfig';
 
@@ -32,11 +33,11 @@ const PIXELS_PER_UNIT = 160;
 /** Default label height on the floor, world units. */
 export const DEFAULT_FLOOR_LABEL_SIZE = 2.7;
 /**
- * Label height above y=0 — must clear the tallest stacked ground layer (tile height, up to 0.03
- * for sand, + GROUND_LAYER_Y_STEP per extra groundLayer, see TileMapConfig.ts) so it's never drawn
- * under the ground. Height only — depth testing stays on so buildings/props still hide it normally.
+ * Label height above its entity — the FloorLayers.ts "floor labels" layer (above the ground
+ * layers, the store floor and the dropper outlines), for an entity standing at FloorLayers.baseY.
+ * Height only — depth testing stays on so buildings/props still hide it normally.
  */
-const FLOOR_HEIGHT = 0.1;
+const FLOOR_HEIGHT = FloorLayers.labelLocalY;
 const FONT_FAMILY = '"Baloo2-ExtraBold", "Arial Black", Arial, sans-serif';
 /** Plate padding as a fraction of the label's height — left/right, and top/bottom (the icon fills the rest of the height). */
 const PAD_X = 0.18;

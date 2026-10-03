@@ -19,6 +19,43 @@ const GRAPH_TAB_ID = '__graph__';
 /** Sentinel activeId for the Map Suggestions tab (see renderTabs()/renderActiveTab()/renderMapSuggestionsTab()) — same "read-only, not a manifest entry" convention as GRAPH_TAB_ID. */
 const MAP_SUGGESTIONS_TAB_ID = '__map_suggestions__';
 
+/**
+ * Grouped tabs: a manifest entry with a `parentTab` isn't its own tab-bar button — it's one
+ * section (sub-tab) of a single button named after its parentTab, e.g. "Store View" -> Floor.
+ * Sections that have no data yet are placeholders listed here (sentinel ids, same convention as
+ * GRAPH_TAB_ID) so the sub-tab already shows; a real manifest section is added automatically.
+ */
+const PLACEHOLDER_SECTIONS = [];
+
+/** Every section (real manifest entry or placeholder) under `parentTab`, in display order. */
+function sectionsOf(parentTab) {
+    return [...manifest, ...PLACEHOLDER_SECTIONS].filter(e => e.parentTab === parentTab);
+}
+
+/** The parentTab `id` belongs to, if it's a section of a grouped tab. */
+function parentTabOf(id) {
+    return [...manifest, ...PLACEHOLDER_SECTIONS].find(e => e.id === id)?.parentTab;
+}
+
+/** The sub-tab bar for a grouped tab — see sectionsOf(). */
+function renderSectionTabs(parentTab) {
+    const bar = document.createElement('div');
+    bar.className = 'graph-subtabs';
+    for (const section of sectionsOf(parentTab)) {
+        const btn = document.createElement('button');
+        btn.textContent = section.label + (dirtyTabs.has(section.id) ? ' •' : '');
+        btn.className = section.id === activeId ? 'active' : '';
+        btn.onclick = () => {
+            activeId = section.id;
+            saveUiState();
+            renderTabs();
+            renderActiveTab();
+        };
+        bar.appendChild(btn);
+    }
+    return bar;
+}
+
 let manifest = [];
 let allData = {};
 let activeId = null;
@@ -150,7 +187,7 @@ async function init() {
     }
     // Falls back to the first tab whenever the restored (or already-active) id no longer names
     // a real tab — e.g. the saved section was deleted, or this is the very first-ever load.
-    if (!activeId || (activeId !== GRAPH_TAB_ID && activeId !== MAP_SUGGESTIONS_TAB_ID && !manifest.some(e => e.id === activeId))) {
+    if (!activeId || (activeId !== GRAPH_TAB_ID && activeId !== MAP_SUGGESTIONS_TAB_ID && !PLACEHOLDER_SECTIONS.some(e => e.id === activeId) && !manifest.some(e => e.id === activeId))) {
         activeId = manifest[0]?.id ?? null;
     }
     renderTabs();
@@ -159,7 +196,26 @@ async function init() {
 
 function renderTabs() {
     tabsEl.innerHTML = '';
+    const renderedParents = new Set();
     for (const entry of manifest) {
+        // A section of a grouped tab — one button for the whole group, at its first section's spot.
+        if (entry.parentTab) {
+            if (renderedParents.has(entry.parentTab)) continue;
+            renderedParents.add(entry.parentTab);
+            const sections = sectionsOf(entry.parentTab);
+            const btn = document.createElement('button');
+            btn.textContent = entry.parentTab + (sections.some(sec => dirtyTabs.has(sec.id)) ? ' •' : '');
+            btn.className = [parentTabOf(activeId) === entry.parentTab ? 'active' : '', entry.group ? `tab-group-${entry.group}` : ''].filter(Boolean).join(' ');
+            btn.onclick = () => {
+                activeId = sections[0].id;
+                saveUiState();
+                renderTabs();
+                renderActiveTab();
+            };
+            tabsEl.appendChild(btn);
+            continue;
+        }
+
         const btn = document.createElement('button');
         btn.textContent = entry.label + (dirtyTabs.has(entry.id) ? ' •' : '');
         // manifest.json's own `group` field (world/farming/progression/economy/system) — purely
@@ -388,6 +444,7 @@ function createMissingMapEntry(id) {
 const SHARED_SECTIONS = {
     farms: { dataKey: 'tiles', schema: 'farmTiles', title: 'Tile Settings — shared by every farm plot, not per-plot', label: 'Tile Settings' },
     storages: { dataKey: 'signpost', schema: 'storageSignpost', title: 'Signpost — shared by every storage (each storage only sets its own Signpost Side / Gap / Rotation below)', label: 'Signpost' },
+    storeWalls: { dataKey: 'setup', schema: 'storeWallSetup', title: 'Wall Setup — the size EVERY wall in the game shares (styles below only change the look)', label: 'Wall Setup' },
 };
 
 const MISSING_ON_MAP_LABEL = {
@@ -469,6 +526,18 @@ async function persist(tabId) {
 // Tab / entry-list rendering
 // ---------------------------------------------------------------------------
 
+/** Default/By-id headings for a queues-shaped tab whose by-id entries aren't map objects. */
+const QUEUES_SECTION_LABELS = {
+    storeFloors: {
+        default: 'Default — the floor every store uses unless its Stores-tab "Floor Checker" picks one below',
+        byId: 'Other checkers — pick one per store on the Stores tab (Floor Checker)',
+    },
+    storeWalls: {
+        default: 'Default style — the walls every store uses unless its Stores-tab "Wall Style" picks one below',
+        byId: 'Other styles — pick one per store on the Stores tab (Wall Style)',
+    },
+};
+
 function renderActiveTab() {
     contentEl.innerHTML = '';
     contentEl.classList.toggle('graph-tab-active', activeId === GRAPH_TAB_ID);
@@ -486,10 +555,22 @@ function renderActiveTab() {
         return;
     }
 
+    const placeholder = PLACEHOLDER_SECTIONS.find(e => e.id === activeId);
+    if (placeholder) {
+        sourceHintEl.textContent = '';
+        contentEl.appendChild(renderSectionTabs(placeholder.parentTab));
+        contentEl.appendChild(sectionLabel(placeholder.hint));
+        return;
+    }
+
     const manifestEntry = manifest.find(e => e.id === activeId);
     sourceHintEl.textContent = manifestEntry?.sourceHint
         ? `source: ${manifestEntry.sourceHint}`
         : '';
+
+    if (manifestEntry.parentTab) {
+        contentEl.appendChild(renderSectionTabs(manifestEntry.parentTab));
+    }
 
     const toolbar = document.createElement('div');
     toolbar.className = 'toolbar';
@@ -544,9 +625,13 @@ function renderActiveTab() {
             contentEl.appendChild(renderEntryCard(null, shared.dataKey, data[shared.dataKey], ENTITY_SCHEMAS[shared.schema] ?? [], false, false, missingOnMap, shared.label));
         }
         const noun = { farms: 'plot', storages: 'storage', stores: 'store' }[activeId] ?? 'queue';
-        contentEl.appendChild(sectionLabel(`Default — used by any ${noun} placed on the map with no id-specific override below`));
+        const labels = QUEUES_SECTION_LABELS[activeId] ?? {
+            default: `Default — used by any ${noun} placed on the map with no id-specific override below`,
+            byId: `By ${noun} id — only takes effect for a ${noun} object on the Tiled map with a matching id`,
+        };
+        contentEl.appendChild(sectionLabel(labels.default));
         contentEl.appendChild(renderEntryCard(null, 'default', data.default, schema, false, false, missingOnMap));
-        contentEl.appendChild(sectionLabel(`By ${noun} id — only takes effect for a ${noun} object on the Tiled map with a matching id`));
+        contentEl.appendChild(sectionLabel(labels.byId));
         for (const [id, value] of Object.entries(data.byId ?? {})) {
             contentEl.appendChild(renderEntryCard(data.byId, id, value, schema, true, true, missingOnMap));
         }
@@ -1408,7 +1493,8 @@ function onAddEntry() {
             alert('That id already exists.');
             return;
         }
-        container[id] = {};
+        // A floor checker's fields are all required — start from the default's look, not blank.
+        container[id] = activeId === 'storeFloors' || activeId === 'storeWalls' ? { ...structuredClone(data.default), name: id } : {};
     }
     markDirty();
     renderActiveTab();
@@ -1665,10 +1751,67 @@ function renderEntryCard(container, key, value, schema, removable, renamable, mi
         control.appendChild(input);
         body.appendChild(row);
     }
-    renderFields(body, value, schema, markDirty);
+    // Store View -> Floor / Wall: a live preview, in the card header and above the fields
+    // (not on the shared Wall Setup card — `key` 'setup').
+    let onDirty = markDirty;
+    const previewDraw = { storeFloors: drawCheckerPreview, storeWalls: drawWallPreview }[activeId];
+    if (previewDraw && value && key !== 'setup') {
+        const swatch = makePreviewCanvas(28, 28);
+        swatch.classList.add('entry-icon-thumb');
+        summary.insertBefore(swatch, summary.firstChild);
+        const preview = activeId === 'storeWalls' ? makePreviewCanvas(240, 120) : makePreviewCanvas(160, 160);
+        const { row, control } = fieldRow(activeId === 'storeWalls' ? 'Preview (side view — full Wall Setup height)' : 'Preview (one map tile = 32px here)');
+        control.appendChild(preview);
+        body.appendChild(row);
+        const redraw = () => {
+            previewDraw(swatch, value);
+            previewDraw(preview, value);
+        };
+        redraw();
+        onDirty = () => {
+            markDirty();
+            redraw();
+        };
+    }
+    renderFields(body, value, schema, onDirty);
     details.appendChild(body);
 
     return details;
+}
+
+/** An empty preview canvas for the Store View cards — see drawCheckerPreview() / drawWallPreview(). */
+function makePreviewCanvas(width, height) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.borderRadius = '4px';
+    canvas.style.border = '1px solid #0006';
+    return canvas;
+}
+
+/** A wall style seen from the side, same bands the game paints (PolyWallBuilder.ts): bottomColor up to bottomHeight, topColor above — against the shared Wall Setup height. */
+function drawWallPreview(canvas, style) {
+    const ctx = canvas.getContext('2d');
+    const height = Number(allData.storeWalls?.setup?.height) > 0 ? Number(allData.storeWalls.setup.height) : 1;
+    const split = Math.min(1, Math.max(0, (Number(style.bottomHeight) || 0) / height));
+    const bottomPx = Math.round(canvas.height * split);
+    ctx.fillStyle = style.topColor || '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height - bottomPx);
+    ctx.fillStyle = style.bottomColor || '#000000';
+    ctx.fillRect(0, canvas.height - bottomPx, canvas.width, bottomPx);
+}
+
+/** Same pattern the game paints (CheckerFloorBuilder.ts): squares of `scale` map tiles, one map tile = 32px; the small header swatch is zoomed out 4x. */
+function drawCheckerPreview(canvas, checker) {
+    const ctx = canvas.getContext('2d');
+    const tilePx = canvas.width < 64 ? 8 : 32;
+    const square = Math.max(1, tilePx * (Number(checker.scale) > 0 ? Number(checker.scale) : 1));
+    for (let y = 0, j = 0; y < canvas.height; y += square, j++) {
+        for (let x = 0, i = 0; x < canvas.width; x += square, i++) {
+            ctx.fillStyle = (i + j) % 2 === 0 ? (checker.colorA || '#ffffff') : (checker.colorB || '#000000');
+            ctx.fillRect(x, y, square, square);
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

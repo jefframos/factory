@@ -116,6 +116,9 @@ import { getStoreConfig, WORKER_NPC_ID, type StoreWorkerRole } from '../store/St
 import HireDeskZone from '../store/HireDeskZone';
 import { StoreProgressStorage } from '../store/StoreProgressStorage';
 import StoragePurchaseZone from '../store/StoragePurchaseZone';
+import { getStoreFloorChecker, getStoreWallStyle } from '../store/StoreViewTypes';
+import { readStoreLayouts } from '../store/StoreLayout';
+import { FloorLayers, onFloor } from '../world/FloorLayers';
 import { FLOOR_FRAME } from '../ui/PopupConfig';
 import { getCarrierCapacity, getCarrierLevel, getCarrierShopIds } from '../data/CarrierCapacity';
 import { CarryStack } from '../player/CarryStack';
@@ -233,10 +236,8 @@ const TEST_BOX_HALF_EXTENTS = new THREE.Vector3(0.5, 0.5, 0.5);
 const TEST_BOX_OFFSET_Z = 4;
 
 /** Where the build/deposit zone sits — see setupDropZone(). Off to the side, clear of the resource nodes and the solid test box. */
-const DROP_ZONE_OFFSET = new THREE.Vector3(6, 0, -2);
+const DROP_ZONE_OFFSET = new THREE.Vector3(6, FloorLayers.baseY, -2);
 
-/** Where the test Camp building zone sits — see setupBuildingZone(). Separate spot from the drop zone so the two nameplates never overlap. */
-const BUILDING_ZONE_OFFSET = new THREE.Vector3(-6, 0, -2);
 /** How far (world units, each side) a SOLID storage with no dropper grows its drop-off trigger past its own footprint — see setupStorages(). */
 const STORAGE_SOLID_TRIGGER_PADDING = 0.6;
 
@@ -1201,6 +1202,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private setupBuildingZone(): void {
         const buildingsWithoutDropper: BuildingId[] = [];
         const buildingsNotOnMap: BuildingId[] = [];
+        // starter building id -> its store id — a store's starter wears that store's floor checker.
+        const storeIdByStarter = new Map(readStoreLayouts().filter(layout => layout.starter).map(layout => [layout.starter!, layout.id]));
 
         for (const buildingId of Object.values(BuildingId)) {
             // Treated as if it doesn't exist at all — see BuildingConfig.disabled's own doc.
@@ -1215,12 +1218,12 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 buildingsNotOnMap.push(buildingId);
                 continue;
             }
-            const position = new THREE.Vector3(placement.x, BUILDING_ZONE_OFFSET.y, placement.z);
+            const position = new THREE.Vector3(placement.x, FloorLayers.baseY, placement.z);
 
             const dropperPlacement = this.worldObjects.getDropperFor(buildingId);
             const triggerArea: BuildingTriggerArea | undefined = dropperPlacement
                 ? {
-                    position: new THREE.Vector3(dropperPlacement.x, BUILDING_ZONE_OFFSET.y, dropperPlacement.z),
+                    position: new THREE.Vector3(dropperPlacement.x, FloorLayers.baseY, dropperPlacement.z),
                     footprint: { width: dropperPlacement.width, depth: dropperPlacement.depth },
                 }
                 : undefined;
@@ -1229,6 +1232,9 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             }
 
             const ownMeshes = this.worldObjects.getOwnMeshes('building', buildingId);
+            // The store this building belongs to (it's that store's starter, or one of its
+            // sections) picks the floor checker and wall style — see StoreViewTypes.getStoreFloorChecker().
+            const viewStoreId = storeIdByStarter.get(buildingId) ?? this.worldObjects.getStoreSection(buildingId)?.storeId;
             const cameraTarget = this.worldObjects.getCameraTargetFor(buildingId);
             this.requirementRegistry.registerSpawnGate(buildingId, BUILDING_CONFIG[buildingId].appearRequirement, () => {
                 // Same optional NPC-in-front-of-the-entity system setupMarts() uses — see
@@ -1259,9 +1265,13 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     triggerArea,
                     ownMeshes,
                     npc,
-                    cameraTarget && new THREE.Vector3(cameraTarget.x, BUILDING_ZONE_OFFSET.y, cameraTarget.z),
+                    cameraTarget && new THREE.Vector3(cameraTarget.x, FloorLayers.baseY, cameraTarget.z),
                     () => this.uiService.economyUi.getIconAnchorPosition(CurrencyType.Money),
                     this.worldObjects.getStoreSection(buildingId) !== undefined,
+                    this.worldObjects.getFloors(buildingId),
+                    getStoreFloorChecker(viewStoreId),
+                    this.worldObjects.getWalls(buildingId),
+                    getStoreWallStyle(viewStoreId),
                 ));
                 this.threeScene.add(buildingZone.transform);
                 this.registerZoneVisibility(buildingZone.transform, position.x, position.z, placement.width, placement.depth);
@@ -1331,7 +1341,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
             const gate = this.world.add(new Gate(this.screenHost, id, {
                 ...config,
-                position: [placement.x, config.position[1], placement.z],
+                position: [placement.x, FloorLayers.baseY + config.position[1], placement.z],
                 mesh: { ...config.mesh, size: [colliderWidth, config.mesh.size[1], colliderDepth] },
                 viewRotationOffsetDeg: (config.viewRotationOffsetDeg ?? 0) - placement.rotationDeg,
             }));
@@ -1357,7 +1367,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     id,
                     config.requirement.resourceType,
                     config.requirement.amount,
-                    new THREE.Vector3(dropperPlacement.x, 0, dropperPlacement.z),
+                    onFloor(dropperPlacement.x, dropperPlacement.z),
                     this.screenHost,
                     { width: dropperPlacement.width, depth: dropperPlacement.depth },
                     gate.transform.position.clone().add(new THREE.Vector3(0, config.mesh.size[1] / 2, 0)),
@@ -1413,7 +1423,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private setupMeshLayer(): void {
         for (const placement of getMeshPlacements()) {
             const entity = this.world.spawn();
-            entity.transform.position.set(placement.x, 0, placement.z);
+            entity.transform.position.copy(onFloor(placement.x, placement.z));
             // Scaled to its drawn footprint, rotated, pivot-corrected and (if solid) given a
             // collider exactly like any map-placed model — see MapMeshVisual.ts.
             if (!addMapMeshVisual(entity, placement, { occlusionFade: STRUCTURE_OCCLUSION_FADE })) {
@@ -1446,7 +1456,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             }
 
             this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
-                const position = new THREE.Vector3(placement.x, 0, placement.z);
+                const position = onFloor(placement.x, placement.z);
 
                 // A quest giver needs BOTH its own config AND at least two waypoints (a path
                 // needs a start and an end) — see QuestGiverEntity.ts's own doc. When both are
@@ -1525,14 +1535,14 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             // No dropper + solid: the trigger IS the storage's footprint, which the solid collider
             // would keep the player out of — pad it so standing against the storage still counts.
             const padding = !dropper && (config.solid ?? 0) > 0 ? STORAGE_SOLID_TRIGGER_PADDING : 0;
-            const triggerPosition = new THREE.Vector3(trigger.x, 0, trigger.z);
+            const triggerPosition = onFloor(trigger.x, trigger.z);
             const triggerSize = { width: trigger.width + padding * 2, depth: trigger.depth + padding * 2 };
 
             const spawnStorage = (): void => {
                 const storageZone = this.world.add(new StorageZone(
                     id,
                     config,
-                    new THREE.Vector3(placement.x, 0, placement.z),
+                    onFloor(placement.x, placement.z),
                     triggerPosition,
                     triggerSize,
                     { width: placement.width, depth: placement.depth },
@@ -1612,7 +1622,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             }
 
             this.requirementRegistry.registerSpawnGate(desk.id, requirement, () => {
-                const triggerPosition = new THREE.Vector3(trigger.x, 0, trigger.z);
+                const triggerPosition = onFloor(trigger.x, trigger.z);
                 const triggerFootprint = { width: trigger.width, depth: trigger.depth };
 
                 const deskZone = this.world.add(new HireDeskZone(
@@ -1627,7 +1637,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 const npcId = getStoreConfig(storeId).hiring?.npcId ?? WORKER_NPC_ID;
                 const npcConfig = getNpcConfig(npcId);
                 if (npcConfig) {
-                    const npcPosition = new THREE.Vector3(desk.placement.x, 0, desk.placement.z);
+                    const npcPosition = onFloor(desk.placement.x, desk.placement.z);
                     // Seated — the hireDesk spot is drawn on the desk's chair.
                     const npc = this.world.add(new NpcEntity(npcPosition, npcConfig, () => this.mainPlayer.transform.position, { sitting: true }));
                     this.threeScene.add(npc.transform);
@@ -1670,7 +1680,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     return;
                 }
 
-                const position = new THREE.Vector3(placement.x, 0, placement.z);
+                const position = onFloor(placement.x, placement.z);
                 const farmZone = this.world.add(new FarmZone(
                     position, this.screenHost, id,
                     () => this.uiService.economyUi.getIconAnchorPosition(config.price.currency),
@@ -1722,7 +1732,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 continue;
             }
 
-            const position = new THREE.Vector3(placement.x, 0, placement.z);
+            const position = onFloor(placement.x, placement.z);
             const trigger = this.world.add(new Trigger(
                 position,
                 { width: placement.width, depth: placement.depth },
@@ -1748,7 +1758,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private spawnFarmGrid(id: string, placement: WorldObjectPlacement, config: FarmPlotConfig): void {
         const cells = computeFarmGrid(placement.width, placement.depth);
         cells.forEach((cell, index) => {
-            const position = new THREE.Vector3(placement.x + cell.localX, 0, placement.z + cell.localZ);
+            const position = onFloor(placement.x + cell.localX, placement.z + cell.localZ);
             // Staggered by grid index (row-major, see FarmGrid.computeFarmGrid()) — each cell's
             // own pop-in tween (see FarmPlotTile.ts's own doc) starts a beat after the last, so
             // buying a plot ripples its whole grid into existence instead of every tile
@@ -1791,11 +1801,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             }
 
             this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
-                const position = new THREE.Vector3(placement.x, 0, placement.z);
+                const position = onFloor(placement.x, placement.z);
                 const dropperPlacement = this.worldObjects.getDropperFor(id);
                 const triggerArea: ShopTriggerArea | undefined = dropperPlacement
                     ? {
-                        position: new THREE.Vector3(dropperPlacement.x, 0, dropperPlacement.z),
+                        position: onFloor(dropperPlacement.x, dropperPlacement.z),
                         footprint: { width: dropperPlacement.width, depth: dropperPlacement.depth },
                     }
                     : undefined;
@@ -1835,11 +1845,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             }
 
             this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
-                const position = new THREE.Vector3(placement.x, 0, placement.z);
+                const position = onFloor(placement.x, placement.z);
                 const dropperPlacement = this.worldObjects.getDropperFor(id);
                 const triggerArea: MartTriggerArea | undefined = dropperPlacement
                     ? {
-                        position: new THREE.Vector3(dropperPlacement.x, 0, dropperPlacement.z),
+                        position: onFloor(dropperPlacement.x, dropperPlacement.z),
                         footprint: { width: dropperPlacement.width, depth: dropperPlacement.depth },
                     }
                     : undefined;
@@ -1889,11 +1899,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             }
 
             this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
-                const position = new THREE.Vector3(placement.x, 0, placement.z);
+                const position = onFloor(placement.x, placement.z);
                 const dropperPlacement = this.worldObjects.getDropperFor(id);
                 const triggerArea: CraftingTableTriggerArea | undefined = dropperPlacement
                     ? {
-                        position: new THREE.Vector3(dropperPlacement.x, 0, dropperPlacement.z),
+                        position: onFloor(dropperPlacement.x, dropperPlacement.z),
                         footprint: { width: dropperPlacement.width, depth: dropperPlacement.depth },
                     }
                     : undefined;
@@ -1966,11 +1976,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 continue;
             }
 
-            const position = new THREE.Vector3(placement.x, 0, placement.z);
+            const position = onFloor(placement.x, placement.z);
             const dropperPlacement = this.worldObjects.getDropperFor(id);
             const triggerArea: CraftTriggerArea | undefined = dropperPlacement
                 ? {
-                    position: new THREE.Vector3(dropperPlacement.x, 0, dropperPlacement.z),
+                    position: onFloor(dropperPlacement.x, dropperPlacement.z),
                     footprint: { width: dropperPlacement.width, depth: dropperPlacement.depth },
                 }
                 : undefined;

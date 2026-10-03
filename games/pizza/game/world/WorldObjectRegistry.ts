@@ -96,6 +96,12 @@ const SECTION_OVERLAP_EPSILON = 0.05;
 const STORE_SECTION_TYPE = 'storeSection';
 /** The "type" of a hire desk spot — see SECTIONS_LAYER_NAME / HireDeskZone.ts. */
 const HIRE_DESK_TYPE = 'hireDesk';
+/** The "type" of a checker-floor rect on a "--storeView--" layer — see StoreFloorPlacement / readStoreViewLayers(). */
+const STORE_FLOOR_TYPE = 'floor';
+/** The "type" of a wall polyline/polygon on a "--storeView--" layer — see StoreWallPlacement / readStoreViewLayers(). */
+const STORE_WALL_TYPE = 'polyWall';
+/** Rects on a "--storeView--" layer that cut a hole in any wall of the same building they overlap — see StoreWallPlacement.openings. */
+const STORE_OPENING_TYPES: Record<string, StoreWallOpening['kind']> = { polyWindow: 'window', polyDoor: 'door' };
 
 /**
  * Custom BOOL property (Tiled's "Custom Properties" panel, type "bool"), set on a "building"
@@ -199,6 +205,43 @@ export interface OwnMeshPlacement extends DecodedObjectModel {
     depth: number;
     solid: number;
     /** Store-view pieces only: the store sections (building ids) whose area this piece overlaps — once any of them is built, the piece is removed (e.g. a wall where the new room opens up). See WorldObjectRegistry.readStoreViewLayers() / BuildingZone.isPieceRemoved(). */
+    coveredBySections?: string[];
+}
+
+/**
+ * A "type"="floor" rect on a "--storeView--" layer — drawn as ONE checker-textured plane (see
+ * CheckerFloorBuilder) instead of one glb tile model per 64px cell. Just the shape: how it
+ * looks (colors, square size, height) is the store's floor checker (StoreViewTypes.ts).
+ * `tileSize` is one map tile in world units — what a checker's `scale` of 1 means.
+ */
+export interface StoreFloorPlacement {
+    x: number;
+    z: number;
+    width: number;
+    depth: number;
+    rotationY: number;
+    tileSize: number;
+    /** Same as OwnMeshPlacement.coveredBySections — the whole rect is removed once any of them is built. */
+    coveredBySections?: string[];
+}
+
+/** A "polyWindow" / "polyDoor" rect — world-space bounds (rotation ignored: drawn axis-aligned). Sizes come from StoreViewTypes.WALL_SETUP. */
+export interface StoreWallOpening {
+    kind: 'window' | 'door';
+    rect: { minX: number; maxX: number; minZ: number; maxZ: number };
+}
+
+/**
+ * A "type"="polyWall" polyline (open) or polygon (closed loop) on a "--storeView--" layer —
+ * drawn as ONE wall mesh following its vertices (see PolyWallBuilder). `points` are world-space.
+ * Just the line: size is StoreViewTypes.WALL_SETUP, the look is the store's wall style.
+ */
+export interface StoreWallPlacement {
+    points: { x: number; z: number }[];
+    closed: boolean;
+    /** Every window/door rect drawn for the same building — PolyWallBuilder cuts the ones that actually overlap this wall. */
+    openings?: StoreWallOpening[];
+    /** Same as OwnMeshPlacement.coveredBySections — the whole wall is removed once any of them is built. */
     coveredBySections?: string[];
 }
 
@@ -395,6 +438,10 @@ export default class WorldObjectRegistry {
      * own doc).
      */
     private readonly ownMeshesByKey = new Map<string, OwnMeshPlacement[]>();
+    /** building id -> its "floor" rects from the "--storeView--" layers — see StoreFloorPlacement / getFloors(). */
+    private readonly floorsByBuilding = new Map<string, StoreFloorPlacement[]>();
+    /** building id -> its "polyWall" lines from the "--storeView--" layers — see StoreWallPlacement / getWalls(). */
+    private readonly wallsByBuilding = new Map<string, StoreWallPlacement[]>();
 
     public constructor(
         mapAlias: string = DEFAULT_TILE_MAP_ALIASES.map,
@@ -541,11 +588,15 @@ export default class WorldObjectRegistry {
      * "--storeView--<buildingId>" layers (see StoreLayerNames.ts): every model on the layer
      * becomes one of that building's own-mesh pieces — same as a mapSettings object with
      * type=building, id=<buildingId>, useOwnMesh checked, minus the per-piece props (solid still
-     * comes from the object's/tile's own "solid"). If no mapSettings object already places the
-     * building, its placement is the bounding rect of all its pieces. Anything without a model
-     * (a rect/point) is warned about and skipped — droppers etc. stay on mapSettings.
+     * comes from the object's/tile's own "solid"). A plain rect with "type"="floor" is instead a
+     * StoreFloorPlacement (one checker plane in the store's checker, see CheckerFloorBuilder). If no mapSettings object
+     * already places the building, its placement is the bounding rect of all its pieces and
+     * floors. Anything else (another rect/point) is warned about and skipped — droppers etc.
+     * stay on mapSettings.
      */
     private readStoreViewLayers(map: TiledMapData, tileSizePx: number, worldUnitsPerTile: number): void {
+        // Window/door rects per building, handed to that building's walls once every layer is read.
+        const openingsByBuilding = new Map<string, StoreWallOpening[]>();
         // One box per building across ALL its view layers ("--storeView--stall1", "...-2", ...).
         const boundsByBuilding = new Map<string, { minX: number; minZ: number; maxX: number; maxZ: number }>();
 
@@ -561,19 +612,61 @@ export default class WorldObjectRegistry {
                 bounds = { minX: Infinity, minZ: Infinity, maxX: -Infinity, maxZ: -Infinity };
                 boundsByBuilding.set(buildingId, bounds);
             }
+            let floors = this.floorsByBuilding.get(buildingId);
+            if (!floors) {
+                floors = [];
+                this.floorsByBuilding.set(buildingId, floors);
+            }
+            let walls = this.wallsByBuilding.get(buildingId);
+            if (!walls) {
+                walls = [];
+                this.wallsByBuilding.set(buildingId, walls);
+            }
             let added = 0;
+            let addedFloors = 0;
+            let addedWalls = 0;
 
             for (const obj of layer.objects ?? []) {
+                const openingKind = obj.gid ? undefined : STORE_OPENING_TYPES[getObjectProperty(obj, 'type') ?? ''];
+                if (openingKind) {
+                    const rect = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+                    let openings = openingsByBuilding.get(buildingId);
+                    if (!openings) {
+                        openings = [];
+                        openingsByBuilding.set(buildingId, openings);
+                    }
+                    openings.push({
+                        kind: openingKind,
+                        rect: { minX: rect.x - rect.width / 2, maxX: rect.x + rect.width / 2, minZ: rect.z - rect.depth / 2, maxZ: rect.z + rect.depth / 2 },
+                    });
+                    continue;
+                }
+                const wallVertices = obj.polyline ?? obj.polygon;
+                if (getObjectProperty(obj, 'type') === STORE_WALL_TYPE && wallVertices && wallVertices.length >= 2) {
+                    const wall = this.readStoreWall(obj, wallVertices, tileSizePx, worldUnitsPerTile);
+                    for (const point of wall.points) {
+                        bounds.minX = Math.min(bounds.minX, point.x);
+                        bounds.maxX = Math.max(bounds.maxX, point.x);
+                        bounds.minZ = Math.min(bounds.minZ, point.z);
+                        bounds.maxZ = Math.max(bounds.maxZ, point.z);
+                    }
+                    walls.push(wall);
+                    addedWalls++;
+                    continue;
+                }
+                const isFloor = !obj.gid && getObjectProperty(obj, 'type') === STORE_FLOOR_TYPE;
                 const decoded = obj.gid ? decodeObjectModel(obj, map) : undefined;
-                if (!decoded) {
-                    console.warn(`[WorldObjectRegistry] object #${obj.id} on "${layer.name}" isn't a known model — only models belong on a storeView layer, skipping`);
+                if (!decoded && !isFloor) {
+                    console.warn(`[WorldObjectRegistry] object #${obj.id} on "${layer.name}" isn't a known model or a "floor" rect — skipping`);
                     continue;
                 }
                 const placement = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+                // Same Tiled-clockwise -> THREE-Y sign flip as decodeObjectModel().
+                const rotationY = decoded?.rotationY ?? -(placement.rotationDeg * Math.PI) / 180;
                 // Footprint as laid on the floor — a 90°/270° piece's width/depth swap (same
                 // bounding-box math BuildingZone.addSolidAreasFromMap() uses for its collider).
-                const cos = Math.abs(Math.cos(decoded.rotationY));
-                const sin = Math.abs(Math.sin(decoded.rotationY));
+                const cos = Math.abs(Math.cos(rotationY));
+                const sin = Math.abs(Math.sin(rotationY));
                 const halfX = (placement.width * cos + placement.depth * sin) / 2;
                 const halfZ = (placement.width * sin + placement.depth * cos) / 2;
                 const coveredBySections = this.storeSections
@@ -581,6 +674,27 @@ export default class WorldObjectRegistry {
                         Math.abs(placement.x - s.x) < halfX + s.width / 2 - SECTION_OVERLAP_EPSILON
                         && Math.abs(placement.z - s.z) < halfZ + s.depth / 2 - SECTION_OVERLAP_EPSILON)
                     .map(section => section.id);
+                bounds.minX = Math.min(bounds.minX, placement.x - halfX);
+                bounds.maxX = Math.max(bounds.maxX, placement.x + halfX);
+                bounds.minZ = Math.min(bounds.minZ, placement.z - halfZ);
+                bounds.maxZ = Math.max(bounds.maxZ, placement.z + halfZ);
+                if (coveredBySections.length > 0) {
+                    console.log(`  - "${layer.name}" ${isFloor ? 'floor' : 'piece'} #${obj.id} overlaps section(s) ${coveredBySections.join(', ')} — removed once built`);
+                }
+
+                if (!decoded) {
+                    floors.push({
+                        x: placement.x,
+                        z: placement.z,
+                        width: placement.width,
+                        depth: placement.depth,
+                        rotationY,
+                        tileSize: worldUnitsPerTile,
+                        ...(coveredBySections.length > 0 ? { coveredBySections } : {}),
+                    });
+                    addedFloors++;
+                    continue;
+                }
                 entries.push({
                     ...decoded,
                     x: placement.x,
@@ -590,16 +704,16 @@ export default class WorldObjectRegistry {
                     solid: readOwnMeshSolid(obj, map),
                     ...(coveredBySections.length > 0 ? { coveredBySections } : {}),
                 });
-                if (coveredBySections.length > 0) {
-                    console.log(`  - "${layer.name}" piece #${obj.id} overlaps section(s) ${coveredBySections.join(', ')} — removed once built`);
-                }
-                bounds.minX = Math.min(bounds.minX, placement.x - halfX);
-                bounds.maxX = Math.max(bounds.maxX, placement.x + halfX);
-                bounds.minZ = Math.min(bounds.minZ, placement.z - halfZ);
-                bounds.maxZ = Math.max(bounds.maxZ, placement.z + halfZ);
                 added++;
             }
-            console.log(`  - "${layer.name}" -> building "${buildingId}": ${added} model piece(s)`);
+            console.log(`  - "${layer.name}" -> building "${buildingId}": ${added} model piece(s), ${addedFloors} floor(s), ${addedWalls} wall(s)`);
+        }
+
+        for (const [buildingId, openings] of openingsByBuilding) {
+            for (const wall of this.wallsByBuilding.get(buildingId) ?? []) {
+                wall.openings = openings;
+            }
+            console.log(`  - building "${buildingId}": ${openings.length} wall opening(s)`);
         }
 
         // Placed once every view layer is in, so the building's position covers all of them.
@@ -613,6 +727,36 @@ export default class WorldObjectRegistry {
                 buildings.set(buildingId, { x: (minX + maxX) / 2, z: (minZ + maxZ) / 2, width: maxX - minX, depth: maxZ - minZ, rotationDeg: 0 });
             }
         }
+    }
+
+    /** One "polyWall" object -> world-space StoreWallPlacement (Tiled rotation applied to the vertices, same as readSpawnerShape()). */
+    private readStoreWall(obj: TiledObject, vertices: { x: number; y: number }[], tileSizePx: number, worldUnitsPerTile: number): StoreWallPlacement {
+        const scale = worldUnitsPerTile / tileSizePx;
+        const rotationRad = (obj.rotation * Math.PI) / 180;
+        const cos = Math.cos(rotationRad);
+        const sin = Math.sin(rotationRad);
+        const points = vertices.map(v => ({
+            x: (obj.x + v.x * cos - v.y * sin) * scale,
+            z: (obj.y + v.x * sin + v.y * cos) * scale,
+        }));
+        // A section overlapping ANY segment's box removes the whole wall (same rule as a piece).
+        const coveredBySections = this.storeSections
+            .filter(({ placement: s }) => points.some((p, i) => {
+                const q = points[i + 1] ?? (obj.polygon ? points[0] : undefined);
+                if (!q) {
+                    return false;
+                }
+                const halfX = Math.abs(q.x - p.x) / 2;
+                const halfZ = Math.abs(q.z - p.z) / 2;
+                return Math.abs((p.x + q.x) / 2 - s.x) < halfX + s.width / 2 - SECTION_OVERLAP_EPSILON
+                    && Math.abs((p.z + q.z) / 2 - s.z) < halfZ + s.depth / 2 - SECTION_OVERLAP_EPSILON;
+            }))
+            .map(section => section.id);
+        return {
+            points,
+            closed: obj.polygon !== undefined,
+            ...(coveredBySections.length > 0 ? { coveredBySections } : {}),
+        };
     }
 
     /**
@@ -785,6 +929,16 @@ export default class WorldObjectRegistry {
     /** Every "useOwnMesh" object sharing (type, id) — see ownMeshesByKey's own doc. Empty array (not undefined) if none were drawn/checked at all, same "no existence check needed" convention as getShapes()/getWaypoints(). */
     public getOwnMeshes(type: string, id: string): readonly OwnMeshPlacement[] {
         return this.ownMeshesByKey.get(`${type}:${id}`) ?? [];
+    }
+
+    /** Every "floor" rect drawn for building `buildingId` on its "--storeView--" layers — see StoreFloorPlacement. Empty array if none. */
+    public getFloors(buildingId: string): readonly StoreFloorPlacement[] {
+        return this.floorsByBuilding.get(buildingId) ?? [];
+    }
+
+    /** Every "polyWall" drawn for building `buildingId` on its "--storeView--" layers — see StoreWallPlacement. Empty array if none. */
+    public getWalls(buildingId: string): readonly StoreWallPlacement[] {
+        return this.wallsByBuilding.get(buildingId) ?? [];
     }
 
     /** The placement for `id` within `type`'s bucket, or undefined if no such object exists on the map — callers decide what "not found" means (buildings/gates skip spawning); this never warns on its own. */

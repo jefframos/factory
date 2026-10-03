@@ -1,0 +1,15 @@
+{
+    "default": {
+        "name": "Plain",
+        "bottomColor": "#8a6f5a",
+        "topColor": "#e9e2d6",
+        "bottomHeight": 1.2
+    },
+    "byId": {},
+    "setup": {
+        "height": 4,
+        "thickness": 0.35,
+        "doorHeight": 3,
+        "windowHeight": 1.5
+    }
+}

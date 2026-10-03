@@ -125,6 +125,7 @@ import { SavedStoreClient, StoreClientStorage } from './StoreClientStorage';
 import { DEFAULT_CASHIER_VIEW, DEFAULT_CLIENT_RADIUS, DEFAULT_MONEY_DROP_VIEW, DEFAULT_NAV_CELL_SIZE, DEFAULT_RESTOCKER_WANDER_RADIUS, DEFAULT_GARBAGE_SPAWN_SLOWDOWN, DEFAULT_MAX_GARBAGE, DEFAULT_WORKER_COLLECT_EVERY_SALES, DEFAULT_WORKER_WANDER_RADIUS, getCashierLevelStats, getCleanerLevelStats, getRestockerLevelStats, StoreClientMood, StoreConfig, StorePacing, getNextStoreLevel, getStoreConfig, getStorageSpotDirection, getStorePacing, rollClientMoodStepSec } from './StoreTypes';
 import { StoreProgressStorage } from './StoreProgressStorage';
 import { StoreUnlocks } from './StoreUnlocks';
+import { FloorLayers } from '../world/FloorLayers';
 
 /** The first client shows up this long after the store spawns, rather than a full spawnIntervalSec. */
 const FIRST_SPAWN_DELAY_SEC = 1;
@@ -1386,7 +1387,7 @@ export function spawnStores(deps: SpawnStoresDeps): Store[] {
                 storageId: id,
                 dropPoint: new THREE.Vector3(dropper?.x ?? placement.x, 0, dropper?.z ?? placement.z),
                 // Its drop point (StorageZone: dropOffset, default y 0.4) — the bin's opening.
-                binPosition: new THREE.Vector3(placement.x + (storageConfig.dropOffset?.x ?? 0), storageConfig.dropOffset?.y ?? 0.4, placement.z + (storageConfig.dropOffset?.z ?? 0)),
+                binPosition: new THREE.Vector3(placement.x + (storageConfig.dropOffset?.x ?? 0), FloorLayers.baseY + (storageConfig.dropOffset?.y ?? 0.4), placement.z + (storageConfig.dropOffset?.z ?? 0)),
             });
         }
 

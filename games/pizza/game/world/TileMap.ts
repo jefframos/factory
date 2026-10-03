@@ -9,7 +9,7 @@
 // builds each matched layer as its own set of rounded, per-tile-height blob
 // meshes, layered the same way (see IslandMeshBuilder.ts). Either way, a
 // layer beyond the first (e.g. a "groundLayer2" decorative overlay) is lifted
-// GROUND_LAYER_Y_STEP higher than the one before it so it renders on top
+// FloorLayers.groundLayerGap higher than the one before it so it renders on top
 // instead of z-fighting/overlapping it. Purely visual paint on top of
 // WorldManager's existing ground plane/physics slab — doesn't touch
 // collision itself, but build() also keeps the col/row -> TileDef lookup
@@ -30,7 +30,6 @@ import {
     findLayers,
     getTilesetFirstGids,
     GROUND_LAYER_NAME,
-    GROUND_LAYER_Y_STEP,
     isGroundWalkable,
     iterateLayerCells,
     loadTileDefs,
@@ -41,6 +40,7 @@ import {
     TILE_PAINT_Y_OFFSET,
     WORLD_UNITS_PER_TILE,
 } from './TileMapConfig';
+import { groundLayerY } from './FloorLayers';
 import { clearWalkabilityQuery, setWalkabilityQuery } from './TileWalkability';
 import ZoneVisibilityManager from './ZoneVisibilityManager';
 
@@ -57,7 +57,7 @@ export interface GroundCell {
 }
 
 export default class TileMap {
-    /** One InstancedMesh per matched groundLayer-named layer (see build()) — index order is paint order, which is also Y-offset order (see GROUND_LAYER_Y_STEP). */
+    /** One InstancedMesh per matched groundLayer-named layer (see build()) — index order is paint order, which is also Y-offset order (see FloorLayers.groundLayerGap). */
     private readonly meshes: THREE.InstancedMesh[] = [];
     /**
      * col/row (see `cellKey`) -> resolved ground def, used ONLY by getGroundDefAt()/
@@ -75,7 +75,7 @@ export default class TileMap {
      * IslandMeshBuilder.getGroundCellLayers() reads to flood-fill EACH layer into its own
      * set of per-tile-name blobs — a decorative overlay layer gets the exact same rounded,
      * per-tile-height treatment the base layer does, just as its own separate geometry
-     * lifted GROUND_LAYER_Y_STEP higher, instead of punching a hole in (or reshaping the
+     * lifted FloorLayers.groundLayerGap higher, instead of punching a hole in (or reshaping the
      * rounded edge of) the base layer's blob.
      */
     private readonly layerCellLists: GroundCell[][] = [];
@@ -96,7 +96,7 @@ export default class TileMap {
      * one InstancedMesh per layer whose name contains GROUND_LAYER_NAME (see findLayers()) —
      * not just an exact "groundLayer" match, so a map can stack decorative variants
      * ("groundLayer2", "groundLayer_path", ...) on top of the base layer. Each later match (in
-     * Tiled's own layer order) sits GROUND_LAYER_Y_STEP higher than the one before it, so a
+     * Tiled's own layer order) sits FloorLayers.groundLayerGap higher than the one before it, so a
      * decoration painted on top of the base ground actually renders on top instead of
      * z-fighting with it. Call once during scene build.
      *
@@ -143,7 +143,7 @@ export default class TileMap {
             BendService.applyBend(material);
 
             const mesh = new THREE.InstancedMesh(geometry, material, cells.length);
-            mesh.position.y = TILE_PAINT_Y_OFFSET + layerIndex * GROUND_LAYER_Y_STEP;
+            mesh.position.y = TILE_PAINT_Y_OFFSET + groundLayerY(layerIndex);
             // InstancedMesh's default bounding sphere comes from the geometry alone (one tile,
             // centered at the mesh's local origin) — Three culls the WHOLE mesh against that tiny
             // sphere, so every instance except the one near world origin gets frustum-culled away.

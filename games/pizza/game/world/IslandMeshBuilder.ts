@@ -11,7 +11,7 @@
 // groundLayer-named layer (see TileMapConfig.GROUND_LAYER_NAME/findLayers()) —
 // a decorative "groundLayer2" overlay gets the exact same rounded, per-tile-
 // height treatment (ISLAND_TILE_DEFS) the base layer does, just as its own
-// separate geometry lifted GROUND_LAYER_Y_STEP higher (see build()), rather
+// separate geometry lifted FloorLayers.groundLayerGap higher (see build()), rather
 // than being flattened into the base layer's own blobs (which would let an
 // overlay tile punch a hole in, or reshape the rounded edge of, the base).
 //
@@ -37,7 +37,8 @@ import { ClusterMeshBuilder } from '../builders/ClusterMeshBuilder';
 import { createWaterMaterial } from '../builders/WaterMaterial';
 import { BendService } from '../services/BendService';
 import TileMap, { GroundCell } from './TileMap';
-import { GROUND_LAYER_Y_STEP, tileCellToWorldPosition } from './TileMapConfig';
+import { tileCellToWorldPosition } from './TileMapConfig';
+import { groundLayerY } from './FloorLayers';
 import {
     ISLAND_DEFAULT_TILE,
     ISLAND_NON_LAND_TILES,
@@ -69,7 +70,7 @@ export default class IslandMeshBuilder {
     /**
      * Reads tileMap.getGroundCellLayers() (call after tileMap.build()) and, for EACH matched
      * layer independently, builds one merged mesh per land tile name — lifted
-     * `layerIndex * GROUND_LAYER_Y_STEP` above the base, same offset TileMap's own flat paint
+     * `groundLayerY(layerIndex)` (FloorLayers.ts) above the base, same offset TileMap's own flat paint
      * uses, so a decorative overlay layer's blobs sit visibly above the base layer's rather
      * than z-fighting/merging with them. The water plane is only ever built once, sized and
      * colored off the BASE layer (layerIndex 0) — water is a base-terrain feature, not
@@ -108,7 +109,7 @@ export default class IslandMeshBuilder {
                 bucket.push(cell);
             }
 
-            const layerYOffset = layerIndex * GROUND_LAYER_Y_STEP;
+            const layerYOffset = groundLayerY(layerIndex);
             for (const [name, namedCells] of byName) {
                 if (!zoneVisibility) {
                     this.buildTileGroup(name, namedCells, worldUnitsPerTile, layerYOffset);

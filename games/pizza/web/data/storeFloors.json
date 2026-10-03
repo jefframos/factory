@@ -1,0 +1,9 @@
+{
+    "default": {
+        "name": "Kitchen tiles",
+        "colorA": "#d4dbde",
+        "colorB": "#bdbcbc",
+        "scale": 1
+    },
+    "byId": {}
+}

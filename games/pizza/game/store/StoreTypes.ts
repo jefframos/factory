@@ -318,6 +318,10 @@ export interface StoreConfig {
     workerColor?: string;
     /** Hat every worker of this store wears — see StoreWorkerHat. Unset / no model = the "worker" look's own (none by default). */
     workerHat?: StoreWorkerHat;
+    /** Checker this store's floor uses — a StoreViewTypes.ts FLOOR_CHECKER_BY_ID id (Store View tab -> Floor). Unset = DEFAULT_FLOOR_CHECKER. */
+    floorChecker?: string;
+    /** Style this store's walls use — a StoreViewTypes.ts WALL_STYLE_BY_ID id (Store View tab -> Wall). Unset = DEFAULT_WALL_STYLE. */
+    wallStyle?: string;
     /** What this store's hire desk(s) offer — see StoreHiringConfig. Unset = DEFAULT_HIRE_ROLES. */
     hiring?: StoreHiringConfig;
     /** When true, this store isn't spawned at all — same convention as every other entity's `disabled`. */

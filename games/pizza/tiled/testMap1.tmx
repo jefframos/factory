@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="14" nextobjectid="353">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="14" nextobjectid="359">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -754,8 +754,8 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4,
-0,0,4,4,0,0,0,0,0,0,0,0,0,0,0,4
+4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,4,4,0,0,0,0,0,0,0,0,0,0,0,0
 </chunk>
    <chunk x="0" y="0" width="16" height="16">
 0,0,0,0,0,4,4,4,4,4,5,4,0,0,0,0,
@@ -772,8 +772,8 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,5,5,5,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-4,4,4,4,4,4,4,4,4,4,4,0,0,0,0,0,
-4,4,4,4,4,4,4,4,4,4,4,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </chunk>
    <chunk x="16" y="0" width="16" height="16">
 0,0,0,0,0,0,0,0,4,4,4,4,0,0,0,0,
@@ -830,58 +830,40 @@
 0,0,0,0,0,0,0,0,0,0,0,4,4,4,4,4
 </chunk>
    <chunk x="-16" y="16" width="16" height="16">
-0,0,0,4,4,0,0,0,0,0,0,0,0,0,0,4,
+0,0,0,4,4,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,4,4,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,4,4,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,4,
-4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
-4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
-4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4,
-4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4,
-4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4,
-4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4,
-4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4,
-4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4,
-4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4,
-4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4,
+0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,
+4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,0,
+4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,0,
+4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-</chunk>
-   <chunk x="0" y="16" width="16" height="16">
-4,4,4,4,4,4,4,4,4,4,4,0,0,0,0,0,
-4,4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,
-4,4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,
-4,0,0,0,0,0,0,0,0,4,4,4,4,4,4,4,
-0,0,0,0,0,0,0,0,0,0,4,4,4,4,4,4,
-0,0,0,0,0,0,0,0,0,0,4,4,4,4,4,4,
-0,0,0,0,0,0,0,0,0,0,4,4,4,4,4,4,
-4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
-4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
-4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
-4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
-4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
-4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
-4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
-4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </chunk>
    <chunk x="16" y="16" width="16" height="16">
 0,0,0,0,0,4,4,4,0,0,0,0,0,0,0,0,
 0,0,0,0,0,4,4,4,0,0,0,0,0,0,0,0,
 0,0,0,0,0,4,4,4,0,0,0,0,0,0,0,0,
-4,4,0,0,0,4,4,4,0,0,0,0,0,0,0,0,
-4,4,0,0,0,4,4,4,0,0,0,0,0,0,0,0,
-4,4,4,0,0,4,4,4,0,0,0,0,0,0,0,0,
-4,4,4,4,0,4,4,4,0,0,0,0,0,0,0,0,
-4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,4,
-4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,4,
-4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,4,
-4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,4,
-4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,4,
-4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4,
-4,4,0,0,0,0,0,0,0,0,0,0,0,0,4,4,
-4,4,4,0,0,0,0,0,0,0,0,0,0,4,4,0,
-0,0,4,4,4,4,0,0,0,0,0,0,4,4,4,0
+0,0,0,0,0,4,4,4,0,0,0,0,0,0,0,0,
+0,0,0,0,0,4,4,4,0,0,0,0,0,0,0,0,
+0,0,0,0,0,4,4,4,0,0,0,0,0,0,0,0,
+0,0,0,0,0,4,4,4,0,0,0,0,0,0,0,0,
+0,0,0,0,4,4,4,4,0,0,0,0,0,0,0,4,
+0,0,0,0,4,4,4,4,0,0,0,0,0,0,0,4,
+0,0,0,0,4,4,4,0,0,0,0,0,0,0,0,4,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,4,
+0,0,0,0,0,0,0,0,0,0,0,0,0,4,4,0,
+0,0,0,0,4,4,0,0,0,0,0,0,4,4,4,0
 </chunk>
    <chunk x="32" y="16" width="16" height="16">
 4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1727,13 +1709,6 @@
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="35" x="-543.333" y="272">
-   <properties>
-    <property name="id" value="treeSpawner"/>
-    <property name="type" value="spawner"/>
-   </properties>
-   <polygon points="84,-110 -142.667,103 -134,300 -81.8705,408.412 1.21295,338.119 41.9727,262.829 -101.558,202.551 -111.351,130.209 92.2079,136.933 318.241,334.065 492,-103 300.667,-140"/>
-  </object>
   <object id="160" x="-336.333" y="858">
    <properties>
     <property name="id" value="treeSpawner"/>
@@ -1748,31 +1723,31 @@
    </properties>
    <polygon points="93,-44 -111.667,115 -87.8333,219 230,196 236.167,97.5"/>
   </object>
-  <object id="37" x="-160" y="896" width="96" height="64">
+  <object id="37" x="-192" y="480" width="96" height="64">
    <properties>
     <property name="id" value="farm1"/>
     <property name="type" value="farm"/>
    </properties>
   </object>
-  <object id="185" x="-160" y="576" width="96" height="64">
+  <object id="185" x="-320" y="384" width="96" height="64">
    <properties>
     <property name="id" value="farm4"/>
     <property name="type" value="farm"/>
    </properties>
   </object>
-  <object id="186" x="-160" y="480" width="96" height="64">
+  <object id="186" x="-448" y="384" width="96" height="64">
    <properties>
     <property name="id" value="farm5"/>
     <property name="type" value="farm"/>
    </properties>
   </object>
-  <object id="100" x="-160" y="800" width="96" height="64">
+  <object id="100" x="-320" y="480" width="96" height="64">
    <properties>
     <property name="id" value="farm2"/>
     <property name="type" value="farm"/>
    </properties>
   </object>
-  <object id="101" x="-160" y="704" width="96" height="64">
+  <object id="101" x="-192" y="384" width="96" height="64">
    <properties>
     <property name="id" value="farm3"/>
     <property name="type" value="farm"/>
@@ -1816,88 +1791,32 @@
   <object id="259" gid="47" x="339.515" y="421.939" width="64" height="16" rotation="90"/>
  </objectgroup>
  <objectgroup id="13" name="--storeView--stall1-2">
-  <object id="244" gid="41" x="-32" y="512" width="64" height="64"/>
-  <object id="265" gid="41" x="-32" y="576" width="64" height="64"/>
-  <object id="271" gid="41" x="-32" y="640" width="64" height="64"/>
-  <object id="277" gid="41" x="-32" y="704" width="64" height="64"/>
-  <object id="283" gid="41" x="-32" y="768" width="64" height="64"/>
-  <object id="289" gid="41" x="-32" y="832" width="64" height="64"/>
-  <object id="295" gid="41" x="-32" y="896" width="64" height="64"/>
-  <object id="301" gid="41" x="-32" y="960" width="64" height="64"/>
-  <object id="307" gid="41" x="-32" y="1024" width="64" height="64"/>
-  <object id="245" gid="41" x="32" y="512" width="64" height="64"/>
-  <object id="266" gid="41" x="32" y="576" width="64" height="64"/>
-  <object id="272" gid="41" x="32" y="640" width="64" height="64"/>
-  <object id="278" gid="41" x="32" y="704" width="64" height="64"/>
-  <object id="284" gid="41" x="32" y="768" width="64" height="64"/>
-  <object id="290" gid="41" x="32" y="832" width="64" height="64"/>
-  <object id="296" gid="41" x="32" y="896" width="64" height="64"/>
-  <object id="302" gid="41" x="32" y="960" width="64" height="64"/>
-  <object id="308" gid="41" x="32" y="1024" width="64" height="64"/>
-  <object id="246" gid="41" x="96" y="512" width="64" height="64"/>
-  <object id="267" gid="41" x="96" y="576" width="64" height="64"/>
-  <object id="273" gid="41" x="96" y="640" width="64" height="64"/>
-  <object id="279" gid="41" x="96" y="704" width="64" height="64"/>
-  <object id="285" gid="41" x="96" y="768" width="64" height="64"/>
-  <object id="291" gid="41" x="96" y="832" width="64" height="64"/>
-  <object id="297" gid="41" x="96" y="896" width="64" height="64"/>
-  <object id="303" gid="41" x="96" y="960" width="64" height="64"/>
-  <object id="309" gid="41" x="96" y="1024" width="64" height="64"/>
-  <object id="247" gid="41" x="160" y="512" width="64" height="64"/>
-  <object id="268" gid="41" x="160" y="576" width="64" height="64"/>
-  <object id="274" gid="41" x="160" y="640" width="64" height="64"/>
-  <object id="280" gid="41" x="160" y="704" width="64" height="64"/>
-  <object id="286" gid="41" x="160" y="768" width="64" height="64"/>
-  <object id="292" gid="41" x="160" y="832" width="64" height="64"/>
-  <object id="298" gid="41" x="160" y="896" width="64" height="64"/>
-  <object id="304" gid="41" x="160" y="960" width="64" height="64"/>
-  <object id="310" gid="41" x="160" y="1024" width="64" height="64"/>
-  <object id="248" gid="41" x="224" y="512" width="64" height="64"/>
-  <object id="269" gid="41" x="224" y="576" width="64" height="64"/>
-  <object id="275" gid="41" x="224" y="640" width="64" height="64"/>
-  <object id="281" gid="41" x="224" y="704" width="64" height="64"/>
-  <object id="287" gid="41" x="224" y="768" width="64" height="64"/>
-  <object id="293" gid="41" x="224" y="832" width="64" height="64"/>
-  <object id="299" gid="41" x="224" y="896" width="64" height="64"/>
-  <object id="305" gid="41" x="224" y="960" width="64" height="64"/>
-  <object id="311" gid="41" x="224" y="1024" width="64" height="64"/>
-  <object id="249" gid="41" x="288" y="512" width="64" height="64"/>
-  <object id="270" gid="41" x="288" y="576" width="64" height="64"/>
-  <object id="276" gid="41" x="288" y="640" width="64" height="64"/>
-  <object id="331" gid="41" x="352" y="640" width="64" height="64"/>
-  <object id="338" gid="41" x="416" y="640" width="64" height="64"/>
-  <object id="345" gid="41" x="480" y="640" width="64" height="64"/>
-  <object id="352" gid="41" x="544" y="640" width="64" height="64"/>
-  <object id="282" gid="41" x="288" y="704" width="64" height="64"/>
-  <object id="330" gid="41" x="352" y="704" width="64" height="64"/>
-  <object id="337" gid="41" x="416" y="704" width="64" height="64"/>
-  <object id="344" gid="41" x="480" y="704" width="64" height="64"/>
-  <object id="351" gid="41" x="544" y="704" width="64" height="64"/>
-  <object id="288" gid="41" x="288" y="768" width="64" height="64"/>
-  <object id="329" gid="41" x="352" y="768" width="64" height="64"/>
-  <object id="336" gid="41" x="416" y="768" width="64" height="64"/>
-  <object id="343" gid="41" x="480" y="768" width="64" height="64"/>
-  <object id="350" gid="41" x="544" y="768" width="64" height="64"/>
-  <object id="294" gid="41" x="288" y="832" width="64" height="64"/>
-  <object id="328" gid="41" x="352" y="832" width="64" height="64"/>
-  <object id="335" gid="41" x="416" y="832" width="64" height="64"/>
-  <object id="342" gid="41" x="480" y="832" width="64" height="64"/>
-  <object id="349" gid="41" x="544" y="832" width="64" height="64"/>
-  <object id="300" gid="41" x="288" y="896" width="64" height="64"/>
-  <object id="327" gid="41" x="352" y="896" width="64" height="64"/>
-  <object id="334" gid="41" x="416" y="896" width="64" height="64"/>
-  <object id="341" gid="41" x="480" y="896" width="64" height="64"/>
-  <object id="348" gid="41" x="544" y="896" width="64" height="64"/>
-  <object id="306" gid="41" x="288" y="960" width="64" height="64"/>
-  <object id="326" gid="41" x="352" y="960" width="64" height="64"/>
-  <object id="333" gid="41" x="416" y="960" width="64" height="64"/>
-  <object id="340" gid="41" x="480" y="960" width="64" height="64"/>
-  <object id="347" gid="41" x="544" y="960" width="64" height="64"/>
-  <object id="312" gid="41" x="288" y="1024" width="64" height="64"/>
-  <object id="325" gid="41" x="352" y="1024" width="64" height="64"/>
-  <object id="332" gid="41" x="416" y="1024" width="64" height="64"/>
-  <object id="339" gid="41" x="480" y="1024" width="64" height="64"/>
-  <object id="346" gid="41" x="544" y="1024" width="64" height="64"/>
+  <object id="353" x="-32" y="448" width="384" height="576">
+   <properties>
+    <property name="type" value="floor"/>
+   </properties>
+  </object>
+  <object id="354" x="352" y="576" width="256" height="448">
+   <properties>
+    <property name="type" value="floor"/>
+   </properties>
+  </object>
+  <object id="356" x="-98" y="1016">
+   <properties>
+    <property name="type" value="polyWall"/>
+   </properties>
+   <polyline points="0,0 -2,-194 -86,-190 -88,-270 10,-278"/>
+  </object>
+  <object id="357" x="-111" y="907" width="24" height="29">
+   <properties>
+    <property name="type" value="polyWindow"/>
+   </properties>
+  </object>
+  <object id="358" x="-199" y="767" width="26" height="36">
+   <properties>
+    <property name="type" value="polyDoor"/>
+   </properties>
+  </object>
  </objectgroup>
  <objectgroup draworder="index" id="11" name="--storeSection--stall1" opacity="0.8">
   <object id="230" gid="42" x="353" y="480" width="64" height="64"/>

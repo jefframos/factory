@@ -784,6 +784,8 @@ const ENTITY_SCHEMAS = {
             ],
         },
         { key: 'workerColor', type: 'color', label: 'Staff Color (every worker of this store — blank = the NPCs tab\'s "worker" look)', optional: true },
+        { key: 'floorChecker', type: 'select', label: 'Floor Checker (Store View tab -> Floor — blank = the default checker)', source: 'storeFloors', optional: true },
+        { key: 'wallStyle', type: 'select', label: 'Wall Style (Store View tab -> Wall — blank = the default style)', source: 'storeWalls', optional: true },
         {
             key: 'workerHat', type: 'group', label: 'Staff Hat (every worker of this store wears it — no model = none)',
             fields: [
@@ -870,6 +872,26 @@ const ENTITY_SCHEMAS = {
             ],
         },
         { key: 'disabled', type: 'boolean', label: 'Disabled (takes this store out of the game entirely)', optional: true },
+    ],
+    // Store View tab -> Floor — see game/store/StoreViewTypes.ts's FloorCheckerConfig.
+    storeFloors: [
+        { key: 'name', type: 'text', label: 'Name (shown in the editor — later in a floor shop)', optional: true },
+        { key: 'colorA', type: 'color', label: 'Color A' },
+        { key: 'colorB', type: 'color', label: 'Color B' },
+        { key: 'scale', type: 'number', label: 'Square Size (map tiles per checker square — 1 = one 32px tile, 0.5 = smaller, 2 = bigger)' },
+    ],
+    // Store View tab -> Wall — see game/store/StoreViewTypes.ts's WallStyleConfig / WallSetupConfig.
+    storeWalls: [
+        { key: 'name', type: 'text', label: 'Name (shown in the editor — later in a shop)', optional: true },
+        { key: 'bottomColor', type: 'color', label: 'Bottom Color' },
+        { key: 'topColor', type: 'color', label: 'Top Color' },
+        { key: 'bottomHeight', type: 'number', label: 'Bottom Band Height (world units from the floor — where Bottom Color ends)' },
+    ],
+    storeWallSetup: [
+        { key: 'height', type: 'number', label: 'Height (world units, from the floor up)' },
+        { key: 'thickness', type: 'number', label: 'Thickness (world units, centered on the drawn line — also the collider thickness)' },
+        { key: 'doorHeight', type: 'number', label: 'Door Height (a "polyDoor" rect over a wall cuts a hole from the floor up to this — no collider, walkable)' },
+        { key: 'windowHeight', type: 'number', label: 'Window Height (a "polyWindow" rect over a wall cuts a hole this tall, centered on the wall height)' },
     ],
     farms: [
         {
@@ -1139,6 +1161,15 @@ const ENTITY_SCHEMAS = {
     // Global player-balance knobs (see PlayerConfig.ts's own doc) — only ever meant to have one
     // entry, "default", but reuses the same open-ended partialRecord list every other id-keyed
     // tab (shops/tools/crafting/...) already renders with, rather than a bespoke single-form tab.
+    // game/world/FloorLayers.ts — bottom to top. Each gap is measured from the layer below it.
+    floorLayers: [
+        { key: 'groundY', type: 'number', label: 'Ground (Y of the base "groundLayer")' },
+        { key: 'groundLayerGap', type: 'number', label: 'Ground Layer Gap (each extra "groundLayer2", "groundLayer3"... sits this much above the one below)' },
+        { key: 'groundLayerCount', type: 'number', label: 'Ground Layer Count (how many ground layers to make room for — the store floor goes above the top one)' },
+        { key: 'storeFloorGap', type: 'number', label: 'Store Floor Gap (store checker floor above the top ground layer — this is also the BASE Y buildings, storages, droppers... stand on)' },
+        { key: 'decalGap', type: 'number', label: 'Dropper Gap (dropper / purchase / trigger outlines above the store floor)' },
+        { key: 'labelGap', type: 'number', label: 'Floor Text Gap (prices and costs painted on the floor, above the outlines)' },
+    ],
     player: [
         { key: 'walkSpeed', type: 'number', label: 'Walk Speed (world units/sec)' },
         { key: 'runSpeedMultiplier', type: 'number', label: 'Run Speed Multiplier (applied to Walk Speed while sprinting)' },

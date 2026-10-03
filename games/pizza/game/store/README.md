@@ -104,7 +104,34 @@ you. Both tabs have a **Default** entry (used by any id without an override) and
 | `bubbleOffset` | Want-bubble height above the client's head. |
 | `defaultStorageId` | Storage that is **free** and appears when the store opens. Blank = every storage must be bought. |
 | `levels` | The progression ladder — see [section 3](#3-progression--unlocks). |
+| `floorChecker` | Which Store View → Floor checker this store's floor uses. Blank = the default checker. |
+| `wallStyle` | Which Store View → Wall style this store's walls use. Blank = the default style. |
 | `disabled` | Removes the store entirely. |
+
+### Store View tab → Floor → `game/store/StoreViewTypes.ts`
+
+The store's floor is drawn in Tiled as plain rects with `type` = `floor` on its
+`--storeView--<starter>` layers. Each rect becomes one checker mesh (`builders/CheckerFloorBuilder.ts`),
+so the rects only set the floor's shape. The look comes from a **checker**: the **Default** one, unless
+the store's `floorChecker` picks another by id. A floor on a store section's building uses that
+section's store. Fields: `colorA` / `colorB`, `scale` (map tiles per checker square). Its height is the
+store-floor layer in `world/FloorLayers.ts` (editor: Floor Layers tab).
+Runtime lookup: `getStoreFloorChecker(storeId)`. To re-skin a floor that's already showing, call
+`BuildingZone.setFloorChecker()`; a player-bought floor will plug in through these two.
+
+### Store View tab → Wall → `game/store/StoreViewTypes.ts`
+
+Walls are drawn in Tiled as a polyline (open) or polygon (closed loop) with `type` = `polyWall` on the
+store's `--storeView--` layers. Each one becomes one mitered wall mesh with box colliders
+(`builders/PolyWallBuilder.ts`), standing on the floor-layer base Y. **Wall Setup** (`WALL_SETUP`:
+`height`, `thickness`) is shared by every wall in the game. The look is a **style** (`bottomColor` up to
+`bottomHeight`, `topColor` above it): the Default one, unless the store's `wallStyle` (Stores tab)
+picks another. Runtime: `getStoreWallStyle(storeId)`; `BuildingZone.setWallStyle()` re-skins shown walls.
+
+**Windows and doors:** draw a plain rect with `type` = `polyWindow` or `polyDoor` on the same building's
+`--storeView--` layers, overlapping the wall. The wall gets a hole along the stretch of wall the rect
+overlaps. A door goes from the floor up to Wall Setup `doorHeight` and has **no collider** (walkable). A window
+is `windowHeight` tall, centered on the wall's height, and keeps its collider. Don't overlap two openings.
 
 ### Storages tab → `game/data/StorageTypes.ts` (fields that matter for stores)
 

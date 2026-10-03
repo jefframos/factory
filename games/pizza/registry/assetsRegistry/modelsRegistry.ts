@@ -779,14 +779,6 @@ const CastleWall = {
 }
 } as const;
 
-const CharactersCharacterMedium = {
-  id: 'characterMedium',
-  path: 'characters/default/characterMedium',
-  fullPath: 'pizza/models/characters/default/characterMedium.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
 const CharactersDigging = {
   id: 'Digging',
   path: 'characters/default/Digging',
@@ -1004,171 +996,6 @@ const CharactersHappyIdle = {
   "RightLeg": "RightLeg",
   "RightFoot": "RightFoot",
   "RightToes": "RightToes"
-}
-} as const;
-
-const CharactersIdle = {
-  id: 'idle',
-  path: 'characters/default/idle',
-  fullPath: 'pizza/models/characters/default/idle.glb',
-  format: 'glb',
-  nodes: {
-  "RightUpLeg": "RightUpLeg",
-  "RightHandIndex3": "RightHandIndex3",
-  "LeftToeRoll": "LeftToeRoll",
-  "LeftHeelRoll": "LeftHeelRoll",
-  "RightFootRollCtrl": "RightFootRollCtrl",
-  "Hips": "Hips",
-  "LeftHand": "LeftHand",
-  "LeftHandIndex2": "LeftHandIndex2",
-  "RightHeelRoll": "RightHeelRoll",
-  "RightHandThumb1": "RightHandThumb1",
-  "Neck": "Neck",
-  "RightLeg": "RightLeg",
-  "RightShoulder": "RightShoulder",
-  "RightKneeCtrl": "RightKneeCtrl",
-  "UpperChest": "UpperChest",
-  "LeftToes": "LeftToes",
-  "RightArm": "RightArm",
-  "LeftKneeCtrl": "LeftKneeCtrl",
-  "Chest": "Chest",
-  "RightHandIndex2": "RightHandIndex2",
-  "LeftHandIndex1": "LeftHandIndex1",
-  "LeftFootIK": "LeftFootIK",
-  "LeftFootCtrl": "LeftFootCtrl",
-  "RightToeRoll": "RightToeRoll",
-  "RightHand": "RightHand",
-  "LeftFootRollCtrl": "LeftFootRollCtrl",
-  "Spine": "Spine",
-  "RightFootIK": "RightFootIK",
-  "RightFootCtrl": "RightFootCtrl",
-  "LeftHandThumb2": "LeftHandThumb2",
-  "LeftArm": "LeftArm",
-  "LeftForeArm": "LeftForeArm",
-  "LeftLeg": "LeftLeg",
-  "RightForeArm": "RightForeArm",
-  "Head": "Head",
-  "LeftFoot": "LeftFoot",
-  "RightHandThumb2": "RightHandThumb2",
-  "RightFoot": "RightFoot",
-  "HipsCtrl": "HipsCtrl",
-  "RightToes": "RightToes",
-  "LeftShoulder": "LeftShoulder",
-  "LeftHandIndex3": "LeftHandIndex3",
-  "Root": "Root",
-  "LeftUpLeg": "LeftUpLeg",
-  "LeftHandThumb1": "LeftHandThumb1",
-  "RightHandIndex1": "RightHandIndex1"
-}
-} as const;
-
-const CharactersIdle2 = {
-  id: 'idle2',
-  path: 'characters/default/idle2',
-  fullPath: 'pizza/models/characters/default/idle2.glb',
-  format: 'glb',
-  nodes: {
-  "Root": "Root",
-  "LeftFootCtrl": "LeftFootCtrl",
-  "LeftHeelRoll": "LeftHeelRoll",
-  "LeftToeRoll": "LeftToeRoll",
-  "LeftFootIK": "LeftFootIK",
-  "LeftFootRollCtrl": "LeftFootRollCtrl",
-  "LeftKneeCtrl": "LeftKneeCtrl",
-  "RightFootCtrl": "RightFootCtrl",
-  "RightHeelRoll": "RightHeelRoll",
-  "RightToeRoll": "RightToeRoll",
-  "RightFootIK": "RightFootIK",
-  "RightFootRollCtrl": "RightFootRollCtrl",
-  "RightKneeCtrl": "RightKneeCtrl",
-  "HipsCtrl": "HipsCtrl",
-  "Hips": "Hips",
-  "Spine": "Spine",
-  "Chest": "Chest",
-  "UpperChest": "UpperChest",
-  "Neck": "Neck",
-  "Head": "Head",
-  "LeftShoulder": "LeftShoulder",
-  "LeftArm": "LeftArm",
-  "LeftForeArm": "LeftForeArm",
-  "LeftHand": "LeftHand",
-  "LeftHandIndex1": "LeftHandIndex1",
-  "LeftHandIndex2": "LeftHandIndex2",
-  "LeftHandIndex3": "LeftHandIndex3",
-  "LeftHandThumb1": "LeftHandThumb1",
-  "LeftHandThumb2": "LeftHandThumb2",
-  "RightShoulder": "RightShoulder",
-  "RightArm": "RightArm",
-  "RightForeArm": "RightForeArm",
-  "RightHand": "RightHand",
-  "RightHandIndex1": "RightHandIndex1",
-  "RightHandIndex2": "RightHandIndex2",
-  "RightHandIndex3": "RightHandIndex3",
-  "RightHandThumb1": "RightHandThumb1",
-  "RightHandThumb2": "RightHandThumb2",
-  "LeftUpLeg": "LeftUpLeg",
-  "LeftLeg": "LeftLeg",
-  "LeftFoot": "LeftFoot",
-  "LeftToes": "LeftToes",
-  "RightUpLeg": "RightUpLeg",
-  "RightLeg": "RightLeg",
-  "RightFoot": "RightFoot",
-  "RightToes": "RightToes"
-}
-} as const;
-
-const CharactersJump = {
-  id: 'jump',
-  path: 'characters/default/jump',
-  fullPath: 'pizza/models/characters/default/jump.glb',
-  format: 'glb',
-  nodes: {
-  "RightKneeCtrl": "RightKneeCtrl",
-  "RightUpLeg": "RightUpLeg",
-  "Hips": "Hips",
-  "LeftHand": "LeftHand",
-  "RightFoot": "RightFoot",
-  "RightFootCtrl": "RightFootCtrl",
-  "LeftForeArm": "LeftForeArm",
-  "RightHandIndex1": "RightHandIndex1",
-  "RightHandThumb2": "RightHandThumb2",
-  "RightHandIndex2": "RightHandIndex2",
-  "RightFootIK": "RightFootIK",
-  "RightForeArm": "RightForeArm",
-  "LeftFootRollCtrl": "LeftFootRollCtrl",
-  "RightShoulder": "RightShoulder",
-  "Spine": "Spine",
-  "LeftHandIndex3": "LeftHandIndex3",
-  "LeftHandIndex2": "LeftHandIndex2",
-  "LeftUpLeg": "LeftUpLeg",
-  "LeftFootCtrl": "LeftFootCtrl",
-  "LeftHandIndex1": "LeftHandIndex1",
-  "LeftLeg": "LeftLeg",
-  "RightArm": "RightArm",
-  "HipsCtrl": "HipsCtrl",
-  "LeftFootIK": "LeftFootIK",
-  "LeftHandThumb2": "LeftHandThumb2",
-  "RightToes": "RightToes",
-  "Root": "Root",
-  "RightHeelRoll": "RightHeelRoll",
-  "LeftToeRoll": "LeftToeRoll",
-  "LeftShoulder": "LeftShoulder",
-  "LeftHandThumb1": "LeftHandThumb1",
-  "LeftKneeCtrl": "LeftKneeCtrl",
-  "LeftToes": "LeftToes",
-  "LeftHeelRoll": "LeftHeelRoll",
-  "Neck": "Neck",
-  "LeftFoot": "LeftFoot",
-  "Chest": "Chest",
-  "RightFootRollCtrl": "RightFootRollCtrl",
-  "RightHand": "RightHand",
-  "UpperChest": "UpperChest",
-  "RightHandIndex3": "RightHandIndex3",
-  "RightLeg": "RightLeg",
-  "Head": "Head",
-  "LeftArm": "LeftArm",
-  "RightToeRoll": "RightToeRoll",
-  "RightHandThumb1": "RightHandThumb1"
 }
 } as const;
 
@@ -1447,61 +1274,6 @@ const CharactersRoll = {
 }
 } as const;
 
-const CharactersRun = {
-  id: 'run',
-  path: 'characters/default/run',
-  fullPath: 'pizza/models/characters/default/run.glb',
-  format: 'glb',
-  nodes: {
-  "LeftKneeCtrl": "LeftKneeCtrl",
-  "RightHandIndex3": "RightHandIndex3",
-  "RightToeRoll": "RightToeRoll",
-  "RightHandIndex1": "RightHandIndex1",
-  "LeftForeArm": "LeftForeArm",
-  "Hips": "Hips",
-  "RightUpLeg": "RightUpLeg",
-  "RightHeelRoll": "RightHeelRoll",
-  "LeftHeelRoll": "LeftHeelRoll",
-  "Spine": "Spine",
-  "RightFoot": "RightFoot",
-  "RightFootRollCtrl": "RightFootRollCtrl",
-  "RightHandThumb2": "RightHandThumb2",
-  "Root": "Root",
-  "RightKneeCtrl": "RightKneeCtrl",
-  "LeftHandIndex1": "LeftHandIndex1",
-  "LeftToes": "LeftToes",
-  "Chest": "Chest",
-  "LeftFootRollCtrl": "LeftFootRollCtrl",
-  "RightForeArm": "RightForeArm",
-  "LeftArm": "LeftArm",
-  "RightFootIK": "RightFootIK",
-  "LeftHand": "LeftHand",
-  "RightToes": "RightToes",
-  "LeftHandThumb1": "LeftHandThumb1",
-  "LeftToeRoll": "LeftToeRoll",
-  "RightFootCtrl": "RightFootCtrl",
-  "LeftHandIndex2": "LeftHandIndex2",
-  "LeftUpLeg": "LeftUpLeg",
-  "RightShoulder": "RightShoulder",
-  "LeftFoot": "LeftFoot",
-  "RightHand": "RightHand",
-  "LeftFootIK": "LeftFootIK",
-  "RightLeg": "RightLeg",
-  "HipsCtrl": "HipsCtrl",
-  "Head": "Head",
-  "LeftFootCtrl": "LeftFootCtrl",
-  "RightHandIndex2": "RightHandIndex2",
-  "LeftHandIndex3": "LeftHandIndex3",
-  "UpperChest": "UpperChest",
-  "LeftHandThumb2": "LeftHandThumb2",
-  "LeftLeg": "LeftLeg",
-  "RightArm": "RightArm",
-  "LeftShoulder": "LeftShoulder",
-  "RightHandThumb1": "RightHandThumb1",
-  "Neck": "Neck"
-}
-} as const;
-
 const CharactersRunning = {
   id: 'Running',
   path: 'characters/default/Running',
@@ -1561,116 +1333,6 @@ const CharactersSitting = {
   id: 'Sitting',
   path: 'characters/default/Sitting',
   fullPath: 'pizza/models/characters/default/Sitting.glb',
-  format: 'glb',
-  nodes: {
-  "Root": "Root",
-  "LeftFootCtrl": "LeftFootCtrl",
-  "LeftHeelRoll": "LeftHeelRoll",
-  "LeftToeRoll": "LeftToeRoll",
-  "LeftFootIK": "LeftFootIK",
-  "LeftFootRollCtrl": "LeftFootRollCtrl",
-  "LeftKneeCtrl": "LeftKneeCtrl",
-  "RightFootCtrl": "RightFootCtrl",
-  "RightHeelRoll": "RightHeelRoll",
-  "RightToeRoll": "RightToeRoll",
-  "RightFootIK": "RightFootIK",
-  "RightFootRollCtrl": "RightFootRollCtrl",
-  "RightKneeCtrl": "RightKneeCtrl",
-  "HipsCtrl": "HipsCtrl",
-  "Hips": "Hips",
-  "Spine": "Spine",
-  "Chest": "Chest",
-  "UpperChest": "UpperChest",
-  "Neck": "Neck",
-  "Head": "Head",
-  "LeftShoulder": "LeftShoulder",
-  "LeftArm": "LeftArm",
-  "LeftForeArm": "LeftForeArm",
-  "LeftHand": "LeftHand",
-  "LeftHandIndex1": "LeftHandIndex1",
-  "LeftHandIndex2": "LeftHandIndex2",
-  "LeftHandIndex3": "LeftHandIndex3",
-  "LeftHandThumb1": "LeftHandThumb1",
-  "LeftHandThumb2": "LeftHandThumb2",
-  "RightShoulder": "RightShoulder",
-  "RightArm": "RightArm",
-  "RightForeArm": "RightForeArm",
-  "RightHand": "RightHand",
-  "RightHandIndex1": "RightHandIndex1",
-  "RightHandIndex2": "RightHandIndex2",
-  "RightHandIndex3": "RightHandIndex3",
-  "RightHandThumb1": "RightHandThumb1",
-  "RightHandThumb2": "RightHandThumb2",
-  "LeftUpLeg": "LeftUpLeg",
-  "LeftLeg": "LeftLeg",
-  "LeftFoot": "LeftFoot",
-  "LeftToes": "LeftToes",
-  "RightUpLeg": "RightUpLeg",
-  "RightLeg": "RightLeg",
-  "RightFoot": "RightFoot",
-  "RightToes": "RightToes"
-}
-} as const;
-
-const CharactersStandingMeleeAttackDownwardCHOP = {
-  id: 'StandingMeleeAttackDownwardCHOP',
-  path: 'characters/default/StandingMeleeAttackDownwardCHOP',
-  fullPath: 'pizza/models/characters/default/StandingMeleeAttackDownwardCHOP.glb',
-  format: 'glb',
-  nodes: {
-  "Root": "Root",
-  "LeftFootCtrl": "LeftFootCtrl",
-  "LeftHeelRoll": "LeftHeelRoll",
-  "LeftToeRoll": "LeftToeRoll",
-  "LeftFootIK": "LeftFootIK",
-  "LeftFootRollCtrl": "LeftFootRollCtrl",
-  "LeftKneeCtrl": "LeftKneeCtrl",
-  "RightFootCtrl": "RightFootCtrl",
-  "RightHeelRoll": "RightHeelRoll",
-  "RightToeRoll": "RightToeRoll",
-  "RightFootIK": "RightFootIK",
-  "RightFootRollCtrl": "RightFootRollCtrl",
-  "RightKneeCtrl": "RightKneeCtrl",
-  "HipsCtrl": "HipsCtrl",
-  "Hips": "Hips",
-  "Spine": "Spine",
-  "Chest": "Chest",
-  "UpperChest": "UpperChest",
-  "Neck": "Neck",
-  "Head": "Head",
-  "LeftShoulder": "LeftShoulder",
-  "LeftArm": "LeftArm",
-  "LeftForeArm": "LeftForeArm",
-  "LeftHand": "LeftHand",
-  "LeftHandIndex1": "LeftHandIndex1",
-  "LeftHandIndex2": "LeftHandIndex2",
-  "LeftHandIndex3": "LeftHandIndex3",
-  "LeftHandThumb1": "LeftHandThumb1",
-  "LeftHandThumb2": "LeftHandThumb2",
-  "RightShoulder": "RightShoulder",
-  "RightArm": "RightArm",
-  "RightForeArm": "RightForeArm",
-  "RightHand": "RightHand",
-  "RightHandIndex1": "RightHandIndex1",
-  "RightHandIndex2": "RightHandIndex2",
-  "RightHandIndex3": "RightHandIndex3",
-  "RightHandThumb1": "RightHandThumb1",
-  "RightHandThumb2": "RightHandThumb2",
-  "LeftUpLeg": "LeftUpLeg",
-  "LeftLeg": "LeftLeg",
-  "LeftFoot": "LeftFoot",
-  "LeftToes": "LeftToes",
-  "RightUpLeg": "RightUpLeg",
-  "RightLeg": "RightLeg",
-  "RightFoot": "RightFoot",
-  "RightToes": "RightToes"
-}
-} as const;
-
-const CharactersStandingPICKAXE = {
-  id: 'StandingPICKAXE',
-  path: 'characters/default/StandingPICKAXE',
-  fullPath: 'pizza/models/characters/default/StandingPICKAXE.glb',
   format: 'glb',
   nodes: {
   "Root": "Root",
@@ -1832,6 +1494,116 @@ const CharactersStandToSit = {
 }
 } as const;
 
+const CharactersStandingMeleeAttackDownwardCHOP = {
+  id: 'StandingMeleeAttackDownwardCHOP',
+  path: 'characters/default/StandingMeleeAttackDownwardCHOP',
+  fullPath: 'pizza/models/characters/default/StandingMeleeAttackDownwardCHOP.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "Root",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "LeftToeRoll": "LeftToeRoll",
+  "LeftFootIK": "LeftFootIK",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "RightFootCtrl": "RightFootCtrl",
+  "RightHeelRoll": "RightHeelRoll",
+  "RightToeRoll": "RightToeRoll",
+  "RightFootIK": "RightFootIK",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "RightKneeCtrl": "RightKneeCtrl",
+  "HipsCtrl": "HipsCtrl",
+  "Hips": "Hips",
+  "Spine": "Spine",
+  "Chest": "Chest",
+  "UpperChest": "UpperChest",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandIndex3": "RightHandIndex3",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToes": "LeftToes",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToes": "RightToes"
+}
+} as const;
+
+const CharactersStandingPICKAXE = {
+  id: 'StandingPICKAXE',
+  path: 'characters/default/StandingPICKAXE',
+  fullPath: 'pizza/models/characters/default/StandingPICKAXE.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "Root",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "LeftToeRoll": "LeftToeRoll",
+  "LeftFootIK": "LeftFootIK",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "RightFootCtrl": "RightFootCtrl",
+  "RightHeelRoll": "RightHeelRoll",
+  "RightToeRoll": "RightToeRoll",
+  "RightFootIK": "RightFootIK",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "RightKneeCtrl": "RightKneeCtrl",
+  "HipsCtrl": "HipsCtrl",
+  "Hips": "Hips",
+  "Spine": "Spine",
+  "Chest": "Chest",
+  "UpperChest": "UpperChest",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandIndex3": "RightHandIndex3",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToes": "LeftToes",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToes": "RightToes"
+}
+} as const;
+
 const CharactersTalking = {
   id: 'Talking',
   path: 'characters/default/Talking',
@@ -1884,74 +1656,6 @@ const CharactersTalking = {
   "RightLeg": "RightLeg",
   "RightFoot": "RightFoot",
   "RightToes": "RightToes"
-}
-} as const;
-
-const CharactersTestIdle = {
-  id: 'test_idle',
-  path: 'characters/default/test_idle',
-  fullPath: 'pizza/models/characters/default/test_idle.glb',
-  format: 'glb',
-  nodes: {
-  "Root": "Root",
-  "LeftFootCtrl": "LeftFootCtrl",
-  "LeftHeelRoll": "LeftHeelRoll",
-  "LeftToeRoll": "LeftToeRoll",
-  "LeftFootIK": "LeftFootIK",
-  "LeftFootIKEnd": "LeftFootIK_end",
-  "LeftFootRollCtrl": "LeftFootRollCtrl",
-  "LeftFootRollCtrlEnd": "LeftFootRollCtrl_end",
-  "LeftKneeCtrl": "LeftKneeCtrl",
-  "LeftKneeCtrlEnd": "LeftKneeCtrl_end",
-  "RightFootCtrl": "RightFootCtrl",
-  "RightHeelRoll": "RightHeelRoll",
-  "RightToeRoll": "RightToeRoll",
-  "RightFootIK": "RightFootIK",
-  "RightFootIKEnd": "RightFootIK_end",
-  "RightFootRollCtrl": "RightFootRollCtrl",
-  "RightFootRollCtrlEnd": "RightFootRollCtrl_end",
-  "RightKneeCtrl": "RightKneeCtrl",
-  "RightKneeCtrlEnd": "RightKneeCtrl_end",
-  "HipsCtrl": "HipsCtrl",
-  "Hips": "Hips",
-  "Spine": "Spine",
-  "Chest": "Chest",
-  "UpperChest": "UpperChest",
-  "Neck": "Neck",
-  "Head": "Head",
-  "HeadEnd": "Head_end",
-  "LeftShoulder": "LeftShoulder",
-  "LeftArm": "LeftArm",
-  "LeftForeArm": "LeftForeArm",
-  "LeftHand": "LeftHand",
-  "LeftHandIndex1": "LeftHandIndex1",
-  "LeftHandIndex2": "LeftHandIndex2",
-  "LeftHandIndex3": "LeftHandIndex3",
-  "LeftHandIndex3End": "LeftHandIndex3_end",
-  "LeftHandThumb1": "LeftHandThumb1",
-  "LeftHandThumb2": "LeftHandThumb2",
-  "LeftHandThumb2End": "LeftHandThumb2_end",
-  "RightShoulder": "RightShoulder",
-  "RightArm": "RightArm",
-  "RightForeArm": "RightForeArm",
-  "RightHand": "RightHand",
-  "RightHandIndex1": "RightHandIndex1",
-  "RightHandIndex2": "RightHandIndex2",
-  "RightHandIndex3": "RightHandIndex3",
-  "RightHandIndex3End": "RightHandIndex3_end",
-  "RightHandThumb1": "RightHandThumb1",
-  "RightHandThumb2": "RightHandThumb2",
-  "RightHandThumb2End": "RightHandThumb2_end",
-  "LeftUpLeg": "LeftUpLeg",
-  "LeftLeg": "LeftLeg",
-  "LeftFoot": "LeftFoot",
-  "LeftToes": "LeftToes",
-  "LeftToesEnd": "LeftToes_end",
-  "RightUpLeg": "RightUpLeg",
-  "RightLeg": "RightLeg",
-  "RightFoot": "RightFoot",
-  "RightToes": "RightToes",
-  "RightToesEnd": "RightToes_end"
 }
 } as const;
 
@@ -2062,6 +1766,302 @@ const CharactersWatering = {
   "RightLeg": "RightLeg",
   "RightFoot": "RightFoot",
   "RightToes": "RightToes"
+}
+} as const;
+
+const CharactersCharacterMedium = {
+  id: 'characterMedium',
+  path: 'characters/default/characterMedium',
+  fullPath: 'pizza/models/characters/default/characterMedium.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
+const CharactersIdle = {
+  id: 'idle',
+  path: 'characters/default/idle',
+  fullPath: 'pizza/models/characters/default/idle.glb',
+  format: 'glb',
+  nodes: {
+  "RightUpLeg": "RightUpLeg",
+  "RightHandIndex3": "RightHandIndex3",
+  "LeftToeRoll": "LeftToeRoll",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "Hips": "Hips",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "RightHeelRoll": "RightHeelRoll",
+  "RightHandThumb1": "RightHandThumb1",
+  "Neck": "Neck",
+  "RightLeg": "RightLeg",
+  "RightShoulder": "RightShoulder",
+  "RightKneeCtrl": "RightKneeCtrl",
+  "UpperChest": "UpperChest",
+  "LeftToes": "LeftToes",
+  "RightArm": "RightArm",
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "Chest": "Chest",
+  "RightHandIndex2": "RightHandIndex2",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftFootIK": "LeftFootIK",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "RightToeRoll": "RightToeRoll",
+  "RightHand": "RightHand",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "Spine": "Spine",
+  "RightFootIK": "RightFootIK",
+  "RightFootCtrl": "RightFootCtrl",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftLeg": "LeftLeg",
+  "RightForeArm": "RightForeArm",
+  "Head": "Head",
+  "LeftFoot": "LeftFoot",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightFoot": "RightFoot",
+  "HipsCtrl": "HipsCtrl",
+  "RightToes": "RightToes",
+  "LeftShoulder": "LeftShoulder",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "Root": "Root",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "RightHandIndex1": "RightHandIndex1"
+}
+} as const;
+
+const CharactersIdle2 = {
+  id: 'idle2',
+  path: 'characters/default/idle2',
+  fullPath: 'pizza/models/characters/default/idle2.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "Root",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "LeftToeRoll": "LeftToeRoll",
+  "LeftFootIK": "LeftFootIK",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "RightFootCtrl": "RightFootCtrl",
+  "RightHeelRoll": "RightHeelRoll",
+  "RightToeRoll": "RightToeRoll",
+  "RightFootIK": "RightFootIK",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "RightKneeCtrl": "RightKneeCtrl",
+  "HipsCtrl": "HipsCtrl",
+  "Hips": "Hips",
+  "Spine": "Spine",
+  "Chest": "Chest",
+  "UpperChest": "UpperChest",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandIndex3": "RightHandIndex3",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToes": "LeftToes",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToes": "RightToes"
+}
+} as const;
+
+const CharactersJump = {
+  id: 'jump',
+  path: 'characters/default/jump',
+  fullPath: 'pizza/models/characters/default/jump.glb',
+  format: 'glb',
+  nodes: {
+  "RightKneeCtrl": "RightKneeCtrl",
+  "RightUpLeg": "RightUpLeg",
+  "Hips": "Hips",
+  "LeftHand": "LeftHand",
+  "RightFoot": "RightFoot",
+  "RightFootCtrl": "RightFootCtrl",
+  "LeftForeArm": "LeftForeArm",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightFootIK": "RightFootIK",
+  "RightForeArm": "RightForeArm",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "RightShoulder": "RightShoulder",
+  "Spine": "Spine",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftLeg": "LeftLeg",
+  "RightArm": "RightArm",
+  "HipsCtrl": "HipsCtrl",
+  "LeftFootIK": "LeftFootIK",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightToes": "RightToes",
+  "Root": "Root",
+  "RightHeelRoll": "RightHeelRoll",
+  "LeftToeRoll": "LeftToeRoll",
+  "LeftShoulder": "LeftShoulder",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "LeftToes": "LeftToes",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "Neck": "Neck",
+  "LeftFoot": "LeftFoot",
+  "Chest": "Chest",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "RightHand": "RightHand",
+  "UpperChest": "UpperChest",
+  "RightHandIndex3": "RightHandIndex3",
+  "RightLeg": "RightLeg",
+  "Head": "Head",
+  "LeftArm": "LeftArm",
+  "RightToeRoll": "RightToeRoll",
+  "RightHandThumb1": "RightHandThumb1"
+}
+} as const;
+
+const CharactersRun = {
+  id: 'run',
+  path: 'characters/default/run',
+  fullPath: 'pizza/models/characters/default/run.glb',
+  format: 'glb',
+  nodes: {
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "RightHandIndex3": "RightHandIndex3",
+  "RightToeRoll": "RightToeRoll",
+  "RightHandIndex1": "RightHandIndex1",
+  "LeftForeArm": "LeftForeArm",
+  "Hips": "Hips",
+  "RightUpLeg": "RightUpLeg",
+  "RightHeelRoll": "RightHeelRoll",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "Spine": "Spine",
+  "RightFoot": "RightFoot",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "RightHandThumb2": "RightHandThumb2",
+  "Root": "Root",
+  "RightKneeCtrl": "RightKneeCtrl",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftToes": "LeftToes",
+  "Chest": "Chest",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "RightForeArm": "RightForeArm",
+  "LeftArm": "LeftArm",
+  "RightFootIK": "RightFootIK",
+  "LeftHand": "LeftHand",
+  "RightToes": "RightToes",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftToeRoll": "LeftToeRoll",
+  "RightFootCtrl": "RightFootCtrl",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftUpLeg": "LeftUpLeg",
+  "RightShoulder": "RightShoulder",
+  "LeftFoot": "LeftFoot",
+  "RightHand": "RightHand",
+  "LeftFootIK": "LeftFootIK",
+  "RightLeg": "RightLeg",
+  "HipsCtrl": "HipsCtrl",
+  "Head": "Head",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "RightHandIndex2": "RightHandIndex2",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "UpperChest": "UpperChest",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "LeftLeg": "LeftLeg",
+  "RightArm": "RightArm",
+  "LeftShoulder": "LeftShoulder",
+  "RightHandThumb1": "RightHandThumb1",
+  "Neck": "Neck"
+}
+} as const;
+
+const CharactersTestIdle = {
+  id: 'test_idle',
+  path: 'characters/default/test_idle',
+  fullPath: 'pizza/models/characters/default/test_idle.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "Root",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "LeftToeRoll": "LeftToeRoll",
+  "LeftFootIK": "LeftFootIK",
+  "LeftFootIKEnd": "LeftFootIK_end",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "LeftFootRollCtrlEnd": "LeftFootRollCtrl_end",
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "LeftKneeCtrlEnd": "LeftKneeCtrl_end",
+  "RightFootCtrl": "RightFootCtrl",
+  "RightHeelRoll": "RightHeelRoll",
+  "RightToeRoll": "RightToeRoll",
+  "RightFootIK": "RightFootIK",
+  "RightFootIKEnd": "RightFootIK_end",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "RightFootRollCtrlEnd": "RightFootRollCtrl_end",
+  "RightKneeCtrl": "RightKneeCtrl",
+  "RightKneeCtrlEnd": "RightKneeCtrl_end",
+  "HipsCtrl": "HipsCtrl",
+  "Hips": "Hips",
+  "Spine": "Spine",
+  "Chest": "Chest",
+  "UpperChest": "UpperChest",
+  "Neck": "Neck",
+  "Head": "Head",
+  "HeadEnd": "Head_end",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "LeftHandIndex3End": "LeftHandIndex3_end",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "LeftHandThumb2End": "LeftHandThumb2_end",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandIndex3": "RightHandIndex3",
+  "RightHandIndex3End": "RightHandIndex3_end",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightHandThumb2End": "RightHandThumb2_end",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToes": "LeftToes",
+  "LeftToesEnd": "LeftToes_end",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToes": "RightToes",
+  "RightToesEnd": "RightToes_end"
 }
 } as const;
 
@@ -5827,16 +5827,6 @@ const ResourcesRock3BColor1 = {
 }
 } as const;
 
-const ResourcesSilverNuggets = {
-  id: 'Silver_Nuggets',
-  path: 'resources/Silver_Nuggets',
-  fullPath: 'pizza/models/resources/Silver_Nuggets.gltf',
-  format: 'gltf',
-  nodes: {
-  "SilverNuggets": "Silver_Nuggets"
-}
-} as const;
-
 const ResourcesSilverNuggetLarge = {
   id: 'Silver_Nugget_Large',
   path: 'resources/Silver_Nugget_Large',
@@ -5864,6 +5854,16 @@ const ResourcesSilverNuggetSmall = {
   format: 'gltf',
   nodes: {
   "SilverNuggetSmall": "Silver_Nugget_Small"
+}
+} as const;
+
+const ResourcesSilverNuggets = {
+  id: 'Silver_Nuggets',
+  path: 'resources/Silver_Nuggets',
+  fullPath: 'pizza/models/resources/Silver_Nuggets.gltf',
+  format: 'gltf',
+  nodes: {
+  "SilverNuggets": "Silver_Nuggets"
 }
 } as const;
 
@@ -7887,6 +7887,17 @@ const RestaurantPillarB = {
 }
 } as const;
 
+const RestaurantPizzaOven = {
+  id: 'pizza_oven',
+  path: 'restaurant/pizza_oven',
+  fullPath: 'pizza/models/restaurant/pizza_oven.gltf',
+  format: 'gltf',
+  nodes: {
+  "PizzaOven": "pizza_oven",
+  "PizzaOvenDoor": "pizza_oven_door"
+}
+} as const;
+
 const RestaurantPizzaboxClosed = {
   id: 'pizzabox_closed',
   path: 'restaurant/pizzabox_closed',
@@ -7915,17 +7926,6 @@ const RestaurantPizzaboxStacked = {
   format: 'gltf',
   nodes: {
   "PizzaboxStacked": "pizzabox_stacked"
-}
-} as const;
-
-const RestaurantPizzaOven = {
-  id: 'pizza_oven',
-  path: 'restaurant/pizza_oven',
-  fullPath: 'pizza/models/restaurant/pizza_oven.gltf',
-  format: 'gltf',
-  nodes: {
-  "PizzaOven": "pizza_oven",
-  "PizzaOvenDoor": "pizza_oven_door"
 }
 } as const;
 
@@ -9569,6 +9569,26 @@ const ToolsScissors = {
 }
 } as const;
 
+const ToolsScrewA = {
+  id: 'screw_A',
+  path: 'tools/gltf/screw_A',
+  fullPath: 'pizza/models/tools/gltf/screw_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "ScrewA": "screw_A"
+}
+} as const;
+
+const ToolsScrewB = {
+  id: 'screw_B',
+  path: 'tools/gltf/screw_B',
+  fullPath: 'pizza/models/tools/gltf/screw_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "ScrewB": "screw_B"
+}
+} as const;
+
 const ToolsScrewdriverALong = {
   id: 'screwdriver_A_long',
   path: 'tools/gltf/screwdriver_A_long',
@@ -9646,26 +9666,6 @@ const ToolsScrewdriverBShortColor = {
   format: 'gltf',
   nodes: {
   "ScrewdriverBShortColor": "screwdriver_B_short_color"
-}
-} as const;
-
-const ToolsScrewA = {
-  id: 'screw_A',
-  path: 'tools/gltf/screw_A',
-  fullPath: 'pizza/models/tools/gltf/screw_A.gltf',
-  format: 'gltf',
-  nodes: {
-  "ScrewA": "screw_A"
-}
-} as const;
-
-const ToolsScrewB = {
-  id: 'screw_B',
-  path: 'tools/gltf/screw_B',
-  fullPath: 'pizza/models/tools/gltf/screw_B.gltf',
-  format: 'gltf',
-  nodes: {
-  "ScrewB": "screw_B"
 }
 } as const;
 
@@ -9823,30 +9823,30 @@ export const MODELS = {
     Wall: CastleWall
   },
   Characters: {
-    CharacterMedium: CharactersCharacterMedium,
     Digging: CharactersDigging,
     Excited: CharactersExcited,
     FallingIdle: CharactersFallingIdle,
     HappyIdle: CharactersHappyIdle,
-    Idle: CharactersIdle,
-    Idle2: CharactersIdle2,
-    Jump: CharactersJump,
     JumpingUp: CharactersJumpingUp,
     Landing: CharactersLanding,
     PickFruit: CharactersPickFruit,
     PlantTree: CharactersPlantTree,
     Roll: CharactersRoll,
-    Run: CharactersRun,
     Running: CharactersRunning,
     Sitting: CharactersSitting,
-    StandingMeleeAttackDownwardCHOP: CharactersStandingMeleeAttackDownwardCHOP,
-    StandingPICKAXE: CharactersStandingPICKAXE,
     StandToRoll: CharactersStandToRoll,
     StandToSit: CharactersStandToSit,
+    StandingMeleeAttackDownwardCHOP: CharactersStandingMeleeAttackDownwardCHOP,
+    StandingPICKAXE: CharactersStandingPICKAXE,
     Talking: CharactersTalking,
-    TestIdle: CharactersTestIdle,
     Walking: CharactersWalking,
-    Watering: CharactersWatering
+    Watering: CharactersWatering,
+    CharacterMedium: CharactersCharacterMedium,
+    Idle: CharactersIdle,
+    Idle2: CharactersIdle2,
+    Jump: CharactersJump,
+    Run: CharactersRun,
+    TestIdle: CharactersTestIdle
   },
   Food: {
     AdvocadoHalf: FoodAdvocadoHalf,
@@ -10212,10 +10212,10 @@ export const MODELS = {
     Rock1EColor1: ResourcesRock1EColor1,
     Rock3AColor1: ResourcesRock3AColor1,
     Rock3BColor1: ResourcesRock3BColor1,
-    SilverNuggets: ResourcesSilverNuggets,
     SilverNuggetLarge: ResourcesSilverNuggetLarge,
     SilverNuggetMedium: ResourcesSilverNuggetMedium,
     SilverNuggetSmall: ResourcesSilverNuggetSmall,
+    SilverNuggets: ResourcesSilverNuggets,
     StoneChunksLarge: ResourcesStoneChunksLarge,
     StoneChunksSmall: ResourcesStoneChunksSmall,
     Tree1AColor1: ResourcesTree1AColor1,
@@ -10419,10 +10419,10 @@ export const MODELS = {
     Papertowel: RestaurantPapertowel,
     PillarA: RestaurantPillarA,
     PillarB: RestaurantPillarB,
+    PizzaOven: RestaurantPizzaOven,
     PizzaboxClosed: RestaurantPizzaboxClosed,
     PizzaboxOpen: RestaurantPizzaboxOpen,
     PizzaboxStacked: RestaurantPizzaboxStacked,
-    PizzaOven: RestaurantPizzaOven,
     Plate: RestaurantPlate,
     PlateDirty: RestaurantPlateDirty,
     PlateSmall: RestaurantPlateSmall,
@@ -10591,6 +10591,8 @@ export const MODELS = {
     RopeBundleB: ToolsRopeBundleB,
     Saw: ToolsSaw,
     Scissors: ToolsScissors,
+    ScrewA: ToolsScrewA,
+    ScrewB: ToolsScrewB,
     ScrewdriverALong: ToolsScrewdriverALong,
     ScrewdriverALongColor: ToolsScrewdriverALongColor,
     ScrewdriverAShort: ToolsScrewdriverAShort,
@@ -10599,8 +10601,6 @@ export const MODELS = {
     ScrewdriverBLongColor: ToolsScrewdriverBLongColor,
     ScrewdriverBShort: ToolsScrewdriverBShort,
     ScrewdriverBShortColor: ToolsScrewdriverBShortColor,
-    ScrewA: ToolsScrewA,
-    ScrewB: ToolsScrewB,
     Shovel: ToolsShovel,
     Tongs: ToolsTongs,
     Torch: ToolsTorch,

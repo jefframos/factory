@@ -103,7 +103,9 @@ export function readMapObjectIds(mapFilePath) {
     for (const layer of objectLayersNamed(map, name => name.startsWith(STORE_VIEW_LAYER_PREFIX))) {
         // Up to the first "-" — "--storeView--stall1-2" is building "stall1" too (StoreLayerNames.storeViewBuildingId()).
         const buildingId = layer.name.slice(STORE_VIEW_LAYER_PREFIX.length).split('-')[0];
-        if (buildingId && (layer.objects ?? []).some(obj => obj.gid)) {
+        // A model piece, a "floor" rect or a "polyWall" line (WorldObjectRegistry's StoreFloorPlacement / StoreWallPlacement).
+        const isPiece = obj => obj.gid || (obj.properties ?? []).some(p => p.name === 'type' && (p.value === 'floor' || p.value === 'polyWall'));
+        if (buildingId && (layer.objects ?? []).some(isPiece)) {
             (byType.building ??= new Set()).add(buildingId);
         }
     }

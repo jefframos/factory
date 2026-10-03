@@ -19,6 +19,7 @@ import { StoreRect } from './StoreLayout';
 import { addStorePropVisual } from './StorePropVisual';
 import { addMapMeshVisual } from '../world/MapMeshVisual';
 import { MeshPlacement } from '../world/MeshLayerSpawner';
+import { FloorLayers } from '../world/FloorLayers';
 
 const TRIGGER_HALF_HEIGHT = 0.75;
 const CORNER_RADIUS = 0.3;
@@ -36,7 +37,7 @@ export default class StoreCashier extends Entity {
         this.rect = rect;
         this.viewId = viewId;
         this.mesh = mesh;
-        this.transform.position.set(rect.x, 0, rect.z);
+        this.transform.position.set(rect.x, FloorLayers.baseY, rect.z);
     }
 
     public override awake(): void {

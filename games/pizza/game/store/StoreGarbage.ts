@@ -17,6 +17,7 @@ import { darkenResourceDisplayModel, disposeResourceDisplayModel, loadResourceDi
 import { GARBAGE_DARKEN } from '../data/GarbageCarryStorage';
 import { ResourceType } from '../actions/ResourceTypes';
 import type { SavedGarbage } from './StoreGarbageStorage';
+import { FloorLayers } from '../world/FloorLayers';
 
 /** Flies spawned per second over each piece. */
 const FLIES_PER_SEC = 3;
@@ -33,7 +34,7 @@ export default class StoreGarbage extends Entity {
         super();
         this.type = saved.type;
         this.yaw = saved.yaw;
-        this.transform.position.set(saved.x, 0, saved.z);
+        this.transform.position.set(saved.x, FloorLayers.baseY, saved.z);
     }
 
     public override awake(): void {

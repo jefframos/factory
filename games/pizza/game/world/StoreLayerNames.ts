@@ -12,6 +12,9 @@
 //                            building id, up to its first "-": add more layers for the same
 //                            building as "--storeView--stall1-2", "--storeView--stall1-floor", ...
 //                            and all their pieces merge (e.g. the floor on its own layer).
+//                            A plain rect with "type"="floor" is a checker floor — one mesh for
+//                            the whole rect instead of one model per tile, painted with the
+//                            store's floor checker (StoreViewTypes.ts, editor: Store View tab).
 //   --storeSection--stall1   the store's buildable sections (see WorldObjectRegistry's
 //                            SECTIONS_LAYER_NAME doc). Same content the old "sections" layer had.
 //

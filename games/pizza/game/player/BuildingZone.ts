@@ -44,7 +44,11 @@ import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
 import { BUILDING_CONFIG, BuildingId, getFillFractionForLevel, getMeshConfigForLevel, getViewIdForLevel, isOwnMeshForcedForLevel } from '../data/BuildingTypes';
 import { resolveEntityView } from '../world/EntityViewRegistry';
-import { OwnMeshPlacement } from '../world/WorldObjectRegistry';
+import { OwnMeshPlacement, StoreFloorPlacement, StoreWallPlacement } from '../world/WorldObjectRegistry';
+import { CheckerFloorBuilder } from '../builders/CheckerFloorBuilder';
+import { PolyWallBuilder } from '../builders/PolyWallBuilder';
+import { FloorLayers } from '../world/FloorLayers';
+import { DEFAULT_FLOOR_CHECKER, DEFAULT_WALL_STYLE, FloorCheckerConfig, WALL_SETUP, WallStyleConfig } from '../store/StoreViewTypes';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
@@ -197,6 +201,12 @@ export default class BuildingZone extends Entity {
     private solidColliders: RigidBody[] = [];
     /** Each currently-shown own-mesh piece's visual + collider — so a built store section can remove just the pieces it covers (see removePiecesCoveredBy()). Rebuilt with the mesh (createBuildingMesh()/disposeBuildingMesh()). */
     private readonly ownMeshParts = new Map<OwnMeshPlacement, { visual?: GlbVisualComponent; collider?: RigidBody }>();
+    /** Each currently-shown floor rect's checker plane (see the constructor's `floors` param) — built/disposed with the own-mesh pieces, removed the same way when a built section covers it. */
+    private readonly floorMeshes = new Map<StoreFloorPlacement, THREE.Mesh>();
+    /** Same as floorMeshes, for the constructor's `walls` (one PolyWallBuilder mesh each). */
+    private readonly wallMeshes = new Map<StoreWallPlacement, THREE.Mesh>();
+    /** Each shown wall's collider boxes (PolyWallBuilder.colliderBoxes()) — also in `solidColliders`, so they're torn down with the rest; kept per wall so a built section can drop just its own. */
+    private readonly wallColliders = new Map<StoreWallPlacement, RigidBody[]>();
 
     private readonly handleProgressChanged = (id: BuildingId): void => {
         if (id === this.buildingId) {
@@ -241,6 +251,14 @@ export default class BuildingZone extends Entity {
     private readonly triggerArea?: BuildingTriggerArea;
     /** See the constructor's `ownMeshes` param doc — consulted by resolveOwnMeshFallbacks(). */
     private readonly ownMeshes: readonly OwnMeshPlacement[];
+    /** See the constructor's `floors` param doc. */
+    private readonly floors: readonly StoreFloorPlacement[];
+    /** See the constructor's `walls` param doc. */
+    private readonly walls: readonly StoreWallPlacement[];
+    /** What `walls` are painted with — see the constructor's `wallStyle` param / setWallStyle(). */
+    private wallStyle: WallStyleConfig;
+    /** What `floors` are painted with — see the constructor's `floorChecker` param / setFloorChecker(). */
+    private floorChecker: FloorCheckerConfig;
     /** See the constructor's `npc` param doc. Undefined means "no NPC assigned," same as before this existed. */
     private readonly npc?: NpcEntity;
     /** See the constructor's `cameraTarget` param doc. */
@@ -323,6 +341,18 @@ export default class BuildingZone extends Entity {
          * set — see viewIdForLevel()/forcesOwnMesh() and friends.
          */
         isSection = false,
+        /**
+         * This building's "floor" rects from its "--storeView--" layers (see
+         * WorldObjectRegistry.getFloors()) — each one checker plane, shown together with the
+         * own-mesh pieces (see createBuildingMesh()). Empty (the default) = no floor.
+         */
+        floors: readonly StoreFloorPlacement[] = [],
+        /** The checker `floors` are painted with — the owning store's (StoreViewTypes.getStoreFloorChecker()). Swap later with setFloorChecker(). */
+        floorChecker: FloorCheckerConfig = DEFAULT_FLOOR_CHECKER,
+        /** This building's "polyWall" lines (WorldObjectRegistry.getWalls()) — one wall mesh each, shown/removed with the floors. */
+        walls: readonly StoreWallPlacement[] = [],
+        /** The style `walls` are painted with — the owning store's (StoreViewTypes.getStoreWallStyle()). Swap later with setWallStyle(). */
+        wallStyle: WallStyleConfig = DEFAULT_WALL_STYLE,
     ) {
         super();
         this.cameraTarget = cameraTarget;
@@ -335,6 +365,10 @@ export default class BuildingZone extends Entity {
         this.footprint = footprint;
         this.triggerArea = triggerArea;
         this.ownMeshes = ownMeshes;
+        this.floors = floors;
+        this.walls = walls;
+        this.wallStyle = wallStyle;
+        this.floorChecker = floorChecker;
         this.npc = npc;
         this.transform.position.copy(position);
         this.restY = position.y;
@@ -594,7 +628,7 @@ export default class BuildingZone extends Entity {
     // ---- Pieces removed by a built store section (OwnMeshPlacement.coveredBySections)
 
     /** True once any store section this piece overlaps has been built — the piece no longer belongs (e.g. a wall where that section's room opens up). */
-    private isPieceRemoved(entry: OwnMeshPlacement): boolean {
+    private isPieceRemoved(entry: { coveredBySections?: string[] }): boolean {
         return entry.coveredBySections?.some(sectionId =>
             BUILDING_CONFIG[sectionId as BuildingId] !== undefined && BuildingStorage.getLevel(sectionId as BuildingId) >= 1) ?? false;
     }
@@ -608,8 +642,27 @@ export default class BuildingZone extends Entity {
         return parts;
     }
 
-    /** A section (`sectionId`) just got built — shrink away and drop every currently-shown piece it covers, plus that piece's collider. Nothing else is rebuilt. */
+    /** A section (`sectionId`) just got built — shrink away and drop every currently-shown piece (and floor) it covers, plus that piece's collider. Nothing else is rebuilt. */
     private removePiecesCoveredBy(sectionId: string): void {
+        for (const meshes of [this.floorMeshes, this.wallMeshes] as Map<{ coveredBySections?: string[] }, THREE.Mesh>[]) {
+            for (const [placement, mesh] of meshes) {
+                if (!placement.coveredBySections?.includes(sectionId)) {
+                    continue;
+                }
+                meshes.delete(placement);
+                const colliders = this.wallColliders.get(placement as StoreWallPlacement) ?? [];
+                this.wallColliders.delete(placement as StoreWallPlacement);
+                colliders.forEach(collider => collider.destroy());
+                this.solidColliders = this.solidColliders.filter(collider => !colliders.includes(collider));
+                gsap.to(mesh.scale, {
+                    x: 0, y: 0, z: 0,
+                    duration: PIECE_REMOVE_DURATION_SEC,
+                    ease: 'back.in(1.7)',
+                    onComplete: () => BuildingZone.disposeFloorMesh(mesh),
+                });
+            }
+        }
+
         for (const [entry, parts] of this.ownMeshParts) {
             if (!entry.coveredBySections?.includes(sectionId)) {
                 continue;
@@ -700,7 +753,8 @@ export default class BuildingZone extends Entity {
         }
 
         const ownMeshViews = this.resolveOwnMeshFallbacks();
-        if (ownMeshViews.length > 0) {
+        if (ownMeshViews.length > 0 || this.floors.length > 0 || this.walls.length > 0) {
+            this.createFloorMeshes();
             // Only here — the map-drawn pieces are what's actually showing. A level still on a
             // real view (e.g. level 0's baseView site) must not collide with pieces it doesn't show.
             if (this.solidFromMap) {
@@ -832,6 +886,81 @@ export default class BuildingZone extends Entity {
                 z + this.triggerArea.position.z - this.transform.position.z,
             ],
         };
+    }
+
+    /**
+     * One checker plane per `this.floors` rect, and one wall mesh per `this.walls` line, not
+     * removed by a built section (see CheckerFloorBuilder / PolyWallBuilder) — no reveal sweep: it's flat, so the sweep would just pop it in, and
+     * the reveal shader would make it transparent (sorting issues under the pieces standing on it).
+     */
+    private createFloorMeshes(): void {
+        for (const floor of this.floors) {
+            if (this.isPieceRemoved(floor)) {
+                continue;
+            }
+            // restY, not transform.position.y — the zone may still be mid rise-in (ZoneVisibilityManager).
+            const origin = new THREE.Vector3(this.transform.position.x, this.restY, this.transform.position.z);
+            const mesh = CheckerFloorBuilder.build(floor, origin, this.floorChecker);
+            this.transform.add(mesh);
+            this.floorMeshes.set(floor, mesh);
+        }
+        for (const wall of this.walls) {
+            if (this.isPieceRemoved(wall)) {
+                continue;
+            }
+            const origin = new THREE.Vector3(this.transform.position.x, this.restY, this.transform.position.z);
+            const mesh = PolyWallBuilder.build(wall, origin, WALL_SETUP, this.wallStyle);
+            this.transform.add(mesh);
+            this.wallMeshes.set(wall, mesh);
+            this.addWallColliders(wall);
+        }
+    }
+
+    /**
+     * Walls always block (no `solid` fraction) — one static box per PolyWallBuilder.colliderBoxes()
+     * entry, standing on FloorLayers.baseY up to WALL_SETUP.height, positioned relative to this
+     * zone like addSolidAreasFromMap()'s pieces. Store clients path around them too (Store's nav
+     * grid picks up every static solid).
+     */
+    private addWallColliders(wall: StoreWallPlacement): void {
+        const colliders: RigidBody[] = [];
+        for (const box of PolyWallBuilder.colliderBoxes(wall, WALL_SETUP)) {
+            const halfExtents = new THREE.Vector3(box.halfX, WALL_SETUP.height / 2, box.halfZ);
+            const centerOffset = new THREE.Vector3(
+                box.x - this.transform.position.x,
+                FloorLayers.baseY - this.restY + WALL_SETUP.height / 2,
+                box.z - this.transform.position.z,
+            );
+            const solidArea = buildSolidArea(halfExtents, centerOffset, 1);
+            if (solidArea) {
+                colliders.push(this.addComponent(solidArea));
+            }
+        }
+        this.solidColliders.push(...colliders);
+        this.wallColliders.set(wall, colliders);
+    }
+
+    /** Repaints every shown wall with `style` in place (e.g. the store's walls changed) — walls built later use it too. */
+    public setWallStyle(style: WallStyleConfig): void {
+        this.wallStyle = style;
+        for (const mesh of this.wallMeshes.values()) {
+            PolyWallBuilder.applyStyle(mesh, WALL_SETUP, style);
+        }
+    }
+
+    /** Repaints every shown floor with `checker` in place (e.g. the store's floor changed) — floors built later use it too. */
+    public setFloorChecker(checker: FloorCheckerConfig): void {
+        this.floorChecker = checker;
+        for (const [floor, mesh] of this.floorMeshes) {
+            CheckerFloorBuilder.applyChecker(mesh, floor, checker);
+        }
+    }
+
+    /** Floor and wall meshes own their geometry/material (the checker texture is shared — see CheckerFloorBuilder). */
+    private static disposeFloorMesh(mesh: THREE.Mesh): void {
+        mesh.removeFromParent();
+        mesh.geometry.dispose();
+        (mesh.material as THREE.Material).dispose();
     }
 
     private createBuildingBox(config: ReturnType<typeof getMeshConfigForLevel>, dropIn: boolean, targetFraction: number): void {
@@ -992,6 +1121,15 @@ export default class BuildingZone extends Entity {
         }
         this.buildingVisuals = [];
         this.ownMeshParts.clear();
+
+        for (const mesh of [...this.floorMeshes.values(), ...this.wallMeshes.values()]) {
+            gsap.killTweensOf(mesh.scale);
+            BuildingZone.disposeFloorMesh(mesh);
+        }
+        this.floorMeshes.clear();
+        this.wallMeshes.clear();
+        // The colliders themselves are in solidColliders, destroyed below.
+        this.wallColliders.clear();
 
         for (const collider of this.solidColliders) {
             collider.destroy();

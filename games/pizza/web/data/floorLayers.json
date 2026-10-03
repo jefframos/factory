@@ -1,0 +1,10 @@
+{
+    "default": {
+        "groundY": 0,
+        "groundLayerGap": 0.01,
+        "groundLayerCount": 2,
+        "storeFloorGap": 0.01,
+        "decalGap": 0.005,
+        "labelGap": 0.005
+    }
+}

@@ -27,6 +27,7 @@
 import * as THREE from 'three';
 import Component from '../ecs/Component';
 import { DottedLineBuilder, DottedLineStyle } from '../builders/DottedLineBuilder';
+import { FloorLayers, localY } from '../world/FloorLayers';
 
 /** Default ring color — a neutral white/grey reads as "informational," distinct from both READY_COLOR and BLOCKED_COLOR so a color change itself is what communicates the player's own eligibility, not just a re-draw. */
 const NEUTRAL_COLOR = 0xffffff;
@@ -39,7 +40,7 @@ export type CaptureZoneState = 'neutral' | 'ready' | 'blocked';
 
 export default class CaptureZoneVisualComponent extends Component {
     private readonly radius: number;
-    private readonly baseStyle: DottedLineStyle;
+    private baseStyle: DottedLineStyle;
     private _mesh?: THREE.Mesh;
     private neutralTexture?: THREE.CanvasTexture;
     private readyTexture?: THREE.CanvasTexture;
@@ -60,6 +61,9 @@ export default class CaptureZoneVisualComponent extends Component {
     }
 
     public awake(): void {
+        // An animal walks the ground, not FloorLayers.baseY — put the ring on the decal layer
+        // relative to wherever this entity actually stands (unless a caller set its own y).
+        this.baseStyle = { y: localY(FloorLayers.decalY, this.entity.transform.position.y), ...this.baseStyle };
         this.neutralTexture = DottedLineBuilder.getCircleTexture(this.radius, { ...this.baseStyle, color: NEUTRAL_COLOR });
         this.readyTexture = DottedLineBuilder.getCircleTexture(this.radius, { ...this.baseStyle, color: READY_COLOR });
         this.blockedTexture = DottedLineBuilder.getCircleTexture(this.radius, { ...this.baseStyle, color: BLOCKED_COLOR });
