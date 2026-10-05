@@ -14,10 +14,10 @@
                 3
             ],
             "scale": 4,
-            "selectedLayer": 8,
+            "selectedLayer": 10,
             "viewCenter": {
-                "x": 32,
-                "y": 1018.875
+                "x": 399,
+                "y": 593.375
             }
         },
         "testMap1.tmx#models": {
