@@ -32,11 +32,15 @@ export default class StoreCashier extends Entity {
     private player?: MainPlayer;
     private counterShown = false;
 
-    public constructor(rect: StoreRect, viewId?: string, mesh?: MeshPlacement) {
+    /** Draw the dotted floor outline — off when the store sets hideCashierDropperView (see StoreConfig). */
+    private readonly showOutline: boolean;
+
+    public constructor(rect: StoreRect, viewId?: string, mesh?: MeshPlacement, showOutline = true) {
         super();
         this.rect = rect;
         this.viewId = viewId;
         this.mesh = mesh;
+        this.showOutline = showOutline;
         this.transform.position.set(rect.x, FloorLayers.baseY, rect.z);
     }
 
@@ -49,7 +53,9 @@ export default class StoreCashier extends Entity {
             layer: Layers.Trigger,
             centerOffset: new THREE.Vector3(0, TRIGGER_HALF_HEIGHT, 0),
         }));
-        this.addComponent(new DottedZoneVisualComponent(this.rect.width, this.rect.depth, CORNER_RADIUS, { color: getZoneColor(ZoneColorKind.Queue) }));
+        if (this.showOutline) {
+            this.addComponent(new DottedZoneVisualComponent(this.rect.width, this.rect.depth, CORNER_RADIUS, { color: getZoneColor(ZoneColorKind.Queue) }));
+        }
 
         rigidBody.onTriggerEnter.add(other => this.handleEnter(other));
         rigidBody.onTriggerStay.add(other => this.handleEnter(other));

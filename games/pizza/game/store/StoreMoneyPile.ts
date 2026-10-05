@@ -83,6 +83,7 @@ export default class StoreMoneyPile extends Entity {
     /** False until the first refresh — bills restored from a save appear in place, only NEW ones drop in. */
     private initialized = false;
     private readonly getWalletOverlayPosition: () => { x: number; y: number };
+    private readonly showOutline: boolean;
 
     private readonly billsRoot = new THREE.Group();
     private readonly billGeometry = new THREE.BoxGeometry(BILL_SIZE.x, BILL_SIZE.y, BILL_SIZE.z);
@@ -104,10 +105,13 @@ export default class StoreMoneyPile extends Entity {
         getWalletOverlayPosition: () => { x: number; y: number },
         viewId?: string,
         mesh?: MeshPlacement,
+        /** Draw the dotted floor outline — off when the store sets hideMoneyDropDropperView (see StoreConfig). */
+        showOutline = true,
     ) {
         super();
         this.viewId = viewId;
         this.mesh = mesh;
+        this.showOutline = showOutline;
         this.storeId = storeId;
         this.rect = rect;
         this.screenHost = screenHost;
@@ -130,7 +134,9 @@ export default class StoreMoneyPile extends Entity {
             layer: Layers.Trigger,
             centerOffset: new THREE.Vector3(0, TRIGGER_HALF_HEIGHT, 0),
         }));
-        this.addComponent(new DottedZoneVisualComponent(this.rect.width, this.rect.depth, CORNER_RADIUS, { color: getZoneColor(ZoneColorKind.DropZone) }));
+        if (this.showOutline) {
+            this.addComponent(new DottedZoneVisualComponent(this.rect.width, this.rect.depth, CORNER_RADIUS, { color: getZoneColor(ZoneColorKind.DropZone) }));
+        }
 
         rigidBody.onTriggerEnter.add(other => this.tryCollect(other));
         rigidBody.onTriggerStay.add(other => this.tryCollect(other));

@@ -49,7 +49,7 @@ import { CheckerFloorBuilder } from '../builders/CheckerFloorBuilder';
 import { PolyWallBuilder } from '../builders/PolyWallBuilder';
 import StoreDoor from '../store/StoreDoor';
 import { FloorLayers } from '../world/FloorLayers';
-import { DEFAULT_DOOR_STYLE, DEFAULT_FLOOR_CHECKER, DEFAULT_WALL_STYLE, DoorStyleConfig, FloorCheckerConfig, WALL_SETUP, WallStyleConfig } from '../store/StoreViewTypes';
+import { DEFAULT_DOOR_STYLE, DEFAULT_FLOOR_CHECKER, DEFAULT_WALL_STYLE, DoorStyleConfig, FloorCheckerConfig, getDoorStyle, getFloorChecker, getWallSetup, getWallStyle, WallSetupConfig, WallStyleConfig } from '../store/StoreViewTypes';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
@@ -262,6 +262,8 @@ export default class BuildingZone extends Entity {
     private wallStyle: WallStyleConfig;
     /** How the walls' doors look — see the constructor's `doorStyle` param / setDoorStyle(). */
     private doorStyle: DoorStyleConfig;
+    /** Doors whose own "style" prop picked their look (see buildWall()) — setDoorStyle() leaves them alone. */
+    private readonly ownStyleDoors = new WeakSet<StoreDoor>();
     /** What `floors` are painted with — see the constructor's `floorChecker` param / setFloorChecker(). */
     private floorChecker: FloorCheckerConfig;
     /** See the constructor's `npc` param doc. Undefined means "no NPC assigned," same as before this existed. */
@@ -907,7 +909,8 @@ export default class BuildingZone extends Entity {
         for (const floor of this.floors) {
             // restY, not transform.position.y — the zone may still be mid rise-in (ZoneVisibilityManager).
             const origin = new THREE.Vector3(this.transform.position.x, this.restY, this.transform.position.z);
-            const mesh = CheckerFloorBuilder.build(floor, origin, this.floorChecker);
+            // Its own "style" prop wins over the building's/store's checker.
+            const mesh = CheckerFloorBuilder.build(floor, origin, floor.style ? getFloorChecker(floor.style) : this.floorChecker);
             this.transform.add(mesh);
             this.floorMeshes.set(floor, mesh);
         }
@@ -929,11 +932,19 @@ export default class BuildingZone extends Entity {
         };
         // restY, not transform.position.y — the zone may still be mid rise-in (ZoneVisibilityManager).
         const origin = new THREE.Vector3(this.transform.position.x, this.restY, this.transform.position.z);
-        const mesh = PolyWallBuilder.build(shown, origin, WALL_SETUP, this.wallStyle);
+        // Its own "setup"/"style" props win over the default setup / the building's/store's style.
+        const setup = getWallSetup(wall.setup);
+        const mesh = PolyWallBuilder.build(shown, origin, setup, wall.style ? getWallStyle(wall.style) : this.wallStyle);
         this.transform.add(mesh);
         this.wallMeshes.set(wall, mesh);
-        this.addWallColliders(wall, shown);
-        const doors = PolyWallBuilder.doorFrames(shown, WALL_SETUP).map(frame => new StoreDoor(frame, origin, FloorLayers.baseY, this.doorStyle));
+        this.addWallColliders(wall, shown, setup);
+        const doors = PolyWallBuilder.doorFrames(shown, setup).map(frame => {
+            const door = new StoreDoor(frame, origin, FloorLayers.baseY, frame.style ? getDoorStyle(frame.style) : this.doorStyle);
+            if (frame.style) {
+                this.ownStyleDoors.add(door);
+            }
+            return door;
+        });
         doors.forEach(door => this.transform.add(door.object));
         this.wallDoors.set(wall, doors);
     }
@@ -959,13 +970,13 @@ export default class BuildingZone extends Entity {
      * zone like addSolidAreasFromMap()'s pieces. Store clients path around them too (Store's nav
      * grid picks up every static solid).
      */
-    private addWallColliders(wall: StoreWallPlacement, shown: StoreWallPlacement): void {
+    private addWallColliders(wall: StoreWallPlacement, shown: StoreWallPlacement, setup: WallSetupConfig): void {
         const colliders: RigidBody[] = [];
-        for (const box of PolyWallBuilder.colliderBoxes(shown, WALL_SETUP)) {
-            const halfExtents = new THREE.Vector3(box.halfX, WALL_SETUP.height / 2, box.halfZ);
+        for (const box of PolyWallBuilder.colliderBoxes(shown, setup)) {
+            const halfExtents = new THREE.Vector3(box.halfX, setup.height / 2, box.halfZ);
             const centerOffset = new THREE.Vector3(
                 box.x - this.transform.position.x,
-                FloorLayers.baseY - this.restY + WALL_SETUP.height / 2,
+                FloorLayers.baseY - this.restY + setup.height / 2,
                 box.z - this.transform.position.z,
             );
             const solidArea = buildSolidArea(halfExtents, centerOffset, 1);
@@ -977,19 +988,21 @@ export default class BuildingZone extends Entity {
         this.wallColliders.set(wall, colliders);
     }
 
-    /** Repaints every shown wall with `style` in place (e.g. the store's walls changed) — walls built later use it too. */
+    /** Repaints every shown wall with `style` in place (e.g. the store's walls changed) — walls built later use it too. A wall with its own "style" prop keeps it. */
     public setWallStyle(style: WallStyleConfig): void {
         this.wallStyle = style;
-        for (const mesh of this.wallMeshes.values()) {
-            PolyWallBuilder.applyStyle(mesh, WALL_SETUP, style);
+        for (const [wall, mesh] of this.wallMeshes) {
+            if (!wall.style) {
+                PolyWallBuilder.applyStyle(mesh, getWallSetup(wall.setup), style);
+            }
         }
     }
 
-    /** Restyles every shown door in place — doors built later use it too. */
+    /** Restyles every shown door in place — doors built later use it too. A door with its own "style" prop keeps it. */
     public setDoorStyle(style: DoorStyleConfig): void {
         this.doorStyle = style;
         for (const doors of this.wallDoors.values()) {
-            doors.forEach(door => door.setStyle(style));
+            doors.filter(door => !this.ownStyleDoors.has(door)).forEach(door => door.setStyle(style));
         }
     }
 
@@ -997,7 +1010,10 @@ export default class BuildingZone extends Entity {
     public setFloorChecker(checker: FloorCheckerConfig): void {
         this.floorChecker = checker;
         for (const [floor, mesh] of this.floorMeshes) {
-            CheckerFloorBuilder.applyChecker(mesh, floor, checker);
+            // A floor with its own "style" prop keeps it.
+            if (!floor.style) {
+                CheckerFloorBuilder.applyChecker(mesh, floor, checker);
+            }
         }
     }
 
@@ -1006,6 +1022,12 @@ export default class BuildingZone extends Entity {
         mesh.removeFromParent();
         mesh.geometry.dispose();
         (mesh.material as THREE.Material).dispose();
+        // A see-through wall's glass layer (PolyWallBuilder.applyStyle()) — shares the geometry above, owns its material.
+        for (const child of mesh.children) {
+            if (child instanceof THREE.Mesh) {
+                (child.material as THREE.Material).dispose();
+            }
+        }
     }
 
     private createBuildingBox(config: ReturnType<typeof getMeshConfigForLevel>, dropIn: boolean, targetFraction: number): void {

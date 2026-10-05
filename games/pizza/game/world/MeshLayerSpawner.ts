@@ -28,7 +28,7 @@
 // lookup need here, PizzaScene just wants "everything on this layer, right
 // now," once, at scene build.
 
-import { DEFAULT_TILE_MAP_ALIASES, getObjectBooleanProperty, getObjectNumberProperty, getTiledTileBooleanProperty, getTiledTileNumberProperty, loadTiledMap, loadTileDefs, resolveTiledTileImageName, TiledMapData, TiledObject, WORLD_UNITS_PER_TILE } from './TileMapConfig';
+import { DEFAULT_TILE_MAP_ALIASES, findTilesetOwningGid, getObjectBooleanProperty, getObjectNumberProperty, getTiledTileBooleanProperty, getTiledTileNumberProperty, loadTiledMap, loadTileDefs, resolveTiledTileImageName, TiledMapData, TiledObject, WORLD_UNITS_PER_TILE } from './TileMapConfig';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 
 /** Tiled layer name holding hand-placed model-snapshot placeholder objects — see this file's own doc. */
@@ -108,6 +108,56 @@ export function decodeObjectModel(obj: TiledObject, map: TiledMapData): DecodedO
     };
 }
 
+/** One axis-aligned collision box, world space — see MeshPlacement.colliders. */
+export interface MeshCollider {
+    x: number;
+    z: number;
+    halfX: number;
+    halfZ: number;
+}
+
+/**
+ * The collision rects drawn on `obj`'s tile (see TiledTileset.tiles' objectgroup), mapped onto
+ * `obj` as placed: scaled from the tile image's pixels to the object's drawn size, then turned by
+ * the object's rotation around its bottom-left anchor (Tiled's own pivot for a tile object) —
+ * the same math objectToMeshPlacement() uses for the center. Each becomes the axis-aligned box
+ * around its rotated corners (exact for 0/90/180/270). Undefined if the tile has no rects.
+ */
+/** `colliders` only when there are some — keeps placements without tile collision rects unchanged. */
+function withColliders(colliders: MeshCollider[] | undefined): { colliders?: MeshCollider[] } {
+    return colliders ? { colliders } : {};
+}
+
+function readTileColliders(obj: TiledObject, map: TiledMapData, scale: number): MeshCollider[] | undefined {
+    const owner = obj.gid ? findTilesetOwningGid(map, obj.gid) : undefined;
+    const tile = owner?.tiles?.find(entry => entry.id === obj.gid! - owner.firstgid);
+    // Rects only — a rect is the shape with no ellipse/polygon/polyline/point marker.
+    const rects = (tile?.objectgroup?.objects ?? []).filter(shape =>
+        !shape.ellipse && !shape.polygon && !shape.polyline && !(shape as { point?: boolean }).point && shape.width > 0 && shape.height > 0);
+    if (!tile || rects.length === 0 || !tile.imagewidth || !tile.imageheight) {
+        return undefined;
+    }
+    const sx = obj.width / tile.imagewidth;
+    const sy = obj.height / tile.imageheight;
+    const rotationRad = (obj.rotation * Math.PI) / 180;
+    const cos = Math.cos(rotationRad);
+    const sin = Math.sin(rotationRad);
+    return rects.map(rect => {
+        // Corners relative to the object's anchor: the image's top edge sits obj.height above it.
+        const corners = [[rect.x, rect.y], [rect.x + rect.width, rect.y], [rect.x, rect.y + rect.height], [rect.x + rect.width, rect.y + rect.height]]
+            .map(([px, py]) => {
+                const lx = px * sx;
+                const ly = -obj.height + py * sy;
+                return { x: (obj.x + lx * cos - ly * sin) * scale, z: (obj.y + lx * sin + ly * cos) * scale };
+            });
+        const minX = Math.min(...corners.map(c => c.x));
+        const maxX = Math.max(...corners.map(c => c.x));
+        const minZ = Math.min(...corners.map(c => c.z));
+        const maxZ = Math.max(...corners.map(c => c.z));
+        return { x: (minX + maxX) / 2, z: (minZ + maxZ) / 2, halfX: (maxX - minX) / 2, halfZ: (maxZ - minZ) / 2 };
+    });
+}
+
 export interface MeshPlacement {
     /** "Group.Key" — see ModelSnapshotTool.resolveModelDef(), the one thing this ref is for. */
     modelRef: string;
@@ -120,6 +170,13 @@ export interface MeshPlacement {
     worldDepth: number;
     /** This object's own "solid" custom property (see SOLID_PROPERTY's own doc) — false unless a level designer explicitly checked it. */
     solid: boolean;
+    /**
+     * World-space collision boxes from the TILE's own collision rects (Tiled's tile collision
+     * editor), fitted to this object's size and rotation — when set, a solid placement collides
+     * with these instead of one box over its whole footprint (see MapMeshVisual). Rects only;
+     * other shapes are ignored. Undefined = the tile has none.
+     */
+    colliders?: MeshCollider[];
     /** World-unit nudges applied to the model's own local position, on top of x/z above — see OFFSET_X_PROPERTY's own doc. 0 unless set. */
     offsetX: number;
     offsetY: number;
@@ -207,6 +264,7 @@ export function objectToMeshPlacement(obj: TiledObject, map: TiledMapData, scale
         worldWidth: obj.width * scale,
         worldDepth: obj.height * scale,
         solid: getObjectBooleanProperty(obj, SOLID_PROPERTY) || getTiledTileBooleanProperty(map, obj.gid, SOLID_PROPERTY),
+        ...withColliders(readTileColliders(obj, map, scale)),
         offsetX: decoded.offsetX,
         offsetY: decoded.offsetY,
         offsetZ: decoded.offsetZ,

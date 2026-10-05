@@ -74,7 +74,7 @@ import {
     WORLD_UNITS_PER_TILE,
 } from './TileMapConfig';
 import { decodeObjectModel, DecodedObjectModel } from './MeshLayerSpawner';
-import { getStoreSectionLayers, getStoreViewLayers } from './StoreLayerNames';
+import { getStoreLayerMapObjects, getStoreSectionLayers, getStoreViewLayers } from './StoreLayerNames';
 
 /** Tiled layer name holding hand-placed building/gate/etc. spawn points — see this file's own doc. */
 export const OBJECTS_LAYER_NAME = 'mapSettings';
@@ -152,6 +152,12 @@ const OWN_MESH_SOLID_PROPERTY = 'solid';
  * tileset, for every fence drawn with it), same object-then-tile precedence MeshLayerSpawner.ts
  * uses for the meshes layer. A number is the 0-1 fraction; a checked bool means fully solid (1).
  */
+/** A floor rect's own "style" prop, as a StoreFloorPlacement field — see that interface. */
+function floorStyle(obj: TiledObject): { style?: string } {
+    const style = getObjectProperty(obj, 'style');
+    return style ? { style } : {};
+}
+
 function readOwnMeshSolid(obj: TiledObject, map: TiledMapData): number {
     const own = obj.properties?.find(p => p.name === OWN_MESH_SOLID_PROPERTY);
     if (own) {
@@ -225,6 +231,8 @@ export interface StoreFloorPlacement {
     depth: number;
     rotationY: number;
     tileSize: number;
+    /** Its own "style" prop — a FLOOR_CHECKER_BY_ID id (StoreViewTypes.ts). Unset = the building's / store's checker. */
+    style?: string;
 }
 
 /** World-space axis-aligned rect. */
@@ -237,7 +245,7 @@ export interface WorldRect {
 
 /**
  * A hole in a wall — PolyWallBuilder cuts it along the stretch of wall `rect` overlaps:
- *   - 'window' / 'door': a "polyWindow" / "polyDoor" rect (rotation ignored: drawn axis-aligned);
+ *   - 'window' / 'door': a "polyWindow" / "polyDoor" rect (its rotated footprint's bounding box; a door's rotation also sets `facing`);
  *     sizes from StoreViewTypes.WALL_SETUP.
  *   - 'gap': full height, no collider — where a BUILT store section's area crosses the wall
  *     (see StoreWallPlacement.sectionCuts), so the new room opens into the store.
@@ -253,6 +261,14 @@ export interface StoreWallOpening {
     sliding?: boolean;
     /** Doors only — the "fitToCeiling" bool prop: the opening (and door) goes the wall's full height, no wall left above it. Wins over `high`. */
     fitToCeiling?: boolean;
+    /** Doors only — its own "style" prop: a DOOR_STYLE_BY_ID id (e.g. "glass"). Unset = the building's / store's door style. */
+    style?: string;
+    /**
+     * Doors only — which way the door's FRONT faces (world XZ unit vector), from the rect's own
+     * Tiled rotation: 0 = +Z (down in Tiled), 90 = +X, 180 = -Z, 270 = -X — so a door faces the
+     * same way however its wall was drawn. See PolyWallBuilder.doorFrames().
+     */
+    facing?: { x: number; z: number };
 }
 
 /**
@@ -280,6 +296,10 @@ export interface StoreWallPlacement {
     openings?: StoreWallOpening[];
     /** "polyWallExclusion" rects (of other sections) crossing this wall — each cuts its stretch out once its section is built (never the whole wall). */
     sectionCuts?: StoreWallSectionCut[];
+    /** Its own "style" prop — a WALL_STYLE_BY_ID id. Unset = the building's / store's wall style. */
+    style?: string;
+    /** Its own "setup" prop — a WALL_SETUP_BY_ID id (height/thickness/opening heights). Unset = DEFAULT_WALL_SETUP. */
+    setup?: string;
 }
 
 /**
@@ -493,7 +513,9 @@ export default class WorldObjectRegistry {
         // same substring convention TileMap's "groundLayer" uses, so the map's objects can be
         // split across several layers. All matched layers are read as one list.
         const layers = map.layers.filter(l => l.type === 'objectgroup' && l.name.includes(OBJECTS_LAYER_NAME));
-        const objects = layers.flatMap(l => l.objects ?? []);
+        // Plus regular objects (storages, trash bins, their droppers, ...) kept on a store's own
+        // "--store--*" layer — see StoreLayerNames.getStoreLayerMapObjects().
+        const objects = [...layers.flatMap(l => l.objects ?? []), ...getStoreLayerMapObjects(map)];
         if (layers.length === 0) {
             console.warn(`[WorldObjectRegistry] no objectgroup layer with "${OBJECTS_LAYER_NAME}" in its name found on "${mapAlias}" — nothing placed on the map will spawn`);
             return;
@@ -715,6 +737,7 @@ export default class WorldObjectRegistry {
                         depth: placement.depth,
                         rotationY,
                         tileSize: worldUnitsPerTile,
+                        ...floorStyle(obj),
                     });
                     addedFloors++;
                     continue;
@@ -768,9 +791,13 @@ export default class WorldObjectRegistry {
         const first = points[0];
         const last = points[points.length - 1];
         const loopsBack = points.length > 3 && Math.hypot(last.x - first.x, last.z - first.z) < 1e-3;
+        const style = getObjectProperty(obj, 'style');
+        const setup = getObjectProperty(obj, 'setup');
         return {
             points: loopsBack ? points.slice(0, -1) : points,
             closed: obj.polygon !== undefined || loopsBack,
+            ...(style ? { style } : {}),
+            ...(setup ? { setup } : {}),
         };
     }
 
@@ -823,17 +850,27 @@ export default class WorldObjectRegistry {
             return undefined;
         }
         const rect = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+        // The hole covers the rect as drawn — a rotated rect's bounding box (90/270 swap width/depth).
+        const rotationRad = (rect.rotationDeg * Math.PI) / 180;
+        const cos = Math.abs(Math.cos(rotationRad));
+        const sin = Math.abs(Math.sin(rotationRad));
+        const halfX = (rect.width * cos + rect.depth * sin) / 2;
+        const halfZ = (rect.width * sin + rect.depth * cos) / 2;
+        const facing = kind === 'door' ? { x: Math.sin(rotationRad), z: Math.cos(rotationRad) } : undefined;
         const double = kind === 'door' && getObjectBooleanProperty(obj, 'isDouble');
         const high = kind === 'door' && getObjectBooleanProperty(obj, 'isHigh');
         const sliding = kind === 'door' && getObjectBooleanProperty(obj, 'isSliding');
         const fitToCeiling = kind === 'door' && getObjectBooleanProperty(obj, 'fitToCeiling');
+        const style = kind === 'door' ? getObjectProperty(obj, 'style') : undefined;
         return {
             kind,
-            rect: { minX: rect.x - rect.width / 2, maxX: rect.x + rect.width / 2, minZ: rect.z - rect.depth / 2, maxZ: rect.z + rect.depth / 2 },
+            rect: { minX: rect.x - halfX, maxX: rect.x + halfX, minZ: rect.z - halfZ, maxZ: rect.z + halfZ },
             ...(double ? { double } : {}),
             ...(high ? { high } : {}),
             ...(sliding ? { sliding } : {}),
             ...(fitToCeiling ? { fitToCeiling } : {}),
+            ...(style ? { style } : {}),
+            ...(facing ? { facing } : {}),
         };
     }
 
@@ -940,6 +977,7 @@ export default class WorldObjectRegistry {
                     depth: placement.depth,
                     rotationY: -(placement.rotationDeg * Math.PI) / 180,
                     tileSize: worldUnitsPerTile,
+                    ...floorStyle(obj),
                 });
                 continue;
             }

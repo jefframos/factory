@@ -4,7 +4,8 @@
 // MeshLayerSpawner.ts) on an entity, fitted exactly the way the map shows it:
 // scaled to the object's drawn footprint, turned by its rotation, centered on
 // its rect whatever the model's own pivot, and — when the placement is solid
-// (object or tile "solid" property) — with a collider covering that footprint.
+// (object or tile "solid" property) — with a collider covering that footprint, or, when the tile
+// has collision rects drawn in Tiled's tile collision editor, one collider per rect instead.
 // Used for the meshes layer (PizzaScene.setupMeshLayer()) and for store
 // counters (StoreCashier/StoreMoneyPile), so both read the map the same way.
 //
@@ -85,7 +86,23 @@ export function addMapMeshVisual(entity: Entity, placement: MeshPlacement, optio
         mesh.scale.set(scaleX, scaleY, scaleZ);
         mesh.rotation.y = placement.rotationY;
 
-        if (placement.solid) {
+        if (placement.solid && placement.colliders && placement.colliders.length > 0) {
+            // The tile's own collision rects (Tiled's tile collision editor) instead of the whole
+            // footprint — already fitted to this placement's size/rotation in world space.
+            const halfY = Math.max(nativeSize.y * scaleY, 0.1) / 2;
+            for (const collider of placement.colliders) {
+                entity.addComponent(new RigidBody({
+                    halfExtents: new THREE.Vector3(collider.halfX, halfY, collider.halfZ),
+                    isStatic: true,
+                    layer: Layers.Environment,
+                    centerOffset: new THREE.Vector3(
+                        collider.x - entity.transform.position.x,
+                        placement.offsetY + halfY,
+                        collider.z - entity.transform.position.z,
+                    ),
+                }));
+            }
+        } else if (placement.solid) {
             // Colliders are axis-aligned: a rotated object gets the box around its ROTATED
             // footprint (exact for 90°/270°) — see BuildingZone.addSolidAreasFromMap().
             const cos = Math.abs(Math.cos(placement.rotationY));

@@ -109,7 +109,7 @@ import { DevGuiManager } from 'core/utils/DevGuiManager';
 import { CarrierStackMode, getPlayerConfig } from '../data/PlayerConfig';
 import { getStorageConfig, getStorageResourceCost, isStorageForSale } from '../data/StorageTypes';
 import { StorageInventory } from '../data/StorageInventory';
-import StorageZone from '../world/StorageZone';
+import StorageZone, { getStorageIcon } from '../world/StorageZone';
 import Store, { spawnStores } from '../store/Store';
 import { StoreUnlocks } from '../store/StoreUnlocks';
 import { getStoreConfig, WORKER_NPC_ID, type StoreWorkerRole } from '../store/StoreTypes';
@@ -117,7 +117,7 @@ import HireDeskZone from '../store/HireDeskZone';
 import { StoreProgressStorage } from '../store/StoreProgressStorage';
 import StoragePurchaseZone from '../store/StoragePurchaseZone';
 import { getDoorStyle, getFloorChecker, getStoreDoorStyle, getStoreFloorChecker, getStoreWallStyle, getWallStyle } from '../store/StoreViewTypes';
-import { readStoreLayouts } from '../store/StoreLayout';
+import { findStoreIdAt, readStoreLayouts } from '../store/StoreLayout';
 import { FloorLayers, onFloor } from '../world/FloorLayers';
 import { FLOOR_FRAME } from '../ui/PopupConfig';
 import { getCarrierCapacity, getCarrierLevel, getCarrierShopIds } from '../data/CarrierCapacity';
@@ -239,7 +239,10 @@ const TEST_BOX_OFFSET_Z = 4;
 const DROP_ZONE_OFFSET = new THREE.Vector3(6, FloorLayers.baseY, -2);
 
 /** How far (world units, each side) a SOLID storage with no dropper grows its drop-off trigger past its own footprint — see setupStorages(). */
-const STORAGE_SOLID_TRIGGER_PADDING = 0.6;
+// 0.35: the player's own collider is 0.8 wide (MainPlayer HALF_EXTENTS.x 0.4), so standing against
+// the crate still overlaps this — while neighbouring storages drawn 4 units apart (2.9 wide) keep
+// a gap between their drop areas instead of overlapping (was 0.6).
+const STORAGE_SOLID_TRIGGER_PADDING = 0.35;
 
 /** Default timing for a camera-focus event (see PizzaScene.focusCameraOn()) when a caller doesn't override — a beat quick enough not to drag out an upgrade, slow enough to actually read as travel rather than a cut. */
 const DEFAULT_FOCUS_TRAVEL_SEC = 0.8;
@@ -1539,6 +1542,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             const padding = !dropper && (config.solid ?? 0) > 0 ? STORAGE_SOLID_TRIGGER_PADDING : 0;
             const triggerPosition = onFloor(trigger.x, trigger.z);
             const triggerSize = { width: trigger.width + padding * 2, depth: trigger.depth + padding * 2 };
+            // The store this storage sits in decides whether its drop area shows an outline
+            // (StoreConfig.hideStorageDropperView) — stores aren't spawned yet, so ask the layout.
+            const storeId = findStoreIdAt(placement.x, placement.z);
+            const showDropOutline = !(storeId && getStoreConfig(storeId).hideStorageDropperView);
 
             const spawnStorage = (): void => {
                 const storageZone = this.world.add(new StorageZone(
@@ -1549,6 +1556,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     triggerSize,
                     { width: placement.width, depth: placement.depth },
                     this.screenHost,
+                    showDropOutline,
                 ));
                 this.threeScene.add(storageZone.transform);
                 // Registered over the storage's OWN footprint (where its mesh is), not the dropper's.
@@ -1572,6 +1580,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     spawnStorage,
                     config.frame ?? FLOOR_FRAME,
                     config.floorLabelSize,
+                    getStorageIcon(config),
+                    showDropOutline,
                 ));
                 this.threeScene.add(purchaseZone.transform);
                 this.registerZoneVisibility(purchaseZone.transform, trigger.x, trigger.z, trigger.width, trigger.depth);
@@ -1632,6 +1642,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     () => this.stores.find(store => store.getId() === storeId),
                     () => this.freezePlayerMovement(),
                     () => this.unfreezePlayerMovement(),
+                    !getStoreConfig(storeId).hideHireDeskDropperView,
                 ));
                 this.threeScene.add(deskZone.transform);
                 this.registerZoneVisibility(deskZone.transform, triggerPosition.x, triggerPosition.z, triggerFootprint.width, triggerFootprint.depth);

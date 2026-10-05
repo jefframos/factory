@@ -39,6 +39,19 @@ function objectLayersNamed(map, matches) {
     return (map.layers ?? []).filter(l => l.type === 'objectgroup' && typeof l.name === 'string' && matches(l.name));
 }
 
+/** Matches StoreLayerNames.ts's STORE_LAYOUT_TYPES — what the store itself is made of on its layer. */
+const STORE_LAYOUT_TYPES = new Set(['store', 'storeEntrance', 'storeExit', 'storeCashier', 'storeMoneyDrop', 'npcPoint']);
+
+/** Regular objects (storages, trash bins, ...) kept on a store layer — see StoreLayerNames.getStoreLayerMapObjects(). */
+function readStoreLayerMapObjects(map) {
+    return objectLayersNamed(map, name => name.startsWith(STORE_LAYER_PREFIX) || name === STORES_LAYER_NAME)
+        .flatMap(l => l.objects ?? [])
+        .filter(obj => {
+            const type = (obj.properties ?? []).find(p => p.name === 'type')?.value;
+            return typeof type === 'string' && !STORE_LAYOUT_TYPES.has(type);
+        });
+}
+
 /**
  * Reads `mapFilePath` and buckets every object on its "mapSettings" layer by
  * ("type" custom property) -> Set of ("id" custom property) — the same
@@ -333,7 +346,7 @@ export function readZoneContents(mapFilePath) {
     }
 
     const byZone = {};
-    for (const obj of readMapSettingsObjects(map) ?? []) {
+    for (const obj of [...(readMapSettingsObjects(map) ?? []), ...readStoreLayerMapObjects(map)]) {
         const props = Object.fromEntries((obj.properties ?? []).map(p => [p.name, p.value]));
         const type = props.type;
         const id = props.id;

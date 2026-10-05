@@ -204,6 +204,15 @@ function findPartMeshes(
     return found;
 }
 
+/** readStoreLayouts() for the default map, read once — see findStoreIdAt(). */
+let cachedDefaultLayouts: StoreLayout[] | undefined;
+
+/** The id of the store whose area contains (x, z) on the default map — the same "inside the store rect" membership stores use for their storages. For things built BEFORE the Store entities exist (e.g. storages). Undefined = in no store. */
+export function findStoreIdAt(x: number, z: number): string | undefined {
+    cachedDefaultLayouts ??= readStoreLayouts();
+    return cachedDefaultLayouts.find(layout => rectContains(layout.area, x, z))?.id;
+}
+
 export function rectContains(rect: StoreRect, x: number, z: number): boolean {
     return Math.abs(x - rect.x) <= rect.width / 2 && Math.abs(z - rect.z) <= rect.depth / 2;
 }

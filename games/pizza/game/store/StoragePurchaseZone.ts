@@ -79,6 +79,10 @@ export default class StoragePurchaseZone extends Entity {
     private readonly labelAnchor = new THREE.Object3D();
     private readonly frame?: PopupFrameChoice;
     private readonly floorLabelSize?: number;
+    /** See the constructor's `subjectIcon` param doc. */
+    private readonly subjectIcon?: PIXI.Texture;
+    /** See the constructor's `showOutline` param doc. */
+    private readonly showOutline: boolean;
     /** Exactly one of these is built, depending on `frame` — see awake(). */
     private popupRow?: PIXI.Container;
     private pricePanels: LockRequirementPanel[] = [];
@@ -103,8 +107,14 @@ export default class StoragePurchaseZone extends Entity {
         frame?: PopupFrameChoice,
         /** StorageConfig.floorLabelSize — max height of the floor cost label. */
         floorLabelSize?: number,
+        /** What this storage is for (its resource, or the trash icon — see StorageZone.getStorageIcon()), shown above the cost and on the unlock notification. Undefined = cost only. */
+        subjectIcon?: PIXI.Texture,
+        /** Draw the dotted outline around the for-sale area — off when this storage's store sets hideStorageDropperView (see StoreConfig). */
+        showOutline = true,
     ) {
         super();
+        this.subjectIcon = subjectIcon;
+        this.showOutline = showOutline;
         this.storageId = storageId;
         this.price = price && price.amount > 0 ? price : undefined;
         this.resourceCost = resourceCost;
@@ -133,7 +143,9 @@ export default class StoragePurchaseZone extends Entity {
             layer: Layers.Trigger,
             centerOffset: new THREE.Vector3(0, TRIGGER_HALF_HEIGHT, 0),
         }));
-        this.addComponent(new DottedZoneVisualComponent(width, depth, CORNER_RADIUS, { color: getZoneColor(ZoneColorKind.Farm) }));
+        if (this.showOutline) {
+            this.addComponent(new DottedZoneVisualComponent(width, depth, CORNER_RADIUS, { color: getZoneColor(ZoneColorKind.Farm) }));
+        }
 
         this.transform.add(this.labelAnchor);
         if (isFloorFrame(this.frame)) {
@@ -150,8 +162,13 @@ export default class StoragePurchaseZone extends Entity {
             this.labelAnchor.position.set(0, POPUP_HEIGHT_OFFSET, 0);
             // One padlock panel per cost part, stacked top to bottom, centered on the anchor.
             const row = new PIXI.Container();
-            this.pricePanels = this.parts.map(part => {
-                const panel = buildLockRequirementPanel(this.partIcon(part), { cornerText: this.partText(part), frame: this.frame });
+            // What it's for sits beside the first (top) panel's padlock.
+            this.pricePanels = this.parts.map((part, index) => {
+                const panel = buildLockRequirementPanel(this.partIcon(part), {
+                    cornerText: this.partText(part),
+                    frame: this.frame,
+                    subjectIcon: index === 0 ? this.subjectIcon : undefined,
+                });
                 row.addChild(panel.frame);
                 return panel;
             });
@@ -199,8 +216,12 @@ export default class StoragePurchaseZone extends Entity {
         return `${Math.min(this.partPaid(part), part.amount)}/${part.amount}`;
     }
 
+    /** What it's for on the first line (icon only), then one cost part per line. */
     private labelItems(): FloorLabelItem[] {
-        return this.parts.map(part => ({ icon: this.partIcon(part), text: this.partText(part) }));
+        return [
+            ...(this.subjectIcon ? [{ icon: this.subjectIcon }] : []),
+            ...this.parts.map(part => ({ icon: this.partIcon(part), text: this.partText(part) })),
+        ];
     }
 
     private refreshLabel(): void {
@@ -306,7 +327,7 @@ export default class StoragePurchaseZone extends Entity {
         UpgradeNotificationManager.instance.show({
             type: NotificationType.Unlockable,
             rarity: NotificationRarity.Common,
-            icon: this.parts[0] ? this.partIcon(this.parts[0]) : undefined,
+            icon: this.subjectIcon ?? (this.parts[0] ? this.partIcon(this.parts[0]) : undefined),
             title: 'STORAGE UNLOCKED!',
             subtitle: 'NEW STORAGE',
         });

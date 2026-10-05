@@ -332,10 +332,10 @@
         ],
         "offset": [
             0,
-            1,
+            0.75,
             0
         ],
-        "scale": 0.5,
+        "scale": 0.75,
         "rotationDeg": 0
     },
     "storeCashierView": {

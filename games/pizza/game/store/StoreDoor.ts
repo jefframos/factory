@@ -34,6 +34,7 @@ import { BendService, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 import type { DoorFrame } from '../builders/PolyWallBuilder';
 import type { DoorStyleConfig } from './StoreViewTypes';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
+import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 
 /** How far either side of the doorway (world units, across the wall) someone opens the door from. */
 const OPEN_REACH = 2;
@@ -103,6 +104,8 @@ export default class StoreDoor {
     private style: DoorStyleConfig;
     /** Bumped by every setStyle()/dispose() — a model load finishing for an older style is dropped. */
     private styleVersion = 0;
+    /** Two leaves meeting in the middle ("isDouble", or a sliding door too wide to slide as one) — picks DoorStyleConfig.doubleModels over `models`. */
+    private readonly double: boolean;
 
     /**
      * `frame` is world-space; `origin` is where the owner's transform rests (the door's object
@@ -125,7 +128,8 @@ export default class StoreDoor {
         // A single sliding leaf too wide for the wall on either side parts in two instead.
         const singleLeafWidth = Math.max(0.1, this.width - LEAF_GAP * 2);
         const biParting = frame.sliding && !frame.double && singleLeafWidth + LEAF_GAP > Math.max(frame.roomBefore, frame.roomAfter);
-        if (frame.double || biParting) {
+        this.double = frame.double || biParting;
+        if (this.double) {
             // Two halves, gaps at both jambs and in the middle.
             const leafWidth = Math.max(0.1, (this.width - LEAF_GAP * 3) / 2);
             this.addSide(0, 1, leafWidth, leafHeight, frame.roomBefore);
@@ -195,8 +199,14 @@ export default class StoreDoor {
      */
     private buildLeafContent(leaf: Leaf): void {
         this.setLeafContent(leaf, this.buildPanel(leaf));
-        const model = this.style.models?.[0];
+        // A double door's leaves use doubleModels when set; a single door (or no doubleModels) uses models.
+        const doubleRefs = this.double ? this.style.doubleModels : undefined;
+        const ref = (doubleRefs && doubleRefs.length > 0 ? doubleRefs : this.style.models)?.[0];
+        const model = ModelSnapshotTool.resolveModelRef(ref);
         if (!model) {
+            if (ref) {
+                console.warn(`[StoreDoor] door model ${typeof ref === 'string' ? ref : ref.id} isn't in MODELS — keeping the plain panel`);
+            }
             return;
         }
         const version = this.styleVersion;
@@ -264,7 +274,12 @@ export default class StoreDoor {
         const scaleX = (size.x > 1e-4 ? leaf.width / size.x : 1) * multiplier;
         const scaleY = (size.y > 1e-4 ? leaf.height / size.y : 1) * multiplier;
         const scaleZ = ((scaleX + scaleY) / 2);
-        object.scale.multiply(new THREE.Vector3(scaleX, scaleY, scaleZ));
+        // A leaf hung on the FAR jamb (direction -1 — the second leaf of a double door) is the
+        // mirror image of one hung on the start jamb: flip the model across its width so its
+        // hinge edge sits at that leaf's own jamb and the two leaves meet handle-to-handle in the
+        // middle. three.js flips face winding for a negative-determinant matrix, so it still lights.
+        const mirrorX = leaf.direction === -1 ? -1 : 1;
+        object.scale.multiply(new THREE.Vector3(scaleX * mirrorX, scaleY, scaleZ));
         object.updateMatrixWorld(true);
         const fitted = new THREE.Box3().setFromObject(object);
         const center = fitted.getCenter(new THREE.Vector3());

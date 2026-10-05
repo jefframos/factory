@@ -45,6 +45,8 @@ export default class HireDeskZone extends Entity {
     private buttonContent!: BaseButton;
     /** Last state refreshAlert() applied. */
     private alertShown = false;
+    /** See the constructor's `showOutline` param doc. */
+    private readonly showOutline: boolean;
 
     public constructor(
         position: THREE.Vector3,
@@ -54,8 +56,11 @@ export default class HireDeskZone extends Entity {
         getStore: () => Store | undefined,
         freezePlayerMovement: () => void,
         unfreezePlayerMovement: () => void,
+        /** Draw the dotted outline around the desk spot — off when the store sets hideHireDeskDropperView (see StoreConfig). */
+        showOutline = true,
     ) {
         super();
+        this.showOutline = showOutline;
         this.screenHost = screenHost;
         this.storeId = storeId;
         this.footprint = footprint;
@@ -108,7 +113,9 @@ export default class HireDeskZone extends Entity {
             }
         });
 
-        this.addComponent(new DottedZoneVisualComponent(width, depth, CORNER_RADIUS, { color: getZoneColor(ZoneColorKind.MartDropper) }));
+        if (this.showOutline) {
+            this.addComponent(new DottedZoneVisualComponent(width, depth, CORNER_RADIUS, { color: getZoneColor(ZoneColorKind.MartDropper) }));
+        }
 
         this.buttonContent = createLibraryButton({
             color: 'blue',

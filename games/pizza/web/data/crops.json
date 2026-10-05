@@ -71,7 +71,7 @@
         "name": "Broccoli",
         "stages": [
             {
-                "durationSec": 20,
+                "durationSec": 8,
                 "mesh": "cropBroccoliView",
                 "start": {
                     "offset": [
@@ -84,14 +84,14 @@
                 "end": {
                     "offset": [
                         0,
-                        0,
+                        -0.5,
                         0
                     ],
                     "scale": 0.6
                 }
             },
             {
-                "durationSec": 20,
+                "durationSec": 8,
                 "start": {
                     "offset": [
                         0,
@@ -103,10 +103,10 @@
                 "end": {
                     "offset": [
                         0,
-                        0,
+                        -0.5,
                         0
                     ],
-                    "scale": 1
+                    "scale": 3
                 }
             },
             {
@@ -125,7 +125,7 @@
                         -0.5,
                         0
                     ],
-                    "scale": 4
+                    "scale": 3
                 }
             }
         ],
@@ -207,7 +207,7 @@
         "name": "Carrot",
         "stages": [
             {
-                "durationSec": 15,
+                "durationSec": 5,
                 "mesh": "cropCarrotView",
                 "start": {
                     "offset": [
@@ -220,14 +220,14 @@
                 "end": {
                     "offset": [
                         0,
-                        0,
+                        -1,
                         0
                     ],
                     "scale": 2
                 }
             },
             {
-                "durationSec": 20,
+                "durationSec": 5,
                 "start": {
                     "offset": [
                         0,
@@ -751,7 +751,7 @@
         "name": "Tomato",
         "stages": [
             {
-                "durationSec": 3,
+                "durationSec": 5,
                 "mesh": "cropTomatoView",
                 "start": {
                     "offset": [
@@ -771,7 +771,7 @@
                 }
             },
             {
-                "durationSec": 3,
+                "durationSec": 5,
                 "start": {
                     "offset": [
                         0,
@@ -786,7 +786,7 @@
                         0,
                         0
                     ],
-                    "scale": 1
+                    "scale": 3
                 }
             },
             {
@@ -805,7 +805,7 @@
                         0,
                         0
                     ],
-                    "scale": 4
+                    "scale": 5
                 }
             }
         ],

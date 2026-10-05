@@ -400,6 +400,30 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         "frame": "Floor",
         "floorLabelSide": "south",
         "baseAtDropper": true
+    },
+    "storeRoom2": {
+        baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
+        "name": "Deposit",
+        "appearRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 3
+        },
+        "levels": [{
+            "level": 1,
+            "requirements": {},
+            "money": 100,
+            "effect": {
+                "type": "storeRoom",
+                "value": 1,
+                "description": "Deposit room"
+            },
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }],
+        "popupMode": "simple",
+        "updateParticleEffectId": "craftingMyst",
+        "frame": "Floor"
     }
 };
 

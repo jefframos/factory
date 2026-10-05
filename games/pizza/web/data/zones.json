@@ -9,16 +9,17 @@
         }
     },
     "2": {
+        "cameraTemplateId": "far1",
         "requirement": {
             "type": "gate",
             "gateId": "gateWood"
-        },
-        "cameraTemplateId": "far1"
+        }
     },
     "3": {
         "requirement": {
-            "type": "item",
-            "item": "pickaxe"
+            "type": "building",
+            "buildingId": "stall1",
+            "level": 1
         },
         "cameraTemplateId": "far2"
     },

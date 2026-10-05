@@ -186,5 +186,29 @@
         "baseAtDropper": true,
         "floorChecker": "roomTiles",
         "doorStyle": "glass"
+    },
+    "storeRoom2": {
+        "levels": [
+            {
+                "requirements": {},
+                "money": 100,
+                "effect": {
+                    "type": "storeRoom",
+                    "value": 1,
+                    "description": "Deposit room"
+                },
+                "level": 1,
+                "forceOwnMesh": true
+            }
+        ],
+        "name": "Deposit",
+        "appearRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 3
+        },
+        "updateParticleEffectId": "craftingMyst",
+        "popupMode": "simple",
+        "frame": "Floor"
     }
 }

@@ -444,7 +444,6 @@ function createMissingMapEntry(id) {
 const SHARED_SECTIONS = {
     farms: { dataKey: 'tiles', schema: 'farmTiles', title: 'Tile Settings — shared by every farm plot, not per-plot', label: 'Tile Settings' },
     storages: { dataKey: 'signpost', schema: 'storageSignpost', title: 'Signpost — shared by every storage (each storage only sets its own Signpost Side / Gap / Rotation below)', label: 'Signpost' },
-    storeWalls: { dataKey: 'setup', schema: 'storeWallSetup', title: 'Wall Setup — the size EVERY wall in the game shares (styles below only change the look)', label: 'Wall Setup' },
 };
 
 const MISSING_ON_MAP_LABEL = {
@@ -530,15 +529,19 @@ async function persist(tabId) {
 const QUEUES_SECTION_LABELS = {
     storeFloors: {
         default: 'Default — the floor every store uses unless its Stores-tab "Floor Checker" picks one below',
-        byId: 'Other checkers — pick one per store on the Stores tab (Floor Checker)',
+        byId: 'Other checkers — pick one per store on the Stores tab (Floor Checker), or per floor rect in Tiled with a "style" property set to the id',
     },
     storeWalls: {
         default: 'Default style — the walls every store uses unless its Stores-tab "Wall Style" picks one below',
-        byId: 'Other styles — pick one per store on the Stores tab (Wall Style)',
+        byId: 'Other styles — pick one per store on the Stores tab (Wall Style), or per wall in Tiled with a "style" property set to the id',
+    },
+    storeWallSetups: {
+        default: 'Default setup — the size of every wall unless its Tiled "setup" property names one below',
+        byId: 'Other setups — pick one per wall in Tiled with a "setup" property set to the id (e.g. a low counter wall)',
     },
     storeDoors: {
         default: 'Default style — every door unless its building (Buildings tab) or store (Stores tab) "Door Style" picks one below',
-        byId: 'Other styles — pick one per building on the Buildings tab, or per store on the Stores tab (Door Style)',
+        byId: 'Other styles — pick one per building on the Buildings tab, per store on the Stores tab (Door Style), or per door in Tiled with a "style" property set to the id (e.g. glass)',
     },
 };
 
@@ -1498,7 +1501,7 @@ function onAddEntry() {
             return;
         }
         // A floor checker's fields are all required — start from the default's look, not blank.
-        container[id] = ['storeFloors', 'storeWalls', 'storeDoors'].includes(activeId) ? { ...structuredClone(data.default), name: id } : {};
+        container[id] = ['storeFloors', 'storeWalls', 'storeDoors', 'storeWallSetups'].includes(activeId) ? { ...structuredClone(data.default), name: id } : {};
     }
     markDirty();
     renderActiveTab();
@@ -1820,7 +1823,7 @@ function drawDoorPreview(canvas, style) {
 /** A wall style seen from the side, same bands the game paints (PolyWallBuilder.ts): bottomColor up to bottomHeight, topColor above — against the shared Wall Setup height. */
 function drawWallPreview(canvas, style) {
     const ctx = canvas.getContext('2d');
-    const height = Number(allData.storeWalls?.setup?.height) > 0 ? Number(allData.storeWalls.setup.height) : 1;
+    const height = Number(allData.storeWallSetups?.default?.height) > 0 ? Number(allData.storeWallSetups.default.height) : 1;
     const split = Math.min(1, Math.max(0, (Number(style.bottomHeight) || 0) / height));
     const bottomPx = Math.round(canvas.height * split);
     ctx.fillStyle = style.topColor || '#ffffff';

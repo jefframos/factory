@@ -1,14 +1,50 @@
 {
     "automappingRulesFile": "",
-    "commands": [
-    ],
+    "commands": [],
     "compatibilityVersion": 1100,
     "extensionsPath": "extensions",
     "folders": [
         "."
     ],
-    "properties": [
-    ],
+    "properties": [],
     "propertyTypes": [
+        {
+            "id": 1,
+            "name": "floorStyle",
+            "type": "enum",
+            "storageType": "string",
+            "values": [
+                "roomTiles"
+            ],
+            "valuesAsFlags": false
+        },
+        {
+            "id": 2,
+            "name": "wallStyle",
+            "type": "enum",
+            "storageType": "string",
+            "values": [
+                "glassTop"
+            ],
+            "valuesAsFlags": false
+        },
+        {
+            "id": 3,
+            "name": "doorStyle",
+            "type": "enum",
+            "storageType": "string",
+            "values": [
+                "glass"
+            ],
+            "valuesAsFlags": false
+        },
+        {
+            "id": 4,
+            "name": "wallSetup",
+            "type": "enum",
+            "storageType": "string",
+            "values": [],
+            "valuesAsFlags": false
+        }
     ]
 }

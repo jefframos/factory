@@ -17,6 +17,7 @@
 import { MilestoneRequirement } from './MilestoneRequirement';
 import { ItemType } from "../crafting/ItemTypes";
 import { GateId } from "./GateTypes";
+import { BuildingId } from "./BuildingId";
 
 export interface ZoneConfigEntry {
     requirement?: MilestoneRequirement;
@@ -51,8 +52,9 @@ export const ZONE_CONFIG: Partial<Record<number, ZoneConfigEntry>> = {
     },
     "3": {
         "requirement": {
-            "type": "item",
-            "item": ItemType.Pickaxe
+            "type": "building",
+            "buildingId": BuildingId.Stall1,
+            "level": 1
         },
         "cameraTemplateId": "far2"
     },

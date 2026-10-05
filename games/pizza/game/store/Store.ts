@@ -122,7 +122,7 @@ import StoreLine from './StoreLine';
 import { StoreLayout, StorePoint, StoreRect, randomPointInRect, readStoreLayouts, rectContains } from './StoreLayout';
 import { StoreMoneyStorage } from './StoreMoneyStorage';
 import { SavedStoreClient, StoreClientStorage } from './StoreClientStorage';
-import { DEFAULT_CASHIER_VIEW, DEFAULT_CLIENT_RADIUS, DEFAULT_MONEY_DROP_VIEW, DEFAULT_NAV_CELL_SIZE, DEFAULT_RESTOCKER_WANDER_RADIUS, DEFAULT_GARBAGE_SPAWN_SLOWDOWN, DEFAULT_MAX_GARBAGE, DEFAULT_WORKER_COLLECT_EVERY_SALES, DEFAULT_WORKER_WANDER_RADIUS, getCashierLevelStats, getCleanerLevelStats, getRestockerLevelStats, StoreClientMood, StoreConfig, StorePacing, getNextStoreLevel, getStoreConfig, getStorageSpotDirection, getStorePacing, rollClientMoodStepSec } from './StoreTypes';
+import { DEFAULT_CASHIER_VIEW, DEFAULT_CLIENT_RADIUS, DEFAULT_NAV_CELL_SIZE, DEFAULT_RESTOCKER_WANDER_RADIUS, DEFAULT_GARBAGE_SPAWN_SLOWDOWN, DEFAULT_MAX_GARBAGE, DEFAULT_WORKER_COLLECT_EVERY_SALES, DEFAULT_WORKER_WANDER_RADIUS, getCashierLevelStats, getCleanerLevelStats, getRestockerLevelStats, StoreClientMood, StoreConfig, StorePacing, getNextStoreLevel, getStoreConfig, getStorageSpotDirection, getStorePacing, rollClientMoodStepSec } from './StoreTypes';
 import { StoreProgressStorage } from './StoreProgressStorage';
 import { StoreUnlocks } from './StoreUnlocks';
 import { FloorLayers } from '../world/FloorLayers';
@@ -297,9 +297,9 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
 
     public override awake(): void {
         const world = this.world!;
-        this.cashier = world.add(new StoreCashier(this.layout.cashier, this.config.cashierView ?? DEFAULT_CASHIER_VIEW, this.layout.cashierMesh));
+        this.cashier = world.add(new StoreCashier(this.layout.cashier, this.config.cashierView ?? DEFAULT_CASHIER_VIEW, this.layout.cashierMesh, !this.config.hideCashierDropperView));
         this.root.add(this.cashier.transform);
-        this.moneyPile = world.add(new StoreMoneyPile(this.layout.id, this.layout.moneyDrop, this.screenHost, this.config.moneyPerBill, this.config.billsPerPile, this.getWalletOverlayPosition, this.config.moneyDropView ?? DEFAULT_MONEY_DROP_VIEW, this.layout.moneyDropMesh));
+        this.moneyPile = world.add(new StoreMoneyPile(this.layout.id, this.layout.moneyDrop, this.screenHost, this.config.moneyPerBill, this.config.billsPerPile, this.getWalletOverlayPosition, this.config.moneyDropView, this.layout.moneyDropMesh, !this.config.hideMoneyDropDropperView));
         this.root.add(this.moneyPile.transform);
         void StoreMoneyStorage.load();
         void StoreClientStorage.load();

@@ -98,6 +98,14 @@ const DEFAULT_PARTICLE_SPAWN_RATE_PER_SEC = 4;
 
 /** Texture alias shown on a trash storage's signpost (StorageConfig.trash). */
 const TRASH_SIGNPOST_ICON = 'PictoIcon_Delete-2';
+
+/** What a storage is FOR, as an icon — the trash icon for a trash, its `resourceType`'s icon otherwise, undefined for an any-resource storage. Shared by this zone's signpost and StoragePurchaseZone's for-sale label so both show the same thing. */
+export function getStorageIcon(config: StorageConfig): PIXI.Texture | undefined {
+    if (config.trash) {
+        return PIXI.Texture.from(TRASH_SIGNPOST_ICON);
+    }
+    return config.resourceType !== undefined ? getAssetIcon(resolveResourceAssetKey(config.resourceType)) : undefined;
+}
 /** A trashed item shrinks to this fraction of its slot size as it falls in, then disappears. */
 const TRASH_END_SCALE_FRACTION = 0.2;
 
@@ -110,6 +118,8 @@ export default class StorageZone extends Entity {
     private readonly storageId: string;
     private readonly config: StorageConfig;
     private readonly triggerSize: { width: number; depth: number };
+    /** See the constructor's `showDropOutline` param doc. */
+    private readonly showDropOutline: boolean;
     /** The storage object's OWN footprint — what StorageConfig.solid's collider covers. */
     private readonly storageSize: { width: number; depth: number };
     private readonly screenHost: ScreenAnchorHost;
@@ -152,8 +162,11 @@ export default class StorageZone extends Entity {
         triggerSize: { width: number; depth: number },
         storageSize: { width: number; depth: number },
         screenHost: ScreenAnchorHost,
+        /** Draw the dotted outline around the drop area — off when this storage's store sets hideStorageDropperView (see StoreConfig / PizzaScene.setupStorages()). */
+        showDropOutline = true,
     ) {
         super();
+        this.showDropOutline = showDropOutline;
         this.screenHost = screenHost;
         this.storageId = storageId;
         this.config = config;
@@ -176,7 +189,9 @@ export default class StorageZone extends Entity {
         rigidBody.onTriggerStay.add(other => this.handleTriggerEnter(other));
         rigidBody.onTriggerExit.add(other => this.handleTriggerExit(other));
 
-        this.addComponent(new DottedZoneVisualComponent(width, depth, CORNER_RADIUS, { color: getZoneColor(ZoneColorKind.DropZone) }));
+        if (this.showDropOutline) {
+            this.addComponent(new DottedZoneVisualComponent(width, depth, CORNER_RADIUS, { color: getZoneColor(ZoneColorKind.DropZone) }));
+        }
 
         // StorageConfig.solid — built here rather than via SolidArea.buildSolidArea(), which scales
         // its centerOffset along with its size (it assumes a collider centered on the entity's
@@ -314,14 +329,15 @@ export default class StorageZone extends Entity {
 
     /** The signpost sign's content — the item icon + "xN" stored count, just the trash icon for a trash, or undefined (no sign) for a storage with no `resourceType`. */
     private signpostItems(): FloorLabelItem[] | undefined {
+        const icon = getStorageIcon(this.config);
         if (this.config.trash) {
-            return [{ icon: PIXI.Texture.from(TRASH_SIGNPOST_ICON) }];
+            return [{ icon }];
         }
         const type = this.config.resourceType;
         if (type === undefined) {
             return undefined;
         }
-        return [{ icon: getAssetIcon(resolveResourceAssetKey(type)), text: `x${StorageInventory.getCount(this.storageId, type)}` }];
+        return [{ icon, text: `x${StorageInventory.getCount(this.storageId, type)}` }];
     }
 
     /** Keeps whichever count display this storage has (signpost sign or popup) in sync with StorageInventory. */

@@ -29,5 +29,6 @@ export enum BuildingId {
     Tower2 = "tower2",
     Floor1 = "floor1",
     Stall1 = "stall1",
-    StoreRoom1 = "storeRoom1"
+    StoreRoom1 = "storeRoom1",
+    StoreRoom2 = "storeRoom2"
 }

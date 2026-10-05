@@ -43,6 +43,8 @@ import { spawnFlyingIconFromOverlayPoint } from '../components/FlyingResourceIco
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { buildLockRequirementPanel, LockRequirementPanel } from '../ui/LockRequirementPanel';
 import { FarmPlotConfig, FARM_TILE_CONFIG } from '../data/FarmTypes';
+import { CROP_CONFIG } from '../data/CropTypes';
+import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { FarmPlotStorage } from '../data/FarmPlotStorage';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CURRENCY_CONFIG } from '../data/EconomyTypes';
@@ -172,7 +174,8 @@ export default class FarmZone extends Entity {
     private buildPricePopup(): void {
         this.pricePanel = buildLockRequirementPanel(
             getAssetIcon(CURRENCY_CONFIG[this.config.price.currency].assetKey),
-            { cornerText: '' },
+            // A crop-specific plot shows its crop beside the padlock — see cropIcon().
+            { cornerText: '', subjectIcon: this.cropIcon() },
         );
         this.refreshLabel();
 
@@ -271,12 +274,22 @@ export default class FarmZone extends Entity {
 
     /** Same "big center-upper callout" ShopZone's Upgrade/CraftZone's NewTool notifications use — see UpgradeNotificationManager.ts's own doc. FARM_TILE_CONFIG.icon is shared across every plot (see that file's own doc), same as this notification itself: it announces farming as a whole getting unlocked, not any one plot's own identity. */
     private announceFarmUnlocked(): void {
+        // A crop-specific plot announces its own crop (icon + name); an open plot keeps the shared farm icon.
+        const cropIcon = this.cropIcon();
+        const cropName = this.config.assignedCropId ? CROP_CONFIG[this.config.assignedCropId]?.name : undefined;
         UpgradeNotificationManager.instance.show({
             type: NotificationType.Unlockable,
             rarity: NotificationRarity.Common,
-            icon: FARM_TILE_CONFIG.icon ? PIXI.Texture.from(FARM_TILE_CONFIG.icon) : undefined,
+            icon: cropIcon ?? (FARM_TILE_CONFIG.icon ? PIXI.Texture.from(FARM_TILE_CONFIG.icon) : undefined),
             title: 'FARM UNLOCKED!',
-            subtitle: 'NEW PLOT',
+            subtitle: cropName ? `${cropName.toUpperCase()} PLOT` : 'NEW PLOT',
         });
+    }
+
+    /** The harvest icon of the crop this plot is assigned to (FarmPlotConfig.assignedCropId) — undefined for a plot that takes any crop. */
+    private cropIcon(): PIXI.Texture | undefined {
+        const cropId = this.config.assignedCropId;
+        const resourceType = cropId ? CROP_CONFIG[cropId]?.yield.resourceType : undefined;
+        return resourceType ? getAssetIcon(resolveResourceAssetKey(resourceType)) : undefined;
     }
 }

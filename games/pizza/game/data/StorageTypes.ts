@@ -283,7 +283,7 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             }
         ],
         "view": "storageView",
-        "itemScale": 4
+        "itemOrientation": "standing"
     },
     "storage3": {
         "accepts": "farm",
@@ -348,7 +348,7 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
         "scale": 0.5,
         "rotationDeg": 0,
         "dropOffset": {
-            "y": 2.3
+            "y": 1
         },
         "pile": {
             "columns": 2,

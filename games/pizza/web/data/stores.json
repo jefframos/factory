@@ -205,6 +205,9 @@
                     }
                 ]
             },
+            "hideStorageDropperView": true,
+            "hideCashierDropperView": true,
+            "hideMoneyDropDropperView": true,
             "hiring": {
                 "roles": [
                     {

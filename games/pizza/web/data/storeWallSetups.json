@@ -1,0 +1,11 @@
+{
+    "default": {
+        "name": "Standard",
+        "height": 6,
+        "thickness": 0.35,
+        "doorHeight": 4,
+        "tallDoorHeight": 5.5,
+        "windowHeight": 1.5
+    },
+    "byId": {}
+}

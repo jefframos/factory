@@ -52,7 +52,7 @@
                 }
             ],
             "view": "storageView",
-            "itemScale": 4
+            "itemOrientation": "standing"
         },
         "storage2": {
             "models": [
@@ -151,7 +151,7 @@
             "scale": 0.5,
             "rotationDeg": 0,
             "dropOffset": {
-                "y": 2.3
+                "y": 1
             },
             "pile": {
                 "columns": 2,

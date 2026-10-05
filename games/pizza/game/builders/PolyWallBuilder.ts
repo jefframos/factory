@@ -39,8 +39,36 @@ const BAND_TEXTURE_ROWS = 256;
 /** Band textures, shared across every wall with the same style + height — never disposed (tiny). */
 const textureCache = new Map<string, THREE.DataTexture>();
 
-function bandTexture(style: WallStyleConfig, height: number): THREE.DataTexture {
-    const key = `${style.bottomColor}|${style.topColor}|${style.bottomHeight}|${height}`;
+/** A band at or above this opacity counts as solid (drawn in the opaque layer); below it, glass. */
+const SOLID_OPACITY = 0.999;
+
+/** The style's band opacities, clamped — unset = 1 (solid). */
+function bandOpacities(style: WallStyleConfig): { bottom: number; top: number } {
+    return {
+        bottom: THREE.MathUtils.clamp(style.bottomOpacity ?? 1, 0, 1),
+        top: THREE.MathUtils.clamp(style.topOpacity ?? 1, 0, 1),
+    };
+}
+
+/** True when either band is see-through — the wall then also gets a glass layer (see applyStyle()). */
+function hasGlassBand(style: WallStyleConfig): boolean {
+    const { bottom, top } = bandOpacities(style);
+    return bottom < SOLID_OPACITY || top < SOLID_OPACITY;
+}
+
+/**
+ * The 1-wide band texture: bottom color up to bottomHeight, top color above. Its alpha splits the
+ * wall into two layers drawn from the same geometry, so a solid band and a glass band on ONE mesh
+ * still sort right:
+ *   - 'solid': solid bands alpha 1, glass bands alpha 0 — the main (opaque, depth-writing,
+ *     alpha-tested) material, so glass rows are cut away from it;
+ *   - 'glass': glass bands at their opacity, solid bands alpha 0 — the see-through child mesh
+ *     (blended, no depth write), so it never hides what's behind it.
+ * A fully solid style just uses 'solid' (every row alpha 1), exactly as before opacities existed.
+ */
+function bandTexture(style: WallStyleConfig, height: number, layer: 'solid' | 'glass' = 'solid'): THREE.DataTexture {
+    const opacity = bandOpacities(style);
+    const key = `${style.bottomColor}|${style.topColor}|${style.bottomHeight}|${height}|${opacity.bottom}|${opacity.top}|${layer}`;
     let texture = textureCache.get(key);
     if (texture) {
         return texture;
@@ -52,11 +80,15 @@ function bandTexture(style: WallStyleConfig, height: number): THREE.DataTexture 
     const data = new Uint8Array(BAND_TEXTURE_ROWS * 4);
     for (let row = 0; row < BAND_TEXTURE_ROWS; row++) {
         // Row 0 = v 0 (the floor) — DataTexture isn't flipped.
-        const hex = (row + 0.5) / BAND_TEXTURE_ROWS < split ? bottom : top;
+        const isBottom = (row + 0.5) / BAND_TEXTURE_ROWS < split;
+        const hex = isBottom ? bottom : top;
+        const bandOpacity = isBottom ? opacity.bottom : opacity.top;
+        const solid = bandOpacity >= SOLID_OPACITY;
+        const alpha = layer === 'solid' ? (solid ? 1 : 0) : (solid ? 0 : bandOpacity);
         data[row * 4] = (hex >> 16) & 0xff;
         data[row * 4 + 1] = (hex >> 8) & 0xff;
         data[row * 4 + 2] = hex & 0xff;
-        data[row * 4 + 3] = 0xff;
+        data[row * 4 + 3] = Math.round(alpha * 255);
     }
     texture = new THREE.DataTexture(data, 1, BAND_TEXTURE_ROWS, THREE.RGBAFormat);
     texture.colorSpace = THREE.SRGBColorSpace;
@@ -114,6 +146,10 @@ interface WallOpeningSpan {
     /** Doors only — see StoreWallOpening.double / .sliding. */
     double?: boolean;
     sliding?: boolean;
+    /** Doors only — see StoreWallOpening.style. */
+    style?: string;
+    /** Doors only — see StoreWallOpening.facing. */
+    facing?: { x: number; z: number };
     u0: number;
     u1: number;
     y0: number;
@@ -174,6 +210,8 @@ function openingSpans(wall: StoreWallPlacement, setup: WallSetupConfig): WallOpe
                     kind: opening.kind,
                     ...(opening.double ? { double: true } : {}),
                     ...(opening.sliding ? { sliding: true } : {}),
+                    ...(opening.style ? { style: opening.style } : {}),
+                    ...(opening.facing ? { facing: opening.facing } : {}),
                     u0: distance + clip[0] * length,
                     u1: distance + clip[1] * length,
                     y0: opening.kind === 'window' ? windowBottom : 0,
@@ -185,7 +223,7 @@ function openingSpans(wall: StoreWallPlacement, setup: WallSetupConfig): WallOpe
         pieces.sort((a, b) => a.u0 - b.u0);
         for (const piece of pieces) {
             const last = spans[spans.length - 1];
-            if (last && last.kind === piece.kind && last.y0 === piece.y0 && last.y1 === piece.y1 && last.double === piece.double && last.sliding === piece.sliding && Math.abs(last.u1 - piece.u0) < 1e-4) {
+            if (last && last.kind === piece.kind && last.y0 === piece.y0 && last.y1 === piece.y1 && last.double === piece.double && last.sliding === piece.sliding && last.style === piece.style && last.facing === piece.facing && Math.abs(last.u1 - piece.u0) < 1e-4) {
                 last.u1 = piece.u1;
             } else {
                 spans.push(piece);
@@ -220,6 +258,8 @@ export interface DoorFrame {
     double: boolean;
     /** Leaves slide into the wall instead of swinging — see StoreWallOpening.sliding. */
     sliding: boolean;
+    /** The door's own style id ("style" prop — see StoreWallOpening.style); undefined = the building's/store's. */
+    style?: string;
     /**
      * Straight wall (world units) beside the opening on the hinge side / the far side, before
      * the next corner or the line's end, minus half a thickness (the corner's miter). How far a
@@ -275,15 +315,28 @@ export class PolyWallBuilder {
 
         return openingSpans(wall, setup)
             .filter(span => span.kind === 'door')
-            .map(span => ({
-                hinge: pointAlong(wall, span.u0),
-                end: pointAlong(wall, span.u1),
-                height: span.y1 - span.y0,
-                double: span.double ?? false,
-                sliding: span.sliding ?? false,
-                roomBefore: Math.max(0, span.u0 - segmentAt(span.u0 + 1e-4)[0] - margin),
-                roomAfter: Math.max(0, segmentAt(span.u1 - 1e-4)[1] - span.u1 - margin),
-            }));
+            .map(span => {
+                const frame: DoorFrame = {
+                    hinge: pointAlong(wall, span.u0),
+                    end: pointAlong(wall, span.u1),
+                    height: span.y1 - span.y0,
+                    double: span.double ?? false,
+                    sliding: span.sliding ?? false,
+                    ...(span.style ? { style: span.style } : {}),
+                    roomBefore: Math.max(0, span.u0 - segmentAt(span.u0 + 1e-4)[0] - margin),
+                    roomAfter: Math.max(0, segmentAt(span.u1 - 1e-4)[1] - span.u1 - margin),
+                };
+                // StoreDoor's front (its local +Z) is the hinge -> end direction turned left:
+                // (-dz, dx). If that points away from the door's own `facing` (its rect's
+                // rotation), hang it from the other end instead — same opening, front flipped.
+                const facing = span.facing;
+                const dx = frame.end.x - frame.hinge.x;
+                const dz = frame.end.z - frame.hinge.z;
+                if (facing && -dz * facing.x + dx * facing.z < 0) {
+                    return { ...frame, hinge: frame.end, end: frame.hinge, roomBefore: frame.roomAfter, roomAfter: frame.roomBefore };
+                }
+                return frame;
+            });
     }
 
     /**
@@ -518,8 +571,38 @@ export class PolyWallBuilder {
 
     /** (Re)paints a mesh build() made with `style` — `setup` must be the one it was built with (the band split is relative to its height). */
     public static applyStyle(mesh: THREE.Mesh, setup: WallSetupConfig, style: WallStyleConfig): void {
+        const glass = hasGlassBand(style);
         const material = mesh.material as THREE.MeshStandardMaterial;
-        material.map = bandTexture(style, setup.height);
+        material.map = bandTexture(style, setup.height, 'solid');
+        // With a glass band, its rows are alpha 0 in the solid layer — cut them out of this pass.
+        material.alphaTest = glass ? 0.5 : 0;
         material.needsUpdate = true;
+
+        // The see-through band(s): a child sharing the wall's geometry, blended over everything
+        // opaque and never writing depth (so whatever's behind the glass still shows).
+        let glassMesh = mesh.children.find(child => child.userData.wallGlass) as THREE.Mesh | undefined;
+        if (!glass) {
+            if (glassMesh) {
+                glassMesh.removeFromParent();
+                (glassMesh.material as THREE.Material).dispose();
+            }
+            return;
+        }
+        if (!glassMesh) {
+            const glassMaterial = new THREE.MeshStandardMaterial({
+                roughness: 0.15,
+                metalness: 0,
+                transparent: true,
+                depthWrite: false,
+                side: material.side,
+            });
+            BendService.applyBend(glassMaterial);
+            glassMesh = new THREE.Mesh(mesh.geometry, glassMaterial);
+            glassMesh.userData.wallGlass = true;
+            mesh.add(glassMesh);
+        }
+        const glassMaterial = glassMesh.material as THREE.MeshStandardMaterial;
+        glassMaterial.map = bandTexture(style, setup.height, 'glass');
+        glassMaterial.needsUpdate = true;
     }
 }

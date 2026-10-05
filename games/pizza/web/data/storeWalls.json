@@ -5,12 +5,14 @@
         "topColor": "#e9e2d6",
         "bottomHeight": 1.2
     },
-    "byId": {},
-    "setup": {
-        "height": 6,
-        "thickness": 0.35,
-        "doorHeight": 3,
-        "tallDoorHeight": 5,
-        "windowHeight": 1.5
+    "byId": {
+        "glassTop": {
+            "name": "Glass Top",
+            "bottomColor": "#8a6f5a",
+            "topColor": "#9fd8ff",
+            "bottomHeight": 1.2,
+            "bottomOpacity": 1,
+            "topOpacity": 0.35
+        }
     }
 }

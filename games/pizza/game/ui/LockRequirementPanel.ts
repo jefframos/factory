@@ -26,6 +26,8 @@ const LABEL_FRAME_PADDING = uniformFitPadding(18);
 
 export const LOCK_ICON_SIZE = 40;
 const REQUIREMENT_ICON_SIZE = 40;
+/** LockRequirementPanelOptions.subjectIcon — a touch bigger than the requirement icon, since it's what the panel is about. */
+const SUBJECT_ICON_SIZE = 48;
 /** Gap between the lock icon and the requirement icon sitting beside it. */
 const ICON_GAP = 10;
 /** Size of the exclamation/check badge overlapping the requirement icon's bottom-right corner. */
@@ -49,6 +51,8 @@ export interface LockRequirementPanelOptions {
     frame?: PopupFrameChoice;
     /** The "missing" exclamation badge on the requirement icon — default true. Turn off where the icon means "this goes here", not "you don't have this yet" (e.g. StorageZone's accepted-resource panel). */
     showBadge?: boolean;
+    /** What's being unlocked (e.g. a tomato farm's tomato), shown to the left of the padlock. Omit for the plain padlock + requirement panel. */
+    subjectIcon?: PIXI.Texture;
 }
 
 export interface LockRequirementPanel {
@@ -69,6 +73,14 @@ export function buildLockRequirementPanel(requirementIcon: PIXI.Texture, options
     lockIcon.scale.set(ViewUtils.elementScaler(lockIcon, LOCK_ICON_SIZE));
     lockIcon.position.set(-(REQUIREMENT_ICON_SIZE / 2 + ICON_GAP / 2), 0);
     row.addChild(lockIcon);
+
+    if (options.subjectIcon) {
+        const subject = new PIXI.Sprite(options.subjectIcon);
+        subject.anchor.set(0.5, 1);
+        subject.scale.set(ViewUtils.elementScaler(subject, SUBJECT_ICON_SIZE));
+        subject.position.set(lockIcon.x - LOCK_ICON_SIZE / 2 - ICON_GAP - SUBJECT_ICON_SIZE / 2, 0);
+        row.addChild(subject);
+    }
 
     const requirementIconX = LOCK_ICON_SIZE / 2 + ICON_GAP / 2;
     const icon = new PIXI.Sprite(requirementIcon);

@@ -260,7 +260,16 @@ export interface TiledTileset {
      * exactly the point: "is this crate solid" is a property of the crate, not of one particular
      * instance of it. See getTiledTileBooleanProperty(), the one reader.
      */
-    tiles?: { id: number; image: string; properties?: TiledObjectProperty[] }[];
+    tiles?: {
+        id: number;
+        image: string;
+        /** The tile image's own pixel size — what its `objectgroup` shapes are measured in. */
+        imagewidth?: number;
+        imageheight?: number;
+        properties?: TiledObjectProperty[];
+        /** Shapes drawn in Tiled's tile collision editor, in the tile image's pixels (top-left origin) — see MeshLayerSpawner.readTileColliders(). */
+        objectgroup?: { objects?: TiledObject[] };
+    }[];
 }
 
 /** Shared by resolveTiledTileImageName()/getTiledTileBooleanProperty() — the tileset with the LARGEST firstgid that's still `<= gid`, or undefined if `gid` is 0/negative or smaller than every tileset's own firstgid. */

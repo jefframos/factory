@@ -313,8 +313,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORE_CONFIG',
         byIdExportName: 'STORE_CONFIG_BY_ID',
-        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'cashierView', 'moneyDropView', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'angryDropSec', 'maxGarbage', 'garbageSpawnSlowdown', 'forgivingEarlyLevels', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'cleanerWorker', 'workerColor', 'workerHat', 'floorChecker', 'wallStyle', 'doorStyle', 'hiring', 'disabled'],
-        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'cashierView', 'moneyDropView', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'angryDropSec', 'maxGarbage', 'garbageSpawnSlowdown', 'forgivingEarlyLevels', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'cleanerWorker', 'workerColor', 'workerHat', 'floorChecker', 'wallStyle', 'doorStyle', 'hiring', 'disabled'],
+        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'cashierView', 'moneyDropView', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'angryDropSec', 'maxGarbage', 'garbageSpawnSlowdown', 'forgivingEarlyLevels', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'cleanerWorker', 'workerColor', 'workerHat', 'floorChecker', 'wallStyle', 'doorStyle', 'hiring', 'hideStorageDropperView', 'hideCashierDropperView', 'hideMoneyDropDropperView', 'hideHireDeskDropperView', 'disabled'],
+        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'cashierView', 'moneyDropView', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'angryDropSec', 'maxGarbage', 'garbageSpawnSlowdown', 'forgivingEarlyLevels', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'cleanerWorker', 'workerColor', 'workerHat', 'floorChecker', 'wallStyle', 'doorStyle', 'hiring', 'hideStorageDropperView', 'hideCashierDropperView', 'hideMoneyDropDropperView', 'hideHireDeskDropperView', 'disabled'],
     },
     // The checker patterns a store floor can use — see game/store/StoreViewTypes.ts. Not map
     // objects: a store picks one by id (stores' own `floorChecker`), the default otherwise. Shown
@@ -335,11 +335,18 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_WALL_STYLE',
         byIdExportName: 'WALL_STYLE_BY_ID',
-        managedKeys: ['name', 'bottomColor', 'topColor', 'bottomHeight'],
+        managedKeys: ['name', 'bottomColor', 'topColor', 'bottomHeight', 'bottomOpacity', 'topOpacity'],
+        optionalKeys: ['name', 'bottomOpacity', 'topOpacity'],
+    },
+    // Wall sizes — DEFAULT_WALL_SETUP first, then named ones a wall picks with its Tiled "setup"
+    // prop (see game/store/StoreViewTypes.ts getWallSetup()). Same {default, byId} shape as the styles.
+    storeWallSetups: {
+        file: path.join(GAME_DIR, 'store', 'StoreViewTypes.ts'),
+        kind: 'queues',
+        defaultExportName: 'DEFAULT_WALL_SETUP',
+        byIdExportName: 'WALL_SETUP_BY_ID',
+        managedKeys: ['name', 'height', 'thickness', 'doorHeight', 'tallDoorHeight', 'windowHeight'],
         optionalKeys: ['name'],
-        tileExportName: 'WALL_SETUP',
-        tileManagedKeys: ['height', 'thickness', 'doorHeight', 'tallDoorHeight', 'windowHeight'],
-        tileDataKey: 'setup',
     },
     // Door styles — see game/store/StoreViewTypes.ts's DoorStyleConfig. Same {default, byId} shape
     // as storeFloors; picked per building (buildings' `doorStyle`) or per store (stores' `doorStyle`).
@@ -348,8 +355,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_DOOR_STYLE',
         byIdExportName: 'DOOR_STYLE_BY_ID',
-        managedKeys: ['name', 'models', 'scale', 'color', 'opacity'],
-        optionalKeys: ['name', 'models', 'scale'],
+        managedKeys: ['name', 'models', 'doubleModels', 'scale', 'color', 'opacity'],
+        optionalKeys: ['name', 'models', 'doubleModels', 'scale'],
     },
     // A MART — a "mart"-typed object drawn on the Tiled map's "mapSettings" layer, open-ended
     // by id like shops/crafting/farms, not enum-backed. Same {default, byId} two-export shape

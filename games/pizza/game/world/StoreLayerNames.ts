@@ -43,6 +43,23 @@ export function getStoreLayers(map: TiledMapData): TiledLayer[] {
     return objectLayers(map, name => name.startsWith(STORE_LAYER_PREFIX) || name === LEGACY_STORES_LAYER_NAME);
 }
 
+/** Object types StoreLayout.ts reads off a store layer itself (the store's own area/parts/NPC points). Counter meshes there carry no type at all. */
+const STORE_LAYOUT_TYPES: ReadonlySet<string> = new Set(['store', 'storeEntrance', 'storeExit', 'storeCashier', 'storeMoneyDrop', 'npcPoint']);
+
+/**
+ * Every OTHER typed object on the store layers — e.g. the store's storages and trash bin — so they
+ * can live on "--store--stall1" next to the store they belong to instead of on mapSettings.
+ * WorldObjectRegistry reads these exactly like mapSettings objects (same type/id/dropper rules).
+ */
+export function getStoreLayerMapObjects(map: TiledMapData): NonNullable<TiledLayer['objects']> {
+    return getStoreLayers(map)
+        .flatMap(layer => layer.objects ?? [])
+        .filter(obj => {
+            const type = obj.properties?.find(p => p.name === 'type')?.value;
+            return typeof type === 'string' && !STORE_LAYOUT_TYPES.has(type);
+        });
+}
+
 /** Every section layer — "--storeSection--*" plus legacy layers whose name contains "sections". */
 export function getStoreSectionLayers(map: TiledMapData): TiledLayer[] {
     return objectLayers(map, name => name.startsWith(STORE_SECTION_LAYER_PREFIX) || name.includes(LEGACY_SECTIONS_LAYER_NAME));

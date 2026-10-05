@@ -256,7 +256,7 @@ export interface StoreConfig {
     bubbleOffset: number;
     /** EntityViewRegistry view for the solid counter drawn in the cashier rect (see StorePropVisual.ts) — the player serves standing against it. Unset = DEFAULT_CASHIER_VIEW. */
     cashierView?: string;
-    /** Same, for the money drop — paid bills pile on its top. Unset = DEFAULT_MONEY_DROP_VIEW. */
+    /** Same, for the money drop — paid bills pile on its top. Unset = no counter: the bills pile on the floor (a counter model drawn on the map for the money drop still wins — see StoreMoneyPile). */
     moneyDropView?: string;
     /**
      * Pacing while the store has only ONE shelf (available storage). spawnIntervalSec/maxClients
@@ -326,6 +326,14 @@ export interface StoreConfig {
     doorStyle?: string;
     /** What this store's hire desk(s) offer — see StoreHiringConfig. Unset = DEFAULT_HIRE_ROLES. */
     hiring?: StoreHiringConfig;
+    /** Hide the dotted floor outline of this store's storages/trash drop areas (owned and for-sale) — they sit inside the store's area. Unset = shown. */
+    hideStorageDropperView?: boolean;
+    /** Hide the dotted floor outline of this store's cashier area (StoreCashier). Unset = shown. */
+    hideCashierDropperView?: boolean;
+    /** Hide the dotted floor outline of this store's money drop, where the player grabs earnings (StoreMoneyPile). Unset = shown. */
+    hideMoneyDropDropperView?: boolean;
+    /** Hide the dotted floor outline of this store's hire desk spot(s) (HireDeskZone). Unset = shown. */
+    hideHireDeskDropperView?: boolean;
     /** When true, this store isn't spawned at all — same convention as every other entity's `disabled`. */
     disabled?: boolean;
 }
@@ -370,6 +378,9 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
 /** Per-store-id overrides — sparse: only stores a level designer has customized need an entry. */
 export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
     "farmStore1": {
+        "hideStorageDropperView": true,
+        "hideCashierDropperView": true,
+        "hideMoneyDropDropperView": true,
         "hiring": {
             "roles": [
                 {
@@ -643,9 +654,8 @@ export const STORE_MOOD_ICON: Record<StoreClientMood, string> = {
     angry: 'emoji-angry',
 };
 
-/** StoreConfig.cashierView / moneyDropView fallbacks — kitchen cabinets for now (see EntityViewRegistry.ts). */
+/** StoreConfig.cashierView fallback — a kitchen cabinet for now (see EntityViewRegistry.ts). The money drop has no fallback: unset = bills on the floor. */
 export const DEFAULT_CASHIER_VIEW = 'storeCashierView';
-export const DEFAULT_MONEY_DROP_VIEW = 'storeMoneyDropView';
 export const DEFAULT_NAV_CELL_SIZE = 0.3;
 export const DEFAULT_CLIENT_RADIUS = 0.35;
 export const DEFAULT_BROWSE_CHANCE = 0.4;
