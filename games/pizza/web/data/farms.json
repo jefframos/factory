@@ -15,7 +15,11 @@
             },
             "assignedCropId": "carrot",
             "requiredTool": "shovel",
-            "autoPlant": true
+            "autoPlant": true,
+            "appearRequirement": {
+                "type": "storage",
+                "storageId": "storage1"
+            }
         },
         "farm2": {
             "price": {

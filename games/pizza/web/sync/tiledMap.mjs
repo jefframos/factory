@@ -40,7 +40,7 @@ function objectLayersNamed(map, matches) {
 }
 
 /** Matches StoreLayerNames.ts's STORE_LAYOUT_TYPES — what the store itself is made of on its layer. */
-const STORE_LAYOUT_TYPES = new Set(['store', 'storeEntrance', 'storeExit', 'storeCashier', 'storeMoneyDrop', 'npcPoint']);
+const STORE_LAYOUT_TYPES = new Set(['store', 'storeEntrance', 'storeExit', 'storeCashier', 'storeMoneyDrop', 'npcPoint', 'clientArea']);
 
 /** Regular objects (storages, trash bins, ...) kept on a store layer — see StoreLayerNames.getStoreLayerMapObjects(). */
 function readStoreLayerMapObjects(map) {

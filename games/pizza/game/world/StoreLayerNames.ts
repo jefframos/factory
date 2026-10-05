@@ -44,7 +44,7 @@ export function getStoreLayers(map: TiledMapData): TiledLayer[] {
 }
 
 /** Object types StoreLayout.ts reads off a store layer itself (the store's own area/parts/NPC points). Counter meshes there carry no type at all. */
-const STORE_LAYOUT_TYPES: ReadonlySet<string> = new Set(['store', 'storeEntrance', 'storeExit', 'storeCashier', 'storeMoneyDrop', 'npcPoint']);
+const STORE_LAYOUT_TYPES: ReadonlySet<string> = new Set(['store', 'storeEntrance', 'storeExit', 'storeCashier', 'storeMoneyDrop', 'npcPoint', 'clientArea']);
 
 /**
  * Every OTHER typed object on the store layers — e.g. the store's storages and trash bin — so they

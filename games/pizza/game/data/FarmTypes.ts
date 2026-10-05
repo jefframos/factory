@@ -144,7 +144,11 @@ export const FARM_PLOT_CONFIG_BY_ID: Partial<Record<string, FarmPlotConfig>> = {
         },
         "assignedCropId": CropId.Carrot,
         "requiredTool": "shovel",
-        "autoPlant": true
+        "autoPlant": true,
+        "appearRequirement": {
+            "type": "storage",
+            "storageId": "storage1"
+        }
     },
     "farm2": {
         "price": {

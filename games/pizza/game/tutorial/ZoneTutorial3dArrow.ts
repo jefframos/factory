@@ -10,6 +10,10 @@
 // decoration: visible the whole time ZoneTutorialController has a real target to point it at,
 // hidden the moment it doesn't.
 //
+// Drawn as the "tutorialArrow" sprite (ui atlas) on a flat quad — NOT ArrowBuilder's extruded
+// mesh anymore — sitting just above FloorLayers' top layer (floor labels) and drawn after the
+// floor decals, so the ground layers / store floor / dropper outlines never cover it.
+//
 // A plain class managing one raw THREE.Mesh added directly to the real THREE.Scene, NOT an ECS
 // Entity/Component — nothing here needs physics, per-entity pooling, or any other ECS machinery
 // ZoneTutorialArrow's own ScreenAnchorComponent route needs for ITS screen-projection problem;
@@ -17,30 +21,32 @@
 // already computes the player/target positions (ZoneTutorialController).
 
 import * as THREE from 'three';
-import { ArrowBuilder } from '../builders/ArrowBuilder';
+import * as PIXI from 'pixi.js';
+import { pixiTextureToThree } from '../builders/PixiIconToThree';
+import { BendService } from '../services/BendService';
+import { FloorLayers } from '../world/FloorLayers';
 
-/** Small clearance above the player's own base (feet) so the arrow doesn't z-fight with the ground plane it's resting flat on. */
-const GROUND_CLEARANCE = 0.15;
+/** The arrow's sprite in the ui atlas — drawn tip-up, so the tip is the quad's +Y (see buildMesh()). */
+const ARROW_TEXTURE_ID = 'tutorialArrow';
+/** Clearance above the highest floor layer (labels) — or the player's own feet, if higher — so no ground layer ever z-fights or covers it. */
+const GROUND_CLEARANCE = 0.02;
+/** Drawn after the floor decals (DottedLineBuilder's DECAL_RENDER_ORDER = 10) and floor labels. */
+const ARROW_RENDER_ORDER = 11;
 /** How far out from the player's own base the arrow sits, toward the target — see update()'s own doc. */
 const OFFSET_FROM_PLAYER = 1;
-/** Big enough to read clearly at normal play-camera distance without dwarfing the player. */
+/** Arrow length (tail to tip), world units — big enough to read clearly at normal play-camera distance without dwarfing the player. Width follows the sprite's own aspect. */
 const ARROW_SCALE = 1.2;
-/** Orange — reads as a clear "go here" guide marker distinct from DropZone's own green nameplate. */
-const ARROW_COLOR = 0xff8800;
 
 export default class ZoneTutorial3dArrow {
     private readonly scene: THREE.Scene;
     private readonly mesh: THREE.Mesh;
-    /** Scratch — avoids allocating a new Vector3 every frame in update(). */
-    private readonly scratchLookTarget = new THREE.Vector3();
 
     private destroyed = false;
 
     public constructor(scene: THREE.Scene) {
         this.scene = scene;
 
-        this.mesh = ArrowBuilder.build({ color: ARROW_COLOR });
-        this.mesh.scale.setScalar(ARROW_SCALE);
+        this.mesh = ZoneTutorial3dArrow.buildMesh();
         this.mesh.visible = false;
         this.scene.add(this.mesh);
     }
@@ -68,31 +74,57 @@ export default class ZoneTutorial3dArrow {
 
         this.mesh.position.set(
             playerPosition.x + dirX * OFFSET_FROM_PLAYER,
-            playerPosition.y + GROUND_CLEARANCE,
+            Math.max(playerPosition.y, FloorLayers.labelY) + GROUND_CLEARANCE,
             playerPosition.z + dirZ * OFFSET_FROM_PLAYER,
         );
 
-        // Same height as the arrow itself (not the target's own height) keeps this yaw-only, so
-        // it always lies flat on the ground rather than pitching up or down at the target.
-        // Object3D.lookAt() points local -Z at the target — ArrowBuilder's own tip ended up on
-        // local +Z instead (confirmed visually: the arrow pointed exactly away from the actual
-        // target), hence the extra half-turn below rather than trusting lookAt() alone.
-        this.scratchLookTarget.set(targetPosition.x, this.mesh.position.y, targetPosition.z);
-        this.mesh.lookAt(this.scratchLookTarget);
-        this.mesh.rotateY(Math.PI);
+        // Yaw only, so it always lies flat. The tip is local -Z (see buildMesh()); rotation.y = θ
+        // turns -Z into (-sin θ, 0, -cos θ), so θ = atan2(-dirX, -dirZ) points it at (dirX, dirZ).
+        if (horizontalDistance > 1e-4) {
+            this.mesh.rotation.y = Math.atan2(-dirX, -dirZ);
+        }
     }
 
     public hide(): void {
         this.mesh.visible = false;
     }
 
-    /** Tears this down for good — removes the mesh from the scene and disposes its own (never-shared, see ArrowBuilder.ts's own doc) material. Safe to call more than once. */
+    /** Tears this down for good — removes the mesh from the scene and disposes its own geometry/material (the texture is PixiIconToThree's shared cache — never disposed). Safe to call more than once. */
     public destroy(): void {
         if (this.destroyed) {
             return;
         }
         this.destroyed = true;
         this.scene.remove(this.mesh);
+        this.mesh.geometry.dispose();
         (this.mesh.material as THREE.Material).dispose();
+    }
+
+    /** A flat quad lying on the ground, the sprite's tip (+Y) turned to local -Z, tail-to-tip ARROW_SCALE long, tail at the origin. */
+    private static buildMesh(): THREE.Mesh {
+        const pixiTexture = PIXI.Texture.from(ARROW_TEXTURE_ID);
+        const map = pixiTextureToThree(pixiTexture);
+        if (!map) {
+            console.warn(`[ZoneTutorial3dArrow] texture "${ARROW_TEXTURE_ID}" not found — the ground arrow will be blank`);
+        }
+        const aspect = pixiTexture.orig.height > 0 ? pixiTexture.orig.width / pixiTexture.orig.height : 1;
+
+        const geometry = new THREE.PlaneGeometry(ARROW_SCALE * aspect, ARROW_SCALE);
+        // Face up: the plane's +Y (sprite top = tip) becomes -Z. Then the tail moves to the
+        // origin, so `mesh.position` places the tail (same footprint the old extruded arrow had).
+        geometry.rotateX(-Math.PI / 2);
+        geometry.translate(0, 0, -ARROW_SCALE / 2);
+
+        const material = new THREE.MeshBasicMaterial({
+            map,
+            transparent: true,
+            depthWrite: false,
+            side: THREE.DoubleSide,
+        });
+        BendService.applyBend(material);
+
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.renderOrder = ARROW_RENDER_ORDER;
+        return mesh;
     }
 }

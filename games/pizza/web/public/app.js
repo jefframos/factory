@@ -2092,6 +2092,9 @@ function renderRequirementField(container, obj, field, onDirty) {
         if (type === 'store') {
             return { type: 'store', storeId: getOptions('stores')[0]?.value ?? '', level: 2 };
         }
+        if (type === 'storage') {
+            return { type: 'storage', storageId: getOptions('storages')[0]?.value ?? '' };
+        }
         return { type: 'resource', resourceType: getOptions('resources')[0]?.value ?? '', amount: 1 };
     }
 

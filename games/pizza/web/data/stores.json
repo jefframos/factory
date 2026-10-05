@@ -32,6 +32,9 @@
         },
         "cleanerWorker": {
             "levels": []
+        },
+        "hiring": {
+            "roles": []
         }
     },
     "byId": {
@@ -187,7 +190,6 @@
                     ]
                 }
             ],
-            "defaultStorageId": "storage1",
             "startSpawnIntervalSec": 24,
             "startMaxClients": 2,
             "startPatienceMultiplier": 1.6,

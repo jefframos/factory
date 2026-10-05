@@ -383,7 +383,7 @@ export function shapeArea(shape: SpawnerShape): number {
 }
 
 /** The axis-aligned world-space box sampleRandomPointInShape() rejection-samples within before testing isPointInShape() — tight for 'circle'/'rect' (every sampled point is already guaranteed inside for those, see that function's own doc), loose for 'polygon' (its own bounding box, since there's no cheaper uniform-sampling approach for an arbitrary shape). */
-function boundsOfShape(shape: SpawnerShape): { minX: number; maxX: number; minZ: number; maxZ: number } {
+export function boundsOfShape(shape: SpawnerShape): { minX: number; maxX: number; minZ: number; maxZ: number } {
     switch (shape.kind) {
         case 'circle':
             return { minX: shape.center.x - shape.radius!, maxX: shape.center.x + shape.radius!, minZ: shape.center.z - shape.radius!, maxZ: shape.center.z + shape.radius! };
@@ -427,6 +427,39 @@ export function sampleRandomPointInShape(shape: SpawnerShape, maxAttempts: numbe
         }
     }
     return undefined;
+}
+
+/**
+ * Converts a "spawner"-type (or any other area) TiledObject to its full world-space SpawnerShape — see that
+ * interface's own doc for the kind-selection rule and rotation caveat. Mirrors
+ * objectToWorldRect()'s pixel->world `scale` and rotation math (TileMapConfig.ts's own
+ * doc), just applied per-vertex for a polygon instead of once for a rect's center.
+ */
+export function objectToShape(obj: TiledObject, tileSizePx: number, worldUnitsPerTile: number): SpawnerShape {
+    const scale = worldUnitsPerTile / tileSizePx;
+
+    if (obj.polygon && obj.polygon.length > 0) {
+        const rotationRad = (obj.rotation * Math.PI) / 180;
+        const cos = Math.cos(rotationRad);
+        const sin = Math.sin(rotationRad);
+
+        const points = obj.polygon.map(p => {
+            const rotatedX = p.x * cos - p.y * sin;
+            const rotatedY = p.x * sin + p.y * cos;
+            return { x: (obj.x + rotatedX) * scale, z: (obj.y + rotatedY) * scale };
+        });
+        const centroid = points.reduce((sum, p) => ({ x: sum.x + p.x / points.length, z: sum.z + p.z / points.length }), { x: 0, z: 0 });
+
+        return { kind: 'polygon', center: centroid, points };
+    }
+
+    if (obj.ellipse) {
+        const rect = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+        return { kind: 'circle', center: { x: rect.x, z: rect.z }, radius: (rect.width + rect.depth) / 4 };
+    }
+
+    const rect = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+    return { kind: 'rect', center: { x: rect.x, z: rect.z }, halfWidth: rect.width / 2, halfDepth: rect.depth / 2 };
 }
 
 /** One "storeSection" area — see SECTIONS_LAYER_NAME. Also registered as a `building` placement under the same id, so the regular building setup spawns it. */
@@ -606,7 +639,7 @@ export default class WorldObjectRegistry {
             }
 
             if (type === SPAWNER_TYPE) {
-                const shape = this.readSpawnerShape(obj, tileDefs.tileSize, worldUnitsPerTile);
+                const shape = objectToShape(obj, tileDefs.tileSize, worldUnitsPerTile);
                 // Appended, not set — see shapesById's own doc for why a spawner id
                 // deliberately collects every instance instead of the last one silently
                 // winning (the byType bucket above still only keeps the last placement per id,
@@ -776,7 +809,7 @@ export default class WorldObjectRegistry {
         }
     }
 
-    /** One "polyWall" object -> world-space StoreWallPlacement (Tiled rotation applied to the vertices, same as readSpawnerShape()). Section cuts come later — see assignWallExclusions(). */
+    /** One "polyWall" object -> world-space StoreWallPlacement (Tiled rotation applied to the vertices, same as objectToShape()). Section cuts come later — see assignWallExclusions(). */
     private readStoreWall(obj: TiledObject, vertices: { x: number; y: number }[], tileSizePx: number, worldUnitsPerTile: number): StoreWallPlacement {
         const scale = worldUnitsPerTile / tileSizePx;
         const rotationRad = (obj.rotation * Math.PI) / 180;
@@ -1090,39 +1123,6 @@ export default class WorldObjectRegistry {
         }
     }
 
-    /**
-     * Converts a "spawner"-type TiledObject to its full world-space SpawnerShape — see that
-     * interface's own doc for the kind-selection rule and rotation caveat. Mirrors
-     * objectToWorldRect()'s pixel->world `scale` and rotation math (TileMapConfig.ts's own
-     * doc), just applied per-vertex for a polygon instead of once for a rect's center.
-     */
-    private readSpawnerShape(obj: TiledObject, tileSizePx: number, worldUnitsPerTile: number): SpawnerShape {
-        const scale = worldUnitsPerTile / tileSizePx;
-
-        if (obj.polygon && obj.polygon.length > 0) {
-            const rotationRad = (obj.rotation * Math.PI) / 180;
-            const cos = Math.cos(rotationRad);
-            const sin = Math.sin(rotationRad);
-
-            const points = obj.polygon.map(p => {
-                const rotatedX = p.x * cos - p.y * sin;
-                const rotatedY = p.x * sin + p.y * cos;
-                return { x: (obj.x + rotatedX) * scale, z: (obj.y + rotatedY) * scale };
-            });
-            const centroid = points.reduce((sum, p) => ({ x: sum.x + p.x / points.length, z: sum.z + p.z / points.length }), { x: 0, z: 0 });
-
-            return { kind: 'polygon', center: centroid, points };
-        }
-
-        if (obj.ellipse) {
-            const rect = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
-            return { kind: 'circle', center: { x: rect.x, z: rect.z }, radius: (rect.width + rect.depth) / 4 };
-        }
-
-        const rect = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
-        return { kind: 'rect', center: { x: rect.x, z: rect.z }, halfWidth: rect.width / 2, halfDepth: rect.depth / 2 };
-    }
-
     /** Reads one waypoint object's "target"/"order" and appends it to that target's path — see this file's own doc. Warns and skips if either custom property is missing (a waypoint with no target/order can't be placed on any path at all). */
     private registerWaypoint(obj: TiledObject, tileSizePx: number, worldUnitsPerTile: number): void {
         const target = getObjectProperty(obj, WAYPOINT_TARGET_PROPERTY);
@@ -1229,6 +1229,11 @@ export default class WorldObjectRegistry {
     /** The map's "playerStart" point (see this file's own doc), or undefined if the level designer hasn't drawn one — the caller (PizzaScene) falls back to MainPlayer's own default position in that case. */
     public getPlayerStart(): WorldObjectPlacement | undefined {
         return this.playerStartPlacement;
+    }
+
+    /** Every "storeSection" area drawn on the map — see SECTIONS_LAYER_NAME. */
+    public getStoreSections(): readonly StoreSectionPlacement[] {
+        return this.storeSections;
     }
 
     /** The "storeSection" area with this (building) id, if drawn — see SECTIONS_LAYER_NAME. */

@@ -87,6 +87,8 @@ export default class StoragePurchaseZone extends Entity {
     private popupRow?: PIXI.Container;
     private pricePanels: LockRequirementPanel[] = [];
     private floorLabel?: FloorLabelComponent;
+    /** See the constructor's `mapRotationDeg`. */
+    private readonly mapRotationDeg: number;
 
     private readonly handleProgressChanged = (id: string): void => {
         if (id === this.storageId) {
@@ -111,8 +113,11 @@ export default class StoragePurchaseZone extends Entity {
         subjectIcon?: PIXI.Texture,
         /** Draw the dotted outline around the for-sale area — off when this storage's store sets hideStorageDropperView (see StoreConfig). */
         showOutline = true,
+        /** The storage object's own rotation on the Tiled map (degrees, clockwise) — the floor cost label turns with it. */
+        mapRotationDeg = 0,
     ) {
         super();
+        this.mapRotationDeg = mapRotationDeg;
         this.subjectIcon = subjectIcon;
         this.showOutline = showOutline;
         this.storageId = storageId;
@@ -150,13 +155,17 @@ export default class StoragePurchaseZone extends Entity {
         this.transform.add(this.labelAnchor);
         if (isFloorFrame(this.frame)) {
             this.labelAnchor.position.set(0, FLOOR_COIN_TARGET_HEIGHT, 0);
+            // Turned a quarter (or three), the label's own width runs along the area's depth.
+            const quarterTurned = Math.abs(Math.sin(THREE.MathUtils.degToRad(this.mapRotationDeg))) > Math.SQRT1_2;
             this.floorLabel = this.addComponent(new FloorLabelComponent({
                 items: this.labelItems(),
                 // One cost per line — side by side it gets wide and shrinks to fit the area.
                 stack: 'column',
                 size: this.floorLabelSize ?? DEFAULT_FLOOR_LABEL_SIZE,
-                maxWidth: width * FLOOR_LABEL_AREA_FILL,
-                maxDepth: depth * FLOOR_LABEL_AREA_FILL,
+                maxWidth: (quarterTurned ? depth : width) * FLOOR_LABEL_AREA_FILL,
+                maxDepth: (quarterTurned ? width : depth) * FLOOR_LABEL_AREA_FILL,
+                // Tiled turns clockwise, the label's yaw counter-clockwise — hence the minus.
+                rotationDeg: -this.mapRotationDeg,
             }));
         } else {
             this.labelAnchor.position.set(0, POPUP_HEIGHT_OFFSET, 0);

@@ -48,6 +48,7 @@
 import { isMilestoneRequirementMet, MilestoneRequirement } from '../data/MilestoneRequirement';
 import { StoreUnlocks } from '../store/StoreUnlocks';
 import { StoreProgressStorage } from '../store/StoreProgressStorage';
+import { StorageOwnershipStorage } from '../store/StorageOwnershipStorage';
 
 interface SpawnGateEntry {
     readonly id: string;
@@ -70,6 +71,8 @@ export default class RequirementRegistry {
     public constructor() {
         // A store level-up can enable any spawn-gated id (see StoreUnlocks.ts) — recheck right away.
         StoreProgressStorage.onLevelChanged.add(() => this.trySpawnAll());
+        // So does buying a storage (MilestoneRequirement's 'storage' kind).
+        StorageOwnershipStorage.onPurchase.add(() => this.trySpawnAll());
     }
 
     /**

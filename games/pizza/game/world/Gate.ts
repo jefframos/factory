@@ -103,6 +103,8 @@ export default class Gate extends Entity {
 
     /** The gate's own visible structure — a plain box, OR (see awake()) whatever real glb this.config.view resolves to; either way gsap-scaled to zero by collapseMesh() on unlock, so this stays typed as the common THREE.Object3D rather than THREE.Mesh specifically. */
     private mesh?: THREE.Object3D;
+    /** The blocking box — dropped as soon as playUnlockSequence() starts, not when the entity is removed. */
+    private collider!: RigidBody;
 
     /** The shared lock/requirement panel (see LockRequirementPanel.ts) — its frame is faded out wholesale at the end of playUnlockIconSequence(), and its lockIcon/badge swapped to their unlocked textures just before. */
     private panel!: LockRequirementPanel;
@@ -145,7 +147,7 @@ export default class Gate extends Entity {
         const [width, height, depth] = this.config.mesh.size;
         const halfExtents = new THREE.Vector3(width / 2, height / 2, depth / 2);
 
-        this.addComponent(new RigidBody({
+        this.collider = this.addComponent(new RigidBody({
             halfExtents,
             isStatic: true,
             layer: Layers.Environment,
@@ -290,6 +292,10 @@ export default class Gate extends Entity {
      */
     public async playUnlockSequence(cameraFocusHost: CameraFocusHost): Promise<void> {
         GateStorage.unlock(this.gateId);
+        // Open the way right away — the entity (and the rest of it) only goes once the whole
+        // sequence ends, and waiting that long to let the player through read as a bug.
+        // Safe to destroy twice: unregistering again on removal is a no-op.
+        this.collider.destroy();
 
         // Look-at point sits at the gate's own mid-height PLUS the configurable
         // cameraFocusHeightOffset (see GateConfig's own doc) — raising the look-at point in

@@ -55,7 +55,7 @@ export const FLOOR_LAYER_CONFIG_BY_ID: Partial<Record<string, FloorLayerConfig>>
         "groundLayerGap": 0.01,
         "groundLayerCount": 2,
         "storeFloorGap": 0.01,
-        "decalGap": 0.005,
+        "decalGap": 0.05,
         "labelGap": 0.005
     },
 };

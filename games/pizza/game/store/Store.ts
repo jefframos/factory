@@ -81,6 +81,7 @@ import { StorageInventory } from '../data/StorageInventory';
 import { StorageConfig, getStorageConfig } from '../data/StorageTypes';
 import { BuildingStorage } from '../data/BuildingStorage';
 import { BuildingId } from '../data/BuildingId';
+import { BUILDING_CONFIG } from '../data/BuildingTypes';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { CROP_CONFIG, CropId } from '../data/CropTypes';
 import { FarmPlotStorage } from '../data/FarmPlotStorage';
@@ -88,7 +89,7 @@ import { getFarmPlotConfig } from '../data/FarmTypes';
 import { SeedStorage } from '../data/SeedStorage';
 import { SEED_CONFIG, SeedId } from '../data/SeedTypes';
 import { pickRandom } from '../world/AssetLibraryRegistry';
-import WorldObjectRegistry from '../world/WorldObjectRegistry';
+import WorldObjectRegistry, { boundsOfShape, isPointInShape } from '../world/WorldObjectRegistry';
 import StoreClient, { StoreClientHost, StoreClientWant, StoreSpot, StoreStorageRef } from './StoreClient';
 import StoreWorker from './StoreWorker';
 import { WORKER_NPC_ID, type StoreWorkerRole } from './StoreTypes';
@@ -126,6 +127,7 @@ import { DEFAULT_CASHIER_VIEW, DEFAULT_CLIENT_RADIUS, DEFAULT_NAV_CELL_SIZE, DEF
 import { StoreProgressStorage } from './StoreProgressStorage';
 import { StoreUnlocks } from './StoreUnlocks';
 import { FloorLayers } from '../world/FloorLayers';
+import { BuildReveal } from '../player/BuildReveal';
 
 /** The first client shows up this long after the store spawns, rather than a full spawnIntervalSec. */
 const FIRST_SPAWN_DELAY_SEC = 1;
@@ -157,6 +159,8 @@ const GARBAGE_PICKUP_STAGGER_SEC = 0.12;
 const GARBAGE_PICKUP_HEIGHT = 0.2;
 /** The nav grid covers the store area + entrance + exit, grown by this much (world units). */
 const NAV_BOUNDS_MARGIN = 1;
+/** Random tries findWanderSpot() makes for a point inside the clientArea(s) — more than randomWalkablePoint()'s default, since an irregular area (or one partly over an unbuilt section) rejects many. */
+const WANDER_SPOT_TRIES = 48;
 /** How often the nav grid checks whether anything solid appeared/disappeared (physics bodies changed). */
 const NAV_CHECK_SEC = 1;
 /** ... and rebuilds regardless this often (e.g. the tile map published its walkability late). */
@@ -213,6 +217,8 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     private readonly claimedGarbage = new Map<StoreGarbage, StoreCleanerWorker>();
     /** Every trash storage on the map — where cleaners throw garbage (see getTrashTarget()). Only the AVAILABLE ones count (bought, store level reached — StoreUnlocks.isStorageAvailable()), checked live since a trash bin can be for sale. */
     private readonly trashTargets: StoreTrashSpot[];
+    /** Every store section on the map (id + area) — the parts of the clientArea(s) inside one that isn't built yet are off-limits for wandering (see isClientAreaPoint()). */
+    private readonly sections: StoreSectionArea[];
     private readonly handleWorkerLevelChanged = (storeId: string): void => {
         if (storeId === this.layout.id) {
             this.applyWorkerLevels();
@@ -260,10 +266,12 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         farmIds: string[] = [],
         farmRects: StoreRect[] = [],
         trashTargets: StoreTrashSpot[] = [],
+        sections: StoreSectionArea[] = [],
     ) {
         super();
         this.farmIds = farmIds;
         this.trashTargets = trashTargets;
+        this.sections = sections;
         this.layout = layout;
         this.config = config;
         this.screenHost = screenHost;
@@ -419,7 +427,8 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         if (!(Object.values(BuildingId) as string[]).includes(starter)) {
             return false;
         }
-        return BuildingStorage.getLevel(starter as BuildingId) >= 1;
+        // Built, and its build animation finished — no cashier/storages/clients popping in mid-build.
+        return BuildingStorage.getLevel(starter as BuildingId) >= 1 && !BuildReveal.isRunning(starter);
     }
 
     public isVisible(): boolean {
@@ -620,20 +629,47 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         return point && { point, lookAt: shelf.position };
     }
 
-    /** Somewhere free inside the store's own area, sometimes looking at a shelf once there. */
+    /**
+     * Somewhere free inside the store's clientArea(s) — minus any part over a section not built
+     * yet — or, with none drawn, inside the store's own area. Sometimes looking at a shelf once there.
+     */
     public findWanderSpot(client: StoreClient): StoreSpot | undefined {
         const grid = this.navGrid;
-        const area = rectBounds(this.layout.area);
-        const inset = { minX: area.minX + 1, minZ: area.minZ + 1, maxX: area.maxX - 1, maxZ: area.maxZ - 1 };
-        const fallback = randomPointInRect(this.layout.area, 1);
-        const point = grid
-            ? grid.randomWalkablePoint(inset, candidate => this.isFreeSpot(client, candidate))
-            : new THREE.Vector3(fallback.x, 0, fallback.z);
+        const areas = this.layout.clientAreas;
+        let bounds: NavBounds;
+        if (areas.length > 0) {
+            const shapeBounds = areas.map(boundsOfShape);
+            bounds = {
+                minX: Math.min(...shapeBounds.map(b => b.minX)),
+                minZ: Math.min(...shapeBounds.map(b => b.minZ)),
+                maxX: Math.max(...shapeBounds.map(b => b.maxX)),
+                maxZ: Math.max(...shapeBounds.map(b => b.maxZ)),
+            };
+        } else {
+            const area = rectBounds(this.layout.area);
+            bounds = { minX: area.minX + 1, minZ: area.minZ + 1, maxX: area.maxX - 1, maxZ: area.maxZ - 1 };
+        }
+        let point: THREE.Vector3 | undefined;
+        if (grid) {
+            point = grid.randomWalkablePoint(bounds, candidate => this.isClientAreaPoint(candidate.x, candidate.z) && this.isFreeSpot(client, candidate), WANDER_SPOT_TRIES);
+        } else {
+            const fallback = randomPointInRect(this.layout.area, 1);
+            point = this.isClientAreaPoint(fallback.x, fallback.z) ? new THREE.Vector3(fallback.x, 0, fallback.z) : undefined;
+        }
         if (!point) {
             return undefined;
         }
         const shelves = this.getAvailableStorages();
         return { point, lookAt: shelves.length > 0 && Math.random() < 0.5 ? pickRandom(shelves).position : undefined };
+    }
+
+    /** Inside one of the store's clientArea(s) (any point, if none drawn) and not inside a section that isn't built yet. */
+    private isClientAreaPoint(x: number, z: number): boolean {
+        const areas = this.layout.clientAreas;
+        if (areas.length > 0 && !areas.some(shape => isPointInShape(shape, x, z))) {
+            return false;
+        }
+        return !this.sections.some(section => !isSectionBuilt(section.id) && rectContains(section.rect, x, z));
     }
 
     /**
@@ -1309,6 +1345,11 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     }
 }
 
+/** Same rule as BuildingZone's own isSectionBuilt(): a section is active once its building reaches level 1. */
+function isSectionBuilt(sectionId: string): boolean {
+    return BUILDING_CONFIG[sectionId as BuildingId] !== undefined && BuildingStorage.getLevel(sectionId as BuildingId) >= 1;
+}
+
 function rectBounds(rect: StoreRect): NavBounds {
     return { minX: rect.x - rect.width / 2, minZ: rect.z - rect.depth / 2, maxX: rect.x + rect.width / 2, maxZ: rect.z + rect.depth / 2 };
 }
@@ -1339,13 +1380,19 @@ function shuffle<T>(items: T[]): T[] {
     return items;
 }
 
+/** A store section's id (its building id) and area — see Store.sections. */
+export interface StoreSectionArea {
+    id: string;
+    rect: StoreRect;
+}
+
 export interface SpawnStoresDeps {
     world: World;
     threeScene: THREE.Object3D;
     worldObjects: WorldObjectRegistry;
     screenHost: ScreenAnchorHost;
     getWalletOverlayPosition: () => { x: number; y: number };
-    /** PizzaScene.registerZoneVisibility() — hides the whole store under fog of war until its zone is revealed. */
+    /** PizzaScene.registerZoneVisibility() — hides the whole store under fog of war until its cashier's zone is revealed. */
     registerZoneVisibility: (object: THREE.Object3D, worldX: number, worldZ: number, width: number, depth: number) => void;
 }
 
@@ -1391,12 +1438,17 @@ export function spawnStores(deps: SpawnStoresDeps): Store[] {
             });
         }
 
+        const sections: StoreSectionArea[] = deps.worldObjects.getStoreSections().map(section => ({ id: section.id, rect: section.placement }));
+
         const root = new THREE.Group();
         root.name = `store:${layout.id}`;
         deps.threeScene.add(root);
-        deps.registerZoneVisibility(root, layout.area.x, layout.area.z, layout.area.width, layout.area.depth);
+        // By the cashier's zone, not the whole store area — a store may overlap a zone that only
+        // opens later (its expansion, see ZoneTypes.ts), and its clients/cashier/workers (all
+        // under `root`) must show while that one is still locked.
+        deps.registerZoneVisibility(root, layout.cashier.x, layout.cashier.z, layout.cashier.width, layout.cashier.depth);
 
-        const store = deps.world.add(new Store(layout, config, storages, deps.screenHost, root, deps.getWalletOverlayPosition, farmIds, farmRects, trashTargets));
+        const store = deps.world.add(new Store(layout, config, storages, deps.screenHost, root, deps.getWalletOverlayPosition, farmIds, farmRects, trashTargets, sections));
         stores.push(store);
     }
     return stores;

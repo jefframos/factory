@@ -1273,4 +1273,8 @@ const REQUIREMENT_TYPE_FIELDS = {
         { key: 'storeId', type: 'select', label: 'Store', source: 'stores' },
         { key: 'level', type: 'number', label: 'Store Level (at least)' },
     ],
+    // "Appears once storage X is built (bought, or free)" — e.g. a farm unlocked by its shelf.
+    storage: [
+        { key: 'storageId', type: 'select', label: 'Storage', source: 'storages' },
+    ],
 };

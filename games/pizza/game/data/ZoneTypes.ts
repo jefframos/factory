@@ -45,6 +45,14 @@ export const ZONE_CONFIG: Partial<Record<number, ZoneConfigEntry>> = {
     },
     "4": {
         "requirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 5
+        },
+        "cameraTemplateId": "far1"
+    },
+    "5": {
+        "requirement": {
             "type": "gate",
             "gateId": GateId.Gate1
         },

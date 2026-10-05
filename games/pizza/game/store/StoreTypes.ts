@@ -372,6 +372,9 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
     },
     "workerHat": {
         "models": []
+    },
+    "hiring": {
+        "roles": []
     }
 };
 
@@ -384,16 +387,49 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
         "hiring": {
             "roles": [
                 {
-                    "role": "cashier", "cost": 100, "maxCount": 1,
-                    "upgrades": [{ "level": 2, "cost": 80 }, { "level": 3, "cost": 160 }]
+                    "role": "cashier",
+                    "cost": 100,
+                    "maxCount": 1,
+                    "upgrades": [
+                        {
+                            "level": 2,
+                            "cost": 80
+                        },
+                        {
+                            "level": 3,
+                            "cost": 160
+                        }
+                    ]
                 },
                 {
-                    "role": "restocker", "cost": 75, "maxCount": 3,
-                    "upgrades": [{ "level": 2, "cost": 60 }, { "level": 3, "cost": 120 }]
+                    "role": "restocker",
+                    "cost": 75,
+                    "maxCount": 3,
+                    "upgrades": [
+                        {
+                            "level": 2,
+                            "cost": 60
+                        },
+                        {
+                            "level": 3,
+                            "cost": 120
+                        }
+                    ]
                 },
                 {
-                    "role": "cleaner", "cost": 75, "maxCount": 2,
-                    "upgrades": [{ "level": 2, "cost": 60 }, { "level": 3, "cost": 120 }]
+                    "role": "cleaner",
+                    "cost": 75,
+                    "maxCount": 2,
+                    "upgrades": [
+                        {
+                            "level": 2,
+                            "cost": 60
+                        },
+                        {
+                            "level": 3,
+                            "cost": 120
+                        }
+                    ]
                 }
             ]
         },
@@ -554,7 +590,6 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                 ]
             }
         ],
-        "defaultStorageId": "storage1",
         "billsPerPile": 10,
         "workers": [],
         "cleanerWorker": {

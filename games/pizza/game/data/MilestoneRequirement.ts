@@ -31,6 +31,8 @@ import { GateStorage } from './GateStorage';
 import { TriggerStorage } from './TriggerStorage';
 import { getTriggerConfig } from './TriggerTypes';
 import { StoreProgressStorage } from '../store/StoreProgressStorage';
+import { StorageOwnershipStorage } from '../store/StorageOwnershipStorage';
+import { getStorageConfig, isStorageForSale } from './StorageTypes';
 // GateId stays type-only (`type GateId`) since GateTypes.ts's own GateConfig.requirement field
 // is typed as MilestoneRequirement — a plain runtime import of GateId here would be circular.
 // GATE_CONFIG, unlike GateId, IS read as a real value below (isMilestoneRequirementMet()'s own
@@ -80,7 +82,13 @@ export interface StoreMilestoneRequirement {
     level: number;
 }
 
-export type MilestoneRequirement = BuildingMilestoneRequirement | ItemMilestoneRequirement | ResourceMilestoneRequirement | GateMilestoneRequirement | TriggerMilestoneRequirement | StoreMilestoneRequirement;
+/** Storage `storageId` must be BUILT — bought (StorageOwnershipStorage), or free (nothing to buy). E.g. "the carrot farm appears once the carrot shelf is built". */
+export interface StorageMilestoneRequirement {
+    type: 'storage';
+    storageId: string;
+}
+
+export type MilestoneRequirement = BuildingMilestoneRequirement | ItemMilestoneRequirement | ResourceMilestoneRequirement | GateMilestoneRequirement | TriggerMilestoneRequirement | StoreMilestoneRequirement | StorageMilestoneRequirement;
 
 /**
  * True once whichever storage backs `requirement`'s own kind says it's already satisfied — the
@@ -115,5 +123,9 @@ export function isMilestoneRequirementMet(requirement: MilestoneRequirement): bo
                 || TriggerStorage.isActivated(requirement.triggerId);
         case 'store':
             return StoreProgressStorage.getLevel(requirement.storeId) >= requirement.level;
+        case 'storage': {
+            const config = getStorageConfig(requirement.storageId);
+            return config.disabled || !isStorageForSale(config) || StorageOwnershipStorage.isOwned(requirement.storageId);
+        }
     }
 }

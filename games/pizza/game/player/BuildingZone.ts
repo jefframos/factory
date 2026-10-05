@@ -72,6 +72,7 @@ import { ParticleSystem } from '../vfx/ParticleSystem';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import NpcEntity from '../world/NpcEntity';
 import DepositPacer from '../utils/DepositPacer';
+import { BuildReveal } from './BuildReveal';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
@@ -105,6 +106,18 @@ const MISSING_TOOL_BADGE_TEXTURE = 'Icon_Exclamation';
 const FLY_IN_STAGGER_SEC = 0.12;
 /** How long the reveal sweep takes on a level-up mesh swap — see playRevealEffect(). */
 const MESH_DROP_DURATION_SEC = 0.7;
+/**
+ * Staged build — a level-up of a building with map-drawn floors/walls (a store, a store section):
+ * the floor is laid at once, the walls rise out of it over WALL_RISE_SEC, then the pieces sweep in
+ * one after another (nearest the pay spot first) from PIECES_START_SEC, spread over
+ * PIECES_SPREAD_SEC. STAGED_BUILD_SEC is the whole thing (see BuildReveal.ts).
+ */
+const WALL_RISE_SEC = 0.8;
+const PIECES_START_SEC = 0.6;
+const PIECES_SPREAD_SEC = 1.3;
+const STAGED_BUILD_SEC = PIECES_START_SEC + PIECES_SPREAD_SEC + MESH_DROP_DURATION_SEC;
+/** A rising wall starts this flat — not 0, which would make a degenerate (NaN-normal) matrix. */
+const WALL_RISE_START_SCALE = 0.001;
 /** How long awaitingReentry stays true after a level clears before auto-clearing on its own — see that field's own doc. A player who stays standing in the zone through the whole level-up beat can resume depositing toward the NEXT level after this, without having to walk out and back in. */
 const REENTRY_TIMEOUT_SEC = 3;
 /** How long a piece shrinks away when a built store section removes it — see removePiecesCoveredBy(). */
@@ -194,6 +207,10 @@ export default class BuildingZone extends Entity {
      * populated at all) whenever `buildingMesh` above is the one in use instead.
      */
     private buildingVisuals: GlbVisualComponent[] = [];
+    /** A staged build's per-piece reveal fills (each piece sweeps in on its own delay, so it can't share `revealProgress`) — see createBuildingMesh(). */
+    private readonly pieceRevealProgress: { value: number }[] = [];
+    /** performance.now() the current staged build started — a piece whose glb loads late still starts on schedule. */
+    private stagedBuildStartMs = 0;
     /** The view id `buildingMesh`/`buildingVisual` was last built from — lets replaceBuildingMesh() tell "the new level shares this SAME mesh with the one just cleared" (grow the existing reveal fill in place, no dispose/recreate) apart from "the new level actually swaps in a different mesh" (see getFillFractionForLevel()'s own doc on why a run of levels can share one view id). Undefined only before the very first createBuildingMesh() call. */
     private currentViewId?: string;
     /** Whether `currentViewId`'s mesh was actually sourced via isOwnMeshForcedForLevel()'s fallback rather than resolveEntityView() — tracked SEPARATELY because the raw view id string alone can't tell the two apart: a level with no `view` of its own reports the SAME `baseView` id as level 0 (getViewIdForLevel() doesn't know about forceOwnMesh at all), so comparing viewId alone would wrongly conclude "same mesh" and skip the swap entirely on a level whose forceOwnMesh flag just flipped — see replaceBuildingMesh()'s own doc. */
@@ -766,15 +783,27 @@ export default class BuildingZone extends Entity {
 
         const ownMeshViews = this.resolveOwnMeshFallbacks();
         if (ownMeshViews.length > 0 || this.floors.length > 0 || this.walls.length > 0) {
-            this.createFloorMeshes();
+            // An actual build of a floor/walls building plays staged (see STAGED_BUILD_SEC).
+            const staged = dropIn && (this.floors.length > 0 || this.walls.length > 0);
+            if (staged) {
+                this.stagedBuildStartMs = performance.now();
+                BuildReveal.start(this.buildingId, STAGED_BUILD_SEC);
+            }
+            this.createFloorMeshes(staged);
             // Only here — the map-drawn pieces are what's actually showing. A level still on a
             // real view (e.g. level 0's baseView site) must not collide with pieces it doesn't show.
             if (this.solidFromMap) {
                 this.addSolidAreasFromMap();
             }
-            for (const { entry, resolved, footprint, rotationY } of ownMeshViews) {
-                this.pieceParts(entry).visual = this.createBuildingView(resolved, dropIn, targetFraction, footprint, rotationY);
-            }
+            // Staged: nearest the pay spot first, so the build spreads out from where the player stands.
+            const from = this.triggerArea?.position ?? this.transform.position;
+            const pieces = staged
+                ? [...ownMeshViews].sort((a, b) => Math.hypot(a.entry.x - from.x, a.entry.z - from.z) - Math.hypot(b.entry.x - from.x, b.entry.z - from.z))
+                : ownMeshViews;
+            pieces.forEach(({ entry, resolved, footprint, rotationY }, i) => {
+                const delaySec = staged ? PIECES_START_SEC + (pieces.length > 1 ? PIECES_SPREAD_SEC * i / (pieces.length - 1) : 0) : undefined;
+                this.pieceParts(entry).visual = this.createBuildingView(resolved, dropIn, targetFraction, footprint, rotationY, delaySec);
+            });
             return;
         }
 
@@ -905,7 +934,7 @@ export default class BuildingZone extends Entity {
      * removed by a built section (see CheckerFloorBuilder / PolyWallBuilder) — no reveal sweep: it's flat, so the sweep would just pop it in, and
      * the reveal shader would make it transparent (sorting issues under the pieces standing on it).
      */
-    private createFloorMeshes(): void {
+    private createFloorMeshes(riseWalls = false): void {
         for (const floor of this.floors) {
             // restY, not transform.position.y — the zone may still be mid rise-in (ZoneVisibilityManager).
             const origin = new THREE.Vector3(this.transform.position.x, this.restY, this.transform.position.z);
@@ -916,6 +945,21 @@ export default class BuildingZone extends Entity {
         }
         for (const wall of this.walls) {
             this.buildWall(wall);
+            if (riseWalls) {
+                this.riseWall(wall);
+            }
+        }
+    }
+
+    /** Staged build: `wall` (and its doors) grows up out of the floor over WALL_RISE_SEC. Its colliders are already up. */
+    private riseWall(wall: StoreWallPlacement): void {
+        const objects = [this.wallMeshes.get(wall), ...(this.wallDoors.get(wall) ?? []).map(door => door.object)];
+        for (const object of objects) {
+            if (!object) {
+                continue;
+            }
+            object.scale.y = WALL_RISE_START_SCALE;
+            gsap.to(object.scale, { y: 1, duration: WALL_RISE_SEC, ease: 'power2.out' });
         }
     }
 
@@ -1069,6 +1113,7 @@ export default class BuildingZone extends Entity {
         targetFraction: number,
         fitFootprint?: { width: number; depth: number },
         rotationY?: number,
+        stagedDelaySec?: number,
     ): GlbVisualComponent {
         const [offsetX, offsetY, offsetZ] = resolved.offset;
 
@@ -1112,7 +1157,7 @@ export default class BuildingZone extends Entity {
                     mesh.scale.set(scaleX, scaleY, scaleZ);
                     mesh.rotation.y = rotationY ?? 0;
                 }
-                this.playRevealEffect(visual.mesh, dropIn, targetFraction);
+                this.playRevealEffect(visual.mesh, dropIn, targetFraction, stagedDelaySec);
             },
             STRUCTURE_OCCLUSION_FADE,
         );
@@ -1131,8 +1176,10 @@ export default class BuildingZone extends Entity {
      * 0) snaps straight to `targetFraction` with no animation, since there's no prior state to
      * grow FROM; `dropIn` true (an actual level-up) animates 0 -> targetFraction instead, the
      * "grows in from the ground" beat that replaces the old drop-from-above/bounce one.
+     * `stagedDelaySec` (a staged build's piece — see createBuildingMesh()) gives this mesh its
+     * own fill, starting that long after the build began.
      */
-    private playRevealEffect(root: THREE.Object3D, dropIn: boolean, targetFraction: number): void {
+    private playRevealEffect(root: THREE.Object3D, dropIn: boolean, targetFraction: number, stagedDelaySec?: number): void {
         // `root` was just parented under this.transform this SAME tick (either the box mesh
         // built a few lines up, or a GlbVisualComponent's onReady) — its (and its ancestors')
         // matrixWorld hasn't necessarily been recomputed by the renderer yet, and Box3 reads
@@ -1161,20 +1208,29 @@ export default class BuildingZone extends Entity {
         // foundation) — Box3 has no idea that part is invisible, so clamping the bottom to restY
         // keeps the fill fraction tracking what's actually visible above ground.
         const revealMinY = Math.max(correctedMinY, this.restY);
-        this.revealProgress.value = dropIn ? 0 : targetFraction;
+        let progress = this.revealProgress;
+        if (stagedDelaySec !== undefined) {
+            progress = { value: 0 };
+            this.pieceRevealProgress.push(progress);
+        } else {
+            progress.value = dropIn ? 0 : targetFraction;
+        }
         root.traverse(child => {
             if (child instanceof THREE.Mesh) {
                 const materials = Array.isArray(child.material) ? child.material : [child.material];
-                materials.forEach(material => BendService.applyReveal(material, revealMinY, correctedMaxY, this.revealProgress));
+                materials.forEach(material => BendService.applyReveal(material, revealMinY, correctedMaxY, progress));
             }
         });
         if (dropIn) {
-            gsap.to(this.revealProgress, { value: targetFraction, duration: MESH_DROP_DURATION_SEC, ease: 'power2.out' });
+            const delay = stagedDelaySec === undefined ? 0 : Math.max(0, stagedDelaySec - (performance.now() - this.stagedBuildStartMs) / 1000);
+            gsap.to(progress, { value: targetFraction, duration: MESH_DROP_DURATION_SEC, delay, ease: 'power2.out' });
         }
     }
 
     private disposeBuildingMesh(): void {
         gsap.killTweensOf(this.revealProgress);
+        this.pieceRevealProgress.forEach(progress => gsap.killTweensOf(progress));
+        this.pieceRevealProgress.length = 0;
 
         if (this.buildingMesh) {
             this.buildingMesh.geometry.dispose();
@@ -1233,7 +1289,7 @@ export default class BuildingZone extends Entity {
             && (this.buildingMesh || this.buildingVisuals.length > 0);
         if (sameView) {
             const targetFraction = this.fillFractionForLevel(level);
-            gsap.to(this.revealProgress, { value: targetFraction, duration: MESH_DROP_DURATION_SEC, ease: 'power2.out' });
+            gsap.to([this.revealProgress, ...this.pieceRevealProgress], { value: targetFraction, duration: MESH_DROP_DURATION_SEC, ease: 'power2.out' });
             return;
         }
 
@@ -1583,7 +1639,8 @@ export default class BuildingZone extends Entity {
 
         if (this.cameraFocusHost) {
             const focusTarget = this.getCameraFocusPosition().add(CAMERA_FOCUS_HEIGHT_OFFSET);
-            await this.cameraFocusHost.focusCameraOn(focusTarget, { holdSec: CAMERA_FOCUS_HOLD_SEC });
+            // A staged build holds the camera until it's finished.
+            await this.cameraFocusHost.focusCameraOn(focusTarget, { holdSec: Math.max(CAMERA_FOCUS_HOLD_SEC, BuildReveal.remainingSec(this.buildingId)) });
         } else {
             await wait(LEVEL_UP_REVEAL_DELAY_SEC);
         }

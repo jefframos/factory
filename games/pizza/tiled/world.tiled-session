@@ -10,14 +10,14 @@
         },
         "testMap1.tmx": {
             "expandedObjectLayers": [
-                3,
-                11
+                11,
+                3
             ],
-            "scale": 3,
-            "selectedLayer": 9,
+            "scale": 4,
+            "selectedLayer": 8,
             "viewCenter": {
-                "x": 437.3333333333333,
-                "y": 484.8333333333333
+                "x": 32,
+                "y": 1018.875
             }
         },
         "testMap1.tmx#models": {

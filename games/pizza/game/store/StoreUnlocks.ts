@@ -5,6 +5,12 @@
 // that store reaches that level), plus a store's `defaultStorageId` (hidden
 // until the store opens, level 1). Ids no store mentions are never gated.
 //
+// Also gated by WHERE an object is drawn (see registerPlacementGates()):
+//   - inside a "storeSection" rect -> hidden until that section is built,
+//   - else inside a store's area   -> hidden until that store opens (level 1).
+// RequirementRegistry rechecks on a building level-up (a section built) and on
+// a store level change (a store opening), so these appear right away too.
+//
 // RequirementRegistry consults isEnabled() for every spawn gate (buildings,
 // queues, farms, shops, marts, crafting tables, storages) and rechecks
 // whenever StoreProgressStorage.onLevelChanged fires, so a level-up makes
@@ -13,8 +19,12 @@
 // Also owns the "is this storage usable by clients" rule shared by
 // PizzaScene.setupStorages() and Store.ts — see isStorageAvailable().
 
+import { BUILDING_CONFIG } from '../data/BuildingTypes';
+import { BuildingId } from '../data/BuildingId';
+import { BuildingStorage } from '../data/BuildingStorage';
 import { StorageConfig, isStorageForSale } from '../data/StorageTypes';
-import { readStoreLayouts } from './StoreLayout';
+import type WorldObjectRegistry from '../world/WorldObjectRegistry';
+import { readStoreLayouts, rectContains } from './StoreLayout';
 import { StoreProgressStorage } from './StoreProgressStorage';
 import { StorageOwnershipStorage } from './StorageOwnershipStorage';
 import { getStoreConfig } from './StoreTypes';
@@ -24,15 +34,48 @@ interface StoreGate {
     level: number;
 }
 
+/** Map object types whose spawn goes through RequirementRegistry — the ones registerPlacementGates() gates by position. Buildings are left out: a section and a store's starter are themselves buildings drawn inside those areas. */
+const PLACEMENT_GATED_TYPES = ['storage', 'shop', 'queue', 'mart', 'farm'];
+
 export class StoreUnlocks {
     /** Built lazily on first query — the map has to be loaded, which it always is by the time anything spawns. */
     private static gates?: Map<string, StoreGate>;
     private static defaultStorageIds?: Set<string>;
+    /** entityId -> "may it exist yet?" from where it's drawn — see registerPlacementGates(). */
+    private static readonly placementGates = new Map<string, () => boolean>();
 
-    /** False while `entityId` is listed under a store level that store hasn't reached yet. */
+    /** False while `entityId` is listed under a store level that store hasn't reached yet, or sits in a section / store that isn't built / open yet (see registerPlacementGates()). */
     static isEnabled(entityId: string): boolean {
         const gate = this.getGates().get(entityId);
-        return !gate || StoreProgressStorage.getLevel(gate.storeId) >= gate.level;
+        if (gate && StoreProgressStorage.getLevel(gate.storeId) < gate.level) {
+            return false;
+        }
+        return this.placementGates.get(entityId)?.() ?? true;
+    }
+
+    /**
+     * Gates every PLACEMENT_GATED_TYPES object by where it's drawn (its center): inside a
+     * "storeSection" rect -> until that section is built (level 1, same rule BuildingZone uses);
+     * else inside a (non-disabled) store's area -> until that store opens. Call once, before the
+     * spawn gates are registered.
+     */
+    static registerPlacementGates(worldObjects: WorldObjectRegistry): void {
+        const sections = worldObjects.getStoreSections();
+        const stores = readStoreLayouts().filter(layout => !getStoreConfig(layout.id).disabled);
+        for (const type of PLACEMENT_GATED_TYPES) {
+            for (const [id, placement] of worldObjects.getAllOfType(type)) {
+                const section = sections.find(s => rectContains(s.placement, placement.x, placement.z));
+                if (section) {
+                    this.placementGates.set(id, () => isSectionBuilt(section.id));
+                    console.log(`[StoreUnlocks] ${type} "${id}" waits for section "${section.id}" to be built`);
+                    continue;
+                }
+                const store = stores.find(layout => rectContains(layout.area, placement.x, placement.z));
+                if (store) {
+                    this.placementGates.set(id, () => StoreProgressStorage.getLevel(store.id) >= 1);
+                }
+            }
+        }
     }
 
     static isDefaultStorage(storageId: string): boolean {
@@ -89,4 +132,9 @@ export class StoreUnlocks {
         }
         return this.gates;
     }
+}
+
+/** A store section is built once its building reaches level 1 — same rule as BuildingZone's own isSectionBuilt(). */
+function isSectionBuilt(sectionId: string): boolean {
+    return BUILDING_CONFIG[sectionId as BuildingId] !== undefined && BuildingStorage.getLevel(sectionId as BuildingId) >= 1;
 }

@@ -15,6 +15,12 @@
 //                     ("target" = that part's own "id", e.g. "farmStore1Cashier"
 //                     or "farmStore1MoneyDrop") — see StoreWorker.ts. Optional:
 //                     a missing one falls back to that part's own center.
+//   - clientArea:     where clients may wander (rect, ellipse or polygon;
+//                     "target" = store id, or unset = the store whose area
+//                     holds its center). Several per store are unioned. Any
+//                     part over a store section that isn't built yet is
+//                     skipped until it is (see Store.findWanderSpot()).
+//                     None = clients wander the whole store area.
 //
 // A counter model for the cashier / money drop: any image (tile object) on
 // ANY object layer whose "target" is that part's own "id" (e.g.
@@ -37,6 +43,7 @@ import {
     objectToWorldRect,
 } from '../world/TileMapConfig';
 import { getStoreLayers } from '../world/StoreLayerNames';
+import { SpawnerShape, objectToShape } from '../world/WorldObjectRegistry';
 
 
 /** A world-space point (x/z). */
@@ -68,6 +75,8 @@ export interface StoreLayout {
     /** Where a worker stands to serve / to collect the money — the map's "npcPoint" targeting that part (see this file's own doc). Undefined = none drawn. */
     cashierNpcPoint?: StorePoint;
     moneyDropNpcPoint?: StorePoint;
+    /** The map's "clientArea" shapes for this store — where clients wander (see this file's own doc). Empty = the whole store area. */
+    clientAreas: SpawnerShape[];
 }
 
 type StorePartType = 'storeEntrance' | 'storeExit' | 'storeCashier' | 'storeMoneyDrop';
@@ -93,6 +102,8 @@ export function readStoreLayouts(
     const partIds = new Map<string, { storeId: string; type: StorePartType }>();
     /** "npcPoint" objects, keyed by their target part id — resolved to a store once every part id is known. */
     const npcPoints = new Map<string, StorePoint>();
+    /** "clientArea" shapes, with their "target" store (if set) — resolved once every store area is known. */
+    const clientAreas: { target?: string; shape: SpawnerShape }[] = [];
 
     for (const obj of objects) {
         const type = getObjectProperty(obj, 'type');
@@ -110,6 +121,8 @@ export function readStoreLayouts(
             if (starter) {
                 starters.set(id, starter);
             }
+        } else if (type === 'clientArea') {
+            clientAreas.push({ target: getObjectProperty(obj, 'target'), shape: objectToShape(obj, tileSize, WORLD_UNITS_PER_TILE) });
         } else if (type === 'npcPoint') {
             const target = getObjectProperty(obj, 'target');
             if (!target) {
@@ -145,6 +158,16 @@ export function readStoreLayouts(
         points.set(`${part.storeId}|${part.type}`, point);
     }
 
+    const areasByStore = new Map<string, SpawnerShape[]>();
+    for (const { target, shape } of clientAreas) {
+        const storeId = target ?? [...areas].find(([, area]) => rectContains(area, shape.center.x, shape.center.z))?.[0];
+        if (!storeId || !areas.has(storeId)) {
+            console.warn(`[StoreLayout] clientArea ${target ? `targets unknown store "${target}"` : 'has no "target" and its center is in no store area'} — skipping`);
+            continue;
+        }
+        areasByStore.set(storeId, [...(areasByStore.get(storeId) ?? []), shape]);
+    }
+
     const layouts: StoreLayout[] = [];
     for (const [id, area] of areas) {
         const p = parts.get(id) ?? {};
@@ -165,6 +188,7 @@ export function readStoreLayouts(
             moneyDropMesh: meshes.get(`${id}|storeMoneyDrop`),
             cashierNpcPoint: points.get(`${id}|storeCashier`),
             moneyDropNpcPoint: points.get(`${id}|storeMoneyDrop`),
+            clientAreas: areasByStore.get(id) ?? [],
         });
     }
     return layouts;

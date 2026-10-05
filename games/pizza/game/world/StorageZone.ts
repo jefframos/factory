@@ -154,6 +154,9 @@ export default class StorageZone extends Entity {
         }
     };
 
+    /** See the constructor's `mapRotationDeg`. */
+    private readonly mapRotationDeg: number;
+
     public constructor(
         storageId: string,
         config: StorageConfig,
@@ -164,9 +167,12 @@ export default class StorageZone extends Entity {
         screenHost: ScreenAnchorHost,
         /** Draw the dotted outline around the drop area — off when this storage's store sets hideStorageDropperView (see StoreConfig / PizzaScene.setupStorages()). */
         showDropOutline = true,
+        /** The storage object's own rotation on the Tiled map (degrees, clockwise) — turns the mesh on top of its config/view rotationDeg. The signpost isn't affected. */
+        mapRotationDeg = 0,
     ) {
         super();
         this.showDropOutline = showDropOutline;
+        this.mapRotationDeg = mapRotationDeg;
         this.screenHost = screenHost;
         this.storageId = storageId;
         this.config = config;
@@ -224,7 +230,8 @@ export default class StorageZone extends Entity {
                 modelDef,
                 view ? this.meshOffset.clone().add(new THREE.Vector3(...view.offset)) : this.meshOffset.clone(),
                 this.meshScale,
-                THREE.MathUtils.degToRad(view?.rotationDeg ?? this.config.rotationDeg),
+                // Tiled turns clockwise, THREE's yaw counter-clockwise — hence the minus.
+                THREE.MathUtils.degToRad((view?.rotationDeg ?? this.config.rotationDeg) - this.mapRotationDeg),
                 () => {
                     // Parents included before measuring — see the background-tab stale-matrixWorld
                     // note in ResourceDisplayModel.ts. Only the X/Z SIZE is used, so the mesh's own

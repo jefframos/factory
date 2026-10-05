@@ -459,6 +459,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // icon (see registerQueueSpawnGates()), so the panel has to exist first.
         this.uiService = new UIService(this.game, () => this.toggleCameraMode());
         this.setupDebugButtons();
+        // Before any spawn gate — objects inside a store section / store area wait for it (see StoreUnlocks.ts).
+        StoreUnlocks.registerPlacementGates(this.worldObjects);
         this.registerQueueSpawnGates();
         this.registerShopSpawnGates();
         this.setupMarts();
@@ -1279,7 +1281,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     BUILDING_CONFIG[buildingId].doorStyle ? getDoorStyle(BUILDING_CONFIG[buildingId].doorStyle) : getStoreDoorStyle(viewStoreId),
                 ));
                 this.threeScene.add(buildingZone.transform);
-                this.registerZoneVisibility(buildingZone.transform, position.x, position.z, placement.width, placement.depth);
+                // A store building (starter or section) follows its DROPPER's zone, not its whole
+                // footprint — a store may overlap a zone that only opens later (e.g. its
+                // expansion area, see ZoneTypes.ts) and must still show while that one is locked.
+                const visibilityArea = viewStoreId !== undefined && dropperPlacement ? dropperPlacement : placement;
+                this.registerZoneVisibility(buildingZone.transform, visibilityArea.x, visibilityArea.z, visibilityArea.width, visibilityArea.depth);
             });
         }
 
@@ -1530,11 +1536,16 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * swaps in the real StorageZone once paid.
      */
     private setupStorages(): void {
-        for (const [id, placement] of this.worldObjects.getAllOfType('storage')) {
+        for (const [id, drawn] of this.worldObjects.getAllOfType('storage')) {
             const config = getStorageConfig(id);
             if (config.disabled) {
                 continue;
             }
+            // A storage turned a quarter (or three) in Tiled covers its rect the other way round —
+            // swap so the trigger/outline/solid match what the map shows. Its rotation also turns
+            // the mesh and the for-sale cost label (not the signpost).
+            const quarterTurned = Math.abs(Math.sin(THREE.MathUtils.degToRad(drawn.rotationDeg))) > Math.SQRT1_2;
+            const placement = quarterTurned ? { ...drawn, width: drawn.depth, depth: drawn.width } : drawn;
             const dropper = this.worldObjects.getDropperFor(id);
             const trigger = dropper ?? placement;
             // No dropper + solid: the trigger IS the storage's footprint, which the solid collider
@@ -1557,6 +1568,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     { width: placement.width, depth: placement.depth },
                     this.screenHost,
                     showDropOutline,
+                    placement.rotationDeg,
                 ));
                 this.threeScene.add(storageZone.transform);
                 // Registered over the storage's OWN footprint (where its mesh is), not the dropper's.
@@ -1582,6 +1594,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     config.floorLabelSize,
                     getStorageIcon(config),
                     showDropOutline,
+                    placement.rotationDeg,
                 ));
                 this.threeScene.add(purchaseZone.transform);
                 this.registerZoneVisibility(purchaseZone.transform, trigger.x, trigger.z, trigger.width, trigger.depth);

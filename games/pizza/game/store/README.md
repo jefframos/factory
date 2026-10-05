@@ -38,6 +38,7 @@ object's own Name/Class fields are ignored. Only plain rectangles are read.
 | `storeExit` | `id`, `target` = store id | Clients walk here after paying and despawn. |
 | `storeCashier` | `id`, `target` = store id | The player stands here to serve. Clients queue in a line next to it. |
 | `storeMoneyDrop` | `id`, `target` = store id | Paid money piles up here (one pile after another — a bigger rect holds more piles); the player walks over it to collect. |
+| `clientArea` | optional `target` = store id (unset = the store whose area holds its center) | Rect, ellipse or polygon: where wandering clients stroll. Several are combined. Any part over a store section that isn't built yet is ignored until it is. None = the whole store area. |
 
 A store missing any of its four parts is skipped (console warning `[StoreLayout] ...`).
 
@@ -297,6 +298,9 @@ Hooks outside this folder:
   spawn gate and swaps in `StoragePurchaseZone` for unbought ones.
 - `world/RequirementRegistry.ts` — every spawn gate also checks `StoreUnlocks.isEnabled(id)`
   and rechecks on store level-up.
+  It also gates by position: a storage/shop/queue/mart/farm drawn inside a `storeSection`
+  waits for that section to be built; one inside a store area waits for the store to open
+  (`StoreUnlocks.registerPlacementGates()`).
 - `index.ts` — loads `StoreProgressStorage` / `StorageOwnershipStorage` at boot.
 - `data/PlayerDataReset.ts` — clears the store saves.
 
@@ -323,7 +327,7 @@ any shopping state, out of patience with nothing bought ──► leaving
 | `queuing` | Stands at its place, facing the shelf. Every 3–6 s, if someone is still ahead of it, it may go **browsing** (`browseChance`). |
 | `browsing` | Walks to a free spot near another shelf (or beside its own, if there's only one) and looks at it for 2–4 s, then goes back. **Keeps its place in the queue**; heads straight back the moment it's next. |
 | `picking` | At the front: takes one unit every `pickDelaySec`. Finishing an item cheers it up one mood step (when more items are left). |
-| `wandering` | Everything left on its list has run out: after 2 s at the empty shelf it gives up its place (so people behind it can get other things) and strolls to random free spots in the store. Every second it checks **every item still on its list** and goes for the first one back in stock. |
+| `wandering` | Everything left on its list has run out: after 2 s at the empty shelf it gives up its place (so people behind it can get other things) and strolls to random free spots in the store (inside its `clientArea`, if drawn). Every second it checks **every item still on its list** and goes for the first one back in stock. |
 | `toCashier` / `cashierQueue` / `readyToPay` | Walks to its place at the cashier, waits behind others, then waits at the front for the player. |
 | `leaving` / `done` | Walks to the exit, then Store removes it. |
 
