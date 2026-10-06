@@ -25,6 +25,7 @@ import gsap from 'gsap';
 import { Game } from 'core/Game';
 import type Popup from './Popup';
 import { ACTIVE_POPUP_TRANSITION } from './PopupTransitions';
+import { GameplayTracker } from '../../platform/GameplayTracker';
 
 const DARKEN_ALPHA = 0.55;
 
@@ -98,6 +99,8 @@ export class PopupManager {
 
         popup.bindClose(() => this.close(popup));
         this.current = { popup, layer, backdrop };
+        // Gameplay pauses while a popup is open (Poki gameplayStop) — see GameplayTracker.ts.
+        GameplayTracker.setPopupOpen(true);
 
         ACTIVE_POPUP_TRANSITION.playIn({ root: popup.root, backdrop });
     }
@@ -110,6 +113,9 @@ export class PopupManager {
         const { layer, backdrop } = this.current;
         this.current = undefined;
         popup.notifyClosed();
+        // Back to playing (Poki gameplayStart). closeImmediate() deliberately doesn't report —
+        // it only runs right before show() opens the next popup, so gameplay stays stopped.
+        GameplayTracker.setPopupOpen(false);
 
         const timeline = ACTIVE_POPUP_TRANSITION.playOut({ root: popup.root, backdrop }, () => {
             layer.destroy({ children: true });

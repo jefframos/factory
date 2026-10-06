@@ -52,7 +52,8 @@
 // A "cameraTarget" object is a point carrying "target" (e.g. a BuildingId)
 // instead of "id" — where the camera looks when that building levels up,
 // instead of its default (see BuildingZone.getCameraFocusPosition()). Read
-// through getCameraTargetFor().
+// through getCameraTargetFor(). A "cameraFocus" point on a store layer is the same thing for
+// that store's building (see StoreLayerNames.getStoreCameraFocuses()).
 //
 // Built once alongside TileMap (same loadTiledMap()/loadTileDefs() PIXI
 // Assets reads, no extra network/parse cost) — call get()/
@@ -74,7 +75,7 @@ import {
     WORLD_UNITS_PER_TILE,
 } from './TileMapConfig';
 import { decodeObjectModel, DecodedObjectModel } from './MeshLayerSpawner';
-import { getStoreLayerMapObjects, getStoreSectionLayers, getStoreViewLayers } from './StoreLayerNames';
+import { getStoreCameraFocuses, getStoreLayerMapObjects, getStoreSectionLayers, getStoreViewLayers } from './StoreLayerNames';
 
 /** Tiled layer name holding hand-placed building/gate/etc. spawn points — see this file's own doc. */
 export const OBJECTS_LAYER_NAME = 'mapSettings';
@@ -587,12 +588,7 @@ export default class WorldObjectRegistry {
                     console.warn(`[WorldObjectRegistry] cameraTarget #${obj.id} has no "${CAMERA_TARGET_TARGET_PROPERTY}" custom property — skipping`);
                     continue;
                 }
-                const { x, z } = objectToWorldRect(obj, tileDefs.tileSize, worldUnitsPerTile);
-                if (this.cameraTargetsByTarget.has(target)) {
-                    console.warn(`[WorldObjectRegistry] more than one cameraTarget targets "${target}" — the last one found (#${obj.id}) wins`);
-                }
-                this.cameraTargetsByTarget.set(target, { x, z });
-                console.log(`  - type="cameraTarget" target="${target}" -> world x=${x.toFixed(2)} z=${z.toFixed(2)}`);
+                this.registerCameraTarget(target, obj, tileDefs.tileSize, worldUnitsPerTile);
                 continue;
             }
 
@@ -669,6 +665,11 @@ export default class WorldObjectRegistry {
             }
         }
 
+        // A store layer's "cameraFocus" point is a cameraTarget for that store's building.
+        for (const { target, object } of getStoreCameraFocuses(map)) {
+            this.registerCameraTarget(target, object, tileDefs.tileSize, worldUnitsPerTile);
+        }
+
         this.readSectionLayers(map, tileDefs.tileSize, worldUnitsPerTile);
         this.readStoreViewLayers(map, tileDefs.tileSize, worldUnitsPerTile);
         this.assignWallExclusions();
@@ -677,6 +678,16 @@ export default class WorldObjectRegistry {
         for (const waypoints of this.waypointsByTarget.values()) {
             waypoints.sort((a, b) => a.order - b.order);
         }
+    }
+
+    /** Where the camera looks when `target` (e.g. a BuildingId) levels up — see getCameraTargetFor(). */
+    private registerCameraTarget(target: string, obj: Parameters<typeof objectToWorldRect>[0], tileSizePx: number, worldUnitsPerTile: number): void {
+        const { x, z } = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+        if (this.cameraTargetsByTarget.has(target)) {
+            console.warn(`[WorldObjectRegistry] more than one cameraTarget/cameraFocus targets "${target}" — the last one found (#${obj.id}) wins`);
+        }
+        this.cameraTargetsByTarget.set(target, { x, z });
+        console.log(`  - camera target for "${target}" -> world x=${x.toFixed(2)} z=${z.toFixed(2)}`);
     }
 
     /**

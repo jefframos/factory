@@ -112,7 +112,7 @@ import CropVisualComponent from '../components/CropVisualComponent';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import { FARM_TILE_CONFIG, FarmPlotConfig } from '../data/FarmTypes';
-import { CROP_CONFIG, CropId, isCropReady } from '../data/CropTypes';
+import { CROP_CONFIG, CropId, getCropTotalGrowSec, isCropReady } from '../data/CropTypes';
 import { FarmCropStorage, PlantedCrop } from '../data/FarmCropStorage';
 import { SEED_CONFIG, SeedId } from '../data/SeedTypes';
 import { SeedStorage } from '../data/SeedStorage';
@@ -133,6 +133,7 @@ import FarmAutoPlantHud from './FarmAutoPlantHud';
 import { getPlayerConfig } from '../data/PlayerConfig';
 import { CarryStack } from '../player/CarryStack';
 import { flyResourceToStack } from '../components/FlyToStack';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 
 const FARM_TILE_CORNER_RADIUS = 0.2;
 const PLACEHOLDER_HEIGHT = 0.1;
@@ -433,7 +434,9 @@ export default class FarmPlotTile extends Entity {
             return;
         }
 
-        const plantedAtSec = GameClock.nowSec();
+        // The first time a farm shows up, its crops are already grown — ready to collect right away.
+        const grownSec = FarmCropStorage.hasEverPlanted(this.tileKey) ? 0 : getCropTotalGrowSec(CROP_CONFIG[cropId]);
+        const plantedAtSec = GameClock.nowSec() - grownSec;
         FarmCropStorage.plant(this.tileKey, cropId, plantedAtSec);
         // An autoPlant cell also plants with nobody standing on it (see awake()/harvest()) — only
         // show the growth HUD when the player is actually here, same as handleTriggerEnter() does.
@@ -499,6 +502,7 @@ export default class FarmPlotTile extends Entity {
         if (!FarmCropStorage.harvest(this.tileKey)) {
             return;
         }
+        GameAnalytics.cropHarvested(planted.cropId);
 
         if (intoStack) {
             // Banked one unit at a time as each lands on the stack — see FlyToStack.ts. The stack

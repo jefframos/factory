@@ -206,6 +206,14 @@ const ENTITY_SCHEMAS = {
         { key: 'requirement', type: 'requirement', label: 'Unlock Requirement', optional: true },
         { key: 'cameraTemplateId', type: 'select', label: 'Camera Template (blank = the Camera Templates tab\'s own "default" entry)', source: 'cameraTemplates', optional: true },
     ],
+    // The end-of-demo popup (DemoTypes.ts) — only the "default" entry is used.
+    demo: [
+        { key: 'endRequirement', type: 'requirement', label: 'Ends the Demo When (the popup shows once per save, after any build animation/camera trip it caused)', optional: true },
+        { key: 'delaySec', type: 'number', label: 'Delay (seconds after that before the popup shows — blank = 0)', optional: true },
+        { key: 'title', type: 'text', label: 'Popup Title' },
+        { key: 'message', type: 'text', label: 'Popup Message' },
+        { key: 'disabled', type: 'boolean', label: 'Disabled (no end-of-demo popup)', optional: true },
+    ],
     // Free-designer-id (NOT zoneNumber-keyed, unlike `zones`/`zoneTutorials` above) — a "default"
     // entry is expected to always exist (see CameraTemplateTypes.ts's own doc); deleting it just
     // means every zone with no Camera Template of its own falls back to whatever
@@ -223,22 +231,51 @@ const ENTITY_SCHEMAS = {
     // unused" convention buildings' `levels`/providers' `drops` list items already tolerate;
     // there's no conditional-field support in this schema engine to hide the other two. A
     // 'trigger' step has no resource to gather — the arrow just points at that trigger's placed
-    // location until it activates (see ZoneTutorialController.ts's own doc).
+    // location until it activates (see ZoneTutorialController.ts's own doc). The store kinds
+    // (Fill Storage / Serve Sale / Collect Money / Build) are the FTUE's shop lesson — see
+    // ZoneTutorialTypes.ts.
     zoneTutorials: [
         {
             key: 'steps', type: 'list', label: 'Steps (walked through in order)',
-            itemLabel: item => item.kind === 'craft' ? `Craft: ${item.craftId ?? '?'}` : item.kind === 'gate' ? `Gate: ${item.gateId ?? '?'}` : `Trigger: ${item.triggerId ?? '?'}`,
+            itemLabel: item => ({
+                craft: `Craft: ${item.craftId ?? '?'}`,
+                gate: `Gate: ${item.gateId ?? '?'}`,
+                storage: `Fill Storage: ${item.storageId ?? '?'} x${item.amount ?? 1}${item.farmId ? ` (from ${item.farmId})` : ''}`,
+                sale: `Serve Sale: ${item.storeId ?? '?'} (${item.amount ?? 1} total)`,
+                collectMoney: `Collect Money: ${item.storeId ?? '?'}`,
+                build: `Build: ${item.buildingId ?? '?'}`,
+                buyStorage: `Buy Storage: ${item.storageId ?? '?'}${item.gatherZone !== undefined ? ` (gather in zone ${item.gatherZone})` : ''}`,
+            })[item.kind] ?? `Trigger: ${item.triggerId ?? '?'}`,
             fields: [
-                { key: 'kind', type: 'select', label: 'Kind', options: [{ value: 'craft', label: 'Craft' }, { value: 'gate', label: 'Gate' }, { value: 'trigger', label: 'Trigger' }] },
+                {
+                    key: 'kind', type: 'select', label: 'Kind',
+                    options: [
+                        { value: 'craft', label: 'Craft' },
+                        { value: 'gate', label: 'Gate' },
+                        { value: 'trigger', label: 'Trigger' },
+                        { value: 'storage', label: 'Fill Storage (gather its item from a farm, deposit it)' },
+                        { value: 'sale', label: 'Serve Sale (stand at the store\'s cashier until a client pays)' },
+                        { value: 'collectMoney', label: 'Collect Money (grab the store\'s money drop)' },
+                        { value: 'build', label: 'Build (pay at the building\'s dropper until it\'s Lv 1)' },
+                        { value: 'buyStorage', label: 'Buy Storage (gather its resource cost, e.g. chop trees for wood, then pay at it)' },
+                    ],
+                },
                 { key: 'craftId', type: 'select', label: 'Craft Table (if Kind = Craft)', source: 'crafting', optional: true },
                 { key: 'gateId', type: 'select', label: 'Gate (if Kind = Gate)', source: 'gates', optional: true },
                 { key: 'triggerId', type: 'select', label: 'Trigger (if Kind = Trigger)', source: 'triggers', optional: true },
+                { key: 'storageId', type: 'select', label: 'Storage (if Kind = Fill Storage — needs a Resource Type on the Storages tab; or Buy Storage)', source: 'storages', optional: true },
+                { key: 'gatherZone', type: 'number', label: 'Gather Zone (if Kind = Buy Storage — only point at sources in this zone number, e.g. 3 for the tree zone; blank = nearest anywhere)', optional: true },
+                { key: 'farmId', type: 'select', label: 'Farm (if Kind = Fill Storage — where the gather arrow points; blank = nearest farm growing that item)', source: 'farms', optional: true },
+                { key: 'storeId', type: 'select', label: 'Store (if Kind = Serve Sale / Collect Money)', source: 'stores', optional: true },
+                { key: 'amount', type: 'number', label: 'Amount (Fill Storage: units on the shelf; Serve Sale: total sales — blank = 1)', optional: true },
+                { key: 'buildingId', type: 'select', label: 'Building (if Kind = Build)', source: 'buildings', optional: true },
                 { key: 'iconTextureId', type: 'icon', label: 'Icon Override (blank = tutorial\'s own Arrow Icon below)', optional: true },
                 { key: 'offset', type: 'vector3', label: 'Icon Offset (x, y, z — world units nudged onto the target position; default 0,0,0)' },
             ],
         },
         { key: 'arrowTextureId', type: 'icon', label: 'Arrow Icon (fallback for any step above with no Icon Override set)' },
         { key: 'use3dArrow', type: 'boolean', label: 'Use 3D Arrow (not implemented yet — screen-space arrow always shows regardless)' },
+        { key: 'startRequirement', type: 'requirement', label: 'Start Requirement (starts on its own the moment this is met, wherever the player is — instead of when they walk into this zone)', optional: true },
     ],
     // One fixed row per ZoneColorKind — see ZoneColorTypes.ts's own doc. The label spells out
     // which entity type each kind actually renders on, since "buildingDropper"/"gateDropper"
@@ -291,6 +328,8 @@ const ENTITY_SCHEMAS = {
         },
         { key: 'updateParticleEffectId', type: 'select', label: 'Update Particle Effect (fires every time this building levels up)', source: 'particleEffects', optional: true },
         { key: 'updateParticleCount', type: 'number', label: 'Update Particle Count', optional: true },
+        { key: 'floorLabelIcon', type: 'icon', label: 'Floor Label Icon (Floor frame only — drawn above the cost to show what\'s being built, e.g. ItemIcon_Shop_old-2 for a shop; blank = just the cost)', optional: true },
+        { key: 'buildDurationMultiplier', type: 'number', label: 'Build Duration Multiplier (x how long the build animation takes when it levels up — walls rising, pieces sweeping in; the camera holds on it until done. 1.5 = 50% slower; blank = 1)', optional: true },
         { key: 'baseAtDropper', type: 'boolean', label: 'Base Site At Dropper (the unbuilt level-0 Base View stands at the center of this building\'s dropper instead of at the building\'s own position — falls back to the building position if it has no dropper)', optional: true },
         { key: 'anchorAtDropper', type: 'boolean', label: 'Anchor Popup/Particles At Dropper (requirements panel, Level Up! callout, and update particle burst all spawn at this building\'s own dropper instead of its mesh — falls back to the mesh if it has no dropper)', optional: true },
         { key: 'npcId', type: 'select', label: 'NPC (optional — spawns an animated NPC at this building)', source: 'npcs', optional: true },
@@ -747,6 +786,9 @@ const ENTITY_SCHEMAS = {
         { key: 'maxClientPatience', type: 'number', label: 'Max Client Patience (blank = 1.5)', optional: true },
         { key: 'veryHappyPayMultiplier', type: 'number', label: 'Very Happy Pay Multiplier (x what a very happy client pays — blank = 2)', optional: true },
         { key: 'unhappyPayPenalty', type: 'number', label: 'Sad/Angry Pay Penalty (fraction taken off, 0.2 = 20% less — blank = 0.2)', optional: true },
+        { key: 'openRequirement', type: 'requirement', label: 'Open Early (the store opens at Lv 1 as soon as this is met, before its map "starter" building is built — clients, cashier, money drop and Lv 1 storages/farms work without the building; meanwhile each client wants one unit of one item and never gets upset; used by the FTUE)', optional: true },
+        { key: 'earlySpawnIntervalSec', type: 'number', label: 'Early Spawn Interval (seconds between two clients arriving while open early — blank = normal pacing)', optional: true },
+        { key: 'earlyMaxClients', type: 'number', label: 'Early Max Clients (most clients at once while open early, before the starter is built — they never get upset then; blank = normal pacing)', optional: true },
         { key: 'defaultStorageId', type: 'text', label: 'Default Storage (storage id on the map — FREE, appears when the store opens; blank = every storage must be bought)', optional: true },
         {
             key: 'levels', type: 'list', label: 'Levels (store is Lv 1 when it opens; each entry is what it takes to REACH that level, counted from the previous one)', optional: true,
@@ -761,6 +803,14 @@ const ENTITY_SCHEMAS = {
                     ],
                 },
                 { key: 'amount', type: 'number', label: 'Amount' },
+                {
+                    key: 'moodFloor', type: 'select', label: 'Lowest Client Mood at this level (e.g. Happy at Lv 1: nobody gets annoyed, walks out or drops garbage — blank = no floor)', optional: true,
+                    options: [
+                        { value: 'happy', label: 'Happy' },
+                        { value: 'annoyed', label: 'Annoyed' },
+                        { value: 'sad', label: 'Sad' },
+                    ],
+                },
                 {
                     key: 'enables', type: 'list', label: 'Enables (map object ids that stay hidden until this level — storage, farm, building, queue, shop, mart, crafting table)', optional: true,
                     itemLabel: item => item.entityId || 'entity',
@@ -1276,5 +1326,11 @@ const REQUIREMENT_TYPE_FIELDS = {
     // "Appears once storage X is built (bought, or free)" — e.g. a farm unlocked by its shelf.
     storage: [
         { key: 'storageId', type: 'select', label: 'Storage', source: 'storages' },
+    ],
+    // "Once store X has made N sales in total" (lifetime — never reset by a store level-up),
+    // e.g. the FTUE's "zone 2 opens after the first sale". See MilestoneRequirement.ts.
+    storeSales: [
+        { key: 'storeId', type: 'select', label: 'Store', source: 'stores' },
+        { key: 'sales', type: 'number', label: 'Total Sales (at least — clients who ever paid)' },
     ],
 };

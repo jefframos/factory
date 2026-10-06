@@ -47,6 +47,13 @@ import BuildingZone, { BuildingTriggerArea } from '../player/BuildingZone';
 import QueueZone from '../player/QueueZone';
 import { getQueueConfig } from '../data/QueueTypes';
 import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
+import { getDemoConfig } from '../data/DemoTypes';
+import { DemoStorage } from '../data/DemoStorage';
+import DemoEndPopup from '../ui/popups/DemoEndPopup';
+import { GameAnalytics } from '../analytics/GameAnalytics';
+import { GameplayTracker } from '../platform/GameplayTracker';
+import { PopupManager } from '../ui/popups/PopupManager';
+import { BuildReveal } from '../player/BuildReveal';
 import QuestGiverGroup from '../player/QuestGiverGroup';
 import { getQuestGiverConfig } from '../data/QuestGiverTypes';
 import ShopZone, { ShopTriggerArea } from '../shop/ShopZone';
@@ -364,6 +371,9 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      */
     private cameraFocusPoint: THREE.Vector3 | null = null;
 
+    /** An eased focusCameraOn() glide in progress (CameraFocusOptions.easedPan) — while set, fixedUpdate() moves smoothedFollowTarget along it instead of the regular follow lerp. `to` gets the player's current position (the return glide ends on the player, wherever they've walked). */
+    private cameraPan?: { from: THREE.Vector3; to: (playerPosition: THREE.Vector3) => THREE.Vector3; startMs: number; durationSec: number };
+
     /**
      * The point the camera is ACTUALLY aimed/positioned at — eased toward whichever point it
      * should currently be following (player or cameraFocusPoint), rather than snapping to
@@ -474,6 +484,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupTriggers();
         this.setupCraftTables();
         StoreProgressStorage.onLevelChanged.add(this.handleStoreLevelChanged);
+        // Poki gameplayStart on the player's first tap/click/key from here on — see GameplayTracker.ts.
+        GameplayTracker.init();
         this.setupDebugGui();
         this.threeScene.add(this.mainPlayer.transform);
 
@@ -2266,9 +2278,19 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             // not where the camera looks THIS frame — see smoothedFollowTarget's own doc for why
             // that distinction matters (jumping straight to this would snap the camera's gaze
             // instantly even though position still eased smoothly).
-            const desiredTarget = this.cameraFocusPoint ?? playerPosition;
-            const followT = 1 - Math.exp(-CAMERA_SETTINGS.followSpeed * delta);
-            this.smoothedFollowTarget.lerp(desiredTarget, followT);
+            const pan = this.cameraPan;
+            if (pan) {
+                // Eased glide (see cameraPan's own doc) — smoothstep in/out over its duration.
+                const t = Math.min(1, (performance.now() - pan.startMs) / (pan.durationSec * 1000));
+                this.smoothedFollowTarget.lerpVectors(pan.from, pan.to(playerPosition), t * t * (3 - 2 * t));
+                if (t >= 1) {
+                    this.cameraPan = undefined;
+                }
+            } else {
+                const desiredTarget = this.cameraFocusPoint ?? playerPosition;
+                const followT = 1 - Math.exp(-CAMERA_SETTINGS.followSpeed * delta);
+                this.smoothedFollowTarget.lerp(desiredTarget, followT);
+            }
 
             // Position is set DIRECTLY from smoothedFollowTarget (rigidly offset, not a second
             // independent lerp toward it) — see smoothedFollowTarget's own doc for the ONE lag
@@ -2347,7 +2369,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      */
     public async focusCameraOn(target: THREE.Vector3, options: CameraFocusOptions = {}): Promise<void> {
         const travelSec = options.travelSec ?? DEFAULT_FOCUS_TRAVEL_SEC;
-        const holdSec = options.holdSec ?? DEFAULT_FOCUS_HOLD_SEC;
+        const holdSec = options.holdUntilSec !== undefined ? Math.max(0, options.holdUntilSec - travelSec) : options.holdSec ?? DEFAULT_FOCUS_HOLD_SEC;
         const returnSec = options.returnSec ?? travelSec;
 
         // Movement is disabled BEFORE the pre-delay (not just before the travel) — see
@@ -2361,12 +2383,24 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         }
 
         this.cameraFocusPoint = target.clone();
+        if (options.easedPan) {
+            const focus = this.cameraFocusPoint;
+            this.cameraPan = { from: this.smoothedFollowTarget.clone(), to: () => focus, startMs: performance.now(), durationSec: travelSec };
+        }
         await wait(travelSec);
         await wait(holdSec);
         // Clearing this is the ENTIRE "return" instruction — fixedUpdate() falls back to
         // playerPosition next step and the same lerp eases back toward wherever the player
         // actually is by then, not wherever they were when the event started.
         this.cameraFocusPoint = null;
+        if (options.easedPan) {
+            this.cameraPan = { from: this.smoothedFollowTarget.clone(), to: playerPosition => playerPosition, startMs: performance.now(), durationSec: returnSec };
+        }
+        if (options.releaseOnReturn) {
+            this.unfreezePlayerMovement();
+            await wait(returnSec);
+            return;
+        }
         await wait(returnSec);
 
         this.unfreezePlayerMovement();
@@ -2382,6 +2416,38 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * freezes are currently active only lets go once the LAST one clears.
      */
     private movementFreezeCount = 0;
+
+    /** Seconds the demo's endRequirement has been met with the player free to move — see updateDemoEnd(). */
+    private demoEndTimerSec = 0;
+
+    /**
+     * Shows the end-of-demo popup (DemoTypes.ts) once per save, as soon as its endRequirement is
+     * met — but only after whatever met it has finished playing: a building's build animation
+     * (BuildReveal) and any camera trip (movement frozen), then the config's delaySec.
+     */
+    private updateDemoEnd(delta: number): void {
+        const config = getDemoConfig();
+        if (!config?.endRequirement || config.disabled) {
+            return;
+        }
+        void DemoStorage.load();
+        if (!DemoStorage.isLoaded() || DemoStorage.isEndShown()) {
+            return;
+        }
+        const requirement = config.endRequirement;
+        const stillPlaying = this.movementFreezeCount > 0 || (requirement.type === 'building' && BuildReveal.isRunning(requirement.buildingId));
+        if (stillPlaying || !isMilestoneRequirementMet(requirement)) {
+            this.demoEndTimerSec = 0;
+            return;
+        }
+        this.demoEndTimerSec += delta;
+        if (this.demoEndTimerSec < (config.delaySec ?? 0)) {
+            return;
+        }
+        DemoStorage.markEndShown();
+        GameAnalytics.demoEnded();
+        PopupManager.instance.show(new DemoEndPopup(config.title, config.message));
+    }
 
     private freezePlayerMovement(): void {
         this.movementFreezeCount++;
@@ -2447,6 +2513,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.updateStoreUi();
         this.uiService.update();
         this.movementTutorialOverlay.update(delta);
+        this.updateDemoEnd(delta);
         ParticleSystem.update(delta);
 
         super.update(delta);
@@ -2460,6 +2527,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.dynamicResourceSpawner.destroy();
         this.shapeResourceSpawner.destroy();
         this.zoneTutorialController.destroy();
+        GameplayTracker.destroy();
         this.flyCamera.destroy();
         this.movementTutorialOverlay.destroy();
         this.loadingSpinner?.destroy();

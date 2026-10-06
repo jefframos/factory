@@ -88,7 +88,14 @@ export interface StorageMilestoneRequirement {
     storageId: string;
 }
 
-export type MilestoneRequirement = BuildingMilestoneRequirement | ItemMilestoneRequirement | ResourceMilestoneRequirement | GateMilestoneRequirement | TriggerMilestoneRequirement | StoreMilestoneRequirement | StorageMilestoneRequirement;
+/** Store `storeId` must have made AT LEAST `sales` sales in total (clients who paid, lifetime — StoreProgressStorage.getTotalSales(), never reset by a level-up). E.g. "zone 2 opens after the store's first sale" in the FTUE. */
+export interface StoreSalesMilestoneRequirement {
+    type: 'storeSales';
+    storeId: string;
+    sales: number;
+}
+
+export type MilestoneRequirement = BuildingMilestoneRequirement | ItemMilestoneRequirement | ResourceMilestoneRequirement | GateMilestoneRequirement | TriggerMilestoneRequirement | StoreMilestoneRequirement | StorageMilestoneRequirement | StoreSalesMilestoneRequirement;
 
 /**
  * True once whichever storage backs `requirement`'s own kind says it's already satisfied — the
@@ -127,5 +134,7 @@ export function isMilestoneRequirementMet(requirement: MilestoneRequirement): bo
             const config = getStorageConfig(requirement.storageId);
             return config.disabled || !isStorageForSale(config) || StorageOwnershipStorage.isOwned(requirement.storageId);
         }
+        case 'storeSales':
+            return StoreProgressStorage.getTotalSales(requirement.storeId) >= requirement.sales;
     }
 }

@@ -36,6 +36,7 @@ import { FarmCropStorage } from './FarmCropStorage';
 import { SeedStorage } from './SeedStorage';
 import { TutorialProgressStorage } from '../tutorial/TutorialProgressStorage';
 import { TriggerStorage } from './TriggerStorage';
+import { DemoStorage } from './DemoStorage';
 import { DebugZoneRevealCookie } from '../utils/DebugZoneRevealCookie';
 
 /**
@@ -129,5 +130,6 @@ export async function wipeAllPlayerData(): Promise<void> {
         SeedStorage.clearAll(),
         TutorialProgressStorage.clearAll(),
         TriggerStorage.clearAll(),
+        DemoStorage.clearAll(),
     ]);
 }

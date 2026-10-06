@@ -124,12 +124,11 @@
     "stall1": {
         "levels": [
             {
-                "requirements": {
-                    "wood": 20
-                },
+                "requirements": {},
                 "effect": {},
                 "level": 1,
-                "forceOwnMesh": true
+                "forceOwnMesh": true,
+                "money": 10
             }
         ],
         "npcOffset": [
@@ -141,8 +140,9 @@
         "icon": "pizza-model-snapshots_Food-Pumpkin",
         "baseFillFraction": 0.1,
         "appearRequirement": {
-            "type": "gate",
-            "gateId": "gateAxe"
+            "type": "storeSales",
+            "storeId": "farmStore1",
+            "sales": 1
         },
         "baseView": "baseBuildingSite",
         "updateParticleEffectId": "craftingMyst",
@@ -151,15 +151,16 @@
         "baseFillFull": true,
         "frame": "Floor",
         "floorLabelSide": "south",
-        "baseAtDropper": true
+        "baseAtDropper": true,
+        "buildDurationMultiplier": 2.5,
+        "floorLabelIcon": "ItemIcon_Shop_old-2"
     },
     "storeRoom1": {
         "levels": [
             {
                 "requirements": {
-                    "wood": 30
+                    "wood": 50
                 },
-                "money": 150,
                 "effect": {
                     "type": "storeRoom",
                     "value": 1,
@@ -174,7 +175,7 @@
         "appearRequirement": {
             "type": "store",
             "storeId": "farmStore1",
-            "level": 3
+            "level": 4
         },
         "baseView": "baseBuildingSite",
         "updateParticleEffectId": "craftingMyst",
@@ -190,8 +191,10 @@
     "storeRoom2": {
         "levels": [
             {
-                "requirements": {},
-                "money": 100,
+                "requirements": {
+                    "wood": 50
+                },
+                "money": 200,
                 "effect": {
                     "type": "storeRoom",
                     "value": 1,
@@ -205,7 +208,7 @@
         "appearRequirement": {
             "type": "store",
             "storeId": "farmStore1",
-            "level": 3
+            "level": 5
         },
         "updateParticleEffectId": "craftingMyst",
         "popupMode": "simple",

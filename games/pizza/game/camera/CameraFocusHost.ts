@@ -16,6 +16,12 @@ export interface CameraFocusOptions {
     travelSec?: number;
     /** Seconds the camera holds on `target` before easing back. */
     holdSec?: number;
+    /** Instead of holdSec: the camera leaves `target` this many seconds after it starts travelling there (travel included) — e.g. exactly when a build animation that's already playing ends. */
+    holdUntilSec?: number;
+    /** Gives the player control back the moment the camera starts easing back, instead of once it's back. */
+    releaseOnReturn?: boolean;
+    /** The camera glides to `target` over exactly travelSec (and back over returnSec) on an ease-in-out curve, instead of the regular follow lag (which covers most of the way in a fraction of a second) — a slow, cinematic pan. */
+    easedPan?: boolean;
     /** Seconds the camera takes easing back onto the (possibly since-moved) player. */
     returnSec?: number;
 }

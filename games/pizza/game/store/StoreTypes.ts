@@ -13,6 +13,7 @@
 
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import type { StoreWaitStyle } from './StoreQueueSpots';
+import type { MilestoneRequirement } from '../data/MilestoneRequirement';
 
 export type StoreSpotDirection = 'north' | 'south' | 'east' | 'west';
 
@@ -47,6 +48,12 @@ export interface StoreLevelConfig {
     amount: number;
     /** Map objects that stay hidden until the store reaches this level. */
     enables?: StoreEnableEntry[];
+    /**
+     * Lowest mood a client can drop to while the store is AT this level — e.g. 'happy' at Lv 1:
+     * nobody gets annoyed, walks out or throws garbage (there's no bin yet). Unset = no floor
+     * (or forgivingEarlyLevels' built-in one, if that's on).
+     */
+    moodFloor?: StoreClientMood;
 }
 
 /**
@@ -289,7 +296,7 @@ export interface StoreConfig {
     maxGarbage?: number;
     /** Below maxGarbage, each piece on the floor makes clients come this much less often (0.15 = spawn interval +15% per piece). Unset = DEFAULT_GARBAGE_SPAWN_SLOWDOWN. */
     garbageSpawnSlowdown?: number;
-    /** When true, early store levels cap how low a client's mood can drop (level 1: happy, level 2: annoyed — see Store.getMoodFloor()). Unset/false = clients can always get angry. */
+    /** When true, early store levels cap how low a client's mood can drop (level 1: happy, level 2: annoyed — see Store.getMoodFloor()). A level's own `moodFloor` (levels list) wins over this. Unset/false = clients can always get angry. */
     forgivingEarlyLevels?: boolean;
     /** x moodStepSec with only one shelf (more forgiving early on), easing to x1 with every shelf. Unset = DEFAULT_START_PATIENCE_MULTIPLIER. */
     startPatienceMultiplier?: number;
@@ -302,6 +309,18 @@ export interface StoreConfig {
     veryHappyPayMultiplier?: number;
     /** Fraction taken off a SAD or ANGRY client's payment (0.2 = 20% less, rounded). Unset = DEFAULT_UNHAPPY_PAY_PENALTY. */
     unhappyPayPenalty?: number;
+    /**
+     * Opens the store (Lv 1) as soon as this is met, even before its map "starter" building is
+     * built — clients, cashier, money drop and level-1 storages/farms all work without the
+     * building (no floor/walls yet); building the starter later just adds its look. While open
+     * early every client wants one unit of one item and never gets upset. Used by the FTUE to
+     * teach selling before the shop exists. Unset = opens only once the starter is built.
+     */
+    openRequirement?: MilestoneRequirement;
+    /** Most clients inside at once while open early (openRequirement met, starter not built yet) — they also never get upset then. Unset = normal pacing. */
+    earlyMaxClients?: number;
+    /** Seconds between two clients arriving while open early. Unset = normal pacing (startSpawnIntervalSec with one shelf). */
+    earlySpawnIntervalSec?: number;
     /** A storage (map id, inside this store) that is FREE and appears the moment the store opens. Unset = the player has to buy every storage. */
     defaultStorageId?: string;
     /** Level ladder — see StoreLevelConfig's own doc. Empty/unset = the store stays level 1 forever. */
@@ -486,7 +505,7 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
             }
         ],
         "spawnIntervalSec": 12,
-        "startSpawnIntervalSec": 24,
+        "startSpawnIntervalSec": 14,
         "maxClients": 5,
         "startMaxClients": 2,
         "startPatienceMultiplier": 1.6,
@@ -535,7 +554,8 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                     {
                         "entityId": "farm1"
                     }
-                ]
+                ],
+                "moodFloor": "happy"
             },
             {
                 "level": 2,
@@ -547,6 +567,9 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                     },
                     {
                         "entityId": "storage2"
+                    },
+                    {
+                        "entityId": "trash1"
                     }
                 ]
             },
@@ -588,9 +611,89 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                         "entityId": "storage5"
                     }
                 ]
+            },
+            {
+                "level": 6,
+                "requirementType": "money",
+                "amount": 500
+            },
+            {
+                "level": 7,
+                "requirementType": "money",
+                "amount": 700
+            },
+            {
+                "level": 8,
+                "requirementType": "money",
+                "amount": 950
+            },
+            {
+                "level": 9,
+                "requirementType": "money",
+                "amount": 1250
+            },
+            {
+                "level": 10,
+                "requirementType": "money",
+                "amount": 1600
+            },
+            {
+                "level": 11,
+                "requirementType": "money",
+                "amount": 2000
+            },
+            {
+                "level": 12,
+                "requirementType": "money",
+                "amount": 2500
+            },
+            {
+                "level": 13,
+                "requirementType": "money",
+                "amount": 3100
+            },
+            {
+                "level": 14,
+                "requirementType": "money",
+                "amount": 3800
+            },
+            {
+                "level": 15,
+                "requirementType": "money",
+                "amount": 4600
+            },
+            {
+                "level": 16,
+                "requirementType": "money",
+                "amount": 5500
+            },
+            {
+                "level": 17,
+                "requirementType": "money",
+                "amount": 6500
+            },
+            {
+                "level": 18,
+                "requirementType": "money",
+                "amount": 7600
+            },
+            {
+                "level": 19,
+                "requirementType": "money",
+                "amount": 8800
+            },
+            {
+                "level": 20,
+                "requirementType": "money",
+                "amount": 10000
             }
         ],
         "billsPerPile": 10,
+        "openRequirement": {
+            "type": "trigger",
+            "triggerId": "walkTutorialTrigger"
+        },
+        "earlyMaxClients": 2,
         "workers": [],
         "cleanerWorker": {
             "levels": [
@@ -600,7 +703,8 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                     "carryCapacity": 1
                 }
             ]
-        }
+        },
+        "earlySpawnIntervalSec": 8
     }
 };
 

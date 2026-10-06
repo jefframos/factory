@@ -11,15 +11,16 @@
     "2": {
         "cameraTemplateId": "far1",
         "requirement": {
-            "type": "gate",
-            "gateId": "gateWood"
+            "type": "storeSales",
+            "storeId": "farmStore1",
+            "sales": 1
         }
     },
     "3": {
         "requirement": {
-            "type": "building",
-            "buildingId": "stall1",
-            "level": 1
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 2
         },
         "cameraTemplateId": "far2"
     },

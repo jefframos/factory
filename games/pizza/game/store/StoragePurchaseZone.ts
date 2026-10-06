@@ -41,6 +41,7 @@ import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import MainPlayer from '../player/MainPlayer';
 import { StorageOwnershipStorage } from './StorageOwnershipStorage';
 import DepositPacer from '../utils/DepositPacer';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 
 const TRIGGER_HALF_HEIGHT = 0.5;
 const CORNER_RADIUS = 0.3;
@@ -327,6 +328,7 @@ export default class StoragePurchaseZone extends Entity {
             return;
         }
         this.destroying = true;
+        GameAnalytics.storageBought(this.storageId);
         this.announce();
         this.onPurchased();
         this.world?.remove(this);

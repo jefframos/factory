@@ -31,6 +31,8 @@
 // plain `{x,y,z}` object. Optional; an unset step behaves exactly as if it were `[0, 0, 0]`.
 
 import { GateId } from '../data/GateTypes';
+import { BuildingId } from '../data/BuildingId';
+import type { MilestoneRequirement } from '../data/MilestoneRequirement';
 
 export interface ZoneTutorialCraftStep {
     kind: 'craft';
@@ -62,7 +64,69 @@ export interface ZoneTutorialTriggerStep {
     offset?: [number, number, number];
 }
 
-export type ZoneTutorialStep = ZoneTutorialCraftStep | ZoneTutorialGateStep | ZoneTutorialTriggerStep;
+/** "Fill a store shelf": gather the storage's own resourceType (StorageConfig.resourceType) from a farm, then deposit it there. Completes once the storage holds `amount` of it. */
+export interface ZoneTutorialStorageStep {
+    kind: 'storage';
+    /** A "storage" id on the map — must have a resourceType (see StorageTypes.ts). */
+    storageId: string;
+    /** Units to deposit. Unset = 1. */
+    amount?: number;
+    /** The farm the gather arrow points at. Unset = the nearest farm whose assignedCropId yields the storage's resource, else the nearest ResourceNode producing it. */
+    farmId?: string;
+    /** See ZoneTutorialCraftStep.iconTextureId's own doc — same per-step override, same fallback chain. */
+    iconTextureId?: string;
+    /** See this file's own top-of-file doc on `offset`. Optional — unset behaves as `[0, 0, 0]`. */
+    offset?: [number, number, number];
+}
+
+/** "Build a storage that costs resources": gather whatever of the storage's resourceCost (StorageTypes.ts) the player still lacks from the nearest source (e.g. chop trees for wood), then pay at its purchase spot. Completes once it's bought. */
+export interface ZoneTutorialBuyStorageStep {
+    kind: 'buyStorage';
+    /** A "storage" id on the map with a resourceCost/price. */
+    storageId: string;
+    /** Only point the gather arrow at sources standing in this zone (e.g. the zone full of trees this lesson unlocks). Unset = the nearest anywhere (also the fallback when that zone has none left). */
+    gatherZone?: number;
+    /** See ZoneTutorialCraftStep.iconTextureId's own doc — same per-step override, same fallback chain. */
+    iconTextureId?: string;
+    /** See this file's own top-of-file doc on `offset`. Optional — unset behaves as `[0, 0, 0]`. */
+    offset?: [number, number, number];
+}
+
+/** "Serve at the cashier": the arrow points at the store's cashier until the store has made `amount` sales in total (StoreProgressStorage.getTotalSales()). */
+export interface ZoneTutorialSaleStep {
+    kind: 'sale';
+    /** A "store" id on the map (see StoreLayout.ts). */
+    storeId: string;
+    /** Total sales needed. Unset = 1. */
+    amount?: number;
+    /** See ZoneTutorialCraftStep.iconTextureId's own doc — same per-step override, same fallback chain. */
+    iconTextureId?: string;
+    /** See this file's own top-of-file doc on `offset`. Optional — unset behaves as `[0, 0, 0]`. */
+    offset?: [number, number, number];
+}
+
+/** "Grab your money": the arrow points at the store's money drop until its pile is collected (StoreMoneyStorage.onTaken). */
+export interface ZoneTutorialCollectMoneyStep {
+    kind: 'collectMoney';
+    /** A "store" id on the map (see StoreLayout.ts). */
+    storeId: string;
+    /** See ZoneTutorialCraftStep.iconTextureId's own doc — same per-step override, same fallback chain. */
+    iconTextureId?: string;
+    /** See this file's own top-of-file doc on `offset`. Optional — unset behaves as `[0, 0, 0]`. */
+    offset?: [number, number, number];
+}
+
+/** "Build it": the arrow points at the building's dropper until it reaches level 1. */
+export interface ZoneTutorialBuildStep {
+    kind: 'build';
+    buildingId: BuildingId;
+    /** See ZoneTutorialCraftStep.iconTextureId's own doc — same per-step override, same fallback chain. */
+    iconTextureId?: string;
+    /** See this file's own top-of-file doc on `offset`. Optional — unset behaves as `[0, 0, 0]`. */
+    offset?: [number, number, number];
+}
+
+export type ZoneTutorialStep = ZoneTutorialCraftStep | ZoneTutorialGateStep | ZoneTutorialTriggerStep | ZoneTutorialStorageStep | ZoneTutorialSaleStep | ZoneTutorialCollectMoneyStep | ZoneTutorialBuildStep | ZoneTutorialBuyStorageStep;
 
 export interface ZoneTutorialConfig {
     /** Walked through in order, one at a time — see TutorialProgressStorage.ts for how far along a given zone's player already is. */
@@ -85,6 +149,13 @@ export interface ZoneTutorialConfig {
      * that drives both together. Optional; defaults to false (screen-space only).
      */
     use3dArrow?: boolean;
+    /**
+     * When set, this tutorial starts on its own the moment this is met, wherever the player is,
+     * instead of when the player walks into this zone — e.g. zone 3's "chop trees, build the
+     * tomato shelf" lesson starts as farmStore1 reaches Lv 2 (the same moment zone 3 opens).
+     * Unset = starts when the player enters this zone.
+     */
+    startRequirement?: MilestoneRequirement;
 }
 
 /** ZoneTutorialConfig.arrowTextureId's fallback when a zone's auto-discovered entry hasn't set one yet — see that field's own doc. */
@@ -92,12 +163,12 @@ export const DEFAULT_ARROW_TEXTURE_ID = 'pointer';
 
 /**
  * zoneNumber -> its own tutorial config — sparse, same "only a level designer's actually
- * configured entries show up" convention ZoneTypes.ts's ZONE_CONFIG uses. Seed data below
- * mirrors the very first moments of the game: gather bark, craft the starter axe (see
- * CraftTypes.ts's "craftAxe" table), then gather wood and feed GateId.GateAxe's own
- * resource requirement (5 wood — see GateTypes.ts; despite the "Axe" name/doc comment, this
- * gate's actual requirement field is resource/wood/5, which is exactly what makes it usable
- * as a tutorial 'gate' step at all).
+ * configured entries show up" convention ZoneTypes.ts's ZONE_CONFIG uses. Zone 0's entry is the
+ * FTUE (a started tutorial follows the player into every zone until it's done — see
+ * ZoneTutorialController's own doc): walk out (the
+ * trigger reveals zone 1 and opens farmStore1 early — see StoreConfig.openRequirement), carry
+ * a carrot from farm1 to storage1, serve the first client at the cashier (that sale reveals
+ * zone 2 — see ZoneTypes.ts), collect the money drop, then build stall1 with it.
  */
 export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> = {
     "0": {
@@ -108,6 +179,45 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
                 "offset": [
                     0,
                     -2,
+                    0
+                ]
+            },
+            {
+                "kind": "storage",
+                "storageId": "storage1",
+                "amount": 1,
+                "farmId": "farm1",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "kind": "sale",
+                "storeId": "farmStore1",
+                "amount": 1,
+                "offset": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "kind": "collectMoney",
+                "storeId": "farmStore1",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "kind": "build",
+                "buildingId": BuildingId.Stall1,
+                "offset": [
+                    0,
+                    0,
                     0
                 ]
             }
@@ -122,18 +232,7 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
         use3dArrow: true,
     },
     "1": {
-        "steps": [
-            {
-                "kind": "gate",
-                "gateId": GateId.GateWood,
-                "offset": [
-                    0,
-                    0,
-                    0
-                ],
-                "iconTextureId": "woodcutters-axe"
-            }
-        ],
+        "steps": [],
         "arrowTextureId": "woodcutters-axe",
         "use3dArrow": true
     },
@@ -147,17 +246,24 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
     "3": {
         "steps": [
             {
+                "kind": "buyStorage",
+                "storageId": "storage2",
+                "gatherZone": 3,
+                "iconTextureId": "woodcutters-axe",
                 "offset": [
                     0,
                     0,
                     0
-                ],
-                "kind": "craft",
-                "craftId": "craftPickaxe",
-                "iconTextureId": "tutorialHand2"
+                ]
             }
         ],
-        "use3dArrow": true
+        "use3dArrow": true,
+        "arrowTextureId": "woodcutters-axe",
+        "startRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 2
+        }
     },
     "10": {
         "steps": []

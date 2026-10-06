@@ -73,6 +73,7 @@ import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import NpcEntity from '../world/NpcEntity';
 import DepositPacer from '../utils/DepositPacer';
 import { BuildReveal } from './BuildReveal';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
@@ -110,12 +111,15 @@ const MESH_DROP_DURATION_SEC = 0.7;
  * Staged build — a level-up of a building with map-drawn floors/walls (a store, a store section):
  * the floor is laid at once, the walls rise out of it over WALL_RISE_SEC, then the pieces sweep in
  * one after another (nearest the pay spot first) from PIECES_START_SEC, spread over
- * PIECES_SPREAD_SEC. STAGED_BUILD_SEC is the whole thing (see BuildReveal.ts).
+ * PIECES_SPREAD_SEC (only with more than one piece). The whole thing — whichever of the walls or
+ * the last piece finishes last — is what BuildReveal.ts tracks (see stagedBuildSec()). Every build
+ * duration here is x BuildingConfig.buildDurationMultiplier (see buildTimeScale()).
  */
 const WALL_RISE_SEC = 0.8;
 const PIECES_START_SEC = 0.6;
 const PIECES_SPREAD_SEC = 1.3;
-const STAGED_BUILD_SEC = PIECES_START_SEC + PIECES_SPREAD_SEC + MESH_DROP_DURATION_SEC;
+/** A staged build's camera trip glides there (and back) over this long — a slow pan, see CameraFocusOptions.easedPan. */
+const STAGED_BUILD_CAMERA_PAN_SEC = 1.5;
 /** A rising wall starts this flat — not 0, which would make a degenerate (NaN-normal) matrix. */
 const WALL_RISE_START_SCALE = 0.001;
 /** How long awaitingReentry stays true after a level clears before auto-clearing on its own — see that field's own doc. A player who stays standing in the zone through the whole level-up beat can resume depositing toward the NEXT level after this, without having to walk out and back in. */
@@ -787,7 +791,7 @@ export default class BuildingZone extends Entity {
             const staged = dropIn && (this.floors.length > 0 || this.walls.length > 0);
             if (staged) {
                 this.stagedBuildStartMs = performance.now();
-                BuildReveal.start(this.buildingId, STAGED_BUILD_SEC);
+                BuildReveal.start(this.buildingId, this.stagedBuildSec(ownMeshViews.length));
             }
             this.createFloorMeshes(staged);
             // Only here — the map-drawn pieces are what's actually showing. A level still on a
@@ -801,7 +805,7 @@ export default class BuildingZone extends Entity {
                 ? [...ownMeshViews].sort((a, b) => Math.hypot(a.entry.x - from.x, a.entry.z - from.z) - Math.hypot(b.entry.x - from.x, b.entry.z - from.z))
                 : ownMeshViews;
             pieces.forEach(({ entry, resolved, footprint, rotationY }, i) => {
-                const delaySec = staged ? PIECES_START_SEC + (pieces.length > 1 ? PIECES_SPREAD_SEC * i / (pieces.length - 1) : 0) : undefined;
+                const delaySec = staged ? (PIECES_START_SEC + (pieces.length > 1 ? PIECES_SPREAD_SEC * i / (pieces.length - 1) : 0)) * this.buildTimeScale() : undefined;
                 this.pieceParts(entry).visual = this.createBuildingView(resolved, dropIn, targetFraction, footprint, rotationY, delaySec);
             });
             return;
@@ -951,6 +955,18 @@ export default class BuildingZone extends Entity {
         }
     }
 
+    /** How long a staged build with `pieceCount` pieces really animates: the walls rising, or the last piece finishing its sweep, whichever ends later. */
+    private stagedBuildSec(pieceCount: number): number {
+        const wallsSec = this.walls.length > 0 ? WALL_RISE_SEC : 0;
+        const piecesSec = pieceCount > 0 ? PIECES_START_SEC + (pieceCount > 1 ? PIECES_SPREAD_SEC : 0) + MESH_DROP_DURATION_SEC : 0;
+        return Math.max(wallsSec, piecesSec) * this.buildTimeScale();
+    }
+
+    /** x every build animation duration — BuildingConfig.buildDurationMultiplier (unset = 1). */
+    private buildTimeScale(): number {
+        return Math.max(0.1, BUILDING_CONFIG[this.buildingId].buildDurationMultiplier ?? 1);
+    }
+
     /** Staged build: `wall` (and its doors) grows up out of the floor over WALL_RISE_SEC. Its colliders are already up. */
     private riseWall(wall: StoreWallPlacement): void {
         const objects = [this.wallMeshes.get(wall), ...(this.wallDoors.get(wall) ?? []).map(door => door.object)];
@@ -959,7 +975,7 @@ export default class BuildingZone extends Entity {
                 continue;
             }
             object.scale.y = WALL_RISE_START_SCALE;
-            gsap.to(object.scale, { y: 1, duration: WALL_RISE_SEC, ease: 'power2.out' });
+            gsap.to(object.scale, { y: 1, duration: WALL_RISE_SEC * this.buildTimeScale(), ease: 'power2.out' });
         }
     }
 
@@ -1223,7 +1239,7 @@ export default class BuildingZone extends Entity {
         });
         if (dropIn) {
             const delay = stagedDelaySec === undefined ? 0 : Math.max(0, stagedDelaySec - (performance.now() - this.stagedBuildStartMs) / 1000);
-            gsap.to(progress, { value: targetFraction, duration: MESH_DROP_DURATION_SEC, delay, ease: 'power2.out' });
+            gsap.to(progress, { value: targetFraction, duration: MESH_DROP_DURATION_SEC * this.buildTimeScale(), delay, ease: 'power2.out' });
         }
     }
 
@@ -1289,7 +1305,7 @@ export default class BuildingZone extends Entity {
             && (this.buildingMesh || this.buildingVisuals.length > 0);
         if (sameView) {
             const targetFraction = this.fillFractionForLevel(level);
-            gsap.to([this.revealProgress, ...this.pieceRevealProgress], { value: targetFraction, duration: MESH_DROP_DURATION_SEC, ease: 'power2.out' });
+            gsap.to([this.revealProgress, ...this.pieceRevealProgress], { value: targetFraction, duration: MESH_DROP_DURATION_SEC * this.buildTimeScale(), ease: 'power2.out' });
             return;
         }
 
@@ -1410,6 +1426,8 @@ export default class BuildingZone extends Entity {
         const next = BuildingStorage.getNextLevelConfig(this.buildingId)!;
         const entries = Object.entries(next.requirements) as [ResourceType, number][];
         this.floorLabel.setItems([
+            // BuildingConfig.floorLabelIcon — what's being built (e.g. the store icon for a shop).
+            ...(config.floorLabelIcon ? [{ icon: PIXI.Texture.from(config.floorLabelIcon) }] : []),
             ...(level > 0 ? [{ text: title }] : []),
             ...((next.money ?? 0) > 0
                 ? [{ icon: getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey), text: `${BuildingStorage.getMoneyProgress(this.buildingId)}/${next.money}` }]
@@ -1624,7 +1642,12 @@ export default class BuildingZone extends Entity {
     }
 
     private async playLevelUpSequence(level: number): Promise<void> {
+        GameAnalytics.built(this.buildingId, level);
         this.spawnLevelUpPopup(level);
+        // Fully built — the dropper outline and cost label go right away, not after the camera trip.
+        if (BuildingStorage.isMaxLevel(this.buildingId)) {
+            this.refreshLabel();
+        }
         this.replaceBuildingMesh(level);
 
         // The "update" particle slot (see BuildingConfig.updateParticleEffectId's own doc) —
@@ -1639,8 +1662,12 @@ export default class BuildingZone extends Entity {
 
         if (this.cameraFocusHost) {
             const focusTarget = this.getCameraFocusPosition().add(CAMERA_FOCUS_HEIGHT_OFFSET);
-            // A staged build holds the camera until it's finished.
-            await this.cameraFocusHost.focusCameraOn(focusTarget, { holdSec: Math.max(CAMERA_FOCUS_HOLD_SEC, BuildReveal.remainingSec(this.buildingId)) });
+            // A staged build: the camera watches it (its travel counts toward that) and the player
+            // is free again the moment it finishes, while the camera eases back.
+            const buildSec = BuildReveal.remainingSec(this.buildingId);
+            await this.cameraFocusHost.focusCameraOn(focusTarget, buildSec > 0
+                ? { holdUntilSec: buildSec, releaseOnReturn: true, easedPan: true, travelSec: STAGED_BUILD_CAMERA_PAN_SEC, returnSec: STAGED_BUILD_CAMERA_PAN_SEC }
+                : { holdSec: CAMERA_FOCUS_HOLD_SEC });
         } else {
             await wait(LEVEL_UP_REVEAL_DELAY_SEC);
         }

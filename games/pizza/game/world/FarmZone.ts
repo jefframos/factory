@@ -56,6 +56,7 @@ import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificat
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import DepositPacer from '../utils/DepositPacer';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 
 const FARM_ZONE_CORNER_RADIUS = 0.2;
 const PLACEHOLDER_HEIGHT = 0.1;
@@ -259,6 +260,7 @@ export default class FarmZone extends Entity {
                 }
                 FarmPlotStorage.addProgress(this.farmId, this.config, 1);
                 if (FarmPlotStorage.tryCompletePurchase(this.farmId, this.config)) {
+                    GameAnalytics.farmBought(this.farmId);
                     this.announceFarmUnlocked();
                     this.destroying = true;
                     this.onPurchased();

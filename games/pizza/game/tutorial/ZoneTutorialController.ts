@@ -28,13 +28,28 @@
 // GateStorage.onUnlock; a 'craft' step's completion subscribes to CraftStorage.onChange,
 // filtered down to "is this step's own primary recipe id now in completedRecipeIds" — both
 // completely independent of the live backpack count the phase check above reads.
+//
+// The store steps (the FTUE — see ZoneTutorialTypes.ts): a 'storage' step runs the same
+// gather/deliver phases (gather from a farm, deliver to the storage's dropper) and completes
+// once the storage holds enough; 'sale' points at the store's cashier until enough sales,
+// 'collectMoney' at its money drop until the pile is collected, 'build' at a building's dropper
+// until it's built. A step that's already done when it becomes current (a reload, or a trigger
+// walked before this existed) advances right away — see isStepAlreadyDone().
+//
+// Which zone's tutorial runs: the one already running, in EVERY zone, until its last step is
+// done — crossing into another zone never hides or swaps it. With none running, a tutorial
+// whose startRequirement is met starts (anywhere), else the player's own zone's (one without a
+// startRequirement). See findRunningTutorialZone() / findRequirementStartedZone().
+//
+// A 'buyStorage' step gathers whatever of a storage's resourceCost is still missing (e.g. chop
+// trees for wood — only in step.gatherZone when set), then points at its purchase spot.
 
 import * as THREE from 'three';
 import World from '../ecs/World';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import WorldObjectRegistry from '../world/WorldObjectRegistry';
 import ZoneVisibilityManager from '../world/ZoneVisibilityManager';
-import { DEFAULT_ARROW_TEXTURE_ID, ZONE_TUTORIAL_CONFIG, ZoneTutorialConfig, ZoneTutorialCraftStep, ZoneTutorialGateStep, ZoneTutorialStep } from './ZoneTutorialTypes';
+import { DEFAULT_ARROW_TEXTURE_ID, ZONE_TUTORIAL_CONFIG, ZoneTutorialConfig, ZoneTutorialCraftStep, ZoneTutorialGateStep, ZoneTutorialStep, ZoneTutorialStorageStep, ZoneTutorialBuyStorageStep } from './ZoneTutorialTypes';
 import { TutorialProgressStorage } from './TutorialProgressStorage';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { ResourceType } from '../actions/ResourceTypes';
@@ -44,8 +59,20 @@ import { GateId, GATE_CONFIG } from '../data/GateTypes';
 import { GateStorage } from '../data/GateStorage';
 import { TriggerStorage } from '../data/TriggerStorage';
 import ResourceNodeRegistry from '../player/ResourceNodeRegistry';
+import { getStorageConfig, getStorageResourceCost, isStorageForSale } from '../data/StorageTypes';
+import { StorageOwnershipStorage } from '../store/StorageOwnershipStorage';
+import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
+import { StorageInventory } from '../data/StorageInventory';
+import { getFarmPlotConfig } from '../data/FarmTypes';
+import { CROP_CONFIG } from '../data/CropTypes';
+import { BuildingStorage } from '../data/BuildingStorage';
+import { BuildingId } from '../data/BuildingId';
+import { StoreProgressStorage } from '../store/StoreProgressStorage';
+import { StoreMoneyStorage } from '../store/StoreMoneyStorage';
+import { readStoreLayouts } from '../store/StoreLayout';
 import ZoneTutorialArrow, { DELIVER_TARGET_HEIGHT_OFFSET } from './ZoneTutorialArrow';
 import ZoneTutorial3dArrow from './ZoneTutorial3dArrow';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 
 interface ResolvedStepRequirement {
     resourceType: ResourceType;
@@ -94,7 +121,7 @@ export default class ZoneTutorialController {
     /** Call once per frame — see this file's own doc for why (backpack/zone changes need to reflect instantly, not on some slower poll). */
     public update(): void {
         const playerPosition = this.getPlayerPosition();
-        const zoneNumber = this.currentZoneNumber(playerPosition);
+        const zoneNumber = this.findRunningTutorialZone() ?? this.findRequirementStartedZone() ?? this.zoneTutorialHere(playerPosition);
         const config = zoneNumber !== undefined ? ZONE_TUTORIAL_CONFIG[zoneNumber] : undefined;
 
         if (zoneNumber === undefined || !config) {
@@ -115,13 +142,26 @@ export default class ZoneTutorialController {
 
         const step = config.steps[completedCount];
         this.applyStepIcon(config, step);
-        this.subscribeToCompletion(zoneNumber, step, completedCount);
+        if (this.subscribeToCompletion(zoneNumber, step, completedCount)) {
+            // Already done — advanceStep() has re-run update() for the next step.
+            return;
+        }
 
-        if (step.kind === 'trigger') {
+        if (step.kind === 'trigger' || step.kind === 'sale' || step.kind === 'collectMoney' || step.kind === 'build') {
             // No resource to gather at all — always the "deliver" arrow, straight at the
-            // trigger's own placed location, until its onActivate fires (see
+            // step's own target, until its completion signal fires (see
             // subscribeToCompletion()'s own doc) and advances past it.
             this.pointAtDeliverTarget(step);
+            return;
+        }
+
+        if (step.kind === 'storage') {
+            this.updateStorageStep(step, playerPosition);
+            return;
+        }
+
+        if (step.kind === 'buyStorage') {
+            this.updateBuyStorageStep(step, playerPosition);
             return;
         }
 
@@ -152,6 +192,107 @@ export default class ZoneTutorialController {
 
     private currentZoneNumber(playerPosition: THREE.Vector3): number | undefined {
         return this.zoneVisibility.getZoneForPosition(playerPosition.x, playerPosition.z);
+    }
+
+    /** The tutorial already running (it keeps guiding in every zone until it's done), else one left half-done by an earlier session — undefined = none, so the player's own zone decides. */
+    private findRunningTutorialZone(): number | undefined {
+        if (this.activeZoneNumber !== undefined && !this.isTutorialDone(this.activeZoneNumber)) {
+            return this.activeZoneNumber;
+        }
+        for (const key of Object.keys(ZONE_TUTORIAL_CONFIG)) {
+            const zoneNumber = Number(key);
+            if (TutorialProgressStorage.getCompletedStepCount(zoneNumber) > 0 && !this.isTutorialDone(zoneNumber)) {
+                return zoneNumber;
+            }
+        }
+        return undefined;
+    }
+
+    /** A not-yet-done tutorial whose startRequirement is met — see ZoneTutorialConfig.startRequirement. */
+    private findRequirementStartedZone(): number | undefined {
+        for (const [key, config] of Object.entries(ZONE_TUTORIAL_CONFIG)) {
+            const zoneNumber = Number(key);
+            if (config?.startRequirement && !this.isTutorialDone(zoneNumber) && isMilestoneRequirementMet(config.startRequirement)) {
+                return zoneNumber;
+            }
+        }
+        return undefined;
+    }
+
+    /** The player's own zone, when its tutorial starts on entry (no startRequirement of its own). */
+    private zoneTutorialHere(playerPosition: THREE.Vector3): number | undefined {
+        const zoneNumber = this.currentZoneNumber(playerPosition);
+        return zoneNumber !== undefined && !ZONE_TUTORIAL_CONFIG[zoneNumber]?.startRequirement ? zoneNumber : undefined;
+    }
+
+    private isTutorialDone(zoneNumber: number): boolean {
+        const config = ZONE_TUTORIAL_CONFIG[zoneNumber];
+        return !config || TutorialProgressStorage.getCompletedStepCount(zoneNumber) >= config.steps.length;
+    }
+
+    /** A 'storage' step's gather/deliver phase — what's already on the shelf counts too, so the arrow only asks for what's still missing. */
+    private updateStorageStep(step: ZoneTutorialStorageStep, playerPosition: THREE.Vector3): void {
+        const resourceType = getStorageConfig(step.storageId).resourceType;
+        if (!resourceType) {
+            console.warn(`[ZoneTutorialController] storage "${step.storageId}" has no resourceType — a 'storage' tutorial step needs one, hiding this step's arrow`);
+            this.hideArrow();
+            return;
+        }
+        const missing = (step.amount ?? 1) - StorageInventory.getCount(step.storageId, resourceType);
+        if (BackpackStorage.getCount(resourceType) >= missing) {
+            this.pointAtDeliverTarget(step);
+            return;
+        }
+        const farm = this.findFarmFor(resourceType, playerPosition, step.farmId);
+        if (farm) {
+            this.updateArrow(farm.add(this.stepOffset(step)));
+            return;
+        }
+        this.pointAtGatherTarget(resourceType, playerPosition, step);
+    }
+
+    /** A 'buyStorage' step — gather the first resourceCost entry still short (backpack + already paid), from step.gatherZone when set; once everything's in hand, the purchase spot. */
+    private updateBuyStorageStep(step: ZoneTutorialBuyStorageStep, playerPosition: THREE.Vector3): void {
+        const missing = getStorageResourceCost(getStorageConfig(step.storageId)).find(cost =>
+            BackpackStorage.getCount(cost.resourceType) + StorageOwnershipStorage.getResourceProgress(step.storageId, cost.resourceType) < cost.amount);
+        if (!missing) {
+            this.pointAtDeliverTarget(step);
+            return;
+        }
+        const gatherZone = step.gatherZone;
+        const inZone = gatherZone === undefined ? undefined
+            : ResourceNodeRegistry.findNearest(missing.resourceType, playerPosition, node => this.zoneVisibility.getZoneForPosition(node.position.x, node.position.z) === gatherZone);
+        if (inZone) {
+            this.updateArrow(inZone.position.clone().add(this.stepOffset(step)));
+            return;
+        }
+        this.pointAtGatherTarget(missing.resourceType, playerPosition, step);
+    }
+
+    /** `farmId`'s position if set, else the nearest farm whose assignedCropId yields `resourceType` — undefined when there's none (the caller falls back to a ResourceNode). */
+    private findFarmFor(resourceType: ResourceType, playerPosition: THREE.Vector3, farmId?: string): THREE.Vector3 | undefined {
+        if (farmId) {
+            const placement = this.worldObjects.get('farm', farmId);
+            if (!placement) {
+                console.warn(`[ZoneTutorialController] no "farm" object "${farmId}" found on the Tiled map`);
+            }
+            return placement ? new THREE.Vector3(placement.x, 0, placement.z) : undefined;
+        }
+        let best: THREE.Vector3 | undefined;
+        let bestDistSq = Infinity;
+        for (const [id, placement] of this.worldObjects.getAllOfType('farm')) {
+            const config = getFarmPlotConfig(id);
+            const cropId = config.assignedCropId;
+            if (config.disabled || !cropId || CROP_CONFIG[cropId]?.yield.resourceType !== resourceType) {
+                continue;
+            }
+            const distSq = (placement.x - playerPosition.x) ** 2 + (placement.z - playerPosition.z) ** 2;
+            if (distSq < bestDistSq) {
+                bestDistSq = distSq;
+                best = new THREE.Vector3(placement.x, 0, placement.z);
+            }
+        }
+        return best;
     }
 
     private activateZone(zoneNumber: number, config: ZoneTutorialConfig): void {
@@ -274,11 +415,8 @@ export default class ZoneTutorialController {
     }
 
     private pointAtDeliverTarget(step: ZoneTutorialStep): void {
-        const type = step.kind === 'craft' ? 'craft' : step.kind === 'gate' ? 'gate' : 'trigger';
-        const id = step.kind === 'craft' ? step.craftId : step.kind === 'gate' ? step.gateId : step.triggerId;
-        const placement = this.worldObjects.get(type, id);
+        const placement = this.resolveDeliverPosition(step);
         if (!placement) {
-            console.warn(`[ZoneTutorialController] no "${type}" object "${id}" found on the Tiled map — can't point the deliver arrow anywhere`);
             this.hideArrow();
             return;
         }
@@ -286,18 +424,94 @@ export default class ZoneTutorialController {
         this.updateArrow(target, DELIVER_TARGET_HEIGHT_OFFSET);
     }
 
-    private subscribeToCompletion(zoneNumber: number, step: ZoneTutorialStep, completedCount: number): void {
+    /** Where a step's deliver arrow points — the placed craft table/gate/trigger, a storage's or building's dropper (else the object itself), a store's cashier/money drop. Warns and returns undefined when it isn't on the map. */
+    private resolveDeliverPosition(step: ZoneTutorialStep): { x: number; z: number } | undefined {
+        if (step.kind === 'sale' || step.kind === 'collectMoney') {
+            const layout = readStoreLayouts().find(store => store.id === step.storeId);
+            if (!layout) {
+                console.warn(`[ZoneTutorialController] no store "${step.storeId}" found on the Tiled map — can't point the arrow anywhere`);
+                return undefined;
+            }
+            return step.kind === 'sale' ? layout.cashier : layout.moneyDrop;
+        }
+        const [type, id] = step.kind === 'craft' ? ['craft', step.craftId]
+            : step.kind === 'gate' ? ['gate', step.gateId]
+            : step.kind === 'trigger' ? ['trigger', step.triggerId]
+            : step.kind === 'storage' || step.kind === 'buyStorage' ? ['storage', step.storageId]
+            : ['building', step.buildingId];
+        // A storage/building is filled at its dropper when it has one.
+        const dropper = type === 'storage' || type === 'building' ? this.worldObjects.getDropperFor(id) : undefined;
+        const placement = dropper ?? this.worldObjects.get(type, id);
+        if (!placement) {
+            console.warn(`[ZoneTutorialController] no "${type}" object "${id}" found on the Tiled map — can't point the deliver arrow anywhere`);
+        }
+        return placement;
+    }
+
+    /** Returns true when the step was already done and advanceStep() ran instead (see isStepAlreadyDone()). */
+    private subscribeToCompletion(zoneNumber: number, step: ZoneTutorialStep, completedCount: number): boolean {
         const key = `${zoneNumber}:${completedCount}`;
         if (this.activeStepKey === key) {
-            return;
+            return false;
         }
         this.unsubscribeCompletionListener();
         this.activeStepKey = key;
 
-        if (step.kind === 'craft') {
+        // A step becoming current (an already-done one still gets its start/complete pair, below).
+        if (completedCount === 0) {
+            GameAnalytics.tutorialStart(zoneNumber);
+        }
+        GameAnalytics.tutorialStepStart(zoneNumber, completedCount, step.kind);
+
+        if (this.isStepAlreadyDone(step)) {
+            this.advanceStep(zoneNumber, completedCount);
+            return true;
+        }
+
+        if (step.kind === 'storage') {
+            const handler = (id: string): void => {
+                if (id === step.storageId && this.isStepAlreadyDone(step)) {
+                    this.advanceStep(zoneNumber, completedCount);
+                }
+            };
+            StorageInventory.onChange.add(handler);
+            this.unsubscribeCompletion = () => StorageInventory.onChange.remove(handler);
+        } else if (step.kind === 'sale') {
+            const handler = (id: string): void => {
+                if (id === step.storeId && this.isStepAlreadyDone(step)) {
+                    this.advanceStep(zoneNumber, completedCount);
+                }
+            };
+            StoreProgressStorage.onProgressChanged.add(handler);
+            this.unsubscribeCompletion = () => StoreProgressStorage.onProgressChanged.remove(handler);
+        } else if (step.kind === 'collectMoney') {
+            const handler = (id: string): void => {
+                if (id === step.storeId) {
+                    this.advanceStep(zoneNumber, completedCount);
+                }
+            };
+            StoreMoneyStorage.onTaken.add(handler);
+            this.unsubscribeCompletion = () => StoreMoneyStorage.onTaken.remove(handler);
+        } else if (step.kind === 'buyStorage') {
+            const handler = (id: string): void => {
+                if (id === step.storageId) {
+                    this.advanceStep(zoneNumber, completedCount);
+                }
+            };
+            StorageOwnershipStorage.onPurchase.add(handler);
+            this.unsubscribeCompletion = () => StorageOwnershipStorage.onPurchase.remove(handler);
+        } else if (step.kind === 'build') {
+            const handler = (id: BuildingId): void => {
+                if (id === step.buildingId && this.isStepAlreadyDone(step)) {
+                    this.advanceStep(zoneNumber, completedCount);
+                }
+            };
+            BuildingStorage.onLevelUp.add(handler);
+            this.unsubscribeCompletion = () => BuildingStorage.onLevelUp.remove(handler);
+        } else if (step.kind === 'craft') {
             const recipeId = this.primaryRecipeId(step.craftId);
             if (!recipeId) {
-                return;
+                return false;
             }
             const handler = (id: string): void => {
                 if (id === step.craftId && CraftStorage.getState(step.craftId).completedRecipeIds.includes(recipeId)) {
@@ -323,6 +537,33 @@ export default class ZoneTutorialController {
             TriggerStorage.onActivate.add(handler);
             this.unsubscribeCompletion = () => TriggerStorage.onActivate.remove(handler);
         }
+        return false;
+    }
+
+    /**
+     * True when `step`'s goal is already reached (a reload, or a trigger walked before its step
+     * existed) — so it's skipped instead of pointing at something that can't fire again (a
+     * destroyOnTrigger trigger is gone once activated). 'collectMoney' is event-only: an empty
+     * pile right after a sale can just mean the money is still flying onto it. 'craft'/'gate'
+     * keep their original event-only behavior.
+     */
+    private isStepAlreadyDone(step: ZoneTutorialStep): boolean {
+        switch (step.kind) {
+            case 'trigger':
+                return TriggerStorage.isActivated(step.triggerId);
+            case 'storage': {
+                const resourceType = getStorageConfig(step.storageId).resourceType;
+                return resourceType !== undefined && StorageInventory.getCount(step.storageId, resourceType) >= (step.amount ?? 1);
+            }
+            case 'buyStorage':
+                return !isStorageForSale(getStorageConfig(step.storageId)) || StorageOwnershipStorage.isOwned(step.storageId);
+            case 'sale':
+                return StoreProgressStorage.getTotalSales(step.storeId) >= (step.amount ?? 1);
+            case 'build':
+                return BuildingStorage.getLevel(step.buildingId) >= 1;
+            default:
+                return false;
+        }
     }
 
     private unsubscribeCompletionListener(): void {
@@ -333,6 +574,14 @@ export default class ZoneTutorialController {
 
     /** The instant the current step's own real completion signal fires — persist the advance and re-run update() immediately (update() runs every frame anyway, so this just saves the one-frame lag of waiting for the next call) rather than leaving the just-completed step's arrow/listener stale until then. */
     private advanceStep(zoneNumber: number, completedCount: number): void {
+        const steps = ZONE_TUTORIAL_CONFIG[zoneNumber]?.steps ?? [];
+        const step = steps[completedCount];
+        if (step) {
+            GameAnalytics.tutorialStepComplete(zoneNumber, completedCount, step.kind);
+            if (completedCount + 1 >= steps.length) {
+                GameAnalytics.tutorialComplete(zoneNumber);
+            }
+        }
         TutorialProgressStorage.setCompletedStepCount(zoneNumber, completedCount + 1);
         this.unsubscribeCompletionListener();
         this.update();

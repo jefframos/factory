@@ -302,15 +302,20 @@ function findMapStore(id) {
     return mapValidation?.mapStores?.find(s => s.id === id);
 }
 
-/** Plain-language "what opens this store" for a mapStores entry — mirrors store/Store.ts's isOpen(). */
+/** Plain-language "what opens this store" for a mapStores entry — mirrors store/Store.ts's isOpen(), including the Stores tab's own Open Early requirement. */
 function describeStoreStarter(mapStore) {
     if (mapStore.starter === null) {
         return 'Open from the start (no "starter" set on the map)';
     }
+    const stores = allData.stores;
+    const early = (stores?.byId?.[mapStore.id] ?? stores?.default)?.openRequirement;
+    const earlyText = early
+        ? ` — or earlier, once ${early.type} ${Object.entries(early).filter(([k]) => k !== 'type').map(([k, v]) => `${k}=${v}`).join(' ')} (Open Early)`
+        : '';
     if (!mapStore.starterIsBuilding) {
-        return `"${mapStore.starter}" is not a building id: the store will stay closed`;
+        return `"${mapStore.starter}" is not a building id: the store will ${early ? 'only open early' : 'stay closed'}${earlyText}`;
     }
-    return `Build "${mapStore.starter}" to level 1`;
+    return `Build "${mapStore.starter}" to level 1${earlyText}`;
 }
 
 /** "Stores on the map" list for the Stores tab's banner — every store object drawn on the map with its read-only opening requirement. */
@@ -2094,6 +2099,9 @@ function renderRequirementField(container, obj, field, onDirty) {
         }
         if (type === 'storage') {
             return { type: 'storage', storageId: getOptions('storages')[0]?.value ?? '' };
+        }
+        if (type === 'storeSales') {
+            return { type: 'storeSales', storeId: getOptions('stores')[0]?.value ?? '', sales: 1 };
         }
         return { type: 'resource', resourceType: getOptions('resources')[0]?.value ?? '', amount: 1 };
     }

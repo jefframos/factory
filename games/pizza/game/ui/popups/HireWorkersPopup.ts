@@ -35,6 +35,7 @@ import { SavedStoreWorker, StoreWorkerStorage } from '../../store/StoreWorkerSto
 import type Store from '../../store/Store';
 import { canAffordAnyWorkerUpgrade, STAFF_ALERT_TEXTURE } from '../../store/StaffUpgradeAlert';
 import ViewUtils from 'core/utils/ViewUtils';
+import { GameAnalytics } from '../../analytics/GameAnalytics';
 
 type HireTabId = 'hire' | 'upgrade';
 
@@ -108,6 +109,7 @@ export default class HireWorkersPopup extends Popup {
 
         // Same reason as MartPopup: buildContent() runs inside super(), before the fields above exist.
         this.render();
+        GameAnalytics.hireDeskOpened();
 
         EconomyStorage.onChange.add(this.handleChange);
         StoreWorkerStorage.onLevelChanged.add(this.handleChange);
@@ -239,6 +241,8 @@ export default class HireWorkersPopup extends Popup {
         }
         if (!store.hireWorker(entry.role)) {
             EconomyStorage.add(CurrencyType.Money, entry.cost);
+        } else {
+            GameAnalytics.workerHired(entry.role);
         }
         // spend()/add() already re-rendered via onChange, but before the roster changed.
         this.render();
@@ -289,6 +293,7 @@ export default class HireWorkersPopup extends Popup {
             return;
         }
         StoreWorkerStorage.setLevel(this.storeId, current.id, next.level);
+        GameAnalytics.workerUpgraded(current.role, next.level);
     }
 
     // ---- Shared row

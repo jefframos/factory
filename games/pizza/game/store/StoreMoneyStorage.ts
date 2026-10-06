@@ -17,6 +17,8 @@ export class StoreMoneyStorage {
 
     /** Fires with the store id whose pile just changed. */
     static readonly onChange: Signal = new Signal();
+    /** Fires with (storeId, amount) when a non-empty pile is collected (takeAll()) — by the player or a cashier worker. */
+    static readonly onTaken: Signal = new Signal();
 
     static load(): Promise<void> {
         this.loading ??= (async () => {
@@ -59,6 +61,7 @@ export class StoreMoneyStorage {
         this.amounts.delete(storeId);
         void this.persist();
         this.onChange.dispatch(storeId);
+        this.onTaken.dispatch(storeId, amount);
         return amount;
     }
 

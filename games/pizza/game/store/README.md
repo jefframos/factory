@@ -38,6 +38,7 @@ object's own Name/Class fields are ignored. Only plain rectangles are read.
 | `storeExit` | `id`, `target` = store id | Clients walk here after paying and despawn. |
 | `storeCashier` | `id`, `target` = store id | The player stands here to serve. Clients queue in a line next to it. |
 | `storeMoneyDrop` | `id`, `target` = store id | Paid money piles up here (one pile after another — a bigger rect holds more piles); the player walks over it to collect. |
+| `cameraFocus` | optional `target` = building id (unset = the layer's suffix, e.g. `--store--stall1` → `stall1`) | Point: where the camera looks while the store building is being built (same as a `cameraTarget` on mapSettings). Slow the build down with the Buildings tab's `buildDurationMultiplier` (stall1: 1.75). |
 | `clientArea` | optional `target` = store id (unset = the store whose area holds its center) | Rect, ellipse or polygon: where wandering clients stroll. Several are combined. Any part over a store section that isn't built yet is ignored until it is. None = the whole store area. |
 
 A store missing any of its four parts is skipped (console warning `[StoreLayout] ...`).
@@ -103,6 +104,7 @@ you. Both tabs have a **Default** entry (used by any id without an override) and
 | `moneyPerBill` | Visual only — money per bill on the floor. |
 | `billsPerPile` | Visual only — a money pile grows to this many bills, then the next pile starts beside it (row by row across the money drop). |
 | `bubbleOffset` | Want-bubble height above the client's head. |
+| `openRequirement` / `earlyMaxClients` / `earlySpawnIntervalSec` | **Open Early** (client cap and seconds between arrivals while open early) — see [Opening early](#opening-early-the-ftue). Blank = opens only once the starter is built. |
 | `defaultStorageId` | Storage that is **free** and appears when the store opens. Blank = every storage must be bought. |
 | `levels` | The progression ladder — see [section 3](#3-progression--unlocks). |
 | `floorChecker` | Which Store View → Floor checker this store's floor uses. Blank = the default checker. |
@@ -183,13 +185,16 @@ panel in `color` at `opacity` (below 1 = see-through glass). **Default** is the 
 
 ## 3. Progression & unlocks
 
-- Store level is **0 while closed**, **1 when it opens** (starter built).
+- Store level is **0 while closed**, **1 when it opens** (starter built, or earlier through
+  `openRequirement` — see [Opening early](#opening-early-the-ftue)).
 - Each `levels` entry: `{ level, requirementType, amount, enables: [{ entityId }] }`.
   - `level` — the level this entry is for (2, 3, ...).
   - `requirementType` — `money` (what clients paid) or `sales` (number of clients who paid).
   - `amount` — needed to reach this level, counted **from the previous level-up** (progress
     resets to 0 on each level; overflow is dropped).
   - `enables` — map ids that stay **hidden until this level**.
+  - `moodFloor` — lowest mood a client can reach while the store is at this level (farmStore1 Lv 1: `happy` —
+    nobody gets annoyed, walks out or drops garbage before the bin exists at Lv 2).
   - A `level: 1` entry's requirement is ignored — its `enables` appear when the store opens.
 - `defaultStorageId` is automatically treated as "enabled at level 1".
 - Enable-able ids: **storages, farms, buildings, queues, shops, marts, crafting tables**
@@ -204,11 +209,46 @@ panel in `color` at `opacity` (below 1 = see-through glass). **Default** is the 
 
 | Level | Reached by | Enables |
 |---|---|---|
-| 1 | build `stall1` | `storage1` (carrots, free default) + `farm1` (price 0 → appears already owned) |
-| 2 | 50 money | `farm2` (50) + `storage2` (tomatoes, 10) |
+| 1 | walk `walkTutorialTrigger` (open early, see below); `stall1` is built later | `storage1` (carrots, free) + `farm1` (price 0 → appears already owned) |
+| 2 | 50 money | `farm2` (50) + `storage2` (tomatoes, 10) + `trash1` |
 | 3 | +100 money | `farm3` (50) + `storage3` (broccoli, 10) |
 | 4 | +200 money | `farm4` (50) + `storage4` (strawberries, 10) |
 | 5 | +350 money | `farm5` (50) + `storage5` (corn, 10) |
+| 6–20 | +500 … +10000 money | nothing (more room to grow) |
+
+Store rooms: `storeRoom1` (the office with the hire desk) appears at **Lv 4** for 50 wood;
+`storeRoom2` (the deposit) appears at **Lv 5** for 200 money + 50 wood. Building the deposit
+ends the demo: the Demo tab (`game/data/DemoTypes.ts`) shows an "End of the Demo" popup once per
+save, after its build animation and camera trip finish.
+
+### Opening early (the FTUE)
+
+Stores tab `openRequirement` (**Open Early**, any requirement) opens the store at Lv 1 before
+its map `starter` is built: clients, cashier, money drop and the Lv 1 storages/farms all work,
+with no store floor or walls yet. Building the starter later just adds its look. While open
+early, at most `earlyMaxClients` clients are inside, each wants **one unit of one item**, and
+none gets upset (mood floor = happy).
+
+farmStore1's FTUE, driven by zone 0's tutorial (Zone Tutorials tab). Like every zone tutorial, once it
+starts it keeps guiding in every zone the player walks into until its last step is done:
+
+1. **Trigger** `walkTutorialTrigger`: reveals zone 1 and opens farmStore1 early, so `farm1`,
+   `storage1`, the cashier and the money drop appear.
+2. **Fill Storage** `storage1` from `farm1`: carry a carrot over.
+3. **Serve Sale** at farmStore1: the client buys it and pays. That first sale (a `storeSales`
+   requirement) reveals zone 2 and makes `stall1` appear.
+4. **Collect Money** from farmStore1's money drop.
+5. **Build** `stall1`, which costs 10 money and no wood. The store is now a regular store.
+
+### Lv 2: the wood lesson
+
+Reaching Lv 2 reveals **zone 3**, which holds the tree spawner, and makes `storage2` (tomatoes) appear for sale at 10 money + 20 wood.
+Zone 3's tutorial has a **Start Requirement** (farmStore1 Lv 2), so it starts on its own wherever the player is.
+Its single **Buy Storage** step (`storage2`, Gather Zone 3) points at the nearest tree in zone 3 until
+the player carries enough wood, then at storage2 until it's bought.
+
+`storeSales` (any Requirement field) = the store's **lifetime** sales count
+(`StoreProgressStorage.getTotalSales()`), never reset by a level-up.
 
 Strawberry and corn grow on the tomato's curve (3 s + 3 s + 2 s, scale 0.2 → 0.6 → 1 → 4); corn's
 crop view is scaled 0.75 (its model is ~2x the tomato's) so all three end up about the same size.

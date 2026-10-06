@@ -72,6 +72,7 @@ import GlbVisualComponent from '../components/GlbVisualComponent';
 import { resolveEntityView } from '../world/EntityViewRegistry';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import DepositPacer from '../utils/DepositPacer';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
@@ -805,6 +806,7 @@ export default class ShopZone extends Entity {
         if (!ShopUpgradeStorage.tryCompleteUpgrade(this.shopId, this.config)) {
             return;
         }
+        GameAnalytics.shopUpgradeBought(this.config.tool, ShopUpgradeStorage.getLevel(this.shopId));
         // Rarity is hardcoded to Common for now — ShopConfig has no rarity-by-level field yet
         // (see ShopTypes.ts). Wire it up to actually vary per level once that's added.
         UpgradeNotificationManager.instance.show({

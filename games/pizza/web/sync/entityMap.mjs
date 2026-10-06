@@ -76,11 +76,12 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'ZONE_TUTORIAL_CONFIG',
         kind: 'partialRecord',
         // `steps` has no unmanaged sibling fields on any of its items (ZoneTutorialStep is
-        // exactly {kind, craftId, gateId, triggerId, iconTextureId, offset} — see
+        // exactly {kind, craftId, gateId, triggerId, storageId, amount, farmId, storeId,
+        // buildingId, gatherZone, iconTextureId, offset} — see
         // ZoneTutorialTypes.ts), same "no listMerge needed" reasoning as questGivers' own
         // `variants` — a plain wholesale replacement of the whole array is always safe here.
-        managedKeys: ['steps', 'arrowTextureId', 'use3dArrow'],
-        optionalKeys: ['arrowTextureId', 'use3dArrow'],
+        managedKeys: ['steps', 'arrowTextureId', 'use3dArrow', 'startRequirement'],
+        optionalKeys: ['arrowTextureId', 'use3dArrow', 'startRequirement'],
         protectEntries: true,
     },
     // A single dotted-outline color per named zone kind (dropper/trigger/queue/craft/farm/...) —
@@ -109,8 +110,8 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'BUILDING_CONFIG',
         kind: 'enumRecord',
         enumName: 'BuildingId',
-        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'baseAtDropper', 'anchorAtDropper', 'npcId', 'npcOffset', 'disabled', 'floorChecker', 'wallStyle', 'doorStyle'],
-        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'baseAtDropper', 'anchorAtDropper', 'npcId', 'npcOffset', 'disabled', 'floorChecker', 'wallStyle', 'doorStyle'],
+        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'baseAtDropper', 'buildDurationMultiplier', 'floorLabelIcon', 'anchorAtDropper', 'npcId', 'npcOffset', 'disabled', 'floorChecker', 'wallStyle', 'doorStyle'],
+        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'baseAtDropper', 'buildDurationMultiplier', 'floorLabelIcon', 'anchorAtDropper', 'npcId', 'npcOffset', 'disabled', 'floorChecker', 'wallStyle', 'doorStyle'],
         // BuildingLevelConfig also carries a `mesh` field (per-level placeholder art) that
         // this editor doesn't manage — a plain wholesale replacement of the `levels` array
         // (what every OTHER list field in this map gets, since none of their items have
@@ -313,8 +314,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORE_CONFIG',
         byIdExportName: 'STORE_CONFIG_BY_ID',
-        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'cashierView', 'moneyDropView', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'angryDropSec', 'maxGarbage', 'garbageSpawnSlowdown', 'forgivingEarlyLevels', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'cleanerWorker', 'workerColor', 'workerHat', 'floorChecker', 'wallStyle', 'doorStyle', 'hiring', 'hideStorageDropperView', 'hideCashierDropperView', 'hideMoneyDropDropperView', 'hideHireDeskDropperView', 'disabled'],
-        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'cashierView', 'moneyDropView', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'angryDropSec', 'maxGarbage', 'garbageSpawnSlowdown', 'forgivingEarlyLevels', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'cleanerWorker', 'workerColor', 'workerHat', 'floorChecker', 'wallStyle', 'doorStyle', 'hiring', 'hideStorageDropperView', 'hideCashierDropperView', 'hideMoneyDropDropperView', 'hideHireDeskDropperView', 'disabled'],
+        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'cashierView', 'moneyDropView', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'angryDropSec', 'maxGarbage', 'garbageSpawnSlowdown', 'forgivingEarlyLevels', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'openRequirement', 'earlyMaxClients', 'earlySpawnIntervalSec', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'cleanerWorker', 'workerColor', 'workerHat', 'floorChecker', 'wallStyle', 'doorStyle', 'hiring', 'hideStorageDropperView', 'hideCashierDropperView', 'hideMoneyDropDropperView', 'hideHireDeskDropperView', 'disabled'],
+        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'cashierView', 'moneyDropView', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'angryDropSec', 'maxGarbage', 'garbageSpawnSlowdown', 'forgivingEarlyLevels', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'openRequirement', 'earlyMaxClients', 'earlySpawnIntervalSec', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'cleanerWorker', 'workerColor', 'workerHat', 'floorChecker', 'wallStyle', 'doorStyle', 'hiring', 'hideStorageDropperView', 'hideCashierDropperView', 'hideMoneyDropDropperView', 'hideHireDeskDropperView', 'disabled'],
     },
     // The checker patterns a store floor can use — see game/store/StoreViewTypes.ts. Not map
     // objects: a store picks one by id (stores' own `floorChecker`), the default otherwise. Shown
@@ -579,6 +580,14 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'FLOOR_LAYER_CONFIG_BY_ID',
         kind: 'partialRecord',
         managedKeys: ['groundY', 'groundLayerGap', 'groundLayerCount', 'storeFloorGap', 'decalGap', 'labelGap'],
+    },
+    // The end-of-demo popup — see game/data/DemoTypes.ts. One "default" entry, same as `player`.
+    demo: {
+        file: path.join(GAME_DIR, 'data', 'DemoTypes.ts'),
+        exportName: 'DEMO_CONFIG_BY_ID',
+        kind: 'partialRecord',
+        managedKeys: ['endRequirement', 'delaySec', 'title', 'message', 'disabled'],
+        optionalKeys: ['endRequirement', 'delaySec', 'disabled'],
     },
     player: {
         file: path.join(GAME_DIR, 'data', 'PlayerConfig.ts'),

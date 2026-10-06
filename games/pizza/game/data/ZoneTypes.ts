@@ -38,8 +38,9 @@ export const ZONE_CONFIG: Partial<Record<number, ZoneConfigEntry>> = {
     },
     "2": {
         "requirement": {
-            "type": "gate",
-            "gateId": GateId.GateWood
+            "type": "storeSales",
+            "storeId": "farmStore1",
+            "sales": 1
         },
         "cameraTemplateId": "far1"
     },
@@ -60,9 +61,9 @@ export const ZONE_CONFIG: Partial<Record<number, ZoneConfigEntry>> = {
     },
     "3": {
         "requirement": {
-            "type": "building",
-            "buildingId": BuildingId.Stall1,
-            "level": 1
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 2
         },
         "cameraTemplateId": "far2"
     },

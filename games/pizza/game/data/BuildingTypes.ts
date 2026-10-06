@@ -177,6 +177,10 @@ export interface BuildingConfig extends FloorLabelConfig {
      * when it has no dropper. undefined/false (the default) keeps the old placement.
      */
     baseAtDropper?: boolean;
+    /** Bare UI icon name (e.g. 'ItemIcon_Shop_old-2', the store icon) drawn as the first line of the 'Floor' frame cost label, showing what's being built. Unset = just the cost. */
+    floorLabelIcon?: string;
+    /** x how long this building's build animation takes when it levels up (walls rising, pieces sweeping in — the camera holds on it until done). 1.5 = 50% slower. Unset = 1. */
+    buildDurationMultiplier?: number;
     /** NpcTypes.ts id — optional; when set, an animated NPC (see NpcEntity.ts) spawns alongside this building, wearing that NpcConfig's CharacterView. Same convention as MartConfig.npcId. undefined (the default) means no NPC spawns here at all. */
     npcId?: string;
     /** World-unit [x, y, z] nudge off the building's own mesh position (see PizzaScene.setupBuildingZone()) — undefined/[0,0,0] (the default) puts the NPC right at the building's own center. Only read when `npcId` is set. Always relative to the mesh position, regardless of `anchorAtDropper` — that flag only affects the requirements panel/particles, not where a level designer wants an NPC standing relative to the building's own visible model. */
@@ -341,14 +345,14 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         "name": "FoodStall1",
         "icon": "pizza-model-snapshots_Food-Pumpkin",
         "appearRequirement": {
-            "type": "gate",
-            "gateId": GateId.GateAxe
+            "type": "storeSales",
+            "storeId": "farmStore1",
+            "sales": 1
         },
         "levels": [{
             "level": 1,
-            "requirements": {
-                "wood": 20
-            },
+            "requirements": {},
+            "money": 10,
             "effect": {},
             "forceOwnMesh": true
         }],
@@ -365,7 +369,9 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         "baseFillFull": true,
         "frame": "Floor",
         "floorLabelSide": "south",
-        "baseAtDropper": true
+        "baseAtDropper": true,
+        "buildDurationMultiplier": 2.5,
+        "floorLabelIcon": "ItemIcon_Shop_old-2"
     },
     "storeRoom1": {
         "floorChecker": "roomTiles",
@@ -375,14 +381,13 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         "appearRequirement": {
             "type": "store",
             "storeId": "farmStore1",
-            "level": 3
+            "level": 4
         },
         "levels": [{
             "level": 1,
             "requirements": {
-                "wood": 30
+                "wood": 50
             },
-            "money": 150,
             "effect": {
                 "type": "storeRoom",
                 "value": 1,
@@ -407,12 +412,14 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         "appearRequirement": {
             "type": "store",
             "storeId": "farmStore1",
-            "level": 3
+            "level": 5
         },
         "levels": [{
             "level": 1,
-            "requirements": {},
-            "money": 100,
+            "requirements": {
+                "wood": 50
+            },
+            "money": 200,
             "effect": {
                 "type": "storeRoom",
                 "value": 1,

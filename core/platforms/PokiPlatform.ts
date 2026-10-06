@@ -93,6 +93,11 @@ export default class PokiPlatform implements IPlatformConnection {
         }
     }
 
+    /** PokiSDK.measure() — see https://developers.poki.com/guide/game-events and PlatformHandler.measure(). Skipped if the SDK didn't load. */
+    public measure(category: string, what: string, action: string): void {
+        window['PokiSDK']?.measure?.(category, what, action);
+    }
+
     public async setPlayerScore(score: number): Promise<void> {
         console.debug("Poki Platform: Setting player score:", score);
         // Insert logic to save the player's score, if Poki provides it

@@ -39,8 +39,8 @@ function objectLayersNamed(map, matches) {
     return (map.layers ?? []).filter(l => l.type === 'objectgroup' && typeof l.name === 'string' && matches(l.name));
 }
 
-/** Matches StoreLayerNames.ts's STORE_LAYOUT_TYPES — what the store itself is made of on its layer. */
-const STORE_LAYOUT_TYPES = new Set(['store', 'storeEntrance', 'storeExit', 'storeCashier', 'storeMoneyDrop', 'npcPoint', 'clientArea']);
+/** Matches StoreLayerNames.ts's STORE_LAYOUT_TYPES — what the store itself is made of on its layer (plus its cameraFocus point). */
+const STORE_LAYOUT_TYPES = new Set(['store', 'storeEntrance', 'storeExit', 'storeCashier', 'storeMoneyDrop', 'npcPoint', 'clientArea', 'cameraFocus']);
 
 /** Regular objects (storages, trash bins, ...) kept on a store layer — see StoreLayerNames.getStoreLayerMapObjects(). */
 function readStoreLayerMapObjects(map) {

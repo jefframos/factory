@@ -64,6 +64,7 @@ import StoreNavGrid from './nav/StoreNavGrid';
 import StoreBubble, { StoreBubbleContent } from './StoreBubble';
 import StoreLine from './StoreLine';
 import type { SavedStoreClient, SavedStoreClientWant } from './StoreClientStorage';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 import {
     DEFAULT_ANGRY_DROP_SEC,
     DEFAULT_BROWSE_CHANCE,
@@ -750,6 +751,7 @@ export default class StoreClient extends Entity implements NavNeighbor {
         }
         this.changeMood(-1);
         if (SHOPPING_STATES.has(this.state) && this.moodIndex <= LEAVE_EMPTY_HANDED_MOOD_INDEX && !this.wants.some(want => want.bought > 0)) {
+            GameAnalytics.clientLeft('out-of-patience');
             this.setState('leaving');
         }
     }
@@ -765,7 +767,9 @@ export default class StoreClient extends Entity implements NavNeighbor {
             return;
         }
         // Holding something: go find a clean spot to dump it first. Nothing: just leave.
-        this.setState(this.wants.some(want => want.bought > 0) ? 'dumping' : 'leaving');
+        const holding = this.wants.some(want => want.bought > 0);
+        GameAnalytics.clientLeft(holding ? 'angry-dumped' : 'angry');
+        this.setState(holding ? 'dumping' : 'leaving');
     }
 
     /** Off to a clean spot (see this file's own doc) — out of every line; with no spot found it dumps right here. */
@@ -817,6 +821,9 @@ export default class StoreClient extends Entity implements NavNeighbor {
 
     private startCheckout(): void {
         // Couldn't buy anything at all — just leave.
+        if (this.getBasePrice() <= 0) {
+            GameAnalytics.clientLeft('nothing-to-buy');
+        }
         this.setState(this.getBasePrice() > 0 ? 'toCashier' : 'leaving');
     }
 

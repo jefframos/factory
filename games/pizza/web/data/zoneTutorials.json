@@ -9,24 +9,52 @@
                     -2,
                     0
                 ]
+            },
+            {
+                "kind": "storage",
+                "storageId": "storage1",
+                "amount": 1,
+                "farmId": "farm1",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "kind": "sale",
+                "storeId": "farmStore1",
+                "amount": 1,
+                "offset": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "kind": "collectMoney",
+                "storeId": "farmStore1",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "kind": "build",
+                "buildingId": "stall1",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ]
             }
         ],
         "arrowTextureId": "tutorialHand2",
         "use3dArrow": true
     },
     "1": {
-        "steps": [
-            {
-                "kind": "gate",
-                "gateId": "gateWood",
-                "offset": [
-                    0,
-                    0,
-                    0
-                ],
-                "iconTextureId": "woodcutters-axe"
-            }
-        ],
+        "steps": [],
         "arrowTextureId": "woodcutters-axe",
         "use3dArrow": true
     },
@@ -37,17 +65,24 @@
     "3": {
         "steps": [
             {
+                "kind": "buyStorage",
+                "storageId": "storage2",
+                "gatherZone": 3,
+                "iconTextureId": "woodcutters-axe",
                 "offset": [
                     0,
                     0,
                     0
-                ],
-                "kind": "craft",
-                "craftId": "craftPickaxe",
-                "iconTextureId": "tutorialHand2"
+                ]
             }
         ],
-        "use3dArrow": true
+        "arrowTextureId": "woodcutters-axe",
+        "use3dArrow": true,
+        "startRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 2
+        }
     },
     "4": {
         "steps": []

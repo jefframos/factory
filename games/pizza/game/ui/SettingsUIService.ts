@@ -47,8 +47,6 @@ const FAST_SPEED = 2;
 /** Speed arrow height inside the BUTTON_SIZE square, and how far the second arrow sits right of the first (fraction of its width — they overlap a little). */
 const SPEED_ICON_SIZE = 30;
 const SPEED_ICON_STEP = 0.55;
-/** Corner-pinned "this matters" badge on the settings button — see BaseButton.addAlertIcon(). Always shown (not conditional on anything) since the ask is simply "mark this button as important," not "only when a setting needs attention." */
-const ALERT_ICON_SIZE = 20;
 
 export default class SettingsUIService {
     private readonly game: Game;
@@ -89,7 +87,6 @@ export default class SettingsUIService {
             // (setState(STANDARD) also fires on construction and every mouse-out).
             click: { callback: () => PopupManager.instance.show(new SettingsPopup()) },
         });
-        this.settingsButton.addAlertIcon(PIXI.Texture.from(Assets.Textures.UI.Exclamation), ALERT_ICON_SIZE);
         this.game.uiLayer.addChild(this.settingsButton);
 
         const arrowTexture = PIXI.Texture.from(SPEED_ICON);

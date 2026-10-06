@@ -51,7 +51,7 @@ export default class ResourceNodeRegistry {
      * table) — it counts as producing `resourceType` if ANY drop entry can yield it, not just
      * the highest-weight one. A LooseResourceNode has exactly one resourceType, no drop table.
      */
-    static findNearest(resourceType: ResourceType, fromPosition: THREE.Vector3): GatherTarget | undefined {
+    static findNearest(resourceType: ResourceType, fromPosition: THREE.Vector3, accept?: (node: GatherTarget) => boolean): GatherTarget | undefined {
         let nearest: GatherTarget | undefined;
         let nearestDistSq = Infinity;
 
@@ -65,6 +65,10 @@ export default class ResourceNodeRegistry {
                     continue;
                 }
             } else if (node.resourceType !== resourceType) {
+                continue;
+            }
+
+            if (accept && !accept(node)) {
                 continue;
             }
 

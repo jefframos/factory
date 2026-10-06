@@ -31,10 +31,14 @@ export interface PlantedCrop {
 
 interface FarmCropSaveData {
     planted: Record<string, PlantedCrop>;
+    /** Every cell key ever planted — see hasEverPlanted(). */
+    everPlanted?: string[];
 }
 
 export class FarmCropStorage {
     private static readonly planted = new Map<string, PlantedCrop>();
+    /** Every cell key ever planted, harvested or not — see hasEverPlanted(). */
+    private static readonly everPlanted = new Set<string>();
 
     /** Fires with the tile key that just got planted or harvested — see CropVisualComponent.ts, the one thing that redraws a cell's own growth mesh off this. */
     static readonly onChange: Signal = new Signal();
@@ -55,6 +59,10 @@ export class FarmCropStorage {
                     continue;
                 }
                 this.planted.set(key, crop);
+                this.everPlanted.add(key);
+            }
+            for (const key of parsed.everPlanted ?? []) {
+                this.everPlanted.add(key);
             }
         } catch (e) {
             console.error('FarmCropStorage: failed to load save data', e);
@@ -71,6 +79,11 @@ export class FarmCropStorage {
         return this.planted.get(key);
     }
 
+    /** False until `key` gets its first crop — a farm's very first crop is planted already grown (see FarmPlotTile.autoPlant()). */
+    static hasEverPlanted(key: string): boolean {
+        return this.everPlanted.has(key);
+    }
+
     /** No-ops if `key` already has something growing — a caller must harvest() first. */
     static plant(key: string, cropId: CropId, plantedAtSec: number): void {
         if (this.planted.has(key)) {
@@ -78,6 +91,7 @@ export class FarmCropStorage {
         }
 
         this.planted.set(key, { cropId, plantedAtSec });
+        this.everPlanted.add(key);
         this.onChange.dispatch(key);
         void this.persist();
     }
@@ -96,6 +110,7 @@ export class FarmCropStorage {
     private static async persist(): Promise<void> {
         const data: FarmCropSaveData = {
             planted: Object.fromEntries(this.planted),
+            everPlanted: [...this.everPlanted],
         };
         await PlatformHandler.instance.platform.setItem(STORAGE_KEY, JSON.stringify(data));
     }
@@ -103,6 +118,7 @@ export class FarmCropStorage {
     /** Debug/dev reset — see FarmPlotStorage.clearAll()'s own caveat: doesn't retroactively clear any already-spawned FarmPlotTile's own mesh this session, only affects what the NEXT scene load spawns as planted. */
     static async clearAll(): Promise<void> {
         this.planted.clear();
+        this.everPlanted.clear();
         await PlatformHandler.instance.platform.removeItem(STORAGE_KEY);
     }
 }

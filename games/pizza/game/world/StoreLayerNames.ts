@@ -6,6 +6,8 @@
 //
 //   --store--stall1          the store itself: area, entrance/exit, cashier, money drop, NPC
 //                            points (see StoreLayout.ts). Same content the old "stores" layer had.
+//                            A "type"="cameraFocus" point here is where the camera looks while
+//                            the store building is being built (see getStoreCameraFocuses()).
 //   --storeView--stall1      the store building's look: EVERY model on this layer is a piece of
 //                            building `stall1` — no per-piece type/id/useOwnMesh props (see
 //                            WorldObjectRegistry.readStoreViewLayers()). Here the suffix IS the
@@ -43,8 +45,11 @@ export function getStoreLayers(map: TiledMapData): TiledLayer[] {
     return objectLayers(map, name => name.startsWith(STORE_LAYER_PREFIX) || name === LEGACY_STORES_LAYER_NAME);
 }
 
-/** Object types StoreLayout.ts reads off a store layer itself (the store's own area/parts/NPC points). Counter meshes there carry no type at all. */
-const STORE_LAYOUT_TYPES: ReadonlySet<string> = new Set(['store', 'storeEntrance', 'storeExit', 'storeCashier', 'storeMoneyDrop', 'npcPoint', 'clientArea']);
+/** A point on a store layer: where the camera looks when that store's building levels up — see getStoreCameraFocuses(). */
+export const STORE_CAMERA_FOCUS_TYPE = 'cameraFocus';
+
+/** Object types read off a store layer itself (StoreLayout.ts: the store's own area/parts/NPC points; plus its cameraFocus). Counter meshes there carry no type at all. */
+const STORE_LAYOUT_TYPES: ReadonlySet<string> = new Set(['store', 'storeEntrance', 'storeExit', 'storeCashier', 'storeMoneyDrop', 'npcPoint', 'clientArea', STORE_CAMERA_FOCUS_TYPE]);
 
 /**
  * Every OTHER typed object on the store layers — e.g. the store's storages and trash bin — so they
@@ -58,6 +63,33 @@ export function getStoreLayerMapObjects(map: TiledMapData): NonNullable<TiledLay
             const type = obj.properties?.find(p => p.name === 'type')?.value;
             return typeof type === 'string' && !STORE_LAYOUT_TYPES.has(type);
         });
+}
+
+/**
+ * Every "cameraFocus" point on the store layers, with the building it's for: its own "target"
+ * custom property, else the layer's suffix up to the first "-" (by convention the store's starter
+ * building — "--store--stall1" -> "stall1"). Read by WorldObjectRegistry like a "cameraTarget"
+ * (see getCameraTargetFor()) — the store building's build camera trip looks at it. A point on the
+ * legacy "stores" layer has no suffix, so it needs "target".
+ */
+export function getStoreCameraFocuses(map: TiledMapData): { target: string; object: NonNullable<TiledLayer['objects']>[number] }[] {
+    const focuses: { target: string; object: NonNullable<TiledLayer['objects']>[number] }[] = [];
+    for (const layer of getStoreLayers(map)) {
+        const layerTarget = layer.name.startsWith(STORE_LAYER_PREFIX) ? layer.name.slice(STORE_LAYER_PREFIX.length).split('-')[0] : '';
+        for (const object of layer.objects ?? []) {
+            if (object.properties?.find(p => p.name === 'type')?.value !== STORE_CAMERA_FOCUS_TYPE) {
+                continue;
+            }
+            const target = object.properties?.find(p => p.name === 'target')?.value;
+            const resolved = typeof target === 'string' && target.length > 0 ? target : layerTarget;
+            if (!resolved) {
+                console.warn(`[StoreLayerNames] cameraFocus #${object.id} on "${layer.name}" has no "target" and the layer name carries no building id — skipping`);
+                continue;
+            }
+            focuses.push({ target: resolved, object });
+        }
+    }
+    return focuses;
 }
 
 /** Every section layer — "--storeSection--*" plus legacy layers whose name contains "sections". */

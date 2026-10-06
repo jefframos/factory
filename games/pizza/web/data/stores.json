@@ -135,7 +135,8 @@
                         {
                             "entityId": "farm1"
                         }
-                    ]
+                    ],
+                    "moodFloor": "happy"
                 },
                 {
                     "level": 2,
@@ -147,6 +148,9 @@
                         },
                         {
                             "entityId": "storage2"
+                        },
+                        {
+                            "entityId": "trash1"
                         }
                     ]
                 },
@@ -188,9 +192,84 @@
                             "entityId": "storage5"
                         }
                     ]
+                },
+                {
+                    "level": 6,
+                    "requirementType": "money",
+                    "amount": 500
+                },
+                {
+                    "level": 7,
+                    "requirementType": "money",
+                    "amount": 700
+                },
+                {
+                    "level": 8,
+                    "requirementType": "money",
+                    "amount": 950
+                },
+                {
+                    "level": 9,
+                    "requirementType": "money",
+                    "amount": 1250
+                },
+                {
+                    "level": 10,
+                    "requirementType": "money",
+                    "amount": 1600
+                },
+                {
+                    "level": 11,
+                    "requirementType": "money",
+                    "amount": 2000
+                },
+                {
+                    "level": 12,
+                    "requirementType": "money",
+                    "amount": 2500
+                },
+                {
+                    "level": 13,
+                    "requirementType": "money",
+                    "amount": 3100
+                },
+                {
+                    "level": 14,
+                    "requirementType": "money",
+                    "amount": 3800
+                },
+                {
+                    "level": 15,
+                    "requirementType": "money",
+                    "amount": 4600
+                },
+                {
+                    "level": 16,
+                    "requirementType": "money",
+                    "amount": 5500
+                },
+                {
+                    "level": 17,
+                    "requirementType": "money",
+                    "amount": 6500
+                },
+                {
+                    "level": 18,
+                    "requirementType": "money",
+                    "amount": 7600
+                },
+                {
+                    "level": 19,
+                    "requirementType": "money",
+                    "amount": 8800
+                },
+                {
+                    "level": 20,
+                    "requirementType": "money",
+                    "amount": 10000
                 }
             ],
-            "startSpawnIntervalSec": 24,
+            "startSpawnIntervalSec": 14,
             "startMaxClients": 2,
             "startPatienceMultiplier": 1.6,
             "moodStepSec": 20,
@@ -258,7 +337,13 @@
                         ]
                     }
                 ]
-            }
+            },
+            "openRequirement": {
+                "type": "trigger",
+                "triggerId": "walkTutorialTrigger"
+            },
+            "earlyMaxClients": 2,
+            "earlySpawnIntervalSec": 8
         }
     }
 }

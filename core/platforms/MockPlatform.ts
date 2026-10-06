@@ -71,6 +71,11 @@ export default class MockPlatform implements IPlatformConnection {
         return Promise.resolve(true);
     }
 
+    /** No analytics backend locally — just logs what a real platform would receive (see PlatformHandler.measure()). */
+    public measure(category: string, what: string, action: string): void {
+        console.debug(`[Analytics] ${category} / ${what} / ${action}`);
+    }
+
     public async setPlayerScore(score: number): Promise<void> {
         console.debug("Mock Platform: Setting player score:", score);
         // Insert logic to save the player's score, if Poki provides it

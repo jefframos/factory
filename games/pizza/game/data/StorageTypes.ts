@@ -276,12 +276,6 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             "currency": CurrencyType.Money,
             "amount": 0
         },
-        "resourceCost": [
-            {
-                "resourceType": ResourceType.Wood,
-                "amount": 20
-            }
-        ],
         "view": "storageView",
         "itemOrientation": "standing"
     },

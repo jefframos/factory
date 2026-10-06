@@ -33,6 +33,9 @@
 // A store with a "starter" (see StoreLayout.ts) stays closed — no clients,
 // cashier/money-drop outlines hidden — until that building reaches level 1
 // (BuildingStorage), checked every frame so it opens the moment it's built.
+// StoreConfig.openRequirement opens it EARLY instead (the FTUE: sell before the
+// shop exists) — while open early, at most earlyMaxClients clients come, each
+// wants one unit of one item, and none of them gets upset (see isOpenEarly()).
 //
 // Everything spawned here is parented under `root`, which spawnStores()
 // registers with fog of war over the store's own area — so the whole store
@@ -128,6 +131,8 @@ import { StoreProgressStorage } from './StoreProgressStorage';
 import { StoreUnlocks } from './StoreUnlocks';
 import { FloorLayers } from '../world/FloorLayers';
 import { BuildReveal } from '../player/BuildReveal';
+import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 
 /** The first client shows up this long after the store spawns, rather than a full spawnIntervalSec. */
 const FIRST_SPAWN_DELAY_SEC = 1;
@@ -224,6 +229,8 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
             this.applyWorkerLevels();
         }
     };
+    /** isStarterBuilt() as of last frame — undefined before the first one (so a store already built on load doesn't announce). See announceShopOpen(). */
+    private starterBuiltLastFrame?: boolean;
     private spawnTimerSec = 0;
     /** True until the first client spawns — it comes after FIRST_SPAWN_DELAY_SEC instead of a full interval. */
     private firstSpawnPending = true;
@@ -333,9 +340,19 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
             }
         }
 
+        // The starter just finished building (its build animation included) — announce the shop.
+        const starterBuilt = this.isStarterBuilt();
+        if (this.starterBuiltLastFrame === false && starterBuilt) {
+            this.announceShopOpen();
+        }
+        this.starterBuiltLastFrame = starterBuilt;
+
         const open = this.isOpen();
         if (open) {
             // No-op after the first time — level 0 -> 1 (see StoreProgressStorage.open()).
+            if (StoreProgressStorage.getLevel(this.layout.id) < 1) {
+                GameAnalytics.storeLevelReached(this.layout.id, 1, getNextStoreLevel(this.config, 1) !== undefined);
+            }
             StoreProgressStorage.open(this.layout.id);
         }
         this.cashier!.transform.visible = open;
@@ -420,6 +437,11 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     }
 
     public isOpen(): boolean {
+        return this.isStarterBuilt() || this.isOpenEarly();
+    }
+
+    /** True when there's no starter, or it's built — see this file's own doc. */
+    private isStarterBuilt(): boolean {
         const starter = this.layout.starter;
         if (starter === undefined) {
             return true;
@@ -431,14 +453,26 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         return BuildingStorage.getLevel(starter as BuildingId) >= 1 && !BuildReveal.isRunning(starter);
     }
 
+    /** Open through StoreConfig.openRequirement while the starter isn't built yet — see this file's own doc. */
+    private isOpenEarly(): boolean {
+        return this.config.openRequirement !== undefined && !this.isStarterBuilt() && isMilestoneRequirementMet(this.config.openRequirement);
+    }
+
     public isVisible(): boolean {
         return this.root.visible;
     }
 
     /** Lowest mood a client can drop to at the store's current level — see MOOD_FLOOR_BY_LEVEL. */
     public getMoodFloor(): StoreClientMood | undefined {
-        // Opt-in (StoreConfig.forgivingEarlyLevels) — by default clients can always get angry.
-        return this.config.forgivingEarlyLevels ? MOOD_FLOOR_BY_LEVEL[StoreProgressStorage.getLevel(this.layout.id)] : undefined;
+        // Open early (the FTUE) — nobody walks out while the player is still learning.
+        if (this.isOpenEarly()) {
+            return 'happy';
+        }
+        // The current level's own floor (StoreLevelConfig.moodFloor), else the opt-in built-in
+        // ladder (StoreConfig.forgivingEarlyLevels) — by default clients can always get angry.
+        const level = StoreProgressStorage.getLevel(this.layout.id);
+        const levelFloor = this.config.levels?.find(entry => entry.level === level)?.moodFloor;
+        return levelFloor ?? (this.config.forgivingEarlyLevels ? MOOD_FLOOR_BY_LEVEL[level] : undefined);
     }
 
     // ---- Garbage
@@ -783,7 +817,20 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
 
     /** Busier (and less forgiving) with every shelf the player has made available, every hired worker and every store level — see getStorePacing(). */
     private getPacing(): StorePacing {
-        return getStorePacing(this.config, this.getAvailableStorages().length, this.storages.length, this.workers.length, StoreProgressStorage.getLevel(this.layout.id));
+        const pacing = getStorePacing(this.config, this.getAvailableStorages().length, this.storages.length, this.workers.length, StoreProgressStorage.getLevel(this.layout.id));
+        if (!this.isOpenEarly()) {
+            return pacing;
+        }
+        // Open early (the FTUE): its own client cap and arrival pace, no overflow — see
+        // StoreConfig.earlyMaxClients / earlySpawnIntervalSec.
+        const earlyMax = this.config.earlyMaxClients;
+        const earlyInterval = this.config.earlySpawnIntervalSec;
+        return {
+            ...pacing,
+            maxClients: earlyMax !== undefined ? Math.max(1, earlyMax) : pacing.maxClients,
+            spawnIntervalSec: earlyInterval !== undefined && earlyInterval > 0 ? earlyInterval : pacing.spawnIntervalSec,
+            overflowClients: earlyMax !== undefined ? 0 : pacing.overflowClients,
+        };
     }
 
     /**
@@ -818,9 +865,10 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         return rectContains(this.layout.area, x, z);
     }
 
-    /** What the top-center StoreUI shows for this store — undefined while it's closed or still hidden under fog of war. */
+    /** What the top-center StoreUI shows for this store — undefined while it's closed, open early (starter not built), or still hidden under fog of war. */
     public getHudState(): StoreUIState | undefined {
-        if (!this.isOpen() || !this.isVisible()) {
+        // Not while open early (the FTUE) — only once the shop itself is built.
+        if (!this.isStarterBuilt() || !this.isVisible()) {
             return undefined;
         }
         const level = StoreProgressStorage.getLevel(this.layout.id);
@@ -886,10 +934,12 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
             return false;
         }
 
-        const distinct = randomInt(1, Math.min(Math.max(1, this.config.maxDistinctItems), offered.length));
+        // Open early (the FTUE): one unit of one item, so one deposit always makes one sale.
+        const early = this.isOpenEarly();
+        const distinct = early ? 1 : randomInt(1, Math.min(Math.max(1, this.config.maxDistinctItems), offered.length));
         const wants: StoreClientWant[] = offered.slice(0, distinct).map(type => ({
             type,
-            amount: randomInt(1, Math.max(1, this.config.maxAmountPerItem)),
+            amount: early ? 1 : randomInt(1, Math.max(1, this.config.maxAmountPerItem)),
         }));
 
         const spawn = randomPointInRect(this.layout.entrance);
@@ -1317,6 +1367,7 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         }
         this.payTimerSec = 0;
         const from = front.getHeadWorldPosition();
+        GameAnalytics.clientPaid(front.getMood());
         const amount = front.pay();
         this.moneyPile?.receivePayment(amount, from);
         this.recordSale(amount);
@@ -1328,11 +1379,24 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         this.recordSale(amount);
     }
 
+    /** Same Unlockable callout a bought storage gets (see StoragePurchaseZone.announce()). */
+    private announceShopOpen(): void {
+        UpgradeNotificationManager.instance.show({
+            type: NotificationType.Unlockable,
+            rarity: NotificationRarity.Common,
+            icon: PIXI.Texture.from(STORE_ICON),
+            badgeTexture: storeBadgeTextureFor(Math.max(1, StoreProgressStorage.getLevel(this.layout.id))),
+            title: 'SHOP OPEN!',
+            subtitle: (this.config.name ?? 'New shop').toUpperCase(),
+        });
+    }
+
     private recordSale(amount: number): void {
         // Someone paid — the store isn't stuck any more (see updateOverflow()).
         this.overflowAllowed = 0;
         this.stuckTimerSec = 0;
         for (const level of StoreProgressStorage.recordSale(this.layout.id, this.config, amount)) {
+            GameAnalytics.storeLevelReached(this.layout.id, level, getNextStoreLevel(this.config, level) !== undefined);
             UpgradeNotificationManager.instance.show({
                 type: NotificationType.Unlockable,
                 rarity: NotificationRarity.Common,

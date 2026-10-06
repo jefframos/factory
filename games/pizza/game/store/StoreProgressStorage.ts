@@ -2,8 +2,11 @@
 //
 // Each store's level plus its progress toward the next one — store id ->
 // { level, money, sales }. `money`/`sales` count only since the last level
-// up (they reset on each one). Level 0 = closed (starter not built yet),
-// level 1 = open. See StoreTypes.ts's StoreLevelConfig for the ladder.
+// up (they reset on each one). Level 0 = closed (starter not built yet, and
+// no StoreConfig.openRequirement met), level 1 = open. See StoreTypes.ts's
+// StoreLevelConfig for the ladder. `totalMoney`/`totalSales` never reset —
+// lifetime counters behind MilestoneRequirement's 'storeSales' kind (e.g.
+// "zone 2 opens after the store's first sale").
 //
 // onLevelChanged is what makes level-gated map objects appear (see
 // StoreUnlocks.ts / RequirementRegistry). Same static-class +
@@ -20,6 +23,9 @@ interface StoreProgress {
     level: number;
     money: number;
     sales: number;
+    /** Lifetime — never reset on a level-up. */
+    totalMoney: number;
+    totalSales: number;
 }
 
 export class StoreProgressStorage {
@@ -35,10 +41,16 @@ export class StoreProgressStorage {
             const raw = await PlatformHandler.instance.platform.getItem(STORAGE_KEY);
             const parsed: Record<string, Partial<StoreProgress>> = raw ? JSON.parse(raw) : {};
             for (const [storeId, state] of Object.entries(parsed)) {
+                const level = Math.max(0, Math.floor(state.level ?? 0));
+                const money = Math.max(0, state.money ?? 0);
+                const sales = Math.max(0, state.sales ?? 0);
                 this.states.set(storeId, {
-                    level: Math.max(0, Math.floor(state.level ?? 0)),
-                    money: Math.max(0, state.money ?? 0),
-                    sales: Math.max(0, state.sales ?? 0),
+                    level,
+                    money,
+                    sales,
+                    // Saves from before the lifetime counters: at least one sale per level-up past 1.
+                    totalMoney: Math.max(money, state.totalMoney ?? 0),
+                    totalSales: Math.max(sales + Math.max(0, level - 1), state.totalSales ?? 0),
                 });
             }
         } catch (e) {
@@ -58,7 +70,12 @@ export class StoreProgressStorage {
         return this.states.get(storeId)?.sales ?? 0;
     }
 
-    /** Level 0 -> 1, the moment the store's starter is built. No-op if already open. */
+    /** Clients who ever paid at this store — never reset (see this file's own doc). */
+    static getTotalSales(storeId: string): number {
+        return this.states.get(storeId)?.totalSales ?? 0;
+    }
+
+    /** Level 0 -> 1, the moment the store opens (starter built, or its openRequirement met). No-op if already open. */
     static open(storeId: string): void {
         const state = this.state(storeId);
         if (state.level >= 1) {
@@ -82,6 +99,8 @@ export class StoreProgressStorage {
         }
         state.money += amount;
         state.sales += 1;
+        state.totalMoney += amount;
+        state.totalSales += 1;
 
         const reached: number[] = [];
         let next = getNextStoreLevel(config, state.level);
@@ -112,7 +131,7 @@ export class StoreProgressStorage {
     private static state(storeId: string): StoreProgress {
         let state = this.states.get(storeId);
         if (!state) {
-            state = { level: 0, money: 0, sales: 0 };
+            state = { level: 0, money: 0, sales: 0, totalMoney: 0, totalSales: 0 };
             this.states.set(storeId, state);
         }
         return state;

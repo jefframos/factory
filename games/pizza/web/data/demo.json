@@ -1,0 +1,12 @@
+{
+    "default": {
+        "endRequirement": {
+            "type": "building",
+            "buildingId": "storeRoom2",
+            "level": 1
+        },
+        "delaySec": 1,
+        "title": "End of the Demo",
+        "message": "Thanks for playing! You've reached the end of the demo. More is coming soon!"
+    }
+}

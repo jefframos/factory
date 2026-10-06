@@ -48,6 +48,7 @@ import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnc
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import { ActionTarget } from '../components/PlayerActionController';
 import { PROVIDER_CONFIG, ProviderType } from '../actions/ProviderTypes';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 import { ResourceType } from '../actions/ResourceTypes';
 import { resolveProviderAssetKey } from '../actions/ProviderRegistry';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
@@ -358,6 +359,8 @@ export default class ResourceNode extends Entity implements ActionTarget {
             return false;
         }
 
+        // Only the player hits nodes (PlayerActionController) — e.g. gather / tree / chop.
+        GameAnalytics.resourceDepleted(this.providerType, PROVIDER_CONFIG[this.providerType].action);
         this.deplete(PROVIDER_CONFIG[this.providerType].respawnSec);
         return true;
     }

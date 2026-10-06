@@ -45,12 +45,6 @@
                 "currency": "money",
                 "amount": 0
             },
-            "resourceCost": [
-                {
-                    "resourceType": "wood",
-                    "amount": 20
-                }
-            ],
             "view": "storageView",
             "itemOrientation": "standing"
         },

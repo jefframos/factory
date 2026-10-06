@@ -49,6 +49,13 @@ export interface IPlatformConnection {
 
     getLanguage?(): Promise<string>;
 
+    /**
+     * Sends one analytics event — (category, what, action), e.g. ('level', '1', 'start'). Only
+     * ever called through PlatformHandler.measure(), which has already cleaned the values (see
+     * its own doc). Optional: a platform without an analytics API just doesn't implement it.
+     */
+    measure?(category: string, what: string, action: string): void;
+
     /** Real account display name from the platform's own SDK, when it exposes one (e.g. a logged-in CrazyGames user) — null/undefined if unavailable or the user isn't logged in. Not every platform can supply this (Poki and GameDistribution don't expose player identity), so this stays optional; callers should fall back to a locally saved or randomly generated name. */
     getPlayerName?(): Promise<string | null>;
 
