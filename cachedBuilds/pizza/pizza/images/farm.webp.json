@@ -1,8 +1,48 @@
 {
   "frames": {
-    "pizza-model-snapshots_Food-Watermelon": {
+    "trash": {
       "frame": {
         "x": 2,
+        "y": 2,
+        "w": 266,
+        "h": 360
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 3,
+        "w": 266,
+        "h": 360
+      },
+      "sourceSize": {
+        "w": 266,
+        "h": 363
+      }
+    },
+    "trash-small": {
+      "frame": {
+        "x": 270,
+        "y": 2,
+        "w": 67,
+        "h": 88
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 67,
+        "h": 88
+      },
+      "sourceSize": {
+        "w": 67,
+        "h": 91
+      }
+    },
+    "pizza-model-snapshots_Food-Watermelon": {
+      "frame": {
+        "x": 339,
         "y": 2,
         "w": 276,
         "h": 295
@@ -22,12 +62,12 @@
     },
     "pizza-model-snapshots_Food-Tomato": {
       "frame": {
-        "x": 280,
-        "y": 2,
+        "x": 2,
+        "y": 364,
         "w": 183,
         "h": 182
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -42,12 +82,12 @@
     },
     "pizza-model-snapshots_Food-Strawberry": {
       "frame": {
-        "x": 2,
+        "x": 270,
         "y": 299,
         "w": 230,
         "h": 245
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -62,8 +102,8 @@
     },
     "pizza-model-snapshots_Food-PumpkinBasic": {
       "frame": {
-        "x": 280,
-        "y": 187,
+        "x": 270,
+        "y": 92,
         "w": 46,
         "h": 38
       },
@@ -82,12 +122,12 @@
     },
     "pizza-model-snapshots_Food-Pumpkin": {
       "frame": {
-        "x": 464,
-        "y": 2,
+        "x": 2,
+        "y": 548,
         "w": 324,
         "h": 279
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -102,12 +142,12 @@
     },
     "pizza-model-snapshots_Food-Mushroom": {
       "frame": {
-        "x": 2,
-        "y": 531,
+        "x": 328,
+        "y": 546,
         "w": 244,
         "h": 247
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -122,12 +162,12 @@
     },
     "pizza-model-snapshots_Food-Leek": {
       "frame": {
-        "x": 249,
-        "y": 328,
+        "x": 617,
+        "y": 2,
         "w": 196,
         "h": 299
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -142,7 +182,7 @@
     },
     "pizza-model-snapshots_Food-Corn": {
       "frame": {
-        "x": 745,
+        "x": 815,
         "y": 2,
         "w": 287,
         "h": 303
@@ -162,7 +202,7 @@
     },
     "pizza-model-snapshots_Food-Cauliflower": {
       "frame": {
-        "x": 745,
+        "x": 574,
         "y": 307,
         "w": 296,
         "h": 260
@@ -182,12 +222,12 @@
     },
     "pizza-model-snapshots_Food-Carrot": {
       "frame": {
-        "x": 251,
-        "y": 526,
+        "x": 836,
+        "y": 307,
         "w": 145,
         "h": 243
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -202,12 +242,12 @@
     },
     "pizza-model-snapshots_Food-Cabbage": {
       "frame": {
-        "x": 2,
-        "y": 777,
+        "x": 836,
+        "y": 454,
         "w": 301,
         "h": 259
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -222,12 +262,12 @@
     },
     "pizza-model-snapshots_Food-Broccoli": {
       "frame": {
-        "x": 305,
-        "y": 771,
+        "x": 2,
+        "y": 829,
         "w": 234,
         "h": 229
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -242,7 +282,7 @@
     },
     "pizza-model-snapshots_Food-Beet": {
       "frame": {
-        "x": 536,
+        "x": 574,
         "y": 605,
         "w": 258,
         "h": 342
@@ -259,6 +299,106 @@
         "w": 258,
         "h": 342
       }
+    },
+    "milk": {
+      "frame": {
+        "x": 2,
+        "y": 1060,
+        "w": 225,
+        "h": 363
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 88,
+        "y": 0,
+        "w": 225,
+        "h": 363
+      },
+      "sourceSize": {
+        "w": 403,
+        "h": 363
+      }
+    },
+    "icecream": {
+      "frame": {
+        "x": 367,
+        "y": 795,
+        "w": 204,
+        "h": 321
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 204,
+        "h": 321
+      },
+      "sourceSize": {
+        "w": 204,
+        "h": 322
+      }
+    },
+    "egg": {
+      "frame": {
+        "x": 834,
+        "y": 757,
+        "w": 229,
+        "h": 288
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 75,
+        "y": 36,
+        "w": 229,
+        "h": 288
+      },
+      "sourceSize": {
+        "w": 378,
+        "h": 355
+      }
+    },
+    "butter": {
+      "frame": {
+        "x": 1104,
+        "y": 2,
+        "w": 290,
+        "h": 280
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 290,
+        "h": 280
+      },
+      "sourceSize": {
+        "w": 290,
+        "h": 281
+      }
+    },
+    "bread": {
+      "frame": {
+        "x": 1104,
+        "y": 294,
+        "w": 261,
+        "h": 277
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 261,
+        "h": 277
+      },
+      "sourceSize": {
+        "w": 261,
+        "h": 277
+      }
     }
   },
   "meta": {
@@ -267,8 +407,8 @@
     "image": "farm.webp",
     "format": "RGBA8888",
     "size": {
-      "w": 1034,
-      "h": 1038
+      "w": 1386,
+      "h": 1287
     },
     "scale": 1,
     "related_multi_packs": []
