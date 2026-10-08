@@ -51,7 +51,7 @@
 //     in the nearest trash storage (claimNearestGarbage() / getTrashTarget());
 //   - restockers (StoreRestockerWorker.ts): refill the emptiest shelf from the
 //     farms. Shelves and farm cells are claimed here (findRestockJob() /
-//     claimReadyTile()) so two restockers never chase the same one, and the
+//     claimReadySource()) so two restockers never chase the same one, and the
 //     nav grid also covers every farm plot so they can walk there.
 //
 // Garbage (StoreGarbage.ts): a client that stays ANGRY too long drops what it
@@ -104,7 +104,6 @@ import StoreCleanerWorker, { StoreCleanerHost, TrashTarget } from './StoreCleane
 /** A trash storage's TrashTarget plus which storage it is — see Store.trashTargets. */
 type StoreTrashSpot = TrashTarget & { storageId: string };
 import { SavedStoreWorker, StoreWorkerStorage } from './StoreWorkerStorage';
-import FarmPlotTile from '../world/FarmPlotTile';
 import StoreGarbage from './StoreGarbage';
 import { SavedGarbage, StoreGarbageStorage } from './StoreGarbageStorage';
 import { GARBAGE_DARKEN, GarbageCarryStorage } from '../data/GarbageCarryStorage';
@@ -134,6 +133,7 @@ import { BuildReveal } from '../player/BuildReveal';
 import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
 import { GameAnalytics } from '../analytics/GameAnalytics';
 import { AnimalProduce } from '../data/AnimalProduce';
+import { RestockSource, RestockSupply } from './RestockSupply';
 
 /** The first client shows up this long after the store spawns, rather than a full spawnIntervalSec. */
 const FIRST_SPAWN_DELAY_SEC = 1;
@@ -217,8 +217,10 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     /** A worker reported a change (see notifyWorkerChanged()) — saveWorkers() runs at the end of this frame. */
     private workersDirty = false;
     /** Shelf / farm cell claims, so two restockers never chase the same one. */
-    private readonly claimedStorages = new Map<string, StoreRestockerWorker>();
-    private readonly claimedTiles = new Map<FarmPlotTile, StoreRestockerWorker>();
+    /** Shelf id -> the restockers currently working it — several may share one shelf while it has room (see findRestockJob()). */
+    private readonly claimedStorages = new Map<string, Set<StoreRestockerWorker>>();
+    /** Source (farm cell / stall box / dispenser — see RestockSupply.ts) -> the restocker headed there. */
+    private readonly claimedTiles = new Map<RestockSource, StoreRestockerWorker>();
     /** Garbage claimed by a cleaner — see claimNearestGarbage(). */
     private readonly claimedGarbage = new Map<StoreGarbage, StoreCleanerWorker>();
     /** Every trash storage on the map — where cleaners throw garbage (see getTrashTarget()). Only the AVAILABLE ones count (bought, store level reached — StoreUnlocks.isStorageAvailable()), checked live since a trash bin can be for sale. */
@@ -1153,13 +1155,33 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     }
 
     /** See StoreRestockerHost.findRestockJob() — the emptiest available, not-full shelf with a ready, unclaimed farm cell for its item. */
+    /**
+     * The shelf this restocker should fill next. Several restockers may work the same shelf as long
+     * as what it holds plus everything the OTHERS working it can carry still leaves room — so a
+     * second restocker helps with a big shelf instead of standing around. A shelf nobody else is
+     * serving wins first (spreads them out), then the emptiest.
+     */
     public findRestockJob(worker: StoreRestockerWorker): RestockJob | undefined {
         const pick = this.getAvailableStorages()
-            .filter(storage => storage.config.resourceType !== undefined && !this.isClaimedByOther(this.claimedStorages.get(storage.id), worker))
-            .map(storage => ({ storage, type: storage.config.resourceType!, count: StorageInventory.getCount(storage.id, storage.config.resourceType!) }))
-            .filter(candidate => candidate.count < storageCapacity(candidate.storage.config) && this.hasReadyTile(candidate.type, worker))
-            .sort((a, b) => a.count - b.count)[0];
+            .filter(storage => storage.config.resourceType !== undefined)
+            .map(storage => {
+                const others = this.otherClaimers(storage.id, worker);
+                return {
+                    storage,
+                    type: storage.config.resourceType!,
+                    count: StorageInventory.getCount(storage.id, storage.config.resourceType!),
+                    others: others.length,
+                    promised: others.reduce((sum, other) => sum + other.getCarryCapacity(), 0),
+                };
+            })
+            .filter(candidate => candidate.count + candidate.promised < storageCapacity(candidate.storage.config) && this.hasReadyTile(candidate.type, worker))
+            .sort((a, b) => a.others - b.others || a.count - b.count)[0];
         return pick && this.claimStorage(pick.storage, pick.type, worker);
+    }
+
+    /** Every restocker other than `worker` currently working shelf `storageId`. */
+    private otherClaimers(storageId: string, worker: StoreRestockerWorker): StoreRestockerWorker[] {
+        return [...(this.claimedStorages.get(storageId) ?? [])].filter(owner => owner !== worker);
     }
 
     /** See StoreRestockerHost.findShelfFor() — a shelf dedicated to `type` (an unclaimed one first), else any shelf that accepts it. */
@@ -1167,26 +1189,26 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         const shelves = this.getAvailableStorages();
         const dedicated = shelves.filter(storage => storage.config.resourceType === type);
         const generic = shelves.filter(storage => storage.config.resourceType === undefined && storageAccepts(storage.config, type));
-        const pick = dedicated.find(storage => !this.isClaimedByOther(this.claimedStorages.get(storage.id), worker)) ?? dedicated[0] ?? generic[0];
+        const pick = dedicated.find(storage => this.otherClaimers(storage.id, worker).length === 0) ?? dedicated[0] ?? generic[0];
         return pick && this.claimStorage(pick, type, worker);
     }
 
-    /** See StoreRestockerHost.claimReadyTile() — the nearest ready, unclaimed farm cell yielding `type`; replaces this worker's previous cell claim. */
-    public claimReadyTile(worker: StoreRestockerWorker, type: ResourceType, near: THREE.Vector3): FarmPlotTile | undefined {
-        for (const [tile, owner] of this.claimedTiles) {
+    /** See StoreRestockerHost.claimReadySource() — the nearest ready, unclaimed source (farm cell, stall box, dispenser) of `type`; replaces this worker's previous source claim. */
+    public claimReadySource(worker: StoreRestockerWorker, type: ResourceType, near: THREE.Vector3): RestockSource | undefined {
+        for (const [source, owner] of this.claimedTiles) {
             if (owner === worker) {
-                this.claimedTiles.delete(tile);
+                this.claimedTiles.delete(source);
             }
         }
-        let best: FarmPlotTile | undefined;
+        let best: RestockSource | undefined;
         let bestDistance = Infinity;
-        for (const tile of FarmPlotTile.getAll()) {
-            if (tile.getReadyYield()?.resourceType !== type || this.isClaimedByOther(this.claimedTiles.get(tile), worker)) {
+        for (const source of RestockSupply.getAll()) {
+            if (source.getReadyYield()?.resourceType !== type || this.isClaimedByOther(this.claimedTiles.get(source), worker)) {
                 continue;
             }
-            const distance = tile.transform.position.distanceToSquared(near);
+            const distance = source.walkPoint.distanceToSquared(near);
             if (distance < bestDistance) {
-                best = tile;
+                best = source;
                 bestDistance = distance;
             }
         }
@@ -1265,14 +1287,15 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     }
 
     public releaseClaims(worker: StoreRestockerWorker): void {
-        for (const [id, owner] of this.claimedStorages) {
-            if (owner === worker) {
+        for (const [id, owners] of this.claimedStorages) {
+            owners.delete(worker);
+            if (owners.size === 0) {
                 this.claimedStorages.delete(id);
             }
         }
-        for (const [tile, owner] of this.claimedTiles) {
+        for (const [source, owner] of this.claimedTiles) {
             if (owner === worker) {
-                this.claimedTiles.delete(tile);
+                this.claimedTiles.delete(source);
             }
         }
     }
@@ -1286,17 +1309,21 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     }
 
     private claimStorage(storage: StoreStorage, type: ResourceType, worker: StoreRestockerWorker): RestockJob {
-        this.claimedStorages.set(storage.id, worker);
+        // One shelf per worker at a time — drop any previous shelf claim first.
+        for (const [id, owners] of this.claimedStorages) {
+            owners.delete(worker);
+            if (owners.size === 0) {
+                this.claimedStorages.delete(id);
+            }
+        }
+        const owners = this.claimedStorages.get(storage.id) ?? new Set<StoreRestockerWorker>();
+        owners.add(worker);
+        this.claimedStorages.set(storage.id, owners);
         return { storageId: storage.id, type, dropPoint: storage.dropPoint.clone(), shelfPosition: storage.position.clone() };
     }
 
     private hasReadyTile(type: ResourceType, worker: StoreRestockerWorker): boolean {
-        for (const tile of FarmPlotTile.getAll()) {
-            if (tile.getReadyYield()?.resourceType === type && !this.isClaimedByOther(this.claimedTiles.get(tile), worker)) {
-                return true;
-            }
-        }
-        return false;
+        return RestockSupply.getAll().some(source => source.getReadyYield()?.resourceType === type && !this.isClaimedByOther(this.claimedTiles.get(source), worker));
     }
 
     private isClaimedByOther(owner: StoreRestockerWorker | undefined, worker: StoreRestockerWorker): boolean {
@@ -1493,6 +1520,14 @@ export function spawnStores(deps: SpawnStoresDeps): Store[] {
                 farmIds.push(id);
                 farmRects.push(placement);
             }
+        }
+        // Restockers also pick up at animal stalls' boxes and mix stations' dispensers (see
+        // RestockSupply.ts) — the nav grid has to reach those too.
+        for (const [id] of deps.worldObjects.getAllOfType('animalStall')) {
+            farmRects.push(...deps.worldObjects.getPartsFor(id, 'storage'));
+        }
+        for (const [id] of deps.worldObjects.getAllOfType('mixStation')) {
+            farmRects.push(...deps.worldObjects.getPartsFor(id, 'dispenser'), ...deps.worldObjects.getPartsFor(id, 'collectArea'));
         }
 
         // Every trash storage on the map (stores never sell from one — see above) — where cleaners throw garbage.

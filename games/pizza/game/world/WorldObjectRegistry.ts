@@ -74,7 +74,7 @@ import {
     TiledObject,
     WORLD_UNITS_PER_TILE,
 } from './TileMapConfig';
-import { decodeObjectModel, DecodedObjectModel } from './MeshLayerSpawner';
+import { decodeObjectModel, DecodedObjectModel, MeshPlacement, objectToMeshPlacement } from './MeshLayerSpawner';
 import { getStoreCameraFocuses, getStoreLayerMapObjects, getStoreSectionLayers, getStoreViewLayers } from './StoreLayerNames';
 
 /** Tiled layer name holding hand-placed building/gate/etc. spawn points — see this file's own doc. */
@@ -204,6 +204,8 @@ export interface WorldObjectPlacement {
     width: number;
     depth: number;
     rotationDeg: number;
+    /** A part's own "order" property (see getPartsFor()) — e.g. which ingredient a mix station's storage holds. Unset otherwise. */
+    order?: number;
 }
 
 /**
@@ -508,6 +510,8 @@ export default class WorldObjectRegistry {
     private readonly fences: StoreWallPlacement[] = [];
     /** target -> type -> placements of id-less objects that only name a "target" — see getPartsFor(). */
     private readonly partsByTarget = new Map<string, Map<string, WorldObjectPlacement[]>>();
+    /** target -> the untyped model tile that names it — see getMeshPartFor(). */
+    private readonly meshPartsByTarget = new Map<string, MeshPlacement>();
     /** Every "polyFenceGap" rect — see getFenceGaps(). */
     private readonly fenceGaps: { minX: number; maxX: number; minZ: number; maxZ: number }[] = [];
     /** Every mapSettings/store-layer "polyDoor" rect — see getFenceDoors(). */
@@ -633,6 +637,16 @@ export default class WorldObjectRegistry {
             }
 
             const id = objId;
+            // An untyped model tile with a "target": that target's model (e.g. a mix station's table).
+            const meshTarget = !type && obj.gid ? getObjectProperty(obj, DROPPER_TARGET_PROPERTY) : undefined;
+            if (meshTarget) {
+                const mesh = objectToMeshPlacement(obj, map, worldUnitsPerTile / tileDefs.tileSize);
+                if (mesh) {
+                    this.meshPartsByTarget.set(meshTarget, mesh);
+                    console.log(`  - model "${mesh.modelRef}" (part of "${meshTarget}")`);
+                }
+                continue;
+            }
             // No id but a "target": a PART of that target (e.g. an animal stall's storage / dropper) —
             // a dropper registers as the target's dropper, anything else is listed under getPartsFor().
             const partTarget = !id && type ? getObjectProperty(obj, DROPPER_TARGET_PROPERTY) : undefined;
@@ -646,7 +660,8 @@ export default class WorldObjectRegistry {
                         byType = new Map();
                         this.partsByTarget.set(partTarget, byType);
                     }
-                    byType.set(type, [...(byType.get(type) ?? []), placement]);
+                    const order = getObjectNumberProperty(obj, 'order');
+                    byType.set(type, [...(byType.get(type) ?? []), order !== undefined ? { ...placement, order } : placement]);
                 }
                 console.log(`  - type="${type}" (part of "${partTarget}") -> world x=${placement.x.toFixed(2)} z=${placement.z.toFixed(2)}`);
                 continue;
@@ -711,7 +726,9 @@ export default class WorldObjectRegistry {
             }
 
             if (type === DROPPER_TYPE) {
-                const target = getObjectProperty(obj, DROPPER_TARGET_PROPERTY);
+                // A dropper naming no "target" stands for the object its OWN id names (e.g.
+                // id=butterStation on a mix station's dropper).
+                const target = getObjectProperty(obj, DROPPER_TARGET_PROPERTY) ?? id;
                 if (!target) {
                     console.warn(`[WorldObjectRegistry] dropper "${id}" has no "${DROPPER_TARGET_PROPERTY}" custom property — it won't be used as anything's trigger area`);
                 } else if (this.dropperPlacementsByTarget.has(target)) {
@@ -1261,6 +1278,11 @@ export default class WorldObjectRegistry {
      */
     public getDropperFor(targetId: string): WorldObjectPlacement | undefined {
         return this.dropperPlacementsByTarget.get(targetId);
+    }
+
+    /** The untyped model tile whose "target" is `targetId` (e.g. a mix station's table), as a MeshPlacement — undefined if none. */
+    public getMeshPartFor(targetId: string): MeshPlacement | undefined {
+        return this.meshPartsByTarget.get(targetId);
     }
 
     /** Every id-less `type` object whose "target" is `targetId` — e.g. an animal stall's storage (see PizzaScene.setupAnimalStalls()). */

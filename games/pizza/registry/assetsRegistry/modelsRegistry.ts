@@ -2154,6 +2154,56 @@ const FoodFish = {
 }
 } as const;
 
+const FoodFoodFlour = {
+  id: 'Food_Flour',
+  path: 'food/Food_Flour',
+  fullPath: 'pizza/models/food/Food_Flour.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodFlour": "Food_Flour"
+}
+} as const;
+
+const FoodFoodIcecreamConeChocolate = {
+  id: 'food_icecream_cone_chocolate',
+  path: 'food/food_icecream_cone_chocolate',
+  fullPath: 'pizza/models/food/food_icecream_cone_chocolate.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIcecreamConeChocolate": "food_icecream_cone_chocolate"
+}
+} as const;
+
+const FoodFoodIcecreamConeStrawberry = {
+  id: 'food_icecream_cone_strawberry',
+  path: 'food/food_icecream_cone_strawberry',
+  fullPath: 'pizza/models/food/food_icecream_cone_strawberry.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIcecreamConeStrawberry": "food_icecream_cone_strawberry"
+}
+} as const;
+
+const FoodFoodIcecreamConeVanilla = {
+  id: 'food_icecream_cone_vanilla',
+  path: 'food/food_icecream_cone_vanilla',
+  fullPath: 'pizza/models/food/food_icecream_cone_vanilla.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIcecreamConeVanilla": "food_icecream_cone_vanilla"
+}
+} as const;
+
+const FoodFoodIngredientCheeseSlice = {
+  id: 'food_ingredient_cheese_slice',
+  path: 'food/food_ingredient_cheese_slice',
+  fullPath: 'pizza/models/food/food_ingredient_cheese_slice.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientCheeseSlice": "food_ingredient_cheese_slice"
+}
+} as const;
+
 const FoodFrappe = {
   id: 'frappe',
   path: 'food/frappe',
@@ -2347,6 +2397,36 @@ const FoodIceCream = {
   nodes: {
   "IceCream": "ice-cream",
   "Group": "Group"
+}
+} as const;
+
+const FoodJarASmall = {
+  id: 'jar_A_small',
+  path: 'food/jar_A_small',
+  fullPath: 'pizza/models/food/jar_A_small.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarASmall": "jar_A_small"
+}
+} as const;
+
+const FoodJarCLarge = {
+  id: 'jar_C_large',
+  path: 'food/jar_C_large',
+  fullPath: 'pizza/models/food/jar_C_large.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarCLarge": "jar_C_large"
+}
+} as const;
+
+const FoodJarDMedium = {
+  id: 'jar_D_medium',
+  path: 'food/jar_D_medium',
+  fullPath: 'pizza/models/food/jar_D_medium.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarDMedium": "jar_D_medium"
 }
 } as const;
 
@@ -3877,6 +3957,16 @@ const RestaurantKitchencabinet = {
 }
 } as const;
 
+const RestaurantTableMediumLong = {
+  id: 'table_medium_long',
+  path: 'restaurant/table_medium_long',
+  fullPath: 'pizza/models/restaurant/table_medium_long.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableMediumLong": "table_medium_long"
+}
+} as const;
+
 const RestaurantTrashcan = {
   id: 'trashcan',
   path: 'restaurant/trashcan',
@@ -4224,6 +4314,11 @@ export const MODELS = {
     Eggplant: FoodEggplant,
     FishBones: FoodFishBones,
     Fish: FoodFish,
+    FoodFlour: FoodFoodFlour,
+    FoodIcecreamConeChocolate: FoodFoodIcecreamConeChocolate,
+    FoodIcecreamConeStrawberry: FoodFoodIcecreamConeStrawberry,
+    FoodIcecreamConeVanilla: FoodFoodIcecreamConeVanilla,
+    FoodIngredientCheeseSlice: FoodFoodIngredientCheeseSlice,
     Frappe: FoodFrappe,
     FriesEmpty: FoodFriesEmpty,
     Fries: FoodFries,
@@ -4243,6 +4338,9 @@ export const MODELS = {
     IceCreamScoopChocolate: FoodIceCreamScoopChocolate,
     IceCreamScoopMint: FoodIceCreamScoopMint,
     IceCream: FoodIceCream,
+    JarASmall: FoodJarASmall,
+    JarCLarge: FoodJarCLarge,
+    JarDMedium: FoodJarDMedium,
     KnifeBlock: FoodKnifeBlock,
     Leek: FoodLeek,
     LemonHalf: FoodLemonHalf,
@@ -4403,6 +4501,7 @@ export const MODELS = {
     Crate: RestaurantCrate,
     FoodIngredientBurgerTrash: RestaurantFoodIngredientBurgerTrash,
     Kitchencabinet: RestaurantKitchencabinet,
+    TableMediumLong: RestaurantTableMediumLong,
     Trashcan: RestaurantTrashcan
   },
   Store: {

@@ -387,5 +387,35 @@
         "sellable": true,
         "pileScale": 2.5,
         "carrierSpacing": 0.8
+    },
+    "butter": {
+        "label": "Butter",
+        "icon": "butter",
+        "models": [
+            "Food.Cheese"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 20,
+        "sellable": true,
+        "pileScale": 0.6,
+        "carrierSpacing": 0.8
+    },
+    "bread": {
+        "label": "Bread",
+        "icon": "bread",
+        "models": [
+            "Food.Loaf"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 30,
+        "sellable": true,
+        "pileScale": 0.8,
+        "carrierSpacing": 0.8
     }
 }

@@ -177,6 +177,8 @@ export interface StorageConfig {
      * most one item per slot: the player can't drop off more. Unset = the normal crate + pile.
      */
     shelf?: string;
+    /** Holds at most this many items — the player can't drop off more (e.g. a mix station's ingredient spot: one batch). Unset = a shelf's slot count, else unlimited. */
+    maxItems?: number;
 }
 
 /**

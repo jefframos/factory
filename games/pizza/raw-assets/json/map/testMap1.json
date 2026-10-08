@@ -1644,14 +1644,14 @@
                     3, 3, 3, 3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
                     3, 3, 3, 3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
                     3, 3, 3, 3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-                    3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+                    3, 3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+                    3, 3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+                    3, 3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
                     3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
                     3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+                    3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+                    3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
                     3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-                    3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-                    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-                    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-                    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
                     5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
                     5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
                     5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
@@ -1800,7 +1800,7 @@
          "startx":-32,
          "starty":-16,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":80,
          "x":0,
          "y":0
@@ -3973,6 +3973,276 @@
                  "width":0,
                  "x":171,
                  "y":810
+                }, 
+                {
+                 "height":64,
+                 "id":430,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"butterStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"mixStation"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":128,
+                 "x":373,
+                 "y":847.25
+                }, 
+                {
+                 "height":64,
+                 "id":438,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"breadStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"mixStation"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":128,
+                 "x":468.75,
+                 "y":692.75
+                }, 
+                {
+                 "height":39.5,
+                 "id":431,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"butterStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":45,
+                 "x":414.25,
+                 "y":908.5
+                }, 
+                {
+                 "height":39.5,
+                 "id":437,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"breadStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":45,
+                 "x":510.25,
+                 "y":755.75
+                }, 
+                {
+                 "gid":40,
+                 "height":48,
+                 "id":432,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"butterStation"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":96,
+                 "x":387,
+                 "y":902.25
+                }, 
+                {
+                 "gid":40,
+                 "height":48,
+                 "id":439,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"breadStation"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":96,
+                 "x":482.75,
+                 "y":747.75
+                }, 
+                {
+                 "height":28,
+                 "id":434,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"order",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"butterStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"storage"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28.75,
+                 "x":389.25,
+                 "y":865.5
+                }, 
+                {
+                 "height":28,
+                 "id":442,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"order",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"breadStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"storage"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28.75,
+                 "x":485,
+                 "y":711
+                }, 
+                {
+                 "height":28,
+                 "id":441,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"order",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"breadStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"storage"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28.75,
+                 "x":515.5,
+                 "y":711
+                }, 
+                {
+                 "height":28,
+                 "id":436,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"order",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"butterStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dispenser"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28.75,
+                 "x":452,
+                 "y":865.25
+                }, 
+                {
+                 "height":28,
+                 "id":440,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"order",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"breadStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dispenser"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28.75,
+                 "x":548.75,
+                 "y":710.75
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -5184,7 +5454,7 @@
          "y":0
         }],
  "nextlayerid":15,
- "nextobjectid":430,
+ "nextobjectid":443,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

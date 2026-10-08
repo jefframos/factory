@@ -16,10 +16,13 @@
 // back; delivered ones fly from its back onto the shelf and land in
 // StorageInventory (so StorageZone's pile and the clients see them).
 //
-// Jobs and farm cells are CLAIMED through the Store (see findRestockJob() /
-// claimReadyTile()), so two restockers never chase the same shelf or cell.
-// Only farm cells are sources for now (FarmPlotTile.getAll()) — the store's
-// shelves only sell crops.
+// It picks up from any RestockSource (store/RestockSupply.ts): ripe farm cells, and the boxes
+// animal stalls lay into (eggs, milk) / mix station dispensers (butter, bread) — one item each.
+//
+// Jobs and sources are CLAIMED through the Store (see findRestockJob() /
+// claimReadySource()): two restockers never chase the same source, and several
+// can work the same shelf only while it has room for all of their loads (each
+// prefers a shelf nobody else is serving).
 //
 // What's on its back is saved with the store's worker roster
 // (StoreWorkerStorage.ts), so a reload mid-delivery still delivers.
@@ -28,7 +31,7 @@ import * as THREE from 'three';
 import StoreWorker, { StoreWorkerBaseOptions, StoreWorkerNavHost, randomRange } from './StoreWorker';
 import { StoreWorkerRole } from './StoreTypes';
 import type { SavedStoreWorker, SavedWorkerCarry } from './StoreWorkerStorage';
-import type FarmPlotTile from '../world/FarmPlotTile';
+import type { RestockSource } from './RestockSupply';
 import CarrierStackVisual, { stackItemScale } from '../components/CarrierStackVisual';
 import { getPileScale } from '../components/ItemPile';
 import { flyResourceModel } from '../components/FlyToStack';
@@ -47,8 +50,6 @@ const HARVEST_PAUSE_SEC = 0.35;
 const DEPOSIT_STAGGER_SEC = 0.15;
 /** A walk that hasn't arrived after this long (unreachable goal) gives the job up. */
 const WALK_TIMEOUT_SEC = 30;
-/** Harvested crops launch from this high above the cell. */
-const HARVEST_LAUNCH_HEIGHT = 0.4;
 /** Delivered items aim this high above the shelf's own position. */
 const SHELF_LAND_HEIGHT = 0.6;
 /** Fallback flight end/start when the carrier hasn't loaded yet — roughly its back. */
@@ -69,12 +70,12 @@ export interface StoreRestockerHost extends StoreWorkerNavHost {
     /** Middle of the store's shelves — where it idles. */
     getHomePoint(): THREE.Vector3;
     getRestockerStats(level: number): { moveSpeed: number; carryCapacity: number };
-    /** The emptiest shelf whose crop is ready on some unclaimed farm cell — claimed for `worker`. undefined = nothing to do. */
+    /** The emptiest shelf whose item is ready at some unclaimed source — claimed for `worker`. undefined = nothing to do. */
     findRestockJob(worker: StoreRestockerWorker): RestockJob | undefined;
     /** A shelf for `type` (even a full one) — for items already on its back (e.g. after a reload). Claimed for `worker`. */
     findShelfFor(worker: StoreRestockerWorker, type: ResourceType): RestockJob | undefined;
-    /** The nearest ready farm cell yielding `type` that nobody else claimed — claimed for `worker`. */
-    claimReadyTile(worker: StoreRestockerWorker, type: ResourceType, near: THREE.Vector3): FarmPlotTile | undefined;
+    /** The nearest ready source (farm cell, stall box, dispenser) of `type` that nobody else claimed — claimed for `worker`. */
+    claimReadySource(worker: StoreRestockerWorker, type: ResourceType, near: THREE.Vector3): RestockSource | undefined;
     /** Drops every shelf/cell `worker` claimed. */
     releaseClaims(worker: StoreRestockerWorker): void;
     /** Parent for flying item models (world space). */
@@ -106,7 +107,7 @@ export default class StoreRestockerWorker extends StoreWorker {
 
     private state: StoreRestockerState = 'idle';
     private job?: RestockJob;
-    private tile?: FarmPlotTile;
+    private source?: RestockSource;
     private timerSec = 0;
     private wanderTimerSec = 0;
     private walkTimerSec = 0;
@@ -140,6 +141,11 @@ export default class StoreRestockerWorker extends StoreWorker {
 
     // ---- Store-facing API
 
+    /** How many items it carries at once — what the Store counts as promised to a shelf it's working (see findRestockJob()). */
+    public getCarryCapacity(): number {
+        return this.carryCapacity;
+    }
+
     public getState(): StoreRestockerState {
         return this.state;
     }
@@ -172,19 +178,19 @@ export default class StoreRestockerWorker extends StoreWorker {
             case 'idle':
                 this.host.releaseClaims(this);
                 this.job = undefined;
-                this.tile = undefined;
+                this.source = undefined;
                 this.timerSec = 0;
                 this.stopWalking();
                 break;
             case 'toTile':
-                this.walkTo(this.tile!.transform.position);
+                this.walkTo(this.source!.walkPoint);
                 break;
             case 'harvesting':
                 this.harvestTile();
                 this.timerSec = HARVEST_PAUSE_SEC;
                 break;
             case 'toShelf':
-                this.tile = undefined;
+                this.source = undefined;
                 this.walkTo(this.job!.dropPoint, false);
                 break;
             case 'depositing':
@@ -235,10 +241,10 @@ export default class StoreRestockerWorker extends StoreWorker {
                 }
             } else {
                 const job = this.host.findRestockJob(this);
-                const tile = job && this.host.claimReadyTile(this, job.type, this.transform.position);
-                if (job && tile) {
+                const source = job && this.host.claimReadySource(this, job.type, this.transform.position);
+                if (job && source) {
                     this.job = job;
-                    this.tile = tile;
+                    this.source = source;
                     this.setState('toTile');
                     return;
                 }
@@ -259,9 +265,9 @@ export default class StoreRestockerWorker extends StoreWorker {
         }
     }
 
-    /** Walking to a claimed farm cell — if its crop is gone (the player took it), try another one. */
+    /** Walking to a claimed source — if what it had is gone (the player took it), try another one. */
     private updateToTile(delta: number): void {
-        if (!this.tile?.getReadyYield()) {
+        if (!this.source?.getReadyYield()) {
             this.nextTileOrShelf();
             return;
         }
@@ -280,9 +286,9 @@ export default class StoreRestockerWorker extends StoreWorker {
             return;
         }
         if (this.totalCarried() < this.carryCapacity) {
-            const next = this.host.claimReadyTile(this, job.type, this.transform.position);
+            const next = this.host.claimReadySource(this, job.type, this.transform.position);
             if (next) {
-                this.tile = next;
+                this.source = next;
                 this.setState('toTile');
                 return;
             }
@@ -290,22 +296,22 @@ export default class StoreRestockerWorker extends StoreWorker {
         this.setState(this.totalCarried() > 0 ? 'toShelf' : 'idle');
     }
 
-    /** Takes the cell's crop (if it fits — a first pick always does) and flies each unit onto its back. */
+    /** Takes the source's pickup (if it fits — a first pick always does) and flies each unit onto its back. */
     private harvestTile(): void {
-        const tile = this.tile;
-        const ready = tile?.getReadyYield();
-        if (!tile || !ready) {
+        const source = this.source;
+        const ready = source?.getReadyYield();
+        if (!source || !ready) {
             return;
         }
         const total = this.totalCarried();
         if (total > 0 && total + ready.amount > this.carryCapacity) {
             return;
         }
-        const harvested = tile.harvestForWorker();
+        const harvested = source.takeForWorker();
         if (!harvested) {
             return;
         }
-        const from = tile.transform.position.clone().setY(tile.transform.position.y + HARVEST_LAUNCH_HEIGHT);
+        const from = source.launchPoint.clone();
         for (let i = 0; i < harvested.amount; i++) {
             this.flyOntoBack(harvested.resourceType, from);
         }

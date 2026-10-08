@@ -35,7 +35,7 @@ interface StoreGate {
 }
 
 /** Map object types whose spawn goes through RequirementRegistry — the ones registerPlacementGates() gates by position. Buildings are left out: a section and a store's starter are themselves buildings drawn inside those areas. */
-const PLACEMENT_GATED_TYPES = ['storage', 'shop', 'queue', 'mart', 'farm'];
+const PLACEMENT_GATED_TYPES = ['storage', 'shop', 'queue', 'mart', 'farm', 'mixStation'];
 
 export class StoreUnlocks {
     /** Built lazily on first query — the map has to be loaded, which it always is by the time anything spawns. */

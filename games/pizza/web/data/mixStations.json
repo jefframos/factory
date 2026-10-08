@@ -1,0 +1,78 @@
+{
+    "default": {
+        "name": "Mix Station",
+        "inputs": [
+            {
+                "resourceType": "milk",
+                "amount": 1,
+                "capacity": 4
+            }
+        ],
+        "resourceType": "butter",
+        "outputAmount": 1,
+        "mixSec": 5,
+        "maxOutput": 6,
+        "price": {
+            "currency": "money",
+            "amount": 10
+        },
+        "surfaceHeight": 2,
+        "boxModels": [
+            "Restaurant.Crate"
+        ],
+        "boxScale": 0.8
+    },
+    "byId": {
+        "butterStation": {
+            "name": "Butter Station",
+            "inputs": [
+                {
+                    "resourceType": "milk",
+                    "amount": 1,
+                    "capacity": 4
+                }
+            ],
+            "resourceType": "butter",
+            "outputAmount": 1,
+            "mixSec": 5,
+            "maxOutput": 6,
+            "price": {
+                "currency": "money",
+                "amount": 10
+            },
+            "surfaceHeight": 2,
+            "boxModels": [
+                "Restaurant.Crate"
+            ],
+            "boxScale": 0.8
+        },
+        "breadStation": {
+            "name": "Bread Station",
+            "inputs": [
+                {
+                    "resourceType": "egg",
+                    "amount": 1,
+                    "capacity": 4
+                },
+                {
+                    "resourceType": "milk",
+                    "amount": 1,
+                    "capacity": 4
+                }
+            ],
+            "resourceType": "bread",
+            "outputAmount": 1,
+            "mixSec": 5,
+            "maxOutput": 6,
+            "price": {
+                "currency": "money",
+                "amount": 10
+            },
+            "surfaceHeight": 2,
+            "boxModels": [
+                "Restaurant.Crate"
+            ],
+            "boxScale": 0.8
+        }
+    }
+}

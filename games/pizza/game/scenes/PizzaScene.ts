@@ -125,6 +125,11 @@ import { StoreProgressStorage } from '../store/StoreProgressStorage';
 import StoragePurchaseZone from '../store/StoragePurchaseZone';
 import { getAnimalStallConfig } from '../data/AnimalStallTypes';
 import { AnimalProduce } from '../data/AnimalProduce';
+import { DEFAULT_MIX_INPUT_CAPACITY, getMixStationConfig } from '../data/MixStationTypes';
+import MixStation, { MixStationBox } from '../world/MixStation';
+import { RestockSupply, StorageSupplySource } from '../store/RestockSupply';
+import { StorageOwnershipStorage } from '../store/StorageOwnershipStorage';
+import type { StorageConfig } from '../data/StorageTypes';
 import StallAnimal from '../player/StallAnimal';
 import { stackItemScale } from '../components/CarrierStackVisual';
 import { getPileScale } from '../components/ItemPile';
@@ -263,6 +268,10 @@ const STORAGE_SOLID_TRIGGER_PADDING = 0.35;
 const PEN_INSET = 0.7;
 /** Where a laid item launches from, above the animal's feet. */
 const LAY_HEIGHT = 0.3;
+/** A mix station's dispenser sits on its (solid) top — its collect area reaches this far past it, so the player can stand next to the station. */
+const MIX_COLLECT_PADDING = 1.2;
+/** Where items sit inside a mix station's ingredient box, above its bottom (x the box scale) — half-way up Restaurant.Crate. */
+const MIX_BOX_DROP_HEIGHT = 0.4;
 
 /** Default timing for a camera-focus event (see PizzaScene.focusCameraOn()) when a caller doesn't override — a beat quick enough not to drag out an upgrade, slow enough to actually read as travel rather than a cut. */
 const DEFAULT_FOCUS_TRAVEL_SEC = 0.8;
@@ -492,6 +501,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupFarms();
         this.setupStorages();
         this.setupAnimalStalls();
+        this.setupMixStations();
         this.setupStores();
         // After setupStores() — a desk can spawn immediately (its section already built) and
         // looks its store up from this.stores.
@@ -1677,8 +1687,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     maxZ: pen.z + pen.depth / 2 - inset,
                 };
                 const type = stallConfig.resourceType;
-                // Store clients may order it from now on (see Store.isObtainable()).
+                // Store clients may order it from now on (see Store.isObtainable()), and restockers
+                // may pick it up from the box (see RestockSupply.ts).
                 AnimalProduce.markProducing(type);
+                RestockSupply.register(new StorageSupplySource(id, type, onFloor(box.x, box.z), onFloor(box.x, box.z).setY(FloorLayers.baseY + LAY_HEIGHT)));
                 const layScale = stackItemScale() * getPileScale(type);
                 const tryProduce = (animal: StallAnimal): boolean => {
                     if (storageZone.getFillCount() >= storageZone.getCapacity()) {
@@ -1719,6 +1731,139 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     true,
                     dropper.rotationDeg,
                     { title: 'STALL BUILT!', subtitle: (stallConfig.name ?? 'Animal stall').toUpperCase() },
+                ));
+                this.threeScene.add(purchaseZone.transform);
+                this.registerZoneVisibility(purchaseZone.transform, dropper.x, dropper.z, dropper.width, dropper.depth);
+            });
+        }
+    }
+
+    /**
+     * Every "mixStation" on the map — see MixStationTypes.ts for the map setup and flow. Until it's
+     * bought (its config price, keyed in StorageOwnershipStorage by the station's id) a
+     * StoragePurchaseZone stands on its dropper. Built: one StorageZone per ingredient BOX (its
+     * "storage" part with that "order" — a box model on the station's top, taking only that
+     * ingredient, up to its capacity, from a deposit area padded past the station's edge), a
+     * collect StorageZone at the dispenser (its "collectArea" part, else the dispenser padded the
+     * same way), and the MixStation itself (model, making area on the dropper, panel, mixing).
+     * Goes through the spawn gate, so it waits for its store to open.
+     */
+    private setupMixStations(): void {
+        for (const [id, rect] of this.worldObjects.getAllOfType('mixStation')) {
+            const config = getMixStationConfig(id);
+            if (config.disabled) {
+                continue;
+            }
+            const dropper = this.worldObjects.getDropperFor(id);
+            const dispenser = this.worldObjects.getPartsFor(id, 'dispenser')[0];
+            if (!dropper || !dispenser) {
+                console.warn(`[PizzaScene] mix station "${id}" needs a "dropper" and a "dispenser" naming it — skipping`);
+                continue;
+            }
+            const spots = this.worldObjects.getPartsFor(id, 'storage');
+            const collectArea = this.worldObjects.getPartsFor(id, 'collectArea')[0];
+            const mesh = this.worldObjects.getMeshPartFor(id);
+
+            const spotConfig = (overrides: Partial<StorageConfig>): StorageConfig => ({
+                accepts: 'farm',
+                models: [],
+                scale: 1,
+                rotationDeg: 0,
+                // On the station's top.
+                dropOffset: { y: config.surfaceHeight },
+                pile: { columns: 2, rows: 2, layers: 1 },
+                hideSignpost: true,
+                itemOrientation: 'standing',
+                ...overrides,
+            });
+
+            const spawnBuilt = (): void => {
+                // The boxes sit on the station's top.
+                const onTop = (x: number, z: number): THREE.Vector3 => onFloor(x, z).setY(FloorLayers.baseY + config.surfaceHeight);
+                const boxLook: Partial<StorageConfig> = {
+                    models: config.boxModels ?? [],
+                    scale: config.boxScale ?? 1,
+                    dropOffset: { y: MIX_BOX_DROP_HEIGHT * (config.boxScale ?? 1) },
+                };
+                const boxes: MixStationBox[] = config.inputs.map((input, index) => {
+                    const storageId = `${id}:in${index}`;
+                    const spot = spots.find(s => s.order === index) ?? spots[index];
+                    if (!spot) {
+                        console.warn(`[PizzaScene] mix station "${id}" has no "storage" with order ${index} for its ${input.resourceType} — it can't be filled`);
+                        return { storageId, position: onTop(rect.x, rect.z) };
+                    }
+                    const capacity = Math.max(input.amount, input.capacity ?? DEFAULT_MIX_INPUT_CAPACITY);
+                    const zone = this.world.add(new StorageZone(
+                        storageId,
+                        spotConfig({
+                            ...boxLook,
+                            resourceType: input.resourceType,
+                            maxItems: capacity,
+                            pile: { columns: 2, rows: 2, layers: Math.max(1, Math.ceil(capacity / 4)) },
+                        }),
+                        onTop(spot.x, spot.z),
+                        onFloor(spot.x, spot.z),
+                        // Deposit standing next to the box — it sits on the (solid) station top.
+                        { width: spot.width + MIX_COLLECT_PADDING * 2, depth: spot.depth + MIX_COLLECT_PADDING * 2 },
+                        { width: spot.width, depth: spot.depth },
+                        this.screenHost,
+                    ));
+                    this.threeScene.add(zone.transform);
+                    this.registerZoneVisibility(zone.transform, spot.x, spot.z, spot.width, spot.depth);
+                    return { storageId, position: onTop(spot.x, spot.z) };
+                });
+
+                const collect = collectArea ?? {
+                    ...dispenser,
+                    width: dispenser.width + MIX_COLLECT_PADDING * 2,
+                    depth: dispenser.depth + MIX_COLLECT_PADDING * 2,
+                };
+                const output = this.world.add(new StorageZone(
+                    `${id}:out`,
+                    // The product box — same box as the ingredients, on the station's top.
+                    spotConfig({ ...boxLook, resourceType: config.resourceType, collect: true, maxItems: config.maxOutput, pile: { columns: 2, rows: 2, layers: Math.max(1, Math.ceil(config.maxOutput / 4)) } }),
+                    onTop(dispenser.x, dispenser.z),
+                    onFloor(collect.x, collect.z),
+                    { width: collect.width, depth: collect.depth },
+                    { width: dispenser.width, depth: dispenser.depth },
+                    this.screenHost,
+                ));
+                this.threeScene.add(output.transform);
+                this.registerZoneVisibility(output.transform, dispenser.x, dispenser.z, dispenser.width, dispenser.depth);
+                // Restockers may take the product to a shelf selling it (see RestockSupply.ts).
+                RestockSupply.register(new StorageSupplySource(
+                    `${id}:out`,
+                    config.resourceType,
+                    onFloor(collect.x, collect.z),
+                    onFloor(dispenser.x, dispenser.z).setY(FloorLayers.baseY + config.surfaceHeight),
+                ));
+
+                const station = this.world.add(new MixStation(config, onFloor(rect.x, rect.z), dropper, mesh, boxes, output, onTop(dispenser.x, dispenser.z), this.screenHost));
+                this.threeScene.add(station.transform);
+                this.registerZoneVisibility(station.transform, rect.x, rect.z, rect.width, rect.depth);
+            };
+
+            this.requirementRegistry.registerSpawnGate(id, undefined, () => {
+                const price = config.price;
+                if (!price || price.amount <= 0 || StorageOwnershipStorage.isOwned(id)) {
+                    spawnBuilt();
+                    return;
+                }
+                const purchaseZone = this.world.add(new StoragePurchaseZone(
+                    id,
+                    price,
+                    [],
+                    onFloor(dropper.x, dropper.z),
+                    { width: dropper.width, depth: dropper.depth },
+                    this.screenHost,
+                    () => this.uiService.economyUi.getIconAnchorPosition(price.currency),
+                    spawnBuilt,
+                    FLOOR_FRAME,
+                    undefined,
+                    undefined,
+                    true,
+                    dropper.rotationDeg,
+                    { title: 'STATION BUILT!', subtitle: (config.name ?? 'Mix station').toUpperCase() },
                 ));
                 this.threeScene.add(purchaseZone.transform);
                 this.registerZoneVisibility(purchaseZone.transform, dropper.x, dropper.z, dropper.width, dropper.depth);

@@ -202,6 +202,15 @@ A storage whose `shelf` field names a Shelves-tab entry is drawn as that shelf: 
 The slot count is the capacity — the player can't drop off more. `storageMilk` uses `shelfEnd` (Store.ShelfEnd, 6 slots: 3 per shelf, its cartons/bottles hidden); `shelfBoxes` (Store.ShelfBoxes, 9 slots) is set up too. `storageEgg` is a normal crate storage. Clients only order an animal product (eggs) once a stall making it is built
 (`data/AnimalProduce.ts`).
 
+### Mix stations (Mix Stations tab → `game/data/MixStationTypes.ts`)
+
+A `mixStation` rect (id) plus parts naming it: a `dropper` (target, or its own id = the station's), an untyped model tile
+with `target` (its look), one id-less `storage` per ingredient (`order` 0, 1, … = which ingredient), a `dispenser`, and
+optionally a `collectArea`. Build price at the dropper (10 cash each). Then: drop the ingredients off at the dropper (each
+spot takes one batch), stand there `mixSec` (5 s — pauses if you step out) and the product flies to the dispenser; stand
+next to it to collect. `butterStation`: milk → butter. `breadStation`: egg + milk → bread. Code: `world/MixStation.ts`,
+`PizzaScene.setupMixStations()`.
+
 ### What clients buy & pay
 
 - They only ask for items from **available** storages (enabled by level + bought/free).

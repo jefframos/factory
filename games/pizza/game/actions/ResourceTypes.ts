@@ -55,7 +55,9 @@ export enum ResourceType {
      */
     Garbage = "garbage",
     Egg = "egg",
-    Milk = "milk"
+    Milk = "milk",
+    Butter = "butter",
+    Bread = "bread"
 }
 
 export interface ResourceConfig {
@@ -352,6 +354,26 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         "price": 12,
         "sellable": true,
         "pileScale": 2.5,
+        "carrierSpacing": 0.8
+    },
+    [ResourceType.Butter]: {
+        color: 0xf5d76e,
+        "label": "Butter",
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 20,
+        "sellable": true,
+        "pileScale": 0.6,
+        "carrierSpacing": 0.8
+    },
+    [ResourceType.Bread]: {
+        color: 0xc68642,
+        "label": "Bread",
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 30,
+        "sellable": true,
+        "pileScale": 0.8,
         "carrierSpacing": 0.8
     }
 };

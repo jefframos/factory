@@ -600,8 +600,11 @@ export default class StorageZone extends Entity {
         return this.pile.capacity;
     }
 
-    /** Only a SHELF is ever full (one item per slot) — a crate storage keeps taking items past what it draws. */
+    /** Full = StorageConfig.maxItems reached, or every slot of a SHELF taken — a plain crate storage keeps taking items past what it draws. */
     private isFull(): boolean {
+        if (this.config.maxItems !== undefined) {
+            return this.getFillCount() >= this.config.maxItems;
+        }
         return this.shelf !== undefined && this.getFillCount() >= this.getCapacity();
     }
 

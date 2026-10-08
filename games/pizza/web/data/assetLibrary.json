@@ -416,5 +416,21 @@
         "scale": 1,
         "rotationDeg": 0,
         "icon": "pizza-model-snapshots_Store-Carton"
+    },
+    "butter": {
+        "models": [
+            "Food.Cheese"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "butter"
+    },
+    "bread": {
+        "models": [
+            "Food.Loaf"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "bread"
     }
 }

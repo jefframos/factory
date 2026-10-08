@@ -298,8 +298,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORAGE_CONFIG',
         byIdExportName: 'STORAGE_CONFIG_BY_ID',
-        managedKeys: ['name', 'accepts', 'resourceType', 'collect', 'shelf', 'trash', 'particleEffectId', 'particleSpawnRate', 'models', 'view', 'hideSignpost', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
-        optionalKeys: ['name', 'view', 'hideSignpost', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'resourceType', 'collect', 'shelf', 'trash', 'particleEffectId', 'particleSpawnRate', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
+        managedKeys: ['name', 'accepts', 'resourceType', 'collect', 'shelf', 'maxItems', 'trash', 'particleEffectId', 'particleSpawnRate', 'models', 'view', 'hideSignpost', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
+        optionalKeys: ['name', 'view', 'hideSignpost', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'resourceType', 'collect', 'shelf', 'maxItems', 'trash', 'particleEffectId', 'particleSpawnRate', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
         // Third export — the ONE signpost every storage shares (see StorageTypes.ts's STORAGE_SIGNPOST_CONFIG),
         // shown as the Storages tab's own 'Signpost' card; same mechanism as farms' FARM_TILE_CONFIG.
         tileExportName: 'STORAGE_SIGNPOST_CONFIG',
@@ -348,6 +348,16 @@ export const ENTITY_SOURCE_MAP = {
         byIdExportName: 'WALL_SETUP_BY_ID',
         managedKeys: ['name', 'height', 'thickness', 'doorHeight', 'tallDoorHeight', 'windowHeight'],
         optionalKeys: ['name'],
+    },
+    // Mix stations — see game/data/MixStationTypes.ts. Same {default, byId} shape as storages; by-id
+    // entries are the map's "mixStation" ids.
+    mixStations: {
+        file: path.join(GAME_DIR, 'data', 'MixStationTypes.ts'),
+        kind: 'queues',
+        defaultExportName: 'DEFAULT_MIX_STATION_CONFIG',
+        byIdExportName: 'MIX_STATION_CONFIG_BY_ID',
+        managedKeys: ['name', 'inputs', 'resourceType', 'outputAmount', 'mixSec', 'maxOutput', 'price', 'surfaceHeight', 'boxModels', 'boxScale', 'disabled'],
+        optionalKeys: ['name', 'price', 'boxModels', 'boxScale', 'disabled'],
     },
     // Shelves — see game/data/ShelfTypes.ts. Plain id-keyed record (no default — a storage with no
     // `shelf` keeps the crate look).

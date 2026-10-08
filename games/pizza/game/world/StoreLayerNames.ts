@@ -61,7 +61,12 @@ export function getStoreLayerMapObjects(map: TiledMapData): NonNullable<TiledLay
         .flatMap(layer => layer.objects ?? [])
         .filter(obj => {
             const type = obj.properties?.find(p => p.name === 'type')?.value;
-            return typeof type === 'string' && !STORE_LAYOUT_TYPES.has(type);
+            if (typeof type === 'string') {
+                return !STORE_LAYOUT_TYPES.has(type);
+            }
+            // An untyped model tile naming a "target" — that target's model (e.g. a mix station's
+            // table — WorldObjectRegistry.getMeshPartFor()). A store part's counter model is one too.
+            return obj.gid !== undefined && obj.properties?.some(p => p.name === 'target') === true;
         });
 }
 

@@ -670,6 +670,7 @@ const ENTITY_SCHEMAS = {
         },
         { key: 'resourceType', type: 'select', label: 'Only This Resource (e.g. one specific crop — overrides Accepts; blank = anything Accepts allows)', source: 'resources', optional: true },
         { key: 'shelf', type: 'select', label: 'Shelf (draw it as this Shelves-tab shelf: its model, items on its fixed slots, and it holds at most one item per slot — blank = the normal crate + pile)', source: 'shelves', optional: true },
+        { key: 'maxItems', type: 'number', label: 'Max Items (holds at most this many — the player can\'t drop off more; blank = a shelf\'s slot count, else unlimited)', optional: true },
         { key: 'collect', type: 'boolean', label: 'Collect (the player TAKES from it instead of dropping off — its items fly onto the player\'s stack while there\'s room; e.g. an animal stall\'s egg box, whose entry here has the stall\'s id)', optional: true },
         { key: 'trash', type: 'boolean', label: 'Trash (takes ONLY garbage — Accepts/Only This Resource are ignored — and destroys it: no pile, no count; signpost shows a trash icon; stores never sell from it)', optional: true },
         { key: 'particleEffectId', type: 'select', label: 'Particle Effect (ambient, from the drop point — Particle Effects tab; blank = none)', source: 'particleEffects', optional: true },
@@ -948,6 +949,34 @@ const ENTITY_SCHEMAS = {
         { key: 'bottomHeight', type: 'number', label: 'Bottom Band Height (world units from the floor — where Bottom Color ends)' },
         { key: 'bottomOpacity', type: 'number', label: 'Bottom Opacity (1 = solid, 0.35 = see-through glass — blank = 1)', optional: true },
         { key: 'topOpacity', type: 'number', label: 'Top Opacity (1 = solid, 0.35 = see-through glass, e.g. a shop-front: solid bottom, glass top — blank = 1)', optional: true },
+    ],
+    // Mix Stations tab — see game/data/MixStationTypes.ts (map setup + flow in its doc).
+    mixStations: [
+        { key: 'name', type: 'text', label: 'Name (build notification + editor)', optional: true },
+        {
+            key: 'inputs', type: 'list', label: 'Ingredients (in the order of the map storages\' "order" property — 0 = first)',
+            itemLabel: (item, index) => `${index ?? 0}: ${item.amount ?? 1} ${item.resourceType ?? '?'}`,
+            fields: [
+                { key: 'resourceType', type: 'select', label: 'Resource', source: 'resources' },
+                { key: 'amount', type: 'number', label: 'Amount (used per batch)' },
+                { key: 'capacity', type: 'number', label: 'Box Holds (how many the ingredient box takes — several batches; blank = 4)', optional: true },
+            ],
+        },
+        { key: 'resourceType', type: 'select', label: 'Makes', source: 'resources' },
+        { key: 'outputAmount', type: 'number', label: 'Makes Per Batch' },
+        { key: 'mixSec', type: 'number', label: 'Mix Time (seconds the player stands in the dropper area per batch — pauses while they step out)' },
+        { key: 'maxOutput', type: 'number', label: 'Dispenser Holds (most products waiting — no new batch while full)' },
+        { key: 'surfaceHeight', type: 'number', label: 'Surface Height (world units — the station\'s top, where ingredients and the product sit)' },
+        { key: 'boxModels', type: 'modelList', label: 'Ingredient Box Model (first entry used — sits on the station\'s top at each "storage" spot; empty = no box)', optional: true },
+        { key: 'boxScale', type: 'number', label: 'Box Scale (x the box model\'s own size — Restaurant.Crate is 2 wide; blank = 1)', optional: true },
+        {
+            key: 'price', type: 'group', label: 'Build Price (paid at the dropper — amount 0 = built from the start)',
+            fields: [
+                { key: 'currency', type: 'select', label: 'Currency', options: CURRENCY_OPTIONS },
+                { key: 'amount', type: 'number', label: 'Amount' },
+            ],
+        },
+        { key: 'disabled', type: 'boolean', label: 'Disabled (the station isn\'t spawned)', optional: true },
     ],
     // Shelves tab — see game/data/ShelfTypes.ts. A storage picks one with its own `shelf` field.
     shelves: [
