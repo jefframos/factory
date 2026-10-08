@@ -18,6 +18,8 @@
 const GRAPH_TAB_ID = '__graph__';
 /** Sentinel activeId for the Map Suggestions tab (see renderTabs()/renderActiveTab()/renderMapSuggestionsTab()) — same "read-only, not a manifest entry" convention as GRAPH_TAB_ID. */
 const MAP_SUGGESTIONS_TAB_ID = '__map_suggestions__';
+/** The Project tab (see projectTab.js) — project upkeep tools, not a data tab, same sentinel-id convention as the Graph tab. */
+const PROJECT_TAB_ID = '__project__';
 
 /**
  * Grouped tabs: a manifest entry with a `parentTab` isn't its own tab-bar button — it's one
@@ -187,7 +189,7 @@ async function init() {
     }
     // Falls back to the first tab whenever the restored (or already-active) id no longer names
     // a real tab — e.g. the saved section was deleted, or this is the very first-ever load.
-    if (!activeId || (activeId !== GRAPH_TAB_ID && activeId !== MAP_SUGGESTIONS_TAB_ID && !PLACEHOLDER_SECTIONS.some(e => e.id === activeId) && !manifest.some(e => e.id === activeId))) {
+    if (!activeId || (activeId !== GRAPH_TAB_ID && activeId !== MAP_SUGGESTIONS_TAB_ID && activeId !== PROJECT_TAB_ID && !PLACEHOLDER_SECTIONS.some(e => e.id === activeId) && !manifest.some(e => e.id === activeId))) {
         activeId = manifest[0]?.id ?? null;
     }
     renderTabs();
@@ -270,6 +272,18 @@ function renderTabs() {
         renderActiveTab();
     };
     tabsEl.appendChild(suggestionsBtn);
+
+    // Same sentinel convention — project upkeep (model audit / ignore list / legacy folder), see projectTab.js.
+    const projectBtn = document.createElement('button');
+    projectBtn.textContent = 'Project';
+    projectBtn.className = activeId === PROJECT_TAB_ID ? 'active' : '';
+    projectBtn.onclick = () => {
+        activeId = PROJECT_TAB_ID;
+        saveUiState();
+        renderTabs();
+        renderActiveTab();
+    };
+    tabsEl.appendChild(projectBtn);
 }
 
 async function checkMap() {
@@ -544,6 +558,14 @@ const QUEUES_SECTION_LABELS = {
         default: 'Default setup — the size of every wall unless its Tiled "setup" property names one below',
         byId: 'Other setups — pick one per wall in Tiled with a "setup" property set to the id (e.g. a low counter wall)',
     },
+    storeFenceDoors: {
+        default: 'Default setup — every fence door (a "polyDoor" rect over a "polyFence") unless its Tiled "setup" property names one below',
+        byId: 'Other setups — pick one per fence door in Tiled with a "setup" property set to the id',
+    },
+    storeFences: {
+        default: 'Default style — every "polyFence" unless its Tiled "style" property names one below',
+        byId: 'Other styles — pick one per fence in Tiled with a "style" property set to the id',
+    },
     storeDoors: {
         default: 'Default style — every door unless its building (Buildings tab) or store (Stores tab) "Door Style" picks one below',
         byId: 'Other styles — pick one per building on the Buildings tab, per store on the Stores tab (Door Style), or per door in Tiled with a "style" property set to the id (e.g. glass)',
@@ -553,11 +575,19 @@ const QUEUES_SECTION_LABELS = {
 function renderActiveTab() {
     contentEl.innerHTML = '';
     contentEl.classList.toggle('graph-tab-active', activeId === GRAPH_TAB_ID);
+    // The Project tab's tables use the whole window width too.
+    contentEl.classList.toggle('project-tab-active', activeId === PROJECT_TAB_ID);
     if (!activeId) return;
 
     if (activeId === GRAPH_TAB_ID) {
         sourceHintEl.textContent = 'A read-only visualization — see the source of any node\'s own data on its own tab to edit it.';
         renderGraphTab(contentEl);
+        return;
+    }
+
+    if (activeId === PROJECT_TAB_ID) {
+        sourceHintEl.textContent = 'Project upkeep — writes games/pizza/raw-assets/models-ignore.json and the raw-assets/legacy folder (see web/sync/modelAudit.mjs).';
+        renderProjectTab(contentEl);
         return;
     }
 
@@ -1506,7 +1536,7 @@ function onAddEntry() {
             return;
         }
         // A floor checker's fields are all required — start from the default's look, not blank.
-        container[id] = ['storeFloors', 'storeWalls', 'storeDoors', 'storeWallSetups'].includes(activeId) ? { ...structuredClone(data.default), name: id } : {};
+        container[id] = ['storeFloors', 'storeWalls', 'storeDoors', 'storeWallSetups', 'storeFences', 'storeFenceDoors'].includes(activeId) ? { ...structuredClone(data.default), name: id } : {};
     }
     markDirty();
     renderActiveTab();

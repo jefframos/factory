@@ -54,6 +54,8 @@ export enum ResourceType {
      * storage takes it (StorageZone.accepts()), and it can't be sold.
      */
     Garbage = "garbage",
+    Egg = "egg",
+    Milk = "milk"
 }
 
 export interface ResourceConfig {
@@ -332,4 +334,24 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         category: "farm",
         "sellable": false
     },
+    [ResourceType.Egg]: {
+        color: 0xf3e6c8,
+        "label": "Egg",
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 8,
+        "sellable": true,
+        "pileScale": 3,
+        "carrierSpacing": 0.7
+    },
+    [ResourceType.Milk]: {
+        color: 0xf7f7f2,
+        "label": "Milk",
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 12,
+        "sellable": true,
+        "pileScale": 2.5,
+        "carrierSpacing": 0.8
+    }
 };

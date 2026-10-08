@@ -1,0 +1,43 @@
+{
+    "default": {
+        "name": "Chicken Stall",
+        "animalModels": [
+            "Pets.AnimalChick"
+        ],
+        "animalScale": 0.5,
+        "animalCount": 1,
+        "wanderSpeed": 0.8,
+        "minPauseSec": 1,
+        "maxPauseSec": 3,
+        "resourceType": "egg",
+        "produceIntervalSec": 8
+    },
+    "byId": {
+        "chickenStall": {
+            "name": "Chicken Stall",
+            "animalModels": [
+                "Pets.AnimalChick"
+            ],
+            "animalScale": 0.5,
+            "animalCount": 1,
+            "wanderSpeed": 0.8,
+            "minPauseSec": 1,
+            "maxPauseSec": 3,
+            "resourceType": "egg",
+            "produceIntervalSec": 30
+        },
+        "cowStall": {
+            "name": "Cow Stall",
+            "animalModels": [
+                "Pets.AnimalCow"
+            ],
+            "animalScale": 1.5,
+            "animalCount": 1,
+            "wanderSpeed": 0.6,
+            "minPauseSec": 2,
+            "maxPauseSec": 4,
+            "resourceType": "milk",
+            "produceIntervalSec": 45
+        }
+    }
+}

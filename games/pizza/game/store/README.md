@@ -156,6 +156,27 @@ To remove part of an existing wall (the store's, or another section's) when the 
 window or door in it goes too). An exclusion belongs to the section named in its `target` property, else to the
 nearest section rect within 4 world units. It never cuts its own section's walls. Exact duplicate walls are skipped.
 
+### Store View tab → Fence → `game/store/StoreViewTypes.ts`
+
+Draw a polyline (open) or polygon (closed loop) with `type` = `polyFence` — on `mapSettings` or a store layer,
+same as a `polyWall` but not tied to any building. It becomes a see-through wooden fence (`builders/PolyFenceBuilder.ts`):
+a post at every corner and every `postSpacing`, `railCount` rails between posts, solid like a low wall (one post thick).
+Look/size = the **Default** fence style (brown wood, `#8b5a2b`) unless the line's own `style` prop names another
+(`npm run tiled-types` adds them to Tiled's `fenceStyle` dropdown). Fields: `color`, `height`, `postSpacing`, `postWidth`,
+`railCount`, `railThickness`.
+
+**Openings:** draw a plain rect with `type` = `polyFenceGap` over the fence — every post-to-post span whose middle
+is inside it is left out (walkable, no collider); the posts either side stay. A closed fence around farms needs one,
+or the player can't get in to harvest.
+
+Each stretch of fence shows with the fog-of-war zone it stands in (`PizzaScene.setupFences()`).
+
+**Fence doors:** a `polyDoor` rect over a fence (on `mapSettings` / a store layer — store walls' doors live on their
+own view/section layers) cuts an exact hole where it crosses the fence and puts a fence door in it (`world/FenceDoor.ts`):
+the **Store View → Fence Door** setup's model (default `Deco.FenceDoorway`) stretched along the fence to fill the hole,
+`height` tall, standing on the floor. `colliderInset` = solid support at each side of the hole (world units from each end
+inward); the middle stays walkable. `width` narrows the hole (centered); the polyDoor's own `setup` prop picks a named setup.
+
 ### Store View tab → Door → `game/store/StoreViewTypes.ts`
 
 How every door looks: a **model** (first entry, stretched over each leaf, × `scale`), or with no model, a plain
@@ -173,6 +194,13 @@ panel in `color` at `opacity` (below 1 = see-through glass). **Default** is the 
 | `solid` | Collider (1 = full footprint). Clients walk through it regardless. |
 | `frame` | Popup Frame Override. **Floor** (default when blank) = in-world: stored count painted on the floor south of the storage, and while for sale the price painted on its purchase area (dropper, or its own footprint), shrunk to fit — `components/FloorLabelComponent.ts`. Any other frame (e.g. `QueueFrame`) = floating UI-layer popup in that frame. `floorLabelSize` / `floorLabelGap` tune the floor labels. Only storages understand Floor for now. |
 | `disabled` | Storage (and so its item) is gone from the game. |
+
+### Shelves (Shelves tab → `game/data/ShelfTypes.ts`)
+
+A storage whose `shelf` field names a Shelves-tab entry is drawn as that shelf: its model (decorative nodes hidden with
+`hideNodes`, e.g. `carton*, box, box_*`) with each item on one of its fixed **slots** (model units, before `scale`).
+The slot count is the capacity — the player can't drop off more. `storageMilk` uses `shelfEnd` (Store.ShelfEnd, 6 slots: 3 per shelf, its cartons/bottles hidden); `shelfBoxes` (Store.ShelfBoxes, 9 slots) is set up too. `storageEgg` is a normal crate storage. Clients only order an animal product (eggs) once a stall making it is built
+(`data/AnimalProduce.ts`).
 
 ### What clients buy & pay
 
@@ -379,6 +407,14 @@ nothing on its list is available does it wander.
 The mood clock runs in every state before paying. **Adding an activity** (sitting, eating,
 ...): add a name to `ClientState`, one entry (`enter`/`update`/`exit`) to the `states`
 table in the constructor, and the transitions into/out of it — nothing else changes.
+
+### Player prompts (`ui/AlertIcon.ts`)
+
+- A client that can't find what it wants (its shelf is empty, or it's wandering for it) shows a bobbing **?** on its bubble.
+- The client at the front of the cashier line shows a **!** on its bubble while nobody serves (no player, no cashier worker),
+  and a big **!** floats over the cashier counter (`StoreCashier.setNeedsService()`).
+- Every piece of garbage on the floor has a bobbing **trash** icon over it.
+- How far away the counter/garbage icons stay visible: `store/StoreAlertConfig.ts`.
 
 ### Walking (`nav/`)
 

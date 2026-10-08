@@ -164,6 +164,19 @@ export interface StorageConfig {
     resourceCost?: StorageResourceCost[];
     /** When true, this storage isn't spawned at all — same convention as every other entity's `disabled`. */
     disabled?: boolean;
+    /**
+     * When true the player TAKES from this storage instead of dropping off: standing in its area,
+     * its items fly onto the player's stack one at a time while there's room (StorageZone's
+     * collect mode). For a storage something else fills — e.g. an animal stall's egg box (see
+     * AnimalStallTypes.ts). Unset = the normal drop-off storage.
+     */
+    collect?: boolean;
+    /**
+     * A ShelfTypes.ts shelf id — the storage is drawn as that shelf (its model, replacing
+     * models/view/scale) with items on its fixed slots instead of the crate grid, and holds at
+     * most one item per slot: the player can't drop off more. Unset = the normal crate + pile.
+     */
+    shelf?: string;
 }
 
 /**
@@ -277,7 +290,8 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             "amount": 0
         },
         "view": "storageView",
-        "itemOrientation": "standing"
+        "itemOrientation": "standing",
+        "resourceCost": []
     },
     "storage3": {
         "accepts": "farm",
@@ -382,6 +396,98 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             }
         ],
         "view": "storageView",
+    },
+    "chickenStall": {
+        "name": "Chicken Stall Egg Box",
+        "accepts": "farm",
+        "resourceType": ResourceType.Egg,
+        "collect": true,
+        "models": [MODELS.Restaurant.Crate],
+        "view": "storageView",
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 3,
+            "rows": 3,
+            "layers": 2
+        },
+        "itemOrientation": "standing",
+        "solid": 1,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 20
+        },
+        "resourceCost": []
+    },
+    "storageEgg": {
+        "name": "Egg Storage",
+        "accepts": "farm",
+        "resourceType": ResourceType.Egg,
+        "models": [MODELS.Restaurant.Crate],
+        "scale": 1,
+        "rotationDeg": 90,
+        "dropOffset": {},
+        "pile": {
+            "columns": 4,
+            "rows": 4,
+            "layers": 1
+        },
+        "itemOrientation": "standing",
+        "solid": 1,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 0
+        },
+        "view": "storageView",
+        "popupBobOffset": 3,
+        "resourceCost": []
+    },
+    "storageMilk": {
+        "name": "Milk Shelf",
+        "accepts": "farm",
+        "resourceType": ResourceType.Milk,
+        "shelf": "shelfEnd",
+        "models": [MODELS.Restaurant.Crate],
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 3,
+            "rows": 2,
+            "layers": 1
+        },
+        "itemOrientation": "standing",
+        "solid": 1,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 0
+        },
+        "resourceCost": []
+    },
+    "cowStall": {
+        "name": "Cow Stall Milk Box",
+        "accepts": "farm",
+        "resourceType": ResourceType.Milk,
+        "collect": true,
+        "models": [MODELS.Restaurant.Crate],
+        "view": "storageView",
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 2,
+            "rows": 2,
+            "layers": 1
+        },
+        "itemOrientation": "standing",
+        "solid": 1,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 20
+        },
+        "resourceCost": [],
+        "signpostSide": "east"
     }
 };
 

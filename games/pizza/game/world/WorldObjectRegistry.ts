@@ -101,6 +101,12 @@ const HIRE_DESK_TYPE = 'hireDesk';
 const STORE_FLOOR_TYPE = 'floor';
 /** The "type" of a wall polyline/polygon on a "--storeView--" layer — see StoreWallPlacement / readStoreViewLayers(). */
 const STORE_WALL_TYPE = 'polyWall';
+/** A "polyFence" polyline/polygon on mapSettings (or a store layer) — drawn like a polyWall, built as a wooden fence (see getFences()). */
+const FENCE_TYPE = 'polyFence';
+/** A plain rect over a polyFence: an opening in it (see PolyFenceBuilder.layout()). */
+const FENCE_GAP_TYPE = 'polyFenceGap';
+/** A "polyDoor" rect on mapSettings / a store layer — a fence door where it crosses a polyFence (store walls' doors live on their own view/section layers). */
+const FENCE_DOOR_TYPE = 'polyDoor';
 /** Rects on a "--storeView--" layer that cut a hole in any wall of the same building they overlap — see StoreWallPlacement.openings. */
 const STORE_OPENING_TYPES: Record<string, StoreWallOpening['kind']> = { polyWindow: 'window', polyDoor: 'door' };
 /** A rect on a section layer marking the stretch of OTHER walls that section removes once built — see StoreWallSectionCut. */
@@ -498,6 +504,14 @@ export default class WorldObjectRegistry {
     private readonly dropperPlacementsByTarget = new Map<string, WorldObjectPlacement>();
     /** target (a waypoint's "target" custom property, e.g. a queue id) -> every waypoint drawn for that path, sorted ascending by order once the constructor finishes — see getWaypoints(). */
     private readonly waypointsByTarget = new Map<string, WaypointPlacement[]>();
+    /** Every "polyFence" line — see getFences(). */
+    private readonly fences: StoreWallPlacement[] = [];
+    /** target -> type -> placements of id-less objects that only name a "target" — see getPartsFor(). */
+    private readonly partsByTarget = new Map<string, Map<string, WorldObjectPlacement[]>>();
+    /** Every "polyFenceGap" rect — see getFenceGaps(). */
+    private readonly fenceGaps: { minX: number; maxX: number; minZ: number; maxZ: number }[] = [];
+    /** Every mapSettings/store-layer "polyDoor" rect — see getFenceDoors(). */
+    private readonly fenceDoors: { minX: number; maxX: number; minZ: number; maxZ: number; setup?: string }[] = [];
     /** target (a cameraTarget's "target" custom property, e.g. a BuildingId) -> that point — see getCameraTargetFor(). */
     private readonly cameraTargetsByTarget = new Map<string, { x: number; z: number }>();
     /**
@@ -581,6 +595,32 @@ export default class WorldObjectRegistry {
                 continue;
             }
 
+            // An opening in a fence — just a rect, no id. A door also carries its setup id.
+            if (type === FENCE_GAP_TYPE || type === FENCE_DOOR_TYPE) {
+                const rect = objectToWorldRect(obj, tileDefs.tileSize, worldUnitsPerTile);
+                const bounds = { minX: rect.x - rect.width / 2, maxX: rect.x + rect.width / 2, minZ: rect.z - rect.depth / 2, maxZ: rect.z + rect.depth / 2 };
+                if (type === FENCE_GAP_TYPE) {
+                    this.fenceGaps.push(bounds);
+                } else {
+                    const setup = getObjectProperty(obj, 'setup');
+                    this.fenceDoors.push({ ...bounds, ...(setup ? { setup } : {}) });
+                }
+                continue;
+            }
+
+            // A fence is just a line (no id) — same polyline/polygon reading as a polyWall.
+            if (type === FENCE_TYPE) {
+                const vertices = obj.polyline ?? obj.polygon;
+                if (!vertices || vertices.length < 2) {
+                    console.warn(`[WorldObjectRegistry] polyFence #${obj.id} isn't a polyline/polygon with 2+ points — skipping`);
+                    continue;
+                }
+                const fence = this.readStoreWall(obj, vertices, tileDefs.tileSize, worldUnitsPerTile);
+                this.fences.push(fence);
+                console.log(`  - type="polyFence" #${obj.id} -> ${fence.points.length} points${fence.closed ? ' (closed)' : ''}`);
+                continue;
+            }
+
             // Same "target, no id" shape as a waypoint — see this file's own doc.
             if (type === CAMERA_TARGET_TYPE) {
                 const target = getObjectProperty(obj, CAMERA_TARGET_TARGET_PROPERTY);
@@ -593,6 +633,24 @@ export default class WorldObjectRegistry {
             }
 
             const id = objId;
+            // No id but a "target": a PART of that target (e.g. an animal stall's storage / dropper) —
+            // a dropper registers as the target's dropper, anything else is listed under getPartsFor().
+            const partTarget = !id && type ? getObjectProperty(obj, DROPPER_TARGET_PROPERTY) : undefined;
+            if (type && partTarget) {
+                const placement = objectToWorldRect(obj, tileDefs.tileSize, worldUnitsPerTile);
+                if (type === DROPPER_TYPE) {
+                    this.dropperPlacementsByTarget.set(partTarget, placement);
+                } else {
+                    let byType = this.partsByTarget.get(partTarget);
+                    if (!byType) {
+                        byType = new Map();
+                        this.partsByTarget.set(partTarget, byType);
+                    }
+                    byType.set(type, [...(byType.get(type) ?? []), placement]);
+                }
+                console.log(`  - type="${type}" (part of "${partTarget}") -> world x=${placement.x.toFixed(2)} z=${placement.z.toFixed(2)}`);
+                continue;
+            }
             if (!type || !id) {
                 console.warn(`[WorldObjectRegistry] object #${obj.id} on "${OBJECTS_LAYER_NAME}" is missing its "type" or "id" custom property — skipping`);
                 continue;
@@ -1203,6 +1261,26 @@ export default class WorldObjectRegistry {
      */
     public getDropperFor(targetId: string): WorldObjectPlacement | undefined {
         return this.dropperPlacementsByTarget.get(targetId);
+    }
+
+    /** Every id-less `type` object whose "target" is `targetId` — e.g. an animal stall's storage (see PizzaScene.setupAnimalStalls()). */
+    public getPartsFor(targetId: string, type: string): readonly WorldObjectPlacement[] {
+        return this.partsByTarget.get(targetId)?.get(type) ?? [];
+    }
+
+    /** Every "polyFence" line on the map (world-space points; `style` = its Tiled "style" prop, a FENCE_STYLE_BY_ID id) — built by PizzaScene.setupFences(). */
+    public getFences(): readonly StoreWallPlacement[] {
+        return this.fences;
+    }
+
+    /** Every mapSettings/store-layer "polyDoor" rect (world-space bounds + its "setup" prop, a FENCE_DOOR_SETUP_BY_ID id) — a fence door in any fence it crosses. */
+    public getFenceDoors(): readonly { minX: number; maxX: number; minZ: number; maxZ: number; setup?: string }[] {
+        return this.fenceDoors;
+    }
+
+    /** Every "polyFenceGap" rect (world-space bounds) — openings in any fence they cover. */
+    public getFenceGaps(): readonly { minX: number; maxX: number; minZ: number; maxZ: number }[] {
+        return this.fenceGaps;
     }
 
     /** The "cameraTarget" point drawn for `targetId` (e.g. a BuildingId) — where the camera looks when that entity levels up. Undefined if none is drawn; the caller picks its own default. */

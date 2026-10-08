@@ -348,7 +348,7 @@
     },
     "garbage": {
         "label": "Garbage",
-        "icon": "PictoIcon_Delete-2",
+        "icon": "trash",
         "models": [
             "Restaurant.FoodIngredientBurgerTrash"
         ],
@@ -357,5 +357,35 @@
         "amountPerGather": 1,
         "category": "farm",
         "sellable": false
+    },
+    "egg": {
+        "label": "Egg",
+        "icon": "egg",
+        "models": [
+            "Food.Egg"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 8,
+        "sellable": true,
+        "pileScale": 3,
+        "carrierSpacing": 0.7
+    },
+    "milk": {
+        "label": "Milk",
+        "icon": "milk",
+        "models": [
+            "Store.Carton"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 12,
+        "sellable": true,
+        "pileScale": 2.5,
+        "carrierSpacing": 0.8
     }
 }

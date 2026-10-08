@@ -30,10 +30,19 @@
 // above the TOP of the pile, so it rises with it instead of ending up buried in
 // the stacked items.
 //
+// A COLLECT storage (StorageConfig.collect) runs it the other way: while the player stands in the
+// trigger, its items fly from the top of the pile onto the player's stack, one at a time, while
+// the stack has room (startCollect()). Something else fills it — receiveFrom(), e.g. an animal
+// stall's animals laying eggs (see StallAnimal.ts / PizzaScene.setupAnimalStalls()).
+//
 // A TRASH storage (StorageConfig.trash) runs the exact same transfer, but each
 // item flies into the storage's drop point, shrinks and is destroyed instead of
 // landing in StorageInventory — no pile, no count. Its signpost shows
 // TRASH_SIGNPOST_ICON only.
+//
+// A SHELF storage (StorageConfig.shelf — see ShelfTypes.ts) draws the shelf's model instead
+// (its decorative nodes hidden) and puts each item on one of the shelf's fixed slots ('slots'
+// pile mode); it takes no more items than it has slots (isFull()).
 //
 // The entity's transform sits at the TRIGGER's center (so the RigidBody and the
 // dotted outline need no offset); the mesh and pile are offset to the storage's
@@ -52,7 +61,8 @@ import { resolveEntityView } from './EntityViewRegistry';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
 import CarrierStackVisual, { stackItemScale } from '../components/CarrierStackVisual';
 import ItemPile, { getPileScale, ItemPileLayout } from '../components/ItemPile';
-import { flyResourceModel } from '../components/FlyToStack';
+import { flyResourceModel, flyResourceToStack } from '../components/FlyToStack';
+import { CarryStack } from '../player/CarryStack';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { buildLockRequirementPanel } from '../ui/LockRequirementPanel';
@@ -68,6 +78,7 @@ import { StorageConfig, STORAGE_SIGNPOST_CONFIG } from '../data/StorageTypes';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
+import { getShelfConfig, isShelfNodeHidden, ShelfConfig } from '../data/ShelfTypes';
 import MainPlayer from '../player/MainPlayer';
 import DepositPacer from '../utils/DepositPacer';
 
@@ -117,6 +128,8 @@ export default class StorageZone extends Entity {
     private readonly depositPacer = new DepositPacer(TRANSFER_STAGGER_SEC);
     private readonly storageId: string;
     private readonly config: StorageConfig;
+    /** StorageConfig.shelf, resolved — see this file's own doc. */
+    private readonly shelf?: ShelfConfig;
     private readonly triggerSize: { width: number; depth: number };
     /** See the constructor's `showDropOutline` param doc. */
     private readonly showDropOutline: boolean;
@@ -176,6 +189,7 @@ export default class StorageZone extends Entity {
         this.screenHost = screenHost;
         this.storageId = storageId;
         this.config = config;
+        this.shelf = getShelfConfig(config.shelf);
         this.triggerSize = triggerSize;
         this.storageSize = storageSize;
         this.meshOffset = storagePosition.clone().sub(triggerCenter);
@@ -214,6 +228,53 @@ export default class StorageZone extends Entity {
             }));
         }
 
+        if (this.shelf) {
+            this.buildShelfMesh(this.shelf);
+        } else {
+            this.buildStorageMesh();
+        }
+
+        this.buildSignpost();
+
+        // Each axis falls back on its own — the web editor can save a partial/empty object
+        // (e.g. `dropOffset: {}`), and an undefined axis would put the whole pile at NaN.
+        // A shelf's slots are measured from the shelf itself — no drop offset.
+        const drop = this.shelf ? { x: 0, y: 0, z: 0 } : this.config.dropOffset ?? {};
+        this.pileRoot.position.copy(this.meshOffset).add(new THREE.Vector3(
+            drop.x ?? DEFAULT_DROP_OFFSET.x,
+            drop.y ?? DEFAULT_DROP_OFFSET.y,
+            drop.z ?? DEFAULT_DROP_OFFSET.z,
+        ));
+        this.transform.add(this.pileRoot);
+        this.pile = new ItemPile(this.pileRoot, this.buildLayout());
+        this.finishAwake();
+    }
+
+    /** The shelf's model (StorageConfig.shelf) at the storage's spot — its hideNodes hidden once loaded. */
+    private buildShelfMesh(shelf: ShelfConfig): void {
+        const modelDef = ModelSnapshotTool.resolveModelRef(shelf.models[0]);
+        if (!modelDef) {
+            console.warn(`[StorageZone] "${this.storageId}": shelf model "${String(shelf.models[0])}" is not a known MODELS ref — no mesh`);
+            return;
+        }
+        this.meshScale = shelf.scale;
+        const visual: GlbVisualComponent = new GlbVisualComponent(modelDef, this.meshOffset.clone(), shelf.scale, this.shelfYaw(), () => {
+            visual.mesh.traverse(node => {
+                if (node !== visual.mesh && isShelfNodeHidden(shelf, node.name)) {
+                    node.visible = false;
+                }
+            });
+        });
+        this.visual = this.addComponent(visual);
+    }
+
+    /** The shelf model's yaw — its own rotationDeg on top of the map object's (Tiled turns clockwise, THREE counter-clockwise). */
+    private shelfYaw(): number {
+        return THREE.MathUtils.degToRad((this.shelf?.rotationDeg ?? 0) - this.mapRotationDeg);
+    }
+
+    /** The normal storage look: StorageConfig.view, else its inline models/scale/rotationDeg. */
+    private buildStorageMesh(): void {
         // StorageConfig.view (an Entity Views id) wins over the inline models/scale/rotationDeg.
         const view = resolveEntityView(this.config.view);
         if (this.config.view && !view) {
@@ -244,20 +305,10 @@ export default class StorageZone extends Entity {
             );
             this.visual = this.addComponent(visual);
         }
+    }
 
-        this.buildSignpost();
-
-        // Each axis falls back on its own — the web editor can save a partial/empty object
-        // (e.g. `dropOffset: {}`), and an undefined axis would put the whole pile at NaN.
-        const drop = this.config.dropOffset ?? {};
-        this.pileRoot.position.copy(this.meshOffset).add(new THREE.Vector3(
-            drop.x ?? DEFAULT_DROP_OFFSET.x,
-            drop.y ?? DEFAULT_DROP_OFFSET.y,
-            drop.z ?? DEFAULT_DROP_OFFSET.z,
-        ));
-        this.transform.add(this.pileRoot);
-        this.pile = new ItemPile(this.pileRoot, this.buildLayout());
-
+    /** The rest of awake(), once the mesh and pile exist. */
+    private finishAwake(): void {
         // StorageConfig.particleEffectId — from the drop point (pileRoot), so e.g. a trash's fire
         // rises out of the crate where items fall in. The effect's own `offset` nudges it further.
         if (this.config.particleEffectId) {
@@ -386,6 +437,29 @@ export default class StorageZone extends Entity {
 
     private buildLayout(): ItemPileLayout {
         const pile = this.config.pile ?? { columns: 3, rows: 3, layers: 4 };
+        if (this.shelf) {
+            // Each slot: model units x the shelf's scale, turned with the shelf — root-local (the
+            // pile root sits where the shelf mesh does).
+            const shelf = this.shelf;
+            const yaw = this.shelfYaw();
+            const slotPositions = shelf.slots.map(slot => new THREE.Vector3(...slot.position).multiplyScalar(shelf.scale).applyAxisAngle(UP_AXIS, yaw));
+            return {
+                mode: 'slots',
+                base: new THREE.Vector3(),
+                footprint: this.footprint,
+                maxColumns: 1,
+                maxRows: 1,
+                maxLayers: 1,
+                fitToCells: false,
+                towerMaxItems: slotPositions.length,
+                slotPositions,
+                itemScale: shelf.itemScale !== undefined && shelf.itemScale > 0 ? shelf.itemScale : this.itemScale(),
+                itemYawDeg: this.config.itemYawDeg,
+                itemOrientation: this.config.itemOrientation,
+                localPerWorld: 1,
+                offsetYFor: type => RESOURCE_CONFIG[type]?.storageOffsetY ?? 0,
+            };
+        }
         return {
             mode: 'grid',
             base: new THREE.Vector3(),
@@ -429,7 +503,106 @@ export default class StorageZone extends Entity {
         }
         this.isPlayerInside = true;
         this.player = other.entity;
-        this.startTransfer();
+        if (this.config.collect) {
+            this.startCollect();
+        } else {
+            this.startTransfer();
+        }
+    }
+
+    /** StorageConfig.collect — see this file's own doc. One item per paced step, top of the pile first, while the player's stack has room. */
+    private startCollect(): void {
+        if (this.transferring) {
+            return;
+        }
+        this.transferring = true;
+
+        const step = (): void => {
+            const player = this.player;
+            const scene = this.transform.parent;
+            const type = this.nextStored();
+            if (!this.isPlayerInside || !player || !scene || this.destroyed || type === undefined) {
+                this.transferring = false;
+                return;
+            }
+            if (!CarryStack.hasRoomFor(1)) {
+                CarryStack.notifyFull(player);
+                this.transferring = false;
+                return;
+            }
+            // Launches from where the top item sits, read before it's removed from the pile.
+            const from = this.pile.getSlotWorldPosition(this.pile.count - 1, type, new THREE.Vector3());
+            if (StorageInventory.remove(this.storageId, type, 1) <= 0) {
+                this.transferring = false;
+                return;
+            }
+            flyResourceToStack(scene, player, type, from);
+            this.playLandBounce();
+            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
+        };
+
+        step();
+    }
+
+    /** The first resource this storage holds any of — what a collect step takes next. */
+    private nextStored(): ResourceType | undefined {
+        for (const [type, count] of StorageInventory.getAll(this.storageId)) {
+            if (count > 0) {
+                return type;
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     * One `type` arriving from somewhere other than the player (e.g. an animal laying an egg —
+     * see StallAnimal.ts): flies from `from` into the next free slot of this pile and is added
+     * to StorageInventory as it lands. The caller checks getFillCount() < getCapacity() first.
+     */
+    public receiveFrom(type: ResourceType, from: THREE.Vector3, startScale: number): void {
+        const scene = this.transform.parent;
+        if (!scene || this.destroyed) {
+            StorageInventory.add(this.storageId, type, 1);
+            return;
+        }
+        const incomingId = this.nextIncomingId++;
+        this.incoming.push(incomingId);
+        flyResourceModel({
+            parent: scene,
+            type,
+            from,
+            startScale,
+            endScale: this.pile.getSlotScale(this.pile.count + this.incoming.length - 1, type),
+            orientation: this.config.itemOrientation,
+            yawDeg: this.config.itemYawDeg,
+            resolveTarget: target => {
+                const index = this.pile.count + Math.max(this.incoming.indexOf(incomingId), 0);
+                this.pile.getSlotWorldPosition(index, type, target);
+            },
+            onArrive: () => {
+                const index = this.incoming.indexOf(incomingId);
+                if (index !== -1) {
+                    this.incoming.splice(index, 1);
+                }
+                StorageInventory.add(this.storageId, type, 1);
+                this.playLandBounce();
+            },
+        });
+    }
+
+    /** Items stored plus items already flying in. */
+    public getFillCount(): number {
+        return StorageInventory.getTotal(this.storageId) + this.incoming.length;
+    }
+
+    /** How many items the pile draws — a shelf's slot count, else StorageConfig.pile's grid. */
+    public getCapacity(): number {
+        return this.pile.capacity;
+    }
+
+    /** Only a SHELF is ever full (one item per slot) — a crate storage keeps taking items past what it draws. */
+    private isFull(): boolean {
+        return this.shelf !== undefined && this.getFillCount() >= this.getCapacity();
     }
 
     private handleTriggerExit(other: RigidBody): void {
@@ -455,6 +628,11 @@ export default class StorageZone extends Entity {
                 return;
             }
 
+            // A shelf holds one item per slot — nothing more goes in once they're all taken.
+            if (this.isFull()) {
+                this.transferring = false;
+                return;
+            }
             const from = new THREE.Vector3();
             const type = this.nextOutgoing(player, from);
             // Garbage keeps looking like the darkened item it was (read before the removal trims that list).

@@ -16,6 +16,27 @@ const gameRoot = resolve(__dirname, `../../games/${game}`);
 const rawModels = resolve(gameRoot, `raw-assets/models`);
 const outputRegistry = resolve(gameRoot, `registry/assetsRegistry/modelsRegistry.ts`);
 const publicModelsDir = resolve(__dirname, `../../public/${game}/models`);
+/**
+ * Optional ignore list (written by the pizza editor's Project tab -> Models): `ignore` = model
+ * files (relative to raw-assets/models, '{...}' tags kept) that are neither registered nor
+ * copied to public — and whose stale published copies are removed. No file = nothing ignored.
+ */
+const ignoreFile = resolve(gameRoot, `raw-assets/models-ignore.json`);
+
+/** Lower-cased absolute paths of every ignored model file (Windows paths are case-insensitive). */
+function loadIgnoredModels() {
+    if (!fs.existsSync(ignoreFile)) return new Set();
+    try {
+        const list = JSON.parse(fs.readFileSync(ignoreFile, 'utf8')).ignore ?? [];
+        console.log(`🙈 ${list.length} model(s) ignored (raw-assets/models-ignore.json)`);
+        return new Set(list.map(rel => path.resolve(rawModels, rel).toLowerCase()));
+    } catch (e) {
+        console.warn('⚠️  Could not read raw-assets/models-ignore.json — nothing ignored:', e.message);
+        return new Set();
+    }
+}
+const ignoredModels = loadIgnoredModels();
+const isIgnoredModel = (fullPath) => ignoredModels.has(path.resolve(fullPath).toLowerCase());
 
 const cleanName = (name) => name.replace(/\{.*?\}/g, '').trim();
 
@@ -52,12 +73,16 @@ async function getModelNodes(fullPath, ext) {
 }
 
 /**
- * Helper to copy a folder and all its contents (textures, bins, etc.)
+ * Helper to copy a folder and all its contents (textures, bins, etc.) — except ignored models
+ * (see loadIgnoredModels()).
  */
 function copyFolderSync(from, to) {
     if (!fs.existsSync(to)) fs.mkdirSync(to, { recursive: true });
     fs.readdirSync(from).forEach(element => {
         const stat = fs.lstatSync(path.join(from, element));
+        if (stat.isFile() && isIgnoredModel(path.join(from, element))) {
+            return;
+        }
         if (stat.isFile()) {
             fs.copyFileSync(path.join(from, element), path.join(to, element));
         } else if (stat.isDirectory()) {
@@ -131,6 +156,16 @@ async function scanModels(dir, relativeDir = '', group = null) {
             results = [...results, ...await scanModels(fullSourcePath, nextRelativeDir, nextGroup)];
         } else {
             const ext = path.extname(item.name).toLowerCase();
+            if (extensions.includes(ext) && isIgnoredModel(fullSourcePath)) {
+                // Ignored: not registered, not copied — and a copy published by an earlier build is removed.
+                const destFolder = path.join(publicModelsDir, relativeDir);
+                const stale = [item.name, ...(ext === '.fbx' ? [`${path.parse(item.name).name}.glb`] : [])];
+                for (const name of stale) {
+                    const target = path.join(destFolder, name);
+                    if (fs.existsSync(target)) fs.unlinkSync(target);
+                }
+                continue;
+            }
             if (extensions.includes(ext)) {
                 const nameOnly = cleanName(path.parse(item.name).name);
                 const nodes = await getModelNodes(fullSourcePath, ext);

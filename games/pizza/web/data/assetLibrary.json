@@ -400,5 +400,21 @@
         "scale": 1,
         "rotationDeg": 0,
         "icon": "PictoIcon_Delete-2"
+    },
+    "egg": {
+        "models": [
+            "Food.Egg"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Egg"
+    },
+    "milk": {
+        "models": [
+            "Store.Carton"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Store-Carton"
     }
 }

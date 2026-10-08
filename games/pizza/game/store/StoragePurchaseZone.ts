@@ -63,6 +63,8 @@ type CostPart =
 
 export default class StoragePurchaseZone extends Entity {
     private readonly storageId: string;
+    /** See the constructor's `announcement`. */
+    private readonly announcement?: { title: string; subtitle: string };
     private readonly price?: StoragePrice;
     private readonly resourceCost: readonly StorageResourceCost[];
     private readonly parts: CostPart[];
@@ -116,8 +118,11 @@ export default class StoragePurchaseZone extends Entity {
         showOutline = true,
         /** The storage object's own rotation on the Tiled map (degrees, clockwise) — the floor cost label turns with it. */
         mapRotationDeg = 0,
+        /** The unlock notification's text — unset = "STORAGE UNLOCKED!" / "NEW STORAGE" (an animal stall says it's a stall). */
+        announcement?: { title: string; subtitle: string },
     ) {
         super();
+        this.announcement = announcement;
         this.mapRotationDeg = mapRotationDeg;
         this.subjectIcon = subjectIcon;
         this.showOutline = showOutline;
@@ -339,8 +344,8 @@ export default class StoragePurchaseZone extends Entity {
             type: NotificationType.Unlockable,
             rarity: NotificationRarity.Common,
             icon: this.subjectIcon ?? (this.parts[0] ? this.partIcon(this.parts[0]) : undefined),
-            title: 'STORAGE UNLOCKED!',
-            subtitle: 'NEW STORAGE',
+            title: this.announcement?.title ?? 'STORAGE UNLOCKED!',
+            subtitle: this.announcement?.subtitle ?? 'NEW STORAGE',
         });
     }
 }

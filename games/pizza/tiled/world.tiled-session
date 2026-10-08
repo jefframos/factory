@@ -13,11 +13,11 @@
                 11,
                 3
             ],
-            "scale": 4,
-            "selectedLayer": 10,
+            "scale": 2,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 399,
-                "y": 593.375
+                "x": 1569.25,
+                "y": 1221.25
             }
         },
         "testMap1.tmx#models": {
@@ -53,6 +53,7 @@
     },
     "last.exportedFilePath": "C:/Users/jfbod/Documents/Projects/projects/hyper/factory/games/pizza/raw-assets/json/map",
     "last.imagePath": "C:/Users/jfbod/Documents/Projects/projects/hyper/factory/games/pizza/tiled/models",
+    "last.workingDirectory": "C:/Users/jfbod/Documents/Projects/projects/hyper/factory",
     "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
     "map.lastUsedFormat": "tmx",
     "openFiles": [

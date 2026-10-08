@@ -112,6 +112,7 @@ main#content { padding: 20px 24px 60px; max-width: 900px; }
    every form tab is comfortable at — app.js's renderActiveTab() toggles this class in sync
    with which tab is active. */
 main#content.graph-tab-active { max-width: none; }
+main#content.project-tab-active { max-width: none; }
 
 .entry {
     background: var(--panel);
@@ -536,3 +537,32 @@ button.danger { color: var(--danger); }
     border-radius: 3px;
     display: inline-block;
 }
+
+/* Project tab -> Models (see projectTab.js) */
+.project-title { font-size: 15px; margin: 18px 0 8px; }
+.project-message { white-space: pre-wrap; font-size: 12px; color: var(--muted); margin: 6px 0; }
+.project-summary { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 8px 0; font-size: 13px; }
+.project-filters { display: flex; gap: 8px; margin: 8px 0; }
+.project-filters input[type="search"] { flex: 1; min-width: 160px; }
+.project-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+.project-table td.cell-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.project-table col.col-toggle { width: 84px; }
+.project-table col.col-model { width: 22%; }
+.project-table col.col-path { width: 30%; }
+.project-table col.col-size { width: 72px; }
+.project-table col.col-moved { width: 96px; }
+.model-sources details summary { cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.model-sources details[open] summary { margin-bottom: 4px; }
+.model-sources ul { margin: 0; padding-left: 16px; }
+.project-table caption { text-align: left; color: var(--muted); padding: 4px 0; }
+.project-table th, .project-table td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.project-table th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--bg); }
+.project-table .muted, .project-summary .muted { color: var(--muted); }
+.model-sources { color: var(--muted); overflow-wrap: anywhere; }
+.model-chip { padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); }
+.model-chip.used, .model-toggle.used { border-color: var(--ok); color: var(--ok); }
+.model-chip.forced, .model-toggle.forced { border-color: #ff9f1a; color: #ff9f1a; background: rgba(255, 159, 26, 0.12); }
+.model-chip.off, .model-toggle.off { color: var(--muted); }
+.model-chip.legacy { color: var(--muted); border-style: dashed; }
+.model-toggle { min-width: 64px; font-size: 11px; padding: 3px 8px; }
+.model-toggle.used:disabled { opacity: 1; cursor: default; }

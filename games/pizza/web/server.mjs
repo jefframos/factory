@@ -28,6 +28,7 @@ import { scanImageAssets, scanNonPreloadAssets } from './sync/imageAssets.mjs';
 import { readSpawnerTileTypes, readSpawnerShapeIds, readZoneCells, readZoneContents, readMapSize, readMapObjectIds } from './sync/tiledMap.mjs';
 import { generateTilesetImage, GROUND_NUMBER_STYLE, RESOURCE_NUMBER_STYLE } from './sync/tilesetImage.mjs';
 import { readModelsCatalog } from './sync/modelsCatalog.mjs';
+import { auditModels, saveForced, moveUnused, restoreFromLegacy } from './sync/modelAudit.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -208,6 +209,48 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(404);
             res.end();
         }
+        return;
+    }
+
+    // Project tab -> Models — see sync/modelAudit.mjs.
+    if (url.pathname === '/api/model-audit' && req.method === 'GET') {
+        try {
+            return sendJson(res, 200, auditModels());
+        } catch (err) {
+            return sendJson(res, 500, { error: String(err) });
+        }
+    }
+    if (url.pathname === '/api/model-audit/forced' && req.method === 'POST') {
+        try {
+            const body = await readJsonBody(req);
+            return sendJson(res, 200, saveForced(Array.isArray(body?.forced) ? body.forced : []));
+        } catch (err) {
+            return sendJson(res, 500, { error: String(err) });
+        }
+    }
+    if (url.pathname === '/api/model-audit/move-unused' && req.method === 'POST') {
+        try {
+            return sendJson(res, 200, moveUnused());
+        } catch (err) {
+            return sendJson(res, 500, { error: String(err) });
+        }
+    }
+    if (url.pathname === '/api/model-audit/restore' && req.method === 'POST') {
+        try {
+            const body = await readJsonBody(req);
+            return sendJson(res, 200, restoreFromLegacy(Array.isArray(body?.paths) ? body.paths : []));
+        } catch (err) {
+            return sendJson(res, 500, { error: String(err) });
+        }
+    }
+    // Runs the real models build (tools/models/build-models.mjs) for this game, so ignore-list /
+    // legacy changes reach the registry + public folder without leaving the editor.
+    if (url.pathname === '/api/model-audit/build' && req.method === 'POST') {
+        const repoRoot = path.resolve(__dirname, '..', '..', '..');
+        exec('node tools/models/build-models.mjs', { cwd: repoRoot, env: { ...process.env, GAME: 'pizza' }, maxBuffer: 16 * 1024 * 1024 }, (err, stdout, stderr) => {
+            const output = `${stdout}${stderr}`.trim().split('\n').slice(-20).join('\n');
+            sendJson(res, err ? 500 : 200, err ? { error: String(err), output } : { output });
+        });
         return;
     }
 

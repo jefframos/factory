@@ -160,6 +160,102 @@ export function getWallStyle(id?: string): WallStyleConfig {
     return style;
 }
 
+/**
+ * A "polyFence" line's look and size (see PolyFenceBuilder.ts): wooden posts every
+ * `postSpacing` with `railCount` rails between them — see-through, low. Every fence uses
+ * DEFAULT_FENCE_STYLE unless its own Tiled "style" prop names a FENCE_STYLE_BY_ID entry.
+ */
+export interface FenceStyleConfig {
+    /** Display name — shown in the web editor. Optional. */
+    name?: string;
+    color: string;
+    /** Post height, world units from the floor. */
+    height: number;
+    /** Most distance between two posts, world units (every corner gets a post too). */
+    postSpacing: number;
+    /** Post width/depth, world units — also the collider's thickness. */
+    postWidth: number;
+    /** Horizontal rails between two posts. */
+    railCount: number;
+    /** Rail height (its depth is 60% of this), world units. */
+    railThickness: number;
+}
+
+/** Every fence's look unless its Tiled "style" prop picks another — plain brown wood. */
+export const DEFAULT_FENCE_STYLE: FenceStyleConfig = {
+    "name": "Wood",
+    "color": "#b16648",
+    "height": 1.1,
+    "postSpacing": 2,
+    "postWidth": 0.3,
+    "railCount": 2,
+    "railThickness": 0.14
+};
+
+/** Named fence styles a "polyFence" can pick with its Tiled "style" prop. */
+export const FENCE_STYLE_BY_ID: Partial<Record<string, FenceStyleConfig>> = {};
+
+/** The fence style with id `id` — the default when unset or unknown (warns on unknown). */
+export function getFenceStyle(id?: string): FenceStyleConfig {
+    if (!id) {
+        return DEFAULT_FENCE_STYLE;
+    }
+    const style = FENCE_STYLE_BY_ID[id];
+    if (!style) {
+        console.warn(`[StoreViewTypes] fence style "${id}" doesn't exist — using the default`);
+        return DEFAULT_FENCE_STYLE;
+    }
+    return style;
+}
+
+/**
+ * A fence door — what goes in the hole a "polyDoor" rect cuts in a "polyFence" (see
+ * PolyFenceBuilder.layout() / world/FenceDoor.ts). Every fence door uses DEFAULT_FENCE_DOOR_SETUP
+ * unless its polyDoor's own Tiled "setup" prop names a FENCE_DOOR_SETUP_BY_ID entry.
+ */
+export interface FenceDoorSetupConfig {
+    /** Display name — shown in the web editor. Optional. */
+    name?: string;
+    /** The doorway model — first entry used, stretched along the fence to fill the hole. "Group.Key" strings or MODELS.* definitions. */
+    models?: (string | ModelDefinition)[];
+    /** Hole width (world units), centered on where the polyDoor crosses the fence. Unset = the whole crossing. */
+    width?: number;
+    /** Model height, world units from the floor. */
+    height: number;
+    /** x the model's depth, on top of keeping its own proportions to the height. Unset = 1. */
+    depthScale?: number;
+    /** Solid support at each side of the hole, world units from each end inward — the middle stays walkable. 0 = no colliders. */
+    colliderInset: number;
+    /** Extra yaw (degrees) for a model whose width doesn't run along its own X. Unset = 0. */
+    rotationOffsetDeg?: number;
+}
+
+/** Every fence door unless its polyDoor's "setup" prop picks another. */
+export const DEFAULT_FENCE_DOOR_SETUP: FenceDoorSetupConfig = {
+    "name": "Wood Doorway",
+    "models": [
+        "Deco.FenceDoorway"
+    ],
+    "height": 5,
+    "colliderInset": 2
+};
+
+/** Named fence door setups a "polyDoor" over a fence can pick with its Tiled "setup" prop. */
+export const FENCE_DOOR_SETUP_BY_ID: Partial<Record<string, FenceDoorSetupConfig>> = {};
+
+/** The fence door setup with id `id` — the default when unset or unknown (warns on unknown). */
+export function getFenceDoorSetup(id?: string): FenceDoorSetupConfig {
+    if (!id) {
+        return DEFAULT_FENCE_DOOR_SETUP;
+    }
+    const setup = FENCE_DOOR_SETUP_BY_ID[id];
+    if (!setup) {
+        console.warn(`[StoreViewTypes] fence door setup "${id}" doesn't exist — using the default`);
+        return DEFAULT_FENCE_DOOR_SETUP;
+    }
+    return setup;
+}
+
 /** The wall style store `storeId`'s walls show — the one place a future bought wall plugs in. No store = the default. */
 export function getStoreWallStyle(storeId?: string): WallStyleConfig {
     return getWallStyle(storeId ? getStoreConfig(storeId).wallStyle : undefined);

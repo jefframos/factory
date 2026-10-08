@@ -61,6 +61,11 @@
             "name": "gravel",
             "color": "#5D5D5D",
             "walkable": true
+        },
+        {
+            "name": "ground",
+            "color": "#C97C59",
+            "walkable": true
         }
     ],
     "resources": [

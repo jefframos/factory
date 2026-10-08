@@ -298,8 +298,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORAGE_CONFIG',
         byIdExportName: 'STORAGE_CONFIG_BY_ID',
-        managedKeys: ['name', 'accepts', 'resourceType', 'trash', 'particleEffectId', 'particleSpawnRate', 'models', 'view', 'hideSignpost', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
-        optionalKeys: ['name', 'view', 'hideSignpost', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'resourceType', 'trash', 'particleEffectId', 'particleSpawnRate', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
+        managedKeys: ['name', 'accepts', 'resourceType', 'collect', 'shelf', 'trash', 'particleEffectId', 'particleSpawnRate', 'models', 'view', 'hideSignpost', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
+        optionalKeys: ['name', 'view', 'hideSignpost', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'resourceType', 'collect', 'shelf', 'trash', 'particleEffectId', 'particleSpawnRate', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
         // Third export — the ONE signpost every storage shares (see StorageTypes.ts's STORAGE_SIGNPOST_CONFIG),
         // shown as the Storages tab's own 'Signpost' card; same mechanism as farms' FARM_TILE_CONFIG.
         tileExportName: 'STORAGE_SIGNPOST_CONFIG',
@@ -348,6 +348,45 @@ export const ENTITY_SOURCE_MAP = {
         byIdExportName: 'WALL_SETUP_BY_ID',
         managedKeys: ['name', 'height', 'thickness', 'doorHeight', 'tallDoorHeight', 'windowHeight'],
         optionalKeys: ['name'],
+    },
+    // Shelves — see game/data/ShelfTypes.ts. Plain id-keyed record (no default — a storage with no
+    // `shelf` keeps the crate look).
+    shelves: {
+        file: path.join(GAME_DIR, 'data', 'ShelfTypes.ts'),
+        exportName: 'SHELF_CONFIG_BY_ID',
+        kind: 'partialRecord',
+        managedKeys: ['name', 'models', 'scale', 'rotationDeg', 'hideNodes', 'slots', 'itemScale'],
+        optionalKeys: ['name', 'rotationDeg', 'hideNodes', 'itemScale'],
+    },
+    // Animal stalls — see game/data/AnimalStallTypes.ts. Same {default, byId} shape as storages;
+    // by-id entries are the map's "animalStall" ids.
+    animalStalls: {
+        file: path.join(GAME_DIR, 'data', 'AnimalStallTypes.ts'),
+        kind: 'queues',
+        defaultExportName: 'DEFAULT_ANIMAL_STALL_CONFIG',
+        byIdExportName: 'ANIMAL_STALL_CONFIG_BY_ID',
+        managedKeys: ['name', 'animalModels', 'animalScale', 'animalYawOffsetDeg', 'animalCount', 'wanderSpeed', 'minPauseSec', 'maxPauseSec', 'resourceType', 'produceIntervalSec', 'disabled'],
+        optionalKeys: ['name', 'animalYawOffsetDeg', 'disabled'],
+    },
+    // Fence styles — see game/store/StoreViewTypes.ts's FenceStyleConfig. Same {default, byId}
+    // shape as the wall styles; a "polyFence" picks one with its Tiled "style" prop.
+    storeFences: {
+        file: path.join(GAME_DIR, 'store', 'StoreViewTypes.ts'),
+        kind: 'queues',
+        defaultExportName: 'DEFAULT_FENCE_STYLE',
+        byIdExportName: 'FENCE_STYLE_BY_ID',
+        managedKeys: ['name', 'color', 'height', 'postSpacing', 'postWidth', 'railCount', 'railThickness'],
+        optionalKeys: ['name'],
+    },
+    // Fence door setups — see game/store/StoreViewTypes.ts's FenceDoorSetupConfig. Same {default,
+    // byId} shape; a "polyDoor" over a fence picks one with its Tiled "setup" prop.
+    storeFenceDoors: {
+        file: path.join(GAME_DIR, 'store', 'StoreViewTypes.ts'),
+        kind: 'queues',
+        defaultExportName: 'DEFAULT_FENCE_DOOR_SETUP',
+        byIdExportName: 'FENCE_DOOR_SETUP_BY_ID',
+        managedKeys: ['name', 'models', 'width', 'height', 'depthScale', 'colliderInset', 'rotationOffsetDeg'],
+        optionalKeys: ['name', 'models', 'width', 'depthScale', 'rotationOffsetDeg'],
     },
     // Door styles — see game/store/StoreViewTypes.ts's DoorStyleConfig. Same {default, byId} shape
     // as storeFloors; picked per building (buildings' `doorStyle`) or per store (stores' `doorStyle`).

@@ -669,6 +669,8 @@ const ENTITY_SCHEMAS = {
             ],
         },
         { key: 'resourceType', type: 'select', label: 'Only This Resource (e.g. one specific crop — overrides Accepts; blank = anything Accepts allows)', source: 'resources', optional: true },
+        { key: 'shelf', type: 'select', label: 'Shelf (draw it as this Shelves-tab shelf: its model, items on its fixed slots, and it holds at most one item per slot — blank = the normal crate + pile)', source: 'shelves', optional: true },
+        { key: 'collect', type: 'boolean', label: 'Collect (the player TAKES from it instead of dropping off — its items fly onto the player\'s stack while there\'s room; e.g. an animal stall\'s egg box, whose entry here has the stall\'s id)', optional: true },
         { key: 'trash', type: 'boolean', label: 'Trash (takes ONLY garbage — Accepts/Only This Resource are ignored — and destroys it: no pile, no count; signpost shows a trash icon; stores never sell from it)', optional: true },
         { key: 'particleEffectId', type: 'select', label: 'Particle Effect (ambient, from the drop point — Particle Effects tab; blank = none)', source: 'particleEffects', optional: true },
         { key: 'particleSpawnRate', type: 'number', label: 'Particle Spawn Rate (particles per second — blank = 4)', optional: true },
@@ -946,6 +948,57 @@ const ENTITY_SCHEMAS = {
         { key: 'bottomHeight', type: 'number', label: 'Bottom Band Height (world units from the floor — where Bottom Color ends)' },
         { key: 'bottomOpacity', type: 'number', label: 'Bottom Opacity (1 = solid, 0.35 = see-through glass — blank = 1)', optional: true },
         { key: 'topOpacity', type: 'number', label: 'Top Opacity (1 = solid, 0.35 = see-through glass, e.g. a shop-front: solid bottom, glass top — blank = 1)', optional: true },
+    ],
+    // Shelves tab — see game/data/ShelfTypes.ts. A storage picks one with its own `shelf` field.
+    shelves: [
+        { key: 'name', type: 'text', label: 'Name (shown in the editor)', optional: true },
+        { key: 'models', type: 'modelList', label: 'Shelf Model (first entry used — e.g. Store.ShelfBoxes)' },
+        { key: 'scale', type: 'number', label: 'Scale (x the model\'s own size — and its slot positions)' },
+        { key: 'rotationDeg', type: 'number', label: 'Rotation (deg, on top of the storage object\'s own rotation on the map — blank = 0)', optional: true },
+        { key: 'hideNodes', type: 'text', label: 'Hide Nodes (comma-separated model node names, a trailing * = prefix — e.g. "carton*, box, box_*" hides shelf-boxes\' decorative boxes)', optional: true },
+        { key: 'itemScale', type: 'number', label: 'Item Scale (x each item\'s size on this shelf — blank = the storage\'s own Item Scale)', optional: true },
+        {
+            key: 'slots', type: 'list', label: 'Slots (where items sit, filled in this order — the count is how many items the shelf holds)',
+            itemLabel: (item, index) => `Slot ${(index ?? 0) + 1}: ${(item.position ?? []).map(v => Number(v).toFixed(2)).join(', ')}`,
+            fields: [
+                { key: 'position', type: 'vector3', label: 'Position (x, y, z — the item\'s bottom-center, in the model\'s own units before Scale; shelf-boxes\' shelves are at y 0.175 and 0.55)' },
+            ],
+        },
+    ],
+    // Animal Stalls tab — see game/data/AnimalStallTypes.ts. The stall's PRICE and its egg box live on
+    // the Storages tab, under the stall's own id.
+    animalStalls: [
+        { key: 'name', type: 'text', label: 'Name (build notification + editor)', optional: true },
+        { key: 'animalModels', type: 'modelList', label: 'Animal Model (one picked at random per animal — e.g. Pets.AnimalChick)' },
+        { key: 'animalScale', type: 'number', label: 'Animal Scale (x the model\'s own size)' },
+        { key: 'animalYawOffsetDeg', type: 'number', label: 'Animal Yaw Offset (deg — for a model that doesn\'t face +Z; blank = 0)', optional: true },
+        { key: 'animalCount', type: 'number', label: 'Animals (spawned when the stall is built)' },
+        { key: 'wanderSpeed', type: 'number', label: 'Wander Speed (world units / second)' },
+        { key: 'minPauseSec', type: 'number', label: 'Min Pause (seconds standing still between walks)' },
+        { key: 'maxPauseSec', type: 'number', label: 'Max Pause (seconds)' },
+        { key: 'resourceType', type: 'select', label: 'Produces (laid into the stall\'s box)', source: 'resources' },
+        { key: 'produceIntervalSec', type: 'number', label: 'Produce Every (seconds per animal — paused while the box is full)' },
+        { key: 'disabled', type: 'boolean', label: 'Disabled (the stall isn\'t spawned)', optional: true },
+    ],
+    // Store View tab -> Fence — see game/store/StoreViewTypes.ts's FenceStyleConfig / PolyFenceBuilder.ts.
+    storeFences: [
+        { key: 'name', type: 'text', label: 'Name (shown in the editor)', optional: true },
+        { key: 'color', type: 'color', label: 'Color (posts and rails)' },
+        { key: 'height', type: 'number', label: 'Height (post height, world units from the floor)' },
+        { key: 'postSpacing', type: 'number', label: 'Post Spacing (most distance between two posts, world units — every corner gets a post too)' },
+        { key: 'postWidth', type: 'number', label: 'Post Width (world units — also how thick the collider is)' },
+        { key: 'railCount', type: 'number', label: 'Rails (horizontal rails between two posts)' },
+        { key: 'railThickness', type: 'number', label: 'Rail Thickness (world units)' },
+    ],
+    // Store View tab -> Fence Door — see game/store/StoreViewTypes.ts's FenceDoorSetupConfig / world/FenceDoor.ts.
+    storeFenceDoors: [
+        { key: 'name', type: 'text', label: 'Name (shown in the editor)', optional: true },
+        { key: 'models', type: 'modelList', label: 'Model (first entry used — stretched along the fence to fill the hole)' },
+        { key: 'width', type: 'number', label: 'Hole Width (world units, centered on where the polyDoor crosses the fence — blank = the whole crossing)', optional: true },
+        { key: 'height', type: 'number', label: 'Height (model height, world units from the floor)' },
+        { key: 'depthScale', type: 'number', label: 'Depth Scale (x the model\'s depth on top of keeping its proportions — blank = 1)', optional: true },
+        { key: 'colliderInset', type: 'number', label: 'Collider Inset (solid support at each side of the hole, world units from each end inward — the middle stays walkable; 0 = no colliders)' },
+        { key: 'rotationOffsetDeg', type: 'number', label: 'Rotation Offset (deg — for a model whose width doesn\'t run along its own X; blank = 0)', optional: true },
     ],
     // Store View tab -> Door — see game/store/StoreViewTypes.ts's DoorStyleConfig.
     storeDoors: [

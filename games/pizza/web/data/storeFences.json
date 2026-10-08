@@ -1,0 +1,12 @@
+{
+    "default": {
+        "name": "Wood",
+        "color": "#b16648",
+        "height": 1.1,
+        "postSpacing": 2,
+        "postWidth": 0.3,
+        "railCount": 2,
+        "railThickness": 0.14
+    },
+    "byId": {}
+}

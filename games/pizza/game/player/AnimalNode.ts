@@ -103,7 +103,7 @@ const TURN_SMOOTHING_RATE = 10;
  * point (e.g. current ~179°, target ~-179°) turns the SHORT way (2°), not almost all the way
  * around (358°).
  */
-function turnTowardSmoothed(current: number, target: number, rate: number, delta: number): number {
+export function turnTowardSmoothed(current: number, target: number, rate: number, delta: number): number {
     const twoPi = Math.PI * 2;
     let diff = (target - current) % twoPi;
     if (diff > Math.PI) {

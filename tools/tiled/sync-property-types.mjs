@@ -6,6 +6,7 @@
 //   wallStyle   <- web/data/storeWalls.json       (WALL_STYLE_BY_ID ids)
 //   doorStyle   <- web/data/storeDoors.json       (DOOR_STYLE_BY_ID ids, e.g. "glass")
 //   wallSetup   <- web/data/storeWallSetups.json  (WALL_SETUP_BY_ID ids)
+//   fenceStyle  <- web/data/storeFences.json      (FENCE_STYLE_BY_ID ids)
 //
 //   npm run tiled-types
 //
@@ -35,6 +36,7 @@ const SOURCES = [
     { name: 'wallStyle', file: 'storeWalls.json' },
     { name: 'doorStyle', file: 'storeDoors.json' },
     { name: 'wallSetup', file: 'storeWallSetups.json' },
+    { name: 'fenceStyle', file: 'storeFences.json' },
 ];
 
 if (!fs.existsSync(projectFile)) {

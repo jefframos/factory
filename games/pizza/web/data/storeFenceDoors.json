@@ -1,0 +1,11 @@
+{
+    "default": {
+        "name": "Wood Doorway",
+        "models": [
+            "Deco.FenceDoorway"
+        ],
+        "height": 5,
+        "colliderInset": 2
+    },
+    "byId": {}
+}

@@ -123,6 +123,8 @@ export interface StoreClientHost {
     isVisible(): boolean;
     /** Lowest mood a client can drop to right now (early store levels), undefined = no floor — see Store.getMoodFloor(). */
     getMoodFloor(): StoreClientMood | undefined;
+    /** True while nobody (neither the player nor a cashier worker) is serving at the cashier — a client waiting to pay then shows a '!' (see bubbleContent()). */
+    isCashierUnattended(): boolean;
     /** The store's walkability grid — undefined until built (clients then walk straight). */
     getNavGrid(): StoreNavGrid | undefined;
     /** Everyone to steer around (all clients, including `this` — skipped by identity — and the player). */
@@ -846,13 +848,16 @@ export default class StoreClient extends Entity implements NavNeighbor {
             const current = this.currentWant();
             const outOfStock = this.state === 'wandering' || (this.state === 'picking' && !!this.storage && !!current && StorageInventory.getCount(this.storage.id, current.type) <= 0);
             const waitingFor = outOfStock ? current?.type : undefined;
-            return wants.length > 0 ? { kind: 'wants', mood, wants, waitingFor } : { kind: 'mood', mood };
+            // Can't find what it wants (empty shelf / wandering for it) — a '?' says so.
+            return wants.length > 0 ? { kind: 'wants', mood, wants, waitingFor, ...(waitingFor ? { alert: 'question' as const } : {}) } : { kind: 'mood', mood };
         }
         switch (this.state) {
             case 'toCashier':
             case 'cashierQueue':
-            case 'readyToPay':
                 return { kind: 'pay', mood, amount: this.getTotalPrice() };
+            case 'readyToPay':
+                // At the front with nobody serving — a '!' calls the player over.
+                return { kind: 'pay', mood, amount: this.getTotalPrice(), ...(this.host.isCashierUnattended() ? { alert: 'exclamation' as const } : {}) };
             case 'dumping':
             case 'leaving':
                 return { kind: 'mood', mood };

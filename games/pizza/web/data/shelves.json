@@ -1,0 +1,127 @@
+{
+    "shelfBoxes": {
+        "name": "Shelf (boxes)",
+        "models": [
+            "Store.ShelfBoxes"
+        ],
+        "scale": 3.5,
+        "hideNodes": "carton*, box, box_*",
+        "slots": [
+            {
+                "position": [
+                    -0.204,
+                    0.175,
+                    -0.15
+                ]
+            },
+            {
+                "position": [
+                    0,
+                    0.175,
+                    -0.15
+                ]
+            },
+            {
+                "position": [
+                    0.204,
+                    0.175,
+                    -0.15
+                ]
+            },
+            {
+                "position": [
+                    -0.204,
+                    0.175,
+                    0.15
+                ]
+            },
+            {
+                "position": [
+                    0,
+                    0.175,
+                    0.15
+                ]
+            },
+            {
+                "position": [
+                    0.204,
+                    0.175,
+                    0.15
+                ]
+            },
+            {
+                "position": [
+                    -0.2,
+                    0.55,
+                    0
+                ]
+            },
+            {
+                "position": [
+                    0,
+                    0.55,
+                    0
+                ]
+            },
+            {
+                "position": [
+                    0.2,
+                    0.55,
+                    0
+                ]
+            }
+        ]
+    },
+    "shelfEnd": {
+        "name": "Shelf (end)",
+        "models": [
+            "Store.ShelfEnd"
+        ],
+        "scale": 3.5,
+        "hideNodes": "carton*, bottle*",
+        "slots": [
+            {
+                "position": [
+                    -0.204,
+                    0.175,
+                    0
+                ]
+            },
+            {
+                "position": [
+                    0,
+                    0.175,
+                    0
+                ]
+            },
+            {
+                "position": [
+                    0.204,
+                    0.175,
+                    0
+                ]
+            },
+            {
+                "position": [
+                    -0.204,
+                    0.55,
+                    0
+                ]
+            },
+            {
+                "position": [
+                    0,
+                    0.55,
+                    0
+                ]
+            },
+            {
+                "position": [
+                    0.204,
+                    0.55,
+                    0
+                ]
+            }
+        ]
+    }
+}

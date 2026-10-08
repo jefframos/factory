@@ -18,6 +18,8 @@
 //                        item that doesn't fit its cell just enough to fit (a
 //                        storage: a 2x2 stays a 2x2 whatever you put in it).
 //   - 'tower': one item per level, each resting on the actual top of the one below.
+//   - 'slots': fixed spots (`slotPositions`), one item each, in order — a shelf (see
+//              ShelfTypes.ts). The slot count is the capacity; items keep their size.
 //
 // Because items keep their real sizes, placement depends on every item below,
 // so positions are recomputed from the live list (relayout()) whenever the
@@ -39,7 +41,7 @@ import * as THREE from 'three';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { disposeResourceDisplayModel, ItemOrientation, loadResourceDisplayModel, darkenResourceDisplayModel } from '../world/ResourceDisplayModel';
 
-export type ItemPileMode = 'grid' | 'tower';
+export type ItemPileMode = 'grid' | 'tower' | 'slots';
 
 export interface ItemPileLayout {
     mode: ItemPileMode;
@@ -54,6 +56,8 @@ export interface ItemPileLayout {
     fitToCells: boolean;
     /** Tower mode's own cap. */
     towerMaxItems: number;
+    /** 'slots' mode: each item's bottom-center, root-local, in fill order — its length is the capacity. */
+    slotPositions?: THREE.Vector3[];
     /** Multiplier on every item's real world size. */
     itemScale: number;
     /**
@@ -168,6 +172,9 @@ export default class ItemPile {
     /** Most units the current layout draws — anything past this is still counted, just not shown. */
     public get capacity(): number {
         const { mode, maxColumns, maxRows, maxLayers, towerMaxItems } = this.layout;
+        if (mode === 'slots') {
+            return this.layout.slotPositions?.length ?? 0;
+        }
         return mode === 'tower' ? towerMaxItems : maxColumns * maxRows * maxLayers;
     }
 
@@ -346,6 +353,11 @@ export default class ItemPile {
             return drawnRestHeight(below, fitBelow) * rest + offsetY(below) - offsetY(above);
         };
 
+        if (mode === 'slots') {
+            const slotPositions = this.layout.slotPositions ?? [];
+            return sizes.map((_, i) => slotPositions[i].clone().setY(slotPositions[i].y + offsetY(i)));
+        }
+
         if (mode === 'tower') {
             let y = base.y;
             sizes.forEach((size, i) => {
@@ -411,7 +423,7 @@ export default class ItemPile {
     /** Per-item shrink factor (<= 1) so each fits its grid cell — all 1 unless `fitToCells` (and always 1 for 'tower'). */
     private fitsFor(sizes: THREE.Vector3[], columns: number, rows: number): number[] {
         const { mode, footprint, fitToCells } = this.layout;
-        if (mode === 'tower' || !fitToCells) {
+        if (mode === 'tower' || mode === 'slots' || !fitToCells) {
             return sizes.map(() => 1);
         }
         const cellX = footprint.x / columns;

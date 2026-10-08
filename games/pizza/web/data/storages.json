@@ -46,7 +46,8 @@
                 "amount": 0
             },
             "view": "storageView",
-            "itemOrientation": "standing"
+            "itemOrientation": "standing",
+            "resourceCost": []
         },
         "storage2": {
             "models": [
@@ -187,6 +188,106 @@
                 }
             ],
             "view": "storageView"
+        },
+        "chickenStall": {
+            "name": "Chicken Stall Egg Box",
+            "accepts": "farm",
+            "resourceType": "egg",
+            "collect": true,
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "scale": 1,
+            "rotationDeg": 0,
+            "dropOffset": {},
+            "pile": {
+                "columns": 3,
+                "rows": 3,
+                "layers": 2
+            },
+            "solid": 1,
+            "price": {
+                "currency": "money",
+                "amount": 20
+            },
+            "view": "storageView",
+            "itemOrientation": "standing",
+            "resourceCost": []
+        },
+        "storageEgg": {
+            "name": "Egg Storage",
+            "accepts": "farm",
+            "resourceType": "egg",
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "view": "storageView",
+            "scale": 1,
+            "rotationDeg": 90,
+            "dropOffset": {},
+            "pile": {
+                "columns": 4,
+                "rows": 4,
+                "layers": 1
+            },
+            "solid": 1,
+            "popupBobOffset": 3,
+            "price": {
+                "currency": "money",
+                "amount": 0
+            },
+            "itemOrientation": "standing",
+            "resourceCost": []
+        },
+        "storageMilk": {
+            "name": "Milk Shelf",
+            "accepts": "farm",
+            "resourceType": "milk",
+            "shelf": "shelfEnd",
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "scale": 1,
+            "rotationDeg": 0,
+            "dropOffset": {},
+            "pile": {
+                "columns": 3,
+                "rows": 2,
+                "layers": 1
+            },
+            "solid": 1,
+            "price": {
+                "currency": "money",
+                "amount": 0
+            },
+            "itemOrientation": "standing",
+            "resourceCost": []
+        },
+        "cowStall": {
+            "name": "Cow Stall Milk Box",
+            "accepts": "farm",
+            "resourceType": "milk",
+            "collect": true,
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "scale": 1,
+            "rotationDeg": 0,
+            "dropOffset": {},
+            "pile": {
+                "columns": 2,
+                "rows": 2,
+                "layers": 1
+            },
+            "solid": 1,
+            "price": {
+                "currency": "money",
+                "amount": 20
+            },
+            "view": "storageView",
+            "itemOrientation": "standing",
+            "resourceCost": [],
+            "signpostSide": "east"
         }
     },
     "signpost": {

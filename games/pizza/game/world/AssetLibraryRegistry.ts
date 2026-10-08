@@ -302,7 +302,7 @@ export const ASSET_LIBRARY = {
         "models": [MODELS.Restaurant.FoodIngredientBurgerTrash],
         "scale": 1,
         "rotationDeg": 0,
-        "icon": "PictoIcon_Delete-2"
+        "icon": "trash"
     },
     "palm": {
         "models": [MODELS.Resources.Tree4AColor1, MODELS.Resources.Tree4BColor1],
@@ -522,6 +522,18 @@ export const ASSET_LIBRARY = {
             0,
             360
         ]
+    },
+    "egg": {
+        "icon": "egg",
+        "models": [MODELS.Food.Egg],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "milk": {
+        "icon": "milk",
+        "models": [MODELS.Store.Carton],
+        "scale": 1,
+        "rotationDeg": 0
     }
 } satisfies Record<string, AssetLibraryEntry>;
 

@@ -123,6 +123,11 @@ import { getStoreConfig, WORKER_NPC_ID, type StoreWorkerRole } from '../store/St
 import HireDeskZone from '../store/HireDeskZone';
 import { StoreProgressStorage } from '../store/StoreProgressStorage';
 import StoragePurchaseZone from '../store/StoragePurchaseZone';
+import { getAnimalStallConfig } from '../data/AnimalStallTypes';
+import { AnimalProduce } from '../data/AnimalProduce';
+import StallAnimal from '../player/StallAnimal';
+import { stackItemScale } from '../components/CarrierStackVisual';
+import { getPileScale } from '../components/ItemPile';
 import { getDoorStyle, getFloorChecker, getStoreDoorStyle, getStoreFloorChecker, getStoreWallStyle, getWallStyle } from '../store/StoreViewTypes';
 import { findStoreIdAt, readStoreLayouts } from '../store/StoreLayout';
 import { FloorLayers, onFloor } from '../world/FloorLayers';
@@ -149,6 +154,10 @@ import { ModelSnapshotWindow } from '../debug/ModelSnapshotWindow';
 import { MapLayoutSuggestionTool, MapLayoutArchetype } from '../debug/MapLayoutSuggestionTool';
 import { getMeshPlacements } from '../world/MeshLayerSpawner';
 import { addMapMeshVisual } from '../world/MapMeshVisual';
+import { FenceOpeningRect, FenceSpan, PolyFenceBuilder } from '../builders/PolyFenceBuilder';
+import { getFenceDoorSetup, getFenceStyle } from '../store/StoreViewTypes';
+import { addFenceDoorVisual } from '../world/FenceDoor';
+import { buildSolidArea } from '../physics/SolidArea';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 
 /**
@@ -250,6 +259,10 @@ const DROP_ZONE_OFFSET = new THREE.Vector3(6, FloorLayers.baseY, -2);
 // the crate still overlaps this — while neighbouring storages drawn 4 units apart (2.9 wide) keep
 // a gap between their drop areas instead of overlapping (was 0.6).
 const STORAGE_SOLID_TRIGGER_PADDING = 0.35;
+/** An animal stall's animals stay this far inside the pen rect — clear of its fence posts. */
+const PEN_INSET = 0.7;
+/** Where a laid item launches from, above the animal's feet. */
+const LAY_HEIGHT = 0.3;
 
 /** Default timing for a camera-focus event (see PizzaScene.focusCameraOn()) when a caller doesn't override — a beat quick enough not to drag out an upgrade, slow enough to actually read as travel rather than a cut. */
 const DEFAULT_FOCUS_TRAVEL_SEC = 0.8;
@@ -465,6 +478,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupBuildingZone();
         this.setupGates();
         this.setupMeshLayer();
+        this.setupFences();
         // Built before registerQueueSpawnGates() — a queue's reward flies to this UI's wallet
         // icon (see registerQueueSpawnGates()), so the panel has to exist first.
         this.uiService = new UIService(this.game, () => this.toggleCameraMode());
@@ -477,6 +491,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupCraftingTables();
         this.setupFarms();
         this.setupStorages();
+        this.setupAnimalStalls();
         this.setupStores();
         // After setupStores() — a desk can spawn immediately (its section already built) and
         // looks its store up from this.stores.
@@ -1460,6 +1475,73 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     }
 
     /**
+     * Every "polyFence" line on the map (WorldObjectRegistry.getFences()) as a wooden fence —
+     * see PolyFenceBuilder.ts. Its post-to-post spans are grouped by the fog-of-war zone each one
+     * stands in: one entity per group (one merged mesh + its colliders), shown with that zone, so
+     * the stretch around an already-open zone doesn't wait for the next one. A "polyFenceGap"
+     * rect over it leaves a hole; a "polyDoor" rect leaves a hole with a fence door in it (its
+     * own entity — the model plus two side colliders, see world/FenceDoor.ts).
+     */
+    private setupFences(): void {
+        const zoneVisibility = this.worldManager.getZoneVisibilityManager();
+        const openings: FenceOpeningRect[] = [
+            ...this.worldObjects.getFenceGaps(),
+            ...this.worldObjects.getFenceDoors().map(rect => ({ ...rect, door: getFenceDoorSetup(rect.setup) })),
+        ];
+        for (const fence of this.worldObjects.getFences()) {
+            const style = getFenceStyle(fence.style);
+            const layout = PolyFenceBuilder.layout(fence, style, openings);
+            for (const slot of layout.doors) {
+                const entity = this.world.spawn();
+                entity.transform.position.copy(onFloor(slot.mid.x, slot.mid.z));
+                addFenceDoorVisual(entity, slot);
+                for (const box of PolyFenceBuilder.doorColliderBoxes(slot, style.postWidth)) {
+                    const solidArea = buildSolidArea(
+                        new THREE.Vector3(box.halfX, slot.setup.height / 2, box.halfZ),
+                        new THREE.Vector3(box.x - slot.mid.x, slot.setup.height / 2, box.z - slot.mid.z),
+                        1,
+                    );
+                    if (solidArea) {
+                        entity.addComponent(solidArea);
+                    }
+                }
+                this.threeScene.add(entity.transform);
+                const zone = zoneVisibility.getZoneForPosition(slot.mid.x, slot.mid.z);
+                zoneVisibility.registerWithZones(entity.transform, zone === undefined ? [] : [zone], slot.mid.x, slot.mid.z, ZONE_REVEAL_CONFIG.categoryDelaySec.props);
+            }
+            const byZone = new Map<number | undefined, FenceSpan[]>();
+            for (const span of layout.spans) {
+                const zone = zoneVisibility.getZoneForPosition(span.mid.x, span.mid.z);
+                const group = byZone.get(zone) ?? [];
+                group.push(span);
+                byZone.set(zone, group);
+            }
+            for (const [zone, spans] of byZone) {
+                const centerX = spans.reduce((sum, span) => sum + span.mid.x, 0) / spans.length;
+                const centerZ = spans.reduce((sum, span) => sum + span.mid.z, 0) / spans.length;
+                const entity = this.world.spawn();
+                entity.transform.position.copy(onFloor(centerX, centerZ));
+                const mesh = new THREE.Mesh(PolyFenceBuilder.buildGeometry(spans, style, entity.transform.position), PolyFenceBuilder.createMaterial(style));
+                mesh.castShadow = true;
+                entity.transform.add(mesh);
+                for (const box of PolyFenceBuilder.colliderBoxes(spans, style)) {
+                    const solidArea = buildSolidArea(
+                        new THREE.Vector3(box.halfX, style.height / 2, box.halfZ),
+                        new THREE.Vector3(box.x - centerX, style.height / 2, box.z - centerZ),
+                        1,
+                    );
+                    if (solidArea) {
+                        entity.addComponent(solidArea);
+                    }
+                }
+                this.threeScene.add(entity.transform);
+                // No zone under it = never shown (same "no zone = locked" rule as everything else).
+                zoneVisibility.registerWithZones(entity.transform, zone === undefined ? [] : [zone], centerX, centerZ, ZONE_REVEAL_CONFIG.categoryDelaySec.props);
+            }
+        }
+    }
+
+    /**
      * Registers one SPAWN gate (see RequirementRegistry.ts's own doc) per "queue" object found
      * on the Tiled map's "mapSettings" layer, keyed off QueueConfig.appearRequirement (see
      * QueueTypes.ts's own doc) — see WorldObjectRegistry.getAllOfType()'s own doc for why this
@@ -1547,6 +1629,103 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * hasn't bought yet spawns a StoragePurchaseZone over the same trigger area instead, which
      * swaps in the real StorageZone once paid.
      */
+    /**
+     * Every "animalStall" on the map (see AnimalStallTypes.ts for the whole design). Building it =
+     * buying the storage that shares its id (Storages tab: price, box model, collect: true) at the
+     * stall's dropper; until then a StoragePurchaseZone stands there. Once built: the collect box
+     * (a StorageZone over the stall's id-less "storage" part) and `animalCount` StallAnimals
+     * wandering the pen (the stall rect, inset from its fence), each laying its resourceType into
+     * the box while it has room. Goes through the spawn gate, so a store level can enable it.
+     */
+    private setupAnimalStalls(): void {
+        for (const [id, pen] of this.worldObjects.getAllOfType('animalStall')) {
+            const stallConfig = getAnimalStallConfig(id);
+            const storageConfig = getStorageConfig(id);
+            if (stallConfig.disabled || storageConfig.disabled) {
+                continue;
+            }
+            const box = this.worldObjects.getPartsFor(id, 'storage')[0];
+            const dropper = this.worldObjects.getDropperFor(id);
+            if (!box || !dropper) {
+                console.warn(`[PizzaScene] animal stall "${id}" needs an id-less "storage" and "dropper" with target="${id}" — skipping`);
+                continue;
+            }
+
+            const spawnBuilt = (): void => {
+                // The box — its trigger padded so standing against a solid box still counts.
+                const padding = (storageConfig.solid ?? 0) > 0 ? STORAGE_SOLID_TRIGGER_PADDING : 0;
+                const storageZone = this.world.add(new StorageZone(
+                    id,
+                    storageConfig,
+                    onFloor(box.x, box.z),
+                    onFloor(box.x, box.z),
+                    { width: box.width + padding * 2, depth: box.depth + padding * 2 },
+                    { width: box.width, depth: box.depth },
+                    this.screenHost,
+                    true,
+                    box.rotationDeg,
+                ));
+                this.threeScene.add(storageZone.transform);
+                this.registerZoneVisibility(storageZone.transform, box.x, box.z, box.width, box.depth);
+
+                // The animals — kept off the fence posts.
+                const inset = Math.min(PEN_INSET, pen.width / 4, pen.depth / 4);
+                const area = {
+                    minX: pen.x - pen.width / 2 + inset,
+                    maxX: pen.x + pen.width / 2 - inset,
+                    minZ: pen.z - pen.depth / 2 + inset,
+                    maxZ: pen.z + pen.depth / 2 - inset,
+                };
+                const type = stallConfig.resourceType;
+                // Store clients may order it from now on (see Store.isObtainable()).
+                AnimalProduce.markProducing(type);
+                const layScale = stackItemScale() * getPileScale(type);
+                const tryProduce = (animal: StallAnimal): boolean => {
+                    if (storageZone.getFillCount() >= storageZone.getCapacity()) {
+                        return false;
+                    }
+                    storageZone.receiveFrom(type, animal.position.clone().setY(animal.position.y + LAY_HEIGHT), layScale);
+                    return true;
+                };
+                for (let i = 0; i < Math.max(0, Math.round(stallConfig.animalCount)); i++) {
+                    const start = onFloor(
+                        THREE.MathUtils.lerp(area.minX, area.maxX, Math.random()),
+                        THREE.MathUtils.lerp(area.minZ, area.maxZ, Math.random()),
+                    );
+                    const animal = this.world.add(new StallAnimal(stallConfig, area, start, tryProduce));
+                    this.threeScene.add(animal.transform);
+                    this.registerZoneVisibility(animal.transform, pen.x, pen.z, pen.width, pen.depth);
+                }
+            };
+
+            this.requirementRegistry.registerSpawnGate(id, undefined, () => {
+                if (!isStorageForSale(storageConfig) || StoreUnlocks.isStorageOwned(id, storageConfig)) {
+                    spawnBuilt();
+                    return;
+                }
+                const price = storageConfig.price;
+                const purchaseZone = this.world.add(new StoragePurchaseZone(
+                    id,
+                    price,
+                    getStorageResourceCost(storageConfig),
+                    onFloor(dropper.x, dropper.z),
+                    { width: dropper.width, depth: dropper.depth },
+                    this.screenHost,
+                    () => this.uiService.economyUi.getIconAnchorPosition(price?.currency ?? CurrencyType.Money),
+                    spawnBuilt,
+                    storageConfig.frame ?? FLOOR_FRAME,
+                    storageConfig.floorLabelSize,
+                    getStorageIcon(storageConfig),
+                    true,
+                    dropper.rotationDeg,
+                    { title: 'STALL BUILT!', subtitle: (stallConfig.name ?? 'Animal stall').toUpperCase() },
+                ));
+                this.threeScene.add(purchaseZone.transform);
+                this.registerZoneVisibility(purchaseZone.transform, dropper.x, dropper.z, dropper.width, dropper.depth);
+            });
+        }
+    }
+
     private setupStorages(): void {
         for (const [id, drawn] of this.worldObjects.getAllOfType('storage')) {
             const config = getStorageConfig(id);

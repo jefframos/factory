@@ -133,6 +133,7 @@ import { FloorLayers } from '../world/FloorLayers';
 import { BuildReveal } from '../player/BuildReveal';
 import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
 import { GameAnalytics } from '../analytics/GameAnalytics';
+import { AnimalProduce } from '../data/AnimalProduce';
 
 /** The first client shows up this long after the store spawns, rather than a full spawnIntervalSec. */
 const FIRST_SPAWN_DELAY_SEC = 1;
@@ -312,7 +313,7 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
 
     public override awake(): void {
         const world = this.world!;
-        this.cashier = world.add(new StoreCashier(this.layout.cashier, this.config.cashierView ?? DEFAULT_CASHIER_VIEW, this.layout.cashierMesh, !this.config.hideCashierDropperView));
+        this.cashier = world.add(new StoreCashier(this.layout.cashier, this.config.cashierView ?? DEFAULT_CASHIER_VIEW, this.layout.cashierMesh, !this.config.hideCashierDropperView, this.screenHost));
         this.root.add(this.cashier.transform);
         this.moneyPile = world.add(new StoreMoneyPile(this.layout.id, this.layout.moneyDrop, this.screenHost, this.config.moneyPerBill, this.config.billsPerPile, this.getWalletOverlayPosition, this.config.moneyDropView, this.layout.moneyDropMesh, !this.config.hideMoneyDropDropperView));
         this.root.add(this.moneyPile.transform);
@@ -462,6 +463,11 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         return this.root.visible;
     }
 
+    /** See StoreClientHost.isCashierUnattended(). */
+    public isCashierUnattended(): boolean {
+        return !(this.cashier?.isPlayerInside() ?? false) && !this.cashierWorker?.isServing();
+    }
+
     /** Lowest mood a client can drop to at the store's current level — see MOOD_FLOOR_BY_LEVEL. */
     public getMoodFloor(): StoreClientMood | undefined {
         // Open early (the FTUE) — nobody walks out while the player is still learning.
@@ -574,7 +580,7 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     }
 
     private addGarbage(saved: SavedGarbage): void {
-        const piece = this.world!.add(new StoreGarbage(saved));
+        const piece = this.world!.add(new StoreGarbage(saved, this.screenHost));
         this.root.add(piece.transform);
         this.garbage.push(piece);
     }
@@ -911,7 +917,8 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         }
         const crops = (Object.keys(CROP_CONFIG) as CropId[]).filter(id => CROP_CONFIG[id].yield.resourceType === type);
         if (crops.length === 0) {
-            return true;
+            // Something an animal stall lays (eggs): only once a stall making it has been built.
+            return !AnimalProduce.isAnimalProduce(type) || AnimalProduce.isProducing(type);
         }
         return this.farmIds.some(farmId => {
             if (!FarmPlotStorage.isOwned(farmId)) {
@@ -1353,6 +1360,8 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         const front = this.cashierLine.front();
         const playerServing = this.cashier?.isPlayerInside() ?? false;
         const worker = this.cashierWorker?.isServing() ? this.cashierWorker : undefined;
+        // A client waiting at the front with nobody serving — the '!' over the counter calls the player.
+        this.cashier?.setNeedsService(!!front?.isReadyToPay() && !playerServing && !worker);
         if (!front?.isReadyToPay() || (!playerServing && !worker)) {
             this.payTimerSec = 0;
             return;

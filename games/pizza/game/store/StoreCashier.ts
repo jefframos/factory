@@ -7,6 +7,9 @@
 // cashierMesh — placed/rotated/solid exactly as drawn, see MapMeshVisual.ts),
 // else StoreConfig.cashierView in the middle of the rect (StorePropVisual.ts).
 // The player serves standing against it.
+//
+// setNeedsService(true) (Store: a client is waiting to pay and nobody is serving) shows a
+// bobbing '!' high over the counter (ui/AlertIcon.ts) so the player knows to come over.
 
 import * as THREE from 'three';
 import Entity from '../ecs/Entity';
@@ -20,9 +23,15 @@ import { addStorePropVisual } from './StorePropVisual';
 import { addMapMeshVisual } from '../world/MapMeshVisual';
 import { MeshPlacement } from '../world/MeshLayerSpawner';
 import { FloorLayers } from '../world/FloorLayers';
+import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
+import { createAlertIcon, destroyAlertIcon } from '../ui/AlertIcon';
+import { STORE_ALERT_ANCHOR_OPTIONS } from './StoreAlertConfig';
 
 const TRIGGER_HALF_HEIGHT = 0.75;
 const CORNER_RADIUS = 0.3;
+/** The '!' floats this high over the cashier rect's center (world units). */
+const ALERT_HEIGHT = 2.6;
+const ALERT_SIZE = 52;
 
 export default class StoreCashier extends Entity {
     private readonly rect: StoreRect;
@@ -31,12 +40,17 @@ export default class StoreCashier extends Entity {
     private readonly mesh?: MeshPlacement;
     private player?: MainPlayer;
     private counterShown = false;
+    private readonly screenHost?: ScreenAnchorHost;
+    private alertIcon?: ReturnType<typeof createAlertIcon>;
+    private alertAnchor?: ScreenAnchorComponent;
+    private needsService = false;
 
     /** Draw the dotted floor outline — off when the store sets hideCashierDropperView (see StoreConfig). */
     private readonly showOutline: boolean;
 
-    public constructor(rect: StoreRect, viewId?: string, mesh?: MeshPlacement, showOutline = true) {
+    public constructor(rect: StoreRect, viewId?: string, mesh?: MeshPlacement, showOutline = true, screenHost?: ScreenAnchorHost) {
         super();
+        this.screenHost = screenHost;
         this.rect = rect;
         this.viewId = viewId;
         this.mesh = mesh;
@@ -78,6 +92,32 @@ export default class StoreCashier extends Entity {
 
     public isPlayerInside(): boolean {
         return this.player !== undefined;
+    }
+
+    /** Shows/hides the '!' over the counter — see this file's own doc. */
+    public setNeedsService(needs: boolean): void {
+        if (needs === this.needsService) {
+            return;
+        }
+        this.needsService = needs;
+        if (needs && !this.alertAnchor && this.screenHost) {
+            this.alertIcon = createAlertIcon('exclamation', ALERT_SIZE);
+            const target = new THREE.Vector3();
+            this.alertAnchor = this.addComponent(new ScreenAnchorComponent(
+                this.screenHost,
+                this.alertIcon,
+                () => target.copy(this.transform.position).setY(this.transform.position.y + ALERT_HEIGHT),
+                STORE_ALERT_ANCHOR_OPTIONS,
+            ));
+        }
+        this.alertAnchor?.setForceHidden(!needs);
+    }
+
+    public override destroy(): void {
+        if (this.alertIcon) {
+            destroyAlertIcon(this.alertIcon);
+        }
+        super.destroy();
     }
 
     private handleEnter(other: RigidBody): void {

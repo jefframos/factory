@@ -8,6 +8,10 @@
 // (STORE_MOOD_ICON); walking out, the bubble shows just that face. Same slot visual and frame as QueueZone's task panel
 // (createResourceSlot + AutoFitFrame), rebuilt only when what it shows
 // actually changes.
+//
+// `alert` adds a bobbing badge on the bubble's top-right corner (ui/AlertIcon.ts): '?' = it
+// can't find what it wants (its shelf is empty), '!' = it's waiting at the cashier with nobody
+// serving — so the player can tell at a glance who needs them.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
@@ -19,6 +23,7 @@ import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { CURRENCY_CONFIG, CurrencyType } from '../data/EconomyTypes';
 import { ResourceType } from '../actions/ResourceTypes';
 import { STORE_MOOD_ICON, StoreClientMood } from './StoreTypes';
+import { AlertIconKind, createAlertIcon, destroyAlertIcon } from '../ui/AlertIcon';
 
 /** Whole bubble (frame, faces, slots, money) drawn at this fraction of its natural size. */
 const BUBBLE_SCALE = 0.55;
@@ -30,6 +35,9 @@ const PULSE_ALPHA = 0.35;
 const PULSE_SEC = 0.45;
 const MOOD_ICON_SIZE = SLOT_LAYOUT.slotSize;
 const MOOD_GAP = SLOT_LAYOUT.gapToNeighbor;
+/** The alert badge's size (UI pixels, before distance scaling) and how far it overhangs the bubble's corner. */
+const ALERT_SIZE = 30;
+const ALERT_OVERHANG = 6;
 
 /** The client's mood face (STORE_MOOD_ICON), sized to one resource slot. */
 function createMoodFace(mood: StoreClientMood): PIXI.Sprite {
@@ -47,8 +55,8 @@ export interface StoreBubbleWant {
 export type StoreBubbleContent =
     | { kind: 'hidden' }
     | { kind: 'mood'; mood: StoreClientMood }
-    | { kind: 'wants'; mood: StoreClientMood; wants: StoreBubbleWant[]; waitingFor?: ResourceType }
-    | { kind: 'pay'; mood: StoreClientMood; amount: number };
+    | { kind: 'wants'; mood: StoreClientMood; wants: StoreBubbleWant[]; waitingFor?: ResourceType; alert?: AlertIconKind }
+    | { kind: 'pay'; mood: StoreClientMood; amount: number; alert?: AlertIconKind };
 
 export default class StoreBubble {
     /** Hand this to a ScreenAnchorComponent — see QueueZone.awake()'s own doc on why the frame sits inside a wrapper. */
@@ -56,6 +64,8 @@ export default class StoreBubble {
     private readonly body = new PIXI.Container();
     private readonly frame: AutoFitFrame;
     private currentKey = '';
+    /** The corner badge, when the content asks for one — see this file's own doc. */
+    private alert?: PIXI.Container;
 
     public constructor() {
         this.frame = new AutoFitFrame(FRAME_PADDING, 'QueueFrame', this.body);
@@ -76,6 +86,7 @@ export default class StoreBubble {
             gsap.killTweensOf(child);
             child.destroy({ children: true });
         });
+        this.removeAlert();
 
         if (content.kind === 'hidden') {
             this.frame.visible = false;
@@ -93,11 +104,36 @@ export default class StoreBubble {
         }
         this.frame.visible = true;
         this.frame.fit();
+        if (content.kind !== 'mood' && content.alert) {
+            this.addAlert(content.alert);
+        }
+    }
+
+    /** The badge, centered just inside the frame's top-right corner (frame bounds are in its own, unscaled space). */
+    private addAlert(kind: AlertIconKind): void {
+        const bounds = this.frame.getLocalBounds();
+        this.alert = createAlertIcon(kind, ALERT_SIZE);
+        this.alert.position.set(
+            (bounds.x + bounds.width) * BUBBLE_SCALE - ALERT_SIZE / 2 + ALERT_OVERHANG,
+            bounds.y * BUBBLE_SCALE + ALERT_SIZE / 2 - ALERT_OVERHANG,
+        );
+        this.content.addChild(this.alert);
+    }
+
+    private removeAlert(): void {
+        if (this.alert) {
+            destroyAlertIcon(this.alert);
+            this.alert.destroy({ children: true });
+            this.alert = undefined;
+        }
     }
 
     /** Only stops the pulse tweens — `content` itself is destroyed by the ScreenAnchorComponent it was handed to. */
     public destroy(): void {
         this.body.children.forEach(child => gsap.killTweensOf(child));
+        if (this.alert) {
+            destroyAlertIcon(this.alert);
+        }
     }
 
     /** Mood face, then the items — one centered row, bottom edge at y=0, same layout as QueueZone.refreshLabel()'s requirements row. */
