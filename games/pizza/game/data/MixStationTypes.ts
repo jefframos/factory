@@ -22,7 +22,7 @@
 
 import { ResourceType } from '../actions/ResourceTypes';
 import { CurrencyType } from './EconomyTypes';
-import type { StoragePrice } from './StorageTypes';
+import type { StoragePrice, StorageResourceCost } from './StorageTypes';
 import { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
 
 export interface MixStationInput {
@@ -49,8 +49,10 @@ export interface MixStationConfig {
     mixSec: number;
     /** Most units waiting at the dispenser — no new batch while it's full. */
     maxOutput: number;
-    /** Build cost, paid at the dropper. Unset / 0 = built from the start. */
+    /** Build cost, paid at the dropper. Unset / 0 (and no resourceCost) = built from the start. */
     price?: StoragePrice;
+    /** Resources the build also costs (e.g. 15 stone), paid from the backpack at the dropper — same as StorageConfig.resourceCost. */
+    resourceCost?: StorageResourceCost[];
     /** Height of the station's top (world units) — where ingredients and the product sit. */
     surfaceHeight: number;
     /** The ingredient boxes' model — first entry used. Empty/unset = no box, just the pile. "Group.Key" strings or MODELS.* definitions. */
@@ -101,13 +103,19 @@ export const MIX_STATION_CONFIG_BY_ID: Partial<Record<string, MixStationConfig>>
         "maxOutput": 6,
         "price": {
             "currency": CurrencyType.Money,
-            "amount": 10
+            "amount": 60
         },
         "surfaceHeight": 2,
         "boxModels": [
             "Restaurant.Crate"
         ],
-        "boxScale": 0.8
+        "boxScale": 0.8,
+        "resourceCost": [
+            {
+                "resourceType": ResourceType.Stone,
+                "amount": 15
+            }
+        ]
     },
     "breadStation": {
         "name": "Bread Station",
@@ -129,13 +137,19 @@ export const MIX_STATION_CONFIG_BY_ID: Partial<Record<string, MixStationConfig>>
         "maxOutput": 6,
         "price": {
             "currency": CurrencyType.Money,
-            "amount": 10
+            "amount": 120
         },
         "surfaceHeight": 2,
         "boxModels": [
             "Restaurant.Crate"
         ],
-        "boxScale": 0.8
+        "boxScale": 0.8,
+        "resourceCost": [
+            {
+                "resourceType": ResourceType.Stone,
+                "amount": 30
+            }
+        ]
     }
 };
 

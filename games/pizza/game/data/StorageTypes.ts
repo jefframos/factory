@@ -72,6 +72,13 @@ export interface StorageConfig {
      */
     trash?: boolean;
     /**
+     * Trash only: once the player has stood in it this many seconds (and carries no garbage), it
+     * also takes everything on their stack — crops, eggs, butter, ... ('farm' items; never wood,
+     * stone or other building resources). The way out of carrying something nobody buys. Walking
+     * past doesn't trigger it. Unset / 0 = garbage only.
+     */
+    dumpAnyAfterSec?: number;
+    /**
      * Optional continuous ambient particle effect (see vfx/ParticleRegistry.ts — PARTICLE_REGISTRY),
      * emitted from this storage's drop point (dropOffset) for as long as it stands — same slot
      * GateConfig/CraftTableConfig carry. Unset = no particles.
@@ -351,6 +358,7 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
         "name": "Trash",
         "accepts": "farm",
         "trash": true,
+        "dumpAnyAfterSec": 1.5,
         "hideSignpost": true,
         "particleEffectId": "trashFire",
         "particleSpawnRate": 10,
@@ -490,6 +498,51 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
         },
         "resourceCost": [],
         "signpostSide": "east"
+    },
+    "storageButter": {
+        "name": "Butter Shelf",
+        "accepts": "farm",
+        "resourceType": ResourceType.Butter,
+        "shelf": "shelfBoxes",
+        "models": [MODELS.Restaurant.Crate],
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 3,
+            "rows": 3,
+            "layers": 1
+        },
+        "itemOrientation": "standing",
+        "solid": 1,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 0
+        },
+        "resourceCost": []
+    },
+    "storageBread": {
+        "name": "Bread Storage",
+        "accepts": "farm",
+        "resourceType": ResourceType.Bread,
+        "models": [MODELS.Restaurant.Crate],
+        "view": "storageView",
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 3,
+            "rows": 3,
+            "layers": 1
+        },
+        "itemOrientation": "standing",
+        "popupBobOffset": 3,
+        "solid": 1,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 0
+        },
+        "resourceCost": []
     }
 };
 

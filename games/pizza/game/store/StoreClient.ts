@@ -65,6 +65,7 @@ import StoreBubble, { StoreBubbleContent } from './StoreBubble';
 import StoreLine from './StoreLine';
 import type { SavedStoreClient, SavedStoreClientWant } from './StoreClientStorage';
 import { GameAnalytics } from '../analytics/GameAnalytics';
+import { FarmUpgradeStorage } from '../data/FarmUpgradeStorage';
 import {
     DEFAULT_ANGRY_DROP_SEC,
     DEFAULT_BROWSE_CHANCE,
@@ -835,7 +836,8 @@ export default class StoreClient extends Entity implements NavNeighbor {
     }
 
     private getBasePrice(): number {
-        const base = this.wants.reduce((sum, want) => sum + want.bought * getStoreItemPrice(want.type), 0);
+        // A farm upgrade (FarmUpgradeLevelConfig.priceBonus) makes its crop sell for more.
+        const base = this.wants.reduce((sum, want) => sum + want.bought * Math.round(getStoreItemPrice(want.type) * (1 + FarmUpgradeStorage.getPriceBonusFor(want.type))), 0);
         return base > 0 ? Math.max(1, Math.round(base * this.host.config.priceMultiplier)) : 0;
     }
 

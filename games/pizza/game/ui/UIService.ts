@@ -34,12 +34,15 @@ import { UpgradeNotificationManager } from './notifications/UpgradeNotificationM
 import InGameButtonList from './InGameButtonList';
 import BackpackButton from './BackpackButton';
 import StoreUI from './StoreUI';
+import NextUnlocksUI from './NextUnlocksUI';
 
 /** Gap between the backpack HUD panel's bottom edge and the actual bottom of the screen — see positionBackpackUi(). Only relevant if backpackUi is switched back on — see that field's own comment. */
 const BACKPACK_UI_BOTTOM_MARGIN = 16;
 
 /** Gap between the store panel's top edge and the top of the screen — see positionStoreUi(). */
 const STORE_UI_TOP_MARGIN = 16;
+/** Gap between the next-unlocks strip and the screen's bottom-right corner — see positionNextUnlocksUi(). */
+const NEXT_UNLOCKS_UI_MARGIN = 16;
 
 /** Gap between the backpack LIST's top/left edges and the currency topbar/screen edge — see positionBackpackListUi(). */
 const BACKPACK_LIST_UI_MARGIN = 16;
@@ -111,6 +114,9 @@ export default class UIService {
     /** Top-center level + progress panel for the store the player is standing in — PizzaScene feeds it via setState() every frame (see StoreUI.ts's own doc). */
     public readonly storeUi: StoreUI;
 
+    /** Bottom-right "NEXT" column teasing what the next store level brings — PizzaScene feeds it via setState() every frame (see NextUnlocksUI.ts's own doc). */
+    public readonly nextUnlocksUi: NextUnlocksUI;
+
     /**
      * `onCameraToggle` is a callback into the scene rather than this service importing
      * PizzaScene directly — same structural-interface style ScreenAnchorHost already uses
@@ -164,6 +170,9 @@ export default class UIService {
         this.storeUi = new StoreUI();
         this.game.uiLayer.addChild(this.storeUi);
 
+        this.nextUnlocksUi = new NextUnlocksUI();
+        this.game.uiLayer.addChild(this.nextUnlocksUi);
+
         this.backpackButton = new BackpackButton();
         if (showDebugHud) {
             this.game.uiLayer.addChild(this.backpackButton);
@@ -191,6 +200,7 @@ export default class UIService {
         this.positionToolLevelUi();
         this.positionToolListUi();
         this.positionStoreUi();
+        this.positionNextUnlocksUi();
         this.settingsUi.update();
         this.backpackButton.update();
     }
@@ -310,6 +320,19 @@ export default class UIService {
         );
     }
 
+    /** Bottom-right — its real bounds' bottom-right corner NEXT_UNLOCKS_UI_MARGIN in from the screen's (re-read every frame: the column grows/shrinks with the number of unlocks). */
+    private positionNextUnlocksUi(): void {
+        const screen = Game.overlayScreenData;
+        if (!screen) {
+            return;
+        }
+        const bounds = this.nextUnlocksUi.getLayoutBounds();
+        this.nextUnlocksUi.position.set(
+            screen.bottomRight.x - NEXT_UNLOCKS_UI_MARGIN - (bounds.x + bounds.width),
+            screen.bottomRight.y - NEXT_UNLOCKS_UI_MARGIN - (bounds.y + bounds.height),
+        );
+    }
+
     private positionToolListUi(): void {
         const screen = Game.overlayScreenData;
         if (!screen) {
@@ -336,6 +359,7 @@ export default class UIService {
         this.toolLevelUi.destroy();
         this.toolListUi.destroy();
         this.storeUi.destroy({ children: true });
+        this.nextUnlocksUi.destroy({ children: true });
         this.settingsUi.destroy();
         this.backpackButton.destroy();
     }

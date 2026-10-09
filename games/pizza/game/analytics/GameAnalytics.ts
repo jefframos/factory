@@ -98,6 +98,10 @@ export const GameAnalytics = {
     cropHarvested(cropId: string): void {
         send('harvest', cropId, 'collect');
     },
+    /** A farm upgraded at the farm manager (FarmUpgradesPopup). */
+    farmUpgraded(farmId: string, level: number): void {
+        send('farm-upgrade', `${farmId}-${level}`, 'bought');
+    },
 
     demoEnded(): void {
         send('demo', 'end', 'complete');

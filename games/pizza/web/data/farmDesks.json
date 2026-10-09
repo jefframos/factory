@@ -1,0 +1,12 @@
+{
+    "default": {
+        "name": "Farm Manager",
+        "buttonLabel": "Farms"
+    },
+    "byId": {
+        "farmDesk1": {
+            "name": "Farm Manager",
+            "buttonLabel": "Farms"
+        }
+    }
+}

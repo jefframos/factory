@@ -1,9 +1,9 @@
 {
     "default": {
         "endRequirement": {
-            "type": "building",
-            "buildingId": "storeRoom2",
-            "level": 1
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 9
         },
         "delaySec": 1,
         "title": "End of the Demo",

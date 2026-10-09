@@ -298,8 +298,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORAGE_CONFIG',
         byIdExportName: 'STORAGE_CONFIG_BY_ID',
-        managedKeys: ['name', 'accepts', 'resourceType', 'collect', 'shelf', 'maxItems', 'trash', 'particleEffectId', 'particleSpawnRate', 'models', 'view', 'hideSignpost', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
-        optionalKeys: ['name', 'view', 'hideSignpost', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'resourceType', 'collect', 'shelf', 'maxItems', 'trash', 'particleEffectId', 'particleSpawnRate', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
+        managedKeys: ['name', 'accepts', 'resourceType', 'collect', 'shelf', 'maxItems', 'trash', 'particleEffectId', 'particleSpawnRate', 'models', 'view', 'hideSignpost', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled', 'dumpAnyAfterSec'],
+        optionalKeys: ['name', 'view', 'hideSignpost', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'resourceType', 'collect', 'shelf', 'maxItems', 'trash', 'dumpAnyAfterSec', 'particleEffectId', 'particleSpawnRate', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
         // Third export — the ONE signpost every storage shares (see StorageTypes.ts's STORAGE_SIGNPOST_CONFIG),
         // shown as the Storages tab's own 'Signpost' card; same mechanism as farms' FARM_TILE_CONFIG.
         tileExportName: 'STORAGE_SIGNPOST_CONFIG',
@@ -309,6 +309,24 @@ export const ENTITY_SOURCE_MAP = {
     // A STORE — a "store"-typed object on the Tiled map's "stores" layer (see store/StoreTypes.ts),
     // open-ended by id. Same {default, byId} two-export shape as storages (kind: 'queues'); `npcs`
     // and `storageSpotDirections` are plain object lists, serialized as-is.
+    // FARM UPGRADES — per-farm-id upgrade ladders sold by the farm manager (see FarmUpgradeTypes.ts).
+    farmUpgrades: {
+        file: path.join(GAME_DIR, 'data', 'FarmUpgradeTypes.ts'),
+        kind: 'queues',
+        defaultExportName: 'DEFAULT_FARM_UPGRADE_CONFIG',
+        byIdExportName: 'FARM_UPGRADE_CONFIG_BY_ID',
+        managedKeys: ['levels'],
+        optionalKeys: [],
+    },
+    // FARM DESKS — the farm manager NPC's spot ("farmDesk" on the map — see FarmDeskTypes.ts).
+    farmDesks: {
+        file: path.join(GAME_DIR, 'data', 'FarmDeskTypes.ts'),
+        kind: 'queues',
+        defaultExportName: 'DEFAULT_FARM_DESK_CONFIG',
+        byIdExportName: 'FARM_DESK_CONFIG_BY_ID',
+        managedKeys: ['name', 'npcId', 'appearRequirement', 'buttonLabel', 'disabled'],
+        optionalKeys: ['name', 'npcId', 'appearRequirement', 'buttonLabel', 'disabled'],
+    },
     stores: {
         file: path.join(GAME_DIR, 'store', 'StoreTypes.ts'),
         kind: 'queues',
@@ -356,8 +374,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_MIX_STATION_CONFIG',
         byIdExportName: 'MIX_STATION_CONFIG_BY_ID',
-        managedKeys: ['name', 'inputs', 'resourceType', 'outputAmount', 'mixSec', 'maxOutput', 'price', 'surfaceHeight', 'boxModels', 'boxScale', 'disabled'],
-        optionalKeys: ['name', 'price', 'boxModels', 'boxScale', 'disabled'],
+        managedKeys: ['name', 'inputs', 'resourceType', 'outputAmount', 'mixSec', 'maxOutput', 'price', 'resourceCost', 'surfaceHeight', 'boxModels', 'boxScale', 'disabled'],
+        optionalKeys: ['name', 'price', 'resourceCost', 'boxModels', 'boxScale', 'disabled'],
     },
     // Shelves — see game/data/ShelfTypes.ts. Plain id-keyed record (no default — a storage with no
     // `shelf` keeps the crate look).

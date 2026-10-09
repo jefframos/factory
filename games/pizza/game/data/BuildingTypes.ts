@@ -377,7 +377,7 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         "floorChecker": "roomTiles",
         "doorStyle": "glass",
         baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
-        "name": "StoreRoom1",
+        "name": "Hire Office",
         "appearRequirement": {
             "type": "store",
             "storeId": "farmStore1",

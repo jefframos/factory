@@ -38,13 +38,19 @@
             "maxOutput": 6,
             "price": {
                 "currency": "money",
-                "amount": 10
+                "amount": 60
             },
             "surfaceHeight": 2,
             "boxModels": [
                 "Restaurant.Crate"
             ],
-            "boxScale": 0.8
+            "boxScale": 0.8,
+            "resourceCost": [
+                {
+                    "resourceType": "stone",
+                    "amount": 15
+                }
+            ]
         },
         "breadStation": {
             "name": "Bread Station",
@@ -66,13 +72,19 @@
             "maxOutput": 6,
             "price": {
                 "currency": "money",
-                "amount": 10
+                "amount": 120
             },
             "surfaceHeight": 2,
             "boxModels": [
                 "Restaurant.Crate"
             ],
-            "boxScale": 0.8
+            "boxScale": 0.8,
+            "resourceCost": [
+                {
+                    "resourceType": "stone",
+                    "amount": 30
+                }
+            ]
         }
     }
 }

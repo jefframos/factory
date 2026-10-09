@@ -29,6 +29,7 @@
 import { ThreeScene } from 'core/scene/ThreeScene';
 import { GameClock } from '../utils/GameClock';
 import * as THREE from 'three';
+import * as PIXI from 'pixi.js';
 import { ParticleSystem } from '../vfx/ParticleSystem';
 import gsap from 'gsap';
 // import { DEFAULT_START_VALUE } from '../ClogConstants';
@@ -46,7 +47,8 @@ import DropZone from '../player/DropZone';
 import BuildingZone, { BuildingTriggerArea } from '../player/BuildingZone';
 import QueueZone from '../player/QueueZone';
 import { getQueueConfig } from '../data/QueueTypes';
-import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
+import { isMilestoneRequirementMet, MilestoneRequirement } from '../data/MilestoneRequirement';
+import { CROP_CONFIG } from '../data/CropTypes';
 import { getDemoConfig } from '../data/DemoTypes';
 import { DemoStorage } from '../data/DemoStorage';
 import DemoEndPopup from '../ui/popups/DemoEndPopup';
@@ -121,10 +123,13 @@ import Store, { spawnStores } from '../store/Store';
 import { StoreUnlocks } from '../store/StoreUnlocks';
 import { getStoreConfig, WORKER_NPC_ID, type StoreWorkerRole } from '../store/StoreTypes';
 import HireDeskZone from '../store/HireDeskZone';
+import FarmDeskZone from '../world/FarmDeskZone';
+import StoreUnlockHints from '../store/StoreUnlockHints';
+import { getFarmDeskConfig } from '../data/FarmDeskTypes';
 import { StoreProgressStorage } from '../store/StoreProgressStorage';
 import StoragePurchaseZone from '../store/StoragePurchaseZone';
 import { getAnimalStallConfig } from '../data/AnimalStallTypes';
-import { AnimalProduce } from '../data/AnimalProduce';
+import { ProducedGoods } from '../data/ProducedGoods';
 import { DEFAULT_MIX_INPUT_CAPACITY, getMixStationConfig } from '../data/MixStationTypes';
 import MixStation, { MixStationBox } from '../world/MixStation';
 import { RestockSupply, StorageSupplySource } from '../store/RestockSupply';
@@ -293,17 +298,28 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private readonly world = new World();
 
     /**
+     * Every world-anchored UI element (nameplates, prices, storage/station labels, client bubbles,
+     * alert icons...) — the FIRST child of `game.uiLayer`, so every HUD panel (added to uiLayer
+     * after it) always draws over the world's own UI, and notifications/popups (their own tiers
+     * above uiLayer — see core/Game.ts) over both. Same transform as uiLayer (identity), so
+     * coordinates are interchangeable between the two.
+     */
+    private readonly worldUiLayer: PIXI.Container = this.game.uiLayer.addChildAt(new PIXI.Container(), 0);
+
+    /**
      * Shared by anything that pairs a Pixi overlay element to a 3D point (ScreenAnchorComponent)
      * — DropZone's nameplate/deposit popups, ResourceNode's damage numbers. One instance so they
-     * all read the exact same worldToScreen/overlayContainer. Points at `game.uiLayer` (the
-     * bottom of the three z-ordered overlay tiers — see core/Game.ts's own doc), NOT the raw
-     * `game.overlayContainer` umbrella, which now exists purely to hold uiLayer/
-     * notificationLayer/popupLayer in the right order — anything added directly to it instead
-     * of one of those three would draw on top of even popupLayer, for having been added last.
+     * all read the exact same worldToScreen/overlayContainer. Points at worldUiLayer (the bottom
+     * of game.uiLayer — see its own doc), NOT the raw `game.overlayContainer` umbrella, which
+     * exists purely to hold uiLayer/notificationLayer/popupLayer in the right order — anything
+     * added directly to it would draw on top of even popupLayer, for having been added last.
+     * Flying icons headed INTO the HUD (money to the wallet) use effectsContainer — uiLayer
+     * itself, over the HUD.
      */
     private readonly screenHost: ScreenAnchorHost = {
         worldToScreen: position => this.worldToScreen(position),
-        overlayContainer: this.game.uiLayer,
+        overlayContainer: this.worldUiLayer,
+        effectsContainer: this.game.uiLayer,
         getViewerPosition: () => this.mainPlayer.transform.position,
         // Delegates to MainPlayer's own PlayerUIAvoidanceComponent (head position + live,
         // designer-tunable radius) — see that component's own doc. Referenced lazily (this
@@ -344,6 +360,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private readonly requirementRegistry = new RequirementRegistry();
     /** Every store on the map (see setupStores()) — updateStoreUi() picks the one the player stands in. */
     private stores: Store[] = [];
+    /** What each store level brings — feeds the HUD's next-unlocks strip (see updateStoreUi()). Built on first use. */
+    private unlockHints?: StoreUnlockHints;
 
     /** Points a screen-space arrow at whatever the player's current zone's tutorial (see ZoneTutorialTypes.ts) wants them to do next — see ZoneTutorialController.ts's own doc. Driven once per fixedUpdate(), same call-site pattern as worldManager.update(). */
     private readonly zoneTutorialController = new ZoneTutorialController(
@@ -394,7 +412,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private cameraFocusPoint: THREE.Vector3 | null = null;
 
     /** An eased focusCameraOn() glide in progress (CameraFocusOptions.easedPan) — while set, fixedUpdate() moves smoothedFollowTarget along it instead of the regular follow lerp. `to` gets the player's current position (the return glide ends on the player, wherever they've walked). */
-    private cameraPan?: { from: THREE.Vector3; to: (playerPosition: THREE.Vector3) => THREE.Vector3; startMs: number; durationSec: number };
+    private cameraPan?: { from: THREE.Vector3; to: (playerPosition: THREE.Vector3) => THREE.Vector3; elapsedSec: number; durationSec: number };
 
     /**
      * The point the camera is ACTUALLY aimed/positioned at — eased toward whichever point it
@@ -506,6 +524,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // After setupStores() — a desk can spawn immediately (its section already built) and
         // looks its store up from this.stores.
         this.setupHireDesks();
+        this.setupFarmDesks();
         this.setupTriggers();
         this.setupCraftTables();
         StoreProgressStorage.onLevelChanged.add(this.handleStoreLevelChanged);
@@ -1689,7 +1708,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 const type = stallConfig.resourceType;
                 // Store clients may order it from now on (see Store.isObtainable()), and restockers
                 // may pick it up from the box (see RestockSupply.ts).
-                AnimalProduce.markProducing(type);
+                ProducedGoods.markProducing(type);
                 RestockSupply.register(new StorageSupplySource(id, type, onFloor(box.x, box.z), onFloor(box.x, box.z).setY(FloorLayers.baseY + LAY_HEIGHT)));
                 const layScale = stackItemScale() * getPileScale(type);
                 const tryProduce = (animal: StallAnimal): boolean => {
@@ -1746,7 +1765,9 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * ingredient, up to its capacity, from a deposit area padded past the station's edge), a
      * collect StorageZone at the dispenser (its "collectArea" part, else the dispenser padded the
      * same way), and the MixStation itself (model, making area on the dropper, panel, mixing).
-     * Goes through the spawn gate, so it waits for its store to open.
+     * Goes through the spawn gate, so it waits for its store to open (and for any store level
+     * that lists it under `enables`). A station whose product no map storage sells is skipped —
+     * its product would have nowhere to go and clog the player's stack.
      */
     private setupMixStations(): void {
         for (const [id, rect] of this.worldObjects.getAllOfType('mixStation')) {
@@ -1758,6 +1779,14 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             const dispenser = this.worldObjects.getPartsFor(id, 'dispenser')[0];
             if (!dropper || !dispenser) {
                 console.warn(`[PizzaScene] mix station "${id}" needs a "dropper" and a "dispenser" naming it — skipping`);
+                continue;
+            }
+            const sold = [...this.worldObjects.getAllOfType('storage').keys()].some(storageId => {
+                const storage = getStorageConfig(storageId);
+                return !storage.disabled && !storage.collect && storage.resourceType === config.resourceType;
+            });
+            if (!sold) {
+                console.warn(`[PizzaScene] mix station "${id}" makes ${config.resourceType}, but no "storage" on the map sells it (resourceType ${config.resourceType}) — skipping, its product would have nowhere to go`);
                 continue;
             }
             const spots = this.worldObjects.getPartsFor(id, 'storage');
@@ -1778,6 +1807,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             });
 
             const spawnBuilt = (): void => {
+                // Store clients may order its product from now on (see Store.isObtainable()).
+                ProducedGoods.markProducing(config.resourceType);
                 // The boxes sit on the station's top.
                 const onTop = (x: number, z: number): THREE.Vector3 => onFloor(x, z).setY(FloorLayers.baseY + config.surfaceHeight);
                 const boxLook: Partial<StorageConfig> = {
@@ -1845,18 +1876,19 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
             this.requirementRegistry.registerSpawnGate(id, undefined, () => {
                 const price = config.price;
-                if (!price || price.amount <= 0 || StorageOwnershipStorage.isOwned(id)) {
+                const resourceCost = (config.resourceCost ?? []).filter(cost => cost.amount > 0);
+                if (((price?.amount ?? 0) <= 0 && resourceCost.length === 0) || StorageOwnershipStorage.isOwned(id)) {
                     spawnBuilt();
                     return;
                 }
                 const purchaseZone = this.world.add(new StoragePurchaseZone(
                     id,
                     price,
-                    [],
+                    resourceCost,
                     onFloor(dropper.x, dropper.z),
                     { width: dropper.width, depth: dropper.depth },
                     this.screenHost,
-                    () => this.uiService.economyUi.getIconAnchorPosition(price.currency),
+                    () => this.uiService.economyUi.getIconAnchorPosition(price?.currency ?? CurrencyType.Money),
                     spawnBuilt,
                     FLOOR_FRAME,
                     undefined,
@@ -1942,17 +1974,45 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private updateStoreUi(): void {
         const position = this.mainPlayer?.transform.position;
         let state;
+        let inside: Store | undefined;
         if (position) {
             for (const store of this.stores) {
                 if (store.containsPoint(position.x, position.z)) {
                     state = store.getHudState();
                     if (state) {
+                        inside = store;
                         break;
                     }
                 }
             }
         }
         this.uiService.storeUi.setState(state);
+        this.updateNextUnlocks(inside);
+    }
+
+    /**
+     * The next-unlocks strip (ui/NextUnlocksUI.ts): what the next store level that brings anything
+     * will unlock — for the store the player is in, else the first built one. Hidden before any
+     * shop is built (the FTUE has its own arrows) and once nothing is left to unlock.
+     */
+    private updateNextUnlocks(inside: Store | undefined): void {
+        const store = inside ?? this.stores.find(candidate => candidate.getHudState() !== undefined);
+        const hud = store?.getHudState();
+        if (!store || !hud) {
+            this.uiService.nextUnlocksUi.setState(undefined);
+            return;
+        }
+        this.unlockHints ??= new StoreUnlockHints(this.worldObjects);
+        const next = this.unlockHints.findNext(store.getId(), hud.level);
+        if (!next) {
+            this.uiService.nextUnlocksUi.setState(undefined);
+            return;
+        }
+        this.uiService.nextUnlocksUi.setState({
+            level: next.level,
+            hints: next.hints,
+            progress: next.level === hud.level + 1 && hud.next ? { value: hud.next.progress, amount: hud.next.amount } : undefined,
+        });
     }
 
     /** Grocery stores drawn on the map's "stores" layer — see store/Store.ts. Independent of setupStorages(): a store reads its storages straight from the map + StorageInventory. */
@@ -2010,6 +2070,44 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         }
     }
 
+    /**
+     * The farm manager — one FarmDeskZone + standing NPC per "farmDesk" on the map (see
+     * FarmDeskTypes.ts). The NPC stands at the desk rect's center; the player talks to it at the
+     * dropper targeting the desk's id (else on the desk rect itself). Appears once the config's
+     * appearRequirement is met (and any store level listing it under `enables` is reached).
+     */
+    private setupFarmDesks(): void {
+        const farmIds = [...this.worldObjects.getAllOfType('farm').keys()].filter(id => !getFarmPlotConfig(id).disabled);
+        for (const [id, placement] of this.worldObjects.getAllOfType('farmDesk')) {
+            const config = getFarmDeskConfig(id);
+            if (config.disabled) {
+                continue;
+            }
+            const trigger = this.worldObjects.getDropperFor(id) ?? placement;
+            this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
+                const triggerPosition = onFloor(trigger.x, trigger.z);
+                const triggerFootprint = { width: trigger.width, depth: trigger.depth };
+                const deskZone = this.world.add(new FarmDeskZone(
+                    config, triggerPosition, triggerFootprint, this.screenHost, farmIds,
+                    () => this.freezePlayerMovement(),
+                    () => this.unfreezePlayerMovement(),
+                ));
+                this.threeScene.add(deskZone.transform);
+                this.registerZoneVisibility(deskZone.transform, triggerPosition.x, triggerPosition.z, triggerFootprint.width, triggerFootprint.depth);
+
+                const npcId = config.npcId ?? WORKER_NPC_ID;
+                const npcConfig = getNpcConfig(npcId);
+                if (!npcConfig) {
+                    console.warn(`[PizzaScene] farmDesk "${id}" wants npcId "${npcId}", which has no NpcConfig entry — no NPC at the desk`);
+                    return;
+                }
+                const npc = this.world.add(new NpcEntity(onFloor(placement.x, placement.z), npcConfig, () => this.mainPlayer.transform.position));
+                this.threeScene.add(npc.transform);
+                this.registerZoneVisibility(npc.transform, placement.x, placement.z, placement.width, placement.depth);
+            });
+        }
+    }
+
     private setupStores(): void {
         this.stores = spawnStores({
             world: this.world,
@@ -2019,6 +2117,25 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             getWalletOverlayPosition: () => this.uiService.economyUi.getIconAnchorPosition(CurrencyType.Money),
             registerZoneVisibility: (object, x, z, width, depth) => this.registerZoneVisibility(object, x, z, width, depth),
         });
+    }
+
+    /**
+     * A farm with no appearRequirement of its own waits for the storage selling its crop to be
+     * built (MilestoneRequirement 'storage' — bought, or free) — otherwise the player can buy the
+     * farm first and harvest something with nowhere to put it. The first map storage (by id) whose
+     * resourceType is the farm's crop; undefined (no extra gate) for a farm without an assigned
+     * crop, a crop no storage sells, or a farm the player already owns (an older save keeps it).
+     */
+    private sellingStorageRequirement(farmId: string, config: FarmPlotConfig): MilestoneRequirement | undefined {
+        if (!config.assignedCropId || FarmPlotStorage.isOwned(farmId)) {
+            return undefined;
+        }
+        const resourceType = CROP_CONFIG[config.assignedCropId]?.yield.resourceType;
+        const storageId = [...this.worldObjects.getAllOfType('storage').keys()].sort().find(candidate => {
+            const storage = getStorageConfig(candidate);
+            return !storage.disabled && !storage.collect && !storage.trash && storage.resourceType === resourceType;
+        });
+        return storageId ? { type: 'storage', storageId } : undefined;
     }
 
     private setupFarms(): void {
@@ -2031,7 +2148,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 continue;
             }
 
-            this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
+            this.requirementRegistry.registerSpawnGate(id, config.appearRequirement ?? this.sellingStorageRequirement(id, config), () => {
                 // A free plot (price 0) is owned the moment it appears — no "0/0" for-sale zone.
                 // tryCompletePurchase() completes straight away (0 paid >= 0 owed) and saves it like a bought one.
                 if (config.price.amount <= 0) {
@@ -2604,8 +2721,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             // instantly even though position still eased smoothly).
             const pan = this.cameraPan;
             if (pan) {
-                // Eased glide (see cameraPan's own doc) — smoothstep in/out over its duration.
-                const t = Math.min(1, (performance.now() - pan.startMs) / (pan.durationSec * 1000));
+                // Eased glide (see cameraPan's own doc) — smoothstep in/out over its duration. Game
+                // time, not wall time, so a pause (GameClock.pause()) holds it where it is.
+                pan.elapsedSec += delta;
+                const t = Math.min(1, pan.elapsedSec / Math.max(0.001, pan.durationSec));
                 this.smoothedFollowTarget.lerpVectors(pan.from, pan.to(playerPosition), t * t * (3 - 2 * t));
                 if (t >= 1) {
                     this.cameraPan = undefined;
@@ -2709,7 +2828,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.cameraFocusPoint = target.clone();
         if (options.easedPan) {
             const focus = this.cameraFocusPoint;
-            this.cameraPan = { from: this.smoothedFollowTarget.clone(), to: () => focus, startMs: performance.now(), durationSec: travelSec };
+            this.cameraPan = { from: this.smoothedFollowTarget.clone(), to: () => focus, elapsedSec: 0, durationSec: travelSec };
         }
         await wait(travelSec);
         await wait(holdSec);
@@ -2718,7 +2837,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // actually is by then, not wherever they were when the event started.
         this.cameraFocusPoint = null;
         if (options.easedPan) {
-            this.cameraPan = { from: this.smoothedFollowTarget.clone(), to: playerPosition => playerPosition, startMs: performance.now(), durationSec: returnSec };
+            this.cameraPan = { from: this.smoothedFollowTarget.clone(), to: playerPosition => playerPosition, elapsedSec: 0, durationSec: returnSec };
         }
         if (options.releaseOnReturn) {
             this.unfreezePlayerMovement();

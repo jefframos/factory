@@ -233,7 +233,7 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         label: "Broccoli",
         color: 0x4a7c3a,
         category: "farm",
-        "price": 10,
+        "price": 15,
         "sellable": true
     },
     [ResourceType.Cabbage]: {
@@ -268,7 +268,7 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         label: "Corn",
         color: 0xf2c94c,
         category: "farm",
-        "price": 7,
+        "price": 20,
         "sellable": true,
         "carrierOrientation": "onSide",
         "carrierSpacing": 0.5
@@ -310,7 +310,7 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         label: "Strawberry",
         color: 0xe0304f,
         category: "farm",
-        "price": 10,
+        "price": 18,
         "sellable": true
     },
     [ResourceType.Tomato]: {
@@ -318,7 +318,7 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         label: "Tomato",
         color: 0xd94430,
         category: "farm",
-        "price": 10,
+        "price": 12,
         "sellable": true
     },
     [ResourceType.Watermelon]: {
@@ -341,7 +341,7 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         "label": "Egg",
         "amountPerGather": 1,
         "category": "farm",
-        "price": 8,
+        "price": 25,
         "sellable": true,
         "pileScale": 3,
         "carrierSpacing": 0.7
@@ -351,7 +351,7 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         "label": "Milk",
         "amountPerGather": 1,
         "category": "farm",
-        "price": 12,
+        "price": 30,
         "sellable": true,
         "pileScale": 2.5,
         "carrierSpacing": 0.8
@@ -361,7 +361,7 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         "label": "Butter",
         "amountPerGather": 1,
         "category": "farm",
-        "price": 20,
+        "price": 70,
         "sellable": true,
         "pileScale": 0.6,
         "carrierSpacing": 0.8
@@ -371,7 +371,7 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         "label": "Bread",
         "amountPerGather": 1,
         "category": "farm",
-        "price": 30,
+        "price": 120,
         "sellable": true,
         "pileScale": 0.8,
         "carrierSpacing": 0.8

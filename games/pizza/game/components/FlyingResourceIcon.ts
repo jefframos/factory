@@ -92,7 +92,8 @@ function flyIcon(
     icon.anchor.set(0.5);
     icon.scale.set(ViewUtils.elementScaler(icon, ICON_SIZE));
     icon.visible = false;
-    host.overlayContainer.addChild(icon);
+    // Over the HUD it may be flying into (e.g. the wallet) — same coordinates as overlayContainer.
+    (host.effectsContainer ?? host.overlayContainer).addChild(icon);
 
     const progress = { t: 0 };
 

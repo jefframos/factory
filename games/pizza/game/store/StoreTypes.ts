@@ -54,6 +54,26 @@ export interface StoreLevelConfig {
      * (or forgivingEarlyLevels' built-in one, if that's on).
      */
     moodFloor?: StoreClientMood;
+    /**
+     * Easing while the store is AT this level (early levels — the player is still alone): x every
+     * new client's patience (seconds per mood step) on top of the normal pacing. Unset = 1.
+     */
+    patienceMultiplier?: number;
+    /** Same, x the time between two clients arriving (1.3 = 30% fewer clients). Unset = 1. */
+    spawnIntervalMultiplier?: number;
+    /**
+     * Extra chips for the HUD's next-unlocks strip (ui/NextUnlocksUI.ts) — anything this level
+     * brings that isn't in `enables` (e.g. "Pickaxe"). What `enables` lists, buildings appearing
+     * at this level and zones opening at it are shown automatically — see store/StoreUnlockHints.ts.
+     */
+    hints?: StoreLevelHint[];
+}
+
+/** One extra next-unlocks chip — see StoreLevelConfig.hints. */
+export interface StoreLevelHint {
+    /** Texture alias (packed ui/images atlas, e.g. "mining-pickaxe"). Blank = the store icon. */
+    icon?: string;
+    label: string;
 }
 
 /**
@@ -538,6 +558,14 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
             {
                 "storageId": "storage5",
                 "direction": "west"
+            },
+            {
+                "storageId": "storageButter",
+                "direction": "south"
+            },
+            {
+                "storageId": "storageBread",
+                "direction": "west"
             }
         ],
         "cashierSpotDirection": "east",
@@ -571,7 +599,10 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                     {
                         "entityId": "trash1"
                     }
-                ]
+                ],
+                "moodFloor": "annoyed",
+                "patienceMultiplier": 1.5,
+                "spawnIntervalMultiplier": 1.3
             },
             {
                 "level": 3,
@@ -583,8 +614,17 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                     },
                     {
                         "entityId": "storage3"
+                    },
+                    {
+                        "entityId": "chickenStall"
+                    },
+                    {
+                        "entityId": "storageEgg"
                     }
-                ]
+                ],
+                "moodFloor": "annoyed",
+                "patienceMultiplier": 1.4,
+                "spawnIntervalMultiplier": 1.25
             },
             {
                 "level": 4,
@@ -596,8 +636,14 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                     },
                     {
                         "entityId": "storage4"
+                    },
+                    {
+                        "entityId": "farmDesk1"
                     }
-                ]
+                ],
+                "moodFloor": "sad",
+                "patienceMultiplier": 1.3,
+                "spawnIntervalMultiplier": 1.15
             },
             {
                 "level": 5,
@@ -609,23 +655,54 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                     },
                     {
                         "entityId": "storage5"
+                    },
+                    {
+                        "entityId": "cowStall"
+                    },
+                    {
+                        "entityId": "storageMilk"
                     }
-                ]
+                ],
+                "moodFloor": "sad",
+                "patienceMultiplier": 1.15,
+                "spawnIntervalMultiplier": 1.1
             },
             {
                 "level": 6,
                 "requirementType": "money",
-                "amount": 500
+                "amount": 500,
+                "hints": [
+                    {
+                        "icon": "mining-pickaxe",
+                        "label": "Pickaxe"
+                    }
+                ]
             },
             {
                 "level": 7,
                 "requirementType": "money",
-                "amount": 700
+                "amount": 700,
+                "enables": [
+                    {
+                        "entityId": "butterStation"
+                    },
+                    {
+                        "entityId": "storageButter"
+                    }
+                ]
             },
             {
                 "level": 8,
                 "requirementType": "money",
-                "amount": 950
+                "amount": 950,
+                "enables": [
+                    {
+                        "entityId": "breadStation"
+                    },
+                    {
+                        "entityId": "storageBread"
+                    }
+                ]
             },
             {
                 "level": 9,
@@ -834,14 +911,17 @@ export interface StorePacing {
  * them, a linear step per shelf in between — so each new shelf brings a few more clients. On top
  * of that shelf-based max, every hired worker (clientsPerWorker) and every store level above 1
  * (clientsPerLevel) allow a little more — the more help the player has, the busier it gets.
+ * The current level's own easing (StoreLevelConfig.patienceMultiplier / spawnIntervalMultiplier)
+ * multiplies the result — early levels stay calmer.
  */
 export function getStorePacing(config: StoreConfig, shelves: number, totalShelves: number, workers = 0, level = 1): StorePacing {
     const t = totalShelves > 1 ? Math.min(1, Math.max(0, (shelves - 1) / (totalShelves - 1))) : 1;
     const lerp = (from: number, to: number) => from + (to - from) * t;
     const startInterval = config.startSpawnIntervalSec ?? config.spawnIntervalSec * DEFAULT_START_SPAWN_INTERVAL_FACTOR;
     const startMax = config.startMaxClients ?? Math.min(DEFAULT_START_MAX_CLIENTS, config.maxClients);
+    const easing = config.levels?.find(entry => entry.level === level);
     return {
-        spawnIntervalSec: lerp(startInterval, config.spawnIntervalSec),
+        spawnIntervalSec: lerp(startInterval, config.spawnIntervalSec) * Math.max(0.1, easing?.spawnIntervalMultiplier ?? 1),
         // Rounded down so client count grows on the slow side (2 -> 3 -> 5 over three shelves, not 2 -> 4 -> 5).
         maxClients: Math.max(1, Math.floor(
             lerp(startMax, config.maxClients)
@@ -851,7 +931,7 @@ export function getStorePacing(config: StoreConfig, shelves: number, totalShelve
         )),
         overflowClients: Math.max(0, Math.floor(config.overflowClients ?? DEFAULT_OVERFLOW_CLIENTS)),
         stuckSec: Math.max(1, config.stuckSec ?? DEFAULT_STUCK_SEC),
-        patienceMultiplier: lerp(config.startPatienceMultiplier ?? DEFAULT_START_PATIENCE_MULTIPLIER, 1),
+        patienceMultiplier: lerp(config.startPatienceMultiplier ?? DEFAULT_START_PATIENCE_MULTIPLIER, 1) * Math.max(0.1, easing?.patienceMultiplier ?? 1),
     };
 }
 

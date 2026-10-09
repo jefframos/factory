@@ -58,7 +58,7 @@ export interface FloorLabelOptions {
     items?: FloorLabelItem[];
     /** Label height on the floor (world units) — per LINE with `stack: 'column'`. Width follows: square for icon-only, wider with text. Default DEFAULT_FLOOR_LABEL_SIZE (2.7). */
     size?: number;
-    /** 'row' (default): every item side by side. 'column': one item per line, icons lined up on the left — reads better (and stays closer to square) for several icon+count items. */
+    /** 'row' (default): every item side by side. 'column': one item per line, each line centered — reads better (and stays closer to square) for several icon+count items. */
     stack?: 'row' | 'column';
     /** Where the label sits, relative to the owning entity (Y is ignored — it always sits on the floor). Its center, unless `side` is set. */
     offset?: THREE.Vector3;
@@ -270,8 +270,12 @@ export default class FloorLabelComponent extends Component {
         const startX = (widthPx - contentWidth) / 2;
         let x = startX;
         layout.forEach((l, index) => {
-            // Column: every line starts at the same x (icons lined up); row: items follow each other.
+            // Column: each line centered on its own width (an icon-only line sits in the middle,
+            // not on the left); row: items follow each other.
             const lineTop = column ? padY + index * (iconSize + lineGap) : padY;
+            if (column) {
+                x = (widthPx - l.width) / 2;
+            }
             if (l.item.iconCanvas) {
                 ctx.drawImage(l.item.iconCanvas, x, lineTop, iconSize, iconSize);
             }
@@ -283,7 +287,7 @@ export default class FloorLabelComponent extends Component {
                 ctx.fillStyle = '#ffffff';
                 ctx.fillText(l.item.text, textX, textY);
             }
-            x = column ? startX : x + l.width + itemGap;
+            x += l.width + itemGap;
         });
 
         if (resized) {

@@ -159,7 +159,8 @@
                 "currency": "money",
                 "amount": 25
             },
-            "resourceCost": []
+            "resourceCost": [],
+            "dumpAnyAfterSec": 1.5
         },
         "storage5": {
             "models": [
@@ -288,6 +289,55 @@
             "itemOrientation": "standing",
             "resourceCost": [],
             "signpostSide": "east"
+        },
+        "storageButter": {
+            "name": "Butter Shelf",
+            "accepts": "farm",
+            "resourceType": "butter",
+            "shelf": "shelfBoxes",
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "scale": 1,
+            "rotationDeg": 0,
+            "dropOffset": {},
+            "pile": {
+                "columns": 3,
+                "rows": 3,
+                "layers": 1
+            },
+            "solid": 1,
+            "price": {
+                "currency": "money",
+                "amount": 0
+            },
+            "itemOrientation": "standing",
+            "resourceCost": []
+        },
+        "storageBread": {
+            "name": "Bread Storage",
+            "accepts": "farm",
+            "resourceType": "bread",
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "view": "storageView",
+            "scale": 1,
+            "rotationDeg": 0,
+            "dropOffset": {},
+            "pile": {
+                "columns": 3,
+                "rows": 3,
+                "layers": 1
+            },
+            "solid": 1,
+            "popupBobOffset": 3,
+            "price": {
+                "currency": "money",
+                "amount": 0
+            },
+            "itemOrientation": "standing",
+            "resourceCost": []
         }
     },
     "signpost": {

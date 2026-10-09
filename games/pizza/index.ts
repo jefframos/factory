@@ -29,6 +29,7 @@ import { GateStorage } from './game/data/GateStorage';
 import { EconomyStorage } from './game/data/EconomyStorage';
 import { FarmPlotStorage } from './game/data/FarmPlotStorage';
 import { FarmCropStorage } from './game/data/FarmCropStorage';
+import { FarmUpgradeStorage } from './game/data/FarmUpgradeStorage';
 import { SeedStorage } from './game/data/SeedStorage';
 import { QueueStorage } from './game/data/QueueStorage';
 import { ItemStorage } from './game/crafting/ItemStorage';
@@ -108,6 +109,7 @@ export default class MyGame extends Game {
             await EconomyStorage.load();
             await FarmPlotStorage.load();
             await FarmCropStorage.load();
+            await FarmUpgradeStorage.load();
             await SeedStorage.load();
             await QueueStorage.load();
             await ShopUpgradeStorage.load();

@@ -38,6 +38,8 @@ export interface ZoneTutorialCraftStep {
     kind: 'craft';
     /** A CraftTypes.ts CRAFT_CONFIG_BY_ID key — see ZoneTutorialController's own doc for how its required (resourceType, amount) and completion are resolved. */
     craftId: string;
+    /** Only point the gather arrow at sources standing in this zone (e.g. the loose stones next to the pickaxe table). Unset = the nearest anywhere (also the fallback when that zone has none left). */
+    gatherZone?: number;
     /** See this file's own top-of-file doc on why this lives per-step. Optional — ZoneTutorialController falls back to the config's own arrowTextureId (then DEFAULT_ARROW_TEXTURE_ID) when unset. */
     iconTextureId?: string;
     /** See this file's own top-of-file doc on `offset`. Optional — unset behaves as `[0, 0, 0]`. */
@@ -79,10 +81,10 @@ export interface ZoneTutorialStorageStep {
     offset?: [number, number, number];
 }
 
-/** "Build a storage that costs resources": gather whatever of the storage's resourceCost (StorageTypes.ts) the player still lacks from the nearest source (e.g. chop trees for wood), then pay at its purchase spot. Completes once it's bought. */
+/** "Build a storage that costs resources": gather whatever of the storage's resourceCost (StorageTypes.ts) the player still lacks from the nearest source (e.g. chop trees for wood), then pay at its purchase spot. Completes once it's bought. Works for a mix station too (its MixStationTypes.ts price/resourceCost). */
 export interface ZoneTutorialBuyStorageStep {
     kind: 'buyStorage';
-    /** A "storage" id on the map with a resourceCost/price. */
+    /** A "storage" (or "mixStation") id on the map with a resourceCost/price. */
     storageId: string;
     /** Only point the gather arrow at sources standing in this zone (e.g. the zone full of trees this lesson unlocks). Unset = the nearest anywhere (also the fallback when that zone has none left). */
     gatherZone?: number;
@@ -241,7 +243,26 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
         "use3dArrow": false
     },
     "4": {
-        "steps": []
+        "steps": [
+            {
+                "kind": "buyStorage",
+                "storageId": "butterStation",
+                "gatherZone": 4,
+                "iconTextureId": "mining-pickaxe",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ]
+            }
+        ],
+        "arrowTextureId": "mining-pickaxe",
+        "use3dArrow": true,
+        "startRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 7
+        }
     },
     "3": {
         "steps": [
@@ -267,6 +288,28 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
     },
     "10": {
         "steps": []
+    },
+    "5": {
+        "steps": [
+            {
+                "kind": "craft",
+                "craftId": "craftPickaxe",
+                "gatherZone": 5,
+                "iconTextureId": "mining-pickaxe",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ]
+            }
+        ],
+        "arrowTextureId": "mining-pickaxe",
+        "use3dArrow": true,
+        "startRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 6
+        }
     }
 };
 

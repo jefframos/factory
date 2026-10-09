@@ -238,7 +238,7 @@ const ENTITY_SCHEMAS = {
         {
             key: 'steps', type: 'list', label: 'Steps (walked through in order)',
             itemLabel: item => ({
-                craft: `Craft: ${item.craftId ?? '?'}`,
+                craft: `Craft: ${item.craftId ?? '?'}${item.gatherZone !== undefined ? ` (gather in zone ${item.gatherZone})` : ''}`,
                 gate: `Gate: ${item.gateId ?? '?'}`,
                 storage: `Fill Storage: ${item.storageId ?? '?'} x${item.amount ?? 1}${item.farmId ? ` (from ${item.farmId})` : ''}`,
                 sale: `Serve Sale: ${item.storeId ?? '?'} (${item.amount ?? 1} total)`,
@@ -263,8 +263,8 @@ const ENTITY_SCHEMAS = {
                 { key: 'craftId', type: 'select', label: 'Craft Table (if Kind = Craft)', source: 'crafting', optional: true },
                 { key: 'gateId', type: 'select', label: 'Gate (if Kind = Gate)', source: 'gates', optional: true },
                 { key: 'triggerId', type: 'select', label: 'Trigger (if Kind = Trigger)', source: 'triggers', optional: true },
-                { key: 'storageId', type: 'select', label: 'Storage (if Kind = Fill Storage — needs a Resource Type on the Storages tab; or Buy Storage)', source: 'storages', optional: true },
-                { key: 'gatherZone', type: 'number', label: 'Gather Zone (if Kind = Buy Storage — only point at sources in this zone number, e.g. 3 for the tree zone; blank = nearest anywhere)', optional: true },
+                { key: 'storageId', type: 'select', label: 'Storage (if Kind = Fill Storage — needs a Resource Type on the Storages tab; or Buy Storage — a storage or a mix station)', source: '$buyableIds', optional: true },
+                { key: 'gatherZone', type: 'number', label: 'Gather Zone (if Kind = Buy Storage or Craft — only point at sources in this zone number, e.g. 3 for the tree zone; blank = nearest anywhere)', optional: true },
                 { key: 'farmId', type: 'select', label: 'Farm (if Kind = Fill Storage — where the gather arrow points; blank = nearest farm growing that item)', source: 'farms', optional: true },
                 { key: 'storeId', type: 'select', label: 'Store (if Kind = Serve Sale / Collect Money)', source: 'stores', optional: true },
                 { key: 'amount', type: 'number', label: 'Amount (Fill Storage: units on the shelf; Serve Sale: total sales — blank = 1)', optional: true },
@@ -673,6 +673,7 @@ const ENTITY_SCHEMAS = {
         { key: 'maxItems', type: 'number', label: 'Max Items (holds at most this many — the player can\'t drop off more; blank = a shelf\'s slot count, else unlimited)', optional: true },
         { key: 'collect', type: 'boolean', label: 'Collect (the player TAKES from it instead of dropping off — its items fly onto the player\'s stack while there\'s room; e.g. an animal stall\'s egg box, whose entry here has the stall\'s id)', optional: true },
         { key: 'trash', type: 'boolean', label: 'Trash (takes ONLY garbage — Accepts/Only This Resource are ignored — and destroys it: no pile, no count; signpost shows a trash icon; stores never sell from it)', optional: true },
+        { key: 'dumpAnyAfterSec', type: 'number', label: 'Dump Anything After (trash only — seconds standing in it, garbage gone, before it also takes every stack item: crops, eggs, butter...; never wood/stone. Blank = garbage only)', optional: true },
         { key: 'particleEffectId', type: 'select', label: 'Particle Effect (ambient, from the drop point — Particle Effects tab; blank = none)', source: 'particleEffects', optional: true },
         { key: 'particleSpawnRate', type: 'number', label: 'Particle Spawn Rate (particles per second — blank = 4)', optional: true },
         { key: 'view', type: 'select', label: 'View (Entity Views tab — the storage mesh; when set it wins over Model/Scale/Rotation below)', source: 'entityViews', optional: true },
@@ -806,6 +807,8 @@ const ENTITY_SCHEMAS = {
                     ],
                 },
                 { key: 'amount', type: 'number', label: 'Amount' },
+                { key: 'patienceMultiplier', type: 'number', label: 'Patience x (while at this level — x every new client\'s patience; e.g. 1.5 early on; blank = 1)', optional: true },
+                { key: 'spawnIntervalMultiplier', type: 'number', label: 'Arrival Interval x (while at this level — x time between clients arriving; 1.3 = 30% fewer; blank = 1)', optional: true },
                 {
                     key: 'moodFloor', type: 'select', label: 'Lowest Client Mood at this level (e.g. Happy at Lv 1: nobody gets annoyed, walks out or drops garbage — blank = no floor)', optional: true,
                     options: [
@@ -815,10 +818,18 @@ const ENTITY_SCHEMAS = {
                     ],
                 },
                 {
-                    key: 'enables', type: 'list', label: 'Enables (map object ids that stay hidden until this level — storage, farm, building, queue, shop, mart, crafting table)', optional: true,
+                    key: 'enables', type: 'list', label: 'Enables (map object ids that stay hidden until this level — storage, farm, building, queue, shop, mart, crafting table, mix station, animal stall, farm desk)', optional: true,
                     itemLabel: item => item.entityId || 'entity',
                     fields: [
                         { key: 'entityId', type: 'select', label: 'Map Object (from the Tiled map)', source: '$storeEnableableIds' },
+                    ],
+                },
+                {
+                    key: 'hints', type: 'list', label: 'Next-Unlock Hints (extra chips on the HUD strip teasing this level — Enables, buildings appearing at this level and zones opening at it are shown automatically)', optional: true,
+                    itemLabel: item => item.label || 'hint',
+                    fields: [
+                        { key: 'icon', type: 'icon', label: 'Icon (blank = the store icon)', optional: true },
+                        { key: 'label', type: 'text', label: 'Label (short — e.g. "Pickaxe")' },
                     ],
                 },
             ],
@@ -970,13 +981,44 @@ const ENTITY_SCHEMAS = {
         { key: 'boxModels', type: 'modelList', label: 'Ingredient Box Model (first entry used — sits on the station\'s top at each "storage" spot; empty = no box)', optional: true },
         { key: 'boxScale', type: 'number', label: 'Box Scale (x the box model\'s own size — Restaurant.Crate is 2 wide; blank = 1)', optional: true },
         {
-            key: 'price', type: 'group', label: 'Build Price (paid at the dropper — amount 0 = built from the start)',
+            key: 'price', type: 'group', label: 'Build Price (paid at the dropper — amount 0 and no Resource Cost = built from the start)',
             fields: [
                 { key: 'currency', type: 'select', label: 'Currency', options: CURRENCY_OPTIONS },
                 { key: 'amount', type: 'number', label: 'Amount' },
             ],
         },
-        { key: 'disabled', type: 'boolean', label: 'Disabled (the station isn\'t spawned)', optional: true },
+        {
+            key: 'resourceCost', type: 'list', label: 'Resource Cost (resources the build ALSO costs, paid from the backpack — e.g. 15 stone; empty = price only)', optional: true,
+            itemLabel: item => `${item.amount ?? '?'} ${item.resourceType || 'resource'}`,
+            fields: [
+                { key: 'resourceType', type: 'select', label: 'Resource', source: 'resources' },
+                { key: 'amount', type: 'number', label: 'Amount' },
+            ],
+        },
+        { key: 'disabled', type: 'boolean', label: 'Disabled (the station isn\'t spawned — also skipped when no map storage sells what it makes)', optional: true },
+    ],
+    // Farm Upgrades tab — see game/data/FarmUpgradeTypes.ts. Keyed by farm id; the default ladder
+    // is used by every farm without its own entry.
+    farmUpgrades: [
+        {
+            key: 'levels', type: 'list', label: 'Upgrade Levels (what it costs to REACH each level and what the farm does from then on — the highest is the max)',
+            itemLabel: item => `Lv ${item.level ?? '?'} — ${item.cost ?? '?'} money: +${Math.round((item.priceBonus ?? 0) * 100)}% price${item.growSpeed ? `, x${item.growSpeed} speed` : ''}${item.yieldBonus ? `, +${item.yieldBonus} per harvest` : ''}`,
+            fields: [
+                { key: 'level', type: 'number', label: 'Level (2, 3, ...)' },
+                { key: 'cost', type: 'number', label: 'Cost (money)' },
+                { key: 'priceBonus', type: 'number', label: 'Price Bonus (+ fraction on this farm\'s crop in the store — 0.4 = +40%; blank = 0)', optional: true },
+                { key: 'growSpeed', type: 'number', label: 'Grow Speed (x — 1.5 = crops grow 1.5x faster; applies to crops planted from then on; blank = 1)', optional: true },
+                { key: 'yieldBonus', type: 'number', label: 'Yield Bonus (+ units per harvest, player and restockers; blank = 0)', optional: true },
+            ],
+        },
+    ],
+    // Farm Desks tab — see game/data/FarmDeskTypes.ts. A "farmDesk" rect on the map (NPC spot) + a dropper targeting it.
+    farmDesks: [
+        { key: 'name', type: 'text', label: 'Name (popup title + editor)', optional: true },
+        { key: 'npcId', type: 'select', label: 'NPC (the farm manager — blank = the "worker" look)', source: 'npcs', optional: true },
+        { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement (desk + NPC show once met; blank = right away — a store level can also list it under Enables)', optional: true },
+        { key: 'buttonLabel', type: 'text', label: 'Button Label (blank = "Farms")', optional: true },
+        { key: 'disabled', type: 'boolean', label: 'Disabled (not spawned)', optional: true },
     ],
     // Shelves tab — see game/data/ShelfTypes.ts. A storage picks one with its own `shelf` field.
     shelves: [

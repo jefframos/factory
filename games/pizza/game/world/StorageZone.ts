@@ -38,7 +38,8 @@
 // A TRASH storage (StorageConfig.trash) runs the exact same transfer, but each
 // item flies into the storage's drop point, shrinks and is destroyed instead of
 // landing in StorageInventory — no pile, no count. Its signpost shows
-// TRASH_SIGNPOST_ICON only.
+// TRASH_SIGNPOST_ICON only. With StorageConfig.dumpAnyAfterSec, standing in it
+// that long (garbage gone) also throws away whatever is on the player's stack.
 //
 // A SHELF storage (StorageConfig.shelf — see ShelfTypes.ts) draws the shelf's model instead
 // (its decorative nodes hidden) and puts each item on one of the shelf's fixed slots ('slots'
@@ -108,7 +109,7 @@ const SOLID_HALF_HEIGHT = 0.5;
 const DEFAULT_PARTICLE_SPAWN_RATE_PER_SEC = 4;
 
 /** Texture alias shown on a trash storage's signpost (StorageConfig.trash). */
-const TRASH_SIGNPOST_ICON = 'PictoIcon_Delete-2';
+const TRASH_SIGNPOST_ICON = 'trash';
 
 /** What a storage is FOR, as an icon — the trash icon for a trash, its `resourceType`'s icon otherwise, undefined for an any-resource storage. Shared by this zone's signpost and StoragePurchaseZone's for-sale label so both show the same thing. */
 export function getStorageIcon(config: StorageConfig): PIXI.Texture | undefined {
@@ -154,6 +155,8 @@ export default class StorageZone extends Entity {
 
     private player?: MainPlayer;
     private isPlayerInside = false;
+    /** performance.now() the player stepped in — StorageConfig.dumpAnyAfterSec counts from it. */
+    private enteredAtMs = 0;
     private transferring = false;
     private destroyed = false;
 
@@ -480,9 +483,17 @@ export default class StorageZone extends Entity {
     }
 
     private accepts(type: ResourceType): boolean {
-        // The trash takes garbage (store/StoreGarbage.ts) and nothing else; garbage goes nowhere else.
+        // The trash takes garbage (store/StoreGarbage.ts); garbage goes nowhere else. Garbage gone
+        // and the player still standing here (dumpAnyAfterSec) -> any stack item too.
         if (this.config.trash) {
-            return type === ResourceType.Garbage;
+            if (type === ResourceType.Garbage) {
+                return true;
+            }
+            const dumpAfterSec = this.config.dumpAnyAfterSec ?? 0;
+            return dumpAfterSec > 0
+                && BackpackStorage.getCount(ResourceType.Garbage) <= 0
+                && performance.now() - this.enteredAtMs >= dumpAfterSec * 1000
+                && RESOURCE_CONFIG[type]?.category === 'farm';
         }
         if (type === ResourceType.Garbage) {
             return false;
@@ -500,6 +511,9 @@ export default class StorageZone extends Entity {
     private handleTriggerEnter(other: RigidBody): void {
         if (!(other.entity instanceof MainPlayer) || this.destroyed) {
             return;
+        }
+        if (!this.isPlayerInside) {
+            this.enteredAtMs = performance.now();
         }
         this.isPlayerInside = true;
         this.player = other.entity;

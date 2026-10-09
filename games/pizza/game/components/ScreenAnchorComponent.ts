@@ -48,6 +48,8 @@ import ViewUtils from 'core/utils/ViewUtils';
 export interface ScreenAnchorHost {
     worldToScreen(position: THREE.Vector3): { x: number; y: number } | null;
     readonly overlayContainer: PIXI.Container;
+    /** Optional — where short-lived effects that fly INTO the HUD (FlyingResourceIcon) are added, so they draw over the HUD panels instead of under them. Must share overlayContainer's coordinate space. Unset = overlayContainer. */
+    readonly effectsContainer?: PIXI.Container;
     /** Optional — only consulted when ScreenAnchorOptions.maxDistance and/or distanceScale are set (see their own docs). Omit entirely on a host nothing ever asks to cull/scale by distance. */
     getViewerPosition?(): THREE.Vector3;
     /** Optional — only consulted when ScreenAnchorOptions.avoidViewer is set. Returns the live "keep UI off the player" region (see PlayerUIAvoidanceComponent.ts — anchored at the player's HEAD, not the base point getViewerPosition() above returns), or undefined if that component isn't present (e.g. a headless test player with no UI at all). Omit entirely on a host nothing ever asks to dodge the player. */

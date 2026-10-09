@@ -34,8 +34,9 @@
     },
     "5": {
         "requirement": {
-            "type": "gate",
-            "gateId": "gate1"
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 6
         },
         "cameraTemplateId": "far2"
     },

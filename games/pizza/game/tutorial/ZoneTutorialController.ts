@@ -41,7 +41,7 @@
 // whose startRequirement is met starts (anywhere), else the player's own zone's (one without a
 // startRequirement). See findRunningTutorialZone() / findRequirementStartedZone().
 //
-// A 'buyStorage' step gathers whatever of a storage's resourceCost is still missing (e.g. chop
+// A 'buyStorage' step (a storage, or a mix station — same purchase flow) gathers whatever of its resourceCost is still missing (e.g. chop
 // trees for wood — only in step.gatherZone when set), then points at its purchase spot.
 
 import * as THREE from 'three';
@@ -59,7 +59,8 @@ import { GateId, GATE_CONFIG } from '../data/GateTypes';
 import { GateStorage } from '../data/GateStorage';
 import { TriggerStorage } from '../data/TriggerStorage';
 import ResourceNodeRegistry from '../player/ResourceNodeRegistry';
-import { getStorageConfig, getStorageResourceCost, isStorageForSale } from '../data/StorageTypes';
+import { getStorageConfig, getStorageResourceCost, isStorageForSale, StorageResourceCost } from '../data/StorageTypes';
+import { getMixStationConfig } from '../data/MixStationTypes';
 import { StorageOwnershipStorage } from '../store/StorageOwnershipStorage';
 import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
 import { StorageInventory } from '../data/StorageInventory';
@@ -175,7 +176,7 @@ export default class ZoneTutorialController {
 
         const have = BackpackStorage.getCount(requirement.resourceType);
         if (have < requirement.amount) {
-            this.pointAtGatherTarget(requirement.resourceType, playerPosition, step);
+            this.pointAtGatherTargetIn(requirement.resourceType, playerPosition, step, step.kind === 'craft' ? step.gatherZone : undefined);
         } else {
             this.pointAtDeliverTarget(step);
         }
@@ -253,20 +254,35 @@ export default class ZoneTutorialController {
 
     /** A 'buyStorage' step — gather the first resourceCost entry still short (backpack + already paid), from step.gatherZone when set; once everything's in hand, the purchase spot. */
     private updateBuyStorageStep(step: ZoneTutorialBuyStorageStep, playerPosition: THREE.Vector3): void {
-        const missing = getStorageResourceCost(getStorageConfig(step.storageId)).find(cost =>
+        const missing = this.purchaseOf(step.storageId).resourceCost.find(cost =>
             BackpackStorage.getCount(cost.resourceType) + StorageOwnershipStorage.getResourceProgress(step.storageId, cost.resourceType) < cost.amount);
         if (!missing) {
             this.pointAtDeliverTarget(step);
             return;
         }
-        const gatherZone = step.gatherZone;
-        const inZone = gatherZone === undefined ? undefined
-            : ResourceNodeRegistry.findNearest(missing.resourceType, playerPosition, node => this.zoneVisibility.getZoneForPosition(node.position.x, node.position.z) === gatherZone);
+        this.pointAtGatherTargetIn(missing.resourceType, playerPosition, step, step.gatherZone);
+    }
+
+    /** The nearest source of `resourceType` standing in `zone` when set (and there's one left there), else the nearest anywhere. */
+    private pointAtGatherTargetIn(resourceType: ResourceType, playerPosition: THREE.Vector3, step: ZoneTutorialStep, zone?: number): void {
+        const inZone = zone === undefined ? undefined
+            : ResourceNodeRegistry.findNearest(resourceType, playerPosition, node => this.zoneVisibility.getZoneForPosition(node.position.x, node.position.z) === zone);
         if (inZone) {
             this.updateArrow(inZone.position.clone().add(this.stepOffset(step)));
             return;
         }
-        this.pointAtGatherTarget(missing.resourceType, playerPosition, step);
+        this.pointAtGatherTarget(resourceType, playerPosition, step);
+    }
+
+    /** What buying `id` costs — a mix station's config when `id` is one on the map, else the storage's. */
+    private purchaseOf(id: string): { forSale: boolean; resourceCost: StorageResourceCost[] } {
+        if (this.worldObjects.get('mixStation', id)) {
+            const config = getMixStationConfig(id);
+            const resourceCost = (config.resourceCost ?? []).filter(cost => cost.amount > 0);
+            return { forSale: (config.price?.amount ?? 0) > 0 || resourceCost.length > 0, resourceCost };
+        }
+        const config = getStorageConfig(id);
+        return { forSale: isStorageForSale(config), resourceCost: getStorageResourceCost(config) };
     }
 
     /** `farmId`'s position if set, else the nearest farm whose assignedCropId yields `resourceType` — undefined when there's none (the caller falls back to a ResourceNode). */
@@ -556,7 +572,7 @@ export default class ZoneTutorialController {
                 return resourceType !== undefined && StorageInventory.getCount(step.storageId, resourceType) >= (step.amount ?? 1);
             }
             case 'buyStorage':
-                return !isStorageForSale(getStorageConfig(step.storageId)) || StorageOwnershipStorage.isOwned(step.storageId);
+                return !this.purchaseOf(step.storageId).forSale || StorageOwnershipStorage.isOwned(step.storageId);
             case 'sale':
                 return StoreProgressStorage.getTotalSales(step.storeId) >= (step.amount ?? 1);
             case 'build':

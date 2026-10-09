@@ -199,17 +199,25 @@ panel in `color` at `opacity` (below 1 = see-through glass). **Default** is the 
 
 A storage whose `shelf` field names a Shelves-tab entry is drawn as that shelf: its model (decorative nodes hidden with
 `hideNodes`, e.g. `carton*, box, box_*`) with each item on one of its fixed **slots** (model units, before `scale`).
-The slot count is the capacity — the player can't drop off more. `storageMilk` uses `shelfEnd` (Store.ShelfEnd, 6 slots: 3 per shelf, its cartons/bottles hidden); `shelfBoxes` (Store.ShelfBoxes, 9 slots) is set up too. `storageEgg` is a normal crate storage. Clients only order an animal product (eggs) once a stall making it is built
-(`data/AnimalProduce.ts`).
+The slot count is the capacity — the player can't drop off more. `storageMilk` uses `shelfEnd` (Store.ShelfEnd, 6 slots: 3 per shelf, its cartons/bottles hidden); `storageButter` uses `shelfBoxes` (Store.ShelfBoxes, 9 slots). `storageEgg` and `storageBread` are normal crate storages. Clients only order an animal product (eggs) once a stall making it is built
+(`data/ProducedGoods.ts` — mix station products too).
 
 ### Mix stations (Mix Stations tab → `game/data/MixStationTypes.ts`)
 
 A `mixStation` rect (id) plus parts naming it: a `dropper` (target, or its own id = the station's), an untyped model tile
 with `target` (its look), one id-less `storage` per ingredient (`order` 0, 1, … = which ingredient), a `dispenser`, and
-optionally a `collectArea`. Build price at the dropper (10 cash each). Then: drop the ingredients off at the dropper (each
-spot takes one batch), stand there `mixSec` (5 s — pauses if you step out) and the product flies to the dispenser; stand
-next to it to collect. `butterStation`: milk → butter. `breadStation`: egg + milk → bread. Code: `world/MixStation.ts`,
-`PizzaScene.setupMixStations()`.
+optionally a `collectArea`. Build price at the dropper: `price` + `resourceCost` (butterStation 60 money + 15 stone,
+breadStation 120 money + 30 stone). Then: fill each ingredient box (standing next to it, up to its `capacity`), stand on
+the dropper `mixSec` (5 s — pauses if you step out) and the product flies to the dispenser; stand next to it to collect.
+`butterStation`: milk → butter (store Lv 7). `breadStation`: egg + milk → bread (store Lv 8). A station is **not spawned
+if no storage on the map sells its product** — storageButter / storageBread come with the same level. Code:
+`world/MixStation.ts`, `PizzaScene.setupMixStations()`.
+
+### The trash as the player's bin
+
+`trash1` takes garbage the moment the player walks in. With `dumpAnyAfterSec` (1.5 s) it also takes everything on the
+player's stack once they've stood in it that long with no garbage left — the way out of carrying something nobody buys.
+'farm' items only (crops, eggs, butter...), never wood/stone.
 
 ### What clients buy & pay
 
@@ -231,12 +239,15 @@ next to it to collect. `butterStation`: milk → butter. `breadStation`: egg + m
     resets to 0 on each level; overflow is dropped).
   - `enables` — map ids that stay **hidden until this level**.
   - `moodFloor` — lowest mood a client can reach while the store is at this level (farmStore1 Lv 1: `happy` —
-    nobody gets annoyed, walks out or drops garbage before the bin exists at Lv 2).
+    nobody gets annoyed, walks out or drops garbage before the bin exists at Lv 2; Lv 2–3 `annoyed` — nobody
+    walks out or drops garbage; Lv 4–5 `sad` — may leave empty-handed, never angry, so no garbage).
+  - `patienceMultiplier` / `spawnIntervalMultiplier` — easing while at this level: x client patience and x time
+    between arrivals (farmStore1 Lv 2–5: 1.5/1.3, 1.4/1.25, 1.3/1.15, 1.15/1.1). See `getStorePacing()`.
   - A `level: 1` entry's requirement is ignored — its `enables` appear when the store opens.
 - `defaultStorageId` is automatically treated as "enabled at level 1".
-- Enable-able ids: **storages, farms, buildings, queues, shops, marts, crafting tables**
-  (anything spawned through `RequirementRegistry.registerSpawnGate`). Gates, triggers and
-  craft stations are **not** covered.
+- Enable-able ids: **storages, farms, buildings, queues, shops, marts, crafting tables, mix
+  stations, animal stalls, farm desks** (anything spawned through
+  `RequirementRegistry.registerSpawnGate`). Gates, triggers and craft stations are **not** covered.
 - An enabled farm/storage still has to be **bought** if it has a price.
 - While the player is inside a store's area (its `store` rect), a top-center panel
   (`ui/StoreUI.ts`) shows `STORE LV N` + a progress bar toward the next level; it fades out
@@ -248,15 +259,18 @@ next to it to collect. `butterStation`: milk → butter. `breadStation`: egg + m
 |---|---|---|
 | 1 | walk `walkTutorialTrigger` (open early, see below); `stall1` is built later | `storage1` (carrots, free) + `farm1` (price 0 → appears already owned) |
 | 2 | 50 money | `farm2` (50) + `storage2` (tomatoes, 10) + `trash1` |
-| 3 | +100 money | `farm3` (50) + `storage3` (broccoli, 10) |
-| 4 | +200 money | `farm4` (50) + `storage4` (strawberries, 10) |
-| 5 | +350 money | `farm5` (50) + `storage5` (corn, 10) |
-| 6–20 | +500 … +10000 money | nothing (more room to grow) |
+| 3 | +100 money | `farm3` (50) + `storage3` (broccoli, 10) + `chickenStall` (20 → eggs) + `storageEgg` (free) |
+| 4 | +200 money | `farm4` (50) + `storage4` (strawberries, 10) + `farmDesk1` (farm manager — farm upgrades) |
+| 5 | +350 money | `farm5` (50) + `storage5` (corn, 10) + `cowStall` (20 → milk) + `storageMilk` (free) |
+| 6 | +500 money | nothing in the store — **zone 5** opens (Zones tab): the pickaxe table + loose stones |
+| 7 | +700 money | `butterStation` (60 + 15 stone) + `storageButter` |
+| 8 | +950 money | `breadStation` (120 + 30 stone) + `storageBread` |
+| 9–20 | +1250 … +10000 money | nothing yet — the demo ends at Lv 9 |
 
 Store rooms: `storeRoom1` (the office with the hire desk) appears at **Lv 4** for 50 wood;
-`storeRoom2` (the deposit) appears at **Lv 5** for 200 money + 50 wood. Building the deposit
+`storeRoom2` (the deposit) appears at **Lv 5** for 200 money + 50 wood. Reaching **Lv 9**
 ends the demo: the Demo tab (`game/data/DemoTypes.ts`) shows an "End of the Demo" popup once per
-save, after its build animation and camera trip finish.
+save.
 
 ### Opening early (the FTUE)
 

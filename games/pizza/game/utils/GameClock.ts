@@ -15,6 +15,9 @@
 //
 // Speed itself isn't saved — every session starts at 1x. load() must be
 // awaited at boot (see index.ts), before anything reads nowMs().
+//
+// pause()/resume() freeze the world behind something the player has to
+// dismiss (see UpgradeNotificationManager.ts) — see pause()'s own doc.
 
 import gsap from 'gsap';
 import { Game } from 'core/Game';
@@ -55,9 +58,51 @@ export class GameClock {
 
     static setSpeed(speed: number): void {
         this.speed = Math.max(1, speed);
-        Game.timeScale = this.speed;
+        // While paused, the frame delta stays at 0 — resume() restores the new speed.
+        Game.timeScale = this.isPaused() ? 0 : this.speed;
         gsap.globalTimeline.timeScale(this.speed);
         void this.persist();
+    }
+
+    /** Why the game is paused right now — the world stays frozen until the last reason is released. */
+    private static readonly pauseReasons = new Set<string>();
+    /** Every gsap tween/delayedCall that existed when the pause began, held paused — see pause(). */
+    private static pausedTweens?: gsap.core.Timeline;
+
+    static isPaused(): boolean {
+        return this.pauseReasons.size > 0;
+    }
+
+    /**
+     * Freezes the WORLD (not the UI drawn after this call): every frame's delta becomes 0 (no
+     * movement, clients, workers, physics, particles) and every gsap tween / delayedCall running
+     * right now — item flights, build animations, camera-trip waits (GsapUtils.wait()) — is
+     * gathered into one paused timeline (gsap.exportRoot()). Tweens created AFTER this call (the
+     * paused-game UI itself, e.g. a notification) run normally. Reference-counted by `reason`.
+     * Wall-clock timers (crop growth, cooldowns — nowMs()) keep running, same as offline time.
+     */
+    static pause(reason: string): void {
+        if (this.pauseReasons.has(reason)) {
+            return;
+        }
+        if (this.pauseReasons.size === 0) {
+            // includeDelayedCalls must be passed explicitly — gsap 3.13 leaves delayedCalls (so
+            // every GsapUtils.wait()) running otherwise.
+            this.pausedTweens = gsap.exportRoot({}, true);
+            this.pausedTweens.pause();
+            Game.timeScale = 0;
+        }
+        this.pauseReasons.add(reason);
+    }
+
+    /** Releases `reason` — the world runs again once no reason is left. */
+    static resume(reason: string): void {
+        if (!this.pauseReasons.delete(reason) || this.pauseReasons.size > 0) {
+            return;
+        }
+        this.pausedTweens?.resume();
+        this.pausedTweens = undefined;
+        Game.timeScale = this.speed;
     }
 
     /** Call once per frame with the (already scaled) frame delta — adds the time gained over real time this frame. */

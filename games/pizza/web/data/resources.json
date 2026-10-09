@@ -159,7 +159,8 @@
         "icon": "pizza-model-snapshots_Pets-AnimalPig",
         "scale": 0.5,
         "rotationDeg": 0,
-        "category": "animal"
+        "category": "animal",
+        "amountPerGather": 1
     },
     "wheat": {
         "label": "Wheat",
@@ -195,7 +196,7 @@
         "rotationDeg": 0,
         "amountPerGather": 1,
         "category": "farm",
-        "price": 10,
+        "price": 15,
         "sellable": true
     },
     "cabbage": {
@@ -250,7 +251,7 @@
         "rotationDeg": 0,
         "amountPerGather": 1,
         "category": "farm",
-        "price": 7,
+        "price": 20,
         "sellable": true,
         "carrierOrientation": "onSide",
         "carrierSpacing": 0.5
@@ -317,7 +318,7 @@
         "rotationDeg": 0,
         "amountPerGather": 1,
         "category": "farm",
-        "price": 10,
+        "price": 18,
         "sellable": true
     },
     "tomato": {
@@ -330,7 +331,7 @@
         "rotationDeg": 0,
         "amountPerGather": 1,
         "category": "farm",
-        "price": 10,
+        "price": 12,
         "sellable": true
     },
     "watermelon": {
@@ -368,7 +369,7 @@
         "rotationDeg": 0,
         "amountPerGather": 1,
         "category": "farm",
-        "price": 8,
+        "price": 25,
         "sellable": true,
         "pileScale": 3,
         "carrierSpacing": 0.7
@@ -383,7 +384,7 @@
         "rotationDeg": 0,
         "amountPerGather": 1,
         "category": "farm",
-        "price": 12,
+        "price": 30,
         "sellable": true,
         "pileScale": 2.5,
         "carrierSpacing": 0.8
@@ -398,7 +399,7 @@
         "rotationDeg": 0,
         "amountPerGather": 1,
         "category": "farm",
-        "price": 20,
+        "price": 70,
         "sellable": true,
         "pileScale": 0.6,
         "carrierSpacing": 0.8
@@ -413,7 +414,7 @@
         "rotationDeg": 0,
         "amountPerGather": 1,
         "category": "farm",
-        "price": 30,
+        "price": 120,
         "sellable": true,
         "pileScale": 0.8,
         "carrierSpacing": 0.8

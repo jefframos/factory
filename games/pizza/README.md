@@ -93,6 +93,23 @@ fresh-player run.
 - There's **no in-game seed source** yet (dev GUI only). Current farms all use `autoPlant`
   + `assignedCropId`, so they don't need seeds.
 - A 0-price farm plot is free and appears already owned.
+- **A farm waits for its storage.** A farm with no Appear Requirement of its own only appears once
+  the storage selling its crop is built (bought or free) — `PizzaScene.sellingStorageRequirement()`.
+  So at a store level that enables both, the player buys the shelf first, then the farm shows up.
+  Farms already owned in a save are never hidden.
+- **Every notification pauses the game until tapped** and is followed by an ad break offer —
+  don't fire one for small, frequent events (see Notifications).
+- **A zone/gate requirement must be reachable**: an object only on the `backup` layer never
+  spawns, so a requirement on it (e.g. the old `gate1` for zone 5) never unlocks.
+- The **first crop a farm cell ever grows is planted fully grown**
+  (`FarmCropStorage.everPlanted`), so a newly revealed farm is instantly harvestable.
+- **After placing a model that's new to the map, refresh the model ignore list and rebuild
+  the models** (editor Project tab → Models). Otherwise `build-models` may have skipped it
+  as unused, and it won't resolve in game. See Model audit below.
+- **Never sync the editor's Asset Library tab** unless you've just reloaded it.
+  `web/data/assetLibrary.json` drifts behind the TS, and a save overwrites real art entries
+  (trees, rocks, ...). Edit `AssetLibraryRegistry.ts` by hand, or restore it from git if
+  that happens. Saving the Resources tab is safe.
 
 For the full list of "add a new X" recipes, see **Where to look first when extending**
 at the bottom.
@@ -660,16 +677,35 @@ itself.
 
 ## Notifications — `game/ui/notifications/`
 
-A large, non-blocking, center-upper callout for big events (tool upgrades today;
-building-upgrade/gate-unlock call sites aren't wired up yet) — deliberately NOT a `Popup`
-(no backdrop, doesn't steal input, self-timed).
+A large center-upper callout for big events (tool upgrades, crafted tools, farms/storages/
+stalls/stations bought, the shop opening, store level-ups) — deliberately NOT a `Popup`.
+
+**Tap to continue + ad break** (`TAP_TO_CONTINUE`, `COMMERCIAL_BREAK_AFTER` in the
+manager): the first notification opens a session — the world pauses (`GameClock.pause()`,
+below), gameplay is reported stopped (`GameplayTracker` → Poki `gameplayStop`) and a dimmed
+backdrop catches taps. Each notification holds with a pulsing "TAP TO CONTINUE" until tapped
+(taps ignored for the first 0.8 s). When the queue is empty the backdrop fades, the platform
+gets a natural break (`GameplayTracker.commercialBreak()` → `PokiSDK.commercialBreak()`; Poki
+decides if and how often an ad plays), then the world resumes and `gameplayStart` fires.
+Notifications arriving during the break join the same session. Set `TAP_TO_CONTINUE = false`
+for the old self-timed, non-blocking callout.
+
+**Pausing the world — `utils/GameClock.ts`** `pause(reason)` / `resume(reason)`
+(reference-counted): every frame's delta becomes 0 (`Game.timeScale`) and every gsap tween
+and delayedCall alive at that moment is gathered into one paused timeline
+(`gsap.exportRoot({}, true)` — the `true` matters: gsap 3.13 leaves delayedCalls, i.e. every
+`wait()`, running without it). Tweens created after the pause (the paused-game UI) run
+normally. Wall-clock timers (`GameClock.nowMs()`: crop growth, cooldowns) keep running, like
+offline time. Anything timed with `performance.now()` keeps running too — the eased camera
+pan was moved to game time for that reason.
 
 - **`UpgradeNotificationView.ts`** — the visual + animation: a ribbon (9-sliced,
   `NotificationType`-colored via `UpgradeStyle.ribbonTextureFor()`) reading "UPGRADE!", a
   badge hanging off its bottom edge (`NotificationRarity`-colored via
   `UpgradeStyle.badgeTextureFor()`) holding the target's icon with a spinning shine effect
   behind it, and a caption below naming what got upgraded (e.g. "AXE LEVEL 2"). Owns its
-  own show → hold → hide → self-destroy lifecycle (`play(restPosition): Promise<void>`).
+  own show → hold → hide → self-destroy lifecycle (`play(restPosition, dismissed?)` — with
+  `dismissed` it holds until that promise resolves instead of for a fixed time).
 - **`UpgradeNotificationManager.ts`** — a singleton queue (multiple `show()` calls queue
   rather than interrupt each other) that only knows WHERE a notification sits and THAT they
   queue — never what one looks like. `init(game)` once (see `UIService`'s constructor,
@@ -703,6 +739,17 @@ still comes from the level's own `BuildingMeshConfig`, since Tiled has no 3rd di
 `createBuildingMesh()` now also checks `EntityViewRegistry.resolveEntityView()` first,
 falling back to the placeholder box only when no real view resolves (see World / terrain
 above).
+
+**Staged build (store buildings)** — the build animation's real length is
+`BuildingZone.stagedBuildSec()`, scaled by the level's `buildDurationMultiplier` (stall1
+uses 2.5 for a slow, showy first shop). The camera trip uses `CameraFocusHost` options
+`holdUntilSec` (hold for the whole build), `releaseOnReturn` (the player can move again as
+soon as the camera starts back) and `easedPan` (a smoothstep glide of
+`STAGED_BUILD_CAMERA_PAN_SEC` = 1.5 s instead of the snappy default; `PizzaScene.focusCameraOn()`
+implements it). If a `cameraFocus` point is drawn on the store's layer
+(`StoreLayerNames.getStoreCameraFocuses()`), the camera looks there instead of at the
+building. At max level, the dropper and price label hide immediately. `floorLabelIcon`
+puts an icon (e.g. `ItemIcon_Shop_old-2`) on the price floor label.
 
 **Gate, in full** — `Gate.ts` resolves its visible mesh the same way: a resolved
 `EntityViewRegistry` view spawns a real `GlbVisualComponent` (scale/rotation composed from
@@ -750,9 +797,12 @@ requirement vocabulary and one dispatcher instead of bespoke implementations per
   tool/good — `ItemStorage.hasCount()`), `{type:'resource', resourceType, amount}`
   (currently HELD in `BackpackStorage`, so — unlike the others — it can become un-met
   again if the player spends the resource), or `{type:'trigger', triggerId}` (whether
-  `Trigger.ts`'s entity with that id has fired — see World / terrain above).
-  `isMilestoneRequirementMet()` is the one function that actually reads any of those four
-  storages.
+  `Trigger.ts`'s entity with that id has fired — see World / terrain above), or
+  `{type:'storeSales', storeId, sales}` (lifetime sales of a store,
+  `StoreProgressStorage.getTotalSales()`). The registry also rechecks on
+  `StoreProgressStorage.onProgressChanged`, so a sale, a store level or a building level can
+  each unlock things. `isMilestoneRequirementMet()` is the one function that actually reads
+  any of those storages.
 - **`RequirementRegistry.ts`** — the BEHAVIOR half, two roles over the same requirement
   data: **spawn gate** (`registerSpawnGate(id, requirement, spawn)`— entity doesn't exist
   yet; `spawn()` fires exactly once, immediately if `requirement` is undefined) and
@@ -818,7 +868,210 @@ Wiring: building setup looks up `getNpcConfig(buildingConfig.npcId)` and constru
 Grocery stores: NPC clients buy items out of the storages inside a store, pay at the
 cashier, and sales level the store up, unlocking farms/storages/etc. per level. Map setup
 (the `stores` Tiled layer), config (Stores/Storages editor tabs), progression and the code
-map are all in **[game/store/README.md](game/store/README.md)**.
+map are all in **[game/store/README.md](game/store/README.md)**. That file covers opening
+early (FTUE), the Lv2 wood lesson, `cameraFocus`, fences, shelves, mix stations, player
+prompts and the levels table. The headlines:
+
+- **Opening early.** `StoreConfig.openRequirement` (farmStore1: the `walkTutorialTrigger`
+  trigger) opens the store *before* its starter building exists. While open early
+  (`Store.isOpenEarly()`), clients want 1 unit of 1 item, mood can't drop below happy, and
+  `earlyMaxClients` / `earlySpawnIntervalSec` replace the normal pacing. The store HUD only
+  shows once the starter is built (`isStarterBuilt()`), which also fires "SHOP OPEN!".
+- **Levels** run to 20. `StoreLevelConfig.moodFloor` (Lv1 = happy) keeps early clients from
+  leaving angry, which would soft-lock a player with no bin yet. The trash bin is a Lv2
+  unlock.
+- **Calmer early levels (Lv2–5)**, per store level: `moodFloor` (Lv2–3 annoyed = nobody walks out
+  or drops garbage; Lv4–5 sad = may leave empty-handed, never angry so still no garbage),
+  `patienceMultiplier` (x client patience: 1.5, 1.4, 1.3, 1.15) and `spawnIntervalMultiplier`
+  (x time between arrivals: 1.3, 1.25, 1.15, 1.1), applied in `getStorePacing()`. From Lv6 the
+  store runs at its normal pace.
+- **Lifetime counters** — `StoreProgressStorage` keeps `totalMoney`/`totalSales`, which feed
+  the `storeSales` requirement (zone 2 and stall1 both appear after the first sale).
+- **Restockers** pull from every `RestockSupply` source: farm cells, plus storages and mix
+  dispensers that register themselves (`RestockSupply.register`). So they restock eggs,
+  milk, butter and bread, not just crops. Several restockers can share one shelf while the
+  shelf's count plus what the others are carrying is under capacity.
+- **Client indicators** (`ui/AlertIcon.ts`, `store/StoreAlertConfig.ts`): "?" over a
+  client who can't find an item, "!" over one waiting at an unattended cashier
+  (`Store.isCashierUnattended()`), and a trash icon over a full garbage bin.
+- **The bin is the player's way out** — `StorageConfig.dumpAnyAfterSec` (trash1: 1.5 s):
+  standing in the trash that long, with no garbage left, also throws away everything on the
+  stack ('farm' items — crops, eggs, butter...; never wood/stone). Walking past does nothing.
+- **Nothing gets made that nobody buys.** Clients only order a producer's goods once one is
+  built (`data/ProducedGoods.ts` — animal stalls AND mix stations), and a mix station whose
+  product no map storage sells isn't spawned at all (console warning).
+
+## Zone tutorials & FTUE — `game/tutorial/`
+
+`ZoneTutorialTypes.ts` (editor tab: Tutorials) gives each zone an ordered step list. The
+step kinds are `craft`, `gate`, `trigger`, `storage` (deliver a resource into a storage),
+`buyStorage` (buy a storage — or a mix station; `gatherZone` points the arrow at where to get
+the cost, e.g. the trees), `sale` (a client buys), `collectMoney` (take the cashier's money) and `build`
+(build a building). `ZoneTutorialController.ts` runs them:
+- **Once a tutorial starts, it keeps running in every zone until it's done**
+  (`findRunningTutorialZone`). Walking between zones no longer hides or restarts it.
+- A tutorial with a `startRequirement` starts on its own when that's met
+  (`findRequirementStartedZone`), wherever the player is. Zone 3's wood lesson starts at
+  store Lv2.
+- Steps that are already satisfied (e.g. after a reload) are skipped
+  (`isStepAlreadyDone`).
+- `craft` steps take a `gatherZone` too (zone 5's pickaxe lesson points at the loose
+  stones next to the table, not at rocks the player can't mine yet).
+
+**The current FTUE (zone 0):** walk to `walkTutorialTrigger` → farm1/storage1 appear and the
+store opens early → deliver a carrot to storage1 → a client buys it → collect the money →
+zone 2 reveals and stall1 appears (10 money) → build it. At store Lv2, zone 3 (trees)
+unlocks and the tutorial sends the player to chop wood for storage2. Lv6: zone 5 opens and
+the tutorial has them craft the pickaxe (3 loose stones). Lv7: it sends them to mine zone 4's
+rocks and build the butter station (60 money + 15 stone).
+
+### Progression ladder (farmStore1, as of 2026-10)
+
+| Lv | Unlocks | New thing to do |
+|---|---|---|
+| 1 | farm1 carrots (FTUE), storage1; store opens early | sell, collect money, build the shop |
+| 2 | farm2 tomato, storage2 (20 wood), trash1; zone 3 trees | chop wood |
+| 3 | farm3 broccoli, storage3, **chickenStall** + storageEgg | animals → eggs |
+| 4 | farm4 strawberry, storage4, storeRoom1 (hire office, 50 wood), **farmDesk1** | hire staff, upgrade farms |
+| 5 | farm5 corn, storage5, **cowStall** + storageMilk, storeRoom2; zone 4 | milk |
+| 6 | **zone 5**: pickaxe table + loose stones | mine (pickaxe) |
+| 7 | **butterStation** (60 money + 15 stone), storageButter | mix milk → butter |
+| 8 | **breadStation** (120 money + 30 stone), storageBread | egg + milk → bread |
+| 9 | demo end popup | — |
+
+Sell prices climb with each unlock: carrot 10, tomato 12, broccoli 15, strawberry 18, corn 20,
+egg 25, milk 30, butter 70, bread 120 (Resources tab). Store-level unlocks are the Stores tab's
+`levels[].enables` — any map id, including mix stations, animal stalls and farm desks.
+
+**Next-unlocks HUD** (`ui/NextUnlocksUI.ts`, data from `store/StoreUnlockHints.ts`): a
+bottom-right "NEXT" column — one icon tile per thing the next store level (that brings
+anything) unlocks. It reads the data — the level's `enables` (a farm shows its crop, a storage
+its item, a stall / station its product, a farm desk, the trash, a building), buildings whose
+`appearRequirement` is that store level, zones opening at it ("New Area") — plus the level's
+own `hints` (Stores tab → Levels → Next-Unlock Hints, e.g. Lv6 "Pickaxe"). One tile per item
+(a farm and its storage share one). Hidden before the shop is built and once nothing is left;
+pops on a level-up. `NEXT_UNLOCKS_UI_CONFIG` keeps the extras switched off rather than removed:
+`showLevel` (level in the title), `showProgress` (bar — redundant with the store panel),
+`showLabels` (names under tiles), `direction` (vertical/horizontal). Tile icons with no item of
+their own: `UNLOCK_HINT_ICONS`.
+
+**HUD layering**: world-anchored UI (ScreenAnchorComponent content — nameplates, prices, client
+bubbles, alert icons) lives in PizzaScene's `worldUiLayer`, the FIRST child of `game.uiLayer`,
+so every HUD panel draws over it; notifications and popups are tiers above uiLayer. Flying icons
+headed into the HUD (FlyingResourceIcon) use `ScreenAnchorHost.effectsContainer` (uiLayer itself)
+to fly over it.
+
+## Animal stalls, shelves & mix stations
+
+These are producers that feed the store's storages. They use **id-less map parts** (below)
+so one config entry can be laid out freely in Tiled.
+
+- **Map parts** — an object with no `id` but a `target` property is a *part* of the entity
+  named by `target`. `WorldObjectRegistry.getPartsFor(target, type)` returns them (an
+  `order` property sorts them). An untyped model tile with a `target` is that entity's mesh
+  (`getMeshPartFor(target)`). A dropper without a `target` uses its own `id`.
+- **Animal stalls** — `data/AnimalStallTypes.ts` (editor: Animal Stalls), `player/StallAnimal.ts`,
+  `PizzaScene.setupAnimalStalls()`. A `type=animalStall` rect plus parts (storage, dropper,
+  fence). It's bought through the **Storages entry with the same id** (price 20,
+  `collect: true`). Once bought, an animal wanders the pen and lays its product into that
+  storage every `interval` seconds, and the player collects it there. chickenStall → Egg
+  (30 s), cowStall → Milk (45 s, scale 1.5). `data/ProducedGoods.ts` tells the store which
+  items only a producer makes, so clients only ask for them once one is built.
+- **Shelves** — `data/ShelfTypes.ts` (editor: Shelves): a shelf mesh plus slot positions;
+  a storage using it holds at most one item per slot (`ItemPile` `'slots'` mode).
+  shelfBoxes = 9 slots, shelfEnd = 6. storageMilk uses shelfEnd.
+- **Storage modes** (`world/StorageZone.ts`) — `collect: true` means the player takes items
+  out instead of putting them in (`startCollect`). `maxItems` caps capacity (`isFull`,
+  `getCapacity`). `receiveFrom()` flies an item in from a world point (producers use it).
+- **Mix stations** — `data/MixStationTypes.ts` (editor: Mix Stations), `world/MixStation.ts`,
+  `PizzaScene.setupMixStations()`. A `type=mixStation` rect plus parts: a dropper (pay to
+  build — `price` + optional `resourceCost` like a storage's, e.g. stone — then the
+  **making area**), a model tile (e.g. a table), one id-less
+  `storage` per input with `order` 0, 1, … (an ingredient **box** on the table top, holding
+  `capacity`, default 4, filled by standing next to it), and a `dispenser` (the product box, a
+  collect storage). With every box holding a batch and the player standing in the making
+  area, it mixes for `mixSec` (5 s), then sends the product to the dispenser (up to
+  `maxOutput`). Each box has an icon + count label, the product box uses a different frame,
+  and the progress bar only shows while it's making. Stations: butterStation (milk →
+  butter), breadStation (egg + milk → bread). `mixStation` is placement-gated by
+  `StoreUnlocks` like other store parts, and listed under store levels 7/8. **A station is
+  skipped if no map storage sells its product** — add the shelf (storageButter /
+  storageBread) first.
+
+## Farm manager & farm upgrades — `data/FarmUpgradeTypes.ts`, `data/FarmDeskTypes.ts`
+
+An NPC by the farm's east gate (`farmDesk1`, store Lv4) sells upgrades for each owned farm (its crop sells for more) —
+same interaction as the hire desk: stand on its spot → "Farms" button → `FarmUpgradesPopup`
+(one row per owned farm: level, what the next level does, price; "!" badge on the button while
+something is affordable).
+- **Map**: a `type=farmDesk` rect with an id on `mapSettings` (the NPC stands at its center)
+  + a `dropper` targeting it (where the player talks to it). `PizzaScene.setupFarmDesks()`,
+  `world/FarmDeskZone.ts`. Desk settings (NPC look, appear requirement, button label): editor
+  Farm Desks tab.
+- **Ladders**: editor Farm Upgrades tab — per farm id (default for the rest): `cost`,
+  `priceBonus` (+ fraction on the crop's store price), and the supported-but-unused
+  `growSpeed` (x) / `yieldBonus` (+ per harvest). Default: Lv2 40 (+20%), Lv3 90 (+40%),
+  Lv4 180 (+70%), Lv5 350 (+100%) — sell price only, crops already grow fast enough. Saved in
+  `FarmUpgradeStorage`.
+- **Price** applies when a client pays (`StoreClient.getBasePrice()` x
+  `FarmUpgradeStorage.getPriceBonusFor(type)` — the best upgraded farm growing that item).
+- **Grow speed / yield, if used** (`world/FarmPlotTile.ts`): grow speed back-dates a crop's
+  `plantedAtSec` when it's planted (a x2 farm plants it half-grown — the stage visuals and
+  readiness keep working off `plantedAtSec` alone), so a crop already growing keeps its pace.
+  The yield bonus is added to every harvest, the player's and restockers'.
+
+## Fences & fence doors — `builders/PolyFenceBuilder.ts`, `world/FenceDoor.ts`
+
+A `polyFence` polyline/polygon on `mapSettings` or a store layer builds a see-through
+wooden fence with colliders (`PizzaScene.setupFences()`, grouped per zone for reveal). The
+`fenceStyle` property picks a style from the editor's Store View → Fence section (color,
+post width, ...; default brown wood). Openings:
+- `polyFenceGap` — a rect where the fence is simply left open.
+- `polyDoor` — a rect where a `Deco.FenceDoorway` model is fitted into the gap. Its sides
+  get colliders, and `colliderInset` narrows the walkable opening (Store View → Fence Door).
+
+## Demo end — `data/DemoTypes.ts`, `ui/popups/DemoEndPopup.ts`
+
+Once `endRequirement` is met (store Lv9 — after bread has been selling) plus `delaySec`, `PizzaScene.updateDemoEnd()`
+shows a one-time popup (title/message are editable in the Demo tab). `DemoStorage` records
+that it was shown, and Clear Data resets it.
+
+## Analytics & platform gameplay events
+
+- **`analytics/GameAnalytics.ts`** is the single table of every game event. It calls
+  `PlatformHandler.measure(category, what, action)` → `PokiSDK.measure` (other platforms are
+  no-ops; `MockPlatform` logs). Events: tutorial start/complete and per-step, store level
+  reached, client paid/left (with a reason), build, storage/farm/upgrade bought, hire desk
+  and workers, gather, harvest, farm upgrade, demo end. Add new events here rather than calling
+  `measure` directly.
+- **`platform/GameplayTracker.ts`** sends Poki `gameplayStart` on the player's first
+  tap/click/key (`init()` from the scene), and `gameplayStop`/`gameplayStart` while
+  anything blocks play — named blockers via `setBlocked(reason, on)`: a popup
+  (`setPopupOpen`), a tap-to-continue notification, an ad break. `commercialBreak()` wraps
+  the platform's ad break with gameplay stopped for its length.
+
+## Model audit — editor Project tab → Models
+
+`web/sync/modelAudit.mjs` scans the `.tmx` and the source for every model reference and
+shows which models are used, and by what. Toggling a model forces it in or out (forced
+ones show orange). The result is saved to `raw-assets/models-ignore.json`, which
+`tools/models/build-models.mjs` honors: ignored models aren't built, and stale copies are
+deleted. "Move unused" moves unused source models to `raw-assets/legacy/` (listed in
+`legacy.json`), and they can be restored from the same tab. **When you start using a model,
+refresh the list and rebuild**, or it won't be in the build.
+
+## Known gaps (as of 2026-10)
+
+- Icons for Egg, Milk (and other new snapshot icons) still need generating via the dev
+  GUI → Model Snapshots.
+- Restockers don't fill mix-station ingredient boxes — only the player does, and mixing
+  needs the player standing there.
+- Client entrance for the FTUE store is in zone 2.
+- storageButter (north wall, by the office door) and storageBread (by the front door) were
+  placed without seeing the store — check them and the farm desk spot in Tiled.
+- Content stops at store Lv9 (demo end); levels 9–20 unlock nothing yet.
+- `gate1` / `tower` only exist on the `backup` layer — nothing references them now (zone 5
+  opens at store Lv6 instead).
 
 ## Queues — `game/player/QueueZone.ts`, `game/data/QueueTypes.ts`, `game/data/QueueStorage.ts`
 
@@ -1027,10 +1280,32 @@ boot step:
   `registerUnlockGate()` for Gate-style "already exists, vanishes once met", or a
   `ZONE_CONFIG` entry's own `requirement` field for a zone) in its `PizzaScene.ts` setup
   method — see the shared requirement system under Buildings & progression above.
-  `MilestoneRequirement` covers building level, owned item, held resource amount, and now
-  a fired `Trigger` id; add a new arm there (+ a branch in `isMilestoneRequirementMet()`)
-  for a milestone kind that doesn't fit those four.
+  `MilestoneRequirement` covers building level, owned item, held resource amount, a fired
+  `Trigger` id, unlocked gate, owned storage, store level and store sales; add a new arm there (+ a branch in
+  `isMilestoneRequirementMet()`) for a milestone kind that doesn't fit those.
 - **New "walk here to flip a flag" trigger** (not tied to gathering/depositing) → draw a
   `"trigger"` object on Tiled's `"mapSettings"` layer with an `id` and optional
   `destroyOnTrigger`; `PizzaScene.setupTriggers()` wires it up automatically — combine with
   a `{type:'trigger', triggerId}` `MilestoneRequirement` elsewhere to gate on it.
+- **New tutorial step / lesson** → a zone entry in `ZoneTutorialTypes.ts` (Tutorials tab).
+  Use `startRequirement` for a lesson that should start on its own. A new step kind needs
+  a union arm there plus an `update*Step` and an `isStepAlreadyDone` branch in
+  `ZoneTutorialController.ts`.
+- **New animal stall** → `AnimalStallTypes.ts` entry + a Storages entry with the same id
+  (its price, `collect: true`), then on Tiled a `type=animalStall` rect plus targeted
+  storage/dropper/fence parts. `ProducedGoods.ts` picks its product up automatically.
+- **New mix recipe** → `MixStationTypes.ts` entry (Mix Stations tab) + a `type=mixStation`
+  rect, with dropper, model tile, `storage` parts (`order` per input) and a `dispenser` on
+  Tiled. Register a new resource (Resources tab + icon) first if it makes one.
+- **New shelf look** → `ShelfTypes.ts` entry (mesh + slot positions), then reference it
+  from a storage's shelf field.
+- **New analytics event** → add a method to `GameAnalytics.ts` and call it where the event
+  completes.
+- **New fence style / door** → Store View tab → Fence / Fence Door, then set `fenceStyle` on
+  the Tiled `polyFence`.
+- **New farm manager / farm upgrade ladder** → draw a `type=farmDesk` rect + a dropper
+  targeting it on `mapSettings`, set it up in the Farm Desks tab (or list it under a store
+  level's Enables); per-farm ladders in the Farm Upgrades tab.
+- **Something the player must acknowledge** → `UpgradeNotificationManager.instance.show()`
+  already pauses + offers an ad break; for a custom modal, pair `GameClock.pause(reason)` with
+  `GameplayTracker.setBlocked(reason, true)` and release both.

@@ -33,6 +33,7 @@ import { AnimalFollowStorage } from './AnimalFollowStorage';
 import { PlayerPositionStorage } from './PlayerPositionStorage';
 import { FarmPlotStorage } from './FarmPlotStorage';
 import { FarmCropStorage } from './FarmCropStorage';
+import { FarmUpgradeStorage } from './FarmUpgradeStorage';
 import { SeedStorage } from './SeedStorage';
 import { TutorialProgressStorage } from '../tutorial/TutorialProgressStorage';
 import { TriggerStorage } from './TriggerStorage';
@@ -127,6 +128,7 @@ export async function wipeAllPlayerData(): Promise<void> {
         PlayerPositionStorage.clearAll(),
         FarmPlotStorage.clearAll(),
         FarmCropStorage.clearAll(),
+        FarmUpgradeStorage.clearAll(),
         SeedStorage.clearAll(),
         TutorialProgressStorage.clearAll(),
         TriggerStorage.clearAll(),

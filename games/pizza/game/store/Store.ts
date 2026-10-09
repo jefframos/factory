@@ -132,7 +132,7 @@ import { FloorLayers } from '../world/FloorLayers';
 import { BuildReveal } from '../player/BuildReveal';
 import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
 import { GameAnalytics } from '../analytics/GameAnalytics';
-import { AnimalProduce } from '../data/AnimalProduce';
+import { ProducedGoods } from '../data/ProducedGoods';
 import { RestockSource, RestockSupply } from './RestockSupply';
 
 /** The first client shows up this long after the store spawns, rather than a full spawnIntervalSec. */
@@ -919,8 +919,8 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         }
         const crops = (Object.keys(CROP_CONFIG) as CropId[]).filter(id => CROP_CONFIG[id].yield.resourceType === type);
         if (crops.length === 0) {
-            // Something an animal stall lays (eggs): only once a stall making it has been built.
-            return !AnimalProduce.isAnimalProduce(type) || AnimalProduce.isProducing(type);
+            // Something only a producer makes (eggs, butter): only once one making it has been built.
+            return !ProducedGoods.isProduced(type) || ProducedGoods.isProducing(type);
         }
         return this.farmIds.some(farmId => {
             if (!FarmPlotStorage.isOwned(farmId)) {

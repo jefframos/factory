@@ -1885,7 +1885,7 @@ function drawCheckerPreview(canvas, checker) {
 // ---------------------------------------------------------------------------
 
 /** Map object types whose entities spawn through RequirementRegistry.registerSpawnGate() — the only ones a store level's "enables" list can hide. */
-const STORE_ENABLEABLE_MAP_TYPES = ['building', 'storage', 'farm', 'queue', 'shop', 'mart', 'craftTable'];
+const STORE_ENABLEABLE_MAP_TYPES = ['building', 'storage', 'farm', 'queue', 'shop', 'mart', 'craftTable', 'mixStation', 'animalStall', 'farmDesk'];
 
 function getOptions(sourceId) {
     // A '$'-prefixed source isn't a manifest tab id — it's a map-derived option list fetched
@@ -1898,6 +1898,13 @@ function getOptions(sourceId) {
     }
     if (sourceId === '$spawnerShapeIds') {
         return spawnerShapeIds.map(id => ({ value: id, label: id }));
+    }
+    // Anything bought through a storage purchase spot — a storage, or a mix station.
+    if (sourceId === '$buyableIds') {
+        return [
+            ...getOptions('storages'),
+            ...getOptions('mixStations').map(o => ({ value: o.value, label: `${o.label} (mix station)` })),
+        ];
     }
     if (sourceId === '$storeEnableableIds') {
         return STORE_ENABLEABLE_MAP_TYPES.flatMap(type => (mapObjectIdsByType[type] ?? []).map(id => ({ value: id, label: `${id} (${type})` })));

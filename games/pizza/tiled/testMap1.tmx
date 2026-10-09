@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="15" nextobjectid="443">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="15" nextobjectid="447">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -1712,6 +1712,18 @@
     <property name="type" value="trigger"/>
    </properties>
   </object>
+  <object id="443" name="farmDesk: farmDesk1" x="-122.182" y="676" width="24" height="24">
+   <properties>
+    <property name="id" value="farmDesk1"/>
+    <property name="type" value="farmDesk"/>
+   </properties>
+  </object>
+  <object id="444" name="dropper → farmDesk1" x="-124.727" y="702" width="28.3636" height="32">
+   <properties>
+    <property name="target" value="farmDesk1"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
   <object id="41" name="teleporter: farmTeleporter" x="-740.5" y="-75">
    <properties>
     <property name="id" value="farmTeleporter"/>
@@ -1747,7 +1759,7 @@
     <property name="type" value="animalStall"/>
    </properties>
   </object>
-  <object id="422" name="dropper → chickenStall" x="-124" y="933.5" width="64" height="32">
+  <object id="422" name="dropper → chickenStall" x="-128" y="928" width="40.7273" height="32">
    <properties>
     <property name="target" value="chickenStall"/>
     <property name="type" value="dropper"/>
@@ -1771,7 +1783,7 @@
     <property name="type" value="animalStall"/>
    </properties>
   </object>
-  <object id="427" name="dropper → cowStall" x="-304.5" y="928" width="64" height="32">
+  <object id="427" name="dropper → cowStall" x="-304.5" y="928" width="38.1818" height="32">
    <properties>
     <property name="target" value="cowStall"/>
     <property name="type" value="dropper"/>
@@ -1784,8 +1796,8 @@
    </properties>
   </object>
  </objectgroup>
- <objectgroup draworder="index" id="12" name="--storeView--stall1" locked="1"/>
- <objectgroup id="13" name="--storeView--stall1-2" locked="1">
+ <objectgroup draworder="index" id="12" name="--storeView--stall1"/>
+ <objectgroup id="13" name="--storeView--stall1-2">
   <object id="353" name="floor" x="-32" y="575.667" width="320" height="448.333">
    <properties>
     <property name="type" value="floor"/>
@@ -1803,7 +1815,7 @@
    </properties>
    <polyline points="64,-416 384,-416 384,-864"/>
   </object>
-  <object id="358" name="polyDoor" x="-0.666667" y="623.333" width="96" height="64" rotation="90">
+  <object id="358" name="polyDoor" x="-0.666667" y="719.333" width="96" height="64" rotation="90">
    <properties>
     <property name="isDouble" type="bool" value="true"/>
     <property name="isHigh" type="bool" value="true"/>
@@ -1853,7 +1865,7 @@
     <property name="type" value="polyWindow"/>
    </properties>
   </object>
-  <object id="412" gid="55" x="-29.25" y="744.656" width="28.25" height="17.6563"/>
+  <object id="412" gid="55" x="-28.7045" y="710.292" width="28.25" height="17.6563"/>
  </objectgroup>
  <objectgroup draworder="index" id="11" name="--storeSection--stall1-office" locked="1" opacity="0.8">
   <object id="363" name="floor" x="-28.3333" y="416.167" width="192" height="160">
@@ -1966,7 +1978,7 @@
    </properties>
   </object>
  </objectgroup>
- <objectgroup draworder="index" id="9" name="--store--stall1">
+ <objectgroup draworder="index" id="9" name="--store--stall1" locked="1">
   <object id="153" name="store: farmStore1" x="-61" y="444.333" width="717.667" height="577">
    <properties>
     <property name="id" value="farmStore1"/>
@@ -2037,6 +2049,18 @@
   <object id="429" name="storage: storageMilk" x="221.591" y="609.818" width="46.333" height="50.6667">
    <properties>
     <property name="id" value="storageMilk"/>
+    <property name="type" value="storage"/>
+   </properties>
+  </object>
+  <object id="445" name="storage: storageButter" x="129" y="609" width="46.333" height="50.6667">
+   <properties>
+    <property name="id" value="storageButter"/>
+    <property name="type" value="storage"/>
+   </properties>
+  </object>
+  <object id="446" name="storage: storageBread" x="229" y="935" width="46.333" height="50.6667">
+   <properties>
+    <property name="id" value="storageBread"/>
     <property name="type" value="storage"/>
    </properties>
   </object>

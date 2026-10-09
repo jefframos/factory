@@ -85,7 +85,48 @@
         }
     },
     "4": {
-        "steps": []
+        "steps": [
+            {
+                "kind": "buyStorage",
+                "storageId": "butterStation",
+                "gatherZone": 4,
+                "iconTextureId": "mining-pickaxe",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ]
+            }
+        ],
+        "arrowTextureId": "mining-pickaxe",
+        "use3dArrow": true,
+        "startRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 7
+        }
+    },
+    "5": {
+        "steps": [
+            {
+                "kind": "craft",
+                "craftId": "craftPickaxe",
+                "gatherZone": 5,
+                "iconTextureId": "mining-pickaxe",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ]
+            }
+        ],
+        "arrowTextureId": "mining-pickaxe",
+        "use3dArrow": true,
+        "startRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 6
+        }
     },
     "10": {
         "steps": []

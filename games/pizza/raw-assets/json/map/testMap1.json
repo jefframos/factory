@@ -2375,6 +2375,52 @@
                  "y":869.167
                 }, 
                 {
+                 "height":24,
+                 "id":443,
+                 "name":"farmDesk: farmDesk1",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"farmDesk1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"farmDesk"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":-122.181818181818,
+                 "y":676
+                }, 
+                {
+                 "height":32,
+                 "id":444,
+                 "name":"dropper \u2192 farmDesk1",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"farmDesk1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28.3636363636364,
+                 "x":-124.727272727273,
+                 "y":702
+                }, 
+                {
                  "height":0,
                  "id":41,
                  "name":"teleporter: farmTeleporter",
@@ -2546,9 +2592,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":64,
-                 "x":-124,
-                 "y":933.5
+                 "width":40.7272727272727,
+                 "x":-128,
+                 "y":928
                 }, 
                 {
                  "height":32,
@@ -2607,7 +2653,8 @@
                  "width":0,
                  "x":-400.5,
                  "y":928
-                }, 
+                },
+            
                 {
                  "height":109,
                  "id":426,
@@ -2650,11 +2697,10 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":64,
+                 "width":38.1818181818182,
                  "x":-304.5,
                  "y":928
-                },
-            
+                }, 
                 {
                  "height":32,
                  "id":428,
@@ -2687,7 +2733,6 @@
         {
          "draworder":"index",
          "id":12,
-         "locked":true,
          "name":"--storeView--stall1",
          "objects":[],
          "opacity":1,
@@ -2699,7 +2744,6 @@
         {
          "draworder":"topdown",
          "id":13,
-         "locked":true,
          "name":"--storeView--stall1-2",
          "objects":[
                 {
@@ -2804,7 +2848,7 @@
                  "visible":true,
                  "width":96,
                  "x":-0.666667,
-                 "y":623.333
+                 "y":719.333
                 }, 
                 {
                  "height":64,
@@ -2986,8 +3030,8 @@
                  "type":"",
                  "visible":true,
                  "width":28.25,
-                 "x":-29.25,
-                 "y":744.656
+                 "x":-28.7045454545455,
+                 "y":710.292363636364
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -3510,6 +3554,7 @@
         {
          "draworder":"index",
          "id":9,
+         "locked":true,
          "name":"--store--stall1",
          "objects":[
                 {
@@ -3822,6 +3867,52 @@
                 }, 
                 {
                  "height":50.6667,
+                 "id":445,
+                 "name":"storage: storageButter",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"storageButter"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"storage"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":46.333,
+                 "x":129,
+                 "y":609
+                }, 
+                {
+                 "height":50.6667,
+                 "id":446,
+                 "name":"storage: storageBread",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"storageBread"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"storage"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":46.333,
+                 "x":229,
+                 "y":935
+                }, 
+                {
+                 "height":50.6667,
                  "id":116,
                  "name":"storage: storage2",
                  "opacity":1,
@@ -3888,7 +3979,8 @@
                  "width":46.333,
                  "x":192,
                  "y":800
-                }, 
+                },
+            
                 {
                  "height":32,
                  "id":192,
@@ -3934,8 +4026,7 @@
                  "width":46.333,
                  "x":192,
                  "y":864
-                },
-            
+                }, 
                 {
                  "gid":52,
                  "height":67.3333,
@@ -5454,7 +5545,7 @@
          "y":0
         }],
  "nextlayerid":15,
- "nextobjectid":443,
+ "nextobjectid":447,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

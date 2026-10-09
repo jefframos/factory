@@ -88,6 +88,11 @@
 // PLACEHOLDER_COLOR regardless, since that path only exists for
 // dev/no-art-yet plots anyway.
 //
+// Farm upgrades (data/FarmUpgradeTypes.ts, bought at the farm manager): a crop
+// is planted already part-way grown so it finishes FarmUpgradeStorage.getGrowSpeed()
+// times sooner (see plantedAtNow()), and every harvest yields
+// FarmUpgradeStorage.getYieldBonus() more (see harvestAmount()).
+//
 // Store restocker workers (store/StoreRestockerWorker.ts) harvest too: every
 // live tile is listed in FarmPlotTile.getAll(), and harvestForWorker() takes
 // a ready crop off the cell (re-arming it exactly like a player harvest) and
@@ -134,6 +139,7 @@ import { getPlayerConfig } from '../data/PlayerConfig';
 import { CarryStack } from '../player/CarryStack';
 import { flyResourceToStack } from '../components/FlyToStack';
 import { GameAnalytics } from '../analytics/GameAnalytics';
+import { FarmUpgradeStorage } from '../data/FarmUpgradeStorage';
 
 const FARM_TILE_CORNER_RADIUS = 0.2;
 const PLACEHOLDER_HEIGHT = 0.1;
@@ -276,8 +282,24 @@ export default class FarmPlotTile extends Entity {
         if (!planted || !isCropReady(CROP_CONFIG[planted.cropId], planted.plantedAtSec)) {
             return undefined;
         }
-        const { resourceType, amount } = CROP_CONFIG[planted.cropId].yield;
-        return { resourceType, amount };
+        const { resourceType } = CROP_CONFIG[planted.cropId].yield;
+        return { resourceType, amount: this.harvestAmount(planted.cropId) };
+    }
+
+    /** The crop's own yield plus this farm's upgrade bonus. */
+    private harvestAmount(cropId: CropId): number {
+        return CROP_CONFIG[cropId].yield.amount + FarmUpgradeStorage.getYieldBonus(this.farmId);
+    }
+
+    /**
+     * plantedAtSec for a crop planted now — back-dated so it's ready after its grow time divided
+     * by this farm's growSpeed (a speed-2 farm plants it half-grown). The crop's stages/readiness
+     * keep working off plantedAtSec alone.
+     */
+    private plantedAtNow(cropId: CropId): number {
+        const speed = FarmUpgradeStorage.getGrowSpeed(this.farmId);
+        const headStartSec = speed > 1 ? getCropTotalGrowSec(CROP_CONFIG[cropId]) * (1 - 1 / speed) : 0;
+        return GameClock.nowSec() - headStartSec;
     }
 
     /**
@@ -396,7 +418,7 @@ export default class FarmPlotTile extends Entity {
             return;
         }
 
-        const plantedAtSec = GameClock.nowSec();
+        const plantedAtSec = this.plantedAtNow(SEED_CONFIG[seedId].cropId);
         FarmCropStorage.plant(this.tileKey, SEED_CONFIG[seedId].cropId, plantedAtSec);
         this.seedPicker.unregister(this.tileKey);
         this.registerAsCropHudCandidate({ cropId: SEED_CONFIG[seedId].cropId, plantedAtSec });
@@ -435,8 +457,9 @@ export default class FarmPlotTile extends Entity {
         }
 
         // The first time a farm shows up, its crops are already grown — ready to collect right away.
-        const grownSec = FarmCropStorage.hasEverPlanted(this.tileKey) ? 0 : getCropTotalGrowSec(CROP_CONFIG[cropId]);
-        const plantedAtSec = GameClock.nowSec() - grownSec;
+        const plantedAtSec = FarmCropStorage.hasEverPlanted(this.tileKey)
+            ? this.plantedAtNow(cropId)
+            : GameClock.nowSec() - getCropTotalGrowSec(CROP_CONFIG[cropId]);
         FarmCropStorage.plant(this.tileKey, cropId, plantedAtSec);
         // An autoPlant cell also plants with nobody standing on it (see awake()/harvest()) — only
         // show the growth HUD when the player is actually here, same as handleTriggerEnter() does.
@@ -487,7 +510,7 @@ export default class FarmPlotTile extends Entity {
 
     /** Banks CropConfig.yield into BackpackStorage and clears this cell back to empty — CropVisualComponent notices FarmCropStorage.getPlanted() going undefined on its own next update() and removes the grown mesh itself, so this never has to touch that component directly. Two callers, one per plot kind: a free plot's FarmCropHud "Collect" tap, or an assignedCropId plot's own update() auto-harvest check (see that method's own doc) — either way `this.cropHud.unregister()` right after is a safe no-op if this tile was never registered with it in the first place (an already-ready assignedCropId crop never is — see handleTriggerEnter()). Re-registers for the NEXT planting right after, so the player never has to step off and back on: a free plot re-shows the seed picker, an assignedCropId plot restarts its own auto-plant countdown instead (same branch handleTriggerEnter() itself uses for an empty cell). */
     private harvest(planted: PlantedCrop): void {
-        const { yield: cropYield } = CROP_CONFIG[planted.cropId];
+        const cropYield = { resourceType: CROP_CONFIG[planted.cropId].yield.resourceType, amount: this.harvestAmount(planted.cropId) };
         const intoStack = getPlayerConfig().harvestIntoStack && this.player !== undefined;
 
         // Stack-full gate — checked BEFORE harvesting, so a crop that doesn't fit simply stays

@@ -4,8 +4,10 @@
 // gameplayStart() / gameplayStop() (the platform wrappers skip a repeated call themselves).
 //
 // Gameplay is active once the player has interacted at least once (first tap/click/key after
-// the game scene loads — see init()) AND no popup is open (PopupManager reports both ways — see
-// setPopupOpen()). So: first interaction -> start; a popup opens -> stop; it closes -> start.
+// the game scene loads — see init()) AND nothing is blocking it: an open popup (PopupManager —
+// setPopupOpen()), a tap-to-continue notification (UpgradeNotificationManager), an ad break
+// (commercialBreak()) — each reports through setBlocked(). So: first interaction -> start;
+// something blocks -> stop; the last blocker goes -> start.
 // Camera trips (a build/gate/zone reveal briefly freezing movement) count as gameplay.
 
 import PlatformHandler from 'core/platforms/PlatformHandler';
@@ -14,7 +16,8 @@ const INTERACTION_EVENTS = ['pointerdown', 'touchstart', 'keydown'] as const;
 
 export class GameplayTracker {
     private static interacted = false;
-    private static popupOpen = false;
+    /** Whatever is stopping gameplay right now — see setBlocked(). */
+    private static readonly blockers = new Set<string>();
     private static active = false;
     private static listening = false;
 
@@ -37,8 +40,37 @@ export class GameplayTracker {
 
     /** PopupManager: a popup opened (true) / the last one closed (false). */
     static setPopupOpen(open: boolean): void {
-        this.popupOpen = open;
+        this.setBlocked('popup', open);
+    }
+
+    /** Something (`reason`) stops gameplay (true) / no longer does (false) — gameplay resumes once no reason is left. */
+    static setBlocked(reason: string, blocked: boolean): void {
+        if (blocked) {
+            this.blockers.add(reason);
+        } else {
+            this.blockers.delete(reason);
+        }
         this.refresh();
+    }
+
+    /**
+     * A natural break — the platform may show an ad (Poki commercialBreak(); the platform decides
+     * whether one actually plays, and how often). Gameplay is reported stopped for its whole
+     * length, as the platform requires. Never throws; resolves once the game may continue.
+     */
+    static async commercialBreak(): Promise<void> {
+        const platform = PlatformHandler.instance.platform;
+        if (!platform) {
+            return;
+        }
+        this.setBlocked('commercialBreak', true);
+        try {
+            await platform.showCommercialBreak();
+        } catch (e) {
+            console.warn('[GameplayTracker] commercial break failed', e);
+        } finally {
+            this.setBlocked('commercialBreak', false);
+        }
     }
 
     /** Scene teardown — stops listening and reports gameplay stopped. */
@@ -59,7 +91,7 @@ export class GameplayTracker {
     }
 
     private static refresh(): void {
-        const shouldBeActive = this.interacted && !this.popupOpen;
+        const shouldBeActive = this.interacted && this.blockers.size === 0;
         if (shouldBeActive === this.active) {
             return;
         }

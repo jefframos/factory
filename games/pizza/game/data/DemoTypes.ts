@@ -27,9 +27,9 @@ export interface DemoConfigEntry {
 export const DEMO_CONFIG_BY_ID: Partial<Record<string, DemoConfigEntry>> = {
     "default": {
         "endRequirement": {
-            "type": "building",
-            "buildingId": BuildingId.StoreRoom2,
-            "level": 1
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 9
         },
         "delaySec": 1,
         "title": "End of the Demo",

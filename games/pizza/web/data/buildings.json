@@ -170,7 +170,7 @@
                 "forceOwnMesh": true
             }
         ],
-        "name": "StoreRoom1",
+        "name": "Hire Office",
         "baseFillFraction": 0.1,
         "appearRequirement": {
             "type": "store",

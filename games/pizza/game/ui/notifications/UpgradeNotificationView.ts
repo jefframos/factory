@@ -19,6 +19,10 @@
 // with Image_Effect_Rotate spinning slowly behind it for a "shiny" reveal;
 // then a caption line below the badge naming exactly what got upgraded
 // ("AXE LEVEL 2").
+//
+// Tap-to-continue: play() can be handed a `dismissed` promise (UpgradeNotificationManager's
+// backdrop tap) — the view then holds until it resolves instead of for HOLD_DURATION_SEC, with a
+// pulsing "TAP TO CONTINUE" line under the caption.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
@@ -48,6 +52,9 @@ const SPIN_DURATION_SEC = 8;
 
 const ENTER_DURATION_SEC = 0.5;
 const HOLD_DURATION_SEC = 2.4;
+/** Gap between the caption and the "TAP TO CONTINUE" line. */
+const TAP_HINT_GAP = 18;
+const TAP_HINT_TEXT = 'TAP TO CONTINUE';
 const EXIT_DURATION_SEC = 0.4;
 /** How far above its resting spot the notification starts (enter) / ends up (exit). */
 const TRAVEL_DISTANCE = 160;
@@ -70,6 +77,9 @@ export interface UpgradeNotificationOptions {
 export default class UpgradeNotificationView extends PIXI.Container {
     /** The infinite spin tween on the shine sprite — killed explicitly before destroy() (see hide()'s own doc for why that ordering matters). */
     private readonly spinTween: gsap.core.Tween;
+    /** "TAP TO CONTINUE" — only shown when play() waits for a tap. */
+    private readonly tapHint: PIXI.Text;
+    private tapHintTween?: gsap.core.Tween;
 
     public constructor(options: UpgradeNotificationOptions) {
         super();
@@ -116,6 +126,12 @@ export default class UpgradeNotificationView extends PIXI.Container {
         caption.position.set(0, BADGE_Y_OFFSET + BADGE_NATURAL_SIZE.height / 2 + CAPTION_GAP);
         this.addChild(caption);
 
+        this.tapHint = new PIXI.Text(TAP_HINT_TEXT, { ...TextStyleRegistry.Notification, fill: 0xffffff, fontSize: 22 } as PIXI.TextStyle);
+        this.tapHint.anchor.set(0.5, 0);
+        this.tapHint.position.set(0, caption.y + caption.height + TAP_HINT_GAP);
+        this.tapHint.visible = false;
+        this.addChild(this.tapHint);
+
         this.addChild(ribbon);
         this.addChild(title);
     }
@@ -127,15 +143,28 @@ export default class UpgradeNotificationView extends PIXI.Container {
      * and moves on to whatever's next in its queue — it never has to know the timing/easing
      * details, only that the view is done and gone once this resolves.
      */
-    public play(restPosition: PIXI.IPointData): Promise<void> {
+    public play(restPosition: PIXI.IPointData, dismissed?: Promise<void>): Promise<void> {
         this.position.set(restPosition.x, restPosition.y - TRAVEL_DISTANCE);
         this.alpha = 0;
 
         return new Promise(resolve => {
-            const timeline = gsap.timeline({ onComplete: () => this.hide(resolve) });
-            timeline.to(this, { y: restPosition.y, alpha: 1, duration: ENTER_DURATION_SEC, ease: 'back.out(1.7)' });
-            timeline.to(this, { duration: HOLD_DURATION_SEC });
-            timeline.to(this, { y: restPosition.y - TRAVEL_DISTANCE, alpha: 0, duration: EXIT_DURATION_SEC, ease: 'sine.in' });
+            const exit = (): void => {
+                this.tapHintTween?.kill();
+                gsap.to(this, {
+                    y: restPosition.y - TRAVEL_DISTANCE, alpha: 0, duration: EXIT_DURATION_SEC, ease: 'sine.in',
+                    onComplete: () => this.hide(resolve),
+                });
+            };
+            const enter = gsap.to(this, { y: restPosition.y, alpha: 1, duration: ENTER_DURATION_SEC, ease: 'back.out(1.7)' });
+            if (!dismissed) {
+                enter.then(() => gsap.delayedCall(HOLD_DURATION_SEC, exit));
+                return;
+            }
+            // Held until tapped — see this file's own doc.
+            this.tapHint.visible = true;
+            this.tapHint.alpha = 0;
+            this.tapHintTween = gsap.to(this.tapHint, { alpha: 1, duration: 0.6, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: ENTER_DURATION_SEC });
+            void Promise.all([enter.then(), dismissed]).then(exit);
         });
     }
 
@@ -147,6 +176,7 @@ export default class UpgradeNotificationView extends PIXI.Container {
      */
     private hide(resolve: () => void): void {
         this.spinTween.kill();
+        this.tapHintTween?.kill();
         this.destroy({ children: true });
         resolve();
     }
