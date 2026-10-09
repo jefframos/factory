@@ -750,6 +750,9 @@ implements it). If a `cameraFocus` point is drawn on the store's layer
 (`StoreLayerNames.getStoreCameraFocuses()`), the camera looks there instead of at the
 building. At max level, the dropper and price label hide immediately. `floorLabelIcon`
 puts an icon (e.g. `ItemIcon_Shop_old-2`) on the price floor label.
+`noSiteBeforeBuilt` shows nothing before level 1 (no site view, placeholder box or drawn pieces) and
+`priceInsideDropper` paints the price inside the dropper, centered — the for-sale-storage look a store
+section always has (stall1 uses both).
 
 **Gate, in full** — `Gate.ts` resolves its visible mesh the same way: a resolved
 `EntityViewRegistry` view spawns a real `GlbVisualComponent` (scale/rotation composed from

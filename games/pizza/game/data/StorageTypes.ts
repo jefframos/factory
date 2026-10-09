@@ -109,6 +109,8 @@ export interface StorageConfig {
      * is shared by every storage, see STORAGE_SIGNPOST_CONFIG. Unset = 'north'.
      */
     signpostSide?: FloorLabelSide;
+    /** Which way this storage's signpost (post + sign) faces — the side its sign reads from. Unset = 'south'. signpostRotationDeg fine-tunes on top. */
+    signpostFacing?: FloorLabelSide;
     /** When true, this storage has no signpost at all (post and icon) — e.g. the trash, whose model already says what it is. Unset = signpost shown. */
     hideSignpost?: boolean;
     /** Distance from the storage's edge to the signpost, world units. Unset = 0.2. */
@@ -222,7 +224,7 @@ export const STORAGE_SIGNPOST_CONFIG: StorageSignpostConfig = {
         4.6,
         0.3
     ],
-    "iconScale": 1.5
+    "iconScale": 1
 };
 
 /** Applied to every discovered "storage" object unless STORAGE_CONFIG_BY_ID has an override for its id. */
@@ -428,7 +430,9 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             "currency": CurrencyType.Money,
             "amount": 20
         },
-        "resourceCost": []
+        "resourceCost": [],
+        "signpostSide": "west",
+        "signpostFacing": "east"
     },
     "storageEgg": {
         "name": "Egg Storage",
@@ -451,7 +455,9 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
         },
         "view": "storageView",
         "popupBobOffset": 3,
-        "resourceCost": []
+        "resourceCost": [],
+        "signpostSide": "west",
+        "signpostFacing": "east"
     },
     "storageMilk": {
         "name": "Milk Shelf",
@@ -473,7 +479,9 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             "currency": CurrencyType.Money,
             "amount": 0
         },
-        "resourceCost": []
+        "resourceCost": [],
+        "signpostSide": "west",
+        "signpostFacing": "east"
     },
     "cowStall": {
         "name": "Cow Stall Milk Box",
@@ -497,13 +505,14 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             "amount": 20
         },
         "resourceCost": [],
-        "signpostSide": "east"
+        "signpostSide": "west",
+        "signpostFacing": "east"
     },
     "storageButter": {
         "name": "Butter Shelf",
         "accepts": "farm",
         "resourceType": ResourceType.Butter,
-        "shelf": "shelfBoxes",
+        "shelf": "shelfEnd",
         "models": [MODELS.Restaurant.Crate],
         "scale": 1,
         "rotationDeg": 0,
@@ -519,7 +528,9 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             "currency": CurrencyType.Money,
             "amount": 0
         },
-        "resourceCost": []
+        "resourceCost": [],
+        "signpostSide": "west",
+        "signpostFacing": "east"
     },
     "storageBread": {
         "name": "Bread Storage",
@@ -542,7 +553,9 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             "currency": CurrencyType.Money,
             "amount": 0
         },
-        "resourceCost": []
+        "resourceCost": [],
+        "signpostSide": "west",
+        "signpostFacing": "east"
     }
 };
 

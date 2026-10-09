@@ -177,6 +177,18 @@ export interface BuildingConfig extends FloorLabelConfig {
      * when it has no dropper. undefined/false (the default) keeps the old placement.
      */
     baseAtDropper?: boolean;
+    /**
+     * When true, NOTHING stands here before the first level is built — no site view, no placeholder
+     * box, no map-drawn pieces — just the dropper outline and its price, like a for-sale storage
+     * (a store section always behaves this way). undefined/false = the usual level-0 site.
+     */
+    noSiteBeforeBuilt?: boolean;
+    /**
+     * When true, the price (cost list) is painted INSIDE the dropper, centered and shrunk to fit,
+     * like a for-sale storage — instead of beside it (frame 'Floor' + floorLabelSide) or as a
+     * floating popup. Deposits fly onto it. (A store section always behaves this way.)
+     */
+    priceInsideDropper?: boolean;
     /** Bare UI icon name (e.g. 'ItemIcon_Shop_old-2', the store icon) drawn as the first line of the 'Floor' frame cost label, showing what's being built. Unset = just the cost. */
     floorLabelIcon?: string;
     /** x how long this building's build animation takes when it levels up (walls rising, pieces sweeping in — the camera holds on it until done). 1.5 = 50% slower. Unset = 1. */
@@ -357,7 +369,6 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
             "forceOwnMesh": true
         }],
         "popupMode": "simple",
-        "baseFillFraction": 0.1,
         "updateParticleEffectId": "craftingMyst",
         "npcOffset": [
             0,
@@ -365,11 +376,11 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
             0
         ],
         "solidFromMap": true,
-        "baseView": "baseBuildingSite",
-        "baseFillFull": true,
         "frame": "Floor",
         "floorLabelSide": "south",
         "baseAtDropper": true,
+        "noSiteBeforeBuilt": true,
+        "priceInsideDropper": true,
         "buildDurationMultiplier": 2.5,
         "floorLabelIcon": "ItemIcon_Shop_old-2"
     },
@@ -404,7 +415,12 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         "baseFillFull": true,
         "frame": "Floor",
         "floorLabelSide": "south",
-        "baseAtDropper": true
+        "baseAtDropper": true,
+        "npcOffset": [
+            0,
+            0,
+            0
+        ]
     },
     "storeRoom2": {
         baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
@@ -430,7 +446,12 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         }],
         "popupMode": "simple",
         "updateParticleEffectId": "craftingMyst",
-        "frame": "Floor"
+        "frame": "Floor",
+        "npcOffset": [
+            0,
+            0,
+            0
+        ]
     }
 };
 

@@ -15,6 +15,10 @@
 //                next-best spot in turn — so neighbouring storages share the
 //                floor instead of one line swallowing the space in front of
 //                another, and no two lines' spots ever overlap.
+//
+// A line with its own front spot from the map (StoreLine.straight — e.g. the
+// cashier's "clientPoint") is always laid out straight, first, and the
+// clustered lines keep clear of its spots.
 
 import * as THREE from 'three';
 import StoreNavGrid from './nav/StoreNavGrid';
@@ -40,18 +44,22 @@ export function layoutQueueSpots(
     spotsPerLine: number,
 ): void {
     const count = Math.max(1, spotsPerLine);
-    if (style === 'line') {
-        for (const line of lines) {
-            const spots: THREE.Vector3[] = [];
-            for (let i = 0; i < count; i++) {
-                spots.push(i === 0 ? line.firstSpot.clone() : grid.snapToWalkable(line.lineSpot(i)));
-            }
-            line.setSpots(spots);
+    const straightLines = style === 'line' ? lines : lines.filter(line => line.straight);
+    const taken: THREE.Vector3[] = [];
+    for (const line of straightLines) {
+        const spots: THREE.Vector3[] = [];
+        for (let i = 0; i < count; i++) {
+            spots.push(i === 0 ? line.firstSpot.clone() : grid.snapToWalkable(line.lineSpot(i)));
         }
+        line.setSpots(spots);
+        taken.push(...spots);
+    }
+    if (style === 'line') {
         return;
     }
+    lines = lines.filter(line => !line.straight);
 
-    const taken: THREE.Vector3[] = lines.map(line => line.firstSpot.clone());
+    taken.push(...lines.map(line => line.firstSpot.clone()));
     const spotsByLine: THREE.Vector3[][] = lines.map(line => [line.firstSpot.clone()]);
     const candidatesByLine = lines.map(line => rankCandidates(grid, line));
     const cursor = lines.map(() => 0);

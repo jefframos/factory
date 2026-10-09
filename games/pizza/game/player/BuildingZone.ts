@@ -561,9 +561,10 @@ export default class BuildingZone extends Entity {
         // 'Floor' frame: the requirements are painted on the ground beside the deposit area
         // (the dropper, or the building's own footprint without one) instead of a floating
         // popup — labelFrame is still built/refreshed but never put on screen.
-        if (this.isSection) {
-            // A store section reads like a for-sale storage (StoragePurchaseZone): its cost list
-            // painted INSIDE the dropper, centered, one part per line, shrunk to fit the area.
+        if (this.priceInsideDropper) {
+            // A store section (or BuildingConfig.priceInsideDropper) reads like a for-sale storage
+            // (StoragePurchaseZone): its cost list painted INSIDE the dropper, centered, one part
+            // per line, shrunk to fit the area.
             this.floorLabel = this.addComponent(new FloorLabelComponent({
                 items: [],
                 stack: 'column',
@@ -780,8 +781,9 @@ export default class BuildingZone extends Entity {
             return;
         }
         // A section's drawn pieces are its BUILT look — before that (no site view resolving),
-        // show nothing rather than the pieces or a placeholder box.
-        if (this.isSection && level === 0) {
+        // show nothing rather than the pieces or a placeholder box. Same for
+        // BuildingConfig.noSiteBeforeBuilt.
+        if (this.noSiteBeforeBuilt && level === 0) {
             return;
         }
 
@@ -886,12 +888,22 @@ export default class BuildingZone extends Entity {
     // ---- Store sections (see the constructor's `isSection` param doc). Each of these is the
     // plain BuildingTypes.ts helper/field for a normal building, with the section default on top.
 
-    /** getViewIdForLevel(), but a section shows NO view before it's built (even with a baseView set) — just its dropper outline + cost label, like a for-sale storage. */
+    /** getViewIdForLevel(), but a section (or BuildingConfig.noSiteBeforeBuilt) shows NO view before it's built (even with a baseView set) — just its dropper outline + cost label, like a for-sale storage. */
     private viewIdForLevel(level: number): string | undefined {
-        if (this.isSection && level === 0) {
+        if (this.noSiteBeforeBuilt && level === 0) {
             return undefined;
         }
         return getViewIdForLevel(this.buildingId, level);
+    }
+
+    /** BuildingConfig.noSiteBeforeBuilt — always on for a section. */
+    private get noSiteBeforeBuilt(): boolean {
+        return this.isSection || BUILDING_CONFIG[this.buildingId].noSiteBeforeBuilt === true;
+    }
+
+    /** BuildingConfig.priceInsideDropper — always on for a section. */
+    private get priceInsideDropper(): boolean {
+        return this.isSection || BUILDING_CONFIG[this.buildingId].priceInsideDropper === true;
     }
 
     /** isOwnMeshForcedForLevel(), but a section's built levels always use its drawn pieces unless that level sets its own `view`. */
@@ -1509,8 +1521,8 @@ export default class BuildingZone extends Entity {
      */
     private getFlyInTarget(target: THREE.Vector3): THREE.Vector3 {
         const config = BUILDING_CONFIG[this.buildingId];
-        // A section's cost is painted inside its dropper — deposits land on it, like a storage's.
-        if (this.isSection && this.triggerArea) {
+        // A section's cost (or priceInsideDropper's) is painted inside its dropper — deposits land on it, like a storage's.
+        if (this.priceInsideDropper && this.triggerArea) {
             return target.copy(this.triggerArea.position).setY(this.triggerArea.position.y + SECTION_FLY_IN_HEIGHT);
         }
         if (this.baseAtDropper && this.triggerArea && BuildingStorage.getLevel(this.buildingId) === 0) {

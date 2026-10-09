@@ -213,7 +213,9 @@
             },
             "view": "storageView",
             "itemOrientation": "standing",
-            "resourceCost": []
+            "resourceCost": [],
+            "signpostSide": "west",
+            "signpostFacing": "east"
         },
         "storageEgg": {
             "name": "Egg Storage",
@@ -238,7 +240,9 @@
                 "amount": 0
             },
             "itemOrientation": "standing",
-            "resourceCost": []
+            "resourceCost": [],
+            "signpostSide": "west",
+            "signpostFacing": "east"
         },
         "storageMilk": {
             "name": "Milk Shelf",
@@ -262,7 +266,9 @@
                 "amount": 0
             },
             "itemOrientation": "standing",
-            "resourceCost": []
+            "resourceCost": [],
+            "signpostSide": "west",
+            "signpostFacing": "east"
         },
         "cowStall": {
             "name": "Cow Stall Milk Box",
@@ -288,13 +294,14 @@
             "view": "storageView",
             "itemOrientation": "standing",
             "resourceCost": [],
-            "signpostSide": "east"
+            "signpostSide": "west",
+            "signpostFacing": "east"
         },
         "storageButter": {
             "name": "Butter Shelf",
             "accepts": "farm",
             "resourceType": "butter",
-            "shelf": "shelfBoxes",
+            "shelf": "shelfEnd",
             "models": [
                 "Restaurant.Crate"
             ],
@@ -312,7 +319,9 @@
                 "amount": 0
             },
             "itemOrientation": "standing",
-            "resourceCost": []
+            "resourceCost": [],
+            "signpostSide": "west",
+            "signpostFacing": "east"
         },
         "storageBread": {
             "name": "Bread Storage",
@@ -337,7 +346,9 @@
                 "amount": 0
             },
             "itemOrientation": "standing",
-            "resourceCost": []
+            "resourceCost": [],
+            "signpostSide": "west",
+            "signpostFacing": "east"
         }
     },
     "signpost": {
@@ -345,7 +356,7 @@
             "Survival.SignpostSingle"
         ],
         "scale": 12,
-        "iconScale": 1.5,
+        "iconScale": 1,
         "iconOffset": [
             0,
             4.6,

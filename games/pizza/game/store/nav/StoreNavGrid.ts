@@ -10,7 +10,9 @@
 // blockWhere()) with obstacles already inflated by the client radius, so a
 // path through walkable cell centers never clips a corner. Paths:
 //   - start/goal snap to the nearest walkable cell (a client may stand just
-//     inside an inflated obstacle — e.g. at a shelf's pick-up spot),
+//     inside an inflated obstacle — e.g. at a shelf's pick-up spot). Starting
+//     inside one, the path first steps OUT to that cell; a goal inside one is
+//     reached through its nearest walkable cell — never across the obstacle,
 //   - 8-neighbour A* with an octile heuristic and no diagonal corner cutting,
 //     an optional extra per-cell cost (NavAgent uses it to go around clients
 //     standing still),
@@ -211,6 +213,11 @@ export default class StoreNavGrid {
     /**
      * A* from `from` to `to`, smoothed. Fills `out` with the waypoints AFTER the start, the last
      * being exactly `to`. Returns false (and leaves `out` empty) when there's no path.
+     *
+     * An end inside a blocked cell (a client standing in an obstacle's margin, or a goal hugging
+     * one) is linked through its nearest walkable cell: the path steps out to it first / goes in
+     * from it last. Everything in between is checked with no end slack, so it never cuts across
+     * an obstacle's corner.
      */
     public findPath(from: THREE.Vector3, to: THREE.Vector3, out: THREE.Vector3[], extraCost?: NavCellCost): boolean {
         out.length = 0;
@@ -219,26 +226,40 @@ export default class StoreNavGrid {
         if (start === -1 || goal === -1) {
             return false;
         }
-        if (start === goal || this.hasLineOfSight(from.x, from.z, to.x, to.z)) {
-            out.push(to.clone());
+        const fromBlocked = !this.isWalkableAt(from.x, from.z);
+        const toBlocked = !this.isWalkableAt(to.x, to.z);
+        const startPoint = fromBlocked ? this.cellCenter(start) : from;
+        const endPoint = toBlocked ? this.cellCenter(goal) : to;
+        if (fromBlocked) {
+            out.push(startPoint.clone());
+        }
+        const finish = (): true => {
+            if (toBlocked) {
+                out.push(to.clone());
+            }
             return true;
+        };
+        if (start === goal || this.hasLineOfSight(startPoint.x, startPoint.z, endPoint.x, endPoint.z, 0)) {
+            out.push(endPoint.clone());
+            return finish();
         }
 
         const cells = this.searchCells(start, goal, extraCost);
         if (!cells) {
+            out.length = 0;
             return false;
         }
 
         // String-pull: from the current anchor, jump to the farthest cell still in line of sight.
         const points = cells.map(index => this.cellCenter(index));
-        points.push(to.clone());
-        let anchorX = from.x;
-        let anchorZ = from.z;
+        points.push(endPoint.clone());
+        let anchorX = startPoint.x;
+        let anchorZ = startPoint.z;
         let i = 0;
         while (i < points.length) {
             let farthest = i;
             for (let j = points.length - 1; j > i; j--) {
-                if (this.hasLineOfSight(anchorX, anchorZ, points[j].x, points[j].z)) {
+                if (this.hasLineOfSight(anchorX, anchorZ, points[j].x, points[j].z, 0)) {
                     farthest = j;
                     break;
                 }
@@ -249,7 +270,7 @@ export default class StoreNavGrid {
             anchorZ = point.z;
             i = farthest + 1;
         }
-        return true;
+        return finish();
     }
 
     /** Uniform random walkable point inside `bounds` (a few tries), or undefined. */

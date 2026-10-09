@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="15" nextobjectid="447">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="15" nextobjectid="448">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -1433,16 +1433,16 @@
 3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,
+3,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,
+2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,
 2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,
 2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,
-2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,
-2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,
-1,1,1,2,2,3,3,3,3,3,3,3,3,3,3,3,
-1,1,1,1,1,3,3,3,3,3,3,3,3,3,3,3,
-1,1,1,1,1,3,3,3,3,3,3,3,3,3,3,3,
-1,1,1,1,3,3,3,3,3,3,3,3,3,3,3,3,
+2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,
+2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,
+1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,3,
+1,1,1,1,1,2,2,2,2,3,3,3,3,3,3,3,
+1,1,1,1,1,2,2,2,2,3,3,3,3,3,3,3,
+1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,3,
 1,1,3,3,3,3,3,3,3,3,3,3,3,3,3,5
 </chunk>
    <chunk x="16" y="16" width="16" height="16">
@@ -1580,7 +1580,7 @@
     <property name="type" value="queue"/>
    </properties>
   </object>
-  <object id="84" name="dropper: dropperStall1" x="192" y="640" width="64" height="64.5">
+  <object id="84" name="dropper: dropperStall1" x="96" y="768" width="96" height="96">
    <properties>
     <property name="id" value="dropperStall1"/>
     <property name="target" value="stall1"/>
@@ -1797,7 +1797,7 @@
   </object>
  </objectgroup>
  <objectgroup draworder="index" id="12" name="--storeView--stall1"/>
- <objectgroup id="13" name="--storeView--stall1-2">
+ <objectgroup id="13" name="--storeView--stall1-2" locked="1">
   <object id="353" name="floor" x="-32" y="575.667" width="320" height="448.333">
    <properties>
     <property name="type" value="floor"/>
@@ -1829,7 +1829,7 @@
     <property name="type" value="polyDoor"/>
    </properties>
   </object>
-  <object id="368" name="polyDoor" x="112.833" y="1008.92" width="116.167" height="31.5">
+  <object id="368" name="polyDoor" x="68.583" y="1004.42" width="116.167" height="31.5">
    <properties>
     <property name="fitToCeiling" type="bool" value="true"/>
     <property name="isHigh" type="bool" value="true"/>
@@ -1860,14 +1860,14 @@
     <property name="type" value="polyWindow"/>
    </properties>
   </object>
-  <object id="404" name="polyWindow" x="0" y="992" width="64" height="53.5">
+  <object id="404" name="polyWindow" x="-7.25" y="991.75" width="64" height="53.5">
    <properties>
     <property name="type" value="polyWindow"/>
    </properties>
   </object>
   <object id="412" gid="55" x="-28.7045" y="710.292" width="28.25" height="17.6563"/>
  </objectgroup>
- <objectgroup draworder="index" id="11" name="--storeSection--stall1-office" locked="1" opacity="0.8">
+ <objectgroup draworder="index" id="11" name="--storeSection--stall1-office" opacity="0.8">
   <object id="363" name="floor" x="-28.3333" y="416.167" width="192" height="160">
    <properties>
     <property name="type" value="floor"/>
@@ -1926,7 +1926,7 @@
    </properties>
   </object>
  </objectgroup>
- <objectgroup draworder="index" id="14" name="--storeSection--stall1-deposit" locked="1" opacity="0.8">
+ <objectgroup draworder="index" id="14" name="--storeSection--stall1-deposit" opacity="0.8">
   <object id="376" name="floor" x="350.333" y="447" width="319" height="192">
    <properties>
     <property name="type" value="floor"/>
@@ -1979,6 +1979,12 @@
   </object>
  </objectgroup>
  <objectgroup draworder="index" id="9" name="--store--stall1" locked="1">
+  <object id="413" name="clientArea" x="-7.33333" y="611.333">
+   <properties>
+    <property name="type" value="clientArea"/>
+   </properties>
+   <polygon points="18,-2 277.334,-4 277.355,278.836 176.5,278.75 152.338,357.1 33.4167,362.833 32,346.667 44.417,251.75 48.333,185.083 23.3333,114.667"/>
+  </object>
   <object id="153" name="store: farmStore1" x="-61" y="444.333" width="717.667" height="577">
    <properties>
     <property name="id" value="farmStore1"/>
@@ -2000,101 +2006,102 @@
     <property name="type" value="storeExit"/>
    </properties>
   </object>
-  <object id="156" name="storeCashier: farmStore1Cashier" x="21.5" y="826.083" width="67.5833" height="54">
+  <object id="156" name="storeCashier: farmStore1Cashier" x="174.25" y="910.958" width="51.5833" height="69.875">
    <properties>
     <property name="id" value="farmStore1Cashier"/>
     <property name="target" value="farmStore1"/>
     <property name="type" value="storeCashier"/>
    </properties>
   </object>
-  <object id="157" name="storeMoneyDrop: farmStore1MoneyDrop" x="11.6477" y="887.182" width="76.75" height="48.7273">
+  <object id="157" name="storeMoneyDrop: farmStore1MoneyDrop" x="229.875" y="935.375" width="36.5" height="45.9773">
    <properties>
     <property name="id" value="farmStore1MoneyDrop"/>
     <property name="target" value="farmStore1"/>
     <property name="type" value="storeMoneyDrop"/>
    </properties>
   </object>
-  <object id="193" name="npcPoint → farmStore1Cashier" x="46.1818" y="871.947">
+  <object id="193" name="npcPoint → farmStore1Cashier" x="208.182" y="959.822">
    <properties>
     <property name="target" value="farmStore1Cashier"/>
     <property name="type" value="npcPoint"/>
    </properties>
    <point/>
   </object>
-  <object id="194" name="npcPoint → farmStore1MoneyDrop" x="46.3488" y="910.091">
+  <object id="447" name="npcPoint → farmStore1Cashier" x="201.307" y="899.322">
+   <properties>
+    <property name="target" value="farmStore1Cashier"/>
+    <property name="type" value="clientPoint"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="194" name="npcPoint → farmStore1MoneyDrop" x="247.849" y="960.716">
    <properties>
     <property name="target" value="farmStore1MoneyDrop"/>
     <property name="type" value="npcPoint"/>
    </properties>
    <point/>
   </object>
-  <object id="413" name="clientArea" x="-7.33333" y="611.333">
-   <properties>
-    <property name="type" value="clientArea"/>
-   </properties>
-   <polygon points="18,-2 277.334,-4 282,382 28.6667,381.333 32,346.667 122.667,328 115.333,183.333 23.3333,114.667"/>
-  </object>
-  <object id="115" name="storage: storage1" x="64" y="736" width="46.333" height="50.6667">
+  <object id="115" name="storage: storage1" x="64" y="704" width="32" height="50.6667">
    <properties>
     <property name="id" value="storage1"/>
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="424" name="storage: storageEgg" x="175.199" y="608.902" width="46.333" height="50.6667">
+  <object id="424" name="storage: storageEgg" x="-17.5" y="961.5" width="32" height="32">
    <properties>
     <property name="id" value="storageEgg"/>
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="429" name="storage: storageMilk" x="221.591" y="609.818" width="46.333" height="50.6667">
+  <object id="429" name="storage: storageMilk" x="-23.5757" y="929.526" width="46.333" height="50.6667" rotation="270">
    <properties>
     <property name="id" value="storageMilk"/>
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="445" name="storage: storageButter" x="129" y="609" width="46.333" height="50.6667">
+  <object id="445" name="storage: storageButter" x="-23.5419" y="882.25" width="46.333" height="50.6667" rotation="270">
    <properties>
     <property name="id" value="storageButter"/>
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="446" name="storage: storageBread" x="229" y="935" width="46.333" height="50.6667">
+  <object id="446" name="storage: storageBread" x="-17.5" y="929.5" width="32" height="32">
    <properties>
     <property name="id" value="storageBread"/>
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="116" name="storage: storage2" x="128" y="736" width="46.333" height="50.6667">
+  <object id="116" name="storage: storage2" x="96" y="704" width="32" height="50.6667">
    <properties>
     <property name="id" value="storage2"/>
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="158" name="storage: storage3" x="192" y="736" width="46.333" height="50.6667">
+  <object id="158" name="storage: storage3" x="128" y="704" width="32" height="50.6667">
    <properties>
     <property name="id" value="storage3"/>
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="187" name="storage: storage4" x="192" y="800" width="46.333" height="50.6667">
+  <object id="187" name="storage: storage4" x="160" y="704" width="32" height="50.6667">
    <properties>
     <property name="id" value="storage4"/>
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="192" name="storage: trash1" x="-11.4773" y="1004.02" width="32" height="32" rotation="270">
+  <object id="192" name="storage: trash1" x="251.523" y="614.77" width="32" height="32" rotation="270">
    <properties>
     <property name="id" value="trash1"/>
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="188" name="storage: storage5" x="192" y="864" width="46.333" height="50.6667">
+  <object id="188" name="storage: storage5" x="192" y="704" width="32" height="50.6667">
    <properties>
     <property name="id" value="storage5"/>
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="389" gid="52" x="86" y="814" width="67.3333" height="67.3333" rotation="180">
+  <object id="389" gid="52" x="163.417" y="909.708" width="67.3333" height="67.3333" rotation="90">
    <properties>
     <property name="target" value="farmStore1Cashier"/>
    </properties>

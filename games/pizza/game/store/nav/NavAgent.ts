@@ -15,7 +15,11 @@
 //      nearby neighbours (stronger from standing ones), faded out close to
 //      the final goal so arrival still lands exactly on the spot.
 //   3. only takes a step that stays on walkable cells (tries the unsteered
-//      direction, then each axis alone, to slide along obstacles).
+//      direction, then each axis alone, to slide along obstacles). Standing
+//      inside an obstacle's margin (a pick-up spot hugging a shelf), it only
+//      walks straight along the path — which steps out the nearest way (see
+//      StoreNavGrid.findPath()) — never steered or slid deeper in. Only the
+//      final hop may end inside a margin (a goal hugging an obstacle).
 // No path / off the grid / stuck for a while -> walks straight (fail-open:
 // a client may clip something, but never freezes forever).
 
@@ -54,8 +58,8 @@ const STANDING_CELL_COST = 6;
 /** Checked once per STUCK_CHECK_SEC: moving less than this fraction of speed x time = stuck. */
 const STUCK_CHECK_SEC = 0.75;
 const STUCK_PROGRESS_FRACTION = 0.2;
-/** After this many stuck checks in a row, stop respecting the grid until the next waypoint. */
-const STUCK_LIMIT = 3;
+/** After this many stuck checks in a row, stop respecting the grid until the next waypoint (each check also replans first). */
+const STUCK_LIMIT = 5;
 
 export default class NavAgent {
     public moveDirX = 0;
@@ -176,8 +180,14 @@ export default class NavAgent {
         // Steered step, else straight at the waypoint, else slide along one axis. If none fits, stay
         // put this frame — the stuck check replans, and eventually stops respecting the grid.
         const stride = Math.min(step, distance);
-        void (this.tryStep(grid, steerX, steerZ, stride) || this.tryStep(grid, dirX, dirZ, stride)
-            || this.tryStep(grid, Math.sign(dirX), 0, stride * Math.abs(dirX)) || this.tryStep(grid, 0, Math.sign(dirZ), stride * Math.abs(dirZ)));
+        const finalHop = this.pathIndex >= this.path.length - 1;
+        if (grid && !this.ignoreGrid && !grid.isWalkableAt(this.position.x, this.position.z)) {
+            // Inside an obstacle's margin: straight along the path only (it leads out the nearest way).
+            this.move(dirX, dirZ, stride);
+        } else {
+            void (this.tryStep(grid, steerX, steerZ, stride, finalHop) || this.tryStep(grid, dirX, dirZ, stride, finalHop)
+                || this.tryStep(grid, Math.sign(dirX), 0, stride * Math.abs(dirX), finalHop) || this.tryStep(grid, 0, Math.sign(dirZ), stride * Math.abs(dirZ), finalHop));
+        }
         this.isMoving = true;
         this.updateStuck(delta);
     }
@@ -250,24 +260,34 @@ export default class NavAgent {
         return [pushX, pushZ];
     }
 
-    /** Moves `stride` along (dirX, dirZ) if the landing point is walkable (or the grid is being ignored). */
-    private tryStep(grid: StoreNavGrid | undefined, dirX: number, dirZ: number, stride: number): boolean {
+    /**
+     * Moves `stride` along (dirX, dirZ) if the landing point is walkable — or the grid is being
+     * ignored, or this is the final hop onto a goal that itself sits in an obstacle's margin (a
+     * pick-up spot hugging a shelf, reached from its nearest walkable cell).
+     */
+    private tryStep(grid: StoreNavGrid | undefined, dirX: number, dirZ: number, stride: number, finalHop: boolean): boolean {
         if (stride <= 0 || (dirX === 0 && dirZ === 0)) {
             return false;
         }
         const nextX = this.position.x + dirX * stride;
         const nextZ = this.position.z + dirZ * stride;
-        // Off the grid, standing somewhere already blocked (e.g. a pick-up spot hugging a shelf) or
-        // declared stuck: don't block the move.
-        const free = !grid || this.ignoreGrid || !grid.isWalkableAt(this.position.x, this.position.z) || grid.isWalkableAt(nextX, nextZ);
+        const free = !grid || this.ignoreGrid || grid.isWalkableAt(nextX, nextZ)
+            || (finalHop && !grid.isWalkableAt(this.goal.x, this.goal.z));
         if (!free) {
             return false;
         }
-        this.position.x = nextX;
-        this.position.z = nextZ;
+        this.move(dirX, dirZ, stride);
+        return true;
+    }
+
+    private move(dirX: number, dirZ: number, stride: number): void {
+        if (stride <= 0 || (dirX === 0 && dirZ === 0)) {
+            return;
+        }
+        this.position.x += dirX * stride;
+        this.position.z += dirZ * stride;
         this.moveDirX = dirX;
         this.moveDirZ = dirZ;
-        return true;
     }
 
     private updateStuck(delta: number): void {

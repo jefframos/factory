@@ -37,6 +37,7 @@ object's own Name/Class fields are ignored. Only plain rectangles are read.
 | `storeEntrance` | `id`, `target` = store id | Clients spawn at a random point inside it. |
 | `storeExit` | `id`, `target` = store id | Clients walk here after paying and despawn. |
 | `storeCashier` | `id`, `target` = store id | The player stands here to serve. Clients queue in a line next to it. |
+| `clientPoint` (point) | `target` = the cashier's `id` | Where the FRONT client of the cashier queue stands to pay; the queue runs straight on from it, away from the cashier (or along `cashierSpotDirection`), never clustered. Optional — none = the line starts just off the cashier's edge. |
 | `storeMoneyDrop` | `id`, `target` = store id | Paid money piles up here (one pile after another — a bigger rect holds more piles); the player walks over it to collect. |
 | `cameraFocus` | optional `target` = building id (unset = the layer's suffix, e.g. `--store--stall1` → `stall1`) | Point: where the camera looks while the store building is being built (same as a `cameraTarget` on mapSettings). Slow the build down with the Buildings tab's `buildDurationMultiplier` (stall1: 1.75). |
 | `clientArea` | optional `target` = store id (unset = the store whose area holds its center) | Rect, ellipse or polygon: where wandering clients stroll. Several are combined. Any part over a store section that isn't built yet is ignored until it is. None = the whole store area. |
@@ -450,10 +451,15 @@ table in the constructor, and the transitions into/out of it — nothing else ch
 - **Paths**: A* (8 directions, no corner cutting), then smoothed to a few straight
   segments. ~0.5 ms for the longest path in farmStore1. Cells next to someone standing
   cost more, so paths bend around waiting clients.
+- **Ends hugging an obstacle**: a walker standing inside an obstacle's margin (a pick-up
+  spot next to a shelf) first steps OUT to the nearest walkable cell, and a goal inside one
+  is reached from its nearest walkable cell — never across the obstacle. Line-of-sight
+  smoothing checks every segment end to end (no corner cutting).
 - **Steering** (`NavAgent`): walkers push away from other clients and the player, and
   pass on the right when meeting someone head-on. Steps never land on blocked cells
-  (they slide along obstacles instead). Replans when its goal moves, the grid changes,
-  every 1.25 s while walking, and when stuck; stuck for ~2 s → walks straight
+  (they slide along obstacles instead); inside a margin they only walk straight along the
+  path, and only the final hop may end in one. Replans when its goal moves, the grid
+  changes, every 1.25 s while walking, and when stuck; stuck for ~3.75 s → walks straight
   (fail-open — may clip something, never freezes).
 - **Queue spots** (`StoreQueueSpots`): spot 0 is always the pick-up/pay spot in front of the
   shelf/cashier. With `waitStyle: cluster` the others are free cells in a fan behind it

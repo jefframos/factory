@@ -69,6 +69,7 @@ import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { buildLockRequirementPanel } from '../ui/LockRequirementPanel';
 import FloorLabelComponent, { FloorLabelItem, floorLabelEdgeOffset } from '../components/FloorLabelComponent';
 import { isFloorFrame, FLOOR_FRAME } from '../ui/PopupConfig';
+import type { FloorLabelSide } from '../ui/PopupConfig';
 import type { LockRequirementPanel } from '../ui/LockRequirementPanel';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from './AssetLibraryRegistry';
@@ -107,6 +108,9 @@ const DEFAULT_SIGNPOST_ICON_HEIGHT = 1.5;
 const SOLID_HALF_HEIGHT = 0.5;
 /** StorageConfig.particleSpawnRate fallback — same rate Gate/CraftZone's own ambient emitters use. */
 const DEFAULT_PARTICLE_SPAWN_RATE_PER_SEC = 4;
+
+/** Yaw (degrees) that turns a signpost — post and sign, built facing south (+z) — to face each side (east = +x). See StorageConfig.signpostFacing. */
+const SIGNPOST_FACING_YAW_DEG: Record<FloorLabelSide, number> = { south: 0, east: 90, north: 180, west: -90 };
 
 /** Texture alias shown on a trash storage's signpost (StorageConfig.trash). */
 const TRASH_SIGNPOST_ICON = 'trash';
@@ -361,7 +365,10 @@ export default class StorageZone extends Entity {
             return;
         }
         const side = this.config.signpostSide ?? 'north';
-        const yaw = THREE.MathUtils.degToRad(this.config.signpostRotationDeg ?? 0);
+        // Facing (default south — the sign reads from the south) + the fine-tune rotation, for the
+        // post, its offsets and the sign alike.
+        const yawDeg = SIGNPOST_FACING_YAW_DEG[this.config.signpostFacing ?? 'south'] + (this.config.signpostRotationDeg ?? 0);
+        const yaw = THREE.MathUtils.degToRad(yawDeg);
         // Shared offset nudges the post off its side/gap spot — x/z turn with this storage's yaw.
         const [postX, postY, postZ] = shared.offset ?? [0, 0, 0];
         const position = floorLabelEdgeOffset(side, this.meshOffset, this.storageSize.width, this.storageSize.depth, this.config.signpostGap ?? DEFAULT_SIGNPOST_GAP)
@@ -383,6 +390,7 @@ export default class StorageZone extends Entity {
             size: shared.iconScale,
             upright: true,
             background: false,
+            rotationDeg: yawDeg,
             offset: new THREE.Vector3(position.x + iconOffset.x, 0, position.z + iconOffset.z),
             height: position.y + offsetY,
         }));

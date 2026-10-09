@@ -6,6 +6,11 @@
 // the next one `spacing` world units behind, and so on. When someone leaves,
 // everyone behind them moves up one spot, so waiting clients never overlap.
 //
+// With a `frontSpot` (the map's "clientPoint" for that part — see StoreLayout.ts)
+// the line starts exactly there and runs straight on, away from the target
+// (or along the configured direction), and is always laid out straight — never
+// clustered around the target (`straight`).
+//
 // The ORDER is all this class decides. WHERE spot N is comes from setSpots()
 // (see StoreQueueSpots.ts — a straight line or a cluster around the target,
 // fitted to the store's nav grid); until that's called, spots fall back to
@@ -29,6 +34,8 @@ export default class StoreLine<T> {
     public readonly firstSpot: THREE.Vector3;
     /** Unit vector pointing from spot 0 toward the back of the line. */
     public readonly direction: THREE.Vector3;
+    /** Laid out as a straight line even in a 'cluster' store — set when the map gives this line its own front spot. */
+    public readonly straight: boolean;
     public readonly spacing: number;
     private readonly members: T[] = [];
     /** Spot positions by queue index — see setSpots(). Empty = the straight-line fallback. */
@@ -38,9 +45,23 @@ export default class StoreLine<T> {
      * `rect` is the thing being queued at; the line starts `margin` past its edge and extends
      * along `direction` if given, otherwise toward `towardPoint` (the store's own center).
      */
-    public constructor(rect: StoreRect, towardPoint: THREE.Vector3, spacing: number, margin: number, direction?: StoreSpotDirection) {
+    public constructor(rect: StoreRect, towardPoint: THREE.Vector3, spacing: number, margin: number, direction?: StoreSpotDirection, frontSpot?: { x: number; z: number }) {
         this.target = new THREE.Vector3(rect.x, 0, rect.z);
         this.spacing = spacing;
+        this.straight = frontSpot !== undefined;
+
+        if (frontSpot) {
+            // Starts on the map's own point; continues away from the target unless told otherwise.
+            this.firstSpot = new THREE.Vector3(frontSpot.x, 0, frontSpot.z);
+            this.direction = direction
+                ? DIRECTION_VECTORS[direction].clone()
+                : new THREE.Vector3(frontSpot.x - rect.x, 0, frontSpot.z - rect.z);
+            if (this.direction.lengthSq() < 1e-6) {
+                this.direction.copy(DIRECTION_VECTORS.south);
+            }
+            this.direction.normalize();
+            return;
+        }
 
         if (direction) {
             this.direction = DIRECTION_VECTORS[direction].clone();

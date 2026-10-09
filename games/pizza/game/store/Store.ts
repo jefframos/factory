@@ -301,7 +301,8 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
             dropPoint: new THREE.Vector3(source.dropRect?.x ?? source.rect.x, 0, source.dropRect?.z ?? source.rect.z),
             line: new StoreLine<StoreClient>(source.rect, center, config.spotSpacing, config.spotMargin, getStorageSpotDirection(config, source.id)),
         }));
-        this.cashierLine = new StoreLine<StoreClient>(layout.cashier, center, config.spotSpacing, config.spotMargin, config.cashierSpotDirection);
+        // The map's "clientPoint" for the cashier (if drawn) is where the front client pays — see StoreLine.ts.
+        this.cashierLine = new StoreLine<StoreClient>(layout.cashier, center, config.spotSpacing, config.spotMargin, config.cashierSpotDirection, layout.cashierClientPoint);
 
         // Farm plots too — restocker workers walk there (see StoreRestockerWorker.ts).
         const covered = [layout.area, layout.entrance, layout.exit, ...farmRects].map(rectBounds);

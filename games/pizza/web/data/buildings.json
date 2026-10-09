@@ -138,22 +138,21 @@
         ],
         "name": "FoodStall1",
         "icon": "pizza-model-snapshots_Food-Pumpkin",
-        "baseFillFraction": 0.1,
         "appearRequirement": {
             "type": "storeSales",
             "storeId": "farmStore1",
             "sales": 1
         },
-        "baseView": "baseBuildingSite",
         "updateParticleEffectId": "craftingMyst",
         "popupMode": "simple",
         "solidFromMap": true,
-        "baseFillFull": true,
         "frame": "Floor",
         "floorLabelSide": "south",
         "baseAtDropper": true,
         "buildDurationMultiplier": 2.5,
-        "floorLabelIcon": "ItemIcon_Shop_old-2"
+        "floorLabelIcon": "ItemIcon_Shop_old-2",
+        "noSiteBeforeBuilt": true,
+        "priceInsideDropper": true
     },
     "storeRoom1": {
         "levels": [
@@ -186,7 +185,12 @@
         "floorLabelSide": "south",
         "baseAtDropper": true,
         "floorChecker": "roomTiles",
-        "doorStyle": "glass"
+        "doorStyle": "glass",
+        "npcOffset": [
+            0,
+            0,
+            0
+        ]
     },
     "storeRoom2": {
         "levels": [
@@ -212,6 +216,11 @@
         },
         "updateParticleEffectId": "craftingMyst",
         "popupMode": "simple",
-        "frame": "Floor"
+        "frame": "Floor",
+        "npcOffset": [
+            0,
+            0,
+            0
+        ]
     }
 }
