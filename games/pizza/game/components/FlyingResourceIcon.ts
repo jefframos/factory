@@ -127,8 +127,12 @@ function flyIcon(
             );
         },
         onComplete: () => {
-            onArrive?.();
-            icon.destroy();
+            // Destroyed even if the landing callback throws — never left stuck on screen.
+            try {
+                onArrive?.();
+            } finally {
+                icon.destroy();
+            }
         },
     });
 }

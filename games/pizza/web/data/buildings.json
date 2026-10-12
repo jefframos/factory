@@ -190,7 +190,8 @@
             0,
             0,
             0
-        ]
+        ],
+        "floorLabelIcon": "ItemIcon_Shop-2"
     },
     "storeRoom2": {
         "levels": [
@@ -221,6 +222,7 @@
             0,
             0,
             0
-        ]
+        ],
+        "floorLabelIcon": "cooking-pot"
     }
 }

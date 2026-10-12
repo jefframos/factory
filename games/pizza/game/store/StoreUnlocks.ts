@@ -28,6 +28,7 @@ import { readStoreLayouts, rectContains } from './StoreLayout';
 import { StoreProgressStorage } from './StoreProgressStorage';
 import { StorageOwnershipStorage } from './StorageOwnershipStorage';
 import { getStoreConfig } from './StoreTypes';
+import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
 
 interface StoreGate {
     storeId: string;
@@ -90,7 +91,8 @@ export class StoreUnlocks {
 
     /** Usable by clients: not disabled, enabled by its store level (if gated), and owned. */
     static isStorageAvailable(storageId: string, config: StorageConfig): boolean {
-        return !config.disabled && this.isEnabled(storageId) && this.isStorageOwned(storageId, config);
+        return !config.disabled && this.isEnabled(storageId) && this.isStorageOwned(storageId, config)
+            && (!config.appearRequirement || isMilestoneRequirementMet(config.appearRequirement));
     }
 
     private static getGates(): Map<string, StoreGate> {

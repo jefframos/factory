@@ -33,6 +33,7 @@
 import { GateId } from '../data/GateTypes';
 import { BuildingId } from '../data/BuildingId';
 import type { MilestoneRequirement } from '../data/MilestoneRequirement';
+import { ResourceType } from '../actions/ResourceTypes';
 
 export interface ZoneTutorialCraftStep {
     kind: 'craft';
@@ -128,7 +129,45 @@ export interface ZoneTutorialBuildStep {
     offset?: [number, number, number];
 }
 
-export type ZoneTutorialStep = ZoneTutorialCraftStep | ZoneTutorialGateStep | ZoneTutorialTriggerStep | ZoneTutorialStorageStep | ZoneTutorialSaleStep | ZoneTutorialCollectMoneyStep | ZoneTutorialBuildStep | ZoneTutorialBuyStorageStep;
+/** "Pick one": the arrow points at a farm growing `resourceType` until the player holds `amount` of it (BackpackStorage). The FTUE's first step after walking in — the carrot shelf appears once it's done. */
+export interface ZoneTutorialHarvestStep {
+    kind: 'harvest';
+    resourceType: ResourceType;
+    /** Units to hold. Unset = 1. */
+    amount?: number;
+    /** The farm the arrow points at. Unset = the nearest farm whose assignedCropId yields it. */
+    farmId?: string;
+    /** See ZoneTutorialCraftStep.iconTextureId's own doc — same per-step override, same fallback chain. */
+    iconTextureId?: string;
+    /** See this file's own top-of-file doc on `offset`. Optional — unset behaves as `[0, 0, 0]`. */
+    offset?: [number, number, number];
+}
+
+/** Options every step kind takes. */
+export interface ZoneTutorialStepOptions {
+    /**
+     * When this step becomes the current one (the previous one done, or the lesson starting on its
+     * own — e.g. the Lv2 wood lesson), the camera glides to where its arrow points — the farm,
+     * storage, cashier, building, the trees of the zone just revealed... — holds a moment with the
+     * player stopped, then comes back (ZoneTutorialController.tryFocus()). Once per save; never for
+     * a step skipped because it was already done.
+     */
+    focusCamera?: boolean;
+    /**
+     * For a step that first sends the player gathering (e.g. chop wood for a storage): when they
+     * have enough and the arrow switches to where it's paid/delivered, the camera glides there too
+     * — once per save, and only if they were actually gathering first.
+     */
+    focusCameraOnDeliver?: boolean;
+    /**
+     * World units: the step is DONE once the player comes this close to where its arrow points —
+     * for "look, something new" lessons (a new stall, a room to build) where seeing it is the point,
+     * not buying it. Unset = only when its own goal is reached.
+     */
+    doneOnReach?: number;
+}
+
+export type ZoneTutorialStep = (ZoneTutorialHarvestStep | ZoneTutorialCraftStep | ZoneTutorialGateStep | ZoneTutorialTriggerStep | ZoneTutorialStorageStep | ZoneTutorialSaleStep | ZoneTutorialCollectMoneyStep | ZoneTutorialBuildStep | ZoneTutorialBuyStorageStep) & ZoneTutorialStepOptions;
 
 export interface ZoneTutorialConfig {
     /** Walked through in order, one at a time — see TutorialProgressStorage.ts for how far along a given zone's player already is. */
@@ -185,6 +224,18 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
                 ]
             },
             {
+                "kind": "harvest",
+                "resourceType": ResourceType.Carrot,
+                "amount": 1,
+                "farmId": "farm1",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ],
+                "focusCamera": true
+            },
+            {
                 "kind": "storage",
                 "storageId": "storage1",
                 "amount": 1,
@@ -193,7 +244,8 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
                     0,
                     0,
                     0
-                ]
+                ],
+                "focusCamera": true
             },
             {
                 "kind": "sale",
@@ -203,7 +255,8 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
                     0,
                     0,
                     0
-                ]
+                ],
+                "focusCamera": true
             },
             {
                 "kind": "collectMoney",
@@ -212,7 +265,8 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
                     0,
                     0,
                     0
-                ]
+                ],
+                "focusCamera": true
             },
             {
                 "kind": "build",
@@ -221,7 +275,8 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
                     0,
                     0,
                     0
-                ]
+                ],
+                "focusCamera": true
             }
         ],
         // Placeholder — 'pointer' is a real frame in ui.webp's atlas (confirmed against
@@ -234,26 +289,62 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
         use3dArrow: true,
     },
     "1": {
-        "steps": [],
-        "arrowTextureId": "woodcutters-axe",
-        "use3dArrow": true
+        "steps": [
+            {
+                "kind": "build",
+                "buildingId": BuildingId.StoreRoom1,
+                "offset": [
+                    0,
+                    0,
+                    0
+                ],
+                "focusCamera": true,
+                "doneOnReach": 3.5
+            }
+        ],
+        "arrowTextureId": "tutorialHand2",
+        "use3dArrow": true,
+        "startRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 4
+        }
     },
     "2": {
-        "steps": [],
-        "use3dArrow": false
+        "steps": [
+            {
+                "kind": "buyStorage",
+                "storageId": "chickenStall",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ],
+                "focusCamera": true,
+                "doneOnReach": 3.5
+            }
+        ],
+        "use3dArrow": true,
+        "arrowTextureId": "tutorialHand2",
+        "startRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 3
+        }
     },
     "4": {
         "steps": [
             {
                 "kind": "buyStorage",
-                "storageId": "butterStation",
+                "storageId": "breadStation",
                 "gatherZone": 4,
                 "iconTextureId": "mining-pickaxe",
                 "offset": [
                     0,
                     0,
                     0
-                ]
+                ],
+                "focusCamera": true
             }
         ],
         "arrowTextureId": "mining-pickaxe",
@@ -261,7 +352,7 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
         "startRequirement": {
             "type": "store",
             "storeId": "farmStore1",
-            "level": 7
+            "level": 8
         }
     },
     "3": {
@@ -275,7 +366,9 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
                     0,
                     0,
                     0
-                ]
+                ],
+                "focusCamera": true,
+                "focusCameraOnDeliver": true
             }
         ],
         "use3dArrow": true,
@@ -287,7 +380,48 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
         }
     },
     "10": {
-        "steps": []
+        "steps": [
+            {
+                "kind": "buyStorage",
+                "storageId": "cowStall",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ],
+                "focusCamera": true,
+                "doneOnReach": 3.5
+            },
+            {
+                "kind": "build",
+                "buildingId": BuildingId.StoreRoom2,
+                "offset": [
+                    0,
+                    0,
+                    0
+                ],
+                "focusCamera": true,
+                "doneOnReach": 3.5
+            },
+            {
+                "kind": "buyStorage",
+                "storageId": "butterStation",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ],
+                "focusCamera": true,
+                "doneOnReach": 3.5
+            }
+        ],
+        "arrowTextureId": "tutorialHand2",
+        "use3dArrow": true,
+        "startRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 5
+        }
     },
     "5": {
         "steps": [
@@ -300,7 +434,8 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
                     0,
                     0,
                     0
-                ]
+                ],
+                "focusCamera": true
             }
         ],
         "arrowTextureId": "mining-pickaxe",

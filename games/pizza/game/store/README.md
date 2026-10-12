@@ -207,10 +207,10 @@ The slot count is the capacity — the player can't drop off more. `storageMilk`
 
 A `mixStation` rect (id) plus parts naming it: a `dropper` (target, or its own id = the station's), an untyped model tile
 with `target` (its look), one id-less `storage` per ingredient (`order` 0, 1, … = which ingredient), a `dispenser`, and
-optionally a `collectArea`. Build price at the dropper: `price` + `resourceCost` (butterStation 60 money + 15 stone,
+optionally a `collectArea`. Build price at the dropper: `price` + `resourceCost` (butterStation 60 money,
 breadStation 120 money + 30 stone). Then: fill each ingredient box (standing next to it, up to its `capacity`), stand on
 the dropper `mixSec` (5 s — pauses if you step out) and the product flies to the dispenser; stand next to it to collect.
-`butterStation`: milk → butter (store Lv 7). `breadStation`: egg + milk → bread (store Lv 8). A station is **not spawned
+`butterStation`: milk → butter (store Lv 5, inside the deposit room — appears once `storeRoom2` is built). `breadStation`: egg + milk → bread (store Lv 8). A station is **not spawned
 if no storage on the map sells its product** — storageButter / storageBread come with the same level. Code:
 `world/MixStation.ts`, `PizzaScene.setupMixStations()`.
 
@@ -262,9 +262,9 @@ player's stack once they've stood in it that long with no garbage left — the w
 | 2 | 50 money | `farm2` (50) + `storage2` (tomatoes, 10) + `trash1` |
 | 3 | +100 money | `farm3` (50) + `storage3` (broccoli, 10) + `chickenStall` (20 → eggs) + `storageEgg` (free) |
 | 4 | +200 money | `farm4` (50) + `storage4` (strawberries, 10) + `farmDesk1` (farm manager — farm upgrades) |
-| 5 | +350 money | `farm5` (50) + `storage5` (corn, 10) + `cowStall` (20 → milk) + `storageMilk` (free) |
+| 5 | +350 money | `farm5` (50) + `storage5` (corn, 10) + `cowStall` (20 → milk) + `storageMilk` (free) + `butterStation` (60, in the deposit room — once `storeRoom2` is built) + `storageButter` |
 | 6 | +500 money | nothing in the store — **zone 5** opens (Zones tab): the pickaxe table + loose stones |
-| 7 | +700 money | `butterStation` (60 + 15 stone) + `storageButter` |
+| 7 | +700 money | nothing yet |
 | 8 | +950 money | `breadStation` (120 + 30 stone) + `storageBread` |
 | 9–20 | +1250 … +10000 money | nothing yet — the demo ends at Lv 9 |
 

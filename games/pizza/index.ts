@@ -50,6 +50,8 @@ import { Localization } from './game/i18n/Localization';
 import loaderConfig from './loader.config';
 
 import platformConfig from './platforms.config.json';
+import { SpotlightStorage } from './game/data/SpotlightStorage';
+import { AnimalStallUpgradeStorage } from './game/data/AnimalStallUpgradeStorage';
 
 export default class MyGame extends Game {
     private gameContainer = new PIXI.Container();
@@ -110,6 +112,8 @@ export default class MyGame extends Game {
             await FarmPlotStorage.load();
             await FarmCropStorage.load();
             await FarmUpgradeStorage.load();
+            await SpotlightStorage.load();
+            await AnimalStallUpgradeStorage.load();
             await SeedStorage.load();
             await QueueStorage.load();
             await ShopUpgradeStorage.load();

@@ -389,6 +389,7 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         "doorStyle": "glass",
         baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
         "name": "Hire Office",
+        "floorLabelIcon": "ItemIcon_Shop-2",
         "appearRequirement": {
             "type": "store",
             "storeId": "farmStore1",
@@ -425,6 +426,7 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
     "storeRoom2": {
         baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
         "name": "Deposit",
+        "floorLabelIcon": "cooking-pot",
         "appearRequirement": {
             "type": "store",
             "storeId": "farmStore1",

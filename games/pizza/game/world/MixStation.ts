@@ -8,6 +8,11 @@
 //   - a progress bar over the making area, shown ONLY while it's actually making (the player is
 //     there and every box holds a batch).
 //
+// The boxes rest on whatever solid surface is drawn under them — a kitchen counter, the station's
+// own table — found from the static colliders' tops (physics/SurfaceQuery.ts), re-checked every
+// SURFACE_CHECK_SEC (the counters' colliders only reach their real height once their models load).
+// Nothing solid under a box = config.surfaceHeight above the floor.
+//
 // The ingredient boxes and the product box are plain StorageZones built by PizzaScene: each
 // ingredient box takes only its resource, up to its capacity (StorageConfig.maxItems), from the
 // player standing next to it; the product box is a collect storage. This entity only watches them:
@@ -41,6 +46,7 @@ import { ResourceType } from '../actions/ResourceTypes';
 import type { MeshPlacement } from './MeshLayerSpawner';
 import type StorageZone from './StorageZone';
 import type { MixStationConfig } from '../data/MixStationTypes';
+import { findSolidTopAt } from '../physics/SurfaceQuery';
 
 const TRIGGER_HALF_HEIGHT = 0.75;
 /** A box's label floats this far above the box's own spot (on the station's top). */
@@ -54,6 +60,12 @@ const BAR_HEIGHT = 2.6;
 const BAR_WIDTH = 110;
 const SLOT_LAYOUT = getIconLayout('Requirement');
 const MAKING_AREA_CORNER_RADIUS = 0.3;
+/** How often the boxes re-check the surface under them — see this file's own doc. */
+const SURFACE_CHECK_SEC = 0.5;
+/** How fast a box glides to a newly found surface height (exponential ease, 1/s). */
+const SURFACE_GLIDE_SPEED = 6;
+/** Closer than this to its surface, a box just snaps the rest of the way. */
+const SURFACE_SNAP_DISTANCE = 0.005;
 
 export interface MixStationRect {
     x: number;
@@ -62,10 +74,12 @@ export interface MixStationRect {
     depth: number;
 }
 
-/** One ingredient box — its StorageInventory id and where it stands (world, on the station's top). */
+/** One ingredient box — its StorageInventory id, where it stands (world, kept on the surface under it) and its StorageZone. */
 export interface MixStationBox {
     storageId: string;
     position: THREE.Vector3;
+    /** Undefined when the map has no spot for it (nothing to move). */
+    zone?: StorageZone;
 }
 
 /** A small framed "icon + count" label — rebuilt only when what it shows changes. */
@@ -108,6 +122,9 @@ export default class MixStation extends Entity {
 
     private player?: MainPlayer;
     private progress = 0;
+    private surfaceTimerSec = 0;
+    /** Each box spot's (and the product box's) surface height to glide to — see settleOnSurfaces(). */
+    private readonly surfaceTargets = new Map<THREE.Vector3, number>();
     private readonly boxLabels: BoxLabel[] = [];
     private readonly productLabel = new BoxLabel(PRODUCT_FRAME);
     private readonly barContent = new PIXI.Container();
@@ -191,6 +208,12 @@ export default class MixStation extends Entity {
 
     public override update(delta: number): void {
         super.update(delta);
+        this.surfaceTimerSec -= delta;
+        if (this.surfaceTimerSec <= 0) {
+            this.surfaceTimerSec = SURFACE_CHECK_SEC;
+            this.settleOnSurfaces();
+        }
+        this.glideToSurfaces(delta);
 
         const ready = this.hasIngredients() && this.output.getFillCount() + this.config.outputAmount <= this.config.maxOutput;
         const making = ready && this.player !== undefined;
@@ -204,6 +227,41 @@ export default class MixStation extends Entity {
             }
         }
         this.refreshLabels(making);
+    }
+
+    /** The surface under every box (and the product box) — where glideToSurfaces() takes it. */
+    private settleOnSurfaces(): void {
+        const physics = this.world?.physics;
+        if (!physics) {
+            return;
+        }
+        const floorY = this.transform.position.y;
+        const surfaceAt = (spot: THREE.Vector3): number => findSolidTopAt(physics, spot.x, spot.z, floorY) ?? floorY + this.config.surfaceHeight;
+        for (const box of this.boxes) {
+            if (box.zone) {
+                this.surfaceTargets.set(box.position, surfaceAt(box.position));
+            }
+        }
+        this.surfaceTargets.set(this.outputPosition, surfaceAt(this.outputPosition));
+    }
+
+    /** Eases each box toward its surface (no teleport) — the box, its pile and its label move together. */
+    private glideToSurfaces(delta: number): void {
+        const t = 1 - Math.exp(-SURFACE_GLIDE_SPEED * delta);
+        const glide = (spot: THREE.Vector3, zone: StorageZone): void => {
+            const target = this.surfaceTargets.get(spot);
+            if (target === undefined || spot.y === target) {
+                return;
+            }
+            spot.y = Math.abs(target - spot.y) <= SURFACE_SNAP_DISTANCE ? target : spot.y + (target - spot.y) * t;
+            zone.setStorageY(spot.y);
+        };
+        for (const box of this.boxes) {
+            if (box.zone) {
+                glide(box.position, box.zone);
+            }
+        }
+        glide(this.outputPosition, this.output);
     }
 
     /** A ScreenAnchorComponent keeping `content` `height` above world point `spot`. */
@@ -225,7 +283,7 @@ export default class MixStation extends Entity {
     private finishBatch(): void {
         this.config.inputs.forEach((input, i) => StorageInventory.remove(this.boxes[i]?.storageId ?? '', input.resourceType, input.amount));
         const type = this.config.resourceType;
-        const from = this.transform.position.clone().setY(this.transform.position.y + this.config.surfaceHeight + 0.3);
+        const from = this.transform.position.clone().setY(this.outputPosition.y + 0.3);
         for (let i = 0; i < this.config.outputAmount; i++) {
             this.output.receiveFrom(type, from, stackItemScale() * getPileScale(type));
         }

@@ -1800,7 +1800,7 @@
          "startx":-32,
          "starty":-16,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":80,
          "x":0,
          "y":0
@@ -1991,8 +1991,8 @@
                  "type":"",
                  "visible":true,
                  "width":65,
-                 "x":488,
-                 "y":468
+                 "x":560.667,
+                 "y":696.333
                 }, 
                 {
                  "height":64.5,
@@ -2394,8 +2394,8 @@
                  "type":"",
                  "visible":true,
                  "width":24,
-                 "x":-122.181818181818,
-                 "y":676
+                 "x":-126.363818181818,
+                 "y":677.272727272727
                 }, 
                 {
                  "height":32,
@@ -2416,9 +2416,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":28.3636363636364,
-                 "x":-124.727272727273,
-                 "y":702
+                 "width":28.3636,
+                 "x":-128,
+                 "y":704
                 }, 
                 {
                  "height":0,
@@ -2592,7 +2592,7 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":40.7272727272727,
+                 "width":40.7273,
                  "x":-128,
                  "y":928
                 }, 
@@ -2697,7 +2697,7 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":38.1818181818182,
+                 "width":38.1818,
                  "x":-304.5,
                  "y":928
                 }, 
@@ -2723,6 +2723,52 @@
                  "width":32,
                  "x":-304.5,
                  "y":992
+                }, 
+                {
+                 "height":24,
+                 "id":463,
+                 "name":"farmDesk: farmDesk1",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"farmDesk2"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"farmDesk"
+                        }],
+                 "rotation":270,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":-154.363636363636,
+                 "y":923.545454545454
+                }, 
+                {
+                 "height":32,
+                 "id":465,
+                 "name":"dropper \u2192 farmDesk1",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"farmDesk2"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28.3636,
+                 "x":-128,
+                 "y":896
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2733,6 +2779,7 @@
         {
          "draworder":"index",
          "id":12,
+         "locked":true,
          "name":"--storeView--stall1",
          "objects":[],
          "opacity":1,
@@ -3031,8 +3078,8 @@
                  "type":"",
                  "visible":true,
                  "width":28.25,
-                 "x":-28.7045454545455,
-                 "y":710.292363636364
+                 "x":-28.7045,
+                 "y":710.292
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -3043,6 +3090,7 @@
         {
          "draworder":"index",
          "id":11,
+         "locked":true,
          "name":"--storeSection--stall1-office",
          "objects":[
                 {
@@ -3464,8 +3512,8 @@
                  "type":"",
                  "visible":true,
                  "width":24,
-                 "x":350.333,
-                 "y":511
+                 "x":643.788,
+                 "y":635
                 }, 
                 {
                  "gid":54,
@@ -3477,8 +3525,8 @@
                  "type":"",
                  "visible":true,
                  "width":24,
-                 "x":350.333,
-                 "y":511
+                 "x":352.697,
+                 "y":635.545
                 }, 
                 {
                  "height":0,
@@ -3543,6 +3591,150 @@
                  "width":45.5,
                  "x":544,
                  "y":608
+                }, 
+                {
+                 "gid":57,
+                 "height":32,
+                 "id":448,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":640,
+                 "y":480
+                }, 
+                {
+                 "gid":60,
+                 "height":32,
+                 "id":449,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":608,
+                 "y":480
+                }, 
+                {
+                 "gid":60,
+                 "height":32,
+                 "id":450,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":576,
+                 "y":480
+                }, 
+                {
+                 "gid":60,
+                 "height":32,
+                 "id":451,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":544,
+                 "y":480
+                }, 
+                {
+                 "gid":60,
+                 "height":32,
+                 "id":455,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":480,
+                 "y":480
+                }, 
+                {
+                 "gid":60,
+                 "height":32,
+                 "id":456,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":448,
+                 "y":480
+                },
+            
+                {
+                 "gid":60,
+                 "height":32,
+                 "id":457,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":416,
+                 "y":480
+                }, 
+                {
+                 "gid":60,
+                 "height":32,
+                 "id":452,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":90,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":640,
+                 "y":480
+                }, 
+                {
+                 "gid":59,
+                 "height":32,
+                 "id":454,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":512,
+                 "y":480
+                }, 
+                {
+                 "gid":62,
+                 "height":34.4545,
+                 "id":458,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":31.4545,
+                 "x":352,
+                 "y":480
+                }, 
+                {
+                 "gid":61,
+                 "height":31.5909,
+                 "id":459,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":90,
+                 "type":"",
+                 "visible":true,
+                 "width":31.7727,
+                 "x":640,
+                 "y":512.227
                 }],
          "opacity":0.8,
          "type":"objectgroup",
@@ -3553,9 +3745,36 @@
         {
          "draworder":"index",
          "id":9,
-         "locked":true,
          "name":"--store--stall1",
          "objects":[
+                {
+                 "height":577,
+                 "id":153,
+                 "name":"store: farmStore1",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"farmStore1"
+                        }, 
+                        {
+                         "name":"starter",
+                         "type":"string",
+                         "value":"stall1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"store"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":717.667,
+                 "x":-61,
+                 "y":444.333
+                }, 
                 {
                  "height":0,
                  "id":413,
@@ -3571,16 +3790,16 @@
                          "y":-4
                         }, 
                         {
-                         "x":277.355469273329,
-                         "y":278.835740553446
+                         "x":277.355,
+                         "y":278.836
                         }, 
                         {
                          "x":176.5,
                          "y":278.75
                         }, 
                         {
-                         "x":152.337520384271,
-                         "y":357.099553536502
+                         "x":152.338,
+                         "y":357.1
                         }, 
                         {
                          "x":33.4167,
@@ -3614,34 +3833,6 @@
                  "width":0,
                  "x":-7.33333,
                  "y":611.333
-                }, 
-                {
-                 "height":577,
-                 "id":153,
-                 "name":"store: farmStore1",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"farmStore1"
-                        }, 
-                        {
-                         "name":"starter",
-                         "type":"string",
-                         "value":"stall1"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"store"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":717.667,
-                 "x":-61,
-                 "y":444.333
                 }, 
                 {
                  "height":79,
@@ -3776,7 +3967,7 @@
                  "type":"",
                  "visible":true,
                  "width":0,
-                 "x":208.1818,
+                 "x":208.182,
                  "y":959.822
                 }, 
                 {
@@ -3800,7 +3991,7 @@
                  "type":"",
                  "visible":true,
                  "width":0,
-                 "x":201.3068,
+                 "x":201.307,
                  "y":899.322
                 }, 
                 {
@@ -3824,7 +4015,7 @@
                  "type":"",
                  "visible":true,
                  "width":0,
-                 "x":247.8488,
+                 "x":247.849,
                  "y":960.716
                 }, 
                 {
@@ -3916,8 +4107,8 @@
                  "type":"",
                  "visible":true,
                  "width":46.333,
-                 "x":-23.5418500000001,
-                 "y":882.24985
+                 "x":-23.5419,
+                 "y":882.25
                 }, 
                 {
                  "height":32,
@@ -4032,7 +4223,7 @@
                  "type":"",
                  "visible":true,
                  "width":32,
-                 "x":251.5227,
+                 "x":251.523,
                  "y":614.77
                 }, 
                 {
@@ -4074,8 +4265,8 @@
                  "type":"",
                  "visible":true,
                  "width":67.3333,
-                 "x":163.4167,
-                 "y":909.708333333333
+                 "x":163.417,
+                 "y":909.708
                 }, 
                 {
                  "height":0,
@@ -4097,7 +4288,7 @@
                  "y":810
                 }, 
                 {
-                 "height":64,
+                 "height":35.4545,
                  "id":430,
                  "name":"",
                  "opacity":1,
@@ -4115,9 +4306,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":128,
-                 "x":373,
-                 "y":847.25
+                 "width":70.9091,
+                 "x":422,
+                 "y":452.977
                 }, 
                 {
                  "height":64,
@@ -4139,8 +4330,8 @@
                  "type":"",
                  "visible":true,
                  "width":128,
-                 "x":468.75,
-                 "y":692.75
+                 "x":526.75,
+                 "y":448.75
                 }, 
                 {
                  "height":39.5,
@@ -4162,8 +4353,8 @@
                  "type":"",
                  "visible":true,
                  "width":45,
-                 "x":414.25,
-                 "y":908.5
+                 "x":441.25,
+                 "y":479.136
                 }, 
                 {
                  "height":39.5,
@@ -4185,27 +4376,8 @@
                  "type":"",
                  "visible":true,
                  "width":45,
-                 "x":510.25,
-                 "y":755.75
-                }, 
-                {
-                 "gid":40,
-                 "height":48,
-                 "id":432,
-                 "name":"",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"target",
-                         "type":"string",
-                         "value":"butterStation"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":96,
-                 "x":387,
-                 "y":902.25
+                 "x":568.25,
+                 "y":511.75
                 }, 
                 {
                  "gid":40,
@@ -4223,8 +4395,8 @@
                  "type":"",
                  "visible":true,
                  "width":96,
-                 "x":482.75,
-                 "y":747.75
+                 "x":540.75,
+                 "y":503.75
                 }, 
                 {
                  "height":28,
@@ -4251,8 +4423,8 @@
                  "type":"",
                  "visible":true,
                  "width":28.75,
-                 "x":389.25,
-                 "y":865.5
+                 "x":417.523,
+                 "y":450.136
                 }, 
                 {
                  "height":28,
@@ -4279,8 +4451,8 @@
                  "type":"",
                  "visible":true,
                  "width":28.75,
-                 "x":485,
-                 "y":711
+                 "x":543,
+                 "y":467
                 }, 
                 {
                  "height":28,
@@ -4307,8 +4479,8 @@
                  "type":"",
                  "visible":true,
                  "width":28.75,
-                 "x":515.5,
-                 "y":711
+                 "x":573.5,
+                 "y":467
                 }, 
                 {
                  "height":28,
@@ -4335,8 +4507,8 @@
                  "type":"",
                  "visible":true,
                  "width":28.75,
-                 "x":452,
-                 "y":865.25
+                 "x":481.182,
+                 "y":450.432
                 }, 
                 {
                  "height":28,
@@ -4363,8 +4535,8 @@
                  "type":"",
                  "visible":true,
                  "width":28.75,
-                 "x":548.75,
-                 "y":710.75
+                 "x":606.75,
+                 "y":466.75
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -4375,6 +4547,7 @@
         {
          "draworder":"topdown",
          "id":6,
+         "locked":true,
          "name":"meshes",
          "objects":[
                 {
@@ -5576,7 +5749,7 @@
          "y":0
         }],
  "nextlayerid":15,
- "nextobjectid":448,
+ "nextobjectid":466,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",
@@ -5620,7 +5793,7 @@
          "margin":0,
          "name":"models",
          "spacing":0,
-         "tilecount":23,
+         "tilecount":30,
          "tileheight":117,
          "tiles":[
                 {
@@ -5911,6 +6084,84 @@
                  "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Deco--Plants15__16x10.png",
                  "imageheight":10,
                  "imagewidth":16,
+                 "properties":[
+                        {
+                         "name":"solid",
+                         "type":"bool",
+                         "value":true
+                        }]
+                }, 
+                {
+                 "id":31,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Restaurant--KitchencabinetCornerHalfStyleB__64x64.png",
+                 "imageheight":64,
+                 "imagewidth":64
+                }, 
+                {
+                 "id":32,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Restaurant--KitchencounterInnercornerBacksplashStyleB__64x64.png",
+                 "imageheight":64,
+                 "imagewidth":64,
+                 "properties":[
+                        {
+                         "name":"solid",
+                         "type":"bool",
+                         "value":true
+                        }]
+                }, 
+                {
+                 "id":33,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Restaurant--KitchencounterOutercornerBacksplashStyleB__64x64.png",
+                 "imageheight":64,
+                 "imagewidth":64,
+                 "properties":[
+                        {
+                         "name":"solid",
+                         "type":"bool",
+                         "value":true
+                        }]
+                }, 
+                {
+                 "id":34,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Restaurant--KitchencounterSinkBacksplashStyleB__64x65.png",
+                 "imageheight":65,
+                 "imagewidth":64,
+                 "properties":[
+                        {
+                         "name":"solid",
+                         "type":"bool",
+                         "value":true
+                        }]
+                }, 
+                {
+                 "id":35,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Restaurant--KitchencounterStraightABacksplashStyleB__64x65.png",
+                 "imageheight":65,
+                 "imagewidth":64,
+                 "properties":[
+                        {
+                         "name":"solid",
+                         "type":"bool",
+                         "value":true
+                        }]
+                }, 
+                {
+                 "id":36,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Food--StoveMulti__64x73.png",
+                 "imageheight":73,
+                 "imagewidth":64,
+                 "properties":[
+                        {
+                         "name":"solid",
+                         "type":"bool",
+                         "value":true
+                        }]
+                }, 
+                {
+                 "id":37,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Restaurant--FridgeA__64x72.png",
+                 "imageheight":72,
+                 "imagewidth":64,
                  "properties":[
                         {
                          "name":"solid",

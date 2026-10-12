@@ -39,6 +39,8 @@ import { TutorialProgressStorage } from '../tutorial/TutorialProgressStorage';
 import { TriggerStorage } from './TriggerStorage';
 import { DemoStorage } from './DemoStorage';
 import { DebugZoneRevealCookie } from '../utils/DebugZoneRevealCookie';
+import { SpotlightStorage } from './SpotlightStorage';
+import { AnimalStallUpgradeStorage } from './AnimalStallUpgradeStorage';
 
 /**
  * Same storage list PizzaScene's own dev "Reset Everything" button clears (including
@@ -129,6 +131,8 @@ export async function wipeAllPlayerData(): Promise<void> {
         FarmPlotStorage.clearAll(),
         FarmCropStorage.clearAll(),
         FarmUpgradeStorage.clearAll(),
+        SpotlightStorage.clearAll(),
+        AnimalStallUpgradeStorage.clearAll(),
         SeedStorage.clearAll(),
         TutorialProgressStorage.clearAll(),
         TriggerStorage.clearAll(),

@@ -13,11 +13,11 @@
                 11,
                 3
             ],
-            "scale": 4,
-            "selectedLayer": 11,
+            "scale": 3,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": 536.125,
-                "y": 837.875
+                "x": 161.16666666666663,
+                "y": 829.1666666666666
             }
         },
         "testMap1.tmx#models": {

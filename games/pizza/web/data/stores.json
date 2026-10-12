@@ -181,6 +181,9 @@
                         },
                         {
                             "entityId": "storageEgg"
+                        },
+                        {
+                            "entityId": "farmDesk2"
                         }
                     ],
                     "moodFloor": "annoyed",
@@ -222,6 +225,12 @@
                         },
                         {
                             "entityId": "storageMilk"
+                        },
+                        {
+                            "entityId": "butterStation"
+                        },
+                        {
+                            "entityId": "storageButter"
                         }
                     ],
                     "moodFloor": "sad",
@@ -242,15 +251,7 @@
                 {
                     "level": 7,
                     "requirementType": "money",
-                    "amount": 700,
-                    "enables": [
-                        {
-                            "entityId": "butterStation"
-                        },
-                        {
-                            "entityId": "storageButter"
-                        }
-                    ]
+                    "amount": 700
                 },
                 {
                     "level": 8,
@@ -399,8 +400,14 @@
                 "type": "trigger",
                 "triggerId": "walkTutorialTrigger"
             },
-            "earlyMaxClients": 2,
-            "earlySpawnIntervalSec": 8
+            "earlyMaxClients": 1,
+            "earlySpawnIntervalSec": 8,
+            "cashierRequirement": {
+                "type": "tutorialStep",
+                "zone": 0,
+                "step": 3
+            },
+            "outOfStockDemand": 0.2
         }
     }
 }

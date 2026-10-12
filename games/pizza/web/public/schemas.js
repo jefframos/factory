@@ -238,6 +238,7 @@ const ENTITY_SCHEMAS = {
         {
             key: 'steps', type: 'list', label: 'Steps (walked through in order)',
             itemLabel: item => ({
+                harvest: `Harvest: ${item.amount ?? 1} ${item.resourceType ?? '?'}${item.farmId ? ` (at ${item.farmId})` : ''}`,
                 craft: `Craft: ${item.craftId ?? '?'}${item.gatherZone !== undefined ? ` (gather in zone ${item.gatherZone})` : ''}`,
                 gate: `Gate: ${item.gateId ?? '?'}`,
                 storage: `Fill Storage: ${item.storageId ?? '?'} x${item.amount ?? 1}${item.farmId ? ` (from ${item.farmId})` : ''}`,
@@ -250,6 +251,7 @@ const ENTITY_SCHEMAS = {
                 {
                     key: 'kind', type: 'select', label: 'Kind',
                     options: [
+                        { value: 'harvest', label: 'Harvest (point at a farm until the player holds the item)' },
                         { value: 'craft', label: 'Craft' },
                         { value: 'gate', label: 'Gate' },
                         { value: 'trigger', label: 'Trigger' },
@@ -265,10 +267,14 @@ const ENTITY_SCHEMAS = {
                 { key: 'triggerId', type: 'select', label: 'Trigger (if Kind = Trigger)', source: 'triggers', optional: true },
                 { key: 'storageId', type: 'select', label: 'Storage (if Kind = Fill Storage — needs a Resource Type on the Storages tab; or Buy Storage — a storage or a mix station)', source: '$buyableIds', optional: true },
                 { key: 'gatherZone', type: 'number', label: 'Gather Zone (if Kind = Buy Storage or Craft — only point at sources in this zone number, e.g. 3 for the tree zone; blank = nearest anywhere)', optional: true },
-                { key: 'farmId', type: 'select', label: 'Farm (if Kind = Fill Storage — where the gather arrow points; blank = nearest farm growing that item)', source: 'farms', optional: true },
+                { key: 'resourceType', type: 'select', label: 'Resource (if Kind = Harvest)', source: 'resources', optional: true },
+                { key: 'farmId', type: 'select', label: 'Farm (if Kind = Fill Storage or Harvest — where the gather arrow points; blank = nearest farm growing that item)', source: 'farms', optional: true },
                 { key: 'storeId', type: 'select', label: 'Store (if Kind = Serve Sale / Collect Money)', source: 'stores', optional: true },
                 { key: 'amount', type: 'number', label: 'Amount (Fill Storage: units on the shelf; Serve Sale: total sales — blank = 1)', optional: true },
                 { key: 'buildingId', type: 'select', label: 'Building (if Kind = Build)', source: 'buildings', optional: true },
+                { key: 'focusCamera', type: 'boolean', label: 'Focus Camera (when this step starts — the previous one just done — the camera glides to its target and holds a moment, player stopped)', optional: true },
+                { key: 'doneOnReach', type: 'number', label: 'Done On Reach (world units — the step finishes once the player comes this close to where its arrow points; for "look, something new" lessons; blank = only when its goal is done)', optional: true },
+                { key: 'focusCameraOnDeliver', type: 'boolean', label: 'Focus Camera On Deliver (after gathering enough, when the arrow switches to where it is paid/delivered, the camera glides there too — e.g. the storage to build)', optional: true },
                 { key: 'iconTextureId', type: 'icon', label: 'Icon Override (blank = tutorial\'s own Arrow Icon below)', optional: true },
                 { key: 'offset', type: 'vector3', label: 'Icon Offset (x, y, z — world units nudged onto the target position; default 0,0,0)' },
             ],
@@ -443,6 +449,8 @@ const ENTITY_SCHEMAS = {
             ],
         },
         { key: 'price', type: 'number', label: 'Mart Price (base price a Mart buys/sells this at — blank means this resource can never be bought or sold at any mart)', optional: true },
+        { key: 'storeDemand', type: 'number', label: 'Store Demand (how often store clients ask for it vs the other items — 1 = as often as any, 0.5 = half as often; lower it for slow goods like eggs; blank = 1)', optional: true },
+        { key: 'storeMaxPerOrder', type: 'number', label: 'Max Per Order (most units one store client asks for — e.g. 1 for eggs; blank = the store\'s own max)', optional: true },
         { key: 'sellable', type: 'boolean', label: 'Sellable To Marts (blocks selling this resource back even though it has a Mart Price — still buyable; meaningless with no Mart Price set)', optional: true },
         { key: 'pileScale', type: 'number', label: 'Pile Scale (draw size on the carrier/in storages and while flying there — only the model grows, spots/spacing stay the same; blank = 1)', optional: true },
         { key: 'carrierSpacing', type: 'number', label: 'Carrier Spacing (how close it stacks on the player\'s back — 0.7 = 30% closer; drawn size unchanged; blank = 1)', optional: true },
@@ -675,6 +683,7 @@ const ENTITY_SCHEMAS = {
         { key: 'maxItems', type: 'number', label: 'Max Items (holds at most this many — the player can\'t drop off more; blank = a shelf\'s slot count, else unlimited)', optional: true },
         { key: 'collect', type: 'boolean', label: 'Collect (the player TAKES from it instead of dropping off — its items fly onto the player\'s stack while there\'s room; e.g. an animal stall\'s egg box, whose entry here has the stall\'s id)', optional: true },
         { key: 'trash', type: 'boolean', label: 'Trash (takes ONLY garbage — Accepts/Only This Resource are ignored — and destroys it: no pile, no count; signpost shows a trash icon; stores never sell from it)', optional: true },
+        { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement (the storage — and its store selling from it — waits for this; e.g. a Tutorial Step; blank = right away)', optional: true },
         { key: 'dumpAnyAfterSec', type: 'number', label: 'Dump Anything After (trash only — seconds standing in it, garbage gone, before it also takes every stack item: crops, eggs, butter...; never wood/stone. Blank = garbage only)', optional: true },
         { key: 'particleEffectId', type: 'select', label: 'Particle Effect (ambient, from the drop point — Particle Effects tab; blank = none)', source: 'particleEffects', optional: true },
         { key: 'particleSpawnRate', type: 'number', label: 'Particle Spawn Rate (particles per second — blank = 4)', optional: true },
@@ -803,6 +812,8 @@ const ENTITY_SCHEMAS = {
         { key: 'unhappyPayPenalty', type: 'number', label: 'Sad/Angry Pay Penalty (fraction taken off, 0.2 = 20% less — blank = 0.2)', optional: true },
         { key: 'openRequirement', type: 'requirement', label: 'Open Early (the store opens at Lv 1 as soon as this is met, before its map "starter" building is built — clients, cashier, money drop and Lv 1 storages/farms work without the building; meanwhile each client wants one unit of one item and never gets upset; used by the FTUE)', optional: true },
         { key: 'earlySpawnIntervalSec', type: 'number', label: 'Early Spawn Interval (seconds between two clients arriving while open early — blank = normal pacing)', optional: true },
+        { key: 'cashierRequirement', type: 'requirement', label: 'Cashier Requirement (the cashier + money drop appear once this is met, the store being open — e.g. a Tutorial Step in the FTUE; blank = when the store opens)', optional: true },
+        { key: 'outOfStockDemand', type: 'number', label: 'Out-Of-Stock Demand (x how often a new client asks for an item with nothing unclaimed on its shelves — demand follows supply; 0 = never, 1 = no difference; blank = 0.2)', optional: true },
         { key: 'earlyMaxClients', type: 'number', label: 'Early Max Clients (most clients at once while open early, before the starter is built — they never get upset then; blank = normal pacing)', optional: true },
         { key: 'defaultStorageId', type: 'text', label: 'Default Storage (storage id on the map — FREE, appears when the store opens; blank = every storage must be bought)', optional: true },
         {
@@ -1028,7 +1039,14 @@ const ENTITY_SCHEMAS = {
         { key: 'name', type: 'text', label: 'Name (popup title + editor)', optional: true },
         { key: 'npcId', type: 'select', label: 'NPC (the farm manager — blank = the "worker" look)', source: 'npcs', optional: true },
         { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement (desk + NPC show once met; blank = right away — a store level can also list it under Enables)', optional: true },
-        { key: 'buttonLabel', type: 'text', label: 'Button Label (blank = "Farms")', optional: true },
+        { key: 'buttonLabel', type: 'text', label: 'Button Label (blank = "Farms", or "Animals" for an Animals desk)', optional: true },
+        {
+            key: 'kind', type: 'select', label: 'Kind (what it sells — blank = Farms)', optional: true,
+            options: [
+                { value: 'farms', label: 'Farms (farm upgrades — Farm Upgrades tab)' },
+                { value: 'animals', label: 'Animals (one more animal per level — Animal Stalls tab → Upgrades)' },
+            ],
+        },
         { key: 'disabled', type: 'boolean', label: 'Disabled (not spawned)', optional: true },
     ],
     // Shelves tab — see game/data/ShelfTypes.ts. A storage picks one with its own `shelf` field.
@@ -1060,6 +1078,14 @@ const ENTITY_SCHEMAS = {
         { key: 'maxPauseSec', type: 'number', label: 'Max Pause (seconds)' },
         { key: 'resourceType', type: 'select', label: 'Produces (laid into the stall\'s box)', source: 'resources' },
         { key: 'produceIntervalSec', type: 'number', label: 'Produce Every (seconds per animal — paused while the box is full)' },
+        {
+            key: 'upgrades', type: 'list', label: 'Upgrades (sold by an Animals-kind farm desk — each level adds ONE more animal; cost to REACH that level; blank = Lv2 60, Lv3 150)', optional: true,
+            itemLabel: item => `Lv ${item.level ?? '?'} — ${item.cost ?? '?'} money: +1 animal`,
+            fields: [
+                { key: 'level', type: 'number', label: 'Level (2, 3, ...)' },
+                { key: 'cost', type: 'number', label: 'Cost (money)' },
+            ],
+        },
         { key: 'disabled', type: 'boolean', label: 'Disabled (the stall isn\'t spawned)', optional: true },
     ],
     // Store View tab -> Fence — see game/store/StoreViewTypes.ts's FenceStyleConfig / PolyFenceBuilder.ts.
@@ -1467,5 +1493,11 @@ const REQUIREMENT_TYPE_FIELDS = {
     storeSales: [
         { key: 'storeId', type: 'select', label: 'Store', source: 'stores' },
         { key: 'sales', type: 'number', label: 'Total Sales (at least — clients who ever paid)' },
+    ],
+    // "Once zone N's tutorial has completed at least S steps" (saved progress — survives reloads),
+    // e.g. the FTUE's carrot shelf appearing after the harvest step. See MilestoneRequirement.ts.
+    tutorialStep: [
+        { key: 'zone', type: 'number', label: 'Tutorial Zone' },
+        { key: 'step', type: 'number', label: 'Steps Completed (at least — 2 = the first two steps are done)' },
     ],
 };

@@ -316,6 +316,13 @@ export interface StoreConfig {
     maxGarbage?: number;
     /** Below maxGarbage, each piece on the floor makes clients come this much less often (0.15 = spawn interval +15% per piece). Unset = DEFAULT_GARBAGE_SPAWN_SLOWDOWN. */
     garbageSpawnSlowdown?: number;
+    /**
+     * x how often a new client asks for an item that's OUT of stock right now (nothing on its
+     * shelves beyond what clients inside already claimed) — demand follows supply, so clients don't
+     * queue up for eggs the hens haven't laid yet. 0 = never, 1 = no difference. Unset =
+     * DEFAULT_OUT_OF_STOCK_DEMAND.
+     */
+    outOfStockDemand?: number;
     /** When true, early store levels cap how low a client's mood can drop (level 1: happy, level 2: annoyed — see Store.getMoodFloor()). A level's own `moodFloor` (levels list) wins over this. Unset/false = clients can always get angry. */
     forgivingEarlyLevels?: boolean;
     /** x moodStepSec with only one shelf (more forgiving early on), easing to x1 with every shelf. Unset = DEFAULT_START_PATIENCE_MULTIPLIER. */
@@ -341,6 +348,12 @@ export interface StoreConfig {
     earlyMaxClients?: number;
     /** Seconds between two clients arriving while open early. Unset = normal pacing (startSpawnIntervalSec with one shelf). */
     earlySpawnIntervalSec?: number;
+    /**
+     * The cashier and money drop appear only once this is met (the store still has to be open) —
+     * the FTUE shows them once the first carrot is on the shelf (a 'tutorialStep' requirement).
+     * Unset = as soon as the store opens.
+     */
+    cashierRequirement?: MilestoneRequirement;
     /** A storage (map id, inside this store) that is FREE and appears the moment the store opens. Unset = the player has to buy every storage. */
     defaultStorageId?: string;
     /** Level ladder — see StoreLevelConfig's own doc. Empty/unset = the store stays level 1 forever. */
@@ -620,6 +633,9 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                     },
                     {
                         "entityId": "storageEgg"
+                    },
+                    {
+                        "entityId": "farmDesk2"
                     }
                 ],
                 "moodFloor": "annoyed",
@@ -661,6 +677,12 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                     },
                     {
                         "entityId": "storageMilk"
+                    },
+                    {
+                        "entityId": "butterStation"
+                    },
+                    {
+                        "entityId": "storageButter"
                     }
                 ],
                 "moodFloor": "sad",
@@ -681,15 +703,7 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
             {
                 "level": 7,
                 "requirementType": "money",
-                "amount": 700,
-                "enables": [
-                    {
-                        "entityId": "butterStation"
-                    },
-                    {
-                        "entityId": "storageButter"
-                    }
-                ]
+                "amount": 700
             },
             {
                 "level": 8,
@@ -770,7 +784,7 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
             "type": "trigger",
             "triggerId": "walkTutorialTrigger"
         },
-        "earlyMaxClients": 2,
+        "earlyMaxClients": 1,
         "workers": [],
         "cleanerWorker": {
             "levels": [
@@ -781,7 +795,13 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                 }
             ]
         },
-        "earlySpawnIntervalSec": 8
+        "earlySpawnIntervalSec": 8,
+        "cashierRequirement": {
+            "type": "tutorialStep",
+            "zone": 0,
+            "step": 3
+        },
+        "outOfStockDemand": 0.2
     }
 };
 
@@ -888,6 +908,8 @@ export const DEFAULT_MAX_CLIENT_PATIENCE = 1.5;
 export const DEFAULT_CLIENTS_PER_WORKER = 1;
 export const DEFAULT_CLIENTS_PER_LEVEL = 0.5;
 export const DEFAULT_OVERFLOW_CLIENTS = 2;
+/** StoreConfig.outOfStockDemand fallback. */
+export const DEFAULT_OUT_OF_STOCK_DEMAND = 0.2;
 export const DEFAULT_STUCK_SEC = 15;
 /** StoreConfig.angryDropSec / maxGarbage fallbacks. */
 export const DEFAULT_ANGRY_DROP_SEC = 8;

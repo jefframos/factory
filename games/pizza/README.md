@@ -897,6 +897,11 @@ prompts and the levels table. The headlines:
 - **Client indicators** (`ui/AlertIcon.ts`, `store/StoreAlertConfig.ts`): "?" over a
   client who can't find an item, "!" over one waiting at an unattended cashier
   (`Store.isCashierUnattended()`), and a trash icon over a full garbage bin.
+- **Demand follows supply** (`Store.pickWants()`): a new client's items are drawn by weight —
+  Resources tab `storeDemand` (egg/milk 0.6, butter 0.4, bread 0.35, others 1) x store `outOfStockDemand`
+  (0.2) when nothing unclaimed is on that item's shelves (stock minus what clients inside still need).
+  Amounts are capped by `storeMaxPerOrder` (1 for the slow goods) and by the unclaimed stock. Crops
+  refill fast so they stay at full demand; eggs/milk/butter/bread get asked for about as fast as they're made.
 - **The bin is the player's way out** — `StorageConfig.dumpAnyAfterSec` (trash1: 1.5 s):
   standing in the trash that long, with no garbage left, also throws away everything on the
   stack ('farm' items — crops, eggs, butter...; never wood/stone). Walking past does nothing.
@@ -907,7 +912,7 @@ prompts and the levels table. The headlines:
 ## Zone tutorials & FTUE — `game/tutorial/`
 
 `ZoneTutorialTypes.ts` (editor tab: Tutorials) gives each zone an ordered step list. The
-step kinds are `craft`, `gate`, `trigger`, `storage` (deliver a resource into a storage),
+step kinds are `harvest` (hold an item — the arrow stays on its farm), `craft`, `gate`, `trigger`, `storage` (deliver a resource into a storage),
 `buyStorage` (buy a storage — or a mix station; `gatherZone` points the arrow at where to get
 the cost, e.g. the trees), `sale` (a client buys), `collectMoney` (take the cashier's money) and `build`
 (build a building). `ZoneTutorialController.ts` runs them:
@@ -918,15 +923,33 @@ the cost, e.g. the trees), `sale` (a client buys), `collectMoney` (take the cash
   store Lv2.
 - Steps that are already satisfied (e.g. after a reload) are skipped
   (`isStepAlreadyDone`).
+- `focusCamera` (any step): when the step becomes current (previous step done, or the lesson starting
+  on its own), the camera glides to where its arrow points, holds ~1 s with the player stopped, then
+  returns (`ZoneTutorialController.tryFocus()`) — once per save, never for a skipped step, and only once
+  the camera is free. A "gather in zone N" step waits (up to 4 s) for a source in that zone — the Lv2
+  wood lesson shows the trees of the zone it just revealed. Used by the FTUE (every step after the
+  trigger) and the wood (Lv2), pickaxe (Lv6) and bread-station stone (Lv8) lessons.
+- `focusCameraOnDeliver`: after gathering enough, when the arrow switches to where it's paid/delivered,
+  the camera glides there too (once per save, only if the player was gathering first). The Lv2 wood
+  lesson uses it: trees first, then storage2 once you hold enough wood.
+- **Lessons for every new thing** (requirement-started, so where the player stands doesn't matter;
+  keyed by an unused zone number, run one at a time in key order; hand icon `tutorialHand2` + 3D arrow,
+  `focusCamera` on each step): #2 Lv3 buy chickenStall · #1 Lv4 build storeRoom1 (hire office) · #10 Lv5
+  buy cowStall → build storeRoom2 (deposit) → buy butterStation · #3 Lv2 wood · #5 Lv6 pickaxe · #4 Lv8
+  bread station. A new thing to teach = add steps to a free key with a start requirement.
+- `doneOnReach` (world units): the step is done once the player comes that close to where its arrow
+  points — the "look, something new" lessons (#1, #2, #10: 3.5) finish on arrival, not on purchase.
 - `craft` steps take a `gatherZone` too (zone 5's pickaxe lesson points at the loose
   stones next to the table, not at rocks the player can't mine yet).
 
-**The current FTUE (zone 0):** walk to `walkTutorialTrigger` → farm1/storage1 appear and the
-store opens early → deliver a carrot to storage1 → a client buys it → collect the money →
+**The current FTUE (zone 0):** walk to `walkTutorialTrigger` → the store opens early and only
+farm1 appears → pick a carrot (`harvest` step) → storage1 appears (`appearRequirement`: tutorialStep 0/2) and
+ONE client comes in (`earlyMaxClients` 1, no overflow) → deposit the carrot → the cashier + money drop
+appear (store `cashierRequirement`: tutorialStep 0/3) → the client pays → collect the money →
 zone 2 reveals and stall1 appears (10 money) → build it. At store Lv2, zone 3 (trees)
 unlocks and the tutorial sends the player to chop wood for storage2. Lv6: zone 5 opens and
-the tutorial has them craft the pickaxe (3 loose stones). Lv7: it sends them to mine zone 4's
-rocks and build the butter station (60 money + 15 stone).
+the tutorial has them craft the pickaxe (3 loose stones). Lv8: it sends them to mine zone 4's
+rocks and build the bread station (120 money + 30 stone).
 
 ### Progression ladder (farmStore1, as of 2026-10)
 
@@ -936,9 +959,9 @@ rocks and build the butter station (60 money + 15 stone).
 | 2 | farm2 tomato, storage2 (20 wood), trash1; zone 3 trees | chop wood |
 | 3 | farm3 broccoli, storage3, **chickenStall** + storageEgg | animals → eggs |
 | 4 | farm4 strawberry, storage4, storeRoom1 (hire office, 50 wood), **farmDesk1** | hire staff, upgrade farms |
-| 5 | farm5 corn, storage5, **cowStall** + storageMilk, storeRoom2; zone 4 | milk |
+| 5 | farm5 corn, storage5, **cowStall** + storageMilk, storeRoom2 (the deposit room) → **butterStation** inside it (60 money) + storageButter; zone 4 | milk, mix milk → butter |
 | 6 | **zone 5**: pickaxe table + loose stones | mine (pickaxe) |
-| 7 | **butterStation** (60 money + 15 stone), storageButter | mix milk → butter |
+| 7 | — (free slot) | — |
 | 8 | **breadStation** (120 money + 30 stone), storageBread | egg + milk → bread |
 | 9 | demo end popup | — |
 
@@ -963,6 +986,15 @@ bubbles, alert icons) lives in PizzaScene's `worldUiLayer`, the FIRST child of `
 so every HUD panel draws over it; notifications and popups are tiers above uiLayer. Flying icons
 headed into the HUD (FlyingResourceIcon) use `ScreenAnchorHost.effectsContainer` (uiLayer itself)
 to fly over it.
+
+**First-time spotlights** (`camera/SpotlightDirector.ts`, saved in `SpotlightStorage`): a one-time camera trip
+(glide, ~1.3 s hold with the player stopped, back) to something new — an animal stall, a store expansion
+(section: hire office, deposit) or a mix station the moment it appears for sale during play (not on a
+reload — OFF: `SPOTLIGHT_CONFIG.forSale`, the lessons above pan and point instead), and the first reachable source of each gatherable kind in `SPOTLIGHT_CONFIG.resources` (wood,
+stone): chopped trees (axe), mined deposits (pickaxe), loose stones — in a revealed zone, near the
+player, tool owned — that list is EMPTY by default: wood and stone are shown by the lessons that need
+them (`focusCamera` steps), at the moment they're needed. Queued one at a time, never during another
+camera trip/pause. Clear Data resets them.
 
 ## Animal stalls, shelves & mix stations
 
@@ -995,11 +1027,20 @@ so one config entry can be laid out freely in Tiled.
   collect storage). With every box holding a batch and the player standing in the making
   area, it mixes for `mixSec` (5 s), then sends the product to the dispenser (up to
   `maxOutput`). Each box has an icon + count label, the product box uses a different frame,
-  and the progress bar only shows while it's making. Stations: butterStation (milk →
+  and the progress bar only shows while it's making. The boxes rest on whatever solid surface is drawn
+  under them (a kitchen counter, the station's own table — the top of the static colliders there, see
+  `physics/SurfaceQuery.ts`; re-checked every 0.5 s), else `surfaceHeight` above the floor. Stations: butterStation (milk →
   butter), breadStation (egg + milk → bread). `mixStation` is placement-gated by
-  `StoreUnlocks` like other store parts, and listed under store levels 7/8. **A station is
+  `StoreUnlocks` like other store parts — both stand in the deposit room (storeRoom2), so they
+  only appear once it's built — and listed under store levels 5/8. **A station is
   skipped if no map storage sells its product** — add the shelf (storageButter /
   storageBread) first.
+
+**Deposits never double-claim** (`data/DepositReservations.ts`): every pay spot (storage/stall/station
+purchase, building, farm plot) reserves each unit it launches from the backpack/wallet in one shared
+ledger, so standing in two pay spots at once can't send the same log to both. A purchase spot spawns the
+real storage before announcing (a failing listener is logged, never leaves it half bought), finishes on
+its own if it loads already fully paid, and a flying icon is always cleaned up.
 
 ## Farm manager & farm upgrades — `data/FarmUpgradeTypes.ts`, `data/FarmDeskTypes.ts`
 
@@ -1011,6 +1052,10 @@ something is affordable).
   + a `dropper` targeting it (where the player talks to it). `PizzaScene.setupFarmDesks()`,
   `world/FarmDeskZone.ts`. Desk settings (NPC look, appear requirement, button label): editor
   Farm Desks tab.
+- **Animal keeper**: a desk with `kind: 'animals'` (`farmDesk2`, by the stalls, store Lv3) sells animal
+  stall upgrades instead (`AnimalUpgradesPopup`): each level adds one more animal, so the stall lays
+  more often — ladder per stall in Animal Stalls → Upgrades (default Lv2 60, Lv3 150), saved in
+  `AnimalStallUpgradeStorage`; the new animal walks into the pen right away.
 - **Ladders**: editor Farm Upgrades tab — per farm id (default for the rest): `cost`,
   `priceBonus` (+ fraction on the crop's store price), and the supported-but-unused
   `growSpeed` (x) / `yieldBonus` (+ per harvest). Default: Lv2 40 (+20%), Lv3 90 (+40%),

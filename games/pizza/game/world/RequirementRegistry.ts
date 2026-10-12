@@ -49,6 +49,7 @@ import { isMilestoneRequirementMet, MilestoneRequirement } from '../data/Milesto
 import { StoreUnlocks } from '../store/StoreUnlocks';
 import { StoreProgressStorage } from '../store/StoreProgressStorage';
 import { StorageOwnershipStorage } from '../store/StorageOwnershipStorage';
+import { TutorialProgressStorage } from '../tutorial/TutorialProgressStorage';
 
 interface SpawnGateEntry {
     readonly id: string;
@@ -75,6 +76,8 @@ export default class RequirementRegistry {
         StoreProgressStorage.onProgressChanged.add(() => this.trySpawnAll());
         // So does buying a storage (MilestoneRequirement's 'storage' kind).
         StorageOwnershipStorage.onPurchase.add(() => this.trySpawnAll());
+        // So does a tutorial step completing (MilestoneRequirement's 'tutorialStep' kind).
+        TutorialProgressStorage.onChange.add(() => this.trySpawnAll());
     }
 
     /**

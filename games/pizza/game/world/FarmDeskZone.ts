@@ -19,6 +19,7 @@ import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import MainPlayer from '../player/MainPlayer';
 import { PopupManager } from '../ui/popups/PopupManager';
 import FarmUpgradesPopup, { canAffordAnyFarmUpgrade } from '../ui/popups/FarmUpgradesPopup';
+import AnimalUpgradesPopup, { canAffordAnyAnimalUpgrade } from '../ui/popups/AnimalUpgradesPopup';
 import { STAFF_ALERT_TEXTURE } from '../store/StaffUpgradeAlert';
 import type { FarmDeskConfig } from '../data/FarmDeskTypes';
 
@@ -35,8 +36,8 @@ export default class FarmDeskZone extends Entity {
     private readonly config: FarmDeskConfig;
     private readonly footprint: { width: number; depth: number };
     private readonly screenHost: ScreenAnchorHost;
-    /** Every farm on the map — the popup lists the owned ones. */
-    private readonly farmIds: readonly string[];
+    /** Every farm (kind 'farms') or animal stall (kind 'animals') on the map — the popup lists the owned ones. */
+    private readonly ids: readonly string[];
     private readonly freezePlayerMovement: () => void;
     private readonly unfreezePlayerMovement: () => void;
 
@@ -49,7 +50,7 @@ export default class FarmDeskZone extends Entity {
         position: THREE.Vector3,
         footprint: { width: number; depth: number },
         screenHost: ScreenAnchorHost,
-        farmIds: readonly string[],
+        ids: readonly string[],
         freezePlayerMovement: () => void,
         unfreezePlayerMovement: () => void,
     ) {
@@ -57,7 +58,7 @@ export default class FarmDeskZone extends Entity {
         this.config = config;
         this.footprint = footprint;
         this.screenHost = screenHost;
-        this.farmIds = farmIds;
+        this.ids = ids;
         this.freezePlayerMovement = freezePlayerMovement;
         this.unfreezePlayerMovement = unfreezePlayerMovement;
         this.transform.position.copy(position);
@@ -88,7 +89,7 @@ export default class FarmDeskZone extends Entity {
         this.buttonContent = createLibraryButton({
             color: 'green',
             width: BUTTON_WIDTH, height: BUTTON_HEIGHT,
-            label: this.config.buttonLabel ?? 'Farms',
+            label: this.config.buttonLabel ?? (this.isAnimals() ? 'Animals' : 'Farms'),
             onClick: () => this.open(),
         });
         const anchorPosition = new THREE.Vector3();
@@ -112,7 +113,7 @@ export default class FarmDeskZone extends Entity {
 
     /** Exclamation badge on the button while some owned farm's next upgrade is affordable. Only touches the button when the state flips. */
     private refreshAlert(): void {
-        const show = canAffordAnyFarmUpgrade(this.farmIds);
+        const show = this.isAnimals() ? canAffordAnyAnimalUpgrade(this.ids) : canAffordAnyFarmUpgrade(this.ids);
         if (show === this.alertShown) {
             return;
         }
@@ -129,6 +130,12 @@ export default class FarmDeskZone extends Entity {
             return;
         }
         this.freezePlayerMovement();
-        PopupManager.instance.show(new FarmUpgradesPopup(this.config.name ?? 'Farm Manager', this.farmIds, this.unfreezePlayerMovement));
+        PopupManager.instance.show(this.isAnimals()
+            ? new AnimalUpgradesPopup(this.config.name ?? 'Animal Keeper', this.ids, this.unfreezePlayerMovement)
+            : new FarmUpgradesPopup(this.config.name ?? 'Farm Manager', this.ids, this.unfreezePlayerMovement));
+    }
+
+    private isAnimals(): boolean {
+        return this.config.kind === 'animals';
     }
 }

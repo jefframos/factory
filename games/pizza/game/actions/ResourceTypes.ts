@@ -105,6 +105,14 @@ export interface ResourceConfig {
      */
     sellable?: boolean;
     /**
+     * How often store clients ask for this, relative to the other items on sale (1 = as often as
+     * any, 0.5 = half as often). Lower it for slow goods (eggs, milk, butter, bread) so demand
+     * matches what the player can make. Unset = 1. See Store.trySpawnClient().
+     */
+    storeDemand?: number;
+    /** Most units of this one client asks for (on top of the store's maxAmountPerItem). Unset = no extra cap. */
+    storeMaxPerOrder?: number;
+    /**
      * Extra DRAW size for this resource when piled — on the carrier, in a storage, and on the
      * flight to either (see ItemPile.getPileScale()). Only the model grows (from its own
      * bottom-center); where it sits and how the pile is spaced stay exactly as at 1, so e.g. 2 =
@@ -344,7 +352,9 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         "price": 25,
         "sellable": true,
         "pileScale": 3,
-        "carrierSpacing": 0.7
+        "carrierSpacing": 0.7,
+        "storeDemand": 0.6,
+        "storeMaxPerOrder": 1
     },
     [ResourceType.Milk]: {
         color: 0xf7f7f2,
@@ -354,7 +364,9 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         "price": 30,
         "sellable": true,
         "pileScale": 2.5,
-        "carrierSpacing": 0.8
+        "carrierSpacing": 0.8,
+        "storeDemand": 0.6,
+        "storeMaxPerOrder": 1
     },
     [ResourceType.Butter]: {
         color: 0xf5d76e,
@@ -364,7 +376,9 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         "price": 70,
         "sellable": true,
         "pileScale": 0.6,
-        "carrierSpacing": 0.8
+        "carrierSpacing": 0.8,
+        "storeDemand": 0.4,
+        "storeMaxPerOrder": 1
     },
     [ResourceType.Bread]: {
         color: 0xc68642,
@@ -374,6 +388,8 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         "price": 120,
         "sellable": true,
         "pileScale": 0.8,
-        "carrierSpacing": 0.8
+        "carrierSpacing": 0.8,
+        "storeDemand": 0.35,
+        "storeMaxPerOrder": 1
     }
 };

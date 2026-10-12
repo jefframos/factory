@@ -45,12 +45,7 @@
                 "Restaurant.Crate"
             ],
             "boxScale": 0.8,
-            "resourceCost": [
-                {
-                    "resourceType": "stone",
-                    "amount": 15
-                }
-            ]
+            "resourceCost": []
         },
         "breadStation": {
             "name": "Bread Station",

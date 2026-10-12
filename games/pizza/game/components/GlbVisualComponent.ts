@@ -45,6 +45,12 @@ export default class GlbVisualComponent extends Component {
         this.occlusionFade = occlusionFade;
     }
 
+    /** Shifts the model by `delta` (its parent's space) — before it has loaded too (it then loads there). */
+    public moveBy(delta: THREE.Vector3): void {
+        this.centerOffset.add(delta);
+        this._mesh?.position.add(delta);
+    }
+
     public get mesh(): THREE.Object3D {
         if (!this._mesh) {
             throw new Error('GlbVisualComponent mesh accessed before its model finished loading');

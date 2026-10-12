@@ -2140,6 +2140,9 @@ function renderRequirementField(container, obj, field, onDirty) {
         if (type === 'storeSales') {
             return { type: 'storeSales', storeId: getOptions('stores')[0]?.value ?? '', sales: 1 };
         }
+        if (type === 'tutorialStep') {
+            return { type: 'tutorialStep', zone: 0, step: 1 };
+        }
         return { type: 'resource', resourceType: getOptions('resources')[0]?.value ?? '', amount: 1 };
     }
 

@@ -12,6 +12,9 @@
 
 import type { MilestoneRequirement } from './MilestoneRequirement';
 
+/** See FarmDeskConfig.kind. */
+export type FarmDeskKind = 'farms' | 'animals';
+
 export interface FarmDeskConfig {
     /** Shown in the editor and as the popup's title. Optional. */
     name?: string;
@@ -19,8 +22,14 @@ export interface FarmDeskConfig {
     npcId?: string;
     /** The desk (and its NPC) appear once this is met. Unset = right away. */
     appearRequirement?: MilestoneRequirement;
-    /** Label on the button that opens the popup. Unset = "Farms". */
+    /** Label on the button that opens the popup. Unset = "Farms" (or "Animals" for kind 'animals'). */
     buttonLabel?: string;
+    /**
+     * What this desk sells: 'farms' — farm upgrades (FarmUpgradesPopup, FarmUpgradeTypes.ts);
+     * 'animals' — animal stall upgrades, one more animal per level (AnimalUpgradesPopup,
+     * AnimalStallConfig.upgrades). Unset = 'farms'.
+     */
+    kind?: FarmDeskKind;
     /** When true, this desk isn't spawned at all. */
     disabled?: boolean;
 }
@@ -34,6 +43,11 @@ export const FARM_DESK_CONFIG_BY_ID: Partial<Record<string, FarmDeskConfig>> = {
     "farmDesk1": {
         "name": "Farm Manager",
         "buttonLabel": "Farms"
+    },
+    "farmDesk2": {
+        "name": "Animal Keeper",
+        "buttonLabel": "Animals",
+        "kind": "animals"
     }
 };
 

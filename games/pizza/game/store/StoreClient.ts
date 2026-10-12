@@ -830,6 +830,11 @@ export default class StoreClient extends Entity implements NavNeighbor {
         this.setState(this.getBasePrice() > 0 ? 'toCashier' : 'leaving');
     }
 
+    /** Units of `type` this client still wants to pick (claimed against the shelves — see Store.unclaimedStock()). */
+    public getRemainingWant(type: ResourceType): number {
+        return this.wants.reduce((sum, want) => sum + (want.type === type && !want.skipped ? want.remaining : 0), 0);
+    }
+
     /** What this client pays right now — its base price scaled by its current mood. */
     private getTotalPrice(): number {
         return applyMoodToPrice(this.host.config, this.getMood(), this.getBasePrice());

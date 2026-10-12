@@ -186,6 +186,14 @@ export function readStoreLayouts(
         areasByStore.set(storeId, [...(areasByStore.get(storeId) ?? []), shape]);
     }
 
+    // Parts whose store has no area object at all (e.g. the "store" rect was deleted in Tiled) —
+    // that store doesn't exist, and nothing it gates by level or placement is gated any more.
+    for (const target of parts.keys()) {
+        if (!areas.has(target)) {
+            console.warn(`[StoreLayout] store parts target "${target}", but there's no "store" object with that id — the store is skipped and nothing it gates (levels, sections) stays hidden`);
+        }
+    }
+
     const layouts: StoreLayout[] = [];
     for (const [id, area] of areas) {
         const p = parts.get(id) ?? {};

@@ -128,7 +128,7 @@ import StoreUnlockHints from '../store/StoreUnlockHints';
 import { getFarmDeskConfig } from '../data/FarmDeskTypes';
 import { StoreProgressStorage } from '../store/StoreProgressStorage';
 import StoragePurchaseZone from '../store/StoragePurchaseZone';
-import { getAnimalStallConfig } from '../data/AnimalStallTypes';
+import { getAnimalStallConfig, getAnimalCountAt } from '../data/AnimalStallTypes';
 import { ProducedGoods } from '../data/ProducedGoods';
 import { DEFAULT_MIX_INPUT_CAPACITY, getMixStationConfig } from '../data/MixStationTypes';
 import MixStation, { MixStationBox } from '../world/MixStation';
@@ -169,6 +169,11 @@ import { getFenceDoorSetup, getFenceStyle } from '../store/StoreViewTypes';
 import { addFenceDoorVisual } from '../world/FenceDoor';
 import { buildSolidArea } from '../physics/SolidArea';
 import GlbVisualComponent from '../components/GlbVisualComponent';
+import { getAssetIcon } from '../world/AssetLibraryRegistry';
+import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
+import SpotlightDirector from '../camera/SpotlightDirector';
+import { ZONE_TUTORIAL_CONFIG } from '../tutorial/ZoneTutorialTypes';
+import { AnimalStallUpgradeStorage } from '../data/AnimalStallUpgradeStorage';
 
 /**
  * Camera settings data — a spherical orbit around the player instead of a
@@ -371,6 +376,25 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.worldObjects,
         this.worldManager.getZoneVisibilityManager(),
         () => this.mainPlayer.transform.position,
+        // focusCamera steps glide the camera to what's next (see ZoneTutorialStepOptions.focusCamera),
+        // once nothing else holds the camera.
+        this,
+        () => this.movementFreezeCount === 0 && !GameClock.isPaused(),
+    );
+
+    /**
+     * One-time camera trips to something new — an animal stall, a store expansion, a mix station
+     * for sale, the first woods / breakable stones (see camera/SpotlightDirector.ts). Waits for
+     * any other camera trip or pause; resource spotlights wait until the first tutorial is done.
+     */
+    private readonly spotlights = new SpotlightDirector(
+        this,
+        this.worldManager.getZoneVisibilityManager(),
+        () => this.movementFreezeCount === 0 && !GameClock.isPaused(),
+        () => {
+            const steps = ZONE_TUTORIAL_CONFIG[0]?.steps.length ?? 0;
+            return TutorialProgressStorage.getCompletedStepCount(0) >= steps;
+        },
     );
 
     /** The fresh-game "move the character" hand animation, zone-0-only — see MovementTutorialOverlay.ts's own doc. Driven once per render-rate update(), same call-site pattern as uiService.update() (a screen-fixed overlay, not tied to the physics step). */
@@ -527,6 +551,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupFarmDesks();
         this.setupTriggers();
         this.setupCraftTables();
+        // From here on, something appearing for sale is news (a reload's restore isn't).
+        this.spotlights.markReady();
         StoreProgressStorage.onLevelChanged.add(this.handleStoreLevelChanged);
         // Poki gameplayStart on the player's first tap/click/key from here on — see GameplayTracker.ts.
         GameplayTracker.init();
@@ -1298,6 +1324,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             const viewStoreId = storeIdByStarter.get(buildingId) ?? this.worldObjects.getStoreSection(buildingId)?.storeId;
             const cameraTarget = this.worldObjects.getCameraTargetFor(buildingId);
             this.requirementRegistry.registerSpawnGate(buildingId, BUILDING_CONFIG[buildingId].appearRequirement, () => {
+                // A store expansion (hire office, deposit...) just became available — show it once.
+                if (this.worldObjects.getStoreSection(buildingId) && BuildingStorage.getLevel(buildingId) === 0) {
+                    this.spotlights.request(`section:${buildingId}`, triggerArea?.position ?? position);
+                }
                 // Same optional NPC-in-front-of-the-entity system setupMarts() uses — see
                 // BuildingConfig.npcId/npcOffset's own doc for why this is always relative to
                 // the mesh position, not the dropper/trigger. Spawned BEFORE constructing
@@ -1718,15 +1748,27 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     storageZone.receiveFrom(type, animal.position.clone().setY(animal.position.y + LAY_HEIGHT), layScale);
                     return true;
                 };
-                for (let i = 0; i < Math.max(0, Math.round(stallConfig.animalCount)); i++) {
-                    const start = onFloor(
-                        THREE.MathUtils.lerp(area.minX, area.maxX, Math.random()),
-                        THREE.MathUtils.lerp(area.minZ, area.maxZ, Math.random()),
-                    );
-                    const animal = this.world.add(new StallAnimal(stallConfig, area, start, tryProduce));
-                    this.threeScene.add(animal.transform);
-                    this.registerZoneVisibility(animal.transform, pen.x, pen.z, pen.width, pen.depth);
-                }
+                // One animal per level past 1 on top of animalCount (the animal keeper's upgrades —
+                // see AnimalStallTypes.getAnimalCountAt()); an upgrade bought later walks in right away.
+                let animals = 0;
+                const fillPen = (): void => {
+                    const wanted = getAnimalCountAt(id, AnimalStallUpgradeStorage.getLevel(id));
+                    for (; animals < wanted; animals++) {
+                        const start = onFloor(
+                            THREE.MathUtils.lerp(area.minX, area.maxX, Math.random()),
+                            THREE.MathUtils.lerp(area.minZ, area.maxZ, Math.random()),
+                        );
+                        const animal = this.world.add(new StallAnimal(stallConfig, area, start, tryProduce));
+                        this.threeScene.add(animal.transform);
+                        this.registerZoneVisibility(animal.transform, pen.x, pen.z, pen.width, pen.depth);
+                    }
+                };
+                fillPen();
+                AnimalStallUpgradeStorage.onChange.add((stallId: string) => {
+                    if (stallId === id) {
+                        fillPen();
+                    }
+                });
             };
 
             this.requirementRegistry.registerSpawnGate(id, undefined, () => {
@@ -1734,6 +1776,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     spawnBuilt();
                     return;
                 }
+                // A new animal is available — show its stall once.
+                this.spotlights.request(`stall:${id}`, onFloor(dropper.x, dropper.z));
                 const price = storageConfig.price;
                 const purchaseZone = this.world.add(new StoragePurchaseZone(
                     id,
@@ -1838,10 +1882,12 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                         { width: spot.width + MIX_COLLECT_PADDING * 2, depth: spot.depth + MIX_COLLECT_PADDING * 2 },
                         { width: spot.width, depth: spot.depth },
                         this.screenHost,
+                        // No outline — standing next to the box is enough; only the making area is drawn.
+                        false,
                     ));
                     this.threeScene.add(zone.transform);
                     this.registerZoneVisibility(zone.transform, spot.x, spot.z, spot.width, spot.depth);
-                    return { storageId, position: onTop(spot.x, spot.z) };
+                    return { storageId, position: onTop(spot.x, spot.z), zone };
                 });
 
                 const collect = collectArea ?? {
@@ -1849,15 +1895,18 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     width: dispenser.width + MIX_COLLECT_PADDING * 2,
                     depth: dispenser.depth + MIX_COLLECT_PADDING * 2,
                 };
+                // Shared with MixStation (which keeps it on the surface under it) and the restockers' supply.
+                const outputPosition = onTop(dispenser.x, dispenser.z);
                 const output = this.world.add(new StorageZone(
                     `${id}:out`,
                     // The product box — same box as the ingredients, on the station's top.
                     spotConfig({ ...boxLook, resourceType: config.resourceType, collect: true, maxItems: config.maxOutput, pile: { columns: 2, rows: 2, layers: Math.max(1, Math.ceil(config.maxOutput / 4)) } }),
-                    onTop(dispenser.x, dispenser.z),
+                    outputPosition.clone(),
                     onFloor(collect.x, collect.z),
                     { width: collect.width, depth: collect.depth },
                     { width: dispenser.width, depth: dispenser.depth },
                     this.screenHost,
+                    false,
                 ));
                 this.threeScene.add(output.transform);
                 this.registerZoneVisibility(output.transform, dispenser.x, dispenser.z, dispenser.width, dispenser.depth);
@@ -1866,10 +1915,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     `${id}:out`,
                     config.resourceType,
                     onFloor(collect.x, collect.z),
-                    onFloor(dispenser.x, dispenser.z).setY(FloorLayers.baseY + config.surfaceHeight),
+                    outputPosition,
                 ));
 
-                const station = this.world.add(new MixStation(config, onFloor(rect.x, rect.z), dropper, mesh, boxes, output, onTop(dispenser.x, dispenser.z), this.screenHost));
+                const station = this.world.add(new MixStation(config, onFloor(rect.x, rect.z), dropper, mesh, boxes, output, outputPosition, this.screenHost));
                 this.threeScene.add(station.transform);
                 this.registerZoneVisibility(station.transform, rect.x, rect.z, rect.width, rect.depth);
             };
@@ -1881,6 +1930,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     spawnBuilt();
                     return;
                 }
+                // Something new to make — show the station once.
+                this.spotlights.request(`station:${id}`, onFloor(dropper.x, dropper.z));
                 const purchaseZone = this.world.add(new StoragePurchaseZone(
                     id,
                     price,
@@ -1892,7 +1943,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     spawnBuilt,
                     FLOOR_FRAME,
                     undefined,
-                    undefined,
+                    // What it makes — on the cost label and the "STATION BUILT!" notification.
+                    getAssetIcon(resolveResourceAssetKey(config.resourceType)),
                     true,
                     dropper.rotationDeg,
                     { title: 'STATION BUILT!', subtitle: (config.name ?? 'Mix station').toUpperCase() },
@@ -1937,13 +1989,15 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     this.screenHost,
                     showDropOutline,
                     placement.rotationDeg,
+                    // Outline the dropper / the storage itself, not the padding around it.
+                    { width: trigger.width, depth: trigger.depth },
                 ));
                 this.threeScene.add(storageZone.transform);
                 // Registered over the storage's OWN footprint (where its mesh is), not the dropper's.
                 this.registerZoneVisibility(storageZone.transform, placement.x, placement.z, placement.width, placement.depth);
             };
 
-            this.requirementRegistry.registerSpawnGate(id, undefined, () => {
+            this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
                 if (!isStorageForSale(config) || StoreUnlocks.isStorageOwned(id, config)) {
                     spawnStorage();
                     return;
@@ -1963,6 +2017,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     getStorageIcon(config),
                     showDropOutline,
                     placement.rotationDeg,
+                    undefined,
+                    // The cost label stays inside the dropper / the storage itself, not the padding
+                    // around it — side-by-side storages' labels never overlap.
+                    { width: trigger.width, depth: trigger.depth },
                 ));
                 this.threeScene.add(purchaseZone.transform);
                 this.registerZoneVisibility(purchaseZone.transform, trigger.x, trigger.z, trigger.width, trigger.depth);
@@ -2078,6 +2136,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      */
     private setupFarmDesks(): void {
         const farmIds = [...this.worldObjects.getAllOfType('farm').keys()].filter(id => !getFarmPlotConfig(id).disabled);
+        const stallIds = [...this.worldObjects.getAllOfType('animalStall').keys()].filter(id => !getAnimalStallConfig(id).disabled);
         for (const [id, placement] of this.worldObjects.getAllOfType('farmDesk')) {
             const config = getFarmDeskConfig(id);
             if (config.disabled) {
@@ -2088,7 +2147,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 const triggerPosition = onFloor(trigger.x, trigger.z);
                 const triggerFootprint = { width: trigger.width, depth: trigger.depth };
                 const deskZone = this.world.add(new FarmDeskZone(
-                    config, triggerPosition, triggerFootprint, this.screenHost, farmIds,
+                    config, triggerPosition, triggerFootprint, this.screenHost, config.kind === 'animals' ? stallIds : farmIds,
                     () => this.freezePlayerMovement(),
                     () => this.unfreezePlayerMovement(),
                 ));
@@ -2957,6 +3016,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.uiService.update();
         this.movementTutorialOverlay.update(delta);
         this.updateDemoEnd(delta);
+        this.spotlights.update(delta, this.mainPlayer.transform.position);
         ParticleSystem.update(delta);
 
         super.update(delta);

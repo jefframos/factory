@@ -176,6 +176,8 @@ export default class StorageZone extends Entity {
 
     /** See the constructor's `mapRotationDeg`. */
     private readonly mapRotationDeg: number;
+    /** See the constructor's `outlineSize`. */
+    private readonly outlineSize?: { width: number; depth: number };
 
     public constructor(
         storageId: string,
@@ -189,8 +191,11 @@ export default class StorageZone extends Entity {
         showDropOutline = true,
         /** The storage object's own rotation on the Tiled map (degrees, clockwise) — turns the mesh on top of its config/view rotationDeg. The signpost isn't affected. */
         mapRotationDeg = 0,
+        /** Size of the dotted outline — e.g. the storage itself when `triggerSize` is padded around it, so lined-up storages' outlines don't overlap. Unset = triggerSize. */
+        outlineSize?: { width: number; depth: number },
     ) {
         super();
+        this.outlineSize = outlineSize;
         this.showDropOutline = showDropOutline;
         this.mapRotationDeg = mapRotationDeg;
         this.screenHost = screenHost;
@@ -217,7 +222,8 @@ export default class StorageZone extends Entity {
         rigidBody.onTriggerExit.add(other => this.handleTriggerExit(other));
 
         if (this.showDropOutline) {
-            this.addComponent(new DottedZoneVisualComponent(width, depth, CORNER_RADIUS, { color: getZoneColor(ZoneColorKind.DropZone) }));
+            const outline = this.outlineSize ?? this.triggerSize;
+            this.addComponent(new DottedZoneVisualComponent(outline.width, outline.depth, CORNER_RADIUS, { color: getZoneColor(ZoneColorKind.DropZone) }));
         }
 
         // StorageConfig.solid — built here rather than via SolidArea.buildSolidArea(), which scales
@@ -610,6 +616,22 @@ export default class StorageZone extends Entity {
                 this.playLandBounce();
             },
         });
+    }
+
+    /**
+     * Moves the storage — its model, pile and drop point — to stand at world height `y` (e.g. a
+     * mix station's box settling onto the counter drawn under it — see MixStation). The trigger
+     * (where the player stands) stays on the floor.
+     */
+    public setStorageY(y: number): void {
+        const dy = y - (this.transform.position.y + this.meshOffset.y);
+        if (Math.abs(dy) < 1e-3) {
+            return;
+        }
+        const delta = new THREE.Vector3(0, dy, 0);
+        this.meshOffset.add(delta);
+        this.pileRoot.position.add(delta);
+        this.visual?.moveBy(delta);
     }
 
     /** Items stored plus items already flying in. */

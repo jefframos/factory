@@ -19,6 +19,7 @@ import type { FloorLabelSide, PopupFrameChoice } from '../ui/PopupConfig';
 import type { ItemOrientation } from '../world/ResourceDisplayModel';
 import type { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
 import MODELS from "../../registry/assetsRegistry/modelsRegistry";
+import type { MilestoneRequirement } from './MilestoneRequirement';
 
 /**
  * What a storage takes, by ResourceConfig.category (see ResourceTypes.ts):
@@ -78,6 +79,12 @@ export interface StorageConfig {
      * past doesn't trigger it. Unset / 0 = garbage only.
      */
     dumpAnyAfterSec?: number;
+    /**
+     * The storage (bought or for sale) appears only once this is met — and its store doesn't sell
+     * from it before then either. E.g. the FTUE's carrot shelf waiting for the first carrot picked
+     * (a 'tutorialStep' requirement). Unset = right away (store level / section gates still apply).
+     */
+    appearRequirement?: MilestoneRequirement;
     /**
      * Optional continuous ambient particle effect (see vfx/ParticleRegistry.ts — PARTICLE_REGISTRY),
      * emitted from this storage's drop point (dropOffset) for as long as it stands — same slot
@@ -302,7 +309,12 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
         },
         "view": "storageView",
         "itemOrientation": "standing",
-        "resourceCost": []
+        "resourceCost": [],
+        "appearRequirement": {
+            "type": "tutorialStep",
+            "zone": 0,
+            "step": 2
+        }
     },
     "storage3": {
         "accepts": "farm",

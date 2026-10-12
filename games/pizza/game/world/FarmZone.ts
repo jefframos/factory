@@ -57,6 +57,7 @@ import { NotificationRarity, NotificationType } from '../ui/notifications/Notifi
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import DepositPacer from '../utils/DepositPacer';
 import { GameAnalytics } from '../analytics/GameAnalytics';
+import { DepositReservations } from '../data/DepositReservations';
 
 const FARM_ZONE_CORNER_RADIUS = 0.2;
 const PLACEHOLDER_HEIGHT = 0.1;
@@ -243,7 +244,7 @@ export default class FarmZone extends Entity {
                 // reasoning (EconomyStorage's balance only drops on LANDING, but a coin departs
                 // every FLY_IN_STAGGER_SEC).
                 && FarmPlotStorage.getProgress(this.farmId) + this.inFlightCoins < this.config.price.amount
-                && EconomyStorage.getBalance(this.config.price.currency) - this.inFlightCoins > 0;
+                && DepositReservations.canReserve(DepositReservations.currencyKey(this.config.price.currency), EconomyStorage.getBalance(this.config.price.currency));
 
             if (!stillWants) {
                 this.draining = false;
@@ -252,9 +253,12 @@ export default class FarmZone extends Entity {
 
             this.labelAnchor.getWorldPosition(toWorld);
             this.inFlightCoins++;
+            const coinKey = DepositReservations.currencyKey(this.config.price.currency);
+            DepositReservations.reserve(coinKey);
 
             spawnFlyingIconFromOverlayPoint(this.screenHost, this.getWalletOverlayPosition, toWorld.clone(), icon, () => {
                 this.inFlightCoins--;
+                DepositReservations.release(coinKey);
                 if (this.destroying || !EconomyStorage.spend(this.config.price.currency, 1)) {
                     return;
                 }

@@ -74,6 +74,7 @@ import NpcEntity from '../world/NpcEntity';
 import DepositPacer from '../utils/DepositPacer';
 import { BuildReveal } from './BuildReveal';
 import { GameAnalytics } from '../analytics/GameAnalytics';
+import { DepositReservations } from '../data/DepositReservations';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
@@ -81,6 +82,24 @@ const LABEL_FRAME_PADDING = uniformFitPadding(15);
 const UP_AXIS = new THREE.Vector3(0, 1, 0);
 
 const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
+/** A fitted map piece's collider is never flatter than this (world units) — see fitPieceColliderHeight(). */
+const MIN_PIECE_COLLIDER_HEIGHT = 0.1;
+const DOWN_AXIS = new THREE.Vector3(0, -1, 0);
+
+/**
+ * Height of a fitted model's surface above its own bottom, at the middle of its footprint — a
+ * ray straight down from above its bounding box's center: a counter's top, a fridge's roof, not a
+ * backsplash or anything else standing taller at an edge. Nothing hit (a hollow piece) = the full
+ * bounding-box height.
+ */
+function measureSurfaceHeight(mesh: THREE.Object3D): number {
+    mesh.updateWorldMatrix(true, true);
+    const box = new THREE.Box3().setFromObject(mesh);
+    const center = box.getCenter(new THREE.Vector3());
+    const raycaster = new THREE.Raycaster(new THREE.Vector3(center.x, box.max.y + 1, center.z), DOWN_AXIS);
+    const hit = raycaster.intersectObject(mesh, true)[0];
+    return hit ? hit.point.y - box.min.y : box.max.y - box.min.y;
+}
 /** Corner rounding for the dropper's floor outline — purely cosmetic, the collider itself stays a sharp-cornered box (see RigidBody below). */
 const DROPPER_ZONE_CORNER_RADIUS = 0.3;
 const POPUP_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 2.2, 0);
@@ -657,6 +676,25 @@ export default class BuildingZone extends Entity {
         }
     }
 
+    /**
+     * A solid piece's collider is created (addSolidAreasFromMap()) before its model has loaded, at
+     * a placeholder height. Once the model is fitted to the piece's footprint — scaled down with it
+     * when the piece is drawn smaller in Tiled — the collider's top moves to the model's surface at
+     * the middle of its footprint (a counter's top, not its taller backsplash — see
+     * measureSurfaceHeight()), standing on the floor. Footprint is unchanged.
+     */
+    private fitPieceColliderHeight(entry: OwnMeshPlacement, height: number): void {
+        const collider = this.pieceParts(entry).collider;
+        if (!collider) {
+            return;
+        }
+        const halfY = Math.max(height, MIN_PIECE_COLLIDER_HEIGHT) / 2;
+        collider.resize(
+            new THREE.Vector3(collider.halfExtents.x, halfY, collider.halfExtents.z),
+            new THREE.Vector3(collider.centerOffset.x, halfY, collider.centerOffset.z),
+        );
+    }
+
     // ---- Pieces removed by a built store section (OwnMeshPlacement.coveredBySections)
 
     /** True once any store section this piece overlaps has been built — the piece no longer belongs (e.g. a wall where that section's room opens up). */
@@ -808,7 +846,8 @@ export default class BuildingZone extends Entity {
                 : ownMeshViews;
             pieces.forEach(({ entry, resolved, footprint, rotationY }, i) => {
                 const delaySec = staged ? (PIECES_START_SEC + (pieces.length > 1 ? PIECES_SPREAD_SEC * i / (pieces.length - 1) : 0)) * this.buildTimeScale() : undefined;
-                this.pieceParts(entry).visual = this.createBuildingView(resolved, dropIn, targetFraction, footprint, rotationY, delaySec);
+                this.pieceParts(entry).visual = this.createBuildingView(resolved, dropIn, targetFraction, footprint, rotationY, delaySec,
+                    height => this.fitPieceColliderHeight(entry, height));
             });
             return;
         }
@@ -1142,6 +1181,8 @@ export default class BuildingZone extends Entity {
         fitFootprint?: { width: number; depth: number },
         rotationY?: number,
         stagedDelaySec?: number,
+        /** With fitFootprint: called once the model is fitted, with its surface height (world units — see measureSurfaceHeight()). */
+        onFittedHeight?: (height: number) => void,
     ): GlbVisualComponent {
         const [offsetX, offsetY, offsetZ] = resolved.offset;
 
@@ -1184,6 +1225,9 @@ export default class BuildingZone extends Entity {
 
                     mesh.scale.set(scaleX, scaleY, scaleZ);
                     mesh.rotation.y = rotationY ?? 0;
+                    if (onFittedHeight) {
+                        onFittedHeight(measureSurfaceHeight(mesh));
+                    }
                 }
                 this.playRevealEffect(visual.mesh, dropIn, targetFraction, stagedDelaySec);
             },
@@ -1548,7 +1592,8 @@ export default class BuildingZone extends Entity {
             const need = next?.requirements[type] ?? 0;
             const remaining = need - BuildingStorage.getProgress(this.buildingId, type) - inFlight;
 
-            const fromWorld = remaining > 0 && BackpackStorage.getCount(type) - inFlight > 0
+            const reserveKey = DepositReservations.resourceKey(type);
+            const fromWorld = remaining > 0 && DepositReservations.canReserve(reserveKey, BackpackStorage.getCount(type))
                 ? this.player?.getComponent(CharacterVisualComponent)?.character.getCarrierWorldPosition()
                 : undefined;
 
@@ -1559,9 +1604,11 @@ export default class BuildingZone extends Entity {
 
             this.getFlyInTarget(toWorld);
             this.inFlightByType.set(type, inFlight + 1);
+            DepositReservations.reserve(reserveKey);
 
             spawnFlyingResourceIcon(this.screenHost, fromWorld.clone(), toWorld.clone(), icon, () => {
                 this.inFlightByType.set(type, (this.inFlightByType.get(type) ?? 1) - 1);
+                DepositReservations.release(reserveKey);
                 if (BackpackStorage.removeOne(type)) {
                     BuildingStorage.addProgress(this.buildingId, type, 1);
                     BuildingStorage.tryCompleteLevel(this.buildingId);
@@ -1598,16 +1645,19 @@ export default class BuildingZone extends Entity {
                 ? BuildingStorage.getNextLevelConfig(this.buildingId)
                 : undefined;
             const remaining = (next?.money ?? 0) - BuildingStorage.getMoneyProgress(this.buildingId) - this.moneyInFlight;
-            if (remaining <= 0 || EconomyStorage.getBalance(CurrencyType.Money) - this.moneyInFlight <= 0) {
+            const moneyKey = DepositReservations.currencyKey(CurrencyType.Money);
+            if (remaining <= 0 || !DepositReservations.canReserve(moneyKey, EconomyStorage.getBalance(CurrencyType.Money))) {
                 this.moneyDraining = false;
                 return;
             }
 
             this.getFlyInTarget(toWorld);
             this.moneyInFlight++;
+            DepositReservations.reserve(moneyKey);
 
             spawnFlyingIconFromOverlayPoint(this.screenHost, getWalletOverlayPosition, toWorld.clone(), icon, () => {
                 this.moneyInFlight--;
+                DepositReservations.release(moneyKey);
                 if (EconomyStorage.spend(CurrencyType.Money, 1)) {
                     BuildingStorage.addMoneyProgress(this.buildingId, 1);
                     BuildingStorage.tryCompleteLevel(this.buildingId);

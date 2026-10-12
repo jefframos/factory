@@ -74,13 +74,37 @@ import { readStoreLayouts } from '../store/StoreLayout';
 import ZoneTutorialArrow, { DELIVER_TARGET_HEIGHT_OFFSET } from './ZoneTutorialArrow';
 import ZoneTutorial3dArrow from './ZoneTutorial3dArrow';
 import { GameAnalytics } from '../analytics/GameAnalytics';
+import type { CameraFocusHost } from '../camera/CameraFocusHost';
+import { SpotlightStorage } from '../data/SpotlightStorage';
 
 interface ResolvedStepRequirement {
     resourceType: ResourceType;
     amount: number;
 }
 
+/** A focusCamera step's camera trip (ZoneTutorialStepOptions.focusCamera): a beat before it starts (lets an appear/reveal begin), the glide there, the hold. */
+const STEP_FOCUS_PRE_DELAY_SEC = 0.35;
+const STEP_FOCUS_TRAVEL_SEC = 0.75;
+const STEP_FOCUS_HOLD_SEC = 1.1;
+/** A "gather in zone N" step's trip waits at most this long for a source in that zone before going to wherever the arrow points. */
+const STEP_FOCUS_WAIT_MAX_SEC = 4;
+
 export default class ZoneTutorialController {
+    /** See the constructor's `cameraHost`. */
+    private readonly cameraHost?: CameraFocusHost;
+    /**
+     * A focusCamera step that just became current and hasn't had its camera trip yet — the trip
+     * goes wherever the arrow first points for it (see updateArrow()), once per save
+     * (SpotlightStorage key), as soon as the camera is free (`canFocus`).
+     */
+    private pendingFocus?: { key: string; sinceMs: number };
+    /** See the constructor's `canFocus`. */
+    private readonly canFocus: () => boolean;
+    /** activeStepKey of a doneOnReach step the player just reached — advanced at the start of the next update(). */
+    private reachedStepKey?: string;
+    /** activeStepKey of the step last seen pointing the player at something to gather — see focusCameraOnDeliver. */
+    private gatheringStepKey?: string;
+
     private readonly world: World;
     private readonly host: ScreenAnchorHost;
     private readonly scene: THREE.Scene;
@@ -110,7 +134,13 @@ export default class ZoneTutorialController {
         worldObjects: WorldObjectRegistry,
         zoneVisibility: ZoneVisibilityManager,
         getPlayerPosition: () => THREE.Vector3,
+        /** Where focusCamera steps send the camera (see ZoneTutorialStepOptions.focusCamera). Unset = no camera trips. */
+        cameraHost?: CameraFocusHost,
+        /** False while the camera is busy (another trip, a freeze, a paused game) — a pending focus waits. Unset = always free. */
+        canFocus: () => boolean = () => true,
     ) {
+        this.cameraHost = cameraHost;
+        this.canFocus = canFocus;
         this.world = world;
         this.host = host;
         this.scene = scene;
@@ -121,6 +151,13 @@ export default class ZoneTutorialController {
 
     /** Call once per frame — see this file's own doc for why (backpack/zone changes need to reflect instantly, not on some slower poll). */
     public update(): void {
+        // A doneOnReach step the player reached last frame — done (see checkReached()).
+        if (this.reachedStepKey && this.reachedStepKey === this.activeStepKey) {
+            const [zone, index] = this.reachedStepKey.split(':').map(Number);
+            this.reachedStepKey = undefined;
+            this.advanceStep(zone, index);
+            return;
+        }
         const playerPosition = this.getPlayerPosition();
         const zoneNumber = this.findRunningTutorialZone() ?? this.findRequirementStartedZone() ?? this.zoneTutorialHere(playerPosition);
         const config = zoneNumber !== undefined ? ZONE_TUTORIAL_CONFIG[zoneNumber] : undefined;
@@ -163,6 +200,17 @@ export default class ZoneTutorialController {
 
         if (step.kind === 'buyStorage') {
             this.updateBuyStorageStep(step, playerPosition);
+            return;
+        }
+
+        if (step.kind === 'harvest') {
+            // Nothing to deliver — the arrow stays on the farm until the item is in hand.
+            const farm = this.findFarmFor(step.resourceType, playerPosition, step.farmId);
+            if (farm) {
+                this.updateArrow(farm.add(this.stepOffset(step)));
+            } else {
+                this.pointAtGatherTarget(step.resourceType, playerPosition, step);
+            }
             return;
         }
 
@@ -268,10 +316,13 @@ export default class ZoneTutorialController {
         const inZone = zone === undefined ? undefined
             : ResourceNodeRegistry.findNearest(resourceType, playerPosition, node => this.zoneVisibility.getZoneForPosition(node.position.x, node.position.z) === zone);
         if (inZone) {
+            this.gatheringStepKey = this.activeStepKey;
             this.updateArrow(inZone.position.clone().add(this.stepOffset(step)));
             return;
         }
-        this.pointAtGatherTarget(resourceType, playerPosition, step);
+        // Nothing in that zone yet (e.g. its trees still streaming in): the arrow points at the
+        // nearest anywhere, but the camera trip waits for the zone's own (see tryFocus()).
+        this.pointAtGatherTarget(resourceType, playerPosition, step, zone === undefined);
     }
 
     /** What buying `id` costs — a mix station's config when `id` is one on the map, else the storage's. */
@@ -335,7 +386,9 @@ export default class ZoneTutorialController {
     }
 
     /** Drives BOTH arrows toward `target` — the flat 2D one always (unconditionally, exactly as before the 3D one existed), plus the 3D one too whenever the active zone's own config.use3dArrow is set (see this.use3dArrow) — they're additive, never a replacement for each other. The ONE call site pointAtGatherTarget()/pointAtDeliverTarget() both go through. `heightOffset` only means anything to the 2D arrow (see ZoneTutorialArrow.update()'s own doc); the 3D arrow ignores it — its own hover height is relative to the PLAYER, not the target (see ZoneTutorial3dArrow.ts's own doc). */
-    private updateArrow(target: THREE.Vector3, heightOffset?: number): void {
+    private updateArrow(target: THREE.Vector3, heightOffset?: number, focusable = true): void {
+        this.tryFocus(target, focusable);
+        this.checkReached(target);
         this.arrow?.update(target, heightOffset);
         if (this.use3dArrow) {
             this.arrow3d?.update(this.getPlayerPosition(), target);
@@ -420,14 +473,15 @@ export default class ZoneTutorialController {
         return new THREE.Vector3(x, y, z);
     }
 
-    private pointAtGatherTarget(resourceType: ResourceType, playerPosition: THREE.Vector3, step: ZoneTutorialStep): void {
+    private pointAtGatherTarget(resourceType: ResourceType, playerPosition: THREE.Vector3, step: ZoneTutorialStep, focusable = true): void {
+        this.gatheringStepKey = this.activeStepKey;
         const node = ResourceNodeRegistry.findNearest(resourceType, playerPosition);
         if (!node) {
             console.warn(`[ZoneTutorialController] no live ResourceNode currently produces "${resourceType}" — can't point the gather arrow anywhere (data misconfiguration, or every source is out of range/depleted)`);
             this.hideArrow();
             return;
         }
-        this.updateArrow(node.position.clone().add(this.stepOffset(step)));
+        this.updateArrow(node.position.clone().add(this.stepOffset(step)), undefined, focusable);
     }
 
     private pointAtDeliverTarget(step: ZoneTutorialStep): void {
@@ -435,6 +489,13 @@ export default class ZoneTutorialController {
         if (!placement) {
             this.hideArrow();
             return;
+        }
+        // ZoneTutorialStepOptions.focusCameraOnDeliver — done gathering, now show where it goes.
+        if (step.focusCameraOnDeliver && this.activeStepKey && this.gatheringStepKey === this.activeStepKey && !this.pendingFocus) {
+            const key = `tutorial:${this.activeStepKey}:deliver`;
+            if (!SpotlightStorage.has(key)) {
+                this.pendingFocus = { key, sinceMs: performance.now() };
+            }
         }
         const target = new THREE.Vector3(placement.x, 0, placement.z).add(this.stepOffset(step));
         this.updateArrow(target, DELIVER_TARGET_HEIGHT_OFFSET);
@@ -454,6 +515,7 @@ export default class ZoneTutorialController {
             : step.kind === 'gate' ? ['gate', step.gateId]
             : step.kind === 'trigger' ? ['trigger', step.triggerId]
             : step.kind === 'storage' || step.kind === 'buyStorage' ? ['storage', step.storageId]
+            : step.kind === 'harvest' ? ['farm', step.farmId ?? '']
             : ['building', step.buildingId];
         // A storage/building is filled at its dropper when it has one.
         const dropper = type === 'storage' || type === 'building' ? this.worldObjects.getDropperFor(id) : undefined;
@@ -484,7 +546,22 @@ export default class ZoneTutorialController {
             return true;
         }
 
-        if (step.kind === 'storage') {
+        // A focusCamera step just became current (and isn't already done) — its camera trip goes
+        // where the arrow first points, once per save (see updateArrow()/tryFocus()).
+        const focusKey = `tutorial:${zoneNumber}:${completedCount}`;
+        this.pendingFocus = step.focusCamera && !SpotlightStorage.has(focusKey)
+            ? { key: focusKey, sinceMs: performance.now() }
+            : undefined;
+
+        if (step.kind === 'harvest') {
+            const handler = (): void => {
+                if (this.isStepAlreadyDone(step)) {
+                    this.advanceStep(zoneNumber, completedCount);
+                }
+            };
+            BackpackStorage.onChange.add(handler);
+            this.unsubscribeCompletion = () => BackpackStorage.onChange.remove(handler);
+        } else if (step.kind === 'storage') {
             const handler = (id: string): void => {
                 if (id === step.storageId && this.isStepAlreadyDone(step)) {
                     this.advanceStep(zoneNumber, completedCount);
@@ -567,6 +644,8 @@ export default class ZoneTutorialController {
         switch (step.kind) {
             case 'trigger':
                 return TriggerStorage.isActivated(step.triggerId);
+            case 'harvest':
+                return BackpackStorage.getCount(step.resourceType) >= (step.amount ?? 1);
             case 'storage': {
                 const resourceType = getStorageConfig(step.storageId).resourceType;
                 return resourceType !== undefined && StorageInventory.getCount(step.storageId, resourceType) >= (step.amount ?? 1);
@@ -580,6 +659,47 @@ export default class ZoneTutorialController {
             default:
                 return false;
         }
+    }
+
+    /** ZoneTutorialStepOptions.doneOnReach — the player came close enough to where the arrow points. */
+    private checkReached(target: THREE.Vector3): void {
+        const key = this.activeStepKey;
+        if (!key || this.reachedStepKey === key) {
+            return;
+        }
+        const [zone, index] = key.split(':').map(Number);
+        const radius = ZONE_TUTORIAL_CONFIG[zone]?.steps[index]?.doneOnReach;
+        if (!radius) {
+            return;
+        }
+        const player = this.getPlayerPosition();
+        if (Math.hypot(player.x - target.x, player.z - target.z) <= radius) {
+            this.reachedStepKey = key;
+        }
+    }
+    /**
+     * The pending focusCamera trip (see pendingFocus), to where the arrow points right now — once the
+     * camera is free, and (for a "gather in zone N" step) once the arrow points into that zone
+     * (`focusable`), or after STEP_FOCUS_WAIT_MAX_SEC anyway.
+     */
+    private tryFocus(target: THREE.Vector3, focusable: boolean): void {
+        const pending = this.pendingFocus;
+        if (!pending || !this.cameraHost || !this.canFocus()) {
+            return;
+        }
+        if (!focusable && performance.now() - pending.sinceMs < STEP_FOCUS_WAIT_MAX_SEC * 1000) {
+            return;
+        }
+        this.pendingFocus = undefined;
+        SpotlightStorage.add(pending.key);
+        void this.cameraHost.focusCameraOn(new THREE.Vector3(target.x, 0, target.z), {
+            preDelaySec: STEP_FOCUS_PRE_DELAY_SEC,
+            travelSec: STEP_FOCUS_TRAVEL_SEC,
+            holdSec: STEP_FOCUS_HOLD_SEC,
+            easedPan: true,
+            // The player can move again as soon as the camera starts back.
+            releaseOnReturn: true,
+        });
     }
 
     private unsubscribeCompletionListener(): void {
@@ -598,6 +718,7 @@ export default class ZoneTutorialController {
                 GameAnalytics.tutorialComplete(zoneNumber);
             }
         }
+        this.pendingFocus = undefined;
         TutorialProgressStorage.setCompletedStepCount(zoneNumber, completedCount + 1);
         this.unsubscribeCompletionListener();
         this.update();

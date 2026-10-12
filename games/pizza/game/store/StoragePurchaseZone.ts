@@ -42,6 +42,7 @@ import MainPlayer from '../player/MainPlayer';
 import { StorageOwnershipStorage } from './StorageOwnershipStorage';
 import DepositPacer from '../utils/DepositPacer';
 import { GameAnalytics } from '../analytics/GameAnalytics';
+import { DepositReservations } from '../data/DepositReservations';
 
 const TRIGGER_HALF_HEIGHT = 0.5;
 const CORNER_RADIUS = 0.3;
@@ -65,6 +66,8 @@ export default class StoragePurchaseZone extends Entity {
     private readonly storageId: string;
     /** See the constructor's `announcement`. */
     private readonly announcement?: { title: string; subtitle: string };
+    /** See the constructor's `labelArea`. */
+    private readonly labelArea?: { width: number; depth: number };
     private readonly price?: StoragePrice;
     private readonly resourceCost: readonly StorageResourceCost[];
     private readonly parts: CostPart[];
@@ -120,8 +123,16 @@ export default class StoragePurchaseZone extends Entity {
         mapRotationDeg = 0,
         /** The unlock notification's text — unset = "STORAGE UNLOCKED!" / "NEW STORAGE" (an animal stall says it's a stall). */
         announcement?: { title: string; subtitle: string },
+        /**
+         * The area the floor cost label (and the dotted outline) stays inside (centered on
+         * `position`) — e.g. the storage's own footprint when `footprint` is padded around it so
+         * the player can buy it standing against it. Unset = `footprint`. Keeps lined-up storages'
+         * labels and outlines from overlapping.
+         */
+        labelArea?: { width: number; depth: number },
     ) {
         super();
+        this.labelArea = labelArea;
         this.announcement = announcement;
         this.mapRotationDeg = mapRotationDeg;
         this.subjectIcon = subjectIcon;
@@ -155,7 +166,12 @@ export default class StoragePurchaseZone extends Entity {
             centerOffset: new THREE.Vector3(0, TRIGGER_HALF_HEIGHT, 0),
         }));
         if (this.showOutline) {
-            this.addComponent(new DottedZoneVisualComponent(width, depth, CORNER_RADIUS, { color: getZoneColor(ZoneColorKind.Farm) }));
+            this.addComponent(new DottedZoneVisualComponent(
+                Math.min(width, this.labelArea?.width ?? width),
+                Math.min(depth, this.labelArea?.depth ?? depth),
+                CORNER_RADIUS,
+                { color: getZoneColor(ZoneColorKind.Farm) },
+            ));
         }
 
         this.transform.add(this.labelAnchor);
@@ -163,13 +179,15 @@ export default class StoragePurchaseZone extends Entity {
             this.labelAnchor.position.set(0, FLOOR_COIN_TARGET_HEIGHT, 0);
             // Turned a quarter (or three), the label's own width runs along the area's depth.
             const quarterTurned = Math.abs(Math.sin(THREE.MathUtils.degToRad(this.mapRotationDeg))) > Math.SQRT1_2;
+            const labelWidth = Math.min(width, this.labelArea?.width ?? width);
+            const labelDepth = Math.min(depth, this.labelArea?.depth ?? depth);
             this.floorLabel = this.addComponent(new FloorLabelComponent({
                 items: this.labelItems(),
                 // One cost per line — side by side it gets wide and shrinks to fit the area.
                 stack: 'column',
                 size: this.floorLabelSize ?? DEFAULT_FLOOR_LABEL_SIZE,
-                maxWidth: (quarterTurned ? depth : width) * FLOOR_LABEL_AREA_FILL,
-                maxDepth: (quarterTurned ? width : depth) * FLOOR_LABEL_AREA_FILL,
+                maxWidth: (quarterTurned ? labelDepth : labelWidth) * FLOOR_LABEL_AREA_FILL,
+                maxDepth: (quarterTurned ? labelWidth : labelDepth) * FLOOR_LABEL_AREA_FILL,
                 // Tiled turns clockwise, the label's yaw counter-clockwise — hence the minus.
                 rotationDeg: -this.mapRotationDeg,
             }));
@@ -280,13 +298,15 @@ export default class StoragePurchaseZone extends Entity {
         const icon = this.partIcon(part);
         const toWorld = new THREE.Vector3();
 
+        // Shared with every other pay spot — see DepositReservations.ts.
+        const reserveKey = part.kind === 'coin' ? DepositReservations.currencyKey(part.currency) : DepositReservations.resourceKey(part.type);
         const step = (): void => {
             const inFlight = this.inFlight[index];
             const have = part.kind === 'coin' ? EconomyStorage.getBalance(part.currency) : BackpackStorage.getCount(part.type);
             const stillWants = this.player !== undefined
                 && !this.destroying
                 && this.partPaid(part) + inFlight < part.amount
-                && have - inFlight > 0;
+                && DepositReservations.canReserve(reserveKey, have);
             if (!stillWants) {
                 this.draining[index] = false;
                 return;
@@ -294,8 +314,10 @@ export default class StoragePurchaseZone extends Entity {
 
             this.labelAnchor.getWorldPosition(toWorld);
             this.inFlight[index]++;
+            DepositReservations.reserve(reserveKey);
             const onArrive = (): void => {
                 this.inFlight[index]--;
+                DepositReservations.release(reserveKey);
                 if (this.destroying) {
                     return;
                 }
@@ -328,15 +350,52 @@ export default class StoragePurchaseZone extends Entity {
         step();
     }
 
+    /**
+     * Completes the purchase once everything's paid. The real storage spawns FIRST and this spot
+     * goes away, then the analytics/notification — and a failing listener anywhere (the purchase
+     * signal wakes tutorials, farms waiting for this storage...) is logged instead of leaving the
+     * purchase half done (paid, but this spot stuck with nothing left to take).
+     */
     private tryComplete(): void {
-        if (!StorageOwnershipStorage.tryCompletePurchase(this.storageId, this.price?.amount ?? 0, this.resourceCost)) {
+        if (this.destroying) {
+            return;
+        }
+        let owned: boolean;
+        try {
+            owned = StorageOwnershipStorage.tryCompletePurchase(this.storageId, this.price?.amount ?? 0, this.resourceCost);
+        } catch (e) {
+            console.error(`[StoragePurchaseZone] "${this.storageId}": something listening to the purchase failed`, e);
+            owned = StorageOwnershipStorage.isOwned(this.storageId);
+        }
+        if (!owned) {
             return;
         }
         this.destroying = true;
-        GameAnalytics.storageBought(this.storageId);
-        this.announce();
-        this.onPurchased();
+        try {
+            this.onPurchased();
+        } catch (e) {
+            console.error(`[StoragePurchaseZone] "${this.storageId}": spawning the bought storage failed`, e);
+        }
         this.world?.remove(this);
+        try {
+            GameAnalytics.storageBought(this.storageId);
+            this.announce();
+        } catch (e) {
+            console.error(`[StoragePurchaseZone] "${this.storageId}": announcing the purchase failed`, e);
+        }
+    }
+
+    /** Everything already paid (e.g. a save left half-completed) — the first frame finishes the purchase. */
+    private checkedAlreadyPaid = false;
+
+    public override update(delta: number): void {
+        super.update(delta);
+        if (!this.checkedAlreadyPaid) {
+            this.checkedAlreadyPaid = true;
+            if (this.parts.length > 0 && this.parts.every(part => this.partPaid(part) >= part.amount)) {
+                this.tryComplete();
+            }
+        }
     }
 
     private announce(): void {

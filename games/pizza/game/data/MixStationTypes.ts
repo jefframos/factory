@@ -110,12 +110,7 @@ export const MIX_STATION_CONFIG_BY_ID: Partial<Record<string, MixStationConfig>>
             "Restaurant.Crate"
         ],
         "boxScale": 0.8,
-        "resourceCost": [
-            {
-                "resourceType": ResourceType.Stone,
-                "amount": 15
-            }
-        ]
+        "resourceCost": []
     },
     "breadStation": {
         "name": "Bread Station",

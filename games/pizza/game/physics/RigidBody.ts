@@ -110,17 +110,34 @@ export default class RigidBody extends Component {
             return;
         }
 
-        const geometry = new THREE.BoxGeometry(
-            this.halfExtents.x * 2,
-            this.halfExtents.y * 2,
-            this.halfExtents.z * 2,
-        );
         this.debugMesh = new THREE.LineSegments(
-            new THREE.EdgesGeometry(geometry),
+            this.buildDebugGeometry(),
             new THREE.LineBasicMaterial({ color: this.isTrigger ? DEBUG_TRIGGER_COLOR : DEBUG_COLLIDER_COLOR }),
         );
         this.debugMesh.position.copy(this.centerOffset);
         this.entity.transform.add(this.debugMesh);
+    }
+
+    /**
+     * Changes the box after creation — e.g. a map piece's collider growing/shrinking to its model's
+     * real height once the model has loaded (BuildingZone.fitPieceColliderHeight()). Keeps the
+     * debug wireframe in step.
+     */
+    public resize(halfExtents: THREE.Vector3, centerOffset: THREE.Vector3 = this.centerOffset): void {
+        this.halfExtents.copy(halfExtents);
+        this.centerOffset.copy(centerOffset);
+        if (this.debugMesh) {
+            this.debugMesh.geometry.dispose();
+            this.debugMesh.geometry = this.buildDebugGeometry();
+            this.debugMesh.position.copy(this.centerOffset);
+        }
+    }
+
+    private buildDebugGeometry(): THREE.EdgesGeometry {
+        const box = new THREE.BoxGeometry(this.halfExtents.x * 2, this.halfExtents.y * 2, this.halfExtents.z * 2);
+        const edges = new THREE.EdgesGeometry(box);
+        box.dispose();
+        return edges;
     }
 
     /** World-space box center — entity position plus this body's local offset. */

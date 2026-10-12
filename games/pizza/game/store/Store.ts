@@ -95,7 +95,7 @@ import { pickRandom } from '../world/AssetLibraryRegistry';
 import WorldObjectRegistry, { boundsOfShape, isPointInShape } from '../world/WorldObjectRegistry';
 import StoreClient, { StoreClientHost, StoreClientWant, StoreSpot, StoreStorageRef } from './StoreClient';
 import StoreWorker from './StoreWorker';
-import { WORKER_NPC_ID, type StoreWorkerRole } from './StoreTypes';
+import { WORKER_NPC_ID, type StoreWorkerRole, DEFAULT_OUT_OF_STOCK_DEMAND } from './StoreTypes';
 import { getNpcConfig, hatSpecOf, NpcLook, rollNpcLook } from '../data/NpcTypes';
 import StoreCashierWorker, { StoreCashierHost } from './StoreCashierWorker';
 import StoreRestockerWorker, { RestockJob, StoreRestockerHost } from './StoreRestockerWorker';
@@ -359,12 +359,17 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
             }
             StoreProgressStorage.open(this.layout.id);
         }
-        this.cashier!.transform.visible = open;
-        this.moneyPile!.transform.visible = open;
-        if (open) {
-            // No-ops after the first time — counters (and their colliders) only exist once open.
+        // StoreConfig.cashierRequirement — the FTUE keeps the cashier and money drop away until the
+        // first carrot is on the shelf.
+        const cashierShown = open && (!this.config.cashierRequirement || isMilestoneRequirementMet(this.config.cashierRequirement));
+        this.cashier!.transform.visible = cashierShown;
+        this.moneyPile!.transform.visible = cashierShown;
+        if (cashierShown) {
+            // No-ops after the first time — counters (and their colliders) only exist once shown.
             this.cashier!.showCounter();
             this.moneyPile!.showCounter();
+        }
+        if (open) {
             // Once, as soon as the saved roster has loaded.
             if (!this.workersRestored && StoreWorkerStorage.isLoaded()) {
                 this.restoreWorkers();
@@ -390,7 +395,9 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
             }
         }
 
-        this.updateCashier(delta);
+        if (cashierShown) {
+            this.updateCashier(delta);
+        }
         this.updateNav(delta);
 
         if (open && !this.clientsRestored && StoreClientStorage.isLoaded()) {
@@ -938,19 +945,60 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     }
 
     /** Returns false when nothing could spawn (nothing offered / no looks configured). */
+    /** Units of `type` on this store's available shelves that no client inside has claimed yet. */
+    private unclaimedStock(type: ResourceType): number {
+        const stock = this.getAvailableStorages().reduce((sum, storage) => sum + StorageInventory.getCount(storage.id, type), 0);
+        const claimed = this.clients.reduce((sum, client) => sum + client.getRemainingWant(type), 0);
+        return stock - claimed;
+    }
+
+    /**
+     * What a new client orders — demand follows supply:
+     *   - each offered item is weighted by its ResourceConfig.storeDemand (slow goods less often),
+     *     x StoreConfig.outOfStockDemand when nothing unclaimed is on its shelves right now;
+     *   - items are drawn by weight, without repeats;
+     *   - each amount is capped by the store's maxAmountPerItem, the item's storeMaxPerOrder and —
+     *     when some is in stock — by how much unclaimed stock there is.
+     * Open early (the FTUE): one unit of one item, so one deposit always makes one sale.
+     */
+    private pickWants(offered: ResourceType[]): StoreClientWant[] {
+        if (this.isOpenEarly()) {
+            return [{ type: offered[Math.floor(Math.random() * offered.length)], amount: 1 }];
+        }
+        const outOfStock = Math.max(0, this.config.outOfStockDemand ?? DEFAULT_OUT_OF_STOCK_DEMAND);
+        const pool = offered.map(type => {
+            const unclaimed = this.unclaimedStock(type);
+            return { type, unclaimed, weight: Math.max(0, RESOURCE_CONFIG[type]?.storeDemand ?? 1) * (unclaimed >= 1 ? 1 : outOfStock) };
+        }).filter(entry => entry.weight > 0);
+        const distinct = Math.min(pool.length, randomInt(1, Math.max(1, this.config.maxDistinctItems)));
+        const wants: StoreClientWant[] = [];
+        for (let i = 0; i < distinct; i++) {
+            const total = pool.reduce((sum, entry) => sum + entry.weight, 0);
+            let roll = Math.random() * total;
+            const index = Math.max(0, pool.findIndex(entry => (roll -= entry.weight) <= 0));
+            const [entry] = pool.splice(index, 1);
+            let cap = Math.max(1, this.config.maxAmountPerItem);
+            const perOrder = RESOURCE_CONFIG[entry.type]?.storeMaxPerOrder;
+            if (perOrder !== undefined) {
+                cap = Math.min(cap, Math.max(1, perOrder));
+            }
+            if (entry.unclaimed >= 1) {
+                cap = Math.min(cap, Math.floor(entry.unclaimed));
+            }
+            wants.push({ type: entry.type, amount: randomInt(1, cap) });
+        }
+        return wants;
+    }
+
     private trySpawnClient(pacing: StorePacing): boolean {
         const offered = shuffle(this.getOfferedTypes());
         if (offered.length === 0 || this.config.npcs.length === 0) {
             return false;
         }
-
-        // Open early (the FTUE): one unit of one item, so one deposit always makes one sale.
-        const early = this.isOpenEarly();
-        const distinct = early ? 1 : randomInt(1, Math.min(Math.max(1, this.config.maxDistinctItems), offered.length));
-        const wants: StoreClientWant[] = offered.slice(0, distinct).map(type => ({
-            type,
-            amount: early ? 1 : randomInt(1, Math.max(1, this.config.maxAmountPerItem)),
-        }));
+        const wants = this.pickWants(offered);
+        if (wants.length === 0) {
+            return false;
+        }
 
         const spawn = randomPointInRect(this.layout.entrance);
         const exit = randomPointInRect(this.layout.exit);

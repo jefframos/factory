@@ -7,6 +7,11 @@
         "farmDesk1": {
             "name": "Farm Manager",
             "buttonLabel": "Farms"
+        },
+        "farmDesk2": {
+            "name": "Animal Keeper",
+            "buttonLabel": "Animals",
+            "kind": "animals"
         }
     }
 }

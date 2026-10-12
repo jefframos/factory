@@ -3231,6 +3231,16 @@ const FoodSteamer = {
 }
 } as const;
 
+const FoodStoveMulti = {
+  id: 'stove_multi',
+  path: 'food/stove_multi',
+  fullPath: 'pizza/models/food/stove_multi.gltf',
+  format: 'gltf',
+  nodes: {
+  "StoveMulti": "stove_multi"
+}
+} as const;
+
 const FoodStrawberry = {
   id: 'strawberry',
   path: 'food/strawberry',
@@ -3947,6 +3957,68 @@ const RestaurantFoodIngredientBurgerTrash = {
 }
 } as const;
 
+const RestaurantFridgeA = {
+  id: 'fridge_A',
+  path: 'restaurant/fridge_A',
+  fullPath: 'pizza/models/restaurant/fridge_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "FridgeA": "fridge_A",
+  "FridgeADoorBottom": "fridge_A_door_bottom",
+  "FridgeADoorTop": "fridge_A_door_top"
+}
+} as const;
+
+const RestaurantIcecreamCherry = {
+  id: 'icecream_cherry',
+  path: 'restaurant/icecream_cherry',
+  fullPath: 'pizza/models/restaurant/icecream_cherry.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamCherry": "icecream_cherry"
+}
+} as const;
+
+const RestaurantJarALarge = {
+  id: 'jar_A_large',
+  path: 'restaurant/jar_A_large',
+  fullPath: 'pizza/models/restaurant/jar_A_large.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarALarge": "jar_A_large"
+}
+} as const;
+
+const RestaurantJarBMedium = {
+  id: 'jar_B_medium',
+  path: 'restaurant/jar_B_medium',
+  fullPath: 'pizza/models/restaurant/jar_B_medium.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarBMedium": "jar_B_medium"
+}
+} as const;
+
+const RestaurantJarCSmall = {
+  id: 'jar_C_small',
+  path: 'restaurant/jar_C_small',
+  fullPath: 'pizza/models/restaurant/jar_C_small.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarCSmall": "jar_C_small"
+}
+} as const;
+
+const RestaurantJarDSmall = {
+  id: 'jar_D_small',
+  path: 'restaurant/jar_D_small',
+  fullPath: 'pizza/models/restaurant/jar_D_small.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarDSmall": "jar_D_small"
+}
+} as const;
+
 const RestaurantKitchencabinet = {
   id: 'kitchencabinet',
   path: 'restaurant/kitchencabinet',
@@ -3954,6 +4026,96 @@ const RestaurantKitchencabinet = {
   format: 'gltf',
   nodes: {
   "Kitchencabinet": "kitchencabinet"
+}
+} as const;
+
+const RestaurantKitchencabinetCornerHalfStyleB = {
+  id: 'kitchencabinet_corner_half_styleB',
+  path: 'restaurant/kitchencabinet_corner_half_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencabinet_corner_half_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencabinetCornerHalfStyleB": "kitchencabinet_corner_half_styleB"
+}
+} as const;
+
+const RestaurantKitchencabinetCornerStyleB = {
+  id: 'kitchencabinet_corner_styleB',
+  path: 'restaurant/kitchencabinet_corner_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencabinet_corner_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencabinetCornerStyleB": "kitchencabinet_corner_styleB"
+}
+} as const;
+
+const RestaurantKitchencabinetHalfStyleB = {
+  id: 'kitchencabinet_half_styleB',
+  path: 'restaurant/kitchencabinet_half_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencabinet_half_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencabinetHalfStyleB": "kitchencabinet_half_styleB"
+}
+} as const;
+
+const RestaurantKitchencabinetStyleB = {
+  id: 'kitchencabinet_styleB',
+  path: 'restaurant/kitchencabinet_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencabinet_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencabinetStyleB": "kitchencabinet_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterInnercornerBacksplashStyleB = {
+  id: 'kitchencounter_innercorner_backsplash_styleB',
+  path: 'restaurant/kitchencounter_innercorner_backsplash_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_innercorner_backsplash_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterInnercornerBacksplashStyleB": "kitchencounter_innercorner_backsplash_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterInnercornerStyleB = {
+  id: 'kitchencounter_innercorner_styleB',
+  path: 'restaurant/kitchencounter_innercorner_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_innercorner_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterInnercornerStyleB": "kitchencounter_innercorner_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterOutercornerBacksplashStyleB = {
+  id: 'kitchencounter_outercorner_backsplash_styleB',
+  path: 'restaurant/kitchencounter_outercorner_backsplash_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_outercorner_backsplash_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterOutercornerBacksplashStyleB": "kitchencounter_outercorner_backsplash_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterSinkBacksplashStyleB = {
+  id: 'kitchencounter_sink_backsplash_styleB',
+  path: 'restaurant/kitchencounter_sink_backsplash_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_sink_backsplash_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterSinkBacksplashStyleB": "kitchencounter_sink_backsplash_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterStraightABacksplashStyleB = {
+  id: 'kitchencounter_straight_A_backsplash_styleB',
+  path: 'restaurant/kitchencounter_straight_A_backsplash_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_straight_A_backsplash_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterStraightABacksplashStyleB": "kitchencounter_straight_A_backsplash_styleB"
 }
 } as const;
 
@@ -4419,6 +4581,7 @@ export const MODELS = {
     Soda: FoodSoda,
     Soy: FoodSoy,
     Steamer: FoodSteamer,
+    StoveMulti: FoodStoveMulti,
     Strawberry: FoodStrawberry,
     StyrofoamDinner: FoodStyrofoamDinner,
     Styrofoam: FoodStyrofoam,
@@ -4500,7 +4663,22 @@ export const MODELS = {
     ChairA: RestaurantChairA,
     Crate: RestaurantCrate,
     FoodIngredientBurgerTrash: RestaurantFoodIngredientBurgerTrash,
+    FridgeA: RestaurantFridgeA,
+    IcecreamCherry: RestaurantIcecreamCherry,
+    JarALarge: RestaurantJarALarge,
+    JarBMedium: RestaurantJarBMedium,
+    JarCSmall: RestaurantJarCSmall,
+    JarDSmall: RestaurantJarDSmall,
     Kitchencabinet: RestaurantKitchencabinet,
+    KitchencabinetCornerHalfStyleB: RestaurantKitchencabinetCornerHalfStyleB,
+    KitchencabinetCornerStyleB: RestaurantKitchencabinetCornerStyleB,
+    KitchencabinetHalfStyleB: RestaurantKitchencabinetHalfStyleB,
+    KitchencabinetStyleB: RestaurantKitchencabinetStyleB,
+    KitchencounterInnercornerBacksplashStyleB: RestaurantKitchencounterInnercornerBacksplashStyleB,
+    KitchencounterInnercornerStyleB: RestaurantKitchencounterInnercornerStyleB,
+    KitchencounterOutercornerBacksplashStyleB: RestaurantKitchencounterOutercornerBacksplashStyleB,
+    KitchencounterSinkBacksplashStyleB: RestaurantKitchencounterSinkBacksplashStyleB,
+    KitchencounterStraightABacksplashStyleB: RestaurantKitchencounterStraightABacksplashStyleB,
     TableMediumLong: RestaurantTableMediumLong,
     Trashcan: RestaurantTrashcan
   },

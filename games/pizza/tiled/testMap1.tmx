@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="15" nextobjectid="448">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="15" nextobjectid="466">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -9,7 +9,7 @@
  <tileset firstgid="14" name="resources" tilewidth="32" tileheight="32" tilecount="11" columns="11">
   <image source="resources.png" width="352" height="32"/>
  </tileset>
- <tileset firstgid="25" name="models" tilewidth="128" tileheight="117" tilecount="23" columns="0">
+ <tileset firstgid="25" name="models" tilewidth="128" tileheight="117" tilecount="30" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="0">
    <properties>
@@ -144,6 +144,45 @@
     <property name="solid" type="bool" value="true"/>
    </properties>
    <image source="models/pizza-model-snapshots_Deco--Plants15__16x10.png" width="16" height="10"/>
+  </tile>
+  <tile id="31">
+   <image source="models/pizza-model-snapshots_Restaurant--KitchencabinetCornerHalfStyleB__64x64.png" width="64" height="64"/>
+  </tile>
+  <tile id="32">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Restaurant--KitchencounterInnercornerBacksplashStyleB__64x64.png" width="64" height="64"/>
+  </tile>
+  <tile id="33">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Restaurant--KitchencounterOutercornerBacksplashStyleB__64x64.png" width="64" height="64"/>
+  </tile>
+  <tile id="34">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Restaurant--KitchencounterSinkBacksplashStyleB__64x65.png" width="64" height="65"/>
+  </tile>
+  <tile id="35">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Restaurant--KitchencounterStraightABacksplashStyleB__64x65.png" width="64" height="65"/>
+  </tile>
+  <tile id="36">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Food--StoveMulti__64x73.png" width="64" height="73"/>
+  </tile>
+  <tile id="37">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Restaurant--FridgeA__64x72.png" width="64" height="72"/>
   </tile>
  </tileset>
  <layer id="1" name="groundLayer" width="30" height="20" opacity="0.41">
@@ -1209,7 +1248,7 @@
 </chunk>
   </data>
  </layer>
- <layer id="7" name="zones" width="30" height="20">
+ <layer id="7" name="zones" width="30" height="20" visible="0">
   <data encoding="csv">
    <chunk x="-32" y="-16" width="16" height="16">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1617,7 +1656,7 @@
     <property name="type" value="shop"/>
    </properties>
   </object>
-  <object id="184" name="shop: shopBackpack" x="488" y="468" width="65" height="65">
+  <object id="184" name="shop: shopBackpack" x="560.667" y="696.333" width="65" height="65">
    <properties>
     <property name="id" value="shopBackpack"/>
     <property name="type" value="shop"/>
@@ -1712,13 +1751,13 @@
     <property name="type" value="trigger"/>
    </properties>
   </object>
-  <object id="443" name="farmDesk: farmDesk1" x="-122.182" y="676" width="24" height="24">
+  <object id="443" name="farmDesk: farmDesk1" x="-126.364" y="677.273" width="24" height="24">
    <properties>
     <property name="id" value="farmDesk1"/>
     <property name="type" value="farmDesk"/>
    </properties>
   </object>
-  <object id="444" name="dropper → farmDesk1" x="-124.727" y="702" width="28.3636" height="32">
+  <object id="444" name="dropper → farmDesk1" x="-128" y="704" width="28.3636" height="32">
    <properties>
     <property name="target" value="farmDesk1"/>
     <property name="type" value="dropper"/>
@@ -1795,8 +1834,20 @@
     <property name="type" value="storage"/>
    </properties>
   </object>
+  <object id="463" name="farmDesk: farmDesk1" x="-154.364" y="923.545" width="24" height="24" rotation="270">
+   <properties>
+    <property name="id" value="farmDesk2"/>
+    <property name="type" value="farmDesk"/>
+   </properties>
+  </object>
+  <object id="465" name="dropper → farmDesk1" x="-128" y="896" width="28.3636" height="32">
+   <properties>
+    <property name="target" value="farmDesk2"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
  </objectgroup>
- <objectgroup draworder="index" id="12" name="--storeView--stall1"/>
+ <objectgroup draworder="index" id="12" name="--storeView--stall1" locked="1"/>
  <objectgroup id="13" name="--storeView--stall1-2" locked="1">
   <object id="353" name="floor" x="-32" y="575.667" width="320" height="448.333">
    <properties>
@@ -1867,7 +1918,7 @@
   </object>
   <object id="412" gid="55" x="-28.7045" y="710.292" width="28.25" height="17.6563"/>
  </objectgroup>
- <objectgroup draworder="index" id="11" name="--storeSection--stall1-office" opacity="0.8">
+ <objectgroup draworder="index" id="11" name="--storeSection--stall1-office" locked="1" opacity="0.8">
   <object id="363" name="floor" x="-28.3333" y="416.167" width="192" height="160">
    <properties>
     <property name="type" value="floor"/>
@@ -1961,8 +2012,8 @@
     <property name="type" value="polyWindow"/>
    </properties>
   </object>
-  <object id="408" gid="53" x="350.333" y="511" width="24" height="24"/>
-  <object id="409" gid="54" x="350.333" y="511" width="24" height="28"/>
+  <object id="408" gid="53" x="643.788" y="635" width="24" height="24"/>
+  <object id="409" gid="54" x="352.697" y="635.545" width="24" height="28"/>
   <object id="414" name="polyWall" x="533" y="485.667">
    <properties>
     <property name="style" value="glassTop"/>
@@ -1977,20 +2028,31 @@
     <property name="type" value="polyDoor"/>
    </properties>
   </object>
+  <object id="448" gid="57" x="640" y="480" width="32" height="32"/>
+  <object id="449" gid="60" x="608" y="480" width="32" height="32"/>
+  <object id="450" gid="60" x="576" y="480" width="32" height="32"/>
+  <object id="451" gid="60" x="544" y="480" width="32" height="32"/>
+  <object id="455" gid="60" x="480" y="480" width="32" height="32"/>
+  <object id="456" gid="60" x="448" y="480" width="32" height="32"/>
+  <object id="457" gid="60" x="416" y="480" width="32" height="32"/>
+  <object id="452" gid="60" x="640" y="480" width="32" height="32" rotation="90"/>
+  <object id="454" gid="59" x="512" y="480" width="32" height="32"/>
+  <object id="458" gid="62" x="352" y="480" width="31.4545" height="34.4545"/>
+  <object id="459" gid="61" x="640" y="512.227" width="31.7727" height="31.5909" rotation="90"/>
  </objectgroup>
- <objectgroup draworder="index" id="9" name="--store--stall1" locked="1">
-  <object id="413" name="clientArea" x="-7.33333" y="611.333">
-   <properties>
-    <property name="type" value="clientArea"/>
-   </properties>
-   <polygon points="18,-2 277.334,-4 277.355,278.836 176.5,278.75 152.338,357.1 33.4167,362.833 32,346.667 44.417,251.75 48.333,185.083 23.3333,114.667"/>
-  </object>
+ <objectgroup draworder="index" id="9" name="--store--stall1">
   <object id="153" name="store: farmStore1" x="-61" y="444.333" width="717.667" height="577">
    <properties>
     <property name="id" value="farmStore1"/>
     <property name="starter" value="stall1"/>
     <property name="type" value="store"/>
    </properties>
+  </object>
+  <object id="413" name="clientArea" x="-7.33333" y="611.333">
+   <properties>
+    <property name="type" value="clientArea"/>
+   </properties>
+   <polygon points="18,-2 277.334,-4 277.355,278.836 176.5,278.75 152.338,357.1 33.4167,362.833 32,346.667 44.417,251.75 48.333,185.083 23.3333,114.667"/>
   </object>
   <object id="154" name="storeEntrance: farmStore1Entrance" x="224" y="1152" width="64" height="79">
    <properties>
@@ -2112,69 +2174,64 @@
    </properties>
    <point/>
   </object>
-  <object id="430" x="373" y="847.25" width="128" height="64">
+  <object id="430" x="422" y="452.977" width="70.9091" height="35.4545">
    <properties>
     <property name="id" value="butterStation"/>
     <property name="type" value="mixStation"/>
    </properties>
   </object>
-  <object id="438" x="468.75" y="692.75" width="128" height="64">
+  <object id="438" x="526.75" y="448.75" width="128" height="64">
    <properties>
     <property name="id" value="breadStation"/>
     <property name="type" value="mixStation"/>
    </properties>
   </object>
-  <object id="431" x="414.25" y="908.5" width="45" height="39.5">
+  <object id="431" x="441.25" y="479.136" width="45" height="39.5">
    <properties>
     <property name="id" value="butterStation"/>
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="437" x="510.25" y="755.75" width="45" height="39.5">
+  <object id="437" x="568.25" y="511.75" width="45" height="39.5">
    <properties>
     <property name="id" value="breadStation"/>
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="432" gid="40" x="387" y="902.25" width="96" height="48">
-   <properties>
-    <property name="target" value="butterStation"/>
-   </properties>
-  </object>
-  <object id="439" gid="40" x="482.75" y="747.75" width="96" height="48">
+  <object id="439" gid="40" x="540.75" y="503.75" width="96" height="48">
    <properties>
     <property name="target" value="breadStation"/>
    </properties>
   </object>
-  <object id="434" x="389.25" y="865.5" width="28.75" height="28">
+  <object id="434" x="417.523" y="450.136" width="28.75" height="28">
    <properties>
     <property name="order" type="int" value="0"/>
     <property name="target" value="butterStation"/>
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="442" x="485" y="711" width="28.75" height="28">
+  <object id="442" x="543" y="467" width="28.75" height="28">
    <properties>
     <property name="order" type="int" value="0"/>
     <property name="target" value="breadStation"/>
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="441" x="515.5" y="711" width="28.75" height="28">
+  <object id="441" x="573.5" y="467" width="28.75" height="28">
    <properties>
     <property name="order" type="int" value="1"/>
     <property name="target" value="breadStation"/>
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="436" x="452" y="865.25" width="28.75" height="28">
+  <object id="436" x="481.182" y="450.432" width="28.75" height="28">
    <properties>
     <property name="order" type="int" value="1"/>
     <property name="target" value="butterStation"/>
     <property name="type" value="dispenser"/>
    </properties>
   </object>
-  <object id="440" x="548.75" y="710.75" width="28.75" height="28">
+  <object id="440" x="606.75" y="466.75" width="28.75" height="28">
    <properties>
     <property name="order" type="int" value="1"/>
     <property name="target" value="breadStation"/>
@@ -2182,7 +2239,7 @@
    </properties>
   </object>
  </objectgroup>
- <objectgroup id="6" name="meshes">
+ <objectgroup id="6" name="meshes" locked="1">
   <object id="95" gid="28" x="992" y="1248" width="80" height="80"/>
   <object id="96" gid="28" x="1056" y="1248" width="80" height="80"/>
   <object id="97" gid="28" x="1120" y="1248" width="80" height="80"/>

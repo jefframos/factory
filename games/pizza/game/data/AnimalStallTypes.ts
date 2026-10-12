@@ -36,9 +36,29 @@ export interface AnimalStallConfig {
     resourceType: ResourceType;
     /** Seconds between two items from ONE animal (paused while the box is full). */
     produceIntervalSec: number;
+    /**
+     * What the animal keeper (a "farmDesk" of kind 'animals') sells for this stall: each entry is
+     * what it costs to REACH that level, and every level past 1 adds one more animal (so the stall
+     * lays more often). The highest listed level is the max. Unset/empty = DEFAULT_ANIMAL_STALL_UPGRADES.
+     */
+    upgrades?: AnimalStallUpgradeLevel[];
     /** When true, this stall isn't spawned at all. */
     disabled?: boolean;
 }
+
+/** One rung of a stall's upgrade ladder — see AnimalStallConfig.upgrades. */
+export interface AnimalStallUpgradeLevel {
+    /** The level this buys (2, 3, ...). */
+    level: number;
+    /** Money (CurrencyType.Money) to reach it from the level below. */
+    cost: number;
+}
+
+/** AnimalStallConfig.upgrades fallback: up to two more animals. */
+export const DEFAULT_ANIMAL_STALL_UPGRADES: readonly AnimalStallUpgradeLevel[] = [
+    { level: 2, cost: 60 },
+    { level: 3, cost: 150 },
+];
 
 /** Every stall unless ANIMAL_STALL_CONFIG_BY_ID has its id. */
 export const DEFAULT_ANIMAL_STALL_CONFIG: AnimalStallConfig = {
@@ -84,6 +104,27 @@ export const ANIMAL_STALL_CONFIG_BY_ID: Partial<Record<string, AnimalStallConfig
         "produceIntervalSec": 45
     }
 };
+
+/** A stall's resolved upgrade ladder — see AnimalStallConfig.upgrades. */
+export function getAnimalStallUpgrades(id: string): readonly AnimalStallUpgradeLevel[] {
+    const upgrades = getAnimalStallConfig(id).upgrades;
+    return upgrades && upgrades.length > 0 ? upgrades : DEFAULT_ANIMAL_STALL_UPGRADES;
+}
+
+/** The upgrade a stall at `level` can buy next — undefined at the top of its ladder. */
+export function getNextAnimalStallUpgrade(id: string, level: number): AnimalStallUpgradeLevel | undefined {
+    return getAnimalStallUpgrades(id).find(entry => entry.level === level + 1);
+}
+
+/** Highest level this stall can reach. */
+export function getAnimalStallMaxLevel(id: string): number {
+    return Math.max(1, ...getAnimalStallUpgrades(id).map(entry => entry.level));
+}
+
+/** Animals in the pen at `level`: the config's animalCount, plus one per level past 1. */
+export function getAnimalCountAt(id: string, level: number): number {
+    return Math.max(0, Math.round(getAnimalStallConfig(id).animalCount)) + Math.max(0, level - 1);
+}
 
 export function getAnimalStallConfig(id: string): AnimalStallConfig {
     return ANIMAL_STALL_CONFIG_BY_ID[id] ?? DEFAULT_ANIMAL_STALL_CONFIG;

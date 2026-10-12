@@ -146,8 +146,8 @@ export const FARM_PLOT_CONFIG_BY_ID: Partial<Record<string, FarmPlotConfig>> = {
         "requiredTool": "shovel",
         "autoPlant": true,
         "appearRequirement": {
-            "type": "storage",
-            "storageId": "storage1"
+            "type": "trigger",
+            "triggerId": "walkTutorialTrigger"
         }
     },
     "farm2": {

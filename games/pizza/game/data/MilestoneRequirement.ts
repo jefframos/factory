@@ -42,6 +42,7 @@ import { getStorageConfig, isStorageForSale } from './StorageTypes';
 // one started the load cycle. BUILDING_CONFIG above follows the identical reasoning for the
 // 'building' case.
 import { GATE_CONFIG, type GateId } from './GateTypes';
+import { TutorialProgressStorage } from '../tutorial/TutorialProgressStorage';
 
 /** A building must be AT LEAST `level` — the original (and still default) milestone kind. */
 export interface BuildingMilestoneRequirement {
@@ -95,7 +96,18 @@ export interface StoreSalesMilestoneRequirement {
     sales: number;
 }
 
-export type MilestoneRequirement = BuildingMilestoneRequirement | ItemMilestoneRequirement | ResourceMilestoneRequirement | GateMilestoneRequirement | TriggerMilestoneRequirement | StoreMilestoneRequirement | StorageMilestoneRequirement | StoreSalesMilestoneRequirement;
+/**
+ * Zone `zone`'s tutorial must have completed AT LEAST `step` steps (TutorialProgressStorage — saved,
+ * only ever grows). E.g. the FTUE's "the carrot shelf appears once the first carrot is picked"
+ * (step 2 = trigger + harvest done). Survives reloads, unlike a held-resource check.
+ */
+export interface TutorialStepMilestoneRequirement {
+    type: 'tutorialStep';
+    zone: number;
+    step: number;
+}
+
+export type MilestoneRequirement = BuildingMilestoneRequirement | ItemMilestoneRequirement | ResourceMilestoneRequirement | GateMilestoneRequirement | TriggerMilestoneRequirement | StoreMilestoneRequirement | StorageMilestoneRequirement | StoreSalesMilestoneRequirement | TutorialStepMilestoneRequirement;
 
 /**
  * True once whichever storage backs `requirement`'s own kind says it's already satisfied — the
@@ -136,5 +148,7 @@ export function isMilestoneRequirementMet(requirement: MilestoneRequirement): bo
         }
         case 'storeSales':
             return StoreProgressStorage.getTotalSales(requirement.storeId) >= requirement.sales;
+        case 'tutorialStep':
+            return TutorialProgressStorage.getCompletedStepCount(requirement.zone) >= requirement.step;
     }
 }

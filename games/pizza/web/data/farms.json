@@ -17,8 +17,8 @@
             "requiredTool": "shovel",
             "autoPlant": true,
             "appearRequirement": {
-                "type": "storage",
-                "storageId": "storage1"
+                "type": "trigger",
+                "triggerId": "walkTutorialTrigger"
             }
         },
         "farm2": {

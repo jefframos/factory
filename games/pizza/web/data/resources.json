@@ -372,7 +372,9 @@
         "price": 25,
         "sellable": true,
         "pileScale": 3,
-        "carrierSpacing": 0.7
+        "carrierSpacing": 0.7,
+        "storeDemand": 0.6,
+        "storeMaxPerOrder": 1
     },
     "milk": {
         "label": "Milk",
@@ -387,7 +389,9 @@
         "price": 30,
         "sellable": true,
         "pileScale": 2.5,
-        "carrierSpacing": 0.8
+        "carrierSpacing": 0.8,
+        "storeDemand": 0.6,
+        "storeMaxPerOrder": 1
     },
     "butter": {
         "label": "Butter",
@@ -402,7 +406,9 @@
         "price": 70,
         "sellable": true,
         "pileScale": 0.6,
-        "carrierSpacing": 0.8
+        "carrierSpacing": 0.8,
+        "storeDemand": 0.4,
+        "storeMaxPerOrder": 1
     },
     "bread": {
         "label": "Bread",
@@ -417,6 +423,8 @@
         "price": 120,
         "sellable": true,
         "pileScale": 0.8,
-        "carrierSpacing": 0.8
+        "carrierSpacing": 0.8,
+        "storeDemand": 0.35,
+        "storeMaxPerOrder": 1
     }
 }

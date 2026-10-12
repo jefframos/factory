@@ -168,14 +168,14 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'RESOURCE_CONFIG',
         kind: 'enumRecord',
         enumName: 'ResourceType',
-        managedKeys: ['label', 'amountPerGather', 'category', 'price', 'sellable', 'pileScale', 'carrierSpacing', 'storageOffsetY', 'carrierOrientation', 'disabled'],
+        managedKeys: ['label', 'amountPerGather', 'category', 'price', 'sellable', 'storeDemand', 'storeMaxPerOrder', 'pileScale', 'carrierSpacing', 'storageOffsetY', 'carrierOrientation', 'disabled'],
         // Unset means 'main' (see ResourceConfig.category's own doc) — a mirror/entry that
         // predates this field just leaves it alone rather than getting force-set to 'main'.
         // `price`/`sellable` are MartTypes.ts's own concern (see that file's own doc) — unset
         // price means this resource can never be bought/sold at any mart at all; unset sellable
         // means true whenever a price IS set. `disabled` unset means "live," same as every
         // resource before this field existed — see ResourceConfig.disabled's own doc.
-        optionalKeys: ['category', 'price', 'sellable', 'pileScale', 'carrierSpacing', 'storageOffsetY', 'carrierOrientation', 'disabled'],
+        optionalKeys: ['category', 'price', 'sellable', 'storeDemand', 'storeMaxPerOrder', 'pileScale', 'carrierSpacing', 'storageOffsetY', 'carrierOrientation', 'disabled'],
         // The Resources tab ALSO has icon/models/scale/rotationDeg fields, but ResourceConfig
         // itself carries none of those — see entityMap's own top-of-file doc on
         // `externalFields`. For a LOOSE ground-loot resource (bark/pebble/grassFiber, no
@@ -298,8 +298,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORAGE_CONFIG',
         byIdExportName: 'STORAGE_CONFIG_BY_ID',
-        managedKeys: ['name', 'accepts', 'resourceType', 'collect', 'shelf', 'maxItems', 'trash', 'particleEffectId', 'particleSpawnRate', 'models', 'view', 'hideSignpost', 'signpostSide', 'signpostFacing', 'signpostGap', 'signpostRotationDeg', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled', 'dumpAnyAfterSec'],
-        optionalKeys: ['name', 'view', 'hideSignpost', 'signpostSide', 'signpostFacing', 'signpostGap', 'signpostRotationDeg', 'resourceType', 'collect', 'shelf', 'maxItems', 'trash', 'dumpAnyAfterSec', 'particleEffectId', 'particleSpawnRate', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
+        managedKeys: ['name', 'accepts', 'resourceType', 'collect', 'shelf', 'maxItems', 'trash', 'particleEffectId', 'particleSpawnRate', 'models', 'view', 'hideSignpost', 'signpostSide', 'signpostFacing', 'signpostGap', 'signpostRotationDeg', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled', 'dumpAnyAfterSec', 'appearRequirement'],
+        optionalKeys: ['name', 'view', 'hideSignpost', 'signpostSide', 'signpostFacing', 'signpostGap', 'signpostRotationDeg', 'resourceType', 'collect', 'shelf', 'maxItems', 'trash', 'dumpAnyAfterSec', 'appearRequirement', 'particleEffectId', 'particleSpawnRate', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
         // Third export — the ONE signpost every storage shares (see StorageTypes.ts's STORAGE_SIGNPOST_CONFIG),
         // shown as the Storages tab's own 'Signpost' card; same mechanism as farms' FARM_TILE_CONFIG.
         tileExportName: 'STORAGE_SIGNPOST_CONFIG',
@@ -324,16 +324,16 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_FARM_DESK_CONFIG',
         byIdExportName: 'FARM_DESK_CONFIG_BY_ID',
-        managedKeys: ['name', 'npcId', 'appearRequirement', 'buttonLabel', 'disabled'],
-        optionalKeys: ['name', 'npcId', 'appearRequirement', 'buttonLabel', 'disabled'],
+        managedKeys: ['name', 'npcId', 'appearRequirement', 'buttonLabel', 'kind', 'disabled'],
+        optionalKeys: ['name', 'npcId', 'appearRequirement', 'buttonLabel', 'kind', 'disabled'],
     },
     stores: {
         file: path.join(GAME_DIR, 'store', 'StoreTypes.ts'),
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORE_CONFIG',
         byIdExportName: 'STORE_CONFIG_BY_ID',
-        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'cashierView', 'moneyDropView', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'angryDropSec', 'maxGarbage', 'garbageSpawnSlowdown', 'forgivingEarlyLevels', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'openRequirement', 'earlyMaxClients', 'earlySpawnIntervalSec', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'cleanerWorker', 'workerColor', 'workerHat', 'floorChecker', 'wallStyle', 'doorStyle', 'hiring', 'hideStorageDropperView', 'hideCashierDropperView', 'hideMoneyDropDropperView', 'hideHireDeskDropperView', 'disabled'],
-        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'cashierView', 'moneyDropView', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'angryDropSec', 'maxGarbage', 'garbageSpawnSlowdown', 'forgivingEarlyLevels', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'openRequirement', 'earlyMaxClients', 'earlySpawnIntervalSec', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'cleanerWorker', 'workerColor', 'workerHat', 'floorChecker', 'wallStyle', 'doorStyle', 'hiring', 'hideStorageDropperView', 'hideCashierDropperView', 'hideMoneyDropDropperView', 'hideHireDeskDropperView', 'disabled'],
+        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'cashierView', 'moneyDropView', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'angryDropSec', 'maxGarbage', 'garbageSpawnSlowdown', 'forgivingEarlyLevels', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'openRequirement', 'earlyMaxClients', 'earlySpawnIntervalSec', 'cashierRequirement', 'outOfStockDemand', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'cleanerWorker', 'workerColor', 'workerHat', 'floorChecker', 'wallStyle', 'doorStyle', 'hiring', 'hideStorageDropperView', 'hideCashierDropperView', 'hideMoneyDropDropperView', 'hideHireDeskDropperView', 'disabled'],
+        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'cashierView', 'moneyDropView', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'angryDropSec', 'maxGarbage', 'garbageSpawnSlowdown', 'forgivingEarlyLevels', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'openRequirement', 'earlyMaxClients', 'earlySpawnIntervalSec', 'cashierRequirement', 'outOfStockDemand', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'cleanerWorker', 'workerColor', 'workerHat', 'floorChecker', 'wallStyle', 'doorStyle', 'hiring', 'hideStorageDropperView', 'hideCashierDropperView', 'hideMoneyDropDropperView', 'hideHireDeskDropperView', 'disabled'],
     },
     // The checker patterns a store floor can use — see game/store/StoreViewTypes.ts. Not map
     // objects: a store picks one by id (stores' own `floorChecker`), the default otherwise. Shown
@@ -393,8 +393,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_ANIMAL_STALL_CONFIG',
         byIdExportName: 'ANIMAL_STALL_CONFIG_BY_ID',
-        managedKeys: ['name', 'animalModels', 'animalScale', 'animalYawOffsetDeg', 'animalCount', 'wanderSpeed', 'minPauseSec', 'maxPauseSec', 'resourceType', 'produceIntervalSec', 'disabled'],
-        optionalKeys: ['name', 'animalYawOffsetDeg', 'disabled'],
+        managedKeys: ['name', 'animalModels', 'animalScale', 'animalYawOffsetDeg', 'animalCount', 'wanderSpeed', 'minPauseSec', 'maxPauseSec', 'resourceType', 'produceIntervalSec', 'upgrades', 'disabled'],
+        optionalKeys: ['name', 'animalYawOffsetDeg', 'upgrades', 'disabled'],
     },
     // Fence styles — see game/store/StoreViewTypes.ts's FenceStyleConfig. Same {default, byId}
     // shape as the wall styles; a "polyFence" picks one with its Tiled "style" prop.

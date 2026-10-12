@@ -14,6 +14,7 @@
 // getCompletedStepCount() for whatever zone the player starts in.
 
 import PlatformHandler from 'core/platforms/PlatformHandler';
+import { Signal } from 'signals';
 
 const STORAGE_KEY = 'PIZZA_TUTORIAL_PROGRESS';
 
@@ -46,8 +47,12 @@ export class TutorialProgressStorage {
     /** Overwrites the completed-step count for `zoneNumber` — fire-and-forget persist, same convention as every other *Storage.ts here. */
     static setCompletedStepCount(zoneNumber: number, count: number): void {
         this.completedByZone.set(zoneNumber, count);
+        this.onChange.dispatch(zoneNumber);
         void this.persist();
     }
+
+    /** Fires with the zone number whose progress changed — RequirementRegistry rechecks ('tutorialStep' requirements). */
+    static readonly onChange: Signal = new Signal();
 
     private static async persist(): Promise<void> {
         const data: Record<string, number> = Object.fromEntries(this.completedByZone);
