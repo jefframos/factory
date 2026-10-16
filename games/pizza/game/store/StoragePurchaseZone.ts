@@ -102,6 +102,19 @@ export default class StoragePurchaseZone extends Entity {
         }
     };
 
+    public getStorageId(): string {
+        return this.storageId;
+    }
+
+    /** What's still left to pay — coins, then each resource (already-paid progress taken off). Read by the playtest bot. */
+    public getRemainingCost(): { money: number; resources: { type: ResourceType; amount: number }[] } {
+        const money = Math.max(0, (this.price?.amount ?? 0) - StorageOwnershipStorage.getProgress(this.storageId));
+        const resources = this.resourceCost
+            .map(cost => ({ type: cost.resourceType, amount: Math.max(0, cost.amount - StorageOwnershipStorage.getResourceProgress(this.storageId, cost.resourceType)) }))
+            .filter(cost => cost.amount > 0);
+        return { money, resources };
+    }
+
     public constructor(
         storageId: string,
         price: StoragePrice | undefined,

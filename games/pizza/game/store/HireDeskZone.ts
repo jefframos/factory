@@ -48,6 +48,10 @@ export default class HireDeskZone extends Entity {
     /** See the constructor's `showOutline` param doc. */
     private readonly showOutline: boolean;
 
+    public getStoreId(): string {
+        return this.storeId;
+    }
+
     public constructor(
         position: THREE.Vector3,
         footprint: { width: number; depth: number },

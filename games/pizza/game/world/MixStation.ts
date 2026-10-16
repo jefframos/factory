@@ -206,6 +206,16 @@ export default class MixStation extends Entity {
         this.refreshLabels(false);
     }
 
+    /** What the playtest bot (playtest/PlaytestBot.ts) needs: where to stand to make, whether a batch can start, and each ingredient box. */
+    public getPlaytestState(): { product: ResourceType; makingPoint: THREE.Vector3; ready: boolean; inputs: { storageId: string; resourceType: ResourceType; batch: number }[] } {
+        return {
+            product: this.config.resourceType,
+            makingPoint: new THREE.Vector3(this.dropper.x, 0, this.dropper.z),
+            ready: this.hasIngredients() && this.output.getFillCount() + this.config.outputAmount <= this.config.maxOutput,
+            inputs: this.config.inputs.map((input, i) => ({ storageId: this.boxes[i]?.storageId ?? '', resourceType: input.resourceType, batch: input.amount })),
+        };
+    }
+
     public override update(delta: number): void {
         super.update(delta);
         this.surfaceTimerSec -= delta;

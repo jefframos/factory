@@ -51,6 +51,8 @@ export interface MovementInputHost extends PIXI.Container {
 
 export default class PlayerMovementController extends Component {
     private readonly moveInput = new THREE.Vector2(0, 0);
+    /** Scripted input (the playtest bot — see playtest/PlaytestBot.ts): while set, it replaces keyboard/joystick input. World-space (x, z), like moveInput. */
+    private scriptedInput?: THREE.Vector2;
     private readonly getMoveSpeed: () => number;
     private readonly inputHost: MovementInputHost;
 
@@ -136,14 +138,24 @@ export default class PlayerMovementController extends Component {
         }
     }
 
+    /** Drives the player from code instead of input — see scriptedInput. (0, 0) stands still; clearScriptedInput() hands control back. */
+    public setScriptedInput(x: number, z: number): void {
+        (this.scriptedInput ??= new THREE.Vector2()).set(x, z);
+    }
+
+    public clearScriptedInput(): void {
+        this.scriptedInput = undefined;
+    }
+
     public fixedUpdate(delta: number): void {
         const rigidBody = this.entity.getComponent(RigidBody);
         const visual = this.entity.getComponent(CharacterVisualComponent);
+        const input = this.scriptedInput ?? this.moveInput;
 
         if (rigidBody) {
             const speed = this.getMoveSpeed();
-            let velocityX = this.moveInput.x * speed;
-            let velocityZ = this.moveInput.y * speed;
+            let velocityX = input.x * speed;
+            let velocityZ = input.y * speed;
 
             // Tile-map walkability (e.g. water/lava) is entirely optional — see
             // TileWalkability.ts's own doc — isWalkable() is a no-op (always true) unless
@@ -164,7 +176,7 @@ export default class PlayerMovementController extends Component {
             rigidBody.velocity.z = velocityZ;
         }
 
-        visual?.moveInput.copy(this.moveInput);
+        visual?.moveInput.copy(input);
     }
 
     /** Player shouldn't keep coasting on whatever velocity it had the instant this got disabled (see class doc) — zero it immediately rather than waiting for the next enabled fixedUpdate(). */

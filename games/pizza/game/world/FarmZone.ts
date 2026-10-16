@@ -94,6 +94,15 @@ export default class FarmZone extends Entity {
         }
     };
 
+    public getFarmId(): string {
+        return this.farmId;
+    }
+
+    /** Coins still left to pay — 0 once owned (or free). Read by the playtest bot. */
+    public getRemainingPrice(): number {
+        return FarmPlotStorage.isOwned(this.farmId) ? 0 : Math.max(0, this.config.price.amount - FarmPlotStorage.getProgress(this.farmId));
+    }
+
     public constructor(
         position: THREE.Vector3,
         screenHost: ScreenAnchorHost,

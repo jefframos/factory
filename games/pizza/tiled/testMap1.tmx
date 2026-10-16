@@ -1715,31 +1715,31 @@
    </properties>
    <polygon points="93,-44 -111.667,115 -87.8333,219 230,196 236.167,97.5"/>
   </object>
-  <object id="37" name="farm: farm1" x="-224" y="800" width="64" height="64">
+  <object id="37" name="farm: farm1" x="-208" y="816" width="64" height="64">
    <properties>
     <property name="id" value="farm1"/>
     <property name="type" value="farm"/>
    </properties>
   </object>
-  <object id="185" name="farm: farm4" x="-320" y="704" width="64" height="64">
+  <object id="185" name="farm: farm4" x="-464" y="688" width="64" height="64">
    <properties>
     <property name="id" value="farm4"/>
     <property name="type" value="farm"/>
    </properties>
   </object>
-  <object id="186" name="farm: farm5" x="-416" y="800" width="64" height="64">
+  <object id="186" name="farm: farm5" x="-432" y="816" width="64" height="64">
    <properties>
     <property name="id" value="farm5"/>
     <property name="type" value="farm"/>
    </properties>
   </object>
-  <object id="100" name="farm: farm2" x="-320" y="800" width="64" height="64">
+  <object id="100" name="farm: farm2" x="-320" y="816" width="64" height="64">
    <properties>
     <property name="id" value="farm2"/>
     <property name="type" value="farm"/>
    </properties>
   </object>
-  <object id="101" name="farm: farm3" x="-224" y="704" width="64" height="64">
+  <object id="101" name="farm: farm3" x="-224" y="688" width="64" height="64">
    <properties>
     <property name="id" value="farm3"/>
     <property name="type" value="farm"/>

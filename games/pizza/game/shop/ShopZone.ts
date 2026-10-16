@@ -532,6 +532,25 @@ export default class ShopZone extends Entity {
             .every(type => BackpackStorage.getCount(type) >= ShopUpgradeStorage.getRemainingResource(this.shopId, this.config, type));
     }
 
+    /** The next level's label and what's still left to pay — undefined when maxed or cooling down. Read by the playtest bot. */
+    public getPlaytestPurchase(): { label: string; money: number; resources: { type: ResourceType; amount: number }[] } | undefined {
+        if (ShopUpgradeStorage.isMaxLevel(this.shopId, this.config) || ShopUpgradeStorage.isOnCooldown(this.shopId)) {
+            return undefined;
+        }
+        const resources = getUpgradeCost(this.config, ShopUpgradeStorage.getLevel(this.shopId)).resources;
+        return {
+            label: `${this.config.name ?? this.shopId} Lv ${ShopUpgradeStorage.getLevel(this.shopId) + 1}`,
+            money: ShopUpgradeStorage.getRemainingMoney(this.shopId, this.config),
+            resources: (Object.keys(resources) as ResourceType[])
+                .map(type => ({ type, amount: ShopUpgradeStorage.getRemainingResource(this.shopId, this.config, type) }))
+                .filter(cost => cost.amount > 0),
+        };
+    }
+
+    public getShopId(): string {
+        return this.shopId;
+    }
+
     /** True if any of this shop's hand-listed levels costs resources (not just money). */
     private hasResourceCosts(): boolean {
         return (this.config.levels ?? []).some(level => Object.values(level.resources ?? {}).some(amount => (amount ?? 0) > 0));

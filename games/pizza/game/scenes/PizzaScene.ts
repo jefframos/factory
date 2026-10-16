@@ -79,6 +79,7 @@ import { computeFarmGrid, FARM_GRID_CELL_SIZE, FARM_GRID_APPEAR_STAGGER_SEC } fr
 import { getFarmPlotConfig, FarmPlotConfig } from '../data/FarmTypes';
 import { getTriggerConfig } from '../data/TriggerTypes';
 import { ZONE_CONFIG } from '../data/ZoneTypes';
+import PlaytestSession from '../playtest/PlaytestSession';
 import { DEFAULT_CAMERA_TEMPLATE_ID, getCameraTemplate } from '../data/CameraTemplateTypes';
 import { TriggerStorage } from '../data/TriggerStorage';
 import { FarmPlotStorage } from '../data/FarmPlotStorage';
@@ -406,6 +407,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
     /** The player — self-contained (RigidBody, PlayerMovementController, collision events all wired up in its own awake()). See MainPlayer.ts. */
     private readonly mainPlayer: MainPlayer;
+    /** ?bot / ?record playtest (see playtest/README.md) — undefined in normal play. */
+    private playtest?: PlaytestSession;
 
     /** Debug-only PC free-fly camera (see DebugFlyCameraController.ts's own doc) — OFF by default, toggled via the "Toggle Fly Camera" debug button (see setupDebugButtons()). */
     private readonly flyCamera: DebugFlyCameraController;
@@ -557,6 +560,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // Poki gameplayStart on the player's first tap/click/key from here on — see GameplayTracker.ts.
         GameplayTracker.init();
         this.setupDebugGui();
+        this.setupPlaytest();
         this.threeScene.add(this.mainPlayer.transform);
 
         this.positionCamera();
@@ -1074,6 +1078,23 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * a plain BackpackStorage credit should ever hand out for free — an animal isn't "a simple
      * resource" the way Wood/Stone/Berries/Bark/Pebble/GrassFiber/Crystal/Iron/Rope are.
      */
+    /** ?bot / ?record — the playtest bot and/or session recorder (see playtest/README.md). No-op otherwise. */
+    private setupPlaytest(): void {
+        const zoneNumbers = Object.keys(ZONE_CONFIG).map(Number);
+        const zoneVisibility = this.worldManager.getZoneVisibilityManager();
+        this.playtest = PlaytestSession.fromUrl({
+            world: this.world,
+            player: this.mainPlayer,
+            worldObjects: this.worldObjects,
+            tileMap: this.worldManager.getTileMap(),
+            zoneVisibility,
+            getStores: () => this.stores,
+            getActiveTutorialStep: () => this.zoneTutorialController.getActiveStep(),
+            isPlayerFrozen: () => this.movementFreezeCount > 0 || !this.mainPlayer.movementController.enabled,
+            getRevealKey: () => zoneNumbers.filter(zone => zoneVisibility.isZoneRevealed(zone)).join(','),
+        });
+    }
+
     private setupDebugButtons(): void {
         InGameButtonList.registerButton('Clear Data', () => clearAllPlayerData());
         // Narrower than 'Clear Data' — resets every queue's active task/progress/cooldown
@@ -2760,6 +2781,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.shapeResourceSpawner.update(playerPosition, delta);
         // Independent of the above too — see ZoneTutorialController.ts's own doc.
         this.zoneTutorialController.update();
+        this.playtest?.fixedUpdate(delta);
         // Same "the player's own zone drives something" idea as the tutorial controller above,
         // just for the camera's own settings instead — see applyCameraTemplateForZone()'s own
         // doc for why this is cheap to call unconditionally every tick.
@@ -3016,6 +3038,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.uiService.update();
         this.movementTutorialOverlay.update(delta);
         this.updateDemoEnd(delta);
+        this.playtest?.update();
         this.spotlights.update(delta, this.mainPlayer.transform.position);
         ParticleSystem.update(delta);
 
@@ -3030,6 +3053,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.dynamicResourceSpawner.destroy();
         this.shapeResourceSpawner.destroy();
         this.zoneTutorialController.destroy();
+        this.playtest?.destroy();
         GameplayTracker.destroy();
         this.flyCamera.destroy();
         this.movementTutorialOverlay.destroy();

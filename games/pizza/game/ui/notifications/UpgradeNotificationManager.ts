@@ -156,6 +156,16 @@ export class UpgradeNotificationManager {
         });
     }
 
+    /** True while a notification is on screen waiting for the continue tap (world paused). */
+    public isAwaitingTap(): boolean {
+        return this.dismissCurrent !== undefined;
+    }
+
+    /** Same as the player tapping the backdrop — the playtest bot's way through (playtest/PlaytestBot.ts). Ignored inside MIN_SHOW_SEC, like a real tap. */
+    public tapToContinue(): void {
+        this.handleBackdropTap();
+    }
+
     private readonly handleBackdropTap = (): void => {
         if (!this.dismissCurrent || performance.now() < this.tapAllowedAtMs) {
             return;

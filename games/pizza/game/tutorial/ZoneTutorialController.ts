@@ -230,6 +230,16 @@ export default class ZoneTutorialController {
         }
     }
 
+    /** The step the arrow is guiding toward right now — undefined with no tutorial running. Read by the playtest bot (playtest/PlaytestBot.ts). */
+    public getActiveStep(): { zoneNumber: number; index: number; step: ZoneTutorialStep } | undefined {
+        if (this.activeZoneNumber === undefined || !this.activeStepKey) {
+            return undefined;
+        }
+        const [zoneNumber, index] = this.activeStepKey.split(':').map(Number);
+        const step = ZONE_TUTORIAL_CONFIG[zoneNumber]?.steps[index];
+        return step ? { zoneNumber, index, step } : undefined;
+    }
+
     /** Tears everything down — call from PizzaScene's own teardown so the arrow sprite/listeners don't outlive the scene. */
     public destroy(): void {
         this.deactivate();

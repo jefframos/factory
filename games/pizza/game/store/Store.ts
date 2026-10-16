@@ -185,6 +185,29 @@ export interface StoreStorageSource {
     dropRect?: StoreRect;
 }
 
+/** See Store.getPlaytestSnapshot(). */
+export interface StorePlaytestSnapshot {
+    id: string;
+    open: boolean;
+    openEarly: boolean;
+    visible: boolean;
+    area: StoreRect;
+    cashier: StoreRect;
+    moneyDrop: StoreRect;
+    /** The cashier counter and money drop are up (StoreConfig.cashierRequirement met). */
+    cashierShown: boolean;
+    clients: readonly StoreClient[];
+    /** The storages clients can buy from right now. */
+    storages: { id: string; resourceType?: ResourceType; dropPoint: THREE.Vector3 }[];
+    garbage: readonly THREE.Vector3[];
+    maxGarbage: number;
+    tooDirty: boolean;
+    hasCashierWorker: boolean;
+    cashierUnattended: boolean;
+    moneyPile: number;
+    moodFloor?: StoreClientMood;
+}
+
 interface StoreStorage extends StoreStorageRef {
     readonly config: StorageConfig;
     readonly rect: StoreRect;
@@ -874,6 +897,29 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     /** Storages clients can use right now — bought (or free), and enabled by the store's level. See StoreUnlocks.isStorageAvailable(). */
     private getAvailableStorages(): StoreStorage[] {
         return this.storages.filter(s => StoreUnlocks.isStorageAvailable(s.id, s.config));
+    }
+
+    /** Everything the playtest recorder/bot (playtest/) reads off a store each sample — read-only views, nothing here changes the store. */
+    public getPlaytestSnapshot(): StorePlaytestSnapshot {
+        return {
+            id: this.layout.id,
+            open: this.isOpen(),
+            openEarly: this.isOpenEarly(),
+            visible: this.isVisible(),
+            area: this.layout.area,
+            cashier: this.layout.cashier,
+            moneyDrop: this.layout.moneyDrop,
+            cashierShown: this.cashier?.transform.visible ?? false,
+            clients: this.clients,
+            storages: this.getAvailableStorages().map(storage => ({ id: storage.id, resourceType: storage.config.resourceType, dropPoint: storage.dropPoint })),
+            garbage: this.garbage.map(piece => piece.transform.position),
+            maxGarbage: Math.max(1, this.config.maxGarbage ?? DEFAULT_MAX_GARBAGE),
+            tooDirty: this.isTooDirty(),
+            hasCashierWorker: this.cashierWorker !== undefined,
+            cashierUnattended: this.isCashierUnattended(),
+            moneyPile: StoreMoneyStorage.get(this.layout.id),
+            moodFloor: this.getMoodFloor(),
+        };
     }
 
     /** True when world point (x, z) is inside this store's own area (the "store" rect on the map). */

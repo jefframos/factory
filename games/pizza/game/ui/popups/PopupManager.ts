@@ -105,6 +105,11 @@ export class PopupManager {
         ACTIVE_POPUP_TRANSITION.playIn({ root: popup.root, backdrop });
     }
 
+    /** The popup open right now, if any. */
+    public getCurrent(): Popup | undefined {
+        return this.current?.popup;
+    }
+
     /** Animates `popup` out via ACTIVE_POPUP_TRANSITION, then tears it down — no-ops if `popup` isn't the one currently open (e.g. a stale close callback firing after it's already been replaced by a newer popup). */
     public close(popup: Popup): void {
         if (!this.current || this.current.popup !== popup) {

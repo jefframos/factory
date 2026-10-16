@@ -179,6 +179,14 @@ export default class StorageZone extends Entity {
     /** See the constructor's `outlineSize`. */
     private readonly outlineSize?: { width: number; depth: number };
 
+    public getStorageId(): string {
+        return this.storageId;
+    }
+
+    public getConfig(): StorageConfig {
+        return this.config;
+    }
+
     public constructor(
         storageId: string,
         config: StorageConfig,
@@ -645,7 +653,7 @@ export default class StorageZone extends Entity {
     }
 
     /** Full = StorageConfig.maxItems reached, or every slot of a SHELF taken — a plain crate storage keeps taking items past what it draws. */
-    private isFull(): boolean {
+    public isFull(): boolean {
         if (this.config.maxItems !== undefined) {
             return this.getFillCount() >= this.config.maxItems;
         }

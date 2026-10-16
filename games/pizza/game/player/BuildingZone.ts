@@ -315,6 +315,15 @@ export default class BuildingZone extends Entity {
     /** See the constructor's `isSection` param doc. */
     private readonly isSection: boolean;
 
+    public getBuildingId(): BuildingId {
+        return this.buildingId;
+    }
+
+    /** Just leveled up — nothing more goes in until the player steps out and back in (see awaitingReentry). */
+    public isAwaitingReentry(): boolean {
+        return this.awaitingReentry;
+    }
+
     public constructor(
         position: THREE.Vector3,
         screenHost: ScreenAnchorHost,

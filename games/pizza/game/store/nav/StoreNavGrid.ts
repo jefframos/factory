@@ -210,6 +210,20 @@ export default class StoreNavGrid {
         return true;
     }
 
+    /** True if any half-cell sample along a -> b satisfies `test` — see findPath()'s noShortcutOver. */
+    private segmentTouches(ax: number, az: number, bx: number, bz: number, test: (x: number, z: number) => boolean): boolean {
+        const dx = bx - ax;
+        const dz = bz - az;
+        const length = Math.hypot(dx, dz);
+        const step = this.cellSize * 0.5;
+        for (let d = step; d < length; d += step) {
+            if (test(ax + (dx * d) / length, az + (dz * d) / length)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * A* from `from` to `to`, smoothed. Fills `out` with the waypoints AFTER the start, the last
      * being exactly `to`. Returns false (and leaves `out` empty) when there's no path.
@@ -219,7 +233,16 @@ export default class StoreNavGrid {
      * from it last. Everything in between is checked with no end slack, so it never cuts across
      * an obstacle's corner.
      */
-    public findPath(from: THREE.Vector3, to: THREE.Vector3, out: THREE.Vector3[], extraCost?: NavCellCost): boolean {
+    public findPath(
+        from: THREE.Vector3,
+        to: THREE.Vector3,
+        out: THREE.Vector3[],
+        extraCost?: NavCellCost,
+        /** Optional: smoothing never takes a straight shortcut over a point this returns true for (e.g. costly cells A* went around). */
+        noShortcutOver?: (x: number, z: number) => boolean,
+    ): boolean {
+        const clear = (ax: number, az: number, bx: number, bz: number): boolean =>
+            this.hasLineOfSight(ax, az, bx, bz, 0) && (!noShortcutOver || !this.segmentTouches(ax, az, bx, bz, noShortcutOver));
         out.length = 0;
         const start = this.nearestWalkableCell(from.x, from.z);
         const goal = this.nearestWalkableCell(to.x, to.z);
@@ -239,7 +262,7 @@ export default class StoreNavGrid {
             }
             return true;
         };
-        if (start === goal || this.hasLineOfSight(startPoint.x, startPoint.z, endPoint.x, endPoint.z, 0)) {
+        if (start === goal || clear(startPoint.x, startPoint.z, endPoint.x, endPoint.z)) {
             out.push(endPoint.clone());
             return finish();
         }
@@ -259,7 +282,7 @@ export default class StoreNavGrid {
         while (i < points.length) {
             let farthest = i;
             for (let j = points.length - 1; j > i; j--) {
-                if (this.hasLineOfSight(anchorX, anchorZ, points[j].x, points[j].z, 0)) {
+                if (clear(anchorX, anchorZ, points[j].x, points[j].z)) {
                     farthest = j;
                     break;
                 }

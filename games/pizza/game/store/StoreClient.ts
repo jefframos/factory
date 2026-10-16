@@ -835,6 +835,16 @@ export default class StoreClient extends Entity implements NavNeighbor {
         return this.wants.reduce((sum, want) => sum + (want.type === type && !want.skipped ? want.remaining : 0), 0);
     }
 
+    /** Its shopping list as it stands (skipped items left out) — read by the playtest recorder (playtest/PlaytestRecorder.ts). */
+    public getWants(): { type: ResourceType; remaining: number; bought: number }[] {
+        return this.wants.filter(want => !want.skipped).map(want => ({ type: want.type, remaining: want.remaining, bought: want.bought }));
+    }
+
+    /** The item it's working on right now while still shopping — undefined once it's done picking. */
+    public getCurrentWantType(): ResourceType | undefined {
+        return SHOPPING_STATES.has(this.state) ? this.wants[this.wantIndex]?.type : undefined;
+    }
+
     /** What this client pays right now — its base price scaled by its current mood. */
     private getTotalPrice(): number {
         return applyMoodToPrice(this.host.config, this.getMood(), this.getBasePrice());

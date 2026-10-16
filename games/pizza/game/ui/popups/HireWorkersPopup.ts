@@ -87,6 +87,36 @@ interface RowSpec {
     onAction: () => void;
 }
 
+/** Hire one `entry.role` into `store` — pays, hires, refunds if the store refuses. The popup's Hire button and the playtest bot both go through here. */
+export function hireStoreWorker(store: Store, entry: StoreHireRoleConfig): boolean {
+    const hired = (StoreWorkerStorage.getRoster(store.getId()) ?? []).filter(worker => worker.role === entry.role).length;
+    if (hired >= getHireMaxCount(entry) || !EconomyStorage.spend(CurrencyType.Money, entry.cost)) {
+        return false;
+    }
+    if (!store.hireWorker(entry.role)) {
+        EconomyStorage.add(CurrencyType.Money, entry.cost);
+        return false;
+    }
+    GameAnalytics.workerHired(entry.role);
+    return true;
+}
+
+/** Buys worker `workerId`'s next level, if there is one and it's affordable. Popup Upgrade button + playtest bot. */
+export function upgradeStoreWorker(storeId: string, workerId: string): boolean {
+    // Re-read the saved level — a popup row may be a frame stale.
+    const current = (StoreWorkerStorage.getRoster(storeId) ?? []).find(entry => entry.id === workerId);
+    if (!current) {
+        return false;
+    }
+    const next = getNextWorkerUpgrade(getStoreConfig(storeId), current.role, current.level ?? 1);
+    if (!next || !EconomyStorage.spend(CurrencyType.Money, next.cost)) {
+        return false;
+    }
+    StoreWorkerStorage.setLevel(storeId, current.id, next.level);
+    GameAnalytics.workerUpgraded(current.role, next.level);
+    return true;
+}
+
 export default class HireWorkersPopup extends Popup {
     private readonly storeId: string;
     private readonly getStore: () => Store | undefined;
@@ -235,15 +265,7 @@ export default class HireWorkersPopup extends Popup {
     }
 
     private hire(entry: StoreHireRoleConfig, store: Store): void {
-        const hired = this.roster().filter(worker => worker.role === entry.role).length;
-        if (hired >= getHireMaxCount(entry) || !EconomyStorage.spend(CurrencyType.Money, entry.cost)) {
-            return;
-        }
-        if (!store.hireWorker(entry.role)) {
-            EconomyStorage.add(CurrencyType.Money, entry.cost);
-        } else {
-            GameAnalytics.workerHired(entry.role);
-        }
+        hireStoreWorker(store, entry);
         // spend()/add() already re-rendered via onChange, but before the roster changed.
         this.render();
     }
@@ -283,17 +305,7 @@ export default class HireWorkersPopup extends Popup {
     }
 
     private upgrade(worker: SavedStoreWorker): void {
-        // Re-read the saved level — the row may be a frame stale.
-        const current = this.roster().find(entry => entry.id === worker.id);
-        if (!current) {
-            return;
-        }
-        const next = getNextWorkerUpgrade(getStoreConfig(this.storeId), current.role, current.level ?? 1);
-        if (!next || !EconomyStorage.spend(CurrencyType.Money, next.cost)) {
-            return;
-        }
-        StoreWorkerStorage.setLevel(this.storeId, current.id, next.level);
-        GameAnalytics.workerUpgraded(current.role, next.level);
+        upgradeStoreWorker(this.storeId, worker.id);
     }
 
     // ---- Shared row
