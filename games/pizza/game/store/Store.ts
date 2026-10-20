@@ -82,6 +82,7 @@ import { NotificationRarity, NotificationType } from '../ui/notifications/Notifi
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { StorageInventory } from '../data/StorageInventory';
 import { StorageConfig, getStorageConfig } from '../data/StorageTypes';
+import { getStorageStockCap } from '../data/StorageCapacity';
 import { BuildingStorage } from '../data/BuildingStorage';
 import { BuildingId } from '../data/BuildingId';
 import { BUILDING_CONFIG } from '../data/BuildingTypes';
@@ -92,7 +93,7 @@ import { getFarmPlotConfig } from '../data/FarmTypes';
 import { SeedStorage } from '../data/SeedStorage';
 import { SEED_CONFIG, SeedId } from '../data/SeedTypes';
 import { pickRandom } from '../world/AssetLibraryRegistry';
-import WorldObjectRegistry, { boundsOfShape, isPointInShape } from '../world/WorldObjectRegistry';
+import WorldObjectRegistry, { boundsOfShape, isInStoreSection, isPointInShape, SpawnerShape } from '../world/WorldObjectRegistry';
 import StoreClient, { StoreClientHost, StoreClientWant, StoreSpot, StoreStorageRef } from './StoreClient';
 import StoreWorker from './StoreWorker';
 import { WORKER_NPC_ID, type StoreWorkerRole, DEFAULT_OUT_OF_STOCK_DEMAND } from './StoreTypes';
@@ -100,6 +101,8 @@ import { getNpcConfig, hatSpecOf, NpcLook, rollNpcLook } from '../data/NpcTypes'
 import StoreCashierWorker, { StoreCashierHost } from './StoreCashierWorker';
 import StoreRestockerWorker, { RestockJob, StoreRestockerHost } from './StoreRestockerWorker';
 import StoreCleanerWorker, { StoreCleanerHost, TrashTarget } from './StoreCleanerWorker';
+import StoreBakerWorker, { StoreBakerHost } from './StoreBakerWorker';
+import MixStation from '../world/MixStation';
 
 /** A trash storage's TrashTarget plus which storage it is — see Store.trashTargets. */
 type StoreTrashSpot = TrashTarget & { storageId: string };
@@ -125,7 +128,7 @@ import StoreLine from './StoreLine';
 import { StoreLayout, StorePoint, StoreRect, randomPointInRect, readStoreLayouts, rectContains } from './StoreLayout';
 import { StoreMoneyStorage } from './StoreMoneyStorage';
 import { SavedStoreClient, StoreClientStorage } from './StoreClientStorage';
-import { DEFAULT_CASHIER_VIEW, DEFAULT_CLIENT_RADIUS, DEFAULT_NAV_CELL_SIZE, DEFAULT_RESTOCKER_WANDER_RADIUS, DEFAULT_GARBAGE_SPAWN_SLOWDOWN, DEFAULT_MAX_GARBAGE, DEFAULT_WORKER_COLLECT_EVERY_SALES, DEFAULT_WORKER_WANDER_RADIUS, getCashierLevelStats, getCleanerLevelStats, getRestockerLevelStats, StoreClientMood, StoreConfig, StorePacing, getNextStoreLevel, getStoreConfig, getStorageSpotDirection, getStorePacing, rollClientMoodStepSec } from './StoreTypes';
+import { DEFAULT_CASHIER_VIEW, DEFAULT_CLIENT_RADIUS, DEFAULT_NAV_CELL_SIZE, DEFAULT_RESTOCKER_WANDER_RADIUS, DEFAULT_GARBAGE_SPAWN_SLOWDOWN, DEFAULT_MAX_GARBAGE, DEFAULT_WORKER_COLLECT_EVERY_SALES, DEFAULT_WORKER_WANDER_RADIUS, DEFAULT_BAKER_WANDER_RADIUS, getBakerLevelStats, getCashierLevelStats, getCleanerLevelStats, getRestockerLevelStats, StoreClientMood, StoreConfig, StorePacing, getNextStoreLevel, getStoreConfig, getStorageSpotDirection, getStorePacing, rollClientMoodStepSec } from './StoreTypes';
 import { StoreProgressStorage } from './StoreProgressStorage';
 import { StoreUnlocks } from './StoreUnlocks';
 import { FloorLayers } from '../world/FloorLayers';
@@ -133,7 +136,7 @@ import { BuildReveal } from '../player/BuildReveal';
 import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
 import { GameAnalytics } from '../analytics/GameAnalytics';
 import { ProducedGoods } from '../data/ProducedGoods';
-import { RestockSource, RestockSupply } from './RestockSupply';
+import { RestockSource, RestockSupply, StorageSupplySource } from './RestockSupply';
 
 /** The first client shows up this long after the store spawns, rather than a full spawnIntervalSec. */
 const FIRST_SPAWN_DELAY_SEC = 1;
@@ -147,6 +150,8 @@ const MOOD_FLOOR_BY_LEVEL: Partial<Record<number, StoreClientMood>> = {
 };
 /** Extra waiting spots laid out past the busiest the store can be right now — covers workers hired / levels gained before the next nav rebuild. */
 const QUEUE_SPOT_HEADROOM = 3;
+/** A baker taking from a shelf: items fly from this high above the shelf's spot. */
+const SHELF_PICK_HEIGHT = 0.6;
 /** Two pieces of garbage never sit closer than this (center to center), world units. */
 const GARBAGE_SPACING = 1.1;
 /** Rings of candidate spots tried around a dropping client, and how far apart they are. */
@@ -215,7 +220,7 @@ interface StoreStorage extends StoreStorageRef {
     readonly dropPoint: THREE.Vector3;
 }
 
-export default class Store extends Entity implements StoreClientHost, StoreCashierHost, StoreRestockerHost, StoreCleanerHost {
+export default class Store extends Entity implements StoreClientHost, StoreCashierHost, StoreRestockerHost, StoreCleanerHost, StoreBakerHost {
     public readonly config: StoreConfig;
     public readonly screenHost: ScreenAnchorHost;
     public readonly cashierLine: StoreLine<StoreClient>;
@@ -242,8 +247,12 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     /** Shelf / farm cell claims, so two restockers never chase the same one. */
     /** Shelf id -> the restockers currently working it — several may share one shelf while it has room (see findRestockJob()). */
     private readonly claimedStorages = new Map<string, Set<StoreRestockerWorker>>();
-    /** Source (farm cell / stall box / dispenser — see RestockSupply.ts) -> the restocker headed there. */
-    private readonly claimedTiles = new Map<RestockSource, StoreRestockerWorker>();
+    /** Source (farm cell / stall box / dispenser — see RestockSupply.ts — or a shelf a baker takes from) -> the restocker or baker headed there. */
+    private readonly claimedTiles = new Map<RestockSource, StoreWorker>();
+    /** Mix station -> the baker working it (one per station) — see claimStation(). */
+    private readonly claimedStations = new Map<MixStation, StoreBakerWorker>();
+    /** A shelf as a baker's ingredient source, per "shelf id|type" — cached so claims (keyed by source) stay stable. */
+    private readonly shelfSources = new Map<string, RestockSource>();
     /** Garbage claimed by a cleaner — see claimNearestGarbage(). */
     private readonly claimedGarbage = new Map<StoreGarbage, StoreCleanerWorker>();
     /** Every trash storage on the map — where cleaners throw garbage (see getTrashTarget()). Only the AVAILABLE ones count (bought, store level reached — StoreUnlocks.isStorageAvailable()), checked live since a trash bin can be for sale. */
@@ -744,7 +753,7 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         if (areas.length > 0 && !areas.some(shape => isPointInShape(shape, x, z))) {
             return false;
         }
-        return !this.sections.some(section => !isSectionBuilt(section.id) && rectContains(section.rect, x, z));
+        return !this.sections.some(section => !isSectionBuilt(section.id) && isInStoreSection(section, x, z));
     }
 
     /**
@@ -841,7 +850,7 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     private layoutQueues(grid: StoreNavGrid): void {
         this.queueSpotCount = this.queueSpotsNeeded();
         layoutQueueSpots(grid, [...this.storages.map(storage => storage.line), this.cashierLine], this.config.waitStyle ?? 'cluster', this.queueSpotCount,
-            (x, z) => rectContains(this.layout.area, x, z) && !this.sections.some(section => !isSectionBuilt(section.id) && rectContains(section.rect, x, z)),
+            (x, z) => rectContains(this.layout.area, x, z) && !this.sections.some(section => !isSectionBuilt(section.id) && isInStoreSection(section, x, z)),
             (x, z) => this.isClientAreaPoint(x, z));
     }
 
@@ -1191,6 +1200,21 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
                 wanderRadius: this.config.cleanerWorker?.wanderRadius ?? DEFAULT_RESTOCKER_WANDER_RADIUS,
                 carried: entry.carried,
             });
+        } else if (entry.role === 'baker') {
+            const stats = getBakerLevelStats(this.config, entry.level);
+            const spawnAt = this.getKitchenHome().clone();
+            this.navGrid?.snapToWalkable(spawnAt);
+            worker = new StoreBakerWorker(this, {
+                id: entry.id,
+                level: entry.level,
+                moveSpeed: stats.moveSpeed,
+                radius,
+                look: this.getWorkerLook(),
+                spawnAt,
+                carryCapacity: stats.carryCapacity,
+                wanderRadius: this.config.bakerWorker?.wanderRadius ?? DEFAULT_BAKER_WANDER_RADIUS,
+                carried: entry.carried,
+            });
         } else {
             console.warn(`[Store] "${this.layout.id}": worker "${entry.id}" has unknown role "${String(entry.role)}" — skipping`);
             return;
@@ -1224,7 +1248,7 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         const saved = StoreWorkerStorage.getRoster(this.layout.id) ?? [];
         const roster = saved.map(entry => {
             const worker = this.workers.find(candidate => candidate.workerId === entry.id);
-            if (worker instanceof StoreRestockerWorker || worker instanceof StoreCleanerWorker) {
+            if (worker instanceof StoreRestockerWorker || worker instanceof StoreCleanerWorker || worker instanceof StoreBakerWorker) {
                 return worker.toSave();
             }
             return worker ? { ...entry, level: worker.getLevel() } : entry;
@@ -1269,14 +1293,17 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         return sum.divideScalar(this.storages.length);
     }
 
-    /** See StoreRestockerHost.findRestockJob() — the emptiest available, not-full shelf with a ready, unclaimed farm cell for its item. */
+    /** See StoreRestockerHost.findRestockJob() — the emptiest available shelf below its restock cap (getStorageStockCap() — the player can stock past it) with a ready, unclaimed farm cell for its item. */
     /**
      * The shelf this restocker should fill next. Several restockers may work the same shelf as long
      * as what it holds plus everything the OTHERS working it can carry still leaves room — so a
      * second restocker helps with a big shelf instead of standing around. A shelf nobody else is
-     * serving wins first (spreads them out), then the emptiest.
+     * serving wins first (spreads them out), then the emptiest. The kitchen runner (see
+     * isKitchenRunner()) takes the kitchen's products (bread, butter, ...) before anything else.
      */
     public findRestockJob(worker: StoreRestockerWorker): RestockJob | undefined {
+        const products = this.isKitchenRunner(worker) ? new Set(this.getKitchenStations().map(station => station.getProduct())) : undefined;
+        const isProduct = (type: ResourceType): number => (products?.has(type) ? 1 : 0);
         const pick = this.getAvailableStorages()
             .filter(storage => storage.config.resourceType !== undefined)
             .map(storage => {
@@ -1289,9 +1316,18 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
                     promised: others.reduce((sum, other) => sum + other.getCarryCapacity(), 0),
                 };
             })
-            .filter(candidate => candidate.count + candidate.promised < storageCapacity(candidate.storage.config) && this.hasReadyTile(candidate.type, worker))
-            .sort((a, b) => a.others - b.others || a.count - b.count)[0];
+            .filter(candidate => candidate.count + candidate.promised < getStorageStockCap(candidate.storage.config) && this.hasReadyTile(candidate.type, worker))
+            .sort((a, b) => isProduct(b.type) - isProduct(a.type) || a.others - b.others || a.count - b.count)[0];
         return pick && this.claimStorage(pick.storage, pick.type, worker);
+    }
+
+    /**
+     * With two or more restockers and a kitchen, the first one (roster order) is the kitchen
+     * runner: it takes the mix stations' products to their shelves first — a baker never does.
+     */
+    private isKitchenRunner(worker: StoreRestockerWorker): boolean {
+        const restockers = this.workers.filter((candidate): candidate is StoreRestockerWorker => candidate instanceof StoreRestockerWorker);
+        return restockers.length >= 2 && restockers[0] === worker && this.getKitchenStations().length > 0;
     }
 
     /** Every restocker other than `worker` currently working shelf `storageId`. */
@@ -1310,6 +1346,11 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
 
     /** See StoreRestockerHost.claimReadySource() — the nearest ready, unclaimed source (farm cell, stall box, dispenser) of `type`; replaces this worker's previous source claim. */
     public claimReadySource(worker: StoreRestockerWorker, type: ResourceType, near: THREE.Vector3): RestockSource | undefined {
+        return this.claimNearestSource(worker, RestockSupply.getAll(), type, near);
+    }
+
+    /** The nearest of `sources` with `type` ready that no other worker claimed — claimed for `worker`, replacing its previous source claim. */
+    private claimNearestSource(worker: StoreWorker, sources: readonly RestockSource[], type: ResourceType, near: THREE.Vector3): RestockSource | undefined {
         for (const [source, owner] of this.claimedTiles) {
             if (owner === worker) {
                 this.claimedTiles.delete(source);
@@ -1317,7 +1358,7 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         }
         let best: RestockSource | undefined;
         let bestDistance = Infinity;
-        for (const source of RestockSupply.getAll()) {
+        for (const source of sources) {
             if (source.getReadyYield()?.resourceType !== type || this.isClaimedByOther(this.claimedTiles.get(source), worker)) {
                 continue;
             }
@@ -1331,6 +1372,71 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
             this.claimedTiles.set(best, worker);
         }
         return best;
+    }
+
+    // ---- Kitchen (bakers — see StoreBakerWorker.ts)
+
+    /** See StoreBakerHost.getKitchenStations() — built mix stations whose making area is inside this store. */
+    public getKitchenStations(): MixStation[] {
+        return [...MixStation.getAll()].filter(station => {
+            const point = station.getMakingPoint();
+            return rectContains(this.layout.area, point.x, point.z);
+        });
+    }
+
+    /** See StoreBakerHost.getKitchenHome() — the middle of the kitchen's making areas (the shelves' middle with no kitchen). */
+    public getKitchenHome(): THREE.Vector3 {
+        const stations = this.getKitchenStations();
+        if (stations.length === 0) {
+            return this.getHomePoint();
+        }
+        const sum = new THREE.Vector3();
+        stations.forEach(station => sum.add(station.getMakingPoint()));
+        return sum.divideScalar(stations.length);
+    }
+
+    /** The kitchen as a playtest report sees it — each baker's status line and each station's state. Undefined with no kitchen and no baker. */
+    public getKitchenReport(): { bakers: string[]; stations: ReturnType<MixStation['getReportState']>[] } | undefined {
+        const bakers = this.workers.filter((worker): worker is StoreBakerWorker => worker instanceof StoreBakerWorker).map(baker => baker.getReportLabel());
+        const stations = this.getKitchenStations().map(station => station.getReportState());
+        return bakers.length > 0 || stations.length > 0 ? { bakers, stations } : undefined;
+    }
+
+    public getBakerStats(level: number): { moveSpeed: number; carryCapacity: number } {
+        return getBakerLevelStats(this.config, level);
+    }
+
+    /** See StoreBakerHost.claimStation(). */
+    public claimStation(worker: StoreBakerWorker, station: MixStation): boolean {
+        const owner = this.claimedStations.get(station);
+        if (owner && owner !== worker) {
+            return false;
+        }
+        for (const [claimed, claimedBy] of this.claimedStations) {
+            if (claimedBy === worker) {
+                this.claimedStations.delete(claimed);
+            }
+        }
+        this.claimedStations.set(station, worker);
+        return true;
+    }
+
+    /** See StoreBakerHost.claimIngredientSource() — this store's shelves holding `type` (taken from like a client would) and every restock source (farm cell, stall box, dispenser), nearest first. */
+    public claimIngredientSource(worker: StoreBakerWorker, type: ResourceType, near: THREE.Vector3): RestockSource | undefined {
+        const shelves = this.getAvailableStorages()
+            .filter(storage => StorageInventory.getCount(storage.id, type) > 0)
+            .map(storage => this.shelfSource(storage, type));
+        return this.claimNearestSource(worker, [...shelves, ...RestockSupply.getAll()], type, near);
+    }
+
+    private shelfSource(storage: StoreStorage, type: ResourceType): RestockSource {
+        const key = `${storage.id}|${type}`;
+        let source = this.shelfSources.get(key);
+        if (!source) {
+            source = new StorageSupplySource(storage.id, type, storage.dropPoint.clone(), storage.position.clone().setY(storage.position.y + SHELF_PICK_HEIGHT));
+            this.shelfSources.set(key, source);
+        }
+        return source;
     }
 
     public getCleanerStats(level: number): { moveSpeed: number; carryCapacity: number } {
@@ -1401,11 +1507,19 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         }
     }
 
-    public releaseClaims(worker: StoreRestockerWorker): void {
-        for (const [id, owners] of this.claimedStorages) {
-            owners.delete(worker);
-            if (owners.size === 0) {
-                this.claimedStorages.delete(id);
+    public releaseClaims(worker: StoreRestockerWorker | StoreBakerWorker): void {
+        if (worker instanceof StoreRestockerWorker) {
+            for (const [id, owners] of this.claimedStorages) {
+                owners.delete(worker);
+                if (owners.size === 0) {
+                    this.claimedStorages.delete(id);
+                }
+            }
+        } else {
+            for (const [station, owner] of this.claimedStations) {
+                if (owner === worker) {
+                    this.claimedStations.delete(station);
+                }
             }
         }
         for (const [source, owner] of this.claimedTiles) {
@@ -1441,7 +1555,7 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         return RestockSupply.getAll().some(source => source.getReadyYield()?.resourceType === type && !this.isClaimedByOther(this.claimedTiles.get(source), worker));
     }
 
-    private isClaimedByOther(owner: StoreRestockerWorker | undefined, worker: StoreRestockerWorker): boolean {
+    private isClaimedByOther(owner: StoreWorker | undefined, worker: StoreWorker): boolean {
         return owner !== undefined && owner !== worker;
     }
 
@@ -1569,12 +1683,6 @@ function rectBounds(rect: StoreRect): NavBounds {
     return { minX: rect.x - rect.width / 2, minZ: rect.z - rect.depth / 2, maxX: rect.x + rect.width / 2, maxZ: rect.z + rect.depth / 2 };
 }
 
-/** How many items a storage's pile shows — a restocker treats a shelf at this count as full. Same fallback as StorageZone.buildLayout(). */
-function storageCapacity(config: StorageConfig): number {
-    const pile = config.pile ?? { columns: 3, rows: 3, layers: 4 };
-    return pile.columns * pile.rows * pile.layers;
-}
-
 /** Same rule as StorageZone.accepts() for a storage with no `resourceType`. */
 function storageAccepts(config: StorageConfig, type: ResourceType): boolean {
     if (type === ResourceType.Garbage) {
@@ -1598,7 +1706,10 @@ function shuffle<T>(items: T[]): T[] {
 /** A store section's id (its building id) and area — see Store.sections. */
 export interface StoreSectionArea {
     id: string;
-    rect: StoreRect;
+    /** Bounding box — see StoreSectionPlacement. */
+    placement: StoreRect;
+    /** Exact polygon area, when drawn as one — isInStoreSection() tests it. */
+    shape?: SpawnerShape;
 }
 
 export interface SpawnStoresDeps {
@@ -1661,7 +1772,7 @@ export function spawnStores(deps: SpawnStoresDeps): Store[] {
             });
         }
 
-        const sections: StoreSectionArea[] = deps.worldObjects.getStoreSections().map(section => ({ id: section.id, rect: section.placement }));
+        const sections: StoreSectionArea[] = deps.worldObjects.getStoreSections().map(section => ({ id: section.id, placement: section.placement, shape: section.shape }));
 
         const root = new THREE.Group();
         root.name = `store:${layout.id}`;

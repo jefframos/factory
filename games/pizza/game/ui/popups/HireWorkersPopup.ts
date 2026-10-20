@@ -70,9 +70,10 @@ const ROLE_LABELS: Record<StoreWorkerRole, string> = {
     cashier: 'Cashier',
     restocker: 'Restocker',
     cleaner: 'Cleaner',
+    baker: 'Baker',
 };
 /** Upgrade tab order — grouped by role, then by id. */
-const ROLE_ORDER: StoreWorkerRole[] = ['cashier', 'restocker', 'cleaner'];
+const ROLE_ORDER: StoreWorkerRole[] = ['cashier', 'restocker', 'cleaner', 'baker'];
 
 /** One row's content — both tabs render through renderRow(). */
 interface RowSpec {

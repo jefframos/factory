@@ -56,6 +56,8 @@ export interface ItemPileLayout {
     fitToCells: boolean;
     /** Tower mode's own cap. */
     towerMaxItems: number;
+    /** Optional cap on how many units are drawn in ANY mode, on top of the layout's own size — the rest are counted, not shown. */
+    maxDrawn?: number;
     /** 'slots' mode: each item's bottom-center, root-local, in fill order — its length is the capacity. */
     slotPositions?: THREE.Vector3[];
     /** Multiplier on every item's real world size. */
@@ -171,11 +173,11 @@ export default class ItemPile {
 
     /** Most units the current layout draws — anything past this is still counted, just not shown. */
     public get capacity(): number {
-        const { mode, maxColumns, maxRows, maxLayers, towerMaxItems } = this.layout;
-        if (mode === 'slots') {
-            return this.layout.slotPositions?.length ?? 0;
-        }
-        return mode === 'tower' ? towerMaxItems : maxColumns * maxRows * maxLayers;
+        const { mode, maxColumns, maxRows, maxLayers, towerMaxItems, maxDrawn } = this.layout;
+        const size = mode === 'slots'
+            ? this.layout.slotPositions?.length ?? 0
+            : mode === 'tower' ? towerMaxItems : maxColumns * maxRows * maxLayers;
+        return maxDrawn !== undefined ? Math.min(size, maxDrawn) : size;
     }
 
     /** Replaces the layout and re-places everything (models are kept — only positions/scale change). */

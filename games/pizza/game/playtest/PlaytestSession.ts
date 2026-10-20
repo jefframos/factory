@@ -18,7 +18,7 @@ import PlaytestRecorder, { PlaytestData } from './PlaytestRecorder';
 import PlaytestBot, { BotStyle, PlaytestHost } from './PlaytestBot';
 import { analyzePlaytest } from './PlaytestAnalysis';
 import NavDebugOverlay from './NavDebugOverlay';
-import { buildPlaytestReportHtml } from './PlaytestReport';
+import { buildPlaytestReportHtml, buildPlaytestReportText } from './PlaytestReport';
 import { GameClock } from '../utils/GameClock';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CurrencyType } from '../data/EconomyTypes';
@@ -33,6 +33,32 @@ const START_DELAY_MS = 1500;
 /** After the demo-end popup, keep recording this long (game time) before reporting. */
 const DEMO_END_GRACE_SEC = 5;
 const PANEL_REFRESH_MS = 500;
+/** Speed buttons on the panel (bot mode). */
+const SPEED_OPTIONS = [1, 2, 5, 10];
+
+/** Panel choices (speed, free cam) remembered across reloads — a debug convenience, not part of the save (?fresh keeps it). */
+const SETTINGS_KEY = 'pizza.playtestBotSettings';
+
+interface BotSettings {
+    speed?: number;
+    freeCam?: boolean;
+}
+
+function loadSettings(): BotSettings {
+    try {
+        return JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as BotSettings;
+    } catch {
+        return {};
+    }
+}
+
+function saveSettings(patch: BotSettings): void {
+    try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...loadSettings(), ...patch }));
+    } catch {
+        // Storage blocked — the panel still works, it just won't remember.
+    }
+}
 
 function params(): URLSearchParams {
     return new URLSearchParams(window.location.search);
@@ -53,7 +79,8 @@ export default class PlaytestSession {
         }
         const bot = p.has('bot');
         const style: BotStyle = p.get('bot') === 'casual' ? 'casual' : 'efficient';
-        const speed = bot ? Math.max(1, Number(p.get('speed')) || DEFAULT_SPEED) : 1;
+        // The last speed picked on the panel wins over &speed / the default.
+        const speed = bot ? Math.max(1, loadSettings().speed || Number(p.get('speed')) || DEFAULT_SPEED) : 1;
         const minutes = Math.max(1, Number(p.get('minutes')) || DEFAULT_MINUTES);
         return new PlaytestSession(host, bot ? style : undefined, speed, minutes);
     }
@@ -70,11 +97,19 @@ export default class PlaytestSession {
     private lastPanelGameSec = 0;
     private reportLayer?: HTMLDivElement;
     private navOverlay?: NavDebugOverlay;
+    /** Stop pressed — the bot is off (you have control) until Resume. Recording continues. */
+    private botStopped = false;
+    private botStartedOnce = false;
+    /** Game time of the last Resume — the stall check counts from here, not from before the stop. */
+    private resumedAtSec = 0;
+    private stopButton?: HTMLButtonElement;
+    private freeCamButton?: HTMLButtonElement;
+    private readonly speedButtons = new Map<number, HTMLButtonElement>();
 
     private constructor(
         private readonly host: PlaytestHost,
         private readonly style: BotStyle | undefined,
-        private readonly speed: number,
+        private speed: number,
         private readonly minutes: number,
     ) {
         this.recorder = new PlaytestRecorder(() => host.getStores(), () => host.isPlayerFrozen(), style ? 'bot' : 'human', speed, style);
@@ -82,6 +117,11 @@ export default class PlaytestSession {
         (window as unknown as { __pizzaPlaytest?: unknown }).__pizzaPlaytest = {
             report: () => this.end('requested'),
             data: () => this.recorder.snapshot(),
+            /** The text report so far, without ending the run — e.g. copy(__pizzaPlaytest.text()) in the console. */
+            text: () => {
+                const snapshot = this.recorder.snapshot();
+                return buildPlaytestReportText(snapshot, analyzePlaytest(snapshot));
+            },
             stop: () => this.end('stopped'),
         };
         console.log(`[Playtest] ${style ? `bot (${style}) at ${speed}x for ${minutes} game min` : 'recording a human session'} — window.__pizzaPlaytest.report() to finish early`);
@@ -101,9 +141,13 @@ export default class PlaytestSession {
         if (this.ended) {
             return;
         }
-        if (this.style && !this.bot && performance.now() - this.startRealMs >= START_DELAY_MS) {
+        if (this.style && !this.bot && !this.botStopped && performance.now() - this.startRealMs >= START_DELAY_MS) {
             this.bot = new PlaytestBot(this.host, this.recorder, this.style, name => this.handlePopupClosed(name));
             GameClock.setSpeed(this.speed);
+            if (!this.botStartedOnce && loadSettings().freeCam) {
+                this.setFreeCamera(true);
+            }
+            this.botStartedOnce = true;
         }
         this.recorder.update();
         this.bot?.update();
@@ -128,7 +172,7 @@ export default class PlaytestSession {
     }
 
     private checkEnd(): void {
-        if (!this.style) {
+        if (!this.style || this.botStopped) {
             return;
         }
         const t = this.recorder.gameTimeSec;
@@ -139,7 +183,7 @@ export default class PlaytestSession {
             this.end('reached the end of the demo');
         } else if (t >= this.minutes * 60) {
             this.end(`time limit (${this.minutes} game min)`);
-        } else if (t - this.recorder.lastEventTime() >= STALL_END_SEC) {
+        } else if (t - Math.max(this.recorder.lastEventTime(), this.resumedAtSec) >= STALL_END_SEC) {
             this.end(`nothing happened for ${STALL_END_SEC / 60} game min — stuck`);
         }
     }
@@ -169,10 +213,80 @@ export default class PlaytestSession {
         const buttons = document.createElement('div');
         buttons.style.cssText = 'margin-top:6px;display:flex;gap:6px';
         buttons.appendChild(this.button('Report', () => this.end('requested')));
+        if (this.style) {
+            this.stopButton = this.button('Stop', () => this.toggleBot());
+            buttons.appendChild(this.stopButton);
+            this.freeCamButton = this.button('Free cam', () => this.setFreeCamera(!this.host.isFreeCamera()));
+            buttons.appendChild(this.freeCamButton);
+        }
         panel.appendChild(buttons);
+        if (this.style) {
+            const speeds = document.createElement('div');
+            speeds.style.cssText = 'margin-top:6px;display:flex;gap:6px';
+            for (const speed of SPEED_OPTIONS) {
+                const button = this.button(`${speed}x`, () => this.setSpeed(speed));
+                this.speedButtons.set(speed, button);
+                speeds.appendChild(button);
+            }
+            panel.appendChild(speeds);
+            this.refreshSpeedButtons();
+        }
         document.body.appendChild(panel);
         this.panel = panel;
         this.panelText = text;
+    }
+
+    /** Stop hands control back to you at 1x (recording continues); Resume restarts the bot at the chosen speed. */
+    private toggleBot(): void {
+        if (this.ended) {
+            return;
+        }
+        this.botStopped = !this.botStopped;
+        if (this.botStopped) {
+            this.bot?.stop();
+            this.bot = undefined;
+            GameClock.setSpeed(1);
+        } else {
+            this.resumedAtSec = this.recorder.gameTimeSec;
+        }
+        if (this.stopButton) {
+            this.stopButton.textContent = this.botStopped ? 'Resume' : 'Stop';
+        }
+        // Re-apply so the player's movement controller matches who's driving now.
+        if (this.host.isFreeCamera()) {
+            this.setFreeCamera(true);
+        }
+    }
+
+    /** Fly camera instead of the follow camera (WASD/right-drag/wheel — see DebugFlyCameraController). */
+    private setFreeCamera(enabled: boolean): void {
+        this.host.setFreeCamera(enabled, !this.botStopped);
+        saveSettings({ freeCam: enabled });
+        this.refreshFreeCamButton();
+    }
+
+    private refreshFreeCamButton(): void {
+        if (this.freeCamButton) {
+            this.freeCamButton.style.background = this.host.isFreeCamera() ? '#4a6cf7' : '#2b3040';
+        }
+    }
+
+    private setSpeed(speed: number): void {
+        this.speed = speed;
+        saveSettings({ speed });
+        // Before the bot starts (or while stopped) it's applied when the bot (re)starts.
+        if (this.bot) {
+            GameClock.setSpeed(speed);
+        }
+        this.refreshSpeedButtons();
+    }
+
+    private refreshSpeedButtons(): void {
+        for (const [speed, button] of this.speedButtons) {
+            const active = speed === this.speed;
+            button.style.background = active ? '#4a6cf7' : '#2b3040';
+            button.style.borderColor = active ? '#7d95ff' : '#556';
+        }
     }
 
     private button(label: string, onClick: () => void): HTMLButtonElement {
@@ -189,6 +303,8 @@ export default class PlaytestSession {
             return;
         }
         this.lastPanelMs = now;
+        // The debug menu's "Toggle Fly Camera" flips it too.
+        this.refreshFreeCamButton();
         const t = this.recorder.gameTimeSec;
         // Achieved speed (game s per real s, over the last panel refresh) — drops below the set
         // speed when frames get too heavy for the fixed-step catch-up (core Game.ts clamps it).
@@ -198,10 +314,10 @@ export default class PlaytestSession {
         this.lastPanelGameSec = t;
         const levels = this.host.getStores().map(store => `${store.getId()} Lv ${StoreProgressStorage.getLevel(store.getId())}`).join(', ');
         const lines = [
-            `PLAYTEST ${this.style ? `bot · ${this.style} · ${GameClock.getSpeed()}x` : 'recording you'}`,
+            `PLAYTEST ${this.style ? `bot · ${this.style} · ${this.botStopped ? 'stopped' : `${GameClock.getSpeed()}x`}` : 'recording you'}`,
             `game ${formatTime(t)}${this.style ? ` / ${this.minutes}:00 · ${achieved.toFixed(1)}x real` : ''} · $${EconomyStorage.getBalance(CurrencyType.Money)}`,
             levels,
-            this.bot ? this.bot.getGoalLabel() : (this.style ? 'starting…' : ''),
+            this.bot ? this.bot.getGoalLabel() : (this.style && !this.botStopped ? 'starting…' : ''),
             this.bot?.getNextUnlockLabel() ?? '',
         ];
         this.panelText.textContent = '';
@@ -221,6 +337,16 @@ export default class PlaytestSession {
         layer.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);display:flex;flex-direction:column;padding:12px;gap:8px';
         const bar = document.createElement('div');
         bar.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
+        const text = buildPlaytestReportText(data, analysis);
+        const copyButton = this.button('Copy report (text)', () => {
+            void copyToClipboard(text).then(ok => {
+                copyButton.textContent = ok ? `Copied (${Math.round(text.length / 1000)}k chars)` : 'Copy failed — see console';
+                if (!ok) {
+                    console.log(text);
+                }
+            });
+        });
+        bar.appendChild(copyButton);
         bar.appendChild(this.button('Download report (.html)', () => download(`pizza-playtest-${stamp}.html`, html, 'text/html')));
         bar.appendChild(this.button('Download data (.json)', () => download(`pizza-playtest-${stamp}.json`, JSON.stringify(data), 'application/json')));
         bar.appendChild(this.button('Close', () => layer.remove()));
@@ -242,6 +368,23 @@ function formatTime(sec: number): string {
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
     return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+/** navigator.clipboard where allowed, else the old hidden-textarea copy (plain http / no permission). */
+async function copyToClipboard(text: string): Promise<boolean> {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch {
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.style.cssText = 'position:fixed;left:-9999px;top:0';
+        document.body.appendChild(area);
+        area.select();
+        const ok = document.execCommand('copy');
+        area.remove();
+        return ok;
+    }
 }
 
 function download(name: string, content: string, type: string): void {

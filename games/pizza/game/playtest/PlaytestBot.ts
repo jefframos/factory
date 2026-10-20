@@ -15,7 +15,7 @@
 //   60  the tutorial step the arrow points at (mapped onto the goals below)
 //   55  buy the cheapest affordable thing for sale (storage, farm, building level, station)
 //   52  hire staff at the hire desk (cashier -> restocker -> cleaner)
-//   46+ deliver what a shelf is short of (38: anything, once the stack is full)
+//   46+ deliver what a shelf is short of; 47 anything else a shelf takes (56 once the stack is full)
 //   40+ gather resources (wood, stone) the next purchase needs — +5 per minute it waits, max 58
 //   42+ harvest/collect what clients are waiting for (34: just topping up the shelf buffer)
 //   43  make at a mix station whose product is short
@@ -94,6 +94,10 @@ export interface PlaytestHost {
     isPlayerFrozen(): boolean;
     /** Revealed zone numbers, joined — changes whenever a zone opens. */
     getRevealKey(): string;
+    /** The debug fly camera (DebugFlyCameraController) — the session panel's Free cam button. */
+    isFreeCamera(): boolean;
+    /** keepPlayerMovement while the bot is driving — see PizzaScene.setFlyCamera(). */
+    setFreeCamera(enabled: boolean, keepPlayerMovement: boolean): void;
 }
 
 interface BotGoal {
@@ -164,6 +168,7 @@ const HIRE_PLAN: { role: StoreWorkerRole; max: number }[] = [
     { role: 'cashier', max: 1 },
     { role: 'restocker', max: 2 },
     { role: 'cleaner', max: 1 },
+    { role: 'baker', max: 1 },
 ];
 
 interface Scan {
@@ -674,6 +679,10 @@ export default class PlaytestBot {
         for (const plan of HIRE_PLAN) {
             const role = roles.find(r => r.role === plan.role);
             const hired = roster.filter(worker => worker.role === plan.role).length;
+            // A baker is only worth it once a mix station is built.
+            if (plan.role === 'baker' && this.scan.mixStations.length === 0) {
+                continue;
+            }
             if (role && hired < Math.min(plan.max, getHireMaxCount(role))) {
                 entry = role;
                 break;
@@ -738,17 +747,18 @@ export default class PlaytestBot {
         const goals: BotGoal[] = [];
         const needs = this.computeNeeds(snapshots);
 
-        // Deliver: carried items a shelf is short of — or anything a shelf takes once the stack is
-        // full (it's blocking every other harvest). Items nobody needs otherwise stay carried.
+        // Deliver: anything carried that a shelf takes — shelves have no limit for the player, and
+        // a real player unloads crops at the shelf rather than walking around with them. Short
+        // shelves first; a full stack (blocking every harvest) beats gathering and purchases too.
         const stackFull = !CarryStack.hasRoomFor(1);
         for (const [type, need] of needs) {
             const carried = BackpackStorage.getCount(type);
-            if (carried <= 0 || need.sinks.length === 0 || (need.need <= 0 && !stackFull)) {
+            if (carried <= 0 || need.sinks.length === 0) {
                 continue;
             }
             const sink = this.nearestZone(need.sinks.filter(zone => !zone.isFull()));
             if (sink) {
-                const priority = need.need > 0 ? 46 + Math.min(10, need.demand) + (stackFull ? 5 : 0) : 38;
+                const priority = need.need > 0 ? 46 + Math.min(10, need.demand) + (stackFull ? 5 : 0) : (stackFull ? 56 : 47);
                 goals.push(this.deliverGoal(sink, type, priority));
             }
         }

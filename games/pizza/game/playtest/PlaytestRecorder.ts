@@ -74,6 +74,8 @@ export interface StoreSample {
     moneyPile: number;
     workers: Record<string, number>;
     readyToPayUnattended: number;
+    /** The store's mix stations and bakers (Store.getKitchenReport()) — unset with neither. */
+    kitchen?: ReturnType<Store['getKitchenReport']>;
 }
 
 export type ClientOutcome = 'paid' | 'out-of-patience' | 'angry' | 'angry-dumped' | 'nothing-to-buy' | 'unknown';
@@ -486,6 +488,10 @@ export default class PlaytestRecorder {
             }
             for (const worker of StoreWorkerStorage.getRoster(id) ?? []) {
                 sample.workers[worker.role] = (sample.workers[worker.role] ?? 0) + 1;
+            }
+            const kitchen = store.getKitchenReport();
+            if (kitchen) {
+                sample.kitchen = kitchen;
             }
             stores[id] = sample;
         }

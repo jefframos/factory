@@ -43,7 +43,11 @@
 //
 // A SHELF storage (StorageConfig.shelf — see ShelfTypes.ts) draws the shelf's model instead
 // (its decorative nodes hidden) and puts each item on one of the shelf's fixed slots ('slots'
-// pile mode); it takes no more items than it has slots (isFull()).
+// pile mode).
+//
+// The player can always drop off more (only StorageConfig.maxItems stops them — isFull()); the
+// pile draws at most getStorageStockCap() items, which is also where restockers stop — see
+// data/StorageCapacity.ts.
 //
 // The entity's transform sits at the TRIGGER's center (so the RigidBody and the
 // dotted outline need no offset); the mesh and pile are offset to the storage's
@@ -81,6 +85,7 @@ import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 import { getShelfConfig, isShelfNodeHidden, ShelfConfig } from '../data/ShelfTypes';
+import { getStorageStockCap } from '../data/StorageCapacity';
 import MainPlayer from '../player/MainPlayer';
 import DepositPacer from '../utils/DepositPacer';
 
@@ -477,6 +482,7 @@ export default class StorageZone extends Entity {
                 maxLayers: 1,
                 fitToCells: false,
                 towerMaxItems: slotPositions.length,
+                maxDrawn: getStorageStockCap(this.config),
                 slotPositions,
                 itemScale: shelf.itemScale !== undefined && shelf.itemScale > 0 ? shelf.itemScale : this.itemScale(),
                 itemYawDeg: this.config.itemYawDeg,
@@ -495,6 +501,7 @@ export default class StorageZone extends Entity {
             // A storage's grid is exactly what its config says — oversized items shrink to fit.
             fitToCells: true,
             towerMaxItems: pile.columns * pile.rows * pile.layers,
+            maxDrawn: getStorageStockCap(this.config),
             itemScale: this.itemScale(),
             itemYawDeg: this.config.itemYawDeg,
             itemOrientation: this.config.itemOrientation,
@@ -652,12 +659,9 @@ export default class StorageZone extends Entity {
         return this.pile.capacity;
     }
 
-    /** Full = StorageConfig.maxItems reached, or every slot of a SHELF taken — a plain crate storage keeps taking items past what it draws. */
+    /** Full = StorageConfig.maxItems reached. Otherwise never — crates and shelves keep taking items past what they draw (see data/StorageCapacity.ts). */
     public isFull(): boolean {
-        if (this.config.maxItems !== undefined) {
-            return this.getFillCount() >= this.config.maxItems;
-        }
-        return this.shelf !== undefined && this.getFillCount() >= this.getCapacity();
+        return this.config.maxItems !== undefined && this.getFillCount() >= this.config.maxItems;
     }
 
     private handleTriggerExit(other: RigidBody): void {
@@ -683,7 +687,7 @@ export default class StorageZone extends Entity {
                 return;
             }
 
-            // A shelf holds one item per slot — nothing more goes in once they're all taken.
+            // StorageConfig.maxItems (e.g. a mix station's ingredient box) — nothing more goes in.
             if (this.isFull()) {
                 this.transferring = false;
                 return;

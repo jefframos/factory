@@ -26,7 +26,7 @@ export interface SavedStoreWorker {
     id: string;
     role: StoreWorkerRole;
     level: number;
-    /** Restocker only: items on its back (harvested, not delivered yet) — delivered after a reload instead of lost. */
+    /** Restocker / cleaner / baker: items on its back (not delivered yet) — delivered after a reload instead of lost. */
     carried?: SavedWorkerCarry[];
 }
 

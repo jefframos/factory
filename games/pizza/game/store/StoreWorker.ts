@@ -16,6 +16,8 @@
 // Each subclass is its own state machine, driven from think() every frame:
 //   - StoreCashierWorker.ts   — serves at the cashier, collects the money drop.
 //   - StoreRestockerWorker.ts — refills the emptiest shelf from the farms.
+//   - StoreCleanerWorker.ts   — picks garbage off the floor into the trash.
+//   - StoreBakerWorker.ts     — runs the kitchen's mix stations.
 //
 // Its id/role/level mirror its StoreWorkerStorage.ts entry — Store.ts owns
 // that save and calls applyLevel() when a level changes.

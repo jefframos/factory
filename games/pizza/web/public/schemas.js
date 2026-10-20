@@ -867,6 +867,7 @@ const ENTITY_SCHEMAS = {
                         { value: 'cashier', label: 'Cashier (serves at the cashier, collects the money drop — one per store)' },
                         { value: 'restocker', label: 'Restocker (refills the emptiest shelf from the farms)' },
                         { value: 'cleaner', label: 'Cleaner (picks garbage off the floor and throws it in the trash)' },
+                        { value: 'baker', label: 'Baker (runs the kitchen\'s mix stations — fetches ingredients, fills the boxes, mixes)' },
                     ],
                 },
                 { key: 'level', type: 'number', label: 'Starting Level (blank = 1)', optional: true },
@@ -910,7 +911,7 @@ const ENTITY_SCHEMAS = {
             fields: [
                 { key: 'npcId', type: 'select', label: 'Desk NPC (blank = the "worker" look)', source: 'npcs', optional: true },
                 {
-                    key: 'roles', type: 'list', label: 'Roles (in popup order — empty = cashier 100, restocker 75, cleaner 75)', optional: true,
+                    key: 'roles', type: 'list', label: 'Roles (in popup order — empty = cashier 100, restocker 75, cleaner 75, baker 100)', optional: true,
                     itemLabel: item => `${item.role || '?'} — ${item.cost ?? '?'} money${item.maxCount ? `, max ${item.maxCount}` : ''}`,
                     fields: [
                         {
@@ -919,6 +920,7 @@ const ENTITY_SCHEMAS = {
                                 { value: 'cashier', label: 'Cashier (one per store)' },
                                 { value: 'restocker', label: 'Restocker' },
                                 { value: 'cleaner', label: 'Cleaner' },
+                                { value: 'baker', label: 'Baker' },
                             ],
                         },
                         { key: 'cost', type: 'number', label: 'Cost (money per hire)' },
@@ -946,6 +948,21 @@ const ENTITY_SCHEMAS = {
                         { key: 'level', type: 'number', label: 'Level' },
                         { key: 'moveSpeed', type: 'number', label: 'Walk Speed (world units / second — the player walks at 5)' },
                         { key: 'carryCapacity', type: 'number', label: 'Carry Spaces (pieces on its back at once)' },
+                    ],
+                },
+            ],
+        },
+        {
+            key: 'bakerWorker', type: 'group', label: 'Baker Worker Settings (stays in the kitchen: mixes at any station with a batch ready; otherwise fetches a missing ingredient from a shelf or its source — farm, stall box — into the boxes. Never takes the product to a shelf)',
+            fields: [
+                { key: 'wanderRadius', type: 'number', label: 'Wander Radius (how far from the middle of the kitchen it strolls while idle — world units; blank = 1.5)', optional: true },
+                {
+                    key: 'levels', type: 'list', label: 'Levels (stats per worker level — the entry for its level, or the highest below it, is used; empty = speed 4, carries 3)', optional: true,
+                    itemLabel: item => `Lv ${item.level ?? '?'} — speed ${item.moveSpeed ?? '?'}, carries ${item.carryCapacity ?? '?'}`,
+                    fields: [
+                        { key: 'level', type: 'number', label: 'Level' },
+                        { key: 'moveSpeed', type: 'number', label: 'Walk Speed (world units / second — the player walks at 5)' },
+                        { key: 'carryCapacity', type: 'number', label: 'Carry Spaces (items on its back at once)' },
                     ],
                 },
             ],

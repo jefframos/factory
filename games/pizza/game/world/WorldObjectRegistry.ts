@@ -477,7 +477,19 @@ export interface StoreSectionPlacement {
     id: string;
     /** The store this section belongs to — its own `target` prop. Undefined if not set. */
     storeId?: string;
+    /** Its bounding box (exact for a rect) — the size/position the section's building spawns at. */
     placement: WorldObjectPlacement;
+    /** The exact area when drawn as a polygon — what isInStoreSection() tests. Unset = `placement` is the area. */
+    shape?: SpawnerShape;
+}
+
+/** True if (x, z) is inside the section's drawn area — its polygon when drawn as one, else its rect. */
+export function isInStoreSection(section: { placement: { x: number; z: number; width: number; depth: number }; shape?: SpawnerShape }, x: number, z: number): boolean {
+    if (section.shape) {
+        return isPointInShape(section.shape, x, z);
+    }
+    const p = section.placement;
+    return Math.abs(x - p.x) <= p.width / 2 && Math.abs(z - p.z) <= p.depth / 2;
 }
 
 /** One "hireDesk" spot — where the desk's NPC stands. The player interacts at the dropper whose `target` is this desk's `id` (see getDropperFor()), else on the desk area itself. See SECTIONS_LAYER_NAME / HireDeskZone.ts. */
@@ -954,6 +966,10 @@ export default class WorldObjectRegistry {
             .filter(({ placement: s }) =>
                 Math.abs(x - s.x) < halfX + s.width / 2 - SECTION_OVERLAP_EPSILON
                 && Math.abs(z - s.z) < halfZ + s.depth / 2 - SECTION_OVERLAP_EPSILON)
+            // A polygon section: the piece's center or a corner (pulled in by the epsilon) must be
+            // inside the polygon itself, not just its bounding box.
+            .filter(section => !section.shape || [[0, 0], [-1, -1], [1, -1], [1, 1], [-1, 1]].some(([sx, sz]) =>
+                isInStoreSection(section, x + sx * Math.max(0, halfX - SECTION_OVERLAP_EPSILON), z + sz * Math.max(0, halfZ - SECTION_OVERLAP_EPSILON))))
             .map(section => section.id);
         if (coveredBySections.length === 0) {
             return {};
@@ -1030,7 +1046,21 @@ export default class WorldObjectRegistry {
                 console.warn(`[WorldObjectRegistry] storeSection #${obj.id} has no "id" (a building id from the Buildings tab) — skipping`);
                 continue;
             }
-            const placement = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+            // A polygon has no width/height — objectToWorldRect() would make it a zero-size rect at
+            // its first vertex and nothing would be "inside" it. Its bounding box is the placement.
+            let placement = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+            let shape: SpawnerShape | undefined;
+            if (obj.polygon && obj.polygon.length >= 3) {
+                shape = objectToShape(obj, tileSizePx, worldUnitsPerTile);
+                const bounds = boundsOfShape(shape);
+                placement = {
+                    x: (bounds.minX + bounds.maxX) / 2,
+                    z: (bounds.minZ + bounds.maxZ) / 2,
+                    width: bounds.maxX - bounds.minX,
+                    depth: bounds.maxZ - bounds.minZ,
+                    rotationDeg: 0,
+                };
+            }
             let buildings = this.byType.get('building');
             if (!buildings) {
                 buildings = new Map();
@@ -1040,12 +1070,11 @@ export default class WorldObjectRegistry {
                 console.warn(`[WorldObjectRegistry] storeSection "${id}" reuses an id already placed as a building — the section wins`);
             }
             buildings.set(id, placement);
-            this.storeSections.push({ id, storeId: getObjectProperty(obj, DROPPER_TARGET_PROPERTY), placement });
-            console.log(`  - type="storeSection" id="${id}" -> world x=${placement.x.toFixed(2)} z=${placement.z.toFixed(2)} width=${placement.width.toFixed(2)} depth=${placement.depth.toFixed(2)}`);
+            this.storeSections.push({ id, storeId: getObjectProperty(obj, DROPPER_TARGET_PROPERTY), placement, shape });
+            console.log(`  - type="storeSection" id="${id}"${shape ? ' (polygon)' : ''} -> world x=${placement.x.toFixed(2)} z=${placement.z.toFixed(2)} width=${placement.width.toFixed(2)} depth=${placement.depth.toFixed(2)}`);
         }
 
-        const sectionAt = (x: number, z: number): StoreSectionPlacement | undefined => this.storeSections.find(({ placement: p }) =>
-            Math.abs(x - p.x) <= p.width / 2 && Math.abs(z - p.z) <= p.depth / 2);
+        const sectionAt = (x: number, z: number): StoreSectionPlacement | undefined => this.storeSections.find(section => isInStoreSection(section, x, z));
 
         // Window/door rects per section, handed to that section's walls after the loop.
         const sectionOpenings = new Map<string, StoreWallOpening[]>();

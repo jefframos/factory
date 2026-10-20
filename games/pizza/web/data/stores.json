@@ -402,6 +402,21 @@
                                 "cost": 120
                             }
                         ]
+                    },
+                    {
+                        "role": "baker",
+                        "cost": 100,
+                        "maxCount": 1,
+                        "upgrades": [
+                            {
+                                "level": 2,
+                                "cost": 80
+                            },
+                            {
+                                "level": 3,
+                                "cost": 160
+                            }
+                        ]
                     }
                 ]
             },
@@ -416,7 +431,27 @@
                 "zone": 0,
                 "step": 3
             },
-            "outOfStockDemand": 0.2
+            "outOfStockDemand": 0.2,
+            "bakerWorker": {
+                "wanderRadius": 1.5,
+                "levels": [
+                    {
+                        "level": 1,
+                        "moveSpeed": 2,
+                        "carryCapacity": 3
+                    },
+                    {
+                        "level": 2,
+                        "moveSpeed": 2.5,
+                        "carryCapacity": 3
+                    },
+                    {
+                        "level": 3,
+                        "moveSpeed": 3,
+                        "carryCapacity": 3
+                    }
+                ]
+            }
         }
     }
 }

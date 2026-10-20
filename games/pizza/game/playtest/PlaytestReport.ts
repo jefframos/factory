@@ -6,6 +6,8 @@
 // items, issues, activity log). Charts are plain SVG built here; a small inline script adds the
 // hover crosshair + tooltip. Colors: the dataviz reference palette's first three categorical slots
 // (validated all-pairs) and its status colors for severities, light + dark.
+//
+// buildPlaytestReportText() is the same report as compact markdown text, for pasting into a chat.
 
 import type { PlaytestData } from './PlaytestRecorder';
 import { Analysis, clock, Finding, forSaleWaits } from './PlaytestAnalysis';
@@ -308,3 +310,147 @@ const HOVER_SCRIPT = `
   });
 })();
 `;
+
+// ---- Plain text (the "Copy report" button)
+
+/** Rows past this are cut from the long text tables (issues, events) — the head is what matters. */
+const TEXT_MAX_ROWS = 40;
+/** The text timeline has one line per this many game seconds. */
+const TEXT_TIMELINE_STEP_SEC = 60;
+
+/**
+ * The same report as compact plain text (markdown tables) — small enough to paste into a chat:
+ * headline numbers, findings, the tables, and a once-a-minute timeline in place of the charts.
+ */
+export function buildPlaytestReportText(data: PlaytestData, analysis: Analysis): string {
+    const s = analysis.summary;
+    const out: string[] = [];
+    const add = (...lines: string[]): void => {
+        out.push(...lines);
+    };
+
+    add(`# Pizza playtest — ${data.mode === 'bot' ? `bot (${data.botStyle}) at ${data.speed}x` : 'human session'}`,
+        `Started ${data.startedAtIso} · ${clock(s.durationSec)} game time · ended: ${s.endReason}`,
+        '',
+        `- Store level: ${Object.entries(s.finalLevels).map(([id, lv]) => `${id} Lv ${lv}`).join(', ') || '—'}`,
+        `- Clients: ${s.paid} paid / ${s.lost} walked out (${Object.entries(s.lostByReason).map(([r, n]) => `${n} ${r}`).join(', ') || 'none'})`,
+        `- Paid by mood: ${Object.entries(s.paidByMood).map(([m, n]) => `${m} ${n}`).join(', ') || '—'}`,
+        `- Income: ${Math.round(s.income)} (${s.incomePerMin.toFixed(1)}/game min)`,
+        `- Bought ${s.purchases} · hired ${s.hires} · ${s.notifications} notifications · frozen ${clock(data.frozenSec)}`,
+        '');
+
+    add('## Findings');
+    if (analysis.findings.length === 0) {
+        add('None.');
+    }
+    for (const f of analysis.findings) {
+        add(`- **[${f.severity}] ${f.area}${f.t !== undefined ? ` @${clock(f.t)}` : ''}** ${f.title} — ${f.detail}`);
+    }
+    add('');
+
+    textTable(out, 'Store levels', ['Store', 'Lv', 'At', 'Took'], analysis.levels.map(l => [l.storeId, `${l.level}`, clock(l.t), clock(l.tookSec)]));
+    textTable(out, 'Tutorial steps', ['Step', 'At', 'Took'], analysis.tutorial.map(t => [t.step, clock(t.t), clock(t.tookSec)]));
+    textTable(out, 'Items', ['Item', 'Clients', 'Units', 'Walk-outs', 'Client-sec empty', 'Empty w/ waiters'],
+        analysis.products.map(p => [p.type, `${p.wantedBy}`, `${p.unitsWanted}`, `${p.lostOver}`, `${Math.round(p.waitOnEmptySec)}`, `${p.emptyWithWaitersPct.toFixed(0)}%`]));
+    textTable(out, 'For sale & blocker', ['Item', 'First', 'Waited', 'Bought', 'Short of'],
+        forSaleWaits(data).map(w => [w.label, clock(w.firstSeen), clock(w.waitedSec), w.bought ? 'yes' : 'no', w.blocker || '—']));
+    textTable(out, 'Time spent', ['Activity', 'Time', '%'], analysis.activity.map(a => [a.kind, clock(a.sec), `${a.pct.toFixed(0)}%`]));
+    textTable(out, 'Idle stretches (45 s+)', ['From', 'Length', 'Why'], analysis.idleSpans.map(i => [clock(i.start), clock(i.end - i.start), i.reason]));
+    textTable(out, 'Purchases, hires & levels', ['At', 'Event', 'Details'],
+        data.events.filter(e => ['storageBought', 'farmBought', 'built', 'workerHired', 'workerUpgraded', 'storeLevelReached', 'tutorialComplete', 'demoEnded'].includes(e.name))
+            .map(e => [clock(e.t), e.name, e.args.join(' ')]));
+    textTable(out, 'Issues the bot ran into', ['At', 'Kind', 'Detail'], data.issues.map(i => [clock(i.t), i.kind, i.detail]));
+    if (Object.keys(data.strayPickups ?? {}).length > 0) {
+        add(`Stray pickups: ${Object.entries(data.strayPickups).map(([type, n]) => `${type} ${n}`).join(', ')}`, '');
+    }
+
+    // Timeline: one sample per minute — wallet, per store level/clients/garbage/workers, and the
+    // items clients want more of than the shelves hold (the bottlenecks the charts would show).
+    const rows: string[][] = [];
+    let nextT = 0;
+    for (const sample of data.samples) {
+        if (sample.t < nextT) {
+            continue;
+        }
+        nextT = sample.t + TEXT_TIMELINE_STEP_SEC;
+        const stores = Object.entries(sample.stores).map(([id, st]) => {
+            const short = Object.entries(st.demand)
+                .map(([type, want]) => [type, (want ?? 0) - ((st.stock as Record<string, number>)[type] ?? 0)] as const)
+                .filter(([, gap]) => gap > 0)
+                .map(([type, gap]) => `${type}-${gap}`);
+            const workers = Object.entries(st.workers).map(([role, n]) => `${role.slice(0, 4)}${n}`).join(',');
+            return `${id} Lv${st.level} c${st.clients} g${st.garbage}${workers ? ` w:${workers}` : ''}${short.length > 0 ? ` short:${short.join(',')}` : ''}`;
+        }).join(' | ');
+        const carrying = Object.entries(sample.carrying).filter(([, n]) => (n ?? 0) > 0).map(([type, n]) => `${type}${n}`).join(',');
+        const kitchen = Object.values(sample.stores).map(st => st.kitchen).filter(k => k !== undefined).map(k => [
+            ...k!.stations.map(st => `${st.product}${st.mixing ? '*' : ''} out${st.output}/${st.maxOutput} made${st.made}(b${st.madeByWorker}) [${st.boxes.map(b => `${b.type}${b.count}/${b.capacity}`).join(' ')}]`),
+            ...k!.bakers.map(label => `baker: ${label}`),
+        ].join('; ')).join(' | ');
+        rows.push([clock(sample.t), `${Math.round(sample.money)}`, stores, carrying || '—', sample.activity ?? '', kitchen]);
+    }
+    textTable(out, 'Timeline (1/min — c=clients g=garbage w=workers per role, short=wanted minus on shelf; kitchen: *=mixing, made(b=by a worker), [boxes])',
+        ['t', '$', 'Stores', 'Carrying', 'Doing', 'Kitchen'], rows, Infinity);
+    kitchenSummary(out, data);
+
+    return out.join('\n');
+}
+
+/**
+ * Per station: batches made (and by a worker alone), share of samples mixing / product box full /
+ * missing a batch of some ingredient; per baker: share of samples in each state. Samples are evenly
+ * spaced, so shares are shares of game time since the station / baker appeared.
+ */
+function kitchenSummary(out: string[], data: PlaytestData): void {
+    const stations = new Map<string, { made: number; byWorker: number; samples: number; mixing: number; full: number; short: number; shortOf: Record<string, number> }>();
+    const bakers = new Map<string, Record<string, number>>();
+    for (const sample of data.samples) {
+        for (const [storeId, st] of Object.entries(sample.stores)) {
+            for (const station of st.kitchen?.stations ?? []) {
+                const key = `${storeId} ${station.product}`;
+                const entry = stations.get(key) ?? { made: 0, byWorker: 0, samples: 0, mixing: 0, full: 0, short: 0, shortOf: {} };
+                entry.made = station.made;
+                entry.byWorker = station.madeByWorker;
+                entry.samples++;
+                entry.mixing += station.mixing ? 1 : 0;
+                entry.full += station.output >= station.maxOutput ? 1 : 0;
+                const missing = station.boxes.filter(box => box.count <= 0);
+                if (missing.length > 0) {
+                    entry.short++;
+                    missing.forEach(box => entry.shortOf[box.type] = (entry.shortOf[box.type] ?? 0) + 1);
+                }
+                stations.set(key, entry);
+            }
+            (st.kitchen?.bakers ?? []).forEach((label, i) => {
+                const key = `${storeId} baker${i + 1}`;
+                const states = bakers.get(key) ?? {};
+                const state = label.split(' ')[0];
+                states[state] = (states[state] ?? 0) + 1;
+                bakers.set(key, states);
+            });
+        }
+    }
+    const pct = (n: number, of: number): string => `${of > 0 ? Math.round(n / of * 100) : 0}%`;
+    textTable(out, 'Kitchen stations', ['Station', 'Batches', 'By worker', 'Mixing', 'Product box full', 'An empty box', 'Empty most'],
+        [...stations].map(([key, s]) => [key, `${s.made}`, `${s.byWorker}`, pct(s.mixing, s.samples), pct(s.full, s.samples), pct(s.short, s.samples),
+            Object.entries(s.shortOf).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—']));
+    textTable(out, 'Bakers (share of time per state)', ['Baker', 'States'],
+        [...bakers].map(([key, states]) => {
+            const total = Object.values(states).reduce((sum, n) => sum + n, 0);
+            return [key, Object.entries(states).sort((a, b) => b[1] - a[1]).map(([state, n]) => `${state} ${pct(n, total)}`).join(', ')];
+        }));
+}
+
+function textTable(out: string[], title: string, head: string[], rows: string[][], maxRows = TEXT_MAX_ROWS): void {
+    if (rows.length === 0) {
+        return;
+    }
+    const cell = (value: string): string => value.replace(/\|/g, '/').replace(/\s+/g, ' ').trim();
+    out.push(`## ${title}`, `| ${head.join(' | ')} |`, `|${head.map(() => '---').join('|')}|`);
+    for (const row of rows.slice(0, maxRows)) {
+        out.push(`| ${row.map(cell).join(' | ')} |`);
+    }
+    if (rows.length > maxRows) {
+        out.push(`(+${rows.length - maxRows} more rows)`);
+    }
+    out.push('');
+}

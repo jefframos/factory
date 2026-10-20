@@ -20,6 +20,9 @@
 // -> mixing progresses (pausing while the player is out, resetting if a box runs short); when it
 // completes, one batch is used up and the product flies to the product box
 // (StorageZone.receiveFrom()) — then the next batch starts while the boxes last.
+//
+// A store BAKER (store/StoreBakerWorker.ts) can do the player's part: fill the boxes
+// (depositFromWorker()) and stand in the making area (operate(), every frame it's there).
 
 import * as THREE from 'three';
 import * as PIXI from 'pixi.js';
@@ -74,6 +77,24 @@ export interface MixStationRect {
     depth: number;
 }
 
+/** One ingredient box as a worker sees it — see MixStation.getInputNeeds(). */
+export interface MixStationInputNeed {
+    /** Index into config.inputs (and the boxes). */
+    index: number;
+    resourceType: ResourceType;
+    /** Units one batch uses. */
+    batch: number;
+    /** What the box holds at most. */
+    capacity: number;
+    /** In the box, plus items already flying in. */
+    count: number;
+    /** The box's spot (on the station's top) — a worker walks next to it to drop items in. */
+    position: THREE.Vector3;
+}
+
+/** How long one operate() call keeps the station mixing — a worker calls it every frame it stands there. */
+const OPERATOR_HOLD_SEC = 0.25;
+
 /** One ingredient box — its StorageInventory id, where it stands (world, kept on the surface under it) and its StorageZone. */
 export interface MixStationBox {
     storageId: string;
@@ -112,6 +133,13 @@ class BoxLabel {
 }
 
 export default class MixStation extends Entity {
+    /** Every built station — store bakers (StoreBakerWorker.ts) pick theirs from here. */
+    private static readonly all = new Set<MixStation>();
+
+    public static getAll(): ReadonlySet<MixStation> {
+        return MixStation.all;
+    }
+
     private readonly config: MixStationConfig;
     private readonly dropper: MixStationRect;
     private readonly mesh?: MeshPlacement;
@@ -121,9 +149,13 @@ export default class MixStation extends Entity {
     private readonly screenHost: ScreenAnchorHost;
 
     private player?: MainPlayer;
+    /** > 0 while a worker is operating it (operate()) — counts like the player standing in the making area. */
+    private operatorHoldSec = 0;
     private progress = 0;
     /** Batches finished since spawn — read by the playtest bot (getPlaytestState()). */
     private batchesMade = 0;
+    /** Of batchesMade, how many a worker made alone (operate(), no player in the making area) — for playtest reports. */
+    private batchesByWorker = 0;
     private surfaceTimerSec = 0;
     /** Each box spot's (and the product box's) surface height to glide to — see settleOnSurfaces(). */
     private readonly surfaceTargets = new Map<THREE.Vector3, number>();
@@ -206,6 +238,82 @@ export default class MixStation extends Entity {
         this.barAnchor.setForceHidden(true);
 
         this.refreshLabels(false);
+        MixStation.all.add(this);
+    }
+
+    public override destroy(): void {
+        MixStation.all.delete(this);
+        super.destroy();
+    }
+
+    /** What a playtest report shows per station each sample — see PlaytestRecorder's StoreSample.kitchen. */
+    public getReportState(): { product: ResourceType; made: number; madeByWorker: number; output: number; maxOutput: number; mixing: boolean; boxes: { type: ResourceType; count: number; capacity: number }[] } {
+        return {
+            product: this.config.resourceType,
+            made: this.batchesMade,
+            madeByWorker: this.batchesByWorker,
+            output: this.output.getFillCount(),
+            maxOutput: this.config.maxOutput,
+            mixing: this.canMix() && (this.player !== undefined || this.operatorHoldSec > 0),
+            boxes: this.getInputNeeds().map(need => ({ type: need.resourceType, count: need.count, capacity: need.capacity })),
+        };
+    }
+
+    // ---- Worker API (store bakers — see StoreBakerWorker.ts)
+
+    public getProduct(): ResourceType {
+        return this.config.resourceType;
+    }
+
+    /** Where the player (or a baker) stands while it mixes — the making area's center, on the floor. */
+    public getMakingPoint(): THREE.Vector3 {
+        return new THREE.Vector3(this.dropper.x, this.transform.position.y, this.dropper.z);
+    }
+
+    /** Every box holds a batch and the product box has room for one more — standing here would make something. */
+    public canMix(): boolean {
+        return this.hasIngredients() && this.hasOutputRoom();
+    }
+
+    /** The product box can take one more batch. */
+    public hasOutputRoom(): boolean {
+        return this.output.getFillCount() + this.config.outputAmount <= this.config.maxOutput;
+    }
+
+    /** Each ingredient box: what it takes, holds and has (in flight included) — boxes the map has no spot for are left out. */
+    public getInputNeeds(): MixStationInputNeed[] {
+        const needs: MixStationInputNeed[] = [];
+        this.config.inputs.forEach((input, index) => {
+            const box = this.boxes[index];
+            if (!box?.zone) {
+                return;
+            }
+            needs.push({
+                index,
+                resourceType: input.resourceType,
+                batch: input.amount,
+                capacity: Math.max(input.amount, input.capacity ?? DEFAULT_MIX_INPUT_CAPACITY),
+                count: box.zone.getFillCount(),
+                position: box.position,
+            });
+        });
+        return needs;
+    }
+
+    /** One `type` from a worker into box `index` — flies from `from` and lands in the box. False when the box doesn't take it or is full. */
+    public depositFromWorker(index: number, type: ResourceType, from: THREE.Vector3): boolean {
+        const need = this.getInputNeeds().find(candidate => candidate.index === index);
+        const zone = this.boxes[index]?.zone;
+        if (!need || !zone || need.resourceType !== type || need.count >= need.capacity) {
+            return false;
+        }
+        zone.receiveFrom(type, from, stackItemScale() * getPileScale(type));
+        return true;
+    }
+
+    /** A worker standing in the making area — call every frame; mixing runs while it keeps calling. */
+    public operate(): void {
+        this.operatorHoldSec = OPERATOR_HOLD_SEC;
     }
 
     /** What the playtest bot (playtest/PlaytestBot.ts) needs: where to stand to make, whether a batch can start, and each ingredient box. */
@@ -229,8 +337,9 @@ export default class MixStation extends Entity {
         }
         this.glideToSurfaces(delta);
 
-        const ready = this.hasIngredients() && this.output.getFillCount() + this.config.outputAmount <= this.config.maxOutput;
-        const making = ready && this.player !== undefined;
+        const ready = this.canMix();
+        this.operatorHoldSec = Math.max(0, this.operatorHoldSec - delta);
+        const making = ready && (this.player !== undefined || this.operatorHoldSec > 0);
         if (!ready) {
             this.progress = 0;
         } else if (making) {
@@ -296,6 +405,9 @@ export default class MixStation extends Entity {
     /** Uses one batch up and sends the product to the product box. */
     private finishBatch(): void {
         this.batchesMade++;
+        if (!this.player) {
+            this.batchesByWorker++;
+        }
         this.config.inputs.forEach((input, i) => StorageInventory.remove(this.boxes[i]?.storageId ?? '', input.resourceType, input.amount));
         const type = this.config.resourceType;
         const from = this.transform.position.clone().setY(this.outputPosition.y + 0.3);

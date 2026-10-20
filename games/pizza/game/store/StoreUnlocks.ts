@@ -23,6 +23,7 @@ import { BUILDING_CONFIG } from '../data/BuildingTypes';
 import { BuildingId } from '../data/BuildingId';
 import { BuildingStorage } from '../data/BuildingStorage';
 import { StorageConfig, isStorageForSale } from '../data/StorageTypes';
+import { isInStoreSection } from '../world/WorldObjectRegistry';
 import type WorldObjectRegistry from '../world/WorldObjectRegistry';
 import { readStoreLayouts, rectContains } from './StoreLayout';
 import { StoreProgressStorage } from './StoreProgressStorage';
@@ -56,7 +57,7 @@ export class StoreUnlocks {
 
     /**
      * Gates every PLACEMENT_GATED_TYPES object by where it's drawn (its center): inside a
-     * "storeSection" rect -> until that section is built (level 1, same rule BuildingZone uses);
+     * "storeSection" area (rect or polygon) -> until that section is built (level 1, same rule BuildingZone uses);
      * else inside a (non-disabled) store's area -> until that store opens. Call once, before the
      * spawn gates are registered.
      */
@@ -65,7 +66,7 @@ export class StoreUnlocks {
         const stores = readStoreLayouts().filter(layout => !getStoreConfig(layout.id).disabled);
         for (const type of PLACEMENT_GATED_TYPES) {
             for (const [id, placement] of worldObjects.getAllOfType(type)) {
-                const section = sections.find(s => rectContains(s.placement, placement.x, placement.z));
+                const section = sections.find(s => isInStoreSection(s, placement.x, placement.z));
                 if (section) {
                     this.placementGates.set(id, () => isSectionBuilt(section.id));
                     console.log(`[StoreUnlocks] ${type} "${id}" waits for section "${section.id}" to be built`);

@@ -61,6 +61,10 @@ import { getQuestGiverConfig } from '../data/QuestGiverTypes';
 import ShopZone, { ShopTriggerArea } from '../shop/ShopZone';
 import MartZone, { MartTriggerArea } from '../shop/MartZone';
 import NpcEntity from '../world/NpcEntity';
+import AlertAboveComponent from '../components/AlertAboveComponent';
+import { canAffordAnyWorkerUpgrade } from '../store/StaffUpgradeAlert';
+import { canAffordAnyFarmUpgrade } from '../ui/popups/FarmUpgradesPopup';
+import { canAffordAnyAnimalUpgrade } from '../ui/popups/AnimalUpgradesPopup';
 import { getNpcConfig } from '../data/NpcTypes';
 import CraftingTableZone, { CraftingTableTriggerArea } from '../shop/CraftingTableZone';
 import FarmSeedPicker from '../world/FarmSeedPicker';
@@ -199,6 +203,9 @@ const DEFAULT_CAMERA_DISTANCE = CAMERA_SETTINGS.distance;
 /** Straight overhead — see cameraUpVector()'s own doc for why 90 specifically used to make the camera spin. */
 const TOP_DOWN_CAMERA_PITCH_DEG = 90;
 const TOP_DOWN_CAMERA_DISTANCE = 35;
+/** How high the '!' floats over a desk NPC's feet (AlertAboveComponent) — same as the cashier's; lower for the seated hire manager. */
+const DESK_NPC_ALERT_HEIGHT = 2.6;
+const DESK_NPC_ALERT_HEIGHT_SEATED = 2.1;
 /** How long toggling the camera mode takes to ease pitch/distance to their new values — instant would read as a jump-cut; this is a smooth top-down/follow transition instead. */
 const CAMERA_MODE_TRANSITION_SEC = 0.8;
 /** How long crossing into a zone with a different camera template takes to ease into its settings — see applyCameraTemplateForZone()'s own doc. Same "smooth, not a jump-cut" reasoning as CAMERA_MODE_TRANSITION_SEC, just a touch longer since a zone crossing is a bigger context change than a manual toggle. */
@@ -1093,6 +1100,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             getActiveTutorialStep: () => this.zoneTutorialController.getActiveStep(),
             isPlayerFrozen: () => this.movementFreezeCount > 0 || !this.mainPlayer.movementController.enabled,
             getRevealKey: () => zoneNumbers.filter(zone => zoneVisibility.isZoneRevealed(zone)).join(','),
+            isFreeCamera: () => this.flyCamera.isEnabled(),
+            setFreeCamera: (enabled, keepPlayerMovement) => this.setFlyCamera(enabled, keepPlayerMovement),
         });
     }
 
@@ -1204,11 +1213,18 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * anything down, so toggling back off resumes normal play exactly where the player was left.
      */
     private toggleFlyCamera(): void {
-        const enabling = !this.flyCamera.isEnabled();
-        this.flyCamera.setEnabled(enabling);
+        this.setFlyCamera(!this.flyCamera.isEnabled());
+    }
+
+    /**
+     * `keepPlayerMovement` — the playtest bot drives the player through scripted input (which
+     * already overrides the keyboard), so flying alongside it must leave the controller enabled.
+     */
+    private setFlyCamera(enabled: boolean, keepPlayerMovement = false): void {
+        this.flyCamera.setEnabled(enabled);
         const movement = this.mainPlayer.getComponent(PlayerMovementController);
         if (movement) {
-            movement.enabled = !enabling;
+            movement.enabled = !enabled || keepPlayerMovement;
         }
     }
 
@@ -2142,6 +2158,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     const npcPosition = onFloor(desk.placement.x, desk.placement.z);
                     // Seated — the hireDesk spot is drawn on the desk's chair.
                     const npc = this.world.add(new NpcEntity(npcPosition, npcConfig, () => this.mainPlayer.transform.position, { sitting: true }));
+                    // '!' over the hire manager while a staff upgrade is affordable (same rule as the desk button's badge).
+                    npc.addComponent(new AlertAboveComponent(this.screenHost, DESK_NPC_ALERT_HEIGHT_SEATED, () => canAffordAnyWorkerUpgrade(storeId)));
                     this.threeScene.add(npc.transform);
                 } else {
                     console.warn(`[PizzaScene] hireDesk "${desk.id}" wants npcId "${npcId}", which has no NpcConfig entry — no NPC at the desk`);
@@ -2185,6 +2203,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 const npc = this.world.add(new NpcEntity(onFloor(placement.x, placement.z), npcConfig, () => this.mainPlayer.transform.position));
                 // Faces the dropper — where the player stands to talk to it (no-op without one: same spot).
                 npc.faceToward(triggerPosition.x, triggerPosition.z);
+                // '!' while one of its upgrades is affordable — farm upgrades, or the animal keeper's stall upgrades.
+                const ids = config.kind === 'animals' ? stallIds : farmIds;
+                npc.addComponent(new AlertAboveComponent(this.screenHost, DESK_NPC_ALERT_HEIGHT,
+                    config.kind === 'animals' ? () => canAffordAnyAnimalUpgrade(ids) : () => canAffordAnyFarmUpgrade(ids)));
                 this.threeScene.add(npc.transform);
                 this.registerZoneVisibility(npc.transform, placement.x, placement.z, placement.width, placement.depth);
             });

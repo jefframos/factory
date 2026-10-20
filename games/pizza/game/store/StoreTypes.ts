@@ -81,8 +81,10 @@ export interface StoreLevelHint {
  *   - 'cashier':   serves at the cashier and collects the money drop — StoreCashierWorker.ts.
  *   - 'restocker': refills the emptiest shelf from the farms — StoreRestockerWorker.ts.
  *   - 'cleaner':   picks garbage off the floor and throws it in the trash — StoreCleanerWorker.ts.
+ *   - 'baker':     runs the store's mix stations (kitchen) — fetches ingredients, fills the boxes
+ *                  and mixes; never carries the product to a shelf — StoreBakerWorker.ts.
  */
-export type StoreWorkerRole = 'cashier' | 'restocker' | 'cleaner';
+export type StoreWorkerRole = 'cashier' | 'restocker' | 'cleaner' | 'baker';
 
 /** NPCs tab id EVERY store worker wears — one shared look (edit it there to change them all). */
 export const WORKER_NPC_ID = 'worker';
@@ -157,6 +159,7 @@ export const DEFAULT_HIRE_ROLES: readonly StoreHireRoleConfig[] = [
     { role: 'cashier', cost: 100, maxCount: 1 },
     { role: 'restocker', cost: 75 },
     { role: 'cleaner', cost: 75 },
+    { role: 'baker', cost: 100, maxCount: 1 },
 ];
 
 /** Resolved hire-desk roles for a store — see StoreHiringConfig. */
@@ -366,6 +369,8 @@ export interface StoreConfig {
     restockerWorker?: StoreRestockerWorkerConfig;
     /** Settings for this store's cleaner workers — same shape as restockers (speed + carry spaces per level). See StoreCleanerWorker.ts. */
     cleanerWorker?: StoreRestockerWorkerConfig;
+    /** Settings for this store's bakers — same shape (speed + carry spaces per level; wanderRadius around the kitchen). See StoreBakerWorker.ts. */
+    bakerWorker?: StoreRestockerWorkerConfig;
     /** Body/head color EVERY worker of this store wears — so each store's staff has its own look. Unset = the NPCs tab's "worker" look. */
     workerColor?: string;
     /** Hat every worker of this store wears — see StoreWorkerHat. Unset / no model = the "worker" look's own (none by default). */
@@ -480,6 +485,21 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                         {
                             "level": 3,
                             "cost": 120
+                        }
+                    ]
+                },
+                {
+                    "role": "baker",
+                    "cost": 100,
+                    "maxCount": 1,
+                    "upgrades": [
+                        {
+                            "level": 2,
+                            "cost": 80
+                        },
+                        {
+                            "level": 3,
+                            "cost": 160
                         }
                     ]
                 }
@@ -810,7 +830,27 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
             "zone": 0,
             "step": 3
         },
-        "outOfStockDemand": 0.2
+        "outOfStockDemand": 0.2,
+        "bakerWorker": {
+            "wanderRadius": 1.5,
+            "levels": [
+                {
+                    "level": 1,
+                    "moveSpeed": 2,
+                    "carryCapacity": 3
+                },
+                {
+                    "level": 2,
+                    "moveSpeed": 2.5,
+                    "carryCapacity": 3
+                },
+                {
+                    "level": 3,
+                    "moveSpeed": 3,
+                    "carryCapacity": 3
+                }
+            ]
+        }
     }
 };
 
@@ -862,6 +902,20 @@ export function getCleanerLevelStats(config: StoreConfig, level: number): { move
     return {
         moveSpeed: entry?.moveSpeed ?? DEFAULT_RESTOCKER_MOVE_SPEED,
         carryCapacity: Math.max(1, Math.floor(entry?.carryCapacity ?? DEFAULT_RESTOCKER_CARRY_CAPACITY)),
+    };
+}
+
+/** Baker carry spaces with no levels configured. */
+export const DEFAULT_BAKER_CARRY_CAPACITY = 3;
+/** StoreConfig.bakerWorker.wanderRadius fallback — how far from the kitchen's middle it strolls, world units. */
+export const DEFAULT_BAKER_WANDER_RADIUS = 1.5;
+
+/** A baker's stats at `level` — StoreConfig.bakerWorker.levels; carries DEFAULT_BAKER_CARRY_CAPACITY by default. */
+export function getBakerLevelStats(config: StoreConfig, level: number): { moveSpeed: number; carryCapacity: number } {
+    const entry = pickLevelEntry(config.bakerWorker?.levels, level);
+    return {
+        moveSpeed: entry?.moveSpeed ?? DEFAULT_RESTOCKER_MOVE_SPEED,
+        carryCapacity: Math.max(1, Math.floor(entry?.carryCapacity ?? DEFAULT_BAKER_CARRY_CAPACITY)),
     };
 }
 

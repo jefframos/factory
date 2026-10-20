@@ -189,11 +189,11 @@ export interface StorageConfig {
     collect?: boolean;
     /**
      * A ShelfTypes.ts shelf id — the storage is drawn as that shelf (its model, replacing
-     * models/view/scale) with items on its fixed slots instead of the crate grid, and holds at
-     * most one item per slot: the player can't drop off more. Unset = the normal crate + pile.
+     * models/view/scale) with items on its fixed slots instead of the crate grid (one drawn item
+     * per slot; the player can still drop off more — see StorageCapacity.ts). Unset = the normal crate + pile.
      */
     shelf?: string;
-    /** Holds at most this many items — the player can't drop off more (e.g. a mix station's ingredient spot: one batch). Unset = a shelf's slot count, else unlimited. */
+    /** Holds at most this many items — the player can't drop off more (e.g. a mix station's ingredient spot: one batch). Unset = unlimited. */
     maxItems?: number;
 }
 
