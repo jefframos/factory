@@ -34,6 +34,7 @@ import { SeedStorage } from './game/data/SeedStorage';
 import { QueueStorage } from './game/data/QueueStorage';
 import { ItemStorage } from './game/crafting/ItemStorage';
 import { BackpackUnlockStorage } from './game/data/BackpackUnlockStorage';
+import { UpgradeMenuStorage } from './game/shop/UpgradeMenuStorage';
 import { CurrencyUnlockStorage } from './game/data/CurrencyUnlockStorage';
 import { CraftStorage } from './game/crafting/CraftStorage';
 import { DynamicResourceStorage } from './game/world/DynamicResourceStorage';
@@ -125,6 +126,7 @@ export default class MyGame extends Game {
             await ShopUpgradeStorage.load();
             await ItemStorage.load();
             await BackpackUnlockStorage.load();
+            await UpgradeMenuStorage.load();
             await CurrencyUnlockStorage.load();
             await CraftStorage.load();
             await DynamicResourceStorage.load();

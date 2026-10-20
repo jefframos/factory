@@ -125,8 +125,16 @@ export const SHAPE_RESOURCE_PLACEMENTS: ShapeResourcePlacement[] = [
     {
         "resourceType": ResourceType.Stone,
         "shapeId": "stoneSpawner",
-        "density": 0.2,
+        "count": 3,
         "minDistance": 3,
-        "checkIntervalSec": 30
+        "checkIntervalSec": 60
+    },
+    {
+        "spawnType": "provider",
+        "providerType": ProviderType.StoneDeposit,
+        "shapeId": "stoneSpawner",
+        "count": 8,
+        "minDistance": 2.2,
+        "checkIntervalSec": 45
     }
 ];

@@ -122,6 +122,8 @@ export default class MixStation extends Entity {
 
     private player?: MainPlayer;
     private progress = 0;
+    /** Batches finished since spawn — read by the playtest bot (getPlaytestState()). */
+    private batchesMade = 0;
     private surfaceTimerSec = 0;
     /** Each box spot's (and the product box's) surface height to glide to — see settleOnSurfaces(). */
     private readonly surfaceTargets = new Map<THREE.Vector3, number>();
@@ -207,9 +209,11 @@ export default class MixStation extends Entity {
     }
 
     /** What the playtest bot (playtest/PlaytestBot.ts) needs: where to stand to make, whether a batch can start, and each ingredient box. */
-    public getPlaytestState(): { product: ResourceType; makingPoint: THREE.Vector3; ready: boolean; inputs: { storageId: string; resourceType: ResourceType; batch: number }[] } {
+    public getPlaytestState(): { product: ResourceType; makingPoint: THREE.Vector3; ready: boolean; made: number; inputs: { storageId: string; resourceType: ResourceType; batch: number }[] } {
         return {
             product: this.config.resourceType,
+            /** Batches finished so far — the bot leaves after one (see PlaytestBot's make goal). */
+            made: this.batchesMade,
             makingPoint: new THREE.Vector3(this.dropper.x, 0, this.dropper.z),
             ready: this.hasIngredients() && this.output.getFillCount() + this.config.outputAmount <= this.config.maxOutput,
             inputs: this.config.inputs.map((input, i) => ({ storageId: this.boxes[i]?.storageId ?? '', resourceType: input.resourceType, batch: input.amount })),
@@ -291,6 +295,7 @@ export default class MixStation extends Entity {
 
     /** Uses one batch up and sends the product to the product box. */
     private finishBatch(): void {
+        this.batchesMade++;
         this.config.inputs.forEach((input, i) => StorageInventory.remove(this.boxes[i]?.storageId ?? '', input.resourceType, input.amount));
         const type = this.config.resourceType;
         const from = this.transform.position.clone().setY(this.outputPosition.y + 0.3);

@@ -8,6 +8,7 @@
 //   &minutes=40          stop after this many GAME minutes (default 40)
 //   &fresh               start from a wiped save (index.ts) — otherwise it continues YOUR save
 //   ?record              no bot: records YOU playing; press Report on the panel when done
+//   &botnav              draw the bot's walkability map + route on the ground (NavDebugOverlay.ts)
 //
 // Owns the recorder (always), the bot (bot mode), a small status panel (top-right, DOM) and the
 // end of the run: the demo-end popup, the time limit, or nothing happening for STALL_END_SEC — then
@@ -16,6 +17,7 @@
 import PlaytestRecorder, { PlaytestData } from './PlaytestRecorder';
 import PlaytestBot, { BotStyle, PlaytestHost } from './PlaytestBot';
 import { analyzePlaytest } from './PlaytestAnalysis';
+import NavDebugOverlay from './NavDebugOverlay';
 import { buildPlaytestReportHtml } from './PlaytestReport';
 import { GameClock } from '../utils/GameClock';
 import { EconomyStorage } from '../data/EconomyStorage';
@@ -67,6 +69,7 @@ export default class PlaytestSession {
     private lastPanelRealMs = 0;
     private lastPanelGameSec = 0;
     private reportLayer?: HTMLDivElement;
+    private navOverlay?: NavDebugOverlay;
 
     private constructor(
         private readonly host: PlaytestHost,
@@ -104,6 +107,10 @@ export default class PlaytestSession {
         }
         this.recorder.update();
         this.bot?.update();
+        if (this.bot && params().has('botnav')) {
+            this.navOverlay ??= new NavDebugOverlay(this.host.scene);
+            this.navOverlay.update(this.bot.getNav().getGrid(), this.bot.getPath(), this.host.player.transform.position);
+        }
         this.refreshPanel();
     }
 
@@ -111,6 +118,7 @@ export default class PlaytestSession {
         this.bot?.stop();
         this.panel?.remove();
         this.reportLayer?.remove();
+        this.navOverlay?.destroy();
     }
 
     private handlePopupClosed(name: string): void {

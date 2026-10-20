@@ -19,6 +19,7 @@
 //   storage      <storageId>                   bought        a storage is bought
 //   farm         <farmId>                      bought        a farm plot is bought
 //   upgrade      <tool>-<level>                bought        a shop sells a tool upgrade
+//   button       upgrade-menu                  visible       the upgrades menu opens
 //   button       hire-desk                     visible       the staff popup opens
 //   button       hire-desk                     interact      hire / upgrade pressed (and paid)
 //   worker       <role>                        hired         a worker is hired
@@ -78,6 +79,11 @@ export const GameAnalytics = {
     },
     shopUpgradeBought(tool: string, level: number): void {
         send('upgrade', `${tool}-${level}`, 'bought');
+    },
+
+    /** The bottom-left upgrades menu opens (UpgradeMenuButton). */
+    upgradeMenuOpened(): void {
+        send('button', 'upgrade-menu', 'visible');
     },
 
     hireDeskOpened(): void {

@@ -185,6 +185,15 @@ export const FARM_PLOT_CONFIG_BY_ID: Partial<Record<string, FarmPlotConfig>> = {
         "assignedCropId": CropId.Corn,
         "requiredTool": "shovel",
         "autoPlant": true
+    },
+    "farm6": {
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 80
+        },
+        "assignedCropId": CropId.Pumpkin,
+        "requiredTool": "shovel",
+        "autoPlant": true
     }
 };
 

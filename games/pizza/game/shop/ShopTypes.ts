@@ -137,86 +137,123 @@ export const DEFAULT_SHOWCASE_HEIGHT = 2.6;
  * Per-shop-id config — see this file's own doc for why (unlike QueueTypes' DEFAULT_QUEUE_CONFIG)
  * there's no fallback for an id not listed here.
  *
- * shop1's cost curve mirrors the old hand-typed 10-level axe ladder's own final price almost
- * exactly — baseCost 10 / costScale 2.05 lands level 10's cost at ~6394, vs. that ladder's final
- * 6400 (10 * 2.05^9). The ladder's actual min/max attribute ranges now live on the tool itself
- * (see TOOL_LIBRARY.axe.attributes in ToolRegistry.ts), not here.
+ * These are sold from the UPGRADES MENU (ui/popups/UpgradesPopup.ts, opened by the bottom-left
+ * backpack button — see shop/UpgradeMenu.ts for which show when), not from shops on the map:
+ * the map's shop objects moved to Tiled's "backup" layer, so no ShopZone spawns. Same data either
+ * way — ShopUpgradeStorage keeps the bought level, applyShopLevel() applies it.
+ *
+ * Prices are hand-listed per level (`levels`): money plus resources the player gathers — wood
+ * and stone first, then iron / copper / gold, ores that only appear later on the map. The first
+ * carrier level is deliberately cheap (the menu's first lesson — see UpgradeMenu.ts). No
+ * cooldown: a menu purchase is instant.
  */
 export const SHOP_CONFIG_BY_ID: Partial<Record<string, ShopConfig>> = {
     shop1: {
-        name: "Axe Shop",
+        name: "Axe",
         tool: "axe",
         action: ActionType.Chop,
         mesh: DEFAULT_SHOP_MESH,
         totalLevels: 10,
         baseCost: 10,
         costScale: 2.05,
-        cooldownSec: 300,
+        cooldownSec: 0,
         popupBobOffset: 3,
         baseView: "shop1View",
         solid: 0.5,
-        "frame": "QueueFrame",
-        "appearRequirement": {
-            "type": "item",
-            "item": ItemType.Axe
-        }
+        frame: "QueueFrame",
+        appearRequirement: { type: "item", item: ItemType.Axe },
+        // Axe starts at ladder level 2 (TOOL_LIBRARY.axe.startLevel) — 8 levels left to sell.
+        levels: [
+            { money: 40, resources: { [ResourceType.Wood]: 10 } },
+            { money: 90, resources: { [ResourceType.Wood]: 25 } },
+            { money: 160, resources: { [ResourceType.Wood]: 40, [ResourceType.Stone]: 10 } },
+            { money: 260, resources: { [ResourceType.Wood]: 60, [ResourceType.Stone]: 20 } },
+            { money: 400, resources: { [ResourceType.Wood]: 80, [ResourceType.Stone]: 30, [ResourceType.Ir]: 5 } },
+            { money: 600, resources: { [ResourceType.Wood]: 100, [ResourceType.Ir]: 10 } },
+            { money: 850, resources: { [ResourceType.Ir]: 20, [ResourceType.Copper]: 5 } },
+            { money: 1200, resources: { [ResourceType.Ir]: 30, [ResourceType.Copper]: 10, [ResourceType.Gold]: 5 } },
+        ],
     },
-    "shop2": {
+    shop2: {
+        name: "Pickaxe",
+        tool: "pickaxe",
+        action: ActionType.Mine,
         mesh: DEFAULT_SHOP_MESH,
-        "name": "Pickaxe Shop",
-        "tool": "pickaxe",
-        "action": ActionType.Mine,
-        "totalLevels": 10,
-        "baseCost": 10,
-        "costScale": 2.05,
-        "cooldownSec": 300,
-        "popupBobOffset": 3,
-        "baseView": "shop2View",
-        "solid": 0.5,
-        "frame": "QueueFrame",
-        "appearRequirement": {
-            "type": "item",
-            "item": ItemType.Pickaxe
-        }
+        totalLevels: 10,
+        baseCost: 10,
+        costScale: 2.05,
+        cooldownSec: 0,
+        popupBobOffset: 3,
+        baseView: "shop2View",
+        solid: 0.5,
+        frame: "QueueFrame",
+        appearRequirement: { type: "item", item: ItemType.Pickaxe },
+        levels: [
+            { money: 80, resources: { [ResourceType.Stone]: 20 } },
+            { money: 150, resources: { [ResourceType.Stone]: 40, [ResourceType.Wood]: 20 } },
+            { money: 250, resources: { [ResourceType.Stone]: 60, [ResourceType.Wood]: 30 } },
+            { money: 380, resources: { [ResourceType.Stone]: 80, [ResourceType.Ir]: 5 } },
+            { money: 550, resources: { [ResourceType.Stone]: 100, [ResourceType.Ir]: 10 } },
+            { money: 750, resources: { [ResourceType.Ir]: 15, [ResourceType.Copper]: 5 } },
+            { money: 1000, resources: { [ResourceType.Ir]: 20, [ResourceType.Copper]: 10 } },
+            { money: 1300, resources: { [ResourceType.Ir]: 30, [ResourceType.Copper]: 15 } },
+            { money: 1700, resources: { [ResourceType.Ir]: 40, [ResourceType.Copper]: 20, [ResourceType.Gold]: 5 } },
+            { money: 2200, resources: { [ResourceType.Ir]: 50, [ResourceType.Copper]: 25, [ResourceType.Gold]: 10 } },
+        ],
     },
-    // Carrier upgrades — more room in the crate on the player's back (see data/CarrierCapacity.ts).
-    // Priced per level by hand (`levels`); baseCost/costScale are unused while `levels` is set.
-    "shopBackpack": {
+    shopKnife: {
+        name: "Knife",
+        tool: "knife",
+        action: ActionType.Slash,
         mesh: DEFAULT_SHOP_MESH,
-        "name": "Carrier Shop",
-        "appearRequirement": {
-            "type": "store",
-            "storeId": "farmStore1",
-            "level": 2
-        },
-        "tool": "carrier",
-        "totalLevels": 10,
-        "baseCost": 0,
-        "costScale": 1,
-        "cooldownSec": 300,
-        "popupBobOffset": 3,
-        "solid": 0.5,
-        "frame": "QueueFrame",
-        "showcase": true,
-        "showcaseScale": 0.6,
-        "showcaseHeight": 1.2,
-        "particleEffectId": "craftingMyst",
-        "levels": [
-            {
-                "money": 100,
-                "resources": {
-                    "wood": 50
-                }
-            },
-            {
-                "money": 150,
-                "resources": {
-                    "wood": 50,
-                    "stone": 20
-                }
-            }
-        ]
-    }
+        totalLevels: 10,
+        baseCost: 10,
+        costScale: 2.05,
+        cooldownSec: 0,
+        frame: "QueueFrame",
+        appearRequirement: { type: "item", item: ItemType.Knife },
+        levels: [
+            { money: 60, resources: { [ResourceType.Wood]: 10 } },
+            { money: 120, resources: { [ResourceType.Wood]: 20, [ResourceType.Stone]: 10 } },
+            { money: 220, resources: { [ResourceType.Wood]: 30, [ResourceType.Stone]: 20 } },
+            { money: 350, resources: { [ResourceType.Stone]: 30, [ResourceType.Ir]: 5 } },
+            { money: 520, resources: { [ResourceType.Stone]: 40, [ResourceType.Ir]: 10 } },
+            { money: 750, resources: { [ResourceType.Ir]: 15, [ResourceType.Copper]: 5 } },
+            { money: 1000, resources: { [ResourceType.Ir]: 20, [ResourceType.Copper]: 10 } },
+            { money: 1400, resources: { [ResourceType.Ir]: 30, [ResourceType.Copper]: 15 } },
+            { money: 1800, resources: { [ResourceType.Ir]: 40, [ResourceType.Copper]: 20, [ResourceType.Gold]: 5 } },
+            { money: 2400, resources: { [ResourceType.Ir]: 50, [ResourceType.Copper]: 25, [ResourceType.Gold]: 10 } },
+        ],
+    },
+    shopBackpack: {
+        name: "Backpack",
+        tool: "carrier",
+        mesh: DEFAULT_SHOP_MESH,
+        totalLevels: 10,
+        baseCost: 0,
+        costScale: 1,
+        cooldownSec: 0,
+        popupBobOffset: 3,
+        solid: 0.5,
+        frame: "QueueFrame",
+        showcase: true,
+        showcaseScale: 0.6,
+        showcaseHeight: 1.2,
+        particleEffectId: "craftingMyst",
+        // +1 carry slot per level (TOOL_LIBRARY.carrier.capacity 3 -> 13 over 10 levels).
+        levels: [
+            { money: 15 },
+            { money: 60, resources: { [ResourceType.Wood]: 10 } },
+            { money: 120, resources: { [ResourceType.Wood]: 25 } },
+            { money: 200, resources: { [ResourceType.Wood]: 40, [ResourceType.Stone]: 10 } },
+            { money: 320, resources: { [ResourceType.Wood]: 60, [ResourceType.Stone]: 20 } },
+            { money: 500, resources: { [ResourceType.Wood]: 80, [ResourceType.Stone]: 30, [ResourceType.Ir]: 5 } },
+            { money: 750, resources: { [ResourceType.Wood]: 100, [ResourceType.Stone]: 40, [ResourceType.Ir]: 10 } },
+            { money: 1000, resources: { [ResourceType.Stone]: 60, [ResourceType.Ir]: 15, [ResourceType.Copper]: 5 } },
+            { money: 1400, resources: { [ResourceType.Stone]: 80, [ResourceType.Ir]: 20, [ResourceType.Copper]: 10 } },
+            { money: 2000, resources: { [ResourceType.Stone]: 100, [ResourceType.Ir]: 30, [ResourceType.Copper]: 15, [ResourceType.Gold]: 5 } },
+        ],
+    },
 };
 
 export function getShopConfig(id: string): ShopConfig | undefined {

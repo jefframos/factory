@@ -222,7 +222,7 @@ export const ENTITY_VIEW_CONFIG: Record<string, EntityViewConfig> = {
     },
     "cropPumpkinView": {
         "models": [MODELS.Food.Pumpkin],
-        "scale": 1.5,
+        "scale": 0.6,
         "rotationDeg": 0,
         "offset": [
             0,

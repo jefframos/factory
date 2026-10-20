@@ -47,6 +47,8 @@ import BuildingZone from '../player/BuildingZone';
 import HireDeskZone from '../store/HireDeskZone';
 import MixStation from '../world/MixStation';
 import ShopZone from '../shop/ShopZone';
+import { UpgradeMenu } from '../shop/UpgradeMenu';
+import { ShopUpgradeStorage } from '../shop/ShopUpgradeStorage';
 import FarmPlotTile from '../world/FarmPlotTile';
 import ResourceNode from '../player/ResourceNode';
 import ResourceNodeRegistry, { type GatherTarget } from '../player/ResourceNodeRegistry';
@@ -81,6 +83,8 @@ export type BotStyle = 'efficient' | 'casual';
 
 export interface PlaytestHost {
     readonly world: World;
+    /** For the ?botnav overlay (NavDebugOverlay.ts). */
+    readonly scene: THREE.Scene;
     readonly player: MainPlayer;
     readonly worldObjects: WorldObjectRegistry;
     readonly tileMap: TileMap;
@@ -131,7 +135,7 @@ interface StylePreset {
 
 const STYLES: Record<BotStyle, StylePreset> = {
     efficient: { thinkSec: 0.4, shelfBuffer: 4, servePriority: 80, distractChance: 0, pace: 1, avoidFields: true },
-    casual: { thinkSec: 1.5, shelfBuffer: 2, servePriority: 58, distractChance: 0.04, pace: 0.85, avoidFields: false },
+    casual: { thinkSec: 1.5, shelfBuffer: 2, servePriority: 58, distractChance: 0.012, pace: 0.85, avoidFields: false },
 };
 
 /** A new goal must beat the current one by this much to interrupt it. */
@@ -142,6 +146,13 @@ const STUCK_CHECK_SEC = 1.5;
 const STUCK_MIN_MOVE = 0.15;
 const STUCK_LIMIT = 4;
 const BLACKLIST_SEC = 25;
+/** A target with no path to it is skipped this long — the map won't change much sooner (a zone opening, a building rising). */
+const NO_PATH_BLACKLIST_SEC = 60;
+/** When stuck against something, step sideways this long before re-planning. */
+const SIDESTEP_SEC = 0.5;
+/** watchStandingStill(): moved less than this (world units) for this long (game s) = standing still. */
+const STILL_MOVE = 0.5;
+const STILL_LOG_SEC = 10;
 /** How often the for-sale list goes to the recorder. */
 const FOR_SALE_LOG_SEC = 15;
 /** Stand this close to a tree/rock — well inside PlayerConfig.resourceDetectionRadius (3). */
@@ -173,6 +184,8 @@ interface Purchase {
     point: THREE.Vector3;
     radius: number;
     remaining(): number;
+    /** Bought from a menu, not by standing somewhere — done on the spot, no walking (the upgrades menu). */
+    buyNow?(): boolean;
 }
 
 export default class PlaytestBot {
@@ -183,6 +196,9 @@ export default class PlaytestBot {
     private arrived = false;
     /** Pushed up against whatever it walks to (a tree's collider) close enough to count as there — see followPath(). */
     private blockedNearGoal = false;
+    /** Seconds left of a sidestep after getting stuck, and which side (+1/-1) — see followPath(). */
+    private sidestepSec = 0;
+    private sidestepSign = 1;
     private stallTimerSec = 0;
     private lastProgress = NaN;
     private readonly path: THREE.Vector3[] = [];
@@ -208,6 +224,10 @@ export default class PlaytestBot {
     private lastForSaleLogSec = -Infinity;
     /** Crate contents last step — see trackStrayPickups(). */
     private readonly lastCarried = new Map<ResourceType, number>();
+    /** watchStandingStill(): where the player last moved from, how long it's been, and whether this stretch is logged. */
+    private readonly stillAnchor = new THREE.Vector3();
+    private stillSec = 0;
+    private stillLogged = false;
     /** For the status panel — see logForSale(). */
     private nextUnlockLabel = '';
 
@@ -252,6 +272,41 @@ export default class PlaytestBot {
         }
         this.runGoal(delta);
         this.trackStrayPickups();
+        this.watchStandingStill(delta);
+    }
+
+    /**
+     * Diagnostics: the player hasn't moved for STILL_LOG_SEC while some client waits on an EMPTY
+     * shelf — logs what the bot was doing then (once per stretch), so a report shows exactly what
+     * kept it from restocking. Pauses (frozen movement, notifications) don't count.
+     */
+    private watchStandingStill(delta: number): void {
+        const pos = this.host.player.transform.position;
+        if (this.host.isPlayerFrozen() || Math.hypot(pos.x - this.stillAnchor.x, pos.z - this.stillAnchor.z) > STILL_MOVE) {
+            this.stillAnchor.copy(pos);
+            this.stillSec = 0;
+            this.stillLogged = false;
+            return;
+        }
+        this.stillSec += delta;
+        if (this.stillLogged || this.stillSec < STILL_LOG_SEC) {
+            return;
+        }
+        const empty = new Set<string>();
+        for (const store of this.host.getStores()) {
+            const snapshot = store.getPlaytestSnapshot();
+            for (const client of snapshot.clients) {
+                const want = client.getCurrentWantType();
+                if (want !== undefined && snapshot.storages.filter(s => s.resourceType === want).every(s => StorageInventory.getCount(s.id, want) <= 0)) {
+                    empty.add(want);
+                }
+            }
+        }
+        if (empty.size === 0) {
+            return;
+        }
+        this.stillLogged = true;
+        this.recorder.logIssue('idle-while-short', `stood still ${Math.round(this.stillSec)}+ s doing "${this.getGoalLabel()}" while clients waited on empty ${[...empty].join(', ')}`, pos.x, pos.z);
     }
 
     /**
@@ -333,7 +388,7 @@ export default class PlaytestBot {
             return this.goal;
         }
         if (this.style.distractChance > 0 && Math.random() < this.style.distractChance && this.goal?.kind !== 'distracted') {
-            const until = this.timeSec + 5 + Math.random() * 8;
+            const until = this.timeSec + 3 + Math.random() * 4;
             this.distractedUntilSec = until;
             const here = this.playerPosition().clone();
             return { key: `distracted:${until}`, kind: 'distracted', detail: 'looking around', priority: 100, point: here, radius: 99, timeoutSec: 20, stay: true, isDone: () => this.timeSec >= until };
@@ -583,6 +638,22 @@ export default class PlaytestBot {
     }
 
     private purchaseGoal(purchase: Purchase, priority: number): BotGoal {
+        if (purchase.buyNow) {
+            // A menu purchase: open the menu wherever the player stands and tap Buy.
+            let bought = false;
+            return {
+                key: purchase.key, kind: 'upgrade', detail: `${purchase.label} (${purchase.money} money${purchase.resources.map(r => ` + ${r.amount} ${r.type}`).join('')})`,
+                priority, point: this.playerPosition().clone(), radius: 99, timeoutSec: 10, stay: true,
+                isDone: () => bought,
+                onArrive: () => {
+                    bought = purchase.buyNow!();
+                    if (!bought) {
+                        this.logOnce('upgrade-failed', purchase.key, `couldn't buy ${purchase.label} from the upgrades menu`);
+                    }
+                },
+                progress: () => 0, stallSec: 3,
+            };
+        }
         return {
             key: purchase.key, kind: 'buy', detail: `${purchase.label} (${purchase.money} money${purchase.resources.map(r => ` + ${r.amount} ${r.type}`).join('')})`,
             priority, point: purchase.point, radius: purchase.radius, timeoutSec: 90, stay: true,
@@ -695,17 +766,24 @@ export default class PlaytestBot {
             }
         }
 
-        // Make: a mix station with everything it needs, whose product is short.
+        // Make: a mix station with everything it needs, whose product is short — ONE batch per
+        // visit, then back to the shelves. It used to stay until the station couldn't make more
+        // (up to maxOutput batches) at a priority restocking couldn't interrupt, so the bot stood
+        // there while shelves ran empty. Clients asking for the product make it as urgent as
+        // restocking; otherwise it's a top-up, below anything clients are waiting on.
         for (const station of this.scan.mixStations) {
             const state = station.getPlaytestState();
-            if (!state.ready || (needs.get(state.product)?.need ?? 0) <= 0) {
+            const need = needs.get(state.product);
+            if (!state.ready || (need?.need ?? 0) <= 0) {
                 continue;
             }
+            const madeBefore = state.made;
             goals.push({
-                key: `make:${state.product}`, kind: 'make', detail: `${state.product} at the mix station`, priority: 43,
-                point: state.makingPoint, radius: 0.5, timeoutSec: 60, stay: true,
-                isDone: () => !station.getPlaytestState().ready,
-                progress: () => 0, stallSec: 45,
+                key: `make:${state.product}`, kind: 'make', detail: `${state.product} at the mix station`,
+                priority: (need?.demand ?? 0) > 0 ? 42 + Math.min(10, need!.demand) : 33,
+                point: state.makingPoint, radius: 0.5, timeoutSec: 40, stay: true,
+                isDone: () => station.getPlaytestState().made > madeBefore || !station.getPlaytestState().ready,
+                progress: () => station.getPlaytestState().made, stallSec: 15,
             });
         }
 
@@ -1026,6 +1104,26 @@ export default class PlaytestBot {
                 },
             });
         }
+        // The upgrades menu (backpack, axe, pickaxe, ...) — bought from anywhere, once its button is up.
+        if (UpgradeMenu.isButtonUnlocked()) {
+            for (const entry of UpgradeMenu.getEntries()) {
+                if (!entry.cost) {
+                    continue;
+                }
+                const level = entry.level;
+                const shopId = entry.shopId;
+                list.push({
+                    key: `menu:${shopId}:${level + 1}`,
+                    label: `${entry.name} Lv ${level + 1}`,
+                    money: entry.cost.money,
+                    resources: (Object.entries(entry.cost.resources) as [ResourceType, number][]).map(([type, amount]) => ({ type, amount })),
+                    point: this.playerPosition().clone(),
+                    radius: 99,
+                    remaining: () => (ShopUpgradeStorage.getLevel(shopId) > level ? 0 : 1),
+                    buyNow: () => UpgradeMenu.buy(shopId) !== undefined,
+                });
+            }
+        }
         return list.filter(p => !this.isBlacklisted(p.key));
     }
 
@@ -1050,8 +1148,9 @@ export default class PlaytestBot {
         this.stuckCount = 0;
         this.stuckTimerSec = 0;
         this.lastPosition.copy(this.playerPosition());
-        this.plan();
+        this.sidestepSec = 0;
         this.recorder.beginActivity(goal.kind, goal.detail);
+        this.plan();
     }
 
     private finishGoal(outcome: string): void {
@@ -1065,9 +1164,9 @@ export default class PlaytestBot {
         this.recorder.endActivity(outcome);
     }
 
-    private abandon(reason: string, issueKind: string): void {
+    private abandon(reason: string, issueKind: string, blacklistSec = BLACKLIST_SEC): void {
         const goal = this.goal!;
-        this.blacklist.set(goal.key, this.timeSec + BLACKLIST_SEC);
+        this.blacklist.set(goal.key, this.timeSec + blacklistSec);
         if (goal.kind !== 'idle' && goal.kind !== 'distracted') {
             const pos = this.playerPosition();
             this.logOnce(issueKind, goal.key, `${goal.kind} "${goal.detail}" — ${reason}`, pos.x, pos.z);
@@ -1083,9 +1182,28 @@ export default class PlaytestBot {
         if (!goal) {
             return;
         }
-        if (!this.nav.findPath(this.playerPosition(), goal.point, this.path, this.style.avoidFields)) {
-            this.path.length = 0;
+        const from = this.playerPosition();
+        if (this.nav.findPath(from, goal.point, this.path, this.style.avoidFields)) {
+            return;
         }
+        // Maybe the map just changed (a wall rose, a zone opened) — rebuild once and retry.
+        this.nav.rebuildNow();
+        if (this.nav.findPath(from, goal.point, this.path, this.style.avoidFields)) {
+            return;
+        }
+        // No way there on the bot's map. Walking straight at it only grinds into a wall (the old
+        // behaviour — the "stuck" loops) — skip it for a while and say where it couldn't get to.
+        this.path.length = 0;
+        this.abandon(`no path from (${from.x.toFixed(1)}, ${from.z.toFixed(1)}) to (${goal.point.x.toFixed(1)}, ${goal.point.z.toFixed(1)})`, 'no-path', NO_PATH_BLACKLIST_SEC);
+    }
+
+    /** The bot's map and current route — for the ?botnav overlay (NavDebugOverlay.ts). */
+    public getNav(): WorldNavGrid {
+        return this.nav;
+    }
+
+    public getPath(): readonly THREE.Vector3[] {
+        return this.path;
     }
 
     private runGoal(delta: number): void {
@@ -1149,6 +1267,9 @@ export default class PlaytestBot {
         this.replanTimerSec -= delta;
         if (this.replanTimerSec <= 0) {
             this.plan();
+            if (this.goal !== goal) {
+                return;
+            }
         }
 
         // Stuck: barely moved over STUCK_CHECK_SEC while trying to walk.
@@ -1164,13 +1285,30 @@ export default class PlaytestBot {
                 }
                 this.stuckCount++;
                 if (this.stuckCount >= STUCK_LIMIT) {
-                    this.abandon(`stuck near (${pos.x.toFixed(1)}, ${pos.z.toFixed(1)})`, 'stuck');
+                    this.abandon(`stuck near (${pos.x.toFixed(1)}, ${pos.z.toFixed(1)}) heading for (${goal.point.x.toFixed(1)}, ${goal.point.z.toFixed(1)})`, 'stuck');
                     return;
                 }
-                this.plan();
+                // Step sideways off whatever it's pressed against (alternating sides), then re-plan.
+                this.sidestepSec = SIDESTEP_SEC;
+                this.sidestepSign = -this.sidestepSign;
+                return;
             } else {
                 this.stuckCount = 0;
             }
+        }
+
+        if (this.sidestepSec > 0) {
+            this.sidestepSec -= delta;
+            const ahead = this.pathIndex < this.path.length ? this.path[this.pathIndex] : goal.point;
+            const ax = ahead.x - pos.x;
+            const az = ahead.z - pos.z;
+            const len = Math.hypot(ax, az) || 1;
+            // Perpendicular to where it was trying to go, a little backwards.
+            this.host.player.movementController.setScriptedInput((-az / len) * this.sidestepSign - (ax / len) * 0.3, (ax / len) * this.sidestepSign - (az / len) * 0.3);
+            if (this.sidestepSec <= 0) {
+                this.plan();
+            }
+            return;
         }
 
         // Next waypoint; past the end of the path, straight at the goal point.

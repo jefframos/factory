@@ -615,7 +615,7 @@
         "name": "Pumpkin",
         "stages": [
             {
-                "durationSec": 20,
+                "durationSec": 4,
                 "mesh": "cropPumpkinView",
                 "start": {
                     "offset": [
@@ -635,7 +635,7 @@
                 }
             },
             {
-                "durationSec": 20,
+                "durationSec": 4,
                 "start": {
                     "offset": [
                         0,
@@ -654,7 +654,7 @@
                 }
             },
             {
-                "durationSec": 0,
+                "durationSec": 3,
                 "start": {
                     "offset": [
                         0,
@@ -669,7 +669,7 @@
                         0,
                         0
                     ],
-                    "scale": 1
+                    "scale": 4
                 }
             }
         ],

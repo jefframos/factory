@@ -39,6 +39,11 @@ export function getCarrierLevel(): number {
 
 /** Items the carry stack can hold right now — see this file's own doc. */
 export function getCarrierCapacity(): number {
+    return getCarrierCapacityAtLevel(getCarrierLevel());
+}
+
+/** What the crate holds at carrier ladder level `level` — the upgrades menu's "Carry 3 → 4" (see shop/UpgradeMenu.ts). */
+export function getCarrierCapacityAtLevel(level: number): number {
     const entry = TOOL_LIBRARY[CARRIER_TOOL_ID] as ToolVisualEntry;
     const range = entry.capacity;
     if (range?.min === undefined) {
@@ -47,5 +52,5 @@ export function getCarrierCapacity(): number {
     if (range.max === undefined || entry.maxLevel <= 0) {
         return Math.round(range.min);
     }
-    return Math.round(range.min + (range.max - range.min) * (getCarrierLevel() / entry.maxLevel));
+    return Math.round(range.min + (range.max - range.min) * (Math.min(level, entry.maxLevel) / entry.maxLevel));
 }

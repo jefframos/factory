@@ -112,7 +112,7 @@ export default class StoreLine<T> {
         return this.members.indexOf(member);
     }
 
-    /** Replaces where each queue index stands. Indices past the end continue straight on from the last spot. */
+    /** Replaces where each queue index stands. Indices past the end get spots of their own around the last one (see getSpotFor()). */
     public setSpots(spots: THREE.Vector3[]): void {
         this.spots = spots.map(spot => spot.clone());
     }
@@ -139,6 +139,13 @@ export default class StoreLine<T> {
         if (index < this.spots.length) {
             return target.copy(this.spots[index]);
         }
-        return target.copy(this.spots[this.spots.length - 1]).addScaledVector(this.direction, (index - this.spots.length + 1) * this.spacing);
+        // Past the last laid-out spot (Store re-lays spots as its capacity grows, so this is rare):
+        // a spot of its own near the end of the line — never the SAME point as someone else, or
+        // both keep pushing each other off it and neither ever arrives. Small ring around the last
+        // spot, one step per extra client.
+        const extra = index - this.spots.length + 1;
+        const angle = extra * 2.4;
+        const radius = this.spacing * (0.6 + 0.2 * Math.floor(extra / 6));
+        return target.copy(this.spots[this.spots.length - 1]).add(new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius));
     }
 }

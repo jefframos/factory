@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="15" nextobjectid="466">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="15" nextobjectid="468">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -972,21 +972,75 @@
  </layer>
  <layer id="2" name="resourcesLayer" width="30" height="20">
   <data encoding="csv">
+   <chunk x="0" y="-16" width="16" height="16">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,15,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,15,15,0
+</chunk>
+   <chunk x="16" y="-16" width="16" height="16">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,15,15,15,15,0,0,0,0,0,0,0,0,0,0,0,
+0,15,15,15,15,15,15,0,0,0,0,0,0,0,0,0
+</chunk>
+   <chunk x="0" y="0" width="16" height="16">
+0,0,0,0,0,0,0,0,0,0,0,0,15,15,15,0,
+0,0,0,0,0,0,0,0,0,0,0,15,15,15,0,0,
+0,0,0,0,0,0,0,0,0,0,0,15,15,15,0,0,
+0,0,0,0,0,0,0,0,0,0,0,15,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,15,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,15,15,15,0,
+0,0,0,0,0,0,0,0,0,0,0,0,15,15,15,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,15,15,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,15,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</chunk>
    <chunk x="16" y="0" width="16" height="16">
+0,0,0,0,0,15,15,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,15,15,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,15,15,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,15,15,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,15,15,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,15,15,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,15,15,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,15,15,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,15,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,15,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,15,15,15,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </chunk>
@@ -1613,6 +1667,12 @@
   </data>
  </layer>
  <objectgroup id="3" name="mapSettings1">
+  <object id="417" name="polyFence" x="-135.5" y="922" visible="0">
+   <properties>
+    <property name="type" value="polyFence"/>
+   </properties>
+   <polygon points="7.5,-26 -376.5,-26 -376.5,-250 7.5,-250"/>
+  </object>
   <object id="3" name="queue: queue1" x="1056" y="512" width="32" height="128">
    <properties>
     <property name="id" value="queue1"/>
@@ -1649,25 +1709,6 @@
     <property name="type" value="waypoint"/>
    </properties>
    <ellipse/>
-  </object>
-  <object id="55" name="shop: shop2" x="864" y="448" width="65" height="65">
-   <properties>
-    <property name="id" value="shop2"/>
-    <property name="type" value="shop"/>
-   </properties>
-  </object>
-  <object id="184" name="shop: shopBackpack" x="560.667" y="696.333" width="65" height="65">
-   <properties>
-    <property name="id" value="shopBackpack"/>
-    <property name="type" value="shop"/>
-   </properties>
-  </object>
-  <object id="56" name="dropper: dropperShop2" x="864" y="454" width="64.5" height="64.5">
-   <properties>
-    <property name="id" value="dropperShop2"/>
-    <property name="target" value="shop2"/>
-    <property name="type" value="dropper"/>
-   </properties>
   </object>
   <object id="12" name="craft: craftPickaxe" x="537.417" y="68.583" width="32" height="32">
    <properties>
@@ -1713,7 +1754,7 @@
     <property name="id" value="stoneSpawner"/>
     <property name="type" value="spawner"/>
    </properties>
-   <polygon points="93,-44 -111.667,115 -87.8333,219 230,196 236.167,97.5"/>
+   <polygon points="-100.333,43.6667 -111.667,115 -87.8333,219 -20.6667,139.667 -21.4997,64.1667"/>
   </object>
   <object id="37" name="farm: farm1" x="-208" y="816" width="64" height="64">
    <properties>
@@ -1721,13 +1762,19 @@
     <property name="type" value="farm"/>
    </properties>
   </object>
-  <object id="185" name="farm: farm4" x="-464" y="688" width="64" height="64">
+  <object id="185" name="farm: farm4" x="-334.667" y="708" width="64" height="64">
    <properties>
     <property name="id" value="farm4"/>
     <property name="type" value="farm"/>
    </properties>
   </object>
-  <object id="186" name="farm: farm5" x="-432" y="816" width="64" height="64">
+  <object id="466" name="farm: farm4" x="-452.333" y="698" width="64" height="64">
+   <properties>
+    <property name="id" value="farm6"/>
+    <property name="type" value="farm"/>
+   </properties>
+  </object>
+  <object id="186" name="farm: farm5" x="-438.333" y="817" width="64" height="64">
    <properties>
     <property name="id" value="farm5"/>
     <property name="type" value="farm"/>
@@ -1769,12 +1816,6 @@
     <property name="type" value="teleporter"/>
    </properties>
    <point/>
-  </object>
-  <object id="417" name="polyFence" x="-135.5" y="922">
-   <properties>
-    <property name="type" value="polyFence"/>
-   </properties>
-   <polygon points="7.5,-26 -376.5,-26 -376.5,-250 7.5,-250"/>
   </object>
   <object id="418" name="polyDoor" x="-384" y="640" width="128" height="64">
    <properties>
@@ -2163,6 +2204,12 @@
     <property name="type" value="storage"/>
    </properties>
   </object>
+  <object id="467" name="storage: storage5" x="179.667" y="610" width="32" height="50.6667">
+   <properties>
+    <property name="id" value="storage6"/>
+    <property name="type" value="storage"/>
+   </properties>
+  </object>
   <object id="389" gid="52" x="163.417" y="909.708" width="67.3333" height="67.3333" rotation="90">
    <properties>
     <property name="target" value="farmStore1Cashier"/>
@@ -2499,6 +2546,25 @@
    <properties>
     <property name="id" value="gateWood"/>
     <property name="type" value="gate"/>
+   </properties>
+  </object>
+  <object id="55" name="shop: shop2" x="864" y="448" width="65" height="65">
+   <properties>
+    <property name="id" value="shop2"/>
+    <property name="type" value="shop"/>
+   </properties>
+  </object>
+  <object id="56" name="dropper: dropperShop2" x="864" y="454" width="64.5" height="64.5">
+   <properties>
+    <property name="id" value="dropperShop2"/>
+    <property name="target" value="shop2"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="184" name="shop: shopBackpack" x="560.667" y="696.333" width="65" height="65">
+   <properties>
+    <property name="id" value="shopBackpack"/>
+    <property name="type" value="shop"/>
    </properties>
   </object>
  </objectgroup>

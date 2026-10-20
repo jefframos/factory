@@ -1084,6 +1084,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         const zoneVisibility = this.worldManager.getZoneVisibilityManager();
         this.playtest = PlaytestSession.fromUrl({
             world: this.world,
+            scene: this.threeScene,
             player: this.mainPlayer,
             worldObjects: this.worldObjects,
             tileMap: this.worldManager.getTileMap(),
@@ -2182,6 +2183,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     return;
                 }
                 const npc = this.world.add(new NpcEntity(onFloor(placement.x, placement.z), npcConfig, () => this.mainPlayer.transform.position));
+                // Faces the dropper — where the player stands to talk to it (no-op without one: same spot).
+                npc.faceToward(triggerPosition.x, triggerPosition.z);
                 this.threeScene.add(npc.transform);
                 this.registerZoneVisibility(npc.transform, placement.x, placement.z, placement.width, placement.depth);
             });

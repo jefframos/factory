@@ -301,12 +301,15 @@
         "models": [
             "Food.Pumpkin"
         ],
-        "scale": 1,
+        "scale": 1.6,
         "rotationDeg": 0,
         "amountPerGather": 1,
         "category": "farm",
-        "price": 10,
-        "sellable": true
+        "price": 28,
+        "sellable": true,
+        "carrierOrientation": "onSide",
+        "carrierSpacing": 0.5,
+        "storeMaxPerOrder": 2
     },
     "strawberry": {
         "label": "Strawberry",

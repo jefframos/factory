@@ -596,12 +596,13 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                         "entityId": "farm1"
                     }
                 ],
-                "moodFloor": "happy"
+                "moodFloor": "happy",
+                "spawnIntervalMultiplier": 0.6
             },
             {
                 "level": 2,
                 "requirementType": "money",
-                "amount": 50,
+                "amount": 30,
                 "enables": [
                     {
                         "entityId": "farm2"
@@ -703,7 +704,15 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
             {
                 "level": 7,
                 "requirementType": "money",
-                "amount": 700
+                "amount": 700,
+                "enables": [
+                    {
+                        "entityId": "farm6"
+                    },
+                    {
+                        "entityId": "storage6"
+                    }
+                ]
             },
             {
                 "level": 8,

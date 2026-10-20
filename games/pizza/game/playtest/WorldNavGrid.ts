@@ -22,8 +22,8 @@ import { FARM_GRID_CELL_SIZE } from '../world/FarmGrid';
 const FARM_CELL_COST = 6;
 
 const CELL_SIZE = 0.5;
-/** Player half-width 0.4 + a little slack, so string-pulled paths don't scrape corners. */
-const PLAYER_RADIUS = 0.45;
+/** Player half-width 0.4 + slack, so string-pulled paths don't scrape wall ends and door frames (0.45 was too tight — the bot snagged on doorways). Doorways are 2+ units wide, so this still fits through. */
+const PLAYER_RADIUS = 0.6;
 const REBUILD_MIN_SEC = 2;
 /** Same as Store.ts's NAV_BODY_* filter — ignores the ground slab, overhead things and floor decals. */
 const BODY_MAX_BOTTOM = 1.8;
@@ -57,6 +57,14 @@ export default class WorldNavGrid {
         this.rebuild();
         this.builtPhysicsVersion = version;
         this.builtRevealKey = revealKey;
+        this.sinceBuildSec = 0;
+    }
+
+    /** Rebuilds right away, regardless of the throttle — e.g. when a path just failed. */
+    public rebuildNow(): void {
+        this.rebuild();
+        this.builtPhysicsVersion = this.world.physics.version;
+        this.builtRevealKey = this.getRevealKey();
         this.sinceBuildSec = 0;
     }
 

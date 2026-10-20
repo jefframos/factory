@@ -26,6 +26,7 @@ import { HighScoreStorage } from './HighScoreStorage';
 import { CraftStorage } from '../crafting/CraftStorage';
 import { ItemStorage } from '../crafting/ItemStorage';
 import { BackpackUnlockStorage } from './BackpackUnlockStorage';
+import { UpgradeMenuStorage } from '../shop/UpgradeMenuStorage';
 import { CurrencyUnlockStorage } from './CurrencyUnlockStorage';
 import { DynamicResourceStorage } from '../world/DynamicResourceStorage';
 import { ShapeResourceStorage } from '../world/ShapeResourceStorage';
@@ -123,6 +124,7 @@ export async function wipeAllPlayerData(): Promise<void> {
         CraftStorage.clearAll(),
         ItemStorage.resetToDefaults(),
         BackpackUnlockStorage.clearAll(),
+        UpgradeMenuStorage.clearAll(),
         CurrencyUnlockStorage.clearAll(),
         DynamicResourceStorage.clearAll(),
         ShapeResourceStorage.clearAll(),

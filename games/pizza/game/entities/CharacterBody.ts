@@ -929,6 +929,15 @@ export default class CharacterBody {
         this.targetRotation.setFromAxisAngle(this.up, Math.atan2(dirX, dirZ));
     }
 
+    /** faceDirection(), but snapped at once instead of turning over the next frames — for placing a character facing somewhere (e.g. an NPC at its desk). */
+    public faceDirectionNow(dirX: number, dirZ: number): void {
+        if (Math.hypot(dirX, dirZ) < 1e-4) {
+            return;
+        }
+        this.faceDirection(dirX, dirZ);
+        this.container.quaternion.copy(this.targetRotation);
+    }
+
     /**
      * Call once per frame. `moveInputX`/`moveInputZ` drive facing rotation
      * and the 'speed' animator variable (both default to 0 — an idle NPC

@@ -774,7 +774,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
         name: "Pumpkin",
         stages: [
             {
-                "durationSec": 20,
+                "durationSec": 4,
                 "mesh": "cropPumpkinView",
                 "start": {
                     "offset": [
@@ -794,7 +794,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
                 }
             },
             {
-                "durationSec": 20,
+                "durationSec": 4,
                 "start": {
                     "offset": [
                         0,
@@ -813,7 +813,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
                 }
             },
             {
-                "durationSec": 0,
+                "durationSec": 3,
                 "start": {
                     "offset": [
                         0,
@@ -828,7 +828,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
                         0,
                         0
                     ],
-                    "scale": 1
+                    "scale": 4
                 }
             }
         ],

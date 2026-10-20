@@ -56,6 +56,15 @@
             "assignedCropId": "corn",
             "requiredTool": "shovel",
             "autoPlant": true
+        },
+        "farm6": {
+            "price": {
+                "currency": "money",
+                "amount": 80
+            },
+            "assignedCropId": "pumpkin",
+            "requiredTool": "shovel",
+            "autoPlant": true
         }
     },
     "tiles": {

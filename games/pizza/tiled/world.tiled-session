@@ -1,5 +1,5 @@
 {
-    "activeFile": "testMap1.tmx",
+    "activeFile": "",
     "expandedProjectPaths": [
         "."
     ],
@@ -10,14 +10,14 @@
         },
         "testMap1.tmx": {
             "expandedObjectLayers": [
-                11,
-                3
+                3,
+                11
             ],
-            "scale": 5.5,
+            "scale": 2,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": -141.45454545454544,
-                "y": 805
+                "x": 200.75,
+                "y": 681.25
             }
         },
         "testMap1.tmx#models": {
@@ -57,7 +57,6 @@
     "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
     "map.lastUsedFormat": "tmx",
     "openFiles": [
-        "testMap1.tmx"
     ],
     "project": "world.tiled-project",
     "property.type": "int",

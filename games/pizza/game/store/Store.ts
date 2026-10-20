@@ -284,6 +284,8 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     private navCheckTimerSec = 0;
     private navFullCheckTimerSec = 0;
     private navPhysicsVersion = -1;
+    /** Spots per queue in the current layout — see layoutQueues(). */
+    private queueSpotCount = 0;
     private readonly navNeighbors: NavNeighbor[] = [];
     private player?: RigidBody;
     private playerNeighbor?: NavNeighbor;
@@ -755,6 +757,11 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         this.navFullCheckTimerSec -= delta;
         if (this.navCheckTimerSec <= 0) {
             this.navCheckTimerSec = NAV_CHECK_SEC;
+            // The store can now hold more clients than there are queue spots (a level-up, a hire)
+            // — lay them out again; a grid rebuild alone only happens when something solid moves.
+            if (this.navGrid && this.queueSpotsNeeded() > this.queueSpotCount) {
+                this.layoutQueues(this.navGrid);
+            }
             if (!this.navGrid || physics.version !== this.navPhysicsVersion || this.navFullCheckTimerSec <= 0) {
                 this.navFullCheckTimerSec = NAV_FULL_CHECK_SEC;
                 if (physics.version !== this.navPhysicsVersion) {
@@ -821,8 +828,21 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
             return;
         }
         this.navGrid = grid;
+        this.layoutQueues(grid);
+    }
+
+    /** Spots each queue needs: the most clients the store can hold right now, plus headroom. */
+    private queueSpotsNeeded(): number {
         const pacing = getStorePacing(this.config, this.storages.length, this.storages.length, this.workers.length, StoreProgressStorage.getLevel(this.layout.id));
-        layoutQueueSpots(grid, [...this.storages.map(storage => storage.line), this.cashierLine], this.config.waitStyle ?? 'cluster', pacing.maxClients + pacing.overflowClients + QUEUE_SPOT_HEADROOM);
+        return pacing.maxClients + pacing.overflowClients + QUEUE_SPOT_HEADROOM;
+    }
+
+    /** Lays every queue's spots out on `grid` for queueSpotsNeeded() clients (see StoreQueueSpots.ts). */
+    private layoutQueues(grid: StoreNavGrid): void {
+        this.queueSpotCount = this.queueSpotsNeeded();
+        layoutQueueSpots(grid, [...this.storages.map(storage => storage.line), this.cashierLine], this.config.waitStyle ?? 'cluster', this.queueSpotCount,
+            (x, z) => rectContains(this.layout.area, x, z) && !this.sections.some(section => !isSectionBuilt(section.id) && rectContains(section.rect, x, z)),
+            (x, z) => this.isClientAreaPoint(x, z));
     }
 
     /** A random walkable point between minRadius and maxRadius of `center`, clear of other clients and queue spots. */

@@ -276,7 +276,7 @@ export const ASSET_LIBRARY = {
     },
     "pumpkin": {
         "models": [MODELS.Food.Pumpkin],
-        "scale": 1,
+        "scale": 1.6,
         "rotationDeg": 0,
         "icon": "pizza-model-snapshots_Food-Pumpkin"
     },

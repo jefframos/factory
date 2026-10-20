@@ -53,6 +53,16 @@ export default class NpcEntity extends Entity {
         this.bodyOptions = bodyOptions;
     }
 
+    /**
+     * Turns this NPC to face world point (x, z), at once — e.g. a desk NPC facing the spot where the
+     * player stands to talk to it. Call right after constructing it: the look-at sensor captures its
+     * rest pose once the rig loads (see load()), so the facing must already be in place by then. An
+     * idle NPC keeps whatever facing it was given (update() feeds no move input).
+     */
+    public faceToward(x: number, z: number): void {
+        this.body.faceDirectionNow(x - this.transform.position.x, z - this.transform.position.z);
+    }
+
     public override awake(): void {
         this.transform.add(this.body.container);
         void this.load();

@@ -310,8 +310,11 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         label: "Pumpkin",
         color: 0xd9631e,
         category: "farm",
-        "price": 10,
-        "sellable": true
+        "price": 28,
+        "sellable": true,
+        "storeMaxPerOrder": 2,
+        "carrierSpacing": 0.5,
+        "carrierOrientation": "onSide"
     },
     [ResourceType.Strawberry]: {
         amountPerGather: 1,

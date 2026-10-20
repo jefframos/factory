@@ -259,12 +259,12 @@ player's stack once they've stood in it that long with no garbage left — the w
 | Level | Reached by | Enables |
 |---|---|---|
 | 1 | walk `walkTutorialTrigger` (open early, see below); `stall1` is built later | `storage1` (carrots, free) + `farm1` (price 0 → appears already owned) |
-| 2 | 50 money | `farm2` (50) + `storage2` (tomatoes, 10) + `trash1` |
+| 2 | 30 money (at Lv 1 a client comes every ~8 s instead of 14 — Lv 1 spawnIntervalMultiplier 0.6) | `farm2` (50) + `storage2` (tomatoes, 10) + `trash1` |
 | 3 | +100 money | `farm3` (50) + `storage3` (broccoli, 10) + `chickenStall` (20 → eggs) + `storageEgg` (free) |
 | 4 | +200 money | `farm4` (50) + `storage4` (strawberries, 10) + `farmDesk1` (farm manager — farm upgrades) |
 | 5 | +350 money | `farm5` (50) + `storage5` (corn, 10) + `cowStall` (20 → milk) + `storageMilk` (free) + `butterStation` (60, in the deposit room — once `storeRoom2` is built) + `storageButter` |
 | 6 | +500 money | nothing in the store — **zone 5** opens (Zones tab): the pickaxe table + loose stones |
-| 7 | +700 money | nothing yet |
+| 7 | +700 money | `farm6` (80, pumpkins) + `storage6` (pumpkins, 15 + 30 wood + 15 stone — stone from the zone 5 quarry's deposits, pickaxe needed) |
 | 8 | +950 money | `breadStation` (120 + 30 stone) + `storageBread` |
 | 9–20 | +1250 … +10000 money | nothing yet — the demo ends at Lv 9 |
 

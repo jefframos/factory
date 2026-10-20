@@ -361,10 +361,12 @@ export function analyzePlaytest(data: PlaytestData): Analysis {
         'no-source': 'No source for a needed resource',
         wasted: 'Carried items nothing wanted',
         'hire-failed': 'Hiring failed',
+        'idle-while-short': 'Stood still while clients waited on an empty shelf',
+        'no-path': 'No path to a target on the bot map',
     };
     for (const [kind, issues] of Object.entries(issuesByKind)) {
         findings.push({
-            severity: kind === 'stuck' || kind === 'no-source' ? 'medium' : 'low',
+            severity: kind === 'idle-while-short' ? (issues.length >= 5 ? 'high' : 'medium') : kind === 'stuck' || kind === 'no-source' || kind === 'no-path' ? 'medium' : 'low',
             area: 'Reachability',
             title: `${issueTitles[kind] ?? kind} (${issues.length})`,
             detail: issues.slice(0, 6).map(issue => `${clock(issue.t)} ${issue.detail}`).join(' · ') + (issues.length > 6 ? ` · +${issues.length - 6} more` : ''),

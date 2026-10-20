@@ -1,71 +1,341 @@
 {
     "shop1": {
-        "name": "Axe Shop",
+        "name": "Axe",
         "tool": "axe",
         "action": "chop",
-        "totalLevels": 10,
-        "baseCost": 10,
-        "costScale": 2.05,
-        "cooldownSec": 300,
-        "popupBobOffset": 3,
-        "baseView": "shop1View",
-        "solid": 0.5,
-        "frame": "QueueFrame",
         "appearRequirement": {
             "type": "item",
             "item": "axe"
-        }
-    },
-    "shop2": {
-        "name": "Pickaxe Shop",
-        "tool": "pickaxe",
-        "action": "mine",
+        },
         "totalLevels": 10,
         "baseCost": 10,
         "costScale": 2.05,
-        "cooldownSec": 300,
+        "cooldownSec": 0,
+        "levels": [
+            {
+                "money": 40,
+                "resources": {
+                    "wood": 10
+                }
+            },
+            {
+                "money": 90,
+                "resources": {
+                    "wood": 25
+                }
+            },
+            {
+                "money": 160,
+                "resources": {
+                    "wood": 40,
+                    "stone": 10
+                }
+            },
+            {
+                "money": 260,
+                "resources": {
+                    "wood": 60,
+                    "stone": 20
+                }
+            },
+            {
+                "money": 400,
+                "resources": {
+                    "wood": 80,
+                    "stone": 30,
+                    "ir": 5
+                }
+            },
+            {
+                "money": 600,
+                "resources": {
+                    "wood": 100,
+                    "ir": 10
+                }
+            },
+            {
+                "money": 850,
+                "resources": {
+                    "ir": 20,
+                    "copper": 5
+                }
+            },
+            {
+                "money": 1200,
+                "resources": {
+                    "ir": 30,
+                    "copper": 10,
+                    "gold": 5
+                }
+            }
+        ],
         "popupBobOffset": 3,
-        "baseView": "shop2View",
-        "solid": 0.5,
+        "baseView": "shop1View",
         "frame": "QueueFrame",
+        "solid": 0.5
+    },
+    "shop2": {
+        "name": "Pickaxe",
+        "tool": "pickaxe",
+        "action": "mine",
         "appearRequirement": {
             "type": "item",
             "item": "pickaxe"
-        }
-    },
-    "shopBackpack": {
-        "name": "Carrier Shop",
-        "appearRequirement": {
-            "type": "store",
-            "storeId": "farmStore1",
-            "level": 2
         },
-        "tool": "carrier",
         "totalLevels": 10,
-        "baseCost": 0,
-        "costScale": 1,
-        "cooldownSec": 300,
-        "popupBobOffset": 3,
-        "solid": 0.5,
-        "frame": "QueueFrame",
-        "showcase": true,
-        "showcaseScale": 0.6,
-        "showcaseHeight": 1.2,
-        "particleEffectId": "craftingMyst",
+        "baseCost": 10,
+        "costScale": 2.05,
+        "cooldownSec": 0,
         "levels": [
             {
-                "money": 100,
+                "money": 80,
                 "resources": {
-                    "wood": 50
+                    "stone": 20
                 }
             },
             {
                 "money": 150,
                 "resources": {
-                    "wood": 50,
-                    "stone": 20
+                    "stone": 40,
+                    "wood": 20
+                }
+            },
+            {
+                "money": 250,
+                "resources": {
+                    "stone": 60,
+                    "wood": 30
+                }
+            },
+            {
+                "money": 380,
+                "resources": {
+                    "stone": 80,
+                    "ir": 5
+                }
+            },
+            {
+                "money": 550,
+                "resources": {
+                    "stone": 100,
+                    "ir": 10
+                }
+            },
+            {
+                "money": 750,
+                "resources": {
+                    "ir": 15,
+                    "copper": 5
+                }
+            },
+            {
+                "money": 1000,
+                "resources": {
+                    "ir": 20,
+                    "copper": 10
+                }
+            },
+            {
+                "money": 1300,
+                "resources": {
+                    "ir": 30,
+                    "copper": 15
+                }
+            },
+            {
+                "money": 1700,
+                "resources": {
+                    "ir": 40,
+                    "copper": 20,
+                    "gold": 5
+                }
+            },
+            {
+                "money": 2200,
+                "resources": {
+                    "ir": 50,
+                    "copper": 25,
+                    "gold": 10
                 }
             }
-        ]
+        ],
+        "popupBobOffset": 3,
+        "baseView": "shop2View",
+        "frame": "QueueFrame",
+        "solid": 0.5
+    },
+    "shopKnife": {
+        "name": "Knife",
+        "tool": "knife",
+        "action": "slash",
+        "appearRequirement": {
+            "type": "item",
+            "item": "knife"
+        },
+        "totalLevels": 10,
+        "baseCost": 10,
+        "costScale": 2.05,
+        "cooldownSec": 0,
+        "levels": [
+            {
+                "money": 60,
+                "resources": {
+                    "wood": 10
+                }
+            },
+            {
+                "money": 120,
+                "resources": {
+                    "wood": 20,
+                    "stone": 10
+                }
+            },
+            {
+                "money": 220,
+                "resources": {
+                    "wood": 30,
+                    "stone": 20
+                }
+            },
+            {
+                "money": 350,
+                "resources": {
+                    "stone": 30,
+                    "ir": 5
+                }
+            },
+            {
+                "money": 520,
+                "resources": {
+                    "stone": 40,
+                    "ir": 10
+                }
+            },
+            {
+                "money": 750,
+                "resources": {
+                    "ir": 15,
+                    "copper": 5
+                }
+            },
+            {
+                "money": 1000,
+                "resources": {
+                    "ir": 20,
+                    "copper": 10
+                }
+            },
+            {
+                "money": 1400,
+                "resources": {
+                    "ir": 30,
+                    "copper": 15
+                }
+            },
+            {
+                "money": 1800,
+                "resources": {
+                    "ir": 40,
+                    "copper": 20,
+                    "gold": 5
+                }
+            },
+            {
+                "money": 2400,
+                "resources": {
+                    "ir": 50,
+                    "copper": 25,
+                    "gold": 10
+                }
+            }
+        ],
+        "frame": "QueueFrame"
+    },
+    "shopBackpack": {
+        "name": "Backpack",
+        "tool": "carrier",
+        "totalLevels": 10,
+        "baseCost": 0,
+        "costScale": 1,
+        "cooldownSec": 0,
+        "levels": [
+            {
+                "money": 15
+            },
+            {
+                "money": 60,
+                "resources": {
+                    "wood": 10
+                }
+            },
+            {
+                "money": 120,
+                "resources": {
+                    "wood": 25
+                }
+            },
+            {
+                "money": 200,
+                "resources": {
+                    "wood": 40,
+                    "stone": 10
+                }
+            },
+            {
+                "money": 320,
+                "resources": {
+                    "wood": 60,
+                    "stone": 20
+                }
+            },
+            {
+                "money": 500,
+                "resources": {
+                    "wood": 80,
+                    "stone": 30,
+                    "ir": 5
+                }
+            },
+            {
+                "money": 750,
+                "resources": {
+                    "wood": 100,
+                    "stone": 40,
+                    "ir": 10
+                }
+            },
+            {
+                "money": 1000,
+                "resources": {
+                    "stone": 60,
+                    "ir": 15,
+                    "copper": 5
+                }
+            },
+            {
+                "money": 1400,
+                "resources": {
+                    "stone": 80,
+                    "ir": 20,
+                    "copper": 10
+                }
+            },
+            {
+                "money": 2000,
+                "resources": {
+                    "stone": 100,
+                    "ir": 30,
+                    "copper": 15,
+                    "gold": 5
+                }
+            }
+        ],
+        "showcase": true,
+        "showcaseScale": 0.6,
+        "showcaseHeight": 1.2,
+        "particleEffectId": "craftingMyst",
+        "popupBobOffset": 3,
+        "frame": "QueueFrame",
+        "solid": 0.5
     }
 }

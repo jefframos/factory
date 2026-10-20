@@ -354,6 +354,38 @@
             "resourceCost": [],
             "signpostSide": "west",
             "signpostFacing": "east"
+        },
+        "storage6": {
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "dropOffset": {},
+            "pile": {
+                "columns": 2,
+                "rows": 2,
+                "layers": 3
+            },
+            "accepts": "farm",
+            "resourceType": "pumpkin",
+            "scale": 1,
+            "rotationDeg": 0,
+            "solid": 1,
+            "popupBobOffset": 3,
+            "price": {
+                "currency": "money",
+                "amount": 15
+            },
+            "resourceCost": [
+                {
+                    "resourceType": "wood",
+                    "amount": 30
+                },
+                {
+                    "resourceType": "stone",
+                    "amount": 15
+                }
+            ],
+            "view": "storageView"
         }
     },
     "signpost": {

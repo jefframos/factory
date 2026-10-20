@@ -27,8 +27,16 @@
     {
         "shapeId": "stoneSpawner",
         "resourceType": "stone",
-        "density": 0.2,
-        "checkIntervalSec": 30,
-        "minDistance": 3
+        "checkIntervalSec": 60,
+        "minDistance": 3,
+        "count": 3
+    },
+    {
+        "shapeId": "stoneSpawner",
+        "spawnType": "provider",
+        "providerType": "stoneDeposit",
+        "count": 8,
+        "minDistance": 2.2,
+        "checkIntervalSec": 45
     }
 ]

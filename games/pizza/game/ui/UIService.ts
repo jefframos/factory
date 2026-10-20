@@ -33,6 +33,7 @@ import SettingsUIService, { SETTINGS_ROW_BUTTON_SIZE, SETTINGS_ROW_TOP_LEFT_MARG
 import { UpgradeNotificationManager } from './notifications/UpgradeNotificationManager';
 import InGameButtonList from './InGameButtonList';
 import BackpackButton from './BackpackButton';
+import UpgradeMenuButton, { UPGRADE_MENU_BUTTON_SIZE } from './UpgradeMenuButton';
 import StoreUI from './StoreUI';
 import NextUnlocksUI from './NextUnlocksUI';
 
@@ -111,6 +112,9 @@ export default class UIService {
     /** Bottom-left button that opens InventoryPopup — see BackpackButton.ts's own doc. */
     private readonly backpackButton: BackpackButton;
 
+    /** Bottom-left backpack button that opens the upgrades menu — see UpgradeMenuButton.ts. Hides itself until unlocked. */
+    private readonly upgradeMenuButton: UpgradeMenuButton;
+
     /** Top-center level + progress panel for the store the player is standing in — PizzaScene feeds it via setState() every frame (see StoreUI.ts's own doc). */
     public readonly storeUi: StoreUI;
 
@@ -173,6 +177,9 @@ export default class UIService {
         this.nextUnlocksUi = new NextUnlocksUI();
         this.game.uiLayer.addChild(this.nextUnlocksUi);
 
+        this.upgradeMenuButton = new UpgradeMenuButton();
+        this.game.uiLayer.addChild(this.upgradeMenuButton);
+
         this.backpackButton = new BackpackButton();
         if (showDebugHud) {
             this.game.uiLayer.addChild(this.backpackButton);
@@ -196,6 +203,8 @@ export default class UIService {
         this.inGameButtonList.update();
         // Reads inGameButtonList's own just-set position — must run after it (see this
         // method's own doc on positionAnimalDockUi()).
+        // Reads inGameButtonList's top too; the animal dock below stacks on top of it.
+        this.positionUpgradeMenuButton();
         this.positionAnimalDockUi();
         this.positionToolLevelUi();
         this.positionToolListUi();
@@ -203,6 +212,25 @@ export default class UIService {
         this.positionNextUnlocksUi();
         this.settingsUi.update();
         this.backpackButton.update();
+        this.upgradeMenuButton.update();
+    }
+
+    /** Bottom-left corner — above the debug button list when that's on screen (?debug), else on the screen edge. */
+    private positionUpgradeMenuButton(): void {
+        const screen = Game.overlayScreenData;
+        if (!screen) {
+            return;
+        }
+        const bottom = this.inGameButtonList.visible ? this.inGameButtonList.getTopScreenY() : screen.bottomLeft.y - CAMERA_TOGGLE_BUTTON_MARGIN;
+        this.upgradeMenuButton.position.set(
+            screen.bottomLeft.x + CAMERA_TOGGLE_BUTTON_MARGIN,
+            bottom - UPGRADE_MENU_BUTTON_SIZE,
+        );
+    }
+
+    /** What the animal dock stacks on: the upgrades button when it's showing, else the debug button list. */
+    private animalDockTopAnchorY(): number {
+        return this.upgradeMenuButton.visible ? this.upgradeMenuButton.y : this.inGameButtonList.getTopScreenY();
     }
 
     /** Bottom-center, regardless of viewport size/aspect. */
@@ -240,7 +268,7 @@ export default class UIService {
 
         this.animalDockUi.position.set(
             screen.bottomLeft.x + CAMERA_TOGGLE_BUTTON_MARGIN,
-            this.inGameButtonList.getTopScreenY() - this.animalDockUi.panelHeight - ANIMAL_DOCK_UI_BOTTOM_MARGIN,
+            this.animalDockTopAnchorY() - this.animalDockUi.panelHeight - ANIMAL_DOCK_UI_BOTTOM_MARGIN,
         );
     }
 
@@ -362,5 +390,6 @@ export default class UIService {
         this.nextUnlocksUi.destroy({ children: true });
         this.settingsUi.destroy();
         this.backpackButton.destroy();
+        this.upgradeMenuButton.destroy();
     }
 }

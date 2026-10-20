@@ -568,6 +568,36 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
         "resourceCost": [],
         "signpostSide": "west",
         "signpostFacing": "east"
+    },
+    "storage6": {
+        "accepts": "farm",
+        "resourceType": ResourceType.Pumpkin,
+        "models": [MODELS.Restaurant.Crate],
+        "view": "storageView",
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 2,
+            "rows": 2,
+            "layers": 3
+        },
+        "popupBobOffset": 3,
+        "solid": 1,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 15
+        },
+        "resourceCost": [
+            {
+                "resourceType": ResourceType.Wood,
+                "amount": 30
+            },
+            {
+                "resourceType": ResourceType.Stone,
+                "amount": 15
+            }
+        ]
     }
 };
 
