@@ -31,6 +31,10 @@ import type StoreClient from '../store/StoreClient';
 import type { ClientState } from '../store/StoreClient';
 
 const SAMPLE_SEC = 1;
+/** data.errors: stack lines kept per error, max characters, and most distinct errors kept. */
+const ERROR_STACK_LINES = 4;
+const ERROR_MAX_CHARS = 600;
+const ERROR_MAX_DISTINCT = 30;
 /** States in which a client is stuck on its current item while that item's shelves are empty. */
 const SHELF_WAIT_STATES: ReadonlySet<ClientState> = new Set<ClientState>(['queuing', 'browsing', 'picking', 'wandering', 'toShelf']);
 
@@ -149,6 +153,8 @@ export interface PlaytestData {
     frozenSec: number;
     /** Real milliseconds the world sat paused behind tap-to-continue notifications. */
     notificationPauseRealMs: number;
+    /** console.error calls and uncaught errors during the run — each distinct message once (first time + count). */
+    errors?: { t: number; message: string; count: number }[];
 }
 
 interface TrackedClient {
@@ -174,6 +180,7 @@ export default class PlaytestRecorder {
     private openActivity?: PlaytestActivity;
     private pauseStartedRealMs?: number;
     private stopped = false;
+    private originalConsoleError?: typeof console.error;
 
     public constructor(
         private readonly getStores: () => readonly Store[],
@@ -202,9 +209,11 @@ export default class PlaytestRecorder {
             income: {},
             frozenSec: 0,
             notificationPauseRealMs: 0,
+            errors: [],
         };
         this.hookAnalytics();
         this.hookNotifications();
+        this.hookErrors();
     }
 
     public get gameTimeSec(): number {
@@ -332,7 +341,49 @@ export default class PlaytestRecorder {
         };
     }
 
+    /**
+     * console.error and uncaught errors / rejections go into data.errors, so a failure the game only
+     * logs (e.g. a bought station that never spawns) shows up in the report instead of only in a
+     * console nobody watched. The original console.error still runs.
+     */
+    private hookErrors(): void {
+        const original = console.error;
+        this.originalConsoleError = original;
+        console.error = (...args: unknown[]): void => {
+            this.logError(args.map(describeError).join(' '));
+            original.apply(console, args);
+        };
+        window.addEventListener('error', this.handleWindowError);
+        window.addEventListener('unhandledrejection', this.handleRejection);
+    }
+
+    private readonly handleWindowError = (event: ErrorEvent): void => {
+        this.logError(`uncaught: ${event.error !== undefined ? describeError(event.error) : event.message}`);
+    };
+
+    private readonly handleRejection = (event: PromiseRejectionEvent): void => {
+        this.logError(`unhandled rejection: ${describeError(event.reason)}`);
+    };
+
+    private logError(message: string): void {
+        const errors = this.data.errors ??= [];
+        // Past the first few stack lines it's noise for a report.
+        const trimmed = message.split('\n').slice(0, ERROR_STACK_LINES).join('\n').slice(0, ERROR_MAX_CHARS);
+        const existing = errors.find(entry => entry.message === trimmed);
+        if (existing) {
+            existing.count++;
+        } else if (errors.length < ERROR_MAX_DISTINCT) {
+            errors.push({ t: this.timeSec, message: trimmed, count: 1 });
+        }
+    }
+
     private unhook(): void {
+        if (this.originalConsoleError) {
+            console.error = this.originalConsoleError;
+            this.originalConsoleError = undefined;
+        }
+        window.removeEventListener('error', this.handleWindowError);
+        window.removeEventListener('unhandledrejection', this.handleRejection);
         const target = GameAnalytics as unknown as Record<string, AnalyticsFn>;
         for (const [name, original] of this.originals) {
             target[name] = original;
@@ -517,5 +568,20 @@ export default class PlaytestRecorder {
             }));
         }
         return result;
+    }
+}
+
+/** One console.error argument / thrown value as text — an Error with its stack. */
+function describeError(value: unknown): string {
+    if (value instanceof Error) {
+        return `${value.message}\n${value.stack ?? ''}`;
+    }
+    if (typeof value === 'string') {
+        return value;
+    }
+    try {
+        return JSON.stringify(value) ?? String(value);
+    } catch {
+        return String(value);
     }
 }

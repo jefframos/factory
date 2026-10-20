@@ -339,6 +339,14 @@ export function buildPlaytestReportText(data: PlaytestData, analysis: Analysis):
         `- Bought ${s.purchases} · hired ${s.hires} · ${s.notifications} notifications · frozen ${clock(data.frozenSec)}`,
         '');
 
+    // Errors first — something the game only logged (a spawn that threw, ...) explains odd numbers below.
+    const errors = data.errors ?? [];
+    add(`## Console errors (${errors.length === 0 ? 'none' : `${errors.length} distinct`})`);
+    for (const error of errors) {
+        add(`- @${clock(error.t)}${error.count > 1 ? ` (x${error.count})` : ''}:`, '```', error.message, '```');
+    }
+    add('');
+
     add('## Findings');
     if (analysis.findings.length === 0) {
         add('None.');
