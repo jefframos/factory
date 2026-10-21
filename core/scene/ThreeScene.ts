@@ -68,8 +68,10 @@ export abstract class ThreeScene extends GameScene {
     }
 
     public update(delta: number): void {
-        // Render the 3D Scene every frame
-        SetupThree.renderer.render(this.threeScene, this.threeCamera);
+        // Render the 3D Scene every frame (every Game.renderEvery-th one, for headless playtests)
+        if (Game.shouldRender()) {
+            SetupThree.renderer.render(this.threeScene, this.threeCamera);
+        }
     }
 
     public destroy(): void {

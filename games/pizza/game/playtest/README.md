@@ -21,6 +21,9 @@ speed, browser console errors including boot), `data.json`, `console.log` and sc
 store level-up, every 60 real seconds (`--shots N`, 0 = off) and at the end. `--timeout N` (real
 minutes, default 30) cuts a run that hangs and reports what it has.
 
+Headless draws only every 10th frame (`--render N`; the game logic still runs every frame) and briefly
+draws every frame before each screenshot.
+
 Browser: an installed Playwright Chromium (`npx playwright install chromium` if there's none, or
 point `PLAYTEST_CHROME` at any Chrome). Headless uses software WebGL: 5x is reached comfortably; at 10x the frame rate drops and per-unit
 transfers (paying, depositing) become frame-bound, which skews the numbers — compare runs at the same speed.

@@ -9,6 +9,7 @@
 //   &fresh               start from a wiped save (index.ts) — otherwise it continues YOUR save
 //   ?record              no bot: records YOU playing; press Report on the panel when done
 //   &botnav              draw the bot's walkability map + route on the ground (NavDebugOverlay.ts)
+//   &render=N            draw only every Nth frame (headless runner speed-up — core Game.renderEvery)
 //
 // Owns the recorder (always), the bot (bot mode), a small status panel (top-right, DOM) and the
 // end of the run: the demo-end popup, the time limit, or nothing happening for STALL_END_SEC — then
@@ -20,6 +21,7 @@ import { analyzePlaytest } from './PlaytestAnalysis';
 import NavDebugOverlay from './NavDebugOverlay';
 import { buildPlaytestReportHtml, buildPlaytestReportText } from './PlaytestReport';
 import { GameClock } from '../utils/GameClock';
+import { Game } from 'core/Game';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CurrencyType } from '../data/EconomyTypes';
 import { StoreProgressStorage } from '../store/StoreProgressStorage';
@@ -82,6 +84,8 @@ export default class PlaytestSession {
         // The last speed picked on the panel wins over &speed / the default.
         const speed = bot ? Math.max(1, loadSettings().speed || Number(p.get('speed')) || DEFAULT_SPEED) : 1;
         const minutes = Math.max(1, Number(p.get('minutes')) || DEFAULT_MINUTES);
+        // &render=N: draw only every Nth frame (core Game.renderEvery) — the headless runner's speed-up.
+        Game.renderEvery = Math.max(1, Math.floor(Number(p.get('render')) || 1));
         return new PlaytestSession(host, bot ? style : undefined, speed, minutes);
     }
 
@@ -137,6 +141,12 @@ export default class PlaytestSession {
             }),
             /** The finished run's text report and raw data — undefined until it ends. */
             result: () => this.result,
+            /** Draw every Nth frame — the runner sets 1 for a moment before each screenshot. Returns the previous value. */
+            setRenderEvery: (n: number) => {
+                const previous = Game.renderEvery;
+                Game.renderEvery = Math.max(1, Math.floor(n));
+                return previous;
+            },
         };
         console.log(`[Playtest] ${style ? `bot (${style}) at ${speed}x for ${minutes} game min` : 'recording a human session'} — window.__pizzaPlaytest.report() to finish early`);
     }

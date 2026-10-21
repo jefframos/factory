@@ -2,16 +2,16 @@
 //
 // Runs one pizza bot playtest in a browser and saves its report — no copy/paste:
 //
-//   npm run playtest                        headless, own dev server, 5x, fresh save
+//   npm run playtest                        headless, own dev server, 5x, fresh save (~6 min real)
 //   npm run playtest:watch                  same in a visible window (window stays open after)
 //   npm run playtest -- --minutes 20 --speed 5 --style casual
 //   npm run playtest -- --url http://localhost:9001   use a dev server you already run
 //
 // Options:
 //   --headed            visible window (real GPU) instead of headless (software WebGL)
-//   --speed N           game speed (default 5 — what manual runs use; at 10x headless the frame
-//                       rate drops and per-unit transfers (paying, depositing) get frame-bound, which
-//                       skews the numbers — compare runs at the same speed)
+//   --speed N           game speed (default 5). Higher skews a full run: frames get long and per-unit
+//                       transfers (paying, depositing — DepositPacer) send at most one unit per frame,
+//                       so at 10x a full run lost 39% of clients vs 15% at 5x. Compare at the same speed.
 //   --minutes N         game-minute limit (default 40; the run also ends at the demo end / a stall)
 //   --style S           'efficient' (default) or 'casual'
 //   --keep-save         don't wipe the save first (headless always starts from an empty profile anyway)
@@ -19,6 +19,7 @@
 //                       reload, no browser tab — your own server WILL reload the run if a file changes)
 //   --timeout N         real minutes before the run is cut and reported anyway (default 30)
 //   --shots N           screenshot every N real seconds (default 60; 0 = only level-ups + the end)
+//   --render N          draw every Nth frame (default 10 headless, 1 headed) — logic runs every frame
 //   --label L           added to the output folder name
 //   --keep-open         keep the window open after the report (default with --headed)
 //
@@ -50,6 +51,9 @@ const POLL_MS = 2000;
 const PROGRESS_EVERY_MS = 15000;
 const BOOT_TIMEOUT_MS = 120000;
 const VITE_READY_TIMEOUT_MS = 60000;
+const RENDER_EVERY_HEADLESS = 10;
+/** Real ms of full drawing before a screenshot. */
+const SHOT_SETTLE_MS = 300;
 /**
  * Console errors that are never the game's: Chrome's own favicon.ico 404 (invisible to Playwright's
  * request events — a real 404 still shows as its own "[http 404] <url>" line) and the COOP header
@@ -68,6 +72,8 @@ const minutes = Number(args.minutes ?? 40);
 const style = args.style === 'casual' ? 'casual' : 'efficient';
 const timeoutMs = Number(args.timeout ?? 30) * 60000;
 const shotEveryMs = Number(args.shots ?? 60) * 1000;
+// Headless draws every RENDER_EVERY_HEADLESS-th frame (nobody watches; drawing is most of a frame); headed draws every frame.
+const renderEvery = Math.max(1, Math.floor(Number(args.render ?? (headed ? 1 : RENDER_EVERY_HEADLESS))));
 
 const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 const outDir = path.join(OUT_ROOT, `${stamp}${args.label ? `-${String(args.label).replace(/[^\w-]/g, '_')}` : ''}`);
@@ -89,7 +95,7 @@ process.on('SIGINT', () => {
 
 try {
     const base = args.url ? String(args.url).replace(/\/$/, '') : await startVite();
-    const query = new URLSearchParams({ bot: style === 'casual' ? 'casual' : '', speed: String(speed), minutes: String(minutes) });
+    const query = new URLSearchParams({ bot: style === 'casual' ? 'casual' : '', speed: String(speed), minutes: String(minutes), render: String(renderEvery) });
     let url = `${base}/?${query.toString().replace('bot=&', 'bot&')}`;
     if (args['keep-save'] !== true) {
         url += '&fresh';
@@ -257,7 +263,13 @@ async function getState(page) {
 
 async function shot(page, state, tag) {
     const name = `${clock(state?.gameTimeSec ?? 0).replace(':', 'm')}s-${levelKey(state).replace(/\W+/g, '')}${tag ? `-${tag}` : ''}.png`;
+    // Draw every frame for a moment so the shot is current, then back to skipping.
+    const previous = await page.evaluate(() => window.__pizzaPlaytest?.setRenderEvery(1)).catch(() => undefined);
+    await page.waitForTimeout(SHOT_SETTLE_MS);
     await page.screenshot({ path: path.join(outDir, name) }).catch(() => undefined);
+    if (previous !== undefined) {
+        await page.evaluate(n => window.__pizzaPlaytest?.setRenderEvery(n), previous).catch(() => undefined);
+    }
 }
 
 // ---- Helpers

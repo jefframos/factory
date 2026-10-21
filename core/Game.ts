@@ -70,6 +70,18 @@ export class Game {
     static scale: number;
     /** Multiplies every frame's delta (update() and fixedUpdate() alike) — e.g. pizza's 2x speed toggle (games/pizza/game/utils/GameClock.ts). 1 = real time. */
     static timeScale = 1;
+    /**
+     * Draw only every Nth frame (UI and ThreeScene alike) — logic still runs every frame. 1 = every
+     * frame. For headless playtests (pizza's ?render=N): drawing is most of a frame's cost there, and
+     * cheaper frames mean smaller game-time steps at high timeScale.
+     */
+    static renderEvery = 1;
+    private static frameIndex = 0;
+
+    /** Whether this frame draws — see renderEvery. */
+    static shouldRender(): boolean {
+        return Game.renderEvery <= 1 || Game.frameIndex % Game.renderEvery === 0;
+    }
 
     private static extractDebugParams() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -193,6 +205,10 @@ export class Game {
         const now = performance.now();
         const deltaMS = now - this.lastTime;
         this.lastTime = now;
+
+        Game.frameIndex++;
+        // PIXI draws the stage on its own ticker right after this — skip it on non-render frames.
+        this.app.stage.renderable = Game.shouldRender();
 
         const deltaSeconds = (deltaMS / 1000) * Game.timeScale;
         Game.deltaTime = deltaSeconds;
