@@ -338,8 +338,9 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         // The map's "clientPoint" for the cashier (if drawn) is where the front client pays — see StoreLine.ts.
         this.cashierLine = new StoreLine<StoreClient>(layout.cashier, center, config.spotSpacing, config.spotMargin, config.cashierSpotDirection, layout.cashierClientPoint);
 
-        // Farm plots too — restocker workers walk there (see StoreRestockerWorker.ts).
-        const covered = [layout.area, layout.entrance, layout.exit, ...farmRects].map(rectBounds);
+        // Farm plots too — restocker workers walk there (see StoreRestockerWorker.ts) — and the store's
+        // sections, which may reach past the store's own rect (e.g. the kitchen room).
+        const covered = [layout.area, layout.entrance, layout.exit, ...farmRects, ...sections.filter(section => section.storeId === layout.id).map(section => section.placement)].map(rectBounds);
         this.navBounds = {
             minX: Math.min(...covered.map(b => b.minX)) - NAV_BOUNDS_MARGIN,
             minZ: Math.min(...covered.map(b => b.minZ)) - NAV_BOUNDS_MARGIN,
@@ -1376,11 +1377,12 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
 
     // ---- Kitchen (bakers — see StoreBakerWorker.ts)
 
-    /** See StoreBakerHost.getKitchenStations() — built mix stations whose making area is inside this store. */
+    /** See StoreBakerHost.getKitchenStations() — built mix stations whose making area is inside this store: its rect, or one of its own sections (a kitchen room may reach past the rect). */
     public getKitchenStations(): MixStation[] {
         return [...MixStation.getAll()].filter(station => {
             const point = station.getMakingPoint();
-            return rectContains(this.layout.area, point.x, point.z);
+            return rectContains(this.layout.area, point.x, point.z)
+                || this.sections.some(section => section.storeId === this.layout.id && isInStoreSection(section, point.x, point.z));
         });
     }
 
@@ -1706,6 +1708,8 @@ function shuffle<T>(items: T[]): T[] {
 /** A store section's id (its building id) and area — see Store.sections. */
 export interface StoreSectionArea {
     id: string;
+    /** The store it belongs to (its `target`) — every store gets every section (unbuilt ones block walking), but only its own extend its area. */
+    storeId?: string;
     /** Bounding box — see StoreSectionPlacement. */
     placement: StoreRect;
     /** Exact polygon area, when drawn as one — isInStoreSection() tests it. */
@@ -1754,6 +1758,9 @@ export function spawnStores(deps: SpawnStoresDeps): Store[] {
         }
         for (const [id] of deps.worldObjects.getAllOfType('mixStation')) {
             farmRects.push(...deps.worldObjects.getPartsFor(id, 'dispenser'), ...deps.worldObjects.getPartsFor(id, 'collectArea'));
+            // Bakers (StoreBakerWorker.ts) stand in the making area and fill the ingredient boxes.
+            const makingArea = deps.worldObjects.getDropperFor(id);
+            farmRects.push(...deps.worldObjects.getPartsFor(id, 'storage'), ...(makingArea ? [makingArea] : []));
         }
 
         // Every trash storage on the map (stores never sell from one — see above) — where cleaners throw garbage.
@@ -1772,7 +1779,7 @@ export function spawnStores(deps: SpawnStoresDeps): Store[] {
             });
         }
 
-        const sections: StoreSectionArea[] = deps.worldObjects.getStoreSections().map(section => ({ id: section.id, placement: section.placement, shape: section.shape }));
+        const sections: StoreSectionArea[] = deps.worldObjects.getStoreSections().map(section => ({ id: section.id, storeId: section.storeId, placement: section.placement, shape: section.shape }));
 
         const root = new THREE.Group();
         root.name = `store:${layout.id}`;

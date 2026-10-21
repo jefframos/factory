@@ -30,3 +30,6 @@ cachedBuilds/.tmp/
 
 # Env vars
 .env*
+
+# Playtest runs (npm run playtest) — screenshots + reports per run
+games/pizza/reports/playtests/

@@ -92,8 +92,12 @@ export interface MixStationInputNeed {
     position: THREE.Vector3;
 }
 
-/** How long one operate() call keeps the station mixing — a worker calls it every frame it stands there. */
-const OPERATOR_HOLD_SEC = 0.25;
+/**
+ * How many frames one operate() call keeps the station mixing — a worker calls it every frame it stands
+ * there. Frames, not seconds: at high game speed one frame can be longer than any fixed hold, which
+ * used to expire it before update() ever saw it. 2 covers either update order (worker before/after us).
+ */
+const OPERATOR_HOLD_FRAMES = 2;
 
 /** One ingredient box — its StorageInventory id, where it stands (world, kept on the surface under it) and its StorageZone. */
 export interface MixStationBox {
@@ -150,7 +154,7 @@ export default class MixStation extends Entity {
 
     private player?: MainPlayer;
     /** > 0 while a worker is operating it (operate()) — counts like the player standing in the making area. */
-    private operatorHoldSec = 0;
+    private operatorHoldFrames = 0;
     private progress = 0;
     /** Batches finished since spawn — read by the playtest bot (getPlaytestState()). */
     private batchesMade = 0;
@@ -254,7 +258,7 @@ export default class MixStation extends Entity {
             madeByWorker: this.batchesByWorker,
             output: this.output.getFillCount(),
             maxOutput: this.config.maxOutput,
-            mixing: this.canMix() && (this.player !== undefined || this.operatorHoldSec > 0),
+            mixing: this.canMix() && (this.player !== undefined || this.operatorHoldFrames > 0),
             boxes: this.getInputNeeds().map(need => ({ type: need.resourceType, count: need.count, capacity: need.capacity })),
         };
     }
@@ -313,7 +317,7 @@ export default class MixStation extends Entity {
 
     /** A worker standing in the making area — call every frame; mixing runs while it keeps calling. */
     public operate(): void {
-        this.operatorHoldSec = OPERATOR_HOLD_SEC;
+        this.operatorHoldFrames = OPERATOR_HOLD_FRAMES;
     }
 
     /** What the playtest bot (playtest/PlaytestBot.ts) needs: where to stand to make, whether a batch can start, and each ingredient box. */
@@ -338,8 +342,9 @@ export default class MixStation extends Entity {
         this.glideToSurfaces(delta);
 
         const ready = this.canMix();
-        this.operatorHoldSec = Math.max(0, this.operatorHoldSec - delta);
-        const making = ready && (this.player !== undefined || this.operatorHoldSec > 0);
+        const operated = this.operatorHoldFrames > 0;
+        this.operatorHoldFrames = Math.max(0, this.operatorHoldFrames - 1);
+        const making = ready && (this.player !== undefined || operated);
         if (!ready) {
             this.progress = 0;
         } else if (making) {

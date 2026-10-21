@@ -105,6 +105,8 @@ export default class PlaytestSession {
     private stopButton?: HTMLButtonElement;
     private freeCamButton?: HTMLButtonElement;
     private readonly speedButtons = new Map<number, HTMLButtonElement>();
+    /** Set when the run ends — what __pizzaPlaytest.result() hands the headless runner. */
+    private result?: { text: string; data: PlaytestData };
 
     private constructor(
         private readonly host: PlaytestHost,
@@ -123,6 +125,18 @@ export default class PlaytestSession {
                 return buildPlaytestReportText(snapshot, analyzePlaytest(snapshot));
             },
             stop: () => this.end('stopped'),
+            /** For the headless runner (tools/playtest/run-playtest.mjs) — polled every couple of seconds. */
+            state: () => ({
+                ended: this.ended,
+                endReason: this.result?.data.endReason,
+                gameTimeSec: this.recorder.gameTimeSec,
+                speed: GameClock.getSpeed(),
+                money: EconomyStorage.getBalance(CurrencyType.Money),
+                levels: Object.fromEntries(this.host.getStores().map(store => [store.getId(), StoreProgressStorage.getLevel(store.getId())])),
+                doing: this.bot?.getGoalLabel() ?? '',
+            }),
+            /** The finished run's text report and raw data — undefined until it ends. */
+            result: () => this.result,
         };
         console.log(`[Playtest] ${style ? `bot (${style}) at ${speed}x for ${minutes} game min` : 'recording a human session'} — window.__pizzaPlaytest.report() to finish early`);
     }
@@ -338,6 +352,7 @@ export default class PlaytestSession {
         const bar = document.createElement('div');
         bar.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
         const text = buildPlaytestReportText(data, analysis);
+        this.result = { text, data };
         const copyButton = this.button('Copy report (text)', () => {
             void copyToClipboard(text).then(ok => {
                 copyButton.textContent = ok ? `Copied (${Math.round(text.length / 1000)}k chars)` : 'Copy failed — see console';
