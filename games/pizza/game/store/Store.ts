@@ -1404,6 +1404,11 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         return bakers.length > 0 || stations.length > 0 ? { bakers, stations } : undefined;
     }
 
+    /** See StoreBakerHost.getShelfStock() — every available shelf of this store. */
+    public getShelfStock(type: ResourceType): number {
+        return this.getAvailableStorages().reduce((sum, storage) => sum + StorageInventory.getCount(storage.id, type), 0);
+    }
+
     public getBakerStats(level: number): { moveSpeed: number; carryCapacity: number } {
         return getBakerLevelStats(this.config, level);
     }

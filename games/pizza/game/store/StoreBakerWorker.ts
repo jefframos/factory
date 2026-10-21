@@ -31,6 +31,7 @@ import CarrierStackVisual, { stackItemScale } from '../components/CarrierStackVi
 import { getPileScale } from '../components/ItemPile';
 import { flyResourceModel } from '../components/FlyToStack';
 import { getPlayerConfig } from '../data/PlayerConfig';
+import { STORAGE_STOCK_CAP } from '../data/StorageCapacity';
 import { ResourceType } from '../actions/ResourceTypes';
 import type { NpcBodyOptions } from '../world/NpcBodyLoader';
 
@@ -54,6 +55,8 @@ export interface StoreBakerHost extends StoreWorkerNavHost {
     /** Middle of the kitchen — where it idles. */
     getKitchenHome(): THREE.Vector3;
     getBakerStats(level: number): { moveSpeed: number; carryCapacity: number };
+    /** Units of `type` on the store's shelves right now. */
+    getShelfStock(type: ResourceType): number;
     /** True if no OTHER baker is on `station` — claimed for `worker` (replacing its previous station). */
     claimStation(worker: StoreBakerWorker, station: MixStation): boolean;
     /** The nearest unclaimed place holding `type` — a store shelf or a restock source — claimed for `worker`. */
@@ -266,26 +269,26 @@ export default class StoreBakerWorker extends StoreWorker {
         }
     }
 
-    /** Something on its back that a box has room for -> take it there. */
+    /** Something on its back that a box has room for -> take it there: the station closest to a full batch first (same rule as startFetching()), then the nearest. */
     private startDelivery(): boolean {
-        let best: BoxTarget | undefined;
-        let bestDistance = Infinity;
+        let best: { target: BoxTarget; missing: number; distance: number } | undefined;
         for (const station of this.host.getKitchenStations()) {
-            for (const need of station.getInputNeeds()) {
+            const needs = station.getInputNeeds();
+            const missing = needs.reduce((sum, need) => sum + Math.max(0, need.batch - need.count), 0);
+            for (const need of needs) {
                 if ((this.carried.get(need.resourceType) ?? 0) <= 0 || need.count >= need.capacity) {
                     continue;
                 }
                 const distance = need.position.distanceToSquared(this.transform.position);
-                if (distance < bestDistance) {
-                    best = this.boxTarget(station, need);
-                    bestDistance = distance;
+                if (!best || missing < best.missing || (missing === best.missing && distance < best.distance)) {
+                    best = { target: this.boxTarget(station, need), missing, distance };
                 }
             }
         }
         if (!best) {
             return false;
         }
-        this.box = best;
+        this.box = best.target;
         this.setState('toBox');
         return true;
     }
@@ -305,28 +308,40 @@ export default class StoreBakerWorker extends StoreWorker {
     }
 
     /**
-     * A box short of its ingredient at a station whose product box has room -> fetch some. Boxes
-     * that block a batch (below one batch) first, then the emptiest; only types with a ready
-     * source, and only as many as fit on its back and in the box.
+     * A box short of its ingredient at a station whose product is wanted -> fetch some. Order:
+     *   1. boxes below one batch (they block mixing) before top-ups;
+     *   2. the station closest to a full batch — its other boxes already hold theirs (a bread station
+     *      with its eggs in gets the next milk instead of the butter station eating every milk);
+     *   3. the station whose product is scarcest (shelves + product box);
+     *   4. the emptiest box.
+     * Skips stations whose product is already stocked to the shelf cap (STORAGE_STOCK_CAP) — no
+     * point using shared ingredients on it. Only types with a ready source, and only as many as fit
+     * on its back and in the box.
      */
     private startFetching(): boolean {
         const room = this.carryCapacity - this.totalCarried();
         if (room <= 0) {
             return false;
         }
-        const candidates: { station: MixStation; need: MixStationInputNeed }[] = [];
+        const candidates: { station: MixStation; need: MixStationInputNeed; missing: number; stock: number }[] = [];
         for (const station of this.host.getKitchenStations()) {
-            if (!station.hasOutputRoom()) {
+            const stock = this.host.getShelfStock(station.getProduct()) + station.getOutputCount();
+            if (!station.hasOutputRoom() || stock >= STORAGE_STOCK_CAP) {
                 continue;
             }
-            for (const need of station.getInputNeeds()) {
+            const needs = station.getInputNeeds();
+            // Units still missing before this station can mix one batch.
+            const missing = needs.reduce((sum, need) => sum + Math.max(0, need.batch - need.count), 0);
+            for (const need of needs) {
                 if (need.count < need.capacity) {
-                    candidates.push({ station, need });
+                    candidates.push({ station, need, missing, stock });
                 }
             }
         }
         candidates.sort((a, b) =>
             Number(a.need.count >= a.need.batch) - Number(b.need.count >= b.need.batch)
+            || a.missing - b.missing
+            || a.stock - b.stock
             || a.need.count / a.need.capacity - b.need.count / b.need.capacity);
         for (const { station, need } of candidates) {
             const source = this.host.claimIngredientSource(this, need.resourceType, this.transform.position);

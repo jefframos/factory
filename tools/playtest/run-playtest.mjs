@@ -15,7 +15,8 @@
 //   --minutes N         game-minute limit (default 40; the run also ends at the demo end / a stall)
 //   --style S           'efficient' (default) or 'casual'
 //   --keep-save         don't wipe the save first (headless always starts from an empty profile anyway)
-//   --url U             base URL of a running dev server; default: start one on a free port
+//   --url U             base URL of a running dev server; default: start one on a free port (no live
+//                       reload, no browser tab — your own server WILL reload the run if a file changes)
 //   --timeout N         real minutes before the run is cut and reported anyway (default 30)
 //   --shots N           screenshot every N real seconds (default 60; 0 = only level-ups + the end)
 //   --label L           added to the output folder name
@@ -133,6 +134,8 @@ try {
     let lastShot = Date.now();
     let lastLevelKey = levelKey(state);
     let timedOut = false;
+    let reloads = 0;
+    let lastGameSec = state?.gameTimeSec ?? 0;
     while (!(state?.ended && (await page.evaluate(() => !!window.__pizzaPlaytest?.result())))) {
         if (Date.now() - startMs > timeoutMs) {
             timedOut = true;
@@ -146,6 +149,13 @@ try {
         if (!state) {
             continue;
         }
+        // Game time went back = the page reloaded (a dev server with live reload saw a file change)
+        // and the run restarted from scratch — the report only covers the last stretch.
+        if (state.gameTimeSec + 5 < lastGameSec) {
+            reloads++;
+            console.log(`[playtest] WARNING: the page reloaded at game ${clock(lastGameSec)} — the run restarted (live reload on --url servers? use the runner's own server)`);
+        }
+        lastGameSec = state.gameTimeSec;
         if (Date.now() - lastProgress > PROGRESS_EVERY_MS) {
             lastProgress = Date.now();
             console.log(`[playtest] ${clock((Date.now() - startMs) / 1000)} real · game ${clock(state.gameTimeSec)} · ${levelKey(state)} · $${Math.round(state.money)} · ${state.doing}`);
@@ -172,6 +182,7 @@ try {
         '## Runner',
         `- ${headed ? 'headed' : 'headless'} · ${url}`,
         `- real time ${clock(realSec)} · game time ${clock(result.data.durationSec)} · achieved ${(result.data.durationSec / Math.max(1, realSec)).toFixed(1)}x (asked ${speed}x)${timedOut ? ' · CUT by the real-time limit' : ''}`,
+        ...(reloads > 0 ? [`- WARNING: the page reloaded ${reloads}x mid-run — this report only covers the run after the last reload`] : []),
         `- browser console errors (boot included): ${consoleLines.length === 0 ? 'none' : `${consoleLines.length} — see console.log`}`,
         ...summarizeConsole(consoleLines),
     ].join('\n');
@@ -204,7 +215,12 @@ try {
 async function startVite() {
     const port = await freePort(9100);
     const viteBin = path.join(ROOT, 'node_modules', 'vite', 'bin', 'vite.js');
-    vite = spawn(process.execPath, [viteBin, '--port', String(port), '--strictPort'], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
+    // PLAYTEST_SERVER: no browser tab, no live reload (see vite.config.ts) — editing files mid-run is safe.
+    vite = spawn(process.execPath, [viteBin, '--port', String(port), '--strictPort'], {
+        cwd: ROOT,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, PLAYTEST_SERVER: '1' },
+    });
     let output = '';
     return new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error(`vite didn't start within ${VITE_READY_TIMEOUT_MS / 1000}s:\n${output.slice(-2000)}`)), VITE_READY_TIMEOUT_MS);

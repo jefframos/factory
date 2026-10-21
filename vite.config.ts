@@ -81,11 +81,16 @@ export default defineConfig({
             input: resolve(__dirname, `games/${GAME}/index.html`),
         },
     },
-    server: {
-        host: '0.0.0.0',
-        port: 9001,
-        open: true,
-    }
+    // PLAYTEST_SERVER is set by tools/playtest/run-playtest.mjs for the dev server it starts: no
+    // browser tab, and no live reload — a file saved mid-run would reload the page and restart the
+    // run (its URL has &fresh).
+    server: process.env.PLAYTEST_SERVER
+        ? { host: '127.0.0.1', open: false, hmr: false, watch: { ignored: ['**/*'] } }
+        : {
+            host: '0.0.0.0',
+            port: 9001,
+            open: true,
+        },
 });
 
 

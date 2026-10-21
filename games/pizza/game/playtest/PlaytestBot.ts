@@ -16,6 +16,7 @@
 //   55  buy the cheapest affordable thing for sale (storage, farm, building level, station)
 //   52  hire staff at the hire desk (cashier -> restocker -> cleaner)
 //   46+ deliver what a shelf is short of; 47 anything else a shelf takes (56 once the stack is full)
+//   50  upgrade staff / farms / animals with spare money, cheapest first (25 when a purchase needs the money)
 //   40+ gather resources (wood, stone) the next purchase needs — +5 per minute it waits, max 58
 //   42+ harvest/collect what clients are waiting for (34: just topping up the shelf buffer)
 //   43  make at a mix station whose product is short
@@ -45,6 +46,9 @@ import StoragePurchaseZone from '../store/StoragePurchaseZone';
 import FarmZone from '../world/FarmZone';
 import BuildingZone from '../player/BuildingZone';
 import HireDeskZone from '../store/HireDeskZone';
+import FarmDeskZone from '../world/FarmDeskZone';
+import { cheapestFarmUpgrade, upgradeFarm } from '../ui/popups/FarmUpgradesPopup';
+import { cheapestAnimalUpgrade, upgradeAnimalStall } from '../ui/popups/AnimalUpgradesPopup';
 import MixStation from '../world/MixStation';
 import ShopZone from '../shop/ShopZone';
 import { UpgradeMenu } from '../shop/UpgradeMenu';
@@ -144,6 +148,8 @@ const STYLES: Record<BotStyle, StylePreset> = {
 
 /** A new goal must beat the current one by this much to interrupt it. */
 const PREEMPT_MARGIN = 10;
+/** A staff upgrade bought with spare money — above gathering (40+) and shelf top-ups, below buying (55) and urgent restocks. */
+const UPGRADE_SPARE_PRIORITY = 50;
 const WAYPOINT_REACHED = 0.4;
 const REPLAN_SEC = 3;
 const STUCK_CHECK_SEC = 1.5;
@@ -178,6 +184,7 @@ interface Scan {
     buildingZones: BuildingZone[];
     hireDesks: HireDeskZone[];
     mixStations: MixStation[];
+    farmDesks: FarmDeskZone[];
     shops: ShopZone[];
 }
 
@@ -218,7 +225,7 @@ export default class PlaytestBot {
     private notificationSinceMs?: number;
     private popupSinceMs?: number;
     private distractedUntilSec = 0;
-    private scan: Scan = { storageZones: [], purchaseZones: [], farmZones: [], buildingZones: [], hireDesks: [], mixStations: [], shops: [] };
+    private scan: Scan = { storageZones: [], purchaseZones: [], farmZones: [], buildingZones: [], hireDesks: [], mixStations: [], farmDesks: [], shops: [] };
     /** Issue kinds already logged per target — so a tree the bot keeps failing on logs once, not every retry. */
     private readonly loggedIssues = new Set<string>();
     private readonly scratch = new THREE.Vector3();
@@ -428,7 +435,7 @@ export default class PlaytestBot {
             add(goal);
         }
         add(this.resourceForPurchaseGoal(purchases));
-        add(this.upgradeWorkerGoal(stores.map(entry => entry.store)));
+        add(this.upgradeGoal(stores.map(entry => entry.store), purchases));
         add(this.idleGoal(stores.map(entry => entry.snapshot), purchases));
 
         if (candidates.length === 0) {
@@ -712,8 +719,21 @@ export default class PlaytestBot {
         };
     }
 
-    private upgradeWorkerGoal(stores: Store[]): BotGoal | undefined {
+    /**
+     * The cheapest affordable upgrade sold at a desk: staff (hire desk), farms (farm manager) or
+     * animals (animal keeper — one more animal per level). With spare money (still enough after it for
+     * the priciest thing for sale) it's UPGRADE_SPARE_PRIORITY — purchases usually wait on wood/stone,
+     * not money, so at a flat 25 the bot never upgraded anything while money piled up.
+     */
+    private upgradeGoal(stores: Store[], purchases: Purchase[]): BotGoal | undefined {
         const wallet = EconomyStorage.getBalance(CurrencyType.Money);
+        const reserve = Math.max(0, ...purchases.map(purchase => purchase.money));
+        let best: { key: string; kind: string; detail: string; cost: number; desk: Entity; buy: () => void } | undefined;
+        const offer = (candidate: NonNullable<typeof best>): void => {
+            if (candidate.cost <= wallet && (!best || candidate.cost < best.cost)) {
+                best = candidate;
+            }
+        };
         for (const store of stores) {
             const desk = this.scan.hireDesks.find(d => d.getStoreId() === store.getId());
             if (!desk) {
@@ -722,24 +742,37 @@ export default class PlaytestBot {
             const config = getStoreConfig(store.getId());
             for (const worker of StoreWorkerStorage.getRoster(store.getId()) ?? []) {
                 const next = getNextWorkerUpgrade(config, worker.role, worker.level ?? 1);
-                if (!next || next.cost > wallet) {
-                    continue;
+                if (next) {
+                    offer({ key: `upgrade:${worker.id}:${next.level}`, kind: 'upgrade staff', detail: `${worker.id} -> Lv ${next.level}`, cost: next.cost, desk,
+                        buy: () => upgradeStoreWorker(store.getId(), worker.id) });
                 }
-                const target = this.zoneTarget(desk);
-                let done = false;
-                return {
-                    key: `upgrade:${worker.id}:${next.level}`, kind: 'upgrade staff', detail: `${worker.id} -> Lv ${next.level} for ${next.cost}`, priority: 25,
-                    point: target.point, radius: target.radius, timeoutSec: 60, stay: true,
-                    isDone: () => done,
-                    // One try either way — a failed upgrade (money spent meanwhile) is re-picked next think.
-                    onArrive: () => {
-                        upgradeStoreWorker(store.getId(), worker.id);
-                        done = true;
-                    },
-                };
             }
         }
-        return undefined;
+        for (const desk of this.scan.farmDesks) {
+            const animals = desk.getKind() === 'animals';
+            const next = animals ? cheapestAnimalUpgrade(desk.getIds()) : cheapestFarmUpgrade(desk.getIds());
+            if (next) {
+                offer({ key: `upgrade:${next.id}:${next.level}`, kind: animals ? 'upgrade animals' : 'upgrade farm', detail: `${next.id} -> Lv ${next.level}`, cost: next.cost, desk,
+                    buy: () => (animals ? upgradeAnimalStall(next.id) : upgradeFarm(next.id)) });
+            }
+        }
+        if (!best) {
+            return undefined;
+        }
+        const chosen: NonNullable<typeof best> = best;
+        const target = this.zoneTarget(chosen.desk);
+        let done = false;
+        return {
+            key: chosen.key, kind: chosen.kind, detail: `${chosen.detail} for ${chosen.cost}`,
+            priority: wallet - chosen.cost >= reserve ? UPGRADE_SPARE_PRIORITY : 25,
+            point: target.point, radius: target.radius, timeoutSec: 60, stay: true,
+            isDone: () => done,
+            // One try either way — a failed upgrade (money spent meanwhile) is re-picked next think.
+            onArrive: () => {
+                chosen.buy();
+                done = true;
+            },
+        };
     }
 
     /** Harvest / collect what's short, and deliver what's carried — see this file's own doc. */
@@ -1342,7 +1375,7 @@ export default class PlaytestBot {
     // ---- Helpers
 
     private scanWorld(): void {
-        const scan: Scan = { storageZones: [], purchaseZones: [], farmZones: [], buildingZones: [], hireDesks: [], mixStations: [], shops: [] };
+        const scan: Scan = { storageZones: [], purchaseZones: [], farmZones: [], buildingZones: [], hireDesks: [], mixStations: [], farmDesks: [], shops: [] };
         this.host.world.forEachEntity(entity => {
             if (entity instanceof StorageZone) {
                 scan.storageZones.push(entity);
@@ -1354,6 +1387,8 @@ export default class PlaytestBot {
                 scan.buildingZones.push(entity);
             } else if (entity instanceof HireDeskZone) {
                 scan.hireDesks.push(entity);
+            } else if (entity instanceof FarmDeskZone) {
+                scan.farmDesks.push(entity);
             } else if (entity instanceof MixStation) {
                 scan.mixStations.push(entity);
             } else if (entity instanceof ShopZone) {

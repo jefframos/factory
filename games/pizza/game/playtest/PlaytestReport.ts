@@ -17,6 +17,8 @@ const CHART_H = 180;
 const SMALL_W = 360;
 const SMALL_H = 120;
 const PAD = { left: 40, right: 12, top: 10, bottom: 22 };
+/** Events listed in the "Purchases, hires & levels" table (HTML and text). */
+const PURCHASE_EVENTS = ['storageBought', 'farmBought', 'built', 'workerHired', 'workerUpgraded', 'farmUpgraded', 'animalStallUpgraded', 'shopUpgradeBought', 'storeLevelReached', 'tutorialComplete', 'demoEnded'];
 
 interface Series {
     name: string;
@@ -102,7 +104,7 @@ ${table('For sale & what blocked it', ['Item', 'First for sale', 'Waited', 'Boug
 ${table('Clients paid by mood', ['Mood', 'Clients'], Object.entries(s.paidByMood).map(([m, n]) => [m, `${n}`]))}
 ${table('Idle stretches (45 s+)', ['From', 'Length', 'Why'], analysis.idleSpans.map(i => [clock(i.start), clock(i.end - i.start), i.reason]))}
 ${table('Issues the bot ran into', ['At', 'Kind', 'Detail'], data.issues.map(i => [clock(i.t), i.kind, i.detail]))}
-${table('Purchases, hires & levels', ['At', 'Event', 'Details'], data.events.filter(e => ['storageBought', 'farmBought', 'built', 'workerHired', 'workerUpgraded', 'storeLevelReached', 'tutorialComplete', 'demoEnded'].includes(e.name)).map(e => [clock(e.t), e.name, e.args.join(' ')]))}
+${table('Purchases, hires & levels', ['At', 'Event', 'Details'], data.events.filter(e => PURCHASE_EVENTS.includes(e.name)).map(e => [clock(e.t), e.name, e.args.join(' ')]))}
 <details><summary>Activity log (${data.activities.length})</summary>
 ${table('', ['Start', 'Length', 'Activity', 'Detail', 'Outcome'], data.activities.map(a => [clock(a.start), clock((a.end ?? s.durationSec) - a.start), a.kind, a.detail, a.outcome ?? '']))}
 </details>
@@ -365,7 +367,7 @@ export function buildPlaytestReportText(data: PlaytestData, analysis: Analysis):
     textTable(out, 'Time spent', ['Activity', 'Time', '%'], analysis.activity.map(a => [a.kind, clock(a.sec), `${a.pct.toFixed(0)}%`]));
     textTable(out, 'Idle stretches (45 s+)', ['From', 'Length', 'Why'], analysis.idleSpans.map(i => [clock(i.start), clock(i.end - i.start), i.reason]));
     textTable(out, 'Purchases, hires & levels', ['At', 'Event', 'Details'],
-        data.events.filter(e => ['storageBought', 'farmBought', 'built', 'workerHired', 'workerUpgraded', 'storeLevelReached', 'tutorialComplete', 'demoEnded'].includes(e.name))
+        data.events.filter(e => PURCHASE_EVENTS.includes(e.name))
             .map(e => [clock(e.t), e.name, e.args.join(' ')]));
     textTable(out, 'Issues the bot ran into', ['At', 'Kind', 'Detail'], data.issues.map(i => [clock(i.t), i.kind, i.detail]));
     if (Object.keys(data.strayPickups ?? {}).length > 0) {

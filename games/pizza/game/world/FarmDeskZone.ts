@@ -138,4 +138,13 @@ export default class FarmDeskZone extends Entity {
     private isAnimals(): boolean {
         return this.config.kind === 'animals';
     }
+
+    /** For the playtest bot: what this desk sells upgrades for, and for which ids (owned or not). */
+    public getKind(): 'farms' | 'animals' {
+        return this.isAnimals() ? 'animals' : 'farms';
+    }
+
+    public getIds(): readonly string[] {
+        return this.ids;
+    }
 }

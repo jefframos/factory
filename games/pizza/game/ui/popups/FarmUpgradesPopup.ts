@@ -40,6 +40,30 @@ const CROP_ICON_GAP = 10;
 const MONEY_ICON_SIZE = 18;
 
 /** True when some owned farm in `farmIds` has an upgrade the player can pay for right now — FarmDeskZone's button badge. */
+/** The cheapest next level among the owned farms of `farmIds` — for the playtest bot. Undefined when all are maxed / none owned. */
+export function cheapestFarmUpgrade(farmIds: readonly string[]): { id: string; level: number; cost: number } | undefined {
+    let best: { id: string; level: number; cost: number } | undefined;
+    for (const farmId of farmIds.filter(id => FarmPlotStorage.isOwned(id))) {
+        const next = getNextFarmUpgrade(farmId, FarmUpgradeStorage.getLevel(farmId));
+        if (next && (!best || next.cost < best.cost)) {
+            best = { id: farmId, level: next.level, cost: next.cost };
+        }
+    }
+    return best;
+}
+
+/** Buys farm `farmId`'s next level if affordable. The popup's Upgrade button and the playtest bot both go through here. */
+export function upgradeFarm(farmId: string): boolean {
+    // Re-read the saved level — a popup row may be a frame stale.
+    const next = getNextFarmUpgrade(farmId, FarmUpgradeStorage.getLevel(farmId));
+    if (!next || !EconomyStorage.spend(CurrencyType.Money, next.cost)) {
+        return false;
+    }
+    FarmUpgradeStorage.setLevel(farmId, next.level);
+    GameAnalytics.farmUpgraded(farmId, next.level);
+    return true;
+}
+
 export function canAffordAnyFarmUpgrade(farmIds: readonly string[]): boolean {
     const money = EconomyStorage.getBalance(CurrencyType.Money);
     return farmIds.some(farmId => {
@@ -103,13 +127,7 @@ export default class FarmUpgradesPopup extends Popup {
     }
 
     private upgrade(farmId: string): void {
-        // Re-read the saved level — the row may be a frame stale.
-        const next = getNextFarmUpgrade(farmId, FarmUpgradeStorage.getLevel(farmId));
-        if (!next || !EconomyStorage.spend(CurrencyType.Money, next.cost)) {
-            return;
-        }
-        FarmUpgradeStorage.setLevel(farmId, next.level);
-        GameAnalytics.farmUpgraded(farmId, next.level);
+        upgradeFarm(farmId);
     }
 
     /** "+40% price · x1.5 speed · +1 per harvest" — what `level` gives (or "No bonus yet" at level 1). */

@@ -41,6 +41,29 @@ function isStallOwned(stallId: string): boolean {
 }
 
 /** True when some owned stall in `stallIds` has an upgrade the player can pay for right now — the desk button's badge. */
+/** The cheapest next level among the owned stalls of `stallIds` — for the playtest bot. Undefined when all are maxed / none owned. */
+export function cheapestAnimalUpgrade(stallIds: readonly string[]): { id: string; level: number; cost: number } | undefined {
+    let best: { id: string; level: number; cost: number } | undefined;
+    for (const stallId of stallIds.filter(isStallOwned)) {
+        const next = getNextAnimalStallUpgrade(stallId, AnimalStallUpgradeStorage.getLevel(stallId));
+        if (next && (!best || next.cost < best.cost)) {
+            best = { id: stallId, level: next.level, cost: next.cost };
+        }
+    }
+    return best;
+}
+
+/** Buys stall `stallId`'s next level (one more animal) if affordable. The popup's Upgrade button and the playtest bot both go through here. */
+export function upgradeAnimalStall(stallId: string): boolean {
+    const next = getNextAnimalStallUpgrade(stallId, AnimalStallUpgradeStorage.getLevel(stallId));
+    if (!next || !EconomyStorage.spend(CurrencyType.Money, next.cost)) {
+        return false;
+    }
+    AnimalStallUpgradeStorage.setLevel(stallId, next.level);
+    GameAnalytics.animalStallUpgraded(stallId, next.level);
+    return true;
+}
+
 export function canAffordAnyAnimalUpgrade(stallIds: readonly string[]): boolean {
     const money = EconomyStorage.getBalance(CurrencyType.Money);
     return stallIds.some(stallId => {
@@ -104,12 +127,7 @@ export default class AnimalUpgradesPopup extends Popup {
     }
 
     private upgrade(stallId: string): void {
-        const next = getNextAnimalStallUpgrade(stallId, AnimalStallUpgradeStorage.getLevel(stallId));
-        if (!next || !EconomyStorage.spend(CurrencyType.Money, next.cost)) {
-            return;
-        }
-        AnimalStallUpgradeStorage.setLevel(stallId, next.level);
-        GameAnalytics.animalStallUpgraded(stallId, next.level);
+        upgradeAnimalStall(stallId);
     }
 
     private renderRow(index: number, stallId: string): void {

@@ -279,6 +279,11 @@ export default class MixStation extends Entity {
         return this.hasIngredients() && this.hasOutputRoom();
     }
 
+    /** Products waiting in the product box (in flight included). */
+    public getOutputCount(): number {
+        return this.output.getFillCount();
+    }
+
     /** The product box can take one more batch. */
     public hasOutputRoom(): boolean {
         return this.output.getFillCount() + this.config.outputAmount <= this.config.maxOutput;

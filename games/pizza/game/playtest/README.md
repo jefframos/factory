@@ -70,9 +70,10 @@ entities (`StorageZone`, `StoragePurchaseZone`, `FarmZone`, `BuildingZone`, `Hir
 It does: follow the zone tutorials; restock by demand (farms, egg/milk boxes, mix-station products);
 serve at the cashier; collect money; buy every storage/farm/building level/station as soon as it's
 affordable (cheapest first); chop/mine for resource costs; carry garbage to the trash; hire
-cashier -> 2 restockers -> cleaner -> baker (once a mix station is built); upgrade staff with spare money.
+cashier -> 2 restockers -> cleaner -> baker (once a mix station is built); spend spare money (what's left
+after the priciest thing for sale) on the cheapest staff / farm-manager / animal-keeper upgrade.
 
-It doesn't (yet): farm-manager / animal-keeper upgrades, the mart, crafting-table popups, gates
+It doesn't (yet): the mart, crafting-table popups, gates
 outside a tutorial step. A goal it can't finish (stuck, unreachable, missing tool, nothing happening
 in a zone) is dropped for 25 s and logged under **Reachability** in the report — those are often
 real problems too.
