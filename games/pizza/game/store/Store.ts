@@ -1743,7 +1743,8 @@ export function spawnStores(deps: SpawnStoresDeps): Store[] {
         const storages: StoreStorageSource[] = [];
         for (const [id, placement] of deps.worldObjects.getAllOfType('storage')) {
             const storageConfig = getStorageConfig(id);
-            if (!storageConfig.disabled && !storageConfig.trash && rectContains(layout.area, placement.x, placement.z)) {
+            // A pantry (the diner fridge) is kitchen supply, never a shelf clients buy from.
+            if (!storageConfig.disabled && !storageConfig.trash && !storageConfig.pantry && rectContains(layout.area, placement.x, placement.z)) {
                 storages.push({ id, rect: placement, config: storageConfig, dropRect: deps.worldObjects.getDropperFor(id) });
             }
         }

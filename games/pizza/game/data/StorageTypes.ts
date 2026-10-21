@@ -52,6 +52,14 @@ export interface StorageResourceCost {
     amount: number;
 }
 
+/** StorageConfig.pantry — what a pantry takes and how many of each. */
+export interface StoragePantryConfig {
+    /** The types it takes (objects, so the editor's sync writes ResourceType.X — see StorageResourceCost). */
+    items: { resourceType: ResourceType }[];
+    /** Most units of EACH type it holds. */
+    maxPerType: number;
+}
+
 export interface StorageConfig {
     /** Display name — shown in the web editor. Optional. */
     name?: string;
@@ -195,6 +203,13 @@ export interface StorageConfig {
     shelf?: string;
     /** Holds at most this many items — the player can't drop off more (e.g. a mix station's ingredient spot: one batch). Unset = unlimited. */
     maxItems?: number;
+    /**
+     * A PANTRY (e.g. the diner's fridge): takes only these types, up to `maxPerType` of each, and
+     * shows no pile — its signpost lists what's inside. Mix stations naming it (MixStationConfig.pantryId)
+     * cook straight from it instead of from their own boxes, so it's the one thing to refill. Never a
+     * shop shelf (clients don't buy from it). Unset = a normal storage.
+     */
+    pantry?: StoragePantryConfig;
 }
 
 /**
@@ -640,6 +655,44 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             "layers": 1
         },
         "itemOrientation": "standing",
+        "solid": 1,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 0
+        },
+        "resourceCost": []
+    },
+    "dinerFridge": {
+        "name": "Diner Fridge",
+        "accepts": "farm",
+        "pantry": {
+            "items": [
+                {
+                    "resourceType": ResourceType.Bread
+                },
+                {
+                    "resourceType": ResourceType.Tomato
+                },
+                {
+                    "resourceType": ResourceType.Milk
+                },
+                {
+                    "resourceType": ResourceType.Strawberry
+                }
+            ],
+            "maxPerType": 12
+        },
+        "models": [MODELS.Restaurant.FridgeA],
+        "signpostSide": "south",
+        "signpostFacing": "south",
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 1,
+            "rows": 1,
+            "layers": 1
+        },
         "solid": 1,
         "price": {
             "currency": CurrencyType.Money,

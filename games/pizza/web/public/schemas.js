@@ -681,6 +681,17 @@ const ENTITY_SCHEMAS = {
         { key: 'resourceType', type: 'select', label: 'Only This Resource (e.g. one specific crop — overrides Accepts; blank = anything Accepts allows)', source: 'resources', optional: true },
         { key: 'shelf', type: 'select', label: 'Shelf (draw it as this Shelves-tab shelf: its model, items on its fixed slots, and it holds at most one item per slot — blank = the normal crate + pile)', source: 'shelves', optional: true },
         { key: 'maxItems', type: 'number', label: 'Max Items (holds at most this many — the player can\'t drop off more; blank = a shelf\'s slot count, else unlimited)', optional: true },
+        {
+            key: 'pantry', type: 'group', label: 'Pantry (e.g. the diner fridge: takes only these types, up to Max Per Type of each, shows no pile — its sign lists the contents; mix stations with this as their Pantry cook from it. Never a shop shelf)', optional: true,
+            fields: [
+                {
+                    key: 'items', type: 'list', label: 'Takes',
+                    itemLabel: item => item.resourceType || '?',
+                    fields: [{ key: 'resourceType', type: 'select', label: 'Resource', source: 'resources' }],
+                },
+                { key: 'maxPerType', type: 'number', label: 'Max Per Type (most units of EACH type it holds)' },
+            ],
+        },
         { key: 'collect', type: 'boolean', label: 'Collect (the player TAKES from it instead of dropping off — its items fly onto the player\'s stack while there\'s room; e.g. an animal stall\'s egg box, whose entry here has the stall\'s id)', optional: true },
         { key: 'trash', type: 'boolean', label: 'Trash (takes ONLY garbage — Accepts/Only This Resource are ignored — and destroys it: no pile, no count; signpost shows a trash icon; stores never sell from it)', optional: true },
         { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement (the storage — and its store selling from it — waits for this; e.g. a Tutorial Step; blank = right away)', optional: true },
@@ -1019,6 +1030,8 @@ const ENTITY_SCHEMAS = {
         { key: 'surfaceHeight', type: 'number', label: 'Surface Height (world units — the station\'s top, where ingredients and the product sit)' },
         { key: 'boxModels', type: 'modelList', label: 'Ingredient Box Model (first entry used — sits on the station\'s top at each "storage" spot; empty = no box)', optional: true },
         { key: 'boxScale', type: 'number', label: 'Box Scale (x the box model\'s own size — Restaurant.Crate is 2 wide; blank = 1)', optional: true },
+        { key: 'pantryId', type: 'select', label: 'Pantry (a storage with Pantry set, e.g. the diner fridge — the station cooks straight from it, no ingredient boxes of its own; blank = its own boxes)', source: 'storages', optional: true },
+        { key: 'productBox', type: 'boolean', label: 'Product Box (off = the product sits on the station without a box, e.g. burgers on the stove; blank = on)', optional: true },
         {
             key: 'price', type: 'group', label: 'Build Price (paid at the dropper — amount 0 and no Resource Cost = built from the start)',
             fields: [

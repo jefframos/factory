@@ -726,6 +726,9 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                     },
                     {
                         "entityId": "storageIcecream"
+                    },
+                    {
+                        "entityId": "dinerFridge"
                     }
                 ]
             },

@@ -3921,6 +3921,11 @@
                         }],
                  "properties":[
                         {
+                         "name":"style",
+                         "type":"string",
+                         "value":"glassTop"
+                        }, 
+                        {
                          "name":"type",
                          "type":"string",
                          "value":"polyWall"
@@ -3984,134 +3989,108 @@
                  "y":744
                 }, 
                 {
-                 "gid":40,
-                 "height":48,
-                 "id":478,
+                 "gid":67,
+                 "height":96,
+                 "id":513,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":96,
-                 "x":744,
-                 "y":624
-                }, 
-                {
-                 "gid":41,
-                 "height":32,
-                 "id":479,
-                 "name":"",
-                 "opacity":1,
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":32,
                  "x":752,
-                 "y":576
+                 "y":688
                 }, 
                 {
-                 "gid":41,
-                 "height":32,
-                 "id":480,
+                 "gid":69,
+                 "height":24,
+                 "id":514,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":32,
-                 "x":752,
-                 "y":656
+                 "width":24,
+                 "x":788,
+                 "y":590
                 }, 
                 {
-                 "gid":41,
-                 "height":32,
-                 "id":481,
+                 "gid":69,
+                 "height":24,
+                 "id":515,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":32,
-                 "x":800,
-                 "y":576
+                 "width":24,
+                 "x":788,
+                 "y":714
                 }, 
                 {
-                 "gid":41,
-                 "height":32,
-                 "id":482,
+                 "gid":69,
+                 "height":24,
+                 "id":516,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":32,
-                 "x":800,
-                 "y":656
+                 "width":24,
+                 "x":726,
+                 "y":652
                 }, 
                 {
-                 "gid":40,
-                 "height":48,
-                 "id":483,
+                 "gid":68,
+                 "height":96,
+                 "id":517,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":96,
-                 "x":856,
-                 "y":624
+                 "x":896,
+                 "y":688
                 }, 
                 {
-                 "gid":41,
-                 "height":32,
-                 "id":484,
+                 "gid":69,
+                 "height":24,
+                 "id":518,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":32,
-                 "x":864,
-                 "y":576
+                 "width":24,
+                 "x":932,
+                 "y":590
                 }, 
                 {
-                 "gid":41,
-                 "height":32,
-                 "id":485,
+                 "gid":69,
+                 "height":24,
+                 "id":519,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":32,
-                 "x":864,
-                 "y":656
+                 "width":24,
+                 "x":932,
+                 "y":714
                 }, 
                 {
-                 "gid":41,
-                 "height":32,
-                 "id":486,
+                 "gid":69,
+                 "height":24,
+                 "id":520,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":32,
-                 "x":912,
-                 "y":576
-                }, 
-                {
-                 "gid":41,
-                 "height":32,
-                 "id":487,
-                 "name":"",
-                 "opacity":1,
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":32,
-                 "x":912,
-                 "y":656
+                 "width":24,
+                 "x":994,
+                 "y":652
                 }],
          "opacity":0.8,
          "type":"objectgroup",
@@ -4214,6 +4193,11 @@
                          "y":0
                         }],
                  "properties":[
+                        {
+                         "name":"style",
+                         "type":"string",
+                         "value":"glassTop"
+                        }, 
                         {
                          "name":"type",
                          "type":"string",
@@ -4367,304 +4351,6 @@
          "name":"--store--stall1-diner",
          "objects":[
                 {
-                 "height":49,
-                 "id":499,
-                 "name":"mixStation: burgerStation",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"burgerStation"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"mixStation"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":96,
-                 "x":744,
-                 "y":456
-                }, 
-                {
-                 "height":40,
-                 "id":500,
-                 "name":"dropper \u2192 burgerStation",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"burgerStation"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"dropper"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":45,
-                 "x":768,
-                 "y":486
-                }, 
-                {
-                 "height":28,
-                 "id":501,
-                 "name":"storage \u2192 burgerStation",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"order",
-                         "type":"int",
-                         "value":0
-                        }, 
-                        {
-                         "name":"target",
-                         "type":"string",
-                         "value":"burgerStation"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"storage"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":28.75,
-                 "x":744,
-                 "y":455
-                }, 
-                {
-                 "height":28,
-                 "id":502,
-                 "name":"storage \u2192 burgerStation",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"order",
-                         "type":"int",
-                         "value":1
-                        }, 
-                        {
-                         "name":"target",
-                         "type":"string",
-                         "value":"burgerStation"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"storage"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":28.75,
-                 "x":775,
-                 "y":455
-                }, 
-                {
-                 "height":28,
-                 "id":503,
-                 "name":"dispenser \u2192 burgerStation",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"order",
-                         "type":"int",
-                         "value":1
-                        }, 
-                        {
-                         "name":"target",
-                         "type":"string",
-                         "value":"burgerStation"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"dispenser"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":28.75,
-                 "x":808,
-                 "y":455
-                }, 
-                {
-                 "gid":61,
-                 "height":73,
-                 "id":504,
-                 "name":"",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"target",
-                         "type":"string",
-                         "value":"burgerStation"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":64,
-                 "x":760,
-                 "y":520
-                }, 
-                {
-                 "height":49,
-                 "id":505,
-                 "name":"mixStation: icecreamStation",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"icecreamStation"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"mixStation"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":96,
-                 "x":880,
-                 "y":456
-                }, 
-                {
-                 "height":40,
-                 "id":506,
-                 "name":"dropper \u2192 icecreamStation",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"icecreamStation"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"dropper"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":45,
-                 "x":904,
-                 "y":486
-                }, 
-                {
-                 "height":28,
-                 "id":507,
-                 "name":"storage \u2192 icecreamStation",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"order",
-                         "type":"int",
-                         "value":0
-                        }, 
-                        {
-                         "name":"target",
-                         "type":"string",
-                         "value":"icecreamStation"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"storage"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":28.75,
-                 "x":880,
-                 "y":455
-                }, 
-                {
-                 "height":28,
-                 "id":508,
-                 "name":"storage \u2192 icecreamStation",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"order",
-                         "type":"int",
-                         "value":1
-                        }, 
-                        {
-                         "name":"target",
-                         "type":"string",
-                         "value":"icecreamStation"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"storage"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":28.75,
-                 "x":911,
-                 "y":455
-                }, 
-                {
-                 "height":28,
-                 "id":509,
-                 "name":"dispenser \u2192 icecreamStation",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"order",
-                         "type":"int",
-                         "value":1
-                        }, 
-                        {
-                         "name":"target",
-                         "type":"string",
-                         "value":"icecreamStation"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"dispenser"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":28.75,
-                 "x":944,
-                 "y":455
-                }, 
-                {
-                 "gid":62,
-                 "height":72,
-                 "id":510,
-                 "name":"",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"target",
-                         "type":"string",
-                         "value":"icecreamStation"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":64,
-                 "x":896,
-                 "y":520
-                }, 
-                {
                  "height":51,
                  "id":511,
                  "name":"storage: storageBurger",
@@ -4709,6 +4395,215 @@
                  "width":46,
                  "x":-24,
                  "y":831
+                }, 
+                {
+                 "height":64,
+                 "id":521,
+                 "name":"storage: dinerFridge (fridge \u2014 kitchen pantry)",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"dinerFridge"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"storage"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64,
+                 "x":728,
+                 "y":452
+                }, 
+                {
+                 "height":49,
+                 "id":522,
+                 "name":"mixStation: burgerStation",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"burgerStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"mixStation"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":96,
+                 "x":808,
+                 "y":456
+                }, 
+                {
+                 "height":40,
+                 "id":523,
+                 "name":"dropper \u2192 burgerStation",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"burgerStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":45,
+                 "x":832,
+                 "y":486
+                }, 
+                {
+                 "height":28,
+                 "id":524,
+                 "name":"dispenser \u2192 burgerStation",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"order",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"burgerStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dispenser"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28.75,
+                 "x":872,
+                 "y":455
+                }, 
+                {
+                 "gid":61,
+                 "height":73,
+                 "id":525,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"burgerStation"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64,
+                 "x":824,
+                 "y":520
+                }, 
+                {
+                 "height":49,
+                 "id":526,
+                 "name":"mixStation: icecreamStation",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"icecreamStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"mixStation"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":96,
+                 "x":920,
+                 "y":456
+                }, 
+                {
+                 "height":40,
+                 "id":527,
+                 "name":"dropper \u2192 icecreamStation",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"icecreamStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":45,
+                 "x":944,
+                 "y":486
+                }, 
+                {
+                 "height":28,
+                 "id":528,
+                 "name":"dispenser \u2192 icecreamStation",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"order",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"icecreamStation"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dispenser"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28.75,
+                 "x":984,
+                 "y":455
+                }, 
+                {
+                 "gid":60,
+                 "height":65,
+                 "id":529,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"icecreamStation"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64,
+                 "x":936,
+                 "y":520
                 }],
          "opacity":0.8,
          "type":"objectgroup",
@@ -6803,7 +6698,7 @@
          "y":0
         }],
  "nextlayerid":18,
- "nextobjectid":513,
+ "nextobjectid":530,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",
@@ -6847,7 +6742,7 @@
          "margin":0,
          "name":"models",
          "spacing":0,
-         "tilecount":34,
+         "tilecount":37,
          "tileheight":117,
          "tiles":[
                 {
@@ -7271,6 +7166,36 @@
                          "type":"bool",
                          "value":true
                         }]
+                }, 
+                {
+                 "id":42,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Restaurant--TableRoundA__96x96.png",
+                 "imageheight":96,
+                 "imagewidth":96,
+                 "properties":[
+                        {
+                         "name":"solid",
+                         "type":"bool",
+                         "value":true
+                        }]
+                }, 
+                {
+                 "id":43,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Restaurant--TableRoundB__96x96.png",
+                 "imageheight":96,
+                 "imagewidth":96,
+                 "properties":[
+                        {
+                         "name":"solid",
+                         "type":"bool",
+                         "value":true
+                        }]
+                }, 
+                {
+                 "id":44,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Restaurant--ChairStool__24x24.png",
+                 "imageheight":24,
+                 "imagewidth":24
                 }],
          "tilewidth":128
         }],

@@ -134,6 +134,13 @@ const TRASH_END_SCALE_FRACTION = 0.2;
 const DEFAULT_ACCEPTS_PANEL_CLEARANCE = 1.0;
 
 export default class StorageZone extends Entity {
+    /** Every spawned storage by id — e.g. a mix station finds its pantry (MixStationConfig.pantryId), which may spawn after it. */
+    private static readonly byId = new Map<string, StorageZone>();
+
+    public static get(storageId: string): StorageZone | undefined {
+        return StorageZone.byId.get(storageId);
+    }
+
     /** Speeds this zone's one-unit-at-a-time deposits up (to ~3x) the longer the player keeps paying — see DepositPacer.ts. */
     private readonly depositPacer = new DepositPacer(TRANSFER_STAGGER_SEC);
     private readonly storageId: string;
@@ -190,6 +197,11 @@ export default class StorageZone extends Entity {
 
     public getConfig(): StorageConfig {
         return this.config;
+    }
+
+    /** The storage object's own spot (world) — not the trigger center. */
+    public getStoragePosition(out = new THREE.Vector3()): THREE.Vector3 {
+        return out.copy(this.transform.position).add(this.meshOffset);
     }
 
     public constructor(
@@ -347,6 +359,7 @@ export default class StorageZone extends Entity {
         }
         this.pile.sync(StorageInventory.getAll(this.storageId));
         StorageInventory.onChange.add(this.handleInventoryChanged);
+        StorageZone.byId.set(this.storageId, this);
 
         // 'Floor' (the default) draws nothing extra here — the stored count is shown on the
         // signpost instead (see buildSignpost()). A popup frame keeps its floating panel.
@@ -358,6 +371,9 @@ export default class StorageZone extends Entity {
     public override destroy(): void {
         this.destroyed = true;
         StorageInventory.onChange.remove(this.handleInventoryChanged);
+        if (StorageZone.byId.get(this.storageId) === this) {
+            StorageZone.byId.delete(this.storageId);
+        }
         this.pile.dispose();
         super.destroy();
     }
@@ -421,6 +437,14 @@ export default class StorageZone extends Entity {
         if (this.config.trash) {
             return [{ icon }];
         }
+        // A pantry shows no pile — its sign lists every type it takes and how many are inside.
+        const pantry = this.config.pantry;
+        if (pantry) {
+            return pantry.items.map(item => ({
+                icon: getAssetIcon(resolveResourceAssetKey(item.resourceType)),
+                text: `${StorageInventory.getCount(this.storageId, item.resourceType)}/${pantry.maxPerType}`,
+            }));
+        }
         const type = this.config.resourceType;
         if (type === undefined) {
             return undefined;
@@ -430,6 +454,10 @@ export default class StorageZone extends Entity {
 
     /** Keeps whichever count display this storage has (signpost sign or popup) in sync with StorageInventory. */
     private refreshFloorLabel(): void {
+        if (this.config.pantry) {
+            this.signpostLabel?.setItems(this.signpostItems() ?? []);
+            return;
+        }
         if (this.config.trash || this.config.resourceType === undefined) {
             return;
         }
@@ -482,7 +510,8 @@ export default class StorageZone extends Entity {
                 maxLayers: 1,
                 fitToCells: false,
                 towerMaxItems: slotPositions.length,
-                maxDrawn: getStorageStockCap(this.config),
+                // A pantry draws nothing — its sign lists the contents (see signpostItems()).
+                maxDrawn: this.config.pantry ? 0 : getStorageStockCap(this.config),
                 slotPositions,
                 itemScale: shelf.itemScale !== undefined && shelf.itemScale > 0 ? shelf.itemScale : this.itemScale(),
                 itemYawDeg: this.config.itemYawDeg,
@@ -501,7 +530,8 @@ export default class StorageZone extends Entity {
             // A storage's grid is exactly what its config says — oversized items shrink to fit.
             fitToCells: true,
             towerMaxItems: pile.columns * pile.rows * pile.layers,
-            maxDrawn: getStorageStockCap(this.config),
+            // A pantry draws nothing — its sign lists the contents (see signpostItems()).
+                maxDrawn: this.config.pantry ? 0 : getStorageStockCap(this.config),
             itemScale: this.itemScale(),
             itemYawDeg: this.config.itemYawDeg,
             itemOrientation: this.config.itemOrientation,
@@ -526,6 +556,11 @@ export default class StorageZone extends Entity {
         }
         if (type === ResourceType.Garbage) {
             return false;
+        }
+        // A pantry: only its types, up to maxPerType of each — see StorageConfig.pantry.
+        const pantry = this.config.pantry;
+        if (pantry) {
+            return pantry.items.some(item => item.resourceType === type) && StorageInventory.getCount(this.storageId, type) < pantry.maxPerType;
         }
         // A specific resource overrides the category — see StorageConfig.resourceType's own doc.
         if (this.config.resourceType !== undefined) {

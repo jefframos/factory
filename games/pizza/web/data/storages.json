@@ -438,6 +438,46 @@
             "resourceCost": [],
             "signpostSide": "west",
             "signpostFacing": "east"
+        },
+        "dinerFridge": {
+            "name": "Diner Fridge",
+            "accepts": "farm",
+            "models": [
+                "Restaurant.FridgeA"
+            ],
+            "scale": 1,
+            "rotationDeg": 0,
+            "dropOffset": {},
+            "pile": {
+                "columns": 1,
+                "rows": 1,
+                "layers": 1
+            },
+            "solid": 1,
+            "price": {
+                "currency": "money",
+                "amount": 0
+            },
+            "resourceCost": [],
+            "signpostSide": "south",
+            "signpostFacing": "south",
+            "pantry": {
+                "items": [
+                    {
+                        "resourceType": "bread"
+                    },
+                    {
+                        "resourceType": "tomato"
+                    },
+                    {
+                        "resourceType": "milk"
+                    },
+                    {
+                        "resourceType": "strawberry"
+                    }
+                ],
+                "maxPerType": 12
+            }
         }
     },
     "signpost": {

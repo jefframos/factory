@@ -108,7 +108,9 @@
                 "Restaurant.Crate"
             ],
             "boxScale": 0.8,
-            "resourceCost": []
+            "resourceCost": [],
+            "pantryId": "dinerFridge",
+            "productBox": false
         },
         "burgerStation": {
             "name": "Burger Stove",
@@ -142,7 +144,9 @@
                     "resourceType": "stone",
                     "amount": 20
                 }
-            ]
+            ],
+            "pantryId": "dinerFridge",
+            "productBox": false
         }
     }
 }

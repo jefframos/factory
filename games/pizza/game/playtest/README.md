@@ -16,6 +16,22 @@ report at `games/pizza/reports/playtests/latest.md`:
 | `npm run playtest -- --minutes 20 --speed 5 --style casual --label tomato` | Options (all optional) |
 | `npm run playtest -- --url http://localhost:9001` | Use the dev server you already have running |
 
+### Start later in the game — scenarios
+
+A scenario is a snapshot of the whole save (`games/pizza/playtest-scenarios/<name>.json`, committed).
+`--scenario diner` (or `?scenario=diner` in the browser) starts there instead of from zero:
+
+```
+npm run playtest -- --scenario diner --no-demo-end --minutes 15      # test the restaurant only
+npm run playtest -- --no-demo-end --snapshot-at storageBought:burgerStation --snapshot-name diner --snapshot-stop
+```
+
+The second line makes one: the bot plays from a fresh save and saves the moment the event fires
+(`storageBought:<id>`, `built:<buildingId>`, `farmBought:<id>`, ...). Or play yourself and press
+**Save state** on the panel, then drop the downloaded file into `playtest-scenarios/`. A scenario
+taken before a map/config change still loads, but re-make it when the change affects what's saved
+(new storages, rooms, ids). `--no-demo-end` (`&nodemoend`) keeps playing past the demo end.
+
 ### Try a change without editing the source — `--set` / `--compare`
 
 `--set <editor tab>.<id>.<path>=<value>` overrides a config value for that run (repeatable; JSON values;

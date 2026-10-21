@@ -254,6 +254,9 @@
                         },
                         {
                             "entityId": "storageIcecream"
+                        },
+                        {
+                            "entityId": "dinerFridge"
                         }
                     ]
                 },

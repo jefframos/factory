@@ -47,7 +47,7 @@ import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import { DEFAULT_MIX_INPUT_CAPACITY } from '../data/MixStationTypes';
 import { ResourceType } from '../actions/ResourceTypes';
 import type { MeshPlacement } from './MeshLayerSpawner';
-import type StorageZone from './StorageZone';
+import StorageZone from './StorageZone';
 import type { MixStationConfig } from '../data/MixStationTypes';
 import { findSolidTopAt } from '../physics/SurfaceQuery';
 
@@ -227,11 +227,14 @@ export default class MixStation extends Entity {
         ));
 
         // A label over each box, and over the product box.
-        this.boxes.forEach(box => {
-            const label = new BoxLabel(INGREDIENT_FRAME);
-            this.boxLabels.push(label);
-            this.anchorAbove(label.content, box.position, LABEL_CLEARANCE);
-        });
+        // Cooking from a pantry: no boxes to label — the pantry's own sign lists its contents.
+        if (!this.config.pantryId) {
+            this.boxes.forEach(box => {
+                const label = new BoxLabel(INGREDIENT_FRAME);
+                this.boxLabels.push(label);
+                this.anchorAbove(label.content, box.position, LABEL_CLEARANCE);
+            });
+        }
         this.anchorAbove(this.productLabel.content, this.outputPosition, LABEL_CLEARANCE);
 
         // The bar, over the making area — hidden unless it's making.
@@ -292,6 +295,24 @@ export default class MixStation extends Entity {
     /** Each ingredient box: what it takes, holds and has (in flight included) — boxes the map has no spot for are left out. */
     public getInputNeeds(): MixStationInputNeed[] {
         const needs: MixStationInputNeed[] = [];
+        // Cooking from a pantry (the diner fridge): what's in IT, per type — filled at the fridge.
+        if (this.config.pantryId) {
+            const pantry = StorageZone.get(this.config.pantryId);
+            const pantryConfig = pantry?.getConfig().pantry;
+            if (!pantry || !pantryConfig) {
+                return needs;
+            }
+            const position = pantry.getStoragePosition();
+            this.config.inputs.forEach((input, index) => needs.push({
+                index,
+                resourceType: input.resourceType,
+                batch: input.amount,
+                capacity: Math.max(input.amount, pantryConfig.maxPerType),
+                count: StorageInventory.getCount(this.config.pantryId!, input.resourceType),
+                position,
+            }));
+            return needs;
+        }
         this.config.inputs.forEach((input, index) => {
             const box = this.boxes[index];
             if (!box?.zone) {
@@ -312,7 +333,7 @@ export default class MixStation extends Entity {
     /** One `type` from a worker into box `index` — flies from `from` and lands in the box. False when the box doesn't take it or is full. */
     public depositFromWorker(index: number, type: ResourceType, from: THREE.Vector3): boolean {
         const need = this.getInputNeeds().find(candidate => candidate.index === index);
-        const zone = this.boxes[index]?.zone;
+        const zone = this.config.pantryId ? StorageZone.get(this.config.pantryId) : this.boxes[index]?.zone;
         if (!need || !zone || need.resourceType !== type || need.count >= need.capacity) {
             return false;
         }

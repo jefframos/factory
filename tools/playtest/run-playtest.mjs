@@ -29,6 +29,12 @@
 //   --timeout N         real minutes before a run is cut and reported anyway (default 30)
 //   --shots N           screenshot every N real seconds (default 60; 0 = only level-ups + the end)
 //   --render N          draw every Nth frame (default 10 headless, 1 headed) — logic runs every frame
+//   --scenario NAME     start from a saved snapshot: games/pizza/playtest-scenarios/NAME.json
+//                       (made with --snapshot-at, or the panel's Save state button)
+//   --snapshot-at E[:ID] save a scenario when analytics event E (first arg ID) fires — e.g.
+//                       storageBought:burgerStation, built:storeRoom3, farmBought:farm6
+//   --snapshot-name N   its file name (default snapshot); --snapshot-stop ends the run right after
+//   --no-demo-end       keep playing past the demo end
 //   --label L           added to the output folder name
 //   --keep-open         keep the window open after the report (default with --headed)
 //
@@ -55,6 +61,7 @@ import { chromium } from 'playwright-core';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OUT_ROOT = path.join(ROOT, 'games', 'pizza', 'reports', 'playtests');
+const SCENARIO_DIR = path.join(ROOT, 'games', 'pizza', 'playtest-scenarios');
 const POLL_MS = 2000;
 const PROGRESS_EVERY_MS = 15000;
 const BOOT_TIMEOUT_MS = 120000;
@@ -85,6 +92,8 @@ const shotEveryMs = Number(args.shots ?? 60) * 1000;
 // Headless draws every RENDER_EVERY_HEADLESS-th frame (nobody watches; drawing is most of a frame); headed draws every frame.
 const renderEvery = Math.max(1, Math.floor(Number(args.render ?? (headed ? 1 : RENDER_EVERY_HEADLESS))));
 const repeat = Math.max(1, Math.floor(Number(args.repeat ?? 1)));
+// --snapshot-at event[:firstArg] -> [name, arg] for __pizzaPlaytest.eventSeen().
+const snapshotAt = args['snapshot-at'] ? (() => { const [name, ...rest] = String(args['snapshot-at']).split(':'); return [name, rest.length > 0 ? rest.join(':') : undefined]; })() : undefined;
 
 const comparing = args.compare !== undefined;
 const variants = comparing ? args.compare.map(parseVariant) : [{ name: args.label ? String(args.label) : 'run', sets: args.set ?? [] }];
@@ -172,8 +181,15 @@ async function runOne(base, run) {
     for (const set of run.sets) {
         query.append('set', set);
     }
-    let url = `${base}/?${query.toString().replace(/^bot=&/, 'bot&')}`;
-    if (args['keep-save'] !== true) {
+    if (args.scenario) {
+        query.set('scenario', String(args.scenario));
+    }
+    if (args['no-demo-end'] === true) {
+        query.set('nodemoend', '');
+    }
+    let url = `${base}/?${query.toString().replace(/^bot=&/, 'bot&').replace(/nodemoend=(&|$)/, 'nodemoend$1')}`;
+    // A scenario replaces the whole save itself; otherwise start from an empty one.
+    if (args['keep-save'] !== true && !args.scenario) {
         url += '&fresh';
     }
     console.log(`[playtest] ${tag}${url}`);
@@ -211,6 +227,7 @@ async function runOne(base, run) {
         let timedOut = false;
         let reloads = 0;
         let lastGameSec = state?.gameTimeSec ?? 0;
+        let snapshotted = false;
         while (!(state?.ended && (await page.evaluate(() => !!window.__pizzaPlaytest?.result())))) {
             if (Date.now() - startMs > timeoutMs) {
                 timedOut = true;
@@ -231,6 +248,19 @@ async function runOne(base, run) {
                 console.log(`[playtest] ${tag}WARNING: the page reloaded at game ${clock(lastGameSec)} — the run restarted (live reload on --url servers? use the runner's own server)`);
             }
             lastGameSec = state.gameTimeSec;
+            // --snapshot-at: save a scenario the moment the event first fires.
+            if (snapshotAt && !snapshotted && await page.evaluate(([name, arg]) => window.__pizzaPlaytest?.eventSeen(name, arg), snapshotAt).catch(() => false)) {
+                snapshotted = true;
+                const note = `${snapshotAt.filter(Boolean).join(':')} — ${levelKey(state)} at game ${clock(state.gameTimeSec)}`;
+                const snapshot = await page.evaluate(n => window.__pizzaPlaytest?.saveState(n), note);
+                fs.mkdirSync(SCENARIO_DIR, { recursive: true });
+                const file = path.join(SCENARIO_DIR, `${safe(args['snapshot-name'] ?? 'snapshot')}.json`);
+                fs.writeFileSync(file, JSON.stringify(snapshot, null, 1));
+                console.log(`[playtest] ${tag}scenario saved: ${path.relative(ROOT, file)} (${note})`);
+                if (args['snapshot-stop'] === true) {
+                    await page.evaluate(() => window.__pizzaPlaytest?.report());
+                }
+            }
             if (Date.now() - lastProgress > PROGRESS_EVERY_MS) {
                 lastProgress = Date.now();
                 console.log(`[playtest] ${tag}${clock((Date.now() - startMs) / 1000)} real · game ${clock(state.gameTimeSec)} · ${levelKey(state)} · $${Math.round(state.money)} · ${state.doing}`);

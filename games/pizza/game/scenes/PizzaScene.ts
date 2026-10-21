@@ -1901,7 +1901,16 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     scale: config.boxScale ?? 1,
                     dropOffset: { y: MIX_BOX_DROP_HEIGHT * (config.boxScale ?? 1) },
                 };
+                const pantryId = config.pantryId;
+                if (pantryId && !getStorageConfig(pantryId).pantry) {
+                    console.warn(`[PizzaScene] mix station "${id}" cooks from "${pantryId}", which isn't a pantry storage (StorageConfig.pantry) — it can't be filled`);
+                }
                 const boxes: MixStationBox[] = config.inputs.map((input, index) => {
+                    // Cooking from a pantry (the diner fridge): no boxes of its own — every input
+                    // reads the pantry's inventory (see MixStationConfig.pantryId).
+                    if (pantryId) {
+                        return { storageId: pantryId, position: onTop(rect.x, rect.z) };
+                    }
                     const storageId = `${id}:in${index}`;
                     const spot = spots.find(s => s.order === index) ?? spots[index];
                     if (!spot) {
@@ -1940,8 +1949,16 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 const outputPosition = onTop(dispenser.x, dispenser.z);
                 const output = this.world.add(new StorageZone(
                     `${id}:out`,
-                    // The product box — same box as the ingredients, on the station's top.
-                    spotConfig({ ...boxLook, resourceType: config.resourceType, collect: true, maxItems: config.maxOutput, pile: { columns: 2, rows: 2, layers: Math.max(1, Math.ceil(config.maxOutput / 4)) } }),
+                    // The product box — same box as the ingredients, on the station's top. With
+                    // productBox false the products just sit there (e.g. burgers on the stove).
+                    spotConfig({
+                        ...boxLook,
+                        ...(config.productBox === false ? { models: [], dropOffset: { y: 0 } } : {}),
+                        resourceType: config.resourceType,
+                        collect: true,
+                        maxItems: config.maxOutput,
+                        pile: { columns: 2, rows: 2, layers: Math.max(1, Math.ceil(config.maxOutput / 4)) },
+                    }),
                     outputPosition.clone(),
                     onFloor(collect.x, collect.z),
                     { width: collect.width, depth: collect.depth },

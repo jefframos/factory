@@ -393,7 +393,7 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         "appearRequirement": {
             "type": "store",
             "storeId": "farmStore1",
-            "level": 4
+            "level": 2
         },
         "levels": [{
             "level": 1,

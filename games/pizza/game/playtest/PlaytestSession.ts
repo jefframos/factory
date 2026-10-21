@@ -10,6 +10,8 @@
 //   ?record              no bot: records YOU playing; press Report on the panel when done
 //   &botnav              draw the bot's walkability map + route on the ground (NavDebugOverlay.ts)
 //   &render=N            draw only every Nth frame (headless runner speed-up — core Game.renderEvery)
+//   ?scenario=NAME       start from a saved snapshot (playtest-scenarios/NAME.json — PlaytestScenario.ts)
+//   &nodemoend           keep playing past the demo end
 //
 // Owns the recorder (always), the bot (bot mode), a small status panel (top-right, DOM) and the
 // end of the run: the demo-end popup, the time limit, or nothing happening for STALL_END_SEC — then
@@ -22,6 +24,7 @@ import NavDebugOverlay from './NavDebugOverlay';
 import { buildPlaytestReportHtml, buildPlaytestReportText } from './PlaytestReport';
 import { GameClock } from '../utils/GameClock';
 import { Game } from 'core/Game';
+import { captureSaveState } from './PlaytestScenario';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CurrencyType } from '../data/EconomyTypes';
 import { StoreProgressStorage } from '../store/StoreProgressStorage';
@@ -141,6 +144,10 @@ export default class PlaytestSession {
             }),
             /** The finished run's text report and raw data — undefined until it ends. */
             result: () => this.result,
+            /** Every save key now — a scenario snapshot (PlaytestScenario.ts). */
+            saveState: (note?: string) => captureSaveState(note),
+            /** Whether an analytics event has fired this run — `arg` matches its first argument (e.g. eventSeen('storageBought', 'burgerStation')). */
+            eventSeen: (name: string, arg?: string) => this.recorder.snapshot().events.some(event => event.name === name && (arg === undefined || String(event.args[0]) === arg)),
             /** Draw every Nth frame — the runner sets 1 for a moment before each screenshot. Returns the previous value. */
             setRenderEvery: (n: number) => {
                 const previous = Game.renderEvery;
@@ -203,7 +210,8 @@ export default class PlaytestSession {
         if (this.demoEndedAtSec === undefined && this.recorder.hasEvent('demoEnded')) {
             this.demoEndedAtSec = t;
         }
-        if (this.demoEndedAtSec !== undefined && t - this.demoEndedAtSec >= DEMO_END_GRACE_SEC) {
+        // &nodemoend: keep playing past the demo end (testing content beyond it).
+        if (this.demoEndedAtSec !== undefined && t - this.demoEndedAtSec >= DEMO_END_GRACE_SEC && !params().has('nodemoend')) {
             this.end('reached the end of the demo');
         } else if (t >= this.minutes * 60) {
             this.end(`time limit (${this.minutes} game min)`);
@@ -237,6 +245,13 @@ export default class PlaytestSession {
         const buttons = document.createElement('div');
         buttons.style.cssText = 'margin-top:6px;display:flex;gap:6px';
         buttons.appendChild(this.button('Report', () => this.end('requested')));
+        // Downloads a scenario snapshot of this moment — put it in games/pizza/playtest-scenarios/
+        // and start runs from it with ?scenario=<name> (see PlaytestScenario.ts).
+        buttons.appendChild(this.button('Save state', () => {
+            const levels = this.host.getStores().map(store => `${store.getId()} Lv${StoreProgressStorage.getLevel(store.getId())}`).join(', ');
+            const snapshot = captureSaveState(`${levels} at game ${formatTime(this.recorder.gameTimeSec)}`);
+            download(`scenario-${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.json`, JSON.stringify(snapshot, null, 1), 'application/json');
+        }));
         if (this.style) {
             this.stopButton = this.button('Stop', () => this.toggleBot());
             buttons.appendChild(this.stopButton);

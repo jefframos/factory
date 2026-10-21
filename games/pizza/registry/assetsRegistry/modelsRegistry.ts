@@ -3986,6 +3986,16 @@ const RestaurantChairA = {
 }
 } as const;
 
+const RestaurantChairStool = {
+  id: 'chair_stool',
+  path: 'restaurant/chair_stool',
+  fullPath: 'pizza/models/restaurant/chair_stool.gltf',
+  format: 'gltf',
+  nodes: {
+  "ChairStool": "chair_stool"
+}
+} as const;
+
 const RestaurantCrate = {
   id: 'crate',
   path: 'restaurant/crate',
@@ -4175,6 +4185,26 @@ const RestaurantTableMediumLong = {
   format: 'gltf',
   nodes: {
   "TableMediumLong": "table_medium_long"
+}
+} as const;
+
+const RestaurantTableRoundA = {
+  id: 'table_round_A',
+  path: 'restaurant/table_round_A',
+  fullPath: 'pizza/models/restaurant/table_round_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableRoundA": "table_round_A"
+}
+} as const;
+
+const RestaurantTableRoundB = {
+  id: 'table_round_B',
+  path: 'restaurant/table_round_B',
+  fullPath: 'pizza/models/restaurant/table_round_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableRoundB": "table_round_B"
 }
 } as const;
 
@@ -4716,6 +4746,7 @@ export const MODELS = {
   },
   Restaurant: {
     ChairA: RestaurantChairA,
+    ChairStool: RestaurantChairStool,
     Crate: RestaurantCrate,
     FoodIngredientBurgerTrash: RestaurantFoodIngredientBurgerTrash,
     FridgeA: RestaurantFridgeA,
@@ -4735,6 +4766,8 @@ export const MODELS = {
     KitchencounterSinkBacksplashStyleB: RestaurantKitchencounterSinkBacksplashStyleB,
     KitchencounterStraightABacksplashStyleB: RestaurantKitchencounterStraightABacksplashStyleB,
     TableMediumLong: RestaurantTableMediumLong,
+    TableRoundA: RestaurantTableRoundA,
+    TableRoundB: RestaurantTableRoundB,
     Trashcan: RestaurantTrashcan
   },
   Store: {

@@ -46,6 +46,7 @@ import { ensureSaveDataVersion } from './game/data/SaveDataVersion';
 import { wipeAllPlayerData } from './game/data/PlayerDataReset';
 import { wantsFreshPlaytestSave } from './game/playtest/PlaytestSession';
 import { applyTuningFromUrl } from './game/playtest/PlaytestTuning';
+import { loadScenarioFromUrl } from './game/playtest/PlaytestScenario';
 import { TutorialProgressStorage } from './game/tutorial/TutorialProgressStorage';
 import { TriggerStorage } from './game/data/TriggerStorage';
 import { GameClock } from './game/utils/GameClock';
@@ -105,7 +106,8 @@ export default class MyGame extends Game {
             // Must run before every *Storage.load() below — see SaveDataVersion.ts.
             await ensureSaveDataVersion();
             // Playtest from a brand-new save (?bot&fresh / ?record&fresh) — see game/playtest/README.md.
-            if (wantsFreshPlaytestSave()) {
+            // ?scenario=<name> starts from a saved snapshot (PlaytestScenario.ts) — wins over &fresh.
+            if (!(await loadScenarioFromUrl()) && wantsFreshPlaytestSave()) {
                 await wipeAllPlayerData();
             }
             await ShopStorage.load();

@@ -8,7 +8,8 @@
 //   - an untyped model tile with target = the station: its look (e.g. a table);
 //   - one id-less "storage" per ingredient, target = the station, "order" 0, 1, ... = which entry of
 //     `inputs` it holds — a BOX on the station's top (`boxModels`) the player fills standing next
-//     to it, holding up to that input's `capacity`;
+//     to it, holding up to that input's `capacity`. Not needed with `pantryId`: the station then
+//     cooks straight from that pantry storage (e.g. the diner's fridge);
 //   - an id-less "dispenser" (target = the station): where the product appears; the player
 //     collects it standing next to it (or inside a "collectArea" rect targeting the station).
 //
@@ -59,6 +60,14 @@ export interface MixStationConfig {
     boxModels?: (string | ModelDefinition)[];
     /** x the box model's own size. Unset = 1. */
     boxScale?: number;
+    /**
+     * A pantry storage id (StorageConfig.pantry — e.g. the diner's fridge): the station cooks straight
+     * from it — no ingredient boxes of its own (its map "storage" parts are ignored), so the pantry is
+     * the one thing to refill, shared by every station naming it. Unset = its own boxes.
+     */
+    pantryId?: string;
+    /** False = the product appears on the station without a box under it (e.g. burgers dropped on the stove). Unset = a box (boxModels). */
+    productBox?: boolean;
     /** When true, this station isn't spawned at all. */
     disabled?: boolean;
 }
@@ -173,7 +182,9 @@ export const MIX_STATION_CONFIG_BY_ID: Partial<Record<string, MixStationConfig>>
         "boxModels": [
             "Restaurant.Crate"
         ],
-        "boxScale": 0.8
+        "boxScale": 0.8,
+        "pantryId": "dinerFridge",
+        "productBox": false
     },
     "burgerStation": {
         "name": "Burger Stove",
@@ -207,7 +218,9 @@ export const MIX_STATION_CONFIG_BY_ID: Partial<Record<string, MixStationConfig>>
         "boxModels": [
             "Restaurant.Crate"
         ],
-        "boxScale": 0.8
+        "boxScale": 0.8,
+        "pantryId": "dinerFridge",
+        "productBox": false
     }
 };
 
