@@ -386,6 +386,58 @@
                 }
             ],
             "view": "storageView"
+        },
+        "storageIcecream": {
+            "name": "Ice Cream Shelf",
+            "accepts": "farm",
+            "resourceType": "icecream",
+            "shelf": "shelfEnd",
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "scale": 1,
+            "rotationDeg": 0,
+            "dropOffset": {},
+            "pile": {
+                "columns": 3,
+                "rows": 3,
+                "layers": 1
+            },
+            "solid": 1,
+            "price": {
+                "currency": "money",
+                "amount": 0
+            },
+            "itemOrientation": "standing",
+            "resourceCost": [],
+            "signpostSide": "west",
+            "signpostFacing": "east"
+        },
+        "storageBurger": {
+            "name": "Burger Shelf",
+            "accepts": "farm",
+            "resourceType": "burger",
+            "shelf": "shelfEnd",
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "scale": 1,
+            "rotationDeg": 0,
+            "dropOffset": {},
+            "pile": {
+                "columns": 3,
+                "rows": 3,
+                "layers": 1
+            },
+            "solid": 1,
+            "price": {
+                "currency": "money",
+                "amount": 0
+            },
+            "itemOrientation": "standing",
+            "resourceCost": [],
+            "signpostSide": "west",
+            "signpostFacing": "east"
         }
     },
     "signpost": {

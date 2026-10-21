@@ -224,5 +224,70 @@
             0
         ],
         "floorLabelIcon": "cooking-pot"
+    },
+    "storeRoom3": {
+        "levels": [
+            {
+                "requirements": {
+                    "wood": 60
+                },
+                "money": 300,
+                "effect": {
+                    "type": "storeRoom",
+                    "value": 1,
+                    "description": "Diner: burgers, ice cream and tables"
+                },
+                "level": 1,
+                "forceOwnMesh": true
+            }
+        ],
+        "name": "Diner",
+        "appearRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 6
+        },
+        "updateParticleEffectId": "craftingMyst",
+        "popupMode": "simple",
+        "frame": "Floor",
+        "npcOffset": [
+            0,
+            0,
+            0
+        ],
+        "floorLabelIcon": "cooking-pot"
+    },
+    "storeRoom4": {
+        "levels": [
+            {
+                "requirements": {
+                    "wood": 40,
+                    "stone": 20
+                },
+                "money": 400,
+                "effect": {
+                    "type": "storeRoom",
+                    "value": 1,
+                    "description": "Arcade: lucky machines"
+                },
+                "level": 1,
+                "forceOwnMesh": true
+            }
+        ],
+        "name": "Arcade",
+        "appearRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 7
+        },
+        "updateParticleEffectId": "craftingMyst",
+        "popupMode": "simple",
+        "frame": "Floor",
+        "npcOffset": [
+            0,
+            0,
+            0
+        ],
+        "floorLabelIcon": "ItemIcon_Shop-2"
     }
 }

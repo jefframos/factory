@@ -429,5 +429,39 @@
         "carrierSpacing": 0.8,
         "storeDemand": 0.35,
         "storeMaxPerOrder": 1
+    },
+    "burger": {
+        "label": "Burger",
+        "icon": "burger",
+        "models": [
+            "Food.Burger"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 180,
+        "sellable": true,
+        "pileScale": 0.8,
+        "carrierSpacing": 0.8,
+        "storeDemand": 0.3,
+        "storeMaxPerOrder": 1
+    },
+    "icecream": {
+        "label": "Ice Cream",
+        "icon": "icecream",
+        "models": [
+            "Food.IceCream"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 90,
+        "sellable": true,
+        "pileScale": 0.8,
+        "carrierSpacing": 0.8,
+        "storeDemand": 0.4,
+        "storeMaxPerOrder": 1
     }
 }

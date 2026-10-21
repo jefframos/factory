@@ -432,5 +432,21 @@
         "scale": 1,
         "rotationDeg": 0,
         "icon": "bread"
+    },
+    "burger": {
+        "models": [
+            "Food.Burger"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "burger"
+    },
+    "icecream": {
+        "models": [
+            "Food.IceCream"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "icecream"
     }
 }

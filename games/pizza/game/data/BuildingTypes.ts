@@ -454,6 +454,71 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
             0,
             0
         ]
+    },
+    "storeRoom3": {
+        baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
+        "name": "Diner",
+        "floorLabelIcon": "cooking-pot",
+        "appearRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 6
+        },
+        "levels": [{
+            "level": 1,
+            "requirements": {
+                "wood": 60
+            },
+            "money": 300,
+            "effect": {
+                "type": "storeRoom",
+                "value": 1,
+                "description": "Diner: burgers, ice cream and tables"
+            },
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }],
+        "popupMode": "simple",
+        "updateParticleEffectId": "craftingMyst",
+        "frame": "Floor",
+        "npcOffset": [
+            0,
+            0,
+            0
+        ]
+    },
+    "storeRoom4": {
+        baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
+        "name": "Arcade",
+        "floorLabelIcon": "ItemIcon_Shop-2",
+        "appearRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 7
+        },
+        "levels": [{
+            "level": 1,
+            "requirements": {
+                "wood": 40,
+                "stone": 20
+            },
+            "money": 400,
+            "effect": {
+                "type": "storeRoom",
+                "value": 1,
+                "description": "Arcade: lucky machines"
+            },
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }],
+        "popupMode": "simple",
+        "updateParticleEffectId": "craftingMyst",
+        "frame": "Floor",
+        "npcOffset": [
+            0,
+            0,
+            0
+        ]
     }
 };
 

@@ -8,6 +8,55 @@ export interface ModelDefinition {
   readonly nodes: Record<string, string>;
 }
 
+const ActivitiesATM01 = {
+  id: 'ATM_01',
+  path: 'activities/ATM_01',
+  fullPath: 'pizza/models/activities/ATM_01.glb',
+  format: 'glb',
+  nodes: {
+  "ATM01": "ATM_01"
+}
+} as const;
+
+const ActivitiesSlotMachine01 = {
+  id: 'Slot_Machine_01',
+  path: 'activities/Slot_Machine_01',
+  fullPath: 'pizza/models/activities/Slot_Machine_01.glb',
+  format: 'glb',
+  nodes: {
+  "SlotMachine01": "Slot_Machine_01",
+  "Slot01": "Slot_01",
+  "Slot02": "Slot_02",
+  "Slot03": "Slot_03",
+  "Slot04": "Slot_04"
+}
+} as const;
+
+const ActivitiesSlotMachine02 = {
+  id: 'Slot_Machine_02',
+  path: 'activities/Slot_Machine_02',
+  fullPath: 'pizza/models/activities/Slot_Machine_02.glb',
+  format: 'glb',
+  nodes: {
+  "SlotMachine02": "Slot_Machine_02",
+  "Slot05": "Slot_05",
+  "Slot06": "Slot_06",
+  "Slot07": "Slot_07",
+  "Slot08": "Slot_08"
+}
+} as const;
+
+const ActivitiesSlotMachineAquarium01 = {
+  id: 'Slot_Machine_Aquarium_01',
+  path: 'activities/Slot_Machine_Aquarium_01',
+  fullPath: 'pizza/models/activities/Slot_Machine_Aquarium_01.glb',
+  format: 'glb',
+  nodes: {
+  "SlotMachineAquarium01": "Slot_Machine_Aquarium_01",
+  "SlotMachineAquariumFish01": "Slot_Machine_Aquarium_Fish_01"
+}
+} as const;
+
 const CharactersCharacterMedium = {
   id: 'characterMedium',
   path: 'characters/default/characterMedium',
@@ -4364,6 +4413,12 @@ const ToolsShovel = {
 // raw-assets/models/characters{m}/... becomes MODELS.Characters.<name>. Files with no
 // containing folder land in MODELS.Root.
 export const MODELS = {
+  Activities: {
+    ATM01: ActivitiesATM01,
+    SlotMachine01: ActivitiesSlotMachine01,
+    SlotMachine02: ActivitiesSlotMachine02,
+    SlotMachineAquarium01: ActivitiesSlotMachineAquarium01
+  },
   Characters: {
     CharacterMedium: CharactersCharacterMedium,
     Digging: CharactersDigging,

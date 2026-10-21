@@ -145,6 +145,69 @@ export const MIX_STATION_CONFIG_BY_ID: Partial<Record<string, MixStationConfig>>
                 "amount": 30
             }
         ]
+    },
+    "icecreamStation": {
+        "name": "Ice Cream Machine",
+        "inputs": [
+            {
+                "resourceType": ResourceType.Milk,
+                "amount": 1,
+                "capacity": 4
+            },
+            {
+                "resourceType": ResourceType.Strawberry,
+                "amount": 1,
+                "capacity": 4
+            }
+        ],
+        "resourceType": ResourceType.IceCream,
+        "outputAmount": 1,
+        "mixSec": 4,
+        "maxOutput": 6,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 100
+        },
+        "resourceCost": [],
+        "surfaceHeight": 2,
+        "boxModels": [
+            "Restaurant.Crate"
+        ],
+        "boxScale": 0.8
+    },
+    "burgerStation": {
+        "name": "Burger Stove",
+        "inputs": [
+            {
+                "resourceType": ResourceType.Bread,
+                "amount": 1,
+                "capacity": 4
+            },
+            {
+                "resourceType": ResourceType.Tomato,
+                "amount": 1,
+                "capacity": 4
+            }
+        ],
+        "resourceType": ResourceType.Burger,
+        "outputAmount": 1,
+        "mixSec": 6,
+        "maxOutput": 6,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 150
+        },
+        "resourceCost": [
+            {
+                "resourceType": ResourceType.Stone,
+                "amount": 20
+            }
+        ],
+        "surfaceHeight": 2,
+        "boxModels": [
+            "Restaurant.Crate"
+        ],
+        "boxScale": 0.8
     }
 };
 

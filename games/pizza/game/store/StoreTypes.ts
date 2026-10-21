@@ -719,6 +719,14 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                         "icon": "mining-pickaxe",
                         "label": "Pickaxe"
                     }
+                ],
+                "enables": [
+                    {
+                        "entityId": "icecreamStation"
+                    },
+                    {
+                        "entityId": "storageIcecream"
+                    }
                 ]
             },
             {
@@ -744,6 +752,12 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                     },
                     {
                         "entityId": "storageBread"
+                    },
+                    {
+                        "entityId": "burgerStation"
+                    },
+                    {
+                        "entityId": "storageBurger"
                     }
                 ]
             },

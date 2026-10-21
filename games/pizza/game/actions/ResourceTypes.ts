@@ -57,7 +57,9 @@ export enum ResourceType {
     Egg = "egg",
     Milk = "milk",
     Butter = "butter",
-    Bread = "bread"
+    Bread = "bread",
+    Burger = "burger",
+    IceCream = "icecream"
 }
 
 export interface ResourceConfig {
@@ -393,6 +395,30 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         "pileScale": 0.8,
         "carrierSpacing": 0.8,
         "storeDemand": 0.35,
+        "storeMaxPerOrder": 1
+    },
+    [ResourceType.Burger]: {
+        color: 0xb5651d,
+        "label": "Burger",
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 180,
+        "sellable": true,
+        "pileScale": 0.8,
+        "carrierSpacing": 0.8,
+        "storeDemand": 0.3,
+        "storeMaxPerOrder": 1
+    },
+    [ResourceType.IceCream]: {
+        color: 0xf6c6d0,
+        "label": "Ice Cream",
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 90,
+        "sellable": true,
+        "pileScale": 0.8,
+        "carrierSpacing": 0.8,
+        "storeDemand": 0.4,
         "storeMaxPerOrder": 1
     }
 };

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="15" nextobjectid="473">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="18" nextobjectid="513">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -9,7 +9,7 @@
  <tileset firstgid="14" name="resources" tilewidth="32" tileheight="32" tilecount="11" columns="11">
   <image source="resources.png" width="352" height="32"/>
  </tileset>
- <tileset firstgid="25" name="models" tilewidth="128" tileheight="117" tilecount="30" columns="0">
+ <tileset firstgid="25" name="models" tilewidth="128" tileheight="117" tilecount="34" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="0">
    <properties>
@@ -183,6 +183,30 @@
     <property name="solid" type="bool" value="true"/>
    </properties>
    <image source="models/pizza-model-snapshots_Restaurant--FridgeA__64x72.png" width="64" height="72"/>
+  </tile>
+  <tile id="38">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Activities--ATM01__25x32.png" width="25" height="32"/>
+  </tile>
+  <tile id="39">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Activities--SlotMachine01__28x27.png" width="28" height="27"/>
+  </tile>
+  <tile id="40">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Activities--SlotMachine02__28x27.png" width="28" height="27"/>
+  </tile>
+  <tile id="41">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Activities--SlotMachineAquarium01__28x27.png" width="28" height="27"/>
   </tile>
  </tileset>
  <layer id="1" name="groundLayer" width="30" height="20" opacity="0.41">
@@ -2098,6 +2122,180 @@
     <property name="type" value="polyWall"/>
    </properties>
    <polyline points="139,-29.5 11,-29.5 11,-125.5 -277,-125.5 -277,98.5"/>
+  </object>
+ </objectgroup>
+ <objectgroup draworder="index" id="15" name="--storeSection--stall1-diner" opacity="0.8">
+  <object id="473" name="storeSection: storeRoom3" x="720" y="448">
+   <properties>
+    <property name="id" value="storeRoom3"/>
+    <property name="target" value="farmStore1"/>
+    <property name="type" value="storeSection"/>
+   </properties>
+   <polygon points="0,0 304,0 304,288 0,288"/>
+  </object>
+  <object id="474" name="floor" x="720" y="448" width="304" height="288">
+   <properties>
+    <property name="type" value="floor"/>
+   </properties>
+  </object>
+  <object id="475" name="polyWall" x="720" y="448">
+   <properties>
+    <property name="type" value="polyWall"/>
+   </properties>
+   <polyline points="0,0 304,0 304,288 0,288 0,0"/>
+  </object>
+  <object id="476" name="polyDoor" x="904" y="705" width="45.5" height="64" rotation="90">
+   <properties>
+    <property name="isDouble" type="bool" value="true"/>
+    <property name="isHigh" type="bool" value="false"/>
+    <property name="type" value="polyDoor"/>
+   </properties>
+  </object>
+  <object id="477" name="dropper → storeRoom3" x="912" y="744" width="80" height="32">
+   <properties>
+    <property name="target" value="storeRoom3"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="478" gid="40" x="744" y="624" width="96" height="48"/>
+  <object id="479" gid="41" x="752" y="576" width="32" height="32"/>
+  <object id="480" gid="41" x="752" y="656" width="32" height="32"/>
+  <object id="481" gid="41" x="800" y="576" width="32" height="32"/>
+  <object id="482" gid="41" x="800" y="656" width="32" height="32"/>
+  <object id="483" gid="40" x="856" y="624" width="96" height="48"/>
+  <object id="484" gid="41" x="864" y="576" width="32" height="32"/>
+  <object id="485" gid="41" x="864" y="656" width="32" height="32"/>
+  <object id="486" gid="41" x="912" y="576" width="32" height="32"/>
+  <object id="487" gid="41" x="912" y="656" width="32" height="32"/>
+ </objectgroup>
+ <objectgroup draworder="index" id="16" name="--storeSection--stall1-arcade" opacity="0.8">
+  <object id="488" name="storeSection: storeRoom4" x="720" y="784">
+   <properties>
+    <property name="id" value="storeRoom4"/>
+    <property name="target" value="farmStore1"/>
+    <property name="type" value="storeSection"/>
+   </properties>
+   <polygon points="0,0 304,0 304,224 0,224"/>
+  </object>
+  <object id="489" name="floor" x="720" y="784" width="304" height="224">
+   <properties>
+    <property name="type" value="floor"/>
+   </properties>
+  </object>
+  <object id="490" name="polyWall" x="720" y="784">
+   <properties>
+    <property name="type" value="polyWall"/>
+   </properties>
+   <polyline points="0,0 304,0 304,224 0,224 0,0"/>
+  </object>
+  <object id="491" name="polyDoor" x="824" y="753" width="45.5" height="64" rotation="90">
+   <properties>
+    <property name="isDouble" type="bool" value="true"/>
+    <property name="isHigh" type="bool" value="false"/>
+    <property name="type" value="polyDoor"/>
+   </properties>
+  </object>
+  <object id="492" name="dropper → storeRoom4" x="664" y="848" width="48" height="64">
+   <properties>
+    <property name="target" value="storeRoom4"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="493" gid="64" x="760" y="1000" width="28" height="27"/>
+  <object id="494" gid="64" x="812" y="1000" width="28" height="27"/>
+  <object id="495" gid="65" x="864" y="1000" width="28" height="27"/>
+  <object id="496" gid="66" x="916" y="1000" width="28" height="27"/>
+  <object id="497" gid="65" x="968" y="1000" width="28" height="27"/>
+  <object id="498" gid="63" x="736" y="840" width="25" height="32"/>
+ </objectgroup>
+ <objectgroup draworder="index" id="17" name="--store--stall1-diner" opacity="0.8">
+  <object id="499" name="mixStation: burgerStation" x="744" y="456" width="96" height="49">
+   <properties>
+    <property name="id" value="burgerStation"/>
+    <property name="type" value="mixStation"/>
+   </properties>
+  </object>
+  <object id="500" name="dropper → burgerStation" x="768" y="486" width="45" height="40">
+   <properties>
+    <property name="id" value="burgerStation"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="501" name="storage → burgerStation" x="744" y="455" width="28.75" height="28">
+   <properties>
+    <property name="order" type="int" value="0"/>
+    <property name="target" value="burgerStation"/>
+    <property name="type" value="storage"/>
+   </properties>
+  </object>
+  <object id="502" name="storage → burgerStation" x="775" y="455" width="28.75" height="28">
+   <properties>
+    <property name="order" type="int" value="1"/>
+    <property name="target" value="burgerStation"/>
+    <property name="type" value="storage"/>
+   </properties>
+  </object>
+  <object id="503" name="dispenser → burgerStation" x="808" y="455" width="28.75" height="28">
+   <properties>
+    <property name="order" type="int" value="1"/>
+    <property name="target" value="burgerStation"/>
+    <property name="type" value="dispenser"/>
+   </properties>
+  </object>
+  <object id="504" gid="61" x="760" y="520" width="64" height="73">
+   <properties>
+    <property name="target" value="burgerStation"/>
+   </properties>
+  </object>
+  <object id="505" name="mixStation: icecreamStation" x="880" y="456" width="96" height="49">
+   <properties>
+    <property name="id" value="icecreamStation"/>
+    <property name="type" value="mixStation"/>
+   </properties>
+  </object>
+  <object id="506" name="dropper → icecreamStation" x="904" y="486" width="45" height="40">
+   <properties>
+    <property name="id" value="icecreamStation"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="507" name="storage → icecreamStation" x="880" y="455" width="28.75" height="28">
+   <properties>
+    <property name="order" type="int" value="0"/>
+    <property name="target" value="icecreamStation"/>
+    <property name="type" value="storage"/>
+   </properties>
+  </object>
+  <object id="508" name="storage → icecreamStation" x="911" y="455" width="28.75" height="28">
+   <properties>
+    <property name="order" type="int" value="1"/>
+    <property name="target" value="icecreamStation"/>
+    <property name="type" value="storage"/>
+   </properties>
+  </object>
+  <object id="509" name="dispenser → icecreamStation" x="944" y="455" width="28.75" height="28">
+   <properties>
+    <property name="order" type="int" value="1"/>
+    <property name="target" value="icecreamStation"/>
+    <property name="type" value="dispenser"/>
+   </properties>
+  </object>
+  <object id="510" gid="62" x="896" y="520" width="64" height="72">
+   <properties>
+    <property name="target" value="icecreamStation"/>
+   </properties>
+  </object>
+  <object id="511" name="storage: storageBurger" x="-24" y="780" width="46" height="51">
+   <properties>
+    <property name="id" value="storageBurger"/>
+    <property name="type" value="storage"/>
+   </properties>
+  </object>
+  <object id="512" name="storage: storageIcecream" x="-24" y="831" width="46" height="51">
+   <properties>
+    <property name="id" value="storageIcecream"/>
+    <property name="type" value="storage"/>
+   </properties>
   </object>
  </objectgroup>
  <objectgroup draworder="index" id="9" name="--store--stall1" visible="0" locked="1">

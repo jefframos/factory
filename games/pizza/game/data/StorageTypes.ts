@@ -598,6 +598,54 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
                 "amount": 15
             }
         ]
+    },
+    "storageIcecream": {
+        "name": "Ice Cream Shelf",
+        "accepts": "farm",
+        "resourceType": ResourceType.IceCream,
+        "shelf": "shelfEnd",
+        "models": [MODELS.Restaurant.Crate],
+        "signpostSide": "west",
+        "signpostFacing": "east",
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 3,
+            "rows": 3,
+            "layers": 1
+        },
+        "itemOrientation": "standing",
+        "solid": 1,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 0
+        },
+        "resourceCost": []
+    },
+    "storageBurger": {
+        "name": "Burger Shelf",
+        "accepts": "farm",
+        "resourceType": ResourceType.Burger,
+        "shelf": "shelfEnd",
+        "models": [MODELS.Restaurant.Crate],
+        "signpostSide": "west",
+        "signpostFacing": "east",
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 3,
+            "rows": 3,
+            "layers": 1
+        },
+        "itemOrientation": "standing",
+        "solid": 1,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 0
+        },
+        "resourceCost": []
     }
 };
 

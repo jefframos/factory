@@ -546,6 +546,18 @@ export const ASSET_LIBRARY = {
         "models": [MODELS.Food.Loaf],
         "scale": 1,
         "rotationDeg": 0
+    },
+    "burger": {
+        "icon": "burger",
+        "models": [MODELS.Food.Burger],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "icecream": {
+        "icon": "icecream",
+        "models": [MODELS.Food.IceCream],
+        "scale": 1,
+        "rotationDeg": 0
     }
 } satisfies Record<string, AssetLibraryEntry>;
 
