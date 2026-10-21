@@ -662,7 +662,7 @@ export default class QueueZone extends Entity {
                 this.checkForCompletion();
             });
 
-            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
+            this.depositPacer.schedule(step);
         };
 
         step();
@@ -710,7 +710,7 @@ export default class QueueZone extends Entity {
                 this.checkForCompletion();
             });
 
-            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
+            this.depositPacer.schedule(step);
         };
 
         step();

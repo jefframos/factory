@@ -17,7 +17,7 @@
 
 import PlaytestRecorder, { PlaytestData } from './PlaytestRecorder';
 import PlaytestBot, { BotStyle, PlaytestHost } from './PlaytestBot';
-import { analyzePlaytest } from './PlaytestAnalysis';
+import { Analysis, analyzePlaytest } from './PlaytestAnalysis';
 import NavDebugOverlay from './NavDebugOverlay';
 import { buildPlaytestReportHtml, buildPlaytestReportText } from './PlaytestReport';
 import { GameClock } from '../utils/GameClock';
@@ -110,7 +110,7 @@ export default class PlaytestSession {
     private freeCamButton?: HTMLButtonElement;
     private readonly speedButtons = new Map<number, HTMLButtonElement>();
     /** Set when the run ends — what __pizzaPlaytest.result() hands the headless runner. */
-    private result?: { text: string; data: PlaytestData };
+    private result?: { text: string; data: PlaytestData; summary: Analysis['summary']; levels: Analysis['levels'] };
 
     private constructor(
         private readonly host: PlaytestHost,
@@ -362,7 +362,7 @@ export default class PlaytestSession {
         const bar = document.createElement('div');
         bar.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
         const text = buildPlaytestReportText(data, analysis);
-        this.result = { text, data };
+        this.result = { text, data, summary: analysis.summary, levels: analysis.levels };
         const copyButton = this.button('Copy report (text)', () => {
             void copyToClipboard(text).then(ok => {
                 copyButton.textContent = ok ? `Copied (${Math.round(text.length / 1000)}k chars)` : 'Copy failed — see console';

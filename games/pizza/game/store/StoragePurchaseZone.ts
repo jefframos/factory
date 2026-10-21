@@ -357,7 +357,7 @@ export default class StoragePurchaseZone extends Entity {
                 spawnFlyingResourceIcon(this.screenHost, from.clone(), toWorld.clone(), icon, onArrive);
             }
 
-            gsap.delayedCall(this.pacers[index].nextDelaySec(), step);
+            this.pacers[index].schedule(step);
         };
 
         step();

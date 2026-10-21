@@ -45,6 +45,7 @@ import { PlayerPositionStorage } from './game/data/PlayerPositionStorage';
 import { ensureSaveDataVersion } from './game/data/SaveDataVersion';
 import { wipeAllPlayerData } from './game/data/PlayerDataReset';
 import { wantsFreshPlaytestSave } from './game/playtest/PlaytestSession';
+import { applyTuningFromUrl } from './game/playtest/PlaytestTuning';
 import { TutorialProgressStorage } from './game/tutorial/TutorialProgressStorage';
 import { TriggerStorage } from './game/data/TriggerStorage';
 import { GameClock } from './game/utils/GameClock';
@@ -79,6 +80,8 @@ export default class MyGame extends Game {
 
     }
     protected async initialize() {
+        // Playtest config overrides (&set=...) — before anything reads a config. See PlaytestTuning.ts.
+        applyTuningFromUrl();
         // 1. Determine platform (fallback to 'local')
         const platformName = import.meta.env.VITE_PLATFORM || 'local';
         const config = platformConfig[platformName];

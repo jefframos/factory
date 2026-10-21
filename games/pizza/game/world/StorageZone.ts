@@ -581,7 +581,7 @@ export default class StorageZone extends Entity {
             }
             flyResourceToStack(scene, player, type, from);
             this.playLandBounce();
-            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
+            this.depositPacer.schedule(step);
         };
 
         step();
@@ -739,7 +739,7 @@ export default class StorageZone extends Entity {
                 },
             });
 
-            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
+            this.depositPacer.schedule(step);
         };
 
         step();

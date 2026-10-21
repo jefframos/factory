@@ -339,6 +339,7 @@ export function buildPlaytestReportText(data: PlaytestData, analysis: Analysis):
         `- Paid by mood: ${Object.entries(s.paidByMood).map(([m, n]) => `${m} ${n}`).join(', ') || '—'}`,
         `- Income: ${Math.round(s.income)} (${s.incomePerMin.toFixed(1)}/game min)`,
         `- Bought ${s.purchases} · hired ${s.hires} · ${s.notifications} notifications · frozen ${clock(data.frozenSec)}`,
+        ...((data.tuning ?? []).length > 0 ? [`- **Tuning:** ${data.tuning!.join(' · ')}`] : []),
         '');
 
     // Errors first — something the game only logged (a spawn that threw, ...) explains odd numbers below.

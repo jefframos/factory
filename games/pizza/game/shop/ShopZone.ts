@@ -767,7 +767,7 @@ export default class ShopZone extends Entity {
                 this.completeIfFunded();
             });
 
-            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
+            this.depositPacer.schedule(step);
         };
 
         step();
@@ -814,7 +814,7 @@ export default class ShopZone extends Entity {
                 }
             });
 
-            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
+            this.depositPacer.schedule(step);
         };
 
         step();

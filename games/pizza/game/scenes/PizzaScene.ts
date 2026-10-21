@@ -204,6 +204,9 @@ const DEFAULT_CAMERA_DISTANCE = CAMERA_SETTINGS.distance;
 const TOP_DOWN_CAMERA_PITCH_DEG = 90;
 const TOP_DOWN_CAMERA_DISTANCE = 35;
 /** How high the '!' floats over a desk NPC's feet (AlertAboveComponent) — same as the cashier's; lower for the seated hire manager. */
+/** Longest game-time step entity update() gets — a longer frame is split (see update()), at most MAX_ENTITY_SUBSTEPS times. */
+const MAX_ENTITY_STEP_SEC = 0.1;
+const MAX_ENTITY_SUBSTEPS = 8;
 const DESK_NPC_ALERT_HEIGHT = 2.6;
 const DESK_NPC_ALERT_HEIGHT_SEATED = 2.1;
 /** How long toggling the camera mode takes to ease pitch/distance to their new values — instant would read as a jump-cut; this is a smooth top-down/follow transition instead. */
@@ -3053,12 +3056,21 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // pointer-follow tracking plus CharacterVisualComponent syncing position/animation from
         // whatever fixedUpdate's physics step last resolved (once the FBX character has loaded
         // and that component exists at all — harmless no-op until then).
-        this.world.update(delta);
-        // Runs only once every entity's own update() above has resolved this frame — see
-        // Entity.lateUpdate()'s own doc. NpcEntity is the one caller today (its neck look-at
-        // needs mainPlayer's fully-current-frame position, not whatever it was before this
-        // frame's own movement resolved).
-        this.world.lateUpdate(delta);
+        //
+        // A long frame (high game speed, or a slow device) is split into sub-steps of at most
+        // MAX_ENTITY_STEP_SEC: clients' / workers' steering (NavAgent) and every entity timer were
+        // built for small steps — one 0.7 s step overshoots and jitters, so the store fell behind
+        // only because of the speed (a 10x playtest lost 50% of its clients vs 15% at 5x). At 1x
+        // a frame is far below the limit — one step, unchanged.
+        const steps = Math.min(MAX_ENTITY_SUBSTEPS, Math.max(1, Math.ceil(delta / MAX_ENTITY_STEP_SEC)));
+        for (let i = 0; i < steps; i++) {
+            this.world.update(delta / steps);
+            // Runs only once every entity's own update() above has resolved this step — see
+            // Entity.lateUpdate()'s own doc. NpcEntity is the one caller today (its neck look-at
+            // needs mainPlayer's fully-current-frame position, not whatever it was before this
+            // frame's own movement resolved).
+            this.world.lateUpdate(delta / steps);
+        }
         this.updateStoreUi();
         this.uiService.update();
         this.movementTutorialOverlay.update(delta);

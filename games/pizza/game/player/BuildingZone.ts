@@ -1624,7 +1624,7 @@ export default class BuildingZone extends Entity {
                 }
             });
 
-            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
+            this.depositPacer.schedule(step);
         };
 
         step();
@@ -1673,7 +1673,7 @@ export default class BuildingZone extends Entity {
                 }
             });
 
-            gsap.delayedCall(this.moneyPacer.nextDelaySec(), step);
+            this.moneyPacer.schedule(step);
         };
 
         step();

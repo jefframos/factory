@@ -239,7 +239,7 @@ export default class DropZone extends Entity {
                 }
             });
 
-            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
+            this.depositPacer.schedule(step);
         };
 
         step();

@@ -67,6 +67,8 @@ export class Game {
     };
 
     static deltaTime: number;
+    /** Game seconds since start — the sum of every frame's scaled delta, so it follows timeScale and stops while it's 0 (paused). */
+    static elapsedSec = 0;
     static scale: number;
     /** Multiplies every frame's delta (update() and fixedUpdate() alike) — e.g. pizza's 2x speed toggle (games/pizza/game/utils/GameClock.ts). 1 = real time. */
     static timeScale = 1;
@@ -212,6 +214,7 @@ export class Game {
 
         const deltaSeconds = (deltaMS / 1000) * Game.timeScale;
         Game.deltaTime = deltaSeconds;
+        Game.elapsedSec += deltaSeconds;
 
         // --- Fixed Update Accumulator Logic ---
         // Clamp catch-up after a long gap (e.g. tab backgrounded for minutes) so we don't

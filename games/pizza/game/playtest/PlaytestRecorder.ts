@@ -27,6 +27,7 @@ import { StoreProgressStorage } from '../store/StoreProgressStorage';
 import { StoreWorkerStorage } from '../store/StoreWorkerStorage';
 import { getNextStoreLevel, getStoreConfig } from '../store/StoreTypes';
 import type Store from '../store/Store';
+import { getAppliedTuning } from './PlaytestTuning';
 import type StoreClient from '../store/StoreClient';
 import type { ClientState } from '../store/StoreClient';
 
@@ -153,6 +154,8 @@ export interface PlaytestData {
     frozenSec: number;
     /** Real milliseconds the world sat paused behind tap-to-continue notifications. */
     notificationPauseRealMs: number;
+    /** Config overrides this run played with (&set=... — PlaytestTuning.ts), "path: old -> new". */
+    tuning?: string[];
     /** console.error calls and uncaught errors during the run — each distinct message once (first time + count). */
     errors?: { t: number; message: string; count: number }[];
 }
@@ -210,6 +213,7 @@ export default class PlaytestRecorder {
             frozenSec: 0,
             notificationPauseRealMs: 0,
             errors: [],
+            tuning: [...getAppliedTuning()],
         };
         this.hookAnalytics();
         this.hookNotifications();

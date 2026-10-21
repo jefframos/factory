@@ -281,7 +281,7 @@ export default class FarmZone extends Entity {
                 }
             });
 
-            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
+            this.depositPacer.schedule(step);
         };
 
         step();
