@@ -423,6 +423,7 @@ export default class PlaytestBot {
         this.logForSale(purchases);
         const affordable = purchases.filter(p => this.canAfford(p));
         add(this.moneyPileGoal(stores.map(entry => entry.snapshot), purchases));
+        add(this.atmGoal(stores.map(entry => entry.snapshot), purchases));
         add(this.tutorialGoal(stores.map(entry => entry.snapshot)));
         if (affordable.length > 0) {
             const cheapest = affordable.reduce((best, p) => (p.money < best.money ? p : best));
@@ -523,6 +524,31 @@ export default class PlaytestBot {
             timeoutSec: 60, stay: true,
             isDone: () => store.getPlaytestSnapshot().moneyPile <= 0,
             progress: () => store.getPlaytestSnapshot().moneyPile, stallSec: 6,
+        };
+    }
+
+    /** The lucky arcade's ATM — same rule as the money drop: when it unlocks a purchase, or once it holds 25+. */
+    private atmGoal(snapshots: StorePlaytestSnapshot[], purchases: Purchase[]): BotGoal | undefined {
+        const withAtm = snapshots.filter(s => s.arcadeAtm && s.arcadeAtm.amount > 0);
+        if (withAtm.length === 0) {
+            return undefined;
+        }
+        const snapshot = withAtm.reduce((best, s) => (s.arcadeAtm!.amount > best.arcadeAtm!.amount ? s : best));
+        const atm = snapshot.arcadeAtm!;
+        const wallet = EconomyStorage.getBalance(CurrencyType.Money);
+        const unlocksPurchase = purchases.some(p => p.money > wallet && p.money <= wallet + atm.amount);
+        if (!unlocksPurchase && atm.amount < 25) {
+            return undefined;
+        }
+        const store = this.host.getStores().find(s => s.getId() === snapshot.id)!;
+        const amountNow = (): number => store.getPlaytestSnapshot().arcadeAtm?.amount ?? 0;
+        return {
+            key: `atm:${snapshot.id}`, kind: 'collect money', detail: `${atm.amount} at the ${snapshot.id} arcade ATM`,
+            priority: unlocksPurchase ? 64 : 30,
+            point: new THREE.Vector3(atm.rect.x, 0, atm.rect.z), radius: Math.max(0.25, Math.min(atm.rect.width, atm.rect.depth) * 0.3),
+            timeoutSec: 60, stay: true,
+            isDone: () => amountNow() <= 0,
+            progress: amountNow, stallSec: 6,
         };
     }
 

@@ -32,5 +32,10 @@ export enum BuildingId {
     StoreRoom1 = "storeRoom1",
     StoreRoom2 = "storeRoom2",
     StoreRoom3 = "storeRoom3",
-    StoreRoom4 = "storeRoom4"
+    StoreRoom4 = "storeRoom4",
+    ArcadeMachine1 = "arcadeMachine1",
+    ArcadeMachine2 = "arcadeMachine2",
+    ArcadeMachine3 = "arcadeMachine3",
+    ArcadeMachine4 = "arcadeMachine4",
+    ArcadeMachine5 = "arcadeMachine5"
 }

@@ -338,6 +338,7 @@ export function buildPlaytestReportText(data: PlaytestData, analysis: Analysis):
         `- Clients: ${s.paid} paid / ${s.lost} walked out (${Object.entries(s.lostByReason).map(([r, n]) => `${n} ${r}`).join(', ') || 'none'})`,
         `- Paid by mood: ${Object.entries(s.paidByMood).map(([m, n]) => `${m} ${n}`).join(', ') || '—'}`,
         `- Income: ${Math.round(s.income)} (${s.incomePerMin.toFixed(1)}/game min)`,
+        ...arcadeLine(data),
         `- Bought ${s.purchases} · hired ${s.hires} · ${s.notifications} notifications · frozen ${clock(data.frozenSec)}`,
         ...((data.tuning ?? []).length > 0 ? [`- **Tuning:** ${data.tuning!.join(' · ')}`] : []),
         '');
@@ -449,6 +450,19 @@ function kitchenSummary(out: string[], data: PlaytestData): void {
             const total = Object.values(states).reduce((sum, n) => sum + n, 0);
             return [key, Object.entries(states).sort((a, b) => b[1] - a[1]).map(([state, n]) => `${state} ${pct(n, total)}`).join(', ')];
         }));
+}
+
+/** "- Arcade: 34 plays, 612 coins (arcadeMachine1 20, ...) · first play at 4:10" — empty without plays. */
+function arcadeLine(data: PlaytestData): string[] {
+    const plays = data.events.filter(event => event.name === 'arcadePlayed');
+    if (plays.length === 0) {
+        return [];
+    }
+    const coins = plays.reduce((sum, event) => sum + (Number(event.args[1]) || 0), 0);
+    const perMachine = new Map<string, number>();
+    plays.forEach(event => perMachine.set(String(event.args[0]), (perMachine.get(String(event.args[0])) ?? 0) + 1));
+    const machines = [...perMachine].map(([id, n]) => `${id} ${n}`).join(', ');
+    return [`- Arcade: ${plays.length} plays, ${coins} coins (${machines}) · first play at ${clock(plays[0].t)}`];
 }
 
 function textTable(out: string[], title: string, head: string[], rows: string[][], maxRows = TEXT_MAX_ROWS): void {

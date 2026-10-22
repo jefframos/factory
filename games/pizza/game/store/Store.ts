@@ -94,7 +94,7 @@ import { SeedStorage } from '../data/SeedStorage';
 import { SEED_CONFIG, SeedId } from '../data/SeedTypes';
 import { pickRandom } from '../world/AssetLibraryRegistry';
 import WorldObjectRegistry, { boundsOfShape, isInStoreSection, isPointInShape, SpawnerShape } from '../world/WorldObjectRegistry';
-import StoreClient, { StoreClientHost, StoreClientWant, StoreSpot, StoreStorageRef } from './StoreClient';
+import StoreClient, { StoreArcadePlay, StoreClientHost, StoreClientWant, StoreSpot, StoreStorageRef } from './StoreClient';
 import StoreWorker from './StoreWorker';
 import { WORKER_NPC_ID, type StoreWorkerRole, DEFAULT_OUT_OF_STOCK_DEMAND } from './StoreTypes';
 import { getNpcConfig, hatSpecOf, NpcLook, rollNpcLook } from '../data/NpcTypes';
@@ -211,6 +211,27 @@ export interface StorePlaytestSnapshot {
     cashierUnattended: boolean;
     moneyPile: number;
     moodFloor?: StoreClientMood;
+    /** The lucky arcade's ATM (where its takings pile up) and how much is on it — undefined without an arcade. */
+    arcadeAtm?: { rect: StoreRect; amount: number };
+}
+
+/**
+ * One lucky machine of this store's arcade: a building whose level effect is
+ * { type: 'arcadeMachine', value: coins per play } (BuildingTypes.ts). `playPoint` is where a client
+ * stands to play (its dropper — where the player buys/upgrades it), `machinePoint` what it faces.
+ */
+export interface StoreArcadeMachine {
+    id: BuildingId;
+    playPoint: THREE.Vector3;
+    machinePoint: THREE.Vector3;
+    occupant?: StoreClient;
+}
+
+/** What spawnStores() hands a store for its arcade — see StoreArcadeMachine and the arcade section. */
+export interface StoreArcadeSetup {
+    machines: StoreArcadeMachine[];
+    /** The "arcadeAtm" rect (id = the store's id) — where the takings pile up for the player to collect. */
+    atm?: StoreRect;
 }
 
 interface StoreStorage extends StoreStorageRef {
@@ -234,6 +255,10 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     private readonly clients: StoreClient[] = [];
     private cashier?: StoreCashier;
     private moneyPile?: StoreMoneyPile;
+    /** The lucky arcade's machines and ATM — see the arcade section. */
+    private readonly arcade: StoreArcadeSetup;
+    /** The arcade ATM's takings pile — made once there's something to show (see ensureAtmPile()). */
+    private atmPile?: StoreMoneyPile;
     /** Every spawned worker — see restoreWorkers(). */
     private readonly workers: StoreWorker[] = [];
     /** See getWorkerLook(). */
@@ -311,8 +336,10 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         farmRects: StoreRect[] = [],
         trashTargets: StoreTrashSpot[] = [],
         sections: StoreSectionArea[] = [],
+        arcade: StoreArcadeSetup = { machines: [] },
     ) {
         super();
+        this.arcade = arcade;
         this.farmIds = farmIds;
         this.trashTargets = trashTargets;
         this.sections = sections;
@@ -371,6 +398,9 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
 
     public override update(delta: number): void {
         super.update(delta);
+        if (!this.atmPile && this.arcade.atm && StoreMoneyStorage.get(this.arcadeMoneyKey()) > 0) {
+            this.ensureAtmPile();
+        }
 
         for (let i = this.clients.length - 1; i >= 0; i--) {
             if (this.clients[i].isFinished()) {
@@ -948,6 +978,7 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
             hasCashierWorker: this.cashierWorker !== undefined,
             cashierUnattended: this.isCashierUnattended(),
             moneyPile: StoreMoneyStorage.get(this.layout.id),
+            arcadeAtm: this.arcade.atm ? { rect: this.arcade.atm, amount: StoreMoneyStorage.get(this.arcadeMoneyKey()) } : undefined,
             moodFloor: this.getMoodFloor(),
         };
     }
@@ -1404,6 +1435,81 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         return bakers.length > 0 || stations.length > 0 ? { bakers, stations } : undefined;
     }
 
+    // ---- Lucky arcade (StoreConfig.arcade)
+    //
+    // A client who just paid goes to play a free BUILT machine with config.arcade.playChance
+    // (StoreClient's toArcade / playing states), for playSec; the machine's coins for its current
+    // level (the building level's effect.value) fly onto the ATM's pile — StoreMoneyStorage under
+    // arcadeMoneyKey(), collected by the player like the money drop — and count as store income
+    // (recordSale(), so they push the store level too). Tickets are cosmetic: clients get them,
+    // the store keeps the coins.
+
+    /** See StoreClientHost.claimArcadeMachine(). */
+    public claimArcadeMachine(client: StoreClient): StoreArcadePlay | undefined {
+        const arcade = this.config.arcade;
+        if (!arcade || this.arcade.machines.length === 0 || Math.random() >= arcade.playChance) {
+            return undefined;
+        }
+        // A machine still "held" by a client that's gone (removed, reloaded) counts as free.
+        const free = this.arcade.machines.filter(machine =>
+            BuildingStorage.getLevel(machine.id) >= 1 && (!machine.occupant || !this.clients.includes(machine.occupant)));
+        if (free.length === 0) {
+            return undefined;
+        }
+        const machine = pickRandom(free);
+        machine.occupant = client;
+        return { point: machine.playPoint.clone(), lookAt: machine.machinePoint.clone(), playSec: arcade.playSec };
+    }
+
+    /** See StoreClientHost.finishArcadePlay(). */
+    public finishArcadePlay(client: StoreClient): void {
+        const machine = this.arcade.machines.find(candidate => candidate.occupant === client);
+        if (!machine) {
+            return;
+        }
+        machine.occupant = undefined;
+        const coins = this.arcadeCoinsPerPlay(machine.id);
+        if (coins <= 0) {
+            return;
+        }
+        this.ensureAtmPile();
+        if (this.atmPile) {
+            this.atmPile.receivePayment(coins, client.getHeadWorldPosition());
+        } else {
+            StoreMoneyStorage.add(this.arcadeMoneyKey(), coins);
+        }
+        this.recordSale(coins);
+        GameAnalytics.arcadePlayed(machine.id, coins);
+    }
+
+    /** See StoreClientHost.releaseArcadeMachine(). */
+    public releaseArcadeMachine(client: StoreClient): void {
+        for (const machine of this.arcade.machines) {
+            if (machine.occupant === client) {
+                machine.occupant = undefined;
+            }
+        }
+    }
+
+    /** Coins one play on `id` pays at its current level — 0 while unbuilt. */
+    private arcadeCoinsPerPlay(id: BuildingId): number {
+        const level = BuildingStorage.getLevel(id);
+        return level >= 1 ? (BUILDING_CONFIG[id]?.levels[level - 1]?.effect?.value ?? 0) : 0;
+    }
+
+    /** The ATM's StoreMoneyStorage key — its own pile, separate from the money drop. */
+    private arcadeMoneyKey(): string {
+        return `${this.layout.id}:arcade`;
+    }
+
+    private ensureAtmPile(): void {
+        if (this.atmPile || !this.arcade.atm || !this.world) {
+            return;
+        }
+        this.atmPile = this.world.add(new StoreMoneyPile(this.arcadeMoneyKey(), this.arcade.atm, this.screenHost, this.config.moneyPerBill, this.config.billsPerPile, this.getWalletOverlayPosition));
+        this.root.add(this.atmPile.transform);
+    }
+
     /** See StoreBakerHost.getShelfStock() — every available shelf of this store. */
     public getShelfStock(type: ResourceType): number {
         return this.getAvailableStorages().reduce((sum, storage) => sum + StorageInventory.getCount(storage.id, type), 0);
@@ -1795,7 +1901,20 @@ export function spawnStores(deps: SpawnStoresDeps): Store[] {
         // under `root`) must show while that one is still locked.
         deps.registerZoneVisibility(root, layout.cashier.x, layout.cashier.z, layout.cashier.width, layout.cashier.depth);
 
-        const store = deps.world.add(new Store(layout, config, storages, deps.screenHost, root, deps.getWalletOverlayPosition, farmIds, farmRects, trashTargets, sections));
+        // Lucky arcade: buildings whose level effect is 'arcadeMachine', inside this store or one of
+        // its sections; its ATM is the "arcadeAtm" with this store's id.
+        const insideStore = (x: number, z: number): boolean => rectContains(layout.area, x, z)
+            || sections.some(section => section.storeId === layout.id && isInStoreSection(section, x, z));
+        const arcade: StoreArcadeSetup = { machines: [], atm: deps.worldObjects.getAllOfType('arcadeAtm').get(layout.id) };
+        for (const [id, placement] of deps.worldObjects.getAllOfType('building')) {
+            const building = BUILDING_CONFIG[id as BuildingId];
+            if (building?.levels[0]?.effect?.type !== 'arcadeMachine' || !insideStore(placement.x, placement.z)) {
+                continue;
+            }
+            const dropper = deps.worldObjects.getDropperFor(id) ?? placement;
+            arcade.machines.push({ id: id as BuildingId, playPoint: new THREE.Vector3(dropper.x, 0, dropper.z), machinePoint: new THREE.Vector3(placement.x, 0, placement.z) });
+        }
+        const store = deps.world.add(new Store(layout, config, storages, deps.screenHost, root, deps.getWalletOverlayPosition, farmIds, farmRects, trashTargets, sections, arcade));
         stores.push(store);
     }
     return stores;

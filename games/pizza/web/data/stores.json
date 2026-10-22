@@ -468,6 +468,10 @@
                         "carryCapacity": 3
                     }
                 ]
+            },
+            "arcade": {
+                "playChance": 0.4,
+                "playSec": 5
             }
         }
     }

@@ -67,6 +67,11 @@ export const GameAnalytics = {
     clientLeft(reason: ClientLeaveReason): void {
         send('client', reason, 'left');
     },
+    /** A client finished a play on a lucky machine — `coins` went to the arcade ATM. */
+    arcadePlayed(machineId: string, coins: number): void {
+        send('arcade', machineId, 'played');
+        void coins;
+    },
 
     built(buildingId: string, level: number): void {
         send('build', `${buildingId}-${level}`, 'built');

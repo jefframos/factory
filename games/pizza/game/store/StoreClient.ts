@@ -14,6 +14,7 @@
 //      └──restocked─── wandering  (strolls the store, still asking for the item)
 //
 //   toCashier ──arrived──► cashierQueue ──front──► readyToPay ──paid──► leaving ──► done
+//                                                                  └─(StoreConfig.arcade)─► toArcade ──► playing ──► leaving
 //
 //   Any shopping state, out of patience with nothing bought ──► leaving
 //
@@ -86,6 +87,8 @@ const FALLBACK_HEAD_HEIGHT = 2;
 const STORAGE_ICON_HEIGHT = 1;
 /** A fed-up client walking to a clean spot dumps wherever it is after this long (unreachable spot). */
 const DUMP_WALK_TIMEOUT_SEC = 12;
+/** A client heading to a lucky machine gives up (and walks out) if it hasn't arrived after this long. */
+const ARCADE_WALK_TIMEOUT_SEC = 25;
 /** Where a picked item aims if the crate hasn't loaded yet — roughly its back. */
 const FALLBACK_CARRY_HEIGHT = 1.2;
 const ARRIVAL_MOOD_INDEX = STORE_MOOD_LADDER.indexOf('happy');
@@ -140,6 +143,19 @@ export interface StoreClientHost {
     findCleanDropSpot(client: StoreClient): THREE.Vector3 | undefined;
     /** Something saved by toSave() changed (an item picked, mood, or it paid/left) — the store re-saves its clients. */
     notifyClientChanged(): void;
+    /** Just paid: maybe go play a lucky machine (StoreConfig.arcade) — claims a free built one for `client`, or undefined (walk out). */
+    claimArcadeMachine(client: StoreClient): StoreArcadePlay | undefined;
+    /** The play finished — the machine's coins go to the arcade ATM and the machine is free again. */
+    finishArcadePlay(client: StoreClient): void;
+    /** Frees whatever machine `client` claimed (it left before finishing). */
+    releaseArcadeMachine(client: StoreClient): void;
+}
+
+/** One claimed lucky-machine play — where to stand, what to face, how long it lasts. */
+export interface StoreArcadePlay {
+    point: THREE.Vector3;
+    lookAt: THREE.Vector3;
+    playSec: number;
 }
 
 export interface StoreClientWant {
@@ -166,6 +182,8 @@ export type ClientState =
     | 'cashierQueue'
     | 'readyToPay'
     | 'dumping'
+    | 'toArcade'
+    | 'playing'
     | 'leaving'
     | 'done';
 
@@ -210,6 +228,10 @@ export default class StoreClient extends Entity implements NavNeighbor {
     private angryTimerSec = 0;
     /** Seconds spent walking to its dump spot — see updateDumping(). */
     private dumpTimerSec = 0;
+    /** The lucky-machine play claimed after paying (toArcade / playing), if any. */
+    private arcadePlay?: StoreArcadePlay;
+    private arcadeWalkSec = 0;
+    private playTimerSec = 0;
     /** Browsing / wandering: where it's headed, and whether it's arrived and is looking around. */
     private outing?: StoreSpot;
     private outingLookSec = 0;
@@ -248,6 +270,8 @@ export default class StoreClient extends Entity implements NavNeighbor {
             cashierQueue: { update: () => this.updateCashierQueue() },
             readyToPay: { update: () => this.updateReadyToPay() },
             dumping: { enter: () => this.enterDumping(), update: delta => this.updateDumping(delta) },
+            toArcade: { enter: () => this.enterToArcade(), update: delta => this.updateToArcade(delta) },
+            playing: { enter: () => { this.playTimerSec = 0; this.agent.stop(); }, update: delta => this.updatePlaying(delta), exit: () => this.host.releaseArcadeMachine(this) },
             leaving: { enter: () => this.enterLeaving(), update: () => this.updateLeaving() },
             done: { enter: () => this.agent.stop(), update: () => undefined },
         };
@@ -339,7 +363,9 @@ export default class StoreClient extends Entity implements NavNeighbor {
     /** Store.ts calls this when the player is at the cashier — frees the cashier spot, starts walking to the exit and returns what this client pays. */
     public pay(): number {
         const amount = this.getTotalPrice();
-        this.setState('leaving');
+        // Maybe a round on a lucky machine before walking out (StoreConfig.arcade).
+        this.arcadePlay = this.host.claimArcadeMachine(this);
+        this.setState(this.arcadePlay ? 'toArcade' : 'leaving');
         return amount;
     }
 
@@ -583,6 +609,44 @@ export default class StoreClient extends Entity implements NavNeighbor {
             return;
         }
         this.faceTarget = this.host.cashierLine.target;
+    }
+
+    // ---- Lucky arcade (StoreConfig.arcade)
+
+    private enterToArcade(): void {
+        this.host.notifyClientChanged();
+        this.leaveStorage();
+        this.host.cashierLine.leave(this);
+        this.arcadeWalkSec = 0;
+        this.agent.setGoal(this.arcadePlay!.point);
+    }
+
+    /** Walking to the claimed machine — gives up (frees it, walks out) after ARCADE_WALK_TIMEOUT_SEC. */
+    private updateToArcade(delta: number): void {
+        this.arcadeWalkSec += delta;
+        if (this.agent.hasArrived()) {
+            this.setState('playing');
+        } else if (this.arcadeWalkSec >= ARCADE_WALK_TIMEOUT_SEC) {
+            this.host.releaseArcadeMachine(this);
+            this.arcadePlay = undefined;
+            this.setState('leaving');
+        }
+    }
+
+    /** Plays for playSec facing the machine, then its coins go to the ATM (finishArcadePlay()) and it walks out. */
+    private updatePlaying(delta: number): void {
+        const play = this.arcadePlay;
+        if (!play) {
+            this.setState('leaving');
+            return;
+        }
+        this.faceTarget = play.lookAt;
+        this.playTimerSec += delta;
+        if (this.playTimerSec >= play.playSec) {
+            this.host.finishArcadePlay(this);
+            this.arcadePlay = undefined;
+            this.setState('leaving');
+        }
     }
 
     private enterLeaving(): void {

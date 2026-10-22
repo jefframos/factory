@@ -4239,71 +4239,6 @@
                  "y":848
                 }, 
                 {
-                 "gid":64,
-                 "height":27,
-                 "id":493,
-                 "name":"",
-                 "opacity":1,
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":28,
-                 "x":760,
-                 "y":1000
-                }, 
-                {
-                 "gid":64,
-                 "height":27,
-                 "id":494,
-                 "name":"",
-                 "opacity":1,
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":28,
-                 "x":812,
-                 "y":1000
-                }, 
-                {
-                 "gid":65,
-                 "height":27,
-                 "id":495,
-                 "name":"",
-                 "opacity":1,
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":28,
-                 "x":864,
-                 "y":1000
-                }, 
-                {
-                 "gid":66,
-                 "height":27,
-                 "id":496,
-                 "name":"",
-                 "opacity":1,
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":28,
-                 "x":916,
-                 "y":1000
-                }, 
-                {
-                 "gid":65,
-                 "height":27,
-                 "id":497,
-                 "name":"",
-                 "opacity":1,
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":28,
-                 "x":968,
-                 "y":1000
-                }, 
-                {
                  "gid":63,
                  "height":32,
                  "id":498,
@@ -4581,6 +4516,300 @@
                  "width":64,
                  "x":936,
                  "y":520
+                }],
+         "opacity":0.8,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"index",
+         "id":18,
+         "name":"--store--stall1-arcade",
+         "objects":[
+                {
+                 "gid":64,
+                 "height":27,
+                 "id":530,
+                 "name":"building: arcadeMachine1",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"arcadeMachine1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"building"
+                        }, 
+                        {
+                         "name":"useOwnMesh",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28,
+                 "x":760,
+                 "y":1000
+                }, 
+                {
+                 "height":28,
+                 "id":531,
+                 "name":"dropper \u2192 arcadeMachine1",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"arcadeMachine1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":754,
+                 "y":940
+                }, 
+                {
+                 "gid":64,
+                 "height":27,
+                 "id":532,
+                 "name":"building: arcadeMachine2",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"arcadeMachine2"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"building"
+                        }, 
+                        {
+                         "name":"useOwnMesh",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28,
+                 "x":812,
+                 "y":1000
+                }, 
+                {
+                 "height":28,
+                 "id":533,
+                 "name":"dropper \u2192 arcadeMachine2",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"arcadeMachine2"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":806,
+                 "y":940
+                }, 
+                {
+                 "gid":65,
+                 "height":27,
+                 "id":534,
+                 "name":"building: arcadeMachine3",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"arcadeMachine3"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"building"
+                        }, 
+                        {
+                         "name":"useOwnMesh",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28,
+                 "x":864,
+                 "y":1000
+                }, 
+                {
+                 "height":28,
+                 "id":535,
+                 "name":"dropper \u2192 arcadeMachine3",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"arcadeMachine3"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":858,
+                 "y":940
+                }, 
+                {
+                 "gid":66,
+                 "height":27,
+                 "id":536,
+                 "name":"building: arcadeMachine4",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"arcadeMachine4"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"building"
+                        }, 
+                        {
+                         "name":"useOwnMesh",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28,
+                 "x":916,
+                 "y":1000
+                }, 
+                {
+                 "height":28,
+                 "id":537,
+                 "name":"dropper \u2192 arcadeMachine4",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"arcadeMachine4"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":910,
+                 "y":940
+                }, 
+                {
+                 "gid":65,
+                 "height":27,
+                 "id":538,
+                 "name":"building: arcadeMachine5",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"arcadeMachine5"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"building"
+                        }, 
+                        {
+                         "name":"useOwnMesh",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28,
+                 "x":968,
+                 "y":1000
+                }, 
+                {
+                 "height":28,
+                 "id":539,
+                 "name":"dropper \u2192 arcadeMachine5",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"arcadeMachine5"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":962,
+                 "y":940
+                }, 
+                {
+                 "height":52,
+                 "id":540,
+                 "name":"arcadeAtm: farmStore1",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"farmStore1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"arcadeAtm"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":44,
+                 "x":728,
+                 "y":800
                 }],
          "opacity":0.8,
          "type":"objectgroup",
@@ -5394,7 +5623,8 @@
          "visible":false,
          "x":0,
          "y":0
-        }, 
+        },
+    
         {
          "draworder":"topdown",
          "id":6,
@@ -5536,8 +5766,7 @@
          "visible":true,
          "x":0,
          "y":0
-        },
-    
+        }, 
         {
          "draworder":"topdown",
          "id":8,
@@ -6674,8 +6903,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":18,
- "nextobjectid":530,
+ "nextlayerid":19,
+ "nextobjectid":541,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

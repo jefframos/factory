@@ -233,6 +233,14 @@ export interface StoreRestockerWorkerConfig {
     levels?: StoreRestockerLevelConfig[];
 }
 
+/** StoreConfig.arcade — see that field's own doc. */
+export interface StoreArcadeConfig {
+    /** Chance (0-1) a client who just paid goes to play, when a built machine is free. */
+    playChance: number;
+    /** Seconds one play takes. */
+    playSec: number;
+}
+
 export interface StoreConfig {
     /** Display name — shown in the web editor. Optional. */
     name?: string;
@@ -371,6 +379,13 @@ export interface StoreConfig {
     cleanerWorker?: StoreRestockerWorkerConfig;
     /** Settings for this store's bakers — same shape (speed + carry spaces per level; wanderRadius around the kitchen). See StoreBakerWorker.ts. */
     bakerWorker?: StoreRestockerWorkerConfig;
+    /**
+     * The lucky arcade (machines = buildings whose level effect is { type: 'arcadeMachine', value: coins per
+     * play } — see Store.ts's arcade section): a paid client goes to play a free built machine with
+     * `playChance`, for `playSec`; the coins land on the arcade ATM's pile (and count as store income).
+     * Unset = no client plays.
+     */
+    arcade?: StoreArcadeConfig;
     /** Body/head color EVERY worker of this store wears — so each store's staff has its own look. Unset = the NPCs tab's "worker" look. */
     workerColor?: string;
     /** Hat every worker of this store wears — see StoreWorkerHat. Unset / no model = the "worker" look's own (none by default). */
@@ -867,6 +882,10 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                     "carryCapacity": 3
                 }
             ]
+        },
+        "arcade": {
+            "playChance": 0.4,
+            "playSec": 5
         }
     }
 };

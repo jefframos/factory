@@ -519,6 +519,201 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
             0,
             0
         ]
+    },
+    "arcadeMachine1": {
+        baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
+        "name": "Lucky Machine 1",
+        "floorLabelIcon": "ItemIcon_Shop-2",
+        "appearRequirement": {
+            "type": "building",
+            "buildingId": BuildingId.StoreRoom4,
+            "level": 1
+        },
+        "levels": [{
+            "level": 1,
+            "requirements": {"stone":10},
+            "money": 300,
+            "effect": {"type":"arcadeMachine","value":12,"description":"Lucky machine: 12 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }, {
+            "level": 2,
+            "requirements": {"wood":30},
+            "money": 450,
+            "effect": {"type":"arcadeMachine","value":20,"description":"Lucky machine: 20 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }, {
+            "level": 3,
+            "requirements": {"stone":20},
+            "money": 900,
+            "effect": {"type":"arcadeMachine","value":30,"description":"Lucky machine: 30 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }],
+        "popupMode": "simple",
+        "updateParticleEffectId": "craftingMyst",
+        "frame": "Floor",
+        "noSiteBeforeBuilt": true,
+        "priceInsideDropper": true,
+        "solidFromMap": true,
+        "npcOffset": [0, 0, 0]
+    },
+    "arcadeMachine2": {
+        baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
+        "name": "Lucky Machine 2",
+        "floorLabelIcon": "ItemIcon_Shop-2",
+        "appearRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 10
+        },
+        "levels": [{
+            "level": 1,
+            "requirements": {"stone":20},
+            "money": 600,
+            "effect": {"type":"arcadeMachine","value":15,"description":"Lucky machine: 15 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }, {
+            "level": 2,
+            "requirements": {"wood":40},
+            "money": 900,
+            "effect": {"type":"arcadeMachine","value":24,"description":"Lucky machine: 24 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }, {
+            "level": 3,
+            "requirements": {"stone":40},
+            "money": 1800,
+            "effect": {"type":"arcadeMachine","value":36,"description":"Lucky machine: 36 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }],
+        "popupMode": "simple",
+        "updateParticleEffectId": "craftingMyst",
+        "frame": "Floor",
+        "noSiteBeforeBuilt": true,
+        "priceInsideDropper": true,
+        "solidFromMap": true,
+        "npcOffset": [0, 0, 0]
+    },
+    "arcadeMachine3": {
+        baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
+        "name": "Lucky Machine 3",
+        "floorLabelIcon": "ItemIcon_Shop-2",
+        "appearRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 11
+        },
+        "levels": [{
+            "level": 1,
+            "requirements": {"stone":30},
+            "money": 1200,
+            "effect": {"type":"arcadeMachine","value":18,"description":"Lucky machine: 18 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }, {
+            "level": 2,
+            "requirements": {"wood":50},
+            "money": 1800,
+            "effect": {"type":"arcadeMachine","value":30,"description":"Lucky machine: 30 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }, {
+            "level": 3,
+            "requirements": {"stone":60},
+            "money": 3600,
+            "effect": {"type":"arcadeMachine","value":45,"description":"Lucky machine: 45 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }],
+        "popupMode": "simple",
+        "updateParticleEffectId": "craftingMyst",
+        "frame": "Floor",
+        "noSiteBeforeBuilt": true,
+        "priceInsideDropper": true,
+        "solidFromMap": true,
+        "npcOffset": [0, 0, 0]
+    },
+    "arcadeMachine4": {
+        baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
+        "name": "Lucky Machine 4",
+        "floorLabelIcon": "ItemIcon_Shop-2",
+        "appearRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 12
+        },
+        "levels": [{
+            "level": 1,
+            "requirements": {"stone":45},
+            "money": 2400,
+            "effect": {"type":"arcadeMachine","value":22,"description":"Lucky machine: 22 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }, {
+            "level": 2,
+            "requirements": {"wood":60},
+            "money": 3600,
+            "effect": {"type":"arcadeMachine","value":36,"description":"Lucky machine: 36 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }, {
+            "level": 3,
+            "requirements": {"stone":90},
+            "money": 7200,
+            "effect": {"type":"arcadeMachine","value":55,"description":"Lucky machine: 55 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }],
+        "popupMode": "simple",
+        "updateParticleEffectId": "craftingMyst",
+        "frame": "Floor",
+        "noSiteBeforeBuilt": true,
+        "priceInsideDropper": true,
+        "solidFromMap": true,
+        "npcOffset": [0, 0, 0]
+    },
+    "arcadeMachine5": {
+        baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
+        "name": "Lucky Machine 5",
+        "floorLabelIcon": "ItemIcon_Shop-2",
+        "appearRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 13
+        },
+        "levels": [{
+            "level": 1,
+            "requirements": {"stone":60},
+            "money": 4800,
+            "effect": {"type":"arcadeMachine","value":26,"description":"Lucky machine: 26 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }, {
+            "level": 2,
+            "requirements": {"wood":70},
+            "money": 7200,
+            "effect": {"type":"arcadeMachine","value":44,"description":"Lucky machine: 44 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }, {
+            "level": 3,
+            "requirements": {"stone":120},
+            "money": 14400,
+            "effect": {"type":"arcadeMachine","value":66,"description":"Lucky machine: 66 coins per play"},
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }],
+        "popupMode": "simple",
+        "updateParticleEffectId": "craftingMyst",
+        "frame": "Floor",
+        "noSiteBeforeBuilt": true,
+        "priceInsideDropper": true,
+        "solidFromMap": true,
+        "npcOffset": [0, 0, 0]
     }
 };
 

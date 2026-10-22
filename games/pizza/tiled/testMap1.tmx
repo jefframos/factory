@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="18" nextobjectid="530">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="19" nextobjectid="541">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -2198,11 +2198,6 @@
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="493" gid="64" x="760" y="1000" width="28" height="27"/>
-  <object id="494" gid="64" x="812" y="1000" width="28" height="27"/>
-  <object id="495" gid="65" x="864" y="1000" width="28" height="27"/>
-  <object id="496" gid="66" x="916" y="1000" width="28" height="27"/>
-  <object id="497" gid="65" x="968" y="1000" width="28" height="27"/>
   <object id="498" gid="63" x="736" y="840" width="25" height="32"/>
  </objectgroup>
  <objectgroup draworder="index" id="17" name="--store--stall1-diner" opacity="0.8">
@@ -2270,6 +2265,79 @@
   <object id="529" gid="60" x="936" y="520" width="64" height="65">
    <properties>
     <property name="target" value="icecreamStation"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup draworder="index" id="18" name="--store--stall1-arcade" opacity="0.8">
+  <object id="530" name="building: arcadeMachine1" gid="64" x="760" y="1000" width="28" height="27">
+   <properties>
+    <property name="id" value="arcadeMachine1"/>
+    <property name="type" value="building"/>
+    <property name="useOwnMesh" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="531" name="dropper → arcadeMachine1" x="754" y="940" width="40" height="28">
+   <properties>
+    <property name="target" value="arcadeMachine1"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="532" name="building: arcadeMachine2" gid="64" x="812" y="1000" width="28" height="27">
+   <properties>
+    <property name="id" value="arcadeMachine2"/>
+    <property name="type" value="building"/>
+    <property name="useOwnMesh" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="533" name="dropper → arcadeMachine2" x="806" y="940" width="40" height="28">
+   <properties>
+    <property name="target" value="arcadeMachine2"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="534" name="building: arcadeMachine3" gid="65" x="864" y="1000" width="28" height="27">
+   <properties>
+    <property name="id" value="arcadeMachine3"/>
+    <property name="type" value="building"/>
+    <property name="useOwnMesh" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="535" name="dropper → arcadeMachine3" x="858" y="940" width="40" height="28">
+   <properties>
+    <property name="target" value="arcadeMachine3"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="536" name="building: arcadeMachine4" gid="66" x="916" y="1000" width="28" height="27">
+   <properties>
+    <property name="id" value="arcadeMachine4"/>
+    <property name="type" value="building"/>
+    <property name="useOwnMesh" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="537" name="dropper → arcadeMachine4" x="910" y="940" width="40" height="28">
+   <properties>
+    <property name="target" value="arcadeMachine4"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="538" name="building: arcadeMachine5" gid="65" x="968" y="1000" width="28" height="27">
+   <properties>
+    <property name="id" value="arcadeMachine5"/>
+    <property name="type" value="building"/>
+    <property name="useOwnMesh" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="539" name="dropper → arcadeMachine5" x="962" y="940" width="40" height="28">
+   <properties>
+    <property name="target" value="arcadeMachine5"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="540" name="arcadeAtm: farmStore1" x="728" y="800" width="44" height="52">
+   <properties>
+    <property name="id" value="farmStore1"/>
+    <property name="type" value="arcadeAtm"/>
    </properties>
   </object>
  </objectgroup>
