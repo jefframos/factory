@@ -51,18 +51,20 @@ const UNLOCK_STAFF: StoreWorkerRole[] = ['cashier', 'restocker', 'restocker', 'c
  * some store level's `enables` is available from that level on; one listed nowhere always is.
  */
 function enabledAt(id: string, level: number): boolean {
-    let listed = false;
+    return storeLevelEnabling(id) <= level;
+}
+
+/** The lowest store level whose `enables` lists `id` — 0 when no level lists it (never gated). Also used by the debug menu's Build buttons. */
+export function storeLevelEnabling(id: string): number {
+    let lowest = Infinity;
     for (const config of Object.values(STORE_CONFIG_BY_ID)) {
         for (const entry of config?.levels ?? []) {
             if (entry.enables?.some(enable => enable.entityId === id)) {
-                listed = true;
-                if (entry.level <= level) {
-                    return true;
-                }
+                lowest = Math.min(lowest, entry.level);
             }
         }
     }
-    return !listed;
+    return lowest === Infinity ? 0 : lowest;
 }
 
 /** The `?unlockTo=` level, if any. */

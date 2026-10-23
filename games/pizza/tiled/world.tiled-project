@@ -1,14 +1,12 @@
 {
     "automappingRulesFile": "",
-    "commands": [
-    ],
+    "commands": [],
     "compatibilityVersion": 1100,
     "extensionsPath": "extensions",
     "folders": [
         "."
     ],
-    "properties": [
-    ],
+    "properties": [],
     "propertyTypes": [
         {
             "id": 3,
@@ -26,6 +24,10 @@
             "storageType": "string",
             "type": "enum",
             "values": [
+                "arcadeTiles",
+                "bakeryTiles",
+                "dinerTiles",
+                "officeTiles",
                 "roomTiles"
             ],
             "valuesAsFlags": false
@@ -35,8 +37,7 @@
             "name": "wallSetup",
             "storageType": "string",
             "type": "enum",
-            "values": [
-            ],
+            "values": [],
             "valuesAsFlags": false
         },
         {
@@ -45,8 +46,20 @@
             "storageType": "string",
             "type": "enum",
             "values": [
+                "glassArcade",
+                "glassBakery",
+                "glassDiner",
+                "glassOffice",
                 "glassTop"
             ],
+            "valuesAsFlags": false
+        },
+        {
+            "id": 5,
+            "name": "fenceStyle",
+            "type": "enum",
+            "storageType": "string",
+            "values": [],
             "valuesAsFlags": false
         }
     ]

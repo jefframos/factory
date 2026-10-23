@@ -630,6 +630,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupModelSnapshotWindow();
         const tileMap = this.worldManager.getTileMap();
         buildPizzaDebugMenu({
+            world: this.world,
+            worldObjects: this.worldObjects,
             threeScene: this.threeScene,
             threeCamera: this.threeCamera,
             player: this.mainPlayer,

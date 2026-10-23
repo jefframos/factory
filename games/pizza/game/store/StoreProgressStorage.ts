@@ -86,6 +86,20 @@ export class StoreProgressStorage {
         void this.persist();
     }
 
+    /** Debug menu (DebugSectionBuilder.ts) — raises the store to `level` live and announces it, so what that level enables appears. No-op if it's already there. */
+    static debugRaiseLevel(storeId: string, level: number): void {
+        const state = this.state(storeId);
+        if (state.level >= level) {
+            return;
+        }
+        state.level = level;
+        state.money = 0;
+        state.sales = 0;
+        void this.persist();
+        this.onProgressChanged.dispatch(storeId);
+        this.onLevelChanged.dispatch(storeId, level);
+    }
+
     static open(storeId: string): void {
         const state = this.state(storeId);
         if (state.level >= 1) {

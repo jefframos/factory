@@ -57,9 +57,10 @@ import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 import { downloadGameData } from './GameDataBaker';
 import { MapLayoutSuggestionTool, MapLayoutArchetype } from './MapLayoutSuggestionTool';
 import { captureSaveState } from '../playtest/PlaytestScenario';
+import { buildSectionNow, type SectionBuildHost } from './DebugSectionBuilder';
 
 /** The scene-side actions and objects the menu drives — PizzaScene passes closures over its own privates. */
-export interface PizzaDebugHost {
+export interface PizzaDebugHost extends SectionBuildHost {
     readonly threeScene: THREE.Scene;
     readonly threeCamera: THREE.PerspectiveCamera;
     readonly player: MainPlayer;
@@ -84,6 +85,13 @@ export interface PizzaDebugHost {
 const KNOWN_SCENARIOS = ['diner'];
 /** Store levels offered as one-click jumps. */
 const QUICK_LEVELS = [3, 5, 8, 10, 13];
+/** "Build room" buttons: label -> storeSection id (Buildings tab). */
+const BUILD_ROOMS: [string, string][] = [
+    ['Office', 'storeRoom1'],
+    ['Bakery', 'storeRoom2'],
+    ['Diner', 'storeRoom3'],
+    ['Arcade', 'storeRoom4'],
+];
 
 /** Builds every panel — see this file's own doc. The overlay itself is initialized in index.ts. */
 export function buildPizzaDebugMenu(host: PizzaDebugHost): void {
@@ -126,6 +134,29 @@ function buildProgressionPanel(host: PizzaDebugHost): void {
     const progression = panel('Progression', 'progression', true);
     const storeId = firstStoreId();
     progression.monitor('Store level', () => (storeId ? StoreProgressStorage.getLevel(storeId) : '—'));
+
+    // Build: one store room and everything inside it, live — raises the store level if needed (DebugSectionBuilder.ts).
+    const build = progression.folder('Build room (live)');
+    let building = false;
+    build.buttons(BUILD_ROOMS.map(([label, sectionId]) => ({
+        label,
+        variant: 'accent' as const,
+        tooltip: `Builds ${sectionId} and what's inside it (stations, storages, machines) for free`,
+        action: () => {
+            if (building) {
+                return;
+            }
+            building = true;
+            DebugOverlay.instance.toast(`Building ${label}...`);
+            buildSectionNow(host, sectionId)
+                .then(summary => DebugOverlay.instance.toast(summary))
+                .catch(error => {
+                    console.error('[PizzaDebugMenu] build failed', error);
+                    DebugOverlay.instance.toast(`Build ${label} failed — see console`, true);
+                })
+                .finally(() => { building = false; });
+        },
+    })));
 
     // Jump: wipe the save and boot at that store level with everything possible built (PlaytestUnlock.ts).
     const jump = progression.folder('Jump to store level');

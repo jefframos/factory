@@ -1996,6 +1996,7 @@
  <objectgroup draworder="index" id="11" name="--storeSection--stall1-office" locked="1" opacity="0.8">
   <object id="363" name="floor" x="-28.3333" y="416.167" width="192" height="160">
    <properties>
+    <property name="style" value="officeTiles"/>
     <property name="type" value="floor"/>
    </properties>
   </object>
@@ -2029,6 +2030,7 @@
   <object id="264" gid="51" x="-23.5833" y="459.167" width="72.604" height="38.5709"/>
   <object id="361" name="polyWall" x="-26.3333" y="448.167">
    <properties>
+    <property name="style" value="glassOffice"/>
     <property name="type" value="polyWall"/>
    </properties>
    <polyline points="190,128 -2,128 -2,-32 190,-32 190,128"/>
@@ -2063,11 +2065,13 @@
   </object>
   <object id="468" name="floor" x="350.333" y="447" width="319" height="192">
    <properties>
+    <property name="style" value="bakeryTiles"/>
     <property name="type" value="floor"/>
    </properties>
   </object>
   <object id="469" name="floor" x="256" y="352" width="288" height="288">
    <properties>
+    <property name="style" value="bakeryTiles"/>
     <property name="type" value="floor"/>
    </properties>
   </object>
@@ -2091,7 +2095,7 @@
   <object id="409" gid="54" x="352.697" y="635.545" width="24" height="28"/>
   <object id="414" name="polyWall" x="533" y="485.667">
    <properties>
-    <property name="style" value="glassTop"/>
+    <property name="style" value="glassBakery"/>
     <property name="type" value="polyWall"/>
    </properties>
    <polyline points="-245,154.333 136.333,153.333 139,-37.667"/>
@@ -2116,6 +2120,7 @@
   <object id="459" gid="61" x="640" y="512.227" width="31.7727" height="31.5909" rotation="90"/>
   <object id="471" name="polyWall" x="533" y="477.5">
    <properties>
+    <property name="style" value="glassBakery"/>
     <property name="type" value="polyWall"/>
    </properties>
    <polyline points="139,-29.5 11,-29.5 11,-125.5 -277,-125.5 -277,98.5"/>
@@ -2132,12 +2137,13 @@
   </object>
   <object id="474" name="floor" x="720" y="448" width="304" height="288">
    <properties>
+    <property name="style" value="dinerTiles"/>
     <property name="type" value="floor"/>
    </properties>
   </object>
   <object id="475" name="polyWall" x="720" y="448">
    <properties>
-    <property name="style" value="glassTop"/>
+    <property name="style" value="glassDiner"/>
     <property name="type" value="polyWall"/>
    </properties>
    <polyline points="0,0 304,0 304,288 0,288 0,0"/>
@@ -2155,14 +2161,14 @@
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="513" gid="67" x="752" y="688" width="96" height="96"/>
-  <object id="514" gid="69" x="788" y="590" width="24" height="24"/>
-  <object id="515" gid="69" x="788" y="714" width="24" height="24"/>
-  <object id="516" gid="69" x="726" y="652" width="24" height="24"/>
-  <object id="517" gid="68" x="896" y="688" width="96" height="96"/>
-  <object id="518" gid="69" x="932" y="590" width="24" height="24"/>
-  <object id="519" gid="69" x="932" y="714" width="24" height="24"/>
-  <object id="520" gid="69" x="994" y="652" width="24" height="24"/>
+  <object id="513" gid="67" x="776" y="664" width="48" height="48"/>
+  <object id="514" gid="69" x="794" y="615" width="12" height="12"/>
+  <object id="515" gid="69" x="794" y="677" width="12" height="12"/>
+  <object id="516" gid="69" x="763" y="646" width="12" height="12"/>
+  <object id="517" gid="68" x="920" y="664" width="48" height="48"/>
+  <object id="518" gid="69" x="938" y="615" width="12" height="12"/>
+  <object id="519" gid="69" x="938" y="677" width="12" height="12"/>
+  <object id="520" gid="69" x="969" y="646" width="12" height="12"/>
  </objectgroup>
  <objectgroup draworder="index" id="16" name="--storeSection--stall1-arcade" opacity="0.8">
   <object id="488" name="storeSection: storeRoom4" x="720" y="784">
@@ -2175,12 +2181,13 @@
   </object>
   <object id="489" name="floor" x="720" y="784" width="304" height="224">
    <properties>
+    <property name="style" value="arcadeTiles"/>
     <property name="type" value="floor"/>
    </properties>
   </object>
   <object id="490" name="polyWall" x="720" y="784">
    <properties>
-    <property name="style" value="glassTop"/>
+    <property name="style" value="glassArcade"/>
     <property name="type" value="polyWall"/>
    </properties>
    <polyline points="0,0 304,0 304,224 0,224 0,0"/>
@@ -2198,7 +2205,7 @@
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="498" gid="63" x="736" y="840" width="25" height="32"/>
+  <object id="498" gid="63" x="742.25" y="832" width="12.5" height="16"/>
  </objectgroup>
  <objectgroup draworder="index" id="17" name="--store--stall1-diner" opacity="0.8">
   <object id="511" name="storage: storageBurger" x="-24" y="780" width="46" height="51">
@@ -2238,7 +2245,7 @@
     <property name="type" value="dispenser"/>
    </properties>
   </object>
-  <object id="525" gid="61" x="824" y="520" width="64" height="73">
+  <object id="525" gid="61" x="840" y="501.75" width="32" height="36.5">
    <properties>
     <property name="target" value="burgerStation"/>
    </properties>
@@ -2262,14 +2269,14 @@
     <property name="type" value="dispenser"/>
    </properties>
   </object>
-  <object id="529" gid="60" x="936" y="520" width="64" height="65">
+  <object id="529" gid="60" x="952" y="503.75" width="32" height="32.5">
    <properties>
     <property name="target" value="icecreamStation"/>
    </properties>
   </object>
  </objectgroup>
  <objectgroup draworder="index" id="18" name="--store--stall1-arcade" opacity="0.8">
-  <object id="530" name="building: arcadeMachine1" gid="64" x="760" y="1000" width="28" height="27">
+  <object id="530" name="building: arcadeMachine1" gid="64" x="767" y="993.25" width="14" height="13.5">
    <properties>
     <property name="id" value="arcadeMachine1"/>
     <property name="type" value="building"/>
@@ -2282,7 +2289,7 @@
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="532" name="building: arcadeMachine2" gid="64" x="812" y="1000" width="28" height="27">
+  <object id="532" name="building: arcadeMachine2" gid="64" x="819" y="993.25" width="14" height="13.5">
    <properties>
     <property name="id" value="arcadeMachine2"/>
     <property name="type" value="building"/>
@@ -2295,7 +2302,7 @@
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="534" name="building: arcadeMachine3" gid="65" x="864" y="1000" width="28" height="27">
+  <object id="534" name="building: arcadeMachine3" gid="65" x="871" y="993.25" width="14" height="13.5">
    <properties>
     <property name="id" value="arcadeMachine3"/>
     <property name="type" value="building"/>
@@ -2308,7 +2315,7 @@
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="536" name="building: arcadeMachine4" gid="66" x="916" y="1000" width="28" height="27">
+  <object id="536" name="building: arcadeMachine4" gid="66" x="923" y="993.25" width="14" height="13.5">
    <properties>
     <property name="id" value="arcadeMachine4"/>
     <property name="type" value="building"/>
@@ -2321,7 +2328,7 @@
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="538" name="building: arcadeMachine5" gid="65" x="968" y="1000" width="28" height="27">
+  <object id="538" name="building: arcadeMachine5" gid="65" x="975" y="993.25" width="14" height="13.5">
    <properties>
     <property name="id" value="arcadeMachine5"/>
     <property name="type" value="building"/>

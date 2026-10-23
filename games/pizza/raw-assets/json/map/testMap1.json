@@ -3105,6 +3105,11 @@
                  "opacity":1,
                  "properties":[
                         {
+                         "name":"style",
+                         "type":"string",
+                         "value":"officeTiles"
+                        }, 
+                        {
                          "name":"type",
                          "type":"string",
                          "value":"floor"
@@ -3280,6 +3285,11 @@
                         }],
                  "properties":[
                         {
+                         "name":"style",
+                         "type":"string",
+                         "value":"glassOffice"
+                        }, 
+                        {
                          "name":"type",
                          "type":"string",
                          "value":"polyWall"
@@ -3435,6 +3445,11 @@
                  "opacity":1,
                  "properties":[
                         {
+                         "name":"style",
+                         "type":"string",
+                         "value":"bakeryTiles"
+                        }, 
+                        {
                          "name":"type",
                          "type":"string",
                          "value":"floor"
@@ -3452,6 +3467,11 @@
                  "name":"floor",
                  "opacity":1,
                  "properties":[
+                        {
+                         "name":"style",
+                         "type":"string",
+                         "value":"bakeryTiles"
+                        }, 
                         {
                          "name":"type",
                          "type":"string",
@@ -3571,7 +3591,7 @@
                         {
                          "name":"style",
                          "type":"string",
-                         "value":"glassTop"
+                         "value":"glassBakery"
                         }, 
                         {
                          "name":"type",
@@ -3785,6 +3805,11 @@
                         }],
                  "properties":[
                         {
+                         "name":"style",
+                         "type":"string",
+                         "value":"glassBakery"
+                        }, 
+                        {
                          "name":"type",
                          "type":"string",
                          "value":"polyWall"
@@ -3859,6 +3884,11 @@
                  "opacity":1,
                  "properties":[
                         {
+                         "name":"style",
+                         "type":"string",
+                         "value":"dinerTiles"
+                        }, 
+                        {
                          "name":"type",
                          "type":"string",
                          "value":"floor"
@@ -3900,7 +3930,7 @@
                         {
                          "name":"style",
                          "type":"string",
-                         "value":"glassTop"
+                         "value":"glassDiner"
                         }, 
                         {
                          "name":"type",
@@ -3967,107 +3997,107 @@
                 }, 
                 {
                  "gid":67,
-                 "height":96,
+                 "height":48,
                  "id":513,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":96,
-                 "x":752,
-                 "y":688
+                 "width":48,
+                 "x":776,
+                 "y":664
                 }, 
                 {
                  "gid":69,
-                 "height":24,
+                 "height":12,
                  "id":514,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":24,
-                 "x":788,
-                 "y":590
+                 "width":12,
+                 "x":794,
+                 "y":615
                 }, 
                 {
                  "gid":69,
-                 "height":24,
+                 "height":12,
                  "id":515,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":24,
-                 "x":788,
-                 "y":714
+                 "width":12,
+                 "x":794,
+                 "y":677
                 }, 
                 {
                  "gid":69,
-                 "height":24,
+                 "height":12,
                  "id":516,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":24,
-                 "x":726,
-                 "y":652
+                 "width":12,
+                 "x":763,
+                 "y":646
                 }, 
                 {
                  "gid":68,
-                 "height":96,
+                 "height":48,
                  "id":517,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":96,
-                 "x":896,
-                 "y":688
+                 "width":48,
+                 "x":920,
+                 "y":664
                 }, 
                 {
                  "gid":69,
-                 "height":24,
+                 "height":12,
                  "id":518,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":24,
-                 "x":932,
-                 "y":590
+                 "width":12,
+                 "x":938,
+                 "y":615
                 }, 
                 {
                  "gid":69,
-                 "height":24,
+                 "height":12,
                  "id":519,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":24,
-                 "x":932,
-                 "y":714
+                 "width":12,
+                 "x":938,
+                 "y":677
                 }, 
                 {
                  "gid":69,
-                 "height":24,
+                 "height":12,
                  "id":520,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":24,
-                 "x":994,
-                 "y":652
+                 "width":12,
+                 "x":969,
+                 "y":646
                 }],
          "opacity":0.8,
          "type":"objectgroup",
@@ -4132,6 +4162,11 @@
                  "opacity":1,
                  "properties":[
                         {
+                         "name":"style",
+                         "type":"string",
+                         "value":"arcadeTiles"
+                        }, 
+                        {
                          "name":"type",
                          "type":"string",
                          "value":"floor"
@@ -4173,7 +4208,7 @@
                         {
                          "name":"style",
                          "type":"string",
-                         "value":"glassTop"
+                         "value":"glassArcade"
                         }, 
                         {
                          "name":"type",
@@ -4240,16 +4275,16 @@
                 }, 
                 {
                  "gid":63,
-                 "height":32,
+                 "height":16,
                  "id":498,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":25,
-                 "x":736,
-                 "y":840
+                 "width":12.5,
+                 "x":742.25,
+                 "y":832
                 }],
          "opacity":0.8,
          "type":"objectgroup",
@@ -4407,7 +4442,7 @@
                 }, 
                 {
                  "gid":61,
-                 "height":73,
+                 "height":36.5,
                  "id":525,
                  "name":"",
                  "opacity":1,
@@ -4420,9 +4455,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":64,
-                 "x":824,
-                 "y":520
+                 "width":32,
+                 "x":840,
+                 "y":501.75
                 }, 
                 {
                  "height":49,
@@ -4500,7 +4535,7 @@
                 }, 
                 {
                  "gid":60,
-                 "height":65,
+                 "height":32.5,
                  "id":529,
                  "name":"",
                  "opacity":1,
@@ -4513,9 +4548,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":64,
-                 "x":936,
-                 "y":520
+                 "width":32,
+                 "x":952,
+                 "y":503.75
                 }],
          "opacity":0.8,
          "type":"objectgroup",
@@ -4530,7 +4565,7 @@
          "objects":[
                 {
                  "gid":64,
-                 "height":27,
+                 "height":13.5,
                  "id":530,
                  "name":"building: arcadeMachine1",
                  "opacity":1,
@@ -4553,9 +4588,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":28,
-                 "x":760,
-                 "y":1000
+                 "width":14,
+                 "x":767,
+                 "y":993.25
                 }, 
                 {
                  "height":28,
@@ -4582,7 +4617,7 @@
                 }, 
                 {
                  "gid":64,
-                 "height":27,
+                 "height":13.5,
                  "id":532,
                  "name":"building: arcadeMachine2",
                  "opacity":1,
@@ -4605,9 +4640,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":28,
-                 "x":812,
-                 "y":1000
+                 "width":14,
+                 "x":819,
+                 "y":993.25
                 }, 
                 {
                  "height":28,
@@ -4634,7 +4669,7 @@
                 }, 
                 {
                  "gid":65,
-                 "height":27,
+                 "height":13.5,
                  "id":534,
                  "name":"building: arcadeMachine3",
                  "opacity":1,
@@ -4657,9 +4692,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":28,
-                 "x":864,
-                 "y":1000
+                 "width":14,
+                 "x":871,
+                 "y":993.25
                 }, 
                 {
                  "height":28,
@@ -4686,7 +4721,7 @@
                 }, 
                 {
                  "gid":66,
-                 "height":27,
+                 "height":13.5,
                  "id":536,
                  "name":"building: arcadeMachine4",
                  "opacity":1,
@@ -4709,9 +4744,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":28,
-                 "x":916,
-                 "y":1000
+                 "width":14,
+                 "x":923,
+                 "y":993.25
                 }, 
                 {
                  "height":28,
@@ -4738,7 +4773,7 @@
                 }, 
                 {
                  "gid":65,
-                 "height":27,
+                 "height":13.5,
                  "id":538,
                  "name":"building: arcadeMachine5",
                  "opacity":1,
@@ -4761,9 +4796,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":28,
-                 "x":968,
-                 "y":1000
+                 "width":14,
+                 "x":975,
+                 "y":993.25
                 }, 
                 {
                  "height":28,

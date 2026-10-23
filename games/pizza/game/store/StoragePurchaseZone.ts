@@ -115,6 +115,18 @@ export default class StoragePurchaseZone extends Entity {
         return { money, resources };
     }
 
+    /** Debug menu "Build" buttons (DebugSectionBuilder.ts) — pays what's still owed for free and completes the purchase the normal way (real storage spawns, notification shows). */
+    public debugCompletePurchase(): void {
+        const remaining = this.getRemainingCost();
+        if (remaining.money > 0) {
+            StorageOwnershipStorage.addProgress(this.storageId, remaining.money);
+        }
+        for (const cost of remaining.resources) {
+            StorageOwnershipStorage.addResourceProgress(this.storageId, cost.type, cost.amount);
+        }
+        this.tryComplete();
+    }
+
     public constructor(
         storageId: string,
         price: StoragePrice | undefined,

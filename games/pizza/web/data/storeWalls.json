@@ -13,6 +13,38 @@
             "bottomHeight": 1.2,
             "bottomOpacity": 1,
             "topOpacity": 0.35
+        },
+        "glassOffice": {
+            "name": "Glass (office base)",
+            "bottomColor": "#4f6272",
+            "topColor": "#9fd8ff",
+            "bottomHeight": 1.2,
+            "bottomOpacity": 1,
+            "topOpacity": 0.35
+        },
+        "glassBakery": {
+            "name": "Glass (bakery base)",
+            "bottomColor": "#9a5b34",
+            "topColor": "#9fd8ff",
+            "bottomHeight": 1.2,
+            "bottomOpacity": 1,
+            "topOpacity": 0.35
+        },
+        "glassDiner": {
+            "name": "Glass (diner base)",
+            "bottomColor": "#b3303c",
+            "topColor": "#9fd8ff",
+            "bottomHeight": 1.2,
+            "bottomOpacity": 1,
+            "topOpacity": 0.35
+        },
+        "glassArcade": {
+            "name": "Glass (arcade base)",
+            "bottomColor": "#3d2b70",
+            "topColor": "#9fd8ff",
+            "bottomHeight": 1.2,
+            "bottomOpacity": 1,
+            "topOpacity": 0.35
         }
     }
 }

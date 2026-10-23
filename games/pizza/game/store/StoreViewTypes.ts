@@ -50,6 +50,30 @@ export const FLOOR_CHECKER_BY_ID: Partial<Record<string, FloorCheckerConfig>> = 
         "colorA": "#e9dcc0",
         "colorB": "#b48b5e",
         "scale": 0.5
+    },
+    "officeTiles": {
+        "name": "Office tiles",
+        "colorA": "#cfd3dc",
+        "colorB": "#a9b0c0",
+        "scale": 1
+    },
+    "bakeryTiles": {
+        "name": "Terracotta (bakery)",
+        "colorA": "#e8bb90",
+        "colorB": "#c7825a",
+        "scale": 0.5
+    },
+    "dinerTiles": {
+        "name": "Diner checker",
+        "colorA": "#f3efe6",
+        "colorB": "#2e2e2e",
+        "scale": 0.5
+    },
+    "arcadeTiles": {
+        "name": "Arcade night",
+        "colorA": "#2d2552",
+        "colorB": "#4b3b8c",
+        "scale": 1
     }
 };
 
@@ -140,6 +164,38 @@ export const WALL_STYLE_BY_ID: Partial<Record<string, WallStyleConfig>> = {
     "glassTop": {
         "name": "Glass Top",
         "bottomColor": "#8a6f5a",
+        "topColor": "#9fd8ff",
+        "bottomHeight": 1.2,
+        "bottomOpacity": 1,
+        "topOpacity": 0.35
+    },
+    "glassOffice": {
+        "name": "Glass (office base)",
+        "bottomColor": "#4f6272",
+        "topColor": "#9fd8ff",
+        "bottomHeight": 1.2,
+        "bottomOpacity": 1,
+        "topOpacity": 0.35
+    },
+    "glassBakery": {
+        "name": "Glass (bakery base)",
+        "bottomColor": "#9a5b34",
+        "topColor": "#9fd8ff",
+        "bottomHeight": 1.2,
+        "bottomOpacity": 1,
+        "topOpacity": 0.35
+    },
+    "glassDiner": {
+        "name": "Glass (diner base)",
+        "bottomColor": "#b3303c",
+        "topColor": "#9fd8ff",
+        "bottomHeight": 1.2,
+        "bottomOpacity": 1,
+        "topOpacity": 0.35
+    },
+    "glassArcade": {
+        "name": "Glass (arcade base)",
+        "bottomColor": "#3d2b70",
         "topColor": "#9fd8ff",
         "bottomHeight": 1.2,
         "bottomOpacity": 1,
