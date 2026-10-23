@@ -96,6 +96,13 @@ export class FarmPlotStorage {
      * ShopUpgradeStorage.tryCompleteUpgrade()/QueueStorage.tryCompleteTask()) — false if it isn't
      * fully funded yet or was already owned.
      */
+    /** Debug / playtest unlock (PlaytestUnlock.ts) — owned without paying. Boot-time only: fires no signals. */
+    static debugSetOwned(id: string): void {
+        this.ownedIds.add(id);
+        this.progress.delete(id);
+        void this.persist();
+    }
+
     static tryCompletePurchase(id: string, config: FarmPlotConfig): boolean {
         if (this.isOwned(id) || this.getProgress(id) < config.price.amount) {
             return false;

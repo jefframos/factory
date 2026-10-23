@@ -93,6 +93,14 @@ export class StorageOwnershipStorage {
     }
 
     /** Marks the storage owned (and fires onPurchase) once coins >= `price` and every resource cost is met. Returns whether it's owned now. */
+    /** Debug / playtest unlock (PlaytestUnlock.ts) — owned without paying. Boot-time only: fires no signals. */
+    static debugSetOwned(id: string): void {
+        this.progress.delete(id);
+        this.resources.delete(id);
+        this.ownedIds.add(id);
+        void this.persist();
+    }
+
     static tryCompletePurchase(id: string, price: number, resourceCost: readonly StorageResourceCost[]): boolean {
         if (this.ownedIds.has(id)) {
             return true;

@@ -76,6 +76,16 @@ export class StoreProgressStorage {
     }
 
     /** Level 0 -> 1, the moment the store opens (starter built, or its openRequirement met). No-op if already open. */
+    /** Debug / playtest unlock (PlaytestUnlock.ts) — jumps straight to `level`, as if `totalSales` sales had happened. Boot-time only: fires no signals. */
+    static debugSetLevel(storeId: string, level: number, totalSales: number): void {
+        const state = this.state(storeId);
+        state.level = Math.max(1, Math.floor(level));
+        state.money = 0;
+        state.sales = 0;
+        state.totalSales = Math.max(state.totalSales, totalSales);
+        void this.persist();
+    }
+
     static open(storeId: string): void {
         const state = this.state(storeId);
         if (state.level >= 1) {

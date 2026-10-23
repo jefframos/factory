@@ -47,6 +47,7 @@ import { wipeAllPlayerData } from './game/data/PlayerDataReset';
 import { wantsFreshPlaytestSave } from './game/playtest/PlaytestSession';
 import { applyTuningFromUrl } from './game/playtest/PlaytestTuning';
 import { loadScenarioFromUrl } from './game/playtest/PlaytestScenario';
+import { applyUnlockFromUrl, getUnlockLevel } from './game/playtest/PlaytestUnlock';
 import { TutorialProgressStorage } from './game/tutorial/TutorialProgressStorage';
 import { TriggerStorage } from './game/data/TriggerStorage';
 import { GameClock } from './game/utils/GameClock';
@@ -107,7 +108,8 @@ export default class MyGame extends Game {
             await ensureSaveDataVersion();
             // Playtest from a brand-new save (?bot&fresh / ?record&fresh) — see game/playtest/README.md.
             // ?scenario=<name> starts from a saved snapshot (PlaytestScenario.ts) — wins over &fresh.
-            if (!(await loadScenarioFromUrl()) && wantsFreshPlaytestSave()) {
+            // ?unlockTo=N (PlaytestUnlock.ts) starts from a wiped save too, filled in after the loads below.
+            if (!(await loadScenarioFromUrl()) && (wantsFreshPlaytestSave() || getUnlockLevel() !== undefined)) {
                 await wipeAllPlayerData();
             }
             await ShopStorage.load();
@@ -141,6 +143,8 @@ export default class MyGame extends Game {
             await TutorialProgressStorage.load();
             await TriggerStorage.load();
             await GameClock.load();
+            // ?unlockTo=N — jump to store level N with everything possible built (PlaytestUnlock.ts).
+            await applyUnlockFromUrl();
             ShopUpgradeStorage.reapplyAllShopUpgrades();
             await Localization.load();
 

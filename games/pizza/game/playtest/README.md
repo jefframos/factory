@@ -16,6 +16,19 @@ report at `games/pizza/reports/playtests/latest.md`:
 | `npm run playtest -- --minutes 20 --speed 5 --style casual --label tomato` | Options (all optional) |
 | `npm run playtest -- --url http://localhost:9001` | Use the dev server you already have running |
 
+### Jump to a store level — `unlockTo`
+
+`?unlockTo=8` (browser, with or without `bot`) or `--unlock-to 8` (runner) starts at store level 8
+with everything built/bought that's possible by then — rooms, storages, stalls, mix stations,
+farms, lucky machines whose unlock is met — tutorials done, a cashier / 2 restockers / cleaner /
+baker hired and 2000 money (`PlaytestUnlock.ts`). It replaces the save. E.g. `?unlockTo=8` to
+test the diner, `?unlockTo=13` for every lucky machine.
+
+```
+npm run playtest:watch -- --unlock-to 8 --minutes 15      # watch the restaurant run
+http://localhost:9001/?unlockTo=8                          # play it yourself
+```
+
 ### Start later in the game — scenarios
 
 A scenario is a snapshot of the whole save (`games/pizza/playtest-scenarios/<name>.json`, committed).

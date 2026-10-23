@@ -34,6 +34,8 @@
 //   --snapshot-at E[:ID] save a scenario when analytics event E (first arg ID) fires — e.g.
 //                       storageBought:burgerStation, built:storeRoom3, farmBought:farm6
 //   --snapshot-name N   its file name (default snapshot); --snapshot-stop ends the run right after
+//   --unlock-to N       start at store level N with everything possible built/bought, staff hired
+//                       (game/playtest/PlaytestUnlock.ts) — e.g. 8 to test the diner, 12 for the arcade
 //   --no-demo-end       keep playing past the demo end
 //   --label L           added to the output folder name
 //   --keep-open         keep the window open after the report (default with --headed)
@@ -184,12 +186,15 @@ async function runOne(base, run) {
     if (args.scenario) {
         query.set('scenario', String(args.scenario));
     }
+    if (args['unlock-to'] !== undefined) {
+        query.set('unlockTo', String(args['unlock-to']));
+    }
     if (args['no-demo-end'] === true) {
         query.set('nodemoend', '');
     }
     let url = `${base}/?${query.toString().replace(/^bot=&/, 'bot&').replace(/nodemoend=(&|$)/, 'nodemoend$1')}`;
     // A scenario replaces the whole save itself; otherwise start from an empty one.
-    if (args['keep-save'] !== true && !args.scenario) {
+    if (args['keep-save'] !== true && !args.scenario && args['unlock-to'] === undefined) {
         url += '&fresh';
     }
     console.log(`[playtest] ${tag}${url}`);

@@ -153,6 +153,15 @@ export class BuildingStorage {
      * false) if requirements aren't actually met yet, so a caller can call this unconditionally
      * right after a deposit and just check the return value.
      */
+    /** Debug / playtest unlock (PlaytestUnlock.ts) — straight to `level` without paying. Boot-time only: fires no signals. */
+    static debugSetLevel(id: BuildingId, level: number): void {
+        const state = this.state(id);
+        state.level = Math.max(0, Math.floor(level));
+        state.progress = {};
+        state.money = 0;
+        void this.persist();
+    }
+
     static tryCompleteLevel(id: BuildingId): boolean {
         if (!this.isNextLevelReady(id)) {
             return false;
