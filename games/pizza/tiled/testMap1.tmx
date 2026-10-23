@@ -2205,7 +2205,7 @@
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="498" gid="63" x="742.25" y="832" width="12.5" height="16"/>
+  <object id="498" gid="63" x="732" y="912" width="25" height="32"/>
  </objectgroup>
  <objectgroup draworder="index" id="17" name="--store--stall1-diner" opacity="0.8">
   <object id="511" name="storage: storageBurger" x="-24" y="780" width="46" height="51">
@@ -2276,72 +2276,72 @@
   </object>
  </objectgroup>
  <objectgroup draworder="index" id="18" name="--store--stall1-arcade" opacity="0.8">
-  <object id="530" name="building: arcadeMachine1" gid="64" x="767" y="993.25" width="14" height="13.5">
+  <object id="530" name="building: arcadeMachine1" gid="64" x="866" y="790" width="28" height="27" rotation="180">
    <properties>
     <property name="id" value="arcadeMachine1"/>
     <property name="type" value="building"/>
     <property name="useOwnMesh" type="bool" value="true"/>
    </properties>
   </object>
-  <object id="531" name="dropper → arcadeMachine1" x="754" y="940" width="40" height="28">
+  <object id="531" name="dropper → arcadeMachine1" x="836" y="821" width="32" height="28">
    <properties>
     <property name="target" value="arcadeMachine1"/>
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="532" name="building: arcadeMachine2" gid="64" x="819" y="993.25" width="14" height="13.5">
+  <object id="532" name="building: arcadeMachine2" gid="64" x="902" y="790" width="28" height="27" rotation="180">
    <properties>
     <property name="id" value="arcadeMachine2"/>
     <property name="type" value="building"/>
     <property name="useOwnMesh" type="bool" value="true"/>
    </properties>
   </object>
-  <object id="533" name="dropper → arcadeMachine2" x="806" y="940" width="40" height="28">
+  <object id="533" name="dropper → arcadeMachine2" x="872" y="821" width="32" height="28">
    <properties>
     <property name="target" value="arcadeMachine2"/>
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="534" name="building: arcadeMachine3" gid="65" x="871" y="993.25" width="14" height="13.5">
+  <object id="534" name="building: arcadeMachine3" gid="65" x="938" y="790" width="28" height="27" rotation="180">
    <properties>
     <property name="id" value="arcadeMachine3"/>
     <property name="type" value="building"/>
     <property name="useOwnMesh" type="bool" value="true"/>
    </properties>
   </object>
-  <object id="535" name="dropper → arcadeMachine3" x="858" y="940" width="40" height="28">
+  <object id="535" name="dropper → arcadeMachine3" x="908" y="821" width="32" height="28">
    <properties>
     <property name="target" value="arcadeMachine3"/>
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="536" name="building: arcadeMachine4" gid="66" x="923" y="993.25" width="14" height="13.5">
+  <object id="536" name="building: arcadeMachine4" gid="66" x="974" y="790" width="28" height="27" rotation="180">
    <properties>
     <property name="id" value="arcadeMachine4"/>
     <property name="type" value="building"/>
     <property name="useOwnMesh" type="bool" value="true"/>
    </properties>
   </object>
-  <object id="537" name="dropper → arcadeMachine4" x="910" y="940" width="40" height="28">
+  <object id="537" name="dropper → arcadeMachine4" x="944" y="821" width="32" height="28">
    <properties>
     <property name="target" value="arcadeMachine4"/>
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="538" name="building: arcadeMachine5" gid="65" x="975" y="993.25" width="14" height="13.5">
+  <object id="538" name="building: arcadeMachine5" gid="65" x="1010" y="790" width="28" height="27" rotation="180">
    <properties>
     <property name="id" value="arcadeMachine5"/>
     <property name="type" value="building"/>
     <property name="useOwnMesh" type="bool" value="true"/>
    </properties>
   </object>
-  <object id="539" name="dropper → arcadeMachine5" x="962" y="940" width="40" height="28">
+  <object id="539" name="dropper → arcadeMachine5" x="980" y="821" width="32" height="28">
    <properties>
     <property name="target" value="arcadeMachine5"/>
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="540" name="arcadeAtm: farmStore1" x="728" y="800" width="44" height="52">
+  <object id="540" name="arcadeAtm: farmStore1" x="724" y="872" width="44" height="52">
    <properties>
     <property name="id" value="farmStore1"/>
     <property name="type" value="arcadeAtm"/>

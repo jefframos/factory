@@ -4275,16 +4275,16 @@
                 }, 
                 {
                  "gid":63,
-                 "height":16,
+                 "height":32,
                  "id":498,
                  "name":"",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":12.5,
-                 "x":742.25,
-                 "y":832
+                 "width":25,
+                 "x":732,
+                 "y":912
                 }],
          "opacity":0.8,
          "type":"objectgroup",
@@ -4565,7 +4565,7 @@
          "objects":[
                 {
                  "gid":64,
-                 "height":13.5,
+                 "height":27,
                  "id":530,
                  "name":"building: arcadeMachine1",
                  "opacity":1,
@@ -4585,12 +4585,12 @@
                          "type":"bool",
                          "value":true
                         }],
-                 "rotation":0,
+                 "rotation":180,
                  "type":"",
                  "visible":true,
-                 "width":14,
-                 "x":767,
-                 "y":993.25
+                 "width":28,
+                 "x":866,
+                 "y":790
                 }, 
                 {
                  "height":28,
@@ -4611,13 +4611,13 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":40,
-                 "x":754,
-                 "y":940
+                 "width":32,
+                 "x":836,
+                 "y":821
                 }, 
                 {
                  "gid":64,
-                 "height":13.5,
+                 "height":27,
                  "id":532,
                  "name":"building: arcadeMachine2",
                  "opacity":1,
@@ -4637,12 +4637,12 @@
                          "type":"bool",
                          "value":true
                         }],
-                 "rotation":0,
+                 "rotation":180,
                  "type":"",
                  "visible":true,
-                 "width":14,
-                 "x":819,
-                 "y":993.25
+                 "width":28,
+                 "x":902,
+                 "y":790
                 }, 
                 {
                  "height":28,
@@ -4663,13 +4663,13 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":40,
-                 "x":806,
-                 "y":940
+                 "width":32,
+                 "x":872,
+                 "y":821
                 }, 
                 {
                  "gid":65,
-                 "height":13.5,
+                 "height":27,
                  "id":534,
                  "name":"building: arcadeMachine3",
                  "opacity":1,
@@ -4689,12 +4689,12 @@
                          "type":"bool",
                          "value":true
                         }],
-                 "rotation":0,
+                 "rotation":180,
                  "type":"",
                  "visible":true,
-                 "width":14,
-                 "x":871,
-                 "y":993.25
+                 "width":28,
+                 "x":938,
+                 "y":790
                 }, 
                 {
                  "height":28,
@@ -4715,13 +4715,13 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":40,
-                 "x":858,
-                 "y":940
+                 "width":32,
+                 "x":908,
+                 "y":821
                 }, 
                 {
                  "gid":66,
-                 "height":13.5,
+                 "height":27,
                  "id":536,
                  "name":"building: arcadeMachine4",
                  "opacity":1,
@@ -4741,12 +4741,12 @@
                          "type":"bool",
                          "value":true
                         }],
-                 "rotation":0,
+                 "rotation":180,
                  "type":"",
                  "visible":true,
-                 "width":14,
-                 "x":923,
-                 "y":993.25
+                 "width":28,
+                 "x":974,
+                 "y":790
                 }, 
                 {
                  "height":28,
@@ -4767,13 +4767,13 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":40,
-                 "x":910,
-                 "y":940
+                 "width":32,
+                 "x":944,
+                 "y":821
                 }, 
                 {
                  "gid":65,
-                 "height":13.5,
+                 "height":27,
                  "id":538,
                  "name":"building: arcadeMachine5",
                  "opacity":1,
@@ -4793,12 +4793,12 @@
                          "type":"bool",
                          "value":true
                         }],
-                 "rotation":0,
+                 "rotation":180,
                  "type":"",
                  "visible":true,
-                 "width":14,
-                 "x":975,
-                 "y":993.25
+                 "width":28,
+                 "x":1010,
+                 "y":790
                 }, 
                 {
                  "height":28,
@@ -4819,9 +4819,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":40,
-                 "x":962,
-                 "y":940
+                 "width":32,
+                 "x":980,
+                 "y":821
                 }, 
                 {
                  "height":52,
@@ -4843,8 +4843,8 @@
                  "type":"",
                  "visible":true,
                  "width":44,
-                 "x":728,
-                 "y":800
+                 "x":724,
+                 "y":872
                 }],
          "opacity":0.8,
          "type":"objectgroup",
