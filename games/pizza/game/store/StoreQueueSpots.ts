@@ -71,6 +71,11 @@ export function layoutQueueSpots(
     isClientArea: (x: number, z: number) => boolean = isAllowed,
 ): void {
     const count = Math.max(1, spotsPerLine);
+    // The searches below test the same cell centres over and over (millions of times in a big
+    // late-game store — a 1.3 s freeze per layout): answer each cell once.
+    const sameTest = isClientArea === isAllowed;
+    isAllowed = memoByCell(grid, isAllowed);
+    isClientArea = sameTest ? isAllowed : memoByCell(grid, isClientArea);
     const stepAllowed = (spot: THREE.Vector3): boolean => grid.isWalkableAt(spot.x, spot.z) && isAllowed(spot.x, spot.z);
     const allowed = (spot: THREE.Vector3): boolean => stepAllowed(spot) && isClientArea(spot.x, spot.z);
     const straightLines = style === 'line' ? lines : lines.filter(line => line.straight);
@@ -103,9 +108,10 @@ export function layoutQueueSpots(
 
     taken.push(...lines.map(line => line.firstSpot.clone()));
     const spotsByLine: THREE.Vector3[][] = lines.map(line => [line.firstSpot.clone()]);
-    // Only cells inside the store, in sight of the front spot (not through a wall).
-    const candidatesByLine = lines.map(line => rankCandidates(grid, line)
-        .filter(cell => allowed(cell) && inSight(grid, line.firstSpot, cell)));
+    // Ranked cells near each line's front spot. Only ones inside the store and in sight of the front
+    // spot (not through a wall) count — checked lazily as the cursor reaches them: a line takes a
+    // handful of spots, and testing every ranked cell up front was most of a late-game layout.
+    const candidatesByLine = lines.map(line => rankCandidates(grid, line));
     const cursor = lines.map(() => 0);
 
     for (let round = 1; round < count; round++) {
@@ -114,7 +120,7 @@ export function layoutQueueSpots(
             let chosen: THREE.Vector3 | undefined;
             while (cursor[lineIndex] < candidates.length) {
                 const candidate = candidates[cursor[lineIndex]++];
-                if (isFree(candidate, taken, line.spacing)) {
+                if (isFree(candidate, taken, line.spacing) && allowed(candidate) && inSight(grid, line.firstSpot, candidate)) {
                     chosen = candidate;
                     break;
                 }
@@ -129,6 +135,26 @@ export function layoutQueueSpots(
     }
 
     lines.forEach((line, lineIndex) => line.setSpots(spotsByLine[lineIndex]));
+}
+
+/** `test`, cached per nav cell for one layout pass — exact for cell centres (what the searches pass); any other point is tested directly. */
+function memoByCell(grid: StoreNavGrid, test: (x: number, z: number) => boolean): (x: number, z: number) => boolean {
+    const cache = new Int8Array(grid.cellCount); // 0 = not asked yet, 1 = yes, 2 = no
+    const center = new THREE.Vector3();
+    return (x, z) => {
+        const index = grid.cellAt(x, z);
+        if (index < 0) {
+            return test(x, z);
+        }
+        grid.cellCenter(index, center);
+        if (Math.abs(center.x - x) > 1e-6 || Math.abs(center.z - z) > 1e-6) {
+            return test(x, z);
+        }
+        if (cache[index] === 0) {
+            cache[index] = test(x, z) ? 1 : 2;
+        }
+        return cache[index] === 1;
+    };
 }
 
 function isFree(spot: THREE.Vector3, taken: readonly THREE.Vector3[], minDist: number): boolean {
@@ -195,17 +221,14 @@ function nearestFree(
     accept: (cell: THREE.Vector3) => boolean,
     allowed: (spot: THREE.Vector3) => boolean,
 ): THREE.Vector3 | undefined {
-    let best: THREE.Vector3 | undefined;
-    let bestDistSq = Infinity;
-    for (const cell of grid.walkableCellsNear(from.x, from.z, reach)) {
-        const distSq = cell.distanceToSquared(from);
-        if (distSq >= bestDistSq || !allowed(cell) || !accept(cell)) {
-            continue;
-        }
-        bestDistSq = distSq;
-        best = cell;
-    }
-    return best;
+    // Ring search from `from` (StoreNavGrid.nearestWalkableCellWhere) — scanning the whole reach
+    // (up to LAST_RESORT_REACH: ~70k cells) for every spot was most of a late-game layout's time.
+    const cell = new THREE.Vector3();
+    const found = grid.nearestWalkableCellWhere(from.x, from.z, reach, (cx, cz) => {
+        cell.set(cx, 0, cz);
+        return allowed(cell) && accept(cell);
+    });
+    return found ? new THREE.Vector3(found.x, 0, found.z) : undefined;
 }
 
 /** Walkable cells near a line's front spot, best (closest, in front, along its direction) first. */

@@ -116,6 +116,70 @@ export default class StoreNavGrid {
         return true;
     }
 
+    /** Same blocked cells as `other` (same size grid) at every cell whose centre passes `inside`? Lets a rebuild skip work that only cares about one area. */
+    public sameBlockedWithin(other: StoreNavGrid, inside: (x: number, z: number) => boolean): boolean {
+        if (other.cols !== this.cols || other.rows !== this.rows) {
+            return false;
+        }
+        for (let i = 0; i < this.blocked.length; i++) {
+            if (this.blocked[i] !== other.blocked[i]) {
+                const c = i % this.cols;
+                const r = (i - c) / this.cols;
+                if (inside(this.minX + (c + 0.5) * this.cellSize, this.minZ + (r + 0.5) * this.cellSize)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * The centre of the walkable cell nearest (x, z), within `radius`, that `accept` takes — or
+     * undefined. Searches outward ring by ring and stops once no closer cell can exist, so a wide
+     * search costs only as much as the distance to its answer (no Vector3 per cell either).
+     */
+    public nearestWalkableCellWhere(x: number, z: number, radius: number, accept: (cx: number, cz: number) => boolean): { x: number; z: number } | undefined {
+        const centerC = Math.floor((x - this.minX) / this.cellSize);
+        const centerR = Math.floor((z - this.minZ) / this.cellSize);
+        const radiusSq = radius * radius;
+        const maxRing = Math.ceil(radius / this.cellSize) + 1;
+        let bestSq = Infinity;
+        let bestX = 0;
+        let bestZ = 0;
+        const consider = (c: number, r: number): void => {
+            if (c < 0 || r < 0 || c >= this.cols || r >= this.rows || this.blocked[r * this.cols + c] === 1) {
+                return;
+            }
+            const cx = this.minX + (c + 0.5) * this.cellSize;
+            const cz = this.minZ + (r + 0.5) * this.cellSize;
+            const distSq = (cx - x) * (cx - x) + (cz - z) * (cz - z);
+            if (distSq > radiusSq || distSq >= bestSq || !accept(cx, cz)) {
+                return;
+            }
+            bestSq = distSq;
+            bestX = cx;
+            bestZ = cz;
+        };
+        for (let ring = 0; ring <= maxRing; ring++) {
+            // Every cell centre in this ring is at least (ring - 1) cells away from (x, z).
+            const nearest = Math.max(0, ring - 1) * this.cellSize;
+            if (nearest * nearest > bestSq || nearest > radius) {
+                break;
+            }
+            for (let r = centerR - ring; r <= centerR + ring; r++) {
+                if (r === centerR - ring || r === centerR + ring) {
+                    for (let c = centerC - ring; c <= centerC + ring; c++) {
+                        consider(c, r);
+                    }
+                } else {
+                    consider(centerC - ring, r);
+                    consider(centerC + ring, r);
+                }
+            }
+        }
+        return bestSq === Infinity ? undefined : { x: bestX, z: bestZ };
+    }
+
     public isCellBlocked(index: number): boolean {
         return this.blocked[index] === 1;
     }

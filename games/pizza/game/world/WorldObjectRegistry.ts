@@ -1155,7 +1155,13 @@ export default class WorldObjectRegistry {
             }
             const opening = this.readWallOpening(obj, tileSizePx, worldUnitsPerTile);
             if (opening) {
-                const owner = sectionAt(placement.x, placement.z);
+                // A door straddles its wall, so its centre can sit just outside the room (the arcade's
+                // did — the hole was skipped and the room sealed): then the section it overlaps owns it.
+                const owner = sectionAt(placement.x, placement.z) ?? this.storeSections.find(section => {
+                    const area = section.placement;
+                    return opening.rect.maxX >= area.x - area.width / 2 && opening.rect.minX <= area.x + area.width / 2
+                        && opening.rect.maxZ >= area.z - area.depth / 2 && opening.rect.minZ <= area.z + area.depth / 2;
+                });
                 if (!owner) {
                     console.warn(`[WorldObjectRegistry] ${type} #${obj.id} on a section layer isn't inside any storeSection rect — skipping`);
                     continue;

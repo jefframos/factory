@@ -835,7 +835,8 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
      * Blocked: every storage of this store (bought or not), the cashier and money-drop spots,
      * every static solid physics body in reach (walls, buildings, solid storages, ...), and
      * unwalkable tiles — all grown by the client radius. Kept as-is (no replans) when the
-     * result is identical to the current grid; otherwise swapped in and the queue spots re-laid.
+     * result is identical to the current grid; otherwise swapped in, and the queue spots re-laid
+     * when a changed cell is inside the store's area.
      */
     private rebuildNavGrid(): void {
         const radius = this.config.clientRadius ?? DEFAULT_CLIENT_RADIUS;
@@ -867,8 +868,14 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         if (this.navGrid && this.navGrid.sameBlockedAs(grid)) {
             return;
         }
+        // Queue spots only stand inside the store's area — a change outside it (trees and rocks
+        // streaming in and out at the grid's margin as the player walks) swaps the grid in
+        // without re-laying every queue, which froze a late-game store for a second each time.
+        const queuesUnaffected = this.navGrid?.sameBlockedWithin(grid, (x, z) => rectContains(this.layout.area, x, z)) ?? false;
         this.navGrid = grid;
-        this.layoutQueues(grid);
+        if (!queuesUnaffected) {
+            this.layoutQueues(grid);
+        }
     }
 
     /** Spots each queue needs: the most clients the store can hold right now, plus headroom. */
