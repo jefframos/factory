@@ -4585,12 +4585,12 @@
                          "type":"bool",
                          "value":true
                         }],
-                 "rotation":180,
+                 "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":28,
-                 "x":866,
-                 "y":790
+                 "x":838,
+                 "y":817
                 }, 
                 {
                  "height":28,
@@ -4637,12 +4637,12 @@
                          "type":"bool",
                          "value":true
                         }],
-                 "rotation":180,
+                 "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":28,
-                 "x":902,
-                 "y":790
+                 "x":874,
+                 "y":817
                 }, 
                 {
                  "height":28,
@@ -4689,12 +4689,12 @@
                          "type":"bool",
                          "value":true
                         }],
-                 "rotation":180,
+                 "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":28,
-                 "x":938,
-                 "y":790
+                 "x":910,
+                 "y":817
                 }, 
                 {
                  "height":28,
@@ -4741,12 +4741,12 @@
                          "type":"bool",
                          "value":true
                         }],
-                 "rotation":180,
+                 "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":28,
-                 "x":974,
-                 "y":790
+                 "x":946,
+                 "y":817
                 }, 
                 {
                  "height":28,
@@ -4793,12 +4793,12 @@
                          "type":"bool",
                          "value":true
                         }],
-                 "rotation":180,
+                 "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":28,
-                 "x":1010,
-                 "y":790
+                 "x":982,
+                 "y":817
                 }, 
                 {
                  "height":28,
