@@ -131,7 +131,7 @@ three PIXI bundles in order — `json` (also triggers `loadShopItems()`/`loadIsl
 `fonts`, `images` — each patched to `pizza/<kind>/` via `ManifestHelper.patchPaths()`.
 `startGame()` calls `applyDebugPhysicsCookie()` (dev-mode-only, see Debug cookies below —
 must run before any entity's `RigidBody.awake()`, which reads the debug flags once at
-construction), initializes `DevGuiManager` (gated on `?dev` — see `Game.debugParams`),
+construction), initializes the core `DebugOverlay` (gated on `?dev` / `?debug` — see `Game.debugParams`),
 registers and switches to `PizzaScene`.
 
 ## Scene: `game/scenes/PizzaScene.ts`
@@ -163,18 +163,16 @@ space, no conversion needed).
 `ParticleEmitterComponent`/`ParticleBurstOnDestroyComponent` or a direct
 `ParticleSystem.burst()` call.
 
-**Dev GUI** (`setupDebugGui()`, no-ops without `?dev`) — resource-clearing buttons,
-live camera sliders, a live render-stats readout (`triangles`/`drawCalls`/`meshCount`
-from `SetupThree.renderer.info` vs. a full scene traversal — useful for spotting
-frustum-culling mismatches caused by `BendService`'s vertex bend happening *after* THREE
-already decided visibility from the un-bent bounding sphere), every `PerformanceConfig`
-knob (see below), an `Upgrades` folder — one force-upgrade button per shop (fully
-funds + completes the next level in one click, firing the same notification the real
-coin-drain flow does — see Tools & shop upgrades / Notifications below) plus a live
-per-tool readout of `hitIntervalSec`/`hitScale`/`yieldPerHit` — and debug buttons to add
-seeds (`SeedStorage.add`, currently the ONLY way to acquire seeds — see Farming below)
-and to reveal zones ahead of schedule (`WorldManager.revealNextZone()`/
-`revealUpToZone()`, persisted via `DebugZoneRevealCookie` — see Zone locking below).
+**Debug menu** (`game/debug/PizzaDebugMenu.ts`, built by `setupDebugMenu()`; inert without
+`?dev` / `?debug`) — core `DebugOverlay` panels, opened from the top-left Debug pill or
+the backtick key: **Progression** (jump to store level N via `?unlockTo=N`, load / save
+playtest scenarios, store / staff / tool shortcuts, force-upgrade per shop), **Economy**,
+**World** (teleport, fly / top-down camera, camera sliders, tile readout, UI avoidance, map
+layout suggestions), **Carrier**, **Reset** (clear any one save, or everything),
+**Performance** (render stats — `triangles`/`drawCalls` vs. scene mesh count, useful for
+spotting culling mismatches from `BendService`'s post-cull bend — `PerformanceConfig`
+knobs, platform pause, data / mesh dumps) and **Tool Stats** (live per-tool gather stats).
+Panel values are saved only when you press that panel's Apply.
 
 ## World / terrain — `game/world/`
 
@@ -1239,7 +1237,7 @@ Three small `document.cookie`-backed utilities — NOT `PlatformHandler`/`*Stora
 deliberately local dev/testing state, read synchronously at module load with no async
 boot step:
 
-- **`DebugMenuVisibilityCookie.ts`** — persists whether `InGameButtonList`'s testing-button
+- **`DebugMenuVisibilityCookie.ts`** — (unused since the debug menu moved to `DebugOverlay`) persists whether `InGameButtonList`'s testing-button
   stack (Top-Down View, Clear Data, Open Next Zone, Add 100 Money, etc.) is expanded/
   collapsed; collapsed by default on first load.
 - **`DebugPhysicsCookie.ts`** — lets the separate pizza web editor's header toggles

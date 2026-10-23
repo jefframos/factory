@@ -72,8 +72,7 @@ import FarmCropHud from '../world/FarmCropHud';
 import FarmAutoPlantHud from '../world/FarmAutoPlantHud';
 import { getMartConfig } from '../data/MartTypes';
 import { getCraftingTableConfig } from '../data/CraftingTableTypes';
-import { getShopConfig, getUpgradeCost, SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
-import { ShopUpgradeStorage } from '../shop/ShopUpgradeStorage';
+import { getShopConfig, SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
 import CraftZone, { CraftTriggerArea } from '../crafting/CraftZone';
 import { getCraftConfig } from '../crafting/CraftTypes';
 import FarmZone from '../world/FarmZone';
@@ -87,14 +86,10 @@ import PlaytestSession from '../playtest/PlaytestSession';
 import { DEFAULT_CAMERA_TEMPLATE_ID, getCameraTemplate } from '../data/CameraTemplateTypes';
 import { TriggerStorage } from '../data/TriggerStorage';
 import { FarmPlotStorage } from '../data/FarmPlotStorage';
-import { SeedId } from '../data/SeedTypes';
-import { SeedStorage } from '../data/SeedStorage';
 import { TutorialProgressStorage } from '../tutorial/TutorialProgressStorage';
 import { CraftStorage } from '../crafting/CraftStorage';
 import { ItemStorage } from '../crafting/ItemStorage';
 import { ItemType } from '../crafting/ItemTypes';
-import { QueueStorage } from '../data/QueueStorage';
-import { EconomyStorage } from '../data/EconomyStorage';
 import { CurrencyType } from '../data/EconomyTypes';
 import WorldManager from '../world/WorldManager';
 import WorldObjectRegistry, { WorldObjectPlacement } from '../world/WorldObjectRegistry';
@@ -106,21 +101,11 @@ import ShapeResourceSpawner from '../world/ShapeResourceSpawner';
 import AnimalNode from '../player/AnimalNode';
 import { AnimalFollowStorage } from '../data/AnimalFollowStorage';
 import UIService from '../ui/UIService';
-import InGameButtonList from '../ui/InGameButtonList';
-import { clearAllPlayerData } from '../data/PlayerDataReset';
+import { buildPizzaDebugMenu } from '../debug/PizzaDebugMenu';
 import { ZONE_REVEAL_CONFIG } from '../world/FogOfWarConfig';
-import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
-import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
 import { BUILDING_CONFIG, BuildingId } from '../data/BuildingTypes';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
-import { PROVIDER_CONFIG } from '../actions/ProviderTypes';
-import { ACTION_CONFIG } from '../actions/ActionTypes';
-import { getToolIcon } from '../actions/ToolRegistry';
-import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
-import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
-import { DevGuiManager } from 'core/utils/DevGuiManager';
-import { CarrierStackMode, getPlayerConfig } from '../data/PlayerConfig';
 import { getStorageConfig, getStorageResourceCost, isStorageForSale } from '../data/StorageTypes';
 import { StorageInventory } from '../data/StorageInventory';
 import StorageZone, { getStorageIcon } from '../world/StorageZone';
@@ -147,8 +132,6 @@ import { getDoorStyle, getFloorChecker, getStoreDoorStyle, getStoreFloorChecker,
 import { findStoreIdAt, readStoreLayouts } from '../store/StoreLayout';
 import { FloorLayers, onFloor } from '../world/FloorLayers';
 import { FLOOR_FRAME } from '../ui/PopupConfig';
-import { getCarrierCapacity, getCarrierLevel, getCarrierShopIds } from '../data/CarrierCapacity';
-import { CarryStack } from '../player/CarryStack';
 import PlayerUIAvoidanceComponent from '../components/PlayerUIAvoidanceComponent';
 import SetupThree from 'core/scene/SetupThree';
 import DebugFlyCameraController from '../debug/DebugFlyCameraController';
@@ -162,11 +145,9 @@ import GateDropZone from '../world/GateDropZone';
 import RequirementRegistry from '../world/RequirementRegistry';
 import { GATE_CONFIG, GateId } from '../data/GateTypes';
 import { GateStorage } from '../data/GateStorage';
-import { downloadGameData } from '../debug/GameDataBaker';
 import { PlayerPositionStorage } from '../data/PlayerPositionStorage';
 import { isWalkable } from '../world/TileWalkability';
 import { ModelSnapshotWindow } from '../debug/ModelSnapshotWindow';
-import { MapLayoutSuggestionTool, MapLayoutArchetype } from '../debug/MapLayoutSuggestionTool';
 import { getMeshPlacements } from '../world/MeshLayerSpawner';
 import { addMapMeshVisual } from '../world/MapMeshVisual';
 import { FenceOpeningRect, FenceSpan, PolyFenceBuilder } from '../builders/PolyFenceBuilder';
@@ -545,8 +526,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupFences();
         // Built before registerQueueSpawnGates() — a queue's reward flies to this UI's wallet
         // icon (see registerQueueSpawnGates()), so the panel has to exist first.
-        this.uiService = new UIService(this.game, () => this.toggleCameraMode());
-        this.setupDebugButtons();
+        this.uiService = new UIService(this.game);
         // Before any spawn gate — objects inside a store section / store area wait for it (see StoreUnlocks.ts).
         StoreUnlocks.registerPlacementGates(this.worldObjects);
         this.registerQueueSpawnGates();
@@ -569,45 +549,13 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         StoreProgressStorage.onLevelChanged.add(this.handleStoreLevelChanged);
         // Poki gameplayStart on the player's first tap/click/key from here on — see GameplayTracker.ts.
         GameplayTracker.init();
-        this.setupDebugGui();
+        this.setupDebugMenu();
         this.setupPlaytest();
         this.threeScene.add(this.mainPlayer.transform);
 
         this.positionCamera();
         void this.loadPlayerCharacter();
     }
-
-    /**
-     * Live dat.GUI readout for renderer stats — meshCount is EVERY THREE.Mesh currently in
-     * threeScene (frustum culling never removes/re-adds objects, just skips drawing them —
-     * see THREE's Frustum.intersectsObject, which tests the mesh's own boundingSphere BEFORE
-     * BendService's vertex-shader bend displaces anything, so a mesh sitting right at the
-     * cull boundary is being culled/kept based on its UN-bent position). triangles/drawCalls
-     * come straight from SetupThree.renderer.info.render, which DOES reflect the outcome of
-     * that (possibly wrong, pre-bend) culling decision — only what actually got drawn this
-     * frame counts toward them. Comparing meshCount against drawCalls is exactly how to spot
-     * "this is being culled when it shouldn't be" vs "this is being culled correctly."
-     * dat.GUI's `.listen()` (see DevGuiManager.addReadout()) re-reads these getters every
-     * frame on its own — nothing here needs to be updated manually per frame.
-     */
-    private readonly renderStats = {
-        threeScene: this.threeScene,
-        get triangles(): number {
-            return SetupThree.renderer.info.render.triangles;
-        },
-        get drawCalls(): number {
-            return SetupThree.renderer.info.render.calls;
-        },
-        get meshCount(): number {
-            let count = 0;
-            this.threeScene.traverse(obj => {
-                if ((obj as THREE.Mesh).isMesh) {
-                    count++;
-                }
-            });
-            return count;
-        },
-    };
 
     /**
      * TEMP DEBUG (background-tab missing meshes) — downloads one row per top-level scene
@@ -675,344 +623,39 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     }
 
     /**
-     * Live-tunes PlayerConfig.carrier (offset/rotation/scale) on the player's loaded character —
-     * see CharacterBody.setCarrierTransform(). Session-only: copy the numbers you like into the
-     * web editor's Player tab (or PlayerConfig.ts) to keep them. Each slider applies straight
-     * away; before the character has loaded there's nothing to move, so changes just wait for the
-     * next slider tick after it has.
+     * Every debug tool, as DebugOverlay panels (Progression, Economy, World, Carrier, Reset,
+     * Performance, Tool Stats) — see PizzaDebugMenu.ts. Inert without ?dev / ?debug.
      */
-    private setupCarrierDevGui(): void {
-        const initial = getPlayerConfig().carrier;
-        const values: Record<string, number> = {
-            offsetX: initial.offset.x, offsetY: initial.offset.y, offsetZ: initial.offset.z,
-            rotX: initial.rotationDeg.x, rotY: initial.rotationDeg.y, rotZ: initial.rotationDeg.z,
-            scale: initial.scale,
-        };
-        const apply = (): void => {
-            this.mainPlayer.character?.setCarrierTransform({
-                models: initial.models,
-                offset: { x: values.offsetX, y: values.offsetY, z: values.offsetZ },
-                rotationDeg: { x: values.rotX, y: values.rotY, z: values.rotZ },
-                scale: values.scale,
-                stackMode: initial.stackMode,
-            });
-        };
-        DevGuiManager.instance.addObjectTrigger(values, apply, ['offsetX', 'offsetY', 'offsetZ'], [-200, 200], 'Carrier', 'Carrier');
-        DevGuiManager.instance.addObjectTrigger(values, apply, ['rotX', 'rotY', 'rotZ'], [-180, 180], 'Carrier', 'Carrier');
-        DevGuiManager.instance.addObjectTrigger(values, apply, ['scale'], [0, 150], 'Carrier', 'Carrier');
-        // Written straight into the LIVE config — CarrierStackVisual/FlyToStack read it every
-        // frame (see stackItemScale()), so the pile re-fits immediately.
-        const itemScaleValues = { itemScale: initial.itemScale ?? 1 };
-        DevGuiManager.instance.addObjectTrigger(itemScaleValues, updated => {
-            initial.itemScale = updated.itemScale;
-        }, ['itemScale'], [0.25, 4], 'Stacked Item', 'Carrier');
-        // Bound straight to the LIVE config object — CarrierStackVisual re-reads stackMode every
-        // frame and rebuilds the pile when it changes, so nothing else needs to happen here.
-        DevGuiManager.instance.addDropdown<CarrierStackMode>(
-            initial as unknown as Record<string, unknown>, 'stackMode', ['grid', 'tower'], () => undefined, 'Stack Mode', 'Carrier',
-        );
-        // Carrier capacity (see data/CarrierCapacity.ts) comes from the carrier shop's level, so these
-        // buttons buy/reset that level (free, no cooldown) to play-test higher limits.
-        const capacityReadout = { capacity: getCarrierCapacity(), level: getCarrierLevel(), carried: 0 };
-        DevGuiManager.instance.addReadout(capacityReadout, ['capacity', 'level', 'carried'], 'Stack', 'Carrier');
-        const refreshCapacityReadout = (): void => {
-            capacityReadout.capacity = getCarrierCapacity();
-            capacityReadout.level = getCarrierLevel();
-            capacityReadout.carried = CarryStack.carriedCount();
-        };
-        ShopUpgradeStorage.onChange.add(refreshCapacityReadout);
-        BackpackStorage.onChange.add(refreshCapacityReadout);
-        refreshCapacityReadout();
-        DevGuiManager.instance.addButton('Upgrade Carrier (+1 level, free)', () => {
-            const shopId = getCarrierShopIds()[0];
-            const config = shopId ? getShopConfig(shopId) : undefined;
-            if (!shopId || !config || !ShopUpgradeStorage.grantLevel(shopId, config)) {
-                console.log('[Carrier] no carrier shop, or already maxed');
-            }
-        }, 'Carrier');
-        DevGuiManager.instance.addButton('Reset Carrier Level', () => {
-            for (const shopId of getCarrierShopIds()) {
-                ShopUpgradeStorage.resetShop(shopId);
-            }
-        }, 'Carrier');
-        DevGuiManager.instance.addButton('Log Carrier Config', () => console.log('PlayerConfig.carrier =', JSON.stringify({
-            models: initial.models,
-            offset: { x: values.offsetX, y: values.offsetY, z: values.offsetZ },
-            rotationDeg: { x: values.rotX, y: values.rotY, z: values.rotZ },
-            scale: values.scale,
-            stackMode: initial.stackMode,
-            itemScale: initial.itemScale,
-        })), 'Carrier');
-    }
-
-    /** Dev-only tools — no-ops entirely unless launched with ?dev (see Game.debugParams/DevGuiManager.initialize(), called once in index.ts's startGame()). */
-    private setupDebugGui(): void {
-        DevGuiManager.instance.addReadout(this.renderStats, ['triangles', 'drawCalls', 'meshCount'], 'Render', 'Render');
-
-        // Live-tune the "keep UI off the player" region every 'simple' zone popup dodges (see
-        // PlayerUIAvoidanceComponent.ts) and preview exactly what it protects with a translucent
-        // circle at the player's own head — turn the toggle on, drag the radius, and every
-        // 'simple' popup on screen reacts on its very next frame (both are read live, not
-        // snapshotted — see that component's own doc).
-        const uiAvoidance = this.mainPlayer.getComponent(PlayerUIAvoidanceComponent);
-        if (uiAvoidance) {
-            DevGuiManager.instance.addProperties(uiAvoidance, ['radius'], [0, 200], 'Radius', 'UI Avoidance');
-            DevGuiManager.instance.addToggle(
-                'Show Preview',
-                uiAvoidance.showDebugPreview,
-                value => { uiAvoidance.showDebugPreview = value; },
-                'UI Avoidance',
-            );
-        }
-
-        // Dumps every hand-authored design config (resources, tools, actions, items,
-        // crafting, shops, queues, buildings, gates, dynamic resource placements, asset
-        // library) into one JSON file and downloads it — see GameDataBaker.ts's own doc.
-        // For design review, not player-facing.
-        DevGuiManager.instance.addButton(
-            'Bake Game Data',
-            () => downloadGameData(),
-            'Data',
-        );
-
+    private setupDebugMenu(): void {
         this.setupModelSnapshotWindow();
-        this.setupMapLayoutSuggestionDevGui();
-        this.setupCarrierDevGui();
-
-        // TEMP DEBUG (background-tab missing meshes) — see dumpSceneMeshes(). Remove once diagnosed.
-        DevGuiManager.instance.addButton('Dump Scene Meshes', () => this.dumpSceneMeshes(), 'Debug');
-
-        // Camera far needs updateProjectionMatrix() on every change to actually take
-        // effect — addObjectTrigger's callback (unlike addProperties' plain owner[key]=v)
-        // is exactly the hook for that side effect.
-        DevGuiManager.instance.addObjectTrigger(
-            PERFORMANCE_CONFIG,
-            () => {
-                this.threeCamera.far = PERFORMANCE_CONFIG.cameraFar;
-                this.threeCamera.updateProjectionMatrix();
+        const tileMap = this.worldManager.getTileMap();
+        buildPizzaDebugMenu({
+            threeScene: this.threeScene,
+            threeCamera: this.threeCamera,
+            player: this.mainPlayer,
+            cameraSettings: CAMERA_SETTINGS,
+            // Which ground tile the player stands on — name from map/tiles.json, and whether it's
+            // passable right now (a locked zone reads as blocked too, see TileMap.isWalkableAt()).
+            tileReadout: () => {
+                const { x, z } = this.mainPlayer.transform.position;
+                const { col, row } = tileMap.worldToTileCell(x, z);
+                const def = tileMap.getGroundDefAt(x, z);
+                const walkable = tileMap.isWalkableAt(x, z);
+                return `(${col}, ${row}) ${def?.name ?? 'none'}${walkable ? '' : ' [BLOCKED]'} @ (${x.toFixed(1)}, ${z.toFixed(1)})`;
             },
-            ['cameraFar'],
-            [100, 3000],
-            'Camera',
-            'Performance',
-        );
-        // resourceLoadRadius/UnloadRadius are read fresh every WorldManager.update() call
-        // (see PerformanceConfig.ts's own doc) — no onChange side effect needed, dragging
-        // these takes effect on the very next frame.
-        // addProperties() always renders as "<name>.<propertyKey>" (see DevGuiManager.ts) —
-        // short, DISTINCT names here on purpose, since "Resource Load Radius" and "Resource
-        // Unload Radius" both start with the same word and read as identical at a glance in
-        // dat.GUI's 200px-wide panel.
-        DevGuiManager.instance.addProperties(PERFORMANCE_CONFIG, ['resourceLoadRadius'], [5, 150], 'Load', 'Performance');
-        DevGuiManager.instance.addProperties(PERFORMANCE_CONFIG, ['resourceUnloadRadius'], [5, 160], 'Unload', 'Performance');
-        DevGuiManager.instance.addProperties(PERFORMANCE_CONFIG, ['resourcePopInSec'], [0, 1.5], 'Pop In', 'Performance');
-        DevGuiManager.instance.addProperties(PERFORMANCE_CONFIG, ['resourcePopOutSec'], [0, 1.5], 'Pop Out', 'Performance');
-
-        DevGuiManager.instance.addButton(
-            'Clear Global Resources',
-            () => void GlobalResourceStorage.clearAll(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Clear Backpack',
-            () => void BackpackStorage.clearAll(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Clear Buildings',
-            () => void BuildingStorage.clearAll(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Clear Gates',
-            () => void GateStorage.clearAll(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Clear Queues',
-            () => void QueueStorage.clearAll(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Clear Money',
-            () => void EconomyStorage.clearAll(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Clear Shop Upgrades',
-            () => void ShopUpgradeStorage.clearAll(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Clear Crafting',
-            () => void this.resetCraftingProgress(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Clear Dynamic Resources',
-            () => void this.dynamicResourceSpawner.resetAll(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Clear Shape Resources',
-            () => void this.shapeResourceSpawner.resetAll(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Clear Animal Followers',
-            () => void AnimalFollowStorage.clearAll(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Clear Player Position',
-            () => void PlayerPositionStorage.clearAll(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Clear Farms',
-            () => void FarmPlotStorage.clearAll(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Clear Tutorial Progress',
-            () => void TutorialProgressStorage.clearAll(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Clear Triggers',
-            () => void TriggerStorage.clearAll(),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Add 10 Of Each Resource',
-            () => {
-                // Skips Pig — see setupDebugButtons()'s own doc on why an animal-caught
-                // resource isn't something a plain "add 10" credit should ever hand out. Also
-                // skips anything disabled (see ResourceConfig.disabled's own doc) — a debug
-                // "give me everything" button handing out a resource nobody can otherwise
-                // obtain anymore would defeat the whole point of disabling it.
-                for (const type of Object.values(ResourceType)) {
-                    if (type === ResourceType.Pig || RESOURCE_CONFIG[type]?.disabled) {
-                        continue;
-                    }
-                    BackpackStorage.add(type, 10);
-                }
-            },
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Add 100 Money',
-            () => EconomyStorage.add(CurrencyType.Money, 100),
-            'Resources',
-        );
-        DevGuiManager.instance.addButton(
-            'Add 5 of every Seed',
-            () => {
-                for (const seedId of Object.values(SeedId)) {
-                    SeedStorage.add(seedId, 5);
-                }
-            },
-            'Resources',
-        );
-        // Same wipe + reload as the player-facing "Clear Data" (see PlayerDataReset.ts). This
-        // used to clear storages in place WITHOUT reloading, which left zones revealed in
-        // memory while GateStorage etc. were wiped — the periodic stable-tile save then
-        // re-persisted the player's position inside a zone the fresh save never unlocks.
-        DevGuiManager.instance.addButton(
-            'Reset Everything',
-            () => clearAllPlayerData(),
-            'Resources',
-        );
-
-        // One force-upgrade button per configured shop — fully funds AND completes its next
-        // level in one click (bypassing both the coin-deposit walk-up and its cooldown, unlike
-        // the normal ShopZone flow), so a designer can test every upgrade tier's ActionConfig
-        // change without grinding money/waiting out cooldowns. tryCompleteUpgrade() itself
-        // doesn't check cooldown — only addProgress()'s cap on `cost` and isMaxLevel() gate
-        // this at all. Fires the same UpgradeNotificationManager callout ShopZone's own
-        // coin-drain completion does (see ShopZone.ts) — this button bypasses ShopZone
-        // entirely, so without this call here the notification would never have a way to
-        // be exercised outside actually standing in the shop and paying it off.
-        for (const [id, config] of Object.entries(SHOP_CONFIG_BY_ID)) {
-            if (!config) {
-                continue;
-            }
-            DevGuiManager.instance.addButton(
-                `Upgrade ${config.name}`,
-                () => {
-                    if (ShopUpgradeStorage.isMaxLevel(id, config)) {
-                        return;
-                    }
-                    const cost = getUpgradeCost(config, ShopUpgradeStorage.getLevel(id));
-                    ShopUpgradeStorage.addProgress(id, config, cost.money);
-                    for (const [type, amount] of Object.entries(cost.resources) as [ResourceType, number][]) {
-                        ShopUpgradeStorage.addResourceProgress(id, config, type, amount);
-                    }
-                    if (ShopUpgradeStorage.tryCompleteUpgrade(id, config)) {
-                        UpgradeNotificationManager.instance.show({
-                            type: NotificationType.Upgrade,
-                            rarity: NotificationRarity.Common,
-                            icon: getToolIcon(config.tool),
-                            title: 'UPGRADE!',
-                            subtitle: `${config.tool.toUpperCase()} LEVEL ${ShopUpgradeStorage.getLevel(id)}`,
-                        });
-                    }
-                },
-                'Upgrades',
-            );
-        }
-        DevGuiManager.instance.addButton(
-            'Reset Upgrades',
-            () => void ShopUpgradeStorage.clearAll(),
-            'Upgrades',
-        );
-
-        // One folder per tool (named after ShopConfig.tool, capitalized — 'Axe'/'Pickaxe')
-        // with live readouts of the three independent knobs a shop upgrade actually moves
-        // (see ActionTypes.ts's own doc): hitIntervalSec (seconds per swing), hitScale (hits
-        // one swing counts as — capped by a target's remaining life), and yieldPerHit
-        // (amountPerGather * resourcePerHit — the uncapped per-hit yield multiplier). .listen()
-        // (see DevGuiManager.addReadout()) keeps these live as ShopUpgradeStorage upgrades
-        // land, no manual refresh wiring needed. Matched to the PROVIDER_CONFIG entry whose
-        // `action` equals this shop's action, since that's what amountPerGather lives on now
-        // (see ProviderTypes.ts — moved off ResourceConfig when providers split out).
-        for (const config of Object.values(SHOP_CONFIG_BY_ID)) {
-            // A shop with no action (the carrier) has no swing stats to read out.
-            const action = config?.action;
-            if (!config || action === undefined) {
-                continue;
-            }
-            const providerConfig = Object.values(PROVIDER_CONFIG).find(p => p.action === action);
-            if (!providerConfig) {
-                continue;
-            }
-            const toolStats = {
-                get hitIntervalSec(): number {
-                    return ACTION_CONFIG[action].hitIntervalSec;
-                },
-                get hitScale(): number {
-                    return ACTION_CONFIG[action].hitScale;
-                },
-                get yieldPerHit(): number {
-                    return providerConfig.amountPerGather * ACTION_CONFIG[action].resourcePerHit;
-                },
-                get hitAngleDeg(): number {
-                    return ACTION_CONFIG[action].hitAngleDeg;
-                },
-                get hitRangeMeters(): number {
-                    return ACTION_CONFIG[action].hitRangeMeters;
-                },
-            };
-            const folderName = config.tool.charAt(0).toUpperCase() + config.tool.slice(1);
-            DevGuiManager.instance.addReadout(toolStats, ['hitIntervalSec', 'hitScale', 'yieldPerHit', 'hitAngleDeg', 'hitRangeMeters'], config.name, folderName);
-        }
-
-        // Live sliders bound directly to CAMERA_SETTINGS — cameraOffset()/fixedUpdate() read
-        // it every frame, so dragging these updates the camera immediately, no extra wiring.
-        DevGuiManager.instance.addProperties(CAMERA_SETTINGS, ['yawDeg'], [-180, 180], 'Camera', 'Camera');
-        DevGuiManager.instance.addProperties(CAMERA_SETTINGS, ['pitchDeg'], [0, 89], 'Camera', 'Camera');
-        DevGuiManager.instance.addProperties(CAMERA_SETTINGS, ['distance'], [2, 30], 'Camera', 'Camera');
-        DevGuiManager.instance.addProperties(CAMERA_SETTINGS, ['followSpeed'], [0.5, 20], 'Camera', 'Camera');
+            revealNextZone: () => this.worldManager.revealNextZone(),
+            teleportToNextTeleporter: () => this.teleportToNextTeleporter(),
+            unlockAllTools: () => this.unlockAllTools(),
+            toggleFlyCamera: () => this.toggleFlyCamera(),
+            toggleTopDownCamera: () => this.toggleCameraMode(),
+            addMoneyToCurrentStore: amount => this.addMoneyToCurrentStore(amount),
+            fillAvailableStorages: amount => this.fillAvailableStorages(amount),
+            hireStoreWorker: role => this.hireStoreWorker(role),
+            resetCraftingProgress: () => void this.resetCraftingProgress(),
+            resetDynamicResources: () => void this.dynamicResourceSpawner.resetAll(),
+            resetShapeResources: () => void this.shapeResourceSpawner.resetAll(),
+            dumpSceneMeshes: () => this.dumpSceneMeshes(),
+        });
     }
 
     /**
@@ -1025,36 +668,6 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         if (Game.debugParams.snap === 1) {
             ModelSnapshotWindow.mount();
         }
-    }
-
-    /**
-     * "Show Suggestion" draws a ghost overlay of a hand-tuned zone-layout archetype directly on
-     * the live map, at the map's own tile scale — see MapLayoutSuggestionTool.ts's own doc.
-     * Purely a design-review sketch: nothing here spawns real zones or edits the Tiled map.
-     */
-    private setupMapLayoutSuggestionDevGui(): void {
-        const archetypes: MapLayoutArchetype[] = ['loop', 'ring', 'valley'];
-
-        DevGuiManager.instance.addDropdown(
-            MapLayoutSuggestionTool.settings,
-            'archetype',
-            archetypes,
-            () => { /* value already written straight into settings.archetype */ },
-            'Archetype',
-            'Map Layout Suggestions',
-        );
-
-        DevGuiManager.instance.addButton('Show Suggestion', () => {
-            MapLayoutSuggestionTool.show(this.threeScene);
-        }, 'Map Layout Suggestions');
-
-        DevGuiManager.instance.addButton('Shuffle Suggestion', () => {
-            MapLayoutSuggestionTool.reroll(this.threeScene);
-        }, 'Map Layout Suggestions');
-
-        DevGuiManager.instance.addButton('Clear Suggestion', () => {
-            MapLayoutSuggestionTool.clear();
-        }, 'Map Layout Suggestions');
     }
 
     /**
@@ -1075,19 +688,6 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         });
     }
 
-    /**
-     * "Clear Data", "Open Next Zone", "Add 100 Money", "Add 10 Of Each Resource" — quick,
-     * always-visible in-game buttons (see InGameButtonList.ts's own doc) for testing without
-     * opening the Settings popup or the dev GUI overlay every time. "Clear Data" is the exact
-     * same reset + reload as the Settings popup's own button (see PlayerDataReset.ts). "Open
-     * Next Zone" calls WorldManager.revealNextZone() — a debug-only sequential unlock, one zone
-     * per click, independent of any real requirement/trigger system. The last two mirror the
-     * dev GUI's own "Add 100 Money"/"Add 10 Of Each Resource" buttons (see setupDebugGui()) —
-     * EXCEPT this one skips ResourceType.Pig, unlike that dev-GUI version: Pig is what catching
-     * an animal via AnimalCatchController banks (see ResourceTypes.ts's own doc), not something
-     * a plain BackpackStorage credit should ever hand out for free — an animal isn't "a simple
-     * resource" the way Wood/Stone/Berries/Bark/Pebble/GrassFiber/Crystal/Iron/Rope are.
-     */
     /** ?bot / ?record — the playtest bot and/or session recorder (see playtest/README.md). No-op otherwise. */
     private setupPlaytest(): void {
         const zoneNumbers = Object.keys(ZONE_CONFIG).map(Number);
@@ -1105,56 +705,6 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             getRevealKey: () => zoneNumbers.filter(zone => zoneVisibility.isZoneRevealed(zone)).join(','),
             isFreeCamera: () => this.flyCamera.isEnabled(),
             setFreeCamera: (enabled, keepPlayerMovement) => this.setFlyCamera(enabled, keepPlayerMovement),
-        });
-    }
-
-    private setupDebugButtons(): void {
-        InGameButtonList.registerButton('Clear Data', () => clearAllPlayerData());
-        // Narrower than 'Clear Data' — resets every queue's active task/progress/cooldown
-        // WITHOUT touching backpack/economy/buildings/etc, and without the full-page reload
-        // clearAllPlayerData() does. Notifies every live QueueZone via onTaskChanged (see
-        // QueueStorage.clearAll()'s own doc), so panels update immediately in place.
-        InGameButtonList.registerButton('Clear Queue States', () => void QueueStorage.clearAll());
-        // Empties the backpack only (carried resources + the farm stack on the player's back) —
-        // no reload, nothing else touched. The stack visual follows on its own via
-        // BackpackStorage.onChange (see CarrierStackVisual.ts).
-        InGameButtonList.registerButton('Clear Backpack', () => void BackpackStorage.clearAll());
-        InGameButtonList.registerButton('Open Next Zone', () => this.worldManager.revealNextZone());
-        InGameButtonList.registerButton('Teleport: Next', () => this.teleportToNextTeleporter());
-        InGameButtonList.registerButton('Unlock All Tools', () => this.unlockAllTools());
-        InGameButtonList.registerButton('Toggle Fly Camera', () => this.toggleFlyCamera());
-        InGameButtonList.registerButton('Add 100 Money', () => EconomyStorage.add(CurrencyType.Money, 100));
-        InGameButtonList.registerButton('Add 10 Resources', () => {
-            for (const type of Object.values(ResourceType)) {
-                if (type === ResourceType.Pig || type === ResourceType.Garbage || RESOURCE_CONFIG[type]?.disabled) {
-                    continue;
-                }
-                BackpackStorage.add(type, 10);
-            }
-        });
-        InGameButtonList.registerButton('Add 50 To Store', () => this.addMoneyToCurrentStore(50));
-        InGameButtonList.registerButton('Fill Storages +3', () => this.fillAvailableStorages(3));
-        InGameButtonList.registerButton('Hire Cashier', () => this.hireStoreWorker('cashier'));
-        InGameButtonList.registerButton('Hire Restocker', () => this.hireStoreWorker('restocker'));
-        InGameButtonList.registerButton('Hire Cleaner', () => this.hireStoreWorker('cleaner'));
-        InGameButtonList.registerButton('Add 5 Seeds', () => {
-            for (const seedId of Object.values(SeedId)) {
-                SeedStorage.add(seedId, 5);
-            }
-        });
-
-        // Live "which ground tile is the player standing on" readout — added to help track down
-        // a tile that was warping the player to an odd position. Reads straight off TileMap
-        // (WorldManager.getTileMap()) every frame: worldToTileCell() for the col/row, getGroundDefAt()
-        // for the tile's name (map/tiles.json), isWalkableAt() for whether it's currently passable
-        // (a locked zone reads as not-walkable too — see TileMap.isWalkableAt()'s own doc).
-        InGameButtonList.registerText(() => {
-            const { x, z } = this.mainPlayer.transform.position;
-            const tileMap = this.worldManager.getTileMap();
-            const { col, row } = tileMap.worldToTileCell(x, z);
-            const def = tileMap.getGroundDefAt(x, z);
-            const walkable = tileMap.isWalkableAt(x, z);
-            return `Tile (${col}, ${row}): ${def?.name ?? 'none'}${walkable ? '' : ' [BLOCKED]'} @ (${x.toFixed(2)}, ${z.toFixed(2)})`;
         });
     }
 
@@ -2655,7 +2205,6 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      */
     private toggleCameraMode(): void {
         this.isTopDownCamera = !this.isTopDownCamera;
-        this.uiService.setCameraToggleLabel(this.isTopDownCamera ? 'Follow View' : 'Top-Down View');
 
         gsap.killTweensOf(CAMERA_SETTINGS);
         gsap.to(CAMERA_SETTINGS, {

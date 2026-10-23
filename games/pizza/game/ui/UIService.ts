@@ -19,7 +19,6 @@
 // manager object" shape as WorldManager/GateManager, just for 2D HUD instead
 // of 3D world state.
 
-import BaseButton from 'core/ui/BaseButton';
 import { Game } from 'core/Game';
 import BackpackUI from './BackpackUI';
 import BackpackListUI from './BackpackListUI';
@@ -31,7 +30,6 @@ import ToolLevelUI from './ToolLevelUI';
 import ToolListUI from './ToolListUI';
 import SettingsUIService, { SETTINGS_ROW_BUTTON_SIZE, SETTINGS_ROW_TOP_LEFT_MARGIN } from './SettingsUIService';
 import { UpgradeNotificationManager } from './notifications/UpgradeNotificationManager';
-import InGameButtonList from './InGameButtonList';
 import BackpackButton from './BackpackButton';
 import UpgradeMenuButton, { UPGRADE_MENU_BUTTON_SIZE } from './UpgradeMenuButton';
 import StoreUI from './StoreUI';
@@ -62,7 +60,7 @@ const GLOBAL_RESOURCES_UI_MARGIN = 16;
 /** Gap between the economy (money) HUD panel's top/right edges and the actual top-right corner of the screen — see positionEconomyUi(). Same spot globalResourcesUi would occupy (that panel is currently not added to the display tree), so no visual collision. */
 const ECONOMY_UI_MARGIN = 16;
 
-/** Gap between the in-game button list's own top edge and the animal dock's bottom edge — see positionAnimalDockUi(). Distinct from InGameButtonList's OWN internal SCREEN_MARGIN (its bottom/left inset from the screen edge, not this stacking gap). */
+/** Inset of the bottom-left column (upgrades button, animal dock) from the screen's left and bottom edges. */
 const CAMERA_TOGGLE_BUTTON_MARGIN = 16;
 
 /** Gap between the tool/level HUD panel's bottom/right edges and the actual bottom-right corner of the screen — see positionToolLevelUi(). Only relevant if toolLevelUi is switched back on — see that field's own comment. */
@@ -100,12 +98,6 @@ export default class UIService {
     /** The tools, alternative style — a bare vertical icon+level list (no frame/title), pinned top-left under the settings/mute button row. This is the one actually wired into the display tree; see ToolListUI.ts's own doc for why it exists alongside toolLevelUi instead of replacing it. */
     public readonly toolListUi: ToolListUI;
 
-    /** Bottom-left stack of small utility buttons — see InGameButtonList.ts's own doc. The camera-toggle button (this service's own registration, right below) is always the first one registered, so it stays anchored in the exact bottom-most slot a standalone button used to occupy. */
-    private readonly inGameButtonList: InGameButtonList;
-
-    /** Bottom-left toggle between the normal follow camera and a top-down view — registered on inGameButtonList like any other debug button (see PizzaScene.ts's own "Clear Data"/"Open Next Zone" registrations), just done here since UIService is what owns the camera-toggle callback. No button texture art exists yet for pizza — PIXI.Texture.WHITE + tint is the same "flat colored placeholder until real art exists" convention BuildingMeshConfig/GateMeshConfig already use for meshes, just applied to a UI button instead (see InGameButtonList.ts's own styling). */
-    private readonly cameraToggleButton: BaseButton;
-
     /** Top-left mute + settings buttons, and the settings panel the gear button opens — see SettingsUIService.ts's own doc. */
     private readonly settingsUi: SettingsUIService;
 
@@ -121,12 +113,7 @@ export default class UIService {
     /** Bottom-right "NEXT" column teasing what the next store level brings — PizzaScene feeds it via setState() every frame (see NextUnlocksUI.ts's own doc). */
     public readonly nextUnlocksUi: NextUnlocksUI;
 
-    /**
-     * `onCameraToggle` is a callback into the scene rather than this service importing
-     * PizzaScene directly — same structural-interface style ScreenAnchorHost already uses
-     * elsewhere in this game, so UIService doesn't need to know anything about camera state.
-     */
-    public constructor(game: Game, onCameraToggle: () => void) {
+    public constructor(game: Game) {
         this.game = game;
 
         this.backpackUi = new BackpackUI();
@@ -160,14 +147,6 @@ export default class UIService {
             this.game.uiLayer.addChild(this.toolListUi);
         }
 
-        this.inGameButtonList = new InGameButtonList();
-        this.game.uiLayer.addChild(this.inGameButtonList);
-        // Registered FIRST, before anything else (PizzaScene's own "Clear Data"/"Open Next
-        // Zone" buttons — see InGameButtonList.ts's own doc) gets a chance to register —
-        // that's what keeps this in the exact bottom-most slot a standalone button used to sit
-        // in, regardless of what else gets added later.
-        this.cameraToggleButton = InGameButtonList.registerButton('Top-Down View', onCameraToggle);
-
         this.settingsUi = new SettingsUIService(this.game);
         UpgradeNotificationManager.instance.init(this.game);
 
@@ -188,11 +167,6 @@ export default class UIService {
         this.update();
     }
 
-    /** Flips the camera-toggle button's own label — called by the scene right after it flips its own isTopDownCamera state, so the button always reads what it's about to switch TO next. */
-    public setCameraToggleLabel(text: string): void {
-        this.cameraToggleButton.setLabel(text);
-    }
-
     /** Re-anchors every panel to the current viewport every frame — cheap, and this scene has no resize hook of its own to piggyback on instead. */
     public update(): void {
         this.positionBackpackUi();
@@ -200,10 +174,6 @@ export default class UIService {
         this.positionGlobalResourcesUi();
         this.positionEconomyUi();
         this.positionBackpackListUi();
-        this.inGameButtonList.update();
-        // Reads inGameButtonList's own just-set position — must run after it (see this
-        // method's own doc on positionAnimalDockUi()).
-        // Reads inGameButtonList's top too; the animal dock below stacks on top of it.
         this.positionUpgradeMenuButton();
         this.positionAnimalDockUi();
         this.positionToolLevelUi();
@@ -215,22 +185,26 @@ export default class UIService {
         this.upgradeMenuButton.update();
     }
 
-    /** Bottom-left corner — above the debug button list when that's on screen (?debug), else on the screen edge. */
+    /** Bottom-left corner, on the screen edge. */
     private positionUpgradeMenuButton(): void {
         const screen = Game.overlayScreenData;
         if (!screen) {
             return;
         }
-        const bottom = this.inGameButtonList.visible ? this.inGameButtonList.getTopScreenY() : screen.bottomLeft.y - CAMERA_TOGGLE_BUTTON_MARGIN;
+        const bottom = screen.bottomLeft.y - CAMERA_TOGGLE_BUTTON_MARGIN;
         this.upgradeMenuButton.position.set(
             screen.bottomLeft.x + CAMERA_TOGGLE_BUTTON_MARGIN,
             bottom - UPGRADE_MENU_BUTTON_SIZE,
         );
     }
 
-    /** What the animal dock stacks on: the upgrades button when it's showing, else the debug button list. */
+    /** What the animal dock stacks on: the upgrades button when it's showing, else the screen's bottom edge. */
     private animalDockTopAnchorY(): number {
-        return this.upgradeMenuButton.visible ? this.upgradeMenuButton.y : this.inGameButtonList.getTopScreenY();
+        const screen = Game.overlayScreenData;
+        if (this.upgradeMenuButton.visible || !screen) {
+            return this.upgradeMenuButton.y;
+        }
+        return screen.bottomLeft.y - CAMERA_TOGGLE_BUTTON_MARGIN;
     }
 
     /** Bottom-center, regardless of viewport size/aspect. */
@@ -380,10 +354,6 @@ export default class UIService {
         this.animalDockUi.destroy();
         this.globalResourcesUi.destroy();
         this.economyUi.destroy();
-        // Destroys every registered button (including cameraToggleButton, a child of it — see
-        // InGameButtonList.ts's own doc) as one call, `{ children: true }` — no separate
-        // cameraToggleButton.destroy() needed, and calling it twice would double-destroy.
-        this.inGameButtonList.destroy();
         this.toolLevelUi.destroy();
         this.toolListUi.destroy();
         this.storeUi.destroy({ children: true });

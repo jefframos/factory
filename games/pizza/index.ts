@@ -12,7 +12,7 @@ import imageManifest from './manifests/images.json'; // adjust path
 import jsonManifest from './manifests/json.json'; // adjust path
 
 import { getPlatformInstance } from 'core/platforms/PlatformFactory';
-import { DevGuiManager } from 'core/utils/DevGuiManager';
+import { DebugOverlay } from 'core/debug/DebugOverlay';
 import { applyDebugPhysicsCookie } from './game/utils/DebugPhysicsCookie';
 import Assets from './Assets';
 import PizzaScene from './game/scenes/PizzaScene';
@@ -274,8 +274,8 @@ export default class MyGame extends Game {
         if (Game.debugParams.dev) {
             applyDebugPhysicsCookie();
         }
-        DevGuiManager.instance.initialize(Game.debugParams.dev);
-        PlatformHandler.instance.setupDevPauseToggle();
+        // Debug panels (backtick / the Debug pill) for ?dev or ?debug; inert otherwise. PizzaScene fills them (PizzaDebugMenu.ts).
+        DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'pizza');
         const gameplay = this.sceneManager.register<PizzaScene>('game', PizzaScene, this);
         // if (Game.debugParams.scene === 'level') {
         //     const editor = this.sceneManager.register<LevelEditorScene>('level', LevelEditorScene, this);
