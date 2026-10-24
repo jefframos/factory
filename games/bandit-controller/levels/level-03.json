@@ -1,0 +1,52 @@
+{
+  "id": "level-03",
+  "name": "Grand Vault",
+  "grid": { "cell": 0.5 },
+  "floor": { "width": 22, "depth": 30, "colorA": "#d9d4f2", "colorB": "#8a7fc2", "checkerScale": 1.5 },
+  "start": { "x": 0, "z": 19 },
+  "waypoints": [{ "x": 0, "z": 7 }, { "x": 0, "z": -5 }, { "x": -4, "z": -12.5 }],
+  "entryPath": { "x": 0, "z": 19, "width": 4.8, "depth": 8 },
+  "walls": [
+    {
+      "closed": true,
+      "points": [{ "x": -11, "z": 15 }, { "x": 11, "z": 15 }, { "x": 11, "z": -15 }, { "x": -11, "z": -15 }],
+      "openings": [
+        { "kind": "door", "minX": -1.25, "maxX": 1.25, "minZ": 14.7, "maxZ": 15.3 },
+        { "kind": "window", "minX": -9, "maxX": -5, "minZ": 14.7, "maxZ": 15.3 },
+        { "kind": "window", "minX": 5, "maxX": 9, "minZ": 14.7, "maxZ": 15.3 }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [{ "x": -11, "z": 3 }, { "x": 11, "z": 3 }],
+      "openings": [{ "kind": "door", "minX": -1.25, "maxX": 1.25, "minZ": 2.7, "maxZ": 3.3 }]
+    },
+    {
+      "closed": false,
+      "points": [{ "x": -11, "z": -9 }, { "x": 11, "z": -9 }],
+      "openings": [{ "kind": "door", "minX": -1.25, "maxX": 1.25, "minZ": -9.3, "maxZ": -8.7 }]
+    }
+  ],
+  "props": [
+    { "model": "heist/mini-market/cash-register.glb", "x": -7, "z": 11, "rotationY": 0, "height": 1.25, "collider": { "halfX": 0.8, "halfY": 0.65, "halfZ": 0.55 }, "revealAt": 0 },
+    { "model": "heist/mini-market/column.glb", "x": 6, "z": 9, "rotationY": 0, "height": 5.7, "collider": null, "revealAt": 0 },
+    { "model": "heist/mini-market/shelf-boxes.glb", "x": 8, "z": -2, "rotationY": 1.5708, "height": 2.7, "collider": { "halfX": 0.6, "halfY": 1.35, "halfZ": 1.2 }, "revealAt": 1 },
+    { "model": "heist/mini-market/shelf-boxes.glb", "x": -8, "z": -4, "rotationY": 1.5708, "height": 2.7, "collider": { "halfX": 0.6, "halfY": 1.35, "halfZ": 1.2 }, "revealAt": 1 },
+    { "model": "heist/vault/vault.gltf", "x": -8, "z": -12.5, "rotationY": 0, "height": 2.8, "collider": { "halfX": 0.95, "halfY": 1.4, "halfZ": 0.8 }, "revealAt": 2 },
+    { "model": "heist/trees/tree-large.glb", "x": -8, "z": -17, "rotationY": 0, "height": 8, "collider": null, "revealAt": 0 },
+    { "model": "heist/trees/tree-small.glb", "x": -3, "z": -18, "rotationY": 0, "height": 5.5, "collider": null, "revealAt": 0 },
+    { "model": "heist/trees/tree-large.glb", "x": 3, "z": -17.5, "rotationY": 0, "height": 7.5, "collider": null, "revealAt": 0 },
+    { "model": "heist/trees/tree-small.glb", "x": 8, "z": -18, "rotationY": 0, "height": 5.8, "collider": null, "revealAt": 0 }
+  ],
+  "loot": [
+    { "model": "resources/Money_Pile_Small.gltf", "x": 4, "z": 11, "amount": 25, "scale": 1.35, "revealAt": 0 },
+    { "model": "resources/Money_Bills_Stack_Small.gltf", "x": -3, "z": 8, "amount": 25, "scale": 1.35, "revealAt": 0 },
+    { "model": "resources/Money_Coins_Stack_Small.gltf", "x": 6, "z": 5, "amount": 20, "scale": 1.35, "revealAt": 0 },
+    { "model": "resources/Silver_Bars_Stack_Large.gltf", "x": 4, "z": -1, "amount": 50, "scale": 1.5, "revealAt": 1 },
+    { "model": "resources/Gold_Nuggets.gltf", "x": -4, "z": 0, "amount": 50, "scale": 1.65, "revealAt": 1 },
+    { "model": "resources/Gold_Bars_Stack_Large.gltf", "x": 5, "z": -6, "amount": 80, "scale": 1.65, "revealAt": 1 },
+    { "model": "resources/Gems_Pile_Large.gltf", "x": 4, "z": -12, "amount": 120, "scale": 1.3, "revealAt": 2 },
+    { "model": "resources/Gems_Chest.gltf", "x": -1, "z": -13, "amount": 150, "scale": 1.3, "revealAt": 2 },
+    { "model": "resources/Money_Pile_Large.gltf", "x": 8, "z": -12, "amount": 100, "scale": 1.15, "revealAt": 2 }
+  ]
+}

@@ -11,7 +11,8 @@ import * as THREE from 'three';
 import { pruneCollected } from '../builders/CollectibleBuilder';
 import Collectible from '../entities/Collectible';
 import { COIN, CollectibleDefinition } from '../data/CollectibleSettings';
-import MODELS from '../../registry/assetsRegistry/modelsRegistry';
+import { LevelCatalog } from '../data/LevelCatalog';
+import { LevelData, LevelDoor, LevelLoot, levelDoors, levelWindowPanes } from '../data/LevelData';
 import { GameState } from '../data/GameState';
 import { PLAYER_SETTINGS } from '../data/PlayerSettings';
 import Entity from 'core/ecs/Entity';
@@ -28,30 +29,12 @@ import { BendService as PizzaBendService } from '../../../pizza/game/services/Be
 import StoreDoor from '../../../pizza/game/store/StoreDoor';
 import { FloorLayers } from '../../../pizza/game/world/FloorLayers';
 import type { StoreFloorPlacement, StoreWallPlacement } from '../../../pizza/game/world/WorldObjectRegistry';
-import type { FloorCheckerConfig, WallSetupConfig, WallStyleConfig } from '../../../pizza/game/store/StoreViewTypes';
+import type { DoorStyleConfig, FloorCheckerConfig, WallSetupConfig, WallStyleConfig } from '../../../pizza/game/store/StoreViewTypes';
 
-const START_POSITION = new THREE.Vector3(0, 0, 16);
-const MID_POSITION = new THREE.Vector3(0, 0, 1.5);
-const FINISH_POSITION = new THREE.Vector3(0, 0, -9.5);
-const WAYPOINTS = [START_POSITION, MID_POSITION, FINISH_POSITION] as const;
-const FIRST_AREA_COIN_COUNT = 3;
 const GOAL_TRIGGER_RADIUS = 2.6;
 const GOAL_MARKER_RADIUS = 1.25;
 const FIELD_SIZE = 48;
 const ROOM_ORIGIN = new THREE.Vector3();
-const ROOM_FLOOR: StoreFloorPlacement = {
-    x: 0,
-    z: 0,
-    width: 18,
-    depth: 24,
-    rotationY: 0,
-    tileSize: 1,
-};
-const FLOOR_CHECKER: FloorCheckerConfig = {
-    colorA: '#c8f0e1',
-    colorB: '#67b39e',
-    scale: 1.5,
-};
 const WALL_SETUP: WallSetupConfig = {
     height: 6,
     thickness: 0.35,
@@ -76,106 +59,23 @@ const DOOR_STYLE: DoorStyleConfig = {
     color: '#493023',
     opacity: 1,
 };
-const DOOR_CENTERS_Z = [12, -3.5];
-const DOOR_ASSIST_HALF_WIDTH = 1.85;
+const DOOR_ASSIST_MARGIN = 0.6;
 const DOOR_CLEARANCE = 1.3;
 const LOWERED_WALL_SCALE = 0.2;
 const WALL_LOWER_DURATION_SEC = 0.45;
-const ROOM_WALLS: StoreWallPlacement[] = [
-    {
-        closed: true,
-        points: [
-            { x: -9, z: 12 },
-            { x: 9, z: 12 },
-            { x: 9, z: -12 },
-            { x: -9, z: -12 },
-        ],
-        openings: [{
-            kind: 'door',
-            rect: { minX: -1.25, maxX: 1.25, minZ: 11.7, maxZ: 12.3 },
-        }, {
-            kind: 'window',
-            rect: { minX: -7.7, maxX: -4.5, minZ: 11.7, maxZ: 12.3 },
-        }, {
-            kind: 'window',
-            rect: { minX: 4.5, maxX: 7.7, minZ: 11.7, maxZ: 12.3 },
-        }, {
-            kind: 'window',
-            rect: { minX: 8.7, maxX: 9.3, minZ: 6, maxZ: 8.8 },
-        }, {
-            kind: 'window',
-            rect: { minX: 8.7, maxX: 9.3, minZ: -1.5, maxZ: 1.3 },
-        }, {
-            kind: 'window',
-            rect: { minX: -9.3, maxX: -8.7, minZ: 6, maxZ: 8.8 },
-        }, {
-            kind: 'window',
-            rect: { minX: -9.3, maxX: -8.7, minZ: -1.5, maxZ: 1.3 },
-        }],
-    },
-    {
-        closed: false,
-        points: [{ x: -9, z: -3.5 }, { x: 9, z: -3.5 }],
-        openings: [{
-            kind: 'door',
-            rect: { minX: -1.25, maxX: 1.25, minZ: -3.8, maxZ: -3.2 },
-        }],
-    },
-];
-const LOOT_PICKUPS: { position: THREE.Vector3; definition: CollectibleDefinition }[] = [
-    {
-        position: new THREE.Vector3(0, 1.2, 10),
-        definition: { ...COIN, model: MODELS.Resources.MoneyBillsStackSmall, resourceAmount: 20, modelScale: 1.35 },
-    },
-    {
-        position: new THREE.Vector3(-4, 1.2, 7),
-        definition: { ...COIN, model: MODELS.Resources.MoneyPileSmall, resourceAmount: 20, modelScale: 1.35 },
-    },
-    {
-        position: new THREE.Vector3(5, 1.2, 1),
-        definition: { ...COIN, model: MODELS.Resources.MoneyCoinsStackSmall, resourceAmount: 15, modelScale: 1.35 },
-    },
-    {
-        position: new THREE.Vector3(0, 1.2, -1),
-        definition: { ...COIN, model: MODELS.Resources.MoneyBillsStackSmall, resourceAmount: 20, modelScale: 1.35 },
-    },
-    {
-        position: new THREE.Vector3(-5, 1.2, -5),
-        definition: { ...COIN, model: MODELS.Resources.GoldNuggets, resourceAmount: 40, modelScale: 1.65 },
-    },
-    {
-        position: new THREE.Vector3(4, 1.2, -8),
-        definition: { ...COIN, model: MODELS.Resources.GoldBarsStackLarge, resourceAmount: 60, modelScale: 1.65 },
-    },
-    {
-        position: new THREE.Vector3(0, 1.2, -11),
-        definition: { ...COIN, model: MODELS.Resources.GoldBarsStackLarge, resourceAmount: 60, modelScale: 1.65 },
-    },
-    {
-        position: new THREE.Vector3(-5.5, 1.2, -10),
-        definition: { ...COIN, model: MODELS.Resources.MoneyPileLarge, resourceAmount: 100, modelScale: 1.15 },
-    },
-];
-const ROOM_WINDOW_PANES = [
-    { x: -6.1, z: 12, rotationY: 0, width: 2.9 },
-    { x: 6.1, z: 12, rotationY: 0, width: 2.9 },
-    { x: 9, z: 7.4, rotationY: Math.PI / 2, width: 2.6 },
-    { x: 9, z: -0.1, rotationY: Math.PI / 2, width: 2.6 },
-    { x: -9, z: 7.4, rotationY: Math.PI / 2, width: 2.6 },
-    { x: -9, z: -0.1, rotationY: Math.PI / 2, width: 2.6 },
-];
 const CELEBRATION_CAMERA_OPTIONS: CameraFollowOptions = {
     freezeHeightWhileAirborne: true,
     fixedYawDeg: 0,
 };
 const CAMERA_PANEL_ID = 'bandit-controller.path.camera';
 const BENDING_PANEL_ID = 'bandit-controller.path.bending';
-const MODEL_BASE = './bandit-controller/models/heist/';
+const LEVELS_PANEL_ID = 'bandit-controller.path.levels';
+const MODEL_BASE = './bandit-controller/models/';
 const CELEBRATION_ANIMATION_URL = './bandit-controller/models/animations/Excited.glb';
 const PAYOUT_STAGGER_SEC = 0.12;
 const CELEBRATION_PITCH_DEG = 28;
 const CELEBRATION_DISTANCE = 8;
-const CELEBRATION_DANCE_SEC = 3.5;
+const CELEBRATION_DANCE_SEC = 1;
 const CAMERA_FOCUS_ALONG_SEGMENT = 0.66;
 
 type PathLevelState = 'waiting' | 'following' | 'revealing' | 'celebrating' | 'payout' | 'complete';
@@ -202,10 +102,13 @@ export default class PathLevelScene extends ThreeScene {
     private readonly dressingAssets: THREE.Object3D[] = [];
     private goalParticleAccumulator = 0;
     private readonly goalParticlePosition = new THREE.Vector3();
-    private readonly vaultArea = new THREE.Group();
+    private level!: LevelData;
+    private waypoints: THREE.Vector3[] = [];
+    private doors: LevelDoor[] = [];
+    private readonly revealGroups = new Map<number, THREE.Group>();
     private readonly occlusionTarget = new THREE.Vector3();
-    private readonly activeStart = START_POSITION.clone();
-    private readonly activeGoal = MID_POSITION.clone();
+    private readonly activeStart = new THREE.Vector3();
+    private readonly activeGoal = new THREE.Vector3();
     private readonly segmentFocus = new THREE.Vector3();
     private readonly pathCameraOptions: CameraFollowOptions = {
         freezeHeightWhileAirborne: true,
@@ -215,7 +118,7 @@ export default class PathLevelScene extends ThreeScene {
     private cameraZoomTween?: gsap.core.Tween;
     private goalArrivalTween?: gsap.core.Tween;
     private nextWaypointIndex = 1;
-    private vaultAreaRevealed = false;
+    private revealedUpTo = 0;
     private floorMesh?: THREE.Mesh;
     private exteriorGround?: THREE.Mesh;
     private entryPath?: THREE.Mesh;
@@ -251,11 +154,17 @@ export default class PathLevelScene extends ThreeScene {
         this.state = 'waiting';
         this.pathDrawMode = 'free';
         this.wallsLowered = false;
-        this.vaultAreaRevealed = false;
+        this.revealedUpTo = 0;
         this.goalArrivalTween?.kill();
         this.goalArrivalTween = undefined;
-        this.activeStart.copy(START_POSITION);
-        this.activeGoal.copy(MID_POSITION);
+        this.level = LevelCatalog.current();
+        this.waypoints = [
+            new THREE.Vector3(this.level.start.x, 0, this.level.start.z),
+            ...this.level.waypoints.map((point) => new THREE.Vector3(point.x, 0, point.z)),
+        ];
+        this.doors = levelDoors(this.level);
+        this.activeStart.copy(this.waypoints[0]);
+        this.activeGoal.copy(this.waypoints[1]);
         this.nextWaypointIndex = 1;
         this.route = [];
         this.routeBlocked = false;
@@ -263,7 +172,7 @@ export default class PathLevelScene extends ThreeScene {
         this.collectibles.length = 0;
         this.collectedPayouts.length = 0;
         this.env = new WorldEnvironment(this.threeScene, BendService, FIELD_SIZE, 64, 1);
-        const player = this.env.spawnPlayer(this, START_POSITION);
+        const player = this.env.spawnPlayer(this, this.waypoints[0]);
         player.movementController.enabled = false;
         const opener = player as unknown as { opensDoors: boolean; transform: THREE.Object3D };
         opener.opensDoors = true;
@@ -274,16 +183,14 @@ export default class PathLevelScene extends ThreeScene {
         this.frameActiveSegment(true);
 
         this.buildCourse();
-        this.buildCollectibles(LOOT_PICKUPS.slice(0, FIRST_AREA_COIN_COUNT));
+        this.buildCollectibles(0);
         this.buildHud();
         this.setupCameraDebug();
         this.addInputListeners();
     }
 
     private buildCourse(): void {
-        this.vaultArea.clear();
-        this.vaultArea.visible = false;
-        this.threeScene.add(this.vaultArea);
+        this.revealGroups.clear();
         PizzaParticleSystem.init(this.threeScene, './bandit-controller/images/non-preload/');
         this.threeScene.background = buildBlueSkyTexture();
         this.threeScene.add(new THREE.HemisphereLight(0xe9f0e8, 0x4b4034, 1.8));
@@ -292,7 +199,7 @@ export default class PathLevelScene extends ThreeScene {
         this.threeScene.add(light);
 
         this.exteriorGround = new THREE.Mesh(
-            new THREE.PlaneGeometry(44, 46, 44, 46),
+            new THREE.PlaneGeometry(this.level.floor.width + 26, this.level.floor.depth + 22, 44, 46),
             new THREE.MeshStandardMaterial({ color: 0x77a970, roughness: 0.98 }),
         );
         this.exteriorGround.rotation.x = -Math.PI / 2;
@@ -300,20 +207,42 @@ export default class PathLevelScene extends ThreeScene {
         BendService.applyBend(this.exteriorGround.material as THREE.Material);
         this.threeScene.add(this.exteriorGround);
 
-        this.entryPath = new THREE.Mesh(
-            new THREE.PlaneGeometry(4.8, 8),
-            new THREE.MeshStandardMaterial({ color: 0x9a744d, roughness: 0.96 }),
-        );
-        this.entryPath.rotation.x = -Math.PI / 2;
-        this.entryPath.position.set(0, 0.012, 16);
-        BendService.applyBend(this.entryPath.material as THREE.Material);
-        this.threeScene.add(this.entryPath);
+        const entry = this.level.entryPath;
+        if (entry) {
+            this.entryPath = new THREE.Mesh(
+                new THREE.PlaneGeometry(entry.width, entry.depth),
+                new THREE.MeshStandardMaterial({ color: 0x9a744d, roughness: 0.96 }),
+            );
+            this.entryPath.rotation.x = -Math.PI / 2;
+            this.entryPath.position.set(entry.x, 0.012, entry.z);
+            BendService.applyBend(this.entryPath.material as THREE.Material);
+            this.threeScene.add(this.entryPath);
+        }
 
-        this.floorMesh = CheckerFloorBuilder.build(ROOM_FLOOR, ROOM_ORIGIN, FLOOR_CHECKER);
+        this.floorMesh = CheckerFloorBuilder.build({
+            x: 0,
+            z: 0,
+            width: this.level.floor.width,
+            depth: this.level.floor.depth,
+            rotationY: 0,
+            tileSize: 1,
+        } as StoreFloorPlacement, ROOM_ORIGIN, {
+            colorA: this.level.floor.colorA,
+            colorB: this.level.floor.colorB,
+            scale: this.level.floor.checkerScale,
+        } as FloorCheckerConfig);
         this.threeScene.add(this.floorMesh);
 
-        for (let wallIndex = 0; wallIndex < ROOM_WALLS.length; wallIndex++) {
-            const wall = ROOM_WALLS[wallIndex];
+        const roomWalls: StoreWallPlacement[] = this.level.walls.map((levelWall) => ({
+            closed: levelWall.closed,
+            points: levelWall.points.map((point) => ({ x: point.x, z: point.z })),
+            openings: levelWall.openings.map((opening) => ({
+                kind: opening.kind,
+                rect: { minX: opening.minX, maxX: opening.maxX, minZ: opening.minZ, maxZ: opening.maxZ },
+            })),
+        }));
+        for (let wallIndex = 0; wallIndex < roomWalls.length; wallIndex++) {
+            const wall = roomWalls[wallIndex];
             const mesh = PolyWallBuilder.build(wall, ROOM_ORIGIN, WALL_SETUP, WALL_STYLE);
             const lintelClearWall: StoreWallPlacement = {
                 ...wall,
@@ -355,14 +284,13 @@ export default class PathLevelScene extends ThreeScene {
             }
         }
 
-        this.addMarker(START_POSITION, 0x52dda0);
-        this.addMarker(MID_POSITION, 0xffd889, GOAL_MARKER_RADIUS);
-        this.buildDressing();
-        this.buildRearTrees();
+        this.addMarker(this.waypoints[0], 0x52dda0);
+        this.addMarker(this.waypoints[1], this.waypoints.length === 2 ? 0xff725e : 0xffd889, GOAL_MARKER_RADIUS);
+        this.buildProps();
     }
 
     private addWindowPanes(parent: THREE.Mesh): void {
-        for (const window of ROOM_WINDOW_PANES) {
+        for (const window of levelWindowPanes(this.level)) {
             const material = new THREE.MeshPhysicalMaterial({
                 color: 0x8bd9f4,
                 transparent: true,
@@ -383,19 +311,6 @@ export default class PathLevelScene extends ThreeScene {
         }
     }
 
-    private buildRearTrees(): void {
-        const treeLine = [
-            { x: -8, z: -14.2, model: 'trees/tree-large.glb', height: 8 },
-            { x: -4, z: -15, model: 'trees/tree-small.glb', height: 5.5 },
-            { x: 0, z: -14.5, model: 'trees/tree-large.glb', height: 7.5 },
-            { x: 4, z: -15, model: 'trees/tree-small.glb', height: 5.8 },
-            { x: 8, z: -14.2, model: 'trees/tree-large.glb', height: 8 },
-        ];
-        for (const tree of treeLine) {
-            this.placeAsset(tree.model, new THREE.Vector3(tree.x, FloorLayers.baseY, tree.z), tree.height);
-        }
-    }
-
     private updateGoalParticles(delta: number): void {
         if (this.state === 'celebrating' || this.state === 'payout' || this.state === 'complete') {
             return;
@@ -408,14 +323,29 @@ export default class PathLevelScene extends ThreeScene {
         }
     }
 
-    private buildDressing(): void {
-        this.placeAsset('vault/vault.gltf', new THREE.Vector3(5.5, FloorLayers.baseY, -9.5), 2.8, 0, this.vaultArea);
-        this.placeAsset('mini-market/cash-register.glb', new THREE.Vector3(-6, FloorLayers.baseY, 7), 1.25);
-        this.placeAsset('mini-market/shelf-boxes.glb', new THREE.Vector3(-7, FloorLayers.baseY, -6), 2.7, Math.PI / 2, this.vaultArea);
-        this.placeAsset('mini-market/column.glb', new THREE.Vector3(7, FloorLayers.baseY, 1), 5.7);
-        this.addPropCollider(new THREE.Vector3(5.5, FloorLayers.baseY, -9.5), new THREE.Vector3(0.95, 1.4, 0.8));
-        this.addPropCollider(new THREE.Vector3(-6, FloorLayers.baseY, 7), new THREE.Vector3(0.8, 0.65, 0.55));
-        this.addPropCollider(new THREE.Vector3(-7, FloorLayers.baseY, -6), new THREE.Vector3(0.6, 1.35, 1.2));
+    private revealGroup(index: number): THREE.Group {
+        let group = this.revealGroups.get(index);
+        if (!group) {
+            group = new THREE.Group();
+            group.visible = index <= this.revealedUpTo;
+            this.threeScene.add(group);
+            this.revealGroups.set(index, group);
+        }
+        return group;
+    }
+
+    private buildProps(): void {
+        for (const prop of this.level.props) {
+            const position = new THREE.Vector3(prop.x, FloorLayers.baseY, prop.z);
+            const parent = prop.revealAt > 0 ? this.revealGroup(prop.revealAt) : this.threeScene;
+            void this.placeAsset(prop.model, position, prop.height, prop.rotationY, parent);
+            if (prop.collider) {
+                this.addPropCollider(
+                    position,
+                    new THREE.Vector3(prop.collider.halfX, prop.collider.halfY, prop.collider.halfZ),
+                );
+            }
+        }
     }
 
     private async placeAsset(
@@ -512,7 +442,29 @@ export default class PathLevelScene extends ThreeScene {
         this.threeScene.add(marker);
     }
 
-    private buildCollectibles(pickups: readonly { position: THREE.Vector3; definition: CollectibleDefinition }[]): void {
+    private lootDefinition(loot: LevelLoot): CollectibleDefinition {
+        const withoutExtension = loot.model.replace(/\.(gltf|glb)$/i, '');
+        return {
+            ...COIN,
+            model: {
+                id: withoutExtension.split('/').pop() ?? withoutExtension,
+                path: withoutExtension,
+                fullPath: `bandit-controller/models/${loot.model}`,
+                format: loot.model.toLowerCase().endsWith('.glb') ? 'glb' : 'gltf',
+                nodes: {},
+            } as CollectibleDefinition['model'],
+            resourceAmount: loot.amount,
+            modelScale: loot.scale,
+        };
+    }
+
+    private buildCollectibles(revealAt: number): void {
+        const pickups = this.level.loot
+            .filter((loot) => loot.revealAt === revealAt)
+            .map((loot) => ({
+                position: new THREE.Vector3(loot.x, 1.2, loot.z),
+                definition: this.lootDefinition(loot),
+            }));
         for (const pickup of pickups) {
             const collectible = this.env.world.add(new Collectible(
                 pickup.definition,
@@ -615,6 +567,16 @@ export default class PathLevelScene extends ThreeScene {
         panel.slider(camera, 'pitchDeg', 55, 89, 1, 'Pitch');
         panel.slider(camera, 'distance', 10, 32, 0.5, 'Distance');
         panel.slider(camera, 'followSpeed', 0.5, 20, 0.5, 'Follow Speed');
+
+        const levelsPanel = DebugOverlay.instance.panel('Levels', { id: LEVELS_PANEL_ID });
+        levelsPanel.buttons(LevelCatalog.all().map((entry, index) => ({
+            label: `${index + 1}. ${entry.name}${entry.id === this.level.id ? ' ●' : ''}`,
+            variant: entry.id === this.level.id ? 'accent' as const : 'default' as const,
+            action: () => {
+                LevelCatalog.select(index);
+                this.onRestart.dispatch();
+            },
+        })));
 
         const bending = DebugOverlay.instance.panel('Path Bending', { id: BENDING_PANEL_ID });
         bending.slider(BendService.uniforms.uBendStrength, 'value', 0, 0.006, 0.0001, 'Player / floor');
@@ -758,14 +720,8 @@ export default class PathLevelScene extends ThreeScene {
             return route.map((point) => point.clone());
         }
 
-        const crossedDoors = DOOR_CENTERS_Z.filter((doorZ) => route.some((point, index) => {
-            if (index === 0) {
-                return false;
-            }
-            const previous = route[index - 1];
-            return (previous.z - doorZ) * (point.z - doorZ) <= 0
-                && this.crossesDoorInAssistRange(previous, point);
-        }));
+        const crossedDoors = this.doors.filter((door) => route.some((point, index) => index > 0
+            && this.segmentCrossesDoor(door, route[index - 1], point)));
 
         // Resample evenly so the curve has uniform density instead of sparse door waypoints.
         const spacing = 0.25;
@@ -794,16 +750,20 @@ export default class PathLevelScene extends ThreeScene {
 
         // Ease x toward the door centre over a blend zone, then hold it through the doorway.
         const blend = 2.5;
-        const doorWeight = (point: THREE.Vector3): number => {
-            let weight = 0;
-            for (const doorZ of crossedDoors) {
-                const distance = Math.abs(point.z - doorZ) - DOOR_CLEARANCE;
+        const doorPull = (point: THREE.Vector3): { weight: number; x: number } => {
+            let best = { weight: 0, x: point.x };
+            for (const door of crossedDoors) {
+                const distance = Math.abs(point.z - door.z) - DOOR_CLEARANCE;
                 const t = THREE.MathUtils.clamp(1 - distance / blend, 0, 1);
-                weight = Math.max(weight, t * t * (3 - 2 * t));
+                const weight = t * t * (3 - 2 * t);
+                if (weight > best.weight) {
+                    best = { weight, x: door.x };
+                }
             }
-            return weight;
+            return best;
         };
-        const weights = samples.map(doorWeight);
+        const pulls = samples.map(doorPull);
+        const weights = pulls.map((pull) => pull.weight);
 
         for (let pass = 0; pass < 2; pass++) {
             for (let index = 1; index < samples.length - 1; index++) {
@@ -817,21 +777,23 @@ export default class PathLevelScene extends ThreeScene {
             }
         }
         samples.forEach((point, index) => {
-            point.x = THREE.MathUtils.lerp(point.x, 0, weights[index]);
+            point.x = THREE.MathUtils.lerp(point.x, pulls[index].x, weights[index]);
         });
         return samples;
     }
 
-    private crossesDoorInAssistRange(start: THREE.Vector3, end: THREE.Vector3): boolean {
+    private segmentCrossesDoor(door: LevelDoor, start: THREE.Vector3, end: THREE.Vector3): boolean {
         const deltaZ = end.z - start.z;
         if (Math.abs(deltaZ) < 1e-8) {
             return false;
         }
-        return DOOR_CENTERS_Z.some((doorZ) => {
-            const t = (doorZ - start.z) / deltaZ;
-            return t >= -1e-4 && t <= 1 + 1e-4
-                && Math.abs(start.x + (end.x - start.x) * t) <= DOOR_ASSIST_HALF_WIDTH;
-        });
+        const t = (door.z - start.z) / deltaZ;
+        return t >= -1e-4 && t <= 1 + 1e-4
+            && Math.abs(start.x + (end.x - start.x) * t - door.x) <= door.halfWidth + DOOR_ASSIST_MARGIN;
+    }
+
+    private crossesDoorInAssistRange(start: THREE.Vector3, end: THREE.Vector3): boolean {
+        return this.doors.some((door) => this.segmentCrossesDoor(door, start, end));
     }
 
     private segmentHitsWall(start: THREE.Vector3, end: THREE.Vector3): boolean {
@@ -873,10 +835,12 @@ export default class PathLevelScene extends ThreeScene {
     }
 
     private clampToCourse(point: THREE.Vector3): THREE.Vector3 {
+        const halfWidth = this.level.floor.width / 2 + 2.2;
+        const halfDepth = this.level.floor.depth / 2 + 2.2;
         return new THREE.Vector3(
-            THREE.MathUtils.clamp(point.x, -11.2, 11.2),
+            THREE.MathUtils.clamp(point.x, -halfWidth, halfWidth),
             0.08,
-            THREE.MathUtils.clamp(point.z, -14.2, Math.max(14.2, this.activeStart.z, this.env.mainPlayer.transform.position.z)),
+            THREE.MathUtils.clamp(point.z, -halfDepth, Math.max(halfDepth, this.activeStart.z, this.env.mainPlayer.transform.position.z)),
         );
     }
 
@@ -991,7 +955,7 @@ export default class PathLevelScene extends ThreeScene {
         ribbon.anchor.set(0.5);
         ribbon.scale.set(1.1);
         ribbon.position.set(0, -125);
-        const title = new PIXI.Text('LEVEL COMPLETE', {
+        const title = new PIXI.Text(`LEVEL ${LevelCatalog.all().indexOf(this.level) + 1} COMPLETE`, {
             fontFamily: 'Trebuchet MS, sans-serif', fontSize: 20, fontWeight: 'bold', fill: 0xffffff,
             stroke: 0x0b3d12, strokeThickness: 5,
         });
@@ -1011,7 +975,7 @@ export default class PathLevelScene extends ThreeScene {
         buttonBg.width = 240;
         buttonBg.height = 90;
         buttonBg.position.set(-120, -45);
-        const buttonLabel = new PIXI.Text('PLAY AGAIN', {
+        const buttonLabel = new PIXI.Text(LevelCatalog.hasNext(this.level) ? 'NEXT LEVEL' : 'PLAY AGAIN', {
             fontFamily: 'Trebuchet MS, sans-serif', fontSize: 32, fontWeight: 'bold', fill: 0xffffff,
             stroke: 0x6b4200, strokeThickness: 6,
         });
@@ -1021,7 +985,10 @@ export default class PathLevelScene extends ThreeScene {
         button.position.set(0, 60);
         button.eventMode = 'static';
         button.cursor = 'pointer';
-        button.on('pointertap', () => this.onRestart.dispatch());
+        button.on('pointertap', () => {
+            LevelCatalog.advance(this.level);
+            this.onRestart.dispatch();
+        });
 
         modal.addChild(panel, ribbon, title, total, button);
         this.positionBottomPanel(modal);
@@ -1052,6 +1019,8 @@ export default class PathLevelScene extends ThreeScene {
         });
         this.env.cameraSystem.blendTo('celebration', 0.8);
         this.setInstruction('THE GETAWAY!');
+        // Started now so animation loading doesn't delay the meter.
+        const danceDone = new Promise<void>((resolve) => setTimeout(resolve, CELEBRATION_DANCE_SEC * 1000));
 
         const playerPosition = this.env.mainPlayer.transform.position;
         const towardCamera = this.threeCamera.position.clone().sub(playerPosition);
@@ -1072,8 +1041,6 @@ export default class PathLevelScene extends ThreeScene {
         }
 
         if (!this.destroyed) {
-            // Money flies to the HUD while the dance plays; the modal waits for both.
-            const danceDone = new Promise<void>((resolve) => setTimeout(resolve, CELEBRATION_DANCE_SEC * 1000));
             this.payOutCollectedMoney(danceDone);
         }
     }
@@ -1137,7 +1104,7 @@ export default class PathLevelScene extends ThreeScene {
         movement.exitPathMode();
         this.activeStart.copy(this.activeGoal);
         this.nextWaypointIndex++;
-        this.activeGoal.copy(WAYPOINTS[this.nextWaypointIndex]);
+        this.activeGoal.copy(this.waypoints[this.nextWaypointIndex]);
         this.state = 'waiting';
         this.route = [];
         this.routeBlocked = false;
@@ -1148,14 +1115,20 @@ export default class PathLevelScene extends ThreeScene {
             : 'CHECKPOINT REACHED; TRACE TO THE VAULT EXIT');
     }
 
-    private revealVaultArea(): void {
-        if (this.vaultAreaRevealed) {
+    private revealArea(index: number): void {
+        if (index <= this.revealedUpTo) {
             return;
         }
-        this.vaultAreaRevealed = true;
-        this.vaultArea.visible = true;
-        this.addMarker(FINISH_POSITION, 0xff725e, GOAL_MARKER_RADIUS);
-        this.buildCollectibles(LOOT_PICKUPS.slice(FIRST_AREA_COIN_COUNT));
+        this.revealedUpTo = index;
+        for (const [groupIndex, group] of this.revealGroups) {
+            group.visible = groupIndex <= index;
+        }
+        const nextGoal = this.waypoints[index + 1];
+        if (nextGoal) {
+            const isExit = index + 1 === this.waypoints.length - 1;
+            this.addMarker(nextGoal, isExit ? 0xff725e : 0xffd889, GOAL_MARKER_RADIUS);
+        }
+        this.buildCollectibles(index);
     }
 
     private beginGoalArrival(): void {
@@ -1182,8 +1155,8 @@ export default class PathLevelScene extends ThreeScene {
                 this.route = [];
                 this.routeBlocked = false;
                 this.clearRoute();
-                if (this.nextWaypointIndex < WAYPOINTS.length - 1) {
-                    this.revealVaultArea();
+                if (this.nextWaypointIndex < this.waypoints.length - 1) {
+                    this.revealArea(this.nextWaypointIndex);
                     this.advanceWaypoint();
                 } else {
                     void this.beginCelebration();
@@ -1212,7 +1185,7 @@ export default class PathLevelScene extends ThreeScene {
             const movementComplete = this.env.mainPlayer.movementController.isPathComplete;
             if (this.pathDrawMode === 'free') {
                 if (movementComplete) {
-                    const waypoint = WAYPOINTS[this.nextWaypointIndex];
+                    const waypoint = this.waypoints[this.nextWaypointIndex];
                     if (waypoint && this.distanceXZ(this.env.mainPlayer.transform.position, waypoint) <= GOAL_TRIGGER_RADIUS) {
                         this.activeGoal.copy(waypoint);
                         this.beginGoalArrival();
@@ -1222,7 +1195,7 @@ export default class PathLevelScene extends ThreeScene {
                 }
             } else {
                 const distanceToGoal = this.distanceXZ(this.env.mainPlayer.transform.position, this.activeGoal);
-                const finalGoal = this.nextWaypointIndex >= WAYPOINTS.length - 1;
+                const finalGoal = this.nextWaypointIndex >= this.waypoints.length - 1;
                 if (finalGoal) {
                     if (movementComplete && distanceToGoal <= 0.75) {
                         this.beginGoalArrival();
@@ -1239,8 +1212,8 @@ export default class PathLevelScene extends ThreeScene {
 
     private updateWallHeight(): void {
         const position = this.env.mainPlayer.transform.position;
-        const insideRoom = Math.abs(position.x) < ROOM_FLOOR.width / 2 - 0.2
-            && Math.abs(position.z) < ROOM_FLOOR.depth / 2 - 0.2;
+        const insideRoom = Math.abs(position.x) < this.level.floor.width / 2 - 0.2
+            && Math.abs(position.z) < this.level.floor.depth / 2 - 0.2;
         if (insideRoom === this.wallsLowered) {
             return;
         }
@@ -1343,7 +1316,7 @@ export default class PathLevelScene extends ThreeScene {
         const pitch = THREE.MathUtils.degToRad(cameraSettings.pitchDeg);
         const halfFovTangent = Math.tan(THREE.MathUtils.degToRad(this.threeCamera.fov / 2));
         const aspect = window.innerWidth / Math.max(1, window.innerHeight);
-        const halfWidth = ROOM_FLOOR.width / 2 + 0.5;
+        const halfWidth = this.level.floor.width / 2 + 0.5;
         const segmentDepth = Math.abs(this.activeGoal.z - this.activeStart.z);
         const depthToStart = segmentDepth * CAMERA_FOCUS_ALONG_SEGMENT + 2;
         const depthToGoal = segmentDepth * (1 - CAMERA_FOCUS_ALONG_SEGMENT) + 2;
@@ -1395,6 +1368,7 @@ export default class PathLevelScene extends ThreeScene {
         this.hud = undefined;
         DebugOverlay.instance.removePanel(CAMERA_PANEL_ID);
         DebugOverlay.instance.removePanel(BENDING_PANEL_ID);
+        DebugOverlay.instance.removePanel(LEVELS_PANEL_ID);
         for (const door of this.wallDoors) {
             door.dispose();
         }

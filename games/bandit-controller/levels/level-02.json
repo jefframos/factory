@@ -1,0 +1,41 @@
+{
+  "id": "level-02",
+  "name": "Corner Store",
+  "grid": { "cell": 0.5 },
+  "floor": { "width": 14, "depth": 20, "colorA": "#f1e3c4", "colorB": "#c9a56a", "checkerScale": 1.5 },
+  "start": { "x": 0, "z": 14 },
+  "waypoints": [{ "x": 0, "z": 0 }, { "x": 3, "z": -7.5 }],
+  "entryPath": { "x": 0, "z": 14, "width": 4.8, "depth": 6 },
+  "walls": [
+    {
+      "closed": true,
+      "points": [{ "x": -7, "z": 10 }, { "x": 7, "z": 10 }, { "x": 7, "z": -10 }, { "x": -7, "z": -10 }],
+      "openings": [
+        { "kind": "door", "minX": -1.25, "maxX": 1.25, "minZ": 9.7, "maxZ": 10.3 },
+        { "kind": "window", "minX": -5.5, "maxX": -2.5, "minZ": 9.7, "maxZ": 10.3 },
+        { "kind": "window", "minX": 2.5, "maxX": 5.5, "minZ": 9.7, "maxZ": 10.3 }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [{ "x": -7, "z": -2 }, { "x": 7, "z": -2 }],
+      "openings": [{ "kind": "door", "minX": -1.25, "maxX": 1.25, "minZ": -2.3, "maxZ": -1.7 }]
+    }
+  ],
+  "props": [
+    { "model": "heist/mini-market/cash-register.glb", "x": 4.5, "z": 6, "rotationY": 3.1416, "height": 1.25, "collider": { "halfX": 0.8, "halfY": 0.65, "halfZ": 0.55 }, "revealAt": 0 },
+    { "model": "heist/mini-market/shelf-boxes.glb", "x": -5.5, "z": 4, "rotationY": 1.5708, "height": 2.7, "collider": { "halfX": 0.6, "halfY": 1.35, "halfZ": 1.2 }, "revealAt": 0 },
+    { "model": "heist/mini-market/shelf-boxes.glb", "x": -5.5, "z": -5, "rotationY": 1.5708, "height": 2.7, "collider": { "halfX": 0.6, "halfY": 1.35, "halfZ": 1.2 }, "revealAt": 1 },
+    { "model": "heist/vault/vault.gltf", "x": 4.5, "z": -8, "rotationY": 0, "height": 2.8, "collider": { "halfX": 0.95, "halfY": 1.4, "halfZ": 0.8 }, "revealAt": 1 },
+    { "model": "heist/trees/tree-large.glb", "x": -5, "z": -12, "rotationY": 0, "height": 8, "collider": null, "revealAt": 0 },
+    { "model": "heist/trees/tree-small.glb", "x": 0, "z": -12.5, "rotationY": 0, "height": 5.5, "collider": null, "revealAt": 0 },
+    { "model": "heist/trees/tree-large.glb", "x": 5, "z": -12, "rotationY": 0, "height": 7.5, "collider": null, "revealAt": 0 }
+  ],
+  "loot": [
+    { "model": "resources/Money_Pile_Small.gltf", "x": -2.5, "z": 6.5, "amount": 25, "scale": 1.35, "revealAt": 0 },
+    { "model": "resources/Money_Bills_Stack_Small.gltf", "x": 2.5, "z": 3, "amount": 25, "scale": 1.35, "revealAt": 0 },
+    { "model": "resources/Gold_Nuggets.gltf", "x": -3, "z": -4.5, "amount": 50, "scale": 1.65, "revealAt": 1 },
+    { "model": "resources/Gold_Bars_Stack_Large.gltf", "x": 1.5, "z": -6, "amount": 80, "scale": 1.65, "revealAt": 1 },
+    { "model": "resources/Gems_Chest.gltf", "x": -1, "z": -8, "amount": 120, "scale": 1.3, "revealAt": 1 }
+  ]
+}

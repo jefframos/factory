@@ -5,6 +5,7 @@
         "dev": "vite",
         "start": "vite",
         "editor": "node tools/editor/run-editor.mjs",
+        "level": "node tools/editor/run-editor.mjs",
         "playtest": "node tools/playtest/run-playtest.mjs",
         "playtest:watch": "node tools/playtest/run-playtest.mjs --headed",
         "build": "vite build",
