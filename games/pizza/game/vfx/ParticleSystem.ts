@@ -46,9 +46,14 @@ export class ParticleSystem {
     private static group: THREE.Group | null = null;
     private static readonly batches = new Map<string, ParticleBatch>();
     private static readonly pendingLoads = new Set<string>();
+    private static nonPreloadImageBase = NON_PRELOAD_IMAGE_BASE;
 
-    public static init(scene: THREE.Scene): void {
+    public static init(scene: THREE.Scene, nonPreloadImageBase = NON_PRELOAD_IMAGE_BASE): void {
+        ParticleSystem.nonPreloadImageBase = nonPreloadImageBase;
         if (ParticleSystem.group) {
+            if (ParticleSystem.group.parent !== scene) {
+                scene.add(ParticleSystem.group);
+            }
             return;
         }
         ParticleSystem.group = new THREE.Group();
@@ -123,10 +128,14 @@ export class ParticleSystem {
         }
         ParticleSystem.pendingLoads.add(key);
 
-        void TextureBuilder.load(`${NON_PRELOAD_IMAGE_BASE}${texturePath}`).then((texture) => {
+        const textureUrl = `${ParticleSystem.nonPreloadImageBase}${texturePath}`;
+        void TextureBuilder.load(textureUrl).then((texture) => {
             const batch = new ParticleBatch(texture, BATCH_CAPACITY, blendMode);
             ParticleSystem.group?.add(batch.points);
             ParticleSystem.batches.set(key, batch);
+        }).catch((error) => {
+            console.error(`[ParticleSystem] Failed to load particle texture ${textureUrl}`, error);
+        }).finally(() => {
             ParticleSystem.pendingLoads.delete(key);
         });
     }

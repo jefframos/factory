@@ -20,15 +20,13 @@ import * as THREE from 'three';
 import { Signal } from 'signals';
 import { Game } from 'core/Game';
 import { ThreeScene } from 'core/scene/ThreeScene';
-import { DevGuiManager } from 'core/utils/DevGuiManager';
+import { DebugOverlay } from 'core/debug/DebugOverlay';
 import { BendService } from 'core/services/BendService';
 import { WorldEnvironment, CameraFollowOptions } from './shared/WorldEnvironment';
 import Collectible from '../entities/Collectible';
 import { buildGateMarker, buildTriggerGate } from '../builders/GateBuilder';
 import { spawnCollectible, pruneCollected } from '../builders/CollectibleBuilder';
 import { CAMERA_SETTINGS_BY_MODE, DEFAULT_CAMERA_MODE } from '../data/GameSettings';
-import { PLAYER_SETTINGS } from '../data/PlayerSettings';
-import { WORLD_SETTINGS } from '../data/WorldSettings';
 import { MONEY_PILE_SMALL, generateCollectibleSpawnPositions } from '../data/CollectibleSettings';
 import GameUI from '../ui/GameUI';
 import MoneyHud from '../ui/MoneyHud';
@@ -48,20 +46,6 @@ const SWIPE_GATE_POSITION = { x: 6, z: -14 };
 const CAMERA_FOLLOW_OPTIONS: CameraFollowOptions = {
     freezeHeightWhileAirborne: true,
 };
-
-/**
- * Dev-GUI sliders bind directly to whichever objects THIS hub instance
- * happens to own (its own WorldEnvironment.cameraSystem.current, etc.) —
- * DevGuiManager's folders are keyed by name and never cleared
- * (getOrCreateFolder() just keeps appending), so re-wiring on every hub
- * rebuild would stack duplicate rows forever. Guarding to "once per page
- * load" means Player/World sliders (module-level singletons, read live by
- * every scene regardless of which one is current) stay correct forever, but
- * the Camera sliders go inert after the FIRST scene switch away from this
- * hub instance — acceptable for a ?dev-only debug tool; fixing it properly
- * would need DevGuiManager to support removing/replacing controls.
- */
-let devGuiWired = false;
 
 export default class HubScene extends ThreeScene {
     /** Fired with the target minigame's SceneManager key ('runner-minigame' | 'swipe-minigame') — see index.ts. */
@@ -100,10 +84,7 @@ export default class HubScene extends ThreeScene {
         this.buildMinigameGates();
         this.awakeCameraHotkeys();
 
-        if (!devGuiWired) {
-            devGuiWired = true;
-            this.wireDevGui();
-        }
+        this.wireDebugOverlay();
     }
 
     public update(delta: number): void {
@@ -170,33 +151,15 @@ export default class HubScene extends ThreeScene {
         this.env.updateCamera(this.threeCamera, 0, CAMERA_FOLLOW_OPTIONS);
     }
 
-    private wireDevGui(): void {
+    private wireDebugOverlay(): void {
         const current = this.env.cameraSystem.current;
-        DevGuiManager.instance.addProperties(current, ['yawDeg'], [-180, 180], 'Camera', 'Camera');
-        DevGuiManager.instance.addProperties(current, ['pitchDeg'], [0, 89], 'Camera', 'Camera');
-        DevGuiManager.instance.addProperties(current, ['distance'], [2, 20], 'Camera', 'Camera');
-        DevGuiManager.instance.addProperties(current, ['followSpeed'], [0.5, 20], 'Camera', 'Camera');
-        DevGuiManager.instance.addProperties(current.offset, ['x', 'y', 'z'], [-3, 3], 'Camera Offset', 'Camera');
+        const cameraPanel = DebugOverlay.instance.panel('Hub Camera', { id: 'bandit-controller.hub.camera' });
+        cameraPanel.slider(current, 'yawDeg', -180, 180, 1, 'Yaw');
+        cameraPanel.slider(current, 'pitchDeg', 0, 89, 1, 'Pitch');
+        cameraPanel.slider(current, 'distance', 2, 32, 0.5, 'Distance');
+        cameraPanel.slider(current, 'followSpeed', 0.5, 20, 0.5, 'Follow Speed');
+        cameraPanel.vector(current, 'offset', { step: 0.1 });
 
-        // Player + World tuning — edits PlayerSettings.ts/WorldSettings.ts directly, which
-        // every reader (in whichever scene is currently active) reads LIVE, so these take
-        // effect immediately regardless of which scene is current when you drag a slider.
-        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['walkSpeed'], [1, 15], 'Player', 'Player');
-        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['runSpeedMultiplier'], [1, 4], 'Player', 'Player');
-        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['jumpSpeed'], [2, 25], 'Player', 'Player');
-        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['rollDuration'], [0.1, 2], 'Player', 'Player');
-        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['slideDuration'], [0.1, 2], 'Player', 'Player');
-        // Collider height profiles (see PlayerSettings.getPlayerColliderHalfExtents()) — only
-        // takes effect for the player's CURRENT stand/slide state going forward (MainPlayer.
-        // awake() reads standHalfHeight once at spawn, CharacterVisualComponent re-reads both
-        // on the next slide transition), same "live but not retroactive" caveat every other
-        // *Settings.ts slider already has.
-        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['standHalfHeight'], [0.3, 1.5], 'Player', 'Player');
-        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['slideHalfHeight'], [0.1, 1], 'Player', 'Player');
-        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['hitKickbackSpeed'], [0, 20], 'Player', 'Player');
-        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['hitKickbackDuration'], [0.05, 1.5], 'Player', 'Player');
-        DevGuiManager.instance.addProperties(WORLD_SETTINGS, ['gravity'], [-60, -2], 'World', 'World');
-        DevGuiManager.instance.addProperties(WORLD_SETTINGS, ['maxPhysicsDelta'], [0.01, 0.1], 'World', 'World');
     }
 
     public resize(): void {
@@ -205,6 +168,7 @@ export default class HubScene extends ThreeScene {
 
     public destroy(): void {
         window.removeEventListener('keydown', this.onCameraHotkey);
+        DebugOverlay.instance.removePanel('bandit-controller.hub.camera');
         this.gameUI?.destroy();
         for (const collectible of this.collectibles) {
             this.env.world.remove(collectible);

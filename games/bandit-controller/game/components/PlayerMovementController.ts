@@ -53,6 +53,7 @@ const LATERAL_FOLLOW_SPEED = 10;
 /** Whatever the controller needs from its host scene to hook input. */
 export interface MovementInputHost extends PIXI.Container {
     worldToScreen(position: THREE.Vector3): { x: number; y: number } | null;
+    screenToGround?(screenX: number, screenY: number): THREE.Vector3 | null;
 }
 
 export default class PlayerMovementController extends Component {
@@ -63,14 +64,22 @@ export default class PlayerMovementController extends Component {
     private keyboardInput?: KeyboardInputMovement;
     private analogInput?: AnalogInput;
     private sprintHeld = false;
+    private analogEnabled?: boolean;
+    private clickModeEnabled = PLAYER_SETTINGS.clickToMoveEnabled;
     /** The analog stick's own normalized magnitude (0-1, see AnalogInput's onMove) — tracked separately from moveInput.length() because keyboard input is always exactly 0 or 1 (see WALK_ANIM_MAGNITUDE's own doc) and would otherwise always read as "past the run threshold." Reset to 0 when the stick is released or this controller is disabled. */
     private analogMagnitude = 0;
 
     /** Latest raw pointer/touch screen X (CSS pixels) — updated continuously by a plain window listener (see awake()), read only while in runner mode (see updateRunnerMovement()). Null until the pointer/finger has moved at least once. */
     private pointerScreenX: number | null = null;
+    private clickTarget: THREE.Vector3 | null = null;
 
     /** True while in "runner mode" — see enterRunnerMode(). */
     private runnerMode = false;
+    /** True while following an explicit world-space route — path scenes use this to keep movement and animation inside the same player controller as free/runner modes. */
+    private pathMode = false;
+    private pathRoute: THREE.Vector3[] = [];
+    private pathIndex = 1;
+    private pathComplete = false;
     /** World-space, Y-flattened, unit forward/right for the current runner lane — set once on enterRunnerMode(), read every runner fixedUpdate() tick. */
     private readonly runnerForward = new THREE.Vector3(0, 0, -1);
     private readonly runnerRight = new THREE.Vector3(1, 0, 0);
@@ -89,11 +98,17 @@ export default class PlayerMovementController extends Component {
 
         this.keyboardInput = new KeyboardInputMovement();
         this.keyboardInput.onMove.add(({ direction, magnitude }: { direction: PIXI.Point; magnitude: number }) => {
+            if (magnitude > 0) {
+                this.clickTarget = null;
+            }
             this.moveInput.set(direction.x * magnitude, direction.y * magnitude);
         });
 
         this.analogInput = new AnalogInput(this.inputHost);
         this.analogInput.onMove.add(({ direction, magnitude }: { direction: PIXI.Point; magnitude: number }) => {
+            if (magnitude > 0) {
+                this.clickTarget = null;
+            }
             this.analogMagnitude = magnitude;
             this.moveInput.set(magnitude > 0 ? direction.x * magnitude : 0, magnitude > 0 ? direction.y * magnitude : 0);
         });
@@ -104,9 +119,26 @@ export default class PlayerMovementController extends Component {
         // hover replay bug that doesn't apply here) so steering responds to the very first
         // mouse/finger movement, before the player has clicked anything.
         window.addEventListener('pointermove', this.onPointerMove);
+        window.addEventListener('pointerup', this.onPointerUp);
 
         window.addEventListener('keydown', this.onKeyDown);
         window.addEventListener('keyup', this.onKeyUp);
+        this.syncAnalogInput();
+    }
+
+    private syncAnalogInput(): void {
+        const shouldEnable = this.enabled
+            && !PLAYER_SETTINGS.clickToMoveEnabled
+            && !this.runnerMode
+            && !this.pathMode;
+        if (this.analogEnabled === shouldEnable) {
+            return;
+        }
+        this.analogEnabled = shouldEnable;
+        this.analogInput?.setEnabled(shouldEnable);
+        if (!shouldEnable) {
+            this.analogMagnitude = 0;
+        }
     }
 
     private onKeyDown = (e: KeyboardEvent): void => {
@@ -136,6 +168,16 @@ export default class PlayerMovementController extends Component {
         this.pointerScreenX = e.clientX;
     };
 
+    private onPointerUp = (event: PointerEvent): void => {
+        if (!this.enabled || this.runnerMode || this.pathMode || !PLAYER_SETTINGS.clickToMoveEnabled || event.button !== 0 || !event.isPrimary) {
+            return;
+        }
+        if (event.target instanceof Element && event.target.closest('#daybreak-debug-overlay')) {
+            return;
+        }
+        this.clickTarget = this.inputHost.screenToGround?.(event.clientX, event.clientY) ?? null;
+    };
+
     /**
      * Switches to "runner mode": forward movement becomes automatic along
      * `worldDirection` (constant, always at running pace) and sideways
@@ -147,17 +189,40 @@ export default class PlayerMovementController extends Component {
      * player happens to be standing right now becomes the lane's center).
      */
     public enterRunnerMode(worldDirection: THREE.Vector3): void {
+        this.pathMode = false;
         this.runnerMode = true;
         this.runnerForward.set(worldDirection.x, 0, worldDirection.z).normalize();
         this.runnerRight.crossVectors(this.runnerForward, WORLD_UP).normalize();
         this.lateralOffset = 0;
-        this.analogInput?.setEnabled(false);
+        this.syncAnalogInput();
     }
 
     /** Reverts to normal free WASD/analog movement. */
     public exitRunnerMode(): void {
         this.runnerMode = false;
-        this.analogInput?.setEnabled(true);
+        this.syncAnalogInput();
+    }
+
+    /** Starts following a route authored in world space, beginning at the player's current position. */
+    public enterPathMode(route: readonly THREE.Vector3[]): void {
+        this.runnerMode = false;
+        this.pathMode = true;
+        this.pathRoute = route.map((point) => point.clone());
+        this.pathIndex = 1;
+        this.pathComplete = this.pathRoute.length < 2;
+        this.syncAnalogInput();
+    }
+
+    public exitPathMode(): void {
+        this.pathMode = false;
+        this.pathRoute = [];
+        this.pathIndex = 1;
+        this.pathComplete = false;
+        this.syncAnalogInput();
+    }
+
+    public get isPathComplete(): boolean {
+        return this.pathComplete;
     }
 
     private tryJump(): void {
@@ -172,9 +237,28 @@ export default class PlayerMovementController extends Component {
     public fixedUpdate(delta: number): void {
         const rigidBody = this.entity.getComponent(RigidBody);
         const visual = this.entity.getComponent(CharacterVisualComponent);
+        if (this.clickModeEnabled !== PLAYER_SETTINGS.clickToMoveEnabled) {
+            this.clickModeEnabled = PLAYER_SETTINGS.clickToMoveEnabled;
+            this.clickTarget = null;
+            this.moveInput.set(0, 0);
+        }
+        this.syncAnalogInput();
+        if (!PLAYER_SETTINGS.clickToMoveEnabled) {
+            this.clickTarget = null;
+        }
+
+        if (this.pathMode) {
+            this.updatePathMovement(rigidBody, visual, delta);
+            return;
+        }
 
         if (this.runnerMode) {
             this.updateRunnerMovement(rigidBody, visual, delta);
+            return;
+        }
+
+        if (PLAYER_SETTINGS.clickToMoveEnabled && this.clickTarget) {
+            this.updateClickMovement(rigidBody, visual, delta);
             return;
         }
 
@@ -197,6 +281,74 @@ export default class PlayerMovementController extends Component {
                     (this.moveInput.y / magnitude) * animMagnitude,
                 );
             }
+        }
+    }
+
+    private updateClickMovement(rigidBody: RigidBody | undefined, visual: CharacterVisualComponent | undefined, delta: number): void {
+        const position = this.entity.transform.position;
+        const dx = this.clickTarget!.x - position.x;
+        const dz = this.clickTarget!.z - position.z;
+        const distance = Math.hypot(dx, dz);
+        if (distance < 0.15) {
+            this.clickTarget = null;
+            if (rigidBody) {
+                rigidBody.velocity.x = 0;
+                rigidBody.velocity.z = 0;
+            }
+            visual?.moveInput.set(0, 0);
+            return;
+        }
+
+        const speed = this.getMoveSpeed(this.sprintHeld || this.analogMagnitude > ANALOG_RUN_THRESHOLD);
+        const stepSpeed = delta > 0 ? Math.min(speed, distance / delta) : 0;
+        const directionX = dx / distance;
+        const directionZ = dz / distance;
+        if (rigidBody) {
+            rigidBody.velocity.x = directionX * stepSpeed;
+            rigidBody.velocity.z = directionZ * stepSpeed;
+        }
+        visual?.moveInput.set(directionX, directionZ);
+    }
+
+    private updatePathMovement(rigidBody: RigidBody | undefined, visual: CharacterVisualComponent | undefined, delta: number): void {
+        const position = this.entity.transform.position;
+        const target = this.pathRoute[this.pathIndex];
+        if (!target || this.pathComplete) {
+            if (rigidBody) {
+                rigidBody.velocity.x = 0;
+                rigidBody.velocity.z = 0;
+            }
+            if (visual) {
+                visual.moveInput.set(0, 0);
+            }
+            this.pathComplete = true;
+            return;
+        }
+
+        const dx = target.x - position.x;
+        const dz = target.z - position.z;
+        const distance = Math.hypot(dx, dz);
+        if (distance < 0.18) {
+            this.pathIndex++;
+            if (this.pathIndex >= this.pathRoute.length) {
+                this.pathComplete = true;
+                this.updatePathMovement(rigidBody, visual, delta);
+                return;
+            }
+            this.updatePathMovement(rigidBody, visual, delta);
+            return;
+        }
+
+        const speed = this.getMoveSpeed(true);
+        const stepSpeed = delta > 0 ? Math.min(speed, distance / delta) : 0;
+        const directionX = dx / distance;
+        const directionZ = dz / distance;
+        if (rigidBody) {
+            rigidBody.velocity.x = directionX * stepSpeed;
+            rigidBody.velocity.z = directionZ * stepSpeed;
+        }
+        if (visual) {
+            visual.moveInput.set(directionX, directionZ);
         }
     }
 
@@ -258,18 +410,23 @@ export default class PlayerMovementController extends Component {
         this.entity.getComponent(CharacterVisualComponent)?.moveInput.set(0, 0);
         this.sprintHeld = false;
         this.analogMagnitude = 0;
+        this.clickTarget = null;
         this.analogInput?.setEnabled(false);
+        this.analogEnabled = false;
     }
 
     /** Counterpart to onDisable() — brings the joystick back once this component is handed movement again. */
     public onEnable(): void {
-        this.analogInput?.setEnabled(true);
+        this.clickModeEnabled = PLAYER_SETTINGS.clickToMoveEnabled;
+        this.clickTarget = null;
+        this.syncAnalogInput();
     }
 
     public destroy(): void {
         this.keyboardInput?.destroy();
         this.analogInput?.destroy();
         window.removeEventListener('pointermove', this.onPointerMove);
+        window.removeEventListener('pointerup', this.onPointerUp);
         window.removeEventListener('keydown', this.onKeyDown);
         window.removeEventListener('keyup', this.onKeyUp);
     }

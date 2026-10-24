@@ -28,8 +28,8 @@ export const FLOOR_SIZE = 300;
 const FLOOR_HALF_THICKNESS = 0.5;
 
 /** Spherical orbit around the player: yawDeg (rotation around the player, 0 = behind looking toward -Z), pitchDeg (tilt up/down, 90 = straight overhead), distance (how far back). Converts a CameraSettings' yaw/pitch/distance into a world-space offset from the look-at point. */
-function cameraOrbitOffset(settings: CameraSettings): THREE.Vector3 {
-    const yaw = settings.yawDeg * (Math.PI / 180);
+function cameraOrbitOffset(settings: CameraSettings, yawOverride = settings.yawDeg): THREE.Vector3 {
+    const yaw = yawOverride * (Math.PI / 180);
     const pitch = settings.pitchDeg * (Math.PI / 180);
     const horizontal = settings.distance * Math.cos(pitch);
 
@@ -70,8 +70,18 @@ export interface VisualFloorPatch {
 }
 
 export interface CameraFollowOptions {
+    /** Explicit world-space camera focus target — used by waypoint levels to frame both ends of the active segment. */
+    target?: THREE.Vector3;
     /** If set, the look-at point's X is pinned to this world value instead of tracking the player's own X — e.g. RunnerMinigameScene locking the camera to the lane's own centerline instead of swaying with the player's lateral pointer-follow steering. */
     lockX?: number;
+    /** If set, the look-at point's Z is pinned to a world value — useful for keeping a compact level centered while the camera frames the full room. */
+    lockZ?: number;
+    /** Use a fixed world yaw instead of the active camera preset's yaw. */
+    fixedYawDeg?: number;
+    /** Follow the target immediately instead of easing the camera pivot behind it. */
+    snapFollowTarget?: boolean;
+    /** World-space map bounds — center small levels and clamp follow so larger levels stay framed. */
+    bounds?: { minX: number; maxX: number; minZ: number; maxZ: number };
     /**
      * If true, the look-at point's Y only updates while the player's RigidBody is grounded —
      * frozen at whatever height it last was on solid ground while airborne, then resyncs the
@@ -286,12 +296,29 @@ export class WorldEnvironment {
         }
 
         this.followTarget.set(
-            options.lockX ?? playerPosition.x,
-            options.freezeHeightWhileAirborne ? this.lastGroundedHeight : playerPosition.y,
-            playerPosition.z,
+            options.target?.x ?? options.lockX ?? playerPosition.x,
+            options.target?.y ?? (options.freezeHeightWhileAirborne ? this.lastGroundedHeight : playerPosition.y),
+            options.target?.z ?? options.lockZ ?? playerPosition.z,
         );
 
-        const followT = delta > 0 ? 1 - Math.exp(-settings.followSpeed * delta) : 1;
+        if (options.bounds) {
+            const halfViewHeight = Math.tan(THREE.MathUtils.degToRad(threeCamera.fov / 2)) * settings.distance;
+            const halfViewWidth = halfViewHeight * threeCamera.aspect;
+            const minX = options.bounds.minX + halfViewWidth;
+            const maxX = options.bounds.maxX - halfViewWidth;
+            const minZ = options.bounds.minZ + halfViewHeight;
+            const maxZ = options.bounds.maxZ - halfViewHeight;
+            this.followTarget.x = minX > maxX
+                ? (options.bounds.minX + options.bounds.maxX) / 2
+                : THREE.MathUtils.clamp(this.followTarget.x, minX, maxX);
+            this.followTarget.z = minZ > maxZ
+                ? (options.bounds.minZ + options.bounds.maxZ) / 2
+                : THREE.MathUtils.clamp(this.followTarget.z, minZ, maxZ);
+        }
+
+        const followT = options.snapFollowTarget || delta <= 0
+            ? 1
+            : 1 - Math.exp(-settings.followSpeed * delta);
         this.smoothedTarget.lerp(this.followTarget, followT);
 
         // settings.offset shifts the look-at point itself (e.g. up to chest/head height) —
@@ -301,7 +328,7 @@ export class WorldEnvironment {
             this.offsetVector.set(settings.offset.x, settings.offset.y, settings.offset.z),
         );
 
-        threeCamera.position.copy(lookAtPoint).add(cameraOrbitOffset(settings));
+        threeCamera.position.copy(lookAtPoint).add(cameraOrbitOffset(settings, options.fixedYawDeg));
         threeCamera.lookAt(lookAtPoint);
     }
 }

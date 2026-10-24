@@ -317,7 +317,7 @@ export default class CharacterBody {
      */
     public update(delta: number, moveInputX: number = 0, moveInputZ: number = 0, extraVars: Record<string, number | boolean> = {}): void {
         if (moveInputX !== 0 || moveInputZ !== 0) {
-            this.targetRotation.setFromAxisAngle(this.up, Math.atan2(moveInputX, moveInputZ));
+            this.faceDirection(moveInputX, moveInputZ);
         }
         this.container.quaternion.slerp(this.targetRotation, ROTATION_SLERP);
 
@@ -329,6 +329,14 @@ export default class CharacterBody {
         }
 
         this.animator.update(delta);
+    }
+
+    /** Sets the facing target without applying movement, e.g. to look toward the camera during the level celebration. */
+    public faceDirection(directionX: number, directionZ: number): void {
+        if (directionX === 0 && directionZ === 0) {
+            return;
+        }
+        this.targetRotation.setFromAxisAngle(this.up, Math.atan2(directionX, directionZ));
     }
 
     public destroy(): void {

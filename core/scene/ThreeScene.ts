@@ -7,6 +7,9 @@ export abstract class ThreeScene extends GameScene {
     // Three.js Core
     public threeScene: THREE.Scene;
     public threeCamera: THREE.PerspectiveCamera;
+    private readonly screenRaycaster = new THREE.Raycaster();
+    private readonly screenGroundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    private readonly screenGroundPoint = new THREE.Vector3();
 
     constructor(game: Game) {
         super(game);
@@ -65,6 +68,20 @@ export abstract class ThreeScene extends GameScene {
             x: (ndc.x * 0.5 + 0.5) * window.innerWidth,
             y: (1 - (ndc.y * 0.5 + 0.5)) * window.innerHeight,
         };
+    }
+
+    /** Projects raw CSS-pixel screen coordinates onto the world ground plane. */
+    public screenToGround(screenX: number, screenY: number): THREE.Vector3 | null {
+        this.threeCamera.updateMatrixWorld();
+        this.screenRaycaster.setFromCamera(
+            new THREE.Vector2(
+                (screenX / window.innerWidth) * 2 - 1,
+                -(screenY / window.innerHeight) * 2 + 1,
+            ),
+            this.threeCamera,
+        );
+        const hit = this.screenRaycaster.ray.intersectPlane(this.screenGroundPlane, this.screenGroundPoint);
+        return hit ? hit.clone() : null;
     }
 
     public update(delta: number): void {

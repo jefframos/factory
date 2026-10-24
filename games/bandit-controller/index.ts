@@ -3,7 +3,7 @@ import HtmlLoader from 'core/loader/HtmlLoader';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { getPlatformInstance } from 'core/platforms/PlatformFactory';
 import { SceneManager } from 'core/scene/SceneManager';
-import { DevGuiManager } from 'core/utils/DevGuiManager';
+import { DebugOverlay } from 'core/debug/DebugOverlay';
 import { setPhysicsDebugFlags } from 'core/physics/PhysicsConstants';
 import * as PIXI from 'pixi.js';
 
@@ -12,10 +12,13 @@ import platformConfig from './platforms.config.json';
 import HubScene from './game/scenes/HubScene';
 import RunnerMinigameScene from './game/scenes/RunnerMinigameScene';
 import SwipeMinigameScene from './game/scenes/SwipeMinigameScene';
+import PathLevelScene from './game/scenes/PathLevelScene';
 import RadialTransition from './game/ui/RadialTransition';
 import { applyDebugPhysicsCookie, saveDebugPhysicsCookie } from './game/utils/DebugPhysicsCookie';
 import { RunnerBendService } from 'core/services/RunnerBendService';
 import { RUNNER_MINIGAME_SETTINGS, SWIPE_MINIGAME_SETTINGS } from './game/data/MinigameSettings';
+import { PLAYER_SETTINGS } from './game/data/PlayerSettings';
+import { WORLD_SETTINGS } from './game/data/WorldSettings';
 import MoneyHud from './game/ui/MoneyHud';
 import { GameState } from './game/data/GameState';
 
@@ -28,6 +31,7 @@ interface AsyncReadyScene {
 const MINIGAME_QUERY_SHORTHAND: Record<string, string> = {
     runner: 'runner-minigame',
     swipe: 'swipe-minigame',
+    path: 'path-level',
 };
 
 type PlatformConfigEntry = { className?: string; folder?: string; gameId?: string; enableAds?: boolean };
@@ -87,6 +91,8 @@ export default class MyGame extends Game {
             this.stageContainer.addChild(this.gameContainer);
             this.sceneManager = new SceneManager(this.gameContainer);
 
+            await PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`);
+
             PlatformHandler.instance.platform.loadFinished();
             this.loaderScene.hide();
             this.startGame();
@@ -96,9 +102,7 @@ export default class MyGame extends Game {
     }
 
     private startGame(): void {
-        // Dev-only tuning panel (dat.GUI) — visible with ?dev in the URL (see Game.extractDebugParams()).
-        // Must run before the scene builds so HubScene's camera sliders have a GUI to attach to.
-        DevGuiManager.instance.initialize(Game.debugParams.dev);
+        DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'bandit-controller');
 
         // Physics debug wireframes (player + obstacle colliders/triggers) — three sources,
         // most to least specific: ?colliders=1 in the URL, then whatever was last saved via
@@ -114,24 +118,16 @@ export default class MyGame extends Game {
         const showTriggers = urlColliders ?? !!savedPhysicsDebug.trigger;
         setPhysicsDebugFlags({ collider: showColliders, trigger: showTriggers });
 
-        // Same toggle, live, from the ?dev=1 dat.GUI panel — addToggle()/removeFolder()
-        // themselves no-op outside dev mode. Flipping one only takes effect for entities that
-        // awake() AFTER the flip (i.e. the next scene change, since RigidBody's debug
-        // wireframe is built once in awake() and never rebuilt) — check the box, then
-        // enter/re-enter a scene (hub <-> minigame) to see it take hold. Each onChange also
-        // saves to the cookie, so the checked state survives a reload. removeFolder() first
-        // guards against stacking duplicate rows if this ever runs more than once per page
-        // load (see DevGuiManager.removeFolder's own doc) — startGame() currently only runs
-        // once, but this keeps that an implementation detail rather than a hard requirement.
-        DevGuiManager.instance.removeFolder('Physics Debug');
-        DevGuiManager.instance.addToggle('Show Colliders', showColliders, (value) => {
+        const physicsDebugPanel = DebugOverlay.instance.panel('Physics Debug', { id: 'bandit-controller.physics' });
+        const physicsDebugSettings = { showColliders, showTriggers };
+        physicsDebugPanel.toggle(physicsDebugSettings, 'showColliders').onChange((value) => {
             setPhysicsDebugFlags({ collider: value });
             saveDebugPhysicsCookie({ collider: value });
-        }, 'Physics Debug');
-        DevGuiManager.instance.addToggle('Show Triggers', showTriggers, (value) => {
+        });
+        physicsDebugPanel.toggle(physicsDebugSettings, 'showTriggers').onChange((value) => {
             setPhysicsDebugFlags({ trigger: value });
             saveDebugPhysicsCookie({ trigger: value });
-        }, 'Physics Debug');
+        });
 
         // The one shared top-left money counter — see MoneyHud.ts's own doc. Constructed here
         // (once, ever) and added straight to uiLayer rather than any scene's own display
@@ -158,35 +154,45 @@ export default class MyGame extends Game {
         swipeMinigame.onComplete.add(() => this.requestSceneChange('hub'));
         swipeMinigame.onRestart.add(() => this.requestSceneChange('swipe-minigame', true));
 
-        this.scenesByKey = { 'hub': hub, 'runner-minigame': runnerMinigame, 'swipe-minigame': swipeMinigame };
+        const pathLevel = this.sceneManager.register<PathLevelScene>('path-level', PathLevelScene, this, this.moneyHud);
+        pathLevel.onRestart.add(() => this.requestSceneChange('path-level', true));
+
+        this.scenesByKey = { 'hub': hub, 'runner-minigame': runnerMinigame, 'swipe-minigame': swipeMinigame, 'path-level': pathLevel };
         this.transition = new RadialTransition(this);
 
-        // RunnerBendService.uniforms is a static, page-lifetime singleton (never replaced on
-        // scene rebuild, unlike HubScene's own per-instance camera settings) — safe to wire
-        // exactly once here rather than needing a per-rebuild guard. uBendGrowth isn't wired
-        // here — DevGuiManager.addProperties() hardcodes a 0.01 slider step, far too coarse
-        // for that uniform's useful 0-0.001 range — it stays a plain hand-edited constant in
-        // RunnerBendService.ts (see its own doc), same "editable by hand or dev-GUI" fallback
-        // every *Settings.ts data file in this project already follows.
-        DevGuiManager.instance.addProperties(RunnerBendService.uniforms.uBendYAmplitude, ['value'], [0, 15], 'Runner Bend: up/down intensity', 'Runner Bend');
-        DevGuiManager.instance.addProperties(RunnerBendService.uniforms.uBendXAmplitude, ['value'], [0, 15], 'Runner Bend: left/right intensity', 'Runner Bend');
-        DevGuiManager.instance.addProperties(RunnerBendService.uniforms.uBendYFrequency, ['value'], [0, 0.3], 'Runner Bend: up/down frequency', 'Runner Bend');
-        DevGuiManager.instance.addProperties(RunnerBendService.uniforms.uBendXFrequency, ['value'], [0, 0.3], 'Runner Bend: left/right frequency', 'Runner Bend');
-        DevGuiManager.instance.addProperties(RunnerBendService.uniforms.uBendYDescendFraction, ['value'], [0.01, 1], 'Runner Bend: descend portion of each step', 'Runner Bend');
-        DevGuiManager.instance.addProperties(RunnerBendService.uniforms.uBendStartDistance, ['value'], [0, 100], 'Runner Bend: distance before bend starts', 'Runner Bend');
+        const runnerPanel = DebugOverlay.instance.panel('Runner', { id: 'bandit-controller.runner' });
+        runnerPanel.slider(RunnerBendService.uniforms.uBendYAmplitude, 'value', 0, 15, 0.1, 'Bend Y Amplitude');
+        runnerPanel.slider(RunnerBendService.uniforms.uBendXAmplitude, 'value', 0, 15, 0.1, 'Bend X Amplitude');
+        runnerPanel.slider(RunnerBendService.uniforms.uBendYFrequency, 'value', 0, 0.3, 0.001, 'Bend Y Frequency');
+        runnerPanel.slider(RunnerBendService.uniforms.uBendXFrequency, 'value', 0, 0.3, 0.001, 'Bend X Frequency');
+        runnerPanel.slider(RunnerBendService.uniforms.uBendYDescendFraction, 'value', 0.01, 1, 0.01, 'Bend Descend Fraction');
+        runnerPanel.slider(RunnerBendService.uniforms.uBendStartDistance, 'value', 0, 100, 1, 'Bend Start Distance');
+        runnerPanel.slider(RUNNER_MINIGAME_SETTINGS, 'forwardSpeed', 1, 25, 0.1, 'Runner Speed');
+        runnerPanel.slider(SWIPE_MINIGAME_SETTINGS, 'forwardSpeed', 1, 25, 0.1, 'Swipe Speed');
 
-        // Each minigame's own constant forward pace (MinigameSettings.ts) — deliberately
-        // separate sliders from the hub's PlayerSettings, same "editable by hand or dev-GUI"
-        // convention as the bend uniforms just above.
-        DevGuiManager.instance.addProperties(RUNNER_MINIGAME_SETTINGS, ['forwardSpeed'], [1, 25], 'Runner minigame: forward speed', 'Minigame Speed');
-        DevGuiManager.instance.addProperties(SWIPE_MINIGAME_SETTINGS, ['forwardSpeed'], [1, 25], 'Swipe minigame: forward speed', 'Minigame Speed');
+        const gameplayPanel = DebugOverlay.instance.panel('Gameplay', { id: 'bandit-controller.gameplay' });
+        gameplayPanel.toggle(PLAYER_SETTINGS, 'clickToMoveEnabled').name('Walk to Click Release');
+
+        const worldPanel = DebugOverlay.instance.panel('Player & World', { id: 'bandit-controller.world' });
+        worldPanel.slider(PLAYER_SETTINGS, 'walkSpeed', 1, 15, 0.1, 'Walk Speed');
+        worldPanel.slider(PLAYER_SETTINGS, 'runSpeedMultiplier', 1, 4, 0.1, 'Run Multiplier');
+        worldPanel.slider(PLAYER_SETTINGS, 'jumpSpeed', 2, 25, 0.1, 'Jump Speed');
+        worldPanel.slider(PLAYER_SETTINGS, 'rollDuration', 0.1, 2, 0.01, 'Roll Duration');
+        worldPanel.slider(PLAYER_SETTINGS, 'slideDuration', 0.1, 2, 0.01, 'Slide Duration');
+        worldPanel.slider(PLAYER_SETTINGS, 'standHalfHeight', 0.3, 1.5, 0.01, 'Stand Half Height');
+        worldPanel.slider(PLAYER_SETTINGS, 'slideHalfHeight', 0.1, 1, 0.01, 'Slide Half Height');
+        worldPanel.slider(PLAYER_SETTINGS, 'hitKickbackSpeed', 0, 20, 0.1, 'Hit Kickback Speed');
+        worldPanel.slider(PLAYER_SETTINGS, 'hitKickbackDuration', 0.05, 1.5, 0.01, 'Hit Kickback Duration');
+        worldPanel.slider(WORLD_SETTINGS, 'gravity', -60, -2, 0.1, 'Gravity');
+        worldPanel.slider(WORLD_SETTINGS, 'maxPhysicsDelta', 0.01, 0.1, 0.001, 'Max Physics Delta');
 
         // The very first scene load already has its own cover (HtmlLoader, hidden just above)
         // — the radial transition is only for LATER hub<->minigame changes, so this goes
         // straight through sceneManager rather than requestSceneChange()/playSceneTransition().
-        // ?minigame=runner/swipe (see MINIGAME_QUERY_SHORTHAND's own doc) skips the hub
-        // entirely and drops straight into that minigame instead, for quick testing.
-        const initialSceneKey = MINIGAME_QUERY_SHORTHAND[Game.debugParams.minigame] ?? 'hub';
+        // ?minigame=runner/swipe/path or ?scene=hub keeps every existing mode directly reachable.
+        const initialSceneKey = MINIGAME_QUERY_SHORTHAND[Game.debugParams.minigame]
+            ?? Game.debugParams.scene
+            ?? 'path-level';
         this.sceneManager.changeScene(initialSceneKey);
         this.sceneManager.resize();
     }

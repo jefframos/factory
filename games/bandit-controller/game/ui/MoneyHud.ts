@@ -41,6 +41,7 @@ export default class MoneyHud extends PIXI.Container {
     private readonly amountLabel: PIXI.Text;
     /** The `.scale` that renders the REAL loaded icon at ICON_SIZE — set once loadMoneyIcon() resolves. Until then the sprite has no texture to size against, so playGainFeedback()'s reset/tween targets use this instead of a hardcoded 1 (see this file's own history, ported from GameUI.ts: hardcoding 1 there matched the sprite's scale only by accident, and broke as soon as width/height were computed against a real, non-square-pixel-for-pixel texture). */
     private moneyIconBaseScale = 1;
+    private moneyIconFeedback?: gsap.core.Timeline;
 
     public constructor(initialAmount: number = 0) {
         super();
@@ -71,6 +72,10 @@ export default class MoneyHud extends PIXI.Container {
         this.moneyIcon.width = ICON_SIZE;
         this.moneyIcon.height = ICON_SIZE;
         this.moneyIconBaseScale = this.moneyIcon.scale.x;
+        this.moneyIconFeedback?.kill();
+        this.moneyIconFeedback = undefined;
+        gsap.killTweensOf(this.moneyIcon.scale);
+        this.moneyIcon.scale.set(this.moneyIconBaseScale);
     }
 
     /**
@@ -102,9 +107,15 @@ export default class MoneyHud extends PIXI.Container {
 
     private playGainFeedback(gained: number): void {
         const base = this.moneyIconBaseScale;
+        this.moneyIconFeedback?.kill();
         gsap.killTweensOf(this.moneyIcon.scale);
         this.moneyIcon.scale.set(base);
-        gsap.timeline()
+        this.moneyIconFeedback = gsap.timeline({
+            onComplete: () => {
+                this.moneyIcon.scale.set(base);
+                this.moneyIconFeedback = undefined;
+            },
+        })
             .to(this.moneyIcon.scale, { x: base * JIGGLE_PUNCH_SCALE, y: base * JIGGLE_PUNCH_SCALE, duration: JIGGLE_PUNCH_SEC, ease: 'back.out(2)' })
             .to(this.moneyIcon.scale, { x: base, y: base, duration: JIGGLE_SETTLE_SEC, ease: 'power1.out' });
 

@@ -12,7 +12,7 @@ import type { CameraSettings } from 'core/camera/CameraSettings';
 
 export const STANDARD_CAMERA_SETTINGS: CameraSettings = {
     yawDeg: 0,
-    pitchDeg: 25,
+    pitchDeg: 65,
     distance: 10,
     followSpeed: 6,
     offset: { x: 0, y: 1.2, z: 0 },
@@ -30,7 +30,7 @@ export const CLOSEUP_CAMERA_SETTINGS: CameraSettings = {
 /** Straight overhead — pitchDeg near 90 so the orbit math (cameraOrbitOffset() in game/scenes/shared/WorldEnvironment.ts) stays well-defined; see that function's own doc for why exactly 90 is avoided. */
 export const TOPDOWN_CAMERA_SETTINGS: CameraSettings = {
     yawDeg: 0,
-    pitchDeg: 85,
+    pitchDeg: 65,
     distance: 16,
     followSpeed: 5,
     offset: { x: 0, y: 0, z: 0 },

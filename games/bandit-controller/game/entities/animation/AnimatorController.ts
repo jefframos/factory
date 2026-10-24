@@ -1,10 +1,11 @@
 // AnimatorController.ts
 //
-// Loads/caches FBX animation clips and controls playback against a single
+// Loads/caches FBX/GLB animation clips and controls playback against a single
 // THREE.AnimationMixer, driven by an AnimatorBoard (idle/walk/run/jump/roll).
 
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import AnimatorBoard from './AnimationBoard';
 import { loadCompressedFile, releaseObjectURL } from '../../utils/GzipLoader';
 
@@ -14,6 +15,7 @@ export default class AnimatorController {
     private animations: { [id: string]: THREE.AnimationClip } = {};
     private currentAction: THREE.AnimationAction | null = null;
     private currentAnimationId: string | null = null;
+    private stateMachineSuspended = false;
 
     public animatorBoard?: AnimatorBoard;
 
@@ -29,17 +31,29 @@ export default class AnimatorController {
 
         const resolvedUrl = await loadCompressedFile(animationUrl);
         try {
-            const fbxLoader = new FBXLoader();
-            const animObject = await fbxLoader.loadAsync(resolvedUrl);
-            if (animObject.animations.length === 0) {
+            const extension = animationUrl.replace(/\.gz$/, '').split('.').pop()?.toLowerCase();
+            let clip: THREE.AnimationClip | undefined;
+
+            if (extension === 'fbx') {
+                const animObject = await new FBXLoader().loadAsync(resolvedUrl);
+                clip = animObject.animations[0];
+            } else if (extension === 'glb' || extension === 'gltf') {
+                const gltf = await new GLTFLoader().loadAsync(resolvedUrl);
+                clip = gltf.animations[0];
+            } else {
+                console.error(`AnimatorController: unsupported animation format "${extension}" in "${animationUrl}"`);
+                return;
+            }
+
+            if (!clip) {
                 console.error(`AnimatorController: no animations found in "${animationUrl}"`);
                 return;
             }
-            const clip = animObject.animations[0];
+
             AnimatorController.animationCache[animationUrl] = clip;
             this.animations[id] = clip;
         } catch (err) {
-            console.error('AnimatorController: error loading animation', err);
+            console.error(`AnimatorController: error loading animation "${animationUrl}"`, err);
         } finally {
             releaseObjectURL(resolvedUrl);
         }
@@ -101,9 +115,17 @@ export default class AnimatorController {
         this.currentAnimationId = id;
     }
 
+    /** Crossfades to a manually selected pose and stops locomotion transitions from taking it over. */
+    public playExclusive(id: string, duration: number = 0.2, loop: boolean = false): void {
+        this.stateMachineSuspended = true;
+        this.mix(id, 1, duration, loop);
+    }
+
     /** Update the mixer; call this once per frame. */
     public update(delta: number): void {
-        this.animatorBoard?.update(delta);
+        if (!this.stateMachineSuspended) {
+            this.animatorBoard?.update(delta);
+        }
         if (this.mixer) {
             this.mixer.update(delta);
         }

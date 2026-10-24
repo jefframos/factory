@@ -8,6 +8,54 @@ export interface ModelDefinition {
   readonly nodes: Record<string, string>;
 }
 
+const CharactersFallingIdle = {
+  id: 'FallingIdle',
+  path: 'characters/default/FallingIdle',
+  fullPath: 'bandit-controller/models/characters/default/FallingIdle.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CharactersJumpingUp = {
+  id: 'JumpingUp',
+  path: 'characters/default/JumpingUp',
+  fullPath: 'bandit-controller/models/characters/default/JumpingUp.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CharactersLanding = {
+  id: 'Landing',
+  path: 'characters/default/Landing',
+  fullPath: 'bandit-controller/models/characters/default/Landing.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CharactersRoll = {
+  id: 'Roll',
+  path: 'characters/default/Roll',
+  fullPath: 'bandit-controller/models/characters/default/Roll.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CharactersRunning = {
+  id: 'Running',
+  path: 'characters/default/Running',
+  fullPath: 'bandit-controller/models/characters/default/Running.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CharactersWalking = {
+  id: 'Walking',
+  path: 'characters/default/Walking',
+  fullPath: 'bandit-controller/models/characters/default/Walking.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
 const CharactersCharacterMedium = {
   id: 'characterMedium',
   path: 'characters/default/characterMedium',
@@ -19,104 +67,56 @@ const CharactersCharacterMedium = {
 const CharactersFallback = {
   id: 'fallback',
   path: 'characters/default/fallback',
-  fullPath: 'bandit-controller/models/characters/default/fallback.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersFallingIdle = {
-  id: 'FallingIdle',
-  path: 'characters/default/FallingIdle',
-  fullPath: 'bandit-controller/models/characters/default/FallingIdle.fbx',
-  format: 'fbx',
+  fullPath: 'bandit-controller/models/characters/default/fallback.glb',
+  format: 'glb',
   nodes: {}
 } as const;
 
 const CharactersIdle = {
   id: 'idle',
   path: 'characters/default/idle',
-  fullPath: 'bandit-controller/models/characters/default/idle.fbx',
-  format: 'fbx',
+  fullPath: 'bandit-controller/models/characters/default/idle.glb',
+  format: 'glb',
   nodes: {}
 } as const;
 
 const CharactersJumpDownRun = {
   id: 'jump-down-run',
   path: 'characters/default/jump-down-run',
-  fullPath: 'bandit-controller/models/characters/default/jump-down-run.fbx',
-  format: 'fbx',
+  fullPath: 'bandit-controller/models/characters/default/jump-down-run.glb',
+  format: 'glb',
   nodes: {}
 } as const;
 
 const CharactersJumpUpNew = {
   id: 'jump-up-new',
   path: 'characters/default/jump-up-new',
-  fullPath: 'bandit-controller/models/characters/default/jump-up-new.fbx',
-  format: 'fbx',
+  fullPath: 'bandit-controller/models/characters/default/jump-up-new.glb',
+  format: 'glb',
   nodes: {}
 } as const;
 
 const CharactersJumpUpRun = {
   id: 'jump-up-run',
   path: 'characters/default/jump-up-run',
-  fullPath: 'bandit-controller/models/characters/default/jump-up-run.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersJumpingUp = {
-  id: 'JumpingUp',
-  path: 'characters/default/JumpingUp',
-  fullPath: 'bandit-controller/models/characters/default/JumpingUp.fbx',
-  format: 'fbx',
+  fullPath: 'bandit-controller/models/characters/default/jump-up-run.glb',
+  format: 'glb',
   nodes: {}
 } as const;
 
 const CharactersLandingNew = {
   id: 'landing-new',
   path: 'characters/default/landing-new',
-  fullPath: 'bandit-controller/models/characters/default/landing-new.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersLanding = {
-  id: 'Landing',
-  path: 'characters/default/Landing',
-  fullPath: 'bandit-controller/models/characters/default/Landing.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersRoll = {
-  id: 'Roll',
-  path: 'characters/default/Roll',
-  fullPath: 'bandit-controller/models/characters/default/Roll.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersRunning = {
-  id: 'Running',
-  path: 'characters/default/Running',
-  fullPath: 'bandit-controller/models/characters/default/Running.fbx',
-  format: 'fbx',
+  fullPath: 'bandit-controller/models/characters/default/landing-new.glb',
+  format: 'glb',
   nodes: {}
 } as const;
 
 const CharactersSlide = {
   id: 'slide',
   path: 'characters/default/slide',
-  fullPath: 'bandit-controller/models/characters/default/slide.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersWalking = {
-  id: 'Walking',
-  path: 'characters/default/Walking',
-  fullPath: 'bandit-controller/models/characters/default/Walking.fbx',
-  format: 'fbx',
+  fullPath: 'bandit-controller/models/characters/default/slide.glb',
+  format: 'glb',
   nodes: {}
 } as const;
 
@@ -300,16 +300,6 @@ const ResourcesCopperBarsStackSmall = {
 }
 } as const;
 
-const ResourcesCopperNuggets = {
-  id: 'Copper_Nuggets',
-  path: 'resources/Copper_Nuggets',
-  fullPath: 'bandit-controller/models/resources/Copper_Nuggets.gltf',
-  format: 'gltf',
-  nodes: {
-  "CopperNuggets": "Copper_Nuggets"
-}
-} as const;
-
 const ResourcesCopperNuggetLarge = {
   id: 'Copper_Nugget_Large',
   path: 'resources/Copper_Nugget_Large',
@@ -337,6 +327,16 @@ const ResourcesCopperNuggetSmall = {
   format: 'gltf',
   nodes: {
   "CopperNuggetSmall": "Copper_Nugget_Small"
+}
+} as const;
+
+const ResourcesCopperNuggets = {
+  id: 'Copper_Nuggets',
+  path: 'resources/Copper_Nuggets',
+  fullPath: 'bandit-controller/models/resources/Copper_Nuggets.gltf',
+  format: 'gltf',
+  nodes: {
+  "CopperNuggets": "Copper_Nuggets"
 }
 } as const;
 
@@ -540,16 +540,6 @@ const ResourcesFuelABarrel = {
 }
 } as const;
 
-const ResourcesFuelABarrels = {
-  id: 'Fuel_A_Barrels',
-  path: 'resources/Fuel_A_Barrels',
-  fullPath: 'bandit-controller/models/resources/Fuel_A_Barrels.gltf',
-  format: 'gltf',
-  nodes: {
-  "FuelABarrels": "Fuel_A_Barrels"
-}
-} as const;
-
 const ResourcesFuelABarrelDirty = {
   id: 'Fuel_A_Barrel_Dirty',
   path: 'resources/Fuel_A_Barrel_Dirty',
@@ -557,6 +547,16 @@ const ResourcesFuelABarrelDirty = {
   format: 'gltf',
   nodes: {
   "FuelABarrelDirty": "Fuel_A_Barrel_Dirty"
+}
+} as const;
+
+const ResourcesFuelABarrels = {
+  id: 'Fuel_A_Barrels',
+  path: 'resources/Fuel_A_Barrels',
+  fullPath: 'bandit-controller/models/resources/Fuel_A_Barrels.gltf',
+  format: 'gltf',
+  nodes: {
+  "FuelABarrels": "Fuel_A_Barrels"
 }
 } as const;
 
@@ -580,16 +580,6 @@ const ResourcesFuelBBarrel = {
 }
 } as const;
 
-const ResourcesFuelBBarrels = {
-  id: 'Fuel_B_Barrels',
-  path: 'resources/Fuel_B_Barrels',
-  fullPath: 'bandit-controller/models/resources/Fuel_B_Barrels.gltf',
-  format: 'gltf',
-  nodes: {
-  "FuelBBarrels": "Fuel_B_Barrels"
-}
-} as const;
-
 const ResourcesFuelBBarrelDirty = {
   id: 'Fuel_B_Barrel_Dirty',
   path: 'resources/Fuel_B_Barrel_Dirty',
@@ -597,6 +587,16 @@ const ResourcesFuelBBarrelDirty = {
   format: 'gltf',
   nodes: {
   "FuelBBarrelDirty": "Fuel_B_Barrel_Dirty"
+}
+} as const;
+
+const ResourcesFuelBBarrels = {
+  id: 'Fuel_B_Barrels',
+  path: 'resources/Fuel_B_Barrels',
+  fullPath: 'bandit-controller/models/resources/Fuel_B_Barrels.gltf',
+  format: 'gltf',
+  nodes: {
+  "FuelBBarrels": "Fuel_B_Barrels"
 }
 } as const;
 
@@ -620,16 +620,6 @@ const ResourcesFuelCBarrel = {
 }
 } as const;
 
-const ResourcesFuelCBarrels = {
-  id: 'Fuel_C_Barrels',
-  path: 'resources/Fuel_C_Barrels',
-  fullPath: 'bandit-controller/models/resources/Fuel_C_Barrels.gltf',
-  format: 'gltf',
-  nodes: {
-  "FuelCBarrels": "Fuel_C_Barrels"
-}
-} as const;
-
 const ResourcesFuelCBarrelDirty = {
   id: 'Fuel_C_Barrel_Dirty',
   path: 'resources/Fuel_C_Barrel_Dirty',
@@ -640,6 +630,16 @@ const ResourcesFuelCBarrelDirty = {
 }
 } as const;
 
+const ResourcesFuelCBarrels = {
+  id: 'Fuel_C_Barrels',
+  path: 'resources/Fuel_C_Barrels',
+  fullPath: 'bandit-controller/models/resources/Fuel_C_Barrels.gltf',
+  format: 'gltf',
+  nodes: {
+  "FuelCBarrels": "Fuel_C_Barrels"
+}
+} as const;
+
 const ResourcesFuelCJerrycan = {
   id: 'Fuel_C_Jerrycan',
   path: 'resources/Fuel_C_Jerrycan',
@@ -647,6 +647,36 @@ const ResourcesFuelCJerrycan = {
   format: 'gltf',
   nodes: {
   "FuelCJerrycan": "Fuel_C_Jerrycan"
+}
+} as const;
+
+const ResourcesGemLarge = {
+  id: 'Gem_Large',
+  path: 'resources/Gem_Large',
+  fullPath: 'bandit-controller/models/resources/Gem_Large.gltf',
+  format: 'gltf',
+  nodes: {
+  "GemLarge": "Gem_Large"
+}
+} as const;
+
+const ResourcesGemMedium = {
+  id: 'Gem_Medium',
+  path: 'resources/Gem_Medium',
+  fullPath: 'bandit-controller/models/resources/Gem_Medium.gltf',
+  format: 'gltf',
+  nodes: {
+  "GemMedium": "Gem_Medium"
+}
+} as const;
+
+const ResourcesGemSmall = {
+  id: 'Gem_Small',
+  path: 'resources/Gem_Small',
+  fullPath: 'bandit-controller/models/resources/Gem_Small.gltf',
+  format: 'gltf',
+  nodes: {
+  "GemSmall": "Gem_Small"
 }
 } as const;
 
@@ -701,36 +731,6 @@ const ResourcesGemsSack = {
 }
 } as const;
 
-const ResourcesGemLarge = {
-  id: 'Gem_Large',
-  path: 'resources/Gem_Large',
-  fullPath: 'bandit-controller/models/resources/Gem_Large.gltf',
-  format: 'gltf',
-  nodes: {
-  "GemLarge": "Gem_Large"
-}
-} as const;
-
-const ResourcesGemMedium = {
-  id: 'Gem_Medium',
-  path: 'resources/Gem_Medium',
-  fullPath: 'bandit-controller/models/resources/Gem_Medium.gltf',
-  format: 'gltf',
-  nodes: {
-  "GemMedium": "Gem_Medium"
-}
-} as const;
-
-const ResourcesGemSmall = {
-  id: 'Gem_Small',
-  path: 'resources/Gem_Small',
-  fullPath: 'bandit-controller/models/resources/Gem_Small.gltf',
-  format: 'gltf',
-  nodes: {
-  "GemSmall": "Gem_Small"
-}
-} as const;
-
 const ResourcesGoldBar = {
   id: 'Gold_Bar',
   path: 'resources/Gold_Bar',
@@ -781,16 +781,6 @@ const ResourcesGoldBarsStackSmall = {
 }
 } as const;
 
-const ResourcesGoldNuggets = {
-  id: 'Gold_Nuggets',
-  path: 'resources/Gold_Nuggets',
-  fullPath: 'bandit-controller/models/resources/Gold_Nuggets.gltf',
-  format: 'gltf',
-  nodes: {
-  "GoldNuggets": "Gold_Nuggets"
-}
-} as const;
-
 const ResourcesGoldNuggetLarge = {
   id: 'Gold_Nugget_Large',
   path: 'resources/Gold_Nugget_Large',
@@ -818,6 +808,16 @@ const ResourcesGoldNuggetSmall = {
   format: 'gltf',
   nodes: {
   "GoldNuggetSmall": "Gold_Nugget_Small"
+}
+} as const;
+
+const ResourcesGoldNuggets = {
+  id: 'Gold_Nuggets',
+  path: 'resources/Gold_Nuggets',
+  fullPath: 'bandit-controller/models/resources/Gold_Nuggets.gltf',
+  format: 'gltf',
+  nodes: {
+  "GoldNuggets": "Gold_Nuggets"
 }
 } as const;
 
@@ -871,16 +871,6 @@ const ResourcesIronBarsStackSmall = {
 }
 } as const;
 
-const ResourcesIronNuggets = {
-  id: 'Iron_Nuggets',
-  path: 'resources/Iron_Nuggets',
-  fullPath: 'bandit-controller/models/resources/Iron_Nuggets.gltf',
-  format: 'gltf',
-  nodes: {
-  "IronNuggets": "Iron_Nuggets"
-}
-} as const;
-
 const ResourcesIronNuggetLarge = {
   id: 'Iron_Nugget_Large',
   path: 'resources/Iron_Nugget_Large',
@@ -911,6 +901,16 @@ const ResourcesIronNuggetSmall = {
 }
 } as const;
 
+const ResourcesIronNuggets = {
+  id: 'Iron_Nuggets',
+  path: 'resources/Iron_Nuggets',
+  fullPath: 'bandit-controller/models/resources/Iron_Nuggets.gltf',
+  format: 'gltf',
+  nodes: {
+  "IronNuggets": "Iron_Nuggets"
+}
+} as const;
+
 const ResourcesMoneyBill = {
   id: 'Money_Bill',
   path: 'resources/Money_Bill',
@@ -918,6 +918,16 @@ const ResourcesMoneyBill = {
   format: 'gltf',
   nodes: {
   "MoneyBill": "Money_Bill"
+}
+} as const;
+
+const ResourcesMoneyBillArched = {
+  id: 'Money_Bill_Arched',
+  path: 'resources/Money_Bill_Arched',
+  fullPath: 'bandit-controller/models/resources/Money_Bill_Arched.gltf',
+  format: 'gltf',
+  nodes: {
+  "MoneyBillArched": "Money_Bill_Arched"
 }
 } as const;
 
@@ -948,16 +958,6 @@ const ResourcesMoneyBillsStackSmall = {
   format: 'gltf',
   nodes: {
   "MoneyBillsStackSmall": "Money_Bills_Stack_Small"
-}
-} as const;
-
-const ResourcesMoneyBillArched = {
-  id: 'Money_Bill_Arched',
-  path: 'resources/Money_Bill_Arched',
-  fullPath: 'bandit-controller/models/resources/Money_Bill_Arched.gltf',
-  format: 'gltf',
-  nodes: {
-  "MoneyBillArched": "Money_Bill_Arched"
 }
 } as const;
 
@@ -1191,16 +1191,6 @@ const ResourcesSilverBarsStackSmall = {
 }
 } as const;
 
-const ResourcesSilverNuggets = {
-  id: 'Silver_Nuggets',
-  path: 'resources/Silver_Nuggets',
-  fullPath: 'bandit-controller/models/resources/Silver_Nuggets.gltf',
-  format: 'gltf',
-  nodes: {
-  "SilverNuggets": "Silver_Nuggets"
-}
-} as const;
-
 const ResourcesSilverNuggetLarge = {
   id: 'Silver_Nugget_Large',
   path: 'resources/Silver_Nugget_Large',
@@ -1228,6 +1218,16 @@ const ResourcesSilverNuggetSmall = {
   format: 'gltf',
   nodes: {
   "SilverNuggetSmall": "Silver_Nugget_Small"
+}
+} as const;
+
+const ResourcesSilverNuggets = {
+  id: 'Silver_Nuggets',
+  path: 'resources/Silver_Nuggets',
+  fullPath: 'bandit-controller/models/resources/Silver_Nuggets.gltf',
+  format: 'gltf',
+  nodes: {
+  "SilverNuggets": "Silver_Nuggets"
 }
 } as const;
 
@@ -1381,36 +1381,6 @@ const ResourcesWoodLogStack = {
 }
 } as const;
 
-const ResourcesWoodPlanksStackLarge = {
-  id: 'Wood_Planks_Stack_Large',
-  path: 'resources/Wood_Planks_Stack_Large',
-  fullPath: 'bandit-controller/models/resources/Wood_Planks_Stack_Large.gltf',
-  format: 'gltf',
-  nodes: {
-  "WoodPlanksStackLarge": "Wood_Planks_Stack_Large"
-}
-} as const;
-
-const ResourcesWoodPlanksStackMedium = {
-  id: 'Wood_Planks_Stack_Medium',
-  path: 'resources/Wood_Planks_Stack_Medium',
-  fullPath: 'bandit-controller/models/resources/Wood_Planks_Stack_Medium.gltf',
-  format: 'gltf',
-  nodes: {
-  "WoodPlanksStackMedium": "Wood_Planks_Stack_Medium"
-}
-} as const;
-
-const ResourcesWoodPlanksStackSmall = {
-  id: 'Wood_Planks_Stack_Small',
-  path: 'resources/Wood_Planks_Stack_Small',
-  fullPath: 'bandit-controller/models/resources/Wood_Planks_Stack_Small.gltf',
-  format: 'gltf',
-  nodes: {
-  "WoodPlanksStackSmall": "Wood_Planks_Stack_Small"
-}
-} as const;
-
 const ResourcesWoodPlankA = {
   id: 'Wood_Plank_A',
   path: 'resources/Wood_Plank_A',
@@ -1438,6 +1408,36 @@ const ResourcesWoodPlankC = {
   format: 'gltf',
   nodes: {
   "WoodPlankC": "Wood_Plank_C"
+}
+} as const;
+
+const ResourcesWoodPlanksStackLarge = {
+  id: 'Wood_Planks_Stack_Large',
+  path: 'resources/Wood_Planks_Stack_Large',
+  fullPath: 'bandit-controller/models/resources/Wood_Planks_Stack_Large.gltf',
+  format: 'gltf',
+  nodes: {
+  "WoodPlanksStackLarge": "Wood_Planks_Stack_Large"
+}
+} as const;
+
+const ResourcesWoodPlanksStackMedium = {
+  id: 'Wood_Planks_Stack_Medium',
+  path: 'resources/Wood_Planks_Stack_Medium',
+  fullPath: 'bandit-controller/models/resources/Wood_Planks_Stack_Medium.gltf',
+  format: 'gltf',
+  nodes: {
+  "WoodPlanksStackMedium": "Wood_Planks_Stack_Medium"
+}
+} as const;
+
+const ResourcesWoodPlanksStackSmall = {
+  id: 'Wood_Planks_Stack_Small',
+  path: 'resources/Wood_Planks_Stack_Small',
+  fullPath: 'bandit-controller/models/resources/Wood_Planks_Stack_Small.gltf',
+  format: 'gltf',
+  nodes: {
+  "WoodPlanksStackSmall": "Wood_Planks_Stack_Small"
 }
 } as const;
 
@@ -2808,20 +2808,20 @@ const WorldTrafficLight = {
 // containing folder land in MODELS.Root.
 export const MODELS = {
   Characters: {
+    FallingIdle: CharactersFallingIdle,
+    JumpingUp: CharactersJumpingUp,
+    Landing: CharactersLanding,
+    Roll: CharactersRoll,
+    Running: CharactersRunning,
+    Walking: CharactersWalking,
     CharacterMedium: CharactersCharacterMedium,
     Fallback: CharactersFallback,
-    FallingIdle: CharactersFallingIdle,
     Idle: CharactersIdle,
     JumpDownRun: CharactersJumpDownRun,
     JumpUpNew: CharactersJumpUpNew,
     JumpUpRun: CharactersJumpUpRun,
-    JumpingUp: CharactersJumpingUp,
     LandingNew: CharactersLandingNew,
-    Landing: CharactersLanding,
-    Roll: CharactersRoll,
-    Running: CharactersRunning,
-    Slide: CharactersSlide,
-    Walking: CharactersWalking
+    Slide: CharactersSlide
   },
   Resources: {
     ContainersBoxLarge: ResourcesContainersBoxLarge,
@@ -2842,10 +2842,10 @@ export const MODELS = {
     CopperBarsStackLarge: ResourcesCopperBarsStackLarge,
     CopperBarsStackMedium: ResourcesCopperBarsStackMedium,
     CopperBarsStackSmall: ResourcesCopperBarsStackSmall,
-    CopperNuggets: ResourcesCopperNuggets,
     CopperNuggetLarge: ResourcesCopperNuggetLarge,
     CopperNuggetMedium: ResourcesCopperNuggetMedium,
     CopperNuggetSmall: ResourcesCopperNuggetSmall,
+    CopperNuggets: ResourcesCopperNuggets,
     FoodAppleGreen: ResourcesFoodAppleGreen,
     FoodAppleRed: ResourcesFoodAppleRed,
     FoodBarrelEmpty: ResourcesFoodBarrelEmpty,
@@ -2866,48 +2866,48 @@ export const MODELS = {
     FoodPileMedium: ResourcesFoodPileMedium,
     FoodPileSmall: ResourcesFoodPileSmall,
     FuelABarrel: ResourcesFuelABarrel,
-    FuelABarrels: ResourcesFuelABarrels,
     FuelABarrelDirty: ResourcesFuelABarrelDirty,
+    FuelABarrels: ResourcesFuelABarrels,
     FuelAJerrycan: ResourcesFuelAJerrycan,
     FuelBBarrel: ResourcesFuelBBarrel,
-    FuelBBarrels: ResourcesFuelBBarrels,
     FuelBBarrelDirty: ResourcesFuelBBarrelDirty,
+    FuelBBarrels: ResourcesFuelBBarrels,
     FuelBJerrycan: ResourcesFuelBJerrycan,
     FuelCBarrel: ResourcesFuelCBarrel,
-    FuelCBarrels: ResourcesFuelCBarrels,
     FuelCBarrelDirty: ResourcesFuelCBarrelDirty,
+    FuelCBarrels: ResourcesFuelCBarrels,
     FuelCJerrycan: ResourcesFuelCJerrycan,
+    GemLarge: ResourcesGemLarge,
+    GemMedium: ResourcesGemMedium,
+    GemSmall: ResourcesGemSmall,
     GemsChest: ResourcesGemsChest,
     GemsChestEmpty: ResourcesGemsChestEmpty,
     GemsPileLarge: ResourcesGemsPileLarge,
     GemsPileSmall: ResourcesGemsPileSmall,
     GemsSack: ResourcesGemsSack,
-    GemLarge: ResourcesGemLarge,
-    GemMedium: ResourcesGemMedium,
-    GemSmall: ResourcesGemSmall,
     GoldBar: ResourcesGoldBar,
     GoldBars: ResourcesGoldBars,
     GoldBarsStackLarge: ResourcesGoldBarsStackLarge,
     GoldBarsStackMedium: ResourcesGoldBarsStackMedium,
     GoldBarsStackSmall: ResourcesGoldBarsStackSmall,
-    GoldNuggets: ResourcesGoldNuggets,
     GoldNuggetLarge: ResourcesGoldNuggetLarge,
     GoldNuggetMedium: ResourcesGoldNuggetMedium,
     GoldNuggetSmall: ResourcesGoldNuggetSmall,
+    GoldNuggets: ResourcesGoldNuggets,
     IronBar: ResourcesIronBar,
     IronBars: ResourcesIronBars,
     IronBarsStackLarge: ResourcesIronBarsStackLarge,
     IronBarsStackMedium: ResourcesIronBarsStackMedium,
     IronBarsStackSmall: ResourcesIronBarsStackSmall,
-    IronNuggets: ResourcesIronNuggets,
     IronNuggetLarge: ResourcesIronNuggetLarge,
     IronNuggetMedium: ResourcesIronNuggetMedium,
     IronNuggetSmall: ResourcesIronNuggetSmall,
+    IronNuggets: ResourcesIronNuggets,
     MoneyBill: ResourcesMoneyBill,
+    MoneyBillArched: ResourcesMoneyBillArched,
     MoneyBillsStackLarge: ResourcesMoneyBillsStackLarge,
     MoneyBillsStackMedium: ResourcesMoneyBillsStackMedium,
     MoneyBillsStackSmall: ResourcesMoneyBillsStackSmall,
-    MoneyBillArched: ResourcesMoneyBillArched,
     MoneyCoinsStackLarge: ResourcesMoneyCoinsStackLarge,
     MoneyCoinsStackMedium: ResourcesMoneyCoinsStackMedium,
     MoneyCoinsStackSingle: ResourcesMoneyCoinsStackSingle,
@@ -2931,10 +2931,10 @@ export const MODELS = {
     SilverBarsStackLarge: ResourcesSilverBarsStackLarge,
     SilverBarsStackMedium: ResourcesSilverBarsStackMedium,
     SilverBarsStackSmall: ResourcesSilverBarsStackSmall,
-    SilverNuggets: ResourcesSilverNuggets,
     SilverNuggetLarge: ResourcesSilverNuggetLarge,
     SilverNuggetMedium: ResourcesSilverNuggetMedium,
     SilverNuggetSmall: ResourcesSilverNuggetSmall,
+    SilverNuggets: ResourcesSilverNuggets,
     StoneBrick: ResourcesStoneBrick,
     StoneBricksStackLarge: ResourcesStoneBricksStackLarge,
     StoneBricksStackMedium: ResourcesStoneBricksStackMedium,
@@ -2950,12 +2950,12 @@ export const MODELS = {
     WoodLogA: ResourcesWoodLogA,
     WoodLogB: ResourcesWoodLogB,
     WoodLogStack: ResourcesWoodLogStack,
-    WoodPlanksStackLarge: ResourcesWoodPlanksStackLarge,
-    WoodPlanksStackMedium: ResourcesWoodPlanksStackMedium,
-    WoodPlanksStackSmall: ResourcesWoodPlanksStackSmall,
     WoodPlankA: ResourcesWoodPlankA,
     WoodPlankB: ResourcesWoodPlankB,
-    WoodPlankC: ResourcesWoodPlankC
+    WoodPlankC: ResourcesWoodPlankC,
+    WoodPlanksStackLarge: ResourcesWoodPlanksStackLarge,
+    WoodPlanksStackMedium: ResourcesWoodPlanksStackMedium,
+    WoodPlanksStackSmall: ResourcesWoodPlanksStackSmall
   },
   World: {
     BuildingA: WorldBuildingA,

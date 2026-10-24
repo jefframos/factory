@@ -42,7 +42,8 @@ export function spawnFlyingIconToOverlayPoint(
     getToLocalPoint: () => PIXI.Point,
     texture: PIXI.Texture,
     onArrive?: () => void,
-): void {
+    delaySec: number = 0,
+): gsap.core.Tween {
     const icon = new PIXI.Sprite(texture);
     icon.anchor.set(0.5);
     icon.width = ICON_SIZE;
@@ -57,9 +58,10 @@ export function spawnFlyingIconToOverlayPoint(
     const scratchTo = new THREE.Vector3();
     const progress = { t: 0 };
 
-    gsap.to(progress, {
+    return gsap.to(progress, {
         t: 1,
         duration: FLIGHT_DURATION_SEC,
+        delay: Math.max(0, delaySec),
         ease: 'power1.in',
         onUpdate: () => {
             const screen = threeScene.worldToScreen(fromWorld);
@@ -83,5 +85,6 @@ export function spawnFlyingIconToOverlayPoint(
             onArrive?.();
             icon.destroy();
         },
+        onInterrupt: () => icon.destroy(),
     });
 }

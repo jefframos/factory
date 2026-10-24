@@ -1,8 +1,8 @@
 // DebugPhysicsCookie.ts
 //
 // Persists the ?dev=1 panel's "Show Colliders"/"Show Triggers" checkboxes (see index.ts)
-// across reloads — dat.GUI itself has no storage of its own (see DevGuiManager.ts), so
-// without this every toggle would silently reset to off on the next reload. Same small-JSON-
+// across reloads. These flags must be restored before physics entities are built, earlier
+// than the debug overlay creates its controls. Same small-JSON-
 // cookie shape pizza's own DebugPhysicsCookie.ts uses for its web-editor toggles, but here
 // the GAME itself is the only reader AND writer (no separate editor process involved), so
 // both halves live in one file instead of being split across an editor + a game-side reader.

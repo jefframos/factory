@@ -57,6 +57,11 @@ export default class ThirdPersonCharacter {
         this.body.setHeadOffset(x, y, z);
     }
 
+    /** Turns toward a world-space horizontal direction without feeding locomotion input. */
+    public faceDirection(directionX: number, directionZ: number): void {
+        this.body.faceDirection(directionX, directionZ);
+    }
+
     /**
      * Call once per frame from the host scene. `moveInputX`/`moveInputZ` are
      * the normalized (-1..1) move input, used here purely to drive the

@@ -208,6 +208,22 @@ export const PARTICLE_REGISTRY: Record<string, ParticleEffectDescriptor> = {
             -0.5,
             0
         ]
+    },
+    heistGoal: {
+        name: "Heist Goal Sparkles",
+        texture: "particles/star_08.webp",
+        color: "#ffd35b",
+        blendMode: "additive",
+        fadeInSec: 0.08,
+        fadeOutSec: 0.45,
+        lifetimeSec: 0.9,
+        sizeMin: 0.35,
+        sizeMax: 0.7,
+        riseSpeedMin: 0.45,
+        riseSpeedMax: 1.1,
+        spreadRadius: 0.85,
+        maxOpacity: 0.95,
+        offset: [0, 0.15, 0],
     }
 };
 

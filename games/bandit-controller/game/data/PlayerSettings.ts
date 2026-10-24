@@ -11,6 +11,8 @@
 import * as THREE from 'three';
 
 export interface PlayerSettings {
+    /** Dev-only alternate input: left-click/tap release sends the player toward that ground point. */
+    clickToMoveEnabled: boolean;
     /** Base ground speed, world units/second, while not sprinting. */
     walkSpeed: number;
     /** Multiplied onto walkSpeed while sprinting/running (see ThirdPersonCharacter.getMoveSpeed(true)) — also the constant pace used for both runner modes' automatic forward movement. */
@@ -57,6 +59,7 @@ export interface PlayerSettings {
 }
 
 export const PLAYER_SETTINGS: PlayerSettings = {
+    clickToMoveEnabled: false,
     walkSpeed: 5,
     runSpeedMultiplier: 1.8,
     slideMultiplier: 1.2,
