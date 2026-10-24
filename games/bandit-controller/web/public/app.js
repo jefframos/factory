@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { isModalOpen } from './shared.js';
+import { openModelPicker, setModelCatalog, modelThumbUrl } from './modelPicker.js';
+import { initWorldStyles, loadWorldStyles, renderWorldStyles, saveWorldStyles, hasUnsavedStyles, styleOf } from './worldStyles.js';
+import { initUiTab, refreshUiTab, saveUiKit, hasUnsavedUiChanges } from './uikit.js';
 
 // ---------------------------------------------------------------- state
 let levels = [];
@@ -11,7 +15,7 @@ let pendingModel = null;
 let wallDraft = [];
 let hoverPoint = new THREE.Vector3();
 let gameUrl = 'http://localhost:9001/';
-let allModels = [];
+let activeTab = 'level';
 let drag = null;
 let panning = null;
 let spaceDown = false;
@@ -214,13 +218,15 @@ async function fillHolder(holder, path, options) {
 function rebuildStatic() {
     clearGroup(staticGroup);
     const { floor } = level;
+    const floorStyle = styleOf('floor', level.styles?.floor);
+    const wallStyle = styleOf('wall', level.styles?.wall);
 
-    const ground = mesh(new THREE.PlaneGeometry(floor.width + 26, floor.depth + 22), 0x3d5a3a, -0.03);
+    const ground = mesh(new THREE.PlaneGeometry(floor.width + 26, floor.depth + 22), styleOf('ground', level.styles?.ground).color, -0.03);
     ground.rotation.x = -Math.PI / 2;
     staticGroup.add(ground);
 
     if (level.entryPath) {
-        const entry = mesh(new THREE.PlaneGeometry(level.entryPath.width, level.entryPath.depth), 0x9a744d, -0.02);
+        const entry = mesh(new THREE.PlaneGeometry(level.entryPath.width, level.entryPath.depth), styleOf('path', level.styles?.path).color, -0.02);
         entry.rotation.x = -Math.PI / 2;
         entry.position.set(level.entryPath.x, -0.02, level.entryPath.z);
         staticGroup.add(entry);
@@ -229,15 +235,15 @@ function rebuildStatic() {
     const checker = document.createElement('canvas');
     checker.width = checker.height = 2;
     const ctx = checker.getContext('2d');
-    ctx.fillStyle = floor.colorA;
+    ctx.fillStyle = floorStyle.colorA;
     ctx.fillRect(0, 0, 2, 2);
-    ctx.fillStyle = floor.colorB;
+    ctx.fillStyle = floorStyle.colorB;
     ctx.fillRect(0, 0, 1, 1);
     ctx.fillRect(1, 1, 1, 1);
     const texture = new THREE.CanvasTexture(checker);
     texture.magFilter = THREE.NearestFilter;
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    const cell = floor.checkerScale || 1.5;
+    const cell = floorStyle.checkerScale || 1.5;
     texture.repeat.set(floor.width / cell / 2, floor.depth / cell / 2);
     const floorMesh = new THREE.Mesh(
         new THREE.PlaneGeometry(floor.width, floor.depth),
@@ -267,7 +273,7 @@ function rebuildStatic() {
             const a = wall.points[i];
             const b = wall.points[(i + 1) % wall.points.length];
             const length = Math.hypot(b.x - a.x, b.z - a.z);
-            const piece = mesh(new THREE.BoxGeometry(length + 0.35, 0.5, 0.35), selected ? 0xffd15c : 0x378f91, 0.25);
+            const piece = mesh(new THREE.BoxGeometry(length + 0.35, 0.5, 0.35), selected ? 0xffd15c : wallStyle.bottomColor, 0.25);
             piece.position.x = (a.x + b.x) / 2;
             piece.position.z = (a.z + b.z) / 2;
             piece.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
@@ -777,6 +783,14 @@ canvas.addEventListener('wheel', (event) => {
 }, { passive: false });
 
 window.addEventListener('keydown', (event) => {
+    if (isModalOpen()) return;
+    if (activeTab !== 'level') {
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+            event.preventDefault();
+            void saveUiKit();
+        }
+        return;
+    }
     const typing = ['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName);
     if (event.code === 'Space' && !typing) {
         spaceDown = true;
@@ -824,7 +838,7 @@ window.addEventListener('keyup', (event) => {
     }
 });
 window.addEventListener('beforeunload', (event) => {
-    if (dirty) {
+    if (dirty || hasUnsavedUiChanges() || hasUnsavedStyles()) {
         event.preventDefault();
     }
 });
@@ -889,6 +903,17 @@ function renderInspector() {
         if (!item) return;
         title.textContent = `${type.toUpperCase()} · ${item.model}`;
         panel.append(
+            button('Change model…', () => openModelPicker({
+                current: item.model,
+                title: 'Replace model',
+                confirmLabel: 'Use model',
+                onPick: (path) => {
+                    item.model = path;
+                    markDirty();
+                    rebuildAll();
+                    renderInspector();
+                },
+            })),
             field('X', item.x, change((v) => (item.x = v), true), { step: 0.25 }),
             field('Z', item.z, change((v) => (item.z = v), true), { step: 0.25 }),
         );
@@ -1018,8 +1043,7 @@ function syncSettings() {
     $('gridCell').value = level.grid.cell;
     $('floorWidth').value = level.floor.width;
     $('floorDepth').value = level.floor.depth;
-    $('colorA').value = level.floor.colorA;
-    $('colorB').value = level.floor.colorB;
+    renderWorldStyles();
     $('hasEntry').checked = Boolean(level.entryPath);
 }
 
@@ -1034,8 +1058,6 @@ function bindSettings() {
     bind('gridCell', (input) => (level.grid.cell = Math.max(0.1, Number(input.value))));
     bind('floorWidth', (input) => (level.floor.width = Math.max(2, Number(input.value))));
     bind('floorDepth', (input) => (level.floor.depth = Math.max(2, Number(input.value))));
-    bind('colorA', (input) => (level.floor.colorA = input.value));
-    bind('colorB', (input) => (level.floor.colorB = input.value));
     bind('hasEntry', (input) => {
         level.entryPath = input.checked
             ? { x: level.start.x, z: level.start.z, width: 4.8, depth: 6 }
@@ -1082,6 +1104,7 @@ async function openLevel(id) {
 
 async function saveLevel() {
     try {
+        await saveWorldStyles();
         await api(`/api/levels/${level.id}`, { method: 'PUT', body: JSON.stringify(level) });
         const index = levels.findIndex((entry) => entry.id === level.id);
         if (index >= 0) {
@@ -1143,47 +1166,79 @@ document.querySelectorAll('[data-tool]').forEach((element) => element.addEventLi
 
 // ---------------------------------------------------------------- model browser
 function renderModelList() {
-    const filter = $('modelSearch').value.trim().toLowerCase();
-    const list = $('modelList');
-    list.replaceChildren();
-    let currentCategory = '';
-    for (const path of allModels) {
-        if (filter && !path.toLowerCase().includes(filter)) {
-            continue;
-        }
-        const category = path.split('/').slice(0, -1).join('/') || '/';
-        if (category !== currentCategory) {
-            currentCategory = category;
-            const header = document.createElement('div');
-            header.className = 'cat';
-            header.textContent = category;
-            list.append(header);
-        }
-        const item = document.createElement('div');
-        item.className = `item${path === pendingModel ? ' active' : ''}`;
-        item.textContent = path.split('/').pop();
-        item.title = path;
-        item.addEventListener('click', () => {
-            pendingModel = pendingModel === path ? null : path;
-            setHint(pendingModel ? `Click the map to drop ${path} (Esc to stop).` : '');
+    const holder = $('modelList');
+    holder.replaceChildren();
+    if (pendingModel) {
+        const thumb = document.createElement('img');
+        thumb.src = modelThumbUrl(pendingModel);
+        thumb.alt = '';
+        const name = document.createElement('div');
+        name.className = 'chip-name';
+        name.textContent = pendingModel.split('/').pop().replace(/\.glb$/, '');
+        name.title = pendingModel;
+        const clear = document.createElement('button');
+        clear.className = 'icon-btn';
+        clear.textContent = '✕';
+        clear.title = 'Stop placing';
+        clear.addEventListener('click', () => {
+            pendingModel = null;
+            setHint('');
             renderModelList();
         });
-        list.append(item);
+        const chip = document.createElement('div');
+        chip.className = 'model-chip';
+        chip.append(thumb, name, clear);
+        holder.append(chip);
     }
 }
-$('modelSearch').addEventListener('input', renderModelList);
+$('pickModel').addEventListener('click', () => openModelPicker({
+    current: pendingModel,
+    title: 'Choose a model to place',
+    confirmLabel: 'Place on map',
+    onPick: (path) => {
+        pendingModel = path;
+        setHint(`Click the map to drop ${path} (Esc to stop).`);
+        renderModelList();
+    },
+}));
+
+// ---------------------------------------------------------------- tabs
+let uiTabReady = false;
+async function switchTab(name) {
+    activeTab = name;
+    document.querySelectorAll('[data-tab]').forEach((tab) => tab.classList.toggle('active', tab.dataset.tab === name));
+    document.querySelectorAll('.tab-panel').forEach((panel) => { panel.hidden = panel.id !== `tab-${name}`; });
+    if (name === 'level') {
+        resize();
+    } else if (!uiTabReady) {
+        uiTabReady = true;
+        await initUiTab($('tab-ui'));
+    } else {
+        refreshUiTab();
+    }
+    history.replaceState(null, '', `#${name}`);
+}
+document.querySelectorAll('[data-tab]').forEach((tab) => tab.addEventListener('click', () => void switchTab(tab.dataset.tab)));
 
 // ---------------------------------------------------------------- init
 async function init() {
     bindSettings();
+    initWorldStyles($('worldStyles'), {
+        level: () => level,
+        levels: () => levels.map((entry) => (entry.id === level?.id ? level : entry)),
+        onLevelChange: () => { markDirty(); rebuildStatic(); },
+        onStylesChange: () => { markDirty(); rebuildStatic(); },
+    });
+    await loadWorldStyles();
     setTool('select');
     resize();
     loop();
     const config = await api('/api/config');
     gameUrl = config.gameUrl;
-    allModels = await api('/api/models');
+    setModelCatalog(await api('/api/models'));
     renderModelList();
     await refreshLevels();
+    if (location.hash === '#ui') await switchTab('ui');
 }
 
 init().catch((error) => {

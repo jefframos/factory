@@ -8,6 +8,7 @@ import { setPhysicsDebugFlags } from 'core/physics/PhysicsConstants';
 import * as PIXI from 'pixi.js';
 
 import loaderConfig from './loader.config';
+import fontManifest from './manifests/fonts.json';
 import platformConfig from './platforms.config.json';
 import HubScene from './game/scenes/HubScene';
 import RunnerMinigameScene from './game/scenes/RunnerMinigameScene';
@@ -91,6 +92,7 @@ export default class MyGame extends Game {
             this.stageContainer.addChild(this.gameContainer);
             this.sceneManager = new SceneManager(this.gameContainer);
 
+            await this.loadFonts();
             await PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`);
 
             PlatformHandler.instance.platform.loadFinished();
@@ -99,6 +101,17 @@ export default class MyGame extends Game {
         } catch (error) {
             console.error('Failed to initialize platform:', error);
         }
+    }
+
+    /** Registers every packed font (games/bandit-controller/raw-assets/fonts) so PIXI.Text can use it by family name. */
+    private async loadFonts(): Promise<void> {
+        const families = fontManifest.bundles[0].assets
+            .flatMap((asset) => asset.alias)
+            .filter((alias) => !alias.includes('.'));
+        await Promise.all(families.map(async (family) => {
+            const face = new FontFace(family, `url(./${this.folderPath}/fonts/${family}.woff2) format('woff2')`);
+            document.fonts.add(await face.load());
+        }));
     }
 
     private startGame(): void {

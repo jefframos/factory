@@ -1,3 +1,4 @@
+import type { LevelStyles } from './WorldStyles';
 // LevelData.ts
 //
 // Data-driven description of a path level. Level files live in games/bandit-controller/levels/*.json
@@ -74,7 +75,9 @@ export interface LevelData {
     id: string;
     name: string;
     grid: { cell: number };
-    floor: { width: number; depth: number; colorA: string; colorB: string; checkerScale: number };
+    floor: { width: number; depth: number };
+    /** Named shared styles (see ui/worldstyles.json). */
+    styles?: LevelStyles;
     start: LevelPoint;
     /** Checkpoints in order; the last one is the exit. */
     waypoints: LevelPoint[];

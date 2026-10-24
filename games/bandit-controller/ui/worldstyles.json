@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "floor": {
+    "floorStyle1": { "name": "Blue tiles", "colorA": "#5f93d6", "colorB": "#5f93d6", "checkerScale": 1.5 },
+    "floorStyle2": { "name": "Mint checker", "colorA": "#c8f0e1", "colorB": "#67b39e", "checkerScale": 1.5 }
+  },
+  "wall": {
+    "wallStyle1": { "name": "Teal bank", "bottomColor": "#378f91", "topColor": "#ffd889", "bottomHeight": 1.4, "height": 6, "thickness": 0.35 }
+  },
+  "door": {
+    "doorStyle1": { "name": "Plain wood", "color": "#493023", "opacity": 1, "model": "heist/doors/door_A" }
+  },
+  "window": {
+    "windowStyle1": { "name": "Glass", "color": "#8bd9f4", "opacity": 0.34 }
+  },
+  "ground": {
+    "groundStyle1": { "name": "Grass", "color": "#77a970" }
+  },
+  "path": {
+    "pathStyle1": { "name": "Dirt road", "color": "#9a744d" }
+  }
+}

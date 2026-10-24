@@ -6,6 +6,7 @@
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
+import { UiKit } from './UiKit';
 
 interface MeterZone {
     from: number;
@@ -44,17 +45,9 @@ export default class BonusMeter extends PIXI.Container {
     public constructor(private readonly onResult: (multiplier: number) => void) {
         super();
 
-        const panel = new PIXI.NineSlicePlane(PIXI.Texture.from('BorderFrame_Round20_Single_Dark'), 20, 20, 20, 20);
-        panel.width = PANEL_WIDTH;
-        panel.height = PANEL_HEIGHT;
-        panel.position.set(-PANEL_WIDTH / 2, -PANEL_HEIGHT / 2);
-        this.addChild(panel);
+        this.addChild(UiKit.image('bonusMeter', 'panel', PANEL_WIDTH, PANEL_HEIGHT));
 
-        const title = new PIXI.Text('BONUS!', {
-            fontFamily: 'Trebuchet MS, sans-serif', fontSize: 24, fontWeight: 'bold', fill: 0xffffff,
-            stroke: 0x0b3d12, strokeThickness: 5,
-        });
-        title.anchor.set(0.5);
+        const title = UiKit.text('bonusMeter', 'title');
         title.position.set(0, -PANEL_HEIGHT / 2 + 26);
         this.addChild(title);
 
@@ -71,7 +64,7 @@ export default class BonusMeter extends PIXI.Container {
         gauge.addChild(hub);
 
         this.resultLabel = new PIXI.Text('', {
-            fontFamily: 'Trebuchet MS, sans-serif', fontSize: 40, fontWeight: 'bold', fill: 0xffd15c,
+            fontFamily: UiKit.fontFamily('primary'), fontSize: 40, fontWeight: 'normal', fill: 0xffd15c,
             stroke: 0x3a2400, strokeThickness: 6,
         });
         this.resultLabel.anchor.set(0.5);
@@ -110,9 +103,9 @@ export default class BonusMeter extends PIXI.Container {
 
             const mid = Math.PI + ((zone.from + zone.to) / 2) * Math.PI;
             const label = new PIXI.Text(`x${zone.multiplier}`, {
-                fontFamily: 'Trebuchet MS, sans-serif',
+                fontFamily: UiKit.fontFamily('primary'),
                 fontSize: zone.multiplier === 5 ? 20 : 17,
-                fontWeight: 'bold',
+                fontWeight: 'normal',
                 fill: 0xffffff,
                 stroke: 0x1b1b1b,
                 strokeThickness: 4,
@@ -137,15 +130,8 @@ export default class BonusMeter extends PIXI.Container {
 
     private buildStopButton(): PIXI.Container {
         const button = new PIXI.Container();
-        const bg = new PIXI.NineSlicePlane(PIXI.Texture.from('Button01_s_Green'), 30, 40, 30, 40);
-        bg.width = 220;
-        bg.height = 90;
-        bg.position.set(-110, -45);
-        const label = new PIXI.Text('STOP', {
-            fontFamily: 'Trebuchet MS, sans-serif', fontSize: 40, fontWeight: 'bold', fill: 0xffffff,
-            stroke: 0x0b3d12, strokeThickness: 6,
-        });
-        label.anchor.set(0.5);
+        const bg = UiKit.image('bonusMeter', 'button', 220, 90);
+        const label = UiKit.text('bonusMeter', 'buttonLabel');
         button.addChild(bg, label);
         button.scale.set(0.7);
         button.eventMode = 'static';

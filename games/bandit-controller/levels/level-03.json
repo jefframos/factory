@@ -6,10 +6,7 @@
   },
   "floor": {
     "width": 22,
-    "depth": 30,
-    "colorA": "#5f93d6",
-    "colorB": "#5f93d6",
-    "checkerScale": 1.5
+    "depth": 30
   },
   "start": {
     "x": 0,
@@ -333,5 +330,13 @@
       "scale": 1.35,
       "revealAt": 2
     }
-  ]
+  ],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  }
 }

@@ -14,6 +14,8 @@ import Guard from '../entities/Guard';
 import { LevelSight } from '../utils/LevelSight';
 import { COIN, CollectibleDefinition } from '../data/CollectibleSettings';
 import { LevelCatalog } from '../data/LevelCatalog';
+import { UiKit } from '../ui/UiKit';
+import { WorldStyles } from '../data/WorldStyles';
 import { LevelData, LevelDoor, LevelLoot, levelDoors, levelWindowPanes } from '../data/LevelData';
 import { GameState } from '../data/GameState';
 import { PLAYER_SETTINGS } from '../data/PlayerSettings';
@@ -38,30 +40,6 @@ const CHECKPOINT_STOP_RADIUS = 1.2;
 const GOAL_MARKER_RADIUS = 1.25;
 const FIELD_SIZE = 48;
 const ROOM_ORIGIN = new THREE.Vector3();
-const WALL_SETUP: WallSetupConfig = {
-    height: 6,
-    thickness: 0.35,
-    doorHeight: 4,
-    tallDoorHeight: 5.5,
-    windowHeight: 1.5,
-};
-const WALL_STYLE: WallStyleConfig = {
-    bottomColor: '#378f91',
-    topColor: '#ffd889',
-    bottomHeight: 1.4,
-};
-const DOOR_STYLE: DoorStyleConfig = {
-    name: 'Bank plain wood',
-    models: [{
-        id: 'door_A',
-        path: 'heist/doors/door_A',
-        fullPath: 'bandit-controller/models/heist/doors/door_A.gltf',
-        format: 'gltf',
-        nodes: {},
-    }],
-    color: '#493023',
-    opacity: 1,
-};
 const DOOR_ASSIST_MARGIN = 0.6;
 const DOOR_CLEARANCE = 1.3;
 const LOWERED_WALL_SCALE = 0.2;
@@ -214,7 +192,37 @@ export default class PathLevelScene extends ThreeScene {
         this.addInputListeners();
     }
 
+    private wallSetup!: WallSetupConfig;
+    private wallStyle!: WallStyleConfig;
+    private doorStyle!: DoorStyleConfig;
+
+    private resolveWorldStyles(): void {
+        const wall = WorldStyles.get('wall', this.level.styles?.wall);
+        const door = WorldStyles.get('door', this.level.styles?.door);
+        this.wallSetup = {
+            height: wall.height,
+            thickness: wall.thickness,
+            doorHeight: 4,
+            tallDoorHeight: 5.5,
+            windowHeight: 1.5,
+        };
+        this.wallStyle = { bottomColor: wall.bottomColor, topColor: wall.topColor, bottomHeight: wall.bottomHeight };
+        this.doorStyle = {
+            name: door.name,
+            models: door.model ? [{
+                id: door.model.split('/').pop() as string,
+                path: door.model,
+                fullPath: `bandit-controller/models/${door.model}.gltf`,
+                format: 'gltf',
+                nodes: {},
+            }] : [],
+            color: door.color,
+            opacity: door.opacity,
+        };
+    }
+
     private buildCourse(): void {
+        this.resolveWorldStyles();
         this.revealGroups.clear();
         PizzaParticleSystem.init(this.threeScene, './bandit-controller/images/non-preload/');
         this.threeScene.background = buildBlueSkyTexture();
@@ -225,7 +233,7 @@ export default class PathLevelScene extends ThreeScene {
 
         this.exteriorGround = new THREE.Mesh(
             new THREE.PlaneGeometry(this.level.floor.width + 26, this.level.floor.depth + 22, 44, 46),
-            new THREE.MeshStandardMaterial({ color: 0x77a970, roughness: 0.98 }),
+            new THREE.MeshStandardMaterial({ color: WorldStyles.get('ground', this.level.styles?.ground).color, roughness: 0.98 }),
         );
         this.exteriorGround.rotation.x = -Math.PI / 2;
         this.exteriorGround.position.y = 0.005;
@@ -236,7 +244,7 @@ export default class PathLevelScene extends ThreeScene {
         if (entry) {
             this.entryPath = new THREE.Mesh(
                 new THREE.PlaneGeometry(entry.width, entry.depth),
-                new THREE.MeshStandardMaterial({ color: 0x9a744d, roughness: 0.96 }),
+                new THREE.MeshStandardMaterial({ color: WorldStyles.get('path', this.level.styles?.path).color, roughness: 0.96 }),
             );
             this.entryPath.rotation.x = -Math.PI / 2;
             this.entryPath.position.set(entry.x, 0.012, entry.z);
@@ -244,6 +252,7 @@ export default class PathLevelScene extends ThreeScene {
             this.threeScene.add(this.entryPath);
         }
 
+        const floorStyle = WorldStyles.get('floor', this.level.styles?.floor);
         this.floorMesh = CheckerFloorBuilder.build({
             x: 0,
             z: 0,
@@ -252,9 +261,9 @@ export default class PathLevelScene extends ThreeScene {
             rotationY: 0,
             tileSize: 1,
         } as StoreFloorPlacement, ROOM_ORIGIN, {
-            colorA: this.level.floor.colorA,
-            colorB: this.level.floor.colorB,
-            scale: this.level.floor.checkerScale,
+            colorA: floorStyle.colorA,
+            colorB: floorStyle.colorB,
+            scale: floorStyle.checkerScale,
         } as FloorCheckerConfig);
         this.threeScene.add(this.floorMesh);
 
@@ -268,14 +277,14 @@ export default class PathLevelScene extends ThreeScene {
         }));
         for (let wallIndex = 0; wallIndex < roomWalls.length; wallIndex++) {
             const wall = roomWalls[wallIndex];
-            const mesh = PolyWallBuilder.build(wall, ROOM_ORIGIN, WALL_SETUP, WALL_STYLE);
+            const mesh = PolyWallBuilder.build(wall, ROOM_ORIGIN, this.wallSetup, this.wallStyle);
             const lintelClearWall: StoreWallPlacement = {
                 ...wall,
                 openings: wall.openings?.map((opening) => opening.kind === 'door'
                     ? { ...opening, fitToCeiling: true }
                     : opening),
             };
-            const lintelClearMesh = PolyWallBuilder.build(lintelClearWall, ROOM_ORIGIN, WALL_SETUP, WALL_STYLE);
+            const lintelClearMesh = PolyWallBuilder.build(lintelClearWall, ROOM_ORIGIN, this.wallSetup, this.wallStyle);
             if (wallIndex === 0) {
                 this.addWindowPanes(mesh);
                 this.addWindowPanes(lintelClearMesh);
@@ -286,14 +295,14 @@ export default class PathLevelScene extends ThreeScene {
             this.threeScene.add(mesh);
             this.threeScene.add(lintelClearMesh);
 
-            for (const collider of PolyWallBuilder.colliderBoxes(wall, WALL_SETUP)) {
+            for (const collider of PolyWallBuilder.colliderBoxes(wall, this.wallSetup)) {
                 this.wallBoxes.push(collider);
                 const entity = this.env.world.spawn();
                 entity.transform.position.set(collider.x, FloorLayers.baseY, collider.z);
                 this.threeScene.add(entity.transform);
                 entity.addComponent(new RigidBody({
-                    halfExtents: new THREE.Vector3(collider.halfX, WALL_SETUP.height / 2, collider.halfZ),
-                    centerOffset: new THREE.Vector3(0, WALL_SETUP.height / 2, 0),
+                    halfExtents: new THREE.Vector3(collider.halfX, this.wallSetup.height / 2, collider.halfZ),
+                    centerOffset: new THREE.Vector3(0, this.wallSetup.height / 2, 0),
                     isStatic: true,
                     blocksVertical: false,
                     layer: Layers.Environment,
@@ -302,8 +311,8 @@ export default class PathLevelScene extends ThreeScene {
                 this.wallColliders.push(entity);
             }
 
-            for (const frame of PolyWallBuilder.doorFrames(wall, WALL_SETUP)) {
-                const door = new StoreDoor(frame, ROOM_ORIGIN, FloorLayers.baseY, DOOR_STYLE);
+            for (const frame of PolyWallBuilder.doorFrames(wall, this.wallSetup)) {
+                const door = new StoreDoor(frame, ROOM_ORIGIN, FloorLayers.baseY, this.doorStyle);
                 this.wallDoors.push(door);
                 this.threeScene.add(door.object);
             }
@@ -315,11 +324,12 @@ export default class PathLevelScene extends ThreeScene {
     }
 
     private addWindowPanes(parent: THREE.Mesh): void {
+        const windowStyle = WorldStyles.get('window', this.level.styles?.window);
         for (const window of levelWindowPanes(this.level)) {
             const material = new THREE.MeshPhysicalMaterial({
-                color: 0x8bd9f4,
+                color: windowStyle.color,
                 transparent: true,
-                opacity: 0.34,
+                opacity: windowStyle.opacity,
                 roughness: 0.16,
                 metalness: 0.04,
                 depthWrite: false,
@@ -327,10 +337,10 @@ export default class PathLevelScene extends ThreeScene {
             });
             BendService.applyBend(material);
             const pane = new THREE.Mesh(
-                new THREE.PlaneGeometry(window.width, WALL_SETUP.windowHeight, 3, 2),
+                new THREE.PlaneGeometry(window.width, this.wallSetup.windowHeight, 3, 2),
                 material,
             );
-            pane.position.set(window.x - ROOM_ORIGIN.x, FloorLayers.baseY - ROOM_ORIGIN.y + WALL_SETUP.height / 2, window.z - ROOM_ORIGIN.z);
+            pane.position.set(window.x - ROOM_ORIGIN.x, FloorLayers.baseY - ROOM_ORIGIN.y + this.wallSetup.height / 2, window.z - ROOM_ORIGIN.z);
             pane.rotation.y = window.rotationY;
             parent.add(pane);
         }
@@ -511,9 +521,9 @@ export default class PathLevelScene extends ThreeScene {
     private buildHud(): void {
         this.hud = new PIXI.Container();
         this.instruction = new PIXI.Text('TRACE FROM THE GREEN START TO THE GOLD CHECKPOINT', {
-            fontFamily: 'Trebuchet MS, sans-serif',
+            fontFamily: UiKit.fontFamily('primary'),
             fontSize: 20,
-            fontWeight: 'bold',
+            fontWeight: 'normal',
             fill: 0xffffff,
             stroke: 0x203c35,
             strokeThickness: 5,
@@ -521,9 +531,9 @@ export default class PathLevelScene extends ThreeScene {
         });
         this.instruction.anchor.set(0.5);
         this.runMoneyLabel = new PIXI.Text('', {
-            fontFamily: 'Trebuchet MS, sans-serif',
+            fontFamily: UiKit.fontFamily('primary'),
             fontSize: 18,
-            fontWeight: 'bold',
+            fontWeight: 'normal',
             fill: 0xffd36b,
             stroke: 0x443320,
             strokeThickness: 4,
@@ -546,9 +556,9 @@ export default class PathLevelScene extends ThreeScene {
         const button = new PIXI.Container();
         const background = new PIXI.Graphics();
         const text = new PIXI.Text(label, {
-            fontFamily: 'Trebuchet MS, sans-serif',
+            fontFamily: UiKit.fontFamily('primary'),
             fontSize: 15,
-            fontWeight: 'bold',
+            fontWeight: 'normal',
             fill: 0xffffff,
         });
         text.anchor.set(0.5);
@@ -973,40 +983,20 @@ export default class PathLevelScene extends ThreeScene {
         }
         this.state = 'complete';
         const modal = new PIXI.Container();
-        const panel = new PIXI.NineSlicePlane(PIXI.Texture.from('BorderFrame_Round20_Single_Dark'), 20, 20, 20, 20);
-        panel.width = 380;
-        panel.height = 250;
-        panel.position.set(-190, -125);
+        const panel = UiKit.image('levelComplete', 'panel', 380, 250);
 
-        const ribbon = new PIXI.Sprite(PIXI.Texture.from('Title_Ribbon01_Green'));
-        ribbon.anchor.set(0.5);
-        ribbon.scale.set(1.1);
+        const ribbon = UiKit.sprite('levelComplete', 'ribbon', 1.1);
         ribbon.position.set(0, -125);
-        const title = new PIXI.Text(`LEVEL ${LevelCatalog.all().indexOf(this.level) + 1} COMPLETE`, {
-            fontFamily: 'Trebuchet MS, sans-serif', fontSize: 20, fontWeight: 'bold', fill: 0xffffff,
-            stroke: 0x0b3d12, strokeThickness: 5,
-        });
-        title.anchor.set(0.5);
+        const title = UiKit.text('levelComplete', 'title', { level: LevelCatalog.all().indexOf(this.level) + 1 });
         title.position.set(0, -122);
 
         const bonusText = multiplier > 1 ? `  (x${multiplier} BONUS)` : '';
-        const total = new PIXI.Text(`$${this.runMoney * multiplier} SECURED${bonusText}`, {
-            fontFamily: 'Trebuchet MS, sans-serif', fontSize: 24, fontWeight: 'bold', fill: 0xffd15c,
-            stroke: 0x3a2400, strokeThickness: 5,
-        });
-        total.anchor.set(0.5);
+        const total = UiKit.text('levelComplete', 'total', { money: this.runMoney * multiplier, bonus: bonusText });
         total.position.set(0, -35);
 
         const button = new PIXI.Container();
-        const buttonBg = new PIXI.NineSlicePlane(PIXI.Texture.from('Button01_s_Yellow'), 30, 40, 30, 40);
-        buttonBg.width = 240;
-        buttonBg.height = 90;
-        buttonBg.position.set(-120, -45);
-        const buttonLabel = new PIXI.Text(LevelCatalog.hasNext(this.level) ? 'NEXT LEVEL' : 'PLAY AGAIN', {
-            fontFamily: 'Trebuchet MS, sans-serif', fontSize: 32, fontWeight: 'bold', fill: 0xffffff,
-            stroke: 0x6b4200, strokeThickness: 6,
-        });
-        buttonLabel.anchor.set(0.5);
+        const buttonBg = UiKit.image('levelComplete', 'button', 240, 90);
+        const buttonLabel = UiKit.text('levelComplete', 'buttonLabel', { buttonText: LevelCatalog.hasNext(this.level) ? 'NEXT LEVEL' : 'PLAY AGAIN' });
         button.addChild(buttonBg, buttonLabel);
         button.scale.set(0.7);
         button.position.set(0, 60);
@@ -1396,40 +1386,19 @@ export default class PathLevelScene extends ThreeScene {
 
     private showBustedPopup(): void {
         const modal = new PIXI.Container();
-        const panel = new PIXI.NineSlicePlane(PIXI.Texture.from('BorderFrame_Round20_Single_Dark'), 20, 20, 20, 20);
-        panel.width = 380;
-        panel.height = 230;
-        panel.position.set(-190, -115);
+        const panel = UiKit.image('busted', 'panel', 380, 230);
 
-        const ribbon = new PIXI.Sprite(PIXI.Texture.from('Title_Ribbon01_Green'));
-        ribbon.anchor.set(0.5);
-        ribbon.scale.set(1.1);
-        ribbon.tint = 0xff6a6a;
+        const ribbon = UiKit.sprite('busted', 'ribbon', 1.1);
         ribbon.position.set(0, -115);
-        const title = new PIXI.Text('BUSTED!', {
-            fontFamily: 'Trebuchet MS, sans-serif', fontSize: 22, fontWeight: 'bold', fill: 0xffffff,
-            stroke: 0x5a0d0d, strokeThickness: 5,
-        });
-        title.anchor.set(0.5);
+        const title = UiKit.text('busted', 'title');
         title.position.set(0, -112);
 
-        const message = new PIXI.Text('A guard caught you.\nWatch their patrol and time it.', {
-            fontFamily: 'Trebuchet MS, sans-serif', fontSize: 20, fontWeight: 'bold', fill: 0xffffff,
-            stroke: 0x1d1d1d, strokeThickness: 4, align: 'center',
-        });
-        message.anchor.set(0.5);
+        const message = UiKit.text('busted', 'message');
         message.position.set(0, -35);
 
         const button = new PIXI.Container();
-        const buttonBg = new PIXI.NineSlicePlane(PIXI.Texture.from('Button01_s_Yellow'), 30, 40, 30, 40);
-        buttonBg.width = 240;
-        buttonBg.height = 90;
-        buttonBg.position.set(-120, -45);
-        const buttonLabel = new PIXI.Text('TRY AGAIN', {
-            fontFamily: 'Trebuchet MS, sans-serif', fontSize: 32, fontWeight: 'bold', fill: 0xffffff,
-            stroke: 0x6b4200, strokeThickness: 6,
-        });
-        buttonLabel.anchor.set(0.5);
+        const buttonBg = UiKit.image('busted', 'button', 240, 90);
+        const buttonLabel = UiKit.text('busted', 'buttonLabel');
         button.addChild(buttonBg, buttonLabel);
         button.scale.set(0.7);
         button.position.set(0, 50);

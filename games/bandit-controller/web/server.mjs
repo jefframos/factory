@@ -7,7 +7,7 @@
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { exec } from 'node:child_process';
+import { exec, execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -17,6 +17,15 @@ const INDEX_FILE = path.join(LEVELS_DIR, 'index.json');
 const REPO_ROOT = path.join(__dirname, '..', '..', '..');
 const MODELS_DIR = path.join(REPO_ROOT, 'public', 'bandit-controller', 'models');
 const THREE_DIR = path.join(REPO_ROOT, 'node_modules', 'three');
+const STYLES_FILE = path.join(__dirname, '..', 'ui', 'worldstyles.json');
+const UIKIT_FILE = path.join(__dirname, '..', 'ui', 'uikit.json');
+const FONTS_DIR = path.join(REPO_ROOT, 'public', 'bandit-controller', 'fonts');
+const THUMBS_DIR = path.join(__dirname, '.thumbs');
+const UI_SOURCES = {
+    game: path.join(REPO_ROOT, 'games', 'bandit-controller', 'raw-assets', 'images', 'ui{tps}'),
+    pizza: path.join(REPO_ROOT, 'games', 'pizza', 'raw-assets', 'images', 'ui{tps}'),
+};
+const SAFE_NAME = /^[\w.\- ]+$/;
 const PORT = process.env.EDITOR_PORT ? Number(process.env.EDITOR_PORT) : 4700;
 const GAME_URL = process.env.GAME_URL ?? 'http://localhost:9001/';
 const ID_PATTERN = /^level-[a-z0-9-]+$/;
@@ -33,6 +42,7 @@ const MIME_TYPES = {
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
     '.webp': 'image/webp',
+    '.woff2': 'font/woff2',
 };
 
 async function readJson(file, fallback) {
@@ -75,10 +85,63 @@ async function listModels(dir = MODELS_DIR, prefix = '') {
         if (entry.isDirectory()) {
             models.push(...await listModels(path.join(dir, entry.name), relative));
         } else if (/\.(gltf|glb)$/i.test(entry.name)) {
-            models.push(relative);
+            const stat = await fs.stat(path.join(dir, entry.name));
+            models.push({ path: relative, mtime: Math.round(stat.mtimeMs), size: stat.size });
         }
     }
-    return models.sort();
+    return models.sort((a, b) => a.path.localeCompare(b.path));
+}
+
+const thumbFile = (model) => `${model.path.replaceAll('/', '__')}.${model.mtime}.png`;
+
+async function listModelsWithThumbs() {
+    const existing = new Set(await fs.readdir(THUMBS_DIR).catch(() => []));
+    return (await listModels()).map((model) => ({ ...model, thumb: existing.has(thumbFile(model)) ? thumbFile(model) : null, thumbName: thumbFile(model) }));
+}
+
+async function listUiImages() {
+    const images = [];
+    for (const [source, dir] of Object.entries(UI_SOURCES)) {
+        const entries = await fs.readdir(dir).catch(() => []);
+        for (const file of entries.filter((name) => /\.png$/i.test(name)).sort()) {
+            images.push({ name: file.replace(/\.png$/i, ''), source });
+        }
+    }
+    return images;
+}
+
+/** Copies kit images that only exist in another game's UI folder into this game's atlas source folder. */
+async function importMissingImages(kit) {
+    const names = new Set();
+    for (const screen of Object.values(kit.screens ?? {})) {
+        for (const element of Object.values(screen.elements ?? {})) {
+            if (element.type === 'image' && element.image) names.add(element.image);
+        }
+    }
+    const imported = [];
+    for (const name of names) {
+        if (!SAFE_NAME.test(name)) continue;
+        const target = path.join(UI_SOURCES.game, `${name}.png`);
+        const exists = await fs.stat(target).then(() => true, () => false);
+        if (!exists) {
+            await fs.copyFile(path.join(UI_SOURCES.pizza, `${name}.png`), target).then(() => imported.push(name), () => {});
+        }
+    }
+    return imported;
+}
+
+function runAtlasBuild() {
+    return new Promise((resolve) => {
+        execFile('npm', ['run', 'image'], { cwd: REPO_ROOT, env: { ...process.env, GAME: 'bandit-controller' }, timeout: 240000 }, (error, stdout, stderr) => {
+            resolve({ ok: !error, log: `${stdout}\n${stderr}`.trim().split('\n').slice(-12).join('\n') });
+        });
+    });
+}
+
+async function readRawBody(req) {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    return Buffer.concat(chunks);
 }
 
 function newLevelTemplate(id, name) {
@@ -86,7 +149,8 @@ function newLevelTemplate(id, name) {
         id,
         name,
         grid: { cell: 0.5 },
-        floor: { width: 16, depth: 20, colorA: '#c8f0e1', colorB: '#67b39e', checkerScale: 1.5 },
+        floor: { width: 16, depth: 20 },
+        styles: { floor: 'floorStyle1', wall: 'wallStyle1', door: 'doorStyle1', window: 'windowStyle1', ground: 'groundStyle1', path: 'pathStyle1' },
         start: { x: 0, z: 14 },
         waypoints: [{ x: 0, z: 0 }, { x: 0, z: -7 }],
         entryPath: { x: 0, z: 14, width: 4.8, depth: 6 },
@@ -159,7 +223,49 @@ async function handleApi(req, res, url) {
         return send(res, 200, { gameUrl: GAME_URL });
     }
     if (url.pathname === '/api/models' && req.method === 'GET') {
-        return send(res, 200, await listModels());
+        return send(res, 200, await listModelsWithThumbs());
+    }
+    if (url.pathname === '/api/thumb' && req.method === 'POST') {
+        const name = url.searchParams.get('name') ?? '';
+        if (!/^[\w.\-]+\.png$/.test(name)) {
+            return send(res, 400, { error: 'Bad thumbnail name' });
+        }
+        await fs.mkdir(THUMBS_DIR, { recursive: true });
+        await fs.writeFile(path.join(THUMBS_DIR, name), await readRawBody(req));
+        return send(res, 200, { ok: true });
+    }
+    if (url.pathname === '/api/ui/images' && req.method === 'GET') {
+        return send(res, 200, await listUiImages());
+    }
+    if (url.pathname === '/api/fonts' && req.method === 'GET') {
+        const files = await fs.readdir(FONTS_DIR).catch(() => []);
+        return send(res, 200, files.filter((name) => name.endsWith('.woff2')).map((name) => name.replace(/\.woff2$/, '')).sort());
+    }
+    if (url.pathname === '/api/worldstyles' && req.method === 'GET') {
+        return send(res, 200, await readJson(STYLES_FILE, { version: 1 }));
+    }
+    if (url.pathname === '/api/worldstyles' && req.method === 'PUT') {
+        const styles = await readBody(req);
+        if (!styles || typeof styles.floor !== 'object' || typeof styles.wall !== 'object') {
+            return send(res, 400, { error: 'Invalid styles' });
+        }
+        await writeJson(STYLES_FILE, styles);
+        return send(res, 200, { ok: true });
+    }
+    if (url.pathname === '/api/uikit' && req.method === 'GET') {
+        return send(res, 200, await readJson(UIKIT_FILE, { version: 1, screens: {} }));
+    }
+    if (url.pathname === '/api/uikit' && req.method === 'PUT') {
+        const kit = await readBody(req);
+        if (!kit || typeof kit.screens !== 'object') {
+            return send(res, 400, { error: 'Invalid UI kit' });
+        }
+        await fs.mkdir(path.dirname(UIKIT_FILE), { recursive: true });
+        await writeJson(UIKIT_FILE, kit);
+        return send(res, 200, { ok: true, imported: await importMissingImages(kit) });
+    }
+    if (url.pathname === '/api/ui/atlas' && req.method === 'POST') {
+        return send(res, 200, await runAtlasBuild());
     }
     if (url.pathname === '/api/levels' && req.method === 'GET') {
         return send(res, 200, await listLevels());
@@ -218,6 +324,18 @@ const server = http.createServer(async (req, res) => {
         }
         if (url.pathname.startsWith('/models/')) {
             return await serveFile(res, MODELS_DIR, decodeURIComponent(url.pathname.slice('/models/'.length)));
+        }
+        if (url.pathname.startsWith('/fonts/')) {
+            return await serveFile(res, FONTS_DIR, decodeURIComponent(url.pathname.slice('/fonts/'.length)));
+        }
+        if (url.pathname.startsWith('/thumbs/')) {
+            return await serveFile(res, THUMBS_DIR, decodeURIComponent(url.pathname.slice('/thumbs/'.length)));
+        }
+        if (url.pathname.startsWith('/ui-images/')) {
+            const [, , source, file] = url.pathname.split('/');
+            if (UI_SOURCES[source] && file) {
+                return await serveFile(res, UI_SOURCES[source], decodeURIComponent(file));
+            }
         }
         if (url.pathname.startsWith('/vendor/three/')) {
             return await serveFile(res, THREE_DIR, decodeURIComponent(url.pathname.slice('/vendor/three/'.length)));

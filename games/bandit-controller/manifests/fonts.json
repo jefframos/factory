@@ -2,7 +2,26 @@
   "bundles": [
     {
       "name": "default",
-      "assets": []
+      "assets": [
+        {
+          "alias": [
+            "Baloo2-ExtraBold.ttf",
+            "Baloo2-ExtraBold"
+          ],
+          "src": [
+            "Baloo2-ExtraBold.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "Baloo2-Regular.ttf",
+            "Baloo2-Regular"
+          ],
+          "src": [
+            "Baloo2-Regular.woff2"
+          ]
+        }
+      ]
     }
   ]
 }
