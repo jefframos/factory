@@ -32,6 +32,21 @@ function collectFbx(target) {
     return fs.readdirSync(target, { withFileTypes: true }).flatMap((item) => collectFbx(path.join(target, item.name)));
 }
 
+// Mixamo clips are retargeted onto the game's character rig when one is found.
+function findRig(dir) {
+    if (!fs.existsSync(dir)) return null;
+    for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, item.name);
+        if (item.isDirectory()) {
+            const found = findRig(full);
+            if (found) return found;
+        } else if (item.name === 'characterMedium.fbx') return full;
+    }
+    return null;
+}
+const rigPath = findRig(resolve(__dirname, `../../games/${game}/raw-assets/models`));
+const rigBuffer = rigPath ? fs.readFileSync(rigPath) : undefined;
+
 const kb = (bytes) => `${(bytes / 1024).toFixed(0)}K`;
 let converted = 0;
 
@@ -41,7 +56,7 @@ for (const file of targets.flatMap(collectFbx)) {
     const source = fs.readFileSync(file);
     let glb;
     try {
-        glb = await convertFbxAnimationToGlb(source);
+        glb = await convertFbxAnimationToGlb(source, rigBuffer);
     } catch (e) {
         console.warn(`⚠️  ${path.basename(file)}: ${e.message}`);
         continue;

@@ -315,7 +315,53 @@ function rebuildStatic() {
         label.position.set(point.x, 1.2, point.z);
         staticGroup.add(label);
     });
+    drawGuards();
     updateSelectionOverlay();
+}
+
+function guardHeading(guard) {
+    if (guard.path.length > 1) {
+        return Math.atan2(guard.path[1].x - guard.path[0].x, guard.path[1].z - guard.path[0].z);
+    }
+    return (guard.facing * Math.PI) / 180;
+}
+
+function drawGuards() {
+    level.guards.forEach((guard, guardIndex) => {
+        if (!guard.path.length) return;
+        const selected = selection && (selection.type === 'guard' || selection.type === 'guardPoint') && selection.index === guardIndex;
+        const color = selected ? 0xff9a9a : 0xff4040;
+        if (guard.path.length > 1) {
+            const points = guard.path.map((point) => new THREE.Vector3(point.x, 0.08, point.z));
+            if (guard.loop) points.push(points[0].clone());
+            staticGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), new THREE.LineBasicMaterial({ color })));
+        }
+        guard.path.forEach((point, pointIndex) => {
+            const marker = mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.3, 14), pointIndex === 0 ? 0xff2020 : color, 0.15);
+            marker.position.x = point.x;
+            marker.position.z = point.z;
+            if (selection?.type === 'guardPoint' && selection.index === guardIndex && selection.sub === pointIndex) {
+                marker.material.color.set(0xffffff);
+            }
+            staticGroup.add(marker);
+        });
+        const heading = guardHeading(guard);
+        const half = (guard.fov * Math.PI) / 360;
+        const shape = [new THREE.Vector3(guard.path[0].x, 0.09, guard.path[0].z)];
+        for (let i = 0; i <= 16; i++) {
+            const angle = heading - half + (half * 2 * i) / 16;
+            shape.push(new THREE.Vector3(guard.path[0].x + Math.sin(angle) * guard.range, 0.09, guard.path[0].z + Math.cos(angle) * guard.range));
+        }
+        const geometry = new THREE.BufferGeometry().setFromPoints(shape);
+        const indices = [];
+        for (let i = 1; i < shape.length - 1; i++) indices.push(0, i, i + 1);
+        geometry.setIndex(indices);
+        const cone = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+        staticGroup.add(cone);
+        const label = labelSprite('G', '#ff6a6a');
+        label.position.set(guard.path[0].x, 1.4, guard.path[0].z);
+        staticGroup.add(label);
+    });
 }
 
 const holders = { prop: [], loot: [] };
@@ -435,6 +481,14 @@ function pick(point) {
             }
         }
     }
+    for (let g = level.guards.length - 1; g >= 0; g--) {
+        for (let p = 0; p < level.guards[g].path.length; p++) {
+            const guardPoint = level.guards[g].path[p];
+            if (Math.hypot(guardPoint.x - point.x, guardPoint.z - point.z) < 0.8) {
+                return { type: 'guardPoint', index: g, sub: p };
+            }
+        }
+    }
     for (let i = level.waypoints.length - 1; i >= 0; i--) {
         if (Math.hypot(level.waypoints[i].x - point.x, level.waypoints[i].z - point.z) < 1.2) {
             return { type: 'waypoint', index: i };
@@ -466,6 +520,7 @@ function entityPosition(sel) {
         case 'start': return level.start;
         case 'waypoint': return level.waypoints[sel.index];
         case 'wallPoint': return level.walls[sel.index].points[sel.sub];
+        case 'guardPoint': return level.guards[sel.index].path[sel.sub];
         default: return null;
     }
 }
@@ -514,7 +569,11 @@ function deleteSelection() {
             level.walls[index].points.splice(sub, 1);
         }
     } else if (type === 'opening') level.walls[index].openings.splice(sub, 1);
-    else return;
+    else if (type === 'guardPoint') {
+        const guard = level.guards[index];
+        guard.path.splice(sub, 1);
+        if (guard.path.length === 0) level.guards.splice(index, 1);
+    } else return;
     selection = null;
     markDirty();
     rebuildAll();
@@ -533,6 +592,7 @@ function setTool(next) {
         window: 'Click on a wall to place a window.',
         start: 'Click to set the player start.',
         waypoint: 'Click to add a checkpoint (the last one is the exit).',
+        guard: 'Click to lay out a guard patrol. Enter or double-click finishes (one point = stationary guard).',
     };
     setHint(hints[next]);
     updateSelectionOverlay();
@@ -543,6 +603,20 @@ function setHint(text) {
 }
 
 function finishWall() {
+    if (tool === 'guard') {
+        if (wallDraft.length >= 1) {
+            level.guards.push({
+                path: wallDraft.map((point) => ({ x: point.x, z: point.z })),
+                loop: false, speed: 1.6, pause: 1, fov: 60, range: 6, sweep: wallDraft.length === 1 ? 35 : 0, facing: 180,
+            });
+            markDirty();
+            selection = { type: 'guardPoint', index: level.guards.length - 1, sub: 0 };
+            renderInspector();
+        }
+        wallDraft = [];
+        rebuildStatic();
+        return;
+    }
     if (wallDraft.length >= 2) {
         level.walls.push({ closed: false, points: wallDraft.map((point) => ({ x: point.x, z: point.z })), openings: [] });
         markDirty();
@@ -614,7 +688,7 @@ canvas.addEventListener('pointerdown', (event) => {
         void dropModel(raw);
         return;
     }
-    if (tool === 'wall') {
+    if (tool === 'wall' || tool === 'guard') {
         if (event.detail >= 2) {
             return finishWall();
         }
@@ -721,7 +795,7 @@ window.addEventListener('keydown', (event) => {
         wallDraft = [];
         renderModelList();
         setTool('select');
-    } else if (event.key === 'Enter' && tool === 'wall') {
+    } else if (event.key === 'Enter' && (tool === 'wall' || tool === 'guard')) {
         finishWall();
     } else if (event.key === 'Delete' || event.key === 'Backspace') {
         deleteSelection();
@@ -862,6 +936,28 @@ function renderInspector() {
                 button('Later', () => swapWaypoint(index, index + 1)),
             );
         }
+    } else if (type === 'guardPoint') {
+        const guard = level.guards[index];
+        const point = guard.path[sub];
+        title.textContent = `GUARD ${index + 1} · POINT ${sub + 1}/${guard.path.length}`;
+        panel.append(
+            field('X', point.x, change((v) => (point.x = v)), { step: 0.25 }),
+            field('Z', point.z, change((v) => (point.z = v)), { step: 0.25 }),
+            field('Speed', guard.speed, change((v) => (guard.speed = Math.max(0.2, v))), { step: 0.1 }),
+            field('Pause (s)', guard.pause, change((v) => (guard.pause = Math.max(0, v))), { step: 0.25 }),
+            field('Cone angle °', guard.fov, change((v) => (guard.fov = Math.min(170, Math.max(10, v)))), { step: 5 }),
+            field('Cone range', guard.range, change((v) => (guard.range = Math.max(1, v))), { step: 0.5 }),
+            field('Look sweep °', guard.sweep, change((v) => (guard.sweep = Math.max(0, v))), { step: 5 }),
+            field('Facing ° (single point)', guard.facing, change((v) => (guard.facing = v)), { step: 15 }),
+            field('Loop circuit', guard.loop, change((v) => (guard.loop = v)), { type: 'checkbox' }),
+            button('Add point after this', () => {
+                guard.path.splice(sub + 1, 0, { x: round(point.x + 1), z: point.z });
+                selection = { type: 'guardPoint', index, sub: sub + 1 };
+                markDirty();
+                rebuildStatic();
+                renderInspector();
+            }),
+        );
     } else if (type === 'wall' || type === 'wallPoint') {
         const wall = level.walls[index];
         title.textContent = type === 'wall' ? `WALL ${index + 1}` : `WALL ${index + 1} · POINT ${sub + 1}`;
@@ -961,6 +1057,7 @@ async function refreshLevels(selectId) {
     const target = levels.find((entry) => entry.id === selectId) ?? levels[0];
     if (target) {
         level = clone(target);
+        level.guards ??= [];
         selection = null;
         syncSettings();
         rebuildAll();

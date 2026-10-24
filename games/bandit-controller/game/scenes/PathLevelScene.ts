@@ -10,6 +10,8 @@ import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import { pruneCollected } from '../builders/CollectibleBuilder';
 import Collectible from '../entities/Collectible';
+import Guard from '../entities/Guard';
+import { LevelSight } from '../utils/LevelSight';
 import { COIN, CollectibleDefinition } from '../data/CollectibleSettings';
 import { LevelCatalog } from '../data/LevelCatalog';
 import { LevelData, LevelDoor, LevelLoot, levelDoors, levelWindowPanes } from '../data/LevelData';
@@ -32,6 +34,7 @@ import type { StoreFloorPlacement, StoreWallPlacement } from '../../../pizza/gam
 import type { DoorStyleConfig, FloorCheckerConfig, WallSetupConfig, WallStyleConfig } from '../../../pizza/game/store/StoreViewTypes';
 
 const GOAL_TRIGGER_RADIUS = 2.6;
+const CHECKPOINT_STOP_RADIUS = 1.2;
 const GOAL_MARKER_RADIUS = 1.25;
 const FIELD_SIZE = 48;
 const ROOM_ORIGIN = new THREE.Vector3();
@@ -48,11 +51,11 @@ const WALL_STYLE: WallStyleConfig = {
     bottomHeight: 1.4,
 };
 const DOOR_STYLE: DoorStyleConfig = {
-    name: 'Bank carved wood',
+    name: 'Bank plain wood',
     models: [{
-        id: 'Door_A_Decorated',
-        path: 'heist/doors/Door_A_Decorated',
-        fullPath: 'bandit-controller/models/heist/doors/Door_A_Decorated.gltf',
+        id: 'door_A',
+        path: 'heist/doors/door_A',
+        fullPath: 'bandit-controller/models/heist/doors/door_A.gltf',
         format: 'gltf',
         nodes: {},
     }],
@@ -76,9 +79,19 @@ const PAYOUT_STAGGER_SEC = 0.12;
 const CELEBRATION_PITCH_DEG = 28;
 const CELEBRATION_DISTANCE = 8;
 const CELEBRATION_DANCE_SEC = 1;
+const SAD_ANIMATION_URL = './bandit-controller/models/animations/Crying.glb';
+const BUSTED_REACTION_SEC = 2.2;
 const CAMERA_FOCUS_ALONG_SEGMENT = 0.66;
+/** Wide levels are framed on this half-width only, so portrait screens stay zoomed in on the path. */
+// Default fraction of the screen height the view is pushed down; while aiming at a segment start the shift is solved so the player sits at PLAYER_SCREEN_Y_FRACTION (from the top).
+const SCREEN_VERTICAL_SHIFT = 0.12;
+const PLAYER_SCREEN_Y_FRACTION = 0.85;
+const CAMERA_MAX_HALF_WIDTH = 5.5;
+/** Seconds inside a guard's cone before the player is busted, and how fast suspicion cools off once out of sight. */
+const SPOT_TIME_SEC = 1.1;
+const ALERT_DECAY_PER_SEC = 1.2;
 
-type PathLevelState = 'waiting' | 'following' | 'revealing' | 'celebrating' | 'payout' | 'complete';
+type PathLevelState = 'waiting' | 'following' | 'revealing' | 'celebrating' | 'payout' | 'complete' | 'busted';
 type PathDrawMode = 'exit' | 'free';
 
 export default class PathLevelScene extends ThreeScene {
@@ -110,6 +123,8 @@ export default class PathLevelScene extends ThreeScene {
     private readonly activeStart = new THREE.Vector3();
     private readonly activeGoal = new THREE.Vector3();
     private readonly segmentFocus = new THREE.Vector3();
+    private readonly shiftProbe = new THREE.Vector3();
+    private screenShiftFraction = SCREEN_VERTICAL_SHIFT;
     private readonly pathCameraOptions: CameraFollowOptions = {
         freezeHeightWhileAirborne: true,
         fixedYawDeg: 0,
@@ -124,6 +139,7 @@ export default class PathLevelScene extends ThreeScene {
     private entryPath?: THREE.Mesh;
     private doorWorld?: Parameters<StoreDoor['update']>[1];
     private destroyed = false;
+    private stopAtCheckpoints = true;
     private route: THREE.Vector3[] = [];
     private routeMesh?: THREE.Mesh;
     private routeBlocked = false;
@@ -138,6 +154,14 @@ export default class PathLevelScene extends ThreeScene {
     private modeSelector?: PIXI.Container;
     private readonly modeButtons = new Map<PathDrawMode, { background: PIXI.Graphics; label: PIXI.Text }>();
     private completeModal?: PIXI.Container;
+    private bustedModal?: PIXI.Container;
+    private guards: Guard[] = [];
+    private bustGuard?: Guard;
+    private bustPhase: 'chase' | 'react' = 'chase';
+    private bustTimer = 0;
+    private bustFocus = false;
+    private spottedMessageShown = false;
+    private messageBeforeSpotted = '';
     private bonusMeter?: BonusMeter;
 
     public constructor(game: Game, moneyHud: MoneyHud) {
@@ -183,6 +207,7 @@ export default class PathLevelScene extends ThreeScene {
         this.frameActiveSegment(true);
 
         this.buildCourse();
+        this.buildGuards();
         this.buildCollectibles(0);
         this.buildHud();
         this.setupCameraDebug();
@@ -565,8 +590,10 @@ export default class PathLevelScene extends ThreeScene {
         const panel = DebugOverlay.instance.panel('Path Camera', { id: CAMERA_PANEL_ID });
         const camera = this.env.cameraSystem.current;
         panel.slider(camera, 'pitchDeg', 55, 89, 1, 'Pitch');
-        panel.slider(camera, 'distance', 10, 32, 0.5, 'Distance');
+        panel.slider(camera, 'distance', 6, 32, 0.5, 'Distance');
         panel.slider(camera, 'followSpeed', 0.5, 20, 0.5, 'Follow Speed');
+
+        panel.toggle(this, 'stopAtCheckpoints', { label: 'Stop at checkpoints' });
 
         const levelsPanel = DebugOverlay.instance.panel('Levels', { id: LEVELS_PANEL_ID });
         levelsPanel.buttons(LevelCatalog.all().map((entry, index) => ({
@@ -1002,13 +1029,8 @@ export default class PathLevelScene extends ThreeScene {
         }
     }
 
-    private async beginCelebration(): Promise<void> {
-        if (this.state === 'celebrating' || this.state === 'payout' || this.state === 'complete') {
-            return;
-        }
-        this.state = 'celebrating';
-        this.env.mainPlayer.movementController.enabled = false;
-
+    /** Low, close camera used for both the win dance and the busted reaction. */
+    private focusCameraOnPlayer(): void {
         const currentCamera = this.env.cameraSystem.current;
         this.env.cameraSystem.register('celebration', {
             ...currentCamera,
@@ -1018,6 +1040,16 @@ export default class PathLevelScene extends ThreeScene {
             offset: { ...currentCamera.offset, y: 1 },
         });
         this.env.cameraSystem.blendTo('celebration', 0.8);
+    }
+
+    private async beginCelebration(): Promise<void> {
+        if (this.state === 'celebrating' || this.state === 'payout' || this.state === 'complete') {
+            return;
+        }
+        this.state = 'celebrating';
+        this.env.mainPlayer.movementController.enabled = false;
+
+        this.focusCameraOnPlayer();
         this.setInstruction('THE GETAWAY!');
         // Started now so animation loading doesn't delay the meter.
         const danceDone = new Promise<void>((resolve) => setTimeout(resolve, CELEBRATION_DANCE_SEC * 1000));
@@ -1149,7 +1181,7 @@ export default class PathLevelScene extends ThreeScene {
             ease: 'power2.out',
             onComplete: () => {
                 this.goalArrivalTween = undefined;
-                if (this.destroyed) {
+                if (this.destroyed || this.state !== 'revealing') {
                     return;
                 }
                 this.route = [];
@@ -1181,6 +1213,14 @@ export default class PathLevelScene extends ThreeScene {
             door.update(delta, this.doorWorld);
         }
         pruneCollected(this.env.world, this.collectibles);
+        this.updateGuards(delta);
+        if (this.state === 'following' && this.stopAtCheckpoints) {
+            const checkpoint = this.waypoints[this.nextWaypointIndex];
+            if (checkpoint && this.distanceXZ(this.env.mainPlayer.transform.position, checkpoint) <= CHECKPOINT_STOP_RADIUS) {
+                this.activeGoal.copy(checkpoint);
+                this.beginGoalArrival();
+            }
+        }
         if (this.state === 'following') {
             const movementComplete = this.env.mainPlayer.movementController.isPathComplete;
             if (this.pathDrawMode === 'free') {
@@ -1208,6 +1248,199 @@ export default class PathLevelScene extends ThreeScene {
             }
         }
         super.update(delta);
+    }
+
+    private buildGuards(): void {
+        this.destroyGuards();
+        this.spottedMessageShown = false;
+        this.bustGuard = undefined;
+        this.bustFocus = false;
+        const sight = new LevelSight(this.level);
+        for (const data of this.level.guards ?? []) {
+            if (data.path.length === 0) {
+                continue;
+            }
+            const guard = new Guard(this.threeScene, data, sight, BendService);
+            guard.load().catch((error) => console.warn('[PathLevelScene] Could not load guard', error));
+            this.guards.push(guard);
+        }
+    }
+
+    private destroyGuards(): void {
+        for (const guard of this.guards) {
+            guard.destroy();
+        }
+        this.guards = [];
+    }
+
+    /** Patrols only run while the player is walking their path, so a level is a timing puzzle the player can study while planning. */
+    private updateGuards(delta: number): void {
+        if (this.guards.length === 0) {
+            return;
+        }
+        if (this.state === 'busted') {
+            this.updateBustedSequence(delta);
+            return;
+        }
+        const walking = this.state === 'following' || this.state === 'waiting' || this.state === 'revealing';
+        const player = this.env.mainPlayer.transform.position;
+        let highestAlert = 0;
+        let spotter: Guard | undefined;
+        for (const guard of this.guards) {
+            if (!walking) {
+                guard.hold();
+            } else {
+                const tooClose = guard.isTooClose(player);
+                const seen = tooClose || guard.sees(player);
+                if (seen) {
+                    guard.focusOn(player);
+                }
+                guard.advance(delta);
+                guard.alert = tooClose
+                    ? 1
+                    : seen
+                    ? Math.min(1, guard.alert + delta / SPOT_TIME_SEC)
+                    : Math.max(0, guard.alert - delta * ALERT_DECAY_PER_SEC);
+            }
+            guard.render(delta);
+            if (guard.alert >= highestAlert) {
+                highestAlert = guard.alert;
+                spotter = guard;
+            }
+        }
+        this.updateSpottedMessage(highestAlert);
+        if ((this.state === 'following' || this.state === 'waiting') && highestAlert >= 1 && spotter) {
+            this.beginBusted(spotter);
+        }
+    }
+
+    private updateBustedSequence(delta: number): void {
+        const guard = this.bustGuard;
+        const player = this.env.mainPlayer.transform.position;
+        for (const other of this.guards) {
+            if (other === guard) {
+                continue;
+            }
+            other.hold();
+            other.render(delta);
+        }
+        if (!guard) {
+            return;
+        }
+        if (this.bustPhase === 'chase') {
+            if (guard.chase(player, delta)) {
+                this.bustPhase = 'react';
+                this.bustTimer = 0;
+                guard.faceToward(player);
+                guard.playAngry();
+                this.playPlayerSad(guard);
+                this.bustFocus = true;
+                this.focusCameraOnPlayer();
+            }
+        } else {
+            this.bustTimer += delta;
+            if (this.bustTimer >= BUSTED_REACTION_SEC && !this.bustedModal) {
+                this.showBustedPopup();
+            }
+        }
+        guard.render(delta);
+    }
+
+    private playPlayerSad(guard: Guard): void {
+        const character = this.env.mainPlayer.character;
+        if (!character) {
+            return;
+        }
+        character.faceDirection(guard.position.x - this.env.mainPlayer.transform.position.x, guard.position.z - this.env.mainPlayer.transform.position.z);
+        character.animator.playExclusive('sad', 0.3, true);
+    }
+
+    private updateSpottedMessage(highestAlert: number): void {
+        if (!this.instruction) {
+            return;
+        }
+        const playing = this.state === 'following' || this.state === 'waiting';
+        if (highestAlert > 0.15 && playing && !this.spottedMessageShown) {
+            this.spottedMessageShown = true;
+            this.messageBeforeSpotted = this.instruction.text;
+            this.setInstruction('SPOTTED! GET OUT OF SIGHT!');
+        } else if (this.spottedMessageShown && (highestAlert <= 0.01 || !playing)) {
+            this.spottedMessageShown = false;
+            if (playing) {
+                this.setInstruction(this.messageBeforeSpotted);
+            }
+        }
+    }
+
+    private beginBusted(spotter: Guard): void {
+        if (this.state !== 'following' && this.state !== 'waiting') {
+            return;
+        }
+        this.state = 'busted';
+        this.bustGuard = spotter;
+        this.bustPhase = 'chase';
+        this.bustTimer = 0;
+        const movement = this.env.mainPlayer.movementController;
+        movement.enabled = false;
+        movement.exitPathMode();
+        this.route = [];
+        this.clearRoute();
+        this.setInstruction('BUSTED!');
+        for (const guard of this.guards) {
+            guard.setConeVisible(false);
+        }
+        spotter.alert = 1;
+        void this.env.mainPlayer.character?.registerAnimation('sad', SAD_ANIMATION_URL)
+            .catch((error) => console.warn('[PathLevelScene] Could not load sad animation', error));
+    }
+
+    private showBustedPopup(): void {
+        const modal = new PIXI.Container();
+        const panel = new PIXI.NineSlicePlane(PIXI.Texture.from('BorderFrame_Round20_Single_Dark'), 20, 20, 20, 20);
+        panel.width = 380;
+        panel.height = 230;
+        panel.position.set(-190, -115);
+
+        const ribbon = new PIXI.Sprite(PIXI.Texture.from('Title_Ribbon01_Green'));
+        ribbon.anchor.set(0.5);
+        ribbon.scale.set(1.1);
+        ribbon.tint = 0xff6a6a;
+        ribbon.position.set(0, -115);
+        const title = new PIXI.Text('BUSTED!', {
+            fontFamily: 'Trebuchet MS, sans-serif', fontSize: 22, fontWeight: 'bold', fill: 0xffffff,
+            stroke: 0x5a0d0d, strokeThickness: 5,
+        });
+        title.anchor.set(0.5);
+        title.position.set(0, -112);
+
+        const message = new PIXI.Text('A guard caught you.\nWatch their patrol and time it.', {
+            fontFamily: 'Trebuchet MS, sans-serif', fontSize: 20, fontWeight: 'bold', fill: 0xffffff,
+            stroke: 0x1d1d1d, strokeThickness: 4, align: 'center',
+        });
+        message.anchor.set(0.5);
+        message.position.set(0, -35);
+
+        const button = new PIXI.Container();
+        const buttonBg = new PIXI.NineSlicePlane(PIXI.Texture.from('Button01_s_Yellow'), 30, 40, 30, 40);
+        buttonBg.width = 240;
+        buttonBg.height = 90;
+        buttonBg.position.set(-120, -45);
+        const buttonLabel = new PIXI.Text('TRY AGAIN', {
+            fontFamily: 'Trebuchet MS, sans-serif', fontSize: 32, fontWeight: 'bold', fill: 0xffffff,
+            stroke: 0x6b4200, strokeThickness: 6,
+        });
+        buttonLabel.anchor.set(0.5);
+        button.addChild(buttonBg, buttonLabel);
+        button.scale.set(0.7);
+        button.position.set(0, 50);
+        button.eventMode = 'static';
+        button.cursor = 'pointer';
+        button.on('pointertap', () => this.onRestart.dispatch());
+
+        modal.addChild(panel, ribbon, title, message, button);
+        this.positionBottomPanel(modal);
+        this.game.uiLayer.addChild(modal);
+        this.bustedModal = modal;
     }
 
     private updateWallHeight(): void {
@@ -1270,10 +1503,11 @@ export default class PathLevelScene extends ThreeScene {
 
     public fixedUpdate(delta: number): void {
         this.env.fixedUpdate(delta);
-        const cameraOptions = this.state === 'celebrating' || this.state === 'payout' || this.state === 'complete'
+        const cameraOptions = this.state === 'celebrating' || this.state === 'payout' || this.state === 'complete' || this.bustFocus
             ? CELEBRATION_CAMERA_OPTIONS
             : this.pathCameraOptions;
         this.env.updateCamera(this.threeCamera, delta, cameraOptions);
+        this.applyScreenShift(delta);
         const playerPosition = this.env.mainPlayer.transform.position;
         PizzaBendService.updateOrigin(playerPosition);
         PizzaBendService.updateOcclusionTarget(this.occlusionTarget.set(
@@ -1284,7 +1518,34 @@ export default class PathLevelScene extends ThreeScene {
         PizzaBendService.updateCameraPosition(this.threeCamera.position);
     }
 
+    private applyScreenShift(delta = 0): void {
+        const width = window.innerWidth;
+        const height = Math.max(1, window.innerHeight);
+        const camera = this.threeCamera;
+        const aiming = this.state === 'waiting' || this.state === 'revealing';
+        let wantedShift = this.screenShiftFraction;
+        if (aiming) {
+            camera.clearViewOffset();
+            camera.updateMatrixWorld();
+            const player = this.env.mainPlayer.transform.position;
+            const ndcY = this.shiftProbe.set(player.x, player.y + 0.8, player.z).project(camera).y;
+            wantedShift = PLAYER_SCREEN_Y_FRACTION - (1 - ndcY) / 2;
+        } else if (this.state !== 'following') {
+            wantedShift = SCREEN_VERTICAL_SHIFT;
+        }
+        this.screenShiftFraction = delta > 0 && Number.isFinite(wantedShift)
+            ? THREE.MathUtils.lerp(this.screenShiftFraction, wantedShift, 1 - Math.exp(-delta * 8))
+            : Number.isFinite(wantedShift) ? wantedShift : this.screenShiftFraction;
+        const offsetY = -this.screenShiftFraction * height;
+        const view = camera.view;
+        if (view?.enabled && view.fullWidth === width && view.fullHeight === height && view.offsetY === offsetY) {
+            return;
+        }
+        camera.setViewOffset(width, height, 0, offsetY, width, height);
+    }
+
     public resize(): void {
+        this.applyScreenShift();
         if (this.state === 'waiting' || this.state === 'following') {
             this.frameActiveSegment(true);
         }
@@ -1306,6 +1567,9 @@ export default class PathLevelScene extends ThreeScene {
         if (this.bonusMeter) {
             this.positionBottomPanel(this.bonusMeter);
         }
+        if (this.bustedModal) {
+            this.positionBottomPanel(this.bustedModal);
+        }
     }
 
     private frameActiveSegment(instant = false): void {
@@ -1316,7 +1580,7 @@ export default class PathLevelScene extends ThreeScene {
         const pitch = THREE.MathUtils.degToRad(cameraSettings.pitchDeg);
         const halfFovTangent = Math.tan(THREE.MathUtils.degToRad(this.threeCamera.fov / 2));
         const aspect = window.innerWidth / Math.max(1, window.innerHeight);
-        const halfWidth = this.level.floor.width / 2 + 0.5;
+        const halfWidth = Math.min(this.level.floor.width / 2, CAMERA_MAX_HALF_WIDTH) + 0.3;
         const segmentDepth = Math.abs(this.activeGoal.z - this.activeStart.z);
         const depthToStart = segmentDepth * CAMERA_FOCUS_ALONG_SEGMENT + 2;
         const depthToGoal = segmentDepth * (1 - CAMERA_FOCUS_ALONG_SEGMENT) + 2;
@@ -1330,7 +1594,7 @@ export default class PathLevelScene extends ThreeScene {
             0,
             THREE.MathUtils.lerp(this.activeStart.z, this.activeGoal.z, CAMERA_FOCUS_ALONG_SEGMENT),
         );
-        const targetDistance = Math.max(verticalFit, horizontalFit) + 1.5;
+        const targetDistance = Math.max(verticalFit, horizontalFit) + 0.5;
         this.cameraZoomTween?.kill();
         if (instant) {
             cameraSettings.distance = targetDistance;
@@ -1363,7 +1627,10 @@ export default class PathLevelScene extends ThreeScene {
         this.completeModal?.removeFromParent();
         this.completeModal?.destroy({ children: true });
         this.completeModal = undefined;
-        this.hud?.removeFromParent();
+        this.bustedModal?.removeFromParent();
+        this.bustedModal?.destroy({ children: true });
+        this.bustedModal = undefined;
+        this.destroyGuards();
         this.hud?.destroy({ children: true });
         this.hud = undefined;
         DebugOverlay.instance.removePanel(CAMERA_PANEL_ID);

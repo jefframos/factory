@@ -97,6 +97,7 @@ function newLevelTemplate(id, name) {
         }],
         props: [],
         loot: [],
+        guards: [],
     };
 }
 

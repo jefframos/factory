@@ -1,5 +1,6 @@
 import { Document, NodeIO } from '@gltf-transform/core';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { retargetMixamoClips } from './retarget-mixamo.mjs';
 
 const io = new NodeIO();
 
@@ -10,13 +11,18 @@ const TRACK_PATHS = { quaternion: 'rotation', position: 'translation', scale: 's
  * contains any mesh (i.e. it's a character/prop model, not an animation-only
  * file) so the caller keeps it as a plain FBX.
  */
-function parseAnimationOnlyFbx(buffer) {
+function parseAnimationOnlyFbx(buffer, rigBuffer) {
     const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
     const object = new FBXLoader().parse(arrayBuffer, '');
 
     let hasMesh = false;
     object.traverse((child) => { if (child.isMesh) hasMesh = true; });
     if (hasMesh || object.animations.length === 0) return null;
+    if (rigBuffer && object.animations.some((c) => c.tracks.some((t) => t.name.startsWith('mixamorig')))) {
+        const rigArrayBuffer = rigBuffer.buffer.slice(rigBuffer.byteOffset, rigBuffer.byteOffset + rigBuffer.byteLength);
+        const rig = new FBXLoader().parse(rigArrayBuffer, '');
+        return retargetMixamoClips(object, object.animations, rig);
+    }
     return object.animations;
 }
 
@@ -30,8 +36,8 @@ function parseAnimationOnlyFbx(buffer) {
  *
  * Returns the GLB bytes, or null if `buffer` isn't an animation-only FBX.
  */
-export async function convertFbxAnimationToGlb(buffer) {
-    const clips = parseAnimationOnlyFbx(buffer);
+export async function convertFbxAnimationToGlb(buffer, rigBuffer) {
+    const clips = parseAnimationOnlyFbx(buffer, rigBuffer);
     if (!clips) return null;
 
     const doc = new Document();

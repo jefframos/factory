@@ -51,6 +51,25 @@ export interface LevelLoot {
     revealAt: number;
 }
 
+export interface LevelGuard {
+    /** Patrol points; a single point makes a stationary guard. */
+    path: LevelPoint[];
+    /** true = walk the points as a circuit, false = walk there and back. */
+    loop: boolean;
+    /** Walking speed in world units per second. */
+    speed: number;
+    /** Seconds spent standing at every patrol point. */
+    pause: number;
+    /** Cone opening angle in degrees. */
+    fov: number;
+    /** Cone length in world units. */
+    range: number;
+    /** Degrees the guard looks left and right while standing still (0 = stares straight ahead). */
+    sweep: number;
+    /** Starting heading in degrees for single-point guards (0 = +Z, 180 = -Z, the direction the player runs). */
+    facing: number;
+}
+
 export interface LevelData {
     id: string;
     name: string;
@@ -63,6 +82,7 @@ export interface LevelData {
     walls: LevelWall[];
     props: LevelProp[];
     loot: LevelLoot[];
+    guards?: LevelGuard[];
 }
 
 export interface LevelDoor {
