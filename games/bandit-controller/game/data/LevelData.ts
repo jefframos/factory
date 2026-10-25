@@ -131,7 +131,8 @@ export interface LevelData {
     /** Shows a looping finger from the player to the goal until the player draws a path. */
     tutorial?: boolean;
     grid: { cell: number };
-    floor: { width: number; depth: number };
+    /** `rects` (optional) are the actual floor pieces for non-rectangular houses; width/depth stay the overall bounds. */
+    floor: { width: number; depth: number; rects?: { x: number; z: number; width: number; depth: number }[] };
     /** Named shared styles (see ui/worldstyles.json). */
     styles?: LevelStyles;
     start: LevelPoint;

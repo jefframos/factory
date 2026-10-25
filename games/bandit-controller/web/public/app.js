@@ -240,18 +240,19 @@ function rebuildStatic() {
     ctx.fillStyle = floorStyle.colorB;
     ctx.fillRect(0, 0, 1, 1);
     ctx.fillRect(1, 1, 1, 1);
-    const texture = new THREE.CanvasTexture(checker);
-    texture.magFilter = THREE.NearestFilter;
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
     const cell = floorStyle.checkerScale || 1.5;
-    texture.repeat.set(floor.width / cell / 2, floor.depth / cell / 2);
-    const floorMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(floor.width, floor.depth),
-        new THREE.MeshBasicMaterial({ map: texture }),
-    );
-    floorMesh.rotation.x = -Math.PI / 2;
-    floorMesh.position.y = -0.01;
-    staticGroup.add(floorMesh);
+    const rects = floor.rects?.length ? floor.rects : [{ x: 0, z: 0, width: floor.width, depth: floor.depth }];
+    for (const rect of rects) {
+        const texture = new THREE.CanvasTexture(checker);
+        texture.magFilter = THREE.NearestFilter;
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(rect.width / cell / 2, rect.depth / cell / 2);
+        texture.offset.set((rect.x - rect.width / 2) / cell / 2, (rect.z - rect.depth / 2) / cell / 2);
+        const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(rect.width, rect.depth), new THREE.MeshBasicMaterial({ map: texture }));
+        floorMesh.rotation.x = -Math.PI / 2;
+        floorMesh.position.set(rect.x, -0.01, rect.z);
+        staticGroup.add(floorMesh);
+    }
 
     const gridCell = level.grid.cell || 0.5;
     const half = { x: floor.width / 2 + 8, z: floor.depth / 2 + 8 };

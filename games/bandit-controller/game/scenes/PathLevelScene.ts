@@ -88,6 +88,7 @@ const BUST_CHASE_TIMEOUT_SEC = 3;
 const BUSTED_REACTION_SEC = 2.2;
 const CAMERA_BOUNDS_PADDING = 1.5;
 const CAMERA_MIN_HALF_WIDTH = 3.5;
+const CAMERA_MIN_HALF_DEPTH = 4.5;
 const CAMERA_BOUNDS_HEIGHT = 1.6;
 /** Fractions of the screen (in NDC units, 2 = full height) kept clear: the top holds the HUD. */
 const CAMERA_SCREEN_PAD_TOP = 0.32;
@@ -203,7 +204,7 @@ export default class PathLevelScene extends ThreeScene {
     private sharedGoalActive = false;
     private readonly boundsRoomPoint = new THREE.Vector3();
     private groupCelebration = false;
-    private floorMesh?: THREE.Mesh;
+    private floorMeshes: THREE.Mesh[] = [];
     private exteriorGround?: THREE.Mesh;
     private entryPath?: THREE.Mesh;
     private doorWorld?: Parameters<StoreDoor['update']>[1];
@@ -384,19 +385,18 @@ export default class PathLevelScene extends ThreeScene {
         }
 
         const floorStyle = WorldStyles.get('floor', this.level.styles?.floor);
-        this.floorMesh = CheckerFloorBuilder.build({
-            x: 0,
-            z: 0,
-            width: this.level.floor.width,
-            depth: this.level.floor.depth,
-            rotationY: 0,
-            tileSize: 1,
-        } as StoreFloorPlacement, ROOM_ORIGIN, {
-            colorA: floorStyle.colorA,
-            colorB: floorStyle.colorB,
-            scale: floorStyle.checkerScale,
-        } as FloorCheckerConfig);
-        this.threeScene.add(this.floorMesh);
+        const floorRects = this.level.floor.rects?.length
+            ? this.level.floor.rects
+            : [{ x: 0, z: 0, width: this.level.floor.width, depth: this.level.floor.depth }];
+        for (const rect of floorRects) {
+            const piece = CheckerFloorBuilder.build({ ...rect, rotationY: 0, tileSize: 1 } as StoreFloorPlacement, ROOM_ORIGIN, {
+                colorA: floorStyle.colorA,
+                colorB: floorStyle.colorB,
+                scale: floorStyle.checkerScale,
+            } as FloorCheckerConfig);
+            this.floorMeshes.push(piece);
+            this.threeScene.add(piece);
+        }
 
         const roomWalls: StoreWallPlacement[] = this.level.walls.map((levelWall) => ({
             closed: levelWall.closed,
@@ -2244,6 +2244,10 @@ export default class PathLevelScene extends ThreeScene {
         const centerX = (bounds.min.x + bounds.max.x) / 2;
         bounds.min.x = Math.min(bounds.min.x, centerX - minHalfWidth);
         bounds.max.x = Math.max(bounds.max.x, centerX + minHalfWidth);
+        // Same for depth: a sideways step (start and goal on one line) would otherwise be framed as a thin strip.
+        const centerZ = (bounds.min.z + bounds.max.z) / 2;
+        bounds.min.z = Math.min(bounds.min.z, centerZ - CAMERA_MIN_HALF_DEPTH);
+        bounds.max.z = Math.max(bounds.max.z, centerZ + CAMERA_MIN_HALF_DEPTH);
         bounds.expandByVector(this.boundsProbe.set(CAMERA_BOUNDS_PADDING, 0, CAMERA_BOUNDS_PADDING));
 
         this.frameBounds.copy(bounds);
@@ -2395,10 +2399,12 @@ export default class PathLevelScene extends ThreeScene {
             });
         }
         this.wallLintelClearMeshes.length = 0;
-        if (this.floorMesh) {
-            this.floorMesh.geometry.dispose();
-            (this.floorMesh.material as THREE.Material).dispose();
-            this.floorMesh = undefined;
+        if (this.floorMeshes.length) {
+            for (const piece of this.floorMeshes) {
+                piece.geometry.dispose();
+                (piece.material as THREE.Material).dispose();
+            }
+            this.floorMeshes = [];
         }
         for (const ground of [this.exteriorGround, this.entryPath]) {
             if (!ground) {

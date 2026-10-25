@@ -6,7 +6,21 @@
   },
   "floor": {
     "width": 24,
-    "depth": 16
+    "depth": 16,
+    "rects": [
+      {
+        "x": -4.0,
+        "z": -0.5,
+        "width": 12,
+        "depth": 13
+      },
+      {
+        "x": 6.0,
+        "z": 2.0,
+        "width": 8,
+        "depth": 8
+      }
+    ]
   },
   "start": {
     "x": -7,
