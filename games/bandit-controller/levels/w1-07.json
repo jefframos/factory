@@ -1,0 +1,134 @@
+{
+  "id": "w1-07",
+  "name": "Duo Patrol",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 14,
+    "depth": 12
+  },
+  "start": {
+    "x": -1.75,
+    "z": 8.0
+  },
+  "waypoints": [
+    {
+      "x": -1.75,
+      "z": -2.0
+    }
+  ],
+  "entryPath": {
+    "x": 0,
+    "z": 8.0,
+    "width": 7.5,
+    "depth": 4
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": -7.0,
+          "z": 6.0
+        },
+        {
+          "x": 7.0,
+          "z": 6.0
+        },
+        {
+          "x": 7.0,
+          "z": -6.0
+        },
+        {
+          "x": -7.0,
+          "z": -6.0
+        }
+      ],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": -3.35,
+          "maxX": 3.35,
+          "minZ": 5.7,
+          "maxZ": 6.3
+        }
+      ]
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -2.5,
+      "z": 0.0,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [
+    {
+      "path": [
+        {
+          "x": -4.5,
+          "z": 0.0
+        },
+        {
+          "x": 4.5,
+          "z": 0.0
+        }
+      ],
+      "loop": false,
+      "speed": 1.4,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 4.5,
+      "sweep": 40,
+      "facing": 270
+    }
+  ],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "squad": [
+    {
+      "view": "blue",
+      "start": {
+        "x": -1.75,
+        "z": 8.0
+      },
+      "waypoints": [
+        {
+          "x": -1.75,
+          "z": -2.0
+        }
+      ]
+    },
+    {
+      "view": "purple",
+      "start": {
+        "x": 1.75,
+        "z": 8.0
+      },
+      "waypoints": [
+        {
+          "x": 1.75,
+          "z": -2.0
+        }
+      ]
+    }
+  ],
+  "sharedGoal": {
+    "x": 0,
+    "z": -2.5,
+    "width": 10,
+    "depth": 6,
+    "enabled": true
+  }
+}

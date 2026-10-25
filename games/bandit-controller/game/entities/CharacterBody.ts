@@ -11,12 +11,17 @@ import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { BendService, WorldBendService } from 'core/services/BendService';
+import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import AnimatorController from './animation/AnimatorController';
 import { loadCompressedFile, releaseObjectURL } from '../utils/GzipLoader';
 
 const ROTATION_SLERP = 0.15;
 /** Head size in REAL world units (same units as the floor/camera). */
 const HEAD_CUBE_SIZE = 115;
+/** A hat's widest side is scaled to this fraction of HEAD_CUBE_SIZE. */
+const HAT_WIDTH_FIT = 1.05;
+/** How far a hat sinks onto the head, as a fraction of HEAD_CUBE_SIZE. */
+const HAT_SINK = 0.03;
 /** Head pivot/offset, in the SAME real world units as HEAD_CUBE_SIZE — (0,0,0) sits exactly at the head bone's own origin. */
 const HEAD_CUBE_OFFSET = new THREE.Vector3(0, 50, 0);
 /** Face-decal plane, relative to HEAD_CUBE_SIZE — a plane just in front of the head's +Z face. */
@@ -37,6 +42,8 @@ export default class CharacterBody {
     private targetRotation = new THREE.Quaternion();
     private readonly up = new THREE.Vector3(0, 1, 0);
     private headCube?: THREE.Mesh;
+    private hat?: THREE.Group;
+    private hatToken = 0;
     /** Wraps headCube — cancels the head bone's own inherited scale so HEAD_CUBE_SIZE/HEAD_CUBE_OFFSET are true world units. */
     private headCubeHolder?: THREE.Group;
     private headBone?: THREE.Object3D;
@@ -286,7 +293,48 @@ export default class CharacterBody {
         );
     }
 
+    /** Puts the hat model at `fullPath` (a models registry fullPath) on the head, or takes it off with no path. Call after the head is mounted. */
+    public setHat(fullPath?: string): void {
+        this.removeHat();
+        const holder = this.headCubeHolder;
+        if (!fullPath || !holder) {
+            return;
+        }
+        const token = ++this.hatToken;
+        ModelLoaderManager.instance.loadModel(`./${fullPath}`, fullPath.split('/').pop())
+            .then((object) => {
+                if (token !== this.hatToken || holder !== this.headCubeHolder) {
+                    return;
+                }
+                object.traverse((child) => {
+                    if (child instanceof THREE.Mesh) {
+                        const materials = Array.isArray(child.material) ? child.material : [child.material];
+                        materials.forEach((material) => this.bendService.applyBend(material));
+                    }
+                });
+                object.updateWorldMatrix(false, true);
+                const box = new THREE.Box3().setFromObject(object);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                object.position.set(-center.x, -box.min.y, -center.z);
+                const hat = new THREE.Group();
+                hat.add(object);
+                hat.scale.setScalar((HEAD_CUBE_SIZE * HAT_WIDTH_FIT) / Math.max(size.x, size.z, 1e-6));
+                hat.position.y = HEAD_CUBE_SIZE / 2 - HEAD_CUBE_SIZE * HAT_SINK;
+                holder.add(hat);
+                this.hat = hat;
+            })
+            .catch((error) => console.warn(`CharacterBody: failed to load hat "${fullPath}"`, error));
+    }
+
+    private removeHat(): void {
+        this.hatToken++;
+        this.hat?.removeFromParent();
+        this.hat = undefined;
+    }
+
     private removeHeadCube(): void {
+        this.removeHat();
         if (!this.headCubeHolder) {
             return;
         }

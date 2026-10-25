@@ -120,6 +120,232 @@ const CharactersSlide = {
   nodes: {}
 } as const;
 
+const HatsAmericanHat = {
+  id: 'American_Hat',
+  path: 'hats/American_Hat',
+  fullPath: 'bandit-controller/models/hats/American_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsArmorHat = {
+  id: 'Armor_Hat',
+  path: 'hats/Armor_Hat',
+  fullPath: 'bandit-controller/models/hats/Armor_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsBoxingHat = {
+  id: 'Boxing_Hat',
+  path: 'hats/Boxing_Hat',
+  fullPath: 'bandit-controller/models/hats/Boxing_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsCashierHat = {
+  id: 'Cashier_Hat',
+  path: 'hats/Cashier_Hat',
+  fullPath: 'bandit-controller/models/hats/Cashier_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsChefHat = {
+  id: 'Chef_Hat',
+  path: 'hats/Chef_Hat',
+  fullPath: 'bandit-controller/models/hats/Chef_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsCowboyHat = {
+  id: 'Cowboy_Hat',
+  path: 'hats/Cowboy_Hat',
+  fullPath: 'bandit-controller/models/hats/Cowboy_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsCrown = {
+  id: 'Crown',
+  path: 'hats/Crown',
+  fullPath: 'bandit-controller/models/hats/Crown.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsFiremanHat = {
+  id: 'Fireman_Hat',
+  path: 'hats/Fireman_Hat',
+  fullPath: 'bandit-controller/models/hats/Fireman_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsGreenHat = {
+  id: 'Green_Hat',
+  path: 'hats/Green_Hat',
+  fullPath: 'bandit-controller/models/hats/Green_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsHardHat = {
+  id: 'Hard_Hat',
+  path: 'hats/Hard_Hat',
+  fullPath: 'bandit-controller/models/hats/Hard_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsJesterHat = {
+  id: 'Jester_Hat',
+  path: 'hats/Jester_Hat',
+  fullPath: 'bandit-controller/models/hats/Jester_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsMexicanHat = {
+  id: 'Mexican_Hat',
+  path: 'hats/Mexican_Hat',
+  fullPath: 'bandit-controller/models/hats/Mexican_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsMillitaryHat = {
+  id: 'Millitary_Hat',
+  path: 'hats/Millitary_Hat',
+  fullPath: 'bandit-controller/models/hats/Millitary_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsPirateHat = {
+  id: 'Pirate_Hat',
+  path: 'hats/Pirate_Hat',
+  fullPath: 'bandit-controller/models/hats/Pirate_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsPoliceHat = {
+  id: 'Police_Hat',
+  path: 'hats/Police_Hat',
+  fullPath: 'bandit-controller/models/hats/Police_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsSantaHat = {
+  id: 'Santa_Hat',
+  path: 'hats/Santa_Hat',
+  fullPath: 'bandit-controller/models/hats/Santa_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsVikingHat = {
+  id: 'Viking_Hat',
+  path: 'hats/Viking_Hat',
+  fullPath: 'bandit-controller/models/hats/Viking_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsWarriorHat = {
+  id: 'Warrior_Hat',
+  path: 'hats/Warrior_Hat',
+  fullPath: 'bandit-controller/models/hats/Warrior_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HeistDoorADecorated = {
+  id: 'Door_A_Decorated',
+  path: 'heist/doors/Door_A_Decorated',
+  fullPath: 'bandit-controller/models/heist/doors/Door_A_Decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "DoorADecorated": "Door_A_Decorated"
+}
+} as const;
+
+const HeistDoorA = {
+  id: 'door_A',
+  path: 'heist/doors/door_A',
+  fullPath: 'bandit-controller/models/heist/doors/door_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "DoorA": "door_A"
+}
+} as const;
+
+const HeistCashRegister = {
+  id: 'cash-register',
+  path: 'heist/mini-market/cash-register',
+  fullPath: 'bandit-controller/models/heist/mini-market/cash-register.glb',
+  format: 'glb',
+  nodes: {
+  "CashRegister": "cash-register"
+}
+} as const;
+
+const HeistColumn = {
+  id: 'column',
+  path: 'heist/mini-market/column',
+  fullPath: 'bandit-controller/models/heist/mini-market/column.glb',
+  format: 'glb',
+  nodes: {
+  "Column": "column"
+}
+} as const;
+
+const HeistShelfBoxes = {
+  id: 'shelf-boxes',
+  path: 'heist/mini-market/shelf-boxes',
+  fullPath: 'bandit-controller/models/heist/mini-market/shelf-boxes.glb',
+  format: 'glb',
+  nodes: {
+  "ShelfBoxes": "shelf-boxes",
+  "Carton": "carton",
+  "Box": "box"
+}
+} as const;
+
+const HeistTreeLarge = {
+  id: 'tree-large',
+  path: 'heist/trees/tree-large',
+  fullPath: 'bandit-controller/models/heist/trees/tree-large.glb',
+  format: 'glb',
+  nodes: {
+  "TreeLarge": "tree-large"
+}
+} as const;
+
+const HeistTreeSmall = {
+  id: 'tree-small',
+  path: 'heist/trees/tree-small',
+  fullPath: 'bandit-controller/models/heist/trees/tree-small.glb',
+  format: 'glb',
+  nodes: {
+  "TreeSmall": "tree-small"
+}
+} as const;
+
+const HeistVault = {
+  id: 'vault',
+  path: 'heist/vault/vault',
+  fullPath: 'bandit-controller/models/heist/vault/vault.gltf',
+  format: 'gltf',
+  nodes: {
+  "Vault": "vault"
+}
+} as const;
+
 const ResourcesContainersBoxLarge = {
   id: 'Containers_Box_Large',
   path: 'resources/Containers_Box_Large',
@@ -2822,6 +3048,36 @@ export const MODELS = {
     JumpUpRun: CharactersJumpUpRun,
     LandingNew: CharactersLandingNew,
     Slide: CharactersSlide
+  },
+  Hats: {
+    AmericanHat: HatsAmericanHat,
+    ArmorHat: HatsArmorHat,
+    BoxingHat: HatsBoxingHat,
+    CashierHat: HatsCashierHat,
+    ChefHat: HatsChefHat,
+    CowboyHat: HatsCowboyHat,
+    Crown: HatsCrown,
+    FiremanHat: HatsFiremanHat,
+    GreenHat: HatsGreenHat,
+    HardHat: HatsHardHat,
+    JesterHat: HatsJesterHat,
+    MexicanHat: HatsMexicanHat,
+    MillitaryHat: HatsMillitaryHat,
+    PirateHat: HatsPirateHat,
+    PoliceHat: HatsPoliceHat,
+    SantaHat: HatsSantaHat,
+    VikingHat: HatsVikingHat,
+    WarriorHat: HatsWarriorHat
+  },
+  Heist: {
+    DoorADecorated: HeistDoorADecorated,
+    DoorA: HeistDoorA,
+    CashRegister: HeistCashRegister,
+    Column: HeistColumn,
+    ShelfBoxes: HeistShelfBoxes,
+    TreeLarge: HeistTreeLarge,
+    TreeSmall: HeistTreeSmall,
+    Vault: HeistVault
   },
   Resources: {
     ContainersBoxLarge: ResourcesContainersBoxLarge,

@@ -13,6 +13,7 @@ import platformConfig from './platforms.config.json';
 import HubScene from './game/scenes/HubScene';
 import RunnerMinigameScene from './game/scenes/RunnerMinigameScene';
 import SwipeMinigameScene from './game/scenes/SwipeMinigameScene';
+import HomeScene from './game/scenes/HomeScene';
 import PathLevelScene from './game/scenes/PathLevelScene';
 import RadialTransition from './game/ui/RadialTransition';
 import { applyDebugPhysicsCookie, saveDebugPhysicsCookie } from './game/utils/DebugPhysicsCookie';
@@ -170,7 +171,11 @@ export default class MyGame extends Game {
         const pathLevel = this.sceneManager.register<PathLevelScene>('path-level', PathLevelScene, this, this.moneyHud);
         pathLevel.onRestart.add(() => this.requestSceneChange('path-level', true));
 
-        this.scenesByKey = { 'hub': hub, 'runner-minigame': runnerMinigame, 'swipe-minigame': swipeMinigame, 'path-level': pathLevel };
+        pathLevel.onHome.add(() => this.requestSceneChange('home', true));
+        const home = this.sceneManager.register<HomeScene>('home', HomeScene, this, this.moneyHud);
+        home.onPlayLevel.add(() => this.requestSceneChange('path-level', true));
+
+        this.scenesByKey = { 'home': home, 'hub': hub, 'runner-minigame': runnerMinigame, 'swipe-minigame': swipeMinigame, 'path-level': pathLevel };
         this.transition = new RadialTransition(this);
 
         const runnerPanel = DebugOverlay.instance.panel('Runner', { id: 'bandit-controller.runner' });
@@ -205,7 +210,7 @@ export default class MyGame extends Game {
         // ?minigame=runner/swipe/path or ?scene=hub keeps every existing mode directly reachable.
         const initialSceneKey = MINIGAME_QUERY_SHORTHAND[Game.debugParams.minigame]
             ?? Game.debugParams.scene
-            ?? 'path-level';
+            ?? (new URLSearchParams(window.location.search).has('level') ? 'path-level' : 'home');
         this.sceneManager.changeScene(initialSceneKey);
         this.sceneManager.resize();
     }

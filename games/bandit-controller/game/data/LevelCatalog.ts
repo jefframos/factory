@@ -4,23 +4,122 @@
 // plus a tiny localStorage-backed progression ("which level is next").
 
 import type { LevelData } from './LevelData';
+import type { LevelStyles } from './WorldStyles';
 import order from '../../levels/index.json';
+import worldData from '../../levels/worlds.json';
 
-const files = import.meta.glob('../../levels/level-*.json', { eager: true, import: 'default' }) as Record<string, LevelData>;
+const files = import.meta.glob('../../levels/*.json', { eager: true, import: 'default' }) as Record<string, LevelData>;
 const PROGRESS_KEY = 'bandit-controller.levelProgress';
+const COMPLETED_KEY = 'bandit-controller.completedLevels';
 
-function allLevels(): LevelData[] {
+export interface WorldInfo {
+    id: string;
+    name: string;
+    /** 1-based position in the campaign. */
+    number: number;
+    levels: LevelData[];
+}
+
+interface WorldFile {
+    id: string;
+    name: string;
+    styles?: LevelStyles;
+    levels: string[];
+}
+
+let cache: { levels: LevelData[]; worlds: WorldInfo[] } | undefined;
+
+/** Worlds define the campaign order and the look of their levels (world styles override a level's own). */
+function build(): { levels: LevelData[]; worlds: WorldInfo[] } {
+    if (cache) {
+        return cache;
+    }
     const byId = new Map<string, LevelData>();
     for (const level of Object.values(files)) {
-        byId.set(level.id, level);
+        if (level?.id && level.floor) {
+            byId.set(level.id, level);
+        }
     }
-    const ordered = (order.levels as string[]).map((id) => byId.get(id)).filter((level): level is LevelData => Boolean(level));
-    const unlisted = [...byId.values()].filter((level) => !ordered.includes(level));
-    return [...ordered, ...unlisted];
+    const levels: LevelData[] = [];
+    const worlds: WorldInfo[] = [];
+    const used = new Set<string>();
+    (worldData.worlds as WorldFile[]).forEach((entry, index) => {
+        const members: LevelData[] = [];
+        for (const id of entry.levels) {
+            const level = byId.get(id);
+            if (level && !used.has(id)) {
+                used.add(id);
+                members.push({ ...level, styles: { ...level.styles, ...entry.styles } });
+            }
+        }
+        if (members.length > 0) {
+            worlds.push({ id: entry.id, name: entry.name, number: index + 1, levels: members });
+            levels.push(...members);
+        }
+    });
+    const extras = [...(order.levels as string[]), ...byId.keys()]
+        .filter((id, index, all) => all.indexOf(id) === index && byId.has(id) && !used.has(id))
+        .map((id) => byId.get(id) as LevelData);
+    levels.push(...extras);
+    cache = { levels, worlds };
+    return cache;
+}
+
+function allLevels(): LevelData[] {
+    return build().levels;
+}
+
+function readCompleted(): Set<string> {
+    try {
+        return new Set(JSON.parse(window.localStorage.getItem(COMPLETED_KEY) ?? '[]') as string[]);
+    } catch {
+        return new Set();
+    }
 }
 
 export const LevelCatalog = {
     all: allLevels,
+
+    isCompleted(level: LevelData): boolean {
+        return readCompleted().has(level.id);
+    },
+
+    markCompleted(level: LevelData): void {
+        const done = readCompleted();
+        done.add(level.id);
+        window.localStorage.setItem(COMPLETED_KEY, JSON.stringify([...done]));
+    },
+
+    /** A level is playable once the one before it is done (or progress already reached it). */
+    isUnlocked(index: number): boolean {
+        const levels = allLevels();
+        if (index <= 0 || index <= this.getIndex()) {
+            return true;
+        }
+        return this.isCompleted(levels[index - 1]);
+    },
+
+    /** Completed levels in `world`, for the "3/8" badges. */
+    worldProgress(world: WorldInfo): { done: number; total: number } {
+        const done = readCompleted();
+        return { done: world.levels.filter((level) => done.has(level.id)).length, total: world.levels.length };
+    },
+
+    worlds(): WorldInfo[] {
+        return build().worlds;
+    },
+
+    /** World and 1-based level number within it, or undefined for levels outside every world. */
+    locate(level: LevelData): { world: WorldInfo; levelNumber: number } | undefined {
+        const world = build().worlds.find((entry) => entry.levels.includes(level));
+        return world ? { world, levelNumber: world.levels.indexOf(level) + 1 } : undefined;
+    },
+
+    /** True when `level` is the last one of its world. */
+    isWorldFinale(level: LevelData): boolean {
+        const found = this.locate(level);
+        return Boolean(found && found.levelNumber === found.world.levels.length);
+    },
 
     count(): number {
         return allLevels().length;

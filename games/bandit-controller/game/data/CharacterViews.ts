@@ -9,6 +9,8 @@ export interface CharacterView {
     color: string;
     /** Relative path under images/non-preload — e.g. "skins/cool.webp". Resolve with resolveSkinImagePath(). */
     face: string;
+    /** Hat model id under models/hats (e.g. "Crown"); unset = bare head. */
+    hat?: string;
 }
 
 export const CHARACTER_VIEWS: Record<string, CharacterView> = {
@@ -17,7 +19,7 @@ export const CHARACTER_VIEWS: Record<string, CharacterView> = {
     yellow: { color: '#ffca28', face: 'skins/clown.webp' },
     blue: { color: '#42a5f5', face: 'skins/cool.webp' },
     coral: { color: '#ff8a65', face: 'skins/pirate.webp' },
-    purple: { color: '#ab47bc', face: 'skins/ninja.webp' },
+    purple: { color: '#ab47bc', face: 'skins/face-smirk-1.webp' },
     cyan: { color: '#26c6da', face: 'skins/cat.webp' },
     pink: { color: '#ec407a', face: 'skins/face-hearts-1.webp' },
     violet: { color: '#7e57c2', face: 'skins/panda.webp' },
@@ -33,4 +35,72 @@ const NON_PRELOAD_IMAGE_BASE = 'bandit-controller/images/non-preload/';
 
 export function resolveSkinImagePath(relativePath: string): string {
     return `./${NON_PRELOAD_IMAGE_BASE}${relativePath}`;
+}
+
+/** The three squad members shown on Home and used by squad levels. */
+export const SQUAD_VIEW_NAMES = ['blue', 'purple', 'orange'] as const;
+
+/** Faces the player can pick for a squad member on the Home screen. */
+export const FACE_OPTIONS: string[] = [
+    'skins/cool.webp',
+    'skins/face-smirk-1.webp',
+    'skins/face-sunglasses-2.webp',
+    'skins/face-brave-1.webp',
+    'skins/face-smile-1.webp',
+    'skins/face-laughing-1.webp',
+    'skins/face-money-1.webp',
+    'skins/face-mustache-1.webp',
+    'skins/face-glasses-1.webp',
+    'skins/face-star-1.webp',
+    'skins/face-hearts-1.webp',
+    'skins/cat.webp',
+    'skins/dog.webp',
+    'skins/panda.webp',
+    'skins/pirate.webp',
+    'skins/clown.webp',
+    'skins/devil.webp',
+    'skins/ninja.webp',
+];
+
+const SQUAD_LOOK_KEY = 'bandit-controller.squadLook';
+
+function saveLook(): void {
+    try {
+        const look: Record<string, { face: string; hat?: string }> = {};
+        for (const name of SQUAD_VIEW_NAMES) {
+            look[name] = { face: CHARACTER_VIEWS[name].face, hat: CHARACTER_VIEWS[name].hat };
+        }
+        window.localStorage.setItem(SQUAD_LOOK_KEY, JSON.stringify(look));
+    } catch {
+        // storage unavailable: the choice just won't persist
+    }
+}
+
+export function setSquadFace(viewName: string, face: string): void {
+    if (CHARACTER_VIEWS[viewName]) {
+        CHARACTER_VIEWS[viewName].face = face;
+        saveLook();
+    }
+}
+
+export function setSquadHat(viewName: string, hat: string | undefined): void {
+    if (CHARACTER_VIEWS[viewName]) {
+        CHARACTER_VIEWS[viewName].hat = hat;
+        saveLook();
+    }
+}
+
+try {
+    const saved = JSON.parse(window.localStorage.getItem(SQUAD_LOOK_KEY) ?? '{}') as Record<string, { face?: string; hat?: string }>;
+    for (const [name, look] of Object.entries(saved)) {
+        const view = CHARACTER_VIEWS[name];
+        if (view && look.face && FACE_OPTIONS.includes(look.face)) {
+            view.face = look.face;
+        }
+        if (view && look.hat) {
+            view.hat = look.hat;
+        }
+    }
+} catch {
+    // ignore corrupted saves
 }

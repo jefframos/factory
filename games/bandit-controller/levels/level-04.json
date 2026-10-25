@@ -1,27 +1,138 @@
 {
   "id": "level-04",
   "name": "Squad Test",
-  "grid": { "cell": 0.5 },
-  "floor": { "width": 16, "depth": 18 },
-  "start": { "x": -4, "z": 11 },
-  "waypoints": [{ "x": -4, "z": -6.5 }],
-  "entryPath": { "x": 0, "z": 11, "width": 12, "depth": 4 },
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 16,
+    "depth": 18
+  },
+  "start": {
+    "x": -4,
+    "z": 11
+  },
+  "waypoints": [
+    {
+      "x": -4,
+      "z": -6.5
+    }
+  ],
+  "entryPath": {
+    "x": 0,
+    "z": 11,
+    "width": 12,
+    "depth": 4
+  },
   "squad": [
-    { "view": "blue", "start": { "x": -4, "z": 11 }, "waypoints": [{ "x": -4, "z": -6.5 }] },
-    { "view": "purple", "start": { "x": 0, "z": 11 }, "waypoints": [{ "x": 0, "z": -6.5 }] },
-    { "view": "orange", "start": { "x": 4, "z": 11 }, "waypoints": [{ "x": 4, "z": -6.5 }] }
+    {
+      "view": "blue",
+      "start": {
+        "x": -4,
+        "z": 11
+      },
+      "waypoints": [
+        {
+          "x": -4,
+          "z": -6.5
+        }
+      ]
+    },
+    {
+      "view": "purple",
+      "start": {
+        "x": 0,
+        "z": 11
+      },
+      "waypoints": [
+        {
+          "x": 0,
+          "z": -6.5
+        }
+      ]
+    },
+    {
+      "view": "orange",
+      "start": {
+        "x": 4,
+        "z": 11
+      },
+      "waypoints": [
+        {
+          "x": 4,
+          "z": -6.5
+        }
+      ]
+    }
   ],
   "walls": [
     {
       "closed": true,
-      "points": [{ "x": -8, "z": 9 }, { "x": 8, "z": 9 }, { "x": 8, "z": -9 }, { "x": -8, "z": -9 }],
-      "openings": [{ "kind": "gap", "minX": -6, "maxX": 6, "minZ": 8.7, "maxZ": 9.3 }]
+      "points": [
+        {
+          "x": -8,
+          "z": 9
+        },
+        {
+          "x": 8,
+          "z": 9
+        },
+        {
+          "x": 8,
+          "z": -9
+        },
+        {
+          "x": -8,
+          "z": -9
+        }
+      ],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": -6,
+          "maxX": 6,
+          "minZ": 8.7,
+          "maxZ": 9.3
+        }
+      ]
     }
   ],
   "props": [],
   "loot": [],
   "guards": [
-    { "path": [{ "x": -2, "z": -2 }, { "x": 2, "z": -2 }], "loop": true, "speed": 1.4, "pause": 1.5, "fov": 60, "range": 6, "sweep": 40, "facing": 180 }
+    {
+      "path": [
+        {
+          "x": -2,
+          "z": 3
+        },
+        {
+          "x": 2,
+          "z": 3
+        }
+      ],
+      "loop": true,
+      "speed": 1.4,
+      "pause": 1.5,
+      "fov": 60,
+      "range": 6,
+      "sweep": 40,
+      "facing": 180
+    }
   ],
-  "styles": { "floor": "floorStyle1", "wall": "wallStyle1", "door": "doorStyle1", "window": "windowStyle1", "ground": "groundStyle1", "path": "pathStyle1" }
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "sharedGoal": {
+    "x": 0,
+    "z": -6,
+    "width": 12,
+    "depth": 5,
+    "enabled": true
+  }
 }

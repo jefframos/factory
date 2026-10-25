@@ -1,0 +1,131 @@
+{
+  "id": "tutorial-02",
+  "name": "Two Thieves",
+  "tutorial": true,
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 12,
+    "depth": 18
+  },
+  "start": {
+    "x": -2.5,
+    "z": 11
+  },
+  "waypoints": [
+    {
+      "x": -2.5,
+      "z": -6.5
+    }
+  ],
+  "entryPath": {
+    "x": 0,
+    "z": 11,
+    "width": 8,
+    "depth": 4
+  },
+  "squad": [
+    {
+      "view": "blue",
+      "start": {
+        "x": -2.5,
+        "z": 11
+      },
+      "waypoints": [
+        {
+          "x": -2.5,
+          "z": -6.5
+        }
+      ]
+    },
+    {
+      "view": "purple",
+      "start": {
+        "x": 2.5,
+        "z": 11
+      },
+      "waypoints": [
+        {
+          "x": 2.5,
+          "z": -6.5
+        }
+      ]
+    }
+  ],
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": -6,
+          "z": 9
+        },
+        {
+          "x": 6,
+          "z": 9
+        },
+        {
+          "x": 6,
+          "z": -9
+        },
+        {
+          "x": -6,
+          "z": -9
+        }
+      ],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": -4.5,
+          "maxX": 4.5,
+          "minZ": 8.7,
+          "maxZ": 9.3
+        }
+      ]
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -2.5,
+      "z": 3,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": 2.5,
+      "z": 3,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": 0,
+      "z": -3,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "sharedGoal": {
+    "x": 0,
+    "z": -6.5,
+    "width": 10,
+    "depth": 5,
+    "enabled": true
+  }
+}

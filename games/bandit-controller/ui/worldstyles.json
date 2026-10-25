@@ -1,22 +1,136 @@
 {
   "version": 1,
   "floor": {
-    "floorStyle1": { "name": "Blue tiles", "colorA": "#5f93d6", "colorB": "#5f93d6", "checkerScale": 1.5 },
-    "floorStyle2": { "name": "Mint checker", "colorA": "#c8f0e1", "colorB": "#67b39e", "checkerScale": 1.5 }
+    "floorStyle1": {
+      "name": "Blue tiles",
+      "colorA": "#5f93d6",
+      "colorB": "#5f93d6",
+      "checkerScale": 1.5
+    },
+    "floorStyle2": {
+      "name": "Mint checker",
+      "colorA": "#c8f0e1",
+      "colorB": "#67b39e",
+      "checkerScale": 1.5
+    },
+    "floorStyle3": {
+      "name": "Museum marble",
+      "colorA": "#f3dcc0",
+      "colorB": "#d9b58f",
+      "checkerScale": 1.5
+    },
+    "floorStyle4": {
+      "name": "Casino night",
+      "colorA": "#5b3a8c",
+      "colorB": "#3f2766",
+      "checkerScale": 1.5
+    },
+    "floorStyle5": {
+      "name": "Fortress stone",
+      "colorA": "#9aa5b1",
+      "colorB": "#7b8794",
+      "checkerScale": 1.5
+    }
   },
   "wall": {
-    "wallStyle1": { "name": "Teal bank", "bottomColor": "#378f91", "topColor": "#ffd889", "bottomHeight": 1.4, "height": 6, "thickness": 0.35 }
+    "wallStyle1": {
+      "name": "Teal bank",
+      "bottomColor": "#378f91",
+      "topColor": "#ffd889",
+      "bottomHeight": 1.4,
+      "height": 6,
+      "thickness": 0.35
+    },
+    "wallStyle2": {
+      "name": "Mint vault",
+      "bottomColor": "#3f9c86",
+      "topColor": "#e8fff4",
+      "bottomHeight": 1.4,
+      "height": 6,
+      "thickness": 0.35
+    },
+    "wallStyle3": {
+      "name": "Museum",
+      "bottomColor": "#a3512f",
+      "topColor": "#ffe3b3",
+      "bottomHeight": 1.4,
+      "height": 6,
+      "thickness": 0.35
+    },
+    "wallStyle4": {
+      "name": "Casino",
+      "bottomColor": "#8a2f6b",
+      "topColor": "#ffd24a",
+      "bottomHeight": 1.4,
+      "height": 6,
+      "thickness": 0.35
+    },
+    "wallStyle5": {
+      "name": "Fortress",
+      "bottomColor": "#4a5563",
+      "topColor": "#d96a5a",
+      "bottomHeight": 1.4,
+      "height": 6,
+      "thickness": 0.4
+    }
   },
   "door": {
-    "doorStyle1": { "name": "Plain wood", "color": "#493023", "opacity": 1, "model": "heist/doors/door_A" }
+    "doorStyle1": {
+      "name": "Plain wood",
+      "color": "#493023",
+      "opacity": 1,
+      "model": "heist/doors/door_A"
+    }
   },
   "window": {
-    "windowStyle1": { "name": "Glass", "color": "#8bd9f4", "opacity": 0.34 }
+    "windowStyle1": {
+      "name": "Glass",
+      "color": "#8bd9f4",
+      "opacity": 0.34
+    }
   },
   "ground": {
-    "groundStyle1": { "name": "Grass", "color": "#77a970" }
+    "groundStyle1": {
+      "name": "Grass",
+      "color": "#77a970"
+    },
+    "groundStyle2": {
+      "name": "Mint lawn",
+      "color": "#8fcf9c"
+    },
+    "groundStyle3": {
+      "name": "Desert",
+      "color": "#e0c07a"
+    },
+    "groundStyle4": {
+      "name": "Night grass",
+      "color": "#3d6b57"
+    },
+    "groundStyle5": {
+      "name": "Snow",
+      "color": "#e6eef5"
+    }
   },
   "path": {
-    "pathStyle1": { "name": "Dirt road", "color": "#9a744d" }
+    "pathStyle1": {
+      "name": "Dirt road",
+      "color": "#9a744d"
+    },
+    "pathStyle2": {
+      "name": "Pale road",
+      "color": "#c9b79a"
+    },
+    "pathStyle3": {
+      "name": "Sand road",
+      "color": "#b98d5a"
+    },
+    "pathStyle4": {
+      "name": "Asphalt",
+      "color": "#4b4f5c"
+    },
+    "pathStyle5": {
+      "name": "Gravel",
+      "color": "#8d8f94"
+    }
   }
 }

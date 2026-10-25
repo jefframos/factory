@@ -1,0 +1,24 @@
+{
+  "id": "tutorial-01",
+  "name": "First Steps",
+  "tutorial": true,
+  "grid": { "cell": 0.5 },
+  "floor": { "width": 10, "depth": 18 },
+  "start": { "x": 0, "z": 11 },
+  "waypoints": [{ "x": 0, "z": -6.5 }],
+  "entryPath": { "x": 0, "z": 11, "width": 3.6, "depth": 4 },
+  "walls": [
+    {
+      "closed": true,
+      "points": [{ "x": -5, "z": 9 }, { "x": 5, "z": 9 }, { "x": 5, "z": -9 }, { "x": -5, "z": -9 }],
+      "openings": [{ "kind": "door", "minX": -1.25, "maxX": 1.25, "minZ": 8.7, "maxZ": 9.3 }]
+    }
+  ],
+  "props": [],
+  "loot": [
+    { "model": "resources/Money_Coins_Stack_Small.gltf", "x": 0, "z": 3, "amount": 25, "scale": 1.35, "revealAt": 0 },
+    { "model": "resources/Money_Bills_Stack_Small.gltf", "x": 0, "z": -2, "amount": 25, "scale": 1.35, "revealAt": 0 }
+  ],
+  "guards": [],
+  "styles": { "floor": "floorStyle1", "wall": "wallStyle1", "door": "doorStyle1", "window": "windowStyle1", "ground": "groundStyle1", "path": "pathStyle1" }
+}

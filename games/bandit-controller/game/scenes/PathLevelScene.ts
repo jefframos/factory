@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import { pruneCollected } from '../builders/CollectibleBuilder';
 import Collectible from '../entities/Collectible';
 import Guard from '../entities/Guard';
+import SecurityCamera from '../entities/SecurityCamera';
 import { LevelSight } from '../utils/LevelSight';
 import { COIN, CollectibleDefinition } from '../data/CollectibleSettings';
 import { LevelCatalog } from '../data/LevelCatalog';
@@ -19,7 +20,7 @@ import { TextureBuilder } from '../builders/TextureBuilder';
 import { CHARACTER_VIEWS, DEFAULT_CHARACTER_VIEW, resolveSkinImagePath } from '../data/CharacterViews';
 import type MainPlayer from '../player/MainPlayer';
 import { WorldStyles } from '../data/WorldStyles';
-import { LevelData, LevelDoor, LevelLoot, levelDoors, levelWindowPanes } from '../data/LevelData';
+import { LevelData, LevelDoor, LevelLoot, LevelSharedGoal, levelDoors, levelWindowPanes } from '../data/LevelData';
 import { GameState } from '../data/GameState';
 import { PLAYER_SETTINGS } from '../data/PlayerSettings';
 import Entity from 'core/ecs/Entity';
@@ -43,7 +44,10 @@ const GOAL_TRIGGER_RADIUS = 1.35;
 const CHECKPOINT_STOP_RADIUS = 1.2;
 const GOAL_MARKER_RADIUS = 1.25;
 const GOAL_COLOR = 0x3fd67a;
+const SAFE_MODEL = 'heist/vault/vault.gltf';
+const SHARED_SLOT_SPACING = 1.8;
 const GOAL_HAND_SIZE = 76;
+const DRAG_HINT_CYCLE_MS = 2600;
 const FIELD_SIZE = 48;
 const ROOM_ORIGIN = new THREE.Vector3();
 const DOOR_ASSIST_MARGIN = 0.6;
@@ -56,17 +60,28 @@ const CELEBRATION_CAMERA_OPTIONS: CameraFollowOptions = {
 };
 /** Extra world width kept around the player/guard pair in the final busted shot. */
 const BUST_FRAME_MARGIN = 5.5;
+const SQUAD_FRAME_MARGIN = 8;
+const SQUAD_MIN_DISTANCE = 20;
 const BUSTED_FACE = 'skins/face-crying-2.webp';
 const CAMERA_PANEL_ID = 'bandit-controller.path.camera';
 const BENDING_PANEL_ID = 'bandit-controller.path.bending';
 const LEVELS_PANEL_ID = 'bandit-controller.path.levels';
 const MODEL_BASE = './bandit-controller/models/';
 const CELEBRATION_ANIMATION_URL = './bandit-controller/models/animations/Excited.glb';
+/** One dance per squad member, in squad order. */
+const SQUAD_DANCE_URLS = [
+    './bandit-controller/models/animations/Dance_Locking.glb',
+    './bandit-controller/models/animations/Dance_Wave.glb',
+    './bandit-controller/models/animations/Dance_Chicken.glb',
+];
 const PAYOUT_STAGGER_SEC = 0.12;
 const CELEBRATION_PITCH_DEG = 28;
-const CELEBRATION_DISTANCE = 11;
+/** World units a press must travel before it counts as a drag instead of a tap. */
+const TAP_MAX_DRAG = 0.35;
+const CELEBRATION_DISTANCE = 13;
 const CELEBRATION_DANCE_SEC = 1;
 const SAD_ANIMATION_URL = './bandit-controller/models/animations/Crying.glb';
+const BUST_CHASE_TIMEOUT_SEC = 3;
 const BUSTED_REACTION_SEC = 2.2;
 const CAMERA_BOUNDS_PADDING = 1.5;
 const CAMERA_MIN_HALF_WIDTH = 3.5;
@@ -95,6 +110,9 @@ const SPOT_TIME_SEC = 1.1;
 const ALERT_DECAY_PER_SEC = 1.2;
 
 type PathLevelState = 'waiting' | 'following' | 'revealing' | 'celebrating' | 'payout' | 'complete' | 'busted' | 'done';
+/** Anything that can spot the player: patrolling guards and fixed security cameras. */
+type Spotter = Guard | SecurityCamera;
+
 type PathDrawMode = 'exit' | 'free';
 
 /** One controllable character. The scene's own path fields always hold the focused member's data; the others keep theirs here. */
@@ -114,6 +132,9 @@ interface SquadMember {
 
 export default class PathLevelScene extends ThreeScene {
     public readonly onRestart: Signal = new Signal();
+    /** Fired by the top-right home button; index.ts switches to the Home scene. */
+    public readonly onHome: Signal = new Signal();
+    private homeButton?: PIXI.Container;
 
     private readonly moneyHud: MoneyHud;
     private env!: WorldEnvironment;
@@ -158,7 +179,11 @@ export default class PathLevelScene extends ThreeScene {
     private cameraBlendTween?: gsap.core.Tween;
     private readonly cameraTuning = { yawDeg: 0, fov: 0, bend: true };
     private goalHand?: PIXI.Sprite;
+    private dragHint?: PIXI.Sprite;
+    private readonly dragHintWorld = new THREE.Vector3();
     private selectionNeedsFraming = false;
+    private pointerDragged = false;
+    private readonly pointerDownWorld = new THREE.Vector3();
     private selectionHalo?: THREE.Mesh;
     private readonly goalHandWorld = new THREE.Vector3();
     private readonly focusGoal = new THREE.Vector3();
@@ -167,9 +192,12 @@ export default class PathLevelScene extends ThreeScene {
     private focused?: SquadMember;
     /** True while a non-focused member is being stepped, so camera and HUD side effects are skipped. */
     private inBackground = false;
-    private readonly guardTargets = new Map<Guard, SquadMember>();
+    private readonly guardTargets = new Map<Spotter, SquadMember>();
     private nextWaypointIndex = 1;
     private revealedUpTo = 0;
+    private sharedGoalActive = false;
+    private readonly boundsRoomPoint = new THREE.Vector3();
+    private groupCelebration = false;
     private floorMesh?: THREE.Mesh;
     private exteriorGround?: THREE.Mesh;
     private entryPath?: THREE.Mesh;
@@ -187,12 +215,14 @@ export default class PathLevelScene extends ThreeScene {
     private hud?: PIXI.Container;
     private instruction?: PIXI.Text;
     private runMoneyLabel?: PIXI.Text;
-    private modeSelector?: PIXI.Container;
-    private readonly modeButtons = new Map<PathDrawMode, { background: PIXI.Graphics; label: PIXI.Text }>();
+    private worldLabel?: PIXI.Text;
+    private cashPill?: PIXI.Container;
+    private cashPillBackground?: PIXI.Graphics;
+    private cashPillCoin?: PIXI.Graphics;
     private completeModal?: PIXI.Container;
     private bustedModal?: PIXI.Container;
-    private guards: Guard[] = [];
-    private bustGuard?: Guard;
+    private guards: Spotter[] = [];
+    private bustGuard?: Spotter;
     private bustPhase: 'chase' | 'react' = 'chase';
     private bustTimer = 0;
     private bustFocus = false;
@@ -203,6 +233,11 @@ export default class PathLevelScene extends ThreeScene {
         target: this.bustFocusPoint,
     };
     private bustYawTween?: gsap.core.Tween;
+    private readonly groupCameraOptions: CameraFollowOptions = {
+        freezeHeightWhileAirborne: true,
+        fixedYawDeg: 0,
+        target: this.bustFocusPoint,
+    };
     private spottedMessageShown = false;
     private messageBeforeSpotted = '';
     private bonusMeter?: BonusMeter;
@@ -240,9 +275,15 @@ export default class PathLevelScene extends ThreeScene {
             ? this.level.squad
             : [{ view: '', start: this.level.start, waypoints: this.level.waypoints }];
         const squadMode = Boolean(this.level.squad?.length);
-        for (const spec of squad) {
+        const shared = this.level.sharedGoal;
+        this.groupCelebration = false;
+        this.sharedGoalActive = Boolean(shared) && shared!.enabled !== false && squad.length > 1;
+        for (const [squadIndex, spec] of squad.entries()) {
             const view = CHARACTER_VIEWS[spec.view] ?? DEFAULT_CHARACTER_VIEW;
             const waypoints = [spec.start, ...spec.waypoints].map((point) => new THREE.Vector3(point.x, 0, point.z));
+            if (this.sharedGoalActive && shared) {
+                waypoints[waypoints.length - 1] = this.sharedGoalSlot(shared, squadIndex, squad.length);
+            }
             const player = this.env.spawnPlayer(this, waypoints[0], undefined, view);
             player.movementController.enabled = false;
             (player as unknown as { opensDoors: boolean }).opensDoors = true;
@@ -403,7 +444,13 @@ export default class PathLevelScene extends ThreeScene {
 
         for (const member of this.members) {
             this.addMarker(member.waypoints[0], member.color ?? 0x8fb8ff);
-            this.addMarker(member.waypoints[1], member.color ?? GOAL_COLOR, GOAL_MARKER_RADIUS);
+            const isSharedGoal = this.sharedGoalActive && member.waypoints.length === 2;
+            if (!isSharedGoal) {
+                this.addMarker(member.waypoints[1], member.color ?? GOAL_COLOR, GOAL_MARKER_RADIUS);
+            }
+        }
+        if (this.sharedGoalActive && this.level.sharedGoal) {
+            this.buildSharedGoalRoom(this.level.sharedGoal);
         }
         this.buildGoalArrow();
         this.buildProps();
@@ -453,6 +500,45 @@ export default class PathLevelScene extends ThreeScene {
             this.revealGroups.set(index, group);
         }
         return group;
+    }
+
+    /** Evenly spaced spots on one row across the room, so the squad lines up side by side facing the camera. */
+    private sharedGoalSlot(goal: LevelSharedGoal, index: number, count: number): THREE.Vector3 {
+        const spacing = Math.min(SHARED_SLOT_SPACING, (goal.width - 1) / Math.max(1, count));
+        return new THREE.Vector3(goal.x + (index - (count - 1) / 2) * spacing, 0, goal.z + goal.depth * 0.2);
+    }
+
+    private insideSharedGoal(position: THREE.Vector3): boolean {
+        const goal = this.level.sharedGoal;
+        return Boolean(goal) && this.sharedGoalActive
+            && Math.abs(position.x - goal!.x) <= goal!.width / 2
+            && Math.abs(position.z - goal!.z) <= goal!.depth / 2;
+    }
+
+    private buildSharedGoalRoom(goal: LevelSharedGoal): void {
+        const material = new THREE.MeshBasicMaterial({ color: GOAL_COLOR, transparent: true, opacity: 0.35, depthWrite: false });
+        BendService.applyBend(material);
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(goal.width, goal.depth), material);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.set(goal.x, FloorLayers.baseY + 0.06, goal.z);
+        this.threeScene.add(floor);
+
+        const edgeMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+        BendService.applyBend(edgeMaterial);
+        const halfW = goal.width / 2;
+        const halfD = goal.depth / 2;
+        const outline = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(goal.x - halfW, FloorLayers.baseY + 0.08, goal.z - halfD),
+            new THREE.Vector3(goal.x + halfW, FloorLayers.baseY + 0.08, goal.z - halfD),
+            new THREE.Vector3(goal.x + halfW, FloorLayers.baseY + 0.08, goal.z + halfD),
+            new THREE.Vector3(goal.x - halfW, FloorLayers.baseY + 0.08, goal.z + halfD),
+        ]), edgeMaterial);
+        this.threeScene.add(outline);
+
+        // The safe sits against the far wall of the room.
+        const safe = new THREE.Vector3(goal.x, FloorLayers.baseY, goal.z - halfD + 1);
+        void this.placeAsset(SAFE_MODEL, safe, 2.8, 0);
+        this.addPropCollider(safe, new THREE.Vector3(0.95, 1.4, 0.8));
     }
 
     private buildProps(): void {
@@ -573,6 +659,36 @@ export default class PathLevelScene extends ThreeScene {
         hand.visible = false;
         this.game.uiLayer.addChild(hand);
         this.goalHand = hand;
+
+        const hint = new PIXI.Sprite(PIXI.Texture.from('handHud'));
+        hint.anchor.set(0.2, 0.1);
+        hint.width = GOAL_HAND_SIZE;
+        hint.height = GOAL_HAND_SIZE;
+        hint.visible = false;
+        this.game.uiLayer.addChild(hint);
+        this.dragHint = hint;
+    }
+
+    /** Tutorial finger: loops from the focused character to its goal while nobody is drawing. */
+    private updateDragHint(): void {
+        const hint = this.dragHint;
+        if (!hint) {
+            return;
+        }
+        const active = Boolean(this.level.tutorial) && this.state === 'waiting' && this.pointerId === null;
+        const from = active ? this.worldToScreen(this.dragHintWorld.copy(this.env.mainPlayer.transform.position).setY(FloorLayers.baseY + 0.3)) : null;
+        const to = active ? this.worldToScreen(this.goalHandWorld.set(this.activeGoal.x, FloorLayers.baseY + 0.3, this.activeGoal.z)) : null;
+        hint.visible = Boolean(from && to);
+        if (!from || !to) {
+            return;
+        }
+        const cycle = (performance.now() % DRAG_HINT_CYCLE_MS) / DRAG_HINT_CYCLE_MS;
+        const t = THREE.MathUtils.smoothstep(THREE.MathUtils.clamp((cycle - 0.15) / 0.6, 0, 1), 0, 1);
+        const fade = cycle < 0.15 ? cycle / 0.15 : cycle > 0.85 ? (1 - cycle) / 0.15 : 1;
+        const a = this.game.uiLayer.toLocal(new PIXI.Point(from.x, from.y), this.game.app.stage);
+        const b = this.game.uiLayer.toLocal(new PIXI.Point(to.x, to.y), this.game.app.stage);
+        hint.position.set(THREE.MathUtils.lerp(a.x, b.x, t), THREE.MathUtils.lerp(a.y, b.y, t));
+        hint.alpha = fade;
     }
 
     private updateGoalArrow(): void {
@@ -581,7 +697,11 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
         const active = this.state === 'waiting' || this.state === 'following' || this.state === 'revealing';
-        const marker = this.waypoints[this.nextWaypointIndex];
+        let marker = this.waypoints[this.nextWaypointIndex];
+        const room = this.level.sharedGoal;
+        if (room && this.sharedGoalActive && this.nextWaypointIndex >= this.waypoints.length - 1) {
+            marker = this.goalHandWorld.set(room.x, 0, room.z + room.depth * 0.2);
+        }
         const screen = active && marker ? this.worldToScreen(this.goalHandWorld.set(marker.x, FloorLayers.baseY + 0.3, marker.z)) : null;
         hand.visible = Boolean(screen);
         if (!screen) {
@@ -647,6 +767,7 @@ export default class PathLevelScene extends ThreeScene {
             ));
             collectible.transform.position.copy(pickup.position);
             collectible.onCollected.add((amount) => {
+                this.showCollectPop(this.env.mainPlayer.getCollectTargetPosition().clone(), amount);
                 this.collectedPayouts.push(amount);
                 this.runMoney += amount;
                 this.refreshRunMoney();
@@ -654,6 +775,30 @@ export default class PathLevelScene extends ThreeScene {
             this.collectibles.push(collectible);
             void collectible.load();
         }
+    }
+
+    private showCollectPop(world: THREE.Vector3, amount: number): void {
+        const screen = this.worldToScreen(world);
+        if (!screen) {
+            return;
+        }
+        const at = this.game.uiLayer.toLocal(new PIXI.Point(screen.x, screen.y), this.game.app.stage);
+        const text = new PIXI.Text(`+$${amount}`, new PIXI.TextStyle({
+            fontSize: 34,
+            fontWeight: 'bold',
+            fill: 0x6dff8a,
+            stroke: 0x0b3d1a,
+            strokeThickness: 6,
+        }));
+        text.anchor.set(0.5);
+        text.position.set(at.x, at.y);
+        text.scale.set(0.2);
+        this.game.uiLayer.addChild(text);
+        gsap.timeline({ onComplete: () => text.destroy() })
+            .to(text.scale, { x: 1.2, y: 1.2, duration: 0.18, ease: 'back.out(3)' })
+            .to(text.scale, { x: 1, y: 1, duration: 0.1 })
+            .to(text.position, { y: at.y - 60, duration: 0.7, ease: 'power1.out' }, 0.1)
+            .to(text, { alpha: 0, duration: 0.3 }, 0.6);
     }
 
     private buildHud(): void {
@@ -670,68 +815,49 @@ export default class PathLevelScene extends ThreeScene {
         this.instruction.anchor.set(0.5);
         this.runMoneyLabel = new PIXI.Text('', {
             fontFamily: UiKit.fontFamily('primary'),
-            fontSize: 18,
-            fontWeight: 'normal',
-            fill: 0xffd36b,
-            stroke: 0x443320,
-            strokeThickness: 4,
+            fontSize: 30,
+            fill: 0xffffff,
+            stroke: 0x1d5a2a,
+            strokeThickness: 6,
         });
         this.runMoneyLabel.anchor.set(0.5);
-        this.modeSelector = new PIXI.Container();
-        this.modeButtons.clear();
-        this.modeSelector.addChild(
-            this.makeModeButton('EXIT RUN', 'exit'),
-            this.makeModeButton('FREE DRAW', 'free'),
-        );
-        this.hud.addChild(this.instruction, this.modeSelector, this.runMoneyLabel);
+        this.cashPill = new PIXI.Container();
+        this.cashPillBackground = new PIXI.Graphics();
+        const coin = new PIXI.Graphics();
+        coin.beginFill(0xffc83d).lineStyle(3, 0xb8860b).drawCircle(0, 0, 17).endFill();
+        coin.lineStyle(0).beginFill(0xffe28a).drawCircle(-4, -4, 6).endFill();
+        this.cashPillCoin = coin;
+        this.cashPill.addChild(this.cashPillBackground, coin, this.runMoneyLabel);
+        const found = LevelCatalog.locate(this.level);
+        this.worldLabel = new PIXI.Text(found ? `WORLD ${found.world.number}  ${found.world.name.toUpperCase()}  ·  LEVEL ${found.levelNumber}/${found.world.levels.length}` : this.level.name.toUpperCase(), {
+            fontFamily: UiKit.fontFamily('primary'),
+            fontSize: 14,
+            fill: 0xffffff,
+            stroke: 0x203c35,
+            strokeThickness: 4,
+        });
+        this.worldLabel.anchor.set(0.5);
+        this.homeButton = this.buildHomeButton();
+        this.hud.addChild(this.instruction, this.cashPill, this.worldLabel, this.homeButton);
         this.refreshRunMoney();
-        this.refreshModeButtons();
         this.game.uiLayer.addChild(this.hud);
         this.resize();
     }
 
-    private makeModeButton(label: string, mode: PathDrawMode): PIXI.Container {
+    private buildHomeButton(): PIXI.Container {
         const button = new PIXI.Container();
-        const background = new PIXI.Graphics();
-        const text = new PIXI.Text(label, {
-            fontFamily: UiKit.fontFamily('primary'),
-            fontSize: 15,
-            fontWeight: 'normal',
-            fill: 0xffffff,
-        });
-        text.anchor.set(0.5);
-        text.position.set(76, 21);
-        button.addChild(background, text);
+        const back = new PIXI.Graphics();
+        back.beginFill(0x000000, 0.25).drawCircle(0, 4, 30).endFill();
+        back.beginFill(0xffffff).lineStyle(4, 0x2a6fb0).drawCircle(0, 0, 30).endFill();
+        const icon = PIXI.Sprite.from('PictoIcon_Home_1-2');
+        icon.anchor.set(0.5);
+        icon.width = icon.height = 38;
+        button.addChild(back, icon);
         button.eventMode = 'static';
         button.cursor = 'pointer';
-        button.hitArea = new PIXI.Rectangle(0, 0, 152, 42);
-        button.on('pointertap', () => this.selectPathMode(mode));
-        this.modeButtons.set(mode, { background, label: text });
+        button.hitArea = new PIXI.Circle(0, 0, 34);
+        button.on('pointertap', () => this.onHome.dispatch());
         return button;
-    }
-
-    private selectPathMode(mode: PathDrawMode): void {
-        if (this.state !== 'waiting' || this.pointerId !== null) {
-            return;
-        }
-        this.pathDrawMode = mode;
-        this.route = [];
-        this.routeBlocked = false;
-        this.clearRoute();
-        this.refreshModeButtons();
-            this.setInstruction(mode === 'exit'
-            ? 'TRACE TO THE GOLD CHECKPOINT'
-            : 'TRACE FROM THE PLAYER; RELEASE ANYWHERE');
-    }
-
-    private refreshModeButtons(): void {
-        this.modeButtons.forEach(({ background }, mode) => {
-            background.clear();
-            background.beginFill(mode === this.pathDrawMode ? 0x187f77 : 0x315e58, 0.96);
-            background.lineStyle(2, mode === this.pathDrawMode ? 0xffd889 : 0xffffff, 0.9);
-            background.drawRoundedRect(0, 0, 152, 42, 11);
-            background.endFill();
-        });
     }
 
     private applyCameraPreset(preset: CameraPreset): void {
@@ -839,6 +965,8 @@ export default class PathLevelScene extends ThreeScene {
             : this.env.mainPlayer.transform.position;
         this.clearRoute();
         this.pointerId = event.pointerId;
+        this.pointerDownWorld.copy(this.pointerWorld);
+        this.pointerDragged = false;
         this.routeBlocked = false;
         this.route = [start.clone()];
         this.setInstruction(this.pathDrawMode === 'exit'
@@ -851,6 +979,12 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
         if (!this.pickFloor(event.clientX, event.clientY)) {
+            return;
+        }
+        if (this.distanceXZ(this.pointerWorld, this.pointerDownWorld) >= TAP_MAX_DRAG) {
+            this.pointerDragged = true;
+        }
+        if (!this.pointerDragged) {
             return;
         }
         const point = this.clampToCourse(this.pointerWorld);
@@ -886,12 +1020,26 @@ export default class PathLevelScene extends ThreeScene {
         const needsFraming = this.selectionNeedsFraming;
         this.selectionNeedsFraming = false;
         const hasFloorPoint = this.pickFloor(event.clientX, event.clientY);
+        if (!this.pointerDragged) {
+            // A tap only selects; it never starts a walk.
+            this.route = [];
+            this.routeBlocked = false;
+            this.clearRoute();
+            this.setInstruction(this.pathDrawMode === 'exit'
+                ? 'TRACE TO THE GOLD CHECKPOINT'
+                : 'TRACE FROM THE PLAYER; RELEASE ANYWHERE');
+            if (needsFraming) {
+                this.frameActiveSegment();
+            }
+            return;
+        }
         const endPoint = hasFloorPoint ? this.clampToCourse(this.pointerWorld) : undefined;
         if (endPoint && this.distanceXZ(this.route[this.route.length - 1], endPoint) > 0.12) {
             this.appendRouteSamples(endPoint);
         }
         const tracedPath = this.route.map((point) => point.clone());
-        const reachesGoal = endPoint && this.distanceXZ(endPoint, this.activeGoal) <= 1.3;
+        const reachesGoal = endPoint && (this.distanceXZ(endPoint, this.activeGoal) <= 1.3
+            || (this.nextWaypointIndex >= this.waypoints.length - 1 && this.insideSharedGoal(endPoint)));
         const accepted = endPoint
             && this.route.length > 1
             && (this.pathDrawMode === 'free' || reachesGoal);
@@ -1271,12 +1419,13 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
         this.state = 'complete';
+        LevelCatalog.markCompleted(this.level);
         const modal = new PIXI.Container();
         const panel = UiKit.image('levelComplete', 'panel', 380, 250);
 
         const ribbon = UiKit.sprite('levelComplete', 'ribbon', 1.1);
         ribbon.position.set(0, -125);
-        const title = UiKit.text('levelComplete', 'title', { level: LevelCatalog.all().indexOf(this.level) + 1 });
+        const title = UiKit.text('levelComplete', 'title', { level: this.levelLabel() });
         title.position.set(0, -122);
 
         const bonusText = multiplier > 1 ? `  (x${multiplier} BONUS)` : '';
@@ -1285,7 +1434,7 @@ export default class PathLevelScene extends ThreeScene {
 
         const button = new PIXI.Container();
         const buttonBg = UiKit.image('levelComplete', 'button', 240, 90);
-        const buttonLabel = UiKit.text('levelComplete', 'buttonLabel', { buttonText: LevelCatalog.hasNext(this.level) ? 'NEXT LEVEL' : 'PLAY AGAIN' });
+        const buttonLabel = UiKit.text('levelComplete', 'buttonLabel', { buttonText: !LevelCatalog.hasNext(this.level) ? 'PLAY AGAIN' : LevelCatalog.isWorldFinale(this.level) ? 'NEXT WORLD' : 'NEXT LEVEL' });
         button.addChild(buttonBg, buttonLabel);
         button.scale.set(0.7);
         button.position.set(0, 60);
@@ -1302,9 +1451,25 @@ export default class PathLevelScene extends ThreeScene {
         this.completeModal = modal;
     }
 
+    /** "2-3" = world 2, level 3; falls back to the flat campaign number for levels outside every world. */
+    private levelLabel(): string {
+        const found = LevelCatalog.locate(this.level);
+        return found ? `${found.world.number}-${found.levelNumber}` : String(LevelCatalog.all().indexOf(this.level) + 1);
+    }
+
     private refreshRunMoney(): void {
-        if (this.runMoneyLabel) {
-            this.runMoneyLabel.text = `CASH AT HAND  $${this.runMoney}`;
+        if (this.runMoneyLabel && this.cashPill && this.cashPillBackground && this.cashPillCoin) {
+            this.runMoneyLabel.text = `$${this.runMoney}`;
+            const textWidth = this.runMoneyLabel.width;
+            const width = textWidth + 84;
+            this.cashPillBackground.clear()
+                .beginFill(0x103a1c, 0.82).lineStyle(3, 0x6dff8a, 0.9)
+                .drawRoundedRect(-width / 2, -26, width, 52, 26).endFill();
+            this.cashPillCoin.position.set(-width / 2 + 30, 0);
+            this.runMoneyLabel.position.set(-width / 2 + 54 + textWidth / 2, 0);
+            gsap.killTweensOf(this.cashPill.scale);
+            this.cashPill.scale.set(1.18);
+            gsap.to(this.cashPill.scale, { x: 1, y: 1, duration: 0.3, ease: 'back.out(3)' });
         }
     }
 
@@ -1314,7 +1479,7 @@ export default class PathLevelScene extends ThreeScene {
         this.env.cameraSystem.register('celebration', {
             ...currentCamera,
             pitchDeg: Math.min(currentCamera.pitchDeg, CELEBRATION_PITCH_DEG),
-            distance: Math.min(currentCamera.distance, CELEBRATION_DISTANCE),
+            distance: CELEBRATION_DISTANCE,
             followSpeed: 5,
             offset: { ...currentCamera.offset, y: 1 },
         });
@@ -1322,7 +1487,7 @@ export default class PathLevelScene extends ThreeScene {
     }
 
     /** Frames player and guard side by side: the camera looks at their midpoint from the direction perpendicular to the line between them. */
-    private focusCameraOnBustPair(guard: Guard): void {
+    private focusCameraOnBustPair(guard: Spotter): void {
         const player = this.env.mainPlayer.transform.position;
         const dx = guard.position.x - player.x;
         const dz = guard.position.z - player.z;
@@ -1361,32 +1526,70 @@ export default class PathLevelScene extends ThreeScene {
         this.bustYawTween = gsap.to(this.bustCameraOptions, { fixedYawDeg: wrapped, duration: 0.8, ease: 'sine.inOut' });
     }
 
+    /** Frames the whole lined-up squad from the front so everyone is in the final shot. */
+    private focusCameraOnSquad(): void {
+        const box = new THREE.Box3().makeEmpty();
+        for (const member of this.members) {
+            box.expandByPoint(member.player.transform.position);
+        }
+        const center = box.getCenter(new THREE.Vector3());
+        this.bustFocusPoint.set(center.x, 0, center.z);
+        this.groupCelebration = true;
+        const width = box.max.x - box.min.x;
+        const settings = this.env.cameraSystem.current;
+        const halfFovTangent = Math.tan(THREE.MathUtils.degToRad(this.threeCamera.fov / 2));
+        const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+        const fitDistance = (width + SQUAD_FRAME_MARGIN) / (2 * halfFovTangent * aspect);
+        this.env.cameraSystem.register('celebration', {
+            ...settings,
+            pitchDeg: Math.min(settings.pitchDeg, CELEBRATION_PITCH_DEG),
+            distance: Math.max(SQUAD_MIN_DISTANCE, fitDistance),
+            followSpeed: 5,
+            offset: { ...settings.offset, y: 1 },
+        });
+        this.env.cameraSystem.blendTo('celebration', 0.8);
+    }
+
     private async beginCelebration(): Promise<void> {
         if (this.state === 'celebrating' || this.state === 'payout' || this.state === 'complete') {
             return;
         }
         this.state = 'celebrating';
+        // A still-running path framing tween would otherwise keep fighting the finale camera.
+        this.cameraBlendTween?.kill();
+        this.cameraBlendTween = undefined;
         this.env.mainPlayer.movementController.enabled = false;
 
-        this.focusCameraOnPlayer();
+        const squad = this.members.length > 1;
+        if (squad) {
+            this.focusCameraOnSquad();
+        } else {
+            this.focusCameraOnPlayer();
+        }
         this.setInstruction('THE GETAWAY!');
         // Started now so animation loading doesn't delay the meter.
         const danceDone = new Promise<void>((resolve) => setTimeout(resolve, CELEBRATION_DANCE_SEC * 1000));
 
-        const playerPosition = this.env.mainPlayer.transform.position;
-        const towardCamera = this.threeCamera.position.clone().sub(playerPosition);
-        this.env.mainPlayer.character?.faceDirection(towardCamera.x, towardCamera.z);
+        const dancers = squad ? this.members.map((member) => member.player) : [this.env.mainPlayer];
+        for (const dancer of dancers) {
+            dancer.movementController.enabled = false;
+            const towardCamera = this.threeCamera.position.clone().sub(dancer.transform.position);
+            dancer.character?.faceDirection(towardCamera.x, towardCamera.z);
+        }
 
         try {
             await this.env.playerReady;
             if (this.destroyed) {
                 return;
             }
-            const character = this.env.mainPlayer.character;
-            if (character) {
-                await character.registerAnimation('celebration', CELEBRATION_ANIMATION_URL);
-                character.animator.playExclusive('celebration', 0.25, false);
-            }
+            await Promise.all(dancers.map(async (dancer, index) => {
+                const character = dancer.character;
+                if (character) {
+                    const url = squad ? SQUAD_DANCE_URLS[index % SQUAD_DANCE_URLS.length] : CELEBRATION_ANIMATION_URL;
+                    await character.registerAnimation('celebration', url);
+                    character.animator.playExclusive('celebration', 0.25, true);
+                }
+            }));
         } catch (error) {
             console.warn('[PathLevelScene] Could not load celebration animation', error);
         }
@@ -1474,10 +1677,6 @@ export default class PathLevelScene extends ThreeScene {
         for (const [groupIndex, group] of this.revealGroups) {
             group.visible = groupIndex <= index;
         }
-        const nextGoal = this.waypoints[index + 1];
-        if (nextGoal) {
-            this.addMarker(nextGoal, this.focused?.color ?? GOAL_COLOR, GOAL_MARKER_RADIUS);
-        }
         this.buildCollectibles(index);
     }
 
@@ -1511,6 +1710,11 @@ export default class PathLevelScene extends ThreeScene {
                     this.clearRoute();
                     if (this.nextWaypointIndex < this.waypoints.length - 1) {
                         this.revealArea(this.nextWaypointIndex);
+                        // Each member shows its own next goal, even if another member already revealed this area.
+                        const nextGoal = this.waypoints[this.nextWaypointIndex + 1];
+                        if (nextGoal) {
+                            this.addMarker(nextGoal, this.focused?.color ?? GOAL_COLOR, GOAL_MARKER_RADIUS);
+                        }
                         this.advanceWaypoint();
                     } else {
                         this.completeMember();
@@ -1523,6 +1727,13 @@ export default class PathLevelScene extends ThreeScene {
 
     /** Checkpoint and goal arrival for the member currently held in the scene fields. */
     private updateMemberProgress(): void {
+        const lastIndex = this.waypoints.length - 1;
+        if (this.state === 'following' && this.sharedGoalActive && this.nextWaypointIndex >= lastIndex
+            && this.insideSharedGoal(this.env.mainPlayer.transform.position)) {
+            this.activeGoal.copy(this.waypoints[lastIndex]);
+            this.beginGoalArrival();
+            return;
+        }
         if (this.state === 'following' && this.stopAtCheckpoints) {
             const checkpoint = this.waypoints[this.nextWaypointIndex];
             if (checkpoint && this.distanceXZ(this.env.mainPlayer.transform.position, checkpoint) <= CHECKPOINT_STOP_RADIUS) {
@@ -1568,6 +1779,7 @@ export default class PathLevelScene extends ThreeScene {
         this.env.update(delta);
         this.updateGoalParticles(delta);
         this.updateGoalArrow();
+        this.updateDragHint();
         this.updateSelectionHalo();
         PizzaParticleSystem.update(delta);
         this.updateWallHeight();
@@ -1601,6 +1813,9 @@ export default class PathLevelScene extends ThreeScene {
             guard.load().catch((error) => console.warn('[PathLevelScene] Could not load guard', error));
             this.guards.push(guard);
         }
+        for (const data of this.level.cameras ?? []) {
+            this.guards.push(new SecurityCamera(this.threeScene, data, sight, BendService));
+        }
     }
 
     private destroyGuards(): void {
@@ -1626,7 +1841,7 @@ export default class PathLevelScene extends ThreeScene {
             return state === 'waiting' || state === 'following';
         });
         let highestAlert = 0;
-        let spotter: Guard | undefined;
+        let spotter: Spotter | undefined;
         for (const guard of this.guards) {
             if (!walking) {
                 guard.hold();
@@ -1686,7 +1901,9 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
         if (this.bustPhase === 'chase') {
-            if (guard.chase(player, delta)) {
+            this.bustTimer += delta;
+            // Safety net: never let a chase run forever.
+            if (guard.chase(player, delta) || this.bustTimer > BUST_CHASE_TIMEOUT_SEC) {
                 this.bustPhase = 'react';
                 this.bustTimer = 0;
                 guard.faceToward(player);
@@ -1704,7 +1921,7 @@ export default class PathLevelScene extends ThreeScene {
         guard.render(delta);
     }
 
-    private playPlayerSad(guard: Guard): void {
+    private playPlayerSad(guard: Spotter): void {
         const character = this.env.mainPlayer.character;
         if (!character) {
             return;
@@ -1730,7 +1947,7 @@ export default class PathLevelScene extends ThreeScene {
         }
     }
 
-    private beginBusted(spotter: Guard): void {
+    private beginBusted(spotter: Spotter): void {
         if (this.state !== 'following' && this.state !== 'waiting') {
             return;
         }
@@ -1772,6 +1989,9 @@ export default class PathLevelScene extends ThreeScene {
 
         const message = UiKit.text('busted', 'message');
         message.position.set(0, -35);
+        if (this.bustGuard instanceof SecurityCamera) {
+            message.text = 'A security camera spotted you.\nWatch its sweep and time it.';
+        }
 
         const button = new PIXI.Container();
         const buttonBg = UiKit.image('busted', 'button', 240, 90);
@@ -1850,7 +2070,7 @@ export default class PathLevelScene extends ThreeScene {
     public fixedUpdate(delta: number): void {
         this.env.fixedUpdate(delta);
         const cameraOptions = this.state === 'celebrating' || this.state === 'payout' || this.state === 'complete' || this.bustFocus
-            ? (this.bustFocus ? this.bustCameraOptions : CELEBRATION_CAMERA_OPTIONS)
+            ? (this.bustFocus ? this.bustCameraOptions : this.groupCelebration ? this.groupCameraOptions : CELEBRATION_CAMERA_OPTIONS)
             : this.pathCameraOptions;
         this.syncCameraTuning();
         this.reframeIfPlayerLeavesBounds();
@@ -1906,14 +2126,14 @@ export default class PathLevelScene extends ThreeScene {
         if (this.instruction) {
             this.instruction.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + 42);
         }
-        if (this.runMoneyLabel) {
-            this.runMoneyLabel.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + 124);
+        if (this.worldLabel) {
+            this.worldLabel.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + 148);
         }
-        if (this.modeSelector) {
-            this.modeSelector.position.set(Game.overlayScreenData.center.x - 156, Game.overlayScreenData.topLeft.y + 66);
-            const buttons = this.modeSelector.children;
-            buttons[0].position.set(0, 0);
-            buttons[1].position.set(160, 0);
+        if (this.homeButton) {
+            this.homeButton.position.set(Game.overlayScreenData.topRight.x - 44, Game.overlayScreenData.topLeft.y + 44);
+        }
+        if (this.cashPill) {
+            this.cashPill.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + 96);
         }
         if (this.completeModal) {
             this.positionBottomPanel(this.completeModal);
@@ -1946,8 +2166,20 @@ export default class PathLevelScene extends ThreeScene {
             extend(checkpoint);
         }
         extend(this.env.mainPlayer.transform.position);
+        const room = this.level.sharedGoal;
+        if (room && this.sharedGoalActive && this.nextWaypointIndex >= this.waypoints.length - 1) {
+            extend(this.boundsRoomPoint.set(room.x - room.width / 2, 0, room.z - room.depth / 2));
+            extend(this.boundsRoomPoint.set(room.x + room.width / 2, 0, room.z + room.depth / 2));
+        }
         for (const point of this.route) {
             extend(point);
+        }
+        // Squad: keep every idle member and its goal in the shot so nobody is off screen.
+        for (const other of this.members) {
+            if (other !== this.focused && this.memberState(other) !== 'done') {
+                extend(other.player.transform.position);
+                extend(other.waypoints[other.nextWaypointIndex] ?? other.goal);
+            }
         }
         const floorHalfX = this.level.floor.width / 2;
         bounds.min.x = Math.max(bounds.min.x, -floorHalfX - 2);
@@ -2056,6 +2288,8 @@ export default class PathLevelScene extends ThreeScene {
         this.cameraBlendTween?.kill();
         this.goalHand?.destroy();
         this.goalHand = undefined;
+        this.dragHint?.destroy();
+        this.dragHint = undefined;
         this.payoutFlights.forEach((flight) => flight.kill());
         this.payoutFlights.length = 0;
         this.removeInputListeners();

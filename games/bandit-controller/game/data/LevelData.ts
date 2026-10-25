@@ -71,6 +71,30 @@ export interface LevelGuard {
     facing: number;
 }
 
+/** A wall-mounted security camera: a cone that sweeps around `facing`; being seen by it busts the player. */
+export interface LevelSecurityCamera {
+    x: number;
+    z: number;
+    /** Centre heading in degrees (0 = +Z, 180 = -Z, 90 = +X, 270 = -X). */
+    facing: number;
+    /** Degrees swept left and right of `facing` (0 = fixed). */
+    sweep: number;
+    /** Seconds for one full left-right-left sweep. */
+    period: number;
+    fov: number;
+    range: number;
+}
+
+/** A shared finish room: when enabled, every squad member must reach it and each lines up on its own spot inside. */
+export interface LevelSharedGoal {
+    x: number;
+    z: number;
+    width: number;
+    depth: number;
+    /** Defaults to true; false falls back to each member's own goal. */
+    enabled?: boolean;
+}
+
 export interface LevelSquadMember {
     /** Key of CHARACTER_VIEWS (e.g. blue, purple, orange); also colours the member's route and goal. */
     view: string;
@@ -82,6 +106,8 @@ export interface LevelSquadMember {
 export interface LevelData {
     id: string;
     name: string;
+    /** Shows a looping finger from the player to the goal until the player draws a path. */
+    tutorial?: boolean;
     grid: { cell: number };
     floor: { width: number; depth: number };
     /** Named shared styles (see ui/worldstyles.json). */
@@ -91,11 +117,13 @@ export interface LevelData {
     waypoints: LevelPoint[];
     /** Several characters that must each reach their own goal. Replaces start/waypoints for play when present. */
     squad?: LevelSquadMember[];
+    sharedGoal?: LevelSharedGoal;
     entryPath?: { x: number; z: number; width: number; depth: number } | null;
     walls: LevelWall[];
     props: LevelProp[];
     loot: LevelLoot[];
     guards?: LevelGuard[];
+    cameras?: LevelSecurityCamera[];
 }
 
 export interface LevelDoor {

@@ -1,0 +1,104 @@
+{
+  "worlds": [
+    {
+      "id": "world-1",
+      "name": "Downtown Bank",
+      "styles": {
+        "floor": "floorStyle1",
+        "wall": "wallStyle1",
+        "ground": "groundStyle1",
+        "path": "pathStyle1"
+      },
+      "levels": [
+        "tutorial-01",
+        "tutorial-02",
+        "tutorial-03",
+        "tutorial-04",
+        "tutorial-05",
+        "w1-06",
+        "w1-07",
+        "w1-08"
+      ]
+    },
+    {
+      "id": "world-2",
+      "name": "Mint Vault",
+      "styles": {
+        "floor": "floorStyle2",
+        "wall": "wallStyle2",
+        "ground": "groundStyle2",
+        "path": "pathStyle2"
+      },
+      "levels": [
+        "level-01",
+        "level-02",
+        "level-03",
+        "level-04",
+        "w2-05",
+        "w2-06",
+        "w2-07",
+        "w2-08"
+      ]
+    },
+    {
+      "id": "world-3",
+      "name": "Sunset Museum",
+      "styles": {
+        "floor": "floorStyle3",
+        "wall": "wallStyle3",
+        "ground": "groundStyle3",
+        "path": "pathStyle3"
+      },
+      "levels": [
+        "w3-01",
+        "w3-02",
+        "w3-03",
+        "w3-04",
+        "w3-05",
+        "w3-06",
+        "w3-07",
+        "w3-08"
+      ]
+    },
+    {
+      "id": "world-4",
+      "name": "Night Casino",
+      "styles": {
+        "floor": "floorStyle4",
+        "wall": "wallStyle4",
+        "ground": "groundStyle4",
+        "path": "pathStyle4"
+      },
+      "levels": [
+        "w4-01",
+        "w4-02",
+        "w4-03",
+        "w4-04",
+        "w4-05",
+        "w4-06",
+        "w4-07",
+        "w4-08"
+      ]
+    },
+    {
+      "id": "world-5",
+      "name": "Fortress",
+      "styles": {
+        "floor": "floorStyle5",
+        "wall": "wallStyle5",
+        "ground": "groundStyle5",
+        "path": "pathStyle5"
+      },
+      "levels": [
+        "w5-01",
+        "w5-02",
+        "w5-03",
+        "w5-04",
+        "w5-05",
+        "w5-06",
+        "w5-07",
+        "w5-08"
+      ]
+    }
+  ]
+}

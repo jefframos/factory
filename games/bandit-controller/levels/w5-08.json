@@ -1,0 +1,292 @@
+{
+  "id": "w5-08",
+  "name": "The Crown Jewels",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 16,
+    "depth": 32
+  },
+  "start": {
+    "x": -3.5,
+    "z": 18.0
+  },
+  "waypoints": [
+    {
+      "x": -3.5,
+      "z": 8.0
+    },
+    {
+      "x": -3.5,
+      "z": -2.0
+    },
+    {
+      "x": -3.5,
+      "z": -12.0
+    }
+  ],
+  "entryPath": {
+    "x": 0,
+    "z": 18.0,
+    "width": 11.0,
+    "depth": 4
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": -8.0,
+          "z": 16.0
+        },
+        {
+          "x": 8.0,
+          "z": 16.0
+        },
+        {
+          "x": 8.0,
+          "z": -16.0
+        },
+        {
+          "x": -8.0,
+          "z": -16.0
+        }
+      ],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": -5.1,
+          "maxX": 5.1,
+          "minZ": 15.7,
+          "maxZ": 16.3
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -8.0,
+          "z": 4.0
+        },
+        {
+          "x": 8.0,
+          "z": 4.0
+        }
+      ],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": -5.1,
+          "maxX": 5.1,
+          "minZ": 3.7,
+          "maxZ": 4.3
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -8.0,
+          "z": -6.0
+        },
+        {
+          "x": 8.0,
+          "z": -6.0
+        }
+      ],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": -5.1,
+          "maxX": 5.1,
+          "minZ": -6.3,
+          "maxZ": -5.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -4.0,
+          "z": -3.0
+        },
+        {
+          "x": 8.0,
+          "z": -3.0
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -2.5,
+      "z": 10.0,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": 2.5,
+      "z": 0.0,
+      "amount": 50,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -2.5,
+      "z": -10.0,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [
+    {
+      "path": [
+        {
+          "x": -6.5,
+          "z": 10.0
+        },
+        {
+          "x": 6.5,
+          "z": 10.0
+        }
+      ],
+      "loop": false,
+      "speed": 1.9,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 5,
+      "sweep": 40,
+      "facing": 270
+    },
+    {
+      "path": [
+        {
+          "x": -6.5,
+          "z": -10.0
+        },
+        {
+          "x": 6.5,
+          "z": -10.0
+        }
+      ],
+      "loop": false,
+      "speed": 1.9,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 5,
+      "sweep": 40,
+      "facing": 270
+    }
+  ],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "squad": [
+    {
+      "view": "blue",
+      "start": {
+        "x": -3.5,
+        "z": 18.0
+      },
+      "waypoints": [
+        {
+          "x": -3.5,
+          "z": 8.0
+        },
+        {
+          "x": -3.5,
+          "z": -2.0
+        },
+        {
+          "x": -3.5,
+          "z": -12.0
+        }
+      ]
+    },
+    {
+      "view": "purple",
+      "start": {
+        "x": 0.0,
+        "z": 18.0
+      },
+      "waypoints": [
+        {
+          "x": 0.0,
+          "z": 8.0
+        },
+        {
+          "x": 0.0,
+          "z": -2.0
+        },
+        {
+          "x": 0.0,
+          "z": -12.0
+        }
+      ]
+    },
+    {
+      "view": "orange",
+      "start": {
+        "x": 3.5,
+        "z": 18.0
+      },
+      "waypoints": [
+        {
+          "x": 3.5,
+          "z": 8.0
+        },
+        {
+          "x": 3.5,
+          "z": -2.0
+        },
+        {
+          "x": 3.5,
+          "z": -12.0
+        }
+      ]
+    }
+  ],
+  "sharedGoal": {
+    "x": 0,
+    "z": -12.5,
+    "width": 12,
+    "depth": 6,
+    "enabled": true
+  },
+  "cameras": [
+    {
+      "x": 7.6,
+      "z": 15.6,
+      "facing": 225,
+      "sweep": 45,
+      "period": 5,
+      "fov": 50,
+      "range": 10
+    },
+    {
+      "x": 7.6,
+      "z": -6.4,
+      "facing": 225,
+      "sweep": 45,
+      "period": 5,
+      "fov": 50,
+      "range": 10
+    }
+  ]
+}

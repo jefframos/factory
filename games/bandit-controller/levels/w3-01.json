@@ -1,0 +1,90 @@
+{
+  "id": "w3-01",
+  "name": "Smile, You're on Camera",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 12,
+    "depth": 12
+  },
+  "start": {
+    "x": 0.0,
+    "z": 8.0
+  },
+  "waypoints": [
+    {
+      "x": 0.0,
+      "z": -2.0
+    }
+  ],
+  "entryPath": {
+    "x": 0,
+    "z": 8.0,
+    "width": 4.0,
+    "depth": 4
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": -6.0,
+          "z": 6.0
+        },
+        {
+          "x": 6.0,
+          "z": 6.0
+        },
+        {
+          "x": 6.0,
+          "z": -6.0
+        },
+        {
+          "x": -6.0,
+          "z": -6.0
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -1.25,
+          "maxX": 1.25,
+          "minZ": 5.7,
+          "maxZ": 6.3
+        }
+      ]
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -2.5,
+      "z": 0.0,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "cameras": [
+    {
+      "x": -5.6,
+      "z": 5.6,
+      "facing": 135,
+      "sweep": 40,
+      "period": 6,
+      "fov": 50,
+      "range": 9
+    }
+  ]
+}

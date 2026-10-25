@@ -136,7 +136,7 @@
         },
         "message": {
           "type": "text",
-          "text": "A guard caught you.\\nWatch their patrol and time it.",
+          "text": "A guard caught you.\nWatch their patrol and time it.",
           "fill": "#ffffff",
           "stroke": "#1d1d1d",
           "strokeWidth": 4,
