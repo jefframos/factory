@@ -5,27 +5,41 @@
     "cell": 0.5
   },
   "floor": {
-    "width": 14,
-    "depth": 20
+    "width": 25.48,
+    "depth": 20,
+    "rects": [
+      {
+        "x": 2.94,
+        "z": 6,
+        "width": 19.6,
+        "depth": 8
+      },
+      {
+        "x": -2.94,
+        "z": -4,
+        "width": 19.6,
+        "depth": 12
+      }
+    ]
   },
   "start": {
-    "x": 0,
-    "z": 12
+    "x": -2.94,
+    "z": -12
   },
   "waypoints": [
     {
-      "x": 0,
+      "x": -2.94,
       "z": 0
     },
     {
-      "x": 3,
-      "z": -7.5
+      "x": -1.26,
+      "z": 7.5
     }
   ],
   "entryPath": {
-    "x": 0,
-    "z": 12,
-    "width": 4.8,
+    "x": -2.94,
+    "z": -12,
+    "width": 6.72,
     "depth": 4
   },
   "walls": [
@@ -33,43 +47,59 @@
       "closed": true,
       "points": [
         {
-          "x": -7,
+          "x": 12.74,
           "z": 10
         },
         {
-          "x": 7,
+          "x": -6.86,
           "z": 10
         },
         {
-          "x": 7,
+          "x": -6.86,
+          "z": 2
+        },
+        {
+          "x": -12.74,
+          "z": 2
+        },
+        {
+          "x": -12.74,
           "z": -10
         },
         {
-          "x": -7,
+          "x": 6.86,
           "z": -10
+        },
+        {
+          "x": 6.86,
+          "z": 2
+        },
+        {
+          "x": 12.74,
+          "z": 2
         }
       ],
       "openings": [
         {
           "kind": "door",
-          "minX": -1.25,
-          "maxX": 1.25,
-          "minZ": 9.7,
-          "maxZ": 10.3
+          "minX": -4.69,
+          "maxX": -1.19,
+          "minZ": -10.3,
+          "maxZ": -9.7
         },
         {
           "kind": "window",
-          "minX": -5.5,
-          "maxX": -2.5,
-          "minZ": 9.7,
-          "maxZ": 10.3
+          "minX": 0.56,
+          "maxX": 4.76,
+          "minZ": -10.3,
+          "maxZ": -9.7
         },
         {
           "kind": "window",
-          "minX": 2.5,
-          "maxX": 5.5,
-          "minZ": 9.7,
-          "maxZ": 10.3
+          "minX": -10.64,
+          "maxX": -6.44,
+          "minZ": -10.3,
+          "maxZ": -9.7
         }
       ]
     },
@@ -77,21 +107,65 @@
       "closed": false,
       "points": [
         {
-          "x": -7,
-          "z": -2
+          "x": 6.86,
+          "z": 2
         },
         {
-          "x": 7,
-          "z": -2
+          "x": -6.86,
+          "z": 2
         }
       ],
       "openings": [
         {
           "kind": "door",
-          "minX": -1.25,
-          "maxX": 1.25,
-          "minZ": -2.3,
-          "maxZ": -1.7
+          "minX": -1.75,
+          "maxX": 1.75,
+          "minZ": 1.7,
+          "maxZ": 2.3
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -0.98,
+          "z": 10
+        },
+        {
+          "x": -0.98,
+          "z": 2
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -1.28,
+          "maxX": -0.68,
+          "minZ": 4.35,
+          "maxZ": 9.4
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 0.98,
+          "z": 2
+        },
+        {
+          "x": 0.98,
+          "z": -10
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 0.68,
+          "maxX": 1.28,
+          "minZ": -8.4,
+          "maxZ": -2.35
         }
       ]
     }
@@ -100,12 +174,12 @@
     {
       "path": [
         {
-          "x": -1.5,
-          "z": -9
+          "x": 5.04,
+          "z": 9
         },
         {
-          "x": -1.5,
-          "z": -4
+          "x": 5.04,
+          "z": 4
         }
       ],
       "loop": false,
@@ -114,15 +188,15 @@
       "fov": 55,
       "range": 5.5,
       "sweep": 50,
-      "facing": 180
+      "facing": 0
     }
   ],
   "props": [
     {
       "model": "heist/mini-market/cash-register.glb",
-      "x": 4.5,
-      "z": 6,
-      "rotationY": 3.1416,
+      "x": -9.24,
+      "z": -6,
+      "rotationY": 6.2832,
       "height": 1.25,
       "collider": {
         "halfX": 0.8,
@@ -133,9 +207,9 @@
     },
     {
       "model": "heist/mini-market/shelf-boxes.glb",
-      "x": -5.5,
-      "z": 4,
-      "rotationY": 1.5708,
+      "x": 4.76,
+      "z": -4,
+      "rotationY": 4.7124,
       "height": 2.7,
       "collider": {
         "halfX": 0.6,
@@ -146,9 +220,9 @@
     },
     {
       "model": "heist/mini-market/shelf-boxes.glb",
-      "x": -5.5,
-      "z": -5,
-      "rotationY": 1.5708,
+      "x": 10.64,
+      "z": 5,
+      "rotationY": 4.7124,
       "height": 2.7,
       "collider": {
         "halfX": 0.6,
@@ -159,9 +233,9 @@
     },
     {
       "model": "heist/vault/vault.gltf",
-      "x": 4.5,
-      "z": -8,
-      "rotationY": 0,
+      "x": -3.36,
+      "z": 8,
+      "rotationY": 3.1416,
       "height": 2.8,
       "collider": {
         "halfX": 0.95,
@@ -172,27 +246,27 @@
     },
     {
       "model": "heist/trees/tree-large.glb",
-      "x": -5,
-      "z": -12,
-      "rotationY": 0,
+      "x": 9.94,
+      "z": 12,
+      "rotationY": 3.1416,
       "height": 8,
       "collider": null,
       "revealAt": 0
     },
     {
       "model": "heist/trees/tree-small.glb",
-      "x": 0,
-      "z": -12.5,
-      "rotationY": 0,
+      "x": 2.94,
+      "z": 12.5,
+      "rotationY": 3.1416,
       "height": 5.5,
       "collider": null,
       "revealAt": 0
     },
     {
       "model": "heist/trees/tree-large.glb",
-      "x": 5,
-      "z": -12,
-      "rotationY": 0,
+      "x": -4.06,
+      "z": 12,
+      "rotationY": 3.1416,
       "height": 7.5,
       "collider": null,
       "revealAt": 0
@@ -201,40 +275,40 @@
   "loot": [
     {
       "model": "resources/Money_Coins_Stack_Small.gltf",
-      "x": -2.5,
-      "z": 6.5,
+      "x": 0.56,
+      "z": -6.5,
       "amount": 25,
       "scale": 1.35,
       "revealAt": 0
     },
     {
       "model": "resources/Money_Bills_Stack_Small.gltf",
-      "x": 2.5,
-      "z": 3,
+      "x": -6.44,
+      "z": -3,
       "amount": 25,
       "scale": 1.35,
       "revealAt": 0
     },
     {
       "model": "resources/Money_Bills_Stack_Small.gltf",
-      "x": -3,
-      "z": -4.5,
+      "x": 7.14,
+      "z": 4.5,
       "amount": 50,
       "scale": 1.35,
       "revealAt": 1
     },
     {
       "model": "resources/Money_Coins_Stack_Small.gltf",
-      "x": 1.5,
-      "z": -6,
+      "x": 0.84,
+      "z": 6,
       "amount": 80,
       "scale": 1.35,
       "revealAt": 1
     },
     {
       "model": "resources/Money_Bills_Stack_Small.gltf",
-      "x": -1,
-      "z": -8,
+      "x": 4.34,
+      "z": 8,
       "amount": 120,
       "scale": 1.35,
       "revealAt": 1
@@ -247,5 +321,7 @@
     "window": "windowStyle1",
     "ground": "groundStyle1",
     "path": "pathStyle1"
-  }
+  },
+  "cameras": [],
+  "traps": []
 }

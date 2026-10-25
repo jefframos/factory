@@ -151,22 +151,31 @@ export interface LevelData {
     drones?: LevelDrone[];
 }
 
+/** Shared finish areas replace final destination disks, but not intermediate checkpoints. */
+export function shouldShowWaypointMarker(level: LevelData, waypointIndex: number, waypointCount: number): boolean {
+    const sharedFinish = level.sharedGoal && level.sharedGoal.enabled !== false && (level.squad?.length ?? 0) > 1;
+    return !sharedFinish || waypointIndex < waypointCount - 1;
+}
+
 export interface LevelDoor {
     x: number;
     z: number;
     halfWidth: number;
+    alongX: boolean;
 }
 
-/** Doors in horizontal walls (opening wider along X) — the only ones the path assist can steer through. */
+/** Door centres and their opening direction, shared by horizontal and vertical walls. */
 export function levelDoors(level: LevelData): LevelDoor[] {
     const doors: LevelDoor[] = [];
     for (const wall of level.walls) {
         for (const opening of wall.openings) {
-            if (opening.kind === 'door' && opening.maxX - opening.minX >= opening.maxZ - opening.minZ) {
+            if (opening.kind === 'door') {
+                const alongX = opening.maxX - opening.minX >= opening.maxZ - opening.minZ;
                 doors.push({
                     x: (opening.minX + opening.maxX) / 2,
                     z: (opening.minZ + opening.maxZ) / 2,
-                    halfWidth: (opening.maxX - opening.minX) / 2,
+                    halfWidth: (alongX ? opening.maxX - opening.minX : opening.maxZ - opening.minZ) / 2,
+                    alongX,
                 });
             }
         }

@@ -50,6 +50,7 @@ import { buildRoadDetails } from '../builders/RoadDetailsBuilder';
 import { waitForFirstInput } from '../utils/waitForFirstInput';
 import ReturnToHubButton from '../ui/ReturnToHubButton';
 import RestartButton from '../ui/RestartButton';
+import { GameAudio } from '../audio/GameAudio';
 import MoneyHud from '../ui/MoneyHud';
 import Collectible from '../entities/Collectible';
 import { COIN } from '../data/CollectibleSettings';
@@ -132,6 +133,7 @@ export default class RunnerMinigameScene extends ThreeScene {
             if (this.stopped) {
                 return;
             }
+            GameAudio.play('victory');
             this.onComplete.dispatch();
         }, RunnerBendService);
 
@@ -259,6 +261,7 @@ export default class RunnerMinigameScene extends ThreeScene {
             return;
         }
         this.stopped = true;
+        GameAudio.play('busted');
 
         const player = this.env.mainPlayer;
         player.movementController.enabled = false;

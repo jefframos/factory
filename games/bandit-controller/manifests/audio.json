@@ -2,7 +2,80 @@
   "bundles": [
     {
       "name": "default",
-      "assets": []
+      "assets": [
+        {
+          "alias": [
+            "busted.ogg"
+          ],
+          "src": [
+            "busted.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "checkpoint.ogg"
+          ],
+          "src": [
+            "checkpoint.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep-1.ogg"
+          ],
+          "src": [
+            "footstep-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep-2.ogg"
+          ],
+          "src": [
+            "footstep-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "heist-music.mp3"
+          ],
+          "src": [
+            "heist-music.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "pickup-1.ogg"
+          ],
+          "src": [
+            "pickup-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "pickup-2.ogg"
+          ],
+          "src": [
+            "pickup-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-tap.wav"
+          ],
+          "src": [
+            "ui-tap.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "victory.wav"
+          ],
+          "src": [
+            "victory.mp3"
+          ]
+        }
+      ]
     }
   ]
 }

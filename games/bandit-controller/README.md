@@ -20,6 +20,78 @@ Porting a feature over from the full game? Read
 a map of every system in `games/bandit/legacy`, what's already been ported
 here, and what's next.
 
+## Presentation and audio
+
+The home screen uses a solid garden floor and five background tree models.
+Home and campaign scenes disable the shared environment's debug-grid visual,
+but keep its ground collider. The home wardrobe is accessed through EDIT SQUAD;
+there is no separate shop shortcut or game-name ribbon.
+
+The main screen has two actions: EDIT SQUAD and a larger golden CHOOSE LEVEL
+button. Choosing a level opens a separate world/level panel with a BACK button;
+the world grid is not part of the main menu. Home uses a vibrant grass-green garden;
+campaign exteriors use richer greens, warm sand and deep blue, with low-contrast
+indoor floors so characters, goals, and primary actions remain readable.
+Guards wear a reserved navy uniform, independent of customizable squad skins;
+red remains available to players, while guard alerts still use danger red.
+Campaign door panels are hidden; wall openings, collision gaps, and route assistance
+remain unchanged. The configured model is the undecorated `Door_A` from
+[KayKit Prototype Bits](https://github.com/KayKit-Game-Assets/KayKit-Prototype-Bits-1.0),
+not `Door_A_Decorated` or the similarly named restaurant emergency door. The
+self-contained `wooden-door.glb` is converted from the original glTF; its CC0
+license is kept beside the source asset. Door style model paths
+accept `.glb` or `.gltf`; extensionless paths retain the legacy `.gltf` default.
+
+With `?dev=1` (or `?debug=1`), the **Progression** debug panel shows cash, stars,
+and completion counts. **RESET GAME DATA...** asks for confirmation, removes only
+this game's progression/currency/wardrobe/squad/daily keys, then reloads Home.
+Mute preferences, developer settings, and other games' data are preserved.
+Run `npm run test:bandit-progression` to verify the reset scope.
+
+The persistent top-right sound toggle uses the shared `SoundManager`, like Tower,
+including saved mute preferences and platform-forced mute. Campaign Home is
+beside it rather than underneath it. [`GameAudio.ts`](game/audio/GameAudio.ts)
+registers the audio manifest using the configured platform folder, preloads
+effects, and starts one music loop after a pointer/key gesture. Music is quieter
+in gameplay. Platform pauses and hidden tabs silence all audio without changing
+the player's mute preference; visibility handling follows the platform policy.
+
+Cues cover UI taps, wardrobe feedback, daily rewards, pickup collection,
+distance-based grounded footsteps, accepted/blocked paths, checkpoints, wins,
+bonuses, and busted/hit outcomes. Frequently repeated cues are throttled.
+
+Audio sources are copied from this repository's Clog assets: `Tap.wav`,
+`pepSound3.ogg`, `pepSound5.ogg`, `phaserUp2.ogg`, `lowDown.ogg`,
+`hpp-yay1.wav`, `footstep_wood_000.ogg`, `footstep_wood_002.ogg`, and
+`Pong-the-Atmosphere-Dan_Lebo_Lebowitz-Tone-Seeker.mp3`. They have game-local,
+space-free names in [`raw-assets/audio/`](raw-assets/audio/). No new external
+sound library was downloaded. Run `npm run audio` with `GAME=bandit-controller`
+to generate browser MP3s and [`manifests/audio.json`](manifests/audio.json).
+
+## Campaign layouts and route checks
+
+Campaign levels are authored in [`levels/`](levels/), with world membership in
+[`levels/worlds.json`](levels/worlds.json). Non-tutorial levels in worlds 1–7
+use staggered floor pieces, side-room divisions, and varied entry directions;
+tutorials keep their simpler layouts. Keep every wall opening aligned with its
+wall, and rotate patrol headings, prop colliders, entry paths, and shared goals
+when changing a layout's orientation.
+In 1-7, side partitions sit back from the central doorway to keep its opening and
+approach clear; doorway route checks include both directions and side-room detours.
+Active shared finish areas replace the squad's final destination disks, including
+when those destinations are revealed after a checkpoint. Intermediate checkpoints
+and individual goals in levels without an active shared finish remain visible.
+
+[`LevelRoute.ts`](game/utils/LevelRoute.ts) assists horizontal and vertical
+door crossings locally along the drawn trace. A door must not pull unrelated
+parts of the route toward its centre just because they share a world-space row.
+The adjusted route is checked against wall colliders before following it.
+
+Run `npm run test:level-paths` after editing levels or door assistance. It covers
+the world 8–2 courtyard crossing in both directions, sideways door assistance,
+actual wall-style collider dimensions, guard patrol clearance, and reachable
+waypoints, shared-goal slots, and loot for every non-tutorial world 1–7 level.
+
 ## Big picture: a hub scene + one scene per minigame
 
 `index.ts` boots a plain `core/Game` subclass — no PIXI.Assets bundles, no

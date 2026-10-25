@@ -1,6 +1,6 @@
 // Guard.ts
 //
-// A patrolling guard: the player's rig tinted red, walking a fixed, repeating route and carrying a
+// A patrolling guard: the player's rig in a reserved navy uniform, walking a repeating route and carrying a
 // translucent view cone on the floor. Movement is a pure function of the time fed to advance(), so a
 // level is a deterministic puzzle. The cone is clipped by walls (see LevelSight).
 
@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import ThirdPersonCharacter from './ThirdPersonCharacter';
 import { TextureBuilder } from '../builders/TextureBuilder';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
-import { CHARACTER_VIEWS, resolveSkinImagePath } from '../data/CharacterViews';
+import { GUARD_CHARACTER_VIEW, resolveSkinImagePath } from '../data/CharacterViews';
 import type { LevelGuard } from '../data/LevelData';
 import type { LevelSight } from '../utils/LevelSight';
 import { WorldBendService } from 'core/services/BendService';
@@ -106,13 +106,13 @@ export default class Guard {
             if (data.loop) {
                 points.push(points[0].clone());
             }
-            const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff5252, transparent: true, opacity: 0.55 });
+            const lineMaterial = new THREE.LineBasicMaterial({ color: GUARD_CHARACTER_VIEW.color, transparent: true, opacity: 0.55 });
             this.bendService.applyBend(lineMaterial);
             this.routeLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), lineMaterial);
             this.routeLine.frustumCulled = false;
             this.threeScene.add(this.routeLine);
             for (const point of this.path) {
-                const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff5252, transparent: true, opacity: 0.6 });
+                const markerMaterial = new THREE.MeshBasicMaterial({ color: GUARD_CHARACTER_VIEW.color, transparent: true, opacity: 0.6 });
                 this.bendService.applyBend(markerMaterial);
                 const marker = new THREE.Mesh(new THREE.CircleGeometry(0.18, 16), markerMaterial);
                 marker.rotation.x = -Math.PI / 2;
@@ -158,7 +158,7 @@ export default class Guard {
         await character.registerAnimation('run', modelUrl(MODELS.Characters.Running.fullPath));
         character.setUp();
         await character.registerAnimation('angry', ANGRY_ANIMATION_URL);
-        const view = CHARACTER_VIEWS.red;
+        const view = GUARD_CHARACTER_VIEW;
         const faceTexture = await TextureBuilder.load(resolveSkinImagePath(view.face));
         character.applyCharacterView(view.color, faceTexture);
         character.container.scale.setScalar(CHARACTER_SCALE);

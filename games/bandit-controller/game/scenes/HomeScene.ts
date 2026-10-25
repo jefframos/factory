@@ -1,8 +1,8 @@
 // HomeScene.ts
 //
-// The friendly front screen: the squad idling in 3D, a world picker with a level grid (checks for
-// completed levels, locks for ones not reached yet), a PLAY button, an EDIT SQUAD panel and a reserved
-// SHOP slot. It only exposes Signals — index.ts is the one that changes scenes.
+// The friendly front screen: the squad idling in 3D, EDIT SQUAD, and CHOOSE LEVEL,
+// which opens a separate world picker with completion checks and locked levels.
+// It only exposes Signals — index.ts is the one that changes scenes.
 
 import gsap from 'gsap';
 import * as PIXI from 'pixi.js';
@@ -31,6 +31,8 @@ import type MainPlayer from '../player/MainPlayer';
 import { UiKit } from '../ui/UiKit';
 import MoneyHud from '../ui/MoneyHud';
 import { WorldEnvironment } from './shared/WorldEnvironment';
+import ModelLoaderManager from 'core/three/ModelLoaderManager';
+import { GameAudio } from '../audio/GameAudio';
 
 const CARD_COLUMNS = 5;
 const CARD_WIDTH = 70;
@@ -43,17 +45,20 @@ const PODIUM = [
     { x: -1.75, z: -0.3, height: 0.35 },
     { x: 1.75, z: -0.3, height: 0.35 },
 ];
+const PODIUM_CAP_HEIGHT = 0.06;
 const CAMERA_FOV = 30;
 const CAMERA_DISTANCE = 15;
+const SQUAD_FRAME_WIDTH = 7.2;
 const CAMERA_HEIGHT = 3.2;
 const LOOK_HEIGHT = 1.1;
 const MENU_HEIGHT = 330;
+const HOME_MENU_HEIGHT = 190;
 const DESIGN_WIDTH = 420;
 const GRID_COLUMNS = 4;
 const TILE = 72;
 const TILE_GAP = 12;
 
-const TILE_COLORS = { done: 0x5cc84a, open: 0x3b9ae8, locked: 0x8a97a6 };
+const TILE_COLORS = { done: 0x55a989, open: 0x4d96c5, locked: 0x8798a8 };
 
 const textStyle = (size: number, stroke = 0x1d2b3a): Partial<PIXI.ITextStyle> => ({
     fontFamily: UiKit.fontFamily('primary'),
@@ -80,8 +85,9 @@ export default class HomeScene extends ThreeScene {
     private root?: PIXI.Container;
     private menu!: PIXI.Container;
     private editPanel!: PIXI.Container;
-    private title!: PIXI.Container;
-    private shopButton!: PIXI.Container;
+    private levelPicker!: PIXI.Container;
+    private levelPanel!: PIXI.Container;
+    private levelDim!: PIXI.Graphics;
     private worldTitle!: PIXI.Text;
     private worldProgress!: PIXI.Text;
     private dailyModal?: PIXI.Container;
@@ -97,6 +103,9 @@ export default class HomeScene extends ThreeScene {
     private editing = false;
     private destroyed = false;
     private tweens: gsap.core.Tween[] = [];
+    private sceneryReady: Promise<void> = Promise.resolve();
+    private readonly sceneryResources: Array<THREE.BufferGeometry | THREE.Material> = [];
+    private sceneryGeneration = 0;
 
     public constructor(game: Game, moneyHud: MoneyHud) {
         super(game);
@@ -104,18 +113,20 @@ export default class HomeScene extends ThreeScene {
     }
 
     public get ready(): Promise<void> {
-        return this.env.playerReady;
+        return Promise.all([this.env.playerReady, this.sceneryReady]).then(() => undefined);
     }
 
     public build(): void {
         this.destroyed = false;
         this.editing = false;
-        this.env = new WorldEnvironment(this.threeScene, BendService, 40, 16, 1);
+        this.env = new WorldEnvironment(this.threeScene, BendService, 40, 16, 1, undefined, false);
+        this.buildGarden();
+        this.threeScene.add(new THREE.HemisphereLight(0xfff4df, 0x6c8874, 0.8));
         this.podiumMaterials = [];
         this.players = SQUAD_VIEW_NAMES.map((name, index) => {
             const spot = PODIUM[index];
             this.buildPodium(spot, new THREE.Color(CHARACTER_VIEWS[name].color));
-            const player = this.env.spawnPlayer(this, new THREE.Vector3(spot.x, spot.height, spot.z), undefined, CHARACTER_VIEWS[name]);
+            const player = this.env.spawnPlayer(this, new THREE.Vector3(spot.x, spot.height + PODIUM_CAP_HEIGHT, spot.z), undefined, CHARACTER_VIEWS[name]);
             player.movementController.enabled = false;
             (player.rigidBody as { useGravity: boolean }).useGravity = false;
             return player;
@@ -135,6 +146,56 @@ export default class HomeScene extends ThreeScene {
         this.refreshWorld();
     }
 
+    private buildGarden(): void {
+        const generation = ++this.sceneryGeneration;
+        const geometry = new THREE.PlaneGeometry(70, 70, 48, 48);
+        const material = new THREE.MeshStandardMaterial({ color: 0x55b94c, roughness: 1 });
+        BendService.applyBend(material);
+        const ground = new THREE.Mesh(geometry, material);
+        ground.name = 'home-garden-ground';
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.02;
+        this.sceneryResources.push(geometry, material);
+        this.threeScene.add(ground);
+
+        const trees = [
+            { x: -5.2, z: -4.5, height: 4.2 },
+            { x: -3.4, z: -7, height: 4.8 },
+            { x: 0.4, z: -8, height: 4.4 },
+            { x: 3.6, z: -6.5, height: 4.7 },
+            { x: 5.4, z: -3.8, height: 4 },
+        ];
+        this.sceneryReady = Promise.all(trees.map(async (spot, index) => {
+            const kind = index % 2 ? 'tree-small' : 'tree-large';
+            const tree = await ModelLoaderManager.instance.loadModel(`./${this.game.folderPath}/models/heist/trees/${kind}.glb`);
+            if (this.destroyed || generation !== this.sceneryGeneration) {
+                return;
+            }
+            const bounds = new THREE.Box3().setFromObject(tree);
+            const scale = spot.height / (bounds.max.y - bounds.min.y);
+            tree.scale.setScalar(scale);
+            tree.position.set(spot.x, -bounds.min.y * scale, spot.z);
+            tree.rotation.y = index * 1.3;
+            tree.name = `home-tree-${index}`;
+            tree.traverse((child) => {
+                if (child instanceof THREE.Mesh) {
+                    const cloneMaterial = (source: THREE.Material): THREE.Material => {
+                        const clone = source.clone();
+                        BendService.applyBend(clone);
+                        this.sceneryResources.push(clone);
+                        return clone;
+                    };
+                    child.material = Array.isArray(child.material)
+                        ? child.material.map(cloneMaterial)
+                        : cloneMaterial(child.material);
+                }
+            });
+            this.threeScene.add(tree);
+        })).then(() => undefined).catch((error) => {
+            console.error('[HomeScene] Could not load garden trees', error);
+        });
+    }
+
     private buildPodium(spot: { x: number; z: number; height: number }, color: THREE.Color): void {
         const base = new THREE.MeshStandardMaterial({ color: color.clone().lerp(new THREE.Color(0xffffff), 0.35), roughness: 0.5 });
         const top = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
@@ -143,14 +204,16 @@ export default class HomeScene extends ThreeScene {
         BendService.applyBend(top);
         const column = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.05, spot.height, 40), base);
         column.position.set(spot.x, spot.height / 2, spot.z);
-        const cap = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.06, 40), top);
-        cap.position.set(spot.x, spot.height + 0.03 - 0.06, spot.z);
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, PODIUM_CAP_HEIGHT, 40), top);
+        cap.position.set(spot.x, spot.height + PODIUM_CAP_HEIGHT / 2, spot.z);
         cap.scale.set(1, 1, 1);
         this.threeScene.add(column, cap);
     }
 
     private placeCamera(): void {
-        this.threeCamera.position.set(0, CAMERA_HEIGHT, CAMERA_DISTANCE);
+        const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+        const fitDistance = SQUAD_FRAME_WIDTH / (2 * Math.tan(THREE.MathUtils.degToRad(CAMERA_FOV / 2)) * aspect);
+        this.threeCamera.position.set(0, CAMERA_HEIGHT, Math.max(CAMERA_DISTANCE, fitDistance));
         this.threeCamera.lookAt(0, LOOK_HEIGHT, 0);
     }
 
@@ -163,21 +226,17 @@ export default class HomeScene extends ThreeScene {
         const root = new PIXI.Container();
         this.root = root;
 
-        this.title = new PIXI.Container();
-        const ribbon = PIXI.Sprite.from('Title_Ribbon01_Green');
-        ribbon.anchor.set(0.5);
-        ribbon.scale.set(0.85);
-        this.title.addChild(ribbon, label('HEIST CREW', 24, 0x1d5a2a));
-
-        this.shopButton = this.roundButton('Icon_Lock02', 0x9aa6b4);
-        const soon = label('SHOP', 13);
-        soon.position.set(0, 42);
-        this.shopButton.addChild(soon);
-
         this.menu = this.buildMenu();
         this.editPanel = this.buildEditPanel();
         this.editPanel.visible = false;
-        root.addChild(this.title, this.shopButton, this.menu, this.editPanel);
+        this.levelPicker = new PIXI.Container();
+        this.levelPicker.name = 'level-picker';
+        this.levelDim = new PIXI.Graphics();
+        this.levelDim.eventMode = 'static';
+        this.levelPanel = this.buildLevelPanel();
+        this.levelPicker.addChild(this.levelDim, this.levelPanel);
+        this.levelPicker.visible = false;
+        root.addChild(this.menu, this.editPanel, this.levelPicker);
         this.game.uiLayer.addChild(root);
         this.resize();
         this.offerDailyReward();
@@ -204,6 +263,7 @@ export default class HomeScene extends ThreeScene {
         amount.position.set(0, 5);
         const claim = this.makeButton('Button01_s_Blue', 190, 64, 'CLAIM', 22, () => {
             Progress.claimDaily();
+            GameAudio.play('bonus');
             this.moneyHud.setResourceCount(GameState.getMoney());
             modal.destroy({ children: true });
             this.dailyModal = undefined;
@@ -218,18 +278,6 @@ export default class HomeScene extends ThreeScene {
     private layoutDaily(): void {
         const screen = Game.overlayScreenData;
         if (this.dailyModal && !this.dailyModal.destroyed) this.dailyModal.position.set(screen.center.x, screen.center.y);
-    }
-
-    private roundButton(icon: string, color: number): PIXI.Container {
-        const button = new PIXI.Container();
-        const back = new PIXI.Graphics();
-        back.beginFill(0x000000, 0.25).drawCircle(0, 4, 30).endFill();
-        back.beginFill(color).lineStyle(4, 0xffffff).drawCircle(0, 0, 30).endFill();
-        const sprite = PIXI.Sprite.from(icon);
-        sprite.anchor.set(0.5);
-        sprite.scale.set(34 / Math.max(sprite.texture.width, sprite.texture.height, 1));
-        button.addChild(back, sprite);
-        return button;
     }
 
     private makeButton(frame: string, width: number, height: number, text: string, size: number, onTap: () => void): PIXI.Container {
@@ -264,8 +312,21 @@ export default class HomeScene extends ThreeScene {
 
     private buildMenu(): PIXI.Container {
         const menu = new PIXI.Container();
+        menu.name = 'home-actions';
+        const edit = this.makeButton('Button01_s_Blue', 210, 58, 'EDIT SQUAD', 23, () => this.setEditing(true));
+        edit.name = 'edit-squad';
+        edit.position.set(0, -56);
+        const choose = this.makeButton('Button01_s_Yellow', 354, 92, 'CHOOSE LEVEL', 32, () => this.setChoosingLevel(true));
+        choose.name = 'choose-level';
+        choose.position.set(0, 35);
+        menu.addChild(edit, choose);
+        return menu;
+    }
+
+    private buildLevelPanel(): PIXI.Container {
+        const menu = new PIXI.Container();
         const back = new PIXI.Graphics();
-        back.beginFill(0x16324a, 0.92).lineStyle(4, 0xffffff, 0.9).drawRoundedRect(-DESIGN_WIDTH / 2, -MENU_HEIGHT / 2, DESIGN_WIDTH, MENU_HEIGHT, 26).endFill();
+        back.beginFill(0x23465a, 0.98).lineStyle(4, 0xeaf3f5, 0.9).drawRoundedRect(-DESIGN_WIDTH / 2, -MENU_HEIGHT / 2, DESIGN_WIDTH, MENU_HEIGHT, 26).endFill();
         menu.addChild(back);
 
         this.worldTitle = label('', 26);
@@ -286,18 +347,17 @@ export default class HomeScene extends ThreeScene {
         this.grid = new PIXI.Container();
         menu.addChild(this.grid);
 
-        const edit = this.makeButton('Button01_s_Blue', 150, 58, 'EDIT SQUAD', 20, () => this.setEditing(true));
-        edit.position.set(-100, 120);
-        const play = this.makeButton('Button01_s_Green', 190, 68, 'PLAY', 34, () => this.playRecommended());
-        play.position.set(85, 120);
-        menu.addChild(edit, play);
+        const backButton = this.makeButton('Button01_s_Blue', 180, 52, 'BACK', 23, () => this.setChoosingLevel(false));
+        backButton.name = 'close-level-picker';
+        backButton.position.set(0, 126);
+        menu.addChild(backButton);
         return menu;
     }
 
     private buildEditPanel(): PIXI.Container {
         const panel = new PIXI.Container();
         const back = new PIXI.Graphics();
-        back.beginFill(0x16324a, 0.94).lineStyle(4, 0xffffff, 0.9).drawRoundedRect(-DESIGN_WIDTH / 2, -MENU_HEIGHT / 2, DESIGN_WIDTH, MENU_HEIGHT, 26).endFill();
+        back.beginFill(0x23465a, 0.96).lineStyle(4, 0xeaf3f5, 0.9).drawRoundedRect(-DESIGN_WIDTH / 2, -MENU_HEIGHT / 2, DESIGN_WIDTH, MENU_HEIGHT, 26).endFill();
         this.editBody = new PIXI.Container();
         this.toast = label('', 15, 0x7a1d1d);
         this.toast.position.set(0, 5);
@@ -474,10 +534,12 @@ export default class HomeScene extends ThreeScene {
     private onCard(item: WardrobeItem | undefined, card: PIXI.Container): void {
         const kind = this.editTab === 'faces' ? 'face' : 'hat';
         if (item && !Wardrobe.buy(kind, item)) {
+            GameAudio.play('blocked');
             this.showToast('NOT ENOUGH CASH');
             this.tweens.push(gsap.fromTo(card, { rotation: -0.08 }, { rotation: 0, duration: 0.4, ease: 'elastic.out(1, 0.3)' }));
             return;
         }
+        GameAudio.play('equip');
         this.moneyHud.setResourceCount(GameState.getMoney());
         const name = SQUAD_VIEW_NAMES[this.editMember];
         const player = this.players[this.editMember];
@@ -511,6 +573,15 @@ export default class HomeScene extends ThreeScene {
         this.resize();
     }
 
+    private setChoosingLevel(choosing: boolean): void {
+        this.levelPicker.visible = choosing;
+        this.menu.visible = !choosing;
+        if (choosing) {
+            this.refreshWorld();
+        }
+        this.resize();
+    }
+
     private changeWorld(step: number): void {
         const count = LevelCatalog.worlds().length;
         this.worldIndex = (this.worldIndex + step + count) % count;
@@ -526,6 +597,8 @@ export default class HomeScene extends ThreeScene {
         const progress = LevelCatalog.worldProgress(world);
         const unlocked = LevelCatalog.isUnlocked(this.globalIndex(world.levels[0]));
         this.worldTitle.text = `${world.number}. ${world.name.toUpperCase()}`;
+        this.worldTitle.scale.set(1);
+        this.worldTitle.scale.set(Math.min(1, (DESIGN_WIDTH - 140) / this.worldTitle.width));
         const stars = Progress.worldStars(world.levels);
         const gate = worldGateStars(world.number);
         this.worldProgress.text = unlocked
@@ -598,16 +671,6 @@ export default class HomeScene extends ThreeScene {
         return tile;
     }
 
-    /** First unfinished unlocked level of the current world, otherwise its first level. */
-    private playRecommended(): void {
-        const world = this.world();
-        const target = world.levels.find((level) => !LevelCatalog.isCompleted(level) && LevelCatalog.isUnlocked(this.globalIndex(level)))
-            ?? world.levels.find((level) => LevelCatalog.isUnlocked(this.globalIndex(level)));
-        if (target) {
-            this.play(this.globalIndex(target));
-        }
-    }
-
     private play(index: number): void {
         LevelCatalog.select(index);
         this.onPlayLevel.dispatch();
@@ -620,20 +683,21 @@ export default class HomeScene extends ThreeScene {
             return;
         }
         const scale = Math.min(1.1, screen.width / DESIGN_WIDTH, screen.height / 720);
-        this.title.scale.set(scale);
-        this.title.position.set(screen.center.x, screen.topLeft.y + 80 * scale);
-        this.shopButton.scale.set(scale);
-        this.shopButton.position.set(screen.topRight.x - 44 * scale, screen.topLeft.y + 44 * scale);
 
-        const menuCenter = screen.bottomLeft.y - (MENU_HEIGHT / 2 + 14) * scale;
+        const panelHeight = this.editing ? MENU_HEIGHT : HOME_MENU_HEIGHT;
+        const menuCenter = screen.bottomLeft.y - (panelHeight / 2 + 24) * scale;
         this.menu.scale.set(scale);
         this.menu.position.set(screen.center.x, menuCenter);
-        const menuTop = menuCenter - (MENU_HEIGHT / 2) * scale;
+        const menuTop = menuCenter - (panelHeight / 2) * scale;
 
         this.editPanel.scale.set(scale);
         this.editPanel.position.set(screen.center.x, menuCenter);
+        this.levelPicker.position.set(screen.center.x, screen.center.y);
+        this.levelPanel.scale.set(scale);
+        this.levelDim.clear().beginFill(0x122c3d, 0.65)
+            .drawRect(-screen.width / 2, -screen.height / 2, screen.width, screen.height).endFill();
 
-        // The squad is centered in the free space between the title and the bottom panel.
+        // Keep the squad between the persistent corner controls and the bottom panel.
         const bottomEdge = menuTop;
         const free = (screen.topLeft.y + 120 * scale + bottomEdge) / 2 + 125 * scale;
         const fraction = (free - screen.topLeft.y) / Math.max(1, screen.height);
@@ -648,12 +712,12 @@ export default class HomeScene extends ThreeScene {
 
     public fixedUpdate(delta: number): void {
         this.players.forEach((player, index) => {
-            player.transform.position.y = PODIUM[index].height;
+            player.transform.position.y = PODIUM[index].height + PODIUM_CAP_HEIGHT;
             player.rigidBody.velocity.y = 0;
         });
         this.env.fixedUpdate(delta);
         this.players.forEach((player, index) => {
-            player.transform.position.y = PODIUM[index].height;
+            player.transform.position.y = PODIUM[index].height + PODIUM_CAP_HEIGHT;
             player.rigidBody.grounded = true;
         });
         this.placeCamera();
@@ -669,6 +733,8 @@ export default class HomeScene extends ThreeScene {
         this.root = undefined;
         this.threeCamera.clearViewOffset();
         this.env?.destroy();
+        this.sceneryResources.forEach((resource) => resource.dispose());
+        this.sceneryResources.length = 0;
         super.destroy();
     }
 }

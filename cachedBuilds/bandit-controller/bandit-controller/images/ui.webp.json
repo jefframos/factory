@@ -1,8 +1,68 @@
 {
   "frames": {
-    "Title_Ribbon01_Green": {
+    "handHud": {
       "frame": {
         "x": 2,
+        "y": 2,
+        "w": 62,
+        "h": 70
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 5,
+        "w": 62,
+        "h": 70
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "arrow-right": {
+      "frame": {
+        "x": 66,
+        "y": 2,
+        "w": 40,
+        "h": 74
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 40,
+        "h": 74
+      },
+      "sourceSize": {
+        "w": 40,
+        "h": 74
+      }
+    },
+    "arrow-left": {
+      "frame": {
+        "x": 2,
+        "y": 78,
+        "w": 40,
+        "h": 74
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 40,
+        "h": 74
+      },
+      "sourceSize": {
+        "w": 40,
+        "h": 74
+      }
+    },
+    "Title_Ribbon01_Green": {
+      "frame": {
+        "x": 108,
         "y": 2,
         "w": 304,
         "h": 143
@@ -60,10 +120,130 @@
         "h": 62
       }
     },
-    "Image_Effect_Rotate": {
+    "PictoIcon_Home_1-2": {
       "frame": {
         "x": 2,
         "y": 209,
+        "w": 120,
+        "h": 111
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 5,
+        "y": 13,
+        "w": 120,
+        "h": 111
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Label_Badge01_Green": {
+      "frame": {
+        "x": 130,
+        "y": 147,
+        "w": 129,
+        "h": 132
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 129,
+        "h": 132
+      },
+      "sourceSize": {
+        "w": 129,
+        "h": 132
+      }
+    },
+    "ItemIcon_Star_Gold": {
+      "frame": {
+        "x": 261,
+        "y": 147,
+        "w": 133,
+        "h": 127
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 133,
+        "h": 127
+      },
+      "sourceSize": {
+        "w": 133,
+        "h": 127
+      }
+    },
+    "ItemFrame01_Single_Green": {
+      "frame": {
+        "x": 2,
+        "y": 322,
+        "w": 60,
+        "h": 122
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 60,
+        "h": 122
+      },
+      "sourceSize": {
+        "w": 60,
+        "h": 122
+      }
+    },
+    "ItemFrame01_Single_Gray": {
+      "frame": {
+        "x": 261,
+        "y": 276,
+        "w": 60,
+        "h": 122
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 60,
+        "h": 122
+      },
+      "sourceSize": {
+        "w": 60,
+        "h": 122
+      }
+    },
+    "ItemFrame01_Single_Blue": {
+      "frame": {
+        "x": 126,
+        "y": 281,
+        "w": 60,
+        "h": 122
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 60,
+        "h": 122
+      },
+      "sourceSize": {
+        "w": 60,
+        "h": 122
+      }
+    },
+    "Image_Effect_Rotate": {
+      "frame": {
+        "x": 2,
+        "y": 384,
         "w": 270,
         "h": 275
       },
@@ -80,9 +260,109 @@
         "h": 275
       }
     },
+    "Icon_Lock02": {
+      "frame": {
+        "x": 279,
+        "y": 338,
+        "w": 83,
+        "h": 86
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 83,
+        "h": 86
+      },
+      "sourceSize": {
+        "w": 83,
+        "h": 86
+      }
+    },
+    "Icon_Close02": {
+      "frame": {
+        "x": 279,
+        "y": 423,
+        "w": 75,
+        "h": 75
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 75,
+        "h": 75
+      },
+      "sourceSize": {
+        "w": 75,
+        "h": 75
+      }
+    },
+    "Icon_Check02": {
+      "frame": {
+        "x": 356,
+        "y": 423,
+        "w": 54,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 54,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 54,
+        "h": 48
+      }
+    },
     "Button01_s_Yellow": {
       "frame": {
-        "x": 308,
+        "x": 279,
+        "y": 500,
+        "w": 70,
+        "h": 114
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 70,
+        "h": 114
+      },
+      "sourceSize": {
+        "w": 70,
+        "h": 114
+      }
+    },
+    "Button01_s_Red": {
+      "frame": {
+        "x": 279,
+        "y": 572,
+        "w": 70,
+        "h": 114
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 70,
+        "h": 114
+      },
+      "sourceSize": {
+        "w": 70,
+        "h": 114
+      }
+    },
+    "Button01_s_Purple": {
+      "frame": {
+        "x": 414,
         "y": 2,
         "w": 70,
         "h": 114
@@ -102,7 +382,7 @@
     },
     "Button01_s_Green": {
       "frame": {
-        "x": 308,
+        "x": 414,
         "y": 118,
         "w": 70,
         "h": 114
@@ -120,14 +400,54 @@
         "h": 114
       }
     },
+    "Button01_s_Gray": {
+      "frame": {
+        "x": 412,
+        "y": 234,
+        "w": 70,
+        "h": 114
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 70,
+        "h": 114
+      },
+      "sourceSize": {
+        "w": 70,
+        "h": 114
+      }
+    },
+    "Button01_s_Blue": {
+      "frame": {
+        "x": 367,
+        "y": 350,
+        "w": 70,
+        "h": 114
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 70,
+        "h": 114
+      },
+      "sourceSize": {
+        "w": 70,
+        "h": 114
+      }
+    },
     "BorderFrame_Round20_Single_Dark": {
       "frame": {
-        "x": 130,
-        "y": 147,
+        "x": 412,
+        "y": 422,
         "w": 44,
         "h": 46
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -147,8 +467,8 @@
     "image": "ui.webp",
     "format": "RGBA8888",
     "size": {
-      "w": 380,
-      "h": 481
+      "w": 486,
+      "h": 656
     },
     "scale": 1,
     "related_multi_packs": []

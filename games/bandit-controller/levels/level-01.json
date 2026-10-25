@@ -5,71 +5,101 @@
     "cell": 0.5
   },
   "floor": {
-    "width": 10,
-    "depth": 18
+    "width": 18,
+    "depth": 17.08,
+    "rects": [
+      {
+        "x": 5.75,
+        "z": 1.54,
+        "width": 6.5,
+        "depth": 14
+      },
+      {
+        "x": -3.25,
+        "z": -1.54,
+        "width": 11.5,
+        "depth": 14
+      }
+    ]
   },
   "start": {
-    "x": 0,
-    "z": 11
+    "x": -11,
+    "z": -1.54
   },
   "waypoints": [
     {
-      "x": 0,
-      "z": -1.5
+      "x": 1.5,
+      "z": -1.54
     },
     {
-      "x": 0,
-      "z": -6.5
+      "x": 6.5,
+      "z": 1.54
     }
   ],
   "entryPath": {
-    "x": 0,
-    "z": 11,
-    "width": 3.6,
-    "depth": 4
+    "x": -11,
+    "z": -1.54,
+    "width": 4,
+    "depth": 5.04
   },
   "walls": [
     {
       "closed": true,
       "points": [
         {
-          "x": -5,
-          "z": 9
+          "x": 9,
+          "z": -5.46
         },
         {
-          "x": 5,
-          "z": 9
+          "x": 9,
+          "z": 8.54
         },
         {
-          "x": 5,
-          "z": -9
+          "x": 2.5,
+          "z": 8.54
         },
         {
-          "x": -5,
-          "z": -9
+          "x": 2.5,
+          "z": 5.46
+        },
+        {
+          "x": -9,
+          "z": 5.46
+        },
+        {
+          "x": -9,
+          "z": -8.54
+        },
+        {
+          "x": 2.5,
+          "z": -8.54
+        },
+        {
+          "x": 2.5,
+          "z": -5.46
         }
       ],
       "openings": [
         {
           "kind": "door",
-          "minX": -1.25,
-          "maxX": 1.25,
-          "minZ": 8.7,
-          "maxZ": 9.3
+          "minX": -9.3,
+          "maxX": -8.7,
+          "minZ": -3.29,
+          "maxZ": 0.21
         },
         {
           "kind": "window",
-          "minX": -4.4,
-          "maxX": -2.2,
-          "minZ": 8.7,
-          "maxZ": 9.3
+          "minX": -9.3,
+          "maxX": -8.7,
+          "minZ": -7.7,
+          "maxZ": -4.62
         },
         {
           "kind": "window",
-          "minX": 2.2,
-          "maxX": 4.4,
-          "minZ": 8.7,
-          "maxZ": 9.3
+          "minX": -9.3,
+          "maxX": -8.7,
+          "minZ": 1.54,
+          "maxZ": 4.62
         }
       ]
     },
@@ -77,21 +107,43 @@
       "closed": false,
       "points": [
         {
-          "x": -5,
-          "z": -2.5
+          "x": 2.5,
+          "z": -5.46
         },
         {
-          "x": 5,
-          "z": -2.5
+          "x": 2.5,
+          "z": 5.46
         }
       ],
       "openings": [
         {
           "kind": "door",
-          "minX": -1.25,
-          "maxX": 1.25,
-          "minZ": -2.8,
-          "maxZ": -2.2
+          "minX": 2.2,
+          "maxX": 2.8,
+          "minZ": -1.75,
+          "maxZ": 1.75
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 2.5,
+          "z": 1.26
+        },
+        {
+          "x": -9,
+          "z": 1.26
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -5.4,
+          "maxX": -1.6,
+          "minZ": 0.96,
+          "maxZ": 1.56
         }
       ]
     }
@@ -99,66 +151,66 @@
   "props": [
     {
       "model": "heist/vault/vault.gltf",
-      "x": 3.2,
-      "z": -6.5,
-      "rotationY": 0,
+      "x": 6.5,
+      "z": 6.02,
+      "rotationY": 4.7124,
       "height": 2.8,
       "collider": {
-        "halfX": 0.95,
+        "halfX": 0.8,
         "halfY": 1.4,
-        "halfZ": 0.8
+        "halfZ": 0.95
       },
       "revealAt": 1
     },
     {
       "model": "heist/mini-market/cash-register.glb",
-      "x": -3.4,
-      "z": 5,
-      "rotationY": 0,
+      "x": -5,
+      "z": -6.3,
+      "rotationY": 4.7124,
       "height": 1.5,
       "collider": {
-        "halfX": 0.8,
+        "halfX": 0.55,
         "halfY": 0.65,
-        "halfZ": 0.55
+        "halfZ": 0.8
       },
       "revealAt": 0
     },
     {
       "model": "heist/mini-market/shelf-boxes.glb",
-      "x": -3.9,
-      "z": -5,
-      "rotationY": 1.5708,
+      "x": 5,
+      "z": -3.92,
+      "rotationY": 6.2832,
       "height": 2.7,
       "collider": {
-        "halfX": 0.6,
+        "halfX": 1.2,
         "halfY": 1.35,
-        "halfZ": 1.2
+        "halfZ": 0.6
       },
       "revealAt": 1
     },
     {
       "model": "heist/trees/tree-large.glb",
-      "x": -4,
-      "z": -11,
-      "rotationY": 0,
+      "x": 11,
+      "z": -4.06,
+      "rotationY": 4.7124,
       "height": 8,
       "collider": null,
       "revealAt": 0
     },
     {
       "model": "heist/trees/tree-small.glb",
-      "x": 0,
-      "z": -11.5,
-      "rotationY": 0,
+      "x": 11.5,
+      "z": 1.54,
+      "rotationY": 4.7124,
       "height": 5.5,
       "collider": null,
       "revealAt": 0
     },
     {
       "model": "heist/trees/tree-large.glb",
-      "x": 4,
-      "z": -11,
-      "rotationY": 0,
+      "x": 11,
+      "z": 7.14,
+      "rotationY": 4.7124,
       "height": 7.5,
       "collider": null,
       "revealAt": 0
@@ -167,40 +219,40 @@
   "loot": [
     {
       "model": "resources/Money_Bills_Stack_Small.gltf",
-      "x": 0,
-      "z": 6.5,
+      "x": -6.5,
+      "z": -1.54,
       "amount": 20,
       "scale": 1.35,
       "revealAt": 0
     },
     {
       "model": "resources/Money_Coins_Stack_Small.gltf",
-      "x": 2.5,
-      "z": 3.5,
+      "x": -3.5,
+      "z": 1.96,
       "amount": 20,
       "scale": 1.35,
       "revealAt": 0
     },
     {
       "model": "resources/Money_Bills_Stack_Small.gltf",
-      "x": -2,
-      "z": -0.5,
+      "x": 0.5,
+      "z": -4.34,
       "amount": 40,
       "scale": 1.35,
       "revealAt": 1
     },
     {
       "model": "resources/Money_Coins_Stack_Small.gltf",
-      "x": 1.5,
-      "z": -4.5,
+      "x": 4.5,
+      "z": 3.64,
       "amount": 60,
       "scale": 1.35,
       "revealAt": 1
     },
     {
       "model": "resources/Money_Bills_Stack_Small.gltf",
-      "x": -1.5,
-      "z": -7.5,
+      "x": 7.5,
+      "z": -0.56,
       "amount": 100,
       "scale": 1.35,
       "revealAt": 1
@@ -214,5 +266,7 @@
     "window": "windowStyle1",
     "ground": "groundStyle1",
     "path": "pathStyle1"
-  }
+  },
+  "cameras": [],
+  "traps": []
 }

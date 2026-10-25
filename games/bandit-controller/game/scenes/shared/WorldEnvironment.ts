@@ -129,7 +129,7 @@ export class WorldEnvironment {
      * keeps snapped under the player instead — `floorSize` still governs the
      * (separate, invisible) ground collider either way, so the player can
      * always walk the whole level regardless of how small the visible patch
-     * is.
+     * is. Set `renderBaseFloor` false when the scene supplies its own ground.
      */
     public constructor(
         threeScene: THREE.Scene,
@@ -138,6 +138,7 @@ export class WorldEnvironment {
         floorSegments: number = 32,
         floorCenterBias: number = 1,
         visualFloorPatch?: VisualFloorPatch,
+        renderBaseFloor = true,
     ) {
         this.threeScene = threeScene;
         this.bendService = bendService;
@@ -170,7 +171,7 @@ export class WorldEnvironment {
                 );
                 this.sidewalkMeshes.push(mesh);
             }
-        } else {
+        } else if (renderBaseFloor) {
             FloorBuilder.build(this.threeScene, this.floorSize, 0, 0, this.bendService, floorSegments, floorCenterBias);
         }
         this.buildGroundCollider();

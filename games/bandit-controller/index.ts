@@ -23,6 +23,12 @@ import { PLAYER_SETTINGS } from './game/data/PlayerSettings';
 import { WORLD_SETTINGS } from './game/data/WorldSettings';
 import MoneyHud from './game/ui/MoneyHud';
 import { GameState } from './game/data/GameState';
+import SoundManager from 'core/audio/SoundManager';
+import { GameAudio } from './game/audio/GameAudio';
+import SoundToggleButton from './game/ui/SoundToggleButton';
+import { Progress } from './game/data/Progress';
+import { LevelCatalog } from './game/data/LevelCatalog';
+import { resetProgressionData } from './game/data/ProgressionStorage';
 
 /** What every scene exposes for the transition below to wait on — see HubScene.ready's own doc. */
 interface AsyncReadyScene {
@@ -65,6 +71,7 @@ export default class MyGame extends Game {
     private scenesByKey: Record<string, AsyncReadyScene> = {};
     /** The one top-left money counter every scene shares — see MoneyHud.ts's own doc for why this lives here (outliving every scene rebuild) instead of inside any one of them. */
     private moneyHud!: MoneyHud;
+    private soundToggle?: SoundToggleButton;
 
     public constructor() {
         super({ resolution: Math.min(2, devicePixelRatio), backgroundAlpha: 0 }, false);
@@ -80,6 +87,7 @@ export default class MyGame extends Game {
         const config = (platformConfig as Record<string, PlatformConfigEntry>)[platformName];
 
         this.folderPath = config?.folder || this.folderPath;
+        SoundManager.STORAGE_ID = 'bandit-controller.';
 
         try {
             this.setCanvasZIndex(8);
@@ -95,6 +103,7 @@ export default class MyGame extends Game {
 
             await this.loadFonts();
             await PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`);
+            await GameAudio.initialize(this.folderPath);
 
             PlatformHandler.instance.platform.loadFinished();
             this.loaderScene.hide();
@@ -116,7 +125,15 @@ export default class MyGame extends Game {
     }
 
     private startGame(): void {
+        this.soundToggle = new SoundToggleButton();
+        this.uiLayer.eventMode = 'static';
+        this.uiLayer.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
+            if (event.target !== this.uiLayer) {
+                GameAudio.play('tap');
+            }
+        });
         DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'bandit-controller');
+        this.setupProgressionDebug();
 
         // Physics debug wireframes (player + obstacle colliders/triggers) — three sources,
         // most to least specific: ?colliders=1 in the URL, then whatever was last saved via
@@ -212,7 +229,38 @@ export default class MyGame extends Game {
             ?? Game.debugParams.scene
             ?? (new URLSearchParams(window.location.search).has('level') ? 'path-level' : 'home');
         this.sceneManager.changeScene(initialSceneKey);
+        this.uiLayer.addChild(this.soundToggle);
+        GameAudio.setScene(initialSceneKey);
         this.sceneManager.resize();
+    }
+
+    private setupProgressionDebug(): void {
+        if (!DebugOverlay.instance.isEnabled) {
+            return;
+        }
+        const panel = DebugOverlay.instance.panel('Progression', { id: 'bandit-controller.progression' });
+        panel.monitor('Cash', () => GameState.getMoney());
+        panel.monitor('Stars', () => Progress.totalStars());
+        panel.monitor('Completed levels', () => LevelCatalog.all().filter((level) => LevelCatalog.isCompleted(level)).length);
+        panel.monitor('Reset includes', () => 'Levels, stars, cash, wardrobe, squad looks, daily rewards');
+        panel.monitor('Preserves', () => 'Sound preferences, developer settings and other games');
+        panel.button('RESET GAME DATA...', () => {
+            if (!window.confirm('Reset Bandit Controller progress, stars, cash, wardrobe, squad looks and daily rewards? This cannot be undone. Sound and developer settings are preserved.')) {
+                return;
+            }
+            try {
+                resetProgressionData();
+            } catch (error) {
+                console.error('[Progression] Could not reset game data', error);
+                window.alert('Could not reset game data. Check the console for details.');
+                return;
+            }
+            const url = new URL(window.location.href);
+            for (const key of ['level', 'scene', 'minigame']) {
+                url.searchParams.delete(key);
+            }
+            window.location.assign(url.href);
+        });
     }
 
     /**
@@ -242,6 +290,10 @@ export default class MyGame extends Game {
             await this.transition.cover();
             this.sceneManager.changeScene(sceneKey, force);
             await this.scenesByKey[sceneKey]?.ready;
+            if (this.soundToggle) {
+                this.uiLayer.addChild(this.soundToggle);
+            }
+            GameAudio.setScene(sceneKey);
             await this.transition.reveal();
         } finally {
             this.transitionInProgress = false;
@@ -262,6 +314,7 @@ export default class MyGame extends Game {
         super.onResize();
         this.sceneManager?.resize();
         this.moneyHud?.reposition();
+        this.soundToggle?.reposition();
     }
 }
 

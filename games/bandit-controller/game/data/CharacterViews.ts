@@ -30,6 +30,12 @@ export const CHARACTER_VIEWS: Record<string, CharacterView> = {
 /** What the player actually spawns wearing — matches bandit's "isStarter" look. */
 export const DEFAULT_CHARACTER_VIEW: CharacterView = CHARACTER_VIEWS.blue;
 
+/** Reserved uniform, separate from customizable squad looks. */
+export const GUARD_CHARACTER_VIEW: Readonly<CharacterView> = {
+    color: '#234b8e',
+    face: 'skins/face-brave-1.webp',
+};
+
 /** Non-preload art (skins/faces) is served straight from the image pipeline's output — see public/bandit-controller/images/non-preload. */
 const NON_PRELOAD_IMAGE_BASE = 'bandit-controller/images/non-preload/';
 

@@ -5,53 +5,83 @@
     "cell": 0.5
   },
   "floor": {
-    "width": 14,
-    "depth": 12
+    "width": 12,
+    "depth": 19.6,
+    "rects": [
+      {
+        "x": 0,
+        "z": 0,
+        "width": 12,
+        "depth": 19.6
+      }
+    ]
   },
   "start": {
-    "x": -1.75,
-    "z": 8.0
+    "x": 8,
+    "z": 2.45
   },
   "waypoints": [
     {
-      "x": -1.75,
-      "z": -2.0
+      "x": -2,
+      "z": 2.45
     }
   ],
   "entryPath": {
-    "x": 0,
-    "z": 8.0,
-    "width": 7.5,
-    "depth": 4
+    "x": 8,
+    "z": 0,
+    "width": 4,
+    "depth": 10.5
   },
   "walls": [
     {
       "closed": true,
       "points": [
         {
-          "x": -7.0,
-          "z": 6.0
+          "x": -6,
+          "z": 9.8
         },
         {
-          "x": 7.0,
-          "z": 6.0
+          "x": -6,
+          "z": -9.8
         },
         {
-          "x": 7.0,
-          "z": -6.0
+          "x": 6,
+          "z": -9.8
         },
         {
-          "x": -7.0,
-          "z": -6.0
+          "x": 6,
+          "z": 9.8
         }
       ],
       "openings": [
         {
           "kind": "gap",
-          "minX": -3.35,
-          "maxX": 3.35,
-          "minZ": 5.7,
-          "maxZ": 6.3
+          "minX": 5.7,
+          "maxX": 6.3,
+          "minZ": -4.69,
+          "maxZ": 4.69
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -6,
+          "z": 3.92
+        },
+        {
+          "x": 6,
+          "z": 3.92
+        }
+      ],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": -6,
+          "maxX": 2,
+          "minZ": 3.62,
+          "maxZ": 4.22
         }
       ]
     }
@@ -60,8 +90,8 @@
   "loot": [
     {
       "model": "resources/Money_Coins_Stack_Small.gltf",
-      "x": -2.5,
-      "z": 0.0,
+      "x": 0,
+      "z": 3.5,
       "amount": 25,
       "scale": 1.35,
       "revealAt": 0
@@ -80,46 +110,47 @@
     {
       "view": "blue",
       "start": {
-        "x": -1.75,
-        "z": 8.0
+        "x": 8,
+        "z": 2.45
       },
       "waypoints": [
         {
-          "x": -1.75,
-          "z": -2.0
+          "x": -2,
+          "z": 2.45
         }
       ]
     },
     {
       "view": "purple",
       "start": {
-        "x": 1.75,
-        "z": 8.0
+        "x": 8,
+        "z": -2.45
       },
       "waypoints": [
         {
-          "x": 1.75,
-          "z": -2.0
+          "x": -2,
+          "z": -2.45
         }
       ]
     }
   ],
   "sharedGoal": {
-    "x": 0,
-    "z": -2.5,
-    "width": 10,
-    "depth": 6,
+    "x": -2.5,
+    "z": 0,
+    "width": 6,
+    "depth": 14,
     "enabled": true
   },
   "traps": [
     {
       "x": 0,
-      "z": 0.0,
-      "width": 13.0,
-      "depth": 2.0,
+      "z": 0,
+      "width": 2,
+      "depth": 13,
       "period": 3.2,
       "active": 1.2,
       "offset": 0.5
     }
-  ]
+  ],
+  "cameras": []
 }

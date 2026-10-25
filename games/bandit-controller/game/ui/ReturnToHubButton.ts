@@ -46,7 +46,7 @@ export default class ReturnToHubButton {
         if (!screen) {
             return;
         }
-        this.button.position.set(screen.topRight.x - BUTTON_WIDTH - MARGIN, screen.topRight.y + MARGIN);
+        this.button.position.set(screen.topRight.x - BUTTON_WIDTH - MARGIN - 78, screen.topRight.y + MARGIN);
     }
 
     public destroy(): void {

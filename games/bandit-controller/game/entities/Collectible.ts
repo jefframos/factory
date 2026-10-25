@@ -25,9 +25,26 @@ import { BendService, WorldBendService } from 'core/services/BendService';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import ArcSpline from '../utils/ArcSpline';
 import { CollectibleDefinition, COLLECTIBLE_TUNING } from '../data/CollectibleSettings';
+import { GameAudio } from '../audio/GameAudio';
 
 /** Model-registry entries carry a repo-relative fullPath (e.g. "bandit-controller/models/..."), served at runtime from ./bandit-controller/... — same convention as MainPlayer.ts's own modelUrl(). */
 const modelUrl = (fullPath: string): string => `./${fullPath}`;
+
+function createSparkleGeometry(): THREE.BufferGeometry {
+    const vertices = [0, 0, 0];
+    const indices: number[] = [];
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2 - Math.PI / 2;
+        const radius = i % 2 === 0 ? 0.5 : 0.14;
+        vertices.push(Math.cos(angle) * radius, Math.sin(angle) * radius, 0);
+        indices.push(0, i + 1, ((i + 1) % 8) + 1);
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setIndex(indices);
+    return geometry;
+}
 
 export default class Collectible extends Entity {
     /** Fires once, with resourceAmount, the instant this pickup reaches the player. */
@@ -49,6 +66,14 @@ export default class Collectible extends Entity {
     /** Where the pickup was resting when it got attracted — the arc's fixed `from` endpoint (only the `to` endpoint, the player, keeps moving). */
     private readonly arcFrom = new THREE.Vector3();
     private readonly arc = new ArcSpline(COLLECTIBLE_TUNING.arcHeight);
+    private readonly sparkleGroup = new THREE.Group();
+    private readonly sparkles: Array<{
+        mesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
+        material: THREE.MeshBasicMaterial;
+        baseScale: number;
+    }> = [];
+    private sparkleGeometry?: THREE.BufferGeometry;
+    private sparkleTime = Math.random() * Math.PI * 2;
     /** World-Y the pickup was actually placed at — the center updateIdleFloat()'s bob oscillates around. Captured lazily (see updateIdleFloat()) rather than at construction, since the caller sets transform.position AFTER `new Collectible(...)`, not before. */
     private restingY?: number;
     /** Own phase (see updateIdleFloat()), advanced every idle tick — randomized starting value per instance so a whole row of coins doesn't bob/spin in lockstep. */
@@ -88,7 +113,7 @@ export default class Collectible extends Entity {
     /** Loads + places the pickup's mesh at the entity's current transform.position — call once right after World.add(), same two-step (sync awake() + async load()) split MainPlayer.loadCharacter() uses. */
     public async load(): Promise<void> {
         const object = await ModelLoaderManager.instance.loadModel(modelUrl(this.definition.model.fullPath));
-        object.scale.setScalar(this.definition.modelScale);
+        object.scale.setScalar(this.definition.modelScale * COLLECTIBLE_TUNING.visualScaleMultiplier);
         object.position.copy(this.transform.position);
 
         object.traverse((child) => {
@@ -103,6 +128,7 @@ export default class Collectible extends Entity {
 
         this.mesh = object;
         this.threeScene.add(object);
+        this.createSparkles();
     }
 
     public override fixedUpdate(delta: number): void {
@@ -126,9 +152,12 @@ export default class Collectible extends Entity {
         const position = this.arc.evaluate(this.arcFrom, this.getPlayerPosition(), eased);
         this.transform.position.copy(position);
         this.mesh?.position.copy(position);
+        this.updateSparkles(delta);
 
         if (t >= 1) {
             this.collected = true;
+            GameAudio.play('pickup');
+            this.sparkleGroup.visible = false;
             this.onCollected.dispatch(this.definition.resourceAmount);
         }
     }
@@ -156,6 +185,53 @@ export default class Collectible extends Entity {
             this.mesh.position.copy(this.transform.position);
             this.mesh.rotation.y += COLLECTIBLE_TUNING.spinSpeed * delta;
         }
+        this.updateSparkles(delta);
+    }
+
+    private createSparkles(): void {
+        this.sparkleGeometry = createSparkleGeometry();
+        const placements = [
+            { x: 0.42, y: 0.28, z: 0.08, size: 0.2 },
+            { x: -0.38, y: 0.34, z: -0.08, size: 0.16 },
+            { x: 0.08, y: -0.42, z: 0.12, size: 0.14 },
+        ];
+
+        for (const placement of placements) {
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xfff4a3,
+                transparent: true,
+                opacity: 0.5,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                toneMapped: false,
+            });
+            this.bendService.applyBend(material);
+            const mesh = new THREE.Mesh(this.sparkleGeometry, material);
+            mesh.position.set(placement.x, placement.y, placement.z);
+            mesh.scale.setScalar(placement.size);
+            this.sparkleGroup.add(mesh);
+            this.sparkles.push({ mesh, material, baseScale: placement.size });
+        }
+
+        this.sparkleGroup.position.copy(this.transform.position);
+        this.threeScene.add(this.sparkleGroup);
+    }
+
+    private updateSparkles(delta: number): void {
+        if (this.sparkles.length === 0) {
+            return;
+        }
+
+        this.sparkleTime += delta;
+        this.sparkleGroup.position.copy(this.transform.position);
+        this.sparkles.forEach(({ mesh, material, baseScale }, index) => {
+            const phase = this.sparkleTime * 3 + index * 2.1;
+            const pulse = (Math.sin(phase) + 1) / 2;
+            material.opacity = 0.12 + pulse * 0.72;
+            mesh.scale.setScalar(baseScale * (0.75 + pulse * 0.55));
+            mesh.rotation.z += delta * (index % 2 === 0 ? 1 : -1) * (1.5 + index * 0.35);
+        });
     }
 
     public override destroy(): void {
@@ -165,6 +241,11 @@ export default class Collectible extends Entity {
                 child.geometry.dispose();
             }
         });
+        this.sparkleGroup.removeFromParent();
+        this.sparkleGeometry?.dispose();
+        for (const { material } of this.sparkles) {
+            material.dispose();
+        }
         super.destroy();
     }
 }

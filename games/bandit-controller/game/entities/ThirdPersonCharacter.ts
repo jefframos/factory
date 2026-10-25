@@ -70,8 +70,8 @@ export default class ThirdPersonCharacter {
     }
 
     /** Turns toward a world-space horizontal direction without feeding locomotion input. */
-    public faceDirection(directionX: number, directionZ: number): void {
-        this.body.faceDirection(directionX, directionZ);
+    public faceDirection(directionX: number, directionZ: number, snap = false): void {
+        this.body.faceDirection(directionX, directionZ, snap);
     }
 
     /**

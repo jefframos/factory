@@ -3,100 +3,100 @@
   "floor": {
     "floorStyle1": {
       "name": "Blue tiles",
-      "colorA": "#5f93d6",
-      "colorB": "#5f93d6",
+      "colorA": "#9bbddd",
+      "colorB": "#95b7d7",
       "checkerScale": 1.5
     },
     "floorStyle2": {
       "name": "Mint checker",
-      "colorA": "#c8f0e1",
-      "colorB": "#67b39e",
+      "colorA": "#c0ead7",
+      "colorB": "#9bd6b9",
       "checkerScale": 1.5
     },
     "floorStyle3": {
       "name": "Museum marble",
-      "colorA": "#f3dcc0",
-      "colorB": "#d9b58f",
+      "colorA": "#f0e0cb",
+      "colorB": "#dbc7af",
       "checkerScale": 1.5
     },
     "floorStyle4": {
       "name": "Casino night",
-      "colorA": "#5b3a8c",
-      "colorB": "#3f2766",
+      "colorA": "#b29bdd",
+      "colorB": "#9a80ca",
       "checkerScale": 1.5
     },
     "floorStyle5": {
       "name": "Fortress stone",
-      "colorA": "#9aa5b1",
-      "colorB": "#7b8794",
+      "colorA": "#bdc6cc",
+      "colorB": "#a6b3bc",
       "checkerScale": 1.5
     },
     "floorStyle6": {
       "name": "Lab tile",
-      "colorA": "#d5f5ee",
-      "colorB": "#a9e3d6",
+      "colorA": "#b5e6df",
+      "colorB": "#91d0c6",
       "checkerScale": 1.5
     },
     "floorStyle7": {
       "name": "Station deck",
-      "colorA": "#46506a",
-      "colorB": "#38425a",
+      "colorA": "#98a9bc",
+      "colorB": "#8094aa",
       "checkerScale": 1.5
     }
   },
   "wall": {
     "wallStyle1": {
       "name": "Teal bank",
-      "bottomColor": "#378f91",
-      "topColor": "#ffd889",
+      "bottomColor": "#4f8e92",
+      "topColor": "#e8d8b5",
       "bottomHeight": 1.4,
       "height": 6,
       "thickness": 0.35
     },
     "wallStyle2": {
       "name": "Mint vault",
-      "bottomColor": "#3f9c86",
-      "topColor": "#e8fff4",
+      "bottomColor": "#5e9385",
+      "topColor": "#e6eddb",
       "bottomHeight": 1.4,
       "height": 6,
       "thickness": 0.35
     },
     "wallStyle3": {
       "name": "Museum",
-      "bottomColor": "#a3512f",
-      "topColor": "#ffe3b3",
+      "bottomColor": "#99785e",
+      "topColor": "#eee0ca",
       "bottomHeight": 1.4,
       "height": 6,
       "thickness": 0.35
     },
     "wallStyle4": {
       "name": "Casino",
-      "bottomColor": "#8a2f6b",
-      "topColor": "#ffd24a",
+      "bottomColor": "#7d658c",
+      "topColor": "#e3d1a9",
       "bottomHeight": 1.4,
       "height": 6,
       "thickness": 0.35
     },
     "wallStyle5": {
       "name": "Fortress",
-      "bottomColor": "#4a5563",
-      "topColor": "#d96a5a",
+      "bottomColor": "#657786",
+      "topColor": "#cbb9ae",
       "bottomHeight": 1.4,
       "height": 6,
       "thickness": 0.4
     },
     "wallStyle6": {
       "name": "Neon lab",
-      "bottomColor": "#2f6f73",
-      "topColor": "#4de8c2",
+      "bottomColor": "#568c8c",
+      "topColor": "#b4dfcf",
       "bottomHeight": 1.4,
       "height": 6,
       "thickness": 0.4
     },
     "wallStyle7": {
       "name": "Station",
-      "bottomColor": "#2a3045",
-      "topColor": "#8d6bff",
+      "bottomColor": "#56667f",
+      "topColor": "#c0b6dc",
       "bottomHeight": 1.4,
       "height": 6,
       "thickness": 0.4
@@ -107,7 +107,7 @@
       "name": "Plain wood",
       "color": "#493023",
       "opacity": 1,
-      "model": "heist/doors/door_A"
+      "model": "heist/doors/wooden-door.glb"
     }
   },
   "window": {
@@ -120,31 +120,31 @@
   "ground": {
     "groundStyle1": {
       "name": "Grass",
-      "color": "#77a970"
+      "color": "#65af50"
     },
     "groundStyle2": {
       "name": "Mint lawn",
-      "color": "#8fcf9c"
+      "color": "#69bb83"
     },
     "groundStyle3": {
       "name": "Desert",
-      "color": "#e0c07a"
+      "color": "#dfb96d"
     },
     "groundStyle4": {
       "name": "Night grass",
-      "color": "#3d6b57"
+      "color": "#37866e"
     },
     "groundStyle5": {
       "name": "Snow",
-      "color": "#e6eef5"
+      "color": "#dce5e8"
     },
     "groundStyle6": {
       "name": "Toxic green",
-      "color": "#6fb98a"
+      "color": "#53b89a"
     },
     "groundStyle7": {
       "name": "Deep space",
-      "color": "#1c2038"
+      "color": "#455c91"
     }
   },
   "path": {

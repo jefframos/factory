@@ -15,6 +15,8 @@ import SecurityCamera from '../entities/SecurityCamera';
 import Trap from '../entities/Trap';
 import Drone from '../entities/Drone';
 import { LevelSight } from '../utils/LevelSight';
+import { adjustRouteThroughDoors, doorCrossing } from '../utils/LevelRoute';
+import { GameAudio } from '../audio/GameAudio';
 import { COIN, CollectibleDefinition } from '../data/CollectibleSettings';
 import { LevelCatalog } from '../data/LevelCatalog';
 import { UiKit } from '../ui/UiKit';
@@ -22,7 +24,7 @@ import { TextureBuilder } from '../builders/TextureBuilder';
 import { CHARACTER_VIEWS, DEFAULT_CHARACTER_VIEW, resolveSkinImagePath } from '../data/CharacterViews';
 import type MainPlayer from '../player/MainPlayer';
 import { WorldStyles } from '../data/WorldStyles';
-import { LevelData, LevelDoor, LevelLoot, LevelSharedGoal, levelDoors, levelWindowPanes } from '../data/LevelData';
+import { LevelData, LevelDoor, LevelLoot, LevelSharedGoal, levelDoors, levelWindowPanes, shouldShowWaypointMarker } from '../data/LevelData';
 import { GameState } from '../data/GameState';
 import { Progress } from '../data/Progress';
 import { PLAYER_SETTINGS } from '../data/PlayerSettings';
@@ -53,8 +55,6 @@ const GOAL_HAND_SIZE = 76;
 const DRAG_HINT_CYCLE_MS = 2600;
 const FIELD_SIZE = 48;
 const ROOM_ORIGIN = new THREE.Vector3();
-const DOOR_ASSIST_MARGIN = 0.6;
-const DOOR_CLEARANCE = 1.3;
 const LOWERED_WALL_SCALE = 0.2;
 const WALL_LOWER_DURATION_SEC = 0.45;
 const CELEBRATION_CAMERA_OPTIONS: CameraFollowOptions = {
@@ -202,6 +202,10 @@ export default class PathLevelScene extends ThreeScene {
     private readonly goalHandWorld = new THREE.Vector3();
     private readonly focusGoal = new THREE.Vector3();
     private goalArrivalTweens: gsap.core.Tween[] = [];
+    /** Members walking (not tweening) into their slot inside the shared safe room. */
+    private homeWalks: { member: SquadMember; slot: THREE.Vector3 }[] = [];
+    /** Members whose character already got its "look into the level" start facing. */
+    private readonly startFaced = new Set<SquadMember>();
     private members: SquadMember[] = [];
     private focused?: SquadMember;
     /** True while a non-focused member is being stepped, so camera and HUD side effects are skipped. */
@@ -273,6 +277,8 @@ export default class PathLevelScene extends ThreeScene {
         this.revealedUpTo = 0;
         this.goalArrivalTweens.forEach((tween) => tween.kill());
         this.goalArrivalTweens = [];
+        this.homeWalks = [];
+        this.startFaced.clear();
         this.members = [];
         this.focused = undefined;
         this.inBackground = false;
@@ -286,7 +292,7 @@ export default class PathLevelScene extends ThreeScene {
         this.spotted = false;
         this.collectibles.length = 0;
         this.collectedPayouts.length = 0;
-        this.env = new WorldEnvironment(this.threeScene, BendService, FIELD_SIZE, 64, 1);
+        this.env = new WorldEnvironment(this.threeScene, BendService, FIELD_SIZE, 64, 1, undefined, false);
         const squad = this.level.squad?.length
             ? this.level.squad
             : [{ view: '', start: this.level.start, waypoints: this.level.waypoints }];
@@ -340,6 +346,8 @@ export default class PathLevelScene extends ThreeScene {
     private resolveWorldStyles(): void {
         const wall = WorldStyles.get('wall', this.level.styles?.wall);
         const door = WorldStyles.get('door', this.level.styles?.door);
+        const doorModel = door.model?.replace(/\.(glb|gltf)$/i, '');
+        const doorFormat = door.model?.toLowerCase().endsWith('.glb') ? 'glb' : 'gltf';
         this.wallSetup = {
             height: wall.height,
             thickness: wall.thickness,
@@ -350,11 +358,11 @@ export default class PathLevelScene extends ThreeScene {
         this.wallStyle = { bottomColor: wall.bottomColor, topColor: wall.topColor, bottomHeight: wall.bottomHeight };
         this.doorStyle = {
             name: door.name,
-            models: door.model ? [{
-                id: door.model.split('/').pop() as string,
-                path: door.model,
-                fullPath: `bandit-controller/models/${door.model}.gltf`,
-                format: 'gltf',
+            models: doorModel ? [{
+                id: doorModel.split('/').pop() as string,
+                path: doorModel,
+                fullPath: `${this.game.folderPath}/models/${doorModel}.${doorFormat}`,
+                format: doorFormat,
                 nodes: {},
             }] : [],
             color: door.color,
@@ -380,18 +388,6 @@ export default class PathLevelScene extends ThreeScene {
         this.exteriorGround.position.y = 0.005;
         BendService.applyBend(this.exteriorGround.material as THREE.Material);
         this.threeScene.add(this.exteriorGround);
-
-        const entry = this.level.entryPath;
-        if (entry) {
-            this.entryPath = new THREE.Mesh(
-                new THREE.PlaneGeometry(entry.width, entry.depth),
-                new THREE.MeshStandardMaterial({ color: WorldStyles.get('path', this.level.styles?.path).color, roughness: 0.96 }),
-            );
-            this.entryPath.rotation.x = -Math.PI / 2;
-            this.entryPath.position.set(entry.x, 0.012, entry.z);
-            BendService.applyBend(this.entryPath.material as THREE.Material);
-            this.threeScene.add(this.entryPath);
-        }
 
         const floorStyle = WorldStyles.get('floor', this.level.styles?.floor);
         const floorRects = this.level.floor.rects?.length
@@ -453,6 +449,7 @@ export default class PathLevelScene extends ThreeScene {
 
             for (const frame of PolyWallBuilder.doorFrames(wall, this.wallSetup)) {
                 const door = new StoreDoor(frame, ROOM_ORIGIN, FloorLayers.baseY, this.doorStyle);
+                door.object.visible = false;
                 this.wallDoors.push(door);
                 this.threeScene.add(door.object);
             }
@@ -460,8 +457,7 @@ export default class PathLevelScene extends ThreeScene {
 
         for (const member of this.members) {
             this.addMarker(member.waypoints[0], member.color ?? 0x8fb8ff);
-            const isSharedGoal = this.sharedGoalActive && member.waypoints.length === 2;
-            if (!isSharedGoal) {
+            if (shouldShowWaypointMarker(this.level, 1, member.waypoints.length)) {
                 this.addMarker(member.waypoints[1], member.color ?? GOAL_COLOR, GOAL_MARKER_RADIUS);
             }
         }
@@ -691,7 +687,7 @@ export default class PathLevelScene extends ThreeScene {
         if (!hint) {
             return;
         }
-        const active = Boolean(this.level.tutorial) && this.state === 'waiting' && this.pointerId === null;
+        const active = false;
         const from = active ? this.worldToScreen(this.dragHintWorld.copy(this.env.mainPlayer.transform.position).setY(FloorLayers.baseY + 0.3)) : null;
         const to = active ? this.worldToScreen(this.goalHandWorld.set(this.activeGoal.x, FloorLayers.baseY + 0.3, this.activeGoal.z)) : null;
         hint.visible = Boolean(from && to);
@@ -830,6 +826,7 @@ export default class PathLevelScene extends ThreeScene {
             align: 'center',
         });
         this.instruction.anchor.set(0.5);
+        this.instruction.visible = false;
         this.runMoneyLabel = new PIXI.Text('', {
             fontFamily: UiKit.fontFamily('primary'),
             fontSize: 30,
@@ -846,12 +843,12 @@ export default class PathLevelScene extends ThreeScene {
         this.cashPillCoin = coin;
         this.cashPill.addChild(this.cashPillBackground, coin, this.runMoneyLabel);
         const found = LevelCatalog.locate(this.level);
-        this.worldLabel = new PIXI.Text(found ? `WORLD ${found.world.number}  ${found.world.name.toUpperCase()}  ·  LEVEL ${found.levelNumber}/${found.world.levels.length}` : this.level.name.toUpperCase(), {
+        this.worldLabel = new PIXI.Text(found ? `${found.world.number}-${found.levelNumber}` : '', {
             fontFamily: UiKit.fontFamily('primary'),
-            fontSize: 14,
+            fontSize: 34,
             fill: 0xffffff,
             stroke: 0x203c35,
-            strokeThickness: 4,
+            strokeThickness: 7,
         });
         this.worldLabel.anchor.set(0.5);
         this.homeButton = this.buildHomeButton();
@@ -1192,6 +1189,7 @@ export default class PathLevelScene extends ThreeScene {
             blocked: this.routeBlocked,
         });
         if (this.routeBlocked) {
+            GameAudio.play('blocked');
             this.route = [];
             this.routeBlocked = false;
             this.clearRoute();
@@ -1203,6 +1201,7 @@ export default class PathLevelScene extends ThreeScene {
         }
 
         this.route = finalRoute;
+        GameAudio.play('start');
         this.state = 'following';
         if (this.pathDrawMode === 'free') {
             this.activeStart.copy(this.route[0]);
@@ -1219,88 +1218,15 @@ export default class PathLevelScene extends ThreeScene {
     }
 
     private adjustRouteThroughDoors(route: readonly THREE.Vector3[]): THREE.Vector3[] {
-        if (route.length < 2) {
-            return route.map((point) => point.clone());
-        }
-
-        const crossedDoors = this.doors.filter((door) => route.some((point, index) => index > 0
-            && this.segmentCrossesDoor(door, route[index - 1], point)));
-
-        // Resample evenly so the curve has uniform density instead of sparse door waypoints.
-        const spacing = 0.25;
-        const samples = [route[0].clone()];
-        let carried = 0;
-        for (let index = 1; index < route.length; index++) {
-            const start = route[index - 1];
-            const end = route[index];
-            const length = this.distanceXZ(start, end);
-            let travelled = spacing - carried;
-            while (travelled <= length) {
-                const t = travelled / length;
-                samples.push(new THREE.Vector3(
-                    THREE.MathUtils.lerp(start.x, end.x, t),
-                    0.08,
-                    THREE.MathUtils.lerp(start.z, end.z, t),
-                ));
-                travelled += spacing;
-            }
-            carried = length - (travelled - spacing);
-        }
-        const last = route[route.length - 1];
-        if (this.distanceXZ(samples[samples.length - 1], last) > 0.05) {
-            samples.push(last.clone());
-        }
-
-        // Ease x toward the door centre over a blend zone, then hold it through the doorway.
-        const blend = 2.5;
-        const doorPull = (point: THREE.Vector3): { weight: number; x: number } => {
-            let best = { weight: 0, x: point.x };
-            for (const door of crossedDoors) {
-                const distance = Math.abs(point.z - door.z) - DOOR_CLEARANCE;
-                const t = THREE.MathUtils.clamp(1 - distance / blend, 0, 1);
-                const weight = t * t * (3 - 2 * t);
-                if (weight > best.weight) {
-                    best = { weight, x: door.x };
-                }
-            }
-            return best;
-        };
-        const pulls = samples.map(doorPull);
-        const weights = pulls.map((pull) => pull.weight);
-
-        for (let pass = 0; pass < 2; pass++) {
-            for (let index = 1; index < samples.length - 1; index++) {
-                if (weights[index] >= 1) {
-                    continue;
-                }
-                const previous = samples[index - 1];
-                const next = samples[index + 1];
-                samples[index].x = (previous.x + samples[index].x * 2 + next.x) / 4;
-                samples[index].z = (previous.z + samples[index].z * 2 + next.z) / 4;
-            }
-        }
-        samples.forEach((point, index) => {
-            point.x = THREE.MathUtils.lerp(point.x, pulls[index].x, weights[index]);
-        });
-        return samples;
-    }
-
-    private segmentCrossesDoor(door: LevelDoor, start: THREE.Vector3, end: THREE.Vector3): boolean {
-        const deltaZ = end.z - start.z;
-        if (Math.abs(deltaZ) < 1e-8) {
-            return false;
-        }
-        const t = (door.z - start.z) / deltaZ;
-        return t >= -1e-4 && t <= 1 + 1e-4
-            && Math.abs(start.x + (end.x - start.x) * t - door.x) <= door.halfWidth + DOOR_ASSIST_MARGIN;
+        return adjustRouteThroughDoors(route, this.doors);
     }
 
     private crossesDoorInAssistRange(start: THREE.Vector3, end: THREE.Vector3): boolean {
-        return this.doors.some((door) => this.segmentCrossesDoor(door, start, end));
+        return this.doors.some((door) => doorCrossing(door, start, end) !== undefined);
     }
 
-    private segmentHitsWall(start: THREE.Vector3, end: THREE.Vector3): boolean {
-        if (this.crossesDoorInAssistRange(start, end)) {
+    private segmentHitsWall(start: THREE.Vector3, end: THREE.Vector3, assist = true): boolean {
+        if (assist && this.crossesDoorInAssistRange(start, end)) {
             return false;
         }
         const radius = PLAYER_SETTINGS.colliderHalfWidth + 0.08;
@@ -1354,11 +1280,11 @@ export default class PathLevelScene extends ThreeScene {
         }
 
         // A raw trace that hits a wall is shown as drawn; door smoothing only applies to clear traces.
-        const hits = (points: readonly THREE.Vector3[]): boolean => points.some((point, index) => index > 0
-            && this.segmentHitsWall(points[index - 1], point));
-        this.routeBlocked = hits(this.route);
+        const hits = (points: readonly THREE.Vector3[], assist: boolean): boolean => points.some((point, index) => index > 0
+            && this.segmentHitsWall(points[index - 1], point, assist));
+        this.routeBlocked = hits(this.route, true);
         const route = this.routeBlocked ? this.route : this.adjustRouteThroughDoors(this.route);
-        this.routeBlocked ||= hits(route);
+        this.routeBlocked ||= hits(route, false);
 
         const routeColor = this.routeBlocked ? 0xf04455 : (this.focused?.color ?? 0x2bd2bd);
         if (route.length > 1) {
@@ -1471,6 +1397,7 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
         this.state = 'done';
+        GameAudio.play('checkpoint');
         const next = this.members.find((other) => other !== member && this.memberState(other) !== 'done');
         if (!next) {
             void this.beginCelebration();
@@ -1498,6 +1425,7 @@ export default class PathLevelScene extends ThreeScene {
     }
 
     private applyBonus(multiplier: number): void {
+        GameAudio.play('bonus');
         this.bonusMeter?.removeFromParent();
         this.bonusMeter?.destroy({ children: true });
         this.bonusMeter = undefined;
@@ -1705,6 +1633,7 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
         this.state = 'celebrating';
+        GameAudio.play('victory');
         // A still-running path framing tween would otherwise keep fighting the finale camera.
         this.cameraBlendTween?.kill();
         this.cameraBlendTween = undefined;
@@ -1803,6 +1732,7 @@ export default class PathLevelScene extends ThreeScene {
     }
 
     private advanceWaypoint(): void {
+        GameAudio.play('checkpoint');
         const movement = this.env.mainPlayer.movementController;
         movement.enabled = false;
         movement.exitPathMode();
@@ -1828,6 +1758,65 @@ export default class PathLevelScene extends ThreeScene {
             group.visible = groupIndex <= index;
         }
         this.buildCollectibles(index);
+    }
+
+    /** Characters start looking into the level: along the dominant axis from their start toward the floor centre. */
+    private faceStartDirections(): void {
+        for (const member of this.members) {
+            if (this.startFaced.has(member) || !member.player.character) {
+                continue;
+            }
+            const dx = -member.start.x;
+            const dz = -member.start.z;
+            if (Math.abs(dx) > Math.abs(dz)) {
+                member.player.character.faceDirection(Math.sign(dx), 0, true);
+            } else {
+                member.player.character.faceDirection(0, Math.sign(dz) || -1, true);
+            }
+            this.startFaced.add(member);
+        }
+    }
+
+    /** Inside the safe room: keep walking to the member's own slot, then turn to face the camera. */
+    private beginHomeWalk(): void {
+        if (this.state !== 'following') {
+            return;
+        }
+        this.state = 'revealing';
+        const member = this.focused!;
+        const movement = member.player.movementController;
+        const slot = this.activeGoal.clone();
+        movement.enabled = true;
+        movement.enterPathMode([member.player.transform.position.clone(), slot]);
+        this.homeWalks.push({ member, slot });
+    }
+
+    private updateHomeWalks(): void {
+        if (this.homeWalks.length === 0) {
+            return;
+        }
+        for (const walk of [...this.homeWalks]) {
+            const player = walk.member.player;
+            const arrived = player.movementController.isPathComplete
+                || this.distanceXZ(player.transform.position, walk.slot) <= 0.12;
+            if (!arrived || this.isEnded()) {
+                continue;
+            }
+            this.homeWalks = this.homeWalks.filter((entry) => entry !== walk);
+            player.movementController.exitPathMode();
+            player.movementController.enabled = false;
+            const towardCamera = this.threeCamera.position.clone().sub(player.transform.position);
+            player.character?.faceDirection(towardCamera.x, towardCamera.z);
+            this.runAsMember(walk.member, () => {
+                if (this.state !== 'revealing') {
+                    return;
+                }
+                this.route = [];
+                this.routeBlocked = false;
+                this.clearRoute();
+                this.completeMember();
+            });
+        }
     }
 
     private beginGoalArrival(): void {
@@ -1862,7 +1851,7 @@ export default class PathLevelScene extends ThreeScene {
                         this.revealArea(this.nextWaypointIndex);
                         // Each member shows its own next goal, even if another member already revealed this area.
                         const nextGoal = this.waypoints[this.nextWaypointIndex + 1];
-                        if (nextGoal) {
+                        if (nextGoal && shouldShowWaypointMarker(this.level, this.nextWaypointIndex + 1, this.waypoints.length)) {
                             this.addMarker(nextGoal, this.focused?.color ?? GOAL_COLOR, GOAL_MARKER_RADIUS);
                         }
                         this.advanceWaypoint();
@@ -1881,7 +1870,7 @@ export default class PathLevelScene extends ThreeScene {
         if (this.state === 'following' && this.sharedGoalActive && this.nextWaypointIndex >= lastIndex
             && this.insideSharedGoal(this.env.mainPlayer.transform.position)) {
             this.activeGoal.copy(this.waypoints[lastIndex]);
-            this.beginGoalArrival();
+            this.beginHomeWalk();
             return;
         }
         if (this.state === 'following' && this.stopAtCheckpoints) {
@@ -1930,6 +1919,8 @@ export default class PathLevelScene extends ThreeScene {
         this.updateGoalParticles(delta);
         this.updateGoalArrow();
         this.updateDragHint();
+        this.faceStartDirections();
+        this.updateHomeWalks();
         this.updateSelectionHalo();
         PizzaParticleSystem.update(delta);
         this.updateWallHeight();
@@ -2114,6 +2105,7 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
         this.state = 'busted';
+        GameAudio.play('busted');
         for (const other of this.members) {
             if (other !== this.focused && other.state === 'following') {
                 other.player.movementController.enabled = false;
@@ -2293,10 +2285,10 @@ export default class PathLevelScene extends ThreeScene {
             this.instruction.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + 42);
         }
         if (this.worldLabel) {
-            this.worldLabel.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + 148);
+            this.worldLabel.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + 42);
         }
         if (this.homeButton) {
-            this.homeButton.position.set(Game.overlayScreenData.topRight.x - 44, Game.overlayScreenData.topLeft.y + 44);
+            this.homeButton.position.set(Game.overlayScreenData.topRight.x - 118, Game.overlayScreenData.topLeft.y + 44);
         }
         if (this.squadBar) {
             this.squadBar.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + Game.overlayScreenData.height - 70);

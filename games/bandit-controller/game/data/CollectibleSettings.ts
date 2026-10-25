@@ -43,6 +43,8 @@ export function resolveCollectibleIconPath(relativePath: string): string {
 }
 
 export interface CollectibleTuning {
+    /** Shared visual-only scale boost applied after each pickup's per-level/model scale. */
+    visualScaleMultiplier: number;
     /** Radius (world units) at which an idle pickup notices the player and starts flying to them — see Collectible's trigger RigidBody. */
     attractRadius: number;
     /** Fixed real-time seconds an attracted pickup takes to reach the player, regardless of distance or how much the player moves in the meantime — see Collectible's ArcSpline-driven homing (its own doc explains why this is a constant DURATION rather than a closing speed). */
@@ -58,6 +60,7 @@ export interface CollectibleTuning {
 };
 
 export const COLLECTIBLE_TUNING: CollectibleTuning = {
+    visualScaleMultiplier: 1.2,
     attractRadius: 3,
     snapDurationSec: 0.35,
     arcHeight: 1.2,

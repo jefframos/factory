@@ -46,6 +46,7 @@ import { buildRoadDetails } from '../builders/RoadDetailsBuilder';
 import { waitForFirstInput } from '../utils/waitForFirstInput';
 import ReturnToHubButton from '../ui/ReturnToHubButton';
 import RestartButton from '../ui/RestartButton';
+import { GameAudio } from '../audio/GameAudio';
 import MoneyHud from '../ui/MoneyHud';
 import Collectible from '../entities/Collectible';
 import { COIN } from '../data/CollectibleSettings';
@@ -305,6 +306,7 @@ export default class SwipeMinigameScene extends ThreeScene {
             return;
         }
         this.stopped = true;
+        GameAudio.play('busted');
 
         const player = this.env.mainPlayer;
         player.swipeRunnerController.deactivate();
@@ -343,6 +345,7 @@ export default class SwipeMinigameScene extends ThreeScene {
             this.updateTimerLabel();
             if (this.remainingSec <= 0) {
                 this.finished = true;
+                GameAudio.play('victory');
                 this.onComplete.dispatch();
             }
         }

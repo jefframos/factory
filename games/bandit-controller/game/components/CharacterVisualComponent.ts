@@ -13,6 +13,7 @@ import Component from 'core/ecs/Component';
 import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
 import RigidBody from 'core/physics/RigidBody';
 import { PLAYER_SETTINGS, getPlayerColliderHalfExtents, getPlayerColliderCenterOffset } from '../data/PlayerSettings';
+import { GameAudio } from '../audio/GameAudio';
 
 export default class CharacterVisualComponent extends Component {
     public readonly character: ThirdPersonCharacter;
@@ -25,6 +26,8 @@ export default class CharacterVisualComponent extends Component {
     private slidingRemaining = 0;
     /** Whether the RigidBody is CURRENTLY sized for sliding (see update()) — tracked separately from `slidingRemaining > 0` so the resize only fires once per transition (on the edge), not every frame the slide state holds. */
     private colliderIsSlideSized = false;
+    private previousPosition?: THREE.Vector3;
+    private stepDistance = 0;
 
     public constructor(character: ThirdPersonCharacter) {
         super();
@@ -73,6 +76,22 @@ export default class CharacterVisualComponent extends Component {
             this.worldPosition.y -= rigidBody.halfExtents.y;
         } else {
             this.worldPosition.copy(this.entity.transform.position);
+        }
+
+        if (this.previousPosition) {
+            const distance = Math.hypot(this.worldPosition.x - this.previousPosition.x, this.worldPosition.z - this.previousPosition.z);
+            if (rigidBody?.grounded && !isSliding && this.rollingRemaining <= 0 && distance > 0.001 && distance < 2) {
+                this.stepDistance += distance;
+                if (this.stepDistance >= 1.5) {
+                    GameAudio.play('footstep');
+                    this.stepDistance %= 1.5;
+                }
+            } else {
+                this.stepDistance = 0;
+            }
+            this.previousPosition.copy(this.worldPosition);
+        } else {
+            this.previousPosition = this.worldPosition.clone();
         }
 
         this.character.update(delta, this.worldPosition, this.moveInput.x, this.moveInput.y, {

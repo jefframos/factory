@@ -56,10 +56,10 @@ let cachedSkyTexture: THREE.CanvasTexture | undefined;
 export function buildBlueSkyTexture(): THREE.CanvasTexture {
     if (!cachedSkyTexture) {
         cachedSkyTexture = buildGradientTexture(
-            [58, 121, 214],
-            [72, 140, 226],
-            [186, 224, 255],
-            [206, 233, 255],
+            [108, 173, 221],
+            [126, 189, 232],
+            [215, 237, 246],
+            [231, 244, 248],
         );
     }
     return cachedSkyTexture;

@@ -417,11 +417,14 @@ export default class CharacterBody {
     }
 
     /** Sets the facing target without applying movement, e.g. to look toward the camera during the level celebration. */
-    public faceDirection(directionX: number, directionZ: number): void {
+    public faceDirection(directionX: number, directionZ: number, snap = false): void {
         if (directionX === 0 && directionZ === 0) {
             return;
         }
         this.targetRotation.setFromAxisAngle(this.up, Math.atan2(directionX, directionZ));
+        if (snap) {
+            this.container.quaternion.copy(this.targetRotation);
+        }
     }
 
     public destroy(): void {

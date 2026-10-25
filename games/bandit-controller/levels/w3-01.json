@@ -6,52 +6,82 @@
   },
   "floor": {
     "width": 12,
-    "depth": 12
+    "depth": 16.8,
+    "rects": [
+      {
+        "x": 0,
+        "z": 0,
+        "width": 12,
+        "depth": 16.8
+      }
+    ]
   },
   "start": {
-    "x": 0.0,
-    "z": 8.0
+    "x": -8,
+    "z": 0
   },
   "waypoints": [
     {
-      "x": 0.0,
-      "z": -2.0
+      "x": 2,
+      "z": 0
     }
   ],
   "entryPath": {
-    "x": 0,
-    "z": 8.0,
-    "width": 4.0,
-    "depth": 4
+    "x": -8,
+    "z": 0,
+    "width": 4,
+    "depth": 5.6
   },
   "walls": [
     {
       "closed": true,
       "points": [
         {
-          "x": -6.0,
-          "z": 6.0
+          "x": 6,
+          "z": -8.4
         },
         {
-          "x": 6.0,
-          "z": 6.0
+          "x": 6,
+          "z": 8.4
         },
         {
-          "x": 6.0,
-          "z": -6.0
+          "x": -6,
+          "z": 8.4
         },
         {
-          "x": -6.0,
-          "z": -6.0
+          "x": -6,
+          "z": -8.4
         }
       ],
       "openings": [
         {
           "kind": "door",
-          "minX": -1.25,
-          "maxX": 1.25,
-          "minZ": 5.7,
-          "maxZ": 6.3
+          "minX": -6.3,
+          "maxX": -5.7,
+          "minZ": -1.75,
+          "maxZ": 1.75
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 6,
+          "z": 3.36
+        },
+        {
+          "x": -6,
+          "z": 3.36
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -1.65,
+          "maxX": 1.65,
+          "minZ": 3.06,
+          "maxZ": 3.66
         }
       ]
     }
@@ -60,8 +90,8 @@
   "loot": [
     {
       "model": "resources/Money_Coins_Stack_Small.gltf",
-      "x": -2.5,
-      "z": 0.0,
+      "x": 0,
+      "z": -3.5,
       "amount": 25,
       "scale": 1.35,
       "revealAt": 0
@@ -79,12 +109,13 @@
   "cameras": [
     {
       "x": -5.6,
-      "z": 5.6,
-      "facing": 135,
+      "z": -7.84,
+      "facing": 45,
       "sweep": 40,
       "period": 6,
       "fov": 50,
       "range": 9
     }
-  ]
+  ],
+  "traps": []
 }

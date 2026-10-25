@@ -284,6 +284,16 @@ const HeistDoorA = {
 }
 } as const;
 
+const HeistWoodenDoor = {
+  id: 'wooden-door',
+  path: 'heist/doors/wooden-door',
+  fullPath: 'bandit-controller/models/heist/doors/wooden-door.glb',
+  format: 'glb',
+  nodes: {
+  "DoorA": "Door_A"
+}
+} as const;
+
 const HeistCashRegister = {
   id: 'cash-register',
   path: 'heist/mini-market/cash-register',
@@ -3072,6 +3082,7 @@ export const MODELS = {
   Heist: {
     DoorADecorated: HeistDoorADecorated,
     DoorA: HeistDoorA,
+    WoodenDoor: HeistWoodenDoor,
     CashRegister: HeistCashRegister,
     Column: HeistColumn,
     ShelfBoxes: HeistShelfBoxes,
