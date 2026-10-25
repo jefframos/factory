@@ -10,7 +10,6 @@
         "path": "pathStyle1"
       },
       "levels": [
-        "tutorial-01",
         "tutorial-02",
         "tutorial-03",
         "tutorial-04",
@@ -137,7 +136,23 @@
         "w7-05",
         "w7-06",
         "w7-07",
-        "w7-08"
+        "w7-08",
+        "tutorial-01"
+      ]
+    },
+    {
+      "id": "world-8",
+      "name": "Suburban Homes",
+      "styles": {
+        "floor": "floorStyle3",
+        "wall": "wallStyle3",
+        "ground": "groundStyle3",
+        "path": "pathStyle3"
+      },
+      "levels": [
+        "h1-01",
+        "h1-02",
+        "h1-03"
       ]
     }
   ]
