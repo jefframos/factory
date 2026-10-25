@@ -30,6 +30,18 @@
       "colorA": "#9aa5b1",
       "colorB": "#7b8794",
       "checkerScale": 1.5
+    },
+    "floorStyle6": {
+      "name": "Lab tile",
+      "colorA": "#d5f5ee",
+      "colorB": "#a9e3d6",
+      "checkerScale": 1.5
+    },
+    "floorStyle7": {
+      "name": "Station deck",
+      "colorA": "#46506a",
+      "colorB": "#38425a",
+      "checkerScale": 1.5
     }
   },
   "wall": {
@@ -72,6 +84,22 @@
       "bottomHeight": 1.4,
       "height": 6,
       "thickness": 0.4
+    },
+    "wallStyle6": {
+      "name": "Neon lab",
+      "bottomColor": "#2f6f73",
+      "topColor": "#4de8c2",
+      "bottomHeight": 1.4,
+      "height": 6,
+      "thickness": 0.4
+    },
+    "wallStyle7": {
+      "name": "Station",
+      "bottomColor": "#2a3045",
+      "topColor": "#8d6bff",
+      "bottomHeight": 1.4,
+      "height": 6,
+      "thickness": 0.4
     }
   },
   "door": {
@@ -109,6 +137,14 @@
     "groundStyle5": {
       "name": "Snow",
       "color": "#e6eef5"
+    },
+    "groundStyle6": {
+      "name": "Toxic green",
+      "color": "#6fb98a"
+    },
+    "groundStyle7": {
+      "name": "Deep space",
+      "color": "#1c2038"
     }
   },
   "path": {
@@ -131,6 +167,14 @@
     "pathStyle5": {
       "name": "Gravel",
       "color": "#8d8f94"
+    },
+    "pathStyle6": {
+      "name": "Steel",
+      "color": "#9fb4b8"
+    },
+    "pathStyle7": {
+      "name": "Plating",
+      "color": "#59607a"
     }
   }
 }

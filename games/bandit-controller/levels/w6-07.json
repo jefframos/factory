@@ -1,0 +1,183 @@
+{
+  "id": "w6-07",
+  "name": "Contamination",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 12,
+    "depth": 32
+  },
+  "start": {
+    "x": 0.0,
+    "z": 18.0
+  },
+  "waypoints": [
+    {
+      "x": 0.0,
+      "z": 8.0
+    },
+    {
+      "x": 0.0,
+      "z": -2.0
+    },
+    {
+      "x": 0.0,
+      "z": -12.0
+    }
+  ],
+  "entryPath": {
+    "x": 0,
+    "z": 18.0,
+    "width": 4.0,
+    "depth": 4
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": -6.0,
+          "z": 16.0
+        },
+        {
+          "x": 6.0,
+          "z": 16.0
+        },
+        {
+          "x": 6.0,
+          "z": -16.0
+        },
+        {
+          "x": -6.0,
+          "z": -16.0
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -1.25,
+          "maxX": 1.25,
+          "minZ": 15.7,
+          "maxZ": 16.3
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -6.0,
+          "z": 4.0
+        },
+        {
+          "x": 6.0,
+          "z": 4.0
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -1.25,
+          "maxX": 1.25,
+          "minZ": 3.7,
+          "maxZ": 4.3
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -6.0,
+          "z": -6.0
+        },
+        {
+          "x": 6.0,
+          "z": -6.0
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -1.25,
+          "maxX": 1.25,
+          "minZ": -6.3,
+          "maxZ": -5.7
+        }
+      ]
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -2.5,
+      "z": 10.0,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": 2.5,
+      "z": 0.0,
+      "amount": 50,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -2.5,
+      "z": -10.0,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "traps": [
+    {
+      "x": 0,
+      "z": 10.0,
+      "width": 11.0,
+      "depth": 2.0,
+      "period": 3.0,
+      "active": 1.2,
+      "offset": 0.0
+    },
+    {
+      "x": 0,
+      "z": -10.0,
+      "width": 11.0,
+      "depth": 2.0,
+      "period": 3.0,
+      "active": 1.2,
+      "offset": 1.5
+    }
+  ],
+  "drones": [
+    {
+      "path": [
+        {
+          "x": -4,
+          "z": 0.0
+        },
+        {
+          "x": 4,
+          "z": 0.0
+        }
+      ],
+      "speed": 2.0,
+      "radius": 1.8
+    }
+  ]
+}

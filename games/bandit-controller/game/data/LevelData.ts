@@ -85,6 +85,28 @@ export interface LevelSecurityCamera {
     range: number;
 }
 
+/** A floor hazard (spike plate) that cycles: safe, a short warning flash, then armed. Stepping on it while armed busts instantly. */
+export interface LevelTrap {
+    x: number;
+    z: number;
+    width: number;
+    depth: number;
+    /** Seconds for one full safe + armed cycle. */
+    period: number;
+    /** Seconds per cycle the spikes stay up (at the end of the cycle). */
+    active: number;
+    /** Seconds added to the level clock, to desynchronise several traps. */
+    offset: number;
+}
+
+/** A hovering patrol drone: no vision cone, it spots anything inside a round light beneath it, and walks its route back and forth. */
+export interface LevelDrone {
+    path: LevelPoint[];
+    speed: number;
+    /** Radius of the light disc in world units. */
+    radius: number;
+}
+
 /** A shared finish room: when enabled, every squad member must reach it and each lines up on its own spot inside. */
 export interface LevelSharedGoal {
     x: number;
@@ -124,6 +146,8 @@ export interface LevelData {
     loot: LevelLoot[];
     guards?: LevelGuard[];
     cameras?: LevelSecurityCamera[];
+    traps?: LevelTrap[];
+    drones?: LevelDrone[];
 }
 
 export interface LevelDoor {

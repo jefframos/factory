@@ -99,6 +99,46 @@
         "w5-07",
         "w5-08"
       ]
+    },
+    {
+      "id": "world-6",
+      "name": "Neon Lab",
+      "styles": {
+        "floor": "floorStyle6",
+        "wall": "wallStyle6",
+        "ground": "groundStyle6",
+        "path": "pathStyle6"
+      },
+      "levels": [
+        "w6-01",
+        "w6-02",
+        "w6-03",
+        "w6-04",
+        "w6-05",
+        "w6-06",
+        "w6-07",
+        "w6-08"
+      ]
+    },
+    {
+      "id": "world-7",
+      "name": "Orbital Station",
+      "styles": {
+        "floor": "floorStyle7",
+        "wall": "wallStyle7",
+        "ground": "groundStyle7",
+        "path": "pathStyle7"
+      },
+      "levels": [
+        "w7-01",
+        "w7-02",
+        "w7-03",
+        "w7-04",
+        "w7-05",
+        "w7-06",
+        "w7-07",
+        "w7-08"
+      ]
     }
   ]
 }

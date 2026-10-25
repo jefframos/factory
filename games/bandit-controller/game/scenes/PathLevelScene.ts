@@ -12,6 +12,8 @@ import { pruneCollected } from '../builders/CollectibleBuilder';
 import Collectible from '../entities/Collectible';
 import Guard from '../entities/Guard';
 import SecurityCamera from '../entities/SecurityCamera';
+import Trap from '../entities/Trap';
+import Drone from '../entities/Drone';
 import { LevelSight } from '../utils/LevelSight';
 import { COIN, CollectibleDefinition } from '../data/CollectibleSettings';
 import { LevelCatalog } from '../data/LevelCatalog';
@@ -112,7 +114,7 @@ const ALERT_DECAY_PER_SEC = 1.2;
 
 type PathLevelState = 'waiting' | 'following' | 'revealing' | 'celebrating' | 'payout' | 'complete' | 'busted' | 'done';
 /** Anything that can spot the player: patrolling guards and fixed security cameras. */
-type Spotter = Guard | SecurityCamera;
+type Spotter = Guard | SecurityCamera | Trap | Drone;
 
 type PathDrawMode = 'exit' | 'free';
 
@@ -1854,6 +1856,14 @@ export default class PathLevelScene extends ThreeScene {
         for (const data of this.level.cameras ?? []) {
             this.guards.push(new SecurityCamera(this.threeScene, data, sight, BendService));
         }
+        for (const data of this.level.drones ?? []) {
+            if (data.path.length > 1) {
+                this.guards.push(new Drone(this.threeScene, data, sight, BendService));
+            }
+        }
+        for (const data of this.level.traps ?? []) {
+            this.guards.push(new Trap(this.threeScene, data, BendService));
+        }
     }
 
     private destroyGuards(): void {
@@ -2032,6 +2042,10 @@ export default class PathLevelScene extends ThreeScene {
         message.position.set(0, -35);
         if (this.bustGuard instanceof SecurityCamera) {
             message.text = 'A security camera spotted you.\nWatch its sweep and time it.';
+        } else if (this.bustGuard instanceof Trap) {
+            message.text = 'You stepped on the spikes!\nCross while they are down.';
+        } else if (this.bustGuard instanceof Drone) {
+            message.text = 'A drone lit you up.\nSlip past when it flies away.';
         }
 
         const button = new PIXI.Container();
