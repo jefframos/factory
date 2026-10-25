@@ -322,6 +322,7 @@ function rebuildStatic() {
         staticGroup.add(label);
     });
     drawGuards();
+    drawExtras();
     updateSelectionOverlay();
 }
 
@@ -366,6 +367,106 @@ function drawGuards() {
         staticGroup.add(cone);
         const label = labelSprite('G', '#ff6a6a');
         label.position.set(guard.path[0].x, 1.4, guard.path[0].z);
+        staticGroup.add(label);
+    });
+}
+
+const SQUAD_COLORS = { blue: 0x42a5f5, purple: 0xab47bc, orange: 0xffa726 };
+const isSel = (type, index, sub) => selection?.type === type && selection.index === index && (sub === undefined || selection.sub === sub);
+
+function addCone(x, z, heading, half, range, color, opacity = 0.3) {
+    const shape = [new THREE.Vector3(x, 0.09, z)];
+    for (let i = 0; i <= 16; i++) {
+        const angle = heading - half + (half * 2 * i) / 16;
+        shape.push(new THREE.Vector3(x + Math.sin(angle) * range, 0.09, z + Math.cos(angle) * range));
+    }
+    const geometry = new THREE.BufferGeometry().setFromPoints(shape);
+    const indices = [];
+    for (let i = 1; i < shape.length - 1; i++) indices.push(0, i, i + 1);
+    geometry.setIndex(indices);
+    staticGroup.add(new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color, transparent: true, opacity, side: THREE.DoubleSide, depthWrite: false })));
+}
+
+function addMarker(x, z, radius, color, text, sel) {
+    const marker = mesh(new THREE.CylinderGeometry(radius, radius, 0.12, 24), sel ? 0xffffff : color, 0.06);
+    marker.position.set(x, 0.06, z);
+    staticGroup.add(marker);
+    const label = labelSprite(text, '#' + color.toString(16).padStart(6, '0'));
+    label.position.set(x, 1.2, z);
+    staticGroup.add(label);
+}
+
+function drawExtras() {
+    (level.squad ?? []).forEach((member, index) => {
+        const color = SQUAD_COLORS[member.view] ?? 0xcccccc;
+        const stops = [member.start, ...member.waypoints];
+        const line = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints(stops.map((p) => new THREE.Vector3(p.x, 0.07, p.z))),
+            new THREE.LineDashedMaterial({ color, dashSize: 0.4, gapSize: 0.3 }),
+        );
+        line.computeLineDistances();
+        staticGroup.add(line);
+        addMarker(member.start.x, member.start.z, 0.8, color, 'S' + (index + 1), isSel('squadStart', index));
+        member.waypoints.forEach((p, sub) => addMarker(p.x, p.z, 1.0, color, `${index + 1}.${sub + 1}`, isSel('squadPoint', index, sub)));
+    });
+    const goal = level.sharedGoal;
+    if (goal) {
+        const box = mesh(new THREE.BoxGeometry(goal.width, 0.1, goal.depth), isSel('goal', 0) ? 0xffffff : 0x6dff8a, 0.05, goal.enabled === false ? 0.12 : 0.35);
+        box.position.set(goal.x, 0.05, goal.z);
+        staticGroup.add(box);
+        const label = labelSprite('SAFE', '#6dff8a');
+        label.position.set(goal.x, 1.2, goal.z);
+        staticGroup.add(label);
+    }
+    (level.cameras ?? []).forEach((camera, index) => {
+        const sel = isSel('camera', index);
+        const heading = (camera.facing * Math.PI) / 180;
+        const half = (camera.fov * Math.PI) / 360;
+        addCone(camera.x, camera.z, heading, half, camera.range, 0x7fd8ff, 0.3);
+        if (camera.sweep > 0) {
+            const sweep = (camera.sweep * Math.PI) / 180;
+            for (const sign of [-1, 1]) {
+                const a = heading + sign * sweep;
+                staticGroup.add(new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(camera.x, 0.1, camera.z), new THREE.Vector3(camera.x + Math.sin(a) * camera.range, 0.1, camera.z + Math.cos(a) * camera.range)]),
+                    new THREE.LineBasicMaterial({ color: 0x7fd8ff }),
+                ));
+            }
+        }
+        const body = mesh(new THREE.BoxGeometry(0.7, 0.5, 0.7), sel ? 0xffffff : 0x2c333b, 0.4);
+        body.position.x = camera.x;
+        body.position.z = camera.z;
+        staticGroup.add(body);
+        const label = labelSprite('CAM', '#7fd8ff');
+        label.position.set(camera.x, 1.5, camera.z);
+        staticGroup.add(label);
+    });
+    (level.traps ?? []).forEach((trap, index) => {
+        const box = mesh(new THREE.BoxGeometry(trap.width, 0.2, trap.depth), isSel('trap', index) ? 0xffffff : 0xd04040, 0.1, 0.8);
+        box.position.set(trap.x, 0.1, trap.z);
+        staticGroup.add(box);
+        const label = labelSprite(`SPIKES ${trap.active}/${trap.period}s`, '#ff8080');
+        label.position.set(trap.x, 1.2, trap.z);
+        staticGroup.add(label);
+    });
+    (level.drones ?? []).forEach((drone, index) => {
+        if (!drone.path.length) return;
+        if (drone.path.length > 1) {
+            staticGroup.add(new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints(drone.path.map((p) => new THREE.Vector3(p.x, 0.08, p.z))),
+                new THREE.LineBasicMaterial({ color: 0xffe066 }),
+            ));
+        }
+        drone.path.forEach((p, sub) => {
+            const marker = mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.3, 14), isSel('dronePoint', index, sub) ? 0xffffff : 0xffe066, 0.15);
+            marker.position.set(p.x, 0.15, p.z);
+            staticGroup.add(marker);
+        });
+        const disc = mesh(new THREE.CylinderGeometry(drone.radius, drone.radius, 0.05, 32), 0xffe066, 0.04, 0.25);
+        disc.position.set(drone.path[0].x, 0.04, drone.path[0].z);
+        staticGroup.add(disc);
+        const label = labelSprite('DRONE', '#ffe066');
+        label.position.set(drone.path[0].x, 1.6, drone.path[0].z);
         staticGroup.add(label);
     });
 }
@@ -495,6 +596,26 @@ function pick(point) {
             }
         }
     }
+    for (let i = (level.drones ?? []).length - 1; i >= 0; i--) {
+        for (let p = 0; p < level.drones[i].path.length; p++) {
+            const d = level.drones[i].path[p];
+            if (Math.hypot(d.x - point.x, d.z - point.z) < 0.8) return { type: 'dronePoint', index: i, sub: p };
+        }
+    }
+    for (let i = (level.cameras ?? []).length - 1; i >= 0; i--) {
+        if (Math.hypot(level.cameras[i].x - point.x, level.cameras[i].z - point.z) < 0.9) return { type: 'camera', index: i };
+    }
+    for (let i = (level.squad ?? []).length - 1; i >= 0; i--) {
+        const member = level.squad[i];
+        for (let p = 0; p < member.waypoints.length; p++) {
+            if (Math.hypot(member.waypoints[p].x - point.x, member.waypoints[p].z - point.z) < 1.1) return { type: 'squadPoint', index: i, sub: p };
+        }
+        if (Math.hypot(member.start.x - point.x, member.start.z - point.z) < 0.9) return { type: 'squadStart', index: i };
+    }
+    for (let i = (level.traps ?? []).length - 1; i >= 0; i--) {
+        const t = level.traps[i];
+        if (Math.abs(t.x - point.x) <= t.width / 2 && Math.abs(t.z - point.z) <= t.depth / 2) return { type: 'trap', index: i };
+    }
     for (let i = level.waypoints.length - 1; i >= 0; i--) {
         if (Math.hypot(level.waypoints[i].x - point.x, level.waypoints[i].z - point.z) < 1.2) {
             return { type: 'waypoint', index: i };
@@ -514,6 +635,10 @@ function pick(point) {
             }
         }
     }
+    const goal = level.sharedGoal;
+    if (goal && Math.abs(goal.x - point.x) <= goal.width / 2 && Math.abs(goal.z - point.z) <= goal.depth / 2) {
+        return { type: 'goal', index: 0 };
+    }
     const segment = nearestWallSegment(point, 0.5);
     return segment ? { type: 'wall', index: segment.wallIndex } : null;
 }
@@ -527,6 +652,12 @@ function entityPosition(sel) {
         case 'waypoint': return level.waypoints[sel.index];
         case 'wallPoint': return level.walls[sel.index].points[sel.sub];
         case 'guardPoint': return level.guards[sel.index].path[sel.sub];
+        case 'squadStart': return level.squad[sel.index].start;
+        case 'squadPoint': return level.squad[sel.index].waypoints[sel.sub];
+        case 'goal': return level.sharedGoal;
+        case 'camera': return level.cameras[sel.index];
+        case 'trap': return level.traps[sel.index];
+        case 'dronePoint': return level.drones[sel.index].path[sel.sub];
         default: return null;
     }
 }
@@ -579,6 +710,17 @@ function deleteSelection() {
         const guard = level.guards[index];
         guard.path.splice(sub, 1);
         if (guard.path.length === 0) level.guards.splice(index, 1);
+    } else if (type === 'camera') level.cameras.splice(index, 1);
+    else if (type === 'trap') level.traps.splice(index, 1);
+    else if (type === 'goal') delete level.sharedGoal;
+    else if (type === 'dronePoint') {
+        const drone = level.drones[index];
+        drone.path.splice(sub, 1);
+        if (drone.path.length === 0) level.drones.splice(index, 1);
+    } else if (type === 'squadPoint') {
+        const member = level.squad[index];
+        if (member.waypoints.length <= 1) return setHint('A squad member needs at least one goal.');
+        member.waypoints.splice(sub, 1);
     } else return;
     selection = null;
     markDirty();
@@ -598,6 +740,9 @@ function setTool(next) {
         window: 'Click on a wall to place a window.',
         start: 'Click to set the player start.',
         waypoint: 'Click to add a checkpoint (the last one is the exit).',
+        camera: 'Click to place a security camera.',
+        trap: 'Click to place a spike trap.',
+        drone: 'Click to lay out a drone route (2+ points). Enter or double-click finishes.',
         guard: 'Click to lay out a guard patrol. Enter or double-click finishes (one point = stationary guard).',
     };
     setHint(hints[next]);
@@ -609,6 +754,17 @@ function setHint(text) {
 }
 
 function finishWall() {
+    if (tool === 'drone') {
+        if (wallDraft.length >= 2) {
+            (level.drones ??= []).push({ path: wallDraft.map((p) => ({ x: p.x, z: p.z })), speed: 2, radius: 1.8 });
+            markDirty();
+            selection = { type: 'dronePoint', index: level.drones.length - 1, sub: 0 };
+            renderInspector();
+        }
+        wallDraft = [];
+        rebuildStatic();
+        return;
+    }
     if (tool === 'guard') {
         if (wallDraft.length >= 1) {
             level.guards.push({
@@ -694,7 +850,21 @@ canvas.addEventListener('pointerdown', (event) => {
         void dropModel(raw);
         return;
     }
-    if (tool === 'wall' || tool === 'guard') {
+    if (tool === 'camera') {
+        (level.cameras ??= []).push({ x: point.x, z: point.z, facing: 180, sweep: 40, period: 6, fov: 50, range: 9 });
+        selection = { type: 'camera', index: level.cameras.length - 1 };
+        markDirty();
+        rebuildStatic();
+        return renderInspector();
+    }
+    if (tool === 'trap') {
+        (level.traps ??= []).push({ x: point.x, z: point.z, width: 6, depth: 2, period: 3, active: 1.2, offset: 0 });
+        selection = { type: 'trap', index: level.traps.length - 1 };
+        markDirty();
+        rebuildStatic();
+        return renderInspector();
+    }
+    if (tool === 'wall' || tool === 'guard' || tool === 'drone') {
         if (event.detail >= 2) {
             return finishWall();
         }
@@ -809,7 +979,7 @@ window.addEventListener('keydown', (event) => {
         wallDraft = [];
         renderModelList();
         setTool('select');
-    } else if (event.key === 'Enter' && (tool === 'wall' || tool === 'guard')) {
+    } else if (event.key === 'Enter' && (tool === 'wall' || tool === 'guard' || tool === 'drone')) {
         finishWall();
     } else if (event.key === 'Delete' || event.key === 'Backspace') {
         deleteSelection();
@@ -978,6 +1148,66 @@ function renderInspector() {
             button('Add point after this', () => {
                 guard.path.splice(sub + 1, 0, { x: round(point.x + 1), z: point.z });
                 selection = { type: 'guardPoint', index, sub: sub + 1 };
+                markDirty();
+                rebuildStatic();
+                renderInspector();
+            }),
+        );
+    } else if (type === 'squadStart' || type === 'squadPoint') {
+        const member = level.squad[index];
+        const point = entityPosition(selection);
+        title.textContent = type === 'squadStart' ? `SQUAD ${index + 1} (${member.view}) · START` : `SQUAD ${index + 1} (${member.view}) · GOAL ${sub + 1}/${member.waypoints.length}`;
+        panel.append(
+            field('X', point.x, change((v) => (point.x = v)), { step: 0.25 }),
+            field('Z', point.z, change((v) => (point.z = v)), { step: 0.25 }),
+            field('Character', member.view, change((v) => (member.view = v)), { choices: ['blue', 'purple', 'orange'] }),
+        );
+    } else if (type === 'goal') {
+        const goal = level.sharedGoal;
+        title.textContent = 'SHARED SAFE ROOM';
+        panel.append(
+            field('X', goal.x, change((v) => (goal.x = v)), { step: 0.25 }),
+            field('Z', goal.z, change((v) => (goal.z = v)), { step: 0.25 }),
+            field('Width', goal.width, change((v) => (goal.width = Math.max(1, v))), { step: 0.5 }),
+            field('Depth', goal.depth, change((v) => (goal.depth = Math.max(1, v))), { step: 0.5 }),
+            field('Everyone must reach it', goal.enabled !== false, change((v) => (goal.enabled = v)), { type: 'checkbox' }),
+        );
+    } else if (type === 'camera') {
+        const camera = level.cameras[index];
+        title.textContent = `SECURITY CAMERA ${index + 1}`;
+        panel.append(
+            field('X', camera.x, change((v) => (camera.x = v)), { step: 0.25 }),
+            field('Z', camera.z, change((v) => (camera.z = v)), { step: 0.25 }),
+            field('Facing °', camera.facing, change((v) => (camera.facing = v)), { step: 15 }),
+            field('Sweep ±°', camera.sweep, change((v) => (camera.sweep = Math.max(0, v))), { step: 5 }),
+            field('Period (s)', camera.period, change((v) => (camera.period = Math.max(0.5, v))), { step: 0.5 }),
+            field('Cone angle °', camera.fov, change((v) => (camera.fov = Math.min(170, Math.max(10, v)))), { step: 5 }),
+            field('Cone range', camera.range, change((v) => (camera.range = Math.max(1, v))), { step: 0.5 }),
+        );
+    } else if (type === 'trap') {
+        const trap = level.traps[index];
+        title.textContent = `SPIKE TRAP ${index + 1}`;
+        panel.append(
+            field('X', trap.x, change((v) => (trap.x = v)), { step: 0.25 }),
+            field('Z', trap.z, change((v) => (trap.z = v)), { step: 0.25 }),
+            field('Width', trap.width, change((v) => (trap.width = Math.max(0.5, v))), { step: 0.5 }),
+            field('Depth', trap.depth, change((v) => (trap.depth = Math.max(0.5, v))), { step: 0.5 }),
+            field('Cycle (s)', trap.period, change((v) => (trap.period = Math.max(1, v))), { step: 0.2 }),
+            field('Spikes up (s)', trap.active, change((v) => (trap.active = Math.max(0.2, v))), { step: 0.2 }),
+            field('Time offset (s)', trap.offset, change((v) => (trap.offset = v)), { step: 0.25 }),
+        );
+    } else if (type === 'dronePoint') {
+        const drone = level.drones[index];
+        const point = drone.path[sub];
+        title.textContent = `DRONE ${index + 1} · POINT ${sub + 1}/${drone.path.length}`;
+        panel.append(
+            field('X', point.x, change((v) => (point.x = v)), { step: 0.25 }),
+            field('Z', point.z, change((v) => (point.z = v)), { step: 0.25 }),
+            field('Speed', drone.speed, change((v) => (drone.speed = Math.max(0.2, v))), { step: 0.1 }),
+            field('Light radius', drone.radius, change((v) => (drone.radius = Math.max(0.5, v))), { step: 0.2 }),
+            button('Add point after this', () => {
+                drone.path.splice(sub + 1, 0, { x: round(point.x + 1), z: point.z });
+                selection = { type: 'dronePoint', index, sub: sub + 1 };
                 markDirty();
                 rebuildStatic();
                 renderInspector();

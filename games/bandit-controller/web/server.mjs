@@ -63,7 +63,7 @@ async function readOrder() {
 }
 
 async function listLevels() {
-    const files = (await fs.readdir(LEVELS_DIR)).filter((file) => /^level-.*\.json$/.test(file));
+    const files = (await fs.readdir(LEVELS_DIR)).filter((file) => /\.json$/.test(file) && !['index.json', 'worlds.json'].includes(file));
     const byId = new Map();
     for (const file of files) {
         const level = await readJson(path.join(LEVELS_DIR, file), null);
