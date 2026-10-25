@@ -64,7 +64,7 @@ const MODEL_BASE = './bandit-controller/models/';
 const CELEBRATION_ANIMATION_URL = './bandit-controller/models/animations/Excited.glb';
 const PAYOUT_STAGGER_SEC = 0.12;
 const CELEBRATION_PITCH_DEG = 28;
-const CELEBRATION_DISTANCE = 8;
+const CELEBRATION_DISTANCE = 11;
 const CELEBRATION_DANCE_SEC = 1;
 const SAD_ANIMATION_URL = './bandit-controller/models/animations/Crying.glb';
 const BUSTED_REACTION_SEC = 2.2;
@@ -158,6 +158,8 @@ export default class PathLevelScene extends ThreeScene {
     private cameraBlendTween?: gsap.core.Tween;
     private readonly cameraTuning = { yawDeg: 0, fov: 0, bend: true };
     private goalHand?: PIXI.Sprite;
+    private selectionNeedsFraming = false;
+    private selectionHalo?: THREE.Mesh;
     private readonly goalHandWorld = new THREE.Vector3();
     private readonly focusGoal = new THREE.Vector3();
     private goalArrivalTweens: gsap.core.Tween[] = [];
@@ -538,6 +540,26 @@ export default class PathLevelScene extends ThreeScene {
         object.removeFromParent();
     }
 
+    /** Ring under the member the player is currently controlling (squad levels only). */
+    private updateSelectionHalo(): void {
+        if (this.members.length < 2 || !this.focused) {
+            return;
+        }
+        if (!this.selectionHalo) {
+            const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false });
+            BendService.applyBend(material);
+            this.selectionHalo = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.1, 40), material);
+            this.selectionHalo.rotation.x = -Math.PI / 2;
+            this.selectionHalo.renderOrder = 2;
+            this.threeScene.add(this.selectionHalo);
+        }
+        const halo = this.selectionHalo;
+        const position = this.env.mainPlayer.transform.position;
+        halo.position.set(position.x, 0.13, position.z);
+        halo.visible = !this.isEnded() && this.state !== 'done'
+            && this.state !== 'celebrating' && this.state !== 'payout' && this.state !== 'complete';
+    }
+
     private buildGoalArrow(): void {
         if (this.goalHand) {
             return;
@@ -795,14 +817,22 @@ export default class PathLevelScene extends ThreeScene {
         if (this.isEnded() || this.isDebugTarget(event.target) || !this.pickFloor(event.clientX, event.clientY)) {
             return;
         }
-        // Tapping any idle member picks it, so the camera and the path follow whoever was touched.
-        const member = this.members.find((candidate) => this.memberState(candidate) === 'waiting'
-            && this.distanceXZ(this.pointerWorld, this.memberStartPoint(candidate)) <= 1.3);
+        // Pick the closest idle member. The camera only follows on release so it never moves mid-draw.
+        let member: SquadMember | undefined;
+        let best = 1.3;
+        for (const candidate of this.members) {
+            const distance = this.distanceXZ(this.pointerWorld, this.memberStartPoint(candidate));
+            if (this.memberState(candidate) === 'waiting' && distance <= best) {
+                best = distance;
+                member = candidate;
+            }
+        }
         if (!member) {
             return;
         }
         if (member !== this.focused) {
-            this.focusMember(member);
+            this.swapTo(member);
+            this.selectionNeedsFraming = true;
         }
         const start = this.pathDrawMode === 'exit'
             ? this.activeStart
@@ -853,6 +883,8 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
         this.pointerId = null;
+        const needsFraming = this.selectionNeedsFraming;
+        this.selectionNeedsFraming = false;
         const hasFloorPoint = this.pickFloor(event.clientX, event.clientY);
         const endPoint = hasFloorPoint ? this.clampToCourse(this.pointerWorld) : undefined;
         if (endPoint && this.distanceXZ(this.route[this.route.length - 1], endPoint) > 0.12) {
@@ -875,6 +907,9 @@ export default class PathLevelScene extends ThreeScene {
             this.setInstruction(this.pathDrawMode === 'exit'
                 ? 'TRACE TO THE GOLD CHECKPOINT'
                 : 'TRACE FROM THE PLAYER; RELEASE ANYWHERE');
+            if (needsFraming) {
+                this.frameActiveSegment();
+            }
             return;
         }
 
@@ -895,6 +930,9 @@ export default class PathLevelScene extends ThreeScene {
             this.routeBlocked = false;
             this.clearRoute();
             this.setInstruction('PATH BLOCKED; TRY AROUND THE OBSTACLE');
+            if (needsFraming) {
+                this.frameActiveSegment();
+            }
             return;
         }
 
@@ -1530,6 +1568,7 @@ export default class PathLevelScene extends ThreeScene {
         this.env.update(delta);
         this.updateGoalParticles(delta);
         this.updateGoalArrow();
+        this.updateSelectionHalo();
         PizzaParticleSystem.update(delta);
         this.updateWallHeight();
         PizzaBendService.updateTime(delta);
