@@ -292,7 +292,7 @@ function rebuildStatic() {
             const width = opening.maxX - opening.minX;
             const depth = opening.maxZ - opening.minZ;
             const isSelected = selection?.type === 'opening' && selection.index === wallIndex && selection.sub === openingIndex;
-            const color = isSelected ? 0xff5577 : opening.kind === 'door' ? 0xffb347 : 0x6cc6ff;
+            const color = isSelected ? 0xff5577 : opening.kind === 'door' ? 0xffb347 : opening.kind === 'gap' ? 0xb6f58a : 0x6cc6ff;
             const box = mesh(new THREE.BoxGeometry(Math.max(width, 0.4), 0.7, Math.max(depth, 0.4)), color, 0.4);
             box.position.x = (opening.minX + opening.maxX) / 2;
             box.position.z = (opening.minZ + opening.maxZ) / 2;
@@ -997,7 +997,7 @@ function renderInspector() {
     } else if (type === 'opening') {
         const opening = level.walls[index].openings[sub];
         title.textContent = `${opening.kind.toUpperCase()} (wall ${index + 1})`;
-        panel.append(field('Kind', opening.kind, change((v) => (opening.kind = v)), { choices: ['door', 'window'] }));
+        panel.append(field('Kind', opening.kind, change((v) => (opening.kind = v)), { choices: ['door', 'window', 'gap'] }));
         ['minX', 'maxX', 'minZ', 'maxZ'].forEach((key) => panel.append(
             field(key, opening[key], change((v) => (opening[key] = v)), { step: 0.25 }),
         ));

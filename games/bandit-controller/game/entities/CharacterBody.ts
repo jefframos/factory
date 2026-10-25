@@ -16,7 +16,7 @@ import { loadCompressedFile, releaseObjectURL } from '../utils/GzipLoader';
 
 const ROTATION_SLERP = 0.15;
 /** Head size in REAL world units (same units as the floor/camera). */
-const HEAD_CUBE_SIZE = 120;
+const HEAD_CUBE_SIZE = 115;
 /** Head pivot/offset, in the SAME real world units as HEAD_CUBE_SIZE — (0,0,0) sits exactly at the head bone's own origin. */
 const HEAD_CUBE_OFFSET = new THREE.Vector3(0, 50, 0);
 /** Face-decal plane, relative to HEAD_CUBE_SIZE — a plane just in front of the head's +Z face. */
@@ -196,6 +196,17 @@ export default class CharacterBody {
     public applyCharacterView(color: THREE.ColorRepresentation, faceTexture: THREE.Texture): void {
         this.setBodyColor(color);
         this.mountHeadCube(this.buildHeadMesh(color, faceTexture));
+    }
+
+    /** Swaps only the face decal on the existing head, keeping the head and body colour as they are. */
+    public setFaceTexture(faceTexture: THREE.Texture): void {
+        const decal = this.headCube?.children.find((child): child is THREE.Mesh => child instanceof THREE.Mesh);
+        const material = decal?.material as THREE.MeshStandardMaterial | undefined;
+        if (!material) {
+            return;
+        }
+        material.map = faceTexture;
+        material.needsUpdate = true;
     }
 
     /** Rounded head mesh, softer-looking than a sharp-edged cube, with a face decal plane in front of its +Z face. */

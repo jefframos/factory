@@ -12,6 +12,7 @@
 import * as THREE from 'three';
 import World from 'core/ecs/World';
 import MainPlayer from '../../player/MainPlayer';
+import type { CharacterView } from '../../data/CharacterViews';
 import { MovementInputHost } from '../../components/PlayerMovementController';
 import { FloorBuilder } from '../../builders/FloorBuilder';
 import { buildBlueSkyTexture } from '../../builders/SkyBuilder';
@@ -97,6 +98,7 @@ export class WorldEnvironment {
     /** Named virtual cameras (see GameSettings.ts) — cutTo()/blendTo() between them. */
     public readonly cameraSystem = new VirtualCameraSystem(STANDARD_CAMERA_SETTINGS);
     public mainPlayer!: MainPlayer;
+    private readonly spawnedPlayers: MainPlayer[] = [];
     /** The actual floor size THIS environment built (may differ from the FLOOR_SIZE default — see constructor's own floorSize param) — read this instead of the FLOOR_SIZE constant when a scene needs to reason about ITS OWN world bounds (e.g. SwipeMinigameScene sizing lane visuals, RunnerMinigameScene placing obstacles). */
     public readonly floorSize: number;
     /** Resolves once the player's character (FBX mesh + animation clips) has finished loading — see spawnPlayer(). Scenes expose this as their own `ready` so index.ts's scene-transition can hold the radial-cover reveal until the new scene actually has something to show. Starts pre-resolved so reading it before spawnPlayer() is ever called isn't an error. */
@@ -203,11 +205,13 @@ export class WorldEnvironment {
      * SwipeMinigameScene pass their own constant forward pace instead (see
      * MinigameSettings.ts's forwardSpeed fields).
      */
-    public spawnPlayer(inputHost: MovementInputHost, spawnPosition: THREE.Vector3, getMoveSpeed?: (sprinting: boolean) => number): MainPlayer {
+    public spawnPlayer(inputHost: MovementInputHost, spawnPosition: THREE.Vector3, getMoveSpeed?: (sprinting: boolean) => number, view?: CharacterView): MainPlayer {
         const player = this.world.add(new MainPlayer(inputHost, this.threeScene, this.bendService, getMoveSpeed));
         player.transform.position.copy(spawnPosition);
         this.threeScene.add(player.transform);
-        this.playerReady = player.loadCharacter();
+        // Several players can be spawned (squad levels), so readiness covers all of them.
+        this.playerReady = Promise.all([this.playerReady, player.loadCharacter(view)]).then(() => undefined);
+        this.spawnedPlayers.push(player);
 
         this.mainPlayer = player;
         this.smoothedTarget.copy(spawnPosition);
@@ -269,6 +273,10 @@ export class WorldEnvironment {
      * SwipeMinigameScene visit would keep reacting to swipe gestures too.
      */
     public destroy(): void {
+        for (const player of this.spawnedPlayers) {
+            this.world.remove(player);
+        }
+        this.spawnedPlayers.length = 0;
         if (this.mainPlayer) {
             this.world.remove(this.mainPlayer);
         }

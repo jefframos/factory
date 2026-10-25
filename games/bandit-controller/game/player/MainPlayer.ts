@@ -19,7 +19,7 @@ import CharacterVisualComponent from '../components/CharacterVisualComponent';
 import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
 import { TextureBuilder } from '../builders/TextureBuilder';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
-import { DEFAULT_CHARACTER_VIEW, resolveSkinImagePath } from '../data/CharacterViews';
+import { type CharacterView, DEFAULT_CHARACTER_VIEW, resolveSkinImagePath } from '../data/CharacterViews';
 import { PLAYER_SETTINGS, getPlayerMoveSpeed, getPlayerColliderHalfExtents, getPlayerColliderCenterOffset } from '../data/PlayerSettings';
 import { BendService, WorldBendService } from 'core/services/BendService';
 
@@ -105,7 +105,7 @@ export default class MainPlayer extends Entity {
     }
 
     /** Loads the FBX character + the idle/walk/run/jump/roll/slide/hit clips and wires up the animation state graph, then attaches CharacterVisualComponent so it starts tracking the RigidBody that's already been moving this whole time. */
-    public async loadCharacter(): Promise<void> {
+    public async loadCharacter(view: CharacterView = DEFAULT_CHARACTER_VIEW): Promise<void> {
         const character = new ThirdPersonCharacter(this.bendService);
 
         await character.loadMesh(modelUrl(MODELS.Characters.CharacterMedium.fullPath));
@@ -124,8 +124,8 @@ export default class MainPlayer extends Entity {
         await character.registerAnimation('hit', modelUrl(MODELS.Characters.Fallback.fullPath));
         character.setUp();
 
-        const faceTexture = await TextureBuilder.load(resolveSkinImagePath(DEFAULT_CHARACTER_VIEW.face));
-        character.applyCharacterView(DEFAULT_CHARACTER_VIEW.color, faceTexture);
+        const faceTexture = await TextureBuilder.load(resolveSkinImagePath(view.face));
+        character.applyCharacterView(view.color, faceTexture);
         character.container.scale.setScalar(CHARACTER_SCALE);
 
         if (this.destroyed) {

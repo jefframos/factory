@@ -12,7 +12,7 @@ export interface LevelPoint {
 }
 
 export interface LevelOpening {
-    kind: 'door' | 'window';
+    kind: 'door' | 'window' | 'gap';
     minX: number;
     maxX: number;
     minZ: number;
@@ -71,6 +71,14 @@ export interface LevelGuard {
     facing: number;
 }
 
+export interface LevelSquadMember {
+    /** Key of CHARACTER_VIEWS (e.g. blue, purple, orange); also colours the member's route and goal. */
+    view: string;
+    start: LevelPoint;
+    /** Checkpoints in order; the last one is this member's goal. */
+    waypoints: LevelPoint[];
+}
+
 export interface LevelData {
     id: string;
     name: string;
@@ -81,6 +89,8 @@ export interface LevelData {
     start: LevelPoint;
     /** Checkpoints in order; the last one is the exit. */
     waypoints: LevelPoint[];
+    /** Several characters that must each reach their own goal. Replaces start/waypoints for play when present. */
+    squad?: LevelSquadMember[];
     entryPath?: { x: number; z: number; width: number; depth: number } | null;
     walls: LevelWall[];
     props: LevelProp[];

@@ -15,6 +15,9 @@ import { LevelSight } from '../utils/LevelSight';
 import { COIN, CollectibleDefinition } from '../data/CollectibleSettings';
 import { LevelCatalog } from '../data/LevelCatalog';
 import { UiKit } from '../ui/UiKit';
+import { TextureBuilder } from '../builders/TextureBuilder';
+import { CHARACTER_VIEWS, DEFAULT_CHARACTER_VIEW, resolveSkinImagePath } from '../data/CharacterViews';
+import type MainPlayer from '../player/MainPlayer';
 import { WorldStyles } from '../data/WorldStyles';
 import { LevelData, LevelDoor, LevelLoot, levelDoors, levelWindowPanes } from '../data/LevelData';
 import { GameState } from '../data/GameState';
@@ -35,9 +38,12 @@ import { FloorLayers } from '../../../pizza/game/world/FloorLayers';
 import type { StoreFloorPlacement, StoreWallPlacement } from '../../../pizza/game/world/WorldObjectRegistry';
 import type { DoorStyleConfig, FloorCheckerConfig, WallSetupConfig, WallStyleConfig } from '../../../pizza/game/store/StoreViewTypes';
 
-const GOAL_TRIGGER_RADIUS = 2.6;
+/** Just past the marker's own radius (GOAL_MARKER_RADIUS), so arriving only counts once the player is actually on the disk. */
+const GOAL_TRIGGER_RADIUS = 1.35;
 const CHECKPOINT_STOP_RADIUS = 1.2;
 const GOAL_MARKER_RADIUS = 1.25;
+const GOAL_COLOR = 0x3fd67a;
+const GOAL_HAND_SIZE = 76;
 const FIELD_SIZE = 48;
 const ROOM_ORIGIN = new THREE.Vector3();
 const DOOR_ASSIST_MARGIN = 0.6;
@@ -48,6 +54,9 @@ const CELEBRATION_CAMERA_OPTIONS: CameraFollowOptions = {
     freezeHeightWhileAirborne: true,
     fixedYawDeg: 0,
 };
+/** Extra world width kept around the player/guard pair in the final busted shot. */
+const BUST_FRAME_MARGIN = 5.5;
+const BUSTED_FACE = 'skins/face-crying-2.webp';
 const CAMERA_PANEL_ID = 'bandit-controller.path.camera';
 const BENDING_PANEL_ID = 'bandit-controller.path.bending';
 const LEVELS_PANEL_ID = 'bandit-controller.path.levels';
@@ -59,18 +68,49 @@ const CELEBRATION_DISTANCE = 8;
 const CELEBRATION_DANCE_SEC = 1;
 const SAD_ANIMATION_URL = './bandit-controller/models/animations/Crying.glb';
 const BUSTED_REACTION_SEC = 2.2;
-const CAMERA_FOCUS_ALONG_SEGMENT = 0.66;
+const CAMERA_BOUNDS_PADDING = 1.5;
+const CAMERA_MIN_HALF_WIDTH = 3.5;
+const CAMERA_BOUNDS_HEIGHT = 1.6;
+/** Fractions of the screen (in NDC units, 2 = full height) kept clear: the top holds the HUD. */
+const CAMERA_SCREEN_PAD_TOP = 0.32;
+const CAMERA_SCREEN_PAD_BOTTOM = 0.1;
+const CAMERA_SCREEN_PAD_SIDE = 0.08;
+const CAMERA_TRANSITION_SEC = 1.3;
+/** Bend strengths stashed while the bend is off; module-level so it survives scene restarts. */
+const savedBend = new Map<unknown, number>();
+interface CameraPreset { label: string; pitchDeg: number; yawDeg: number; fov: number; bend: boolean }
+const CAMERA_PRESETS: CameraPreset[] = [
+    { label: 'Back iso', pitchDeg: 60, yawDeg: 0, fov: 22, bend: false },
+    { label: 'Bent', pitchDeg: 65, yawDeg: 0, fov: 0, bend: true },
+    { label: 'Flat', pitchDeg: 65, yawDeg: 0, fov: 0, bend: false },
+    { label: 'Top-down', pitchDeg: 85, yawDeg: 0, fov: 0, bend: false },
+    { label: 'Iso 45°', pitchDeg: 35, yawDeg: 45, fov: 22, bend: false },
+    { label: 'Low angle', pitchDeg: 40, yawDeg: 0, fov: 0, bend: true },
+];
 /** Wide levels are framed on this half-width only, so portrait screens stay zoomed in on the path. */
-// Default fraction of the screen height the view is pushed down; while aiming at a segment start the shift is solved so the player sits at PLAYER_SCREEN_Y_FRACTION (from the top).
+// Default fraction of the screen height the view is pushed down.
 const SCREEN_VERTICAL_SHIFT = 0.12;
-const PLAYER_SCREEN_Y_FRACTION = 0.85;
-const CAMERA_MAX_HALF_WIDTH = 5.5;
 /** Seconds inside a guard's cone before the player is busted, and how fast suspicion cools off once out of sight. */
 const SPOT_TIME_SEC = 1.1;
 const ALERT_DECAY_PER_SEC = 1.2;
 
-type PathLevelState = 'waiting' | 'following' | 'revealing' | 'celebrating' | 'payout' | 'complete' | 'busted';
+type PathLevelState = 'waiting' | 'following' | 'revealing' | 'celebrating' | 'payout' | 'complete' | 'busted' | 'done';
 type PathDrawMode = 'exit' | 'free';
+
+/** One controllable character. The scene's own path fields always hold the focused member's data; the others keep theirs here. */
+interface SquadMember {
+    player: MainPlayer;
+    /** Route, start and goal tint; undefined keeps the single-character look. */
+    color?: number;
+    waypoints: THREE.Vector3[];
+    nextWaypointIndex: number;
+    start: THREE.Vector3;
+    goal: THREE.Vector3;
+    route: THREE.Vector3[];
+    routeMesh?: THREE.Mesh;
+    routeBlocked: boolean;
+    state: PathLevelState;
+}
 
 export default class PathLevelScene extends ThreeScene {
     public readonly onRestart: Signal = new Signal();
@@ -86,6 +126,8 @@ export default class PathLevelScene extends ThreeScene {
     private readonly wallMeshes: THREE.Mesh[] = [];
     private readonly wallLintelClearMeshes: THREE.Mesh[] = [];
     private wallsLowered = false;
+    /** Walls stay low everywhere; turn off to raise them whenever the player is outside the room. */
+    public wallsAlwaysLow = true;
     private readonly wallDoors: StoreDoor[] = [];
     private readonly wallColliders: Entity[] = [];
     private readonly wallBoxes: { x: number; z: number; halfX: number; halfZ: number }[] = [];
@@ -100,16 +142,30 @@ export default class PathLevelScene extends ThreeScene {
     private readonly occlusionTarget = new THREE.Vector3();
     private readonly activeStart = new THREE.Vector3();
     private readonly activeGoal = new THREE.Vector3();
-    private readonly segmentFocus = new THREE.Vector3();
+    private readonly frameBounds = new THREE.Box3();
+    private readonly boundsProbe = new THREE.Vector3();
     private readonly shiftProbe = new THREE.Vector3();
+    private readonly segmentFocus = new THREE.Vector3();
     private screenShiftFraction = SCREEN_VERTICAL_SHIFT;
     private readonly pathCameraOptions: CameraFollowOptions = {
         freezeHeightWhileAirborne: true,
         fixedYawDeg: 0,
         target: this.segmentFocus,
+        // segmentFocus and distance are eased by one tween, so the follow smoothing must not add a second ease on top.
+        snapFollowTarget: true,
     };
-    private cameraZoomTween?: gsap.core.Tween;
-    private goalArrivalTween?: gsap.core.Tween;
+    private defaultFov = 50;
+    private cameraBlendTween?: gsap.core.Tween;
+    private readonly cameraTuning = { yawDeg: 0, fov: 0, bend: true };
+    private goalHand?: PIXI.Sprite;
+    private readonly goalHandWorld = new THREE.Vector3();
+    private readonly focusGoal = new THREE.Vector3();
+    private goalArrivalTweens: gsap.core.Tween[] = [];
+    private members: SquadMember[] = [];
+    private focused?: SquadMember;
+    /** True while a non-focused member is being stepped, so camera and HUD side effects are skipped. */
+    private inBackground = false;
+    private readonly guardTargets = new Map<Guard, SquadMember>();
     private nextWaypointIndex = 1;
     private revealedUpTo = 0;
     private floorMesh?: THREE.Mesh;
@@ -138,6 +194,13 @@ export default class PathLevelScene extends ThreeScene {
     private bustPhase: 'chase' | 'react' = 'chase';
     private bustTimer = 0;
     private bustFocus = false;
+    private readonly bustFocusPoint = new THREE.Vector3();
+    private readonly bustCameraOptions: CameraFollowOptions = {
+        freezeHeightWhileAirborne: true,
+        fixedYawDeg: 0,
+        target: this.bustFocusPoint,
+    };
+    private bustYawTween?: gsap.core.Tween;
     private spottedMessageShown = false;
     private messageBeforeSpotted = '';
     private bonusMeter?: BonusMeter;
@@ -157,30 +220,46 @@ export default class PathLevelScene extends ThreeScene {
         this.pathDrawMode = 'free';
         this.wallsLowered = false;
         this.revealedUpTo = 0;
-        this.goalArrivalTween?.kill();
-        this.goalArrivalTween = undefined;
+        this.goalArrivalTweens.forEach((tween) => tween.kill());
+        this.goalArrivalTweens = [];
+        this.members = [];
+        this.focused = undefined;
+        this.inBackground = false;
+        this.guardTargets.clear();
         this.level = LevelCatalog.current();
-        this.waypoints = [
-            new THREE.Vector3(this.level.start.x, 0, this.level.start.z),
-            ...this.level.waypoints.map((point) => new THREE.Vector3(point.x, 0, point.z)),
-        ];
         this.doors = levelDoors(this.level);
-        this.activeStart.copy(this.waypoints[0]);
-        this.activeGoal.copy(this.waypoints[1]);
-        this.nextWaypointIndex = 1;
         this.route = [];
         this.routeBlocked = false;
         this.runMoney = 0;
         this.collectibles.length = 0;
         this.collectedPayouts.length = 0;
         this.env = new WorldEnvironment(this.threeScene, BendService, FIELD_SIZE, 64, 1);
-        const player = this.env.spawnPlayer(this, this.waypoints[0]);
-        player.movementController.enabled = false;
-        const opener = player as unknown as { opensDoors: boolean; transform: THREE.Object3D };
-        opener.opensDoors = true;
+        const squad = this.level.squad?.length
+            ? this.level.squad
+            : [{ view: '', start: this.level.start, waypoints: this.level.waypoints }];
+        const squadMode = Boolean(this.level.squad?.length);
+        for (const spec of squad) {
+            const view = CHARACTER_VIEWS[spec.view] ?? DEFAULT_CHARACTER_VIEW;
+            const waypoints = [spec.start, ...spec.waypoints].map((point) => new THREE.Vector3(point.x, 0, point.z));
+            const player = this.env.spawnPlayer(this, waypoints[0], undefined, view);
+            player.movementController.enabled = false;
+            (player as unknown as { opensDoors: boolean }).opensDoors = true;
+            this.members.push({
+                player,
+                color: squadMode ? new THREE.Color(view.color).getHex() : undefined,
+                waypoints,
+                nextWaypointIndex: 1,
+                start: waypoints[0].clone(),
+                goal: waypoints[1].clone(),
+                route: [],
+                routeBlocked: false,
+                state: 'waiting',
+            });
+        }
         this.doorWorld = {
-            forEachEntity: (visit: (entity: typeof opener) => void) => visit(opener),
+            forEachEntity: (visit: (entity: unknown) => void) => this.members.forEach((member) => visit(member.player)),
         } as unknown as Parameters<StoreDoor['update']>[1];
+        this.swapTo(this.members[0]);
         this.env.cameraSystem.cutTo('topdown');
         this.frameActiveSegment(true);
 
@@ -188,6 +267,8 @@ export default class PathLevelScene extends ThreeScene {
         this.buildGuards();
         this.buildCollectibles(0);
         this.buildHud();
+        this.defaultFov = this.threeCamera.fov;
+        this.applyCameraPreset(CAMERA_PRESETS[0]);
         this.setupCameraDebug();
         this.addInputListeners();
     }
@@ -318,8 +399,11 @@ export default class PathLevelScene extends ThreeScene {
             }
         }
 
-        this.addMarker(this.waypoints[0], 0x52dda0);
-        this.addMarker(this.waypoints[1], this.waypoints.length === 2 ? 0xff725e : 0xffd889, GOAL_MARKER_RADIUS);
+        for (const member of this.members) {
+            this.addMarker(member.waypoints[0], member.color ?? 0x8fb8ff);
+            this.addMarker(member.waypoints[1], member.color ?? GOAL_COLOR, GOAL_MARKER_RADIUS);
+        }
+        this.buildGoalArrow();
         this.buildProps();
     }
 
@@ -452,6 +536,38 @@ export default class PathLevelScene extends ThreeScene {
             materials.forEach((material) => material.dispose());
         });
         object.removeFromParent();
+    }
+
+    private buildGoalArrow(): void {
+        if (this.goalHand) {
+            return;
+        }
+        const hand = new PIXI.Sprite(PIXI.Texture.from('handHud'));
+        hand.anchor.set(0.5);
+        hand.width = GOAL_HAND_SIZE;
+        hand.height = GOAL_HAND_SIZE;
+        // The source art points up-left; this turns the fingertip straight down.
+        hand.rotation = Math.PI * 1.19;
+        hand.visible = false;
+        this.game.uiLayer.addChild(hand);
+        this.goalHand = hand;
+    }
+
+    private updateGoalArrow(): void {
+        const hand = this.goalHand;
+        if (!hand) {
+            return;
+        }
+        const active = this.state === 'waiting' || this.state === 'following' || this.state === 'revealing';
+        const marker = this.waypoints[this.nextWaypointIndex];
+        const screen = active && marker ? this.worldToScreen(this.goalHandWorld.set(marker.x, FloorLayers.baseY + 0.3, marker.z)) : null;
+        hand.visible = Boolean(screen);
+        if (!screen) {
+            return;
+        }
+        const local = this.game.uiLayer.toLocal(new PIXI.Point(screen.x, screen.y), this.game.app.stage);
+        const bob = Math.abs(Math.sin(performance.now() / 380)) * 18;
+        hand.position.set(local.x, local.y - GOAL_HAND_SIZE * 0.55 - bob);
     }
 
     private addMarker(position: THREE.Vector3, color: number, radius = 0.78): void {
@@ -596,13 +712,54 @@ export default class PathLevelScene extends ThreeScene {
         });
     }
 
+    private applyCameraPreset(preset: CameraPreset): void {
+        const camera = this.env.cameraSystem.current;
+        camera.pitchDeg = preset.pitchDeg;
+        this.cameraTuning.yawDeg = preset.yawDeg;
+        this.cameraTuning.fov = preset.fov || this.defaultFov;
+        this.cameraTuning.bend = preset.bend;
+        this.syncCameraTuning();
+        this.frameActiveSegment(true);
+    }
+
+    /** Pushes the debug-tunable yaw/FOV/bend into the live camera and materials; cheap, so it runs every frame. */
+    private syncCameraTuning(): void {
+        const tuning = this.cameraTuning;
+        this.pathCameraOptions.fixedYawDeg = tuning.yawDeg;
+        if (this.threeCamera.fov !== tuning.fov) {
+            this.threeCamera.fov = tuning.fov;
+            this.threeCamera.updateProjectionMatrix();
+        }
+        for (const service of [BendService, PizzaBendService]) {
+            const uniform = service.uniforms.uBendStrength;
+            if (tuning.bend) {
+                if (savedBend.has(service)) {
+                    uniform.value = savedBend.get(service) as number;
+                    savedBend.delete(service);
+                }
+            } else if (!savedBend.has(service)) {
+                savedBend.set(service, uniform.value);
+                uniform.value = 0;
+            }
+        }
+    }
+
     private setupCameraDebug(): void {
         const panel = DebugOverlay.instance.panel('Path Camera', { id: CAMERA_PANEL_ID });
         const camera = this.env.cameraSystem.current;
-        panel.slider(camera, 'pitchDeg', 55, 89, 1, 'Pitch');
+        const tuning = this.cameraTuning;
+        panel.buttons(CAMERA_PRESETS.map((preset) => ({
+            label: preset.label,
+            action: () => this.applyCameraPreset(preset),
+        })));
+        panel.slider(tuning, 'yawDeg', -90, 90, 1, 'Yaw');
+        panel.slider(tuning, 'fov', 15, 70, 1, 'FOV');
+        panel.toggle(tuning, 'bend', { label: 'World bend' });
+        panel.slider(camera, 'pitchDeg', 25, 89, 1, 'Pitch');
         panel.slider(camera, 'distance', 6, 32, 0.5, 'Distance');
         panel.slider(camera, 'followSpeed', 0.5, 20, 0.5, 'Follow Speed');
 
+        panel.toggle(this, 'wallsAlwaysLow', { label: 'Walls always low' });
         panel.toggle(this, 'stopAtCheckpoints', { label: 'Stop at checkpoints' });
 
         const levelsPanel = DebugOverlay.instance.panel('Levels', { id: LEVELS_PANEL_ID });
@@ -635,16 +792,21 @@ export default class PathLevelScene extends ThreeScene {
     }
 
     private readonly onPointerDown = (event: PointerEvent): void => {
-        if (this.state !== 'waiting' || this.isDebugTarget(event.target)) {
+        if (this.isEnded() || this.isDebugTarget(event.target) || !this.pickFloor(event.clientX, event.clientY)) {
             return;
+        }
+        // Tapping any idle member picks it, so the camera and the path follow whoever was touched.
+        const member = this.members.find((candidate) => this.memberState(candidate) === 'waiting'
+            && this.distanceXZ(this.pointerWorld, this.memberStartPoint(candidate)) <= 1.3);
+        if (!member) {
+            return;
+        }
+        if (member !== this.focused) {
+            this.focusMember(member);
         }
         const start = this.pathDrawMode === 'exit'
             ? this.activeStart
             : this.env.mainPlayer.transform.position;
-        if (!this.pickFloor(event.clientX, event.clientY)
-            || this.distanceXZ(this.pointerWorld, start) > 1.3) {
-            return;
-        }
         this.clearRoute();
         this.pointerId = event.pointerId;
         this.routeBlocked = false;
@@ -741,8 +903,8 @@ export default class PathLevelScene extends ThreeScene {
         if (this.pathDrawMode === 'free') {
             this.activeStart.copy(this.route[0]);
             this.activeGoal.copy(endpoint);
-            this.frameActiveSegment();
         }
+        this.frameActiveSegment();
         this.env.mainPlayer.movementController.enabled = true;
         this.env.mainPlayer.movementController.enterPathMode(this.route);
         this.setInstruction('FOLLOWING YOUR PATH');
@@ -894,12 +1056,16 @@ export default class PathLevelScene extends ThreeScene {
         const route = this.routeBlocked ? this.route : this.adjustRouteThroughDoors(this.route);
         this.routeBlocked ||= hits(route);
 
-        const routeColor = this.routeBlocked ? 0xf04455 : 0x2bd2bd;
+        const routeColor = this.routeBlocked ? 0xf04455 : (this.focused?.color ?? 0x2bd2bd);
         if (route.length > 1) {
             const curve = new THREE.CatmullRomCurve3(route, false, 'centripetal');
             const routeMaterial = new THREE.MeshStandardMaterial({
                 color: routeColor,
-                emissive: this.routeBlocked ? 0x650817 : 0x074d44,
+                emissive: this.routeBlocked
+                    ? 0x650817
+                    : this.focused?.color !== undefined
+                    ? new THREE.Color(routeColor).multiplyScalar(0.3)
+                    : 0x074d44,
                 roughness: 0.28,
             });
             BendService.applyBend(routeMaterial);
@@ -924,8 +1090,93 @@ export default class PathLevelScene extends ThreeScene {
         return Math.hypot(a.x - b.x, a.z - b.z);
     }
 
+    private isEnded(): boolean {
+        return this.state === 'celebrating' || this.state === 'payout' || this.state === 'complete' || this.state === 'busted';
+    }
+
+    private memberState(member: SquadMember): PathLevelState {
+        return member === this.focused ? this.state : member.state;
+    }
+
+    private memberStartPoint(member: SquadMember): THREE.Vector3 {
+        if (this.pathDrawMode === 'exit') {
+            return member === this.focused ? this.activeStart : member.start;
+        }
+        return member.player.transform.position;
+    }
+
+    /** Makes `member` the one the scene fields (path, goal, route, state) and the camera refer to. */
+    private swapTo(member: SquadMember): void {
+        const previous = this.focused;
+        if (previous === member) {
+            return;
+        }
+        if (previous) {
+            previous.waypoints = this.waypoints;
+            previous.nextWaypointIndex = this.nextWaypointIndex;
+            previous.start.copy(this.activeStart);
+            previous.goal.copy(this.activeGoal);
+            previous.route = this.route;
+            previous.routeMesh = this.routeMesh;
+            previous.routeBlocked = this.routeBlocked;
+            previous.state = this.state;
+        }
+        this.focused = member;
+        this.waypoints = member.waypoints;
+        this.nextWaypointIndex = member.nextWaypointIndex;
+        this.activeStart.copy(member.start);
+        this.activeGoal.copy(member.goal);
+        this.route = member.route;
+        this.routeMesh = member.routeMesh;
+        this.routeBlocked = member.routeBlocked;
+        this.state = member.state;
+        this.env.mainPlayer = member.player;
+    }
+
+    /** Runs `step` against another member without moving the camera or touching the HUD. */
+    private runAsMember(member: SquadMember, step: () => void): void {
+        const previous = this.focused;
+        if (!previous || member === previous) {
+            step();
+            return;
+        }
+        this.inBackground = true;
+        this.swapTo(member);
+        step();
+        this.inBackground = false;
+        // Finishing the last member keeps it focused for the celebration.
+        if (this.state !== 'celebrating') {
+            this.swapTo(previous);
+        }
+    }
+
+    private focusMember(member: SquadMember): void {
+        if (this.pointerId !== null) {
+            this.pointerId = null;
+            this.route = [];
+            this.clearRoute();
+        }
+        this.swapTo(member);
+        this.frameActiveSegment();
+        this.setInstruction('TRACE FROM THE PLAYER; RELEASE ANYWHERE');
+    }
+
+    private completeMember(): void {
+        const member = this.focused;
+        if (!member) {
+            return;
+        }
+        this.state = 'done';
+        const next = this.members.find((other) => other !== member && this.memberState(other) !== 'done');
+        if (!next) {
+            void this.beginCelebration();
+        } else if (!this.inBackground) {
+            this.focusMember(next);
+        }
+    }
+
     private setInstruction(text: string): void {
-        if (this.instruction) {
+        if (this.instruction && !this.inBackground) {
             this.instruction.text = text;
         }
     }
@@ -1030,6 +1281,46 @@ export default class PathLevelScene extends ThreeScene {
             offset: { ...currentCamera.offset, y: 1 },
         });
         this.env.cameraSystem.blendTo('celebration', 0.8);
+    }
+
+    /** Frames player and guard side by side: the camera looks at their midpoint from the direction perpendicular to the line between them. */
+    private focusCameraOnBustPair(guard: Guard): void {
+        const player = this.env.mainPlayer.transform.position;
+        const dx = guard.position.x - player.x;
+        const dz = guard.position.z - player.z;
+        const separation = Math.hypot(dx, dz);
+        this.bustFocusPoint.set((player.x + guard.position.x) / 2, 0, (player.z + guard.position.z) / 2);
+
+        let sideX = dz;
+        let sideZ = -dx;
+        if (separation < 0.001) {
+            sideX = 0;
+            sideZ = 1;
+        } else if (sideZ < 0) {
+            sideX = -sideX;
+            sideZ = -sideZ;
+        }
+        const targetYaw = THREE.MathUtils.radToDeg(Math.atan2(sideX, sideZ));
+        const fromYaw = this.pathCameraOptions.fixedYawDeg ?? 0;
+        this.bustCameraOptions.fixedYawDeg = fromYaw;
+        // Shortest way round, so the camera never swings the long way.
+        const wrapped = fromYaw + THREE.MathUtils.euclideanModulo(targetYaw - fromYaw + 180, 360) - 180;
+
+        const settings = this.env.cameraSystem.current;
+        const halfFovTangent = Math.tan(THREE.MathUtils.degToRad(this.threeCamera.fov / 2));
+        const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+        const fitDistance = (separation + BUST_FRAME_MARGIN) / (2 * halfFovTangent * aspect);
+        this.env.cameraSystem.register('celebration', {
+            ...settings,
+            pitchDeg: Math.min(settings.pitchDeg, CELEBRATION_PITCH_DEG),
+            distance: Math.max(CELEBRATION_DISTANCE, fitDistance),
+            followSpeed: 5,
+            offset: { ...settings.offset, y: 1 },
+        });
+        this.env.cameraSystem.blendTo('celebration', 0.8);
+
+        this.bustYawTween?.kill();
+        this.bustYawTween = gsap.to(this.bustCameraOptions, { fixedYawDeg: wrapped, duration: 0.8, ease: 'sine.inOut' });
     }
 
     private async beginCelebration(): Promise<void> {
@@ -1147,8 +1438,7 @@ export default class PathLevelScene extends ThreeScene {
         }
         const nextGoal = this.waypoints[index + 1];
         if (nextGoal) {
-            const isExit = index + 1 === this.waypoints.length - 1;
-            this.addMarker(nextGoal, isExit ? 0xff725e : 0xffd889, GOAL_MARKER_RADIUS);
+            this.addMarker(nextGoal, this.focused?.color ?? GOAL_COLOR, GOAL_MARKER_RADIUS);
         }
         this.buildCollectibles(index);
     }
@@ -1162,48 +1452,39 @@ export default class PathLevelScene extends ThreeScene {
         movement.enabled = false;
         movement.exitPathMode();
 
-        const playerPosition = this.env.mainPlayer.transform.position;
-        this.goalArrivalTween?.kill();
-        this.goalArrivalTween = gsap.to(playerPosition, {
+        const member = this.focused!;
+        const playerPosition = member.player.transform.position;
+        const tween = gsap.to(playerPosition, {
             x: this.activeGoal.x,
             z: this.activeGoal.z,
             duration: 0.28,
             ease: 'power2.out',
             onComplete: () => {
-                this.goalArrivalTween = undefined;
-                if (this.destroyed || this.state !== 'revealing') {
+                this.goalArrivalTweens = this.goalArrivalTweens.filter((entry) => entry !== tween);
+                if (this.destroyed || this.isEnded()) {
                     return;
                 }
-                this.route = [];
-                this.routeBlocked = false;
-                this.clearRoute();
-                if (this.nextWaypointIndex < this.waypoints.length - 1) {
-                    this.revealArea(this.nextWaypointIndex);
-                    this.advanceWaypoint();
-                } else {
-                    void this.beginCelebration();
-                }
+                this.runAsMember(member, () => {
+                    if (this.state !== 'revealing') {
+                        return;
+                    }
+                    this.route = [];
+                    this.routeBlocked = false;
+                    this.clearRoute();
+                    if (this.nextWaypointIndex < this.waypoints.length - 1) {
+                        this.revealArea(this.nextWaypointIndex);
+                        this.advanceWaypoint();
+                    } else {
+                        this.completeMember();
+                    }
+                });
             },
         });
+        this.goalArrivalTweens.push(tween);
     }
 
-    public update(delta: number): void {
-        if (this.state === 'waiting') {
-            const movement = this.env.mainPlayer.movementController;
-            if (movement.enabled !== PLAYER_SETTINGS.clickToMoveEnabled) {
-                movement.enabled = PLAYER_SETTINGS.clickToMoveEnabled;
-            }
-        }
-        this.env.update(delta);
-        this.updateGoalParticles(delta);
-        PizzaParticleSystem.update(delta);
-        this.updateWallHeight();
-        PizzaBendService.updateTime(delta);
-        for (const door of this.wallDoors) {
-            door.update(delta, this.doorWorld);
-        }
-        pruneCollected(this.env.world, this.collectibles);
-        this.updateGuards(delta);
+    /** Checkpoint and goal arrival for the member currently held in the scene fields. */
+    private updateMemberProgress(): void {
         if (this.state === 'following' && this.stopAtCheckpoints) {
             const checkpoint = this.waypoints[this.nextWaypointIndex];
             if (checkpoint && this.distanceXZ(this.env.mainPlayer.transform.position, checkpoint) <= CHECKPOINT_STOP_RADIUS) {
@@ -1237,6 +1518,32 @@ export default class PathLevelScene extends ThreeScene {
                 }
             }
         }
+    }
+
+    public update(delta: number): void {
+        if (this.state === 'waiting') {
+            const movement = this.env.mainPlayer.movementController;
+            if (movement.enabled !== PLAYER_SETTINGS.clickToMoveEnabled) {
+                movement.enabled = PLAYER_SETTINGS.clickToMoveEnabled;
+            }
+        }
+        this.env.update(delta);
+        this.updateGoalParticles(delta);
+        this.updateGoalArrow();
+        PizzaParticleSystem.update(delta);
+        this.updateWallHeight();
+        PizzaBendService.updateTime(delta);
+        for (const door of this.wallDoors) {
+            door.update(delta, this.doorWorld);
+        }
+        pruneCollected(this.env.world, this.collectibles);
+        this.updateGuards(delta);
+        this.updateMemberProgress();
+        for (const member of this.members) {
+            if (member !== this.focused && member.state === 'following' && !this.isEnded()) {
+                this.runAsMember(member, () => this.updateMemberProgress());
+            }
+        }
         super.update(delta);
     }
 
@@ -1245,6 +1552,7 @@ export default class PathLevelScene extends ThreeScene {
         this.spottedMessageShown = false;
         this.bustGuard = undefined;
         this.bustFocus = false;
+        this.bustYawTween?.kill();
         const sight = new LevelSight(this.level);
         for (const data of this.level.guards ?? []) {
             if (data.path.length === 0) {
@@ -1273,17 +1581,34 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
         const walking = this.state === 'following' || this.state === 'waiting' || this.state === 'revealing';
-        const player = this.env.mainPlayer.transform.position;
+        // Every member still in play can be spotted, focused or not.
+        const targets = this.members.filter((member) => {
+            const state = this.memberState(member);
+            return state === 'waiting' || state === 'following';
+        });
         let highestAlert = 0;
         let spotter: Guard | undefined;
         for (const guard of this.guards) {
             if (!walking) {
                 guard.hold();
             } else {
-                const tooClose = guard.isTooClose(player);
-                const seen = tooClose || guard.sees(player);
-                if (seen) {
-                    guard.focusOn(player);
+                let target: SquadMember | undefined;
+                let tooClose = false;
+                for (const member of targets) {
+                    const position = member.player.transform.position;
+                    if (guard.isTooClose(position)) {
+                        target = member;
+                        tooClose = true;
+                        break;
+                    }
+                    if (!target && guard.sees(position)) {
+                        target = member;
+                    }
+                }
+                const seen = Boolean(target);
+                if (target) {
+                    guard.focusOn(target.player.transform.position);
+                    this.guardTargets.set(guard, target);
                 }
                 guard.advance(delta);
                 guard.alert = tooClose
@@ -1299,8 +1624,12 @@ export default class PathLevelScene extends ThreeScene {
             }
         }
         this.updateSpottedMessage(highestAlert);
-        if ((this.state === 'following' || this.state === 'waiting') && highestAlert >= 1 && spotter) {
-            this.beginBusted(spotter);
+        if (walking && highestAlert >= 1 && spotter) {
+            const caught = this.guardTargets.get(spotter) ?? this.focused;
+            if (caught && targets.includes(caught)) {
+                this.swapTo(caught);
+                this.beginBusted(spotter);
+            }
         }
     }
 
@@ -1325,7 +1654,7 @@ export default class PathLevelScene extends ThreeScene {
                 guard.playAngry();
                 this.playPlayerSad(guard);
                 this.bustFocus = true;
-                this.focusCameraOnPlayer();
+                this.focusCameraOnBustPair(guard);
             }
         } else {
             this.bustTimer += delta;
@@ -1367,6 +1696,12 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
         this.state = 'busted';
+        for (const other of this.members) {
+            if (other !== this.focused && other.state === 'following') {
+                other.player.movementController.enabled = false;
+                other.player.movementController.exitPathMode();
+            }
+        }
         this.bustGuard = spotter;
         this.bustPhase = 'chase';
         this.bustTimer = 0;
@@ -1380,6 +1715,9 @@ export default class PathLevelScene extends ThreeScene {
             guard.setConeVisible(false);
         }
         spotter.alert = 1;
+        void TextureBuilder.load(resolveSkinImagePath(BUSTED_FACE))
+            .then((texture) => this.env.mainPlayer.character?.setFaceTexture(texture))
+            .catch((error) => console.warn('[PathLevelScene] Could not load busted face', error));
         void this.env.mainPlayer.character?.registerAnimation('sad', SAD_ANIMATION_URL)
             .catch((error) => console.warn('[PathLevelScene] Could not load sad animation', error));
     }
@@ -1414,8 +1752,8 @@ export default class PathLevelScene extends ThreeScene {
 
     private updateWallHeight(): void {
         const position = this.env.mainPlayer.transform.position;
-        const insideRoom = Math.abs(position.x) < this.level.floor.width / 2 - 0.2
-            && Math.abs(position.z) < this.level.floor.depth / 2 - 0.2;
+        const insideRoom = this.wallsAlwaysLow || (Math.abs(position.x) < this.level.floor.width / 2 - 0.2
+            && Math.abs(position.z) < this.level.floor.depth / 2 - 0.2);
         if (insideRoom === this.wallsLowered) {
             return;
         }
@@ -1473,8 +1811,10 @@ export default class PathLevelScene extends ThreeScene {
     public fixedUpdate(delta: number): void {
         this.env.fixedUpdate(delta);
         const cameraOptions = this.state === 'celebrating' || this.state === 'payout' || this.state === 'complete' || this.bustFocus
-            ? CELEBRATION_CAMERA_OPTIONS
+            ? (this.bustFocus ? this.bustCameraOptions : CELEBRATION_CAMERA_OPTIONS)
             : this.pathCameraOptions;
+        this.syncCameraTuning();
+        this.reframeIfPlayerLeavesBounds();
         this.env.updateCamera(this.threeCamera, delta, cameraOptions);
         this.applyScreenShift(delta);
         const playerPosition = this.env.mainPlayer.transform.position;
@@ -1487,24 +1827,30 @@ export default class PathLevelScene extends ThreeScene {
         PizzaBendService.updateCameraPosition(this.threeCamera.position);
     }
 
+    /** The shot is fixed for the whole step; it only widens when the player actually walks out of the framed area. */
+    private reframeIfPlayerLeavesBounds(): void {
+        if (this.state !== 'following' || this.cameraBlendTween || this.frameBounds.isEmpty()) {
+            return;
+        }
+        const player = this.env.mainPlayer.transform.position;
+        const margin = CAMERA_BOUNDS_PADDING * 0.5;
+        const bounds = this.frameBounds;
+        if (player.x < bounds.min.x + margin || player.x > bounds.max.x - margin
+            || player.z < bounds.min.z + margin || player.z > bounds.max.z - margin) {
+            this.frameActiveSegment();
+        }
+    }
+
     private applyScreenShift(delta = 0): void {
         const width = window.innerWidth;
         const height = Math.max(1, window.innerHeight);
         const camera = this.threeCamera;
         const aiming = this.state === 'waiting' || this.state === 'revealing';
-        let wantedShift = this.screenShiftFraction;
-        if (aiming) {
-            camera.clearViewOffset();
-            camera.updateMatrixWorld();
-            const player = this.env.mainPlayer.transform.position;
-            const ndcY = this.shiftProbe.set(player.x, player.y + 0.8, player.z).project(camera).y;
-            wantedShift = PLAYER_SCREEN_Y_FRACTION - (1 - ndcY) / 2;
-        } else if (this.state !== 'following') {
-            wantedShift = SCREEN_VERTICAL_SHIFT;
+        if (!this.cameraBlendTween && this.state !== 'following' && !aiming) {
+            this.screenShiftFraction = delta > 0
+                ? THREE.MathUtils.lerp(this.screenShiftFraction, SCREEN_VERTICAL_SHIFT, 1 - Math.exp(-delta * 3))
+                : SCREEN_VERTICAL_SHIFT;
         }
-        this.screenShiftFraction = delta > 0 && Number.isFinite(wantedShift)
-            ? THREE.MathUtils.lerp(this.screenShiftFraction, wantedShift, 1 - Math.exp(-delta * 8))
-            : Number.isFinite(wantedShift) ? wantedShift : this.screenShiftFraction;
         const offsetY = -this.screenShiftFraction * height;
         const view = camera.view;
         if (view?.enabled && view.fullWidth === width && view.fullHeight === height && view.offsetY === offsetY) {
@@ -1541,37 +1887,67 @@ export default class PathLevelScene extends ThreeScene {
         }
     }
 
+    /**
+     * Frames the section as one fixed shot: the bounds of the segment start, goal, the drawn route and the
+     * player, plus padding. The camera only moves when those bounds change (new segment / new path), so
+     * walking inside the section never zooms or pans.
+     */
     private frameActiveSegment(instant = false): void {
-        if (!this.env?.mainPlayer) {
+        if (!this.env?.mainPlayer || this.inBackground) {
             return;
         }
         const cameraSettings = this.env.cameraSystem.current;
-        const pitch = THREE.MathUtils.degToRad(cameraSettings.pitchDeg);
-        const halfFovTangent = Math.tan(THREE.MathUtils.degToRad(this.threeCamera.fov / 2));
-        const aspect = window.innerWidth / Math.max(1, window.innerHeight);
-        const halfWidth = Math.min(this.level.floor.width / 2, CAMERA_MAX_HALF_WIDTH) + 0.3;
-        const segmentDepth = Math.abs(this.activeGoal.z - this.activeStart.z);
-        const depthToStart = segmentDepth * CAMERA_FOCUS_ALONG_SEGMENT + 2;
-        const depthToGoal = segmentDepth * (1 - CAMERA_FOCUS_ALONG_SEGMENT) + 2;
-        const halfDepth = Math.max(depthToStart, depthToGoal);
-        const nearEdgeDepth = halfDepth * Math.cos(pitch);
-        const verticalFit = nearEdgeDepth + (halfDepth * Math.sin(pitch)) / halfFovTangent;
-        const horizontalFit = nearEdgeDepth + halfWidth / (halfFovTangent * aspect);
+        const bounds = new THREE.Box3().makeEmpty();
+        const extend = (point: THREE.Vector3) => bounds.expandByPoint(this.boundsProbe.set(point.x, 0, point.z));
+        extend(this.activeStart);
+        extend(this.activeGoal);
+        // activeGoal is the end of a free-drawn path, so the real checkpoint must be framed explicitly.
+        const checkpoint = this.waypoints[this.nextWaypointIndex];
+        if (checkpoint) {
+            extend(checkpoint);
+        }
+        extend(this.env.mainPlayer.transform.position);
+        for (const point of this.route) {
+            extend(point);
+        }
+        const floorHalfX = this.level.floor.width / 2;
+        bounds.min.x = Math.max(bounds.min.x, -floorHalfX - 2);
+        bounds.max.x = Math.min(bounds.max.x, floorHalfX + 2);
+        // A section is never framed narrower than this, so a straight path doesn't zoom in to a sliver.
+        const minHalfWidth = Math.min(floorHalfX, CAMERA_MIN_HALF_WIDTH);
+        const centerX = (bounds.min.x + bounds.max.x) / 2;
+        bounds.min.x = Math.min(bounds.min.x, centerX - minHalfWidth);
+        bounds.max.x = Math.max(bounds.max.x, centerX + minHalfWidth);
+        bounds.expandByVector(this.boundsProbe.set(CAMERA_BOUNDS_PADDING, 0, CAMERA_BOUNDS_PADDING));
 
-        this.segmentFocus.set(
-            (this.activeStart.x + this.activeGoal.x) / 2,
-            0,
-            THREE.MathUtils.lerp(this.activeStart.z, this.activeGoal.z, CAMERA_FOCUS_ALONG_SEGMENT),
-        );
-        const targetDistance = Math.max(verticalFit, horizontalFit) + 0.5;
-        this.cameraZoomTween?.kill();
+        this.frameBounds.copy(bounds);
+        bounds.getCenter(this.focusGoal);
+        const fit = this.fitBounds(bounds, this.focusGoal);
+
+        this.cameraBlendTween?.kill();
+        this.cameraBlendTween = undefined;
         if (instant) {
-            cameraSettings.distance = targetDistance;
+            cameraSettings.distance = fit.distance;
+            this.segmentFocus.copy(this.focusGoal);
+            this.screenShiftFraction = fit.shift;
         } else {
-            this.cameraZoomTween = gsap.to(cameraSettings, {
-                distance: targetDistance,
-                duration: 0.55,
-                ease: 'power2.inOut',
+            // Position, zoom and screen shift all ride ONE progress value, so they start, peak and stop together.
+            const fromFocus = this.segmentFocus.clone();
+            const fromDistance = cameraSettings.distance;
+            const fromShift = this.screenShiftFraction;
+            const progress = { t: 0 };
+            this.cameraBlendTween = gsap.to(progress, {
+                t: 1,
+                duration: CAMERA_TRANSITION_SEC,
+                ease: 'sine.inOut',
+                onUpdate: () => {
+                    this.segmentFocus.lerpVectors(fromFocus, this.focusGoal, progress.t);
+                    cameraSettings.distance = THREE.MathUtils.lerp(fromDistance, fit.distance, progress.t);
+                    this.screenShiftFraction = THREE.MathUtils.lerp(fromShift, fit.shift, progress.t);
+                },
+                onComplete: () => {
+                    this.cameraBlendTween = undefined;
+                },
             });
         }
         this.threeCamera.updateProjectionMatrix();
@@ -1580,12 +1956,67 @@ export default class PathLevelScene extends ThreeScene {
         }
     }
 
+    /** Smallest camera distance that keeps `bounds` (ground rectangle, player-height tall) inside the usable screen area, plus the screen shift that centres it there. */
+    private fitBounds(bounds: THREE.Box3, focus: THREE.Vector3): { distance: number; shift: number } {
+        const settings = this.env.cameraSystem.current;
+        const yaw = THREE.MathUtils.degToRad(this.pathCameraOptions.fixedYawDeg ?? settings.yawDeg);
+        const pitch = THREE.MathUtils.degToRad(settings.pitchDeg);
+        const probe = this.threeCamera.clone();
+        probe.clearViewOffset();
+        probe.aspect = window.innerWidth / Math.max(1, window.innerHeight);
+        probe.updateProjectionMatrix();
+        const lookAt = new THREE.Vector3(focus.x + settings.offset.x, focus.y + settings.offset.y, focus.z + settings.offset.z);
+        const corners: THREE.Vector3[] = [];
+        for (const x of [bounds.min.x, bounds.max.x]) {
+            for (const z of [bounds.min.z, bounds.max.z]) {
+                for (const y of [0, CAMERA_BOUNDS_HEIGHT]) {
+                    corners.push(new THREE.Vector3(x, y, z));
+                }
+            }
+        }
+        const usableHalfHeight = (2 - CAMERA_SCREEN_PAD_TOP - CAMERA_SCREEN_PAD_BOTTOM) / 2;
+        const usableCenter = (CAMERA_SCREEN_PAD_BOTTOM - CAMERA_SCREEN_PAD_TOP) / 2;
+        const measure = (distance: number) => {
+            probe.position.set(
+                lookAt.x + distance * Math.cos(pitch) * Math.sin(yaw),
+                lookAt.y + distance * Math.sin(pitch),
+                lookAt.z + distance * Math.cos(pitch) * Math.cos(yaw),
+            );
+            probe.lookAt(lookAt);
+            probe.updateMatrixWorld(true);
+            let minY = Infinity;
+            let maxY = -Infinity;
+            let maxAbsX = 0;
+            for (const corner of corners) {
+                const ndc = this.shiftProbe.copy(corner).project(probe);
+                minY = Math.min(minY, ndc.y);
+                maxY = Math.max(maxY, ndc.y);
+                maxAbsX = Math.max(maxAbsX, Math.abs(ndc.x));
+            }
+            const fits = (maxY - minY) / 2 <= usableHalfHeight && maxAbsX <= 1 - CAMERA_SCREEN_PAD_SIDE;
+            return { fits, centerY: (minY + maxY) / 2 };
+        };
+        let low = 3;
+        let high = 120;
+        for (let i = 0; i < 24; i++) {
+            const mid = (low + high) / 2;
+            if (measure(mid).fits) {
+                high = mid;
+            } else {
+                low = mid;
+            }
+        }
+        const shift = (measure(high).centerY - usableCenter) / 2;
+        return { distance: high, shift: Number.isFinite(shift) ? shift : SCREEN_VERTICAL_SHIFT };
+    }
+
     public destroy(): void {
         this.destroyed = true;
-        this.goalArrivalTween?.kill();
-        this.goalArrivalTween = undefined;
-        this.cameraZoomTween?.kill();
-        this.cameraZoomTween = undefined;
+        this.goalArrivalTweens.forEach((tween) => tween.kill());
+        this.goalArrivalTweens = [];
+        this.cameraBlendTween?.kill();
+        this.goalHand?.destroy();
+        this.goalHand = undefined;
         this.payoutFlights.forEach((flight) => flight.kill());
         this.payoutFlights.length = 0;
         this.removeInputListeners();

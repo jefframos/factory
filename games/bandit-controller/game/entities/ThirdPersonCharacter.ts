@@ -53,6 +53,10 @@ export default class ThirdPersonCharacter {
         this.body.applyCharacterView(color, faceTexture);
     }
 
+    public setFaceTexture(faceTexture: THREE.Texture): void {
+        this.body.setFaceTexture(faceTexture);
+    }
+
     public setHeadOffset(x: number, y: number, z: number): void {
         this.body.setHeadOffset(x, y, z);
     }
