@@ -153,6 +153,7 @@ export default class HomeScene extends ThreeScene {
     }
 
     private buildUi(): void {
+        this.dailyModal = undefined;
         const root = new PIXI.Container();
         this.root = root;
 
@@ -199,6 +200,7 @@ export default class HomeScene extends ThreeScene {
             Progress.claimDaily();
             this.moneyHud.setResourceCount(GameState.getMoney());
             modal.destroy({ children: true });
+            this.dailyModal = undefined;
         });
         claim.position.set(0, 70);
         modal.addChild(dim, panel, title, streak, amount, claim);
@@ -209,7 +211,7 @@ export default class HomeScene extends ThreeScene {
 
     private layoutDaily(): void {
         const screen = Game.overlayScreenData;
-        this.dailyModal?.position.set(screen.center.x, screen.center.y);
+        if (this.dailyModal && !this.dailyModal.destroyed) this.dailyModal.position.set(screen.center.x, screen.center.y);
     }
 
     private roundButton(icon: string, color: number): PIXI.Container {
@@ -584,7 +586,7 @@ export default class HomeScene extends ThreeScene {
 
         // The squad is centered in the free space between the title and the bottom panel.
         const bottomEdge = menuTop;
-        const free = (screen.topLeft.y + 120 * scale + bottomEdge) / 2;
+        const free = (screen.topLeft.y + 120 * scale + bottomEdge) / 2 + 95 * scale;
         const fraction = (free - screen.topLeft.y) / Math.max(1, screen.height);
         const height = Math.max(1, window.innerHeight);
         this.threeCamera.setViewOffset(window.innerWidth, height, 0, (0.5 - fraction) * height, window.innerWidth, height);
