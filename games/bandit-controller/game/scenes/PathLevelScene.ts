@@ -22,6 +22,7 @@ import type MainPlayer from '../player/MainPlayer';
 import { WorldStyles } from '../data/WorldStyles';
 import { LevelData, LevelDoor, LevelLoot, LevelSharedGoal, levelDoors, levelWindowPanes } from '../data/LevelData';
 import { GameState } from '../data/GameState';
+import { Progress } from '../data/Progress';
 import { PLAYER_SETTINGS } from '../data/PlayerSettings';
 import Entity from 'core/ecs/Entity';
 import RigidBody from 'core/physics/RigidBody';
@@ -144,6 +145,8 @@ export default class PathLevelScene extends ThreeScene {
     private readonly collectedPayouts: number[] = [];
     private readonly payoutFlights: ReturnType<typeof spawnFlyingIconToOverlayPoint>[] = [];
     private runMoney = 0;
+    private lootCollected = 0;
+    private spotted = false;
     private readonly wallMeshes: THREE.Mesh[] = [];
     private readonly wallLintelClearMeshes: THREE.Mesh[] = [];
     private wallsLowered = false;
@@ -268,6 +271,8 @@ export default class PathLevelScene extends ThreeScene {
         this.route = [];
         this.routeBlocked = false;
         this.runMoney = 0;
+        this.lootCollected = 0;
+        this.spotted = false;
         this.collectibles.length = 0;
         this.collectedPayouts.length = 0;
         this.env = new WorldEnvironment(this.threeScene, BendService, FIELD_SIZE, 64, 1);
@@ -770,6 +775,7 @@ export default class PathLevelScene extends ThreeScene {
                 this.showCollectPop(this.env.mainPlayer.getCollectTargetPosition().clone(), amount);
                 this.collectedPayouts.push(amount);
                 this.runMoney += amount;
+                this.lootCollected++;
                 this.refreshRunMoney();
             });
             this.collectibles.push(collectible);
@@ -1420,8 +1426,13 @@ export default class PathLevelScene extends ThreeScene {
         }
         this.state = 'complete';
         LevelCatalog.markCompleted(this.level);
+        const result = Progress.complete(this.level, {
+            loot: this.lootCollected >= this.level.loot.length,
+            unseen: !this.spotted,
+        });
+        this.moneyHud.setResourceCount(GameState.getMoney());
         const modal = new PIXI.Container();
-        const panel = UiKit.image('levelComplete', 'panel', 380, 250);
+        const panel = UiKit.image('levelComplete', 'panel', 380, 290);
 
         const ribbon = UiKit.sprite('levelComplete', 'ribbon', 1.1);
         ribbon.position.set(0, -125);
@@ -1430,22 +1441,49 @@ export default class PathLevelScene extends ThreeScene {
 
         const bonusText = multiplier > 1 ? `  (x${multiplier} BONUS)` : '';
         const total = UiKit.text('levelComplete', 'total', { money: this.runMoney * multiplier, bonus: bonusText });
-        total.position.set(0, -35);
+        total.position.set(0, -15);
+
+        const starRow = new PIXI.Container();
+        for (let i = 0; i < 3; i++) {
+            const star = PIXI.Sprite.from('ItemIcon_Star_Gold');
+            star.anchor.set(0.5);
+            star.height = 46;
+            star.scale.x = star.scale.y;
+            star.position.set((i - 1) * 56, 0);
+            if (i >= result.stars) {
+                star.tint = 0x202020;
+                star.alpha = 0.55;
+            }
+            starRow.addChild(star);
+        }
+        starRow.position.set(0, -70);
+        const notes = [!result.stars || result.stars < 2 ? 'GRAB ALL LOOT FOR 2 STARS' : '', result.stars < 3 ? 'STAY UNSEEN FOR 3 STARS' : ''].filter(Boolean);
+        const bonusLines = [
+            result.total > 0 ? `+$${result.total} REWARD${result.firstClear ? ' (FIRST CLEAR)' : ''}` : '',
+            notes[notes.length - 1] ?? '',
+        ].filter(Boolean).join('\n');
+        const rewardText = new PIXI.Text(bonusLines, { fontFamily: 'Arial Black, Arial', fontSize: 15, fill: 0xffe14d, align: 'center', stroke: 0x000000, strokeThickness: 3 });
+        rewardText.anchor.set(0.5);
+        rewardText.position.set(0, 28);
 
         const button = new PIXI.Container();
         const buttonBg = UiKit.image('levelComplete', 'button', 240, 90);
-        const buttonLabel = UiKit.text('levelComplete', 'buttonLabel', { buttonText: !LevelCatalog.hasNext(this.level) ? 'PLAY AGAIN' : LevelCatalog.isWorldFinale(this.level) ? 'NEXT WORLD' : 'NEXT LEVEL' });
+        const buttonLabel = UiKit.text('levelComplete', 'buttonLabel', { buttonText: !LevelCatalog.isUnlocked(LevelCatalog.all().indexOf(this.level) + 1) && LevelCatalog.hasNext(this.level) ? 'MORE STARS!' : !LevelCatalog.hasNext(this.level) ? 'PLAY AGAIN' : LevelCatalog.isWorldFinale(this.level) ? 'NEXT WORLD' : 'NEXT LEVEL' });
         button.addChild(buttonBg, buttonLabel);
         button.scale.set(0.7);
-        button.position.set(0, 60);
+        button.position.set(0, 82);
         button.eventMode = 'static';
         button.cursor = 'pointer';
         button.on('pointertap', () => {
+            if (LevelCatalog.hasNext(this.level) && !LevelCatalog.isUnlocked(LevelCatalog.all().indexOf(this.level) + 1)) {
+                this.onHome.dispatch();
+                return;
+            }
             LevelCatalog.advance(this.level);
             this.onRestart.dispatch();
         });
 
-        modal.addChild(panel, ribbon, title, total, button);
+        modal.addChild(panel, ribbon, title, starRow, total, rewardText, button);
         this.positionBottomPanel(modal);
         this.game.uiLayer.addChild(modal);
         this.completeModal = modal;
@@ -1876,6 +1914,9 @@ export default class PathLevelScene extends ThreeScene {
                 highestAlert = guard.alert;
                 spotter = guard;
             }
+        }
+        if (walking && highestAlert > 0) {
+            this.spotted = true;
         }
         this.updateSpottedMessage(highestAlert);
         if (walking && highestAlert >= 1 && spotter) {

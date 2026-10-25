@@ -77,6 +77,22 @@ function readCompleted(): Set<string> {
     }
 }
 
+const STARS_KEY = 'bandit-controller.stars';
+
+function starsTotal(): number {
+    try {
+        return Object.values(JSON.parse(window.localStorage.getItem(STARS_KEY) ?? '{}') as Record<string, number>).reduce((a, b) => a + b, 0);
+    } catch {
+        return 0;
+    }
+}
+
+/** Stars needed to enter a world: 1 per level of the worlds before it, per world step. */
+export function worldGateStars(number: number): number {
+    const previous = build().worlds[number - 2];
+    return previous ? previous.levels.length * (number - 1) : 0;
+}
+
 export const LevelCatalog = {
     all: allLevels,
 
@@ -93,6 +109,10 @@ export const LevelCatalog = {
     /** A level is playable once the one before it is done (or progress already reached it). */
     isUnlocked(index: number): boolean {
         const levels = allLevels();
+        const found = levels[index] ? this.locate(levels[index]) : undefined;
+        if (found && found.levelNumber === 1 && starsTotal() < worldGateStars(found.world.number)) {
+            return false;
+        }
         if (index <= 0 || index <= this.getIndex()) {
             return true;
         }

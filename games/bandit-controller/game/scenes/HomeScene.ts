@@ -22,7 +22,8 @@ import {
 import { GameState } from '../data/GameState';
 import { FACES, HATS, Wardrobe, WardrobeItem } from '../data/Wardrobe';
 import { HatIcons } from '../ui/HatIcons';
-import { LevelCatalog, WorldInfo } from '../data/LevelCatalog';
+import { LevelCatalog, WorldInfo, worldGateStars } from '../data/LevelCatalog';
+import { Progress } from '../data/Progress';
 import type MainPlayer from '../player/MainPlayer';
 import { UiKit } from '../ui/UiKit';
 import MoneyHud from '../ui/MoneyHud';
@@ -80,6 +81,7 @@ export default class HomeScene extends ThreeScene {
     private shopButton!: PIXI.Container;
     private worldTitle!: PIXI.Text;
     private worldProgress!: PIXI.Text;
+    private dailyModal?: PIXI.Container;
     private worldLock!: PIXI.Sprite;
     private grid!: PIXI.Container;
     private editBody!: PIXI.Container;
@@ -171,6 +173,43 @@ export default class HomeScene extends ThreeScene {
         root.addChild(this.title, this.shopButton, this.menu, this.editPanel);
         this.game.uiLayer.addChild(root);
         this.resize();
+        this.offerDailyReward();
+    }
+
+    private offerDailyReward(): void {
+        const reward = Progress.dailyReward();
+        if (!reward.available) {
+            return;
+        }
+        const modal = new PIXI.Container();
+        const dim = new PIXI.Graphics();
+        dim.beginFill(0x000000, 0.55).drawRect(-1200, -1200, 2400, 2400).endFill();
+        dim.eventMode = 'static';
+        const panel = new PIXI.NineSlicePlane(PIXI.Texture.from('ItemFrame01_Single_Blue'), 30, 30, 30, 30);
+        panel.width = 300;
+        panel.height = 220;
+        panel.position.set(-150, -110);
+        const title = label('DAILY REWARD', 24, 0x1d5a2a);
+        title.position.set(0, -70);
+        const streak = label(`DAY ${reward.streak} STREAK`, 16);
+        streak.position.set(0, -35);
+        const amount = label(`$${reward.amount}`, 40);
+        amount.position.set(0, 5);
+        const claim = this.makeButton('Button01_s_Blue', 190, 64, 'CLAIM', 22, () => {
+            Progress.claimDaily();
+            this.moneyHud.setResourceCount(GameState.getMoney());
+            modal.destroy({ children: true });
+        });
+        claim.position.set(0, 70);
+        modal.addChild(dim, panel, title, streak, amount, claim);
+        this.root?.addChild(modal);
+        this.dailyModal = modal;
+        this.layoutDaily();
+    }
+
+    private layoutDaily(): void {
+        const screen = Game.overlayScreenData;
+        this.dailyModal?.position.set(screen.center.x, screen.center.y);
     }
 
     private roundButton(icon: string, color: number): PIXI.Container {
@@ -436,7 +475,11 @@ export default class HomeScene extends ThreeScene {
         const progress = LevelCatalog.worldProgress(world);
         const unlocked = LevelCatalog.isUnlocked(this.globalIndex(world.levels[0]));
         this.worldTitle.text = `${world.number}. ${world.name.toUpperCase()}`;
-        this.worldProgress.text = `${progress.done}/${progress.total} COMPLETE`;
+        const stars = Progress.worldStars(world.levels);
+        const gate = worldGateStars(world.number);
+        this.worldProgress.text = unlocked
+            ? `${progress.done}/${progress.total} DONE   ★ ${stars.earned}/${stars.max}`
+            : `NEED ★ ${gate} (YOU HAVE ${Progress.totalStars()})`;
         this.worldLock.visible = !unlocked;
         this.worldLock.position.set(this.worldTitle.width / 2 + 24, -128);
 
@@ -464,7 +507,21 @@ export default class HomeScene extends ThreeScene {
         back.beginFill(color).lineStyle(4, 0xffffff).drawRoundedRect(-TILE / 2, -TILE / 2, TILE, TILE, 16).endFill();
         tile.addChild(back);
         if (open) {
-            tile.addChild(label(String(number), 34));
+            const numberLabel = label(String(number), done ? 28 : 34);
+            numberLabel.position.y = done ? -8 : 0;
+            tile.addChild(numberLabel);
+            const earned = Progress.starsFor(level);
+            for (let i = 0; done && i < 3; i++) {
+                const star = PIXI.Sprite.from('ItemIcon_Star_Gold');
+                star.anchor.set(0.5);
+                star.scale.set(16 / Math.max(star.texture.width, 1));
+                star.position.set((i - 1) * 17, TILE / 2 - 16);
+                if (i >= earned) {
+                    star.tint = 0x202020;
+                    star.alpha = 0.5;
+                }
+                tile.addChild(star);
+            }
         } else {
             const lock = PIXI.Sprite.from('Icon_Lock02');
             lock.anchor.set(0.5);
@@ -506,6 +563,7 @@ export default class HomeScene extends ThreeScene {
     }
 
     public resize(): void {
+        this.layoutDaily();
         const screen = Game.overlayScreenData;
         if (!this.root || !screen) {
             return;
