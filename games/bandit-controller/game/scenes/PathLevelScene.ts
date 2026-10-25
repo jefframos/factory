@@ -122,6 +122,8 @@ type PathDrawMode = 'exit' | 'free';
 /** One controllable character. The scene's own path fields always hold the focused member's data; the others keep theirs here. */
 interface SquadMember {
     player: MainPlayer;
+    /** Face decal path, for the HUD portrait. */
+    face?: string;
     /** Route, start and goal tint; undefined keeps the single-character look. */
     color?: number;
     waypoints: THREE.Vector3[];
@@ -139,6 +141,12 @@ export default class PathLevelScene extends ThreeScene {
     /** Fired by the top-right home button; index.ts switches to the Home scene. */
     public readonly onHome: Signal = new Signal();
     private homeButton?: PIXI.Container;
+    private squadBar?: PIXI.Container;
+    private squadBadges: { member: SquadMember; ring: PIXI.Graphics; face: PIXI.Sprite; check: PIXI.Text; root: PIXI.Container }[] = [];
+    private mapButton?: PIXI.Container;
+    private mapButtonBack?: PIXI.Graphics;
+    /** Whole-level camera, toggled from the HUD. */
+    private overview = false;
 
     private readonly moneyHud: MoneyHud;
     private env!: WorldEnvironment;
@@ -297,6 +305,7 @@ export default class PathLevelScene extends ThreeScene {
             (player as unknown as { opensDoors: boolean }).opensDoors = true;
             this.members.push({
                 player,
+                face: view.face,
                 color: squadMode ? new THREE.Color(view.color).getHex() : undefined,
                 waypoints,
                 nextWaypointIndex: 1,
@@ -847,9 +856,106 @@ export default class PathLevelScene extends ThreeScene {
         this.worldLabel.anchor.set(0.5);
         this.homeButton = this.buildHomeButton();
         this.hud.addChild(this.instruction, this.cashPill, this.worldLabel, this.homeButton);
+        this.buildSquadHud();
         this.refreshRunMoney();
         this.game.uiLayer.addChild(this.hud);
         this.resize();
+    }
+
+    private buildSquadHud(): void {
+        const hud = this.hud;
+        if (!hud) {
+            return;
+        }
+        this.squadBadges = [];
+        this.squadBar = undefined;
+        if (this.members.length > 1) {
+            const bar = new PIXI.Container();
+            const spacing = 78;
+            this.members.forEach((member, index) => {
+                const root = new PIXI.Container();
+                root.position.x = (index - (this.members.length - 1) / 2) * spacing;
+                const color = member.color ?? 0xffffff;
+                const ring = new PIXI.Graphics();
+                const face = new PIXI.Sprite();
+                face.anchor.set(0.5);
+                face.width = face.height = 46;
+                if (member.face) {
+                    void PIXI.Assets.load<PIXI.Texture>(resolveSkinImagePath(member.face)).then((texture) => {
+                        if (!face.destroyed && texture) {
+                            face.texture = texture;
+                            face.width = face.height = 46;
+                        }
+                    }).catch(() => undefined);
+                }
+                const faceMask = new PIXI.Graphics().beginFill(0xffffff).drawCircle(0, 0, 25).endFill();
+                face.mask = faceMask;
+                const back = new PIXI.Graphics().beginFill(color).drawCircle(0, 0, 27).endFill();
+                const check = new PIXI.Text('✓', { fontFamily: UiKit.fontFamily('primary'), fontSize: 34, fill: 0xffffff, stroke: 0x1d5a2a, strokeThickness: 6 });
+                check.anchor.set(0.5);
+                check.visible = false;
+                root.addChild(back, face, faceMask, ring, check);
+                root.eventMode = 'static';
+                root.cursor = 'pointer';
+                root.hitArea = new PIXI.Circle(0, 0, 36);
+                root.on('pointertap', () => this.selectMemberFromHud(member));
+                bar.addChild(root);
+                this.squadBadges.push({ member, ring, face, check, root });
+            });
+            this.squadBar = bar;
+            hud.addChild(bar);
+        }
+        const map = new PIXI.Container();
+        this.mapButtonBack = new PIXI.Graphics();
+        const label = new PIXI.Text('MAP', { fontFamily: UiKit.fontFamily('primary'), fontSize: 15, fill: 0xffffff, stroke: 0x203c35, strokeThickness: 4 });
+        label.anchor.set(0.5);
+        map.addChild(this.mapButtonBack, label);
+        map.eventMode = 'static';
+        map.cursor = 'pointer';
+        map.hitArea = new PIXI.Circle(0, 0, 34);
+        map.on('pointertap', () => this.toggleOverview());
+        this.mapButton = map;
+        hud.addChild(map);
+        this.refreshSquadHud();
+    }
+
+    private refreshSquadHud(): void {
+        const hidden = this.isEnded();
+        if (this.squadBar) {
+            this.squadBar.visible = !hidden;
+        }
+        if (this.mapButton) {
+            this.mapButton.visible = !hidden;
+        }
+        for (const badge of this.squadBadges) {
+            const done = this.memberState(badge.member) === 'done';
+            const current = badge.member === this.focused;
+            const scale = current ? 1.18 : 0.9;
+            badge.root.scale.set(scale);
+            badge.root.alpha = done ? 0.55 : 1;
+            badge.check.visible = done;
+            badge.face.alpha = done ? 0.35 : 1;
+            badge.ring.clear().lineStyle(current ? 5 : 3, current ? 0xffffff : 0x203c35).drawCircle(0, 0, 27);
+        }
+        if (this.mapButtonBack) {
+            this.mapButtonBack.clear()
+                .beginFill(0x000000, 0.25).drawCircle(0, 4, 30).endFill()
+                .beginFill(this.overview ? 0x2bd2bd : 0x2a6fb0).lineStyle(4, 0xffffff).drawCircle(0, 0, 30).endFill();
+        }
+    }
+
+    private selectMemberFromHud(member: SquadMember): void {
+        if (this.isEnded() || member === this.focused || this.memberState(member) !== 'waiting') {
+            return;
+        }
+        this.focusMember(member);
+        this.refreshSquadHud();
+    }
+
+    private toggleOverview(): void {
+        this.overview = !this.overview;
+        this.frameActiveSegment();
+        this.refreshSquadHud();
     }
 
     private buildHomeButton(): PIXI.Container {
@@ -966,6 +1072,10 @@ export default class PathLevelScene extends ThreeScene {
         }
         if (member !== this.focused) {
             this.swapTo(member);
+            this.selectionNeedsFraming = true;
+        }
+        if (this.overview) {
+            this.overview = false;
             this.selectionNeedsFraming = true;
         }
         const start = this.pathDrawMode === 'exit'
@@ -1830,6 +1940,7 @@ export default class PathLevelScene extends ThreeScene {
         pruneCollected(this.env.world, this.collectibles);
         this.updateGuards(delta);
         this.updateMemberProgress();
+        this.refreshSquadHud();
         for (const member of this.members) {
             if (member !== this.focused && member.state === 'following' && !this.isEnded()) {
                 this.runAsMember(member, () => this.updateMemberProgress());
@@ -2143,7 +2254,7 @@ export default class PathLevelScene extends ThreeScene {
 
     /** The shot is fixed for the whole step; it only widens when the player actually walks out of the framed area. */
     private reframeIfPlayerLeavesBounds(): void {
-        if (this.state !== 'following' || this.cameraBlendTween || this.frameBounds.isEmpty()) {
+        if (this.overview || this.state !== 'following' || this.cameraBlendTween || this.frameBounds.isEmpty()) {
             return;
         }
         const player = this.env.mainPlayer.transform.position;
@@ -2187,6 +2298,12 @@ export default class PathLevelScene extends ThreeScene {
         if (this.homeButton) {
             this.homeButton.position.set(Game.overlayScreenData.topRight.x - 44, Game.overlayScreenData.topLeft.y + 44);
         }
+        if (this.squadBar) {
+            this.squadBar.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + Game.overlayScreenData.height - 70);
+        }
+        if (this.mapButton) {
+            this.mapButton.position.set(Game.overlayScreenData.topRight.x - 52, Game.overlayScreenData.topLeft.y + Game.overlayScreenData.height - 70);
+        }
         if (this.cashPill) {
             this.cashPill.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + 96);
         }
@@ -2212,6 +2329,11 @@ export default class PathLevelScene extends ThreeScene {
         }
         const cameraSettings = this.env.cameraSystem.current;
         const bounds = new THREE.Box3().makeEmpty();
+        if (this.overview) {
+            this.frameOverview(bounds);
+            this.applyFrame(bounds, instant, cameraSettings);
+            return;
+        }
         const extend = (point: THREE.Vector3) => bounds.expandByPoint(this.boundsProbe.set(point.x, 0, point.z));
         extend(this.activeStart);
         extend(this.activeGoal);
@@ -2250,6 +2372,10 @@ export default class PathLevelScene extends ThreeScene {
         bounds.max.z = Math.max(bounds.max.z, centerZ + CAMERA_MIN_HALF_DEPTH);
         bounds.expandByVector(this.boundsProbe.set(CAMERA_BOUNDS_PADDING, 0, CAMERA_BOUNDS_PADDING));
 
+        this.applyFrame(bounds, instant, cameraSettings);
+    }
+
+    private applyFrame(bounds: THREE.Box3, instant: boolean, cameraSettings: { distance: number }): void {
         this.frameBounds.copy(bounds);
         bounds.getCenter(this.focusGoal);
         const fit = this.fitBounds(bounds, this.focusGoal);
@@ -2284,6 +2410,20 @@ export default class PathLevelScene extends ThreeScene {
         if (instant) {
             this.env.updateCamera(this.threeCamera, 0, this.pathCameraOptions);
         }
+    }
+
+    /** Whole-level shot: every floor piece, the entry path and everyone in play. */
+    private frameOverview(bounds: THREE.Box3): void {
+        const floor = this.level.floor;
+        const rects = floor.rects?.length ? floor.rects : [{ x: 0, z: 0, width: floor.width, depth: floor.depth }];
+        for (const rect of rects) {
+            bounds.expandByPoint(this.boundsProbe.set(rect.x - rect.width / 2, 0, rect.z - rect.depth / 2));
+            bounds.expandByPoint(this.boundsProbe.set(rect.x + rect.width / 2, 0, rect.z + rect.depth / 2));
+        }
+        for (const member of this.members) {
+            bounds.expandByPoint(this.boundsProbe.set(member.player.transform.position.x, 0, member.player.transform.position.z));
+        }
+        bounds.expandByVector(this.boundsProbe.set(CAMERA_BOUNDS_PADDING, 0, CAMERA_BOUNDS_PADDING));
     }
 
     /** Smallest camera distance that keeps `bounds` (ground rectangle, player-height tall) inside the usable screen area, plus the screen shift that centres it there. */
