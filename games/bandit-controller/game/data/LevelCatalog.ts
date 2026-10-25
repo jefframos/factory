@@ -110,7 +110,7 @@ export const LevelCatalog = {
     isUnlocked(index: number): boolean {
         const levels = allLevels();
         const found = levels[index] ? this.locate(levels[index]) : undefined;
-        if (found && found.levelNumber === 1 && starsTotal() < worldGateStars(found.world.number)) {
+        if (found && starsTotal() < worldGateStars(found.world.number)) {
             return false;
         }
         if (index <= 0 || index <= this.getIndex()) {
