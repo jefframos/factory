@@ -1256,16 +1256,69 @@ function swapWaypoint(from, to) {
 }
 
 // ---------------------------------------------------------------- level list / settings
+let worlds = [];
+
+const worldOf = (id) => worlds.find((world) => world.levels.includes(id));
+
 function renderLevelList() {
     const list = $('levelList');
     list.replaceChildren();
-    levels.forEach((entry, index) => {
+    const byId = new Map(levels.map((entry) => [entry.id, entry]));
+    const addItem = (entry, number) => {
         const item = document.createElement('li');
         item.className = entry.id === level?.id ? 'active' : '';
-        item.innerHTML = `<span>${index + 1}. ${entry.name}</span><small>${entry.id}</small>`;
+        item.innerHTML = `<span>${number}. ${entry.name}</span><small>${entry.id}</small>`;
         item.addEventListener('click', () => openLevel(entry.id));
         list.append(item);
+    };
+    const addHeader = (text) => {
+        const header = document.createElement('li');
+        header.className = 'world-header';
+        header.style.cssText = 'font-weight:700;opacity:.7;font-size:11px;text-transform:uppercase;cursor:default;pointer-events:none;padding-top:8px';
+        header.textContent = text;
+        list.append(header);
+    };
+    worlds.forEach((world, index) => {
+        const members = world.levels.map((id) => byId.get(id)).filter(Boolean);
+        addHeader(`World ${index + 1} · ${world.name} (${members.length})`);
+        members.forEach((entry, i) => addItem(entry, i + 1));
     });
+    const loose = levels.filter((entry) => !worldOf(entry.id));
+    if (loose.length) {
+        addHeader(`Unassigned (${loose.length})`);
+        loose.forEach((entry, i) => addItem(entry, i + 1));
+    }
+    const select = $('levelWorld');
+    select.replaceChildren();
+    worlds.forEach((world, index) => select.append(new Option(`${index + 1}. ${world.name}`, world.id)));
+    select.append(new Option('Unassigned', ''));
+    select.value = (level && worldOf(level.id)?.id) ?? '';
+}
+
+async function loadWorlds() {
+    worlds = (await api('/api/worlds')).worlds ?? [];
+}
+
+async function saveWorlds() {
+    const current = await api('/api/worlds');
+    current.worlds = worlds;
+    await api('/api/worlds', { method: 'PUT', body: JSON.stringify(current) });
+}
+
+async function moveToWorld(worldId) {
+    const target = worlds.find((world) => world.id === worldId);
+    worlds.forEach((world) => (world.levels = world.levels.filter((id) => id !== level.id)));
+    if (target) {
+        target.levels.push(level.id);
+        // Re-skin the level so the editor matches what the game will show.
+        level.styles = { ...level.styles, ...target.styles };
+        markDirty();
+        rebuildAll();
+        renderInspector();
+        syncSettings();
+    }
+    await saveWorlds();
+    renderLevelList();
 }
 
 function syncSettings() {
@@ -1306,6 +1359,7 @@ async function api(path, options) {
 
 async function refreshLevels(selectId) {
     levels = await api('/api/levels');
+    await loadWorlds();
     const target = levels.find((entry) => entry.id === selectId) ?? levels[0];
     if (target) {
         level = clone(target);
@@ -1348,11 +1402,19 @@ async function saveLevel() {
 }
 
 async function reorder(delta) {
-    const index = levels.findIndex((entry) => entry.id === level.id);
-    const target = index + delta;
-    if (target < 0 || target >= levels.length) {
+    const group = worldOf(level.id)?.levels;
+    if (group) {
+        const index = group.indexOf(level.id);
+        const target = index + delta;
+        if (target < 0 || target >= group.length) return;
+        [group[index], group[target]] = [group[target], group[index]];
+        await saveWorlds();
+        renderLevelList();
         return;
     }
+    const index = levels.findIndex((entry) => entry.id === level.id);
+    const target = index + delta;
+    if (target < 0 || target >= levels.length) return;
     [levels[index], levels[target]] = [levels[target], levels[index]];
     await api('/api/order', { method: 'PUT', body: JSON.stringify({ levels: levels.map((entry) => entry.id) }) });
     renderLevelList();
@@ -1381,6 +1443,7 @@ $('delLevel').addEventListener('click', async () => {
     dirty = false;
     await refreshLevels();
 });
+$('levelWorld').addEventListener('change', () => moveToWorld($('levelWorld').value));
 $('moveUp').addEventListener('click', () => reorder(-1));
 $('moveDown').addEventListener('click', () => reorder(1));
 $('save').addEventListener('click', saveLevel);

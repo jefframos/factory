@@ -14,6 +14,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const LEVELS_DIR = path.join(__dirname, '..', 'levels');
 const INDEX_FILE = path.join(LEVELS_DIR, 'index.json');
+const WORLDS_FILE = path.join(LEVELS_DIR, 'worlds.json');
 const REPO_ROOT = path.join(__dirname, '..', '..', '..');
 const MODELS_DIR = path.join(REPO_ROOT, 'public', 'bandit-controller', 'models');
 const THREE_DIR = path.join(REPO_ROOT, 'node_modules', 'three');
@@ -28,7 +29,7 @@ const UI_SOURCES = {
 const SAFE_NAME = /^[\w.\- ]+$/;
 const PORT = process.env.EDITOR_PORT ? Number(process.env.EDITOR_PORT) : 4700;
 const GAME_URL = process.env.GAME_URL ?? 'http://localhost:9001/';
-const ID_PATTERN = /^level-[a-z0-9-]+$/;
+const ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 
 const MIME_TYPES = {
     '.html': 'text/html; charset=utf-8',
@@ -283,6 +284,17 @@ async function handleApi(req, res, url) {
         await writeJson(INDEX_FILE, { levels: [...order, id] });
         return send(res, 201, level);
     }
+    if (url.pathname === '/api/worlds' && req.method === 'GET') {
+        return send(res, 200, await readJson(WORLDS_FILE, { worlds: [] }));
+    }
+    if (url.pathname === '/api/worlds' && req.method === 'PUT') {
+        const body = await readBody(req);
+        if (!Array.isArray(body.worlds) || !body.worlds.every((w) => Array.isArray(w.levels) && w.levels.every((id) => ID_PATTERN.test(id)))) {
+            return send(res, 400, { error: 'Invalid worlds' });
+        }
+        await writeJson(WORLDS_FILE, body);
+        return send(res, 200, { ok: true });
+    }
     if (url.pathname === '/api/order' && req.method === 'PUT') {
         const body = await readBody(req);
         if (!Array.isArray(body.levels) || !body.levels.every((id) => ID_PATTERN.test(id))) {
@@ -310,6 +322,11 @@ async function handleApi(req, res, url) {
         if (req.method === 'DELETE') {
             await fs.rm(file, { force: true });
             await writeJson(INDEX_FILE, { levels: (await readOrder()).filter((entry) => entry !== id) });
+            const worlds = await readJson(WORLDS_FILE, null);
+            if (worlds?.worlds) {
+                worlds.worlds.forEach((w) => (w.levels = w.levels.filter((entry) => entry !== id)));
+                await writeJson(WORLDS_FILE, worlds);
+            }
             return send(res, 200, { ok: true });
         }
     }
