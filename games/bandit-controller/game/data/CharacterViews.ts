@@ -62,13 +62,19 @@ export const FACE_OPTIONS: string[] = [
     'skins/ninja.webp',
 ];
 
+/** Body colors a squad member can pick; no two members may share one. */
+export const SQUAD_COLORS: string[] = [
+    '#42a5f5', '#ab47bc', '#ffa726', '#ff5252', '#66bb6a',
+    '#ffca28', '#26c6da', '#ec407a', '#7e57c2', '#8d6e63',
+];
+
 const SQUAD_LOOK_KEY = 'bandit-controller.squadLook';
 
 function saveLook(): void {
     try {
-        const look: Record<string, { face: string; hat?: string }> = {};
+        const look: Record<string, { face: string; hat?: string; color: string }> = {};
         for (const name of SQUAD_VIEW_NAMES) {
-            look[name] = { face: CHARACTER_VIEWS[name].face, hat: CHARACTER_VIEWS[name].hat };
+            look[name] = { face: CHARACTER_VIEWS[name].face, hat: CHARACTER_VIEWS[name].hat, color: CHARACTER_VIEWS[name].color };
         }
         window.localStorage.setItem(SQUAD_LOOK_KEY, JSON.stringify(look));
     } catch {
@@ -83,6 +89,20 @@ export function setSquadFace(viewName: string, face: string): void {
     }
 }
 
+/** Whether another squad member already wears `color`. */
+export function isSquadColorTaken(viewName: string, color: string): boolean {
+    return SQUAD_VIEW_NAMES.some((name) => name !== viewName && CHARACTER_VIEWS[name].color === color);
+}
+
+export function setSquadColor(viewName: string, color: string): boolean {
+    if (!CHARACTER_VIEWS[viewName] || isSquadColorTaken(viewName, color)) {
+        return false;
+    }
+    CHARACTER_VIEWS[viewName].color = color;
+    saveLook();
+    return true;
+}
+
 export function setSquadHat(viewName: string, hat: string | undefined): void {
     if (CHARACTER_VIEWS[viewName]) {
         CHARACTER_VIEWS[viewName].hat = hat;
@@ -91,11 +111,14 @@ export function setSquadHat(viewName: string, hat: string | undefined): void {
 }
 
 try {
-    const saved = JSON.parse(window.localStorage.getItem(SQUAD_LOOK_KEY) ?? '{}') as Record<string, { face?: string; hat?: string }>;
+    const saved = JSON.parse(window.localStorage.getItem(SQUAD_LOOK_KEY) ?? '{}') as Record<string, { face?: string; hat?: string; color?: string }>;
     for (const [name, look] of Object.entries(saved)) {
         const view = CHARACTER_VIEWS[name];
         if (view && look.face && FACE_OPTIONS.includes(look.face)) {
             view.face = look.face;
+        }
+        if (view && look.color && SQUAD_COLORS.includes(look.color) && !isSquadColorTaken(name, look.color)) {
+            view.color = look.color;
         }
         if (view && look.hat) {
             view.hat = look.hat;

@@ -14,7 +14,10 @@ import { BendService } from 'core/services/BendService';
 import { TextureBuilder } from '../builders/TextureBuilder';
 import {
     CHARACTER_VIEWS,
+    SQUAD_COLORS,
     SQUAD_VIEW_NAMES,
+    isSquadColorTaken,
+    setSquadColor,
     resolveSkinImagePath,
     setSquadFace,
     setSquadHat,
@@ -37,8 +40,8 @@ const PAGE_SIZE = 10;
 /** Podium per squad member: x, z and top height. Blue (the main character) stands in the centre, a step higher and in front. */
 const PODIUM = [
     { x: 0, z: 0.9, height: 0.7 },
-    { x: -2.15, z: -0.3, height: 0.35 },
-    { x: 2.15, z: -0.3, height: 0.35 },
+    { x: -1.75, z: -0.3, height: 0.35 },
+    { x: 1.75, z: -0.3, height: 0.35 },
 ];
 const CAMERA_FOV = 30;
 const CAMERA_DISTANCE = 15;
@@ -82,11 +85,12 @@ export default class HomeScene extends ThreeScene {
     private worldTitle!: PIXI.Text;
     private worldProgress!: PIXI.Text;
     private dailyModal?: PIXI.Container;
+    private podiumMaterials: THREE.MeshStandardMaterial[] = [];
     private worldLock!: PIXI.Sprite;
     private grid!: PIXI.Container;
     private editBody!: PIXI.Container;
     private editMember = 0;
-    private editTab: 'faces' | 'hats' = 'faces';
+    private editTab: 'faces' | 'hats' | 'colors' = 'faces';
     private editPage = 0;
     private toast!: PIXI.Text;
     private worldIndex = 0;
@@ -107,6 +111,7 @@ export default class HomeScene extends ThreeScene {
         this.destroyed = false;
         this.editing = false;
         this.env = new WorldEnvironment(this.threeScene, BendService, 40, 16, 1);
+        this.podiumMaterials = [];
         this.players = SQUAD_VIEW_NAMES.map((name, index) => {
             const spot = PODIUM[index];
             this.buildPodium(spot, new THREE.Color(CHARACTER_VIEWS[name].color));
@@ -133,6 +138,7 @@ export default class HomeScene extends ThreeScene {
     private buildPodium(spot: { x: number; z: number; height: number }, color: THREE.Color): void {
         const base = new THREE.MeshStandardMaterial({ color: color.clone().lerp(new THREE.Color(0xffffff), 0.35), roughness: 0.5 });
         const top = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+        this.podiumMaterials.push(base);
         BendService.applyBend(base);
         BendService.applyBend(top);
         const column = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.05, spot.height, 40), base);
@@ -325,16 +331,24 @@ export default class HomeScene extends ThreeScene {
             this.editBody.addChild(member);
         });
 
-        const tabs: ['faces' | 'hats', string][] = [['faces', 'FACES'], ['hats', 'HATS']];
+        const tabs: ['faces' | 'hats' | 'colors', string][] = [['faces', 'FACES'], ['hats', 'HATS'], ['colors', 'COLORS']];
         tabs.forEach(([tab, text], index) => {
-            const button = this.makeButton(this.editTab === tab ? 'Button01_s_Green' : 'Button01_s_Gray', 130, 38, text, 18, () => {
+            const button = this.makeButton(this.editTab === tab ? 'Button01_s_Green' : 'Button01_s_Gray', 98, 38, text, 15, () => {
                 this.editTab = tab;
                 this.editPage = 0;
                 this.refreshEdit();
             });
-            button.position.set((index - 0.5) * 140, -98);
+            button.position.set((index - 1) * 104, -98);
             this.editBody.addChild(button);
         });
+
+        if (this.editTab === 'colors') {
+            this.buildColorGrid();
+            const doneButton = this.makeButton('Button01_s_Green', 150, 52, 'DONE', 26, () => this.setEditing(false));
+            doneButton.position.set(0, 126);
+            this.editBody.addChild(doneButton);
+            return;
+        }
 
         const items: (WardrobeItem | undefined)[] = this.editTab === 'faces' ? FACES : [undefined, ...HATS];
         const pages = Math.ceil(items.length / PAGE_SIZE);
@@ -361,6 +375,41 @@ export default class HomeScene extends ThreeScene {
             counter.position.set(108, 126);
             this.editBody.addChild(prev, next, counter);
         }
+    }
+
+    private buildColorGrid(): void {
+        const name = SQUAD_VIEW_NAMES[this.editMember];
+        SQUAD_COLORS.forEach((hex, index) => {
+            const taken = isSquadColorTaken(name, hex);
+            const selected = CHARACTER_VIEWS[name].color === hex;
+            const swatch = new PIXI.Container();
+            const disc = new PIXI.Graphics();
+            disc.beginFill(new THREE.Color(hex).getHex()).lineStyle(selected ? 5 : 3, selected ? 0xffe14d : 0xffffff).drawCircle(0, 0, 25).endFill();
+            swatch.addChild(disc);
+            if (taken) {
+                disc.alpha = 0.3;
+                const lock = PIXI.Sprite.from('Icon_Close02');
+                lock.anchor.set(0.5);
+                lock.scale.set(0.35);
+                swatch.addChild(lock);
+            }
+            swatch.position.set(((index % 5) - 2) * 58, -38 + Math.floor(index / 5) * 62);
+            swatch.eventMode = 'static';
+            swatch.cursor = taken ? 'default' : 'pointer';
+            swatch.hitArea = new PIXI.Circle(0, 0, 30);
+            swatch.on('pointertap', () => {
+                if (taken) {
+                    this.showToast('COLOR IN USE');
+                    return;
+                }
+                if (setSquadColor(name, hex)) {
+                    this.players[this.editMember]?.character?.setColor(hex);
+                    this.podiumMaterials[this.editMember]?.color.set(new THREE.Color(hex).lerp(new THREE.Color(0xffffff), 0.35));
+                    this.refreshEdit();
+                }
+            });
+            this.editBody.addChild(swatch);
+        });
     }
 
     private turnPage(step: number, pages: number): void {
@@ -586,7 +635,7 @@ export default class HomeScene extends ThreeScene {
 
         // The squad is centered in the free space between the title and the bottom panel.
         const bottomEdge = menuTop;
-        const free = (screen.topLeft.y + 120 * scale + bottomEdge) / 2 + 95 * scale;
+        const free = (screen.topLeft.y + 120 * scale + bottomEdge) / 2 + 125 * scale;
         const fraction = (free - screen.topLeft.y) / Math.max(1, screen.height);
         const height = Math.max(1, window.innerHeight);
         this.threeCamera.setViewOffset(window.innerWidth, height, 0, (0.5 - fraction) * height, window.innerWidth, height);

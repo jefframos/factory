@@ -57,6 +57,10 @@ export default class ThirdPersonCharacter {
         this.body.setHat(fullPath);
     }
 
+    public setColor(color: THREE.ColorRepresentation): void {
+        this.body.setColor(color);
+    }
+
     public setFaceTexture(faceTexture: THREE.Texture): void {
         this.body.setFaceTexture(faceTexture);
     }

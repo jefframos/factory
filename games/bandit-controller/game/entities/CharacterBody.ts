@@ -199,6 +199,32 @@ export default class CharacterBody {
         });
     }
 
+    /** Live recolor of the body and the head cube; the face decal and hat keep their own materials. */
+    public setColor(color: THREE.ColorRepresentation): void {
+        const head = this.headCubeHolder;
+        this.container.traverse((child) => {
+            if (!(child instanceof THREE.Mesh)) {
+                return;
+            }
+            let inHead = false;
+            for (let node: THREE.Object3D | null = child; node; node = node.parent) {
+                if (node === head) {
+                    inHead = true;
+                    break;
+                }
+            }
+            if (inHead && child !== this.headCube) {
+                return;
+            }
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            for (const material of materials) {
+                if (material instanceof THREE.MeshStandardMaterial) {
+                    material.color.set(color);
+                }
+            }
+        });
+    }
+
     /** Colors the body + attaches a smooth (rounded-corner) head with `faceTexture` decaled onto it — the whole cosmetic identity this controller needs (same color+face data as bandit's Character Views, see CharacterViews.ts). */
     public applyCharacterView(color: THREE.ColorRepresentation, faceTexture: THREE.Texture): void {
         this.setBodyColor(color);
