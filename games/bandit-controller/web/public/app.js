@@ -733,6 +733,9 @@ function setTool(next) {
     tool = next;
     wallDraft = [];
     document.querySelectorAll('[data-tool]').forEach((button) => button.classList.toggle('active', button.dataset.tool === next));
+    const addSelect = $('addTool');
+    addSelect.value = [...addSelect.options].some((option) => option.value === next) ? next : '';
+    addSelect.classList.toggle('active', Boolean(addSelect.value));
     const hints = {
         select: 'Click to select, drag to move. Pick a model on the left to drop it.',
         wall: 'Click to add wall points. Enter or double-click finishes; Esc cancels.',
@@ -1262,6 +1265,7 @@ const worldOf = (id) => worlds.find((world) => world.levels.includes(id));
 
 function renderLevelList() {
     const list = $('levelList');
+    const scroll = list.scrollTop;
     list.replaceChildren();
     const byId = new Map(levels.map((entry) => [entry.id, entry]));
     const addItem = (entry, number) => {
@@ -1293,6 +1297,8 @@ function renderLevelList() {
     worlds.forEach((world, index) => select.append(new Option(`${index + 1}. ${world.name}`, world.id)));
     select.append(new Option('Unassigned', ''));
     select.value = (level && worldOf(level.id)?.id) ?? '';
+    list.scrollTop = scroll;
+    list.querySelector('li.active')?.scrollIntoView({ block: 'nearest' });
 }
 
 async function loadWorlds() {
@@ -1312,13 +1318,13 @@ async function moveToWorld(worldId) {
         target.levels.push(level.id);
         // Re-skin the level so the editor matches what the game will show.
         level.styles = { ...level.styles, ...target.styles };
-        markDirty();
         rebuildAll();
         renderInspector();
         syncSettings();
     }
     await saveWorlds();
     renderLevelList();
+    await saveLevel();
 }
 
 function syncSettings() {
@@ -1442,6 +1448,11 @@ $('delLevel').addEventListener('click', async () => {
     await api(`/api/levels/${level.id}`, { method: 'DELETE' });
     dirty = false;
     await refreshLevels();
+});
+$('addTool').addEventListener('change', () => {
+    pendingModel = null;
+    renderModelList();
+    setTool($('addTool').value || 'select');
 });
 $('levelWorld').addEventListener('change', () => moveToWorld($('levelWorld').value));
 $('moveUp').addEventListener('click', () => reorder(-1));

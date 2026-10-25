@@ -60,16 +60,13 @@
     <div id="toolbar" class="toolbar">
       <div class="segmented">
         <button data-tool="select" class="active">Select</button>
-        <button data-tool="wall">Wall</button>
-        <button data-tool="door">Door</button>
-        <button data-tool="window">Window</button>
-        <button data-tool="start">Start</button>
-        <button data-tool="waypoint">Checkpoint</button>
-        <button data-tool="guard">Guard</button>
-      <button data-tool="camera">Camera</button>
-      <button data-tool="trap">Trap</button>
-      <button data-tool="drone">Drone</button>
       </div>
+      <select id="addTool" title="Add to level">
+        <option value="">＋ Add…</option>
+        <optgroup label="Structure"><option value="wall">Wall</option><option value="door">Door</option><option value="window">Window</option></optgroup>
+        <optgroup label="Route"><option value="start">Start</option><option value="waypoint">Checkpoint</option></optgroup>
+        <optgroup label="Threats"><option value="guard">Guard</option><option value="camera">Camera</option><option value="trap">Trap</option><option value="drone">Drone</option></optgroup>
+      </select>
       <span class="spacer"></span>
       <span id="status"></span>
       <button id="save" class="primary">Save</button>
