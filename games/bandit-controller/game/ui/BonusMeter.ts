@@ -7,6 +7,7 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { UiKit } from './UiKit';
+import { UiAnim, UiTween } from './UiAnim';
 
 interface MeterZone {
     from: number;
@@ -33,6 +34,7 @@ export default class BonusMeter extends PIXI.Container {
     private sweepTween?: gsap.core.Tween;
     private stopped = false;
     private resultDelay?: gsap.core.Tween;
+    private resultTweens: UiTween[] = [];
     private readonly resultLabel: PIXI.Text;
     private readonly stopButton: PIXI.Container;
     private readonly onKeyDown = (event: KeyboardEvent): void => {
@@ -155,6 +157,16 @@ export default class BonusMeter extends PIXI.Container {
         this.resultLabel.visible = true;
         this.resultLabel.scale.set(0.4);
         gsap.to(this.resultLabel.scale, { x: 1, y: 1, duration: 0.35, ease: 'back.out(3)' });
+        const flash = new PIXI.Graphics();
+        flash.beginFill(0xffffff).drawRoundedRect(-PANEL_WIDTH / 2, -PANEL_HEIGHT / 2, PANEL_WIDTH, PANEL_HEIGHT, 30).endFill();
+        flash.blendMode = PIXI.BLEND_MODES.ADD;
+        flash.eventMode = 'none';
+        this.addChild(flash);
+        this.resultTweens.push(
+            gsap.fromTo(flash, { alpha: 0.6 }, { alpha: 0, duration: 0.35 }),
+            ...UiAnim.punch(this, 0.08),
+            ...UiAnim.sparkBurst(this, this.resultLabel.x, this.resultLabel.y + 5, zone.multiplier >= 5 ? 0xffd84a : 0x7dff8a, 110),
+        );
         this.resultDelay = gsap.delayedCall(0.9, () => this.onResult(zone.multiplier));
     }
 
@@ -162,6 +174,7 @@ export default class BonusMeter extends PIXI.Container {
         window.removeEventListener('keydown', this.onKeyDown);
         this.sweepTween?.kill();
         this.resultDelay?.kill();
+        this.resultTweens.forEach((tween) => tween.kill());
         gsap.killTweensOf(this.resultLabel.scale);
         super.destroy(options);
     }

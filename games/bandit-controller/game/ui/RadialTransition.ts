@@ -1,6 +1,7 @@
 // RadialTransition.ts
 //
-// Full-screen circular wipe played between scene changes. Every scene here
+// Full-screen circular wipe played between scene changes (royal blue with a gold rim, and a
+// spinning gold star while the incoming scene loads). Every scene here
 // loads asynchronously (the player's FBX character + animation clips, via
 // MainPlayer.loadCharacter()) — without this, switching scenes would show
 // the new scene's floor/gates for a beat with no visible character before
@@ -49,13 +50,58 @@ const DURATION_SEC = 0.5;
 const EASE = 'power2.inOut';
 /** How much bigger than maxRadius the reveal's host rect's own half-size is — see this file's own doc on why the hole must stay strictly inside its host shape. */
 const HOST_MARGIN_SCALE = 2;
+/** Branded wipe: royal blue fill with a gold rim, matching the shop palette. */
+const FILL_COLOR = 0x1a43a8;
+const RIM_COLOR = 0xffd43b;
+const RIM_WIDTH = 14;
 
 export default class RadialTransition {
     private readonly graphics = new PIXI.Graphics();
+    /** Spinning gold star shown while the screen is covered (the next scene is loading). */
+    private readonly badge = new PIXI.Container();
+    private badgeTweens: gsap.core.Tween[] = [];
 
     public constructor(game: Game) {
         this.graphics.eventMode = 'none';
-        game.popupLayer.addChild(this.graphics);
+        this.badge.eventMode = 'none';
+        this.badge.visible = false;
+        game.popupLayer.addChild(this.graphics, this.badge);
+    }
+
+    private showBadge(): void {
+        if (this.badge.children.length === 0) {
+            const ring = new PIXI.Graphics();
+            ring.beginFill(0x0b1840, 0.5).drawCircle(0, 0, 54).endFill();
+            ring.lineStyle(6, RIM_COLOR).drawCircle(0, 0, 54);
+            const star = PIXI.Sprite.from('ItemIcon_Star_Gold');
+            star.anchor.set(0.5);
+            star.name = 'star';
+            star.height = 64;
+            star.scale.x = star.scale.y;
+            this.badge.addChild(ring, star);
+        }
+        const star = this.badge.getChildByName('star') as PIXI.Sprite;
+        const { x, y } = this.center;
+        this.badge.position.set(x, y);
+        this.badge.visible = true;
+        this.killBadge();
+        this.badge.scale.set(0);
+        this.badgeTweens.push(
+            gsap.to(this.badge.scale, { x: 1, y: 1, duration: 0.3, ease: 'back.out(2.5)' }),
+            gsap.to(star, { rotation: Math.PI * 2, duration: 1.2, ease: 'none', repeat: -1 }),
+        );
+    }
+
+    private hideBadge(): void {
+        this.killBadge();
+        this.badgeTweens.push(gsap.to(this.badge.scale, { x: 0, y: 0, duration: 0.15, ease: 'back.in(2)', onComplete: () => {
+            this.badge.visible = false;
+        } }));
+    }
+
+    private killBadge(): void {
+        this.badgeTweens.forEach((tween) => tween.kill());
+        this.badgeTweens = [];
     }
 
     /** Half-diagonal of the current design-space screen size — the smallest radius, centered on screen, guaranteed to reach every corner. Read fresh per call rather than cached, so a resize mid-transition (rare, but possible) doesn't leave a corner uncovered. */
@@ -81,11 +127,16 @@ export default class RadialTransition {
                 ease: EASE,
                 onUpdate: () => {
                     this.graphics.clear();
-                    this.graphics.beginFill(0x000000);
+                    this.graphics.beginFill(FILL_COLOR);
                     this.graphics.drawCircle(x, y, progress.radius);
                     this.graphics.endFill();
+                    this.graphics.lineStyle(RIM_WIDTH, RIM_COLOR).drawCircle(x, y, progress.radius).lineStyle(0);
                 },
-                onComplete: () => resolve(),
+                onComplete: () => {
+                    this.graphics.clear().beginFill(FILL_COLOR).drawCircle(x, y, maxRadius + RIM_WIDTH).endFill();
+                    this.showBadge();
+                    resolve();
+                },
             });
         });
     }
@@ -97,19 +148,23 @@ export default class RadialTransition {
         const hostHalfSize = maxRadius * HOST_MARGIN_SCALE;
         const progress = { radius: 0 };
 
+        this.hideBadge();
         return new Promise((resolve) => {
             gsap.to(progress, {
-                radius: maxRadius,
+                radius: maxRadius + RIM_WIDTH,
                 duration: DURATION_SEC,
                 ease: EASE,
                 onUpdate: () => {
                     this.graphics.clear();
-                    this.graphics.beginFill(0x000000);
+                    this.graphics.beginFill(FILL_COLOR);
                     this.graphics.drawRect(x - hostHalfSize, y - hostHalfSize, hostHalfSize * 2, hostHalfSize * 2);
                     this.graphics.beginHole();
                     this.graphics.drawCircle(x, y, progress.radius);
                     this.graphics.endHole();
                     this.graphics.endFill();
+                    if (progress.radius > 1) {
+                        this.graphics.lineStyle(RIM_WIDTH, RIM_COLOR).drawCircle(x, y, progress.radius).lineStyle(0);
+                    }
                 },
                 onComplete: () => {
                     this.graphics.clear();
@@ -121,6 +176,8 @@ export default class RadialTransition {
 
     public destroy(): void {
         gsap.killTweensOf(this.graphics);
+        this.killBadge();
         this.graphics.destroy();
+        this.badge.destroy({ children: true });
     }
 }

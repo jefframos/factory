@@ -20,6 +20,7 @@ import { GameAudio } from '../audio/GameAudio';
 import { COIN, CollectibleDefinition } from '../data/CollectibleSettings';
 import { LevelCatalog } from '../data/LevelCatalog';
 import { UiKit } from '../ui/UiKit';
+import { UiAnim, UiTween } from '../ui/UiAnim';
 import { TextureBuilder } from '../builders/TextureBuilder';
 import { CHARACTER_VIEWS, DEFAULT_CHARACTER_VIEW, resolveSkinImagePath } from '../data/CharacterViews';
 import type MainPlayer from '../player/MainPlayer';
@@ -254,6 +255,8 @@ export default class PathLevelScene extends ThreeScene {
     private cashPillBackground?: PIXI.Graphics;
     private cashPillCoin?: PIXI.Graphics;
     private completeModal?: PIXI.Container;
+    /** End-of-level / busted popup animations, killed on destroy. */
+    private uiTweens: UiTween[] = [];
     private bustedModal?: PIXI.Container;
     private guards: Spotter[] = [];
     private bustGuard?: Spotter;
@@ -1556,6 +1559,7 @@ export default class PathLevelScene extends ThreeScene {
         this.bonusMeter = meter;
         this.game.uiLayer.addChild(meter);
         this.positionBottomPanel(meter);
+        this.uiTweens.push(...UiAnim.popIn(meter));
     }
 
     private applyBonus(multiplier: number): void {
@@ -1614,21 +1618,30 @@ export default class PathLevelScene extends ThreeScene {
         title.position.set(0, -122);
 
         const bonusText = multiplier > 1 ? `  (x${multiplier} BONUS)` : '';
-        const total = UiKit.text('levelComplete', 'total', { money: this.runMoney * multiplier, bonus: bonusText });
+        const securedMoney = this.runMoney * multiplier;
+        const total = UiKit.text('levelComplete', 'total', { money: securedMoney, bonus: bonusText });
         total.position.set(0, -15);
+        const totalText = total.text;
 
         const starRow = new PIXI.Container();
+        const earnedStars: PIXI.Sprite[] = [];
         for (let i = 0; i < 3; i++) {
             const star = PIXI.Sprite.from('ItemIcon_Star_Gold');
             star.anchor.set(0.5);
             star.height = 46;
             star.scale.x = star.scale.y;
             star.position.set((i - 1) * 56, 0);
-            if (i >= result.stars) {
-                star.tint = 0x202020;
-                star.alpha = 0.55;
+            const slot = PIXI.Sprite.from('ItemIcon_Star_Gold');
+            slot.anchor.set(0.5);
+            slot.scale.copyFrom(star.scale);
+            slot.position.copyFrom(star.position);
+            slot.tint = 0x202020;
+            slot.alpha = 0.55;
+            starRow.addChild(slot);
+            if (i < result.stars) {
+                earnedStars.push(star);
+                starRow.addChild(star);
             }
-            starRow.addChild(star);
         }
         starRow.position.set(0, -70);
         const notes = [!result.stars || result.stars < 2 ? 'GRAB ALL LOOT FOR 2 STARS' : '', result.stars < 3 ? 'STAY UNSEEN FOR 3 STARS' : ''].filter(Boolean);
@@ -1661,6 +1674,70 @@ export default class PathLevelScene extends ThreeScene {
         this.positionBottomPanel(modal);
         this.game.uiLayer.addChild(modal);
         this.completeModal = modal;
+        this.animateCompletePopup(modal, { ribbon, title, earnedStars, starRow, total, totalText, securedMoney, rewardText, button });
+    }
+
+    /** Banner drop, stars landing one by one, money count-up, confetti, then the pulsing NEXT button. */
+    private animateCompletePopup(modal: PIXI.Container, parts: {
+        ribbon: PIXI.Container; title: PIXI.Container; earnedStars: PIXI.Sprite[]; starRow: PIXI.Container;
+        total: PIXI.Text; totalText: string; securedMoney: number; rewardText: PIXI.Text; button: PIXI.Container;
+    }): void {
+        const track = (tweens: UiTween[]): void => {
+            this.uiTweens.push(...tweens);
+        };
+        const glow = UiAnim.rays(modal, 330);
+        glow.rays.alpha = 0;
+        track(glow.tweens);
+        track([gsap.to(glow.rays, { alpha: 1, duration: 0.6, delay: 0.3 })]);
+        track(UiAnim.popIn(modal));
+        track(UiAnim.dropIn(parts.ribbon, 90, 0.12));
+        track(UiAnim.dropIn(parts.title, 90, 0.12));
+        track(UiAnim.confetti(modal, -150, -140, 45, 0.8));
+        track(UiAnim.confetti(modal, 150, -140, 45, 0.8));
+
+        const starStart = 0.45;
+        const starStep = 0.32;
+        parts.earnedStars.forEach((star, index) => {
+            const scale = star.scale.x;
+            star.scale.set(0);
+            star.rotation = -0.6;
+            const delay = starStart + index * starStep;
+            track([
+                gsap.to(star.scale, { x: scale, y: scale, duration: 0.5, delay, ease: 'elastic.out(1.2, 0.45)' }),
+                gsap.to(star, { rotation: 0, duration: 0.4, delay, ease: 'back.out(2)' }),
+                gsap.delayedCall(delay, () => {
+                    if (this.destroyed || star.destroyed) {
+                        return;
+                    }
+                    GameAudio.play('checkpoint');
+                    track(UiAnim.sparkBurst(parts.starRow, star.x, star.y, 0xffe066, 56));
+                    track(UiAnim.punch(modal, 0.03));
+                }),
+            ]);
+        });
+        const afterStars = starStart + Math.max(1, parts.earnedStars.length) * starStep;
+        const moneyLabel = `$${parts.securedMoney}`;
+        if (parts.totalText.includes(moneyLabel)) {
+            track(UiAnim.countUp(parts.total, 0, parts.securedMoney, (value) => parts.totalText.replace(moneyLabel, `$${value}`), 0.7, afterStars - 0.2));
+        }
+        track(UiAnim.staggerRise([parts.total, parts.rewardText], afterStars - 0.25, 0.12, 24));
+        parts.button.eventMode = 'none';
+        const buttonScale = parts.button.scale.x;
+        parts.button.scale.set(0);
+        track([gsap.to(parts.button.scale, {
+            x: buttonScale,
+            y: buttonScale,
+            duration: 0.45,
+            delay: afterStars + 0.35,
+            ease: 'back.out(2.4)',
+            onComplete: () => {
+                if (this.destroyed || parts.button.destroyed) {
+                    return;
+                }
+                parts.button.eventMode = 'static';
+                track(UiAnim.pulse(parts.button, 0.06, 0.6));
+            },
+        })]);
     }
 
     /** "2-3" = world 2, level 3 ("T-2" in the tutorial); falls back to the flat campaign number for levels outside every world. */
@@ -2298,6 +2375,34 @@ export default class PathLevelScene extends ThreeScene {
         this.positionBottomPanel(modal);
         this.game.uiLayer.addChild(modal);
         this.bustedModal = modal;
+        // Slams in, rattles, then the retry button springs up and breathes.
+        modal.alpha = 0;
+        this.uiTweens.push(
+            gsap.fromTo(modal.scale, { x: 1.6, y: 1.6 }, { x: 1, y: 1, duration: 0.3, ease: 'power3.in' }),
+            gsap.to(modal, { alpha: 1, duration: 0.15 }),
+            gsap.delayedCall(0.3, () => {
+                if (!this.destroyed && !modal.destroyed) {
+                    this.uiTweens.push(...UiAnim.shake(modal, 14, 0.4));
+                }
+            }),
+            ...UiAnim.dropIn(ribbon, 70, 0.3),
+            ...UiAnim.dropIn(title, 70, 0.3),
+            ...UiAnim.staggerRise([message], 0.45, 0, 20),
+        );
+        const buttonScale = button.scale.x;
+        button.scale.set(0);
+        this.uiTweens.push(gsap.to(button.scale, {
+            x: buttonScale,
+            y: buttonScale,
+            duration: 0.4,
+            delay: 0.65,
+            ease: 'back.out(2.4)',
+            onComplete: () => {
+                if (!this.destroyed && !button.destroyed) {
+                    this.uiTweens.push(...UiAnim.pulse(button, 0.06, 0.6));
+                }
+            },
+        }));
     }
 
     private updateWallHeight(): void {
@@ -2617,6 +2722,8 @@ export default class PathLevelScene extends ThreeScene {
         this.payoutFlights.length = 0;
         this.removeInputListeners();
         this.clearRoute();
+        this.uiTweens.forEach((tween) => tween.kill());
+        this.uiTweens = [];
         this.bonusMeter?.removeFromParent();
         this.bonusMeter?.destroy({ children: true });
         this.bonusMeter = undefined;

@@ -22,13 +22,32 @@ here, and what's next.
 
 ## Presentation and audio
 
-The home screen uses a solid garden floor and five background tree models.
+The home screen uses a solid garden floor with a heist backdrop: the big vault
+far behind the squad (with a warm additive gold pool under it), gold-bar stacks
+and money piles beside it, and small loot piles next to the podiums.
 Home and campaign scenes disable the shared environment's debug-grid visual,
 but keep its ground collider. The home wardrobe is accessed through EDIT SQUAD;
 there is no separate shop shortcut or game-name ribbon.
 
 The main screen has two actions: EDIT SQUAD and a larger golden CHOOSE LEVEL
-button. Choosing a level opens a separate, larger world/level panel (88 px tiles,
+button (it breathes and has a periodic shine sweep).
+
+UI juice lives in `game/ui/UiAnim.ts` (popIn/popOut, dropIn, staggerPop/Rise,
+pulse, punch, shake, countUp, rays, confetti, sparkBurst). Every helper returns
+its gsap animations so scenes can kill them on destroy. Home menus slide/fade
+between the main buttons, the Edit Squad panel (slides up while the camera
+re-frames the squad) and the level picker (pops in, tiles pop in staggered,
+worlds slide left/right). Daily Reward and Settings pop in and out. Edit Squad
+is a taller Clash-style shop: royal-blue panel with chunky dark outlines, a
+segmented FACES/HATS/COLORS bar, 4x2 cards coloured by price tier (blue common,
+orange rare, purple epic, gold legendary), green/grey price pills, page dots,
+and a spark burst plus a squash-and-stretch hop on the 3D member when equipping.
+The end of a level pops the panel with rotating rays and confetti, drops the
+ribbon, lands the stars one by one (sound + sparks), counts up the money and
+then springs in a pulsing NEXT button; the bonus meter pops in and flashes on
+STOP; BUSTED slams in and shakes. Scene changes use a royal-blue wipe with a
+gold rim and a spinning gold star while the next scene loads
+(`RadialTransition`). Choosing a level opens a separate, larger world/level panel (88 px tiles,
 4 per row, short rows centred; 3 per row for the tutorial) with a BACK button;
 the world grid is not part of the main menu. Earned stars use the glossy gold
 `ItemIcon_Star_Gold` (the same icon pack's gold star; the old file was a mislabeled
