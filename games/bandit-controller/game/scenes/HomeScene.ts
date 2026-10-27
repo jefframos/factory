@@ -1,7 +1,7 @@
 // HomeScene.ts
 //
-// The friendly front screen: the squad idling in 3D, EDIT SQUAD, and CHOOSE LEVEL,
-// which opens a separate world picker with completion checks and locked levels.
+// The friendly front screen: the squad idling in 3D, PLAY to resume the saved level,
+// EDIT SQUAD, and CHOOSE LEVEL for the world picker with completion checks and locks.
 // It only exposes Signals — index.ts is the one that changes scenes.
 
 import gsap from 'gsap';
@@ -541,15 +541,21 @@ export default class HomeScene extends ThreeScene {
     private buildMenu(): PIXI.Container {
         const menu = new PIXI.Container();
         menu.name = 'home-actions';
-        const edit = this.makeButton('Button01_s_Blue', 230, 62, 'EDIT SQUAD', 24, () => this.setEditing(true));
+        const edit = this.makeButton('Button01_s_Blue', 180, 62, 'EDIT SQUAD', 20, () => this.setEditing(true));
         edit.name = 'edit-squad';
-        edit.position.set(0, -60);
-        const choose = this.makeButton('Button01_s_Yellow', 354, 96, 'CHOOSE LEVEL', 34, () => this.setChoosingLevel(true));
+        edit.position.set(-96, -60);
+        const choose = this.makeButton('Button01_s_Blue', 180, 62, 'CHOOSE LEVEL', 20, () => this.setChoosingLevel(true));
         choose.name = 'choose-level';
-        choose.position.set(0, 35);
-        this.addShine(choose, 354, 96);
-        this.track(UiAnim.pulse(choose, 0.04, 0.8));
-        menu.addChild(edit, choose);
+        choose.position.set(96, -60);
+        const play = this.makeButton('Button01_s_Yellow', 354, 96, 'PLAY', 42, () => {
+            GameAudio.play('tap');
+            this.play(LevelCatalog.getIndex());
+        });
+        play.name = 'play';
+        play.position.set(0, 35);
+        this.addShine(play, 354, 96);
+        this.track(UiAnim.pulse(play, 0.04, 0.8));
+        menu.addChild(edit, choose, play);
         return menu;
     }
 
