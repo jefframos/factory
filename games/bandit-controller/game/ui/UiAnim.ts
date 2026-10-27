@@ -12,6 +12,11 @@ export type UiTween = gsap.core.Animation;
 
 const CONFETTI_COLORS = [0xffd84a, 0xff6b9a, 0x5ad1ff, 0x7dea6a, 0xffffff, 0xff9f43];
 
+function killDisplayTweens(target: PIXI.Container): void {
+    [target, target.scale, target.position, target.pivot, target.skew].forEach((value) => gsap.killTweensOf(value));
+    target.children.forEach((child) => killDisplayTweens(child as PIXI.Container));
+}
+
 export const UiAnim = {
     /** Dim fades in while the panel springs from small to its current scale. */
     popIn(panel: PIXI.Container, dim?: PIXI.Container, delay = 0): UiTween[] {
@@ -28,17 +33,20 @@ export const UiAnim = {
 
     /** Reverse of popIn; `onDone` runs once both have faded (usually destroys the modal). */
     popOut(panel: PIXI.Container, dim: PIXI.Container | undefined, onDone: () => void): UiTween[] {
+        killDisplayTweens(panel);
+        if (dim) {
+            killDisplayTweens(dim);
+        }
         const scale = panel.scale.x || 1;
         panel.eventMode = 'none';
-        const tweens: UiTween[] = [
-            gsap.to(panel.scale, { x: scale * 0.7, y: scale * 0.7, duration: 0.18, ease: 'back.in(2)' }),
-            gsap.to(panel, { alpha: 0, duration: 0.18, onComplete: onDone }),
-        ];
+        const timeline = gsap.timeline({ onComplete: onDone });
+        timeline.to(panel.scale, { x: scale * 0.7, y: scale * 0.7, duration: 0.18, ease: 'back.in(2)' }, 0)
+            .to(panel, { alpha: 0, duration: 0.18 }, 0);
         if (dim) {
             dim.eventMode = 'none';
-            tweens.push(gsap.to(dim, { alpha: 0, duration: 0.2 }));
+            timeline.to(dim, { alpha: 0, duration: 0.2 }, 0);
         }
-        return tweens;
+        return [timeline];
     },
 
     /** Drops in from above with a bounce (banners, ribbons). */
@@ -153,7 +161,10 @@ export const UiAnim = {
             const peakY = y + Math.sin(angle) * power;
             const fall = 220 + Math.random() * 260;
             const duration = 1.4 + Math.random() * 0.9;
-            const timeline = gsap.timeline({ onComplete: () => piece.destroy() });
+            const timeline = gsap.timeline({ onComplete: () => {
+                killDisplayTweens(piece);
+                piece.destroy();
+            } });
             timeline.to(piece, { x: peakX, y: peakY, duration: 0.45, ease: 'power3.out' })
                 .to(piece, { y: peakY + fall, x: peakX + (Math.random() - 0.5) * 120, duration, ease: 'sine.in' })
                 .to(piece, { alpha: 0, duration: 0.4 }, `-=0.4`);
