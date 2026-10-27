@@ -1,0 +1,349 @@
+{
+  "id": "rx-w4-02",
+  "name": "Curator's Walk",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 21.84,
+    "depth": 48,
+    "rects": [
+      {
+        "x": 2.52,
+        "z": -11,
+        "width": 16.8,
+        "depth": 10
+      },
+      {
+        "x": -2.52,
+        "z": -1,
+        "width": 16.8,
+        "depth": 10
+      },
+      {
+        "x": 2.52,
+        "z": 10,
+        "width": 16.8,
+        "depth": 12
+      },
+      {
+        "x": 2.47,
+        "z": -20,
+        "width": 7,
+        "depth": 8
+      }
+    ]
+  },
+  "start": {
+    "x": 2.52,
+    "z": 18
+  },
+  "waypoints": [
+    {
+      "x": 3.5,
+      "z": 8
+    },
+    {
+      "x": -2.52,
+      "z": -2
+    },
+    {
+      "x": 2.47,
+      "z": -19.6
+    }
+  ],
+  "entryPath": {
+    "x": 2.52,
+    "z": 18,
+    "width": 5.6,
+    "depth": 4
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": 10.92,
+          "z": -16
+        },
+        {
+          "x": -5.88,
+          "z": -16
+        },
+        {
+          "x": -5.88,
+          "z": -6
+        },
+        {
+          "x": -10.92,
+          "z": -6
+        },
+        {
+          "x": -10.92,
+          "z": 4
+        },
+        {
+          "x": -5.88,
+          "z": 4
+        },
+        {
+          "x": -5.88,
+          "z": 16
+        },
+        {
+          "x": 10.92,
+          "z": 16
+        },
+        {
+          "x": 10.92,
+          "z": 4
+        },
+        {
+          "x": 5.88,
+          "z": 4
+        },
+        {
+          "x": 5.88,
+          "z": -6
+        },
+        {
+          "x": 10.92,
+          "z": -6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 0.42,
+          "maxX": 4.62,
+          "minZ": 15.7,
+          "maxZ": 16.3
+        },
+        {
+          "kind": "door",
+          "minX": 0.37,
+          "maxX": 4.57,
+          "minZ": -16.3,
+          "maxZ": -15.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 5.88,
+          "z": 4
+        },
+        {
+          "x": -5.88,
+          "z": 4
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -2.1,
+          "maxX": 2.1,
+          "minZ": 3.7,
+          "maxZ": 4.3
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 5.88,
+          "z": -6
+        },
+        {
+          "x": -5.88,
+          "z": -6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -2.1,
+          "maxX": 2.1,
+          "minZ": -6.3,
+          "maxZ": -5.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 5.88,
+          "z": -3
+        },
+        {
+          "x": -5.32,
+          "z": -3
+        }
+      ],
+      "openings": []
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -0.84,
+          "z": -16
+        },
+        {
+          "x": -0.84,
+          "z": -8
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -1.14,
+          "maxX": -0.54,
+          "minZ": -13.1,
+          "maxZ": -8.9
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 0.84,
+          "z": -4
+        },
+        {
+          "x": 0.84,
+          "z": 2
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 0.54,
+          "maxX": 1.14,
+          "minZ": -2.3,
+          "maxZ": 1.3
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -0.84,
+          "z": 6
+        },
+        {
+          "x": -0.84,
+          "z": 16
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -1.14,
+          "maxX": -0.54,
+          "minZ": 7.9,
+          "maxZ": 12.1
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 5.97,
+          "z": -16
+        },
+        {
+          "x": 5.97,
+          "z": -24
+        },
+        {
+          "x": -1.03,
+          "z": -24
+        },
+        {
+          "x": -1.03,
+          "z": -16
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": 6.02,
+      "z": 10,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": -6.02,
+      "z": 0,
+      "amount": 50,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": 6.02,
+      "z": -10,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [
+    {
+      "path": [
+        {
+          "x": -1.68,
+          "z": 10
+        }
+      ],
+      "loop": false,
+      "speed": 1.4,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 5,
+      "sweep": 40,
+      "facing": 180
+    }
+  ],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "cameras": [
+    {
+      "x": -5.32,
+      "z": -6.4,
+      "facing": 135,
+      "sweep": 35,
+      "period": 5,
+      "fov": 50,
+      "range": 9
+    }
+  ],
+  "traps": [],
+  "vault": {
+    "x": 2.47,
+    "z": -20,
+    "width": 7,
+    "depth": 8,
+    "side": "-z"
+  }
+}

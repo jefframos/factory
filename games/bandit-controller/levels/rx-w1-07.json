@@ -1,0 +1,208 @@
+{
+  "id": "rx-w1-07",
+  "name": "Coin Counters",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 19.6,
+    "depth": 28,
+    "rects": [
+      {
+        "x": 0,
+        "z": 0,
+        "width": 19.6,
+        "depth": 12
+      },
+      {
+        "x": -0.02,
+        "z": -10,
+        "width": 7.75,
+        "depth": 8
+      }
+    ]
+  },
+  "start": {
+    "x": 2.45,
+    "z": 8
+  },
+  "waypoints": [
+    {
+      "x": 2.45,
+      "z": -2
+    }
+  ],
+  "entryPath": {
+    "x": 0,
+    "z": 8,
+    "width": 10.5,
+    "depth": 4
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": 9.8,
+          "z": -6
+        },
+        {
+          "x": -9.8,
+          "z": -6
+        },
+        {
+          "x": -9.8,
+          "z": 6
+        },
+        {
+          "x": 9.8,
+          "z": 6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": -4.69,
+          "maxX": 4.69,
+          "minZ": 5.7,
+          "maxZ": 6.3
+        },
+        {
+          "kind": "door",
+          "minX": -2.12,
+          "maxX": 2.08,
+          "minZ": -6.3,
+          "maxZ": -5.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 3.92,
+          "z": -6
+        },
+        {
+          "x": 3.92,
+          "z": 6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": 3.62,
+          "maxX": 4.22,
+          "minZ": -6,
+          "maxZ": 1.9
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 3.85,
+          "z": -6
+        },
+        {
+          "x": 3.85,
+          "z": -14
+        },
+        {
+          "x": -3.9,
+          "z": -14
+        },
+        {
+          "x": -3.9,
+          "z": -6
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": 3.5,
+      "z": 0,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [
+    {
+      "path": [
+        {
+          "x": 6.3,
+          "z": 0
+        },
+        {
+          "x": -6.3,
+          "z": 0
+        }
+      ],
+      "loop": false,
+      "speed": 1.4,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 4.5,
+      "sweep": 40,
+      "facing": 90
+    }
+  ],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "squad": [
+    {
+      "view": "blue",
+      "start": {
+        "x": 2.45,
+        "z": 8
+      },
+      "waypoints": [
+        {
+          "x": 0.88,
+          "z": -9.6
+        }
+      ]
+    },
+    {
+      "view": "purple",
+      "start": {
+        "x": -2.45,
+        "z": 8
+      },
+      "waypoints": [
+        {
+          "x": -0.92,
+          "z": -9.6
+        }
+      ]
+    }
+  ],
+  "sharedGoal": {
+    "x": -0.02,
+    "z": -10,
+    "width": 7.15,
+    "depth": 7.4,
+    "enabled": true
+  },
+  "cameras": [],
+  "traps": [],
+  "vault": {
+    "x": -0.02,
+    "z": -10,
+    "width": 7.75,
+    "depth": 8,
+    "side": "-z"
+  }
+}

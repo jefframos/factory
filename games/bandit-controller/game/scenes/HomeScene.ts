@@ -33,6 +33,7 @@ import MoneyHud from '../ui/MoneyHud';
 import { WorldEnvironment } from './shared/WorldEnvironment';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { GameAudio } from '../audio/GameAudio';
+import { reloadToHome, resetProgressionData } from '../data/ProgressionStorage';
 
 const CARD_COLUMNS = 5;
 const CARD_WIDTH = 70;
@@ -55,8 +56,16 @@ const MENU_HEIGHT = 330;
 const HOME_MENU_HEIGHT = 190;
 const DESIGN_WIDTH = 420;
 const GRID_COLUMNS = 4;
-const TILE = 72;
-const TILE_GAP = 12;
+const TILE = 88;
+const TILE_GAP = 14;
+/** The level picker is its own, larger panel: 4 x 3 tiles fit a 10-level world. */
+const LEVEL_PANEL_WIDTH = 470;
+const LEVEL_PANEL_HEIGHT = 530;
+const LEVEL_TITLE_Y = -LEVEL_PANEL_HEIGHT / 2 + 46;
+const LEVEL_GRID_Y = 6;
+
+/** Cash the settings ADD MONEY button grants per tap. */
+const SETTINGS_MONEY = 1000;
 
 const TILE_COLORS = { done: 0x55a989, open: 0x4d96c5, locked: 0x8798a8 };
 
@@ -91,6 +100,8 @@ export default class HomeScene extends ThreeScene {
     private worldTitle!: PIXI.Text;
     private worldProgress!: PIXI.Text;
     private dailyModal?: PIXI.Container;
+    private settingsButton?: PIXI.Container;
+    private settingsModal?: PIXI.Container;
     private podiumMaterials: THREE.MeshStandardMaterial[] = [];
     private worldLock!: PIXI.Sprite;
     private grid!: PIXI.Container;
@@ -236,7 +247,9 @@ export default class HomeScene extends ThreeScene {
         this.levelPanel = this.buildLevelPanel();
         this.levelPicker.addChild(this.levelDim, this.levelPanel);
         this.levelPicker.visible = false;
-        root.addChild(this.menu, this.editPanel, this.levelPicker);
+        this.settingsModal = undefined;
+        this.settingsButton = this.buildSettingsButton();
+        root.addChild(this.menu, this.editPanel, this.levelPicker, this.settingsButton);
         this.game.uiLayer.addChild(root);
         this.resize();
         this.offerDailyReward();
@@ -275,9 +288,105 @@ export default class HomeScene extends ThreeScene {
         this.layoutDaily();
     }
 
+    /** Round cog matching the sound toggle; sits just left of it in the top-right corner. */
+    private buildSettingsButton(): PIXI.Container {
+        const button = new PIXI.Container();
+        button.name = 'settings-button';
+        const icon = new PIXI.Graphics();
+        icon.beginFill(0x000000, 0.2).drawCircle(0, 4, 30).endFill();
+        icon.beginFill(0xffffff).lineStyle(4, 0x2a6fb0).drawCircle(0, 0, 30).endFill();
+        icon.lineStyle(0).beginFill(0x244e6d);
+        const teeth = 8;
+        const points: number[] = [];
+        for (let i = 0; i < teeth * 4; i++) {
+            const angle = (i / (teeth * 4)) * Math.PI * 2;
+            const radius = i % 4 < 2 ? 18 : 13;
+            points.push(Math.cos(angle) * radius, Math.sin(angle) * radius);
+        }
+        icon.drawPolygon(points).endFill();
+        icon.beginFill(0xffffff).drawCircle(0, 0, 6).endFill();
+        button.addChild(icon);
+        button.eventMode = 'static';
+        button.cursor = 'pointer';
+        button.hitArea = new PIXI.Circle(0, 0, 34);
+        button.on('pointertap', () => this.openSettings());
+        return button;
+    }
+
+    private openSettings(): void {
+        if (this.settingsModal && !this.settingsModal.destroyed) {
+            return;
+        }
+        GameAudio.play('tap');
+        const modal = new PIXI.Container();
+        modal.name = 'settings-modal';
+        const close = (): void => {
+            modal.destroy({ children: true });
+            this.settingsModal = undefined;
+        };
+        const dim = new PIXI.Graphics();
+        dim.beginFill(0x000000, 0.55).drawRect(-1200, -1200, 2400, 2400).endFill();
+        dim.eventMode = 'static';
+        dim.on('pointertap', close);
+        const panel = new PIXI.NineSlicePlane(PIXI.Texture.from('ItemFrame01_Single_Blue'), 30, 30, 30, 30);
+        panel.width = 320;
+        panel.height = 360;
+        panel.position.set(-160, -180);
+        panel.eventMode = 'static';
+        const title = label('SETTINGS', 28, 0x1d4a7a);
+        title.position.set(0, -138);
+        const status = label('', 15);
+        status.position.set(0, 148);
+        const notify = (text: string): void => {
+            status.text = text;
+            status.alpha = 1;
+            this.tweens.push(gsap.fromTo(status, { alpha: 1 }, { alpha: 0, duration: 0.5, delay: 1.2 }));
+        };
+        const unlock = this.makeButton('Button01_s_Green', 250, 62, LevelCatalog.isAllUnlocked() ? 'ALL UNLOCKED' : 'UNLOCK ALL LEVELS', 20, () => {
+            LevelCatalog.unlockAll();
+            this.refreshWorld();
+            notify('EVERY LEVEL IS OPEN');
+        });
+        unlock.name = 'settings-unlock-all';
+        unlock.position.set(0, -70);
+        const money = this.makeButton('Button01_s_Yellow', 250, 62, `ADD $${SETTINGS_MONEY}`, 22, () => {
+            GameState.addMoney(SETTINGS_MONEY);
+            this.moneyHud.setResourceCount(GameState.getMoney());
+            GameAudio.play('bonus');
+            notify(`+$${SETTINGS_MONEY}`);
+        });
+        money.name = 'settings-add-money';
+        money.position.set(0, 4);
+        const clear = this.makeButton('Button01_s_Red', 250, 62, 'CLEAR DATA', 22, () => {
+            if (!window.confirm('Clear all Bandit Controller progress, stars, cash, wardrobe, squad looks and daily rewards? This cannot be undone.')) {
+                return;
+            }
+            resetProgressionData();
+            reloadToHome();
+        });
+        clear.name = 'settings-clear-data';
+        clear.position.set(0, 78);
+        const closeButton = label('✕', 26);
+        closeButton.position.set(132, -150);
+        closeButton.eventMode = 'static';
+        closeButton.cursor = 'pointer';
+        closeButton.hitArea = new PIXI.Circle(0, 0, 24);
+        closeButton.on('pointertap', close);
+        modal.addChild(dim, panel, title, unlock, money, clear, status, closeButton);
+        this.root?.addChild(modal);
+        this.settingsModal = modal;
+        this.layoutDaily();
+    }
+
     private layoutDaily(): void {
         const screen = Game.overlayScreenData;
         if (this.dailyModal && !this.dailyModal.destroyed) this.dailyModal.position.set(screen.center.x, screen.center.y);
+        if (this.settingsModal && !this.settingsModal.destroyed) {
+            this.settingsModal.position.set(screen.center.x, screen.center.y);
+            this.settingsModal.scale.set(Math.min(1.1, screen.width / DESIGN_WIDTH, screen.height / 720));
+        }
+        // Left of the global sound toggle (SoundToggleButton.reposition).
+        this.settingsButton?.position.set(screen.topRight.x - 44 - 76, screen.topLeft.y + 44);
     }
 
     private makeButton(frame: string, width: number, height: number, text: string, size: number, onTap: () => void): PIXI.Container {
@@ -298,11 +407,11 @@ export default class HomeScene extends ThreeScene {
         return button;
     }
 
-    private arrow(frame: string, x: number, onTap: () => void): PIXI.Sprite {
+    private arrow(frame: string, x: number, onTap: () => void, y = -118): PIXI.Sprite {
         const arrow = PIXI.Sprite.from(frame);
         arrow.anchor.set(0.5);
         arrow.scale.set(0.8);
-        arrow.position.set(x, -118);
+        arrow.position.set(x, y);
         arrow.eventMode = 'static';
         arrow.cursor = 'pointer';
         arrow.hitArea = new PIXI.Rectangle(-40, -50, 80, 100);
@@ -326,13 +435,14 @@ export default class HomeScene extends ThreeScene {
     private buildLevelPanel(): PIXI.Container {
         const menu = new PIXI.Container();
         const back = new PIXI.Graphics();
-        back.beginFill(0x23465a, 0.98).lineStyle(4, 0xeaf3f5, 0.9).drawRoundedRect(-DESIGN_WIDTH / 2, -MENU_HEIGHT / 2, DESIGN_WIDTH, MENU_HEIGHT, 26).endFill();
+        back.beginFill(0x23465a, 0.98).lineStyle(4, 0xeaf3f5, 0.9)
+            .drawRoundedRect(-LEVEL_PANEL_WIDTH / 2, -LEVEL_PANEL_HEIGHT / 2, LEVEL_PANEL_WIDTH, LEVEL_PANEL_HEIGHT, 30).endFill();
         menu.addChild(back);
 
-        this.worldTitle = label('', 26);
-        this.worldTitle.position.set(0, -128);
-        this.worldProgress = label('', 16);
-        this.worldProgress.position.set(0, -100);
+        this.worldTitle = label('', 30);
+        this.worldTitle.position.set(0, LEVEL_TITLE_Y);
+        this.worldProgress = label('', 18);
+        this.worldProgress.position.set(0, LEVEL_TITLE_Y + 32);
         this.worldLock = PIXI.Sprite.from('Icon_Lock02');
         this.worldLock.anchor.set(0.5);
         this.worldLock.scale.set(0.3);
@@ -340,16 +450,16 @@ export default class HomeScene extends ThreeScene {
             this.worldTitle,
             this.worldProgress,
             this.worldLock,
-            this.arrow('arrow-left', -DESIGN_WIDTH / 2 + 38, () => this.changeWorld(-1)),
-            this.arrow('arrow-right', DESIGN_WIDTH / 2 - 38, () => this.changeWorld(1)),
+            this.arrow('arrow-left', -LEVEL_PANEL_WIDTH / 2 + 40, () => this.changeWorld(-1), LEVEL_TITLE_Y + 10),
+            this.arrow('arrow-right', LEVEL_PANEL_WIDTH / 2 - 40, () => this.changeWorld(1), LEVEL_TITLE_Y + 10),
         );
 
         this.grid = new PIXI.Container();
         menu.addChild(this.grid);
 
-        const backButton = this.makeButton('Button01_s_Blue', 180, 52, 'BACK', 23, () => this.setChoosingLevel(false));
+        const backButton = this.makeButton('Button01_s_Blue', 200, 58, 'BACK', 25, () => this.setChoosingLevel(false));
         backButton.name = 'close-level-picker';
-        backButton.position.set(0, 126);
+        backButton.position.set(0, LEVEL_PANEL_HEIGHT / 2 - 46);
         menu.addChild(backButton);
         return menu;
     }
@@ -596,24 +706,28 @@ export default class HomeScene extends ThreeScene {
         const world = this.world();
         const progress = LevelCatalog.worldProgress(world);
         const unlocked = LevelCatalog.isUnlocked(this.globalIndex(world.levels[0]));
-        this.worldTitle.text = `${world.number}. ${world.name.toUpperCase()}`;
+        this.worldTitle.text = world.tutorial ? 'TUTORIAL' : `${world.label}. ${world.name.toUpperCase()}`;
         this.worldTitle.scale.set(1);
-        this.worldTitle.scale.set(Math.min(1, (DESIGN_WIDTH - 140) / this.worldTitle.width));
+        this.worldTitle.scale.set(Math.min(1, (LEVEL_PANEL_WIDTH - 150) / this.worldTitle.width));
         const stars = Progress.worldStars(world.levels);
         const gate = worldGateStars(world.number);
         this.worldProgress.text = unlocked
             ? `${progress.done}/${progress.total} DONE   ★ ${stars.earned}/${stars.max}`
             : `NEED ★ ${gate} (YOU HAVE ${Progress.totalStars()})`;
         this.worldLock.visible = !unlocked;
-        this.worldLock.position.set(this.worldTitle.width / 2 + 24, -128);
+        this.worldLock.position.set(this.worldTitle.width / 2 + 24, LEVEL_TITLE_Y);
 
         this.grid.removeChildren().forEach((child) => child.destroy({ children: true }));
-        const rows = Math.ceil(world.levels.length / GRID_COLUMNS);
+        // The 5-level tutorial reads better as 3 + 2 than 4 + 1.
+        const columns = world.levels.length <= 6 ? 3 : GRID_COLUMNS;
+        const rows = Math.ceil(world.levels.length / columns);
         world.levels.forEach((level, index) => {
-            const column = index % GRID_COLUMNS;
-            const row = Math.floor(index / GRID_COLUMNS);
-            const x = (column - (GRID_COLUMNS - 1) / 2) * (TILE + TILE_GAP);
-            const y = -35 + (row - (rows - 1) / 2) * (TILE + TILE_GAP) + (TILE + TILE_GAP) / 2 - 6;
+            const column = index % columns;
+            const row = Math.floor(index / columns);
+            // A short last row is centred instead of hugging the left edge.
+            const inRow = Math.min(columns, world.levels.length - row * columns);
+            const x = (column - (inRow - 1) / 2) * (TILE + TILE_GAP);
+            const y = LEVEL_GRID_Y + (row - (rows - 1) / 2) * (TILE + TILE_GAP);
             const tile = this.buildTile(level, index + 1);
             tile.position.set(x, y);
             this.grid.addChild(tile);
@@ -627,19 +741,19 @@ export default class HomeScene extends ThreeScene {
         const color = done ? TILE_COLORS.done : open ? TILE_COLORS.open : TILE_COLORS.locked;
         const tile = new PIXI.Container();
         const back = new PIXI.Graphics();
-        back.beginFill(0x000000, 0.25).drawRoundedRect(-TILE / 2, -TILE / 2 + 5, TILE, TILE, 16).endFill();
-        back.beginFill(color).lineStyle(4, 0xffffff).drawRoundedRect(-TILE / 2, -TILE / 2, TILE, TILE, 16).endFill();
+        back.beginFill(0x000000, 0.25).drawRoundedRect(-TILE / 2, -TILE / 2 + 6, TILE, TILE, 20).endFill();
+        back.beginFill(color).lineStyle(5, 0xffffff).drawRoundedRect(-TILE / 2, -TILE / 2, TILE, TILE, 20).endFill();
         tile.addChild(back);
         if (open) {
-            const numberLabel = label(String(number), done ? 28 : 34);
-            numberLabel.position.y = done ? -8 : 0;
+            const numberLabel = label(String(number), done ? 34 : 42);
+            numberLabel.position.y = done ? -10 : 0;
             tile.addChild(numberLabel);
             const earned = Progress.starsFor(level);
             for (let i = 0; done && i < 3; i++) {
                 const star = PIXI.Sprite.from('ItemIcon_Star_Gold');
                 star.anchor.set(0.5);
-                star.scale.set(16 / Math.max(star.texture.width, 1));
-                star.position.set((i - 1) * 17, TILE / 2 - 16);
+                star.scale.set(24 / Math.max(star.texture.width, 1));
+                star.position.set((i - 1) * 24, TILE / 2 - 20 + (i === 1 ? -3 : 0));
                 if (i >= earned) {
                     star.tint = 0x202020;
                     star.alpha = 0.5;
@@ -649,14 +763,14 @@ export default class HomeScene extends ThreeScene {
         } else {
             const lock = PIXI.Sprite.from('Icon_Lock02');
             lock.anchor.set(0.5);
-            lock.scale.set(0.5);
+            lock.scale.set(0.6);
             tile.addChild(lock);
         }
         if (done) {
             const check = PIXI.Sprite.from('Icon_Check02');
             check.anchor.set(0.5);
             check.scale.set(0.5);
-            check.position.set(TILE / 2 - 6, TILE / 2 - 6);
+            check.position.set(TILE / 2 - 6, -TILE / 2 + 6);
             tile.addChild(check);
         }
         tile.eventMode = 'static';
@@ -693,7 +807,7 @@ export default class HomeScene extends ThreeScene {
         this.editPanel.scale.set(scale);
         this.editPanel.position.set(screen.center.x, menuCenter);
         this.levelPicker.position.set(screen.center.x, screen.center.y);
-        this.levelPanel.scale.set(scale);
+        this.levelPanel.scale.set(Math.min(1.15, screen.width / (LEVEL_PANEL_WIDTH + 24), screen.height / (LEVEL_PANEL_HEIGHT + 40)));
         this.levelDim.clear().beginFill(0x122c3d, 0.65)
             .drawRect(-screen.width / 2, -screen.height / 2, screen.width, screen.height).endFill();
 

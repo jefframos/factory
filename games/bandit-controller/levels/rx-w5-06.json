@@ -1,0 +1,373 @@
+{
+  "id": "rx-w5-06",
+  "name": "Basement Run",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 47,
+    "depth": 24.19,
+    "rects": [
+      {
+        "x": 11,
+        "z": 3.696,
+        "width": 10,
+        "depth": 16.8
+      },
+      {
+        "x": 1,
+        "z": 0,
+        "width": 10,
+        "depth": 16.8
+      },
+      {
+        "x": -10,
+        "z": -3.696,
+        "width": 12,
+        "depth": 16.8
+      },
+      {
+        "x": 19.75,
+        "z": 3.77,
+        "width": 7.5,
+        "depth": 7.75
+      }
+    ]
+  },
+  "start": {
+    "x": -18,
+    "z": -3.696
+  },
+  "waypoints": [
+    {
+      "x": -8,
+      "z": -3.696
+    },
+    {
+      "x": 2,
+      "z": 0
+    },
+    {
+      "x": 19.35,
+      "z": 3.77
+    }
+  ],
+  "entryPath": {
+    "x": -18,
+    "z": -3.696,
+    "width": 4,
+    "depth": 5.6
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": 16,
+          "z": -4.704
+        },
+        {
+          "x": 16,
+          "z": 12.096
+        },
+        {
+          "x": 6,
+          "z": 12.096
+        },
+        {
+          "x": 6,
+          "z": 8.4
+        },
+        {
+          "x": -4,
+          "z": 8.4
+        },
+        {
+          "x": -4,
+          "z": 4.704
+        },
+        {
+          "x": -16,
+          "z": 4.704
+        },
+        {
+          "x": -16,
+          "z": -12.096
+        },
+        {
+          "x": -4,
+          "z": -12.096
+        },
+        {
+          "x": -4,
+          "z": -8.4
+        },
+        {
+          "x": 6,
+          "z": -8.4
+        },
+        {
+          "x": 6,
+          "z": -4.704
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -16.3,
+          "maxX": -15.7,
+          "minZ": -5.8,
+          "maxZ": -1.6
+        },
+        {
+          "kind": "door",
+          "minX": 15.7,
+          "maxX": 16.3,
+          "minZ": 1.67,
+          "maxZ": 5.87
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -4,
+          "z": -8.4
+        },
+        {
+          "x": -4,
+          "z": 4.704
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -4.3,
+          "maxX": -3.7,
+          "minZ": -3.95,
+          "maxZ": 0.25
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 6,
+          "z": -4.704
+        },
+        {
+          "x": 6,
+          "z": 8.4
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 5.7,
+          "maxX": 6.3,
+          "minZ": -0.25,
+          "maxZ": 3.95
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 16,
+          "z": 0.336
+        },
+        {
+          "x": 8,
+          "z": 0.34
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 8.1,
+          "maxX": 12.65,
+          "minZ": 0.036,
+          "maxZ": 0.636
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 4,
+          "z": 3.36
+        },
+        {
+          "x": -4,
+          "z": 3.36
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -1.9,
+          "maxX": 2.65,
+          "minZ": 3.06,
+          "maxZ": 3.66
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -4,
+          "z": -7.056
+        },
+        {
+          "x": -16,
+          "z": -7.056
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -12.1,
+          "maxX": -7.9,
+          "minZ": -7.356,
+          "maxZ": -6.756
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 16,
+          "z": 7.65
+        },
+        {
+          "x": 23.5,
+          "z": 7.65
+        },
+        {
+          "x": 23.5,
+          "z": -0.1
+        },
+        {
+          "x": 16,
+          "z": -0.1
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -10,
+      "z": -7.196,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": 0,
+      "z": 3.5,
+      "amount": 50,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": 10,
+      "z": 0.196,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [
+    {
+      "path": [
+        {
+          "x": -10,
+          "z": -9.996
+        },
+        {
+          "x": -10,
+          "z": 2.604
+        }
+      ],
+      "loop": false,
+      "speed": 1.9,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 5,
+      "sweep": 40,
+      "facing": 180
+    },
+    {
+      "path": [
+        {
+          "x": 0,
+          "z": -6.3
+        },
+        {
+          "x": 0,
+          "z": 6.3
+        }
+      ],
+      "loop": false,
+      "speed": 1.9,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 5,
+      "sweep": 40,
+      "facing": 180
+    },
+    {
+      "path": [
+        {
+          "x": 10,
+          "z": 8.596
+        }
+      ],
+      "loop": false,
+      "speed": 1.4,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 5,
+      "sweep": 45,
+      "facing": 90
+    }
+  ],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "cameras": [
+    {
+      "x": -3.6,
+      "z": -7.84,
+      "facing": 45,
+      "sweep": 40,
+      "period": 5,
+      "fov": 50,
+      "range": 9
+    }
+  ],
+  "traps": [],
+  "vault": {
+    "x": 19.75,
+    "z": 3.77,
+    "width": 7.5,
+    "depth": 7.75,
+    "side": "+x"
+  }
+}

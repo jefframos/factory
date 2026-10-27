@@ -162,32 +162,32 @@
     },
     "ItemIcon_Star_Gold": {
       "frame": {
-        "x": 261,
-        "y": 147,
-        "w": 133,
-        "h": 127
+        "x": 124,
+        "y": 281,
+        "w": 289,
+        "h": 288
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 133,
-        "h": 127
+        "w": 289,
+        "h": 288
       },
       "sourceSize": {
-        "w": 133,
-        "h": 127
+        "w": 289,
+        "h": 288
       }
     },
     "ItemFrame01_Single_Green": {
       "frame": {
-        "x": 2,
-        "y": 322,
+        "x": 261,
+        "y": 147,
         "w": 60,
         "h": 122
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -202,12 +202,12 @@
     },
     "ItemFrame01_Single_Gray": {
       "frame": {
-        "x": 261,
-        "y": 276,
+        "x": 323,
+        "y": 147,
         "w": 60,
         "h": 122
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -222,12 +222,12 @@
     },
     "ItemFrame01_Single_Blue": {
       "frame": {
-        "x": 126,
-        "y": 281,
+        "x": 2,
+        "y": 322,
         "w": 60,
         "h": 122
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -242,12 +242,12 @@
     },
     "Image_Effect_Rotate": {
       "frame": {
-        "x": 2,
-        "y": 384,
+        "x": 414,
+        "y": 2,
         "w": 270,
         "h": 275
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -262,8 +262,8 @@
     },
     "Icon_Lock02": {
       "frame": {
-        "x": 279,
-        "y": 338,
+        "x": 2,
+        "y": 446,
         "w": 83,
         "h": 86
       },
@@ -282,8 +282,8 @@
     },
     "Icon_Close02": {
       "frame": {
-        "x": 279,
-        "y": 423,
+        "x": 2,
+        "y": 531,
         "w": 75,
         "h": 75
       },
@@ -302,8 +302,8 @@
     },
     "Icon_Check02": {
       "frame": {
-        "x": 356,
-        "y": 423,
+        "x": 64,
+        "y": 322,
         "w": 54,
         "h": 48
       },
@@ -322,8 +322,8 @@
     },
     "Button01_s_Yellow": {
       "frame": {
-        "x": 279,
-        "y": 500,
+        "x": 414,
+        "y": 279,
         "w": 70,
         "h": 114
       },
@@ -342,8 +342,8 @@
     },
     "Button01_s_Red": {
       "frame": {
-        "x": 279,
-        "y": 572,
+        "x": 530,
+        "y": 279,
         "w": 70,
         "h": 114
       },
@@ -363,7 +363,7 @@
     "Button01_s_Purple": {
       "frame": {
         "x": 414,
-        "y": 2,
+        "y": 351,
         "w": 70,
         "h": 114
       },
@@ -383,7 +383,7 @@
     "Button01_s_Green": {
       "frame": {
         "x": 414,
-        "y": 118,
+        "y": 467,
         "w": 70,
         "h": 114
       },
@@ -402,28 +402,8 @@
     },
     "Button01_s_Gray": {
       "frame": {
-        "x": 412,
-        "y": 234,
-        "w": 70,
-        "h": 114
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 70,
-        "h": 114
-      },
-      "sourceSize": {
-        "w": 70,
-        "h": 114
-      }
-    },
-    "Button01_s_Blue": {
-      "frame": {
-        "x": 367,
-        "y": 350,
+        "x": 486,
+        "y": 351,
         "w": 70,
         "h": 114
       },
@@ -440,10 +420,30 @@
         "h": 114
       }
     },
+    "Button01_s_Blue": {
+      "frame": {
+        "x": 602,
+        "y": 351,
+        "w": 70,
+        "h": 114
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 70,
+        "h": 114
+      },
+      "sourceSize": {
+        "w": 70,
+        "h": 114
+      }
+    },
     "BorderFrame_Round20_Single_Dark": {
       "frame": {
-        "x": 412,
-        "y": 422,
+        "x": 64,
+        "y": 372,
         "w": 44,
         "h": 46
       },
@@ -467,8 +467,8 @@
     "image": "ui.webp",
     "format": "RGBA8888",
     "size": {
-      "w": 486,
-      "h": 656
+      "w": 686,
+      "h": 608
     },
     "scale": 1,
     "related_multi_packs": []

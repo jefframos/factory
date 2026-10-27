@@ -61,6 +61,15 @@ export default class ThirdPersonCharacter {
         this.body.setColor(color);
     }
 
+    public enableOutline(): void {
+        this.body.enableOutline();
+    }
+
+    /** Fresnel glow marking the selected squad member; 0 turns it off. */
+    public setRim(strength: number): void {
+        this.body.setRim(strength);
+    }
+
     public setFaceTexture(faceTexture: THREE.Texture): void {
         this.body.setFaceTexture(faceTexture);
     }

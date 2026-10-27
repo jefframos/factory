@@ -22,6 +22,7 @@
         "test:gather": "ts-node --transpile-only -r tsconfig-paths/register --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/test-gather.ts",
         "test:level-paths": "ts-node --transpile-only -r tsconfig-paths/register --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/test-level-paths.ts",
         "test:bandit-progression": "ts-node --transpile-only -r tsconfig-paths/register --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/test-bandit-progression.ts",
+        "playtest:bandit": "node scripts/playtest-bandit-levels.mjs",
         "test": "npm run test:physics && npm run test:ecs && npm run test:actions && npm run test:gather && npm run test:level-paths && npm run test:bandit-progression",
         "generate:index": "ts-node scripts/generate-index.ts",
         "translate:i18n": "node tools/i18n/translate-i18n.mjs",

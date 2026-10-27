@@ -1,0 +1,356 @@
+{
+  "id": "rx-level-02",
+  "name": "Corner Teller",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 28.72,
+    "depth": 20,
+    "rects": [
+      {
+        "x": -2.94,
+        "z": -6,
+        "width": 19.6,
+        "depth": 8
+      },
+      {
+        "x": 2.94,
+        "z": 4,
+        "width": 19.6,
+        "depth": 12
+      },
+      {
+        "x": -10.61,
+        "z": 2.3,
+        "width": 7.5,
+        "depth": 7
+      }
+    ]
+  },
+  "start": {
+    "x": 2.94,
+    "z": 12
+  },
+  "waypoints": [
+    {
+      "x": 2.94,
+      "z": 0
+    },
+    {
+      "x": -10.21,
+      "z": 2.3
+    }
+  ],
+  "entryPath": {
+    "x": 2.94,
+    "z": 12,
+    "width": 6.72,
+    "depth": 4
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": -12.74,
+          "z": -10
+        },
+        {
+          "x": 6.86,
+          "z": -10
+        },
+        {
+          "x": 6.86,
+          "z": -2
+        },
+        {
+          "x": 12.74,
+          "z": -2
+        },
+        {
+          "x": 12.74,
+          "z": 10
+        },
+        {
+          "x": -6.86,
+          "z": 10
+        },
+        {
+          "x": -6.86,
+          "z": -2
+        },
+        {
+          "x": -12.74,
+          "z": -2
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 0.84,
+          "maxX": 5.04,
+          "minZ": 9.7,
+          "maxZ": 10.3
+        },
+        {
+          "kind": "window",
+          "minX": -4.76,
+          "maxX": -0.56,
+          "minZ": 9.7,
+          "maxZ": 10.3
+        },
+        {
+          "kind": "window",
+          "minX": 6.44,
+          "maxX": 10.64,
+          "minZ": 9.7,
+          "maxZ": 10.3
+        },
+        {
+          "kind": "door",
+          "minX": -7.16,
+          "maxX": -6.56,
+          "minZ": 0.2,
+          "maxZ": 4.4
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -6.86,
+          "z": -2
+        },
+        {
+          "x": 6.86,
+          "z": -2
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -2.1,
+          "maxX": 2.1,
+          "minZ": -2.3,
+          "maxZ": -1.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 0.98,
+          "z": -10
+        },
+        {
+          "x": 0.98,
+          "z": -4
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 0.68,
+          "maxX": 1.28,
+          "minZ": -9.4,
+          "maxZ": -4.35
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -0.98,
+          "z": 0
+        },
+        {
+          "x": -0.98,
+          "z": 10
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -1.28,
+          "maxX": -0.68,
+          "minZ": 2.35,
+          "maxZ": 8.4
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -6.86,
+          "z": 5.8
+        },
+        {
+          "x": -14.36,
+          "z": 5.8
+        },
+        {
+          "x": -14.36,
+          "z": -1.2
+        },
+        {
+          "x": -6.86,
+          "z": -1.2
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "guards": [
+    {
+      "path": [
+        {
+          "x": -5.04,
+          "z": -9
+        },
+        {
+          "x": -5.04,
+          "z": -4
+        }
+      ],
+      "loop": false,
+      "speed": 1.6,
+      "pause": 2.2,
+      "fov": 55,
+      "range": 5.5,
+      "sweep": 50,
+      "facing": 180
+    }
+  ],
+  "props": [
+    {
+      "model": "heist/mini-market/cash-register.glb",
+      "x": 9.24,
+      "z": 6,
+      "rotationY": 9.425,
+      "height": 1.25,
+      "collider": {
+        "halfX": 0.8,
+        "halfY": 0.65,
+        "halfZ": 0.55
+      },
+      "revealAt": 0
+    },
+    {
+      "model": "heist/mini-market/shelf-boxes.glb",
+      "x": -4.76,
+      "z": 4,
+      "rotationY": 7.854,
+      "height": 2.7,
+      "collider": {
+        "halfX": 0.6,
+        "halfY": 1.35,
+        "halfZ": 1.2
+      },
+      "revealAt": 0
+    },
+    {
+      "model": "heist/mini-market/shelf-boxes.glb",
+      "x": -10.64,
+      "z": -5,
+      "rotationY": 7.854,
+      "height": 2.7,
+      "collider": {
+        "halfX": 0.6,
+        "halfY": 1.35,
+        "halfZ": 1.2
+      },
+      "revealAt": 1
+    },
+    {
+      "model": "heist/trees/tree-large.glb",
+      "x": -9.94,
+      "z": -12,
+      "rotationY": 6.283,
+      "height": 8,
+      "collider": null,
+      "revealAt": 0
+    },
+    {
+      "model": "heist/trees/tree-small.glb",
+      "x": -2.94,
+      "z": -12.5,
+      "rotationY": 6.283,
+      "height": 5.5,
+      "collider": null,
+      "revealAt": 0
+    },
+    {
+      "model": "heist/trees/tree-large.glb",
+      "x": 4.06,
+      "z": -12,
+      "rotationY": 6.283,
+      "height": 7.5,
+      "collider": null,
+      "revealAt": 0
+    }
+  ],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -0.56,
+      "z": 6.5,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": 6.44,
+      "z": 3,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": -7.14,
+      "z": -4.5,
+      "amount": 50,
+      "scale": 1.35,
+      "revealAt": 1
+    },
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -0.84,
+      "z": -6,
+      "amount": 80,
+      "scale": 1.35,
+      "revealAt": 1
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": -4.34,
+      "z": -8,
+      "amount": 120,
+      "scale": 1.35,
+      "revealAt": 1
+    }
+  ],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "cameras": [],
+  "traps": [],
+  "vault": {
+    "x": -10.61,
+    "z": 2.3,
+    "width": 7.5,
+    "depth": 7,
+    "side": "-x"
+  }
+}

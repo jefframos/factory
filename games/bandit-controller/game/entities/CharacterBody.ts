@@ -33,6 +33,41 @@ const FACE_DECAL_SCALE = 0.85;
  * MeshStandardMaterial instead of trying to patch the existing material.
  */
 const FALLBACK_COLOR = 0xffffff;
+/** Dark ink used for the character outline shell. */
+const OUTLINE_COLOR = 0x15121f;
+/** Outline thickness in world units, so it scales with the character: bold up close on Home, thin on zoomed-out levels. */
+const OUTLINE_WORLD_WIDTH = 0.02;
+const RIM_COLOR = 0xfff1a8;
+
+/**
+ * Inverted-hull outline: a back-face shell pushed out along the view-space normal, chained after the
+ * world bend so it bends with the body. Lambert (unlit black + emissive) is used because its vertex
+ * shader always provides the skinned `transformedNormal`.
+ */
+function createOutlineMaterial(bendService: WorldBendService): THREE.MeshLambertMaterial {
+    const material = new THREE.MeshLambertMaterial({ color: 0x000000, emissive: OUTLINE_COLOR, side: THREE.BackSide });
+    bendService.applyBend(material);
+    const bend = material.onBeforeCompile;
+    material.onBeforeCompile = (shader, renderer) => {
+        bend.call(material, shader, renderer);
+        shader.uniforms.uOutlineWidth = { value: OUTLINE_WORLD_WIDTH };
+        shader.vertexShader = 'uniform float uOutlineWidth;\n' + shader.vertexShader.replace(
+            '#include <logdepthbuf_vertex>',
+            `
+            vec3 _outlineNormal = normalize( transformedNormal );
+            #ifdef FLIP_SIDED
+                _outlineNormal = -_outlineNormal;
+            #endif
+            mvPosition.xyz += _outlineNormal * uOutlineWidth;
+            gl_Position = projectionMatrix * mvPosition;
+            #include <logdepthbuf_vertex>
+            `,
+        );
+    };
+    const bendKey = bend.toString();
+    material.customProgramCacheKey = () => `bandit-character-outline:${bendKey}`;
+    return material;
+}
 
 export default class CharacterBody {
     public readonly container: THREE.Group = new THREE.Group();
@@ -49,6 +84,12 @@ export default class CharacterBody {
     private headBone?: THREE.Object3D;
     /** Which bend flavor this body's own materials use — defaults to the hub's plain BendService; RunnerMinigameScene/SwipeMinigameScene pass RunnerBendService instead (see ThirdPersonCharacter's own constructor). */
     private readonly bendService: WorldBendService;
+    private outlineMaterial?: THREE.MeshLambertMaterial;
+    /** Shared by the body and head materials: a fresnel rim that marks the selected squad member. */
+    private readonly rimUniforms = {
+        uRimStrength: { value: 0 },
+        uRimColor: { value: new THREE.Color(RIM_COLOR) },
+    };
 
     public constructor(bendService: WorldBendService = BendService) {
         this.bendService = bendService;
@@ -79,6 +120,7 @@ export default class CharacterBody {
             const materialCount = Array.isArray(child.material) ? child.material.length : 1;
             const flatMaterial = new THREE.MeshStandardMaterial({ color: FALLBACK_COLOR });
             this.bendService.applyBend(flatMaterial);
+            this.applyRim(flatMaterial);
 
             child.material = materialCount > 1
                 ? new Array(materialCount).fill(flatMaterial)
@@ -247,6 +289,7 @@ export default class CharacterBody {
         const geometry = new RoundedBoxGeometry(HEAD_CUBE_SIZE, HEAD_CUBE_SIZE, HEAD_CUBE_SIZE, 4, HEAD_CUBE_SIZE * 0.25);
         const material = new THREE.MeshStandardMaterial({ color });
         this.bendService.applyBend(material);
+        this.applyRim(material);
         const mesh = new THREE.Mesh(geometry, material);
         mesh.add(this.buildFaceDecal(HEAD_CUBE_SIZE, faceTexture));
         return mesh;
@@ -260,6 +303,7 @@ export default class CharacterBody {
         this.bendService.applyBend(material);
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.z = size / 2 + size * 0.01;
+        mesh.userData.noOutline = true;
         return mesh;
     }
 
@@ -288,6 +332,7 @@ export default class CharacterBody {
         this.headCube = cube;
 
         this.applyHeadTransform();
+        this.addOutlineShells(holder);
     }
 
     /** Repositions the head cube live — same real-world units as HEAD_CUBE_SIZE/HEAD_CUBE_OFFSET, (0,0,0) at the head bone's own origin. */
@@ -349,6 +394,7 @@ export default class CharacterBody {
                 hat.position.y = HEAD_CUBE_SIZE / 2 - HEAD_CUBE_SIZE * HAT_SINK;
                 holder.add(hat);
                 this.hat = hat;
+                this.addOutlineShells(hat);
             })
             .catch((error) => console.warn(`CharacterBody: failed to load hat "${fullPath}"`, error));
     }
@@ -373,6 +419,73 @@ export default class CharacterBody {
         });
         this.headCubeHolder = undefined;
         this.headCube = undefined;
+    }
+
+    /** Gives the body, head and hat a dark ink outline so the character reads against any floor. */
+    public enableOutline(): void {
+        if (this.outlineMaterial) {
+            return;
+        }
+        this.outlineMaterial = createOutlineMaterial(this.bendService);
+        this.addOutlineShells(this.container);
+    }
+
+    /** 0 hides the selection rim; around 1 is a strong glow. */
+    public setRim(strength: number): void {
+        this.rimUniforms.uRimStrength.value = strength;
+    }
+
+    private applyRim(material: THREE.MeshStandardMaterial): void {
+        const previous = material.onBeforeCompile;
+        const uniforms = this.rimUniforms;
+        material.onBeforeCompile = (shader, renderer) => {
+            previous.call(material, shader, renderer);
+            shader.uniforms.uRimStrength = uniforms.uRimStrength;
+            shader.uniforms.uRimColor = uniforms.uRimColor;
+            shader.fragmentShader = 'uniform float uRimStrength;\nuniform vec3 uRimColor;\n' + shader.fragmentShader.replace(
+                '#include <opaque_fragment>',
+                `
+                float _rim = 1.0 - clamp( dot( normalize( vViewPosition ), normal ), 0.0, 1.0 );
+                outgoingLight += uRimColor * pow( _rim, 2.2 ) * uRimStrength;
+                #include <opaque_fragment>
+                `,
+            );
+        };
+        const previousKey = previous.toString();
+        material.customProgramCacheKey = () => `bandit-character-rim:${previousKey}`;
+    }
+
+    /** Adds one outline shell per mesh under `root` (skinned shells share the original skeleton). */
+    private addOutlineShells(root: THREE.Object3D): void {
+        const material = this.outlineMaterial;
+        if (!material) {
+            return;
+        }
+        const targets: THREE.Mesh[] = [];
+        root.traverse((child) => {
+            if (child instanceof THREE.Mesh && !child.userData.outlineShell && !child.userData.noOutline && !child.userData.hasOutline) {
+                targets.push(child);
+            }
+        });
+        for (const mesh of targets) {
+            let shell: THREE.Mesh;
+            if (mesh instanceof THREE.SkinnedMesh) {
+                const skinned = new THREE.SkinnedMesh(mesh.geometry, material);
+                skinned.bind(mesh.skeleton, mesh.bindMatrix);
+                shell = skinned;
+            } else {
+                shell = new THREE.Mesh(mesh.geometry, material);
+            }
+            shell.userData.outlineShell = true;
+            mesh.userData.hasOutline = true;
+            shell.position.copy(mesh.position);
+            shell.quaternion.copy(mesh.quaternion);
+            shell.scale.copy(mesh.scale);
+            shell.frustumCulled = false;
+            shell.castShadow = false;
+            shell.receiveShadow = false;
+            mesh.parent?.add(shell);
+        }
     }
 
     /** Case-insensitive bone lookup by name. */

@@ -117,6 +117,47 @@ export interface LevelSharedGoal {
     enabled?: boolean;
 }
 
+/** Which side of the house the vault room is attached to; its entrance faces back into the house. */
+export type LevelVaultSide = '+x' | '-x' | '+z' | '-z';
+
+/** The guard-free finish room every level ends in (scripts/bandit-vault-rooms.mjs). */
+export interface LevelVault {
+    x: number;
+    z: number;
+    width: number;
+    depth: number;
+    side: LevelVaultSide;
+}
+
+export interface VaultSafe {
+    x: number;
+    z: number;
+    yaw: number;
+    halfX: number;
+    halfZ: number;
+}
+
+/** The safe stands against the wall opposite the entrance, facing it, so nobody walks past it. */
+export function vaultSafe(vault: LevelVault): VaultSafe {
+    const sign = vault.side.startsWith('+') ? 1 : -1;
+    if (vault.side.endsWith('x')) {
+        return {
+            x: vault.x + sign * (vault.width / 2 - 1),
+            z: vault.z,
+            yaw: -sign * Math.PI / 2,
+            halfX: 0.8,
+            halfZ: 0.95,
+        };
+    }
+    return {
+        x: vault.x,
+        z: vault.z + sign * (vault.depth / 2 - 1),
+        yaw: sign > 0 ? Math.PI : 0,
+        halfX: 0.95,
+        halfZ: 0.8,
+    };
+}
+
 export interface LevelSquadMember {
     /** Key of CHARACTER_VIEWS (e.g. blue, purple, orange); also colours the member's route and goal. */
     view: string;
@@ -141,6 +182,7 @@ export interface LevelData {
     /** Several characters that must each reach their own goal. Replaces start/waypoints for play when present. */
     squad?: LevelSquadMember[];
     sharedGoal?: LevelSharedGoal;
+    vault?: LevelVault;
     entryPath?: { x: number; z: number; width: number; depth: number } | null;
     walls: LevelWall[];
     props: LevelProp[];
@@ -151,10 +193,18 @@ export interface LevelData {
     drones?: LevelDrone[];
 }
 
-/** Shared finish areas replace final destination disks, but not intermediate checkpoints. */
+/** Shared finish areas and vault rooms replace final destination disks, but not intermediate checkpoints. */
 export function shouldShowWaypointMarker(level: LevelData, waypointIndex: number, waypointCount: number): boolean {
     const sharedFinish = level.sharedGoal && level.sharedGoal.enabled !== false && (level.squad?.length ?? 0) > 1;
-    return !sharedFinish || waypointIndex < waypointCount - 1;
+    return !(sharedFinish || level.vault) || waypointIndex < waypointCount - 1;
+}
+
+/** True when the point lies inside the vault room (with a small inset so releases on the wall line don't count). */
+export function insideVault(level: LevelData, x: number, z: number, inset = 0.4): boolean {
+    const vault = level.vault;
+    return Boolean(vault)
+        && Math.abs(x - vault!.x) <= vault!.width / 2 - inset
+        && Math.abs(z - vault!.z) <= vault!.depth / 2 - inset;
 }
 
 export interface LevelDoor {

@@ -1,0 +1,344 @@
+{
+  "id": "rx-w6-07",
+  "name": "Coolant Leak",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 22.18,
+    "depth": 47,
+    "rects": [
+      {
+        "x": 2.688,
+        "z": 11,
+        "width": 16.8,
+        "depth": 10
+      },
+      {
+        "x": -2.688,
+        "z": 1,
+        "width": 16.8,
+        "depth": 10
+      },
+      {
+        "x": 2.688,
+        "z": -10,
+        "width": 16.8,
+        "depth": 12
+      },
+      {
+        "x": 2.64,
+        "z": 19.75,
+        "width": 8.5,
+        "depth": 7.5
+      }
+    ]
+  },
+  "start": {
+    "x": 2.688,
+    "z": -18
+  },
+  "waypoints": [
+    {
+      "x": 2.688,
+      "z": -8
+    },
+    {
+      "x": -2.688,
+      "z": 2
+    },
+    {
+      "x": 2.64,
+      "z": 19.35
+    }
+  ],
+  "entryPath": {
+    "x": 2.688,
+    "z": -18,
+    "width": 5.6,
+    "depth": 4
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": 11.088,
+          "z": 16
+        },
+        {
+          "x": -5.712,
+          "z": 16
+        },
+        {
+          "x": -5.712,
+          "z": 6
+        },
+        {
+          "x": -11.088,
+          "z": 6
+        },
+        {
+          "x": -11.088,
+          "z": -4
+        },
+        {
+          "x": -5.712,
+          "z": -4
+        },
+        {
+          "x": -5.712,
+          "z": -16
+        },
+        {
+          "x": 11.088,
+          "z": -16
+        },
+        {
+          "x": 11.088,
+          "z": -4
+        },
+        {
+          "x": 5.712,
+          "z": -4
+        },
+        {
+          "x": 5.712,
+          "z": 6
+        },
+        {
+          "x": 11.088,
+          "z": 6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 0.59,
+          "maxX": 4.79,
+          "minZ": -16.3,
+          "maxZ": -15.7
+        },
+        {
+          "kind": "door",
+          "minX": 0.54,
+          "maxX": 4.74,
+          "minZ": 15.7,
+          "maxZ": 16.3
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 5.712,
+          "z": -4
+        },
+        {
+          "x": -5.712,
+          "z": -4
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -2.1,
+          "maxX": 2.1,
+          "minZ": -4.3,
+          "maxZ": -3.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 5.712,
+          "z": 6
+        },
+        {
+          "x": -5.712,
+          "z": 6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -2.1,
+          "maxX": 2.1,
+          "minZ": 5.7,
+          "maxZ": 6.3
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 6.048,
+          "z": 16
+        },
+        {
+          "x": 6.048,
+          "z": 6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 5.748,
+          "maxX": 6.348,
+          "minZ": 8,
+          "maxZ": 12.65
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -6.048,
+          "z": 6
+        },
+        {
+          "x": -6.048,
+          "z": -4
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -6.348,
+          "maxX": -5.748,
+          "minZ": -1.9,
+          "maxZ": 2.65
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 6.048,
+          "z": -4
+        },
+        {
+          "x": 6.048,
+          "z": -16
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 5.748,
+          "maxX": 6.348,
+          "minZ": -12.1,
+          "maxZ": -7.9
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 6.89,
+          "z": 16
+        },
+        {
+          "x": 6.89,
+          "z": 23.5
+        },
+        {
+          "x": -1.61,
+          "z": 23.5
+        },
+        {
+          "x": -1.61,
+          "z": 16
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": 6.188,
+      "z": -10,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": -6.188,
+      "z": 0,
+      "amount": 50,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": 6.188,
+      "z": 10,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "traps": [
+    {
+      "x": 2.688,
+      "z": -10,
+      "width": 11,
+      "depth": 2,
+      "period": 3,
+      "active": 1.2,
+      "offset": 0
+    },
+    {
+      "x": 2.688,
+      "z": 10,
+      "width": 11,
+      "depth": 2,
+      "period": 3,
+      "active": 1.2,
+      "offset": 1.5
+    }
+  ],
+  "drones": [
+    {
+      "path": [
+        {
+          "x": 2.912,
+          "z": 0
+        },
+        {
+          "x": -8.288,
+          "z": 0
+        }
+      ],
+      "speed": 2,
+      "radius": 1.8
+    }
+  ],
+  "cameras": [],
+  "vault": {
+    "x": 2.64,
+    "z": 19.75,
+    "width": 8.5,
+    "depth": 7.5,
+    "side": "+z"
+  }
+}

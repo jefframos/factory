@@ -7,7 +7,21 @@
   },
   "floor": {
     "width": 10,
-    "depth": 18
+    "depth": 32,
+    "rects": [
+      {
+        "x": 0,
+        "z": 0,
+        "width": 10,
+        "depth": 18
+      },
+      {
+        "x": -0.05,
+        "z": -12.5,
+        "width": 7,
+        "depth": 7
+      }
+    ]
   },
   "start": {
     "x": 0,
@@ -15,8 +29,8 @@
   },
   "waypoints": [
     {
-      "x": 0,
-      "z": -6.5
+      "x": -0.05,
+      "z": -12.1
     }
   ],
   "entryPath": {
@@ -49,12 +63,41 @@
       "openings": [
         {
           "kind": "door",
-          "minX": -1.25,
-          "maxX": 1.25,
+          "minX": -2.1,
+          "maxX": 2.1,
           "minZ": 8.7,
           "maxZ": 9.3
+        },
+        {
+          "kind": "door",
+          "minX": -2.15,
+          "maxX": 2.05,
+          "minZ": -9.3,
+          "maxZ": -8.7
         }
       ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -3.55,
+          "z": -9
+        },
+        {
+          "x": -3.55,
+          "z": -16
+        },
+        {
+          "x": 3.45,
+          "z": -16
+        },
+        {
+          "x": 3.45,
+          "z": -9
+        }
+      ],
+      "openings": []
     }
   ],
   "props": [],
@@ -84,5 +127,12 @@
     "window": "windowStyle1",
     "ground": "groundStyle3",
     "path": "pathStyle3"
+  },
+  "vault": {
+    "x": -0.05,
+    "z": -12.5,
+    "width": 7,
+    "depth": 7,
+    "side": "-z"
   }
 }

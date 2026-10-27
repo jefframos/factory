@@ -128,6 +128,7 @@ export default class MainPlayer extends Entity {
         character.applyCharacterView(view.color, faceTexture);
         character.setHat(view.hat ? `bandit-controller/models/hats/${view.hat}.glb` : undefined);
         character.container.scale.setScalar(CHARACTER_SCALE);
+        character.enableOutline();
 
         if (this.destroyed) {
             character.destroy();

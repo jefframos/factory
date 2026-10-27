@@ -1,0 +1,358 @@
+{
+  "id": "rx-w5-02",
+  "name": "Front Yard",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 28.22,
+    "depth": 47,
+    "rects": [
+      {
+        "x": -4.312,
+        "z": -11,
+        "width": 19.6,
+        "depth": 10
+      },
+      {
+        "x": 0,
+        "z": -1,
+        "width": 19.6,
+        "depth": 10
+      },
+      {
+        "x": 4.312,
+        "z": 10,
+        "width": 19.6,
+        "depth": 12
+      },
+      {
+        "x": -4.34,
+        "z": -19.75,
+        "width": 7.75,
+        "depth": 7.5
+      }
+    ]
+  },
+  "start": {
+    "x": 4.312,
+    "z": 18
+  },
+  "waypoints": [
+    {
+      "x": 4.312,
+      "z": 8
+    },
+    {
+      "x": 0,
+      "z": -2
+    },
+    {
+      "x": -4.34,
+      "z": -19.35
+    }
+  ],
+  "entryPath": {
+    "x": 4.312,
+    "z": 18,
+    "width": 5.6,
+    "depth": 4
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": 5.488,
+          "z": -16
+        },
+        {
+          "x": -14.112,
+          "z": -16
+        },
+        {
+          "x": -14.112,
+          "z": -6
+        },
+        {
+          "x": -9.8,
+          "z": -6
+        },
+        {
+          "x": -9.8,
+          "z": 4
+        },
+        {
+          "x": -5.488,
+          "z": 4
+        },
+        {
+          "x": -5.488,
+          "z": 16
+        },
+        {
+          "x": 14.112,
+          "z": 16
+        },
+        {
+          "x": 14.112,
+          "z": 4
+        },
+        {
+          "x": 9.8,
+          "z": 4
+        },
+        {
+          "x": 9.8,
+          "z": -6
+        },
+        {
+          "x": 5.488,
+          "z": -6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 2.21,
+          "maxX": 6.41,
+          "minZ": 15.7,
+          "maxZ": 16.3
+        },
+        {
+          "kind": "door",
+          "minX": -6.44,
+          "maxX": -2.24,
+          "minZ": -16.3,
+          "maxZ": -15.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 9.8,
+          "z": 4
+        },
+        {
+          "x": -5.488,
+          "z": 4
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 0.06,
+          "maxX": 4.26,
+          "minZ": 3.7,
+          "maxZ": 4.3
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 5.488,
+          "z": -6
+        },
+        {
+          "x": -9.8,
+          "z": -6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -4.26,
+          "maxX": -0.06,
+          "minZ": -6.3,
+          "maxZ": -5.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -0.392,
+          "z": -16
+        },
+        {
+          "x": -0.39,
+          "z": -8
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -0.692,
+          "maxX": -0.092,
+          "minZ": -12.65,
+          "maxZ": -8.1
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -3.92,
+          "z": -4
+        },
+        {
+          "x": -3.92,
+          "z": 4
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -4.22,
+          "maxX": -3.62,
+          "minZ": -2.65,
+          "maxZ": 1.9
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 8.232,
+          "z": 4
+        },
+        {
+          "x": 8.232,
+          "z": 16
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 7.932,
+          "maxX": 8.532,
+          "minZ": 7.9,
+          "maxZ": 12.1
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -0.46,
+          "z": -16
+        },
+        {
+          "x": -0.46,
+          "z": -23.5
+        },
+        {
+          "x": -8.21,
+          "z": -23.5
+        },
+        {
+          "x": -8.21,
+          "z": -16
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": 7.812,
+      "z": 10,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": -3.5,
+      "z": 0,
+      "amount": 50,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -0.812,
+      "z": -10,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [
+    {
+      "path": [
+        {
+          "x": 12.012,
+          "z": 10
+        },
+        {
+          "x": -3.388,
+          "z": 10
+        }
+      ],
+      "loop": false,
+      "speed": 1.8,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 5,
+      "sweep": 40,
+      "facing": 90
+    },
+    {
+      "path": [
+        {
+          "x": 3.388,
+          "z": -10
+        },
+        {
+          "x": -12.012,
+          "z": -10
+        }
+      ],
+      "loop": false,
+      "speed": 1.8,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 5,
+      "sweep": 40,
+      "facing": 90
+    }
+  ],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "cameras": [
+    {
+      "x": -9.24,
+      "z": 3.6,
+      "facing": 135,
+      "sweep": 40,
+      "period": 5,
+      "fov": 50,
+      "range": 9
+    }
+  ],
+  "traps": [],
+  "vault": {
+    "x": -4.34,
+    "z": -19.75,
+    "width": 7.75,
+    "depth": 7.5,
+    "side": "-z"
+  }
+}

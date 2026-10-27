@@ -28,7 +28,7 @@ import { GameAudio } from './game/audio/GameAudio';
 import SoundToggleButton from './game/ui/SoundToggleButton';
 import { Progress } from './game/data/Progress';
 import { LevelCatalog } from './game/data/LevelCatalog';
-import { resetProgressionData } from './game/data/ProgressionStorage';
+import { reloadToHome, resetProgressionData } from './game/data/ProgressionStorage';
 
 /** What every scene exposes for the transition below to wait on — see HubScene.ready's own doc. */
 interface AsyncReadyScene {
@@ -255,11 +255,7 @@ export default class MyGame extends Game {
                 window.alert('Could not reset game data. Check the console for details.');
                 return;
             }
-            const url = new URL(window.location.href);
-            for (const key of ['level', 'scene', 'minigame']) {
-                url.searchParams.delete(key);
-            }
-            window.location.assign(url.href);
+            reloadToHome();
         });
     }
 

@@ -1,0 +1,354 @@
+{
+  "id": "rx-w4-05",
+  "name": "Drill Sergeant",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 25.87,
+    "depth": 47,
+    "rects": [
+      {
+        "x": 3.136,
+        "z": 11,
+        "width": 19.6,
+        "depth": 10
+      },
+      {
+        "x": -3.136,
+        "z": 1,
+        "width": 19.6,
+        "depth": 10
+      },
+      {
+        "x": 3.136,
+        "z": -10,
+        "width": 19.6,
+        "depth": 12
+      },
+      {
+        "x": 3.24,
+        "z": 19.75,
+        "width": 7,
+        "depth": 7.5
+      }
+    ]
+  },
+  "start": {
+    "x": 3.136,
+    "z": -18
+  },
+  "waypoints": [
+    {
+      "x": 3.136,
+      "z": -8
+    },
+    {
+      "x": -3.136,
+      "z": 2
+    },
+    {
+      "x": 3.24,
+      "z": 19.35
+    }
+  ],
+  "entryPath": {
+    "x": 3.136,
+    "z": -18,
+    "width": 5.6,
+    "depth": 4
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": 12.936,
+          "z": 16
+        },
+        {
+          "x": -6.664,
+          "z": 16
+        },
+        {
+          "x": -6.664,
+          "z": 6
+        },
+        {
+          "x": -12.936,
+          "z": 6
+        },
+        {
+          "x": -12.936,
+          "z": -4
+        },
+        {
+          "x": -6.664,
+          "z": -4
+        },
+        {
+          "x": -6.664,
+          "z": -16
+        },
+        {
+          "x": 12.936,
+          "z": -16
+        },
+        {
+          "x": 12.936,
+          "z": -4
+        },
+        {
+          "x": 6.664,
+          "z": -4
+        },
+        {
+          "x": 6.664,
+          "z": 6
+        },
+        {
+          "x": 12.936,
+          "z": 6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 1.04,
+          "maxX": 5.24,
+          "minZ": -16.3,
+          "maxZ": -15.7
+        },
+        {
+          "kind": "door",
+          "minX": 1.14,
+          "maxX": 5.34,
+          "minZ": 15.7,
+          "maxZ": 16.3
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 6.664,
+          "z": -4
+        },
+        {
+          "x": -6.664,
+          "z": -4
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -2.1,
+          "maxX": 2.1,
+          "minZ": -4.3,
+          "maxZ": -3.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 6.664,
+          "z": 6
+        },
+        {
+          "x": -6.664,
+          "z": 6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -2.1,
+          "maxX": 2.1,
+          "minZ": 5.7,
+          "maxZ": 6.3
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 7.056,
+          "z": 16
+        },
+        {
+          "x": 7.056,
+          "z": 6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 6.756,
+          "maxX": 7.356,
+          "minZ": 8.1,
+          "maxZ": 12.65
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -7.056,
+          "z": 6
+        },
+        {
+          "x": -7.056,
+          "z": -4
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -7.356,
+          "maxX": -6.756,
+          "minZ": -1.9,
+          "maxZ": 2.65
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 7.056,
+          "z": -4
+        },
+        {
+          "x": 7.056,
+          "z": -16
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 6.756,
+          "maxX": 7.356,
+          "minZ": -12.1,
+          "maxZ": -7.9
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 6.74,
+          "z": 16
+        },
+        {
+          "x": 6.74,
+          "z": 23.5
+        },
+        {
+          "x": -0.26,
+          "z": 23.5
+        },
+        {
+          "x": -0.26,
+          "z": 16
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": 6.636,
+      "z": -10,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": -6.636,
+      "z": 0,
+      "amount": 50,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": 6.636,
+      "z": 10,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [
+    {
+      "path": [
+        {
+          "x": 10.836,
+          "z": -10
+        },
+        {
+          "x": -4.564,
+          "z": -10
+        }
+      ],
+      "loop": false,
+      "speed": 1.7,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 5,
+      "sweep": 40,
+      "facing": 90
+    },
+    {
+      "path": [
+        {
+          "x": 8.036,
+          "z": 10
+        }
+      ],
+      "loop": false,
+      "speed": 1.4,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 5,
+      "sweep": 40,
+      "facing": 0
+    }
+  ],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "cameras": [
+    {
+      "x": -12.376,
+      "z": -3.6,
+      "facing": 45,
+      "sweep": 40,
+      "period": 5,
+      "fov": 50,
+      "range": 9
+    }
+  ],
+  "traps": [],
+  "vault": {
+    "x": 3.24,
+    "z": 19.75,
+    "width": 7,
+    "depth": 7.5,
+    "side": "+z"
+  }
+}

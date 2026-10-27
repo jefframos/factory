@@ -5,7 +5,7 @@
     "cell": 0.5
   },
   "floor": {
-    "width": 28,
+    "width": 40,
     "depth": 18,
     "rects": [
       {
@@ -25,6 +25,12 @@
         "z": 4.75,
         "width": 24,
         "depth": 4.5
+      },
+      {
+        "x": 16,
+        "z": -3.42,
+        "width": 8,
+        "depth": 7.75
       }
     ]
   },
@@ -38,8 +44,8 @@
       "z": -3
     },
     {
-      "x": 8,
-      "z": -4
+      "x": 15.6,
+      "z": -3.42
     }
   ],
   "entryPath": {
@@ -88,8 +94,8 @@
       "openings": [
         {
           "kind": "door",
-          "minX": -1.5,
-          "maxX": 1.5,
+          "minX": -2.1,
+          "maxX": 2.1,
           "minZ": 6.7,
           "maxZ": 7.3
         },
@@ -106,6 +112,13 @@
           "maxX": 9.5,
           "minZ": 6.7,
           "maxZ": 7.3
+        },
+        {
+          "kind": "door",
+          "minX": 11.7,
+          "maxX": 12.3,
+          "minZ": -5.52,
+          "maxZ": -1.32
         }
       ]
     },
@@ -124,8 +137,8 @@
       "openings": [
         {
           "kind": "door",
-          "minX": -9.25,
-          "maxX": -6.75,
+          "minX": -10.1,
+          "maxX": -5.9,
           "minZ": 2.2,
           "maxZ": 2.8
         }
@@ -146,12 +159,34 @@
       "openings": [
         {
           "kind": "door",
-          "minX": 6.75,
-          "maxX": 9.25,
+          "minX": 5.9,
+          "maxX": 10.1,
           "minZ": 2.2,
           "maxZ": 2.8
         }
       ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 12,
+          "z": -7.3
+        },
+        {
+          "x": 20,
+          "z": -7.3
+        },
+        {
+          "x": 20,
+          "z": 0.45
+        },
+        {
+          "x": 12,
+          "z": 0.45
+        }
+      ],
+      "openings": []
     }
   ],
   "props": [],
@@ -189,5 +224,12 @@
     "window": "windowStyle1",
     "ground": "groundStyle3",
     "path": "pathStyle3"
+  },
+  "vault": {
+    "x": 16,
+    "z": -3.42,
+    "width": 8,
+    "depth": 7.75,
+    "side": "+x"
   }
 }

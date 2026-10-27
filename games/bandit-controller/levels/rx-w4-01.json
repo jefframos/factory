@@ -1,0 +1,270 @@
+{
+  "id": "rx-w4-01",
+  "name": "Restoration Wing",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 37,
+    "depth": 25.87,
+    "rects": [
+      {
+        "x": 6,
+        "z": 3.136,
+        "width": 10,
+        "depth": 19.6
+      },
+      {
+        "x": -5,
+        "z": -3.136,
+        "width": 12,
+        "depth": 19.6
+      },
+      {
+        "x": 14.75,
+        "z": 3.24,
+        "width": 7.5,
+        "depth": 7
+      }
+    ]
+  },
+  "start": {
+    "x": -13,
+    "z": -3.136
+  },
+  "waypoints": [
+    {
+      "x": -3,
+      "z": -3.136
+    },
+    {
+      "x": 14.35,
+      "z": 3.24
+    }
+  ],
+  "entryPath": {
+    "x": -13,
+    "z": -3.136,
+    "width": 4,
+    "depth": 5.6
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": 11,
+          "z": -6.664
+        },
+        {
+          "x": 11,
+          "z": 12.936
+        },
+        {
+          "x": 1,
+          "z": 12.936
+        },
+        {
+          "x": 1,
+          "z": 6.664
+        },
+        {
+          "x": -11,
+          "z": 6.664
+        },
+        {
+          "x": -11,
+          "z": -12.936
+        },
+        {
+          "x": 1,
+          "z": -12.936
+        },
+        {
+          "x": 1,
+          "z": -6.664
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -11.3,
+          "maxX": -10.7,
+          "minZ": -5.24,
+          "maxZ": -1.04
+        },
+        {
+          "kind": "door",
+          "minX": 10.7,
+          "maxX": 11.3,
+          "minZ": 1.14,
+          "maxZ": 5.34
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 1,
+          "z": -6.664
+        },
+        {
+          "x": 1,
+          "z": 6.664
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 0.7,
+          "maxX": 1.3,
+          "minZ": -2.1,
+          "maxZ": 2.1
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 11,
+          "z": -0.784
+        },
+        {
+          "x": 3,
+          "z": -0.78
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 3.9,
+          "maxX": 8.1,
+          "minZ": -1.084,
+          "maxZ": -0.484
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -1,
+          "z": 0.78
+        },
+        {
+          "x": -11,
+          "z": 0.784
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -7.1,
+          "maxX": -2.9,
+          "minZ": 0.484,
+          "maxZ": 1.084
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 11,
+          "z": 6.74
+        },
+        {
+          "x": 18.5,
+          "z": 6.74
+        },
+        {
+          "x": 18.5,
+          "z": -0.26
+        },
+        {
+          "x": 11,
+          "z": -0.26
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -5,
+      "z": -6.636,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": 5,
+      "z": 6.636,
+      "amount": 50,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [
+    {
+      "path": [
+        {
+          "x": -5,
+          "z": -10.836
+        },
+        {
+          "x": -5,
+          "z": 4.564
+        }
+      ],
+      "loop": false,
+      "speed": 1.6,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 5,
+      "sweep": 40,
+      "facing": 180
+    }
+  ],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "cameras": [
+    {
+      "x": 1.4,
+      "z": -6.104,
+      "facing": 45,
+      "sweep": 40,
+      "period": 5,
+      "fov": 50,
+      "range": 9
+    },
+    {
+      "x": 10.6,
+      "z": 12.376,
+      "facing": 225,
+      "sweep": 40,
+      "period": 5,
+      "fov": 50,
+      "range": 8
+    }
+  ],
+  "traps": [],
+  "vault": {
+    "x": 14.75,
+    "z": 3.24,
+    "width": 7.5,
+    "depth": 7,
+    "side": "+x"
+  }
+}

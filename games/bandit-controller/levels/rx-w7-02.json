@@ -1,0 +1,349 @@
+{
+  "id": "rx-w7-02",
+  "name": "Hover Lab",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 45,
+    "depth": 22.18,
+    "rects": [
+      {
+        "x": -11,
+        "z": -2.688,
+        "width": 10,
+        "depth": 16.8
+      },
+      {
+        "x": -1,
+        "z": 2.688,
+        "width": 10,
+        "depth": 16.8
+      },
+      {
+        "x": 10,
+        "z": -2.688,
+        "width": 12,
+        "depth": 16.8
+      },
+      {
+        "x": -19.25,
+        "z": -2.64,
+        "width": 6.5,
+        "depth": 7
+      }
+    ]
+  },
+  "start": {
+    "x": 18,
+    "z": -2.688
+  },
+  "waypoints": [
+    {
+      "x": 8,
+      "z": -2.688
+    },
+    {
+      "x": -2,
+      "z": 2.688
+    },
+    {
+      "x": -18.85,
+      "z": -2.64
+    }
+  ],
+  "entryPath": {
+    "x": 18,
+    "z": -2.688,
+    "width": 4,
+    "depth": 5.6
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": -16,
+          "z": -11.088
+        },
+        {
+          "x": -16,
+          "z": 5.712
+        },
+        {
+          "x": -6,
+          "z": 5.712
+        },
+        {
+          "x": -6,
+          "z": 11.088
+        },
+        {
+          "x": 4,
+          "z": 11.088
+        },
+        {
+          "x": 4,
+          "z": 5.712
+        },
+        {
+          "x": 16,
+          "z": 5.712
+        },
+        {
+          "x": 16,
+          "z": -11.088
+        },
+        {
+          "x": 4,
+          "z": -11.088
+        },
+        {
+          "x": 4,
+          "z": -5.712
+        },
+        {
+          "x": -6,
+          "z": -5.712
+        },
+        {
+          "x": -6,
+          "z": -11.088
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 15.7,
+          "maxX": 16.3,
+          "minZ": -4.79,
+          "maxZ": -0.59
+        },
+        {
+          "kind": "door",
+          "minX": -16.3,
+          "maxX": -15.7,
+          "minZ": -4.74,
+          "maxZ": -0.54
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 4,
+          "z": -5.712
+        },
+        {
+          "x": 4,
+          "z": 5.712
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 3.7,
+          "maxX": 4.3,
+          "minZ": -2.1,
+          "maxZ": 2.1
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -6,
+          "z": -5.712
+        },
+        {
+          "x": -6,
+          "z": 5.712
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -6.3,
+          "maxX": -5.7,
+          "minZ": -2.1,
+          "maxZ": 2.1
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -16,
+          "z": -6.048
+        },
+        {
+          "x": -6,
+          "z": -6.048
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -12.65,
+          "maxX": -8.1,
+          "minZ": -6.348,
+          "maxZ": -5.748
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -6,
+          "z": 6.048
+        },
+        {
+          "x": 4,
+          "z": 6.048
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -2.65,
+          "maxX": 1.9,
+          "minZ": 5.748,
+          "maxZ": 6.348
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 4,
+          "z": -6.048
+        },
+        {
+          "x": 16,
+          "z": -6.048
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 7.9,
+          "maxX": 12.1,
+          "minZ": -6.348,
+          "maxZ": -5.748
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -16,
+          "z": -6.14
+        },
+        {
+          "x": -22.5,
+          "z": -6.14
+        },
+        {
+          "x": -22.5,
+          "z": 0.86
+        },
+        {
+          "x": -16,
+          "z": 0.86
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": 10,
+      "z": -6.188,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": 0,
+      "z": 6.188,
+      "amount": 50,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -10,
+      "z": -6.188,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "drones": [
+    {
+      "path": [
+        {
+          "x": 10,
+          "z": -8.288
+        },
+        {
+          "x": 10,
+          "z": 2.912
+        }
+      ],
+      "speed": 2,
+      "radius": 1.8
+    },
+    {
+      "path": [
+        {
+          "x": -10,
+          "z": -8.288
+        },
+        {
+          "x": -10,
+          "z": 2.912
+        }
+      ],
+      "speed": 2,
+      "radius": 1.8
+    }
+  ],
+  "cameras": [
+    {
+      "x": 3.6,
+      "z": -5.152,
+      "facing": 315,
+      "sweep": 40,
+      "period": 5,
+      "fov": 50,
+      "range": 9
+    }
+  ],
+  "traps": [],
+  "vault": {
+    "x": -19.25,
+    "z": -2.64,
+    "width": 6.5,
+    "depth": 7,
+    "side": "-x"
+  }
+}

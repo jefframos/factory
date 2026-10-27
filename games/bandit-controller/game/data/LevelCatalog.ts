@@ -11,12 +11,18 @@ import worldData from '../../levels/worlds.json';
 const files = import.meta.glob('../../levels/*.json', { eager: true, import: 'default' }) as Record<string, LevelData>;
 const PROGRESS_KEY = 'bandit-controller.levelProgress';
 const COMPLETED_KEY = 'bandit-controller.completedLevels';
+const UNLOCK_ALL_KEY = 'bandit-controller.unlockAll';
+const TUTORIAL_WORLD_ID = 'tutorial';
 
 export interface WorldInfo {
     id: string;
     name: string;
-    /** 1-based position in the campaign. */
+    /** 1-based position in the campaign (drives star gates and payouts). */
     number: number;
+    /** True for the opening tutorial world, which is shown unnumbered. */
+    tutorial: boolean;
+    /** Player-facing number: 'T' for the tutorial, then 1, 2, ... for the real worlds. */
+    label: string;
     levels: LevelData[];
 }
 
@@ -43,6 +49,7 @@ function build(): { levels: LevelData[]; worlds: WorldInfo[] } {
     const levels: LevelData[] = [];
     const worlds: WorldInfo[] = [];
     const used = new Set<string>();
+    let numbered = 0;
     (worldData.worlds as WorldFile[]).forEach((entry, index) => {
         const members: LevelData[] = [];
         for (const id of entry.levels) {
@@ -53,7 +60,9 @@ function build(): { levels: LevelData[]; worlds: WorldInfo[] } {
             }
         }
         if (members.length > 0) {
-            worlds.push({ id: entry.id, name: entry.name, number: index + 1, levels: members });
+            const tutorial = entry.id === TUTORIAL_WORLD_ID;
+            const label = tutorial ? 'T' : String(++numbered);
+            worlds.push({ id: entry.id, name: entry.name, number: index + 1, tutorial, label, levels: members });
             levels.push(...members);
         }
     });
@@ -108,6 +117,9 @@ export const LevelCatalog = {
 
     /** A level is playable once the one before it is done (or progress already reached it). */
     isUnlocked(index: number): boolean {
+        if (this.isAllUnlocked()) {
+            return true;
+        }
         const levels = allLevels();
         const found = levels[index] ? this.locate(levels[index]) : undefined;
         if (found && starsTotal() < worldGateStars(found.world.number)) {
@@ -119,7 +131,16 @@ export const LevelCatalog = {
         return this.isCompleted(levels[index - 1]);
     },
 
-    /** Completed levels in `world`, for the "3/8" badges. */
+    /** Settings cheat: every level and world gate opens, without marking anything completed. */
+    isAllUnlocked(): boolean {
+        return window.localStorage.getItem(UNLOCK_ALL_KEY) === '1';
+    },
+
+    unlockAll(): void {
+        window.localStorage.setItem(UNLOCK_ALL_KEY, '1');
+    },
+
+    /** Completed levels in `world`, for the "3/10" badges. */
     worldProgress(world: WorldInfo): { done: number; total: number } {
         const done = readCompleted();
         return { done: world.levels.filter((level) => done.has(level.id)).length, total: world.levels.length };

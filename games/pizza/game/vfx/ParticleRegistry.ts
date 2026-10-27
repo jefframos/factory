@@ -224,6 +224,22 @@ export const PARTICLE_REGISTRY: Record<string, ParticleEffectDescriptor> = {
         spreadRadius: 0.85,
         maxOpacity: 0.95,
         offset: [0, 0.15, 0],
+    },
+    heistSafe: {
+        name: "Heist Safe Gold Fountain",
+        texture: "particles/star_08.webp",
+        color: "#ffc61a",
+        blendMode: "additive",
+        fadeInSec: 0.1,
+        fadeOutSec: 0.6,
+        lifetimeSec: 1.7,
+        sizeMin: 1.6,
+        sizeMax: 3.0,
+        riseSpeedMin: 1.6,
+        riseSpeedMax: 3.2,
+        spreadRadius: 1.6,
+        maxOpacity: 1,
+        offset: [0, 0.4, 0],
     }
 };
 

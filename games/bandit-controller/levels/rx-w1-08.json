@@ -1,0 +1,266 @@
+{
+  "id": "rx-w1-08",
+  "name": "Mint Rooftops",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 35,
+    "depth": 21.84,
+    "rects": [
+      {
+        "x": -6,
+        "z": -2.52,
+        "width": 10,
+        "depth": 16.8
+      },
+      {
+        "x": 5,
+        "z": 2.52,
+        "width": 12,
+        "depth": 16.8
+      },
+      {
+        "x": -14.25,
+        "z": -2.59,
+        "width": 6.5,
+        "depth": 7.75
+      }
+    ]
+  },
+  "start": {
+    "x": 13,
+    "z": 2.52
+  },
+  "waypoints": [
+    {
+      "x": 3,
+      "z": 2.52
+    },
+    {
+      "x": -13.85,
+      "z": -2.59
+    }
+  ],
+  "entryPath": {
+    "x": 13,
+    "z": 2.52,
+    "width": 4,
+    "depth": 5.6
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": -11,
+          "z": -10.92
+        },
+        {
+          "x": -11,
+          "z": 5.88
+        },
+        {
+          "x": -1,
+          "z": 5.88
+        },
+        {
+          "x": -1,
+          "z": 10.92
+        },
+        {
+          "x": 11,
+          "z": 10.92
+        },
+        {
+          "x": 11,
+          "z": -5.88
+        },
+        {
+          "x": -1,
+          "z": -5.88
+        },
+        {
+          "x": -1,
+          "z": -10.92
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 10.7,
+          "maxX": 11.3,
+          "minZ": 0.42,
+          "maxZ": 4.62
+        },
+        {
+          "kind": "door",
+          "minX": -11.3,
+          "maxX": -10.7,
+          "minZ": -4.69,
+          "maxZ": -0.49
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -1,
+          "z": -5.88
+        },
+        {
+          "x": -1,
+          "z": 5.88
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -1.3,
+          "maxX": -0.7,
+          "minZ": -2.1,
+          "maxZ": 2.1
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -11,
+          "z": 3.6
+        },
+        {
+          "x": -1,
+          "z": 3.6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -7.65,
+          "maxX": -3.1,
+          "minZ": 3.3,
+          "maxZ": 3.9
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -1,
+          "z": -3.6
+        },
+        {
+          "x": 11,
+          "z": -3.6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 2.9,
+          "maxX": 7.1,
+          "minZ": -3.9,
+          "maxZ": -3.3
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -11,
+          "z": -6.47
+        },
+        {
+          "x": -17.5,
+          "z": -6.47
+        },
+        {
+          "x": -17.5,
+          "z": 1.28
+        },
+        {
+          "x": -11,
+          "z": 1.28
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": 5,
+      "z": -0.98,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": -5,
+      "z": 0.98,
+      "amount": 50,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [
+    {
+      "path": [
+        {
+          "x": 5,
+          "z": -3.08
+        },
+        {
+          "x": 5,
+          "z": 8.12
+        }
+      ],
+      "loop": false,
+      "speed": 1.4,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 4.5,
+      "sweep": 40,
+      "facing": 180
+    },
+    {
+      "path": [
+        {
+          "x": -5,
+          "z": -7.42
+        }
+      ],
+      "loop": false,
+      "speed": 1.4,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 4.5,
+      "sweep": 35,
+      "facing": 270
+    }
+  ],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "cameras": [],
+  "traps": [],
+  "vault": {
+    "x": -14.25,
+    "z": -2.59,
+    "width": 6.5,
+    "depth": 7.75,
+    "side": "-x"
+  }
+}

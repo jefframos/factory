@@ -15,7 +15,7 @@ import SecurityCamera from '../entities/SecurityCamera';
 import Trap from '../entities/Trap';
 import Drone from '../entities/Drone';
 import { LevelSight } from '../utils/LevelSight';
-import { adjustRouteThroughDoors, doorCrossing } from '../utils/LevelRoute';
+import { NavGrid } from '../utils/NavGrid';
 import { GameAudio } from '../audio/GameAudio';
 import { COIN, CollectibleDefinition } from '../data/CollectibleSettings';
 import { LevelCatalog } from '../data/LevelCatalog';
@@ -24,7 +24,7 @@ import { TextureBuilder } from '../builders/TextureBuilder';
 import { CHARACTER_VIEWS, DEFAULT_CHARACTER_VIEW, resolveSkinImagePath } from '../data/CharacterViews';
 import type MainPlayer from '../player/MainPlayer';
 import { WorldStyles } from '../data/WorldStyles';
-import { LevelData, LevelDoor, LevelLoot, LevelSharedGoal, levelDoors, levelWindowPanes, shouldShowWaypointMarker } from '../data/LevelData';
+import { LevelData, LevelLoot, LevelSharedGoal, LevelVault, insideVault, levelWindowPanes, shouldShowWaypointMarker, vaultSafe } from '../data/LevelData';
 import { GameState } from '../data/GameState';
 import { Progress } from '../data/Progress';
 import { PLAYER_SETTINGS } from '../data/PlayerSettings';
@@ -50,9 +50,16 @@ const CHECKPOINT_STOP_RADIUS = 1.2;
 const GOAL_MARKER_RADIUS = 1.25;
 const GOAL_COLOR = 0x3fd67a;
 const SAFE_MODEL = 'heist/vault/vault.gltf';
+const VAULT_FLOOR_COLOR = 0xffd34d;
 const SHARED_SLOT_SPACING = 1.8;
+/** Planning clearance around walls for drawn routes (the body is 0.4 wide each side). */
+const ROUTE_CLEARANCE = 0.55;
+/** How close a release (or the assisted route's end) must be to the gold checkpoint. */
+const GOAL_RELEASE_RADIUS = 1.8;
+/** Campaign levels (by catalog order) that show the drag + tap tutorial hand. */
+const HAND_HINT_LEVELS = 5;
 const GOAL_HAND_SIZE = 76;
-const DRAG_HINT_CYCLE_MS = 2600;
+const DRAG_HINT_CYCLE_MS = 3200;
 const FIELD_SIZE = 48;
 const ROOM_ORIGIN = new THREE.Vector3();
 const LOWERED_WALL_SCALE = 0.2;
@@ -170,9 +177,14 @@ export default class PathLevelScene extends ThreeScene {
     private readonly dressingAssets: THREE.Object3D[] = [];
     private goalParticleAccumulator = 0;
     private readonly goalParticlePosition = new THREE.Vector3();
+    /** Set by buildVault(); the safe gets its own constant gold fountain so the finish reads from anywhere. */
+    private safePosition?: THREE.Vector3;
+    private safeGlow?: THREE.Mesh;
+    private safeParticleAccumulator = 0;
+    private safeGlowTime = 0;
     private level!: LevelData;
     private waypoints: THREE.Vector3[] = [];
-    private doors: LevelDoor[] = [];
+    private navGrid?: NavGrid;
     private readonly revealGroups = new Map<number, THREE.Group>();
     private readonly occlusionTarget = new THREE.Vector3();
     private readonly activeStart = new THREE.Vector3();
@@ -192,8 +204,12 @@ export default class PathLevelScene extends ThreeScene {
     private defaultFov = 50;
     private cameraBlendTween?: gsap.core.Tween;
     private readonly cameraTuning = { yawDeg: 0, fov: 0, bend: true };
-    private goalHand?: PIXI.Sprite;
     private dragHint?: PIXI.Sprite;
+    private handHintLevel = false;
+    private hintPath: THREE.Vector3[] = [];
+    private hintLengths: number[] = [];
+    private hintPathKey = '';
+    private hintCycleStart = -1;
     private readonly dragHintWorld = new THREE.Vector3();
     private selectionNeedsFraming = false;
     private pointerDragged = false;
@@ -273,6 +289,9 @@ export default class PathLevelScene extends ThreeScene {
         this.destroyed = false;
         this.state = 'waiting';
         this.pathDrawMode = 'free';
+        this.safePosition = undefined;
+        this.safeGlow = undefined;
+        this.safeParticleAccumulator = 0;
         this.wallsLowered = false;
         this.revealedUpTo = 0;
         this.goalArrivalTweens.forEach((tween) => tween.kill());
@@ -284,7 +303,6 @@ export default class PathLevelScene extends ThreeScene {
         this.inBackground = false;
         this.guardTargets.clear();
         this.level = LevelCatalog.current();
-        this.doors = levelDoors(this.level);
         this.route = [];
         this.routeBlocked = false;
         this.runMoney = 0;
@@ -330,6 +348,7 @@ export default class PathLevelScene extends ThreeScene {
         this.frameActiveSegment(true);
 
         this.buildCourse();
+        this.buildNavGrid();
         this.buildGuards();
         this.buildCollectibles(0);
         this.buildHud();
@@ -461,6 +480,9 @@ export default class PathLevelScene extends ThreeScene {
                 this.addMarker(member.waypoints[1], member.color ?? GOAL_COLOR, GOAL_MARKER_RADIUS);
             }
         }
+        if (this.level.vault) {
+            this.buildVault(this.level.vault);
+        }
         if (this.sharedGoalActive && this.level.sharedGoal) {
             this.buildSharedGoalRoom(this.level.sharedGoal);
         }
@@ -495,11 +517,33 @@ export default class PathLevelScene extends ThreeScene {
         if (this.state === 'celebrating' || this.state === 'payout' || this.state === 'complete') {
             return;
         }
+        this.updateSafeSparkle(delta);
+        // The vault's safe fountain already marks the finish, so only checkpoints get goal sparkles.
+        if (this.safePosition && this.nextWaypointIndex >= this.waypoints.length - 1) {
+            return;
+        }
         this.goalParticleAccumulator += delta;
         while (this.goalParticleAccumulator >= 0.14) {
             this.goalParticleAccumulator -= 0.14;
             this.goalParticlePosition.set(this.activeGoal.x, FloorLayers.baseY + 0.2, this.activeGoal.z);
             PizzaParticleSystem.spawn('heistGoal', this.goalParticlePosition);
+        }
+    }
+
+    private updateSafeSparkle(delta: number): void {
+        if (!this.safePosition) {
+            return;
+        }
+        this.safeGlowTime += delta;
+        if (this.safeGlow) {
+            const pulse = 0.5 + 0.5 * Math.sin(this.safeGlowTime * 4);
+            this.safeGlow.scale.setScalar(1 + pulse * 0.18);
+            (this.safeGlow.material as THREE.MeshBasicMaterial).opacity = 0.45 + pulse * 0.35;
+        }
+        this.safeParticleAccumulator += delta;
+        while (this.safeParticleAccumulator >= 0.05) {
+            this.safeParticleAccumulator -= 0.05;
+            PizzaParticleSystem.spawn('heistSafe', this.safePosition);
         }
     }
 
@@ -516,6 +560,18 @@ export default class PathLevelScene extends ThreeScene {
 
     /** Evenly spaced spots on one row across the room, so the squad lines up side by side facing the camera. */
     private sharedGoalSlot(goal: LevelSharedGoal, index: number, count: number): THREE.Vector3 {
+        const vault = this.level.vault;
+        if (vault) {
+            // A row across the vault, between the entrance and the safe.
+            const alongX = vault.side.endsWith('z');
+            const sign = vault.side.startsWith('+') ? 1 : -1;
+            const across = alongX ? goal.width : goal.depth;
+            const spacing = Math.min(SHARED_SLOT_SPACING, (across - 1) / Math.max(1, count));
+            const offset = (index - (count - 1) / 2) * spacing;
+            return alongX
+                ? new THREE.Vector3(vault.x + offset, 0, vault.z - sign * 0.4)
+                : new THREE.Vector3(vault.x - sign * 0.4, 0, vault.z + offset);
+        }
         const spacing = Math.min(SHARED_SLOT_SPACING, (goal.width - 1) / Math.max(1, count));
         return new THREE.Vector3(goal.x + (index - (count - 1) / 2) * spacing, 0, goal.z + goal.depth * 0.2);
     }
@@ -525,6 +581,11 @@ export default class PathLevelScene extends ThreeScene {
         return Boolean(goal) && this.sharedGoalActive
             && Math.abs(position.x - goal!.x) <= goal!.width / 2
             && Math.abs(position.z - goal!.z) <= goal!.depth / 2;
+    }
+
+    /** The vault room (or shared finish area) counts as the final goal as a whole. */
+    private insideFinishArea(position: THREE.Vector3): boolean {
+        return this.insideSharedGoal(position) || insideVault(this.level, position.x, position.z);
     }
 
     private buildSharedGoalRoom(goal: LevelSharedGoal): void {
@@ -547,10 +608,64 @@ export default class PathLevelScene extends ThreeScene {
         ]), edgeMaterial);
         this.threeScene.add(outline);
 
-        // The safe sits against the far wall of the room.
-        const safe = new THREE.Vector3(goal.x, FloorLayers.baseY, goal.z - halfD + 1);
-        void this.placeAsset(SAFE_MODEL, safe, 2.8, 0);
-        this.addPropCollider(safe, new THREE.Vector3(0.95, 1.4, 0.8));
+        // Older layouts without a vault room keep the safe against the room's far wall.
+        if (!this.level.vault) {
+            const safe = new THREE.Vector3(goal.x, FloorLayers.baseY, goal.z - halfD + 1);
+            void this.placeAsset(SAFE_MODEL, safe, 2.8, 0);
+            this.addPropCollider(safe, new THREE.Vector3(0.95, 1.4, 0.8));
+        }
+    }
+
+    /** The finish room: a warm floor tint and the safe against the wall opposite the entrance. */
+    private buildVault(vault: LevelVault): void {
+        if (!this.sharedGoalActive) {
+            const material = new THREE.MeshBasicMaterial({ color: VAULT_FLOOR_COLOR, transparent: true, opacity: 0.28, depthWrite: false });
+            BendService.applyBend(material);
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(vault.width - 0.3, vault.depth - 0.3), material);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.set(vault.x, FloorLayers.baseY + 0.05, vault.z);
+            this.threeScene.add(floor);
+        }
+        const safe = vaultSafe(vault);
+        const position = new THREE.Vector3(safe.x, FloorLayers.baseY, safe.z);
+        void this.placeAsset(SAFE_MODEL, position, 2.8, safe.yaw);
+        this.addPropCollider(position, new THREE.Vector3(safe.halfX, 1.4, safe.halfZ));
+
+        this.safePosition = position.clone().setY(FloorLayers.baseY + 0.2);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            map: this.safeGlowTexture(),
+            color: 0xffc61a,
+            transparent: true,
+            opacity: 0.7,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+        });
+        BendService.applyBend(glowMaterial);
+        this.safeGlow = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2), glowMaterial);
+        this.safeGlow.rotation.x = -Math.PI / 2;
+        this.safeGlow.position.set(position.x, FloorLayers.baseY + 0.07, position.z);
+        this.safeGlow.renderOrder = 2;
+        this.threeScene.add(this.safeGlow);
+    }
+
+    /** Soft radial gradient for the pulsing gold pool under the safe. */
+    private static safeGlowMap?: THREE.CanvasTexture;
+
+    private safeGlowTexture(): THREE.CanvasTexture {
+        if (PathLevelScene.safeGlowMap) {
+            return PathLevelScene.safeGlowMap;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 128;
+        const context = canvas.getContext('2d')!;
+        const gradient = context.createRadialGradient(64, 64, 0, 64, 64, 64);
+        gradient.addColorStop(0, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.45, 'rgba(255,255,255,0.55)');
+        gradient.addColorStop(1, 'rgba(255,255,255,0)');
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, 128, 128);
+        PathLevelScene.safeGlowMap = new THREE.CanvasTexture(canvas);
+        return PathLevelScene.safeGlowMap;
     }
 
     private buildProps(): void {
@@ -656,23 +771,21 @@ export default class PathLevelScene extends ThreeScene {
         halo.position.set(position.x, 0.13, position.z);
         halo.visible = !this.isEnded() && this.state !== 'done'
             && this.state !== 'celebrating' && this.state !== 'payout' && this.state !== 'complete';
+        // Fresnel rim on the selected member only; it pulses gently so it reads as "this one".
+        const rim = halo.visible ? 0.9 + 0.35 * Math.sin(performance.now() / 220) : 0;
+        for (const member of this.members) {
+            member.player.character?.setRim(member === this.focused ? rim : 0);
+        }
     }
 
     private buildGoalArrow(): void {
-        if (this.goalHand) {
+        if (this.dragHint) {
             return;
         }
-        const hand = new PIXI.Sprite(PIXI.Texture.from('handHud'));
-        hand.anchor.set(0.5);
-        hand.width = GOAL_HAND_SIZE;
-        hand.height = GOAL_HAND_SIZE;
-        // The source art points up-left; this turns the fingertip straight down.
-        hand.rotation = Math.PI * 1.19;
-        hand.visible = false;
-        this.game.uiLayer.addChild(hand);
-        this.goalHand = hand;
-
+        const index = LevelCatalog.all().indexOf(this.level);
+        this.handHintLevel = index >= 0 && index < HAND_HINT_LEVELS;
         const hint = new PIXI.Sprite(PIXI.Texture.from('handHud'));
+        // The source art points up-left: anchor on the fingertip.
         hint.anchor.set(0.2, 0.1);
         hint.width = GOAL_HAND_SIZE;
         hint.height = GOAL_HAND_SIZE;
@@ -681,47 +794,76 @@ export default class PathLevelScene extends ThreeScene {
         this.dragHint = hint;
     }
 
-    /** Tutorial finger: loops from the focused character to its goal while nobody is drawing. */
+    /** Where the focused member is heading next: its checkpoint, or the vault/shared room at the end. */
+    private hintTarget(): THREE.Vector3 | undefined {
+        const marker = this.waypoints[this.nextWaypointIndex];
+        const room = this.level.sharedGoal;
+        const finalLeg = this.nextWaypointIndex >= this.waypoints.length - 1;
+        if (finalLeg && this.level.vault) {
+            return this.goalHandWorld.set(this.level.vault.x, 0, this.level.vault.z);
+        }
+        if (room && this.sharedGoalActive && finalLeg) {
+            return this.goalHandWorld.set(room.x, 0, room.z + room.depth * 0.2);
+        }
+        return marker ? this.goalHandWorld.copy(marker) : undefined;
+    }
+
+    /**
+     * Tutorial finger (first campaign levels only): presses on the character, then drags along a
+     * walkable path to the next checkpoint, so players learn to trace from the player rather than tap the goal.
+     */
     private updateDragHint(): void {
         const hint = this.dragHint;
         if (!hint) {
             return;
         }
-        const active = false;
-        const from = active ? this.worldToScreen(this.dragHintWorld.copy(this.env.mainPlayer.transform.position).setY(FloorLayers.baseY + 0.3)) : null;
-        const to = active ? this.worldToScreen(this.goalHandWorld.set(this.activeGoal.x, FloorLayers.baseY + 0.3, this.activeGoal.z)) : null;
-        hint.visible = Boolean(from && to);
-        if (!from || !to) {
+        const target = this.handHintLevel && this.state === 'waiting' && this.pointerId === null && !this.isEnded()
+            ? this.hintTarget()
+            : undefined;
+        if (!target || !this.navGrid) {
+            hint.visible = false;
+            this.hintCycleStart = -1;
             return;
         }
-        const cycle = (performance.now() % DRAG_HINT_CYCLE_MS) / DRAG_HINT_CYCLE_MS;
-        const t = THREE.MathUtils.smoothstep(THREE.MathUtils.clamp((cycle - 0.15) / 0.6, 0, 1), 0, 1);
-        const fade = cycle < 0.15 ? cycle / 0.15 : cycle > 0.85 ? (1 - cycle) / 0.15 : 1;
-        const a = this.game.uiLayer.toLocal(new PIXI.Point(from.x, from.y), this.game.app.stage);
-        const b = this.game.uiLayer.toLocal(new PIXI.Point(to.x, to.y), this.game.app.stage);
-        hint.position.set(THREE.MathUtils.lerp(a.x, b.x, t), THREE.MathUtils.lerp(a.y, b.y, t));
-        hint.alpha = fade;
-    }
-
-    private updateGoalArrow(): void {
-        const hand = this.goalHand;
-        if (!hand) {
-            return;
+        const from = this.env.mainPlayer.transform.position;
+        const key = `${from.x.toFixed(1)},${from.z.toFixed(1)}>${target.x.toFixed(1)},${target.z.toFixed(1)}`;
+        if (key !== this.hintPathKey) {
+            this.hintPathKey = key;
+            const path = this.navGrid.findPath(from, target) ?? [{ x: from.x, z: from.z }, { x: target.x, z: target.z }];
+            this.hintPath = path.map((point) => new THREE.Vector3(point.x, FloorLayers.baseY + 0.3, point.z));
+            this.hintPath[0].set(from.x, FloorLayers.baseY + 0.3, from.z);
+            this.hintLengths = [0];
+            for (let i = 1; i < this.hintPath.length; i++) {
+                this.hintLengths.push(this.hintLengths[i - 1] + this.hintPath[i].distanceTo(this.hintPath[i - 1]));
+            }
         }
-        const active = this.state === 'waiting' || this.state === 'following' || this.state === 'revealing';
-        let marker = this.waypoints[this.nextWaypointIndex];
-        const room = this.level.sharedGoal;
-        if (room && this.sharedGoalActive && this.nextWaypointIndex >= this.waypoints.length - 1) {
-            marker = this.goalHandWorld.set(room.x, 0, room.z + room.depth * 0.2);
+        const now = performance.now();
+        if (this.hintCycleStart < 0) {
+            this.hintCycleStart = now;
         }
-        const screen = active && marker ? this.worldToScreen(this.goalHandWorld.set(marker.x, FloorLayers.baseY + 0.3, marker.z)) : null;
-        hand.visible = Boolean(screen);
+        const cycle = ((now - this.hintCycleStart) % DRAG_HINT_CYCLE_MS) / DRAG_HINT_CYCLE_MS;
+        // Press on the player, drag along the path, hold on the goal, fade out.
+        const travel = THREE.MathUtils.smoothstep(THREE.MathUtils.clamp((cycle - 0.18) / 0.55, 0, 1), 0, 1);
+        const total = this.hintLengths[this.hintLengths.length - 1];
+        const distance = travel * total;
+        let segment = 1;
+        while (segment < this.hintPath.length - 1 && this.hintLengths[segment] < distance) {
+            segment++;
+        }
+        const span = this.hintLengths[segment] - this.hintLengths[segment - 1];
+        const t = span > 0 ? (distance - this.hintLengths[segment - 1]) / span : 1;
+        const world = this.dragHintWorld.copy(this.hintPath[segment - 1]).lerp(this.hintPath[Math.min(segment, this.hintPath.length - 1)], t);
+        const screen = this.worldToScreen(world);
+        hint.visible = Boolean(screen);
         if (!screen) {
             return;
         }
         const local = this.game.uiLayer.toLocal(new PIXI.Point(screen.x, screen.y), this.game.app.stage);
-        const bob = Math.abs(Math.sin(performance.now() / 380)) * 18;
-        hand.position.set(local.x, local.y - GOAL_HAND_SIZE * 0.55 - bob);
+        const press = cycle < 0.18 ? Math.sin(cycle / 0.18 * Math.PI) : 0;
+        hint.position.set(local.x, local.y);
+        hint.alpha = cycle < 0.08 ? cycle / 0.08 : cycle > 0.88 ? Math.max(0, (1 - cycle) / 0.12) : 1;
+        hint.width = GOAL_HAND_SIZE * (1 - press * 0.15);
+        hint.height = GOAL_HAND_SIZE * (1 - press * 0.15);
     }
 
     private addMarker(position: THREE.Vector3, color: number, radius = 0.78): void {
@@ -843,7 +985,7 @@ export default class PathLevelScene extends ThreeScene {
         this.cashPillCoin = coin;
         this.cashPill.addChild(this.cashPillBackground, coin, this.runMoneyLabel);
         const found = LevelCatalog.locate(this.level);
-        this.worldLabel = new PIXI.Text(found ? `${found.world.number}-${found.levelNumber}` : '', {
+        this.worldLabel = new PIXI.Text(found ? `${found.world.label}-${found.levelNumber}` : '', {
             fontFamily: UiKit.fontFamily('primary'),
             fontSize: 34,
             fill: 0xffffff,
@@ -1083,7 +1225,7 @@ export default class PathLevelScene extends ThreeScene {
         this.pointerDownWorld.copy(this.pointerWorld);
         this.pointerDragged = false;
         this.routeBlocked = false;
-        this.route = [start.clone()];
+        this.route = this.routeStart(start);
         this.setInstruction(this.pathDrawMode === 'exit'
             ? 'DRAW A PATH TO THE GOLD CHECKPOINT'
             : 'RELEASE ANYWHERE TO FOLLOW THE PATH');
@@ -1102,13 +1244,54 @@ export default class PathLevelScene extends ThreeScene {
         if (!this.pointerDragged) {
             return;
         }
-        const point = this.clampToCourse(this.pointerWorld);
-        if (this.distanceXZ(point, this.route[this.route.length - 1]) < 0.2) {
+        if (this.distanceXZ(this.pointerWorld, this.route[this.route.length - 1]) < 0.2) {
             return;
         }
-        this.appendRouteSamples(point);
-        this.drawRoute();
+        if (this.extendRoute(this.pointerWorld)) {
+            this.drawRoute();
+        }
     };
+
+    /**
+     * Grows the drawn route toward `target`: the trace slides off walls and stays on the floor, and
+     * a stretch that would cut through a wall detours through the nearest door (A*), so brushing a
+     * wall never throws the whole path away. False when the target can't be reached at all.
+     */
+    private extendRoute(target: THREE.Vector3): boolean {
+        const last = this.route[this.route.length - 1];
+        const added = this.navGrid?.extend(last, target);
+        if (!added) {
+            return false;
+        }
+        for (const point of added) {
+            if (this.distanceXZ(point as THREE.Vector3, this.route[this.route.length - 1]) > 0.05) {
+                this.appendRouteSamples(new THREE.Vector3(point.x, 0.08, point.z));
+            }
+        }
+        return true;
+    }
+
+    private buildNavGrid(): void {
+        const floor = this.level.floor;
+        const regions = [
+            ...(floor.rects?.length ? floor.rects : [{ x: 0, z: 0, width: floor.width, depth: floor.depth }]),
+            ...(this.level.entryPath ? [this.level.entryPath] : []),
+        ];
+        this.navGrid = new NavGrid(regions, this.wallBoxes, ROUTE_CLEARANCE);
+    }
+
+    /** Route start: the player's spot, plus a step out to free floor when it stands hugging a wall. */
+    private routeStart(start: THREE.Vector3): THREE.Vector3[] {
+        const points = [new THREE.Vector3(start.x, 0.08, start.z)];
+        const grid = this.navGrid;
+        if (grid && !grid.isFree(start.x, start.z)) {
+            const free = grid.nearestFree(start);
+            if (free) {
+                points.push(new THREE.Vector3(free.x, 0.08, free.z));
+            }
+        }
+        return points;
+    }
 
     private appendRouteSamples(target: THREE.Vector3): void {
         const start = this.route[this.route.length - 1];
@@ -1148,13 +1331,15 @@ export default class PathLevelScene extends ThreeScene {
             }
             return;
         }
-        const endPoint = hasFloorPoint ? this.clampToCourse(this.pointerWorld) : undefined;
+        const endPoint = hasFloorPoint ? this.pointerWorld.clone().setY(0.08) : undefined;
         if (endPoint && this.distanceXZ(this.route[this.route.length - 1], endPoint) > 0.12) {
-            this.appendRouteSamples(endPoint);
+            this.extendRoute(endPoint);
         }
         const tracedPath = this.route.map((point) => point.clone());
-        const reachesGoal = endPoint && (this.distanceXZ(endPoint, this.activeGoal) <= 1.3
-            || (this.nextWaypointIndex >= this.waypoints.length - 1 && this.insideSharedGoal(endPoint)));
+        const routeEnd = this.route[this.route.length - 1];
+        const nearGoal = (point: THREE.Vector3) => this.distanceXZ(point, this.activeGoal) <= GOAL_RELEASE_RADIUS
+            || (this.nextWaypointIndex >= this.waypoints.length - 1 && this.insideFinishArea(point));
+        const reachesGoal = endPoint && (nearGoal(endPoint) || nearGoal(routeEnd));
         const accepted = endPoint
             && this.route.length > 1
             && (this.pathDrawMode === 'free' || reachesGoal);
@@ -1176,16 +1361,12 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
 
-        const endpoint = this.pathDrawMode === 'exit' ? this.activeGoal.clone() : endPoint;
-        if (this.distanceXZ(this.route[this.route.length - 1], endpoint) > 0.12) {
-            this.appendRouteSamples(endpoint);
-        }
+        const endpoint = this.pathDrawMode === 'exit' ? this.activeGoal.clone().setY(0.08) : routeEnd.clone();
+        this.routeBlocked = this.distanceXZ(this.route[this.route.length - 1], endpoint) > 0.12 && !this.extendRoute(endpoint);
         this.drawRoute();
-        const finalRoute = this.adjustRouteThroughDoors(this.route);
         console.info('[PathLevelScene] path', {
             mode: this.pathDrawMode,
             tracedPath: this.serializePath(tracedPath),
-            adjustedPath: this.serializePath(finalRoute),
             blocked: this.routeBlocked,
         });
         if (this.routeBlocked) {
@@ -1200,7 +1381,10 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
 
-        this.route = finalRoute;
+        this.startFollowing(endpoint);
+    };
+
+    private startFollowing(endpoint: THREE.Vector3): void {
         GameAudio.play('start');
         this.state = 'following';
         if (this.pathDrawMode === 'free') {
@@ -1217,42 +1401,6 @@ export default class PathLevelScene extends ThreeScene {
         return points.map(({ x, z }) => ({ x: Number(x.toFixed(2)), z: Number(z.toFixed(2)) }));
     }
 
-    private adjustRouteThroughDoors(route: readonly THREE.Vector3[]): THREE.Vector3[] {
-        return adjustRouteThroughDoors(route, this.doors);
-    }
-
-    private crossesDoorInAssistRange(start: THREE.Vector3, end: THREE.Vector3): boolean {
-        return this.doors.some((door) => doorCrossing(door, start, end) !== undefined);
-    }
-
-    private segmentHitsWall(start: THREE.Vector3, end: THREE.Vector3, assist = true): boolean {
-        if (assist && this.crossesDoorInAssistRange(start, end)) {
-            return false;
-        }
-        const radius = PLAYER_SETTINGS.colliderHalfWidth + 0.08;
-        const dx = end.x - start.x;
-        const dz = end.z - start.z;
-        for (const wall of this.wallBoxes) {
-            let minT = 0;
-            let maxT = 1;
-            const clip = (origin: number, delta: number, min: number, max: number): boolean => {
-                if (Math.abs(delta) < 1e-8) {
-                    return origin >= min && origin <= max;
-                }
-                const first = (min - origin) / delta;
-                const second = (max - origin) / delta;
-                minT = Math.max(minT, Math.min(first, second));
-                maxT = Math.min(maxT, Math.max(first, second));
-                return minT <= maxT;
-            };
-            if (clip(start.x, dx, wall.x - wall.halfX - radius, wall.x + wall.halfX + radius)
-                && clip(start.z, dz, wall.z - wall.halfZ - radius, wall.z + wall.halfZ + radius)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private isDebugTarget(target: EventTarget | null): boolean {
         return target instanceof Element && Boolean(target.closest('#daybreak-debug-overlay'));
     }
@@ -1263,28 +1411,14 @@ export default class PathLevelScene extends ThreeScene {
         return this.raycaster.ray.intersectPlane(this.floorPlane, this.pointerWorld) !== null;
     }
 
-    private clampToCourse(point: THREE.Vector3): THREE.Vector3 {
-        const halfWidth = this.level.floor.width / 2 + 2.2;
-        const halfDepth = this.level.floor.depth / 2 + 2.2;
-        return new THREE.Vector3(
-            THREE.MathUtils.clamp(point.x, -halfWidth, halfWidth),
-            0.08,
-            THREE.MathUtils.clamp(point.z, -halfDepth, Math.max(halfDepth, this.activeStart.z, this.env.mainPlayer.transform.position.z)),
-        );
-    }
-
     private drawRoute(): void {
         this.clearRoute();
         if (this.route.length === 0) {
             return;
         }
 
-        // A raw trace that hits a wall is shown as drawn; door smoothing only applies to clear traces.
-        const hits = (points: readonly THREE.Vector3[], assist: boolean): boolean => points.some((point, index) => index > 0
-            && this.segmentHitsWall(points[index - 1], point, assist));
-        this.routeBlocked = hits(this.route, true);
-        const route = this.routeBlocked ? this.route : this.adjustRouteThroughDoors(this.route);
-        this.routeBlocked ||= hits(route, false);
+        // The route is already wall-free (see extendRoute); it only turns red when unreachable.
+        const route = this.route;
 
         const routeColor = this.routeBlocked ? 0xf04455 : (this.focused?.color ?? 0x2bd2bd);
         if (route.length > 1) {
@@ -1529,10 +1663,10 @@ export default class PathLevelScene extends ThreeScene {
         this.completeModal = modal;
     }
 
-    /** "2-3" = world 2, level 3; falls back to the flat campaign number for levels outside every world. */
+    /** "2-3" = world 2, level 3 ("T-2" in the tutorial); falls back to the flat campaign number for levels outside every world. */
     private levelLabel(): string {
         const found = LevelCatalog.locate(this.level);
-        return found ? `${found.world.number}-${found.levelNumber}` : String(LevelCatalog.all().indexOf(this.level) + 1);
+        return found ? `${found.world.label}-${found.levelNumber}` : String(LevelCatalog.all().indexOf(this.level) + 1);
     }
 
     private refreshRunMoney(): void {
@@ -1867,8 +2001,8 @@ export default class PathLevelScene extends ThreeScene {
     /** Checkpoint and goal arrival for the member currently held in the scene fields. */
     private updateMemberProgress(): void {
         const lastIndex = this.waypoints.length - 1;
-        if (this.state === 'following' && this.sharedGoalActive && this.nextWaypointIndex >= lastIndex
-            && this.insideSharedGoal(this.env.mainPlayer.transform.position)) {
+        if (this.state === 'following' && this.nextWaypointIndex >= lastIndex
+            && this.insideFinishArea(this.env.mainPlayer.transform.position)) {
             this.activeGoal.copy(this.waypoints[lastIndex]);
             this.beginHomeWalk();
             return;
@@ -1917,7 +2051,6 @@ export default class PathLevelScene extends ThreeScene {
         }
         this.env.update(delta);
         this.updateGoalParticles(delta);
-        this.updateGoalArrow();
         this.updateDragHint();
         this.faceStartDirections();
         this.updateHomeWalks();
@@ -2477,8 +2610,7 @@ export default class PathLevelScene extends ThreeScene {
         this.goalArrivalTweens.forEach((tween) => tween.kill());
         this.goalArrivalTweens = [];
         this.cameraBlendTween?.kill();
-        this.goalHand?.destroy();
-        this.goalHand = undefined;
+        this.hintPathKey = '';
         this.dragHint?.destroy();
         this.dragHint = undefined;
         this.payoutFlights.forEach((flight) => flight.kill());
@@ -2553,6 +2685,7 @@ export default class PathLevelScene extends ThreeScene {
         }
         this.wallColliders.length = 0;
         this.wallBoxes.length = 0;
+        this.navGrid = undefined;
         this.propColliders.length = 0;
         for (const asset of this.dressingAssets) {
             this.disposeDressingAsset(asset);

@@ -6,7 +6,7 @@
   },
   "floor": {
     "width": 18,
-    "depth": 17.08,
+    "depth": 24.92,
     "rects": [
       {
         "x": 5.75,
@@ -19,6 +19,12 @@
         "z": -1.54,
         "width": 11.5,
         "depth": 14
+      },
+      {
+        "x": -1.8,
+        "z": 8.96,
+        "width": 7,
+        "depth": 7
       }
     ]
   },
@@ -32,8 +38,8 @@
       "z": -1.54
     },
     {
-      "x": 6.5,
-      "z": 1.54
+      "x": -1.8,
+      "z": 8.56
     }
   ],
   "entryPath": {
@@ -84,8 +90,8 @@
           "kind": "door",
           "minX": -9.3,
           "maxX": -8.7,
-          "minZ": -3.29,
-          "maxZ": 0.21
+          "minZ": -3.64,
+          "maxZ": 0.56
         },
         {
           "kind": "window",
@@ -100,6 +106,13 @@
           "maxX": -8.7,
           "minZ": 1.54,
           "maxZ": 4.62
+        },
+        {
+          "kind": "door",
+          "minX": -3.9,
+          "maxX": 0.3,
+          "minZ": 5.16,
+          "maxZ": 5.76
         }
       ]
     },
@@ -120,8 +133,8 @@
           "kind": "door",
           "minX": 2.2,
           "maxX": 2.8,
-          "minZ": -1.75,
-          "maxZ": 1.75
+          "minZ": -2.1,
+          "maxZ": 2.1
         }
       ]
     },
@@ -129,7 +142,7 @@
       "closed": false,
       "points": [
         {
-          "x": 2.5,
+          "x": 0.5,
           "z": 1.26
         },
         {
@@ -140,28 +153,37 @@
       "openings": [
         {
           "kind": "door",
-          "minX": -5.4,
-          "maxX": -1.6,
+          "minX": -5.6,
+          "maxX": -1.4,
           "minZ": 0.96,
           "maxZ": 1.56
         }
       ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -5.3,
+          "z": 5.46
+        },
+        {
+          "x": -5.3,
+          "z": 12.46
+        },
+        {
+          "x": 1.7,
+          "z": 12.46
+        },
+        {
+          "x": 1.7,
+          "z": 5.46
+        }
+      ],
+      "openings": []
     }
   ],
   "props": [
-    {
-      "model": "heist/vault/vault.gltf",
-      "x": 6.5,
-      "z": 6.02,
-      "rotationY": 4.7124,
-      "height": 2.8,
-      "collider": {
-        "halfX": 0.8,
-        "halfY": 1.4,
-        "halfZ": 0.95
-      },
-      "revealAt": 1
-    },
     {
       "model": "heist/mini-market/cash-register.glb",
       "x": -5,
@@ -268,5 +290,12 @@
     "path": "pathStyle1"
   },
   "cameras": [],
-  "traps": []
+  "traps": [],
+  "vault": {
+    "x": -1.8,
+    "z": 8.96,
+    "width": 7,
+    "depth": 7,
+    "side": "+z"
+  }
 }

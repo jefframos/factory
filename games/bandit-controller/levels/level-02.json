@@ -5,7 +5,7 @@
     "cell": 0.5
   },
   "floor": {
-    "width": 25.48,
+    "width": 28.72,
     "depth": 20,
     "rects": [
       {
@@ -19,6 +19,12 @@
         "z": -4,
         "width": 19.6,
         "depth": 12
+      },
+      {
+        "x": 10.61,
+        "z": -2.3,
+        "width": 7.5,
+        "depth": 7
       }
     ]
   },
@@ -32,8 +38,8 @@
       "z": 0
     },
     {
-      "x": -1.26,
-      "z": 7.5
+      "x": 10.21,
+      "z": -2.3
     }
   ],
   "entryPath": {
@@ -82,8 +88,8 @@
       "openings": [
         {
           "kind": "door",
-          "minX": -4.69,
-          "maxX": -1.19,
+          "minX": -5.04,
+          "maxX": -0.84,
           "minZ": -10.3,
           "maxZ": -9.7
         },
@@ -100,6 +106,13 @@
           "maxX": -6.44,
           "minZ": -10.3,
           "maxZ": -9.7
+        },
+        {
+          "kind": "door",
+          "minX": 6.56,
+          "maxX": 7.16,
+          "minZ": -4.4,
+          "maxZ": -0.2
         }
       ]
     },
@@ -118,8 +131,8 @@
       "openings": [
         {
           "kind": "door",
-          "minX": -1.75,
-          "maxX": 1.75,
+          "minX": -2.1,
+          "maxX": 2.1,
           "minZ": 1.7,
           "maxZ": 2.3
         }
@@ -134,7 +147,7 @@
         },
         {
           "x": -0.98,
-          "z": 2
+          "z": 4
         }
       ],
       "openings": [
@@ -152,7 +165,7 @@
       "points": [
         {
           "x": 0.98,
-          "z": 2
+          "z": 0
         },
         {
           "x": 0.98,
@@ -168,6 +181,28 @@
           "maxZ": -2.35
         }
       ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 6.86,
+          "z": -5.8
+        },
+        {
+          "x": 14.36,
+          "z": -5.8
+        },
+        {
+          "x": 14.36,
+          "z": 1.2
+        },
+        {
+          "x": 6.86,
+          "z": 1.2
+        }
+      ],
+      "openings": []
     }
   ],
   "guards": [
@@ -228,19 +263,6 @@
         "halfX": 0.6,
         "halfY": 1.35,
         "halfZ": 1.2
-      },
-      "revealAt": 1
-    },
-    {
-      "model": "heist/vault/vault.gltf",
-      "x": -3.36,
-      "z": 8,
-      "rotationY": 3.1416,
-      "height": 2.8,
-      "collider": {
-        "halfX": 0.95,
-        "halfY": 1.4,
-        "halfZ": 0.8
       },
       "revealAt": 1
     },
@@ -323,5 +345,12 @@
     "path": "pathStyle1"
   },
   "cameras": [],
-  "traps": []
+  "traps": [],
+  "vault": {
+    "x": 10.61,
+    "z": -2.3,
+    "width": 7.5,
+    "depth": 7,
+    "side": "+x"
+  }
 }

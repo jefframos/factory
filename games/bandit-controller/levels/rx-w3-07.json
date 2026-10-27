@@ -1,0 +1,348 @@
+{
+  "id": "rx-w3-07",
+  "name": "Graveyard Shift",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 21.84,
+    "depth": 46,
+    "rects": [
+      {
+        "x": -2.52,
+        "z": -11,
+        "width": 16.8,
+        "depth": 10
+      },
+      {
+        "x": 2.52,
+        "z": -1,
+        "width": 16.8,
+        "depth": 10
+      },
+      {
+        "x": -2.52,
+        "z": 10,
+        "width": 16.8,
+        "depth": 12
+      },
+      {
+        "x": -2.57,
+        "z": -19.5,
+        "width": 7,
+        "depth": 7
+      }
+    ]
+  },
+  "start": {
+    "x": -2.52,
+    "z": 18
+  },
+  "waypoints": [
+    {
+      "x": -2.52,
+      "z": 8
+    },
+    {
+      "x": 2.52,
+      "z": -2
+    },
+    {
+      "x": -2.57,
+      "z": -19.1
+    }
+  ],
+  "entryPath": {
+    "x": -2.52,
+    "z": 18,
+    "width": 5.6,
+    "depth": 4
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": -10.92,
+          "z": -16
+        },
+        {
+          "x": 5.88,
+          "z": -16
+        },
+        {
+          "x": 5.88,
+          "z": -6
+        },
+        {
+          "x": 10.92,
+          "z": -6
+        },
+        {
+          "x": 10.92,
+          "z": 4
+        },
+        {
+          "x": 5.88,
+          "z": 4
+        },
+        {
+          "x": 5.88,
+          "z": 16
+        },
+        {
+          "x": -10.92,
+          "z": 16
+        },
+        {
+          "x": -10.92,
+          "z": 4
+        },
+        {
+          "x": -5.88,
+          "z": 4
+        },
+        {
+          "x": -5.88,
+          "z": -6
+        },
+        {
+          "x": -10.92,
+          "z": -6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -4.62,
+          "maxX": -0.42,
+          "minZ": 15.7,
+          "maxZ": 16.3
+        },
+        {
+          "kind": "door",
+          "minX": -4.67,
+          "maxX": -0.47,
+          "minZ": -16.3,
+          "maxZ": -15.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -5.88,
+          "z": 4
+        },
+        {
+          "x": 5.88,
+          "z": 4
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -2.1,
+          "maxX": 2.1,
+          "minZ": 3.7,
+          "maxZ": 4.3
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -5.88,
+          "z": -6
+        },
+        {
+          "x": 5.88,
+          "z": -6
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -2.1,
+          "maxX": 2.1,
+          "minZ": -6.3,
+          "maxZ": -5.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 0.84,
+          "z": -16
+        },
+        {
+          "x": 0.84,
+          "z": -8
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 0.54,
+          "maxX": 1.14,
+          "minZ": -13.1,
+          "maxZ": -8.9
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -0.84,
+          "z": -4
+        },
+        {
+          "x": -0.84,
+          "z": 2
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -1.14,
+          "maxX": -0.54,
+          "minZ": -2.65,
+          "maxZ": 1.65
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 0.84,
+          "z": 6
+        },
+        {
+          "x": 0.84,
+          "z": 16
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 0.54,
+          "maxX": 1.14,
+          "minZ": 7.9,
+          "maxZ": 12.1
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 0.93,
+          "z": -16
+        },
+        {
+          "x": 0.93,
+          "z": -23
+        },
+        {
+          "x": -6.07,
+          "z": -23
+        },
+        {
+          "x": -6.07,
+          "z": -16
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -6.02,
+      "z": 10,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": 6.02,
+      "z": 0,
+      "amount": 50,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": -6.02,
+      "z": -10,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [
+    {
+      "path": [
+        {
+          "x": -3.78,
+          "z": 0
+        },
+        {
+          "x": 8.82,
+          "z": 0
+        }
+      ],
+      "loop": false,
+      "speed": 1.5,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 4.5,
+      "sweep": 40,
+      "facing": 270
+    }
+  ],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "cameras": [
+    {
+      "x": -10.36,
+      "z": 15.6,
+      "facing": 135,
+      "sweep": 30,
+      "period": 7,
+      "fov": 45,
+      "range": 8
+    },
+    {
+      "x": 5.32,
+      "z": -6.4,
+      "facing": 225,
+      "sweep": 30,
+      "period": 7,
+      "fov": 45,
+      "range": 8
+    }
+  ],
+  "traps": [],
+  "vault": {
+    "x": -2.57,
+    "z": -19.5,
+    "width": 7,
+    "depth": 7,
+    "side": "-z"
+  }
+}

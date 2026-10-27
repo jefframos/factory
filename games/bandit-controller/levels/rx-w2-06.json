@@ -1,0 +1,294 @@
+{
+  "id": "rx-w2-06",
+  "name": "Joint Account",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 25.48,
+    "depth": 36,
+    "rects": [
+      {
+        "x": 2.94,
+        "z": -6,
+        "width": 19.6,
+        "depth": 10
+      },
+      {
+        "x": -2.94,
+        "z": 5,
+        "width": 19.6,
+        "depth": 12
+      },
+      {
+        "x": 3.04,
+        "z": -14.5,
+        "width": 8.5,
+        "depth": 7
+      }
+    ]
+  },
+  "start": {
+    "x": -0.49,
+    "z": 13
+  },
+  "waypoints": [
+    {
+      "x": -0.49,
+      "z": 3
+    },
+    {
+      "x": 5.39,
+      "z": -7
+    }
+  ],
+  "entryPath": {
+    "x": -2.94,
+    "z": 13,
+    "width": 10.5,
+    "depth": 4
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": 12.74,
+          "z": -11
+        },
+        {
+          "x": -6.86,
+          "z": -11
+        },
+        {
+          "x": -6.86,
+          "z": -1
+        },
+        {
+          "x": -12.74,
+          "z": -1
+        },
+        {
+          "x": -12.74,
+          "z": 11
+        },
+        {
+          "x": 6.86,
+          "z": 11
+        },
+        {
+          "x": 6.86,
+          "z": -1
+        },
+        {
+          "x": 12.74,
+          "z": -1
+        }
+      ],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": -7.63,
+          "maxX": 1.75,
+          "minZ": 10.7,
+          "maxZ": 11.3
+        },
+        {
+          "kind": "door",
+          "minX": 0.94,
+          "maxX": 5.14,
+          "minZ": -11.3,
+          "maxZ": -10.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 6.86,
+          "z": -1
+        },
+        {
+          "x": -6.86,
+          "z": -1
+        }
+      ],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": -4.69,
+          "maxX": 4.69,
+          "minZ": -1.3,
+          "maxZ": -0.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -0.98,
+          "z": -11
+        },
+        {
+          "x": -0.98,
+          "z": -1
+        }
+      ],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": -1.28,
+          "maxX": -0.68,
+          "minZ": -11,
+          "maxZ": -3.1
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 0.98,
+          "z": -1
+        },
+        {
+          "x": 0.98,
+          "z": 11
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 0.68,
+          "maxX": 1.28,
+          "minZ": 1.1,
+          "maxZ": 6.9
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": 7.29,
+          "z": -11
+        },
+        {
+          "x": 7.29,
+          "z": -18
+        },
+        {
+          "x": -1.21,
+          "z": -18
+        },
+        {
+          "x": -1.21,
+          "z": -11
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "props": [],
+  "loot": [
+    {
+      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "x": 0.56,
+      "z": 5,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": -0.56,
+      "z": -5,
+      "amount": 50,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [
+    {
+      "path": [
+        {
+          "x": 10.64,
+          "z": -5
+        },
+        {
+          "x": -4.76,
+          "z": -5
+        }
+      ],
+      "loop": false,
+      "speed": 1.5,
+      "pause": 1.5,
+      "fov": 55,
+      "range": 4.5,
+      "sweep": 40,
+      "facing": 90
+    }
+  ],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "squad": [
+    {
+      "view": "blue",
+      "start": {
+        "x": -0.49,
+        "z": 13
+      },
+      "waypoints": [
+        {
+          "x": -0.49,
+          "z": 3
+        },
+        {
+          "x": 3.94,
+          "z": -14.1
+        }
+      ]
+    },
+    {
+      "view": "purple",
+      "start": {
+        "x": -5.39,
+        "z": 13
+      },
+      "waypoints": [
+        {
+          "x": -5.39,
+          "z": 3
+        },
+        {
+          "x": 2.14,
+          "z": -14.1
+        }
+      ]
+    }
+  ],
+  "sharedGoal": {
+    "x": 3.04,
+    "z": -14.5,
+    "width": 7.9,
+    "depth": 6.4,
+    "enabled": true
+  },
+  "cameras": [],
+  "traps": [],
+  "vault": {
+    "x": 3.04,
+    "z": -14.5,
+    "width": 8.5,
+    "depth": 7,
+    "side": "-z"
+  }
+}

@@ -28,8 +28,11 @@ but keep its ground collider. The home wardrobe is accessed through EDIT SQUAD;
 there is no separate shop shortcut or game-name ribbon.
 
 The main screen has two actions: EDIT SQUAD and a larger golden CHOOSE LEVEL
-button. Choosing a level opens a separate world/level panel with a BACK button;
-the world grid is not part of the main menu. Home uses a vibrant grass-green garden;
+button. Choosing a level opens a separate, larger world/level panel (88 px tiles,
+4 per row, short rows centred; 3 per row for the tutorial) with a BACK button;
+the world grid is not part of the main menu. Earned stars use the glossy gold
+`ItemIcon_Star_Gold` (the same icon pack's gold star; the old file was a mislabeled
+red star). Home uses a vibrant grass-green garden;
 campaign exteriors use richer greens, warm sand and deep blue, with low-contrast
 indoor floors so characters, goals, and primary actions remain readable.
 Guards wear a reserved navy uniform, independent of customizable squad skins;
@@ -41,6 +44,11 @@ not `Door_A_Decorated` or the similarly named restaurant emergency door. The
 self-contained `wooden-door.glb` is converted from the original glTF; its CC0
 license is kept beside the source asset. Door style model paths
 accept `.glb` or `.gltf`; extensionless paths retain the legacy `.gltf` default.
+
+Home has a cog **Settings** button left of the sound toggle (like Pizza's settings
+popup) with **UNLOCK ALL LEVELS** (a persisted `bandit-controller.unlockAll` flag that
+opens every level and world gate without marking anything completed), **ADD $1000**,
+and **CLEAR DATA** (same confirmed reset as below, then reloads Home).
 
 With `?dev=1` (or `?debug=1`), the **Progression** debug panel shows cash, stars,
 and completion counts. **RESET GAME DATA...** asks for confirmation, removes only
@@ -71,26 +79,66 @@ to generate browser MP3s and [`manifests/audio.json`](manifests/audio.json).
 ## Campaign layouts and route checks
 
 Campaign levels are authored in [`levels/`](levels/), with world membership in
-[`levels/worlds.json`](levels/worlds.json). Non-tutorial levels in worlds 1–7
+[`levels/worlds.json`](levels/worlds.json). The campaign is a 5-level **Tutorial**
+world (`id: "tutorial"`, shown as "TUTORIAL" with levels T-1…T-5 and the tutorial
+hand) followed by 8 numbered worlds of 10 levels each (85 levels).
+[`scripts/bandit-remix-levels.mjs`](../../scripts/bandit-remix-levels.mjs) owns that
+layout: it rewrites `worlds.json`/`index.json` and regenerates the 26 `rx-<source>`
+remix levels — sources mirrored across X or rotated 180° with every coordinate,
+heading, opening and vault side transformed (`--dry` prints the plan). Edit a remix's
+source and re-run the script rather than editing `rx-*.json` directly.
+Non-tutorial levels in worlds 1–7
 use staggered floor pieces, side-room divisions, and varied entry directions;
 tutorials keep their simpler layouts. Keep every wall opening aligned with its
 wall, and rotate patrol headings, prop colliders, entry paths, and shared goals
 when changing a layout's orientation.
-In 1-7, side partitions sit back from the central doorway to keep its opening and
+In `w1-08` (formerly 1-7), side partitions sit back from the central doorway to keep its opening and
 approach clear; doorway route checks include both directions and side-room detours.
 Active shared finish areas replace the squad's final destination disks, including
 when those destinations are revealed after a checkpoint. Intermediate checkpoints
 and individual goals in levels without an active shared finish remain visible.
 
-[`LevelRoute.ts`](game/utils/LevelRoute.ts) assists horizontal and vertical
-door crossings locally along the drawn trace. A door must not pull unrelated
-parts of the route toward its centre just because they share a world-space row.
-The adjusted route is checked against wall colliders before following it.
+Every campaign level ends in a **vault room**: a rectangular room (at least 6.5 units
+on its short side) attached outside the floor edge nearest the finish, entered through
+one door, with the safe against the far wall so players never walk across it. Vaults
+contain no guards, cameras, drones, or traps; squad members line up between the door
+and the safe. `level.vault` and [`vaultSafe()`](game/data/LevelData.ts) describe it.
+The vault is the finish as a whole: no final waypoint disk is drawn inside it, entering it
+on the last leg completes that member, and the safe shows a constant gold particle fountain
+(`heistSafe` in the pizza particle registry) over a pulsing gold floor glow.
+[`scripts/bandit-vault-rooms.mjs`](../../scripts/bandit-vault-rooms.mjs) is the
+idempotent migration that adds vaults and widens doors to 4.2 units. When another wall
+ends inside a doorway it shortens that wall stub instead of moving the door (`--dry`
+previews).
+
+Path drawing is wall-aware: [`NavGrid.ts`](game/utils/NavGrid.ts) (A* on a 0.25 grid
+with 0.55 clearance) extends the route around walls and through doors as the finger
+moves, so brushing a wall or tracing through it detours instead of invalidating the
+path; traces stay on the floor, and a player standing against a wall first steps out
+to free floor. A path only turns red when the release point is unreachable. Characters
+carry a thin dark inverted-hull outline (world-space width, in
+[`CharacterBody.ts`](game/entities/CharacterBody.ts)), and in squad levels the selected
+member gets a pulsing fresnel rim plus a ground ring. The tutorial world's 5 levels show the hand: it
+presses on the player, then drags along the real route to the goal.
+
+Checkpoints are where players stop to plan, and guards, cameras, and drones keep
+moving meanwhile, so a checkpoint must sit outside every sensor's reach (camera range
+inside its sweep, a stationary guard's range, and a patrol's close radius/cone).
+
+[`LevelRoute.ts`](game/utils/LevelRoute.ts) keeps its earlier door-crossing assist for
+its regression tests; the level scene now uses `NavGrid`.
 
 Run `npm run test:level-paths` after editing levels or door assistance. It covers
-the world 8–2 courtyard crossing in both directions, sideways door assistance,
-actual wall-style collider dimensions, guard patrol clearance, and reachable
-waypoints, shared-goal slots, and loot for every non-tutorial world 1–7 level.
+the `h1-02` courtyard crossing in both directions, sideways door assistance,
+actual wall-style collider dimensions, guard patrol clearance, vault-room invariants,
+NavGrid reachability of every checkpoint and loot in all campaign levels, and
+route-assist regressions.
+
+`npm run playtest:bandit` (with `npm run dev` running) plays every campaign level in
+headless Chrome through the scene's own route/follow code, with real guards, cameras,
+drones, traps, and timing, retrying with waits when busted; it exits non-zero if any
+level can't be completed. `BOT_WAIT=5` adds a planning pause before every trace;
+all campaign levels pass with it. Pass level ids to run only those.
 
 ## Big picture: a hub scene + one scene per minigame
 
