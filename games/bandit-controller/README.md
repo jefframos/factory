@@ -29,8 +29,10 @@ Home and campaign scenes disable the shared environment's debug-grid visual,
 but keep its ground collider. The home wardrobe is accessed through EDIT SQUAD;
 there is no separate shop shortcut or game-name ribbon.
 
-The main screen has two actions: EDIT SQUAD and a larger golden CHOOSE LEVEL
-button (it breathes and has a periodic shine sweep).
+The main screen has a large golden PLAY button that resumes the saved level in
+one tap (or starts the first tutorial on a fresh save). It breathes and has a
+periodic shine sweep. Smaller EDIT SQUAD and CHOOSE LEVEL buttons sit above it;
+CHOOSE LEVEL keeps the world picker available for replaying unlocked levels.
 
 UI juice lives in `game/ui/UiAnim.ts` (popIn/popOut, dropIn, staggerPop/Rise,
 pulse, punch, shake, countUp, rays, confetti, sparkBurst). Every helper returns
