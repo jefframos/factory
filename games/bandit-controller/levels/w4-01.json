@@ -34,8 +34,8 @@
   },
   "waypoints": [
     {
-      "x": 3,
-      "z": 3.136
+      "x": 2,
+      "z": 3.14
     },
     {
       "x": -14.35,
@@ -191,10 +191,453 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/casino/slot-machine-02.glb",
+      "x": 0.8,
+      "z": 7.66,
+      "rotationY": 0,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.41,
+        "halfY": 1.62,
+        "halfZ": 0.41
+      }
+    },
+    {
+      "model": "heist/decor/casino/chair-06.glb",
+      "x": 0.8,
+      "z": 9.26,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.4,
+        "halfY": 0.77,
+        "halfZ": 0.49
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-01.glb",
+      "x": 0.8,
+      "z": 6.46,
+      "rotationY": 3.14,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.62,
+        "halfZ": 0.47
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-01.glb",
+      "x": 2,
+      "z": 7.66,
+      "rotationY": 0,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.62,
+        "halfZ": 0.47
+      }
+    },
+    {
+      "model": "heist/decor/casino/chair-06.glb",
+      "x": 2,
+      "z": 9.26,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.4,
+        "halfY": 0.77,
+        "halfZ": 0.49
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-02.glb",
+      "x": 2,
+      "z": 6.46,
+      "rotationY": 3.14,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.41,
+        "halfY": 1.62,
+        "halfZ": 0.41
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-02.glb",
+      "x": 3.2,
+      "z": 7.66,
+      "rotationY": 0,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.41,
+        "halfY": 1.62,
+        "halfZ": 0.41
+      }
+    },
+    {
+      "model": "heist/decor/casino/chair-06.glb",
+      "x": 3.2,
+      "z": 9.26,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.4,
+        "halfY": 0.77,
+        "halfZ": 0.49
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-01.glb",
+      "x": 3.2,
+      "z": 6.46,
+      "rotationY": 3.14,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.62,
+        "halfZ": 0.47
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-01.glb",
+      "x": -0.25,
+      "z": 4.28,
+      "rotationY": 1.57,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.62,
+        "halfZ": 0.47
+      }
+    },
+    {
+      "model": "heist/decor/casino/flower-03.glb",
+      "x": 0.04,
+      "z": -3.67,
+      "rotationY": 1.57,
+      "height": 2.21,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.74,
+        "halfY": 1.11,
+        "halfZ": 0.74
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-aquarium-01.glb",
+      "x": -0.25,
+      "z": -5.31,
+      "rotationY": 1.57,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.62,
+        "halfZ": 0.47
+      }
+    },
+    {
+      "model": "heist/decor/casino/chair-06.glb",
+      "x": 1.35,
+      "z": -5.31,
+      "rotationY": 4.71,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.49,
+        "halfY": 0.77,
+        "halfZ": 0.4
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-aquarium-01.glb",
+      "x": -1.75,
+      "z": 3.49,
+      "rotationY": -1.57,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.62,
+        "halfZ": 0.47
+      }
+    },
+    {
+      "model": "heist/decor/casino/couch-05.glb",
+      "x": -1.96,
+      "z": -4.21,
+      "rotationY": -1.57,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.66,
+        "halfY": 0.77,
+        "halfZ": 1.33
+      }
+    },
+    {
+      "model": "heist/decor/casino/flower-03.glb",
+      "x": -8.15,
+      "z": -11.89,
+      "rotationY": 0,
+      "height": 2.21,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.74,
+        "halfY": 1.11,
+        "halfZ": 0.74
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-aquarium-01.glb",
+      "x": -6.39,
+      "z": -12.19,
+      "rotationY": 0,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.62,
+        "halfZ": 0.47
+      }
+    },
+    {
+      "model": "heist/decor/casino/chair-06.glb",
+      "x": -6.39,
+      "z": -10.59,
+      "rotationY": 3.14,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.4,
+        "halfY": 0.77,
+        "halfZ": 0.49
+      }
+    },
+    {
+      "model": "heist/decor/casino/column-17.glb",
+      "x": -4.39,
+      "z": -12.3,
+      "rotationY": 0,
+      "height": 4.42,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.37,
+        "halfY": 2.21,
+        "halfZ": 0.37
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-02.glb",
+      "x": 9.34,
+      "z": 12.26,
+      "rotationY": -3.14,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.41,
+        "halfY": 1.62,
+        "halfZ": 0.41
+      }
+    },
+    {
+      "model": "heist/decor/casino/chair-06.glb",
+      "x": 9.34,
+      "z": 10.66,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.4,
+        "halfY": 0.77,
+        "halfZ": 0.49
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-01.glb",
+      "x": 7.72,
+      "z": 12.19,
+      "rotationY": -3.14,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.62,
+        "halfZ": 0.47
+      }
+    },
+    {
+      "model": "heist/decor/casino/chair-06.glb",
+      "x": 7.72,
+      "z": 10.59,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.4,
+        "halfY": 0.77,
+        "halfZ": 0.49
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-02.glb",
+      "x": 3.35,
+      "z": 12.26,
+      "rotationY": -3.14,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.41,
+        "halfY": 1.62,
+        "halfZ": 0.41
+      }
+    },
+    {
+      "model": "heist/decor/casino/chair-06.glb",
+      "x": 3.35,
+      "z": 10.66,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.4,
+        "halfY": 0.77,
+        "halfZ": 0.49
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-01.glb",
+      "x": 1.52,
+      "z": 12.19,
+      "rotationY": -3.14,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.62,
+        "halfZ": 0.47
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-aquarium-01.glb",
+      "x": -0.18,
+      "z": 12.19,
+      "rotationY": -3.14,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.62,
+        "halfZ": 0.47
+      }
+    },
+    {
+      "model": "heist/decor/casino/couch-05.glb",
+      "x": -1.96,
+      "z": -9.44,
+      "rotationY": -1.57,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.66,
+        "halfY": 0.77,
+        "halfZ": 1.33
+      }
+    },
+    {
+      "model": "heist/decor/casino/column-17.glb",
+      "x": -3.37,
+      "z": 6.03,
+      "rotationY": -3.14,
+      "height": 4.42,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.37,
+        "halfY": 2.21,
+        "halfZ": 0.37
+      }
+    },
+    {
+      "model": "heist/decor/casino/flower-03.glb",
+      "x": -5.47,
+      "z": 5.62,
+      "rotationY": -3.14,
+      "height": 2.21,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.74,
+        "halfY": 1.11,
+        "halfZ": 0.74
+      }
+    },
+    {
+      "model": "heist/decor/casino/couch-05.glb",
+      "x": -8.98,
+      "z": 5.7,
+      "rotationY": -3.14,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.33,
+        "halfY": 0.77,
+        "halfZ": 0.66
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-02.glb",
+      "x": 8.5,
+      "z": -0.1,
+      "rotationY": 0,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.41,
+        "halfY": 1.62,
+        "halfZ": 0.41
+      }
+    },
+    {
+      "model": "heist/decor/casino/slot-machine-01.glb",
+      "x": 8.39,
+      "z": -1.53,
+      "rotationY": -3.14,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.62,
+        "halfZ": 0.47
+      }
+    },
+    {
+      "model": "heist/decor/casino/chair-06.glb",
+      "x": 8.39,
+      "z": -3.13,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.4,
+        "halfY": 0.77,
+        "halfZ": 0.49
+      }
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": 5,
       "z": 6.636,
       "amount": 25,

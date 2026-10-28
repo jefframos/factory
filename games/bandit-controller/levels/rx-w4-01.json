@@ -34,8 +34,8 @@
   },
   "waypoints": [
     {
-      "x": -3,
-      "z": -3.136
+      "x": -2,
+      "z": -3.14
     },
     {
       "x": 14.35,
@@ -191,10 +191,350 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/casino/couch-05.glb",
+      "x": -7.4,
+      "z": -7.06,
+      "rotationY": 1.57,
+      "height": 1.87,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.81,
+        "halfY": 0.94,
+        "halfZ": 1.62
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/shrine-candles.glb",
+      "x": 1.69,
+      "z": 11.6,
+      "rotationY": 1.57,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.42,
+        "halfY": 0.77,
+        "halfZ": 0.42
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/primitive-cube-small.glb",
+      "x": 1.99,
+      "z": 9.12,
+      "rotationY": 1.57,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/mixed/idol-a.glb",
+      "x": 1.99,
+      "z": 9.12,
+      "rotationY": 1.57,
+      "height": 1.19,
+      "revealAt": 0,
+      "elevation": 1.53,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/pictureframe-standing-a.glb",
+      "x": -1.37,
+      "z": 5.6,
+      "rotationY": -3.14,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.99,
+        "halfY": 1.36,
+        "halfZ": 0.75
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/pictureframe-standing-b.glb",
+      "x": -8.21,
+      "z": 5.4,
+      "rotationY": -3.14,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.83,
+        "halfY": 1.36,
+        "halfZ": 0.93
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/primitive-cube-small.glb",
+      "x": 3.47,
+      "z": -5.67,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/mixed/idol-a.glb",
+      "x": 3.47,
+      "z": -5.67,
+      "rotationY": 0,
+      "height": 1.19,
+      "revealAt": 0,
+      "elevation": 1.53,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/shrine-candles.glb",
+      "x": 5.92,
+      "z": -5.97,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.42,
+        "halfY": 0.77,
+        "halfZ": 0.42
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/primitive-cube-small.glb",
+      "x": 7.81,
+      "z": -5.67,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/mixed/idol-a.glb",
+      "x": 7.81,
+      "z": -5.67,
+      "rotationY": 0,
+      "height": 1.19,
+      "revealAt": 0,
+      "elevation": 1.53,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/shrine-candles.glb",
+      "x": 9.61,
+      "z": -5.97,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.42,
+        "halfY": 0.77,
+        "halfZ": 0.42
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-19.glb",
+      "x": 9.52,
+      "z": -1.38,
+      "rotationY": -3.14,
+      "height": 2.21,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.43,
+        "halfY": 1.11,
+        "halfZ": 0.33
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/shrine-candles.glb",
+      "x": 9.74,
+      "z": -0.09,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.42,
+        "halfY": 0.77,
+        "halfZ": 0.42
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-19.glb",
+      "x": 0.41,
+      "z": 3.75,
+      "rotationY": -1.57,
+      "height": 2.21,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.33,
+        "halfY": 1.11,
+        "halfZ": 0.43
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/primitive-cube-small.glb",
+      "x": 1.99,
+      "z": -3.84,
+      "rotationY": 1.57,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/mixed/idol-a.glb",
+      "x": 1.99,
+      "z": -3.84,
+      "rotationY": 1.57,
+      "height": 1.19,
+      "revealAt": 0,
+      "elevation": 1.53,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/cute/plants-19.glb",
+      "x": 1.59,
+      "z": 3.35,
+      "rotationY": 1.57,
+      "height": 2.21,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.33,
+        "halfY": 1.11,
+        "halfZ": 0.43
+      }
+    },
+    {
+      "model": "heist/decor/casino/column-17.glb",
+      "x": 1.63,
+      "z": 4.91,
+      "rotationY": 1.57,
+      "height": 4.42,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.37,
+        "halfY": 2.21,
+        "halfZ": 0.37
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/pictureframe-standing-a.glb",
+      "x": -9.94,
+      "z": 2.9,
+      "rotationY": 1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.75,
+        "halfY": 1.36,
+        "halfZ": 0.99
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/pictureframe-standing-b.glb",
+      "x": -9.74,
+      "z": -8.19,
+      "rotationY": 1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.93,
+        "halfY": 1.36,
+        "halfZ": 1.83
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-19.glb",
+      "x": -10.41,
+      "z": -12.24,
+      "rotationY": 1.57,
+      "height": 2.21,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.33,
+        "halfY": 1.11,
+        "halfZ": 0.43
+      }
+    },
+    {
+      "model": "heist/decor/casino/column-17.glb",
+      "x": 0.37,
+      "z": -11.55,
+      "rotationY": -1.57,
+      "height": 4.42,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.37,
+        "halfY": 2.21,
+        "halfZ": 0.37
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/pictureframe-standing-a.glb",
+      "x": -0.06,
+      "z": -8.63,
+      "rotationY": -1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.75,
+        "halfY": 1.36,
+        "halfZ": 0.99
+      }
+    },
+    {
+      "model": "heist/decor/casino/column-17.glb",
+      "x": -8.85,
+      "z": 0.15,
+      "rotationY": -3.14,
+      "height": 4.42,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.37,
+        "halfY": 2.21,
+        "halfZ": 0.37
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/pictureframe-standing-a.glb",
+      "x": -8.2,
+      "z": -11.88,
+      "rotationY": 0,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.99,
+        "halfY": 1.36,
+        "halfZ": 0.75
+      }
+    },
+    {
+      "model": "heist/decor/casino/column-17.glb",
+      "x": -1.36,
+      "z": -12.3,
+      "rotationY": 0,
+      "height": 4.42,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.37,
+        "halfY": 2.21,
+        "halfZ": 0.37
+      }
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": -5,
       "z": -6.636,
       "amount": 25,

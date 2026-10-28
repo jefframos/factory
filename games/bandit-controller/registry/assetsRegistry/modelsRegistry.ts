@@ -8,54 +8,6 @@ export interface ModelDefinition {
   readonly nodes: Record<string, string>;
 }
 
-const CharactersFallingIdle = {
-  id: 'FallingIdle',
-  path: 'characters/default/FallingIdle',
-  fullPath: 'bandit-controller/models/characters/default/FallingIdle.glb',
-  format: 'glb',
-  nodes: {}
-} as const;
-
-const CharactersJumpingUp = {
-  id: 'JumpingUp',
-  path: 'characters/default/JumpingUp',
-  fullPath: 'bandit-controller/models/characters/default/JumpingUp.glb',
-  format: 'glb',
-  nodes: {}
-} as const;
-
-const CharactersLanding = {
-  id: 'Landing',
-  path: 'characters/default/Landing',
-  fullPath: 'bandit-controller/models/characters/default/Landing.glb',
-  format: 'glb',
-  nodes: {}
-} as const;
-
-const CharactersRoll = {
-  id: 'Roll',
-  path: 'characters/default/Roll',
-  fullPath: 'bandit-controller/models/characters/default/Roll.glb',
-  format: 'glb',
-  nodes: {}
-} as const;
-
-const CharactersRunning = {
-  id: 'Running',
-  path: 'characters/default/Running',
-  fullPath: 'bandit-controller/models/characters/default/Running.glb',
-  format: 'glb',
-  nodes: {}
-} as const;
-
-const CharactersWalking = {
-  id: 'Walking',
-  path: 'characters/default/Walking',
-  fullPath: 'bandit-controller/models/characters/default/Walking.glb',
-  format: 'glb',
-  nodes: {}
-} as const;
-
 const CharactersCharacterMedium = {
   id: 'characterMedium',
   path: 'characters/default/characterMedium',
@@ -68,6 +20,14 @@ const CharactersFallback = {
   id: 'fallback',
   path: 'characters/default/fallback',
   fullPath: 'bandit-controller/models/characters/default/fallback.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CharactersFallingIdle = {
+  id: 'FallingIdle',
+  path: 'characters/default/FallingIdle',
+  fullPath: 'bandit-controller/models/characters/default/FallingIdle.glb',
   format: 'glb',
   nodes: {}
 } as const;
@@ -104,6 +64,14 @@ const CharactersJumpUpRun = {
   nodes: {}
 } as const;
 
+const CharactersJumpingUp = {
+  id: 'JumpingUp',
+  path: 'characters/default/JumpingUp',
+  fullPath: 'bandit-controller/models/characters/default/JumpingUp.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
 const CharactersLandingNew = {
   id: 'landing-new',
   path: 'characters/default/landing-new',
@@ -112,10 +80,42 @@ const CharactersLandingNew = {
   nodes: {}
 } as const;
 
+const CharactersLanding = {
+  id: 'Landing',
+  path: 'characters/default/Landing',
+  fullPath: 'bandit-controller/models/characters/default/Landing.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CharactersRoll = {
+  id: 'Roll',
+  path: 'characters/default/Roll',
+  fullPath: 'bandit-controller/models/characters/default/Roll.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CharactersRunning = {
+  id: 'Running',
+  path: 'characters/default/Running',
+  fullPath: 'bandit-controller/models/characters/default/Running.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
 const CharactersSlide = {
   id: 'slide',
   path: 'characters/default/slide',
   fullPath: 'bandit-controller/models/characters/default/slide.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CharactersWalking = {
+  id: 'Walking',
+  path: 'characters/default/Walking',
+  fullPath: 'bandit-controller/models/characters/default/Walking.glb',
   format: 'glb',
   nodes: {}
 } as const;
@@ -264,13 +264,1128 @@ const HatsWarriorHat = {
   nodes: {}
 } as const;
 
-const HeistDoorADecorated = {
-  id: 'Door_A_Decorated',
-  path: 'heist/doors/Door_A_Decorated',
-  fullPath: 'bandit-controller/models/heist/doors/Door_A_Decorated.gltf',
-  format: 'gltf',
+const HeistArmchair02 = {
+  id: 'armchair-02',
+  path: 'heist/decor/casino/armchair-02',
+  fullPath: 'bandit-controller/models/heist/decor/casino/armchair-02.glb',
+  format: 'glb',
   nodes: {
-  "DoorADecorated": "Door_A_Decorated"
+  "Armchair02": "Armchair_02"
+}
+} as const;
+
+const HeistAtm01 = {
+  id: 'atm-01',
+  path: 'heist/decor/casino/atm-01',
+  fullPath: 'bandit-controller/models/heist/decor/casino/atm-01.glb',
+  format: 'glb',
+  nodes: {
+  "ATM01": "ATM_01"
+}
+} as const;
+
+const HeistAtm03 = {
+  id: 'atm-03',
+  path: 'heist/decor/casino/atm-03',
+  fullPath: 'bandit-controller/models/heist/decor/casino/atm-03.glb',
+  format: 'glb',
+  nodes: {
+  "ATM03": "ATM_03"
+}
+} as const;
+
+const HeistCash10 = {
+  id: 'cash-10',
+  path: 'heist/decor/casino/cash-10',
+  fullPath: 'bandit-controller/models/heist/decor/casino/cash-10.glb',
+  format: 'glb',
+  nodes: {
+  "Cash10": "Cash_10"
+}
+} as const;
+
+const HeistCashMachine01 = {
+  id: 'cash-machine-01',
+  path: 'heist/decor/casino/cash-machine-01',
+  fullPath: 'bandit-controller/models/heist/decor/casino/cash-machine-01.glb',
+  format: 'glb',
+  nodes: {
+  "CashMachine01": "Cash_Machine_01"
+}
+} as const;
+
+const HeistChair06 = {
+  id: 'chair-06',
+  path: 'heist/decor/casino/chair-06',
+  fullPath: 'bandit-controller/models/heist/decor/casino/chair-06.glb',
+  format: 'glb',
+  nodes: {
+  "Chair06": "Chair_06"
+}
+} as const;
+
+const HeistChairOffice01 = {
+  id: 'chair-office-01',
+  path: 'heist/decor/casino/chair-office-01',
+  fullPath: 'bandit-controller/models/heist/decor/casino/chair-office-01.glb',
+  format: 'glb',
+  nodes: {
+  "ChairOffice01": "Chair_Office_01",
+  "ChairOfficePart01": "Chair_Office_Part_01"
+}
+} as const;
+
+const HeistColumn17 = {
+  id: 'column-17',
+  path: 'heist/decor/casino/column-17',
+  fullPath: 'bandit-controller/models/heist/decor/casino/column-17.glb',
+  format: 'glb',
+  nodes: {
+  "Column17": "Column_17"
+}
+} as const;
+
+const HeistCouch05 = {
+  id: 'couch-05',
+  path: 'heist/decor/casino/couch-05',
+  fullPath: 'bandit-controller/models/heist/decor/casino/couch-05.glb',
+  format: 'glb',
+  nodes: {
+  "Couch05": "Couch_05"
+}
+} as const;
+
+const HeistFence07 = {
+  id: 'fence-07',
+  path: 'heist/decor/casino/fence-07',
+  fullPath: 'bandit-controller/models/heist/decor/casino/fence-07.glb',
+  format: 'glb',
+  nodes: {
+  "Fence07": "Fence_07"
+}
+} as const;
+
+const HeistFence09 = {
+  id: 'fence-09',
+  path: 'heist/decor/casino/fence-09',
+  fullPath: 'bandit-controller/models/heist/decor/casino/fence-09.glb',
+  format: 'glb',
+  nodes: {
+  "Fence09": "Fence_09"
+}
+} as const;
+
+const HeistFloor01 = {
+  id: 'floor-01',
+  path: 'heist/decor/casino/floor-01',
+  fullPath: 'bandit-controller/models/heist/decor/casino/floor-01.glb',
+  format: 'glb',
+  nodes: {
+  "Floor01": "Floor_01"
+}
+} as const;
+
+const HeistFlower03 = {
+  id: 'flower-03',
+  path: 'heist/decor/casino/flower-03',
+  fullPath: 'bandit-controller/models/heist/decor/casino/flower-03.glb',
+  format: 'glb',
+  nodes: {
+  "Flower03": "Flower_03"
+}
+} as const;
+
+const HeistFruits01 = {
+  id: 'fruits-01',
+  path: 'heist/decor/casino/fruits-01',
+  fullPath: 'bandit-controller/models/heist/decor/casino/fruits-01.glb',
+  format: 'glb',
+  nodes: {
+  "Fruits01": "Fruits_01"
+}
+} as const;
+
+const HeistGoldIngot01 = {
+  id: 'gold-ingot-01',
+  path: 'heist/decor/casino/gold-ingot-01',
+  fullPath: 'bandit-controller/models/heist/decor/casino/gold-ingot-01.glb',
+  format: 'glb',
+  nodes: {
+  "GoldIngot01": "Gold_Ingot_01"
+}
+} as const;
+
+const HeistMonitor02 = {
+  id: 'monitor-02',
+  path: 'heist/decor/casino/monitor-02',
+  fullPath: 'bandit-controller/models/heist/decor/casino/monitor-02.glb',
+  format: 'glb',
+  nodes: {
+  "Monitor02": "Monitor_02"
+}
+} as const;
+
+const HeistNeonSign01 = {
+  id: 'neon-sign-01',
+  path: 'heist/decor/casino/neon-sign-01',
+  fullPath: 'bandit-controller/models/heist/decor/casino/neon-sign-01.glb',
+  format: 'glb',
+  nodes: {
+  "NeonSign01": "Neon_Sign_01"
+}
+} as const;
+
+const HeistSafeBox01 = {
+  id: 'safe-box-01',
+  path: 'heist/decor/casino/safe-box-01',
+  fullPath: 'bandit-controller/models/heist/decor/casino/safe-box-01.glb',
+  format: 'glb',
+  nodes: {
+  "SafeBox01": "SafeBox_01",
+  "SafeBoxDoor01": "SafeBox_Door_01"
+}
+} as const;
+
+const HeistScreens01 = {
+  id: 'screens-01',
+  path: 'heist/decor/casino/screens-01',
+  fullPath: 'bandit-controller/models/heist/decor/casino/screens-01.glb',
+  format: 'glb',
+  nodes: {
+  "Screens01": "Screens_01"
+}
+} as const;
+
+const HeistSlotMachine01 = {
+  id: 'slot-machine-01',
+  path: 'heist/decor/casino/slot-machine-01',
+  fullPath: 'bandit-controller/models/heist/decor/casino/slot-machine-01.glb',
+  format: 'glb',
+  nodes: {
+  "SlotMachine01": "Slot_Machine_01",
+  "Slot01": "Slot_01",
+  "Slot02": "Slot_02",
+  "Slot03": "Slot_03",
+  "Slot04": "Slot_04"
+}
+} as const;
+
+const HeistSlotMachine02 = {
+  id: 'slot-machine-02',
+  path: 'heist/decor/casino/slot-machine-02',
+  fullPath: 'bandit-controller/models/heist/decor/casino/slot-machine-02.glb',
+  format: 'glb',
+  nodes: {
+  "SlotMachine02": "Slot_Machine_02",
+  "Slot05": "Slot_05",
+  "Slot06": "Slot_06",
+  "Slot07": "Slot_07",
+  "Slot08": "Slot_08"
+}
+} as const;
+
+const HeistSlotMachineAquarium01 = {
+  id: 'slot-machine-aquarium-01',
+  path: 'heist/decor/casino/slot-machine-aquarium-01',
+  fullPath: 'bandit-controller/models/heist/decor/casino/slot-machine-aquarium-01.glb',
+  format: 'glb',
+  nodes: {
+  "SlotMachineAquarium01": "Slot_Machine_Aquarium_01",
+  "SlotMachineAquariumFish01": "Slot_Machine_Aquarium_Fish_01"
+}
+} as const;
+
+const HeistTable01 = {
+  id: 'table-01',
+  path: 'heist/decor/casino/table-01',
+  fullPath: 'bandit-controller/models/heist/decor/casino/table-01.glb',
+  format: 'glb',
+  nodes: {
+  "Table01": "Table_01"
+}
+} as const;
+
+const HeistTable06 = {
+  id: 'table-06',
+  path: 'heist/decor/casino/table-06',
+  fullPath: 'bandit-controller/models/heist/decor/casino/table-06.glb',
+  format: 'glb',
+  nodes: {
+  "Table06": "Table_06"
+}
+} as const;
+
+const HeistTablecloth01 = {
+  id: 'tablecloth-01',
+  path: 'heist/decor/casino/tablecloth-01',
+  fullPath: 'bandit-controller/models/heist/decor/casino/tablecloth-01.glb',
+  format: 'glb',
+  nodes: {
+  "Tablecloth01": "Tablecloth_01"
+}
+} as const;
+
+const HeistFlagBannerLong = {
+  id: 'flag-banner-long',
+  path: 'heist/decor/castle/flag-banner-long',
+  fullPath: 'bandit-controller/models/heist/decor/castle/flag-banner-long.glb',
+  format: 'glb',
+  nodes: {
+  "FlagBannerLong": "flag-banner-long"
+}
+} as const;
+
+const HeistRocksSmall = {
+  id: 'rocks-small',
+  path: 'heist/decor/castle/rocks-small',
+  fullPath: 'bandit-controller/models/heist/decor/castle/rocks-small.glb',
+  format: 'glb',
+  nodes: {
+  "RocksSmall": "rocks-small"
+}
+} as const;
+
+const HeistSiegeBallista = {
+  id: 'siege-ballista',
+  path: 'heist/decor/castle/siege-ballista',
+  fullPath: 'bandit-controller/models/heist/decor/castle/siege-ballista.glb',
+  format: 'glb',
+  nodes: {
+  "SiegeBallista": "siege-ballista",
+  "Arrow": "arrow",
+  "Wheel": "wheel"
+}
+} as const;
+
+const HeistSiegeCatapult = {
+  id: 'siege-catapult',
+  path: 'heist/decor/castle/siege-catapult',
+  fullPath: 'bandit-controller/models/heist/decor/castle/siege-catapult.glb',
+  format: 'glb',
+  nodes: {
+  "SiegeCatapult": "siege-catapult",
+  "Catapult": "catapult",
+  "Wheel": "wheel"
+}
+} as const;
+
+const HeistTreeLog = {
+  id: 'tree-log',
+  path: 'heist/decor/castle/tree-log',
+  fullPath: 'bandit-controller/models/heist/decor/castle/tree-log.glb',
+  format: 'glb',
+  nodes: {
+  "TreeLog": "tree-log"
+}
+} as const;
+
+const HeistArmchair18 = {
+  id: 'armchair-18',
+  path: 'heist/decor/cute/armchair-18',
+  fullPath: 'bandit-controller/models/heist/decor/cute/armchair-18.glb',
+  format: 'glb',
+  nodes: {
+  "Armchair18": "Armchair_18"
+}
+} as const;
+
+const HeistBath03 = {
+  id: 'bath-03',
+  path: 'heist/decor/cute/bath-03',
+  fullPath: 'bandit-controller/models/heist/decor/cute/bath-03.glb',
+  format: 'glb',
+  nodes: {
+  "Bath03": "Bath_03"
+}
+} as const;
+
+const HeistBed02 = {
+  id: 'bed-02',
+  path: 'heist/decor/cute/bed-02',
+  fullPath: 'bandit-controller/models/heist/decor/cute/bed-02.glb',
+  format: 'glb',
+  nodes: {
+  "Bed02": "Bed_02",
+  "Bed02Door01": "Bed_02_Door_01",
+  "Bed02Door02": "Bed_02_Door_02",
+  "Bed02Door03": "Bed_02_Door_03"
+}
+} as const;
+
+const HeistClock03 = {
+  id: 'clock-03',
+  path: 'heist/decor/cute/clock-03',
+  fullPath: 'bandit-controller/models/heist/decor/cute/clock-03.glb',
+  format: 'glb',
+  nodes: {
+  "Clock03": "Clock_03"
+}
+} as const;
+
+const HeistCloset01 = {
+  id: 'closet-01',
+  path: 'heist/decor/cute/closet-01',
+  fullPath: 'bandit-controller/models/heist/decor/cute/closet-01.glb',
+  format: 'glb',
+  nodes: {
+  "Closet01": "Closet_01",
+  "Closet01Door": "Closet_01_Door"
+}
+} as const;
+
+const HeistCoffeeTable03 = {
+  id: 'coffee-table-03',
+  path: 'heist/decor/cute/coffee-table-03',
+  fullPath: 'bandit-controller/models/heist/decor/cute/coffee-table-03.glb',
+  format: 'glb',
+  nodes: {
+  "CoffeeTable03": "Coffee_Table_03"
+}
+} as const;
+
+const HeistCouch08 = {
+  id: 'couch-08',
+  path: 'heist/decor/cute/couch-08',
+  fullPath: 'bandit-controller/models/heist/decor/cute/couch-08.glb',
+  format: 'glb',
+  nodes: {
+  "Couch08": "Couch_08"
+}
+} as const;
+
+const HeistFridge01 = {
+  id: 'fridge-01',
+  path: 'heist/decor/cute/fridge-01',
+  fullPath: 'bandit-controller/models/heist/decor/cute/fridge-01.glb',
+  format: 'glb',
+  nodes: {
+  "Fridge01": "Fridge_01",
+  "Fridge01Door01": "Fridge_01_Door_01",
+  "Fridge01Door02": "Fridge_01_Door_02"
+}
+} as const;
+
+const HeistGameConsole01 = {
+  id: 'game-console-01',
+  path: 'heist/decor/cute/game-console-01',
+  fullPath: 'bandit-controller/models/heist/decor/cute/game-console-01.glb',
+  format: 'glb',
+  nodes: {
+  "GameConsole01": "GameConsole_01"
+}
+} as const;
+
+const HeistKitchenTable09 = {
+  id: 'kitchen-table-09',
+  path: 'heist/decor/cute/kitchen-table-09',
+  fullPath: 'bandit-controller/models/heist/decor/cute/kitchen-table-09.glb',
+  format: 'glb',
+  nodes: {
+  "KitchenTable09": "Kitchen_Table_09"
+}
+} as const;
+
+const HeistNightstand02 = {
+  id: 'nightstand-02',
+  path: 'heist/decor/cute/nightstand-02',
+  fullPath: 'bandit-controller/models/heist/decor/cute/nightstand-02.glb',
+  format: 'glb',
+  nodes: {
+  "Nightstand02": "Nightstand_02",
+  "Nightstand02Door": "Nightstand_02_Door"
+}
+} as const;
+
+const HeistPlants15 = {
+  id: 'plants-15',
+  path: 'heist/decor/cute/plants-15',
+  fullPath: 'bandit-controller/models/heist/decor/cute/plants-15.glb',
+  format: 'glb',
+  nodes: {
+  "Plants15": "Plants_15"
+}
+} as const;
+
+const HeistPlants19 = {
+  id: 'plants-19',
+  path: 'heist/decor/cute/plants-19',
+  fullPath: 'bandit-controller/models/heist/decor/cute/plants-19.glb',
+  format: 'glb',
+  nodes: {
+  "Plants19": "Plants_19"
+}
+} as const;
+
+const HeistToilet03 = {
+  id: 'toilet-03',
+  path: 'heist/decor/cute/toilet-03',
+  fullPath: 'bandit-controller/models/heist/decor/cute/toilet-03.glb',
+  format: 'glb',
+  nodes: {
+  "Toilet03": "Toilet_03",
+  "Toilet03Cover": "Toilet_03_Cover"
+}
+} as const;
+
+const HeistWashBasin07 = {
+  id: 'wash-basin-07',
+  path: 'heist/decor/cute/wash-basin-07',
+  fullPath: 'bandit-controller/models/heist/decor/cute/wash-basin-07.glb',
+  format: 'glb',
+  nodes: {
+  "WashBasin07": "Wash_Basin_07"
+}
+} as const;
+
+const HeistAmmoBox = {
+  id: 'ammo-box',
+  path: 'heist/decor/kaykit/ammo-box',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/ammo-box.glb',
+  format: 'glb',
+  nodes: {
+  "AmmoBox": "Ammo_Box"
+}
+} as const;
+
+const HeistBarrelA = {
+  id: 'barrel-a',
+  path: 'heist/decor/kaykit/barrel-a',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/barrel-a.glb',
+  format: 'glb',
+  nodes: {
+  "BarrelA": "Barrel_A"
+}
+} as const;
+
+const HeistBarrelC = {
+  id: 'barrel-c',
+  path: 'heist/decor/kaykit/barrel-c',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/barrel-c.glb',
+  format: 'glb',
+  nodes: {
+  "BarrelC": "Barrel_C"
+}
+} as const;
+
+const HeistCabinetMediumDecorated = {
+  id: 'cabinet-medium-decorated',
+  path: 'heist/decor/kaykit/cabinet-medium-decorated',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/cabinet-medium-decorated.glb',
+  format: 'glb',
+  nodes: {
+  "CabinetMediumDecorated": "cabinet_medium_decorated"
+}
+} as const;
+
+const HeistCargoAStacked = {
+  id: 'cargo-a-stacked',
+  path: 'heist/decor/kaykit/cargo-a-stacked',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/cargo-a-stacked.glb',
+  format: 'glb',
+  nodes: {
+  "CargoAStacked": "cargo_A_stacked"
+}
+} as const;
+
+const HeistCargoBPacked = {
+  id: 'cargo-b-packed',
+  path: 'heist/decor/kaykit/cargo-b-packed',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/cargo-b-packed.glb',
+  format: 'glb',
+  nodes: {
+  "CargoBPacked": "cargo_B_packed"
+}
+} as const;
+
+const HeistCargodepotA = {
+  id: 'cargodepot-a',
+  path: 'heist/decor/kaykit/cargodepot-a',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/cargodepot-a.glb',
+  format: 'glb',
+  nodes: {
+  "CargodepotA": "cargodepot_A"
+}
+} as const;
+
+const HeistChairAWood = {
+  id: 'chair-a-wood',
+  path: 'heist/decor/kaykit/chair-a-wood',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/chair-a-wood.glb',
+  format: 'glb',
+  nodes: {
+  "ChairAWood": "chair_A_wood"
+}
+} as const;
+
+const HeistChairDeskA = {
+  id: 'chair-desk-a',
+  path: 'heist/decor/kaykit/chair-desk-a',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/chair-desk-a.glb',
+  format: 'glb',
+  nodes: {
+  "ChairDeskA": "chair_desk_A"
+}
+} as const;
+
+const HeistCoffinDecorated = {
+  id: 'coffin-decorated',
+  path: 'heist/decor/kaykit/coffin-decorated',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/coffin-decorated.glb',
+  format: 'glb',
+  nodes: {
+  "CoffinDecorated": "coffin_decorated"
+}
+} as const;
+
+const HeistContainersA = {
+  id: 'containers-a',
+  path: 'heist/decor/kaykit/containers-a',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/containers-a.glb',
+  format: 'glb',
+  nodes: {
+  "ContainersA": "containers_A"
+}
+} as const;
+
+const HeistContainersB = {
+  id: 'containers-b',
+  path: 'heist/decor/kaykit/containers-b',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/containers-b.glb',
+  format: 'glb',
+  nodes: {
+  "ContainersB": "containers_B"
+}
+} as const;
+
+const HeistContainersBoxMedium = {
+  id: 'containers-box-medium',
+  path: 'heist/decor/kaykit/containers-box-medium',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/containers-box-medium.glb',
+  format: 'glb',
+  nodes: {
+  "ContainersBoxMedium": "Containers_Box_Medium"
+}
+} as const;
+
+const HeistContainersC = {
+  id: 'containers-c',
+  path: 'heist/decor/kaykit/containers-c',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/containers-c.glb',
+  format: 'glb',
+  nodes: {
+  "ContainersC": "containers_C"
+}
+} as const;
+
+const HeistContainersCrateLarge = {
+  id: 'containers-crate-large',
+  path: 'heist/decor/kaykit/containers-crate-large',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/containers-crate-large.glb',
+  format: 'glb',
+  nodes: {
+  "ContainersCrateLarge": "Containers_Crate_Large"
+}
+} as const;
+
+const HeistContainersCrateMediumWood = {
+  id: 'containers-crate-medium-wood',
+  path: 'heist/decor/kaykit/containers-crate-medium-wood',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/containers-crate-medium-wood.glb',
+  format: 'glb',
+  nodes: {
+  "ContainersCrateMediumWood": "Containers_Crate_Medium_Wood"
+}
+} as const;
+
+const HeistContainersD = {
+  id: 'containers-d',
+  path: 'heist/decor/kaykit/containers-d',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/containers-d.glb',
+  format: 'glb',
+  nodes: {
+  "ContainersD": "containers_D"
+}
+} as const;
+
+const HeistDeskDecorated = {
+  id: 'desk-decorated',
+  path: 'heist/decor/kaykit/desk-decorated',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/desk-decorated.glb',
+  format: 'glb',
+  nodes: {
+  "DeskDecorated": "desk_decorated"
+}
+} as const;
+
+const HeistDeskLargeDecorated = {
+  id: 'desk-large-decorated',
+  path: 'heist/decor/kaykit/desk-large-decorated',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/desk-large-decorated.glb',
+  format: 'glb',
+  nodes: {
+  "DeskLargeDecorated": "desk_large_decorated"
+}
+} as const;
+
+const HeistFoodBarrelFish = {
+  id: 'food-barrel-fish',
+  path: 'heist/decor/kaykit/food-barrel-fish',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/food-barrel-fish.glb',
+  format: 'glb',
+  nodes: {
+  "FoodBarrelFish": "Food_Barrel_Fish"
+}
+} as const;
+
+const HeistFuelABarrels = {
+  id: 'fuel-a-barrels',
+  path: 'heist/decor/kaykit/fuel-a-barrels',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/fuel-a-barrels.glb',
+  format: 'glb',
+  nodes: {
+  "FuelABarrels": "Fuel_A_Barrels"
+}
+} as const;
+
+const HeistFuelBBarrels = {
+  id: 'fuel-b-barrels',
+  path: 'heist/decor/kaykit/fuel-b-barrels',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/fuel-b-barrels.glb',
+  format: 'glb',
+  nodes: {
+  "FuelBBarrels": "Fuel_B_Barrels"
+}
+} as const;
+
+const HeistGemLarge = {
+  id: 'gem-large',
+  path: 'heist/decor/kaykit/gem-large',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/gem-large.glb',
+  format: 'glb',
+  nodes: {
+  "GemLarge": "Gem_Large"
+}
+} as const;
+
+const HeistGemsChest = {
+  id: 'gems-chest',
+  path: 'heist/decor/kaykit/gems-chest',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/gems-chest.glb',
+  format: 'glb',
+  nodes: {
+  "GemsChest": "Gems_Chest"
+}
+} as const;
+
+const HeistGemsPileLarge = {
+  id: 'gems-pile-large',
+  path: 'heist/decor/kaykit/gems-pile-large',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/gems-pile-large.glb',
+  format: 'glb',
+  nodes: {
+  "GemsPileLarge": "Gems_Pile_Large"
+}
+} as const;
+
+const HeistGoldBarsStackLarge = {
+  id: 'gold-bars-stack-large',
+  path: 'heist/decor/kaykit/gold-bars-stack-large',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/gold-bars-stack-large.glb',
+  format: 'glb',
+  nodes: {
+  "GoldBarsStackLarge": "Gold_Bars_Stack_Large"
+}
+} as const;
+
+const HeistGoldBarsStackMedium = {
+  id: 'gold-bars-stack-medium',
+  path: 'heist/decor/kaykit/gold-bars-stack-medium',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/gold-bars-stack-medium.glb',
+  format: 'glb',
+  nodes: {
+  "GoldBarsStackMedium": "Gold_Bars_Stack_Medium"
+}
+} as const;
+
+const HeistHaybale = {
+  id: 'haybale',
+  path: 'heist/decor/kaykit/haybale',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/haybale.glb',
+  format: 'glb',
+  nodes: {
+  "Haybale": "haybale"
+}
+} as const;
+
+const HeistKitchencounterSink = {
+  id: 'kitchencounter-sink',
+  path: 'heist/decor/kaykit/kitchencounter-sink',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/kitchencounter-sink.glb',
+  format: 'glb',
+  nodes: {
+  "KitchencounterSink": "kitchencounter_sink"
+}
+} as const;
+
+const HeistKitchencounterStraightADecorated = {
+  id: 'kitchencounter-straight-a-decorated',
+  path: 'heist/decor/kaykit/kitchencounter-straight-a-decorated',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/kitchencounter-straight-a-decorated.glb',
+  format: 'glb',
+  nodes: {
+  "KitchencounterStraightADecorated": "kitchencounter_straight_A_decorated"
+}
+} as const;
+
+const HeistKitchencounterStraightB = {
+  id: 'kitchencounter-straight-b',
+  path: 'heist/decor/kaykit/kitchencounter-straight-b',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/kitchencounter-straight-b.glb',
+  format: 'glb',
+  nodes: {
+  "KitchencounterStraightB": "kitchencounter_straight_B"
+}
+} as const;
+
+const HeistLampStanding = {
+  id: 'lamp-standing',
+  path: 'heist/decor/kaykit/lamp-standing',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/lamp-standing.glb',
+  format: 'glb',
+  nodes: {
+  "LampStanding": "lamp_standing"
+}
+} as const;
+
+const HeistLandingpadSmall = {
+  id: 'landingpad-small',
+  path: 'heist/decor/kaykit/landingpad-small',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/landingpad-small.glb',
+  format: 'glb',
+  nodes: {
+  "LandingpadSmall": "landingpad_small"
+}
+} as const;
+
+const HeistLanternStanding = {
+  id: 'lantern-standing',
+  path: 'heist/decor/kaykit/lantern-standing',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/lantern-standing.glb',
+  format: 'glb',
+  nodes: {
+  "LanternStanding": "lantern_standing"
+}
+} as const;
+
+const HeistLights = {
+  id: 'lights',
+  path: 'heist/decor/kaykit/lights',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/lights.glb',
+  format: 'glb',
+  nodes: {
+  "Lights": "lights"
+}
+} as const;
+
+const HeistLockerDecorated = {
+  id: 'locker-decorated',
+  path: 'heist/decor/kaykit/locker-decorated',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/locker-decorated.glb',
+  format: 'glb',
+  nodes: {
+  "LockerDecorated": "Locker_Decorated",
+  "LockerDoorDecorated": "Locker_Door_Decorated"
+}
+} as const;
+
+const HeistLocker = {
+  id: 'locker',
+  path: 'heist/decor/kaykit/locker',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/locker.glb',
+  format: 'glb',
+  nodes: {
+  "Locker": "Locker",
+  "LockerDoor": "Locker_Door"
+}
+} as const;
+
+const HeistMoneyBillsStackLarge = {
+  id: 'money-bills-stack-large',
+  path: 'heist/decor/kaykit/money-bills-stack-large',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/money-bills-stack-large.glb',
+  format: 'glb',
+  nodes: {
+  "MoneyBillsStackLarge": "Money_Bills_Stack_Large"
+}
+} as const;
+
+const HeistMoneyPileLarge = {
+  id: 'money-pile-large',
+  path: 'heist/decor/kaykit/money-pile-large',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/money-pile-large.glb',
+  format: 'glb',
+  nodes: {
+  "MoneyPileLarge": "Money_Pile_Large"
+}
+} as const;
+
+const HeistPalletWoodCoveredA = {
+  id: 'pallet-wood-covered-a',
+  path: 'heist/decor/kaykit/pallet-wood-covered-a',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/pallet-wood-covered-a.glb',
+  format: 'glb',
+  nodes: {
+  "PalletWoodCoveredA": "Pallet_Wood_Covered_A"
+}
+} as const;
+
+const HeistPalletWood = {
+  id: 'pallet-wood',
+  path: 'heist/decor/kaykit/pallet-wood',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/pallet-wood.glb',
+  format: 'glb',
+  nodes: {
+  "PalletWood": "Pallet_Wood"
+}
+} as const;
+
+const HeistPictureframeStandingA = {
+  id: 'pictureframe-standing-a',
+  path: 'heist/decor/kaykit/pictureframe-standing-a',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/pictureframe-standing-a.glb',
+  format: 'glb',
+  nodes: {
+  "PictureframeStandingA": "pictureframe_standing_A"
+}
+} as const;
+
+const HeistPictureframeStandingB = {
+  id: 'pictureframe-standing-b',
+  path: 'heist/decor/kaykit/pictureframe-standing-b',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/pictureframe-standing-b.glb',
+  format: 'glb',
+  nodes: {
+  "PictureframeStandingB": "pictureframe_standing_B"
+}
+} as const;
+
+const HeistPillarB = {
+  id: 'pillar-b',
+  path: 'heist/decor/kaykit/pillar-b',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/pillar-b.glb',
+  format: 'glb',
+  nodes: {
+  "PillarB": "Pillar_B"
+}
+} as const;
+
+const HeistPrimitiveCubeSmall = {
+  id: 'primitive-cube-small',
+  path: 'heist/decor/kaykit/primitive-cube-small',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/primitive-cube-small.glb',
+  format: 'glb',
+  nodes: {
+  "PrimitiveCubeSmall": "Primitive_Cube_Small"
+}
+} as const;
+
+const HeistRugOvalA = {
+  id: 'rug-oval-a',
+  path: 'heist/decor/kaykit/rug-oval-a',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/rug-oval-a.glb',
+  format: 'glb',
+  nodes: {
+  "RugOvalA": "rug_oval_A"
+}
+} as const;
+
+const HeistRugRectangleA = {
+  id: 'rug-rectangle-a',
+  path: 'heist/decor/kaykit/rug-rectangle-a',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/rug-rectangle-a.glb',
+  format: 'glb',
+  nodes: {
+  "RugRectangleA": "rug_rectangle_A"
+}
+} as const;
+
+const HeistRugRectangleB = {
+  id: 'rug-rectangle-b',
+  path: 'heist/decor/kaykit/rug-rectangle-b',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/rug-rectangle-b.glb',
+  format: 'glb',
+  nodes: {
+  "RugRectangleB": "rug_rectangle_B"
+}
+} as const;
+
+const HeistRugRectangleStripesA = {
+  id: 'rug-rectangle-stripes-a',
+  path: 'heist/decor/kaykit/rug-rectangle-stripes-a',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/rug-rectangle-stripes-a.glb',
+  format: 'glb',
+  nodes: {
+  "RugRectangleStripesA": "rug_rectangle_stripes_A"
+}
+} as const;
+
+const HeistShelfBLargeDecorated = {
+  id: 'shelf-b-large-decorated',
+  path: 'heist/decor/kaykit/shelf-b-large-decorated',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/shelf-b-large-decorated.glb',
+  format: 'glb',
+  nodes: {
+  "ShelfBLargeDecorated": "shelf_B_large_decorated"
+}
+} as const;
+
+const HeistShrineCandles = {
+  id: 'shrine-candles',
+  path: 'heist/decor/kaykit/shrine-candles',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/shrine-candles.glb',
+  format: 'glb',
+  nodes: {
+  "ShrineCandles": "shrine_candles"
+}
+} as const;
+
+const HeistSilverBarsStackLarge = {
+  id: 'silver-bars-stack-large',
+  path: 'heist/decor/kaykit/silver-bars-stack-large',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/silver-bars-stack-large.glb',
+  format: 'glb',
+  nodes: {
+  "SilverBarsStackLarge": "Silver_Bars_Stack_Large"
+}
+} as const;
+
+const HeistSolarpanel = {
+  id: 'solarpanel',
+  path: 'heist/decor/kaykit/solarpanel',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/solarpanel.glb',
+  format: 'glb',
+  nodes: {
+  "Solarpanel": "solarpanel"
+}
+} as const;
+
+const HeistSpaceFarmSmall = {
+  id: 'space-farm-small',
+  path: 'heist/decor/kaykit/space-farm-small',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/space-farm-small.glb',
+  format: 'glb',
+  nodes: {
+  "SpaceFarmSmall": "space_farm_small"
+}
+} as const;
+
+const HeistStoveMultiCountertop = {
+  id: 'stove-multi-countertop',
+  path: 'heist/decor/kaykit/stove-multi-countertop',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/stove-multi-countertop.glb',
+  format: 'glb',
+  nodes: {
+  "StoveMultiCountertop": "stove_multi_countertop"
+}
+} as const;
+
+const HeistTableMediumDecorated = {
+  id: 'table-medium-decorated',
+  path: 'heist/decor/kaykit/table-medium-decorated',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/table-medium-decorated.glb',
+  format: 'glb',
+  nodes: {
+  "TableMediumDecorated": "table_medium_Decorated"
+}
+} as const;
+
+const HeistTableMediumLong = {
+  id: 'table-medium-long',
+  path: 'heist/decor/kaykit/table-medium-long',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/table-medium-long.glb',
+  format: 'glb',
+  nodes: {
+  "TableMediumLong": "table_medium_long"
+}
+} as const;
+
+const HeistTargetStandADecorated = {
+  id: 'target-stand-a-decorated',
+  path: 'heist/decor/kaykit/target-stand-a-decorated',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/target-stand-a-decorated.glb',
+  format: 'glb',
+  nodes: {
+  "TargetStandADecorated": "target_stand_A_Decorated"
+}
+} as const;
+
+const HeistWaterStorage = {
+  id: 'water-storage',
+  path: 'heist/decor/kaykit/water-storage',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/water-storage.glb',
+  format: 'glb',
+  nodes: {
+  "WaterStorage": "water_storage"
+}
+} as const;
+
+const HeistWeaponrackDecorated = {
+  id: 'weaponrack-decorated',
+  path: 'heist/decor/kaykit/weaponrack-decorated',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/weaponrack-decorated.glb',
+  format: 'glb',
+  nodes: {
+  "WeaponrackDecorated": "Weaponrack_Decorated"
+}
+} as const;
+
+const HeistWoodLogStack = {
+  id: 'wood-log-stack',
+  path: 'heist/decor/kaykit/wood-log-stack',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/wood-log-stack.glb',
+  format: 'glb',
+  nodes: {
+  "WoodLogStack": "Wood_Log_Stack"
+}
+} as const;
+
+const HeistWorkbenchDecorated = {
+  id: 'workbench-decorated',
+  path: 'heist/decor/kaykit/workbench-decorated',
+  fullPath: 'bandit-controller/models/heist/decor/kaykit/workbench-decorated.glb',
+  format: 'glb',
+  nodes: {
+  "WorkbenchDecorated": "Workbench_Decorated"
+}
+} as const;
+
+const HeistGuitarA = {
+  id: 'guitar-a',
+  path: 'heist/decor/mixed/guitar-a',
+  fullPath: 'bandit-controller/models/heist/decor/mixed/guitar-a.glb',
+  format: 'glb',
+  nodes: {
+  "GuitarA": "guitar_A"
+}
+} as const;
+
+const HeistIdolA = {
+  id: 'idol-a',
+  path: 'heist/decor/mixed/idol-a',
+  fullPath: 'bandit-controller/models/heist/decor/mixed/idol-a.glb',
+  format: 'glb',
+  nodes: {
+  "IdolA": "idol_A"
+}
+} as const;
+
+const HeistIdolB = {
+  id: 'idol-b',
+  path: 'heist/decor/mixed/idol-b',
+  fullPath: 'bandit-controller/models/heist/decor/mixed/idol-b.glb',
+  format: 'glb',
+  nodes: {
+  "IdolB": "idol_B"
 }
 } as const;
 
@@ -281,6 +1396,16 @@ const HeistDoorA = {
   format: 'gltf',
   nodes: {
   "DoorA": "door_A"
+}
+} as const;
+
+const HeistDoorADecorated = {
+  id: 'Door_A_Decorated',
+  path: 'heist/doors/Door_A_Decorated',
+  fullPath: 'bandit-controller/models/heist/doors/Door_A_Decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "DoorADecorated": "Door_A_Decorated"
 }
 } as const;
 
@@ -536,6 +1661,16 @@ const ResourcesCopperBarsStackSmall = {
 }
 } as const;
 
+const ResourcesCopperNuggets = {
+  id: 'Copper_Nuggets',
+  path: 'resources/Copper_Nuggets',
+  fullPath: 'bandit-controller/models/resources/Copper_Nuggets.gltf',
+  format: 'gltf',
+  nodes: {
+  "CopperNuggets": "Copper_Nuggets"
+}
+} as const;
+
 const ResourcesCopperNuggetLarge = {
   id: 'Copper_Nugget_Large',
   path: 'resources/Copper_Nugget_Large',
@@ -563,16 +1698,6 @@ const ResourcesCopperNuggetSmall = {
   format: 'gltf',
   nodes: {
   "CopperNuggetSmall": "Copper_Nugget_Small"
-}
-} as const;
-
-const ResourcesCopperNuggets = {
-  id: 'Copper_Nuggets',
-  path: 'resources/Copper_Nuggets',
-  fullPath: 'bandit-controller/models/resources/Copper_Nuggets.gltf',
-  format: 'gltf',
-  nodes: {
-  "CopperNuggets": "Copper_Nuggets"
 }
 } as const;
 
@@ -776,16 +1901,6 @@ const ResourcesFuelABarrel = {
 }
 } as const;
 
-const ResourcesFuelABarrelDirty = {
-  id: 'Fuel_A_Barrel_Dirty',
-  path: 'resources/Fuel_A_Barrel_Dirty',
-  fullPath: 'bandit-controller/models/resources/Fuel_A_Barrel_Dirty.gltf',
-  format: 'gltf',
-  nodes: {
-  "FuelABarrelDirty": "Fuel_A_Barrel_Dirty"
-}
-} as const;
-
 const ResourcesFuelABarrels = {
   id: 'Fuel_A_Barrels',
   path: 'resources/Fuel_A_Barrels',
@@ -793,6 +1908,16 @@ const ResourcesFuelABarrels = {
   format: 'gltf',
   nodes: {
   "FuelABarrels": "Fuel_A_Barrels"
+}
+} as const;
+
+const ResourcesFuelABarrelDirty = {
+  id: 'Fuel_A_Barrel_Dirty',
+  path: 'resources/Fuel_A_Barrel_Dirty',
+  fullPath: 'bandit-controller/models/resources/Fuel_A_Barrel_Dirty.gltf',
+  format: 'gltf',
+  nodes: {
+  "FuelABarrelDirty": "Fuel_A_Barrel_Dirty"
 }
 } as const;
 
@@ -816,16 +1941,6 @@ const ResourcesFuelBBarrel = {
 }
 } as const;
 
-const ResourcesFuelBBarrelDirty = {
-  id: 'Fuel_B_Barrel_Dirty',
-  path: 'resources/Fuel_B_Barrel_Dirty',
-  fullPath: 'bandit-controller/models/resources/Fuel_B_Barrel_Dirty.gltf',
-  format: 'gltf',
-  nodes: {
-  "FuelBBarrelDirty": "Fuel_B_Barrel_Dirty"
-}
-} as const;
-
 const ResourcesFuelBBarrels = {
   id: 'Fuel_B_Barrels',
   path: 'resources/Fuel_B_Barrels',
@@ -833,6 +1948,16 @@ const ResourcesFuelBBarrels = {
   format: 'gltf',
   nodes: {
   "FuelBBarrels": "Fuel_B_Barrels"
+}
+} as const;
+
+const ResourcesFuelBBarrelDirty = {
+  id: 'Fuel_B_Barrel_Dirty',
+  path: 'resources/Fuel_B_Barrel_Dirty',
+  fullPath: 'bandit-controller/models/resources/Fuel_B_Barrel_Dirty.gltf',
+  format: 'gltf',
+  nodes: {
+  "FuelBBarrelDirty": "Fuel_B_Barrel_Dirty"
 }
 } as const;
 
@@ -856,16 +1981,6 @@ const ResourcesFuelCBarrel = {
 }
 } as const;
 
-const ResourcesFuelCBarrelDirty = {
-  id: 'Fuel_C_Barrel_Dirty',
-  path: 'resources/Fuel_C_Barrel_Dirty',
-  fullPath: 'bandit-controller/models/resources/Fuel_C_Barrel_Dirty.gltf',
-  format: 'gltf',
-  nodes: {
-  "FuelCBarrelDirty": "Fuel_C_Barrel_Dirty"
-}
-} as const;
-
 const ResourcesFuelCBarrels = {
   id: 'Fuel_C_Barrels',
   path: 'resources/Fuel_C_Barrels',
@@ -876,6 +1991,16 @@ const ResourcesFuelCBarrels = {
 }
 } as const;
 
+const ResourcesFuelCBarrelDirty = {
+  id: 'Fuel_C_Barrel_Dirty',
+  path: 'resources/Fuel_C_Barrel_Dirty',
+  fullPath: 'bandit-controller/models/resources/Fuel_C_Barrel_Dirty.gltf',
+  format: 'gltf',
+  nodes: {
+  "FuelCBarrelDirty": "Fuel_C_Barrel_Dirty"
+}
+} as const;
+
 const ResourcesFuelCJerrycan = {
   id: 'Fuel_C_Jerrycan',
   path: 'resources/Fuel_C_Jerrycan',
@@ -883,36 +2008,6 @@ const ResourcesFuelCJerrycan = {
   format: 'gltf',
   nodes: {
   "FuelCJerrycan": "Fuel_C_Jerrycan"
-}
-} as const;
-
-const ResourcesGemLarge = {
-  id: 'Gem_Large',
-  path: 'resources/Gem_Large',
-  fullPath: 'bandit-controller/models/resources/Gem_Large.gltf',
-  format: 'gltf',
-  nodes: {
-  "GemLarge": "Gem_Large"
-}
-} as const;
-
-const ResourcesGemMedium = {
-  id: 'Gem_Medium',
-  path: 'resources/Gem_Medium',
-  fullPath: 'bandit-controller/models/resources/Gem_Medium.gltf',
-  format: 'gltf',
-  nodes: {
-  "GemMedium": "Gem_Medium"
-}
-} as const;
-
-const ResourcesGemSmall = {
-  id: 'Gem_Small',
-  path: 'resources/Gem_Small',
-  fullPath: 'bandit-controller/models/resources/Gem_Small.gltf',
-  format: 'gltf',
-  nodes: {
-  "GemSmall": "Gem_Small"
 }
 } as const;
 
@@ -967,6 +2062,36 @@ const ResourcesGemsSack = {
 }
 } as const;
 
+const ResourcesGemLarge = {
+  id: 'Gem_Large',
+  path: 'resources/Gem_Large',
+  fullPath: 'bandit-controller/models/resources/Gem_Large.gltf',
+  format: 'gltf',
+  nodes: {
+  "GemLarge": "Gem_Large"
+}
+} as const;
+
+const ResourcesGemMedium = {
+  id: 'Gem_Medium',
+  path: 'resources/Gem_Medium',
+  fullPath: 'bandit-controller/models/resources/Gem_Medium.gltf',
+  format: 'gltf',
+  nodes: {
+  "GemMedium": "Gem_Medium"
+}
+} as const;
+
+const ResourcesGemSmall = {
+  id: 'Gem_Small',
+  path: 'resources/Gem_Small',
+  fullPath: 'bandit-controller/models/resources/Gem_Small.gltf',
+  format: 'gltf',
+  nodes: {
+  "GemSmall": "Gem_Small"
+}
+} as const;
+
 const ResourcesGoldBar = {
   id: 'Gold_Bar',
   path: 'resources/Gold_Bar',
@@ -1017,6 +2142,16 @@ const ResourcesGoldBarsStackSmall = {
 }
 } as const;
 
+const ResourcesGoldNuggets = {
+  id: 'Gold_Nuggets',
+  path: 'resources/Gold_Nuggets',
+  fullPath: 'bandit-controller/models/resources/Gold_Nuggets.gltf',
+  format: 'gltf',
+  nodes: {
+  "GoldNuggets": "Gold_Nuggets"
+}
+} as const;
+
 const ResourcesGoldNuggetLarge = {
   id: 'Gold_Nugget_Large',
   path: 'resources/Gold_Nugget_Large',
@@ -1044,16 +2179,6 @@ const ResourcesGoldNuggetSmall = {
   format: 'gltf',
   nodes: {
   "GoldNuggetSmall": "Gold_Nugget_Small"
-}
-} as const;
-
-const ResourcesGoldNuggets = {
-  id: 'Gold_Nuggets',
-  path: 'resources/Gold_Nuggets',
-  fullPath: 'bandit-controller/models/resources/Gold_Nuggets.gltf',
-  format: 'gltf',
-  nodes: {
-  "GoldNuggets": "Gold_Nuggets"
 }
 } as const;
 
@@ -1107,6 +2232,16 @@ const ResourcesIronBarsStackSmall = {
 }
 } as const;
 
+const ResourcesIronNuggets = {
+  id: 'Iron_Nuggets',
+  path: 'resources/Iron_Nuggets',
+  fullPath: 'bandit-controller/models/resources/Iron_Nuggets.gltf',
+  format: 'gltf',
+  nodes: {
+  "IronNuggets": "Iron_Nuggets"
+}
+} as const;
+
 const ResourcesIronNuggetLarge = {
   id: 'Iron_Nugget_Large',
   path: 'resources/Iron_Nugget_Large',
@@ -1137,16 +2272,6 @@ const ResourcesIronNuggetSmall = {
 }
 } as const;
 
-const ResourcesIronNuggets = {
-  id: 'Iron_Nuggets',
-  path: 'resources/Iron_Nuggets',
-  fullPath: 'bandit-controller/models/resources/Iron_Nuggets.gltf',
-  format: 'gltf',
-  nodes: {
-  "IronNuggets": "Iron_Nuggets"
-}
-} as const;
-
 const ResourcesMoneyBill = {
   id: 'Money_Bill',
   path: 'resources/Money_Bill',
@@ -1154,16 +2279,6 @@ const ResourcesMoneyBill = {
   format: 'gltf',
   nodes: {
   "MoneyBill": "Money_Bill"
-}
-} as const;
-
-const ResourcesMoneyBillArched = {
-  id: 'Money_Bill_Arched',
-  path: 'resources/Money_Bill_Arched',
-  fullPath: 'bandit-controller/models/resources/Money_Bill_Arched.gltf',
-  format: 'gltf',
-  nodes: {
-  "MoneyBillArched": "Money_Bill_Arched"
 }
 } as const;
 
@@ -1194,6 +2309,16 @@ const ResourcesMoneyBillsStackSmall = {
   format: 'gltf',
   nodes: {
   "MoneyBillsStackSmall": "Money_Bills_Stack_Small"
+}
+} as const;
+
+const ResourcesMoneyBillArched = {
+  id: 'Money_Bill_Arched',
+  path: 'resources/Money_Bill_Arched',
+  fullPath: 'bandit-controller/models/resources/Money_Bill_Arched.gltf',
+  format: 'gltf',
+  nodes: {
+  "MoneyBillArched": "Money_Bill_Arched"
 }
 } as const;
 
@@ -1427,6 +2552,16 @@ const ResourcesSilverBarsStackSmall = {
 }
 } as const;
 
+const ResourcesSilverNuggets = {
+  id: 'Silver_Nuggets',
+  path: 'resources/Silver_Nuggets',
+  fullPath: 'bandit-controller/models/resources/Silver_Nuggets.gltf',
+  format: 'gltf',
+  nodes: {
+  "SilverNuggets": "Silver_Nuggets"
+}
+} as const;
+
 const ResourcesSilverNuggetLarge = {
   id: 'Silver_Nugget_Large',
   path: 'resources/Silver_Nugget_Large',
@@ -1454,16 +2589,6 @@ const ResourcesSilverNuggetSmall = {
   format: 'gltf',
   nodes: {
   "SilverNuggetSmall": "Silver_Nugget_Small"
-}
-} as const;
-
-const ResourcesSilverNuggets = {
-  id: 'Silver_Nuggets',
-  path: 'resources/Silver_Nuggets',
-  fullPath: 'bandit-controller/models/resources/Silver_Nuggets.gltf',
-  format: 'gltf',
-  nodes: {
-  "SilverNuggets": "Silver_Nuggets"
 }
 } as const;
 
@@ -1617,36 +2742,6 @@ const ResourcesWoodLogStack = {
 }
 } as const;
 
-const ResourcesWoodPlankA = {
-  id: 'Wood_Plank_A',
-  path: 'resources/Wood_Plank_A',
-  fullPath: 'bandit-controller/models/resources/Wood_Plank_A.gltf',
-  format: 'gltf',
-  nodes: {
-  "WoodPlankA": "Wood_Plank_A"
-}
-} as const;
-
-const ResourcesWoodPlankB = {
-  id: 'Wood_Plank_B',
-  path: 'resources/Wood_Plank_B',
-  fullPath: 'bandit-controller/models/resources/Wood_Plank_B.gltf',
-  format: 'gltf',
-  nodes: {
-  "WoodPlankB": "Wood_Plank_B"
-}
-} as const;
-
-const ResourcesWoodPlankC = {
-  id: 'Wood_Plank_C',
-  path: 'resources/Wood_Plank_C',
-  fullPath: 'bandit-controller/models/resources/Wood_Plank_C.gltf',
-  format: 'gltf',
-  nodes: {
-  "WoodPlankC": "Wood_Plank_C"
-}
-} as const;
-
 const ResourcesWoodPlanksStackLarge = {
   id: 'Wood_Planks_Stack_Large',
   path: 'resources/Wood_Planks_Stack_Large',
@@ -1674,6 +2769,36 @@ const ResourcesWoodPlanksStackSmall = {
   format: 'gltf',
   nodes: {
   "WoodPlanksStackSmall": "Wood_Planks_Stack_Small"
+}
+} as const;
+
+const ResourcesWoodPlankA = {
+  id: 'Wood_Plank_A',
+  path: 'resources/Wood_Plank_A',
+  fullPath: 'bandit-controller/models/resources/Wood_Plank_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "WoodPlankA": "Wood_Plank_A"
+}
+} as const;
+
+const ResourcesWoodPlankB = {
+  id: 'Wood_Plank_B',
+  path: 'resources/Wood_Plank_B',
+  fullPath: 'bandit-controller/models/resources/Wood_Plank_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "WoodPlankB": "Wood_Plank_B"
+}
+} as const;
+
+const ResourcesWoodPlankC = {
+  id: 'Wood_Plank_C',
+  path: 'resources/Wood_Plank_C',
+  fullPath: 'bandit-controller/models/resources/Wood_Plank_C.gltf',
+  format: 'gltf',
+  nodes: {
+  "WoodPlankC": "Wood_Plank_C"
 }
 } as const;
 
@@ -3044,20 +4169,20 @@ const WorldTrafficLight = {
 // containing folder land in MODELS.Root.
 export const MODELS = {
   Characters: {
-    FallingIdle: CharactersFallingIdle,
-    JumpingUp: CharactersJumpingUp,
-    Landing: CharactersLanding,
-    Roll: CharactersRoll,
-    Running: CharactersRunning,
-    Walking: CharactersWalking,
     CharacterMedium: CharactersCharacterMedium,
     Fallback: CharactersFallback,
+    FallingIdle: CharactersFallingIdle,
     Idle: CharactersIdle,
     JumpDownRun: CharactersJumpDownRun,
     JumpUpNew: CharactersJumpUpNew,
     JumpUpRun: CharactersJumpUpRun,
+    JumpingUp: CharactersJumpingUp,
     LandingNew: CharactersLandingNew,
-    Slide: CharactersSlide
+    Landing: CharactersLanding,
+    Roll: CharactersRoll,
+    Running: CharactersRunning,
+    Slide: CharactersSlide,
+    Walking: CharactersWalking
   },
   Hats: {
     AmericanHat: HatsAmericanHat,
@@ -3080,8 +4205,118 @@ export const MODELS = {
     WarriorHat: HatsWarriorHat
   },
   Heist: {
-    DoorADecorated: HeistDoorADecorated,
+    Armchair02: HeistArmchair02,
+    Atm01: HeistAtm01,
+    Atm03: HeistAtm03,
+    Cash10: HeistCash10,
+    CashMachine01: HeistCashMachine01,
+    Chair06: HeistChair06,
+    ChairOffice01: HeistChairOffice01,
+    Column17: HeistColumn17,
+    Couch05: HeistCouch05,
+    Fence07: HeistFence07,
+    Fence09: HeistFence09,
+    Floor01: HeistFloor01,
+    Flower03: HeistFlower03,
+    Fruits01: HeistFruits01,
+    GoldIngot01: HeistGoldIngot01,
+    Monitor02: HeistMonitor02,
+    NeonSign01: HeistNeonSign01,
+    SafeBox01: HeistSafeBox01,
+    Screens01: HeistScreens01,
+    SlotMachine01: HeistSlotMachine01,
+    SlotMachine02: HeistSlotMachine02,
+    SlotMachineAquarium01: HeistSlotMachineAquarium01,
+    Table01: HeistTable01,
+    Table06: HeistTable06,
+    Tablecloth01: HeistTablecloth01,
+    FlagBannerLong: HeistFlagBannerLong,
+    RocksSmall: HeistRocksSmall,
+    SiegeBallista: HeistSiegeBallista,
+    SiegeCatapult: HeistSiegeCatapult,
+    TreeLog: HeistTreeLog,
+    Armchair18: HeistArmchair18,
+    Bath03: HeistBath03,
+    Bed02: HeistBed02,
+    Clock03: HeistClock03,
+    Closet01: HeistCloset01,
+    CoffeeTable03: HeistCoffeeTable03,
+    Couch08: HeistCouch08,
+    Fridge01: HeistFridge01,
+    GameConsole01: HeistGameConsole01,
+    KitchenTable09: HeistKitchenTable09,
+    Nightstand02: HeistNightstand02,
+    Plants15: HeistPlants15,
+    Plants19: HeistPlants19,
+    Toilet03: HeistToilet03,
+    WashBasin07: HeistWashBasin07,
+    AmmoBox: HeistAmmoBox,
+    BarrelA: HeistBarrelA,
+    BarrelC: HeistBarrelC,
+    CabinetMediumDecorated: HeistCabinetMediumDecorated,
+    CargoAStacked: HeistCargoAStacked,
+    CargoBPacked: HeistCargoBPacked,
+    CargodepotA: HeistCargodepotA,
+    ChairAWood: HeistChairAWood,
+    ChairDeskA: HeistChairDeskA,
+    CoffinDecorated: HeistCoffinDecorated,
+    ContainersA: HeistContainersA,
+    ContainersB: HeistContainersB,
+    ContainersBoxMedium: HeistContainersBoxMedium,
+    ContainersC: HeistContainersC,
+    ContainersCrateLarge: HeistContainersCrateLarge,
+    ContainersCrateMediumWood: HeistContainersCrateMediumWood,
+    ContainersD: HeistContainersD,
+    DeskDecorated: HeistDeskDecorated,
+    DeskLargeDecorated: HeistDeskLargeDecorated,
+    FoodBarrelFish: HeistFoodBarrelFish,
+    FuelABarrels: HeistFuelABarrels,
+    FuelBBarrels: HeistFuelBBarrels,
+    GemLarge: HeistGemLarge,
+    GemsChest: HeistGemsChest,
+    GemsPileLarge: HeistGemsPileLarge,
+    GoldBarsStackLarge: HeistGoldBarsStackLarge,
+    GoldBarsStackMedium: HeistGoldBarsStackMedium,
+    Haybale: HeistHaybale,
+    KitchencounterSink: HeistKitchencounterSink,
+    KitchencounterStraightADecorated: HeistKitchencounterStraightADecorated,
+    KitchencounterStraightB: HeistKitchencounterStraightB,
+    LampStanding: HeistLampStanding,
+    LandingpadSmall: HeistLandingpadSmall,
+    LanternStanding: HeistLanternStanding,
+    Lights: HeistLights,
+    LockerDecorated: HeistLockerDecorated,
+    Locker: HeistLocker,
+    MoneyBillsStackLarge: HeistMoneyBillsStackLarge,
+    MoneyPileLarge: HeistMoneyPileLarge,
+    PalletWoodCoveredA: HeistPalletWoodCoveredA,
+    PalletWood: HeistPalletWood,
+    PictureframeStandingA: HeistPictureframeStandingA,
+    PictureframeStandingB: HeistPictureframeStandingB,
+    PillarB: HeistPillarB,
+    PrimitiveCubeSmall: HeistPrimitiveCubeSmall,
+    RugOvalA: HeistRugOvalA,
+    RugRectangleA: HeistRugRectangleA,
+    RugRectangleB: HeistRugRectangleB,
+    RugRectangleStripesA: HeistRugRectangleStripesA,
+    ShelfBLargeDecorated: HeistShelfBLargeDecorated,
+    ShrineCandles: HeistShrineCandles,
+    SilverBarsStackLarge: HeistSilverBarsStackLarge,
+    Solarpanel: HeistSolarpanel,
+    SpaceFarmSmall: HeistSpaceFarmSmall,
+    StoveMultiCountertop: HeistStoveMultiCountertop,
+    TableMediumDecorated: HeistTableMediumDecorated,
+    TableMediumLong: HeistTableMediumLong,
+    TargetStandADecorated: HeistTargetStandADecorated,
+    WaterStorage: HeistWaterStorage,
+    WeaponrackDecorated: HeistWeaponrackDecorated,
+    WoodLogStack: HeistWoodLogStack,
+    WorkbenchDecorated: HeistWorkbenchDecorated,
+    GuitarA: HeistGuitarA,
+    IdolA: HeistIdolA,
+    IdolB: HeistIdolB,
     DoorA: HeistDoorA,
+    DoorADecorated: HeistDoorADecorated,
     WoodenDoor: HeistWoodenDoor,
     CashRegister: HeistCashRegister,
     Column: HeistColumn,
@@ -3109,10 +4344,10 @@ export const MODELS = {
     CopperBarsStackLarge: ResourcesCopperBarsStackLarge,
     CopperBarsStackMedium: ResourcesCopperBarsStackMedium,
     CopperBarsStackSmall: ResourcesCopperBarsStackSmall,
+    CopperNuggets: ResourcesCopperNuggets,
     CopperNuggetLarge: ResourcesCopperNuggetLarge,
     CopperNuggetMedium: ResourcesCopperNuggetMedium,
     CopperNuggetSmall: ResourcesCopperNuggetSmall,
-    CopperNuggets: ResourcesCopperNuggets,
     FoodAppleGreen: ResourcesFoodAppleGreen,
     FoodAppleRed: ResourcesFoodAppleRed,
     FoodBarrelEmpty: ResourcesFoodBarrelEmpty,
@@ -3133,48 +4368,48 @@ export const MODELS = {
     FoodPileMedium: ResourcesFoodPileMedium,
     FoodPileSmall: ResourcesFoodPileSmall,
     FuelABarrel: ResourcesFuelABarrel,
-    FuelABarrelDirty: ResourcesFuelABarrelDirty,
     FuelABarrels: ResourcesFuelABarrels,
+    FuelABarrelDirty: ResourcesFuelABarrelDirty,
     FuelAJerrycan: ResourcesFuelAJerrycan,
     FuelBBarrel: ResourcesFuelBBarrel,
-    FuelBBarrelDirty: ResourcesFuelBBarrelDirty,
     FuelBBarrels: ResourcesFuelBBarrels,
+    FuelBBarrelDirty: ResourcesFuelBBarrelDirty,
     FuelBJerrycan: ResourcesFuelBJerrycan,
     FuelCBarrel: ResourcesFuelCBarrel,
-    FuelCBarrelDirty: ResourcesFuelCBarrelDirty,
     FuelCBarrels: ResourcesFuelCBarrels,
+    FuelCBarrelDirty: ResourcesFuelCBarrelDirty,
     FuelCJerrycan: ResourcesFuelCJerrycan,
-    GemLarge: ResourcesGemLarge,
-    GemMedium: ResourcesGemMedium,
-    GemSmall: ResourcesGemSmall,
     GemsChest: ResourcesGemsChest,
     GemsChestEmpty: ResourcesGemsChestEmpty,
     GemsPileLarge: ResourcesGemsPileLarge,
     GemsPileSmall: ResourcesGemsPileSmall,
     GemsSack: ResourcesGemsSack,
+    GemLarge: ResourcesGemLarge,
+    GemMedium: ResourcesGemMedium,
+    GemSmall: ResourcesGemSmall,
     GoldBar: ResourcesGoldBar,
     GoldBars: ResourcesGoldBars,
     GoldBarsStackLarge: ResourcesGoldBarsStackLarge,
     GoldBarsStackMedium: ResourcesGoldBarsStackMedium,
     GoldBarsStackSmall: ResourcesGoldBarsStackSmall,
+    GoldNuggets: ResourcesGoldNuggets,
     GoldNuggetLarge: ResourcesGoldNuggetLarge,
     GoldNuggetMedium: ResourcesGoldNuggetMedium,
     GoldNuggetSmall: ResourcesGoldNuggetSmall,
-    GoldNuggets: ResourcesGoldNuggets,
     IronBar: ResourcesIronBar,
     IronBars: ResourcesIronBars,
     IronBarsStackLarge: ResourcesIronBarsStackLarge,
     IronBarsStackMedium: ResourcesIronBarsStackMedium,
     IronBarsStackSmall: ResourcesIronBarsStackSmall,
+    IronNuggets: ResourcesIronNuggets,
     IronNuggetLarge: ResourcesIronNuggetLarge,
     IronNuggetMedium: ResourcesIronNuggetMedium,
     IronNuggetSmall: ResourcesIronNuggetSmall,
-    IronNuggets: ResourcesIronNuggets,
     MoneyBill: ResourcesMoneyBill,
-    MoneyBillArched: ResourcesMoneyBillArched,
     MoneyBillsStackLarge: ResourcesMoneyBillsStackLarge,
     MoneyBillsStackMedium: ResourcesMoneyBillsStackMedium,
     MoneyBillsStackSmall: ResourcesMoneyBillsStackSmall,
+    MoneyBillArched: ResourcesMoneyBillArched,
     MoneyCoinsStackLarge: ResourcesMoneyCoinsStackLarge,
     MoneyCoinsStackMedium: ResourcesMoneyCoinsStackMedium,
     MoneyCoinsStackSingle: ResourcesMoneyCoinsStackSingle,
@@ -3198,10 +4433,10 @@ export const MODELS = {
     SilverBarsStackLarge: ResourcesSilverBarsStackLarge,
     SilverBarsStackMedium: ResourcesSilverBarsStackMedium,
     SilverBarsStackSmall: ResourcesSilverBarsStackSmall,
+    SilverNuggets: ResourcesSilverNuggets,
     SilverNuggetLarge: ResourcesSilverNuggetLarge,
     SilverNuggetMedium: ResourcesSilverNuggetMedium,
     SilverNuggetSmall: ResourcesSilverNuggetSmall,
-    SilverNuggets: ResourcesSilverNuggets,
     StoneBrick: ResourcesStoneBrick,
     StoneBricksStackLarge: ResourcesStoneBricksStackLarge,
     StoneBricksStackMedium: ResourcesStoneBricksStackMedium,
@@ -3217,12 +4452,12 @@ export const MODELS = {
     WoodLogA: ResourcesWoodLogA,
     WoodLogB: ResourcesWoodLogB,
     WoodLogStack: ResourcesWoodLogStack,
-    WoodPlankA: ResourcesWoodPlankA,
-    WoodPlankB: ResourcesWoodPlankB,
-    WoodPlankC: ResourcesWoodPlankC,
     WoodPlanksStackLarge: ResourcesWoodPlanksStackLarge,
     WoodPlanksStackMedium: ResourcesWoodPlanksStackMedium,
-    WoodPlanksStackSmall: ResourcesWoodPlanksStackSmall
+    WoodPlanksStackSmall: ResourcesWoodPlanksStackSmall,
+    WoodPlankA: ResourcesWoodPlankA,
+    WoodPlankB: ResourcesWoodPlankB,
+    WoodPlankC: ResourcesWoodPlankC
   },
   World: {
     BuildingA: WorldBuildingA,

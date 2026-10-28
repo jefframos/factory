@@ -44,8 +44,8 @@
       "z": -8
     },
     {
-      "x": -2.688,
-      "z": 2
+      "x": -2.69,
+      "z": 2.5
     },
     {
       "x": 2.64,
@@ -261,10 +261,193 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": 9.81,
+      "z": 7.01,
+      "rotationY": 0,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/water-storage.glb",
+      "x": -3.87,
+      "z": 14.26,
+      "rotationY": -3.14,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.31,
+        "halfY": 0.77,
+        "halfZ": 1.34
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker.glb",
+      "x": 4.88,
+      "z": -2,
+      "rotationY": -1.57,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.62,
+        "halfZ": 0.48
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": -4.71,
+      "z": 11.49,
+      "rotationY": 1.57,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-b-packed.glb",
+      "x": 4.03,
+      "z": 4.92,
+      "rotationY": -3.14,
+      "height": 1.7,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.75,
+        "halfY": 0.85,
+        "halfZ": 0.75
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker.glb",
+      "x": -4.32,
+      "z": 5.17,
+      "rotationY": -3.14,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.48,
+        "halfY": 1.62,
+        "halfZ": 0.52
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": -3.7,
+      "z": 7.01,
+      "rotationY": 0,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-a-stacked.glb",
+      "x": 7.49,
+      "z": -14.34,
+      "rotationY": 1.57,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 1.19,
+        "halfZ": 1.07
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker.glb",
+      "x": -10.26,
+      "z": 3.55,
+      "rotationY": 1.57,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.62,
+        "halfZ": 0.48
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lights.glb",
+      "x": -4.53,
+      "z": -5.18,
+      "rotationY": -3.14,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.83,
+        "halfY": 1.36,
+        "halfZ": 0.83
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker.glb",
+      "x": -3.45,
+      "z": -3.17,
+      "rotationY": 0,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.48,
+        "halfY": 1.62,
+        "halfZ": 0.52
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-a-stacked.glb",
+      "x": -4.27,
+      "z": -13.37,
+      "rotationY": 1.57,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 1.19,
+        "halfZ": 1.07
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lights.glb",
+      "x": 9.91,
+      "z": -13.91,
+      "rotationY": -1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.83,
+        "halfY": 1.36,
+        "halfZ": 0.83
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/fuel-b-barrels.glb",
+      "x": 9.56,
+      "z": -5.73,
+      "rotationY": -1.57,
+      "height": 1.7,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.15,
+        "halfY": 0.85,
+        "halfZ": 1.15
+      }
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": 6.188,
       "z": -10,
       "amount": 25,
@@ -280,7 +463,7 @@
       "revealAt": 0
     },
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": 6.188,
       "z": 10,
       "amount": 25,

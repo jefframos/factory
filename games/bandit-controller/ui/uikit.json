@@ -49,32 +49,33 @@
         },
         "ribbon": {
           "type": "image",
-          "image": "ResourceBar_Single_Btn_Green1",
+          "image": "Title_Ribbon01_Yellow",
           "slice": [
-            20,
-            20,
-            20,
-            20
+            150,
+            0,
+            150,
+            0
           ],
           "tint": "#ffffff",
-          "w": 190
+          "w": 780,
+          "h": 143
         },
         "title": {
           "type": "text",
-          "text": "LEVEL {level} COMPLETE",
+          "text": "LEVEL {level} CLEAR!",
           "fill": "#ffffff",
-          "stroke": "#0b3d12",
-          "strokeWidth": 5,
-          "size": 20,
+          "stroke": "#7a4100",
+          "strokeWidth": 6,
+          "size": 27,
           "style": "primary"
         },
         "total": {
           "type": "text",
-          "text": "${money} SECURED{bonus}",
+          "text": "${money}",
           "fill": "#ffd15c",
           "stroke": "#3a2400",
-          "strokeWidth": 5,
-          "size": 24,
+          "strokeWidth": 7,
+          "size": 50,
           "style": "primary"
         },
         "button": {
@@ -94,7 +95,43 @@
           "fill": "#ffffff",
           "stroke": "#6b4200",
           "strokeWidth": 6,
-          "size": 32,
+          "size": 34,
+          "style": "primary"
+        },
+        "totalCaption": {
+          "type": "text",
+          "text": "TOTAL EARNED",
+          "fill": "#c9d3e0",
+          "stroke": "#1d1b1a",
+          "strokeWidth": 4,
+          "size": 17,
+          "style": "primary"
+        },
+        "hint": {
+          "type": "text",
+          "text": "{text}",
+          "fill": "#9aa6ba",
+          "stroke": "#1d1b1a",
+          "strokeWidth": 3,
+          "size": 15,
+          "style": "primary"
+        },
+        "breakdownValue": {
+          "type": "text",
+          "text": "+${money}",
+          "fill": "#8dff9e",
+          "stroke": "#0b3d12",
+          "strokeWidth": 4,
+          "size": 21,
+          "style": "primary"
+        },
+        "breakdownLabel": {
+          "type": "text",
+          "text": "{text}",
+          "fill": "#9aa6ba",
+          "stroke": "#1d1b1a",
+          "strokeWidth": 3,
+          "size": 13,
           "style": "primary"
         }
       }
@@ -179,13 +216,53 @@
           ],
           "tint": "#ffffff"
         },
+        "ribbon": {
+          "type": "image",
+          "image": "Title_Ribbon01_Yellow",
+          "slice": [
+            150,
+            0,
+            150,
+            0
+          ],
+          "tint": "#ffffff",
+          "w": 700,
+          "h": 143
+        },
         "title": {
           "type": "text",
-          "text": "BONUS!",
+          "text": "BONUS ROUND!",
           "fill": "#ffffff",
-          "stroke": "#0b3d12",
-          "strokeWidth": 5,
-          "size": 24,
+          "stroke": "#7a4100",
+          "strokeWidth": 6,
+          "size": 27,
+          "style": "primary"
+        },
+        "subtitle": {
+          "type": "text",
+          "text": "LOOT ${money}  ·  STOP ON x5!",
+          "fill": "#c9d3e0",
+          "stroke": "#1d1b1a",
+          "strokeWidth": 3,
+          "size": 17,
+          "style": "primary"
+        },
+        "amount": {
+          "type": "text",
+          "text": "+${money}",
+          "fill": "#ffe14d",
+          "stroke": "#3a2400",
+          "strokeWidth": 7,
+          "size": 44,
+          "style": "primary"
+        },
+        "zoneLabel": {
+          "type": "text",
+          "text": "x{multiplier}",
+          "fill": "#ffffff",
+          "stroke": "#1b1b1b",
+          "strokeWidth": 4,
+          "size": 19,
           "style": "primary"
         },
         "button": {
@@ -206,6 +283,41 @@
           "stroke": "#0b3d12",
           "strokeWidth": 6,
           "size": 40,
+          "style": "primary"
+        },
+        "claimButton": {
+          "type": "image",
+          "image": "Button01_s_Green",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "claimLabel": {
+          "type": "text",
+          "text": "CLAIM x{multiplier}",
+          "fill": "#ffffff",
+          "stroke": "#0b3d12",
+          "strokeWidth": 6,
+          "size": 36,
+          "style": "primary"
+        },
+        "videoIcon": {
+          "type": "image",
+          "image": "ItemIcon_Video",
+          "slice": null,
+          "tint": "#ffffff"
+        },
+        "skipLabel": {
+          "type": "text",
+          "text": "NO THANKS",
+          "fill": "#e8eef5",
+          "stroke": "#1d1b1a",
+          "strokeWidth": 4,
+          "size": 22,
           "style": "primary"
         }
       }

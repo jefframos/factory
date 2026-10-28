@@ -23,8 +23,8 @@ import { type CharacterView, DEFAULT_CHARACTER_VIEW, resolveSkinImagePath } from
 import { PLAYER_SETTINGS, getPlayerMoveSpeed, getPlayerColliderHalfExtents, getPlayerColliderCenterOffset } from '../data/PlayerSettings';
 import { BendService, WorldBendService } from 'core/services/BendService';
 
-/** FBX export scale for this character rig. */
-const CHARACTER_SCALE = 0.0075;
+/** FBX export scale for this character rig, 25% over the 0.0075 export size so characters read better on phones. Visual only — the collider comes from PlayerSettings. */
+const CHARACTER_SCALE = 0.0094;
 
 /** Model-registry entries carry a repo-relative fullPath (e.g. "bandit-controller/models/..."), served at runtime from ./bandit-controller/... (see public/bandit-controller/models, built via `npm run models`). */
 const modelUrl = (fullPath: string): string => `./${fullPath}`;

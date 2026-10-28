@@ -35,6 +35,7 @@ import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { GameAudio } from '../audio/GameAudio';
 import { reloadToHome, resetProgressionData } from '../data/ProgressionStorage';
 import { UiAnim, UiTween } from '../ui/UiAnim';
+import { closeButton, cornerButton, popupPanel, titleRibbon } from '../ui/UiParts';
 
 const CARD_COLUMNS = 4;
 const CARD_WIDTH = 124;
@@ -206,7 +207,7 @@ export default class HomeScene extends ThreeScene {
             { model: 'resources/Money_Pile_Large.gltf', x: 4.3, z: -10.8, height: 1.8, yaw: -0.5 },
             { model: 'resources/Money_Pile_Medium.gltf', x: -3.1, z: 1.6, height: 0.9, yaw: 0.5 },
             { model: 'resources/Gold_Bars_Stack_Medium.gltf', x: 3.1, z: 1.7, height: 0.8, yaw: -0.4 },
-            { model: 'resources/Money_Coins_Stack_Large.gltf', x: -2.4, z: 2.6, height: 0.5, yaw: 0 },
+            { model: 'resources/Money_Bills_Stack_Large.gltf', x: -2.4, z: 2.6, height: 0.5, yaw: 0 },
             { model: 'resources/Gold_Nuggets.gltf', x: 2.4, z: 2.7, height: 0.35, yaw: 1.2 },
         ];
         this.sceneryReady = Promise.all(props.map(async (spot, index) => {
@@ -303,6 +304,8 @@ export default class HomeScene extends ThreeScene {
         this.levelPicker.visible = false;
         this.settingsModal = undefined;
         this.settingsButton = this.buildSettingsButton();
+        // Settings (reset progress, unlock all...) is a developer tool for now: only with ?dev=1.
+        this.settingsButton.visible = Boolean(Game.debugParams.dev);
         root.addChild(this.menu, this.editPanel, this.levelPicker, this.settingsButton);
         this.game.uiLayer.addChild(root);
         this.resize();
@@ -336,75 +339,103 @@ export default class HomeScene extends ThreeScene {
         };
     }
 
+    /** Debug hook: (re)opens the daily reward popup if one is claimable. */
+    public showDailyReward(): void {
+        if (this.dailyModal && !this.dailyModal.destroyed) {
+            UiAnim.kill(this.dailyModal);
+            this.dailyModal.destroy({ children: true });
+            this.dailyModal = undefined;
+        }
+        this.offerDailyReward();
+    }
+
     private offerDailyReward(): void {
         const reward = Progress.dailyReward();
-        if (!reward.available) {
+        if (!reward.available || !this.root) {
             return;
         }
+        const width = 340;
+        const height = 300;
         const modal = new PIXI.Container();
+        modal.name = 'daily-modal';
         const dim = new PIXI.Graphics();
         dim.beginFill(0x000000, 0.55).drawRect(-1200, -1200, 2400, 2400).endFill();
         dim.eventMode = 'static';
         const box = new PIXI.Container();
-        const glow = UiAnim.rays(box, 260);
-        const panel = new PIXI.NineSlicePlane(PIXI.Texture.from('ItemFrame01_Single_Blue'), 30, 30, 30, 30);
-        panel.width = 300;
-        panel.height = 230;
-        panel.position.set(-150, -115);
-        const ribbon = PIXI.Sprite.from('Title_Ribbon01_Green');
-        ribbon.anchor.set(0.5);
-        ribbon.scale.set(300 / Math.max(1, ribbon.texture.width));
-        ribbon.position.set(0, -110);
-        const title = label('DAILY REWARD', 24, 0x1d5a2a);
-        title.position.set(0, -112);
-        const streak = label(`DAY ${reward.streak} STREAK`, 18);
-        streak.position.set(0, -50);
-        const amount = label('$0', 46, 0x5a3a00);
-        amount.style.fill = 0xffe066;
-        amount.position.set(0, 0);
+        const glow = UiAnim.rays(box, 280);
+        const panel = popupPanel(width, height);
+
+        const ribbon = titleRibbon('DAILY REWARD', 30);
+        ribbon.position.set(0, -height / 2 - 4);
+
+        const streakText = label(`DAY ${reward.streak} STREAK`, 18, 0x1d4a7a);
+        streakText.position.set(0, -94);
+        const days = this.buildStreakRow(reward.streak);
+        days.position.set(0, -54);
+
+        const amount = label('$0', 54, 0x5a3a00);
+        amount.style.fill = [0xfff27a, 0xffc229];
+        amount.position.set(0, 4);
+        const next = label(
+            reward.streak >= 7 ? 'MAX STREAK!' : `TOMORROW: $${Progress.dailyAmount(reward.streak + 1)}`,
+            15,
+            0x1d4a7a,
+        );
+        next.alpha = 0.9;
+        next.position.set(0, 46);
+
         this.dailyModal = modal;
         const close = this.presentModal(modal, dim, box, () => {
             this.dailyModal = undefined;
         });
-        const claim = this.makeButton('Button01_s_Green', 200, 66, 'CLAIM', 26, () => {
-            Progress.claimDaily();
-            GameAudio.play('bonus');
-            this.moneyHud.setResourceCount(GameState.getMoney());
-            this.track(UiAnim.confetti(this.root!, modal.x, modal.y, 50));
+        const claim = this.makeButton('Button01_s_Green', 210, 66, 'CLAIM', 28, () => {
+            if (Progress.claimDaily() > 0) {
+                GameAudio.play('bonus');
+                this.moneyHud.setResourceCount(GameState.getMoney());
+                if (this.root) this.track(UiAnim.confetti(this.root, modal.x, modal.y, 50));
+            }
             close();
         });
         claim.name = 'daily-claim';
-        claim.position.set(0, 74);
-        box.addChild(panel, ribbon, title, streak, amount, claim);
+        claim.position.set(0, 100);
+        box.addChild(panel, streakText, days, amount, next, claim, ribbon);
         this.track(glow.tweens);
         this.track(UiAnim.dropIn(ribbon, 80, 0.15));
-        this.track(UiAnim.dropIn(title, 80, 0.15));
+        this.track(UiAnim.staggerPop(days.children, 0.3, 0.05));
         this.track(UiAnim.countUp(amount, 0, reward.amount, (value) => `$${value}`, 0.8, 0.35));
         this.track(UiAnim.pulse(claim, 0.06));
     }
 
-    /** Round cog matching the sound toggle; sits just left of it in the top-right corner. */
-    private buildSettingsButton(): PIXI.Container {
-        const button = new PIXI.Container();
-        button.name = 'settings-button';
-        const icon = new PIXI.Graphics();
-        icon.beginFill(0x000000, 0.2).drawCircle(0, 4, 30).endFill();
-        icon.beginFill(0xffffff).lineStyle(4, 0x2a6fb0).drawCircle(0, 0, 30).endFill();
-        icon.lineStyle(0).beginFill(0x244e6d);
-        const teeth = 8;
-        const points: number[] = [];
-        for (let i = 0; i < teeth * 4; i++) {
-            const angle = (i / (teeth * 4)) * Math.PI * 2;
-            const radius = i % 4 < 2 ? 18 : 13;
-            points.push(Math.cos(angle) * radius, Math.sin(angle) * radius);
+    /** Seven day tiles: past days claimed (green), today highlighted (gold), future greyed. */
+    private buildStreakRow(streak: number): PIXI.Container {
+        const row = new PIXI.Container();
+        const size = 36;
+        const gap = 6;
+        const total = 7 * size + 6 * gap;
+        for (let day = 1; day <= 7; day++) {
+            const tile = new PIXI.Container();
+            const isToday = day === streak;
+            const fill = day < streak ? 0x36d43a : isToday ? 0xffc229 : 0x6f8aa6;
+            const g = new PIXI.Graphics();
+            g.beginFill(0x000000, 0.25).drawRoundedRect(-size / 2, -size / 2 + 3, size, size, 9).endFill();
+            g.lineStyle(3, 0x123049).beginFill(fill).drawRoundedRect(-size / 2, -size / 2, size, size, 9).endFill();
+            g.lineStyle(0).beginFill(0xffffff, 0.3).drawRoundedRect(-size / 2 + 5, -size / 2 + 4, size - 10, 7, 3).endFill();
+            const text = label(String(day), isToday ? 20 : 17, 0x123049);
+            tile.addChild(g, text);
+            tile.alpha = day > streak ? 0.75 : 1;
+            tile.position.set(-total / 2 + size / 2 + (day - 1) * (size + gap), 0);
+            if (isToday) {
+                tile.scale.set(1.15);
+            }
+            row.addChild(tile);
         }
-        icon.drawPolygon(points).endFill();
-        icon.beginFill(0xffffff).drawCircle(0, 0, 6).endFill();
-        button.addChild(icon);
-        button.eventMode = 'static';
-        button.cursor = 'pointer';
-        button.hitArea = new PIXI.Circle(0, 0, 34);
-        button.on('pointertap', () => this.openSettings());
+        return row;
+    }
+
+    /** Cog button matching the sound toggle; sits just left of it in the top-right corner. */
+    private buildSettingsButton(): PIXI.Container {
+        const { button } = cornerButton('Icon_Setting', 42, () => this.openSettings());
+        button.name = 'settings-button';
         return button;
     }
 
@@ -424,13 +455,9 @@ export default class HomeScene extends ThreeScene {
             this.settingsModal = undefined;
         });
         dim.on('pointertap', close);
-        const panel = new PIXI.NineSlicePlane(PIXI.Texture.from('ItemFrame01_Single_Blue'), 30, 30, 30, 30);
-        panel.width = 320;
-        panel.height = 360;
-        panel.position.set(-160, -180);
-        panel.eventMode = 'static';
-        const title = label('SETTINGS', 28, 0x1d4a7a);
-        title.position.set(0, -138);
+        const panel = popupPanel(340, 360);
+        const title = titleRibbon('SETTINGS', 30);
+        title.position.set(0, -184);
         const status = label('', 15);
         status.position.set(0, 148);
         const notify = (text: string): void => {
@@ -463,22 +490,22 @@ export default class HomeScene extends ThreeScene {
         });
         clear.name = 'settings-clear-data';
         clear.position.set(0, 78);
-        const closeButton = label('✕', 26);
-        closeButton.position.set(132, -150);
-        closeButton.eventMode = 'static';
-        closeButton.cursor = 'pointer';
-        closeButton.hitArea = new PIXI.Circle(0, 0, 24);
-        closeButton.on('pointertap', close);
-        box.addChild(panel, title, unlock, money, clear, status, closeButton);
+        const closeBtn = closeButton(close);
+        closeBtn.position.set(150, -150);
+        box.addChild(panel, unlock, money, clear, status, title, closeBtn);
         this.track(UiAnim.staggerRise([unlock, money, clear], 0.12, 0.07));
     }
 
     private layoutDaily(): void {
         const screen = Game.overlayScreenData;
-        if (this.dailyModal && !this.dailyModal.destroyed) this.dailyModal.position.set(screen.center.x, screen.center.y);
+        const modalScale = Math.min(1.1, screen.width / DESIGN_WIDTH, screen.height / 720);
+        if (this.dailyModal && !this.dailyModal.destroyed) {
+            this.dailyModal.position.set(screen.center.x, screen.center.y);
+            this.dailyModal.scale.set(modalScale);
+        }
         if (this.settingsModal && !this.settingsModal.destroyed) {
             this.settingsModal.position.set(screen.center.x, screen.center.y);
-            this.settingsModal.scale.set(Math.min(1.1, screen.width / DESIGN_WIDTH, screen.height / 720));
+            this.settingsModal.scale.set(modalScale);
         }
         // Left of the global sound toggle (SoundToggleButton.reposition).
         this.settingsButton?.position.set(screen.topRight.x - 44 - 76, screen.topLeft.y + 44);
@@ -622,7 +649,11 @@ export default class HomeScene extends ThreeScene {
 
     /** Rebuilds the edit panel; `animate` pops the item cards in (tab / page / member change). */
     private refreshEdit(animate = false): void {
-        this.editBody.removeChildren().forEach((child) => child.destroy({ children: true }));
+        // Fast taps rebuild mid-animation: kill pops/sparks first or gsap writes to nulled transforms.
+        this.editBody.removeChildren().forEach((child) => {
+            UiAnim.kill(child as PIXI.Container);
+            child.destroy({ children: true });
+        });
 
         SQUAD_VIEW_NAMES.forEach((name, index) => {
             const view = CHARACTER_VIEWS[name];
@@ -1079,7 +1110,10 @@ export default class HomeScene extends ThreeScene {
         this.worldLock.visible = !unlocked;
         this.worldLock.position.set(this.worldTitle.width / 2 + 24, LEVEL_TITLE_Y);
 
-        this.grid.removeChildren().forEach((child) => child.destroy({ children: true }));
+        this.grid.removeChildren().forEach((child) => {
+            UiAnim.kill(child as PIXI.Container);
+            child.destroy({ children: true });
+        });
         // The 5-level tutorial reads better as 3 + 2 than 4 + 1.
         const columns = world.levels.length <= 6 ? 3 : GRID_COLUMNS;
         const rows = Math.ceil(world.levels.length / columns);

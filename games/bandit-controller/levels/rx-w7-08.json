@@ -40,16 +40,16 @@
   },
   "waypoints": [
     {
-      "x": -8,
+      "x": -7,
       "z": 9.828
     },
     {
-      "x": 2,
+      "x": 3,
       "z": 4.9
     },
     {
-      "x": 12,
-      "z": -0.028
+      "x": 19.35,
+      "z": -6.73
     }
   ],
   "entryPath": {
@@ -261,10 +261,163 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/kaykit/rug-rectangle-stripes-a.glb",
+      "x": 11,
+      "z": -10.53,
+      "rotationY": 1.57,
+      "height": 0.22,
+      "revealAt": 0,
+      "width": 6.63,
+      "flat": true,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/rug-rectangle-stripes-a.glb",
+      "x": -10,
+      "z": -0.67,
+      "rotationY": 1.57,
+      "height": 0.22,
+      "revealAt": 0,
+      "width": 6.63,
+      "flat": true,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/cute/clock-03.glb",
+      "x": 13.48,
+      "z": -15.4,
+      "rotationY": 0,
+      "height": 4.08,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.81,
+        "halfY": 2.04,
+        "halfZ": 0.45
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lamp-standing.glb",
+      "x": 11.87,
+      "z": 5.34,
+      "rotationY": 3.14,
+      "height": 3.57,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.64,
+        "halfY": 1.79,
+        "halfZ": 0.64
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-19.glb",
+      "x": 15.32,
+      "z": 3.84,
+      "rotationY": -1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.41,
+        "halfY": 1.36,
+        "halfZ": 0.52
+      }
+    },
+    {
+      "model": "heist/decor/cute/armchair-18.glb",
+      "x": 14.87,
+      "z": -11.18,
+      "rotationY": -1.57,
+      "height": 2.04,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.82,
+        "halfY": 1.02,
+        "halfZ": 0.88
+      }
+    },
+    {
+      "model": "heist/decor/cute/clock-03.glb",
+      "x": -12.55,
+      "z": 15.4,
+      "rotationY": 3.14,
+      "height": 4.08,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.81,
+        "halfY": 2.04,
+        "halfZ": 0.45
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-19.glb",
+      "x": -7.3,
+      "z": 15.45,
+      "rotationY": 3.14,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.36,
+        "halfZ": 0.41
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-15.glb",
+      "x": -1.9,
+      "z": 10.66,
+      "rotationY": 3.14,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.19,
+        "halfZ": 0.29
+      }
+    },
+    {
+      "model": "heist/decor/cute/armchair-18.glb",
+      "x": -5.13,
+      "z": 13.61,
+      "rotationY": -1.57,
+      "height": 2.04,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.82,
+        "halfY": 1.02,
+        "halfZ": 0.88
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-19.glb",
+      "x": -7.09,
+      "z": -5.59,
+      "rotationY": 0,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.36,
+        "halfZ": 0.41
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-15.glb",
+      "x": 4.3,
+      "z": -10.66,
+      "rotationY": 0,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.19,
+        "halfZ": 0.29
+      }
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": -10,
       "z": 8.428,
       "amount": 25,
@@ -280,7 +433,7 @@
       "revealAt": 0
     },
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": 10,
       "z": -1.428,
       "amount": 25,
@@ -349,7 +502,7 @@
           "z": 9.828
         },
         {
-          "x": 2,
+          "x": 3,
           "z": 4.9
         },
         {
@@ -370,7 +523,7 @@
           "z": 4.928
         },
         {
-          "x": 2,
+          "x": 3,
           "z": 0
         },
         {
@@ -388,10 +541,10 @@
       "waypoints": [
         {
           "x": -7,
-          "z": 0.028
+          "z": 1.53
         },
         {
-          "x": 2,
+          "x": 3,
           "z": -4.9
         },
         {

@@ -17,6 +17,7 @@
 // destroyed and rebuilt on a scene change.
 
 import * as PIXI from 'pixi.js';
+import { UiKit } from './UiKit';
 import { Game } from 'core/Game';
 import BaseButton from 'core/ui/BaseButton';
 
@@ -40,7 +41,7 @@ export default class GameUI extends PIXI.Container {
                 tint: 0x3a4a6b,
                 width: BUTTON_WIDTH,
                 height: BUTTON_HEIGHT,
-                fontStyle: new PIXI.TextStyle({ fontSize: 20, fontWeight: 'bold', fill: 0xffffff }),
+                fontStyle: new PIXI.TextStyle({ fontFamily: UiKit.fontFamily('primary'), fontSize: 20, fill: 0xffffff, stroke: 0x1d2b3a, strokeThickness: 4 }),
                 fontColor: 0xffffff,
                 fitText: 0.8,
             },
@@ -65,7 +66,7 @@ export default class GameUI extends PIXI.Container {
                 tint,
                 width: BUTTON_WIDTH,
                 height: BUTTON_HEIGHT,
-                fontStyle: new PIXI.TextStyle({ fontSize: 18, fontWeight: 'bold', fill: 0xffffff }),
+                fontStyle: new PIXI.TextStyle({ fontFamily: UiKit.fontFamily('primary'), fontSize: 18, fill: 0xffffff, stroke: 0x1d2b3a, strokeThickness: 4 }),
                 fontColor: 0xffffff,
                 fitText: 0.8,
             },

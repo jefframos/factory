@@ -48,6 +48,7 @@ import ReturnToHubButton from '../ui/ReturnToHubButton';
 import RestartButton from '../ui/RestartButton';
 import { GameAudio } from '../audio/GameAudio';
 import MoneyHud from '../ui/MoneyHud';
+import { UiKit } from '../ui/UiKit';
 import Collectible from '../entities/Collectible';
 import { COIN } from '../data/CollectibleSettings';
 import { RUNNER_LANE_DIRECTION, SWIPE_MINIGAME_SETTINGS, RUNNER_FLOOR_SETTINGS, OBSTACLE_SETTINGS, OBSTACLE_KINDS, ObstacleKind, TRAIN_TUNNEL_OVERLAP, COIN_SETTINGS, RAMP_LENGTH, RAMP_COLOR } from '../data/MinigameSettings';
@@ -139,8 +140,8 @@ export default class SwipeMinigameScene extends ThreeScene {
             player.swipeRunnerController.activate(RUNNER_LANE_DIRECTION, SWIPE_MINIGAME_SETTINGS.laneCount, SWIPE_MINIGAME_SETTINGS.laneWidth, START_POSITION);
         });
         this.timerLabel = new PIXI.Text('', new PIXI.TextStyle({
+            fontFamily: UiKit.fontFamily('primary'),
             fontSize: 32,
-            fontWeight: 'bold',
             fill: 0xffffff,
             stroke: 0x000000,
             strokeThickness: 5,

@@ -1,0 +1,369 @@
+{
+  "id": "tutorial-06",
+  "name": "The Whole Crew",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 18.2,
+    "depth": 35,
+    "rects": [
+      {
+        "x": 0,
+        "z": 0,
+        "width": 18.2,
+        "depth": 22
+      },
+      {
+        "x": -0.06,
+        "z": -14.25,
+        "width": 9.1,
+        "depth": 6.5
+      }
+    ]
+  },
+  "start": {
+    "x": 0,
+    "z": 13
+  },
+  "waypoints": [
+    {
+      "x": 0,
+      "z": 6
+    },
+    {
+      "x": 0,
+      "z": -13.85
+    }
+  ],
+  "entryPath": {
+    "x": 0,
+    "z": 13,
+    "width": 13,
+    "depth": 4
+  },
+  "squad": [
+    {
+      "view": "blue",
+      "start": {
+        "x": -4.5,
+        "z": 13
+      },
+      "waypoints": [
+        {
+          "x": -4.5,
+          "z": 3
+        },
+        {
+          "x": -2,
+          "z": -13.85
+        }
+      ]
+    },
+    {
+      "view": "orange",
+      "start": {
+        "x": 0,
+        "z": 13
+      },
+      "waypoints": [
+        {
+          "x": 0,
+          "z": 6
+        },
+        {
+          "x": 0,
+          "z": -13.85
+        }
+      ]
+    },
+    {
+      "view": "purple",
+      "start": {
+        "x": 4.5,
+        "z": 13
+      },
+      "waypoints": [
+        {
+          "x": 4.5,
+          "z": 3
+        },
+        {
+          "x": 2,
+          "z": -13.85
+        }
+      ]
+    }
+  ],
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": -9.1,
+          "z": 11
+        },
+        {
+          "x": 9.1,
+          "z": 11
+        },
+        {
+          "x": 9.1,
+          "z": -11
+        },
+        {
+          "x": -9.1,
+          "z": -11
+        }
+      ],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": -7.15,
+          "maxX": 7.15,
+          "minZ": 10.7,
+          "maxZ": 11.3
+        },
+        {
+          "kind": "door",
+          "minX": -2.79,
+          "maxX": 2.67,
+          "minZ": -11.3,
+          "maxZ": -10.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -9.1,
+          "z": -1
+        },
+        {
+          "x": 9.1,
+          "z": -1
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -6.63,
+          "maxX": -1.17,
+          "minZ": -1.3,
+          "maxZ": -0.7
+        },
+        {
+          "kind": "door",
+          "minX": 1.17,
+          "maxX": 6.63,
+          "minZ": -1.3,
+          "maxZ": -0.7
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -4.61,
+          "z": -11
+        },
+        {
+          "x": -4.61,
+          "z": -17.5
+        },
+        {
+          "x": 4.49,
+          "z": -17.5
+        },
+        {
+          "x": 4.49,
+          "z": -11
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "props": [
+    {
+      "model": "heist/decor/cute/couch-08.glb",
+      "x": -8.01,
+      "z": -7.15,
+      "rotationY": 1.57,
+      "height": 1.95,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.78,
+        "halfY": 0.98,
+        "halfZ": 2.26
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lamp-standing.glb",
+      "x": -8.17,
+      "z": -3.26,
+      "rotationY": 1.57,
+      "height": 3.57,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.64,
+        "halfY": 1.79,
+        "halfZ": 0.64
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/shelf-b-large-decorated.glb",
+      "x": -8.33,
+      "z": 1.93,
+      "rotationY": 1.57,
+      "height": 1.79,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.49,
+        "halfY": 0.89,
+        "halfZ": 1.97
+      }
+    },
+    {
+      "model": "heist/decor/cute/armchair-18.glb",
+      "x": -7.97,
+      "z": 6.8,
+      "rotationY": 1.57,
+      "height": 2.04,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.82,
+        "halfY": 1.02,
+        "halfZ": 0.88
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lamp-standing.glb",
+      "x": 6.56,
+      "z": -10.07,
+      "rotationY": 0,
+      "height": 3.57,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.64,
+        "halfY": 1.79,
+        "halfZ": 0.64
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-19.glb",
+      "x": -6.27,
+      "z": -10.32,
+      "rotationY": 0,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.36,
+        "halfZ": 0.41
+      }
+    },
+    {
+      "model": "heist/decor/cute/couch-08.glb",
+      "x": 8.01,
+      "z": 5.83,
+      "rotationY": -1.57,
+      "height": 1.95,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.78,
+        "halfY": 0.98,
+        "halfZ": 2.26
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lamp-standing.glb",
+      "x": 8.17,
+      "z": 0.97,
+      "rotationY": -1.57,
+      "height": 3.57,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.64,
+        "halfY": 1.79,
+        "halfZ": 0.64
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/shelf-b-large-decorated.glb",
+      "x": 8.33,
+      "z": -4.38,
+      "rotationY": -1.57,
+      "height": 1.79,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.49,
+        "halfY": 0.89,
+        "halfZ": 1.97
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-19.glb",
+      "x": 8.42,
+      "z": -8.42,
+      "rotationY": -1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.41,
+        "halfY": 1.36,
+        "halfZ": 0.52
+      }
+    }
+  ],
+  "loot": [
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": 0,
+      "z": 6,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": 0,
+      "z": -4,
+      "amount": 40,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": 0,
+      "z": -8,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [],
+  "styles": {
+    "floor": "floorStyle1",
+    "wall": "wallStyle1",
+    "door": "doorStyle1",
+    "window": "windowStyle1",
+    "ground": "groundStyle1",
+    "path": "pathStyle1"
+  },
+  "sharedGoal": {
+    "x": -0.06,
+    "z": -14.25,
+    "width": 8.32,
+    "depth": 5.9,
+    "enabled": true
+  },
+  "vault": {
+    "x": -0.06,
+    "z": -14.25,
+    "width": 9.1,
+    "depth": 6.5,
+    "side": "-z"
+  }
+}

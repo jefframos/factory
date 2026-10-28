@@ -34,12 +34,12 @@
   },
   "waypoints": [
     {
-      "x": -10.3,
-      "z": 1.2
+      "x": -8.89,
+      "z": -0.21
     },
     {
-      "x": -1.54,
-      "z": -7
+      "x": 1.56,
+      "z": -14.6
     }
   ],
   "entryPath": {
@@ -191,10 +191,206 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/kaykit/table-medium-long.glb",
+      "x": -2.24,
+      "z": -7.8,
+      "rotationY": 0,
+      "height": 1.36,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.84,
+        "halfY": 0.68,
+        "halfZ": 0.92
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/money-bills-stack-large.glb",
+      "x": -3.24,
+      "z": -7.8,
+      "rotationY": 0,
+      "height": 0.51,
+      "revealAt": 0,
+      "elevation": 1.36,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/casino/cash-machine-01.glb",
+      "x": -1.24,
+      "z": -4.2,
+      "rotationY": 0,
+      "height": 0.6,
+      "revealAt": 0,
+      "elevation": 1.36,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/locker-decorated.glb",
+      "x": 7.03,
+      "z": 2.73,
+      "rotationY": -1.57,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.62,
+        "halfZ": 0.48
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/workbench-decorated.glb",
+      "x": 7.15,
+      "z": 7.36,
+      "rotationY": -1.57,
+      "height": 1.62,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.42,
+        "halfY": 0.81,
+        "halfZ": 0.84
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker-decorated.glb",
+      "x": 13.75,
+      "z": -9.75,
+      "rotationY": -1.57,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.62,
+        "halfZ": 0.48
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/money-pile-large.glb",
+      "x": 11.63,
+      "z": -2.09,
+      "rotationY": -3.14,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.92,
+        "halfY": 0.77,
+        "halfZ": 0.78
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/pallet-wood.glb",
+      "x": -13.18,
+      "z": 9.05,
+      "rotationY": 1.57,
+      "height": 0.46,
+      "revealAt": 0,
+      "width": 2.38,
+      "collider": {
+        "halfX": 1.04,
+        "halfY": 0.23,
+        "halfZ": 1.07
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/silver-bars-stack-large.glb",
+      "x": -13.18,
+      "z": 9.05,
+      "rotationY": 1.57,
+      "height": 0.94,
+      "revealAt": 0,
+      "elevation": 0.43,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/locker-decorated.glb",
+      "x": -13.75,
+      "z": 5.56,
+      "rotationY": 1.57,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.62,
+        "halfZ": 0.48
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/pallet-wood.glb",
+      "x": -13.18,
+      "z": 2.18,
+      "rotationY": 1.57,
+      "height": 0.46,
+      "revealAt": 0,
+      "width": 2.38,
+      "collider": {
+        "halfX": 1.04,
+        "halfY": 0.23,
+        "halfZ": 1.07
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/silver-bars-stack-large.glb",
+      "x": -13.18,
+      "z": 2.18,
+      "rotationY": 1.57,
+      "height": 0.94,
+      "revealAt": 0,
+      "elevation": 0.43,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/workbench-decorated.glb",
+      "x": -12.07,
+      "z": -0.31,
+      "rotationY": 0,
+      "height": 1.62,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.84,
+        "halfY": 0.81,
+        "halfZ": 0.42
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker-decorated.glb",
+      "x": -7.03,
+      "z": -4.24,
+      "rotationY": 1.57,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.62,
+        "halfZ": 0.48
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/table-medium-long.glb",
+      "x": -6.6,
+      "z": -8.3,
+      "rotationY": 1.57,
+      "height": 1.36,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.92,
+        "halfY": 0.68,
+        "halfZ": 1.84
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/money-bills-stack-large.glb",
+      "x": -6.6,
+      "z": -8.3,
+      "rotationY": 1.57,
+      "height": 0.51,
+      "revealAt": 0,
+      "elevation": 1.36,
+      "collider": null
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": -6.86,
       "z": 5,
       "amount": 25,
@@ -267,8 +463,8 @@
       },
       "waypoints": [
         {
-          "x": -10.3,
-          "z": 1.2
+          "x": -8.89,
+          "z": -0.21
         },
         {
           "x": 1.56,

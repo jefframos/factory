@@ -27,9 +27,9 @@ export const MONEY_PILE_SMALL: CollectibleDefinition = {
     icon: 'icons/money.webp',
 };
 
-/** Floating coin pickup — RunnerMinigameScene/SwipeMinigameScene scatter these along the lane (see CollectibleBuilder.ts), same icon/counter as MONEY_PILE_SMALL (one shared currency, see MoneyHud.ts) but worth less per pickup since a run places several. */
+/** Floating cash pickup (a small bill stack; the game shows no coins anywhere) — RunnerMinigameScene/SwipeMinigameScene scatter these along the lane (see CollectibleBuilder.ts), same icon/counter as MONEY_PILE_SMALL (one shared currency, see MoneyHud.ts) but worth less per pickup since a run places several. */
 export const COIN: CollectibleDefinition = {
-    model: MODELS.Resources.MoneyCoinsStackSingle,
+    model: MODELS.Resources.MoneyBillsStackSmall,
     resourceAmount: 5,
     modelScale: 1,
     icon: 'icons/money.webp',

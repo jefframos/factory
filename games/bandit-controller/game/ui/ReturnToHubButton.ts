@@ -9,6 +9,7 @@
 // GameUI's own buttons (no nine-slice art in this project's own asset set).
 
 import * as PIXI from 'pixi.js';
+import { UiKit } from './UiKit';
 import { Game } from 'core/Game';
 import BaseButton from 'core/ui/BaseButton';
 
@@ -26,7 +27,7 @@ export default class ReturnToHubButton {
                 tint: 0x6b2f3a,
                 width: BUTTON_WIDTH,
                 height: BUTTON_HEIGHT,
-                fontStyle: new PIXI.TextStyle({ fontSize: 18, fontWeight: 'bold', fill: 0xffffff }),
+                fontStyle: new PIXI.TextStyle({ fontFamily: UiKit.fontFamily('primary'), fontSize: 18, fill: 0xffffff, stroke: 0x1d2b3a, strokeThickness: 4 }),
                 fontColor: 0xffffff,
                 fitText: 0.8,
             },

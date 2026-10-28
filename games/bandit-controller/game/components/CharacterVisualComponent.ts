@@ -15,6 +15,9 @@ import RigidBody from 'core/physics/RigidBody';
 import { PLAYER_SETTINGS, getPlayerColliderHalfExtents, getPlayerColliderCenterOffset } from '../data/PlayerSettings';
 import { GameAudio } from '../audio/GameAudio';
 
+/** World units walked per footstep sound (characters are ~3.5 units tall). */
+const FOOTSTEP_STRIDE = 1.2;
+
 export default class CharacterVisualComponent extends Component {
     public readonly character: ThirdPersonCharacter;
 
@@ -80,14 +83,16 @@ export default class CharacterVisualComponent extends Component {
 
         if (this.previousPosition) {
             const distance = Math.hypot(this.worldPosition.x - this.previousPosition.x, this.worldPosition.z - this.previousPosition.z);
-            if (rigidBody?.grounded && !isSliding && this.rollingRemaining <= 0 && distance > 0.001 && distance < 2) {
-                this.stepDistance += distance;
-                if (this.stepDistance >= 1.5) {
-                    GameAudio.play('footstep');
-                    this.stepDistance %= 1.5;
-                }
-            } else {
+            const onFeet = (rigidBody?.grounded ?? true) && !isSliding && this.rollingRemaining <= 0;
+            if (!onFeet || distance >= 2) {
                 this.stepDistance = 0;
+            } else if (distance > 0.001) {
+                // Physics moves on a fixed tick, so many render frames see no movement: those must not reset the stride.
+                this.stepDistance += distance;
+                if (this.stepDistance >= FOOTSTEP_STRIDE) {
+                    GameAudio.play('footstep');
+                    this.stepDistance %= FOOTSTEP_STRIDE;
+                }
             }
             this.previousPosition.copy(this.worldPosition);
         } else {

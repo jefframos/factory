@@ -40,11 +40,11 @@
   },
   "waypoints": [
     {
-      "x": 8,
-      "z": 3.696
+      "x": 7,
+      "z": 3.7
     },
     {
-      "x": -2,
+      "x": -3,
       "z": 0
     },
     {
@@ -261,10 +261,311 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/kaykit/haybale.glb",
+      "x": -4.2,
+      "z": 3.36,
+      "rotationY": 0,
+      "height": 1.19,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.03,
+        "halfY": 0.6,
+        "halfZ": 0.54
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/barrel-a.glb",
+      "x": -3,
+      "z": 4.96,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/target-stand-a-decorated.glb",
+      "x": 14.91,
+      "z": -1.84,
+      "rotationY": -1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.75,
+        "halfY": 1.36,
+        "halfZ": 0.97
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lantern-standing.glb",
+      "x": 14.99,
+      "z": 8.31,
+      "rotationY": -1.57,
+      "height": 2.21,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 1.11,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/barrel-a.glb",
+      "x": 14.99,
+      "z": 10.79,
+      "rotationY": -1.57,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/haybale.glb",
+      "x": 5.97,
+      "z": -3.86,
+      "rotationY": 0,
+      "height": 1.19,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.03,
+        "halfY": 0.6,
+        "halfZ": 0.54
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/target-stand-a-decorated.glb",
+      "x": 12.63,
+      "z": -3.62,
+      "rotationY": 0,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.97,
+        "halfY": 1.36,
+        "halfZ": 0.75
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/barrel-a.glb",
+      "x": 13.13,
+      "z": 11.08,
+      "rotationY": -3.14,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/haybale.glb",
+      "x": 7.28,
+      "z": 11.25,
+      "rotationY": -3.14,
+      "height": 1.19,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.03,
+        "halfY": 0.6,
+        "halfZ": 0.54
+      }
+    },
+    {
+      "model": "heist/decor/castle/tree-log.glb",
+      "x": -14,
+      "z": -10.31,
+      "rotationY": 0,
+      "height": 0.85,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.34,
+        "halfY": 0.43,
+        "halfZ": 1.38
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/barrel-a.glb",
+      "x": -12.35,
+      "z": -11.08,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/castle/tree-log.glb",
+      "x": -8.02,
+      "z": -10.31,
+      "rotationY": 0,
+      "height": 0.85,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.34,
+        "halfY": 0.43,
+        "halfZ": 1.38
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/haybale.glb",
+      "x": -2.37,
+      "z": -7.56,
+      "rotationY": 0,
+      "height": 1.19,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.03,
+        "halfY": 0.6,
+        "halfZ": 0.54
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/target-stand-a-decorated.glb",
+      "x": 2.32,
+      "z": -7.31,
+      "rotationY": 0,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.97,
+        "halfY": 1.36,
+        "halfZ": 0.75
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lantern-standing.glb",
+      "x": 6.45,
+      "z": 8.07,
+      "rotationY": 0,
+      "height": 2.21,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 1.11,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/castle/tree-log.glb",
+      "x": -14.39,
+      "z": 1.45,
+      "rotationY": 0,
+      "height": 0.85,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.34,
+        "halfY": 0.43,
+        "halfZ": 1.38
+      }
+    },
+    {
+      "model": "heist/decor/castle/flag-banner-long.glb",
+      "x": -15.21,
+      "z": 1.43,
+      "rotationY": 1.57,
+      "height": 3.74,
+      "revealAt": 0,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/haybale.glb",
+      "x": -2.38,
+      "z": 7.56,
+      "rotationY": -3.14,
+      "height": 1.19,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.03,
+        "halfY": 0.6,
+        "halfZ": 0.54
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/target-stand-a-decorated.glb",
+      "x": -4.91,
+      "z": 5.97,
+      "rotationY": 1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.75,
+        "halfY": 1.36,
+        "halfZ": 0.97
+      }
+    },
+    {
+      "model": "heist/decor/castle/tree-log.glb",
+      "x": -7.09,
+      "z": 2.92,
+      "rotationY": -3.14,
+      "height": 0.85,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.34,
+        "halfY": 0.43,
+        "halfZ": 1.38
+      }
+    },
+    {
+      "model": "heist/decor/castle/flag-banner-long.glb",
+      "x": -9.44,
+      "z": 3.91,
+      "rotationY": -3.14,
+      "height": 3.74,
+      "revealAt": 0,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/barrel-a.glb",
+      "x": -11.52,
+      "z": 3.69,
+      "rotationY": -3.14,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lantern-standing.glb",
+      "x": -4.99,
+      "z": -7.15,
+      "rotationY": 1.57,
+      "height": 2.21,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 1.11,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/castle/flag-banner-long.glb",
+      "x": -6.79,
+      "z": 2.5,
+      "rotationY": -1.57,
+      "height": 3.74,
+      "revealAt": 0,
+      "collider": null
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": 10,
       "z": 7.196,
       "amount": 25,
@@ -280,7 +581,7 @@
       "revealAt": 0
     },
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": -10,
       "z": -0.196,
       "amount": 25,

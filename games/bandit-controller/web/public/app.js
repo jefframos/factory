@@ -4,6 +4,7 @@ import { isModalOpen } from './shared.js';
 import { openModelPicker, setModelCatalog, modelThumbUrl } from './modelPicker.js';
 import { initWorldStyles, loadWorldStyles, renderWorldStyles, saveWorldStyles, hasUnsavedStyles, styleOf } from './worldStyles.js';
 import { initUiTab, refreshUiTab, saveUiKit, hasUnsavedUiChanges } from './uikit.js';
+import { initHatsTab, refreshHatsTab, saveHats, hasUnsavedHatChanges } from './hats.js';
 
 // ---------------------------------------------------------------- state
 let levels = [];
@@ -961,7 +962,7 @@ window.addEventListener('keydown', (event) => {
     if (activeTab !== 'level') {
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
             event.preventDefault();
-            void saveUiKit();
+            void (activeTab === 'hats' ? saveHats() : saveUiKit());
         }
         return;
     }
@@ -1012,7 +1013,7 @@ window.addEventListener('keyup', (event) => {
     }
 });
 window.addEventListener('beforeunload', (event) => {
-    if (dirty || hasUnsavedUiChanges() || hasUnsavedStyles()) {
+    if (dirty || hasUnsavedUiChanges() || hasUnsavedStyles() || hasUnsavedHatChanges()) {
         event.preventDefault();
     }
 });
@@ -1509,12 +1510,20 @@ $('pickModel').addEventListener('click', () => openModelPicker({
 
 // ---------------------------------------------------------------- tabs
 let uiTabReady = false;
+let hatsTabReady = false;
 async function switchTab(name) {
     activeTab = name;
     document.querySelectorAll('[data-tab]').forEach((tab) => tab.classList.toggle('active', tab.dataset.tab === name));
     document.querySelectorAll('.tab-panel').forEach((panel) => { panel.hidden = panel.id !== `tab-${name}`; });
     if (name === 'level') {
         resize();
+    } else if (name === 'hats') {
+        if (!hatsTabReady) {
+            hatsTabReady = true;
+            await initHatsTab($('tab-hats'));
+        } else {
+            refreshHatsTab();
+        }
     } else if (!uiTabReady) {
         uiTabReady = true;
         await initUiTab($('tab-ui'));
@@ -1544,6 +1553,7 @@ async function init() {
     renderModelList();
     await refreshLevels();
     if (location.hash === '#ui') await switchTab('ui');
+    if (location.hash === '#hats') await switchTab('hats');
 }
 
 init().catch((error) => {

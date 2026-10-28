@@ -13,11 +13,20 @@ export type UiTween = gsap.core.Animation;
 const CONFETTI_COLORS = [0xffd84a, 0xff6b9a, 0x5ad1ff, 0x7dea6a, 0xffffff, 0xff9f43];
 
 function killDisplayTweens(target: PIXI.Container): void {
+    // A parent destroyed with { children: true } leaves its pieces' scale/position nulled.
+    if (target.destroyed) {
+        return;
+    }
     [target, target.scale, target.position, target.pivot, target.skew].forEach((value) => gsap.killTweensOf(value));
     target.children.forEach((child) => killDisplayTweens(child as PIXI.Container));
 }
 
 export const UiAnim = {
+    /** Kills every display tween on `target` and its descendants — call before destroying it. */
+    kill(target: PIXI.Container): void {
+        killDisplayTweens(target);
+    },
+
     /** Dim fades in while the panel springs from small to its current scale. */
     popIn(panel: PIXI.Container, dim?: PIXI.Container, delay = 0): UiTween[] {
         const scale = panel.scale.x || 1;
@@ -125,21 +134,22 @@ export const UiAnim = {
         })];
     },
 
-    /** Rotating light rays behind a panel or icon. */
-    rays(parent: PIXI.Container, radius: number, color = 0xfff0a0, count = 12): { rays: PIXI.Graphics; tweens: UiTween[] } {
-        const rays = new PIXI.Graphics();
-        const half = Math.PI / count / 2;
-        for (let i = 0; i < count; i++) {
-            const angle = (i / count) * Math.PI * 2;
-            rays.beginFill(color, 0.22)
-                .moveTo(0, 0)
-                .lineTo(Math.cos(angle - half) * radius, Math.sin(angle - half) * radius)
-                .lineTo(Math.cos(angle + half) * radius, Math.sin(angle + half) * radius)
-                .closePath().endFill();
-        }
-        rays.blendMode = PIXI.BLEND_MODES.ADD;
+    /**
+     * Rotating light rays behind a panel, icon or button — the soft-edged Image_Effect_Rotate sprite, so every shine in
+     * the game fades out at its tips. Added at the back of `parent`; the returned container can be faded/moved freely.
+     */
+    rays(parent: PIXI.Container, radius: number, color = 0xfff0a0, intensity = 0.75, periodSec = 14): { rays: PIXI.Container; tweens: UiTween[] } {
+        const rays = new PIXI.Container();
+        rays.eventMode = 'none';
+        const sprite = new PIXI.Sprite(PIXI.Texture.from('Image_Effect_Rotate'));
+        sprite.anchor.set(0.5);
+        sprite.width = sprite.height = radius * 2;
+        sprite.tint = color;
+        sprite.alpha = intensity;
+        sprite.blendMode = PIXI.BLEND_MODES.ADD;
+        rays.addChild(sprite);
         parent.addChildAt(rays, 0);
-        return { rays, tweens: [gsap.to(rays, { rotation: Math.PI * 2, duration: 14, ease: 'none', repeat: -1 })] };
+        return { rays, tweens: [gsap.to(sprite, { rotation: Math.PI * 2, duration: periodSec, ease: 'none', repeat: -1 })] };
     },
 
     /** Burst of paper confetti from a point; pieces fall, spin, fade and destroy themselves. */
@@ -162,6 +172,9 @@ export const UiAnim = {
             const fall = 220 + Math.random() * 260;
             const duration = 1.4 + Math.random() * 0.9;
             const timeline = gsap.timeline({ onComplete: () => {
+                if (piece.destroyed) {
+                    return;
+                }
                 killDisplayTweens(piece);
                 piece.destroy();
             } });
@@ -198,7 +211,11 @@ export const UiAnim = {
                 alpha: 0,
                 duration: 0.55,
                 ease: 'power2.out',
-                onComplete: () => spark.destroy(),
+                onComplete: () => {
+                    if (!spark.destroyed) {
+                        spark.destroy();
+                    }
+                },
             }));
         }
         return tweens;

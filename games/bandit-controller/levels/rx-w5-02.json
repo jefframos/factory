@@ -40,8 +40,8 @@
   },
   "waypoints": [
     {
-      "x": 4.312,
-      "z": 8
+      "x": 4.31,
+      "z": 7
     },
     {
       "x": 0,
@@ -261,10 +261,346 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/kaykit/rug-oval-a.glb",
+      "x": 3.92,
+      "z": -3,
+      "rotationY": 0,
+      "height": 0.16,
+      "revealAt": 0,
+      "width": 4.76,
+      "flat": true,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/rug-rectangle-stripes-a.glb",
+      "x": -0.59,
+      "z": 10,
+      "rotationY": 1.57,
+      "height": 0.22,
+      "revealAt": 0,
+      "width": 6.63,
+      "flat": true,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/cute/armchair-18.glb",
+      "x": -0.59,
+      "z": 13.4,
+      "rotationY": 3.14,
+      "height": 2.04,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.88,
+        "halfY": 1.02,
+        "halfZ": 0.82
+      }
+    },
+    {
+      "model": "heist/decor/cute/armchair-18.glb",
+      "x": 7.1,
+      "z": 6.09,
+      "rotationY": -1.57,
+      "height": 2.04,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.82,
+        "halfY": 1.02,
+        "halfZ": 0.88
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-19.glb",
+      "x": 8.91,
+      "z": 6.3,
+      "rotationY": 1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.41,
+        "halfY": 1.36,
+        "halfZ": 0.52
+      }
+    },
+    {
+      "model": "heist/decor/cute/armchair-18.glb",
+      "x": 9.37,
+      "z": 13.91,
+      "rotationY": 1.57,
+      "height": 2.04,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.82,
+        "halfY": 1.02,
+        "halfZ": 0.88
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-15.glb",
+      "x": 7.23,
+      "z": 3.46,
+      "rotationY": -3.14,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.19,
+        "halfZ": 0.29
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lamp-standing.glb",
+      "x": -2.17,
+      "z": 4.93,
+      "rotationY": 0,
+      "height": 3.57,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.64,
+        "halfY": 1.79,
+        "halfZ": 0.64
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-15.glb",
+      "x": 4.07,
+      "z": -6.54,
+      "rotationY": -3.14,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.19,
+        "halfZ": 0.29
+      }
+    },
+    {
+      "model": "heist/decor/cute/closet-01.glb",
+      "x": 2.35,
+      "z": -5.16,
+      "rotationY": 0,
+      "height": 4.08,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.02,
+        "halfY": 2.04,
+        "halfZ": 0.56
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-15.glb",
+      "x": -5.43,
+      "z": -5.46,
+      "rotationY": 0,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.47,
+        "halfY": 1.19,
+        "halfZ": 0.29
+      }
+    },
+    {
+      "model": "heist/decor/cute/fridge-01.glb",
+      "x": -12.91,
+      "z": -13.76,
+      "rotationY": 1.57,
+      "height": 3.91,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.88,
+        "halfY": 1.95,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "heist/decor/cute/closet-01.glb",
+      "x": -6.64,
+      "z": 3.16,
+      "rotationY": 3.14,
+      "height": 4.08,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.02,
+        "halfY": 2.04,
+        "halfZ": 0.56
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lamp-standing.glb",
+      "x": -4.55,
+      "z": 7.11,
+      "rotationY": 1.57,
+      "height": 3.57,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.64,
+        "halfY": 1.79,
+        "halfZ": 0.64
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-19.glb",
+      "x": -4.81,
+      "z": 11.74,
+      "rotationY": 1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.41,
+        "halfY": 1.36,
+        "halfZ": 0.52
+      }
+    },
+    {
+      "model": "heist/decor/cute/armchair-18.glb",
+      "x": -4.35,
+      "z": 14.53,
+      "rotationY": 1.57,
+      "height": 2.04,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.82,
+        "halfY": 1.02,
+        "halfZ": 0.88
+      }
+    },
+    {
+      "model": "heist/decor/cute/closet-01.glb",
+      "x": 8.96,
+      "z": 2.08,
+      "rotationY": -1.57,
+      "height": 4.08,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.56,
+        "halfY": 2.04,
+        "halfZ": 1.02
+      }
+    },
+    {
+      "model": "heist/decor/cute/bed-02.glb",
+      "x": 7.2,
+      "z": -2.51,
+      "rotationY": -1.57,
+      "height": 2.66,
+      "revealAt": 0,
+      "width": 4.76,
+      "collider": {
+        "halfX": 2.14,
+        "halfY": 1.33,
+        "halfZ": 1.92
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-15.glb",
+      "x": 4.94,
+      "z": -8.23,
+      "rotationY": -1.57,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.29,
+        "halfY": 1.19,
+        "halfZ": 0.47
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lamp-standing.glb",
+      "x": -8.87,
+      "z": -3.29,
+      "rotationY": 1.57,
+      "height": 3.57,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.64,
+        "halfY": 1.79,
+        "halfZ": 0.64
+      }
+    },
+    {
+      "model": "heist/decor/cute/closet-01.glb",
+      "x": -8.96,
+      "z": -0.16,
+      "rotationY": 1.57,
+      "height": 4.08,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.56,
+        "halfY": 2.04,
+        "halfZ": 1.02
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/kitchencounter-straight-a-decorated.glb",
+      "x": 3.36,
+      "z": -14.63,
+      "rotationY": 0,
+      "height": 2.13,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.92,
+        "halfY": 1.06,
+        "halfZ": 1.03
+      }
+    },
+    {
+      "model": "heist/decor/cute/fridge-01.glb",
+      "x": -9.61,
+      "z": -14.8,
+      "rotationY": 0,
+      "height": 3.91,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.85,
+        "halfY": 1.95,
+        "halfZ": 0.88
+      }
+    },
+    {
+      "model": "heist/decor/cute/clock-03.glb",
+      "x": 13.39,
+      "z": 12.76,
+      "rotationY": -1.57,
+      "height": 4.08,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.45,
+        "halfY": 2.04,
+        "halfZ": 0.81
+      }
+    },
+    {
+      "model": "heist/decor/cute/armchair-18.glb",
+      "x": 12.98,
+      "z": 6.38,
+      "rotationY": -1.57,
+      "height": 2.04,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.82,
+        "halfY": 1.02,
+        "halfZ": 0.88
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lamp-standing.glb",
+      "x": 11.5,
+      "z": 15.07,
+      "rotationY": 3.14,
+      "height": 3.57,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.64,
+        "halfY": 1.79,
+        "halfZ": 0.64
+      }
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": 7.812,
       "z": 10,
       "amount": 25,
@@ -280,7 +616,7 @@
       "revealAt": 0
     },
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": -0.812,
       "z": -10,
       "amount": 25,

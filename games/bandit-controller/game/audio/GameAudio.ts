@@ -4,17 +4,30 @@ import SoundLoadManager from 'core/audio/SoundLoaderManager';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import audioManifest from '../../manifests/audio.json';
 
+// Heist set: ka-ching cash, bell chimes, police siren and spotted sting are synthesised by
+// scripts/bandit-synth-sounds.mjs; footsteps, cheers and bonus stings come from the shared library.
 const SOUNDS = {
     tap: { soundId: 'ui-tap', volumeMinMax: 0.25 },
-    pickup: { soundId: ['pickup-1', 'pickup-2'], volumeMinMax: 0.3, pitchMinMax: [1, 1.15] },
-    footstep: { soundId: ['footstep-1', 'footstep-2'], volumeMinMax: 0.16, pitchMinMax: [0.95, 1.1] },
-    checkpoint: { soundId: 'checkpoint', volumeMinMax: 0.3 },
-    start: { soundId: 'checkpoint', volumeMinMax: 0.16, pitchMinMax: 1.25 },
+    pickup: { soundId: 'cash', volumeMinMax: 0.32, pitchMinMax: [0.96, 1.06] },
+    cashFly: { soundId: 'cash-tick', volumeMinMax: 0.22, pitchMinMax: [0.95, 1.12] },
+    footstep: { soundId: ['footstep-wood-0', 'footstep-wood-1', 'footstep-wood-2', 'footstep-wood-3', 'footstep-wood-4'], volumeMinMax: [0.18, 0.24], pitchMinMax: [0.92, 1.08] },
+    checkpoint: { soundId: 'checkpoint', volumeMinMax: 0.35 },
+    start: { soundId: 'whoosh', volumeMinMax: 0.22, pitchMinMax: [0.95, 1.05] },
     victory: { soundId: 'victory', volumeMinMax: 0.3 },
-    busted: { soundId: 'busted', volumeMinMax: 0.4 },
+    cheer: { soundId: ['yay-1', 'yay-2', 'yay-3', 'yay-4'], volumeMinMax: 0.32 },
+    applause: { soundId: 'applause', volumeMinMax: 0.22 },
+    busted: { soundId: 'siren', volumeMinMax: 0.32 },
+    lose: { soundId: 'lose', volumeMinMax: 0.3 },
+    spotted: { soundId: 'spotted', volumeMinMax: 0.3 },
     blocked: { soundId: 'busted', volumeMinMax: 0.18, pitchMinMax: 1.4 },
     equip: { soundId: 'pickup-1', volumeMinMax: 0.25, pitchMinMax: 1.3 },
-    bonus: { soundId: 'pickup-2', volumeMinMax: 0.35, pitchMinMax: 1.2 },
+    bonus: { soundId: 'bonus-claim', volumeMinMax: 0.35 },
+    needle: { soundId: 'bonus-needle', volumeMinMax: 0.3 },
+    panel: { soundId: 'panel-open', volumeMinMax: 0.25 },
+    complete: { soundId: 'level-complete', volumeMinMax: 0.28 },
+    star1: { soundId: 'star', volumeMinMax: 0.3, pitchMinMax: 1 },
+    star2: { soundId: 'star', volumeMinMax: 0.32, pitchMinMax: 1.12 },
+    star3: { soundId: 'star', volumeMinMax: 0.34, pitchMinMax: 1.26 },
 } satisfies Record<string, SoundAsset>;
 
 type Cue = keyof typeof SOUNDS;

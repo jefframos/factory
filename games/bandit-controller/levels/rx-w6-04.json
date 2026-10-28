@@ -191,10 +191,180 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": -7.18,
+      "z": -9.3,
+      "rotationY": 0,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": 4.87,
+      "z": -3.63,
+      "rotationY": -1.57,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/water-storage.glb",
+      "x": 4.14,
+      "z": -6.28,
+      "rotationY": -1.57,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.34,
+        "halfY": 0.77,
+        "halfZ": 1.31
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": 4.87,
+      "z": -9.47,
+      "rotationY": -1.57,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lights.glb",
+      "x": 7.06,
+      "z": 8.66,
+      "rotationY": 1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.83,
+        "halfY": 1.36,
+        "halfZ": 0.83
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-a-stacked.glb",
+      "x": 7.81,
+      "z": 0.44,
+      "rotationY": 0,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 1.19,
+        "halfZ": 1.07
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": -9.91,
+      "z": -8.16,
+      "rotationY": 1.57,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lights.glb",
+      "x": -9.74,
+      "z": -3.48,
+      "rotationY": 1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.83,
+        "halfY": 1.36,
+        "halfZ": 0.83
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lights.glb",
+      "x": -4.7,
+      "z": 0.87,
+      "rotationY": 1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.83,
+        "halfY": 1.36,
+        "halfZ": 0.83
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-a-stacked.glb",
+      "x": -4.44,
+      "z": 8.44,
+      "rotationY": 1.57,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 1.19,
+        "halfZ": 1.07
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": -9.35,
+      "z": -9.99,
+      "rotationY": 0,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lights.glb",
+      "x": 9.74,
+      "z": 9.2,
+      "rotationY": -1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.83,
+        "halfY": 1.36,
+        "halfZ": 0.83
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-a-stacked.glb",
+      "x": -1.38,
+      "z": 9.56,
+      "rotationY": 3.14,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 1.19,
+        "halfZ": 1.07
+      }
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": 6.02,
       "z": 5,
       "amount": 25,

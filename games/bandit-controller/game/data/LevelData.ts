@@ -38,6 +38,12 @@ export interface LevelProp {
     z: number;
     rotationY: number;
     height: number;
+    /** When set, the model is scaled so its widest footprint side is this long instead of using `height` (rugs, carpets). */
+    width?: number;
+    /** Raises the model off the floor, e.g. a cash register standing on a counter. */
+    elevation?: number;
+    /** Floor covering (rug, carpet, landing pad): squashed to a thin decal so routes and goal markers draw on top. */
+    flat?: boolean;
     collider?: LevelCollider | null;
     revealAt: number;
 }

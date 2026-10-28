@@ -168,10 +168,115 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/kaykit/lamp-standing.glb",
+      "x": 5.5,
+      "z": -10.07,
+      "rotationY": 0,
+      "height": 3.57,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.64,
+        "halfY": 1.79,
+        "halfZ": 0.64
+      }
+    },
+    {
+      "model": "heist/decor/cute/couch-08.glb",
+      "x": 5.91,
+      "z": 5.61,
+      "rotationY": -1.57,
+      "height": 1.95,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.78,
+        "halfY": 0.98,
+        "halfZ": 2.26
+      }
+    },
+    {
+      "model": "heist/decor/cute/clock-03.glb",
+      "x": 6.27,
+      "z": 1.65,
+      "rotationY": -1.57,
+      "height": 4.08,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.45,
+        "halfY": 2.04,
+        "halfZ": 0.81
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/shelf-b-large-decorated.glb",
+      "x": 6.23,
+      "z": -6.04,
+      "rotationY": -1.57,
+      "height": 1.79,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.49,
+        "halfY": 0.89,
+        "halfZ": 1.97
+      }
+    },
+    {
+      "model": "heist/decor/cute/clock-03.glb",
+      "x": -6.27,
+      "z": -8.6,
+      "rotationY": 1.57,
+      "height": 4.08,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.45,
+        "halfY": 2.04,
+        "halfZ": 0.81
+      }
+    },
+    {
+      "model": "heist/decor/cute/armchair-18.glb",
+      "x": -5.87,
+      "z": -5.76,
+      "rotationY": 1.57,
+      "height": 2.04,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.82,
+        "halfY": 1.02,
+        "halfZ": 0.88
+      }
+    },
+    {
+      "model": "heist/decor/cute/plants-19.glb",
+      "x": -6.32,
+      "z": -3.1,
+      "rotationY": 1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.41,
+        "halfY": 1.36,
+        "halfZ": 0.52
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/shelf-b-large-decorated.glb",
+      "x": -6.23,
+      "z": 4.08,
+      "rotationY": 1.57,
+      "height": 1.79,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.49,
+        "halfY": 0.89,
+        "halfZ": 1.97
+      }
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": 0,
       "z": 6,
       "amount": 25,
@@ -187,7 +292,7 @@
       "revealAt": 0
     },
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": 0,
       "z": -8,
       "amount": 25,

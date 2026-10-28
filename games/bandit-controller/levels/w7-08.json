@@ -40,16 +40,16 @@
   },
   "waypoints": [
     {
-      "x": 8,
-      "z": 9.828
+      "x": 12,
+      "z": 11.61
     },
     {
-      "x": -2,
+      "x": -3,
       "z": 4.9
     },
     {
-      "x": -12,
-      "z": -0.028
+      "x": -19.35,
+      "z": -6.73
     }
   ],
   "entryPath": {
@@ -261,10 +261,137 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/kaykit/landingpad-small.glb",
+      "x": -11,
+      "z": -10.53,
+      "rotationY": 0,
+      "height": 1.16,
+      "revealAt": 0,
+      "width": 4.42,
+      "flat": true,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/landingpad-small.glb",
+      "x": 10,
+      "z": -0.67,
+      "rotationY": 0,
+      "height": 1.16,
+      "revealAt": 0,
+      "width": 4.42,
+      "flat": true,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/fuel-b-barrels.glb",
+      "x": 5.53,
+      "z": 14.08,
+      "rotationY": 1.57,
+      "height": 1.7,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.15,
+        "halfY": 0.85,
+        "halfZ": 1.15
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-a-stacked.glb",
+      "x": -7.44,
+      "z": -14.08,
+      "rotationY": -1.57,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 1.19,
+        "halfZ": 1.07
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": -4.99,
+      "z": 9.41,
+      "rotationY": 1.57,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-a-stacked.glb",
+      "x": 14.56,
+      "z": 14.71,
+      "rotationY": -1.57,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 1.19,
+        "halfZ": 1.07
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": -2.05,
+      "z": 10.19,
+      "rotationY": -3.14,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-a-stacked.glb",
+      "x": -14.56,
+      "z": -11.39,
+      "rotationY": 1.57,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 1.19,
+        "halfZ": 1.07
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": -2.65,
+      "z": -10.19,
+      "rotationY": 0,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lights.glb",
+      "x": -12.51,
+      "z": 5.1,
+      "rotationY": -3.14,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.83,
+        "halfY": 1.36,
+        "halfZ": 0.83
+      }
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": 10,
       "z": 8.428,
       "amount": 25,
@@ -280,7 +407,7 @@
       "revealAt": 0
     },
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": -10,
       "z": -1.428,
       "amount": 25,
@@ -345,11 +472,11 @@
       },
       "waypoints": [
         {
-          "x": 7,
-          "z": 9.828
+          "x": 12,
+          "z": 11.61
         },
         {
-          "x": -2,
+          "x": -3,
           "z": 4.9
         },
         {
@@ -370,7 +497,7 @@
           "z": 4.928
         },
         {
-          "x": -2,
+          "x": -3,
           "z": 0
         },
         {
@@ -391,7 +518,7 @@
           "z": 0.028
         },
         {
-          "x": -2,
+          "x": -3,
           "z": -4.9
         },
         {

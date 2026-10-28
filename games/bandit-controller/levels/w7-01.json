@@ -35,7 +35,7 @@
   "waypoints": [
     {
       "x": 2.52,
-      "z": 3
+      "z": 2
     },
     {
       "x": -2.47,
@@ -191,10 +191,178 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/kaykit/cargo-a-stacked.glb",
+      "x": -6.78,
+      "z": -8,
+      "rotationY": 0,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 1.19,
+        "halfZ": 1.07
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/landingpad-small.glb",
+      "x": 5.88,
+      "z": 2.6,
+      "rotationY": 0,
+      "height": 1.16,
+      "revealAt": 0,
+      "width": 4.42,
+      "flat": true,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-a-stacked.glb",
+      "x": 7.86,
+      "z": 9.56,
+      "rotationY": -3.14,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 1.19,
+        "halfZ": 1.07
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lights.glb",
+      "x": -2.83,
+      "z": 9.82,
+      "rotationY": -3.14,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.83,
+        "halfY": 1.36,
+        "halfZ": 0.83
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/fuel-b-barrels.glb",
+      "x": 9.39,
+      "z": 1.53,
+      "rotationY": -1.57,
+      "height": 1.7,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.15,
+        "halfY": 0.85,
+        "halfZ": 1.15
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-b-packed.glb",
+      "x": -9.84,
+      "z": -2.64,
+      "rotationY": 1.57,
+      "height": 1.7,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.75,
+        "halfY": 0.85,
+        "halfZ": 0.75
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker.glb",
+      "x": -10.09,
+      "z": -5.67,
+      "rotationY": 1.57,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.62,
+        "halfZ": 0.48
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-b-packed.glb",
+      "x": -9.84,
+      "z": -7.7,
+      "rotationY": 1.57,
+      "height": 1.7,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.75,
+        "halfY": 0.85,
+        "halfZ": 0.75
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lights.glb",
+      "x": -4.7,
+      "z": 7.29,
+      "rotationY": 1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.83,
+        "halfY": 1.36,
+        "halfZ": 0.83
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/fuel-b-barrels.glb",
+      "x": -4.35,
+      "z": 0.64,
+      "rotationY": 1.57,
+      "height": 1.7,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.15,
+        "halfY": 0.85,
+        "halfZ": 1.15
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker.glb",
+      "x": 5.05,
+      "z": -8.59,
+      "rotationY": -1.57,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.62,
+        "halfZ": 0.48
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-b-packed.glb",
+      "x": 4.8,
+      "z": -6.07,
+      "rotationY": -1.57,
+      "height": 1.7,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.75,
+        "halfY": 0.85,
+        "halfZ": 0.75
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker.glb",
+      "x": 5.05,
+      "z": -3.23,
+      "rotationY": -1.57,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.62,
+        "halfZ": 0.48
+      }
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": -0.98,
       "z": 5,
       "amount": 25,

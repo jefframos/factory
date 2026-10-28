@@ -132,6 +132,7 @@ export default class MyGame extends Game {
                 GameAudio.play('tap');
             }
         });
+        Progress.notePlayed();
         DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'bandit-controller');
         this.setupProgressionDebug();
 
@@ -195,6 +196,17 @@ export default class MyGame extends Game {
         this.scenesByKey = { 'home': home, 'hub': hub, 'runner-minigame': runnerMinigame, 'swipe-minigame': swipeMinigame, 'path-level': pathLevel };
         this.transition = new RadialTransition(this);
 
+        // Dressing previews (levels/showcase): clicking one opens it straight away from any scene,
+        // without touching saved progress (see LevelCatalog.previewShowcase()).
+        const showcasePanel = DebugOverlay.instance.panel('Showcase Levels', { id: 'bandit-controller.showcase' });
+        showcasePanel.buttons(LevelCatalog.showcases().map((level) => ({
+            label: level.name.replace(/^Showcase:\s*/, ''),
+            action: () => {
+                LevelCatalog.previewShowcase(level.id);
+                this.requestSceneChange('path-level', true);
+            },
+        })));
+
         const runnerPanel = DebugOverlay.instance.panel('Runner', { id: 'bandit-controller.runner' });
         runnerPanel.slider(RunnerBendService.uniforms.uBendYAmplitude, 'value', 0, 15, 0.1, 'Bend Y Amplitude');
         runnerPanel.slider(RunnerBendService.uniforms.uBendXAmplitude, 'value', 0, 15, 0.1, 'Bend X Amplitude');
@@ -227,7 +239,8 @@ export default class MyGame extends Game {
         // ?minigame=runner/swipe/path or ?scene=hub keeps every existing mode directly reachable.
         const initialSceneKey = MINIGAME_QUERY_SHORTHAND[Game.debugParams.minigame]
             ?? Game.debugParams.scene
-            ?? (new URLSearchParams(window.location.search).has('level') ? 'path-level' : 'home');
+            // A brand-new player (nothing cleared yet) goes straight into the first tutorial level.
+            ?? (new URLSearchParams(window.location.search).has('level') || !LevelCatalog.all().some((level) => LevelCatalog.isCompleted(level)) ? 'path-level' : 'home');
         this.sceneManager.changeScene(initialSceneKey);
         this.uiLayer.addChild(this.soundToggle);
         GameAudio.setScene(initialSceneKey);
@@ -244,6 +257,17 @@ export default class MyGame extends Game {
         panel.monitor('Completed levels', () => LevelCatalog.all().filter((level) => LevelCatalog.isCompleted(level)).length);
         panel.monitor('Reset includes', () => 'Levels, stars, cash, wardrobe, squad looks, daily rewards');
         panel.monitor('Preserves', () => 'Sound preferences, developer settings and other games');
+        const daily = { streakDay: 1 };
+        panel.slider(daily, 'streakDay', 1, 7, 1, 'Daily Reward Day');
+        panel.button('SHOW DAILY REWARD', () => {
+            Progress.debugPrimeDaily(daily.streakDay);
+            const home = this.scenesByKey['home'] as HomeScene | undefined;
+            if (home?.parent) {
+                home.showDailyReward();
+            } else {
+                this.requestSceneChange('home', true);
+            }
+        });
         panel.button('RESET GAME DATA...', () => {
             if (!window.confirm('Reset Bandit Controller progress, stars, cash, wardrobe, squad looks and daily rewards? This cannot be undone. Sound and developer settings are preserved.')) {
                 return;

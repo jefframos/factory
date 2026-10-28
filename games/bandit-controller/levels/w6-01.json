@@ -121,10 +121,128 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/kaykit/locker-decorated.glb",
+      "x": -4.06,
+      "z": -7.57,
+      "rotationY": 0,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.48,
+        "halfY": 1.62,
+        "halfZ": 0.52
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/desk-decorated.glb",
+      "x": -1.67,
+      "z": -7.46,
+      "rotationY": 0,
+      "height": 1.95,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.21,
+        "halfY": 0.98,
+        "halfZ": 0.62
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker-decorated.glb",
+      "x": 1.68,
+      "z": -7.57,
+      "rotationY": 0,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.48,
+        "halfY": 1.62,
+        "halfZ": 0.52
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/desk-decorated.glb",
+      "x": 4.15,
+      "z": -7.46,
+      "rotationY": 0,
+      "height": 1.95,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.21,
+        "halfY": 0.98,
+        "halfZ": 0.62
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/chair-desk-a.glb",
+      "x": 4.15,
+      "z": -5.16,
+      "rotationY": 3.14,
+      "height": 2.3,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.56,
+        "halfY": 1.15,
+        "halfZ": 0.73
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker-decorated.glb",
+      "x": 5.17,
+      "z": -3.24,
+      "rotationY": -1.57,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.62,
+        "halfZ": 0.48
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/desk-decorated.glb",
+      "x": 5.06,
+      "z": 5.02,
+      "rotationY": -1.57,
+      "height": 1.95,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.62,
+        "halfY": 0.98,
+        "halfZ": 1.21
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker-decorated.glb",
+      "x": -4.29,
+      "z": 4.19,
+      "rotationY": 0,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.48,
+        "halfY": 1.62,
+        "halfZ": 0.52
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/desk-decorated.glb",
+      "x": 4.05,
+      "z": 7.46,
+      "rotationY": -3.14,
+      "height": 1.95,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.21,
+        "halfY": 0.98,
+        "halfZ": 0.62
+      }
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": 0,
       "z": 3.5,
       "amount": 25,

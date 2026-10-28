@@ -20,6 +20,7 @@ import { GameAudio } from '../audio/GameAudio';
 import { COIN, CollectibleDefinition } from '../data/CollectibleSettings';
 import { LevelCatalog } from '../data/LevelCatalog';
 import { UiKit } from '../ui/UiKit';
+import { cornerButton } from '../ui/UiParts';
 import { UiAnim, UiTween } from '../ui/UiAnim';
 import { TextureBuilder } from '../builders/TextureBuilder';
 import { CHARACTER_VIEWS, DEFAULT_CHARACTER_VIEW, resolveSkinImagePath } from '../data/CharacterViews';
@@ -35,8 +36,9 @@ import { Layers } from 'core/physics/PhysicsConstants';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { WorldEnvironment, CameraFollowOptions } from './shared/WorldEnvironment';
 import MoneyHud from '../ui/MoneyHud';
-import BonusMeter from '../ui/BonusMeter';
-import { spawnFlyingIconToOverlayPoint } from '../ui/FlyingResourceIcon';
+import BonusMeter, { BonusOffer } from '../ui/BonusMeter';
+import { spawnFlyingIconFromOverlayPoint, spawnFlyingIconToOverlayPoint } from '../ui/FlyingResourceIcon';
+import PlatformHandler from 'core/platforms/PlatformHandler';
 import { CheckerFloorBuilder } from '../../../pizza/game/builders/CheckerFloorBuilder';
 import { PolyWallBuilder } from '../../../pizza/game/builders/PolyWallBuilder';
 import { BendService as PizzaBendService } from '../../../pizza/game/services/BendService';
@@ -78,31 +80,42 @@ const CAMERA_PANEL_ID = 'bandit-controller.path.camera';
 const BENDING_PANEL_ID = 'bandit-controller.path.bending';
 const LEVELS_PANEL_ID = 'bandit-controller.path.levels';
 const MODEL_BASE = './bandit-controller/models/';
-const CELEBRATION_ANIMATION_URL = './bandit-controller/models/animations/Excited.glb';
+const CELEBRATION_ANIMATION_URL = './bandit-controller/images/non-preload/models/animations/Excited.glb';
 /** One dance per squad member, in squad order. */
 const SQUAD_DANCE_URLS = [
-    './bandit-controller/models/animations/Dance_Locking.glb',
-    './bandit-controller/models/animations/Dance_Wave.glb',
-    './bandit-controller/models/animations/Dance_Chicken.glb',
+    './bandit-controller/images/non-preload/models/animations/Dance_Locking.glb',
+    './bandit-controller/images/non-preload/models/animations/Dance_Wave.glb',
+    './bandit-controller/images/non-preload/models/animations/Dance_Chicken.glb',
 ];
 const PAYOUT_STAGGER_SEC = 0.12;
 const CELEBRATION_PITCH_DEG = 28;
 /** World units a press must travel before it counts as a drag instead of a tap. */
 const TAP_MAX_DRAG = 0.35;
 const CELEBRATION_DISTANCE = 13;
-const CELEBRATION_DANCE_SEC = 1;
-const SAD_ANIMATION_URL = './bandit-controller/models/animations/Crying.glb';
-const BUST_CHASE_TIMEOUT_SEC = 3;
+/** Dance + "HEIST COMPLETE!" banner before the bonus round. */
+const CELEBRATION_DANCE_SEC = 2.2;
+const STAR_CUES = ['star1', 'star2', 'star3'] as const;
+/** Floor coverings are squashed to this height so the route (y 0.08) and goal markers stay on top. */
+const FLAT_PROP_HEIGHT = 0.03;
+/** Gap between a bottom-pinned end panel and the screen edge. */
+const BOTTOM_PANEL_MARGIN = 28;
+const SAD_ANIMATION_URL = './bandit-controller/images/non-preload/models/animations/Crying.glb';
+const BUST_CHASE_TIMEOUT_SEC = 6;
+/** How close the chasing guard gets to each route corner before heading for the next. */
+const BUST_ROUTE_CORNER_REACH = 0.3;
 const BUSTED_REACTION_SEC = 2.2;
 const CAMERA_BOUNDS_PADDING = 1.5;
 const CAMERA_MIN_HALF_WIDTH = 3.5;
 const CAMERA_MIN_HALF_DEPTH = 4.5;
-const CAMERA_BOUNDS_HEIGHT = 1.6;
+/** Characters are ~3.5 units tall: frame their heads too, not just their feet. */
+const CAMERA_BOUNDS_HEIGHT = 3.6;
 /** Fractions of the screen (in NDC units, 2 = full height) kept clear: the top holds the HUD. */
 const CAMERA_SCREEN_PAD_TOP = 0.32;
 const CAMERA_SCREEN_PAD_BOTTOM = 0.1;
 const CAMERA_SCREEN_PAD_SIDE = 0.08;
 const CAMERA_TRANSITION_SEC = 1.3;
+/** Upper bound for the framing search; well inside the camera far plane (1000). */
+const CAMERA_MAX_DISTANCE = 600;
 /** Bend strengths stashed while the bend is off; module-level so it survives scene restarts. */
 const savedBend = new Map<unknown, number>();
 interface CameraPreset { label: string; pitchDeg: number; yawDeg: number; fov: number; bend: boolean }
@@ -152,7 +165,7 @@ export default class PathLevelScene extends ThreeScene {
     private squadBar?: PIXI.Container;
     private squadBadges: { member: SquadMember; ring: PIXI.Graphics; face: PIXI.Sprite; check: PIXI.Text; root: PIXI.Container }[] = [];
     private mapButton?: PIXI.Container;
-    private mapButtonBack?: PIXI.Graphics;
+    private mapIcon?: PIXI.Sprite;
     /** Whole-level camera, toggled from the HUD. */
     private overview = false;
 
@@ -253,14 +266,22 @@ export default class PathLevelScene extends ThreeScene {
     private worldLabel?: PIXI.Text;
     private cashPill?: PIXI.Container;
     private cashPillBackground?: PIXI.Graphics;
-    private cashPillCoin?: PIXI.Graphics;
+    private cashPillCoin?: PIXI.Sprite;
     private completeModal?: PIXI.Container;
+    private payoutPop?: PIXI.Container;
+    private celebrationBanner?: PIXI.Container;
+    /** How far below its origin each bottom-pinned panel reaches (see positionBottomPanel()). */
+    private readonly panelExtents = new WeakMap<PIXI.Container, number>();
     /** End-of-level / busted popup animations, killed on destroy. */
     private uiTweens: UiTween[] = [];
     private bustedModal?: PIXI.Container;
     private guards: Spotter[] = [];
     private bustGuard?: Spotter;
     private bustPhase: 'chase' | 'react' = 'chase';
+    /** Nav-grid corners from the catching guard to the player, so walls never leave it stuck mid-sprint. */
+    private bustChaseRoute: { x: number; z: number }[] = [];
+    private readonly bustChasePoint = new THREE.Vector3();
+    private sadAnimationLoad?: Promise<void>;
     private bustTimer = 0;
     private bustFocus = false;
     private readonly bustFocusPoint = new THREE.Vector3();
@@ -675,7 +696,7 @@ export default class PathLevelScene extends ThreeScene {
         for (const prop of this.level.props) {
             const position = new THREE.Vector3(prop.x, FloorLayers.baseY, prop.z);
             const parent = prop.revealAt > 0 ? this.revealGroup(prop.revealAt) : this.threeScene;
-            void this.placeAsset(prop.model, position, prop.height, prop.rotationY, parent);
+            void this.placeAsset(prop.model, position.clone().setY(position.y + (prop.elevation ?? 0)), prop.height, prop.rotationY, parent, prop.width, prop.flat);
             if (prop.collider) {
                 this.addPropCollider(
                     position,
@@ -691,6 +712,8 @@ export default class PathLevelScene extends ThreeScene {
         targetHeight: number,
         yaw = 0,
         parent: THREE.Object3D = this.threeScene,
+        targetWidth?: number,
+        flat = false,
     ): Promise<void> {
         try {
             const object = await ModelLoaderManager.instance.loadModel(`${MODEL_BASE}${relativePath}`);
@@ -706,8 +729,18 @@ export default class PathLevelScene extends ThreeScene {
             });
             object.updateMatrixWorld(true);
             const size = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
-            if (size.y > 1e-4) {
+            const footprint = Math.max(size.x, size.z);
+            if (targetWidth && footprint > 1e-4) {
+                object.scale.multiplyScalar(targetWidth / footprint);
+            } else if (size.y > 1e-4) {
                 object.scale.multiplyScalar(targetHeight / size.y);
+            }
+            if (flat) {
+                // Rugs and pads sit under route lines and goal markers (drawn a few cm above the floor).
+                const thickness = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3()).y;
+                if (thickness > FLAT_PROP_HEIGHT) {
+                    object.scale.y *= FLAT_PROP_HEIGHT / thickness;
+                }
             }
             object.rotation.y = yaw;
             object.updateMatrixWorld(true);
@@ -942,8 +975,8 @@ export default class PathLevelScene extends ThreeScene {
         }
         const at = this.game.uiLayer.toLocal(new PIXI.Point(screen.x, screen.y), this.game.app.stage);
         const text = new PIXI.Text(`+$${amount}`, new PIXI.TextStyle({
+            fontFamily: UiKit.fontFamily('primary'),
             fontSize: 34,
-            fontWeight: 'bold',
             fill: 0x6dff8a,
             stroke: 0x0b3d1a,
             strokeThickness: 6,
@@ -982,18 +1015,18 @@ export default class PathLevelScene extends ThreeScene {
         this.runMoneyLabel.anchor.set(0.5);
         this.cashPill = new PIXI.Container();
         this.cashPillBackground = new PIXI.Graphics();
-        const coin = new PIXI.Graphics();
-        coin.beginFill(0xffc83d).lineStyle(3, 0xb8860b).drawCircle(0, 0, 17).endFill();
-        coin.lineStyle(0).beginFill(0xffe28a).drawCircle(-4, -4, 6).endFill();
+        const coin = PIXI.Sprite.from('ItemIcon_Money_Bill');
+        coin.anchor.set(0.5);
+        coin.width = coin.height = 46;
         this.cashPillCoin = coin;
         this.cashPill.addChild(this.cashPillBackground, coin, this.runMoneyLabel);
         const found = LevelCatalog.locate(this.level);
         this.worldLabel = new PIXI.Text(found ? `${found.world.label}-${found.levelNumber}` : '', {
             fontFamily: UiKit.fontFamily('primary'),
-            fontSize: 34,
+            fontSize: 21,
             fill: 0xffffff,
             stroke: 0x203c35,
-            strokeThickness: 7,
+            strokeThickness: 5,
         });
         this.worldLabel.anchor.set(0.5);
         this.homeButton = this.buildHomeButton();
@@ -1047,15 +1080,13 @@ export default class PathLevelScene extends ThreeScene {
             this.squadBar = bar;
             hud.addChild(bar);
         }
-        const map = new PIXI.Container();
-        this.mapButtonBack = new PIXI.Graphics();
+        const { button: map, icon: mapIcon } = cornerButton('PictoIcon_Map_1', 40, () => this.toggleOverview());
+        this.mapIcon = mapIcon;
         const label = new PIXI.Text('MAP', { fontFamily: UiKit.fontFamily('primary'), fontSize: 15, fill: 0xffffff, stroke: 0x203c35, strokeThickness: 4 });
         label.anchor.set(0.5);
-        map.addChild(this.mapButtonBack, label);
-        map.eventMode = 'static';
-        map.cursor = 'pointer';
-        map.hitArea = new PIXI.Circle(0, 0, 34);
-        map.on('pointertap', () => this.toggleOverview());
+        // Gap between the round button and its caption.
+        label.y = 46;
+        map.addChild(label);
         this.mapButton = map;
         hud.addChild(map);
         this.refreshSquadHud();
@@ -1079,10 +1110,8 @@ export default class PathLevelScene extends ThreeScene {
             badge.face.alpha = done ? 0.35 : 1;
             badge.ring.clear().lineStyle(current ? 5 : 3, current ? 0xffffff : 0x203c35).drawCircle(0, 0, 27);
         }
-        if (this.mapButtonBack) {
-            this.mapButtonBack.clear()
-                .beginFill(0x000000, 0.25).drawCircle(0, 4, 30).endFill()
-                .beginFill(this.overview ? 0x2bd2bd : 0x2a6fb0).lineStyle(4, 0xffffff).drawCircle(0, 0, 30).endFill();
+        if (this.mapIcon) {
+            this.mapIcon.tint = this.overview ? 0x6dffe6 : 0xffffff;
         }
     }
 
@@ -1101,19 +1130,7 @@ export default class PathLevelScene extends ThreeScene {
     }
 
     private buildHomeButton(): PIXI.Container {
-        const button = new PIXI.Container();
-        const back = new PIXI.Graphics();
-        back.beginFill(0x000000, 0.25).drawCircle(0, 4, 30).endFill();
-        back.beginFill(0xffffff).lineStyle(4, 0x2a6fb0).drawCircle(0, 0, 30).endFill();
-        const icon = PIXI.Sprite.from('PictoIcon_Home_1-2');
-        icon.anchor.set(0.5);
-        icon.width = icon.height = 38;
-        button.addChild(back, icon);
-        button.eventMode = 'static';
-        button.cursor = 'pointer';
-        button.hitArea = new PIXI.Circle(0, 0, 34);
-        button.on('pointertap', () => this.onHome.dispatch());
-        return button;
+        return cornerButton('PictoIcon_Home_1', 40, () => this.onHome.dispatch()).button;
     }
 
     private applyCameraPreset(preset: CameraPreset): void {
@@ -1550,59 +1567,234 @@ export default class PathLevelScene extends ThreeScene {
     }
 
     private showBonusMeter(): void {
+        this.hideCelebrationBanner();
         if (this.runMoney <= 0) {
-            this.showCompletePopup(1);
+            this.showCompletePopup();
             return;
         }
+        GameAudio.play('panel');
         this.setInstruction('STOP THE NEEDLE FOR A BONUS!');
-        const meter = new BonusMeter((multiplier) => this.applyBonus(multiplier));
+        const meter = new BonusMeter(
+            this.runMoney,
+            (offer) => void this.claimBonus(offer),
+            () => this.closeBonusMeter(() => this.showCompletePopup()),
+            this.isTutorialLevel(),
+        );
         this.bonusMeter = meter;
+        this.panelExtents.set(meter, BonusMeter.bottomExtent);
         this.game.uiLayer.addChild(meter);
         this.positionBottomPanel(meter);
         this.uiTweens.push(...UiAnim.popIn(meter));
     }
 
-    private applyBonus(multiplier: number): void {
-        GameAudio.play('bonus');
-        this.bonusMeter?.removeFromParent();
-        this.bonusMeter?.destroy({ children: true });
-        this.bonusMeter = undefined;
+    /** Tutorial levels hand out the end bonus for free; rewarded videos start once the player graduates. */
+    private isTutorialLevel(): boolean {
+        return Boolean(LevelCatalog.locate(this.level)?.world.tutorial);
+    }
 
-        const bonus = this.runMoney * (multiplier - 1);
-        if (bonus <= 0) {
-            this.showCompletePopup(multiplier);
+    private closeBonusMeter(onClosed: () => void): void {
+        const meter = this.bonusMeter;
+        if (!meter) {
+            onClosed();
             return;
         }
-        const flight = spawnFlyingIconToOverlayPoint(
-            this,
-            this.game,
-            this.env.mainPlayer.getCollectTargetPosition().clone(),
-            () => this.moneyHud.getMoneyIconOverlayPosition(),
-            this.moneyHud.getIconTexture() ?? PIXI.Texture.WHITE,
-            () => {
-                if (this.destroyed) {
-                    return;
-                }
-                GameState.addMoney(bonus);
-                this.moneyHud.setResourceCount(GameState.getMoney());
-                this.showCompletePopup(multiplier);
-            },
-            0,
-        );
-        this.payoutFlights.push(flight);
+        this.bonusMeter = undefined;
+        this.uiTweens.push(...UiAnim.popOut(meter, undefined, () => {
+            meter.removeFromParent();
+            meter.destroy({ children: true });
+            if (!this.destroyed) {
+                onClosed();
+            }
+        }));
     }
 
-    /** Sits in the lower part of the screen so the dancing player stays visible. */
+    /** Outside the tutorial the bonus is only paid after a rewarded video; a failed/closed ad leaves the offer up so the player can retry or skip. */
+    private async claimBonus(offer: BonusOffer): Promise<void> {
+        this.bonusMeter?.setBusy(true);
+        let watched = true;
+        if (PlatformHandler.ENABLE_VIDEO_ADS && !this.isTutorialLevel()) {
+            try {
+                watched = (await PlatformHandler.instance.platform.showRewardedVideo()) !== false;
+            } catch (error) {
+                console.warn('[PathLevelScene] Rewarded video failed', error);
+                watched = false;
+            }
+        }
+        if (this.destroyed) {
+            return;
+        }
+        if (!watched) {
+            this.bonusMeter?.setBusy(false);
+            return;
+        }
+        GameState.addMoney(offer.bonus);
+        this.closeBonusMeter(() => this.playBonusPayout(offer.bonus, () => this.showCompletePopup(offer)));
+    }
+
+    /** Cash pile + amount pop in the middle of the screen, then a stream of bills flies into the HUD while both counters roll. */
+    private playBonusPayout(bonus: number, onDone: () => void): void {
+        GameAudio.play('bonus');
+        const screen = Game.overlayScreenData;
+        const pop = new PIXI.Container();
+        pop.position.set(screen.center.x, screen.center.y - 40);
+        pop.eventMode = 'none';
+
+        // Back bundles first, the bigger hero bundle last so it sits on top.
+        const pile = new PIXI.Container();
+        const bundles = [
+            { x: -62, y: 22, size: 110, rotation: -0.35 },
+            { x: 62, y: 22, size: 110, rotation: 0.3 },
+            { x: -30, y: -30, size: 104, rotation: -0.15 },
+            { x: 34, y: -28, size: 104, rotation: 0.2 },
+            { x: 0, y: 16, size: 165, rotation: -0.05 },
+        ].map((spec) => {
+            const bundle = PIXI.Sprite.from('ItemIcon_Money_Bill');
+            bundle.anchor.set(0.5);
+            bundle.width = bundle.height = spec.size;
+            bundle.position.set(spec.x, spec.y);
+            bundle.rotation = spec.rotation;
+            pile.addChild(bundle);
+            return bundle;
+        });
+        const amount = UiKit.text('bonusMeter', 'amount', { money: bonus }, { fontSize: 64, strokeThickness: 9 });
+        amount.position.set(0, 122);
+        pop.addChild(pile, amount);
+        const glow = UiAnim.rays(pop, 220, 0xffd84a, 0.75, 5);
+        this.game.uiLayer.addChild(pop);
+        this.payoutPop = pop;
+
+        this.uiTweens.push(
+            ...glow.tweens,
+            gsap.fromTo(glow.rays.scale, { x: 0, y: 0 }, { x: 1, y: 1, duration: 0.5, ease: 'back.out(1.6)' }),
+            ...UiAnim.staggerPop(bundles, 0, 0.07, 'elastic.out(1.1, 0.5)'),
+            gsap.fromTo(pile, { rotation: -0.3 }, { rotation: 0, duration: 0.5, ease: 'back.out(2)' }),
+            ...UiAnim.staggerRise([amount], 0.25, 0, 30),
+            ...UiAnim.sparkBurst(pop, 0, 0, 0xffe066, 150),
+            ...UiAnim.confetti(pop, 0, -40, 50, 1.1),
+        );
+
+        const coinCount = Math.min(14, Math.max(6, Math.round(bonus / 25)));
+        const stagger = 0.06;
+        const holdSec = 0.85;
+        const hudCountSec = coinCount * stagger + 0.5;
+        const total = GameState.getMoney();
+        const texture = this.moneyHud.getIconTexture() ?? PIXI.Texture.WHITE;
+        let landed = 0;
+
+        this.uiTweens.push(gsap.delayedCall(holdSec, () => {
+            if (this.destroyed || pop.destroyed) {
+                return;
+            }
+            // The pile "spends" itself while the stream leaves, and the centre amount drains as the HUD fills.
+            this.uiTweens.push(
+                gsap.to(pile.scale, { x: 0.6, y: 0.6, duration: hudCountSec, ease: 'power1.in' }),
+                ...UiAnim.countUp(amount, bonus, 0, (value) => `+$${value}`, hudCountSec, 0),
+            );
+            for (let i = 0; i < coinCount; i++) {
+                const from = new PIXI.Point(pop.x + (Math.random() - 0.5) * 70, pop.y + (Math.random() - 0.5) * 70);
+                this.payoutFlights.push(spawnFlyingIconFromOverlayPoint(
+                    this.game,
+                    from,
+                    () => this.moneyHud.getMoneyIconOverlayPosition(),
+                    texture,
+                    () => {
+                        if (this.destroyed) {
+                            return;
+                        }
+                        landed++;
+                        if (landed === 1) {
+                            this.moneyHud.countTo(total, hudCountSec);
+                        }
+                        this.moneyHud.punchIcon();
+                        GameAudio.play('cashFly');
+                        if (landed === coinCount) {
+                            this.uiTweens.push(gsap.to(pop, {
+                                alpha: 0,
+                                duration: 0.3,
+                                delay: 0.2,
+                                onComplete: () => {
+                                    if (this.destroyed) {
+                                        return;
+                                    }
+                                    this.destroyPayoutPop();
+                                    onDone();
+                                },
+                            }));
+                        }
+                    },
+                    i * stagger,
+                    52,
+                ));
+            }
+        }));
+    }
+
+    /** "HEIST COMPLETE!" ribbon that slams in over the dancing crew, with confetti from both sides. */
+    private showCelebrationBanner(): void {
+        this.hideCelebrationBanner();
+        const screen = Game.overlayScreenData;
+        const banner = new PIXI.Container();
+        banner.eventMode = 'none';
+        banner.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.15);
+        const ribbon = UiKit.sprite('levelComplete', 'ribbon', 0.75);
+        const title = UiKit.text('levelComplete', 'title', { level: this.levelLabel() }, { fontSize: 34 });
+        title.text = 'HEIST COMPLETE!';
+        title.y = -8;
+        banner.addChild(ribbon, title);
+        const glow = UiAnim.rays(banner, 260, 0xffe066, 0.55, 8);
+        this.game.uiLayer.addChild(banner);
+        this.celebrationBanner = banner;
+        this.uiTweens.push(
+            ...glow.tweens,
+            gsap.fromTo(banner.scale, { x: 2.2, y: 2.2 }, { x: 1, y: 1, duration: 0.35, ease: 'back.out(1.6)' }),
+            gsap.fromTo(banner, { alpha: 0 }, { alpha: 1, duration: 0.15 }),
+            ...UiAnim.confetti(banner, -170, 0, 50, 1),
+            ...UiAnim.confetti(banner, 170, 0, 50, 1),
+            ...UiAnim.sparkBurst(banner, 0, 0, 0xffe066, 180),
+            gsap.delayedCall(0.35, () => {
+                if (!this.destroyed && !banner.destroyed) {
+                    this.uiTweens.push(...UiAnim.punch(banner, 0.08), ...UiAnim.pulse(banner, 0.04, 0.5));
+                }
+            }),
+        );
+    }
+
+    private hideCelebrationBanner(): void {
+        const banner = this.celebrationBanner;
+        if (!banner) {
+            return;
+        }
+        this.celebrationBanner = undefined;
+        this.uiTweens.push(...UiAnim.popOut(banner, undefined, () => {
+            banner.removeFromParent();
+            banner.destroy({ children: true });
+        }));
+    }
+
+    private destroyPayoutPop(): void {
+        if (this.payoutPop) {
+            UiAnim.kill(this.payoutPop);
+            this.payoutPop.removeFromParent();
+            this.payoutPop.destroy({ children: true });
+            this.payoutPop = undefined;
+        }
+    }
+
+    /** Pinned to the bottom edge (using each panel's own extent) so the dancing crew stays visible above it. */
     private positionBottomPanel(panel: PIXI.Container): void {
         const screen = Game.overlayScreenData;
-        panel.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.78);
+        const extent = this.panelExtents.get(panel) ?? 160;
+        panel.position.set(screen.center.x, screen.bottomLeft.y - BOTTOM_PANEL_MARGIN - extent);
     }
 
-    private showCompletePopup(multiplier = 1): void {
+    private showCompletePopup(offer?: BonusOffer): void {
         if (this.state === 'complete') {
             return;
         }
         this.state = 'complete';
+        this.hideCelebrationBanner();
+        GameAudio.play('complete');
+        this.setInstruction('');
         LevelCatalog.markCompleted(this.level);
         const result = Progress.complete(this.level, {
             loot: this.lootCollected >= this.level.loot.length,
@@ -1610,32 +1802,32 @@ export default class PathLevelScene extends ThreeScene {
         });
         this.moneyHud.setResourceCount(GameState.getMoney());
         const modal = new PIXI.Container();
-        const panel = UiKit.image('levelComplete', 'panel', 380, 290);
+        const panelHeight = 380;
+        const panel = UiKit.image('levelComplete', 'panel', 420, panelHeight);
 
-        const ribbon = UiKit.sprite('levelComplete', 'ribbon', 1.1);
-        ribbon.position.set(0, -125);
+        const ribbon = UiKit.sprite('levelComplete', 'ribbon', 0.6);
+        ribbon.position.set(0, -panelHeight / 2);
         const title = UiKit.text('levelComplete', 'title', { level: this.levelLabel() });
-        title.position.set(0, -122);
+        // The ribbon's front piece sits a little above the image centre.
+        title.position.set(0, -panelHeight / 2 - 7);
 
-        const bonusText = multiplier > 1 ? `  (x${multiplier} BONUS)` : '';
-        const securedMoney = this.runMoney * multiplier;
-        const total = UiKit.text('levelComplete', 'total', { money: securedMoney, bonus: bonusText });
-        total.position.set(0, -15);
-        const totalText = total.text;
-
+        // Classic three-star podium: the middle one sits higher and bigger.
         const starRow = new PIXI.Container();
         const earnedStars: PIXI.Sprite[] = [];
         for (let i = 0; i < 3; i++) {
+            const middle = i === 1;
             const star = PIXI.Sprite.from('ItemIcon_Star_Gold');
             star.anchor.set(0.5);
-            star.height = 46;
+            star.height = middle ? 76 : 60;
             star.scale.x = star.scale.y;
-            star.position.set((i - 1) * 56, 0);
+            star.position.set((i - 1) * 78, middle ? -10 : 4);
+            star.rotation = (i - 1) * 0.18;
             const slot = PIXI.Sprite.from('ItemIcon_Star_Gold');
             slot.anchor.set(0.5);
             slot.scale.copyFrom(star.scale);
             slot.position.copyFrom(star.position);
-            slot.tint = 0x202020;
+            slot.rotation = star.rotation;
+            slot.tint = 0x5a6178;
             slot.alpha = 0.55;
             starRow.addChild(slot);
             if (i < result.stars) {
@@ -1643,26 +1835,70 @@ export default class PathLevelScene extends ThreeScene {
                 starRow.addChild(star);
             }
         }
-        starRow.position.set(0, -70);
-        const notes = [!result.stars || result.stars < 2 ? 'GRAB ALL LOOT FOR 2 STARS' : '', result.stars < 3 ? 'STAY UNSEEN FOR 3 STARS' : ''].filter(Boolean);
-        const bonusLines = [
-            result.total > 0 ? `+$${result.total} REWARD${result.firstClear ? ' (FIRST CLEAR)' : ''}` : '',
-            notes[notes.length - 1] ?? '',
-        ].filter(Boolean).join('\n');
-        const rewardText = new PIXI.Text(bonusLines, { fontFamily: 'Arial Black, Arial', fontSize: 15, fill: 0xffe14d, align: 'center', stroke: 0x000000, strokeThickness: 3 });
-        rewardText.anchor.set(0.5);
-        rewardText.position.set(0, 28);
+        starRow.position.set(0, -90);
+
+        const bonus = offer?.bonus ?? 0;
+        // Headline is everything this level paid; the line under it breaks it down.
+        const securedMoney = this.runMoney + bonus + result.total;
+        const totalRow = new PIXI.Container();
+        const total = UiKit.text('levelComplete', 'total', { money: securedMoney });
+        const totalText = total.text;
+        const coin = PIXI.Sprite.from('ItemIcon_Money_Bill');
+        coin.anchor.set(0.5);
+        coin.height = 58;
+        coin.scale.x = coin.scale.y;
+        // Centre coin + digits as one unit, measured at the final amount so the count-up doesn't jitter the layout.
+        const rowWidth = coin.width + 8 + total.width;
+        coin.x = -rowWidth / 2 + coin.width / 2;
+        total.x = coin.x + coin.width / 2 + 8 + total.width / 2;
+        totalRow.addChild(coin, total);
+        totalRow.position.set(0, -10);
+        const caption = UiKit.text('levelComplete', 'totalCaption');
+        caption.position.set(0, 26);
+
+        // Breakdown as fixed-width columns (amount over label) so it never outgrows the panel.
+        const items = [
+            { value: this.runMoney, label: 'LOOT' },
+            ...(offer ? [{ value: bonus, label: `x${offer.multiplier} BONUS` }] : []),
+            ...(result.total > 0 ? [{ value: result.total, label: result.firstClear ? 'FIRST CLEAR' : 'STARS' }] : []),
+        ];
+        const breakdown = new PIXI.Container();
+        const columnWidth = 124;
+        items.forEach((item, index) => {
+            const x = (index - (items.length - 1) / 2) * columnWidth;
+            const value = UiKit.text('levelComplete', 'breakdownValue', { money: item.value });
+            value.position.set(x, 0);
+            const label = UiKit.text('levelComplete', 'breakdownLabel', { text: item.label });
+            label.position.set(x, 22);
+            breakdown.addChild(value, label);
+            if (index > 0) {
+                const divider = new PIXI.Graphics();
+                divider.beginFill(0xffffff, 0.15).drawRect(-1, -12, 2, 44).endFill();
+                divider.x = x - columnWidth / 2;
+                breakdown.addChild(divider);
+            }
+        });
+        breakdown.position.set(0, 62);
+        const notes = [result.stars < 2 ? 'GRAB ALL LOOT FOR 2 STARS' : '', result.stars < 3 ? 'STAY UNSEEN FOR 3 STARS' : ''].filter(Boolean);
+        const hint = UiKit.text('levelComplete', 'hint', { text: notes[0] ?? '' });
+        hint.position.set(0, 116);
 
         const button = new PIXI.Container();
-        const buttonBg = UiKit.image('levelComplete', 'button', 240, 90);
-        const buttonLabel = UiKit.text('levelComplete', 'buttonLabel', { buttonText: !LevelCatalog.isUnlocked(LevelCatalog.all().indexOf(this.level) + 1) && LevelCatalog.hasNext(this.level) ? 'MORE STARS!' : !LevelCatalog.hasNext(this.level) ? 'PLAY AGAIN' : LevelCatalog.isWorldFinale(this.level) ? 'NEXT WORLD' : 'NEXT LEVEL' });
+        const buttonBg = UiKit.image('levelComplete', 'button', 260, 90);
+        const nextIndex = LevelCatalog.all().indexOf(this.level) + 1;
+        const needsStars = LevelCatalog.hasNext(this.level) && !LevelCatalog.isUnlocked(nextIndex);
+        const buttonLabel = UiKit.text('levelComplete', 'buttonLabel', {
+            buttonText: needsStars ? 'MORE STARS!' : !LevelCatalog.hasNext(this.level) ? 'PLAY AGAIN' : LevelCatalog.isWorldFinale(this.level) ? 'NEXT WORLD' : 'NEXT LEVEL',
+        });
+        buttonLabel.y = -4;
         button.addChild(buttonBg, buttonLabel);
-        button.scale.set(0.7);
-        button.position.set(0, 82);
+        button.scale.set(0.72);
+        button.position.set(0, panelHeight / 2 - 18);
         button.eventMode = 'static';
         button.cursor = 'pointer';
         button.on('pointertap', () => {
-            if (LevelCatalog.hasNext(this.level) && !LevelCatalog.isUnlocked(LevelCatalog.all().indexOf(this.level) + 1)) {
+            GameAudio.play('tap');
+            if (needsStars) {
                 this.onHome.dispatch();
                 return;
             }
@@ -1670,47 +1906,50 @@ export default class PathLevelScene extends ThreeScene {
             this.onRestart.dispatch();
         });
 
-        modal.addChild(panel, ribbon, title, starRow, total, rewardText, button);
+        modal.addChild(panel, ribbon, title, starRow, totalRow, caption, breakdown, hint, button);
+        this.panelExtents.set(modal, panelHeight / 2 + 20);
         this.positionBottomPanel(modal);
         this.game.uiLayer.addChild(modal);
         this.completeModal = modal;
-        this.animateCompletePopup(modal, { ribbon, title, earnedStars, starRow, total, totalText, securedMoney, rewardText, button });
+        this.animateCompletePopup(modal, { ribbon, title, earnedStars, starRow, total, totalRow, totalText, securedMoney, details: [caption, breakdown, hint], button });
     }
 
     /** Banner drop, stars landing one by one, money count-up, confetti, then the pulsing NEXT button. */
     private animateCompletePopup(modal: PIXI.Container, parts: {
         ribbon: PIXI.Container; title: PIXI.Container; earnedStars: PIXI.Sprite[]; starRow: PIXI.Container;
-        total: PIXI.Text; totalText: string; securedMoney: number; rewardText: PIXI.Text; button: PIXI.Container;
+        total: PIXI.Text; totalRow: PIXI.Container; totalText: string; securedMoney: number; details: PIXI.Container[]; button: PIXI.Container;
     }): void {
         const track = (tweens: UiTween[]): void => {
             this.uiTweens.push(...tweens);
         };
-        const glow = UiAnim.rays(modal, 330);
+        const glow = UiAnim.rays(modal, 360);
         glow.rays.alpha = 0;
+        glow.rays.y = -90;
         track(glow.tweens);
         track([gsap.to(glow.rays, { alpha: 1, duration: 0.6, delay: 0.3 })]);
         track(UiAnim.popIn(modal));
         track(UiAnim.dropIn(parts.ribbon, 90, 0.12));
         track(UiAnim.dropIn(parts.title, 90, 0.12));
-        track(UiAnim.confetti(modal, -150, -140, 45, 0.8));
-        track(UiAnim.confetti(modal, 150, -140, 45, 0.8));
+        track(UiAnim.confetti(modal, -160, -150, 45, 0.8));
+        track(UiAnim.confetti(modal, 160, -150, 45, 0.8));
 
         const starStart = 0.45;
         const starStep = 0.32;
         parts.earnedStars.forEach((star, index) => {
             const scale = star.scale.x;
+            const rotation = star.rotation;
             star.scale.set(0);
-            star.rotation = -0.6;
+            star.rotation = rotation - 0.6;
             const delay = starStart + index * starStep;
             track([
                 gsap.to(star.scale, { x: scale, y: scale, duration: 0.5, delay, ease: 'elastic.out(1.2, 0.45)' }),
-                gsap.to(star, { rotation: 0, duration: 0.4, delay, ease: 'back.out(2)' }),
+                gsap.to(star, { rotation, duration: 0.4, delay, ease: 'back.out(2)' }),
                 gsap.delayedCall(delay, () => {
                     if (this.destroyed || star.destroyed) {
                         return;
                     }
-                    GameAudio.play('checkpoint');
-                    track(UiAnim.sparkBurst(parts.starRow, star.x, star.y, 0xffe066, 56));
+                    GameAudio.play(STAR_CUES[Math.min(index, STAR_CUES.length - 1)]);
+                    track(UiAnim.sparkBurst(parts.starRow, star.x, star.y, 0xffe066, 64));
                     track(UiAnim.punch(modal, 0.03));
                 }),
             ]);
@@ -1720,7 +1959,7 @@ export default class PathLevelScene extends ThreeScene {
         if (parts.totalText.includes(moneyLabel)) {
             track(UiAnim.countUp(parts.total, 0, parts.securedMoney, (value) => parts.totalText.replace(moneyLabel, `$${value}`), 0.7, afterStars - 0.2));
         }
-        track(UiAnim.staggerRise([parts.total, parts.rewardText], afterStars - 0.25, 0.12, 24));
+        track(UiAnim.staggerRise([parts.totalRow, ...parts.details], afterStars - 0.25, 0.1, 24));
         parts.button.eventMode = 'none';
         const buttonScale = parts.button.scale.x;
         parts.button.scale.set(0);
@@ -1845,6 +2084,9 @@ export default class PathLevelScene extends ThreeScene {
         }
         this.state = 'celebrating';
         GameAudio.play('victory');
+        GameAudio.play('cheer');
+        GameAudio.play('applause');
+        this.showCelebrationBanner();
         // A still-running path framing tween would otherwise keep fighting the finale camera.
         this.cameraBlendTween?.kill();
         this.cameraBlendTween = undefined;
@@ -2265,8 +2507,18 @@ export default class PathLevelScene extends ThreeScene {
         }
         if (this.bustPhase === 'chase') {
             this.bustTimer += delta;
+            // Walls are in the way more often than not: run the nav-grid route, then close in on the player.
+            let arrived = false;
+            const corner = this.bustChaseRoute[0];
+            if (corner && this.bustChaseRoute.length > 1) {
+                if (guard.chase(this.bustChasePoint.set(corner.x, 0, corner.z), delta, BUST_ROUTE_CORNER_REACH)) {
+                    this.bustChaseRoute.shift();
+                }
+            } else {
+                arrived = guard.chase(player, delta);
+            }
             // Safety net: never let a chase run forever.
-            if (guard.chase(player, delta) || this.bustTimer > BUST_CHASE_TIMEOUT_SEC) {
+            if (arrived || this.bustTimer > BUST_CHASE_TIMEOUT_SEC) {
                 this.bustPhase = 'react';
                 this.bustTimer = 0;
                 guard.faceToward(player);
@@ -2290,7 +2542,11 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
         character.faceDirection(guard.position.x - this.env.mainPlayer.transform.position.x, guard.position.z - this.env.mainPlayer.transform.position.z);
-        character.animator.playExclusive('sad', 0.3, true);
+        void (this.sadAnimationLoad ?? Promise.resolve()).then(() => {
+            if (!this.destroyed && this.state === 'busted') {
+                character.animator.playExclusive('sad', 0.3, true);
+            }
+        });
     }
 
     private updateSpottedMessage(highestAlert: number): void {
@@ -2300,6 +2556,7 @@ export default class PathLevelScene extends ThreeScene {
         const playing = this.state === 'following' || this.state === 'waiting';
         if (highestAlert > 0.15 && playing && !this.spottedMessageShown) {
             this.spottedMessageShown = true;
+            GameAudio.play('spotted');
             this.messageBeforeSpotted = this.instruction.text;
             this.setInstruction('SPOTTED! GET OUT OF SIGHT!');
         } else if (this.spottedMessageShown && (highestAlert <= 0.01 || !playing)) {
@@ -2324,6 +2581,8 @@ export default class PathLevelScene extends ThreeScene {
         }
         this.bustGuard = spotter;
         this.bustPhase = 'chase';
+        const playerPosition = this.env.mainPlayer.transform.position;
+        this.bustChaseRoute = (this.navGrid?.findPath(spotter.position, playerPosition) ?? []).slice(1);
         this.bustTimer = 0;
         const movement = this.env.mainPlayer.movementController;
         movement.enabled = false;
@@ -2338,11 +2597,13 @@ export default class PathLevelScene extends ThreeScene {
         void TextureBuilder.load(resolveSkinImagePath(BUSTED_FACE))
             .then((texture) => this.env.mainPlayer.character?.setFaceTexture(texture))
             .catch((error) => console.warn('[PathLevelScene] Could not load busted face', error));
-        void this.env.mainPlayer.character?.registerAnimation('sad', SAD_ANIMATION_URL)
+        // Loaded now; a quick catch (guard already beside you, camera, trap) reacts before it finishes, so playPlayerSad waits on it.
+        this.sadAnimationLoad = this.env.mainPlayer.character?.registerAnimation('sad', SAD_ANIMATION_URL)
             .catch((error) => console.warn('[PathLevelScene] Could not load sad animation', error));
     }
 
     private showBustedPopup(): void {
+        GameAudio.play('lose');
         const modal = new PIXI.Container();
         const panel = UiKit.image('busted', 'panel', 380, 230);
 
@@ -2372,6 +2633,7 @@ export default class PathLevelScene extends ThreeScene {
         button.on('pointertap', () => this.onRestart.dispatch());
 
         modal.addChild(panel, ribbon, title, message, button);
+        this.panelExtents.set(modal, 135);
         this.positionBottomPanel(modal);
         this.game.uiLayer.addChild(modal);
         this.bustedModal = modal;
@@ -2523,7 +2785,8 @@ export default class PathLevelScene extends ThreeScene {
             this.instruction.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + 42);
         }
         if (this.worldLabel) {
-            this.worldLabel.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + 42);
+            // Level number sits bottom-right, under the MAP button and its caption.
+            this.worldLabel.position.set(Game.overlayScreenData.topRight.x - 52, Game.overlayScreenData.topLeft.y + Game.overlayScreenData.height - 28);
         }
         if (this.homeButton) {
             this.homeButton.position.set(Game.overlayScreenData.topRight.x - 118, Game.overlayScreenData.topLeft.y + 44);
@@ -2532,10 +2795,10 @@ export default class PathLevelScene extends ThreeScene {
             this.squadBar.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + Game.overlayScreenData.height - 70);
         }
         if (this.mapButton) {
-            this.mapButton.position.set(Game.overlayScreenData.topRight.x - 52, Game.overlayScreenData.topLeft.y + Game.overlayScreenData.height - 70);
+            this.mapButton.position.set(Game.overlayScreenData.topRight.x - 52, Game.overlayScreenData.topLeft.y + Game.overlayScreenData.height - 104);
         }
         if (this.cashPill) {
-            this.cashPill.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + 96);
+            this.cashPill.position.set(Game.overlayScreenData.center.x, Game.overlayScreenData.topLeft.y + 66);
         }
         if (this.completeModal) {
             this.positionBottomPanel(this.completeModal);
@@ -2578,6 +2841,12 @@ export default class PathLevelScene extends ThreeScene {
             extend(this.boundsRoomPoint.set(room.x - room.width / 2, 0, room.z - room.depth / 2));
             extend(this.boundsRoomPoint.set(room.x + room.width / 2, 0, room.z + room.depth / 2));
         }
+        // Heading for the vault: the whole room (safe included) is the goal, so it is always fully in shot.
+        const vault = this.level.vault;
+        if (vault && this.nextWaypointIndex >= this.waypoints.length - 1) {
+            extend(this.boundsRoomPoint.set(vault.x - vault.width / 2, 0, vault.z - vault.depth / 2));
+            extend(this.boundsRoomPoint.set(vault.x + vault.width / 2, 0, vault.z + vault.depth / 2));
+        }
         for (const point of this.route) {
             extend(point);
         }
@@ -2588,9 +2857,12 @@ export default class PathLevelScene extends ThreeScene {
                 extend(other.waypoints[other.nextWaypointIndex] ?? other.goal);
             }
         }
-        const floorHalfX = this.level.floor.width / 2;
-        bounds.min.x = Math.max(bounds.min.x, -floorHalfX - 2);
-        bounds.max.x = Math.min(bounds.max.x, floorHalfX + 2);
+        // Clamp to the level's real extent: side vaults sit outside floor.width and must not be cut off.
+        const levelMinX = Math.min(-this.level.floor.width / 2, ...(vault ? [vault.x - vault.width / 2] : []));
+        const levelMaxX = Math.max(this.level.floor.width / 2, ...(vault ? [vault.x + vault.width / 2] : []));
+        bounds.min.x = Math.max(bounds.min.x, levelMinX - 2);
+        bounds.max.x = Math.min(bounds.max.x, levelMaxX + 2);
+        const floorHalfX = (levelMaxX - levelMinX) / 2;
         // A section is never framed narrower than this, so a straight path doesn't zoom in to a sliver.
         const minHalfWidth = Math.min(floorHalfX, CAMERA_MIN_HALF_WIDTH);
         const centerX = (bounds.min.x + bounds.max.x) / 2;
@@ -2697,7 +2969,9 @@ export default class PathLevelScene extends ThreeScene {
             return { fits, centerY: (minY + maxY) / 2 };
         };
         let low = 3;
-        let high = 120;
+        // The 22° lens needs ~120 just to frame 24 units across a portrait screen; a spread-out squad on a
+        // wide level needs far more, and capping lower leaves members off screen (softlock).
+        let high = CAMERA_MAX_DISTANCE;
         for (let i = 0; i < 24; i++) {
             const mid = (low + high) / 2;
             if (measure(mid).fits) {
@@ -2730,6 +3004,12 @@ export default class PathLevelScene extends ThreeScene {
         this.completeModal?.removeFromParent();
         this.completeModal?.destroy({ children: true });
         this.completeModal = undefined;
+        this.destroyPayoutPop();
+        if (this.celebrationBanner) {
+            UiAnim.kill(this.celebrationBanner);
+            this.celebrationBanner.destroy({ children: true });
+            this.celebrationBanner = undefined;
+        }
         this.bustedModal?.removeFromParent();
         this.bustedModal?.destroy({ children: true });
         this.bustedModal = undefined;

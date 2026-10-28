@@ -121,10 +121,155 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/kaykit/pallet-wood.glb",
+      "x": -5.22,
+      "z": -3.7,
+      "rotationY": 0,
+      "height": 0.46,
+      "revealAt": 0,
+      "width": 2.38,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 0.23,
+        "halfZ": 1.04
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/gold-bars-stack-large.glb",
+      "x": -5.22,
+      "z": -3.7,
+      "rotationY": 0,
+      "height": 0.94,
+      "revealAt": 0,
+      "elevation": 0.43,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/gold-bars-stack-large.glb",
+      "x": -5.22,
+      "z": -1.1,
+      "rotationY": 0,
+      "height": 0.94,
+      "revealAt": 0,
+      "elevation": 0.43,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/silver-bars-stack-large.glb",
+      "x": -2.62,
+      "z": -1.1,
+      "rotationY": 0,
+      "height": 0.94,
+      "revealAt": 0,
+      "elevation": 0.43,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/locker-decorated.glb",
+      "x": 7.63,
+      "z": -5.19,
+      "rotationY": 0,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.48,
+        "halfY": 1.62,
+        "halfZ": 0.52
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/pallet-wood.glb",
+      "x": -8.01,
+      "z": -4.62,
+      "rotationY": 0,
+      "height": 0.46,
+      "revealAt": 0,
+      "width": 2.38,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 0.23,
+        "halfZ": 1.04
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/silver-bars-stack-large.glb",
+      "x": -8.01,
+      "z": -4.62,
+      "rotationY": 0,
+      "height": 0.94,
+      "revealAt": 0,
+      "elevation": 0.43,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/pallet-wood.glb",
+      "x": -6.84,
+      "z": 4.62,
+      "rotationY": 3.14,
+      "height": 0.46,
+      "revealAt": 0,
+      "width": 2.38,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 0.23,
+        "halfZ": 1.04
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/gold-bars-stack-large.glb",
+      "x": -6.84,
+      "z": 4.62,
+      "rotationY": 3.14,
+      "height": 0.94,
+      "revealAt": 0,
+      "elevation": 0.43,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/containers-box-medium.glb",
+      "x": 6.48,
+      "z": 4.94,
+      "rotationY": 3.14,
+      "height": 0.85,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.05,
+        "halfY": 0.43,
+        "halfZ": 0.75
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/workbench-decorated.glb",
+      "x": 9.11,
+      "z": 0.08,
+      "rotationY": -1.57,
+      "height": 1.62,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.42,
+        "halfY": 0.81,
+        "halfZ": 0.84
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/containers-box-medium.glb",
+      "x": -8.74,
+      "z": 1.94,
+      "rotationY": 1.57,
+      "height": 0.85,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.75,
+        "halfY": 0.43,
+        "halfZ": 1.05
+      }
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": 3.5,
       "z": 0,
       "amount": 25,

@@ -13,7 +13,8 @@ import type { LevelGuard } from '../data/LevelData';
 import type { LevelSight } from '../utils/LevelSight';
 import { WorldBendService } from 'core/services/BendService';
 
-const CHARACTER_SCALE = 0.0075;
+/** Matches MainPlayer's CHARACTER_SCALE; visual only, vision cone and catch range are unaffected. */
+const CHARACTER_SCALE = 0.0094;
 const TURN_RATE = THREE.MathUtils.degToRad(280);
 const SWEEP_PERIOD_SEC = 3;
 const CONE_RAYS = 28;
@@ -22,13 +23,15 @@ const CALM_COLOR = new THREE.Color(0xffe066);
 const ALERT_COLOR = new THREE.Color(0xff2d2d);
 const WALK_INPUT = 0.5;
 const ALERT_ICON_THRESHOLD = 0.5;
-const ICON_HEIGHT = 2.5;
-const ANGRY_ANIMATION_URL = './bandit-controller/models/animations/Talking.glb';
+const ICON_HEIGHT = 3;
+const ANGRY_ANIMATION_URL = './bandit-controller/images/non-preload/models/animations/Talking.glb';
 const TOUCH_RADIUS = 1.0;
 const CLOSE_FRONT_RADIUS = 2.2;
 const FOCUS_HOLD_SEC = 1.6;
 const CHASE_SPEED = 5.5;
-const CHASE_STOP_DISTANCE = 1.15;
+/** Busted: where the guard stops in front of the player. Characters are ~1.3 units wide with big heads, so leave a gap. */
+const CHASE_STOP_DISTANCE = 2.4;
+const ARRIVE_TOLERANCE = 0.02;
 const modelUrl = (fullPath: string): string => `./${fullPath}`;
 
 type GuardMode = 'wait' | 'move';
@@ -180,17 +183,18 @@ export default class Guard {
         this.routeMarkers.forEach((marker) => (marker.visible = visible));
     }
 
-    /** Busted sequence: sprints at `target` and stops next to it. Returns true once arrived. */
-    public chase(target: THREE.Vector3, delta: number): boolean {
+    /** Busted sequence: sprints at `target` and stops `stopDistance` short of it. Returns true once arrived. */
+    public chase(target: THREE.Vector3, delta: number, stopDistance = CHASE_STOP_DISTANCE): boolean {
         const dx = target.x - this.position.x;
         const dz = target.z - this.position.z;
         const distance = Math.hypot(dx, dz);
         this.heading = Math.atan2(dx, dz);
-        if (distance <= CHASE_STOP_DISTANCE) {
+        // The last step lands exactly on stopDistance; float error must not leave the guard sprinting in place.
+        if (distance <= stopDistance + ARRIVE_TOLERANCE) {
             this.moving = false;
             return true;
         }
-        const step = Math.min(CHASE_SPEED * delta, distance - CHASE_STOP_DISTANCE);
+        const step = Math.min(CHASE_SPEED * delta, distance - stopDistance);
         this.position.x += (dx / distance) * step;
         this.position.z += (dz / distance) * step;
         this.moving = true;

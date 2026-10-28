@@ -9,6 +9,8 @@ import order from '../../levels/index.json';
 import worldData from '../../levels/worlds.json';
 
 const files = import.meta.glob('../../levels/*.json', { eager: true, import: 'default' }) as Record<string, LevelData>;
+/** Debug-only dressing previews (one per world theme); never part of the campaign or its progress. */
+const showcaseFiles = import.meta.glob('../../levels/showcase/*.json', { eager: true, import: 'default' }) as Record<string, LevelData>;
 const PROGRESS_KEY = 'bandit-controller.levelProgress';
 const COMPLETED_KEY = 'bandit-controller.completedLevels';
 const UNLOCK_ALL_KEY = 'bandit-controller.unlockAll';
@@ -34,6 +36,12 @@ interface WorldFile {
 }
 
 let cache: { levels: LevelData[]; worlds: WorldInfo[] } | undefined;
+/** Showcase picked from the debug menu; lives for the session only so it never touches saved progress. */
+let previewId: string | undefined;
+
+function showcases(): LevelData[] {
+    return Object.values(showcaseFiles).filter((level) => level?.id && level.floor);
+}
 
 /** Worlds define the campaign order and the look of their levels (world styles override a level's own). */
 function build(): { levels: LevelData[]; worlds: WorldInfo[] } {
@@ -162,6 +170,14 @@ export const LevelCatalog = {
         return Boolean(found && found.levelNumber === found.world.levels.length);
     },
 
+    /** Dressing preview levels for the debug menu (levels/showcase/*.json). */
+    showcases,
+
+    /** Loads a showcase on the next scene start, without changing campaign progress. */
+    previewShowcase(id: string): void {
+        previewId = id;
+    },
+
     count(): number {
         return allLevels().length;
     },
@@ -179,9 +195,13 @@ export const LevelCatalog = {
     /** ?level=<id or 1-based number> overrides saved progression (used by the editor's Play button). */
     current(): LevelData {
         const levels = allLevels();
+        const preview = previewId ? showcases().find((level) => level.id === previewId) : undefined;
+        if (preview) {
+            return preview;
+        }
         const param = new URLSearchParams(window.location.search).get('level');
         if (param) {
-            const found = levels.find((level) => level.id === param) ?? levels[Number(param) - 1];
+            const found = levels.find((level) => level.id === param) ?? showcases().find((level) => level.id === param) ?? levels[Number(param) - 1];
             if (found) {
                 return found;
             }
@@ -191,6 +211,7 @@ export const LevelCatalog = {
 
     /** Jumps straight to level `index` (debug menu); drops any ?level override so it sticks as saved progress. */
     select(index: number): void {
+        previewId = undefined;
         this.setIndex(index);
         const url = new URL(window.location.href);
         if (url.searchParams.has('level')) {
@@ -206,7 +227,12 @@ export const LevelCatalog = {
 
     /** Saves progress to the level after `current`; wraps to the first level after the last one. */
     advance(current: LevelData): void {
+        previewId = undefined;
         const levels = allLevels();
+        // Showcases sit outside the campaign: finishing one must not move saved progress.
+        if (!levels.includes(current)) {
+            return;
+        }
         const next = levels.indexOf(current) + 1;
         this.setIndex(next >= levels.length ? 0 : next);
         const url = new URL(window.location.href);

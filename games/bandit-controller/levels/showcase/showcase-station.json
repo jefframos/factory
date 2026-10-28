@@ -1,0 +1,439 @@
+{
+  "id": "showcase-station",
+  "name": "Showcase: Station",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 20,
+    "depth": 33,
+    "rects": [
+      {
+        "x": 0,
+        "z": 11,
+        "width": 20,
+        "depth": 11
+      },
+      {
+        "x": 0,
+        "z": 0,
+        "width": 20,
+        "depth": 11
+      },
+      {
+        "x": 0,
+        "z": -11,
+        "width": 20,
+        "depth": 11
+      }
+    ]
+  },
+  "start": {
+    "x": 0,
+    "z": 19.5
+  },
+  "waypoints": [
+    {
+      "x": 5,
+      "z": 8
+    },
+    {
+      "x": -5,
+      "z": -2
+    },
+    {
+      "x": 4,
+      "z": -11
+    }
+  ],
+  "entryPath": {
+    "x": 0,
+    "z": 19.5,
+    "width": 4,
+    "depth": 4
+  },
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": -10,
+          "z": -16.5
+        },
+        {
+          "x": 10,
+          "z": -16.5
+        },
+        {
+          "x": 10,
+          "z": 16.5
+        },
+        {
+          "x": -10,
+          "z": 16.5
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -2.1,
+          "maxX": 2.1,
+          "minZ": 16.2,
+          "maxZ": 16.8
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -10,
+          "z": 5.5
+        },
+        {
+          "x": 10,
+          "z": 5.5
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": 2.9,
+          "maxX": 7.1,
+          "minZ": 5.2,
+          "maxZ": 5.8
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -10,
+          "z": -5.5
+        },
+        {
+          "x": 10,
+          "z": -5.5
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "minX": -7.1,
+          "maxX": -2.9,
+          "minZ": -5.8,
+          "maxZ": -5.2
+        }
+      ]
+    }
+  ],
+  "props": [
+    {
+      "model": "heist/decor/kaykit/landingpad-small.glb",
+      "x": -5,
+      "z": 11,
+      "rotationY": 0,
+      "height": 1.16,
+      "revealAt": 0,
+      "width": 4.42,
+      "flat": true,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-a-stacked.glb",
+      "x": -8.6,
+      "z": 15.3,
+      "rotationY": 0,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 1.19,
+        "halfZ": 1.07
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-a-stacked.glb",
+      "x": -7,
+      "z": 15.3,
+      "rotationY": 0,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.07,
+        "halfY": 1.19,
+        "halfZ": 1.07
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargodepot-a.glb",
+      "x": 7.6,
+      "z": 14.4,
+      "rotationY": 0,
+      "height": 2.38,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.98,
+        "halfY": 1.19,
+        "halfZ": 1.99
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/fuel-b-barrels.glb",
+      "x": 8.2,
+      "z": 8,
+      "rotationY": 0,
+      "height": 1.7,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.15,
+        "halfY": 0.85,
+        "halfZ": 1.15
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lights.glb",
+      "x": -1.7,
+      "z": 15.8,
+      "rotationY": 0,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.83,
+        "halfY": 1.36,
+        "halfZ": 0.83
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": -7.6,
+      "z": 3,
+      "rotationY": 0,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": -7.6,
+      "z": 0.4,
+      "rotationY": 0,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": -7.6,
+      "z": -2.2,
+      "rotationY": 0,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": -5.2,
+      "z": 3,
+      "rotationY": 0,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": -5.2,
+      "z": 0.4,
+      "rotationY": 0,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/space-farm-small.glb",
+      "x": -5.2,
+      "z": -2.2,
+      "rotationY": 0,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 0.51,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/water-storage.glb",
+      "x": 8.2,
+      "z": 3,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.31,
+        "halfY": 0.77,
+        "halfZ": 1.34
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/water-storage.glb",
+      "x": 8.2,
+      "z": -1.6,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.31,
+        "halfY": 0.77,
+        "halfZ": 1.34
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lights.glb",
+      "x": -2.8,
+      "z": 0.4,
+      "rotationY": 0,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.83,
+        "halfY": 1.36,
+        "halfZ": 0.83
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/containers-b.glb",
+      "x": -7,
+      "z": -15,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.72,
+        "halfY": 0.77,
+        "halfZ": 1.72
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/containers-d.glb",
+      "x": -7,
+      "z": -11.5,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.72,
+        "halfY": 0.77,
+        "halfZ": 1.72
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/cargo-b-packed.glb",
+      "x": -2.6,
+      "z": -15.6,
+      "rotationY": 0,
+      "height": 1.7,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.75,
+        "halfY": 0.85,
+        "halfZ": 0.75
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker.glb",
+      "x": 9.4,
+      "z": -9,
+      "rotationY": 4.71,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.62,
+        "halfZ": 0.48
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker.glb",
+      "x": 9.4,
+      "z": -10.2,
+      "rotationY": 4.71,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.62,
+        "halfZ": 0.48
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/solarpanel.glb",
+      "x": 7,
+      "z": -15.2,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.67,
+        "halfY": 0.77,
+        "halfZ": 0.84
+      }
+    }
+  ],
+  "loot": [
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": -1.5,
+      "z": 9,
+      "amount": 25,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": -3,
+      "z": -3.5,
+      "amount": 50,
+      "scale": 1.35,
+      "revealAt": 0
+    },
+    {
+      "model": "resources/Money_Bills_Stack_Small.gltf",
+      "x": -2.5,
+      "z": -9.5,
+      "amount": 75,
+      "scale": 1.35,
+      "revealAt": 0
+    }
+  ],
+  "guards": [],
+  "styles": {
+    "floor": "floorStyle7",
+    "wall": "wallStyle7",
+    "ground": "groundStyle7",
+    "path": "pathStyle7",
+    "door": "doorStyle1",
+    "window": "windowStyle1"
+  }
+}

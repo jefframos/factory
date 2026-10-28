@@ -20,6 +20,7 @@ const MODELS_DIR = path.join(REPO_ROOT, 'public', 'bandit-controller', 'models')
 const THREE_DIR = path.join(REPO_ROOT, 'node_modules', 'three');
 const STYLES_FILE = path.join(__dirname, '..', 'ui', 'worldstyles.json');
 const UIKIT_FILE = path.join(__dirname, '..', 'ui', 'uikit.json');
+const HATFITS_FILE = path.join(__dirname, '..', 'ui', 'hatfits.json');
 const FONTS_DIR = path.join(REPO_ROOT, 'public', 'bandit-controller', 'fonts');
 const THUMBS_DIR = path.join(__dirname, '.thumbs');
 const UI_SOURCES = {
@@ -252,6 +253,21 @@ async function handleApi(req, res, url) {
         }
         await writeJson(STYLES_FILE, styles);
         return send(res, 200, { ok: true });
+    }
+    if (url.pathname === '/api/hatfits' && req.method === 'GET') {
+        return send(res, 200, await readJson(HATFITS_FILE, { version: 1, default: { x: 0, y: -0.03, z: 0, scale: 1.05, rotationY: 0 }, hats: {} }));
+    }
+    if (url.pathname === '/api/hatfits' && req.method === 'PUT') {
+        const fits = await readBody(req);
+        if (!fits || typeof fits.default !== 'object' || typeof fits.hats !== 'object') {
+            return send(res, 400, { error: 'Invalid hat fits' });
+        }
+        await writeJson(HATFITS_FILE, fits);
+        return send(res, 200, { ok: true });
+    }
+    if (url.pathname === '/api/hats' && req.method === 'GET') {
+        const files = await fs.readdir(path.join(MODELS_DIR, 'hats')).catch(() => []);
+        return send(res, 200, files.filter((name) => /.(glb|gltf)$/i.test(name)).sort());
     }
     if (url.pathname === '/api/uikit' && req.method === 'GET') {
         return send(res, 200, await readJson(UIKIT_FILE, { version: 1, screens: {} }));

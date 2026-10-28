@@ -9,6 +9,8 @@ import { LevelCatalog, worldGateStars } from './LevelCatalog';
 
 const STARS_KEY = 'bandit-controller.stars';
 const DAILY_KEY = 'bandit-controller.daily';
+/** Day the game was first played: the daily reward is for returning players, never the very first session. */
+const FIRST_PLAY_KEY = 'bandit-controller.firstPlayDay';
 
 export const MAX_STARS = 3;
 export interface LevelResult {
@@ -69,12 +71,34 @@ export const Progress = {
     },
 
     /** Daily reward: grows with the streak (capped at 7 days) and resets after a missed day. */
+    /** Call once per boot; remembers the first day the game was ever played. */
+    notePlayed(): void {
+        if (!window.localStorage.getItem(FIRST_PLAY_KEY)) {
+            window.localStorage.setItem(FIRST_PLAY_KEY, new Date().toDateString());
+        }
+    },
+
     dailyReward(): { available: boolean; streak: number; amount: number } {
         const saved = JSON.parse(window.localStorage.getItem(DAILY_KEY) ?? '{"day":"","streak":0}') as { day: string; streak: number };
         const today = new Date().toDateString();
         const yesterday = new Date(Date.now() - 86400000).toDateString();
         const streak = saved.day === yesterday ? Math.min(7, saved.streak + 1) : saved.day === today ? saved.streak : 1;
-        return { available: saved.day !== today, streak, amount: 100 + (streak - 1) * 50 };
+        const returning = (window.localStorage.getItem(FIRST_PLAY_KEY) ?? today) !== today;
+        return { available: returning && saved.day !== today, streak, amount: Progress.dailyAmount(streak) };
+    },
+
+    dailyAmount(streak: number): number {
+        return 100 + (Math.min(7, Math.max(1, streak)) - 1) * 50;
+    },
+
+    /** Debug: makes today's daily reward claimable again as streak day `streak` (1–7). */
+    debugPrimeDaily(streak: number): void {
+        const day = Math.min(7, Math.max(1, Math.round(streak)));
+        const saved = day > 1
+            ? { day: new Date(Date.now() - 86400000).toDateString(), streak: day - 1 }
+            : { day: '', streak: 0 };
+        window.localStorage.setItem(DAILY_KEY, JSON.stringify(saved));
+        window.localStorage.setItem(FIRST_PLAY_KEY, new Date(Date.now() - 86400000).toDateString());
     },
 
     claimDaily(): number {

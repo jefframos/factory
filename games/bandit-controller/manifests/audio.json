@@ -5,6 +5,30 @@
       "assets": [
         {
           "alias": [
+            "applause.mp3"
+          ],
+          "src": [
+            "applause.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "bonus-claim.wav"
+          ],
+          "src": [
+            "bonus-claim.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "bonus-needle.wav"
+          ],
+          "src": [
+            "bonus-needle.mp3"
+          ]
+        },
+        {
+          "alias": [
             "busted.ogg"
           ],
           "src": [
@@ -13,7 +37,23 @@
         },
         {
           "alias": [
-            "checkpoint.ogg"
+            "cash-tick.wav"
+          ],
+          "src": [
+            "cash-tick.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "cash.wav"
+          ],
+          "src": [
+            "cash.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "checkpoint.wav"
           ],
           "src": [
             "checkpoint.mp3"
@@ -21,18 +61,42 @@
         },
         {
           "alias": [
-            "footstep-1.ogg"
+            "footstep-wood-0.ogg"
           ],
           "src": [
-            "footstep-1.mp3"
+            "footstep-wood-0.mp3"
           ]
         },
         {
           "alias": [
-            "footstep-2.ogg"
+            "footstep-wood-1.ogg"
           ],
           "src": [
-            "footstep-2.mp3"
+            "footstep-wood-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep-wood-2.ogg"
+          ],
+          "src": [
+            "footstep-wood-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep-wood-3.ogg"
+          ],
+          "src": [
+            "footstep-wood-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep-wood-4.ogg"
+          ],
+          "src": [
+            "footstep-wood-4.mp3"
           ]
         },
         {
@@ -41,6 +105,30 @@
           ],
           "src": [
             "heist-music.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "level-complete.wav"
+          ],
+          "src": [
+            "level-complete.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "lose.wav"
+          ],
+          "src": [
+            "lose.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "panel-open.wav"
+          ],
+          "src": [
+            "panel-open.mp3"
           ]
         },
         {
@@ -53,10 +141,26 @@
         },
         {
           "alias": [
-            "pickup-2.ogg"
+            "siren.wav"
           ],
           "src": [
-            "pickup-2.mp3"
+            "siren.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "spotted.wav"
+          ],
+          "src": [
+            "spotted.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "star.wav"
+          ],
+          "src": [
+            "star.mp3"
           ]
         },
         {
@@ -73,6 +177,46 @@
           ],
           "src": [
             "victory.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "whoosh.wav"
+          ],
+          "src": [
+            "whoosh.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "yay-1.wav"
+          ],
+          "src": [
+            "yay-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "yay-2.wav"
+          ],
+          "src": [
+            "yay-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "yay-3.wav"
+          ],
+          "src": [
+            "yay-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "yay-4.wav"
+          ],
+          "src": [
+            "yay-4.mp3"
           ]
         }
       ]

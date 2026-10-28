@@ -40,8 +40,8 @@
   },
   "waypoints": [
     {
-      "x": -4.312,
-      "z": 8
+      "x": -4.31,
+      "z": 7
     },
     {
       "x": 0,
@@ -261,10 +261,437 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/castle/siege-ballista.glb",
+      "x": -4.9,
+      "z": -1,
+      "rotationY": 0,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 2.19,
+        "halfY": 1.36,
+        "halfZ": 1.61
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/haybale.glb",
+      "x": -1.59,
+      "z": 12.4,
+      "rotationY": 0,
+      "height": 1.19,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.03,
+        "halfY": 0.6,
+        "halfZ": 0.54
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/haybale.glb",
+      "x": 0.81,
+      "z": 12.4,
+      "rotationY": 0.35,
+      "height": 1.19,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.03,
+        "halfY": 0.6,
+        "halfZ": 0.54
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/barrel-a.glb",
+      "x": -0.39,
+      "z": 14,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/barrel-a.glb",
+      "x": -13.1,
+      "z": 12.95,
+      "rotationY": 1.57,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/containers-crate-medium-wood.glb",
+      "x": -12.83,
+      "z": 6.73,
+      "rotationY": 1.57,
+      "height": 1.02,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.93,
+        "halfY": 0.51,
+        "halfZ": 1.74
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/target-stand-a-decorated.glb",
+      "x": 3.69,
+      "z": 14.91,
+      "rotationY": -3.14,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.97,
+        "halfY": 1.36,
+        "halfZ": 0.75
+      }
+    },
+    {
+      "model": "heist/decor/castle/rocks-small.glb",
+      "x": -9.47,
+      "z": 15,
+      "rotationY": -3.14,
+      "height": 0.68,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.63,
+        "halfY": 0.34,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/lantern-standing.glb",
+      "x": -11.39,
+      "z": 14.99,
+      "rotationY": -3.14,
+      "height": 2.21,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 1.11,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/castle/tree-log.glb",
+      "x": -8.02,
+      "z": 1.54,
+      "rotationY": 1.57,
+      "height": 0.85,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.38,
+        "halfY": 0.43,
+        "halfZ": 0.34
+      }
+    },
+    {
+      "model": "heist/decor/castle/flag-banner-long.glb",
+      "x": -9.01,
+      "z": -1.06,
+      "rotationY": 1.57,
+      "height": 3.74,
+      "revealAt": 0,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/barrel-a.glb",
+      "x": 8.79,
+      "z": -4.26,
+      "rotationY": -1.57,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/castle/flag-banner-long.glb",
+      "x": 9.01,
+      "z": -2.75,
+      "rotationY": -1.57,
+      "height": 3.74,
+      "revealAt": 0,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/castle/tree-log.glb",
+      "x": 8.02,
+      "z": -1.65,
+      "rotationY": -1.57,
+      "height": 0.85,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.38,
+        "halfY": 0.43,
+        "halfZ": 0.34
+      }
+    },
+    {
+      "model": "heist/decor/castle/flag-banner-long.glb",
+      "x": 9.01,
+      "z": -0.68,
+      "rotationY": -1.57,
+      "height": 3.74,
+      "revealAt": 0,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/castle/tree-log.glb",
+      "x": 8.02,
+      "z": 0.87,
+      "rotationY": -1.57,
+      "height": 0.85,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.38,
+        "halfY": 0.43,
+        "halfZ": 0.34
+      }
+    },
+    {
+      "model": "heist/decor/castle/flag-banner-long.glb",
+      "x": 9.01,
+      "z": 2.38,
+      "rotationY": -1.57,
+      "height": 3.74,
+      "revealAt": 0,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/barrel-a.glb",
+      "x": -9.25,
+      "z": 5.8,
+      "rotationY": -1.57,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/haybale.glb",
+      "x": -7.39,
+      "z": 6.14,
+      "rotationY": 1.57,
+      "height": 1.19,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.54,
+        "halfY": 0.6,
+        "halfZ": 1.03
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/weaponrack-decorated.glb",
+      "x": -2.33,
+      "z": -15,
+      "rotationY": 0,
+      "height": 2.89,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1,
+        "halfY": 1.44,
+        "halfZ": 0.68
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/wood-log-stack.glb",
+      "x": 9.84,
+      "z": -14.98,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.77,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/ammo-box.glb",
+      "x": 12.41,
+      "z": -15.5,
+      "rotationY": 0,
+      "height": 0.68,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.25,
+        "halfY": 0.34,
+        "halfZ": 0.22
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/barrel-a.glb",
+      "x": 1.68,
+      "z": 5.02,
+      "rotationY": 0,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/target-stand-a-decorated.glb",
+      "x": 4.17,
+      "z": 5.09,
+      "rotationY": 0,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.97,
+        "halfY": 1.36,
+        "halfZ": 0.75
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/ammo-box.glb",
+      "x": 12.93,
+      "z": -6.5,
+      "rotationY": -3.14,
+      "height": 0.68,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.25,
+        "halfY": 0.34,
+        "halfZ": 0.22
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/food-barrel-fish.glb",
+      "x": 10.73,
+      "z": -6.81,
+      "rotationY": -3.14,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 0.77,
+        "halfZ": 0.5
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/weaponrack-decorated.glb",
+      "x": -4.48,
+      "z": -12.53,
+      "rotationY": 1.57,
+      "height": 2.89,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.68,
+        "halfY": 1.44,
+        "halfZ": 1
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/target-stand-a-decorated.glb",
+      "x": 4.4,
+      "z": 12.5,
+      "rotationY": -1.57,
+      "height": 2.72,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.75,
+        "halfY": 1.36,
+        "halfZ": 0.97
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/wood-log-stack.glb",
+      "x": 13.1,
+      "z": -13.16,
+      "rotationY": -1.57,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.69,
+        "halfY": 0.77,
+        "halfZ": 0.77
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/ammo-box.glb",
+      "x": 13.61,
+      "z": -10.68,
+      "rotationY": -1.57,
+      "height": 0.68,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.22,
+        "halfY": 0.34,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/food-barrel-fish.glb",
+      "x": 13.3,
+      "z": -7.78,
+      "rotationY": -1.57,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.5,
+        "halfY": 0.77,
+        "halfZ": 0.52
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/wood-log-stack.glb",
+      "x": -3.89,
+      "z": -7.02,
+      "rotationY": 3.14,
+      "height": 1.53,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.77,
+        "halfY": 0.77,
+        "halfZ": 0.69
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/ammo-box.glb",
+      "x": -1.81,
+      "z": -6.5,
+      "rotationY": 3.14,
+      "height": 0.68,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.25,
+        "halfY": 0.34,
+        "halfZ": 0.22
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/weaponrack-decorated.glb",
+      "x": 6.02,
+      "z": -7,
+      "rotationY": 3.14,
+      "height": 2.89,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1,
+        "halfY": 1.44,
+        "halfZ": 0.68
+      }
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": -7.812,
       "z": 10,
       "amount": 25,
@@ -280,7 +707,7 @@
       "revealAt": 0
     },
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": 0.812,
       "z": -10,
       "amount": 25,

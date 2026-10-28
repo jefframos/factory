@@ -14,14 +14,28 @@ import { BendService, WorldBendService } from 'core/services/BendService';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import AnimatorController from './animation/AnimatorController';
 import { loadCompressedFile, releaseObjectURL } from '../utils/GzipLoader';
+import hatFits from '../../ui/hatfits.json';
 
 const ROTATION_SLERP = 0.15;
 /** Head size in REAL world units (same units as the floor/camera). */
 const HEAD_CUBE_SIZE = 115;
-/** A hat's widest side is scaled to this fraction of HEAD_CUBE_SIZE. */
-const HAT_WIDTH_FIT = 1.05;
-/** How far a hat sinks onto the head, as a fraction of HEAD_CUBE_SIZE. */
-const HAT_SINK = 0.03;
+interface HatFit {
+    /** Offsets from the top-centre of the head, as fractions of HEAD_CUBE_SIZE (y < 0 sinks the hat down). */
+    x: number;
+    y: number;
+    z: number;
+    /** The hat's widest side as a fraction of the head width. */
+    scale: number;
+    /** Degrees around the vertical axis. */
+    rotationY: number;
+}
+const HAT_FIT_DATA = hatFits as { default: HatFit; hats: Record<string, Partial<HatFit>> };
+
+/** Placement for a hat model (by file name), from ui/hatfits.json (editor "Hats" tab); unlisted hats use the default. */
+function hatFit(fullPath: string): HatFit {
+    const name = fullPath.split('/').pop()?.replace(/\.[^.]+$/, '') ?? '';
+    return { ...HAT_FIT_DATA.default, ...HAT_FIT_DATA.hats[name] };
+}
 /** Head pivot/offset, in the SAME real world units as HEAD_CUBE_SIZE — (0,0,0) sits exactly at the head bone's own origin. */
 const HEAD_CUBE_OFFSET = new THREE.Vector3(0, 50, 0);
 /** Face-decal plane, relative to HEAD_CUBE_SIZE — a plane just in front of the head's +Z face. */
@@ -390,8 +404,10 @@ export default class CharacterBody {
                 object.position.set(-center.x, -box.min.y, -center.z);
                 const hat = new THREE.Group();
                 hat.add(object);
-                hat.scale.setScalar((HEAD_CUBE_SIZE * HAT_WIDTH_FIT) / Math.max(size.x, size.z, 1e-6));
-                hat.position.y = HEAD_CUBE_SIZE / 2 - HEAD_CUBE_SIZE * HAT_SINK;
+                const fit = hatFit(fullPath);
+                hat.scale.setScalar((HEAD_CUBE_SIZE * fit.scale) / Math.max(size.x, size.z, 1e-6));
+                hat.position.set(HEAD_CUBE_SIZE * fit.x, HEAD_CUBE_SIZE / 2 + HEAD_CUBE_SIZE * fit.y, HEAD_CUBE_SIZE * fit.z);
+                hat.rotation.y = THREE.MathUtils.degToRad(fit.rotationY);
                 holder.add(hat);
                 this.hat = hat;
                 this.addOutlineShells(hat);

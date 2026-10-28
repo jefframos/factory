@@ -88,3 +88,50 @@ export function spawnFlyingIconToOverlayPoint(
         onInterrupt: () => icon.destroy(),
     });
 }
+
+/**
+ * Same flight as spawnFlyingIconToOverlayPoint(), but starting from a point already in
+ * `game.uiLayer`'s space (e.g. the centre-screen bonus payout) instead of a 3D world position.
+ */
+export function spawnFlyingIconFromOverlayPoint(
+    game: Game,
+    from: PIXI.Point,
+    getToLocalPoint: () => PIXI.Point,
+    texture: PIXI.Texture,
+    onArrive?: () => void,
+    delaySec: number = 0,
+    size: number = ICON_SIZE,
+): gsap.core.Tween {
+    const icon = new PIXI.Sprite(texture);
+    icon.anchor.set(0.5);
+    icon.width = size;
+    icon.height = size;
+    icon.visible = false;
+    game.uiLayer.addChild(icon);
+
+    const arc = new ArcSpline(-ARC_HEIGHT_PX);
+    const scratchFrom = new THREE.Vector3(from.x, from.y, 0);
+    const scratchTo = new THREE.Vector3();
+    const progress = { t: 0 };
+    const startScale = icon.scale.x;
+
+    return gsap.to(progress, {
+        t: 1,
+        duration: FLIGHT_DURATION_SEC * 1.4,
+        delay: Math.max(0, delaySec),
+        ease: 'power2.in',
+        onUpdate: () => {
+            const to = getToLocalPoint();
+            scratchTo.set(to.x, to.y, 0);
+            const point = arc.evaluate(scratchFrom, scratchTo, progress.t);
+            icon.visible = true;
+            icon.position.set(point.x, point.y);
+            icon.scale.set(startScale * (1 - progress.t * 0.4));
+        },
+        onComplete: () => {
+            onArrive?.();
+            icon.destroy();
+        },
+        onInterrupt: () => icon.destroy(),
+    });
+}

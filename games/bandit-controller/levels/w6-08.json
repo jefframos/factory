@@ -34,12 +34,12 @@
   },
   "waypoints": [
     {
-      "x": -3,
+      "x": -2,
       "z": -8.26
     },
     {
-      "x": 7,
-      "z": -1.54
+      "x": 14.6,
+      "z": 1.56
     }
   ],
   "entryPath": {
@@ -191,10 +191,187 @@
       "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "heist/decor/kaykit/desk-decorated.glb",
+      "x": 0.06,
+      "z": -11.98,
+      "rotationY": -1.57,
+      "height": 1.95,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.62,
+        "halfY": 0.98,
+        "halfZ": 1.21
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/chair-desk-a.glb",
+      "x": -2.24,
+      "z": -11.98,
+      "rotationY": 1.57,
+      "height": 2.3,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.73,
+        "halfY": 1.15,
+        "halfZ": 0.56
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/table-medium-decorated.glb",
+      "x": 10.15,
+      "z": -6.04,
+      "rotationY": -1.57,
+      "height": 1.36,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.54,
+        "halfY": 0.68,
+        "halfZ": 0.72
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/gem-large.glb",
+      "x": 10.15,
+      "z": -6.04,
+      "rotationY": -1.57,
+      "height": 0.85,
+      "revealAt": 0,
+      "elevation": 1.36,
+      "collider": null
+    },
+    {
+      "model": "heist/decor/kaykit/containers-c.glb",
+      "x": 9.05,
+      "z": 12.18,
+      "rotationY": -1.57,
+      "height": 1.36,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.53,
+        "halfY": 0.68,
+        "halfZ": 1.53
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/desk-decorated.glb",
+      "x": -2.87,
+      "z": 6.9,
+      "rotationY": -3.14,
+      "height": 1.95,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.21,
+        "halfY": 0.98,
+        "halfZ": 0.62
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/chair-desk-a.glb",
+      "x": -2.87,
+      "z": 4.6,
+      "rotationY": 0,
+      "height": 2.3,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.56,
+        "halfY": 1.15,
+        "halfZ": 0.73
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker-decorated.glb",
+      "x": -5.49,
+      "z": 7.01,
+      "rotationY": -3.14,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.48,
+        "halfY": 1.62,
+        "halfZ": 0.52
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/desk-decorated.glb",
+      "x": -8,
+      "z": -13.62,
+      "rotationY": 0,
+      "height": 1.95,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.21,
+        "halfY": 0.98,
+        "halfZ": 0.62
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker-decorated.glb",
+      "x": -4.87,
+      "z": -13.73,
+      "rotationY": 0,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.48,
+        "halfY": 1.62,
+        "halfZ": 0.52
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/desk-decorated.glb",
+      "x": -2.32,
+      "z": -13.62,
+      "rotationY": 0,
+      "height": 1.95,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 1.21,
+        "halfY": 0.98,
+        "halfZ": 0.62
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/locker-decorated.glb",
+      "x": -10.17,
+      "z": 5.16,
+      "rotationY": 1.57,
+      "height": 3.23,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.52,
+        "halfY": 1.62,
+        "halfZ": 0.48
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/table-medium-decorated.glb",
+      "x": 5.8,
+      "z": -6.99,
+      "rotationY": 0,
+      "height": 1.36,
+      "revealAt": 0,
+      "collider": {
+        "halfX": 0.72,
+        "halfY": 0.68,
+        "halfZ": 0.54
+      }
+    },
+    {
+      "model": "heist/decor/kaykit/gem-large.glb",
+      "x": 5.8,
+      "z": -6.99,
+      "rotationY": 0,
+      "height": 0.85,
+      "revealAt": 0,
+      "elevation": 1.36,
+      "collider": null
+    }
+  ],
   "loot": [
     {
-      "model": "resources/Money_Coins_Stack_Small.gltf",
+      "model": "resources/Money_Bills_Stack_Small.gltf",
       "x": -5,
       "z": -6.86,
       "amount": 25,
@@ -228,7 +405,7 @@
       },
       "waypoints": [
         {
-          "x": -3,
+          "x": -2,
           "z": -8.26
         },
         {
@@ -245,7 +422,7 @@
       },
       "waypoints": [
         {
-          "x": -3,
+          "x": -2,
           "z": -3.36
         },
         {
@@ -262,7 +439,7 @@
       },
       "waypoints": [
         {
-          "x": -3,
+          "x": -2,
           "z": 1.54
         },
         {
