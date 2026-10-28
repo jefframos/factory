@@ -1,0 +1,792 @@
+{
+  "version": 1,
+  "$comment": "Dig & Discover tuning (GDD §17: everything configurable). Distances in world units (1 block = 1 unit). materials: durability = hit points, minPower = weakest tool power that can dig it, value = sell price per item, drops = items per block; block = the KayKit block model drawn for it, pickup = what flies into the backpack, decor = pieces poking out of the top (nuggets on ores, gems on crystals) so they read from above. zones: rings around the hub by distance (from = where the zone starts; edges are wobbly); fill = the zone's base rock (its minPower gates the zone behind a tool tier), patches/ores = {id, chance} mixed in, findChance = share of blocks hiding a find. finds: the artifacts to collect (GDD §11) — 3 per zone (`zone`, 0-based), buried and revealed when a tunnel reaches them, worth `reward` cash; `weight` = relative odds within the zone, `rarity` drives the find banner. The collection totem in the hub shows found vs missing; finding them all completes the collection (`collectionReward`). wardrobe: looks bought with cash at the hub closet (colors, faces under images/non-preload/skins, hats under models/hats; hat placement in ui/hatfits.json).",
+  "terrain": {
+    "radius": 80,
+    "blockHeight": 1.6,
+    "seed": 1337,
+    "bedrockBlock": "mine/metal.glb",
+    "zoneWobble": 5
+  },
+  "materials": [
+    {
+      "id": "dirt",
+      "name": "Dirt",
+      "color": "#a87545",
+      "durability": 2,
+      "minPower": 1,
+      "value": 1,
+      "drops": 1,
+      "ore": false,
+      "block": "mine/dirt.glb",
+      "pickup": "mine/stone-chunks-small.glb"
+    },
+    {
+      "id": "gravel",
+      "name": "Gravel",
+      "color": "#9a8f84",
+      "durability": 2,
+      "minPower": 1,
+      "value": 1,
+      "drops": 1,
+      "ore": false,
+      "block": "mine/gravel.glb",
+      "pickup": "mine/stone-chunks-small.glb"
+    },
+    {
+      "id": "stone",
+      "name": "Stone",
+      "color": "#8d8a86",
+      "durability": 4,
+      "minPower": 2,
+      "value": 2,
+      "drops": 1,
+      "ore": false,
+      "block": "mine/stone.glb",
+      "pickup": "mine/stone-chunks-small.glb"
+    },
+    {
+      "id": "deeprock",
+      "name": "Deep Rock",
+      "color": "#5b5a63",
+      "durability": 9,
+      "minPower": 3,
+      "value": 4,
+      "drops": 1,
+      "ore": false,
+      "block": "mine/stone-dark.glb",
+      "pickup": "mine/stone-chunks-small.glb"
+    },
+    {
+      "id": "ruins",
+      "name": "Ancient Bricks",
+      "color": "#b0724f",
+      "durability": 20,
+      "minPower": 5,
+      "value": 8,
+      "drops": 1,
+      "ore": false,
+      "block": "mine/bricks-a.glb",
+      "pickup": "mine/stone-brick.glb"
+    },
+    {
+      "id": "magma",
+      "name": "Magma Rock",
+      "color": "#e2552b",
+      "durability": 36,
+      "minPower": 7,
+      "value": 14,
+      "drops": 1,
+      "ore": false,
+      "block": "mine/lava.glb",
+      "pickup": "mine/stone-chunks-small.glb"
+    },
+    {
+      "id": "copper",
+      "name": "Copper",
+      "color": "#d9783c",
+      "durability": 4,
+      "minPower": 1,
+      "value": 6,
+      "drops": 2,
+      "ore": true,
+      "block": "mine/stone-with-copper.glb",
+      "pickup": "mine/copper-nugget-small.glb",
+      "decor": "mine/copper-nugget-small.glb"
+    },
+    {
+      "id": "silver",
+      "name": "Silver",
+      "color": "#d6dde6",
+      "durability": 7,
+      "minPower": 2,
+      "value": 10,
+      "drops": 2,
+      "ore": true,
+      "block": "mine/stone-with-silver.glb",
+      "pickup": "mine/silver-nugget-small.glb",
+      "decor": "mine/silver-nugget-small.glb"
+    },
+    {
+      "id": "gold",
+      "name": "Gold",
+      "color": "#f4c534",
+      "durability": 12,
+      "minPower": 3,
+      "value": 15,
+      "drops": 2,
+      "ore": true,
+      "block": "mine/stone-with-gold.glb",
+      "pickup": "mine/gold-nugget-small.glb",
+      "decor": "mine/gold-nugget-small.glb"
+    },
+    {
+      "id": "crystal",
+      "name": "Crystal",
+      "color": "#6fe3ff",
+      "durability": 28,
+      "minPower": 5,
+      "value": 50,
+      "drops": 2,
+      "ore": true,
+      "block": "mine/stone-dark.glb",
+      "pickup": "mine/gem-small.glb",
+      "decor": "mine/gem-medium.glb"
+    }
+  ],
+  "tools": [
+    {
+      "id": "shovel",
+      "name": "Shovel",
+      "model": "shovel",
+      "clip": "Digging",
+      "power": 1,
+      "hitInterval": 0.42,
+      "area": 1,
+      "price": 0,
+      "icon": "shovel"
+    },
+    {
+      "id": "pickaxe",
+      "name": "Pickaxe",
+      "model": "pickaxe",
+      "clip": "StandingPICKAXE",
+      "power": 2,
+      "hitInterval": 0.38,
+      "area": 1,
+      "price": 60,
+      "icon": "pickaxe"
+    },
+    {
+      "id": "steelpick",
+      "name": "Steel Pickaxe",
+      "model": "pickaxe",
+      "clip": "StandingPICKAXE",
+      "power": 3,
+      "hitInterval": 0.32,
+      "area": 1,
+      "price": 300,
+      "icon": "pickaxe"
+    },
+    {
+      "id": "drill",
+      "name": "Power Drill",
+      "model": "pickaxe",
+      "clip": "StandingPICKAXE",
+      "power": 4,
+      "hitInterval": 0.26,
+      "area": 3,
+      "price": 900,
+      "icon": "drill"
+    },
+    {
+      "id": "megadrill",
+      "name": "Mega Drill",
+      "model": "pickaxe",
+      "clip": "StandingPICKAXE",
+      "power": 5,
+      "hitInterval": 0.22,
+      "area": 3,
+      "price": 2500,
+      "icon": "drill"
+    },
+    {
+      "id": "magmadrill",
+      "name": "Magma Drill",
+      "model": "pickaxe",
+      "clip": "StandingPICKAXE",
+      "power": 7,
+      "hitInterval": 0.18,
+      "area": 3,
+      "price": 6000,
+      "icon": "drill"
+    }
+  ],
+  "backpack": [
+    {
+      "capacity": 20,
+      "price": 0
+    },
+    {
+      "capacity": 28,
+      "price": 40
+    },
+    {
+      "capacity": 38,
+      "price": 150
+    },
+    {
+      "capacity": 50,
+      "price": 400
+    },
+    {
+      "capacity": 65,
+      "price": 1000
+    },
+    {
+      "capacity": 80,
+      "price": 2500
+    }
+  ],
+  "zones": [
+    {
+      "id": "topsoil",
+      "name": "Topsoil",
+      "from": 0,
+      "fill": "dirt",
+      "patches": [
+        {
+          "id": "gravel",
+          "chance": 0.3
+        }
+      ],
+      "ores": [
+        {
+          "id": "copper",
+          "chance": 0.06
+        }
+      ],
+      "findChance": 0.02
+    },
+    {
+      "id": "stone",
+      "name": "Stone Layer",
+      "from": 18,
+      "fill": "stone",
+      "patches": [
+        {
+          "id": "gravel",
+          "chance": 0.2
+        }
+      ],
+      "ores": [
+        {
+          "id": "copper",
+          "chance": 0.06
+        },
+        {
+          "id": "silver",
+          "chance": 0.05
+        }
+      ],
+      "findChance": 0.012
+    },
+    {
+      "id": "deep",
+      "name": "The Deep",
+      "from": 32,
+      "fill": "deeprock",
+      "patches": [
+        {
+          "id": "stone",
+          "chance": 0.3
+        }
+      ],
+      "ores": [
+        {
+          "id": "silver",
+          "chance": 0.05
+        },
+        {
+          "id": "gold",
+          "chance": 0.05
+        }
+      ],
+      "findChance": 0.008
+    },
+    {
+      "id": "ruins",
+      "name": "Lost Ruins",
+      "from": 46,
+      "fill": "ruins",
+      "patches": [
+        {
+          "id": "deeprock",
+          "chance": 0.35
+        }
+      ],
+      "ores": [
+        {
+          "id": "gold",
+          "chance": 0.06
+        },
+        {
+          "id": "crystal",
+          "chance": 0.04
+        }
+      ],
+      "findChance": 0.012
+    },
+    {
+      "id": "magma",
+      "name": "Magma Core",
+      "from": 62,
+      "fill": "magma",
+      "patches": [
+        {
+          "id": "deeprock",
+          "chance": 0.3
+        }
+      ],
+      "ores": [
+        {
+          "id": "gold",
+          "chance": 0.05
+        },
+        {
+          "id": "crystal",
+          "chance": 0.07
+        }
+      ],
+      "findChance": 0.006
+    }
+  ],
+  "finds": [
+    {
+      "id": "bone",
+      "name": "Old Bone",
+      "model": "mine/bone-a.glb",
+      "size": 0.7,
+      "reward": 20,
+      "zone": 0,
+      "weight": 6,
+      "rarity": "common"
+    },
+    {
+      "id": "comic",
+      "name": "Lost Comic",
+      "model": "mine/comicbook-a.glb",
+      "size": 0.6,
+      "reward": 35,
+      "zone": 0,
+      "weight": 4,
+      "rarity": "common"
+    },
+    {
+      "id": "lantern",
+      "name": "Rusty Lantern",
+      "model": "mine/lantern.glb",
+      "size": 0.65,
+      "reward": 80,
+      "zone": 0,
+      "weight": 2,
+      "rarity": "rare"
+    },
+    {
+      "id": "skull",
+      "name": "Ancient Skull",
+      "model": "mine/skull.glb",
+      "size": 0.6,
+      "reward": 80,
+      "zone": 1,
+      "weight": 6,
+      "rarity": "common"
+    },
+    {
+      "id": "map",
+      "name": "Treasure Map",
+      "model": "mine/map-rolled.glb",
+      "size": 0.7,
+      "reward": 150,
+      "zone": 1,
+      "weight": 3,
+      "rarity": "rare"
+    },
+    {
+      "id": "chest",
+      "name": "Treasure Chest",
+      "model": "mine/chest.glb",
+      "size": 0.75,
+      "reward": 250,
+      "zone": 1,
+      "weight": 2,
+      "rarity": "rare"
+    },
+    {
+      "id": "journal",
+      "name": "Miner's Journal",
+      "model": "mine/journal-closed.glb",
+      "size": 0.6,
+      "reward": 200,
+      "zone": 2,
+      "weight": 6,
+      "rarity": "common"
+    },
+    {
+      "id": "dynamite",
+      "name": "Old Dynamite",
+      "model": "mine/dynamite.glb",
+      "size": 0.7,
+      "reward": 350,
+      "zone": 2,
+      "weight": 3,
+      "rarity": "rare"
+    },
+    {
+      "id": "goldbars",
+      "name": "Lost Gold Bars",
+      "model": "mine/gold-bars.glb",
+      "size": 0.7,
+      "reward": 700,
+      "zone": 2,
+      "weight": 1.5,
+      "rarity": "epic"
+    },
+    {
+      "id": "candle",
+      "name": "Skull Candle",
+      "model": "mine/skull-candle.glb",
+      "size": 0.65,
+      "reward": 500,
+      "zone": 3,
+      "weight": 6,
+      "rarity": "common"
+    },
+    {
+      "id": "anvil",
+      "name": "Ancient Anvil",
+      "model": "mine/anvil.glb",
+      "size": 0.75,
+      "reward": 900,
+      "zone": 3,
+      "weight": 3,
+      "rarity": "rare"
+    },
+    {
+      "id": "idol",
+      "name": "Golden Idol",
+      "model": "mine/idol-a.glb",
+      "size": 0.8,
+      "reward": 2000,
+      "zone": 3,
+      "weight": 1.5,
+      "rarity": "epic"
+    },
+    {
+      "id": "gemchest",
+      "name": "Gem Chest",
+      "model": "mine/gems-chest.glb",
+      "size": 0.8,
+      "reward": 2500,
+      "zone": 4,
+      "weight": 5,
+      "rarity": "rare"
+    },
+    {
+      "id": "fireidol",
+      "name": "Fire Idol",
+      "model": "mine/idol-b.glb",
+      "size": 0.8,
+      "reward": 4000,
+      "zone": 4,
+      "weight": 2,
+      "rarity": "epic"
+    },
+    {
+      "id": "vault",
+      "name": "The Lost Vault",
+      "model": "mine/vault.glb",
+      "size": 0.95,
+      "reward": 12000,
+      "zone": 4,
+      "weight": 0.7,
+      "rarity": "legendary"
+    }
+  ],
+  "collectionReward": {
+    "money": 20000,
+    "hat": "Crown"
+  },
+  "wardrobe": {
+    "colors": [
+      {
+        "id": "#42a5f5",
+        "price": 0
+      },
+      {
+        "id": "#e0a03c",
+        "price": 125
+      },
+      {
+        "id": "#ab47bc",
+        "price": 150
+      },
+      {
+        "id": "#ff5252",
+        "price": 175
+      },
+      {
+        "id": "#66bb6a",
+        "price": 200
+      },
+      {
+        "id": "#ffca28",
+        "price": 225
+      },
+      {
+        "id": "#26c6da",
+        "price": 250
+      },
+      {
+        "id": "#ec407a",
+        "price": 275
+      },
+      {
+        "id": "#7e57c2",
+        "price": 300
+      },
+      {
+        "id": "#8d6e63",
+        "price": 325
+      },
+      {
+        "id": "#37474f",
+        "price": 350
+      },
+      {
+        "id": "#ffffff",
+        "price": 375
+      }
+    ],
+    "faces": [
+      {
+        "id": "skins/face-star-1.webp",
+        "name": "Star",
+        "price": 0
+      },
+      {
+        "id": "skins/cool.webp",
+        "name": "Cool",
+        "price": 80
+      },
+      {
+        "id": "skins/face-smirk-1.webp",
+        "name": "Smirk",
+        "price": 80
+      },
+      {
+        "id": "skins/face-sunglasses-2.webp",
+        "name": "Shades",
+        "price": 80
+      },
+      {
+        "id": "skins/face-brave-1.webp",
+        "name": "Brave",
+        "price": 140
+      },
+      {
+        "id": "skins/face-smile-1.webp",
+        "name": "Smile",
+        "price": 140
+      },
+      {
+        "id": "skins/face-1.webp",
+        "name": "Goofy",
+        "price": 140
+      },
+      {
+        "id": "skins/face-laughing-1.webp",
+        "name": "Laugh",
+        "price": 200
+      },
+      {
+        "id": "skins/face-money-1.webp",
+        "name": "Money",
+        "price": 200
+      },
+      {
+        "id": "skins/face-mustache-1.webp",
+        "name": "Stache",
+        "price": 200
+      },
+      {
+        "id": "skins/face-glasses-1.webp",
+        "name": "Nerd",
+        "price": 260
+      },
+      {
+        "id": "skins/face-hearts-1.webp",
+        "name": "Love",
+        "price": 260
+      },
+      {
+        "id": "skins/face-smile-3.webp",
+        "name": "Joy",
+        "price": 260
+      },
+      {
+        "id": "skins/face-smiling-2.webp",
+        "name": "Bliss",
+        "price": 320
+      },
+      {
+        "id": "skins/face-scary-1.webp",
+        "name": "Shock",
+        "price": 320
+      },
+      {
+        "id": "skins/face-scary-2.webp",
+        "name": "Panic",
+        "price": 320
+      },
+      {
+        "id": "skins/face-crying-1.webp",
+        "name": "Teary",
+        "price": 380
+      },
+      {
+        "id": "skins/face-crying-2.webp",
+        "name": "Sob",
+        "price": 380
+      },
+      {
+        "id": "skins/face-dizzy-1.webp",
+        "name": "Dizzy",
+        "price": 380
+      },
+      {
+        "id": "skins/face-dizzy-2.webp",
+        "name": "Loopy",
+        "price": 440
+      },
+      {
+        "id": "skins/face-fire-1.webp",
+        "name": "Fired Up",
+        "price": 440
+      },
+      {
+        "id": "skins/ninja.webp",
+        "name": "Ninja",
+        "price": 440
+      },
+      {
+        "id": "skins/pirate.webp",
+        "name": "Pirate",
+        "price": 500
+      },
+      {
+        "id": "skins/cat.webp",
+        "name": "Cat",
+        "price": 500
+      },
+      {
+        "id": "skins/dog.webp",
+        "name": "Dog",
+        "price": 500
+      },
+      {
+        "id": "skins/panda.webp",
+        "name": "Panda",
+        "price": 560
+      },
+      {
+        "id": "skins/clown.webp",
+        "name": "Clown",
+        "price": 560
+      },
+      {
+        "id": "skins/devil.webp",
+        "name": "Devil",
+        "price": 560
+      }
+    ],
+    "hats": [
+      {
+        "id": "MiningHelmet",
+        "name": "Mining Helmet",
+        "price": 0
+      },
+      {
+        "id": "HardHat",
+        "name": "Builder",
+        "price": 150
+      },
+      {
+        "id": "CashierHat",
+        "name": "Cashier",
+        "price": 200
+      },
+      {
+        "id": "ChefHat",
+        "name": "Chef",
+        "price": 250
+      },
+      {
+        "id": "GreenHat",
+        "name": "Elf",
+        "price": 300
+      },
+      {
+        "id": "MexicanHat",
+        "name": "Sombrero",
+        "price": 400
+      },
+      {
+        "id": "AmericanHat",
+        "name": "Patriot",
+        "price": 400
+      },
+      {
+        "id": "CowboyHat",
+        "name": "Cowboy",
+        "price": 600
+      },
+      {
+        "id": "PoliceHat",
+        "name": "Police",
+        "price": 600
+      },
+      {
+        "id": "FiremanHat",
+        "name": "Fireman",
+        "price": 800
+      },
+      {
+        "id": "SantaHat",
+        "name": "Santa",
+        "price": 800
+      },
+      {
+        "id": "PirateHat",
+        "name": "Pirate",
+        "price": 1200
+      },
+      {
+        "id": "JesterHat",
+        "name": "Jester",
+        "price": 1200
+      },
+      {
+        "id": "BoxingHat",
+        "name": "Boxer",
+        "price": 1500
+      },
+      {
+        "id": "MillitaryHat",
+        "name": "General",
+        "price": 2000
+      },
+      {
+        "id": "VikingHat",
+        "name": "Viking",
+        "price": 3000
+      },
+      {
+        "id": "WarriorHat",
+        "name": "Warrior",
+        "price": 4000
+      },
+      {
+        "id": "ArmorHat",
+        "name": "Knight",
+        "price": 6000
+      },
+      {
+        "id": "Crown",
+        "name": "Crown",
+        "price": 0,
+        "unlock": "collection"
+      }
+    ]
+  }
+}

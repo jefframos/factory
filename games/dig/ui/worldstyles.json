@@ -1,0 +1,180 @@
+{
+  "version": 1,
+  "floor": {
+    "floorStyle1": {
+      "name": "Blue tiles",
+      "colorA": "#9bbddd",
+      "colorB": "#95b7d7",
+      "checkerScale": 1.5
+    },
+    "floorStyle2": {
+      "name": "Mint checker",
+      "colorA": "#c0ead7",
+      "colorB": "#9bd6b9",
+      "checkerScale": 1.5
+    },
+    "floorStyle3": {
+      "name": "Museum marble",
+      "colorA": "#f0e0cb",
+      "colorB": "#dbc7af",
+      "checkerScale": 1.5
+    },
+    "floorStyle4": {
+      "name": "Casino night",
+      "colorA": "#b29bdd",
+      "colorB": "#9a80ca",
+      "checkerScale": 1.5
+    },
+    "floorStyle5": {
+      "name": "Fortress stone",
+      "colorA": "#bdc6cc",
+      "colorB": "#a6b3bc",
+      "checkerScale": 1.5
+    },
+    "floorStyle6": {
+      "name": "Lab tile",
+      "colorA": "#b5e6df",
+      "colorB": "#91d0c6",
+      "checkerScale": 1.5
+    },
+    "floorStyle7": {
+      "name": "Station deck",
+      "colorA": "#98a9bc",
+      "colorB": "#8094aa",
+      "checkerScale": 1.5
+    }
+  },
+  "wall": {
+    "wallStyle1": {
+      "name": "Teal bank",
+      "bottomColor": "#4f8e92",
+      "topColor": "#e8d8b5",
+      "bottomHeight": 1.4,
+      "height": 6,
+      "thickness": 0.35
+    },
+    "wallStyle2": {
+      "name": "Mint vault",
+      "bottomColor": "#5e9385",
+      "topColor": "#e6eddb",
+      "bottomHeight": 1.4,
+      "height": 6,
+      "thickness": 0.35
+    },
+    "wallStyle3": {
+      "name": "Museum",
+      "bottomColor": "#99785e",
+      "topColor": "#eee0ca",
+      "bottomHeight": 1.4,
+      "height": 6,
+      "thickness": 0.35
+    },
+    "wallStyle4": {
+      "name": "Casino",
+      "bottomColor": "#7d658c",
+      "topColor": "#e3d1a9",
+      "bottomHeight": 1.4,
+      "height": 6,
+      "thickness": 0.35
+    },
+    "wallStyle5": {
+      "name": "Fortress",
+      "bottomColor": "#657786",
+      "topColor": "#cbb9ae",
+      "bottomHeight": 1.4,
+      "height": 6,
+      "thickness": 0.4
+    },
+    "wallStyle6": {
+      "name": "Neon lab",
+      "bottomColor": "#568c8c",
+      "topColor": "#b4dfcf",
+      "bottomHeight": 1.4,
+      "height": 6,
+      "thickness": 0.4
+    },
+    "wallStyle7": {
+      "name": "Station",
+      "bottomColor": "#56667f",
+      "topColor": "#c0b6dc",
+      "bottomHeight": 1.4,
+      "height": 6,
+      "thickness": 0.4
+    }
+  },
+  "door": {
+    "doorStyle1": {
+      "name": "Plain wood",
+      "color": "#493023",
+      "opacity": 1,
+      "model": "heist/doors/wooden-door.glb"
+    }
+  },
+  "window": {
+    "windowStyle1": {
+      "name": "Glass",
+      "color": "#8bd9f4",
+      "opacity": 0.34
+    }
+  },
+  "ground": {
+    "groundStyle1": {
+      "name": "Grass",
+      "color": "#65af50"
+    },
+    "groundStyle2": {
+      "name": "Mint lawn",
+      "color": "#69bb83"
+    },
+    "groundStyle3": {
+      "name": "Desert",
+      "color": "#dfb96d"
+    },
+    "groundStyle4": {
+      "name": "Night grass",
+      "color": "#37866e"
+    },
+    "groundStyle5": {
+      "name": "Snow",
+      "color": "#dce5e8"
+    },
+    "groundStyle6": {
+      "name": "Toxic green",
+      "color": "#53b89a"
+    },
+    "groundStyle7": {
+      "name": "Deep space",
+      "color": "#455c91"
+    }
+  },
+  "path": {
+    "pathStyle1": {
+      "name": "Dirt road",
+      "color": "#9a744d"
+    },
+    "pathStyle2": {
+      "name": "Pale road",
+      "color": "#c9b79a"
+    },
+    "pathStyle3": {
+      "name": "Sand road",
+      "color": "#b98d5a"
+    },
+    "pathStyle4": {
+      "name": "Asphalt",
+      "color": "#4b4f5c"
+    },
+    "pathStyle5": {
+      "name": "Gravel",
+      "color": "#8d8f94"
+    },
+    "pathStyle6": {
+      "name": "Steel",
+      "color": "#9fb4b8"
+    },
+    "pathStyle7": {
+      "name": "Plating",
+      "color": "#59607a"
+    }
+  }
+}

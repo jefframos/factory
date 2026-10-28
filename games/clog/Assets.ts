@@ -70,7 +70,8 @@ export default class Assets {
      */
     static readonly AmbientSound = {
         Music: {
-            soundId: 'Pong-the-Atmosphere-Dan_Lebo_Lebowitz-Tone-Seeker',
+            // Original procedurally-synthesized loop (no third-party music) — safe for YouTube Playables.
+            soundId: 'clog-theme',
             layer: 'music',
             masterVolume: 0.035,
             duckedVolume: 0.015,

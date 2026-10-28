@@ -17,6 +17,7 @@ import Drone from '../entities/Drone';
 import { LevelSight } from '../utils/LevelSight';
 import { NavGrid } from '../utils/NavGrid';
 import { GameAudio } from '../audio/GameAudio';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 import { COIN, CollectibleDefinition } from '../data/CollectibleSettings';
 import { LevelCatalog } from '../data/LevelCatalog';
 import { UiKit } from '../ui/UiKit';
@@ -282,6 +283,8 @@ export default class PathLevelScene extends ThreeScene {
     private bustChaseRoute: { x: number; z: number }[] = [];
     private readonly bustChasePoint = new THREE.Vector3();
     private sadAnimationLoad?: Promise<void>;
+    /** Set while an ad break between levels plays, so a second tap can't start another. */
+    private adBreakRunning = false;
     private bustTimer = 0;
     private bustFocus = false;
     private readonly bustFocusPoint = new THREE.Vector3();
@@ -327,6 +330,7 @@ export default class PathLevelScene extends ThreeScene {
         this.inBackground = false;
         this.guardTargets.clear();
         this.level = LevelCatalog.current();
+        GameAnalytics.levelStart(this.level);
         this.route = [];
         this.routeBlocked = false;
         this.runMoney = 0;
@@ -1216,6 +1220,8 @@ export default class PathLevelScene extends ThreeScene {
         if (this.isEnded() || this.isDebugTarget(event.target) || !this.pickFloor(event.clientX, event.clientY)) {
             return;
         }
+        // Touching the level to move is gameplay; it only stops for ads and the main menu.
+        this.startGameplay();
         // Pick the closest idle member. The camera only follows on release so it never moves mid-draw.
         let member: SquadMember | undefined;
         let best = 1.3;
@@ -1588,6 +1594,29 @@ export default class PathLevelScene extends ThreeScene {
     }
 
     /** Tutorial levels hand out the end bonus for free; rewarded videos start once the player graduates. */
+    /** Platform gameplay event (Poki etc.): runs from the player's first touch until an ad or the main menu. The platform ignores repeats. */
+    private startGameplay(): void {
+        void PlatformHandler.instance.platform?.gameplayStart()
+            .catch((error) => console.warn('[PathLevelScene] gameplayStart failed', error));
+    }
+
+    /** Between levels (next level, retry): gameplay stops, the platform's ad break plays, then `next` runs. */
+    private async adBreakThen(next: () => void): Promise<void> {
+        if (this.adBreakRunning) {
+            return;
+        }
+        this.adBreakRunning = true;
+        try {
+            await PlatformHandler.instance.platform?.gameplayStop();
+            await PlatformHandler.instance.platform?.showCommercialBreak();
+        } catch (error) {
+            console.warn('[PathLevelScene] Ad break failed', error);
+        }
+        if (!this.destroyed) {
+            next();
+        }
+    }
+
     private isTutorialLevel(): boolean {
         return Boolean(LevelCatalog.locate(this.level)?.world.tutorial);
     }
@@ -1611,9 +1640,12 @@ export default class PathLevelScene extends ThreeScene {
     /** Outside the tutorial the bonus is only paid after a rewarded video; a failed/closed ad leaves the offer up so the player can retry or skip. */
     private async claimBonus(offer: BonusOffer): Promise<void> {
         this.bonusMeter?.setBusy(true);
+        GameAnalytics.bonusClaimPressed(offer.multiplier);
         let watched = true;
         if (PlatformHandler.ENABLE_VIDEO_ADS && !this.isTutorialLevel()) {
             try {
+                // Ads are never gameplay; the player's next touch in a level starts it again.
+                await PlatformHandler.instance.platform?.gameplayStop();
                 watched = (await PlatformHandler.instance.platform.showRewardedVideo()) !== false;
             } catch (error) {
                 console.warn('[PathLevelScene] Rewarded video failed', error);
@@ -1628,6 +1660,7 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
         GameState.addMoney(offer.bonus);
+        GameAnalytics.bonusPaid(offer.multiplier);
         this.closeBonusMeter(() => this.playBonusPayout(offer.bonus, () => this.showCompletePopup(offer)));
     }
 
@@ -1800,6 +1833,7 @@ export default class PathLevelScene extends ThreeScene {
             loot: this.lootCollected >= this.level.loot.length,
             unseen: !this.spotted,
         });
+        GameAnalytics.levelComplete(this.level, result.stars);
         this.moneyHud.setResourceCount(GameState.getMoney());
         const modal = new PIXI.Container();
         const panelHeight = 380;
@@ -1903,7 +1937,7 @@ export default class PathLevelScene extends ThreeScene {
                 return;
             }
             LevelCatalog.advance(this.level);
-            this.onRestart.dispatch();
+            void this.adBreakThen(() => this.onRestart.dispatch());
         });
 
         modal.addChild(panel, ribbon, title, starRow, totalRow, caption, breakdown, hint, button);
@@ -2572,6 +2606,7 @@ export default class PathLevelScene extends ThreeScene {
             return;
         }
         this.state = 'busted';
+        GameAnalytics.levelFail(this.level, spotter instanceof SecurityCamera ? 'camera' : spotter instanceof Drone ? 'drone' : spotter instanceof Trap ? 'trap' : 'guard');
         GameAudio.play('busted');
         for (const other of this.members) {
             if (other !== this.focused && other.state === 'following') {
@@ -2630,7 +2665,7 @@ export default class PathLevelScene extends ThreeScene {
         button.position.set(0, 50);
         button.eventMode = 'static';
         button.cursor = 'pointer';
-        button.on('pointertap', () => this.onRestart.dispatch());
+        button.on('pointertap', () => void this.adBreakThen(() => this.onRestart.dispatch()));
 
         modal.addChild(panel, ribbon, title, message, button);
         this.panelExtents.set(modal, 135);

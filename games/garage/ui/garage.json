@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "$comment": "Garage design data, edited in the garage editor (npm run level). Positions are world units; rotationY in degrees; repairTime in seconds.",
+  "bays": [
+    {
+      "id": "bay-1",
+      "x": -7,
+      "z": -4,
+      "rotationY": 0
+    },
+    {
+      "id": "bay-2",
+      "x": 0,
+      "z": -4,
+      "rotationY": 0
+    },
+    {
+      "id": "bay-3",
+      "x": 7,
+      "z": -4,
+      "rotationY": 0
+    }
+  ],
+  "customerCars": [
+    {
+      "id": "sedan",
+      "model": "cars/sedan.glb",
+      "repairReward": 20,
+      "repairTime": 4
+    },
+    {
+      "id": "hatchback",
+      "model": "cars/hatchback-sports.glb",
+      "repairReward": 30,
+      "repairTime": 5
+    },
+    {
+      "id": "suv",
+      "model": "cars/suv.glb",
+      "repairReward": 40,
+      "repairTime": 6
+    },
+    {
+      "id": "taxi",
+      "model": "cars/taxi.glb",
+      "repairReward": 35,
+      "repairTime": 5
+    },
+    {
+      "id": "van",
+      "model": "cars/van.glb",
+      "repairReward": 45,
+      "repairTime": 7
+    },
+    {
+      "id": "police",
+      "model": "cars/police.glb",
+      "repairReward": 60,
+      "repairTime": 8
+    }
+  ],
+  "playerCar": {
+    "model": "cars/race.glb",
+    "x": 0,
+    "z": 6,
+    "rotationY": 180
+  },
+  "upgrades": [
+    {
+      "id": "engine",
+      "name": "Engine",
+      "prices": [
+        100,
+        250,
+        600,
+        1200
+      ]
+    },
+    {
+      "id": "tires",
+      "name": "Tires",
+      "prices": [
+        80,
+        200,
+        450,
+        900
+      ]
+    },
+    {
+      "id": "nitro",
+      "name": "Nitro",
+      "prices": [
+        150,
+        350,
+        800,
+        1600
+      ]
+    }
+  ],
+  "races": [
+    {
+      "id": "race-1",
+      "name": "Street Sprint",
+      "opponents": 1,
+      "trophies": 1
+    }
+  ]
+}

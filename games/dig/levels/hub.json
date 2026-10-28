@@ -1,0 +1,97 @@
+{
+  "id": "hub",
+  "name": "Miner Hub",
+  "grid": {
+    "cell": 0.5
+  },
+  "floor": {
+    "width": 14,
+    "depth": 14,
+    "rects": [
+      {
+        "x": 0,
+        "z": 0,
+        "width": 14,
+        "depth": 14
+      }
+    ]
+  },
+  "start": {
+    "x": 0,
+    "z": 2
+  },
+  "waypoints": [],
+  "walls": [
+    {
+      "closed": true,
+      "points": [
+        {
+          "x": -7,
+          "z": -7
+        },
+        {
+          "x": 7,
+          "z": -7
+        },
+        {
+          "x": 7,
+          "z": 7
+        },
+        {
+          "x": -7,
+          "z": 7
+        }
+      ],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": -2.2,
+          "maxX": 2.2,
+          "minZ": -7.3,
+          "maxZ": -6.7
+        },
+        {
+          "kind": "gap",
+          "minX": -2.2,
+          "maxX": 2.2,
+          "minZ": 6.7,
+          "maxZ": 7.3
+        },
+        {
+          "kind": "gap",
+          "minX": -7.3,
+          "maxX": -6.7,
+          "minZ": -2.2,
+          "maxZ": 2.2
+        },
+        {
+          "kind": "gap",
+          "minX": 6.7,
+          "maxX": 7.3,
+          "minZ": -2.2,
+          "maxZ": 2.2
+        }
+      ]
+    }
+  ],
+  "props": [],
+  "loot": [],
+  "guards": [],
+  "stations": [
+    {
+      "kind": "atm",
+      "x": -4,
+      "z": -4
+    },
+    {
+      "kind": "collection",
+      "x": 4,
+      "z": -4
+    },
+    {
+      "kind": "wardrobe",
+      "x": -4,
+      "z": 3.5
+    }
+  ]
+}

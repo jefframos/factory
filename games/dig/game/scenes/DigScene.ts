@@ -1,0 +1,327 @@
+// DigScene.ts
+//
+// Dig & Discover's main scene: the miner's hub room (levels/hub.json) in the middle of a block-voxel
+// mine (VoxelTerrain). Walking out of a doorway and pushing into the rock digs automatically
+// (MiningController); resources fly into the backpack. The hub's stations: the ATM turns them into money
+// and sells better tools and bigger backpacks, the totem shows the artifact collection, the closet is
+// the wardrobe; each gets a bouncing "!" when there's something new to check there. Progress (money, upgrades, the dug tunnels) is
+// saved (DigProgress). The mine gets harder in zones further out (VoxelTerrain); reaching a new one and
+// digging up finds are announced here.
+//
+// Debug: a free camera (Dig panel), and with ?dev=1 a MAP button opening the 2D mine map (DigMap).
+//
+// Camera: pizza's follow camera — a fixed yaw/pitch orbit around a smoothed follow point, camera and
+// look-at target always exactly `offset` apart so the view never rotates on its own.
+
+import * as THREE from 'three';
+import { Game } from 'core/Game';
+import { ThreeScene } from 'core/scene/ThreeScene';
+import { DebugOverlay } from 'core/debug/DebugOverlay';
+import World from '../ecs/World';
+import RigidBody from '../physics/RigidBody';
+import { Layers } from '../physics/PhysicsConstants';
+import { BendService } from '../services/BendService';
+import DigPlayer from '../player/DigPlayer';
+import { VoxelTerrain } from '../world/VoxelTerrain';
+import { HubRoom, STATION_RADIUS } from '../world/HubRoom';
+import type { StationKind } from '../data/HubData';
+import { HUB } from '../data/HubData';
+import { DIG, MaterialDef } from '../data/DigConfig';
+import { DigProgress } from '../data/DigProgress';
+import { DigEffects } from '../vfx/DigEffects';
+import { MiningController } from '../mining/MiningController';
+import { DigHud } from '../ui/DigHud';
+import { DigMap } from '../ui/DigMap';
+import DebugFlyCameraController from '../debug/DebugFlyCameraController';
+import SetupThree from 'core/scene/SetupThree';
+import * as PIXI from 'pixi.js';
+
+const FLOOR_HALF_THICKNESS = 0.5;
+/** Selling: at most this many items are tossed onto the pad, one every SELL_TOSS_INTERVAL, within SELL_MAX_SEC. */
+const SELL_MAX_TOSSES = 24;
+const SELL_TOSS_INTERVAL = 0.08;
+const SELL_MAX_SEC = 1.6;
+/** Selling from the HUD button: items fly up to this height above the miner and vanish. */
+const SELL_ANYWHERE_HEIGHT = 3.2;
+
+/** Top-down, slightly angled (GDD §4). yaw 0 = camera south of the player looking north (-Z). */
+export const DIG_CAMERA = {
+    yawDeg: 0,
+    pitchDeg: 58,
+    distance: 13,
+    followSpeed: 8,
+};
+
+/** Design aspect the camera distance was tuned for; taller screens pull back so the same area stays framed. */
+const REFERENCE_ASPECT = Game.DESIGN_WIDTH / Game.DESIGN_HEIGHT;
+
+function cameraOffset(camera: THREE.PerspectiveCamera): THREE.Vector3 {
+    const yaw = THREE.MathUtils.degToRad(DIG_CAMERA.yawDeg);
+    const pitch = THREE.MathUtils.degToRad(DIG_CAMERA.pitchDeg);
+    const distance = DIG_CAMERA.distance * Math.max(1, REFERENCE_ASPECT / camera.aspect);
+    const horizontal = distance * Math.cos(pitch);
+    return new THREE.Vector3(horizontal * Math.sin(yaw), distance * Math.sin(pitch), horizontal * Math.cos(yaw));
+}
+
+export default class DigScene extends ThreeScene {
+    private readonly world = new World();
+    private player!: DigPlayer;
+    private terrain!: VoxelTerrain;
+    private hub!: HubRoom;
+    private effects!: DigEffects;
+    private mining!: MiningController;
+    private hud!: DigHud;
+    private map?: DigMap;
+    private mapButton?: PIXI.Container;
+    private flyCamera!: DebugFlyCameraController;
+    private currentZone = 0;
+    private readonly followTarget = new THREE.Vector3();
+    private readonly pickupPoint = new THREE.Vector3();
+
+    public constructor(game: Game) {
+        super(game);
+    }
+
+    public build(): void {
+        this.buildLightsAndGround();
+        this.terrain = new VoxelTerrain(this.threeScene, DigProgress.savedDug);
+        DigProgress.setDugProvider(() => this.terrain.saveDug());
+        this.hub = new HubRoom(this.threeScene, this.world);
+
+        this.player = this.world.add(new DigPlayer(this, this.threeScene));
+        this.player.transform.position.set(HUB.start.x, 0, HUB.start.z);
+        void this.player.loadCharacter().catch((error) => console.error('[DigScene] character failed to load', error));
+
+        this.effects = new DigEffects(this.threeScene, DIG.terrain.blockHeight, () => this.player.pickupPoint(this.pickupPoint));
+        this.hud = new DigHud(() => this.mining.toolChanged(), () => this.sellAnywhere(), () => this.player.applyLook(DigProgress.look));
+        this.game.uiLayer.addChild(this.hud);
+        this.mining = new MiningController(this.terrain, this.effects, this.player, (text) => this.hud.say(text, 0xffd9a8), (find, result) => {
+            this.hud.findBanner.show(find, result);
+            this.effects.floatText(this.player.pickupPoint(new THREE.Vector3()).setY(2.2), `+$${find.reward}`, '#ffe27a');
+        });
+        this.flyCamera = new DebugFlyCameraController(this.threeCamera, SetupThree.renderer.domElement);
+        if (Game.debugParams.dev) {
+            this.buildDevMap();
+        }
+
+        this.followTarget.copy(this.player.transform.position);
+        this.placeCamera();
+        this.buildDebug();
+    }
+
+    /** Mine floor with a collider under the whole map, and warm, readable light (GDD §16: not too dark). */
+    private buildLightsAndGround(): void {
+        this.threeScene.background = new THREE.Color(0x1f1611);
+        this.threeScene.add(new THREE.HemisphereLight(0xfff1dc, 0x4a3426, 1.5));
+        const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+        sun.position.set(6, 14, 8);
+        this.threeScene.add(sun);
+
+        const size = DIG.terrain.radius * 2 + 4;
+        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x5a3f2c, roughness: 1 });
+        BendService.applyBend(floorMaterial);
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(size, size, 48, 48), floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -0.01;
+        this.threeScene.add(floor);
+
+        const ground = this.world.spawn();
+        ground.addComponent(new RigidBody({
+            halfExtents: new THREE.Vector3(size / 2, FLOOR_HALF_THICKNESS, size / 2),
+            centerOffset: new THREE.Vector3(0, -FLOOR_HALF_THICKNESS, 0),
+            isStatic: true,
+            layer: Layers.Environment,
+        }));
+    }
+
+    /** ?dev=1: a MAP button (top right) opening the whole-mine 2D map. */
+    private buildDevMap(): void {
+        this.map = new DigMap(this.terrain, () => this.player.transform.position, (x, z) => this.player.transform.position.set(x, 0, z));
+        const button = new PIXI.Container();
+        button.addChild(new PIXI.Graphics().lineStyle(3, 0xffffff).beginFill(0x2a3442).drawRoundedRect(-44, -22, 88, 44, 12).endFill());
+        const label = new PIXI.Text('MAP', { fontFamily: 'Arial', fontWeight: 'bold', fontSize: 22, fill: 0xffffff });
+        label.anchor.set(0.5);
+        button.addChild(label);
+        button.eventMode = 'static';
+        button.cursor = 'pointer';
+        button.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
+            event.stopPropagation();
+            this.map?.toggle();
+        });
+        this.mapButton = button;
+        this.game.uiLayer.addChild(button, this.map);
+        this.resize();
+    }
+
+    /** Debug free-fly camera on/off; the miner stands still (and stops digging) while it's on. */
+    private setFreeCamera(enabled: boolean): void {
+        this.flyCamera.setEnabled(enabled);
+        this.player.movementController.enabled = !enabled;
+        if (!enabled) {
+            this.placeCamera();
+        }
+    }
+
+    /** Announces the zone the miner walks into: loudly the first time, quietly after that. */
+    private updateZone(): void {
+        const position = this.player.transform.position;
+        const zone = this.terrain.zoneIndexAt(position.x, position.z);
+        if (zone === this.currentZone) return;
+        this.currentZone = zone;
+        const name = DIG.zones[zone].name.toUpperCase();
+        if (DigProgress.reachZone(zone)) {
+            this.hud.say(`NEW ZONE: ${name}!`, 0x8fe3ff);
+        } else {
+            this.hud.say(name, 0xd8e6f0);
+        }
+    }
+
+    private buildDebug(): void {
+        const panel = DebugOverlay.instance.panel('Dig', { id: 'dig.progress' });
+        panel.monitor('Money', () => DigProgress.money);
+        panel.monitor('Backpack', () => `${DigProgress.backpackCount}/${DigProgress.capacity}`);
+        panel.monitor('Tool', () => DigProgress.tool.name);
+        panel.monitor('Zone', () => DIG.zones[this.currentZone].name);
+        panel.button('FREE CAMERA (WASD, right-drag, wheel)', () => this.setFreeCamera(!this.flyCamera.isEnabled()));
+        if (this.map) {
+            panel.button('MINE MAP', () => this.map?.toggle());
+        }
+        panel.button('ADD $100', () => DigProgress.addMoney(100));
+        panel.button('ADD $5000', () => DigProgress.addMoney(5000));
+        panel.button('RESET SAVE', () => {
+            if (window.confirm('Reset all Dig & Discover progress (money, upgrades, dug tunnels)?')) {
+                DigProgress.reset();
+            }
+        });
+    }
+
+    public update(delta: number): void {
+        this.world.update(delta);
+        this.world.lateUpdate(delta);
+        this.terrain.update();
+        this.effects.update(delta);
+        this.hub.update(delta);
+        this.flyCamera.update(delta);
+        this.map?.update(delta);
+        BendService.updateTime(delta);
+        super.update(delta);
+    }
+
+    /** Physics, mining and camera on the same clock, so the character and camera never jitter against each other. */
+    public fixedUpdate(delta: number): void {
+        this.world.fixedUpdate(delta);
+        this.mining.fixedUpdate(delta);
+        this.updateStations();
+        this.updateZone();
+
+        const position = this.player.transform.position;
+        const followT = 1 - Math.exp(-DIG_CAMERA.followSpeed * delta);
+        this.followTarget.lerp(position, followT);
+        if (!this.flyCamera.isEnabled()) {
+            this.placeCamera();
+        }
+        BendService.updateOrigin(this.followTarget);
+        BendService.updateCameraPosition(this.threeCamera.position);
+        BendService.updateOcclusionTarget(position);
+    }
+
+    /**
+     * Standing on a station's pad uses it: the ATM sells the backpack (the items fly into its slot) and
+     * opens the upgrades; the totem and the closet open their panels. Also keeps the "!" marks current.
+     */
+    private updateStations(): void {
+        const position = this.player.transform.position;
+        let open: StationKind | null = null;
+        for (const station of HUB.stations) {
+            if (Math.hypot(position.x - station.x, position.z - station.z) > STATION_RADIUS) continue;
+            open = station.kind;
+            if (station.kind === 'atm' && DigProgress.backpackCount > 0) {
+                this.sell(this.hub.stationTarget('atm') ?? new THREE.Vector3(station.x, 1, station.z), true);
+            }
+        }
+        this.hud.setStationPanel(open);
+        this.hub.setAttention('atm', open !== 'atm' && DigProgress.canAffordUpgrade);
+        this.hub.setAttention('collection', DigProgress.unseenFinds.length > 0);
+        this.hub.setAttention('wardrobe', open !== 'wardrobe' && DigProgress.wardrobeHasNews);
+    }
+
+    /** The HUD's SELL button: sells right where the miner stands, the items flying up and away (the ATM does it in the hub). */
+    private sellAnywhere(): void {
+        if (DigProgress.backpackCount === 0) return;
+        this.sell(this.player.transform.position.clone().add(new THREE.Vector3(0, SELL_ANYWHERE_HEIGHT, -0.6)), false);
+    }
+
+    /**
+     * Sells the backpack at once (so the save is right), then plays it out: the items stream out of the
+     * miner to `target` (the ATM's slot, or up into the air for the SELL button), each arrival pops a
+     * "+$" label (and flashes the ATM's pad) and hands its money and slot over in the HUD. Big
+     * backpacks toss at most SELL_MAX_TOSSES items, each carrying a share.
+     */
+    private sell(target: THREE.Vector3, atPad: boolean): void {
+        const items: MaterialDef[] = [];
+        for (const [id, count] of Object.entries(DigProgress.backpack)) {
+            const material = DIG.materials.find((m) => m.id === id);
+            for (let i = 0; material && i < count; i++) items.push(material);
+        }
+        // Cheapest first, so the sale builds up to the best finds.
+        items.sort((a, b) => a.value - b.value);
+        const total = items.length;
+        const earned = DigProgress.sellAll();
+        const tosses = Math.min(total, SELL_MAX_TOSSES);
+        const interval = Math.min(SELL_TOSS_INTERVAL, SELL_MAX_SEC / tosses);
+        this.hud.holdSale(earned, total);
+        this.hud.saySold(earned, interval * tosses + 0.5);
+        const pad = target;
+        let paid = 0;
+        let handed = 0;
+        for (let k = 0; k < tosses; k++) {
+            // Toss k carries items [first, last) of the sorted backpack.
+            const first = Math.floor((k * total) / tosses);
+            const last = Math.floor(((k + 1) * total) / tosses);
+            const value = items.slice(first, last).reduce((sum, m) => sum + m.value, 0);
+            const material = items[last - 1];
+            const from = this.player.pickupPoint(new THREE.Vector3());
+            this.effects.toss(from, pad, new THREE.Color(material.color), k * interval, () => {
+                paid += value;
+                handed += last - first;
+                this.hud.releaseSale(value, last - first);
+                if (atPad) this.hub.pulse('atm');
+                // Scattered around the target so a quick run of labels doesn't stack into one blob.
+                const label = pad.clone().add(new THREE.Vector3((Math.random() - 0.5) * 3.2, 0.5 + Math.random() * 1.6, (Math.random() - 0.5) * 1.2));
+                this.effects.floatText(label, `+$${value}`);
+                if (k === tosses - 1) {
+                    // Rounding leftovers, so the HUD always ends on the real numbers.
+                    this.hud.releaseSale(earned - paid, total - handed);
+                }
+            }, this.terrain.pickupModel(material));
+        }
+    }
+
+    private placeCamera(): void {
+        this.threeCamera.position.copy(this.followTarget).add(cameraOffset(this.threeCamera));
+        this.threeCamera.lookAt(this.followTarget);
+    }
+
+    public resize(): void {
+        this.hud?.reposition();
+        this.map?.reposition();
+        const screen = Game.overlayScreenData;
+        if (this.mapButton && screen) {
+            this.mapButton.position.set(screen.topLeft.x + screen.width - 64, screen.topLeft.y + 44);
+        }
+    }
+
+    public destroy(): void {
+        DigProgress.saveNow();
+        DebugOverlay.instance.removePanel('dig.progress');
+        this.hud?.destroy();
+        this.flyCamera?.destroy();
+        this.map?.destroy({ children: true });
+        this.mapButton?.destroy({ children: true });
+        this.effects?.destroy();
+        this.terrain?.destroy();
+        this.hub?.destroy();
+        this.player?.destroy();
+        super.destroy();
+    }
+}

@@ -13,18 +13,10 @@
         },
         {
           "alias": [
-            "Pong-the-Atmosphere-Dan_Lebo_Lebowitz-Tone-Seeker.mp3"
+            "clog-theme.wav"
           ],
           "src": [
-            "Pong-the-Atmosphere-Dan_Lebo_Lebowitz-Tone-Seeker.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Tap.wav"
-          ],
-          "src": [
-            "Tap.mp3"
+            "clog-theme.mp3"
           ]
         },
         {
@@ -145,6 +137,14 @@
           ],
           "src": [
             "phaserUp2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Tap.wav"
+          ],
+          "src": [
+            "Tap.mp3"
           ]
         }
       ]

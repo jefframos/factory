@@ -1,0 +1,564 @@
+// CharacterBody.ts
+//
+// The purely visual/animated half of a third-person character — mesh
+// loading, the flat-color material fix (see FALLBACK_COLOR's own doc), the
+// smooth rounded head with a simple face decal, and the idle/walk/run/jump/
+// roll animation state graph. Owns no movement, no move-speed config, no
+// player input — those live in ThirdPersonCharacter, the player-driven
+// controller that wraps one of these.
+
+import * as THREE from 'three';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { BendService, WorldBendService } from 'core/services/BendService';
+import ModelLoaderManager from 'core/three/ModelLoaderManager';
+import AnimatorController from './animation/AnimatorController';
+import { loadCompressedFile, releaseObjectURL } from '../utils/GzipLoader';
+import hatFits from '../../ui/hatfits.json';
+
+const ROTATION_SLERP = 0.15;
+/** Head size in REAL world units (same units as the floor/camera). */
+const HEAD_CUBE_SIZE = 115;
+interface HatFit {
+    /** Offsets from the top-centre of the head, as fractions of HEAD_CUBE_SIZE (y < 0 sinks the hat down). */
+    x: number;
+    y: number;
+    z: number;
+    /** The hat's widest side as a fraction of the head width. */
+    scale: number;
+    /** Degrees around the vertical axis. */
+    rotationY: number;
+}
+const HAT_FIT_DATA = hatFits as { default: HatFit; hats: Record<string, Partial<HatFit>> };
+
+/** Placement for a hat model (by file name), from ui/hatfits.json (editor "Hats" tab); unlisted hats use the default. */
+function hatFit(fullPath: string): HatFit {
+    const name = fullPath.split('/').pop()?.replace(/\.[^.]+$/, '') ?? '';
+    return { ...HAT_FIT_DATA.default, ...HAT_FIT_DATA.hats[name] };
+}
+/** Head pivot/offset, in the SAME real world units as HEAD_CUBE_SIZE — (0,0,0) sits exactly at the head bone's own origin. */
+const HEAD_CUBE_OFFSET = new THREE.Vector3(0, 50, 0);
+/** Face-decal plane, relative to HEAD_CUBE_SIZE — a plane just in front of the head's +Z face. */
+const FACE_DECAL_SCALE = 0.85;
+
+/**
+ * This rig's FBX exports have no texture at all, so the ORIGINAL materials
+ * are unusable as-is — replaced outright with a plain flat-color
+ * MeshStandardMaterial instead of trying to patch the existing material.
+ */
+const FALLBACK_COLOR = 0xffffff;
+/** Dark ink used for the character outline shell. */
+const OUTLINE_COLOR = 0x15121f;
+/** Outline thickness in world units, so it scales with the character: bold up close on Home, thin on zoomed-out levels. */
+const OUTLINE_WORLD_WIDTH = 0.02;
+const RIM_COLOR = 0xfff1a8;
+
+/**
+ * Inverted-hull outline: a back-face shell pushed out along the view-space normal, chained after the
+ * world bend so it bends with the body. Lambert (unlit black + emissive) is used because its vertex
+ * shader always provides the skinned `transformedNormal`.
+ */
+function createOutlineMaterial(bendService: WorldBendService): THREE.MeshLambertMaterial {
+    const material = new THREE.MeshLambertMaterial({ color: 0x000000, emissive: OUTLINE_COLOR, side: THREE.BackSide });
+    bendService.applyBend(material);
+    const bend = material.onBeforeCompile;
+    material.onBeforeCompile = (shader, renderer) => {
+        bend.call(material, shader, renderer);
+        shader.uniforms.uOutlineWidth = { value: OUTLINE_WORLD_WIDTH };
+        shader.vertexShader = 'uniform float uOutlineWidth;\n' + shader.vertexShader.replace(
+            '#include <logdepthbuf_vertex>',
+            `
+            vec3 _outlineNormal = normalize( transformedNormal );
+            #ifdef FLIP_SIDED
+                _outlineNormal = -_outlineNormal;
+            #endif
+            mvPosition.xyz += _outlineNormal * uOutlineWidth;
+            gl_Position = projectionMatrix * mvPosition;
+            #include <logdepthbuf_vertex>
+            `,
+        );
+    };
+    const bendKey = bend.toString();
+    material.customProgramCacheKey = () => `bandit-character-outline:${bendKey}`;
+    return material;
+}
+
+export default class CharacterBody {
+    public readonly container: THREE.Group = new THREE.Group();
+    public readonly animator: AnimatorController = new AnimatorController();
+
+    private mixer?: THREE.AnimationMixer;
+    private targetRotation = new THREE.Quaternion();
+    private readonly up = new THREE.Vector3(0, 1, 0);
+    private headCube?: THREE.Mesh;
+    private hat?: THREE.Group;
+    private hatToken = 0;
+    /** Wraps headCube — cancels the head bone's own inherited scale so HEAD_CUBE_SIZE/HEAD_CUBE_OFFSET are true world units. */
+    private headCubeHolder?: THREE.Group;
+    private headBone?: THREE.Object3D;
+    /** Which bend flavor this body's own materials use — defaults to the hub's plain BendService; RunnerMinigameScene/SwipeMinigameScene pass RunnerBendService instead (see ThirdPersonCharacter's own constructor). */
+    private readonly bendService: WorldBendService;
+    private outlineMaterial?: THREE.MeshLambertMaterial;
+    /** Shared by the body and head materials: a fresnel rim that marks the selected squad member. */
+    private readonly rimUniforms = {
+        uRimStrength: { value: 0 },
+        uRimColor: { value: new THREE.Color(RIM_COLOR) },
+    };
+
+    public constructor(bendService: WorldBendService = BendService) {
+        this.bendService = bendService;
+    }
+
+    public async loadMesh(url: string): Promise<void> {
+        const resolvedUrl = await loadCompressedFile(url);
+        try {
+            const loader = new FBXLoader();
+            const object = await loader.loadAsync(resolvedUrl);
+            this.applyFallbackMaterial(object);
+            this.container.add(object);
+
+            this.mixer = new THREE.AnimationMixer(object);
+            this.animator.setMixer(this.mixer);
+        } finally {
+            releaseObjectURL(resolvedUrl);
+        }
+    }
+
+    /** See FALLBACK_COLOR's own doc — swaps every mesh onto a brand-new flat-color material. */
+    private applyFallbackMaterial(object: THREE.Object3D): void {
+        object.traverse((child) => {
+            if (!(child instanceof THREE.Mesh)) {
+                return;
+            }
+
+            const materialCount = Array.isArray(child.material) ? child.material.length : 1;
+            const flatMaterial = new THREE.MeshStandardMaterial({ color: FALLBACK_COLOR });
+            this.bendService.applyBend(flatMaterial);
+            this.applyRim(flatMaterial);
+
+            child.material = materialCount > 1
+                ? new Array(materialCount).fill(flatMaterial)
+                : flatMaterial;
+        });
+    }
+
+    public async registerAnimation(id: string, url: string): Promise<void> {
+        return this.animator.registerAnimation(id, url);
+    }
+
+    /**
+     * Registers the idle/walk/run/jump/roll state graph — call once after
+     * loadMesh()/registerAnimation() for every clip below have resolved.
+     *
+     * `idleToWalkSpeed`/`walkToRunSpeed` split vars.speed into three bands
+     * (idle / walk / run). vars.speed is the raw move-input magnitude (0-1,
+     * see update()), not a world-units/sec speed.
+     */
+    public setUp(idleToWalkSpeed = 0.01, walkToRunSpeed = 0.75): void {
+        this.animator.registerAnimatorBoard('idle');
+        const board = this.animator.animatorBoard!;
+
+        // --- Trigger-based one-shots, registered FIRST -------------------------------------
+        // AnimatorBoard.update() walks its transitions in REGISTRATION order and fires the
+        // FIRST one whose trigger fired OR condition matched, then clears every trigger
+        // regardless — there's no inherent "a fired trigger outranks a merely-true condition"
+        // rule, just array order. All four of these are triggered explicitly (jump/roll/
+        // slide/hit), each from ANY state, so they need to be checked before any
+        // condition-based transition below gets a chance to win the race and silently
+        // swallow the trigger instead. This bit twice already: HIT is fired from the same
+        // onHitObstacle() call that also disables the movement controller, which zeroes
+        // moveInput synchronously (see PlayerMovementController/SwipeRunnerController's own
+        // onDisable()) — so on that exact tick, vars.speed has ALREADY dropped to ~0 with
+        // grounded still true, which used to satisfy the (then earlier-registered) run->idle/
+        // walk->idle condition first, playing idle instead of the hit pose. jumpUp/falling/
+        // landing/roll/slide/hit are all one-shot poses (loop=false, the trailing argument
+        // below) — they play through once and hold their last frame instead of restarting
+        // from frame 0 every time the clip reaches its own end.
+        //
+        // HIT is listed first of the four: getting hit should always win even if it happens
+        // mid-jump/roll/slide, never the other way around.
+        board.registerTransition('any', 'hit', 0.1, undefined, 'hit', false);
+        board.registerTransition('any', 'jumpUp', 0.1, undefined, 'jump', false);
+        board.registerTransition('any', 'roll', 0.1, undefined, 'roll', false);
+        // Swipe-down slide (see SwipeRunnerController) — its own state, not just reusing
+        // 'roll', with its own dedicated clip (see MainPlayer.loadCharacter()).
+        board.registerTransition('any', 'slide', 0.1, undefined, 'slide', false);
+
+        // --- Condition-based transitions ----------------------------------------------------
+        board.registerTransition('idle', 'walk', 0.25, (vars) => (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed && vars.grounded === true);
+        board.registerTransition('idle', 'run', 0.25, (vars) => (vars.speed as number) >= walkToRunSpeed && vars.grounded === true);
+        board.registerTransition('walk', 'idle', 0.25, (vars) => (vars.speed as number) <= idleToWalkSpeed && vars.grounded === true);
+        board.registerTransition('walk', 'run', 0.25, (vars) => (vars.speed as number) >= walkToRunSpeed && vars.grounded === true);
+        board.registerTransition('run', 'walk', 0.25, (vars) => (vars.speed as number) < walkToRunSpeed && (vars.speed as number) > idleToWalkSpeed && vars.grounded === true);
+        board.registerTransition('run', 'idle', 0.5, (vars) => (vars.speed as number) <= idleToWalkSpeed && vars.grounded === true);
+
+        board.registerTransition('falling', 'run', 0.15, (vars) => (vars.speed as number) >= walkToRunSpeed && vars.grounded === true);
+        board.registerTransition('falling', 'walk', 0.15, (vars) => (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed && vars.grounded === true);
+        board.registerTransition('landing', 'idle', 0.15, (vars) => (vars.speed as number) <= idleToWalkSpeed && vars.grounded === true);
+
+        // Real physics gives verticalSpeed a big positive value the instant the jump starts,
+        // so a "> 0" check here would fire on the very next tick — cutting jumpUp's own 0.1s
+        // crossfade-in off after ~one frame and immediately re-crossfading into falling on
+        // top of it (three actions fighting for weight at once), which is what read as a
+        // glitch. <= 0 instead waits for the actual apex/descent, giving jumpUp the whole
+        // ascent to play and falling a clean, uncontested crossfade of its own.
+        board.registerTransition('jumpUp', 'falling', 0.5, (vars) => (vars.verticalSpeed as number) <= 0, undefined, false);
+        board.registerTransition('falling', 'landing', 0.25, (vars) => vars.grounded === true, undefined, false);
+
+        // A player who becomes airborne WITHOUT jumping — running (or getting knocked) off
+        // the edge of an elevated platform, e.g. a TRAIN/TUNNEL roof (see MinigameSettings.
+        // OBSTACLE_KINDS) — has no jumpUp pose to arrive from, so without this they'd just
+        // keep playing idle/walk/run while genuinely falling through the air. Scoped to
+        // idle/walk/run specifically (never 'any') so it can NEVER fire while already in
+        // jumpUp/falling/landing: 'any' would also match during a real jump's own ASCENT
+        // (grounded is false for the whole arc, not just the descent — see jumpUp->falling's
+        // own comment above on why THAT transition waits for verticalSpeed <= 0), which would
+        // skip straight past the jumpUp pose instead of playing it through the ascent. Safe
+        // to register anywhere relative to 'any'->'jumpUp' now that jumpUp's own trigger is
+        // up in the trigger-priority block above — it always wins ties with THIS condition
+        // regardless of array position, since triggers are checked as their own transitions,
+        // not folded into these.
+        board.registerTransition('idle', 'falling', 0.25, (vars) => vars.grounded === false, undefined, false);
+        board.registerTransition('walk', 'falling', 0.25, (vars) => vars.grounded === false, undefined, false);
+        board.registerTransition('run', 'falling', 0.25, (vars) => vars.grounded === false, undefined, false);
+
+        board.registerTransition('roll', 'idle', 0.2, (vars) => vars.rolling === false && (vars.speed as number) <= idleToWalkSpeed);
+        board.registerTransition('roll', 'walk', 0.2, (vars) => vars.rolling === false && (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed);
+        board.registerTransition('roll', 'run', 0.2, (vars) => vars.rolling === false && (vars.speed as number) >= walkToRunSpeed);
+
+        board.registerTransition('slide', 'idle', 0.2, (vars) => vars.sliding === false && (vars.speed as number) <= idleToWalkSpeed);
+        board.registerTransition('slide', 'walk', 0.2, (vars) => vars.sliding === false && (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed);
+        board.registerTransition('slide', 'run', 0.2, (vars) => vars.sliding === false && (vars.speed as number) >= walkToRunSpeed);
+
+        // Obstacle hit (see RunnerMinigameScene/SwipeMinigameScene's own ObstacleBuilder
+        // callers) — deliberately with no exit transition at all: the whole minigame scene
+        // freezes the instant this fires (movement disabled, kickback then a dead stop — see
+        // HitKickbackController), so there's nothing to transition back to until the player
+        // leaves for the hub, which destroys this entity anyway. The trigger itself is
+        // registered up in the priority block above, not here.
+    }
+
+    /** Recolors every body mesh (excluding the head cube) to an explicit hex color. */
+    public setBodyColor(color: THREE.ColorRepresentation): void {
+        this.container.traverse((child) => {
+            if (!(child instanceof THREE.Mesh) || child === this.headCube) {
+                return;
+            }
+
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+
+            for (const material of materials) {
+                if (material instanceof THREE.MeshStandardMaterial) {
+                    material.color.set(color);
+                }
+            }
+        });
+    }
+
+    /** Live recolor of the body and the head cube; the face decal and hat keep their own materials. */
+    public setColor(color: THREE.ColorRepresentation): void {
+        const head = this.headCubeHolder;
+        this.container.traverse((child) => {
+            if (!(child instanceof THREE.Mesh)) {
+                return;
+            }
+            let inHead = false;
+            for (let node: THREE.Object3D | null = child; node; node = node.parent) {
+                if (node === head) {
+                    inHead = true;
+                    break;
+                }
+            }
+            if (inHead && child !== this.headCube) {
+                return;
+            }
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            for (const material of materials) {
+                if (material instanceof THREE.MeshStandardMaterial) {
+                    material.color.set(color);
+                }
+            }
+        });
+    }
+
+    /** Colors the body + attaches a smooth (rounded-corner) head with `faceTexture` decaled onto it — the whole cosmetic identity this controller needs (same color+face data as bandit's Character Views, see CharacterViews.ts). */
+    public applyCharacterView(color: THREE.ColorRepresentation, faceTexture: THREE.Texture): void {
+        this.setBodyColor(color);
+        this.mountHeadCube(this.buildHeadMesh(color, faceTexture));
+    }
+
+    /** Swaps only the face decal on the existing head, keeping the head and body colour as they are. */
+    public setFaceTexture(faceTexture: THREE.Texture): void {
+        const decal = this.headCube?.children.find((child): child is THREE.Mesh => child instanceof THREE.Mesh);
+        const material = decal?.material as THREE.MeshStandardMaterial | undefined;
+        if (!material) {
+            return;
+        }
+        material.map = faceTexture;
+        material.needsUpdate = true;
+    }
+
+    /** Rounded head mesh, softer-looking than a sharp-edged cube, with a face decal plane in front of its +Z face. */
+    private buildHeadMesh(color: THREE.ColorRepresentation, faceTexture: THREE.Texture): THREE.Mesh {
+        const geometry = new RoundedBoxGeometry(HEAD_CUBE_SIZE, HEAD_CUBE_SIZE, HEAD_CUBE_SIZE, 4, HEAD_CUBE_SIZE * 0.25);
+        const material = new THREE.MeshStandardMaterial({ color });
+        this.bendService.applyBend(material);
+        this.applyRim(material);
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.add(this.buildFaceDecal(HEAD_CUBE_SIZE, faceTexture));
+        return mesh;
+    }
+
+    /** Thin quad sitting just in front of the head's +Z face, carrying the face decal texture — kept as a separate child mesh so the face art is independent of the head's own body material. */
+    private buildFaceDecal(size: number, faceTexture: THREE.Texture): THREE.Mesh {
+        const decalSize = size * FACE_DECAL_SCALE;
+        const geometry = new THREE.PlaneGeometry(decalSize, decalSize);
+        const material = new THREE.MeshStandardMaterial({ map: faceTexture, transparent: false, alphaTest: 0.5 });
+        this.bendService.applyBend(material);
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.z = size / 2 + size * 0.01;
+        mesh.userData.noOutline = true;
+        return mesh;
+    }
+
+    /**
+     * Parents `cube` onto whichever bone is actually named "Head", wrapped
+     * in a holder that cancels the bone's own inherited scale. No-op if no
+     * such bone is found.
+     */
+    private mountHeadCube(cube: THREE.Mesh): void {
+        this.removeHeadCube();
+
+        const headBone = this.findBoneByName('Head');
+
+        if (!headBone) {
+            console.warn('CharacterBody: no "Head" bone found — skipping cube head.');
+            return;
+        }
+
+        this.headBone = headBone;
+
+        const holder = new THREE.Group();
+        headBone.add(holder);
+        holder.add(cube);
+
+        this.headCubeHolder = holder;
+        this.headCube = cube;
+
+        this.applyHeadTransform();
+        this.addOutlineShells(holder);
+    }
+
+    /** Repositions the head cube live — same real-world units as HEAD_CUBE_SIZE/HEAD_CUBE_OFFSET, (0,0,0) at the head bone's own origin. */
+    public setHeadOffset(x: number, y: number, z: number): void {
+        HEAD_CUBE_OFFSET.set(x, y, z);
+        this.applyHeadTransform();
+    }
+
+    /**
+     * Bones in this rig carry their own (often large) inherited scale, so a
+     * fixed geometry size/offset renders unpredictably depending on which
+     * bone it's parented to. Dividing the bone's TRUE cumulative scale out
+     * on the HOLDER keeps HEAD_CUBE_SIZE/OFFSET true world units.
+     */
+    private applyHeadTransform(): void {
+        if (!this.headCubeHolder || !this.headBone) {
+            return;
+        }
+
+        this.headBone.updateWorldMatrix(true, false);
+        const boneWorldScale = new THREE.Vector3();
+        this.headBone.getWorldScale(boneWorldScale);
+
+        this.headCubeHolder.scale.set(1 / boneWorldScale.x, 1 / boneWorldScale.y, 1 / boneWorldScale.z);
+        this.headCubeHolder.position.set(
+            HEAD_CUBE_OFFSET.x / boneWorldScale.x,
+            HEAD_CUBE_OFFSET.y / boneWorldScale.y,
+            HEAD_CUBE_OFFSET.z / boneWorldScale.z,
+        );
+    }
+
+    /** Puts the hat model at `fullPath` (a models registry fullPath) on the head, or takes it off with no path. Call after the head is mounted. */
+    public setHat(fullPath?: string): void {
+        this.removeHat();
+        const holder = this.headCubeHolder;
+        if (!fullPath || !holder) {
+            return;
+        }
+        const token = ++this.hatToken;
+        ModelLoaderManager.instance.loadModel(`./${fullPath}`, fullPath.split('/').pop())
+            .then((object) => {
+                if (token !== this.hatToken || holder !== this.headCubeHolder) {
+                    return;
+                }
+                object.traverse((child) => {
+                    if (child instanceof THREE.Mesh) {
+                        const materials = Array.isArray(child.material) ? child.material : [child.material];
+                        materials.forEach((material) => this.bendService.applyBend(material));
+                    }
+                });
+                object.updateWorldMatrix(false, true);
+                const box = new THREE.Box3().setFromObject(object);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                object.position.set(-center.x, -box.min.y, -center.z);
+                const hat = new THREE.Group();
+                hat.add(object);
+                const fit = hatFit(fullPath);
+                hat.scale.setScalar((HEAD_CUBE_SIZE * fit.scale) / Math.max(size.x, size.z, 1e-6));
+                hat.position.set(HEAD_CUBE_SIZE * fit.x, HEAD_CUBE_SIZE / 2 + HEAD_CUBE_SIZE * fit.y, HEAD_CUBE_SIZE * fit.z);
+                hat.rotation.y = THREE.MathUtils.degToRad(fit.rotationY);
+                holder.add(hat);
+                this.hat = hat;
+                this.addOutlineShells(hat);
+            })
+            .catch((error) => console.warn(`CharacterBody: failed to load hat "${fullPath}"`, error));
+    }
+
+    private removeHat(): void {
+        this.hatToken++;
+        this.hat?.removeFromParent();
+        this.hat = undefined;
+    }
+
+    private removeHeadCube(): void {
+        this.removeHat();
+        if (!this.headCubeHolder) {
+            return;
+        }
+
+        this.headCubeHolder.parent?.remove(this.headCubeHolder);
+        this.headCube?.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                child.geometry.dispose();
+            }
+        });
+        this.headCubeHolder = undefined;
+        this.headCube = undefined;
+    }
+
+    /** Gives the body, head and hat a dark ink outline so the character reads against any floor. */
+    public enableOutline(): void {
+        if (this.outlineMaterial) {
+            return;
+        }
+        this.outlineMaterial = createOutlineMaterial(this.bendService);
+        this.addOutlineShells(this.container);
+    }
+
+    /** 0 hides the selection rim; around 1 is a strong glow. */
+    public setRim(strength: number): void {
+        this.rimUniforms.uRimStrength.value = strength;
+    }
+
+    private applyRim(material: THREE.MeshStandardMaterial): void {
+        const previous = material.onBeforeCompile;
+        const uniforms = this.rimUniforms;
+        material.onBeforeCompile = (shader, renderer) => {
+            previous.call(material, shader, renderer);
+            shader.uniforms.uRimStrength = uniforms.uRimStrength;
+            shader.uniforms.uRimColor = uniforms.uRimColor;
+            shader.fragmentShader = 'uniform float uRimStrength;\nuniform vec3 uRimColor;\n' + shader.fragmentShader.replace(
+                '#include <opaque_fragment>',
+                `
+                float _rim = 1.0 - clamp( dot( normalize( vViewPosition ), normal ), 0.0, 1.0 );
+                outgoingLight += uRimColor * pow( _rim, 2.2 ) * uRimStrength;
+                #include <opaque_fragment>
+                `,
+            );
+        };
+        const previousKey = previous.toString();
+        material.customProgramCacheKey = () => `bandit-character-rim:${previousKey}`;
+    }
+
+    /** Adds one outline shell per mesh under `root` (skinned shells share the original skeleton). */
+    private addOutlineShells(root: THREE.Object3D): void {
+        const material = this.outlineMaterial;
+        if (!material) {
+            return;
+        }
+        const targets: THREE.Mesh[] = [];
+        root.traverse((child) => {
+            if (child instanceof THREE.Mesh && !child.userData.outlineShell && !child.userData.noOutline && !child.userData.hasOutline) {
+                targets.push(child);
+            }
+        });
+        for (const mesh of targets) {
+            let shell: THREE.Mesh;
+            if (mesh instanceof THREE.SkinnedMesh) {
+                const skinned = new THREE.SkinnedMesh(mesh.geometry, material);
+                skinned.bind(mesh.skeleton, mesh.bindMatrix);
+                shell = skinned;
+            } else {
+                shell = new THREE.Mesh(mesh.geometry, material);
+            }
+            shell.userData.outlineShell = true;
+            mesh.userData.hasOutline = true;
+            shell.position.copy(mesh.position);
+            shell.quaternion.copy(mesh.quaternion);
+            shell.scale.copy(mesh.scale);
+            shell.frustumCulled = false;
+            shell.castShadow = false;
+            shell.receiveShadow = false;
+            mesh.parent?.add(shell);
+        }
+    }
+
+    /** Case-insensitive bone lookup by name. */
+    private findBoneByName(name: string): THREE.Object3D | undefined {
+        let found: THREE.Object3D | undefined;
+        const lowerName = name.toLowerCase();
+
+        this.container.traverse((child) => {
+            if (found) {
+                return;
+            }
+
+            if (child.name.toLowerCase() === lowerName) {
+                found = child;
+            }
+        });
+
+        return found;
+    }
+
+    /**
+     * Call once per frame. `moveInputX`/`moveInputZ` drive facing rotation
+     * and the 'speed' animator variable. `extraVars` lets a controller
+     * inject additional animator variables (verticalSpeed/grounded for
+     * jump, rolling for dodge) before the state machine evaluates this
+     * frame's transitions.
+     */
+    public update(delta: number, moveInputX: number = 0, moveInputZ: number = 0, extraVars: Record<string, number | boolean> = {}): void {
+        if (moveInputX !== 0 || moveInputZ !== 0) {
+            this.faceDirection(moveInputX, moveInputZ);
+        }
+        this.container.quaternion.slerp(this.targetRotation, ROTATION_SLERP);
+
+        const speed = Math.hypot(moveInputX, moveInputZ);
+        this.animator.animatorBoard?.setVariable('speed', speed);
+
+        for (const [name, value] of Object.entries(extraVars)) {
+            this.animator.animatorBoard?.setVariable(name, value);
+        }
+
+        this.animator.update(delta);
+    }
+
+    /** Sets the facing target without applying movement, e.g. to look toward the camera during the level celebration. */
+    public faceDirection(directionX: number, directionZ: number, snap = false): void {
+        if (directionX === 0 && directionZ === 0) {
+            return;
+        }
+        this.targetRotation.setFromAxisAngle(this.up, Math.atan2(directionX, directionZ));
+        if (snap) {
+            this.container.quaternion.copy(this.targetRotation);
+        }
+    }
+
+    public destroy(): void {
+        this.removeHeadCube();
+        this.container.parent?.remove(this.container);
+        this.mixer?.stopAllAction();
+    }
+}

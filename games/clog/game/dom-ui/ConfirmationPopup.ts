@@ -8,13 +8,13 @@ export interface ConfirmOptions {
     confirmLabel: string;
     /** Defaults to the localized "Cancel". */
     cancelLabel?: string;
-    /** Skin for the confirm button — 'danger' (red) for destructive choices like Clear Data, 'primary' otherwise. Cancel is always plain 'secondary'. */
+    /** Skin for the confirm button — 'danger' (red) for destructive choices, 'primary' otherwise. Cancel is always plain 'secondary'. */
     confirmRole?: 'primary' | 'accent' | 'danger';
 }
 
 /**
  * Single shared confirm/cancel dialog for any "are you sure?" decision in
- * the game (see SettingsMenu.handleClearData for the first caller) — mounted
+ * the game (e.g. QuitButton) — mounted
  * only while open, so it always lands as DomUiRoot's *last* child and paints
  * above every other currently-open overlay (Settings, Shop, etc.) regardless
  * of which was constructed first. Resolves `true` on Confirm, `false` on

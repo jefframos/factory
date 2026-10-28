@@ -185,7 +185,7 @@ export class ShopStorage {
         await PlatformHandler.instance.platform.setItem(this.KEY, JSON.stringify(data));
     }
 
-    /** Wipes unlocks/equip/best-value progress back to a fresh install — see SettingsMenu's Clear Data action. */
+    /** Wipes unlocks/equip/best-value progress back to a fresh install. */
     static async clearAll(): Promise<void> {
         this._cachedData = this.createDefaultData();
         this.sessionUnlockedCosmeticIds.clear();

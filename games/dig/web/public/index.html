@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dig Editor</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": { "three": "/vendor/three/build/three.module.js", "three/addons/": "/vendor/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<header id="topbar">
+  <div class="brand"><span class="logo">D</span> Dig Editor</div>
+  <nav id="tabs">
+    <button data-tab="level" class="tab active">⛏ Hub</button>
+    <button data-tab="ui" class="tab">🎨 UI Kit</button>
+  </nav>
+</header>
+
+<section id="tab-level" class="tab-panel workspace">
+  <aside id="left" class="sidebar left">
+    <section class="card-section">
+      <h2>Levels</h2>
+      <div class="row">
+        <button id="newLevel">＋ New</button>
+        <button id="dupLevel">Duplicate</button>
+        <button id="delLevel" class="danger">Delete</button>
+      </div>
+      <ul id="levelList" class="list"></ul>
+      <label class="field"><span>World</span><select id="levelWorld"></select></label>
+      <div class="row">
+        <button id="moveUp">▲ Earlier</button>
+        <button id="moveDown">▼ Later</button>
+      </div>
+    </section>
+    <section class="card-section">
+      <h2>Level settings</h2>
+      <label class="field"><span>Name</span><input id="levelName"></label>
+      <label class="field"><span>Grid cell</span><input id="gridCell" type="number" step="0.25" min="0.25"></label>
+      <label class="field"><span>Floor width</span><input id="floorWidth" type="number" step="0.5" min="2"></label>
+      <label class="field"><span>Floor depth</span><input id="floorDepth" type="number" step="0.5" min="2"></label>
+      <label class="field check"><input id="snap" type="checkbox" checked><span>Snap to grid</span></label>
+      <h2>Zone styles</h2>
+      <div id="worldStyles"></div>
+      <label class="field check"><input id="hasEntry" type="checkbox"><span>Entry path (dirt road)</span></label>
+    </section>
+    <section class="card-section">
+      <h2>Models</h2>
+      <label class="field"><span>Drop as</span>
+        <select id="dropAs"><option value="auto">auto (resources = loot)</option><option value="prop">prop</option><option value="loot">loot</option></select>
+      </label>
+      <button id="pickModel" class="primary block">🧊 Pick model…</button>
+      <div id="modelList"></div>
+      <p class="muted small">Pick a model, then click the map to drop it.</p>
+    </section>
+  </aside>
+
+  <main class="stage-area">
+    <div id="toolbar" class="toolbar">
+      <div class="segmented">
+        <button data-tool="select" class="active">Select</button>
+      </div>
+      <select id="addTool" title="Add to level">
+        <option value="">＋ Add…</option>
+        <optgroup label="Structure"><option value="wall">Wall</option><option value="door">Door</option><option value="window">Window</option></optgroup>
+        <optgroup label="Route"><option value="start">Start</option><option value="waypoint">Checkpoint</option></optgroup>
+        <optgroup label="Threats"><option value="guard">Guard</option><option value="camera">Camera</option><option value="trap">Trap</option><option value="drone">Drone</option></optgroup>
+      </select>
+      <span class="spacer"></span>
+      <span id="status"></span>
+      <button id="save" class="primary">Save</button>
+      <button id="play">▶ Play</button>
+    </div>
+    <div id="viewport"></div>
+    <div id="hint"></div>
+  </main>
+
+  <aside id="right" class="sidebar right">
+    <section class="card-section">
+      <h2>Selection</h2>
+      <div id="inspector"><p class="muted">Nothing selected.</p></div>
+    </section>
+    <section class="card-section">
+      <details>
+        <summary>Shortcuts &amp; help</summary>
+        <p class="muted small">
+          Wheel: zoom · Right/middle drag or Space+drag: pan<br>
+          ⌘/Ctrl+S: save · Delete: remove · R: rotate · Arrows: nudge · Esc: cancel<br>
+          Wall tool: click points, Enter/double-click to finish.<br>
+          Door/Window: click on a wall.<br>
+          Checkpoints are visited in order; the last one is the exit.
+          <b>Reveal at</b> N hides an item until checkpoint N (0 = always visible).
+        </p>
+      </details>
+    </section>
+  </aside>
+</section>
+
+<section id="tab-ui" class="tab-panel workspace" hidden></section>
+
+<section id="tab-hats" class="tab-panel workspace" hidden></section>
+
+<div id="toast"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "worlds": [
+    {
+      "id": "hub",
+      "name": "Hub",
+      "levels": [
+        "hub"
+      ]
+    }
+  ]
+}

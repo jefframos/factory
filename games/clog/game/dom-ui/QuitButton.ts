@@ -8,7 +8,7 @@ import backIcon from './images/Icon_Back.png';
  * Persistent top-left "end run" button — sits to the right of
  * SoundToggleButton (itself right of SettingsButton), shown only while
  * actually playing (see setEnabled — BaseDemoScene.setFlowState). Confirms
- * first (same ConfirmationPopup SettingsMenu's Clear Data uses), since
+ * first via ConfirmationPopup, since
  * confirming immediately ends the current run: skips straight to the End
  * Game screen instead of the usual death/revive countdown — see
  * BaseDemoScene's quitToEndGame flag.

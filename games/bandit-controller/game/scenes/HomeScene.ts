@@ -33,6 +33,7 @@ import MoneyHud from '../ui/MoneyHud';
 import { WorldEnvironment } from './shared/WorldEnvironment';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { GameAudio } from '../audio/GameAudio';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 import { reloadToHome, resetProgressionData } from '../data/ProgressionStorage';
 import { UiAnim, UiTween } from '../ui/UiAnim';
 import { closeButton, cornerButton, popupPanel, titleRibbon } from '../ui/UiParts';
@@ -354,6 +355,7 @@ export default class HomeScene extends ThreeScene {
         if (!reward.available || !this.root) {
             return;
         }
+        GameAnalytics.dailyShown(reward.streak);
         const width = 340;
         const height = 300;
         const modal = new PIXI.Container();
@@ -390,6 +392,7 @@ export default class HomeScene extends ThreeScene {
         });
         const claim = this.makeButton('Button01_s_Green', 210, 66, 'CLAIM', 28, () => {
             if (Progress.claimDaily() > 0) {
+                GameAnalytics.dailyClaimed(reward.streak);
                 GameAudio.play('bonus');
                 this.moneyHud.setResourceCount(GameState.getMoney());
                 if (this.root) this.track(UiAnim.confetti(this.root, modal.x, modal.y, 50));
@@ -825,6 +828,7 @@ export default class HomeScene extends ThreeScene {
                 }
                 if (setSquadColor(name, hex)) {
                     GameAudio.play('equip');
+                    GameAnalytics.colorPicked(hex);
                     this.players[this.editMember]?.character?.setColor(hex);
                     this.podiumMaterials[this.editMember]?.color.set(new THREE.Color(hex).lerp(new THREE.Color(0xffffff), 0.35));
                     const { x, y } = swatch.position;
@@ -961,6 +965,11 @@ export default class HomeScene extends ThreeScene {
             return;
         }
         GameAudio.play(wasOwned ? 'equip' : 'bonus');
+        if (item && !wasOwned) {
+            GameAnalytics.itemBought(kind, item.id);
+        } else {
+            GameAnalytics.itemEquipped(kind, item?.id);
+        }
         this.moneyHud.setResourceCount(GameState.getMoney());
         const name = SQUAD_VIEW_NAMES[this.editMember];
         const player = this.players[this.editMember];

@@ -11,6 +11,7 @@ import gsap from 'gsap';
 import { UiKit } from './UiKit';
 import { UiAnim, UiTween } from './UiAnim';
 import { GameAudio } from '../audio/GameAudio';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 
 interface MeterZone {
     from: number;
@@ -237,6 +238,7 @@ export default class BonusMeter extends PIXI.Container {
             return;
         }
         const offer = this.offer;
+        GameAnalytics.bonusOffered(offer.multiplier);
 
         const claim = new PIXI.Container();
         claim.position.set(0, ACTION_Y);
@@ -265,7 +267,10 @@ export default class BonusMeter extends PIXI.Container {
             skip.addChild(hitArea, skipLabel);
             skip.position.set(0, SKIP_Y);
             skip.cursor = 'pointer';
-            skip.on('pointertap', () => this.onSkip());
+            skip.on('pointertap', () => {
+                GameAnalytics.bonusSkipped(offer.multiplier);
+                this.onSkip();
+            });
             this.addChild(skip);
             this.skipButton = skip;
         }

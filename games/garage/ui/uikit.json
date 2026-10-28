@@ -1,0 +1,269 @@
+{
+  "version": 1,
+  "styles": {
+    "primary": {
+      "fontFamily": "Baloo2-ExtraBold",
+      "fill": "#ffffff",
+      "stroke": "#1d1b1a",
+      "strokeWidth": 4,
+      "letterSpacing": 2,
+      "shadow": {
+        "enabled": true,
+        "color": "#000000",
+        "alpha": 0.5,
+        "angle": 90,
+        "distance": 2,
+        "blur": 0
+      }
+    },
+    "secondary": {
+      "fontFamily": "Baloo2-Regular",
+      "fill": "#ffffff",
+      "stroke": "#1d1b1a",
+      "strokeWidth": 3,
+      "letterSpacing": 0,
+      "shadow": {
+        "enabled": false,
+        "color": "#000000",
+        "alpha": 0.5,
+        "angle": 90,
+        "distance": 2,
+        "blur": 0
+      }
+    }
+  },
+  "screens": {
+    "garage": {
+      "label": "Garage",
+      "elements": {
+        "raceButton": {
+          "type": "image",
+          "image": "Button01_s_Yellow",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "raceLabel": {
+          "type": "text",
+          "text": "{label}",
+          "fill": "#ffffff",
+          "stroke": "#6b4200",
+          "strokeWidth": 6,
+          "size": 38,
+          "style": "primary"
+        },
+        "backButton": {
+          "type": "image",
+          "image": "Button01_s_Blue",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "backLabel": {
+          "type": "text",
+          "text": "{label}",
+          "fill": "#ffffff",
+          "stroke": "#0d2a5a",
+          "strokeWidth": 6,
+          "size": 34,
+          "style": "primary"
+        },
+        "title": {
+          "type": "text",
+          "text": "{text}",
+          "fill": "#ffffff",
+          "stroke": "#1d1b1a",
+          "strokeWidth": 6,
+          "size": 34,
+          "style": "primary"
+        },
+        "subtitle": {
+          "type": "text",
+          "text": "{text}",
+          "fill": "#c9d3e0",
+          "stroke": "#1d1b1a",
+          "strokeWidth": 4,
+          "size": 20,
+          "style": "primary"
+        }
+      }
+    },
+    "levelComplete": {
+      "label": "Level complete",
+      "elements": {
+        "panel": {
+          "type": "image",
+          "image": "BorderFrame_Round20_Single_Dark",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "ribbon": {
+          "type": "image",
+          "image": "Title_Ribbon01_Yellow",
+          "slice": [
+            150,
+            0,
+            150,
+            0
+          ],
+          "tint": "#ffffff",
+          "w": 780,
+          "h": 143
+        },
+        "title": {
+          "type": "text",
+          "text": "LEVEL {level} CLEAR!",
+          "fill": "#ffffff",
+          "stroke": "#7a4100",
+          "strokeWidth": 6,
+          "size": 27,
+          "style": "primary"
+        },
+        "total": {
+          "type": "text",
+          "text": "${money}",
+          "fill": "#ffd15c",
+          "stroke": "#3a2400",
+          "strokeWidth": 7,
+          "size": 50,
+          "style": "primary"
+        },
+        "button": {
+          "type": "image",
+          "image": "Button01_s_Yellow",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "buttonLabel": {
+          "type": "text",
+          "text": "{buttonText}",
+          "fill": "#ffffff",
+          "stroke": "#6b4200",
+          "strokeWidth": 6,
+          "size": 34,
+          "style": "primary"
+        },
+        "totalCaption": {
+          "type": "text",
+          "text": "TOTAL EARNED",
+          "fill": "#c9d3e0",
+          "stroke": "#1d1b1a",
+          "strokeWidth": 4,
+          "size": 17,
+          "style": "primary"
+        },
+        "hint": {
+          "type": "text",
+          "text": "{text}",
+          "fill": "#9aa6ba",
+          "stroke": "#1d1b1a",
+          "strokeWidth": 3,
+          "size": 15,
+          "style": "primary"
+        },
+        "breakdownValue": {
+          "type": "text",
+          "text": "+${money}",
+          "fill": "#8dff9e",
+          "stroke": "#0b3d12",
+          "strokeWidth": 4,
+          "size": 21,
+          "style": "primary"
+        },
+        "breakdownLabel": {
+          "type": "text",
+          "text": "{text}",
+          "fill": "#9aa6ba",
+          "stroke": "#1d1b1a",
+          "strokeWidth": 3,
+          "size": 13,
+          "style": "primary"
+        }
+      }
+    },
+    "busted": {
+      "label": "Busted",
+      "elements": {
+        "panel": {
+          "type": "image",
+          "image": "BorderFrame_Round20_Single_Dark",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "ribbon": {
+          "type": "image",
+          "image": "ResourceBar_Single_Btn_Red1",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff",
+          "w": 300
+        },
+        "title": {
+          "type": "text",
+          "text": "BUSTED!",
+          "fill": "#ffffff",
+          "stroke": "#5a0d0d",
+          "strokeWidth": 5,
+          "size": 22,
+          "style": "primary"
+        },
+        "message": {
+          "type": "text",
+          "text": "A guard caught you.\nWatch their patrol and time it.",
+          "fill": "#ffffff",
+          "stroke": "#1d1d1d",
+          "strokeWidth": 4,
+          "size": 20,
+          "style": "primary"
+        },
+        "button": {
+          "type": "image",
+          "image": "Button01_s_Yellow",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "buttonLabel": {
+          "type": "text",
+          "text": "TRY AGAIN",
+          "fill": "#ffffff",
+          "stroke": "#6b4200",
+          "strokeWidth": 6,
+          "size": 32,
+          "style": "primary"
+        }
+      }
+    }
+  }
+}

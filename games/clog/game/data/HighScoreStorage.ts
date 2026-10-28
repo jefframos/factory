@@ -40,7 +40,7 @@ export class HighScoreStorage {
         return score > this.runStartBest;
     }
 
-    /** Wipes the persisted best back to a fresh install — see SettingsMenu's Clear Data action. */
+    /** Wipes the persisted best back to a fresh install. */
     static async clearAll(): Promise<void> {
         this.cached = 0;
         this.runStartBest = 0;

@@ -1,9 +1,0 @@
-Heist interior props are CC0 assets:
-
-- KayKit Bits Bundle 2, vault: https://kaylousberg.com
-- KayKit Bits Bundle 1, decorated door: https://kaylousberg.com
-- Kenney Mini Market, cashier, shelf, and column: https://kenney.nl
-- Kenney Castle Kit, rear trees: https://kenney.nl
-
-Both source packs declare Creative Commons Zero (CC0). The original files are
-available in the sibling library3d project.

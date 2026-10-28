@@ -1,0 +1,600 @@
+{
+  "version": 1,
+  "styles": {
+    "primary": {
+      "fontFamily": "Baloo2-ExtraBold",
+      "fill": "#ffffff",
+      "stroke": "#1d1b1a",
+      "strokeWidth": 4,
+      "letterSpacing": 2,
+      "shadow": {
+        "enabled": true,
+        "color": "#000000",
+        "alpha": 0.5,
+        "angle": 90,
+        "distance": 2,
+        "blur": 0
+      }
+    },
+    "secondary": {
+      "fontFamily": "Baloo2-Regular",
+      "fill": "#ffffff",
+      "stroke": "#1d1b1a",
+      "strokeWidth": 3,
+      "letterSpacing": 0,
+      "shadow": {
+        "enabled": false,
+        "color": "#000000",
+        "alpha": 0.5,
+        "angle": 90,
+        "distance": 2,
+        "blur": 0
+      }
+    }
+  },
+  "screens": {
+    "hud": {
+      "label": "HUD",
+      "elements": {
+        "pill": {
+          "type": "image",
+          "image": "ResourceBar_Single_Bg",
+          "slice": [
+            10,
+            10,
+            10,
+            10
+          ],
+          "tint": "#1d140e"
+        },
+        "moneyIcon": {
+          "type": "image",
+          "image": "ItemIcon_Money_Bill",
+          "slice": null,
+          "tint": "#ffffff"
+        },
+        "money": {
+          "type": "text",
+          "text": "${money}",
+          "size": 30,
+          "fill": "#ffe066",
+          "stroke": "#3a2400",
+          "strokeWidth": 5,
+          "style": "primary"
+        },
+        "backpackIcon": {
+          "type": "image",
+          "image": "ItemIcon_Bag_Brown",
+          "slice": null,
+          "tint": "#ffffff"
+        },
+        "backpack": {
+          "type": "text",
+          "text": "{count}/{capacity}",
+          "size": 24,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 4,
+          "style": "primary"
+        },
+        "barBack": {
+          "type": "image",
+          "image": "ResourceBar_Single_Bg",
+          "slice": [
+            10,
+            10,
+            10,
+            10
+          ],
+          "tint": "#000000"
+        },
+        "barFill": {
+          "type": "image",
+          "image": "ResourceBar_Single_Btn_Green1",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "barFull": {
+          "type": "image",
+          "image": "ResourceBar_Single_Btn_Red1",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "toolFrame": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Blue",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "toolName": {
+          "type": "text",
+          "text": "{name}",
+          "size": 18,
+          "fill": "#d7e8ff",
+          "stroke": "#0d2a5a",
+          "strokeWidth": 4,
+          "style": "primary"
+        },
+        "toast": {
+          "type": "text",
+          "text": "{text}",
+          "size": 30,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 6,
+          "style": "primary"
+        },
+        "sellButton": {
+          "type": "image",
+          "image": "Button01_s_Green",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "sellLabel": {
+          "type": "text",
+          "text": "SELL",
+          "size": 20,
+          "fill": "#ffffff",
+          "stroke": "#1d4a12",
+          "strokeWidth": 4,
+          "style": "primary"
+        }
+      }
+    },
+    "upgrades": {
+      "label": "Upgrades",
+      "elements": {
+        "panel": {
+          "type": "image",
+          "image": "BorderFrame_Round20_Single_Dark",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "ribbon": {
+          "type": "image",
+          "image": "Title_Ribbon01_Yellow",
+          "slice": [
+            150,
+            0,
+            150,
+            0
+          ],
+          "tint": "#ffffff",
+          "w": 640,
+          "h": 143
+        },
+        "title": {
+          "type": "text",
+          "text": "UPGRADES",
+          "size": 28,
+          "fill": "#ffffff",
+          "stroke": "#7a4100",
+          "strokeWidth": 6,
+          "style": "primary"
+        },
+        "itemFrame": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Gray",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "itemName": {
+          "type": "text",
+          "text": "{name}",
+          "size": 22,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 4,
+          "style": "primary"
+        },
+        "itemInfo": {
+          "type": "text",
+          "text": "{text}",
+          "size": 15,
+          "fill": "#c9d3e0",
+          "stroke": "#1d140e",
+          "strokeWidth": 3,
+          "style": "secondary"
+        },
+        "buyButton": {
+          "type": "image",
+          "image": "Button01_s_Green",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "lockedButton": {
+          "type": "image",
+          "image": "Button01_s_Gray",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "buyLabel": {
+          "type": "text",
+          "text": "${price}",
+          "size": 24,
+          "fill": "#ffffff",
+          "stroke": "#0b3d12",
+          "strokeWidth": 5,
+          "style": "primary"
+        },
+        "maxLabel": {
+          "type": "text",
+          "text": "MAX",
+          "size": 22,
+          "fill": "#ffffff",
+          "stroke": "#1d1b1a",
+          "strokeWidth": 4,
+          "style": "primary"
+        }
+      }
+    },
+    "collection": {
+      "label": "Collection",
+      "elements": {
+        "panel": {
+          "type": "image",
+          "image": "BorderFrame_Round20_Single_Dark",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "ribbon": {
+          "type": "image",
+          "image": "Title_Ribbon01_Yellow",
+          "slice": [
+            150,
+            0,
+            150,
+            0
+          ],
+          "tint": "#ffffff",
+          "w": 640,
+          "h": 143
+        },
+        "title": {
+          "type": "text",
+          "text": "COLLECTION",
+          "size": 28,
+          "fill": "#ffffff",
+          "stroke": "#7a4100",
+          "strokeWidth": 6,
+          "style": "primary"
+        },
+        "progress": {
+          "type": "text",
+          "text": "{found} / {total} FOUND",
+          "size": 22,
+          "fill": "#ffe066",
+          "stroke": "#3a2400",
+          "strokeWidth": 5,
+          "style": "primary"
+        },
+        "barBack": {
+          "type": "image",
+          "image": "ResourceBar_Single_Bg",
+          "slice": [
+            10,
+            10,
+            10,
+            10
+          ],
+          "tint": "#000000"
+        },
+        "barFill": {
+          "type": "image",
+          "image": "ResourceBar_Single_Btn_Green1",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "zoneLabel": {
+          "type": "text",
+          "text": "{name}",
+          "size": 17,
+          "fill": "#c9d3e0",
+          "stroke": "#1d140e",
+          "strokeWidth": 3,
+          "style": "secondary"
+        },
+        "card": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Gray",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "cardName": {
+          "type": "text",
+          "text": "{name}",
+          "size": 14,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 3,
+          "style": "primary"
+        },
+        "cardCount": {
+          "type": "text",
+          "text": "x{count}",
+          "size": 15,
+          "fill": "#ffe066",
+          "stroke": "#1d140e",
+          "strokeWidth": 3,
+          "style": "primary"
+        },
+        "missing": {
+          "type": "text",
+          "text": "???",
+          "size": 22,
+          "fill": "#8a93a3",
+          "stroke": "#1d140e",
+          "strokeWidth": 3,
+          "style": "primary"
+        },
+        "newBadge": {
+          "type": "image",
+          "image": "Label_Badge01_Green",
+          "slice": null,
+          "tint": "#ffffff"
+        },
+        "newLabel": {
+          "type": "text",
+          "text": "NEW!",
+          "size": 14,
+          "fill": "#ffffff",
+          "stroke": "#0b3d12",
+          "strokeWidth": 3,
+          "style": "primary"
+        },
+        "reward": {
+          "type": "text",
+          "text": "{text}",
+          "size": 16,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 3,
+          "style": "secondary"
+        }
+      }
+    },
+    "wardrobe": {
+      "label": "Wardrobe",
+      "elements": {
+        "panel": {
+          "type": "image",
+          "image": "BorderFrame_Round20_Single_Dark",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "ribbon": {
+          "type": "image",
+          "image": "Title_Ribbon02_Red",
+          "slice": [
+            150,
+            0,
+            150,
+            0
+          ],
+          "tint": "#ffffff",
+          "w": 640,
+          "h": 143
+        },
+        "title": {
+          "type": "text",
+          "text": "WARDROBE",
+          "size": 28,
+          "fill": "#ffffff",
+          "stroke": "#6b0f0f",
+          "strokeWidth": 6,
+          "style": "primary"
+        },
+        "tab": {
+          "type": "image",
+          "image": "Button01_s_Gray",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "tabActive": {
+          "type": "image",
+          "image": "Button01_s_Green",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "tabLabel": {
+          "type": "text",
+          "text": "{text}",
+          "size": 18,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 4,
+          "style": "primary"
+        },
+        "card": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Gray",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "cardWorn": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Green",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "price": {
+          "type": "text",
+          "text": "${price}",
+          "size": 16,
+          "fill": "#ffe066",
+          "stroke": "#1d140e",
+          "strokeWidth": 4,
+          "style": "primary"
+        },
+        "owned": {
+          "type": "text",
+          "text": "{text}",
+          "size": 14,
+          "fill": "#9cff9c",
+          "stroke": "#1d140e",
+          "strokeWidth": 3,
+          "style": "primary"
+        },
+        "lockIcon": {
+          "type": "image",
+          "image": "Icon_Lock02",
+          "slice": null,
+          "tint": "#ffffff"
+        },
+        "arrowLeft": {
+          "type": "image",
+          "image": "arrow-left",
+          "slice": null,
+          "tint": "#ffffff"
+        },
+        "arrowRight": {
+          "type": "image",
+          "image": "arrow-right",
+          "slice": null,
+          "tint": "#ffffff"
+        },
+        "page": {
+          "type": "text",
+          "text": "{page} / {pages}",
+          "size": 18,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 4,
+          "style": "primary"
+        }
+      }
+    },
+    "findBanner": {
+      "label": "Find banner",
+      "elements": {
+        "back": {
+          "type": "image",
+          "image": "Popup01_Basic_Single",
+          "slice": [
+            40,
+            40,
+            40,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "rarity": {
+          "type": "text",
+          "text": "{text}",
+          "size": 24,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 6,
+          "style": "primary"
+        },
+        "name": {
+          "type": "text",
+          "text": "{name}",
+          "size": 30,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 6,
+          "style": "primary"
+        },
+        "reward": {
+          "type": "text",
+          "text": "+${reward}",
+          "size": 28,
+          "fill": "#ffe066",
+          "stroke": "#3a2400",
+          "strokeWidth": 6,
+          "style": "primary"
+        },
+        "hint": {
+          "type": "text",
+          "text": "{text}",
+          "size": 17,
+          "fill": "#ffffff",
+          "stroke": "#0d2a4d",
+          "strokeWidth": 4,
+          "style": "primary"
+        }
+      }
+    }
+  }
+}

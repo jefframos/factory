@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "$comment": "Hat placement on the head, edited in the level editor (Hats tab). Offsets are fractions of the head size from the top of the head (y < 0 sinks the hat down); scale is the hat width as a fraction of the head width; rotationY in degrees. Hats not listed use default.",
+  "default": {
+    "x": 0,
+    "y": -0.03,
+    "z": 0,
+    "scale": 1.05,
+    "rotationY": 0
+  },
+  "hats": {
+    "Boxing_Hat": {
+      "x": 0,
+      "y": -1.15,
+      "z": 0,
+      "scale": 1.46,
+      "rotationY": 0
+    },
+    "Armor_Hat": {
+      "x": 0,
+      "y": -1.2,
+      "z": 0,
+      "scale": 1.34,
+      "rotationY": 0
+    },
+    "Warrior_Hat": {
+      "x": 0,
+      "y": -1.12,
+      "z": -0.04,
+      "scale": 1.49,
+      "rotationY": 0
+    },
+    "Millitary_Hat": {
+      "x": 0,
+      "y": -0.84,
+      "z": 0,
+      "scale": 1.53,
+      "rotationY": 0
+    },
+    "Police_Hat": {
+      "x": 0,
+      "y": -0.43,
+      "z": 0,
+      "scale": 1.66,
+      "rotationY": 0
+    },
+    "Hard_Hat": {
+      "x": 0,
+      "y": -0.28,
+      "z": 0.03,
+      "scale": 1.39,
+      "rotationY": 0
+    },
+    "Cashier_Hat": {
+      "x": 0,
+      "y": -0.34,
+      "z": 0.24,
+      "scale": 1.96,
+      "rotationY": 0
+    },
+    "Chef_Hat": {
+      "x": 0,
+      "y": -0.16,
+      "z": -0.06,
+      "scale": 1.43,
+      "rotationY": 0
+    },
+    "Mexican_Hat": {
+      "x": 0,
+      "y": -0.11,
+      "z": -0.08,
+      "scale": 2.5,
+      "rotationY": 0
+    },
+    "Santa_Hat": {
+      "x": -0.13,
+      "y": -0.25,
+      "z": 0,
+      "scale": 1.49,
+      "rotationY": 0
+    },
+    "Viking_Hat": {
+      "x": 0,
+      "y": -0.27,
+      "z": 0,
+      "scale": 1.75,
+      "rotationY": 0
+    },
+    "Pirate_Hat": {
+      "x": 0,
+      "y": -0.3,
+      "z": 0.07,
+      "scale": 2.01,
+      "rotationY": 0
+    },
+    "Jester_Hat": {
+      "x": 0,
+      "y": -0.03,
+      "z": 0,
+      "scale": 1.79,
+      "rotationY": 0
+    },
+    "Green_Hat": {
+      "x": 0,
+      "y": -0.14,
+      "z": 0,
+      "scale": 1.84,
+      "rotationY": 0
+    },
+    "Fireman_Hat": {
+      "x": 0,
+      "y": -0.2,
+      "z": 0,
+      "scale": 2.05,
+      "rotationY": 0
+    },
+    "Crown": {
+      "x": 0,
+      "y": -0.24,
+      "z": 0,
+      "scale": 1.47,
+      "rotationY": 0
+    },
+    "Cowboy_Hat": {
+      "x": 0,
+      "y": -0.19,
+      "z": 0,
+      "scale": 1.95,
+      "rotationY": 0
+    },
+    "American_Hat": {
+      "x": 0,
+      "y": -0.17,
+      "z": 0,
+      "scale": 1.78,
+      "rotationY": 0
+    }
+  }
+}

@@ -189,7 +189,11 @@ export default class MyGame extends Game {
         const pathLevel = this.sceneManager.register<PathLevelScene>('path-level', PathLevelScene, this, this.moneyHud);
         pathLevel.onRestart.add(() => this.requestSceneChange('path-level', true));
 
-        pathLevel.onHome.add(() => this.requestSceneChange('home', true));
+        // The main menu is not gameplay (platform event); the next touch in a level starts it again.
+        pathLevel.onHome.add(() => {
+            void PlatformHandler.instance.platform?.gameplayStop();
+            this.requestSceneChange('home', true);
+        });
         const home = this.sceneManager.register<HomeScene>('home', HomeScene, this, this.moneyHud);
         home.onPlayLevel.add(() => this.requestSceneChange('path-level', true));
 
