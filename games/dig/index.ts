@@ -14,6 +14,8 @@ import loaderConfig from './loader.config';
 import platformConfig from './platforms.config.json';
 import fontManifest from './manifests/fonts.json';
 import DigScene, { DIG_CAMERA } from './game/scenes/DigScene';
+import { Localization } from './game/i18n/Localization';
+import { DigAudio } from './game/audio/DigAudio';
 
 type PlatformConfigEntry = { className?: string; folder?: string; gameId?: string; enableAds?: boolean };
 
@@ -44,6 +46,9 @@ export default class DigGame extends Game {
             await PlatformHandler.instance.initialize(plat);
 
             PlatformHandler.instance.platform.startLoad();
+            // The language (saved choice, else the browser's) before any UI is built.
+            await Localization.load();
+            await DigAudio.initialize(this.folderPath);
             this.stageContainer.addChild(this.gameContainer);
             this.sceneManager = new SceneManager(this.gameContainer);
 

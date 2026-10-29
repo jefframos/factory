@@ -44,11 +44,15 @@ interface SaveData {
     look: Look;
     /** Money when the wardrobe was last opened: things that became affordable since get its "!". */
     wardrobeBudget: number;
+    /** The wardrobe has been opened at least once (until then the guide leads the miner to it). */
+    wardrobeVisited: boolean;
     dug: string;
     /** Hub buildables bought so far (levels/hub.json `buildables`), by id. */
     built: string[];
     /** Counters the achievements read (finds come from `found`). */
-    stats: { blocks: number; ores: number; earned: number };
+    stats: { blocks: number; ores: number; earned: number; sells: number };
+    /** Total upgrades (tools + backpacks) bought when each hub area appeared — for 'upgradeAfter:<area>' reveals. */
+    revealedAt: Record<string, number>;
     /** Achievement tiers claimed, by achievement id. */
     achievements: Record<string, number>;
 }
@@ -57,8 +61,8 @@ const starterLook = (): Look => ({ color: DIG.wardrobe.colors[0].id, face: DIG.w
 
 const fresh = (): SaveData => ({
     money: 0, toolLevel: 0, backpackLevel: 0, backpack: {}, found: {}, seen: [], collectionDone: false, deepestZone: 0,
-    owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, dug: '', built: [],
-    stats: { blocks: 0, ores: 0, earned: 0 }, achievements: {},
+    owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, wardrobeVisited: false, dug: '', built: [],
+    stats: { blocks: 0, ores: 0, earned: 0, sells: 0 }, achievements: {}, revealedAt: {},
 });
 
 function load(): SaveData {
@@ -66,7 +70,7 @@ function load(): SaveData {
         const raw = window.localStorage.getItem(SAVE_KEY);
         if (raw) {
             const saved = JSON.parse(raw) as Partial<SaveData>;
-            return { ...fresh(), ...saved, stats: { ...fresh().stats, ...saved.stats }, look: { ...starterLook(), ...saved.look }, owned: { ...fresh().owned, ...saved.owned } };
+            return { ...fresh(), ...saved, stats: { ...fresh().stats, ...saved.stats }, revealedAt: { ...saved.revealedAt }, look: { ...starterLook(), ...saved.look }, owned: { ...fresh().owned, ...saved.owned } };
         }
     } catch {
         // A broken save starts fresh.
@@ -165,6 +169,7 @@ export const DigProgress = {
         }
         state.backpack = {};
         state.money += earned;
+        if (earned > 0) state.stats.sells++;
         state.stats.earned += earned;
         this.changed();
         return earned;
@@ -203,7 +208,12 @@ export const DigProgress = {
     },
 
     /** The wardrobe was opened: everything affordable now has been seen. */
+    get wardrobeVisited(): boolean {
+        return state.wardrobeVisited;
+    },
+
     markWardrobeSeen(): void {
+        state.wardrobeVisited = true;
         state.wardrobeBudget = state.money;
         for (const kind of Object.keys(DIG.wardrobe) as LookKind[]) {
             for (const item of DIG.wardrobe[kind]) {
@@ -231,6 +241,24 @@ export const DigProgress = {
         else state.look.hat = item.id;
         this.changed();
         return true;
+    },
+
+    /** Tool and backpack upgrades bought, together (the hub's reveal areas count them). */
+    get upgradesBought(): number {
+        return state.toolLevel + state.backpackLevel;
+    },
+    get timesSold(): number {
+        return state.stats.sells;
+    },
+    /** Upgrades bought when an area appeared (undefined: not yet). */
+    areaRevealedAt(id: string): number | undefined {
+        return state.revealedAt[id];
+    },
+    /** Notes when an area first appeared (saved quietly: no change signal, the hub is what's calling). */
+    markAreaRevealed(id: string): void {
+        if (state.revealedAt[id] !== undefined) return;
+        state.revealedAt[id] = this.upgradesBought;
+        this.scheduleSave();
     },
 
     /** A block was dug (the Digger / Ore Hunter achievements count them). */

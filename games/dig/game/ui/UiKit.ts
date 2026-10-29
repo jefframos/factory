@@ -5,6 +5,7 @@
 
 import * as PIXI from 'pixi.js';
 import kit from '../../ui/uikit.json';
+import { Localization } from '../i18n/Localization';
 
 type StyleRole = 'primary' | 'secondary';
 
@@ -48,6 +49,10 @@ interface TextElement extends Partial<Omit<TextStyleSettings, 'shadow'>> {
     /** 0 / missing = no wrapping. */
     wrapWidth?: number;
     align?: 'left' | 'center' | 'right';
+    /** A Localization id: the element's text comes from the current language (its `{placeholders}` filled the same way). */
+    i18n?: string;
+    /** Shrinks the text to at most this wide (translations run longer than English: never cut off). */
+    maxWidth?: number;
 }
 
 type KitElement = ImageElement | TextElement;
@@ -157,7 +162,8 @@ export const UiKit = {
     /** Styled text; `{name}` placeholders are replaced from `values`. */
     text(screen: string, id: string, values: Record<string, string | number> = {}, extra: Partial<PIXI.TextStyle> = {}): PIXI.Text {
         const data = element<TextElement>(screen, id, 'text');
-        const content = data.text.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ''));
+        const template = data.i18n ? Localization.getString(data.i18n) : data.text;
+        const content = template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ''));
         const style = UiKit.resolveStyle(data.style, data);
         const wrap = data.wrapWidth && data.wrapWidth > 0 ? data.wrapWidth : 0;
         const text = new PIXI.Text(content, {
@@ -176,10 +182,13 @@ export const UiKit = {
             dropShadowBlur: style.shadow.blur,
             wordWrap: wrap > 0,
             wordWrapWidth: wrap,
+            // Languages without spaces (Japanese, Chinese, Thai) still wrap.
+            breakWords: wrap > 0,
             align: data.align ?? 'center',
             ...extra,
         });
         text.anchor.set(0.5);
+        if (data.maxWidth) UiKit.fit(text, data.maxWidth);
         return text;
     },
 };

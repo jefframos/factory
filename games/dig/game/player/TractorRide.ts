@@ -15,6 +15,7 @@ import { DigProgress } from '../data/DigProgress';
 import { hubRects } from '../data/HubData';
 import type DigPlayer from './DigPlayer';
 import type { DigEffects } from '../vfx/DigEffects';
+import { DigAudio } from '../audio/DigAudio';
 
 const MODEL_BASE = './dig/models/';
 /** Wheel radius the spin is worked out from (world units, before the tractor's own scale). */
@@ -80,6 +81,7 @@ export class TractorRide {
         this.riding = on;
         const at = this.player.transform.position.clone().setY(0.6);
         this.effects.smoke(at, config.smoke.count, config.smoke.size, new THREE.Color(config.smoke.color));
+        DigAudio.play('whoosh');
         this.holder.visible = on;
         this.player.speedMultiplier = on ? config.speedMultiplier : 1;
         this.player.seated = on;

@@ -128,7 +128,8 @@
           "fill": "#d7e8ff",
           "stroke": "#0d2a5a",
           "strokeWidth": 4,
-          "style": "primary"
+          "style": "primary",
+          "maxWidth": 150
         },
         "toast": {
           "type": "text",
@@ -137,7 +138,8 @@
           "fill": "#ffffff",
           "stroke": "#1d140e",
           "strokeWidth": 6,
-          "style": "primary"
+          "style": "primary",
+          "wrapWidth": 560
         },
         "sellButton": {
           "type": "image",
@@ -157,7 +159,9 @@
           "fill": "#ffffff",
           "stroke": "#1d4a12",
           "strokeWidth": 4,
-          "style": "primary"
+          "style": "primary",
+          "i18n": "sell",
+          "maxWidth": 70
         },
         "closeButton": {
           "type": "image",
@@ -207,6 +211,11 @@
           "stroke": "#1d140e",
           "strokeWidth": 5,
           "style": "primary"
+        },
+        "settingsIcon": {
+          "type": "image",
+          "image": "Icon_Setting",
+          "tint": "#ffffff"
         }
       }
     },
@@ -234,7 +243,7 @@
             0
           ],
           "tint": "#ffffff",
-          "w": 640,
+          "w": 1000,
           "h": 143,
           "sliceScale": 1
         },
@@ -245,7 +254,9 @@
           "fill": "#ffffff",
           "stroke": "#1d5a12",
           "strokeWidth": 6,
-          "style": "primary"
+          "style": "primary",
+          "i18n": "titleUpgrades",
+          "maxWidth": 355
         },
         "itemFrame": {
           "type": "image",
@@ -305,7 +316,8 @@
           "fill": "#ffffff",
           "stroke": "#0b3d12",
           "strokeWidth": 5,
-          "style": "primary"
+          "style": "primary",
+          "maxWidth": 110
         },
         "maxLabel": {
           "type": "text",
@@ -314,7 +326,9 @@
           "fill": "#ffffff",
           "stroke": "#1d1b1a",
           "strokeWidth": 4,
-          "style": "primary"
+          "style": "primary",
+          "i18n": "max",
+          "maxWidth": 110
         },
         "nodeLabel": {
           "type": "text",
@@ -427,7 +441,7 @@
             0
           ],
           "tint": "#ffffff",
-          "w": 640,
+          "w": 1000,
           "h": 143,
           "sliceScale": 1
         },
@@ -438,7 +452,9 @@
           "fill": "#ffffff",
           "stroke": "#7a4100",
           "strokeWidth": 6,
-          "style": "primary"
+          "style": "primary",
+          "i18n": "titleCollection",
+          "maxWidth": 355
         },
         "progress": {
           "type": "text",
@@ -447,7 +463,9 @@
           "fill": "#ffe066",
           "stroke": "#3a2400",
           "strokeWidth": 5,
-          "style": "primary"
+          "style": "primary",
+          "i18n": "found",
+          "maxWidth": 400
         },
         "barBack": {
           "type": "image",
@@ -531,7 +549,9 @@
           "fill": "#ffffff",
           "stroke": "#0b3d12",
           "strokeWidth": 3,
-          "style": "primary"
+          "style": "primary",
+          "i18n": "newBadge",
+          "maxWidth": 48
         },
         "reward": {
           "type": "text",
@@ -653,7 +673,7 @@
             0
           ],
           "tint": "#ffffff",
-          "w": 640,
+          "w": 1000,
           "h": 143,
           "sliceScale": 1
         },
@@ -664,7 +684,9 @@
           "fill": "#ffffff",
           "stroke": "#6b0f4a",
           "strokeWidth": 6,
-          "style": "primary"
+          "style": "primary",
+          "i18n": "titleWardrobe",
+          "maxWidth": 355
         },
         "tab": {
           "type": "image",
@@ -695,7 +717,8 @@
           "fill": "#ffffff",
           "stroke": "#1d140e",
           "strokeWidth": 4,
-          "style": "primary"
+          "style": "primary",
+          "maxWidth": 140
         },
         "card": {
           "type": "image",
@@ -843,7 +866,7 @@
             0
           ],
           "tint": "#ffffff",
-          "w": 820,
+          "w": 1000,
           "h": 143,
           "sliceScale": 1
         },
@@ -854,7 +877,9 @@
           "fill": "#ffffff",
           "stroke": "#7a3000",
           "strokeWidth": 6,
-          "style": "primary"
+          "style": "primary",
+          "i18n": "titleAchievements",
+          "maxWidth": 355
         },
         "frameLevel0": {
           "type": "image",
@@ -1041,6 +1066,79 @@
             20
           ],
           "tint": "#2b3240"
+        }
+      }
+    },
+    "language": {
+      "label": "Language",
+      "elements": {
+        "panel": {
+          "type": "image",
+          "image": "BorderFrame_Round20_Single_Dark",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "ribbon": {
+          "type": "image",
+          "image": "Title_Ribbon01_Blue",
+          "slice": [
+            150,
+            0,
+            150,
+            0
+          ],
+          "tint": "#ffffff",
+          "w": 1000,
+          "h": 143,
+          "sliceScale": 1
+        },
+        "title": {
+          "type": "text",
+          "text": "LANGUAGE",
+          "size": 28,
+          "fill": "#ffffff",
+          "stroke": "#0d2a5a",
+          "strokeWidth": 6,
+          "style": "primary",
+          "i18n": "titleLanguage",
+          "maxWidth": 355
+        },
+        "option": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Gray",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "optionActive": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Green",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "optionLabel": {
+          "type": "text",
+          "text": "{text}",
+          "size": 18,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 4,
+          "style": "primary",
+          "maxWidth": 128
         }
       }
     }

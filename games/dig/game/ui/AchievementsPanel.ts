@@ -11,6 +11,8 @@ import { UiKit } from './UiKit';
 import { UiAnim } from './UiAnim';
 import { AchievementDef, DIG } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
+import { t, names } from '../i18n/Localization';
+import { DigAudio } from '../audio/DigAudio';
 
 const WIDTH = 760;
 const ROW_HEIGHT = 150;
@@ -30,8 +32,8 @@ const LEVEL_FRAMES = ['frameLevel0', 'frameLevel1', 'frameLevel2', 'frameLevel3'
 export class AchievementsPanel extends PIXI.Container {
     private readonly body = new PIXI.Container();
 
-    /** `onClaim` after a tier is claimed (the HUD flashes the money; `say` shows a message). */
-    public constructor(private readonly say: (text: string, color: number) => void) {
+    /** `onClaimed` after a level is claimed: the HUD plays the reward popup and flies the cash in. */
+    public constructor(private readonly onClaimed: (achievement: AchievementDef, level: number, reward: number, decor: boolean) => void) {
         super();
         const frame = UiKit.image('achievements', 'panel', WIDTH, HEIGHT);
         const ribbon = UiKit.sprite('achievements', 'ribbon', 0.55);
@@ -47,13 +49,16 @@ export class AchievementsPanel extends PIXI.Container {
     }
 
     public refresh(): void {
+        // Stop the old cards' pulses first: a tween left running on a destroyed sprite throws every frame and stalls
+        // every other animation in the game (the reward coins froze mid-air).
+        UiAnim.kill(this.body);
         this.body.removeChildren().forEach((child) => child.destroy({ children: true }));
         DIG.achievements.forEach((achievement, i) => {
             const row = this.row(achievement);
             row.y = -HEIGHT / 2 + HEADER + ROW_HEIGHT * (i + 0.5);
             this.body.addChild(row);
         });
-        const footer = UiKit.fit(UiKit.text('achievements', 'footer', { text: 'Finish an achievement to unlock a trophy for your hub!' }), WIDTH - 40);
+        const footer = UiKit.fit(UiKit.text('achievements', 'footer', { text: t('achievementsFooter') }), WIDTH - 40);
         footer.anchor.set(0.5);
         footer.y = HEIGHT / 2 - 22;
         this.body.addChild(footer);
@@ -78,14 +83,14 @@ export class AchievementsPanel extends PIXI.Container {
         icon.x = iconX;
         row.addChild(frame, icon);
 
-        const name = UiKit.fit(UiKit.text('achievements', 'name', { name: `${achievement.name.toUpperCase()}  ${done ? 'MAX' : `LV ${level + 1}/${tiers}`}` }), TEXT_WIDTH);
+        const name = UiKit.fit(UiKit.text('achievements', 'name', { name: `${names.achievement(achievement).toUpperCase()}  ${done ? t('max') : t('level', { level: level + 1, levels: tiers })}` }), TEXT_WIDTH);
         name.anchor.set(0, 0.5);
         name.position.set(TEXT_X, -44);
-        const goal = achievement.describe.replace('{goal}', tier.goal.toLocaleString('en-US'));
+        const goal = names.achievementGoal(achievement, tier.goal.toLocaleString('en-US'));
         const reward = done
-            ? `${achievement.decor} is in your hub!`
-            : level === tiers - 1 ? `Reward: $${tier.reward.toLocaleString('en-US')} + ${achievement.decor} for your hub` : `Reward: $${tier.reward.toLocaleString('en-US')}`;
-        const info = UiKit.fit(UiKit.text('achievements', 'info', { text: done ? 'Complete!' : goal }), TEXT_WIDTH);
+            ? t('decorInHub', { decor: names.decor(achievement) })
+            : level === tiers - 1 ? t('rewardCashDecor', { reward: tier.reward.toLocaleString('en-US'), decor: names.decor(achievement) }) : t('rewardCash', { reward: tier.reward.toLocaleString('en-US') });
+        const info = UiKit.fit(UiKit.text('achievements', 'info', { text: done ? t('complete') : goal }), TEXT_WIDTH);
         info.anchor.set(0, 0.5);
         info.position.set(TEXT_X, -14);
         row.addChild(name, info);
@@ -101,7 +106,7 @@ export class AchievementsPanel extends PIXI.Container {
             fill.x = -(BAR_WIDTH - 4) / 2 + width / 2;
             bar.addChild(fill);
         }
-        const count = UiKit.text('achievements', 'count', { text: done ? 'DONE' : `${Math.min(value, tier.goal).toLocaleString('en-US')} / ${tier.goal.toLocaleString('en-US')}` });
+        const count = UiKit.text('achievements', 'count', { text: done ? t('done') : `${Math.min(value, tier.goal).toLocaleString('en-US')} / ${tier.goal.toLocaleString('en-US')}` });
         count.anchor.set(0.5);
         bar.addChild(count);
         const rewardText = UiKit.fit(UiKit.text('achievements', 'reward', { text: reward }), TEXT_WIDTH);
@@ -125,7 +130,7 @@ export class AchievementsPanel extends PIXI.Container {
             check.y = -3;
             button.addChild(check);
         } else {
-            button.addChild(UiKit.fit(UiKit.text('achievements', 'buttonLabel', { text: ready ? 'CLAIM' : 'LOCKED' }), BUTTON.width - 20));
+            button.addChild(UiKit.fit(UiKit.text('achievements', 'buttonLabel', { text: ready ? t('claim') : t('locked') }), BUTTON.width - 20));
         }
         if (!ready) {
             if (!done) button.alpha = 0.7;
@@ -144,8 +149,9 @@ export class AchievementsPanel extends PIXI.Container {
         button.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
             event.stopPropagation();
             const claimed = DigProgress.claimAchievement(achievement.id);
+            if (claimed) DigAudio.play('confirm');
             if (!claimed) return;
-            this.say(claimed.decor ? `${achievement.decor.toUpperCase()} UNLOCKED! +$${claimed.reward}` : `+$${claimed.reward.toLocaleString('en-US')}`, 0xffe066);
+            this.onClaimed(achievement, DigProgress.achievementLevel(achievement.id), claimed.reward, claimed.decor);
             this.refresh();
         });
         return button;

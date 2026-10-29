@@ -2,7 +2,600 @@
   "bundles": [
     {
       "name": "default",
-      "assets": []
+      "assets": [
+        {
+          "alias": [
+            "applause.mp3"
+          ],
+          "src": [
+            "applause.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "break-1.ogg"
+          ],
+          "src": [
+            "break-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "break-2.ogg"
+          ],
+          "src": [
+            "break-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "break-3.ogg"
+          ],
+          "src": [
+            "break-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "build-1.ogg"
+          ],
+          "src": [
+            "build-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "build-2.ogg"
+          ],
+          "src": [
+            "build-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "build-3.ogg"
+          ],
+          "src": [
+            "build-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "build-4.ogg"
+          ],
+          "src": [
+            "build-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "build-5.ogg"
+          ],
+          "src": [
+            "build-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "buy-cash.wav"
+          ],
+          "src": [
+            "buy-cash.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "buy-fanfare.wav"
+          ],
+          "src": [
+            "buy-fanfare.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "buy-shine.wav"
+          ],
+          "src": [
+            "buy-shine.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "buy-star.wav"
+          ],
+          "src": [
+            "buy-star.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "coins-1.ogg"
+          ],
+          "src": [
+            "coins-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "coins-2.ogg"
+          ],
+          "src": [
+            "coins-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-gem-1.ogg"
+          ],
+          "src": [
+            "collect-gem-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-gem-2.ogg"
+          ],
+          "src": [
+            "collect-gem-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-gem-3.ogg"
+          ],
+          "src": [
+            "collect-gem-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-gem-4.ogg"
+          ],
+          "src": [
+            "collect-gem-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-gem-5.ogg"
+          ],
+          "src": [
+            "collect-gem-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-metal-1.ogg"
+          ],
+          "src": [
+            "collect-metal-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-metal-2.ogg"
+          ],
+          "src": [
+            "collect-metal-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-metal-3.ogg"
+          ],
+          "src": [
+            "collect-metal-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-metal-4.ogg"
+          ],
+          "src": [
+            "collect-metal-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-metal-5.ogg"
+          ],
+          "src": [
+            "collect-metal-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-stone-1.ogg"
+          ],
+          "src": [
+            "collect-stone-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-stone-2.ogg"
+          ],
+          "src": [
+            "collect-stone-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-stone-3.ogg"
+          ],
+          "src": [
+            "collect-stone-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-stone-4.ogg"
+          ],
+          "src": [
+            "collect-stone-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-stone-5.ogg"
+          ],
+          "src": [
+            "collect-stone-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "dig-hit-1.ogg"
+          ],
+          "src": [
+            "dig-hit-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "dig-hit-2.ogg"
+          ],
+          "src": [
+            "dig-hit-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "dig-hit-3.ogg"
+          ],
+          "src": [
+            "dig-hit-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "dig-hit-4.ogg"
+          ],
+          "src": [
+            "dig-hit-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "dig-hit-5.ogg"
+          ],
+          "src": [
+            "dig-hit-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-gem-1.ogg"
+          ],
+          "src": [
+            "hit-gem-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-gem-2.ogg"
+          ],
+          "src": [
+            "hit-gem-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-gem-3.ogg"
+          ],
+          "src": [
+            "hit-gem-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-gem-4.ogg"
+          ],
+          "src": [
+            "hit-gem-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-gem-5.ogg"
+          ],
+          "src": [
+            "hit-gem-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-metal-1.ogg"
+          ],
+          "src": [
+            "hit-metal-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-metal-2.ogg"
+          ],
+          "src": [
+            "hit-metal-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-metal-3.ogg"
+          ],
+          "src": [
+            "hit-metal-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-metal-4.ogg"
+          ],
+          "src": [
+            "hit-metal-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-metal-5.ogg"
+          ],
+          "src": [
+            "hit-metal-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "reveal.ogg"
+          ],
+          "src": [
+            "reveal.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "sparkle.mp3"
+          ],
+          "src": [
+            "sparkle.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "step-stone-1.ogg"
+          ],
+          "src": [
+            "step-stone-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "step-stone-2.ogg"
+          ],
+          "src": [
+            "step-stone-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "step-stone-3.ogg"
+          ],
+          "src": [
+            "step-stone-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "step-stone-4.ogg"
+          ],
+          "src": [
+            "step-stone-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "step-stone-5.ogg"
+          ],
+          "src": [
+            "step-stone-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "step-wood-0.ogg"
+          ],
+          "src": [
+            "step-wood-0.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "step-wood-1.ogg"
+          ],
+          "src": [
+            "step-wood-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "step-wood-2.ogg"
+          ],
+          "src": [
+            "step-wood-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "step-wood-3.ogg"
+          ],
+          "src": [
+            "step-wood-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "step-wood-4.ogg"
+          ],
+          "src": [
+            "step-wood-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-click-1.ogg"
+          ],
+          "src": [
+            "ui-click-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-click-2.ogg"
+          ],
+          "src": [
+            "ui-click-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-click-3.ogg"
+          ],
+          "src": [
+            "ui-click-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-close.ogg"
+          ],
+          "src": [
+            "ui-close.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-complete.ogg"
+          ],
+          "src": [
+            "ui-complete.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-confirm.ogg"
+          ],
+          "src": [
+            "ui-confirm.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-error.ogg"
+          ],
+          "src": [
+            "ui-error.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-item.ogg"
+          ],
+          "src": [
+            "ui-item.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-open.ogg"
+          ],
+          "src": [
+            "ui-open.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-quest.ogg"
+          ],
+          "src": [
+            "ui-quest.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-tab.ogg"
+          ],
+          "src": [
+            "ui-tab.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-toggle.ogg"
+          ],
+          "src": [
+            "ui-toggle.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "whoosh.wav"
+          ],
+          "src": [
+            "whoosh.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "yay-1.wav"
+          ],
+          "src": [
+            "yay-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "yay-2.wav"
+          ],
+          "src": [
+            "yay-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "yay-3.wav"
+          ],
+          "src": [
+            "yay-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "yay-4.wav"
+          ],
+          "src": [
+            "yay-4.mp3"
+          ]
+        }
+      ]
     }
   ]
 }

@@ -13,16 +13,18 @@ import { UiAnim } from './UiAnim';
 import { ModelIcons } from './ModelIcons';
 import { DIG, FindDef, Rarity } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
+import { t, names } from '../i18n/Localization';
+import { DigAudio } from '../audio/DigAudio';
 
 const WIDTH = 640;
-const HEIGHT = 584;
+const HEIGHT = 624;
 /** Frame size, for the HUD to fit the panel on screen. */
 export const COLLECTION_SIZE = { width: WIDTH, height: HEIGHT };
 /** Cards are wide (filling the panel's width), so long names fit. */
-const CARD = 132;
+const CARD = 150;
 const CARD_W = 180;
 const CARD_GAP = 20;
-const ROW_HEIGHT = 180;
+const ROW_HEIGHT = 192;
 const BAR_WIDTH = 300;
 const PER_ROW = 3;
 const ROWS_PER_PAGE = 2;
@@ -79,6 +81,9 @@ export class CollectionPanel extends PIXI.Container {
 
     private renderPage(): void {
         const newIds = this.newIds;
+        // Stop the old cards' pulses first: a tween left running on a destroyed sprite throws every frame and stalls
+        // every other animation in the game (the reward coins froze mid-air).
+        UiAnim.kill(this.body);
         this.body.removeChildren().forEach((child) => child.destroy({ children: true }));
         const found = DigProgress.collectedCount;
         const total = DIG.finds.length;
@@ -97,12 +102,12 @@ export class CollectionPanel extends PIXI.Container {
         }
         this.body.addChild(progress, bar);
 
-        const top = -HEIGHT / 2 + 118;
+        const top = -HEIGHT / 2 + 108;
         ROWS.slice(this.page * ROWS_PER_PAGE, (this.page + 1) * ROWS_PER_PAGE).forEach(({ zone: zoneIndex, finds }, row) => {
             const zone = DIG.zones[zoneIndex];
             const y = top + row * ROW_HEIGHT;
             const reached = zoneIndex <= DigProgress.deepestZone;
-            const label = UiKit.text('collection', 'zoneLabel', { name: reached ? zone.name.toUpperCase() : `${zone.name.toUpperCase()} (not reached)` });
+            const label = UiKit.text('collection', 'zoneLabel', { name: reached ? names.zone(zone).toUpperCase() : t('notReached', { name: names.zone(zone).toUpperCase() }) });
             label.anchor.set(0.5, 0);
             label.y = y;
             this.body.addChild(label);
@@ -114,7 +119,7 @@ export class CollectionPanel extends PIXI.Container {
         });
 
         if (PAGES > 1) {
-            const y = HEIGHT / 2 - 66;
+            const y = HEIGHT / 2 - 80;
             const label = UiKit.text('collection', 'page', { page: this.page + 1, pages: PAGES });
             label.anchor.set(0.5);
             label.y = y;
@@ -124,11 +129,11 @@ export class CollectionPanel extends PIXI.Container {
         const reward = DIG.collectionReward;
         const footer = UiKit.text('collection', 'reward', {
             text: DigProgress.collectionDone
-                ? 'COLLECTION COMPLETE! The Crown is yours (Wardrobe)'
-                : `Find them all: $${reward.money.toLocaleString('en-US')} + the ${reward.hat} hat`,
+                ? t('collectionComplete', { hat: names.look(reward.hat) })
+                : t('collectionGoal', { money: reward.money.toLocaleString('en-US'), hat: names.look(reward.hat) }),
         });
         footer.anchor.set(0.5);
-        footer.y = HEIGHT / 2 - 26;
+        footer.y = HEIGHT / 2 - 36;
         UiKit.fit(footer, WIDTH - 40);
         this.body.addChild(footer);
     }
@@ -143,6 +148,7 @@ export class CollectionPanel extends PIXI.Container {
         arrow.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
             event.stopPropagation();
             this.page = (this.page + step + PAGES) % PAGES;
+            DigAudio.play('click');
             this.renderPage();
         });
         return arrow;
@@ -159,13 +165,13 @@ export class CollectionPanel extends PIXI.Container {
         icon.y = -10;
         card.addChild(frame, icon);
         // The name sits inside the card's bottom edge (shrunk to fit), so rows can stack tightly.
-        const name = count > 0 ? UiKit.text('collection', 'cardName', { name: find.name }) : UiKit.text('collection', 'missing');
+        const name = count > 0 ? UiKit.text('collection', 'cardName', { name: names.find(find) }) : UiKit.text('collection', 'missing');
         name.anchor.set(0.5, 1);
         name.y = CARD / 2 - 6;
         UiKit.fit(name, CARD_W - 16);
         card.addChild(name);
         if (count > 0) {
-            const rarity = UiKit.text('collection', 'rarity', { text: find.rarity.toUpperCase() }, { fill: RARITY_COLORS[find.rarity] });
+            const rarity = UiKit.text('collection', 'rarity', { text: names.rarity(find.rarity) }, { fill: RARITY_COLORS[find.rarity] });
             // Just above the name: the NEW! badge takes the top-left corner and the count the top-right.
             rarity.anchor.set(0.5, 1);
             rarity.position.set(0, CARD / 2 - 26);

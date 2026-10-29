@@ -13,6 +13,8 @@ import { DigProgress, FindResult } from '../data/DigProgress';
 import { VoxelTerrain, BEDROCK, AIR } from '../world/VoxelTerrain';
 import { DigEffects } from '../vfx/DigEffects';
 import type DigPlayer from '../player/DigPlayer';
+import { t, names } from '../i18n/Localization';
+import { DigAudio, type Cue } from '../audio/DigAudio';
 
 /** How far ahead of the miner's centre the block being dug is looked for. */
 const REACH = 0.75;
@@ -60,7 +62,7 @@ export class MiningController {
         const material = this.terrain.material(ix, iz);
         if (value === BEDROCK || !material) {
             this.effects.setCrack(null, 0);
-            this.hint('Bedrock — the edge of the mine');
+            this.hint(t('bedrock'));
             this.idle(delta);
             return;
         }
@@ -68,14 +70,14 @@ export class MiningController {
         // would just waste the vein.
         if (DigProgress.backpackCount >= DigProgress.capacity) {
             this.effects.setCrack(null, 0);
-            this.hint('Backpack full! Sell at the hub');
+            this.hint(t('backpackFull'));
             this.idle(delta);
             return;
         }
         if (material.minPower > tool.power) {
             this.effects.setCrack(null, 0);
             const needed = DIG.tools.find((t) => t.power >= material.minPower);
-            this.hint(`${material.name} needs a ${needed?.name ?? 'stronger tool'}`);
+            this.hint(t('needsTool', { material: names.material(material), tool: needed ? names.tool(needed) : t('strongerTool') }));
             this.idle(delta);
             return;
         }
@@ -141,6 +143,7 @@ export class MiningController {
         if (total < material.durability) {
             this.damage.set(index, total);
             this.effects.hit(this.center, this.color);
+            DigAudio.play(MiningController.hitCue(material));
             return;
         }
         this.damage.delete(index);
@@ -149,6 +152,8 @@ export class MiningController {
         DigProgress.recordBlock(material.ore);
         DigProgress.terrainChanged();
         this.effects.shatter(this.center, this.color);
+        DigAudio.play(MiningController.hitCue(material));
+        DigAudio.play('break');
         this.drop(material, this.center);
         if (find) {
             this.effects.reveal(this.center.clone().setY(1), () => this.onFind(find, DigProgress.addFind(find)), this.terrain.findModel(find));
@@ -156,16 +161,25 @@ export class MiningController {
     }
 
     /**
-     * Every new player finds their first artifact early: on DIG.firstFindAfterBlocks blocks dug the block being dug
+     * Every new player finds their first artifact early: once they've bought an upgrade and dug DIG.firstFindAfterBlocks
+     * blocks, the block being dug
      * gives up the first find (the topsoil's first), and its buried copy leaves the rock.
      */
     private forcedFirstFind(): FindDef | undefined {
         // Only once: the find counts when its pop-out lands, and more blocks can break before that.
-        if (this.firstFindGiven || DigProgress.collectedCount > 0 || DigProgress.achievementStat('blocks') < DIG.firstFindAfterBlocks) return undefined;
+        if (this.firstFindGiven || DigProgress.collectedCount > 0 || DigProgress.upgradesBought < 1
+            || DigProgress.achievementStat('blocks') < DIG.firstFindAfterBlocks) return undefined;
         this.firstFindGiven = true;
         const first = DIG.finds[0];
         this.terrain.unbury(first);
         return first;
+    }
+
+    /** The sound of a hit: crystal rings, ores clank, plain rock thuds (a shovel) or cracks (a pickaxe and up). */
+    private static hitCue(material: MaterialDef): Cue {
+        if (material.id === 'crystal') return 'hitGem';
+        if (material.ore) return 'hitMetal';
+        return DigProgress.tool.model === 'shovel' ? 'hitStone' : 'hitPick';
     }
 
     private drop(material: MaterialDef, at: THREE.Vector3): void {
@@ -173,7 +187,10 @@ export class MiningController {
             const from = at.clone().setY(0.8);
             this.effects.pickup(from, this.color.clone(), () => {
                 if (DigProgress.addItems(material.id, 1) === 0) {
-                    this.hint('Backpack full! Sell at the hub');
+                    this.hint(t('backpackFull'));
+                    DigAudio.play('error');
+                } else {
+                    DigAudio.play(material.id === 'crystal' ? 'collectGem' : material.ore ? 'collectMetal' : 'collectStone');
                 }
             }, this.terrain.pickupModel(material));
         }

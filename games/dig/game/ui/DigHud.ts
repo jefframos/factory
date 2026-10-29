@@ -19,11 +19,17 @@ import { CollectionPanel, COLLECTION_SIZE } from './CollectionPanel';
 import { WardrobePanel, WARDROBE_SIZE } from './WardrobePanel';
 import { FindBanner } from './FindBanner';
 import { AchievementsPanel, ACHIEVEMENTS_SIZE } from './AchievementsPanel';
+import { RewardPopup } from './RewardPopup';
+import { LanguagePanel, LANGUAGE_SIZE } from './LanguagePanel';
+import { MoveHint } from './MoveHint';
 import { ModelIcons } from './ModelIcons';
 import { DIG, Rarity, ToolDef } from '../data/DigConfig';
 import { RARITY_COLORS } from './CollectionPanel';
 import SoundToggleButton from 'core/ui/SoundToggleButton';
 import type { StationKind } from '../data/HubData';
+import { t, names } from '../i18n/Localization';
+import { DigAudio } from '../audio/DigAudio';
+import { Gameplay } from '../data/Gameplay';
 
 const PILL_WIDTH = 210;
 const PILL_HEIGHT = 46;
@@ -36,6 +42,8 @@ const TOOL_SIZE = 96;
 /** The current tool sits in the bottom-right corner: its frame, its name on a pill under it. */
 const TOOL_PILL_WIDTH = 170;
 const MUTE_SIZE = 64;
+/** The guide line wraps at this width. */
+const GUIDE_WIDTH = 420;
 /** The achievements button, under the money / backpack pills: just the memo pad icon, no button shape. */
 const ACHIEVEMENTS_BUTTON = 84;
 const SELL_WIDTH = 86;
@@ -77,8 +85,8 @@ const toolFrame = (tool: ToolDef, owned: boolean): string => (owned ? TOOL_FRAME
 
 /** What a tool does, for its offer. */
 function toolDetail(tool: ToolDef): string {
-    if (tool.vehicle) return `Power ${tool.power} · digs ${tool.area} wide · ride it!`;
-    return `Power ${tool.power}${tool.area > 1 ? ` · digs ${tool.area} wide` : ''}`;
+    if (tool.vehicle) return t('toolPowerRide', { power: tool.power, area: tool.area });
+    return tool.area > 1 ? t('toolPowerWide', { power: tool.power, area: tool.area }) : t('toolPower', { power: tool.power });
 }
 
 /** A tool's picture: its atlas icon, or for the tractor a render of its model. */
@@ -96,6 +104,10 @@ function toolIcon(iconId: string, size: number): PIXI.Sprite {
 export class DigHud extends PIXI.Container {
     private readonly corner = new PIXI.Container();
     private readonly moneyText = UiKit.text('hud', 'money', { money: 0 });
+    /** The money pill's icon: where reward coins fly to. */
+    private moneyIcon?: PIXI.Container;
+    private moneyIconScale = 1;
+    private readonly rewardPopup: RewardPopup;
     private readonly backpackText = UiKit.text('hud', 'backpack', { count: 0, capacity: 0 });
     private readonly barFill = new PIXI.Container();
     private readonly toolChip = new PIXI.Container();
@@ -104,6 +116,12 @@ export class DigHud extends PIXI.Container {
     private readonly guide = new PIXI.Container();
     private readonly guideText = UiKit.text('hud', 'guide', { text: '' });
     private guideShown: string | null = null;
+    /** The guide says an upgrade is affordable: the hand points at its buy button in the ATM panel. */
+    private buyHint = false;
+    /** panelKey() when the upgrade panel was last built (see refresh()). */
+    private renderedPanelKey = '';
+    /** "Drag to move" (a brand-new game only; DigScene shows / hides it). */
+    public readonly moveHint = new MoveHint();
     private readonly sellButton = new PIXI.Container();
     private readonly panel = new PIXI.Container();
     private readonly panelBody = new PIXI.Container();
@@ -113,6 +131,9 @@ export class DigHud extends PIXI.Container {
     private readonly achievements: AchievementsPanel;
     private readonly achievementsButton = new PIXI.Container();
     private readonly achievementsAlert = new PIXI.Container();
+    /** The gear next to mute: opens the settings menu (the language list). */
+    private readonly settings = new PIXI.Container();
+    private readonly language = new LanguagePanel();
     public readonly findBanner = new FindBanner();
     private station: StationKind | null = null;
     private readonly slots: PanelSlot[] = [];
@@ -132,16 +153,34 @@ export class DigHud extends PIXI.Container {
         this.toast.alpha = 0;
         this.buildPanel();
         this.wardrobe = new WardrobePanel(onWear, (text, color) => this.say(text, color));
-        this.achievements = new AchievementsPanel((text, color) => this.say(text, color));
+        this.achievements = new AchievementsPanel((achievement, level, reward, decor) => {
+            this.rewardPopup.show(achievement, level, achievement.tiers.length, reward, decor ? names.decor(achievement) : undefined);
+        });
+        this.rewardPopup = new RewardPopup({
+            moneyTarget: () => (this.moneyIcon ? this.toLocal(this.moneyIcon.getGlobalPosition()) : new PIXI.Point()),
+            hold: (amount) => this.holdSale(amount, 0),
+            release: (amount) => this.releaseSale(amount, 0),
+            punchMoney: () => {
+                if (!this.moneyIcon) return;
+                gsap.killTweensOf(this.moneyIcon.scale);
+                this.moneyIcon.scale.set(this.moneyIconScale);
+                UiAnim.punch(this.moneyIcon, 0.25);
+            },
+            center: () => {
+                const screen = Game.overlayScreenData;
+                return screen ? new PIXI.Point(screen.center.x, screen.topLeft.y + screen.height * 0.36) : new PIXI.Point();
+            },
+        });
         this.buildAchievementsButton();
         this.guide.addChild(UiKit.image('hud', 'pill', 420, 50), this.guideText);
         this.guide.visible = false;
-        this.addChild(this.corner, this.toolChip, this.buildMute(), this.guide,
+        this.addChild(this.corner, this.toolChip, this.buildMute(), this.buildSettings(), this.guide, this.moveHint,
             this.slot(this.panel, UPGRADE_SIZE),
             this.slot(this.collection, COLLECTION_SIZE),
             this.slot(this.wardrobe, WARDROBE_SIZE),
             this.slot(this.achievements, ACHIEVEMENTS_SIZE, true),
-            this.findBanner, this.toast);
+            this.slot(this.language, LANGUAGE_SIZE, true),
+            this.findBanner, this.toast, this.rewardPopup);
         DigProgress.onChange.add(this.onChange);
         this.refresh();
         this.reposition();
@@ -159,6 +198,7 @@ export class DigHud extends PIXI.Container {
         close.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         close.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
             event.stopPropagation();
+            DigAudio.play('close');
             this.closeStationPanel();
         });
         panel.addChild(close);
@@ -170,6 +210,7 @@ export class DigHud extends PIXI.Container {
     private closeStationPanel(): void {
         this.toolChip.visible = true;
         this.achievements.visible = false;
+        this.language.visible = false;
         this.setUpgradePanel(false);
         this.collection.visible = false;
         this.wardrobe.visible = false;
@@ -185,6 +226,10 @@ export class DigHud extends PIXI.Container {
         back.alpha = 0.85;
         const symbol = icon('hud', iconId, ICON_SIZE);
         symbol.position.set(ICON_SIZE / 2, 0);
+        if (iconId === 'moneyIcon') {
+            this.moneyIcon = symbol;
+            this.moneyIconScale = symbol.scale.x;
+        }
         label.anchor.set(0, 0.5);
         label.position.set(ICON_SIZE + 8, -2);
         row.addChild(back, symbol, label);
@@ -237,19 +282,45 @@ export class DigHud extends PIXI.Container {
         this.corner.addChild(this.achievementsButton);
     }
 
-    /** Opens/closes the achievements (in the same bottom-half slot as the station panels). */
+    /** Opens/closes the achievements (centred over the game, like the language list). */
     private toggleAchievements(): void {
-        if (this.achievements.visible) {
+        this.toggleOverlay(this.achievements, () => this.achievements.refresh());
+    }
+
+    /** Opens an overlay panel opened from the HUD (closing whatever else is open), or closes it if it's showing. */
+    private toggleOverlay(panel: PIXI.Container, refresh: () => void): void {
+        if (panel.visible) {
             this.closeStationPanel();
             return;
         }
-        this.setUpgradePanel(false);
-        this.collection.visible = false;
-        this.wardrobe.visible = false;
+        this.closeStationPanel();
         this.toolChip.visible = false;
-        this.achievements.refresh();
-        this.achievements.visible = true;
-        UiAnim.popIn(this.achievements);
+        // Achievements and settings stop play (the platform's gameplayStop); moving again restarts it (DigScene).
+        Gameplay.stop();
+        refresh();
+        panel.visible = true;
+        UiAnim.popIn(panel);
+        DigAudio.play('open');
+    }
+
+    /** Shows the language list (the HUD was just rebuilt for a new language: keep it open). */
+    public openLanguage(): void {
+        if (!this.language.visible) this.toggleOverlay(this.language, () => this.language.refresh());
+    }
+
+    /** The gear on the round dark button (same as mute), left of it. */
+    private buildSettings(): PIXI.Container {
+        this.settings.addChild(icon('hud', 'muteButton', MUTE_SIZE), icon('hud', 'settingsIcon', MUTE_SIZE * 0.55));
+        this.settings.eventMode = 'static';
+        this.settings.cursor = 'pointer';
+        this.settings.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
+        this.settings.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
+            event.stopPropagation();
+            UiAnim.punch(this.settings, 0.12);
+            DigAudio.play('toggle');
+            this.toggleOverlay(this.language, () => this.language.refresh());
+        });
+        return this.settings;
     }
 
     /** Top-right mute toggle (core's SoundToggleButton on the kit's round dark button), like the other games. */
@@ -266,6 +337,7 @@ export class DigHud extends PIXI.Container {
         this.mute.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
             if (event.target !== icons) icons.emit('pointertap', event);
             UiAnim.punch(this.mute, 0.12);
+            DigAudio.play('toggle');
         });
         return this.mute;
     }
@@ -288,9 +360,9 @@ export class DigHud extends PIXI.Container {
 
     /** "SOLD! +$X", counting up over the sale. */
     public saySold(earned: number, duration: number): void {
-        this.say('SOLD! +$0', 0x9cff9c);
+        this.say(t('sold', { amount: 0 }), 0x9cff9c);
         gsap.killTweensOf(this.toast);
-        UiAnim.countUp(this.toast, 0, earned, (value) => `SOLD! +$${value}`, duration);
+        UiAnim.countUp(this.toast, 0, earned, (value) => t('sold', { amount: value }), duration);
         gsap.to(this.toast, { alpha: 0, duration: 0.5, delay: duration + 1.2 });
     }
 
@@ -311,6 +383,8 @@ export class DigHud extends PIXI.Container {
         // Only worth showing with something to sell (and not while a sale is still flying).
         this.sellButton.visible = DigProgress.backpackCount > 0;
         this.backpackText.text = `${count}/${capacity}`;
+        // Shrinks to the gap before the fill bar ("100/200" would run into it).
+        UiKit.fit(this.backpackText, BAR_X - BAR_WIDTH / 2 - (ICON_SIZE + 8) - 6);
         this.backpackText.style.fill = full ? 0xff7a6a : 0xffffff;
         this.barFill.removeChildren().forEach((child) => child.destroy({ children: true }));
         const fraction = Math.min(1, count / Math.max(1, capacity));
@@ -324,7 +398,7 @@ export class DigHud extends PIXI.Container {
 
         this.toolChip.removeChildren().forEach((child) => child.destroy({ children: true }));
         const tool = DigProgress.tool;
-        const name = UiKit.text('hud', 'toolName', { name: tool.name.toUpperCase() });
+        const name = UiKit.text('hud', 'toolName', { name: names.tool(tool).toUpperCase() });
         name.y = TOOL_SIZE / 2 + 12;
         // Bottom-right: the tool in its frame, its name on a pill under it (shrunk to fit, never cut).
         const pill = UiKit.image('hud', 'pill', TOOL_PILL_WIDTH, 34);
@@ -334,14 +408,18 @@ export class DigHud extends PIXI.Container {
         UiKit.fit(name, TOOL_PILL_WIDTH - 16);
         this.toolChip.addChild(UiKit.image('upgrades', toolFrame(tool, true), TOOL_SIZE, TOOL_SIZE), toolArt(tool, TOOL_SIZE * 0.72), pill, name);
 
-        if (this.panelOpen) {
+        // Rebuilt only when what they show changes — not on every coin of a sale landing, which used to
+        // recreate the buy buttons mid-tap (flicker, taps lost).
+        if (this.panelOpen && this.panelKey() !== this.renderedPanelKey) {
             this.renderPanel();
         }
-        if (this.station === 'wardrobe') {
+        if (this.station === 'wardrobe' && this.heldMoney === 0) {
             this.wardrobe.refresh();
         }
         this.achievementsAlert.visible = DigProgress.claimableAchievements > 0;
-        if (this.achievements.visible) {
+        // Not while money is still landing (a sale, a reward): rebuilding the panel on every coin is wasted work and
+        // kills its tweens mid-flight. It catches up when the last coin lands (heldMoney back to 0).
+        if (this.achievements.visible && this.heldMoney === 0) {
             this.achievements.refresh();
         }
     }
@@ -351,8 +429,11 @@ export class DigHud extends PIXI.Container {
         if (kind === this.station) return;
         this.station = kind;
         // The open panel fills the bottom of the screen, where the tool chip sits.
-        this.toolChip.visible = kind === null && !this.achievements.visible;
-        if (kind !== null) this.achievements.visible = false;
+        this.toolChip.visible = kind === null && !this.achievements.visible && !this.language.visible;
+        if (kind !== null) {
+            this.achievements.visible = false;
+            this.language.visible = false;
+        }
         this.setUpgradePanel(kind === 'atm');
         this.collection.visible = kind === 'collection';
         this.wardrobe.visible = kind === 'wardrobe';
@@ -360,24 +441,36 @@ export class DigHud extends PIXI.Container {
             this.collection.refresh(DigProgress.unseenFinds);
             DigProgress.markFindsSeen();
             UiAnim.popIn(this.collection);
+            DigAudio.play('open');
         } else if (kind === 'wardrobe') {
             this.wardrobe.refresh();
             DigProgress.markWardrobeSeen();
             UiAnim.popIn(this.wardrobe);
+            DigAudio.play('open');
         }
     }
 
     /** The guide's line (null hides it); pops in when it changes so the new step gets noticed. */
-    public setGuide(text: string | null): void {
+    public setGuide(text: string | null, buy = false): void {
+        if (buy !== this.buyHint) {
+            this.buyHint = buy;
+            if (this.panelOpen) this.renderPanel();
+        }
         if (text === this.guideShown) return;
+        // A new step (not the first one, nor the guide finishing): a soft "quest" chime.
+        if (text !== null && this.guideShown !== null) DigAudio.play('quest');
         this.guideShown = text;
-        this.guide.visible = text !== null;
+        // The steps aren't shown as text any more: the floor arrows lead the way (the text is kept for debugging).
+        this.guide.visible = false;
         if (text === null) return;
         this.guideText.text = text;
-        UiKit.fit(this.guideText, 390);
-        // A fresh pill sized to the text (stretching the old one would stretch its corners too).
+        // Wraps (long translations), on a fresh pill sized to the text (stretching the old one would stretch its corners).
+        this.guideText.style.wordWrap = true;
+        this.guideText.style.breakWords = true;
+        this.guideText.style.wordWrapWidth = GUIDE_WIDTH;
+        this.guideText.style.align = 'center';
         this.guide.removeChildAt(0).destroy({ children: true });
-        this.guide.addChildAt(UiKit.image('hud', 'pill', Math.max(260, this.guideText.width + 60), 50), 0);
+        this.guide.addChildAt(UiKit.image('hud', 'pill', Math.max(260, this.guideText.width + 60), this.guideText.height + 22), 0);
         UiAnim.punch(this.guide, 0.12);
     }
 
@@ -413,6 +506,7 @@ export class DigHud extends PIXI.Container {
         if (open) {
             this.renderPanel();
             UiAnim.popIn(this.panel);
+            DigAudio.play('open');
         }
     }
 
@@ -420,7 +514,18 @@ export class DigHud extends PIXI.Container {
      * The tool path as a timeline (shovel ... tractor, owned / next / later), the next tool's offer under it,
      * the backpack, and a line on where the path ends.
      */
+    /** What the upgrade panel shows, as a key: levels, what's affordable, the guide's hand. */
+    private panelKey(): string {
+        const money = DigProgress.money;
+        const tool = DigProgress.nextTool;
+        const bag = DigProgress.nextBackpack;
+        return [DigProgress.toolLevel, DigProgress.capacity, !!tool && money >= tool.price, !!bag && money >= bag.price, this.buyHint].join('|');
+    }
+
     private renderPanel(): void {
+        this.renderedPanelKey = this.panelKey();
+        // The buy buttons pulse: stop that before destroying them (see AchievementsPanel.refresh()).
+        UiAnim.kill(this.panelBody);
         this.panelBody.removeChildren().forEach((child) => child.destroy({ children: true }));
         const tool = DigProgress.nextTool;
         const bag = DigProgress.nextBackpack;
@@ -428,8 +533,8 @@ export class DigHud extends PIXI.Container {
         this.panelBody.addChild(this.offer(
             -25,
             toolArt(tool ?? DigProgress.tool, 64),
-            tool ? tool.name.toUpperCase() : 'TRACTOR OWNED',
-            tool ? toolDetail(tool) : 'The best there is: ride it in the mine',
+            tool ? names.tool(tool).toUpperCase() : t('tractorOwned'),
+            tool ? toolDetail(tool) : t('tractorOwnedInfo'),
             tool?.price,
             () => DigProgress.buyTool(),
             { frame: toolFrame(tool ?? DigProgress.tool, !tool), rarity: (tool ?? DigProgress.tool).rarity },
@@ -437,14 +542,20 @@ export class DigHud extends PIXI.Container {
         this.panelBody.addChild(this.offer(
             100,
             icon('hud', 'backpackIcon', 64),
-            bag ? `BACKPACK ${bag.capacity}` : 'BIGGEST BACKPACK',
-            bag ? `Holds ${bag.capacity} items` : 'Nothing left to buy',
+            bag ? t('backpackSize', { capacity: bag.capacity }) : t('biggestBackpack'),
+            bag ? t('backpackHolds', { capacity: bag.capacity }) : t('nothingLeft'),
             bag?.price,
             () => DigProgress.buyBackpack(),
         ));
+        // Guide: the hand on the buy button of the upgrade the money covers (the tool first).
+        if (this.buyHint) {
+            const money = DigProgress.money;
+            const row = tool && money >= tool.price ? -25 : bag && money >= bag.price ? 100 : undefined;
+            if (row !== undefined) this.panelBody.addChild(this.pointingHand(OFFER.buttonX, row));
+        }
         const goal = DIG.tools[DIG.tools.length - 1];
         const footer = UiKit.text('upgrades', 'itemInfo', {
-            text: DigProgress.hasTractor ? 'You ride the tractor outside the hub!' : `Goal: the ${goal.name.toUpperCase()} · digs ${goal.area} wide · ride it at ${DIG.tractor.speedMultiplier}x speed`,
+            text: DigProgress.hasTractor ? t('tractorRiding') : t('tractorGoal', { tool: names.tool(goal).toUpperCase(), area: goal.area, speed: DIG.tractor.speedMultiplier }),
         });
         footer.anchor.set(0.5);
         footer.y = UPGRADE_SIZE.height / 2 - 30;
@@ -471,7 +582,7 @@ export class DigHud extends PIXI.Container {
             node.x = x(i);
             node.addChild(UiKit.image('upgrades', toolFrame(tool, i <= owned), size, size), toolArt(tool, size * 0.72));
             const label = UiKit.text('upgrades', 'nodeLabel', {
-                text: i < owned ? '' : i === owned ? 'NOW' : goal ? `GOAL\n$${tool.price.toLocaleString('en-US')}` : `$${tool.price.toLocaleString('en-US')}`,
+                text: i < owned ? '' : i === owned ? t('now') : goal ? t('goalPrice', { price: tool.price.toLocaleString('en-US') }) : `$${tool.price.toLocaleString('en-US')}`,
             });
             label.anchor.set(0.5, 0);
             label.y = size / 2 + 4;
@@ -490,6 +601,20 @@ export class DigHud extends PIXI.Container {
             row.addChild(node);
         });
         return row;
+    }
+
+    /** The handHud pointing hand, fingertip on (x, y) and tapping at it (same art as the move hint). */
+    private pointingHand(x: number, y: number): PIXI.Container {
+        const holder = new PIXI.Container();
+        holder.eventMode = 'none';
+        holder.position.set(x, y);
+        const hand = PIXI.Sprite.from('handHud');
+        hand.width = hand.height = 72;
+        // The fingertip sits ~(0.22, 0.16) into the art: place that on the button, a little below-right of its centre.
+        hand.position.set(10 - 72 * 0.22, 8 - 72 * 0.16);
+        holder.addChild(hand);
+        gsap.to(holder, { y: y + 10, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+        return holder;
     }
 
     /** `look.frame` swaps the icon frame (a tool's rarity / grey); `look.rarity` names it in its colour after the title. */
@@ -533,10 +658,15 @@ export class DigHud extends PIXI.Container {
         button.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
             event.stopPropagation();
             if (buy()) {
-                this.say('UPGRADED!', 0x9cff9c);
+                this.say(t('upgraded'), 0x9cff9c);
+                // A purchase is a big deal: ka-ching + fanfare, and a sparkle on top for a new tool.
+                DigAudio.play('buyCash');
+                DigAudio.play('buyFanfare');
+                if (look.rarity) DigAudio.play('buyShine');
                 this.onBuy();
             } else {
-                this.say('NOT ENOUGH CASH', 0xff8a7a);
+                this.say(t('notEnoughCash'), 0xff8a7a);
+                DigAudio.play('error');
                 UiAnim.shake(button, 8, 0.35);
             }
         });
@@ -549,9 +679,11 @@ export class DigHud extends PIXI.Container {
         if (!screen) return;
         this.corner.position.set(screen.topLeft.x + 20, screen.topLeft.y + 44);
         this.mute.position.set(screen.topLeft.x + screen.width - 20 - MUTE_SIZE / 2, screen.topLeft.y + 20 + MUTE_SIZE / 2);
+        this.settings.position.set(this.mute.x - MUTE_SIZE - 12, this.mute.y);
         this.toolChip.position.set(screen.topLeft.x + screen.width - 20 - TOOL_PILL_WIDTH / 2, screen.topLeft.y + screen.height - 40 - TOOL_SIZE / 2 - 26);
         this.toast.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.16);
         this.guide.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.24);
+        this.moveHint.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.72);
         // Station panels: in the bottom half, under the miner, shrunk to fit what's there.
         const top = screen.center.y + PANEL_TOP_GAP;
         const room = screen.topLeft.y + screen.height - 16 - top;

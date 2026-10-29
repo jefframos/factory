@@ -171,13 +171,16 @@ export const UiAnim = {
             const peakY = y + Math.sin(angle) * power;
             const fall = 220 + Math.random() * 260;
             const duration = 1.4 + Math.random() * 0.9;
-            const timeline = gsap.timeline({ onComplete: () => {
+            // Clean up just after gsap's update, not inside it: killing tweens from a timeline's own onComplete stops gsap
+            // walking its list for that frame, and since this timeline then never finishes, every tween after it starved
+            // (the reward coins froze mid-air).
+            const timeline = gsap.timeline({ onComplete: () => queueMicrotask(() => {
                 if (piece.destroyed) {
                     return;
                 }
                 killDisplayTweens(piece);
                 piece.destroy();
-            } });
+            }) });
             timeline.to(piece, { x: peakX, y: peakY, duration: 0.45, ease: 'power3.out' })
                 .to(piece, { y: peakY + fall, x: peakX + (Math.random() - 0.5) * 120, duration, ease: 'sine.in' })
                 .to(piece, { alpha: 0, duration: 0.4 }, `-=0.4`);

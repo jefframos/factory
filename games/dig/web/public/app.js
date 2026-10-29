@@ -1401,7 +1401,8 @@ async function openLevel(id) {
 async function saveLevel() {
     try {
         await saveWorldStyles();
-        await api(`/api/levels/${level.id}`, { method: 'PUT', body: JSON.stringify(level) });
+        const saved = await api(`/api/levels/${level.id}`, { method: 'PUT', body: JSON.stringify(level) });
+        level._version = saved.version;
         const index = levels.findIndex((entry) => entry.id === level.id);
         if (index >= 0) {
             levels[index] = clone(level);

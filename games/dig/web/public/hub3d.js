@@ -25,12 +25,14 @@ const BUILD_RADIUS = 0.9;
 const STATIONS = {
     atm: { label: 'Upgrade shop (ATM)', color: 0x3fd16b, model: 'mine/atm-01.glb', height: 2.1, pedestal: 0 },
     collection: { label: 'Collection totem', color: 0xf4b400, model: 'mine/idol-a.glb', height: 1.4, pedestal: 0.8 },
-    wardrobe: { label: 'Wardrobe', color: 0xe266c8, model: 'mine/closet-01.glb', height: 2.2, pedestal: 0 },
+    wardrobe: { label: 'Wardrobe', color: 0xe266c8, model: 'hub/cute-furniture-glb-closet-02/cute-furniture-glb-closet-02.glb', height: 2.2, pedestal: 0 },
 };
 const GHOST = new THREE.MeshStandardMaterial({ color: 0x8fd3ff, emissive: 0x8fd3ff, emissiveIntensity: 0.25, transparent: true, opacity: 0.4, depthWrite: false });
 const SNAP = 0.25;
 const ROTATE_SNAP = THREE.MathUtils.degToRad(15);
 const UNDO_LIMIT = 60;
+/** Pieces lower than this lose their collider on save (rugs and carpets are walked over). */
+const FLAT_HEIGHT = 0.3;
 /** Mirrors HubRoom's TROPHY_SIZE: a find on its table is this big on its biggest side. */
 const TROPHY_SIZE = 0.55;
 const DEFAULT_TABLE = 'hub/furniture-table-medium-long/furniture-table-medium-long.gltf';
@@ -173,7 +175,8 @@ function touch() {
 function undo() {
     const previous = undoStack.pop();
     if (!previous) return;
-    level = JSON.parse(previous);
+    // Keep the file version this tab last loaded/saved (an undo past a save must not look like a stale copy).
+    level = { ...JSON.parse(previous), _version: level._version };
     if (selection && !entityData(selection)) selection = null;
     setDirty(true);
     rebuildEntities();
@@ -385,7 +388,9 @@ const REVEAL_COLORS = { start: 0x9aa4b2, upgrade: 0x4fc3f7, find: 0xffd23f, buil
 function revealColor(reveal) {
     const rule = reveal.split('|')[0];
     if (rule.startsWith('built:')) return REVEAL_COLORS.built;
-    if (rule === 'firstUpgrade' || rule.startsWith('upgrade:')) return REVEAL_COLORS.upgrade;
+    if (rule === 'firstUpgrade' || rule.startsWith('upgrade:') || rule.startsWith('upgrades:') || rule.startsWith('upgradeAfter:')) return REVEAL_COLORS.upgrade;
+    if (rule.startsWith('half:')) return REVEAL_COLORS.built;
+    if (rule.startsWith('sells:')) return REVEAL_COLORS.build;
     if (rule === 'firstFind') return REVEAL_COLORS.find;
     if (rule === 'firstBuild') return REVEAL_COLORS.build;
     return REVEAL_COLORS.start;
@@ -394,6 +399,10 @@ function revealColor(reveal) {
 function revealLabel(reveal) {
     return reveal.split('|').map((rule) => {
         if (rule === 'firstUpgrade') return 'after the first upgrade';
+        if (rule.startsWith('upgrades:')) return `after ${rule.slice(9)} upgrades`;
+        if (rule.startsWith('sells:')) return `after selling ${rule.slice(6)} times`;
+        if (rule.startsWith('half:')) return `after half of ${level.areas.find((a) => a.id === rule.slice(5))?.name ?? '?'} is built`;
+        if (rule.startsWith('upgradeAfter:')) return `after an upgrade once ${level.areas.find((a) => a.id === rule.slice(13))?.name ?? '?'} is open`;
         if (rule.startsWith('upgrade:')) return `after upgrade ${rule.slice(8)}`;
         if (rule === 'firstFind') return 'after the first find';
         if (rule === 'firstBuild') return 'after the first buildable';
@@ -836,7 +845,8 @@ function refreshColliders() {
             if (!model) return;
             model.updateMatrixWorld(true);
             const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
-            data.collider = { halfX: round(size.x / 2, 0.01), halfY: round(size.y / 2, 0.01), halfZ: round(size.z / 2, 0.01) };
+            // Flat pieces (rugs, carpets) are walked over, never blocking.
+            data.collider = size.y < FLAT_HEIGHT ? null : { halfX: round(size.x / 2, 0.01), halfY: round(size.y / 2, 0.01), halfZ: round(size.z / 2, 0.01) };
         });
     }
 }
@@ -845,7 +855,8 @@ async function save() {
     if (!level) return;
     refreshColliders();
     try {
-        await api(`/api/levels/${HUB_ID}`, { method: 'PUT', body: JSON.stringify(level) });
+        const saved = await api(`/api/levels/${HUB_ID}`, { method: 'PUT', body: JSON.stringify(level) });
+        level._version = saved.version;
         setDirty(false);
         toast('Hub saved — reload the game to see it.');
     } catch (error) {
@@ -926,8 +937,12 @@ function renderInspector() {
     if (type === 'area') {
         const rules = [['start', 'From the start'], ['firstUpgrade', 'After the first upgrade'], ['upgrade:2', 'After the 2nd upgrade'],
             ['upgrade:3', 'After the 3rd upgrade'], ['firstFind', 'After the first find'], ['firstBuild', 'After the first buildable'],
-            ['firstBuild|upgrade:2', 'After the first buildable or the 2nd upgrade'],
-            ...level.areas.filter((a) => a.id !== data.id).map((a) => [`built:${a.id}`, `After "${a.name}" is fully built`])];
+            ['upgrades:1', 'After 1 upgrade (tool or backpack)'], ['upgrades:2', 'After 2 upgrades'], ['upgrades:3', 'After 3 upgrades'],
+            ['upgrades:3|sells:4', 'After 3 upgrades or selling 4 times'], ['sells:3', 'After selling 3 times'],
+            ...level.areas.filter((a) => a.id !== data.id).flatMap((a) => [
+                [`built:${a.id}`, `After "${a.name}" is fully built`],
+                [`half:${a.id}`, `After half of "${a.name}" is built`],
+                [`upgradeAfter:${a.id}`, `After an upgrade once "${a.name}" is open`]])];
         if (!rules.some(([value]) => value === data.reveal)) rules.push([data.reveal, revealLabel(data.reveal)]);
         rows.push(
             textField('Name', data.name, (v) => edit((d) => { d.name = v || d.name; })),

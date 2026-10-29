@@ -23,8 +23,10 @@ import { CheckerFloorBuilder } from '../builders/CheckerFloorBuilder';
 import type { StoreWallPlacement, WallSetupConfig, WallStyleConfig, FloorCheckerConfig } from './RoomTypes';
 import { HUB, HubAchievementDecor, HubArea, HubBuildable, HubStation, HubTrophyTable, StationKind, hubAreaAt, hubRects } from '../data/HubData';
 import { DigProgress } from '../data/DigProgress';
+import type { Box } from './GuidePath';
 import { DIG, FindDef } from '../data/DigConfig';
 import { CanvasArt } from '../ui/CanvasArt';
+import { t, names } from '../i18n/Localization';
 
 const ORIGIN = new THREE.Vector3();
 const WALL_SETUP: WallSetupConfig = { height: 2.2, thickness: 0.3, doorHeight: 2, tallDoorHeight: 2.2, windowHeight: 1 };
@@ -36,7 +38,7 @@ const MODEL_BASE = './dig/models/';
 export const STATION_LOOK: Record<StationKind, { color: number; icon: string; label: string; model: string; height: number; pedestal: number }> = {
     atm: { color: 0x3fd16b, icon: 'ItemIcon_Money_Bill', label: 'ATM', model: 'mine/atm-01.glb', height: 2.1, pedestal: 0 },
     collection: { color: 0xf4b400, icon: 'ItemIcon_Trophy_Gold', label: 'COLLECTION', model: 'mine/idol-a.glb', height: 1.4, pedestal: 0.8 },
-    wardrobe: { color: 0xe266c8, icon: 'ItemIcon_Heart_Red', label: 'WARDROBE', model: 'mine/closet-01.glb', height: 2.2, pedestal: 0 },
+    wardrobe: { color: 0xe266c8, icon: 'ItemIcon_Heart_Red', label: 'WARDROBE', model: 'hub/cute-furniture-glb-closet-02/cute-furniture-glb-closet-02.glb', height: 2.2, pedestal: 0 },
 };
 
 /** Station pads are this wide; standing on one uses the station. */
@@ -51,6 +53,11 @@ const POP_SEC = 0.45;
 /** Trophies are scaled so their biggest side is this (world units). */
 const TROPHY_SIZE = 0.55;
 const TROPHY_SPIN = 0.6;
+/** Trophy table signs: their size, and the distances they fade in (fully shown) / out over. */
+const SIGN_SIZE = { x: 2.6, y: 0.65 };
+const SIGN_NEAR = 2.8;
+const SIGN_FAR = 4.2;
+
 /** Distance between the two rows of a table holding more than 3 finds. */
 const TROPHY_ROW_GAP = 0.62;
 /** Trophy ghost look: faint blue body, bright rim where the surface turns away from the camera. */
@@ -152,12 +159,13 @@ function priceTexture(name: string, price: number): THREE.CanvasTexture {
 /** A zone's name on a plaque with a trophy, floating over its trophy table. */
 function signTexture(name: string): THREE.CanvasTexture {
     const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 64;
+    // Drawn at 512 x 128 so it stays sharp at its (large) size in the world.
+    canvas.width = 512;
+    canvas.height = 128;
     const g = canvas.getContext('2d')!;
-    CanvasArt.plaque(g, 4, 4, 248, 56, 18, 'rgba(255, 216, 107, 0.55)');
-    CanvasArt.drawIcon(g, 'ItemIcon_Trophy_Gold', 30, 32, 40);
-    CanvasArt.text(g, name.toUpperCase(), 140, 34, 26, '#ffd86b', 196);
+    CanvasArt.plaque(g, 6, 6, 500, 116, 34, 'rgba(255, 216, 107, 0.7)');
+    CanvasArt.drawIcon(g, 'ItemIcon_Trophy_Gold', 62, 64, 86);
+    CanvasArt.text(g, name.toUpperCase(), 284, 68, 54, '#ffd86b', 400);
     return CanvasArt.texture(canvas);
 }
 
@@ -194,6 +202,8 @@ export class HubRoom {
     private readonly stations = new Map<StationKind, StationParts>();
     private readonly buildables = new Map<string, BuildableParts>();
     private readonly trophies: Trophy[] = [];
+    /** Trophy table name signs, faded in by the miner's distance; `shown` eases 0..1. */
+    private readonly signs: { sign: THREE.Sprite; x: number; z: number; shown: number }[] = [];
     /** Achievement decorations (hidden until earned), with the collider added once they show. */
     private readonly rewards: { def: HubAchievementDecor; object?: THREE.Object3D; shown: boolean; pop: number }[] = [];
     private readonly ghost = ghostMaterial();
@@ -203,6 +213,8 @@ export class HubRoom {
         this.refreshAreas(true);
     };
     private readonly areas = new Map<string, AreaState>();
+    /** Every collider placed so far (walls, stations, props, built pieces): what the guide's arrow path walks around. */
+    public readonly blockers: Box[] = [];
     /** The area whose contents are being built right now (add() and collider() put things in it). */
     private building: AreaState | null = null;
     /** Called when an area is revealed in play: its name and where its pieces stand (for smoke puffs). */
@@ -271,9 +283,14 @@ export class HubRoom {
         if (table.collider) this.collider(table.x, table.z, table.collider.halfX, table.collider.halfY, table.collider.halfZ);
         const zone = DIG.zones[table.zone];
         if (!zone) return;
-        const sign = this.add(new THREE.Sprite(new THREE.SpriteMaterial({ map: signTexture(zone.name), depthWrite: false })));
-        sign.scale.set(1.5, 0.375, 1);
-        sign.position.set(table.x, elevation + table.height + 1.05, table.z);
+        // The zone's name: big, but only shown while the miner is near the table (see update()).
+        const sign = this.add(new THREE.Sprite(new THREE.SpriteMaterial({ map: signTexture(names.zone(zone)), depthWrite: false, depthTest: false, transparent: true, opacity: 0 })));
+        sign.scale.set(SIGN_SIZE.x, SIGN_SIZE.y, 1);
+        sign.position.set(table.x, elevation + table.height + 2.1, table.z);
+        sign.renderOrder = 4;
+        sign.visible = false;
+        sign.userData.relabel = () => signTexture(names.zone(zone));
+        this.signs.push({ sign, x: table.x, z: table.z, shown: 0 });
         // The table model's long side is its local X (KayKit tables): finds spread along it, 3 to a row; a zone
         // with more finds gets a second row behind (across the table's depth, local Z).
         const along = new THREE.Vector3(Math.cos(table.rotationY), 0, -Math.sin(table.rotationY));
@@ -357,6 +374,20 @@ export class HubRoom {
         return { built: all.filter((b) => b.built).length, total: all.length };
     }
 
+    /** Redraws every 3D label with text (price tags, trophy table signs) in the current language. */
+    public relabel(): void {
+        const redraw = (object: THREE.Object3D) => {
+            object.traverse((child) => {
+                const make = child.userData.relabel as (() => THREE.Texture) | undefined;
+                if (!make || !(child instanceof THREE.Sprite)) return;
+                child.material.map?.dispose();
+                child.material.map = make();
+                child.material.needsUpdate = true;
+            });
+        };
+        redraw(this.threeScene);
+    }
+
     /** The unbuilt buildable whose spot is at (x, z), if any. */
     public buildableAt(x: number, z: number): HubBuildable | undefined {
         for (const parts of this.buildables.values()) {
@@ -404,6 +435,18 @@ export class HubRoom {
         if (rule === 'firstUpgrade') return DigProgress.toolLevel >= 1;
         if (rule.startsWith('upgrade:')) return DigProgress.toolLevel >= Number(rule.slice('upgrade:'.length));
         if (rule === 'firstFind') return DigProgress.collectedCount >= 1;
+        if (rule.startsWith('upgrades:')) return DigProgress.upgradesBought >= Number(rule.slice('upgrades:'.length));
+        if (rule.startsWith('sells:')) return DigProgress.timesSold >= Number(rule.slice('sells:'.length));
+        if (rule.startsWith('upgradeAfter:')) {
+            const at = DigProgress.areaRevealedAt(rule.slice('upgradeAfter:'.length));
+            return at !== undefined && DigProgress.upgradesBought > at;
+        }
+        if (rule.startsWith('half:')) {
+            const other = HUB.areas?.find((a) => a.id === rule.slice('half:'.length));
+            if (!other) return true;
+            const pieces = HubRoom.buildablesIn(other);
+            return pieces.filter((b) => DigProgress.isBuilt(b.id)).length >= Math.ceil(pieces.length / 2);
+        }
         if (rule === 'firstBuild') return (HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id));
         if (rule.startsWith('built:')) {
             const other = HUB.areas?.find((a) => a.id === rule.slice('built:'.length));
@@ -412,6 +455,53 @@ export class HubRoom {
             return this.ruleMet(other, seen) && HubRoom.buildablesIn(other).every((b) => DigProgress.isBuilt(b.id));
         }
         return true;
+    }
+
+    /**
+     * The next hidden area and what unlocks it, for the guide: its name, a line saying what to do, and where to go
+     * (the ATM for upgrades / selling, the nearest unbuilt piece for building). Undefined once everything is open.
+     */
+    public nextUnlock(player: THREE.Vector3): { name: string; text: string; target?: THREE.Vector3; building?: boolean } | undefined {
+        const atm = HUB.stations.find((s) => s.kind === 'atm');
+        const atmAt = atm ? new THREE.Vector3(atm.x, 0, atm.z) : undefined;
+        for (const area of this.areas.values()) {
+            if (area.revealed) continue;
+            const name = names.area(area.def);
+            const rules = area.def.reveal.split('|').map((r) => r.trim());
+            // Upgrades and selling both happen at the ATM: say every way in ("buy 1 more upgrade or sell 2 more times").
+            const atAtm: string[] = [];
+            for (const rule of rules) {
+                if (rule.startsWith('upgrades:')) {
+                    const left = Number(rule.slice(9)) - DigProgress.upgradesBought;
+                    atAtm.push(left === 1 ? t('unlockBuyUpgrade') : t('unlockBuyUpgrades', { count: left }));
+                }
+                if (rule.startsWith('sells:')) {
+                    const left = Number(rule.slice(6)) - DigProgress.timesSold;
+                    atAtm.push(left === 1 ? t('unlockSellOnce') : t('unlockSellTimes', { count: left }));
+                }
+            }
+            if (atAtm.length) {
+                const what = atAtm.reduce((a, b) => t('unlockOr', { a, b }));
+                const text = t('unlockAtAtm', { what, name });
+                return { name, text: `${text[0].toUpperCase()}${text.slice(1)}`, target: atmAt };
+            }
+            for (const rule of rules) {
+                if (rule.startsWith('upgradeAfter:')) {
+                    return { name, text: t('unlockUpgradeAfter', { name }), target: atmAt };
+                }
+                if (rule.startsWith('half:') || rule.startsWith('built:')) {
+                    const other = HUB.areas?.find((a) => a.id === rule.slice(rule.indexOf(':') + 1));
+                    if (!other || !this.areas.get(other.id)?.revealed) continue;
+                    const pieces = HubRoom.buildablesIn(other);
+                    const need = rule.startsWith('half:') ? Math.ceil(pieces.length / 2) : pieces.length;
+                    const left = need - pieces.filter((b) => DigProgress.isBuilt(b.id)).length;
+                    const open = pieces.filter((b) => !DigProgress.isBuilt(b.id));
+                    const nearest = open.reduce<HubBuildable | undefined>((best, b) => (!best || Math.hypot(b.x - player.x, b.z - player.z) < Math.hypot(best.x - player.x, best.z - player.z) ? b : best), undefined);
+                    return { name, text: t('unlockBuild', { count: left, area: names.area(other), name }), target: nearest ? new THREE.Vector3(nearest.x, 0, nearest.z) : undefined, building: true };
+                }
+            }
+        }
+        return undefined;
     }
 
     /** The cheapest buildable the miner can see and hasn't bought (the guide's "first buy"). */
@@ -428,6 +518,7 @@ export class HubRoom {
             area.revealed = met;
             area.group.visible = met;
             if (!met) continue;
+            DigProgress.markAreaRevealed(area.def.id);
             for (const args of area.pending) this.collider(...args, null);
             area.pending = [];
             if (!animate) continue;
@@ -456,7 +547,8 @@ export class HubRoom {
 
     private buildBuildable(def: HubBuildable): void {
         const area = this.building;
-        const tag = this.add(new THREE.Sprite(new THREE.SpriteMaterial({ map: priceTexture(def.name, def.price), depthWrite: false })));
+        const tag = this.add(new THREE.Sprite(new THREE.SpriteMaterial({ map: priceTexture(names.item(def.name), def.price), depthWrite: false })));
+        tag.userData.relabel = () => priceTexture(names.item(def.name), def.price);
         tag.scale.set(1.6, 0.8, 1);
         tag.position.set(def.x, (def.elevation ?? 0) + def.height + 0.7, def.z);
         tag.renderOrder = 4;
@@ -505,6 +597,7 @@ export class HubRoom {
             area.pending.push([x, z, halfX, halfY, halfZ]);
             return;
         }
+        this.blockers.push({ x, z, halfX, halfZ });
         const entity = this.world.spawn();
         entity.transform.position.set(x, 0, z);
         entity.addComponent(new RigidBody({
@@ -620,6 +713,16 @@ export class HubRoom {
         }
         for (const trophy of this.trophies) {
             if (trophy.shown) trophy.object.rotation.y += delta * TROPHY_SPIN;
+        }
+        for (const entry of this.signs) {
+            const distance = Math.hypot(player.x - entry.x, player.z - entry.z);
+            const want = THREE.MathUtils.clamp((SIGN_FAR - distance) / (SIGN_FAR - SIGN_NEAR), 0, 1);
+            entry.shown += (want - entry.shown) * Math.min(1, delta * 8);
+            entry.sign.visible = entry.shown > 0.01;
+            entry.sign.material.opacity = entry.shown;
+            // A small grow as it appears, so it pops rather than just fades.
+            const s = 0.8 + entry.shown * 0.2;
+            entry.sign.scale.set(SIGN_SIZE.x * s, SIGN_SIZE.y * s, 1);
         }
         for (const reward of this.rewards) {
             if (reward.pop < 0 || !reward.object) continue;

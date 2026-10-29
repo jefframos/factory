@@ -54,9 +54,11 @@ export interface HubStation extends HubPoint {
 
 /**
  * A rectangle of the hub whose contents (anything placed inside it) stay hidden until `reveal` is met. Rules:
- * 'start' (always), 'firstUpgrade' / 'upgrade:<n>' (n tool upgrades bought), 'firstFind' (an artifact found),
- * 'firstBuild' (any buildable bought), 'built:<areaId>' (everything buildable in that area bought); several joined
- * with '|' = any of them. Things outside every area are always there. The first area containing a point owns it.
+ * 'start' (always); 'upgrades:<n>' (n upgrades bought, tools + backpacks); 'firstUpgrade' / 'upgrade:<n>' (tool
+ * upgrades); 'sells:<n>' (sold n times); 'firstFind' (an artifact found); 'firstBuild' (any buildable bought);
+ * 'built:<areaId>' / 'half:<areaId>' (all / half of that area's buildables bought); 'upgradeAfter:<areaId>' (an
+ * upgrade bought after that area appeared). Several joined with '|' = any of them. Things outside every area are
+ * always there. The first area containing a point owns it.
  */
 export interface HubArea {
     id: string;

@@ -23,8 +23,8 @@
     ]
   },
   "start": {
-    "x": 0,
-    "z": 2.57
+    "x": -0.5,
+    "z": -1
   },
   "waypoints": [],
   "walls": [
@@ -104,37 +104,16 @@
   ],
   "props": [
     {
-      "model": "hub/holiday-carpet-round-large/holiday-carpet-round-large.gltf",
-      "x": -7.25,
-      "z": -7,
-      "rotationY": 0,
-      "height": 0.1,
-      "collider": null,
-      "elevation": -0.05
-    },
-    {
       "model": "hub/furniture-rug-rectangle-stripes-b/furniture-rug-rectangle-stripes-b.gltf",
       "x": 5.5,
       "z": 5.5,
       "rotationY": 0,
       "height": 0.23,
       "collider": null,
-      "elevation": -0.05,
+      "elevation": -0.15,
       "stretch": {
         "x": 1,
         "z": 1.53
-      }
-    },
-    {
-      "model": "hub/cute-furniture-glb-closet-02/cute-furniture-glb-closet-02.glb",
-      "x": -3.25,
-      "z": 2,
-      "rotationY": 0,
-      "height": 3.96,
-      "collider": {
-        "halfX": 1.02,
-        "halfY": 1.98,
-        "halfZ": 0.56
       }
     },
     {
@@ -143,11 +122,7 @@
       "z": -12.75,
       "rotationY": 0,
       "height": 0.37,
-      "collider": {
-        "halfX": 5.55,
-        "halfY": 0.19,
-        "halfZ": 3.7
-      },
+      "collider": null,
       "elevation": -0.3
     }
   ],
@@ -438,8 +413,8 @@
       "name": "Plants",
       "price": 500,
       "model": "hub/cute-furniture-glb-plants-15/cute-furniture-glb-plants-15.glb",
-      "x": -5.75,
-      "z": -8.5,
+      "x": -8.5,
+      "z": -5.25,
       "rotationY": 0,
       "height": 1.94,
       "collider": {
@@ -532,17 +507,16 @@
     },
     {
       "achievement": "tycoon",
-      "model": "hub/casino-assets-glb-neon-sign-01/casino-assets-glb-neon-sign-01.glb",
-      "x": 0,
+      "model": "hub/fantasy-weapons-halberd/fantasy-weapons-halberd.gltf",
+      "x": 2.5,
       "z": -16.75,
       "rotationY": 0,
-      "height": 1.7,
+      "height": 3.03,
       "collider": {
-        "halfX": 1.32,
-        "halfY": 0.85,
-        "halfZ": 0.05
-      },
-      "elevation": 1.5
+        "halfX": 0.71,
+        "halfY": 1.52,
+        "halfZ": 0.16
+      }
     },
     {
       "achievement": "orehunter",
@@ -572,5 +546,69 @@
       "elevation": 0.1
     }
   ],
-  "areas": []
+  "areas": [
+    {
+      "id": "atm-corner",
+      "name": "ATM",
+      "x": -6.2,
+      "z": -6.1,
+      "width": 2.6,
+      "depth": 2.6,
+      "reveal": "start"
+    },
+    {
+      "id": "wardrobe",
+      "name": "Wardrobe",
+      "x": -7.6,
+      "z": 5.14,
+      "width": 2.8,
+      "depth": 3.4,
+      "reveal": "upgradeAfter:trophy-room"
+    },
+    {
+      "id": "trophy-room",
+      "name": "Trophy Room",
+      "x": 0,
+      "z": -13,
+      "width": 12,
+      "depth": 8,
+      "reveal": "firstFind"
+    },
+    {
+      "id": "south-east",
+      "name": "South East",
+      "x": 4.5,
+      "z": 4.5,
+      "width": 9,
+      "depth": 9,
+      "reveal": "upgradeAfter:wardrobe"
+    },
+    {
+      "id": "north-east",
+      "name": "North East",
+      "x": 4.5,
+      "z": -4.5,
+      "width": 9,
+      "depth": 9,
+      "reveal": "built:south-east"
+    },
+    {
+      "id": "south-west",
+      "name": "South West",
+      "x": -4.5,
+      "z": 4.5,
+      "width": 9,
+      "depth": 9,
+      "reveal": "built:north-east"
+    },
+    {
+      "id": "north-west",
+      "name": "North West",
+      "x": -4.5,
+      "z": -4.5,
+      "width": 9,
+      "depth": 9,
+      "reveal": "built:south-west"
+    }
+  ]
 }

@@ -13,17 +13,19 @@ import { ModelIcons } from './ModelIcons';
 import { RARITY_COLORS } from './CollectionPanel';
 import { DIG, FindDef, Rarity } from '../data/DigConfig';
 import { FindResult } from '../data/DigProgress';
+import { t, names, type StringId } from '../i18n/Localization';
+import { DigAudio } from '../audio/DigAudio';
 
 const WIDTH = 400;
 const HEIGHT = 330;
 /** Widest any line may be: the card minus its rounded border. */
 const TEXT_WIDTH = WIDTH - 48;
 const SHOW_SEC = 2.6;
-const RARITY_LABEL: Record<Rarity, string> = {
-    common: 'FIND!',
-    rare: 'RARE FIND!',
-    epic: 'EPIC FIND!!',
-    legendary: 'LEGENDARY FIND!!!',
+const RARITY_LABEL: Record<Rarity, StringId> = {
+    common: 'find_common',
+    rare: 'find_rare',
+    epic: 'find_epic',
+    legendary: 'find_legendary',
 };
 
 interface Banner {
@@ -53,22 +55,22 @@ export class FindBanner extends PIXI.Container {
 
     public show(find: FindDef, result: FindResult): void {
         this.queue.push({
-            title: result.first ? `NEW ${RARITY_LABEL[find.rarity]}` : RARITY_LABEL[find.rarity],
+            title: result.first ? t('newFind', { title: t(RARITY_LABEL[find.rarity]) }) : t(RARITY_LABEL[find.rarity]),
             color: RARITY_COLORS[find.rarity],
-            name: find.name.toUpperCase(),
+            name: names.find(find).toUpperCase(),
             reward: find.reward,
-            hint: result.first ? 'Added to the collection — check the totem in the hub!' : 'Another one for the collection',
+            hint: result.first ? t('findAdded') : t('findAnother'),
             icon: `./dig/models/${find.model}`,
             confetti: find.rarity !== 'common',
         });
         if (result.completed) {
             const reward = DIG.collectionReward;
             this.queue.push({
-                title: 'COLLECTION COMPLETE!',
+                title: t('titleCollection'),
                 color: RARITY_COLORS.legendary,
-                name: `ALL ${DIG.finds.length} ARTIFACTS`,
+                name: t('allArtifacts', { count: DIG.finds.length }),
                 reward: reward.money,
-                hint: `The ${reward.hat} is waiting in your wardrobe!`,
+                hint: t('hatWaiting', { hat: names.look(reward.hat) }),
                 confetti: true,
             });
         }
@@ -80,6 +82,9 @@ export class FindBanner extends PIXI.Container {
         const banner = this.queue.shift();
         if (!banner) return;
         this.showing = true;
+        // Rare and better finds get a cheer; the legendary one and the completed collection, applause too.
+        if (banner.confetti) DigAudio.play('cheer');
+        if (banner.color === RARITY_COLORS.legendary) DigAudio.play('applause');
         this.removeChildren().forEach((child) => child.destroy({ children: true }));
 
         const card = new PIXI.Container();

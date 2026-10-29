@@ -14,17 +14,22 @@ import { ModelIcons } from './ModelIcons';
 import { DIG, WardrobeItem } from '../data/DigConfig';
 import { DigProgress, LookKind } from '../data/DigProgress';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
+import { t, names, type StringId } from '../i18n/Localization';
+import { DigAudio } from '../audio/DigAudio';
 
-const WIDTH = 620;
-const HEIGHT = 640;
+// Same frame and card size as the collection (CollectionPanel), so both panels scale and read alike.
+const WIDTH = 640;
+const HEIGHT = 624;
 /** Frame size, for the HUD to fit the panel on screen. */
 export const WARDROBE_SIZE = { width: WIDTH, height: HEIGHT };
 /** Cards are wide (filling the panel's width), so prices and labels fit. */
-const CARD = 128;
-const CARD_W = 172;
-const GAP = 18;
+const CARD = 118;
+const CARD_W = 180;
+const GAP = 20;
+/** Row pitch of the 3x3 grid. */
+const ROW = 130;
 const PER_PAGE = 9;
-const TABS: [LookKind, string][] = [['colors', 'COLORS'], ['faces', 'FACES'], ['hats', 'HATS']];
+const TABS: [LookKind, StringId][] = [['colors', 'tabColors'], ['faces', 'tabFaces'], ['hats', 'tabHats']];
 const FACE_BASE = './dig/images/non-preload/';
 
 const hex = (color: string): number => new THREE.Color(color).getHex();
@@ -55,6 +60,9 @@ export class WardrobePanel extends PIXI.Container {
     }
 
     public refresh(): void {
+        // Stop the old cards' pulses first: a tween left running on a destroyed sprite throws every frame and stalls
+        // every other animation in the game (the reward coins froze mid-air).
+        UiAnim.kill(this.body);
         this.body.removeChildren().forEach((child) => child.destroy({ children: true }));
         this.body.addChild(this.tabs());
         const pages = Math.ceil(this.items.length / PER_PAGE);
@@ -62,11 +70,11 @@ export class WardrobePanel extends PIXI.Container {
         const shown = this.items.slice(this.page * PER_PAGE, (this.page + 1) * PER_PAGE);
         shown.forEach((item, i) => {
             const card = this.card(item);
-            card.position.set(((i % 3) - 1) * (CARD_W + GAP), -HEIGHT / 2 + 180 + Math.floor(i / 3) * (CARD + 22));
+            card.position.set(((i % 3) - 1) * (CARD_W + GAP), -HEIGHT / 2 + 150 + Math.floor(i / 3) * ROW);
             this.body.addChild(card);
         });
         if (pages > 1) {
-            const y = HEIGHT / 2 - 50;
+            const y = HEIGHT / 2 - 56;
             const label = UiKit.text('wardrobe', 'page', { page: this.page + 1, pages });
             label.anchor.set(0.5);
             label.y = y;
@@ -76,13 +84,13 @@ export class WardrobePanel extends PIXI.Container {
 
     private tabs(): PIXI.Container {
         const row = new PIXI.Container();
-        row.y = -HEIGHT / 2 + 70;
+        row.y = -HEIGHT / 2 + 62;
         TABS.forEach(([kind, label], i) => {
             const tab = new PIXI.Container();
             tab.x = (i - 1) * 180;
             const active = kind === this.tab;
             tab.addChild(UiKit.image('wardrobe', active ? 'tabActive' : 'tab', 160, 56));
-            const text = UiKit.text('wardrobe', 'tabLabel', { text: label });
+            const text = UiKit.text('wardrobe', 'tabLabel', { text: t(label) });
             text.anchor.set(0.5);
             text.y = -2;
             tab.addChild(text);
@@ -91,6 +99,7 @@ export class WardrobePanel extends PIXI.Container {
             }
             this.tappable(tab, () => {
                 this.tab = kind;
+                DigAudio.play('tab');
                 this.page = 0;
                 this.refresh();
             });
@@ -105,6 +114,7 @@ export class WardrobePanel extends PIXI.Container {
         arrow.position.set(x, y);
         this.tappable(arrow, () => {
             this.page = (this.page + step + pages) % pages;
+            DigAudio.play('click');
             this.refresh();
         });
         return arrow;
@@ -126,13 +136,13 @@ export class WardrobePanel extends PIXI.Container {
 
         let status: PIXI.DisplayObject;
         if (worn || owned) {
-            status = UiKit.text('wardrobe', 'owned', { text: worn ? 'WEARING' : 'OWNED' });
+            status = UiKit.text('wardrobe', 'owned', { text: worn ? t('wearing') : t('owned') });
         } else if (item.unlock) {
             const lock = UiKit.sprite('wardrobe', 'lockIcon');
             lock.scale.set(30 / Math.max(lock.height, 1));
             lock.position.set(CARD_W / 2 - 18, -CARD / 2 + 18);
             card.addChild(lock);
-            status = UiKit.text('wardrobe', 'owned', { text: 'COLLECTION' }, { fill: 0xffd23f });
+            status = UiKit.text('wardrobe', 'owned', { text: t('collectionLock') }, { fill: 0xffd23f });
         } else {
             const affordable = DigProgress.money >= item.price;
             status = UiKit.text('wardrobe', 'price', { price: item.price.toLocaleString('en-US') }, affordable ? {} : { fill: 0xff8a7a });
@@ -167,12 +177,19 @@ export class WardrobePanel extends PIXI.Container {
         if (this.worn(item)) return;
         const wasOwned = DigProgress.ownsLook(this.tab, item);
         if (!DigProgress.wearLook(this.tab, item)) {
-            this.say(item.unlock ? 'COMPLETE THE COLLECTION!' : 'NOT ENOUGH CASH', 0xff8a7a);
+            this.say(item.unlock ? t('completeCollection') : t('notEnoughCash'), 0xff8a7a);
+            DigAudio.play('error');
             UiAnim.shake(card, 8, 0.35);
             return;
         }
         if (!wasOwned) {
-            this.say(`${(item.name ?? 'NEW LOOK').toUpperCase()} BOUGHT!`, 0x9cff9c);
+            this.say(t('lookBought', { name: (item.name ? names.look(item.name) : t('newLook')).toUpperCase() }), 0x9cff9c);
+        }
+        if (wasOwned) {
+            DigAudio.play('item');
+        } else {
+            DigAudio.play('buyCash');
+            DigAudio.play('buyStar');
         }
         this.onWear();
         this.refresh();

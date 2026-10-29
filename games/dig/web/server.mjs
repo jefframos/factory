@@ -81,6 +81,8 @@ async function listLevels() {
     for (const file of files) {
         const level = await readJson(path.join(LEVELS_DIR, file), null);
         if (level?.id) {
+            // The file's version (mtime): a save from a tab that loaded an older copy is refused (see PUT).
+            level._version = await levelVersion(path.join(LEVELS_DIR, file));
             byId.set(level.id, level);
         }
     }
@@ -88,6 +90,10 @@ async function listLevels() {
     const ordered = order.filter((id) => byId.has(id)).map((id) => byId.get(id));
     const unlisted = [...byId.values()].filter((level) => !order.includes(level.id));
     return [...ordered, ...unlisted];
+}
+
+async function levelVersion(file) {
+    return fs.stat(file).then((stat) => Math.round(stat.mtimeMs), () => 0);
 }
 
 async function listModels(dir = MODELS_DIR, prefix = '') {
@@ -417,12 +423,21 @@ async function handleApi(req, res, url) {
             if (problems.length || level.id !== id) {
                 return send(res, 400, { error: problems.join('; ') || 'Id mismatch' });
             }
-            await writeJson(file, level);
+            // Refuse to overwrite a newer file: another tab (or the other hub tab) saved since this copy was loaded,
+            // and writing this one back would silently drop its changes (that's how the reveal areas got wiped).
+            const { _version: loaded, ...data } = level;
+            const current = await levelVersion(file);
+            // No version at all = a tab from an older editor (it can't know about newer fields): refuse that too.
+            if (loaded === undefined || (current && loaded !== current)) {
+                return send(res, 409, { error: `${id}.json was changed since you opened it (another tab saved). Reload to get the latest, then redo your change.` });
+            }
+            await writeJson(file, data);
+            const version = await levelVersion(file);
             const order = await readOrder();
             if (!order.includes(id)) {
                 await writeJson(INDEX_FILE, { levels: [...order, id] });
             }
-            return send(res, 200, { ok: true });
+            return send(res, 200, { ok: true, version });
         }
         if (req.method === 'DELETE') {
             await fs.rm(file, { force: true });

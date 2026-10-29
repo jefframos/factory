@@ -232,20 +232,48 @@
       "price": 40
     },
     {
-      "capacity": 38,
-      "price": 150
+      "capacity": 36,
+      "price": 120
     },
     {
-      "capacity": 50,
-      "price": 400
+      "capacity": 45,
+      "price": 250
     },
     {
-      "capacity": 65,
-      "price": 1000
+      "capacity": 55,
+      "price": 450
     },
     {
-      "capacity": 80,
-      "price": 2500
+      "capacity": 66,
+      "price": 750
+    },
+    {
+      "capacity": 78,
+      "price": 1200
+    },
+    {
+      "capacity": 92,
+      "price": 1900
+    },
+    {
+      "capacity": 108,
+      "price": 3000
+    },
+    {
+      "capacity": 125,
+      "price": 4600
+    },
+    {
+      "capacity": 145,
+      "price": 7000
+    },
+    {
+      "capacity": 170,
+      "price": 10500
+    },
+    {
+      "capacity": 200,
+      "price": 16000
     }
   ],
   "zones": [
@@ -601,8 +629,8 @@
     ],
     "faces": [
       {
-        "id": "skins/face-star-1.webp",
-        "name": "Star",
+        "id": "skins/face-brave-1.webp",
+        "name": "Brave",
         "price": 0
       },
       {
@@ -621,8 +649,8 @@
         "price": 80
       },
       {
-        "id": "skins/face-brave-1.webp",
-        "name": "Brave",
+        "id": "skins/face-star-1.webp",
+        "name": "Star",
         "price": 140
       },
       {

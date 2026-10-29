@@ -1,5 +1,6 @@
 /**
- * Generates games/clog/game/i18n/locales/<code>.json from en.json.
+ * Generates games/<GAME>/game/i18n/locales/<code>.json from en.json (GAME from .env, e.g. GAME=dig; clog by default).
+ * Each game keeps its own cache (clog: translation-cache.json, others: translation-cache.<game>.json).
  *
  * Modes:
  *
@@ -66,8 +67,10 @@ if (!EMAIL || !KEY) {
     process.exit(1);
 }
 
-const LOCALES_DIR = resolve(__dirname, '../../games/clog/game/i18n/locales');
-const CACHE_PATH = resolve(__dirname, 'translation-cache.json');
+const GAME = process.env.GAME || 'clog';
+const LOCALES_DIR = resolve(__dirname, `../../games/${GAME}/game/i18n/locales`);
+const CACHE_PATH = resolve(__dirname, GAME === 'clog' ? 'translation-cache.json' : `translation-cache.${GAME}.json`);
+console.log(`Game: ${GAME} (${LOCALES_DIR})`);
 
 const REQUEST_DELAY_MS = 350;
 const MAX_RETRIES = 2;
