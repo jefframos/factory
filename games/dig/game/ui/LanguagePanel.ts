@@ -9,12 +9,12 @@ import * as PIXI from 'pixi.js';
 import { UiKit } from './UiKit';
 import { UiAnim } from './UiAnim';
 import { Localization } from '../i18n/Localization';
-import { LOCALE_FLAG_CODE, LOCALE_LABELS, SUPPORTED_LOCALES, type Locale } from '../i18n/config';
+import { LOCALE_FLAG_CODE, LOCALE_LABELS, type Locale } from '../i18n/config';
 import { DigAudio } from '../audio/DigAudio';
 
 const COLUMNS = 3;
 const OPTION = { width: 190, height: 54, gapX: 12, gapY: 10 };
-const ROWS = Math.ceil(SUPPORTED_LOCALES.length / COLUMNS);
+const ROWS = Math.ceil(Localization.available.length / COLUMNS);
 const WIDTH = COLUMNS * OPTION.width + (COLUMNS - 1) * OPTION.gapX + 50;
 const TOP = 60;
 const HEIGHT = TOP + ROWS * OPTION.height + (ROWS - 1) * OPTION.gapY + 34;
