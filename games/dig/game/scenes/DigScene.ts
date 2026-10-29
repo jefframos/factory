@@ -24,6 +24,8 @@ import { BendService } from '../services/BendService';
 import DigPlayer from '../player/DigPlayer';
 import { VoxelTerrain } from '../world/VoxelTerrain';
 import { HubRoom, STATION_RADIUS } from '../world/HubRoom';
+import { TractorRide } from '../player/TractorRide';
+import { Guide } from '../world/Guide';
 import type { StationKind } from '../data/HubData';
 import { HUB } from '../data/HubData';
 import { DIG, MaterialDef } from '../data/DigConfig';
@@ -68,6 +70,8 @@ export default class DigScene extends ThreeScene {
     private player!: DigPlayer;
     private terrain!: VoxelTerrain;
     private hub!: HubRoom;
+    private tractor!: TractorRide;
+    private guide!: Guide;
     private effects!: DigEffects;
     private mining!: MiningController;
     private hud!: DigHud;
@@ -75,6 +79,8 @@ export default class DigScene extends ThreeScene {
     private mapButton?: PIXI.Container;
     private flyCamera!: DebugFlyCameraController;
     private currentZone = 0;
+    /** The buildable spot the miner is standing on (so buying/telling the price happens once per visit). */
+    private buildSpot: string | null = null;
     private readonly followTarget = new THREE.Vector3();
     private readonly pickupPoint = new THREE.Vector3();
 
@@ -93,8 +99,16 @@ export default class DigScene extends ThreeScene {
         void this.player.loadCharacter().catch((error) => console.error('[DigScene] character failed to load', error));
 
         this.effects = new DigEffects(this.threeScene, DIG.terrain.blockHeight, () => this.player.pickupPoint(this.pickupPoint));
+        this.tractor = new TractorRide(this.threeScene, this.player, this.effects);
+        // A newly revealed area of the hub: smoke where its pieces pop in, and its name on screen.
+        this.hub.onReveal = (area, points) => {
+            for (const point of points) this.effects.smoke(point.clone().setY(0.5), 4, 0.9, new THREE.Color(0xf3e9d8), 0.6);
+            // Just after whatever caused it ("UPGRADED!", "BUILT: ..."), so both get read.
+            window.setTimeout(() => this.hud.say(`NEW: ${area.name.toUpperCase()}!`, 0x8fe3ff), 1200);
+        };
         this.hud = new DigHud(() => this.mining.toolChanged(), () => this.sellAnywhere(), () => this.player.applyLook(DigProgress.look));
         this.game.uiLayer.addChild(this.hud);
+        this.guide = new Guide(this.threeScene, this.hub, (text) => this.hud.setGuide(text));
         this.mining = new MiningController(this.terrain, this.effects, this.player, (text) => this.hud.say(text, 0xffd9a8), (find, result) => {
             this.hud.findBanner.show(find, result);
             this.effects.floatText(this.player.pickupPoint(new THREE.Vector3()).setY(2.2), `+$${find.reward}`, '#ffe27a');
@@ -193,14 +207,21 @@ export default class DigScene extends ThreeScene {
                 DigProgress.reset();
             }
         });
+        panel.button('CLEAN ALL DATA', () => {
+            if (window.confirm('Clean ALL saved data: game progress plus the debug panel saved tweaks and layout (localStorage, cookies)? The game reloads from scratch.')) {
+                DigProgress.wipeAllData();
+            }
+        });
     }
 
     public update(delta: number): void {
         this.world.update(delta);
         this.world.lateUpdate(delta);
+        this.tractor.update(delta);
+        this.guide.update(delta, this.player.transform.position);
         this.terrain.update();
         this.effects.update(delta);
-        this.hub.update(delta);
+        this.hub.update(delta, this.player.transform.position);
         this.flyCamera.update(delta);
         this.map?.update(delta);
         BendService.updateTime(delta);
@@ -233,6 +254,8 @@ export default class DigScene extends ThreeScene {
         const position = this.player.transform.position;
         let open: StationKind | null = null;
         for (const station of HUB.stations) {
+            // A station in a reveal area that hasn't appeared yet isn't there.
+            if (!this.hub.isStationOpen(station.kind)) continue;
             if (Math.hypot(position.x - station.x, position.z - station.z) > STATION_RADIUS) continue;
             open = station.kind;
             if (station.kind === 'atm' && DigProgress.backpackCount > 0) {
@@ -240,9 +263,29 @@ export default class DigScene extends ThreeScene {
             }
         }
         this.hud.setStationPanel(open);
+        this.updateBuilding(position);
         this.hub.setAttention('atm', open !== 'atm' && DigProgress.canAffordUpgrade);
         this.hub.setAttention('collection', DigProgress.unseenFinds.length > 0);
         this.hub.setAttention('wardrobe', open !== 'wardrobe' && DigProgress.wardrobeHasNews);
+    }
+
+    /**
+     * Walking into a buildable's ghost buys it when the money is there (it pops in), or says what it costs.
+     * Only on stepping onto the spot, so standing there doesn't repeat the message every frame.
+     */
+    private updateBuilding(position: THREE.Vector3): void {
+        const buildable = this.hub.buildableAt(position.x, position.z);
+        if (buildable?.id === this.buildSpot) return;
+        this.buildSpot = buildable?.id ?? null;
+        if (!buildable) return;
+        if (DigProgress.build(buildable.id, buildable.price)) {
+            this.hub.completeBuild(buildable.id);
+            const { built, total } = this.hub.buildProgress;
+            this.hud.say(built === total ? `HUB COMPLETE! ${buildable.name} built` : `BUILT: ${buildable.name}! (${built}/${total})`, 0x8fe3a1);
+            this.effects.floatText(new THREE.Vector3(buildable.x, buildable.height + 1, buildable.z), `-$${buildable.price}`, '#ffe27a');
+        } else {
+            this.hud.say(`${buildable.name}: $${buildable.price.toLocaleString('en-US')} to build`, 0xffd9a8);
+        }
     }
 
     /** The HUD's SELL button: sells right where the miner stands, the items flying up and away (the ATM does it in the hub). */
@@ -307,7 +350,8 @@ export default class DigScene extends ThreeScene {
         this.map?.reposition();
         const screen = Game.overlayScreenData;
         if (this.mapButton && screen) {
-            this.mapButton.position.set(screen.topLeft.x + screen.width - 64, screen.topLeft.y + 44);
+            // Under the mute button (top-right corner).
+            this.mapButton.position.set(screen.topLeft.x + screen.width - 64, screen.topLeft.y + 124);
         }
     }
 
@@ -319,6 +363,8 @@ export default class DigScene extends ThreeScene {
         this.map?.destroy({ children: true });
         this.mapButton?.destroy({ children: true });
         this.effects?.destroy();
+        this.tractor?.destroy();
+        this.guide?.destroy();
         this.terrain?.destroy();
         this.hub?.destroy();
         this.player?.destroy();

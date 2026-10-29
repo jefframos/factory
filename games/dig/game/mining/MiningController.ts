@@ -25,6 +25,8 @@ const TOOL_LINGER_SEC = 0.6;
 const MESSAGE_COOLDOWN_SEC = 2.5;
 
 export class MiningController {
+    /** The forced first find was handed out this session (see forcedFirstFind()). */
+    private firstFindGiven = false;
     private readonly damage = new Map<number, number>();
     private hitTimer = 0;
     private idleTimer = TOOL_LINGER_SEC;
@@ -142,14 +144,28 @@ export class MiningController {
             return;
         }
         this.damage.delete(index);
-        const find = this.terrain.findAt(ix, iz);
+        const find = this.terrain.findAt(ix, iz) ?? this.forcedFirstFind();
         this.terrain.remove(ix, iz);
+        DigProgress.recordBlock(material.ore);
         DigProgress.terrainChanged();
         this.effects.shatter(this.center, this.color);
         this.drop(material, this.center);
         if (find) {
             this.effects.reveal(this.center.clone().setY(1), () => this.onFind(find, DigProgress.addFind(find)), this.terrain.findModel(find));
         }
+    }
+
+    /**
+     * Every new player finds their first artifact early: on DIG.firstFindAfterBlocks blocks dug the block being dug
+     * gives up the first find (the topsoil's first), and its buried copy leaves the rock.
+     */
+    private forcedFirstFind(): FindDef | undefined {
+        // Only once: the find counts when its pop-out lands, and more blocks can break before that.
+        if (this.firstFindGiven || DigProgress.collectedCount > 0 || DigProgress.achievementStat('blocks') < DIG.firstFindAfterBlocks) return undefined;
+        this.firstFindGiven = true;
+        const first = DIG.finds[0];
+        this.terrain.unbury(first);
+        return first;
     }
 
     private drop(material: MaterialDef, at: THREE.Vector3): void {
@@ -167,10 +183,12 @@ export class MiningController {
         const character = this.player.character;
         if (!character || this.swinging) return;
         const tool = DigProgress.tool;
-        character.showTool(tool.model);
-        character.playAction(tool.clip === 'Digging' ? 'dig' : 'mine');
         this.swinging = true;
         this.hitTimer = tool.hitInterval * 0.6;
+        // In the tractor the miner just sits: blocks still break, without the tool or the swing.
+        if (this.player.seated) return;
+        character.showTool(tool.model);
+        character.playAction(tool.clip === 'Digging' ? 'dig' : 'mine');
     }
 
     private idle(delta: number): void {

@@ -49,6 +49,12 @@ export default class AnimatorBoard {
         this.triggers.add(name);
     }
 
+    /** Goes straight to `state` (blending over `duration`), skipping the transitions — e.g. sitting down at once. */
+    public jumpTo(state: string, duration: number): void {
+        this.currentState = state;
+        this.controller.mix(state, 1, duration, !this.oneShotStates.has(state));
+    }
+
     /** Marks `state` as play-once: entering it plays its clip a single time and holds the last frame (no loop) — pair with a `whenFinished` transition out of it (e.g. standToSit -> sitting). */
     public setOneShot(state: string): void {
         this.oneShotStates.add(state);

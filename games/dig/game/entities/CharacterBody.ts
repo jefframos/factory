@@ -31,6 +31,8 @@ const ROTATION_SLERP = 0.15;
 /** Animation ids (registerAnimation()) of the sit states — see setUp()/setSitting(). */
 export const SIT_DOWN_STATE = 'standToSit';
 export const SITTING_STATE = 'sitting';
+/** sitNow(): blend into the sitting loop this fast (seconds). */
+const SIT_NOW_BLEND = 0.08;
 /**
  * Cube-head size in REAL world units (same units as the floor/camera —
  * see mountHeadCube(), which divides out the head bone's own inherited
@@ -237,6 +239,16 @@ export default class CharacterBody {
      * NpcBodyLoader's `sitting` option); warns and stays standing otherwise rather than leaving
      * the board stuck in a state with no clip.
      */
+    /** Sits down at once (straight into the sitting loop, no stand-to-sit clip) or stands back up — e.g. getting into a vehicle. */
+    public sitNow(sitting: boolean): void {
+        if (sitting && !this.animator.hasAnimation(SITTING_STATE)) {
+            console.warn(`[CharacterBody] sitNow(true) needs the "${SITTING_STATE}" clip registered — staying up`);
+            return;
+        }
+        this.animator.animatorBoard?.setVariable('sitting', sitting);
+        if (sitting) this.animator.animatorBoard?.jumpTo(SITTING_STATE, SIT_NOW_BLEND);
+    }
+
     public setSitting(sitting: boolean): void {
         if (sitting && !(this.animator.hasAnimation(SIT_DOWN_STATE) && this.animator.hasAnimation(SITTING_STATE))) {
             console.warn(`[CharacterBody] setSitting(true) needs the "${SIT_DOWN_STATE}" and "${SITTING_STATE}" clips registered — staying up`);
@@ -262,8 +274,15 @@ export default class CharacterBody {
 
     /** Recolors every body mesh (excluding the head cube) to an explicit hex color — shared by both the value-palette player path and the flat-tint NPC path below. */
     public setBodyColor(color: THREE.ColorRepresentation): void {
+        // Only the body: the hat, the tools in hand and the carried prop keep their own colours (re-dressing the
+        // miner after a face change used to tint the hat until a reload).
+        const own = new Set<THREE.Object3D>();
+        const keep = (root?: THREE.Object3D) => root?.traverse((node) => own.add(node));
+        keep(this.hat);
+        keep(this.carrierVisual);
+        this.toolVisuals.forEach((visual) => keep(visual));
         this.container.traverse((child) => {
-            if (!(child instanceof THREE.Mesh) || child === this.headCube) {
+            if (!(child instanceof THREE.Mesh) || child === this.headCube || own.has(child)) {
                 return;
             }
 

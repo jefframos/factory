@@ -21,6 +21,8 @@ export interface MaterialDef {
     ore: boolean;
     /** Block model drawn for it (KayKit Block Bits), under public/dig/models/. */
     block: string;
+    /** Optional colour multiplied over the block model (a material without its own model, like obsidian). */
+    tint?: string;
     /** What flies into the backpack when it breaks. */
     pickup: string;
     /** Optional pieces poking out of the block top (nuggets, gems). */
@@ -43,13 +45,11 @@ export interface ZoneDef {
     fill: string;
     patches: ZoneMix[];
     ores: ZoneMix[];
-    /** Share of the zone's blocks hiding a find. */
-    findChance: number;
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
-/** A buried artifact (GDD §11): shows once its block is on a tunnel edge, pays `reward` when dug. */
+/** A buried artifact (GDD §11): one per mine, shows once its block is on a tunnel edge, pays `reward` when dug. */
 export interface FindDef {
     id: string;
     name: string;
@@ -59,8 +59,6 @@ export interface FindDef {
     reward: number;
     /** The zone (index) it's buried in. */
     zone: number;
-    /** Relative odds among the zone's finds. */
-    weight: number;
     rarity: Rarity;
 }
 
@@ -93,8 +91,47 @@ export interface ToolDef {
     /** Blocks across the dig front (1 or 3). */
     area: number;
     price: number;
-    /** UI atlas icon: ToolIcon_<icon>. */
+    /** UI atlas icon: ToolIcon_<icon> (a vehicle shows its model instead). */
     icon: string;
+    /** The tractor: the last tool, ridden in the mine (TractorRide, ui/dig.json `tractor`). */
+    vehicle?: boolean;
+    /** Frame colour once owned (same colours as the collection); not-owned tools show grey. */
+    rarity: Rarity;
+}
+
+/** The tractor the miner rides outside the hub (TractorRide) once its tool (`vehicle`) is bought; positions are tractor-local, world units. */
+export interface TractorDef {
+    /** Under public/dig/models/. */
+    model: string;
+    /** Tractor height, world units. */
+    height: number;
+    /** Turns the model so its front faces +Z (the miner's forward). */
+    rotationY: number;
+    /** Where the miner sits. */
+    seat: { x: number; y: number; z: number };
+    /** Walking speed multiplier while riding. */
+    speedMultiplier: number;
+    /** The puff when the tractor appears / disappears. */
+    smoke: { count: number; size: number; color: string };
+    /** Small puffs from the exhaust while driving, every `interval` seconds. */
+    exhaust: { x: number; y: number; z: number; interval: number; size: number };
+}
+
+/** What an achievement counts (DigProgress.achievementStat). */
+export type AchievementStat = 'blocks' | 'ores' | 'earned' | 'finds';
+
+/** Collect-X achievements with levels: each tier pays `reward` when claimed; the last also unlocks `decor` in the hub. */
+export interface AchievementDef {
+    id: string;
+    name: string;
+    stat: AchievementStat;
+    /** UI atlas frame. */
+    icon: string;
+    /** The goal line, `{goal}` replaced by the tier's goal. */
+    describe: string;
+    tiers: { goal: number; reward: number }[];
+    /** Name of the hub decoration the last tier unlocks (placed in levels/hub.json achievementDecor). */
+    decor: string;
 }
 
 export interface BackpackLevel {
@@ -112,6 +149,10 @@ export interface DigDesign {
     wardrobe: WardrobeCatalog;
     tools: ToolDef[];
     backpack: BackpackLevel[];
+    tractor: TractorDef;
+    achievements: AchievementDef[];
+    /** The first artifact turns up on this many blocks dug, wherever the miner digs (MiningController). */
+    firstFindAfterBlocks: number;
 }
 
 export const DIG: DigDesign = data as DigDesign;

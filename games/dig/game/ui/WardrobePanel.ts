@@ -15,10 +15,14 @@ import { DIG, WardrobeItem } from '../data/DigConfig';
 import { DigProgress, LookKind } from '../data/DigProgress';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
 
-const WIDTH = 480;
-const HEIGHT = 600;
-const CARD = 112;
-const GAP = 16;
+const WIDTH = 620;
+const HEIGHT = 640;
+/** Frame size, for the HUD to fit the panel on screen. */
+export const WARDROBE_SIZE = { width: WIDTH, height: HEIGHT };
+/** Cards are wide (filling the panel's width), so prices and labels fit. */
+const CARD = 128;
+const CARD_W = 172;
+const GAP = 18;
 const PER_PAGE = 9;
 const TABS: [LookKind, string][] = [['colors', 'COLORS'], ['faces', 'FACES'], ['hats', 'HATS']];
 const FACE_BASE = './dig/images/non-preload/';
@@ -58,7 +62,7 @@ export class WardrobePanel extends PIXI.Container {
         const shown = this.items.slice(this.page * PER_PAGE, (this.page + 1) * PER_PAGE);
         shown.forEach((item, i) => {
             const card = this.card(item);
-            card.position.set(((i % 3) - 1) * (CARD + GAP), -HEIGHT / 2 + 190 + Math.floor(i / 3) * (CARD + GAP + 8));
+            card.position.set(((i % 3) - 1) * (CARD_W + GAP), -HEIGHT / 2 + 180 + Math.floor(i / 3) * (CARD + 22));
             this.body.addChild(card);
         });
         if (pages > 1) {
@@ -66,7 +70,7 @@ export class WardrobePanel extends PIXI.Container {
             const label = UiKit.text('wardrobe', 'page', { page: this.page + 1, pages });
             label.anchor.set(0.5);
             label.y = y;
-            this.body.addChild(label, this.arrow('arrowLeft', -110, y, -1, pages), this.arrow('arrowRight', 110, y, 1, pages));
+            this.body.addChild(label, this.arrow('arrowLeft', -140, y, -1, pages), this.arrow('arrowRight', 140, y, 1, pages));
         }
     }
 
@@ -75,9 +79,9 @@ export class WardrobePanel extends PIXI.Container {
         row.y = -HEIGHT / 2 + 70;
         TABS.forEach(([kind, label], i) => {
             const tab = new PIXI.Container();
-            tab.x = (i - 1) * 140;
+            tab.x = (i - 1) * 180;
             const active = kind === this.tab;
-            tab.addChild(UiKit.image('wardrobe', active ? 'tabActive' : 'tab', 128, 52));
+            tab.addChild(UiKit.image('wardrobe', active ? 'tabActive' : 'tab', 160, 56));
             const text = UiKit.text('wardrobe', 'tabLabel', { text: label });
             text.anchor.set(0.5);
             text.y = -2;
@@ -115,7 +119,7 @@ export class WardrobePanel extends PIXI.Container {
         const card = new PIXI.Container();
         const worn = this.worn(item);
         const owned = DigProgress.ownsLook(this.tab, item);
-        card.addChild(UiKit.image('wardrobe', worn ? 'cardWorn' : 'card', CARD, CARD));
+        card.addChild(UiKit.image('wardrobe', worn ? 'cardWorn' : 'card', CARD_W, CARD));
         const art = this.art(item);
         art.y = -8;
         card.addChild(art);
@@ -126,7 +130,7 @@ export class WardrobePanel extends PIXI.Container {
         } else if (item.unlock) {
             const lock = UiKit.sprite('wardrobe', 'lockIcon');
             lock.scale.set(30 / Math.max(lock.height, 1));
-            lock.position.set(CARD / 2 - 18, -CARD / 2 + 18);
+            lock.position.set(CARD_W / 2 - 18, -CARD / 2 + 18);
             card.addChild(lock);
             status = UiKit.text('wardrobe', 'owned', { text: 'COLLECTION' }, { fill: 0xffd23f });
         } else {
@@ -135,6 +139,7 @@ export class WardrobePanel extends PIXI.Container {
         }
         (status as PIXI.Text).anchor.set(0.5, 1);
         status.y = CARD / 2 - 4;
+        UiKit.fit(status as PIXI.Text, CARD_W - 16);
         card.addChild(status);
         this.tappable(card, () => this.choose(item, card));
         return card;

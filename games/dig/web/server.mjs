@@ -3,12 +3,14 @@
 // Reads/writes games/dig/levels/*.json (the same files the game loads), lists
 // the models under public/dig/models, and serves the browser editor in ./public.
 // three.js is served straight from node_modules so the editor needs no build step.
+// The 3D Hub tab can also browse the 3D asset library (LIBRARY3D_DIR, default
+// D:/projects/PIXI3d/library3d) and import a model from it into the game.
 
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { exec, execFile } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -21,8 +23,15 @@ const THREE_DIR = path.join(REPO_ROOT, 'node_modules', 'three');
 const STYLES_FILE = path.join(__dirname, '..', 'ui', 'worldstyles.json');
 const UIKIT_FILE = path.join(__dirname, '..', 'ui', 'uikit.json');
 const HATFITS_FILE = path.join(__dirname, '..', 'ui', 'hatfits.json');
+const DIG_FILE = path.join(__dirname, '..', 'ui', 'dig.json');
 const FONTS_DIR = path.join(REPO_ROOT, 'public', 'dig', 'fonts');
 const THUMBS_DIR = path.join(__dirname, '.thumbs');
+const LIBRARY_DIR = path.resolve(process.env.LIBRARY3D_DIR ?? 'D:/projects/PIXI3d/library3d');
+const LIBRARY_FILES = path.join(LIBRARY_DIR, 'files');
+const LIBRARY_THUMBS = path.join(LIBRARY_DIR, 'library', 'thumbs');
+/** Imported library models: the raw source the model build packs, and its published copy (usable right away). */
+const HUB_RAW_DIR = path.join(REPO_ROOT, 'games', 'dig', 'raw-assets', 'models', 'hub{m}');
+const HUB_PUBLIC_DIR = path.join(MODELS_DIR, 'hub');
 const UI_SOURCES = {
     game: path.join(REPO_ROOT, 'games', 'dig', 'raw-assets', 'images', 'ui{tps}'),
     pizza: path.join(REPO_ROOT, 'games', 'pizza', 'raw-assets', 'images', 'ui{tps}'),
@@ -41,9 +50,11 @@ const MIME_TYPES = {
     '.gltf': 'model/gltf+json',
     '.glb': 'model/gltf-binary',
     '.bin': 'application/octet-stream',
+    '.fbx': 'application/octet-stream',
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
     '.webp': 'image/webp',
+    '.gif': 'image/gif',
     '.woff2': 'font/woff2',
 };
 
@@ -140,6 +151,63 @@ function runAtlasBuild() {
     });
 }
 
+// ---------------------------------------------------------------- 3D asset library
+
+let libraryCache = null;
+
+/** The library's glTF/GLB assets (the formats the game loads), slimmed down for the browser. */
+async function listLibrary() {
+    if (libraryCache) return libraryCache;
+    const index = await readJson(path.join(LIBRARY_DIR, 'library', 'index.json'), null);
+    if (!index) return { available: false, dir: LIBRARY_DIR, assets: [] };
+    const thumbs = new Set(await fs.readdir(LIBRARY_THUMBS).catch(() => []));
+    const assets = [];
+    for (const asset of index.assets ?? []) {
+        const format = asset.formats?.glb ? 'glb' : asset.formats?.gltf ? 'gltf' : null;
+        if (!format || asset.kind !== 'model') continue;
+        const thumbName = `${asset.id.replaceAll('/', '__')}.png`;
+        assets.push({
+            id: asset.id,
+            name: asset.name,
+            pack: asset.pack,
+            collection: asset.collection,
+            tags: asset.tags ?? [],
+            file: asset.formats[format],
+            thumb: thumbs.has(thumbName) ? `/library-thumbs/${encodeURIComponent(thumbName)}` : asset.preview ? `/library-files/${asset.preview}` : null,
+        });
+    }
+    libraryCache = { available: true, dir: LIBRARY_DIR, assets };
+    return libraryCache;
+}
+
+const slugify = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+/**
+ * Copies a library model (and every file it needs: .bin, textures) into games/dig/raw-assets/models/hub{m}/<slug>/
+ * and its published copy public/dig/models/hub/<slug>/, the model file renamed to the slug so its registry name
+ * is unique. Returns the path the level uses (under models/).
+ */
+async function importLibraryModel(id) {
+    const library = await listLibrary();
+    const asset = library.assets.find((entry) => entry.id === id);
+    if (!asset) throw new Error(`Unknown library asset ${id}`);
+    const { resolveDeps } = await import(pathToFileURL(path.join(LIBRARY_DIR, 'server', 'deps.mjs')).href);
+    const { files, warnings } = await resolveDeps(LIBRARY_FILES, asset.file);
+    const slug = slugify(`${asset.collection || asset.pack}-${asset.name}`);
+    const ext = path.extname(asset.file).toLowerCase();
+    const modelOut = path.basename(asset.file);
+    for (const base of [path.join(HUB_RAW_DIR, slug), path.join(HUB_PUBLIC_DIR, slug)]) {
+        for (const file of files) {
+            const out = file.out === modelOut ? `${slug}${ext}` : file.out;
+            const target = path.join(base, out);
+            if (path.relative(base, target).startsWith('..')) continue;
+            await fs.mkdir(path.dirname(target), { recursive: true });
+            await fs.copyFile(path.join(LIBRARY_FILES, file.src), target);
+        }
+    }
+    return { path: `hub/${slug}/${slug}${ext}`, warnings };
+}
+
 async function readRawBody(req) {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
@@ -222,6 +290,28 @@ async function handleApi(req, res, url) {
 
     if (url.pathname === '/api/config' && req.method === 'GET') {
         return send(res, 200, { gameUrl: GAME_URL });
+    }
+    if (url.pathname === '/api/dig' && req.method === 'GET') {
+        return send(res, 200, await readJson(DIG_FILE, { zones: [], finds: [] }));
+    }
+    if (url.pathname === '/api/dig/tractor' && req.method === 'PUT') {
+        const tractor = await readBody(req);
+        if (!tractor || typeof tractor.model !== 'string' || typeof tractor.seat !== 'object') {
+            return send(res, 400, { error: 'Invalid tractor' });
+        }
+        // Only the tractor section changes; the rest of dig.json is written back as it was read.
+        const design = await readJson(DIG_FILE, null);
+        if (!design) return send(res, 500, { error: 'Could not read dig.json' });
+        design.tractor = tractor;
+        await writeJson(DIG_FILE, design);
+        return send(res, 200, { ok: true });
+    }
+    if (url.pathname === '/api/library' && req.method === 'GET') {
+        return send(res, 200, await listLibrary());
+    }
+    if (url.pathname === '/api/library/import' && req.method === 'POST') {
+        const body = await readBody(req);
+        return send(res, 200, await importLibraryModel(String(body.id ?? '')));
     }
     if (url.pathname === '/api/models' && req.method === 'GET') {
         return send(res, 200, await listModelsWithThumbs());
@@ -356,6 +446,12 @@ const server = http.createServer(async (req, res) => {
         }
         if (url.pathname.startsWith('/models/')) {
             return await serveFile(res, MODELS_DIR, decodeURIComponent(url.pathname.slice('/models/'.length)));
+        }
+        if (url.pathname.startsWith('/library-files/')) {
+            return await serveFile(res, LIBRARY_FILES, decodeURIComponent(url.pathname.slice('/library-files/'.length)));
+        }
+        if (url.pathname.startsWith('/library-thumbs/')) {
+            return await serveFile(res, LIBRARY_THUMBS, decodeURIComponent(url.pathname.slice('/library-thumbs/'.length)));
         }
         if (url.pathname.startsWith('/fonts/')) {
             return await serveFile(res, FONTS_DIR, decodeURIComponent(url.pathname.slice('/fonts/'.length)));

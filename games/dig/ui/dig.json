@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "$comment": "Dig & Discover tuning (GDD §17: everything configurable). Distances in world units (1 block = 1 unit). materials: durability = hit points, minPower = weakest tool power that can dig it, value = sell price per item, drops = items per block; block = the KayKit block model drawn for it, pickup = what flies into the backpack, decor = pieces poking out of the top (nuggets on ores, gems on crystals) so they read from above. zones: rings around the hub by distance (from = where the zone starts; edges are wobbly); fill = the zone's base rock (its minPower gates the zone behind a tool tier), patches/ores = {id, chance} mixed in, findChance = share of blocks hiding a find. finds: the artifacts to collect (GDD §11) — 3 per zone (`zone`, 0-based), buried and revealed when a tunnel reaches them, worth `reward` cash; `weight` = relative odds within the zone, `rarity` drives the find banner. The collection totem in the hub shows found vs missing; finding them all completes the collection (`collectionReward`). wardrobe: looks bought with cash at the hub closet (colors, faces under images/non-preload/skins, hats under models/hats; hat placement in ui/hatfits.json).",
+  "$comment": "Dig & Discover tuning (GDD §17: everything configurable). Distances in world units (1 block = 1 unit). materials: durability = hit points, minPower = weakest tool power that can dig it, value = sell price per item, drops = items per block; block = the KayKit block model drawn for it, pickup = what flies into the backpack, decor = pieces poking out of the top (nuggets on ores, gems on crystals) so they read from above. zones: rings around the hub by distance (from = where the zone starts; edges are wobbly); fill = the zone's base rock (its minPower gates the zone behind a tool tier), patches/ores = {id, chance} mixed in. finds: the artifacts to collect (GDD §11) — 3 per zone (`zone`, 0-based), each buried exactly once at a seeded spot in its zone and revealed when a tunnel reaches it, worth `reward` cash; `rarity` drives the find banner. The collection totem in the hub shows found vs missing; finding them all completes the collection (`collectionReward`). wardrobe: looks bought with cash at the hub closet (colors, faces under images/non-preload/skins, hats under models/hats; hat placement in ui/hatfits.json). tools: the upgrade path shown as a timeline at the ATM (`rarity` colours a tool once owned, grey until then), ending with the tractor (`vehicle`: ridden in the mine, see `tractor`). tractor: the look of the last tool; the miner rides it outside the hub (smoke puff on the way out and back in): height = tractor height in world units, rotationY turns the model (radians), seat = where the miner sits (tractor-local, world units), speedMultiplier on walking speed, smoke = the puff, exhaust = small puffs while driving (tractor-local position, seconds between puffs). Edited in the level editor Tractor tab. achievements: claimed at the HUD trophy button; stat = blocks (dug) / ores (ore blocks dug) / earned (cash from selling and finds) / finds (artifacts collected); each tier pays its reward when claimed, and claiming the last unlocks its decor (named here, placed in levels/hub.json achievementDecor). firstFindAfterBlocks: the first artifact turns up on this many blocks dug (wherever the miner digs), so every new player finds one early; its buried copy is removed.",
   "terrain": {
     "radius": 80,
     "blockHeight": 1.6,
@@ -70,15 +70,16 @@
       "pickup": "mine/stone-brick.glb"
     },
     {
-      "id": "magma",
-      "name": "Magma Rock",
-      "color": "#e2552b",
+      "id": "obsidian",
+      "name": "Obsidian",
+      "color": "#2e2638",
       "durability": 36,
       "minPower": 7,
       "value": 14,
       "drops": 1,
       "ore": false,
-      "block": "mine/lava.glb",
+      "block": "mine/stone-dark.glb",
+      "tint": "#6c5c8e",
       "pickup": "mine/stone-chunks-small.glb"
     },
     {
@@ -144,7 +145,8 @@
       "hitInterval": 0.42,
       "area": 1,
       "price": 0,
-      "icon": "shovel"
+      "icon": "shovel",
+      "rarity": "common"
     },
     {
       "id": "pickaxe",
@@ -154,8 +156,9 @@
       "power": 2,
       "hitInterval": 0.38,
       "area": 1,
-      "price": 60,
-      "icon": "pickaxe"
+      "price": 25,
+      "icon": "pickaxe",
+      "rarity": "common"
     },
     {
       "id": "steelpick",
@@ -166,7 +169,8 @@
       "hitInterval": 0.32,
       "area": 1,
       "price": 300,
-      "icon": "pickaxe"
+      "icon": "pickaxe",
+      "rarity": "rare"
     },
     {
       "id": "drill",
@@ -177,7 +181,8 @@
       "hitInterval": 0.26,
       "area": 3,
       "price": 900,
-      "icon": "drill"
+      "icon": "drill",
+      "rarity": "rare"
     },
     {
       "id": "megadrill",
@@ -188,18 +193,33 @@
       "hitInterval": 0.22,
       "area": 3,
       "price": 2500,
-      "icon": "drill"
+      "icon": "drill",
+      "rarity": "epic"
     },
     {
-      "id": "magmadrill",
-      "name": "Magma Drill",
+      "id": "obsidiandrill",
+      "name": "Obsidian Drill",
       "model": "pickaxe",
       "clip": "StandingPICKAXE",
       "power": 7,
       "hitInterval": 0.18,
       "area": 3,
       "price": 6000,
-      "icon": "drill"
+      "icon": "drill",
+      "rarity": "epic"
+    },
+    {
+      "id": "tractor",
+      "name": "Tractor",
+      "model": "pickaxe",
+      "clip": "StandingPICKAXE",
+      "power": 9,
+      "hitInterval": 0.14,
+      "area": 3,
+      "price": 15000,
+      "icon": "tractor",
+      "vehicle": true,
+      "rarity": "legendary"
     }
   ],
   "backpack": [
@@ -245,13 +265,12 @@
           "id": "copper",
           "chance": 0.06
         }
-      ],
-      "findChance": 0.02
+      ]
     },
     {
       "id": "stone",
       "name": "Stone Layer",
-      "from": 18,
+      "from": 20,
       "fill": "stone",
       "patches": [
         {
@@ -268,13 +287,12 @@
           "id": "silver",
           "chance": 0.05
         }
-      ],
-      "findChance": 0.012
+      ]
     },
     {
       "id": "deep",
       "name": "The Deep",
-      "from": 32,
+      "from": 34,
       "fill": "deeprock",
       "patches": [
         {
@@ -291,13 +309,12 @@
           "id": "gold",
           "chance": 0.05
         }
-      ],
-      "findChance": 0.008
+      ]
     },
     {
       "id": "ruins",
       "name": "Lost Ruins",
-      "from": 46,
+      "from": 48,
       "fill": "ruins",
       "patches": [
         {
@@ -314,14 +331,13 @@
           "id": "crystal",
           "chance": 0.04
         }
-      ],
-      "findChance": 0.012
+      ]
     },
     {
-      "id": "magma",
-      "name": "Magma Core",
-      "from": 62,
-      "fill": "magma",
+      "id": "obsidian",
+      "name": "Obsidian Depths",
+      "from": 64,
+      "fill": "obsidian",
       "patches": [
         {
           "id": "deeprock",
@@ -337,8 +353,7 @@
           "id": "crystal",
           "chance": 0.07
         }
-      ],
-      "findChance": 0.006
+      ]
     }
   ],
   "finds": [
@@ -349,7 +364,6 @@
       "size": 0.7,
       "reward": 20,
       "zone": 0,
-      "weight": 6,
       "rarity": "common"
     },
     {
@@ -359,7 +373,6 @@
       "size": 0.6,
       "reward": 35,
       "zone": 0,
-      "weight": 4,
       "rarity": "common"
     },
     {
@@ -369,7 +382,6 @@
       "size": 0.65,
       "reward": 80,
       "zone": 0,
-      "weight": 2,
       "rarity": "rare"
     },
     {
@@ -379,7 +391,6 @@
       "size": 0.6,
       "reward": 80,
       "zone": 1,
-      "weight": 6,
       "rarity": "common"
     },
     {
@@ -389,7 +400,6 @@
       "size": 0.7,
       "reward": 150,
       "zone": 1,
-      "weight": 3,
       "rarity": "rare"
     },
     {
@@ -399,7 +409,6 @@
       "size": 0.75,
       "reward": 250,
       "zone": 1,
-      "weight": 2,
       "rarity": "rare"
     },
     {
@@ -409,7 +418,6 @@
       "size": 0.6,
       "reward": 200,
       "zone": 2,
-      "weight": 6,
       "rarity": "common"
     },
     {
@@ -419,7 +427,6 @@
       "size": 0.7,
       "reward": 350,
       "zone": 2,
-      "weight": 3,
       "rarity": "rare"
     },
     {
@@ -429,7 +436,6 @@
       "size": 0.7,
       "reward": 700,
       "zone": 2,
-      "weight": 1.5,
       "rarity": "epic"
     },
     {
@@ -439,7 +445,6 @@
       "size": 0.65,
       "reward": 500,
       "zone": 3,
-      "weight": 6,
       "rarity": "common"
     },
     {
@@ -449,7 +454,6 @@
       "size": 0.75,
       "reward": 900,
       "zone": 3,
-      "weight": 3,
       "rarity": "rare"
     },
     {
@@ -459,7 +463,6 @@
       "size": 0.8,
       "reward": 2000,
       "zone": 3,
-      "weight": 1.5,
       "rarity": "epic"
     },
     {
@@ -469,7 +472,6 @@
       "size": 0.8,
       "reward": 2500,
       "zone": 4,
-      "weight": 5,
       "rarity": "rare"
     },
     {
@@ -479,7 +481,33 @@
       "size": 0.8,
       "reward": 4000,
       "zone": 4,
-      "weight": 2,
+      "rarity": "epic"
+    },
+    {
+      "id": "copperhoard",
+      "name": "Copper Hoard",
+      "model": "mine/copper-nuggets.glb",
+      "size": 0.7,
+      "reward": 1800,
+      "zone": 4,
+      "rarity": "common"
+    },
+    {
+      "id": "goldhoard",
+      "name": "Gold Hoard",
+      "model": "mine/gold-nuggets.glb",
+      "size": 0.7,
+      "reward": 3000,
+      "zone": 4,
+      "rarity": "rare"
+    },
+    {
+      "id": "giantgem",
+      "name": "Giant Crystal",
+      "model": "mine/gem-large.glb",
+      "size": 0.8,
+      "reward": 6000,
+      "zone": 4,
       "rarity": "epic"
     },
     {
@@ -489,7 +517,6 @@
       "size": 0.95,
       "reward": 12000,
       "zone": 4,
-      "weight": 0.7,
       "rarity": "legendary"
     }
   ],
@@ -546,6 +573,30 @@
       {
         "id": "#ffffff",
         "price": 375
+      },
+      {
+        "id": "#ff8a65",
+        "price": 250
+      },
+      {
+        "id": "#9ccc65",
+        "price": 250
+      },
+      {
+        "id": "#5c6bc0",
+        "price": 300
+      },
+      {
+        "id": "#26a69a",
+        "price": 300
+      },
+      {
+        "id": "#f48fb1",
+        "price": 350
+      },
+      {
+        "id": "#212121",
+        "price": 400
       }
     ],
     "faces": [
@@ -655,13 +706,33 @@
         "price": 440
       },
       {
-        "id": "skins/ninja.webp",
-        "name": "Ninja",
+        "id": "skins/face-sneaky-1.webp",
+        "name": "Sneaky",
         "price": 440
       },
       {
-        "id": "skins/pirate.webp",
-        "name": "Pirate",
+        "id": "skins/face-grumpy-1.webp",
+        "name": "Grumpy",
+        "price": 440
+      },
+      {
+        "id": "skins/face-sleepy-1.webp",
+        "name": "Sleepy",
+        "price": 440
+      },
+      {
+        "id": "skins/face-cutie-1.webp",
+        "name": "Cutie",
+        "price": 500
+      },
+      {
+        "id": "skins/face-toothy-1.webp",
+        "name": "Toothy",
+        "price": 500
+      },
+      {
+        "id": "skins/face-bandit-1.webp",
+        "name": "Bandit",
         "price": 500
       },
       {
@@ -688,6 +759,26 @@
         "id": "skins/devil.webp",
         "name": "Devil",
         "price": 560
+      },
+      {
+        "id": "skins/face-smitten-1.webp",
+        "name": "Smitten",
+        "price": 500
+      },
+      {
+        "id": "skins/face-starstruck-1.webp",
+        "name": "Starstruck",
+        "price": 500
+      },
+      {
+        "id": "skins/face-chaching-1.webp",
+        "name": "Cha-Ching",
+        "price": 560
+      },
+      {
+        "id": "skins/face-woozy-1.webp",
+        "name": "Woozy",
+        "price": 560
       }
     ],
     "hats": [
@@ -695,11 +786,6 @@
         "id": "MiningHelmet",
         "name": "Mining Helmet",
         "price": 0
-      },
-      {
-        "id": "HardHat",
-        "name": "Builder",
-        "price": 150
       },
       {
         "id": "CashierHat",
@@ -788,5 +874,135 @@
         "unlock": "collection"
       }
     ]
-  }
+  },
+  "tractor": {
+    "model": "hub/kenney-car-kit-tractor-shovel/kenney-car-kit-tractor-shovel.glb",
+    "height": 1.7,
+    "rotationY": 0,
+    "seat": {
+      "x": 0,
+      "y": 1.24,
+      "z": -0.35
+    },
+    "speedMultiplier": 1.6,
+    "smoke": {
+      "count": 16,
+      "size": 1.1,
+      "color": "#d9d3c9"
+    },
+    "exhaust": {
+      "x": 0.32,
+      "y": 1.55,
+      "z": -0.55,
+      "interval": 0.28,
+      "size": 0.35
+    }
+  },
+  "achievements": [
+    {
+      "id": "digger",
+      "name": "Digger",
+      "stat": "blocks",
+      "icon": "ToolIcon_shovel",
+      "describe": "Dig {goal} blocks",
+      "tiers": [
+        {
+          "goal": 100,
+          "reward": 100
+        },
+        {
+          "goal": 500,
+          "reward": 400
+        },
+        {
+          "goal": 2000,
+          "reward": 1500
+        },
+        {
+          "goal": 8000,
+          "reward": 5000
+        }
+      ],
+      "decor": "Digger Banner"
+    },
+    {
+      "id": "orehunter",
+      "name": "Ore Hunter",
+      "stat": "ores",
+      "icon": "ToolIcon_pickaxe",
+      "describe": "Dig {goal} ore blocks",
+      "tiers": [
+        {
+          "goal": 20,
+          "reward": 150
+        },
+        {
+          "goal": 100,
+          "reward": 600
+        },
+        {
+          "goal": 400,
+          "reward": 2000
+        },
+        {
+          "goal": 1500,
+          "reward": 6000
+        }
+      ],
+      "decor": "Gem Pile"
+    },
+    {
+      "id": "tycoon",
+      "name": "Tycoon",
+      "stat": "earned",
+      "icon": "ItemIcon_Money_Bill",
+      "describe": "Earn ${goal}",
+      "tiers": [
+        {
+          "goal": 500,
+          "reward": 100
+        },
+        {
+          "goal": 5000,
+          "reward": 800
+        },
+        {
+          "goal": 25000,
+          "reward": 3000
+        },
+        {
+          "goal": 100000,
+          "reward": 10000
+        }
+      ],
+      "decor": "Neon Sign"
+    },
+    {
+      "id": "collector",
+      "name": "Collector",
+      "stat": "finds",
+      "icon": "ItemIcon_Trophy_Gold",
+      "describe": "Collect {goal} artifacts",
+      "tiers": [
+        {
+          "goal": 3,
+          "reward": 200
+        },
+        {
+          "goal": 6,
+          "reward": 1000
+        },
+        {
+          "goal": 10,
+          "reward": 3000
+        },
+        {
+          "goal": 18,
+          "reward": 8000
+        }
+      ],
+      "decor": "Gold Display"
+    }
+  ],
+  "firstFindAfterBlocks": 12
 }

@@ -15,7 +15,9 @@ import { DIG, FindDef, Rarity } from '../data/DigConfig';
 import { FindResult } from '../data/DigProgress';
 
 const WIDTH = 400;
-const HEIGHT = 300;
+const HEIGHT = 330;
+/** Widest any line may be: the card minus its rounded border. */
+const TEXT_WIDTH = WIDTH - 48;
 const SHOW_SEC = 2.6;
 const RARITY_LABEL: Record<Rarity, string> = {
     common: 'FIND!',
@@ -32,6 +34,11 @@ interface Banner {
     hint: string;
     icon?: string;
     confetti: boolean;
+}
+
+/** Shrinks a line that's wider than the card (long find names, "NEW LEGENDARY FIND!!!"). */
+function fitWidth(text: PIXI.Text): void {
+    text.scale.set(Math.min(1, TEXT_WIDTH / Math.max(text.width, 1)));
 }
 
 export class FindBanner extends PIXI.Container {
@@ -81,6 +88,7 @@ export class FindBanner extends PIXI.Container {
         card.addChild(UiKit.image('findBanner', 'back', WIDTH, HEIGHT));
         const title = UiKit.text('findBanner', 'rarity', { text: banner.title }, { fill: banner.color });
         title.anchor.set(0.5);
+        fitWidth(title);
         title.y = -HEIGHT / 2 + 38;
         card.addChild(title);
         if (banner.icon) {
@@ -96,13 +104,17 @@ export class FindBanner extends PIXI.Container {
         }
         const name = UiKit.text('findBanner', 'name', { name: banner.name });
         name.anchor.set(0.5);
+        fitWidth(name);
         name.y = 52;
         const reward = UiKit.text('findBanner', 'reward', { reward: banner.reward.toLocaleString('en-US') });
         reward.anchor.set(0.5);
+        fitWidth(reward);
         reward.y = 88;
+        // Hints are sentences: wrapped onto two lines (uikit.json wrapWidth) rather than shrunk to unreadable.
         const hint = UiKit.text('findBanner', 'hint', { text: banner.hint });
         hint.anchor.set(0.5);
-        hint.y = HEIGHT / 2 - 26;
+        fitWidth(hint);
+        hint.y = HEIGHT / 2 - 30;
         card.addChild(name, reward, hint);
         this.tweens.push(...rayTweens, ...UiAnim.popIn(card));
         if (banner.confetti) {

@@ -5,20 +5,26 @@
     "cell": 0.5
   },
   "floor": {
-    "width": 14,
-    "depth": 14,
+    "width": 18,
+    "depth": 18,
     "rects": [
       {
         "x": 0,
         "z": 0,
-        "width": 14,
-        "depth": 14
+        "width": 18,
+        "depth": 18
+      },
+      {
+        "x": 0,
+        "z": -13,
+        "width": 12,
+        "depth": 8
       }
     ]
   },
   "start": {
     "x": 0,
-    "z": 2
+    "z": 2.57
   },
   "waypoints": [],
   "walls": [
@@ -26,72 +32,545 @@
       "closed": true,
       "points": [
         {
-          "x": -7,
-          "z": -7
+          "x": -9,
+          "z": -9
         },
         {
-          "x": 7,
-          "z": -7
+          "x": 9,
+          "z": -9
         },
         {
-          "x": 7,
-          "z": 7
+          "x": 9,
+          "z": 9
         },
         {
-          "x": -7,
-          "z": 7
+          "x": -9,
+          "z": 9
         }
       ],
       "openings": [
         {
           "kind": "gap",
-          "minX": -2.2,
-          "maxX": 2.2,
-          "minZ": -7.3,
-          "maxZ": -6.7
+          "minX": -5.5,
+          "maxX": 5.5,
+          "minZ": -9.3,
+          "maxZ": -8.7
         },
         {
           "kind": "gap",
           "minX": -2.2,
           "maxX": 2.2,
-          "minZ": 6.7,
-          "maxZ": 7.3
+          "minZ": 8.7,
+          "maxZ": 9.3
         },
         {
           "kind": "gap",
-          "minX": -7.3,
-          "maxX": -6.7,
-          "minZ": -2.2,
-          "maxZ": 2.2
+          "minX": -9.3,
+          "maxX": -8.7,
+          "minZ": -2,
+          "maxZ": 2
         },
         {
           "kind": "gap",
-          "minX": 6.7,
-          "maxX": 7.3,
-          "minZ": -2.2,
-          "maxZ": 2.2
+          "minX": 8.7,
+          "maxX": 9.3,
+          "minZ": -2,
+          "maxZ": 2
         }
       ]
+    },
+    {
+      "closed": false,
+      "points": [
+        {
+          "x": -6,
+          "z": -9
+        },
+        {
+          "x": -6,
+          "z": -17
+        },
+        {
+          "x": 6,
+          "z": -17
+        },
+        {
+          "x": 6,
+          "z": -9
+        }
+      ],
+      "openings": []
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "model": "hub/holiday-carpet-round-large/holiday-carpet-round-large.gltf",
+      "x": -7.25,
+      "z": -7,
+      "rotationY": 0,
+      "height": 0.1,
+      "collider": null,
+      "elevation": -0.05
+    },
+    {
+      "model": "hub/furniture-rug-rectangle-stripes-b/furniture-rug-rectangle-stripes-b.gltf",
+      "x": 5.5,
+      "z": 5.5,
+      "rotationY": 0,
+      "height": 0.23,
+      "collider": null,
+      "elevation": -0.05,
+      "stretch": {
+        "x": 1,
+        "z": 1.53
+      }
+    },
+    {
+      "model": "hub/cute-furniture-glb-closet-02/cute-furniture-glb-closet-02.glb",
+      "x": -3.25,
+      "z": 2,
+      "rotationY": 0,
+      "height": 3.96,
+      "collider": {
+        "halfX": 1.02,
+        "halfY": 1.98,
+        "halfZ": 0.56
+      }
+    },
+    {
+      "model": "hub/furniture-rug-oval-a/furniture-rug-oval-a.gltf",
+      "x": 0,
+      "z": -12.75,
+      "rotationY": 0,
+      "height": 0.37,
+      "collider": {
+        "halfX": 5.55,
+        "halfY": 0.19,
+        "halfZ": 3.7
+      },
+      "elevation": -0.3
+    }
+  ],
   "loot": [],
   "guards": [],
   "stations": [
     {
       "kind": "atm",
-      "x": -4,
-      "z": -4
+      "x": -7.25,
+      "z": -7,
+      "rotationY": 0
     },
     {
       "kind": "collection",
-      "x": 4,
-      "z": -4
+      "x": 0,
+      "z": -11,
+      "rotationY": 0
     },
     {
       "kind": "wardrobe",
-      "x": -4,
-      "z": 3.5
+      "x": -7.07,
+      "z": 5.14,
+      "rotationY": 1.5708,
+      "scale": 1.5
     }
-  ]
+  ],
+  "buildables": [
+    {
+      "id": "plant-west",
+      "name": "Plant",
+      "price": 200,
+      "model": "hub/cute-furniture-glb-plants-05/cute-furniture-glb-plants-05.glb",
+      "x": 8,
+      "z": -7.75,
+      "rotationY": -0.5236,
+      "height": 1.1,
+      "collider": {
+        "halfX": 0.41,
+        "halfY": 0.55,
+        "halfZ": 0.4
+      }
+    },
+    {
+      "id": "plant-east",
+      "name": "Plant",
+      "price": 50,
+      "model": "hub/cute-furniture-glb-plants-05/cute-furniture-glb-plants-05.glb",
+      "x": 3,
+      "z": 8,
+      "rotationY": -2.3562,
+      "height": 1.77,
+      "collider": {
+        "halfX": 0.67,
+        "halfY": 0.89,
+        "halfZ": 0.67
+      },
+      "elevation": 0.2
+    },
+    {
+      "id": "lamp-west",
+      "name": "Standing Lamp",
+      "price": 350,
+      "model": "hub/furniture-lamp-standing/furniture-lamp-standing.gltf",
+      "x": -2.75,
+      "z": 8.25,
+      "rotationY": 0,
+      "height": 2,
+      "collider": {
+        "halfX": 0.4,
+        "halfY": 1,
+        "halfZ": 0.4
+      }
+    },
+    {
+      "id": "lamp-east",
+      "name": "Standing Lamp",
+      "price": 350,
+      "model": "hub/furniture-lamp-standing/furniture-lamp-standing.gltf",
+      "x": 8.25,
+      "z": 7.75,
+      "rotationY": 0,
+      "height": 2,
+      "collider": {
+        "halfX": 0.4,
+        "halfY": 1,
+        "halfZ": 0.4
+      },
+      "elevation": 0.2
+    },
+    {
+      "id": "bench",
+      "name": "Couch",
+      "price": 600,
+      "model": "hub/cute-furniture-glb-couch-08/cute-furniture-glb-couch-08.glb",
+      "x": 6,
+      "z": 7.71,
+      "rotationY": 3.1416,
+      "height": 1.35,
+      "collider": {
+        "halfX": 1.73,
+        "halfY": 0.68,
+        "halfZ": 0.6
+      },
+      "elevation": 0.1
+    },
+    {
+      "id": "workbench",
+      "name": "Workbench",
+      "price": 1200,
+      "model": "hub/survival-kit-workbench-anvil/survival-kit-workbench-anvil.glb",
+      "x": 8,
+      "z": -3,
+      "rotationY": -1.5708,
+      "height": 1.1,
+      "collider": {
+        "halfX": 0.48,
+        "halfY": 0.55,
+        "halfZ": 0.53
+      }
+    },
+    {
+      "id": "cute-furniture-glb-couch-11",
+      "name": "Couch",
+      "price": 500,
+      "model": "hub/cute-furniture-glb-couch-11/cute-furniture-glb-couch-11.glb",
+      "x": 8,
+      "z": 4.75,
+      "rotationY": -1.5708,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.58,
+        "halfY": 0.6,
+        "halfZ": 1.22
+      }
+    },
+    {
+      "id": "furniture-table-low-decorated",
+      "name": "Table",
+      "price": 500,
+      "model": "hub/furniture-table-low-decorated/furniture-table-low-decorated.gltf",
+      "x": 5.5,
+      "z": 4.75,
+      "rotationY": 1.5708,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.86,
+        "halfY": 0.6,
+        "halfZ": 1.37
+      }
+    },
+    {
+      "id": "plant",
+      "name": "Plant",
+      "price": 50,
+      "model": "hub/cute-furniture-glb-plants-05/cute-furniture-glb-plants-05.glb",
+      "x": 3,
+      "z": 3.5,
+      "rotationY": 0,
+      "height": 1.77,
+      "collider": {
+        "halfX": 0.5,
+        "halfY": 0.89,
+        "halfZ": 0.46
+      },
+      "elevation": 0.2
+    },
+    {
+      "id": "cute-furniture-glb-chair-pc-04",
+      "name": "Chair",
+      "price": 500,
+      "model": "hub/cute-furniture-glb-chair-pc-04/cute-furniture-glb-chair-pc-04.glb",
+      "x": -6,
+      "z": 7.5,
+      "rotationY": -1.5708,
+      "height": 1.68,
+      "collider": {
+        "halfX": 0.59,
+        "halfY": 0.84,
+        "halfZ": 0.6
+      }
+    },
+    {
+      "id": "furniture-desk-decorated",
+      "name": "Computer",
+      "price": 500,
+      "model": "hub/furniture-desk-decorated/furniture-desk-decorated.gltf",
+      "x": -8,
+      "z": 7.5,
+      "rotationY": 1.5708,
+      "height": 2.13,
+      "collider": {
+        "halfX": 0.75,
+        "halfY": 1.06,
+        "halfZ": 1.46
+      }
+    },
+    {
+      "id": "casino-assets-glb-flower-03",
+      "name": "Plant",
+      "price": 200,
+      "model": "hub/casino-assets-glb-flower-03/casino-assets-glb-flower-03.glb",
+      "x": -8.25,
+      "z": 3,
+      "rotationY": 0,
+      "height": 1.76,
+      "collider": {
+        "halfX": 0.66,
+        "halfY": 0.88,
+        "halfZ": 0.65
+      }
+    },
+    {
+      "id": "cute-furniture-glb-nightstand-02",
+      "name": "Nightstand",
+      "price": 500,
+      "model": "hub/cute-furniture-glb-nightstand-02/cute-furniture-glb-nightstand-02.glb",
+      "x": 8.25,
+      "z": 2.75,
+      "rotationY": -1.5708,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.48,
+        "halfY": 0.6,
+        "halfZ": 0.52
+      }
+    },
+    {
+      "id": "furniture-shelf-b-large-decorated",
+      "name": "Shelf",
+      "price": 500,
+      "model": "hub/furniture-shelf-b-large-decorated/furniture-shelf-b-large-decorated.gltf",
+      "x": 9,
+      "z": -5.75,
+      "rotationY": -1.5708,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.37,
+        "halfY": 0.6,
+        "halfZ": 1.47
+      },
+      "elevation": 0.6
+    },
+    {
+      "id": "furniture-shelf-b-small-decorated",
+      "name": "Shelf",
+      "price": 500,
+      "model": "hub/furniture-shelf-b-small-decorated/furniture-shelf-b-small-decorated.gltf",
+      "x": 7.5,
+      "z": -9,
+      "rotationY": 0,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.59,
+        "halfY": 0.6,
+        "halfZ": 0.34
+      },
+      "elevation": 0.8
+    },
+    {
+      "id": "cute-furniture-glb-picture-08",
+      "name": "Picture",
+      "price": 500,
+      "model": "hub/cute-furniture-glb-picture-08/cute-furniture-glb-picture-08.glb",
+      "x": 6.25,
+      "z": -8.75,
+      "rotationY": 0,
+      "height": 1.2,
+      "collider": null,
+      "elevation": 1
+    },
+    {
+      "id": "cute-furniture-glb-clock-03",
+      "name": "Clock",
+      "price": 500,
+      "model": "hub/cute-furniture-glb-clock-03/cute-furniture-glb-clock-03.glb",
+      "x": -8.5,
+      "z": -3.5,
+      "rotationY": 1.5708,
+      "height": 2.57,
+      "collider": {
+        "halfX": 0.32,
+        "halfY": 1.29,
+        "halfZ": 0.56
+      }
+    },
+    {
+      "id": "cute-furniture-glb-plants-15",
+      "name": "Plants",
+      "price": 500,
+      "model": "hub/cute-furniture-glb-plants-15/cute-furniture-glb-plants-15.glb",
+      "x": -5.75,
+      "z": -8.5,
+      "rotationY": 0,
+      "height": 1.94,
+      "collider": {
+        "halfX": 0.43,
+        "halfY": 0.97,
+        "halfZ": 0.26
+      }
+    }
+  ],
+  "trophyTables": [
+    {
+      "zone": 0,
+      "model": "hub/furniture-table-medium-long/furniture-table-medium-long.gltf",
+      "x": -4.95,
+      "z": -10.9,
+      "rotationY": 1.5708,
+      "height": 0.8,
+      "collider": {
+        "halfX": 0.8,
+        "halfY": 0.4,
+        "halfZ": 1.2
+      }
+    },
+    {
+      "zone": 1,
+      "model": "hub/furniture-table-medium-long/furniture-table-medium-long.gltf",
+      "x": -4.4,
+      "z": -15.4,
+      "rotationY": 0.7854,
+      "height": 0.8,
+      "collider": {
+        "halfX": 1.41,
+        "halfY": 0.4,
+        "halfZ": 1.41
+      }
+    },
+    {
+      "zone": 2,
+      "model": "hub/furniture-table-medium-long/furniture-table-medium-long.gltf",
+      "x": 0,
+      "z": -15.95,
+      "rotationY": 0,
+      "height": 0.8,
+      "collider": {
+        "halfX": 1.2,
+        "halfY": 0.4,
+        "halfZ": 0.8
+      }
+    },
+    {
+      "zone": 3,
+      "model": "hub/furniture-table-medium-long/furniture-table-medium-long.gltf",
+      "x": 4.4,
+      "z": -15.4,
+      "rotationY": -0.7854,
+      "height": 0.8,
+      "collider": {
+        "halfX": 1.41,
+        "halfY": 0.4,
+        "halfZ": 1.41
+      }
+    },
+    {
+      "zone": 4,
+      "model": "hub/furniture-table-medium-long/furniture-table-medium-long.gltf",
+      "x": 4.95,
+      "z": -10.9,
+      "rotationY": -1.5708,
+      "height": 0.8,
+      "collider": {
+        "halfX": 0.8,
+        "halfY": 0.4,
+        "halfZ": 1.2
+      }
+    }
+  ],
+  "achievementDecor": [
+    {
+      "achievement": "digger",
+      "model": "hub/castle-kit-flag-banner-long/castle-kit-flag-banner-long.glb",
+      "x": -2.25,
+      "z": -16.75,
+      "rotationY": 1.5708,
+      "height": 2.6,
+      "collider": {
+        "halfX": 0.38,
+        "halfY": 1.3,
+        "halfZ": 0.02
+      }
+    },
+    {
+      "achievement": "tycoon",
+      "model": "hub/casino-assets-glb-neon-sign-01/casino-assets-glb-neon-sign-01.glb",
+      "x": 0,
+      "z": -16.75,
+      "rotationY": 0,
+      "height": 1.7,
+      "collider": {
+        "halfX": 1.32,
+        "halfY": 0.85,
+        "halfZ": 0.05
+      },
+      "elevation": 1.5
+    },
+    {
+      "achievement": "orehunter",
+      "model": "hub/resource-gems-pile-large/resource-gems-pile-large.gltf",
+      "x": 1.5,
+      "z": -12.5,
+      "rotationY": 0,
+      "height": 0.8,
+      "collider": {
+        "halfX": 0.71,
+        "halfY": 0.4,
+        "halfZ": 0.75
+      }
+    },
+    {
+      "achievement": "collector",
+      "model": "hub/casino-assets-glb-gold-ingot-01/casino-assets-glb-gold-ingot-01.glb",
+      "x": -1.25,
+      "z": -12.5,
+      "rotationY": 0,
+      "height": 0.43,
+      "collider": {
+        "halfX": 0.34,
+        "halfY": 0.22,
+        "halfZ": 0.71
+      },
+      "elevation": 0.1
+    }
+  ],
+  "areas": []
 }

@@ -230,3 +230,8 @@ details summary:hover { color: var(--text); }
 .style-group { border-top: 1px solid var(--border); padding-top: 4px; margin-top: 4px; }
 .style-group .field select { flex: 1; min-width: 0; }
 .style-group .field button { padding: 2px 8px; }
+
+/* 3D Hub tab */
+.stack { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+button.block { width: 100%; text-align: left; }
+.hint-bar { flex: none; min-height: 28px; padding: 5px 12px; background: var(--panel); border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }

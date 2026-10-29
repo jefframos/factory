@@ -7,6 +7,7 @@
 //  - selling: items tossed out of the miner onto the sell pad, with rising "+$" labels.
 
 import * as THREE from 'three';
+import { CanvasArt } from '../ui/CanvasArt';
 import { BendService } from '../services/BendService';
 
 const DEBRIS_POOL = 260;
@@ -47,18 +48,8 @@ function textTexture(text: string, color: string): THREE.CanvasTexture {
     canvas.width = 256;
     canvas.height = 96;
     const g = canvas.getContext('2d')!;
-    g.font = 'bold 64px Arial';
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.lineWidth = 12;
-    g.lineJoin = 'round';
-    g.strokeStyle = '#1d3a12';
-    g.strokeText(text, 128, 50);
-    g.fillStyle = color;
-    g.fillText(text, 128, 50);
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
+    CanvasArt.text(g, text, 128, 50, 60, color, 240, '#1d3a12');
+    return CanvasArt.texture(canvas);
 }
 
 function crackTexture(): THREE.CanvasTexture {
@@ -89,6 +80,22 @@ function crackTexture(): THREE.CanvasTexture {
     return texture;
 }
 
+/** A soft white blob (alpha falls off from the middle), tinted per puff. */
+function puffTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 64;
+    const g = canvas.getContext('2d')!;
+    const gradient = g.createRadialGradient(32, 32, 2, 32, 32, 31);
+    gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    gradient.addColorStop(0.5, 'rgba(255,255,255,0.6)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gradient;
+    g.fillRect(0, 0, 64, 64);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+}
+
 export class DigEffects {
     private readonly chips: THREE.InstancedMesh;
     private readonly chipState: Chip[] = [];
@@ -106,6 +113,9 @@ export class DigEffects {
     private readonly rotation = new THREE.Quaternion();
     private readonly euler = new THREE.Euler();
     private readonly scale = new THREE.Vector3();
+
+    private readonly puffs: { sprite: THREE.Sprite; velocity: THREE.Vector3; life: number; maxLife: number; size: number }[] = [];
+    private readonly puffTexture = puffTexture();
 
     /** `pickupTarget` is where resource pickups fly to (the miner). */
     public constructor(private readonly threeScene: THREE.Scene, blockHeight: number, private readonly pickupTarget: () => THREE.Vector3) {
@@ -138,6 +148,27 @@ export class DigEffects {
         this.crack.visible = true;
         this.crackHome.copy(center);
         this.crackMaterial.opacity = 0.25 + damage * 0.7;
+    }
+
+    /**
+     * A puff of smoke: `count` soft billows of `size` drifting up and out from `at`, growing and fading
+     * (the tractor appearing/vanishing; one small puff = exhaust). `spread` scales how far they scatter.
+     */
+    public smoke(at: THREE.Vector3, count: number, size: number, color: THREE.Color, spread = 1): void {
+        for (let n = 0; n < count; n++) {
+            const material = new THREE.SpriteMaterial({ map: this.puffTexture, color, transparent: true, depthWrite: false, opacity: 0 });
+            const sprite = new THREE.Sprite(material);
+            const angle = Math.random() * Math.PI * 2;
+            const out = (0.4 + Math.random() * 0.8) * spread;
+            sprite.position.set(at.x + Math.cos(angle) * 0.3 * spread, at.y + Math.random() * 0.4 * spread, at.z + Math.sin(angle) * 0.3 * spread);
+            sprite.renderOrder = 6;
+            this.threeScene.add(sprite);
+            const maxLife = 0.7 + Math.random() * 0.6;
+            this.puffs.push({
+                sprite, maxLife, life: maxLife, size: size * (0.7 + Math.random() * 0.6),
+                velocity: new THREE.Vector3(Math.cos(angle) * out, 0.8 + Math.random() * 0.9, Math.sin(angle) * out),
+            });
+        }
     }
 
     /** A hit landed: jolts the crack overlay and throws a few chips. */
@@ -229,6 +260,22 @@ export class DigEffects {
     }
 
     public update(delta: number): void {
+        for (let i = this.puffs.length - 1; i >= 0; i--) {
+            const puff = this.puffs[i];
+            puff.life -= delta;
+            if (puff.life <= 0) {
+                puff.sprite.removeFromParent();
+                puff.sprite.material.dispose();
+                this.puffs.splice(i, 1);
+                continue;
+            }
+            const t = 1 - puff.life / puff.maxLife;
+            puff.velocity.multiplyScalar(Math.max(0, 1 - delta * 2.5));
+            puff.sprite.position.addScaledVector(puff.velocity, delta);
+            puff.sprite.scale.setScalar(puff.size * (0.5 + t * 1.3));
+            // Quick fade in, long fade out.
+            puff.sprite.material.opacity = 0.85 * Math.min(1, t * 6) * (1 - t);
+        }
         // Debris
         let any = false;
         for (let i = 0; i < DEBRIS_POOL; i++) {
@@ -301,6 +348,7 @@ export class DigEffects {
     }
 
     public destroy(): void {
+        this.puffs.forEach((puff) => puff.sprite.removeFromParent());
         this.chips.removeFromParent();
         this.chips.dispose();
         this.crack.removeFromParent();

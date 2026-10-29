@@ -19,6 +19,7 @@ import { getPlayerConfig } from '../data/PlayerConfig';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
 import { DigProgress, Look } from '../data/DigProgress';
 import hatFits from '../../ui/hatfits.json';
+import { SITTING_STATE } from '../entities/CharacterBody';
 
 const HALF_EXTENTS = new THREE.Vector3(0.4, 0.9, 0.4);
 /** The character rig is authored in FBX units; same scale as pizza's MainPlayer. */
@@ -33,6 +34,10 @@ const modelUrl = (fullPath: string): string => `./${fullPath}`;
 export default class DigPlayer extends Entity {
     private loaded?: ThirdPersonCharacter;
     private destroyed = false;
+    /** On top of the walking speed (the tractor drives faster). */
+    public speedMultiplier = 1;
+    /** Riding the tractor: the miner just sits (no tool in hand, no swing — MiningController). */
+    public seated = false;
 
     public constructor(private readonly inputHost: MovementInputHost, private readonly threeScene: THREE.Scene) {
         super();
@@ -58,7 +63,7 @@ export default class DigPlayer extends Entity {
             centerOffset: new THREE.Vector3(0, HALF_EXTENTS.y, 0),
             layer: Layers.Player,
         }));
-        this.addComponent(new PlayerMovementController(() => this.loaded?.getMoveSpeed() ?? 0, this.inputHost));
+        this.addComponent(new PlayerMovementController(() => (this.loaded?.getMoveSpeed() ?? 0) * this.speedMultiplier, this.inputHost));
         this.addComponent(new FacingComponent());
     }
 
@@ -75,6 +80,8 @@ export default class DigPlayer extends Entity {
         // Tool swings, on the action layer (MiningController): shovel digging, pickaxe/drill mining.
         await character.registerAnimation('dig', clip('Digging'));
         await character.registerAnimation('mine', clip('StandingPICKAXE'));
+        // Sitting in the tractor (TractorRide -> CharacterBody.sitNow(): straight into the loop).
+        await character.registerAnimation(SITTING_STATE, clip('Sitting'));
         character.setUp(config.idleToWalkSpeed, config.walkToRunSpeed);
         this.applyLook(DigProgress.look, character);
         // The hand's tool holder cancels the hand bone's scale as measured when it's first built, so it

@@ -158,6 +158,55 @@
           "stroke": "#1d4a12",
           "strokeWidth": 4,
           "style": "primary"
+        },
+        "closeButton": {
+          "type": "image",
+          "image": "Button_Round06_Red",
+          "tint": "#ffffff"
+        },
+        "closeIcon": {
+          "type": "image",
+          "image": "Icon_Close02",
+          "tint": "#ffffff"
+        },
+        "muteButton": {
+          "type": "image",
+          "image": "Button_Round03_Dark",
+          "tint": "#ffffff"
+        },
+        "muteOn": {
+          "type": "image",
+          "image": "PictoIcon_Sound",
+          "tint": "#ffffff"
+        },
+        "muteOff": {
+          "type": "image",
+          "image": "PictoIcon_Sound_Off",
+          "tint": "#ffffff"
+        },
+        "alert": {
+          "type": "image",
+          "image": "Icon_Exclamation",
+          "tint": "#ffffff"
+        },
+        "achievementsIcon": {
+          "type": "image",
+          "image": "ItemIcon_MemoPad",
+          "tint": "#ffffff"
+        },
+        "check": {
+          "type": "image",
+          "image": "Icon_Check03_s",
+          "tint": "#ffffff"
+        },
+        "guide": {
+          "type": "text",
+          "text": "{text}",
+          "size": 22,
+          "fill": "#ffe066",
+          "stroke": "#1d140e",
+          "strokeWidth": 5,
+          "style": "primary"
         }
       }
     },
@@ -177,7 +226,7 @@
         },
         "ribbon": {
           "type": "image",
-          "image": "Title_Ribbon01_Yellow",
+          "image": "Title_Ribbon01_Green",
           "slice": [
             150,
             0,
@@ -186,20 +235,21 @@
           ],
           "tint": "#ffffff",
           "w": 640,
-          "h": 143
+          "h": 143,
+          "sliceScale": 1
         },
         "title": {
           "type": "text",
           "text": "UPGRADES",
           "size": 28,
           "fill": "#ffffff",
-          "stroke": "#7a4100",
+          "stroke": "#1d5a12",
           "strokeWidth": 6,
           "style": "primary"
         },
         "itemFrame": {
           "type": "image",
-          "image": "ItemFrame01_Single_Gray",
+          "image": "ItemFrame01_Single_Blue",
           "slice": [
             20,
             20,
@@ -265,6 +315,91 @@
           "stroke": "#1d1b1a",
           "strokeWidth": 4,
           "style": "primary"
+        },
+        "nodeLabel": {
+          "type": "text",
+          "text": "{text}",
+          "size": 16,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 4,
+          "style": "primary",
+          "align": "center"
+        },
+        "rowBack": {
+          "type": "image",
+          "image": "BorderFrame_Round20_White_Bg",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#2b3240"
+        },
+        "toolCommon": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Green",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "toolRare": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Blue",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "toolEpic": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Purple",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "toolLegendary": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Yellow",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "toolLocked": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Gray",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "rarityTag": {
+          "type": "text",
+          "text": "{text}",
+          "size": 15,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 4,
+          "style": "primary"
         }
       }
     },
@@ -293,7 +428,8 @@
           ],
           "tint": "#ffffff",
           "w": 640,
-          "h": 143
+          "h": 143,
+          "sliceScale": 1
         },
         "title": {
           "type": "text",
@@ -358,7 +494,7 @@
         "cardName": {
           "type": "text",
           "text": "{name}",
-          "size": 14,
+          "size": 15,
           "fill": "#ffffff",
           "stroke": "#1d140e",
           "strokeWidth": 3,
@@ -405,6 +541,91 @@
           "stroke": "#1d140e",
           "strokeWidth": 3,
           "style": "secondary"
+        },
+        "arrowLeft": {
+          "type": "image",
+          "image": "arrow-left",
+          "slice": null,
+          "tint": "#ffffff"
+        },
+        "arrowRight": {
+          "type": "image",
+          "image": "arrow-right",
+          "slice": null,
+          "tint": "#ffffff"
+        },
+        "page": {
+          "type": "text",
+          "text": "{page} / {pages}",
+          "size": 18,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 4,
+          "style": "primary"
+        },
+        "cardCommon": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Green",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "cardRare": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Blue",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "cardEpic": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Purple",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "cardLegendary": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Yellow",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "cardMissing": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Navy",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "rarity": {
+          "type": "text",
+          "text": "{text}",
+          "size": 12,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 3,
+          "style": "primary"
         }
       }
     },
@@ -424,7 +645,7 @@
         },
         "ribbon": {
           "type": "image",
-          "image": "Title_Ribbon02_Red",
+          "image": "Title_Ribbon01_Magenta",
           "slice": [
             150,
             0,
@@ -433,14 +654,15 @@
           ],
           "tint": "#ffffff",
           "w": 640,
-          "h": 143
+          "h": 143,
+          "sliceScale": 1
         },
         "title": {
           "type": "text",
           "text": "WARDROBE",
           "size": 28,
           "fill": "#ffffff",
-          "stroke": "#6b0f0f",
+          "stroke": "#6b0f4a",
           "strokeWidth": 6,
           "style": "primary"
         },
@@ -592,7 +814,233 @@
           "fill": "#ffffff",
           "stroke": "#0d2a4d",
           "strokeWidth": 4,
+          "wrapWidth": 352,
           "style": "primary"
+        }
+      }
+    },
+    "achievements": {
+      "label": "Achievements",
+      "elements": {
+        "panel": {
+          "type": "image",
+          "image": "BorderFrame_Round20_Single_Dark",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "ribbon": {
+          "type": "image",
+          "image": "Title_Ribbon01_Orange",
+          "slice": [
+            150,
+            0,
+            150,
+            0
+          ],
+          "tint": "#ffffff",
+          "w": 820,
+          "h": 143,
+          "sliceScale": 1
+        },
+        "title": {
+          "type": "text",
+          "text": "ACHIEVEMENTS",
+          "size": 28,
+          "fill": "#ffffff",
+          "stroke": "#7a3000",
+          "strokeWidth": 6,
+          "style": "primary"
+        },
+        "frameLevel0": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Gray",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "frameLevel1": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Green",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "frameLevel2": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Blue",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "frameLevel3": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Purple",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "frameDone": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Yellow",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "name": {
+          "type": "text",
+          "text": "{name}",
+          "size": 22,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 4,
+          "style": "primary"
+        },
+        "info": {
+          "type": "text",
+          "text": "{text}",
+          "size": 16,
+          "fill": "#c9d3e0",
+          "stroke": "#1d140e",
+          "strokeWidth": 3,
+          "style": "secondary"
+        },
+        "reward": {
+          "type": "text",
+          "text": "{text}",
+          "size": 15,
+          "fill": "#ffe066",
+          "stroke": "#3a2400",
+          "strokeWidth": 3,
+          "style": "secondary"
+        },
+        "count": {
+          "type": "text",
+          "text": "{text}",
+          "size": 13,
+          "fill": "#ffffff",
+          "stroke": "#1d140e",
+          "strokeWidth": 3,
+          "style": "primary"
+        },
+        "footer": {
+          "type": "text",
+          "text": "{text}",
+          "size": 15,
+          "fill": "#c9d3e0",
+          "stroke": "#1d140e",
+          "strokeWidth": 3,
+          "style": "secondary"
+        },
+        "barBack": {
+          "type": "image",
+          "image": "ResourceBar_Single_Bg",
+          "slice": [
+            10,
+            10,
+            10,
+            10
+          ],
+          "tint": "#000000"
+        },
+        "barFill": {
+          "type": "image",
+          "image": "ResourceBar_Single_Btn_Green1",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "barDone": {
+          "type": "image",
+          "image": "ResourceBar_Single_Btn_Green1",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffd23f"
+        },
+        "buttonClaim": {
+          "type": "image",
+          "image": "Button01_s_Green",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "buttonLocked": {
+          "type": "image",
+          "image": "Button01_s_Gray",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "buttonDone": {
+          "type": "image",
+          "image": "Button01_s_Yellow",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "buttonLabel": {
+          "type": "text",
+          "text": "{text}",
+          "size": 22,
+          "fill": "#ffffff",
+          "stroke": "#0b3d12",
+          "strokeWidth": 5,
+          "style": "primary"
+        },
+        "rowBack": {
+          "type": "image",
+          "image": "BorderFrame_Round20_White_Bg",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#2b3240"
         }
       }
     }

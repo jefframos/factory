@@ -35,6 +35,8 @@ interface ImageElement {
     /** Optional size override in the element's own units (before any parent scale). */
     w?: number;
     h?: number;
+    /** Nine-slice corner scale (DEFAULT_SLICE_SCALE when unset). */
+    sliceScale?: number;
 }
 
 interface TextElement extends Partial<Omit<TextStyleSettings, 'shadow'>> {
@@ -73,6 +75,13 @@ function element<T extends KitElement>(screen: string, id: string, type: T['type
     return found as T;
 }
 
+/**
+ * Nine-slice corners are drawn at this fraction of their source size (the plane is built 1/sliceScale bigger,
+ * then scaled down), so frames and buttons keep ~2x detail on high-DPI screens like plain sprites drawn
+ * smaller than their source. An element's own `sliceScale` overrides it (ribbons use 1).
+ */
+const DEFAULT_SLICE_SCALE = 0.5;
+
 export const UiKit = {
     /** A stretchable image (nine-slice when the kit defines a slice), sized in pixels and centered on its origin. */
     image(screen: string, id: string, width: number, height: number): PIXI.Container {
@@ -82,9 +91,11 @@ export const UiKit = {
         const texture = PIXI.Texture.from(data.image);
         let display: PIXI.NineSlicePlane | PIXI.Sprite;
         if (data.slice) {
+            const sliceScale = data.sliceScale ?? DEFAULT_SLICE_SCALE;
             const plane = new PIXI.NineSlicePlane(texture, ...data.slice);
-            plane.width = width;
-            plane.height = height;
+            plane.width = width / sliceScale;
+            plane.height = height / sliceScale;
+            plane.scale.set(sliceScale);
             plane.position.set(-width / 2, -height / 2);
             plane.tint = toNumber(data.tint);
             display = plane;
@@ -124,6 +135,18 @@ export const UiKit = {
         const base = (kit as unknown as KitData).styles?.[role] ?? DEFAULT_STYLE;
         const defined = Object.fromEntries(Object.entries(overrides).filter(([, value]) => value !== undefined));
         return { ...base, ...defined, shadow: { ...base.shadow, ...(overrides.shadow ?? {}) } };
+    },
+
+    /** The atlas frame an image element shows — for code that wants the texture name (core's SoundToggleButton). */
+    imageName(screen: string, id: string): string {
+        return element<ImageElement>(screen, id, 'image').image;
+    },
+
+    /** Shrinks `text` (never grows it) so it's at most `maxWidth` wide — for names that would spill out of their frame. */
+    fit<T extends PIXI.Text>(text: T, maxWidth: number): T {
+        text.scale.set(1);
+        text.scale.set(Math.min(1, maxWidth / Math.max(text.width, 1)));
+        return text;
     },
 
     /** CSS font-family for a named style, for text that is not built from the kit. */

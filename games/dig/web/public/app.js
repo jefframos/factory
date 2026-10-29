@@ -5,6 +5,8 @@ import { openModelPicker, setModelCatalog, modelThumbUrl } from './modelPicker.j
 import { initWorldStyles, loadWorldStyles, renderWorldStyles, saveWorldStyles, hasUnsavedStyles, styleOf } from './worldStyles.js';
 import { initUiTab, refreshUiTab, saveUiKit, hasUnsavedUiChanges } from './uikit.js';
 import { initHatsTab, refreshHatsTab, saveHats, hasUnsavedHatChanges } from './hats.js';
+import { initHub3dTab, refreshHub3dTab } from './hub3d.js';
+import { initTractorTab, refreshTractorTab } from './tractor.js';
 
 // ---------------------------------------------------------------- state
 let levels = [];
@@ -960,6 +962,8 @@ canvas.addEventListener('wheel', (event) => {
 window.addEventListener('keydown', (event) => {
     if (isModalOpen()) return;
     if (activeTab !== 'level') {
+        // The 3D Hub tab handles its own keys (hub3d.js); the Tractor tab saves with its button.
+        if (activeTab === 'hub3d' || activeTab === 'tractor') return;
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
             event.preventDefault();
             void (activeTab === 'hats' ? saveHats() : saveUiKit());
@@ -1511,12 +1515,30 @@ $('pickModel').addEventListener('click', () => openModelPicker({
 // ---------------------------------------------------------------- tabs
 let uiTabReady = false;
 let hatsTabReady = false;
+let hub3dTabReady = false;
+let tractorTabReady = false;
 async function switchTab(name) {
     activeTab = name;
     document.querySelectorAll('[data-tab]').forEach((tab) => tab.classList.toggle('active', tab.dataset.tab === name));
     document.querySelectorAll('.tab-panel').forEach((panel) => { panel.hidden = panel.id !== `tab-${name}`; });
     if (name === 'level') {
         resize();
+        // The 3D Hub tab may have saved hub.json since: reload it so saving here doesn't undo that.
+        if (!dirty && level) await refreshLevels(level.id);
+    } else if (name === 'hub3d') {
+        if (!hub3dTabReady) {
+            hub3dTabReady = true;
+            await initHub3dTab($('tab-hub3d'), { gameUrl });
+        } else {
+            await refreshHub3dTab();
+        }
+    } else if (name === 'tractor') {
+        if (!tractorTabReady) {
+            tractorTabReady = true;
+            await initTractorTab($('tab-tractor'));
+        } else {
+            refreshTractorTab();
+        }
     } else if (name === 'hats') {
         if (!hatsTabReady) {
             hatsTabReady = true;
@@ -1553,7 +1575,9 @@ async function init() {
     renderModelList();
     await refreshLevels();
     if (location.hash === '#ui') await switchTab('ui');
-    if (location.hash === '#hats') await switchTab('hats');
+    else if (location.hash === '#hats') await switchTab('hats');
+    else if (location.hash === '#tractor') await switchTab('tractor');
+    else if (location.hash !== '#level') await switchTab('hub3d');
 }
 
 init().catch((error) => {

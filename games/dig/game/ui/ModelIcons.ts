@@ -10,7 +10,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import SetupThree from 'core/scene/SetupThree';
 
-const SIZE = 160;
+/** Render size: about twice the largest size an icon is shown at, so it stays crisp. */
+const SIZE = 256;
 const cache = new Map<string, Promise<PIXI.Texture | undefined>>();
 let loader: GLTFLoader | undefined;
 

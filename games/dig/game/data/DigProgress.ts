@@ -6,7 +6,7 @@
 // change so a burst of digging writes once.
 
 import { Signal } from 'signals';
-import { DIG, FindDef, ToolDef, WardrobeItem } from './DigConfig';
+import { AchievementStat, DIG, FindDef, ToolDef, WardrobeItem } from './DigConfig';
 
 export type LookKind = 'colors' | 'faces' | 'hats';
 
@@ -45,13 +45,20 @@ interface SaveData {
     /** Money when the wardrobe was last opened: things that became affordable since get its "!". */
     wardrobeBudget: number;
     dug: string;
+    /** Hub buildables bought so far (levels/hub.json `buildables`), by id. */
+    built: string[];
+    /** Counters the achievements read (finds come from `found`). */
+    stats: { blocks: number; ores: number; earned: number };
+    /** Achievement tiers claimed, by achievement id. */
+    achievements: Record<string, number>;
 }
 
 const starterLook = (): Look => ({ color: DIG.wardrobe.colors[0].id, face: DIG.wardrobe.faces[0].id, hat: DIG.wardrobe.hats[0].id });
 
 const fresh = (): SaveData => ({
     money: 0, toolLevel: 0, backpackLevel: 0, backpack: {}, found: {}, seen: [], collectionDone: false, deepestZone: 0,
-    owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, dug: '',
+    owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, dug: '', built: [],
+    stats: { blocks: 0, ores: 0, earned: 0 }, achievements: {},
 });
 
 function load(): SaveData {
@@ -59,7 +66,7 @@ function load(): SaveData {
         const raw = window.localStorage.getItem(SAVE_KEY);
         if (raw) {
             const saved = JSON.parse(raw) as Partial<SaveData>;
-            return { ...fresh(), ...saved, look: { ...starterLook(), ...saved.look }, owned: { ...fresh().owned, ...saved.owned } };
+            return { ...fresh(), ...saved, stats: { ...fresh().stats, ...saved.stats }, look: { ...starterLook(), ...saved.look }, owned: { ...fresh().owned, ...saved.owned } };
         }
     } catch {
         // A broken save starts fresh.
@@ -69,6 +76,8 @@ function load(): SaveData {
 
 const state = load();
 let saveTimer: number | undefined;
+/** Set once the data is wiped: nothing may be saved again before the page reloads. */
+let wiped = false;
 let dugProvider: (() => string) | undefined;
 
 export const DigProgress = {
@@ -125,6 +134,10 @@ export const DigProgress = {
         const bag = this.nextBackpack;
         return (!!tool && state.money >= tool.price) || (!!bag && state.money >= bag.price);
     },
+    /** The current tool is the tractor (the end of the tool path): ridden outside the hub. */
+    get hasTractor(): boolean {
+        return this.tool.vehicle === true;
+    },
     get savedDug(): string {
         return state.dug;
     },
@@ -152,6 +165,7 @@ export const DigProgress = {
         }
         state.backpack = {};
         state.money += earned;
+        state.stats.earned += earned;
         this.changed();
         return earned;
     },
@@ -161,6 +175,7 @@ export const DigProgress = {
         const first = !state.found[find.id];
         state.found[find.id] = (state.found[find.id] ?? 0) + 1;
         state.money += find.reward;
+        state.stats.earned += find.reward;
         const completed = !state.collectionDone && this.collectedCount === DIG.finds.length;
         if (completed) {
             state.collectionDone = true;
@@ -218,6 +233,63 @@ export const DigProgress = {
         return true;
     },
 
+    /** A block was dug (the Digger / Ore Hunter achievements count them). */
+    recordBlock(ore: boolean): void {
+        state.stats.blocks++;
+        if (ore) state.stats.ores++;
+    },
+
+    achievementStat(stat: AchievementStat): number {
+        return stat === 'finds' ? this.collectedCount : state.stats[stat];
+    },
+
+    /** Tiers claimed so far (= the tier being worked on; tiers.length when complete). */
+    achievementLevel(id: string): number {
+        return state.achievements[id] ?? 0;
+    },
+
+    canClaim(id: string): boolean {
+        const achievement = DIG.achievements.find((a) => a.id === id);
+        const level = this.achievementLevel(id);
+        return !!achievement && level < achievement.tiers.length && this.achievementStat(achievement.stat) >= achievement.tiers[level].goal;
+    },
+
+    /** Achievements with a tier ready to claim (the HUD button's "!"). */
+    get claimableAchievements(): number {
+        return DIG.achievements.filter((a) => this.canClaim(a.id)).length;
+    },
+
+    /** The last tier was claimed: its decoration stands in the hub. */
+    hasAchievementDecor(id: string): boolean {
+        const achievement = DIG.achievements.find((a) => a.id === id);
+        return !!achievement && this.achievementLevel(id) >= achievement.tiers.length;
+    },
+
+    /** Pays the current tier and moves on; `decor` when that was the last tier. Undefined when not ready. */
+    claimAchievement(id: string): { reward: number; decor: boolean } | undefined {
+        if (!this.canClaim(id)) return undefined;
+        const achievement = DIG.achievements.find((a) => a.id === id)!;
+        const level = this.achievementLevel(id);
+        const reward = achievement.tiers[level].reward;
+        state.money += reward;
+        state.achievements[id] = level + 1;
+        this.changed();
+        return { reward, decor: level + 1 >= achievement.tiers.length };
+    },
+
+    isBuilt(id: string): boolean {
+        return state.built.includes(id);
+    },
+
+    /** Pays for a hub buildable; false when it's already built or costs more than the money there is. */
+    build(id: string, price: number): boolean {
+        if (state.built.includes(id) || state.money < price) return false;
+        state.money -= price;
+        state.built.push(id);
+        this.changed();
+        return true;
+    },
+
     /** Records reaching a zone; returns true when it's deeper than ever before. */
     reachZone(zone: number): boolean {
         if (zone <= state.deepestZone) return false;
@@ -265,6 +337,7 @@ export const DigProgress = {
     },
 
     saveNow(): void {
+        if (wiped) return;
         if (dugProvider) {
             state.dug = dugProvider();
         }
@@ -278,7 +351,28 @@ export const DigProgress = {
     /** Debug: wipes the save and reloads. */
     reset(): void {
         window.clearTimeout(saveTimer);
+        wiped = true;
         window.localStorage.removeItem(SAVE_KEY);
+        window.location.reload();
+    },
+
+    /**
+     * Debug: wipes everything this origin keeps in the browser — the save, the debug overlay's saved tweaks and
+     * layout (localStorage + cookies), session storage — and reloads into a brand-new game.
+     */
+    wipeAllData(): void {
+        window.clearTimeout(saveTimer);
+        wiped = true;
+        try {
+            window.localStorage.clear();
+            window.sessionStorage.clear();
+        } catch {
+            // Storage blocked: nothing to clear.
+        }
+        for (const cookie of document.cookie.split(';')) {
+            const name = cookie.split('=')[0].trim();
+            if (name) document.cookie = `${name}=; path=/; max-age=0`;
+        }
         window.location.reload();
     },
 };

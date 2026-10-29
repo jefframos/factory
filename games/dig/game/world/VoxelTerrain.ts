@@ -5,8 +5,9 @@
 // drawn with its own KayKit Block Bits model (dirt, stone, stone-with-copper/silver/gold...), crystals
 // get gems poking out of their top (ui/dig.json `block` / `decor`). The mine is laid out in zones —
 // rings around the hub with wobbly edges (ui/dig.json `zones`), each with its own base rock (whose
-// minPower gates the zone behind a tool tier), patches and ore veins from seeded noise — and a few
-// blocks hide finds (`finds`), which show poking out of their block once it's on a tunnel edge.
+// minPower gates the zone behind a tool tier), patches and ore veins from seeded noise — and exactly one
+// block per gallery find hides it (`finds`), at a seeded spot inside its zone; it shows poking out of its
+// block once that's on a tunnel edge, and is gone for good once dug.
 //
 // Drawing: every 16x16 chunk is ONE merged mesh (all blocks share the Block Bits texture), plus one for
 // its decor. Blocks on a tunnel edge are drawn whole; buried blocks only add their top face — all the
@@ -35,6 +36,8 @@ const PICKUP_SIZE = 0.42;
 const DECOR_SIZE = 0.55;
 /** Finds stick this share of their height out of the block top. */
 const FIND_SHOWING = 0.65;
+/** Fewest blocks between two buried finds (rerolled up to 32 times to keep it). */
+const FIND_SPACING = 8;
 
 /** Seeded 2D value noise in [0, 1). */
 function valueNoise(seed: number): (x: number, z: number) => number {
@@ -63,8 +66,8 @@ class MeshBuilder {
     private colors: number[] = [];
     private indices: number[] = [];
 
-    /** Appends `data` moved by (x, y, z), optionally turned around Y and tilted, tinted by `shade`. */
-    public add(data: MeshData, x: number, y: number, z: number, shade: number, transform?: THREE.Matrix4): void {
+    /** Appends `data` moved by (x, y, z), optionally turned around Y and tilted, shaded by `shade` (and coloured by `tint`). */
+    public add(data: MeshData, x: number, y: number, z: number, shade: number, transform?: THREE.Matrix4, tint?: THREE.Color): void {
         const base = this.positions.length / 3;
         const p = new THREE.Vector3();
         const n = new THREE.Vector3();
@@ -78,7 +81,8 @@ class MeshBuilder {
             }
             this.positions.push(p.x + x, p.y + y, p.z + z);
             this.normals.push(n.x, n.y, n.z);
-            this.colors.push(shade, shade, shade);
+            if (tint) this.colors.push(shade * tint.r, shade * tint.g, shade * tint.b);
+            else this.colors.push(shade, shade, shade);
         }
         for (let i = 0; i < data.uvs.length; i++) {
             this.uvs.push(data.uvs[i]);
@@ -142,6 +146,8 @@ export class VoxelTerrain {
     private readonly models = new BlockModels();
     private loaded = false;
     private readonly walkability = (x: number, z: number) => this.isWalkable(x, z);
+    /** Per grid value: the material's `tint` over its block model (obsidian = the dark stone, near black). */
+    private readonly tints: (THREE.Color | undefined)[] = [undefined, ...DIG.materials.map((m) => (m.tint ? new THREE.Color(m.tint) : undefined))];
 
     public constructor(threeScene: THREE.Scene, dugSave?: string) {
         this.radius = DIG.terrain.radius;
@@ -195,8 +201,6 @@ export class VoxelTerrain {
         const patchNoise = DIG.materials.map((_, i) => valueNoise(seed + 53 * (i + 1)));
         const oreNoise = DIG.materials.map((_, i) => valueNoise(seed + 101 * (i + 1)));
         const jitterNoise = valueNoise(seed + 7);
-        // Value noise at whole coordinates is a plain per-cell hash: dice rolls for finds.
-        const findRoll = valueNoise(seed + 977);
 
         const zones: ZoneCells[] = DIG.zones.map((def) => ({
             def,
@@ -231,23 +235,44 @@ export class VoxelTerrain {
                     if (oreNoise[ore.value - 1](x * 0.42, z * 0.42) > 1 - ore.chance * 2.2) material = ore.value;
                 }
                 this.cells[index] = material;
-                if (findRoll(ix, iz) < zone.def.findChance) {
-                    // Given the roll landed under findChance, roll / findChance is a fresh uniform pick.
-                    this.finds[index] = this.pickFind(zoneIndex, findRoll(ix, iz) / zone.def.findChance);
-                }
             }
         }
+        this.buryFinds(seed);
     }
 
-    /** One of the zone's finds, by weight (`roll` in [0, 1)); 0 when it has none. */
-    private pickFind(zoneIndex: number, roll: number): number {
-        const allowed = DIG.finds.filter((find) => find.zone === zoneIndex);
-        let left = roll * allowed.reduce((sum, find) => sum + find.weight, 0);
-        for (const find of allowed) {
-            left -= find.weight;
-            if (left < 0) return DIG.finds.indexOf(find) + 1;
-        }
-        return 0;
+    /**
+     * One block per gallery find: a seeded pick among its zone's diggable blocks whose four neighbours are
+     * rock of the same zone too, so no find starts exposed on the hub floor or straddles a zone border.
+     * Rerolls (a few times) a spot closer than FIND_SPACING to a find already placed, so they spread out.
+     */
+    private buryFinds(seed: number): void {
+        // Value noise at whole coordinates is a plain per-cell hash: one dice roll per find.
+        const roll = valueNoise(seed + 977);
+        const solid = (index: number) => this.cells[index] !== AIR && this.cells[index] !== BEDROCK;
+        const placed: number[] = [];
+        DIG.finds.forEach((find, findIndex) => {
+            const spots: number[] = [];
+            for (let iz = 1; iz < this.size - 1; iz++) {
+                for (let ix = 1; ix < this.size - 1; ix++) {
+                    const index = ix + iz * this.size;
+                    if (this.zones[index] !== find.zone || !solid(index) || this.finds[index]) continue;
+                    const inside = [index - 1, index + 1, index - this.size, index + this.size]
+                        .every((n) => solid(n) && this.zones[n] === find.zone);
+                    if (inside) spots.push(index);
+                }
+            }
+            if (!spots.length) return;
+            let spot = spots[Math.floor(roll(findIndex, 0) * spots.length)];
+            for (let attempt = 1; attempt < 32 && placed.some((p) => this.cellDistance(p, spot) < FIND_SPACING); attempt++) {
+                spot = spots[Math.floor(roll(findIndex, attempt) * spots.length)];
+            }
+            this.finds[spot] = findIndex + 1;
+            placed.push(spot);
+        });
+    }
+
+    private cellDistance(a: number, b: number): number {
+        return Math.hypot((a % this.size) - (b % this.size), Math.floor(a / this.size) - Math.floor(b / this.size));
     }
 
     /** Zone index at a world point: by distance from the hub, the edges wobbling with noise. */
@@ -288,6 +313,16 @@ export class VoxelTerrain {
 
     public material(ix: number, iz: number): MaterialDef | undefined {
         return materialOf(this.cellValue(ix, iz));
+    }
+
+    /** Takes a find's buried copy out of the rock (it was handed out somewhere else: the forced first find). */
+    public unbury(find: FindDef): void {
+        const value = DIG.finds.indexOf(find) + 1;
+        const index = this.finds.indexOf(value);
+        if (index < 0) return;
+        this.finds[index] = 0;
+        this.dirty.add(Math.floor((index % this.size) / CHUNK) + Math.floor(Math.floor(index / this.size) / CHUNK) * Math.ceil(this.size / CHUNK));
+        this.changed++;
     }
 
     /** The find hidden in a solid cell, if any. */
@@ -366,7 +401,7 @@ export class VoxelTerrain {
                 const x = ix - this.radius + 0.5;
                 const z = iz - this.radius + 0.5;
                 const buried = this.isBuried(ix, iz);
-                blocks.add(buried ? model.top : model.full, x, 0, z, 1 + this.jitter[index]);
+                blocks.add(buried ? model.top : model.full, x, 0, z, 1 + this.jitter[index], undefined, this.tints[value]);
                 // A find shows once its block is on a tunnel edge: half sunk into the top, at a slant.
                 const find = this.finds[index] ? DIG.finds[this.finds[index] - 1] : undefined;
                 const findModel = find && !buried ? this.models.decors.get(find.model) : undefined;
