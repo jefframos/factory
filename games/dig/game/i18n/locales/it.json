@@ -8,6 +8,8 @@
     "max": "MAX",
     "newBadge": "NUOVO!",
     "claim": "RISCUOTI",
+    "claimAmount": "RISCUOTI ${amount}",
+    "claimAtTrophy": "Riscuoti ${amount} nella Sala dei Trofei!",
     "locked": "BLOCCATO",
     "done": "FATTO",
     "complete": "Completato!",

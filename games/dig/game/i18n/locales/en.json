@@ -8,6 +8,8 @@
     "max": "MAX",
     "newBadge": "NEW!",
     "claim": "CLAIM",
+    "claimAmount": "CLAIM ${amount}",
+    "claimAtTrophy": "Claim ${amount} in the Trophy Room!",
     "locked": "LOCKED",
     "done": "DONE",
     "complete": "Complete!",

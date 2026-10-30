@@ -8,6 +8,8 @@
     "max": "MAX",
     "newBadge": "NEW!",
     "claim": "受け取る",
+    "claimAmount": "${amount}を受け取る",
+    "claimAtTrophy": "トロフィールームで${amount}を受け取ろう！",
     "locked": "ロック中",
     "done": "完了",
     "complete": "コンプリート！",

@@ -101,10 +101,18 @@ const FULL_PUSHES_TO_GUIDE = 2;
 const MOVE_HINT_DISTANCE = 2.5;
 
 export default class DigScene extends ThreeScene {
-    /** Resolves once the mine is drawn (its block models loaded): the screen fade waits for it. */
+    /**
+     * Resolves once the scene can be played: the mine drawn (its block models loaded) and the miner's character
+     * loaded. The loading screen (index.ts) and the screen fade between mines wait for it, so a player never sees the
+     * game without the miner in it. A character that fails to load still resolves it (logged), rather than leaving the
+     * player on the loading screen.
+     */
     public get ready(): Promise<void> {
-        return this.terrain?.ready ?? Promise.resolve();
+        return Promise.all([this.terrain?.ready, this.characterReady]).then(() => undefined);
     }
+
+    /** The miner's character loading (build()). */
+    private characterReady: Promise<void> = Promise.resolve();
 
     /**
      * Rebuilds the scene from scratch as a fresh instance behind the screen fade (set by the game: index.ts): fades
@@ -169,8 +177,6 @@ export default class DigScene extends ThreeScene {
     public build(): void {
         PlatformHandler.instance.onPause.add(this.onPlatformPause, this);
         PlatformHandler.instance.onResume.add(this.onPlatformResume, this);
-        window.addEventListener('pointerdown', this.onFirstInput, true);
-        window.addEventListener('keydown', this.onFirstInput, true);
         this.buildLightsAndGround();
         this.terrain = new VoxelTerrain(this.threeScene, DigProgress.savedDug, DigProgress.mineSeed, DigProgress.mineTheme);
         this.colorFloorByZone();
@@ -179,7 +185,7 @@ export default class DigScene extends ThreeScene {
 
         this.player = this.world.add(new DigPlayer(this, this.threeScene));
         this.player.transform.position.set(HUB.start.x, 0, HUB.start.z);
-        void this.player.loadCharacter().catch((error) => console.error('[DigScene] character failed to load', error));
+        this.characterReady = this.player.loadCharacter().catch((error) => console.error('[DigScene] character failed to load', error));
 
         this.effects = new DigEffects(this.threeScene, DIG.terrain.blockHeight, () => this.player.pickupPoint(this.pickupPoint));
         this.tractor = new TractorRide(this.threeScene, this.player, this.effects);
@@ -201,12 +207,10 @@ export default class DigScene extends ThreeScene {
         this.hardBlocks = new HardBlockMarkers(this.threeScene, this.terrain);
         this.treasureSparkles = new TreasureSparkles(this.terrain, this.effects);
         this.mining = new MiningController(this.terrain, this.effects, this.player, (text) => this.hud.say(text, 0xffd9a8), (find, zone) => {
-            // Paid now (so the save is right), shown on the banner until CLAIM flies it in; the first find ever is
-            // the tutorial's claim step (the game waits for it).
-            const tutorial = DigProgress.totalFinds === 0;
+            // Its reward waits in the Trophy Room (claimed there: the totem gets its "!"); the banner says so.
             const amount = DigProgress.findPayout(find, zone);
             GameAnalytics.findDug(find.id);
-            this.hud.findBanner.show(find, DigProgress.addFind(find, amount), amount, tutorial);
+            this.hud.findBanner.show(find, DigProgress.addFind(find, amount), amount);
             DigAudio.play('sparkle');
         }, (ix, iz, tool) => {
             // The block's lock jumps and says what it takes.
@@ -233,6 +237,12 @@ export default class DigScene extends ThreeScene {
         this.followTarget.copy(this.player.transform.position);
         this.placeCamera();
         this.buildDebug();
+        // Gameplay starts on the first input, but only once the game is loaded (taps on the loading screen don't count).
+        void this.ready.then(() => {
+            if (this.sceneDestroyed) return;
+            window.addEventListener('pointerdown', this.onFirstInput, true);
+            window.addEventListener('keydown', this.onFirstInput, true);
+        });
         // A save from before analytics: its past tutorial steps count as sent (not reported all at once now).
         if (DigProgress.once('tutorial-primed')) GameAnalytics.primeTutorial((step) => this.tutorialDone(step));
     }
@@ -499,7 +509,8 @@ export default class DigScene extends ThreeScene {
         this.hud.setStationPanel(open);
         this.updateBuilding(position);
         this.hub.setAttention('atm', open !== 'atm' && (DigProgress.canAffordUpgrade || DigProgress.canAffordBoost));
-        this.hub.setAttention('collection', DigProgress.unseenFinds.length > 0);
+        // Something new to look at, or a reward waiting to be claimed there.
+        this.hub.setAttention('collection', DigProgress.unseenFinds.length > 0 || DigProgress.hasUnclaimed);
         this.hub.setAttention('wardrobe', open !== 'wardrobe' && DigProgress.wardrobeHasNews);
     }
 
@@ -520,7 +531,7 @@ export default class DigScene extends ThreeScene {
     }
 
     /**
-     * The tutorial's first purchases are a must: the first bag upgrade, then the first tool, each the moment it's
+     * The tutorial's first purchases are a must: the first tool (the pickaxe), then the first bag upgrade, each the moment it's
      * affordable — the same tick the sale pays, while its coins are still flying, so the miner never gets a step away
      * from the ATM in between; then, once both are bought and the miner reaches the wardrobe (the
      * guide leads there: it appears with the second upgrade), the cheapest hat — any money short of it is quietly
@@ -535,8 +546,9 @@ export default class DigScene extends ThreeScene {
         let forced: ForcedBuy | null = null;
         // Only the first mine teaches: a new mine starts back at level 0, but the player knows the loop by then.
         const firstMine = DigProgress.prestige === 0;
-        if (firstMine && DigProgress.backpackLevel === 0 && bag && money >= bag.price) forced = 'backpack';
-        else if (firstMine && DigProgress.toolLevel === 0 && tool && money >= tool.price) forced = 'tool';
+        // The pickaxe first (it digs faster, so the bag fills and its upgrade comes sooner), then the bag.
+        if (firstMine && DigProgress.toolLevel === 0 && tool && money >= tool.price) forced = 'tool';
+        else if (firstMine && DigProgress.backpackLevel === 0 && bag && money >= bag.price) forced = 'backpack';
         const needsHat = !!hat && !DigProgress.boughtFirstHat && DigProgress.backpackLevel > 0 && DigProgress.toolLevel > 0;
         if (!needsHat) this.hatForced = false;
         else if (!forced && (this.hatForced || this.onStation === 'wardrobe')) {
@@ -547,7 +559,7 @@ export default class DigScene extends ThreeScene {
         if (forced) GameAnalytics.forcedShown(forced);
         this.hud.setForced(forced);
         // The first find's banner holds the game too, until its CLAIM.
-        this.player.movementController.enabled = !forced && !this.leaving && !this.hud.findBanner.blocking && !this.flyCamera.isEnabled();
+        this.player.movementController.enabled = !forced && !this.leaving && !this.flyCamera.isEnabled();
     }
 
     /** Whether a tutorial step is done, from the progress (the funnel GameAnalytics reports). */
@@ -604,6 +616,20 @@ export default class DigScene extends ThreeScene {
     private sellAnywhere(multiplier = 1): void {
         if (DigProgress.backpackCount === 0) return;
         this.sell(this.player.transform.position.clone().add(new THREE.Vector3(0, SELL_ANYWHERE_HEIGHT, -0.6)), false, multiplier);
+    }
+
+    /**
+     * The tutorial's last step is "build your first hub piece": selling then sends the player straight to it, never
+     * back to the rock for the few dollars still missing. Before the first piece is built (once the first relic is
+     * found), a sale that leaves less than the cheapest piece costs is topped up to exactly that; returns the top-up.
+     */
+    private firstBuildTopUp(): number {
+        if ((HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id)) || DigProgress.totalFinds === 0) return 0;
+        const first = this.hub.cheapestOpenBuildable;
+        const short = first ? first.price - DigProgress.money : 0;
+        if (short <= 0) return 0;
+        DigProgress.addMoney(short);
+        return short;
     }
 
     /**
@@ -714,7 +740,8 @@ export default class DigScene extends ThreeScene {
         // Cheapest first, so the sale builds up to the best finds.
         items.sort((a, b) => a.value - b.value);
         const total = items.length;
-        const earned = DigProgress.sellAll(multiplier);
+        // The tutorial's last sale always covers its first hub piece (topped up in the same sale, on its last toss).
+        const earned = DigProgress.sellAll(multiplier) + this.firstBuildTopUp();
         GameAnalytics.sold(atPad ? 'atm' : 'anywhere', DigProgress.timesSold);
         const tosses = Math.min(total, SELL_MAX_TOSSES);
         const interval = Math.min(SELL_TOSS_INTERVAL, SELL_MAX_SEC / tosses);

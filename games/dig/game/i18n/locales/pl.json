@@ -8,6 +8,8 @@
     "max": "MAKS",
     "newBadge": "NOWOŚĆ!",
     "claim": "ODBIERZ",
+    "claimAmount": "ODBIERZ ${amount}",
+    "claimAtTrophy": "Odbierz ${amount} w Sali Trofeów!",
     "locked": "ZABLOKOWANE",
     "done": "GOTOWE",
     "complete": "Ukończone!",

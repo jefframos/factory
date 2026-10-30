@@ -8,6 +8,8 @@
     "max": "MAX",
     "newBadge": "NOUVEAU !",
     "claim": "RÉCUPÉRER",
+    "claimAmount": "RÉCUPÈRE ${amount}",
+    "claimAtTrophy": "Récupère ${amount} dans la Salle des trophées !",
     "locked": "VERROUILLÉ",
     "done": "FAIT",
     "complete": "Terminé !",

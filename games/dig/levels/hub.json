@@ -67,15 +67,15 @@
           "kind": "gap",
           "minX": -9.3,
           "maxX": -8.7,
-          "minZ": -2,
-          "maxZ": 2
+          "minZ": -2.1,
+          "maxZ": 2.1
         },
         {
           "kind": "gap",
           "minX": 8.7,
           "maxX": 9.3,
-          "minZ": -2,
-          "maxZ": 2
+          "minZ": -2.1,
+          "maxZ": 2.1
         }
       ]
     },

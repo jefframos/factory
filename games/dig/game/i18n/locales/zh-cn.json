@@ -8,6 +8,8 @@
     "max": "满级",
     "newBadge": "新!",
     "claim": "领取",
+    "claimAmount": "领取 ${amount}",
+    "claimAtTrophy": "去奖杯室领取 ${amount}！",
     "locked": "未解锁",
     "done": "完成",
     "complete": "完成!",

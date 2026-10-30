@@ -8,6 +8,8 @@
     "max": "MAKS",
     "newBadge": "BARU!",
     "claim": "KLAIM",
+    "claimAmount": "KLAIM ${amount}",
+    "claimAtTrophy": "Klaim ${amount} di Ruang Trofi!",
     "locked": "TERKUNCI",
     "done": "SELESAI",
     "complete": "Selesai!",

@@ -8,6 +8,8 @@
     "max": "MAX",
     "newBadge": "NEU!",
     "claim": "ABHOLEN",
+    "claimAmount": "${amount} HOLEN",
+    "claimAtTrophy": "Hol dir ${amount} im Trophäenraum!",
     "locked": "GESPERRT",
     "done": "FERTIG",
     "complete": "Geschafft!",

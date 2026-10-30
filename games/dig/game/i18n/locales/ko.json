@@ -8,6 +8,8 @@
     "max": "최대",
     "newBadge": "NEW!",
     "claim": "받기",
+    "claimAmount": "${amount} 받기",
+    "claimAtTrophy": "트로피 룸에서 ${amount} 받아 가!",
     "locked": "잠김",
     "done": "완료",
     "complete": "완료!",

@@ -268,7 +268,9 @@
         "achv_champion_goal": "Claim {goal} achievement levels",
         "theme_classic": "Classic",
         "theme_glimmer_caves": "Glimmer Caves",
-        "theme_emerald_hollow": "Emerald Hollow"
+        "theme_emerald_hollow": "Emerald Hollow",
+        "claimAmount": "CLAIM ${amount}",
+        "claimAtTrophy": "Claim ${amount} in the Trophy Room!"
     },
     "it": {
         "titleUpgrades": "UPGRADES",
@@ -539,7 +541,9 @@
         "achv_champion_goal": "Claim {goal} achievement levels",
         "theme_classic": "Classic",
         "theme_glimmer_caves": "Glimmer Caves",
-        "theme_emerald_hollow": "Emerald Hollow"
+        "theme_emerald_hollow": "Emerald Hollow",
+        "claimAmount": "CLAIM ${amount}",
+        "claimAtTrophy": "Claim ${amount} in the Trophy Room!"
     },
     "pt-br": {
         "titleUpgrades": "UPGRADES",
@@ -810,7 +814,9 @@
         "achv_champion_goal": "Claim {goal} achievement levels",
         "theme_classic": "Classic",
         "theme_glimmer_caves": "Glimmer Caves",
-        "theme_emerald_hollow": "Emerald Hollow"
+        "theme_emerald_hollow": "Emerald Hollow",
+        "claimAmount": "CLAIM ${amount}",
+        "claimAtTrophy": "Claim ${amount} in the Trophy Room!"
     },
     "fr": {
         "titleUpgrades": "UPGRADES",
@@ -1081,7 +1087,9 @@
         "achv_champion_goal": "Claim {goal} achievement levels",
         "theme_classic": "Classic",
         "theme_glimmer_caves": "Glimmer Caves",
-        "theme_emerald_hollow": "Emerald Hollow"
+        "theme_emerald_hollow": "Emerald Hollow",
+        "claimAmount": "CLAIM ${amount}",
+        "claimAtTrophy": "Claim ${amount} in the Trophy Room!"
     },
     "de": {
         "titleUpgrades": "UPGRADES",
@@ -1352,7 +1360,9 @@
         "achv_champion_goal": "Claim {goal} achievement levels",
         "theme_classic": "Classic",
         "theme_glimmer_caves": "Glimmer Caves",
-        "theme_emerald_hollow": "Emerald Hollow"
+        "theme_emerald_hollow": "Emerald Hollow",
+        "claimAmount": "CLAIM ${amount}",
+        "claimAtTrophy": "Claim ${amount} in the Trophy Room!"
     },
     "ja": {
         "titleUpgrades": "UPGRADES",
@@ -1623,7 +1633,9 @@
         "achv_champion_goal": "Claim {goal} achievement levels",
         "theme_classic": "Classic",
         "theme_glimmer_caves": "Glimmer Caves",
-        "theme_emerald_hollow": "Emerald Hollow"
+        "theme_emerald_hollow": "Emerald Hollow",
+        "claimAmount": "CLAIM ${amount}",
+        "claimAtTrophy": "Claim ${amount} in the Trophy Room!"
     },
     "ko": {
         "titleUpgrades": "UPGRADES",
@@ -1894,7 +1906,9 @@
         "achv_champion_goal": "Claim {goal} achievement levels",
         "theme_classic": "Classic",
         "theme_glimmer_caves": "Glimmer Caves",
-        "theme_emerald_hollow": "Emerald Hollow"
+        "theme_emerald_hollow": "Emerald Hollow",
+        "claimAmount": "CLAIM ${amount}",
+        "claimAtTrophy": "Claim ${amount} in the Trophy Room!"
     },
     "zh-cn": {
         "titleUpgrades": "UPGRADES",
@@ -2165,7 +2179,9 @@
         "achv_champion_goal": "Claim {goal} achievement levels",
         "theme_classic": "Classic",
         "theme_glimmer_caves": "Glimmer Caves",
-        "theme_emerald_hollow": "Emerald Hollow"
+        "theme_emerald_hollow": "Emerald Hollow",
+        "claimAmount": "CLAIM ${amount}",
+        "claimAtTrophy": "Claim ${amount} in the Trophy Room!"
     },
     "ru": {
         "titleUpgrades": "UPGRADES",
@@ -2436,7 +2452,9 @@
         "achv_champion_goal": "Claim {goal} achievement levels",
         "theme_classic": "Classic",
         "theme_glimmer_caves": "Glimmer Caves",
-        "theme_emerald_hollow": "Emerald Hollow"
+        "theme_emerald_hollow": "Emerald Hollow",
+        "claimAmount": "CLAIM ${amount}",
+        "claimAtTrophy": "Claim ${amount} in the Trophy Room!"
     },
     "tr": {
         "titleUpgrades": "UPGRADES",
@@ -2707,7 +2725,9 @@
         "achv_champion_goal": "Claim {goal} achievement levels",
         "theme_classic": "Classic",
         "theme_glimmer_caves": "Glimmer Caves",
-        "theme_emerald_hollow": "Emerald Hollow"
+        "theme_emerald_hollow": "Emerald Hollow",
+        "claimAmount": "CLAIM ${amount}",
+        "claimAtTrophy": "Claim ${amount} in the Trophy Room!"
     },
     "pl": {
         "titleUpgrades": "UPGRADES",
@@ -2978,7 +2998,9 @@
         "achv_champion_goal": "Claim {goal} achievement levels",
         "theme_classic": "Classic",
         "theme_glimmer_caves": "Glimmer Caves",
-        "theme_emerald_hollow": "Emerald Hollow"
+        "theme_emerald_hollow": "Emerald Hollow",
+        "claimAmount": "CLAIM ${amount}",
+        "claimAtTrophy": "Claim ${amount} in the Trophy Room!"
     },
     "id": {
         "titleUpgrades": "UPGRADES",
@@ -3249,7 +3271,9 @@
         "achv_champion_goal": "Claim {goal} achievement levels",
         "theme_classic": "Classic",
         "theme_glimmer_caves": "Glimmer Caves",
-        "theme_emerald_hollow": "Emerald Hollow"
+        "theme_emerald_hollow": "Emerald Hollow",
+        "claimAmount": "CLAIM ${amount}",
+        "claimAtTrophy": "Claim ${amount} in the Trophy Room!"
     },
     "nl": {
         "titleUpgrades": "UPGRADES",
@@ -3520,7 +3544,9 @@
         "achv_champion_goal": "Claim {goal} achievement levels",
         "theme_classic": "Classic",
         "theme_glimmer_caves": "Glimmer Caves",
-        "theme_emerald_hollow": "Emerald Hollow"
+        "theme_emerald_hollow": "Emerald Hollow",
+        "claimAmount": "CLAIM ${amount}",
+        "claimAtTrophy": "Claim ${amount} in the Trophy Room!"
     },
     "vi": {
         "titleUpgrades": "UPGRADES",
@@ -3786,6 +3812,8 @@
         "achv_champion_goal": "Claim {goal} achievement levels",
         "theme_classic": "Classic",
         "theme_glimmer_caves": "Glimmer Caves",
-        "theme_emerald_hollow": "Emerald Hollow"
+        "theme_emerald_hollow": "Emerald Hollow",
+        "claimAmount": "CLAIM ${amount}",
+        "claimAtTrophy": "Claim ${amount} in the Trophy Room!"
     }
 }

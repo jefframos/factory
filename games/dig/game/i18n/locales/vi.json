@@ -8,6 +8,8 @@
     "max": "TỐI ĐA",
     "newBadge": "MỚI!",
     "claim": "NHẬN",
+    "claimAmount": "NHẬN ${amount}",
+    "claimAtTrophy": "Nhận ${amount} tại Phòng Chiến Tích nhé!",
     "locked": "KHÓA",
     "done": "XONG",
     "complete": "Hoàn thành!",

@@ -100,7 +100,7 @@ export default class DigPlayer extends Entity {
         this.addComponent(new CharacterVisualComponent(character));
     }
 
-    /** Dresses the miner: body colour, face and hat (the wardrobe's look; the starter hat is the mining helmet). */
+    /** Dresses the miner: body colour, face and hat (the wardrobe's look; a new miner wears no hat). */
     public applyLook(look: Readonly<Look>, character = this.loaded): void {
         if (!character) return;
         // Like the tool holder (below), the head cube cancels the head bone's scale as measured when it's
@@ -109,7 +109,14 @@ export default class DigPlayer extends Entity {
         character.container.scale.setScalar(1);
         character.container.updateMatrixWorld(true);
         character.applyCharacterView({ color: look.color, headShape: 'cube', face: look.face });
-        const model = MODELS.Hats[look.hat as keyof typeof MODELS.Hats] ?? MODELS.Hats.MiningHelmet;
+        const model = MODELS.Hats[look.hat as keyof typeof MODELS.Hats];
+        if (!model) {
+            // No hat (a new miner, before the first one is bought).
+            character.body.setHat(undefined);
+            character.container.scale.setScalar(scale);
+            character.container.updateMatrixWorld(true);
+            return;
+        }
         // Same placement table as bandit-controller, keyed by the hat's file name: edit it in `npm run editor`, Hats tab.
         const name = model.fullPath.split('/').pop()!.replace(/\.[^.]+$/, '');
         const fit = { ...HAT_FITS.default, ...HAT_FITS.hats[name] };

@@ -20,6 +20,9 @@ import { DigAudio } from './game/audio/DigAudio';
 
 type PlatformConfigEntry = { className?: string; folder?: string; gameId?: string; enableAds?: boolean };
 
+/** The longest the loading screen waits for the scene to be playable (a stuck model load still lets the player in). */
+const MAX_SCENE_WAIT_MS = 20000;
+
 export default class DigGame extends Game {
     private gameContainer = new PIXI.Container();
     private sceneManager!: SceneManager;
@@ -56,9 +59,13 @@ export default class DigGame extends Game {
             await this.loadFonts();
             await PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`);
 
+            // The loading screen stays up until the scene is playable: the mine drawn and the miner loaded (a player
+            // used to land in the game before the character was there, unable to move). Capped, so a stuck load
+            // still lets them in.
+            const scene = this.startGame();
+            await Promise.race([scene.ready, new Promise((resolve) => window.setTimeout(resolve, MAX_SCENE_WAIT_MS))]);
             PlatformHandler.instance.platform.loadFinished();
             this.loaderScene.hide();
-            this.startGame();
         } catch (error) {
             console.error('Failed to initialize platform:', error);
         }
@@ -75,7 +82,7 @@ export default class DigGame extends Game {
         }));
     }
 
-    private startGame(): void {
+    private startGame(): DigScene {
         DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'dig');
         const camera = DebugOverlay.instance.panel('Camera', { id: 'dig.camera' });
         camera.slider(DIG_CAMERA, 'yawDeg', -180, 180, 1, 'Yaw');
@@ -83,7 +90,7 @@ export default class DigGame extends Game {
         camera.slider(DIG_CAMERA, 'distance', 6, 40, 0.5, 'Distance');
         camera.slider(DIG_CAMERA, 'followSpeed', 1, 20, 0.5, 'Follow Speed');
 
-        this.sceneManager.register<DigScene>('dig', DigScene, this);
+        const scene = this.sceneManager.register<DigScene>('dig', DigScene, this);
         this.sceneManager.changeScene('dig');
         this.sceneManager.resize();
         // Another mine (opened or travelled to): behind the screen fade, the save switches, then a fresh scene
@@ -97,6 +104,7 @@ export default class DigGame extends Game {
             this.sceneManager.resize();
             return scene.ready;
         });
+        return scene;
     }
 
     protected override update(delta: number): void {

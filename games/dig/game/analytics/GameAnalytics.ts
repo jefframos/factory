@@ -47,7 +47,7 @@ import PlatformHandler from 'core/platforms/PlatformHandler';
 import { DigProgress } from '../data/DigProgress';
 
 /** The tutorial steps, in the order a new player meets them (the funnel). */
-export const TUTORIAL = ['move', 'dig', 'bag-full', 'sell', 'bag-upgrade', 'tool-upgrade', 'wardrobe', 'hat', 'find', 'claim', 'collection', 'build'] as const;
+export const TUTORIAL = ['move', 'dig', 'bag-full', 'sell', 'tool-upgrade', 'bag-upgrade', 'wardrobe', 'hat', 'find', 'claim', 'collection', 'build'] as const;
 export type TutorialStep = (typeof TUTORIAL)[number];
 
 const PLAYTIME_MINUTES = [1, 2, 3, 5, 8, 12, 20, 30, 45, 60];

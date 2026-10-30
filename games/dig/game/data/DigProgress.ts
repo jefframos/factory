@@ -3,7 +3,7 @@
 // The player's saved state (GDD §15 persistence): money, tool and backpack levels, what's in the
 // backpack, finds collected (and which the player has looked at in the collection), the deepest zone
 // reached, the wardrobe (owned and worn looks), and which terrain cells have been dug. One localStorage entry, saved shortly after any
-// change so a burst of digging writes once.
+// change so a burst of digging writes once. Versioned (SAVE_VERSION): a save from another version starts a new game.
 
 import { Signal } from 'signals';
 import { AchievementDef, AchievementStat, BoostDef, BoostId, DIG, FindDef, MineTheme, ToolDef, WardrobeItem } from './DigConfig';
@@ -41,12 +41,24 @@ export interface MineSnapshot {
     found?: Record<string, number>;
     seen?: string[];
     collectionDone?: boolean;
+    /** Rewards waiting in this mine's Trophy Room, by find id (COLLECTION_REWARD = the completed collection's). */
+    unclaimed?: Record<string, number>;
 }
 
+/** The unclaimed-rewards key of a completed collection's reward (no find has this id). */
+export const COLLECTION_REWARD = '__collection';
+
 const SAVE_KEY = 'dig.save';
+/**
+ * The save format's version: a save written by any other version (or none — every save before versioning) is
+ * dropped and the player starts a new game (load()). Bump it when a change can't carry old saves over.
+ */
+const SAVE_VERSION = 3;
 const SAVE_DELAY_MS = 800;
 
 interface SaveData {
+    /** SAVE_VERSION when it was written. */
+    version: number;
     money: number;
     toolLevel: number;
     backpackLevel: number;
@@ -83,6 +95,11 @@ interface SaveData {
     currentMine: number;
     /** A collection was ever completed, in any mine: the reward hat (the Crown) is owned for good. */
     crownEarned: boolean;
+    /**
+     * The current mine's rewards dug up but not yet claimed in the Trophy Room, by find id (COLLECTION_REWARD for a
+     * completed collection): finds pay out there, so players come back to the hub to collect.
+     */
+    unclaimed: Record<string, number>;
     /** Every mine's run, by index; the current one's entry is stale (its live values are the fields above). */
     mines: MineSnapshot[];
 }
@@ -93,33 +110,34 @@ const decorTier = (achievement: AchievementDef): number => achievement.decorAt ?
 /** A boost's definition (ui/dig.json boosts). */
 const boostDef = (id: BoostId): BoostDef => DIG.boosts.find((b) => b.id === id)!;
 
-const starterLook = (): Look => ({ color: DIG.wardrobe.colors[0].id, face: DIG.wardrobe.faces[0].id, hat: DIG.wardrobe.hats[0].id });
+/** A new miner: the first colour and face, and no hat (the first hat is the tutorial's first cosmetic buy). */
+const starterLook = (): Look => ({ color: DIG.wardrobe.colors[0].id, face: DIG.wardrobe.faces[0].id, hat: '' });
 
 const fresh = (): SaveData => ({
+    version: SAVE_VERSION,
     money: 0, toolLevel: 0, backpackLevel: 0, backpack: {}, found: {}, seen: [], collectionDone: false, deepestZone: 0,
     owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, wardrobeVisited: false, dug: '', built: [],
     stats: { blocks: 0, ores: 0, earned: 0, sells: 0 }, achievements: {}, revealedAt: {}, sent: [],
-    boosts: {}, prestige: 0, currentMine: 0, mines: [], crownEarned: false,
+    boosts: {}, prestige: 0, currentMine: 0, mines: [], crownEarned: false, unclaimed: {},
 });
 
-const freshMine = (): MineSnapshot => ({ money: 0, toolLevel: 0, backpackLevel: 0, backpack: {}, boosts: {}, dug: '', found: {}, seen: [], collectionDone: false });
+const freshMine = (): MineSnapshot => ({ money: 0, toolLevel: 0, backpackLevel: 0, backpack: {}, boosts: {}, dug: '', found: {}, seen: [], collectionDone: false, unclaimed: {} });
 
+/**
+ * The saved game, or a new one when there's none, it's broken, or it was written by another SAVE_VERSION (the
+ * economy and layout changed too much for an old save to carry over: it's dropped, not migrated).
+ */
 function load(): SaveData {
     try {
         const raw = window.localStorage.getItem(SAVE_KEY);
         if (raw) {
             const saved = JSON.parse(raw) as Partial<SaveData>;
-            const merged = { ...fresh(), ...saved, boosts: { ...saved.boosts }, stats: { ...fresh().stats, ...saved.stats }, revealedAt: { ...saved.revealedAt }, look: { ...starterLook(), ...saved.look }, owned: { ...fresh().owned, ...saved.owned } };
-            // Saves from before mines could be revisited: the mines left behind were finished (the Tractor
-            // owned), so they come back maxed out, their tunnels gone.
-            if (merged.mines.length < merged.prestige) {
-                const done = (): MineSnapshot => ({ ...freshMine(), toolLevel: DIG.tools.length - 1, backpackLevel: DIG.backpack.length - 1 });
-                merged.mines = Array.from({ length: merged.prestige }, (_, k) => merged.mines[k] ?? done());
-                merged.currentMine = merged.prestige;
+            if (saved.version !== SAVE_VERSION) {
+                console.info(`[DigProgress] save version ${saved.version ?? 1} is not ${SAVE_VERSION}: starting a new game`);
+                return fresh();
             }
-            // The Crown came with the (then shared) collection: keep it.
-            merged.crownEarned ||= merged.collectionDone;
-            return merged;
+            // Fields added within this version fill in from fresh().
+            return { ...fresh(), ...saved, boosts: { ...saved.boosts }, unclaimed: { ...saved.unclaimed }, stats: { ...fresh().stats, ...saved.stats }, revealedAt: { ...saved.revealedAt }, look: { ...starterLook(), ...saved.look }, owned: { ...fresh().owned, ...saved.owned } };
         }
     } catch {
         // A broken save starts fresh.
@@ -251,19 +269,42 @@ export const DigProgress = {
         return amount;
     },
 
-    /** A find was dug up: pays `amount` (findPayout), and the collection reward when it was the last one missing. */
+    /**
+     * A find was dug up: it joins the collection, and its `amount` (findPayout) waits in the Trophy Room to be claimed
+     * (claimReward) — as does the collection reward when it was the last one missing.
+     */
     addFind(find: FindDef, amount: number): FindResult {
         const first = !state.found[find.id];
         state.found[find.id] = (state.found[find.id] ?? 0) + 1;
-        state.money += amount;
-        state.stats.earned += amount;
+        state.unclaimed[find.id] = (state.unclaimed[find.id] ?? 0) + amount;
         const completed = !state.collectionDone && this.collectedCount === DIG.finds.length;
         if (completed) {
             state.collectionDone = true;
-            state.money += DIG.collectionReward.money;
+            state.unclaimed[COLLECTION_REWARD] = (state.unclaimed[COLLECTION_REWARD] ?? 0) + DIG.collectionReward.money;
         }
         this.changed();
         return { first, completed };
+    },
+
+    /** A reward waiting in this mine's Trophy Room (a find id or COLLECTION_REWARD); 0 when there's none. */
+    unclaimedFor(id: string): number {
+        return state.unclaimed[id] ?? 0;
+    },
+
+    /** Anything waiting to be claimed in this mine's Trophy Room (the totem's "!"). */
+    get hasUnclaimed(): boolean {
+        return Object.values(state.unclaimed).some((amount) => amount > 0);
+    },
+
+    /** Pays a waiting reward (a find id or COLLECTION_REWARD); returns what it paid (0 if nothing was waiting). */
+    claimReward(id: string): number {
+        const amount = state.unclaimed[id] ?? 0;
+        if (amount <= 0) return 0;
+        delete state.unclaimed[id];
+        state.money += amount;
+        state.stats.earned += amount;
+        this.changed();
+        return amount;
     },
 
     /** The collection was opened: every find so far has been seen. */
@@ -445,6 +486,7 @@ export const DigProgress = {
             money: state.money, toolLevel: state.toolLevel, backpackLevel: state.backpackLevel,
             backpack: { ...state.backpack }, boosts: { ...state.boosts }, dug,
             found: { ...state.found }, seen: [...state.seen], collectionDone: state.collectionDone,
+            unclaimed: { ...state.unclaimed },
         };
     },
 
@@ -462,6 +504,7 @@ export const DigProgress = {
         state.found = { ...mine.found };
         state.seen = [...(mine.seen ?? [])];
         state.collectionDone = mine.collectionDone ?? false;
+        state.unclaimed = { ...mine.unclaimed };
         // The old mine's tunnels must not be written over the new one before the scene is rebuilt.
         dugProvider = undefined;
         this.changed();

@@ -8,6 +8,8 @@
     "max": "МАКС",
     "newBadge": "НОВОЕ!",
     "claim": "ЗАБРАТЬ",
+    "claimAmount": "ЗАБРАТЬ ${amount}",
+    "claimAtTrophy": "Забери ${amount} в Зале трофеев!",
     "locked": "ЗАКРЫТО",
     "done": "ГОТОВО",
     "complete": "Выполнено!",

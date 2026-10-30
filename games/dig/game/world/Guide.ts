@@ -116,7 +116,8 @@ export class Guide {
         if (wardrobe && !DigProgress.wardrobeVisited && this.hub.isStationOpen('wardrobe')) {
             return { text: t('guideWardrobe'), target: new THREE.Vector3(wardrobe.x, 0, wardrobe.z) };
         }
-        if (DigProgress.toolLevel === 0) {
+        // Until both first upgrades are bought (the pickaxe, then the bag): dig, sell, buy — full bag -> the ATM.
+        if (DigProgress.toolLevel === 0 || DigProgress.backpackLevel === 0) {
             if (DigProgress.achievementStat('blocks') === 0) return { text: t('guideDig'), target: inHub ? door : undefined };
             if (tool && DigProgress.money >= tool.price) return { text: t('guideBuyTool', { tool: names.tool(tool) }), target: atmAt, buy: true };
             return this.digSellLoop(inHub, door, atmAt);

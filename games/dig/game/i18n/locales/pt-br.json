@@ -8,6 +8,8 @@
     "max": "MÁX",
     "newBadge": "NOVO!",
     "claim": "RESGATAR",
+    "claimAmount": "RESGATAR ${amount}",
+    "claimAtTrophy": "Resgate ${amount} na Sala de Troféus!",
     "locked": "BLOQUEADO",
     "done": "FEITO",
     "complete": "Completo!",

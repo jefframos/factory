@@ -179,7 +179,7 @@
       "power": 2,
       "hitInterval": 0.38,
       "area": 1,
-      "price": 15,
+      "price": 10,
       "icon": "pickaxe",
       "rarity": "common"
     },
@@ -865,11 +865,6 @@
       {
         "id": "MiningHelmet",
         "name": "Mining Helmet",
-        "price": 0
-      },
-      {
-        "id": "CashierHat",
-        "name": "Cashier",
         "price": 5
       },
       {

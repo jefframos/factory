@@ -8,6 +8,8 @@
     "max": "MAKS",
     "newBadge": "YENİ!",
     "claim": "AL",
+    "claimAmount": "${amount} AL",
+    "claimAtTrophy": "${amount} ödülünü Ganimet Odası'nda al!",
     "locked": "KİLİTLİ",
     "done": "TAMAM",
     "complete": "Tamamlandı!",

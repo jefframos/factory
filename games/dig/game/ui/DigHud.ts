@@ -20,14 +20,14 @@ import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { UiKit } from './UiKit';
-import { UiAnim } from './UiAnim';
+import { UiAnim, type UiTween } from './UiAnim';
 import { tabbedBlock, type TabSpec } from './TabBar';
-import { DigProgress } from '../data/DigProgress';
+import { DigProgress, COLLECTION_REWARD } from '../data/DigProgress';
 import { CollectionPanel, COLLECTION_SIZE } from './CollectionPanel';
 import { WardrobePanel, WARDROBE_SIZE } from './WardrobePanel';
 import { FindBanner, FIND_BANNER_SIZE } from './FindBanner';
 import { AchievementsPanel, ACHIEVEMENTS_SIZE } from './AchievementsPanel';
-import { RewardPopup } from './RewardPopup';
+import { RewardPopup, flyCoin, coinCount, COIN_STAGGER } from './RewardPopup';
 import { LanguagePanel, LANGUAGE_SIZE } from './LanguagePanel';
 import { MinesPanel, MINES_SIZE } from './MinesPanel';
 import { MoveHint } from './MoveHint';
@@ -165,7 +165,9 @@ export class DigHud extends PIXI.Container {
     private readonly panel = new PIXI.Container();
     private readonly panelBody = new PIXI.Container();
     private panelOpen = false;
-    private readonly collection = new CollectionPanel();
+    private readonly collection: CollectionPanel;
+    /** Coins flying in from a Trophy Room claim (killed with the HUD). */
+    private claimTweens: UiTween[] = [];
     private readonly wardrobe: WardrobePanel;
     private readonly achievements: AchievementsPanel;
     private readonly achievementsButton = new PIXI.Container();
@@ -232,18 +234,8 @@ export class DigHud extends PIXI.Container {
                 return screen ? new PIXI.Point(screen.center.x, screen.topLeft.y + screen.height * 0.36) : new PIXI.Point();
             },
         });
-        this.findBanner = new FindBanner({
-            moneyTarget: () => (this.moneyIcon ? this.toLocal(this.moneyIcon.getGlobalPosition()) : new PIXI.Point()),
-            hold: (amount) => this.holdSale(amount, 0),
-            release: (amount) => this.releaseSale(amount, 0),
-            punchMoney: () => {
-                if (!this.moneyIcon) return;
-                gsap.killTweensOf(this.moneyIcon.scale);
-                this.moneyIcon.scale.set(this.moneyIconScale);
-                UiAnim.punch(this.moneyIcon, 0.25);
-            },
-            onBlocking: () => this.updateBlocker(),
-        });
+        this.findBanner = new FindBanner();
+        this.collection = new CollectionPanel((id, from) => this.claimReward(id, from));
         this.buildAchievementsButton();
         this.mines = new MinesPanel((index) => {
             this.closeStationPanel();
@@ -668,6 +660,40 @@ export class DigHud extends PIXI.Container {
         }
     }
 
+    /**
+     * A reward claimed in the Trophy Room (a find, or COLLECTION_REWARD): paid now, then its cash flies from the CLAIM
+     * button (`from`, on screen) into the money icon, the counter climbing as each coin lands.
+     */
+    private claimReward(id: string, from: PIXI.Point): void {
+        const amount = DigProgress.unclaimedFor(id);
+        if (amount <= 0) return;
+        // Held back first, so the counter doesn't jump before the coins land.
+        this.holdSale(amount, 0);
+        DigProgress.claimReward(id);
+        if (id !== COLLECTION_REWARD) GameAnalytics.findClaimed(id);
+        GameAnalytics.tutorialStep('claim');
+        DigAudio.play('confirm');
+        DigAudio.play('buyCash');
+        const start = this.toLocal(from);
+        const target = () => (this.moneyIcon ? this.toLocal(this.moneyIcon.getGlobalPosition()) : new PIXI.Point());
+        const coins = coinCount(amount);
+        let paid = 0;
+        for (let i = 0; i < coins; i++) {
+            // Each coin carries its share; the last one takes the rounding remainder.
+            const share = i === coins - 1 ? amount - paid : Math.floor(amount / coins);
+            paid += share;
+            const at = new PIXI.Point(start.x + (Math.random() - 0.5) * 60, start.y + (Math.random() - 0.5) * 24);
+            this.claimTweens.push(flyCoin(this, at, target, i * COIN_STAGGER, () => {
+                this.releaseSale(share, 0);
+                DigAudio.play('coins');
+                if (!this.moneyIcon) return;
+                gsap.killTweensOf(this.moneyIcon.scale);
+                this.moneyIcon.scale.set(this.moneyIconScale);
+                UiAnim.punch(this.moneyIcon, 0.25);
+            }));
+        }
+    }
+
     /** The backpack just filled up / was emptied: the "FULL!" tag, and the pill and SELL button pulse while full. */
     private setBagFull(full: boolean): void {
         if (full === this.bagFull) return;
@@ -692,9 +718,9 @@ export class DigHud extends PIXI.Container {
         this.forcedTitle.visible = false;
     }
 
-    /** The dim layer is up while a purchase is forced or the first find's banner waits for its CLAIM. */
+    /** The dim layer is up while a purchase is forced or the new-mine question is asked. */
     private updateBlocker(): void {
-        const on = this.forced !== null || (this.findBanner?.blocking ?? false) || this.newMineConfirm.visible;
+        const on = this.forced !== null || this.newMineConfirm.visible;
         if (on && !this.blocker.visible) gsap.fromTo(this.blocker, { alpha: 0 }, { alpha: 1, duration: 0.3 });
         this.blocker.visible = on;
     }
@@ -1261,6 +1287,7 @@ export class DigHud extends PIXI.Container {
     public override destroy(): void {
         DigProgress.onChange.remove(this.onChange);
         gsap.killTweensOf(this.blocker);
+        this.claimTweens.forEach((tween) => tween.kill());
         UiAnim.kill(this);
         super.destroy({ children: true });
     }

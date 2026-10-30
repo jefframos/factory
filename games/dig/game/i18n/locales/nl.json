@@ -8,6 +8,8 @@
     "max": "MAX",
     "newBadge": "NIEUW!",
     "claim": "OPHALEN",
+    "claimAmount": "CLAIM ${amount}",
+    "claimAtTrophy": "Claim ${amount} in de Trofeeënkamer!",
     "locked": "OP SLOT",
     "done": "KLAAR",
     "complete": "Voltooid!",
