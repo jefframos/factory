@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mow Town Editor</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": { "three": "/vendor/three/build/three.module.js", "three/addons/": "/vendor/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<header id="topbar">
+  <div class="brand"><span class="logo">M</span> Mow Town Editor</div>
+  <nav id="tabs">
+    <button data-tab="town" class="tab active">🏙 Town</button>
+    <button data-tab="tractor" class="tab">🚜 Tractor</button>
+  </nav>
+</header>
+
+<section id="tab-town" class="tab-panel workspace"></section>
+
+<section id="tab-tractor" class="tab-panel workspace" hidden></section>
+
+<div id="toast"></div>
+<script type="module">
+import { api } from './shared.js';
+import { setModelCatalog } from './modelPicker.js';
+import { initTownTab, hasUnsavedTown } from './town3d.js';
+import { initTractorTab, refreshTractorTab, hasUnsavedTractorChanges } from './tractor.js';
+
+const config = await api('/api/config');
+setModelCatalog(await api('/api/models'));
+await initTownTab(document.getElementById('tab-town'), { gameUrl: config.gameUrl });
+let tractorReady = false;
+
+// Tabs: one panel shown at a time; the Tractor tab is built the first time it's opened.
+for (const button of document.querySelectorAll('#tabs .tab')) {
+    button.addEventListener('click', async () => {
+        const tab = button.dataset.tab;
+        document.querySelectorAll('#tabs .tab').forEach((other) => other.classList.toggle('active', other === button));
+        document.querySelectorAll('.tab-panel').forEach((panel) => { panel.hidden = panel.id !== `tab-${tab}`; });
+        if (tab === 'tractor') {
+            if (!tractorReady) {
+                tractorReady = true;
+                await initTractorTab(document.getElementById('tab-tractor'));
+            } else {
+                refreshTractorTab();
+            }
+        }
+    });
+}
+window.addEventListener('beforeunload', (event) => {
+    if (hasUnsavedTown() || hasUnsavedTractorChanges()) event.preventDefault();
+});
+</script>
+</body>
+</html>

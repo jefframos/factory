@@ -34,6 +34,7 @@ cachedBuilds/.tmp/
 # Playtest runs (npm run playtest) — screenshots + reports per run
 games/pizza/reports/playtests/
 games/bandit-controller/web/.thumbs/
+games/mow/web/.thumbs/
 
 # i18n work files (npm run i18n:prepare) — temporary, applied into the locale files
 tools/i18n/pending/

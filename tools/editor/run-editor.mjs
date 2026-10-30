@@ -18,7 +18,10 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-dotenv.config();
+// dotenv never overrides a variable already set in the shell, so a stale
+// `$env:GAME=...` silently wins over .env — say where GAME came from.
+const shellGame = process.env.GAME;
+const fileGame = dotenv.config().parsed?.GAME;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
@@ -28,6 +31,10 @@ if (!GAME) {
     console.error('[editor] Please specify the GAME environment variable in your .env file (GAME=pizza)');
     process.exit(1);
 }
+if (shellGame && fileGame && shellGame !== fileGame) {
+    console.warn(`[editor] GAME=${shellGame} from the shell overrides GAME=${fileGame} in .env — run \`Remove-Item Env:GAME\` (PowerShell) to use .env.`);
+}
+console.log(`[editor] GAME=${GAME} (${shellGame ? 'shell environment' : '.env'})`);
 
 const webDir = path.join(REPO_ROOT, 'games', GAME, 'web');
 const serverEntry = path.join(webDir, 'server.mjs');

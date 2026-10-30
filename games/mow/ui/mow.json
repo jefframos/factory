@@ -1,0 +1,37 @@
+{
+  "$comment": "Mow Town tuning (everything gameplay lives here, not in code). Distances in world units; the grass grid is `cell` units per cell. grass: vegetation types — resistance = cutting power needed (a tool 1 below cuts it slowly, further below not at all), value = clippings per cell, height/color = uncut look, cutColor = the mowed stub. tools: the equipment path (index 0 = what the player starts with) — width = cutting width, speed = walking speed, power = cutting power, capacity = clippings the container holds, size/color = the placeholder cube. upgrades: repeatable levels on top of the tool, on the shop's GEAR tab (capacity: +clippings) or BOOSTS tab (speed +share, money +share of every sale, width +units, blades +share of chewing speed on tough grass); level n costs basePrice x growth^n. boostsUnlockToolLevel: the BOOSTS tab opens with this mower. Tools with `ride` are driven: the tractor (its look, seat, exhaust and smoke: `tractor`, edited in the editor) tinted with the tool colour and scaled by `rideScale`, mounted on entering a section not restored yet. clippingPrice: money per clipping when sold. The town's layout (sections = districts, their grass mix, bonus, stations, separators; props; pavements) is levels/town.json, edited in the editor (npm run editor).",
+  "cell": 0.5,
+  "seed": 4242,
+  "clippingPrice": 0.2,
+  "grass": [
+    { "id": "grass", "name": "Grass", "height": 0.32, "color": "#5cbf4a", "cutColor": "#9bdc6e", "resistance": 1, "value": 1 },
+    { "id": "tallgrass", "name": "Tall Grass", "height": 0.7, "color": "#3e9b3c", "cutColor": "#8ccf62", "resistance": 2, "value": 2 },
+    { "id": "weeds", "name": "Thick Weeds", "height": 0.85, "color": "#557a2a", "cutColor": "#86b55a", "resistance": 3, "value": 4 }
+  ],
+  "tools": [
+    { "id": "scissors", "name": "Scissors", "width": 0.6, "speed": 2.6, "power": 1, "capacity": 80, "price": 0, "size": [0.35, 0.12, 0.35], "color": "#c9ced8", "handheld": true },
+    { "id": "pushmower", "name": "Push Mower", "width": 1.1, "speed": 3.1, "power": 1, "capacity": 180, "price": 15, "size": [0.85, 0.45, 0.7], "color": "#e0473a" },
+    { "id": "poweredmower", "name": "Powered Mower", "width": 1.6, "speed": 3.7, "power": 2, "capacity": 400, "price": 240, "size": [1.15, 0.6, 0.9], "color": "#f2b230", "engine": true },
+    { "id": "rideon", "name": "Ride-on Mower", "width": 2.4, "speed": 4.6, "power": 3, "capacity": 900, "price": 1500, "size": [1.7, 0.9, 1.4], "color": "#3f9be0", "engine": true, "ride": true, "rideScale": 1 },
+    { "id": "industrial", "name": "Industrial Mower", "width": 3.4, "speed": 5.4, "power": 4, "capacity": 2200, "price": 6000, "size": [2.4, 1.1, 1.8], "color": "#7a5ae0", "engine": true, "ride": true, "rideScale": 1.15 },
+    { "id": "mega", "name": "Mega Mower", "width": 5, "speed": 6.2, "power": 5, "capacity": 6000, "price": 20000, "size": [3.4, 1.4, 2.4], "color": "#e05aa8", "engine": true, "ride": true, "rideScale": 1.3 }
+  ],
+  "upgrades": [
+    { "id": "capacity", "tab": "gear", "name": "Capacity", "icon": "ItemIcon_Bag_Brown", "perLevel": 60, "maxLevel": 10, "basePrice": 15, "growth": 1.45 },
+    { "id": "speed", "tab": "boosts", "name": "Speed", "icon": "ItemIcon_Gear_Boots", "perLevel": 0.06, "maxLevel": 15, "basePrice": 40, "growth": 1.35 },
+    { "id": "money", "tab": "boosts", "name": "Money Gain", "icon": "ItemIcon_Money_Coin", "perLevel": 0.1, "maxLevel": 15, "basePrice": 50, "growth": 1.35 },
+    { "id": "width", "tab": "boosts", "name": "Cutting Width", "icon": "ItemIcon_Clover_Green", "perLevel": 0.15, "maxLevel": 15, "basePrice": 45, "growth": 1.35 },
+    { "id": "blades", "tab": "boosts", "name": "Sharp Blades", "icon": "ItemIcon_Gear_Sword", "perLevel": 0.2, "maxLevel": 10, "basePrice": 60, "growth": 1.4 }
+  ],
+  "boostsUnlockToolLevel": 1,
+  "tractor": {
+    "model": "town/vehicles/tractor/tractor.glb",
+    "height": 2,
+    "rotationY": 0,
+    "bodyRadius": 0.6,
+    "cutAhead": 1.35,
+    "seat": { "x": 0, "y": 1.25, "z": -0.38 },
+    "smoke": { "count": 16, "size": 1.1, "color": "#d9d3c9" },
+    "exhaust": { "x": 0.4, "y": 1.8, "z": -0.7, "interval": 0.28, "size": 0.35 }
+  }
+}

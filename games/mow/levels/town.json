@@ -1,0 +1,581 @@
+{
+  "id": "town",
+  "name": "Mow Town",
+  "ground": {
+    "x": 0,
+    "z": -7.5,
+    "width": 80,
+    "depth": 75,
+    "color": "#8c9a7c"
+  },
+  "start": {
+    "x": 0,
+    "z": 10.75
+  },
+  "pavements": [
+    {
+      "id": "plaza",
+      "x": 0,
+      "z": 10.75,
+      "width": 20,
+      "depth": 5.5,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "road",
+      "x": 0,
+      "z": -11.5,
+      "width": 30,
+      "depth": 7,
+      "color": "#4a4f57"
+    },
+    {
+      "id": "path-north-south",
+      "x": 0,
+      "z": 0,
+      "width": 1.5,
+      "depth": 16,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "path-east-west",
+      "x": 0,
+      "z": 0,
+      "width": 20,
+      "depth": 1.5,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-5",
+      "x": 0,
+      "z": -16.5,
+      "width": 43.5,
+      "depth": 2,
+      "color": "#d8ccb0"
+    }
+  ],
+  "atm": {
+    "model": "town/station/atm-01.glb",
+    "height": 2.1,
+    "back": 1.7,
+    "label": 3.3,
+    "color": "#3fd16b",
+    "icon": "ItemIcon_Money_Bill",
+    "collider": {
+      "halfX": 0.75,
+      "halfZ": 0.55
+    }
+  },
+  "atms": [
+    {
+      "x": -5,
+      "z": 11.4,
+      "rotationY": 0
+    },
+    {
+      "x": -7.5,
+      "z": -9.9,
+      "rotationY": 0,
+      "section": "street"
+    },
+    {
+      "x": 7.5,
+      "z": -9.9,
+      "rotationY": 0,
+      "section": "street"
+    }
+  ],
+  "props": [
+    {
+      "model": "town/nature/Tree_1_A_Color1.gltf",
+      "x": -6,
+      "z": -4,
+      "rotationY": 0,
+      "height": 5.76,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_3_A_Color1.gltf",
+      "x": 6.5,
+      "z": -5,
+      "rotationY": 2.1,
+      "height": 5.12,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_2_A_Color1.gltf",
+      "x": -7,
+      "z": 5,
+      "rotationY": 4.2,
+      "height": 6.4,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_1_A_Color1.gltf",
+      "x": 4.5,
+      "z": 4.5,
+      "rotationY": 0.3,
+      "height": 5.44,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_4_A_Color1.gltf",
+      "x": -3,
+      "z": 6,
+      "rotationY": 2.4,
+      "height": 7.04,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_2_A_Color1.gltf",
+      "x": 8,
+      "z": 1.5,
+      "rotationY": 4.5,
+      "height": 6.08,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/city/bench.gltf",
+      "x": -2.2,
+      "z": -2.5,
+      "rotationY": 0,
+      "height": 0.55,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 0.4
+      }
+    },
+    {
+      "model": "town/city/bench.gltf",
+      "x": 2.4,
+      "z": 2.4,
+      "rotationY": 3.1416,
+      "height": 0.55,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 0.4
+      }
+    },
+    {
+      "model": "town/city/bench.gltf",
+      "x": -4,
+      "z": 1.8,
+      "rotationY": 1.5708,
+      "height": 0.55,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 1.1
+      }
+    },
+    {
+      "model": "town/city/streetlight_old_single.gltf",
+      "x": -1.4,
+      "z": -6,
+      "rotationY": 0,
+      "height": 3.6,
+      "collider": {
+        "halfX": 0.2,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/city/streetlight_old_single.gltf",
+      "x": 1.4,
+      "z": 6,
+      "rotationY": 0,
+      "height": 3.6,
+      "collider": {
+        "halfX": 0.2,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/city/streetlight_old_single.gltf",
+      "x": -8.5,
+      "z": -1.4,
+      "rotationY": 0,
+      "height": 3.6,
+      "collider": {
+        "halfX": 0.2,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/city/streetlight_old_single.gltf",
+      "x": 8.5,
+      "z": 1.4,
+      "rotationY": 0,
+      "height": 3.6,
+      "collider": {
+        "halfX": 0.2,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/city/streetlight_old_double.gltf",
+      "x": -9.4,
+      "z": 8.6,
+      "rotationY": 0,
+      "height": 3.6,
+      "collider": {
+        "halfX": 0.2,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/city/streetlight_old_double.gltf",
+      "x": 9.4,
+      "z": 8.6,
+      "rotationY": 0,
+      "height": 3.6,
+      "collider": {
+        "halfX": 0.2,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/city/road_straight.gltf",
+      "x": -14,
+      "z": -11.5,
+      "rotationY": 1.5708,
+      "height": 0.1,
+      "stretch": {
+        "x": 3.5,
+        "z": 3.5
+      },
+      "elevation": -0.01,
+      "collider": null
+    },
+    {
+      "model": "town/city/road_straight.gltf",
+      "x": -7,
+      "z": -11.5,
+      "rotationY": 1.5708,
+      "height": 0.1,
+      "stretch": {
+        "x": 3.5,
+        "z": 3.5
+      },
+      "elevation": -0.01,
+      "collider": null
+    },
+    {
+      "model": "town/city/road_straight_crossing.gltf",
+      "x": 0,
+      "z": -11.5,
+      "rotationY": 1.5708,
+      "height": 0.1,
+      "stretch": {
+        "x": 3.5,
+        "z": 3.5
+      },
+      "elevation": -0.01,
+      "collider": null
+    },
+    {
+      "model": "town/city/road_straight.gltf",
+      "x": 7,
+      "z": -11.5,
+      "rotationY": 1.5708,
+      "height": 0.1,
+      "stretch": {
+        "x": 3.5,
+        "z": 3.5
+      },
+      "elevation": -0.01,
+      "collider": null
+    },
+    {
+      "model": "town/city/road_straight.gltf",
+      "x": 14,
+      "z": -11.5,
+      "rotationY": 1.5708,
+      "height": 0.1,
+      "stretch": {
+        "x": 3.5,
+        "z": 3.5
+      },
+      "elevation": -0.01,
+      "collider": null
+    },
+    {
+      "model": "town/city/streetlight.gltf",
+      "x": -12,
+      "z": -8.35,
+      "rotationY": 1.5708,
+      "height": 5,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      }
+    },
+    {
+      "model": "town/city/streetlight.gltf",
+      "x": -2.5,
+      "z": -8.35,
+      "rotationY": 1.5708,
+      "height": 5,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      }
+    },
+    {
+      "model": "town/city/streetlight.gltf",
+      "x": 2.5,
+      "z": -8.35,
+      "rotationY": 1.5708,
+      "height": 5,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      }
+    },
+    {
+      "model": "town/city/streetlight.gltf",
+      "x": 12,
+      "z": -8.35,
+      "rotationY": 1.5708,
+      "height": 5,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      }
+    },
+    {
+      "model": "town/city/firehydrant.gltf",
+      "x": -9,
+      "z": -8.5,
+      "rotationY": 0,
+      "height": 1,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/city/firehydrant.gltf",
+      "x": 9,
+      "z": -14.6,
+      "rotationY": 0,
+      "height": 1,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/city/firehydrant.gltf",
+      "x": 8,
+      "z": 13.1,
+      "rotationY": 0,
+      "height": 1,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/city/bush_A.gltf",
+      "x": -9.3,
+      "z": 13,
+      "rotationY": 0,
+      "height": 1.1,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/city/bush_B.gltf",
+      "x": -1.6,
+      "z": 13,
+      "rotationY": 0,
+      "height": 1.1,
+      "collider": {
+        "halfX": 1.05,
+        "halfZ": 1
+      }
+    },
+    {
+      "model": "town/city/bush_B.gltf",
+      "x": 1.6,
+      "z": 13,
+      "rotationY": 1.2,
+      "height": 1.1,
+      "collider": {
+        "halfX": 1,
+        "halfZ": 1
+      }
+    },
+    {
+      "model": "town/city/bush_A.gltf",
+      "x": 9.3,
+      "z": 13,
+      "rotationY": 0.8,
+      "height": 1.1,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/city/car_sedan.gltf",
+      "x": -15.5,
+      "z": -14,
+      "rotationY": 1.5708,
+      "height": 2.2,
+      "collider": {
+        "halfX": 2.8,
+        "halfZ": 1.25
+      }
+    },
+    {
+      "model": "town/city/car_taxi.gltf",
+      "x": 15.5,
+      "z": -9,
+      "rotationY": -1.5708,
+      "height": 2.5,
+      "collider": {
+        "halfX": 2.7,
+        "halfZ": 1.2
+      }
+    },
+    {
+      "model": "town/city/building_B_withoutBase.gltf",
+      "x": -16.25,
+      "z": -26.3,
+      "rotationY": 0,
+      "height": 10.5,
+      "collider": {
+        "halfX": 5.4,
+        "halfZ": 4.2
+      },
+      "fade": true
+    },
+    {
+      "model": "town/city/building_E_withoutBase.gltf",
+      "x": 0,
+      "z": -26.3,
+      "rotationY": 0,
+      "height": 18,
+      "collider": {
+        "halfX": 8,
+        "halfZ": 4.95
+      },
+      "fade": true
+    },
+    {
+      "model": "town/city/building_D_withoutBase.gltf",
+      "x": 16.25,
+      "z": -26.3,
+      "rotationY": 0,
+      "height": 15.75,
+      "collider": {
+        "halfX": 5.6,
+        "halfZ": 4.35
+      },
+      "fade": true
+    }
+  ],
+  "grassNoise": {
+    "centre": {
+      "x": 0,
+      "z": 2
+    },
+    "scale": 0.2,
+    "rings": [
+      {
+        "upTo": 8,
+        "mix": {
+          "grass": 1
+        }
+      },
+      {
+        "upTo": 13,
+        "mix": {
+          "grass": 0.75,
+          "tallgrass": 0.25
+        }
+      },
+      {
+        "upTo": 22,
+        "mix": {
+          "grass": 0.5,
+          "tallgrass": 0.38,
+          "weeds": 0.12
+        }
+      },
+      {
+        "upTo": 999,
+        "mix": {
+          "grass": 0.35,
+          "tallgrass": 0.4,
+          "weeds": 0.25
+        }
+      }
+    ]
+  },
+  "grassPatches": [],
+  "sections": [
+    {
+      "id": "park",
+      "name": "Starting Park",
+      "x": 0,
+      "z": 0,
+      "width": 20,
+      "depth": 16,
+      "completeAt": 0.97,
+      "bonus": 100,
+      "ground": "#4f7d35",
+      "restoredGround": "#6fae47",
+      "fill": "auto"
+    },
+    {
+      "id": "street",
+      "name": "Residential Street",
+      "x": 0,
+      "z": -22,
+      "width": 43.5,
+      "depth": 14,
+      "completeAt": 0.97,
+      "bonus": 400,
+      "ground": "#4d7633",
+      "restoredGround": "#6aa845",
+      "separator": {
+        "x": 0,
+        "z": -15,
+        "width": 30,
+        "rotationY": 0
+      },
+      "onUnlock": {
+        "pan": true
+      },
+      "fill": "auto"
+    }
+  ]
+}
