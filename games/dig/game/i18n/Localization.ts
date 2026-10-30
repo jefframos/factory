@@ -5,6 +5,9 @@
 // `npm run translate:i18n` with GAME=dig). Locale files are picked up by glob, so a newly generated language works
 // without touching this file; a string missing from it falls back to English, then to its id.
 //
+// The language at boot: the platform's own setting where it has one (YouTube), else the saved choice, else the
+// browser's preferred languages, else English (load()).
+//
 // Text is read when UI is built (`t('sell')`), so a language change is announced (onLocaleChange) and the scene
 // rebuilds what shows text — the HUD and the hub's 3D price tags / signs — on the spot, no reload (like clog).
 
@@ -33,6 +36,8 @@ function interpolate(template: string, vars: StringVars): string {
 
 class LocalizationService {
     private locale: Locale = DEFAULT_LOCALE;
+    /** The platform supplies the language (load()): a choice made in the menu isn't saved over it. */
+    private platformLanguage = false;
     /** Dispatched with the new locale after setLocale(): rebuild whatever shows text. */
     readonly onLocaleChange: Signal = new Signal();
 
@@ -50,10 +55,29 @@ class LocalizationService {
         return SUPPORTED_LOCALES.filter((locale) => this.hasTranslation(locale));
     }
 
-    /** Call once at boot, before any UI is built: the saved choice, else the browser's language. */
+    /**
+     * Call once at boot, before any UI is built. The language comes from, in order:
+     *  1. the platform's own language setting, where it has one (YouTube Playables' ytgame.system.getLanguage(), which
+     *     its rules say to use instead of the browser's — and not to save a choice over it: platformLanguage);
+     *  2. the player's saved choice (picked in the language menu);
+     *  3. the browser's preferred languages, the first one the game has;
+     *  4. English.
+     */
     async load(): Promise<void> {
+        const platform = PlatformHandler.instance.platform;
         try {
-            const saved = await PlatformHandler.instance.platform.getItem(STORAGE_KEY);
+            const tag = await platform.getLanguage?.();
+            const fromPlatform = tag ? this.match(tag) : undefined;
+            if (fromPlatform) {
+                this.platformLanguage = true;
+                this.locale = fromPlatform;
+                return;
+            }
+        } catch (error) {
+            console.warn('Localization: platform language unavailable', error);
+        }
+        try {
+            const saved = await platform.getItem(STORAGE_KEY);
             this.locale = saved && isSupportedLocale(saved) && this.hasTranslation(saved) ? saved : this.browserLocale();
         } catch (error) {
             console.error('Localization: failed to load saved locale', error);
@@ -66,6 +90,8 @@ class LocalizationService {
         if (!this.hasTranslation(locale) || locale === this.locale) return;
         this.locale = locale;
         this.onLocaleChange.dispatch(locale);
+        // The platform owns the language there: the choice lasts this session, nothing saved over its setting.
+        if (this.platformLanguage) return;
         try {
             await PlatformHandler.instance.platform.setItem(STORAGE_KEY, locale);
         } catch (error) {
@@ -73,12 +99,25 @@ class LocalizationService {
         }
     }
 
+    /** The first of the browser's preferred languages (navigator.languages, in order) the game has; else English. */
     private browserLocale(): Locale {
-        const lang = navigator.language.toLowerCase();
-        if (lang.startsWith('pt') && this.hasTranslation('pt-br')) return 'pt-br';
-        if (lang.startsWith('zh') && this.hasTranslation('zh-cn')) return 'zh-cn';
-        const base = lang.split('-')[0];
-        return isSupportedLocale(base) && this.hasTranslation(base) ? base : DEFAULT_LOCALE;
+        const tags = navigator.languages?.length ? navigator.languages : [navigator.language];
+        for (const tag of tags) {
+            const locale = this.match(tag);
+            if (locale) return locale;
+        }
+        return DEFAULT_LOCALE;
+    }
+
+    /**
+     * A BCP-47 tag ("pt-BR", "es-419", "zh-TW", "nb") to the game's locale for it, if it has a translation: any
+     * Portuguese -> Brazilian Portuguese, any Chinese -> Simplified Chinese, otherwise by its language part.
+     */
+    private match(tag: string): Locale | undefined {
+        const lang = tag.toLowerCase();
+        const base = lang.split(/[-_]/)[0];
+        const candidate = base === 'pt' ? 'pt-br' : base === 'zh' ? 'zh-cn' : base === 'in' ? 'id' : base;
+        return isSupportedLocale(candidate) && this.hasTranslation(candidate) ? candidate : undefined;
     }
 
     /** A string by id (any key in en.json), with `{name}` placeholders filled from `vars`. */
@@ -109,4 +148,6 @@ export const names = {
     item: (name: string) => Localization.getString(`item_${slug(name)}`, undefined, name),
     look: (name: string) => Localization.getString(`look_${slug(name)}`, undefined, name),
     rarity: (rarity: string) => Localization.getString(`rarity_${rarity}`, undefined, rarity.toUpperCase()),
+    /** A mine theme's name (ui/dig.json mineThemes), shown when travelling to a mine. */
+    theme: (name: string) => Localization.getString(`theme_${slug(name)}`, undefined, name),
 };

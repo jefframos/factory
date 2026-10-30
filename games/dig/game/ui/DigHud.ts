@@ -39,7 +39,8 @@ import type { StationKind } from '../data/HubData';
 
 /** A tutorial purchase the HUD won't let go of (DigScene decides when). */
 export type ForcedBuy = 'backpack' | 'tool' | 'hat';
-import { t, names, type StringId } from '../i18n/Localization';
+import { t, names, type StringId, Localization } from '../i18n/Localization';
+import { LOCALE_FLAG_CODE } from '../i18n/config';
 import { DigAudio } from '../audio/DigAudio';
 import { Gameplay } from '../data/Gameplay';
 import { GameAnalytics } from '../analytics/GameAnalytics';
@@ -540,9 +541,15 @@ export class DigHud extends PIXI.Container {
         if (!this.language.visible) this.toggleOverlay(this.language, () => this.language.refresh());
     }
 
-    /** The gear on the round dark button (same as mute), left of it. */
+    /** The language button: the current language's flag on the round dark button (same as mute), beside it. */
     private buildSettings(): PIXI.Container {
-        this.settings.addChild(icon('hud', 'muteButton', MUTE_SIZE), icon('hud', 'settingsIcon', MUTE_SIZE * 0.55));
+        // The menu only picks the language, so the button shows the current language's flag (a player who can't read
+        // the UI still recognizes it). The HUD is rebuilt on a language change, so the flag follows. Back to the gear
+        // (hud settingsIcon) if real settings arrive.
+        const flag = PIXI.Sprite.from(`Icon_Flag_${LOCALE_FLAG_CODE[Localization.currentLocale]}`);
+        flag.anchor.set(0.5);
+        flag.scale.set((MUTE_SIZE * 0.6) / Math.max(flag.texture.width, flag.texture.height, 1));
+        this.settings.addChild(icon('hud', 'muteButton', MUTE_SIZE), flag);
         this.settings.eventMode = 'static';
         this.settings.cursor = 'pointer';
         this.settings.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
@@ -1158,7 +1165,7 @@ export class DigHud extends PIXI.Container {
         symbol.x = OFFER.frameX;
         // The name and its rarity tag share the text column: the name shrinks to leave the tag room, so neither
         // reaches the button.
-        const tag = look.rarity ? UiKit.text('upgrades', 'rarityTag', { text: look.rarity.toUpperCase() }, { fill: RARITY_COLORS[look.rarity] }) : undefined;
+        const tag = look.rarity ? UiKit.text('upgrades', 'rarityTag', { text: names.rarity(look.rarity) }, { fill: RARITY_COLORS[look.rarity] }) : undefined;
         const tagRoom = tag ? tag.width + 12 : 0;
         const name = UiKit.fit(UiKit.text('upgrades', 'itemName', { name: title }), OFFER.textWidth - tagRoom);
         name.anchor.set(0, 0.5);

@@ -635,7 +635,7 @@ export default class DigScene extends ThreeScene {
         this.player.movementController.enabled = false;
         const theme = DigProgress.themeFor(index);
         // Not from inside the HUD's tap handler: the HUD is torn down with the scene.
-        window.setTimeout(() => DigScene.restart?.(t('mineName', { mine: index + 1 }), theme.name, apply), 0);
+        window.setTimeout(() => DigScene.restart?.(t('mineName', { mine: index + 1 }), names.theme(theme.name), apply), 0);
     }
 
     /** The newest mine just got its Tractor: say a new mine is waiting (the MAP button has its "!"). */

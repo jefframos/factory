@@ -1,33 +1,26 @@
 /**
- * Every locale the game ships UI text for. 'en' is the source of truth
- * (games/dig/game/i18n/locales/en.json) — the rest are machine-translated
- * from it by tools/i18n/translate-i18n.mjs and checked in as plain JSON.
+ * Every locale the game ships UI text for: Poki's recommended set, in its order (developers.poki.com/guide/localization
+ * — EFIGS + Turkish, then Chinese / Japanese / Korean, then Brazilian Portuguese and Russian), plus Dutch, Polish,
+ * Indonesian and Vietnamese (big Poki markets with their own localized sites). 'en' is the source of truth
+ * (games/dig/game/i18n/locales/en.json); the rest are translated from it by `npm run i18n:update` (tools/i18n) and
+ * checked in as plain JSON.
  */
 export const SUPPORTED_LOCALES = [
     'en',
-    'es',
-    'it',
-    'pt-br',
     'fr',
+    'it',
     'de',
+    'es',
+    'tr',
+    'zh-cn',
     'ja',
     'ko',
-    'zh-cn',
+    'pt-br',
     'ru',
-    'hi',
-    'tr',
+    'nl',
     'pl',
-    'th',
-    'uk',
     'id',
     'vi',
-    'ar',
-    'nl',
-    'sv',
-    'da',
-    'no',
-    'ro',
-    'cs',
 ] as const;
 
 export type Locale = typeof SUPPORTED_LOCALES[number];
@@ -50,20 +43,11 @@ export const LOCALE_LABELS: Record<Locale, string> = {
     ko: '한국어',
     'zh-cn': '中文',
     ru: 'Русский',
-    hi: 'हिन्दी',
     tr: 'Türkçe',
     pl: 'Polski',
-    th: 'ไทย',
-    uk: 'Українська',
     id: 'Bahasa Indonesia',
     vi: 'Tiếng Việt',
-    ar: 'العربية',
     nl: 'Nederlands',
-    sv: 'Svenska',
-    da: 'Dansk',
-    no: 'Norsk',
-    ro: 'Română',
-    cs: 'Čeština',
 };
 
 /** UI atlas frame Icon_Flag_<code> for each locale (LanguagePanel.ts). */
@@ -78,18 +62,9 @@ export const LOCALE_FLAG_CODE: Record<Locale, string> = {
     ko: 'kor',
     'zh-cn': 'chn',
     ru: 'rus',
-    hi: 'ind',
     tr: 'tur',
     pl: 'pol',
-    th: 'tha',
-    uk: 'ukr',
     id: 'idn',
     vi: 'vnm',
-    ar: 'ara',
     nl: 'nld',
-    sv: 'swe',
-    da: 'dnk',
-    no: 'nor',
-    ro: 'rou',
-    cs: 'cze',
 };

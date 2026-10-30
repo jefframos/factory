@@ -24,38 +24,15 @@ import dotenv from 'dotenv';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { gameLocales } from './i18n-shared.mjs';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const SUPPORTED_LOCALES = [
-    'en',
-    'es',
-    'it',
-    'pt-br',
-    'fr',
-    'de',
-    'ja',
-    'ko',
-    'zh-cn',
-    'ru',
-    'hi',
-    'tr',
-    'pl',
-    'th',
-    'uk',
-    'id',
-    'vi',
-    'ar',
-    'nl',
-    'sv',
-    'da',
-    'no',
-    'ro',
-    'cs',
-];
+// The game's own locale list (its i18n/config.ts), shared with the i18n:* tools.
+const SUPPORTED_LOCALES = gameLocales();
 
 const DEFAULT_LOCALE = 'en';
 
