@@ -4,7 +4,8 @@
 //  - a crack overlay on the block being mined, darker with damage, that jolts on every hit;
 //  - debris chips in the block's colour that burst out and bounce on the floor;
 //  - resource pickups: a cube pops out of the broken block and flies into the miner;
-//  - selling: items tossed out of the miner onto the sell pad, with rising "+$" labels.
+//  - selling: items tossed out of the miner onto the sell pad, with rising "+$" labels;
+//  - sparkles: little twinkling stars drifting up (over buried treasure near the miner: TreasureSparkles).
 
 import * as THREE from 'three';
 import { CanvasArt } from '../ui/CanvasArt';
@@ -80,6 +81,30 @@ function crackTexture(): THREE.CanvasTexture {
     return texture;
 }
 
+/** A four-point star with a soft glow, white (tinted per sparkle). */
+function starTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 64;
+    const g = canvas.getContext('2d')!;
+    const glow = g.createRadialGradient(32, 32, 0, 32, 32, 20);
+    glow.addColorStop(0, 'rgba(255,255,255,0.9)');
+    glow.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = glow;
+    g.fillRect(0, 0, 64, 64);
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2 - Math.PI / 2;
+        const radius = i % 2 === 0 ? 30 : 6;
+        g.lineTo(32 + Math.cos(angle) * radius, 32 + Math.sin(angle) * radius);
+    }
+    g.closePath();
+    g.fill();
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+}
+
 /** A soft white blob (alpha falls off from the middle), tinted per puff. */
 function puffTexture(): THREE.CanvasTexture {
     const canvas = document.createElement('canvas');
@@ -116,6 +141,8 @@ export class DigEffects {
 
     private readonly puffs: { sprite: THREE.Sprite; velocity: THREE.Vector3; life: number; maxLife: number; size: number }[] = [];
     private readonly puffTexture = puffTexture();
+    private readonly sparkles: { sprite: THREE.Sprite; velocity: THREE.Vector3; life: number; maxLife: number; size: number; spin: number }[] = [];
+    private readonly starTexture = starTexture();
 
     /** `pickupTarget` is where resource pickups fly to (the miner). */
     public constructor(private readonly threeScene: THREE.Scene, blockHeight: number, private readonly pickupTarget: () => THREE.Vector3) {
@@ -169,6 +196,20 @@ export class DigEffects {
                 velocity: new THREE.Vector3(Math.cos(angle) * out, 0.8 + Math.random() * 0.9, Math.sin(angle) * out),
             });
         }
+    }
+
+    /** One twinkling star drifting up from `at` (spread a little), glowing in `color`, then fading. */
+    public sparkle(at: THREE.Vector3, color: THREE.Color, size = 0.35): void {
+        const material = new THREE.SpriteMaterial({ map: this.starTexture, color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 });
+        const sprite = new THREE.Sprite(material);
+        sprite.position.copy(at);
+        sprite.renderOrder = 7;
+        this.threeScene.add(sprite);
+        const maxLife = 0.8 + Math.random() * 0.6;
+        this.sparkles.push({
+            sprite, maxLife, life: maxLife, size: size * (0.7 + Math.random() * 0.6), spin: (Math.random() - 0.5) * 4,
+            velocity: new THREE.Vector3((Math.random() - 0.5) * 0.4, 0.9 + Math.random() * 0.8, (Math.random() - 0.5) * 0.4),
+        });
     }
 
     /** A hit landed: jolts the crack overlay and throws a few chips. */
@@ -276,6 +317,23 @@ export class DigEffects {
             // Quick fade in, long fade out.
             puff.sprite.material.opacity = 0.85 * Math.min(1, t * 6) * (1 - t);
         }
+        for (let i = this.sparkles.length - 1; i >= 0; i--) {
+            const sparkle = this.sparkles[i];
+            sparkle.life -= delta;
+            if (sparkle.life <= 0) {
+                sparkle.sprite.removeFromParent();
+                sparkle.sprite.material.dispose();
+                this.sparkles.splice(i, 1);
+                continue;
+            }
+            const t = 1 - sparkle.life / sparkle.maxLife;
+            sparkle.sprite.position.addScaledVector(sparkle.velocity, delta);
+            sparkle.sprite.material.rotation += sparkle.spin * delta;
+            // Pops up, twinkles, shrinks away.
+            const twinkle = 0.75 + 0.25 * Math.sin(t * 26);
+            sparkle.sprite.scale.setScalar(sparkle.size * Math.min(1, t * 5) * (1 - t * 0.6) * twinkle);
+            sparkle.sprite.material.opacity = Math.min(1, t * 6) * (1 - t);
+        }
         // Debris
         let any = false;
         for (let i = 0; i < DEBRIS_POOL; i++) {
@@ -349,6 +407,8 @@ export class DigEffects {
 
     public destroy(): void {
         this.puffs.forEach((puff) => puff.sprite.removeFromParent());
+        this.sparkles.forEach((sparkle) => sparkle.sprite.removeFromParent());
+        this.starTexture.dispose();
         this.chips.removeFromParent();
         this.chips.dispose();
         this.crack.removeFromParent();

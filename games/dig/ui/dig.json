@@ -6,7 +6,13 @@
     "blockHeight": 1.6,
     "seed": 1337,
     "bedrockBlock": "mine/metal.glb",
-    "zoneWobble": 5
+    "bedrockTint": "#2c2c2e",
+    "zoneWobble": 5,
+    "edge": {
+      "radius": 76,
+      "wobble": 5,
+      "roughness": 1.5
+    }
   },
   "materials": [
     {
@@ -55,6 +61,7 @@
       "drops": 1,
       "ore": false,
       "block": "mine/stone-dark.glb",
+      "tint": "#a6b8e6",
       "pickup": "mine/stone-chunks-small.glb"
     },
     {
@@ -67,6 +74,7 @@
       "drops": 1,
       "ore": false,
       "block": "mine/bricks-a.glb",
+      "tint": "#ffae72",
       "pickup": "mine/stone-brick.glb"
     },
     {
@@ -133,6 +141,21 @@
       "block": "mine/stone-dark.glb",
       "pickup": "mine/gem-small.glb",
       "decor": "mine/gem-medium.glb"
+    },
+    {
+      "id": "amethyst",
+      "name": "Amethyst",
+      "color": "#b46cff",
+      "durability": 40,
+      "minPower": 7,
+      "value": 120,
+      "drops": 1,
+      "ore": true,
+      "block": "mine/stone-dark.glb",
+      "tint": "#6c5c8e",
+      "pickup": "mine/gem-large.glb",
+      "decor": "mine/gem-medium.glb",
+      "decorTint": "#c27bff"
     }
   ],
   "tools": [
@@ -142,7 +165,7 @@
       "model": "shovel",
       "clip": "Digging",
       "power": 1,
-      "hitInterval": 0.42,
+      "hitInterval": 0.33,
       "area": 1,
       "price": 0,
       "icon": "shovel",
@@ -156,7 +179,7 @@
       "power": 2,
       "hitInterval": 0.38,
       "area": 1,
-      "price": 25,
+      "price": 15,
       "icon": "pickaxe",
       "rarity": "common"
     },
@@ -168,7 +191,8 @@
       "power": 3,
       "hitInterval": 0.32,
       "area": 1,
-      "price": 300,
+      "depth": 2,
+      "price": 120,
       "icon": "pickaxe",
       "rarity": "rare"
     },
@@ -197,15 +221,18 @@
       "rarity": "epic"
     },
     {
-      "id": "obsidiandrill",
-      "name": "Obsidian Drill",
+      "id": "digger",
+      "name": "Digger",
       "model": "pickaxe",
       "clip": "StandingPICKAXE",
       "power": 7,
       "hitInterval": 0.18,
       "area": 3,
       "price": 6000,
-      "icon": "drill",
+      "icon": "tractor",
+      "vehicle": true,
+      "greyscale": true,
+      "rideSpeed": 1.3,
       "rarity": "epic"
     },
     {
@@ -224,56 +251,72 @@
   ],
   "backpack": [
     {
-      "capacity": 20,
+      "capacity": 10,
       "price": 0
     },
     {
-      "capacity": 28,
+      "capacity": 20,
+      "price": 10
+    },
+    {
+      "capacity": 30,
       "price": 40
     },
     {
-      "capacity": 36,
-      "price": 120
-    },
-    {
-      "capacity": 45,
-      "price": 250
+      "capacity": 40,
+      "price": 90
     },
     {
       "capacity": 55,
-      "price": 450
+      "price": 160
     },
     {
-      "capacity": 66,
-      "price": 750
+      "capacity": 70,
+      "price": 260
     },
     {
-      "capacity": 78,
-      "price": 1200
+      "capacity": 90,
+      "price": 400
     },
     {
-      "capacity": 92,
-      "price": 1900
-    },
-    {
-      "capacity": 108,
-      "price": 3000
-    },
-    {
-      "capacity": 125,
-      "price": 4600
+      "capacity": 115,
+      "price": 600
     },
     {
       "capacity": 145,
-      "price": 7000
+      "price": 850
     },
     {
-      "capacity": 170,
-      "price": 10500
+      "capacity": 180,
+      "price": 1200
     },
     {
-      "capacity": 200,
-      "price": 16000
+      "capacity": 220,
+      "price": 1700
+    },
+    {
+      "capacity": 260,
+      "price": 2400
+    },
+    {
+      "capacity": 300,
+      "price": 3300
+    },
+    {
+      "capacity": 340,
+      "price": 4500
+    },
+    {
+      "capacity": 380,
+      "price": 6000
+    },
+    {
+      "capacity": 400,
+      "price": 8000
+    },
+    {
+      "capacity": 500,
+      "price": 12000
     }
   ],
   "zones": [
@@ -281,6 +324,7 @@
       "id": "topsoil",
       "name": "Topsoil",
       "from": 0,
+      "floor": "#5a3f2c",
       "fill": "dirt",
       "patches": [
         {
@@ -299,6 +343,7 @@
       "id": "stone",
       "name": "Stone Layer",
       "from": 20,
+      "floor": "#4f4a45",
       "fill": "stone",
       "patches": [
         {
@@ -321,6 +366,7 @@
       "id": "deep",
       "name": "The Deep",
       "from": 34,
+      "floor": "#323a4e",
       "fill": "deeprock",
       "patches": [
         {
@@ -343,6 +389,7 @@
       "id": "ruins",
       "name": "Lost Ruins",
       "from": 48,
+      "floor": "#6b3d26",
       "fill": "ruins",
       "patches": [
         {
@@ -365,6 +412,7 @@
       "id": "obsidian",
       "name": "Obsidian Depths",
       "from": 64,
+      "floor": "#2a2236",
       "fill": "obsidian",
       "patches": [
         {
@@ -380,6 +428,10 @@
         {
           "id": "crystal",
           "chance": 0.07
+        },
+        {
+          "id": "amethyst",
+          "chance": 0.025
         }
       ]
     }
@@ -818,7 +870,7 @@
       {
         "id": "CashierHat",
         "name": "Cashier",
-        "price": 200
+        "price": 5
       },
       {
         "id": "ChefHat",
@@ -899,7 +951,7 @@
         "id": "Crown",
         "name": "Crown",
         "price": 0,
-        "unlock": "collection"
+        "unlock": "achievement"
       }
     ]
   },
@@ -907,6 +959,7 @@
     "model": "hub/kenney-car-kit-tractor-shovel/kenney-car-kit-tractor-shovel.glb",
     "height": 1.7,
     "rotationY": 0,
+    "bodyRadius": 0.6,
     "seat": {
       "x": 0,
       "y": 1.24,
@@ -949,9 +1002,22 @@
         {
           "goal": 8000,
           "reward": 5000
+        },
+        {
+          "goal": 20000,
+          "reward": 12000
+        },
+        {
+          "goal": 50000,
+          "reward": 30000
+        },
+        {
+          "goal": 120000,
+          "reward": 70000
         }
       ],
-      "decor": "Digger Banner"
+      "decor": "Digger Banner",
+      "decorAt": 4
     },
     {
       "id": "orehunter",
@@ -975,9 +1041,22 @@
         {
           "goal": 1500,
           "reward": 6000
+        },
+        {
+          "goal": 4000,
+          "reward": 15000
+        },
+        {
+          "goal": 10000,
+          "reward": 35000
+        },
+        {
+          "goal": 25000,
+          "reward": 80000
         }
       ],
-      "decor": "Gem Pile"
+      "decor": "Gem Pile",
+      "decorAt": 4
     },
     {
       "id": "tycoon",
@@ -1001,9 +1080,22 @@
         {
           "goal": 100000,
           "reward": 10000
+        },
+        {
+          "goal": 400000,
+          "reward": 30000
+        },
+        {
+          "goal": 1500000,
+          "reward": 90000
+        },
+        {
+          "goal": 5000000,
+          "reward": 250000
         }
       ],
-      "decor": "Neon Sign"
+      "decor": "Neon Sign",
+      "decorAt": 4
     },
     {
       "id": "collector",
@@ -1027,10 +1119,76 @@
         {
           "goal": 18,
           "reward": 8000
+        },
+        {
+          "goal": 30,
+          "reward": 15000
+        },
+        {
+          "goal": 45,
+          "reward": 30000
+        },
+        {
+          "goal": 72,
+          "reward": 70000
         }
       ],
-      "decor": "Gold Display"
+      "decor": "Gold Display",
+      "decorAt": 4
+    },
+    {
+      "id": "champion",
+      "name": "Champion",
+      "stat": "claims",
+      "icon": "ItemIcon_Star_Gold",
+      "describe": "Claim {goal} achievement levels",
+      "tiers": [
+        {
+          "goal": 15,
+          "reward": 10000
+        }
+      ],
+      "hat": "Crown"
     }
   ],
+  "boosts": [
+    { "id": "digSpeed", "name": "Dig Speed", "icon": "ToolIcon_pickaxe", "perLevel": 0.03, "maxLevel": 20, "basePrice": 60, "growth": 1.3 },
+    { "id": "sellPrice", "name": "Sell Price", "icon": "ItemIcon_Money_Coin", "perLevel": 0.06, "maxLevel": 20, "basePrice": 80, "growth": 1.3 },
+    { "id": "oreLuck", "name": "Ore Luck", "icon": "ItemIcon_Star_Gold", "perLevel": 0.04, "maxLevel": 20, "basePrice": 100, "growth": 1.3 },
+    { "id": "moveSpeed", "name": "Move Speed", "icon": "ItemIcon_Gear_Boots", "perLevel": 0.03, "maxLevel": 20, "basePrice": 50, "growth": 1.3 }
+  ],
+  "boostsUnlockToolLevel": 2,
+  "prestige": {
+    "sellBonus": 0.25,
+    "digBonus": 0.1,
+    "seedStep": 7919
+  },
+  "mineThemes": [
+    { "name": "Classic" },
+    {
+      "name": "Glimmer Caves",
+      "tints": { "dirt": "#7fb7c9", "gravel": "#9aa8e0", "stone": "#8f86e6", "deeprock": "#7fd9b2", "ruins": "#86a4ff", "obsidian": "#4fa38c" },
+      "floors": ["#24404a", "#2c2f55", "#1f4a3a", "#283a66", "#1c3b33"],
+      "hubFloor": ["#a9c4d9", "#93b0c9"],
+      "hubWalls": ["#2f3f66", "#7f9cd0"]
+    },
+    {
+      "name": "Emerald Hollow",
+      "tints": { "dirt": "#94c58e", "gravel": "#a6cfa4", "stone": "#84d0b8", "deeprock": "#a194e6", "ruins": "#d0a6e6", "obsidian": "#6c5c8e" },
+      "floors": ["#2f4a2c", "#264a40", "#2f2a55", "#4a2f4f", "#2a2236"],
+      "hubFloor": ["#c9d9a9", "#b4c993"],
+      "hubWalls": ["#3f5a2f", "#a9c47f"]
+    }
+  ],
+  "findPayout": {
+    "rarity": {
+      "common": 25,
+      "rare": 60,
+      "epic": 150,
+      "legendary": 500
+    },
+    "perZone": 1.5,
+    "roundTo": 5
+  },
   "firstFindAfterBlocks": 12
 }

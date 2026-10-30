@@ -221,14 +221,21 @@ export class HubRoom {
     public onReveal?: (area: HubArea, points: THREE.Vector3[]) => void;
     private time = 0;
 
+    /** The floor and walls in the current mine's colours (its theme), else the default wood. */
+    private readonly floorStyle: FloorCheckerConfig;
+    private readonly wallStyle: WallStyleConfig;
+
     public constructor(private readonly threeScene: THREE.Scene, private readonly world: World) {
+        const theme = DigProgress.mineTheme;
+        this.floorStyle = theme.hubFloor ? { ...FLOOR, colorA: theme.hubFloor[0], colorB: theme.hubFloor[1] } : FLOOR;
+        this.wallStyle = theme.hubWalls ? { ...WALL_STYLE, bottomColor: theme.hubWalls[0], topColor: theme.hubWalls[1] } : WALL_STYLE;
         for (const def of HUB.areas ?? []) {
             const group = new THREE.Group();
             this.threeScene.add(group);
             this.areas.set(def.id, { def, group, revealed: true, pending: [], pop: -1 });
         }
         for (const rect of hubRects()) {
-            this.add(CheckerFloorBuilder.build({ ...rect, rotationY: 0, tileSize: 1 }, ORIGIN, FLOOR));
+            this.add(CheckerFloorBuilder.build({ ...rect, rotationY: 0, tileSize: 1 }, ORIGIN, this.floorStyle));
         }
         for (const levelWall of HUB.walls) {
             const wall: StoreWallPlacement = {
@@ -236,7 +243,7 @@ export class HubRoom {
                 points: levelWall.points.map((p) => ({ x: p.x, z: p.z })),
                 openings: levelWall.openings.map((o) => ({ kind: o.kind, rect: { minX: o.minX, maxX: o.maxX, minZ: o.minZ, maxZ: o.maxZ } })),
             };
-            this.add(PolyWallBuilder.build(wall, ORIGIN, WALL_SETUP, WALL_STYLE));
+            this.add(PolyWallBuilder.build(wall, ORIGIN, WALL_SETUP, this.wallStyle));
             for (const box of PolyWallBuilder.colliderBoxes(wall, WALL_SETUP)) {
                 this.collider(box.x, box.z, box.halfX, WALL_SETUP.height / 2, box.halfZ);
             }
@@ -513,7 +520,8 @@ export class HubRoom {
     /** Shows areas whose rule is now met; `animate` pops their pieces in (and tells onReveal). */
     private refreshAreas(animate: boolean): void {
         for (const area of this.areas.values()) {
-            const met = this.ruleMet(area.def);
+            // Once an area has appeared it stays (a new mine resets the upgrades its rule may count).
+            const met = DigProgress.areaRevealedAt(area.def.id) !== undefined || this.ruleMet(area.def);
             if (met === area.revealed) continue;
             area.revealed = met;
             area.group.visible = met;

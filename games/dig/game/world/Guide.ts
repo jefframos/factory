@@ -3,7 +3,8 @@
 // First-time guidance: works out the next step from the progress alone (nothing extra is saved) — dig the rock,
 // sell at the ATM, buy the first tool, dig up the first find and look at it in the Collection, then whatever opens
 // the next hidden part of the hub (HubRoom.nextUnlock) — and points at it with no text: a trail of small triangles on
-// the floor along the walking route (GuidePath: around walls, stations and rock), flowing towards the target, and a
+// the floor along the walking route (GuidePath: around walls, stations and rock, through the dug tunnels), flowing
+// towards the target and drawn over the rock so a tunnel wall never hides them, and a
 // bouncing marker over it (not over buildables: their price tag is there). It ends for good once the first hub piece (a cosmetic) is bought.
 // The step's text still goes to `say` (the HUD keeps it hidden; handy for debugging).
 
@@ -44,6 +45,8 @@ export class Guide {
     private routeTarget = new THREE.Vector3(Infinity, 0, 0);
     private repath = 0;
     private time = 0;
+    /** The miner keeps trying to dig with a full backpack: lead them back to the ATM, tutorial or not. */
+    private returnToSell = false;
 
     /** `say` shows (or with null clears) the step's text on the HUD. */
     public constructor(threeScene: THREE.Scene, private readonly hub: HubRoom, private readonly solid: (x: number, z: number) => boolean,
@@ -68,26 +71,37 @@ export class Guide {
         // Flat on the floor facing up: the tip (+Y in the shape) then points to -Z, so turn it to +Z.
         geometry.rotateX(-Math.PI / 2);
         geometry.rotateY(Math.PI);
-        const trailMaterial = new THREE.MeshBasicMaterial({ color: COLOR, transparent: true, depthWrite: false });
+        // Drawn over everything: in a tunnel the rock in front (towards the camera) would hide the arrows on its floor.
+        const trailMaterial = new THREE.MeshBasicMaterial({ color: COLOR, transparent: true, depthWrite: false, depthTest: false });
         BendService.applyBend(trailMaterial);
         for (let i = 0; i < TRAIL_MAX; i++) {
             const mesh = new THREE.Mesh(geometry, trailMaterial.clone());
             BendService.applyBend(mesh.material as THREE.Material);
             mesh.visible = false;
-            mesh.renderOrder = 2;
+            mesh.renderOrder = 8;
             this.trail.push(mesh);
             threeScene.add(mesh);
         }
+        // The marker too: the target is often round a corner, behind a wall or a column of rock.
+        material.depthTest = false;
+        this.marker.traverse((child) => (child.renderOrder = 8));
         this.marker.visible = false;
         threeScene.add(this.marker);
     }
 
+    /** Turns the way back to the ATM on (the scene: a few tries at digging with a full backpack) or off. */
+    public setReturnToSell(on: boolean): void {
+        this.returnToSell = on;
+    }
+
     /** The step for the current progress, or null once the guide is done: after the first hub piece is bought. */
     private step(player: THREE.Vector3): GuideStep | null {
-        // Buying the first cosmetic is where the tutorial ends: from there on the player knows the loop.
-        if ((HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id))) return null;
         const atm = HUB.stations.find((s) => s.kind === 'atm');
         const atmAt = atm ? new THREE.Vector3(atm.x, 0, atm.z) : undefined;
+        // Stuck with a full backpack (even after the tutorial): the arrows lead back to sell it.
+        if (this.returnToSell && DigProgress.backpackCount >= DigProgress.capacity) return { text: t('guideBackpackFull'), target: atmAt };
+        // Buying the first cosmetic is where the tutorial ends: from there on the player knows the loop.
+        if ((HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id))) return null;
         const door = this.nearestDoor(player);
         const inHub = hubRects().some((r) => Math.abs(player.x - r.x) <= r.width / 2 && Math.abs(player.z - r.z) <= r.depth / 2);
         const tool = DigProgress.nextTool;

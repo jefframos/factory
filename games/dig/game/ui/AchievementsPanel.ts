@@ -13,11 +13,13 @@ import { AchievementDef, DIG } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
 import { t, names } from '../i18n/Localization';
 import { DigAudio } from '../audio/DigAudio';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 
 const WIDTH = 760;
 const ROW_HEIGHT = 150;
 const HEADER = 70;
-const FOOTER = 56;
+/** Room under the last row for the footer line, clear of the frame's bottom edge. */
+const FOOTER = 96;
 const HEIGHT = HEADER + DIG.achievements.length * ROW_HEIGHT + FOOTER;
 /** Frame size, for the HUD to fit the panel on screen. */
 export const ACHIEVEMENTS_SIZE = { width: WIDTH, height: HEIGHT };
@@ -33,7 +35,7 @@ export class AchievementsPanel extends PIXI.Container {
     private readonly body = new PIXI.Container();
 
     /** `onClaimed` after a level is claimed: the HUD plays the reward popup and flies the cash in. */
-    public constructor(private readonly onClaimed: (achievement: AchievementDef, level: number, reward: number, decor: boolean) => void) {
+    public constructor(private readonly onClaimed: (achievement: AchievementDef, level: number, reward: number, decor: boolean, hat?: string) => void) {
         super();
         const frame = UiKit.image('achievements', 'panel', WIDTH, HEIGHT);
         const ribbon = UiKit.sprite('achievements', 'ribbon', 0.55);
@@ -60,7 +62,7 @@ export class AchievementsPanel extends PIXI.Container {
         });
         const footer = UiKit.fit(UiKit.text('achievements', 'footer', { text: t('achievementsFooter') }), WIDTH - 40);
         footer.anchor.set(0.5);
-        footer.y = HEIGHT / 2 - 22;
+        footer.y = HEIGHT / 2 - 44;
         this.body.addChild(footer);
     }
 
@@ -87,9 +89,13 @@ export class AchievementsPanel extends PIXI.Container {
         name.anchor.set(0, 0.5);
         name.position.set(TEXT_X, -44);
         const goal = names.achievementGoal(achievement, tier.goal.toLocaleString('en-US'));
+        const cash = tier.reward.toLocaleString('en-US');
+        const decorAt = achievement.decorAt ?? tiers;
         const reward = done
-            ? t('decorInHub', { decor: names.decor(achievement) })
-            : level === tiers - 1 ? t('rewardCashDecor', { reward: tier.reward.toLocaleString('en-US'), decor: names.decor(achievement) }) : t('rewardCash', { reward: tier.reward.toLocaleString('en-US') });
+            ? achievement.hat ? t('hatEarned', { hat: names.look(achievement.hat) }) : t('rewardCash', { reward: cash })
+            : achievement.hat && level === tiers - 1 ? t('rewardCashHat', { reward: cash, hat: names.look(achievement.hat) })
+                : achievement.decor && level === decorAt - 1 ? t('rewardCashDecor', { reward: cash, decor: names.decor({ id: achievement.id, decor: achievement.decor }) })
+                    : t('rewardCash', { reward: cash });
         const info = UiKit.fit(UiKit.text('achievements', 'info', { text: done ? t('complete') : goal }), TEXT_WIDTH);
         info.anchor.set(0, 0.5);
         info.position.set(TEXT_X, -14);
@@ -151,7 +157,8 @@ export class AchievementsPanel extends PIXI.Container {
             const claimed = DigProgress.claimAchievement(achievement.id);
             if (claimed) DigAudio.play('confirm');
             if (!claimed) return;
-            this.onClaimed(achievement, DigProgress.achievementLevel(achievement.id), claimed.reward, claimed.decor);
+            GameAnalytics.achievementClaimed(achievement.id, DigProgress.achievementLevel(achievement.id));
+            this.onClaimed(achievement, DigProgress.achievementLevel(achievement.id), claimed.reward, claimed.decor, claimed.hat);
             this.refresh();
         });
         return button;

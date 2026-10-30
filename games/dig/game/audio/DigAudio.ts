@@ -20,8 +20,16 @@ const SOUNDS = {
     // the pickaxe and up play it higher (sharper), the shovel lower (duller).
     hitPick: { soundId: five('dig-hit'), volumeMinMax: [0.2, 0.26], pitchMinMax: [1.08, 1.22] },
     hitStone: { soundId: five('dig-hit'), volumeMinMax: [0.22, 0.28], pitchMinMax: [0.88, 1.0] },
+    // Soft ground (dirt, gravel): a low, gritty crunch instead of the stone tick. Placeholder: the stone footsteps
+    // pitched down. To use real dirt-dig sounds, add dig-dirt-1..5 to raw-assets/audio (`npm run audio`) and switch
+    // soundId to five('dig-dirt').
+    hitDirt: { soundId: five('step-stone'), volumeMinMax: [0.3, 0.36], pitchMinMax: [0.68, 0.8] },
     hitMetal: { soundId: five('hit-metal'), volumeMinMax: [0.22, 0.28], pitchMinMax: [0.94, 1.08] },
     hitGem: { soundId: five('hit-gem'), volumeMinMax: [0.22, 0.28], pitchMinMax: [0.95, 1.1] },
+    // Obsidian: volcanic glass — the gem hit and the break pitched well down, a deep glassy crack instead of the
+    // rock tick (which, sped up by the drills and the tractor, turned into a harsh rattle).
+    hitObsidian: { soundId: five('hit-gem'), volumeMinMax: [0.18, 0.22], pitchMinMax: [0.5, 0.62] },
+    breakObsidian: { soundId: ['break-1', 'break-2', 'break-3'], volumeMinMax: [0.32, 0.38], pitchMinMax: [0.62, 0.72] },
     break: { soundId: ['break-1', 'break-2', 'break-3'], volumeMinMax: [0.3, 0.36], pitchMinMax: [0.92, 1.08] },
     collectStone: { soundId: five('collect-stone'), volumeMinMax: [0.14, 0.18], pitchMinMax: [0.95, 1.12] },
     collectMetal: { soundId: five('collect-metal'), volumeMinMax: [0.18, 0.22], pitchMinMax: [0.95, 1.1] },

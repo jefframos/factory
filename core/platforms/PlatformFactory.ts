@@ -28,8 +28,11 @@ export async function getPlatformInstance(name: string): Promise<IPlatformConnec
             const module = await import('./YouTubePlayablePlatform');
             return new module.default();
         }
+        // Local runs ('local'), cached/demo builds ('default') and anything unnamed: no SDK, every call logged, ads
+        // simulated (MockPlatform). Real platform builds name theirs above.
+        case 'mock':
         default: {
-            const module = await import('./PokiPlatform');
+            const module = await import('./MockPlatform');
             return new module.default();
         }
     }

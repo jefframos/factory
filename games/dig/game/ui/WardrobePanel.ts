@@ -5,17 +5,21 @@
 // or the hat's model), and whether it's worn, owned, locked (the collection-reward Crown) or its price.
 // Tapping buys it if needed (DigProgress.wearLook) and puts it on straight away. Catalogue and prices:
 // ui/dig.json `wardrobe`; styles: ui/uikit.json (screen "wardrobe").
+// While the first hat is forced (setForcedItem) the panel stays on its hat, the hand on it, everything else dimmed.
 
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
+import gsap from 'gsap';
 import { UiKit } from './UiKit';
 import { UiAnim } from './UiAnim';
+import { tabbedBlock } from './TabBar';
 import { ModelIcons } from './ModelIcons';
 import { DIG, WardrobeItem } from '../data/DigConfig';
 import { DigProgress, LookKind } from '../data/DigProgress';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
 import { t, names, type StringId } from '../i18n/Localization';
 import { DigAudio } from '../audio/DigAudio';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 
 // Same frame and card size as the collection (CollectionPanel), so both panels scale and read alike.
 const WIDTH = 640;
@@ -24,20 +28,28 @@ const HEIGHT = 624;
 export const WARDROBE_SIZE = { width: WIDTH, height: HEIGHT };
 /** Cards are wide (filling the panel's width), so prices and labels fit. */
 const CARD = 118;
-const CARD_W = 180;
-const GAP = 20;
+const CARD_W = 172;
+const GAP = 14;
 /** Row pitch of the 3x3 grid. */
-const ROW = 130;
+const ROW = 128;
+/** The tabs and the content block under them (TabBar): the block's top edge, size and the tabs' size. */
+const BLOCK = { top: -HEIGHT / 2 + 112, width: WIDTH - 48, height: HEIGHT - 138, tabWidth: 168, tabHeight: 52 };
+/** The first card row's centre: just inside the block's top. */
+const FIRST_ROW_Y = BLOCK.top + 18 + CARD / 2;
 const PER_PAGE = 9;
 const TABS: [LookKind, StringId][] = [['colors', 'tabColors'], ['faces', 'tabFaces'], ['hats', 'tabHats']];
 const FACE_BASE = './dig/images/non-preload/';
 
 const hex = (color: string): number => new THREE.Color(color).getHex();
+/** Achievement levels the Champion (the Crown's achievement) wants. */
+const crownGoal = (): number => DIG.achievements.find((a) => a.hat)?.tiers.at(-1)?.goal ?? 0;
 
 export class WardrobePanel extends PIXI.Container {
     private readonly body = new PIXI.Container();
     private tab: LookKind = 'hats';
     private page = 0;
+    /** The tutorial's forced first hat (DigHud.setForced): only it can be tapped. */
+    private forcedItem?: string;
 
     /** `onWear` after a look changes (the scene re-dresses the miner); `say` for short messages. */
     public constructor(private readonly onWear: () => void, private readonly say: (text: string, color: number) => void) {
@@ -55,6 +67,17 @@ export class WardrobePanel extends PIXI.Container {
         this.visible = false;
     }
 
+    /** Locks the panel onto one hat (undefined frees it): its tab and page, the hand on it, the rest dimmed. */
+    public setForcedItem(id: string | undefined): void {
+        if (id === this.forcedItem) return;
+        this.forcedItem = id;
+        if (id) {
+            this.tab = 'hats';
+            this.page = Math.floor(Math.max(0, this.items.findIndex((item) => item.id === id)) / PER_PAGE);
+        }
+        this.refresh();
+    }
+
     private get items(): WardrobeItem[] {
         return DIG.wardrobe[this.tab];
     }
@@ -70,11 +93,11 @@ export class WardrobePanel extends PIXI.Container {
         const shown = this.items.slice(this.page * PER_PAGE, (this.page + 1) * PER_PAGE);
         shown.forEach((item, i) => {
             const card = this.card(item);
-            card.position.set(((i % 3) - 1) * (CARD_W + GAP), -HEIGHT / 2 + 150 + Math.floor(i / 3) * ROW);
+            card.position.set(((i % 3) - 1) * (CARD_W + GAP), FIRST_ROW_Y + Math.floor(i / 3) * ROW);
             this.body.addChild(card);
         });
-        if (pages > 1) {
-            const y = HEIGHT / 2 - 56;
+        if (pages > 1 && !this.forcedItem) {
+            const y = BLOCK.top + BLOCK.height - 44;
             const label = UiKit.text('wardrobe', 'page', { page: this.page + 1, pages });
             label.anchor.set(0.5);
             label.y = y;
@@ -82,30 +105,25 @@ export class WardrobePanel extends PIXI.Container {
         }
     }
 
+    /** The tabs over the content block (TabBar); while a hat is forced they don't switch. */
     private tabs(): PIXI.Container {
-        const row = new PIXI.Container();
-        row.y = -HEIGHT / 2 + 62;
-        TABS.forEach(([kind, label], i) => {
-            const tab = new PIXI.Container();
-            tab.x = (i - 1) * 180;
-            const active = kind === this.tab;
-            tab.addChild(UiKit.image('wardrobe', active ? 'tabActive' : 'tab', 160, 56));
-            const text = UiKit.text('wardrobe', 'tabLabel', { text: t(label) });
-            text.anchor.set(0.5);
-            text.y = -2;
-            tab.addChild(text);
-            if (!active) {
-                tab.alpha = 0.85;
-            }
-            this.tappable(tab, () => {
-                this.tab = kind;
+        const block = tabbedBlock({
+            width: BLOCK.width,
+            height: BLOCK.height,
+            tabWidth: BLOCK.tabWidth,
+            tabHeight: BLOCK.tabHeight,
+            tabs: TABS.map(([kind, label]) => ({ id: kind, label: t(label) })),
+            active: this.tab,
+            onSelect: (id) => {
+                if (this.forcedItem) return;
+                this.tab = id as LookKind;
                 DigAudio.play('tab');
                 this.page = 0;
                 this.refresh();
-            });
-            row.addChild(tab);
+            },
         });
-        return row;
+        block.y = BLOCK.top;
+        return block;
     }
 
     private arrow(id: string, x: number, y: number, step: number, pages: number): PIXI.Container {
@@ -142,7 +160,7 @@ export class WardrobePanel extends PIXI.Container {
             lock.scale.set(30 / Math.max(lock.height, 1));
             lock.position.set(CARD_W / 2 - 18, -CARD / 2 + 18);
             card.addChild(lock);
-            status = UiKit.text('wardrobe', 'owned', { text: t('collectionLock') }, { fill: 0xffd23f });
+            status = UiKit.text('wardrobe', 'owned', { text: t('crownLock', { count: crownGoal() }) }, { fill: 0xffd23f });
         } else {
             const affordable = DigProgress.money >= item.price;
             status = UiKit.text('wardrobe', 'price', { price: item.price.toLocaleString('en-US') }, affordable ? {} : { fill: 0xff8a7a });
@@ -151,8 +169,28 @@ export class WardrobePanel extends PIXI.Container {
         status.y = CARD / 2 - 4;
         UiKit.fit(status as PIXI.Text, CARD_W - 16);
         card.addChild(status);
+        if (this.forcedItem && item.id !== this.forcedItem) {
+            card.alpha = 0.35;
+            return card;
+        }
         this.tappable(card, () => this.choose(item, card));
+        if (this.forcedItem) {
+            UiAnim.pulse(card, 0.06, 0.5);
+            card.addChild(this.pointingHand());
+        }
         return card;
+    }
+
+    /** The handHud pointing hand tapping at the card's middle (same art as the HUD's). */
+    private pointingHand(): PIXI.Container {
+        const holder = new PIXI.Container();
+        holder.eventMode = 'none';
+        const hand = PIXI.Sprite.from('handHud');
+        hand.width = hand.height = 72;
+        hand.position.set(20 - 72 * 0.22, 10 - 72 * 0.16);
+        holder.addChild(hand);
+        gsap.to(holder, { y: 10, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+        return holder;
     }
 
     /** The item itself: a swatch, a face on a head in the current colour, or the hat's model. */
@@ -177,7 +215,7 @@ export class WardrobePanel extends PIXI.Container {
         if (this.worn(item)) return;
         const wasOwned = DigProgress.ownsLook(this.tab, item);
         if (!DigProgress.wearLook(this.tab, item)) {
-            this.say(item.unlock ? t('completeCollection') : t('notEnoughCash'), 0xff8a7a);
+            this.say(item.unlock ? t('earnCrown', { count: crownGoal() }) : t('notEnoughCash'), 0xff8a7a);
             DigAudio.play('error');
             UiAnim.shake(card, 8, 0.35);
             return;
@@ -185,6 +223,8 @@ export class WardrobePanel extends PIXI.Container {
         if (!wasOwned) {
             this.say(t('lookBought', { name: (item.name ? names.look(item.name) : t('newLook')).toUpperCase() }), 0x9cff9c);
         }
+        if (wasOwned) GameAnalytics.lookEquipped(this.tab, item.id);
+        else GameAnalytics.lookBought(this.tab, item.id);
         if (wasOwned) {
             DigAudio.play('item');
         } else {

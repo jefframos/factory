@@ -5,7 +5,8 @@
 // drive faster, the wheels turning and the
 // exhaust puffing while it moves; back inside the hub another puff and it's gone, the miner on foot again.
 // The tractor follows the miner's body (its position and facing); the seat offset moves the body up/back
-// into the cab after the character has placed itself for the frame.
+// into the cab after the character has placed itself for the frame. Two tools are ridden: the Digger (the same
+// model with its texture in grey, a little slower: `rideSpeed`) and then the Tractor in its own colours.
 
 import * as THREE from 'three';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
@@ -16,6 +17,7 @@ import { hubRects } from '../data/HubData';
 import type DigPlayer from './DigPlayer';
 import type { DigEffects } from '../vfx/DigEffects';
 import { DigAudio } from '../audio/DigAudio';
+import { EngineSound } from '../audio/EngineSound';
 
 const MODEL_BASE = './dig/models/';
 /** Wheel radius the spin is worked out from (world units, before the tractor's own scale). */
@@ -29,6 +31,13 @@ export class TractorRide {
     private readonly lastPosition = new THREE.Vector3();
     private readonly seat = new THREE.Vector3();
     private readonly exhaust = new THREE.Vector3();
+    /** The model's materials, and its texture in colour and in grey (swapped by the tool owned: updateLook()). */
+    private readonly materials: THREE.MeshStandardMaterial[] = [];
+    private colorMap?: THREE.Texture;
+    private greyMap?: THREE.Texture;
+    private grey = false;
+    /** The engine, running while the miner rides. */
+    private readonly engine = new EngineSound();
 
     public constructor(threeScene: THREE.Scene, private readonly player: DigPlayer, private readonly effects: DigEffects) {
         this.holder.visible = false;
@@ -47,7 +56,10 @@ export class TractorRide {
             model.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
                     child.material = Array.isArray(child.material) ? child.material.map((m) => m.clone()) : child.material.clone();
-                    (Array.isArray(child.material) ? child.material : [child.material]).forEach((m) => BendService.applyBend(m));
+                    (Array.isArray(child.material) ? child.material : [child.material]).forEach((m) => {
+                        BendService.applyBend(m);
+                        if (m instanceof THREE.MeshStandardMaterial) this.materials.push(m);
+                    });
                 }
                 if (/wheel/i.test(child.name)) this.wheels.push(child);
             });
@@ -56,9 +68,47 @@ export class TractorRide {
             model.rotation.y = config.rotationY;
             model.updateMatrixWorld(true);
             model.position.y = -new THREE.Box3().setFromObject(model).min.y;
+            this.colorMap = this.materials.find((m) => m.map)?.map ?? undefined;
+            this.greyMap = this.colorMap ? TractorRide.greyTexture(this.colorMap) : undefined;
+            this.grey = false;
             this.holder.add(model);
         } catch (error) {
             console.warn(`[TractorRide] could not load ${config.model}`, error);
+        }
+    }
+
+    /** A copy of `map` (same settings) with its colours desaturated: the Digger's grey. */
+    private static greyTexture(map: THREE.Texture): THREE.Texture | undefined {
+        const image = map.image as CanvasImageSource & { width: number; height: number };
+        if (!image?.width) return undefined;
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const context = canvas.getContext('2d')!;
+        context.drawImage(image, 0, 0);
+        const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+        const data = pixels.data;
+        for (let i = 0; i < data.length; i += 4) {
+            const luma = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            data[i] = data[i + 1] = data[i + 2] = luma;
+        }
+        context.putImageData(pixels, 0, 0);
+        // Its own Source: clone() shares the original's, and writing the image through it would grey the colour map too.
+        const grey = map.clone();
+        grey.source = new THREE.Source(canvas);
+        grey.needsUpdate = true;
+        return grey;
+    }
+
+    /** The colours for the vehicle owned: grey for the Digger, its own for the Tractor. */
+    private updateLook(): void {
+        const grey = DigProgress.tool.greyscale === true;
+        if (grey === this.grey || !this.colorMap || !this.greyMap) return;
+        this.grey = grey;
+        for (const material of this.materials) {
+            if (!material.map) continue;
+            material.map = grey ? this.greyMap : this.colorMap;
+            material.needsUpdate = true;
         }
     }
 
@@ -71,6 +121,7 @@ export class TractorRide {
     public update(delta: number): void {
         const position = this.player.transform.position;
         const ride = DigProgress.hasTractor && !TractorRide.inHub(position.x, position.z);
+        this.updateLook();
         if (ride !== this.riding) this.setRiding(ride);
         if (this.riding) this.place(delta);
         this.lastPosition.copy(position);
@@ -83,7 +134,9 @@ export class TractorRide {
         this.effects.smoke(at, config.smoke.count, config.smoke.size, new THREE.Color(config.smoke.color));
         DigAudio.play('whoosh');
         this.holder.visible = on;
-        this.player.speedMultiplier = on ? config.speedMultiplier : 1;
+        if (on) this.engine.start();
+        else this.engine.stop();
+        this.player.speedMultiplier = on ? DigProgress.tool.rideSpeed ?? config.speedMultiplier : 1;
         this.player.seated = on;
         const character = this.player.character;
         if (on) {
@@ -107,6 +160,8 @@ export class TractorRide {
         container.position.add(this.seat);
 
         const moved = Math.hypot(feet.x - this.lastPosition.x, feet.z - this.lastPosition.z);
+        // Revs with the speed: walking speed (5) x the ride multiplier is about flat out.
+        this.engine.update(delta > 0 ? moved / delta / (5 * this.player.speedMultiplier) : 0);
         const spin = moved / (WHEEL_RADIUS * (config.height / 1.5));
         for (const wheel of this.wheels) wheel.rotation.x += spin;
         if (moved > 1e-3) {
@@ -120,6 +175,7 @@ export class TractorRide {
     }
 
     public destroy(): void {
+        this.engine.stop();
         this.holder.removeFromParent();
     }
 }

@@ -563,7 +563,7 @@
       "z": 5.14,
       "width": 2.8,
       "depth": 3.4,
-      "reveal": "upgradeAfter:trophy-room"
+      "reveal": "upgrades:2"
     },
     {
       "id": "trophy-room",

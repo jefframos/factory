@@ -1,7 +1,8 @@
 // VoxelTerrain.ts
 //
 // The rock around the hub: a grid of chunky blocks (1 x blockHeight x 1 units) that fills everything
-// outside the hub's floor out to `radius`, closed off by an undiggable bedrock ring. Each material is
+// outside the hub's floor, closed off by an undiggable bedrock wall — round, its line wobbling with noise (big bends
+// and small bumps, ui/dig.json terrain.edge) so the mine never ends in a perfect circle (or the grid's square). Each material is
 // drawn with its own KayKit Block Bits model (dirt, stone, stone-with-copper/silver/gold...), crystals
 // get gems poking out of their top (ui/dig.json `block` / `decor`). The mine is laid out in zones —
 // rings around the hub with wobbly edges (ui/dig.json `zones`), each with its own base rock (whose
@@ -15,10 +16,11 @@
 // the neighbour chunk when it sits on a border). Chunks outside the view are culled.
 //
 // Collision goes through pizza's walkability hook (TileWalkability), which PlayerMovementController
-// already checks per axis, so the miner slides along rock faces.
+// already checks per axis, so the miner slides along rock faces. The footprint grows while the miner rides the
+// tractor (setBody()); mounted in a tunnel too narrow for it, the walking footprint still lets them drive out.
 
 import * as THREE from 'three';
-import { DIG, FindDef, MaterialDef, ZoneDef, materialOf, materialValue } from '../data/DigConfig';
+import { DIG, FindDef, MaterialDef, MineTheme, ZoneDef, materialOf, materialValue } from '../data/DigConfig';
 import { hubRects } from '../data/HubData';
 import { setWalkabilityQuery, clearWalkabilityQuery } from './TileWalkability';
 import { BlockModels, DecorModel, MeshData } from './BlockModels';
@@ -136,7 +138,7 @@ export class VoxelTerrain {
     public readonly finds: Uint8Array;
     /** Bumped on every dug block (the debug map redraws when it changes). */
     public changed = 0;
-    private readonly zoneNoise = valueNoise(DIG.terrain.seed + 31);
+    private readonly zoneNoise: (x: number, z: number) => number;
     /** Resolves once the block models have loaded and the mine is drawn. */
     public readonly ready: Promise<void>;
     private readonly jitter: Float32Array;
@@ -146,10 +148,23 @@ export class VoxelTerrain {
     private readonly models = new BlockModels();
     private loaded = false;
     private readonly walkability = (x: number, z: number) => this.isWalkable(x, z);
-    /** Per grid value: the material's `tint` over its block model (obsidian = the dark stone, near black). */
-    private readonly tints: (THREE.Color | undefined)[] = [undefined, ...DIG.materials.map((m) => (m.tint ? new THREE.Color(m.tint) : undefined))];
+    /** The miner's footprint radius against the rock right now, and where they are (setBody()). */
+    private bodyRadius = BODY_RADIUS;
+    private readonly bodyAt = new THREE.Vector3();
+    /** Per grid value: the material's `tint` over its block model (obsidian = the dark stone), or the mine theme's. */
+    private readonly tints: (THREE.Color | undefined)[];
+    /** The bedrock's tint (terrain.bedrockTint): the mine's end, blackish. */
+    private readonly bedrockTint = DIG.terrain.bedrockTint ? new THREE.Color(DIG.terrain.bedrockTint) : undefined;
+    /** Per grid value: the material's `decorTint` over its decor (the amethyst's purple gems). */
+    private readonly decorTints: (THREE.Color | undefined)[] = [undefined, ...DIG.materials.map((m) => (m.decorTint ? new THREE.Color(m.decorTint) : undefined))];
 
-    public constructor(threeScene: THREE.Scene, dugSave?: string) {
+    /** `seed`: the layout (each new mine has its own: DigProgress.mineSeed). */
+    public constructor(threeScene: THREE.Scene, dugSave?: string, private readonly seed = DIG.terrain.seed, theme?: MineTheme) {
+        this.zoneNoise = valueNoise(seed + 31);
+        this.tints = [undefined, ...DIG.materials.map((m) => {
+            const tint = theme?.tints?.[m.id] ?? m.tint;
+            return tint ? new THREE.Color(tint) : undefined;
+        })];
         this.radius = DIG.terrain.radius;
         this.blockHeight = DIG.terrain.blockHeight;
         this.size = this.radius * 2;
@@ -184,9 +199,19 @@ export class VoxelTerrain {
         ]);
     }
 
-    /** A fresh copy of a material's pickup model (undefined until the models have loaded). */
+    /** A fresh copy of a material's pickup model, in its decorTint if it has one (undefined until the models have loaded). */
     public pickupModel(material: MaterialDef): THREE.Object3D | undefined {
-        return this.models.pickups.get(material.pickup)?.clone(true);
+        const model = this.models.pickups.get(material.pickup)?.clone(true);
+        if (model && material.decorTint) {
+            const tint = new THREE.Color(material.decorTint);
+            model.traverse((child) => {
+                if (!(child instanceof THREE.Mesh)) return;
+                const own = (child.material as THREE.MeshStandardMaterial).clone();
+                own.color.multiply(tint);
+                child.material = own;
+            });
+        }
+        return model;
     }
 
     /** A fresh copy of a find's model (undefined until the models have loaded). */
@@ -197,10 +222,17 @@ export class VoxelTerrain {
     // ---------------------------------------------------------------- generation
 
     private generate(): void {
-        const seed = DIG.terrain.seed;
+        const seed = this.seed;
         const patchNoise = DIG.materials.map((_, i) => valueNoise(seed + 53 * (i + 1)));
         const oreNoise = DIG.materials.map((_, i) => valueNoise(seed + 101 * (i + 1)));
         const jitterNoise = valueNoise(seed + 7);
+        // The edge: big slow bends plus finer bumps, both seeded, so each mine ends in its own shape.
+        const edge = DIG.terrain.edge;
+        const bendNoise = valueNoise(seed + 211);
+        const bumpNoise = valueNoise(seed + 389);
+        const beyondEdge = (x: number, z: number) => Math.hypot(x, z)
+            + (bendNoise(x * 0.06, z * 0.06) - 0.5) * 2 * edge.wobble
+            + (bumpNoise(x * 0.3, z * 0.3) - 0.5) * 2 * edge.roughness > edge.radius;
 
         const zones: ZoneCells[] = DIG.zones.map((def) => ({
             def,
@@ -218,7 +250,7 @@ export class VoxelTerrain {
                 this.jitter[index] = (jitterNoise(ix * 0.9, iz * 0.9) - 0.5) * 0.16;
                 const zoneIndex = this.zoneIndexAt(x, z);
                 this.zones[index] = zoneIndex;
-                if (ix === 0 || iz === 0 || ix === this.size - 1 || iz === this.size - 1) {
+                if (ix === 0 || iz === 0 || ix === this.size - 1 || iz === this.size - 1 || beyondEdge(x, z)) {
                     this.cells[index] = BEDROCK;
                     continue;
                 }
@@ -332,9 +364,21 @@ export class VoxelTerrain {
         return find ? DIG.finds[find - 1] : undefined;
     }
 
-    private isWalkable(x: number, z: number): boolean {
-        const r = BODY_RADIUS;
+    /** Where the miner is and how wide they are against the rock (wider on the tractor); call before movement each step. */
+    public setBody(x: number, z: number, radius = BODY_RADIUS): void {
+        this.bodyAt.set(x, 0, z);
+        this.bodyRadius = radius;
+    }
+
+    private fits(x: number, z: number, r: number): boolean {
         return !this.isSolid(x - r, z - r) && !this.isSolid(x + r, z - r) && !this.isSolid(x - r, z + r) && !this.isSolid(x + r, z + r);
+    }
+
+    private isWalkable(x: number, z: number): boolean {
+        if (this.fits(x, z, this.bodyRadius)) return true;
+        // Wider than walking (the tractor) and already squeezed where it stands (mounted in a narrow tunnel): the
+        // walking footprint, so it can drive (and dig) its way out instead of being stuck.
+        return this.bodyRadius > BODY_RADIUS && !this.fits(this.bodyAt.x, this.bodyAt.z, this.bodyRadius) && this.fits(x, z, BODY_RADIUS);
     }
 
     // ---------------------------------------------------------------- editing
@@ -381,13 +425,13 @@ export class VoxelTerrain {
         const cz = Math.floor(chunkIndex / perSide);
         const blocks = new MeshBuilder();
         const decor = new Map<DecorModel, MeshBuilder>();
-        const addDecor = (model: DecorModel, x: number, y: number, z: number, transform: THREE.Matrix4) => {
+        const addDecor = (model: DecorModel, x: number, y: number, z: number, transform: THREE.Matrix4, tint?: THREE.Color) => {
             let builder = decor.get(model);
             if (!builder) {
                 builder = new MeshBuilder();
                 decor.set(model, builder);
             }
-            builder.add(model.data, x, y, z, 1.15, transform);
+            builder.add(model.data, x, y, z, 1.15, transform, tint);
         };
         const tilt = new THREE.Matrix4();
         for (let iz = cz * CHUNK; iz < Math.min(this.size, (cz + 1) * CHUNK); iz++) {
@@ -401,7 +445,7 @@ export class VoxelTerrain {
                 const x = ix - this.radius + 0.5;
                 const z = iz - this.radius + 0.5;
                 const buried = this.isBuried(ix, iz);
-                blocks.add(buried ? model.top : model.full, x, 0, z, 1 + this.jitter[index], undefined, this.tints[value]);
+                blocks.add(buried ? model.top : model.full, x, 0, z, 1 + this.jitter[index], undefined, value === BEDROCK ? this.bedrockTint : this.tints[value]);
                 // A find shows once its block is on a tunnel edge: half sunk into the top, at a slant.
                 const find = this.finds[index] ? DIG.finds[this.finds[index] - 1] : undefined;
                 const findModel = find && !buried ? this.models.decors.get(find.model) : undefined;
@@ -419,7 +463,7 @@ export class VoxelTerrain {
                         const ox = ((seed % 10) / 10 - 0.45) * 0.55;
                         const oz = (((seed * 3) % 10) / 10 - 0.45) * 0.55;
                         tilt.makeRotationFromEuler(new THREE.Euler(((seed % 5) - 2) * 0.18, seed * 0.7, ((seed % 7) - 3) * 0.15));
-                        addDecor(decorData, x + ox, this.blockHeight - 0.12, z + oz, tilt);
+                        addDecor(decorData, x + ox, this.blockHeight - 0.12, z + oz, tilt, this.decorTints[value]);
                     }
                 }
             }

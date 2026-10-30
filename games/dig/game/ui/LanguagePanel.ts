@@ -11,6 +11,7 @@ import { UiAnim } from './UiAnim';
 import { Localization } from '../i18n/Localization';
 import { LOCALE_FLAG_CODE, LOCALE_LABELS, type Locale } from '../i18n/config';
 import { DigAudio } from '../audio/DigAudio';
+import { GameAnalytics } from '../analytics/GameAnalytics';
 
 const COLUMNS = 3;
 const OPTION = { width: 190, height: 54, gapX: 12, gapY: 10 };
@@ -70,6 +71,7 @@ export class LanguagePanel extends PIXI.Container {
             if (current) return;
             UiAnim.punch(option, 0.1);
             DigAudio.play('confirm');
+            GameAnalytics.languagePicked(locale);
             void Localization.setLocale(locale);
         });
         return option;

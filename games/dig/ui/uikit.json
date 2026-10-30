@@ -247,6 +247,20 @@
           "h": 143,
           "sliceScale": 1
         },
+        "ribbonPurple": {
+          "type": "image",
+          "image": "Title_Ribbon01_Purple",
+          "slice": [
+            150,
+            0,
+            150,
+            0
+          ],
+          "tint": "#ffffff",
+          "w": 1000,
+          "h": 143,
+          "sliceScale": 1
+        },
         "title": {
           "type": "text",
           "text": "UPGRADES",

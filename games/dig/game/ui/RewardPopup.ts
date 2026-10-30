@@ -18,11 +18,58 @@ import { DigAudio } from '../audio/DigAudio';
 const WIDTH = 440;
 const HEIGHT = 330;
 const HOLD_SEC = 1.1;
+/** The dim behind a prize: how dark, and how far it reaches (past any screen edge). */
+const DIM_ALPHA = 0.6;
+const DIM_EXTENT = 5000;
 const COIN_SIZE = 52;
-const COIN_STAGGER = 0.06;
+export const COIN_STAGGER = 0.06;
 const FLIGHT_SEC = 0.6;
 /** Coins rise this far above the straight line on their way (screen +Y is down, so it's negative). */
 const ARC_HEIGHT = -110;
+
+/**
+ * One cash icon added to `layer` at `from` (layer space), flying along an arc into `target()` (re-aimed every frame,
+ * in case the HUD moves); `onArrive` runs once it lands. Shared by this popup and the find banner's CLAIM.
+ */
+export function flyCoin(layer: PIXI.Container, from: PIXI.Point, target: () => PIXI.Point, delay: number, onArrive: () => void): UiTween {
+    const coin = PIXI.Sprite.from(UiKit.imageName('hud', 'moneyIcon'));
+    coin.anchor.set(0.5);
+    coin.scale.set(COIN_SIZE / Math.max(coin.texture.width, coin.texture.height, 1));
+    coin.visible = false;
+    layer.addChild(coin);
+    const startScale = coin.scale.x;
+    const progress = { t: 0 };
+    return gsap.to(progress, {
+        t: 1,
+        duration: FLIGHT_SEC,
+        delay,
+        ease: 'power2.in',
+        onUpdate: () => {
+            const to = target();
+            // Quadratic bezier through a raised midpoint.
+            const midX = (from.x + to.x) / 2;
+            const midY = (from.y + to.y) / 2 + ARC_HEIGHT;
+            const t = progress.t;
+            const u = 1 - t;
+            coin.visible = true;
+            coin.position.set(u * u * from.x + 2 * u * t * midX + t * t * to.x, u * u * from.y + 2 * u * t * midY + t * t * to.y);
+            coin.scale.set(startScale * (1 - t * 0.35));
+            coin.rotation = Math.sin(t * Math.PI * 2) * 0.3;
+        },
+        onComplete: () => {
+            coin.destroy();
+            // Run the landing just after gsap's update loop, not inside it: landing refreshes the HUD, which kills
+            // the old buttons' tweens, and killing tweens mid-loop drops the other coins out of gsap's list (they
+            // froze mid-air, never finishing).
+            queueMicrotask(onArrive);
+        },
+    });
+}
+
+/** How many coins a payout of `amount` flies in as (each carrying a share). */
+export function coinCount(amount: number): number {
+    return Math.min(14, Math.max(6, Math.round(amount / 50)));
+}
 
 export interface RewardHost {
     /** Where the coins fly to, in the popup layer's parent space (the HUD's money icon). */
@@ -51,7 +98,8 @@ export class RewardPopup extends PIXI.Container {
 
     public constructor(private readonly host: RewardHost) {
         super();
-        this.eventMode = 'none';
+        // Its dim (while a prize plays) catches taps; the card and coins don't take any.
+        this.eventMode = 'passive';
     }
 
     /** Queues the prize for achievement level `level` (1-based) of `levels`; `decor` = the hub trophy it unlocked. */
@@ -72,6 +120,14 @@ export class RewardPopup extends PIXI.Container {
         if (reward.decor) DigAudio.play('applause');
         this.removeChildren().forEach((child) => child.destroy({ children: true }));
         const center = this.host.center();
+        // The screen darkens behind the prize and swallows taps until its coins have landed, so another level can't
+        // be claimed (nor the game played) mid-payout.
+        const dim = new PIXI.Graphics().beginFill(0x000000, DIM_ALPHA).drawRect(-DIM_EXTENT, -DIM_EXTENT, DIM_EXTENT * 2, DIM_EXTENT * 2).endFill();
+        dim.eventMode = 'static';
+        dim.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
+        dim.on('pointertap', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
+        this.addChild(dim);
+        this.tweens.push(gsap.fromTo(dim, { alpha: 0 }, { alpha: 1, duration: 0.25 }));
 
         const card = new PIXI.Container();
         card.position.copyFrom(center);
@@ -89,7 +145,7 @@ export class RewardPopup extends PIXI.Container {
         name.y = 38;
         const amount = UiKit.fit(UiKit.text('findBanner', 'reward', { reward: reward.amount.toLocaleString('en-US') }), WIDTH - 48);
         amount.y = 78;
-        const hint = UiKit.fit(UiKit.text('findBanner', 'hint', { text: reward.decor ? t('decorAdded', { decor: reward.decor }) : t('moreAchievements') }), WIDTH - 48);
+        const hint = UiKit.fit(UiKit.text('findBanner', 'hint', { text: reward.decor ?? t('moreAchievements') }), WIDTH - 48);
         hint.y = HEIGHT / 2 - 32;
         card.addChild(title, icon, name, amount, hint);
 
@@ -103,7 +159,7 @@ export class RewardPopup extends PIXI.Container {
             ...UiAnim.confetti(card, 0, -60, 60, 1.1),
         );
 
-        const coins = Math.min(14, Math.max(6, Math.round(reward.amount / 50)));
+        const coins = coinCount(reward.amount);
         const countSec = coins * COIN_STAGGER + FLIGHT_SEC;
         let landed = 0;
         // Everything after the hold is scheduled now with delays (not from inside a delayedCall callback: tweens made
@@ -117,51 +173,15 @@ export class RewardPopup extends PIXI.Container {
             // Each coin carries its share; the last one takes the rounding remainder.
             const share = i === coins - 1 ? reward.amount - Math.floor(reward.amount / coins) * (coins - 1) : Math.floor(reward.amount / coins);
             const from = new PIXI.Point(center.x + (Math.random() - 0.5) * 80, center.y + 78 + (Math.random() - 0.5) * 40);
-            this.flyCoin(from, HOLD_SEC + i * COIN_STAGGER, () => {
+            this.tweens.push(flyCoin(this, from, () => this.host.moneyTarget(), HOLD_SEC + i * COIN_STAGGER, () => {
                 landed++;
                 this.host.release(share);
                 this.host.punchMoney();
                 DigAudio.play('coins');
                 if (landed < coins) return;
                 this.tweens.push(gsap.to(card, { alpha: 0, duration: 0.3, delay: 0.3, onComplete: () => this.finish() }));
-            });
+            }));
         }
-    }
-
-    /** One cash icon from `from` along an arc into the money icon (re-aimed every frame, in case the HUD moves). */
-    private flyCoin(from: PIXI.Point, delay: number, onArrive: () => void): void {
-        const coin = PIXI.Sprite.from(UiKit.imageName('hud', 'moneyIcon'));
-        coin.anchor.set(0.5);
-        coin.scale.set(COIN_SIZE / Math.max(coin.texture.width, coin.texture.height, 1));
-        coin.visible = false;
-        this.addChild(coin);
-        const startScale = coin.scale.x;
-        const progress = { t: 0 };
-        this.tweens.push(gsap.to(progress, {
-            t: 1,
-            duration: FLIGHT_SEC,
-            delay,
-            ease: 'power2.in',
-            onUpdate: () => {
-                const to = this.host.moneyTarget();
-                // Quadratic bezier through a raised midpoint.
-                const midX = (from.x + to.x) / 2;
-                const midY = (from.y + to.y) / 2 + ARC_HEIGHT;
-                const t = progress.t;
-                const u = 1 - t;
-                coin.visible = true;
-                coin.position.set(u * u * from.x + 2 * u * t * midX + t * t * to.x, u * u * from.y + 2 * u * t * midY + t * t * to.y);
-                coin.scale.set(startScale * (1 - t * 0.35));
-                coin.rotation = Math.sin(t * Math.PI * 2) * 0.3;
-            },
-            onComplete: () => {
-                coin.destroy();
-                // Run the landing just after gsap's update loop, not inside it: landing refreshes the HUD, which kills
-                // the old buttons' tweens, and killing tweens mid-loop drops the other coins out of gsap's list (they
-                // froze mid-air, never finishing).
-                queueMicrotask(onArrive);
-            },
-        }));
     }
 
     private finish(): void {

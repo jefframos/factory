@@ -4,6 +4,7 @@
 import { Game } from 'core/Game';
 import HtmlLoader from 'core/loader/HtmlLoader';
 import PlatformHandler from 'core/platforms/PlatformHandler';
+import { ScreenFade } from './game/ui/ScreenFade';
 import { getPlatformInstance } from 'core/platforms/PlatformFactory';
 import { SceneManager } from 'core/scene/SceneManager';
 import { DebugOverlay } from 'core/debug/DebugOverlay';
@@ -85,6 +86,17 @@ export default class DigGame extends Game {
         this.sceneManager.register<DigScene>('dig', DigScene, this);
         this.sceneManager.changeScene('dig');
         this.sceneManager.resize();
+        // Another mine (opened or travelled to): behind the screen fade, the save switches, then a fresh scene
+        // instance under a new key (the old one is destroyed by the switch) — the fade lifts once it's drawn.
+        let mines = 0;
+        DigScene.restart = (title, subtitle, apply) => void ScreenFade.through(title, subtitle, () => {
+            apply();
+            const key = `dig-${++mines}`;
+            const scene = this.sceneManager.register<DigScene>(key, DigScene, this);
+            this.sceneManager.changeScene(key);
+            this.sceneManager.resize();
+            return scene.ready;
+        });
     }
 
     protected override update(delta: number): void {

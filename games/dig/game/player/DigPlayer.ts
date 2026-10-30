@@ -28,7 +28,8 @@ const CHARACTER_SCALE = 0.0075;
 const HAT_SINK = 0.03;
 /** CharacterBody's HAT_WIDTH_FIT: hatfits.json scales are the hat width as a fraction of the head. */
 const HAT_WIDTH_FIT = 1.05;
-const HAT_FITS = hatFits as { default: { y: number; scale: number; rotationY: number }; hats: Record<string, Partial<{ y: number; scale: number; rotationY: number }>> };
+type HatFit = { x: number; y: number; z: number; scale: number; rotationY: number };
+const HAT_FITS = hatFits as { default: HatFit; hats: Record<string, Partial<HatFit>> };
 const modelUrl = (fullPath: string): string => `./${fullPath}`;
 
 export default class DigPlayer extends Entity {
@@ -63,7 +64,7 @@ export default class DigPlayer extends Entity {
             centerOffset: new THREE.Vector3(0, HALF_EXTENTS.y, 0),
             layer: Layers.Player,
         }));
-        this.addComponent(new PlayerMovementController(() => (this.loaded?.getMoveSpeed() ?? 0) * this.speedMultiplier, this.inputHost));
+        this.addComponent(new PlayerMovementController(() => (this.loaded?.getMoveSpeed() ?? 0) * this.speedMultiplier * DigProgress.moveMultiplier, this.inputHost));
         this.addComponent(new FacingComponent());
     }
 
@@ -109,10 +110,10 @@ export default class DigPlayer extends Entity {
         character.container.updateMatrixWorld(true);
         character.applyCharacterView({ color: look.color, headShape: 'cube', face: look.face });
         const model = MODELS.Hats[look.hat as keyof typeof MODELS.Hats] ?? MODELS.Hats.MiningHelmet;
-        // Same placement table as bandit-controller (its editor's Hats tab), keyed by the hat's file name.
+        // Same placement table as bandit-controller, keyed by the hat's file name: edit it in `npm run editor`, Hats tab.
         const name = model.fullPath.split('/').pop()!.replace(/\.[^.]+$/, '');
         const fit = { ...HAT_FITS.default, ...HAT_FITS.hats[name] };
-        character.body.setHat({ model, scale: fit.scale / HAT_WIDTH_FIT, offsetY: fit.y + HAT_SINK, rotationDeg: fit.rotationY });
+        character.body.setHat({ model, scale: fit.scale / HAT_WIDTH_FIT, offsetX: fit.x, offsetY: fit.y + HAT_SINK, offsetZ: fit.z, rotationDeg: fit.rotationY });
         character.container.scale.setScalar(scale);
         character.container.updateMatrixWorld(true);
     }

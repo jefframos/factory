@@ -59,6 +59,9 @@ export interface HatSpec {
     scale?: number;
     /** Extra lift, as a fraction of the head's size (negative = lower). Unset = 0. */
     offsetY?: number;
+    /** Left / right and back / front shifts, as fractions of the head's size (+Z = the face side). Unset = 0. */
+    offsetX?: number;
+    offsetZ?: number;
     /** Yaw, degrees — turn a hat whose front isn't the model's +Z. Unset = 0. */
     rotationDeg?: number;
 }
@@ -554,7 +557,11 @@ export default class CharacterBody {
                 hat.add(object);
                 hat.scale.setScalar((HEAD_CUBE_SIZE * HAT_WIDTH_FIT * (spec.scale ?? 1)) / Math.max(size.x, size.z, 1e-6));
                 hat.rotation.y = THREE.MathUtils.degToRad(spec.rotationDeg ?? 0);
-                hat.position.y = HEAD_CUBE_SIZE / 2 - HEAD_CUBE_SIZE * HAT_SINK + (spec.offsetY ?? 0) * HEAD_CUBE_SIZE;
+                hat.position.set(
+                    (spec.offsetX ?? 0) * HEAD_CUBE_SIZE,
+                    HEAD_CUBE_SIZE / 2 - HEAD_CUBE_SIZE * HAT_SINK + (spec.offsetY ?? 0) * HEAD_CUBE_SIZE,
+                    (spec.offsetZ ?? 0) * HEAD_CUBE_SIZE,
+                );
                 holder.add(hat);
                 this.hat = hat;
             })

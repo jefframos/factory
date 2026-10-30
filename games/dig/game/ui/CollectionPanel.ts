@@ -129,8 +129,8 @@ export class CollectionPanel extends PIXI.Container {
         const reward = DIG.collectionReward;
         const footer = UiKit.text('collection', 'reward', {
             text: DigProgress.collectionDone
-                ? t('collectionComplete', { hat: names.look(reward.hat) })
-                : t('collectionGoal', { money: reward.money.toLocaleString('en-US'), hat: names.look(reward.hat) }),
+                ? t('collectionComplete')
+                : t('collectionGoal', { money: reward.money.toLocaleString('en-US') }),
         });
         footer.anchor.set(0.5);
         footer.y = HEIGHT / 2 - 36;
