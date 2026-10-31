@@ -111,6 +111,8 @@ export interface AtmSpot {
     z: number;
     rotationY?: number;
     section?: string;
+    /** It only appears once the bag has been sold this many times (the first wardrobe: the tutorial's second sale). */
+    appearsAfterSales?: number;
 }
 
 /** A station kind's look (the ATMs', the wardrobes'): the model (path under models/, fitted to `height`), how far behind the pad, the label's height. */

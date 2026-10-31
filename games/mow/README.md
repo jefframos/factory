@@ -38,7 +38,9 @@ The debug panel (**Mow**) has ADD $100 / $1000, RESTORE CURRENT DISTRICT and RES
    goal (**Scissors** → Push Mower ($15) → Powered → Ride-on → Industrial → **Mega**), the next mower's offer, and
    the bag's capacity with its levels. **BOOSTS** (after the first mower; "!" when one is affordable): Speed, Money
    Gain, Cutting Width, Sharp Blades (chew through tough grass faster). Powered and bigger mowers run an engine.
-4. **Dress up** — every **wardrobe** (Dig's closet, a pink pad with a heart) opens Dig's wardrobe: COLORS / FACES / HATS,
+4. **Dress up** — the first **wardrobe** appears with the second sale and the arrows lead to it; its first (cheapest)
+   hat is a must (the wardrobe locks onto it, money topped up if short). Every wardrobe (Dig's closet, a pink pad with a
+   heart) opens Dig's wardrobe: COLORS / FACES / HATS,
    the same catalogue, prices and assets (`wardrobe` in `ui/mow.json`; hats placed by `ui/hatfits.json`). Buying
    puts it on at once; it's saved, and the wardrobe shows a bouncing "!" while something new there is affordable.
 5. **Restore** — each section shows its restored % at the top. At its goal (97%) the last stragglers are cleared,

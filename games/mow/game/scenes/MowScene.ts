@@ -5,7 +5,8 @@
 // moving (MowingSystem), the HUD (MowHud) and the floor arrows (ArrowGuide).
 //
 // The loop: mow -> the container fills -> stand on any ATM's pad (the clippings are tossed into it, cash counts up,
-// and the shop opens: tools and upgrades) -> mow faster. A wardrobe's pad opens Dig's wardrobe (colours, faces, hats). A district reaching its restoration goal clears its last
+// and the shop opens: tools and upgrades) -> mow faster. A wardrobe's pad opens Dig's wardrobe (colours, faces, hats):
+// the first one appears with the second sale, the arrows lead to it, and its first hat is a must (updateStations). A district reaching its restoration goal clears its last
 // stragglers, brightens, blooms with flowers, pays its bonus and opens the next one (its fence sinks, its ATMs pop
 // in, and with `onUnlock.pan` the camera glides over to show it).
 //
@@ -102,6 +103,8 @@ export default class MowScene extends ThreeScene {
     private onAtm = -1;
     /** The wardrobe whose pad the player stands on, or -1. */
     private onWardrobe = -1;
+    /** The tutorial's first hat is being forced (the player is held on the wardrobe's pad until it's bought). */
+    private hatForced = false;
     private moveHintActive = false;
     /** updateRelief(): seconds to the next stuck check; while grass grows back, the district, clippings still to grow and cells a second. */
     private stuckCheck = STUCK_CHECK_SEC;
@@ -320,7 +323,29 @@ export default class MowScene extends ThreeScene {
             this.onWardrobe = wardrobe;
             this.hud.setWardrobeOpen(wardrobe >= 0);
         }
+        this.updateForcedHat(wardrobe >= 0);
         this.town.setWardrobeAttention(wardrobe < 0 && MowProgress.wardrobeHasNews);
+    }
+
+    /**
+     * The tutorial's first hat: on a wardrobe's pad with no hat bought yet, the wardrobe is locked onto the cheapest
+     * one (the hand on it, no closing, the player held there) and any money short of it is quietly added — it never
+     * blocks. Bought: the wardrobe is free again and the game carries on.
+     */
+    private updateForcedHat(onWardrobe: boolean): void {
+        const hat = MowProgress.starterHat;
+        const forced = onWardrobe && !!hat && !MowProgress.boughtFirstHat;
+        if (forced === this.hatForced) return;
+        this.hatForced = forced;
+        const controller = this.player.movementController;
+        if (forced) {
+            if (MowProgress.money < hat.price) MowProgress.addMoney(hat.price - MowProgress.money);
+            GameAnalytics.tutorialStep('wardrobe');
+        } else if (MowProgress.boughtFirstHat) {
+            GameAnalytics.tutorialStep('hat');
+        }
+        this.hud.setWardrobeForced(forced ? hat.id : undefined);
+        if (controller) controller.enabled = !forced;
     }
 
     /** Sells the bag now (so the save is right), then plays it out: clippings tossed into the ATM, cash landing. */
@@ -329,6 +354,8 @@ export default class MowScene extends ThreeScene {
         if (earned <= 0) return;
         GameAnalytics.sold(MowProgress.timesSold);
         GameAnalytics.tutorialStep('sell');
+        // A station waiting for this many sales pops in (the first wardrobe, with the second).
+        this.town.revealStations();
         this.hud.holdSale(earned);
         const bin = this.town.atmModelAt(atm);
         let paid = 0;
@@ -481,6 +508,9 @@ export default class MowScene extends ThreeScene {
         } else if (MowProgress.toolLevel > 0 && firstUpgrade && affordableUpgrade) {
             target = atmAt;
             hint = 'capacity';
+        } else if (!MowProgress.boughtFirstHat && this.town.nearestWardrobe(this.player.transform.position)) {
+            // The first wardrobe is out (the second sale): go and get the first hat.
+            target = this.town.nearestWardrobe(this.player.transform.position);
         } else if (this.fresh.size) {
             const d = [...this.fresh][0];
             const district = MOW.districts[d];

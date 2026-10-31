@@ -4,7 +4,7 @@ The plan for two features, and the record of how they're built. Built on what Mo
 see `game/ui/WardrobePanel.ts`), the floor-arrow guide (`MowScene.updateGuide`), the grass grid (`GrassField`) and the
 town's stations (`Town`).
 
-Status: **Part 1 in progress**, Part 2 planned.
+Status: **Part 1 done** (to be tested in game), Part 2 planned.
 
 ---
 
@@ -27,14 +27,14 @@ Status: **Part 1 in progress**, Part 2 planned.
 
 | Piece | Change |
 |---|---|
-| `levels/town.json` | A station spot can wait for sales: `"appearsAfterSales": 2` (the first wardrobe). The other wardrobe keeps `section`. |
+| `levels/town.json` | A station spot can wait for sales: `"appearsAfterSales": 2` (the first wardrobe). A station tied to a section keeps `section`. |
 | `Town` | `shown()` also checks `appearsAfterSales` against `MowProgress.timesSold`; `revealStations()` is called after a sale too, so the wardrobe pops in. `wardrobeSpot(i)` for the guide. |
 | `MowScene.updateGuide` | New step, after the full-bag / first-upgrade steps: sales ≥ 2 and no hat bought yet → the arrows lead to the nearest wardrobe that's there. |
 | `MowScene` / `MowHud` | On a wardrobe's pad with no hat bought yet: the forced hat. `MowHud.setWardrobeForced(hatId)` locks the panel (`WardrobePanel.setForcedItem`, Dig's), hides the close button, dims the screen like the shop's hint; the scene stops movement and tops up the money. |
 | `WardrobePanel` | Gets Dig's forced-item mode back (`setForcedItem`: its tab and page, the hand, the rest dimmed). |
 | `MowProgress` | `boughtFirstHat`, `starterHat` (the cheapest hat for sale), as in Dig. |
-| Analytics | `tutorial / wardrobe-shown / visible`, `tutorial / hat / complete` (once per player). |
-| Editor | The station inspector's "Appears" gets "After the 2nd sale". |
+| Analytics | Tutorial steps `08-wardrobe` (reached the wardrobe, hat forced) and `09-hat` (first hat bought), appended after `07-park-restored` so the earlier steps keep their numbers. |
+| Editor | The station inspector's "Appears": from the start, after the 1st / 2nd / 3rd sale, or with a section; the 3D label and the lists say which. |
 
 Old saves: a player already past two sales sees the wardrobe at once; one who already owns a hat is never forced.
 

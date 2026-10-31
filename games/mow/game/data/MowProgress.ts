@@ -9,6 +9,8 @@ import { Signal } from 'signals';
 import { MOW, ToolDef, UpgradeDef, UpgradeId, WardrobeItem } from './MowConfig';
 
 export type LookKind = 'colors' | 'faces' | 'hats';
+/** The wardrobe's kinds (its section in ui/mow.json also has a $comment: never walk its keys). */
+export const LOOK_KINDS: LookKind[] = ['colors', 'faces', 'hats'];
 
 /** What the player wears. */
 export interface Look {
@@ -205,7 +207,7 @@ export const MowProgress = {
 
     /** Something in the wardrobe became affordable since it was last opened (its "!"). */
     get wardrobeHasNews(): boolean {
-        return (Object.keys(MOW.wardrobe) as LookKind[]).some((kind) => MOW.wardrobe[kind].some((item) =>
+        return LOOK_KINDS.some((kind) => MOW.wardrobe[kind].some((item) =>
             !this.ownsLook(kind, item) && item.price <= state.money && item.price > state.wardrobeBudget));
     },
 
@@ -213,6 +215,16 @@ export const MowProgress = {
     markWardrobeSeen(): void {
         state.wardrobeBudget = state.money;
         this.scheduleSave();
+    },
+
+    /** The cheapest hat for sale: the first cosmetic, whose purchase the tutorial forces (MowScene). */
+    get starterHat(): WardrobeItem | undefined {
+        return MOW.wardrobe.hats.filter((h) => h.price > 0).reduce<WardrobeItem | undefined>((best, h) => (!best || h.price < best.price ? h : best), undefined);
+    },
+
+    /** A hat has been bought (the tutorial's first cosmetic). */
+    get boughtFirstHat(): boolean {
+        return MOW.wardrobe.hats.some((h) => h.price > 0 && state.owned.hats.includes(h.id));
     },
 
     /** Starter looks (price 0) are free. */

@@ -4,9 +4,11 @@
 // Each card shows the item (a colour swatch, the face on a head in the current colour, or the hat's model), and
 // whether it's worn, owned or its price. Tapping buys it if needed (MowProgress.wearLook) and puts it on straight
 // away. Catalogue and prices: ui/mow.json `wardrobe`; styles: ui/uikit.json (screen "wardrobe").
+// While the tutorial's first hat is forced (setForcedItem) the panel stays on that hat, the hand on it, the rest dimmed.
 
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
+import gsap from 'gsap';
 import { UiKit } from './UiKit';
 import { UiAnim } from './UiAnim';
 import { tabbedBlock } from './TabBar';
@@ -43,6 +45,8 @@ export class WardrobePanel extends PIXI.Container {
     private readonly body = new PIXI.Container();
     private tab: LookKind = 'hats';
     private page = 0;
+    /** The tutorial's forced first hat (MowHud.setWardrobeForced): only it can be tapped. */
+    private forcedItem?: string;
 
     /** `onWear` after a look changes (the scene re-dresses the miner); `say` for short messages. */
     public constructor(private readonly onWear: () => void, private readonly say: (text: string, color: number) => void) {
@@ -58,6 +62,17 @@ export class WardrobePanel extends PIXI.Container {
         frame.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         this.addChild(frame, ribbon, title, this.body);
         this.visible = false;
+    }
+
+    /** Locks the panel onto one hat (undefined frees it): its tab and page, the hand on it, the rest dimmed. */
+    public setForcedItem(id: string | undefined): void {
+        if (id === this.forcedItem) return;
+        this.forcedItem = id;
+        if (id) {
+            this.tab = 'hats';
+            this.page = Math.floor(Math.max(0, this.items.findIndex((item) => item.id === id)) / PER_PAGE);
+        }
+        this.refresh();
     }
 
     private get items(): WardrobeItem[] {
@@ -78,7 +93,7 @@ export class WardrobePanel extends PIXI.Container {
             card.position.set(((i % 3) - 1) * (CARD_W + GAP), FIRST_ROW_Y + Math.floor(i / 3) * ROW);
             this.body.addChild(card);
         });
-        if (pages > 1) {
+        if (pages > 1 && !this.forcedItem) {
             const y = BLOCK.top + BLOCK.height - 44;
             const label = UiKit.text('wardrobe', 'page', { page: this.page + 1, pages });
             label.anchor.set(0.5);
@@ -87,7 +102,7 @@ export class WardrobePanel extends PIXI.Container {
         }
     }
 
-    /** The tabs over the content block (TabBar). */
+    /** The tabs over the content block (TabBar); while a hat is forced they don't switch. */
     private tabs(): PIXI.Container {
         const block = tabbedBlock({
             width: BLOCK.width,
@@ -97,6 +112,7 @@ export class WardrobePanel extends PIXI.Container {
             tabs: TABS.map(([kind, label]) => ({ id: kind, label: t(label) })),
             active: this.tab,
             onSelect: (id) => {
+                if (this.forcedItem) return;
                 this.tab = id as LookKind;
                 MowAudio.play('tab');
                 this.page = 0;
@@ -144,8 +160,28 @@ export class WardrobePanel extends PIXI.Container {
         status.y = CARD / 2 - 4;
         UiKit.fit(status as PIXI.Text, CARD_W - 16);
         card.addChild(status);
+        if (this.forcedItem && item.id !== this.forcedItem) {
+            card.alpha = 0.35;
+            return card;
+        }
         this.tappable(card, () => this.choose(item, card));
+        if (this.forcedItem) {
+            UiAnim.pulse(card, 0.06, 0.5);
+            card.addChild(this.pointingHand());
+        }
         return card;
+    }
+
+    /** The handHud pointing hand tapping at the card's middle (same art as the HUD's). */
+    private pointingHand(): PIXI.Container {
+        const holder = new PIXI.Container();
+        holder.eventMode = 'none';
+        const hand = PIXI.Sprite.from('handHud');
+        hand.width = hand.height = 72;
+        hand.position.set(20 - 72 * 0.22, 10 - 72 * 0.16);
+        holder.addChild(hand);
+        gsap.to(holder, { y: 10, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+        return holder;
     }
 
     /** The item itself: a swatch, a face on a head in the current colour, or the hat's model. */

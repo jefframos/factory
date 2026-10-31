@@ -22,6 +22,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { MOW, TOWN, AtmLook, AtmSpot, DistrictDef, TownProp } from '../data/MowConfig';
+import { MowProgress } from '../data/MowProgress';
 import { BendService, OcclusionFadeConfig, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 import { CanvasArt } from '../ui/CanvasArt';
 import { setWalkabilityQuery, clearWalkabilityQuery } from './TileWalkability';
@@ -239,9 +240,14 @@ export class Town {
 
     // ---------------------------------------------------------------- stations (ATMs, wardrobes)
 
-    /** Whether a station is there: no section, or its section is open. */
+    /**
+     * Whether a station is there: its sales are made (`appearsAfterSales`: the first wardrobe waits for the tutorial's
+     * second sale) and it has no section, or its section is open.
+     */
     private shown(kind: StationKind, i: number): boolean {
-        const section = stationSpots(kind)[i].section;
+        const spot = stationSpots(kind)[i];
+        if ((spot.appearsAfterSales ?? 0) > MowProgress.timesSold) return false;
+        const section = spot.section;
         if (!section) return true;
         const d = MOW.districts.findIndex((district) => district.id === section);
         return d < 0 || this.open[d];
@@ -316,6 +322,19 @@ export class Town {
         return this.stationAt('wardrobe', x, z);
     }
 
+    /** The nearest wardrobe's pad that's there, or null (none yet). */
+    public nearestWardrobe(from: THREE.Vector3, out = new THREE.Vector3()): THREE.Vector3 | null {
+        let best = Infinity;
+        stationSpots('wardrobe').forEach((spot, i) => {
+            const distance = Math.hypot(from.x - spot.x, from.z - spot.z);
+            if (this.shown('wardrobe', i) && distance < best) {
+                best = distance;
+                out.set(spot.x, 0, spot.z);
+            }
+        });
+        return best < Infinity ? out : null;
+    }
+
     /** The wardrobes' "!": something new in it is affordable (and the player isn't in it). */
     public setWardrobeAttention(on: boolean): void {
         for (const alert of this.wardrobeAlerts) alert.visible = on;
@@ -340,8 +359,8 @@ export class Town {
         return out.set(box.x, TOWN.atm.height * 0.6, box.z);
     }
 
-    /** A section's stations pop in (it just opened). */
-    private revealStations(): void {
+    /** Stations whose time has come pop in (a section just opened; a sale made: the first wardrobe). */
+    public revealStations(): void {
         for (const kind of STATION_KINDS) this.groups[kind].forEach((group, i) => {
             if (group.visible || !this.shown(kind, i)) return;
             group.visible = true;

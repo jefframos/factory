@@ -95,7 +95,8 @@
     {
       "x": 7.75,
       "z": 9.75,
-      "rotationY": -1.5708
+      "rotationY": -1.5708,
+      "appearsAfterSales": 2
     }
   ],
   "props": [

@@ -2314,6 +2314,18 @@ const TownAtm01 = {
 }
 } as const;
 
+const TownCloset02 = {
+  id: 'closet-02',
+  path: 'town/station/closet-02',
+  fullPath: 'mow/models/town/station/closet-02.glb',
+  format: 'glb',
+  nodes: {
+  "Closet02": "Closet_02",
+  "Closet02Door01": "Closet_02_Door_01",
+  "Closet02Door02": "Closet_02_Door_02"
+}
+} as const;
+
 const TownTractor = {
   id: 'tractor',
   path: 'town/vehicles/tractor/tractor',
@@ -2466,6 +2478,7 @@ export const MODELS = {
     FlaxFlowerA: TownFlaxFlowerA,
     FlaxFlowerB: TownFlaxFlowerB,
     Atm01: TownAtm01,
+    Closet02: TownCloset02,
     Tractor: TownTractor
   }
 } as const;

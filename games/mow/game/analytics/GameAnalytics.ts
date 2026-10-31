@@ -22,7 +22,8 @@ import PlatformHandler from 'core/platforms/PlatformHandler';
 import { MowProgress } from '../data/MowProgress';
 
 /** The first-session steps, in order (the GDD's first five minutes). */
-export const TUTORIAL = ['move', 'cut', 'bag-full', 'sell', 'first-mower', 'first-upgrade', 'park-restored'] as const;
+// New steps go at the end (even when they come earlier in play), so the numbers of the ones before never change.
+export const TUTORIAL = ['move', 'cut', 'bag-full', 'sell', 'first-mower', 'first-upgrade', 'park-restored', 'wardrobe', 'hat'] as const;
 export type TutorialStep = (typeof TUTORIAL)[number];
 
 const PLAYTIME_MINUTES = [1, 2, 3, 5, 8, 12, 20, 30];

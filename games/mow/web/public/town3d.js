@@ -600,6 +600,25 @@ function buildProp(prop) {
     return holder;
 }
 
+/** A station's "appears" in a few words, for the lists. */
+function appearsLabel(spot) {
+    if (spot.appearsAfterSales) return `after sale ${spot.appearsAfterSales}`;
+    return town.sections.find((s) => s.id === spot.section)?.name ?? 'always';
+}
+
+/** When a station appears: from the start, after the bag's nth sale (`appearsAfterSales`) or with a section. */
+function appearsField(data) {
+    const value = data.appearsAfterSales ? `sales:${data.appearsAfterSales}` : data.section ?? '';
+    const options = [['', 'From the start'], ['sales:1', 'After the 1st sale'], ['sales:2', 'After the 2nd sale'], ['sales:3', 'After the 3rd sale'],
+        ...town.sections.map((s) => [s.id, `When ${s.name} opens`])];
+    return selectField('Appears', value, options, (v) => edit((d) => {
+        delete d.section;
+        delete d.appearsAfterSales;
+        if (v.startsWith('sales:')) d.appearsAfterSales = Number(v.slice(6));
+        else if (v) d.section = v;
+    }));
+}
+
 /** A station (an ATM, a wardrobe) as the game draws it: its pad, the model `back` behind it, its name over it. */
 function buildStation(atm, look, name, labelColor) {
     const holder = new THREE.Group();
@@ -614,7 +633,8 @@ function buildStation(atm, look, name, labelColor) {
     holder.add(stand);
     void fillModel(stand, look.model, look.height, 0);
     const section = town.sections.find((s) => s.id === atm.section);
-    const label = labelSprite(section ? `${name}\nappears with ${section.name}` : name, labelColor);
+    const when = atm.appearsAfterSales ? `after sale ${atm.appearsAfterSales}` : section ? `with ${section.name}` : '';
+    const label = labelSprite(when ? `${name}\nappears ${when}` : name, labelColor);
     label.position.set(0, look.label, -look.back);
     holder.add(label);
     return holder;
@@ -911,8 +931,8 @@ function listItem(type, index, label, small) {
 function renderLists() {
     host.querySelector('#townSectionList').replaceChildren(...town.sections.map((s, i) => listItem('section', i, `${i + 1}. ${s.name}`, `$${s.bonus}`)));
     host.querySelector('#townPatchList').replaceChildren(...town.grassPatches.map((p, i) => listItem('patch', i, `${p.shape === 'round' ? '⬭' : '▭'} ${grassName(p.grass)}`, `${p.width}×${p.depth}`)));
-    host.querySelector('#townAtmList').replaceChildren(...town.atms.map((a, i) => listItem('atm', i, `ATM ${i + 1}`, town.sections.find((s) => s.id === a.section)?.name ?? 'always')));
-    host.querySelector('#townWardrobeList').replaceChildren(...town.wardrobes.map((w, i) => listItem('wardrobe', i, `Wardrobe ${i + 1}`, town.sections.find((s) => s.id === w.section)?.name ?? 'always')));
+    host.querySelector('#townAtmList').replaceChildren(...town.atms.map((a, i) => listItem('atm', i, `ATM ${i + 1}`, appearsLabel(a))));
+    host.querySelector('#townWardrobeList').replaceChildren(...town.wardrobes.map((w, i) => listItem('wardrobe', i, `Wardrobe ${i + 1}`, appearsLabel(w))));
     host.querySelector('#townPavementList').replaceChildren(...town.pavements.map((p, i) => listItem('pavement', i, p.id, `${p.width}×${p.depth}`)));
     host.querySelector('#townPropList').replaceChildren(...town.props.map((p, i) => listItem('prop', i, titleCase(fileName(p.model)), p.model.split('/').slice(0, -1).join('/'))));
 }
@@ -1027,13 +1047,13 @@ function renderInspector() {
     }
     if (type === 'atm') {
         rows.push(
-            selectField('Appears', data.section ?? '', [['', 'From the start'], ...town.sections.map((s) => [s.id, `When ${s.name} opens`])], (v) => edit((d) => { if (v) d.section = v; else delete d.section; })),
+            appearsField(data),
             el('p', { class: 'muted small' }, 'Standing on the pad sells the bag and opens the shop. The machine stands behind the pad.'));
     }
     if (type === 'wardrobe') {
         rows.push(
-            selectField('Appears', data.section ?? '', [['', 'From the start'], ...town.sections.map((s) => [s.id, `When ${s.name} opens`])], (v) => edit((d) => { if (v) d.section = v; else delete d.section; })),
-            el('p', { class: 'muted small' }, 'Standing on the pad opens the wardrobe (colours, faces, hats). The closet stands behind the pad.'));
+            appearsField(data),
+            el('p', { class: 'muted small' }, 'Standing on the pad opens the wardrobe (colours, faces, hats). The closet stands behind the pad. The first one is the tutorial\'s: it appears after the 2nd sale and its first hat is a must.'));
     }
     if (type === 'patch') {
         rows.push(

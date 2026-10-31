@@ -105,6 +105,8 @@ export class MowHud extends PIXI.Container {
     private readonly wardrobe: WardrobePanel;
     private readonly wardrobeHolder = new PIXI.Container();
     private wardrobeOpen = false;
+    /** The wardrobe's close button (hidden while the tutorial's first hat is forced). */
+    private readonly wardrobeClose: PIXI.Container;
     private shopKey = '';
     private hint: ShopHint = null;
     private tab: 'gear' | 'boosts' = 'gear';
@@ -123,7 +125,7 @@ export class MowHud extends PIXI.Container {
         this.buildButtons();
         this.buildShop();
         this.wardrobe = new WardrobePanel(onWear, (text, color) => this.say(text, color));
-        this.addClose(this.wardrobe, WARDROBE_SIZE, () => this.setWardrobeOpen(false));
+        this.wardrobeClose = this.addClose(this.wardrobe, WARDROBE_SIZE, () => this.setWardrobeOpen(false));
         this.wardrobeHolder.addChild(this.wardrobe);
         this.languageHolder.addChild(this.language);
         this.addClose(this.language, LANGUAGE_SIZE, () => this.toggleLanguage());
@@ -247,12 +249,13 @@ export class MowHud extends PIXI.Container {
     }
 
     /** A panel's red close button on its top-right corner. */
-    private addClose(panel: PIXI.Container, size: { width: number; height: number }, onClose: () => void): void {
+    private addClose(panel: PIXI.Container, size: { width: number; height: number }, onClose: () => void): PIXI.Container {
         const close = new PIXI.Container();
         close.addChild(icon('hud', 'closeButton', CLOSE_SIZE), icon('hud', 'closeIcon', CLOSE_SIZE * 0.5));
         close.position.set(size.width / 2 - 8, -size.height / 2 + 8);
         this.tappable(close, onClose);
         panel.addChild(close);
+        return close;
     }
 
     // ---------------------------------------------------------------- shop
@@ -293,6 +296,15 @@ export class MowHud extends PIXI.Container {
         MowProgress.markWardrobeSeen();
         UiAnim.popIn(this.wardrobe);
         MowAudio.play('open');
+    }
+
+    /**
+     * The tutorial's first hat (its id; undefined frees the wardrobe): the panel stays on it, the hand on it, the rest
+     * dimmed, and there's no closing it until it's bought.
+     */
+    public setWardrobeForced(hatId: string | undefined): void {
+        this.wardrobe.setForcedItem(hatId);
+        this.wardrobeClose.visible = !hatId;
     }
 
     /** What the guide wants bought (the hand on its button), or null. */
