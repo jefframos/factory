@@ -50,14 +50,16 @@ export default class DigGame extends Game {
             await PlatformHandler.instance.initialize(plat);
 
             PlatformHandler.instance.platform.startLoad();
-            // The language (saved choice, else the browser's) before any UI is built.
-            await Localization.load();
-            await DigAudio.initialize(this.folderPath);
+            // Everything the UI needs, together (none waits on another): the language (saved choice, else the
+            // browser's), the sound list, the fonts and the UI atlas — before any UI is built.
+            await Promise.all([
+                Localization.load(),
+                DigAudio.initialize(this.folderPath),
+                this.loadFonts(),
+                PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`),
+            ]);
             this.stageContainer.addChild(this.gameContainer);
             this.sceneManager = new SceneManager(this.gameContainer);
-
-            await this.loadFonts();
-            await PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`);
 
             // The loading screen stays up until the scene is playable: the mine drawn and the miner loaded (a player
             // used to land in the game before the character was there, unable to move). Capped, so a stuck load

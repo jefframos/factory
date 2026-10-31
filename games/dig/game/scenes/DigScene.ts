@@ -222,6 +222,9 @@ export default class DigScene extends ThreeScene {
         this.player = this.world.add(new DigPlayer(this, this.threeScene));
         this.player.transform.position.set(HUB.start.x, 0, HUB.start.z);
         this.characterReady = this.player.loadCharacter().catch((error) => console.error('[DigScene] character failed to load', error));
+        // The rock's models only once the miner is in: on a slow line the two would share it, keeping the loading screen
+        // up longer (the rock pops in behind the game instead).
+        void this.characterReady.then(() => this.terrain.loadModels());
 
         this.effects = new DigEffects(this.threeScene, DIG.terrain.blockHeight, () => this.player.pickupPoint(this.pickupPoint));
         this.tractor = new TractorRide(this.threeScene, this.player, this.effects);

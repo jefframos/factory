@@ -31,6 +31,8 @@ export const AIR = 0;
 /** Grid value of the undiggable outer ring (not a DIG.materials entry). */
 export const BEDROCK = 255;
 const CHUNK = 16;
+/** Chunks redrawn a frame while a whole redraw is under way (update()). */
+const REBUILD_BUDGET = 12;
 /** The miner's footprint radius for collision against blocks. */
 const BODY_RADIUS = 0.32;
 /** Extra culling radius around a chunk: the world bend pulls far chunks down, so their real bounds drift. */
@@ -157,6 +159,8 @@ export class VoxelTerrain {
     private readonly group = new THREE.Group();
     private readonly models = new BlockModels();
     private loaded = false;
+    /** loadModels() has started. */
+    private modelsRequested = false;
     private readonly walkability = (x: number, z: number) => this.isWalkable(x, z);
     /** The miner's footprint radius against the rock right now, and where they are (setBody()). */
     private bodyRadius = BODY_RADIUS;
@@ -191,28 +195,45 @@ export class VoxelTerrain {
         }
         threeScene.add(this.group);
         setWalkabilityQuery(this.walkability);
-        this.ready = this.loadModels().then(() => {
-            this.loaded = true;
-            const perSide = Math.ceil(this.size / CHUNK);
-            for (let chunk = 0; chunk < perSide * perSide; chunk++) {
-                this.rebuildChunk(chunk);
-            }
-        });
+        // Playable at once (the cells are all there: walking and digging work); the models load behind the game in
+        // stages once the scene says (loadModels(): after the miner, who gets the bandwidth first), the rock popping
+        // in as each stage arrives. The loading screen only waits for the miner.
+        this.ready = Promise.resolve();
     }
 
-    private async loadModels(): Promise<void> {
-        await Promise.all([
-            this.models.loadBlock(DIG.terrain.bedrockBlock, this.blockHeight),
-            ...DIG.materials.map((m) => this.models.loadBlock(m.block, this.blockHeight)),
+    /**
+     * The mine's models, nearest first, each stage redrawing the rock as it lands: the first zone's blocks (what the
+     * miner walks out into), then every other block, then what sits on and comes out of the rock (gems, pickups,
+     * relics, the cash chest). A model that fails to load is just missing (its blocks / decor aren't drawn). Once.
+     */
+    public async loadModels(): Promise<void> {
+        if (this.modelsRequested) return;
+        this.modelsRequested = true;
+        const settle = async (loads: Promise<void>[]) => {
+            for (const result of await Promise.allSettled(loads)) if (result.status === 'rejected') console.warn('[VoxelTerrain] model', result.reason);
+            this.redrawAll();
+        };
+        const first = DIG.zones[0];
+        const near = new Set([first.fill, ...first.patches.map((p) => p.id), ...first.ores.map((o) => o.id)]);
+        const block = (path: string) => this.models.loadBlock(path, this.blockHeight);
+        await settle(DIG.materials.filter((m) => near.has(m.id)).map((m) => block(m.block)));
+        await settle([block(DIG.terrain.bedrockBlock), ...DIG.materials.filter((m) => !near.has(m.id)).map((m) => block(m.block))]);
+        await settle([
             ...DIG.materials.filter((m) => m.decor).map((m) => this.models.loadDecor(m.decor!, DECOR_SIZE)),
             ...DIG.materials.map((m) => this.models.loadPickup(m.pickup, PICKUP_SIZE)),
             ...DIG.finds.map((find) => this.models.loadDecor(find.model, find.size)),
             ...DIG.finds.map((find) => this.models.loadPickup(find.model, find.size)),
-            // The power chest (the tractor) isn't drawn in the rock and only shows after some digging: it loads
-            // behind the game (loadPowerModel()), not holding up the loading screen.
+            // The power chest (the tractor) isn't drawn in the rock: it loads when play starts (loadPowerModel()).
             this.models.loadDecor(DIG.chests.cash.model, DIG.chests.cash.size),
             this.models.loadPickup(DIG.chests.cash.model, DIG.chests.cash.size),
         ]);
+    }
+
+    /** Every chunk is redrawn (more models are in): over the next frames, nearest first (update()). */
+    private redrawAll(): void {
+        this.loaded = true;
+        const perSide = Math.ceil(this.size / CHUNK);
+        for (let chunk = 0; chunk < perSide * perSide; chunk++) this.dirty.add(chunk);
     }
 
     /** Starts loading the power chest's model (the tractor), once: the scene calls it when play starts. */
@@ -552,12 +573,23 @@ export class VoxelTerrain {
     }
 
     /** Rebuilds the chunks changed since the last call; call once per frame. */
+    /**
+     * Redraws the chunks that changed. A few (digging) all at once; a whole redraw (more models came in) a
+     * REBUILD_BUDGET of chunks a frame, nearest the miner first, so it never stalls a frame.
+     */
     public update(): void {
-        if (!this.loaded) return;
-        for (const chunk of this.dirty) {
-            this.rebuildChunk(chunk);
+        if (!this.loaded || !this.dirty.size) return;
+        let chunks = [...this.dirty];
+        if (chunks.length > REBUILD_BUDGET) {
+            const perSide = Math.ceil(this.size / CHUNK);
+            const [bx, bz] = this.cellOf(this.bodyAt.x, this.bodyAt.z);
+            const away = (chunk: number) => Math.hypot((chunk % perSide + 0.5) * CHUNK - bx, (Math.floor(chunk / perSide) + 0.5) * CHUNK - bz);
+            chunks = chunks.sort((a, b) => away(a) - away(b)).slice(0, REBUILD_BUDGET);
         }
-        this.dirty.clear();
+        for (const chunk of chunks) {
+            this.rebuildChunk(chunk);
+            this.dirty.delete(chunk);
+        }
     }
 
     // ---------------------------------------------------------------- drawing
