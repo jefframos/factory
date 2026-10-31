@@ -380,6 +380,26 @@
         "h": 281
       }
     },
+    "burger": {
+      "frame": {
+        "x": 367,
+        "y": 1118,
+        "w": 160,
+        "h": 167
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 48,
+        "y": 52,
+        "w": 160,
+        "h": 167
+      },
+      "sourceSize": {
+        "w": 256,
+        "h": 256
+      }
+    },
     "bread": {
       "frame": {
         "x": 1104,

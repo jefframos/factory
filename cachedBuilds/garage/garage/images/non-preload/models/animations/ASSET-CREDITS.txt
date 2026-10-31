@@ -1,0 +1,3 @@
+Excited.glb is from Quaternius Universal Animation Library 2.
+License: CC0 1.0 Universal.
+Source: https://quaternius.com
