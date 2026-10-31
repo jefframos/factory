@@ -17,9 +17,11 @@ import { HUB, hubRects } from '../data/HubData';
 import type { HubRoom } from './HubRoom';
 import { findPath } from './GuidePath';
 import type { RelicHunt } from './RelicHunt';
+import { PowerSurge } from '../mining/PowerSurge';
 import { t, names } from '../i18n/Localization';
 
-const COLOR = 0xffd23f;
+/** Green: "the way to go", apart from the gold of treasure beams and the pale green of money pops. */
+const COLOR = 0x2ee86a;
 /** The trail and the marker ring float this high, above rugs and carpets (up to ~0.17 tall), so they never vanish under them. */
 const FLOOR_LIFT = 0.25;
 /** Trail: the first triangle sits this far along the route, then one every SPACING, at most TRAIL_MAX; none this close to the target. */
@@ -48,8 +50,8 @@ export class Guide {
     private routeTarget = new THREE.Vector3(Infinity, 0, 0);
     private repath = 0;
     private time = 0;
-    /** The miner keeps trying to dig with a full backpack: lead them back to the ATM, tutorial or not. */
-    private returnToSell = false;
+    /** Where the first power chest is while it's showing (PowerChestSpawner.firstChestAt), set by the scene. */
+    public firstPowerChest?: () => THREE.Vector3 | undefined;
 
     /** `say` shows (or with null clears) the step's text on the HUD. */
     public constructor(threeScene: THREE.Scene, private readonly hub: HubRoom, private readonly solid: (x: number, z: number) => boolean,
@@ -92,17 +94,17 @@ export class Guide {
         threeScene.add(this.marker);
     }
 
-    /** Turns the way back to the ATM on (the scene: a few tries at digging with a full backpack) or off. */
-    public setReturnToSell(on: boolean): void {
-        this.returnToSell = on;
-    }
-
     /** The step for the current progress, or null once the guide is done: after the first hub piece is bought. */
     private step(player: THREE.Vector3): GuideStep | null {
         const atm = HUB.stations.find((s) => s.kind === 'atm');
         const atmAt = atm ? new THREE.Vector3(atm.x, 0, atm.z) : undefined;
-        // Stuck with a full backpack (even after the tutorial): the arrows lead back to sell it.
-        if (this.returnToSell && DigProgress.backpackCount >= DigProgress.capacity) return { text: t('guideBackpackFull'), target: atmAt };
+        // A power surge running: nothing to follow until it's over (then it picks up where it was).
+        if (PowerSurge.active) return null;
+        // The first power chest showing ahead: dig to it before anything else (its surge cashes everything, full bag or not).
+        const chest = this.firstPowerChest?.();
+        if (chest) return { text: t('guidePowerChest'), target: chest };
+        // A full backpack, tutorial or not: back to the ATM to sell it first.
+        if (DigProgress.backpackCount >= DigProgress.capacity) return { text: t('guideBackpackFull'), target: atmAt };
         const door = this.nearestDoor(player);
         const inHub = hubRects().some((r) => Math.abs(player.x - r.x) <= r.width / 2 && Math.abs(player.z - r.z) <= r.depth / 2);
         // Buying the first cosmetic is where the tutorial ends: from there on the player knows the loop, and the relic

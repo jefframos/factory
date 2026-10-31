@@ -1236,8 +1236,11 @@ export class DigHud extends PIXI.Container {
             node.addChild(label);
             if (i > owned) node.alpha = i === owned + 1 || goal ? 1 : 0.6;
             if (i === owned + 1) UiAnim.pulse(node, 0.08, 0.7);
-            // The tool that opens the next mine says so over its node (the goal stays the last tool).
-            if (i === PRESTIGE_TOOL_LEVEL && !goal) node.addChild(this.newMineBadge(size));
+            // The tool that opens the next mine says so over its node, on turning purple rays (the goal stays the last tool).
+            if (i === PRESTIGE_TOOL_LEVEL && !goal) {
+                UiAnim.rays(node, size * 0.95, 0xb57bff, 0.9, 6);
+                node.addChild(this.newMineBadge(size));
+            }
             row.addChild(node);
         });
         return row;

@@ -11,8 +11,8 @@
 // The chest is a cell flag in the terrain (VoxelTerrain.placeChest), so mining, sparkles and beacons treat it like
 // any chest; its model is drawn here (not in the merged chunk mesh) so it can pop and fade. It looks like what it
 // gives: the tractor the surge rides (TractorRide), glowing round the rainbow; its model loads behind the game, and
-// none shows before it's in. Once the first has been dug, more are buried around the mine
-// (VoxelTerrain.buryPowerChests): showBuried() draws those too, poking out of their blocks, until they're dug.
+// none shows before it's in. Once the first has been dug, one at a time keeps coming back (updateRoaming): after
+// each surge, chests.power.roam.delay seconds on, a little way from the miner.
 
 import * as THREE from 'three';
 import { DIG } from '../data/DigConfig';
@@ -46,9 +46,10 @@ export class PowerChestSpawner {
     private model?: THREE.Object3D;
     private materials: THREE.Material[] = [];
     private readonly at = new THREE.Vector3();
-    /** The buried ones' cells waiting for the model, and the models drawn, by cell. */
-    private buriedPending: number[] = [];
-    private readonly buried = new Map<number, THREE.Object3D>();
+    /** After the first: the one power chest on the map (its cell, -1 = none, and model), and seconds until the next. */
+    private roamCell = -1;
+    private roamModel?: THREE.Object3D;
+    private roamWait = DIG.chests.power.roam.delay;
 
     public constructor(private readonly threeScene: THREE.Scene, private readonly terrain: VoxelTerrain, private readonly effects: DigEffects) {}
 
@@ -140,48 +141,86 @@ export class PowerChestSpawner {
         model.position.y = this.terrain.blockHeight + height * (0.5 - SUNK);
     }
 
-    /** The buried power chests' cells (VoxelTerrain.buryPowerChests): each is drawn once the model is in. */
-    public showBuried(cells: number[]): void {
-        this.buriedPending.push(...cells);
+    /** Where the first power chest is while it's showing (the guide leads there first), or undefined. */
+    public firstChestAt(out = new THREE.Vector3()): THREE.Vector3 | undefined {
+        return this.phase === 'in' || this.phase === 'shown' ? this.terrain.cellCenter(this.ix, this.iz, out) : undefined;
     }
 
-    /** Draws the buried ones whose model is in, drops the dug ones, and turns every power chest's glow. */
-    private updateBuried(): void {
+    /**
+     * After the first: one power chest on the map at a time. Once it's dug and its surge is over, the next comes
+     * roam.delay seconds later, roam.distance blocks from the miner (never right by them), sitting on its block with
+     * its beam until it's dug.
+     */
+    private updateRoaming(delta: number, player: THREE.Vector3): void {
+        if (!DigProgress.hasOnce(POWER_CHEST_TAKEN)) return;
         const size = this.terrain.size;
-        if (this.buriedPending.length && this.terrain.hasChestModel('power')) {
-            for (const cell of this.buriedPending) {
-                const model = this.terrain.chestModel('power');
-                if (!model || this.terrain.chestAt(cell % size, Math.floor(cell / size)) !== 'power') continue;
-                this.terrain.cellCenter(cell % size, Math.floor(cell / size), this.at);
-                model.rotation.set(0.1, (cell % 8) * 0.8, -0.08);
-                this.sitOnBlock(model, this.at);
-                this.threeScene.add(model);
-                this.buried.set(cell, model);
+        if (this.roamCell >= 0) {
+            if (this.terrain.chestAt(this.roamCell % size, Math.floor(this.roamCell / size)) === 'power') return;
+            // Dug: its pop-out flies to the miner (MiningController); this one just goes.
+            this.roamModel?.removeFromParent();
+            this.roamModel = undefined;
+            this.roamCell = -1;
+            this.roamWait = DIG.chests.power.roam.delay;
+        }
+        // The clock starts once the surge is over.
+        if (PowerSurge.active || !this.terrain.hasChestModel('power')) return;
+        this.roamWait -= delta;
+        if (this.roamWait > 0) return;
+        const cell = this.roamSpot(player);
+        const model = this.terrain.chestModel('power');
+        if (cell < 0 || !model || !this.terrain.placeChest(cell % size, Math.floor(cell / size), 'power')) {
+            this.roamWait = 1;
+            return;
+        }
+        this.terrain.cellCenter(cell % size, Math.floor(cell / size), this.at);
+        model.rotation.set(0.1, Math.random() * Math.PI * 2, -0.08);
+        this.sitOnBlock(model, this.at);
+        this.threeScene.add(model);
+        this.roamModel = model;
+        this.roamCell = cell;
+        this.effects.smoke(this.at.clone().setY(this.terrain.blockHeight + 0.2), 5, 0.8, new THREE.Color(0x8fe9ff), 0.6);
+    }
+
+    /** A random block roam.distance [min, max] blocks from the miner that their tool can dig, rock all round; or -1. */
+    private roamSpot(player: THREE.Vector3): number {
+        const [nearest, farthest] = DIG.chests.power.roam.distance;
+        const [px, pz] = this.terrain.cellOf(player.x, player.z);
+        const power = DigProgress.tool.power;
+        const spots: number[] = [];
+        for (let iz = pz - farthest; iz <= pz + farthest; iz++) {
+            for (let ix = px - farthest; ix <= px + farthest; ix++) {
+                const distance = Math.hypot(ix - px, iz - pz);
+                if (distance < nearest || distance > farthest) continue;
+                const value = this.terrain.cellValue(ix, iz);
+                const material = this.terrain.material(ix, iz);
+                if (value === AIR || value === BEDROCK || !material || material.minPower > power) continue;
+                if (this.terrain.findAt(ix, iz) || this.terrain.chestAt(ix, iz)) continue;
+                if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dz]) => this.terrain.cellValue(ix + dx, iz + dz) === AIR)) continue;
+                spots.push(this.terrain.index(ix, iz));
             }
-            this.buriedPending = [];
         }
-        for (const [cell, model] of this.buried) {
-            if (this.terrain.chestAt(cell % size, Math.floor(cell / size)) === 'power') continue;
-            model.removeFromParent();
-            this.buried.delete(cell);
-        }
-        // One glow for them all (and the one fading in): their materials are clones of the same model's.
+        return spots.length ? spots[Math.floor(Math.random() * spots.length)] : -1;
+    }
+
+    /** Turns every power chest's rainbow glow (their materials are clones of the same model's). */
+    private updateGlow(): void {
         const hue = (performance.now() / 1000 * GLOW_SPIN) % 1;
-        const glow = (object: THREE.Object3D) => object.traverse((child) => {
-            if (!(child instanceof THREE.Mesh)) return;
-            for (const material of Array.isArray(child.material) ? child.material : [child.material]) {
-                if (!(material instanceof THREE.MeshStandardMaterial)) continue;
-                material.emissive.setHSL(hue, 1, 0.5);
-                material.emissiveIntensity = GLOW;
-            }
-        });
-        this.buried.forEach((model) => glow(model));
-        if (this.model) glow(this.model);
+        for (const object of [this.model, this.roamModel]) {
+            object?.traverse((child) => {
+                if (!(child instanceof THREE.Mesh)) return;
+                for (const material of Array.isArray(child.material) ? child.material : [child.material]) {
+                    if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+                    material.emissive.setHSL(hue, 1, 0.5);
+                    material.emissiveIntensity = GLOW;
+                }
+            });
+        }
     }
 
     public update(delta: number, player: THREE.Vector3): void {
         this.cooldown = Math.max(0, this.cooldown - delta);
-        this.updateBuried();
+        this.updateRoaming(delta, player);
+        this.updateGlow();
         if (this.phase === 'idle') return;
         this.age += delta;
         const spawn = DIG.chests.power.spawn;
@@ -238,8 +277,8 @@ export class PowerChestSpawner {
     public destroy(): void {
         if (this.phase !== 'idle') this.terrain.clearChest(this.ix, this.iz);
         this.remove();
-        this.buried.forEach((model) => model.removeFromParent());
-        this.buried.clear();
+        if (this.roamCell >= 0) this.terrain.clearChest(this.roamCell % this.terrain.size, Math.floor(this.roamCell / this.terrain.size));
+        this.roamModel?.removeFromParent();
     }
 }
 

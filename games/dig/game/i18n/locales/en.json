@@ -93,6 +93,7 @@
     "guideDig": "Walk out and dig the rock!",
     "guideBuyTool": "Buy the {tool} at the ATM!",
     "guideBackpackFull": "Backpack full! Sell it at the ATM",
+    "guidePowerChest": "Dig to the power truck!",
     "guideSell": "Sell your haul at the ATM",
     "guideKeepDigging": "Keep digging to fill your backpack",
     "guideAfford": "Dig and sell to afford the {tool} (${price})",

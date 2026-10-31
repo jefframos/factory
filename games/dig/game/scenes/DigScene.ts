@@ -100,8 +100,6 @@ const STEP_DISTANCE = 0.9;
 const AD_BREAK_COOLDOWN_MS = 3 * 60 * 1000;
 /** Wait after the BUY tap, so the purchase's fanfare plays before the break. */
 const AD_BREAK_DELAY_MS = 900;
-/** Tries at digging with a full backpack before the guide's arrows lead back to the ATM. */
-const FULL_PUSHES_TO_GUIDE = 2;
 /** Each hub piece that earns pops what it made every this many seconds (at least $1), while the miner is this near the hub. */
 const INCOME_POP_SEC = 3;
 const INCOME_POP_RANGE = 22;
@@ -166,8 +164,6 @@ export default class DigScene extends ThreeScene {
     /** A power surge's cash not yet shown, and the time to the next "+$". */
     private surgeCash = 0;
     private surgeCashTimer = 0;
-    /** Pushes into rock with a full backpack since it filled up (FULL_PUSHES_TO_GUIDE turns the arrows to the ATM on). */
-    private fullPushes = 0;
     /** The backpack was full last frame (filling it up gets called out once). */
     private bagWasFull = false;
     /** The station pad the miner stands on (updateStations). */
@@ -205,8 +201,6 @@ export default class DigScene extends ThreeScene {
     private buildSpot: string | null = null;
     /** Per earning hub piece: cash made since its last pop, and seconds until it may pop again (updateIncomePops). */
     private readonly incomePops = new Map<string, { cash: number; wait: number }>();
-    /** The extra power chests are in this mine's rock (buryPowerChests()). */
-    private powerChestsBuried = false;
     /** When the hub's income was last collected at the ATM (performance.now()). */
     private lastHubCollect = -Infinity;
     private readonly followTarget = new THREE.Vector3();
@@ -253,11 +247,11 @@ export default class DigScene extends ThreeScene {
             window.setTimeout(() => this.hud.say(t('relicNext', { name: names.find(find).toUpperCase() }), 0xffd23f), 1200);
         });
         this.guide = new Guide(this.threeScene, this.hub, (x, z) => this.terrain.isSolid(x, z), this.relicHunt, (text, buy) => this.hud.setGuide(text, buy));
+        this.guide.firstPowerChest = () => this.powerChests.firstChestAt();
         this.hardBlocks = new HardBlockMarkers(this.threeScene, this.terrain);
         this.treasureSparkles = new TreasureSparkles(this.terrain, this.effects);
         this.treasureBeacons = new TreasureBeacons(this.threeScene, this.terrain);
         this.powerChests = new PowerChestSpawner(this.threeScene, this.terrain, this.effects);
-        if (DigProgress.hasOnce(POWER_CHEST_TAKEN)) this.buryPowerChests();
         this.mining = new MiningController(this.terrain, this.effects, this.player, (text) => this.hud.say(text, 0xffd9a8), (find, zone) => {
             // Its reward waits in the Trophy Room (claimed there: the totem gets its "!"); the banner says so.
             const amount = DigProgress.findPayout(find, zone);
@@ -277,10 +271,6 @@ export default class DigScene extends ThreeScene {
             this.hud.flashBackpack();
             this.effects.floatText(this.player.pickupPoint(new THREE.Vector3()).setY(2.4), t('bagFullFloat'), '#ff8a7a');
             DigAudio.play('error');
-        }, () => {
-            // A few tries at digging with a full backpack: the guide's arrows lead back to the ATM until it's sold.
-            this.fullPushes++;
-            if (this.fullPushes >= FULL_PUSHES_TO_GUIDE) this.guide.setReturnToSell(true);
         }, (kind, zone) => this.openChest(kind, zone), (count, at) => {
             this.onBroke(count);
             this.powerChests.onDig(at, this.player.transform.position);
@@ -494,8 +484,6 @@ export default class DigScene extends ThreeScene {
     private openChest(kind: ChestKind, zone: number, debug = false): void {
         if (!debug) GameAnalytics.chestDug(kind, DIG.zones[zone].id);
         if (kind === 'power' && !debug) DigProgress.once(POWER_CHEST_TAKEN);
-        // The first power chest found: more are buried around the mine from now on.
-        if (kind === 'power' && !this.powerChestsBuried) this.buryPowerChests();
         const at = this.player.pickupPoint(new THREE.Vector3());
         const color = new THREE.Color(kind === 'power' ? 0x6fe3ff : 0xffd23f);
         for (let i = 0; i < 14; i++) {
@@ -515,15 +503,6 @@ export default class DigScene extends ThreeScene {
         this.hud.say(t('powerChest', { tool: names.tool(tool).toUpperCase(), seconds: DIG.chests.power.seconds }), 0x8fe9ff);
         DigAudio.play('quest');
         this.mining.toolChanged();
-        // Whatever's in the bag stays there: the surge cashes new drops only.
-        this.guide.setReturnToSell(false);
-        this.fullPushes = 0;
-    }
-
-    /** Buries the extra power chests (once the first has been dug): their beams show from afar. */
-    private buryPowerChests(): void {
-        this.powerChestsBuried = true;
-        this.powerChests.showBuried(this.terrain.buryPowerChests());
     }
 
     /** Runs a power surge's clock (only while playing), its HUD countdown and cash pops, and its end. */
@@ -720,10 +699,6 @@ export default class DigScene extends ThreeScene {
             DigAudio.play('error');
         }
         this.bagWasFull = full;
-        if (!full && this.fullPushes > 0) {
-            this.fullPushes = 0;
-            this.guide.setReturnToSell(false);
-        }
     }
 
     /**

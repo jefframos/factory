@@ -20,8 +20,12 @@ import type DigPlayer from '../player/DigPlayer';
 import { t, names } from '../i18n/Localization';
 import { DigAudio, type Cue } from '../audio/DigAudio';
 
-/** How far ahead of the miner's centre the block being dug is looked for. */
-const REACH = 0.75;
+/**
+ * How far past the miner's footprint (VoxelTerrain.footprint: 0.32 walking, wider in the tractor) the block being dug
+ * is looked for: 0.75 from the centre on foot. Scaled with the footprint, a wide vehicle stopped against the rock still
+ * reaches into it, whatever the angle it's pushed at.
+ */
+const REACH_PAST_BODY = 0.43;
 /** Half the miner's width: every block across it in front gets dug, so standing on a seam between two columns never leaves one blocking. */
 const BODY_HALF_WIDTH = 0.3;
 /** Below this the stick / keys count as not pushing. */
@@ -37,8 +41,6 @@ const SOFT_GROUND = new Set(['dirt', 'gravel']);
 export class MiningController {
     /** The forced first find was handed out this session (see forcedFirstFind()). */
     private firstFindGiven = false;
-    /** Pushing into rock with a full backpack this tick (a new push is counted once: onFullPush). */
-    private pushingFull = false;
     private readonly damage = new Map<number, number>();
     private hitTimer = 0;
     private idleTimer = TOOL_LINGER_SEC;
@@ -60,8 +62,6 @@ export class MiningController {
         private readonly onTooHard: (ix: number, iz: number, tool: string) => void,
         /** The miner tried to dig with a full backpack (at most once per message). */
         private readonly onBagFull: () => void,
-        /** The miner started pushing into rock with a full backpack (once per push, however long it lasts). */
-        private readonly onFullPush: () => void,
         /** A chest dug out reached the miner; `zone` is where it was. */
         private readonly onChest: (kind: ChestKind, zone: number) => void,
         /** One swing broke `count` blocks (at least one), at `at`. */
@@ -72,8 +72,6 @@ export class MiningController {
 
     public fixedUpdate(delta: number): void {
         this.messageCooldown = Math.max(0, this.messageCooldown - delta);
-        const wasPushingFull = this.pushingFull;
-        this.pushingFull = false;
         const target = this.findTarget();
         if (!target) {
             this.effects.setCrack(null, 0);
@@ -95,8 +93,6 @@ export class MiningController {
         // (A power surge cashes every drop, so the bag never stops it.)
         if (!PowerSurge.active && DigProgress.backpackCount >= DigProgress.capacity) {
             this.effects.setCrack(null, 0);
-            this.pushingFull = true;
-            if (!wasPushingFull) this.onFullPush();
             if (this.hint(t('backpackFull'))) this.onBagFull();
             this.idle(delta);
             return;
@@ -126,7 +122,10 @@ export class MiningController {
         }
     }
 
-    /** The block in front of the miner while they push into rock, or null. */
+    /**
+     * The block in front of the miner while they push into rock, or null: looked for along the push, then straight
+     * along its main axis (the way footprint() digs) — a push at an angle into a wall still finds the wall.
+     */
     private findTarget(): [number, number] | null {
         const controller = this.player.movementController;
         // Movement switched off (the debug free camera) means the keys aren't steering the miner.
@@ -135,9 +134,15 @@ export class MiningController {
         if (input.length() < PUSH_THRESHOLD) return null;
         const length = input.length();
         const position = this.player.transform.position;
-        this.probe.set(position.x + (input.x / length) * REACH, 0, position.z + (input.y / length) * REACH);
-        const [ix, iz] = this.terrain.cellOf(this.probe.x, this.probe.z);
-        return this.terrain.cellValue(ix, iz) === AIR ? null : [ix, iz];
+        const reach = this.terrain.footprint + REACH_PAST_BODY;
+        const alongX = Math.abs(input.x) >= Math.abs(input.y);
+        const directions: [number, number][] = [[input.x / length, input.y / length], alongX ? [Math.sign(input.x), 0] : [0, Math.sign(input.y)]];
+        for (const [dx, dz] of directions) {
+            this.probe.set(position.x + dx * reach, 0, position.z + dz * reach);
+            const [ix, iz] = this.terrain.cellOf(this.probe.x, this.probe.z);
+            if (this.terrain.cellValue(ix, iz) !== AIR) return [ix, iz];
+        }
+        return null;
     }
 
     /**

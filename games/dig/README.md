@@ -80,7 +80,7 @@ games/dig/
   Amethyst is a rare purple gem in the obsidian.
 
 ### Mines (prestige)
-Once the newest mine has its Tractor ($15,000, `prestige.tool`; marked "NEW MINE" on the ATM's tool timeline — the
+Once the newest mine has its Tractor ($15,000, painted purple, `prestige.tool`; marked "NEW MINE" on the ATM's tool timeline — the
 Red Tractor after it stays the goal), the HUD shows a bouncing **NEW MINE!** button (and the MAP gets a "!").
 Opening a mine gives a **fresh run** there (shovel, small bag, no cash or boosts) in a new layout and colour theme
 (`mineThemes`), and every mine gets the bonus (`prestige`: +25% cash, +10% dig speed per mine). The **MAP** button
@@ -103,8 +103,9 @@ Two kinds of **chests** (`chests`):
   of where the miner is digging (`mining/PowerChestSpawner.ts`), in rock their tool can dig. It waits however long it
   takes; only if the miner goes more than `spawn.maxDistance` blocks away does it fade out, and the next dig after
   `spawn.respawnDelay` s brings another. Only one at a time, and it counts as taken the moment its block breaks.
-  Digging it opens the hub's first room of furniture (reveal rule `powerChest`), and from then on `power.perZone`
-  more are buried around every mine (`VoxelTerrain.buryPowerChests`, seeded), each a surge one tier above the tool.
+  Digging it opens the hub's first room of furniture (reveal rule `powerChest`). From then on there's always one more
+  out there, one at a time: `power.roam.delay` s after each surge ends, the next sits on a block `roam.distance` blocks
+  from the miner (never right by them), with its beam — each a surge one tier above the tool.
   Digging it starts a **power surge** (`mining/PowerSurge.ts`): for `seconds` the miner digs with the Mega Drill (or
   one tier above their tool if higher), a bit faster, and every block is **cashed on the spot** instead of filling
   the backpack. It's the game's "star": the miner rides the tractor as a small rainbow-glowing truck (`TractorRide`;
@@ -153,7 +154,9 @@ Driven by the progress alone, so a reload lands back in the right step:
 move → dig → bag full → sell → **forced Pickaxe** → **forced first bag** → wardrobe appears → **forced first hat**
 (the Mining Helmet; money topped up if short) → first relic (claim it in the Trophy Room) → first hub piece (the
 last sale is topped up to its price). Forced purchases dim the screen, stop the miner and point at BUY. The guide's
-floor arrows follow the real walking route (A* over the dug tunnels) and draw over the rock.
+green floor arrows follow the real walking route (A* over the dug tunnels) and draw over the rock. Its priorities:
+nothing during a power surge (it resumes after); the first power chest while it's showing; a full backpack back to the
+ATM; then the tutorial step (or the relic hunt).
 
 ### The relic hunt (after the tutorial)
 The playtests lost players in minutes 3–5, right after the tutorial, when the next relic was down to luck. So for

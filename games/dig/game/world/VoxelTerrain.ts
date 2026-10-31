@@ -327,18 +327,6 @@ export class VoxelTerrain {
     }
 
     /**
-     * After the first power chest (the one brought to the player: PowerChestSpawner) has been dug, more are buried
-     * around the mine — chests.power.perZone per zone, seeded like the cash ones (so a reload puts them back where they
-     * were; any already dug stay dug). Called by the scene, once per mine build; returns their cells (PowerChestSpawner
-     * draws them).
-     */
-    public buryPowerChests(): number[] {
-        const cells = this.burySpread('power', DIG.chests.power.perZone ?? [], this.seed + 2203);
-        this.changed++;
-        return cells;
-    }
-
-    /**
      * Buries `perZone[zone]` chests of `kind` in each zone: each in a seeded block of its zone with rock all round
      * (like the finds), kept CHEST_SPACING from every find and chest. Returns the cells they went in.
      */
@@ -520,6 +508,11 @@ export class VoxelTerrain {
     }
 
     /** Where the miner is and how wide they are against the rock (wider on the tractor); call before movement each step. */
+    /** The miner's footprint radius against the rock right now (wider in the tractor: setBody()). */
+    public get footprint(): number {
+        return this.bodyRadius;
+    }
+
     public setBody(x: number, z: number, radius = BODY_RADIUS): void {
         this.bodyAt.set(x, 0, z);
         this.bodyRadius = radius;

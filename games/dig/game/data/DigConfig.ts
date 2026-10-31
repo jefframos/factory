@@ -287,8 +287,11 @@ export interface ChestsDef {
     power: ChestKindDef & {
         /** The tool it gives (one tier above the tool owned if that's higher); the first is not offered once it's owned. */
         tool: string;
-        /** Buried in each zone (index = zone) once the first power chest has been dug (VoxelTerrain.buryPowerChests). */
-        perZone?: number[];
+        /**
+         * After the first: one at a time comes back, `delay` seconds after each surge ends, `distance` [min, max]
+         * blocks from the miner (PowerChestSpawner.updateRoaming).
+         */
+        roam: { delay: number; distance: number[] };
         seconds: number;
         /** Hits come this much faster than the tool's own. */
         speedMultiplier: number;
