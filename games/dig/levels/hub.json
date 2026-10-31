@@ -167,7 +167,8 @@
       "perk": {
         "stat": "sell",
         "amount": 0.02
-      }
+      },
+      "income": 0.2
     },
     {
       "id": "plant-east",
@@ -187,7 +188,8 @@
       "perk": {
         "stat": "sell",
         "amount": 0.03
-      }
+      },
+      "income": 0.1
     },
     {
       "id": "lamp-west",
@@ -206,7 +208,8 @@
       "perk": {
         "stat": "beam",
         "amount": 2
-      }
+      },
+      "income": 1.0
     },
     {
       "id": "lamp-east",
@@ -226,7 +229,8 @@
       "perk": {
         "stat": "beam",
         "amount": 2
-      }
+      },
+      "income": 0.2
     },
     {
       "id": "bench",
@@ -246,7 +250,8 @@
       "perk": {
         "stat": "sell",
         "amount": 0.03
-      }
+      },
+      "income": 0.4
     },
     {
       "id": "workbench",
@@ -265,7 +270,8 @@
       "perk": {
         "stat": "dig",
         "amount": 0.03
-      }
+      },
+      "income": 0.5
     },
     {
       "id": "cute-furniture-glb-couch-11",
@@ -284,7 +290,8 @@
       "perk": {
         "stat": "move",
         "amount": 0.02
-      }
+      },
+      "income": 0.3
     },
     {
       "id": "furniture-table-low-decorated",
@@ -303,7 +310,8 @@
       "perk": {
         "stat": "sell",
         "amount": 0.02
-      }
+      },
+      "income": 0.2
     },
     {
       "id": "plant",
@@ -323,7 +331,8 @@
       "perk": {
         "stat": "move",
         "amount": 0.02
-      }
+      },
+      "income": 0.1
     },
     {
       "id": "cute-furniture-glb-chair-pc-04",
@@ -342,7 +351,8 @@
       "perk": {
         "stat": "move",
         "amount": 0.02
-      }
+      },
+      "income": 0.8
     },
     {
       "id": "furniture-desk-decorated",
@@ -361,7 +371,8 @@
       "perk": {
         "stat": "sell",
         "amount": 0.03
-      }
+      },
+      "income": 1.5
     },
     {
       "id": "casino-assets-glb-flower-03",
@@ -380,7 +391,8 @@
       "perk": {
         "stat": "dig",
         "amount": 0.02
-      }
+      },
+      "income": 0.8
     },
     {
       "id": "cute-furniture-glb-nightstand-02",
@@ -399,7 +411,8 @@
       "perk": {
         "stat": "dig",
         "amount": 0.02
-      }
+      },
+      "income": 0.2
     },
     {
       "id": "furniture-shelf-b-large-decorated",
@@ -419,7 +432,8 @@
       "perk": {
         "stat": "dig",
         "amount": 0.02
-      }
+      },
+      "income": 0.4
     },
     {
       "id": "furniture-shelf-b-small-decorated",
@@ -439,7 +453,8 @@
       "perk": {
         "stat": "sell",
         "amount": 0.02
-      }
+      },
+      "income": 0.2
     },
     {
       "id": "cute-furniture-glb-picture-08",
@@ -455,7 +470,8 @@
       "perk": {
         "stat": "move",
         "amount": 0.02
-      }
+      },
+      "income": 0.3
     },
     {
       "id": "cute-furniture-glb-clock-03",
@@ -474,7 +490,8 @@
       "perk": {
         "stat": "dig",
         "amount": 0.03
-      }
+      },
+      "income": 2.5
     },
     {
       "id": "cute-furniture-glb-plants-15",
@@ -493,7 +510,8 @@
       "perk": {
         "stat": "sell",
         "amount": 0.03
-      }
+      },
+      "income": 3.3
     }
   ],
   "trophyTables": [

@@ -251,6 +251,21 @@
       "icon": "tractor",
       "vehicle": true,
       "rarity": "legendary"
+    },
+    {
+      "id": "redtractor",
+      "name": "Red Tractor",
+      "model": "pickaxe",
+      "clip": "StandingPICKAXE",
+      "power": 11,
+      "hitInterval": 0.11,
+      "area": 5,
+      "price": 100000,
+      "icon": "tractor",
+      "vehicle": true,
+      "tint": "#e8352b",
+      "rideSpeed": 1.8,
+      "rarity": "legendary"
     }
   ],
   "backpack": [
@@ -1158,9 +1173,16 @@
   ],
   "boostsUnlockToolLevel": 2,
   "prestige": {
+    "$comment": "tool: the tool that lets the player open the next mine (later tools are extras). priceStep: each mine after the first, tools, backpacks and boosts cost this much more (mine #2 x1.15, mine #3 x1.30...): the hub's perks and income, kept from mine to mine, would otherwise make each new run easier.",
     "sellBonus": 0.25,
     "digBonus": 0.1,
-    "seedStep": 7919
+    "seedStep": 7919,
+    "tool": "tractor",
+    "priceStep": 0.15
+  },
+  "hubIncome": {
+    "$comment": "Hub pieces earn their `income` ($ a second, levels/hub.json) while playing, x the new mines' sell bonus. It piles up at the ATM (collected on stepping on its pad), up to capMinutes of income.",
+    "capMinutes": 15
   },
   "mineThemes": [
     { "name": "Classic" },

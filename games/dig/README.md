@@ -69,7 +69,9 @@ games/dig/
 
 ### Progression
 - **Tools** (`tools`): Shovel → Pickaxe → Steel Pickaxe (digs 2 deep) → Power Drill → Mega Drill (3 wide, 2 deep)
-  → **Digger** (a grey tractor you ride) → **Tractor**. Vehicles are ridden outside the hub, faster, with an engine.
+  → **Digger** (a grey tractor you ride) → **Tractor** → **Red Tractor** ($100,000, 5 wide: the long goal the hub's
+  income helps pay for). Vehicles are ridden outside the hub, faster, with an engine; a vehicle's `tint` repaints the
+  tractor model (`utils/Paint.ts`, like the Digger's `greyscale`).
 - **Backpack** (`backpack`): 10 → 500 slots in 17 tiers, sized so a trip is mostly digging, not walking.
 - **Boosts** (`boosts`, unlock with the Steel Pickaxe): Dig Speed, Sell Price, Ore Luck, Move Speed — 20 levels
   each, cost ×1.3 per level. The BOOSTS tab shows "!" when one is affordable.
@@ -78,11 +80,13 @@ games/dig/
   Amethyst is a rare purple gem in the obsidian.
 
 ### Mines (prestige)
-Once the newest mine has its Tractor, the HUD shows a bouncing **NEW MINE!** button (and the MAP gets a "!").
+Once the newest mine has its Tractor (`prestige.tool`; the Red Tractor after it is an extra), the HUD shows a bouncing **NEW MINE!** button (and the MAP gets a "!").
 Opening a mine gives a **fresh run** there (shovel, small bag, no cash or boosts) in a new layout and colour theme
 (`mineThemes`), and every mine gets the bonus (`prestige`: +25% cash, +10% dig speed per mine). The **MAP** button
 lists every mine with GO to travel back and forth — each keeps its own cash, tools, bags, boosts, tunnels and
 collection; looks, hub, achievements and the bonus are shared. Switching plays a screen fade with the mine's name.
+Each mine after the first prices its tools, backpacks and boosts `prestige.priceStep` higher (mine #2 x1.15, #3
+x1.30…: `DigProgress.priceOf`), since the hub's perks and income come along; the first mine pays the listed prices.
 
 ### Finds and the collection
 18 buried artifacts per mine (`finds`). Buried ones near the miner give off sparkles in their rarity colour. Digging
@@ -123,12 +127,16 @@ Digger, Ore Hunter, Tycoon, Collector — 7 tiers each, shared across mines; tie
 
 ### Hub rooms and perks
 The hub is shared by every mine, so what's built there is kept for good — a small second prestige layer. Each
-buildable has a **perk** (`perk` in `levels/hub.json`: `sell` / `dig` / `move` as a fraction, `beam` in blocks of
-treasure-beam range), shown on its price tag and floated up when bought. Each reveal area's buildables are a **set**:
-buying them all adds the area's `bonus` (a "COMPLETE!" toast, analytics `hub / set-<area>`). The four rooms open with
-the tools, so new things to buy keep coming: Miner's Corner (tutorial, $50–250), Workshop (Steel Pickaxe, $150–300),
-Lounge (Power Drill, $500–900), Vault Room (Mega Drill, $1,500–2,000) — each piece about 20–40% of the next tool then.
-A hidden room shows a sign with what opens it and its set bonus. The whole hub is worth about one new mine (+28% cash,
+buildable has an **income** (`income`, $ a second) and a **perk** (`perk` in `levels/hub.json`: `sell` / `dig` /
+`move` as a fraction, `beam` in blocks of treasure-beam range). Its price tag has no words: the price, then an icon
+chip for each ("+$0.3/s", "+3%" by the stat's icon). The income piles up while playing (x the new mines' sell bonus,
+up to `hubIncome.capMinutes`) and waits over the ATM ("$252 / +$0.4/s"); stepping onto the ATM's pad collects it.
+Every few seconds each earning piece pops "+$N" over itself while the miner is near, and from the first one the HUD
+shows the base's $/s by the money. Each piece earns about its price / 600 a second (the whole hub ~$13/s). Each reveal area's buildables are a **set**: buying them all adds the area's
+`bonus` ("SET COMPLETE!", analytics `hub / set-<area>`). The rooms aren't named to the player (a new room just says
+"NEW FURNITURE TO BUILD!") and open with the tools, so new things to buy keep coming: the first room (tutorial,
+$50–250), then with the Steel Pickaxe ($150–300), the Power Drill ($500–900) and the Mega Drill ($1,500–2,000) — each
+piece about 20–40% of the next tool then. The whole hub's perks are worth about one new mine (+28% cash,
 +17% dig, +13% move, +4 beam range); the BOOSTS tab's footer adds up everything kept forever (hub + mines). The
 perks apply in `DigProgress` (`sellMultiplier`, `hitInterval`, `moveMultiplier`, `beaconRange`), so a new perk stat
 goes there too. A room for later mines: an area with the reveal rule `mines:<n>`.

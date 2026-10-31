@@ -9,7 +9,7 @@
 import * as PIXI from 'pixi.js';
 import { UiKit } from './UiKit';
 import { UiAnim } from './UiAnim';
-import { DIG } from '../data/DigConfig';
+import { DIG, PRESTIGE_TOOL_LEVEL } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
 import { t, names } from '../i18n/Localization';
 
@@ -75,7 +75,7 @@ export class MinesPanel extends PIXI.Container {
         const tool = DIG.tools[Math.min(mine.toolLevel, DIG.tools.length - 1)];
         const capacity = DIG.backpack[Math.min(mine.backpackLevel, DIG.backpack.length - 1)].capacity;
         const row = this.rowBase(y, `#${index + 1}`);
-        this.texts(row, t('mineName', { mine: index + 1 }) + (mine.toolLevel >= DIG.tools.length - 1 ? `  ${t('mineMaxed')}` : ''),
+        this.texts(row, t('mineName', { mine: index + 1 }) + (mine.toolLevel >= PRESTIGE_TOOL_LEVEL ? `  ${t('mineMaxed')}` : ''),
             t('mineInfo', { tool: names.tool(tool), capacity, money: mine.money.toLocaleString('en-US') }));
         row.addChild(here ? this.button(t('mineHere'), 'lockedButton') : this.button(t('mineGo'), 'buyButton', () => this.onTravel(index)));
         return row;
@@ -88,7 +88,7 @@ export class MinesPanel extends PIXI.Container {
         const bonus = DigProgress.prestige + 1;
         this.texts(row, t('newMineTitle', { mine: index + 1 }), ready
             ? t('newMineInfo', { sell: Math.round(DIG.prestige.sellBonus * bonus * 100), dig: Math.round(DIG.prestige.digBonus * bonus * 100) })
-            : t('mineLocked', { tool: names.tool(DIG.tools[DIG.tools.length - 1]), mine: index }));
+            : t('mineLocked', { tool: names.tool(DIG.tools[PRESTIGE_TOOL_LEVEL]), mine: index }));
         if (ready) {
             const open = this.button(t('newMineGo'), 'buyButton', () => this.onOpenNew());
             UiAnim.pulse(open, 0.05, 0.6);

@@ -5,13 +5,15 @@
 // drive faster, the wheels turning and the
 // exhaust puffing while it moves; back inside the hub another puff and it's gone, the miner on foot again.
 // The tractor follows the miner's body (its position and facing); the seat offset moves the body up/back
-// into the cab after the character has placed itself for the frame. Two tools are ridden: the Digger (the same
-// model with its texture in grey, a little slower: `rideSpeed`) and then the Tractor in its own colours.
+// into the cab after the character has placed itself for the frame. Three tools are ridden: the Digger (the same
+// model with its texture in grey, a little slower: `rideSpeed`), the Tractor in its own colours, and the Red Tractor
+// (repainted: `tint`).
 
 import * as THREE from 'three';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { BendService } from '../services/BendService';
-import { DIG } from '../data/DigConfig';
+import { DIG, toolPaint } from '../data/DigConfig';
+import { paintPixels } from '../utils/Paint';
 import { DigProgress } from '../data/DigProgress';
 import { hubRects } from '../data/HubData';
 import type DigPlayer from './DigPlayer';
@@ -31,11 +33,12 @@ export class TractorRide {
     private readonly lastPosition = new THREE.Vector3();
     private readonly seat = new THREE.Vector3();
     private readonly exhaust = new THREE.Vector3();
-    /** The model's materials, and its texture in colour and in grey (swapped by the tool owned: updateLook()). */
+    /** The model's materials, its texture in its own colours, and repainted ones by paint (swapped by the tool owned: updateLook()). */
     private readonly materials: THREE.MeshStandardMaterial[] = [];
     private colorMap?: THREE.Texture;
-    private greyMap?: THREE.Texture;
-    private grey = false;
+    private readonly paintedMaps = new Map<string, THREE.Texture | undefined>();
+    /** The paint shown now ('' = its own colours). */
+    private paint = '';
     /** The engine, running while the miner rides. */
     private readonly engine = new EngineSound();
 
@@ -83,16 +86,16 @@ export class TractorRide {
             model.updateMatrixWorld(true);
             model.position.y = -new THREE.Box3().setFromObject(model).min.y;
             this.colorMap = this.materials.find((m) => m.map)?.map ?? undefined;
-            this.greyMap = this.colorMap ? TractorRide.greyTexture(this.colorMap) : undefined;
-            this.grey = false;
+            this.paintedMaps.clear();
+            this.paint = '';
             this.holder.add(model);
         } catch (error) {
             console.warn(`[TractorRide] could not load ${config.model}`, error);
         }
     }
 
-    /** A copy of `map` (same settings) with its colours desaturated: the Digger's grey. */
-    private static greyTexture(map: THREE.Texture): THREE.Texture | undefined {
+    /** A copy of `map` (same settings) repainted (paintPixels): the Digger's grey, the Red Tractor's red. */
+    private static paintedTexture(map: THREE.Texture, paint: string): THREE.Texture | undefined {
         const image = map.image as CanvasImageSource & { width: number; height: number };
         if (!image?.width) return undefined;
         const canvas = document.createElement('canvas');
@@ -101,27 +104,26 @@ export class TractorRide {
         const context = canvas.getContext('2d')!;
         context.drawImage(image, 0, 0);
         const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-        const data = pixels.data;
-        for (let i = 0; i < data.length; i += 4) {
-            const luma = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-            data[i] = data[i + 1] = data[i + 2] = luma;
-        }
+        paintPixels(pixels.data, paint);
         context.putImageData(pixels, 0, 0);
-        // Its own Source: clone() shares the original's, and writing the image through it would grey the colour map too.
-        const grey = map.clone();
-        grey.source = new THREE.Source(canvas);
-        grey.needsUpdate = true;
-        return grey;
+        // Its own Source: clone() shares the original's, and writing the image through it would repaint the colour map too.
+        const painted = map.clone();
+        painted.source = new THREE.Source(canvas);
+        painted.needsUpdate = true;
+        return painted;
     }
 
-    /** The colours for the vehicle owned: grey for the Digger, its own for the Tractor. */
+    /** The colours for the vehicle owned: grey for the Digger, its own for the Tractor, red for the Red Tractor. */
     private updateLook(): void {
-        const grey = DigProgress.tool.greyscale === true;
-        if (grey === this.grey || !this.colorMap || !this.greyMap) return;
-        this.grey = grey;
+        const paint = toolPaint(DigProgress.tool) ?? '';
+        if (paint === this.paint || !this.colorMap) return;
+        if (paint && !this.paintedMaps.has(paint)) this.paintedMaps.set(paint, TractorRide.paintedTexture(this.colorMap, paint));
+        const map = paint ? this.paintedMaps.get(paint) : this.colorMap;
+        if (!map) return;
+        this.paint = paint;
         for (const material of this.materials) {
             if (!material.map) continue;
-            material.map = grey ? this.greyMap : this.colorMap;
+            material.map = map;
             material.needsUpdate = true;
         }
     }

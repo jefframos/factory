@@ -123,7 +123,7 @@ export class Guide {
         // Until both first upgrades are bought (the pickaxe, then the bag): dig, sell, buy — full bag -> the ATM.
         if (DigProgress.toolLevel === 0 || DigProgress.backpackLevel === 0) {
             if (DigProgress.achievementStat('blocks') === 0) return { text: t('guideDig'), target: inHub ? door : undefined };
-            if (tool && DigProgress.money >= tool.price) return { text: t('guideBuyTool', { tool: names.tool(tool) }), target: atmAt, buy: true };
+            if (tool && DigProgress.money >= DigProgress.priceOf(tool)) return { text: t('guideBuyTool', { tool: names.tool(tool) }), target: atmAt, buy: true };
             return this.digSellLoop(inHub, door, atmAt);
         }
         // The first piece of the hub: the cheapest one in sight (walk into it to buy it).
@@ -177,7 +177,7 @@ export class Guide {
     private digSellLoop(inHub: boolean, door: THREE.Vector3 | undefined, atmAt: THREE.Vector3 | undefined, goal?: string): GuideStep {
         const tool = DigProgress.nextTool;
         const bag = DigProgress.nextBackpack;
-        const cheapest = Math.min(tool?.price ?? Infinity, bag?.price ?? Infinity);
+        const cheapest = Math.min(tool ? DigProgress.priceOf(tool) : Infinity, bag ? DigProgress.priceOf(bag) : Infinity);
         if (DigProgress.money >= cheapest) return { text: goal ?? t('guideBuyUpgrade'), target: atmAt, buy: true };
         if (DigProgress.backpackCount >= DigProgress.capacity) return { text: t('guideBackpackFull'), target: atmAt };
         return { text: goal ?? t('guideKeepDigging'), target: inHub ? door : undefined };

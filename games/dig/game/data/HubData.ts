@@ -108,6 +108,8 @@ export interface HubBuildable extends HubProp {
     name: string;
     price: number;
     perk?: HubPerk;
+    /** Dollars a second it earns once built, piling up at the ATM (DigProgress.hubIncome). */
+    income?: number;
 }
 
 export interface HubDesign {
@@ -141,6 +143,12 @@ export function hubBonus(stat: HubStat, isBuilt: (id: string) => boolean): numbe
     for (const b of HUB.buildables ?? []) if (b.perk?.stat === stat && isBuilt(b.id)) total += b.perk.amount;
     for (const area of HUB.areas ?? []) if (area.bonus?.stat === stat && setComplete(area, isBuilt)) total += area.bonus.amount;
     return total;
+}
+
+/** Dollars a second, short: "+$0.4/s", "+$13/s". */
+export function rateLabel(perSecond: number): string {
+    const amount = perSecond >= 10 ? Math.round(perSecond).toLocaleString('en-US') : perSecond.toFixed(1).replace(/\.0$/, '');
+    return `+$${amount}/s`;
 }
 
 /** Floor rects of the hub (the whole floor when it has none). */

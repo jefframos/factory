@@ -32,10 +32,10 @@ import { LanguagePanel, LANGUAGE_SIZE } from './LanguagePanel';
 import { MinesPanel, MINES_SIZE } from './MinesPanel';
 import { MoveHint } from './MoveHint';
 import { ModelIcons } from './ModelIcons';
-import { BoostDef, DIG, Rarity, ToolDef } from '../data/DigConfig';
+import { BoostDef, DIG, Rarity, ToolDef, toolPaint } from '../data/DigConfig';
 import { RARITY_COLORS } from './CollectionPanel';
 import SoundToggleButton from 'core/ui/SoundToggleButton';
-import type { StationKind } from '../data/HubData';
+import { rateLabel, type StationKind } from '../data/HubData';
 
 /** A tutorial purchase the HUD won't let go of (DigScene decides when). */
 export type ForcedBuy = 'backpack' | 'tool' | 'hat';
@@ -70,19 +70,19 @@ const ACHIEVEMENTS_BUTTON = 84;
 const PHONE = { width: 112, height: 116, shine: 180 };
 /** The phone only shows with this many tool upgrades bought (the Steel Pickaxe). */
 const PHONE_TOOL_LEVEL = 2;
-const UPGRADE_SIZE = { width: 620, height: 580 };
+const UPGRADE_SIZE = { width: 760, height: 580 };
 /** Tool timeline in the upgrade panel: node size and the tractor's (the goal) bigger node. */
 const NODE_SIZE = 60;
 const GOAL_SIZE = 78;
-const TIMELINE_WIDTH = 460;
+const TIMELINE_WIDTH = 600;
 const LINE_DONE = 0x5fd35a;
 /** The backpack's segmented upgrade bar, under its offer's text. */
-const BAG_BAR = { width: 290, height: 9 };
+const BAG_BAR = { width: 400, height: 9 };
 const LINE_TODO = 0x4a5263;
 /** GEAR tab layout (y): the tool timeline, the tool offer, the backpack offer. */
 const GEAR_Y = { timeline: -110, tool: 28, bag: 146 };
 /** The panel's tabs and the content block under them (TabBar): the block's top edge and size, the tabs' size. */
-const PANEL_BLOCK = { top: -170, width: 580, height: 432, tabWidth: 170, tabHeight: 48 };
+const PANEL_BLOCK = { top: -170, width: 720, height: 432, tabWidth: 170, tabHeight: 48 };
 /** The line along the bottom of the upgrade panel, inside the content block. */
 const PANEL_FOOTER_Y = 238;
 /** BOOSTS tab: one compact row per boost, from FIRST_Y every STEP. */
@@ -90,7 +90,7 @@ const BOOST_ROW = { firstY: -110, step: 94, height: 86 };
 /** The "open a new mine?" confirmation. */
 const NEW_MINE_SIZE = { width: 560, height: 400 };
 /** Offer rows: frame left, name + details, buy button right. */
-const OFFER = { frameX: -226, textX: -170, textWidth: 290, buttonX: 202, buttonWidth: 130, rowWidth: 556 };
+const OFFER = { frameX: -296, textX: -240, textWidth: 400, buttonX: 266, buttonWidth: 150, rowWidth: 696 };
 /** How far a panel's title ribbon sticks out above its frame. */
 const RIBBON_OVERHANG = 44;
 /** Gap between the screen middle (where the miner is) and the top of a panel's ribbon. */
@@ -124,9 +124,9 @@ function toolDetail(tool: ToolDef): string {
     return (tool.depth ?? 1) > 1 ? t('toolPowerDeep', { power: tool.power, depth: tool.depth! }) : t('toolPower', { power: tool.power });
 }
 
-/** A tool's picture: its atlas icon, or for a vehicle a render of the tractor's model (grey for the Digger). */
+/** A tool's picture: its atlas icon, or for a vehicle a render of the tractor's model (grey for the Digger, red for the Red Tractor). */
 function toolArt(tool: ToolDef, size: number): PIXI.Sprite {
-    return tool.vehicle ? ModelIcons.sprite(`./dig/models/${DIG.tractor.model}`, size, false, tool.greyscale) : toolIcon(tool.icon, size);
+    return tool.vehicle ? ModelIcons.sprite(`./dig/models/${DIG.tractor.model}`, size, false, toolPaint(tool)) : toolIcon(tool.icon, size);
 }
 
 function toolIcon(iconId: string, size: number): PIXI.Sprite {
@@ -187,6 +187,9 @@ export class DigHud extends PIXI.Container {
     private station: StationKind | null = null;
     private readonly slots: PanelSlot[] = [];
     private lastMoney = -1;
+    /** What the hub earns a second, by the money (shown from the first piece that earns); the rate shown. */
+    private readonly incomeText = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 22, fill: 0x8fffa0, strokeThickness: 5 });
+    private incomeShown = 0;
     /** Money and items of a sale still flying to the sell pad: shown as not yet earned / still carried. */
     private heldMoney = 0;
     private heldItems = 0;
@@ -325,7 +328,13 @@ export class DigHud extends PIXI.Container {
     }
 
     private buildCorner(): void {
-        this.corner.addChild(this.pill('moneyIcon', this.moneyText, 0));
+        const money = this.pill('moneyIcon', this.moneyText, 0);
+        // The hub's income, just left of the money icon (the corner sits on the screen's right edge).
+        this.incomeText.anchor.set(1, 0.5);
+        this.incomeText.position.set(-6, 0);
+        this.incomeText.visible = false;
+        money.addChild(this.incomeText);
+        this.corner.addChild(money);
         const bag = this.pill('backpackIcon', this.backpackText, 62);
         this.bagRow = bag;
         const bar = new PIXI.Container();
@@ -600,6 +609,25 @@ export class DigHud extends PIXI.Container {
         this.refresh();
     }
 
+    /**
+     * The hub's income by the money: appears (with a pop and a line on screen) with the first piece that earns, and
+     * pops again whenever it goes up.
+     */
+    private refreshIncome(): void {
+        const rate = DigProgress.hubIncome;
+        if (rate === this.incomeShown) return;
+        const first = this.incomeShown === 0;
+        this.incomeShown = rate;
+        this.incomeText.visible = rate > 0;
+        if (rate <= 0) return;
+        this.incomeText.text = rateLabel(rate);
+        gsap.killTweensOf(this.incomeText.scale);
+        this.incomeText.scale.set(1);
+        UiAnim.punch(this.incomeText as unknown as PIXI.Container, 0.35);
+        // After the build's own message.
+        if (first && this.lastMoney >= 0) window.setTimeout(() => this.say(t('baseEarns', { rate: rateLabel(rate) }), 0x8fffa0), 1800);
+    }
+
     /** "SOLD! +$X", counting up over the sale. */
     public saySold(earned: number, duration: number): void {
         this.say(t('sold', { amount: 0 }), 0x9cff9c);
@@ -609,6 +637,7 @@ export class DigHud extends PIXI.Container {
     }
 
     private refresh(): void {
+        this.refreshIncome();
         const money = DigProgress.money - this.heldMoney;
         this.moneyText.text = `$${money}`;
         if (this.lastMoney >= 0 && money > this.lastMoney) {
@@ -896,7 +925,7 @@ export class DigHud extends PIXI.Container {
         const tool = DigProgress.nextTool;
         const bag = DigProgress.nextBackpack;
         const boosts = DIG.boosts.map((b) => `${DigProgress.boostLevel(b.id)}${money >= (DigProgress.boostPrice(b) ?? Infinity) ? '+' : ''}`);
-        return [DigProgress.toolLevel, DigProgress.capacity, !!tool && money >= tool.price, !!bag && money >= bag.price, this.buyHint, this.forced,
+        return [DigProgress.toolLevel, DigProgress.capacity, !!tool && money >= DigProgress.priceOf(tool), !!bag && money >= DigProgress.priceOf(bag), this.buyHint, this.forced,
             this.tab, DigProgress.boostsUnlocked, DigProgress.prestige, ...boosts].join('|');
     }
 
@@ -920,7 +949,7 @@ export class DigHud extends PIXI.Container {
             toolArt(tool, 64),
             names.tool(tool).toUpperCase(),
             toolDetail(tool),
-            tool.price,
+            DigProgress.priceOf(tool),
             () => {
                 if (!DigProgress.buyTool()) return false;
                 GameAnalytics.toolBought(DigProgress.toolLevel, DigProgress.tool.id);
@@ -941,7 +970,7 @@ export class DigHud extends PIXI.Container {
             icon('hud', 'backpackIcon', 64),
             bag ? t('backpackSize', { capacity: bag.capacity }) : t('biggestBackpack'),
             bag ? t('backpackHolds', { capacity: bag.capacity }) : t('nothingLeft'),
-            bag?.price,
+            bag ? DigProgress.priceOf(bag) : undefined,
             () => {
                 if (!DigProgress.buyBackpack()) return false;
                 GameAnalytics.backpackBought(DigProgress.backpackLevel, DigProgress.capacity);
@@ -957,11 +986,11 @@ export class DigHud extends PIXI.Container {
         if (this.buyHint || this.forced) {
             const money = DigProgress.money;
             const row = this.forced === 'backpack' ? GEAR_Y.bag : this.forced === 'tool' ? GEAR_Y.tool
-                : tool && money >= tool.price ? GEAR_Y.tool : bag && money >= bag.price ? GEAR_Y.bag : undefined;
+                : tool && money >= DigProgress.priceOf(tool) ? GEAR_Y.tool : bag && money >= DigProgress.priceOf(bag) ? GEAR_Y.bag : undefined;
             if (row !== undefined) this.panelBody.addChild(this.pointingHand(OFFER.buttonX, row));
         }
         const goal = DIG.tools[DIG.tools.length - 1];
-        this.panelFooter(!DigProgress.nextTool ? t('tractorRiding') : t('tractorGoal', { tool: names.tool(goal).toUpperCase(), area: goal.area, speed: DIG.tractor.speedMultiplier }));
+        this.panelFooter(!DigProgress.nextTool ? t('tractorRiding') : t('tractorGoal', { tool: names.tool(goal).toUpperCase(), area: goal.area, speed: goal.rideSpeed ?? DIG.tractor.speedMultiplier }));
     }
 
     /** A line along the bottom of the upgrade panel. */
@@ -1166,7 +1195,7 @@ export class DigHud extends PIXI.Container {
             node.x = x(i);
             node.addChild(UiKit.image('upgrades', toolFrame(tool, i <= owned), size, size), toolArt(tool, size * 0.72));
             const label = UiKit.text('upgrades', 'nodeLabel', {
-                text: i < owned ? '' : i === owned ? t('now') : goal ? t('goalPrice', { price: tool.price.toLocaleString('en-US') }) : `$${tool.price.toLocaleString('en-US')}`,
+                text: i < owned ? '' : i === owned ? t('now') : goal ? t('goalPrice', { price: DigProgress.priceOf(tool).toLocaleString('en-US') }) : `$${DigProgress.priceOf(tool).toLocaleString('en-US')}`,
             });
             label.anchor.set(0.5, 0);
             label.y = size / 2 + 4;

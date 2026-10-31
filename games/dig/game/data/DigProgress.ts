@@ -6,8 +6,8 @@
 // change so a burst of digging writes once. Versioned (SAVE_VERSION): a save from another version starts a new game.
 
 import { Signal } from 'signals';
-import { hubBonus, type HubStat } from './HubData';
-import { AchievementDef, AchievementStat, BoostDef, BoostId, DIG, FindDef, MineTheme, ToolDef, WardrobeItem } from './DigConfig';
+import { HUB, hubBonus, type HubStat } from './HubData';
+import { AchievementDef, AchievementStat, BoostDef, BoostId, DIG, PRESTIGE_TOOL_LEVEL, FindDef, MineTheme, ToolDef, WardrobeItem } from './DigConfig';
 
 export type LookKind = 'colors' | 'faces' | 'hats';
 
@@ -105,6 +105,14 @@ interface SaveData {
     mines: MineSnapshot[];
     /** Seconds of active play, all sessions together (the analytics' time stamps: GameAnalytics). */
     playSeconds: number;
+    /** The hub's income piled up at the ATM, not collected yet (shared by every mine, like the hub). */
+    hubCash: number;
+}
+
+/** A price rounded to look like one: to $1 under $100, $5 under $1,000, $50 under $10,000, $500 above. */
+function tidyPrice(price: number): number {
+    const step = price < 100 ? 1 : price < 1000 ? 5 : price < 10000 ? 50 : 500;
+    return Math.round(price / step) * step;
 }
 
 /** The tier (1-based) that unlocks an achievement's hub decoration. */
@@ -121,7 +129,7 @@ const fresh = (): SaveData => ({
     money: 0, toolLevel: 0, backpackLevel: 0, backpack: {}, found: {}, seen: [], collectionDone: false, deepestZone: 0,
     owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, wardrobeVisited: false, dug: '', built: [],
     stats: { blocks: 0, ores: 0, earned: 0, sells: 0 }, achievements: {}, revealedAt: {}, sent: [],
-    boosts: {}, prestige: 0, currentMine: 0, mines: [], crownEarned: false, unclaimed: {}, playSeconds: 0,
+    boosts: {}, prestige: 0, currentMine: 0, mines: [], crownEarned: false, unclaimed: {}, playSeconds: 0, hubCash: 0,
 });
 
 const freshMine = (): MineSnapshot => ({ money: 0, toolLevel: 0, backpackLevel: 0, backpack: {}, boosts: {}, dug: '', found: {}, seen: [], collectionDone: false, unclaimed: {} });
@@ -214,7 +222,7 @@ export const DigProgress = {
     get canAffordUpgrade(): boolean {
         const tool = this.nextTool;
         const bag = this.nextBackpack;
-        return (!!tool && state.money >= tool.price) || (!!bag && state.money >= bag.price);
+        return (!!tool && state.money >= this.priceOf(tool)) || (!!bag && state.money >= this.priceOf(bag));
     },
     /** The current tool is a vehicle (the Digger or the Tractor): ridden outside the hub. */
     get hasTractor(): boolean {
@@ -266,7 +274,7 @@ export const DigProgress = {
         const raw = rules.rarity[find.rarity] * (1 + rules.perZone * zone);
         let amount = Math.max(rules.roundTo, Math.round(raw / rules.roundTo) * rules.roundTo);
         if (this.collectedCount === 0) {
-            const next = Math.min(this.nextTool?.price ?? Infinity, this.nextBackpack?.price ?? Infinity);
+            const next = Math.min(this.nextTool ? this.priceOf(this.nextTool) : Infinity, this.nextBackpack ? this.priceOf(this.nextBackpack) : Infinity);
             if (Number.isFinite(next)) amount = Math.max(amount, next);
         }
         return amount;
@@ -403,7 +411,7 @@ export const DigProgress = {
     boostPrice(boost: BoostDef): number | undefined {
         const level = this.boostLevel(boost.id);
         if (level >= boost.maxLevel) return undefined;
-        return Math.round(boost.basePrice * Math.pow(boost.growth, level) / 5) * 5;
+        return Math.round(boost.basePrice * Math.pow(boost.growth, level) * this.priceFactor / 5) * 5;
     },
 
     buyBoost(boost: BoostDef): boolean {
@@ -486,7 +494,7 @@ export const DigProgress = {
 
     /** A new mine can be opened: the newest mine has its last tool (the Tractor). */
     get canOpenNewMine(): boolean {
-        return this.mine(state.prestige).toolLevel >= DIG.tools.length - 1;
+        return this.mine(state.prestige).toolLevel >= PRESTIGE_TOOL_LEVEL;
     },
 
     /** The current mine's run, as saved for later: its tunnels read from the terrain (not cheap: on leaving only). */
@@ -653,10 +661,23 @@ export const DigProgress = {
         return true;
     },
 
+    /**
+     * What a tool or backpack costs in the mine being played: its price, x (1 + prestige.priceStep) for every mine
+     * before this one (the first mine pays the listed prices), rounded to a tidy number.
+     */
+    priceOf(def: { price: number }): number {
+        return state.currentMine === 0 ? def.price : tidyPrice(def.price * this.priceFactor);
+    },
+
+    /** How much more things cost in the mine being played than in the first (1 there). */
+    get priceFactor(): number {
+        return 1 + DIG.prestige.priceStep * state.currentMine;
+    },
+
     buyTool(): boolean {
         const next = this.nextTool;
-        if (!next || state.money < next.price) return false;
-        state.money -= next.price;
+        if (!next || state.money < this.priceOf(next)) return false;
+        state.money -= this.priceOf(next);
         state.toolLevel++;
         this.changed();
         return true;
@@ -664,8 +685,8 @@ export const DigProgress = {
 
     buyBackpack(): boolean {
         const next = this.nextBackpack;
-        if (!next || state.money < next.price) return false;
-        state.money -= next.price;
+        if (!next || state.money < this.priceOf(next)) return false;
+        state.money -= this.priceOf(next);
         state.backpackLevel++;
         this.changed();
         return true;
@@ -699,6 +720,35 @@ export const DigProgress = {
     /** Adds active play time (every frame: saved along with the next change, not on its own). */
     addPlayTime(delta: number): void {
         state.playSeconds += delta;
+        // The hub's income piles up while playing (saved with the next save, like the play time).
+        const perSecond = this.hubIncome;
+        if (perSecond > 0) state.hubCash = Math.min(perSecond * 60 * DIG.hubIncome.capMinutes, state.hubCash + perSecond * delta);
+    },
+
+    /** What the hub earns a second: its pieces' `income`, x the new mines' sell bonus. */
+    get hubIncome(): number {
+        const base = (HUB.buildables ?? []).reduce((sum, b) => sum + (state.built.includes(b.id) ? b.income ?? 0 : 0), 0);
+        return base * (1 + DIG.prestige.sellBonus * state.prestige);
+    },
+
+    /** The pile at the ATM has reached hubIncome.capMinutes of income: it earns nothing more until collected. */
+    get hubCashFull(): boolean {
+        const cap = this.hubIncome * 60 * DIG.hubIncome.capMinutes;
+        return cap > 0 && state.hubCash >= cap - 0.01;
+    },
+
+    /** The hub's income waiting at the ATM, in whole dollars. */
+    get hubCash(): number {
+        return Math.floor(state.hubCash);
+    },
+
+    /** Takes the hub's income waiting at the ATM into the money; returns how much (0 = nothing yet). */
+    collectHubCash(): number {
+        const amount = Math.floor(state.hubCash);
+        if (amount <= 0) return 0;
+        state.hubCash -= amount;
+        this.addEarned(amount);
+        return amount;
     },
 
     /** Marks the terrain changed (a block dug) so it's included in the next save. */

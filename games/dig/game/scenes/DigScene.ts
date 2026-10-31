@@ -38,7 +38,7 @@ import { TreasureBeacons } from '../world/TreasureBeacons';
 import { PowerSurge } from '../mining/PowerSurge';
 import { PowerChestSpawner, POWER_CHEST_TAKEN } from '../mining/PowerChestSpawner';
 import type { StationKind } from '../data/HubData';
-import { hubRects, HUB, hubAreaAt, buildablesIn } from '../data/HubData';
+import { hubRects, HUB, hubAreaAt, buildablesIn, rateLabel } from '../data/HubData';
 import { DIG, ChestKind, MaterialDef } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
 import { DigEffects } from '../vfx/DigEffects';
@@ -101,6 +101,9 @@ const AD_BREAK_COOLDOWN_MS = 3 * 60 * 1000;
 const AD_BREAK_DELAY_MS = 900;
 /** Tries at digging with a full backpack before the guide's arrows lead back to the ATM. */
 const FULL_PUSHES_TO_GUIDE = 2;
+/** Each hub piece that earns pops what it made every this many seconds (at least $1), while the miner is this near the hub. */
+const INCOME_POP_SEC = 3;
+const INCOME_POP_RANGE = 22;
 /** The move hint goes once the miner has walked this far. */
 const MOVE_HINT_DISTANCE = 2.5;
 /** A swing breaking at least this many blocks (a drill's) shakes the camera, harder the more, up to SHAKE_MAX. */
@@ -195,6 +198,8 @@ export default class DigScene extends ThreeScene {
     private readonly lastStep = new THREE.Vector3();
     /** The buildable spot the miner is standing on (so buying/telling the price happens once per visit). */
     private buildSpot: string | null = null;
+    /** Per earning hub piece: cash made since its last pop, and seconds until it may pop again (updateIncomePops). */
+    private readonly incomePops = new Map<string, { cash: number; wait: number }>();
     private readonly followTarget = new THREE.Vector3();
     private readonly pickupPoint = new THREE.Vector3();
 
@@ -222,8 +227,10 @@ export default class DigScene extends ThreeScene {
             GameAnalytics.areaRevealed(area.id);
             DigAudio.play('reveal');
             for (const point of points) this.effects.smoke(point.clone().setY(0.5), 4, 0.9, new THREE.Color(0xf3e9d8), 0.6);
-            // Just after whatever caused it ("UPGRADED!", "BUILT: ..."), so both get read.
-            window.setTimeout(() => this.hud.say(t('newArea', { name: names.area(area).toUpperCase() }), 0x8fe3ff), 1200);
+            // Just after whatever caused it ("UPGRADED!", "BUILT: ..."), so both get read. A room of pieces to buy isn't
+            // named (one more name to learn): it just says there's more to build.
+            const text = buildablesIn(area).length ? t('newPieces') : t('newArea', { name: names.area(area).toUpperCase() });
+            window.setTimeout(() => this.hud.say(text, 0x8fe3ff), 1200);
         };
         this.hud = this.createHud();
         Localization.onLocaleChange.add(this.onLocaleChange, this);
@@ -442,7 +449,10 @@ export default class DigScene extends ThreeScene {
         // The first frame after a pause (platform / hidden tab) carries the whole gap: never step more than this.
         delta = Math.min(delta, MAX_FRAME_SEC);
         this.updateGameplay();
-        if (Gameplay.active) GameAnalytics.playTime(delta);
+        if (Gameplay.active) {
+            GameAnalytics.playTime(delta);
+            this.updateIncomePops(delta);
+        }
         this.world.update(delta);
         this.world.lateUpdate(delta);
         this.tractor.update(delta);
@@ -458,6 +468,7 @@ export default class DigScene extends ThreeScene {
         this.updatePowerSurge(delta);
         this.terrain.update();
         this.effects.update(delta);
+        this.hub.setHubCash(DigProgress.hubCash, DigProgress.hubIncome);
         this.hub.update(delta, this.player.transform.position);
         this.flyCamera.update(delta);
         this.map?.update(delta);
@@ -620,6 +631,8 @@ export default class DigScene extends ThreeScene {
             if (!this.hub.isStationOpen(station.kind)) continue;
             if (Math.hypot(position.x - station.x, position.z - station.z) > STATION_RADIUS) continue;
             open = station.kind;
+            // Only on stepping onto the pad: standing there would collect every dollar as it trickles in.
+            if (station.kind === 'atm' && this.onStation !== 'atm') this.collectHubCash(this.hub.stationTarget('atm') ?? new THREE.Vector3(station.x, 1, station.z));
             if (station.kind === 'atm' && DigProgress.backpackCount > 0) {
                 this.sell(this.hub.stationTarget('atm') ?? new THREE.Vector3(station.x, 1, station.z), true);
             }
@@ -631,6 +644,45 @@ export default class DigScene extends ThreeScene {
         // Something new to look at, or a reward waiting to be claimed there.
         this.hub.setAttention('collection', DigProgress.unseenFinds.length > 0 || DigProgress.hasUnclaimed);
         this.hub.setAttention('wardrobe', open !== 'wardrobe' && DigProgress.wardrobeHasNews);
+    }
+
+    /**
+     * The hub's income, seen being made: every INCOME_POP_SEC each built piece that earns pops "+$N" over itself (what
+     * it made meanwhile, once that's $1), while the miner is near the hub. Just a show — the money itself piles up at
+     * the ATM (DigProgress.hubCash); nothing pops while that pile is full.
+     */
+    private updateIncomePops(delta: number): void {
+        if (DigProgress.hubCashFull) return;
+        const near = this.player.transform.position.length() < INCOME_POP_RANGE;
+        const bonus = 1 + DIG.prestige.sellBonus * DigProgress.prestige;
+        for (const piece of HUB.buildables ?? []) {
+            if (!piece.income || !DigProgress.isBuilt(piece.id)) continue;
+            let pop = this.incomePops.get(piece.id);
+            if (!pop) {
+                // Staggered, so the pieces don't all pop together.
+                pop = { cash: 0, wait: INCOME_POP_SEC * Math.random() };
+                this.incomePops.set(piece.id, pop);
+            }
+            pop.cash += piece.income * bonus * delta;
+            pop.wait -= delta;
+            if (pop.wait > 0 || pop.cash < 1) continue;
+            const amount = Math.floor(pop.cash);
+            pop.cash -= amount;
+            pop.wait = INCOME_POP_SEC;
+            if (near) this.effects.floatText(new THREE.Vector3(piece.x, (piece.elevation ?? 0) + piece.height + 0.5, piece.z), `+$${amount}`, '#8fffa0');
+        }
+    }
+
+    /**
+     * Stepping onto the ATM's pad takes the hub's income waiting there (DigProgress.hubIncome): it pops up over the ATM,
+     * and is said on screen unless a sale is about to say its own.
+     */
+    private collectHubCash(at: THREE.Vector3): void {
+        const amount = DigProgress.collectHubCash();
+        if (amount <= 0) return;
+        this.effects.floatText(at.clone().setY(at.y + 1.2), `+$${amount.toLocaleString('en-US')}`, '#8fffa0');
+        DigAudio.play('coins');
+        if (DigProgress.backpackCount === 0) this.hud.say(t('hubCashCollected', { amount: amount.toLocaleString('en-US') }), 0x8fffa0);
     }
 
     /** The backpack just filled up: said on screen and over the miner (MiningController repeats it while they keep digging). */
@@ -668,8 +720,8 @@ export default class DigScene extends ThreeScene {
         // The pickaxe first (it digs faster, so the bag fills and its upgrade comes sooner), then the bag. Never in the
         // middle of a power surge: its cash would otherwise stop the miner seconds into it.
         const surging = PowerSurge.active;
-        if (firstMine && !surging && DigProgress.toolLevel === 0 && tool && money >= tool.price) forced = 'tool';
-        else if (firstMine && !surging && DigProgress.backpackLevel === 0 && bag && money >= bag.price) forced = 'backpack';
+        if (firstMine && !surging && DigProgress.toolLevel === 0 && tool && money >= DigProgress.priceOf(tool)) forced = 'tool';
+        else if (firstMine && !surging && DigProgress.backpackLevel === 0 && bag && money >= DigProgress.priceOf(bag)) forced = 'backpack';
         const needsHat = !!hat && !DigProgress.boughtFirstHat && DigProgress.backpackLevel > 0 && DigProgress.toolLevel > 0;
         if (!needsHat) this.hatForced = false;
         else if (!forced && (this.hatForced || this.onStation === 'wardrobe')) {
@@ -728,9 +780,9 @@ export default class DigScene extends ThreeScene {
             const name = names.item(buildable.name);
             const top = new THREE.Vector3(buildable.x, buildable.height + 1, buildable.z);
             this.effects.floatText(top, `-$${buildable.price}`, '#ffe27a');
-            // What it gives, rising a beat after the price.
-            const perk = buildable.perk;
-            if (perk) window.setTimeout(() => this.effects.floatText(top.clone().setY(top.y + 0.5), perkLabel(perk), '#8fffa0'), 450);
+            // What it earns, rising a beat after the price (its perk is on its tag).
+            const income = buildable.income;
+            if (income) window.setTimeout(() => this.effects.floatText(top.clone().setY(top.y + 0.5), rateLabel(income), '#8fffa0'), 450);
             // Its room's set: how far along, or (the last piece) the set bonus.
             const area = hubAreaAt(buildable.x, buildable.z);
             const pieces = area ? buildablesIn(area) : [];
@@ -739,10 +791,10 @@ export default class DigScene extends ThreeScene {
                 this.hud.say(t('hubComplete', { name }), 0x8fe3a1);
             } else if (area?.bonus && inSet === pieces.length) {
                 GameAnalytics.hubSetComplete(area.id);
-                this.hud.say(t('setComplete', { name: names.area(area).toUpperCase(), bonus: perkLabel(area.bonus) }), 0x8fffa0);
+                this.hud.say(t('setComplete', { bonus: perkLabel(area.bonus) }), 0x8fffa0);
                 DigAudio.play('quest');
             } else if (area && pieces.length > 1) {
-                this.hud.say(t('builtSet', { name, set: names.area(area), built: inSet, total: pieces.length }), 0x8fe3a1);
+                this.hud.say(t('built', { name, built: inSet, total: pieces.length }), 0x8fe3a1);
             } else {
                 this.hud.say(t('built', { name, built, total }), 0x8fe3a1);
             }

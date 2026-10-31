@@ -999,6 +999,7 @@ function renderInspector() {
         rows.splice(1, 0,
             textField('Name', data.name, (v) => edit((d) => { d.name = v || d.name; })),
             numberField('Price ($)', data.price, 50, (v) => edit((d) => { d.price = Math.max(0, Math.round(v)); })),
+            numberField('Income ($/s)', data.income ?? 0, 0.1, (v) => edit((d) => { d.income = round(Math.max(0, v), 0.1) || undefined; })),
             ...perkFields('Perk (for good, every mine)', data.perk, (perk) => edit((d) => { d.perk = perk; })),
             el('div', { class: 'muted small' }, `id: ${data.id} (saves remember bought pieces by id)`));
     }

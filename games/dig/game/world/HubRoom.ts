@@ -5,11 +5,11 @@
 // the rock) and static colliders, decor props, and the stations — a glowing pad in front of the
 // station's model (the ATM, the artifact totem, the wardrobe closet) with a floating icon, so they're easy
 // to spot from anywhere in the hub, and a bouncing "!" when there's something new to check there — and the
-// buildables: pieces the player buys to finish the hub, drawn as see-through ghosts with a price tag and their perk
-// (walk into one to buy it) until bought, then popped in as the real model. Reveal areas (levels/hub.json `areas`) keep
-// everything inside them hidden — no colliders, no station, no buying — until their rule is met, then pop it all in
-// (so a new player isn't shown the whole hub at once); a hidden room with pieces to buy shows a sign saying what
-// opens it (the tool, or the mine) and its set bonus — and the trophy tables: each zone's
+// buildables: pieces the player buys to finish the hub, drawn as see-through ghosts with a price tag showing their
+// income and perk as icons (walk into one to buy it) until bought, then popped in as the real model. Reveal areas (levels/hub.json
+// `areas`) keep everything inside them hidden — no colliders, no station, no buying — until their rule is met, then
+// pop it all in (so a new player isn't shown the whole hub at once). The hub's income waiting at the ATM floats over
+// it (setHubCash). And the trophy tables: each zone's
 // finds stand on a table in the trophy room, a see-through blue ghost (fresnel rim) until dug up, then the
 // real thing, turning.
 
@@ -22,7 +22,7 @@ import { BendService } from '../services/BendService';
 import { PolyWallBuilder } from '../builders/PolyWallBuilder';
 import { CheckerFloorBuilder } from '../builders/CheckerFloorBuilder';
 import type { StoreWallPlacement, WallSetupConfig, WallStyleConfig, FloorCheckerConfig } from './RoomTypes';
-import { HUB, HubAchievementDecor, HubArea, HubBuildable, HubPerk, HubStation, HubTrophyTable, StationKind, buildablesIn, hubAreaAt, hubRects } from '../data/HubData';
+import { HUB, HubAchievementDecor, HubArea, HubBuildable, HubPerk, HubStation, HubTrophyTable, StationKind, buildablesIn, hubAreaAt, hubRects, rateLabel } from '../data/HubData';
 import { DigProgress } from '../data/DigProgress';
 import type { Box } from './GuidePath';
 import { DIG, FindDef } from '../data/DigConfig';
@@ -109,8 +109,6 @@ interface AreaState {
     pending: [number, number, number, number, number][];
     /** Seconds into the reveal pop-in (-1 = not popping). */
     pop: number;
-    /** While hidden: what opens it (a room with pieces to buy). */
-    sign?: THREE.Sprite;
 }
 
 /** How long the pieces of a newly revealed area take to pop in. */
@@ -153,30 +151,51 @@ export function perkLabel(perk: HubPerk): string {
     return t(`perk_${perk.stat}`, { n: perk.stat === 'beam' ? perk.amount : Math.round(perk.amount * 100) });
 }
 
-/** The price (with a coin) over the buildable's name, and its perk under it, on a plaque. */
-function priceTexture(name: string, price: number, perk?: HubPerk): THREE.CanvasTexture {
+/** Each perk's icon on a price tag (the boosts' icons: ui/dig.json boosts). */
+const PERK_ICONS: Record<HubPerk['stat'], string> = { sell: 'ItemIcon_Money_Coin', dig: 'ToolIcon_pickaxe', move: 'ItemIcon_Gear_Boots', beam: 'ItemIcon_Star_Gold' };
+
+/**
+ * A buildable's tag, no words: its price, and under it what it gives — an icon chip each for its income ("+$0.3/s")
+ * and its perk ("+3%" by the stat's icon). Text sizes are picked to fit, never squeezed.
+ */
+function priceTexture(def: HubBuildable): THREE.CanvasTexture {
     const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 176;
+    canvas.width = 320;
+    canvas.height = 160;
     const g = canvas.getContext('2d')!;
-    CanvasArt.plaque(g, 8, 8, 240, 160, 26, 'rgba(255, 224, 102, 0.6)');
-    CanvasArt.drawIcon(g, 'ItemIcon_Money_Bill', 46, 50, 54);
-    CanvasArt.text(g, `$${price.toLocaleString('en-US')}`, 146, 50, 50, '#ffe066', 168);
-    CanvasArt.text(g, name.toUpperCase(), 128, 96, 24, '#ffffff', 224);
-    if (perk) CanvasArt.text(g, perkLabel(perk), 128, 136, 30, '#8fffa0', 224);
+    CanvasArt.plaque(g, 8, 8, 304, 144, 26, 'rgba(255, 224, 102, 0.6)');
+    const price = `$${def.price.toLocaleString('en-US')}`;
+    CanvasArt.text(g, price, 160, 50, fitSize(g, price, 56, 270), '#ffe066');
+    const chips: [string, string][] = [];
+    if (def.income) chips.push(['ItemIcon_Money_Bill', rateLabel(def.income)]);
+    if (def.perk) chips.push([PERK_ICONS[def.perk.stat], def.perk.stat === 'beam' ? `+${def.perk.amount}` : `+${Math.round(def.perk.amount * 100)}%`]);
+    const width = 288 / Math.max(1, chips.length);
+    chips.forEach(([iconName, text], i) => {
+        const left = 16 + i * width;
+        CanvasArt.drawIcon(g, iconName, left + 22, 112, 40);
+        // The text in the chip's room right of its icon.
+        CanvasArt.text(g, text, left + 44 + (width - 48) / 2, 112, fitSize(g, text, 32, width - 48), '#8fffa0');
+    });
     return CanvasArt.texture(canvas);
 }
 
-/** A hidden room's sign: its name, what opens it, and the set bonus for buying all its pieces. */
-function lockedTexture(area: HubArea, opens: string): THREE.CanvasTexture {
+/** The largest font size up to `size` at which `text` fits in `width` (so nothing gets squeezed). */
+function fitSize(g: CanvasRenderingContext2D, text: string, size: number, width: number): number {
+    g.font = CanvasArt.font(size);
+    const measured = g.measureText(text).width + size * 0.22;
+    return measured <= width ? size : Math.max(14, Math.floor(size * (width / measured)));
+}
+
+/** The hub's income waiting at the ATM: "$123" and what it earns a second. */
+function hubCashTexture(amount: number, perSecond: number): THREE.CanvasTexture {
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 224;
+    canvas.width = 256;
+    canvas.height = 128;
     const g = canvas.getContext('2d')!;
-    CanvasArt.plaque(g, 6, 6, 500, 212, 34, 'rgba(255, 216, 107, 0.7)');
-    CanvasArt.text(g, names.area(area).toUpperCase(), 256, 52, 50, '#ffd86b', 470);
-    CanvasArt.text(g, opens, 256, 112, 32, '#ffffff', 470);
-    if (area.bonus) CanvasArt.text(g, t('setBonus', { bonus: perkLabel(area.bonus) }), 256, 170, 30, '#8fffa0', 470);
+    CanvasArt.plaque(g, 8, 8, 240, 112, 26, 'rgba(143, 255, 160, 0.6)');
+    CanvasArt.drawIcon(g, 'ItemIcon_Money_Bill', 46, 50, 54);
+    CanvasArt.text(g, `$${amount.toLocaleString('en-US')}`, 146, 50, fitSize(g, `$${amount.toLocaleString('en-US')}`, 50, 168), '#8fffa0');
+    CanvasArt.text(g, rateLabel(perSecond), 128, 96, 26, '#ffffff');
     return CanvasArt.texture(canvas);
 }
 
@@ -224,6 +243,10 @@ function alertTexture(): THREE.CanvasTexture {
 export class HubRoom {
     private readonly objects: THREE.Object3D[] = [];
     private readonly stations = new Map<StationKind, StationParts>();
+    /** The hub's income waiting at the ATM (setHubCash), and the amount it shows. */
+    private hubCashTag?: THREE.Sprite;
+    private hubCashShown = -1;
+    private hubCashDrawn = 0;
     private readonly buildables = new Map<string, BuildableParts>();
     private readonly trophies: Trophy[] = [];
     /** Trophy table name signs, faded in by the miner's distance; `shown` eases 0..1. */
@@ -274,7 +297,6 @@ export class HubRoom {
         }
         // Hidden until revealed: decided before anything is built, so their colliders wait.
         this.refreshAreas(false);
-        for (const area of this.areas.values()) this.buildSign(area);
         for (const prop of HUB.props) {
             this.inArea(prop.x, prop.z, () => {
                 void this.placeProp(prop.model, prop.x, prop.z, prop.rotationY, prop.height, prop.elevation ?? 0, prop.stretch);
@@ -476,25 +498,6 @@ export class HubRoom {
         return !station || this.isOpen(station.x, station.z);
     }
 
-    /**
-     * A hidden room with pieces to buy gets a sign floating over it — what opens it and its set bonus — when its rule
-     * says (a tool: 'upgrade:<n>', or a mine: 'mines:<n>'). It goes when the room appears.
-     */
-    private buildSign(area: AreaState): void {
-        if (area.revealed || !buildablesIn(area.def).length) return;
-        const rule = area.def.reveal.split('|').map((r) => r.trim()).find((r) => r.startsWith('upgrade:') || r.startsWith('mines:'));
-        if (!rule) return;
-        const n = Number(rule.split(':')[1]);
-        const tool = DIG.tools[n];
-        const opens = () => rule.startsWith('mines:') ? t('roomOpensMine', { mine: n }) : t('roomOpensTool', { tool: tool ? names.tool(tool).toUpperCase() : '' });
-        const sign = this.add(new THREE.Sprite(new THREE.SpriteMaterial({ map: lockedTexture(area.def, opens()), depthWrite: false })), null);
-        sign.userData.relabel = () => lockedTexture(area.def, opens());
-        sign.scale.set(3.2, 1.4, 1);
-        sign.position.set(area.def.x, 1.6, area.def.z);
-        sign.renderOrder = 4;
-        area.sign = sign;
-    }
-
     /** Whether an area's reveal rule is met (see HubArea): any of its '|'-separated rules. */
     private ruleMet(def: HubArea, seen = new Set<string>()): boolean {
         return def.reveal.split('|').some((rule) => this.singleRuleMet(def, rule.trim(), seen));
@@ -588,7 +591,6 @@ export class HubRoom {
             if (met === area.revealed) continue;
             area.revealed = met;
             area.group.visible = met;
-            if (area.sign) area.sign.visible = !met;
             if (!met) continue;
             DigProgress.markAreaRevealed(area.def.id);
             for (const args of area.pending) this.collider(...args, null);
@@ -619,9 +621,9 @@ export class HubRoom {
 
     private buildBuildable(def: HubBuildable): void {
         const area = this.building;
-        const tag = this.add(new THREE.Sprite(new THREE.SpriteMaterial({ map: priceTexture(names.item(def.name), def.price, def.perk), depthWrite: false })));
-        tag.userData.relabel = () => priceTexture(names.item(def.name), def.price, def.perk);
-        tag.scale.set(1.6, 1.1, 1);
+        const tag = this.add(new THREE.Sprite(new THREE.SpriteMaterial({ map: priceTexture(def), depthWrite: false })));
+        tag.userData.relabel = () => priceTexture(def);
+        tag.scale.set(2.0, 1.0, 1);
         tag.position.set(def.x, (def.elevation ?? 0) + def.height + TAG_LIFT, def.z);
         tag.renderOrder = 4;
         const ring = this.add(new THREE.Mesh(new THREE.TorusGeometry(BUILD_RADIUS, 0.05, 8, 40), this.material(GHOST_COLOR, GHOST_COLOR)));
@@ -733,6 +735,32 @@ export class HubRoom {
     public setAttention(kind: StationKind, on: boolean): void {
         const station = this.stations.get(kind);
         if (station) station.attention.visible = on;
+    }
+
+    /**
+     * The hub's income waiting at the ATM (whole dollars) and what it earns a second: a tag floating over the ATM's
+     * icon while there's something to collect. Redrawn when the amount changes, at most twice a second.
+     */
+    public setHubCash(amount: number, perSecond: number): void {
+        const atm = this.stations.get('atm');
+        if (!atm || !this.isStationOpen('atm')) return;
+        if (!this.hubCashTag) {
+            if (amount <= 0) return;
+            this.hubCashTag = this.add(new THREE.Sprite(new THREE.SpriteMaterial({ depthWrite: false, depthTest: false })), null);
+            this.hubCashTag.scale.set(1.6, 0.8, 1);
+            this.hubCashTag.renderOrder = 4;
+        }
+        const tag = this.hubCashTag;
+        tag.visible = amount > 0;
+        tag.position.set(atm.icon.position.x, atm.iconY + 1.1, atm.icon.position.z);
+        const now = performance.now();
+        if (amount === this.hubCashShown || amount <= 0 || (this.hubCashShown > 0 && now - this.hubCashDrawn < 500)) return;
+        this.hubCashShown = amount;
+        this.hubCashDrawn = now;
+        tag.material.map?.dispose();
+        tag.material.map = hubCashTexture(amount, perSecond);
+        tag.material.needsUpdate = true;
+        tag.userData.relabel = () => hubCashTexture(amount, perSecond);
     }
 
     /** Where items handed to a station fly (the ATM's slot). */

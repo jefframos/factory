@@ -105,6 +105,8 @@ export interface ToolDef {
     vehicle?: boolean;
     /** A vehicle drawn in grey (the tractor's model and icon desaturated): the Digger, the weaker one. */
     greyscale?: boolean;
+    /** A vehicle repainted in this colour (the tractor's shading kept): the Red Tractor. */
+    tint?: string;
     /** A vehicle's speed multiplier on walking speed (unset: the tractor's `speedMultiplier`). */
     rideSpeed?: number;
     /** Frame colour once owned (same colours as the collection); not-owned tools show grey. */
@@ -180,6 +182,16 @@ export interface PrestigeDef {
     digBonus: number;
     /** Each new mine's terrain seed is the base seed + this x the mine number (a new layout, finds buried again). */
     seedStep: number;
+    /** The tool (id) that opens the next mine; tools after it are extras. */
+    tool: string;
+    /** Each mine after the first, tools, backpacks and boosts cost this much more (DigProgress.priceOf). */
+    priceStep: number;
+}
+
+/** The hub's pieces earn money while playing (their `income`, levels/hub.json), piling up at the ATM. */
+export interface HubIncomeDef {
+    /** It stops piling up at this many minutes of income. */
+    capMinutes: number;
 }
 
 /**
@@ -229,6 +241,7 @@ export interface DigDesign {
     /** The BOOSTS tab opens with this many tool upgrades (or after the first new mine). */
     boostsUnlockToolLevel: number;
     prestige: PrestigeDef;
+    hubIncome: HubIncomeDef;
     mineThemes: MineTheme[];
     /**
      * What a find pays when claimed (DigProgress.findPayout): its rarity's base cash x (1 + perZone x the zone it was
@@ -308,6 +321,15 @@ export interface RichOreDef {
 export type ChestKind = 'power' | 'cash';
 
 export const DIG: DigDesign = data as DigDesign;
+
+/** The level of the tool that opens the next mine (DIG.prestige.tool; the last tool if it's missing). */
+const prestigeTool = DIG.tools.findIndex((t) => t.id === DIG.prestige.tool);
+export const PRESTIGE_TOOL_LEVEL = prestigeTool >= 0 ? prestigeTool : DIG.tools.length - 1;
+
+/** How a tool's vehicle is painted: 'grey', a colour, or undefined for its own colours. */
+export function toolPaint(tool: ToolDef): string | undefined {
+    return tool.tint ?? (tool.greyscale ? 'grey' : undefined);
+}
 
 /** Material index 0 is air in the terrain grid, so a cell's material is DIG.materials[value - 1]. */
 export const materialOf = (cell: number): MaterialDef | undefined => DIG.materials[cell - 1];
