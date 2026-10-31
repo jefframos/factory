@@ -7,7 +7,8 @@ import { ensureFolderExists } from '../folderUtils/folderUtils.mjs';
 import { sanitizeAssetNames } from '../folderUtils/sanitizeAssetNames.mjs';
 import audio from '../pack/audio.mjs';
 
-dotenv.config();
+// .env picks the game, even over a GAME left set in the terminal (dotenv alone never overrides one).
+process.env.GAME = dotenv.config().parsed?.GAME ?? process.env.GAME;
 
 const GAME = process.env.GAME;
 const WATCH = process.env.WATCH === 'true';

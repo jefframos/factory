@@ -39,14 +39,28 @@ export class TractorRide {
     /** The engine, running while the miner rides. */
     private readonly engine = new EngineSound();
 
+    /** The model's download started (load()). */
+    private loadStarted = false;
+
+    /**
+     * Loads the model at once only for a player who owns a vehicle already; everyone else gets it in the background
+     * once they start playing (loadInBackground(), from the scene), long before they can buy one.
+     */
     public constructor(threeScene: THREE.Scene, private readonly player: DigPlayer, private readonly effects: DigEffects) {
         this.holder.visible = false;
         threeScene.add(this.holder);
-        void this.load();
+        if (DigProgress.hasTractor) this.loadInBackground();
     }
 
     public get isRiding(): boolean {
         return this.riding;
+    }
+
+    /** Starts the model's download, once. */
+    public loadInBackground(): void {
+        if (this.loadStarted) return;
+        this.loadStarted = true;
+        void this.load();
     }
 
     private async load(): Promise<void> {
@@ -120,6 +134,8 @@ export class TractorRide {
     /** Call after the world has updated (the character has placed itself for this frame). */
     public update(delta: number): void {
         const position = this.player.transform.position;
+        // Just bought (or the background load hasn't been asked for): the model now.
+        if (DigProgress.hasTractor) this.loadInBackground();
         const ride = DigProgress.hasTractor && !TractorRide.inHub(position.x, position.z);
         this.updateLook();
         if (ride !== this.riding) this.setRiding(ride);

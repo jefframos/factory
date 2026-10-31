@@ -264,5 +264,11 @@
     "area_south-west": "South West",
     "area_north-west": "North West",
     "guideWardrobe": "The wardrobe is open! Go and try on a new look",
-    "guideBuyUpgrade": "Buy an upgrade at the ATM!"
+    "guideBuyUpgrade": "Buy an upgrade at the ATM!",
+    "powerChest": "POWER CHEST! {tool} for {seconds}s!",
+    "powerTimer": "{tool} · {seconds}s",
+    "powerOverBuy": "Liked it? Get the {tool} at the ATM!",
+    "powerOver": "Power over! Upgrade at the ATM",
+    "cashChest": "TREASURE CHEST! +${amount}",
+    "combo": "{count} BLOCKS!"
 }

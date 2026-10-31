@@ -19,6 +19,7 @@ From the repo root, with `GAME=dig` in `.env`:
 | `npm run editor` | The level / data editor (see Editor). |
 | `npm run image` | Rebuild the UI atlas after adding images to `raw-assets/images/ui{tps}/`. |
 | `npm run audio` | Repack sounds after adding files to `raw-assets/audio/`. |
+| `npm run models` (= `models:compress`) / `npm run models:uncompress` | Publish the models — compressed by default, every build and editor import (raw assets untouched); `:uncompress` publishes the raw files as they are: textures capped at 256px, the character FBX published as a welded GLB (`raw-assets/models-optimize.json`). Loading: only the mine, the miner and the stations block the loading screen; hub decor, sounds and the tractor load behind the game. |
 | `npm run i18n:update` | Translate new or changed strings with Claude (see Localization). |
 | `npm run i18n:validate` | Check every language file against English. |
 
@@ -89,6 +90,33 @@ one up shows a banner — its reward then **waits in the Trophy Room**: the tote
 has a CLAIM button on each card with a reward (and on the footer for a completed collection). Payouts grow with
 rarity and depth (`findPayout`); the first find of a mine always pays at least the next upgrade.
 
+### Chests, power surges and rich veins
+Two kinds of **chests** (`chests`):
+- **Power chest** (cyan) — the Mega Drill moment, **once per player**. It's never buried: after `spawn.afterBlocks`
+  blocks dug, it pops and fades into the rock `spawn.ahead` blocks in front of where the miner is digging
+  (`mining/PowerChestSpawner.ts`), in rock their tool can dig. It waits however long it takes; only
+  if the miner goes more than `spawn.maxDistance` blocks away does it fade out, and the next dig after
+  `spawn.respawnDelay` s brings another. Only one at a time, and it counts as taken the moment its block breaks.
+  Digging it starts a **power surge** (`mining/PowerSurge.ts`): for `seconds` the miner digs with the Mega Drill (or
+  one tier above their tool if higher), a bit faster, and every block is **cashed on the spot** instead of filling
+  the backpack. A countdown shows at the top; when it ends the HUD names the tool to buy. Never offered once the
+  Mega Drill is owned. Forced tutorial purchases wait until a surge is over. (The data showed only ~8% reached the
+  Power Drill.)
+- **Cash chest** (gold): `perZone` buried per zone, drawn and revealed like finds; pays `reward[zone]` ± `spread`,
+  x the sell bonus, at once.
+
+Buried treasure within `beaconRange` blocks shows a pulsing **light beam** (`world/TreasureBeacons.ts`) — gold, cyan,
+or the find's rarity colour — and sparkles up close. **Rich veins** (`richOre`): ore in seeded noise patches grows
+bigger, more numerous nuggets/gems, twinkles, and drops `dropMultiplier` x the items. Swings that break several blocks
+shake the camera, and every 10 blocks in a run pops "N BLOCKS!". The dev MAP shows chests as squares; the Dig debug
+panel has **POWER SURGE**.
+
+### Analytics time stamps
+Every event (except frequent ones: playtime, sells, bag full, ads, settings, equips) is sent twice: as before, and
+under category `time` with the total active play time (all sessions) as a minute bucket —
+`time / upgrade-tool-03-drill-m08-12 / complete` = the Power Drill bought 8–12 minutes in. The funnel stays as it was;
+the `time` events say when each step happens. See the table in `analytics/GameAnalytics.ts`.
+
 ### Achievements
 Digger, Ore Hunter, Tycoon, Collector — 7 tiers each, shared across mines; tier 4 adds a trophy to the hub.
 **Champion** (claim 15 levels) unlocks the Crown hat. Claiming dims the screen until the coins land.
@@ -121,6 +149,7 @@ Every tuning value lives here, not in code. Main sections:
 | `boosts`, `boostsUnlockToolLevel` | the boost tracks |
 | `prestige`, `mineThemes` | new-mine bonus and each mine's colours (rock tints, floors, hub floor and walls) |
 | `finds`, `findPayout`, `collectionReward`, `firstFindAfterBlocks` | artifacts and what they pay |
+| `chests`, `richOre` | power / cash chests (count per zone, surge tool and length, rewards, beacon range) and rich veins |
 | `wardrobe` | colours, faces, hats and prices (the Crown is `unlock: "achievement"`) |
 | `achievements` | tiers, rewards, the hub decoration (`decor`, `decorAt`) or hat (`hat`) |
 | `tractor` | the ridden vehicle's model, seat, speed, smoke, `bodyRadius` (its footprint against rock) |

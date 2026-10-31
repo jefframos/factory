@@ -191,7 +191,8 @@ const slugify = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace
 /**
  * Copies a library model (and every file it needs: .bin, textures) into games/dig/raw-assets/models/hub{m}/<slug>/
  * and its published copy public/dig/models/hub/<slug>/, the model file renamed to the slug so its registry name
- * is unique. Returns the path the level uses (under models/).
+ * is unique. The published copy is compressed like every model build does (tools/models/shrink-textures.mjs, the
+ * game's raw-assets/models-optimize.json); the raw copy stays as it came. Returns the path the level uses (under models/).
  */
 async function importLibraryModel(id) {
     const library = await listLibrary();
@@ -211,6 +212,9 @@ async function importLibraryModel(id) {
             await fs.copyFile(path.join(LIBRARY_FILES, file.src), target);
         }
     }
+    const { loadShrinkOptions, shrinkModelsFolder } = await import(pathToFileURL(path.join(REPO_ROOT, 'tools', 'models', 'shrink-textures.mjs')).href);
+    const compression = loadShrinkOptions(path.join(REPO_ROOT, 'games', 'dig'));
+    if (compression) await shrinkModelsFolder(path.join(HUB_PUBLIC_DIR, slug), compression);
     return { path: `hub/${slug}/${slug}${ext}`, warnings };
 }
 

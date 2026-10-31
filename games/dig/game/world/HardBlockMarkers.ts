@@ -7,7 +7,7 @@
 
 import * as THREE from 'three';
 import { VoxelTerrain, AIR } from './VoxelTerrain';
-import { DigProgress } from '../data/DigProgress';
+import { PowerSurge } from '../mining/PowerSurge';
 import { CanvasArt } from '../ui/CanvasArt';
 
 /** Blocks this far (in cells) around the miner get their lock. */
@@ -40,7 +40,8 @@ export class HardBlockMarkers {
     private readonly cells: number[] = [];
     private readonly material: THREE.SpriteMaterial;
     private rescan = 0;
-    private toolLevel = -1;
+    /** Dig power the locks were placed for (the tool owned, or a power surge's). */
+    private power = -1;
     private time = 0;
     private bumped = -1;
     private bumpAge = BUMP_SEC;
@@ -68,9 +69,9 @@ export class HardBlockMarkers {
         this.time += delta;
         this.bumpAge += delta;
         this.rescan -= delta;
-        if (this.rescan <= 0 || this.toolLevel !== DigProgress.toolLevel) {
+        if (this.rescan <= 0 || this.power !== PowerSurge.digTool.power) {
             this.rescan = RESCAN_SEC;
-            this.toolLevel = DigProgress.toolLevel;
+            this.power = PowerSurge.digTool.power;
             this.scan(player);
         }
         const top = this.terrain.blockHeight + LIFT;
@@ -92,7 +93,7 @@ export class HardBlockMarkers {
     }
 
     private scan(player: THREE.Vector3): void {
-        const power = DigProgress.tool.power;
+        const power = this.power;
         const terrain = this.terrain;
         const [px, pz] = terrain.cellOf(player.x, player.z);
         const found: number[] = [];

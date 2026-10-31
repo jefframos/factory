@@ -40,6 +40,18 @@
 //   travel       mine-<n>                          complete   the player went back (or on) to mine #n from the MAP
 //   ad           commercial-break                  start      a commercial break starts (after a BUY tap only)
 //   ad           commercial-break                  complete   it ended (played, skipped by the platform or failed)
+//   chest        power-shown-<n>                   visible    the power chest faded in ahead of the miner, the nth
+//                                                             time this session (5 = 5 or more: it keeps coming back
+//                                                             until it's dug)
+//   chest        power-<zoneId> | cash-<zoneId>    complete   a chest dug up (in that zone)
+//   power        <toolId>                          start      a power chest's surge starts (the tool it lends)
+//   power        <toolId>                          complete   the surge ran out
+//
+// Time stamps: every event except the frequent ones (UNTIMED) is sent a second time under category `time`, with
+// what = <category>-<what>-<bucket> and the same action, where <bucket> is the player's active play time so far, all
+// sessions together (DigProgress.playSeconds), as a minute range from TIME_BUCKETS: m00-01, m01-02, ... m60-90,
+// m90plus. So `time / upgrade-tool-03-drill-m08-12 / complete` = the Power Drill bought 8 to 12 minutes in. The
+// plain events stay as they were (the funnel), and the `time` ones split each by when it happened.
 //
 // Add an event here (and to the table) rather than calling PlatformHandler.measure() directly.
 
@@ -52,8 +64,24 @@ export type TutorialStep = (typeof TUTORIAL)[number];
 
 const PLAYTIME_MINUTES = [1, 2, 3, 5, 8, 12, 20, 30, 45, 60];
 
+/** Minutes of total play where a time stamp's bucket starts (the last one is open-ended). */
+const TIME_BUCKETS = [0, 1, 2, 3, 5, 8, 12, 20, 30, 45, 60, 90];
+/** Categories (or category-what) sent too often to be worth a time stamp each. */
+const UNTIMED = new Set(['playtime', 'settings', 'ad', 'bag', 'sell-atm', 'sell-anywhere', 'shop-equip']);
+
+/** The time-stamp bucket of a moment `seconds` of total play in: m05-08, or m90plus. */
+function timeBucket(seconds: number): string {
+    const minutes = seconds / 60;
+    let i = 0;
+    while (i + 1 < TIME_BUCKETS.length && minutes >= TIME_BUCKETS[i + 1]) i++;
+    const from = pad(TIME_BUCKETS[i]);
+    return i + 1 < TIME_BUCKETS.length ? `m${from}-${pad(TIME_BUCKETS[i + 1])}` : `m${from}plus`;
+}
+
 function send(category: string, what: string | number, action: string): void {
     PlatformHandler.instance.measure(category, what, action);
+    if (UNTIMED.has(category) || UNTIMED.has(`${category}-${what}`) || UNTIMED.has(`${category}-${action}`)) return;
+    PlatformHandler.instance.measure('time', `${category}-${what}-${timeBucket(DigProgress.playSeconds)}`, action);
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -72,6 +100,7 @@ export const GameAnalytics = {
     /** Active play time (call every frame while gameplay is active): sends each minute milestone once a session. */
     playTime(delta: number): void {
         playSeconds += delta;
+        DigProgress.addPlayTime(delta);
         while (nextMinute < PLAYTIME_MINUTES.length && playSeconds >= PLAYTIME_MINUTES[nextMinute] * 60) {
             send('playtime', `min-${PLAYTIME_MINUTES[nextMinute]}`, 'reached');
             nextMinute++;
@@ -190,6 +219,21 @@ export const GameAnalytics = {
 
     languagePicked(code: string): void {
         send('settings', `lang-${code}`, 'interact');
+    },
+
+    /** The power chest faded in ahead of the miner, the `count`th time this session (5 = 5 or more). */
+    powerChestShown(count: number): void {
+        send('chest', `power-shown-${Math.min(count, 5)}`, 'visible');
+    },
+
+    /** A buried chest dug up, `zoneId` where. */
+    chestDug(kind: string, zoneId: string): void {
+        send('chest', `${kind}-${zoneId}`, 'complete');
+    },
+
+    /** A power surge started (`start`, the tool it lends) or ran out (`complete`). */
+    powerSurge(toolId: string, action: 'start' | 'complete'): void {
+        send('power', toolId, action);
     },
 };
 

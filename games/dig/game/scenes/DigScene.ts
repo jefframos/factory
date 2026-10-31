@@ -33,9 +33,12 @@ import { TractorRide } from '../player/TractorRide';
 import { Guide } from '../world/Guide';
 import { HardBlockMarkers } from '../world/HardBlockMarkers';
 import { TreasureSparkles } from '../world/TreasureSparkles';
+import { TreasureBeacons } from '../world/TreasureBeacons';
+import { PowerSurge } from '../mining/PowerSurge';
+import { PowerChestSpawner, POWER_CHEST_TAKEN } from '../mining/PowerChestSpawner';
 import type { StationKind } from '../data/HubData';
 import { hubRects, HUB } from '../data/HubData';
-import { DIG, MaterialDef } from '../data/DigConfig';
+import { DIG, ChestKind, MaterialDef } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
 import { DigEffects } from '../vfx/DigEffects';
 import { MiningController } from '../mining/MiningController';
@@ -99,6 +102,16 @@ const AD_BREAK_DELAY_MS = 900;
 const FULL_PUSHES_TO_GUIDE = 2;
 /** The move hint goes once the miner has walked this far. */
 const MOVE_HINT_DISTANCE = 2.5;
+/** A swing breaking at least this many blocks (a drill's) shakes the camera, harder the more, up to SHAKE_MAX. */
+const SHAKE_FROM_BLOCKS = 3;
+const SHAKE_PER_BLOCK = 0.035;
+const SHAKE_MAX = 0.3;
+const SHAKE_DECAY = 9;
+/** Blocks broken with no gap longer than COMBO_GAP_SEC: every COMBO_STEP of them pops a "N BLOCKS!". */
+const COMBO_GAP_SEC = 1.2;
+const COMBO_STEP = 10;
+/** A power surge's cashed drops are added up and shown as one "+$" this often. */
+const SURGE_CASH_SEC = 0.3;
 
 export default class DigScene extends ThreeScene {
     /**
@@ -130,6 +143,19 @@ export default class DigScene extends ThreeScene {
     private hardBlocks!: HardBlockMarkers;
     /** Sparkles over buried finds near the miner. */
     private treasureSparkles!: TreasureSparkles;
+    /** Light beams over buried finds and chests, seen from further away. */
+    private treasureBeacons!: TreasureBeacons;
+    /** The Mega Drill chest fading in ahead of the miner (once per player). */
+    private powerChests!: PowerChestSpawner;
+    /** Camera shake left (world units), from big swings. */
+    private shake = 0;
+    private readonly shakeOffset = new THREE.Vector3();
+    /** Blocks broken in the current run, and the time since the last one (onBroke). */
+    private combo = 0;
+    private comboGap = 0;
+    /** A power surge's cash not yet shown, and the time to the next "+$". */
+    private surgeCash = 0;
+    private surgeCashTimer = 0;
     /** Pushes into rock with a full backpack since it filled up (FULL_PUSHES_TO_GUIDE turns the arrows to the ATM on). */
     private fullPushes = 0;
     /** The backpack was full last frame (filling it up gets called out once). */
@@ -206,6 +232,8 @@ export default class DigScene extends ThreeScene {
         this.guide = new Guide(this.threeScene, this.hub, (x, z) => this.terrain.isSolid(x, z), (text, buy) => this.hud.setGuide(text, buy));
         this.hardBlocks = new HardBlockMarkers(this.threeScene, this.terrain);
         this.treasureSparkles = new TreasureSparkles(this.terrain, this.effects);
+        this.treasureBeacons = new TreasureBeacons(this.threeScene, this.terrain);
+        this.powerChests = new PowerChestSpawner(this.threeScene, this.terrain, this.effects);
         this.mining = new MiningController(this.terrain, this.effects, this.player, (text) => this.hud.say(text, 0xffd9a8), (find, zone) => {
             // Its reward waits in the Trophy Room (claimed there: the totem gets its "!"); the banner says so.
             const amount = DigProgress.findPayout(find, zone);
@@ -228,6 +256,11 @@ export default class DigScene extends ThreeScene {
             // A few tries at digging with a full backpack: the guide's arrows lead back to the ATM until it's sold.
             this.fullPushes++;
             if (this.fullPushes >= FULL_PUSHES_TO_GUIDE) this.guide.setReturnToSell(true);
+        }, (kind, zone) => this.openChest(kind, zone), (count, at) => {
+            this.onBroke(count);
+            this.powerChests.onDig(at, this.player.transform.position);
+        }, (amount) => {
+            this.surgeCash += amount;
         });
         this.flyCamera = new DebugFlyCameraController(this.threeCamera, SetupThree.renderer.domElement);
         if (Game.debugParams.dev) {
@@ -240,6 +273,8 @@ export default class DigScene extends ThreeScene {
         // Gameplay starts on the first input, but only once the game is loaded (taps on the loading screen don't count).
         void this.ready.then(() => {
             if (this.sceneDestroyed) return;
+            // The game is in: now the hub's decor, buildables and trophies load (they pop in as they arrive).
+            this.hub.loadDecor();
             window.addEventListener('pointerdown', this.onFirstInput, true);
             window.addEventListener('keydown', this.onFirstInput, true);
         });
@@ -375,6 +410,7 @@ export default class DigScene extends ThreeScene {
             panel.button('MINE MAP', () => this.map?.toggle());
         }
         panel.button('SELL BACKPACK HERE', () => this.sellAnywhere());
+        panel.button('POWER SURGE (without using up the power chest)', () => this.openChest('power', this.currentZone, true));
         panel.button('ADD $100', () => DigProgress.addMoney(100));
         panel.button('ADD $5000', () => DigProgress.addMoney(5000));
         panel.button('RESET SAVE', () => {
@@ -407,6 +443,9 @@ export default class DigScene extends ThreeScene {
         this.guide.update(delta, this.player.transform.position);
         this.hardBlocks.update(delta, this.player.transform.position);
         this.treasureSparkles.update(delta, this.player.transform.position);
+        this.treasureBeacons.update(delta, this.player.transform.position);
+        this.powerChests.update(delta, this.player.transform.position);
+        this.updatePowerSurge(delta);
         this.terrain.update();
         this.effects.update(delta);
         this.hub.update(delta, this.player.transform.position);
@@ -414,6 +453,71 @@ export default class DigScene extends ThreeScene {
         this.map?.update(delta);
         BendService.updateTime(delta);
         super.update(delta);
+    }
+
+    /**
+     * A chest dug out reached the miner. Cash pays on the spot. Power lends a better tool for a while (PowerSurge):
+     * the drill-sized dig the upgrades lead to, early, with every block cashed as it breaks — once per player (the
+     * spawner stops offering it; `debug` = the debug button, which doesn't use it up).
+     */
+    private openChest(kind: ChestKind, zone: number, debug = false): void {
+        if (!debug) GameAnalytics.chestDug(kind, DIG.zones[zone].id);
+        if (kind === 'power' && !debug) DigProgress.once(POWER_CHEST_TAKEN);
+        const at = this.player.pickupPoint(new THREE.Vector3());
+        const color = new THREE.Color(kind === 'power' ? 0x6fe3ff : 0xffd23f);
+        for (let i = 0; i < 14; i++) {
+            this.effects.sparkle(at.clone().add(new THREE.Vector3((Math.random() - 0.5) * 1.6, Math.random() * 0.8, (Math.random() - 0.5) * 1.6)), color, 0.55);
+        }
+        DigAudio.play('cheer');
+        if (kind === 'cash') {
+            const amount = DigProgress.chestPayout(zone);
+            DigProgress.addEarned(amount);
+            this.hud.say(t('cashChest', { amount: amount.toLocaleString('en-US') }), 0xffd23f);
+            this.effects.floatText(at.clone().setY(2.6), `+$${amount}`, '#ffe27a');
+            DigAudio.play('coins');
+            return;
+        }
+        const tool = PowerSurge.start();
+        GameAnalytics.powerSurge(tool.id, 'start');
+        this.hud.say(t('powerChest', { tool: names.tool(tool).toUpperCase(), seconds: DIG.chests.power.seconds }), 0x8fe9ff);
+        DigAudio.play('quest');
+        this.mining.toolChanged();
+        // Whatever's in the bag stays there: the surge cashes new drops only.
+        this.guide.setReturnToSell(false);
+        this.fullPushes = 0;
+    }
+
+    /** Runs a power surge's clock (only while playing), its HUD countdown and cash pops, and its end. */
+    private updatePowerSurge(delta: number): void {
+        this.surgeCashTimer -= delta;
+        if (this.surgeCash > 0 && this.surgeCashTimer <= 0) {
+            this.surgeCashTimer = SURGE_CASH_SEC;
+            this.effects.floatText(this.player.pickupPoint(new THREE.Vector3()).setY(2.3), `+$${this.surgeCash}`);
+            this.surgeCash = 0;
+        }
+        // Only while the miner can dig: a menu, a forced purchase or the find banner holding the game don't eat it.
+        const ended = Gameplay.active && this.player.movementController.enabled ? PowerSurge.update(delta) : undefined;
+        const tool = PowerSurge.tool;
+        this.hud.setPower(tool ? t('powerTimer', { tool: names.tool(tool).toUpperCase(), seconds: Math.ceil(PowerSurge.secondsLeft) }) : null, PowerSurge.fraction);
+        if (!ended) return;
+        GameAnalytics.powerSurge(ended.id, 'complete');
+        this.mining.toolChanged();
+        // Still above the tool owned: name it, it's what to save up for.
+        const owned = DIG.tools.indexOf(ended) <= DigProgress.toolLevel;
+        this.hud.say(owned ? t('powerOver') : t('powerOverBuy', { tool: names.tool(ended) }), 0x8fe9ff);
+        DigAudio.play('quest');
+    }
+
+    /** One swing broke `count` blocks: big swings shake the camera, and a long run pops a "N BLOCKS!". */
+    private onBroke(count: number): void {
+        if (count >= SHAKE_FROM_BLOCKS) this.shake = Math.min(SHAKE_MAX, this.shake + count * SHAKE_PER_BLOCK);
+        const before = this.combo;
+        this.combo += count;
+        this.comboGap = 0;
+        if (Math.floor(this.combo / COMBO_STEP) > Math.floor(before / COMBO_STEP)) {
+            const shown = Math.floor(this.combo / COMBO_STEP) * COMBO_STEP;
+            this.effects.floatText(this.player.pickupPoint(new THREE.Vector3()).setY(3), t('combo', { count: shown }), '#ffd23f');
+        }
     }
 
     /** The "drag to move" hand until the miner has walked MOVE_HINT_DISTANCE (a brand-new game only). */
@@ -477,6 +581,11 @@ export default class DigScene extends ThreeScene {
         this.updateTutorialFunnel();
         this.updateNewMineReady();
         this.updateZone();
+
+        this.comboGap += delta;
+        if (this.comboGap > COMBO_GAP_SEC) this.combo = 0;
+        this.shake *= Math.exp(-SHAKE_DECAY * delta);
+        if (this.shake < 0.005) this.shake = 0;
 
         const position = this.player.transform.position;
         const followT = 1 - Math.exp(-DIG_CAMERA.followSpeed * delta);
@@ -546,9 +655,11 @@ export default class DigScene extends ThreeScene {
         let forced: ForcedBuy | null = null;
         // Only the first mine teaches: a new mine starts back at level 0, but the player knows the loop by then.
         const firstMine = DigProgress.prestige === 0;
-        // The pickaxe first (it digs faster, so the bag fills and its upgrade comes sooner), then the bag.
-        if (firstMine && DigProgress.toolLevel === 0 && tool && money >= tool.price) forced = 'tool';
-        else if (firstMine && DigProgress.backpackLevel === 0 && bag && money >= bag.price) forced = 'backpack';
+        // The pickaxe first (it digs faster, so the bag fills and its upgrade comes sooner), then the bag. Never in the
+        // middle of a power surge: its cash would otherwise stop the miner seconds into it.
+        const surging = PowerSurge.active;
+        if (firstMine && !surging && DigProgress.toolLevel === 0 && tool && money >= tool.price) forced = 'tool';
+        else if (firstMine && !surging && DigProgress.backpackLevel === 0 && bag && money >= bag.price) forced = 'backpack';
         const needsHat = !!hat && !DigProgress.boughtFirstHat && DigProgress.backpackLevel > 0 && DigProgress.toolLevel > 0;
         if (!needsHat) this.hatForced = false;
         else if (!forced && (this.hatForced || this.onStation === 'wardrobe')) {
@@ -775,8 +886,10 @@ export default class DigScene extends ThreeScene {
     }
 
     private placeCamera(): void {
-        this.threeCamera.position.copy(this.followTarget).add(cameraOffset(this.threeCamera));
-        this.threeCamera.lookAt(this.followTarget);
+        // A shake moves camera and look-at together, so the view jolts without turning.
+        this.shakeOffset.set((Math.random() - 0.5) * 2, 0, (Math.random() - 0.5) * 2).multiplyScalar(this.shake);
+        this.threeCamera.position.copy(this.followTarget).add(cameraOffset(this.threeCamera)).add(this.shakeOffset);
+        this.threeCamera.lookAt(this.shakeOffset.add(this.followTarget));
     }
 
     public resize(): void {
@@ -811,6 +924,8 @@ export default class DigScene extends ThreeScene {
         window.removeEventListener('keydown', this.onFirstInput, true);
         GameAnalytics.sessionStart(DigProgress.achievementStat('blocks') === 0 && DigProgress.upgradesBought === 0);
         Gameplay.start();
+        // Playing now: the tractor's model comes down behind the game (one already owned loaded with the scene).
+        this.tractor.loadInBackground();
     };
 
     /** After a menu stopped gameplay (achievements, settings), moving again starts it again. */
@@ -839,6 +954,10 @@ export default class DigScene extends ThreeScene {
         this.tractor?.destroy();
         this.guide?.destroy();
         this.hardBlocks?.destroy();
+        this.treasureBeacons?.destroy();
+        this.powerChests?.destroy();
+        // A surge belongs to this mine (the scene is rebuilt between mines).
+        PowerSurge.clear();
         this.terrain?.destroy();
         this.hub?.destroy();
         this.player?.destroy();

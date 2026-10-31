@@ -22,7 +22,8 @@ import fs from 'fs';
 import path, { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
-dotenv.config();
+// .env picks the game, even over a GAME left set in the terminal (dotenv alone never overrides one).
+process.env.GAME = dotenv.config().parsed?.GAME ?? process.env.GAME;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);

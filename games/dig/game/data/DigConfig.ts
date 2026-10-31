@@ -29,6 +29,8 @@ export interface MaterialDef {
     decor?: string;
     /** Optional colour multiplied over the decor and the pickup (the amethyst's purple gems on the crystal's model). */
     decorTint?: string;
+    /** Size of the decor on the block (1 = normal): the better ores show bigger nuggets and gems. */
+    decorScale?: number;
 }
 
 /** A material mixed into a zone, as a share of its blocks. */
@@ -236,7 +238,61 @@ export interface DigDesign {
     findPayout: { rarity: Record<Rarity, number>; perZone: number; roundTo: number };
     /** The first artifact turns up on this many blocks dug, wherever the miner digs (MiningController). */
     firstFindAfterBlocks: number;
+    /** Buried power and cash chests (VoxelTerrain.chests), and how far their beacons show. */
+    chests: ChestsDef;
+    /** Rich veins: ore blocks in seeded patches drawn bigger and dropping more (VoxelTerrain.rich). */
+    richOre: RichOreDef;
 }
+
+/** A kind of chest: its model (and tint) poking out of the block. */
+export interface ChestKindDef {
+    model: string;
+    size: number;
+    tint?: string;
+}
+
+export interface ChestsDef {
+    /** Blocks around the miner where buried treasure (finds and chests) shows a light beam. */
+    beaconRange: number;
+    /**
+     * A timed taste of a better tool (PowerSurge). Never buried: it fades in ahead of where the player digs
+     * (PowerChestSpawner), once per player.
+     */
+    power: ChestKindDef & {
+        /** The tool it gives (one tier above the tool owned if that's higher); not offered once it's owned. */
+        tool: string;
+        seconds: number;
+        /** Hits come this much faster than the tool's own. */
+        speedMultiplier: number;
+        spawn: {
+            /** Blocks dug before the first one shows. */
+            afterBlocks: number;
+            /** How far in front of the dig face it appears, [min, max] blocks. */
+            ahead: number[];
+            /** Seconds after one faded away before the next may show. */
+            respawnDelay: number;
+            /** Left this many blocks behind, it fades away (it never goes just for waiting). */
+            maxDistance: number;
+            /** Seconds it takes to fade in (and half that to fade out). */
+            fadeIn: number;
+        };
+    };
+    /** Cash on the spot: reward[zone] x (1 +- spread) x the sell bonus; perZone of them buried in each zone. */
+    cash: ChestKindDef & { reward: number[]; spread: number; perZone: number[] };
+}
+
+export interface RichOreDef {
+    /** Noise frequency (per block) and the level an ore block must reach to be rich. */
+    scale: number;
+    threshold: number;
+    /** Rich ore decor: this much bigger, this many pieces. */
+    decorScale: number;
+    decorCount: number;
+    /** Items a rich ore block drops, x its material's drops. */
+    dropMultiplier: number;
+}
+
+export type ChestKind = 'power' | 'cash';
 
 export const DIG: DigDesign = data as DigDesign;
 

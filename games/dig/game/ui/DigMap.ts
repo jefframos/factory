@@ -10,7 +10,7 @@ import * as PIXI from 'pixi.js';
 import { Game } from 'core/Game';
 import { DIG, FindDef } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
-import { VoxelTerrain, AIR, BEDROCK } from '../world/VoxelTerrain';
+import { VoxelTerrain, AIR, BEDROCK, CHEST_KINDS } from '../world/VoxelTerrain';
 import { RARITY_COLORS } from './CollectionPanel';
 
 const CELL_PX = 3;
@@ -182,6 +182,14 @@ export class DigMap extends PIXI.Container {
             const y = this.map.y + (Math.floor(index / size) + 0.5 - size / 2) * scale;
             this.buried.push({ x, y, find: DIG.finds[terrain.finds[index] - 1] });
             this.drawDot(this.findMarkers, x, y);
+        }
+        // Buried chests: cyan squares (power), gold squares (cash).
+        for (let index = 0; index < terrain.chests.length; index++) {
+            if (!terrain.chests[index] || terrain.cells[index] === AIR) continue;
+            const x = this.map.x + ((index % size) + 0.5 - size / 2) * scale;
+            const y = this.map.y + (Math.floor(index / size) + 0.5 - size / 2) * scale;
+            const color = CHEST_KINDS[terrain.chests[index] - 1] === 'power' ? 0x6fe3ff : 0xffd23f;
+            this.findMarkers.lineStyle(2, 0x000000).beginFill(color).drawRect(x - FIND_MARKER_PX, y - FIND_MARKER_PX, FIND_MARKER_PX * 2, FIND_MARKER_PX * 2).endFill();
         }
         this.setFindCount(this.buried.length);
     }

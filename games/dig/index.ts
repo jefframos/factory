@@ -66,6 +66,8 @@ export default class DigGame extends Game {
             await Promise.race([scene.ready, new Promise((resolve) => window.setTimeout(resolve, MAX_SCENE_WAIT_MS))]);
             PlatformHandler.instance.platform.loadFinished();
             this.loaderScene.hide();
+            // The game is in: the sounds download behind it (a cue before its file arrives is skipped).
+            DigAudio.loadInBackground();
         } catch (error) {
             console.error('Failed to initialize platform:', error);
         }

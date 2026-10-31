@@ -4,8 +4,11 @@ import fs from 'fs';
 import path, { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { convertFbxAnimationToGlb } from './fbx-anim-to-glb.mjs';
+import { loadShrinkOptions, shrinkModelsFolder } from './shrink-textures.mjs';
+import { convertFbxMeshToGlb } from './fbx-mesh-to-glb.mjs';
 
-dotenv.config();
+// .env picks the game, even over a GAME left set in the terminal (dotenv alone never overrides one).
+process.env.GAME = dotenv.config().parsed?.GAME ?? process.env.GAME;
 
 const io = new NodeIO();
 const game = process.env.GAME || process.env.GAME_NAME;
@@ -92,10 +95,31 @@ function copyFolderSync(from, to) {
 }
 
 /**
+ * The game's model compression settings (raw-assets/models-optimize.json): on by default for every build
+ * (`npm run models`, `models:compress`, `watch:models`, `all`); `npm run models:uncompress`
+ * (NO_COMPRESS=true) publishes the raw files as they are. null = off.
+ */
+const compression = process.env.NO_COMPRESS === 'true' ? null : loadShrinkOptions(gameRoot);
+if (!compression) console.log('📦 Models published uncompressed (as in raw-assets)');
+
+/** Whether a published GLB holds a mesh (a converted character), not just animations. */
+function glbHasMesh(file) {
+    try {
+        const buffer = fs.readFileSync(file);
+        const json = JSON.parse(buffer.subarray(20, 20 + buffer.readUInt32LE(12)).toString());
+        return (json.meshes?.length ?? 0) > 0;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Animation-only FBX files (no mesh) are re-packed into a much smaller
  * animation-only GLB next to where the FBX was copied, and the copied FBX is
- * removed — see fbx-anim-to-glb.mjs. Returns the published file name, which
- * is unchanged for anything that isn't an animation-only FBX.
+ * removed — see fbx-anim-to-glb.mjs. A game with "fbxToGlb" (models-optimize.json)
+ * gets its mesh FBX files (characters, props) published as welded GLBs too —
+ * see fbx-mesh-to-glb.mjs; the game must then load them as GLB. Returns the
+ * published file name, which is unchanged for anything not converted.
  */
 async function publishModelFile(sourcePath, destFolder, fileName) {
     const parsed = path.parse(fileName);
@@ -107,6 +131,12 @@ async function publishModelFile(sourcePath, destFolder, fileName) {
 
     const glbPath = path.join(destFolder, glbName);
     const copiedFbxPath = path.join(destFolder, fileName);
+    // Not converting meshes (uncompressed, or the game doesn't opt in): a character GLB from an earlier
+    // compressed build goes, and the FBX (just copied) is published again.
+    if (!compression?.fbxToGlb && fs.existsSync(glbPath) && glbHasMesh(glbPath)) {
+        fs.unlinkSync(glbPath);
+        return fileName;
+    }
     const isUpToDate = fs.existsSync(glbPath)
         && fs.statSync(glbPath).mtimeMs >= fs.statSync(sourcePath).mtimeMs;
 
@@ -114,6 +144,13 @@ async function publishModelFile(sourcePath, destFolder, fileName) {
         let glb = null;
         try {
             glb = await convertFbxAnimationToGlb(fs.readFileSync(sourcePath));
+            if (!glb && compression?.fbxToGlb) {
+                const mesh = await convertFbxMeshToGlb(fs.readFileSync(sourcePath), { dropAttributes: compression.fbxDropAttributes });
+                if (mesh) {
+                    glb = mesh.glb;
+                    console.log(`🧍 ${fileName} -> ${glbName}: ${mesh.before} -> ${mesh.after} vertices, ${(fs.statSync(sourcePath).size / 1024).toFixed(0)} -> ${(glb.length / 1024).toFixed(0)} KB`);
+                }
+            }
         } catch (e) {
             console.warn(`⚠️  Could not convert ${fileName} to GLB, keeping FBX:`, e.message);
         }
@@ -258,6 +295,9 @@ async function main() {
 
     fs.writeFileSync(outputRegistry, content, 'utf8');
     console.log(`✨ Success! Full folders copied and registry updated.`);
+
+    // Cap the published copies' texture sizes (shrink-textures.mjs; per game: raw-assets/models-optimize.json).
+    if (compression) await shrinkModelsFolder(publicModelsDir, compression);
 }
 
 main().catch(err => {

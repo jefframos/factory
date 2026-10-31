@@ -40,6 +40,8 @@
         "font": "node tools/font/build-font.mjs",
         "watch:font": "cross-env WATCH=true node tools/font/build-font.mjs",
         "models": "node tools/models/build-models.mjs",
+        "models:compress": "node tools/models/build-models.mjs",
+        "models:uncompress": "cross-env NO_COMPRESS=true node tools/models/build-models.mjs",
         "anims": "node tools/models/convert-anims.mjs",
         "clean-tmx": "node tools/tiled/clean-models.mjs",
         "tmx-fixer": "node tools/tiled/tmx-fixer.mjs",

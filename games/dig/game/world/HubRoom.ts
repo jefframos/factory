@@ -204,8 +204,8 @@ export class HubRoom {
     private readonly trophies: Trophy[] = [];
     /** Trophy table name signs, faded in by the miner's distance; `shown` eases 0..1. */
     private readonly signs: { sign: THREE.Sprite; x: number; z: number; shown: number }[] = [];
-    /** Achievement decorations (hidden until earned), with the collider added once they show. */
-    private readonly rewards: { def: HubAchievementDecor; object?: THREE.Object3D; shown: boolean; pop: number }[] = [];
+    /** Achievement decorations (hidden until earned); the collider goes in once earned, the model shows once loaded. */
+    private readonly rewards: { def: HubAchievementDecor; object?: THREE.Object3D; shown: boolean; colliderPlaced?: boolean; pop: number }[] = [];
     private readonly ghost = ghostMaterial();
     private readonly onProgress = () => {
         this.refreshTrophies();
@@ -268,7 +268,7 @@ export class HubRoom {
             this.inArea(table.x, table.z, () => void this.buildTrophyTable(table));
         }
         for (const def of HUB.achievementDecor ?? []) {
-            const reward = { def, shown: false, pop: -1 } as (typeof this.rewards)[number];
+            const reward: (typeof this.rewards)[number] = { def, shown: false, pop: -1 };
             this.rewards.push(reward);
             this.building = this.areaState(def.x, def.z);
             void this.placeProp(def.model, def.x, def.z, def.rotationY, def.height, def.elevation ?? 0, def.stretch).then((object) => {
@@ -279,8 +279,24 @@ export class HubRoom {
             });
             this.building = null;
         }
+        // Earned decorations' colliders now, before their models load.
+        this.refreshRewards(false);
         DigProgress.onChange.add(this.onProgress);
     }
+
+    /**
+     * Starts loading everything that isn't needed to play (call once the game is in: the loading screen is gone).
+     * Until then only the stations' models load (walls and floor are built, not loaded), so decor, buildables,
+     * trophies and achievement pieces don't compete with the mine and the miner for the download. They pop in as they
+     * arrive; their colliders are in place from the start (from the level data).
+     */
+    public loadDecor(): void {
+        this.releaseDecor();
+    }
+
+    private releaseDecor!: () => void;
+    /** Resolves on loadDecor(): non-essential models wait for it. */
+    private readonly decorGate = new Promise<void>((resolve) => (this.releaseDecor = resolve));
 
     /** A zone's table: its name floating above, its finds along the long side (ghosts until found). */
     private async buildTrophyTable(table: HubTrophyTable): Promise<void> {
@@ -327,6 +343,8 @@ export class HubRoom {
     /** A find's model sized to TROPHY_SIZE, its base at y = 0 and centred on x/z (placed by the caller). */
     private async loadTrophy(find: FindDef, area: AreaState | null): Promise<THREE.Object3D | undefined> {
         try {
+            // Decor: after the game is in (loadDecor()).
+            await this.decorGate;
             const object = await ModelLoaderManager.instance.loadModel(`${MODEL_BASE}${find.model}`);
             object.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
@@ -352,12 +370,17 @@ export class HubRoom {
     /** Earned achievement decorations appear (popping in when just earned, `animate`). */
     private refreshRewards(animate: boolean): void {
         for (const reward of this.rewards) {
-            if (reward.shown || !reward.object || !DigProgress.hasAchievementDecor(reward.def.achievement)) continue;
+            if (!DigProgress.hasAchievementDecor(reward.def.achievement)) continue;
+            // The collider goes in at once, even while the model is still loading (it's loaded after the game starts).
+            if (!reward.colliderPlaced) {
+                reward.colliderPlaced = true;
+                const collider = reward.def.collider;
+                if (collider) this.collider(reward.def.x, reward.def.z, collider.halfX, collider.halfY, collider.halfZ, this.areaState(reward.def.x, reward.def.z));
+            }
+            if (reward.shown || !reward.object) continue;
             reward.shown = true;
             reward.object.visible = true;
             if (animate) reward.pop = 0;
-            const collider = reward.def.collider;
-            if (collider) this.collider(reward.def.x, reward.def.z, collider.halfX, collider.halfY, collider.halfZ, this.areaState(reward.def.x, reward.def.z));
         }
     }
 
@@ -565,20 +588,20 @@ export class HubRoom {
         ring.position.set(def.x, 0.06, def.z);
         const parts: BuildableParts = { def, solid: new Map(), tag, ring, built: false, pop: -1, colliderPending: false };
         this.buildables.set(def.id, parts);
+        // Already built: solid from the start, collider included, even before its model has loaded.
+        if (DigProgress.isBuilt(def.id)) {
+            parts.built = true;
+            tag.visible = false;
+            ring.visible = false;
+            if (def.collider) this.collider(def.x, def.z, def.collider.halfX, def.collider.halfY, def.collider.halfZ, area);
+        }
         void this.placeProp(def.model, def.x, def.z, def.rotationY, def.height, def.elevation ?? 0, def.stretch).then((object) => {
             if (!object) return;
             parts.object = object;
             object.traverse((child) => {
                 if (child instanceof THREE.Mesh) parts.solid.set(child, child.material);
             });
-            if (DigProgress.isBuilt(def.id)) {
-                parts.built = true;
-                tag.visible = false;
-                ring.visible = false;
-                if (def.collider) this.collider(def.x, def.z, def.collider.halfX, def.collider.halfY, def.collider.halfZ, area);
-            } else if (!parts.built) {
-                this.makeGhost(parts);
-            }
+            if (!parts.built) this.makeGhost(parts);
         });
     }
 
@@ -641,7 +664,7 @@ export class HubRoom {
             const pedestal = this.add(new THREE.Mesh(new THREE.BoxGeometry(0.9 * size, pedestalHeight, 0.9 * size), this.material(0x4a3a30)));
             pedestal.position.set(modelX, pedestalHeight / 2, modelZ);
         }
-        void this.placeProp(look.model, modelX, modelZ, turn, height, pedestalHeight);
+        void this.placeProp(look.model, modelX, modelZ, turn, height, pedestalHeight, undefined, true);
         this.collider(modelX, modelZ, 0.5 * size, (pedestalHeight + height) / 2, 0.45 * size);
         const top = pedestalHeight + height;
         const icon = new THREE.Sprite(new THREE.SpriteMaterial({ map: iconTexture(look.icon, look.color), depthWrite: false }));
@@ -676,11 +699,15 @@ export class HubRoom {
         return this.stations.get(kind)?.target.clone();
     }
 
-    /** A model fitted to `height`, optionally stretched along its own width/depth (`stretch`), turned and stood on `elevation`. */
+    /**
+     * A model fitted to `height`, optionally stretched along its own width/depth (`stretch`), turned and stood on
+     * `elevation`. Loads only once loadDecor() is called, unless `essential` (the stations).
+     */
     private async placeProp(model: string, x: number, z: number, rotationY: number, height: number, elevation: number,
-        stretch?: { x: number; z: number }): Promise<THREE.Object3D | undefined> {
+        stretch?: { x: number; z: number }, essential = false): Promise<THREE.Object3D | undefined> {
         const area = this.building;
         try {
+            if (!essential) await this.decorGate;
             const object = await ModelLoaderManager.instance.loadModel(`${MODEL_BASE}${model}`);
             object.traverse((child) => {
                 if (child instanceof THREE.Mesh) {

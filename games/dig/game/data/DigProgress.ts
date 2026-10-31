@@ -102,6 +102,8 @@ interface SaveData {
     unclaimed: Record<string, number>;
     /** Every mine's run, by index; the current one's entry is stale (its live values are the fields above). */
     mines: MineSnapshot[];
+    /** Seconds of active play, all sessions together (the analytics' time stamps: GameAnalytics). */
+    playSeconds: number;
 }
 
 /** The tier (1-based) that unlocks an achievement's hub decoration. */
@@ -118,7 +120,7 @@ const fresh = (): SaveData => ({
     money: 0, toolLevel: 0, backpackLevel: 0, backpack: {}, found: {}, seen: [], collectionDone: false, deepestZone: 0,
     owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, wardrobeVisited: false, dug: '', built: [],
     stats: { blocks: 0, ores: 0, earned: 0, sells: 0 }, achievements: {}, revealedAt: {}, sent: [],
-    boosts: {}, prestige: 0, currentMine: 0, mines: [], crownEarned: false, unclaimed: {},
+    boosts: {}, prestige: 0, currentMine: 0, mines: [], crownEarned: false, unclaimed: {}, playSeconds: 0,
 });
 
 const freshMine = (): MineSnapshot => ({ money: 0, toolLevel: 0, backpackLevel: 0, backpack: {}, boosts: {}, dug: '', found: {}, seen: [], collectionDone: false, unclaimed: {} });
@@ -552,6 +554,11 @@ export const DigProgress = {
         return true;
     },
 
+    /** Whether once(`key`) was ever passed (without passing it). */
+    hasOnce(key: string): boolean {
+        return state.sent.includes(key);
+    },
+
     /** A block was dug (the Digger / Ore Hunter achievements count them). */
     recordBlock(ore: boolean): void {
         state.stats.blocks++;
@@ -656,6 +663,31 @@ export const DigProgress = {
     addMoney(amount: number): void {
         state.money += amount;
         this.changed();
+    },
+
+    /** Cash the miner earned outside a sale (a cash chest, a power surge's drops): counts for the Tycoon achievement too. */
+    addEarned(amount: number): void {
+        state.money += amount;
+        state.stats.earned += amount;
+        this.changed();
+    },
+
+    /** What a cash chest dug up in zone `zone` pays (ui/dig.json chests.cash): its zone's reward, give or take, x the sell bonus. */
+    chestPayout(zone: number): number {
+        const cash = DIG.chests.cash;
+        const base = cash.reward[Math.min(zone, cash.reward.length - 1)] ?? 0;
+        const roll = 1 + (Math.random() * 2 - 1) * cash.spread;
+        return Math.max(5, Math.round((base * roll * this.sellMultiplier) / 5) * 5);
+    },
+
+    /** Seconds of active play, all sessions together. */
+    get playSeconds(): number {
+        return state.playSeconds;
+    },
+
+    /** Adds active play time (every frame: saved along with the next change, not on its own). */
+    addPlayTime(delta: number): void {
+        state.playSeconds += delta;
     },
 
     /** Marks the terrain changed (a block dug) so it's included in the next save. */

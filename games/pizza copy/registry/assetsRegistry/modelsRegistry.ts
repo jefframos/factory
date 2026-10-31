@@ -8,54 +8,6 @@ export interface ModelDefinition {
   readonly nodes: Record<string, string>;
 }
 
-const CharactersFallingIdle = {
-  id: 'FallingIdle',
-  path: 'characters/default/FallingIdle',
-  fullPath: 'pizza copy/models/characters/default/FallingIdle.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersJumpingUp = {
-  id: 'JumpingUp',
-  path: 'characters/default/JumpingUp',
-  fullPath: 'pizza copy/models/characters/default/JumpingUp.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersLanding = {
-  id: 'Landing',
-  path: 'characters/default/Landing',
-  fullPath: 'pizza copy/models/characters/default/Landing.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersRoll = {
-  id: 'Roll',
-  path: 'characters/default/Roll',
-  fullPath: 'pizza copy/models/characters/default/Roll.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersRunning = {
-  id: 'Running',
-  path: 'characters/default/Running',
-  fullPath: 'pizza copy/models/characters/default/Running.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersStandToRoll = {
-  id: 'Stand To Roll',
-  path: 'characters/default/Stand To Roll',
-  fullPath: 'pizza copy/models/characters/default/Stand To Roll.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
 const CharactersCharacterMedium = {
   id: 'characterMedium',
   path: 'characters/default/characterMedium',
@@ -64,35 +16,83 @@ const CharactersCharacterMedium = {
   nodes: {}
 } as const;
 
+const CharactersFallingIdle = {
+  id: 'FallingIdle',
+  path: 'characters/default/FallingIdle',
+  fullPath: 'pizza copy/models/characters/default/FallingIdle.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
 const CharactersIdle = {
   id: 'idle',
   path: 'characters/default/idle',
-  fullPath: 'pizza copy/models/characters/default/idle.fbx',
-  format: 'fbx',
+  fullPath: 'pizza copy/models/characters/default/idle.glb',
+  format: 'glb',
   nodes: {}
 } as const;
 
 const CharactersIdle2 = {
   id: 'idle2',
   path: 'characters/default/idle2',
-  fullPath: 'pizza copy/models/characters/default/idle2.fbx',
-  format: 'fbx',
+  fullPath: 'pizza copy/models/characters/default/idle2.glb',
+  format: 'glb',
   nodes: {}
 } as const;
 
 const CharactersJump = {
   id: 'jump',
   path: 'characters/default/jump',
-  fullPath: 'pizza copy/models/characters/default/jump.fbx',
-  format: 'fbx',
+  fullPath: 'pizza copy/models/characters/default/jump.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CharactersJumpingUp = {
+  id: 'JumpingUp',
+  path: 'characters/default/JumpingUp',
+  fullPath: 'pizza copy/models/characters/default/JumpingUp.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CharactersLanding = {
+  id: 'Landing',
+  path: 'characters/default/Landing',
+  fullPath: 'pizza copy/models/characters/default/Landing.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CharactersRoll = {
+  id: 'Roll',
+  path: 'characters/default/Roll',
+  fullPath: 'pizza copy/models/characters/default/Roll.glb',
+  format: 'glb',
   nodes: {}
 } as const;
 
 const CharactersRun = {
   id: 'run',
   path: 'characters/default/run',
-  fullPath: 'pizza copy/models/characters/default/run.fbx',
-  format: 'fbx',
+  fullPath: 'pizza copy/models/characters/default/run.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CharactersRunning = {
+  id: 'Running',
+  path: 'characters/default/Running',
+  fullPath: 'pizza copy/models/characters/default/Running.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const CharactersStandToRoll = {
+  id: 'Stand To Roll',
+  path: 'characters/default/Stand To Roll',
+  fullPath: 'pizza copy/models/characters/default/Stand To Roll.glb',
+  format: 'glb',
   nodes: {}
 } as const;
 
@@ -169,17 +169,17 @@ const CharactersTestIdle = {
 // containing folder land in MODELS.Root.
 export const MODELS = {
   Characters: {
-    FallingIdle: CharactersFallingIdle,
-    JumpingUp: CharactersJumpingUp,
-    Landing: CharactersLanding,
-    Roll: CharactersRoll,
-    Running: CharactersRunning,
-    StandToRoll: CharactersStandToRoll,
     CharacterMedium: CharactersCharacterMedium,
+    FallingIdle: CharactersFallingIdle,
     Idle: CharactersIdle,
     Idle2: CharactersIdle2,
     Jump: CharactersJump,
+    JumpingUp: CharactersJumpingUp,
+    Landing: CharactersLanding,
+    Roll: CharactersRoll,
     Run: CharactersRun,
+    Running: CharactersRunning,
+    StandToRoll: CharactersStandToRoll,
     TestIdle: CharactersTestIdle
   }
 } as const;

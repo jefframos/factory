@@ -11,7 +11,8 @@ import {
     writeMeta,
 } from './cache-lib.mjs';
 
-dotenv.config();
+// .env picks the game, even over a GAME left set in the terminal (dotenv alone never overrides one).
+process.env.GAME = dotenv.config().parsed?.GAME ?? process.env.GAME;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

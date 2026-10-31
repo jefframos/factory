@@ -11,8 +11,8 @@ export interface ModelDefinition {
 const CharactersCharacterMedium = {
   id: 'characterMedium',
   path: 'characters/default/characterMedium',
-  fullPath: 'dig/models/characters/default/characterMedium.fbx',
-  format: 'fbx',
+  fullPath: 'dig/models/characters/default/characterMedium.glb',
+  format: 'glb',
   nodes: {}
 } as const;
 
@@ -1448,6 +1448,335 @@ const HatsWarriorHat = {
   nodes: {}
 } as const;
 
+const HubCasinoAssetsGlbFloor01 = {
+  id: 'casino-assets-glb-floor-01',
+  path: 'hub/casino-assets-glb-floor-01/casino-assets-glb-floor-01',
+  fullPath: 'dig/models/hub/casino-assets-glb-floor-01/casino-assets-glb-floor-01.glb',
+  format: 'glb',
+  nodes: {
+  "Floor01": "Floor_01"
+}
+} as const;
+
+const HubCasinoAssetsGlbFlower03 = {
+  id: 'casino-assets-glb-flower-03',
+  path: 'hub/casino-assets-glb-flower-03/casino-assets-glb-flower-03',
+  fullPath: 'dig/models/hub/casino-assets-glb-flower-03/casino-assets-glb-flower-03.glb',
+  format: 'glb',
+  nodes: {
+  "Flower03": "Flower_03"
+}
+} as const;
+
+const HubCasinoAssetsGlbGoldIngot01 = {
+  id: 'casino-assets-glb-gold-ingot-01',
+  path: 'hub/casino-assets-glb-gold-ingot-01/casino-assets-glb-gold-ingot-01',
+  fullPath: 'dig/models/hub/casino-assets-glb-gold-ingot-01/casino-assets-glb-gold-ingot-01.glb',
+  format: 'glb',
+  nodes: {
+  "GoldIngot01": "Gold_Ingot_01"
+}
+} as const;
+
+const HubCasinoAssetsGlbGoldIngot02 = {
+  id: 'casino-assets-glb-gold-ingot-02',
+  path: 'hub/casino-assets-glb-gold-ingot-02/casino-assets-glb-gold-ingot-02',
+  fullPath: 'dig/models/hub/casino-assets-glb-gold-ingot-02/casino-assets-glb-gold-ingot-02.glb',
+  format: 'glb',
+  nodes: {
+  "GoldIngot02": "Gold_Ingot_02"
+}
+} as const;
+
+const HubCasinoAssetsGlbNeonSign01 = {
+  id: 'casino-assets-glb-neon-sign-01',
+  path: 'hub/casino-assets-glb-neon-sign-01/casino-assets-glb-neon-sign-01',
+  fullPath: 'dig/models/hub/casino-assets-glb-neon-sign-01/casino-assets-glb-neon-sign-01.glb',
+  format: 'glb',
+  nodes: {
+  "NeonSign01": "Neon_Sign_01"
+}
+} as const;
+
+const HubCastleKitFlagBannerLong = {
+  id: 'castle-kit-flag-banner-long',
+  path: 'hub/castle-kit-flag-banner-long/castle-kit-flag-banner-long',
+  fullPath: 'dig/models/hub/castle-kit-flag-banner-long/castle-kit-flag-banner-long.glb',
+  format: 'glb',
+  nodes: {
+  "FlagBannerLong": "flag-banner-long"
+}
+} as const;
+
+const HubCuteFurnitureGlbChairPc04 = {
+  id: 'cute-furniture-glb-chair-pc-04',
+  path: 'hub/cute-furniture-glb-chair-pc-04/cute-furniture-glb-chair-pc-04',
+  fullPath: 'dig/models/hub/cute-furniture-glb-chair-pc-04/cute-furniture-glb-chair-pc-04.glb',
+  format: 'glb',
+  nodes: {
+  "ChairPC04": "Chair_PC_04"
+}
+} as const;
+
+const HubCuteFurnitureGlbClock03 = {
+  id: 'cute-furniture-glb-clock-03',
+  path: 'hub/cute-furniture-glb-clock-03/cute-furniture-glb-clock-03',
+  fullPath: 'dig/models/hub/cute-furniture-glb-clock-03/cute-furniture-glb-clock-03.glb',
+  format: 'glb',
+  nodes: {
+  "Clock03": "Clock_03"
+}
+} as const;
+
+const HubCuteFurnitureGlbCloset02 = {
+  id: 'cute-furniture-glb-closet-02',
+  path: 'hub/cute-furniture-glb-closet-02/cute-furniture-glb-closet-02',
+  fullPath: 'dig/models/hub/cute-furniture-glb-closet-02/cute-furniture-glb-closet-02.glb',
+  format: 'glb',
+  nodes: {
+  "Closet02": "Closet_02",
+  "Closet02Door01": "Closet_02_Door_01",
+  "Closet02Door02": "Closet_02_Door_02"
+}
+} as const;
+
+const HubCuteFurnitureGlbCouch08 = {
+  id: 'cute-furniture-glb-couch-08',
+  path: 'hub/cute-furniture-glb-couch-08/cute-furniture-glb-couch-08',
+  fullPath: 'dig/models/hub/cute-furniture-glb-couch-08/cute-furniture-glb-couch-08.glb',
+  format: 'glb',
+  nodes: {
+  "Couch08": "Couch_08"
+}
+} as const;
+
+const HubCuteFurnitureGlbCouch11 = {
+  id: 'cute-furniture-glb-couch-11',
+  path: 'hub/cute-furniture-glb-couch-11/cute-furniture-glb-couch-11',
+  fullPath: 'dig/models/hub/cute-furniture-glb-couch-11/cute-furniture-glb-couch-11.glb',
+  format: 'glb',
+  nodes: {
+  "Couch11": "Couch_11"
+}
+} as const;
+
+const HubCuteFurnitureGlbNightstand02 = {
+  id: 'cute-furniture-glb-nightstand-02',
+  path: 'hub/cute-furniture-glb-nightstand-02/cute-furniture-glb-nightstand-02',
+  fullPath: 'dig/models/hub/cute-furniture-glb-nightstand-02/cute-furniture-glb-nightstand-02.glb',
+  format: 'glb',
+  nodes: {
+  "Nightstand02": "Nightstand_02",
+  "Nightstand02Door": "Nightstand_02_Door"
+}
+} as const;
+
+const HubCuteFurnitureGlbPicture08 = {
+  id: 'cute-furniture-glb-picture-08',
+  path: 'hub/cute-furniture-glb-picture-08/cute-furniture-glb-picture-08',
+  fullPath: 'dig/models/hub/cute-furniture-glb-picture-08/cute-furniture-glb-picture-08.glb',
+  format: 'glb',
+  nodes: {
+  "Picture08": "Picture_08"
+}
+} as const;
+
+const HubCuteFurnitureGlbPlants05 = {
+  id: 'cute-furniture-glb-plants-05',
+  path: 'hub/cute-furniture-glb-plants-05/cute-furniture-glb-plants-05',
+  fullPath: 'dig/models/hub/cute-furniture-glb-plants-05/cute-furniture-glb-plants-05.glb',
+  format: 'glb',
+  nodes: {
+  "Plants05": "Plants_05"
+}
+} as const;
+
+const HubCuteFurnitureGlbPlants15 = {
+  id: 'cute-furniture-glb-plants-15',
+  path: 'hub/cute-furniture-glb-plants-15/cute-furniture-glb-plants-15',
+  fullPath: 'dig/models/hub/cute-furniture-glb-plants-15/cute-furniture-glb-plants-15.glb',
+  format: 'glb',
+  nodes: {
+  "Plants15": "Plants_15"
+}
+} as const;
+
+const HubFantasyWeaponsHalberd = {
+  id: 'fantasy-weapons-halberd',
+  path: 'hub/fantasy-weapons-halberd/fantasy-weapons-halberd',
+  fullPath: 'dig/models/hub/fantasy-weapons-halberd/fantasy-weapons-halberd.gltf',
+  format: 'gltf',
+  nodes: {
+  "Halberd": "halberd"
+}
+} as const;
+
+const HubForestNatureBush2FColor1 = {
+  id: 'forest-nature-bush-2-f-color1',
+  path: 'hub/forest-nature-bush-2-f-color1/forest-nature-bush-2-f-color1',
+  fullPath: 'dig/models/hub/forest-nature-bush-2-f-color1/forest-nature-bush-2-f-color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Bush2FColor1": "Bush_2_F_Color1"
+}
+} as const;
+
+const HubFurnitureDeskDecorated = {
+  id: 'furniture-desk-decorated',
+  path: 'hub/furniture-desk-decorated/furniture-desk-decorated',
+  fullPath: 'dig/models/hub/furniture-desk-decorated/furniture-desk-decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "DeskDecorated": "desk_decorated"
+}
+} as const;
+
+const HubFurnitureLampStanding = {
+  id: 'furniture-lamp-standing',
+  path: 'hub/furniture-lamp-standing/furniture-lamp-standing',
+  fullPath: 'dig/models/hub/furniture-lamp-standing/furniture-lamp-standing.gltf',
+  format: 'gltf',
+  nodes: {
+  "LampStanding": "lamp_standing"
+}
+} as const;
+
+const HubFurnitureRugOvalA = {
+  id: 'furniture-rug-oval-a',
+  path: 'hub/furniture-rug-oval-a/furniture-rug-oval-a',
+  fullPath: 'dig/models/hub/furniture-rug-oval-a/furniture-rug-oval-a.gltf',
+  format: 'gltf',
+  nodes: {
+  "RugOvalA": "rug_oval_A"
+}
+} as const;
+
+const HubFurnitureRugRectangleStripesB = {
+  id: 'furniture-rug-rectangle-stripes-b',
+  path: 'hub/furniture-rug-rectangle-stripes-b/furniture-rug-rectangle-stripes-b',
+  fullPath: 'dig/models/hub/furniture-rug-rectangle-stripes-b/furniture-rug-rectangle-stripes-b.gltf',
+  format: 'gltf',
+  nodes: {
+  "RugRectangleStripesB": "rug_rectangle_stripes_B"
+}
+} as const;
+
+const HubFurnitureShelfBLargeDecorated = {
+  id: 'furniture-shelf-b-large-decorated',
+  path: 'hub/furniture-shelf-b-large-decorated/furniture-shelf-b-large-decorated',
+  fullPath: 'dig/models/hub/furniture-shelf-b-large-decorated/furniture-shelf-b-large-decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "ShelfBLargeDecorated": "shelf_B_large_decorated"
+}
+} as const;
+
+const HubFurnitureShelfBSmallDecorated = {
+  id: 'furniture-shelf-b-small-decorated',
+  path: 'hub/furniture-shelf-b-small-decorated/furniture-shelf-b-small-decorated',
+  fullPath: 'dig/models/hub/furniture-shelf-b-small-decorated/furniture-shelf-b-small-decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "ShelfBSmallDecorated": "shelf_B_small_decorated"
+}
+} as const;
+
+const HubFurnitureTableLowDecorated = {
+  id: 'furniture-table-low-decorated',
+  path: 'hub/furniture-table-low-decorated/furniture-table-low-decorated',
+  fullPath: 'dig/models/hub/furniture-table-low-decorated/furniture-table-low-decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableLowDecorated": "table_low_decorated"
+}
+} as const;
+
+const HubFurnitureTableMediumLong = {
+  id: 'furniture-table-medium-long',
+  path: 'hub/furniture-table-medium-long/furniture-table-medium-long',
+  fullPath: 'dig/models/hub/furniture-table-medium-long/furniture-table-medium-long.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableMediumLong": "table_medium_long"
+}
+} as const;
+
+const HubHolidayCarpetRoundLarge = {
+  id: 'holiday-carpet-round-large',
+  path: 'hub/holiday-carpet-round-large/holiday-carpet-round-large',
+  fullPath: 'dig/models/hub/holiday-carpet-round-large/holiday-carpet-round-large.gltf',
+  format: 'gltf',
+  nodes: {
+  "CarpetRoundLarge": "carpet_round_large"
+}
+} as const;
+
+const HubKenneyCarKitTractorShovel = {
+  id: 'kenney-car-kit-tractor-shovel',
+  path: 'hub/kenney-car-kit-tractor-shovel/kenney-car-kit-tractor-shovel',
+  fullPath: 'dig/models/hub/kenney-car-kit-tractor-shovel/kenney-car-kit-tractor-shovel.glb',
+  format: 'glb',
+  nodes: {
+  "WheelBackLeft": "wheel-back-left",
+  "Body": "body",
+  "Shovel": "shovel",
+  "WheelBackRight": "wheel-back-right",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelFrontRight": "wheel-front-right"
+}
+} as const;
+
+const HubKenneyHolidayKitBench = {
+  id: 'kenney-holiday-kit-bench',
+  path: 'hub/kenney-holiday-kit-bench/kenney-holiday-kit-bench',
+  fullPath: 'dig/models/hub/kenney-holiday-kit-bench/kenney-holiday-kit-bench.glb',
+  format: 'glb',
+  nodes: {
+  "Bench": "bench"
+}
+} as const;
+
+const HubResourceGemsPileLarge = {
+  id: 'resource-gems-pile-large',
+  path: 'hub/resource-gems-pile-large/resource-gems-pile-large',
+  fullPath: 'dig/models/hub/resource-gems-pile-large/resource-gems-pile-large.gltf',
+  format: 'gltf',
+  nodes: {
+  "GemsPileLarge": "Gems_Pile_Large"
+}
+} as const;
+
+const HubRestaurantWallDecorated = {
+  id: 'restaurant-wall-decorated',
+  path: 'hub/restaurant-wall-decorated/restaurant-wall-decorated',
+  fullPath: 'dig/models/hub/restaurant-wall-decorated/restaurant-wall-decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallDecorated": "wall_decorated"
+}
+} as const;
+
+const HubRpgToolsTorch = {
+  id: 'rpg-tools-torch',
+  path: 'hub/rpg-tools-torch/rpg-tools-torch',
+  fullPath: 'dig/models/hub/rpg-tools-torch/rpg-tools-torch.gltf',
+  format: 'gltf',
+  nodes: {
+  "Torch": "torch"
+}
+} as const;
+
+const HubSurvivalKitWorkbenchAnvil = {
+  id: 'survival-kit-workbench-anvil',
+  path: 'hub/survival-kit-workbench-anvil/survival-kit-workbench-anvil',
+  fullPath: 'dig/models/hub/survival-kit-workbench-anvil/survival-kit-workbench-anvil.glb',
+  format: 'glb',
+  nodes: {
+  "WorkbenchAnvil": "workbench-anvil",
+  "Hammer": "hammer"
+}
+} as const;
+
 const MineAnvil = {
   id: 'anvil',
   path: 'mine/anvil',
@@ -2390,6 +2719,40 @@ export const MODELS = {
     SantaHat: HatsSantaHat,
     VikingHat: HatsVikingHat,
     WarriorHat: HatsWarriorHat
+  },
+  Hub: {
+    CasinoAssetsGlbFloor01: HubCasinoAssetsGlbFloor01,
+    CasinoAssetsGlbFlower03: HubCasinoAssetsGlbFlower03,
+    CasinoAssetsGlbGoldIngot01: HubCasinoAssetsGlbGoldIngot01,
+    CasinoAssetsGlbGoldIngot02: HubCasinoAssetsGlbGoldIngot02,
+    CasinoAssetsGlbNeonSign01: HubCasinoAssetsGlbNeonSign01,
+    CastleKitFlagBannerLong: HubCastleKitFlagBannerLong,
+    CuteFurnitureGlbChairPc04: HubCuteFurnitureGlbChairPc04,
+    CuteFurnitureGlbClock03: HubCuteFurnitureGlbClock03,
+    CuteFurnitureGlbCloset02: HubCuteFurnitureGlbCloset02,
+    CuteFurnitureGlbCouch08: HubCuteFurnitureGlbCouch08,
+    CuteFurnitureGlbCouch11: HubCuteFurnitureGlbCouch11,
+    CuteFurnitureGlbNightstand02: HubCuteFurnitureGlbNightstand02,
+    CuteFurnitureGlbPicture08: HubCuteFurnitureGlbPicture08,
+    CuteFurnitureGlbPlants05: HubCuteFurnitureGlbPlants05,
+    CuteFurnitureGlbPlants15: HubCuteFurnitureGlbPlants15,
+    FantasyWeaponsHalberd: HubFantasyWeaponsHalberd,
+    ForestNatureBush2FColor1: HubForestNatureBush2FColor1,
+    FurnitureDeskDecorated: HubFurnitureDeskDecorated,
+    FurnitureLampStanding: HubFurnitureLampStanding,
+    FurnitureRugOvalA: HubFurnitureRugOvalA,
+    FurnitureRugRectangleStripesB: HubFurnitureRugRectangleStripesB,
+    FurnitureShelfBLargeDecorated: HubFurnitureShelfBLargeDecorated,
+    FurnitureShelfBSmallDecorated: HubFurnitureShelfBSmallDecorated,
+    FurnitureTableLowDecorated: HubFurnitureTableLowDecorated,
+    FurnitureTableMediumLong: HubFurnitureTableMediumLong,
+    HolidayCarpetRoundLarge: HubHolidayCarpetRoundLarge,
+    KenneyCarKitTractorShovel: HubKenneyCarKitTractorShovel,
+    KenneyHolidayKitBench: HubKenneyHolidayKitBench,
+    ResourceGemsPileLarge: HubResourceGemsPileLarge,
+    RestaurantWallDecorated: HubRestaurantWallDecorated,
+    RpgToolsTorch: HubRpgToolsTorch,
+    SurvivalKitWorkbenchAnvil: HubSurvivalKitWorkbenchAnvil
   },
   Mine: {
     Anvil: MineAnvil,

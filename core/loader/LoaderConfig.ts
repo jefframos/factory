@@ -23,6 +23,8 @@ export interface LoaderBarConfig {
     borderRadius?: string;
     /** CSS box-shadow on the whole bar — drop shadow and/or an inset to look recessed. Default none. */
     shadow?: string;
+    /** Extra space between the Pong animation and the bar (CSS length): pushes the bar lower. Default '0'. */
+    marginTop?: string;
 }
 
 export interface LoaderConfig {

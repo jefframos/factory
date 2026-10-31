@@ -9,10 +9,12 @@ const loaderConfig: LoaderConfig = {
     accentShadow: '0 3px 0 rgba(10, 40, 120, 0.35)',
     bar: {
         width: '320px',
-        height: '30px',
+        height: '22px',
+        // A little further down from the Pong rally.
+        marginTop: '28px',
         fillColor: 'linear-gradient(180deg, #ffe680 0%, #ffc61a 50%, #ff9f0a 100%)',
         // Glossy highlight along the top, darker lip along the bottom.
-        fillShadow: 'inset 0 3px 0 rgba(255, 255, 255, 0.55), inset 0 -3px 0 rgba(200, 90, 0, 0.35)',
+        fillShadow: 'inset 0 2px 0 rgba(255, 255, 255, 0.55), inset 0 -2px 0 rgba(200, 90, 0, 0.35)',
         fillRadius: '999px',
         backgroundColor: 'rgba(8, 36, 110, 0.45)',
         borderColor: '#ffffff',

@@ -59,6 +59,7 @@ function injectStyles() {
 
             width: var(--loader-bar-width, 300px);
             height: var(--loader-bar-height, 24px);
+            margin-top: var(--loader-bar-margin-top, 0);
 
             background: var(
                 --loader-bar-bg,
@@ -165,6 +166,7 @@ export default class HtmlLoader {
         this.root.style.setProperty('--loader-bar-fill-shadow', bar.fillShadow ?? 'none');
         this.root.style.setProperty('--loader-bar-fill-radius', bar.fillRadius ?? '0');
         this.root.style.setProperty('--loader-bar-shadow', bar.shadow ?? 'none');
+        this.root.style.setProperty('--loader-bar-margin-top', bar.marginTop ?? '0');
         this.root.style.setProperty('--loader-accent', config.accentColor ?? '#ffffff');
         this.root.style.setProperty('--loader-accent-shadow', config.accentShadow ?? 'none');
 

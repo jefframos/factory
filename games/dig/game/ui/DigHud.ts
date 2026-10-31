@@ -60,6 +60,8 @@ const TOOL_PILL_WIDTH = 170;
 const MUTE_SIZE = 64;
 /** The guide line wraps at this width. */
 const GUIDE_WIDTH = 420;
+/** The power surge countdown pill (setPower). */
+const POWER_TIMER = { width: 340, height: 74 };
 /** The NEW MINE call to action in the bottom-left corner: the gem pack's size and the rays behind it. */
 const NEW_MINE_CTA = { icon: 120, rays: 130, label: 170 };
 /** The achievements button, under the money / backpack pills: just the memo pad icon, no button shape. */
@@ -198,6 +200,11 @@ export class DigHud extends PIXI.Container {
     private readonly forcedTitle = UiKit.text('hud', 'toast', { text: '' });
     /** The panels' close buttons (hidden while a purchase is forced). */
     private readonly closeButtons: PIXI.Container[] = [];
+    /** A power surge's countdown (setPower): the lent tool's name over a draining bar, near the top. */
+    private readonly powerTimer = new PIXI.Container();
+    private readonly powerText = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 26, fill: 0x8fe9ff, strokeThickness: 6 });
+    private readonly powerBar = new PIXI.Graphics();
+    private powerShown: string | null = null;
     private readonly onChange = () => this.refresh();
 
     /**
@@ -245,7 +252,11 @@ export class DigHud extends PIXI.Container {
         this.guide.addChild(UiKit.image('hud', 'pill', 420, 50), this.guideText);
         this.guide.visible = false;
         this.buildBlocker();
-        this.addChild(this.corner, this.toolChip, this.buildPhone(), this.buildNewMineCta(), this.buildMute(), this.buildSettings(), this.guide, this.moveHint, this.blocker, this.forcedTitle,
+        this.powerText.anchor.set(0.5);
+        this.powerText.y = -12;
+        this.powerTimer.addChild(UiKit.image('hud', 'pill', POWER_TIMER.width, POWER_TIMER.height), this.powerText, this.powerBar);
+        this.powerTimer.visible = false;
+        this.addChild(this.corner, this.toolChip, this.buildPhone(), this.buildNewMineCta(), this.buildMute(), this.buildSettings(), this.guide, this.powerTimer, this.moveHint, this.blocker, this.forcedTitle,
             this.slot(this.panel, UPGRADE_SIZE),
             this.slot(this.collection, COLLECTION_SIZE),
             this.slot(this.wardrobe, WARDROBE_SIZE),
@@ -816,6 +827,29 @@ export class DigHud extends PIXI.Container {
         UiAnim.punch(this.guide, 0.12);
     }
 
+    /**
+     * A power surge's countdown: `label` (the lent tool and the seconds left) over a bar at `fraction` (1 = full);
+     * null hides it. Pops in when it first shows.
+     */
+    public setPower(label: string | null, fraction = 0): void {
+        if (label === null) {
+            this.powerTimer.visible = false;
+            this.powerShown = null;
+            return;
+        }
+        if (this.powerShown === null) {
+            this.powerTimer.visible = true;
+            UiAnim.punch(this.powerTimer, 0.2);
+        }
+        if (label !== this.powerShown) this.powerText.text = label;
+        this.powerShown = label;
+        const width = POWER_TIMER.width - 48;
+        const color = fraction < 0.25 ? 0xff8a7a : 0x6fe3ff;
+        this.powerBar.clear()
+            .beginFill(0x10202a, 0.8).drawRoundedRect(-width / 2, 12, width, 12, 6).endFill()
+            .beginFill(color).drawRoundedRect(-width / 2, 12, Math.max(12, width * fraction), 12, 6).endFill();
+    }
+
     /** A short centre-screen message. */
     public say(message: string, color = 0xffffff): void {
         gsap.killTweensOf(this.toast);
@@ -1263,6 +1297,7 @@ export class DigHud extends PIXI.Container {
         // Far enough in that the "NEW MINE!" label (wider than the icon) keeps a margin from the screen edge.
         this.newMineCta.position.set(screen.topLeft.x + 28 + NEW_MINE_CTA.label / 2, screen.topLeft.y + screen.height - 70 - NEW_MINE_CTA.icon / 2);
         this.guide.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.24);
+        this.powerTimer.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.25);
         this.moveHint.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.72);
         this.blocker.clear().beginFill(0x000000, 0.6).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
         this.blocker.hitArea = new PIXI.Rectangle(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height);

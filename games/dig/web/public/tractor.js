@@ -6,13 +6,13 @@
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { api, el, toast } from './shared.js';
 
 /** Same as DigPlayer: the rig is authored in FBX units. */
 const CHARACTER_SCALE = 0.0075;
-const CHARACTER = 'characters/default/characterMedium.fbx';
+// The model build publishes the character as a GLB (tools/models/fbx-mesh-to-glb.mjs): same rig as the raw FBX.
+const CHARACTER = 'characters/default/characterMedium.glb';
 const SIT_CLIP = 'characters/default/Sitting.glb';
 const DEG = Math.PI / 180;
 
@@ -213,7 +213,7 @@ async function loadTractor() {
 /** The game's rig in its Sitting clip (the game's CharacterBody swaps the head for a cube; the bare rig is close enough to place the seat). */
 async function loadMiner() {
     try {
-        const [rig, sit] = await Promise.all([new FBXLoader().loadAsync(`/models/${CHARACTER}`), new GLTFLoader().loadAsync(`/models/${SIT_CLIP}`)]);
+        const [rig, sit] = await Promise.all([new GLTFLoader().loadAsync(`/models/${CHARACTER}`).then((gltf) => gltf.scene), new GLTFLoader().loadAsync(`/models/${SIT_CLIP}`)]);
         rig.scale.setScalar(CHARACTER_SCALE);
         rig.traverse((node) => {
             if (node.isMesh) node.material = new THREE.MeshStandardMaterial({ color: 0x42a5f5, roughness: 0.7 });

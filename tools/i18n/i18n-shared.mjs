@@ -13,7 +13,8 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-dotenv.config();
+// .env picks the game, even over a GAME left set in the terminal (dotenv alone never overrides one).
+process.env.GAME = dotenv.config().parsed?.GAME ?? process.env.GAME;
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 

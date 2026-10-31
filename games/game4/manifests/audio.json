@@ -13,6 +13,14 @@
         },
         {
           "alias": [
+            "brittle-rille.mp3"
+          ],
+          "src": [
+            "brittle-rille.mp3"
+          ]
+        },
+        {
+          "alias": [
             "Bubbles.wav"
           ],
           "src": [
@@ -41,6 +49,14 @@
           ],
           "src": [
             "Hover.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "peace-be-with-you.mp3"
+          ],
+          "src": [
+            "peace-be-with-you.mp3"
           ]
         },
         {
@@ -97,22 +113,6 @@
           ],
           "src": [
             "Whoosh.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "brittle-rille.mp3"
-          ],
-          "src": [
-            "brittle-rille.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "peace-be-with-you.mp3"
-          ],
-          "src": [
-            "peace-be-with-you.mp3"
           ]
         }
       ]

@@ -1,0 +1,9 @@
+{
+    "$comment": "npm run models (or models:compress) publishes compressed models; raw assets untouched (tools/models/shrink-textures.mjs, fbx-mesh-to-glb.mjs). maxTextureSize: textures capped (the hub furniture packs embed the same 1024px gradient in every file). fbxToGlb: mesh FBX (the character) published as a welded GLB, dropping fbxDropAttributes (the game swaps the material, so vertex colours are unused).",
+    "maxTextureSize": 256,
+    "jpegQuality": 85,
+    "fbxToGlb": true,
+    "fbxDropAttributes": [
+        "color"
+    ]
+}

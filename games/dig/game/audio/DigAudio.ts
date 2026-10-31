@@ -77,7 +77,11 @@ export class DigAudio {
     private static volumeBeforePause: number | undefined;
     private static readonly lastPlayed = new Map<Cue, number>();
 
-    /** Loads every sound of the packed manifest (call once at boot). */
+    /**
+     * Registers every sound of the packed manifest (call once at boot) without downloading any: the loading screen
+     * doesn't wait for audio. loadInBackground() fetches them all once the game is in; a cue asked for before its
+     * file has arrived starts its download and is skipped (see play()).
+     */
     public static async initialize(folderPath: string): Promise<void> {
         const manifest = structuredClone(audioManifest);
         for (const bundle of manifest.bundles) {
@@ -86,8 +90,6 @@ export class DigAudio {
             }
         }
         SoundLoadManager.instance.setUpManifests([manifest], ['default']);
-        const ids = manifest.bundles.flatMap((bundle) => bundle.assets.map((asset) => asset.alias[0].replace(/\.[^.]+$/, '')));
-        await Promise.all(ids.map((id) => SoundLoadManager.instance.loadSoundByName(id)));
         this.ready = true;
         document.addEventListener('visibilitychange', this.syncPause);
         PlatformHandler.instance.onPause.add(this.onPause);
@@ -95,12 +97,26 @@ export class DigAudio {
         this.syncPause();
     }
 
+    /** Downloads every sound, a few at a time behind the game (call once the game is in: the loading screen is gone). */
+    public static loadInBackground(): void {
+        void SoundLoadManager.instance.loadAllSoundsBackground();
+    }
+
+    /**
+     * Plays a cue, picking among its variants that have loaded. One with none loaded yet starts their download and
+     * stays silent this time: a sound arriving late would play out of step (and a burst of them all at once).
+     */
     public static play(cue: Cue): void {
         if (!this.ready || this.isPaused() || SoundManager.instance.isMuted) return;
         const now = performance.now();
         if (now - (this.lastPlayed.get(cue) ?? -Infinity) < (COOLDOWN_MS[cue] ?? DEFAULT_COOLDOWN_MS)) return;
+        const sound: SoundAsset = SOUNDS[cue];
+        const variants = [sound.soundId].flat();
+        // getSound() starts a missing one's download.
+        const loaded = variants.filter((id) => SoundLoadManager.instance.getSound(id)?.isLoaded);
+        if (!loaded.length) return;
         this.lastPlayed.set(cue, now);
-        SoundManager.instance.tryToPlaySound(SOUNDS[cue]);
+        SoundManager.instance.tryToPlaySound({ ...sound, soundId: loaded });
     }
 
     private static readonly onPause = (): void => {

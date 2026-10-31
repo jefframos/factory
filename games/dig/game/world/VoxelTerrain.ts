@@ -8,7 +8,9 @@
 // rings around the hub with wobbly edges (ui/dig.json `zones`), each with its own base rock (whose
 // minPower gates the zone behind a tool tier), patches and ore veins from seeded noise — and exactly one
 // block per gallery find hides it (`finds`), at a seeded spot inside its zone; it shows poking out of its
-// block once that's on a tunnel edge, and is gone for good once dug.
+// block once that's on a tunnel edge, and is gone for good once dug. Cash chests hide the same way (`chests`: a few
+// per zone, ui/dig.json chests.cash; a power chest is put in a cell while playing: placeChest()), and ore
+// inside seeded rich-vein patches (`rich`, ui/dig.json richOre) grows bigger, more numerous nuggets and gems.
 //
 // Drawing: every 16x16 chunk is ONE merged mesh (all blocks share the Block Bits texture), plus one for
 // its decor. Blocks on a tunnel edge are drawn whole; buried blocks only add their top face — all the
@@ -20,7 +22,7 @@
 // tractor (setBody()); mounted in a tunnel too narrow for it, the walking footprint still lets them drive out.
 
 import * as THREE from 'three';
-import { DIG, FindDef, MaterialDef, MineTheme, ZoneDef, materialOf, materialValue } from '../data/DigConfig';
+import { DIG, ChestKind, FindDef, MaterialDef, MineTheme, ZoneDef, materialOf, materialValue } from '../data/DigConfig';
 import { hubRects } from '../data/HubData';
 import { setWalkabilityQuery, clearWalkabilityQuery } from './TileWalkability';
 import { BlockModels, DecorModel, MeshData } from './BlockModels';
@@ -40,6 +42,10 @@ const DECOR_SIZE = 0.55;
 const FIND_SHOWING = 0.65;
 /** Fewest blocks between two buried finds (rerolled up to 32 times to keep it). */
 const FIND_SPACING = 8;
+/** Fewest blocks between two buried chests (or a chest and a find). */
+const CHEST_SPACING = 5;
+/** Grid values of `chests`. */
+export const CHEST_KINDS: ChestKind[] = ['power', 'cash'];
 
 /** Seeded 2D value noise in [0, 1). */
 function valueNoise(seed: number): (x: number, z: number) => number {
@@ -136,6 +142,10 @@ export class VoxelTerrain {
     public readonly zones: Uint8Array;
     /** 0 = nothing, 1.. = DIG.finds index + 1 (only meaningful while the cell is solid). */
     public readonly finds: Uint8Array;
+    /** 0 = nothing, 1.. = CHEST_KINDS index + 1 (only meaningful while the cell is solid). */
+    public readonly chests: Uint8Array;
+    /** 1 = an ore block in a rich vein (bigger decor, more drops). */
+    public readonly rich: Uint8Array;
     /** Bumped on every dug block (the debug map redraws when it changes). */
     public changed = 0;
     private readonly zoneNoise: (x: number, z: number) => number;
@@ -173,6 +183,8 @@ export class VoxelTerrain {
         this.jitter = new Float32Array(this.size * this.size);
         this.zones = new Uint8Array(this.size * this.size);
         this.finds = new Uint8Array(this.size * this.size);
+        this.chests = new Uint8Array(this.size * this.size);
+        this.rich = new Uint8Array(this.size * this.size);
         this.generate();
         if (dugSave) {
             this.loadDug(dugSave);
@@ -196,6 +208,8 @@ export class VoxelTerrain {
             ...DIG.materials.map((m) => this.models.loadPickup(m.pickup, PICKUP_SIZE)),
             ...DIG.finds.map((find) => this.models.loadDecor(find.model, find.size)),
             ...DIG.finds.map((find) => this.models.loadPickup(find.model, find.size)),
+            ...CHEST_KINDS.map((kind) => this.models.loadDecor(DIG.chests[kind].model, DIG.chests[kind].size)),
+            ...CHEST_KINDS.map((kind) => this.models.loadPickup(DIG.chests[kind].model, DIG.chests[kind].size)),
         ]);
     }
 
@@ -219,6 +233,22 @@ export class VoxelTerrain {
         return this.models.pickups.get(find.model)?.clone(true);
     }
 
+    /** A fresh copy of a chest's model, in its tint (undefined until the models have loaded). */
+    public chestModel(kind: ChestKind): THREE.Object3D | undefined {
+        const def = DIG.chests[kind];
+        const model = this.models.pickups.get(def.model)?.clone(true);
+        if (model && def.tint) {
+            const tint = new THREE.Color(def.tint);
+            model.traverse((child) => {
+                if (!(child instanceof THREE.Mesh)) return;
+                const own = (child.material as THREE.MeshStandardMaterial).clone();
+                own.color.multiply(tint);
+                child.material = own;
+            });
+        }
+        return model;
+    }
+
     // ---------------------------------------------------------------- generation
 
     private generate(): void {
@@ -226,6 +256,8 @@ export class VoxelTerrain {
         const patchNoise = DIG.materials.map((_, i) => valueNoise(seed + 53 * (i + 1)));
         const oreNoise = DIG.materials.map((_, i) => valueNoise(seed + 101 * (i + 1)));
         const jitterNoise = valueNoise(seed + 7);
+        const richNoise = valueNoise(seed + 613);
+        const richOre = DIG.richOre;
         // The edge: big slow bends plus finer bumps, both seeded, so each mine ends in its own shape.
         const edge = DIG.terrain.edge;
         const bendNoise = valueNoise(seed + 211);
@@ -267,9 +299,45 @@ export class VoxelTerrain {
                     if (oreNoise[ore.value - 1](x * 0.42, z * 0.42) > 1 - ore.chance * 2.2) material = ore.value;
                 }
                 this.cells[index] = material;
+                if (materialOf(material)?.ore && richNoise(x * richOre.scale, z * richOre.scale) >= richOre.threshold) this.rich[index] = 1;
             }
         }
         this.buryFinds(seed);
+        this.buryChests(seed);
+    }
+
+    /**
+     * chests.cash.perZone cash chests per zone, each in a seeded block of its zone with rock all round (like the
+     * finds), kept CHEST_SPACING from every find and chest. (Power chests aren't buried: PowerChestSpawner.)
+     */
+    private buryChests(seed: number): void {
+        const roll = valueNoise(seed + 1409);
+        const solid = (index: number) => this.cells[index] !== AIR && this.cells[index] !== BEDROCK;
+        const placed: number[] = [];
+        this.finds.forEach((find, index) => {
+            if (find) placed.push(index);
+        });
+        const cash = CHEST_KINDS.indexOf('cash') + 1;
+        let dice = 0;
+        DIG.zones.forEach((_, zone) => {
+            const spots: number[] = [];
+            for (let iz = 1; iz < this.size - 1; iz++) {
+                for (let ix = 1; ix < this.size - 1; ix++) {
+                    const index = ix + iz * this.size;
+                    if (this.zones[index] !== zone || !solid(index) || this.finds[index]) continue;
+                    const inside = [index - 1, index + 1, index - this.size, index + this.size].every((n) => solid(n) && this.zones[n] === zone);
+                    if (inside) spots.push(index);
+                }
+            }
+            const pick = () => spots[Math.floor(roll(dice++, 0) * spots.length)];
+            for (let n = 0; spots.length && n < (DIG.chests.cash.perZone[zone] ?? 0); n++) {
+                let spot = pick();
+                for (let attempt = 1; attempt < 32 && (this.chests[spot] || placed.some((p) => this.cellDistance(p, spot) < CHEST_SPACING)); attempt++) spot = pick();
+                if (this.chests[spot]) continue;
+                this.chests[spot] = cash;
+                placed.push(spot);
+            }
+        });
     }
 
     /**
@@ -364,6 +432,34 @@ export class VoxelTerrain {
         return find ? DIG.finds[find - 1] : undefined;
     }
 
+    /** The chest hidden in a solid cell, if any. */
+    public chestAt(ix: number, iz: number): ChestKind | undefined {
+        if (ix < 0 || iz < 0 || ix >= this.size || iz >= this.size || this.cellValue(ix, iz) === AIR) return undefined;
+        const chest = this.chests[this.index(ix, iz)];
+        return chest ? CHEST_KINDS[chest - 1] : undefined;
+    }
+
+    /** Hides a chest in a solid cell (a power chest fading in: PowerChestSpawner draws it); false if it can't go there. */
+    public placeChest(ix: number, iz: number, kind: ChestKind): boolean {
+        const value = this.cellValue(ix, iz);
+        if (value === AIR || value === BEDROCK || this.findAt(ix, iz) || this.chestAt(ix, iz)) return false;
+        this.chests[this.index(ix, iz)] = CHEST_KINDS.indexOf(kind) + 1;
+        this.changed++;
+        return true;
+    }
+
+    /** Takes a chest back out of its cell (one left undug fading away). */
+    public clearChest(ix: number, iz: number): void {
+        if (!this.chestAt(ix, iz)) return;
+        this.chests[this.index(ix, iz)] = 0;
+        this.changed++;
+    }
+
+    /** Whether a cell is ore in a rich vein (it drops more). */
+    public isRich(ix: number, iz: number): boolean {
+        return ix >= 0 && iz >= 0 && ix < this.size && iz < this.size && this.rich[this.index(ix, iz)] === 1;
+    }
+
     /** Where the miner is and how wide they are against the rock (wider on the tractor); call before movement each step. */
     public setBody(x: number, z: number, radius = BODY_RADIUS): void {
         this.bodyAt.set(x, 0, z);
@@ -392,6 +488,7 @@ export class VoxelTerrain {
         this.cells[index] = AIR;
         this.dug[index] = 1;
         this.finds[index] = 0;
+        this.chests[index] = 0;
         this.changed++;
         // Its neighbours become tunnel edges, and they may sit in the next chunk over.
         for (const [nx, nz] of [[ix, iz], [ix + 1, iz], [ix - 1, iz], [ix, iz + 1], [ix, iz - 1]]) {
@@ -434,6 +531,8 @@ export class VoxelTerrain {
             builder.add(model.data, x, y, z, 1.15, transform, tint);
         };
         const tilt = new THREE.Matrix4();
+        const grow = new THREE.Matrix4();
+        const richOre = DIG.richOre;
         for (let iz = cz * CHUNK; iz < Math.min(this.size, (cz + 1) * CHUNK); iz++) {
             for (let ix = cx * CHUNK; ix < Math.min(this.size, (cx + 1) * CHUNK); ix++) {
                 const index = this.index(ix, iz);
@@ -454,16 +553,28 @@ export class VoxelTerrain {
                     addDecor(findModel, x, this.blockHeight - find.size * (1 - FIND_SHOWING), z, tilt);
                     continue;
                 }
+                // A cash chest likewise, in its tint (a power chest is drawn by PowerChestSpawner, fading in and out).
+                const chest = this.chests[index] && CHEST_KINDS[this.chests[index] - 1] === 'cash' ? DIG.chests.cash : undefined;
+                const chestModel = chest && !buried ? this.models.decors.get(chest.model) : undefined;
+                if (chest && chestModel) {
+                    tilt.makeRotationFromEuler(new THREE.Euler(0.2, (index % 8) * 0.8, -0.15));
+                    addDecor(chestModel, x, this.blockHeight - chest.size * (1 - FIND_SHOWING), z, tilt, chest.tint ? new THREE.Color(chest.tint) : undefined);
+                    continue;
+                }
                 const decorData = material?.decor ? this.models.decors.get(material.decor) : undefined;
                 if (decorData) {
-                    // Two or three gems poking out of the top at seeded spots and tilts.
-                    const count = 2 + (index % 2);
+                    // Two or three gems poking out of the top at seeded spots and tilts, sized by the material (the
+                    // better the ore, the bigger); a rich vein's are bigger still, and more.
+                    const rich = this.rich[index] === 1;
+                    const count = rich ? richOre.decorCount : 2 + (index % 2);
+                    const size = (material!.decorScale ?? 1) * (rich ? richOre.decorScale : 1);
                     for (let k = 0; k < count; k++) {
                         const seed = (index * 7 + k * 13) % 97;
                         const ox = ((seed % 10) / 10 - 0.45) * 0.55;
                         const oz = (((seed * 3) % 10) / 10 - 0.45) * 0.55;
                         tilt.makeRotationFromEuler(new THREE.Euler(((seed % 5) - 2) * 0.18, seed * 0.7, ((seed % 7) - 3) * 0.15));
-                        addDecor(decorData, x + ox, this.blockHeight - 0.12, z + oz, tilt, this.decorTints[value]);
+                        if (size !== 1) tilt.multiply(grow.makeScale(size, size, size));
+                        addDecor(decorData, x + ox, this.blockHeight - 0.12 * size, z + oz, tilt, this.decorTints[value]);
                     }
                 }
             }

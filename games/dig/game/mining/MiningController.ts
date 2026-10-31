@@ -6,10 +6,13 @@
 // Blocks too hard for the current tool say so instead of breaking (and the scene points at them: onTooHard);
 // bedrock never breaks. Broken blocks
 // drop resources that fly into the backpack; a block hiding a find pops it out too (it pays cash
-// straight away and doesn't take backpack space).
+// straight away and doesn't take backpack space), and so does a chest (onChest). Rich-vein ore drops
+// richOre.dropMultiplier x as much. During a power surge (PowerSurge) the miner digs with the surge's
+// tool and every drop is cashed as it lands instead of filling the backpack.
 
 import * as THREE from 'three';
-import { DIG, FindDef, MaterialDef } from '../data/DigConfig';
+import { ChestKind, DIG, FindDef, MaterialDef } from '../data/DigConfig';
+import { PowerSurge } from './PowerSurge';
 import { DigProgress } from '../data/DigProgress';
 import { VoxelTerrain, BEDROCK, AIR } from '../world/VoxelTerrain';
 import { DigEffects } from '../vfx/DigEffects';
@@ -59,6 +62,12 @@ export class MiningController {
         private readonly onBagFull: () => void,
         /** The miner started pushing into rock with a full backpack (once per push, however long it lasts). */
         private readonly onFullPush: () => void,
+        /** A chest dug out reached the miner; `zone` is where it was. */
+        private readonly onChest: (kind: ChestKind, zone: number) => void,
+        /** One swing broke `count` blocks (at least one), at `at`. */
+        private readonly onBroke: (count: number, at: THREE.Vector3) => void,
+        /** A drop cashed during a power surge: `amount` paid, landing at the miner. */
+        private readonly onSurgeCash: (amount: number) => void,
     ) {}
 
     public fixedUpdate(delta: number): void {
@@ -73,7 +82,7 @@ export class MiningController {
         }
         const [ix, iz] = target;
         const value = this.terrain.cellValue(ix, iz);
-        const tool = DigProgress.tool;
+        const tool = PowerSurge.digTool;
         const material = this.terrain.material(ix, iz);
         if (value === BEDROCK || !material) {
             this.effects.setCrack(null, 0);
@@ -83,7 +92,8 @@ export class MiningController {
         }
         // A full backpack stops the dig: everything drops something, and breaking blocks for nothing
         // would just waste the vein.
-        if (DigProgress.backpackCount >= DigProgress.capacity) {
+        // (A power surge cashes every drop, so the bag never stops it.)
+        if (!PowerSurge.active && DigProgress.backpackCount >= DigProgress.capacity) {
             this.effects.setCrack(null, 0);
             this.pushingFull = true;
             if (!wasPushingFull) this.onFullPush();
@@ -105,12 +115,14 @@ export class MiningController {
         this.terrain.cellCenter(ix, iz, this.center);
         this.effects.setCrack(this.center, (this.damage.get(this.terrain.index(ix, iz)) ?? 0) / material.durability);
         this.hitTimer += delta;
-        const interval = DigProgress.hitInterval;
+        const interval = PowerSurge.hitInterval;
         if (this.hitTimer >= interval) {
             this.hitTimer -= interval;
+            let broke = 0;
             for (const [cx, cz] of this.footprint(target, tool.area, tool.depth)) {
-                this.hitCell(cx, cz, tool.power);
+                if (this.hitCell(cx, cz, tool.power)) broke++;
             }
+            if (broke > 0) this.onBroke(broke, this.center);
         }
     }
 
@@ -153,9 +165,10 @@ export class MiningController {
         return cells;
     }
 
-    private hitCell(ix: number, iz: number, power: number): void {
+    /** One hit on a cell; true when it broke. */
+    private hitCell(ix: number, iz: number, power: number): boolean {
         const material = this.terrain.material(ix, iz);
-        if (!material || material.minPower > power) return;
+        if (!material || material.minPower > power) return false;
         const index = this.terrain.index(ix, iz);
         const total = (this.damage.get(index) ?? 0) + power;
         this.terrain.cellCenter(ix, iz, this.center);
@@ -164,21 +177,28 @@ export class MiningController {
             this.damage.set(index, total);
             this.effects.hit(this.center, this.color);
             DigAudio.play(MiningController.hitCue(material));
-            return;
+            return false;
         }
         this.damage.delete(index);
         const find = this.terrain.findAt(ix, iz) ?? this.forcedFirstFind();
+        const chest = this.terrain.chestAt(ix, iz);
+        const rich = this.terrain.isRich(ix, iz);
         this.terrain.remove(ix, iz);
         DigProgress.recordBlock(material.ore);
         DigProgress.terrainChanged();
         this.effects.shatter(this.center, this.color);
         DigAudio.play(MiningController.hitCue(material));
         DigAudio.play(material.id === 'obsidian' ? 'breakObsidian' : 'break');
-        this.drop(material, this.center);
+        this.drop(material, this.center, rich);
         if (find) {
             const zone = this.terrain.zoneIndexAt(this.center.x, this.center.z);
             this.effects.reveal(this.center.clone().setY(1), () => this.onFind(find, zone), this.terrain.findModel(find));
         }
+        if (chest) {
+            const zone = this.terrain.zoneIndexAt(this.center.x, this.center.z);
+            this.effects.reveal(this.center.clone().setY(1), () => this.onChest(chest, zone), this.terrain.chestModel(chest));
+        }
+        return true;
     }
 
     /**
@@ -203,16 +223,22 @@ export class MiningController {
         if (material.id === 'obsidian') return 'hitObsidian';
         if (material.ore) return 'hitMetal';
         if (SOFT_GROUND.has(material.id)) return 'hitDirt';
-        return DigProgress.tool.model === 'shovel' ? 'hitStone' : 'hitPick';
+        return PowerSurge.digTool.model === 'shovel' ? 'hitStone' : 'hitPick';
     }
 
-    private drop(material: MaterialDef, at: THREE.Vector3): void {
-        // Ore Luck: a chance of one more from an ore block.
-        const drops = material.drops + (material.ore && Math.random() < DigProgress.oreLuck ? 1 : 0);
+    /** What a block drops flies to the miner: into the backpack, or (a power surge) straight to cash. */
+    private drop(material: MaterialDef, at: THREE.Vector3, rich: boolean): void {
+        // Ore Luck: a chance of one more from an ore block. A rich vein multiplies it all.
+        const drops = (material.drops + (material.ore && Math.random() < DigProgress.oreLuck ? 1 : 0)) * (rich ? DIG.richOre.dropMultiplier : 1);
         for (let i = 0; i < drops; i++) {
             const from = at.clone().setY(0.8);
             this.effects.pickup(from, this.color.clone(), () => {
-                if (DigProgress.addItems(material.id, 1) === 0) {
+                if (PowerSurge.active) {
+                    const amount = Math.max(1, Math.round(material.value * DigProgress.sellMultiplier));
+                    DigProgress.addEarned(amount);
+                    this.onSurgeCash(amount);
+                    DigAudio.play(GEMS.has(material.id) ? 'collectGem' : material.ore ? 'collectMetal' : 'collectStone');
+                } else if (DigProgress.addItems(material.id, 1) === 0) {
                     this.hint(t('backpackFull'));
                     DigAudio.play('error');
                 } else {
@@ -225,9 +251,9 @@ export class MiningController {
     private startSwing(): void {
         const character = this.player.character;
         if (!character || this.swinging) return;
-        const tool = DigProgress.tool;
+        const tool = PowerSurge.digTool;
         this.swinging = true;
-        this.hitTimer = DigProgress.hitInterval * 0.6;
+        this.hitTimer = PowerSurge.hitInterval * 0.6;
         // In the tractor the miner just sits: blocks still break, without the tool or the swing.
         if (this.player.seated) return;
         character.showTool(tool.model);

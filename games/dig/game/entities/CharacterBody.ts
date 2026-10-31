@@ -11,6 +11,7 @@
 
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { CubeBuilder, colorForValue } from '../builders/CubeBuilder';
 import { TextureBuilder } from '../builders/TextureBuilder';
 import { ShopStorage, SHOP_ITEMS, DEFAULT_SKIN_ID, resolveShopImagePath } from '../data/ShopStorage';
@@ -134,11 +135,16 @@ export default class CharacterBody {
     /** See debugShowHandMarker(). */
     private handDebugMarker?: THREE.Mesh;
 
+    /**
+     * The character's mesh: a .glb (what the model build publishes from the raw FBX: welded, much smaller —
+     * tools/models/fbx-mesh-to-glb.mjs) or an .fbx as is. Same bones either way, so the animations bind the same.
+     */
     public async loadMesh(url: string): Promise<void> {
         const resolvedUrl = await loadCompressedFile(url);
         try {
-            const loader = new FBXLoader();
-            const object = await loader.loadAsync(resolvedUrl);
+            const object = /\.(glb|gltf)(\.gz)?$/i.test(url)
+                ? (await new GLTFLoader().loadAsync(resolvedUrl)).scene
+                : await new FBXLoader().loadAsync(resolvedUrl);
             this.applyFallbackMaterial(object);
             this.container.add(object);
 
