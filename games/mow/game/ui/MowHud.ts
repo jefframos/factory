@@ -17,6 +17,7 @@ import { UiAnim } from './UiAnim';
 import { MoveHint } from './MoveHint';
 import { LanguagePanel, LANGUAGE_SIZE } from './LanguagePanel';
 import { WardrobePanel, WARDROBE_SIZE } from './WardrobePanel';
+import { TrophiesPanel, TROPHIES_SIZE } from './TrophiesPanel';
 import { MowProgress } from '../data/MowProgress';
 import { MOW, ToolDef, UpgradeDef } from '../data/MowConfig';
 import { tabbedBlock, TabSpec } from './TabBar';
@@ -105,6 +106,11 @@ export class MowHud extends PIXI.Container {
     private readonly wardrobe: WardrobePanel;
     private readonly wardrobeHolder = new PIXI.Container();
     private wardrobeOpen = false;
+    /** The Trophies button (under the pills: the treasures found, by area), its "!", and its panel. */
+    private readonly trophiesButton = new PIXI.Container();
+    private readonly trophiesAlert = new PIXI.Container();
+    private readonly trophies: TrophiesPanel;
+    private readonly trophiesHolder = new PIXI.Container();
     /** The wardrobe's close button (hidden while the tutorial's first hat is forced). */
     private readonly wardrobeClose: PIXI.Container;
     private shopKey = '';
@@ -117,8 +123,11 @@ export class MowHud extends PIXI.Container {
     private district = 0;
     private readonly onChange = () => this.refresh();
 
-    /** `onBuy` after any purchase (the scene reacts: swaps the tool, plays effects); `onWear` after a look changes (re-dress the player). */
-    public constructor(private readonly onBuy: () => void, onWear: () => void) {
+    /**
+     * `onBuy` after any purchase (the scene reacts: swaps the tool, plays effects); `onWear` after a look changes
+     * (re-dress the player); `isOpen(area)` whether a section is open (the Trophies panel marks the rest locked).
+     */
+    public constructor(private readonly onBuy: () => void, onWear: () => void, isOpen: (area: number) => boolean) {
         super();
         this.buildCorner();
         this.buildProgress();
@@ -127,10 +136,14 @@ export class MowHud extends PIXI.Container {
         this.wardrobe = new WardrobePanel(onWear, (text, color) => this.say(text, color));
         this.wardrobeClose = this.addClose(this.wardrobe, WARDROBE_SIZE, () => this.setWardrobeOpen(false));
         this.wardrobeHolder.addChild(this.wardrobe);
+        this.trophies = new TrophiesPanel((key) => this.claimTrophy(key), isOpen);
+        this.addClose(this.trophies, TROPHIES_SIZE, () => this.toggleTrophies());
+        this.trophiesHolder.addChild(this.trophies);
+        this.buildTrophiesButton();
         this.languageHolder.addChild(this.language);
         this.addClose(this.language, LANGUAGE_SIZE, () => this.toggleLanguage());
         this.toast.alpha = 0;
-        this.addChild(this.corner, this.progress, this.mute, this.languageButton, this.moveHint, this.shopHolder, this.wardrobeHolder, this.languageHolder, this.toast);
+        this.addChild(this.corner, this.progress, this.mute, this.languageButton, this.moveHint, this.shopHolder, this.wardrobeHolder, this.trophiesHolder, this.languageHolder, this.toast);
         MowProgress.onChange.add(this.onChange);
         this.refresh();
         this.reposition();
@@ -229,6 +242,59 @@ export class MowHud extends PIXI.Container {
         Gameplay.stop();
         this.language.refresh();
         UiAnim.popIn(this.language);
+    }
+
+    // ---------------------------------------------------------------- trophies
+
+    /** The trophy under the money / bag pills: opens the Trophies panel; a bouncing "!" while a reward waits there. */
+    private buildTrophiesButton(): void {
+        const size = 76;
+        this.trophiesButton.position.set(CORNER_WIDTH - size / 2, 140);
+        const trophy = PIXI.Sprite.from('ItemIcon_Trophy_Gold');
+        trophy.anchor.set(0.5);
+        trophy.scale.set(size / Math.max(trophy.texture.width, trophy.texture.height, 1));
+        this.trophiesButton.addChild(trophy);
+        this.trophiesButton.hitArea = new PIXI.Rectangle(-size / 2, -size / 2, size, size);
+        const alert = icon('hud', 'alert', 34);
+        this.trophiesAlert.addChild(alert);
+        this.trophiesAlert.position.set(size / 2 - 8, -size / 2 + 10);
+        gsap.to(alert, { y: -8, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+        this.trophiesAlert.visible = false;
+        this.trophiesButton.addChild(this.trophiesAlert);
+        this.tappable(this.trophiesButton, () => this.toggleTrophies());
+        this.corner.addChild(this.trophiesButton);
+    }
+
+    private toggleTrophies(): void {
+        MowAudio.play('toggle');
+        this.trophies.visible = !this.trophies.visible;
+        if (!this.trophies.visible) return;
+        Gameplay.stop();
+        this.trophies.refresh();
+        UiAnim.popIn(this.trophies);
+    }
+
+    /** A treasure was just found: said on screen, and the Trophies button jumps to show where it went. */
+    public trophyFound(name: string): void {
+        this.say(t('trophyFound', { name: name.toUpperCase() }), 0xffe27a);
+        gsap.killTweensOf(this.trophiesButton.scale);
+        this.trophiesButton.scale.set(1);
+        UiAnim.punch(this.trophiesButton, 0.35);
+    }
+
+    /** Where the Trophies button is on screen (a found treasure flies there). */
+    public get trophiesButtonPosition(): PIXI.Point {
+        return this.trophiesButton.getGlobalPosition();
+    }
+
+    /** A reward claimed in the Trophies panel: paid now, said, the coins chime. */
+    private claimTrophy(key: string): void {
+        const amount = MowProgress.claimTreasure(key);
+        if (amount <= 0) return;
+        GameAnalytics.treasureClaimed(key);
+        MowAudio.play('buyCash');
+        MowAudio.play('coins');
+        this.say(`+$${amount.toLocaleString('en-US')}`, 0x9cff9c);
     }
 
     /** Opens the language list (the HUD was just rebuilt for a new language: keep it open). */
@@ -566,6 +632,7 @@ export class MowHud extends PIXI.Container {
     }
 
     private refresh(): void {
+        this.trophiesAlert.visible = MowProgress.hasUnclaimedTreasure;
         const money = MowProgress.money - this.heldMoney;
         // The wardrobe's prices turn red / white with the money (not while a sale is still landing).
         if (this.wardrobeOpen && this.heldMoney === 0 && money !== this.lastMoney) this.wardrobe.refresh();
@@ -636,6 +703,9 @@ export class MowHud extends PIXI.Container {
         const wardrobeScale = Math.min(1, room / (WARDROBE_SIZE.height + RIBBON_OVERHANG), (screen.width - 24) / (WARDROBE_SIZE.width + CLOSE_SIZE / 2));
         this.wardrobeHolder.scale.set(wardrobeScale);
         this.wardrobeHolder.position.set(screen.center.x, top + (RIBBON_OVERHANG + WARDROBE_SIZE.height / 2) * wardrobeScale);
+        const trophiesScale = Math.min(1, (screen.height - 94) / (TROPHIES_SIZE.height + RIBBON_OVERHANG), (screen.width - 24) / (TROPHIES_SIZE.width + CLOSE_SIZE / 2));
+        this.trophiesHolder.scale.set(trophiesScale);
+        this.trophiesHolder.position.set(screen.center.x, screen.center.y + (RIBBON_OVERHANG / 2) * trophiesScale);
         const languageScale = Math.min(1, (screen.height - 94) / (LANGUAGE_SIZE.height + RIBBON_OVERHANG), (screen.width - 24) / (LANGUAGE_SIZE.width + CLOSE_SIZE / 2));
         this.languageHolder.scale.set(languageScale);
         this.languageHolder.position.set(screen.center.x, screen.center.y + (RIBBON_OVERHANG / 2) * languageScale);

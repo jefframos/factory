@@ -126,6 +126,31 @@ export interface AtmLook {
     collider: { halfX: number; halfZ: number };
 }
 
+export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+/** A treasure hidden in an area's grass. */
+export interface TreasureDef {
+    id: string;
+    name: string;
+    /** Path under models/ (Dig's relics, in treasures/). */
+    model: string;
+    /** Its size popping out and on its card (world units across). */
+    size: number;
+    /** The section (levels/town.json) whose grass hides it. */
+    area: string;
+    /** Cash claimed in the Trophies panel. */
+    reward: number;
+    rarity: Rarity;
+}
+
+export interface TreasuresDef {
+    /** A hidden treasure's beam shows within this many units of the player. */
+    beamRange: number;
+    items: TreasureDef[];
+    /** Finding all of an area's treasures pays this (by section id), claimed in the panel. */
+    areaBonus: Record<string, number>;
+}
+
 /** Something to wear, bought with cash. */
 export interface WardrobeItem {
     /** Colour hex, face image path (skins/...webp) or hat model key (MODELS.Hats). */
@@ -220,6 +245,8 @@ export interface MowDesign {
     tractor: TractorConfig;
     /** What the wardrobes sell (Dig's catalogue and assets). */
     wardrobe: WardrobeCatalog;
+    /** Treasures hidden in the grass (found by mowing them, claimed in the Trophies panel). */
+    treasures: TreasuresDef;
     /** The level's sections, in unlock order. */
     districts: DistrictDef[];
     start: { x: number; z: number };

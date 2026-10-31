@@ -9,6 +9,8 @@
 //   tutorial     <nn>-<step>                  complete   each first-session step, once per player, in order
 //   tool         <nn>-<toolId>                complete   a tool / mower bought
 //   upgrade      <upgradeId>-<nn>             complete   an upgrade level bought
+//   treasure     <treasureId>                 complete   a treasure found in the grass (or handed over on restoring its area)
+//   treasure     <treasureId> | area-<id>     interact   its reward (or an area's bonus) claimed in the Trophies panel
 //   shop         hat-<id> | face-<id> | color-<id> bought     a wardrobe item bought with cash
 //   shop         hat-<id> | face-<id> | color-<id> equip      an owned wardrobe item put on
 //   sell         count-<n>                    complete   the nth sale, for the first 10
@@ -55,6 +57,15 @@ export const GameAnalytics = {
     tutorialStep(step: TutorialStep): void {
         if (!MowProgress.once(`tutorial-${step}`)) return;
         send('tutorial', `${pad(TUTORIAL.indexOf(step) + 1)}-${step}`, 'complete');
+    },
+
+    treasureFound(id: string): void {
+        send('treasure', id, 'complete');
+    },
+
+    /** `key` is a treasure id, or `area:<id>` for an area's bonus. */
+    treasureClaimed(key: string): void {
+        send('treasure', key.replace('area:', 'area-'), 'interact');
     },
 
     /** `kind` is the wardrobe tab (hats / faces / colors). */

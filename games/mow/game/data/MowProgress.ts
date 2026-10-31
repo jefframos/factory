@@ -43,7 +43,13 @@ interface SaveData {
     look: Look;
     /** Money when the wardrobe was last opened: things that became affordable since get its "!". */
     wardrobeBudget: number;
+    /** Treasures found (ids), and rewards claimed (treasure ids, and `area:<section id>` for an area's bonus). */
+    treasuresFound: string[];
+    treasuresClaimed: string[];
 }
+
+/** The claim key of an area's bonus (all its treasures found). */
+export const areaBonusKey = (areaId: string): string => `area:${areaId}`;
 
 /** A new player: the first colour and face, no hat. */
 const starterLook = (): Look => ({ color: MOW.wardrobe.colors[0].id, face: MOW.wardrobe.faces[0].id, hat: '' });
@@ -52,6 +58,7 @@ const fresh = (): SaveData => ({
     version: SAVE_VERSION, money: 0, toolLevel: 0, upgrades: {}, clippings: 0, cut: '', restored: [],
     stats: { cells: 0, earned: 0, sells: 0 }, sent: [],
     owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0,
+    treasuresFound: [], treasuresClaimed: [],
 });
 
 function load(): SaveData {
@@ -244,6 +251,55 @@ export const MowProgress = {
         else state.look.hat = item.id;
         this.changed();
         return true;
+    },
+
+    // ---------------------------------------------------------------- treasures
+
+    treasureFound(id: string): boolean {
+        return state.treasuresFound.includes(id);
+    },
+
+    /** A treasure was found; false if it already had been. */
+    findTreasure(id: string): boolean {
+        if (state.treasuresFound.includes(id)) return false;
+        state.treasuresFound.push(id);
+        this.changed();
+        return true;
+    },
+
+    /** The treasures of an area (a section id), and how many of them are found. */
+    areaTreasures(areaId: string): { total: number; found: number } {
+        const items = MOW.treasures.items.filter((item) => item.area === areaId);
+        return { total: items.length, found: items.filter((item) => state.treasuresFound.includes(item.id)).length };
+    },
+
+    /** Cash waiting to be claimed for a key (a treasure id, or areaBonusKey(area)); 0 if nothing (or claimed). */
+    unclaimedFor(key: string): number {
+        if (state.treasuresClaimed.includes(key)) return 0;
+        if (key.startsWith('area:')) {
+            const area = key.slice('area:'.length);
+            const { total, found } = this.areaTreasures(area);
+            return total > 0 && found === total ? MOW.treasures.areaBonus[area] ?? 0 : 0;
+        }
+        const item = MOW.treasures.items.find((i) => i.id === key);
+        return item && state.treasuresFound.includes(key) ? item.reward : 0;
+    },
+
+    /** Anything waiting in the Trophies panel (its button's "!"). */
+    get hasUnclaimedTreasure(): boolean {
+        return MOW.treasures.items.some((i) => this.unclaimedFor(i.id) > 0)
+            || MOW.districts.some((d) => this.unclaimedFor(areaBonusKey(d.id)) > 0);
+    },
+
+    /** Pays a waiting reward (a treasure id, or an area's bonus); returns how much (0 = nothing waiting). */
+    claimTreasure(key: string): number {
+        const amount = this.unclaimedFor(key);
+        if (amount <= 0) return 0;
+        state.treasuresClaimed.push(key);
+        state.money += amount;
+        state.stats.earned += amount;
+        this.changed();
+        return amount;
     },
 
     isRestored(districtId: string): boolean {

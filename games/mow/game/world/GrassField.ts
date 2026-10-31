@@ -17,13 +17,16 @@
 // resistance; one short, it has to be chewed through (SLOW_CUT_SEC of contact: `chewing`, the mower is held back
 // meanwhile); further below not at all (`blocked`: a wall until a better mower, with the hint). Cut cells are saved as run-lengths (save() / the constructor's `saved`).
 //
+// Treasures hide under the grass (placeTreasures(): each on a seeded grass cell of its area, spread out); cutting
+// that cell finds it (CutResult.found). An area restored with some still hidden hands them over (takeTreasures()).
+//
 // Cut grass never grows back on its own. Only when the player is stuck — nothing left they can cut and the next mower
 // out of reach — does the scene grow some back (regrow(): grass their mower cuts, just enough to earn the
 // difference). Restored districts stay mowed.
 
 import * as THREE from 'three';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
-import { MOW, TOWN, DistrictDef, GrassDef, GrassPatch } from '../data/MowConfig';
+import { MOW, TOWN, DistrictDef, GrassDef, GrassPatch, TreasureDef } from '../data/MowConfig';
 import { BendService } from '../services/BendService';
 
 const CHUNK = 16;
@@ -146,7 +149,12 @@ export interface CutResult {
     at?: THREE.Vector3;
     /** The colour of what was cut. */
     color?: THREE.Color;
+    /** Treasures whose cells were cut this call: found (and where). */
+    found?: { treasure: TreasureDef; at: THREE.Vector3 }[];
 }
+
+/** Fewest cells between two treasures (rerolled a few times to keep it). */
+const TREASURE_SPACING = 5;
 
 interface Chunk {
     mesh: THREE.InstancedMesh;
@@ -154,6 +162,8 @@ interface Chunk {
 
 export class GrassField {
     public readonly cell = MOW.cell;
+    /** The treasures still hidden, by cell (placeTreasures()). */
+    private readonly treasures = new Map<number, TreasureDef>();
     private readonly minX: number;
     private readonly minZ: number;
     public readonly width: number;
@@ -439,6 +449,11 @@ export class GrassField {
                 this.cutFlags[i] = 1;
                 this.cutCounts[d]++;
                 this.writeInstance(i);
+                const treasure = this.treasures.get(i);
+                if (treasure) {
+                    this.treasures.delete(i);
+                    (result.found ??= []).push({ treasure, at: new THREE.Vector3(x, 0, z) });
+                }
                 result.cells++;
                 result.clippings += grass.value;
                 sumX += x;
@@ -451,6 +466,54 @@ export class GrassField {
             result.color = this.uncutColors[lastType].clone();
         }
         return result;
+    }
+
+    // ---------------------------------------------------------------- treasures
+
+    /**
+     * Hides every treasure not found yet (`isFound`) on a seeded grass cell of its area that isn't cut, at least
+     * TREASURE_SPACING cells from another — the same spots every game (a spot already mowed rerolls). One with no
+     * uncut grass left in its area isn't placed (takeTreasures() hands it over when the area is restored).
+     */
+    public placeTreasures(isFound: (id: string) => boolean): void {
+        const roll = valueNoise(MOW.seed + 4211);
+        const placed: number[] = [];
+        const apart = (a: number, b: number) => Math.hypot((a % this.width) - (b % this.width), Math.floor(a / this.width) - Math.floor(b / this.width));
+        MOW.treasures.items.forEach((treasure, n) => {
+            if (isFound(treasure.id)) return;
+            const d = MOW.districts.findIndex((district) => district.id === treasure.area);
+            if (d < 0) return;
+            const open = this.cellsIn(d).filter((i) => !this.cutFlags[i]);
+            if (!open.length) return;
+            let spot = open[Math.floor(roll(n, 0) * open.length)];
+            for (let attempt = 1; attempt < 24 && placed.some((p) => apart(p, spot) < TREASURE_SPACING); attempt++) {
+                spot = open[Math.floor(roll(n, attempt) * open.length)];
+            }
+            this.treasures.set(spot, treasure);
+            placed.push(spot);
+        });
+    }
+
+    /** The treasures still hidden within `range` of (x, z), and where. */
+    public hiddenTreasuresNear(x: number, z: number, range: number): { treasure: TreasureDef; at: THREE.Vector3 }[] {
+        const near: { treasure: TreasureDef; at: THREE.Vector3 }[] = [];
+        for (const [i, treasure] of this.treasures) {
+            const at = this.center(i % this.width, Math.floor(i / this.width));
+            if (Math.hypot(at.x - x, at.z - z) <= range) near.push({ treasure, at: new THREE.Vector3(at.x, 0, at.z) });
+        }
+        return near;
+    }
+
+    /** Takes out the treasures still hidden in a district (it was restored: none is lost), and where they were. */
+    public takeTreasures(district: number): { treasure: TreasureDef; at: THREE.Vector3 }[] {
+        const taken: { treasure: TreasureDef; at: THREE.Vector3 }[] = [];
+        for (const [i, treasure] of this.treasures) {
+            if (this.districtOf[i] !== district) continue;
+            const at = this.center(i % this.width, Math.floor(i / this.width));
+            taken.push({ treasure, at: new THREE.Vector3(at.x, 0, at.z) });
+            this.treasures.delete(i);
+        }
+        return taken;
     }
 
     /** A district's grass cells (built once, on first use). */

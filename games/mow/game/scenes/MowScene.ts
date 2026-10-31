@@ -10,6 +10,10 @@
 // stragglers, brightens, blooms with flowers, pays its bonus and opens the next one (its fence sinks, its ATMs pop
 // in, and with `onUnlock.pan` the camera glides over to show it).
 //
+// Treasures hide in the grass (GrassField.placeTreasures): a beam rises from one within reach (TreasureBeacons), cutting
+// its cell pops it out into the player and it lands in the Trophies panel (claimed there); an area restored with some
+// still hidden hands them over.
+//
 // Cut grass doesn't grow back — except when the player is stuck (updateRelief()): nothing left in the open district
 // their mower can cut, and the next mower still out of reach with the bag sold. Then just enough grass they can cut
 // grows back to earn the difference.
@@ -36,7 +40,9 @@ import { ArrowGuide } from '../world/ArrowGuide';
 import { MowingSystem } from '../mowing/MowingSystem';
 import { MowHud, ShopHint } from '../ui/MowHud';
 import { MowEffects } from '../vfx/MowEffects';
-import { MOW } from '../data/MowConfig';
+import { MOW, TreasureDef } from '../data/MowConfig';
+import { TreasureBeacons } from '../world/TreasureBeacons';
+import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { MowProgress } from '../data/MowProgress';
 import { Gameplay } from '../data/Gameplay';
 import { MowAudio } from '../audio/MowAudio';
@@ -101,6 +107,10 @@ export default class MowScene extends ThreeScene {
     private readonly fresh = new Set<number>();
     /** The ATM the player stands on (-1: none). */
     private onAtm = -1;
+    /** Beams over the treasures still hidden near the player. */
+    private beacons!: TreasureBeacons;
+    /** Each treasure's model, fitted to its size (loaded behind the game: treasureModels()). */
+    private readonly treasureModels = new Map<string, THREE.Object3D>();
     /** The wardrobe whose pad the player stands on, or -1. */
     private onWardrobe = -1;
     /** The tutorial's first hat is being forced (the player is held on the wardrobe's pad until it's bought). */
@@ -131,13 +141,17 @@ export default class MowScene extends ThreeScene {
         this.town = new Town(this.threeScene, open);
         this.grass = new GrassField(this.threeScene, (x, z) => this.town.isBlocked(x, z), MowProgress.savedCut);
         MowProgress.setCutProvider(() => this.grass.save());
-        // Districts restored in an earlier session look restored again (all mowed, even if the level's grass changed).
+        // Districts restored in an earlier session look restored again (all mowed, even if the level's grass changed);
+        // a treasure of theirs not found then (a save from before treasures) is handed over: its reward waits in the panel.
         MOW.districts.forEach((district, d) => {
             if (!MowProgress.isRestored(district.id)) return;
             this.grass.cutAll(d);
             this.grass.setRestored(d);
             this.town.bloom(this.flowerSpots(district));
+            for (const item of MOW.treasures.items) if (item.area === district.id && MowProgress.findTreasure(item.id)) GameAnalytics.treasureFound(item.id);
         });
+        this.grass.placeTreasures((id) => MowProgress.treasureFound(id));
+        this.beacons = new TreasureBeacons(this.threeScene, this.grass, (id) => !MowProgress.treasureFound(id));
 
         this.player = this.world.add(new MowPlayer(this, this.threeScene));
         this.player.transform.position.set(MOW.start.x, 0, MOW.start.z);
@@ -162,7 +176,7 @@ export default class MowScene extends ThreeScene {
             this.fresh.forEach((d) => {
                 if (this.grass.progress(d) > 0.02) this.fresh.delete(d);
             });
-        });
+        }, (treasure, at) => this.findTreasure(treasure, at));
 
         this.moveHintActive = MowProgress.cellsCut === 0 && MowProgress.toolLevel === 0;
         if (this.moveHintActive) this.hud.moveHint.show();
@@ -173,6 +187,8 @@ export default class MowScene extends ThreeScene {
         this.buildDebug();
         // Gameplay starts on the first input, once the game is loaded.
         void this.ready.then(() => {
+            // The game is in: the treasures' models come down behind it (only needed when one is found).
+            this.loadTreasureModels();
             if (this.sceneDestroyed) return;
             window.addEventListener('pointerdown', this.onFirstInput, true);
             window.addEventListener('keydown', this.onFirstInput, true);
@@ -196,7 +212,7 @@ export default class MowScene extends ThreeScene {
     }
 
     private createHud(): MowHud {
-        const hud = new MowHud(() => this.onBought(), () => this.player.applyLook(MowProgress.look));
+        const hud = new MowHud(() => this.onBought(), () => this.player.applyLook(MowProgress.look), (d) => this.town.isOpen(d));
         this.game.uiLayer.addChild(hud);
         return hud;
     }
@@ -219,6 +235,7 @@ export default class MowScene extends ThreeScene {
         panel.button('ADD $1000', () => MowProgress.addMoney(1000));
         panel.button('RESTORE CURRENT DISTRICT', () => {
             const d = this.currentDistrict();
+            for (const { treasure, at } of this.grass.takeTreasures(d)) this.findTreasure(treasure, at);
             this.grass.cutAll(d);
             this.checkRestoration();
         });
@@ -238,6 +255,7 @@ export default class MowScene extends ThreeScene {
         this.tractor.update(delta);
         this.town.bodyRadius = this.tractor.isRiding ? MOW.tractor.bodyRadius : 0.35;
         this.grass.update();
+        this.beacons.update(delta, this.player.transform.position);
         this.effects.update(delta);
         this.updateEngine(delta);
         this.updateGuide(delta);
@@ -396,6 +414,43 @@ export default class MowScene extends ThreeScene {
     }
 
     /**
+     * A treasure's cell was cut (or its area restored): it pops out of the grass with a burst and hops into the player
+     * (MowEffects.reveal, Dig's), then counts as found — the HUD names it and its Trophies button jumps.
+     */
+    private findTreasure(treasure: TreasureDef, at: THREE.Vector3): void {
+        if (MowProgress.treasureFound(treasure.id)) return;
+        const model = this.treasureModels.get(treasure.id)?.clone(true);
+        MowAudio.play('sparkle');
+        this.effects.reveal(at.clone().setY(0.6), () => {
+            if (!MowProgress.findTreasure(treasure.id)) return;
+            GameAnalytics.treasureFound(treasure.id);
+            this.hud.trophyFound(names.treasure(treasure));
+            MowAudio.play('cheer');
+        }, model);
+    }
+
+    /** The treasures' models, fitted to their size, for the pop-out (loaded behind the game; one missing just flies a cube). */
+    private loadTreasureModels(): void {
+        for (const treasure of MOW.treasures.items) {
+            void ModelLoaderManager.instance.loadModel(`./mow/models/${treasure.model}`).then((object) => {
+                if (!object || this.sceneDestroyed) return;
+                const box = new THREE.Box3().setFromObject(object);
+                const size = box.getSize(new THREE.Vector3());
+                object.position.sub(box.getCenter(new THREE.Vector3()));
+                const holder = new THREE.Group();
+                holder.add(object);
+                holder.scale.setScalar(treasure.size / Math.max(size.x, size.y, size.z, 1e-4));
+                holder.traverse((child) => {
+                    if (!(child instanceof THREE.Mesh)) return;
+                    child.material = (child.material as THREE.Material).clone();
+                    BendService.applyBend(child.material as THREE.Material);
+                });
+                this.treasureModels.set(treasure.id, holder);
+            }).catch((error) => console.warn('[MowScene] treasure model', treasure.model, error));
+        }
+    }
+
+    /**
      * The only way cut grass comes back: the player is stuck. Checked every STUCK_CHECK_SEC — the open districts not
      * restored yet hold nothing their mower can cut (or chew), and the next mower costs more than their money plus the
      * bag sold. Then the newest such district grows back grass their mower cuts at once, enough clippings to earn the
@@ -441,6 +496,8 @@ export default class MowScene extends ThreeScene {
         MOW.districts.forEach((district, d) => {
             if (!this.town.isOpen(d) || MowProgress.isRestored(district.id)) return;
             if (this.grass.progress(d) < district.completeAt) return;
+            // Nothing is lost with the stragglers: treasures still hidden there pop out too.
+            for (const { treasure, at } of this.grass.takeTreasures(d)) this.findTreasure(treasure, at);
             this.grass.cutAll(d);
             MowProgress.grassChanged();
             this.grass.setRestored(d);
@@ -545,6 +602,7 @@ export default class MowScene extends ThreeScene {
         this.hud?.destroy();
         this.guide?.destroy();
         this.effects?.destroy();
+        this.beacons?.destroy();
         this.grass?.destroy();
         this.town?.destroy();
         this.tractor?.destroy();

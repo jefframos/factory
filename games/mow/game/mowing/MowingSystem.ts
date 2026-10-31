@@ -15,7 +15,7 @@ import { MowProgress } from '../data/MowProgress';
 import type MowPlayer from '../player/MowPlayer';
 import type { MowEffects } from '../vfx/MowEffects';
 import { MowAudio } from '../audio/MowAudio';
-import { GrassDef } from '../data/MowConfig';
+import { GrassDef, TreasureDef } from '../data/MowConfig';
 
 /** Below this the stick / keys count as not moving. */
 const MOVE_THRESHOLD = 0.2;
@@ -46,6 +46,8 @@ export class MowingSystem {
         private readonly onBlocked: (grass: GrassDef) => void,
         /** Cells were cut this step. */
         private readonly onCut: (cells: number) => void,
+        /** A hidden treasure's cell was cut: found (GrassField.placeTreasures). */
+        private readonly onTreasure: (treasure: TreasureDef, at: THREE.Vector3) => void,
     ) {}
 
     public fixedUpdate(delta: number): void {
@@ -86,6 +88,7 @@ export class MowingSystem {
         }
         MowAudio.play('cut');
         this.onCut(result.cells);
+        for (const { treasure, at } of result.found ?? []) this.onTreasure(treasure, at);
         if (MowProgress.full) this.onFull();
     }
 

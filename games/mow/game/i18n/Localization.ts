@@ -143,6 +143,10 @@ export const names = {
     district: (def: { id: string; name: string }) => Localization.getString(`district_${def.id}`, undefined, def.name),
     /** An upgrade track (ui/mow.json upgrades). */
     upgrade: (def: { id: string; name: string }) => Localization.getString(`upgrade_${def.id}`, undefined, def.name),
+    /** A treasure (ui/mow.json treasures). */
+    treasure: (def: { id: string; name: string }) => Localization.getString(`treasure_${def.id}`, undefined, def.name),
+    /** A treasure's rarity. */
+    rarity: (rarity: string) => Localization.getString(`rarity_${rarity}`, undefined, rarity),
     /** A wardrobe item's name (ui/mow.json wardrobe), keyed by its English name like Dig's. */
     look: (name: string) => Localization.getString(`look_${slug(name)}`, undefined, name),
 };
