@@ -1,11 +1,21 @@
 // MowProgress.ts
 //
 // The player's saved state: money, the tool owned, upgrade levels, the clippings in the container, which grass has
-// been cut (from the grass field, as a compact string) and which districts are restored. One localStorage entry,
-// saved shortly after any change; versioned (SAVE_VERSION): a save from another version starts a new game.
+// been cut (from the grass field, as a compact string), which districts are restored, and the wardrobe (owned and worn
+// looks). One localStorage entry, saved shortly after any change; versioned (SAVE_VERSION): a save from another version
+// starts a new game. Fields added later get their defaults on an older save of the same version (load()).
 
 import { Signal } from 'signals';
-import { MOW, ToolDef, UpgradeDef, UpgradeId } from './MowConfig';
+import { MOW, ToolDef, UpgradeDef, UpgradeId, WardrobeItem } from './MowConfig';
+
+export type LookKind = 'colors' | 'faces' | 'hats';
+
+/** What the player wears. */
+export interface Look {
+    color: string;
+    face: string;
+    hat: string;
+}
 
 const SAVE_KEY = 'mow.save';
 /** Bump when a change can't carry old saves over: a save from another version starts a new game. */
@@ -26,11 +36,20 @@ interface SaveData {
     stats: { cells: number; earned: number; sells: number };
     /** One-time analytics events already sent, by key. */
     sent: string[];
+    /** Bought wardrobe items, by kind. */
+    owned: Record<LookKind, string[]>;
+    look: Look;
+    /** Money when the wardrobe was last opened: things that became affordable since get its "!". */
+    wardrobeBudget: number;
 }
+
+/** A new player: the first colour and face, no hat. */
+const starterLook = (): Look => ({ color: MOW.wardrobe.colors[0].id, face: MOW.wardrobe.faces[0].id, hat: '' });
 
 const fresh = (): SaveData => ({
     version: SAVE_VERSION, money: 0, toolLevel: 0, upgrades: {}, clippings: 0, cut: '', restored: [],
     stats: { cells: 0, earned: 0, sells: 0 }, sent: [],
+    owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0,
 });
 
 function load(): SaveData {
@@ -39,7 +58,10 @@ function load(): SaveData {
         if (raw) {
             const saved = JSON.parse(raw) as Partial<SaveData>;
             if (saved.version !== SAVE_VERSION) return fresh();
-            return { ...fresh(), ...saved, upgrades: { ...saved.upgrades }, stats: { ...fresh().stats, ...saved.stats } };
+            return {
+                ...fresh(), ...saved, upgrades: { ...saved.upgrades }, stats: { ...fresh().stats, ...saved.stats },
+                owned: { ...fresh().owned, ...saved.owned }, look: { ...starterLook(), ...saved.look },
+            };
         }
     } catch {
         // A broken save starts fresh.
@@ -171,6 +193,43 @@ export const MowProgress = {
         if (price === undefined || state.money < price) return false;
         state.money -= price;
         state.upgrades[upgrade.id] = this.upgradeLevel(upgrade.id) + 1;
+        this.changed();
+        return true;
+    },
+
+    // ---------------------------------------------------------------- wardrobe
+
+    get look(): Readonly<Look> {
+        return state.look;
+    },
+
+    /** Something in the wardrobe became affordable since it was last opened (its "!"). */
+    get wardrobeHasNews(): boolean {
+        return (Object.keys(MOW.wardrobe) as LookKind[]).some((kind) => MOW.wardrobe[kind].some((item) =>
+            !this.ownsLook(kind, item) && item.price <= state.money && item.price > state.wardrobeBudget));
+    },
+
+    /** The wardrobe was opened: everything affordable now has been seen. */
+    markWardrobeSeen(): void {
+        state.wardrobeBudget = state.money;
+        this.scheduleSave();
+    },
+
+    /** Starter looks (price 0) are free. */
+    ownsLook(kind: LookKind, item: WardrobeItem): boolean {
+        return item.price === 0 || state.owned[kind].includes(item.id);
+    },
+
+    /** Buys (if needed) and wears a look; false when it costs more than the money there is. */
+    wearLook(kind: LookKind, item: WardrobeItem): boolean {
+        if (!this.ownsLook(kind, item)) {
+            if (state.money < item.price) return false;
+            state.money -= item.price;
+            state.owned[kind].push(item.id);
+        }
+        if (kind === 'colors') state.look.color = item.id;
+        else if (kind === 'faces') state.look.face = item.id;
+        else state.look.hat = item.id;
         this.changed();
         return true;
     },

@@ -18,15 +18,20 @@ import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
 import { SITTING_STATE } from '../entities/CharacterBody';
 import { getPlayerConfig } from '../data/PlayerConfig';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
-import { MowProgress } from '../data/MowProgress';
+import { MowProgress, Look } from '../data/MowProgress';
+import hatFits from '../../ui/hatfits.json';
 import { ToolDef } from '../data/MowConfig';
 import { BendService } from '../services/BendService';
 
 const HALF_EXTENTS = new THREE.Vector3(0.4, 0.9, 0.4);
 /** The character rig is authored in FBX units; same scale as dig's miner. */
 const CHARACTER_SCALE = 0.0075;
-/** The starting look (no wardrobe yet). */
-const LOOK = { color: '#42a5f5', face: 'skins/face-brave-1.webp' };
+/** Must match CharacterBody's HAT_SINK: ui/hatfits.json (bandit-controller's editor format) measures from the head top. */
+const HAT_SINK = 0.03;
+/** CharacterBody's HAT_WIDTH_FIT: hatfits.json scales are the hat width as a fraction of the head. */
+const HAT_WIDTH_FIT = 1.05;
+type HatFit = { x: number; y: number; z: number; scale: number; rotationY: number };
+const HAT_FITS = hatFits as { default: HatFit; hats: Record<string, Partial<HatFit>> };
 /** Gap between the feet and a pushed tool's back edge (room for the handle and the walk). */
 const TOOL_GAP = 0.7;
 /** Where the hands hold a pushed tool's handle (ahead of the feet, height, each hand this far off the middle). */
@@ -116,10 +121,9 @@ export default class MowPlayer extends Entity {
         // Sat on the tractor (TractorRide -> CharacterBody.sitNow(): straight into the loop).
         await character.registerAnimation(SITTING_STATE, clip('Sitting'));
         character.setUp(config.idleToWalkSpeed, config.walkToRunSpeed);
-        // The head cube cancels the head bone's scale as measured when it's built: build at the rig's natural scale.
-        character.container.updateMatrixWorld(true);
-        character.applyCharacterView({ color: LOOK.color, headShape: 'cube', face: LOOK.face });
+        // Dressed in the wardrobe's look (applyLook() also rebuilds the head at the rig's natural scale).
         character.container.scale.setScalar(CHARACTER_SCALE);
+        this.applyLook(MowProgress.look, character);
         if (this.destroyed) {
             character.destroy();
             return;
@@ -127,6 +131,28 @@ export default class MowPlayer extends Entity {
         this.threeScene.add(character.container);
         this.loaded = character;
         this.addComponent(new CharacterVisualComponent(character));
+    }
+
+    /** Dresses the player: body colour, face and hat (the wardrobe's look, as in Dig; a new player wears no hat). */
+    public applyLook(look: Readonly<Look>, character = this.loaded): void {
+        if (!character) return;
+        // The head cube cancels the head bone's scale as measured when it's built, so it has to be rebuilt at the
+        // rig's natural scale, then the player shrinks back.
+        const scale = character.container.scale.x;
+        character.container.scale.setScalar(1);
+        character.container.updateMatrixWorld(true);
+        character.applyCharacterView({ color: look.color, headShape: 'cube', face: look.face });
+        const model = MODELS.Hats[look.hat as keyof typeof MODELS.Hats];
+        if (!model) {
+            character.body.setHat(undefined);
+        } else {
+            // Same placement table as Dig (ui/hatfits.json), keyed by the hat's file name.
+            const name = model.fullPath.split('/').pop()!.replace(/\.[^.]+$/, '');
+            const fit = { ...HAT_FITS.default, ...HAT_FITS.hats[name] };
+            character.body.setHat({ model, scale: fit.scale / HAT_WIDTH_FIT, offsetX: fit.x, offsetY: fit.y + HAT_SINK, offsetZ: fit.z, rotationDeg: fit.rotationY });
+        }
+        character.container.scale.setScalar(scale);
+        character.container.updateMatrixWorld(true);
     }
 
     /** Builds the tool's placeholder: a cube in its size and colour, with a darker deck where it cuts. */

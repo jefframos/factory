@@ -3,9 +3,11 @@
 // The town around the grass, built from levels/town.json (edited in the editor: npm run editor): the ground, the
 // pavements (plaza, road, park paths: walkable, no grass), the props (library models: KayKit City Builder Bits and
 // Forest trees, fitted to their height like dig's hub props), the sections' separators (a fence with a sign closing
-// each locked section off) and the ATMs — as many as the level places, each a pad with the ATM behind it and a
-// floating money icon; standing on any one sells the bag and opens the shop. An ATM can belong to a section (`section`):
-// it pops in when that section opens, so there's always one close to the grass being mowed.
+// each locked section off) and the stations — as many as the level places of each kind, each a pad with its model
+// behind it and a floating icon: ATMs (money: standing on one sells the bag and opens the shop) and wardrobes (Dig's
+// closet, a heart: opens the wardrobe; a bouncing "!" while something new is affordable: setWardrobeAttention()). A
+// station can belong to a section (`section`): it pops in when that section opens, so there's always one close to the
+// grass being mowed.
 //
 // Models load in the background (`ready`); the boxes they block come from the level, so walking and the grass (which
 // needs to know what's covered) never wait on them. Props marked `fade` (trees, buildings) dither out while they
@@ -19,7 +21,7 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
-import { MOW, TOWN, AtmSpot, DistrictDef, TownProp } from '../data/MowConfig';
+import { MOW, TOWN, AtmLook, AtmSpot, DistrictDef, TownProp } from '../data/MowConfig';
 import { BendService, OcclusionFadeConfig, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 import { CanvasArt } from '../ui/CanvasArt';
 import { setWalkabilityQuery, clearWalkabilityQuery } from './TileWalkability';
@@ -54,9 +56,22 @@ const FLOWER_HEIGHT = 0.85;
 /** Trees and buildings: the whole model dithers out while the camera->player line runs through it. */
 const FADE: OcclusionFadeConfig = { ...STRUCTURE_OCCLUSION_FADE, radius: 0.4 };
 
-/** The box an ATM blocks (its model, `back` behind the pad). */
-function atmBox(spot: AtmSpot): Box {
-    const look = TOWN.atm;
+/** The bouncing "!" (the pizza game's alert icon, UI atlas), like Dig's stations'. */
+function alertTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 128;
+    CanvasArt.drawIcon(canvas.getContext('2d')!, 'Icon_Exclamation', 64, 64, 118);
+    return CanvasArt.texture(canvas);
+}
+
+/** The kinds of station the level places (each with its own look and spots in levels/town.json). */
+export type StationKind = 'atm' | 'wardrobe';
+const STATION_KINDS: StationKind[] = ['atm', 'wardrobe'];
+const stationLook = (kind: StationKind): AtmLook => (kind === 'atm' ? TOWN.atm : TOWN.wardrobe);
+const stationSpots = (kind: StationKind): AtmSpot[] => (kind === 'atm' ? TOWN.atms : TOWN.wardrobes ?? []);
+
+/** The box a station blocks (its model, `back` behind the pad). */
+function stationBox(spot: AtmSpot, look: AtmLook): Box {
     const turn = spot.rotationY ?? 0;
     const sideways = Math.abs(Math.sin(turn)) > 0.5;
     return {
@@ -115,13 +130,18 @@ export class Town {
     private readonly group = new THREE.Group();
     /** What the props block (fixed). */
     private readonly propBoxes: Box[] = [];
-    /** Each ATM's box (no grass under any of them; blocking once it's there). */
-    private readonly atmBoxes: Box[] = TOWN.atms.map(atmBox);
+    /** Each station's box, by kind (no grass under any of them; blocking once it's there). */
+    private readonly boxes: Record<StationKind, Box[]> = {
+        atm: stationSpots('atm').map((spot) => stationBox(spot, stationLook('atm'))),
+        wardrobe: stationSpots('wardrobe').map((spot) => stationBox(spot, stationLook('wardrobe'))),
+    };
     /** Each section's separator (index = section) and its box while it stands. */
     private readonly separators: (THREE.Group | undefined)[] = [];
     private readonly separatorBoxes: (Box | undefined)[] = [];
     private readonly open: boolean[];
-    private readonly atmGroups: THREE.Group[] = [];
+    private readonly groups: Record<StationKind, THREE.Group[]> = { atm: [], wardrobe: [] };
+    /** Each wardrobe's "!" (setWardrobeAttention()). */
+    private readonly wardrobeAlerts: THREE.Sprite[] = [];
     /** Labels to draw again once the town is up (their atlas icons can come out blank while booting). */
     private readonly redraws: (() => void)[] = [];
     private readonly walkability = (x: number, z: number) => this.isWalkable(x, z);
@@ -137,7 +157,7 @@ export class Town {
         this.open = MOW.districts.map((_, d) => open(d));
         this.buildGround();
         TOWN.props.forEach((prop) => this.placeProp(prop));
-        TOWN.atms.forEach((spot) => this.buildAtm(spot));
+        for (const kind of STATION_KINDS) stationSpots(kind).forEach((spot) => this.buildStation(kind, spot));
         this.buildSeparators();
         threeScene.add(this.group);
         setWalkabilityQuery(this.walkability);
@@ -217,19 +237,19 @@ export class Town {
         object.position.set(x, y - bounds.min.y, z);
     }
 
-    // ---------------------------------------------------------------- ATMs
+    // ---------------------------------------------------------------- stations (ATMs, wardrobes)
 
-    /** Whether an ATM is there: no section, or its section is open. */
-    private atmShown(i: number): boolean {
-        const section = TOWN.atms[i].section;
+    /** Whether a station is there: no section, or its section is open. */
+    private shown(kind: StationKind, i: number): boolean {
+        const section = stationSpots(kind)[i].section;
         if (!section) return true;
         const d = MOW.districts.findIndex((district) => district.id === section);
         return d < 0 || this.open[d];
     }
 
-    /** An ATM, in its own frame (pad at the origin, the model `back` behind it on -Z, the label above the model). */
-    private buildAtm(spot: AtmSpot): void {
-        const look = TOWN.atm;
+    /** A station, in its own frame (pad at the origin, the model `back` behind it on -Z, the label above the model). */
+    private buildStation(kind: StationKind, spot: AtmSpot): void {
+        const look = stationLook(kind);
         const group = new THREE.Group();
         const pad = new THREE.Mesh(new THREE.CircleGeometry(PAD_RADIUS, 32), this.material(look.color));
         pad.rotation.x = -Math.PI / 2;
@@ -243,7 +263,7 @@ export class Town {
             group.add(object);
         }));
         const canvas = document.createElement('canvas');
-        // Just the money icon on its plaque: no words to translate.
+        // Just the icon on its plaque (money, a heart): no words to translate.
         canvas.width = 128;
         canvas.height = 128;
         const g = canvas.getContext('2d')!;
@@ -264,16 +284,41 @@ export class Town {
         label.scale.set(1.3, 1.3, 1);
         label.position.set(0, look.label, -look.back);
         group.add(label);
+        if (kind === 'wardrobe') {
+            // The "!" over the label, bobbing (shown by setWardrobeAttention()).
+            const alert = new THREE.Sprite(new THREE.SpriteMaterial({ map: alertTexture(), depthWrite: false }));
+            alert.scale.set(0.9, 0.9, 1);
+            alert.position.set(0.75, look.label + 0.6, -look.back);
+            alert.visible = false;
+            gsap.to(alert.position, { y: alert.position.y + 0.3, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+            group.add(alert);
+            this.wardrobeAlerts.push(alert);
+        }
         group.position.set(spot.x, 0, spot.z);
         group.rotation.y = spot.rotationY ?? 0;
-        group.visible = this.atmShown(this.atmGroups.length);
-        this.atmGroups.push(group);
+        group.visible = this.shown(kind, this.groups[kind].length);
+        this.groups[kind].push(group);
         this.group.add(group);
+    }
+
+    /** The station of a kind whose pad is under (x, z), or -1. */
+    private stationAt(kind: StationKind, x: number, z: number): number {
+        return stationSpots(kind).findIndex((spot, i) => this.shown(kind, i) && Math.hypot(x - spot.x, z - spot.z) <= PAD_RADIUS);
     }
 
     /** The ATM whose pad is under (x, z), or -1. */
     public atmAt(x: number, z: number): number {
-        return TOWN.atms.findIndex((spot, i) => this.atmShown(i) && Math.hypot(x - spot.x, z - spot.z) <= PAD_RADIUS);
+        return this.stationAt('atm', x, z);
+    }
+
+    /** The wardrobe whose pad is under (x, z), or -1. */
+    public wardrobeAt(x: number, z: number): number {
+        return this.stationAt('wardrobe', x, z);
+    }
+
+    /** The wardrobes' "!": something new in it is affordable (and the player isn't in it). */
+    public setWardrobeAttention(on: boolean): void {
+        for (const alert of this.wardrobeAlerts) alert.visible = on;
     }
 
     /** The nearest ATM's pad that's there (where the arrows lead). */
@@ -281,7 +326,7 @@ export class Town {
         let best = Infinity;
         TOWN.atms.forEach((spot, i) => {
             const distance = Math.hypot(from.x - spot.x, from.z - spot.z);
-            if (this.atmShown(i) && distance < best) {
+            if (this.shown('atm', i) && distance < best) {
                 best = distance;
                 out.set(spot.x, 0, spot.z);
             }
@@ -291,14 +336,14 @@ export class Town {
 
     /** Where an ATM's model stands (the clippings are tossed into it). */
     public atmModelAt(i: number, out = new THREE.Vector3()): THREE.Vector3 {
-        const box = this.atmBoxes[i];
+        const box = this.boxes.atm[i];
         return out.set(box.x, TOWN.atm.height * 0.6, box.z);
     }
 
-    /** A section's ATMs pop in (it just opened). */
-    private revealAtms(): void {
-        this.atmGroups.forEach((group, i) => {
-            if (group.visible || !this.atmShown(i)) return;
+    /** A section's stations pop in (it just opened). */
+    private revealStations(): void {
+        for (const kind of STATION_KINDS) this.groups[kind].forEach((group, i) => {
+            if (group.visible || !this.shown(kind, i)) return;
             group.visible = true;
             group.scale.setScalar(0.01);
             gsap.to(group.scale, { x: 1, y: 1, z: 1, duration: 0.6, delay: 0.4, ease: 'back.out(2)' });
@@ -353,7 +398,7 @@ export class Town {
         if (fence) {
             gsap.to(fence.position, { y: -1.6, duration: 0.9, ease: 'power2.in', onComplete: () => void (fence.visible = false) });
         }
-        this.revealAtms();
+        this.revealStations();
     }
 
     public isOpen(district: number): boolean {
@@ -405,14 +450,14 @@ export class Town {
         const pad = 0.25;
         const under = (b: Box) => Math.abs(x - b.x) <= b.halfX + pad && Math.abs(z - b.z) <= b.halfZ + pad;
         return TOWN.pavements.some((p) => Math.abs(x - p.x) <= p.width / 2 + pad && Math.abs(z - p.z) <= p.depth / 2 + pad)
-            || this.propBoxes.some(under) || this.atmBoxes.some(under);
+            || this.propBoxes.some(under) || STATION_KINDS.some((kind) => this.boxes[kind].some(under));
     }
 
     /** Obstacles to walk around (for the guide's route): props, the ATMs that are there, closed fences. */
     public get blockers(): readonly Box[] {
         return [
             ...this.propBoxes,
-            ...this.atmBoxes.filter((_, i) => this.atmShown(i)),
+            ...STATION_KINDS.flatMap((kind) => this.boxes[kind].filter((_, i) => this.shown(kind, i))),
             ...this.separatorBoxes.filter((b, d): b is Box => !!b && !this.open[d]),
         ];
     }
@@ -433,7 +478,8 @@ export class Town {
     public destroy(): void {
         this.destroyed = true;
         clearWalkabilityQuery(this.walkability);
-        this.atmGroups.forEach((group) => gsap.killTweensOf(group.scale));
+        for (const kind of STATION_KINDS) this.groups[kind].forEach((group) => gsap.killTweensOf(group.scale));
+        this.wardrobeAlerts.forEach((alert) => gsap.killTweensOf(alert.position));
         this.separators.forEach((fence) => fence && gsap.killTweensOf(fence.position));
         this.group.removeFromParent();
     }

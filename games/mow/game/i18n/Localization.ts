@@ -131,6 +131,8 @@ export const Localization = new LocalizationService();
 /** Shorthand: `t('sell')`, `t('built', { name, built, total })`. */
 export const t = (id: StringId, vars?: StringVars): string => Localization.getString(id, vars);
 
+const slug = (text: string): string => text.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+
 /** Localized names of game data, falling back to the data's own (English) name. */
 export const names = {
     /** A tool / mower (ui/mow.json tools). */
@@ -141,4 +143,6 @@ export const names = {
     district: (def: { id: string; name: string }) => Localization.getString(`district_${def.id}`, undefined, def.name),
     /** An upgrade track (ui/mow.json upgrades). */
     upgrade: (def: { id: string; name: string }) => Localization.getString(`upgrade_${def.id}`, undefined, def.name),
+    /** A wardrobe item's name (ui/mow.json wardrobe), keyed by its English name like Dig's. */
+    look: (name: string) => Localization.getString(`look_${slug(name)}`, undefined, name),
 };

@@ -38,11 +38,18 @@ The debug panel (**Mow**) has ADD $100 / $1000, RESTORE CURRENT DISTRICT and RES
    goal (**Scissors** → Push Mower ($15) → Powered → Ride-on → Industrial → **Mega**), the next mower's offer, and
    the bag's capacity with its levels. **BOOSTS** (after the first mower; "!" when one is affordable): Speed, Money
    Gain, Cutting Width, Sharp Blades (chew through tough grass faster). Powered and bigger mowers run an engine.
-4. **Restore** — each section shows its restored % at the top. At its goal (97%) the last stragglers are cleared,
+4. **Dress up** — every **wardrobe** (Dig's closet, a pink pad with a heart) opens Dig's wardrobe: COLORS / FACES / HATS,
+   the same catalogue, prices and assets (`wardrobe` in `ui/mow.json`; hats placed by `ui/hatfits.json`). Buying
+   puts it on at once; it's saved, and the wardrobe shows a bouncing "!" while something new there is affordable.
+5. **Restore** — each section shows its restored % at the top. At its goal (97%) the last stragglers are cleared,
    flowers bloom, a bonus is paid, and the next section opens: its fence sinks, its ATMs pop in, and the camera can
    glide over to show it.
 
-The guide is just the floor arrows: full bag → the nearest ATM; the first mower / first upgrade affordable → the
+Cut grass never grows back on its own. Only when the player is stuck — nothing left in the open section their mower
+can cut (or chew), and the next mower out of reach even with the bag sold — does just enough grass they can cut grow
+back to earn the difference ("Fresh grass is growing back!").
+
+The guide is just the floor arrows (purple): full bag → the nearest ATM; the first mower / first upgrade affordable → the
 nearest ATM (with the hand on BUY); a newly opened section → its grass.
 
 ---
@@ -83,6 +90,7 @@ move / turn / scale, D duplicate, Del remove, Ctrl+Z undo, Ctrl+S save.
 | **Grass noise** | Which grass "auto" cells get: rings around the centre (pink marker), each with its shares per grass type — the further out, the tougher, so a new section further away is harder by itself. |
 | **Props** | Game models, or 📚 imported from the 3D library. Fitted to a height; "blocks the player" makes a collider from the model's footprint (a tree's trunk, a building's base) on save — **no grass grows under a collider**. "Fades" = dithers out when it hides the player. |
 | **ATMs** | Sell and shop. As many as you like; one can wait for a section to open. |
+| **Wardrobes** | Open the wardrobe (Dig's closet behind the pad). Placed like ATMs, one can wait for a section too; their look is `wardrobe` in the level. |
 | **Pavements** | Walkable rects, no grass (plaza, road, park paths). |
 | **Start** | Where the player starts. |
 

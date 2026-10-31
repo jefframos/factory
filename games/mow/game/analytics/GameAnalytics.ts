@@ -9,6 +9,8 @@
 //   tutorial     <nn>-<step>                  complete   each first-session step, once per player, in order
 //   tool         <nn>-<toolId>                complete   a tool / mower bought
 //   upgrade      <upgradeId>-<nn>             complete   an upgrade level bought
+//   shop         hat-<id> | face-<id> | color-<id> bought     a wardrobe item bought with cash
+//   shop         hat-<id> | face-<id> | color-<id> equip      an owned wardrobe item put on
 //   sell         count-<n>                    complete   the nth sale, for the first 10
 //   bag          full                         complete   the container fills up (once a session)
 //   district     <districtId>                 complete   a district restored
@@ -54,6 +56,15 @@ export const GameAnalytics = {
         send('tutorial', `${pad(TUTORIAL.indexOf(step) + 1)}-${step}`, 'complete');
     },
 
+    /** `kind` is the wardrobe tab (hats / faces / colors). */
+    lookBought(kind: string, id: string): void {
+        send('shop', lookId(kind, id), 'bought');
+    },
+
+    lookEquipped(kind: string, id: string): void {
+        send('shop', lookId(kind, id), 'equip');
+    },
+
     toolBought(level: number, toolId: string): void {
         send('tool', `${pad(level)}-${toolId}`, 'complete');
     },
@@ -80,3 +91,10 @@ export const GameAnalytics = {
         send('settings', `lang-${code}`, 'interact');
     },
 };
+
+/** Faces are image paths (skins/face-x.webp) and colours hex codes: just the name part. */
+function lookId(kind: string, id: string): string {
+    const prefix = kind === 'hats' ? 'hat' : kind === 'faces' ? 'face' : 'color';
+    const name = id.split('/').pop()!.replace(/\.[^.]+$/, '').replace('#', '');
+    return `${prefix}-${name}`;
+}

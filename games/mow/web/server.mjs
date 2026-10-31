@@ -142,7 +142,7 @@ async function importLibraryModel(id) {
 function validateTown(town) {
     const problems = [];
     if (!town || typeof town !== 'object') return ['Not a town'];
-    for (const key of ['props', 'atms', 'pavements', 'sections', 'grassPatches']) {
+    for (const key of ['props', 'atms', 'wardrobes', 'pavements', 'sections', 'grassPatches']) {
         if (!Array.isArray(town[key])) problems.push(`${key} must be a list`);
     }
     if (!town.start || !Number.isFinite(town.start.x) || !Number.isFinite(town.start.z)) problems.push('start needs x / z');

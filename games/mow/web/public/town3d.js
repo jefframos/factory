@@ -1,6 +1,6 @@
 // Town tab: builds Mow Town (levels/town.json) in a perspective view the way the game draws it — the ground and the
-// pavements, the props (library models fitted to their height), the ATMs (each sells the bag and opens the shop; one
-// tied to a section appears when that section opens), the sections (the districts to restore, in unlock order: their
+// pavements, the props (library models fitted to their height), the ATMs (each sells the bag and opens the shop) and
+// the wardrobes (each opens the wardrobe) — one tied to a section appears when that section opens — the sections (the districts to restore, in unlock order: their
 // rect is where grass grows, their separator is the fence that keeps them closed until the previous one is restored,
 // and what happens when they open), the grass patches (painted over the sections: a grass type, `auto`, or `none` to
 // carve) and the grass noise (rings around a centre: the further out, the tougher the `auto` grass).
@@ -67,6 +67,9 @@ async function reload() {
     town = await api('/api/town');
     town.props ??= [];
     town.atms ??= [];
+    town.wardrobes ??= [];
+    // The wardrobes' look (Dig's closet), for a level from before them.
+    town.wardrobe ??= { model: 'town/station/closet-02.glb', height: 2.2, back: 1.5, label: 3.2, color: '#e266c8', icon: 'ItemIcon_Heart_Red', collider: { halfX: 0.7, halfZ: 0.45 } };
     town.pavements ??= [];
     town.sections ??= [];
     town.grassPatches ??= [];
@@ -97,6 +100,7 @@ function buildLayout() {
                     el('button', { class: 'block', onclick: () => pickModel() }, '🪴 Prop (game model)…'),
                     el('button', { class: 'block primary', onclick: () => importFromLibrary() }, '📚 Import from 3D library…'),
                     el('button', { class: 'block', onclick: () => addAtm() }, '🏧 ATM'),
+                    el('button', { class: 'block', onclick: () => addWardrobe() }, '👗 Wardrobe'),
                     el('button', { class: 'block', onclick: () => addPatch('auto') }, '🌿 Grass patch (noise)'),
                     el('button', { class: 'block', onclick: () => addPatch('tallgrass') }, '🌾 Dense patch (tall grass)'),
                     el('button', { class: 'block', onclick: () => addPatch('none') }, '✂ Bare patch (no grass)'),
@@ -116,6 +120,9 @@ function buildLayout() {
             el('section', { class: 'card-section' },
                 el('h2', {}, 'ATMs'),
                 el('ul', { id: 'townAtmList', class: 'list' })),
+            el('section', { class: 'card-section' },
+                el('h2', {}, 'Wardrobes'),
+                el('ul', { id: 'townWardrobeList', class: 'list' })),
             el('section', { class: 'card-section' },
                 el('h2', {}, 'Pavements'),
                 el('ul', { id: 'townPavementList', class: 'list' })),
@@ -344,16 +351,17 @@ function autoType(x, z, noise) {
     return mow.grass.length - 1;
 }
 
-/** What blocks grass (Town.isBlocked): pavements, prop colliders, ATM boxes, all padded. */
+/** What blocks grass (Town.isBlocked): pavements, prop colliders, ATM and wardrobe boxes, all padded. */
 function blockers() {
     const boxes = town.pavements.map((p) => ({ x: p.x, z: p.z, halfX: p.width / 2, halfZ: p.depth / 2 }));
     for (const prop of town.props) if (prop.collider) boxes.push({ x: prop.x, z: prop.z, halfX: prop.collider.halfX, halfZ: prop.collider.halfZ });
-    for (const atm of town.atms) boxes.push(atmBox(atm));
+    for (const atm of town.atms) boxes.push(stationBox(atm, town.atm));
+    for (const wardrobe of town.wardrobes) boxes.push(stationBox(wardrobe, town.wardrobe));
     return boxes;
 }
 
-function atmBox(atm) {
-    const look = town.atm;
+/** The box a station (an ATM, a wardrobe: `look` is its kind's) blocks: its model, `back` behind the pad. */
+function stationBox(atm, look) {
     const turn = atm.rotationY ?? 0;
     const sideways = Math.abs(Math.sin(turn)) > 0.5;
     return {
@@ -426,7 +434,7 @@ function rebuildGrass() {
 // ---------------------------------------------------------------- entities
 
 const keyOf = (sel) => `${sel.type}:${sel.index}`;
-const LISTS = { prop: 'props', atm: 'atms', pavement: 'pavements', section: 'sections', patch: 'grassPatches' };
+const LISTS = { prop: 'props', atm: 'atms', wardrobe: 'wardrobes', pavement: 'pavements', section: 'sections', patch: 'grassPatches' };
 const listOf = (type) => (LISTS[type] ? town[LISTS[type]] : null);
 const hex = (color) => `#${color.toString(16).padStart(6, '0')}`;
 const grassColor = (id) => (id === 'none' ? '#c9b48a' : id === 'auto' ? '#9be37a' : (mow.grass.find((g) => g.id === id)?.color ?? '#5cbf4a'));
@@ -509,7 +517,8 @@ function rebuildEntities() {
     });
     town.grassPatches.forEach((patch, index) => addHolder({ type: 'patch', index }, buildPatch(patch)));
     town.props.forEach((prop, index) => addHolder({ type: 'prop', index }, buildProp(prop)));
-    town.atms.forEach((atm, index) => addHolder({ type: 'atm', index }, buildAtm(atm)));
+    town.atms.forEach((atm, index) => addHolder({ type: 'atm', index }, buildStation(atm, town.atm, 'ATM', '#3fd16b')));
+    town.wardrobes.forEach((wardrobe, index) => addHolder({ type: 'wardrobe', index }, buildStation(wardrobe, town.wardrobe, 'WARDROBE', '#e266c8')));
     addHolder({ type: 'start', index: 0 }, buildStart());
     addHolder({ type: 'centre', index: 0 }, buildCentre());
     attachGizmo();
@@ -591,8 +600,8 @@ function buildProp(prop) {
     return holder;
 }
 
-function buildAtm(atm) {
-    const look = town.atm;
+/** A station (an ATM, a wardrobe) as the game draws it: its pad, the model `back` behind it, its name over it. */
+function buildStation(atm, look, name, labelColor) {
     const holder = new THREE.Group();
     holder.position.set(atm.x, 0, atm.z);
     holder.rotation.y = atm.rotationY ?? 0;
@@ -605,7 +614,7 @@ function buildAtm(atm) {
     holder.add(stand);
     void fillModel(stand, look.model, look.height, 0);
     const section = town.sections.find((s) => s.id === atm.section);
-    const label = labelSprite(section ? `ATM\nappears with ${section.name}` : 'ATM', '#3fd16b');
+    const label = labelSprite(section ? `${name}\nappears with ${section.name}` : name, labelColor);
     label.position.set(0, look.label, -look.back);
     holder.add(label);
     return holder;
@@ -673,7 +682,7 @@ function attachGizmo() {
 // toFixed drops float noise (0.69 * 1 → 0.6900000000000001) so town.json stays readable.
 const round = (value, step = 0.001) => Number((Math.round(value / step) * step).toFixed(4));
 /** Things that turn (the rest only move / resize). */
-const TURNS = new Set(['prop', 'atm', 'patch', 'separator']);
+const TURNS = new Set(['prop', 'atm', 'wardrobe', 'patch', 'separator']);
 /** Things whose size is width x depth (scaling changes those, not a height). */
 const SIZED = new Set(['pavement', 'section', 'patch']);
 
@@ -773,6 +782,12 @@ function addAtm() {
     touch();
     town.atms.push({ ...dropPoint(), rotationY: 0 });
     added('atm');
+}
+
+function addWardrobe() {
+    touch();
+    town.wardrobes.push({ ...dropPoint(), rotationY: 0 });
+    added('wardrobe');
 }
 
 function addPatch(grass) {
@@ -897,6 +912,7 @@ function renderLists() {
     host.querySelector('#townSectionList').replaceChildren(...town.sections.map((s, i) => listItem('section', i, `${i + 1}. ${s.name}`, `$${s.bonus}`)));
     host.querySelector('#townPatchList').replaceChildren(...town.grassPatches.map((p, i) => listItem('patch', i, `${p.shape === 'round' ? '⬭' : '▭'} ${grassName(p.grass)}`, `${p.width}×${p.depth}`)));
     host.querySelector('#townAtmList').replaceChildren(...town.atms.map((a, i) => listItem('atm', i, `ATM ${i + 1}`, town.sections.find((s) => s.id === a.section)?.name ?? 'always')));
+    host.querySelector('#townWardrobeList').replaceChildren(...town.wardrobes.map((w, i) => listItem('wardrobe', i, `Wardrobe ${i + 1}`, town.sections.find((s) => s.id === w.section)?.name ?? 'always')));
     host.querySelector('#townPavementList').replaceChildren(...town.pavements.map((p, i) => listItem('pavement', i, p.id, `${p.width}×${p.depth}`)));
     host.querySelector('#townPropList').replaceChildren(...town.props.map((p, i) => listItem('prop', i, titleCase(fileName(p.model)), p.model.split('/').slice(0, -1).join('/'))));
 }
@@ -981,7 +997,7 @@ function renderInspector() {
     }
     const type = selection.type;
     const titles = {
-        prop: () => titleCase(fileName(data.model)), atm: () => `ATM ${selection.index + 1}`, pavement: () => data.id,
+        prop: () => titleCase(fileName(data.model)), atm: () => `ATM ${selection.index + 1}`, wardrobe: () => `Wardrobe ${selection.index + 1}`, pavement: () => data.id,
         section: () => data.name, patch: () => `Grass patch: ${grassName(data.grass)}`, start: () => 'Player start',
         centre: () => 'Grass noise centre', separator: () => `${town.sections[selection.index].name} separator`,
     };
@@ -1014,6 +1030,11 @@ function renderInspector() {
             selectField('Appears', data.section ?? '', [['', 'From the start'], ...town.sections.map((s) => [s.id, `When ${s.name} opens`])], (v) => edit((d) => { if (v) d.section = v; else delete d.section; })),
             el('p', { class: 'muted small' }, 'Standing on the pad sells the bag and opens the shop. The machine stands behind the pad.'));
     }
+    if (type === 'wardrobe') {
+        rows.push(
+            selectField('Appears', data.section ?? '', [['', 'From the start'], ...town.sections.map((s) => [s.id, `When ${s.name} opens`])], (v) => edit((d) => { if (v) d.section = v; else delete d.section; })),
+            el('p', { class: 'muted small' }, 'Standing on the pad opens the wardrobe (colours, faces, hats). The closet stands behind the pad.'));
+    }
     if (type === 'patch') {
         rows.push(
             selectField('Grass', data.grass, grassOptions(true), (v) => edit((d) => { d.grass = v; })),
@@ -1031,7 +1052,7 @@ function renderInspector() {
             textField('Id', data.id, (v) => edit((d) => {
                 const old = d.id;
                 d.id = v || d.id;
-                town.atms.forEach((a) => { if (a.section === old) a.section = d.id; });
+                [...town.atms, ...town.wardrobes].forEach((a) => { if (a.section === old) a.section = d.id; });
             })),
             selectField('Grass', data.fill ?? 'auto', grassOptions(true), (v) => edit((d) => { d.fill = v; })),
             numberField('Bonus ($)', data.bonus, 50, (v) => edit((d) => { d.bonus = Math.max(0, Math.round(v)); })),

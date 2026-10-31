@@ -5,9 +5,13 @@
 // moving (MowingSystem), the HUD (MowHud) and the floor arrows (ArrowGuide).
 //
 // The loop: mow -> the container fills -> stand on any ATM's pad (the clippings are tossed into it, cash counts up,
-// and the shop opens: tools and upgrades) -> mow faster. A district reaching its restoration goal clears its last
+// and the shop opens: tools and upgrades) -> mow faster. A wardrobe's pad opens Dig's wardrobe (colours, faces, hats). A district reaching its restoration goal clears its last
 // stragglers, brightens, blooms with flowers, pays its bonus and opens the next one (its fence sinks, its ATMs pop
 // in, and with `onUnlock.pan` the camera glides over to show it).
+//
+// Cut grass doesn't grow back — except when the player is stuck (updateRelief()): nothing left in the open district
+// their mower can cut, and the next mower still out of reach with the bag sold. Then just enough grass they can cut
+// grows back to earn the difference.
 //
 // The guide (no text, just the arrows): a full bag -> the nearest ATM; the first mower or the first upgrade
 // affordable -> the nearest ATM (and the hand on the shop's BUY button); a newly opened district -> its grass.
@@ -60,6 +64,13 @@ const MOVE_HINT_DISTANCE = 2.5;
 const OCCLUSION_HEIGHT = 0.9;
 /** A newly opened section (onUnlock.pan): the camera glides over, holds, glides back (seconds). */
 const PAN = { delay: 1.2, glide: 0.9, hold: 1.4 };
+/** How often the scene checks whether the player is stuck (updateRelief()). */
+const STUCK_CHECK_SEC = 1;
+/** Stuck: grass grown back to earn this much more than the next mower is short of, over about RELIEF_SEC. */
+const RELIEF_MARGIN = 1.25;
+const RELIEF_SEC = 3;
+/** At least this many cells grow back a second while relief is under way. */
+const RELIEF_MIN_RATE = 8;
 
 function cameraOffset(camera: THREE.PerspectiveCamera): THREE.Vector3 {
     const yaw = THREE.MathUtils.degToRad(MOW_CAMERA.yawDeg);
@@ -89,7 +100,12 @@ export default class MowScene extends ThreeScene {
     private readonly fresh = new Set<number>();
     /** The ATM the player stands on (-1: none). */
     private onAtm = -1;
+    /** The wardrobe whose pad the player stands on, or -1. */
+    private onWardrobe = -1;
     private moveHintActive = false;
+    /** updateRelief(): seconds to the next stuck check; while grass grows back, the district, clippings still to grow and cells a second. */
+    private stuckCheck = STUCK_CHECK_SEC;
+    private relief = { district: -1, clippings: 0, rate: 0, carry: 0 };
     private walked = 0;
     /** Where the player was last frame, for the move hint (the engine keeps its own: lastPosition). */
     private readonly hintLast = new THREE.Vector3();
@@ -177,7 +193,7 @@ export default class MowScene extends ThreeScene {
     }
 
     private createHud(): MowHud {
-        const hud = new MowHud(() => this.onBought());
+        const hud = new MowHud(() => this.onBought(), () => this.player.applyLook(MowProgress.look));
         this.game.uiLayer.addChild(hud);
         return hud;
     }
@@ -230,8 +246,7 @@ export default class MowScene extends ThreeScene {
     public fixedUpdate(delta: number): void {
         this.world.fixedUpdate(delta);
         this.mowing.fixedUpdate(delta);
-        // Open districts not restored yet slowly grow back: always grass to earn from (no soft lock whatever was bought).
-        this.grass.regrow(delta, (d) => this.town.isOpen(d) && !MowProgress.isRestored(MOW.districts[d].id));
+        this.updateRelief(delta);
         this.updateStations();
         this.checkRestoration();
         this.updateDistrictBar();
@@ -299,6 +314,13 @@ export default class MowScene extends ThreeScene {
             this.onAtm = atm;
             this.hud.setShopOpen(atm >= 0);
         }
+        // A wardrobe's pad opens the wardrobe (Dig's); its "!" while something new there is affordable.
+        const wardrobe = this.town.wardrobeAt(position.x, position.z);
+        if (wardrobe !== this.onWardrobe) {
+            this.onWardrobe = wardrobe;
+            this.hud.setWardrobeOpen(wardrobe >= 0);
+        }
+        this.town.setWardrobeAttention(wardrobe < 0 && MowProgress.wardrobeHasNews);
     }
 
     /** Sells the bag now (so the save is right), then plays it out: clippings tossed into the ATM, cash landing. */
@@ -344,6 +366,42 @@ export default class MowScene extends ThreeScene {
         if (inside >= 0) return inside;
         const pending = MOW.districts.findIndex((d) => !MowProgress.isRestored(d.id));
         return pending >= 0 ? pending : MOW.districts.length - 1;
+    }
+
+    /**
+     * The only way cut grass comes back: the player is stuck. Checked every STUCK_CHECK_SEC — the open districts not
+     * restored yet hold nothing their mower can cut (or chew), and the next mower costs more than their money plus the
+     * bag sold. Then the newest such district grows back grass their mower cuts at once, enough clippings to earn the
+     * shortfall (x RELIEF_MARGIN), over about RELIEF_SEC, and the HUD says so. Otherwise nothing ever grows back.
+     */
+    private updateRelief(delta: number): void {
+        const relief = this.relief;
+        if (relief.clippings > 0) {
+            relief.carry += relief.rate * delta;
+            const cells = Math.floor(relief.carry);
+            if (cells <= 0) return;
+            relief.carry -= cells;
+            const grown = this.grass.regrow(relief.district, cells, MowProgress.power);
+            // Nothing left to grow back there: done.
+            relief.clippings = grown > 0 ? relief.clippings - grown : 0;
+            return;
+        }
+        this.stuckCheck -= delta;
+        if (this.stuckCheck > 0) return;
+        this.stuckCheck = STUCK_CHECK_SEC;
+        const next = MowProgress.nextTool;
+        if (!next) return;
+        const perClipping = MOW.clippingPrice * (1 + MowProgress.moneyBonus);
+        const shortfall = next.price - MowProgress.money - Math.round(MowProgress.clippings * perClipping);
+        if (shortfall <= 0) return;
+        const open = MOW.districts.map((_, d) => d).filter((d) => this.town.isOpen(d) && !MowProgress.isRestored(MOW.districts[d].id));
+        if (!open.length || open.some((d) => this.grass.cuttableLeft(d, MowProgress.power, 1) > 0)) return;
+        // Stuck. Clippings to grow, and a pace (cells a second) that gets them back in about RELIEF_SEC.
+        const clippings = Math.ceil((shortfall / perClipping) * RELIEF_MARGIN);
+        const cuttable = MOW.grass.filter((g) => g.resistance <= MowProgress.power);
+        const perCell = cuttable.length ? cuttable.reduce((sum, g) => sum + g.value, 0) / cuttable.length : 1;
+        this.relief = { district: open[open.length - 1], clippings, rate: Math.max(RELIEF_MIN_RATE, clippings / perCell / RELIEF_SEC), carry: 0 };
+        this.hud.say(t('grassRegrows'), 0x9cff9c);
     }
 
     private updateDistrictBar(): void {

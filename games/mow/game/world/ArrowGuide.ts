@@ -9,7 +9,8 @@ import * as THREE from 'three';
 import { BendService } from '../services/BendService';
 import { findPath, Box } from './GuidePath';
 
-const COLOR = 0xffd23f;
+/** Purple: reads against the green grass and the grey pavements, apart from the yellow-green clippings. */
+const COLOR = 0xa25cff;
 const LIFT = 0.12;
 const TRAIL_START = 0.9;
 const SPACING = 0.75;

@@ -102,8 +102,9 @@ export interface DistrictDef {
 }
 
 /**
- * An ATM: its pad (the machine stands `back` behind it: on the -Z side when rotationY is 0); `section` = it only
- * appears once that section is open. Every ATM sells the bag and opens the shop.
+ * A station's spot — an ATM or a wardrobe: its pad (the machine / closet stands `back` behind it: on the -Z side when
+ * rotationY is 0); `section` = it only appears once that section is open. Every ATM sells the bag and opens the shop;
+ * every wardrobe opens the wardrobe.
  */
 export interface AtmSpot {
     x: number;
@@ -112,7 +113,7 @@ export interface AtmSpot {
     section?: string;
 }
 
-/** The ATMs' look: the model (path under models/, fitted to `height`), how far behind the pad, the label's height. */
+/** A station kind's look (the ATMs', the wardrobes'): the model (path under models/, fitted to `height`), how far behind the pad, the label's height. */
 export interface AtmLook {
     model: string;
     height: number;
@@ -121,6 +122,20 @@ export interface AtmLook {
     color: string;
     icon: string;
     collider: { halfX: number; halfZ: number };
+}
+
+/** Something to wear, bought with cash. */
+export interface WardrobeItem {
+    /** Colour hex, face image path (skins/...webp) or hat model key (MODELS.Hats). */
+    id: string;
+    name?: string;
+    price: number;
+}
+
+export interface WardrobeCatalog {
+    colors: WardrobeItem[];
+    faces: WardrobeItem[];
+    hats: WardrobeItem[];
 }
 
 /** A model in the town (dig's hub prop format, so the editor places both the same way). */
@@ -182,6 +197,9 @@ export interface TownLevel {
     pavements: Pavement[];
     atm: AtmLook;
     atms: AtmSpot[];
+    /** The wardrobes: Dig's closet, same pad and label as the ATMs (in its own colour and icon). */
+    wardrobe: AtmLook;
+    wardrobes: AtmSpot[];
     props: TownProp[];
     grassNoise: GrassNoise;
     grassPatches: GrassPatch[];
@@ -198,6 +216,8 @@ export interface MowDesign {
     /** The shop's BOOSTS tab opens with this mower (tool level). */
     boostsUnlockToolLevel: number;
     tractor: TractorConfig;
+    /** What the wardrobes sell (Dig's catalogue and assets). */
+    wardrobe: WardrobeCatalog;
     /** The level's sections, in unlock order. */
     districts: DistrictDef[];
     start: { x: number; z: number };

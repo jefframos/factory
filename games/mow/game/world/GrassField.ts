@@ -17,9 +17,9 @@
 // resistance; one short, it has to be chewed through (SLOW_CUT_SEC of contact: `chewing`, the mower is held back
 // meanwhile); further below not at all (`blocked`: a wall until a better mower, with the hint). Cut cells are saved as run-lengths (save() / the constructor's `saved`).
 //
-// An open district not restored yet slowly grows back (regrow(): REGROW_PER_SEC cut cells, anywhere in it), so
-// there's always a little grass to earn from whatever the player bought — slow enough never to stand between the
-// player and the district's goal. Restored districts stay mowed.
+// Cut grass never grows back on its own. Only when the player is stuck — nothing left they can cut and the next mower
+// out of reach — does the scene grow some back (regrow(): grass their mower cuts, just enough to earn the
+// difference). Restored districts stay mowed.
 
 import * as THREE from 'three';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
@@ -33,8 +33,6 @@ const TUFT_MODEL = './mow/models/town/nature/Grass_1_A_Singlesided_Color1.gltf';
 const GRASS_PIXELS = 12;
 /** Width of the mowed stripes, in cells. */
 const STRIPE = 4;
-/** Cut cells growing back per second in each district still being restored. */
-const REGROW_PER_SEC = 0.66;
 /** One power short: a cell takes this long to chew through (seconds of contact). */
 const SLOW_CUT_SEC = 0.7;
 
@@ -178,9 +176,8 @@ export class GrassField {
     /** Per district: cells with grass, and how many are cut. */
     public readonly totals: number[];
     public readonly cutCounts: number[];
-    /** Per district: its grass cells (regrow() picks from them) and the fraction of a regrowth carried over. */
+    /** Per district: its grass cells (cellsIn()). */
     private cellsOf: number[][] = [];
-    private readonly regrowCarry: number[];
     private readonly grounds: THREE.Mesh[] = [];
     /** One texel per cell: a cut cell's colour (rgb) and whether it's cut (alpha); read by the ground shader. */
     private readonly cutMap: THREE.DataTexture;
@@ -211,7 +208,6 @@ export class GrassField {
         this.jitter = new Float32Array(count);
         this.totals = MOW.districts.map(() => 0);
         this.cutCounts = MOW.districts.map(() => 0);
-        this.regrowCarry = MOW.districts.map(() => 0);
         this.cutMap = new THREE.DataTexture(new Uint8Array(count * 4), this.width, this.depth, THREE.RGBAFormat);
         this.cutMap.magFilter = THREE.LinearFilter;
         this.cutMap.minFilter = THREE.LinearFilter;
@@ -457,34 +453,41 @@ export class GrassField {
         return result;
     }
 
-    /**
-     * Grows back cut grass in the districts still being restored (`growing(d)`): REGROW_PER_SEC cells each, picked at
-     * random so it comes back here and there.
-     */
-    public regrow(delta: number, growing: (district: number) => boolean): void {
+    /** A district's grass cells (built once, on first use). */
+    private cellsIn(district: number): number[] {
         if (!this.cellsOf.length) {
             this.cellsOf = MOW.districts.map(() => []);
             for (let i = 0; i < this.types.length; i++) if (this.types[i] && this.districtOf[i] >= 0) this.cellsOf[this.districtOf[i]].push(i);
         }
-        MOW.districts.forEach((_, d) => {
-            const cells = this.cellsOf[d];
-            if (!growing(d) || !this.cutCounts[d] || !cells.length) return;
-            this.regrowCarry[d] += REGROW_PER_SEC * delta;
-            // Random picks over all the district's cells: a pick on uncut grass is a miss, so scale up to hit cut ones.
-            const share = this.cutCounts[d] / cells.length;
-            while (this.regrowCarry[d] >= 1) {
-                this.regrowCarry[d] -= 1;
-                for (let attempt = 0; attempt < Math.ceil(4 / share); attempt++) {
-                    const i = cells[Math.floor(Math.random() * cells.length)];
-                    if (!this.cutFlags[i]) continue;
-                    this.cutFlags[i] = 0;
-                    this.damage[i] = 0;
-                    this.cutCounts[d]--;
-                    this.writeInstance(i);
-                    break;
-                }
-            }
-        });
+        return this.cellsOf[district];
+    }
+
+    /** Uncut cells in a district that `power` can cut (or chew through: one short), up to `limit` (counting stops there). */
+    public cuttableLeft(district: number, power: number, limit = Infinity): number {
+        let count = 0;
+        for (const i of this.cellsIn(district)) {
+            if (this.cutFlags[i] || MOW.grass[this.types[i] - 1].resistance - power > 1) continue;
+            if (++count >= limit) break;
+        }
+        return count;
+    }
+
+    /**
+     * Grows back up to `count` cut cells in a district whose grass `power` cuts at once (never one it would have to
+     * chew or can't cut), picked at random so it comes back here and there; returns the clippings they hold.
+     */
+    public regrow(district: number, count: number, power: number): number {
+        const cut = this.cellsIn(district).filter((i) => this.cutFlags[i] && MOW.grass[this.types[i] - 1].resistance <= power);
+        let clippings = 0;
+        for (let n = 0; n < count && cut.length; n++) {
+            const i = cut.splice(Math.floor(Math.random() * cut.length), 1)[0];
+            this.cutFlags[i] = 0;
+            this.damage[i] = 0;
+            this.cutCounts[district]--;
+            this.writeInstance(i);
+            clippings += MOW.grass[this.types[i] - 1].value;
+        }
+        return clippings;
     }
 
     /** A district's restored share (0..1). */

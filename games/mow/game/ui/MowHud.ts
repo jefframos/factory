@@ -16,6 +16,7 @@ import { UiKit } from './UiKit';
 import { UiAnim } from './UiAnim';
 import { MoveHint } from './MoveHint';
 import { LanguagePanel, LANGUAGE_SIZE } from './LanguagePanel';
+import { WardrobePanel, WARDROBE_SIZE } from './WardrobePanel';
 import { MowProgress } from '../data/MowProgress';
 import { MOW, ToolDef, UpgradeDef } from '../data/MowConfig';
 import { tabbedBlock, TabSpec } from './TabBar';
@@ -100,6 +101,10 @@ export class MowHud extends PIXI.Container {
     private readonly shopBody = new PIXI.Container();
     private readonly shopHolder = new PIXI.Container();
     private shopOpen = false;
+    /** The wardrobe (on a wardrobe's pad), sized and placed like the shop. */
+    private readonly wardrobe: WardrobePanel;
+    private readonly wardrobeHolder = new PIXI.Container();
+    private wardrobeOpen = false;
     private shopKey = '';
     private hint: ShopHint = null;
     private tab: 'gear' | 'boosts' = 'gear';
@@ -110,17 +115,20 @@ export class MowHud extends PIXI.Container {
     private district = 0;
     private readonly onChange = () => this.refresh();
 
-    /** `onBuy` after any purchase (the scene reacts: swaps the tool, plays effects). */
-    public constructor(private readonly onBuy: () => void) {
+    /** `onBuy` after any purchase (the scene reacts: swaps the tool, plays effects); `onWear` after a look changes (re-dress the player). */
+    public constructor(private readonly onBuy: () => void, onWear: () => void) {
         super();
         this.buildCorner();
         this.buildProgress();
         this.buildButtons();
         this.buildShop();
+        this.wardrobe = new WardrobePanel(onWear, (text, color) => this.say(text, color));
+        this.addClose(this.wardrobe, WARDROBE_SIZE, () => this.setWardrobeOpen(false));
+        this.wardrobeHolder.addChild(this.wardrobe);
         this.languageHolder.addChild(this.language);
         this.addClose(this.language, LANGUAGE_SIZE, () => this.toggleLanguage());
         this.toast.alpha = 0;
-        this.addChild(this.corner, this.progress, this.mute, this.languageButton, this.moveHint, this.shopHolder, this.languageHolder, this.toast);
+        this.addChild(this.corner, this.progress, this.mute, this.languageButton, this.moveHint, this.shopHolder, this.wardrobeHolder, this.languageHolder, this.toast);
         MowProgress.onChange.add(this.onChange);
         this.refresh();
         this.reposition();
@@ -272,6 +280,18 @@ export class MowHud extends PIXI.Container {
         if (!open) return;
         this.renderShop();
         UiAnim.popIn(this.shop);
+        MowAudio.play('open');
+    }
+
+    /** Opens / closes the wardrobe (the scene calls this as the player steps on / off a wardrobe's pad). */
+    public setWardrobeOpen(open: boolean): void {
+        if (open === this.wardrobeOpen) return;
+        this.wardrobeOpen = open;
+        this.wardrobe.visible = open;
+        if (!open) return;
+        this.wardrobe.refresh();
+        MowProgress.markWardrobeSeen();
+        UiAnim.popIn(this.wardrobe);
         MowAudio.play('open');
     }
 
@@ -535,6 +555,8 @@ export class MowHud extends PIXI.Container {
 
     private refresh(): void {
         const money = MowProgress.money - this.heldMoney;
+        // The wardrobe's prices turn red / white with the money (not while a sale is still landing).
+        if (this.wardrobeOpen && this.heldMoney === 0 && money !== this.lastMoney) this.wardrobe.refresh();
         this.moneyText.text = `$${money.toLocaleString('en-US')}`;
         if (this.lastMoney >= 0 && money > this.lastMoney) {
             gsap.killTweensOf(this.moneyText.scale);
@@ -599,6 +621,9 @@ export class MowHud extends PIXI.Container {
         const shopScale = Math.min(1, room / (SHOP.height + RIBBON_OVERHANG), (screen.width - 24) / (SHOP.width + CLOSE_SIZE / 2));
         this.shopHolder.scale.set(shopScale);
         this.shopHolder.position.set(screen.center.x, top + (RIBBON_OVERHANG + SHOP.height / 2) * shopScale);
+        const wardrobeScale = Math.min(1, room / (WARDROBE_SIZE.height + RIBBON_OVERHANG), (screen.width - 24) / (WARDROBE_SIZE.width + CLOSE_SIZE / 2));
+        this.wardrobeHolder.scale.set(wardrobeScale);
+        this.wardrobeHolder.position.set(screen.center.x, top + (RIBBON_OVERHANG + WARDROBE_SIZE.height / 2) * wardrobeScale);
         const languageScale = Math.min(1, (screen.height - 94) / (LANGUAGE_SIZE.height + RIBBON_OVERHANG), (screen.width - 24) / (LANGUAGE_SIZE.width + CLOSE_SIZE / 2));
         this.languageHolder.scale.set(languageScale);
         this.languageHolder.position.set(screen.center.x, screen.center.y + (RIBBON_OVERHANG / 2) * languageScale);
