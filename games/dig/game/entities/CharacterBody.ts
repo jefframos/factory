@@ -11,7 +11,7 @@
 
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { createGLTFLoader } from 'core/three/GLTFLoaders';
 import { CubeBuilder, colorForValue } from '../builders/CubeBuilder';
 import { TextureBuilder } from '../builders/TextureBuilder';
 import { ShopStorage, SHOP_ITEMS, DEFAULT_SKIN_ID, resolveShopImagePath } from '../data/ShopStorage';
@@ -143,7 +143,7 @@ export default class CharacterBody {
         const resolvedUrl = await loadCompressedFile(url);
         try {
             const object = /\.(glb|gltf)(\.gz)?$/i.test(url)
-                ? (await new GLTFLoader().loadAsync(resolvedUrl)).scene
+                ? (await createGLTFLoader().loadAsync(resolvedUrl)).scene
                 : await new FBXLoader().loadAsync(resolvedUrl);
             this.applyFallbackMaterial(object);
             this.container.add(object);

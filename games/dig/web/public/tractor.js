@@ -5,7 +5,7 @@
 // and digging stats are the last entry of `tools` (the tool path ends with the tractor).
 
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createGLTFLoader } from './gltf.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { api, el, toast } from './shared.js';
 
@@ -200,7 +200,7 @@ function place() {
 }
 
 async function loadTractor() {
-    const gltf = await new GLTFLoader().loadAsync(`/models/${tractor.model}`).catch((error) => {
+    const gltf = await createGLTFLoader().loadAsync(`/models/${tractor.model}`).catch((error) => {
         toast(`Could not load ${tractor.model}: ${error.message}`, 'bad');
         return null;
     });
@@ -213,7 +213,7 @@ async function loadTractor() {
 /** The game's rig in its Sitting clip (the game's CharacterBody swaps the head for a cube; the bare rig is close enough to place the seat). */
 async function loadMiner() {
     try {
-        const [rig, sit] = await Promise.all([new GLTFLoader().loadAsync(`/models/${CHARACTER}`).then((gltf) => gltf.scene), new GLTFLoader().loadAsync(`/models/${SIT_CLIP}`)]);
+        const [rig, sit] = await Promise.all([createGLTFLoader().loadAsync(`/models/${CHARACTER}`).then((gltf) => gltf.scene), createGLTFLoader().loadAsync(`/models/${SIT_CLIP}`)]);
         rig.scale.setScalar(CHARACTER_SCALE);
         rig.traverse((node) => {
             if (node.isMesh) node.material = new THREE.MeshStandardMaterial({ color: 0x42a5f5, roughness: 0.7 });

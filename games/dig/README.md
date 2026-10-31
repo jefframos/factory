@@ -19,7 +19,7 @@ From the repo root, with `GAME=dig` in `.env`:
 | `npm run editor` | The level / data editor (see Editor). |
 | `npm run image` | Rebuild the UI atlas after adding images to `raw-assets/images/ui{tps}/`. |
 | `npm run audio` | Repack sounds after adding files to `raw-assets/audio/`. |
-| `npm run models` (= `models:compress`) / `npm run models:uncompress` | Publish the models — compressed by default, every build and editor import (raw assets untouched); `:uncompress` publishes the raw files as they are: textures capped at 256px, the character FBX published as a welded GLB (`raw-assets/models-optimize.json`). Loading: only the mine, the miner and the stations block the loading screen; hub decor, sounds and the tractor load behind the game. |
+| `npm run models` (= `models:compress`) / `npm run models:uncompress` | Publish the models — compressed by default, every build and editor import (raw assets untouched): textures capped at 256px, geometry gently quantised and **meshopt**-compressed (`meshopt` in `raw-assets/models-optimize.json`; ~2.5x smaller, decoded in the game by `core/three/GLTFLoaders.ts` and in the editor by `web/public/gltf.js`, so it works on any host), the character FBX published as a welded GLB. `:uncompress` publishes the raw files as they are. Loading: the loading screen only waits for the miner (and fonts / UI atlas); the mine's models load right after, in stages (topsoil blocks, the rest, then gems / pickups / relics), popping in nearest first; hub decor, sounds and the tractor load behind the game too. |
 | `npm run i18n:update` | Translate new or changed strings with Claude (see Localization). |
 | `npm run i18n:validate` | Check every language file against English. |
 

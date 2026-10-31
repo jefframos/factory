@@ -2,7 +2,7 @@
 // CharacterBody.setHat() reads, so a saved change shows up in the game on its next reload. The preview uses
 // the same head (rounded cube, face on +Z) and the same placement math as the game, in head-size units.
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createGLTFLoader } from './gltf.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { api, el, toast } from './shared.js';
@@ -28,7 +28,7 @@ let hatHolder;
 let hatModel;
 let hatSize;
 let loadToken = 0;
-const loader = new GLTFLoader();
+const loader = createGLTFLoader();
 const modelCache = new Map();
 
 export const hasUnsavedHatChanges = () => dirty;

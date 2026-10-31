@@ -14,17 +14,27 @@
 //   re-encoded as JPEG (`jpegQuality`), one with alpha stays PNG (palette-quantised).
 // - Loose .png / .jpg next to .gltf models: resized in place, same format and name (the .gltf points at them).
 // Images already within the cap are left as they are.
+// - `meshopt: true` (opt-in per game): each .glb's geometry is also quantised gently (16-bit positions, 12-bit
+//   normals, 14-bit UVs: no visible change, nothing simplified) and meshopt-compressed (EXT_meshopt_compression).
+//   The game's loaders decode it (core/three/GLTFLoaders.ts; the Dig editor's shared.js). A file already compressed
+//   is left alone, so re-running the step changes nothing.
 
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
 import { NodeIO } from '@gltf-transform/core';
-import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
+import { ALL_EXTENSIONS, EXTMeshoptCompression } from '@gltf-transform/extensions';
+import { quantize } from '@gltf-transform/functions';
+import { MeshoptDecoder, MeshoptEncoder } from 'meshoptimizer';
 
-const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
+await MeshoptDecoder.ready;
+await MeshoptEncoder.ready;
+const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.decoder': MeshoptDecoder, 'meshopt.encoder': MeshoptEncoder });
 
-const DEFAULTS = { maxTextureSize: 512, jpegQuality: 85, fbxToGlb: false, fbxDropAttributes: ['color'] };
+const DEFAULTS = { maxTextureSize: 512, jpegQuality: 85, fbxToGlb: false, fbxDropAttributes: ['color'], meshopt: false };
+/** Gentle quantisation (bits per component): well under what the eye or the world bend could show. */
+const QUANTIZE = { quantizePosition: 16, quantizeNormal: 12, quantizeTexcoord: 14, quantizeColor: 8, quantizeWeight: 8, quantizeGeneric: 12 };
 
 /** The game's settings (raw-assets/models-optimize.json over DEFAULTS), or null when it turned compression off. */
 export function loadShrinkOptions(gameRoot) {
@@ -65,6 +75,11 @@ export async function shrinkGlb(file, options) {
         texture.setImage(new Uint8Array(shrunk.data)).setMimeType(shrunk.mimeType);
         // A file name of the old type would mislead the loader.
         if (texture.getURI()) texture.setURI(texture.getURI().replace(/\.[^.]+$/, shrunk.mimeType === 'image/jpeg' ? '.jpg' : '.png'));
+        changed = true;
+    }
+    if (options.meshopt && !document.getRoot().listExtensionsUsed().some((e) => e.extensionName === EXTMeshoptCompression.EXTENSION_NAME)) {
+        await document.transform(quantize(QUANTIZE));
+        document.createExtension(EXTMeshoptCompression).setRequired(true).setEncoderOptions({ method: EXTMeshoptCompression.EncoderMethod.FILTER });
         changed = true;
     }
     if (!changed) return 0;
@@ -109,7 +124,7 @@ export async function shrinkModelsFolder(dir, options) {
         }
     };
     await walk(dir);
-    console.log(`🗜️  Textures capped at ${options.maxTextureSize}px: ${files} file(s), ${(saved / 1048576).toFixed(2)} MB saved`);
+    console.log(`🗜️  Textures capped at ${options.maxTextureSize}px${options.meshopt ? ' + meshopt' : ''}: ${files} file(s), ${(saved / 1048576).toFixed(2)} MB saved`);
 }
 
 // Run on its own (node tools/models/shrink-textures.mjs): the current game's published models.

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createGLTFLoader } from './gltf.js';
 import { isModalOpen } from './shared.js';
 import { openModelPicker, setModelCatalog, modelThumbUrl } from './modelPicker.js';
 import { initWorldStyles, loadWorldStyles, renderWorldStyles, saveWorldStyles, hasUnsavedStyles, styleOf } from './worldStyles.js';
@@ -48,7 +48,7 @@ const objectGroup = new THREE.Group();
 const overlayGroup = new THREE.Group();
 scene.add(staticGroup, objectGroup, overlayGroup);
 
-const loader = new GLTFLoader();
+const loader = createGLTFLoader();
 const modelCache = new Map();
 const raycaster = new THREE.Raycaster();
 const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);

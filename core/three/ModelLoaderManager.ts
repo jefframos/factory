@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { createGLTFLoader } from './GLTFLoaders';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 
@@ -17,7 +17,7 @@ export default class ModelLoaderManager {
   /** id -> the path(s) loaded under it, for the id-based getModel()/clearCache() lookups. */
   private _pathsById: Map<string, Set<string>> = new Map();
 
-  private _gltfLoader = new GLTFLoader();
+  private _gltfLoader = createGLTFLoader();
   private _fbxLoader = new FBXLoader();
   private _mtlLoader = new MTLLoader();
 

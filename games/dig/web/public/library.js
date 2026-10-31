@@ -3,12 +3,12 @@
 // textures under raw-assets/models/hub{m}/ and public/dig/models/hub/). Pack chips + search like the library viewer.
 
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createGLTFLoader } from './gltf.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { api, el, openModal, toast } from './shared.js';
 
 const PAGE = 240;
-const loader = new GLTFLoader();
+const loader = createGLTFLoader();
 let library;
 
 /** Opens the picker; `onImported(path)` gets the imported model's path under models/. */
