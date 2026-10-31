@@ -21,6 +21,22 @@ if (!GAME) {
 // any game, not just its own. Only the cached-build script
 // (tools/build/build-cached.mjs) reads this list; `apply: 'serve'` means this
 // never runs during `vite build`, so build/build-all behavior is untouched.
+// A platform build (build-all: VITE_PLATFORM set) keeps only its own entry of the game's platforms.config.json,
+// which every game imports whole: a Poki build otherwise ships the CrazyGames / YouTube ids, folders and API
+// script. Builds without a platform (dev, the default / cached build) keep the whole file.
+function trimPlatformConfig(platform: string | undefined): Plugin {
+    return {
+        name: 'trim-platform-config',
+        apply: 'build',
+        enforce: 'pre',
+        transform(code, id) {
+            if (!platform || !id.replace(/\\/g, '/').endsWith('/platforms.config.json')) return null;
+            const all = JSON.parse(code) as Record<string, unknown>;
+            return { code: JSON.stringify(platform in all ? { [platform]: all[platform] } : {}), map: null };
+        },
+    };
+}
+
 function syncGameRegistry(): Plugin {
     return {
         name: 'sync-game-registry',
@@ -88,7 +104,7 @@ export default defineConfig({
     root: `games/${GAME}`,
     base: './',
     publicDir: resolve(__dirname, 'public'),
-    plugins: [injectPlatformApiScript(resolve(__dirname, `games/${GAME}`), PLATFORM), syncGameRegistry(), restartOnGameChange()],
+    plugins: [injectPlatformApiScript(resolve(__dirname, `games/${GAME}`), PLATFORM), trimPlatformConfig(process.env.VITE_PLATFORM), syncGameRegistry(), restartOnGameChange()],
     resolve: {
         alias: {
             'core': resolve(__dirname, 'core'),
