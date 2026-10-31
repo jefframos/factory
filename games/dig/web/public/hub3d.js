@@ -405,6 +405,7 @@ function revealLabel(reveal) {
         if (rule.startsWith('upgradeAfter:')) return `after an upgrade once ${level.areas.find((a) => a.id === rule.slice(13))?.name ?? '?'} is open`;
         if (rule.startsWith('upgrade:')) return `after upgrade ${rule.slice(8)}`;
         if (rule.startsWith('mines:')) return `from mine #${rule.slice(6)}`;
+        if (rule === 'powerChest') return 'after the first power chest';
         if (rule === 'firstFind') return 'after the first find';
         if (rule === 'firstBuild') return 'after the first buildable';
         if (rule.startsWith('built:')) return `after ${level.areas.find((a) => a.id === rule.slice(6))?.name ?? '?'} is built`;
@@ -950,7 +951,7 @@ function renderInspector() {
     ];
     if (type === 'area') {
         const rules = [['start', 'From the start'], ['firstUpgrade', 'After the first upgrade'], ['upgrade:2', 'After the 2nd upgrade'],
-            ['upgrade:3', 'After the 3rd upgrade'], ['upgrade:4', 'After the 4th upgrade'], ['mines:2', 'From mine #2'], ['mines:3', 'From mine #3'], ['firstFind', 'After the first find'], ['firstBuild', 'After the first buildable'],
+            ['upgrade:3', 'After the 3rd upgrade'], ['upgrade:4', 'After the 4th upgrade'], ['mines:2', 'From mine #2'], ['powerChest|upgrade:3', 'After the first power chest (or the 3rd upgrade)'], ['mines:3', 'From mine #3'], ['firstFind', 'After the first find'], ['firstBuild', 'After the first buildable'],
             ['upgrades:1', 'After 1 upgrade (tool or backpack)'], ['upgrades:2', 'After 2 upgrades'], ['upgrades:3', 'After 3 upgrades'],
             ['upgrades:3|sells:4', 'After 3 upgrades or selling 4 times'], ['sells:3', 'After selling 3 times'],
             ...level.areas.filter((a) => a.id !== data.id).flatMap((a) => [

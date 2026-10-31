@@ -32,7 +32,7 @@ import { LanguagePanel, LANGUAGE_SIZE } from './LanguagePanel';
 import { MinesPanel, MINES_SIZE } from './MinesPanel';
 import { MoveHint } from './MoveHint';
 import { ModelIcons } from './ModelIcons';
-import { BoostDef, DIG, Rarity, ToolDef, toolPaint } from '../data/DigConfig';
+import { BoostDef, DIG, PRESTIGE_TOOL_LEVEL, Rarity, ToolDef, toolPaint } from '../data/DigConfig';
 import { RARITY_COLORS } from './CollectionPanel';
 import SoundToggleButton from 'core/ui/SoundToggleButton';
 import { rateLabel, type StationKind } from '../data/HubData';
@@ -117,6 +117,20 @@ function icon(screen: string, id: string, size: number): PIXI.Container {
 const TOOL_FRAME: Record<Rarity, string> = { common: 'toolCommon', rare: 'toolRare', epic: 'toolEpic', legendary: 'toolLegendary' };
 const toolFrame = (tool: ToolDef, owned: boolean): string => (owned ? TOOL_FRAME[tool.rarity] : 'toolLocked');
 
+/** A white glow round the screen's edge, clear in the middle (tinted and pulsed by setPower). */
+function vignetteTexture(): PIXI.Texture {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 256;
+    const g = canvas.getContext('2d')!;
+    const gradient = g.createRadialGradient(128, 128, 56, 128, 128, 182);
+    gradient.addColorStop(0, 'rgba(255,255,255,0)');
+    gradient.addColorStop(0.45, 'rgba(255,255,255,0.3)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0.95)');
+    g.fillStyle = gradient;
+    g.fillRect(0, 0, 256, 256);
+    return PIXI.Texture.from(canvas);
+}
+
 /** What a tool does, for its offer. */
 function toolDetail(tool: ToolDef): string {
     if (tool.vehicle) return t('toolPowerRide', { power: tool.power, area: tool.area });
@@ -200,6 +214,8 @@ export class DigHud extends PIXI.Container {
     /** The first upgrade must be bought: the screen is dimmed, taps are caught, the upgrade panel can't be closed. */
     private forced: ForcedBuy | null = null;
     private readonly blocker = new PIXI.Graphics();
+    /** A power surge's screen edge: a pulsing rainbow glow, the star feeling (setPower). */
+    private readonly powerVignette = new PIXI.Sprite(vignetteTexture());
     private readonly forcedTitle = UiKit.text('hud', 'toast', { text: '' });
     /** The panels' close buttons (hidden while a purchase is forced). */
     private readonly closeButtons: PIXI.Container[] = [];
@@ -259,7 +275,9 @@ export class DigHud extends PIXI.Container {
         this.powerText.y = -12;
         this.powerTimer.addChild(UiKit.image('hud', 'pill', POWER_TIMER.width, POWER_TIMER.height), this.powerText, this.powerBar);
         this.powerTimer.visible = false;
-        this.addChild(this.corner, this.toolChip, this.buildPhone(), this.buildNewMineCta(), this.buildMute(), this.buildSettings(), this.guide, this.powerTimer, this.moveHint, this.blocker, this.forcedTitle,
+        this.powerVignette.visible = false;
+        this.powerVignette.eventMode = 'none';
+        this.addChild(this.powerVignette, this.corner, this.toolChip, this.buildPhone(), this.buildNewMineCta(), this.buildMute(), this.buildSettings(), this.guide, this.powerTimer, this.moveHint, this.blocker, this.forcedTitle,
             this.slot(this.panel, UPGRADE_SIZE),
             this.slot(this.collection, COLLECTION_SIZE),
             this.slot(this.wardrobe, WARDROBE_SIZE),
@@ -864,12 +882,19 @@ export class DigHud extends PIXI.Container {
         if (label === null) {
             this.powerTimer.visible = false;
             this.powerShown = null;
+            this.powerVignette.visible = false;
             return;
         }
         if (this.powerShown === null) {
             this.powerTimer.visible = true;
             UiAnim.punch(this.powerTimer, 0.2);
+            this.powerVignette.visible = true;
         }
+        // The edge glow cycles through the rainbow and throbs to the beat (faster as time runs out).
+        const time = performance.now() / 1000;
+        const beat = fraction < 0.25 ? 11 : 7;
+        this.powerVignette.tint = new PIXI.Color({ h: (time * 220) % 360, s: 90, l: 60 }).toNumber();
+        this.powerVignette.alpha = 0.7 + 0.3 * Math.abs(Math.sin(time * beat));
         if (label !== this.powerShown) this.powerText.text = label;
         this.powerShown = label;
         const width = POWER_TIMER.width - 48;
@@ -1211,9 +1236,27 @@ export class DigHud extends PIXI.Container {
             node.addChild(label);
             if (i > owned) node.alpha = i === owned + 1 || goal ? 1 : 0.6;
             if (i === owned + 1) UiAnim.pulse(node, 0.08, 0.7);
+            // The tool that opens the next mine says so over its node (the goal stays the last tool).
+            if (i === PRESTIGE_TOOL_LEVEL && !goal) node.addChild(this.newMineBadge(size));
             row.addChild(node);
         });
         return row;
+    }
+
+    /** Over the timeline node of the tool that opens the next mine: the new mine's gems and "NEW MINE", glowing purple. */
+    private newMineBadge(nodeSize: number): PIXI.Container {
+        const badge = new PIXI.Container();
+        badge.y = -nodeSize / 2 - 16;
+        const gems = PIXI.Sprite.from('ShopItem_s_GemPack_1');
+        gems.anchor.set(0.5);
+        gems.scale.set(30 / Math.max(gems.texture.width, gems.texture.height, 1));
+        const label = UiKit.fit(UiKit.text('hud', 'toast', { text: t('newMineTag') }, { fontSize: 18, fill: 0xd7a6ff, strokeThickness: 5 }), 96);
+        label.anchor.set(0, 0.5);
+        gems.x = -label.width / 2 - 4;
+        label.x = gems.x + 18;
+        badge.addChild(gems, label);
+        gsap.to(badge, { y: badge.y - 4, duration: 0.6, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+        return badge;
     }
 
     /**
@@ -1340,6 +1383,9 @@ export class DigHud extends PIXI.Container {
         this.powerTimer.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.25);
         this.moveHint.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.72);
         this.blocker.clear().beginFill(0x000000, 0.6).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
+        this.powerVignette.position.set(screen.topLeft.x, screen.topLeft.y);
+        this.powerVignette.width = screen.width;
+        this.powerVignette.height = screen.height;
         this.blocker.hitArea = new PIXI.Rectangle(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height);
         this.forcedTitle.position.set(screen.center.x, screen.center.y - 10);
         // Station panels: in the bottom half, under the miner, shrunk to fit what's there.

@@ -32,6 +32,7 @@ import { HubRoom, STATION_RADIUS, perkLabel } from '../world/HubRoom';
 import { TractorRide } from '../player/TractorRide';
 import { Guide } from '../world/Guide';
 import { RelicHunt } from '../world/RelicHunt';
+import { StarMusic } from '../audio/StarMusic';
 import { HardBlockMarkers } from '../world/HardBlockMarkers';
 import { TreasureSparkles } from '../world/TreasureSparkles';
 import { TreasureBeacons } from '../world/TreasureBeacons';
@@ -104,6 +105,8 @@ const FULL_PUSHES_TO_GUIDE = 2;
 /** Each hub piece that earns pops what it made every this many seconds (at least $1), while the miner is this near the hub. */
 const INCOME_POP_SEC = 3;
 const INCOME_POP_RANGE = 22;
+/** Collecting the hub's income at the ATM happens at most this often. */
+const HUB_COLLECT_GAP_MS = 4000;
 /** The move hint goes once the miner has walked this far. */
 const MOVE_HINT_DISTANCE = 2.5;
 /** A swing breaking at least this many blocks (a drill's) shakes the camera, harder the more, up to SHAKE_MAX. */
@@ -145,6 +148,8 @@ export default class DigScene extends ThreeScene {
     private tractor!: TractorRide;
     private guide!: Guide;
     private relicHunt!: RelicHunt;
+    /** The power surge's tune (the star feeling), playing while one runs. */
+    private readonly starMusic = new StarMusic();
     private hardBlocks!: HardBlockMarkers;
     /** Sparkles over buried finds near the miner. */
     private treasureSparkles!: TreasureSparkles;
@@ -200,6 +205,10 @@ export default class DigScene extends ThreeScene {
     private buildSpot: string | null = null;
     /** Per earning hub piece: cash made since its last pop, and seconds until it may pop again (updateIncomePops). */
     private readonly incomePops = new Map<string, { cash: number; wait: number }>();
+    /** The extra power chests are in this mine's rock (buryPowerChests()). */
+    private powerChestsBuried = false;
+    /** When the hub's income was last collected at the ATM (performance.now()). */
+    private lastHubCollect = -Infinity;
     private readonly followTarget = new THREE.Vector3();
     private readonly pickupPoint = new THREE.Vector3();
 
@@ -248,6 +257,7 @@ export default class DigScene extends ThreeScene {
         this.treasureSparkles = new TreasureSparkles(this.terrain, this.effects);
         this.treasureBeacons = new TreasureBeacons(this.threeScene, this.terrain);
         this.powerChests = new PowerChestSpawner(this.threeScene, this.terrain, this.effects);
+        if (DigProgress.hasOnce(POWER_CHEST_TAKEN)) this.buryPowerChests();
         this.mining = new MiningController(this.terrain, this.effects, this.player, (text) => this.hud.say(text, 0xffd9a8), (find, zone) => {
             // Its reward waits in the Trophy Room (claimed there: the totem gets its "!"); the banner says so.
             const amount = DigProgress.findPayout(find, zone);
@@ -484,6 +494,8 @@ export default class DigScene extends ThreeScene {
     private openChest(kind: ChestKind, zone: number, debug = false): void {
         if (!debug) GameAnalytics.chestDug(kind, DIG.zones[zone].id);
         if (kind === 'power' && !debug) DigProgress.once(POWER_CHEST_TAKEN);
+        // The first power chest found: more are buried around the mine from now on.
+        if (kind === 'power' && !this.powerChestsBuried) this.buryPowerChests();
         const at = this.player.pickupPoint(new THREE.Vector3());
         const color = new THREE.Color(kind === 'power' ? 0x6fe3ff : 0xffd23f);
         for (let i = 0; i < 14; i++) {
@@ -508,6 +520,12 @@ export default class DigScene extends ThreeScene {
         this.fullPushes = 0;
     }
 
+    /** Buries the extra power chests (once the first has been dug): their beams show from afar. */
+    private buryPowerChests(): void {
+        this.powerChestsBuried = true;
+        this.powerChests.showBuried(this.terrain.buryPowerChests());
+    }
+
     /** Runs a power surge's clock (only while playing), its HUD countdown and cash pops, and its end. */
     private updatePowerSurge(delta: number): void {
         this.surgeCashTimer -= delta;
@@ -519,6 +537,9 @@ export default class DigScene extends ThreeScene {
         // Only while the miner can dig: a menu, a forced purchase or the find banner holding the game don't eat it.
         const ended = Gameplay.active && this.player.movementController.enabled ? PowerSurge.update(delta) : undefined;
         const tool = PowerSurge.tool;
+        if (tool && !this.starMusic.playing) this.starMusic.start();
+        if (!tool && this.starMusic.playing) this.starMusic.stop();
+        this.starMusic.update();
         this.hud.setPower(tool ? t('powerTimer', { tool: names.tool(tool).toUpperCase(), seconds: Math.ceil(PowerSurge.secondsLeft) }) : null, PowerSurge.fraction);
         if (!ended) return;
         GameAnalytics.powerSurge(ended.id, 'complete');
@@ -678,8 +699,12 @@ export default class DigScene extends ThreeScene {
      * and is said on screen unless a sale is about to say its own.
      */
     private collectHubCash(at: THREE.Vector3): void {
+        // Standing on the pad's edge steps on and off it: one collection every few seconds, not a "+$1" each time.
+        const now = performance.now();
+        if (now - this.lastHubCollect < HUB_COLLECT_GAP_MS) return;
         const amount = DigProgress.collectHubCash();
         if (amount <= 0) return;
+        this.lastHubCollect = now;
         this.effects.floatText(at.clone().setY(at.y + 1.2), `+$${amount.toLocaleString('en-US')}`, '#8fffa0');
         DigAudio.play('coins');
         if (DigProgress.backpackCount === 0) this.hud.say(t('hubCashCollected', { amount: amount.toLocaleString('en-US') }), 0x8fffa0);
@@ -1004,8 +1029,10 @@ export default class DigScene extends ThreeScene {
         window.removeEventListener('keydown', this.onFirstInput, true);
         GameAnalytics.sessionStart(DigProgress.achievementStat('blocks') === 0 && DigProgress.upgradesBought === 0);
         Gameplay.start();
-        // Playing now: the tractor's model comes down behind the game (one already owned loaded with the scene).
+        // Playing now: the tractor's model comes down behind the game (one already owned loaded with the scene), and
+        // the power chest's (the same tractor) with it.
         this.tractor.loadInBackground();
+        this.terrain.loadPowerModel();
     };
 
     /** After a menu stopped gameplay (achievements, settings), moving again starts it again. */
@@ -1032,6 +1059,7 @@ export default class DigScene extends ThreeScene {
         this.mapButton?.destroy({ children: true });
         this.effects?.destroy();
         this.tractor?.destroy();
+        this.starMusic.stop();
         this.guide?.destroy();
         this.hardBlocks?.destroy();
         this.treasureBeacons?.destroy();

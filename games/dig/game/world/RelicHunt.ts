@@ -12,7 +12,7 @@
 import * as THREE from 'three';
 import { DIG, FindDef } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
-import { HUB, hubRects } from '../data/HubData';
+import { HUB, anyBuildableOpen, hubRects } from '../data/HubData';
 import { AIR, BEDROCK, VoxelTerrain } from './VoxelTerrain';
 import { GameAnalytics } from '../analytics/GameAnalytics';
 
@@ -31,13 +31,15 @@ export class RelicHunt {
     public constructor(private readonly terrain: VoxelTerrain, private readonly onNamed: (find: FindDef) => void) {}
 
     /**
-     * The hunt's part of the game: after the tutorial (the first hub piece built), while the mine's collection is
+     * The hunt's part of the game: after the tutorial (the first hub piece built — or, while no piece is there to build
+     * yet, the first relic: the first room only opens with the first power chest), while the mine's collection is
      * within the guided relics — including claiming the last one's reward.
      */
     public get guiding(): boolean {
         const hunt = DIG.relicHunt;
         const count = DigProgress.collectedCount;
-        return hunt.enabled && count >= 1 && count <= hunt.guided + 1 && (HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id));
+        const tutorialOver = (HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id)) || !anyBuildableOpen((id) => DigProgress.areaRevealedAt(id));
+        return hunt.enabled && count >= 1 && count <= hunt.guided + 1 && tutorialOver;
     }
 
     /** The relic named (and not yet dug up), if any. */

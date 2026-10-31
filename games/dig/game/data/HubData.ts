@@ -57,8 +57,8 @@ export interface HubStation extends HubPoint {
  * 'start' (always); 'upgrades:<n>' (n upgrades bought, tools + backpacks); 'firstUpgrade' / 'upgrade:<n>' (tool
  * upgrades); 'sells:<n>' (sold n times); 'firstFind' (an artifact found); 'firstBuild' (any buildable bought);
  * 'built:<areaId>' / 'half:<areaId>' (all / half of that area's buildables bought); 'upgradeAfter:<areaId>' (an
- * upgrade bought after that area appeared); 'mines:<n>' (n mines opened, the first counting). Several joined with '|'
- * = any of them. Things outside every area are always there. The first area containing a point owns it.
+ * upgrade bought after that area appeared); 'mines:<n>' (n mines opened, the first counting); 'powerChest' (the first
+ * power chest dug: the first room of pieces to build). Several joined with '|' = any of them. Things outside every area are always there. The first area containing a point owns it.
  *
  * An area's buildables are a set: buying them all adds its `bonus` on top of each piece's own perk.
  */
@@ -129,6 +129,14 @@ export const HUB: HubDesign = data as unknown as HubDesign;
 /** The buildables standing in an area: its set. */
 export function buildablesIn(area: HubArea): HubBuildable[] {
     return (HUB.buildables ?? []).filter((b) => hubAreaAt(b.x, b.z)?.id === area.id);
+}
+
+/** Some piece can be bought: one outside every area, or in an area that has appeared (DigProgress.areaRevealedAt). */
+export function anyBuildableOpen(revealedAt: (areaId: string) => number | undefined): boolean {
+    return (HUB.buildables ?? []).some((b) => {
+        const area = hubAreaAt(b.x, b.z);
+        return !area || revealedAt(area.id) !== undefined;
+    });
 }
 
 /** Whether every piece of an area's set is bought (false for an area with none). */

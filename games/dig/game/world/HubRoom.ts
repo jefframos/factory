@@ -24,6 +24,7 @@ import { CheckerFloorBuilder } from '../builders/CheckerFloorBuilder';
 import type { StoreWallPlacement, WallSetupConfig, WallStyleConfig, FloorCheckerConfig } from './RoomTypes';
 import { HUB, HubAchievementDecor, HubArea, HubBuildable, HubPerk, HubStation, HubTrophyTable, StationKind, buildablesIn, hubAreaAt, hubRects, rateLabel } from '../data/HubData';
 import { DigProgress } from '../data/DigProgress';
+import { POWER_CHEST_TAKEN } from '../mining/PowerChestSpawner';
 import type { Box } from './GuidePath';
 import { DIG, FindDef } from '../data/DigConfig';
 import { CanvasArt } from '../ui/CanvasArt';
@@ -46,8 +47,12 @@ export const STATION_LOOK: Record<StationKind, { color: number; icon: string; la
 export const STATION_RADIUS = 1.3;
 /** The station's model stands this far north of the pad's centre. */
 const STATION_MODEL_OFFSET = STATION_RADIUS + 0.25;
-/** A buildable's price tag floats this far over its top. */
-const TAG_LIFT = 0.85;
+/** A buildable's price tag: how far its centre floats over the piece's top, and how wide it is. */
+const TAG_LIFT = 1.05;
+const TAG_WIDTH = 1.6;
+/** Price tag canvas: the price row's height, then one row per thing the piece gives. */
+const TAG_TOP = 92;
+const TAG_ROW = 52;
 /** Walking within this of a buildable's spot buys it. */
 export const BUILD_RADIUS = 0.9;
 const GHOST_COLOR = 0x8fd3ff;
@@ -155,26 +160,29 @@ export function perkLabel(perk: HubPerk): string {
 const PERK_ICONS: Record<HubPerk['stat'], string> = { sell: 'ItemIcon_Money_Coin', dig: 'ToolIcon_pickaxe', move: 'ItemIcon_Gear_Boots', beam: 'ItemIcon_Star_Gold' };
 
 /**
- * A buildable's tag, no words: its price, and under it what it gives — an icon chip each for its income ("+$0.3/s")
- * and its perk ("+3%" by the stat's icon). Text sizes are picked to fit, never squeezed.
+ * A buildable's tag, no words, as a short vertical list: its price on top, then a row each for what it gives — its
+ * income ("+$0.3/s" by a bill) and its perk ("+3%" by the stat's icon) — big enough to read from the camera.
  */
 function priceTexture(def: HubBuildable): THREE.CanvasTexture {
+    const rows: [string, string][] = [];
+    if (def.income) rows.push(['ItemIcon_Money_Bill', rateLabel(def.income)]);
+    if (def.perk) rows.push([PERK_ICONS[def.perk.stat], def.perk.stat === 'beam' ? `+${def.perk.amount}` : `+${Math.round(def.perk.amount * 100)}%`]);
     const canvas = document.createElement('canvas');
-    canvas.width = 320;
-    canvas.height = 160;
+    canvas.width = 256;
+    canvas.height = TAG_TOP + rows.length * TAG_ROW + 14;
     const g = canvas.getContext('2d')!;
-    CanvasArt.plaque(g, 8, 8, 304, 144, 26, 'rgba(255, 224, 102, 0.6)');
+    CanvasArt.plaque(g, 8, 8, 240, canvas.height - 16, 26, 'rgba(255, 224, 102, 0.6)');
     const price = `$${def.price.toLocaleString('en-US')}`;
-    CanvasArt.text(g, price, 160, 50, fitSize(g, price, 56, 270), '#ffe066');
-    const chips: [string, string][] = [];
-    if (def.income) chips.push(['ItemIcon_Money_Bill', rateLabel(def.income)]);
-    if (def.perk) chips.push([PERK_ICONS[def.perk.stat], def.perk.stat === 'beam' ? `+${def.perk.amount}` : `+${Math.round(def.perk.amount * 100)}%`]);
-    const width = 288 / Math.max(1, chips.length);
-    chips.forEach(([iconName, text], i) => {
-        const left = 16 + i * width;
-        CanvasArt.drawIcon(g, iconName, left + 22, 112, 40);
-        // The text in the chip's room right of its icon.
-        CanvasArt.text(g, text, left + 44 + (width - 48) / 2, 112, fitSize(g, text, 32, width - 48), '#8fffa0');
+    CanvasArt.text(g, price, 128, 50, fitSize(g, price, 58, 216), '#ffe066');
+    rows.forEach(([iconName, text], i) => {
+        const y = TAG_TOP + i * TAG_ROW + TAG_ROW / 2 - 4;
+        const size = fitSize(g, text, 40, 160);
+        g.font = CanvasArt.font(size);
+        const width = g.measureText(text).width;
+        // Icon and text centred together as one line.
+        const left = 128 - (44 + 8 + width) / 2;
+        CanvasArt.drawIcon(g, iconName, left + 22, y, 44);
+        CanvasArt.text(g, text, left + 52 + width / 2, y, size, '#8fffa0');
     });
     return CanvasArt.texture(canvas);
 }
@@ -508,6 +516,7 @@ export class HubRoom {
         if (rule.startsWith('upgrade:')) return DigProgress.toolLevel >= Number(rule.slice('upgrade:'.length));
         if (rule === 'firstFind') return DigProgress.collectedCount >= 1;
         if (rule.startsWith('mines:')) return DigProgress.mineCount >= Number(rule.slice('mines:'.length));
+        if (rule === 'powerChest') return DigProgress.hasOnce(POWER_CHEST_TAKEN);
         if (rule.startsWith('upgrades:')) return DigProgress.upgradesBought >= Number(rule.slice('upgrades:'.length));
         if (rule.startsWith('sells:')) return DigProgress.timesSold >= Number(rule.slice('sells:'.length));
         if (rule.startsWith('upgradeAfter:')) {
@@ -623,7 +632,9 @@ export class HubRoom {
         const area = this.building;
         const tag = this.add(new THREE.Sprite(new THREE.SpriteMaterial({ map: priceTexture(def), depthWrite: false })));
         tag.userData.relabel = () => priceTexture(def);
-        tag.scale.set(2.0, 1.0, 1);
+        // Its canvas is 256 wide and grows a row per thing it gives: keep that shape.
+        const image = tag.material.map?.image as { width: number; height: number } | undefined;
+        tag.scale.set(TAG_WIDTH, TAG_WIDTH * (image ? image.height / image.width : 0.6), 1);
         tag.position.set(def.x, (def.elevation ?? 0) + def.height + TAG_LIFT, def.z);
         tag.renderOrder = 4;
         const ring = this.add(new THREE.Mesh(new THREE.TorusGeometry(BUILD_RADIUS, 0.05, 8, 40), this.material(GHOST_COLOR, GHOST_COLOR)));

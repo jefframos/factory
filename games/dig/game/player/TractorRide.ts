@@ -7,7 +7,9 @@
 // The tractor follows the miner's body (its position and facing); the seat offset moves the body up/back
 // into the cab after the character has placed itself for the frame. Three tools are ridden: the Digger (the same
 // model with its texture in grey, a little slower: `rideSpeed`), the Tractor in its own colours, and the Red Tractor
-// (repainted: `tint`).
+// (repainted: `tint`). A power surge (PowerSurge) puts anyone in it too, as the "star" truck: smaller, its paint
+// cycling through the rainbow, for as long as the surge lasts (once the model is in: it loads behind the game from
+// the first input, for every player).
 
 import * as THREE from 'three';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
@@ -20,15 +22,27 @@ import type DigPlayer from './DigPlayer';
 import type { DigEffects } from '../vfx/DigEffects';
 import { DigAudio } from '../audio/DigAudio';
 import { EngineSound } from '../audio/EngineSound';
+import { PowerSurge } from '../mining/PowerSurge';
 
 const MODEL_BASE = './dig/models/';
 /** Wheel radius the spin is worked out from (world units, before the tractor's own scale). */
 const WHEEL_RADIUS = 0.4;
+/** The power surge's truck, for a player without a vehicle of their own: this size of the tractor. */
+const STAR_SCALE = 0.8;
+/** The star glow: how strongly the paint glows, and how fast it goes round the rainbow (turns a second). */
+const STAR_GLOW = 0.55;
+const STAR_SPIN = 0.7;
 
 export class TractorRide {
     private readonly holder = new THREE.Group();
     private readonly wheels: THREE.Object3D[] = [];
     private riding = false;
+    /** The model is in (a power surge only rides once it is). */
+    private loaded = false;
+    /** The star glow is on, the materials' own glow (put back when it ends), and the tractor's size now. */
+    private star = false;
+    private readonly emissive: { color: THREE.Color; intensity: number }[] = [];
+    private scale = 1;
     private exhaustTimer = 0;
     private readonly lastPosition = new THREE.Vector3();
     private readonly seat = new THREE.Vector3();
@@ -89,6 +103,8 @@ export class TractorRide {
             this.paintedMaps.clear();
             this.paint = '';
             this.holder.add(model);
+            for (const material of this.materials) this.emissive.push({ color: material.emissive.clone(), intensity: material.emissiveIntensity });
+            this.loaded = true;
         } catch (error) {
             console.warn(`[TractorRide] could not load ${config.model}`, error);
         }
@@ -128,6 +144,29 @@ export class TractorRide {
         }
     }
 
+    /**
+     * The power surge's look: the tractor glowing round the rainbow (and, for a player without a vehicle, smaller —
+     * the "star" truck); back to its own glow and size when the surge ends.
+     */
+    private updateStar(): void {
+        const star = PowerSurge.active && this.loaded;
+        this.scale = star && !DigProgress.hasTractor ? STAR_SCALE : 1;
+        this.holder.scale.setScalar(this.scale);
+        if (star) {
+            const hue = (performance.now() / 1000 * STAR_SPIN) % 1;
+            this.materials.forEach((material, i) => {
+                material.emissive.setHSL((hue + i * 0.08) % 1, 1, 0.5);
+                material.emissiveIntensity = STAR_GLOW;
+            });
+        } else if (this.star) {
+            this.materials.forEach((material, i) => {
+                material.emissive.copy(this.emissive[i].color);
+                material.emissiveIntensity = this.emissive[i].intensity;
+            });
+        }
+        this.star = star;
+    }
+
     /** Inside the hub's floor (main room and annexes): the miner walks there. */
     private static inHub(x: number, z: number): boolean {
         return hubRects().some((r) => Math.abs(x - r.x) <= r.width / 2 && Math.abs(z - r.z) <= r.depth / 2);
@@ -138,8 +177,10 @@ export class TractorRide {
         const position = this.player.transform.position;
         // Just bought (or the background load hasn't been asked for): the model now.
         if (DigProgress.hasTractor) this.loadInBackground();
-        const ride = DigProgress.hasTractor && !TractorRide.inHub(position.x, position.z);
+        const surge = PowerSurge.active && this.loaded;
+        const ride = (DigProgress.hasTractor || surge) && !TractorRide.inHub(position.x, position.z);
         this.updateLook();
+        this.updateStar();
         if (ride !== this.riding) this.setRiding(ride);
         if (this.riding) this.place(delta);
         this.lastPosition.copy(position);
@@ -154,7 +195,8 @@ export class TractorRide {
         this.holder.visible = on;
         if (on) this.engine.start();
         else this.engine.stop();
-        this.player.speedMultiplier = on ? DigProgress.tool.rideSpeed ?? config.speedMultiplier : 1;
+        // A vehicle of their own rides at its speed; the power surge's truck at the tractor's.
+        this.player.speedMultiplier = on ? (DigProgress.hasTractor ? DigProgress.tool.rideSpeed : undefined) ?? config.speedMultiplier : 1;
         this.player.seated = on;
         const character = this.player.character;
         if (on) {
@@ -174,7 +216,7 @@ export class TractorRide {
         const feet = this.player.transform.position;
         this.holder.position.set(feet.x, 0, feet.z);
         this.holder.quaternion.copy(container.quaternion);
-        this.seat.set(config.seat.x, config.seat.y, config.seat.z).applyQuaternion(container.quaternion);
+        this.seat.set(config.seat.x, config.seat.y, config.seat.z).multiplyScalar(this.scale).applyQuaternion(container.quaternion);
         container.position.add(this.seat);
 
         const moved = Math.hypot(feet.x - this.lastPosition.x, feet.z - this.lastPosition.z);

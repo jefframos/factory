@@ -133,6 +133,9 @@ export class Guide {
         }
         const anyBuilt = (HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id));
         const first = anyBuilt ? undefined : this.hub.cheapestOpenBuildable;
+        // Nothing to build yet (the first room opens with the first power chest): the relic hunt meanwhile; the first
+        // piece is led to as soon as its room appears.
+        if (!anyBuilt && !first) return this.huntStep(inHub, door);
         if (first) {
             const price = first.price.toLocaleString('en-US');
             const name = names.item(first.name);

@@ -153,7 +153,7 @@
     {
       "id": "plant-west",
       "name": "Plant",
-      "price": 150,
+      "price": 500,
       "model": "hub/cute-furniture-glb-plants-05/cute-furniture-glb-plants-05.glb",
       "x": 8,
       "z": -7.75,
@@ -168,7 +168,7 @@
         "stat": "sell",
         "amount": 0.02
       },
-      "income": 0.2
+      "income": 0.8
     },
     {
       "id": "plant-east",
@@ -194,7 +194,7 @@
     {
       "id": "lamp-west",
       "name": "Standing Lamp",
-      "price": 600,
+      "price": 2000,
       "model": "hub/furniture-lamp-standing/furniture-lamp-standing.gltf",
       "x": -2.75,
       "z": 8.25,
@@ -209,7 +209,7 @@
         "stat": "beam",
         "amount": 2
       },
-      "income": 1.0
+      "income": 3.3
     },
     {
       "id": "lamp-east",
@@ -256,7 +256,7 @@
     {
       "id": "workbench",
       "name": "Workbench",
-      "price": 300,
+      "price": 900,
       "model": "hub/survival-kit-workbench-anvil/survival-kit-workbench-anvil.glb",
       "x": 8,
       "z": -3,
@@ -271,7 +271,7 @@
         "stat": "dig",
         "amount": 0.03
       },
-      "income": 0.5
+      "income": 1.5
     },
     {
       "id": "cute-furniture-glb-couch-11",
@@ -337,7 +337,7 @@
     {
       "id": "cute-furniture-glb-chair-pc-04",
       "name": "Chair",
-      "price": 500,
+      "price": 1500,
       "model": "hub/cute-furniture-glb-chair-pc-04/cute-furniture-glb-chair-pc-04.glb",
       "x": -6,
       "z": 7.5,
@@ -352,12 +352,12 @@
         "stat": "move",
         "amount": 0.02
       },
-      "income": 0.8
+      "income": 2.5
     },
     {
       "id": "furniture-desk-decorated",
       "name": "Computer",
-      "price": 900,
+      "price": 2500,
       "model": "hub/furniture-desk-decorated/furniture-desk-decorated.gltf",
       "x": -8,
       "z": 7.5,
@@ -372,12 +372,12 @@
         "stat": "sell",
         "amount": 0.03
       },
-      "income": 1.5
+      "income": 4.2
     },
     {
       "id": "casino-assets-glb-flower-03",
       "name": "Plant",
-      "price": 500,
+      "price": 1500,
       "model": "hub/casino-assets-glb-flower-03/casino-assets-glb-flower-03.glb",
       "x": -8.25,
       "z": 3,
@@ -392,7 +392,7 @@
         "stat": "dig",
         "amount": 0.02
       },
-      "income": 0.8
+      "income": 2.5
     },
     {
       "id": "cute-furniture-glb-nightstand-02",
@@ -417,7 +417,7 @@
     {
       "id": "furniture-shelf-b-large-decorated",
       "name": "Shelf",
-      "price": 220,
+      "price": 700,
       "model": "hub/furniture-shelf-b-large-decorated/furniture-shelf-b-large-decorated.gltf",
       "x": 9,
       "z": -5.75,
@@ -433,12 +433,12 @@
         "stat": "dig",
         "amount": 0.02
       },
-      "income": 0.4
+      "income": 1.2
     },
     {
       "id": "furniture-shelf-b-small-decorated",
       "name": "Shelf",
-      "price": 150,
+      "price": 500,
       "model": "hub/furniture-shelf-b-small-decorated/furniture-shelf-b-small-decorated.gltf",
       "x": 7.5,
       "z": -9,
@@ -454,12 +454,12 @@
         "stat": "sell",
         "amount": 0.02
       },
-      "income": 0.2
+      "income": 0.8
     },
     {
       "id": "cute-furniture-glb-picture-08",
       "name": "Picture",
-      "price": 180,
+      "price": 600,
       "model": "hub/cute-furniture-glb-picture-08/cute-furniture-glb-picture-08.glb",
       "x": 6.25,
       "z": -8.75,
@@ -471,12 +471,12 @@
         "stat": "move",
         "amount": 0.02
       },
-      "income": 0.3
+      "income": 1.0
     },
     {
       "id": "cute-furniture-glb-clock-03",
       "name": "Clock",
-      "price": 1500,
+      "price": 4000,
       "model": "hub/cute-furniture-glb-clock-03/cute-furniture-glb-clock-03.glb",
       "x": -8.5,
       "z": -3.5,
@@ -491,12 +491,12 @@
         "stat": "dig",
         "amount": 0.03
       },
-      "income": 2.5
+      "income": 6.7
     },
     {
       "id": "cute-furniture-glb-plants-15",
       "name": "Plants",
-      "price": 2000,
+      "price": 5000,
       "model": "hub/cute-furniture-glb-plants-15/cute-furniture-glb-plants-15.glb",
       "x": -8.5,
       "z": -5.25,
@@ -511,7 +511,7 @@
         "stat": "sell",
         "amount": 0.03
       },
-      "income": 3.3
+      "income": 8.3
     }
   ],
   "trophyTables": [
@@ -671,7 +671,7 @@
       "z": 4.5,
       "width": 9,
       "depth": 9,
-      "reveal": "upgradeAfter:wardrobe",
+      "reveal": "powerChest|upgrade:3",
       "bonus": {
         "stat": "sell",
         "amount": 0.05
@@ -684,7 +684,7 @@
       "z": -4.5,
       "width": 9,
       "depth": 9,
-      "reveal": "upgrade:2",
+      "reveal": "upgrade:3",
       "bonus": {
         "stat": "dig",
         "amount": 0.05
@@ -697,7 +697,7 @@
       "z": 4.5,
       "width": 9,
       "depth": 9,
-      "reveal": "upgrade:3",
+      "reveal": "upgrade:4",
       "bonus": {
         "stat": "move",
         "amount": 0.05
@@ -710,7 +710,7 @@
       "z": -4.5,
       "width": 9,
       "depth": 9,
-      "reveal": "upgrade:4",
+      "reveal": "upgrade:5",
       "bonus": {
         "stat": "sell",
         "amount": 0.05

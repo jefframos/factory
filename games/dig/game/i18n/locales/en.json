@@ -26,6 +26,7 @@
     "newPieces": "NEW FURNITURE TO BUILD!",
     "hubCashCollected": "BASE INCOME +${amount}!",
     "baseEarns": "YOUR BASE MAKES {rate}!",
+    "newMineTag": "NEW MINE",
     "foreverBonus": "Forever (hub + mines): {list}",
     "perk_sell": "+{n}% CASH",
     "perk_dig": "+{n}% DIG SPEED",

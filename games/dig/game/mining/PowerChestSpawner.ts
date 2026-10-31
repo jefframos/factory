@@ -9,7 +9,10 @@
 // DigScene.openChest), so no second one can show meanwhile: each player gets it once, never once they own the tool.
 //
 // The chest is a cell flag in the terrain (VoxelTerrain.placeChest), so mining, sparkles and beacons treat it like
-// any chest; its model is drawn here (not in the merged chunk mesh) so it can pop and fade.
+// any chest; its model is drawn here (not in the merged chunk mesh) so it can pop and fade. It looks like what it
+// gives: the tractor the surge rides (TractorRide), glowing round the rainbow; its model loads behind the game, and
+// none shows before it's in. Once the first has been dug, more are buried around the mine
+// (VoxelTerrain.buryPowerChests): showBuried() draws those too, poking out of their blocks, until they're dug.
 
 import * as THREE from 'three';
 import { DIG } from '../data/DigConfig';
@@ -20,8 +23,12 @@ import { PowerSurge } from './PowerSurge';
 import { GameAnalytics } from '../analytics/GameAnalytics';
 import type { DigEffects } from '../vfx/DigEffects';
 
-/** The chest pokes this share of its height out of the block top (like a find). */
-const SHOWING = 0.65;
+/** The tractor sits on its block, sunk into it by this share of its height (the rest shows). */
+const SUNK = 0.25;
+/** The rainbow glow: how strong, how fast it goes round (turns a second). */
+const GLOW = 0.55;
+const GLOW_SPIN = 0.7;
+
 /** DigProgress.once key: the power chest was dug out. */
 export const POWER_CHEST_TAKEN = 'power-chest';
 
@@ -39,6 +46,9 @@ export class PowerChestSpawner {
     private model?: THREE.Object3D;
     private materials: THREE.Material[] = [];
     private readonly at = new THREE.Vector3();
+    /** The buried ones' cells waiting for the model, and the models drawn, by cell. */
+    private buriedPending: number[] = [];
+    private readonly buried = new Map<number, THREE.Object3D>();
 
     public constructor(private readonly threeScene: THREE.Scene, private readonly terrain: VoxelTerrain, private readonly effects: DigEffects) {}
 
@@ -51,7 +61,7 @@ export class PowerChestSpawner {
 
     /** A block broke at `dug` while the miner stood at `player`: maybe a chest shows ahead of them. */
     public onDig(dug: THREE.Vector3, player: THREE.Vector3): void {
-        if (this.phase !== 'idle' || this.cooldown > 0 || !this.eligible) return;
+        if (this.phase !== 'idle' || this.cooldown > 0 || !this.eligible || !this.terrain.hasChestModel('power')) return;
         const [dx, dz] = this.terrain.cellOf(dug.x, dug.z);
         const [px, pz] = this.terrain.cellOf(player.x, player.z);
         // The push direction, snapped to the grid.
@@ -108,10 +118,9 @@ export class PowerChestSpawner {
             child.material = material;
             this.materials.push(material);
         });
-        const size = DIG.chests.power.size;
         this.terrain.cellCenter(this.ix, this.iz, this.at);
-        model.position.set(this.at.x, this.terrain.blockHeight - size * (1 - SHOWING), this.at.z);
         model.rotation.set(0.2, Math.random() * Math.PI * 2, -0.15);
+        this.sitOnBlock(model, this.at);
         model.scale.setScalar(0.01);
         this.threeScene.add(model);
         this.model = model;
@@ -120,8 +129,59 @@ export class PowerChestSpawner {
         this.effects.smoke(this.at.clone().setY(this.terrain.blockHeight + 0.2), 5, 0.8, new THREE.Color(0x8fe9ff), 0.6);
     }
 
+    /**
+     * Stands a model on top of the block at `at`, sunk into it by SUNK of its height (models are centred on their
+     * middle: VoxelTerrain's pickups).
+     */
+    private sitOnBlock(model: THREE.Object3D, at: THREE.Vector3): void {
+        model.position.set(at.x, 0, at.z);
+        model.updateMatrixWorld(true);
+        const height = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).y;
+        model.position.y = this.terrain.blockHeight + height * (0.5 - SUNK);
+    }
+
+    /** The buried power chests' cells (VoxelTerrain.buryPowerChests): each is drawn once the model is in. */
+    public showBuried(cells: number[]): void {
+        this.buriedPending.push(...cells);
+    }
+
+    /** Draws the buried ones whose model is in, drops the dug ones, and turns every power chest's glow. */
+    private updateBuried(): void {
+        const size = this.terrain.size;
+        if (this.buriedPending.length && this.terrain.hasChestModel('power')) {
+            for (const cell of this.buriedPending) {
+                const model = this.terrain.chestModel('power');
+                if (!model || this.terrain.chestAt(cell % size, Math.floor(cell / size)) !== 'power') continue;
+                this.terrain.cellCenter(cell % size, Math.floor(cell / size), this.at);
+                model.rotation.set(0.1, (cell % 8) * 0.8, -0.08);
+                this.sitOnBlock(model, this.at);
+                this.threeScene.add(model);
+                this.buried.set(cell, model);
+            }
+            this.buriedPending = [];
+        }
+        for (const [cell, model] of this.buried) {
+            if (this.terrain.chestAt(cell % size, Math.floor(cell / size)) === 'power') continue;
+            model.removeFromParent();
+            this.buried.delete(cell);
+        }
+        // One glow for them all (and the one fading in): their materials are clones of the same model's.
+        const hue = (performance.now() / 1000 * GLOW_SPIN) % 1;
+        const glow = (object: THREE.Object3D) => object.traverse((child) => {
+            if (!(child instanceof THREE.Mesh)) return;
+            for (const material of Array.isArray(child.material) ? child.material : [child.material]) {
+                if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+                material.emissive.setHSL(hue, 1, 0.5);
+                material.emissiveIntensity = GLOW;
+            }
+        });
+        this.buried.forEach((model) => glow(model));
+        if (this.model) glow(this.model);
+    }
+
     public update(delta: number, player: THREE.Vector3): void {
         this.cooldown = Math.max(0, this.cooldown - delta);
+        this.updateBuried();
         if (this.phase === 'idle') return;
         this.age += delta;
         const spawn = DIG.chests.power.spawn;
@@ -178,6 +238,8 @@ export class PowerChestSpawner {
     public destroy(): void {
         if (this.phase !== 'idle') this.terrain.clearChest(this.ix, this.iz);
         this.remove();
+        this.buried.forEach((model) => model.removeFromParent());
+        this.buried.clear();
     }
 }
 

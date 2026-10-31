@@ -285,8 +285,10 @@ export interface ChestsDef {
      * (PowerChestSpawner), once per player.
      */
     power: ChestKindDef & {
-        /** The tool it gives (one tier above the tool owned if that's higher); not offered once it's owned. */
+        /** The tool it gives (one tier above the tool owned if that's higher); the first is not offered once it's owned. */
         tool: string;
+        /** Buried in each zone (index = zone) once the first power chest has been dug (VoxelTerrain.buryPowerChests). */
+        perZone?: number[];
         seconds: number;
         /** Hits come this much faster than the tool's own. */
         speedMultiplier: number;

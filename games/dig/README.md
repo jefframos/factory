@@ -80,7 +80,8 @@ games/dig/
   Amethyst is a rare purple gem in the obsidian.
 
 ### Mines (prestige)
-Once the newest mine has its Tractor (`prestige.tool`; the Red Tractor after it is an extra), the HUD shows a bouncing **NEW MINE!** button (and the MAP gets a "!").
+Once the newest mine has its Tractor ($15,000, `prestige.tool`; marked "NEW MINE" on the ATM's tool timeline — the
+Red Tractor after it stays the goal), the HUD shows a bouncing **NEW MINE!** button (and the MAP gets a "!").
 Opening a mine gives a **fresh run** there (shovel, small bag, no cash or boosts) in a new layout and colour theme
 (`mineThemes`), and every mine gets the bonus (`prestige`: +25% cash, +10% dig speed per mine). The **MAP** button
 lists every mine with GO to travel back and forth — each keeps its own cash, tools, bags, boosts, tunnels and
@@ -96,14 +97,19 @@ rarity and depth (`findPayout`); the first find of a mine always pays at least t
 
 ### Chests, power surges and rich veins
 Two kinds of **chests** (`chests`):
-- **Power chest** (cyan) — the Mega Drill moment, **once per player**. It's never buried: after `spawn.afterBlocks`
-  blocks dug, it pops and fades into the rock `spawn.ahead` blocks in front of where the miner is digging
-  (`mining/PowerChestSpawner.ts`), in rock their tool can dig. It waits however long it takes; only
-  if the miner goes more than `spawn.maxDistance` blocks away does it fade out, and the next dig after
+- **Power chest** (cyan beam) — drawn as the tractor it lets you ride, glowing round the rainbow (its model loads
+  behind the game, not on the loading screen). The first is the Mega Drill moment, **once per player**, and it's
+  never buried: after `spawn.afterBlocks` blocks dug, it pops and fades onto the rock `spawn.ahead` blocks in front
+  of where the miner is digging (`mining/PowerChestSpawner.ts`), in rock their tool can dig. It waits however long it
+  takes; only if the miner goes more than `spawn.maxDistance` blocks away does it fade out, and the next dig after
   `spawn.respawnDelay` s brings another. Only one at a time, and it counts as taken the moment its block breaks.
+  Digging it opens the hub's first room of furniture (reveal rule `powerChest`), and from then on `power.perZone`
+  more are buried around every mine (`VoxelTerrain.buryPowerChests`, seeded), each a surge one tier above the tool.
   Digging it starts a **power surge** (`mining/PowerSurge.ts`): for `seconds` the miner digs with the Mega Drill (or
   one tier above their tool if higher), a bit faster, and every block is **cashed on the spot** instead of filling
-  the backpack. A countdown shows at the top; when it ends the HUD names the tool to buy. Never offered once the
+  the backpack. It's the game's "star": the miner rides the tractor as a small rainbow-glowing truck (`TractorRide`;
+  its model loads behind the game from the first input), the screen's edge throbs in rainbow colours (`DigHud`
+  vignette) and a fast synthesised tune plays (`audio/StarMusic.ts`). A countdown shows at the top; when it ends the HUD names the tool to buy. Never offered once the
   Mega Drill is owned. Forced tutorial purchases wait until a surge is over. (The data showed only ~8% reached the
   Power Drill.)
 - **Cash chest** (gold): `perZone` buried per zone, drawn and revealed like finds; pays `reward[zone]` ± `spread`,
@@ -128,15 +134,16 @@ Digger, Ore Hunter, Tycoon, Collector — 7 tiers each, shared across mines; tie
 ### Hub rooms and perks
 The hub is shared by every mine, so what's built there is kept for good — a small second prestige layer. Each
 buildable has an **income** (`income`, $ a second) and a **perk** (`perk` in `levels/hub.json`: `sell` / `dig` /
-`move` as a fraction, `beam` in blocks of treasure-beam range). Its price tag has no words: the price, then an icon
-chip for each ("+$0.3/s", "+3%" by the stat's icon). The income piles up while playing (x the new mines' sell bonus,
+`move` as a fraction, `beam` in blocks of treasure-beam range). Its price tag has no words: a short vertical list — the
+price, then a row for each ("+$0.3/s" by a bill, "+3%" by the stat's icon). The income piles up while playing (x the new mines' sell bonus,
 up to `hubIncome.capMinutes`) and waits over the ATM ("$252 / +$0.4/s"); stepping onto the ATM's pad collects it.
 Every few seconds each earning piece pops "+$N" over itself while the miner is near, and from the first one the HUD
-shows the base's $/s by the money. Each piece earns about its price / 600 a second (the whole hub ~$13/s). Each reveal area's buildables are a **set**: buying them all adds the area's
+shows the base's $/s by the money. Each piece earns about its price / 600 a second (the whole hub ~$34/s). Each reveal area's buildables are a **set**: buying them all adds the area's
 `bonus` ("SET COMPLETE!", analytics `hub / set-<area>`). The rooms aren't named to the player (a new room just says
-"NEW FURNITURE TO BUILD!") and open with the tools, so new things to buy keep coming: the first room (tutorial,
-$50–250), then with the Steel Pickaxe ($150–300), the Power Drill ($500–900) and the Mega Drill ($1,500–2,000) — each
-piece about 20–40% of the next tool then. The whole hub's perks are worth about one new mine (+28% cash,
+"NEW FURNITURE TO BUILD!") and open one at a time with the tools, so new things to buy keep coming: the first room
+(it appears with the first power chest — or the Power Drill at the latest — $50–250; until it's there the tutorial's
+build step waits and the relic hunt starts on its own), then with the Power Drill ($500–900), the Mega Drill ($1,500–2,500) and the Digger
+($4,000–5,000) — each piece about 20–40% of the next tool then. The whole hub's perks are worth about one new mine (+28% cash,
 +17% dig, +13% move, +4 beam range); the BOOSTS tab's footer adds up everything kept forever (hub + mines). The
 perks apply in `DigProgress` (`sellMultiplier`, `hitInterval`, `moveMultiplier`, `beaconRange`), so a new perk stat
 goes there too. A room for later mines: an area with the reveal rule `mines:<n>`.

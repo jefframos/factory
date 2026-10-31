@@ -1220,12 +1220,11 @@
     "place": [6, 10]
   },
   "chests": {
-    "$comment": "Buried chests besides the finds, each in a seeded block of its zone. power: digging it out gives a timed taste of a better tool (at least one tier above the one owned, never below `tool`) for `seconds`, digging `speedMultiplier` faster; while it lasts every block is cashed at once (no backpack). It is never buried: once the player has dug spawn.afterBlocks blocks, one fades in spawn.ahead blocks in front of where they are digging; left more than spawn.maxDistance blocks behind (never just for waiting) it fades out and another comes spawn.respawnDelay seconds later. Each player gets it once, ever (and never once they own `tool`). cash: pays reward[zone] (x 1 +- spread, x the sell bonus) on the spot. cash.perZone = how many per zone (index = zone). beaconRange = blocks around the miner where buried treasure shows a light beam.",
+    "$comment": "Buried chests besides the finds, each in a seeded block of its zone. power (drawn as the tractor the surge rides, glowing round the rainbow; its model loads behind the game): digging it out gives a timed taste of a better tool (at least one tier above the one owned, never below `tool`) for `seconds`, digging `speedMultiplier` faster; while it lasts every block is cashed at once (no backpack). It is never buried: once the player has dug spawn.afterBlocks blocks, one fades in spawn.ahead blocks in front of where they are digging; left more than spawn.maxDistance blocks behind (never just for waiting) it fades out and another comes spawn.respawnDelay seconds later. That first one comes once per player (and never once they own `tool`); once it has been dug, power.perZone more are buried in each zone (seeded, with beacons), for every player. cash: pays reward[zone] (x 1 +- spread, x the sell bonus) on the spot. cash.perZone = how many per zone (index = zone). beaconRange = blocks around the miner where buried treasure shows a light beam.",
     "beaconRange": 16,
     "power": {
-      "model": "mine/gems-chest.glb",
-      "size": 0.8,
-      "tint": "#8fe9ff",
+      "model": "hub/kenney-car-kit-tractor-shovel/kenney-car-kit-tractor-shovel.glb",
+      "size": 1.1,
       "tool": "megadrill",
       "seconds": 25,
       "speedMultiplier": 1.25,
@@ -1235,7 +1234,8 @@
         "respawnDelay": 6,
         "maxDistance": 24,
         "fadeIn": 0.7
-      }
+      },
+      "perZone": [2, 2, 2, 2, 2]
     },
     "cash": {
       "model": "mine/chest.glb",

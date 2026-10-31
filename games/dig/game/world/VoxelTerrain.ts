@@ -208,9 +208,21 @@ export class VoxelTerrain {
             ...DIG.materials.map((m) => this.models.loadPickup(m.pickup, PICKUP_SIZE)),
             ...DIG.finds.map((find) => this.models.loadDecor(find.model, find.size)),
             ...DIG.finds.map((find) => this.models.loadPickup(find.model, find.size)),
-            ...CHEST_KINDS.map((kind) => this.models.loadDecor(DIG.chests[kind].model, DIG.chests[kind].size)),
-            ...CHEST_KINDS.map((kind) => this.models.loadPickup(DIG.chests[kind].model, DIG.chests[kind].size)),
+            // The power chest (the tractor) isn't drawn in the rock and only shows after some digging: it loads
+            // behind the game (loadPowerModel()), not holding up the loading screen.
+            this.models.loadDecor(DIG.chests.cash.model, DIG.chests.cash.size),
+            this.models.loadPickup(DIG.chests.cash.model, DIG.chests.cash.size),
         ]);
+    }
+
+    /** Starts loading the power chest's model (the tractor), once: the scene calls it when play starts. */
+    public loadPowerModel(): void {
+        void this.models.loadPickup(DIG.chests.power.model, DIG.chests.power.size).catch((error) => console.warn('[VoxelTerrain] power chest model', error));
+    }
+
+    /** A chest kind's model has loaded (chestModel() gives one). */
+    public hasChestModel(kind: ChestKind): boolean {
+        return this.models.pickups.has(DIG.chests[kind].model);
     }
 
     /** A fresh copy of a material's pickup model, in its decorTint if it has one (undefined until the models have loaded). */
@@ -311,14 +323,38 @@ export class VoxelTerrain {
      * finds), kept CHEST_SPACING from every find and chest. (Power chests aren't buried: PowerChestSpawner.)
      */
     private buryChests(seed: number): void {
-        const roll = valueNoise(seed + 1409);
+        this.burySpread('cash', DIG.chests.cash.perZone, seed + 1409);
+    }
+
+    /**
+     * After the first power chest (the one brought to the player: PowerChestSpawner) has been dug, more are buried
+     * around the mine — chests.power.perZone per zone, seeded like the cash ones (so a reload puts them back where they
+     * were; any already dug stay dug). Called by the scene, once per mine build; returns their cells (PowerChestSpawner
+     * draws them).
+     */
+    public buryPowerChests(): number[] {
+        const cells = this.burySpread('power', DIG.chests.power.perZone ?? [], this.seed + 2203);
+        this.changed++;
+        return cells;
+    }
+
+    /**
+     * Buries `perZone[zone]` chests of `kind` in each zone: each in a seeded block of its zone with rock all round
+     * (like the finds), kept CHEST_SPACING from every find and chest. Returns the cells they went in.
+     */
+    private burySpread(kind: ChestKind, perZone: number[], seed: number): number[] {
+        const roll = valueNoise(seed);
         const solid = (index: number) => this.cells[index] !== AIR && this.cells[index] !== BEDROCK;
         const placed: number[] = [];
         this.finds.forEach((find, index) => {
             if (find) placed.push(index);
         });
-        const cash = CHEST_KINDS.indexOf('cash') + 1;
+        this.chests.forEach((chest, index) => {
+            if (chest) placed.push(index);
+        });
+        const value = CHEST_KINDS.indexOf(kind) + 1;
         let dice = 0;
+        const buried: number[] = [];
         DIG.zones.forEach((_, zone) => {
             const spots: number[] = [];
             for (let iz = 1; iz < this.size - 1; iz++) {
@@ -330,14 +366,17 @@ export class VoxelTerrain {
                 }
             }
             const pick = () => spots[Math.floor(roll(dice++, 0) * spots.length)];
-            for (let n = 0; spots.length && n < (DIG.chests.cash.perZone[zone] ?? 0); n++) {
+            for (let n = 0; spots.length && n < (perZone[zone] ?? 0); n++) {
                 let spot = pick();
                 for (let attempt = 1; attempt < 32 && (this.chests[spot] || placed.some((p) => this.cellDistance(p, spot) < CHEST_SPACING)); attempt++) spot = pick();
                 if (this.chests[spot]) continue;
-                this.chests[spot] = cash;
+                this.chests[spot] = value;
+                this.dirtyCell(spot);
                 placed.push(spot);
+                buried.push(spot);
             }
         });
+        return buried;
     }
 
     /**
