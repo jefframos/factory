@@ -104,7 +104,7 @@ Two kinds of **chests** (`chests`):
   takes; only if the miner goes more than `spawn.maxDistance` blocks away does it fade out, and the next dig after
   `spawn.respawnDelay` s brings another. Only one at a time, and it counts as taken the moment its block breaks.
   Digging it opens the hub's first room of furniture (reveal rule `powerChest`). From then on there's always one more
-  out there, one at a time: `power.roam.delay` s after each surge ends, the next sits on a block `roam.distance` blocks
+  out there, one at a time: `power.roam.delay` s (a minute) after each surge ends, the next sits on a block `roam.distance` blocks
   from the miner (never right by them), with its beam — each a surge one tier above the tool.
   Digging it starts a **power surge** (`mining/PowerSurge.ts`): for `seconds` the miner digs with the Mega Drill (or
   one tier above their tool if higher), a bit faster, and every block is **cashed on the spot** instead of filling

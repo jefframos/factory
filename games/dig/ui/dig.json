@@ -1236,7 +1236,7 @@
         "maxDistance": 24,
         "fadeIn": 0.7
       },
-      "roam": { "delay": 10, "distance": [10, 20] }
+      "roam": { "delay": 60, "distance": [10, 20] }
     },
     "cash": {
       "model": "mine/chest.glb",

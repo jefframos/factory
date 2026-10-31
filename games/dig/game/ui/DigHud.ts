@@ -66,6 +66,8 @@ const POWER_TIMER = { width: 340, height: 74 };
 const NEW_MINE_CTA = { icon: 120, rays: 130, label: 170 };
 /** The achievements button, under the money / backpack pills: just the memo pad icon, no button shape. */
 const ACHIEVEMENTS_BUTTON = 84;
+/** DigProgress.once key: the achievements panel was opened with a claim waiting (the first claim's hand is done). */
+const ACHIEVEMENT_HINT = 'hint-achievements';
 /** The SELL x2 offer: a pile of cash (no button shape) over the tool chip, a rotating shine behind it. */
 const PHONE = { width: 112, height: 116, shine: 180 };
 /** The phone only shows with this many tool upgrades bought (the Steel Pickaxe). */
@@ -188,6 +190,13 @@ export class DigHud extends PIXI.Container {
     private readonly achievements: AchievementsPanel;
     private readonly achievementsButton = new PIXI.Container();
     private readonly achievementsAlert = new PIXI.Container();
+    /** While a tier waits to be claimed: a turning shine behind the memo pad, which pulses over a "CLAIM" label. */
+    private readonly achievementsShine = PIXI.Sprite.from('Image_Effect_Rotate');
+    private readonly achievementsBody = new PIXI.Container();
+    private readonly achievementsLabel = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 22, fill: 0xffe27a, strokeThickness: 6 });
+    /** The first claim ever: a hand points at the button until the panel has been opened (ACHIEVEMENT_HINT). */
+    private achievementsHand?: PIXI.Container;
+    private achievementsReady = false;
     /** The mines (MAP button): shown once a second mine exists or can be opened; "!" when one can. */
     private readonly mines: MinesPanel;
     private readonly mapButton = new PIXI.Container();
@@ -446,16 +455,35 @@ export class DigHud extends PIXI.Container {
         this.updateNewMineCta();
     }
 
-    /** The memo pad under the pills (no button shape: the icon reads on its own); the pizza game's "!" bobs on it while a tier is ready to claim. */
+    /**
+     * The memo pad under the pills (no button shape: the icon reads on its own). While a tier is ready to claim it
+     * gets the phone's treatment (setAchievementsReady): a turning gold shine, a pulse, "CLAIM" under it and the pizza
+     * game's "!" bobbing on it.
+     */
     private buildAchievementsButton(): void {
         this.achievementsButton.position.set(CORNER_WIDTH - ACHIEVEMENTS_BUTTON / 2, 150);
-        this.achievementsButton.addChild(icon('hud', 'achievementsIcon', ACHIEVEMENTS_BUTTON));
+        const shine = this.achievementsShine;
+        shine.anchor.set(0.5);
+        shine.scale.set((ACHIEVEMENTS_BUTTON * 1.9) / Math.max(shine.texture.width, shine.texture.height, 1));
+        shine.tint = 0xfff2a0;
+        shine.alpha = 0.85;
+        shine.eventMode = 'none';
+        shine.visible = false;
+        gsap.to(shine, { rotation: Math.PI * 2, duration: 6, ease: 'none', repeat: -1 });
+        this.achievementsLabel.text = t('claim');
+        UiKit.fit(this.achievementsLabel, ACHIEVEMENTS_BUTTON + 16);
+        this.achievementsLabel.anchor.set(0.5);
+        this.achievementsLabel.y = ACHIEVEMENTS_BUTTON / 2 + 4;
+        this.achievementsLabel.visible = false;
+        this.achievementsBody.addChild(icon('hud', 'achievementsIcon', ACHIEVEMENTS_BUTTON), this.achievementsLabel);
+        this.achievementsButton.addChild(shine, this.achievementsBody);
         // The icon alone is the button: an invisible square keeps the whole of it tappable.
         this.achievementsButton.hitArea = new PIXI.Rectangle(-ACHIEVEMENTS_BUTTON / 2, -ACHIEVEMENTS_BUTTON / 2, ACHIEVEMENTS_BUTTON, ACHIEVEMENTS_BUTTON);
         const alert = icon('hud', 'alert', 36);
         this.achievementsAlert.addChild(alert);
         this.achievementsAlert.position.set(ACHIEVEMENTS_BUTTON / 2 - 8, -ACHIEVEMENTS_BUTTON / 2 + 10);
         gsap.to(alert, { y: -8, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+        this.achievementsAlert.visible = false;
         this.achievementsButton.addChild(this.achievementsAlert);
         this.achievementsButton.eventMode = 'static';
         this.achievementsButton.cursor = 'pointer';
@@ -463,9 +491,38 @@ export class DigHud extends PIXI.Container {
         this.achievementsButton.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
             event.stopPropagation();
             UiAnim.punch(this.achievementsButton, 0.12);
+            // The first claim's hand has done its job once the panel opens with something to claim.
+            if (this.achievementsReady && DigProgress.once(ACHIEVEMENT_HINT) && this.achievementsHand) {
+                UiAnim.kill(this.achievementsHand);
+                this.achievementsHand.destroy({ children: true });
+                this.achievementsHand = undefined;
+            }
             this.toggleAchievements();
         });
         this.corner.addChild(this.achievementsButton);
+    }
+
+    /** A tier is ready to claim (or not any more): the button's shine, pulse, label and "!" — and, the first time, the hand. */
+    private setAchievementsReady(ready: boolean): void {
+        if (ready === this.achievementsReady) return;
+        this.achievementsReady = ready;
+        this.achievementsAlert.visible = ready;
+        this.achievementsShine.visible = ready;
+        this.achievementsLabel.visible = ready;
+        gsap.killTweensOf(this.achievementsBody.scale);
+        this.achievementsBody.scale.set(1);
+        if (ready) {
+            UiAnim.popIn(this.achievementsBody);
+            UiAnim.pulse(this.achievementsBody, 0.08, 0.55);
+        }
+        if (ready && !this.achievementsHand && !DigProgress.hasOnce(ACHIEVEMENT_HINT)) {
+            // Mirrored, reaching in from the left: clear of the "CLAIM" label under the pad and of the screen's right
+            // edge (the corner sits on it).
+            this.achievementsHand = this.pointingHand(-ACHIEVEMENTS_BUTTON * 0.3, 0);
+            this.achievementsHand.scale.x = -1;
+            this.achievementsButton.addChild(this.achievementsHand);
+        }
+        if (this.achievementsHand) this.achievementsHand.visible = ready;
     }
 
     /** The MAP button under the achievements, drawn like it (the kit's map icon alone, no button shape); "!" when a new mine can be opened. */
@@ -707,7 +764,7 @@ export class DigHud extends PIXI.Container {
         if (this.station === 'wardrobe' && this.heldMoney === 0) {
             this.wardrobe.refresh();
         }
-        this.achievementsAlert.visible = DigProgress.claimableAchievements > 0;
+        this.setAchievementsReady(DigProgress.claimableAchievements > 0);
         this.mapButton.visible = DigProgress.prestige > 0 || DigProgress.canOpenNewMine;
         this.mapAlert.visible = DigProgress.canOpenNewMine;
         if (this.mines.visible && this.heldMoney === 0) this.mines.refresh();
