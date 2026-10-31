@@ -1,8 +1,8 @@
 // TreasureBeacons.ts
 //
 // Buried treasure calls from afar: a soft, pulsing beam of light rises from the top of every block hiding a find or
-// a chest (VoxelTerrain.finds / chests) within chests.beaconRange blocks of the miner, with a glowing ring on the
-// block — gold for a cash chest, cyan for a power chest, the find's rarity colour for an artifact. It reads from the
+// a chest (VoxelTerrain.finds / chests) within DigProgress.beaconRange blocks of the miner (chests.beaconRange, plus
+// the hub's lamps), with a glowing ring on the block — gold for a cash chest, cyan for a power chest, the find's rarity colour for an artifact. It reads from the
 // other side of the screen, long before TreasureSparkles' close-up stars, so the player has something to dig towards.
 // The beams fade in at the edge of the range; the nearest POOL are shown. Rescanned a few times a second. The relic
 // being hunted (`focus`, RelicHunt) always has its beam, full and bright, however far away it is.
@@ -10,7 +10,8 @@
 import * as THREE from 'three';
 import { VoxelTerrain } from './VoxelTerrain';
 import { BendService } from '../services/BendService';
-import { DIG, ChestKind, FindDef } from '../data/DigConfig';
+import { ChestKind, FindDef } from '../data/DigConfig';
+import { DigProgress } from '../data/DigProgress';
 import { RARITY_COLORS } from '../ui/CollectionPanel';
 
 const POOL = 16;
@@ -137,7 +138,7 @@ export class TreasureBeacons {
 
     private scan(player: THREE.Vector3): void {
         const terrain = this.terrain;
-        const range = DIG.chests.beaconRange;
+        const range = DigProgress.beaconRange;
         const [px, pz] = terrain.cellOf(player.x, player.z);
         const found: { cell: number; distance: number; color: number; opacity: number }[] = [];
         for (let iz = pz - range; iz <= pz + range; iz++) {

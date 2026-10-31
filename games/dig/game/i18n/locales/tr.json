@@ -259,10 +259,6 @@
     "area_atm-corner": "ATM",
     "area_wardrobe": "Gardırop",
     "area_trophy-room": "Kupa Odası",
-    "area_south-east": "Güneydoğu",
-    "area_north-east": "Kuzeydoğu",
-    "area_south-west": "Güneybatı",
-    "area_north-west": "Kuzeybatı",
     "guideWardrobe": "Gardırop açıldı! Hadi yeni bir görünüm dene",
     "guideBuyUpgrade": "ATM'den bir yükseltme al!"
 }

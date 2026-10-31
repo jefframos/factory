@@ -259,10 +259,6 @@
     "area_atm-corner": "ATM",
     "area_wardrobe": "衣装部屋",
     "area_trophy-room": "トロフィールーム",
-    "area_south-east": "南東",
-    "area_north-east": "北東",
-    "area_south-west": "南西",
-    "area_north-west": "北西",
     "guideWardrobe": "衣装部屋がオープン！新しい衣装を試してみよう",
     "guideBuyUpgrade": "ATMでアップグレードを買おう！"
 }

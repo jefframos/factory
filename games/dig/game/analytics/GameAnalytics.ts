@@ -20,6 +20,7 @@
 //   shop         hat-<id> | face-<id> | color-<id> bought     a wardrobe item bought with cash
 //   shop         hat-<id> | face-<id> | color-<id> equip      an owned wardrobe item put on
 //   build        <buildableId>                     complete   a hub piece bought
+//   hub          set-<areaId>                      complete   every piece of a hub room bought (its set bonus on)
 //   area         <areaId>                          visible    a hidden hub area appears
 //   bag          full-<capacity>                   complete   the backpack fills up
 //   sell         atm | anywhere                    complete   the backpack is sold (at the ATM pad / the SELL button)
@@ -154,6 +155,10 @@ export const GameAnalytics = {
 
     built(buildableId: string): void {
         send('build', buildableId, 'complete');
+    },
+
+    hubSetComplete(areaId: string): void {
+        send('hub', `set-${areaId}`, 'complete');
     },
 
     areaRevealed(areaId: string): void {

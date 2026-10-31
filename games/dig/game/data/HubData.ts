@@ -57,8 +57,10 @@ export interface HubStation extends HubPoint {
  * 'start' (always); 'upgrades:<n>' (n upgrades bought, tools + backpacks); 'firstUpgrade' / 'upgrade:<n>' (tool
  * upgrades); 'sells:<n>' (sold n times); 'firstFind' (an artifact found); 'firstBuild' (any buildable bought);
  * 'built:<areaId>' / 'half:<areaId>' (all / half of that area's buildables bought); 'upgradeAfter:<areaId>' (an
- * upgrade bought after that area appeared). Several joined with '|' = any of them. Things outside every area are
- * always there. The first area containing a point owns it.
+ * upgrade bought after that area appeared); 'mines:<n>' (n mines opened, the first counting). Several joined with '|'
+ * = any of them. Things outside every area are always there. The first area containing a point owns it.
+ *
+ * An area's buildables are a set: buying them all adds its `bonus` on top of each piece's own perk.
  */
 export interface HubArea {
     id: string;
@@ -68,6 +70,19 @@ export interface HubArea {
     width: number;
     depth: number;
     reveal: string;
+    /** The set bonus: every buildable in the area bought. */
+    bonus?: HubPerk;
+}
+
+/**
+ * What a hub piece (or a finished set) gives, for good — the hub is shared by every mine: `sell` / `dig` / `move` a
+ * fraction more cash, dig speed, walking speed (0.03 = +3%); `beam` blocks more treasure beam range.
+ */
+export type HubStat = 'sell' | 'dig' | 'move' | 'beam';
+
+export interface HubPerk {
+    stat: HubStat;
+    amount: number;
 }
 
 /** The area owning (x, z), if any. */
@@ -87,11 +102,12 @@ export interface HubAchievementDecor extends HubProp {
     achievement: string;
 }
 
-/** A piece of the hub the player buys: a see-through ghost with its price until bought, then the real thing. */
+/** A piece of the hub the player buys: a see-through ghost with its price (and perk) until bought, then the real thing. */
 export interface HubBuildable extends HubProp {
     id: string;
     name: string;
     price: number;
+    perk?: HubPerk;
 }
 
 export interface HubDesign {
@@ -107,6 +123,25 @@ export interface HubDesign {
 }
 
 export const HUB: HubDesign = data as unknown as HubDesign;
+
+/** The buildables standing in an area: its set. */
+export function buildablesIn(area: HubArea): HubBuildable[] {
+    return (HUB.buildables ?? []).filter((b) => hubAreaAt(b.x, b.z)?.id === area.id);
+}
+
+/** Whether every piece of an area's set is bought (false for an area with none). */
+export function setComplete(area: HubArea, isBuilt: (id: string) => boolean): boolean {
+    const pieces = buildablesIn(area);
+    return pieces.length > 0 && pieces.every((b) => isBuilt(b.id));
+}
+
+/** The hub's bonus to `stat`: the perks of the pieces bought, plus the bonus of every finished set. */
+export function hubBonus(stat: HubStat, isBuilt: (id: string) => boolean): number {
+    let total = 0;
+    for (const b of HUB.buildables ?? []) if (b.perk?.stat === stat && isBuilt(b.id)) total += b.perk.amount;
+    for (const area of HUB.areas ?? []) if (area.bonus?.stat === stat && setComplete(area, isBuilt)) total += area.bonus.amount;
+    return total;
+}
 
 /** Floor rects of the hub (the whole floor when it has none). */
 export function hubRects(): { x: number; z: number; width: number; depth: number }[] {

@@ -259,10 +259,6 @@
     "area_atm-corner": "DAB",
     "area_wardrobe": "Garde-robe",
     "area_trophy-room": "Salle des trophées",
-    "area_south-east": "Sud-Est",
-    "area_north-east": "Nord-Est",
-    "area_south-west": "Sud-Ouest",
-    "area_north-west": "Nord-Ouest",
     "guideWardrobe": "La garde-robe est ouverte ! Va essayer un nouveau look",
     "guideBuyUpgrade": "Achète une amélioration au DAB !"
 }

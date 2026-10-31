@@ -5,10 +5,11 @@
 // the rock) and static colliders, decor props, and the stations — a glowing pad in front of the
 // station's model (the ATM, the artifact totem, the wardrobe closet) with a floating icon, so they're easy
 // to spot from anywhere in the hub, and a bouncing "!" when there's something new to check there — and the
-// buildables: pieces the player buys to finish the hub, drawn as see-through ghosts with a price tag (walk
-// into one to buy it) until bought, then popped in as the real model. Reveal areas (levels/hub.json `areas`) keep
+// buildables: pieces the player buys to finish the hub, drawn as see-through ghosts with a price tag and their perk
+// (walk into one to buy it) until bought, then popped in as the real model. Reveal areas (levels/hub.json `areas`) keep
 // everything inside them hidden — no colliders, no station, no buying — until their rule is met, then pop it all in
-// (so a new player isn't shown the whole hub at once) — and the trophy tables: each zone's
+// (so a new player isn't shown the whole hub at once); a hidden room with pieces to buy shows a sign saying what
+// opens it (the tool, or the mine) and its set bonus — and the trophy tables: each zone's
 // finds stand on a table in the trophy room, a see-through blue ghost (fresnel rim) until dug up, then the
 // real thing, turning.
 
@@ -21,7 +22,7 @@ import { BendService } from '../services/BendService';
 import { PolyWallBuilder } from '../builders/PolyWallBuilder';
 import { CheckerFloorBuilder } from '../builders/CheckerFloorBuilder';
 import type { StoreWallPlacement, WallSetupConfig, WallStyleConfig, FloorCheckerConfig } from './RoomTypes';
-import { HUB, HubAchievementDecor, HubArea, HubBuildable, HubStation, HubTrophyTable, StationKind, hubAreaAt, hubRects } from '../data/HubData';
+import { HUB, HubAchievementDecor, HubArea, HubBuildable, HubPerk, HubStation, HubTrophyTable, StationKind, buildablesIn, hubAreaAt, hubRects } from '../data/HubData';
 import { DigProgress } from '../data/DigProgress';
 import type { Box } from './GuidePath';
 import { DIG, FindDef } from '../data/DigConfig';
@@ -45,6 +46,8 @@ export const STATION_LOOK: Record<StationKind, { color: number; icon: string; la
 export const STATION_RADIUS = 1.3;
 /** The station's model stands this far north of the pad's centre. */
 const STATION_MODEL_OFFSET = STATION_RADIUS + 0.25;
+/** A buildable's price tag floats this far over its top. */
+const TAG_LIFT = 0.85;
 /** Walking within this of a buildable's spot buys it. */
 export const BUILD_RADIUS = 0.9;
 const GHOST_COLOR = 0x8fd3ff;
@@ -106,6 +109,8 @@ interface AreaState {
     pending: [number, number, number, number, number][];
     /** Seconds into the reveal pop-in (-1 = not popping). */
     pop: number;
+    /** While hidden: what opens it (a room with pieces to buy). */
+    sign?: THREE.Sprite;
 }
 
 /** How long the pieces of a newly revealed area take to pop in. */
@@ -143,16 +148,35 @@ interface StationParts {
     target: THREE.Vector3;
 }
 
-/** The price (with a coin) over the buildable's name, on a plaque. */
-function priceTexture(name: string, price: number): THREE.CanvasTexture {
+/** What a perk gives, for labels: "+3% CASH", "+2 TREASURE RANGE". */
+export function perkLabel(perk: HubPerk): string {
+    return t(`perk_${perk.stat}`, { n: perk.stat === 'beam' ? perk.amount : Math.round(perk.amount * 100) });
+}
+
+/** The price (with a coin) over the buildable's name, and its perk under it, on a plaque. */
+function priceTexture(name: string, price: number, perk?: HubPerk): THREE.CanvasTexture {
     const canvas = document.createElement('canvas');
     canvas.width = 256;
-    canvas.height = 128;
+    canvas.height = 176;
     const g = canvas.getContext('2d')!;
-    CanvasArt.plaque(g, 8, 8, 240, 112, 26, 'rgba(255, 224, 102, 0.6)');
+    CanvasArt.plaque(g, 8, 8, 240, 160, 26, 'rgba(255, 224, 102, 0.6)');
     CanvasArt.drawIcon(g, 'ItemIcon_Money_Bill', 46, 50, 54);
     CanvasArt.text(g, `$${price.toLocaleString('en-US')}`, 146, 50, 50, '#ffe066', 168);
     CanvasArt.text(g, name.toUpperCase(), 128, 96, 24, '#ffffff', 224);
+    if (perk) CanvasArt.text(g, perkLabel(perk), 128, 136, 30, '#8fffa0', 224);
+    return CanvasArt.texture(canvas);
+}
+
+/** A hidden room's sign: its name, what opens it, and the set bonus for buying all its pieces. */
+function lockedTexture(area: HubArea, opens: string): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 224;
+    const g = canvas.getContext('2d')!;
+    CanvasArt.plaque(g, 6, 6, 500, 212, 34, 'rgba(255, 216, 107, 0.7)');
+    CanvasArt.text(g, names.area(area).toUpperCase(), 256, 52, 50, '#ffd86b', 470);
+    CanvasArt.text(g, opens, 256, 112, 32, '#ffffff', 470);
+    if (area.bonus) CanvasArt.text(g, t('setBonus', { bonus: perkLabel(area.bonus) }), 256, 170, 30, '#8fffa0', 470);
     return CanvasArt.texture(canvas);
 }
 
@@ -250,6 +274,7 @@ export class HubRoom {
         }
         // Hidden until revealed: decided before anything is built, so their colliders wait.
         this.refreshAreas(false);
+        for (const area of this.areas.values()) this.buildSign(area);
         for (const prop of HUB.props) {
             this.inArea(prop.x, prop.z, () => {
                 void this.placeProp(prop.model, prop.x, prop.z, prop.rotationY, prop.height, prop.elevation ?? 0, prop.stretch);
@@ -451,9 +476,23 @@ export class HubRoom {
         return !station || this.isOpen(station.x, station.z);
     }
 
-    /** Buildables standing in an area (the ones `built:<area>` waits for). */
-    private static buildablesIn(area: HubArea): HubBuildable[] {
-        return (HUB.buildables ?? []).filter((b) => hubAreaAt(b.x, b.z)?.id === area.id);
+    /**
+     * A hidden room with pieces to buy gets a sign floating over it — what opens it and its set bonus — when its rule
+     * says (a tool: 'upgrade:<n>', or a mine: 'mines:<n>'). It goes when the room appears.
+     */
+    private buildSign(area: AreaState): void {
+        if (area.revealed || !buildablesIn(area.def).length) return;
+        const rule = area.def.reveal.split('|').map((r) => r.trim()).find((r) => r.startsWith('upgrade:') || r.startsWith('mines:'));
+        if (!rule) return;
+        const n = Number(rule.split(':')[1]);
+        const tool = DIG.tools[n];
+        const opens = () => rule.startsWith('mines:') ? t('roomOpensMine', { mine: n }) : t('roomOpensTool', { tool: tool ? names.tool(tool).toUpperCase() : '' });
+        const sign = this.add(new THREE.Sprite(new THREE.SpriteMaterial({ map: lockedTexture(area.def, opens()), depthWrite: false })), null);
+        sign.userData.relabel = () => lockedTexture(area.def, opens());
+        sign.scale.set(3.2, 1.4, 1);
+        sign.position.set(area.def.x, 1.6, area.def.z);
+        sign.renderOrder = 4;
+        area.sign = sign;
     }
 
     /** Whether an area's reveal rule is met (see HubArea): any of its '|'-separated rules. */
@@ -465,6 +504,7 @@ export class HubRoom {
         if (rule === 'firstUpgrade') return DigProgress.toolLevel >= 1;
         if (rule.startsWith('upgrade:')) return DigProgress.toolLevel >= Number(rule.slice('upgrade:'.length));
         if (rule === 'firstFind') return DigProgress.collectedCount >= 1;
+        if (rule.startsWith('mines:')) return DigProgress.mineCount >= Number(rule.slice('mines:'.length));
         if (rule.startsWith('upgrades:')) return DigProgress.upgradesBought >= Number(rule.slice('upgrades:'.length));
         if (rule.startsWith('sells:')) return DigProgress.timesSold >= Number(rule.slice('sells:'.length));
         if (rule.startsWith('upgradeAfter:')) {
@@ -474,7 +514,7 @@ export class HubRoom {
         if (rule.startsWith('half:')) {
             const other = HUB.areas?.find((a) => a.id === rule.slice('half:'.length));
             if (!other) return true;
-            const pieces = HubRoom.buildablesIn(other);
+            const pieces = buildablesIn(other);
             return pieces.filter((b) => DigProgress.isBuilt(b.id)).length >= Math.ceil(pieces.length / 2);
         }
         if (rule === 'firstBuild') return (HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id));
@@ -482,7 +522,7 @@ export class HubRoom {
             const other = HUB.areas?.find((a) => a.id === rule.slice('built:'.length));
             if (!other || seen.has(other.id)) return true;
             seen.add(def.id);
-            return this.ruleMet(other, seen) && HubRoom.buildablesIn(other).every((b) => DigProgress.isBuilt(b.id));
+            return this.ruleMet(other, seen) && buildablesIn(other).every((b) => DigProgress.isBuilt(b.id));
         }
         return true;
     }
@@ -522,7 +562,7 @@ export class HubRoom {
                 if (rule.startsWith('half:') || rule.startsWith('built:')) {
                     const other = HUB.areas?.find((a) => a.id === rule.slice(rule.indexOf(':') + 1));
                     if (!other || !this.areas.get(other.id)?.revealed) continue;
-                    const pieces = HubRoom.buildablesIn(other);
+                    const pieces = buildablesIn(other);
                     const need = rule.startsWith('half:') ? Math.ceil(pieces.length / 2) : pieces.length;
                     const left = need - pieces.filter((b) => DigProgress.isBuilt(b.id)).length;
                     const open = pieces.filter((b) => !DigProgress.isBuilt(b.id));
@@ -548,6 +588,7 @@ export class HubRoom {
             if (met === area.revealed) continue;
             area.revealed = met;
             area.group.visible = met;
+            if (area.sign) area.sign.visible = !met;
             if (!met) continue;
             DigProgress.markAreaRevealed(area.def.id);
             for (const args of area.pending) this.collider(...args, null);
@@ -578,10 +619,10 @@ export class HubRoom {
 
     private buildBuildable(def: HubBuildable): void {
         const area = this.building;
-        const tag = this.add(new THREE.Sprite(new THREE.SpriteMaterial({ map: priceTexture(names.item(def.name), def.price), depthWrite: false })));
-        tag.userData.relabel = () => priceTexture(names.item(def.name), def.price);
-        tag.scale.set(1.6, 0.8, 1);
-        tag.position.set(def.x, (def.elevation ?? 0) + def.height + 0.7, def.z);
+        const tag = this.add(new THREE.Sprite(new THREE.SpriteMaterial({ map: priceTexture(names.item(def.name), def.price, def.perk), depthWrite: false })));
+        tag.userData.relabel = () => priceTexture(names.item(def.name), def.price, def.perk);
+        tag.scale.set(1.6, 1.1, 1);
+        tag.position.set(def.x, (def.elevation ?? 0) + def.height + TAG_LIFT, def.z);
         tag.renderOrder = 4;
         const ring = this.add(new THREE.Mesh(new THREE.TorusGeometry(BUILD_RADIUS, 0.05, 8, 40), this.material(GHOST_COLOR, GHOST_COLOR)));
         ring.rotation.x = -Math.PI / 2;
@@ -769,7 +810,7 @@ export class HubRoom {
         }
         for (const parts of this.buildables.values()) {
             if (!parts.built) {
-                parts.tag.position.y = (parts.def.elevation ?? 0) + parts.def.height + 0.7 + Math.sin(this.time * 2 + parts.def.x) * 0.08;
+                parts.tag.position.y = (parts.def.elevation ?? 0) + parts.def.height + TAG_LIFT + Math.sin(this.time * 2 + parts.def.x) * 0.08;
             }
             if (parts.pop >= 0 && parts.object) {
                 parts.pop += delta;

@@ -404,6 +404,7 @@ function revealLabel(reveal) {
         if (rule.startsWith('half:')) return `after half of ${level.areas.find((a) => a.id === rule.slice(5))?.name ?? '?'} is built`;
         if (rule.startsWith('upgradeAfter:')) return `after an upgrade once ${level.areas.find((a) => a.id === rule.slice(13))?.name ?? '?'} is open`;
         if (rule.startsWith('upgrade:')) return `after upgrade ${rule.slice(8)}`;
+        if (rule.startsWith('mines:')) return `from mine #${rule.slice(6)}`;
         if (rule === 'firstFind') return 'after the first find';
         if (rule === 'firstBuild') return 'after the first buildable';
         if (rule.startsWith('built:')) return `after ${level.areas.find((a) => a.id === rule.slice(6))?.name ?? '?'} is built`;
@@ -893,6 +894,19 @@ function renderLists() {
     }, titleCase(fileName(p.model)), el('small', {}, p.model.split('/').slice(0, -1).join('/')))));
 }
 
+/** What a hub piece (or a finished set) gives: a stat and how much (% for cash / dig / move, blocks for beam range). */
+const PERK_STATS = [['', 'None'], ['sell', 'Cash %'], ['dig', 'Dig speed %'], ['move', 'Move speed %'], ['beam', 'Treasure range (blocks)']];
+function perkFields(label, perk, onChange) {
+    const percent = perk && perk.stat !== 'beam';
+    const shown = perk ? (percent ? Math.round(perk.amount * 100) : perk.amount) : 0;
+    const set = (stat, value) => onChange(stat ? { stat, amount: stat === 'beam' ? Math.round(value) : round(value / 100, 0.001) } : undefined);
+    const rows = [el('label', { class: 'field' }, el('span', {}, label),
+        el('select', { onchange: (event) => set(event.target.value, event.target.value === 'beam' ? 2 : 3) },
+            ...PERK_STATS.map(([value, name]) => el('option', { value, selected: value === (perk?.stat ?? '') }, name))))];
+    if (perk) rows.push(numberField(percent ? 'Amount (%)' : 'Amount (blocks)', shown, 1, (v) => set(perk.stat, Math.max(0, v))));
+    return rows;
+}
+
 function numberField(label, value, step, onChange) {
     const input = el('input', { type: 'number', step, value: round(value, step < 1 ? 0.001 : 1) });
     input.addEventListener('change', () => {
@@ -936,7 +950,7 @@ function renderInspector() {
     ];
     if (type === 'area') {
         const rules = [['start', 'From the start'], ['firstUpgrade', 'After the first upgrade'], ['upgrade:2', 'After the 2nd upgrade'],
-            ['upgrade:3', 'After the 3rd upgrade'], ['firstFind', 'After the first find'], ['firstBuild', 'After the first buildable'],
+            ['upgrade:3', 'After the 3rd upgrade'], ['upgrade:4', 'After the 4th upgrade'], ['mines:2', 'From mine #2'], ['mines:3', 'From mine #3'], ['firstFind', 'After the first find'], ['firstBuild', 'After the first buildable'],
             ['upgrades:1', 'After 1 upgrade (tool or backpack)'], ['upgrades:2', 'After 2 upgrades'], ['upgrades:3', 'After 3 upgrades'],
             ['upgrades:3|sells:4', 'After 3 upgrades or selling 4 times'], ['sells:3', 'After selling 3 times'],
             ...level.areas.filter((a) => a.id !== data.id).flatMap((a) => [
@@ -950,6 +964,7 @@ function renderInspector() {
                 ...rules.map(([value, label]) => el('option', { value, selected: value === data.reveal }, label)))),
             numberField('Width', data.width, 0.5, (v) => edit((d) => { d.width = Math.max(0.5, v); })),
             numberField('Depth', data.depth, 0.5, (v) => edit((d) => { d.depth = Math.max(0.5, v); })),
+            ...perkFields('Set bonus (all its pieces bought)', data.bonus, (perk) => edit((d) => { d.bonus = perk; })),
             el('div', { class: 'muted small' }, `id: ${data.id} — other areas can wait for this one to be built.`),
         );
     }
@@ -984,6 +999,7 @@ function renderInspector() {
         rows.splice(1, 0,
             textField('Name', data.name, (v) => edit((d) => { d.name = v || d.name; })),
             numberField('Price ($)', data.price, 50, (v) => edit((d) => { d.price = Math.max(0, Math.round(v)); })),
+            ...perkFields('Perk (for good, every mine)', data.perk, (perk) => edit((d) => { d.perk = perk; })),
             el('div', { class: 'muted small' }, `id: ${data.id} (saves remember bought pieces by id)`));
     }
     if (type === 'station') {

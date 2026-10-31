@@ -259,10 +259,6 @@
     "area_atm-corner": "Cajero",
     "area_wardrobe": "Vestuario",
     "area_trophy-room": "Sala de trofeos",
-    "area_south-east": "Sureste",
-    "area_north-east": "Noreste",
-    "area_south-west": "Suroeste",
-    "area_north-west": "Noroeste",
     "guideWardrobe": "¡El vestuario está abierto! Ve a probarte un look nuevo",
     "guideBuyUpgrade": "¡Compra una mejora en el cajero!"
 }

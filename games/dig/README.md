@@ -121,6 +121,18 @@ the `time` events say when each step happens. See the table in `analytics/GameAn
 Digger, Ore Hunter, Tycoon, Collector — 7 tiers each, shared across mines; tier 4 adds a trophy to the hub.
 **Champion** (claim 15 levels) unlocks the Crown hat. Claiming dims the screen until the coins land.
 
+### Hub rooms and perks
+The hub is shared by every mine, so what's built there is kept for good — a small second prestige layer. Each
+buildable has a **perk** (`perk` in `levels/hub.json`: `sell` / `dig` / `move` as a fraction, `beam` in blocks of
+treasure-beam range), shown on its price tag and floated up when bought. Each reveal area's buildables are a **set**:
+buying them all adds the area's `bonus` (a "COMPLETE!" toast, analytics `hub / set-<area>`). The four rooms open with
+the tools, so new things to buy keep coming: Miner's Corner (tutorial, $50–250), Workshop (Steel Pickaxe, $150–300),
+Lounge (Power Drill, $500–900), Vault Room (Mega Drill, $1,500–2,000) — each piece about 20–40% of the next tool then.
+A hidden room shows a sign with what opens it and its set bonus. The whole hub is worth about one new mine (+28% cash,
++17% dig, +13% move, +4 beam range); the BOOSTS tab's footer adds up everything kept forever (hub + mines). The
+perks apply in `DigProgress` (`sellMultiplier`, `hitInterval`, `moveMultiplier`, `beaconRange`), so a new perk stat
+goes there too. A room for later mines: an area with the reveal rule `mines:<n>`.
+
 ### The tutorial (first mine only)
 Driven by the progress alone, so a reload lands back in the right step:
 move → dig → bag full → sell → **forced Pickaxe** → **forced first bag** → wardrobe appears → **forced first hat**
@@ -165,7 +177,8 @@ Every tuning value lives here, not in code. Main sections:
 | `tractor` | the ridden vehicle's model, seat, speed, smoke, `bodyRadius` (its footprint against rock) |
 
 The hub layout is `levels/hub.json` (edit it in the editor's Hub tabs). Reveal-area rules (`reveal`) say when each
-part of the hub appears: `start`, `upgrades:<n>`, `firstFind`, `upgradeAfter:<area>`, `built:<area>`…
+part of the hub appears: `start`, `upgrades:<n>`, `upgrade:<n>` (tool level), `mines:<n>`, `firstFind`,
+`upgradeAfter:<area>`, `built:<area>`… Pieces' perks and rooms' set bonuses are edited in the Hub 3D inspector.
 
 ---
 

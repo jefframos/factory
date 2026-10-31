@@ -153,7 +153,7 @@
     {
       "id": "plant-west",
       "name": "Plant",
-      "price": 200,
+      "price": 150,
       "model": "hub/cute-furniture-glb-plants-05/cute-furniture-glb-plants-05.glb",
       "x": 8,
       "z": -7.75,
@@ -163,6 +163,10 @@
         "halfX": 0.41,
         "halfY": 0.55,
         "halfZ": 0.4
+      },
+      "perk": {
+        "stat": "sell",
+        "amount": 0.02
       }
     },
     {
@@ -179,12 +183,16 @@
         "halfY": 0.89,
         "halfZ": 0.67
       },
-      "elevation": 0.2
+      "elevation": 0.2,
+      "perk": {
+        "stat": "sell",
+        "amount": 0.03
+      }
     },
     {
       "id": "lamp-west",
       "name": "Standing Lamp",
-      "price": 350,
+      "price": 600,
       "model": "hub/furniture-lamp-standing/furniture-lamp-standing.gltf",
       "x": -2.75,
       "z": 8.25,
@@ -194,12 +202,16 @@
         "halfX": 0.4,
         "halfY": 1,
         "halfZ": 0.4
+      },
+      "perk": {
+        "stat": "beam",
+        "amount": 2
       }
     },
     {
       "id": "lamp-east",
       "name": "Standing Lamp",
-      "price": 350,
+      "price": 150,
       "model": "hub/furniture-lamp-standing/furniture-lamp-standing.gltf",
       "x": 8.25,
       "z": 7.75,
@@ -210,12 +222,16 @@
         "halfY": 1,
         "halfZ": 0.4
       },
-      "elevation": 0.2
+      "elevation": 0.2,
+      "perk": {
+        "stat": "beam",
+        "amount": 2
+      }
     },
     {
       "id": "bench",
       "name": "Couch",
-      "price": 600,
+      "price": 250,
       "model": "hub/cute-furniture-glb-couch-08/cute-furniture-glb-couch-08.glb",
       "x": 6,
       "z": 7.71,
@@ -226,12 +242,16 @@
         "halfY": 0.68,
         "halfZ": 0.6
       },
-      "elevation": 0.1
+      "elevation": 0.1,
+      "perk": {
+        "stat": "sell",
+        "amount": 0.03
+      }
     },
     {
       "id": "workbench",
       "name": "Workbench",
-      "price": 1200,
+      "price": 300,
       "model": "hub/survival-kit-workbench-anvil/survival-kit-workbench-anvil.glb",
       "x": 8,
       "z": -3,
@@ -241,12 +261,16 @@
         "halfX": 0.48,
         "halfY": 0.55,
         "halfZ": 0.53
+      },
+      "perk": {
+        "stat": "dig",
+        "amount": 0.03
       }
     },
     {
       "id": "cute-furniture-glb-couch-11",
       "name": "Couch",
-      "price": 500,
+      "price": 180,
       "model": "hub/cute-furniture-glb-couch-11/cute-furniture-glb-couch-11.glb",
       "x": 8,
       "z": 4.75,
@@ -256,12 +280,16 @@
         "halfX": 0.58,
         "halfY": 0.6,
         "halfZ": 1.22
+      },
+      "perk": {
+        "stat": "move",
+        "amount": 0.02
       }
     },
     {
       "id": "furniture-table-low-decorated",
       "name": "Table",
-      "price": 500,
+      "price": 120,
       "model": "hub/furniture-table-low-decorated/furniture-table-low-decorated.gltf",
       "x": 5.5,
       "z": 4.75,
@@ -271,12 +299,16 @@
         "halfX": 0.86,
         "halfY": 0.6,
         "halfZ": 1.37
+      },
+      "perk": {
+        "stat": "sell",
+        "amount": 0.02
       }
     },
     {
       "id": "plant",
       "name": "Plant",
-      "price": 50,
+      "price": 80,
       "model": "hub/cute-furniture-glb-plants-05/cute-furniture-glb-plants-05.glb",
       "x": 3,
       "z": 3.5,
@@ -287,7 +319,11 @@
         "halfY": 0.89,
         "halfZ": 0.46
       },
-      "elevation": 0.2
+      "elevation": 0.2,
+      "perk": {
+        "stat": "move",
+        "amount": 0.02
+      }
     },
     {
       "id": "cute-furniture-glb-chair-pc-04",
@@ -302,12 +338,16 @@
         "halfX": 0.59,
         "halfY": 0.84,
         "halfZ": 0.6
+      },
+      "perk": {
+        "stat": "move",
+        "amount": 0.02
       }
     },
     {
       "id": "furniture-desk-decorated",
       "name": "Computer",
-      "price": 500,
+      "price": 900,
       "model": "hub/furniture-desk-decorated/furniture-desk-decorated.gltf",
       "x": -8,
       "z": 7.5,
@@ -317,12 +357,16 @@
         "halfX": 0.75,
         "halfY": 1.06,
         "halfZ": 1.46
+      },
+      "perk": {
+        "stat": "sell",
+        "amount": 0.03
       }
     },
     {
       "id": "casino-assets-glb-flower-03",
       "name": "Plant",
-      "price": 200,
+      "price": 500,
       "model": "hub/casino-assets-glb-flower-03/casino-assets-glb-flower-03.glb",
       "x": -8.25,
       "z": 3,
@@ -332,12 +376,16 @@
         "halfX": 0.66,
         "halfY": 0.88,
         "halfZ": 0.65
+      },
+      "perk": {
+        "stat": "dig",
+        "amount": 0.02
       }
     },
     {
       "id": "cute-furniture-glb-nightstand-02",
       "name": "Nightstand",
-      "price": 500,
+      "price": 100,
       "model": "hub/cute-furniture-glb-nightstand-02/cute-furniture-glb-nightstand-02.glb",
       "x": 8.25,
       "z": 2.75,
@@ -347,12 +395,16 @@
         "halfX": 0.48,
         "halfY": 0.6,
         "halfZ": 0.52
+      },
+      "perk": {
+        "stat": "dig",
+        "amount": 0.02
       }
     },
     {
       "id": "furniture-shelf-b-large-decorated",
       "name": "Shelf",
-      "price": 500,
+      "price": 220,
       "model": "hub/furniture-shelf-b-large-decorated/furniture-shelf-b-large-decorated.gltf",
       "x": 9,
       "z": -5.75,
@@ -363,12 +415,16 @@
         "halfY": 0.6,
         "halfZ": 1.47
       },
-      "elevation": 0.6
+      "elevation": 0.6,
+      "perk": {
+        "stat": "dig",
+        "amount": 0.02
+      }
     },
     {
       "id": "furniture-shelf-b-small-decorated",
       "name": "Shelf",
-      "price": 500,
+      "price": 150,
       "model": "hub/furniture-shelf-b-small-decorated/furniture-shelf-b-small-decorated.gltf",
       "x": 7.5,
       "z": -9,
@@ -379,24 +435,32 @@
         "halfY": 0.6,
         "halfZ": 0.34
       },
-      "elevation": 0.8
+      "elevation": 0.8,
+      "perk": {
+        "stat": "sell",
+        "amount": 0.02
+      }
     },
     {
       "id": "cute-furniture-glb-picture-08",
       "name": "Picture",
-      "price": 500,
+      "price": 180,
       "model": "hub/cute-furniture-glb-picture-08/cute-furniture-glb-picture-08.glb",
       "x": 6.25,
       "z": -8.75,
       "rotationY": 0,
       "height": 1.2,
       "collider": null,
-      "elevation": 1
+      "elevation": 1,
+      "perk": {
+        "stat": "move",
+        "amount": 0.02
+      }
     },
     {
       "id": "cute-furniture-glb-clock-03",
       "name": "Clock",
-      "price": 500,
+      "price": 1500,
       "model": "hub/cute-furniture-glb-clock-03/cute-furniture-glb-clock-03.glb",
       "x": -8.5,
       "z": -3.5,
@@ -406,12 +470,16 @@
         "halfX": 0.32,
         "halfY": 1.29,
         "halfZ": 0.56
+      },
+      "perk": {
+        "stat": "dig",
+        "amount": 0.03
       }
     },
     {
       "id": "cute-furniture-glb-plants-15",
       "name": "Plants",
-      "price": 500,
+      "price": 2000,
       "model": "hub/cute-furniture-glb-plants-15/cute-furniture-glb-plants-15.glb",
       "x": -8.5,
       "z": -5.25,
@@ -421,6 +489,10 @@
         "halfX": 0.43,
         "halfY": 0.97,
         "halfZ": 0.26
+      },
+      "perk": {
+        "stat": "sell",
+        "amount": 0.03
       }
     }
   ],
@@ -576,39 +648,55 @@
     },
     {
       "id": "south-east",
-      "name": "South East",
+      "name": "Miner's Corner",
       "x": 4.5,
       "z": 4.5,
       "width": 9,
       "depth": 9,
-      "reveal": "upgradeAfter:wardrobe"
+      "reveal": "upgradeAfter:wardrobe",
+      "bonus": {
+        "stat": "sell",
+        "amount": 0.05
+      }
     },
     {
       "id": "north-east",
-      "name": "North East",
+      "name": "Workshop",
       "x": 4.5,
       "z": -4.5,
       "width": 9,
       "depth": 9,
-      "reveal": "built:south-east"
+      "reveal": "upgrade:2",
+      "bonus": {
+        "stat": "dig",
+        "amount": 0.05
+      }
     },
     {
       "id": "south-west",
-      "name": "South West",
+      "name": "Lounge",
       "x": -4.5,
       "z": 4.5,
       "width": 9,
       "depth": 9,
-      "reveal": "built:north-east"
+      "reveal": "upgrade:3",
+      "bonus": {
+        "stat": "move",
+        "amount": 0.05
+      }
     },
     {
       "id": "north-west",
-      "name": "North West",
+      "name": "Vault Room",
       "x": -4.5,
       "z": -4.5,
       "width": 9,
       "depth": 9,
-      "reveal": "built:south-west"
+      "reveal": "upgrade:4",
+      "bonus": {
+        "stat": "sell",
+        "amount": 0.05
+      }
     }
   ]
 }

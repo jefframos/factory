@@ -259,10 +259,6 @@
     "area_atm-corner": "ATM",
     "area_wardrobe": "옷장",
     "area_trophy-room": "트로피 룸",
-    "area_south-east": "남동쪽",
-    "area_north-east": "북동쪽",
-    "area_south-west": "남서쪽",
-    "area_north-west": "북서쪽",
     "guideWardrobe": "옷장이 열렸어! 가서 새 룩을 입어 봐",
     "guideBuyUpgrade": "ATM에서 업그레이드를 사 봐!"
 }

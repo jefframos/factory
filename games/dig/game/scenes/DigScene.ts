@@ -28,7 +28,7 @@ import { Layers } from '../physics/PhysicsConstants';
 import { BendService } from '../services/BendService';
 import DigPlayer from '../player/DigPlayer';
 import { VoxelTerrain } from '../world/VoxelTerrain';
-import { HubRoom, STATION_RADIUS } from '../world/HubRoom';
+import { HubRoom, STATION_RADIUS, perkLabel } from '../world/HubRoom';
 import { TractorRide } from '../player/TractorRide';
 import { Guide } from '../world/Guide';
 import { RelicHunt } from '../world/RelicHunt';
@@ -38,7 +38,7 @@ import { TreasureBeacons } from '../world/TreasureBeacons';
 import { PowerSurge } from '../mining/PowerSurge';
 import { PowerChestSpawner, POWER_CHEST_TAKEN } from '../mining/PowerChestSpawner';
 import type { StationKind } from '../data/HubData';
-import { hubRects, HUB } from '../data/HubData';
+import { hubRects, HUB, hubAreaAt, buildablesIn } from '../data/HubData';
 import { DIG, ChestKind, MaterialDef } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
 import { DigEffects } from '../vfx/DigEffects';
@@ -726,8 +726,26 @@ export default class DigScene extends ThreeScene {
             DigAudio.play('cheer');
             const { built, total } = this.hub.buildProgress;
             const name = names.item(buildable.name);
-            this.hud.say(built === total ? t('hubComplete', { name }) : t('built', { name, built, total }), 0x8fe3a1);
-            this.effects.floatText(new THREE.Vector3(buildable.x, buildable.height + 1, buildable.z), `-$${buildable.price}`, '#ffe27a');
+            const top = new THREE.Vector3(buildable.x, buildable.height + 1, buildable.z);
+            this.effects.floatText(top, `-$${buildable.price}`, '#ffe27a');
+            // What it gives, rising a beat after the price.
+            const perk = buildable.perk;
+            if (perk) window.setTimeout(() => this.effects.floatText(top.clone().setY(top.y + 0.5), perkLabel(perk), '#8fffa0'), 450);
+            // Its room's set: how far along, or (the last piece) the set bonus.
+            const area = hubAreaAt(buildable.x, buildable.z);
+            const pieces = area ? buildablesIn(area) : [];
+            const inSet = pieces.filter((b) => DigProgress.isBuilt(b.id)).length;
+            if (built === total) {
+                this.hud.say(t('hubComplete', { name }), 0x8fe3a1);
+            } else if (area?.bonus && inSet === pieces.length) {
+                GameAnalytics.hubSetComplete(area.id);
+                this.hud.say(t('setComplete', { name: names.area(area).toUpperCase(), bonus: perkLabel(area.bonus) }), 0x8fffa0);
+                DigAudio.play('quest');
+            } else if (area && pieces.length > 1) {
+                this.hud.say(t('builtSet', { name, set: names.area(area), built: inSet, total: pieces.length }), 0x8fe3a1);
+            } else {
+                this.hud.say(t('built', { name, built, total }), 0x8fe3a1);
+            }
         } else {
             this.hud.say(t('costToBuild', { name: names.item(buildable.name), price: buildable.price.toLocaleString('en-US') }), 0xffd9a8);
         }

@@ -997,13 +997,24 @@ export class DigHud extends PIXI.Container {
         return block;
     }
 
-    /** The BOOSTS tab: a row per boost track, and the new mines' bonus (or what boosts are) along the bottom. */
+    /**
+     * The BOOSTS tab: a row per boost track, and along the bottom what's kept for good — the new mines' bonus and the
+     * hub's (its pieces and finished sets) — or, with neither yet, what boosts are.
+     */
     private renderBoosts(): void {
         DIG.boosts.forEach((boost, i) => this.panelBody.addChild(this.boostRow(boost, BOOST_ROW.firstY + i * BOOST_ROW.step)));
         const mines = DigProgress.prestige;
-        this.panelFooter(mines > 0
-            ? t('mineBonus', { mine: mines + 1, sell: Math.round(DIG.prestige.sellBonus * mines * 100), dig: Math.round(DIG.prestige.digBonus * mines * 100) })
-            : t('boostsHint'));
+        const percent = (n: number) => Math.round(n * 100);
+        const parts: string[] = [];
+        const sell = percent((1 + DIG.prestige.sellBonus * mines) * (1 + DigProgress.hubBonus('sell')) - 1);
+        const dig = percent((1 + DIG.prestige.digBonus * mines) * (1 + DigProgress.hubBonus('dig')) - 1);
+        const move = percent(DigProgress.hubBonus('move'));
+        const beam = DigProgress.hubBonus('beam');
+        if (sell > 0) parts.push(t('perk_sell', { n: sell }));
+        if (dig > 0) parts.push(t('perk_dig', { n: dig }));
+        if (move > 0) parts.push(t('perk_move', { n: move }));
+        if (beam > 0) parts.push(t('perk_beam', { n: beam }));
+        this.panelFooter(parts.length ? t('foreverBonus', { list: parts.join(' · ') }) : t('boostsHint'));
     }
 
     /** One boost: its icon, name and level, its effect now -> next, and the buy button (MAX at the top). */

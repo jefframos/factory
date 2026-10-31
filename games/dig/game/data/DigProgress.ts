@@ -6,6 +6,7 @@
 // change so a burst of digging writes once. Versioned (SAVE_VERSION): a save from another version starts a new game.
 
 import { Signal } from 'signals';
+import { hubBonus, type HubStat } from './HubData';
 import { AchievementDef, AchievementStat, BoostDef, BoostId, DIG, FindDef, MineTheme, ToolDef, WardrobeItem } from './DigConfig';
 
 export type LookKind = 'colors' | 'faces' | 'hats';
@@ -420,14 +421,19 @@ export const DigProgress = {
         return boost.id === 'digSpeed' ? 1 - Math.pow(1 - boost.perLevel, at) : boost.perLevel * at;
     },
 
-    /** Multiplier on everything sold: the Sell Price boost and every new mine opened. */
-    get sellMultiplier(): number {
-        return (1 + this.boostEffect(boostDef('sellPrice'))) * (1 + DIG.prestige.sellBonus * state.prestige);
+    /** The hub's bonus to a stat (HubData.hubBonus): its pieces' perks and finished sets, shared by every mine. */
+    hubBonus(stat: HubStat): number {
+        return hubBonus(stat, (id) => state.built.includes(id));
     },
 
-    /** Seconds between hits with the current tool: the Dig Speed boost and every new mine opened make it shorter. */
+    /** Multiplier on everything sold: the Sell Price boost, every new mine opened and the hub. */
+    get sellMultiplier(): number {
+        return (1 + this.boostEffect(boostDef('sellPrice'))) * (1 + DIG.prestige.sellBonus * state.prestige) * (1 + this.hubBonus('sell'));
+    },
+
+    /** Seconds between hits with the current tool: the Dig Speed boost, every new mine opened and the hub make it shorter. */
     get hitInterval(): number {
-        return this.tool.hitInterval * (1 - this.boostEffect(boostDef('digSpeed'))) / (1 + DIG.prestige.digBonus * state.prestige);
+        return this.tool.hitInterval * (1 - this.boostEffect(boostDef('digSpeed'))) / (1 + DIG.prestige.digBonus * state.prestige) / (1 + this.hubBonus('dig'));
     },
 
     /** Chance an ore block drops one more item (the Ore Luck boost). */
@@ -435,9 +441,14 @@ export const DigProgress = {
         return this.boostEffect(boostDef('oreLuck'));
     },
 
-    /** Multiplier on walking (and riding) speed: the Move Speed boost. */
+    /** Multiplier on walking (and riding) speed: the Move Speed boost and the hub. */
     get moveMultiplier(): number {
-        return 1 + this.boostEffect(boostDef('moveSpeed'));
+        return (1 + this.boostEffect(boostDef('moveSpeed'))) * (1 + this.hubBonus('move'));
+    },
+
+    /** Blocks around the miner where buried treasure shows its beam: chests.beaconRange, plus the hub's. */
+    get beaconRange(): number {
+        return DIG.chests.beaconRange + this.hubBonus('beam');
     },
 
     /** The current mine's terrain seed: every mine has its own layout. */
