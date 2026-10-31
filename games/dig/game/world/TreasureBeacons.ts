@@ -4,7 +4,8 @@
 // a chest (VoxelTerrain.finds / chests) within chests.beaconRange blocks of the miner, with a glowing ring on the
 // block — gold for a cash chest, cyan for a power chest, the find's rarity colour for an artifact. It reads from the
 // other side of the screen, long before TreasureSparkles' close-up stars, so the player has something to dig towards.
-// The beams fade in at the edge of the range; the nearest POOL are shown. Rescanned a few times a second.
+// The beams fade in at the edge of the range; the nearest POOL are shown. Rescanned a few times a second. The relic
+// being hunted (`focus`, RelicHunt) always has its beam, full and bright, however far away it is.
 
 import * as THREE from 'three';
 import { VoxelTerrain } from './VoxelTerrain';
@@ -80,6 +81,8 @@ export class TreasureBeacons {
     private time = 0;
     /** Fade-in (0..1) of each marked cell. */
     private readonly appeared = new Map<number, number>();
+    /** A cell whose beam shows at any range (the hunted relic's), or -1. */
+    public focus = -1;
 
     public constructor(threeScene: THREE.Scene, private readonly terrain: VoxelTerrain) {
         // Enough rings up the beam for the world bend to curve it with the rest.
@@ -152,6 +155,12 @@ export class TreasureBeacons {
             }
         }
         found.sort((a, b) => a.distance - b.distance);
+        const focusFind = this.focus >= 0 ? terrain.findAt(this.focus % terrain.size, Math.floor(this.focus / terrain.size)) : undefined;
+        if (focusFind) {
+            const at = found.findIndex((f) => f.cell === this.focus);
+            if (at >= 0) found.splice(at, 1);
+            found.unshift({ cell: this.focus, distance: 0, color: findColor(focusFind), opacity: CHEST_OPACITY });
+        }
         // Forget cells out of range, so one coming back fades in again.
         const marked = new Set(found.slice(0, this.beacons.length).map((f) => f.cell));
         for (const cell of this.appeared.keys()) if (!marked.has(cell)) this.appeared.delete(cell);

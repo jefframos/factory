@@ -421,8 +421,28 @@ export class VoxelTerrain {
         const index = this.finds.indexOf(value);
         if (index < 0) return;
         this.finds[index] = 0;
-        this.dirty.add(Math.floor((index % this.size) / CHUNK) + Math.floor(Math.floor(index / this.size) / CHUNK) * Math.ceil(this.size / CHUNK));
+        this.dirtyCell(index);
         this.changed++;
+    }
+
+    /** The cell index of a find's buried copy, or -1 (never buried, already dug up or handed out). */
+    public findCell(find: FindDef): number {
+        const index = this.finds.indexOf(DIG.finds.indexOf(find) + 1);
+        return index >= 0 && this.cells[index] !== AIR ? index : -1;
+    }
+
+    /** Moves a find's buried copy into another solid cell (the relic hunt brings a far one within reach: RelicHunt). */
+    public moveFind(find: FindDef, ix: number, iz: number): void {
+        this.unbury(find);
+        const index = this.index(ix, iz);
+        this.finds[index] = DIG.finds.indexOf(find) + 1;
+        this.dirtyCell(index);
+        this.changed++;
+    }
+
+    /** The chunk holding a cell gets redrawn (a find shows poking out of a tunnel edge). */
+    private dirtyCell(index: number): void {
+        this.dirty.add(Math.floor((index % this.size) / CHUNK) + Math.floor(Math.floor(index / this.size) / CHUNK) * Math.ceil(this.size / CHUNK));
     }
 
     /** The find hidden in a solid cell, if any. */

@@ -1190,6 +1190,13 @@
     "roundTo": 5
   },
   "firstFindAfterBlocks": 12,
+  "relicHunt": {
+    "$comment": "After the tutorial (the first hub piece built) the guide leads to the next relics, one at a time, for `guided` relics: claim one in the Trophy Room and the next is named on screen, then the floor arrows and a beam lead to it. One buried more than maxDistance blocks from the miner (or in rock their tool can't dig) moves into a diggable block place[0]..place[1] blocks from them once they're out of the hub. enabled: false = the baseline (no hunt).",
+    "enabled": true,
+    "guided": 4,
+    "maxDistance": 12,
+    "place": [6, 10]
+  },
   "chests": {
     "$comment": "Buried chests besides the finds, each in a seeded block of its zone. power: digging it out gives a timed taste of a better tool (at least one tier above the one owned, never below `tool`) for `seconds`, digging `speedMultiplier` faster; while it lasts every block is cashed at once (no backpack). It is never buried: once the player has dug spawn.afterBlocks blocks, one fades in spawn.ahead blocks in front of where they are digging; left more than spawn.maxDistance blocks behind (never just for waiting) it fades out and another comes spawn.respawnDelay seconds later. Each player gets it once, ever (and never once they own `tool`). cash: pays reward[zone] (x 1 +- spread, x the sell bonus) on the spot. cash.perZone = how many per zone (index = zone). beaconRange = blocks around the miner where buried treasure shows a light beam.",
     "beaconRange": 16,

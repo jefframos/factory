@@ -31,6 +31,7 @@ import { VoxelTerrain } from '../world/VoxelTerrain';
 import { HubRoom, STATION_RADIUS } from '../world/HubRoom';
 import { TractorRide } from '../player/TractorRide';
 import { Guide } from '../world/Guide';
+import { RelicHunt } from '../world/RelicHunt';
 import { HardBlockMarkers } from '../world/HardBlockMarkers';
 import { TreasureSparkles } from '../world/TreasureSparkles';
 import { TreasureBeacons } from '../world/TreasureBeacons';
@@ -140,6 +141,7 @@ export default class DigScene extends ThreeScene {
     private hub!: HubRoom;
     private tractor!: TractorRide;
     private guide!: Guide;
+    private relicHunt!: RelicHunt;
     private hardBlocks!: HardBlockMarkers;
     /** Sparkles over buried finds near the miner. */
     private treasureSparkles!: TreasureSparkles;
@@ -229,7 +231,12 @@ export default class DigScene extends ThreeScene {
         this.moveHintActive = DigProgress.achievementStat('blocks') === 0 && DigProgress.upgradesBought === 0;
         if (this.moveHintActive) this.hud.moveHint.show();
         this.hintLast.copy(this.player.transform.position);
-        this.guide = new Guide(this.threeScene, this.hub, (x, z) => this.terrain.isSolid(x, z), (text, buy) => this.hud.setGuide(text, buy));
+        // Claiming a relic (or building the tutorial's hub piece) names the next one, once the moment's own message has
+        // been read; the guide's arrows lead there.
+        this.relicHunt = new RelicHunt(this.terrain, (find) => {
+            window.setTimeout(() => this.hud.say(t('relicNext', { name: names.find(find).toUpperCase() }), 0xffd23f), 1200);
+        });
+        this.guide = new Guide(this.threeScene, this.hub, (x, z) => this.terrain.isSolid(x, z), this.relicHunt, (text, buy) => this.hud.setGuide(text, buy));
         this.hardBlocks = new HardBlockMarkers(this.threeScene, this.terrain);
         this.treasureSparkles = new TreasureSparkles(this.terrain, this.effects);
         this.treasureBeacons = new TreasureBeacons(this.threeScene, this.terrain);
@@ -237,8 +244,9 @@ export default class DigScene extends ThreeScene {
         this.mining = new MiningController(this.terrain, this.effects, this.player, (text) => this.hud.say(text, 0xffd9a8), (find, zone) => {
             // Its reward waits in the Trophy Room (claimed there: the totem gets its "!"); the banner says so.
             const amount = DigProgress.findPayout(find, zone);
+            const result = DigProgress.addFind(find, amount);
             GameAnalytics.findDug(find.id);
-            this.hud.findBanner.show(find, DigProgress.addFind(find, amount), amount);
+            this.hud.findBanner.show(find, result, amount);
             DigAudio.play('sparkle');
         }, (ix, iz, tool) => {
             // The block's lock jumps and says what it takes.
@@ -440,9 +448,11 @@ export default class DigScene extends ThreeScene {
         this.tractor.update(delta);
         this.updateFootsteps();
         this.updateMoveHint();
+        this.relicHunt.update(delta, this.player.transform.position);
         this.guide.update(delta, this.player.transform.position);
         this.hardBlocks.update(delta, this.player.transform.position);
         this.treasureSparkles.update(delta, this.player.transform.position);
+        this.treasureBeacons.focus = this.relicHunt.targetCell;
         this.treasureBeacons.update(delta, this.player.transform.position);
         this.powerChests.update(delta, this.player.transform.position);
         this.updatePowerSurge(delta);

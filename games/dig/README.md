@@ -128,6 +128,15 @@ move → dig → bag full → sell → **forced Pickaxe** → **forced first bag
 last sale is topped up to its price). Forced purchases dim the screen, stop the miner and point at BUY. The guide's
 floor arrows follow the real walking route (A* over the dug tunnels) and draw over the rock.
 
+### The relic hunt (after the tutorial)
+The playtests lost players in minutes 3–5, right after the tutorial, when the next relic was down to luck. So for
+`relicHunt.guided` relics after the tutorial's (`world/RelicHunt.ts`): the moment the Trophy Room has nothing waiting,
+the next relic (lowest zone first) is named on screen ("NEXT RELIC: …"), and the guide's arrows and a beam that shows
+at any range lead to it. Once the miner is out of the hub it's placed: left where it is if it's within
+`maxDistance` blocks in rock they can dig, otherwise moved into a diggable block `place` blocks from them. Dug up, the
+arrows lead to the Trophy Room to claim it, and the claim names the next one. `relicHunt.enabled: false` is the
+baseline build (the guide ends with the tutorial), for A/B playtests.
+
 ### Saving
 One localStorage entry (`dig.save`), written shortly after any change. It carries a **version**
 (`SAVE_VERSION` in `data/DigProgress.ts`): a save from another version starts a new game. **Bump it when a change
@@ -149,6 +158,7 @@ Every tuning value lives here, not in code. Main sections:
 | `boosts`, `boostsUnlockToolLevel` | the boost tracks |
 | `prestige`, `mineThemes` | new-mine bonus and each mine's colours (rock tints, floors, hub floor and walls) |
 | `finds`, `findPayout`, `collectionReward`, `firstFindAfterBlocks` | artifacts and what they pay |
+| `relicHunt` | the guided relics after the tutorial: on/off, how many, how far one may be before it's moved closer |
 | `chests`, `richOre` | power / cash chests (count per zone, surge tool and length, rewards, beacon range) and rich veins |
 | `wardrobe` | colours, faces, hats and prices (the Crown is `unlock: "achievement"`) |
 | `achievements` | tiers, rewards, the hub decoration (`decor`, `decorAt`) or hat (`hat`) |

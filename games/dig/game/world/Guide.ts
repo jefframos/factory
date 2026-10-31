@@ -5,7 +5,9 @@
 // the next hidden part of the hub (HubRoom.nextUnlock) — and points at it with no text: a trail of small triangles on
 // the floor along the walking route (GuidePath: around walls, stations and rock, through the dug tunnels), flowing
 // towards the target and drawn over the rock so a tunnel wall never hides them, and a
-// bouncing marker over it (not over buildables: their price tag is there). It ends for good once the first hub piece (a cosmetic) is bought.
+// bouncing marker over it (not over buildables: their price tag is there). The tutorial ends once the first hub piece (a
+// cosmetic) is bought; then, for a few relics, the relic hunt (RelicHunt) has the arrows lead to the next relic and to
+// the Trophy Room to claim it, and after that the guide only steps in for a full backpack.
 // The step's text still goes to `say` (the HUD keeps it hidden; handy for debugging).
 
 import * as THREE from 'three';
@@ -14,6 +16,7 @@ import { DigProgress } from '../data/DigProgress';
 import { HUB, hubRects } from '../data/HubData';
 import type { HubRoom } from './HubRoom';
 import { findPath } from './GuidePath';
+import type { RelicHunt } from './RelicHunt';
 import { t, names } from '../i18n/Localization';
 
 const COLOR = 0xffd23f;
@@ -50,7 +53,7 @@ export class Guide {
 
     /** `say` shows (or with null clears) the step's text on the HUD. */
     public constructor(threeScene: THREE.Scene, private readonly hub: HubRoom, private readonly solid: (x: number, z: number) => boolean,
-        private readonly say: (text: string | null, buy: boolean) => void) {
+        private readonly hunt: RelicHunt, private readonly say: (text: string | null, buy: boolean) => void) {
         const material = new THREE.MeshStandardMaterial({ color: COLOR, emissive: COLOR, emissiveIntensity: 0.5 });
         BendService.applyBend(material);
         // Marker: a downward cone over the target and a ring on the floor under it.
@@ -100,10 +103,11 @@ export class Guide {
         const atmAt = atm ? new THREE.Vector3(atm.x, 0, atm.z) : undefined;
         // Stuck with a full backpack (even after the tutorial): the arrows lead back to sell it.
         if (this.returnToSell && DigProgress.backpackCount >= DigProgress.capacity) return { text: t('guideBackpackFull'), target: atmAt };
-        // Buying the first cosmetic is where the tutorial ends: from there on the player knows the loop.
-        if ((HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id))) return null;
         const door = this.nearestDoor(player);
         const inHub = hubRects().some((r) => Math.abs(player.x - r.x) <= r.width / 2 && Math.abs(player.z - r.z) <= r.depth / 2);
+        // Buying the first cosmetic is where the tutorial ends: from there on the player knows the loop, and the relic
+        // hunt gives them something to dig towards.
+        if ((HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id))) return this.huntStep(inHub, door);
         const tool = DigProgress.nextTool;
         const collection = HUB.stations.find((s) => s.kind === 'collection');
 
@@ -148,6 +152,22 @@ export class Guide {
             return this.digSellLoop(inHub, door, atmAt, unlock.text);
         }
         return null;
+    }
+
+    /**
+     * After the tutorial, while the relic hunt lasts: a reward waiting -> the Trophy Room to claim it; otherwise -> the
+     * named relic's block (out through the nearest doorway first, until it's placed). Null once the hunt is over.
+     */
+    private huntStep(inHub: boolean, door: THREE.Vector3 | undefined): GuideStep | null {
+        if (!this.hunt.guiding) return null;
+        const collection = HUB.stations.find((s) => s.kind === 'collection');
+        if (collection && DigProgress.hasUnclaimed && this.hub.isStationOpen('collection')) {
+            return { text: t('guideClaim'), target: new THREE.Vector3(collection.x, 0, collection.z) };
+        }
+        const relic = this.hunt.relic;
+        if (!relic) return null;
+        const text = t('guideRelic', { name: names.find(relic) });
+        return { text, target: this.hunt.target() ?? (inHub ? door : undefined) };
     }
 
     /**

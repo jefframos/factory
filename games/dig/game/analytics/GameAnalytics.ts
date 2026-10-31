@@ -16,6 +16,7 @@
 //   forced       backpack | tool | hat             visible    a forced tutorial purchase's screen appears (once)
 //   upgrade      tool-<nn>-<toolId>                complete   a tool bought (nn = its level)
 //   upgrade      bag-<nn>-<capacity>               complete   a backpack bought (nn = its level)
+//   upgrade      count-<n>                         complete   the player's nth upgrade (tool or bag), for the first 10
 //   shop         hat-<id> | face-<id> | color-<id> bought     a wardrobe item bought with cash
 //   shop         hat-<id> | face-<id> | color-<id> equip      an owned wardrobe item put on
 //   build        <buildableId>                     complete   a hub piece bought
@@ -27,7 +28,12 @@
 //                                                             material per session)
 //   zone         <zoneId>                          start      a zone reached for the first time
 //   find         <findId>                          complete   an artifact dug up
-//   find         <findId>                          interact   its banner's CLAIM (tapped or on its own)
+//   find         <findId>                          interact   its reward claimed in the Trophy Room
+//   find         count-<n>                         complete   the nth artifact dug up in this mine, for the first 10
+//   find         claimed-<n>                       interact   the nth artifact reward claimed in this mine, first 10
+//   hunt         relic-<n>                         visible    the nth relic after the tutorial's named (RelicHunt: the
+//                                                             next objective, shown right after a claim)
+//   hunt         relic-<n>                         complete   that relic dug up
 //   achievement  <achievementId>-<level>           complete   an achievement level claimed
 //   settings     lang-<code>                       interact   a language picked
 //   phone        sell-x2                           visible    the phone (sell at x2 for a video) appears
@@ -56,6 +62,7 @@
 // Add an event here (and to the table) rather than calling PlatformHandler.measure() directly.
 
 import PlatformHandler from 'core/platforms/PlatformHandler';
+import { DIG } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
 
 /** The tutorial steps, in the order a new player meets them (the funnel). */
@@ -128,10 +135,12 @@ export const GameAnalytics = {
 
     toolBought(level: number, toolId: string): void {
         send('upgrade', `tool-${pad(level)}-${toolId}`, 'complete');
+        upgradeCount();
     },
 
     backpackBought(level: number, capacity: number): void {
         send('upgrade', `bag-${pad(level)}-${capacity}`, 'complete');
+        upgradeCount();
     },
 
     /** `kind` is the wardrobe tab (hats / faces / colors). */
@@ -170,12 +179,23 @@ export const GameAnalytics = {
         send('zone', zoneId, 'start');
     },
 
+    /** Call after DigProgress.addFind(). */
     findDug(findId: string): void {
         send('find', findId, 'complete');
+        const count = DigProgress.collectedCount;
+        if (count <= 10 && DigProgress.once(`find-count-${DigProgress.currentMine}-${count}`)) send('find', `count-${count}`, 'complete');
     },
 
+    /** Call after DigProgress.claimReward(). */
     findClaimed(findId: string): void {
         send('find', findId, 'interact');
+        const count = DIG.finds.filter((find) => DigProgress.found[find.id] && DigProgress.unclaimedFor(find.id) === 0).length;
+        if (count <= 10 && DigProgress.once(`find-claimed-${DigProgress.currentMine}-${count}`)) send('find', `claimed-${count}`, 'interact');
+    },
+
+    /** The relic hunt's nth relic named (`visible`) or dug up (`complete`). */
+    relicHunt(n: number, action: 'visible' | 'complete'): void {
+        if (DigProgress.once(`hunt-${DigProgress.currentMine}-${n}-${action}`)) send('hunt', `relic-${n}`, action);
     },
 
     achievementClaimed(achievementId: string, level: number): void {
@@ -236,6 +256,12 @@ export const GameAnalytics = {
         send('power', toolId, action);
     },
 };
+
+/** The player's nth upgrade (tool or bag), for the first 10: call after the purchase. */
+function upgradeCount(): void {
+    const count = DigProgress.upgradesBought;
+    if (count <= 10 && DigProgress.once(`upgrade-count-${count}`)) send('upgrade', `count-${count}`, 'complete');
+}
 
 /** Faces are image paths (skins/face-x.webp) and colours hex codes: just the name part. */
 function lookId(kind: string, id: string): string {

@@ -238,10 +238,23 @@ export interface DigDesign {
     findPayout: { rarity: Record<Rarity, number>; perZone: number; roundTo: number };
     /** The first artifact turns up on this many blocks dug, wherever the miner digs (MiningController). */
     firstFindAfterBlocks: number;
+    /** After the tutorial, the guide leads to the next relics, one at a time (RelicHunt). */
+    relicHunt: RelicHuntDef;
     /** Buried power and cash chests (VoxelTerrain.chests), and how far their beacons show. */
     chests: ChestsDef;
     /** Rich veins: ore blocks in seeded patches drawn bigger and dropping more (VoxelTerrain.rich). */
     richOre: RichOreDef;
+}
+
+export interface RelicHuntDef {
+    /** Off = no hunt (the baseline: the guide ends with the tutorial). */
+    enabled: boolean;
+    /** How many relics after the first are guided to (counted in the mine's collection). */
+    guided: number;
+    /** A relic buried further than this many blocks from the miner, or in rock their tool can't dig, is moved... */
+    maxDistance: number;
+    /** ...into a diggable block this many blocks [min, max] from them. */
+    place: number[];
 }
 
 /** A kind of chest: its model (and tint) poking out of the block. */
