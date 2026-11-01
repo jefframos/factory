@@ -235,7 +235,7 @@ async function handleApi(req, res, url) {
         return send(res, 200, { ok: true });
     }
     if (url.pathname === '/api/mow/tools' && req.method === 'PUT') {
-        // The Mowers tab: each walked tool's grip, gap and size (matched by id; nothing else of a tool changes).
+        // The Mowers tab: each walked tool's grip (with the hands' turn and offset), gap and size (matched by id; nothing else of a tool changes).
         const edits = await readBody(req);
         if (!Array.isArray(edits)) return send(res, 400, { error: 'Invalid tools' });
         const design = await readJson(MOW_FILE, null);
@@ -247,12 +247,15 @@ async function handleApi(req, res, url) {
             const { grip, gap, size } = edit;
             if (!grip || !num(grip.forward) || !num(grip.height) || !num(grip.spread)) return send(res, 400, { error: `Invalid grip for ${tool.id}` });
             if (!Array.isArray(size) || size.length !== 3 || !size.every(num)) return send(res, 400, { error: `Invalid size for ${tool.id}` });
+            if (!num(gap)) return send(res, 400, { error: `Invalid gap for ${tool.id}` });
+            const hand = grip.hand && num(grip.hand.x) && num(grip.hand.y) && num(grip.hand.z) ? { x: grip.hand.x, y: grip.hand.y, z: grip.hand.z } : null;
             tool.grip = { forward: grip.forward, height: grip.height, spread: grip.spread };
+            if (hand && (hand.x || hand.y || hand.z)) tool.grip.hand = hand;
+            const offset = grip.offset && num(grip.offset.x) && num(grip.offset.y) && num(grip.offset.z) ? { x: grip.offset.x, y: grip.offset.y, z: grip.offset.z } : null;
+            if (offset && (offset.x || offset.y || offset.z)) tool.grip.offset = offset;
+            if (grip.mirror === false) tool.grip.mirror = false;
             tool.size = size;
-            if (!tool.handheld) {
-                if (!num(gap)) return send(res, 400, { error: `Invalid gap for ${tool.id}` });
-                tool.gap = gap;
-            }
+            tool.gap = gap;
         }
         await writeMow(design);
         return send(res, 200, { ok: true });

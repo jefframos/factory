@@ -15,7 +15,7 @@ export interface GrassDef {
     color: string;
     /** The mowed stub's colour. */
     cutColor: string;
-    /** Cutting power needed; a tool one below cuts it slowly, further below not at all. */
+    /** Cutting power needed; a tool below it chews through it slowly (MowDesign.chewSec), too far below not at all. */
     resistance: number;
     /** Clippings per cell. */
     value: number;
@@ -63,6 +63,8 @@ export interface GripDef {
     spread: number;
     /** The hands' turn on the bar (degrees, on top of their rest pose; the left hand's, mirrored for the right). */
     hand?: { x: number; y: number; z: number };
+    /** Where the hands reach, moved off the bar (player space: x outward for each hand, y up, z forward). */
+    offset?: { x: number; y: number; z: number };
     /** The right hand mirrors the left's turn (default); off: both take the same turn. */
     mirror?: boolean;
 }
@@ -122,10 +124,15 @@ export interface DistrictDef {
     /** What happens when it opens: the camera glides over to show it (its ATMs and fence come with it anyway). */
     onUnlock?: { pan?: boolean };
     /**
-     * Its grass's size (default 1): the tufts' height and the effort to chew through grass one power too tough both
+     * Its grass's size (default 1): the tufts' height and the effort to chew through grass too tough both
      * scale by it — under 1 an easier section, over 1 a harder one. Clippings per cell stay the same.
      */
     grassScale?: number;
+    /**
+     * The toughest grass that grows in it (a grass id): anything tougher (the noise's, a patch's) grows as this one
+     * instead, so the section can be finished with the mower that cuts it. None = no cap.
+     */
+    maxGrass?: string;
     /** The camera's distance multiplier while it's the section being worked on (default 1; under 1 = closer). */
     zoom?: number;
 }
@@ -254,7 +261,7 @@ export interface IslandDef {
     water: string;
     waterLevel: number;
     margin: number;
-    /** The island's sides: colour, and how deep they go (below the water). */
+    /** The island's sides (stone blocks, tinted this colour) and how deep they go (below the water). */
     sideColor: string;
     sideDepth: number;
     /** The island's shape: a polygon on the ground (any order, no self-crossing). Without one, the ground's rect. */
@@ -291,10 +298,30 @@ export interface TownLevel {
     sections: DistrictDef[];
 }
 
+/**
+ * Rush mode's combo (GameMode): cutting keeps it alive (it ends `window` seconds after the last cut, or when the bag
+ * fills); every `stepSec` of it the multiplier grows by `step`, up to `max`. Meanwhile each cut's money x (multiplier - 1)
+ * goes into a pot, paid out when it ends.
+ */
+export interface ComboDef {
+    window: number;
+    stepSec: number;
+    step: number;
+    max: number;
+}
+
 export interface MowDesign {
+    /** Which game it is unless the URL says (?mode=calm|rush): GameMode.ts. */
+    mode?: 'calm' | 'rush';
+    combo: ComboDef;
     cell: number;
     seed: number;
     clippingPrice: number;
+    /**
+     * Seconds of contact to chew through one cell of grass n powers too tough (entry n - 1); grass more powers too
+     * tough than it has entries can't be cut at all (a lock until a better mower).
+     */
+    chewSec: number[];
     grass: GrassDef[];
     tools: ToolDef[];
     upgrades: UpgradeDef[];
@@ -313,6 +340,21 @@ export interface MowDesign {
 /** How a ridden mower's tractor is painted: 'grey', a colour, or undefined (its own colours). Same as dig's toolPaint. */
 export function toolPaint(tool: ToolDef): string | undefined {
     return tool.tint ?? (tool.greyscale ? 'grey' : undefined);
+}
+
+/** How many powers short a mower can still chew through (MowDesign.chewSec). */
+export function chewReach(): number {
+    return MOW.chewSec.length;
+}
+
+/** Whether a mower of `power` can cut `grass` at all (at once, or chewing through it). */
+export function canCutGrass(grass: GrassDef, power: number): boolean {
+    return grass.resistance - power <= chewReach();
+}
+
+/** The first mower (shop order) that can cut `grass` at all. */
+export function firstToolFor(grass: GrassDef): ToolDef | undefined {
+    return MOW.tools.find((tool) => canCutGrass(grass, tool.power));
 }
 
 export const TOWN: TownLevel = town as unknown as TownLevel;

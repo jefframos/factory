@@ -1,8 +1,10 @@
-// Mowers tab: the walked tools (ui/mow.json `tools` without `ride`: the scissors and the push mowers), to fit the
-// hands. The preview builds each one as MowPlayer.ts does — the placeholder cube in the tool's size and colour, a
-// pushed one `gap` ahead of the feet with its push handle (rails from the deck's back corners up to a crossbar at the
-// grip), a held one hanging at the grip — and poses the player's arms the same way (each arm aimed at its hand's spot,
-// `spread` off the middle of the grip, over the idle or walk clip). Saves each walked tool's grip, gap and size
+// Mowers tab: the walked tools (ui/mow.json `tools` without `ride`: the reel mower and the push mowers), to fit the
+// hands. The preview builds each one as MowPlayer.ts does — the placeholder mower in the tool's size and colour
+// (MowerModel.ts: a reel mower's bladed barrel between two wheels, or a long deck on four wheels with its engine on top) `gap` ahead of the feet, with its push handle (rails from the deck's
+// back corners, or the reel's axle, up to a crossbar at the grip) — and poses the player's arms the same way (each arm
+// aimed at its hand's spot, `spread` off the middle of the grip, over the idle or walk clip; the hands turned by
+// `grip.hand`, mirrored for the right one unless `grip.mirror` is off; `grip.offset` shifts where the hands reach
+// off the bar, its x outward for each hand). Saves each walked tool's grip, gap and size
 // (PUT /api/mow/tools); its price and stats stay in `tools`.
 
 import * as THREE from 'three';
@@ -17,20 +19,31 @@ const CHARACTER = 'characters/default/characterMedium.fbx';
 const CLIPS = { idle: 'characters/default/idle.glb', walk: 'characters/default/Walking.glb' };
 const TOOL_GAP = 0.7;
 const GRIP = { forward: 0.42, height: 0.95, spread: 0.2 };
-const HELD = { forward: 0.4, height: 0.85, spread: 0.07 };
+const REEL_BLADES = 5;
+const REEL_WHEEL = 1.35;
 const HANDLE_RADIUS = 0.035;
 const BAR_OVERHANG = 0.12;
 const UP = new THREE.Vector3(0, 1, 0);
 
-/** [path in the tool, label, step, min, max, pushed only] */
+/** [path in the tool, label, step, min, max] */
 const FIELDS = [
     ['Grip (where the hands hold it)', [
         ['grip.forward', 'Ahead of the feet', 0.01, 0, 1.5],
         ['grip.height', 'Height', 0.01, 0.3, 1.6],
         ['grip.spread', 'Hands apart (each)', 0.01, 0, 0.5],
     ]],
+    ['Hands (turn on the bar, degrees)', [
+        ['grip.hand.x', 'Turn X', 1, -180, 180],
+        ['grip.hand.y', 'Turn Y', 1, -180, 180],
+        ['grip.hand.z', 'Turn Z', 1, -180, 180],
+    ]],
+    ['Hands (offset from the bar)', [
+        ['grip.offset.x', 'Out (each hand)', 0.005, -0.3, 0.3],
+        ['grip.offset.y', 'Up', 0.005, -0.3, 0.3],
+        ['grip.offset.z', 'Forward', 0.005, -0.3, 0.3],
+    ]],
     ['Mower', [
-        ['gap', 'Gap feet → deck', 0.01, 0, 2, true],
+        ['gap', 'Gap feet → deck', 0.01, 0, 2],
         ['size.0', 'Width', 0.01, 0.1, 3],
         ['size.1', 'Height', 0.01, 0.05, 2],
         ['size.2', 'Length', 0.01, 0.1, 3],
@@ -54,6 +67,7 @@ const toolGroup = new THREE.Group();
 const handMarkers = [0, 1].map(() => new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffd54f, depthTest: false })));
 const handleMaterial = new THREE.MeshStandardMaterial({ color: 0x3a3a40, roughness: 0.6 });
 const deckMaterial = new THREE.MeshStandardMaterial({ color: 0x2b2b30, roughness: 0.8 });
+const engineMaterial = new THREE.MeshStandardMaterial({ color: 0x5a5e66, metalness: 0.5, roughness: 0.45 });
 const clock = new THREE.Clock();
 
 export const hasUnsavedMowerChanges = () => dirty;
@@ -63,11 +77,11 @@ export async function initMowersTab(container) {
     const mow = await api('/api/mow');
     tools = mow.tools.filter((tool) => !tool.ride).map((tool) => ({
         ...tool,
-        grip: { ...(tool.grip ?? (tool.handheld ? HELD : GRIP)) },
+        grip: { ...GRIP, ...tool.grip, hand: { x: 0, y: 0, z: 0, ...tool.grip?.hand }, offset: { x: 0, y: 0, z: 0, ...tool.grip?.offset }, mirror: tool.grip?.mirror !== false },
         gap: tool.gap ?? TOOL_GAP,
         size: [...tool.size],
     }));
-    current = tools.find((tool) => !tool.handheld) ?? tools[0];
+    current = tools[0];
     buildLayout();
     setupViewport(host.querySelector('#mowersViewport'));
     void loadPlayer();
@@ -90,7 +104,7 @@ function buildLayout() {
         ...tools.map((tool) => el('option', { value: tool.id, selected: tool === current }, tool.name)));
     const sections = FIELDS.map(([title, fields]) => el('section', { class: 'card-section' },
         el('h2', {}, title),
-        ...fields.filter(([, , , , , pushedOnly]) => !(pushedOnly && current.handheld)).map(([path, label, step, min, max]) => {
+        ...fields.map(([path, label, step, min, max]) => {
             const number = el('input', { type: 'number', step, value: Number(get(path).toFixed(3)), style: { width: '72px', flex: 'none' } });
             const slider = el('input', { type: 'range', min, max, step, value: get(path), style: { flex: '1', minWidth: '0' } });
             const apply = (raw) => {
@@ -111,7 +125,9 @@ function buildLayout() {
     host.replaceChildren(
         el('aside', { class: 'sidebar left' },
             el('section', { class: 'card-section' }, el('h2', {}, 'Tool'), el('label', { class: 'field' }, el('span', {}, 'Walked tool'), picker),
-                el('p', { class: 'muted' }, current.handheld ? 'Held in the hands (hangs at the grip).' : 'Pushed: the crossbar sits at the grip.')),
+                el('p', { class: 'muted' }, current.reel ? 'Reel mower: the handle runs from the barrel\'s axle to the crossbar at the grip.' : 'Pushed: the crossbar sits at the grip.'),
+                el('label', { class: 'field check' }, el('input', { type: 'checkbox', checked: current.grip.mirror, onchange: (event) => { current.grip.mirror = event.target.checked; touch(); } }),
+                    el('span', {}, 'Right hand mirrors the left hand\'s turn'))),
             ...sections),
         el('div', { class: 'stage-area' },
             el('div', { class: 'toolbar' },
@@ -120,7 +136,7 @@ function buildLayout() {
                 el('span', { class: 'spacer' }),
                 el('span', { id: 'mowers-status' })),
             el('div', { id: 'mowersViewport', style: { position: 'relative', flex: '1', minHeight: '0', overflow: 'hidden' } }),
-            el('div', { class: 'hint-bar' }, 'Drag to orbit, wheel to zoom. The player faces +Z (the blue axis). The yellow dots are where the hands go: fit the grip so they sit on the crossbar.')),
+            el('div', { class: 'hint-bar' }, 'Drag to orbit, wheel to zoom. The player faces +Z (the blue axis). The yellow dots are where the hands go: fit the grip so they sit on the crossbar, then turn the hands round it.')),
     );
     const viewport = host.querySelector('#mowersViewport');
     if (renderer) {
@@ -210,26 +226,79 @@ function buildTool() {
     const tool = current;
     const [width, height, length] = tool.size;
     const { grip } = tool;
-    const cube = new THREE.Mesh(new THREE.BoxGeometry(width, height, length), new THREE.MeshStandardMaterial({ color: tool.color, roughness: 0.5 }));
-    if (tool.handheld) {
-        toolGroup.position.set(0, grip.height, grip.forward);
-        toolGroup.add(cube);
-    } else {
-        const ahead = tool.gap + length / 2;
-        toolGroup.position.set(0, 0, ahead);
-        cube.position.y = height / 2 + 0.05;
-        toolGroup.add(cube);
-        const blade = new THREE.Mesh(new THREE.BoxGeometry(width * 1.05, 0.06, length * 1.05), deckMaterial);
-        blade.position.y = 0.05;
-        toolGroup.add(blade);
-        const gripZ = grip.forward - ahead;
-        const barHalf = grip.spread + BAR_OVERHANG;
-        const railX = Math.max(0.08, Math.min(width / 2 - 0.08, barHalf));
-        for (const side of [-1, 1]) {
-            toolGroup.add(tube(new THREE.Vector3(side * railX, height + 0.05, -length / 2 + 0.08), new THREE.Vector3(side * barHalf, grip.height, gripZ)));
+    const body = new THREE.MeshStandardMaterial({ color: tool.color, roughness: 0.5 });
+    const ahead = tool.gap + length / 2;
+    toolGroup.position.set(0, 0, ahead);
+    let base;
+    if (tool.reel) {
+        const steel = new THREE.MeshStandardMaterial({ color: 0xd9dde3, metalness: 0.6, roughness: 0.35 });
+        const radius = height / 2;
+        const wheelRadius = radius * REEL_WHEEL;
+        const barrel = new THREE.Group();
+        barrel.position.y = wheelRadius;
+        const core = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.35, radius * 0.35, width, 10), body);
+        core.rotation.z = Math.PI / 2;
+        barrel.add(core);
+        for (let i = 0; i < REEL_BLADES; i++) {
+            const angle = (i / REEL_BLADES) * Math.PI * 2;
+            const blade = new THREE.Mesh(new THREE.BoxGeometry(width, 0.02, radius * 0.3), steel);
+            blade.position.set(0, Math.sin(angle) * radius * 0.85, Math.cos(angle) * radius * 0.85);
+            blade.rotation.set(-angle, 0.18, 0, 'XYZ');
+            barrel.add(blade);
         }
-        toolGroup.add(tube(new THREE.Vector3(-barHalf - HANDLE_RADIUS, grip.height, gripZ), new THREE.Vector3(barHalf + HANDLE_RADIUS, grip.height, gripZ)));
+        toolGroup.add(barrel);
+        for (const side of [-1, 1]) {
+            const wheel = new THREE.Mesh(new THREE.CylinderGeometry(wheelRadius, wheelRadius, 0.05, 16), deckMaterial);
+            wheel.rotation.z = Math.PI / 2;
+            wheel.position.set(side * (width / 2 + 0.03), wheelRadius, 0);
+            const hub = new THREE.Mesh(new THREE.CylinderGeometry(wheelRadius * 0.45, wheelRadius * 0.45, 0.06, 12), body);
+            hub.rotation.z = Math.PI / 2;
+            hub.position.copy(wheel.position);
+            toolGroup.add(wheel, hub);
+        }
+        const roller = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, width, 8), deckMaterial);
+        roller.rotation.z = Math.PI / 2;
+        roller.position.set(0, 0.04, -length / 2);
+        toolGroup.add(roller);
+        base = { x: width / 2 + 0.07, y: wheelRadius, z: 0 };
+    } else {
+        // As MowerModel.ts: a long low deck on four wheels, a dark skirt, the engine (a cylinder with a cap) in the middle.
+        const cylinder = (radius, h, material, segments = 16) => new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, h, segments), material);
+        const wheelRadius = Math.max(0.07, height * 0.2);
+        const deckBottom = wheelRadius * 0.55;
+        const deckHeight = height * 0.3;
+        const deckTop = deckBottom + deckHeight;
+        const deck = new THREE.Mesh(new THREE.BoxGeometry(width, deckHeight, length), body);
+        deck.position.y = deckBottom + deckHeight / 2;
+        const skirt = new THREE.Mesh(new THREE.BoxGeometry(width * 1.04, 0.05, length * 1.03), deckMaterial);
+        skirt.position.y = deckBottom;
+        toolGroup.add(deck, skirt);
+        for (const sx of [-1, 1]) {
+            for (const sz of [-1, 1]) {
+                const wheel = cylinder(wheelRadius, 0.06, deckMaterial);
+                wheel.rotation.z = Math.PI / 2;
+                wheel.position.set(sx * (width / 2 + 0.03), wheelRadius, sz * (length / 2 - wheelRadius * 1.1));
+                toolGroup.add(wheel);
+            }
+        }
+        const engineRadius = Math.min(width, length) * 0.27;
+        const engineHeight = height * 0.45;
+        const engine = cylinder(engineRadius, engineHeight, engineMaterial, 18);
+        engine.position.set(0, deckTop + engineHeight / 2, -length * 0.04);
+        const cap = cylinder(engineRadius * 0.72, height * 0.1, deckMaterial, 18);
+        cap.position.set(0, deckTop + engineHeight + height * 0.05, engine.position.z);
+        const fuel = cylinder(engineRadius * 0.18, height * 0.08, body, 10);
+        fuel.position.set(engineRadius * 0.35, cap.position.y + height * 0.07, engine.position.z + engineRadius * 0.2);
+        toolGroup.add(engine, cap, fuel);
+        base = { x: 0, y: deckTop, z: -length / 2 + 0.08 };
     }
+    const gripZ = grip.forward - ahead;
+    const barHalf = grip.spread + BAR_OVERHANG;
+    const railX = tool.reel ? base.x : Math.max(0.08, Math.min(width / 2 - 0.08, barHalf));
+    for (const side of [-1, 1]) {
+        toolGroup.add(tube(new THREE.Vector3(side * railX, base.y, base.z), new THREE.Vector3(side * barHalf, grip.height, gripZ)));
+    }
+    toolGroup.add(tube(new THREE.Vector3(-barHalf - HANDLE_RADIUS, grip.height, gripZ), new THREE.Vector3(barHalf + HANDLE_RADIUS, grip.height, gripZ)));
     // Left is +X when facing +Z (MowPlayer: left = UP x forward).
     handMarkers[0].position.set(grip.spread, grip.height, grip.forward);
     handMarkers[1].position.set(-grip.spread, grip.height, grip.forward);
@@ -291,7 +360,10 @@ const aimParent = new THREE.Quaternion();
 function holdPose() {
     if (!rig) return;
     rig.updateMatrixWorld(true);
-    [['Left', handMarkers[0].position], ['Right', handMarkers[1].position]].forEach(([side, target]) => {
+    const offset = current.grip.offset;
+    [['Left', handMarkers[0].position, 1], ['Right', handMarkers[1].position, -1]].forEach(([side, marker, out]) => {
+        // As MowPlayer: the hands reach the bar's spot moved by the grip's offset (x outward for each hand).
+        const target = marker.clone().add(new THREE.Vector3(offset.x * out, offset.y, offset.z));
         const arm = bone(`${side}Arm`);
         const fore = bone(`${side}ForeArm`);
         const hand = bone(`${side}Hand`);
@@ -300,7 +372,11 @@ function holdPose() {
         aim(fore, hand, target);
         const rest = handRest.get(hand);
         if (rest) {
-            hand.quaternion.copy(rest);
+            // As MowPlayer: the grip's turn on top of the rest pose, mirrored for the right hand unless turned off.
+            const turn = current.grip.hand;
+            const flip = side === 'Right' && current.grip.mirror ? -1 : 1;
+            const rad = THREE.MathUtils.degToRad;
+            hand.quaternion.copy(rest).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(rad(turn.x), rad(turn.y * flip), rad(turn.z * flip))));
             hand.updateMatrixWorld(true);
         }
     });

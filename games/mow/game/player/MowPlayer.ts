@@ -2,10 +2,10 @@
 //
 // The player: dig's character controller (RigidBody + PlayerMovementController for WASD / the on-screen joystick,
 // FacingComponent, the animated rig) walking at the current tool's speed (MowProgress.speed), with the tool in front
-// of them, for now a placeholder cube in the tool's size and colour (ui/mow.json `tools`), swapped when a better one
-// is bought: a mower out in front on the ground with a push handle (two rails up from the deck's back corners to a
-// crossbar the hands hold), the scissors held in the hands. Where the hands go is the tool's `grip` (edited in the
-// editor's Mowers tab, which builds the same handle: web/public/mowers.js). The legs walk with the animation while the
+// of them, for now a placeholder mower in the tool's size and colour (MowerModel.ts, ui/mow.json `tools`), swapped when a better one
+// is bought: a mower out in front on the ground with a push handle (two rails up from the deck's back corners — a
+// reel mower's axle — to a crossbar the hands hold). Where the hands go, and how they turn on the bar, is the tool's
+// `grip` (edited in the editor's Mowers tab, which builds the same mowers: web/public/mowers.js). The legs walk with the animation while the
 // arms hold the tool (holdPose: the arms aimed at the grip each frame, after the animation). `cutPoint()` is where the
 // tool cuts, on the ground.
 
@@ -24,6 +24,7 @@ import { MowProgress, Look } from '../data/MowProgress';
 import hatFits from '../../ui/hatfits.json';
 import { GripDef, ToolDef } from '../data/MowConfig';
 import { BendService } from '../services/BendService';
+import { addHandle, buildMower, handleOf, pushAhead, toolGrip, REEL_WHEEL } from './MowerModel';
 
 const HALF_EXTENTS = new THREE.Vector3(0.4, 0.9, 0.4);
 /** The character rig is authored in FBX units; same scale as dig's miner. */
@@ -34,16 +35,6 @@ const HAT_SINK = 0.03;
 const HAT_WIDTH_FIT = 1.05;
 type HatFit = { x: number; y: number; z: number; scale: number; rotationY: number };
 const HAT_FITS = hatFits as { default: HatFit; hats: Record<string, Partial<HatFit>> };
-/** Gap between the feet and a pushed tool's back edge (room for the handle and the walk), without the tool's `gap`. */
-const TOOL_GAP = 0.7;
-/** Where the hands hold a pushed tool's handle, without the tool's `grip`. */
-const GRIP: GripDef = { forward: 0.42, height: 0.95, spread: 0.2 };
-/** Where the hands hold a held tool (the scissors) without its `grip`, and how far ahead it cuts. */
-const HELD: GripDef = { forward: 0.4, height: 0.85, spread: 0.07 };
-const HELD_CUT_AHEAD = 0.55;
-/** The push handle: tube radius, and how far the crossbar runs past each hand. */
-const HANDLE_RADIUS = 0.035;
-const BAR_OVERHANG = 0.12;
 const UP = new THREE.Vector3(0, 1, 0);
 const modelUrl = (fullPath: string): string => `./${fullPath}`;
 
@@ -58,6 +49,11 @@ export default class MowPlayer extends Entity {
     private readonly gripAt = new THREE.Vector3();
     private readonly handleMaterial = new THREE.MeshStandardMaterial({ color: 0x3a3a40, roughness: 0.6 });
     private readonly handTarget = new THREE.Vector3();
+    /** A reel mower's barrel (spun by the distance walked) and where the tool was last frame. */
+    private reel?: THREE.Object3D;
+    private readonly lastToolAt = new THREE.Vector3();
+    private readonly handTurn = new THREE.Quaternion();
+    private readonly handEuler = new THREE.Euler();
     private readonly handTarget2 = new THREE.Vector3();
     private readonly aimFrom = new THREE.Vector3();
     private readonly aimCurrent = new THREE.Vector3();
@@ -154,65 +150,26 @@ export default class MowPlayer extends Entity {
         character.container.updateMatrixWorld(true);
     }
 
-    /** Where the hands hold a tool (its `grip`, or the default for its kind). */
-    private static grip(tool: ToolDef): GripDef {
-        return tool.grip ?? (tool.handheld ? HELD : GRIP);
-    }
-
-    /** How far ahead of the feet a pushed tool's middle is. */
-    private static pushAhead(tool: ToolDef): number {
-        return (tool.gap ?? TOOL_GAP) + tool.size[2] / 2;
-    }
-
     /**
-     * Builds the tool's placeholder: a cube in its size and colour, with a darker deck where it cuts; a pushed one
-     * gets its handle, in its own frame (centred on the cut point, +Z ahead): rails from the deck's back corners up to
-     * a crossbar at the grip.
+     * Builds the tool's placeholder (MowerModel.ts: a reel mower, or a long deck with its engine on top), in its own
+     * frame (centred on the cut point, +Z ahead), and the push handle — rails from the deck's back corners (the reel's
+     * axle ends) up to a crossbar at the grip.
      */
     private showTool(tool: ToolDef): void {
         this.toolDef = tool;
         this.tool.clear();
-        const [width, height, length] = tool.size;
-        const body = new THREE.MeshStandardMaterial({ color: tool.color, roughness: 0.5 });
-        const deck = new THREE.MeshStandardMaterial({ color: 0x2b2b30, roughness: 0.8 });
-        BendService.applyBend(body);
-        BendService.applyBend(deck);
-        const cube = new THREE.Mesh(new THREE.BoxGeometry(width, height, length), body);
-        // Held tools hang from the hands (centred); pushed ones stand on the ground.
-        cube.position.y = tool.handheld ? 0 : height / 2 + 0.05;
-        this.tool.add(cube);
-        if (!tool.handheld) {
-            const blade = new THREE.Mesh(new THREE.BoxGeometry(width * 1.05, 0.06, length * 1.05), deck);
-            blade.position.y = 0.05;
-            this.tool.add(blade);
-            const grip = MowPlayer.grip(tool);
-            const gripZ = grip.forward - MowPlayer.pushAhead(tool);
-            const barHalf = grip.spread + BAR_OVERHANG;
-            const railX = Math.max(0.08, Math.min(width / 2 - 0.08, barHalf));
-            const baseY = height + 0.05;
-            const baseZ = -length / 2 + 0.08;
-            for (const side of [-1, 1]) {
-                this.tool.add(this.tube(new THREE.Vector3(side * railX, baseY, baseZ), new THREE.Vector3(side * barHalf, grip.height, gripZ)));
-            }
-            this.tool.add(this.tube(new THREE.Vector3(-barHalf - HANDLE_RADIUS, grip.height, gripZ), new THREE.Vector3(barHalf + HANDLE_RADIUS, grip.height, gripZ)));
-        }
+        const model = buildMower(tool, (material) => BendService.applyBend(material));
+        const { grip, gripZ } = handleOf(tool);
+        addHandle(model, tool, grip, gripZ, this.handleMaterial);
+        this.tool.add(model.group);
+        this.reel = model.reel;
     }
 
-    /** A handle tube from `a` to `b` (the tool's frame). */
-    private tube(a: THREE.Vector3, b: THREE.Vector3): THREE.Mesh {
-        const length = a.distanceTo(b);
-        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(HANDLE_RADIUS, HANDLE_RADIUS, length, 8), this.handleMaterial);
-        mesh.position.copy(a).add(b).multiplyScalar(0.5);
-        mesh.quaternion.setFromUnitVectors(UP, b.clone().sub(a).normalize());
-        return mesh;
-    }
-
-    /** Where the tool cuts: on the ground in front — the middle of a pushed tool, a step ahead for a held one. */
+    /** Where the tool cuts: on the ground in front, the middle of the mower. */
     public cutPoint(out = new THREE.Vector3()): THREE.Vector3 {
         if (this.riding && this.ridePoint) return this.ridePoint(out);
         const tool = this.toolDef ?? MowProgress.tool;
-        const ahead = tool.handheld ? HELD_CUT_AHEAD : MowPlayer.pushAhead(tool);
-        return out.copy(this.transform.position).addScaledVector(this.facing(), ahead).setY(0);
+        return out.copy(this.transform.position).addScaledVector(this.facing(), pushAhead(tool)).setY(0);
     }
 
     /** The way the character faces (on the ground). */
@@ -223,29 +180,39 @@ export default class MowPlayer extends Entity {
     }
 
     /**
-     * Call after the world has updated (the walk / idle animation has posed the body): places the tool (a pushed one
-     * out in front on the ground with its handle up to the hands, a held one in the hands) and swaps it after a
+     * Call after the world has updated (the walk / idle animation has posed the body): places the tool (out in front
+     * on the ground with its handle up to the hands; a reel spins with the ground covered) and swaps it after a
      * purchase, then poses the arms to hold it (holdPose). Not `update()`: that is Entity's, which runs the components.
      */
     public syncTool(): void {
         const tool = MowProgress.tool;
-        if (tool !== this.toolDef) this.showTool(tool);
+        const changed = tool !== this.toolDef;
+        if (changed) this.showTool(tool);
         // A ridden mower is the tractor (TractorRide), never in the hands: on foot the hands are free.
         this.tool.visible = !tool.ride;
         if (tool.ride) return;
         const forward = this.facing();
         const left = this.left.crossVectors(UP, forward);
-        const grip = MowPlayer.grip(tool);
+        const grip = toolGrip(tool);
         const gripAt = this.gripAt.copy(this.transform.position).addScaledVector(forward, grip.forward).setY(grip.height);
         const container = this.loaded?.container;
         if (container) this.tool.quaternion.copy(container.quaternion);
-        if (tool.handheld) {
-            this.tool.position.copy(gripAt);
-        } else {
-            this.cutPoint(this.tool.position);
+        this.cutPoint(this.tool.position);
+        if (this.reel && !changed) {
+            const at = this.tool.position;
+            const moved = (at.x - this.lastToolAt.x) * forward.x + (at.z - this.lastToolAt.z) * forward.z;
+            this.reel.rotation.x += moved / Math.max(0.05, (tool.size[1] / 2) * REEL_WHEEL) * 3;
         }
+        this.lastToolAt.copy(this.tool.position);
         if (container) {
-            this.holdPose(this.handTarget.copy(gripAt).addScaledVector(left, grip.spread), this.handTarget2.copy(gripAt).addScaledVector(left, -grip.spread));
+            // The hands reach the bar moved by the grip's offset (x outward for each hand); the bar stays put.
+            const offset = grip.offset;
+            const out = grip.spread + (offset?.x ?? 0);
+            const lift = offset?.y ?? 0;
+            const ahead = offset?.z ?? 0;
+            this.handTarget.copy(gripAt).addScaledVector(left, out).addScaledVector(forward, ahead).setY(grip.height + lift);
+            this.handTarget2.copy(gripAt).addScaledVector(left, -out).addScaledVector(forward, ahead).setY(grip.height + lift);
+            this.holdPose(this.handTarget, this.handTarget2, grip);
         }
     }
 
@@ -254,7 +221,7 @@ export default class MowPlayer extends Entity {
      * reaches its grip (the upper arm aimed at it, then the forearm) after the animation has posed the frame, so the
      * legs keep walking and the arms stay on the handle. Aiming (not set angles) works whatever the rig's bone axes are.
      */
-    private holdPose(leftHand: THREE.Vector3, rightHand: THREE.Vector3): void {
+    private holdPose(leftHand: THREE.Vector3, rightHand: THREE.Vector3, grip: GripDef): void {
         const body = this.loaded!.body;
         this.loaded!.container.updateMatrixWorld(true);
         for (const [side, target] of [['Left', leftHand], ['Right', rightHand]] as const) {
@@ -266,7 +233,12 @@ export default class MowPlayer extends Entity {
             this.aim(fore, hand, target);
             const rest = this.handRest.get(hand);
             if (rest) {
-                hand.quaternion.copy(rest);
+                // The grip's turn on top of the rest pose (mirrored for the right hand unless `mirror` is off).
+                const turn = grip.hand ?? { x: 0, y: 0, z: 0 };
+                const flip = side === 'Right' && grip.mirror !== false ? -1 : 1;
+                const rad = THREE.MathUtils.degToRad;
+                this.handTurn.setFromEuler(this.handEuler.set(rad(turn.x), rad(turn.y * flip), rad(turn.z * flip)));
+                hand.quaternion.copy(rest).multiply(this.handTurn);
                 hand.updateMatrixWorld(true);
             }
         }

@@ -21,6 +21,10 @@
 // The guide (no text, just the arrows): a full bag -> the nearest ATM; the first mower or the first upgrade
 // affordable -> the nearest ATM (and the hand on the shop's BUY button); a newly opened district -> its grass.
 //
+// Modes (GameMode, ?mode=calm|rush): both get the path stripes (GrassField), a pop at each quarter of a section
+// (updateDistrictBar) and the restored banner (MowHud.celebrate); rush adds the combo meter (Combo): mowing on
+// without a break raises a multiplier, and the extra money it piled up is paid when the run ends.
+//
 // Camera: dig's follow camera — a fixed yaw / pitch orbit around a smoothed follow point.
 
 import * as THREE from 'three';
@@ -39,15 +43,18 @@ import { TractorRide } from '../player/TractorRide';
 import { ArrowGuide } from '../world/ArrowGuide';
 import type { Box } from '../world/GuidePath';
 import { MowingSystem } from '../mowing/MowingSystem';
+import { Combo } from '../mowing/Combo';
+import { isRush } from '../data/GameMode';
 import { MowHud, ShopHint } from '../ui/MowHud';
 import { MowEffects } from '../vfx/MowEffects';
-import { MOW, TreasureDef } from '../data/MowConfig';
+import { MOW, TreasureDef, firstToolFor } from '../data/MowConfig';
 import { TreasureBeacons } from '../world/TreasureBeacons';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { MowProgress } from '../data/MowProgress';
 import { Gameplay } from '../data/Gameplay';
 import { MowAudio } from '../audio/MowAudio';
 import { EngineSound } from '../audio/EngineSound';
+import { GrassLocks } from '../world/GrassLocks';
 import { GameAnalytics } from '../analytics/GameAnalytics';
 import { t, names, Localization } from '../i18n/Localization';
 
@@ -86,6 +93,10 @@ const RELIEF_MARGIN = 1.25;
 const RELIEF_SEC = 3;
 /** At least this many cells grow back a second while relief is under way. */
 const RELIEF_MIN_RATE = 8;
+/** Confetti over a restored section: chip colours. */
+/** Flower clumps per square unit of a restored section. */
+const FLOWER_DENSITY = 0.04;
+const CONFETTI = [0xff5a6e, 0xffd23f, 0x4fc3ff, 0x9cff6a, 0xc36bff, 0xffffff].map((c) => new THREE.Color(c));
 
 function cameraOffset(camera: THREE.PerspectiveCamera, zoom: number): THREE.Vector3 {
     const yaw = THREE.MathUtils.degToRad(MOW_CAMERA.yawDeg);
@@ -121,6 +132,8 @@ export default class MowScene extends ThreeScene {
     private onAtm = -1;
     /** Beams over the treasures still hidden near the player. */
     private beacons!: TreasureBeacons;
+    /** Padlocks (with the mower it takes) over grass the mower can't cut. */
+    private locks!: GrassLocks;
     /** Each treasure's model, fitted to its size (loaded behind the game: treasureModels()). */
     private readonly treasureModels = new Map<string, THREE.Object3D>();
     /** The wardrobe whose pad the player stands on, or -1. */
@@ -137,6 +150,10 @@ export default class MowScene extends ThreeScene {
     private readonly occlusionTarget = new THREE.Vector3();
     /** A camera pan to a newly opened section: where to, and how far through it (seconds); the player waits. */
     private pan: { to: THREE.Vector3; time: number } | null = null;
+    /** Per section: the quarters of it already celebrated (updateDistrictBar). */
+    private milestones: number[] = [];
+    /** Rush mode's combo meter (null in calm mode). */
+    private combo: Combo | null = null;
 
     public constructor(game: Game) {
         super(game);
@@ -162,6 +179,7 @@ export default class MowScene extends ThreeScene {
             this.town.bloom(this.flowerSpots(district));
             for (const item of MOW.treasures.items) if (item.area === district.id && MowProgress.findTreasure(item.id)) GameAnalytics.treasureFound(item.id);
         });
+        this.milestones = MOW.districts.map((_, d) => Math.floor(this.grass.progress(d) * 4));
         this.grass.placeTreasures((id) => MowProgress.treasureFound(id));
         this.beacons = new TreasureBeacons(this.threeScene, this.grass, (id) => !MowProgress.treasureFound(id));
 
@@ -174,16 +192,24 @@ export default class MowScene extends ThreeScene {
         this.guide = new ArrowGuide(this.threeScene, () => this.town.blockers, () => this.town.unstandable());
         this.hud = this.createHud();
         Localization.onLocaleChange.add(this.onLocaleChange, this);
+        if (isRush) this.combo = this.createCombo();
+        this.locks = new GrassLocks(this.threeScene, this.grass, (d) => this.town.isOpen(d));
         this.mowing = new MowingSystem(this.grass, this.player, this.effects, (d) => this.town.isOpen(d), () => {
+            this.combo?.end();
             this.hud.say(t('bagFull'), 0xff8a7a);
             this.hud.flashBag();
             this.effects.floatText(this.player.pickupPoint(new THREE.Vector3()).setY(2.4), t('bagFullFloat'), '#ff8a7a');
             GameAnalytics.bagFull();
             GameAnalytics.tutorialStep('bag-full');
         }, (grass) => {
-            const tool = MOW.tools.find((tl) => tl.power >= grass.resistance - 1);
+            const tool = firstToolFor(grass);
+            if (tool) {
+                const at = (this.mowing.wall ?? this.player.transform.position).clone().setY(2.2);
+                this.effects.floatText(at, t('needsToolShort', { tool: names.tool(tool) }).toUpperCase(), '#ff8a7a');
+            }
             this.hud.say(tool ? t('needsTool', { grass: names.grass(grass), tool: names.tool(tool) }) : t('needsPower', { grass: names.grass(grass) }), 0xffd9a8);
-        }, () => {
+        }, (_cells, clippings) => {
+            this.combo?.cut(clippings * MOW.clippingPrice * (1 + MowProgress.moneyBonus));
             GameAnalytics.tutorialStep('cut');
             this.fresh.forEach((d) => {
                 if (this.grass.progress(d) > 0.02) this.fresh.delete(d);
@@ -222,6 +248,24 @@ export default class MowScene extends ThreeScene {
             isStatic: true,
             layer: Layers.Environment,
         }));
+    }
+
+    /** Rush mode's combo: a chime and sparkles as it climbs, its pot paid (and shown) when it ends. */
+    private createCombo(): Combo {
+        return new Combo(MOW.combo, {
+            onStep: () => {
+                MowAudio.play('item');
+                const at = this.player.pickupPoint(new THREE.Vector3());
+                for (let i = 0; i < 4; i++) this.effects.sparkle(at, new THREE.Color(0xffe27a), 0.45);
+            },
+            onEnd: (pot, multiplier) => {
+                if (pot <= 0 || this.sceneDestroyed) return;
+                MowProgress.addMoney(pot);
+                this.hud.comboPaid(pot, multiplier);
+                MowAudio.play('coins');
+                this.effects.floatText(this.player.pickupPoint(new THREE.Vector3()).setY(2.6), `+$${pot}`, '#ffe27a');
+            },
+        });
     }
 
     private createHud(): MowHud {
@@ -269,6 +313,8 @@ export default class MowScene extends ThreeScene {
         this.town.bodyRadius = this.tractor.isRiding ? MOW.tractor.bodyRadius : 0.35;
         this.grass.update();
         this.beacons.update(delta, this.player.transform.position);
+        if (this.mowing.wall) this.locks.bump(this.mowing.wall);
+        this.locks.update(delta, this.player.transform.position, MowProgress.power);
         this.effects.update(delta);
         this.updateEngine(delta);
         this.updateGuide(delta);
@@ -280,6 +326,10 @@ export default class MowScene extends ThreeScene {
     public fixedUpdate(delta: number): void {
         this.world.fixedUpdate(delta);
         this.mowing.fixedUpdate(delta);
+        if (this.combo) {
+            this.combo.update(delta);
+            this.hud.setCombo(this.combo.multiplier, this.combo.pot, this.combo.timeShare);
+        }
         this.updateRelief(delta);
         this.updateStations();
         this.checkRestoration();
@@ -315,7 +365,7 @@ export default class MowScene extends ThreeScene {
         this.threeCamera.lookAt(this.followTarget);
     }
 
-    /** Powered mowers run an engine (rising with the speed); the scissors and the push mower are quiet. */
+    /** Powered mowers run an engine (rising with the speed); the reel and the push mower are quiet. */
     private updateEngine(delta: number): void {
         // A ridden mower's engine runs only while it's ridden.
         const engine = MowProgress.tool.engine === true && (!MowProgress.tool.ride || this.tractor.isRiding);
@@ -505,9 +555,17 @@ export default class MowScene extends ThreeScene {
         this.hud.say(t('grassRegrows'), 0x9cff9c);
     }
 
+    /** The bar at the top, and a pop each time the section shown passes another quarter (25 / 50 / 75%). */
     private updateDistrictBar(): void {
         const d = this.currentDistrict();
-        this.hud.setDistrict(d, MowProgress.isRestored(MOW.districts[d].id) ? 1 : this.grass.progress(d));
+        const restored = MowProgress.isRestored(MOW.districts[d].id);
+        const share = restored ? 1 : this.grass.progress(d);
+        this.hud.setDistrict(d, share);
+        const quarter = Math.min(3, Math.floor(share * 4));
+        if (restored || !this.town.isOpen(d) || quarter <= this.milestones[d]) return;
+        this.milestones[d] = quarter;
+        this.hud.milestone(quarter * 25);
+        MowAudio.play('quest');
     }
 
     /** A district at its goal: the stragglers go, it brightens and blooms, its bonus is paid, the next one opens. */
@@ -520,18 +578,26 @@ export default class MowScene extends ThreeScene {
             this.grass.cutAll(d);
             MowProgress.grassChanged();
             this.grass.setRestored(d);
-            this.town.bloom(this.flowerSpots(district));
+            this.town.bloom(this.flowerSpots(district), true);
             MowProgress.restore(district.id, district.bonus);
             GameAnalytics.districtRestored(district.id);
             if (d === 0) GameAnalytics.tutorialStep('yard-restored');
             if (district.id === 'park') GameAnalytics.tutorialStep('park-restored');
             MowAudio.play('applause');
             MowAudio.play('cheer');
-            this.hud.say(t('districtRestored', { name: names.district(district).toUpperCase() }), 0x9cff9c);
-            this.effects.floatText(this.player.pickupPoint(new THREE.Vector3()).setY(2.6), `+$${district.bonus}`, '#ffe27a');
+            this.hud.celebrate(names.district(district).toUpperCase(), district.bonus);
+            MowAudio.play('complete');
             for (let i = 0; i < 8; i++) {
                 const at = new THREE.Vector3(district.x + (Math.random() - 0.5) * district.width, 0.5, district.z + (Math.random() - 0.5) * district.depth);
                 this.effects.smoke(at, 3, 1, new THREE.Color(0xfff2a0), 0.8);
+            }
+            // Confetti round the player, in waves.
+            for (let wave = 0; wave < 4; wave++) {
+                gsap.delayedCall(wave * 0.18, () => {
+                    if (this.sceneDestroyed) return;
+                    const at = this.player.transform.position;
+                    CONFETTI.forEach((color) => this.effects.burst(new THREE.Vector3(at.x + (Math.random() - 0.5) * 3, 0, at.z + (Math.random() - 0.5) * 3), color, 4, 5));
+                });
             }
             const next = d + 1;
             if (next < MOW.districts.length && !this.town.isOpen(next)) {
@@ -542,7 +608,9 @@ export default class MowScene extends ThreeScene {
                 gsap.delayedCall(1.6, () => {
                     if (this.sceneDestroyed) return;
                     this.hud.say(t('districtUnlocked', { name: names.district(nextDistrict).toUpperCase() }), 0x8fe3ff);
-                    MowAudio.play('reveal');
+                    // Uplifting: the victory fanfare with a shimmer (dig's "reveal" read as an error here).
+                    MowAudio.play('buyFanfare');
+                    MowAudio.play('sparkle');
                 });
             }
         });
@@ -556,7 +624,8 @@ export default class MowScene extends ThreeScene {
             seed = (seed * 9301 + 49297) % 233280;
             return seed / 233280;
         };
-        const count = Math.round(district.width * district.depth * 0.25);
+        // Sparse: a sprinkle of colour over the lawn, not a flower bed.
+        const count = Math.round(district.width * district.depth * FLOWER_DENSITY);
         for (let i = 0; i < count; i++) {
             const x = district.x + (random() - 0.5) * district.width;
             const z = district.z + (random() - 0.5) * district.depth;
@@ -649,6 +718,7 @@ export default class MowScene extends ThreeScene {
         this.guide?.destroy();
         this.effects?.destroy();
         this.beacons?.destroy();
+        this.locks?.destroy();
         this.grass?.destroy();
         this.town?.destroy();
         this.tractor?.destroy();

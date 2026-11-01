@@ -1,7 +1,7 @@
 // EngineSound.ts
 //
 // The tractor's engine (there is no engine recording in the game's audio): synthesised live with the Web Audio
-// context Howler already runs — a sawtooth and a square an octave below through a low-pass filter, its loudness
+// context Howler already runs — a triangle and a square an octave below through a low-pass filter, its loudness
 // chugging with a low LFO (the "putt-putt"), all rising in pitch, brightness and chug with the driving speed.
 // It plays through Howler's master gain, so the game's mute, the platform's mute and MowAudio's pause (Howler's
 // volume to 0) silence it like every other sound.
@@ -9,12 +9,13 @@
 import { Howler } from 'howler';
 
 /** Idle -> full speed. */
-const PITCH = { idle: 38, full: 72 };
-const CUTOFF = { idle: 320, full: 1100 };
-const CHUG = { idle: 7, full: 17 };
-const VOLUME = { idle: 0.05, full: 0.11 };
+const PITCH = { idle: 36, full: 58 };
+const CUTOFF = { idle: 200, full: 520 };
+const CHUG = { idle: 6, full: 12 };
+// Kept low: it loops the whole time a powered mower is out, so it should sit under the music and the cuts.
+const VOLUME = { idle: 0.022, full: 0.045 };
 /** Seconds the levels take to follow the speed (and to fade in / out). */
-const GLIDE = 0.12;
+const GLIDE = 0.3;
 const FADE = 0.25;
 
 export class EngineSound {
@@ -30,24 +31,24 @@ export class EngineSound {
         out.gain.value = 0;
         const filter = ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.Q.value = 4;
+        filter.Q.value = 0.9;
         filter.frequency.value = CUTOFF.idle;
-        // The chug: an LFO swinging a gain stage between ~30% and 100%.
+        // The chug: an LFO swinging a gain stage between ~60% and 100% (gentle, not a stutter).
         const chug = ctx.createGain();
-        chug.gain.value = 0.65;
+        chug.gain.value = 0.8;
         const lfo = ctx.createOscillator();
         lfo.frequency.value = CHUG.idle;
         const depth = ctx.createGain();
-        depth.gain.value = 0.35;
+        depth.gain.value = 0.2;
         lfo.connect(depth).connect(chug.gain);
         const saw = ctx.createOscillator();
-        saw.type = 'sawtooth';
+        saw.type = 'triangle';
         saw.frequency.value = PITCH.idle;
         const sub = ctx.createOscillator();
         sub.type = 'square';
         sub.frequency.value = PITCH.idle / 2;
         const subLevel = ctx.createGain();
-        subLevel.gain.value = 0.5;
+        subLevel.gain.value = 0.35;
         saw.connect(filter);
         sub.connect(subLevel).connect(filter);
         filter.connect(chug).connect(out).connect(master);

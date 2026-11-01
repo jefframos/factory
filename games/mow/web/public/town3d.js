@@ -459,6 +459,8 @@ function rebuildGrass() {
     const taken = new Uint8Array(width * depth);
     const counts = mow.grass.map(() => 0);
     town.sections.forEach((section) => {
+        const cap = section.maxGrass ? mow.grass.findIndex((gr) => gr.id === section.maxGrass) : -1;
+        const maxType = cap >= 0 ? cap : mow.grass.length - 1;
         for (let iz = 0; iz < depth; iz++) {
             for (let ix = 0; ix < width; ix++) {
                 const x = minX + (ix + 0.5) * cell;
@@ -469,7 +471,7 @@ function rebuildGrass() {
                 const patch = town.grassPatches.reduce((found, p) => (inPatch(p, x, z) ? p : found), undefined);
                 const kind = patch ? patch.grass : (section.fill ?? 'auto');
                 if (kind === 'none') continue;
-                const type = kind === 'auto' ? autoType(x, z, noise) : Math.max(0, mow.grass.findIndex((gr) => gr.id === kind));
+                const type = Math.min(maxType, kind === 'auto' ? autoType(x, z, noise) : Math.max(0, mow.grass.findIndex((gr) => gr.id === kind)));
                 taken[ix + iz * width] = 1;
                 counts[type]++;
                 g.fillStyle = mow.grass[type].color;
@@ -609,7 +611,7 @@ function buildSection(section, index) {
     const edge = outline(color);
     edge.scale.set(section.width, section.depth, 1);
     edge.position.y = 0.08;
-    const label = labelSprite(`${index + 1}. ${section.name}\n$${section.bonus} bonus · grass: ${grassName(section.fill ?? 'auto')}${(section.grassScale ?? 1) !== 1 ? ` ×${section.grassScale}` : ''}`, hex(color));
+    const label = labelSprite(`${index + 1}. ${section.name}\n$${section.bonus} bonus · grass: ${grassName(section.fill ?? 'auto')}${(section.grassScale ?? 1) !== 1 ? ` ×${section.grassScale}` : ''}${section.maxGrass ? ` · max ${grassName(section.maxGrass)}` : ''}`, hex(color));
     label.position.y = 4;
     label.scale.multiplyScalar(1.6);
     holder.add(fill, edge, label);
@@ -1107,6 +1109,12 @@ function edit(change) {
     rebuildAll();
 }
 
+/** A section's grass cap: no cap, or each grass type with the first mower (shop order) that can cut it (as in the game: at most chewSec's length of powers short). */
+const maxGrassOptions = () => [['', 'No cap'], ...mow.grass.map((g) => {
+    const index = (mow.tools ?? []).findIndex((tool) => g.resistance - tool.power <= (mow.chewSec?.length ?? 1));
+    return [g.id, index >= 0 ? `${g.name} — cut from mower ${index + 1} (${mow.tools[index].name})` : g.name];
+})];
+
 const grassOptions = (withAuto) => [...(withAuto ? [['auto', 'Noise (auto)']] : []), ...mow.grass.map((g) => [g.id, g.name]), ['none', 'No grass']];
 
 function renderInspector() {
@@ -1181,6 +1189,11 @@ function renderInspector() {
                 if (scale === 1) delete d.grassScale;
                 else d.grassScale = scale;
             })),
+            selectField('Max growth', data.maxGrass ?? '', maxGrassOptions(), (v) => edit((d) => {
+                if (v) d.maxGrass = v;
+                else delete d.maxGrass;
+            })),
+            el('p', { class: 'muted small' }, 'Max growth: nothing tougher grows in this section (tougher spots grow this instead), so it can be finished with that mower.'),
             el('p', { class: 'muted small' }, 'Grass size: under 1 an easier section (shorter grass, chewed through faster), over 1 a harder one. Clippings stay the same.'),
             numberField('Camera zoom ×', data.zoom ?? 1, 0.05, (v) => edit((d) => {
                 const zoom = Math.round(Math.min(2, Math.max(0.4, v || 1)) * 100) / 100;

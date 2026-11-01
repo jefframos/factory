@@ -6,7 +6,9 @@
 // panel — open while the player stands on an ATM's pad, laid out like dig's: a GEAR tab (every mower on a timeline
 // up to the goal, the next mower's offer, the bag's capacity with its levels, and the goal along the bottom) and a
 // BOOSTS tab once the first mower is bought (speed, money gain, cutting width, sharp blades); the guide's hand sits
-// on the button it's pointing at.
+// on the button it's pointing at. Both modes (GameMode): a pop by the bar at each quarter of a section (milestone())
+// and a big banner when one is restored (celebrate(): rays, ribbon, the bonus counting up, confetti). Rush mode: the
+// combo meter under the bar (setCombo()).
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
@@ -19,7 +21,7 @@ import { LanguagePanel, LANGUAGE_SIZE } from './LanguagePanel';
 import { WardrobePanel, WARDROBE_SIZE } from './WardrobePanel';
 import { TrophiesPanel, TROPHIES_SIZE } from './TrophiesPanel';
 import { MowProgress } from '../data/MowProgress';
-import { MOW, ToolDef, UpgradeDef, toolPaint } from '../data/MowConfig';
+import { MOW, ToolDef, UpgradeDef } from '../data/MowConfig';
 import { ModelIcons } from './ModelIcons';
 import { tabbedBlock, TabSpec } from './TabBar';
 import { t, names, Localization } from '../i18n/Localization';
@@ -56,20 +58,9 @@ const BAG_BAR = { width: 420, height: 9 };
 const TOOL_FRAMES = ['toolCommon', 'toolCommon', 'toolRare', 'toolRare', 'toolRare', 'toolEpic', 'toolEpic', 'toolLegendary'];
 const toolFrame = (index: number, owned: boolean): string => (owned ? TOOL_FRAMES[Math.min(index, TOOL_FRAMES.length - 1)] : 'toolLocked');
 
-/** A mower's art: a ridden one is its tractor in its paint (as in game); the others, for now, a little block in the
- * mower's colour with a handle. */
+/** A mower's art, rendered from its 3D model (ModelIcons.toolSprite). */
 function mowerArt(tool: ToolDef, size: number): PIXI.Container {
-    if (tool.ride) return ModelIcons.sprite(`./mow/models/${MOW.tractor.model}`, size * 1.15, false, toolPaint(tool));
-    const art = new PIXI.Container();
-    const s = size / 64;
-    const handle = new PIXI.Graphics().lineStyle(5 * s, 0x2b2b30).moveTo(-14 * s, -4 * s).lineTo(-22 * s, -26 * s);
-    const body = new PIXI.Graphics().lineStyle(3 * s, 0x1d140e).beginFill(new PIXI.Color(tool.color).toNumber())
-        .drawRoundedRect(-18 * s, -10 * s, 36 * s, 24 * s, 6 * s).endFill();
-    const wheels = new PIXI.Graphics().beginFill(0x2b2b30).drawCircle(-11 * s, 15 * s, 5 * s).drawCircle(11 * s, 15 * s, 5 * s).endFill();
-    if (!tool.handheld) art.addChild(handle);
-    art.addChild(body);
-    if (!tool.handheld) art.addChild(wheels);
-    return art;
+    return ModelIcons.toolSprite(tool, size);
 }
 const RIBBON_OVERHANG = 44;
 const PANEL_TOP_GAP = 40;
@@ -97,6 +88,13 @@ export class MowHud extends PIXI.Container {
     private readonly progress = new PIXI.Container();
     private readonly progressText = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 22, strokeThickness: 5 });
     private readonly progressFill = new PIXI.Container();
+    /** The section-complete banner (celebrate()) and rush mode's combo meter (setCombo()). */
+    private readonly celebration = new PIXI.Container();
+    private readonly combo = new PIXI.Container();
+    private readonly comboText = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 44, strokeThickness: 8, fill: 0xffe27a });
+    private readonly comboPot = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 24, strokeThickness: 5, fill: 0x9cff9c });
+    private readonly comboBar = new PIXI.Graphics();
+    private comboShown = 1;
     private readonly mute = new PIXI.Container();
     private readonly languageButton = new PIXI.Container();
     private readonly language = new LanguagePanel();
@@ -134,6 +132,7 @@ export class MowHud extends PIXI.Container {
         super();
         this.buildCorner();
         this.buildProgress();
+        this.buildCombo();
         this.buildButtons();
         this.buildShop();
         this.wardrobe = new WardrobePanel(onWear, (text, color) => this.say(text, color));
@@ -146,7 +145,7 @@ export class MowHud extends PIXI.Container {
         this.languageHolder.addChild(this.language);
         this.addClose(this.language, LANGUAGE_SIZE, () => this.toggleLanguage());
         this.toast.alpha = 0;
-        this.addChild(this.corner, this.progress, this.mute, this.languageButton, this.moveHint, this.shopHolder, this.wardrobeHolder, this.trophiesHolder, this.languageHolder, this.toast);
+        this.addChild(this.corner, this.progress, this.combo, this.celebration, this.mute, this.languageButton, this.moveHint, this.shopHolder, this.wardrobeHolder, this.trophiesHolder, this.languageHolder, this.toast);
         MowProgress.onChange.add(this.onChange);
         this.refresh();
         this.reposition();
@@ -209,6 +208,122 @@ export class MowHud extends PIXI.Container {
             fill.x = -inner / 2 + width / 2;
             this.progressFill.addChild(fill);
         }
+    }
+
+    /** A quarter of a section done: the percentage pops out of the bar, which jumps. */
+    public milestone(percent: number): void {
+        gsap.killTweensOf(this.progress.scale);
+        this.progress.scale.set(1);
+        UiAnim.punch(this.progress, 0.2);
+        const pop = UiKit.text('hud', 'toast', { text: `${percent}%` }, { fontSize: 46, strokeThickness: 8, fill: 0x9cff9c });
+        pop.anchor.set(0.5);
+        pop.position.set(PROGRESS.width / 2 + 52, 28);
+        pop.scale.set(0.3);
+        this.progress.addChild(pop);
+        UiAnim.sparkBurst(this.progress, pop.x, pop.y, 0x9cff9c, 70);
+        gsap.to(pop.scale, { x: 1, y: 1, duration: 0.35, ease: 'back.out(3)' });
+        gsap.to(pop, { y: pop.y - 26, alpha: 0, duration: 0.5, delay: 1, onComplete: () => {
+            if (!pop.destroyed) pop.destroy();
+        } });
+    }
+
+    /** A section restored: rays, its name on a ribbon, RESTORED!, its bonus counting up, confetti; then it goes. */
+    public celebrate(name: string, bonus: number): void {
+        UiAnim.kill(this.celebration);
+        this.celebration.removeChildren().forEach((child) => child.destroy({ children: true }));
+        const banner = new PIXI.Container();
+        UiAnim.rays(banner, 300, 0xfff0a0, 0.6, 10);
+        const ribbon = UiKit.sprite('upgrades', 'ribbon', 0.62);
+        const title = UiKit.text('upgrades', 'title', {}, { fontSize: 40 });
+        title.anchor.set(0.5);
+        title.text = name;
+        UiKit.fit(title, 480);
+        title.y = -5;
+        const restored = UiKit.text('hud', 'toast', { text: t('restored') }, { fontSize: 64, strokeThickness: 10, fill: 0xffe27a });
+        restored.anchor.set(0.5);
+        restored.y = -100;
+        const reward = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 46, strokeThickness: 8, fill: 0x9cff9c });
+        reward.anchor.set(0.5);
+        reward.y = 92;
+        const stars = [-1, 0, 1].map((side) => {
+            const star = PIXI.Sprite.from('ItemIcon_Star_Gold');
+            star.anchor.set(0.5);
+            star.scale.set((side === 0 ? 92 : 70) / Math.max(star.texture.width, star.texture.height, 1));
+            star.position.set(side * 210, side === 0 ? -182 : -150);
+            star.rotation = side * 0.25;
+            return star;
+        });
+        banner.addChild(ribbon, title, restored, reward, ...stars);
+        this.celebration.addChild(banner);
+        banner.scale.set(0.3);
+        banner.alpha = 0;
+        gsap.to(banner, { alpha: 1, duration: 0.2 });
+        gsap.to(banner.scale, { x: 1, y: 1, duration: 0.5, ease: 'back.out(2)' });
+        UiAnim.staggerPop(stars, 0.25, 0.12);
+        UiAnim.countUp(reward, 0, bonus, (value) => `+$${value.toLocaleString('en-US')}`, 1, 0.35);
+        UiAnim.confetti(this.celebration, 0, -40, 90, 1.2);
+        gsap.to(banner, { alpha: 0, duration: 0.4, delay: 2.8 });
+        gsap.to(banner.scale, { x: 1.15, y: 1.15, duration: 0.4, delay: 2.8, onComplete: () => {
+            if (banner.destroyed) return;
+            UiAnim.kill(banner);
+            banner.destroy({ children: true });
+        } });
+    }
+
+    // ---------------------------------------------------------------- combo (rush mode)
+
+    private buildCombo(): void {
+        this.comboText.anchor.set(0.5);
+        this.comboPot.anchor.set(0.5);
+        this.comboPot.y = 38;
+        this.comboBar.y = 62;
+        this.combo.addChild(this.comboText, this.comboPot, this.comboBar);
+        this.combo.visible = false;
+    }
+
+    /** The combo meter: hidden at x1; else COMBO xN, the pot so far and how long it has left. */
+    public setCombo(multiplier: number, pot: number, timeShare: number): void {
+        const show = multiplier > 1;
+        if (!show) {
+            if (this.combo.visible) gsap.to(this.combo, { alpha: 0, duration: 0.25, onComplete: () => {
+                this.combo.visible = false;
+            } });
+            this.comboShown = 1;
+            return;
+        }
+        if (!this.combo.visible || multiplier !== this.comboShown) {
+            gsap.killTweensOf(this.combo);
+            this.combo.visible = true;
+            this.combo.alpha = 1;
+            this.comboText.text = t('combo', { multiplier: multiplier.toString() });
+            gsap.killTweensOf(this.comboText.scale);
+            this.comboText.scale.set(1);
+            UiAnim.punch(this.comboText as unknown as PIXI.Container, 0.35);
+            this.comboShown = multiplier;
+        }
+        this.comboPot.text = `+$${Math.round(pot).toLocaleString('en-US')}`;
+        const width = 200;
+        // Gold, going orange then red as it runs out.
+        const color = timeShare > 0.5 ? 0xffd86b : timeShare > 0.25 ? 0xff9a3c : 0xff5a4a;
+        this.comboBar.clear()
+            .beginFill(0x000000, 0.45).drawRoundedRect(-width / 2 - 3, -7, width + 6, 14, 7).endFill()
+            .beginFill(color).drawRoundedRect(-width / 2, -4, Math.max(8, width * timeShare), 8, 4).endFill();
+    }
+
+    /** The combo ended: its payout jumps out of the meter. */
+    public comboPaid(amount: number, multiplier: number): void {
+        if (amount <= 0) return;
+        const paid = UiKit.text('hud', 'toast', { text: t('comboPaid', { multiplier: multiplier.toString(), amount: amount.toLocaleString('en-US') }) },
+            { fontSize: 40, strokeThickness: 8, fill: 0xffe27a });
+        paid.anchor.set(0.5);
+        paid.position.set(this.combo.x, this.combo.y);
+        paid.scale.set(0.4);
+        this.addChild(paid);
+        UiAnim.sparkBurst(this, paid.x, paid.y, 0xffe27a, 110);
+        gsap.to(paid.scale, { x: 1, y: 1, duration: 0.35, ease: 'back.out(3)' });
+        gsap.to(paid, { y: paid.y - 50, alpha: 0, duration: 0.6, delay: 1.1, onComplete: () => {
+            if (!paid.destroyed) paid.destroy();
+        } });
     }
 
     public get shownDistrict(): number {
@@ -695,6 +810,8 @@ export class MowHud extends PIXI.Container {
         this.mute.position.set(screen.topLeft.x + 20 + BUTTON_SIZE / 2, screen.topLeft.y + 20 + BUTTON_SIZE / 2);
         this.languageButton.position.set(this.mute.x + BUTTON_SIZE + 12, this.mute.y);
         this.progress.position.set(screen.center.x, screen.topLeft.y + 120);
+        this.combo.position.set(screen.center.x, screen.topLeft.y + 205);
+        this.celebration.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.36);
         this.toast.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.24);
         this.moveHint.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.72);
         // The shop hangs in the bottom half, under the player; the language list in the middle.

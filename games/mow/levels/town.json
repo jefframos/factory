@@ -12,7 +12,7 @@
     "water": "#3aa6e8",
     "waterLevel": 0.55,
     "margin": 90,
-    "sideColor": "#7a5636",
+    "sideColor": "#9a9488",
     "sideDepth": 1.6,
     "outline": [
       {
@@ -500,8 +500,8 @@
     },
     {
       "model": "town/nature/Bush_4_A_Color1.gltf",
-      "x": -3.5,
-      "z": 19.4,
+      "x": -7.5,
+      "z": 18.25,
       "rotationY": 1.1,
       "height": 1.1,
       "collider": {
@@ -511,8 +511,8 @@
     },
     {
       "model": "town/nature/Bush_1_C_Color1.gltf",
-      "x": 3.5,
-      "z": 19.4,
+      "x": 7.25,
+      "z": 18.25,
       "rotationY": 0,
       "height": 1.1,
       "collider": {
@@ -575,17 +575,6 @@
       "collider": {
         "halfX": 0.3,
         "halfZ": 0.3
-      }
-    },
-    {
-      "model": "town/city/trash_A.gltf",
-      "x": -17.1,
-      "z": -6.2,
-      "rotationY": 0,
-      "height": 1,
-      "collider": {
-        "halfX": 1.2,
-        "halfZ": 1.25
       }
     },
     {
@@ -1578,7 +1567,7 @@
       "width": 12,
       "depth": 5,
       "completeAt": 0.97,
-      "bonus": 40,
+      "bonus": 65,
       "ground": "#557f38",
       "restoredGround": "#72b04a",
       "fill": "grass",
@@ -1593,7 +1582,7 @@
       "width": 20,
       "depth": 16,
       "completeAt": 0.97,
-      "bonus": 100,
+      "bonus": 160,
       "ground": "#4f7d35",
       "restoredGround": "#6fae47",
       "fill": "auto",
@@ -1624,7 +1613,8 @@
       "onUnlock": {
         "pan": true
       },
-      "fill": "auto"
+      "fill": "auto",
+      "maxGrass": "weeds"
     },
     {
       "id": "eastblock",
@@ -1693,7 +1683,8 @@
         "pan": true
       },
       "fill": "auto",
-      "grassScale": 1.35
+      "grassScale": 1.35,
+      "maxGrass": "weeds"
     }
   ]
 }

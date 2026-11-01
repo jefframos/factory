@@ -6,6 +6,8 @@
 //   category     what                         action     when
 //   session      new | returning              start      the player's first input this session
 //   playtime     min-<n>                      reached    n minutes of active play this session
+//   mode         calm | rush                  start      with session/start: which mode is played (GameMode)
+//   mode         <mode>-min-<n>               reached    with each playtime event, per mode (to compare them)
 //   tutorial     <nn>-<step>                  complete   each first-session step, once per player, in order
 //   tool         <nn>-<toolId>                complete   a tool / mower bought
 //   upgrade      <upgradeId>-<nn>             complete   an upgrade level bought
@@ -22,6 +24,7 @@
 
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { MowProgress } from '../data/MowProgress';
+import { MODE } from '../data/GameMode';
 
 /** The first-session steps, in order (the GDD's first five minutes). */
 // New steps go at the end (even when they come earlier in play), so the numbers of the ones before never change.
@@ -42,6 +45,7 @@ let fullSent = false;
 export const GameAnalytics = {
     sessionStart(newGame: boolean): void {
         send('session', newGame ? 'new' : 'returning', 'start');
+        send('mode', MODE, 'start');
     },
 
     /** Active play time (call every frame while gameplay is active). */
@@ -49,6 +53,7 @@ export const GameAnalytics = {
         playSeconds += delta;
         while (nextMinute < PLAYTIME_MINUTES.length && playSeconds >= PLAYTIME_MINUTES[nextMinute] * 60) {
             send('playtime', `min-${PLAYTIME_MINUTES[nextMinute]}`, 'reached');
+            send('mode', `${MODE}-min-${PLAYTIME_MINUTES[nextMinute]}`, 'reached');
             nextMinute++;
         }
     },

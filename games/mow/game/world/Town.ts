@@ -20,6 +20,7 @@
 
 import * as THREE from 'three';
 import gsap from 'gsap';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { MOW, TOWN, AtmLook, AtmSpot, DeckDef, DistrictDef, TownProp } from '../data/MowConfig';
 import { MowProgress } from '../data/MowProgress';
@@ -53,6 +54,8 @@ export const PAD_RADIUS = 1.4;
 const GROUND_Y = -0.05;
 const PAVEMENT_Y = 0.02;
 const PAVEMENT_STEP = 0.012;
+/** Station pads: just over the top pavement (each pavement sits a step above the one before). */
+const PAD_Y = PAVEMENT_Y + TOWN.pavements.length * PAVEMENT_STEP + 0.03;
 /** The island's wooden deck: just over the town's ground, under the sections' grass and the pavements. */
 const DECK_Y = GROUND_Y + 0.03;
 /** One deck plank's width; the plank texture holds PLANKS of them. */
@@ -62,9 +65,67 @@ const PLANKS = 4;
 const BEND_SEGMENT = 0.5;
 /** Models flatter than this (the road tiles) get cut up like that. */
 const FLAT_HEIGHT = 0.3;
-/** A restored section's flowers (KayKit Mixed Bag), and how tall they stand. */
-const FLOWER_MODELS = ['town/nature/flax_flower_A.gltf', 'town/nature/flax_flower_B.gltf'];
-const FLOWER_HEIGHT = 0.85;
+/** A restored section's flower clumps: how big (a clump's height is about half this, in world units): low, just a dash of colour. */
+const FLOWER_SIZE = 0.55;
+/** The kinds of flower, alternating over a section's spots: their head and the petals' colours (one per clump). */
+interface FlowerKind {
+    head: 'daisy' | 'tulip';
+    colours: string[];
+}
+const FLOWER_KINDS: FlowerKind[] = [
+    { head: 'daisy', colours: ['#ffffff', '#ff9cc4', '#b994ff', '#ffe04a'] },
+    { head: 'tulip', colours: ['#ff4f5e', '#ff9a3c', '#ff6fb0', '#ffd23f', '#c36bff'] },
+];
+/** One clump: three stems (x, z, height). */
+const CLUMP = [
+    { x: 0, z: 0, h: 0.5 },
+    { x: 0.13, z: 0.06, h: 0.38 },
+    { x: -0.06, z: 0.12, h: 0.43 },
+];
+
+/**
+ * A kind's clump, part by part (stems and leaves; petals, coloured per clump: no `colour`; a daisy's middle), each
+ * part one geometry for all three flowers. Low poly, flat shaded.
+ */
+const flowerParts = (() => {
+    const cache = new Map<string, { geometry: THREE.BufferGeometry; colour?: string }[]>();
+    const at = (geometry: THREE.BufferGeometry, x: number, y: number, z: number, sx = 1, sy = 1, sz = 1, turnY = 0, tiltZ = 0) =>
+        geometry.scale(sx, sy, sz).rotateZ(tiltZ).rotateY(turnY).translate(x, y, z);
+    return (kind: FlowerKind) => {
+        const cached = cache.get(kind.head);
+        if (cached) return cached;
+        const green: THREE.BufferGeometry[] = [];
+        const petals: THREE.BufferGeometry[] = [];
+        const middles: THREE.BufferGeometry[] = [];
+        CLUMP.forEach(({ x, z, h }, n) => {
+            green.push(at(new THREE.CylinderGeometry(0.014, 0.02, h, 4), x, h / 2, z));
+            // A leaf on each stem, low, each turned another way.
+            green.push(at(new THREE.SphereGeometry(1, 5, 2), x, h * 0.3, z, 0.1, 0.018, 0.04, n * 2.1, 0.5));
+            if (kind.head === 'daisy') {
+                for (let i = 0; i < 6; i++) {
+                    const a = (i / 6) * Math.PI * 2;
+                    petals.push(at(new THREE.SphereGeometry(1, 5, 3), x + Math.cos(a) * 0.065, h, z - Math.sin(a) * 0.065, 0.065, 0.016, 0.034, a, 0.25));
+                }
+                middles.push(at(new THREE.SphereGeometry(0.04, 6, 4), x, h + 0.01, z, 1, 0.6, 1));
+            } else {
+                // A cup of three pointed petals round a closed bud.
+                petals.push(at(new THREE.CylinderGeometry(0.06, 0.035, 0.1, 6), x, h + 0.04, z));
+                for (let i = 0; i < 3; i++) {
+                    const a = (i / 3) * Math.PI * 2 + n;
+                    petals.push(at(new THREE.ConeGeometry(0.035, 0.07, 4), x + Math.cos(a) * 0.04, h + 0.12, z - Math.sin(a) * 0.04));
+                }
+            }
+        });
+        const merge = (list: THREE.BufferGeometry[]) => mergeGeometries(list.map((g) => g.toNonIndexed()))!;
+        const parts: { geometry: THREE.BufferGeometry; colour?: string }[] = [
+            { geometry: merge(green), colour: '#4f9a3a' },
+            { geometry: merge(petals) },
+        ];
+        if (middles.length) parts.push({ geometry: merge(middles), colour: '#f5a524' });
+        cache.set(kind.head, parts);
+        return parts;
+    };
+})();
 /** Trees and buildings: the whole model dithers out while the camera->player line runs through it. */
 const FADE: OcclusionFadeConfig = { ...STRUCTURE_OCCLUSION_FADE, radius: 0.4 };
 
@@ -113,6 +174,126 @@ function plankTexture(color: string): THREE.CanvasTexture {
     texture.anisotropy = 4;
     return texture;
 }
+
+/** World units one repeat of the stone / paving / asphalt textures covers. */
+const STONE_TILE = 1.6;
+const PAVING_TILE = 2;
+/** The open ground's cobbles: 6 across one repeat. */
+const GROUND_TILE = 4;
+
+/** A seeded 0..1 random (the same texture every run). */
+function seeded(seed: number): () => number {
+    let s = seed;
+    return () => {
+        s = (s * 16807) % 2147483647;
+        return s / 2147483647;
+    };
+}
+
+/** A near-white grey: the textures are tinted by their material's colour, so they only shade it a little. */
+const grey = (level: number, alpha = 1) => `rgba(${Math.round(level * 255)}, ${Math.round(level * 255)}, ${Math.round(level * 255)}, ${alpha})`;
+
+/** Light speckles and darker flecks all over (low contrast grain). */
+function speckle(g: CanvasRenderingContext2D, size: number, random: () => number, count: number): void {
+    for (let i = 0; i < count; i++) {
+        g.fillStyle = random() < 0.5 ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.06)';
+        const r = 0.6 + random() * 1.6;
+        g.fillRect(random() * size, random() * size, r, r);
+    }
+}
+
+function tiledTexture(draw: (g: CanvasRenderingContext2D, size: number) => void): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 256;
+    draw(canvas.getContext('2d')!, 256);
+    const texture = CanvasArt.texture(canvas);
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.anisotropy = 4;
+    return texture;
+}
+
+/** The island's sides: staggered stone blocks, each a slightly different shade, thin mortar lines. */
+const stoneTexture = (() => {
+    let texture: THREE.CanvasTexture | null = null;
+    return () => texture ??= tiledTexture((g, size) => {
+        const random = seeded(7);
+        const rows = 4;
+        const h = size / rows;
+        g.fillStyle = grey(0.8);
+        g.fillRect(0, 0, size, size);
+        for (let r = 0; r < rows; r++) {
+            const w = size / 2;
+            for (let c = -1; c < 3; c++) {
+                const x = c * w + (r % 2) * (w / 2);
+                g.fillStyle = grey(0.88 + random() * 0.1);
+                g.beginPath();
+                g.roundRect(x + 2, r * h + 2, w - 4, h - 4, 5);
+                g.fill();
+            }
+        }
+        speckle(g, size, random, 900);
+    });
+})();
+
+/** The island's open ground: loose cobbles of mixed sizes (rounded, faint gaps), low contrast. */
+const groundTexture = (() => {
+    let texture: THREE.CanvasTexture | null = null;
+    return () => texture ??= tiledTexture((g, size) => {
+        const random = seeded(31);
+        g.fillStyle = grey(0.84);
+        g.fillRect(0, 0, size, size);
+        const cells = 6;
+        const step = size / cells;
+        for (let r = 0; r < cells; r++) {
+            for (let c = 0; c < cells; c++) {
+                const w = step * (0.72 + random() * 0.2);
+                const h = step * (0.72 + random() * 0.2);
+                const x = c * step + (step - w) / 2 + (random() - 0.5) * step * 0.12;
+                const y = r * step + (step - h) / 2 + (random() - 0.5) * step * 0.12;
+                g.fillStyle = grey(0.9 + random() * 0.09);
+                // Drawn at every wrap offset, so a cobble crossing the edge continues on the other side.
+                for (const dx of [-size, 0, size]) {
+                    for (const dy of [-size, 0, size]) {
+                        g.beginPath();
+                        g.roundRect(x + dx, y + dy, w, h, Math.min(w, h) * 0.4);
+                        g.fill();
+                    }
+                }
+            }
+        }
+        speckle(g, size, random, 1200);
+    });
+})();
+
+/** The plaza and paths: square paving slabs (faint seams, each a slightly different shade). */
+const pavingTexture = (() => {
+    let texture: THREE.CanvasTexture | null = null;
+    return () => texture ??= tiledTexture((g, size) => {
+        const random = seeded(11);
+        const slabs = 4;
+        const s = size / slabs;
+        g.fillStyle = grey(0.86);
+        g.fillRect(0, 0, size, size);
+        for (let r = 0; r < slabs; r++) {
+            for (let c = 0; c < slabs; c++) {
+                g.fillStyle = grey(0.94 + random() * 0.06);
+                g.fillRect(c * s + 1.5, r * s + 1.5, s - 3, s - 3);
+            }
+        }
+        speckle(g, size, random, 700);
+    });
+})();
+
+/** The roads' tarmac: grain only. */
+const asphaltTexture = (() => {
+    let texture: THREE.CanvasTexture | null = null;
+    return () => texture ??= tiledTexture((g, size) => {
+        const random = seeded(23);
+        g.fillStyle = grey(0.95);
+        g.fillRect(0, 0, size, size);
+        speckle(g, size, random, 2500);
+    });
+})();
 
 /** The kinds of station the level places (each with its own look and spots in levels/town.json). */
 export type StationKind = 'atm' | 'wardrobe';
@@ -219,17 +400,21 @@ export class Town {
         }, 300));
     }
 
-    private material(color: number | string): THREE.MeshStandardMaterial {
-        const material = new THREE.MeshStandardMaterial({ color, roughness: 0.85 });
+    private material(color: number | string, map: THREE.Texture | null = null): THREE.MeshStandardMaterial {
+        const material = new THREE.MeshStandardMaterial({ color, map, roughness: 0.85 });
         BendService.applyBend(material);
         return material;
     }
 
-    /** A flat slab on the ground, subdivided so it follows the world bend. */
-    private slab(x: number, z: number, width: number, depth: number, color: number | string, y: number): void {
+    /** A flat slab on the ground, subdivided so it follows the world bend (`map` repeating every `tile` units). */
+    private slab(x: number, z: number, width: number, depth: number, color: number | string, y: number, map: THREE.Texture | null = null, tile = 1): void {
         const geometry = new THREE.PlaneGeometry(width, depth, Math.ceil(width / BEND_SEGMENT), Math.ceil(depth / BEND_SEGMENT));
+        if (map) {
+            const uv = geometry.getAttribute('uv');
+            for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * width) / tile, (uv.getY(i) * depth) / tile);
+        }
         geometry.rotateX(-Math.PI / 2);
-        const mesh = new THREE.Mesh(geometry, this.material(color));
+        const mesh = new THREE.Mesh(geometry, this.material(color, map));
         mesh.position.set(x, y, z);
         this.group.add(mesh);
     }
@@ -238,7 +423,11 @@ export class Town {
         const deck = TOWN.island?.deck;
         // Ground cells inside the shore; with a deck they stop half way under it (its planks hide their steps).
         this.groundCells(deck ? insetPolygon(this.shore, deck.width / 2) : this.shore, TOWN.ground.color);
-        TOWN.pavements.forEach((p, i) => this.slab(p.x, p.z, p.width, p.depth, p.color, PAVEMENT_Y + i * PAVEMENT_STEP));
+        TOWN.pavements.forEach((p, i) => {
+            const road = p.id.startsWith('road');
+            this.slab(p.x, p.z, p.width, p.depth, p.color, PAVEMENT_Y + i * PAVEMENT_STEP,
+                road ? asphaltTexture() : pavingTexture(), road ? STONE_TILE : PAVING_TILE);
+        });
         this.buildIsland();
     }
 
@@ -267,14 +456,29 @@ export class Town {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+        // World-aligned UVs: the cobbles run on seamlessly whatever the island's shape.
+        const uvs = new Float32Array((cols + 1) * (rows + 1) * 2);
+        for (let i = 0; i < uvs.length / 2; i++) uvs.set([positions[i * 3] / GROUND_TILE, positions[i * 3 + 2] / GROUND_TILE], i * 2);
+        geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
         geometry.setIndex(index);
-        this.group.add(new THREE.Mesh(geometry, this.material(color)));
+        this.group.add(new THREE.Mesh(geometry, this.material(color, groundTexture())));
     }
 
-    /** A box from a to b on the ground (`extend` past both ends), cut along its length so it curves with the bend. */
-    private beam(a: ShorePoint, b: ShorePoint, y: number, height: number, thickness: number, material: THREE.Material, extend = 0): void {
+    /**
+     * A box from a to b on the ground (`extend` past both ends), cut along its length so it curves with the bend.
+     * With `tile`, its texture runs along the length and up the height, repeating every `tile` units.
+     */
+    private beam(a: ShorePoint, b: ShorePoint, y: number, height: number, thickness: number, material: THREE.Material, extend = 0, tile = 0): void {
         const length = Math.hypot(b.x - a.x, b.z - a.z) + extend * 2;
         const geometry = new THREE.BoxGeometry(length, height, thickness, Math.max(1, Math.ceil(length / BEND_SEGMENT)), 1, 1);
+        if (tile) {
+            // Offset by the world position along the edge and the height, so neighbouring walls' blocks line up.
+            const start = a.x * (b.x - a.x) + a.z * (b.z - a.z);
+            const along = start / Math.max(1e-6, Math.hypot(b.x - a.x, b.z - a.z)) + length / 2 - extend;
+            const position = geometry.getAttribute('position');
+            const uv = geometry.getAttribute('uv');
+            for (let i = 0; i < uv.count; i++) uv.setXY(i, (position.getX(i) + along) / tile, (position.getY(i) + y) / tile);
+        }
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set((a.x + b.x) / 2, y, (a.z + b.z) / 2);
         mesh.rotation.y = Math.atan2(-(b.z - a.z), b.x - a.x);
@@ -307,12 +511,12 @@ export class Town {
 
         // The sides: a wall under each edge (just inside it), long enough to close the corners.
         const T = 0.2;
-        const side = this.material(island.sideColor);
+        const side = this.material(island.sideColor, stoneTexture());
         shore.forEach((p, i) => {
             const q = shore[(i + 1) % shore.length];
             const n = normals[i];
             const inward = (point: ShorePoint) => ({ x: point.x + (n.x * T) / 2, z: point.z + (n.z * T) / 2 });
-            this.beam(inward(p), inward(q), top - island.sideDepth / 2, island.sideDepth, T, side, T);
+            this.beam(inward(p), inward(q), top - island.sideDepth / 2, island.sideDepth, T, side, T, STONE_TILE);
         });
 
         const { minX, maxX, minZ, maxZ } = bounds(shore);
@@ -494,11 +698,18 @@ export class Town {
     private buildStation(kind: StationKind, spot: AtmSpot): void {
         const look = stationLook(kind);
         const group = new THREE.Group();
-        const pad = new THREE.Mesh(new THREE.CircleGeometry(PAD_RADIUS, 32), this.material(look.color));
+        // A disc in rings (so it curves with the bend), over the top pavement layer, never fighting it for depth.
+        const padMaterial = this.material(look.color);
+        padMaterial.transparent = true;
+        padMaterial.opacity = 0.55;
+        padMaterial.depthWrite = false;
+        padMaterial.polygonOffset = true;
+        padMaterial.polygonOffsetFactor = -2;
+        padMaterial.polygonOffsetUnits = -2;
+        const pad = new THREE.Mesh(new THREE.RingGeometry(0, PAD_RADIUS, 32, Math.ceil(PAD_RADIUS / BEND_SEGMENT)), padMaterial);
         pad.rotation.x = -Math.PI / 2;
-        pad.position.y = 0.1;
-        (pad.material as THREE.MeshStandardMaterial).transparent = true;
-        (pad.material as THREE.MeshStandardMaterial).opacity = 0.55;
+        pad.position.y = PAD_Y;
+        pad.renderOrder = 1;
         group.add(pad);
         this.loads.push(this.loadModel(look.model, look.height).then((object) => {
             if (!object) return;
@@ -627,8 +838,12 @@ export class Town {
             ];
             const spots: [number, number][] = [];
             for (const [x, z, length, alongX] of sides) {
+                // Cut along their length so they curve with the bend (a single long box stays straight through it).
+                const segments = Math.max(1, Math.ceil(length / BEND_SEGMENT));
                 for (const y of [0.45, 0.95]) {
-                    const rail = new THREE.Mesh(new THREE.BoxGeometry(alongX ? length : 0.08, 0.12, alongX ? 0.08 : length), white);
+                    const rail = new THREE.Mesh(alongX
+                        ? new THREE.BoxGeometry(length, 0.12, 0.08, segments, 1, 1)
+                        : new THREE.BoxGeometry(0.08, 0.12, length, 1, 1, segments), white);
                     rail.position.set(x, y, z);
                     fence.add(rail);
                 }
@@ -685,34 +900,61 @@ export class Town {
     // ---------------------------------------------------------------- flowers
 
     /**
-     * Flowers across a restored section (`points`: where, cut cells): the library's flax flowers, alternating between
-     * its two kinds, each turned and sized a little differently, instanced (one draw per kind and part).
+     * Flowers across a restored section (`points`: where, cut cells): a clump of daisies or tulips on each (FLOWER_KINDS,
+     * at the top of this file), each clump turned, sized and coloured a little differently, instanced (one draw per
+     * kind and part). With `grow`, they spring up in a wave from the section's middle.
      */
-    public bloom(points: THREE.Vector3[]): void {
-        FLOWER_MODELS.forEach((model, kind) => {
-            const spots = points.filter((_, i) => i % FLOWER_MODELS.length === kind);
+    public bloom(points: THREE.Vector3[], grow = false): void {
+        if (!points.length) return;
+        const centre = points.reduce((sum, p) => sum.add(p), new THREE.Vector3()).divideScalar(points.length);
+        const reach = Math.max(1, ...points.map((p) => Math.hypot(p.x - centre.x, p.z - centre.z)));
+        const up = new THREE.Vector3(0, 1, 0);
+        const parts: { mesh: THREE.InstancedMesh; spots: { at: THREE.Vector3; turn: THREE.Quaternion; size: number; delay: number }[] }[] = [];
+        FLOWER_KINDS.forEach((kind, k) => {
+            const spots = points.filter((_, i) => i % FLOWER_KINDS.length === k).map((p) => {
+                const random = Math.abs(Math.sin(p.x * 12.9898 + p.z * 78.233) * 43758.5453) % 1;
+                return {
+                    at: new THREE.Vector3(p.x, 0, p.z),
+                    turn: new THREE.Quaternion().setFromAxisAngle(up, random * Math.PI * 2),
+                    size: FLOWER_SIZE * (0.8 + random * 0.45),
+                    delay: (Math.hypot(p.x - centre.x, p.z - centre.z) / reach) * 0.9 + random * 0.2,
+                    colour: new THREE.Color(kind.colours[Math.floor(random * 97) % kind.colours.length]),
+                };
+            });
             if (!spots.length) return;
-            this.loads.push(this.loadModel(model, 1).then((object) => {
-                if (!object || this.destroyed) return;
-                object.updateMatrixWorld(true);
-                const matrix = new THREE.Matrix4();
-                const placed = new THREE.Matrix4();
-                const turn = new THREE.Quaternion();
-                const up = new THREE.Vector3(0, 1, 0);
-                object.traverse((child) => {
-                    if (!(child instanceof THREE.Mesh)) return;
-                    const mesh = new THREE.InstancedMesh(child.geometry, child.material, spots.length);
-                    spots.forEach((p, i) => {
-                        const random = Math.abs(Math.sin(p.x * 12.9898 + p.z * 78.233)) % 1;
-                        const size = FLOWER_HEIGHT * (0.75 + random * 0.5);
-                        placed.compose(new THREE.Vector3(p.x, 0, p.z), turn.setFromAxisAngle(up, random * Math.PI * 2), new THREE.Vector3(size, size, size));
-                        mesh.setMatrixAt(i, matrix.multiplyMatrices(placed, child.matrixWorld));
-                    });
-                    mesh.computeBoundingSphere();
-                    this.group.add(mesh);
-                });
-            }));
+            for (const part of flowerParts(kind)) {
+                const material = this.material(part.colour ?? '#ffffff');
+                material.flatShading = true;
+                const mesh = new THREE.InstancedMesh(part.geometry, material, spots.length);
+                if (!part.colour) spots.forEach((spot, i) => mesh.setColorAt(i, spot.colour));
+                mesh.frustumCulled = false;
+                this.group.add(mesh);
+                parts.push({ mesh, spots });
+            }
         });
+        const matrix = new THREE.Matrix4();
+        const scale = new THREE.Vector3();
+        const place = (time: number) => {
+            for (const { mesh, spots } of parts) {
+                spots.forEach((spot, i) => {
+                    const t = Math.min(1, Math.max(0, (time - spot.delay) / 0.45));
+                    // Ease out with a little overshoot (back.out).
+                    const grown = t >= 1 ? 1 : 1 + 2.2 * (t - 1) ** 3 + 1.2 * (t - 1) ** 2;
+                    const size = spot.size * Math.max(0.001, grown);
+                    mesh.setMatrixAt(i, matrix.compose(spot.at, spot.turn, scale.set(size, size, size)));
+                });
+                mesh.instanceMatrix.needsUpdate = true;
+            }
+        };
+        if (!grow) {
+            place(Infinity);
+            return;
+        }
+        place(0);
+        const clock = { time: 0 };
+        gsap.to(clock, { time: 1.6, duration: 1.6, ease: 'none', onUpdate: () => {
+            if (!this.destroyed) place(clock.time);
+        } });
     }
 
     // ---------------------------------------------------------------- layout queries

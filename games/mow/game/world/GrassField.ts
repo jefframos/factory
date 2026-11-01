@@ -11,17 +11,22 @@
 //
 // The lawn itself is each district's ground (a plane under its grass), drawn by a cheap shader: a pixel-noise grass
 // pattern (speckles and clumps in world space, so it never stretches) over the ground colour, and the cut cells —
-// read from a small texture with one texel per cell (cutMap: the type's cut colour, alpha = cut) — as mowed lawn,
-// lighter and darker in bands so it shows stripes. The ground brightens when the district is restored.
+// read from a small texture with one texel per cell (cutMap: the type's cut colour, alpha = cut) — as mowed lawn
+// striped like a real one: lighter or darker by the way the mower was heading when it cut there (PATH_SHADES), so
+// going up and down a lawn leaves its stripes. Cells cut without a heading (a section's stragglers, a loaded save)
+// get fixed bands. The ground brightens when the district is restored.
 // Cutting: cutCapsule() takes everything uncut in a capsule (the player's feet out to the tool) the tool's power can handle — at once when power >=
-// resistance; one short, it has to be chewed through (SLOW_CUT_SEC of contact: `chewing`, the mower is held back
-// meanwhile); further below not at all (`blocked`: a wall until a better mower, with the hint). Cut cells are saved as run-lengths (save() / the constructor's `saved`).
+// resistance; short of it, it has to be chewed through (`chewSec` in ui/mow.json: seconds of contact per cell, by how
+// many powers short: `chewing`, the mower is held back meanwhile); further short than that not at all (`blocked`: a
+// wall until a better mower, with its lock and the hint). Cut cells are saved as run-lengths (save() / the constructor's `saved`).
 //
 // Treasures hide under the grass (placeTreasures(): each on a seeded grass cell of its area, spread out); cutting
 // that cell finds it (CutResult.found). An area restored with some still hidden hands them over (takeTreasures()).
 //
+// A section's `maxGrass` caps its grass: nothing tougher than that type grows there (tougher cells become it).
+//
 // A section's `grassScale` (default 1) sizes its grass: the tufts' height and the contact it takes to chew through
-// grass one power too tough both scale by it (an easier section under 1, a harder one over 1).
+// grass too tough both scale by it (an easier section under 1, a harder one over 1).
 //
 // Cut grass never grows back on its own. Only when the player is stuck — nothing left they can cut and the next mower
 // out of reach — does the scene grow some back (regrow(): grass their mower cuts, just enough to earn the
@@ -29,7 +34,7 @@
 
 import * as THREE from 'three';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
-import { MOW, TOWN, DistrictDef, GrassDef, GrassPatch, TreasureDef } from '../data/MowConfig';
+import { MOW, TOWN, DistrictDef, GrassDef, GrassPatch, TreasureDef, canCutGrass } from '../data/MowConfig';
 import { BendService } from '../services/BendService';
 
 const CHUNK = 16;
@@ -37,10 +42,10 @@ const CHUNK = 16;
 const TUFT_MODEL = './mow/models/town/nature/Grass_1_A_Singlesided_Color1.gltf';
 /** The ground's grass noise: "pixels" per world unit. */
 const GRASS_PIXELS = 12;
-/** Width of the mowed stripes, in cells. */
+/** Width of the fixed stripes (cells cut without a heading), in cells. */
 const STRIPE = 4;
-/** One power short: a cell takes this long to chew through (seconds of contact). */
-const SLOW_CUT_SEC = 0.7;
+/** A cut cell's shade by the mower's heading then: up / down the screen (-z / +z), left / right (-x / +x). */
+const PATH_SHADES = { up: 0.86, down: 1.12, left: 0.93, right: 1.05 };
 
 /** Seeded 2D value noise in [0, 1). */
 function valueNoise(seed: number): (x: number, z: number) => number {
@@ -60,6 +65,9 @@ function valueNoise(seed: number): (x: number, z: number) => number {
         return a + (b - a) * fz;
     };
 }
+
+/** A tuft is never shorter than this x its width (shorter grass sinks into the ground instead). */
+const MIN_TUFT_ASPECT = 0.75;
 
 /** A tuft: three thin blades crossing at the root, 1 unit tall, about 1 unit across; darker at the root. */
 function tuftGeometry(): THREE.BufferGeometry {
@@ -146,7 +154,7 @@ export interface CutResult {
     clippings: number;
     /** Cut cells whose grass was as tough as the tool's power (it labours through those: MowingSystem's LOAD_DRAG). */
     hard?: number;
-    /** Grass one power too tough being chewed (not through yet): where and its colour (the chips). */
+    /** Grass too tough being chewed (not through yet): where and its colour (the chips). */
     chewing?: { at: THREE.Vector3; color: THREE.Color };
     /** The toughest grass met that the tool can't cut at all (for the hint), if any. */
     blocked?: GrassDef;
@@ -184,6 +192,8 @@ export class GrassField {
     private readonly instanceOf: Int32Array;
     private readonly chunkOf: Int32Array;
     private readonly jitter: Float32Array;
+    /** Per cut cell: its shade from the mower's heading (0 = none: the fixed bands). Not saved. */
+    private readonly shades: Float32Array;
     private readonly chunks: Chunk[] = [];
     /** Resolves once the library tuft is in (or failed: the plain one stays). */
     public readonly ready: Promise<void>;
@@ -223,6 +233,7 @@ export class GrassField {
         this.instanceOf = new Int32Array(count).fill(-1);
         this.chunkOf = new Int32Array(count).fill(-1);
         this.jitter = new Float32Array(count);
+        this.shades = new Float32Array(count);
         this.totals = MOW.districts.map(() => 0);
         this.cutCounts = MOW.districts.map(() => 0);
         this.cutMap = new THREE.DataTexture(new Uint8Array(count * 4), this.width, this.depth, THREE.RGBAFormat);
@@ -243,6 +254,9 @@ export class GrassField {
         const typeNoise = valueNoise(MOW.seed + 17);
         const jitterNoise = valueNoise(MOW.seed + 3);
         MOW.districts.forEach((district, d) => {
+            // `maxGrass`: nothing tougher grows here.
+            const cap = district.maxGrass ? MOW.grass.findIndex((g) => g.id === district.maxGrass) : -1;
+            const maxType = cap >= 0 ? cap : MOW.grass.length - 1;
             for (let iz = 0; iz < this.depth; iz++) {
                 for (let ix = 0; ix < this.width; ix++) {
                     const { x, z } = this.center(ix, iz);
@@ -253,7 +267,7 @@ export class GrassField {
                     const patch = TOWN.grassPatches.reduce<GrassPatch | undefined>((found, p) => (inPatch(p, x, z) ? p : found), undefined);
                     const kind = patch ? patch.grass : (district.fill ?? 'auto');
                     if (kind === 'none') continue;
-                    const type = kind === 'auto' ? autoType(x, z, typeNoise) : Math.max(0, MOW.grass.findIndex((g) => g.id === kind));
+                    const type = Math.min(maxType, kind === 'auto' ? autoType(x, z, typeNoise) : Math.max(0, MOW.grass.findIndex((g) => g.id === kind)));
                     this.types[i] = type + 1;
                     this.districtOf[i] = d;
                     this.jitter[i] = jitterNoise(ix * 0.9, iz * 0.9);
@@ -381,7 +395,14 @@ export class GrassField {
         const spread = this.cell * (1.35 + j * 0.3);
         // A cut tuft is gone: the ground shows the mowed lawn there (cutMap).
         if (cut) this.scale.set(0, 0, 0);
-        else this.scale.set(spread, grass.height * this.grassScales[this.districtOf[i]] * (0.85 + j * 0.3), spread);
+        else {
+            // Short grass keeps its blades' shape (squashed flat they look like boomerangs): taller, sunk into the
+            // ground so only the visible height shows above it.
+            const visible = grass.height * this.grassScales[this.districtOf[i]] * (0.85 + j * 0.3);
+            const height = Math.max(visible, spread * MIN_TUFT_ASPECT);
+            this.position.y += visible - height;
+            this.scale.set(spread, height, spread);
+        }
         this.matrix.compose(this.position, this.quaternion, this.scale);
         chunk.mesh.setMatrixAt(n, this.matrix);
         this.color.copy(this.uncutColors[type]).multiplyScalar(0.88 + j * 0.24);
@@ -393,7 +414,8 @@ export class GrassField {
     /** A cell's texel in cutMap: its cut colour in the stripe's shade, alpha = cut. */
     private writeCutTexel(i: number, type: number, ix: number, cut: boolean): void {
         const data = this.cutMap.image.data as Uint8Array;
-        this.color.copy(this.cutColors[type]).multiplyScalar(Math.floor(ix / STRIPE) % 2 === 0 ? 1.06 : 0.88);
+        const shade = this.shades[i] || (Math.floor(ix / STRIPE) % 2 === 0 ? 1.06 : 0.88);
+        this.color.copy(this.cutColors[type]).multiplyScalar(shade);
         // The texture is sRGB: write the colour's sRGB bytes.
         const srgb = this.color.clone().convertLinearToSRGB();
         data[i * 4] = Math.min(255, Math.round(srgb.r * 255));
@@ -422,6 +444,10 @@ export class GrassField {
         const abx = bx - ax;
         const abz = bz - az;
         const length2 = abx * abx + abz * abz;
+        // The heading (feet -> tool) sets the stripe's shade, by its main axis.
+        const heading = length2 < 1e-6 ? 0 : Math.abs(abz) >= Math.abs(abx)
+            ? (abz < 0 ? PATH_SHADES.up : PATH_SHADES.down)
+            : (abx < 0 ? PATH_SHADES.left : PATH_SHADES.right);
         /** Squared distance from (x, z) to the segment. */
         const distance2 = (x: number, z: number) => {
             const t = length2 > 0 ? Math.min(1, Math.max(0, ((x - ax) * abx + (z - az) * abz) / length2)) : 0;
@@ -442,19 +468,20 @@ export class GrassField {
                 if (d < 0 || !canCut(d)) continue;
                 const grass = MOW.grass[this.types[i] - 1];
                 const short = grass.resistance - power;
-                if (short > 1) {
+                if (!canCutGrass(grass, power)) {
                     if (!result.blocked || grass.resistance > result.blocked.resistance) result.blocked = grass;
                     continue;
                 }
-                if (short === 1) {
+                if (short > 0) {
                     this.damage[i] += delta;
-                    if (this.damage[i] < SLOW_CUT_SEC * this.grassScales[d]) {
+                    if (this.damage[i] < MOW.chewSec[short - 1] * this.grassScales[d]) {
                         result.chewing ??= { at: new THREE.Vector3(x, 0.4, z), color: this.uncutColors[this.types[i] - 1].clone() };
                         continue;
                     }
                 }
                 this.cutFlags[i] = 1;
                 this.cutCounts[d]++;
+                this.shades[i] = heading;
                 this.writeInstance(i);
                 const treasure = this.treasures.get(i);
                 if (treasure) {
@@ -533,14 +560,67 @@ export class GrassField {
         return this.cellsOf[district];
     }
 
-    /** Uncut cells in a district that `power` can cut (or chew through: one short), up to `limit` (counting stops there). */
+    /** Uncut cells in a district that `power` can cut (or chew through), up to `limit` (counting stops there). */
     public cuttableLeft(district: number, power: number, limit = Infinity): number {
         let count = 0;
         for (const i of this.cellsIn(district)) {
-            if (this.cutFlags[i] || MOW.grass[this.types[i] - 1].resistance - power > 1) continue;
+            if (this.cutFlags[i] || !canCutGrass(MOW.grass[this.types[i] - 1], power)) continue;
             if (++count >= limit) break;
         }
         return count;
+    }
+
+    /**
+     * Grass `power` can't cut at all, near (x, z) (within `range`), in open districts (`canCut`): one spot per
+     * `group` x `group` cells holding such grass on its edge (next to grass it can cut, cut grass or no grass) — where
+     * the player meets the wall. Each spot: its middle, its grass's top and the toughest grass there.
+     */
+    public blockedSpots(x: number, z: number, range: number, power: number, canCut: (district: number) => boolean, group = 3):
+        { x: number; z: number; top: number; grass: GrassDef }[] {
+        const isWall = (ix: number, iz: number): boolean => {
+            if (ix < 0 || iz < 0 || ix >= this.width || iz >= this.depth) return false;
+            const i = ix + iz * this.width;
+            return this.types[i] > 0 && !this.cutFlags[i] && !canCutGrass(MOW.grass[this.types[i] - 1], power);
+        };
+        const cx = Math.floor((x - this.minX) / this.cell);
+        const cz = Math.floor((z - this.minZ) / this.cell);
+        const reach = Math.ceil(range / this.cell);
+        const spots: { x: number; z: number; top: number; grass: GrassDef }[] = [];
+        const gx0 = Math.floor((cx - reach) / group);
+        const gz0 = Math.floor((cz - reach) / group);
+        const gx1 = Math.floor((cx + reach) / group);
+        const gz1 = Math.floor((cz + reach) / group);
+        for (let gz = gz0; gz <= gz1; gz++) {
+            for (let gx = gx0; gx <= gx1; gx++) {
+                let sumX = 0;
+                let sumZ = 0;
+                let count = 0;
+                let top = 0;
+                let toughest: GrassDef | undefined;
+                for (let iz = gz * group; iz < (gz + 1) * group; iz++) {
+                    for (let ix = gx * group; ix < (gx + 1) * group; ix++) {
+                        if (!isWall(ix, iz)) continue;
+                        const i = ix + iz * this.width;
+                        const d = this.districtOf[i];
+                        if (d < 0 || !canCut(d)) continue;
+                        if (isWall(ix + 1, iz) && isWall(ix - 1, iz) && isWall(ix, iz + 1) && isWall(ix, iz - 1)) continue;
+                        const grass = MOW.grass[this.types[i] - 1];
+                        const c = this.center(ix, iz);
+                        sumX += c.x;
+                        sumZ += c.z;
+                        count++;
+                        top = Math.max(top, grass.height * this.grassScales[d]);
+                        if (!toughest || grass.resistance > toughest.resistance) toughest = grass;
+                    }
+                }
+                if (!count || !toughest) continue;
+                const sx = sumX / count;
+                const sz = sumZ / count;
+                if (Math.hypot(sx - x, sz - z) > range) continue;
+                spots.push({ x: sx, z: sz, top, grass: toughest });
+            }
+        }
+        return spots;
     }
 
     /**
