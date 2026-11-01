@@ -14,14 +14,14 @@
   "traffic": {
     "count": 5,
     "models": ["town/city/car_sedan.gltf", "town/city/car_taxi.gltf", "town/city/car_hatchback.gltf", "town/city/car_stationwagon.gltf"],
-    "speed": 3.4,
-    "accel": 3,
-    "brake": 9,
-    "length": 2.5,
+    "speed": 4.4,
+    "accel": 3.5,
+    "brake": 10,
+    "length": 4.2,
     "lane": 1.75,
     "tile": 7,
     "roadY": 0.16,
-    "gap": 1.4
+    "gap": 1.8
   },
   "grass": [
     { "id": "grass", "name": "Grass", "height": 0.32, "color": "#5cbf4a", "cutColor": "#9bdc6e", "resistance": 1, "value": 1 },
