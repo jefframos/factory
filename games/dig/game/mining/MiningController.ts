@@ -41,6 +41,8 @@ const SOFT_GROUND = new Set(['dirt', 'gravel']);
 export class MiningController {
     /** The forced first find was handed out this session (see forcedFirstFind()). */
     private firstFindGiven = false;
+    /** Pushing into rock with a full backpack this tick (a new push is counted once: onFullPush). */
+    private pushingFull = false;
     private readonly damage = new Map<number, number>();
     private hitTimer = 0;
     private idleTimer = TOOL_LINGER_SEC;
@@ -62,6 +64,8 @@ export class MiningController {
         private readonly onTooHard: (ix: number, iz: number, tool: string) => void,
         /** The miner tried to dig with a full backpack (at most once per message). */
         private readonly onBagFull: () => void,
+        /** The miner started pushing into rock with a full backpack (once per push, however long it lasts). */
+        private readonly onFullPush: () => void,
         /** A chest dug out reached the miner; `zone` is where it was. */
         private readonly onChest: (kind: ChestKind, zone: number) => void,
         /** One swing broke `count` blocks (at least one), at `at`. */
@@ -72,6 +76,8 @@ export class MiningController {
 
     public fixedUpdate(delta: number): void {
         this.messageCooldown = Math.max(0, this.messageCooldown - delta);
+        const wasPushingFull = this.pushingFull;
+        this.pushingFull = false;
         const target = this.findTarget();
         if (!target) {
             this.effects.setCrack(null, 0);
@@ -93,6 +99,8 @@ export class MiningController {
         // (A power surge cashes every drop, so the bag never stops it.)
         if (!PowerSurge.active && DigProgress.backpackCount >= DigProgress.capacity) {
             this.effects.setCrack(null, 0);
+            this.pushingFull = true;
+            if (!wasPushingFull) this.onFullPush();
             if (this.hint(t('backpackFull'))) this.onBagFull();
             this.idle(delta);
             return;

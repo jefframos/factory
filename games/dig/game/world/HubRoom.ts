@@ -36,9 +36,14 @@ const WALL_STYLE: WallStyleConfig = { bottomColor: '#5d4030', topColor: '#c49a6c
 const FLOOR: FloorCheckerConfig = { colorA: '#d9c29b', colorB: '#c9ae84', scale: 1 };
 const MODEL_BASE = './dig/models/';
 
-/** Each station: pad colour, its badge icon (UI atlas frame), and its model (path under models/, height, raised on a pedestal). */
-export const STATION_LOOK: Record<StationKind, { color: number; icon: string; label: string; model: string; height: number; pedestal: number }> = {
+/**
+ * Each station: pad colour, its badge icon (UI atlas frame), and its model (path under models/, height, raised on a
+ * pedestal; `hue` turns the model's colours round the colour wheel, in degrees).
+ */
+export const STATION_LOOK: Record<StationKind, { color: number; icon: string; label: string; model: string; height: number; pedestal: number; hue?: number }> = {
     atm: { color: 0x3fd16b, icon: 'ItemIcon_Money_Bill', label: 'ATM', model: 'mine/atm-01.glb', height: 2.1, pedestal: 0 },
+    // The same ATM in purple (its greens turned round to violet), with a star.
+    boost: { color: 0xa66bff, icon: 'ItemIcon_Star_Gold', label: 'BOOSTS', model: 'mine/atm-01.glb', height: 2.1, pedestal: 0, hue: 150 },
     collection: { color: 0xf4b400, icon: 'ItemIcon_Trophy_Gold', label: 'COLLECTION', model: 'mine/idol-a.glb', height: 1.4, pedestal: 0.8 },
     wardrobe: { color: 0xe266c8, icon: 'ItemIcon_Heart_Red', label: 'WARDROBE', model: 'hub/cute-furniture-glb-closet-02/cute-furniture-glb-closet-02.glb', height: 2.2, pedestal: 0 },
 };
@@ -246,6 +251,67 @@ function alertTexture(): THREE.CanvasTexture {
     canvas.width = canvas.height = 128;
     CanvasArt.drawIcon(canvas.getContext('2d')!, 'Icon_Exclamation', 64, 64, 118);
     return CanvasArt.texture(canvas);
+}
+
+/** Hue-turned copies of textures, per (texture, degrees): every station sharing a palette shares the copy. */
+const hueTextures = new Map<string, THREE.Texture>();
+
+/**
+ * Turns a material's colours `degrees` round the colour wheel: its texture maps (the models paint from a shared
+ * colour palette) are redrawn hue-rotated once, its plain colours shifted directly. Greys and white stay as they are.
+ */
+function hueShift(material: THREE.Material, degrees: number): void {
+    const m = material as THREE.MeshStandardMaterial;
+    const turn = degrees / 360;
+    for (const key of ['map', 'emissiveMap'] as const) {
+        const texture = m[key];
+        const image = texture?.image as (CanvasImageSource & { width: number; height: number }) | undefined;
+        if (!texture || !image?.width) continue;
+        const id = `${texture.uuid}:${degrees}`;
+        let shifted = hueTextures.get(id);
+        if (!shifted) {
+            const canvas = document.createElement('canvas');
+            canvas.width = image.width;
+            canvas.height = image.height;
+            const g = canvas.getContext('2d', { willReadFrequently: true })!;
+            g.drawImage(image, 0, 0);
+            const pixels = g.getImageData(0, 0, canvas.width, canvas.height);
+            const color = new THREE.Color();
+            const hsl = { h: 0, s: 0, l: 0 };
+            for (let i = 0; i < pixels.data.length; i += 4) {
+                // Raw sRGB bytes in and out (no colour-space conversion): only the hue turns.
+                color.setRGB(pixels.data[i] / 255, pixels.data[i + 1] / 255, pixels.data[i + 2] / 255, THREE.LinearSRGBColorSpace);
+                color.getHSL(hsl, THREE.LinearSRGBColorSpace);
+                color.setHSL((hsl.h + turn) % 1, hsl.s, hsl.l, THREE.LinearSRGBColorSpace);
+                pixels.data[i] = Math.round(color.r * 255);
+                pixels.data[i + 1] = Math.round(color.g * 255);
+                pixels.data[i + 2] = Math.round(color.b * 255);
+            }
+            g.putImageData(pixels, 0, 0);
+            shifted = new THREE.CanvasTexture(canvas);
+            shifted.colorSpace = texture.colorSpace;
+            shifted.flipY = texture.flipY;
+            shifted.wrapS = texture.wrapS;
+            shifted.wrapT = texture.wrapT;
+            shifted.magFilter = texture.magFilter;
+            shifted.minFilter = texture.minFilter;
+            shifted.channel = texture.channel;
+            hueTextures.set(id, shifted);
+        }
+        m[key] = shifted;
+    }
+    for (const key of ['color', 'emissive'] as const) {
+        const value = m[key];
+        if (value instanceof THREE.Color) value.offsetHSL(turn, 0, 0);
+    }
+    m.needsUpdate = true;
+}
+
+/** The nearest of `pieces` the money covers, else the nearest of all; undefined if there are none. */
+function nearestBuildable(pieces: HubBuildable[], player: THREE.Vector3): HubBuildable | undefined {
+    const affordable = pieces.filter((b) => DigProgress.money >= b.price);
+    return (affordable.length ? affordable : pieces)
+        .reduce<HubBuildable | undefined>((best, b) => (!best || Math.hypot(b.x - player.x, b.z - player.z) < Math.hypot(best.x - player.x, best.z - player.z) ? b : best), undefined);
 }
 
 export class HubRoom {
@@ -500,6 +566,11 @@ export class HubRoom {
         return this.areaState(x, z)?.revealed ?? true;
     }
 
+    /** The hub has this station at all (levels/hub.json). */
+    public isStationPlaced(kind: StationKind): boolean {
+        return HUB.stations.some((s) => s.kind === kind);
+    }
+
     /** A station can be used (its area is revealed). */
     public isStationOpen(kind: StationKind): boolean {
         const station = HUB.stations.find((s) => s.kind === kind);
@@ -517,6 +588,7 @@ export class HubRoom {
         if (rule === 'firstFind') return DigProgress.collectedCount >= 1;
         if (rule.startsWith('mines:')) return DigProgress.mineCount >= Number(rule.slice('mines:'.length));
         if (rule === 'powerChest') return DigProgress.hasOnce(POWER_CHEST_TAKEN);
+        if (rule === 'boosts') return DigProgress.boostsUnlocked;
         if (rule.startsWith('upgrades:')) return DigProgress.upgradesBought >= Number(rule.slice('upgrades:'.length));
         if (rule.startsWith('sells:')) return DigProgress.timesSold >= Number(rule.slice('sells:'.length));
         if (rule.startsWith('upgradeAfter:')) {
@@ -541,7 +613,7 @@ export class HubRoom {
 
     /**
      * The next hidden area and what unlocks it, for the guide: its name, a line saying what to do, and where to go
-     * (the ATM for upgrades / selling, the nearest unbuilt piece for building). Undefined once everything is open.
+     * (the ATM for upgrades / selling, the nearest unbuilt piece for building — the nearest affordable one first). Undefined once everything is open.
      */
     public nextUnlock(player: THREE.Vector3): { name: string; text: string; target?: THREE.Vector3; building?: boolean } | undefined {
         const atm = HUB.stations.find((s) => s.kind === 'atm');
@@ -577,8 +649,7 @@ export class HubRoom {
                     const pieces = buildablesIn(other);
                     const need = rule.startsWith('half:') ? Math.ceil(pieces.length / 2) : pieces.length;
                     const left = need - pieces.filter((b) => DigProgress.isBuilt(b.id)).length;
-                    const open = pieces.filter((b) => !DigProgress.isBuilt(b.id));
-                    const nearest = open.reduce<HubBuildable | undefined>((best, b) => (!best || Math.hypot(b.x - player.x, b.z - player.z) < Math.hypot(best.x - player.x, best.z - player.z) ? b : best), undefined);
+                    const nearest = nearestBuildable(pieces.filter((b) => !DigProgress.isBuilt(b.id)), player);
                     return { name, text: t('unlockBuild', { count: left, area: names.area(other), name }), target: nearest ? new THREE.Vector3(nearest.x, 0, nearest.z) : undefined, building: true };
                 }
             }
@@ -586,10 +657,22 @@ export class HubRoom {
         return undefined;
     }
 
-    /** The cheapest buildable the miner can see and hasn't bought (the guide's "first buy"). */
+    /** The cheapest buildable the miner can see and hasn't bought (what the first sale is topped up to). */
     public get cheapestOpenBuildable(): HubBuildable | undefined {
-        return (HUB.buildables ?? []).filter((b) => this.isOpen(b.x, b.z) && !DigProgress.isBuilt(b.id))
-            .reduce<HubBuildable | undefined>((best, b) => (!best || b.price < best.price ? b : best), undefined);
+        return this.openBuildables.reduce<HubBuildable | undefined>((best, b) => (!best || b.price < best.price ? b : best), undefined);
+    }
+
+    /**
+     * The guide's "first buy": `keep` while the money still covers it (so the target doesn't flip as the miner walks),
+     * else the nearest piece in sight the money covers, else the cheapest (the one to earn for).
+     */
+    public firstBuyFor(player: THREE.Vector3, keep?: string): HubBuildable | undefined {
+        const affordable = this.openBuildables.filter((b) => DigProgress.money >= b.price);
+        return affordable.find((b) => b.id === keep) ?? nearestBuildable(affordable, player) ?? this.cheapestOpenBuildable;
+    }
+
+    private get openBuildables(): HubBuildable[] {
+        return (HUB.buildables ?? []).filter((b) => this.isOpen(b.x, b.z) && !DigProgress.isBuilt(b.id));
     }
 
     /** Shows areas whose rule is now met; `animate` pops their pieces in (and tells onReveal). */
@@ -718,7 +801,7 @@ export class HubRoom {
             const pedestal = this.add(new THREE.Mesh(new THREE.BoxGeometry(0.9 * size, pedestalHeight, 0.9 * size), this.material(0x4a3a30)));
             pedestal.position.set(modelX, pedestalHeight / 2, modelZ);
         }
-        void this.placeProp(look.model, modelX, modelZ, turn, height, pedestalHeight, undefined, true);
+        void this.placeProp(look.model, modelX, modelZ, turn, height, pedestalHeight, undefined, true, look.hue);
         this.collider(modelX, modelZ, 0.5 * size, (pedestalHeight + height) / 2, 0.45 * size);
         const top = pedestalHeight + height;
         const icon = new THREE.Sprite(new THREE.SpriteMaterial({ map: iconTexture(look.icon, look.color), depthWrite: false }));
@@ -784,7 +867,7 @@ export class HubRoom {
      * `elevation`. Loads only once loadDecor() is called, unless `essential` (the stations).
      */
     private async placeProp(model: string, x: number, z: number, rotationY: number, height: number, elevation: number,
-        stretch?: { x: number; z: number }, essential = false): Promise<THREE.Object3D | undefined> {
+        stretch?: { x: number; z: number }, essential = false, hue?: number): Promise<THREE.Object3D | undefined> {
         const area = this.building;
         try {
             if (!essential) await this.decorGate;
@@ -792,6 +875,7 @@ export class HubRoom {
             object.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
                     child.material = Array.isArray(child.material) ? child.material.map((m) => m.clone()) : child.material.clone();
+                    if (hue) (Array.isArray(child.material) ? child.material : [child.material]).forEach((m) => hueShift(m, hue));
                     (Array.isArray(child.material) ? child.material : [child.material]).forEach((m) => BendService.applyBend(m));
                 }
             });

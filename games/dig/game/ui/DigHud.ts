@@ -35,7 +35,7 @@ import { ModelIcons } from './ModelIcons';
 import { BoostDef, DIG, PRESTIGE_TOOL_LEVEL, Rarity, ToolDef, toolPaint } from '../data/DigConfig';
 import { RARITY_COLORS } from './CollectionPanel';
 import SoundToggleButton from 'core/ui/SoundToggleButton';
-import { rateLabel, type StationKind } from '../data/HubData';
+import { HUB, rateLabel, type StationKind } from '../data/HubData';
 
 /** A tutorial purchase the HUD won't let go of (DigScene decides when). */
 export type ForcedBuy = 'backpack' | 'tool' | 'hat';
@@ -45,6 +45,9 @@ import { DigAudio } from '../audio/DigAudio';
 import { Gameplay } from '../data/Gameplay';
 import { GameAnalytics } from '../analytics/GameAnalytics';
 
+/** The upgrade panel's title outline: green under the ATM's ribbon, purple under the boost machine's. */
+const UPGRADE_TITLE_STROKE = 0x1d5a12;
+const BOOST_TITLE_STROKE = 0x4a1d6e;
 const PILL_WIDTH = 210;
 const PILL_HEIGHT = 46;
 const ICON_SIZE = 58;
@@ -171,6 +174,14 @@ export class DigHud extends PIXI.Container {
     private buyHint = false;
     /** The upgrade panel's open tab (BOOSTS once unlocked: DigProgress.boostsUnlocked). */
     private tab: 'gear' | 'boosts' = 'gear';
+    /**
+     * The hub's boost machine is out (DigScene sets it): boosts are sold there (its panel is BOOSTS only) and the
+     * ATM's panel is GEAR only. Without one, the ATM has both tabs.
+     */
+    public boostMachine = false;
+    private readonly panelRibbon = UiKit.sprite('upgrades', 'ribbon', 0.55);
+    private readonly boostRibbon = UiKit.sprite('upgrades', 'ribbonPurple', 0.55);
+    private readonly panelTitle = UiKit.text('upgrades', 'title');
     /** "Open a new mine?" — asked before the reset (a full-screen confirmation). */
     private readonly newMineConfirm = new PIXI.Container();
     /** panelKey() when the upgrade panel was last built (see refresh()). */
@@ -269,7 +280,7 @@ export class DigHud extends PIXI.Container {
                 return screen ? new PIXI.Point(screen.center.x, screen.topLeft.y + screen.height * 0.36) : new PIXI.Point();
             },
         });
-        this.findBanner = new FindBanner();
+        this.findBanner = new FindBanner((id, from) => this.claimReward(id, from));
         this.collection = new CollectionPanel((id, from) => this.claimReward(id, from));
         this.buildAchievementsButton();
         this.mines = new MinesPanel((index) => {
@@ -764,7 +775,11 @@ export class DigHud extends PIXI.Container {
         if (this.station === 'wardrobe' && this.heldMoney === 0) {
             this.wardrobe.refresh();
         }
-        this.setAchievementsReady(DigProgress.claimableAchievements > 0);
+        // During the tutorial (until the first hub piece) just the "!": the shine, pulse, CLAIM and hand would
+        // compete with the guide.
+        const claimable = DigProgress.claimableAchievements > 0;
+        this.setAchievementsReady(claimable && (HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id)));
+        this.achievementsAlert.visible = claimable;
         this.mapButton.visible = DigProgress.prestige > 0 || DigProgress.canOpenNewMine;
         this.mapAlert.visible = DigProgress.canOpenNewMine;
         if (this.mines.visible && this.heldMoney === 0) this.mines.refresh();
@@ -776,8 +791,8 @@ export class DigHud extends PIXI.Container {
     }
 
     /**
-     * A reward claimed in the Trophy Room (a find, or COLLECTION_REWARD): paid now, then its cash flies from the CLAIM
-     * button (`from`, on screen) into the money icon, the counter climbing as each coin lands.
+     * A reward claimed (a find, or COLLECTION_REWARD) from the find banner on the spot or in the Trophy Room: paid
+     * now, then its cash flies from the CLAIM button (`from`, on screen) into the money icon, the counter climbing as each coin lands.
      */
     private claimReward(id: string, from: PIXI.Point): void {
         const amount = DigProgress.unclaimedFor(id);
@@ -866,7 +881,7 @@ export class DigHud extends PIXI.Container {
         }
         // Re-rendered so the hand shows (or goes); opened if it wasn't, closed unless the miner is on the ATM pad.
         if (this.panelOpen) this.renderPanel();
-        this.setUpgradePanel(kind === 'backpack' || kind === 'tool' || (kind === null && this.station === 'atm'));
+        this.setUpgradePanel(kind === 'backpack' || kind === 'tool' || (kind === null && (this.station === 'atm' || this.station === 'boost')));
         this.wardrobe.setForcedItem(kind === 'hat' ? DigProgress.starterHat?.id : undefined);
         const wardrobe = kind === 'hat' || (kind === null && this.station === 'wardrobe');
         if (wardrobe && !this.wardrobe.visible) UiAnim.popIn(this.wardrobe);
@@ -876,7 +891,7 @@ export class DigHud extends PIXI.Container {
         this.updateNewMineCta();
     }
 
-    /** Opens the panel of the station the miner stands on (null = none): ATM upgrades, collection, wardrobe. */
+    /** Opens the panel of the station the miner stands on (null = none): ATM upgrades, boosts, collection, wardrobe. */
     public setStationPanel(kind: StationKind | null): void {
         if (kind === this.station) return;
         this.station = kind;
@@ -889,7 +904,9 @@ export class DigHud extends PIXI.Container {
             this.language.visible = false;
             this.mines.visible = false;
         }
-        this.setUpgradePanel(kind === 'atm');
+        // Straight from one machine's pad to the other's: same panel, other contents.
+        if (this.panelOpen && (kind === 'atm' || kind === 'boost')) this.renderPanel();
+        this.setUpgradePanel(kind === 'atm' || kind === 'boost');
         this.updatePhone();
         this.updateNewMineCta();
         this.collection.visible = kind === 'collection';
@@ -977,11 +994,11 @@ export class DigHud extends PIXI.Container {
 
     private buildPanel(): void {
         const frame = UiKit.image('upgrades', 'panel', UPGRADE_SIZE.width, UPGRADE_SIZE.height);
-        const ribbon = UiKit.sprite('upgrades', 'ribbon', 0.55);
-        ribbon.y = -UPGRADE_SIZE.height / 2;
-        const title = UiKit.text('upgrades', 'title');
-        title.y = -UPGRADE_SIZE.height / 2 - 5;
-        this.panel.addChild(frame, ribbon, title, this.panelBody);
+        // The boost machine's panel wears its own colours (renderPanel swaps them): purple ribbon, BOOSTS.
+        for (const ribbon of [this.panelRibbon, this.boostRibbon]) ribbon.y = -UPGRADE_SIZE.height / 2;
+        this.boostRibbon.visible = false;
+        this.panelTitle.y = -UPGRADE_SIZE.height / 2 - 5;
+        this.panel.addChild(frame, this.panelRibbon, this.boostRibbon, this.panelTitle, this.panelBody);
         this.panel.visible = false;
     }
 
@@ -1001,6 +1018,16 @@ export class DigHud extends PIXI.Container {
      * The tool path as a timeline (shovel ... tractor, owned / next / later), the next tool's offer under it,
      * the backpack, and a line on where the path ends.
      */
+    /**
+     * Which tabs the upgrade panel has: GEAR only (a forced purchase, or the ATM while there's a boost machine),
+     * BOOSTS only (the boost machine), or both (the ATM in a hub without one).
+     */
+    private get panelMode(): 'gear' | 'boosts' | 'both' {
+        if (this.forced) return 'gear';
+        if (this.station === 'boost') return 'boosts';
+        return this.boostMachine ? 'gear' : 'both';
+    }
+
     /** What the upgrade panel shows, as a key: levels, what's affordable, the guide's hand. */
     private panelKey(): string {
         const money = DigProgress.money;
@@ -1008,7 +1035,7 @@ export class DigHud extends PIXI.Container {
         const bag = DigProgress.nextBackpack;
         const boosts = DIG.boosts.map((b) => `${DigProgress.boostLevel(b.id)}${money >= (DigProgress.boostPrice(b) ?? Infinity) ? '+' : ''}`);
         return [DigProgress.toolLevel, DigProgress.capacity, !!tool && money >= DigProgress.priceOf(tool), !!bag && money >= DigProgress.priceOf(bag), this.buyHint, this.forced,
-            this.tab, DigProgress.boostsUnlocked, DigProgress.prestige, ...boosts].join('|');
+            this.tab, this.panelMode, DigProgress.boostsUnlocked, DigProgress.prestige, ...boosts].join('|');
     }
 
     private renderPanel(): void {
@@ -1016,8 +1043,15 @@ export class DigHud extends PIXI.Container {
         // The buy buttons pulse: stop that before destroying them (see AchievementsPanel.refresh()).
         UiAnim.kill(this.panelBody);
         this.panelBody.removeChildren().forEach((child) => child.destroy({ children: true }));
-        // A forced purchase is always on GEAR; BOOSTS only once unlocked.
-        if (this.forced || !DigProgress.boostsUnlocked) this.tab = 'gear';
+        // A forced purchase is always on GEAR; BOOSTS only once unlocked; each machine its own tab.
+        const mode = this.panelMode;
+        const boostMachine = mode === 'boosts';
+        this.panelRibbon.visible = !boostMachine;
+        this.boostRibbon.visible = boostMachine;
+        this.panelTitle.text = boostMachine ? t('tabBoosts') : t('titleUpgrades');
+        this.panelTitle.style.stroke = boostMachine ? BOOST_TITLE_STROKE : UPGRADE_TITLE_STROKE;
+        if (mode === 'boosts') this.tab = 'boosts';
+        else if (mode === 'gear' || !DigProgress.boostsUnlocked) this.tab = 'gear';
         this.panelBody.addChild(this.panelTabs());
         if (this.tab === 'boosts') {
             this.renderBoosts();
@@ -1085,12 +1119,14 @@ export class DigHud extends PIXI.Container {
     }
 
     /**
-     * The tabs over the content block (TabBar): GEAR, and BOOSTS once unlocked (not while a purchase is forced —
-     * that stays on GEAR).
+     * The tabs over the content block (TabBar), per panelMode: GEAR, and BOOSTS once unlocked (not while a purchase is
+     * forced — that stays on GEAR); the boost machine's is BOOSTS alone.
      */
     private panelTabs(): PIXI.Container {
-        const tabs: TabSpec[] = [{ id: 'gear', label: t('tabGear') }];
-        if (DigProgress.boostsUnlocked && !this.forced) tabs.push({ id: 'boosts', label: t('tabBoosts'), alert: DigProgress.canAffordBoost });
+        const mode = this.panelMode;
+        const tabs: TabSpec[] = [];
+        if (mode !== 'boosts') tabs.push({ id: 'gear', label: t('tabGear') });
+        if (mode === 'boosts' || (mode === 'both' && DigProgress.boostsUnlocked)) tabs.push({ id: 'boosts', label: t('tabBoosts'), alert: mode === 'both' && DigProgress.canAffordBoost });
         const block = tabbedBlock({
             width: PANEL_BLOCK.width,
             height: PANEL_BLOCK.height,

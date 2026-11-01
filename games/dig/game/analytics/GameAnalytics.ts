@@ -17,13 +17,14 @@
 //   upgrade      tool-<nn>-<toolId>                complete   a tool bought (nn = its level)
 //   upgrade      bag-<nn>-<capacity>               complete   a backpack bought (nn = its level)
 //   upgrade      count-<n>                         complete   the player's nth upgrade (tool or bag), for the first 10
-//   shop         hat-<id> | face-<id> | color-<id> bought     a wardrobe item bought with cash
-//   shop         hat-<id> | face-<id> | color-<id> equip      an owned wardrobe item put on
+//   shop         hat-<id> | face-<id> | color-<nn> bought     a wardrobe item bought with cash (colours by their
+//                                                             place in wardrobe.colors, 01 = the first)
+//   shop         hat-<id> | face-<id> | color-<nn> equip      an owned wardrobe item put on
 //   build        <buildableId>                     complete   a hub piece bought
 //   hub          set-<areaId>                      complete   every piece of a hub room bought (its set bonus on)
 //   area         <areaId>                          visible    a hidden hub area appears
 //   bag          full-<capacity>                   complete   the backpack fills up
-//   sell         atm | anywhere                    complete   the backpack is sold (at the ATM pad / the SELL button)
+//   sell         atm | boost | anywhere            complete   the backpack is sold (at the ATM / boost machine / SELL button)
 //   sell         count-<n>                         complete   the player's nth sale, for the first 10
 //   blocked      <materialId>                      fail       the miner pushes into rock the tool can't dig (once per
 //                                                             material per session)
@@ -56,9 +57,15 @@
 //
 // Time stamps: every event except the frequent ones (UNTIMED) is sent a second time under category `time`, with
 // what = <category>-<what>-<bucket> and the same action, where <bucket> is the player's active play time so far, all
-// sessions together (DigProgress.playSeconds), as a minute range from TIME_BUCKETS: m00-01, m01-02, ... m60-90,
-// m90plus. So `time / upgrade-tool-03-drill-m08-12 / complete` = the Power Drill bought 8 to 12 minutes in. The
-// plain events stay as they were (the funnel), and the `time` ones split each by when it happened.
+// sessions together (DigProgress.playSeconds), as the minute its TIME_BUCKETS range starts at: m00 (0-1 min), m01,
+// m02, m03, m05, m08, m12, m20, m30, m45, m60, m90 (90 and over). So `time / upgrade-tool-03-drill-m08 / complete` =
+// the Power Drill bought 8 to 12 minutes in. The plain events stay as they were (the funnel), and the `time` ones
+// split each by when it happened.
+//
+// PokiSDK.measure() drops an event whose three values hold more than MAX_NUMBERS runs of digits in all, and any value
+// with characters outside A-Z a-z 0-9 space - _ : . + |. send() keeps every event within that: a time stamp gives up
+// its what's trailing numbers first (`upgrade-bag-02-12-m08` -> `upgrade-bag-02-m08`), and anything still over is
+// skipped (with a warning) rather than sent to be dropped.
 //
 // Add an event here (and to the table) rather than calling PlatformHandler.measure() directly.
 
@@ -67,7 +74,7 @@ import { DIG } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
 
 /** The tutorial steps, in the order a new player meets them (the funnel). */
-export const TUTORIAL = ['move', 'dig', 'bag-full', 'sell', 'tool-upgrade', 'bag-upgrade', 'wardrobe', 'hat', 'find', 'claim', 'collection', 'build'] as const;
+export const TUTORIAL = ['move', 'dig', 'bag-full', 'sell', 'tool-upgrade', 'bag-upgrade', 'wardrobe', 'hat', 'find', 'claim', 'build'] as const;
 export type TutorialStep = (typeof TUTORIAL)[number];
 
 const PLAYTIME_MINUTES = [1, 2, 3, 5, 8, 12, 20, 30, 45, 60];
@@ -77,19 +84,41 @@ const TIME_BUCKETS = [0, 1, 2, 3, 5, 8, 12, 20, 30, 45, 60, 90];
 /** Categories (or category-what) sent too often to be worth a time stamp each. */
 const UNTIMED = new Set(['playtime', 'settings', 'ad', 'bag', 'sell-atm', 'sell-anywhere', 'shop-equip']);
 
-/** The time-stamp bucket of a moment `seconds` of total play in: m05-08, or m90plus. */
+/** The time-stamp bucket of a moment `seconds` of total play in: the minute its range starts at, m05 (5-8 min). */
 function timeBucket(seconds: number): string {
     const minutes = seconds / 60;
     let i = 0;
     while (i + 1 < TIME_BUCKETS.length && minutes >= TIME_BUCKETS[i + 1]) i++;
-    const from = pad(TIME_BUCKETS[i]);
-    return i + 1 < TIME_BUCKETS.length ? `m${from}-${pad(TIME_BUCKETS[i + 1])}` : `m${from}plus`;
+    return `m${pad(TIME_BUCKETS[i])}`;
+}
+
+/** PokiSDK.measure(): at most this many runs of digits across category, what and action together. */
+const MAX_NUMBERS = 2;
+const INVALID_CHARS = /[^A-Za-z0-9_: .+|-]/g;
+
+/** Runs of digits across the values, counted the way PokiSDK.measure() does. */
+function numbers(...values: string[]): number {
+    return values.join(' ').match(/\d+/g)?.length ?? 0;
+}
+
+/** Sends one event, or skips it (with a warning) if PokiSDK.measure() would drop it anyway. */
+function measure(category: string, what: string, action: string): void {
+    what = what.replace(INVALID_CHARS, '-');
+    if (numbers(category, what, action) > MAX_NUMBERS) {
+        console.warn('[GameAnalytics] skipped, too many numbers for PokiSDK.measure():', category, what, action);
+        return;
+    }
+    PlatformHandler.instance.measure(category, what, action);
 }
 
 function send(category: string, what: string | number, action: string): void {
-    PlatformHandler.instance.measure(category, what, action);
+    measure(category, String(what), action);
     if (UNTIMED.has(category) || UNTIMED.has(`${category}-${what}`) || UNTIMED.has(`${category}-${action}`)) return;
-    PlatformHandler.instance.measure('time', `${category}-${what}-${timeBucket(DigProgress.playSeconds)}`, action);
+    const bucket = timeBucket(DigProgress.playSeconds);
+    let timed = `${category}-${what}`;
+    // The bucket's number comes first: drop the what's trailing numbers until it fits.
+    while (numbers('time', timed, bucket, action) > MAX_NUMBERS && /-\d+$/.test(timed)) timed = timed.replace(/-\d+$/, '');
+    measure('time', `${timed}-${bucket}`, action);
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -169,7 +198,7 @@ export const GameAnalytics = {
         send('bag', `full-${capacity}`, 'complete');
     },
 
-    sold(where: 'atm' | 'anywhere', count: number): void {
+    sold(where: 'atm' | 'boost' | 'anywhere', count: number): void {
         send('sell', where, 'complete');
         if (count <= 10) send('sell', `count-${count}`, 'complete');
     },
@@ -268,9 +297,13 @@ function upgradeCount(): void {
     if (count <= 10 && DigProgress.once(`upgrade-count-${count}`)) send('upgrade', `count-${count}`, 'complete');
 }
 
-/** Faces are image paths (skins/face-x.webp) and colours hex codes: just the name part. */
+/**
+ * Faces are image paths (skins/face-x.webp): just the name part. Colours are hex codes, whose digits would count as
+ * several numbers for PokiSDK.measure(): their place in wardrobe.colors instead (color-01 = the first).
+ */
 function lookId(kind: string, id: string): string {
-    const prefix = kind === 'hats' ? 'hat' : kind === 'faces' ? 'face' : 'color';
-    const name = id.split('/').pop()!.replace(/\.[^.]+$/, '').replace('#', '');
-    return `${prefix}-${name}`;
+    if (kind === 'hats') return `hat-${id}`;
+    if (kind === 'faces') return `face-${id.split('/').pop()!.replace(/\.[^.]+$/, '')}`;
+    const index = DIG.wardrobe.colors.findIndex((color) => color.id === id);
+    return `color-${index >= 0 ? pad(index + 1) : id.replace('#', '')}`;
 }

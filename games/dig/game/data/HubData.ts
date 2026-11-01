@@ -41,8 +41,11 @@ export interface HubProp {
     collider?: { halfX: number; halfY: number; halfZ: number } | null;
 }
 
-/** atm = sells the backpack and opens the upgrades; collection = the artifact totem; wardrobe = looks. */
-export type StationKind = 'atm' | 'collection' | 'wardrobe';
+/**
+ * atm = sells the backpack and opens the upgrades (GEAR); boost = the boost machine (the ATM recoloured): sells the
+ * backpack too and opens the BOOSTS; collection = the artifact totem; wardrobe = looks.
+ */
+export type StationKind = 'atm' | 'boost' | 'collection' | 'wardrobe';
 
 export interface HubStation extends HubPoint {
     kind: StationKind;
@@ -58,7 +61,8 @@ export interface HubStation extends HubPoint {
  * upgrades); 'sells:<n>' (sold n times); 'firstFind' (an artifact found); 'firstBuild' (any buildable bought);
  * 'built:<areaId>' / 'half:<areaId>' (all / half of that area's buildables bought); 'upgradeAfter:<areaId>' (an
  * upgrade bought after that area appeared); 'mines:<n>' (n mines opened, the first counting); 'powerChest' (the first
- * power chest dug: the first room of pieces to build). Several joined with '|' = any of them. Things outside every area are always there. The first area containing a point owns it.
+ * power chest dug: the first room of pieces to build); 'boosts' (boosts unlocked: the first hat, see
+ * DigProgress.boostsUnlocked). Several joined with '|' = any of them. Things outside every area are always there. The first area containing a point owns it.
  *
  * An area's buildables are a set: buying them all adds its `bonus` on top of each piece's own perk.
  */

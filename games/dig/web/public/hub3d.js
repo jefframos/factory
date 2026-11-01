@@ -1,5 +1,5 @@
 // 3D Hub tab: builds the miner's hub (levels/hub.json) in a perspective view the way the game draws it — checker
-// floor, walls with their doorways, the stations (ATM / upgrade shop, collection totem, wardrobe), decoration,
+// floor, walls with their doorways, the stations (ATM / upgrade shop, boost machine, collection totem, wardrobe), decoration,
 // buildables (pieces the player buys to finish the hub: see-through with a price tag in the game until bought) and
 // trophy tables (each shows one zone's finds along its long side; silhouettes in the game until dug up) and
 // achievement trophies (decorations that appear once an achievement's last tier is claimed), and reveal areas
@@ -24,6 +24,8 @@ const STATION_MODEL_OFFSET = STATION_RADIUS + 0.25;
 const BUILD_RADIUS = 0.9;
 const STATIONS = {
     atm: { label: 'Upgrade shop (ATM)', color: 0x3fd16b, model: 'mine/atm-01.glb', height: 2.1, pedestal: 0 },
+    // The ATM recoloured (the game hue-rotates its texture; here it's just tinted): sells boosts, and the backpack.
+    boost: { label: 'Boost machine', color: 0xa66bff, model: 'mine/atm-01.glb', height: 2.1, pedestal: 0, tint: 0xc9a6ff },
     collection: { label: 'Collection totem', color: 0xf4b400, model: 'mine/idol-a.glb', height: 1.4, pedestal: 0.8 },
     wardrobe: { label: 'Wardrobe', color: 0xe266c8, model: 'hub/cute-furniture-glb-closet-02/cute-furniture-glb-closet-02.glb', height: 2.2, pedestal: 0 },
 };
@@ -392,6 +394,7 @@ function revealColor(reveal) {
     if (rule.startsWith('half:')) return REVEAL_COLORS.built;
     if (rule.startsWith('sells:')) return REVEAL_COLORS.build;
     if (rule === 'firstFind') return REVEAL_COLORS.find;
+    if (rule === 'boosts') return REVEAL_COLORS.upgrade;
     if (rule === 'firstBuild') return REVEAL_COLORS.build;
     return REVEAL_COLORS.start;
 }
@@ -406,6 +409,7 @@ function revealLabel(reveal) {
         if (rule.startsWith('upgrade:')) return `after upgrade ${rule.slice(8)}`;
         if (rule.startsWith('mines:')) return `from mine #${rule.slice(6)}`;
         if (rule === 'powerChest') return 'after the first power chest';
+        if (rule === 'boosts') return 'once boosts unlock (the first hat)';
         if (rule === 'firstFind') return 'after the first find';
         if (rule === 'firstBuild') return 'after the first buildable';
         if (rule.startsWith('built:')) return `after ${level.areas.find((a) => a.id === rule.slice(6))?.name ?? '?'} is built`;
@@ -511,7 +515,14 @@ function buildStation(station) {
         pedestal.position.y = (look.pedestal * size) / 2;
         stand.add(pedestal);
     }
-    void fillModel(stand, look.model, look.height * size, look.pedestal * size, false);
+    void fillModel(stand, look.model, look.height * size, look.pedestal * size, false).then((model) => {
+        if (!model || !look.tint) return;
+        model.traverse((node) => {
+            if (!node.isMesh) return;
+            node.material = Array.isArray(node.material) ? node.material.map((m) => m.clone()) : node.material.clone();
+            for (const m of [node.material].flat()) m.color?.multiply(new THREE.Color(look.tint));
+        });
+    });
     const label = labelSprite(look.label.replace(/ \(.*\)/, ''), `#${look.color.toString(16).padStart(6, '0')}`);
     label.position.set(0, (look.pedestal + look.height) * size + 0.6, -STATION_MODEL_OFFSET);
     holder.add(label);
@@ -954,6 +965,7 @@ function renderInspector() {
             ['upgrade:3', 'After the 3rd upgrade'], ['upgrade:4', 'After the 4th upgrade'], ['mines:2', 'From mine #2'], ['powerChest|upgrade:3', 'After the first power chest (or the 3rd upgrade)'], ['mines:3', 'From mine #3'], ['firstFind', 'After the first find'], ['firstBuild', 'After the first buildable'],
             ['upgrades:1', 'After 1 upgrade (tool or backpack)'], ['upgrades:2', 'After 2 upgrades'], ['upgrades:3', 'After 3 upgrades'],
             ['upgrades:3|sells:4', 'After 3 upgrades or selling 4 times'], ['sells:3', 'After selling 3 times'],
+            ['boosts', 'Once boosts unlock (the first hat)'],
             ...level.areas.filter((a) => a.id !== data.id).flatMap((a) => [
                 [`built:${a.id}`, `After "${a.name}" is fully built`],
                 [`half:${a.id}`, `After half of "${a.name}" is built`],

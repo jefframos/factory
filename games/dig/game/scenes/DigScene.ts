@@ -100,6 +100,8 @@ const STEP_DISTANCE = 0.9;
 const AD_BREAK_COOLDOWN_MS = 3 * 60 * 1000;
 /** Wait after the BUY tap, so the purchase's fanfare plays before the break. */
 const AD_BREAK_DELAY_MS = 900;
+/** Tries at digging with a full backpack before the guide's arrows lead back to the ATM. */
+const FULL_PUSHES_TO_GUIDE = 2;
 /** Each hub piece that earns pops what it made every this many seconds (at least $1), while the miner is this near the hub. */
 const INCOME_POP_SEC = 3;
 const INCOME_POP_RANGE = 22;
@@ -164,6 +166,8 @@ export default class DigScene extends ThreeScene {
     /** A power surge's cash not yet shown, and the time to the next "+$". */
     private surgeCash = 0;
     private surgeCashTimer = 0;
+    /** Pushes into rock with a full backpack since it filled up (FULL_PUSHES_TO_GUIDE turns the arrows to the ATM on). */
+    private fullPushes = 0;
     /** The backpack was full last frame (filling it up gets called out once). */
     private bagWasFull = false;
     /** The station pad the miner stands on (updateStations). */
@@ -250,7 +254,6 @@ export default class DigScene extends ThreeScene {
             window.setTimeout(() => this.hud.say(t('relicNext', { name: names.find(find).toUpperCase() }), 0xffd23f), 1200);
         });
         this.guide = new Guide(this.threeScene, this.hub, (x, z) => this.terrain.isSolid(x, z), this.relicHunt, (text, buy) => this.hud.setGuide(text, buy));
-        this.guide.firstPowerChest = () => this.powerChests.firstChestAt();
         this.hardBlocks = new HardBlockMarkers(this.threeScene, this.terrain);
         this.treasureSparkles = new TreasureSparkles(this.terrain, this.effects);
         this.treasureBeacons = new TreasureBeacons(this.threeScene, this.terrain);
@@ -274,6 +277,10 @@ export default class DigScene extends ThreeScene {
             this.hud.flashBackpack();
             this.effects.floatText(this.player.pickupPoint(new THREE.Vector3()).setY(2.4), t('bagFullFloat'), '#ff8a7a');
             DigAudio.play('error');
+        }, () => {
+            // A few tries at digging with a full backpack: the guide's arrows lead back to the ATM until it's sold.
+            this.fullPushes++;
+            if (this.fullPushes >= FULL_PUSHES_TO_GUIDE) this.guide.setReturnToSell(true);
         }, (kind, zone) => this.openChest(kind, zone), (count, at) => {
             this.onBroke(count);
             this.powerChests.onDig(at, this.player.transform.position);
@@ -506,6 +513,9 @@ export default class DigScene extends ThreeScene {
         this.hud.say(t('powerChest', { tool: names.tool(tool).toUpperCase(), seconds: DIG.chests.power.seconds }), 0x8fe9ff);
         DigAudio.play('quest');
         this.mining.toolChanged();
+        // Whatever's in the bag stays there: the surge cashes new drops only.
+        this.guide.setReturnToSell(false);
+        this.fullPushes = 0;
     }
 
     /** Runs a power surge's clock (only while playing), its HUD countdown and cash pops, and its end. */
@@ -624,7 +634,9 @@ export default class DigScene extends ThreeScene {
 
     /**
      * Standing on a station's pad uses it: the ATM sells the backpack (the items fly into its slot) and
-     * opens the upgrades; the totem and the closet open their panels. Also keeps the "!" marks current.
+     * opens the upgrades; the boost machine (the ATM in purple) sells too and opens the boosts; the totem and the
+     * closet open their panels. Also keeps the "!" marks current. The boost machine has no guide step: its "!" (a
+     * boost affordable) is all it gets.
      */
     private updateStations(): void {
         const position = this.player.transform.position;
@@ -636,14 +648,18 @@ export default class DigScene extends ThreeScene {
             open = station.kind;
             // Only on stepping onto the pad: standing there would collect every dollar as it trickles in.
             if (station.kind === 'atm' && this.onStation !== 'atm') this.collectHubCash(this.hub.stationTarget('atm') ?? new THREE.Vector3(station.x, 1, station.z));
-            if (station.kind === 'atm' && DigProgress.backpackCount > 0) {
-                this.sell(this.hub.stationTarget('atm') ?? new THREE.Vector3(station.x, 1, station.z), true);
+            if ((station.kind === 'atm' || station.kind === 'boost') && DigProgress.backpackCount > 0) {
+                this.sell(this.hub.stationTarget(station.kind) ?? new THREE.Vector3(station.x, 1, station.z), station.kind);
             }
         }
         this.onStation = open;
+        // Boosts are on the boost machine once it's there; until then (or in a hub without one) on the ATM.
+        const boostMachine = this.hub.isStationPlaced('boost') && this.hub.isStationOpen('boost');
+        this.hud.boostMachine = boostMachine;
         this.hud.setStationPanel(open);
         this.updateBuilding(position);
-        this.hub.setAttention('atm', open !== 'atm' && (DigProgress.canAffordUpgrade || DigProgress.canAffordBoost));
+        this.hub.setAttention('atm', open !== 'atm' && (DigProgress.canAffordUpgrade || (!boostMachine && DigProgress.canAffordBoost)));
+        this.hub.setAttention('boost', open !== 'boost' && DigProgress.canAffordBoost);
         // Something new to look at, or a reward waiting to be claimed there.
         this.hub.setAttention('collection', DigProgress.unseenFinds.length > 0 || DigProgress.hasUnclaimed);
         this.hub.setAttention('wardrobe', open !== 'wardrobe' && DigProgress.wardrobeHasNews);
@@ -702,6 +718,10 @@ export default class DigScene extends ThreeScene {
             DigAudio.play('error');
         }
         this.bagWasFull = full;
+        if (!full && this.fullPushes > 0) {
+            this.fullPushes = 0;
+            this.guide.setReturnToSell(false);
+        }
     }
 
     /**
@@ -734,7 +754,6 @@ export default class DigScene extends ThreeScene {
         }
         if (forced) GameAnalytics.forcedShown(forced);
         this.hud.setForced(forced);
-        // The first find's banner holds the game too, until its CLAIM.
         this.player.movementController.enabled = !forced && !this.leaving && !this.flyCamera.isEnabled();
     }
 
@@ -752,7 +771,6 @@ export default class DigScene extends ThreeScene {
             case 'find': return DigProgress.totalFinds > 0;
             // Sent by the find banner's CLAIM itself; here only for priming an old save.
             case 'claim': return DigProgress.totalFinds > 0;
-            case 'collection': return DigProgress.totalFinds > 0 && DigProgress.unseenFinds.length === 0;
             case 'build': return (HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id));
         }
     }
@@ -809,7 +827,7 @@ export default class DigScene extends ThreeScene {
     /** Sells right where the miner stands, the items flying up and away (the ATM does it in the hub); `multiplier` on the value. */
     private sellAnywhere(multiplier = 1): void {
         if (DigProgress.backpackCount === 0) return;
-        this.sell(this.player.transform.position.clone().add(new THREE.Vector3(0, SELL_ANYWHERE_HEIGHT, -0.6)), false, multiplier);
+        this.sell(this.player.transform.position.clone().add(new THREE.Vector3(0, SELL_ANYWHERE_HEIGHT, -0.6)), null, multiplier);
     }
 
     /**
@@ -921,11 +939,11 @@ export default class DigScene extends ThreeScene {
 
     /**
      * Sells the backpack at once (so the save is right), then plays it out: the items stream out of the
-     * miner to `target` (the ATM's slot, or up into the air for the SELL button), each arrival pops a
+     * miner to `target` (`pad`'s slot: the ATM or the boost machine; or up into the air for the SELL button), each arrival pops a
      * "+$" label (and flashes the ATM's pad) and hands its money and slot over in the HUD. Big
      * backpacks toss at most SELL_MAX_TOSSES items, each carrying a share.
      */
-    private sell(target: THREE.Vector3, atPad: boolean, multiplier = 1): void {
+    private sell(target: THREE.Vector3, atPad: 'atm' | 'boost' | null, multiplier = 1): void {
         const items: MaterialDef[] = [];
         for (const [id, count] of Object.entries(DigProgress.backpack)) {
             const material = DIG.materials.find((m) => m.id === id);
@@ -936,7 +954,7 @@ export default class DigScene extends ThreeScene {
         const total = items.length;
         // The tutorial's last sale always covers its first hub piece (topped up in the same sale, on its last toss).
         const earned = DigProgress.sellAll(multiplier) + this.firstBuildTopUp();
-        GameAnalytics.sold(atPad ? 'atm' : 'anywhere', DigProgress.timesSold);
+        GameAnalytics.sold(atPad ?? 'anywhere', DigProgress.timesSold);
         const tosses = Math.min(total, SELL_MAX_TOSSES);
         const interval = Math.min(SELL_TOSS_INTERVAL, SELL_MAX_SEC / tosses);
         this.hud.holdSale(earned, total);
@@ -956,7 +974,7 @@ export default class DigScene extends ThreeScene {
                 handed += last - first;
                 this.hud.releaseSale(value, last - first);
                 DigAudio.play('coins');
-                if (atPad) this.hub.pulse('atm');
+                if (atPad) this.hub.pulse(atPad);
                 // Scattered around the target so a quick run of labels doesn't stack into one blob.
                 const label = pad.clone().add(new THREE.Vector3((Math.random() - 0.5) * 3.2, 0.5 + Math.random() * 1.6, (Math.random() - 0.5) * 1.2));
                 this.effects.floatText(label, `+$${value}`);

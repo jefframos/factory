@@ -11,8 +11,8 @@
 // The chest is a cell flag in the terrain (VoxelTerrain.placeChest), so mining, sparkles and beacons treat it like
 // any chest; its model is drawn here (not in the merged chunk mesh) so it can pop and fade. It looks like what it
 // gives: the tractor the surge rides (TractorRide), glowing round the rainbow; its model loads behind the game, and
-// none shows before it's in. Once the first has been dug, one at a time keeps coming back (updateRoaming): after
-// each surge, chests.power.roam.delay seconds on, a little way from the miner.
+// none shows before it's in. Once the first has been dug and the tutorial is over (the first hub piece built), one at
+// a time keeps coming back (updateRoaming): chests.power.roam.delay seconds after each surge, a little way from the miner.
 
 import * as THREE from 'three';
 import { DIG } from '../data/DigConfig';
@@ -20,6 +20,7 @@ import { DigProgress } from '../data/DigProgress';
 import { VoxelTerrain, AIR, BEDROCK } from '../world/VoxelTerrain';
 import { BendService } from '../services/BendService';
 import { PowerSurge } from './PowerSurge';
+import { HUB } from '../data/HubData';
 import { GameAnalytics } from '../analytics/GameAnalytics';
 import type { DigEffects } from '../vfx/DigEffects';
 
@@ -76,6 +77,8 @@ export class PowerChestSpawner {
             if (spots.length) break;
             spots = this.spotsAhead(dx, dz, fx, fz, alongX, sides, nearest, farthest);
         }
+        // No diggable rock ahead or to the side (a wall of hard rock, the map's edge): try again on a later dig.
+        if (!spots.length) return;
         const [ix, iz] = spots[Math.floor(Math.random() * spots.length)];
         if (!this.terrain.placeChest(ix, iz, 'power')) return;
         this.ix = ix;
@@ -147,12 +150,12 @@ export class PowerChestSpawner {
     }
 
     /**
-     * After the first: one power chest on the map at a time. Once it's dug and its surge is over, the next comes
-     * roam.delay seconds later, roam.distance blocks from the miner (never right by them), sitting on its block with
+     * After the first, once the tutorial is over: one power chest on the map at a time. Once it's dug and its surge is
+     * over, the next comes roam.delay seconds later, roam.distance blocks from the miner (never right by them), sitting on its block with
      * its beam until it's dug.
      */
     private updateRoaming(delta: number, player: THREE.Vector3): void {
-        if (!DigProgress.hasOnce(POWER_CHEST_TAKEN)) return;
+        if (!DigProgress.hasOnce(POWER_CHEST_TAKEN) || !(HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id))) return;
         const size = this.terrain.size;
         if (this.roamCell >= 0) {
             if (this.terrain.chestAt(this.roamCell % size, Math.floor(this.roamCell / size)) === 'power') return;

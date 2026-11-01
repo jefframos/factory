@@ -124,6 +124,38 @@
       "height": 0.37,
       "collider": null,
       "elevation": -0.3
+    },
+    {
+      "model": "hub/cute-furniture-glb-picture-08/cute-furniture-glb-picture-08.glb",
+      "x": -6,
+      "z": -8.75,
+      "rotationY": 0,
+      "height": 1.2,
+      "collider": null,
+      "elevation": 1,
+      "perk": {
+        "stat": "move",
+        "amount": 0.02
+      },
+      "income": 1
+    },
+    {
+      "model": "hub/furniture-shelf-b-small-decorated/furniture-shelf-b-small-decorated.gltf",
+      "x": 8,
+      "z": -9,
+      "rotationY": 0,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.59,
+        "halfY": 0.6,
+        "halfZ": 0.34
+      },
+      "elevation": 0.8,
+      "perk": {
+        "stat": "sell",
+        "amount": 0.02
+      },
+      "income": 0.8
     }
   ],
   "loot": [],
@@ -131,7 +163,13 @@
   "stations": [
     {
       "kind": "atm",
-      "x": -7.25,
+      "x": -7,
+      "z": -7,
+      "rotationY": 0
+    },
+    {
+      "kind": "boost",
+      "x": 7,
       "z": -7,
       "rotationY": 0
     },
@@ -155,8 +193,8 @@
       "name": "Plant",
       "price": 500,
       "model": "hub/cute-furniture-glb-plants-05/cute-furniture-glb-plants-05.glb",
-      "x": 8,
-      "z": -7.75,
+      "x": 5.5,
+      "z": -8,
       "rotationY": -0.5236,
       "height": 1.1,
       "collider": {
@@ -436,50 +474,12 @@
       "income": 1.2
     },
     {
-      "id": "furniture-shelf-b-small-decorated",
-      "name": "Shelf",
-      "price": 500,
-      "model": "hub/furniture-shelf-b-small-decorated/furniture-shelf-b-small-decorated.gltf",
-      "x": 7.5,
-      "z": -9,
-      "rotationY": 0,
-      "height": 1.2,
-      "collider": {
-        "halfX": 0.59,
-        "halfY": 0.6,
-        "halfZ": 0.34
-      },
-      "elevation": 0.8,
-      "perk": {
-        "stat": "sell",
-        "amount": 0.02
-      },
-      "income": 0.8
-    },
-    {
-      "id": "cute-furniture-glb-picture-08",
-      "name": "Picture",
-      "price": 600,
-      "model": "hub/cute-furniture-glb-picture-08/cute-furniture-glb-picture-08.glb",
-      "x": 6.25,
-      "z": -8.75,
-      "rotationY": 0,
-      "height": 1.2,
-      "collider": null,
-      "elevation": 1,
-      "perk": {
-        "stat": "move",
-        "amount": 0.02
-      },
-      "income": 1.0
-    },
-    {
       "id": "cute-furniture-glb-clock-03",
       "name": "Clock",
       "price": 4000,
       "model": "hub/cute-furniture-glb-clock-03/cute-furniture-glb-clock-03.glb",
       "x": -8.5,
-      "z": -3.5,
+      "z": -2.75,
       "rotationY": 1.5708,
       "height": 2.57,
       "collider": {
@@ -499,7 +499,7 @@
       "price": 5000,
       "model": "hub/cute-furniture-glb-plants-15/cute-furniture-glb-plants-15.glb",
       "x": -8.5,
-      "z": -5.25,
+      "z": -8.4,
       "rotationY": 0,
       "height": 1.94,
       "collider": {
@@ -647,6 +647,15 @@
       "reveal": "start"
     },
     {
+      "id": "boost-corner",
+      "name": "Boosts",
+      "x": 7,
+      "z": -7.5,
+      "width": 2.8,
+      "depth": 2.8,
+      "reveal": "boosts"
+    },
+    {
       "id": "wardrobe",
       "name": "Wardrobe",
       "x": -7.6,
@@ -671,7 +680,7 @@
       "z": 4.5,
       "width": 9,
       "depth": 9,
-      "reveal": "powerChest|upgrade:3",
+      "reveal": "upgradeAfter:wardrobe|powerChest|upgrade:3",
       "bonus": {
         "stat": "sell",
         "amount": 0.05

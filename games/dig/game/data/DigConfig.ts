@@ -238,7 +238,7 @@ export interface DigDesign {
     tractor: TractorDef;
     achievements: AchievementDef[];
     boosts: BoostDef[];
-    /** The BOOSTS tab opens with this many tool upgrades (or after the first new mine). */
+    /** Boosts unlock with this many tool upgrades (or the first hat, or after the first new mine). */
     boostsUnlockToolLevel: number;
     prestige: PrestigeDef;
     hubIncome: HubIncomeDef;

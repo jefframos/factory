@@ -169,7 +169,7 @@
       "model": "shovel",
       "clip": "Digging",
       "power": 1,
-      "hitInterval": 0.26,
+      "hitInterval": 0.2,
       "area": 1,
       "price": 0,
       "icon": "shovel",
@@ -182,7 +182,8 @@
       "clip": "StandingPICKAXE",
       "power": 2,
       "hitInterval": 0.38,
-      "area": 1,
+      "area": 3,
+      "depth": 1,
       "price": 10,
       "icon": "pickaxe",
       "rarity": "common"
@@ -194,7 +195,7 @@
       "clip": "StandingPICKAXE",
       "power": 3,
       "hitInterval": 0.32,
-      "area": 1,
+      "area": 3,
       "depth": 2,
       "price": 120,
       "icon": "pickaxe",
@@ -275,12 +276,8 @@
       "price": 0
     },
     {
-      "capacity": 20,
-      "price": 10
-    },
-    {
       "capacity": 30,
-      "price": 40
+      "price": 10
     },
     {
       "capacity": 40,
@@ -1214,14 +1211,14 @@
   },
   "firstFindAfterBlocks": 12,
   "relicHunt": {
-    "$comment": "After the tutorial (the first hub piece built) the guide leads to the next relics, one at a time, for `guided` relics: claim one in the Trophy Room and the next is named on screen, then the floor arrows and a beam lead to it. One buried more than maxDistance blocks from the miner (or in rock their tool can't dig) moves into a diggable block place[0]..place[1] blocks from them once they're out of the hub. enabled: false = the baseline (no hunt).",
-    "enabled": true,
+    "$comment": "After the tutorial (the first hub piece built) the guide leads to the next relics, one at a time, for `guided` relics: claim one in the Trophy Room and the next is named on screen, then the floor arrows and a beam lead to it. One buried more than maxDistance blocks from the miner (or in rock their tool can't dig) moves into a diggable block place[0]..place[1] blocks from them once they're out of the hub. enabled: false = the baseline (no hunt): off, the treasure beams alone lead to relics (the guided hunt cost tutorial completion).",
+    "enabled": false,
     "guided": 4,
     "maxDistance": 12,
     "place": [6, 10]
   },
   "chests": {
-    "$comment": "Buried chests besides the finds, each in a seeded block of its zone. power (drawn as the tractor the surge rides, glowing round the rainbow; its model loads behind the game): digging it out gives a timed taste of a better tool (at least one tier above the one owned, never below `tool`) for `seconds`, digging `speedMultiplier` faster; while it lasts every block is cashed at once (no backpack). It is never buried: once the player has dug spawn.afterBlocks blocks, one fades in spawn.ahead blocks in front of where they are digging; left more than spawn.maxDistance blocks behind (never just for waiting) it fades out and another comes spawn.respawnDelay seconds later. That first one comes once per player (and never once they own `tool`); once it has been dug, one at a time comes back for good: roam.delay seconds after each surge ends, roam.distance blocks from the miner. cash: pays reward[zone] (x 1 +- spread, x the sell bonus) on the spot. cash.perZone = how many per zone (index = zone). beaconRange = blocks around the miner where buried treasure shows a light beam.",
+    "$comment": "Buried chests besides the finds, each in a seeded block of its zone. power (drawn as the tractor the surge rides, glowing round the rainbow; its model loads behind the game): digging it out gives a timed taste of a better tool (at least one tier above the one owned, never below `tool`) for `seconds`, digging `speedMultiplier` faster; while it lasts every block is cashed at once (no backpack). It is never buried: once the player has dug spawn.afterBlocks blocks, one fades in spawn.ahead blocks in front of where they are digging; left more than spawn.maxDistance blocks behind (never just for waiting) it fades out and another comes spawn.respawnDelay seconds later. That first one comes once per player (and never once they own `tool`); once it has been dug and the tutorial is over (the first hub piece built), one at a time comes back for good: roam.delay seconds after each surge ends (or after the tutorial ends), roam.distance blocks from the miner. cash: pays reward[zone] (x 1 +- spread, x the sell bonus) on the spot. cash.perZone = how many per zone (index = zone). beaconRange = blocks around the miner where buried treasure shows a light beam.",
     "beaconRange": 16,
     "power": {
       "model": "hub/kenney-car-kit-tractor-shovel/kenney-car-kit-tractor-shovel.glb",
@@ -1236,7 +1233,7 @@
         "maxDistance": 24,
         "fadeIn": 0.7
       },
-      "roam": { "delay": 60, "distance": [10, 20] }
+      "roam": { "delay": 180, "distance": [10, 20] }
     },
     "cash": {
       "model": "mine/chest.glb",

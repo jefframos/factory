@@ -398,9 +398,12 @@ export const DigProgress = {
         return state.prestige;
     },
 
-    /** The BOOSTS tab is open: enough tool upgrades, or any new mine opened. */
+    /**
+     * Boosts are on sale (the boost machine appears in the hub, reveal rule 'boosts'): once the first hat is bought
+     * (right after the wardrobe), with enough tool upgrades, or any new mine opened.
+     */
     get boostsUnlocked(): boolean {
-        return state.toolLevel >= DIG.boostsUnlockToolLevel || state.prestige > 0;
+        return this.boughtFirstHat || state.toolLevel >= DIG.boostsUnlockToolLevel || state.prestige > 0;
     },
 
     boostLevel(id: BoostId): number {

@@ -64,17 +64,22 @@ games/dig/
    and a minimum tool power (`materials` in `dig.json`). Rock the current tool can't dig shows a **padlock**.
 2. **Fill the backpack** — each broken block drops items that fly into the bag. A full bag is called out on screen,
    pulses in the HUD, and after a couple of tries at digging the guide's arrows lead back to the ATM.
-3. **Sell** — stand on the ATM pad (or tap the **SELL x2** cash pile for a rewarded video, once it unlocks).
-4. **Upgrade** — at the ATM: **GEAR** (the next tool, the next bag) and **BOOSTS** (repeatable levels).
+3. **Sell** — stand on the ATM pad or the boost machine's (or tap the **SELL x2** cash pile for a rewarded video, once it unlocks).
+4. **Upgrade** — at the ATM: **GEAR** (the next tool, the next bag); at the **boost machine** (the ATM in purple,
+   star icon): **BOOSTS** (repeatable levels). A hub without a `boost` station has both tabs on the ATM.
 
 ### Progression
-- **Tools** (`tools`): Shovel → Pickaxe → Steel Pickaxe (digs 2 deep) → Power Drill → Mega Drill (3 wide, 2 deep)
+- **Tools** (`tools`): Shovel → Pickaxe (3 wide: the first, forced upgrade is a big step) → Steel Pickaxe (3 wide, 2
+  deep) → Power Drill → Mega Drill (3 wide, 2 deep)
   → **Digger** (a grey tractor you ride) → **Tractor** → **Red Tractor** ($100,000, 5 wide: the long goal the hub's
   income helps pay for). Vehicles are ridden outside the hub, faster, with an engine; a vehicle's `tint` repaints the
   tractor model (`utils/Paint.ts`, like the Digger's `greyscale`).
-- **Backpack** (`backpack`): 10 → 500 slots in 17 tiers, sized so a trip is mostly digging, not walking.
-- **Boosts** (`boosts`, unlock with the Steel Pickaxe): Dig Speed, Sell Price, Ore Luck, Move Speed — 20 levels
-  each, cost ×1.3 per level. The BOOSTS tab shows "!" when one is affordable.
+- **Backpack** (`backpack`): 10 → 500 slots in 16 tiers (the first, forced
+  upgrade triples it: 10 → 30), sized so a trip is mostly digging, not walking.
+- **Boosts** (`boosts`): Dig Speed, Sell Price, Ore Luck, Move Speed — 20 levels each, cost ×1.3 per level. They
+  unlock with the first hat (right after the wardrobe), the Steel Pickaxe or a new mine; that reveals the hub's
+  `boost-corner` area (reveal rule `boosts`) with the **boost machine** next to the ATM. No guide step for it: its
+  "!" (a boost affordable) is all it gets. It sells the backpack too (hub cash is collected at the ATM only).
 - **Zones**: rings around the hub — Topsoil, Stone Layer, The Deep, Lost Ruins, Obsidian Depths — each with its own
   rock (tinted so they read apart), ores and floor colour. The mine ends in a noisy round wall of black bedrock.
   Amethyst is a rare purple gem in the obsidian.
@@ -91,8 +96,12 @@ x1.30…: `DigProgress.priceOf`), since the hub's perks and income come along; t
 
 ### Finds and the collection
 18 buried artifacts per mine (`finds`). Buried ones near the miner give off sparkles in their rarity colour. Digging
-one up shows a banner — its reward then **waits in the Trophy Room**: the totem gets a "!", and the collection panel
-has a CLAIM button on each card with a reward (and on the footer for a completed collection). Payouts grow with
+one up shows a banner with a **CLAIM button right there** (`ui/FindBanner.ts`): the reward is paid on the spot and
+the coins fly into the money, so digging goes on. The first find has the pointing hand on CLAIM; a banner left alone
+claims itself (5 s, 12 s for the first find). Only taps on the button are taken, so the banner never blocks moving.
+Anything still unclaimed (an old save, a tab closed mid-banner) waits in the Trophy Room: the totem gets a "!", and
+the collection panel has a CLAIM button on each card with a reward (and on the footer for a completed collection).
+Payouts grow with
 rarity and depth (`findPayout`); the first find of a mine always pays at least the next upgrade.
 
 ### Chests, power surges and rich veins
@@ -103,9 +112,11 @@ Two kinds of **chests** (`chests`):
   of where the miner is digging (`mining/PowerChestSpawner.ts`), in rock their tool can dig. It waits however long it
   takes; only if the miner goes more than `spawn.maxDistance` blocks away does it fade out, and the next dig after
   `spawn.respawnDelay` s brings another. Only one at a time, and it counts as taken the moment its block breaks.
-  Digging it opens the hub's first room of furniture (reveal rule `powerChest`). From then on there's always one more
-  out there, one at a time: `power.roam.delay` s (a minute) after each surge ends, the next sits on a block `roam.distance` blocks
-  from the miner (never right by them), with its beam — each a surge one tier above the tool.
+  The guide never leads to it: it shows up right ahead with its own beam. Once it's dug and the tutorial is over
+  (the first hub piece built), there's always one more out there, one at a time: `power.roam.delay` s (3 minutes)
+  after each surge ends, the next sits on a block `roam.distance` blocks from the miner (never right by them), with
+  its beam — each a surge one tier above the tool. (Every 60 s, and inside the tutorial, surges cashed the bag so
+  often that sales, upgrades, boosts and ad moments dropped.)
   Digging it starts a **power surge** (`mining/PowerSurge.ts`): for `seconds` the miner digs with the Mega Drill (or
   one tier above their tool if higher), a bit faster, and every block is **cashed on the spot** instead of filling
   the backpack. It's the game's "star": the miner rides the tractor as a small rainbow-glowing truck (`TractorRide`;
@@ -124,13 +135,21 @@ panel has **POWER SURGE**.
 
 ### Analytics time stamps
 Every event (except frequent ones: playtime, sells, bag full, ads, settings, equips) is sent twice: as before, and
-under category `time` with the total active play time (all sessions) as a minute bucket —
-`time / upgrade-tool-03-drill-m08-12 / complete` = the Power Drill bought 8–12 minutes in. The funnel stays as it was;
+under category `time` with the total active play time (all sessions) as the minute its bucket starts at —
+`time / upgrade-tool-03-drill-m08 / complete` = the Power Drill bought 8–12 minutes in. The funnel stays as it was;
 the `time` events say when each step happens. See the table in `analytics/GameAnalytics.ts`.
+
+PokiSDK.measure() **drops** an event with more than 2 runs of digits across its three values (and any character
+outside `A-Z a-z 0-9 space - _ : . + |`). The old `m08-12` buckets used up both, so most `time` events with a number
+in them never arrived. Now the bucket is one number, a time stamp drops its what's trailing numbers if needed
+(`upgrade-bag-02-12` → `time / upgrade-bag-02-m05`), wardrobe colours are sent by their place in `wardrobe.colors`
+(`color-01`, not the hex code), and `GameAnalytics` skips (and warns about) anything still over the limit.
 
 ### Achievements
 Digger, Ore Hunter, Tycoon, Collector — 7 tiers each, shared across mines; tier 4 adds a trophy to the hub.
-**Champion** (claim 15 levels) unlocks the Crown hat. Claiming dims the screen until the coins land.
+**Champion** (claim 15 levels) unlocks the Crown hat. Claiming dims the screen until the coins land. During the
+tutorial a ready tier only shows the "!" on the button; its shine, pulse, CLAIM label and first-claim hand wait until
+the first hub piece is built, so they don't compete with the guide.
 
 ### Hub rooms and perks
 The hub is shared by every mine, so what's built there is kept for good — a small second prestige layer. Each
@@ -142,8 +161,8 @@ Every few seconds each earning piece pops "+$N" over itself while the miner is n
 shows the base's $/s by the money. Each piece earns about its price / 600 a second (the whole hub ~$34/s). Each reveal area's buildables are a **set**: buying them all adds the area's
 `bonus` ("SET COMPLETE!", analytics `hub / set-<area>`). The rooms aren't named to the player (a new room just says
 "NEW FURNITURE TO BUILD!") and open one at a time with the tools, so new things to buy keep coming: the first room
-(it appears with the first power chest — or the Power Drill at the latest — $50–250; until it's there the tutorial's
-build step waits and the relic hunt starts on its own), then with the Power Drill ($500–900), the Mega Drill ($1,500–2,500) and the Digger
+(it appears with the first upgrade after the wardrobe, $50–250, so the tutorial ends on its build step a moment
+after the first relic is claimed), then with the Power Drill ($500–900), the Mega Drill ($1,500–2,500) and the Digger
 ($4,000–5,000) — each piece about 20–40% of the next tool then. The whole hub's perks are worth about one new mine (+28% cash,
 +17% dig, +13% move, +4 beam range); the BOOSTS tab's footer adds up everything kept forever (hub + mines). The
 perks apply in `DigProgress` (`sellMultiplier`, `hitInterval`, `moveMultiplier`, `beaconRange`), so a new perk stat
@@ -152,11 +171,21 @@ goes there too. A room for later mines: an area with the reveal rule `mines:<n>`
 ### The tutorial (first mine only)
 Driven by the progress alone, so a reload lands back in the right step:
 move → dig → bag full → sell → **forced Pickaxe** → **forced first bag** → wardrobe appears → **forced first hat**
-(the Mining Helmet; money topped up if short) → first relic (claim it in the Trophy Room) → first hub piece (the
-last sale is topped up to its price). Forced purchases dim the screen, stop the miner and point at BUY. The guide's
-green floor arrows follow the real walking route (A* over the dug tunnels) and draw over the rock. Its priorities:
-nothing during a power surge (it resumes after); the first power chest while it's showing; a full backpack back to the
-ATM; then the tutorial step (or the relic hunt).
+(the Mining Helmet; money topped up if short) → first relic (claimed on its banner, on the spot) → first hub piece (the
+last sale is topped up to the cheapest one's price; the arrows lead to the nearest piece the money covers). Forced purchases dim the screen, stop the miner and point at BUY. The guide's
+gold floor arrows follow the real walking route (A* over the dug tunnels) and draw over the rock. Its priorities:
+nothing during a power surge (it resumes after); a full backpack back to the ATM once the miner has pushed into rock
+with it twice; then the tutorial step (or, after it, the relic hunt when that's on). Out in the rock the arrows stay
+quiet so digging isn't interrupted: only a full backpack and the first upgrade lead from there. The wardrobe and the
+first build are pointed at only once the miner is back in the hub. The Trophy Room is never pointed at: rewards are
+claimed on the find banner, so it's there for completing the collection (its totem still shows a "!" for new finds).
+Tutorial funnel steps (`GameAnalytics.TUTORIAL`): move, dig, bag-full, sell, tool-upgrade, bag-upgrade, wardrobe,
+hat, find, claim, build — `collection` (opening the Trophy Room) was dropped, so `build` is now step 11.
+
+The Oct 31 afternoon build made the tutorial wait for the first power chest, sent the arrows to that chest and ran
+the relic hunt inside the tutorial. Tutorial completion fell from 49% to 35% and players reaching 2 minutes from 55%
+to 46%, so those parts were rolled back to the morning build's tutorial. Keep the tutorial short: the treasure beams
+do the guiding.
 
 ### The relic hunt (after the tutorial)
 The playtests lost players in minutes 3–5, right after the tutorial, when the next relic was down to luck. So for
@@ -164,8 +193,10 @@ The playtests lost players in minutes 3–5, right after the tutorial, when the 
 the next relic (lowest zone first) is named on screen ("NEXT RELIC: …"), and the guide's arrows and a beam that shows
 at any range lead to it. Once the miner is out of the hub it's placed: left where it is if it's within
 `maxDistance` blocks in rock they can dig, otherwise moved into a diggable block `place` blocks from them. Dug up, the
-arrows lead to the Trophy Room to claim it, and the claim names the next one. `relicHunt.enabled: false` is the
-baseline build (the guide ends with the tutorial), for A/B playtests.
+reward is claimed on its banner, and the claim names the next one. `relicHunt.enabled: false` is the
+baseline build (the guide ends with the tutorial) and is the current setting: in the Oct 31 afternoon build the hunt
+went with a big tutorial drop-off, so the treasure beams alone lead to relics for now. It never runs before the first
+hub piece is built.
 
 ### Saving
 One localStorage entry (`dig.save`), written shortly after any change. It carries a **version**
