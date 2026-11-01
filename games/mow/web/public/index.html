@@ -15,6 +15,7 @@
   <nav id="tabs">
     <button data-tab="town" class="tab active">🏙 Town</button>
     <button data-tab="tractor" class="tab">🚜 Tractor</button>
+    <button data-tab="mowers" class="tab">🧹 Mowers</button>
   </nav>
 </header>
 
@@ -22,19 +23,23 @@
 
 <section id="tab-tractor" class="tab-panel workspace" hidden></section>
 
+<section id="tab-mowers" class="tab-panel workspace" hidden></section>
+
 <div id="toast"></div>
 <script type="module">
 import { api } from './shared.js';
 import { setModelCatalog } from './modelPicker.js';
 import { initTownTab, hasUnsavedTown } from './town3d.js';
 import { initTractorTab, refreshTractorTab, hasUnsavedTractorChanges } from './tractor.js';
+import { initMowersTab, refreshMowersTab, hasUnsavedMowerChanges } from './mowers.js';
 
 const config = await api('/api/config');
 setModelCatalog(await api('/api/models'));
 await initTownTab(document.getElementById('tab-town'), { gameUrl: config.gameUrl });
 let tractorReady = false;
+let mowersReady = false;
 
-// Tabs: one panel shown at a time; the Tractor tab is built the first time it's opened.
+// Tabs: one panel shown at a time; the Tractor and Mowers tabs are built the first time they're opened.
 for (const button of document.querySelectorAll('#tabs .tab')) {
     button.addEventListener('click', async () => {
         const tab = button.dataset.tab;
@@ -48,10 +53,18 @@ for (const button of document.querySelectorAll('#tabs .tab')) {
                 refreshTractorTab();
             }
         }
+        if (tab === 'mowers') {
+            if (!mowersReady) {
+                mowersReady = true;
+                await initMowersTab(document.getElementById('tab-mowers'));
+            } else {
+                refreshMowersTab();
+            }
+        }
     });
 }
 window.addEventListener('beforeunload', (event) => {
-    if (hasUnsavedTown() || hasUnsavedTractorChanges()) event.preventDefault();
+    if (hasUnsavedTown() || hasUnsavedTractorChanges() || hasUnsavedMowerChanges()) event.preventDefault();
 });
 </script>
 </body>

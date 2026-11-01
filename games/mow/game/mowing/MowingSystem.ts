@@ -7,7 +7,9 @@
 // sell): said once, the moment it fills (walking on with it full says nothing more: the FULL tag and the arrows to
 // SELL already do). Grass one power too tough resists, like dig's rock: the mower is held back (the player's `drag`)
 // while it chews through, throwing chips with each hit, until it gives; tougher still is a wall until a better mower
-// (with a hint now and then). Cutting throws green chips and a soft swish.
+// (with a hint now and then). Grass as tough as the tool's power is cut, but it labours: slower by its share of the
+// cut (LOAD_DRAG), so even a big mower feels the toughest grass it can handle. Cutting throws green chips and a soft
+// swish.
 
 import * as THREE from 'three';
 import { GrassField } from '../world/GrassField';
@@ -26,6 +28,8 @@ const HINT_COOLDOWN_SEC = 6;
 /** Walking speed share while chewing through tough grass, and against grass the tool can't cut at all. */
 const CHEW_DRAG = 0.22;
 const WALL_DRAG = 0.04;
+/** Walking speed share while everything cut is grass as tough as the tool's power (less in proportion to its share). */
+const LOAD_DRAG = 0.7;
 /** A hit on tough grass (chips and a swish) every this many seconds. */
 const CHEW_HIT_SEC = 0.16;
 
@@ -79,6 +83,7 @@ export class MowingSystem {
             this.hint(() => this.onBlocked(blocked));
         }
         if (result.cells === 0) return;
+        if (result.hard) this.player.drag = 1 - (1 - LOAD_DRAG) * (result.hard / result.cells);
         for (let i = 0; i < result.cells; i++) MowProgress.recordCut();
         MowProgress.addClippings(result.clippings);
         MowProgress.grassChanged();

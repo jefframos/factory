@@ -55,6 +55,32 @@ async function writeJson(file, data) {
     await fs.writeFile(file, JSON.stringify(data, null, 2) + '\n', 'utf-8');
 }
 
+/**
+ * mow.json's own layout: the top two levels expanded, anything deeper on one line when it fits (one grass type, tool,
+ * upgrade, wardrobe item per line), so a save from the editor keeps the file readable.
+ */
+function formatCompact(value, depth = 0) {
+    const inline = (v) => {
+        if (Array.isArray(v)) return `[${v.map(inline).join(', ')}]`;
+        if (v && typeof v === 'object') {
+            const entries = Object.entries(v);
+            return entries.length ? `{ ${entries.map(([k, x]) => `${JSON.stringify(k)}: ${inline(x)}`).join(', ')} }` : '{}';
+        }
+        return JSON.stringify(v);
+    };
+    if (!value || typeof value !== 'object') return JSON.stringify(value);
+    const pad = '  '.repeat(depth + 1);
+    const one = inline(value);
+    if (depth >= 2 && one.length + pad.length <= 400) return one;
+    const end = '  '.repeat(depth);
+    if (Array.isArray(value)) return `[\n${value.map((x) => pad + formatCompact(x, depth + 1)).join(',\n')}\n${end}]`;
+    return `{\n${Object.entries(value).map(([k, x]) => `${pad}${JSON.stringify(k)}: ${formatCompact(x, depth + 1)}`).join(',\n')}\n${end}}`;
+}
+
+async function writeMow(data) {
+    await fs.writeFile(MOW_FILE, formatCompact(data) + '\n', 'utf-8');
+}
+
 /** The file's version (mtime): a save from a tab that loaded an older copy is refused (see PUT /api/town). */
 async function fileVersion(file) {
     return fs.stat(file).then((stat) => Math.round(stat.mtimeMs), () => 0);
@@ -151,6 +177,10 @@ function validateTown(town) {
         if (!section.id) problems.push(`section ${i + 1} has no id`);
         if (!(section.width > 0) || !(section.depth > 0)) problems.push(`section ${section.id ?? i + 1} needs a size`);
     });
+    const outline = town.island?.outline;
+    if (outline && (!Array.isArray(outline) || outline.length < 3 || outline.some((p) => !Number.isFinite(p?.x) || !Number.isFinite(p?.z)))) {
+        problems.push('island outline needs at least 3 points with x / z');
+    }
     return problems;
 }
 
@@ -201,7 +231,30 @@ async function handleApi(req, res, url) {
         const design = await readJson(MOW_FILE, null);
         if (!design) return send(res, 500, { error: 'Could not read mow.json' });
         design.tractor = tractor;
-        await writeJson(MOW_FILE, design);
+        await writeMow(design);
+        return send(res, 200, { ok: true });
+    }
+    if (url.pathname === '/api/mow/tools' && req.method === 'PUT') {
+        // The Mowers tab: each walked tool's grip, gap and size (matched by id; nothing else of a tool changes).
+        const edits = await readBody(req);
+        if (!Array.isArray(edits)) return send(res, 400, { error: 'Invalid tools' });
+        const design = await readJson(MOW_FILE, null);
+        if (!design) return send(res, 500, { error: 'Could not read mow.json' });
+        const num = (v) => typeof v === 'number' && Number.isFinite(v);
+        for (const edit of edits) {
+            const tool = design.tools.find((t) => t.id === edit?.id);
+            if (!tool || tool.ride) return send(res, 400, { error: `Unknown walked tool: ${edit?.id}` });
+            const { grip, gap, size } = edit;
+            if (!grip || !num(grip.forward) || !num(grip.height) || !num(grip.spread)) return send(res, 400, { error: `Invalid grip for ${tool.id}` });
+            if (!Array.isArray(size) || size.length !== 3 || !size.every(num)) return send(res, 400, { error: `Invalid size for ${tool.id}` });
+            tool.grip = { forward: grip.forward, height: grip.height, spread: grip.spread };
+            tool.size = size;
+            if (!tool.handheld) {
+                if (!num(gap)) return send(res, 400, { error: `Invalid gap for ${tool.id}` });
+                tool.gap = gap;
+            }
+        }
+        await writeMow(design);
         return send(res, 200, { ok: true });
     }
     if (url.pathname === '/api/town' && req.method === 'GET') {
