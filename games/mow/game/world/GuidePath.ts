@@ -9,6 +9,9 @@
 // whole mine, so a route can go the long way round through the tunnels — and cells are only looked at as the search
 // reaches them, so that costs no more than the route needs. Returns the route as world points from the miner to the target; with no way through (the target
 // boxed in by rock) it leads as close as it can get, then straight on.
+//
+// In Mow, `solid` is where the player can't stand (Town.standable(): off the open sections and pavements), and the
+// goal can be an `area` (a rect: the route ends at the first cell inside it, the nearest way in on foot).
 
 import * as THREE from 'three';
 
@@ -46,7 +49,7 @@ const buffers = {
     closed: new Uint8Array(SIZE * SIZE),
 };
 
-export function findPath(from: THREE.Vector3, to: THREE.Vector3, solid: (x: number, z: number) => boolean, boxes: readonly Box[]): THREE.Vector3[] {
+export function findPath(from: THREE.Vector3, to: THREE.Vector3, solid: (x: number, z: number) => boolean, boxes: readonly Box[], area?: Box): THREE.Vector3[] {
     // Centred between the two, snapped to whole units so cell edges fall on block edges.
     const w = SIZE;
     const h = SIZE;
@@ -79,15 +82,16 @@ export function findPath(from: THREE.Vector3, to: THREE.Vector3, solid: (x: numb
     const [si, sj] = cellOf(from);
     const [gi, gj] = cellOf(to);
     const start = si + sj * w;
-    const goal = gi + gj * w;
+    let goal = gi + gj * w;
+    const inArea = (k: number) => !!area && Math.abs(cx(k % w) - area.x) <= area.halfX && Math.abs(cz(Math.floor(k / w)) - area.z) <= area.halfZ;
     // The miner's own cell and the target's (a pad, a doorway, a buildable spot) always count as open.
     cells[start] = Cell.Open;
     cells[goal] = Cell.Open;
 
-    // Octile distance: exact on an 8-way grid with no obstacles.
+    // Octile distance: exact on an 8-way grid with no obstacles (to the area's edge when the goal is an area).
     const heuristic = (k: number) => {
-        const dx = Math.abs((k % w) - gi);
-        const dz = Math.abs(Math.floor(k / w) - gj);
+        const dx = area ? Math.max(0, Math.abs(cx(k % w) - area.x) - area.halfX) / CELL : Math.abs((k % w) - gi);
+        const dz = area ? Math.max(0, Math.abs(cz(Math.floor(k / w)) - area.z) - area.halfZ) / CELL : Math.abs(Math.floor(k / w) - gj);
         return Math.max(dx, dz) + (Math.SQRT2 - 1) * Math.min(dx, dz);
     };
     const open = new Heap();
@@ -99,6 +103,10 @@ export function findPath(from: THREE.Vector3, to: THREE.Vector3, solid: (x: numb
     while (open.size && expanded < MAX_EXPANDED) {
         const k = open.pop();
         if (k === goal) break;
+        if (inArea(k)) {
+            goal = k;
+            break;
+        }
         if (closed[k]) continue;
         closed[k] = 1;
         expanded++;
@@ -131,7 +139,9 @@ export function findPath(from: THREE.Vector3, to: THREE.Vector3, solid: (x: numb
     for (let k = end; k !== -1; k = came[k]) route.unshift(k);
     const points = route.map((k) => new THREE.Vector3(cx(k % w), 0, cz(Math.floor(k / w))));
     points[0] = from.clone().setY(0);
-    if (reached) points[points.length - 1] = to.clone().setY(0);
+    if (area) {
+        if (!reached) points.push(to.clone().setY(0));
+    } else if (reached) points[points.length - 1] = to.clone().setY(0);
     else points.push(to.clone().setY(0));
     return smooth(points, solid, boxes);
 }

@@ -21,7 +21,7 @@ export interface Look {
 
 const SAVE_KEY = 'mow.save';
 /** Bump when a change can't carry old saves over: a save from another version starts a new game. */
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
 const SAVE_DELAY_MS = 800;
 
 interface SaveData {

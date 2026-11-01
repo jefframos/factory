@@ -19,7 +19,8 @@ import { LanguagePanel, LANGUAGE_SIZE } from './LanguagePanel';
 import { WardrobePanel, WARDROBE_SIZE } from './WardrobePanel';
 import { TrophiesPanel, TROPHIES_SIZE } from './TrophiesPanel';
 import { MowProgress } from '../data/MowProgress';
-import { MOW, ToolDef, UpgradeDef } from '../data/MowConfig';
+import { MOW, ToolDef, UpgradeDef, toolPaint } from '../data/MowConfig';
+import { ModelIcons } from './ModelIcons';
 import { tabbedBlock, TabSpec } from './TabBar';
 import { t, names, Localization } from '../i18n/Localization';
 import { LOCALE_FLAG_CODE } from '../i18n/config';
@@ -37,26 +38,28 @@ const BAR_HEIGHT = 18;
 const CORNER_WIDTH = ICON_SIZE / 2 + PILL_WIDTH - 8;
 const BUTTON_SIZE = 64;
 const PROGRESS = { width: 360, height: 18 };
-const SHOP = { width: 620, height: 580 };
+const SHOP = { width: 840, height: 580 };
 /** Shop rows: frame left, text, buy button right. */
-const ROW = { width: 556, frameX: -226, textX: -170, textWidth: 290, buttonX: 202, buttonWidth: 130 };
+const ROW = { width: 776, frameX: -336, textX: -280, textWidth: 470, buttonX: 300, buttonWidth: 150 };
 /** The tabs' content block (y = its top edge), and the GEAR tab's rows. */
-const BLOCK = { top: -170, width: 580, height: 432, tabWidth: 170, tabHeight: 48 };
+const BLOCK = { top: -170, width: 800, height: 432, tabWidth: 170, tabHeight: 48 };
 const GEAR_Y = { timeline: -110, tool: 28, bag: 146 };
 const BOOST_ROW = { firstY: -116, step: 90, height: 82 };
 const FOOTER_Y = 238;
 /** The mower timeline: node sizes (the goal bigger), its width, line colours. */
-const TIMELINE = { node: 60, goal: 78, width: 460 };
+const TIMELINE = { node: 60, goal: 78, width: 680 };
 const LINE_DONE = 0x5fd35a;
 const LINE_TODO = 0x4a5263;
 const NEXT_GOLD = 0xffd86b;
-const BAG_BAR = { width: 290, height: 9 };
+const BAG_BAR = { width: 420, height: 9 };
 /** Each mower's frame on the timeline, by its place on the path (the goal legendary). */
-const TOOL_FRAMES = ['toolCommon', 'toolCommon', 'toolRare', 'toolRare', 'toolEpic', 'toolLegendary'];
+const TOOL_FRAMES = ['toolCommon', 'toolCommon', 'toolRare', 'toolRare', 'toolRare', 'toolEpic', 'toolEpic', 'toolLegendary'];
 const toolFrame = (index: number, owned: boolean): string => (owned ? TOOL_FRAMES[Math.min(index, TOOL_FRAMES.length - 1)] : 'toolLocked');
 
-/** A mower's art for now: its placeholder cube's colour, as a little block with a handle. */
+/** A mower's art: a ridden one is its tractor in its paint (as in game); the others, for now, a little block in the
+ * mower's colour with a handle. */
 function mowerArt(tool: ToolDef, size: number): PIXI.Container {
+    if (tool.ride) return ModelIcons.sprite(`./mow/models/${MOW.tractor.model}`, size * 1.15, false, toolPaint(tool));
     const art = new PIXI.Container();
     const s = size / 64;
     const handle = new PIXI.Graphics().lineStyle(5 * s, 0x2b2b30).moveTo(-14 * s, -4 * s).lineTo(-22 * s, -26 * s);

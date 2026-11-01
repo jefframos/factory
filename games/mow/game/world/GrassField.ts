@@ -20,6 +20,9 @@
 // Treasures hide under the grass (placeTreasures(): each on a seeded grass cell of its area, spread out); cutting
 // that cell finds it (CutResult.found). An area restored with some still hidden hands them over (takeTreasures()).
 //
+// A section's `grassScale` (default 1) sizes its grass: the tufts' height and the contact it takes to chew through
+// grass one power too tough both scale by it (an easier section under 1, a harder one over 1).
+//
 // Cut grass never grows back on its own. Only when the player is stuck — nothing left they can cut and the next mower
 // out of reach — does the scene grow some back (regrow(): grass their mower cuts, just enough to earn the
 // difference). Restored districts stay mowed.
@@ -141,6 +144,8 @@ export interface CutResult {
     cells: number;
     /** Clippings they give. */
     clippings: number;
+    /** Cut cells whose grass was as tough as the tool's power (it labours through those: MowingSystem's LOAD_DRAG). */
+    hard?: number;
     /** Grass one power too tough being chewed (not through yet): where and its colour (the chips). */
     chewing?: { at: THREE.Vector3; color: THREE.Color };
     /** The toughest grass met that the tool can't cut at all (for the hint), if any. */
@@ -200,6 +205,8 @@ export class GrassField {
     private readonly color = new THREE.Color();
     private readonly uncutColors = MOW.grass.map((g) => new THREE.Color(g.color));
     private readonly cutColors = MOW.grass.map((g) => new THREE.Color(g.cutColor));
+    /** Per district: its grassScale (tuft height and chew effort). */
+    private readonly grassScales = MOW.districts.map((d) => d.grassScale ?? 1);
 
     /** `isBlocked`: cells under obstacles (trees, benches, buildings) get no grass. `saved`: cut cells from a save. */
     public constructor(threeScene: THREE.Scene, isBlocked: (x: number, z: number) => boolean, saved?: string) {
@@ -374,7 +381,7 @@ export class GrassField {
         const spread = this.cell * (1.35 + j * 0.3);
         // A cut tuft is gone: the ground shows the mowed lawn there (cutMap).
         if (cut) this.scale.set(0, 0, 0);
-        else this.scale.set(spread, grass.height * (0.85 + j * 0.3), spread);
+        else this.scale.set(spread, grass.height * this.grassScales[this.districtOf[i]] * (0.85 + j * 0.3), spread);
         this.matrix.compose(this.position, this.quaternion, this.scale);
         chunk.mesh.setMatrixAt(n, this.matrix);
         this.color.copy(this.uncutColors[type]).multiplyScalar(0.88 + j * 0.24);
@@ -401,7 +408,7 @@ export class GrassField {
     /**
      * Cuts what `power` can handle within `radius` of the segment a -> b (a capsule: the player's feet out to the
      * tool, so nothing is left trapped between them): stronger-or-equal grass at once, one step tougher over
-     * SLOW_CUT_SEC of contact (`delta` is this step's), tougher still not at all. `canCut(district)` says whether a
+     * SLOW_CUT_SEC (x its section's grassScale) of contact (`delta` is this step's), tougher still not at all. `canCut(district)` says whether a
      * district is open (a locked one isn't cut).
      */
     public cutCapsule(ax: number, az: number, bx: number, bz: number, radius: number, power: number, delta: number,
@@ -441,7 +448,7 @@ export class GrassField {
                 }
                 if (short === 1) {
                     this.damage[i] += delta;
-                    if (this.damage[i] < SLOW_CUT_SEC) {
+                    if (this.damage[i] < SLOW_CUT_SEC * this.grassScales[d]) {
                         result.chewing ??= { at: new THREE.Vector3(x, 0.4, z), color: this.uncutColors[this.types[i] - 1].clone() };
                         continue;
                     }
@@ -455,6 +462,7 @@ export class GrassField {
                     (result.found ??= []).push({ treasure, at: new THREE.Vector3(x, 0, z) });
                 }
                 result.cells++;
+                if (short >= 0) result.hard = (result.hard ?? 0) + 1;
                 result.clippings += grass.value;
                 sumX += x;
                 sumZ += z;

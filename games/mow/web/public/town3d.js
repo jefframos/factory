@@ -74,6 +74,11 @@ async function reload() {
     town.sections ??= [];
     town.grassPatches ??= [];
     town.grassNoise ??= { centre: { x: 0, z: 0 }, scale: 0.2, rings: [{ upTo: 999, mix: { grass: 1 } }] };
+    // An island without an outline is the ground's rect: start the shore from its corners.
+    if (town.island && !(town.island.outline?.length >= 3)) {
+        const g = town.ground;
+        town.island.outline = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sz]) => ({ x: g.x + (sx * g.width) / 2, z: g.z + (sz * g.depth) / 2 }));
+    }
     selection = null;
     undoStack.length = 0;
     setDirty(false);
@@ -114,6 +119,10 @@ function buildLayout() {
                 el('h2', {}, 'Grass noise'),
                 el('p', { class: 'muted small' }, 'Which grass "auto" cells get: rings around the centre, tougher further out. Shares per grass type.'),
                 el('div', { id: 'townNoise' })),
+            el('section', { class: 'card-section' },
+                el('h2', {}, 'Island shore'),
+                el('p', { class: 'muted small' }, 'The island\'s outline (orange posts): drag them to reshape it, D on one adds a point after it. The deck, fence and sea follow.'),
+                el('ul', { id: 'townShoreList', class: 'list' })),
             el('section', { class: 'card-section' },
                 el('h2', {}, 'Grass patches'),
                 el('ul', { id: 'townPatchList', class: 'list' })),
@@ -294,14 +303,66 @@ function plane(width, depth, color, y, opacity = 1) {
     return mesh;
 }
 
+// The island's outline maths (mirrors games/mow/game/world/Shore.ts).
+function inwardNormals(points) {
+    let area = 0;
+    points.forEach((p, i) => { const q = points[(i + 1) % points.length]; area += p.x * q.z - q.x * p.z; });
+    const sign = area >= 0 ? 1 : -1;
+    return points.map((p, i) => {
+        const q = points[(i + 1) % points.length];
+        const length = Math.hypot(q.x - p.x, q.z - p.z) || 1;
+        return { x: (-(q.z - p.z) / length) * sign, z: ((q.x - p.x) / length) * sign };
+    });
+}
+
+function insetPolygon(points, distance) {
+    const normals = inwardNormals(points);
+    return points.map((p, i) => {
+        const a = normals[(i - 1 + points.length) % points.length];
+        const b = normals[i];
+        const scale = distance / Math.max(0.25, 1 + a.x * b.x + a.z * b.z);
+        return { x: p.x + (a.x + b.x) * scale, z: p.z + (a.z + b.z) * scale };
+    });
+}
+
+/** The shore as the game reads it: the island's outline, or the ground's rect. */
+function shorePoints() {
+    if (town.island?.outline?.length >= 3) return town.island.outline;
+    const g = town.ground;
+    return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sz]) => ({ x: g.x + (sx * g.width) / 2, z: g.z + (sz * g.depth) / 2 }));
+}
+
+/** A flat polygon (a hole optional) at height y. */
+function polygonMesh(points, color, y, hole) {
+    const shape = new THREE.Shape(points.map((p) => new THREE.Vector2(p.x, -p.z)));
+    if (hole) shape.holes.push(new THREE.Path(hole.map((p) => new THREE.Vector2(p.x, -p.z))));
+    const geometry = new THREE.ShapeGeometry(shape);
+    geometry.rotateX(-Math.PI / 2);
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color, roughness: 0.9, side: THREE.DoubleSide }));
+    mesh.position.y = y;
+    return mesh;
+}
+
 function rebuildGround() {
     groundGroup.clear();
     const ground = town.ground;
-    if (ground) {
-        const mesh = plane(ground.width, ground.depth, ground.color, -0.05);
-        mesh.position.x = ground.x;
-        mesh.position.z = ground.z;
-        groundGroup.add(mesh);
+    if (!ground) return;
+    const shore = shorePoints();
+    const island = town.island;
+    groundGroup.add(polygonMesh(shore, ground.color, -0.05));
+    if (!island) return;
+    // The deck band, the sea round the shore's bounds (the game draws pizza's water) and the fence line.
+    if (island.deck) groundGroup.add(polygonMesh(shore, island.deck.color, -0.02, insetPolygon(shore, island.deck.width)));
+    const xs = shore.map((p) => p.x);
+    const zs = shore.map((p) => p.z);
+    const [minX, maxX, minZ, maxZ] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
+    const sea = plane(maxX - minX + island.margin * 2, maxZ - minZ + island.margin * 2, island.water, -island.waterLevel);
+    sea.position.x = (minX + maxX) / 2;
+    sea.position.z = (minZ + maxZ) / 2;
+    groundGroup.add(sea);
+    if (island.fence) {
+        const line = insetPolygon(shore, island.fence.inset).map((p) => new THREE.Vector3(p.x, island.fence.height, p.z));
+        groundGroup.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(line), new THREE.LineBasicMaterial({ color: island.fence.color })));
     }
 }
 
@@ -445,6 +506,7 @@ function entityData(sel) {
     if (sel.type === 'start') return town.start;
     if (sel.type === 'centre') return town.grassNoise.centre;
     if (sel.type === 'separator') return town.sections[sel.index]?.separator ?? null;
+    if (sel.type === 'shore') return town.island?.outline?.[sel.index] ?? null;
     return listOf(sel.type)?.[sel.index] ?? null;
 }
 
@@ -519,6 +581,7 @@ function rebuildEntities() {
     town.props.forEach((prop, index) => addHolder({ type: 'prop', index }, buildProp(prop)));
     town.atms.forEach((atm, index) => addHolder({ type: 'atm', index }, buildStation(atm, town.atm, 'ATM', '#3fd16b')));
     town.wardrobes.forEach((wardrobe, index) => addHolder({ type: 'wardrobe', index }, buildStation(wardrobe, town.wardrobe, 'WARDROBE', '#e266c8')));
+    town.island?.outline?.forEach((point, index) => addHolder({ type: 'shore', index }, buildShorePoint(point, index)));
     addHolder({ type: 'start', index: 0 }, buildStart());
     addHolder({ type: 'centre', index: 0 }, buildCentre());
     attachGizmo();
@@ -546,7 +609,7 @@ function buildSection(section, index) {
     const edge = outline(color);
     edge.scale.set(section.width, section.depth, 1);
     edge.position.y = 0.08;
-    const label = labelSprite(`${index + 1}. ${section.name}\n$${section.bonus} bonus · grass: ${grassName(section.fill ?? 'auto')}`, hex(color));
+    const label = labelSprite(`${index + 1}. ${section.name}\n$${section.bonus} bonus · grass: ${grassName(section.fill ?? 'auto')}${(section.grassScale ?? 1) !== 1 ? ` ×${section.grassScale}` : ''}`, hex(color));
     label.position.y = 4;
     label.scale.multiplyScalar(1.6);
     holder.add(fill, edge, label);
@@ -640,6 +703,19 @@ function buildStation(atm, look, name, labelColor) {
     return holder;
 }
 
+/** One of the island outline's points: an orange post with its number. */
+function buildShorePoint(point, index) {
+    const holder = new THREE.Group();
+    holder.position.set(point.x, 0, point.z);
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.6, 12), new THREE.MeshStandardMaterial({ color: 0xff8a2a, emissive: 0xff8a2a, emissiveIntensity: 0.35 }));
+    post.position.y = 0.8;
+    const label = labelSprite(`${index + 1}`, '#ffb36b');
+    label.scale.multiplyScalar(0.45);
+    label.position.y = 2.1;
+    holder.add(post, label);
+    return holder;
+}
+
 function buildStart() {
     const holder = new THREE.Group();
     holder.position.set(town.start.x, 0, town.start.z);
@@ -719,6 +795,7 @@ function syncFromGizmo() {
     data.x = round(holder.position.x);
     data.z = round(holder.position.z);
     if (TURNS.has(selection.type)) data.rotationY = round(holder.rotation.y, 0.0001);
+    if (selection.type === 'shore') rebuildGround();
     setDirty(true);
 }
 
@@ -843,7 +920,19 @@ function addSection() {
     focusSelection();
 }
 
+/** Adds a shore point half way to the next one (and selects it). */
+function insertShorePoint(index) {
+    const outline = town.island.outline;
+    const a = outline[index];
+    const b = outline[(index + 1) % outline.length];
+    touch();
+    outline.splice(index + 1, 0, { x: round((a.x + b.x) / 2, SNAP), z: round((a.z + b.z) / 2, SNAP) });
+    rebuildAll();
+    select({ type: 'shore', index: index + 1 });
+}
+
 function duplicateSelection() {
+    if (selection?.type === 'shore') return insertShorePoint(selection.index);
     if (!selection || !LISTS[selection.type] || selection.type === 'section') return;
     const data = entityData(selection);
     touch();
@@ -855,8 +944,10 @@ function duplicateSelection() {
 
 function removeSelection() {
     if (!selection || selection.type === 'start' || selection.type === 'centre') return;
+    if (selection.type === 'shore' && town.island.outline.length <= 3) return toast('The shore needs at least 3 points.', 'bad');
     touch();
     if (selection.type === 'separator') delete town.sections[selection.index].separator;
+    else if (selection.type === 'shore') town.island.outline.splice(selection.index, 1);
     else listOf(selection.type).splice(selection.index, 1);
     selection = null;
     rebuildAll();
@@ -909,6 +1000,15 @@ function refreshColliders() {
 async function save() {
     if (!town) return;
     refreshColliders();
+    // The ground's rect follows the shore (its bounds).
+    if (town.island?.outline?.length >= 3) {
+        const xs = town.island.outline.map((p) => p.x);
+        const zs = town.island.outline.map((p) => p.z);
+        Object.assign(town.ground, {
+            x: round((Math.min(...xs) + Math.max(...xs)) / 2), z: round((Math.min(...zs) + Math.max(...zs)) / 2),
+            width: round(Math.max(...xs) - Math.min(...xs)), depth: round(Math.max(...zs) - Math.min(...zs)),
+        });
+    }
     try {
         const saved = await api('/api/town', { method: 'PUT', body: JSON.stringify(town) });
         town._version = saved.version;
@@ -930,6 +1030,7 @@ function listItem(type, index, label, small) {
 
 function renderLists() {
     host.querySelector('#townSectionList').replaceChildren(...town.sections.map((s, i) => listItem('section', i, `${i + 1}. ${s.name}`, `$${s.bonus}`)));
+    host.querySelector('#townShoreList').replaceChildren(...(town.island?.outline ?? []).map((p, i) => listItem('shore', i, `Point ${i + 1}`, `${p.x}, ${p.z}`)));
     host.querySelector('#townPatchList').replaceChildren(...town.grassPatches.map((p, i) => listItem('patch', i, `${p.shape === 'round' ? '⬭' : '▭'} ${grassName(p.grass)}`, `${p.width}×${p.depth}`)));
     host.querySelector('#townAtmList').replaceChildren(...town.atms.map((a, i) => listItem('atm', i, `ATM ${i + 1}`, appearsLabel(a))));
     host.querySelector('#townWardrobeList').replaceChildren(...town.wardrobes.map((w, i) => listItem('wardrobe', i, `Wardrobe ${i + 1}`, appearsLabel(w))));
@@ -1019,7 +1120,7 @@ function renderInspector() {
     const titles = {
         prop: () => titleCase(fileName(data.model)), atm: () => `ATM ${selection.index + 1}`, wardrobe: () => `Wardrobe ${selection.index + 1}`, pavement: () => data.id,
         section: () => data.name, patch: () => `Grass patch: ${grassName(data.grass)}`, start: () => 'Player start',
-        centre: () => 'Grass noise centre', separator: () => `${town.sections[selection.index].name} separator`,
+        centre: () => 'Grass noise centre', shore: () => `Shore point ${selection.index + 1}`, separator: () => `${town.sections[selection.index].name} separator`,
     };
     const rows = [
         el('div', { class: 'inspector-title' }, titles[type](), el('span', { class: 'tag' }, type)),
@@ -1075,6 +1176,18 @@ function renderInspector() {
                 [...town.atms, ...town.wardrobes].forEach((a) => { if (a.section === old) a.section = d.id; });
             })),
             selectField('Grass', data.fill ?? 'auto', grassOptions(true), (v) => edit((d) => { d.fill = v; })),
+            numberField('Grass size ×', data.grassScale ?? 1, 0.05, (v) => edit((d) => {
+                const scale = Math.round(Math.min(3, Math.max(0.2, v || 1)) * 100) / 100;
+                if (scale === 1) delete d.grassScale;
+                else d.grassScale = scale;
+            })),
+            el('p', { class: 'muted small' }, 'Grass size: under 1 an easier section (shorter grass, chewed through faster), over 1 a harder one. Clippings stay the same.'),
+            numberField('Camera zoom ×', data.zoom ?? 1, 0.05, (v) => edit((d) => {
+                const zoom = Math.round(Math.min(2, Math.max(0.4, v || 1)) * 100) / 100;
+                if (zoom === 1) delete d.zoom;
+                else d.zoom = zoom;
+            })),
+            el('p', { class: 'muted small' }, 'Camera zoom: the camera distance while this is the section being worked on (under 1 = closer, like the Front Yard).'),
             numberField('Bonus ($)', data.bonus, 50, (v) => edit((d) => { d.bonus = Math.max(0, Math.round(v)); })),
             numberField('Restored at (0-1)', data.completeAt, 0.01, (v) => edit((d) => { d.completeAt = Math.min(1, Math.max(0.5, v)); })),
             textField('Ground', data.ground, (v) => edit((d) => { d.ground = v; }), 'color'),
@@ -1090,6 +1203,23 @@ function renderInspector() {
     }
     if (type === 'separator') {
         rows.push(el('p', { class: 'muted small' }, 'The fence (with its sign) that keeps the section closed. Scale X / Length sets how long it is.'));
+    }
+    if (type === 'shore') {
+        const island = town.island;
+        const deck = island.deck;
+        rows.push(
+            el('button', { class: 'block', onclick: () => insertShorePoint(selection.index) }, '＋ Add a point after this one (D)'),
+            el('p', { class: 'muted small' }, 'The island\'s outline, point by point (keep it from crossing itself). Keep sections and roads a deck width in from it: the deck, fence and walkable area follow the shore.'),
+            el('div', { class: 'inspector-title' }, 'Wooden deck'),
+            deck ? numberField('Deck width', deck.width, 0.1, (v) => edit(() => { deck.width = Math.max(0.5, v); })) : '',
+            deck ? textField('Deck colour', deck.color, (v) => edit(() => { deck.color = v; }), 'color') : '',
+            deck ? textField('Pilings colour', deck.pilingColor, (v) => edit(() => { deck.pilingColor = v; }), 'color') : '',
+            deck ? numberField('Pilings every', deck.pilingSpacing, 0.1, (v) => edit(() => { deck.pilingSpacing = Math.max(0.8, v); })) : '',
+            checkField('A wooden deck round the shore', Boolean(deck), (on) => edit(() => {
+                if (on) island.deck = { width: 2.4, color: '#b98352', pilingColor: '#6b4a30', pilingSpacing: 2.6 };
+                else delete island.deck;
+            })),
+            textField('Sides colour', island.sideColor, (v) => edit(() => { island.sideColor = v; }), 'color'));
     }
     if (type === 'centre') {
         rows.push(el('p', { class: 'muted small' }, 'Rings are measured from here: the rings and their mixes are in "Grass noise" on the left.'));

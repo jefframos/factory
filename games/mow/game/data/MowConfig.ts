@@ -43,6 +43,24 @@ export interface ToolDef {
     ride?: boolean;
     /** The tractor's size for this mower (1 = `tractor.height`). */
     rideScale?: number;
+    /** Ridden mowers: the tractor in grey (dig's Digger). */
+    greyscale?: boolean;
+    /** Ridden mowers: the tractor repainted in this colour (dig's Tractor / Red Tractor; wins over `greyscale`). */
+    tint?: string;
+    /** Walked tools: where the hands hold it (edited in the editor's Mowers tab; MowPlayer's defaults without). */
+    grip?: GripDef;
+    /** Pushed tools: the gap between the feet and the deck's back edge. */
+    gap?: number;
+}
+
+/**
+ * Where the hands hold a walked tool, from the player's feet: `forward` ahead, `height` up, each hand `spread` off the
+ * middle. A pushed mower's handle crossbar sits there (rails down to the deck's back corners); a held tool hangs there.
+ */
+export interface GripDef {
+    forward: number;
+    height: number;
+    spread: number;
 }
 
 /** The ridden mowers' tractor (dig's tractor config; edited in the editor's Tractor tab). */
@@ -99,6 +117,13 @@ export interface DistrictDef {
     separator?: { x: number; z: number; width: number; rotationY?: number };
     /** What happens when it opens: the camera glides over to show it (its ATMs and fence come with it anyway). */
     onUnlock?: { pan?: boolean };
+    /**
+     * Its grass's size (default 1): the tufts' height and the effort to chew through grass one power too tough both
+     * scale by it — under 1 an easier section, over 1 a harder one. Clippings per cell stay the same.
+     */
+    grassScale?: number;
+    /** The camera's distance multiplier while it's the section being worked on (default 1; under 1 = closer). */
+    zoom?: number;
 }
 
 /**
@@ -216,10 +241,39 @@ export interface Pavement {
     color: string;
 }
 
+/**
+ * The town as an island (like hole.io's cities): the ground's rect stands out of a sea (the pizza game's water) on
+ * cliff-like sides, with a fence round its edge. Each town (a later city too) is its own island.
+ */
+export interface IslandDef {
+    /** The sea: its colour, how far below the ground it lies, how far it reaches past the island. */
+    water: string;
+    waterLevel: number;
+    margin: number;
+    /** The island's sides: colour, and how deep they go (below the water). */
+    sideColor: string;
+    sideDepth: number;
+    /** The island's shape: a polygon on the ground (any order, no self-crossing). Without one, the ground's rect. */
+    outline?: { x: number; z: number }[];
+    /** A wooden deck round the edge: `width` in from the shore, planks across it, pilings into the sea. */
+    deck?: DeckDef;
+    /** The fence round the edge: posts every `spacing`, rails, a kerb under them (with `kerbColor`); `inset` in from the edge. */
+    fence?: { color: string; kerbColor?: string; height: number; inset: number; spacing: number };
+}
+
+export interface DeckDef {
+    width: number;
+    color: string;
+    /** The pilings standing in the sea along the shore: their colour and the gap between them. */
+    pilingColor: string;
+    pilingSpacing: number;
+}
+
 export interface TownLevel {
     id: string;
     name: string;
     ground: { x: number; z: number; width: number; depth: number; color: string };
+    island?: IslandDef;
     start: { x: number; z: number };
     pavements: Pavement[];
     atm: AtmLook;
@@ -250,6 +304,11 @@ export interface MowDesign {
     /** The level's sections, in unlock order. */
     districts: DistrictDef[];
     start: { x: number; z: number };
+}
+
+/** How a ridden mower's tractor is painted: 'grey', a colour, or undefined (its own colours). Same as dig's toolPaint. */
+export function toolPaint(tool: ToolDef): string | undefined {
+    return tool.tint ?? (tool.greyscale ? 'grey' : undefined);
 }
 
 export const TOWN: TownLevel = town as unknown as TownLevel;

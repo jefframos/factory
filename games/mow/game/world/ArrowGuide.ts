@@ -27,7 +27,9 @@ export class ArrowGuide {
     private repath = 0;
     private time = 0;
 
-    public constructor(threeScene: THREE.Scene, private readonly blockers: () => readonly Box[]) {
+    /** `solid(x, z)`: where the player can't stand (made for each repath: what's open changes). */
+    public constructor(threeScene: THREE.Scene, private readonly blockers: () => readonly Box[],
+        private readonly solid: () => (x: number, z: number) => boolean = () => () => false) {
         const shape = new THREE.Shape();
         shape.moveTo(0, 0.24);
         shape.lineTo(0.2, -0.16);
@@ -47,10 +49,16 @@ export class ArrowGuide {
         }
     }
 
-    /** Leads from `from` to `target` (null: no trail). Call every frame. */
-    public update(delta: number, from: THREE.Vector3, target: THREE.Vector3 | null): void {
+    /**
+     * Leads from `from` to `target` (null: no trail), or with `area` into that rect the nearest way in (`target` its
+     * centre). Call every frame.
+     */
+    public update(delta: number, from: THREE.Vector3, target: THREE.Vector3 | null, area?: Box): void {
         this.time += delta;
-        if (!target || from.distanceTo(target) <= NEAR) {
+        const arrived = area
+            ? Math.abs(from.x - area.x) <= area.halfX + NEAR && Math.abs(from.z - area.z) <= area.halfZ + NEAR
+            : !!target && from.distanceTo(target) <= NEAR;
+        if (!target || arrived) {
             this.show([]);
             return;
         }
@@ -58,7 +66,7 @@ export class ArrowGuide {
         if (this.repath <= 0 || target.distanceToSquared(this.routeTarget) > 0.01) {
             this.repath = REPATH_SEC;
             this.routeTarget.copy(target);
-            this.route = findPath(from, target, () => false, this.blockers());
+            this.route = findPath(from, target, this.solid(), this.blockers(), area);
         } else if (this.route.length) {
             this.route[0].set(from.x, 0, from.z);
         }

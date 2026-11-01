@@ -37,6 +37,7 @@ import { GrassField } from '../world/GrassField';
 import { Town } from '../world/Town';
 import { TractorRide } from '../player/TractorRide';
 import { ArrowGuide } from '../world/ArrowGuide';
+import type { Box } from '../world/GuidePath';
 import { MowingSystem } from '../mowing/MowingSystem';
 import { MowHud, ShopHint } from '../ui/MowHud';
 import { MowEffects } from '../vfx/MowEffects';
@@ -56,6 +57,8 @@ export const MOW_CAMERA = {
     pitchDeg: 55,
     distance: 14,
     followSpeed: 8,
+    /** How fast the distance eases to a new section's `zoom`. */
+    zoomSpeed: 1.5,
 };
 
 const REFERENCE_ASPECT = Game.DESIGN_WIDTH / Game.DESIGN_HEIGHT;
@@ -71,6 +74,11 @@ const MOVE_HINT_DISTANCE = 2.5;
 const OCCLUSION_HEIGHT = 0.9;
 /** A newly opened section (onUnlock.pan): the camera glides over, holds, glides back (seconds). */
 const PAN = { delay: 1.2, glide: 0.9, hold: 1.4 };
+/**
+ * Wandering: further than FAR units from the section being worked on (its rect), the arrows lead back into it, until
+ * the player is back inside (BACK units in from its edge counts).
+ */
+const WANDER = { far: 7, back: 1.5, inset: 1.2 };
 /** How often the scene checks whether the player is stuck (updateRelief()). */
 const STUCK_CHECK_SEC = 1;
 /** Stuck: grass grown back to earn this much more than the next mower is short of, over about RELIEF_SEC. */
@@ -79,10 +87,10 @@ const RELIEF_SEC = 3;
 /** At least this many cells grow back a second while relief is under way. */
 const RELIEF_MIN_RATE = 8;
 
-function cameraOffset(camera: THREE.PerspectiveCamera): THREE.Vector3 {
+function cameraOffset(camera: THREE.PerspectiveCamera, zoom: number): THREE.Vector3 {
     const yaw = THREE.MathUtils.degToRad(MOW_CAMERA.yawDeg);
     const pitch = THREE.MathUtils.degToRad(MOW_CAMERA.pitchDeg);
-    const distance = MOW_CAMERA.distance * Math.max(1, REFERENCE_ASPECT / camera.aspect);
+    const distance = MOW_CAMERA.distance * zoom * Math.max(1, REFERENCE_ASPECT / camera.aspect);
     const horizontal = distance * Math.cos(pitch);
     return new THREE.Vector3(horizontal * Math.sin(yaw), distance * Math.sin(pitch), horizontal * Math.cos(yaw));
 }
@@ -102,9 +110,13 @@ export default class MowScene extends ThreeScene {
     private characterReady: Promise<void> = Promise.resolve();
     private sceneDestroyed = false;
     private readonly followTarget = new THREE.Vector3();
+    /** The camera distance's multiplier, easing to the section being worked on's `zoom` (cameraZoomGoal()). */
+    private zoom = 1;
     private readonly lastPosition = new THREE.Vector3();
     /** Districts that opened this session and haven't been mowed yet (the guide leads there). */
     private readonly fresh = new Set<number>();
+    /** Leading a wandering player back to the section being worked on (updateGuide()). */
+    private wandering = false;
     /** The ATM the player stands on (-1: none). */
     private onAtm = -1;
     /** Beams over the treasures still hidden near the player. */
@@ -159,7 +171,7 @@ export default class MowScene extends ThreeScene {
         this.effects = new MowEffects(this.threeScene, 0.5, () => this.player.pickupPoint(new THREE.Vector3()));
         this.tractor = new TractorRide(this.threeScene, this.player, this.effects, (x, z) => this.inUnfinishedSection(x, z));
         this.player.ridePoint = (out) => this.tractor.cutPoint(out);
-        this.guide = new ArrowGuide(this.threeScene, () => this.town.blockers);
+        this.guide = new ArrowGuide(this.threeScene, () => this.town.blockers, () => this.town.unstandable());
         this.hud = this.createHud();
         Localization.onLocaleChange.add(this.onLocaleChange, this);
         this.mowing = new MowingSystem(this.grass, this.player, this.effects, (d) => this.town.isOpen(d), () => {
@@ -183,6 +195,7 @@ export default class MowScene extends ThreeScene {
         this.lastPosition.copy(this.player.transform.position);
         this.hintLast.copy(this.player.transform.position);
         this.followTarget.copy(this.player.transform.position);
+        this.zoom = this.cameraZoomGoal();
         this.placeCamera();
         this.buildDebug();
         // Gameplay starts on the first input, once the game is loaded.
@@ -273,6 +286,7 @@ export default class MowScene extends ThreeScene {
         this.updateDistrictBar();
         const position = this.player.transform.position;
         this.followTarget.lerp(this.cameraGoal(delta, position), 1 - Math.exp(-MOW_CAMERA.followSpeed * delta));
+        this.zoom += (this.cameraZoomGoal() - this.zoom) * (1 - Math.exp(-MOW_CAMERA.zoomSpeed * delta));
         this.placeCamera();
         BendService.updateOrigin(this.followTarget);
         BendService.updateCameraPosition(this.threeCamera.position);
@@ -291,8 +305,13 @@ export default class MowScene extends ThreeScene {
         return showing ? pan.to : position;
     }
 
+    /** The first section not restored yet sets the zoom (the small Front Yard is seen closer), even while selling. */
+    private cameraZoomGoal(): number {
+        return MOW.districts.find((d) => !MowProgress.isRestored(d.id))?.zoom ?? 1;
+    }
+
     private placeCamera(): void {
-        this.threeCamera.position.copy(this.followTarget).add(cameraOffset(this.threeCamera));
+        this.threeCamera.position.copy(this.followTarget).add(cameraOffset(this.threeCamera, this.zoom));
         this.threeCamera.lookAt(this.followTarget);
     }
 
@@ -504,7 +523,8 @@ export default class MowScene extends ThreeScene {
             this.town.bloom(this.flowerSpots(district));
             MowProgress.restore(district.id, district.bonus);
             GameAnalytics.districtRestored(district.id);
-            if (d === 0) GameAnalytics.tutorialStep('park-restored');
+            if (d === 0) GameAnalytics.tutorialStep('yard-restored');
+            if (district.id === 'park') GameAnalytics.tutorialStep('park-restored');
             MowAudio.play('applause');
             MowAudio.play('cheer');
             this.hud.say(t('districtRestored', { name: names.district(district).toUpperCase() }), 0x9cff9c);
@@ -550,6 +570,7 @@ export default class MowScene extends ThreeScene {
     /** Where the arrows lead now (see the file's header), and the hand in the shop. */
     private updateGuide(delta: number): void {
         let target: THREE.Vector3 | null = null;
+        let area: Box | undefined;
         let hint: ShopHint = null;
         const atmAt = this.town.nearestAtm(this.player.transform.position);
         const next = MowProgress.nextTool;
@@ -572,9 +593,34 @@ export default class MowScene extends ThreeScene {
             const d = [...this.fresh][0];
             const district = MOW.districts[d];
             target = new THREE.Vector3(district.x, 0, district.z + district.depth / 2 - 1.5);
+        } else {
+            area = this.wanderArea();
+            if (area) target = new THREE.Vector3(area.x, 0, area.z);
         }
         this.hud.setShopHint(hint);
-        this.guide.update(delta, this.player.transform.position, target);
+        this.guide.update(delta, this.player.transform.position, target, area);
+    }
+
+    /**
+     * The section being worked on (the first open one not restored), as the arrows' goal while the player has wandered
+     * off from it (WANDER); undefined when they're there, or all is restored.
+     */
+    private wanderArea(): Box | undefined {
+        const d = MOW.districts.findIndex((district, i) => this.town.isOpen(i) && !MowProgress.isRestored(district.id));
+        if (d < 0) {
+            this.wandering = false;
+            return undefined;
+        }
+        const district = MOW.districts[d];
+        const p = this.player.transform.position;
+        const outX = Math.max(0, Math.abs(p.x - district.x) - district.width / 2);
+        const outZ = Math.max(0, Math.abs(p.z - district.z) - district.depth / 2);
+        const away = Math.hypot(outX, outZ);
+        if (away > WANDER.far) this.wandering = true;
+        const inside = Math.abs(p.x - district.x) <= district.width / 2 - WANDER.back && Math.abs(p.z - district.z) <= district.depth / 2 - WANDER.back;
+        if (inside) this.wandering = false;
+        if (!this.wandering) return undefined;
+        return { x: district.x, z: district.z, halfX: district.width / 2 - WANDER.inset, halfZ: district.depth / 2 - WANDER.inset };
     }
 
     // ---------------------------------------------------------------- lifecycle

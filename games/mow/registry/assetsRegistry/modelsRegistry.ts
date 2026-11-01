@@ -2144,6 +2144,36 @@ const TownFirehydrant = {
 }
 } as const;
 
+const TownRoadCorner = {
+  id: 'road_corner',
+  path: 'town/city/road_corner',
+  fullPath: 'mow/models/town/city/road_corner.gltf',
+  format: 'gltf',
+  nodes: {
+  "RoadCorner": "road_corner"
+}
+} as const;
+
+const TownRoadCornerCurved = {
+  id: 'road_corner_curved',
+  path: 'town/city/road_corner_curved',
+  fullPath: 'mow/models/town/city/road_corner_curved.gltf',
+  format: 'gltf',
+  nodes: {
+  "RoadCornerCurved": "road_corner_curved"
+}
+} as const;
+
+const TownRoadJunction = {
+  id: 'road_junction',
+  path: 'town/city/road_junction',
+  fullPath: 'mow/models/town/city/road_junction.gltf',
+  format: 'gltf',
+  nodes: {
+  "RoadJunction": "road_junction"
+}
+} as const;
+
 const TownRoadStraight = {
   id: 'road_straight',
   path: 'town/city/road_straight',
@@ -2161,6 +2191,16 @@ const TownRoadStraightCrossing = {
   format: 'gltf',
   nodes: {
   "RoadStraightCrossing": "road_straight_crossing"
+}
+} as const;
+
+const TownRoadTsplit = {
+  id: 'road_tsplit',
+  path: 'town/city/road_tsplit',
+  fullPath: 'mow/models/town/city/road_tsplit.gltf',
+  format: 'gltf',
+  nodes: {
+  "RoadTsplit": "road_tsplit"
 }
 } as const;
 
@@ -2214,6 +2254,16 @@ const TownBush1AColor1 = {
 }
 } as const;
 
+const TownBush1CColor1 = {
+  id: 'Bush_1_C_Color1',
+  path: 'town/nature/Bush_1_C_Color1',
+  fullPath: 'mow/models/town/nature/Bush_1_C_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Bush1CColor1": "Bush_1_C_Color1"
+}
+} as const;
+
 const TownBush2AColor1 = {
   id: 'Bush_2_A_Color1',
   path: 'town/nature/Bush_2_A_Color1',
@@ -2221,6 +2271,26 @@ const TownBush2AColor1 = {
   format: 'gltf',
   nodes: {
   "Bush2AColor1": "Bush_2_A_Color1"
+}
+} as const;
+
+const TownBush3AColor1 = {
+  id: 'Bush_3_A_Color1',
+  path: 'town/nature/Bush_3_A_Color1',
+  fullPath: 'mow/models/town/nature/Bush_3_A_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Bush3AColor1": "Bush_3_A_Color1"
+}
+} as const;
+
+const TownBush4AColor1 = {
+  id: 'Bush_4_A_Color1',
+  path: 'town/nature/Bush_4_A_Color1',
+  fullPath: 'mow/models/town/nature/Bush_4_A_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Bush4AColor1": "Bush_4_A_Color1"
 }
 } as const;
 
@@ -2337,6 +2407,112 @@ const TownTractor = {
   "WheelBackRight": "wheel-back-right",
   "WheelBackLeft": "wheel-back-left",
   "Body": "body"
+}
+} as const;
+
+const TownTractorShovel = {
+  id: 'tractor-shovel',
+  path: 'town/vehicles/tractor-shovel/tractor-shovel',
+  fullPath: 'mow/models/town/vehicles/tractor-shovel/tractor-shovel.glb',
+  format: 'glb',
+  nodes: {
+  "WheelBackLeft": "wheel-back-left",
+  "Body": "body",
+  "Shovel": "shovel",
+  "WheelBackRight": "wheel-back-right",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelFrontRight": "wheel-front-right"
+}
+} as const;
+
+const TreasuresBoneA = {
+  id: 'bone-a',
+  path: 'treasures/bone-a',
+  fullPath: 'mow/models/treasures/bone-a.glb',
+  format: 'glb',
+  nodes: {
+  "BoneA": "bone_A"
+}
+} as const;
+
+const TreasuresChest = {
+  id: 'chest',
+  path: 'treasures/chest',
+  fullPath: 'mow/models/treasures/chest.glb',
+  format: 'glb',
+  nodes: {
+  "Chest": "chest"
+}
+} as const;
+
+const TreasuresComicbookA = {
+  id: 'comicbook-a',
+  path: 'treasures/comicbook-a',
+  fullPath: 'mow/models/treasures/comicbook-a.glb',
+  format: 'glb',
+  nodes: {
+  "ComicbookA": "comicbook_A"
+}
+} as const;
+
+const TreasuresDynamite = {
+  id: 'dynamite',
+  path: 'treasures/dynamite',
+  fullPath: 'mow/models/treasures/dynamite.glb',
+  format: 'glb',
+  nodes: {
+  "Dynamite": "dynamite"
+}
+} as const;
+
+const TreasuresGoldBars = {
+  id: 'gold-bars',
+  path: 'treasures/gold-bars',
+  fullPath: 'mow/models/treasures/gold-bars.glb',
+  format: 'glb',
+  nodes: {
+  "GoldBars": "Gold_Bars"
+}
+} as const;
+
+const TreasuresJournalClosed = {
+  id: 'journal-closed',
+  path: 'treasures/journal-closed',
+  fullPath: 'mow/models/treasures/journal-closed.glb',
+  format: 'glb',
+  nodes: {
+  "JournalClosed": "journal_closed"
+}
+} as const;
+
+const TreasuresLantern = {
+  id: 'lantern',
+  path: 'treasures/lantern',
+  fullPath: 'mow/models/treasures/lantern.glb',
+  format: 'glb',
+  nodes: {
+  "Lantern": "lantern",
+  "LanternHandle": "lantern_handle"
+}
+} as const;
+
+const TreasuresMapRolled = {
+  id: 'map-rolled',
+  path: 'treasures/map-rolled',
+  fullPath: 'mow/models/treasures/map-rolled.glb',
+  format: 'glb',
+  nodes: {
+  "MapRolled": "map_rolled"
+}
+} as const;
+
+const TreasuresSkull = {
+  id: 'skull',
+  path: 'treasures/skull',
+  fullPath: 'mow/models/treasures/skull.glb',
+  format: 'glb',
+  nodes: {
+  "Skull": "skull"
 }
 } as const;
 
@@ -2461,14 +2637,21 @@ export const MODELS = {
     CarTaxi: TownCarTaxi,
     Dumpster: TownDumpster,
     Firehydrant: TownFirehydrant,
+    RoadCorner: TownRoadCorner,
+    RoadCornerCurved: TownRoadCornerCurved,
+    RoadJunction: TownRoadJunction,
     RoadStraight: TownRoadStraight,
     RoadStraightCrossing: TownRoadStraightCrossing,
+    RoadTsplit: TownRoadTsplit,
     Streetlight: TownStreetlight,
     StreetlightOldDouble: TownStreetlightOldDouble,
     StreetlightOldSingle: TownStreetlightOldSingle,
     TrashA: TownTrashA,
     Bush1AColor1: TownBush1AColor1,
+    Bush1CColor1: TownBush1CColor1,
     Bush2AColor1: TownBush2AColor1,
+    Bush3AColor1: TownBush3AColor1,
+    Bush4AColor1: TownBush4AColor1,
     Grass1ASinglesidedColor1: TownGrass1ASinglesidedColor1,
     Grass2ASinglesidedColor1: TownGrass2ASinglesidedColor1,
     Tree1AColor1: TownTree1AColor1,
@@ -2479,7 +2662,19 @@ export const MODELS = {
     FlaxFlowerB: TownFlaxFlowerB,
     Atm01: TownAtm01,
     Closet02: TownCloset02,
-    Tractor: TownTractor
+    Tractor: TownTractor,
+    TractorShovel: TownTractorShovel
+  },
+  Treasures: {
+    BoneA: TreasuresBoneA,
+    Chest: TreasuresChest,
+    ComicbookA: TreasuresComicbookA,
+    Dynamite: TreasuresDynamite,
+    GoldBars: TreasuresGoldBars,
+    JournalClosed: TreasuresJournalClosed,
+    Lantern: TreasuresLantern,
+    MapRolled: TreasuresMapRolled,
+    Skull: TreasuresSkull
   }
 } as const;
 

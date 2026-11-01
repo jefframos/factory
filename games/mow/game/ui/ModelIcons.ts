@@ -8,6 +8,7 @@
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { paintPixels } from '../utils/Paint';
 import SetupThree from 'core/scene/SetupThree';
 
 /** Render size: about twice the largest size an icon is shown at, so it stays crisp. */
@@ -15,7 +16,7 @@ const SIZE = 256;
 const cache = new Map<string, Promise<PIXI.Texture | undefined>>();
 let loader: GLTFLoader | undefined;
 
-async function render(url: string, greyscale: boolean): Promise<PIXI.Texture | undefined> {
+async function render(url: string, paint: string | undefined): Promise<PIXI.Texture | undefined> {
     const renderer = SetupThree.renderer;
     if (!renderer) {
         return undefined;
@@ -61,35 +62,29 @@ async function render(url: string, greyscale: boolean): Promise<PIXI.Texture | u
         const source = (SIZE - 1 - y) * SIZE * 4;
         image.data.set(pixels.subarray(source, source + SIZE * 4), y * SIZE * 4);
     }
-    if (greyscale) {
-        // The same model in grey (the Digger: the tractor desaturated).
-        const data = image.data;
-        for (let i = 0; i < data.length; i += 4) {
-            const luma = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-            data[i] = data[i + 1] = data[i + 2] = luma;
-        }
-    }
+    // The same model repainted (a ridden mower's tractor: grey, purple, red).
+    if (paint) paintPixels(image.data, paint);
     context.putImageData(image, 0, 0);
     return PIXI.Texture.from(canvas);
 }
 
 export const ModelIcons = {
-    /** The icon for a model (a ./dig/models/... url), optionally in grey; undefined if it can't be drawn. */
-    get(url: string, greyscale = false): Promise<PIXI.Texture | undefined> {
-        const key = greyscale ? `${url}|grey` : url;
+    /** The icon for a model (a ./mow/models/... url), optionally repainted ('grey' or a colour: Paint); undefined if it can't be drawn. */
+    get(url: string, paint?: string): Promise<PIXI.Texture | undefined> {
+        const key = paint ? `${url}|${paint}` : url;
         let promise = cache.get(key);
         if (!promise) {
-            promise = render(url, greyscale).catch(() => undefined);
+            promise = render(url, paint).catch(() => undefined);
             cache.set(key, promise);
         }
         return promise;
     },
 
     /** A sprite that fills in with the model's icon once it's rendered, `size` px across. */
-    sprite(url: string, size: number, silhouette = false, greyscale = false): PIXI.Sprite {
+    sprite(url: string, size: number, silhouette = false, paint?: string): PIXI.Sprite {
         const sprite = new PIXI.Sprite(PIXI.Texture.EMPTY);
         sprite.anchor.set(0.5);
-        void this.get(url, greyscale).then((texture) => {
+        void this.get(url, paint).then((texture) => {
             if (!texture || sprite.destroyed) return;
             sprite.texture = texture;
             sprite.scale.set(size / texture.width);

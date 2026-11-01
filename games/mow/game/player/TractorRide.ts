@@ -4,9 +4,10 @@
 // stepping into a section that isn't restored yet mounts it — a smoke puff, the tractor appears under the player, they
 // sit in its seat at once — and stepping out (onto a pavement, an ATM, a restored section) gets them off again with
 // another puff. While riding, the wheels turn and the exhaust puffs as it moves, and it cuts from under the tractor to
-// its front (cutPoint); on foot with a ridden mower, nothing is cut. One model (`tractor`: look, seat, exhaust, smoke,
-// edited in the editor's Tractor tab) for every ridden mower, tinted with the mower's colour and scaled by its
-// `rideScale`.
+// its front (cutPoint); on foot with a ridden mower, nothing is cut. One model (`tractor`: dig's tractor — look, seat,
+// exhaust, smoke, edited in the editor's Tractor tab) for every ridden mower, painted like dig's vehicles (the
+// mower's `greyscale` / `tint`: the grey Digger, the purple Tractor, the Red Tractor; utils/Paint.ts) and scaled by
+// its `rideScale`.
 //
 // The tractor follows the player's body (its position and facing); the seat offset moves the body up / back into it
 // after the character has placed itself for the frame.
@@ -14,7 +15,8 @@
 import * as THREE from 'three';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { BendService } from '../services/BendService';
-import { MOW, ToolDef } from '../data/MowConfig';
+import { MOW, ToolDef, toolPaint } from '../data/MowConfig';
+import { paintPixels } from '../utils/Paint';
 import { MowProgress } from '../data/MowProgress';
 import type MowPlayer from './MowPlayer';
 import type { MowEffects } from '../vfx/MowEffects';
@@ -23,15 +25,16 @@ import { MowAudio } from '../audio/MowAudio';
 const MODEL_BASE = './mow/models/';
 /** Wheel radius the spin is worked out from (world units, at the tractor's base height). */
 const WHEEL_RADIUS = 0.4;
-/** How much of the mower's colour tints the tractor (0 = its own colours). */
-const TINT = 0.45;
 
 export class TractorRide {
     private readonly holder = new THREE.Group();
     /** The model, fitted to the base height (the holder scales it per mower). */
     private model?: THREE.Object3D;
     private readonly wheels: THREE.Object3D[] = [];
-    private readonly materials: { material: THREE.MeshStandardMaterial; color: THREE.Color }[] = [];
+    private readonly materials: THREE.MeshStandardMaterial[] = [];
+    /** The model's texture in its own colours, and repainted copies by paint (updateLook()). */
+    private colorMap?: THREE.Texture;
+    private readonly paintedMaps = new Map<string, THREE.Texture | undefined>();
     private riding = false;
     private lookFor?: ToolDef;
     private exhaustTimer = 0;
@@ -66,7 +69,7 @@ export class TractorRide {
                     child.material = Array.isArray(child.material) ? child.material.map((m) => m.clone()) : child.material.clone();
                     (Array.isArray(child.material) ? child.material : [child.material]).forEach((m) => {
                         BendService.applyBend(m);
-                        if (m instanceof THREE.MeshStandardMaterial) this.materials.push({ material: m, color: m.color.clone() });
+                        if (m instanceof THREE.MeshStandardMaterial) this.materials.push(m);
                     });
                 }
                 if (/wheel/i.test(child.name)) this.wheels.push(child);
@@ -77,6 +80,8 @@ export class TractorRide {
             model.updateMatrixWorld(true);
             model.position.y = -new THREE.Box3().setFromObject(model).min.y;
             this.model = model;
+            this.colorMap = this.materials.find((m) => m.map)?.map ?? undefined;
+            this.paintedMaps.clear();
             this.lookFor = undefined;
             this.holder.add(model);
         } catch (error) {
@@ -84,13 +89,38 @@ export class TractorRide {
         }
     }
 
-    /** The current mower's look: its colour over the tractor's, its size. */
+    /** A copy of `map` (same settings) repainted (paintPixels): grey, or a colour. */
+    private static paintedTexture(map: THREE.Texture, paint: string): THREE.Texture | undefined {
+        const image = map.image as CanvasImageSource & { width: number; height: number };
+        if (!image?.width) return undefined;
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const context = canvas.getContext('2d')!;
+        context.drawImage(image, 0, 0);
+        const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+        paintPixels(pixels.data, paint);
+        context.putImageData(pixels, 0, 0);
+        // Its own Source: clone() shares the original's, and writing the image through it would repaint the colour map too.
+        const painted = map.clone();
+        painted.source = new THREE.Source(canvas);
+        painted.needsUpdate = true;
+        return painted;
+    }
+
+    /** The current mower's look: its paint (toolPaint) and its size. */
     private updateLook(): void {
         const tool = MowProgress.tool;
         if (tool === this.lookFor || !this.model) return;
         this.lookFor = tool;
-        const tint = new THREE.Color(tool.color);
-        for (const { material, color } of this.materials) material.color.copy(color).lerp(tint, TINT);
+        const paint = toolPaint(tool);
+        if (paint && !this.paintedMaps.has(paint) && this.colorMap) this.paintedMaps.set(paint, TractorRide.paintedTexture(this.colorMap, paint));
+        const map = (paint ? this.paintedMaps.get(paint) : undefined) ?? this.colorMap;
+        for (const material of this.materials) {
+            if (!material.map || !map) continue;
+            material.map = map;
+            material.needsUpdate = true;
+        }
         this.holder.scale.setScalar(this.scale);
     }
 
