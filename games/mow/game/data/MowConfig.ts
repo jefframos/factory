@@ -310,6 +310,27 @@ export interface ComboDef {
     max: number;
 }
 
+/** A few cars driving the roads (world/Traffic.ts): the town's road tiles (props whose model has `road_`) are the lanes. */
+export interface TrafficDef {
+    count: number;
+    /** Car models (paths under models/; front facing +Z), picked in turn. */
+    models: string[];
+    /** Cruising speed (units / s), and how fast they speed up / brake. */
+    speed: number;
+    accel: number;
+    brake: number;
+    /** The cars' length (fitted). */
+    length: number;
+    /** A lane's middle off the road's middle (driving on the right). */
+    lane: number;
+    /** The road tiles' size (they sit on this grid). */
+    tile: number;
+    /** The road's top (the cars' wheels sit on it). */
+    roadY: number;
+    /** Clear road a car keeps in front of it (to the player, to the car ahead); it stops short of that. */
+    gap: number;
+}
+
 export interface MowDesign {
     /** Which game it is unless the URL says (?mode=calm|rush): GameMode.ts. */
     mode?: 'calm' | 'rush';
@@ -322,6 +343,7 @@ export interface MowDesign {
      * tough than it has entries can't be cut at all (a lock until a better mower).
      */
     chewSec: number[];
+    traffic?: TrafficDef;
     grass: GrassDef[];
     tools: ToolDef[];
     upgrades: UpgradeDef[];

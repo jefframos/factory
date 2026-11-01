@@ -382,6 +382,8 @@ export class Town {
     private destroyed = false;
     /** The player's footprint radius for walking (wider on the tractor). */
     public bodyRadius = BODY_RADIUS;
+    /** Obstacles that move (the cars: Traffic.blockers()), only for walking: the guide's route ignores them. */
+    public movingBlockers?: () => readonly Box[];
     /** Resolves once every model has loaded (or failed: the town still plays without one). */
     public readonly ready: Promise<void>;
 
@@ -990,7 +992,8 @@ export class Town {
     private isWalkable(x: number, z: number): boolean {
         const r = this.bodyRadius;
         if (!this.standable(x, z, r, this.lockedRects())) return false;
-        return !this.blockers.some((b) => Math.abs(x - b.x) <= b.halfX + r && Math.abs(z - b.z) <= b.halfZ + r);
+        const hits = (b: Box) => Math.abs(x - b.x) <= b.halfX + r && Math.abs(z - b.z) <= b.halfZ + r;
+        return !this.blockers.some(hits) && !(this.movingBlockers?.() ?? []).some(hits);
     }
 
     /** The locked sections, as [x, z, halfX, halfZ]. */

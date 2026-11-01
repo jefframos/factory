@@ -100,7 +100,15 @@ The roads are one connected network of KayKit tiles (straight, crossing, curved 
 meet its neighbours, so no road just ends): an outer ring round the town and two avenues beside the park. The whole
 island inside its fence is free to roam from the start (roads, verges, the plaza) — only the locked sections aren't:
 each has a white fence all round it (its lock sign on the side facing the section before it), which sinks away when it
-opens. Road tiles sit at `elevation` 0.06, above the road slabs under them (the slabs come first in `pavements`). Treasures and an area bonus wait in every section but the yard.
+opens. Road tiles sit at `elevation` 0.06, above the road slabs under them (the slabs come first in `pavements`).
+
+**Traffic** (`world/Traffic.ts`, `traffic` in `ui/mow.json`) — a few cars (the city kit's sedan, taxi, hatchback,
+station wagon) drive the roads to make the town feel alive. The lanes come from the road tiles themselves (props
+whose model has `road_`, on the 7-unit `tile` grid): each car crosses a tile at a time in the right-hand lane
+(`lane` off the middle), curving through corners and junctions and picking its way at random (straight on likelier).
+A car brakes for the player (or the car ahead) within `gap` of its front and drives on once the way is clear; two
+blocking each other at a junction: the older goes first. Cars are solid to walk into (not to the guide's route); one
+the player is already in isn't, so they can always step out. Treasures and an area bonus wait in every section but the yard.
 
 **Grass size** — a section's `grassScale` (default 1; "Grass size ×" in the editor) multiplies its tufts' height and
 the contact needed to chew through grass too tough: under 1 an easier section, over 1 a harder one.
@@ -150,6 +158,8 @@ games/mow/
                         fences, flowers; walkability, "no grass here"
     world/Shore.ts      the island's outline and its polygon maths (insets, inside, edge distance)
     world/ArrowGuide.ts the floor arrows
+    world/GrassLocks.ts padlocks (with the mower it takes) over grass the mower can't cut
+    world/Traffic.ts    a few cars driving the road tiles, stopping for the player
     mowing/MowingSystem.ts  automatic cutting while moving
     mowing/Combo.ts     rush mode's combo meter
     player/MowPlayer.ts the character with the tool cube in front

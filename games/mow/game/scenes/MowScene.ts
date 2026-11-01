@@ -55,6 +55,7 @@ import { Gameplay } from '../data/Gameplay';
 import { MowAudio } from '../audio/MowAudio';
 import { EngineSound } from '../audio/EngineSound';
 import { GrassLocks } from '../world/GrassLocks';
+import { Traffic } from '../world/Traffic';
 import { GameAnalytics } from '../analytics/GameAnalytics';
 import { t, names, Localization } from '../i18n/Localization';
 
@@ -134,6 +135,8 @@ export default class MowScene extends ThreeScene {
     private beacons!: TreasureBeacons;
     /** Padlocks (with the mower it takes) over grass the mower can't cut. */
     private locks!: GrassLocks;
+    /** A few cars on the roads. */
+    private traffic!: Traffic;
     /** Each treasure's model, fitted to its size (loaded behind the game: treasureModels()). */
     private readonly treasureModels = new Map<string, THREE.Object3D>();
     /** The wardrobe whose pad the player stands on, or -1. */
@@ -168,6 +171,8 @@ export default class MowScene extends ThreeScene {
         this.buildLights();
         const open = (d: number) => d === 0 || MowProgress.isRestored(MOW.districts[d - 1].id);
         this.town = new Town(this.threeScene, open);
+        this.traffic = new Traffic(this.threeScene);
+        this.town.movingBlockers = () => this.traffic.blockers();
         this.grass = new GrassField(this.threeScene, (x, z) => this.town.isBlocked(x, z), MowProgress.savedCut);
         MowProgress.setCutProvider(() => this.grass.save());
         // Districts restored in an earlier session look restored again (all mowed, even if the level's grass changed);
@@ -315,6 +320,7 @@ export default class MowScene extends ThreeScene {
         this.beacons.update(delta, this.player.transform.position);
         if (this.mowing.wall) this.locks.bump(this.mowing.wall);
         this.locks.update(delta, this.player.transform.position, MowProgress.power);
+        this.traffic.update(delta, this.player.transform.position, this.town.bodyRadius);
         this.effects.update(delta);
         this.updateEngine(delta);
         this.updateGuide(delta);
@@ -719,6 +725,7 @@ export default class MowScene extends ThreeScene {
         this.effects?.destroy();
         this.beacons?.destroy();
         this.locks?.destroy();
+        this.traffic?.destroy();
         this.grass?.destroy();
         this.town?.destroy();
         this.tractor?.destroy();
