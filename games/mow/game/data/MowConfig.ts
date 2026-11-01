@@ -37,8 +37,8 @@ export interface ToolDef {
     color: string;
     /** Runs an engine (sound). */
     engine?: boolean;
-    /** Held in the hands (the scissors), not pushed along the ground on a handle. */
-    handheld?: boolean;
+    /** A manual reel mower (the first tool): a spinning bladed barrel between two wheels instead of a deck. */
+    reel?: boolean;
     /** Driven: the tractor (`tractor`), mounted in sections not restored yet (TractorRide). */
     ride?: boolean;
     /** The tractor's size for this mower (1 = `tractor.height`). */
@@ -55,12 +55,16 @@ export interface ToolDef {
 
 /**
  * Where the hands hold a walked tool, from the player's feet: `forward` ahead, `height` up, each hand `spread` off the
- * middle. A pushed mower's handle crossbar sits there (rails down to the deck's back corners); a held tool hangs there.
+ * middle. The mower's handle crossbar sits there (rails down to the deck's back corners, or a reel's axle).
  */
 export interface GripDef {
     forward: number;
     height: number;
     spread: number;
+    /** The hands' turn on the bar (degrees, on top of their rest pose; the left hand's, mirrored for the right). */
+    hand?: { x: number; y: number; z: number };
+    /** The right hand mirrors the left's turn (default); off: both take the same turn. */
+    mirror?: boolean;
 }
 
 /** The ridden mowers' tractor (dig's tractor config; edited in the editor's Tractor tab). */
