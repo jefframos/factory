@@ -19,7 +19,8 @@ const MOW_FILE = path.join(__dirname, '..', 'ui', 'mow.json');
 /**
  * The Map shots tab's settings, by zone (`town` or a section id): `mode` (original: the town as it is; custom: its own
  * diorama, `custom`, a level like town.json), `camera` (yaw / pitch, degrees; `ortho`: isometric, else perspective
- * with `fov`) and `stroke` (a black outline round the small HUD picture). Read by the game's snapshot scene.
+ * with `fov`) and `stroke` (a black outline round the small HUD picture, `strokeWidth` pixels). Read by the game's
+ * snapshot scene.
  */
 const MAPSHOTS_FILE = path.join(__dirname, '..', 'levels', 'mapshots.json');
 const REPO_ROOT = path.join(__dirname, '..', '..', '..');
@@ -337,13 +338,14 @@ async function handleApi(req, res, url) {
     if (url.pathname === '/api/mapshots' && req.method === 'PUT') {
         // A zone's mode and camera (its custom diorama is kept).
         const zone = url.searchParams.get('zone') ?? '';
-        const { mode, camera, stroke } = await readBody(req);
+        const { mode, camera, stroke, strokeWidth } = await readBody(req);
         if (!/^[\w-]+$/.test(zone)) return send(res, 400, { error: 'Bad zone' });
         if (mode !== 'original' && mode !== 'custom') return send(res, 400, { error: 'mode must be original or custom' });
         if (!Number.isFinite(camera?.yaw) || !Number.isFinite(camera?.pitch)) return send(res, 400, { error: 'camera needs yaw and pitch' });
         const shots = await readJson(MAPSHOTS_FILE, { zones: {} });
         const fov = Number.isFinite(camera.fov) ? camera.fov : undefined;
-        shots.zones[zone] = { ...shots.zones[zone], mode, camera: { yaw: camera.yaw, pitch: camera.pitch, ortho: camera.ortho !== false, fov }, stroke: Boolean(stroke) };
+        shots.zones[zone] = { ...shots.zones[zone], mode, camera: { yaw: camera.yaw, pitch: camera.pitch, ortho: camera.ortho !== false, fov }, stroke: Boolean(stroke),
+            strokeWidth: Number.isFinite(strokeWidth) ? Math.min(12, Math.max(1, Math.round(strokeWidth))) : undefined };
         await writeJson(MAPSHOTS_FILE, shots);
         return send(res, 200, { ok: true });
     }

@@ -95,7 +95,8 @@ town's % (a rippling edge with a glow), and a badge with the %.
   section on its own island, the deck round it) and edited right there with the Town tab's editor (a second copy of
   `town3d.js`). Each zone has a camera (yaw round, pitch above; 0° / 40° unless set; **Isometric** on, an
   orthographic camera, or off, a perspective one with its FOV; 🎯 Use this view takes the diorama view's) and a
-  **HUD outline** toggle (a black stroke round the small picture's silhouette, like the rest of the HUD). Settings and dioramas: `levels/mapshots.json`. **📸 Take snapshot** opens the game with
+  **HUD outline** toggle (a black stroke round the small picture's silhouette, like the rest of the HUD; its width
+  in pixels beside it). The frame reaches the top of the tallest thing in the shot, so nothing is cut off. Settings and dioramas: `levels/mapshots.json`. **📸 Take snapshot** opens the game with
   `?mapshots=<editor url>&zone=<zone>` (`debug/TownSnapshotScene.ts`): it builds the level (a custom diorama swapped in
   for the town) fully restored (every section open, mowed, in bloom, every station out; no player, traffic, sea, labels
   or bend), in the game's light, and renders it with an orthographic camera on a transparent background, cropped to

@@ -32,7 +32,7 @@ export const SNAPSHOT_PARAM = 'mapshots';
 const RENDER_WIDTH = 2048;
 const BIG_WIDTH = 512;
 const SMALL_WIDTH = 192;
-/** The small picture's outline (`stroke`): its width in pixels. */
+/** The small picture's outline (`stroke`): its width in pixels unless the zone sets one (`strokeWidth`). */
 const STROKE_PX = 3;
 /** A perspective camera's field of view unless the zone sets one (degrees, vertical). */
 const DEFAULT_FOV = 35;
@@ -43,7 +43,7 @@ const MARGIN = 0.03;
 /** A section's slab of earth under it (thickness, colour), and how much of the town round it the clip keeps. */
 const SLAB = { depth: 1.1, color: 0x9a6a42 };
 const CLIP_PAD = 0.02;
-/** The shot's first frame reaches this high (cropped to what's drawn afterwards). */
+/** The shot's frame reaches this high when nothing is built yet (else the tallest thing's top: top()). */
 const MAX_HEIGHT = 15;
 /** A pixel this opaque (0-255) or more counts as drawn, for the crop. */
 const CROP_ALPHA = 8;
@@ -66,8 +66,9 @@ interface Camera {
 interface ZoneShot {
     mode?: 'original' | 'custom';
     camera?: Camera;
-    /** A black outline round the small (HUD) picture's silhouette. */
+    /** A black outline round the small (HUD) picture's silhouette, `strokeWidth` pixels wide. */
     stroke?: boolean;
+    strokeWidth?: number;
 }
 
 export default class TownSnapshotScene extends ThreeScene {
@@ -181,7 +182,7 @@ export default class TownSnapshotScene extends ThreeScene {
             const small = shrunk(render, SMALL_WIDTH);
             const pictures: [string, HTMLCanvasElement][] = [
                 [shot.name, shrunk(render, BIG_WIDTH)],
-                [`${shot.name}-small`, this.settings.stroke ? outlined(small, STROKE_PX) : small],
+                [`${shot.name}-small`, this.settings.stroke ? outlined(small, Math.max(1, this.settings.strokeWidth ?? STROKE_PX)) : small],
             ];
             try {
                 for (const [name, canvas] of pictures) {
@@ -207,7 +208,7 @@ export default class TownSnapshotScene extends ThreeScene {
         const rect = { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
         return new THREE.Box3(
             new THREE.Vector3(rect.minX, TOWN.island ? -TOWN.island.sideDepth : -SLAB.depth, rect.minZ),
-            new THREE.Vector3(rect.maxX, MAX_HEIGHT, rect.maxZ),
+            new THREE.Vector3(rect.maxX, this.top(), rect.maxZ),
         );
     }
 
@@ -216,8 +217,20 @@ export default class TownSnapshotScene extends ThreeScene {
         const rect = rectOf(section);
         return new THREE.Box3(
             new THREE.Vector3(rect.minX, -SLAB.depth, rect.minZ),
-            new THREE.Vector3(rect.maxX, MAX_HEIGHT, rect.maxZ),
+            new THREE.Vector3(rect.maxX, this.top(), rect.maxZ),
         );
+    }
+
+    /**
+     * The top of the tallest thing built (the frame reaches it: a fixed height cut tall buildings off; the crop takes
+     * away what's left over).
+     */
+    private top(): number {
+        const box = new THREE.Box3();
+        this.threeScene.traverseVisible((child) => {
+            if (child instanceof THREE.Mesh) box.expandByObject(child);
+        });
+        return box.isEmpty() ? MAX_HEIGHT : Math.max(1, box.max.y) + 0.5;
     }
 
     /** Four planes keeping only what's over the section (a hair past its edges, so the slab's sides survive). */

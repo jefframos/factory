@@ -5,7 +5,7 @@
 //     (a second copy of town3d.js) — started from the town (↺ Copy from the town), then anything goes: move things
 //     closer, drop what clutters, add what tells the story.
 // Its camera (yaw round, pitch above; isometric or perspective with its field of view; "🎯 Use this view" takes the
-// diorama view's) sets the angle, and "HUD outline" a black stroke round the small picture. 📸 Take snapshot opens the
+// diorama view's) sets the angle, and "HUD outline" a black stroke round the small picture (its width in pixels). 📸 Take snapshot opens the
 // game in snapshot mode for that zone (TownSnapshotScene: the game's own look), which posts two pictures back here
 // (POST /api/map-snapshot): `<zone>` (512 across, the HUD's reveal) and `<zone>-small` (the HUD's corner).
 
@@ -29,7 +29,7 @@ let preview;
 
 const zoneSettings = (id) => {
     const saved = shots.zones[id] ?? {};
-    return { mode: 'original', stroke: false, ...saved, camera: { ...DEFAULT_CAMERA, ...saved.camera } };
+    return { mode: 'original', stroke: false, strokeWidth: 3, ...saved, camera: { ...DEFAULT_CAMERA, ...saved.camera } };
 };
 const zoneName = (id) => (id === 'town' ? 'Whole town' : town.sections.find((s) => s.id === id)?.name ?? id);
 const imageUrl = (id, small = false) => `/map-images/${id}${small ? '-small' : ''}.webp?t=${Date.now()}`;
@@ -64,7 +64,13 @@ function render() {
         fovLabel.hidden = ortho.checked;
         void saveSettings({ camera: camera() });
     } });
-    const stroke = el('input', { type: 'checkbox', checked: settings.stroke, onchange: () => saveSettings({ stroke: stroke.checked }) });
+    const strokeWidth = el('input', { type: 'number', min: 1, max: 12, step: 1, value: settings.strokeWidth, title: 'The outline\'s width (pixels, on the 192-wide picture)',
+        onchange: () => saveSettings({ strokeWidth: Math.min(12, Math.max(1, Math.round(Number(strokeWidth.value) || 3))) }) });
+    const strokeWidthLabel = el('label', { hidden: !settings.stroke }, strokeWidth, ' px');
+    const stroke = el('input', { type: 'checkbox', checked: settings.stroke, onchange: () => {
+        strokeWidthLabel.hidden = !stroke.checked;
+        void saveSettings({ stroke: stroke.checked });
+    } });
     const custom = settings.mode === 'custom';
     const bar = el('div', { class: 'toolbar mapshots-bar' },
         el('label', {}, 'Zone ', el('select', { onchange: (event) => switchZone(event.target.value) },
@@ -77,6 +83,7 @@ function render() {
         el('label', { title: 'Isometric: no perspective (an orthographic camera). Off: a perspective camera with its field of view.' }, ortho, ' Isometric'),
         fovLabel,
         el('label', { title: 'A black outline round the HUD corner\'s (small) picture, like the rest of the HUD' }, stroke, ' HUD outline'),
+        strokeWidthLabel,
         custom ? el('button', { title: 'The diorama view\'s angle (orbit it first)', onclick: () => useView() }, '🎯 Use this view') : '',
         custom ? el('button', { title: 'Start the diorama again from the town as it is', onclick: () => copyFromTown(true) }, '↺ Copy from the town') : '',
         el('span', { class: 'spacer' }),
@@ -95,8 +102,8 @@ function render() {
 async function saveSettings(change) {
     const settings = { ...zoneSettings(zone), ...change };
     try {
-        await api(`/api/mapshots?zone=${encodeURIComponent(zone)}`, { method: 'PUT', body: JSON.stringify({ mode: settings.mode, camera: settings.camera, stroke: settings.stroke }) });
-        shots.zones[zone] = { ...shots.zones[zone], mode: settings.mode, camera: settings.camera, stroke: settings.stroke };
+        await api(`/api/mapshots?zone=${encodeURIComponent(zone)}`, { method: 'PUT', body: JSON.stringify({ mode: settings.mode, camera: settings.camera, stroke: settings.stroke, strokeWidth: settings.strokeWidth }) });
+        shots.zones[zone] = { ...shots.zones[zone], mode: settings.mode, camera: settings.camera, stroke: settings.stroke, strokeWidth: settings.strokeWidth };
     } catch (error) {
         toast(`Could not save: ${error.message}`, 'bad');
     }
