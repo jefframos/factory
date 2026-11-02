@@ -5,7 +5,8 @@
 
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import type { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { createGLTFLoader } from 'core/three/GLTFLoaders';
 import SetupThree from 'core/scene/SetupThree';
 
 const SIZE = 128;
@@ -17,7 +18,7 @@ async function render(hat: string): Promise<PIXI.Texture | undefined> {
     if (!renderer) {
         return undefined;
     }
-    loader ??= new GLTFLoader();
+    loader ??= createGLTFLoader();
     const gltf = await loader.loadAsync(`./bandit-controller/models/hats/${hat}.glb`);
     const object = gltf.scene;
     const box = new THREE.Box3().setFromObject(object);

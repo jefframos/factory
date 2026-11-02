@@ -13,6 +13,9 @@
 //   upgrade      <upgradeId>-<nn>             complete   an upgrade level bought
 //   treasure     <treasureId>                 complete   a treasure found in the grass (or handed over on restoring its area)
 //   treasure     <treasureId> | area-<id>     interact   its reward (or an area's bonus) claimed in the Trophies panel
+//   secret       <secretId>                   complete   a secret patch's chest found (it pays at once)
+//   panel        map | town | trophies        open       the MAP button's map, the town icon's big view, the Trophies
+//                                                        panel opened by the player (once per player each)
 //   shop         hat-<id> | face-<id> | color-<id> bought     a wardrobe item bought with cash
 //   shop         hat-<id> | face-<id> | color-<id> equip      an owned wardrobe item put on
 //   tab          wardrobe-<tab> | atm-<tab>   interact   a panel tab opened by the player (once per player each)
@@ -21,6 +24,7 @@
 //   sell         count-<n>                    complete   the nth sale, for the first 10
 //   bag          full                         complete   the container fills up (once a session)
 //   district     <districtId>                 complete   a district restored
+//   town         restored                     complete   every district restored: the town's done (once per player)
 //   settings     lang-<code>                  interact   a language picked
 //
 // Add an event here (and to the table) rather than calling PlatformHandler.measure() directly.
@@ -120,6 +124,20 @@ export const GameAnalytics = {
 
     districtRestored(districtId: string): void {
         send('district', districtId, 'complete');
+    },
+
+    /** Every district restored: the end of the town. */
+    townRestored(): void {
+        if (MowProgress.once('town-restored')) send('town', 'restored', 'complete');
+    },
+
+    secretFound(id: string): void {
+        send('secret', id, 'complete');
+    },
+
+    /** A panel opened by the player (the map, the town's big view, Trophies), once per player each. */
+    panelOpened(panel: 'map' | 'town' | 'trophies'): void {
+        if (MowProgress.once(`panel-${panel}`)) send('panel', panel, 'open');
     },
 
     languagePicked(code: string): void {

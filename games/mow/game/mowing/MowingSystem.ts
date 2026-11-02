@@ -68,13 +68,15 @@ export class MowingSystem {
         this.wall = null;
         const controller = this.player.movementController;
         if (!controller?.enabled || controller.input.length() < MOVE_THRESHOLD) return;
-        // A ridden mower cuts only from the tractor (in the sections not restored yet).
-        if (MowProgress.tool.ride && !this.player.riding) return;
         this.player.cutPoint(this.point);
         const feet = this.player.transform.position;
+        // Secret patches go under any sweep: on foot too, in a restored section or between them (where a ridden mower's
+        // tractor isn't).
         for (const { secret, at } of this.secrets?.cut(feet.x, feet.z, this.point.x, this.point.z, MowProgress.width / 2) ?? []) {
             this.onSecret?.(secret, at);
         }
+        // A ridden mower cuts grass only from the tractor (in the sections not restored yet).
+        if (MowProgress.tool.ride && !this.player.riding) return;
         if (MowProgress.full) return;
         const result = this.grass.cutCapsule(feet.x, feet.z, this.point.x, this.point.z, MowProgress.width / 2, MowProgress.power,
             // Sharp Blades: tough grass takes less contact to chew through.

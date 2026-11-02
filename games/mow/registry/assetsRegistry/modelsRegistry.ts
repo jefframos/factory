@@ -11,8 +11,8 @@ export interface ModelDefinition {
 const CharactersCharacterMedium = {
   id: 'characterMedium',
   path: 'characters/default/characterMedium',
-  fullPath: 'mow/models/characters/default/characterMedium.fbx',
-  format: 'fbx',
+  fullPath: 'mow/models/characters/default/characterMedium.glb',
+  format: 'glb',
   nodes: {}
 } as const;
 
@@ -2244,6 +2244,26 @@ const TownTrashA = {
 }
 } as const;
 
+const TownHalloweenCrypt = {
+  id: 'halloween-crypt',
+  path: 'town/library/halloween-crypt/halloween-crypt',
+  fullPath: 'mow/models/town/library/halloween-crypt/halloween-crypt.gltf',
+  format: 'gltf',
+  nodes: {
+  "Crypt": "crypt"
+}
+} as const;
+
+const TownMixedBag1IdolA = {
+  id: 'mixed-bag-1-idol-a',
+  path: 'town/library/mixed-bag-1-idol-a/mixed-bag-1-idol-a',
+  fullPath: 'mow/models/town/library/mixed-bag-1-idol-a/mixed-bag-1-idol-a.gltf',
+  format: 'gltf',
+  nodes: {
+  "IdolA": "idol_A"
+}
+} as const;
+
 const TownBush1AColor1 = {
   id: 'Bush_1_A_Color1',
   path: 'town/nature/Bush_1_A_Color1',
@@ -2647,6 +2667,8 @@ export const MODELS = {
     StreetlightOldDouble: TownStreetlightOldDouble,
     StreetlightOldSingle: TownStreetlightOldSingle,
     TrashA: TownTrashA,
+    HalloweenCrypt: TownHalloweenCrypt,
+    MixedBag1IdolA: TownMixedBag1IdolA,
     Bush1AColor1: TownBush1AColor1,
     Bush1CColor1: TownBush1CColor1,
     Bush2AColor1: TownBush2AColor1,

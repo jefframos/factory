@@ -1,4 +1,4 @@
-// Library picker popup: browses the 3D asset library (D:/projects/PIXI3d/library3d, glTF/GLB only, the formats the
+// Library picker popup: browses the 3D asset library (the repo's library3d submodule, glTF/GLB only, the formats the
 // game loads), previews a model in 3D and imports it into the game (server: /api/library/import copies it and its
 // textures under raw-assets/models/hub{m}/ and public/dig/models/hub/). Pack chips + search like the library viewer.
 
@@ -15,7 +15,7 @@ let library;
 export async function openLibraryPicker({ onImported }) {
     library ??= await api('/api/library');
     if (!library.available) {
-        toast(`3D library not found at ${library.dir} (set LIBRARY3D_DIR)`, 'bad');
+        toast(`3D library not found at ${library.dir}: run git submodule update --init library3d (or set LIBRARY3D_DIR)`, 'bad');
         return;
     }
     let selected = null;

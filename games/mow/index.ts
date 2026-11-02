@@ -65,6 +65,8 @@ export default class MowGame extends Game {
             await Promise.race([scene.ready, new Promise((resolve) => window.setTimeout(resolve, MAX_SCENE_WAIT_MS))]);
             PlatformHandler.instance.platform.loadFinished();
             this.loaderScene.hide();
+            // The game is up: the sound effects come down behind it (kept out of the initial download).
+            MowAudio.loadInBackground();
         } catch (error) {
             console.error('Failed to initialize platform:', error);
         }

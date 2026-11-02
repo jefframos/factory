@@ -5,9 +5,10 @@
 // page. Found ones show their model, name and rarity; missing ones a dark silhouette and "???", so the player knows how
 // many are still hidden in each area. A bar counts them all.
 //
-// Rewards are claimed here: a found treasure whose reward waits has a pulsing CLAIM button and a "!" on its card (the
-// panel opens on the page with one), and an area whose treasures are all found pays its bonus from a CLAIM button in
-// the footer. Tapping one hands it to the HUD (onClaim), which pays it and flies the coins in.
+// Rewards are claimed here, all at once: a found treasure whose reward waits has a "!" on its card (the panel opens on
+// the page with one), and one CLAIM button in the footer (in place of its line) pays every waiting reward — those
+// treasures and the bonus of any area whose treasures are all found. Tapping it hands them to the HUD (onClaim), which
+// pays them and flies the coins in.
 // Styles come from ui/uikit.json (screen "collection"); the claim buttons from "achievements".
 
 import * as PIXI from 'pixi.js';
@@ -48,10 +49,10 @@ export class TrophiesPanel extends PIXI.Container {
     private page = 0;
 
     /**
-     * `onClaim` with a waiting reward's key (a treasure id, or an area's bonus) and where its button is on screen;
+     * `onClaim` with every waiting reward's key (a treasure id, or an area's bonus) and where the button is on screen;
      * `isOpen(area)`: whether that area (a district index) is open yet.
      */
-    public constructor(private readonly onClaim: (key: string, from: PIXI.Point) => void, private readonly isOpen: (area: number) => boolean) {
+    public constructor(private readonly onClaim: (keys: string[], from: PIXI.Point) => void, private readonly isOpen: (area: number) => boolean) {
         super();
         const frame = UiKit.image('collection', 'panel', WIDTH, HEIGHT);
         const ribbon = UiKit.sprite('collection', 'ribbon', 0.55);
@@ -122,11 +123,11 @@ export class TrophiesPanel extends PIXI.Container {
             this.body.addChild(label, this.arrow('arrowLeft', -140, y, -1), this.arrow('arrowRight', 140, y, 1));
         }
 
-        // An area with all its treasures found: its bonus is the footer's CLAIM button.
-        const bonusArea = MOW.districts.find((d) => MowProgress.unclaimedFor(areaBonusKey(d.id)) > 0);
-        if (bonusArea) {
-            const key = areaBonusKey(bonusArea.id);
-            const claim = this.claimButton(key, MowProgress.unclaimedFor(key), FOOTER_BUTTON_WIDTH);
+        // Anything waiting (found treasures, the bonus of an area with all its treasures found): one CLAIM in the footer.
+        const keys = [...MOW.treasures.items.map((item) => item.id), ...MOW.districts.map((d) => areaBonusKey(d.id))]
+            .filter((key) => MowProgress.unclaimedFor(key) > 0);
+        if (keys.length) {
+            const claim = this.claimButton(keys, keys.reduce((sum, key) => sum + MowProgress.unclaimedFor(key), 0), FOOTER_BUTTON_WIDTH);
             claim.y = HEIGHT / 2 - 40;
             this.body.addChild(claim);
             return;
@@ -173,12 +174,8 @@ export class TrophiesPanel extends PIXI.Container {
             rarity.position.set(0, CARD / 2 - 26);
             card.addChild(rarity);
         }
-        const waiting = MowProgress.unclaimedFor(item.id);
-        if (waiting > 0) {
-            // Its reward waits here: a CLAIM button over the card's lower half and a "!" on its corner.
-            const claim = this.claimButton(item.id, waiting, CARD_W - 24);
-            claim.y = CARD / 2 - 24;
-            card.addChild(claim);
+        if (MowProgress.unclaimedFor(item.id) > 0) {
+            // Its reward waits (the footer's CLAIM): a "!" on its corner.
             const alert = UiKit.sprite('hud', 'alert');
             alert.scale.set(34 / Math.max(alert.height, 1));
             alert.position.set(CARD_W / 2 - 2, -CARD / 2 - 12);
@@ -188,8 +185,8 @@ export class TrophiesPanel extends PIXI.Container {
         return card;
     }
 
-    /** A pulsing "CLAIM $X" button for a waiting reward. */
-    private claimButton(key: string, amount: number, width: number): PIXI.Container {
+    /** A pulsing "CLAIM $X" button for waiting rewards (`keys`, worth `amount` together). */
+    private claimButton(keys: string[], amount: number, width: number): PIXI.Container {
         const button = new PIXI.Container();
         button.addChild(UiKit.image('achievements', 'buttonClaim', width, CLAIM_HEIGHT));
         const label = UiKit.text('achievements', 'buttonLabel', { text: t('claimAmount', { amount: amount.toLocaleString('en-US') }) });
@@ -200,7 +197,7 @@ export class TrophiesPanel extends PIXI.Container {
         button.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         button.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
             event.stopPropagation();
-            this.onClaim(key, button.getGlobalPosition());
+            this.onClaim(keys, button.getGlobalPosition());
             this.renderPage();
         });
         UiAnim.pulse(button, 0.06, 0.5);

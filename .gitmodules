@@ -1,0 +1,3 @@
+[submodule "library3d"]
+	path = library3d
+	url = https://github.com/jefframos/library3d.git

@@ -313,6 +313,11 @@ export const MowProgress = {
             || MOW.districts.some((d) => this.unclaimedFor(areaBonusKey(d.id)) > 0);
     },
 
+    /** A treasure reward (or an area's bonus) has ever been claimed (the hand stops pointing at the Trophies button). */
+    get claimedAnyTreasure(): boolean {
+        return state.treasuresClaimed.length > 0;
+    },
+
     /** A secret patch's chest was found (its patch stays mowed). */
     secretFound(id: string): boolean {
         return state.secretsFound.includes(id);
@@ -355,6 +360,10 @@ export const MowProgress = {
 
     get timesSold(): number {
         return state.stats.sells;
+    },
+    /** All the money ever earned (sales, bonuses, rewards). */
+    get earned(): number {
+        return state.stats.earned;
     },
     get cellsCut(): number {
         return state.stats.cells;

@@ -3,8 +3,8 @@
 // Reads/writes games/dig/levels/*.json (the same files the game loads), lists
 // the models under public/dig/models, and serves the browser editor in ./public.
 // three.js is served straight from node_modules so the editor needs no build step.
-// The 3D Hub tab can also browse the 3D asset library (LIBRARY3D_DIR, default
-// D:/projects/PIXI3d/library3d) and import a model from it into the game.
+// The 3D Hub tab can also browse the 3D asset library (LIBRARY3D_DIR, default the repo's library3d submodule:
+// `git submodule update --init library3d`) and import a model from it into the game.
 
 import http from 'node:http';
 import fs from 'node:fs/promises';
@@ -26,7 +26,7 @@ const HATFITS_FILE = path.join(__dirname, '..', 'ui', 'hatfits.json');
 const DIG_FILE = path.join(__dirname, '..', 'ui', 'dig.json');
 const FONTS_DIR = path.join(REPO_ROOT, 'public', 'dig', 'fonts');
 const THUMBS_DIR = path.join(__dirname, '.thumbs');
-const LIBRARY_DIR = path.resolve(process.env.LIBRARY3D_DIR ?? 'D:/projects/PIXI3d/library3d');
+const LIBRARY_DIR = path.resolve(process.env.LIBRARY3D_DIR ?? path.join(REPO_ROOT, 'library3d'));
 const LIBRARY_FILES = path.join(LIBRARY_DIR, 'files');
 const LIBRARY_THUMBS = path.join(LIBRARY_DIR, 'library', 'thumbs');
 /** Imported library models: the raw source the model build packs, and its published copy (usable right away). */

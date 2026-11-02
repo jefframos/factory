@@ -4,6 +4,8 @@
 // gem hits — the stone one de-boomed and trimmed with ffmpeg into dig-hit — a short rock crackle on a break, stone / metal / gem pickups landing in the backpack, stone
 // footsteps, the build sting, the UI set), wooden hub footsteps from pizza, the celebration set from down (cheers,
 // applause, sparkle, whoosh, the reveal sting) and bandit-controller's purchase set (ka-ching, fanfare, shine, star). Files: raw-assets/audio (`npm run audio` packs them).
+// The soundtrack (MUSIC: Reed Mathis' "Somnia Variation 3") loops quietly under everything on SoundManager's "music"
+// layer, loaded on the first input (startMusic(): it's the biggest file, kept out of the initial download) and faded in.
 // Respects mute (SoundManager) and goes quiet while the page or platform is paused.
 
 import { Howler } from 'howler';
@@ -68,9 +70,17 @@ const SOUNDS = {
     applause: { soundId: 'applause', volumeMinMax: 0.22 },
     reveal: { soundId: 'reveal', volumeMinMax: 0.3 },
     whoosh: { soundId: 'whoosh', volumeMinMax: 0.24, pitchMinMax: [0.92, 1.05] },
+    // The bag filling up: a soft stuffed-sack "fwump" (made with ffmpeg: a cloth rustle over a low thump).
+    bagFull: { soundId: 'bag-full', volumeMinMax: 0.5, pitchMinMax: [0.95, 1.05] },
 } satisfies Record<string, SoundAsset>;
 
 export type Cue = keyof typeof SOUNDS;
+
+/** The soundtrack: its file (raw-assets/audio), volume (low: a bed under the game's sounds) and fade-in (ms). */
+const MUSIC = { id: 'Somnia-Variation-3-relax-and-sleep-Reed-Mathis', volume: 0.18, fadeInMs: 4000, layer: 'music' };
+
+/** Sound effects downloaded at once in the background (loadInBackground()). */
+const BACKGROUND_LOADS = 3;
 
 /** Long loops SpatialAudio plays itself (Web Audio, placed in 3D): not loaded as Howler cues. */
 const AMBIENT_LOOPS = new Set(['ocean-ambient', ...(TOWN.sounds ?? []).map((zone) => zone.sound)]);
@@ -85,13 +95,20 @@ export class MowAudio {
     private static volumeBeforePause: number | undefined;
     private static readonly lastPlayed = new Map<Cue, number>();
     private static folderPath = 'mow';
+    private static musicStarted = false;
+    /** The sound effects to download (loadInBackground()), and whether that's started. */
+    private static ids: string[] = [];
+    private static loading = false;
 
     /** Where an audio file is served from (for the ambient loops SpatialAudio loads itself). */
     public static url(file: string): string {
         return `./${this.folderPath}/audio/${file}`;
     }
 
-    /** Loads every sound of the packed manifest (call once at boot). */
+    /**
+     * Sets every sound of the packed manifest up (call once at boot; nothing downloads yet: loadInBackground(), once
+     * the game is up, so the sounds stay out of the initial download).
+     */
     public static async initialize(folderPath: string): Promise<void> {
         this.folderPath = folderPath;
         const manifest = structuredClone(audioManifest);
@@ -101,9 +118,8 @@ export class MowAudio {
             }
         }
         SoundLoadManager.instance.setUpManifests([manifest], ['default']);
-        const ids = manifest.bundles.flatMap((bundle) => bundle.assets.map((asset) => asset.alias[0].replace(/\.[^.]+$/, '')))
-            .filter((id) => !AMBIENT_LOOPS.has(id));
-        await Promise.all(ids.map((id) => SoundLoadManager.instance.loadSoundByName(id)));
+        this.ids = manifest.bundles.flatMap((bundle) => bundle.assets.map((asset) => asset.alias[0].replace(/\.[^.]+$/, '')))
+            .filter((id) => !AMBIENT_LOOPS.has(id) && id !== MUSIC.id);
         this.ready = true;
         document.addEventListener('visibilitychange', this.syncPause);
         PlatformHandler.instance.onPause.add(this.onPause);
@@ -111,8 +127,41 @@ export class MowAudio {
         this.syncPause();
     }
 
+    /**
+     * The soundtrack, looping on its own layer (the scene calls it on the first input: kept out of the initial
+     * download; it loads in the background). Once.
+     */
+    public static startMusic(): void {
+        if (this.musicStarted) return;
+        this.musicStarted = true;
+        SoundManager.instance.setLayerVolume(MUSIC.layer, MUSIC.volume);
+        void SoundManager.instance.playBackgroundSound(MUSIC.id, MUSIC.fadeInMs, MUSIC.layer).catch(() => {
+            // No soundtrack (missing file): the game plays on without it.
+        });
+    }
+
+    /**
+     * Downloads the sound effects in the background, a few at a time (call once the game is up). A cue played before
+     * its file is in is skipped, not played late.
+     */
+    public static loadInBackground(): void {
+        if (this.loading) return;
+        this.loading = true;
+        const queue = [...this.ids];
+        const next = async (): Promise<void> => {
+            for (let id = queue.shift(); id; id = queue.shift()) await SoundLoadManager.instance.loadSoundByName(id).catch(() => undefined);
+        };
+        for (let i = 0; i < BACKGROUND_LOADS; i++) void next();
+    }
+
+    /** Every file of `cue` is in (its variants load together). */
+    private static loaded(cue: Cue): boolean {
+        const ids = SOUNDS[cue].soundId;
+        return (Array.isArray(ids) ? ids : [ids]).every((id) => SoundLoadManager.instance.getSound(id)?.isLoaded);
+    }
+
     public static play(cue: Cue): void {
-        if (!this.ready || this.isPaused() || SoundManager.instance.isMuted) return;
+        if (!this.ready || this.isPaused() || SoundManager.instance.isMuted || !this.loaded(cue)) return;
         const now = performance.now();
         if (now - (this.lastPlayed.get(cue) ?? -Infinity) < (COOLDOWN_MS[cue] ?? DEFAULT_COOLDOWN_MS)) return;
         this.lastPlayed.set(cue, now);

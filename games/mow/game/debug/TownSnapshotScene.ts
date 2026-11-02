@@ -119,7 +119,7 @@ export default class TownSnapshotScene extends ThreeScene {
         MOW.districts.forEach((district, d) => {
             this.grass.cutAll(d);
             this.grass.setRestored(d);
-            this.town.bloom(flowerSpots(district, (x, z) => this.town.isBlocked(x, z)));
+            this.town.bloom(flowerSpots(district, (x, z) => this.grass.isLawn(x, z, d)));
         });
         await Promise.all([this.town.ready, this.grass.ready]);
     }

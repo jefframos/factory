@@ -16,8 +16,8 @@
 // Images already within the cap are left as they are.
 // - `meshopt: true` (opt-in per game): each .glb's geometry is also quantised gently (16-bit positions, 12-bit
 //   normals, 14-bit UVs: no visible change, nothing simplified) and meshopt-compressed (EXT_meshopt_compression).
-//   The game's loaders decode it (core/three/GLTFLoaders.ts; the Dig editor's shared.js). A file already compressed
-//   is left alone, so re-running the step changes nothing.
+//   The game's loaders decode it (core/three/GLTFLoaders.ts; the editors' gltf.js). A file already compressed
+//   is left alone, so re-running the step changes nothing. (.gltf models stay as they are.)
 
 import fs from 'fs';
 import path from 'path';

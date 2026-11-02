@@ -7,7 +7,7 @@
 
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { createGLTFLoader } from 'core/three/GLTFLoaders';
 import AnimatorBoard from './AnimationBoard';
 import { loadCompressedFile, releaseObjectURL } from '../../utils/GzipLoader';
 import { filterClipToBones, UPPER_BODY_BONES } from './BoneMask';
@@ -87,7 +87,7 @@ export default class AnimatorController {
                     }
                     clip = animObject.animations[0];
                 } else if (extension === 'glb' || extension === 'gltf') {
-                    const gltfLoader = new GLTFLoader();
+                    const gltfLoader = createGLTFLoader();
                     const gltf = await gltfLoader.loadAsync(resolvedUrl);
                     if (!gltf.animations || gltf.animations.length === 0) {
                         console.error('No animations found in the GLTF file.');

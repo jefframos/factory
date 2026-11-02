@@ -22,7 +22,7 @@
 // stations, start, noise rings, sounds, secrets, traffic or unlocking (`town-only` controls are hidden).
 
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createGLTFLoader } from './gltf.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { api, el, toast, isModalOpen } from './shared.js';
@@ -76,7 +76,7 @@ const trafficGroup = new THREE.Group();
 /** A yellow box round each selected thing (the selection outlined). */
 const highlightGroup = new THREE.Group();
 const holders = new Map(); // "type:index" -> THREE.Group
-const loader = new GLTFLoader();
+const loader = createGLTFLoader();
 const modelCache = new Map();
 const raycaster = new THREE.Raycaster();
 let grassTimer = 0;
@@ -1201,7 +1201,7 @@ function addSection() {
     town.sections.push({
         id: `section-${n}`, name: `Section ${n}`, x, z, width, depth, fill: 'auto',
         completeAt: 0.97, bonus: Math.round((last?.bonus ?? 100) * 2.5), ground: last?.ground ?? '#4d7633', restoredGround: last?.restoredGround ?? '#6aa845',
-        separator: { x, z: z + depth / 2, width, rotationY: 0 }, onUnlock: { pan: true },
+        separator: { x, z: z + depth / 2, width, rotationY: 0 }, onUnlock: { pan: false },
     });
     added('section');
     focusSelection();

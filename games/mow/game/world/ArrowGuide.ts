@@ -11,7 +11,7 @@ import { findPath, Box } from './GuidePath';
 
 /** Purple: reads against the green grass and the grey pavements, apart from the yellow-green clippings. */
 const COLOR = 0xa25cff;
-/** Above the ground under each arrow (Town.surfaceAt()). */
+/** Above the ground under each arrow (Town.topAt(): a road tile's sidewalk too). */
 const LIFT = 0.04;
 const TRAIL_START = 0.9;
 const SPACING = 0.75;

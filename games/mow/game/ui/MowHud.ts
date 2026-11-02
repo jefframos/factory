@@ -8,12 +8,13 @@
 // BOOSTS tab once the first mower is bought (speed, money gain, cutting width, sharp blades); the guide's hand sits
 // on the button it's pointing at. Both modes (GameMode): a pop by the bar at each quarter of a section (milestone())
 // and a big banner when one is restored (celebrate(): rays, ribbon, the bonus counting up, confetti). Rush mode: the
-// combo meter under the bar (setCombo()). The town under the trophy: its miniature (TownMiniature, baked from the 3D
-// world) under a dark veil that drains as the town is restored, with the town's % — when a section is restored it flies
-// to the middle, big, and drains to the new % with a flash and confetti (TownMiniature.celebrate()), before the
-// banner. Not baked yet: the
-// drawn map (TownMap) stands in there, flown to the centre instead (flyMap()). The MAP button (bottom-left) and a tap
-// on the miniature open the drawn map big: every section's fill, the one being worked on, the player.
+// combo meter under the bar (setCombo()). The town under the trophy: a small icon of its miniature (TownMiniature,
+// baked from the 3D world), whole, with the town's % and a star under it — when a section is restored, after its
+// banner, it flies to the middle, big, under a dark veil that drains to the new % (the town's name on a ribbon over
+// it), with a flash and confetti (TownMiniature.celebrate()); a tap on it blows it up the same way, the veil draining
+// from empty to the town's % (TownMiniature.preview()), up until its close button, another tap or the player moving.
+// Not baked yet: the drawn map (TownMap) stands in there, flown to the centre instead (flyMap()). The MAP button
+// (bottom-left) opens the drawn map big: every section's fill, the one being worked on, the player.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
@@ -26,10 +27,11 @@ import { LanguagePanel, LANGUAGE_SIZE } from './LanguagePanel';
 import { WardrobePanel, WARDROBE_SIZE } from './WardrobePanel';
 import { TrophiesPanel, TROPHIES_SIZE } from './TrophiesPanel';
 import { TownMap } from './TownMap';
-import { FindCard, Find, FIND_CARD_SIZE, flyCoins } from './FindCard';
+import { FindToasts, Find, flyCoins, flyItem } from './FindToasts';
 import { TownMiniature, REVEAL_SEC } from './TownMiniature';
+import { TownCompletePanel, TownCompleteStats, TOWN_COMPLETE_SIZE } from './TownCompletePanel';
 import { MowProgress } from '../data/MowProgress';
-import { MOW, ToolDef, UpgradeDef } from '../data/MowConfig';
+import { MOW, TOWN, ToolDef, UpgradeDef } from '../data/MowConfig';
 import { ModelIcons } from './ModelIcons';
 import { tabbedBlock, TabSpec } from './TabBar';
 import { t, names, Localization } from '../i18n/Localization';
@@ -70,20 +72,27 @@ const toolFrame = (index: number, owned: boolean): string => (owned ? TOOL_FRAME
 function mowerArt(tool: ToolDef, size: number): PIXI.Container {
     return ModelIcons.toolSprite(tool, size);
 }
-/**
- * A restored section's reveal (the town's miniature filling up in the middle, then flying home), in seconds; the
- * banner follows as it lands, and the scene delays its "NEW AREA" message by it too.
- */
-export const MAP_FLIGHT_SEC = REVEAL_SEC;
-/** The RESTORED! banner: held up, then going; the scene's "NEW AREA" message waits for it (BANNER_SEC). */
+/** The RESTORED! banner: held up, then going; the town's fill follows it. */
 const BANNER = { hold: 2.8, out: 0.4 };
-export const BANNER_SEC = BANNER.hold + BANNER.out;
+const BANNER_SEC = BANNER.hold + BANNER.out;
 /** The drawn map's flight (no miniatures baked): out, the fill starting once it's there, back home. */
 const MAP_FLIGHT = { out: 0.35, back: 1.35, home: 0.35 };
-/** The corner miniature's width, its width in the reveal (at most; less on a narrow screen), and the MAP button's size. */
-const MINIATURE_WIDTH = 190;
+/**
+ * A restored section's celebration (celebrate(): the banner, then the town's miniature filling up in the middle and
+ * flying home), in seconds; the scene shows the next area after it.
+ */
+export const CELEBRATION_SEC = BANNER_SEC + Math.max(REVEAL_SEC, MAP_FLIGHT.back + MAP_FLIGHT.home);
+/** The trophy button's size (under the money / bag pills). */
+const TROPHY_SIZE = 76;
+/**
+ * The corner miniature's width (the trophy's, under it), its width in the reveal (at most; less on a narrow screen),
+ * and the MAP button's size.
+ */
+const MINIATURE_WIDTH = TROPHY_SIZE;
 const REVEAL_WIDTH = 560;
 const MAP_BUTTON_SIZE = 84;
+/** The MAP button's map: drawn this wide (at its size, so it stays crisp; only ever scaled down to fit). */
+const PANEL_MAP_WIDTH = 440;
 const RIBBON_OVERHANG = 44;
 const PANEL_TOP_GAP = 40;
 const CLOSE_SIZE = 56;
@@ -102,8 +111,12 @@ export class MowHud extends PIXI.Container {
     private readonly corner = new PIXI.Container();
     /** The money pill's icon: claimed coins fly into it. */
     private moneyIcon?: PIXI.Container;
-    /** A find's claim card (treasures, secret chests), at the bottom of the screen. */
-    private readonly findCard = new FindCard((find, from) => this.claimFind(find, from));
+    /** The finds' toasts (treasures, secret chests), top-left under the buttons. */
+    private readonly findToasts = new FindToasts();
+    /** Treasures still flying into the Trophies button (its "!" and hand wait for them to land). */
+    private treasuresFlying = 0;
+    /** The hand on the Trophies button: a treasure waits there and none was ever claimed (the first one's lesson). */
+    private trophiesHand?: PIXI.Container;
     private readonly moneyText = UiKit.text('hud', 'money', { money: 0 });
     private readonly bagText = UiKit.text('hud', 'backpack', { count: 0, capacity: 0 });
     private readonly barFill = new PIXI.Container();
@@ -118,7 +131,7 @@ export class MowHud extends PIXI.Container {
     private readonly celebration = new PIXI.Container();
     private readonly combo = new PIXI.Container();
     /** The town's miniature (top-right, under the trophy). */
-    private readonly miniature = new TownMiniature(MINIATURE_WIDTH);
+    private readonly miniature = new TownMiniature(MINIATURE_WIDTH, () => Localization.getString('town_name', undefined, TOWN.name).toUpperCase());
     private miniatureReady = false;
     /** The drawn map standing in for the miniature (none baked) and its holder, which flies; where the holder lives. */
     private readonly townMap = new TownMap();
@@ -129,9 +142,11 @@ export class MowHud extends PIXI.Container {
     private readonly mapButton = new PIXI.Container();
     private readonly mapPanel = new PIXI.Container();
     private readonly mapDim = new PIXI.Graphics();
-    private readonly panelMap = new TownMap();
+    private readonly panelMap = new TownMap({ panel: true, width: PANEL_MAP_WIDTH });
     private readonly panelMapHolder = new PIXI.Container();
     private mapClose?: PIXI.Container;
+    /** The miniature's blown-up view's close button (made on its first opening). */
+    private miniatureClose?: PIXI.Container;
     private readonly comboText = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 44, strokeThickness: 8, fill: 0xffe27a });
     private readonly comboPot = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 24, strokeThickness: 5, fill: 0x9cff9c });
     private readonly comboBar = new PIXI.Graphics();
@@ -153,6 +168,10 @@ export class MowHud extends PIXI.Container {
     private readonly trophiesAlert = new PIXI.Container();
     private readonly trophies: TrophiesPanel;
     private readonly trophiesHolder = new PIXI.Container();
+    /** The end of the town (every section restored): its panel over a dim. */
+    private readonly townComplete = new TownCompletePanel(() => this.closeTownComplete());
+    private readonly townCompleteHolder = new PIXI.Container();
+    private readonly townCompleteDim = new PIXI.Graphics();
     /** The wardrobe's close button (hidden while the tutorial's first hat is forced). */
     private readonly wardrobeClose: PIXI.Container;
     private shopKey = '';
@@ -179,7 +198,7 @@ export class MowHud extends PIXI.Container {
         this.wardrobe = new WardrobePanel(onWear, (text, color) => this.say(text, color));
         this.wardrobeClose = this.addClose(this.wardrobe, WARDROBE_SIZE, () => this.setWardrobeOpen(false));
         this.wardrobeHolder.addChild(this.wardrobe);
-        this.trophies = new TrophiesPanel((key) => this.claimTrophy(key), isOpen);
+        this.trophies = new TrophiesPanel((keys, from) => this.claimTrophies(keys, from), isOpen);
         this.addClose(this.trophies, TROPHIES_SIZE, () => this.toggleTrophies());
         this.trophiesHolder.addChild(this.trophies);
         this.buildTrophiesButton();
@@ -188,7 +207,11 @@ export class MowHud extends PIXI.Container {
         this.toast.alpha = 0;
         this.mapHolder.addChild(this.townMap);
         this.buildMap();
-        this.addChild(this.corner, this.progress, this.combo, this.celebration, this.mapHolder, this.miniature, this.mapButton, this.mute, this.languageButton, this.moveHint, this.shopHolder, this.wardrobeHolder, this.trophiesHolder, this.languageHolder, this.mapPanel, this.findCard, this.toast);
+        this.addChild(this.corner, this.progress, this.combo, this.celebration, this.mapHolder, this.miniature, this.mapButton, this.mute, this.languageButton, this.moveHint, this.shopHolder, this.wardrobeHolder, this.trophiesHolder, this.languageHolder, this.mapPanel, this.findToasts, this.toast, this.townCompleteDim, this.townCompleteHolder);
+        this.townCompleteHolder.addChild(this.townComplete);
+        this.townCompleteDim.visible = false;
+        this.townCompleteDim.eventMode = 'static';
+        this.townCompleteDim.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         MowProgress.onChange.add(this.onChange);
         this.refresh();
         this.reposition();
@@ -279,7 +302,7 @@ export class MowHud extends PIXI.Container {
      * MAP button and its panel.
      */
     private buildMap(): void {
-        this.tappable(this.miniature, () => this.toggleMap());
+        this.tappable(this.miniature, () => this.previewMiniature());
         void this.miniature.ready.then((ready) => {
             if (!ready || this.destroyed) return;
             this.miniatureReady = true;
@@ -310,6 +333,9 @@ export class MowHud extends PIXI.Container {
         MowAudio.play('toggle');
         this.mapPanel.visible = !this.mapPanel.visible;
         if (!this.mapPanel.visible) return;
+        GameAnalytics.panelOpened('map');
+        // One map at a time: the miniature's blown-up view goes home.
+        if (this.miniature.open) this.miniature.close();
         Gameplay.stop();
         UiAnim.popIn(this.panelMapHolder, this.mapDim);
     }
@@ -356,24 +382,77 @@ export class MowHud extends PIXI.Container {
     }
 
     /**
-     * A section restored: first the town map's flight (flyMap()), then ? as it lands ? the banner: rays, its name on a
-     * ribbon, RESTORED!, its bonus counting up, confetti; then it goes.
+     * A section restored: first the banner (rays, its name on a ribbon, RESTORED!, its bonus counting up, confetti),
+     * then, as it goes, the town filling up (TownMiniature.celebrate(), or the drawn map's flight: flyMap()). Takes
+     * CELEBRATION_SEC: the scene shows the next area after it.
      */
     public celebrate(name: string, bonus: number, section: number): void {
-        const screen = Game.overlayScreenData;
-        if (!this.miniatureReady || !screen) {
-            this.flyMap(section);
-            gsap.delayedCall(MAP_FLIGHT.back + 0.1, () => {
-                if (!this.destroyed) this.showBanner(name, bonus);
-            });
+        // The section's banner first; as it goes, the town's miniature flies to the middle and fills up to its new %
+        // (its corner % held where it was till then), then home (or the drawn map's flight, no miniature baked).
+        this.showBanner(name, bonus);
+        if (this.miniatureReady) this.miniature.holdShare();
+        gsap.delayedCall(BANNER_SEC, () => {
+            if (this.destroyed) return;
+            // The town's reveal plays alone: the map panel (if open) goes first.
+            if (this.mapPanel.visible) this.toggleMap();
+            if (this.miniatureReady && Game.overlayScreenData) this.miniature.celebrate(this.revealCentre, this.revealScale, () => this.miniatureHome, () => {});
+            else this.flyMap(section);
+        });
+    }
+
+    /** The whole town restored: the end panel (how it went, more towns to come), over a dim, until CONTINUE. */
+    public showTownComplete(stats: TownCompleteStats): void {
+        if (this.mapPanel.visible) this.toggleMap();
+        if (this.miniature.open) this.miniature.close();
+        Gameplay.stop();
+        MowAudio.play('buyFanfare');
+        this.townComplete.show(stats);
+        this.townComplete.visible = true;
+        this.townCompleteDim.visible = true;
+        UiAnim.popIn(this.townComplete, this.townCompleteDim);
+    }
+
+    private closeTownComplete(): void {
+        MowAudio.play('click');
+        this.townComplete.visible = false;
+        this.townCompleteDim.visible = false;
+    }
+
+    /**
+     * A tap on the corner miniature: blown up in the middle, filling from empty to the town's %, until it's closed (its
+     * close button, another tap on it, or the player moving: closeMiniature()).
+     */
+    private previewMiniature(): void {
+        if (this.miniature.open) {
+            this.closeMiniature();
             return;
         }
-        // The town's miniature flies to the middle and fills up to its new %, then home; the banner as it lands.
-        const scale = Math.min(REVEAL_WIDTH, screen.width * 0.85) / MINIATURE_WIDTH;
-        const centre = { x: screen.center.x, y: screen.center.y - screen.height * 0.06 };
-        this.miniature.celebrate(centre, scale, () => this.miniatureHome, () => {
-            if (!this.destroyed) this.showBanner(name, bonus);
-        });
+        if (this.miniature.celebrating) return;
+        MowAudio.play('toggle');
+        GameAnalytics.panelOpened('town');
+        // One map at a time: the map panel closes.
+        if (this.mapPanel.visible) this.mapPanel.visible = false;
+        this.miniatureClose ??= this.closeButton(() => this.closeMiniature());
+        this.miniature.preview(this.revealCentre, this.revealScale, () => this.miniatureHome, this.miniatureClose);
+    }
+
+    /** The miniature's blown-up view (previewMiniature()) back to its corner, if it's up. */
+    public closeMiniature(): void {
+        if (!this.miniature.open) return;
+        MowAudio.play('toggle');
+        this.miniature.close();
+    }
+
+    /** Where the miniature is blown up to (its centre), and how much (REVEAL_WIDTH across at most, less on a narrow screen). */
+    private get revealCentre(): PIXI.IPointData {
+        const screen = Game.overlayScreenData;
+        if (!screen) return this.miniature.position;
+        return { x: screen.center.x, y: screen.center.y - screen.height * 0.06 };
+    }
+
+    private get revealScale(): number {
+        const screen = Game.overlayScreenData;
+        return Math.min(REVEAL_WIDTH, (screen?.width ?? REVEAL_WIDTH) * 0.85) / MINIATURE_WIDTH;
     }
 
     private showBanner(name: string, bonus: number): void {
@@ -514,7 +593,7 @@ export class MowHud extends PIXI.Container {
 
     /** The trophy under the money / bag pills: opens the Trophies panel; a bouncing "!" while a reward waits there. */
     private buildTrophiesButton(): void {
-        const size = 76;
+        const size = TROPHY_SIZE;
         this.trophiesButton.position.set(CORNER_WIDTH - size / 2, 140);
         const trophy = PIXI.Sprite.from('ItemIcon_Trophy_Gold');
         trophy.anchor.set(0.5);
@@ -527,6 +606,10 @@ export class MowHud extends PIXI.Container {
         gsap.to(alert, { y: -8, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
         this.trophiesAlert.visible = false;
         this.trophiesButton.addChild(this.trophiesAlert);
+        // The hand: tapping at the trophy from under it.
+        this.trophiesHand = this.pointingHand(0);
+        this.trophiesHand.visible = false;
+        this.trophiesButton.addChild(this.trophiesHand);
         this.tappable(this.trophiesButton, () => this.toggleTrophies());
         this.corner.addChild(this.trophiesButton);
     }
@@ -534,27 +617,58 @@ export class MowHud extends PIXI.Container {
     private toggleTrophies(): void {
         MowAudio.play('toggle');
         this.trophies.visible = !this.trophies.visible;
+        this.refresh();
         if (!this.trophies.visible) return;
+        GameAnalytics.panelOpened('trophies');
         Gameplay.stop();
         this.trophies.refresh();
         UiAnim.popIn(this.trophies);
     }
 
-    /** Something found (a treasure, a secret chest): its claim card (queued behind any showing). */
-    public showFind(find: Find): void {
-        this.findCard.show(find);
+    /**
+     * A treasure found: its toast, and it flies from the player (`from`, on screen) into the Trophies button, whose "!"
+     * (and, before anything was ever claimed, the hand) shows as it lands: its reward waits there.
+     */
+    public treasureFound(find: Find, from: PIXI.IPointData): void {
+        this.findToasts.show(find);
+        this.treasuresFlying++;
+        this.refresh();
+        const target = () => this.toLocal(this.trophiesButton.getGlobalPosition());
+        flyItem(this, find.model, this.toLocal(from), target, () => {
+            this.treasuresFlying = Math.max(0, this.treasuresFlying - 1);
+            if (this.destroyed) return;
+            MowAudio.play('item');
+            UiAnim.punch(this.trophiesButton, 0.35);
+            this.refresh();
+        });
     }
 
-    /** CLAIM on a find's card: paid now, held off the counter, its coins flying from the button into the money. */
-    private claimFind(find: Find, from: PIXI.Point): void {
-        this.holdSale(find.amount);
-        const paid = find.claim();
-        if (paid < find.amount) this.releaseSale(find.amount - paid);
+    /** A secret chest found: its toast, and it pays at once, `claim()`'s coins flying from the player (`from`, on screen). */
+    public secretFound(find: Find, amount: number, claim: () => number, from: PIXI.IPointData): void {
+        this.findToasts.show({ ...find, name: `${find.name}  +$${amount.toLocaleString('en-US')}` });
+        this.payOut(claim, amount, this.toLocal(from));
+    }
+
+    /** CLAIM in the Trophies panel: every waiting reward (`keys`) paid together, the coins flying from the button (`from`). */
+    private claimTrophies(keys: readonly string[], from: PIXI.Point): void {
+        const total = keys.reduce((sum, key) => sum + MowProgress.unclaimedFor(key), 0);
+        this.payOut(() => keys.reduce((sum, key) => {
+            const paid = MowProgress.claimTreasure(key);
+            if (paid > 0) GameAnalytics.treasureClaimed(key);
+            return sum + paid;
+        }, 0), total, this.toLocal(from));
+    }
+
+    /** Pays `claim()` (expected: `amount`), held off the money counter until its coins land there from `from` (HUD space). */
+    private payOut(claim: () => number, amount: number, from: PIXI.IPointData): void {
+        this.holdSale(amount);
+        const paid = claim();
+        if (paid < amount) this.releaseSale(amount - paid);
         if (paid <= 0) return;
         MowAudio.play('buyCash');
         MowAudio.play('coins');
         const target = () => (this.moneyIcon && !this.moneyIcon.destroyed ? this.toLocal(this.moneyIcon.getGlobalPosition()) : new PIXI.Point());
-        flyCoins(this, this.toLocal(from), target, paid, (share) => {
+        flyCoins(this, from, target, paid, (share) => {
             if (!this.destroyed) this.releaseSale(share);
         });
     }
@@ -562,16 +676,6 @@ export class MowHud extends PIXI.Container {
     /** Where the Trophies button is on screen (a found treasure flies there). */
     public get trophiesButtonPosition(): PIXI.Point {
         return this.trophiesButton.getGlobalPosition();
-    }
-
-    /** A reward claimed in the Trophies panel: paid now, said, the coins chime. */
-    private claimTrophy(key: string): void {
-        const amount = MowProgress.claimTreasure(key);
-        if (amount <= 0) return;
-        GameAnalytics.treasureClaimed(key);
-        MowAudio.play('buyCash');
-        MowAudio.play('coins');
-        this.say(`+$${amount.toLocaleString('en-US')}`, 0x9cff9c);
     }
 
     /** Opens the language list (the HUD was just rebuilt for a new language: keep it open). */
@@ -593,11 +697,17 @@ export class MowHud extends PIXI.Container {
 
     /** A panel's red close button on its top-right corner. */
     private addClose(panel: PIXI.Container, size: { width: number; height: number }, onClose: () => void): PIXI.Container {
+        const close = this.closeButton(onClose);
+        close.position.set(size.width / 2 - 8, -size.height / 2 + 8);
+        panel.addChild(close);
+        return close;
+    }
+
+    /** The red close button, tappable (not placed anywhere yet). */
+    private closeButton(onClose: () => void): PIXI.Container {
         const close = new PIXI.Container();
         close.addChild(icon('hud', 'closeButton', CLOSE_SIZE), icon('hud', 'closeIcon', CLOSE_SIZE * 0.5));
-        close.position.set(size.width / 2 - 8, -size.height / 2 + 8);
         this.tappable(close, onClose);
-        panel.addChild(close);
         return close;
     }
 
@@ -916,7 +1026,11 @@ export class MowHud extends PIXI.Container {
     }
 
     private refresh(): void {
-        this.trophiesAlert.visible = MowProgress.hasUnclaimedTreasure;
+        const waiting = MowProgress.hasUnclaimedTreasure && this.treasuresFlying === 0;
+        this.trophiesAlert.visible = waiting;
+        if (this.trophiesHand) this.trophiesHand.visible = waiting && !MowProgress.claimedAnyTreasure && !this.trophies.visible;
+        // The first refresh shows the save as it is (no "it just changed" feedback).
+        const first = this.lastMoney < 0;
         const money = MowProgress.money - this.heldMoney;
         // The wardrobe's prices turn red / white with the money (not while a sale is still landing).
         if (this.wardrobeOpen && this.heldMoney === 0 && money !== this.lastMoney) this.wardrobe.refresh();
@@ -947,7 +1061,11 @@ export class MowHud extends PIXI.Container {
             this.fullTag.visible = full;
             gsap.killTweensOf(this.bagRow.scale);
             this.bagRow.scale.set(1);
-            if (full) UiAnim.pulse(this.bagRow, 0.08, 0.45);
+            if (full) {
+                UiAnim.pulse(this.bagRow, 0.08, 0.45);
+                // Not when a save loads with it full: only when it fills up in play.
+                if (!first) MowAudio.play('bagFull');
+            }
         }
         if (this.shopOpen && this.shopState() !== this.shopKey) this.renderShop();
     }
@@ -973,7 +1091,8 @@ export class MowHud extends PIXI.Container {
     private get miniatureHome(): PIXI.IPointData {
         const screen = Game.overlayScreenData;
         if (!screen) return this.miniature.position;
-        return { x: screen.topLeft.x + screen.width - 20 - MINIATURE_WIDTH / 2, y: this.corner.y + 190 + this.miniature.pictureHeight / 2 };
+        // Centred under the trophy (corner y 140).
+        return { x: this.corner.x + CORNER_WIDTH - TROPHY_SIZE / 2, y: this.corner.y + 140 + TROPHY_SIZE / 2 + 12 + this.miniature.pictureHeight / 2 };
     }
 
     public reposition(): void {
@@ -991,17 +1110,15 @@ export class MowHud extends PIXI.Container {
         if (!this.miniature.celebrating) this.miniature.position.copyFrom(this.miniatureHome);
         this.mapButton.position.set(screen.topLeft.x + 20 + MAP_BUTTON_SIZE / 2, screen.topLeft.y + screen.height - 20 - MAP_BUTTON_SIZE / 2);
         this.mapDim.clear().beginFill(0x000000, 0.55).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
-        const mapScale = Math.min(2.6, (screen.height * 0.8) / this.panelMap.panelHeight, (screen.width - 48) / this.panelMap.panelWidth);
+        const mapScale = Math.min(1, (screen.height * 0.85) / (this.panelMap.panelHeight + RIBBON_OVERHANG), (screen.width - 24) / (this.panelMap.panelWidth + CLOSE_SIZE / 2));
         this.panelMapHolder.scale.set(mapScale);
         // The close button keeps its usual size on the scaled-up map.
         this.mapClose?.scale.set(1 / mapScale);
         this.panelMapHolder.position.set(screen.center.x, screen.center.y);
         this.celebration.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.36);
         this.toast.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.24);
-        // The find card sits at the bottom, clear of the player.
-        const cardScale = Math.min(1, (screen.width - 32) / FIND_CARD_SIZE.width, (screen.height * 0.42) / FIND_CARD_SIZE.height);
-        this.findCard.scale.set(cardScale);
-        this.findCard.position.set(screen.center.x, screen.topLeft.y + screen.height - 24 - (FIND_CARD_SIZE.height / 2) * cardScale);
+        // The finds' toasts stack down on the left, under the area's bar (clear of its name on a narrow screen).
+        this.findToasts.position.set(screen.topLeft.x + 20, this.progress.y + 60);
         this.moveHint.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.72);
         // The shop hangs in the bottom half, under the player; the language list in the middle.
         const top = screen.center.y + PANEL_TOP_GAP;
@@ -1014,6 +1131,10 @@ export class MowHud extends PIXI.Container {
         this.wardrobeHolder.position.set(screen.center.x, top + (RIBBON_OVERHANG + WARDROBE_SIZE.height / 2) * wardrobeScale);
         const trophiesScale = Math.min(1, (screen.height - 94) / (TROPHIES_SIZE.height + RIBBON_OVERHANG), (screen.width - 24) / (TROPHIES_SIZE.width + CLOSE_SIZE / 2));
         this.trophiesHolder.scale.set(trophiesScale);
+        const completeScale = Math.min(1, (screen.height - 94) / (TOWN_COMPLETE_SIZE.height + RIBBON_OVERHANG), (screen.width - 24) / TOWN_COMPLETE_SIZE.width);
+        this.townCompleteHolder.scale.set(completeScale);
+        this.townCompleteHolder.position.set(screen.center.x, screen.center.y + (RIBBON_OVERHANG / 2) * completeScale);
+        this.townCompleteDim.clear().beginFill(0x000000, 0.6).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
         this.trophiesHolder.position.set(screen.center.x, screen.center.y + (RIBBON_OVERHANG / 2) * trophiesScale);
         const languageScale = Math.min(1, (screen.height - 94) / (LANGUAGE_SIZE.height + RIBBON_OVERHANG), (screen.width - 24) / (LANGUAGE_SIZE.width + CLOSE_SIZE / 2));
         this.languageHolder.scale.set(languageScale);

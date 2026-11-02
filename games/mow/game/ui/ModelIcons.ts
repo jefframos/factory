@@ -7,7 +7,8 @@
 
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import type { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { createGLTFLoader } from 'core/three/GLTFLoaders';
 import { paintPixels } from '../utils/Paint';
 import SetupThree from 'core/scene/SetupThree';
 import { MOW, ToolDef, toolPaint } from '../data/MowConfig';
@@ -21,7 +22,7 @@ let loader: GLTFLoader | undefined;
 
 async function render(url: string, paint: string | undefined): Promise<HTMLCanvasElement | undefined> {
     if (!SetupThree.renderer) return undefined;
-    loader ??= new GLTFLoader();
+    loader ??= createGLTFLoader();
     const gltf = await loader.loadAsync(url);
     return snapshot(gltf.scene, paint);
 }

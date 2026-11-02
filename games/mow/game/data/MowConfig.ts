@@ -346,6 +346,9 @@ export interface TownTraffic {
     cars: { at: string; model?: string }[];
 }
 
+/** A secret patch's chest model (under public/mow/models; one of the treasures uses it too: loaded with them). */
+export const SECRET_CHEST_MODEL = 'treasures/chest.glb';
+
 /** A secret patch: its rect (centre, size) of lush grass, and the cash in the chest mowing it through uncovers. */
 export interface SecretDef {
     id: string;

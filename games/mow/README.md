@@ -162,11 +162,13 @@ A car brakes for the player (or the car ahead) within `gap` of its front and dri
 blocking each other at a junction: the older goes first. Cars are solid to walk into (not to the guide's route); one
 the player is already in isn't, so they can always step out.
 
-**Finds** — a treasure mowed out of the grass (every section, the yard's Toy Chest the first) or a secret patch's chest
-pops out, then its **claim card** (`ui/FindCard.ts`, dig's FindBanner): rays in its rarity's colour, its model, "TREASURE
-FOUND!" / "SECRET FOUND!", its name, what it's worth and a CLAIM button that pays on the spot, the coins flying into the
-money (it claims itself after 6 s). Cards queue and never stop play. A treasure's card also marks it claimed in the
-Trophies panel; an area's bonus (all its treasures found) is still claimed there.
+**Finds** — nothing stops play. A treasure mowed out of the grass (every section, the yard's Toy Chest the first) or
+a secret patch's chest pops out and hops into the player, and a **toast** slides in on the left
+(`ui/FindToasts.ts`, under the area bar: its model, "TREASURE FOUND!" / "SECRET FOUND!" in its colour, its name; several stack, each gone
+after 3 s). A treasure then flies from the player into the **Trophies** button, whose "!" shows as it lands; until the
+player has ever claimed something, a hand points at it too. Its reward waits in the Trophies panel: one **CLAIM** in
+the footer pays everything waiting (found treasures, and the bonus of an area with all its treasures found), the coins
+flying into the money. A secret chest pays at once instead, its coins flying from the player.
 
 **Grass size** — a section's `grassScale` (default 1; "Grass size ×" in the editor) multiplies its tufts' height and
 the contact needed to chew through grass too tough: under 1 an easier section, over 1 a harder one.

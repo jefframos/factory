@@ -82,12 +82,14 @@ export class Traffic {
     private playerRadius = 0.35;
     private destroyed = false;
 
-    public constructor(threeScene: THREE.Scene) {
+    /** `after`: the cars' models wait for it (the town round the player loads first). */
+    public constructor(threeScene: THREE.Scene, after: Promise<unknown> = Promise.resolve()) {
         this.config = MOW.traffic;
         threeScene.add(this.group);
         if (!this.config || !TOWN.traffic) return;
         this.buildGraph();
-        void this.spawn(this.config);
+        const config = this.config;
+        void after.then(() => this.spawn(config));
     }
 
     // ---------------------------------------------------------------- the road graph

@@ -3,8 +3,8 @@
 // Reads/writes games/mow/levels/town.json and the `tractor` section of ui/mow.json (the files the game loads), lists
 // the models under public/mow/models,
 // and serves the browser editor in ./public. three.js is served straight from node_modules so the editor needs no
-// build step. The Town tab can also browse the 3D asset library (LIBRARY3D_DIR, default D:/projects/PIXI3d/library3d)
-// and import a model from it into the game.
+// build step. The Town tab can also browse the 3D asset library (LIBRARY3D_DIR, default the repo's library3d submodule:
+// `git submodule update --init library3d`) and import a model from it into the game.
 
 import http from 'node:http';
 import fs from 'node:fs/promises';
@@ -27,7 +27,7 @@ const REPO_ROOT = path.join(__dirname, '..', '..', '..');
 const MODELS_DIR = path.join(REPO_ROOT, 'public', 'mow', 'models');
 const THREE_DIR = path.join(REPO_ROOT, 'node_modules', 'three');
 const THUMBS_DIR = path.join(__dirname, '.thumbs');
-const LIBRARY_DIR = path.resolve(process.env.LIBRARY3D_DIR ?? 'D:/projects/PIXI3d/library3d');
+const LIBRARY_DIR = path.resolve(process.env.LIBRARY3D_DIR ?? path.join(REPO_ROOT, 'library3d'));
 const LIBRARY_FILES = path.join(LIBRARY_DIR, 'files');
 const LIBRARY_THUMBS = path.join(LIBRARY_DIR, 'library', 'thumbs');
 /** Imported library models: the raw source the model build packs, and its published copy (usable right away). */
@@ -124,6 +124,9 @@ async function listModelsWithThumbs() {
 
 let libraryCache = null;
 
+/** A library model's thumbnail file (library/thumbs, the library app's own naming: they share them). */
+const libraryThumbName = (id) => `${id.replaceAll('/', '__')}.png`;
+
 async function listLibrary() {
     if (libraryCache) return libraryCache;
     const index = await readJson(path.join(LIBRARY_DIR, 'library', 'index.json'), null);
@@ -133,7 +136,7 @@ async function listLibrary() {
     for (const asset of index.assets ?? []) {
         const format = asset.formats?.glb ? 'glb' : asset.formats?.gltf ? 'gltf' : null;
         if (!format || asset.kind !== 'model') continue;
-        const thumbName = `${asset.id.replaceAll('/', '__')}.png`;
+        const thumbName = libraryThumbName(asset.id);
         assets.push({
             id: asset.id,
             name: asset.name,
@@ -379,6 +382,16 @@ async function handleApi(req, res, url) {
         const { default: sharp } = await import('sharp');
         await sharp(png).webp({ quality: 70, alphaQuality: 100 }).toFile(path.join(MAP_PUBLIC_DIR, `${name}.webp`));
         return send(res, 200, { ok: true });
+    }
+    if (url.pathname === '/api/library/thumb' && req.method === 'POST') {
+        // A library model the picker rendered (it had no thumbnail): kept in the library's thumbs for next time.
+        const id = url.searchParams.get('id') ?? '';
+        const asset = (await listLibrary()).assets.find((entry) => entry.id === id);
+        if (!asset) return send(res, 404, { error: `Unknown library asset ${id}` });
+        await fs.mkdir(LIBRARY_THUMBS, { recursive: true });
+        await fs.writeFile(path.join(LIBRARY_THUMBS, libraryThumbName(id)), await readRawBody(req));
+        asset.thumb = `/library-thumbs/${encodeURIComponent(libraryThumbName(id))}`;
+        return send(res, 200, { ok: true, thumb: asset.thumb });
     }
     if (url.pathname === '/api/thumb' && req.method === 'POST') {
         const name = url.searchParams.get('name') ?? '';

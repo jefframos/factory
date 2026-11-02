@@ -56,6 +56,13 @@ const GROUND_Y = -0.05;
 const GRASS_Y = 0.01;
 const PAVEMENT_Y = 0.02;
 const PAVEMENT_STEP = 0.012;
+/** Props this close to the player's start (world units) load first; the rest after (the constructor). */
+const NEAR_LOAD = 24;
+/** topAt()'s cache cell (world units). */
+const TOP_CELL = 0.1;
+const topRay = new THREE.Raycaster();
+const topFrom = new THREE.Vector3();
+const DOWN = new THREE.Vector3(0, -1, 0);
 /** Station pads: just over the top pavement (each pavement sits a step above the one before). */
 const PAD_Y = PAVEMENT_Y + TOWN.pavements.length * PAVEMENT_STEP + 0.03;
 /** The island's wooden deck: just over the town's ground, under the sections' grass and the pavements. */
@@ -427,8 +434,10 @@ export class Town {
     private sea?: THREE.Mesh;
     /** What the props block (fixed). */
     private readonly propBoxes: Box[] = [];
-    /** Flat props laid on the ground (road tiles): their footprint and top, for surfaceAt(). */
-    private readonly floors: { minX: number; maxX: number; minZ: number; maxZ: number; top: number }[] = [];
+    /** Flat props laid on the ground (road tiles): their footprint, top (for surfaceAt()) and model (for topAt()). */
+    private readonly floors: { minX: number; maxX: number; minZ: number; maxZ: number; top: number; object: THREE.Object3D }[] = [];
+    /** topAt()'s answers by TOP_CELL cell (the floors never move). */
+    private readonly tops = new Map<string, number>();
     /** Each station's box, by kind (no grass under any of them; blocking once it's there). */
     private readonly boxes: Record<StationKind, Box[]> = {
         atm: stationSpots('atm').map((spot) => stationBox(spot, stationLook('atm'))),
@@ -457,6 +466,8 @@ export class Town {
     public movingBlockers?: () => readonly Box[];
     /** Resolves once every model has loaded (or failed: the town still plays without one). */
     public readonly ready: Promise<void>;
+    /** Resolves once the models near the player's start (NEAR_LOAD) and the stations are in: enough to play. */
+    public readonly readyNear: Promise<void>;
 
     /**
      * `open(d)`: whether section d is unlocked from the start (its predecessor restored); `restored(d)`: whether it's
@@ -466,13 +477,26 @@ export class Town {
         this.open = MOW.districts.map((_, d) => open(d));
         this.penned = MOW.districts.map((district, d) => !!district.pen && !restored(d));
         this.buildGround();
-        TOWN.props.forEach((prop) => this.placeProp(prop));
+        // Every prop's collider now (the grass and the walking need them from the start), its model by distance from
+        // where the player starts: the near ones (and the stations) first — all the loading screen waits for
+        // (readyNear) — the rest once they're in, so they don't compete for the download.
+        for (const prop of TOWN.props) {
+            if (prop.collider) this.propBoxes.push({ x: prop.x, z: prop.z, halfX: prop.collider.halfX, halfZ: prop.collider.halfZ });
+        }
+        const away = (prop: TownProp) => Math.hypot(prop.x - TOWN.start.x, prop.z - TOWN.start.z);
+        const props = [...TOWN.props].sort((a, b) => away(a) - away(b));
+        props.filter((prop) => away(prop) <= NEAR_LOAD).forEach((prop) => this.placeProp(prop));
         for (const kind of STATION_KINDS) stationSpots(kind).forEach((spot) => this.buildStation(kind, spot));
         this.buildSeparators();
         this.buildPens();
         threeScene.add(this.group);
         setWalkabilityQuery(this.walkability);
-        this.ready = Promise.all(this.loads).then(() => undefined);
+        this.readyNear = Promise.all(this.loads).then(() => undefined);
+        this.ready = this.readyNear.then(() => {
+            if (this.destroyed) return undefined;
+            props.filter((prop) => away(prop) > NEAR_LOAD).forEach((prop) => this.placeProp(prop));
+            return Promise.all(this.loads).then(() => undefined);
+        });
         void this.ready.then(() => window.setTimeout(() => {
             if (!this.destroyed) this.redraws.forEach((redraw) => redraw());
         }, 300));
@@ -722,8 +746,8 @@ export class Town {
         this.group.add(pileMesh);
     }
 
+    /** A prop's model, loaded and placed (its collider is registered up front, in the constructor). */
     private placeProp(prop: TownProp): void {
-        if (prop.collider) this.propBoxes.push({ x: prop.x, z: prop.z, halfX: prop.collider.halfX, halfZ: prop.collider.halfZ });
         this.loads.push(this.loadModel(prop.model, prop.height, prop.fade, prop.stretch).then((object) => {
             if (!object) return;
             object.rotation.y = prop.rotationY;
@@ -735,7 +759,8 @@ export class Town {
                 const box = new THREE.Box3().setFromObject(object);
                 const ray = new THREE.Raycaster(new THREE.Vector3(prop.x, box.max.y + 1, prop.z), new THREE.Vector3(0, -1, 0));
                 const top = ray.intersectObject(object, true)[0]?.point.y ?? box.max.y;
-                this.floors.push({ minX: box.min.x, maxX: box.max.x, minZ: box.min.z, maxZ: box.max.z, top });
+                this.floors.push({ minX: box.min.x, maxX: box.max.x, minZ: box.min.z, maxZ: box.max.z, top, object });
+                this.tops.clear();
             }
         }));
     }
@@ -1062,6 +1087,26 @@ export class Town {
         const deck = TOWN.island?.deck;
         if (deck && containsPoint(this.shore, x, z) && edgeDistance(this.shore, x, z) < deck.width) return { y: DECK_Y, kind: 'deck' };
         return { y: GRASS_Y, kind: 'grass' };
+    }
+
+    /**
+     * The top of whatever is drawn at (x, z): surfaceAt()'s height, or a road tile's own surface there (its raised
+     * kerbs and sidewalks too, where surfaceAt() keeps to the asphalt's height), for things laid on the ground (the
+     * guide's arrows). Cached by TOP_CELL cell.
+     */
+    public topAt(x: number, z: number): number {
+        const key = `${Math.round(x / TOP_CELL)},${Math.round(z / TOP_CELL)}`;
+        const cached = this.tops.get(key);
+        if (cached !== undefined) return cached;
+        let y = this.surfaceAt(x, z).y;
+        for (const f of this.floors) {
+            if (x < f.minX || x > f.maxX || z < f.minZ || z > f.maxZ) continue;
+            topRay.set(topFrom.set(x, f.top + 5, z), DOWN);
+            const hit = topRay.intersectObject(f.object, true)[0];
+            if (hit) y = Math.max(y, hit.point.y);
+        }
+        this.tops.set(key, y);
+        return y;
     }
     /** No grass under pavements, props or ATMs. */
     public isBlocked(x: number, z: number): boolean {

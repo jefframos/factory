@@ -8,14 +8,13 @@
 // (PUT /api/mow/tools); its price and stats stay in `tools`.
 
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { createGLTFLoader } from './gltf.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { api, el, toast } from './shared.js';
 
 /** Same as MowPlayer. */
 const CHARACTER_SCALE = 0.0075;
-const CHARACTER = 'characters/default/characterMedium.fbx';
+const CHARACTER = 'characters/default/characterMedium.glb';
 const CLIPS = { idle: 'characters/default/idle.glb', walk: 'characters/default/Walking.glb' };
 const TOOL_GAP = 0.7;
 const GRIP = { forward: 0.42, height: 0.95, spread: 0.2 };
@@ -307,8 +306,8 @@ function buildTool() {
 /** The game's rig over the idle / walk clip; its arms are posed each frame (holdPose). */
 async function loadPlayer() {
     try {
-        const loader = new GLTFLoader();
-        const [loaded, idle, walk] = await Promise.all([new FBXLoader().loadAsync(`/models/${CHARACTER}`), loader.loadAsync(`/models/${CLIPS.idle}`), loader.loadAsync(`/models/${CLIPS.walk}`)]);
+        const loader = createGLTFLoader();
+        const [loaded, idle, walk] = await Promise.all([loader.loadAsync(`/models/${CHARACTER}`).then((gltf) => gltf.scene), loader.loadAsync(`/models/${CLIPS.idle}`), loader.loadAsync(`/models/${CLIPS.walk}`)]);
         rig = loaded;
         rig.scale.setScalar(CHARACTER_SCALE);
         rig.traverse((node) => {

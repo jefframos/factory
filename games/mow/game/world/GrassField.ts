@@ -551,6 +551,15 @@ export class GrassField {
         return taken;
     }
 
+    /** Whether (x, z) is lawn of `district` (a cell its grass grows on): not a road, the deck, the sea or a prop. */
+    public isLawn(x: number, z: number, district: number): boolean {
+        const ix = Math.floor((x - this.minX) / this.cell);
+        const iz = Math.floor((z - this.minZ) / this.cell);
+        if (ix < 0 || iz < 0 || ix >= this.width || iz >= this.depth) return false;
+        const i = iz * this.width + ix;
+        return this.types[i] > 0 && this.districtOf[i] === district;
+    }
+
     /** A district's grass cells (built once, on first use). */
     private cellsIn(district: number): number[] {
         if (!this.cellsOf.length) {

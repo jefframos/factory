@@ -4,7 +4,9 @@
       "mode": "custom",
       "camera": {
         "yaw": 32,
-        "pitch": 26
+        "pitch": 26,
+        "ortho": false,
+        "fov": 35
       },
       "custom": {
         "id": "town",
@@ -309,7 +311,8 @@
           }
         }
       },
-      "stroke": true
+      "stroke": true,
+      "strokeWidth": 4
     }
   }
 }

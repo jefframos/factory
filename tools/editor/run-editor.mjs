@@ -122,7 +122,9 @@ async function stopPreviousEditor(port) {
 const port = editorPort();
 await stopPreviousEditor(port);
 
-const child = spawn(process.execPath, [serverEntry], {
+// --watch: the server restarts itself when its code changes (an editor left running from before a change kept saving
+// through the old code, dropping the fields it didn't know).
+const child = spawn(process.execPath, ['--watch', serverEntry], {
     stdio: 'inherit',
     cwd: webDir,
 });
