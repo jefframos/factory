@@ -6,17 +6,26 @@
 //               at a rate set by the speed) over a soft whirr. Silent standing still.
 //  - `electric` (the walked engine mowers): a smooth motor hum and whine with a breath of blade air, no chug.
 //  - `tractor`  (the ride-on mowers): a petrol putt-putt (sawtooth + sub through a low-pass, its loudness chugging).
+//  - `car`      (the town's traffic, placed in 3D by SpatialAudio): a smoother engine with tyre roar.
 // Levels are kept low: it loops the whole time a mower runs, so it sits under the music and the cuts.
 // It plays through Howler's master gain, so the game's mute, the platform's mute and MowAudio's pause (Howler's
 // volume to 0) silence it like every other sound.
 
 import { Howler } from 'howler';
 
-export type MowerVoice = 'reel' | 'electric' | 'tractor';
+export type MowerVoice = 'reel' | 'electric' | 'tractor' | 'car';
 
 /** Seconds the levels take to follow the speed, and to fade in / out. */
 const GLIDE = 0.25;
 const FADE = 0.25;
+/**
+ * A mower left standing (below `speed` for `after` seconds) fades slowly to silence (`fade`: the time constant, so
+ * about three times that to nothing) and comes back quickly (`back`) once it moves. Cars keep idling.
+ */
+const STILL = { speed: 0.05, after: 0.2, fade: 0.6, back: 0.08 };
+/** Every mower voice's overall level (the per-voice volumes below are relative to it); cars are set by SpatialAudio. */
+const MOWER_VOLUME = 0.6;
+const levelOf = (voice: MowerVoice) => (voice === 'car' ? 1 : MOWER_VOLUME);
 
 const REEL = {
     /** Blade ticks a second at full speed (a 5-blade reel turning a few times a second). */
@@ -36,6 +45,13 @@ const TRACTOR = {
     cutoff: { idle: 320, full: 820 },
     chug: { idle: 8, full: 15 },
     volume: { idle: 0.03, full: 0.05 },
+};
+/** A town car going by: a smoother, higher engine than the tractor's, with tyre roar on the road. */
+const CAR = {
+    pitch: { idle: 55, full: 95 },
+    cutoff: { idle: 380, full: 1000 },
+    volume: { idle: 0.035, full: 0.06 },
+    tyres: { idle: 0, full: 0.09 },
 };
 
 const lerp = (range: { idle: number; full: number }, k: number) => range.idle + (range.full - range.idle) * k;
@@ -60,6 +76,9 @@ interface Running {
     sources: AudioScheduledSourceNode[];
     /** Follows the speed (0..1); `delta`: seconds since the last call. */
     follow: (k: number, delta: number) => void;
+    /** Seconds the mower has stood still, and whether it's counted as moving (heard). */
+    still: number;
+    moving: boolean;
 }
 
 export class EngineSound {
@@ -73,18 +92,27 @@ export class EngineSound {
         if (!ctx || !destination) return;
         const out = ctx.createGain();
         out.gain.value = 0;
-        out.gain.setTargetAtTime(1, ctx.currentTime, FADE / 3);
+        out.gain.setTargetAtTime(levelOf(voice), ctx.currentTime, FADE / 3);
         out.connect(destination);
-        const build = voice === 'reel' ? reel : voice === 'electric' ? electric : tractor;
+        const build = { reel, electric, tractor, car }[voice];
         const { sources, follow } = build(ctx, out);
         for (const source of sources) source.start();
-        this.running = { kind: voice, ctx, out, sources, follow };
+        this.running = { kind: voice, ctx, out, sources, follow, still: 0, moving: true };
         follow(0, 0);
     }
 
-    /** Follows the walking / driving speed: 0 = standing (idling), 1 = flat out. */
+    /** Follows the walking / driving speed: 0 = standing (idling), 1 = flat out. A mower standing still fades away (STILL). */
     public update(speed: number, delta: number): void {
-        this.running?.follow(Math.min(1, Math.max(0, speed)), delta);
+        const n = this.running;
+        if (!n) return;
+        const k = Math.min(1, Math.max(0, speed));
+        n.follow(k, delta);
+        if (n.kind === 'car') return;
+        n.still = k < STILL.speed ? n.still + delta : 0;
+        const moving = n.still < STILL.after;
+        if (moving === n.moving) return;
+        n.moving = moving;
+        n.out.gain.setTargetAtTime(moving ? levelOf(n.kind) : 0, n.ctx.currentTime, moving ? STILL.back : STILL.fade);
     }
 
     /** Fades the mower out and lets it go. */
@@ -209,6 +237,40 @@ function tractor(ctx: BaseAudioContext, out: GainNode): Pick<Running, 'sources' 
             filter.frequency.setTargetAtTime(lerp(TRACTOR.cutoff, k), t, GLIDE);
             lfo.frequency.setTargetAtTime(lerp(TRACTOR.chug, k), t, GLIDE);
             level.gain.setTargetAtTime(lerp(TRACTOR.volume, k), t, GLIDE);
+        },
+    };
+}
+
+/** A car's engine (sawtooth + a fifth above through a low-pass, a slight wobble) and its tyres on the road (low noise). */
+function car(ctx: BaseAudioContext, out: GainNode): Pick<Running, 'sources' | 'follow'> {
+    const level = gain(ctx, CAR.volume.idle);
+    level.connect(out);
+    const filter = band(ctx, 'lowpass', CAR.cutoff.idle, 0.9);
+    filter.connect(level);
+    const saw = ctx.createOscillator();
+    saw.type = 'sawtooth';
+    saw.frequency.value = CAR.pitch.idle;
+    const fifth = ctx.createOscillator();
+    fifth.type = 'triangle';
+    fifth.frequency.value = CAR.pitch.idle * 1.5;
+    saw.connect(filter);
+    fifth.connect(gain(ctx, 0.3)).connect(filter);
+    const wobble = ctx.createOscillator();
+    wobble.frequency.value = 3 + Math.random() * 2;
+    wobble.connect(gain(ctx, 2)).connect(saw.frequency);
+    const tyreNoise = noiseSource(ctx);
+    const tyres = gain(ctx, 0);
+    tyreNoise.connect(band(ctx, 'lowpass', 520, 0.7)).connect(tyres).connect(out);
+    return {
+        sources: [saw, fifth, wobble, tyreNoise],
+        follow: (k) => {
+            const t = ctx.currentTime;
+            const pitch = lerp(CAR.pitch, k);
+            saw.frequency.setTargetAtTime(pitch, t, GLIDE);
+            fifth.frequency.setTargetAtTime(pitch * 1.5, t, GLIDE);
+            filter.frequency.setTargetAtTime(lerp(CAR.cutoff, k), t, GLIDE);
+            level.gain.setTargetAtTime(lerp(CAR.volume, k), t, GLIDE);
+            tyres.gain.setTargetAtTime(lerp(CAR.tyres, k), t, GLIDE);
         },
     };
 }

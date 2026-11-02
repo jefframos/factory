@@ -43,9 +43,13 @@ interface SaveData {
     look: Look;
     /** Money when the wardrobe was last opened: things that became affordable since get its "!". */
     wardrobeBudget: number;
+    /** The wardrobe was opened again after the first hat: an unclaimed gift (free colour / face) now shows its FREE badge. */
+    freeLooksOffered: boolean;
     /** Treasures found (ids), and rewards claimed (treasure ids, and `area:<section id>` for an area's bonus). */
     treasuresFound: string[];
     treasuresClaimed: string[];
+    /** Secret patches mowed through (ids): their chest found and paid. */
+    secretsFound: string[];
 }
 
 /** The claim key of an area's bonus (all its treasures found). */
@@ -57,8 +61,8 @@ const starterLook = (): Look => ({ color: MOW.wardrobe.colors[0].id, face: MOW.w
 const fresh = (): SaveData => ({
     version: SAVE_VERSION, money: 0, toolLevel: 0, upgrades: {}, clippings: 0, cut: '', restored: [],
     stats: { cells: 0, earned: 0, sells: 0 }, sent: [],
-    owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0,
-    treasuresFound: [], treasuresClaimed: [],
+    owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, freeLooksOffered: false,
+    treasuresFound: [], treasuresClaimed: [], secretsFound: [],
 });
 
 function load(): SaveData {
@@ -212,14 +216,30 @@ export const MowProgress = {
         return state.look;
     },
 
-    /** Something in the wardrobe became affordable since it was last opened (its "!"). */
+    /** Something in the wardrobe became affordable since it was last opened (its "!"), or a gift waits there after the first hat. */
     get wardrobeHasNews(): boolean {
+        if (this.boughtFirstHat && LOOK_KINDS.some((kind) => this.unclaimedFreeLook(kind))) return true;
         return LOOK_KINDS.some((kind) => MOW.wardrobe[kind].some((item) =>
-            !this.ownsLook(kind, item) && item.price <= state.money && item.price > state.wardrobeBudget));
+            !item.free && !this.ownsLook(kind, item) && item.price <= state.money && item.price > state.wardrobeBudget));
+    },
+
+    /** The kind's free look, while it's still unclaimed. */
+    unclaimedFreeLook(kind: LookKind): WardrobeItem | undefined {
+        return MOW.wardrobe[kind].find((item) => item.free && !this.ownsLook(kind, item));
+    },
+
+    /**
+     * Whether the kind's unclaimed free look shows its FREE badge: only from a wardrobe visit after the one where the
+     * first hat was bought — a gift claimed on that first visit never gets one.
+     */
+    freeLookBadge(kind: LookKind): boolean {
+        return state.freeLooksOffered && !!this.unclaimedFreeLook(kind);
     },
 
     /** The wardrobe was opened: everything affordable now has been seen. */
     markWardrobeSeen(): void {
+        // Opened (again) with the first hat already bought: a return visit, so unclaimed gifts get badged.
+        if (this.boughtFirstHat) state.freeLooksOffered = true;
         state.wardrobeBudget = state.money;
         this.scheduleSave();
     },
@@ -239,11 +259,13 @@ export const MowProgress = {
         return item.price === 0 || state.owned[kind].includes(item.id);
     },
 
-    /** Buys (if needed) and wears a look; false when it costs more than the money there is. */
+    /** Buys (if needed) and wears a look; false when it costs more than the money there is. Gifts (`free`) cost nothing. */
     wearLook(kind: LookKind, item: WardrobeItem): boolean {
         if (!this.ownsLook(kind, item)) {
-            if (state.money < item.price) return false;
-            state.money -= item.price;
+            if (!item.free) {
+                if (state.money < item.price) return false;
+                state.money -= item.price;
+            }
             state.owned[kind].push(item.id);
         }
         if (kind === 'colors') state.look.color = item.id;
@@ -289,6 +311,21 @@ export const MowProgress = {
     get hasUnclaimedTreasure(): boolean {
         return MOW.treasures.items.some((i) => this.unclaimedFor(i.id) > 0)
             || MOW.districts.some((d) => this.unclaimedFor(areaBonusKey(d.id)) > 0);
+    },
+
+    /** A secret patch's chest was found (its patch stays mowed). */
+    secretFound(id: string): boolean {
+        return state.secretsFound.includes(id);
+    },
+
+    /** Pays a secret patch's chest (once); returns how much (0 = already found). */
+    claimSecret(id: string, reward: number): number {
+        if (state.secretsFound.includes(id)) return 0;
+        state.secretsFound.push(id);
+        state.money += reward;
+        state.stats.earned += reward;
+        this.changed();
+        return reward;
     },
 
     /** Pays a waiting reward (a treasure id, or an area's bonus); returns how much (0 = nothing waiting). */

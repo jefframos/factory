@@ -1,0 +1,315 @@
+{
+  "zones": {
+    "town": {
+      "mode": "custom",
+      "camera": {
+        "yaw": 32,
+        "pitch": 26
+      },
+      "custom": {
+        "id": "town",
+        "name": "Mow Town",
+        "ground": {
+          "x": 0.125,
+          "z": 1.5,
+          "width": 24.25,
+          "depth": 26,
+          "color": "#8c9a7c"
+        },
+        "island": {
+          "water": "#3aa6e8",
+          "waterLevel": 0.55,
+          "margin": 90,
+          "sideColor": "#9a9488",
+          "sideDepth": 1.6,
+          "outline": [
+            {
+              "x": 12,
+              "z": -11
+            },
+            {
+              "x": 12.25,
+              "z": 14.5
+            },
+            {
+              "x": -12,
+              "z": 14.5
+            },
+            {
+              "x": -11.75,
+              "z": -11.5
+            }
+          ],
+          "deck": {
+            "width": 2.4,
+            "color": "#b98352",
+            "pilingColor": "#6b4a30",
+            "pilingSpacing": 2.6
+          },
+          "fence": {
+            "color": "#f4f1ea",
+            "height": 0.95,
+            "inset": 0.45,
+            "spacing": 1.6
+          }
+        },
+        "start": {
+          "x": 0,
+          "z": 12
+        },
+        "pavements": [
+          {
+            "id": "path-east-west",
+            "x": 0,
+            "z": 11.5,
+            "width": 20,
+            "depth": 1.5,
+            "color": "#d8ccb0"
+          }
+        ],
+        "atm": {
+          "model": "town/station/atm-01.glb",
+          "height": 2.1,
+          "back": 1.7,
+          "label": 3.3,
+          "color": "#3fd16b",
+          "icon": "ItemIcon_Money_Bill",
+          "collider": {
+            "halfX": 0.75,
+            "halfZ": 0.55
+          }
+        },
+        "atms": [],
+        "wardrobe": {
+          "model": "town/station/closet-02.glb",
+          "height": 2.2,
+          "back": 1.5,
+          "label": 3.2,
+          "color": "#e266c8",
+          "icon": "ItemIcon_Heart_Red",
+          "collider": {
+            "halfX": 0.7,
+            "halfZ": 0.45
+          }
+        },
+        "wardrobes": [],
+        "props": [
+          {
+            "model": "town/nature/Tree_1_A_Color1.gltf",
+            "x": -5.5,
+            "z": 7,
+            "rotationY": 0,
+            "height": 5.76,
+            "collider": {
+              "halfX": 0.6,
+              "halfZ": 0.6
+            },
+            "fade": true
+          },
+          {
+            "model": "town/nature/Tree_3_A_Color1.gltf",
+            "x": 5.75,
+            "z": 6.75,
+            "rotationY": 2.1,
+            "height": 5.12,
+            "collider": {
+              "halfX": 0.65,
+              "halfZ": 0.7
+            },
+            "fade": true
+          },
+          {
+            "model": "town/city/bench.gltf",
+            "x": -3,
+            "z": 9.75,
+            "rotationY": 0,
+            "height": 0.55,
+            "collider": {
+              "halfX": 1.1,
+              "halfZ": 0.4
+            }
+          },
+          {
+            "model": "town/city/streetlight_old_double.gltf",
+            "x": -10.6,
+            "z": 9,
+            "rotationY": 0,
+            "height": 3.6,
+            "collider": {
+              "halfX": 0.2,
+              "halfZ": 0.2
+            }
+          },
+          {
+            "model": "town/city/streetlight_old_double.gltf",
+            "x": 10.6,
+            "z": 9,
+            "rotationY": 0,
+            "height": 3.6,
+            "collider": {
+              "halfX": 0.2,
+              "halfZ": 0.2
+            }
+          },
+          {
+            "model": "town/city/streetlight.gltf",
+            "x": -2.5,
+            "z": -8.35,
+            "rotationY": 1.5708,
+            "height": 5,
+            "collider": {
+              "halfX": 0.15,
+              "halfZ": 0.15
+            }
+          },
+          {
+            "model": "town/city/streetlight.gltf",
+            "x": 2.5,
+            "z": -8.35,
+            "rotationY": 1.5708,
+            "height": 5,
+            "collider": {
+              "halfX": 0.15,
+              "halfZ": 0.15
+            }
+          },
+          {
+            "model": "town/city/firehydrant.gltf",
+            "x": -9,
+            "z": -8.5,
+            "rotationY": 0,
+            "height": 1,
+            "collider": {
+              "halfX": 0.3,
+              "halfZ": 0.3
+            }
+          },
+          {
+            "model": "town/city/building_E_withoutBase.gltf",
+            "x": 0,
+            "z": -3.25,
+            "rotationY": 0,
+            "height": 18,
+            "collider": {
+              "halfX": 8,
+              "halfZ": 4.95
+            },
+            "fade": true
+          },
+          {
+            "model": "town/city/streetlight.gltf",
+            "x": 10.3,
+            "z": 3.5,
+            "rotationY": -1.5708,
+            "height": 5,
+            "collider": {
+              "halfX": 0.15,
+              "halfZ": 0.15
+            }
+          },
+          {
+            "model": "town/city/streetlight.gltf",
+            "x": -10.3,
+            "z": 3.5,
+            "rotationY": 1.5708,
+            "height": 5,
+            "collider": {
+              "halfX": 0.15,
+              "halfZ": 0.15
+            }
+          }
+        ],
+        "grassNoise": {
+          "centre": {
+            "x": 0,
+            "z": 2
+          },
+          "scale": 0.2,
+          "rings": [
+            {
+              "upTo": 8,
+              "mix": {
+                "grass": 1
+              }
+            },
+            {
+              "upTo": 13,
+              "mix": {
+                "grass": 0.75,
+                "tallgrass": 0.25
+              }
+            },
+            {
+              "upTo": 22,
+              "mix": {
+                "grass": 0.5,
+                "tallgrass": 0.38,
+                "weeds": 0.12
+              }
+            },
+            {
+              "upTo": 30,
+              "mix": {
+                "grass": 0.3,
+                "tallgrass": 0.35,
+                "weeds": 0.25,
+                "brambles": 0.1
+              }
+            },
+            {
+              "upTo": 38,
+              "mix": {
+                "grass": 0.2,
+                "tallgrass": 0.3,
+                "weeds": 0.25,
+                "brambles": 0.17,
+                "thicket": 0.08
+              }
+            },
+            {
+              "upTo": 999,
+              "mix": {
+                "grass": 0.15,
+                "tallgrass": 0.25,
+                "weeds": 0.25,
+                "brambles": 0.2,
+                "thicket": 0.15
+              }
+            }
+          ]
+        },
+        "grassPatches": [],
+        "sections": [
+          {
+            "id": "park",
+            "name": "Starting Park",
+            "x": 0,
+            "z": 7.25,
+            "width": 20,
+            "depth": 9.5,
+            "completeAt": 0.97,
+            "bonus": 160,
+            "ground": "#4f7d35",
+            "restoredGround": "#6fae47",
+            "fill": "auto"
+          }
+        ],
+        "sounds": [],
+        "secrets": [],
+        "traffic": {
+          "waypoints": [],
+          "links": [],
+          "cars": []
+        },
+        "soundSettings": {
+          "cars": {
+            "volume": 0.35,
+            "near": 3,
+            "far": 14
+          }
+        }
+      },
+      "stroke": true
+    }
+  }
+}

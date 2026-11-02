@@ -11,6 +11,7 @@ import SoundManager, { SoundAsset } from 'core/audio/SoundManager';
 import SoundLoadManager from 'core/audio/SoundLoaderManager';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import audioManifest from '../../manifests/audio.json';
+import { TOWN } from '../data/MowConfig';
 
 const five = (name: string) => [1, 2, 3, 4, 5].map((i) => `${name}-${i}`);
 
@@ -71,6 +72,9 @@ const SOUNDS = {
 
 export type Cue = keyof typeof SOUNDS;
 
+/** Long loops SpatialAudio plays itself (Web Audio, placed in 3D): not loaded as Howler cues. */
+const AMBIENT_LOOPS = new Set(['ocean-ambient', ...(TOWN.sounds ?? []).map((zone) => zone.sound)]);
+
 /** Repeats closer than this are dropped (a burst of pickups or coins doesn't stack into noise). */
 const COOLDOWN_MS: Partial<Record<Cue, number>> = { cut: 90, stepStone: 120, stepWood: 120, stepGrass: 120, coins: 55, collectStone: 45, collectMetal: 45, collectGem: 45 };
 const DEFAULT_COOLDOWN_MS = 60;
@@ -80,9 +84,16 @@ export class MowAudio {
     private static platformPaused = false;
     private static volumeBeforePause: number | undefined;
     private static readonly lastPlayed = new Map<Cue, number>();
+    private static folderPath = 'mow';
+
+    /** Where an audio file is served from (for the ambient loops SpatialAudio loads itself). */
+    public static url(file: string): string {
+        return `./${this.folderPath}/audio/${file}`;
+    }
 
     /** Loads every sound of the packed manifest (call once at boot). */
     public static async initialize(folderPath: string): Promise<void> {
+        this.folderPath = folderPath;
         const manifest = structuredClone(audioManifest);
         for (const bundle of manifest.bundles) {
             for (const asset of bundle.assets) {
@@ -90,7 +101,8 @@ export class MowAudio {
             }
         }
         SoundLoadManager.instance.setUpManifests([manifest], ['default']);
-        const ids = manifest.bundles.flatMap((bundle) => bundle.assets.map((asset) => asset.alias[0].replace(/\.[^.]+$/, '')));
+        const ids = manifest.bundles.flatMap((bundle) => bundle.assets.map((asset) => asset.alias[0].replace(/\.[^.]+$/, '')))
+            .filter((id) => !AMBIENT_LOOPS.has(id));
         await Promise.all(ids.map((id) => SoundLoadManager.instance.loadSoundByName(id)));
         this.ready = true;
         document.addEventListener('visibilitychange', this.syncPause);

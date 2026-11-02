@@ -124,6 +124,11 @@ export interface DistrictDef {
     /** What happens when it opens: the camera glides over to show it (its ATMs and fence come with it anyway). */
     onUnlock?: { pan?: boolean };
     /**
+     * A fence all round this rect (centre, size) keeping the player inside it until the section is restored (the
+     * first one: the yard and the plaza with its ATM), sinking away then. Drawn by Town, edited in the editor.
+     */
+    pen?: { x: number; z: number; width: number; depth: number };
+    /**
      * Its grass's size (default 1): the tufts' height and the effort to chew through grass too tough both
      * scale by it — under 1 an easier section, over 1 a harder one. Clippings per cell stay the same.
      */
@@ -193,6 +198,11 @@ export interface WardrobeItem {
     id: string;
     name?: string;
     price: number;
+    /**
+     * A gift (one colour and one face): claimed for nothing. If it's still unclaimed when the player comes back to
+     * the wardrobe after buying the first hat, its tab and card get a FREE badge (MowProgress.freeLookBadge).
+     */
+    free?: boolean;
 }
 
 export interface WardrobeCatalog {
@@ -266,6 +276,8 @@ export interface IslandDef {
     sideDepth: number;
     /** The island's shape: a polygon on the ground (any order, no self-crossing). Without one, the ground's rect. */
     outline?: { x: number; z: number }[];
+    /** How round the outline's corners are drawn (radius, default 3.5; 0: sharp). The points stay where they are. */
+    cornerRadius?: number;
     /** A wooden deck round the edge: `width` in from the shore, planks across it, pilings into the sea. */
     deck?: DeckDef;
     /** The fence round the edge: posts every `spacing`, rails, a kerb under them (with `kerbColor`); `inset` in from the edge. */
@@ -296,6 +308,57 @@ export interface TownLevel {
     grassNoise: GrassNoise;
     grassPatches: GrassPatch[];
     sections: DistrictDef[];
+    /** Sound zones (the sea round the island, …): edited in the editor's town, played by SpatialAudio. */
+    sounds?: SoundZone[];
+    /** Secret patches: a clump of lush grass anywhere in town hiding a chest (SecretPatches), placed in the editor. */
+    secrets?: SecretDef[];
+    /** Where the cars drive (Traffic): waypoints, the roads linking them, the cars. Edited in the editor. */
+    traffic?: TownTraffic;
+    /** How loud and how far the traffic is heard. */
+    soundSettings?: SoundSettings;
+}
+
+/**
+ * A looping sound over a box on the ground: full `volume` inside it, fading to nothing `fade` units out from its
+ * edges, heard from the box's nearest point (left / right of the screen). Zones playing the same `sound` share one
+ * loop (the loudest zone wins), so they can overlap at the corners.
+ */
+export interface SoundZone {
+    id: string;
+    /** The file in raw-assets/audio, without its extension (`ocean-ambient`). */
+    sound: string;
+    x: number;
+    z: number;
+    width: number;
+    depth: number;
+    fade: number;
+    volume: number;
+}
+
+/**
+ * The traffic's network: waypoints (on the roads' middles), links between them (two-way roads; cars keep to the
+ * right-hand lane), and the cars, each starting at a waypoint (and roaming the waypoints linked to it, so a network
+ * of its own keeps a car to its area).
+ */
+export interface TownTraffic {
+    waypoints: { id: string; x: number; z: number }[];
+    links: [string, string][];
+    cars: { at: string; model?: string }[];
+}
+
+/** A secret patch: its rect (centre, size) of lush grass, and the cash in the chest mowing it through uncovers. */
+export interface SecretDef {
+    id: string;
+    x: number;
+    z: number;
+    width: number;
+    depth: number;
+    reward: number;
+}
+
+export interface SoundSettings {
+    /** Each car's engine: `volume` within `near` of it, nothing from `far`. */
+    cars: { volume: number; near: number; far: number };
 }
 
 /**
@@ -311,9 +374,9 @@ export interface ComboDef {
 }
 
 /** A few cars driving the roads (world/Traffic.ts): the town's road tiles (props whose model has `road_`) are the lanes. */
+/** How the cars drive (ui/mow.json); where they drive is the level's (TownTraffic). */
 export interface TrafficDef {
-    count: number;
-    /** Car models (paths under models/; front facing +Z), picked in turn. */
+    /** Car models (paths under models/; front facing +Z), picked in turn for a car without its own. */
     models: string[];
     /** Cruising speed (units / s), and how fast they speed up / brake. */
     speed: number;
@@ -323,7 +386,7 @@ export interface TrafficDef {
     length: number;
     /** A lane's middle off the road's middle (driving on the right). */
     lane: number;
-    /** The road tiles' size (they sit on this grid). */
+    /** The road tiles' size (they sit on this grid): the editor's "waypoints from road tiles" links tiles this far apart. */
     tile: number;
     /** The road's top (the cars' wheels sit on it). */
     roadY: number;

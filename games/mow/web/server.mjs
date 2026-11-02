@@ -16,6 +16,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const TOWN_FILE = path.join(__dirname, '..', 'levels', 'town.json');
 const MOW_FILE = path.join(__dirname, '..', 'ui', 'mow.json');
+/**
+ * The Map shots tab's settings, by zone (`town` or a section id): `mode` (original: the town as it is; custom: its own
+ * diorama, `custom`, a level like town.json), `camera` (yaw / pitch, degrees; `ortho`: isometric, else perspective
+ * with `fov`) and `stroke` (a black outline round the small HUD picture). Read by the game's snapshot scene.
+ */
+const MAPSHOTS_FILE = path.join(__dirname, '..', 'levels', 'mapshots.json');
 const REPO_ROOT = path.join(__dirname, '..', '..', '..');
 const MODELS_DIR = path.join(REPO_ROOT, 'public', 'mow', 'models');
 const THREE_DIR = path.join(REPO_ROOT, 'node_modules', 'three');
@@ -26,6 +32,11 @@ const LIBRARY_THUMBS = path.join(LIBRARY_DIR, 'library', 'thumbs');
 /** Imported library models: the raw source the model build packs, and its published copy (usable right away). */
 const IMPORT_RAW_DIR = path.join(REPO_ROOT, 'games', 'mow', 'raw-assets', 'models', 'town{m}', 'library');
 const IMPORT_PUBLIC_DIR = path.join(MODELS_DIR, 'town', 'library');
+/** The game's sounds (a sound zone plays one of these; `npm run audio` packs them for the game). */
+const AUDIO_DIR = path.join(REPO_ROOT, 'games', 'mow', 'raw-assets', 'audio');
+/** The town map's miniatures (baked by the game's TownSnapshotScene): the PNG source, and the webp the game loads. */
+const MAP_RAW_DIR = path.join(REPO_ROOT, 'games', 'mow', 'raw-assets', 'non-preload', 'map');
+const MAP_PUBLIC_DIR = path.join(REPO_ROOT, 'public', 'mow', 'images', 'non-preload', 'map');
 const PORT = process.env.EDITOR_PORT ? Number(process.env.EDITOR_PORT) : 4710;
 const GAME_URL = process.env.GAME_URL ?? 'http://localhost:9001/';
 
@@ -178,6 +189,34 @@ function validateTown(town) {
         if (!(section.width > 0) || !(section.depth > 0)) problems.push(`section ${section.id ?? i + 1} needs a size`);
     });
     const outline = town.island?.outline;
+    if (town.sounds !== undefined && !Array.isArray(town.sounds)) problems.push('sounds must be a list');
+    if (town.secrets !== undefined && !Array.isArray(town.secrets)) problems.push('secrets must be a list');
+    if (town.traffic !== undefined) {
+        const { waypoints, links, cars } = town.traffic ?? {};
+        if (!Array.isArray(waypoints) || !Array.isArray(links) || !Array.isArray(cars)) problems.push('traffic needs waypoints, links and cars lists');
+        else {
+            const ids = new Set();
+            waypoints.forEach((w, i) => {
+                if (!w?.id || ids.has(w.id)) problems.push(`traffic waypoint ${i + 1} needs a unique id`);
+                ids.add(w?.id);
+            });
+            links.forEach((link) => {
+                if (!Array.isArray(link) || link.length !== 2 || !ids.has(link[0]) || !ids.has(link[1])) problems.push(`traffic link ${JSON.stringify(link)} joins unknown waypoints`);
+            });
+            cars.forEach((car, i) => { if (!ids.has(car?.at)) problems.push(`car ${i + 1} starts at unknown waypoint ${car?.at}`); });
+        }
+    }
+    const secretIds = new Set();
+    (town.secrets ?? []).forEach((secret, i) => {
+        if (!secret?.id) problems.push(`secret patch ${i + 1} has no id`);
+        else if (secretIds.has(secret.id)) problems.push(`two secret patches are called ${secret.id}`);
+        secretIds.add(secret?.id);
+        if (!(secret?.width > 0) || !(secret?.depth > 0)) problems.push(`secret patch ${secret?.id ?? i + 1} needs a size`);
+    });
+    (town.sounds ?? []).forEach((zone, i) => {
+        if (!zone?.sound) problems.push(`sound zone ${zone?.id ?? i + 1} has no sound`);
+        if (!(zone?.width > 0) || !(zone?.depth > 0)) problems.push(`sound zone ${zone?.id ?? i + 1} needs a size`);
+    });
     if (outline && (!Array.isArray(outline) || outline.length < 3 || outline.some((p) => !Number.isFinite(p?.x) || !Number.isFinite(p?.z)))) {
         problems.push('island outline needs at least 3 points with x / z');
     }
@@ -196,7 +235,8 @@ async function readBody(req) {
 }
 
 function send(res, status, body) {
-    res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+    // Open to the game's origin too (its map snapshots post here).
+    res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
     res.end(JSON.stringify(body));
 }
 
@@ -260,6 +300,10 @@ async function handleApi(req, res, url) {
         await writeMow(design);
         return send(res, 200, { ok: true });
     }
+    if (url.pathname === '/api/sounds' && req.method === 'GET') {
+        const files = await fs.readdir(AUDIO_DIR).catch(() => []);
+        return send(res, 200, [...new Set(files.filter((f) => /\.(mp3|ogg|wav)$/i.test(f)).map((f) => f.replace(/\.[^.]+$/, '')))].sort());
+    }
     if (url.pathname === '/api/town' && req.method === 'GET') {
         const town = await readJson(TOWN_FILE, null);
         if (!town) return send(res, 500, { error: 'Could not read levels/town.json' });
@@ -287,6 +331,53 @@ async function handleApi(req, res, url) {
     if (url.pathname === '/api/models' && req.method === 'GET') {
         return send(res, 200, await listModelsWithThumbs());
     }
+    if (url.pathname === '/api/mapshots' && req.method === 'GET') {
+        return send(res, 200, await readJson(MAPSHOTS_FILE, { zones: {} }));
+    }
+    if (url.pathname === '/api/mapshots' && req.method === 'PUT') {
+        // A zone's mode and camera (its custom diorama is kept).
+        const zone = url.searchParams.get('zone') ?? '';
+        const { mode, camera, stroke } = await readBody(req);
+        if (!/^[\w-]+$/.test(zone)) return send(res, 400, { error: 'Bad zone' });
+        if (mode !== 'original' && mode !== 'custom') return send(res, 400, { error: 'mode must be original or custom' });
+        if (!Number.isFinite(camera?.yaw) || !Number.isFinite(camera?.pitch)) return send(res, 400, { error: 'camera needs yaw and pitch' });
+        const shots = await readJson(MAPSHOTS_FILE, { zones: {} });
+        const fov = Number.isFinite(camera.fov) ? camera.fov : undefined;
+        shots.zones[zone] = { ...shots.zones[zone], mode, camera: { yaw: camera.yaw, pitch: camera.pitch, ortho: camera.ortho !== false, fov }, stroke: Boolean(stroke) };
+        await writeJson(MAPSHOTS_FILE, shots);
+        return send(res, 200, { ok: true });
+    }
+    if (url.pathname === '/api/mapshots/custom' && req.method === 'GET') {
+        const zone = url.searchParams.get('zone') ?? '';
+        const custom = (await readJson(MAPSHOTS_FILE, { zones: {} })).zones[zone]?.custom;
+        if (!custom) return send(res, 404, { error: `No custom diorama for ${zone}` });
+        // The editor's save expects a version (the town's conflict check); a diorama has one editor: any will do.
+        return send(res, 200, { ...custom, _version: 1 });
+    }
+    if (url.pathname === '/api/mapshots/custom' && req.method === 'PUT') {
+        const zone = url.searchParams.get('zone') ?? '';
+        if (!/^[\w-]+$/.test(zone)) return send(res, 400, { error: 'Bad zone' });
+        const { _version, ...custom } = await readBody(req);
+        const problems = validateTown(custom);
+        if (problems.length) return send(res, 400, { error: problems.join('; ') });
+        const shots = await readJson(MAPSHOTS_FILE, { zones: {} });
+        shots.zones[zone] = { mode: 'custom', camera: { yaw: 0, pitch: 40 }, ...shots.zones[zone], custom };
+        await writeJson(MAPSHOTS_FILE, shots);
+        return send(res, 200, { ok: true, version: 1 });
+    }
+    if (url.pathname === '/api/map-snapshot' && req.method === 'POST') {
+        // From the game (another origin): the PNG is kept as the source and published as webp right away, as
+        // `npm run image` would (same quality), so the game shows it without a rebuild.
+        const name = url.searchParams.get('name') ?? '';
+        if (!/^[\w-]+$/.test(name)) return send(res, 400, { error: 'Bad snapshot name' });
+        const png = await readRawBody(req);
+        await fs.mkdir(MAP_RAW_DIR, { recursive: true });
+        await fs.mkdir(MAP_PUBLIC_DIR, { recursive: true });
+        await fs.writeFile(path.join(MAP_RAW_DIR, `${name}.png`), png);
+        const { default: sharp } = await import('sharp');
+        await sharp(png).webp({ quality: 70, alphaQuality: 100 }).toFile(path.join(MAP_PUBLIC_DIR, `${name}.webp`));
+        return send(res, 200, { ok: true });
+    }
     if (url.pathname === '/api/thumb' && req.method === 'POST') {
         const name = url.searchParams.get('name') ?? '';
         if (!/^[\w.\-]+\.png$/.test(name)) return send(res, 400, { error: 'Bad thumbnail name' });
@@ -300,6 +391,10 @@ async function handleApi(req, res, url) {
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
     try {
+        if (req.method === 'OPTIONS') {
+            res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, PUT', 'Access-Control-Allow-Headers': 'Content-Type' });
+            return res.end();
+        }
         if (url.pathname.startsWith('/api/')) return await handleApi(req, res, url);
         const routes = [
             ['/models/', MODELS_DIR],
@@ -307,6 +402,7 @@ const server = http.createServer(async (req, res) => {
             ['/library-thumbs/', LIBRARY_THUMBS],
             ['/thumbs/', THUMBS_DIR],
             ['/vendor/three/', THREE_DIR],
+            ['/map-images/', MAP_PUBLIC_DIR],
         ];
         for (const [prefix, dir] of routes) {
             if (url.pathname.startsWith(prefix)) return await serveFile(res, dir, decodeURIComponent(url.pathname.slice(prefix.length)));

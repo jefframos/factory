@@ -14,6 +14,7 @@ import loaderConfig from './loader.config';
 import platformConfig from './platforms.config.json';
 import fontManifest from './manifests/fonts.json';
 import MowScene, { MOW_CAMERA } from './game/scenes/MowScene';
+import TownSnapshotScene, { SNAPSHOT_PARAM } from './game/debug/TownSnapshotScene';
 import { Localization } from './game/i18n/Localization';
 import { MowAudio } from './game/audio/MowAudio';
 
@@ -80,7 +81,13 @@ export default class MowGame extends Game {
         }));
     }
 
-    private startGame(): MowScene {
+    private startGame(): { ready: Promise<void> } {
+        // The editor's "Map snapshots": bake the town map's miniatures instead of playing (TownSnapshotScene).
+        if (new URLSearchParams(window.location.search).has(SNAPSHOT_PARAM)) {
+            const snapshots = this.sceneManager.register<TownSnapshotScene>('mapshots', TownSnapshotScene, this);
+            this.sceneManager.changeScene('mapshots');
+            return snapshots;
+        }
         DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'mow');
         const camera = DebugOverlay.instance.panel('Camera', { id: 'mow.camera' });
         camera.slider(MOW_CAMERA, 'yawDeg', -180, 180, 1, 'Yaw');

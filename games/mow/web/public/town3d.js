@@ -5,9 +5,21 @@
 // and what happens when they open), the grass patches (painted over the sections: a grass type, `auto`, or `none` to
 // carve) and the grass noise (rings around a centre: the further out, the tougher the `auto` grass).
 //
+// The traffic (`traffic`: waypoints on the roads, the links between them, the cars) is drawn over it: orange posts,
+// cyan roads; selecting a waypoint lights up its links (yellow) and everything it connects to (its network: where a
+// car there can drive). Alt+click (or 🔗 Link) another waypoint links / unlinks them.
+//
+// Shift+click (or Ctrl+click), in the view or the lists, adds to the selection (or takes back out): the gizmo sits on
+// the last one picked, and moving it moves them all together; Del removes them all; Esc lets go.
+//
 // The grass preview shows every cell as the game generates it (same noise, same rings, nothing under a collider or a
 // pavement). Orbit with the mouse, click to select, drag the gizmo to move (W), turn (E) or scale (R). Models come from
 // the game (public/mow/models) or are imported from the 3D asset library (library.js). Saves with PUT /api/town.
+//
+// The Map shots tab loads a second copy of this module (its own state: `town3d.js?diorama`) to edit a zone's custom
+// diorama instead (options.townUrl: /api/mapshots/custom?zone=…), a level shaped like town.json. A diorama is only a
+// picture, so its editor keeps only what makes the view (props, pavements, grass patches, the shore, the lawn): no
+// stations, start, noise rings, sounds, secrets, traffic or unlocking (`town-only` controls are hidden).
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -31,11 +43,24 @@ const SECTION_COLORS = [0x8fe3a1, 0x4fc3f7, 0xffd23f, 0xffa94d, 0xe2a6ff, 0xff8a
 let host;
 let town;
 let mow = { grass: [], cell: 0.5, seed: 1 };
+/** The game's sounds (raw-assets/audio), for the sound zones. */
+let soundFiles = ['ocean-ambient'];
+const DEFAULT_SOUND_SETTINGS = { cars: { volume: 0.35, near: 3, far: 14 } };
 let dirty = false;
 let selection = null; // { type, index }
+/** Also selected (Shift+click): they move with `selection` and go with it on Del. */
+let also = [];
+/** Where each selected holder was when a move began (keyOf -> position). */
+const moveStarts = new Map();
 let snap = true;
 let showGrass = true;
+let showTraffic = true;
+/** 🔗 Link: the next waypoint clicked is linked to (or unlinked from) the selected one. */
+let linking = false;
 let gameUrl = 'http://localhost:9001/';
+/** What this editor loads and saves (the town, or a Map shots diorama), and whether it's a diorama (no Play). */
+let townUrl = '/api/town';
+let diorama = false;
 const undoStack = [];
 
 let renderer;
@@ -46,6 +71,10 @@ let gizmo;
 const groundGroup = new THREE.Group();
 const entityGroup = new THREE.Group();
 const grassGroup = new THREE.Group();
+/** The traffic's roads (links), redrawn as the selection changes; the waypoints themselves are entities. */
+const trafficGroup = new THREE.Group();
+/** A yellow box round each selected thing (the selection outlined). */
+const highlightGroup = new THREE.Group();
 const holders = new Map(); // "type:index" -> THREE.Group
 const loader = new GLTFLoader();
 const modelCache = new Map();
@@ -57,14 +86,40 @@ export const hasUnsavedTown = () => dirty;
 export async function initTownTab(container, options = {}) {
     host = container;
     gameUrl = options.gameUrl ?? gameUrl;
+    townUrl = options.townUrl ?? townUrl;
+    diorama = Boolean(options.diorama);
+    host.classList.toggle('diorama', diorama);
+    if (diorama) showTraffic = false;
     mow = await api('/api/mow');
+    soundFiles = await api('/api/sounds').catch(() => soundFiles);
     buildLayout();
     setupViewport(host.querySelector('#townViewport'));
     await reload();
 }
 
+/** Loads another document into this editor (the Map shots tab: another zone's diorama). */
+export async function loadTown(url) {
+    townUrl = url;
+    await reload();
+}
+
+/** Saves now (the Map shots tab, before taking a shot); false if it failed. */
+export async function saveTown() {
+    return save();
+}
+
+/** The view's angles (degrees): yaw round the target (0 = from the south), pitch above the ground, field of view. */
+export function viewAngles() {
+    const offset = camera.position.clone().sub(orbit.target);
+    return {
+        yaw: Math.round(THREE.MathUtils.radToDeg(Math.atan2(offset.x, offset.z))),
+        pitch: Math.round(THREE.MathUtils.radToDeg(Math.asin(offset.y / Math.max(offset.length(), 1e-6)))),
+        fov: Math.round(camera.fov),
+    };
+}
+
 async function reload() {
-    town = await api('/api/town');
+    town = await api(townUrl);
     town.props ??= [];
     town.atms ??= [];
     town.wardrobes ??= [];
@@ -73,6 +128,10 @@ async function reload() {
     town.pavements ??= [];
     town.sections ??= [];
     town.grassPatches ??= [];
+    town.sounds ??= [];
+    town.secrets ??= [];
+    town.traffic ??= { waypoints: [], links: [], cars: [] };
+    town.soundSettings ??= structuredClone(DEFAULT_SOUND_SETTINGS);
     town.grassNoise ??= { centre: { x: 0, z: 0 }, scale: 0.2, rings: [{ upTo: 999, mix: { grass: 1 } }] };
     // An island without an outline is the ground's rect: start the shore from its corners.
     if (town.island && !(town.island.outline?.length >= 3)) {
@@ -80,6 +139,7 @@ async function reload() {
         town.island.outline = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sz]) => ({ x: g.x + (sx * g.width) / 2, z: g.z + (sz * g.depth) / 2 }));
     }
     selection = null;
+    also = [];
     undoStack.length = 0;
     setDirty(false);
     rebuildAll();
@@ -104,18 +164,21 @@ function buildLayout() {
                 el('div', { class: 'stack' },
                     el('button', { class: 'block', onclick: () => pickModel() }, '🪴 Prop (game model)…'),
                     el('button', { class: 'block primary', onclick: () => importFromLibrary() }, '📚 Import from 3D library…'),
-                    el('button', { class: 'block', onclick: () => addAtm() }, '🏧 ATM'),
-                    el('button', { class: 'block', onclick: () => addWardrobe() }, '👗 Wardrobe'),
+                    el('button', { class: 'block town-only', onclick: () => addAtm() }, '🏧 ATM'),
+                    el('button', { class: 'block town-only', onclick: () => addWardrobe() }, '👗 Wardrobe'),
                     el('button', { class: 'block', onclick: () => addPatch('auto') }, '🌿 Grass patch (noise)'),
                     el('button', { class: 'block', onclick: () => addPatch('tallgrass') }, '🌾 Dense patch (tall grass)'),
                     el('button', { class: 'block', onclick: () => addPatch('none') }, '✂ Bare patch (no grass)'),
                     el('button', { class: 'block', onclick: () => addPavement() }, '⬜ Pavement'),
-                    el('button', { class: 'block', onclick: () => addSection() }, '🗺 Section (next to unlock)'))),
-            el('section', { class: 'card-section' },
+                    el('button', { class: 'block town-only', onclick: () => addSound() }, '🔊 Sound zone'),
+                    el('button', { class: 'block town-only', onclick: () => addSecret() }, '🤫 Secret patch (chest)'),
+                    el('button', { class: 'block town-only', onclick: () => addWaypoint() }, '🚦 Traffic waypoint'),
+                    el('button', { class: 'block town-only', onclick: () => addSection() }, '🗺 Section (next to unlock)'))),
+            el('section', { class: 'card-section town-only' },
                 el('h2', {}, 'Sections'),
                 el('p', { class: 'muted small' }, 'In unlock order: each opens when the one before is restored. Grass grows inside their rect.'),
                 el('ul', { id: 'townSectionList', class: 'list' })),
-            el('section', { class: 'card-section' },
+            el('section', { class: 'card-section town-only' },
                 el('h2', {}, 'Grass noise'),
                 el('p', { class: 'muted small' }, 'Which grass "auto" cells get: rings around the centre, tougher further out. Shares per grass type.'),
                 el('div', { id: 'townNoise' })),
@@ -126,15 +189,30 @@ function buildLayout() {
             el('section', { class: 'card-section' },
                 el('h2', {}, 'Grass patches'),
                 el('ul', { id: 'townPatchList', class: 'list' })),
-            el('section', { class: 'card-section' },
+            el('section', { class: 'card-section town-only' },
                 el('h2', {}, 'ATMs'),
                 el('ul', { id: 'townAtmList', class: 'list' })),
-            el('section', { class: 'card-section' },
+            el('section', { class: 'card-section town-only' },
                 el('h2', {}, 'Wardrobes'),
                 el('ul', { id: 'townWardrobeList', class: 'list' })),
             el('section', { class: 'card-section' },
                 el('h2', {}, 'Pavements'),
                 el('ul', { id: 'townPavementList', class: 'list' })),
+            el('section', { class: 'card-section town-only' },
+                el('h2', {}, 'Sounds'),
+                el('p', { class: 'muted small' }, 'Sound zones (violet boxes): their sound at full volume inside, fading out to the dashed line. Zones with the same sound share one loop (the loudest wins). Volumes are 0-1 (0.15 is a soft bed).'),
+                el('ul', { id: 'townSoundList', class: 'list' }),
+                el('div', { id: 'townSoundSettings' })),
+            el('section', { class: 'card-section town-only' },
+                el('h2', {}, 'Traffic'),
+                el('p', { class: 'muted small' }, 'Cars drive the cyan roads between waypoints (two-way, on the right), each starting at a waypoint and roaming what it links to. Select a waypoint to see its network; Alt+click another to link / unlink it. A new waypoint links to the selected one.'),
+                el('div', { id: 'townTrafficSummary', class: 'muted small' }),
+                el('ul', { id: 'townCarList', class: 'list' }),
+                el('button', { class: 'block', onclick: () => waypointsFromRoads() }, '🛣 Waypoints from road tiles')),
+            el('section', { class: 'card-section town-only' },
+                el('h2', {}, 'Secrets'),
+                el('p', { class: 'muted small' }, 'Secret patches (gold boxes): a clump of lush grass anywhere in town; mowing it through gives up a chest worth its reward. A twinkle shows over it when the player is near.'),
+                el('ul', { id: 'townSecretList', class: 'list' })),
             el('section', { class: 'card-section' },
                 el('h2', {}, 'Props'),
                 el('ul', { id: 'townPropList', class: 'list' }))),
@@ -146,12 +224,13 @@ function buildLayout() {
                     el('button', { dataset: { mode: 'scale' }, onclick: () => setMode('scale') }, 'Scale (R)')),
                 el('label', {}, el('input', { type: 'checkbox', checked: snap, onchange: (event) => { snap = event.target.checked; applySnap(); } }), ' Snap'),
                 el('label', {}, el('input', { type: 'checkbox', checked: showGrass, onchange: (event) => { showGrass = event.target.checked; grassGroup.visible = showGrass; } }), ' Grass preview'),
+                el('label', { class: 'town-only' }, el('input', { type: 'checkbox', checked: showTraffic, onchange: (event) => { showTraffic = event.target.checked; rebuildEntities(); } }), ' Traffic'),
                 el('span', { class: 'spacer' }),
                 el('span', { id: 'townStatus' }),
                 el('button', { class: 'primary', onclick: () => void save() }, '💾 Save'),
-                el('button', { onclick: () => window.open(gameUrl, 'mow-game') }, '▶ Play')),
+                diorama ? '' : el('button', { onclick: () => window.open(gameUrl, 'mow-game') }, '▶ Play')),
             el('div', { id: 'townViewport', style: { position: 'relative', flex: '1', minHeight: '0', overflow: 'hidden' } }),
-            el('div', { class: 'hint-bar' }, 'Left-drag: orbit · Right-drag: pan · Wheel: zoom · Click: select · W/E/R: move/turn/scale · D: duplicate · Del: remove · F: focus · Ctrl+Z: undo · Ctrl+S: save')),
+            el('div', { class: 'hint-bar' }, 'Left-drag: orbit · Right-drag: pan · Wheel: zoom · Click: select · Shift+click: add to selection · Ctrl+A: all of a kind · W/E/R: move/turn/scale · D: duplicate · Del: remove · F: focus · Ctrl+Z: undo · Ctrl+S: save')),
         el('aside', { class: 'sidebar right' },
             el('section', { class: 'card-section' }, el('h2', {}, 'Selection'), el('div', { id: 'townInspector' }))),
     );
@@ -176,6 +255,7 @@ function undo() {
     if (!previous) return;
     town = { ...JSON.parse(previous), _version: town._version };
     if (selection && !entityData(selection)) selection = null;
+    also = selection ? also.filter((sel) => entityData(sel)) : [];
     setDirty(true);
     rebuildAll();
 }
@@ -192,7 +272,7 @@ function setupViewport(viewport) {
     scene.add(new THREE.HemisphereLight(0xffffff, 0x5a7a4a, 1.6));
     const sun = new THREE.DirectionalLight(0xffffff, 1.5);
     sun.position.set(6, 14, 8);
-    scene.add(sun, groundGroup, grassGroup, entityGroup);
+    scene.add(sun, groundGroup, grassGroup, trafficGroup, entityGroup, highlightGroup);
 
     camera = new THREE.PerspectiveCamera(45, 1, 0.1, 800);
     camera.position.set(0, 34, 30);
@@ -204,7 +284,15 @@ function setupViewport(viewport) {
     gizmo = new TransformControls(camera, renderer.domElement);
     gizmo.addEventListener('dragging-changed', (event) => {
         orbit.enabled = !event.value;
-        if (event.value) touch();
+        if (event.value) {
+            touch();
+            // Where everything selected starts, so the others follow the gizmo's move.
+            moveStarts.clear();
+            for (const sel of selected()) {
+                const holder = holders.get(keyOf(sel));
+                if (holder) moveStarts.set(keyOf(sel), holder.position.clone());
+            }
+        }
         else if (gizmo.getMode() === 'scale') commitScale();
         else afterMove();
     });
@@ -272,11 +360,20 @@ function onKey(event) {
     else if (key === 'd' && selection) duplicateSelection();
     else if ((key === 'delete' || key === 'backspace') && selection) removeSelection();
     else if (key === 'escape') select(null);
+    else if ((event.ctrlKey || event.metaKey) && key === 'a') {
+        // Ctrl+A: everything of the selected kind.
+        event.preventDefault();
+        const list = selection && listOf(selection.type);
+        if (list) {
+            also = list.map((_, index) => ({ type: selection.type, index })).filter((sel) => sel.index !== selection.index);
+            select(selection, false, true);
+        }
+    }
     else if (key === 'f' && selection) focusSelection();
 }
 
 /** Flat things (sections, pavements, patches) lose to anything standing on them. */
-const FLAT_TYPES = new Set(['section', 'pavement', 'patch']);
+const FLAT_TYPES = new Set(['section', 'pavement', 'patch', 'sound', 'pen']);
 
 function pickAt(event) {
     const rect = renderer.domElement.getBoundingClientRect();
@@ -288,7 +385,18 @@ function pickAt(event) {
         return node?.userData.entity;
     }).filter(Boolean);
     // A patch over a section wins over the section; anything standing wins over both.
-    select(entities.find((e) => !FLAT_TYPES.has(e.type)) ?? entities.find((e) => e.type === 'patch') ?? entities[0] ?? null);
+    const picked = entities.find((e) => !FLAT_TYPES.has(e.type)) ?? entities.find((e) => e.type === 'patch') ?? entities[0] ?? null;
+    // Linking: a waypoint clicked with one selected (Alt, or 🔗 Link) links / unlinks the two.
+    if (picked?.type === 'waypoint' && selection?.type === 'waypoint' && picked.index !== selection.index && (linking || event.altKey)) {
+        toggleLink(selection.index, picked.index);
+        linking = false;
+        return select(picked);
+    }
+    linking = false;
+    // Shift / Ctrl: add to the selection (a click on nothing keeps it).
+    const add = event.shiftKey || event.ctrlKey || event.metaKey;
+    if (add && !picked) return;
+    select(picked, add);
 }
 
 // ---------------------------------------------------------------- ground
@@ -326,10 +434,46 @@ function insetPolygon(points, distance) {
 }
 
 /** The shore as the game reads it: the island's outline, or the ground's rect. */
+/** The island's outline as the game draws it: its points (or the ground's rect), corners rounded (Shore.ts). */
 function shorePoints() {
-    if (town.island?.outline?.length >= 3) return town.island.outline;
+    const radius = town.island?.cornerRadius ?? 3.5;
+    if (town.island?.outline?.length >= 3) return roundCorners(town.island.outline, radius);
     const g = town.ground;
-    return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sz]) => ({ x: g.x + (sx * g.width) / 2, z: g.z + (sz * g.depth) / 2 }));
+    return roundCorners([[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sz]) => ({ x: g.x + (sx * g.width) / 2, z: g.z + (sz * g.depth) / 2 })), radius);
+}
+
+/** Shore.ts roundCorners(): each corner an arc tangent to its edges (at most 45% of either edge), a point every 15°. */
+function roundCorners(points, radius) {
+    if (radius <= 0 || points.length < 3) return points.map((p) => ({ ...p }));
+    const out = [];
+    points.forEach((p, i) => {
+        const prev = points[(i - 1 + points.length) % points.length];
+        const next = points[(i + 1) % points.length];
+        const inLength = Math.hypot(p.x - prev.x, p.z - prev.z);
+        const outLength = Math.hypot(next.x - p.x, next.z - p.z);
+        if (inLength < 1e-6 || outLength < 1e-6) return;
+        const toPrev = { x: (prev.x - p.x) / inLength, z: (prev.z - p.z) / inLength };
+        const toNext = { x: (next.x - p.x) / outLength, z: (next.z - p.z) / outLength };
+        const turn = Math.PI - Math.acos(Math.max(-1, Math.min(1, toPrev.x * toNext.x + toPrev.z * toNext.z)));
+        if (turn < 0.02) return void out.push({ ...p });
+        const half = (Math.PI - turn) / 2;
+        const reach = Math.min(radius / Math.tan(half), inLength * 0.45, outLength * 0.45);
+        const r = reach * Math.tan(half);
+        const start = { x: p.x + toPrev.x * reach, z: p.z + toPrev.z * reach };
+        const end = { x: p.x + toNext.x * reach, z: p.z + toNext.z * reach };
+        const length = Math.hypot(toPrev.x + toNext.x, toPrev.z + toNext.z) || 1;
+        const centre = { x: p.x + ((toPrev.x + toNext.x) / length) * (r / Math.sin(half)), z: p.z + ((toPrev.z + toNext.z) / length) * (r / Math.sin(half)) };
+        const from = Math.atan2(start.z - centre.z, start.x - centre.x);
+        let sweep = Math.atan2(end.z - centre.z, end.x - centre.x) - from;
+        while (sweep > Math.PI) sweep -= Math.PI * 2;
+        while (sweep < -Math.PI) sweep += Math.PI * 2;
+        const steps = Math.max(2, Math.ceil(Math.abs(sweep) / (Math.PI / 12)));
+        for (let s = 0; s <= steps; s++) {
+            const angle = from + (sweep * s) / steps;
+            out.push({ x: centre.x + Math.cos(angle) * r, z: centre.z + Math.sin(angle) * r });
+        }
+    });
+    return out;
 }
 
 /** A flat polygon (a hole optional) at height y. */
@@ -497,8 +641,8 @@ function rebuildGrass() {
 // ---------------------------------------------------------------- entities
 
 const keyOf = (sel) => `${sel.type}:${sel.index}`;
-const LISTS = { prop: 'props', atm: 'atms', wardrobe: 'wardrobes', pavement: 'pavements', section: 'sections', patch: 'grassPatches' };
-const listOf = (type) => (LISTS[type] ? town[LISTS[type]] : null);
+const LISTS = { prop: 'props', atm: 'atms', wardrobe: 'wardrobes', pavement: 'pavements', section: 'sections', patch: 'grassPatches', sound: 'sounds', secret: 'secrets' };
+const listOf = (type) => (type === 'waypoint' ? town.traffic.waypoints : LISTS[type] ? town[LISTS[type]] : null);
 const hex = (color) => `#${color.toString(16).padStart(6, '0')}`;
 const grassColor = (id) => (id === 'none' ? '#c9b48a' : id === 'auto' ? '#9be37a' : (mow.grass.find((g) => g.id === id)?.color ?? '#5cbf4a'));
 const grassName = (id) => (id === 'none' ? 'no grass' : id === 'auto' ? 'noise' : (mow.grass.find((g) => g.id === id)?.name ?? id));
@@ -508,6 +652,7 @@ function entityData(sel) {
     if (sel.type === 'start') return town.start;
     if (sel.type === 'centre') return town.grassNoise.centre;
     if (sel.type === 'separator') return town.sections[sel.index]?.separator ?? null;
+    if (sel.type === 'pen') return town.sections[sel.index]?.pen ?? null;
     if (sel.type === 'shore') return town.island?.outline?.[sel.index] ?? null;
     return listOf(sel.type)?.[sel.index] ?? null;
 }
@@ -577,16 +722,26 @@ function rebuildEntities() {
     town.pavements.forEach((pavement, index) => addHolder({ type: 'pavement', index }, buildPavement(pavement, index)));
     town.sections.forEach((section, index) => {
         addHolder({ type: 'section', index }, buildSection(section, index));
+        if (diorama) return;
         if (section.separator) addHolder({ type: 'separator', index }, buildSeparator(section.separator, index));
+        if (section.pen) addHolder({ type: 'pen', index }, buildPen(section.pen, index));
     });
     town.grassPatches.forEach((patch, index) => addHolder({ type: 'patch', index }, buildPatch(patch)));
     town.props.forEach((prop, index) => addHolder({ type: 'prop', index }, buildProp(prop)));
     town.atms.forEach((atm, index) => addHolder({ type: 'atm', index }, buildStation(atm, town.atm, 'ATM', '#3fd16b')));
     town.wardrobes.forEach((wardrobe, index) => addHolder({ type: 'wardrobe', index }, buildStation(wardrobe, town.wardrobe, 'WARDROBE', '#e266c8')));
     town.island?.outline?.forEach((point, index) => addHolder({ type: 'shore', index }, buildShorePoint(point, index)));
-    addHolder({ type: 'start', index: 0 }, buildStart());
-    addHolder({ type: 'centre', index: 0 }, buildCentre());
+    renderTraffic();
+    // A diorama is only a picture: no stations' markers, start, noise centre, sounds, secrets or traffic.
+    if (!diorama) {
+        town.sounds.forEach((zone, index) => addHolder({ type: 'sound', index }, buildSound(zone)));
+        town.secrets.forEach((secret, index) => addHolder({ type: 'secret', index }, buildSecret(secret)));
+        if (showTraffic) town.traffic.waypoints.forEach((point, index) => addHolder({ type: 'waypoint', index }, buildWaypoint(point)));
+        addHolder({ type: 'start', index: 0 }, buildStart());
+        addHolder({ type: 'centre', index: 0 }, buildCentre());
+    }
     attachGizmo();
+    renderHighlights();
 }
 
 function addHolder(sel, holder) {
@@ -603,6 +758,61 @@ function buildPavement(pavement, index) {
     return holder;
 }
 
+/** A sound zone: a translucent violet box (full volume), a dashed line where it has faded out, its label. */
+function buildSound(zone) {
+    const holder = new THREE.Group();
+    holder.position.set(zone.x, 0, zone.z);
+    const fill = plane(zone.width, zone.depth, '#a15cff', 0.25, 0.35);
+    const edge = outline(0xc89bff);
+    edge.scale.set(zone.width, zone.depth, 1);
+    edge.position.y = 0.26;
+    const fade = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1)),
+        new THREE.LineDashedMaterial({ color: 0xe6d4ff, dashSize: 0.6, gapSize: 0.4 }));
+    fade.rotation.x = -Math.PI / 2;
+    fade.scale.set(zone.width + zone.fade * 2, zone.depth + zone.fade * 2, 1);
+    fade.position.y = 0.26;
+    fade.computeLineDistances();
+    // The fade line is only a guide: clicks pick the box.
+    fade.raycast = () => {};
+    const label = labelSprite(`🔊 ${zone.id}\n${zone.sound} · vol ${zone.volume} · fade ${zone.fade}`, '#d9bfff');
+    label.position.y = 3;
+    holder.add(fill, edge, fade, label);
+    return holder;
+}
+
+/** A section's pen: a dashed white line round its rect (the fence the game draws) and its label. */
+function buildPen(pen, index) {
+    const holder = new THREE.Group();
+    holder.position.set(pen.x, 0, pen.z);
+    const area = plane(pen.width, pen.depth, '#ffffff', 0.12, 0.06);
+    const line = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1)),
+        new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.5, gapSize: 0.3 }));
+    line.rotation.x = -Math.PI / 2;
+    line.scale.set(pen.width, pen.depth, 1);
+    line.position.y = 0.14;
+    line.computeLineDistances();
+    const label = labelSprite(`🚧 Pen: stay inside
+until ${town.sections[index].name} is restored`, '#ffffff');
+    label.position.set(0, 2.4, pen.depth / 2);
+    holder.add(area, line, label);
+    return holder;
+}
+
+/** A secret patch: a translucent gold-green box (the lush grass), its outline and its label. */
+function buildSecret(secret) {
+    const holder = new THREE.Group();
+    holder.position.set(secret.x, 0, secret.z);
+    const fill = plane(secret.width, secret.depth, '#8ff05a', 0.2, 0.55);
+    const edge = outline(0xffd23f);
+    edge.scale.set(secret.width, secret.depth, 1);
+    edge.position.y = 0.21;
+    const label = labelSprite(`🤫 ${secret.id}
+chest $${secret.reward}`, '#ffe27a');
+    label.position.y = 2;
+    holder.add(fill, edge, label);
+    return holder;
+}
+
 function buildSection(section, index) {
     const holder = new THREE.Group();
     holder.position.set(section.x, 0, section.z);
@@ -611,7 +821,7 @@ function buildSection(section, index) {
     const edge = outline(color);
     edge.scale.set(section.width, section.depth, 1);
     edge.position.y = 0.08;
-    const label = labelSprite(`${index + 1}. ${section.name}\n$${section.bonus} bonus · grass: ${grassName(section.fill ?? 'auto')}${(section.grassScale ?? 1) !== 1 ? ` ×${section.grassScale}` : ''}${section.maxGrass ? ` · max ${grassName(section.maxGrass)}` : ''}`, hex(color));
+    const label = diorama ? labelSprite(section.name, hex(color)) : labelSprite(`${index + 1}. ${section.name}\n$${section.bonus} bonus · grass: ${grassName(section.fill ?? 'auto')}${(section.grassScale ?? 1) !== 1 ? ` ×${section.grassScale}` : ''}${section.maxGrass ? ` · max ${grassName(section.maxGrass)}` : ''}`, hex(color));
     label.position.y = 4;
     label.scale.multiplyScalar(1.6);
     holder.add(fill, edge, label);
@@ -764,11 +974,52 @@ function buildCentre() {
 
 // ---------------------------------------------------------------- selection + gizmo
 
-function select(sel) {
-    selection = sel;
+/** Everything selected: the one the gizmo is on, and the rest. */
+const selected = () => (selection ? [selection, ...also] : []);
+const sameSel = (a, b) => a.type === b.type && a.index === b.index;
+
+/**
+ * Selects `sel` (null: nothing). With `add` (Shift / Ctrl), it joins the selection (the gizmo moves to it) or, already
+ * in it, leaves. `keep`: the others stay as they are (Ctrl+A).
+ */
+function select(sel, add = false, keep = false) {
+    if (add && sel && selection) {
+        if (sameSel(sel, selection)) {
+            selection = also.pop() ?? null;
+        } else if (also.some((other) => sameSel(other, sel))) {
+            also = also.filter((other) => !sameSel(other, sel));
+        } else {
+            also.push(selection);
+            selection = sel;
+        }
+    } else {
+        selection = sel;
+        if (!keep) also = [];
+    }
+    renderTraffic();
     attachGizmo();
+    renderHighlights();
     renderLists();
     renderInspector();
+}
+
+/** A yellow box round everything selected (the gizmo's one brighter). */
+function renderHighlights() {
+    highlightGroup.clear();
+    for (const sel of selected()) {
+        const holder = holders.get(keyOf(sel));
+        if (!holder) continue;
+        const box = new THREE.BoxHelper(holder, sameSel(sel, selection) ? 0xffe066 : 0xffb020);
+        box.userData.holder = holder;
+        // Only a picture: clicks go through it.
+        box.raycast = () => {};
+        highlightGroup.add(box);
+    }
+}
+
+/** The boxes follow their things (after a move; a model that just loaded). */
+function updateHighlights() {
+    for (const box of highlightGroup.children) box.update();
 }
 
 function attachGizmo() {
@@ -782,7 +1033,7 @@ const round = (value, step = 0.001) => Number((Math.round(value / step) * step).
 /** Things that turn (the rest only move / resize). */
 const TURNS = new Set(['prop', 'atm', 'wardrobe', 'patch', 'separator']);
 /** Things whose size is width x depth (scaling changes those, not a height). */
-const SIZED = new Set(['pavement', 'section', 'patch']);
+const SIZED = new Set(['pavement', 'section', 'patch', 'sound', 'pen', 'secret']);
 
 /** The gizmo moved/turned the holder: write it back into the data. */
 function syncFromGizmo() {
@@ -797,7 +1048,25 @@ function syncFromGizmo() {
     data.x = round(holder.position.x);
     data.z = round(holder.position.z);
     if (TURNS.has(selection.type)) data.rotationY = round(holder.rotation.y, 0.0001);
-    if (selection.type === 'shore') rebuildGround();
+    // The rest of the selection moves by as much (a turn is the gizmo's one only).
+    const start = moveStarts.get(keyOf(selection));
+    if (start && also.length && gizmo.getMode() === 'translate') {
+        const dx = holder.position.x - start.x;
+        const dz = holder.position.z - start.z;
+        for (const sel of also) {
+            const other = holders.get(keyOf(sel));
+            const from = moveStarts.get(keyOf(sel));
+            const otherData = entityData(sel);
+            if (!other || !from || !otherData) continue;
+            other.position.set(from.x + dx, other.position.y, from.z + dz);
+            otherData.x = round(other.position.x);
+            otherData.z = round(other.position.z);
+        }
+    }
+    const types = new Set(selected().map((sel) => sel.type));
+    if (types.has('shore')) rebuildGround();
+    if (types.has('waypoint')) renderTraffic();
+    updateHighlights();
     setDirty(true);
 }
 
@@ -903,6 +1172,22 @@ function addPavement() {
     added('pavement');
 }
 
+function addSound() {
+    touch();
+    let n = town.sounds.length + 1;
+    while (town.sounds.some((s) => s.id === `sound-${n}`)) n++;
+    town.sounds.push({ id: `sound-${n}`, sound: soundFiles.includes('ocean-ambient') ? 'ocean-ambient' : soundFiles[0], ...dropPoint(), width: 10, depth: 10, fade: 10, volume: 0.15 });
+    added('sound');
+}
+
+function addSecret() {
+    touch();
+    let n = town.secrets.length + 1;
+    while (town.secrets.some((s) => s.id === `secret-${n}`)) n++;
+    town.secrets.push({ id: `secret-${n}`, ...dropPoint(), width: 2, depth: 2, reward: 50 });
+    added('secret');
+}
+
 /** A new section, the last to unlock: next to the last one (further out), with a separator on its near side. */
 function addSection() {
     touch();
@@ -935,23 +1220,34 @@ function insertShorePoint(index) {
 
 function duplicateSelection() {
     if (selection?.type === 'shore') return insertShorePoint(selection.index);
+    if (selection?.type === 'waypoint') return addWaypoint();
     if (!selection || !LISTS[selection.type] || selection.type === 'section') return;
     const data = entityData(selection);
     touch();
     const copy = { ...structuredClone(data), x: data.x + 1, z: data.z + 1 };
-    if (selection.type === 'pavement') copy.id = `${data.id}-copy`;
+    if (selection.type === 'pavement' || selection.type === 'sound' || selection.type === 'secret') copy.id = `${data.id}-copy`;
     listOf(selection.type).push(copy);
     added(selection.type);
 }
 
+/** Removes everything selected (the start and the noise centre stay; the shore keeps 3 points). */
 function removeSelection() {
-    if (!selection || selection.type === 'start' || selection.type === 'centre') return;
-    if (selection.type === 'shore' && town.island.outline.length <= 3) return toast('The shore needs at least 3 points.', 'bad');
+    const doomed = selected().filter((sel) => sel.type !== 'start' && sel.type !== 'centre');
+    if (!doomed.length) return;
+    const shore = doomed.filter((sel) => sel.type === 'shore').length;
+    if (shore && town.island.outline.length - shore < 3) return toast('The shore needs at least 3 points.', 'bad');
     touch();
-    if (selection.type === 'separator') delete town.sections[selection.index].separator;
-    else if (selection.type === 'shore') town.island.outline.splice(selection.index, 1);
-    else listOf(selection.type).splice(selection.index, 1);
+    // Highest index first, so the ones still to go keep theirs.
+    doomed.sort((a, b) => b.index - a.index);
+    for (const sel of doomed) {
+        if (sel.type === 'separator') delete town.sections[sel.index].separator;
+        else if (sel.type === 'pen') delete town.sections[sel.index].pen;
+        else if (sel.type === 'waypoint') removeWaypoint(sel.index);
+        else if (sel.type === 'shore') town.island.outline.splice(sel.index, 1);
+        else listOf(sel.type).splice(sel.index, 1);
+    }
     selection = null;
+    also = [];
     rebuildAll();
 }
 
@@ -1000,7 +1296,7 @@ function refreshColliders() {
 }
 
 async function save() {
-    if (!town) return;
+    if (!town) return false;
     refreshColliders();
     // The ground's rect follows the shore (its bounds).
     if (town.island?.outline?.length >= 3) {
@@ -1012,21 +1308,202 @@ async function save() {
         });
     }
     try {
-        const saved = await api('/api/town', { method: 'PUT', body: JSON.stringify(town) });
+        const saved = await api(townUrl, { method: 'PUT', body: JSON.stringify(town) });
         town._version = saved.version;
         setDirty(false);
-        toast('Town saved — reload the game to see it.');
+        toast(diorama ? 'Diorama saved.' : 'Town saved — reload the game to see it.');
+        return true;
     } catch (error) {
         toast(`Save failed: ${error.message}`, 'bad');
+        return false;
     }
+}
+
+// ---------------------------------------------------------------- traffic
+
+const TRAFFIC = { road: 0x4fd8ff, network: 0x9be7ff, link: 0xffd23f, waypoint: '#ff9f43', y: 0.32 };
+const waypointIndex = (id) => town.traffic.waypoints.findIndex((w) => w.id === id);
+const linksOf = (id) => town.traffic.links.filter(([a, b]) => a === id || b === id).map(([a, b]) => (a === id ? b : a));
+const carsAt = (id) => town.traffic.cars.filter((car) => car.at === id);
+const carName = (model) => titleCase(fileName(model ?? '').replace(/^car_/, '')) || 'Car';
+
+/** A waypoint: an orange post on the road, its id, and a 🚗 per car starting there. */
+function buildWaypoint(point) {
+    const holder = new THREE.Group();
+    holder.position.set(point.x, 0, point.z);
+    const material = new THREE.MeshStandardMaterial({ color: TRAFFIC.waypoint, emissive: TRAFFIC.waypoint, emissiveIntensity: 0.3 });
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.12, 20), material);
+    disc.position.y = TRAFFIC.y;
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.2, 8), material);
+    post.position.y = 0.9;
+    const cars = carsAt(point.id).length;
+    const label = labelSprite(`${point.id}${cars ? `\n${'🚗'.repeat(Math.min(cars, 4))}` : ''}`, '#ffd2a8');
+    label.position.y = 2;
+    label.scale.multiplyScalar(0.7);
+    holder.add(disc, post, label);
+    return holder;
+}
+
+/**
+ * The roads between waypoints, as flat ribbons: cyan; with a waypoint selected, its links yellow and wider, and the
+ * rest of its network (where a car there can get to) pale, everything else faded.
+ */
+function renderTraffic() {
+    trafficGroup.clear();
+    if (!showTraffic || !town?.traffic) return;
+    const selected = selection?.type === 'waypoint' ? town.traffic.waypoints[selection.index]?.id : null;
+    const network = selected ? reachable(selected) : null;
+    for (const [a, b] of town.traffic.links) {
+        const from = town.traffic.waypoints[waypointIndex(a)];
+        const to = town.traffic.waypoints[waypointIndex(b)];
+        if (!from || !to) continue;
+        const direct = selected && (a === selected || b === selected);
+        const inNetwork = network?.has(a) && network?.has(b);
+        const color = direct ? TRAFFIC.link : inNetwork ? TRAFFIC.network : TRAFFIC.road;
+        const opacity = direct ? 1 : inNetwork ? 0.85 : selected ? 0.25 : 0.7;
+        const length = Math.hypot(to.x - from.x, to.z - from.z);
+        const ribbon = new THREE.Mesh(new THREE.PlaneGeometry(direct ? 0.6 : 0.3, length),
+            new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false }));
+        ribbon.rotation.x = -Math.PI / 2;
+        ribbon.rotation.z = -Math.atan2(to.x - from.x, to.z - from.z);
+        ribbon.position.set((from.x + to.x) / 2, TRAFFIC.y + (direct ? 0.02 : 0), (from.z + to.z) / 2);
+        // Ribbons are only a picture: clicks go to the waypoints.
+        ribbon.raycast = () => {};
+        trafficGroup.add(ribbon);
+    }
+}
+
+/** Every waypoint linked to `id`, through any number of links (its network). */
+function reachable(id) {
+    const seen = new Set([id]);
+    const queue = [id];
+    while (queue.length) {
+        for (const next of linksOf(queue.shift())) {
+            if (seen.has(next)) continue;
+            seen.add(next);
+            queue.push(next);
+        }
+    }
+    return seen;
+}
+
+function toggleLink(fromIndex, toIndex) {
+    const a = town.traffic.waypoints[fromIndex]?.id;
+    const b = town.traffic.waypoints[toIndex]?.id;
+    if (!a || !b || a === b) return;
+    touch();
+    const links = town.traffic.links;
+    const at = links.findIndex(([x, y]) => (x === a && y === b) || (x === b && y === a));
+    if (at >= 0) links.splice(at, 1);
+    else links.push([a, b]);
+    rebuildEntities();
+    renderLists();
+    toast(at >= 0 ? `Unlinked ${a} – ${b}` : `Linked ${a} – ${b}`);
+}
+
+/** A new waypoint in the middle of the view (next to the selected one, linked to it, when one is selected). */
+function addWaypoint() {
+    touch();
+    const points = town.traffic.waypoints;
+    let n = points.length + 1;
+    while (points.some((w) => w.id === `w${n}`)) n++;
+    const from = selection?.type === 'waypoint' ? points[selection.index] : null;
+    const at = from ? { x: from.x + (mow.traffic?.tile ?? 7), z: from.z } : dropPoint();
+    points.push({ id: `w${n}`, ...at });
+    if (from) town.traffic.links.push([from.id, `w${n}`]);
+    added('waypoint');
+}
+
+/** Removes a waypoint, its links and the cars starting there. */
+function removeWaypoint(index) {
+    const id = town.traffic.waypoints[index]?.id;
+    town.traffic.waypoints.splice(index, 1);
+    town.traffic.links = town.traffic.links.filter(([a, b]) => a !== id && b !== id);
+    town.traffic.cars = town.traffic.cars.filter((car) => car.at !== id);
+}
+
+/**
+ * Replaces the waypoints with one per road tile (props whose model has `road_`), linked to the tiles next to it
+ * (`tile` apart, in ui/mow.json): the roads as built. Cars whose waypoint is gone go too.
+ */
+function waypointsFromRoads() {
+    if (town.traffic.waypoints.length && !window.confirm('Replace every waypoint and link with ones made from the road tiles?')) return;
+    touch();
+    const tile = mow.traffic?.tile ?? 7;
+    const key = (x, z) => `${Math.round(x * 10)},${Math.round(z * 10)}`;
+    const tiles = new Map();
+    for (const prop of town.props) if (prop.model.includes('road_') && !tiles.has(key(prop.x, prop.z))) tiles.set(key(prop.x, prop.z), { x: prop.x, z: prop.z });
+    const points = [...tiles.values()].sort((a, b) => a.z - b.z || a.x - b.x).map((p, i) => ({ id: `w${i + 1}`, x: p.x, z: p.z }));
+    const byKey = new Map(points.map((p) => [key(p.x, p.z), p]));
+    const links = [];
+    for (const p of points) {
+        for (const [dx, dz] of [[1, 0], [0, 1]]) {
+            const next = byKey.get(key(p.x + dx * tile, p.z + dz * tile));
+            if (next) links.push([p.id, next.id]);
+        }
+    }
+    const ids = new Set(points.map((p) => p.id));
+    town.traffic = { waypoints: points, links, cars: town.traffic.cars.filter((car) => ids.has(car.at)) };
+    selection = null;
+    also = [];
+    rebuildAll();
+    toast(`${points.length} waypoints, ${links.length} links from the road tiles.`);
+}
+
+function renderTrafficList() {
+    const { waypoints, links, cars } = town.traffic;
+    host.querySelector('#townTrafficSummary').textContent = `${waypoints.length} waypoints · ${links.length} roads · ${cars.length} cars`;
+    host.querySelector('#townCarList').replaceChildren(...cars.map((car) => {
+        const index = waypointIndex(car.at);
+        return listItem('waypoint', index, `🚗 ${carName(car.model)}`, `at ${car.at}`);
+    }));
+}
+
+/** A waypoint's links (click to go there, ✕ to unlink) and its cars (model, ✕), with link / add-car buttons. */
+function waypointInspector(point, index) {
+    const models = mow.traffic?.models ?? [];
+    const links = linksOf(point.id);
+    const cars = carsAt(point.id);
+    return [
+        textField('Id', point.id, (v) => {
+            const id = v.trim();
+            if (!id || id === point.id || town.traffic.waypoints.some((w) => w.id === id)) return;
+            edit(() => {
+                town.traffic.links.forEach((link) => link.forEach((end, i) => { if (end === point.id) link[i] = id; }));
+                town.traffic.cars.forEach((car) => { if (car.at === point.id) car.at = id; });
+                point.id = id;
+            });
+        }),
+        el('div', { class: 'inspector-title' }, `Links (${links.length})`),
+        el('ul', { class: 'list' }, ...links.map((other) => el('li', {},
+            el('span', { onclick: () => { select({ type: 'waypoint', index: waypointIndex(other) }); focusSelection(); } }, `↔ ${other}`),
+            el('button', { class: 'danger', onclick: (event) => { event.stopPropagation(); toggleLink(index, waypointIndex(other)); renderInspector(); } }, '✕')))),
+        el('button', { class: `block${linking ? ' primary' : ''}`, onclick: () => { linking = !linking; renderInspector(); } },
+            linking ? '🔗 Click a waypoint to link / unlink…' : '🔗 Link / unlink another waypoint (or Alt+click it)'),
+        el('div', { class: 'inspector-title' }, `Cars starting here (${cars.length})`),
+        ...cars.map((car) => el('div', { class: 'row' },
+            selectField('Car', car.model ?? '', [['', 'Next in turn'], ...models.map((m) => [m, carName(m)])], (v) => edit(() => {
+                if (v) car.model = v;
+                else delete car.model;
+            })),
+            el('button', { class: 'danger', onclick: () => edit(() => { town.traffic.cars.splice(town.traffic.cars.indexOf(car), 1); }) }, '✕'))),
+        el('button', { class: 'block', onclick: () => edit(() => { town.traffic.cars.push({ at: point.id, model: models[town.traffic.cars.length % Math.max(1, models.length)] }); }) }, '🚗 Add a car here'),
+        el('p', { class: 'muted small' }, links.length ? `Its network: ${reachable(point.id).size} waypoints a car here can reach.` : 'Not linked to anything: a car here would not drive.'),
+    ];
 }
 
 // ---------------------------------------------------------------- lists + inspector
 
 function listItem(type, index, label, small) {
+    const sel = { type, index };
     return el('li', {
-        class: selection?.type === type && selection.index === index ? 'active' : '',
-        onclick: () => { select({ type, index }); focusSelection(); },
+        class: selected().some((other) => sameSel(other, sel)) ? 'active' : '',
+        onclick: (event) => {
+            // Shift / Ctrl: add to the selection (or take back out); a plain click selects it alone and goes there.
+            const add = event.shiftKey || event.ctrlKey || event.metaKey;
+            select(sel, add);
+            if (!add) focusSelection();
+        },
     }, label, small ? el('small', {}, small) : '');
 }
 
@@ -1037,7 +1514,26 @@ function renderLists() {
     host.querySelector('#townAtmList').replaceChildren(...town.atms.map((a, i) => listItem('atm', i, `ATM ${i + 1}`, appearsLabel(a))));
     host.querySelector('#townWardrobeList').replaceChildren(...town.wardrobes.map((w, i) => listItem('wardrobe', i, `Wardrobe ${i + 1}`, appearsLabel(w))));
     host.querySelector('#townPavementList').replaceChildren(...town.pavements.map((p, i) => listItem('pavement', i, p.id, `${p.width}×${p.depth}`)));
+    renderTrafficList();
+    host.querySelector('#townSecretList').replaceChildren(...town.secrets.map((s, i) => listItem('secret', i, `🤫 ${s.id}`, `$${s.reward} · ${s.width}×${s.depth}`)));
+    host.querySelector('#townSoundList').replaceChildren(...town.sounds.map((s, i) => listItem('sound', i, `🔊 ${s.id}`, `${s.sound} · ${s.volume}`)));
+    renderSoundSettings();
     host.querySelector('#townPropList').replaceChildren(...town.props.map((p, i) => listItem('prop', i, titleCase(fileName(p.model)), p.model.split('/').slice(0, -1).join('/'))));
+}
+
+/** The traffic's sound: each car's engine volume, full within `near`, gone from `far`. */
+function renderSoundSettings() {
+    const cars = town.soundSettings.cars;
+    const editCars = (change) => {
+        touch();
+        change();
+        renderSoundSettings();
+    };
+    host.querySelector('#townSoundSettings').replaceChildren(
+        el('div', { class: 'inspector-title' }, 'Cars'),
+        numberField('Volume (0-1)', cars.volume, 0.05, (v) => editCars(() => { cars.volume = round(Math.min(1, Math.max(0, v)), 0.01); })),
+        numberField('Full within', cars.near, 0.5, (v) => editCars(() => { cars.near = Math.max(0, v); })),
+        numberField('Silent from', cars.far, 0.5, (v) => editCars(() => { cars.far = Math.max(cars.near + 0.5, v); })));
 }
 
 /** The grass noise panel: its scale and each ring's reach and mix. */
@@ -1128,13 +1624,16 @@ function renderInspector() {
     const titles = {
         prop: () => titleCase(fileName(data.model)), atm: () => `ATM ${selection.index + 1}`, wardrobe: () => `Wardrobe ${selection.index + 1}`, pavement: () => data.id,
         section: () => data.name, patch: () => `Grass patch: ${grassName(data.grass)}`, start: () => 'Player start',
-        centre: () => 'Grass noise centre', shore: () => `Shore point ${selection.index + 1}`, separator: () => `${town.sections[selection.index].name} separator`,
+        sound: () => `Sound zone: ${data.id}`, waypoint: () => `Waypoint ${data.id}`, secret: () => `Secret patch: ${data.id}`, pen: () => `${town.sections[selection.index].name} pen`, centre: () => 'Grass noise centre', shore: () => `Shore point ${selection.index + 1}`, separator: () => `${town.sections[selection.index].name} separator`,
     };
     const rows = [
         el('div', { class: 'inspector-title' }, titles[type](), el('span', { class: 'tag' }, type)),
         numberField('X', data.x, 0.25, (v) => edit((d) => { d.x = v; })),
         numberField('Z', data.z, 0.25, (v) => edit((d) => { d.z = v; })),
     ];
+    if (also.length) {
+        rows.push(el('p', { class: 'muted small' }, `+${also.length} more selected (outlined): moving this moves them all, Del removes them all, Esc lets go. The fields below are this one's.`));
+    }
     if (TURNS.has(type)) {
         rows.push(numberField('Turn (°)', THREE.MathUtils.radToDeg(data.rotationY ?? 0), 15, (v) => edit((d) => { d.rotationY = round(THREE.MathUtils.degToRad(v), 0.0001); })));
     }
@@ -1174,7 +1673,37 @@ function renderInspector() {
         rows.push(textField('Id', data.id, (v) => edit((d) => { d.id = v || d.id; })), textField('Colour', data.color, (v) => edit((d) => { d.color = v; }), 'color'),
             el('p', { class: 'muted small' }, 'Walkable, no grass on it. Later pavements draw over earlier ones.'));
     }
-    if (type === 'section') {
+    if (type === 'sound') {
+        const options = [...new Set([...soundFiles, data.sound])].map((s) => [s, s]);
+        rows.push(
+            textField('Id', data.id, (v) => edit((d) => { d.id = v || d.id; })),
+            selectField('Sound', data.sound, options, (v) => edit((d) => { d.sound = v; })),
+            numberField('Volume (0-1)', data.volume, 0.01, (v) => edit((d) => { d.volume = round(Math.min(1, Math.max(0, v)), 0.01); })),
+            numberField('Fade distance', data.fade, 0.5, (v) => edit((d) => { d.fade = Math.max(0.5, v); })),
+            el('p', { class: 'muted small' }, 'Full volume inside the box, fading to nothing at the dashed line (Fade distance out from its edges); heard from the box\'s side the player is nearest. A new sound file needs `npm run audio` to reach the game.'));
+    }
+    if (type === 'waypoint') rows.push(...waypointInspector(data, selection.index));
+    if (type === 'secret') {
+        rows.push(
+            textField('Id', data.id, (v) => edit((d) => { d.id = v || d.id; })),
+            numberField('Chest ($)', data.reward, 10, (v) => edit((d) => { d.reward = Math.max(0, Math.round(v)); })),
+            el('p', { class: 'muted small' }, 'Lush grass any mower cuts (even with the bag full; no clippings). Mowed through, its chest pops out with a claim card. Found once per save (by id: renaming it makes it new again).'));
+    }
+    if (type === 'pen') {
+        rows.push(el('p', { class: 'muted small' }, 'A fence all round this rect keeps the player inside until the section is restored, then sinks away. Keep the start, an ATM and the section\'s grass inside it.'));
+    }
+    if (type === 'section' && diorama) {
+        // A diorama's lawn: only how it looks.
+        rows.push(
+            selectField('Grass', data.fill ?? 'auto', grassOptions(true), (v) => edit((d) => { d.fill = v; })),
+            numberField('Grass size ×', data.grassScale ?? 1, 0.05, (v) => edit((d) => {
+                const scale = Math.round(Math.min(3, Math.max(0.2, v || 1)) * 100) / 100;
+                if (scale === 1) delete d.grassScale;
+                else d.grassScale = scale;
+            })),
+            textField('Restored ground', data.restoredGround, (v) => edit((d) => { d.restoredGround = v; }), 'color'),
+            el('p', { class: 'muted small' }, 'The lawn, mowed and in bloom in the picture (its restored ground colour).'));
+    } else if (type === 'section') {
         const index = selection.index;
         rows.push(
             textField('Name', data.name, (v) => edit((d) => { d.name = v || d.name; })),
@@ -1209,6 +1738,9 @@ function renderInspector() {
             index > 0 ? (data.separator
                 ? el('button', { class: 'block', onclick: () => select({ type: 'separator', index }) }, '🚧 Select its separator')
                 : el('button', { class: 'block', onclick: () => edit((d) => { d.separator = { x: d.x, z: d.z + d.depth / 2, width: d.width, rotationY: 0 }; }) }, '🚧 Add a separator')) : '',
+            data.pen
+                ? el('button', { class: 'block', onclick: () => select({ type: 'pen', index }) }, '🚧 Select its pen')
+                : el('button', { class: 'block', onclick: () => edit((d) => { d.pen = { x: d.x, z: d.z, width: d.width + 4, depth: d.depth + 4 }; }) }, '🚧 Add a pen (keeps the player in until restored)'),
             el('div', { class: 'row' },
                 el('button', { onclick: () => moveSection(index, -1) }, '▲ Earlier'),
                 el('button', { onclick: () => moveSection(index, 1) }, '▼ Later')),

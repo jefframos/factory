@@ -12,7 +12,6 @@
   "clippingPrice": 0.2,
   "chewSec": [0.7, 1.6, 3],
   "traffic": {
-    "count": 5,
     "models": ["town/city/car_sedan.gltf", "town/city/car_taxi.gltf", "town/city/car_hatchback.gltf", "town/city/car_stationwagon.gltf"],
     "speed": 4.4,
     "accel": 3.5,
@@ -64,7 +63,7 @@
       { "id": "#42a5f5", "price": 0 },
       { "id": "#e0a03c", "price": 125 },
       { "id": "#ab47bc", "price": 150 },
-      { "id": "#ff5252", "price": 175 },
+      { "id": "#ff5252", "price": 175, "free": true },
       { "id": "#66bb6a", "price": 200 },
       { "id": "#ffca28", "price": 225 },
       { "id": "#26c6da", "price": 250 },
@@ -82,7 +81,7 @@
     ],
     "faces": [
       { "id": "skins/face-brave-1.webp", "name": "Brave", "price": 0 },
-      { "id": "skins/cool.webp", "name": "Cool", "price": 80 },
+      { "id": "skins/cool.webp", "name": "Cool", "price": 80, "free": true },
       { "id": "skins/face-smirk-1.webp", "name": "Smirk", "price": 80 },
       { "id": "skins/face-sunglasses-2.webp", "name": "Shades", "price": 80 },
       { "id": "skins/face-star-1.webp", "name": "Star", "price": 140 },
@@ -141,6 +140,7 @@
     "$comment": "Hidden in the grass of each area (`area` = a section id in levels/town.json), at seeded grass cells. Within beamRange units a beam of light rises from a hidden one; cutting its cell finds it (it flies to the Trophies button). Its `reward` is claimed in the Trophies panel; finding all of an area's pays areaBonus[area] (claimed there too). Models: Dig's relics (models/treasures). docs/README-wardrobe-tutorial-and-treasures.md.",
     "beamRange": 7,
     "items": [
+      { "id": "yardchest", "name": "Toy Chest", "model": "treasures/chest.glb", "size": 0.7, "area": "yard", "reward": 25, "rarity": "rare" },
       { "id": "bone", "name": "Old Bone", "model": "treasures/bone-a.glb", "size": 0.7, "area": "park", "reward": 20, "rarity": "common" },
       { "id": "comic", "name": "Lost Comic", "model": "treasures/comicbook-a.glb", "size": 0.6, "area": "park", "reward": 30, "rarity": "common" },
       { "id": "skull", "name": "Ancient Skull", "model": "treasures/skull.glb", "size": 0.6, "area": "park", "reward": 50, "rarity": "rare" },

@@ -365,6 +365,14 @@
         },
         {
           "alias": [
+            "ocean-ambient.mp3"
+          ],
+          "src": [
+            "ocean-ambient.mp3"
+          ]
+        },
+        {
+          "alias": [
             "reveal.ogg"
           ],
           "src": [

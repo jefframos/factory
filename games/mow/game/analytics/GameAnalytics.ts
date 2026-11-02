@@ -15,6 +15,9 @@
 //   treasure     <treasureId> | area-<id>     interact   its reward (or an area's bonus) claimed in the Trophies panel
 //   shop         hat-<id> | face-<id> | color-<id> bought     a wardrobe item bought with cash
 //   shop         hat-<id> | face-<id> | color-<id> equip      an owned wardrobe item put on
+//   tab          wardrobe-<tab> | atm-<tab>   interact   a panel tab opened by the player (once per player each)
+//   gift         colors | faces               visible    a wardrobe gift's FREE badge seen (once per player each)
+//   gift         <kind>-badge | <kind>-unbadged complete a wardrobe gift claimed, after its badge showed or before
 //   sell         count-<n>                    complete   the nth sale, for the first 10
 //   bag          full                         complete   the container fills up (once a session)
 //   district     <districtId>                 complete   a district restored
@@ -80,6 +83,21 @@ export const GameAnalytics = {
 
     lookEquipped(kind: string, id: string): void {
         send('shop', lookId(kind, id), 'equip');
+    },
+
+    /** A panel's tab opened by the player (wardrobe colors / faces / hats, ATM mowers / boosts), once per player each. */
+    tabOpened(panel: 'wardrobe' | 'atm', tab: string): void {
+        if (MowProgress.once(`tab-${panel}-${tab}`)) send('tab', `${panel}-${tab}`, 'interact');
+    },
+
+    /** A wardrobe gift's FREE badge seen (the return visit after the first hat, still unclaimed), once per kind. */
+    giftBadgeShown(kind: string): void {
+        if (MowProgress.once(`gift-badge-${kind}`)) send('gift', kind, 'visible');
+    },
+
+    /** A wardrobe gift claimed: on its own (no badge yet) or after its FREE badge showed. */
+    giftClaimed(kind: string, afterBadge: boolean): void {
+        send('gift', `${kind}-${afterBadge ? 'badge' : 'unbadged'}`, 'complete');
     },
 
     toolBought(level: number, toolId: string): void {

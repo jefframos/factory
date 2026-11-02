@@ -9,7 +9,8 @@
 // while it chews through, throwing chips with each hit, until it gives; tougher still is a wall until a better mower
 // (with a hint now and then). Grass as tough as the tool's power is cut, but it labours: slower by its share of the
 // cut (LOAD_DRAG), so even a big mower feels the toughest grass it can handle. Cutting throws green chips and a soft
-// swish.
+// swish. The same sweep cuts the secret patches (SecretPatches), even with the bag full: mowed through, one gives up
+// its chest (onSecret).
 
 import * as THREE from 'three';
 import { GrassField } from '../world/GrassField';
@@ -17,7 +18,8 @@ import { MowProgress } from '../data/MowProgress';
 import type MowPlayer from '../player/MowPlayer';
 import type { MowEffects } from '../vfx/MowEffects';
 import { MowAudio } from '../audio/MowAudio';
-import { GrassDef, TreasureDef } from '../data/MowConfig';
+import { GrassDef, SecretDef, TreasureDef } from '../data/MowConfig';
+import type { SecretPatches } from '../world/SecretPatches';
 
 /** Below this the stick / keys count as not moving. */
 const MOVE_THRESHOLD = 0.2;
@@ -54,6 +56,9 @@ export class MowingSystem {
         private readonly onCut: (cells: number, clippings: number) => void,
         /** A hidden treasure's cell was cut: found (GrassField.placeTreasures). */
         private readonly onTreasure: (treasure: TreasureDef, at: THREE.Vector3) => void,
+        /** The secret patches, and one mowed through (its chest is out). */
+        private readonly secrets?: SecretPatches,
+        private readonly onSecret?: (secret: SecretDef, at: THREE.Vector3) => void,
     ) {}
 
     public fixedUpdate(delta: number): void {
@@ -63,11 +68,14 @@ export class MowingSystem {
         this.wall = null;
         const controller = this.player.movementController;
         if (!controller?.enabled || controller.input.length() < MOVE_THRESHOLD) return;
-        if (MowProgress.full) return;
         // A ridden mower cuts only from the tractor (in the sections not restored yet).
         if (MowProgress.tool.ride && !this.player.riding) return;
         this.player.cutPoint(this.point);
         const feet = this.player.transform.position;
+        for (const { secret, at } of this.secrets?.cut(feet.x, feet.z, this.point.x, this.point.z, MowProgress.width / 2) ?? []) {
+            this.onSecret?.(secret, at);
+        }
+        if (MowProgress.full) return;
         const result = this.grass.cutCapsule(feet.x, feet.z, this.point.x, this.point.z, MowProgress.width / 2, MowProgress.power,
             // Sharp Blades: tough grass takes less contact to chew through.
             delta * MowProgress.chewRate, this.canMow);

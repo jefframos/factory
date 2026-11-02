@@ -359,8 +359,72 @@ function subdivide(source: THREE.BufferGeometry, max: number, scale: THREE.Vecto
     return result;
 }
 
+/** How far inside a pen's fence the player's footprint stops. */
+const PEN_CLEARANCE = 0.15;
+
+/**
+ * A white fence all round a rect (two rails per side, posts every ~1.5 units), its rails cut along their length so
+ * they curve with the world bend.
+ */
+function fenceAround(rect: { x: number; z: number; width: number; depth: number }, white: THREE.Material, post: THREE.BufferGeometry): THREE.Group {
+    const fence = new THREE.Group();
+    const hx = rect.width / 2;
+    const hz = rect.depth / 2;
+    const sides: [number, number, number, boolean][] = [
+        [rect.x, rect.z - hz, rect.width, true], [rect.x, rect.z + hz, rect.width, true],
+        [rect.x - hx, rect.z, rect.depth, false], [rect.x + hx, rect.z, rect.depth, false],
+    ];
+    const spots: [number, number][] = [];
+    for (const [x, z, length, alongX] of sides) {
+        // Cut along their length so they curve with the bend (a single long box stays straight through it).
+        const segments = Math.max(1, Math.ceil(length / BEND_SEGMENT));
+        for (const y of [0.45, 0.95]) {
+            const rail = new THREE.Mesh(alongX
+                ? new THREE.BoxGeometry(length, 0.12, 0.08, segments, 1, 1)
+                : new THREE.BoxGeometry(0.08, 0.12, length, 1, 1, segments), white);
+            rail.position.set(x, y, z);
+            fence.add(rail);
+        }
+        const count = Math.max(1, Math.round(length / 1.5));
+        for (let i = 0; i <= count; i++) {
+            const t = -length / 2 + (length * i) / count;
+            spots.push(alongX ? [x + t, z] : [x, z + t]);
+        }
+    }
+    const posts = new THREE.InstancedMesh(post, white, spots.length);
+    const matrix = new THREE.Matrix4();
+    spots.forEach(([x, z], i) => posts.setMatrixAt(i, matrix.makeTranslation(x, 0.6, z)));
+    posts.computeBoundingSphere();
+    fence.add(posts);
+    return fence;
+}
+
+/** Whether (x, z) lies on a side of a section's pen (within half a unit). */
+function onPenSide(x: number, z: number): boolean {
+    return MOW.districts.some(({ pen }) => !!pen && (
+        (Math.abs(Math.abs(z - pen.z) - pen.depth / 2) < 0.5 && Math.abs(x - pen.x) <= pen.width / 2)
+        || (Math.abs(Math.abs(x - pen.x) - pen.width / 2) < 0.5 && Math.abs(z - pen.z) <= pen.depth / 2)));
+}
+
+/** A padlock plaque saying `text`, floating over (x, z). */
+function fenceSign(text: string, x: number, z: number): THREE.Sprite {
+    const canvas = document.createElement('canvas');
+    canvas.width = 384;
+    canvas.height = 96;
+    const g = canvas.getContext('2d')!;
+    CanvasArt.plaque(g, 6, 6, 372, 84, 20);
+    CanvasArt.drawIcon(g, 'Icon_Lock02', 48, 48, 52);
+    CanvasArt.text(g, text, 220, 50, 30, '#ffe27a', 290);
+    const sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: CanvasArt.texture(canvas), depthWrite: false }));
+    sign.scale.set(4.2, 1.05, 1);
+    sign.position.set(x, 2.1, z);
+    return sign;
+}
+
 export class Town {
     private readonly group = new THREE.Group();
+    /** The sea round the island (buildIsland()). */
+    private sea?: THREE.Mesh;
     /** What the props block (fixed). */
     private readonly propBoxes: Box[] = [];
     /** Flat props laid on the ground (road tiles): their footprint and top, for surfaceAt(). */
@@ -370,6 +434,9 @@ export class Town {
         atm: stationSpots('atm').map((spot) => stationBox(spot, stationLook('atm'))),
         wardrobe: stationSpots('wardrobe').map((spot) => stationBox(spot, stationLook('wardrobe'))),
     };
+    /** Per section: its pen (DistrictDef.pen) still stands (the player is kept inside it), and its fence. */
+    private readonly penned: boolean[];
+    private readonly pens: (THREE.Group | undefined)[] = [];
     /** Each section's separator (index = section) and its box while it stands. */
     private readonly separators: (THREE.Group | undefined)[] = [];
     private readonly separatorBoxes: (Box | undefined)[] = [];
@@ -391,13 +458,18 @@ export class Town {
     /** Resolves once every model has loaded (or failed: the town still plays without one). */
     public readonly ready: Promise<void>;
 
-    /** `open(d)`: whether section d is unlocked from the start (its predecessor restored). */
-    public constructor(threeScene: THREE.Scene, open: (district: number) => boolean) {
+    /**
+     * `open(d)`: whether section d is unlocked from the start (its predecessor restored); `restored(d)`: whether it's
+     * restored (its pen, if any, is gone then).
+     */
+    public constructor(threeScene: THREE.Scene, open: (district: number) => boolean, restored: (district: number) => boolean = () => false) {
         this.open = MOW.districts.map((_, d) => open(d));
+        this.penned = MOW.districts.map((district, d) => !!district.pen && !restored(d));
         this.buildGround();
         TOWN.props.forEach((prop) => this.placeProp(prop));
         for (const kind of STATION_KINDS) stationSpots(kind).forEach((spot) => this.buildStation(kind, spot));
         this.buildSeparators();
+        this.buildPens();
         threeScene.add(this.group);
         setWalkabilityQuery(this.walkability);
         this.ready = Promise.all(this.loads).then(() => undefined);
@@ -491,14 +563,27 @@ export class Town {
         this.group.add(mesh);
     }
 
-    /** Points every ~`spacing` along a closed polygon's edges (each corner included). */
+    /** Points every ~`spacing` round a closed polygon, evenly spaced along its whole length. */
     private static alongEdges(points: readonly ShorePoint[], spacing: number): ShorePoint[] {
-        const out: ShorePoint[] = [];
-        points.forEach((p, i) => {
+        // Round the whole loop at one spacing (a rounded corner's short edges don't each get a post).
+        const lengths = points.map((p, i) => {
             const q = points[(i + 1) % points.length];
-            const count = Math.max(1, Math.round(Math.hypot(q.x - p.x, q.z - p.z) / spacing));
-            for (let k = 0; k < count; k++) out.push({ x: p.x + ((q.x - p.x) * k) / count, z: p.z + ((q.z - p.z) * k) / count });
+            return Math.hypot(q.x - p.x, q.z - p.z);
         });
+        const total = lengths.reduce((sum, length) => sum + length, 0);
+        const count = Math.max(3, Math.round(total / spacing));
+        const step = total / count;
+        const out: ShorePoint[] = [];
+        let edge = 0;
+        let start = 0;
+        for (let k = 0; k < count; k++) {
+            const at = k * step;
+            while (edge < points.length - 1 && at > start + lengths[edge]) start += lengths[edge++];
+            const p = points[edge];
+            const q = points[(edge + 1) % points.length];
+            const t = lengths[edge] > 0 ? (at - start) / lengths[edge] : 0;
+            out.push({ x: p.x + (q.x - p.x) * t, z: p.z + (q.z - p.z) * t });
+        }
         return out;
     }
 
@@ -532,6 +617,7 @@ export class Town {
         geometry.rotateX(-Math.PI / 2);
         const material = createWaterMaterial(island.water, -island.waterLevel);
         const sea = new THREE.Mesh(geometry, material);
+        this.sea = sea;
         sea.position.set((minX + maxX) / 2, 0, (minZ + maxZ) / 2);
         sea.frustumCulled = false;
         sea.renderOrder = -1;
@@ -843,46 +929,9 @@ export class Town {
         MOW.districts.forEach((district, d) => {
             const line = district.separator;
             if (!line || d === 0) return;
-            const fence = new THREE.Group();
-            const hx = district.width / 2;
-            const hz = district.depth / 2;
-            const sides: [number, number, number, boolean][] = [
-                [district.x, district.z - hz, district.width, true], [district.x, district.z + hz, district.width, true],
-                [district.x - hx, district.z, district.depth, false], [district.x + hx, district.z, district.depth, false],
-            ];
-            const spots: [number, number][] = [];
-            for (const [x, z, length, alongX] of sides) {
-                // Cut along their length so they curve with the bend (a single long box stays straight through it).
-                const segments = Math.max(1, Math.ceil(length / BEND_SEGMENT));
-                for (const y of [0.45, 0.95]) {
-                    const rail = new THREE.Mesh(alongX
-                        ? new THREE.BoxGeometry(length, 0.12, 0.08, segments, 1, 1)
-                        : new THREE.BoxGeometry(0.08, 0.12, length, 1, 1, segments), white);
-                    rail.position.set(x, y, z);
-                    fence.add(rail);
-                }
-                const count = Math.max(1, Math.round(length / 1.5));
-                for (let i = 0; i <= count; i++) {
-                    const t = -length / 2 + (length * i) / count;
-                    spots.push(alongX ? [x + t, z] : [x, z + t]);
-                }
-            }
-            const posts = new THREE.InstancedMesh(post, white, spots.length);
-            const matrix = new THREE.Matrix4();
-            spots.forEach(([x, z], i) => posts.setMatrixAt(i, matrix.makeTranslation(x, 0.6, z)));
-            posts.computeBoundingSphere();
-            fence.add(posts);
-            const canvas = document.createElement('canvas');
-            canvas.width = 384;
-            canvas.height = 96;
-            const g = canvas.getContext('2d')!;
-            CanvasArt.plaque(g, 6, 6, 372, 84, 20);
-            CanvasArt.drawIcon(g, 'Icon_Lock02', 48, 48, 52);
-            CanvasArt.text(g, `RESTORE THE ${MOW.districts[d - 1].name.toUpperCase()}`, 220, 50, 30, '#ffe27a', 290);
-            const sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: CanvasArt.texture(canvas), depthWrite: false }));
-            sign.scale.set(4.2, 1.05, 1);
-            sign.position.set(line.x, 2.1, line.z);
-            fence.add(sign);
+            const fence = fenceAround(district, white, post);
+            // No sign where it's a pen's side (the first area's fence: a plaque there only distracts a beginner).
+            if (!onPenSide(line.x, line.z)) fence.add(fenceSign(`RESTORE THE ${MOW.districts[d - 1].name.toUpperCase()}`, line.x, line.z));
             fence.visible = !this.open[d];
             this.group.add(fence);
             this.separators[d] = fence;
@@ -890,6 +939,30 @@ export class Town {
             const half = line.width / 2;
             this.separatorBoxes[d] = { x: line.x, z: line.z, halfX: sideways ? 0.25 : half, halfZ: sideways ? half : 0.25 };
         });
+    }
+
+    /**
+     * Each pen (DistrictDef.pen) still standing: the white fence all round its rect, no signs (it's the very start of
+     * the game: nothing to read). The player can't leave it (standable()) until releasePen().
+     */
+    private buildPens(): void {
+        const white = this.material(0xffffff);
+        const post = new THREE.BoxGeometry(0.2, 1.2, 0.2);
+        MOW.districts.forEach((district, d) => {
+            const pen = district.pen;
+            if (!pen || !this.penned[d]) return;
+            const fence = fenceAround(pen, white, post);
+            this.group.add(fence);
+            this.pens[d] = fence;
+        });
+    }
+
+    /** A section restored: its pen (if any) sinks away and the player is free to go. */
+    public releasePen(district: number): void {
+        if (!this.penned[district]) return;
+        this.penned[district] = false;
+        const fence = this.pens[district];
+        if (fence) gsap.to(fence.position, { y: -1.6, duration: 0.9, ease: 'power2.in', onComplete: () => void (fence.visible = false) });
     }
 
     /** Opens a section: its fence sinks away (walkable now) and its ATMs pop in. */
@@ -1030,15 +1103,40 @@ export class Town {
         return MOW.districts.filter((_, i) => !this.open[i]).map((d) => [d.x, d.z, d.width / 2, d.depth / 2] as const);
     }
 
-    /** A footprint `r` round (x, z) inside the island's fence (the shore without one) and off the locked rects. */
+    /**
+     * A footprint `r` round (x, z) inside the island's fence (the shore without one), off the locked rects, and inside
+     * every pen still standing.
+     */
     private standable(x: number, z: number, r: number, locked: readonly (readonly [number, number, number, number])[]): boolean {
         const edge = (TOWN.island?.fence?.inset ?? 0) + ISLAND_FENCE_CLEARANCE;
         if (!containsPoint(this.shore, x, z) || edgeDistance(this.shore, x, z) < edge + r) return false;
+        for (let d = 0; d < this.penned.length; d++) {
+            const pen = MOW.districts[d].pen;
+            if (!this.penned[d] || !pen) continue;
+            if (Math.abs(x - pen.x) > pen.width / 2 - PEN_CLEARANCE - r || Math.abs(z - pen.z) > pen.depth / 2 - PEN_CLEARANCE - r) return false;
+        }
         return !locked.some(([lx, lz, hx, hz]) => Math.abs(x - lx) < hx + r && Math.abs(z - lz) < hz + r);
+    }
+
+    /**
+     * For the map snapshots (TownSnapshotScene): every station shown, no sea, no labels or "!" (the miniature is the
+     * town itself, floating on nothing).
+     */
+    public prepareSnapshot(): void {
+        for (const kind of STATION_KINDS) this.groups[kind].forEach((group) => {
+            gsap.killTweensOf(group.scale);
+            group.visible = true;
+            group.scale.setScalar(1);
+        });
+        if (this.sea) this.sea.visible = false;
+        this.group.traverse((child) => {
+            if (child instanceof THREE.Sprite) child.visible = false;
+        });
     }
 
     public destroy(): void {
         this.destroyed = true;
+        this.pens.forEach((fence) => fence && gsap.killTweensOf(fence.position));
         clearWalkabilityQuery(this.walkability);
         for (const kind of STATION_KINDS) this.groups[kind].forEach((group) => gsap.killTweensOf(group.scale));
         this.wardrobeAlerts.forEach((alert) => gsap.killTweensOf(alert.position));

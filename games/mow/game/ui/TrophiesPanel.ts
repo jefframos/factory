@@ -41,7 +41,7 @@ const FOOTER_BUTTON_WIDTH = 300;
 
 /** Kit frame per rarity, for found cards (and the rarity's colour on its tag). */
 const RARITY_FRAME: Record<Rarity, string> = { common: 'cardCommon', rare: 'cardRare', epic: 'cardEpic', legendary: 'cardLegendary' };
-const RARITY_COLORS: Record<Rarity, number> = { common: 0xffffff, rare: 0x6fb4ff, epic: 0xc77dff, legendary: 0xffd23f };
+export const RARITY_COLORS: Record<Rarity, number> = { common: 0xffffff, rare: 0x6fb4ff, epic: 0xc77dff, legendary: 0xffd23f };
 
 export class TrophiesPanel extends PIXI.Container {
     private readonly body = new PIXI.Container();
