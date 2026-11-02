@@ -142,31 +142,34 @@ export default class CrazyGamesPlatform implements IPlatformConnection {
         }
     }
 
-    public async showRewardedVideo(): Promise<void> {
+    public async showRewardedVideo(): Promise<boolean> {
         console.debug("CrazyGames Platform: Showing rewarded video...");
 
         if (this.crazygamesSDK) {
             SoundManager.instance.muteAllSounds();
 
-            return new Promise((resolve, reject) => {
-                this.crazygamesSDK.ad.requestAd("rewarded", {
-                    adFinished: () => {
-                        console.log("Rewarded ad finished - granting reward");
-                        SoundManager.instance.restoreSound();
-                        resolve();
-                    },
-                    adError: (error: any) => {
-                        console.error("Rewarded ad error:", error);
-                        SoundManager.instance.restoreSound();
-                        reject(error);
-                    },
-                    adStarted: () => {
-                        console.log("Rewarded ad started");
-                    }
+            try {
+                return await new Promise<boolean>((resolve, reject) => {
+                    this.crazygamesSDK.ad.requestAd("rewarded", {
+                        adFinished: () => {
+                            console.log("Rewarded ad finished - granting reward");
+                            resolve(true);
+                        },
+                        adError: (error: unknown) => {
+                            console.error("Rewarded ad error:", error);
+                            reject(error);
+                        },
+                        adStarted: () => {
+                            console.log("Rewarded ad started");
+                        }
+                    });
                 });
-            });
+            } finally {
+                SoundManager.instance.restoreSound();
+            }
         } else {
-            await Promise.resolve();
+            console.warn("CrazyGames Platform: Rewarded video unavailable; SDK not loaded.");
+            return false;
         }
     }
 

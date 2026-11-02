@@ -1,4 +1,8 @@
 {
+    "tractorOfferTitle": "トラクターブースト",
+    "tractorOfferBody": "動画を見ると{seconds}秒間、強力な採掘と即時換金が使えます。その後は元の道具に戻ります。鉱山ごとに1回です。",
+    "tractorWatch": "動画を見る",
+    "tractorAdFailed": "動画が完了しませんでした。離れてから戻ると再挑戦できます。",
     "titleUpgrades": "アップグレード",
     "titleCollection": "コレクション",
     "titleWardrobe": "きせかえ",
@@ -67,6 +71,7 @@
     "tabHats": "ぼうし",
     "wearing": "着用中",
     "owned": "所持",
+    "free": "無料",
     "collectionLock": "コレクション",
     "completeCollection": "コレクションをコンプリートしよう！",
     "lookBought": "{name}を買った！",

@@ -1,4 +1,8 @@
 {
+    "tractorOfferTitle": "拖拉机加速",
+    "tractorOfferBody": "观看视频，获得{seconds}秒强力挖掘和即时换钱。结束后恢复原有工具。每座矿山限用一次。",
+    "tractorWatch": "观看视频",
+    "tractorAdFailed": "视频未完成。离开后再回来即可重试。",
     "titleUpgrades": "升级",
     "titleCollection": "收藏",
     "titleWardrobe": "衣橱",
@@ -67,6 +71,7 @@
     "tabHats": "帽子",
     "wearing": "穿戴中",
     "owned": "已拥有",
+    "free": "免费",
     "collectionLock": "收藏",
     "completeCollection": "集齐全部收藏！",
     "lookBought": "已购买{name}！",

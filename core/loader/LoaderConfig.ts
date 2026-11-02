@@ -32,7 +32,10 @@ export interface LoaderConfig {
     backgroundColor?: string;
     /** Color of the Pong paddles + ball above the bar (any CSS background). Default white. */
     accentColor?: string;
-    /** CSS box-shadow on the paddles + ball. Default none. */
+    /**
+     * Shadow under the paddles + ball, as `x y blur color` (CSS drop-shadow syntax). Drawn over the whole rally
+     * so it always falls the same way however the ball turns, and isn't clipped at the field's edges. Default none.
+     */
     accentShadow?: string;
     /** Optional tiling pattern drawn over the background. */
     pattern?: LoaderPatternConfig;

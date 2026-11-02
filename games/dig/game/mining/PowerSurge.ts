@@ -1,6 +1,6 @@
 // PowerSurge.ts
 //
-// The power chest's reward (ui/dig.json chests.power; it fades in ahead of the miner once per player:
+// The rewarded tractor's power (ui/dig.json chests.power; one fixed offer in The Deep per mine:
 // PowerChestSpawner): for a few seconds the miner digs with a better tool than the one they own — `tool` (the Mega
 // Drill), or one tier above the tool owned if that's higher — and a little faster. While it lasts nothing goes into the backpack: every block is cashed on the spot,
 // so a full bag never cuts the moment short (MiningController). It's the early taste of what the upgrades lead to;

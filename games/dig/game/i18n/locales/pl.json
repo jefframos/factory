@@ -1,4 +1,8 @@
 {
+    "tractorOfferTitle": "DOPALACZ TRAKTORA",
+    "tractorOfferBody": "Obejrzyj film, by przez {seconds}s kopać mocniej i od razu zarabiać. Potem wróci twoje narzędzie. Jeden przejazd na kopalnię.",
+    "tractorWatch": "OBEJRZYJ FILM",
+    "tractorAdFailed": "Film nie został ukończony. Odejdź i wróć, aby spróbować ponownie.",
     "titleUpgrades": "ULEPSZENIA",
     "titleCollection": "KOLEKCJA",
     "titleWardrobe": "GARDEROBA",
@@ -67,6 +71,7 @@
     "tabHats": "CZAPKI",
     "wearing": "NOSZONE",
     "owned": "MASZ",
+    "free": "ZA DARMO",
     "collectionLock": "KOLEKCJA",
     "completeCollection": "UKOŃCZ KOLEKCJĘ!",
     "lookBought": "KUPIONO: {name}!",

@@ -1,4 +1,8 @@
 {
+    "tractorOfferTitle": "TRACTOR BOOST",
+    "tractorOfferBody": "Watch a video for {seconds}s of powerful digging and instant cash. Your own tool returns afterwards. One ride per mine.",
+    "tractorWatch": "WATCH VIDEO",
+    "tractorAdFailed": "Video not completed. Step away and return to try again.",
     "titleUpgrades": "UPGRADES",
     "titleCollection": "COLLECTION",
     "titleWardrobe": "WARDROBE",
@@ -77,6 +81,7 @@
     "tabHats": "HATS",
     "wearing": "WEARING",
     "owned": "OWNED",
+    "free": "FREE",
     "collectionLock": "COLLECTION",
     "completeCollection": "COMPLETE THE COLLECTION!",
     "lookBought": "{name} BOUGHT!",

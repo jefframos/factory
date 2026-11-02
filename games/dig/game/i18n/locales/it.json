@@ -1,4 +1,8 @@
 {
+    "tractorOfferTitle": "BOOST TRATTORE",
+    "tractorOfferBody": "Guarda un video per scavare con potenza e ottenere denaro subito per {seconds}s. Poi torna il tuo attrezzo. Un giro per miniera.",
+    "tractorWatch": "GUARDA VIDEO",
+    "tractorAdFailed": "Video non completato. Allontanati e torna per riprovare.",
     "titleUpgrades": "POTENZIAMENTI",
     "titleCollection": "COLLEZIONE",
     "titleWardrobe": "GUARDAROBA",
@@ -67,6 +71,7 @@
     "tabHats": "CAPPELLI",
     "wearing": "INDOSSATO",
     "owned": "TUO",
+    "free": "GRATIS",
     "collectionLock": "COLLEZIONE",
     "completeCollection": "COMPLETA LA COLLEZIONE!",
     "lookBought": "{name} COMPRATO!",

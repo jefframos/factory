@@ -37,7 +37,7 @@ import { HardBlockMarkers } from '../world/HardBlockMarkers';
 import { TreasureSparkles } from '../world/TreasureSparkles';
 import { TreasureBeacons } from '../world/TreasureBeacons';
 import { PowerSurge } from '../mining/PowerSurge';
-import { PowerChestSpawner, POWER_CHEST_TAKEN } from '../mining/PowerChestSpawner';
+import { PowerChestSpawner, POWER_CHEST_TAKEN, TRACTOR_SPOT_COLOR } from '../mining/PowerChestSpawner';
 import type { StationKind } from '../data/HubData';
 import { hubRects, HUB, hubAreaAt, buildablesIn, rateLabel } from '../data/HubData';
 import { DIG, ChestKind, MaterialDef } from '../data/DigConfig';
@@ -66,6 +66,14 @@ const SKIRT_CELL = 4;
 const FLOOR_SEGMENTS = 164;
 /** Floor colour for a zone without its own. */
 const DEFAULT_FLOOR = 0x5a3f2c;
+/** Darken exposed paths without changing zone hues or the hub's floor. */
+const MINE_FLOOR_LIGHTNESS = 0.65;
+/** Zone fog (ui/dig.json zones `fog`): starts and is full at these multiples of the camera distance. */
+const FOG_NEAR = 1.25;
+const FOG_FAR = 3.4;
+/** How fast the fog colour eases to a new zone's (per second, exponential). */
+const FOG_BLEND = 1.5;
+const DEFAULT_FOG = 0x3a2a1f;
 /** Selling: at most this many items are tossed onto the pad, one every SELL_TOSS_INTERVAL, within SELL_MAX_SEC. */
 const SELL_MAX_TOSSES = 24;
 const SELL_TOSS_INTERVAL = 0.08;
@@ -144,6 +152,8 @@ export default class DigScene extends ThreeScene {
     private player!: DigPlayer;
     private terrain!: VoxelTerrain;
     private floor!: THREE.Mesh;
+    private fog!: THREE.Fog;
+    private readonly fogColors = DIG.zones.map((zone) => new THREE.Color(zone.fog ?? DEFAULT_FOG));
     private hub!: HubRoom;
     private tractor!: TractorRide;
     private guide!: Guide;
@@ -155,7 +165,7 @@ export default class DigScene extends ThreeScene {
     private treasureSparkles!: TreasureSparkles;
     /** Light beams over buried finds and chests, seen from further away. */
     private treasureBeacons!: TreasureBeacons;
-    /** The Mega Drill chest fading in ahead of the miner (once per player). */
+    /** The fixed rewarded tractor offer, unlocked in The Deep. */
     private powerChests!: PowerChestSpawner;
     /** Camera shake left (world units), from big swings. */
     private shake = 0;
@@ -192,6 +202,8 @@ export default class DigScene extends ThreeScene {
     private lastAdBreak = performance.now();
     /** A phone sale's rewarded video is playing. */
     private phoneBusy = false;
+    private tractorOfferOpen = false;
+    private tractorBusy = false;
     private sceneDestroyed = false;
     /** Where the miner was last frame (gameplay restarts when they move). */
     private readonly gameplayLast = new THREE.Vector3();
@@ -209,6 +221,7 @@ export default class DigScene extends ThreeScene {
     private lastHubCollect = -Infinity;
     private readonly followTarget = new THREE.Vector3();
     private readonly pickupPoint = new THREE.Vector3();
+    private readonly badgeWorld = new THREE.Vector3();
 
     public constructor(game: Game) {
         super(game);
@@ -257,7 +270,7 @@ export default class DigScene extends ThreeScene {
         this.hardBlocks = new HardBlockMarkers(this.threeScene, this.terrain);
         this.treasureSparkles = new TreasureSparkles(this.terrain, this.effects);
         this.treasureBeacons = new TreasureBeacons(this.threeScene, this.terrain);
-        this.powerChests = new PowerChestSpawner(this.threeScene, this.terrain, this.effects);
+        this.powerChests = new PowerChestSpawner(this.threeScene, this.terrain, () => this.offerTractor());
         this.mining = new MiningController(this.terrain, this.effects, this.player, (text) => this.hud.say(text, 0xffd9a8), (find, zone) => {
             // Its reward waits in the Trophy Room (claimed there: the totem gets its "!"); the banner says so.
             const amount = DigProgress.findPayout(find, zone);
@@ -282,8 +295,7 @@ export default class DigScene extends ThreeScene {
             this.fullPushes++;
             if (this.fullPushes >= FULL_PUSHES_TO_GUIDE) this.guide.setReturnToSell(true);
         }, (kind, zone) => this.openChest(kind, zone), (count, at) => {
-            this.onBroke(count);
-            this.powerChests.onDig(at, this.player.transform.position);
+            this.onBroke(count, at);
         }, (amount) => {
             this.surgeCash += amount;
         });
@@ -309,10 +321,14 @@ export default class DigScene extends ThreeScene {
 
     /** Mine floor with a collider under the whole map, and warm, readable light (GDD §16: not too dark). */
     private buildLightsAndGround(): void {
-        // Near black like the bedrock: past the world's end there's nothing but dark.
-        this.threeScene.background = new THREE.Color(BEYOND_COLOR);
-        this.threeScene.add(new THREE.HemisphereLight(0xfff1dc, 0x4a3426, 1.5));
-        const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+        // Near black like the bedrock: past the world's end there's nothing but dark — until the zone fog tints the
+        // horizon (updateFog() shares the fog's colour with the background so the far edge melts into it).
+        this.fog = new THREE.Fog(this.fogColors[0].clone(), 1, 2);
+        this.threeScene.fog = this.fog;
+        this.threeScene.background = this.fog.color;
+        // Cool sky fill and warm sun: lit faces warm, shaded sides cool, so blocks keep their shape from above.
+        this.threeScene.add(new THREE.HemisphereLight(0xdfe8ff, 0x3d2f45, 1.2));
+        const sun = new THREE.DirectionalLight(0xffe0b0, 1.85);
         sun.position.set(6, 14, 8);
         this.threeScene.add(sun);
 
@@ -345,7 +361,7 @@ export default class DigScene extends ThreeScene {
         const positions = geometry.getAttribute('position');
         const colors = new Float32Array(positions.count * 3);
         const themeFloors = DigProgress.mineTheme.floors;
-        const zoneColors = DIG.zones.map((zone, i) => new THREE.Color(themeFloors?.[i] ?? zone.floor ?? DEFAULT_FLOOR));
+        const zoneColors = DIG.zones.map((zone, i) => new THREE.Color(themeFloors?.[i] ?? zone.floor ?? DEFAULT_FLOOR).multiplyScalar(MINE_FLOOR_LIGHTNESS));
         for (let i = 0; i < positions.count; i++) {
             // The plane is laid flat (rotated -90° on X): its local Y is world -Z.
             const color = zoneColors[this.terrain.zoneIndexAt(positions.getX(i), -positions.getY(i))];
@@ -436,6 +452,12 @@ export default class DigScene extends ThreeScene {
         }
         panel.button('SELL BACKPACK HERE', () => this.sellAnywhere());
         panel.button('POWER SURGE (without using up the power chest)', () => this.openChest('power', this.currentZone, true));
+        panel.button('SPAWN TRACTOR AD SPOT (3 blocks ahead)', () => {
+            const forward = new THREE.Vector3(0, 0, 1);
+            const container = this.player.character?.container;
+            if (container) forward.applyQuaternion(container.quaternion).setY(0).normalize();
+            this.powerChests.debugPlaceNear(this.player.transform.position, forward);
+        });
         panel.button('ADD $100', () => DigProgress.addMoney(100));
         panel.button('ADD $5000', () => DigProgress.addMoney(5000));
         panel.button('RESET SAVE', () => {
@@ -474,9 +496,12 @@ export default class DigScene extends ThreeScene {
         this.treasureSparkles.update(delta, this.player.transform.position);
         this.treasureBeacons.focus = this.relicHunt.targetCell;
         this.treasureBeacons.update(delta, this.player.transform.position);
-        this.powerChests.update(delta, this.player.transform.position);
+        if (PlatformHandler.ENABLE_VIDEO_ADS) this.powerChests.update(this.player.transform.position, Gameplay.active && !this.tractorOfferOpen
+            && !this.phoneBusy && !this.adBreakRunning && this.hud.canOfferTractor);
+        this.updateTractorBadge();
         this.updatePowerSurge(delta);
-        this.terrain.update();
+        this.terrain.update(delta);
+        this.updateFog(delta);
         this.effects.update(delta);
         this.hub.setHubCash(DigProgress.hubCash, DigProgress.hubIncome);
         this.hub.update(delta, this.player.transform.position);
@@ -486,16 +511,23 @@ export default class DigScene extends ThreeScene {
         super.update(delta);
     }
 
-    /**
-     * A chest dug out reached the miner. Cash pays on the spot. Power lends a better tool for a while (PowerSurge):
-     * the drill-sized dig the upgrades lead to, early, with every block cashed as it breaks — once per player (the
-     * spawner stops offering it; `debug` = the debug button, which doesn't use it up).
-     */
+    /** The rewarded tractor spot's video badge, kept over the tractor on screen (bent like the world it floats in). */
+    private updateTractorBadge(): void {
+        if (!PlatformHandler.ENABLE_VIDEO_ADS || !this.powerChests.badgeVisible) {
+            this.hud.setTractorBadge(null);
+            return;
+        }
+        const world = BendService.applyToPosition(this.powerChests.badgePosition(this.badgeWorld));
+        const screen = this.worldToScreen(world);
+        this.hud.setTractorBadge(screen ? this.hud.toLocal(new PIXI.Point(screen.x, screen.y), this.game.app.stage) : null);
+    }
+
+    /** Cash chests pay immediately; power starts after a rewarded offer or the debug button. */
     private openChest(kind: ChestKind, zone: number, debug = false): void {
         if (!debug) GameAnalytics.chestDug(kind, DIG.zones[zone].id);
         if (kind === 'power' && !debug) DigProgress.once(POWER_CHEST_TAKEN);
         const at = this.player.pickupPoint(new THREE.Vector3());
-        const color = new THREE.Color(kind === 'power' ? 0x6fe3ff : 0xffd23f);
+        const color = new THREE.Color(kind === 'power' ? TRACTOR_SPOT_COLOR : 0xffd23f);
         for (let i = 0; i < 14; i++) {
             this.effects.sparkle(at.clone().add(new THREE.Vector3((Math.random() - 0.5) * 1.6, Math.random() * 0.8, (Math.random() - 0.5) * 1.6)), color, 0.55);
         }
@@ -543,7 +575,8 @@ export default class DigScene extends ThreeScene {
     }
 
     /** One swing broke `count` blocks: big swings shake the camera, and a long run pops a "N BLOCKS!". */
-    private onBroke(count: number): void {
+    private onBroke(count: number, at: THREE.Vector3): void {
+        this.effects.wideBreak(at, count);
         if (count >= SHAKE_FROM_BLOCKS) this.shake = Math.min(SHAKE_MAX, this.shake + count * SHAKE_PER_BLOCK);
         const before = this.combo;
         this.combo += count;
@@ -754,7 +787,7 @@ export default class DigScene extends ThreeScene {
         }
         if (forced) GameAnalytics.forcedShown(forced);
         this.hud.setForced(forced);
-        this.player.movementController.enabled = !forced && !this.leaving && !this.flyCamera.isEnabled();
+        this.player.movementController.enabled = !forced && !this.leaving && !this.tractorOfferOpen && !this.flyCamera.isEnabled();
     }
 
     /** Whether a tutorial step is done, from the progress (the funnel GameAnalytics reports). */
@@ -894,7 +927,7 @@ export default class DigScene extends ThreeScene {
      */
     private async adBreakAfterBuy(): Promise<void> {
         const now = performance.now();
-        if (this.adBreakRunning || !this.tutorialDone('build') || now - this.lastAdBreak < AD_BREAK_COOLDOWN_MS) return;
+        if (this.adBreakRunning || this.tractorOfferOpen || !this.tutorialDone('build') || now - this.lastAdBreak < AD_BREAK_COOLDOWN_MS) return;
         this.adBreakRunning = true;
         this.lastAdBreak = now;
         await new Promise((resolve) => window.setTimeout(resolve, AD_BREAK_DELAY_MS));
@@ -912,11 +945,19 @@ export default class DigScene extends ThreeScene {
     }
 
     /**
-     * The HUD's phone: a rewarded video, then the backpack sold right here at x2 (bandit's bonus flow: gameplay stops
-     * for the ad, the miner's next move starts it again). A closed or failed video sells nothing; the phone comes back.
+     * The HUD's phone: the backpack sold right here at x2. The first DigProgress.freeSellsLeft sales are free; after
+     * that it's a rewarded video first (bandit's bonus flow: gameplay stops for the ad, the miner's next move starts it
+     * again). A closed or failed video sells nothing; the phone comes back.
      */
     private async sellByPhone(): Promise<void> {
-        if (this.phoneBusy || DigProgress.backpackCount === 0) return;
+        if (this.phoneBusy || this.tractorOfferOpen || DigProgress.backpackCount === 0) return;
+        if (DigProgress.freeSellsLeft > 0) {
+            GameAnalytics.phoneTapped(true);
+            DigProgress.useFreeSell();
+            this.sellAnywhere(2);
+            GameAnalytics.phoneResult(true, true);
+            return;
+        }
         this.phoneBusy = true;
         this.hud.setPhoneBusy(true);
         GameAnalytics.phoneTapped();
@@ -935,6 +976,45 @@ export default class DigScene extends ThreeScene {
         this.hud.setPhoneBusy(false);
         GameAnalytics.phoneResult(watched);
         if (watched) this.sellAnywhere(2);
+    }
+
+    private offerTractor(): void {
+        if (this.tractorOfferOpen || !this.powerChests.available) return;
+        this.tractorOfferOpen = true;
+        this.player.movementController.enabled = false;
+        Gameplay.stop();
+        GameAnalytics.tractorOffer('start');
+        this.hud.showTractorOffer(() => void this.watchTractorVideo(), () => {
+            GameAnalytics.tractorOffer('skip');
+            this.tractorOfferOpen = false;
+            this.hud.hideTractorOffer();
+        });
+    }
+
+    private async watchTractorVideo(): Promise<void> {
+        if (this.tractorBusy || !this.tractorOfferOpen || !this.powerChests.available) return;
+        this.tractorBusy = true;
+        this.hud.setTractorBusy();
+        GameAnalytics.tractorOffer('interact');
+        let watched = false;
+        try {
+            Gameplay.stop();
+            watched = PlatformHandler.ENABLE_VIDEO_ADS
+                && await PlatformHandler.instance.platform.showRewardedVideo() === true;
+        } catch (error) {
+            console.warn('[DigScene] Tractor rewarded video failed', error);
+        }
+        this.tractorBusy = false;
+        if (this.sceneDestroyed) return;
+        GameAnalytics.tractorOffer(watched ? 'complete' : 'fail');
+        this.tractorOfferOpen = false;
+        this.hud.hideTractorOffer();
+        if (!watched) {
+            this.hud.say(t('tractorAdFailed'), 0xff9a8a);
+            return;
+        }
+        this.powerChests.consume();
+        this.openChest('power', this.terrain.zoneIndexAt(this.player.transform.position.x, this.player.transform.position.z), true);
     }
 
     /**
@@ -993,6 +1073,16 @@ export default class DigScene extends ThreeScene {
         this.threeCamera.lookAt(this.shakeOffset.add(this.followTarget));
     }
 
+    /** The far view fades into the miner's zone's fog colour (eased across borders), at the camera's distance. */
+    private updateFog(delta: number): void {
+        const position = this.player.transform.position;
+        const target = this.fogColors[this.terrain.zoneIndexAt(position.x, position.z)];
+        this.fog.color.lerp(target, 1 - Math.exp(-delta * FOG_BLEND));
+        const distance = cameraOffset(this.threeCamera).length();
+        this.fog.near = distance * FOG_NEAR;
+        this.fog.far = distance * FOG_FAR;
+    }
+
     public resize(): void {
         this.hud?.reposition();
         this.map?.reposition();
@@ -1036,7 +1126,7 @@ export default class DigScene extends ThreeScene {
         const position = this.player.transform.position;
         const moved = Math.hypot(position.x - this.gameplayLast.x, position.z - this.gameplayLast.z) > 0.02;
         this.gameplayLast.copy(position);
-        if (moved && Gameplay.started && !Gameplay.active) Gameplay.start();
+        if (moved && Gameplay.started && !Gameplay.active && !this.tractorOfferOpen && !this.phoneBusy && !this.adBreakRunning) Gameplay.start();
     }
 
     public destroy(): void {

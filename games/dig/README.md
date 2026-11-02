@@ -64,7 +64,9 @@ games/dig/
    and a minimum tool power (`materials` in `dig.json`). Rock the current tool can't dig shows a **padlock**.
 2. **Fill the backpack** — each broken block drops items that fly into the bag. A full bag is called out on screen,
    pulses in the HUD, and after a couple of tries at digging the guide's arrows lead back to the ATM.
-3. **Sell** — stand on the ATM pad or the boost machine's (or tap the **SELL x2** cash pile for a rewarded video, once it unlocks).
+3. **Sell** — stand on the ATM pad or the boost machine's (or tap the **SELL x2** cash pile for a rewarded video, once it unlocks). The first two
+   SELL x2 taps are free (`PHONE_FREE_SELLS` in `DigProgress`, save field `freeSells`): a FREE tag replaces the video
+   badge, and the first one also gets the pointing hand. Analytics item `sell-x2-free`.
 4. **Upgrade** — at the ATM: **GEAR** (the next tool, the next bag); at the **boost machine** (the ATM in purple,
    star icon): **BOOSTS** (repeatable levels). A hub without a `boost` station has both tabs on the ATM.
 
@@ -75,13 +77,16 @@ games/dig/
   income helps pay for). Vehicles are ridden outside the hub, faster, with an engine; a vehicle's `tint` repaints the
   tractor model (`utils/Paint.ts`, like the Digger's `greyscale`).
 - **Backpack** (`backpack`): 10 → 500 slots in 16 tiers (the first, forced
-  upgrade triples it: 10 → 30), sized so a trip is mostly digging, not walking.
+  upgrade more than quadruples it: 10 → 45, then 60 / 75 / 90 / 110 / 130), sized so a trip is mostly digging, not walking.
 - **Boosts** (`boosts`): Dig Speed, Sell Price, Ore Luck, Move Speed — 20 levels each, cost ×1.3 per level. They
   unlock with the first hat (right after the wardrobe), the Steel Pickaxe or a new mine; that reveals the hub's
   `boost-corner` area (reveal rule `boosts`) with the **boost machine** next to the ATM. No guide step for it: its
   "!" (a boost affordable) is all it gets. It sells the backpack too (hub cash is collected at the ATM only).
 - **Zones**: rings around the hub — Topsoil, Stone Layer, The Deep, Lost Ruins, Obsidian Depths — each with its own
-  rock (tinted so they read apart), ores and floor colour. The mine ends in a noisy round wall of black bedrock.
+  rock (tinted so they read apart — warm sand gravel against cool slate stone), ores and floor colour, and a
+  `fog` colour the far view fades into (eased across borders, also the horizon/background). Ore nuggets and gems
+  glow softly (breathing) and twinkle now and then, so valuable blocks stand out from plain rock. Lighting is a cool
+  sky fill plus a warm sun, so block sides stay readable from above. The mine ends in a noisy round wall of black bedrock.
   Amethyst is a rare purple gem in the obsidian.
 
 ### Mines (prestige)
@@ -105,39 +110,54 @@ Payouts grow with
 rarity and depth (`findPayout`); the first find of a mine always pays at least the next upgrade.
 
 ### Chests, power surges and rich veins
-Two kinds of **chests** (`chests`):
-- **Power chest** (cyan beam) — drawn as the tractor it lets you ride, glowing round the rainbow (its model loads
-  behind the game, not on the loading screen). The first is the Mega Drill moment, **once per player**, and it's
-  never buried: after `spawn.afterBlocks` blocks dug, it pops and fades onto the rock `spawn.ahead` blocks in front
-  of where the miner is digging (`mining/PowerChestSpawner.ts`), in rock their tool can dig. It waits however long it
-  takes; only if the miner goes more than `spawn.maxDistance` blocks away does it fade out, and the next dig after
-  `spawn.respawnDelay` s brings another. Only one at a time, and it counts as taken the moment its block breaks.
-  The guide never leads to it: it shows up right ahead with its own beam. Once it's dug and the tutorial is over
-  (the first hub piece built), there's always one more out there, one at a time: `power.roam.delay` s (3 minutes)
-  after each surge ends, the next sits on a block `roam.distance` blocks from the miner (never right by them), with
-  its beam — each a surge one tier above the tool. (Every 60 s, and inside the tutorial, surges cashed the bag so
-  often that sales, upgrades, boosts and ad moments dropped.)
-  Digging it starts a **power surge** (`mining/PowerSurge.ts`): for `seconds` the miner digs with the Mega Drill (or
+`chests` configures buried cash chests and the optional tractor offer:
+- **Rewarded tractor** — one fixed, seeded spot in The Deep per mine
+  (`mining/PowerChestSpawner.ts`). It unlocks when the player reaches The Deep,
+  with **no five-minute timer**. Within 16 blocks the spot shows the full-colour
+  tractor (turning, bobbing, 1.8x chest size), a green ring, a tall green light
+  beam (the video button's green, so it never reads as crystal cyan or treasure gold) and a floating green video button on a shine (`DigHud.setTractorBadge`,
+  projected each frame). Dig a path to its cell and step within 1.4 blocks to open an offer:
+  **WATCH VIDEO** (the standard video button: video icon, shine, pulse, glint) or **NOT YET**,
+  under a green ribbon with the tractor on a double shine and a 30s badge. It never relocates to follow the miner.
+  A completed rewarded video starts a **30-second power surge** and consumes
+  that mine's offer, saved across reloads/travel. Skip, incomplete video, or
+  failure grants nothing and leaves the spot available after stepping more than
+  2.4 blocks away and returning. No-ads variants hide it. There are no automatic
+  early or recurring power chests; stronger normal tools carry the opening.
+  `mining/PowerSurge.ts` lends the Mega Drill (or
   one tier above their tool if higher), a bit faster, and every block is **cashed on the spot** instead of filling
   the backpack. It's the game's "star": the miner rides the tractor as a small rainbow-glowing truck (`TractorRide`;
   its model loads behind the game from the first input), the screen's edge throbs in rainbow colours (`DigHud`
-  vignette) and a fast synthesised tune plays (`audio/StarMusic.ts`). A countdown shows at the top; when it ends the HUD names the tool to buy. Never offered once the
-  Mega Drill is owned. Forced tutorial purchases wait until a surge is over. (The data showed only ~8% reached the
-  Power Drill.)
+  vignette) and a fast synthesised tune plays (`audio/StarMusic.ts`). A countdown
+  shows at the top; expiry restores the owned tool and bag limits. The offer
+  explains that return before the player watches. Gameplay and movement pause
+  for the offer/ad; movement resumes after dismissal. A menu does not consume
+  surge time. The debug POWER SURGE bypasses the ad and does not consume the spot; the debug
+  **SPAWN TRACTOR AD SPOT** moves the spot 3 blocks ahead of the miner and makes it available again, to test the offer popup.
 - **Cash chest** (gold): `perZone` buried per zone, drawn and revealed like finds; pays `reward[zone]` ± `spread`,
   x the sell bonus, at once.
 
-Buried treasure within `beaconRange` blocks shows a pulsing **light beam** (`world/TreasureBeacons.ts`) — gold, cyan,
+Buried treasure within `beaconRange` blocks shows a pulsing **light beam** (`world/TreasureBeacons.ts`) — gold, green,
 or the find's rarity colour — and sparkles up close. **Rich veins** (`richOre`): ore in seeded noise patches grows
 bigger, more numerous nuggets/gems, twinkles, and drops `dropMultiplier` x the items. Swings that break several blocks
 shake the camera, and every 10 blocks in a run pops "N BLOCKS!". The dev MAP shows chests as squares; the Dig debug
 panel has **POWER SURGE**.
 
 ### Analytics time stamps
+Build changes and the observed opening minutes of each playtest are recorded in
+[the build timeline](data/BUILD_TIMELINE.md). Record every new test there with its
+source/deployment identity, unchanged systems and export window before comparing
+retention. The current local feedback revision adds a reusable 0.22-second ground
+pulse when a swing breaks multiple blocks; it preserves the stronger first upgrade
+and all progression tuning, and has not been measured by the latest export.
+
 Every event (except frequent ones: playtime, sells, bag full, ads, settings, equips) is sent twice: as before, and
 under category `time` with the total active play time (all sessions) as the minute its bucket starts at —
 `time / upgrade-tool-03-drill-m08 / complete` = the Power Drill bought 8–12 minutes in. The funnel stays as it was;
-the `time` events say when each step happens. See the table in `analytics/GameAnalytics.ts`.
+the `time` events say when each step happens. See the table in `analytics/GameAnalytics.ts`. Panel tab taps
+(`tab`, once per player per tab) and the wardrobe gifts (`gift`: badge seen, claimed with/without the badge) say
+whether players find the wardrobe's other pages; `BUILD_TIMELINE.md` lists which events answer each question for
+the current build.
 
 PokiSDK.measure() **drops** an event with more than 2 runs of digits across its three values (and any character
 outside `A-Z a-z 0-9 space - _ : . + |`). The old `m08-12` buckets used up both, so most `time` events with a number
@@ -179,6 +199,11 @@ with it twice; then the tutorial step (or, after it, the relic hunt when that's 
 quiet so digging isn't interrupted: only a full backpack and the first upgrade lead from there. The wardrobe and the
 first build are pointed at only once the miner is back in the hub. The Trophy Room is never pointed at: rewards are
 claimed on the find banner, so it's there for completing the collection (its totem still shows a "!" for new finds).
+
+**Free looks:** one colour (red `#ff5252`) and one face (Cool) are `free: true` in `wardrobe` — claimed for nothing,
+their card says FREE. Claimed on the hat visit, nothing more happens. Still unclaimed after the first hat, the wardrobe
+gets its "!" and, from the next visit on (`freeLooksOffered` in the save), the COLORS / FACES tabs and the cards wear a
+green bobbing FREE tag (`tagBadge` in TabBar.ts) until they're claimed.
 Tutorial funnel steps (`GameAnalytics.TUTORIAL`): move, dig, bag-full, sell, tool-upgrade, bag-upgrade, wardrobe,
 hat, find, claim, build — `collection` (opening the Trophy Room) was dropped, so `build` is now step 11.
 
@@ -213,7 +238,7 @@ Every tuning value lives here, not in code. Main sections:
 |---|---|
 | `terrain` | map radius, block height, seed, bedrock look (`bedrockTint`), the round edge (`edge`), zone wobble |
 | `materials` | each rock / ore: durability, minPower, value, drops, model, `tint`, gem `decorTint` |
-| `zones` | the rings: start distance, fill rock, patches, ores, tunnel `floor` colour |
+| `zones` | the rings: start distance, fill rock, patches, ores, tunnel `floor` colour, far-view `fog` colour |
 | `tools` | the tool path: power, hit interval, `area` / `depth`, price, `vehicle` / `greyscale` / `rideSpeed` |
 | `backpack` | bag tiers: capacity and price |
 | `boosts`, `boostsUnlockToolLevel` | the boost tracks |
@@ -221,7 +246,7 @@ Every tuning value lives here, not in code. Main sections:
 | `finds`, `findPayout`, `collectionReward`, `firstFindAfterBlocks` | artifacts and what they pay |
 | `relicHunt` | the guided relics after the tutorial: on/off, how many, how far one may be before it's moved closer |
 | `chests`, `richOre` | power / cash chests (count per zone, surge tool and length, rewards, beacon range) and rich veins |
-| `wardrobe` | colours, faces, hats and prices (the Crown is `unlock: "achievement"`) |
+| `wardrobe` | colours, faces, hats and prices (the Crown is `unlock: "achievement"`; `free: true` = a gift look) |
 | `achievements` | tiers, rewards, the hub decoration (`decor`, `decorAt`) or hat (`hat`) |
 | `tractor` | the ridden vehicle's model, seat, speed, smoke, `bodyRadius` (its footprint against rock) |
 

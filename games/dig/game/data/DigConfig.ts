@@ -49,6 +49,8 @@ export interface ZoneDef {
     fill: string;
     /** Tunnel floor colour in this zone (DigScene shades the mine floor by zone, blending at the borders). */
     floor?: string;
+    /** Fog colour while the miner is in this zone: the far view fades into it (DigScene.updateFog). */
+    fog?: string;
     patches: ZoneMix[];
     ores: ZoneMix[];
 }
@@ -76,6 +78,11 @@ export interface WardrobeItem {
     price: number;
     /** Not for sale: earned (`achievement` = an achievement whose `hat` it is: the Champion's Crown). */
     unlock?: 'achievement';
+    /**
+     * A gift: claimed for nothing (its price is only what it's worth). Unclaimed, it gets a FREE badge in the wardrobe
+     * from the visit after the first hat's (DigProgress.freeLookBadge).
+     */
+    free?: boolean;
 }
 
 export interface WardrobeCatalog {
@@ -280,33 +287,14 @@ export interface ChestKindDef {
 export interface ChestsDef {
     /** Blocks around the miner where buried treasure (finds and chests) shows a light beam. */
     beaconRange: number;
-    /**
-     * A timed taste of a better tool (PowerSurge). Never buried: it fades in ahead of where the player digs
-     * (PowerChestSpawner), once per player.
-     */
+    /** One fixed rewarded-video tractor offer per mine, unlocked in a deeper zone. */
     power: ChestKindDef & {
-        /** The tool it gives (one tier above the tool owned if that's higher); the first is not offered once it's owned. */
+        /** Minimum tool power lent; one tier above the owned tool if higher. */
         tool: string;
-        /**
-         * After the first: one at a time comes back, `delay` seconds after each surge ends, `distance` [min, max]
-         * blocks from the miner (PowerChestSpawner.updateRoaming).
-         */
-        roam: { delay: number; distance: number[] };
         seconds: number;
         /** Hits come this much faster than the tool's own. */
         speedMultiplier: number;
-        spawn: {
-            /** Blocks dug before the first one shows. */
-            afterBlocks: number;
-            /** How far in front of the dig face it appears, [min, max] blocks. */
-            ahead: number[];
-            /** Seconds after one faded away before the next may show. */
-            respawnDelay: number;
-            /** Left this many blocks behind, it fades away (it never goes just for waiting). */
-            maxDistance: number;
-            /** Seconds it takes to fade in (and half that to fade out). */
-            fadeIn: number;
-        };
+        offer: { zone: string; revealDistance: number; triggerDistance: number };
     };
     /** Cash on the spot: reward[zone] x (1 +- spread) x the sell bonus; perZone of them buried in each zone. */
     cash: ChestKindDef & { reward: number[]; spread: number; perZone: number[] };

@@ -309,13 +309,16 @@ export class PongLoaderAnimation {
                 height: ${this.HEIGHT}px;
                 margin-bottom: 24px;
                 flex-shrink: 0;
+                /* On the unclipped root: one fixed light direction for everything, and nothing cut off at the edges. */
+                filter: var(--loader-accent-filter, none);
             }
 
             .${ROOT_CLASS}__field {
                 position: relative;
                 width: 100%;
                 height: 100%;
-                overflow: hidden;
+                /* Clip only where the ball leaves the court (left/right): the stretched ball and its shadow can overhang top/bottom. */
+                clip-path: inset(-40px 0 -40px 0);
             }
 
             .${ROOT_CLASS}__paddle {
@@ -328,7 +331,6 @@ export class PongLoaderAnimation {
 
                 border-radius: 999px;
                 background: var(--loader-accent, #ffffff);
-                box-shadow: var(--loader-accent-shadow, none);
 
                 transform-origin: 50% 50%;
                 will-change: transform;
@@ -344,14 +346,12 @@ export class PongLoaderAnimation {
 
                 border-radius: 50%;
                 background: var(--loader-accent, #ffffff);
-                box-shadow: var(--loader-accent-shadow, none);
 
                 transform-origin: 50% 50%;
                 will-change: transform;
             }
 
             .${ROOT_CLASS}__ghost {
-                box-shadow: none;
                 opacity: 0;
             }
         `;

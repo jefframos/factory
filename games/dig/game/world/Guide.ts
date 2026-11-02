@@ -23,7 +23,7 @@ import type { RelicHunt } from './RelicHunt';
 import { PowerSurge } from '../mining/PowerSurge';
 import { t, names } from '../i18n/Localization';
 
-/** Gold: "the way to go" — reads best on the hub's tan floor and the rock. */
+/** Gold with a dark silhouette, so direction is readable on light and dark surfaces. */
 const COLOR = 0xffd23f;
 /** The trail and the marker ring float this high, above rugs and carpets (up to ~0.17 tall), so they never vanish under them. */
 const FLOOR_LIFT = 0.25;
@@ -36,6 +36,45 @@ const NEAR = 1.4;
 const REPATH_SEC = 0.25;
 /** Each triangle grows and fades with a wave that runs along the trail towards the target. */
 const WAVE_SPEED = 3.2;
+
+/**
+ * A flat arrowhead with rounded corners, tip along +Z, lying on the floor. `grow` pads it evenly on every side (the
+ * outline), so the border keeps one width all round instead of the thin tip a scaled copy would give.
+ */
+function roundedTriangle(halfWidth: number, tipRadius: number, baseRadius: number, grow = 0): THREE.ShapeGeometry {
+    const corners = [new THREE.Vector2(0, 0.24), new THREE.Vector2(halfWidth, -0.16), new THREE.Vector2(-halfWidth, -0.16)];
+    const shape = new THREE.Shape();
+    for (let i = 0; i < 3; i++) {
+        const radius = i === 0 ? tipRadius : baseRadius;
+        const r = radius + grow;
+        const corner = corners[i];
+        const prev = corners[(i + 2) % 3];
+        const next = corners[(i + 1) % 3];
+        const toPrev = prev.clone().sub(corner).normalize();
+        const toNext = next.clone().sub(corner).normalize();
+        // Inset the corner to the rounded arc's centre; the arc touches both edges, and `grow` pads it outwards.
+        const half = Math.acos(Math.max(-1, Math.min(1, toPrev.dot(toNext)))) / 2;
+        const bisector = toPrev.clone().add(toNext).normalize();
+        const centre = corner.clone().addScaledVector(bisector, radius / Math.sin(half));
+        const along = radius / Math.tan(half);
+        const fromPrev = corner.clone().addScaledVector(toPrev, along).sub(centre);
+        const toward = corner.clone().addScaledVector(toNext, along).sub(centre);
+        const start = Math.atan2(fromPrev.y, fromPrev.x);
+        let sweep = Math.atan2(toward.y, toward.x) - start;
+        while (sweep > Math.PI) sweep -= Math.PI * 2;
+        while (sweep <= -Math.PI) sweep += Math.PI * 2;
+        const startPoint = new THREE.Vector2(centre.x + Math.cos(start) * r, centre.y + Math.sin(start) * r);
+        if (i === 0) shape.moveTo(startPoint.x, startPoint.y);
+        else shape.lineTo(startPoint.x, startPoint.y);
+        shape.absarc(centre.x, centre.y, r, start, start + sweep, sweep < 0);
+    }
+    shape.closePath();
+    const geometry = new THREE.ShapeGeometry(shape, 6);
+    // Flat on the floor facing up: the tip (+Y in the shape) then points to -Z, so turn it to +Z.
+    geometry.rotateX(-Math.PI / 2);
+    geometry.rotateY(Math.PI);
+    return geometry;
+}
 
 export interface GuideStep {
     text: string;
@@ -51,6 +90,8 @@ export interface GuideStep {
 export class Guide {
     private readonly marker = new THREE.Group();
     private readonly trail: THREE.Mesh[] = [];
+    private readonly trailGeometries: THREE.BufferGeometry[] = [];
+    private readonly outlineMaterial = new THREE.MeshBasicMaterial({ color: 0x241d18, transparent: true, opacity: 0.95, depthWrite: false, depthTest: false });
     private route: THREE.Vector3[] = [];
     private routeTarget = new THREE.Vector3(Infinity, 0, 0);
     private repath = 0;
@@ -72,24 +113,22 @@ export class Guide {
         ring.rotation.x = -Math.PI / 2;
         ring.position.y = FLOOR_LIFT;
         this.marker.add(cone, ring);
-        // Trail: flat triangles with their tip along +Z, turned along the route each frame.
-        const shape = new THREE.Shape();
-        shape.moveTo(0, 0.24);
-        shape.lineTo(0.2, -0.16);
-        shape.lineTo(-0.2, -0.16);
-        shape.closePath();
-        const geometry = new THREE.ShapeGeometry(shape);
-        // Flat on the floor facing up: the tip (+Y in the shape) then points to -Z, so turn it to +Z.
-        geometry.rotateX(-Math.PI / 2);
-        geometry.rotateY(Math.PI);
+        // Trail: flat rounded triangles with their tip along +Z, turned along the route each frame.
+        const geometry = roundedTriangle(0.2, 0.02, 0.035);
+        const outlineGeometry = roundedTriangle(0.2, 0.02, 0.035, 0.06);
+        this.trailGeometries.push(geometry, outlineGeometry);
         // Drawn over everything: in a tunnel the rock in front (towards the camera) would hide the arrows on its floor.
         const trailMaterial = new THREE.MeshBasicMaterial({ color: COLOR, transparent: true, depthWrite: false, depthTest: false });
         BendService.applyBend(trailMaterial);
+        BendService.applyBend(this.outlineMaterial);
         for (let i = 0; i < TRAIL_MAX; i++) {
             const mesh = new THREE.Mesh(geometry, trailMaterial.clone());
             BendService.applyBend(mesh.material as THREE.Material);
             mesh.visible = false;
             mesh.renderOrder = 8;
+            const outline = new THREE.Mesh(outlineGeometry, this.outlineMaterial);
+            outline.renderOrder = 7;
+            mesh.add(outline);
             this.trail.push(mesh);
             threeScene.add(mesh);
         }
@@ -260,7 +299,7 @@ export class Guide {
                 // A wave of size and brightness running towards the target.
                 const wave = 0.5 + 0.5 * Math.sin(next * 1.6 - this.time * WAVE_SPEED);
                 mesh.scale.setScalar(0.8 + wave * 0.35);
-                (mesh.material as THREE.MeshBasicMaterial).opacity = 0.45 + wave * 0.55;
+                (mesh.material as THREE.MeshBasicMaterial).opacity = 0.8 + wave * 0.2;
                 next += SPACING;
             }
             along += leg;
@@ -270,6 +309,11 @@ export class Guide {
 
     public destroy(): void {
         this.marker.removeFromParent();
-        this.trail.forEach((mesh) => mesh.removeFromParent());
+        this.trailGeometries.forEach((geometry) => geometry.dispose());
+        this.trail.forEach((mesh) => {
+            mesh.removeFromParent();
+            (mesh.material as THREE.Material).dispose();
+        });
+        this.outlineMaterial.dispose();
     }
 }

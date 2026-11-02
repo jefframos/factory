@@ -1,4 +1,8 @@
 {
+    "tractorOfferTitle": "BOOST TRAKTOR",
+    "tractorOfferBody": "Tonton video untuk menggali lebih kuat dan mendapat uang langsung selama {seconds}d. Setelah itu alatmu kembali. Sekali per tambang.",
+    "tractorWatch": "TONTON VIDEO",
+    "tractorAdFailed": "Video belum selesai. Menjauh lalu kembali untuk mencoba lagi.",
     "titleUpgrades": "UPGRADE",
     "titleCollection": "KOLEKSI",
     "titleWardrobe": "LEMARI",
@@ -67,6 +71,7 @@
     "tabHats": "TOPI",
     "wearing": "DIPAKAI",
     "owned": "DIMILIKI",
+    "free": "GRATIS",
     "collectionLock": "KOLEKSI",
     "completeCollection": "LENGKAPI KOLEKSINYA!",
     "lookBought": "{name} DIBELI!",

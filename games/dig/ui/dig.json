@@ -37,6 +37,7 @@
       "drops": 1,
       "ore": false,
       "block": "mine/gravel.glb",
+      "tint": "#e6cfa6",
       "pickup": "mine/stone-chunks-small.glb"
     },
     {
@@ -49,6 +50,7 @@
       "drops": 1,
       "ore": false,
       "block": "mine/stone.glb",
+      "tint": "#b4bfd4",
       "pickup": "mine/stone-chunks-small.glb"
     },
     {
@@ -101,7 +103,8 @@
       "ore": true,
       "block": "mine/stone-with-copper.glb",
       "pickup": "mine/copper-nugget-small.glb",
-      "decor": "mine/copper-nugget-small.glb"
+      "decor": "mine/copper-nugget-small.glb",
+      "decorScale": 1.3
     },
     {
       "id": "silver",
@@ -276,27 +279,27 @@
       "price": 0
     },
     {
-      "capacity": 30,
+      "capacity": 45,
       "price": 10
     },
     {
-      "capacity": 40,
+      "capacity": 60,
       "price": 90
     },
     {
-      "capacity": 55,
+      "capacity": 75,
       "price": 160
     },
     {
-      "capacity": 70,
+      "capacity": 90,
       "price": 260
     },
     {
-      "capacity": 90,
+      "capacity": 110,
       "price": 400
     },
     {
-      "capacity": 115,
+      "capacity": 130,
       "price": 600
     },
     {
@@ -342,6 +345,7 @@
       "name": "Topsoil",
       "from": 0,
       "floor": "#5a3f2c",
+      "fog": "#5b4330",
       "fill": "dirt",
       "patches": [
         {
@@ -361,6 +365,7 @@
       "name": "Stone Layer",
       "from": 20,
       "floor": "#4f4a45",
+      "fog": "#4b5466",
       "fill": "stone",
       "patches": [
         {
@@ -384,6 +389,7 @@
       "name": "The Deep",
       "from": 34,
       "floor": "#323a4e",
+      "fog": "#253457",
       "fill": "deeprock",
       "patches": [
         {
@@ -407,6 +413,7 @@
       "name": "Lost Ruins",
       "from": 48,
       "floor": "#6b3d26",
+      "fog": "#6b3a28",
       "fill": "ruins",
       "patches": [
         {
@@ -430,6 +437,7 @@
       "name": "Obsidian Depths",
       "from": 64,
       "floor": "#2a2236",
+      "fog": "#2e2245",
       "fill": "obsidian",
       "patches": [
         {
@@ -637,7 +645,8 @@
       },
       {
         "id": "#ff5252",
-        "price": 175
+        "price": 175,
+        "free": true
       },
       {
         "id": "#66bb6a",
@@ -705,7 +714,8 @@
       {
         "id": "skins/cool.webp",
         "name": "Cool",
-        "price": 80
+        "price": 80,
+        "free": true
       },
       {
         "id": "skins/face-smirk-1.webp",
@@ -1218,22 +1228,15 @@
     "place": [6, 10]
   },
   "chests": {
-    "$comment": "Buried chests besides the finds, each in a seeded block of its zone. power (drawn as the tractor the surge rides, glowing round the rainbow; its model loads behind the game): digging it out gives a timed taste of a better tool (at least one tier above the one owned, never below `tool`) for `seconds`, digging `speedMultiplier` faster; while it lasts every block is cashed at once (no backpack). It is never buried: once the player has dug spawn.afterBlocks blocks, one fades in spawn.ahead blocks in front of where they are digging; left more than spawn.maxDistance blocks behind (never just for waiting) it fades out and another comes spawn.respawnDelay seconds later. That first one comes once per player (and never once they own `tool`); once it has been dug and the tutorial is over (the first hub piece built), one at a time comes back for good: roam.delay seconds after each surge ends (or after the tutorial ends), roam.distance blocks from the miner. cash: pays reward[zone] (x 1 +- spread, x the sell bonus) on the spot. cash.perZone = how many per zone (index = zone). beaconRange = blocks around the miner where buried treasure shows a light beam.",
+    "$comment": "Cash chests are buried per zone and pay immediately. Power is a fixed, seeded tractor offer per mine, unlocked on reaching offer.zone and revealed within revealDistance. Dig a path and step within triggerDistance to choose a rewarded video or Not yet. A completed video grants seconds of stronger digging and auto-cash, consuming the offer for that mine. Skip/failure allows retry after leaving and re-entering; no early or recurring automatic power chests.",
     "beaconRange": 16,
     "power": {
       "model": "hub/kenney-car-kit-tractor-shovel/kenney-car-kit-tractor-shovel.glb",
       "size": 1.1,
       "tool": "megadrill",
-      "seconds": 25,
+      "seconds": 30,
       "speedMultiplier": 1.25,
-      "spawn": {
-        "afterBlocks": 25,
-        "ahead": [2, 4],
-        "respawnDelay": 6,
-        "maxDistance": 24,
-        "fadeIn": 0.7
-      },
-      "roam": { "delay": 180, "distance": [10, 20] }
+      "offer": { "zone": "deep", "revealDistance": 16, "triggerDistance": 1.4 }
     },
     "cash": {
       "model": "mine/chest.glb",

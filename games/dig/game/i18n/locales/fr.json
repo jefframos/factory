@@ -1,4 +1,8 @@
 {
+    "tractorOfferTitle": "BOOST TRACTEUR",
+    "tractorOfferBody": "Regarde une vidéo pour creuser puissamment et gagner de l'argent instantanément pendant {seconds}s. Ton outil revient ensuite. Un tour par mine.",
+    "tractorWatch": "VOIR LA VIDÉO",
+    "tractorAdFailed": "Vidéo non terminée. Éloigne-toi puis reviens pour réessayer.",
     "titleUpgrades": "AMÉLIORATIONS",
     "titleCollection": "COLLECTION",
     "titleWardrobe": "GARDE-ROBE",
@@ -67,6 +71,7 @@
     "tabHats": "CHAPEAUX",
     "wearing": "PORTÉ",
     "owned": "ACQUIS",
+    "free": "GRATUIT",
     "collectionLock": "COLLECTION",
     "completeCollection": "COMPLÈTE LA COLLECTION !",
     "lookBought": "{name} ACHETÉ !",

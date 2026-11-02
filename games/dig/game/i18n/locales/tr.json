@@ -1,4 +1,8 @@
 {
+    "tractorOfferTitle": "TRAKTÖR TAKVİYESİ",
+    "tractorOfferBody": "{seconds} saniyelik güçlü kazı ve anında para için video izle. Sonra kendi aletine dönersin. Maden başına bir sürüş.",
+    "tractorWatch": "VİDEO İZLE",
+    "tractorAdFailed": "Video tamamlanmadı. Uzaklaşıp geri gelerek tekrar dene.",
     "titleUpgrades": "GELİŞTİRMELER",
     "titleCollection": "KOLEKSİYON",
     "titleWardrobe": "GARDIROP",
@@ -67,6 +71,7 @@
     "tabHats": "ŞAPKALAR",
     "wearing": "ÜSTÜNDE",
     "owned": "SENDE",
+    "free": "BEDAVA",
     "collectionLock": "KOLEKSİYON",
     "completeCollection": "KOLEKSİYONU TAMAMLA!",
     "lookBought": "{name} ALINDI!",
