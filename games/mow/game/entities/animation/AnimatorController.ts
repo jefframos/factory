@@ -126,6 +126,12 @@ export default class AnimatorController {
         return this.animations[id]?.duration;
     }
 
+    /** `boneName`'s rotation on the registered clip's first frame (undefined if the clip doesn't animate it). */
+    public firstFrameRotation(id: string, boneName: string): THREE.Quaternion | undefined {
+        const track = this.animations[id]?.tracks.find((t) => t.name === `${boneName}.quaternion`);
+        return track ? new THREE.Quaternion().fromArray(track.values, 0) : undefined;
+    }
+
     /**
      * Get animation settings for a registered animation ID. Use this to configure
      * per-animation playback speeds that persist across play() calls.

@@ -95,5 +95,8 @@
         "signals": "^1.0.0",
         "stats.js": "^0.17.0",
         "three": "^0.183.0"
+    },
+    "overrides": {
+        "sharp": "0.33.5"
     }
 }

@@ -53,7 +53,7 @@ import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { MowProgress } from '../data/MowProgress';
 import { Gameplay } from '../data/Gameplay';
 import { MowAudio } from '../audio/MowAudio';
-import { EngineSound } from '../audio/EngineSound';
+import { EngineSound, MowerVoice } from '../audio/EngineSound';
 import { GrassLocks } from '../world/GrassLocks';
 import { Traffic } from '../world/Traffic';
 import { GameAnalytics } from '../analytics/GameAnalytics';
@@ -71,6 +71,8 @@ export const MOW_CAMERA = {
 
 const REFERENCE_ASPECT = Game.DESIGN_WIDTH / Game.DESIGN_HEIGHT;
 const MAX_FRAME_SEC = 0.1;
+/** Metres walked per footstep sound. */
+const STEP_DISTANCE = 0.9;
 const FLOOR_HALF_THICKNESS = 0.5;
 /** Selling: at most this many clumps are tossed into the bin. */
 const SELL_TOSSES = 12;
@@ -118,7 +120,8 @@ export default class MowScene extends ThreeScene {
     private hud!: MowHud;
     private tractor!: TractorRide;
     private readonly engine = new EngineSound();
-    private engineOn = false;
+    /** Distance walked since the last footstep (updateFootsteps()). */
+    private stepDistance = 0;
     private characterReady: Promise<void> = Promise.resolve();
     private sceneDestroyed = false;
     private readonly followTarget = new THREE.Vector3();
@@ -194,6 +197,10 @@ export default class MowScene extends ThreeScene {
         this.effects = new MowEffects(this.threeScene, 0.5, () => this.player.pickupPoint(new THREE.Vector3()));
         this.tractor = new TractorRide(this.threeScene, this.player, this.effects, (x, z) => this.inUnfinishedSection(x, z));
         this.player.ridePoint = (out) => this.tractor.cutPoint(out);
+        this.player.groundAt = (x, z) => {
+            const ground = this.town.surfaceAt(x, z);
+            return ground.kind === 'pavement' ? ground.y : 0;
+        };
         this.guide = new ArrowGuide(this.threeScene, () => this.town.blockers, () => this.town.unstandable());
         this.hud = this.createHud();
         Localization.onLocaleChange.add(this.onLocaleChange, this);
@@ -371,20 +378,35 @@ export default class MowScene extends ThreeScene {
         this.threeCamera.lookAt(this.followTarget);
     }
 
-    /** Powered mowers run an engine (rising with the speed); the reel and the push mower are quiet. */
+    /**
+     * The mower's sound by kind (EngineSound): the reel mowers click, the walked engine mowers hum, the ride-ons chug
+     * (only while ridden: on foot the hands are free). It follows the walking speed. Then the footsteps.
+     */
     private updateEngine(delta: number): void {
-        // A ridden mower's engine runs only while it's ridden.
-        const engine = MowProgress.tool.engine === true && (!MowProgress.tool.ride || this.tractor.isRiding);
-        if (engine !== this.engineOn) {
-            this.engineOn = engine;
-            if (engine) this.engine.start();
-            else this.engine.stop();
-        }
-        if (!engine || delta <= 0) return;
+        const tool = MowProgress.tool;
+        const voice: MowerVoice | null = tool.reel ? 'reel' : tool.ride ? (this.tractor.isRiding ? 'tractor' : null) : tool.engine ? 'electric' : null;
+        if (voice) this.engine.start(voice);
+        else this.engine.stop();
+        if (delta <= 0) return;
         const position = this.player.transform.position;
         const moved = Math.hypot(position.x - this.lastPosition.x, position.z - this.lastPosition.z);
-        this.engine.update(moved / delta / Math.max(1, MowProgress.speed));
         this.lastPosition.copy(position);
+        if (voice) this.engine.update(moved / delta / Math.max(1, MowProgress.speed), delta);
+        this.updateFootsteps(moved);
+    }
+
+    /** A step sound every STEP_DISTANCE walked, by what's underfoot (none while riding; a teleport doesn't count). */
+    private updateFootsteps(moved: number): void {
+        if (this.tractor.isRiding || moved > 3) {
+            this.stepDistance = 0;
+            return;
+        }
+        this.stepDistance += moved;
+        if (this.stepDistance < STEP_DISTANCE) return;
+        this.stepDistance = 0;
+        const position = this.player.transform.position;
+        const kind = this.town.surfaceAt(position.x, position.z).kind;
+        MowAudio.play(kind === 'pavement' ? 'stepStone' : kind === 'deck' ? 'stepWood' : 'stepGrass');
     }
 
     /** "Drag to move" until the player has walked a little (a brand-new game only). */

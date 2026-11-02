@@ -52,6 +52,8 @@ export const PAD_RADIUS = 1.4;
  * slabs under them never show through.
  */
 const GROUND_Y = -0.05;
+/** The sections' grass ground (GrassField). */
+const GRASS_Y = 0.01;
 const PAVEMENT_Y = 0.02;
 const PAVEMENT_STEP = 0.012;
 /** Station pads: just over the top pavement (each pavement sits a step above the one before). */
@@ -361,6 +363,8 @@ export class Town {
     private readonly group = new THREE.Group();
     /** What the props block (fixed). */
     private readonly propBoxes: Box[] = [];
+    /** Flat props laid on the ground (road tiles): their footprint and top, for surfaceAt(). */
+    private readonly floors: { minX: number; maxX: number; minZ: number; maxZ: number; top: number }[] = [];
     /** Each station's box, by kind (no grass under any of them; blocking once it's there). */
     private readonly boxes: Record<StationKind, Box[]> = {
         atm: stationSpots('atm').map((spot) => stationBox(spot, stationLook('atm'))),
@@ -639,6 +643,14 @@ export class Town {
             object.rotation.y = prop.rotationY;
             this.settle(object, prop.x, prop.elevation ?? 0, prop.z);
             this.group.add(object);
+            if (prop.height < FLAT_HEIGHT) {
+                // Its top where it's walked on (the middle: a road tile's kerbs stand higher than the asphalt).
+                object.updateMatrixWorld(true);
+                const box = new THREE.Box3().setFromObject(object);
+                const ray = new THREE.Raycaster(new THREE.Vector3(prop.x, box.max.y + 1, prop.z), new THREE.Vector3(0, -1, 0));
+                const top = ray.intersectObject(object, true)[0]?.point.y ?? box.max.y;
+                this.floors.push({ minX: box.min.x, maxX: box.max.x, minZ: box.min.z, maxZ: box.max.z, top });
+            }
         }));
     }
 
@@ -961,6 +973,23 @@ export class Town {
 
     // ---------------------------------------------------------------- layout queries
 
+    /**
+     * The ground at (x, z): its height (the top pavement or road tile over it, else the grass) and what it is (for
+     * footsteps): `pavement`, `deck` (the island's wooden band), or `grass`.
+     */
+    public surfaceAt(x: number, z: number): { y: number; kind: 'pavement' | 'deck' | 'grass' } {
+        let y = -Infinity;
+        TOWN.pavements.forEach((p, i) => {
+            if (Math.abs(x - p.x) <= p.width / 2 && Math.abs(z - p.z) <= p.depth / 2) y = Math.max(y, PAVEMENT_Y + i * PAVEMENT_STEP);
+        });
+        for (const f of this.floors) {
+            if (x >= f.minX && x <= f.maxX && z >= f.minZ && z <= f.maxZ) y = Math.max(y, f.top);
+        }
+        if (y > -Infinity) return { y, kind: 'pavement' };
+        const deck = TOWN.island?.deck;
+        if (deck && containsPoint(this.shore, x, z) && edgeDistance(this.shore, x, z) < deck.width) return { y: DECK_Y, kind: 'deck' };
+        return { y: GRASS_Y, kind: 'grass' };
+    }
     /** No grass under pavements, props or ATMs. */
     public isBlocked(x: number, z: number): boolean {
         const pad = 0.25;

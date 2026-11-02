@@ -13,6 +13,10 @@ in code, `Town.bloom()`, springing up in a wave; sparse and low — `FLOWER_DENS
 (`player/MowerModel.ts`: the two reel mowers a spinning bladed barrel between two wheels, the three push mowers a long
 deck on four wheels with the engine — a capped cylinder — in its middle), each pushed by a U handle with a crossbar
 the hands hold; the ridden ones are dig's tractor. The shop's mower icons are rendered from these same models.
+Holding the mower (`MowPlayer.holdPose()`): the legs walk with the clip, but each arm (shoulder, upper arm, forearm)
+is frozen in the idle pose and solved as a two-bone IK chain pinned at its grip on the bar, the elbow bending toward
+`ELBOW_POLE` (back, out, a little down); the fingers stay closed round the bar (the idle clip's first frame). The
+mower rolls on top of pavements and road tiles (`Town.surfaceAt()`), its handle and the hands lifting with it.
 
 ---
 
@@ -54,7 +58,11 @@ save.
    goal — two reel mowers, three push mowers, three tractors: **Reel Mower** (bag 120) → Wide Reel ($15, bag 280) → Push Mower ($120) →
    Powered ($450) → Pro ($1800) → Lawn Tractor ($5000, the first ride) → Turbo → **Mega** — the next mower's offer, and
    the bag's capacity with its levels. **BOOSTS** (after the first mower; "!" when one is affordable): Speed, Money
-   Gain, Cutting Width, Sharp Blades (chew through tough grass faster). Powered and bigger mowers run an engine.
+   Gain, Cutting Width, Sharp Blades (chew through tough grass faster). Each kind of mower sounds different
+   (`audio/EngineSound.ts`, synthesised, kept low under the music): the reel mowers click as the blades pass (faster
+   as you walk, silent standing still), the push / powered / pro mowers hum like an electric motor, the ridden ones
+   chug like a petrol engine. Footsteps follow what's underfoot: stone on pavements and roads, wood on the island's
+   deck, a soft pad on grass (`MowScene.updateFootsteps()`).
 4. **Dress up** — the first **wardrobe** appears with the second sale and the arrows lead to it; its first (cheapest)
    hat is a must (the wardrobe locks onto it, money topped up if short). Every wardrobe (Dig's closet, a pink pad with a
    heart) opens Dig's wardrobe: COLORS / FACES / HATS,
@@ -151,18 +159,19 @@ follow walkable ground — round the locked sections, never through them.
 games/mow/
   index.ts              boot (platform, language, audio, fonts, atlas, then the scene)
   game/
-    scenes/MowScene.ts  the game: town, grass, player, stations, restoration, guide, engine sound
+    scenes/MowScene.ts  the game: town, grass, player, stations, restoration, guide, mower sound, footsteps
+    audio/              MowAudio (sound cues), EngineSound (the synthesised reel / electric / petrol mower voices)
     world/GrassField.ts the vegetation: a cell grid over the sections, instanced tufts per 16x16 chunk, the mowed-lawn
                         ground shader (pixel-noise grass + a cut map), cut states, resistance
     world/Town.ts       builds levels/town.json: ground, island (deck, sides, sea, fence), pavements, props, ATMs,
-                        fences, flowers; walkability, "no grass here"
+                        fences, flowers; walkability, "no grass here", surfaceAt (ground height / kind)
     world/Shore.ts      the island's outline and its polygon maths (insets, inside, edge distance)
     world/ArrowGuide.ts the floor arrows
     world/GrassLocks.ts padlocks (with the mower it takes) over grass the mower can't cut
     world/Traffic.ts    a few cars driving the road tiles, stopping for the player
     mowing/MowingSystem.ts  automatic cutting while moving
     mowing/Combo.ts     rush mode's combo meter
-    player/MowPlayer.ts the character with the tool cube in front
+    player/MowPlayer.ts the character pushing the mower (arm IK, finger grip, the mower lifted onto pavements)
     ui/MowHud.ts        money / bag / district bar and milestones / restored banner / combo / shop / language
     data/               MowConfig (typed ui/mow.json), MowProgress (the save, versioned), GameMode (calm / rush)
     analytics/          GameAnalytics (every event; first-session funnel)

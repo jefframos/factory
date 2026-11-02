@@ -39,6 +39,8 @@ const SOUNDS = {
     // walking
     stepStone: { soundId: five('step-stone'), volumeMinMax: [0.12, 0.16], pitchMinMax: [0.92, 1.08] },
     stepWood: { soundId: [0, 1, 2, 3, 4].map((i) => `step-wood-${i}`), volumeMinMax: [0.16, 0.2], pitchMinMax: [0.92, 1.08] },
+    // On the lawn: the stone steps pitched down and quieter (a soft, dull pad rather than a click).
+    stepGrass: { soundId: five('step-stone'), volumeMinMax: [0.07, 0.09], pitchMinMax: [0.7, 0.8] },
     // money
     coins: { soundId: ['coins-1', 'coins-2'], volumeMinMax: [0.18, 0.22], pitchMinMax: [0.95, 1.12] },
     // ui
@@ -70,7 +72,7 @@ const SOUNDS = {
 export type Cue = keyof typeof SOUNDS;
 
 /** Repeats closer than this are dropped (a burst of pickups or coins doesn't stack into noise). */
-const COOLDOWN_MS: Partial<Record<Cue, number>> = { cut: 90, stepStone: 120, stepWood: 120, coins: 55, collectStone: 45, collectMetal: 45, collectGem: 45 };
+const COOLDOWN_MS: Partial<Record<Cue, number>> = { cut: 90, stepStone: 120, stepWood: 120, stepGrass: 120, coins: 55, collectStone: 45, collectMetal: 45, collectGem: 45 };
 const DEFAULT_COOLDOWN_MS = 60;
 
 export class MowAudio {

@@ -443,28 +443,6 @@
       }
     },
     {
-      "model": "town/city/car_sedan.gltf",
-      "x": -27,
-      "z": -14,
-      "rotationY": 1.5708,
-      "height": 2.2,
-      "collider": {
-        "halfX": 2.8,
-        "halfZ": 1.25
-      }
-    },
-    {
-      "model": "town/city/car_taxi.gltf",
-      "x": 27,
-      "z": -9,
-      "rotationY": -1.5708,
-      "height": 2.5,
-      "collider": {
-        "halfX": 2.7,
-        "halfZ": 1.2
-      }
-    },
-    {
       "model": "town/city/building_E_withoutBase.gltf",
       "x": 0,
       "z": -26.3,
@@ -681,28 +659,6 @@
         "halfZ": 2.75
       },
       "fade": true
-    },
-    {
-      "model": "town/city/car_hatchback.gltf",
-      "x": -31,
-      "z": -9.5,
-      "rotationY": -1.5708,
-      "height": 2,
-      "collider": {
-        "halfX": 2.2,
-        "halfZ": 1.15
-      }
-    },
-    {
-      "model": "town/city/car_stationwagon.gltf",
-      "x": -5.5,
-      "z": -14,
-      "rotationY": 1.5708,
-      "height": 2.2,
-      "collider": {
-        "halfX": 2.8,
-        "halfZ": 1.25
-      }
     },
     {
       "model": "town/city/dumpster.gltf",
@@ -1473,28 +1429,6 @@
       "collider": {
         "halfX": 0.15,
         "halfZ": 0.15
-      }
-    },
-    {
-      "model": "town/city/car_sedan.gltf",
-      "x": -24,
-      "z": 24.8,
-      "rotationY": 1.5707963267948966,
-      "height": 2.2,
-      "collider": {
-        "halfX": 2.8,
-        "halfZ": 1.25
-      }
-    },
-    {
-      "model": "town/city/car_taxi.gltf",
-      "x": 9,
-      "z": 22.2,
-      "rotationY": -1.5707963267948966,
-      "height": 2.5,
-      "collider": {
-        "halfX": 2.7,
-        "halfZ": 1.2
       }
     }
   ],
