@@ -86,6 +86,11 @@ export interface TractorConfig {
     smoke: { count: number; size: number; color: string };
     /** Puffs from the exhaust while it moves. */
     exhaust: { x: number; y: number; z: number; interval: number; size: number };
+    /**
+     * The steering wheel the hands hold (in its frame, x rideScale): its middle, the hands `spread` either side, turned
+     * by `hand` (degrees, like a mower's grip). None: the hands stay as the sitting pose has them.
+     */
+    steer?: { x: number; y: number; z: number; spread: number; hand?: { x: number; y: number; z: number } };
 }
 
 export type UpgradeId = 'capacity' | 'speed' | 'money' | 'width' | 'blades';
@@ -408,6 +413,12 @@ export interface MowDesign {
     combo: ComboDef;
     cell: number;
     seed: number;
+    /**
+     * The player's size against the town (1 = the rig as authored): the character, a pushed mower's length and height
+     * (not its width: that's what it cuts), where the hands hold it, and the tractor. Gameplay (cut widths, speeds,
+     * the body's footprint) doesn't change with it.
+     */
+    playerScale?: number;
     clippingPrice: number;
     /**
      * Seconds of contact to chew through one cell of grass n powers too tough (entry n - 1); grass more powers too

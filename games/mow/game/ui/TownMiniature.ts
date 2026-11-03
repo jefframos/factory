@@ -38,6 +38,35 @@ const PREVIEW = { out: 0.35, fill: 1.2, back: 0.35 };
 /** The % under the picture: how far it rides up over the picture's bottom edge, its pill's size and its font size. */
 const BADGE_OVERLAP = 8;
 const BADGE_WIDTH = 72;
+/** The corner badge's pips (one per section): size, gap, and their colours (restored / not yet). */
+const PIP = { size: 8, gap: 4, done: '#ffd23f', locked: '#4a4470' };
+type SectionPip = 'done' | 'current' | 'locked';
+/** Pips are drawn this many times bigger on a canvas (smooth edges) and shown scaled down. */
+const PIP_BAKE = 4;
+const pipTextures = new Map<SectionPip, PIXI.Texture>();
+
+/** A pip's look, baked once: a filled circle (gold: restored), with a white ring (the one being worked on). */
+function pipTexture(state: SectionPip): PIXI.Texture {
+    const cached = pipTextures.get(state);
+    if (cached) return cached;
+    const size = PIP.size * PIP_BAKE;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size + 4;
+    const g = canvas.getContext('2d')!;
+    const c = canvas.width / 2;
+    g.beginPath();
+    g.arc(c, c, size / 2 - (state === 'locked' ? PIP_BAKE * 0.6 : 0), 0, Math.PI * 2);
+    g.fillStyle = state === 'done' ? PIP.done : PIP.locked;
+    g.fill();
+    if (state !== 'locked') {
+        g.lineWidth = PIP_BAKE * (state === 'current' ? 1.6 : 1.1);
+        g.strokeStyle = '#ffffff';
+        g.stroke();
+    }
+    const texture = PIXI.Texture.from(canvas);
+    pipTextures.set(state, texture);
+    return texture;
+}
 /** The % pill's padding either side of its text (it grows with the text past BADGE_WIDTH). */
 const BADGE_PAD = 8;
 const BADGE_HEIGHT = 28;
@@ -232,7 +261,7 @@ export class TownMiniature extends PIXI.Container {
         this.badgeStar.scale.set(BADGE_STAR / Math.max(this.badgeStar.texture.width, this.badgeStar.texture.height, 1));
         this.badgeStar.rotation = -0.2;
         this.badgeText.anchor.set(0.5);
-        this.badge.addChild(this.badgePill, this.badgeText, this.badgeStar);
+        this.badge.addChild(this.badgePill, this.badgeText, this.pips, this.badgeStar);
         this.sizeBadge();
         this.badge.position.set(0, this.picture.pictureHeight / 2 + BADGE_HEIGHT / 2 - BADGE_OVERLAP);
         this.addChild(this.picture, this.badge);
@@ -354,6 +383,9 @@ export class TownMiniature extends PIXI.Container {
             closeButton?.removeFromParent();
             if (this.destroyed) return;
             this.held = false;
+            // Any tween still on its scale (a tap's bounce taken at the blown-up size) goes: home at its own size.
+            UiAnim.kill(this);
+            gsap.killTweensOf(this.scale);
             // Home: whole again (the % alone tells the progress there).
             picture.share = 1;
             this.shown = this.target;
@@ -472,6 +504,10 @@ export class TownMiniature extends PIXI.Container {
             if (Math.abs(this.target - this.shown) < 0.001) this.shown = this.target;
         }
         if (this.held) this.fitBadge();
+        if (this.held !== this.badgeHeld) {
+            this.badgeHeld = this.held;
+            this.sizeBadge();
+        }
         picture.draw(delta);
         const percent = Math.floor((this.held ? picture.share : this.shown) * 100 + 0.001);
         if (percent !== this.percentShown) {
@@ -486,14 +522,44 @@ export class TownMiniature extends PIXI.Container {
      * text in the room right of it.
      */
     private sizeBadge(): void {
+        // In the corner: a pip per section (how many are done, at a glance); blown up: the % counting with the fill.
+        const pips = !this.held && this.sections.length > 0;
+        this.badgeText.visible = !pips;
+        this.pips.visible = pips;
+        const contentWidth = pips ? this.sections.length * PIP.size + (this.sections.length - 1) * PIP.gap : this.badgeText.width;
         const starRoom = BADGE_STAR * 0.45;
-        const width = Math.max(BADGE_WIDTH, starRoom + this.badgeText.width + BADGE_PAD * 2);
+        const width = Math.max(pips ? 0 : BADGE_WIDTH, starRoom + contentWidth + BADGE_PAD * 2);
         const left = -width / 2;
         this.badgePill.clear().lineStyle(3, 0xffffff, 0.95).beginFill(0x2a2350, 0.92)
             .drawRoundedRect(left, -BADGE_HEIGHT / 2, width, BADGE_HEIGHT, BADGE_HEIGHT / 2).endFill();
         this.badgeStar.position.set(left + 4, -2);
-        this.badgeText.x = (left + starRoom + width / 2) / 2;
+        const middle = (left + starRoom + width / 2) / 2;
+        this.badgeText.x = middle;
+        if (!pips) return;
+        // Restored: gold; the one being worked on: a white ring; still locked: dark (baked, smooth: pipTexture()).
+        this.pips.removeChildren().forEach((child) => child.destroy());
+        const start = left + starRoom + BADGE_PAD + PIP.size / 2;
+        this.sections.forEach((state, i) => {
+            const pip = new PIXI.Sprite(pipTexture(state));
+            pip.anchor.set(0.5);
+            pip.scale.set(1 / PIP_BAKE);
+            pip.x = start + i * (PIP.size + PIP.gap);
+            this.pips.addChild(pip);
+        });
     }
+
+    /** Each section's state for the pips: restored, the one being worked on, or neither. Redrawn when it changes. */
+    public setSections(restored: readonly boolean[], current: number): void {
+        const next = restored.map((done, i): SectionPip => (done ? 'done' : i === current ? 'current' : 'locked'));
+        if (next.join() === this.sections.join()) return;
+        this.sections = next;
+        if (this.picture) this.sizeBadge();
+    }
+
+    private sections: SectionPip[] = [];
+    private readonly pips = new PIXI.Container();
+    /** Whether the badge was drawn blown up (the % shows) or in the corner (the pips). */
+    private badgeHeld = false;
 
     public override destroy(): void {
         gsap.ticker.remove(this.tick);

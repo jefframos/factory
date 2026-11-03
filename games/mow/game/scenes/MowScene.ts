@@ -67,7 +67,8 @@ import { t, names, Localization } from '../i18n/Localization';
 export const MOW_CAMERA = {
     yawDeg: 0,
     pitchDeg: 55,
-    distance: 14,
+    // Closer since the player's smaller (MowDesign.playerScale).
+    distance: 11.5,
     followSpeed: 8,
     /** How fast the distance eases to a new section's `zoom`. */
     zoomSpeed: 1.5,
@@ -247,7 +248,8 @@ export default class MowScene extends ThreeScene {
         this.player.transform.position.set(MOW.start.x, 0, MOW.start.z);
         this.characterReady = this.player.loadCharacter().catch((error) => console.error('[MowScene] character failed to load', error));
         this.effects = new MowEffects(this.threeScene, 0.5, () => this.player.pickupPoint(new THREE.Vector3()));
-        this.tractor = new TractorRide(this.threeScene, this.player, this.effects, (x, z) => this.inUnfinishedSection(x, z));
+        // Ridden everywhere once owned (paths, restored sections, the ATMs' pads): it's the reward, not just a mowing tool.
+        this.tractor = new TractorRide(this.threeScene, this.player, this.effects, () => true);
         this.player.ridePoint = (out) => this.tractor.cutPoint(out);
         this.player.groundAt = (x, z) => {
             const ground = this.town.surfaceAt(x, z);
@@ -601,12 +603,6 @@ export default class MowScene extends ThreeScene {
     }
 
     // ---------------------------------------------------------------- districts
-
-    /** Inside an open section not restored yet: where a ridden mower is ridden. */
-    private inUnfinishedSection(x: number, z: number): boolean {
-        return MOW.districts.some((d, i) => this.town.isOpen(i) && !MowProgress.isRestored(d.id)
-            && Math.abs(x - d.x) <= d.width / 2 && Math.abs(z - d.z) <= d.depth / 2);
-    }
 
     /** The district the player is in, else the first one not restored (shown on the HUD's bar). */
     private currentDistrict(): number {

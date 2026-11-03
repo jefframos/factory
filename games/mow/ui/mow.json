@@ -8,9 +8,14 @@
     "max": 5
   },
   "cell": 0.5,
+  "playerScale": 0.75,
   "seed": 4242,
   "clippingPrice": 0.2,
-  "chewSec": [0.7, 1.6, 3],
+  "chewSec": [
+    0.7,
+    1.6,
+    3
+  ],
   "traffic": {
     "models": ["town/city/car_sedan.gltf", "town/city/car_taxi.gltf", "town/city/car_hatchback.gltf", "town/city/car_stationwagon.gltf"],
     "speed": 4.4,
@@ -48,12 +53,13 @@
   ],
   "boostsUnlockToolLevel": 1,
   "tractor": {
-    "model": "town/vehicles/tractor-shovel/tractor-shovel.glb",
+    "model": "town/vehicles/lawn-tractor/lawn-tractor.glb",
     "height": 1.7,
     "rotationY": 0,
     "bodyRadius": 0.6,
     "cutAhead": 1.35,
-    "seat": { "x": 0, "y": 1.24, "z": -0.35 },
+    "seat": { "x": 0, "y": 0.76, "z": -0.62 },
+    "steer": { "x": 0, "y": 1.4, "z": -0.02, "spread": 0.14, "hand": { "x": 0, "y": 63, "z": 0 } },
     "smoke": { "count": 16, "size": 1.1, "color": "#d9d3c9" },
     "exhaust": { "x": 0.32, "y": 1.55, "z": -0.55, "interval": 0.28, "size": 0.35 }
   },

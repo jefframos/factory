@@ -9,7 +9,7 @@ import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import type { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createGLTFLoader } from 'core/three/GLTFLoaders';
-import { paintPixels } from '../utils/Paint';
+import { paintBody, paintPixels } from '../utils/Paint';
 import SetupThree from 'core/scene/SetupThree';
 import { MOW, ToolDef, toolPaint } from '../data/MowConfig';
 import { addHandle, buildMower, handleOf } from '../player/MowerModel';
@@ -24,7 +24,9 @@ async function render(url: string, paint: string | undefined): Promise<HTMLCanva
     if (!SetupThree.renderer) return undefined;
     loader ??= createGLTFLoader();
     const gltf = await loader.loadAsync(url);
-    return snapshot(gltf.scene, paint);
+    // A model in plain colours takes the paint on its body's materials (as in game); a textured one on its pixels.
+    const painted = !!paint && paintBody(gltf.scene, paint);
+    return snapshot(gltf.scene, painted ? undefined : paint);
 }
 
 /** Draws `object` (centred, framed by its bounds, seen from the front-right and above) into a canvas. */

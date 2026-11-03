@@ -55,7 +55,7 @@
   },
   "start": {
     "x": 0,
-    "z": 12
+    "z": 11.5
   },
   "pavements": [
     {
@@ -1443,9 +1443,9 @@
       "id": "yard",
       "name": "Front Yard",
       "x": 0,
-      "z": 16.5,
-      "width": 10,
-      "depth": 5,
+      "z": 16,
+      "width": 8,
+      "depth": 7,
       "completeAt": 0.97,
       "bonus": 65,
       "ground": "#557f38",

@@ -20,6 +20,36 @@ const smooth = (edge0: number, edge1: number, x: number) => {
     return t * t * (3 - 2 * t);
 };
 
+/**
+ * A model in plain colours (no textures to repaint): its body — the colourful materials, not tyres, seat or trim —
+ * painted `paint` (a colour, or 'grey'); `original` gives a material's own colour back when `paint` is undefined.
+ * Returns whether it had any such part (the ridden mower's tractor, in game: TractorRide, and its shop icon).
+ */
+export function isBodyMaterial(material: THREE.Material): material is THREE.MeshStandardMaterial {
+    if (!(material instanceof THREE.MeshStandardMaterial) || material.map) return false;
+    const hsl = material.color.getHSL({ h: 0, s: 0, l: 0 });
+    return hsl.s > 0.4 && hsl.l > 0.15;
+}
+
+/** Paints the body materials of `object` (isBodyMaterial()) `paint`: a colour, or 'grey'. Returns whether any were. */
+export function paintBody(object: THREE.Object3D, paint: string): boolean {
+    let painted = false;
+    object.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        child.material = materials.map((material: THREE.Material) => {
+            if (!isBodyMaterial(material)) return material;
+            painted = true;
+            const copy = material.clone();
+            if (paint === 'grey') copy.color.setRGB(0.55, 0.55, 0.55);
+            else copy.color.set(paint);
+            return copy;
+        });
+        if (child.material.length === 1) child.material = child.material[0];
+    });
+    return painted;
+}
+
 export function paintPixels(data: Uint8ClampedArray, paint: string): void {
     const color = paint === 'grey' ? undefined : new THREE.Color(paint);
     for (let i = 0; i < data.length; i += 4) {

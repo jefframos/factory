@@ -2416,6 +2416,25 @@ const TownCloset02 = {
 }
 } as const;
 
+const TownLawnTractor = {
+  id: 'lawn-tractor',
+  path: 'town/vehicles/lawn-tractor/lawn-tractor',
+  fullPath: 'mow/models/town/vehicles/lawn-tractor/lawn-tractor.glb',
+  format: 'glb',
+  nodes: {
+  "SketchfabModel": "Sketchfab_model",
+  "Root": "root",
+  "GLTFSceneRootNode": "GLTF_SceneRootNode",
+  "Truck0020": "Truck.002_0",
+  "Object4": "Object_4",
+  "Object5": "Object_5",
+  "Truck0061": "Truck.006_1",
+  "Object7": "Object_7",
+  "Object8": "Object_8",
+  "Object9": "Object_9"
+}
+} as const;
+
 const TownTractor = {
   id: 'tractor',
   path: 'town/vehicles/tractor/tractor',
@@ -2684,6 +2703,7 @@ export const MODELS = {
     Tree4AColor1: TownTree4AColor1,
     Atm01: TownAtm01,
     Closet02: TownCloset02,
+    LawnTractor: TownLawnTractor,
     Tractor: TownTractor,
     TractorShovel: TownTractorShovel
   },

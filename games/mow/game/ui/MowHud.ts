@@ -50,6 +50,8 @@ const BAR_HEIGHT = 18;
 const CORNER_WIDTH = ICON_SIZE / 2 + PILL_WIDTH - 8;
 const BUTTON_SIZE = 64;
 const PROGRESS = { width: 360, height: 18 };
+/** The area bar's reward disc at its end: its size. */
+const REWARD = { size: 38 };
 const SHOP = { width: 840, height: 580 };
 /** Shop rows: frame left, text, buy button right. */
 const ROW = { width: 776, frameX: -336, textX: -280, textWidth: 470, buttonX: 300, buttonWidth: 150 };
@@ -85,10 +87,10 @@ export const CELEBRATION_SEC = BANNER_SEC + Math.max(REVEAL_SEC, MAP_FLIGHT.back
 /** The trophy button's size (under the money / bag pills). */
 const TROPHY_SIZE = 76;
 /**
- * The corner miniature's width (the trophy's, under it), its width in the reveal (at most; less on a narrow screen),
+ * The town icon's width (bottom-right), its width in the reveal (at most; less on a narrow screen),
  * and the MAP button's size.
  */
-const MINIATURE_WIDTH = TROPHY_SIZE;
+const MINIATURE_WIDTH = 104;
 const REVEAL_WIDTH = 560;
 const MAP_BUTTON_SIZE = 84;
 /** The MAP button's map: drawn this wide (at its size, so it stays crisp; only ever scaled down to fit). */
@@ -210,7 +212,7 @@ export class MowHud extends PIXI.Container {
         this.toast.alpha = 0;
         this.mapHolder.addChild(this.townMap);
         this.buildMap();
-        this.addChild(this.corner, this.progress, this.combo, this.celebration, this.mapHolder, this.miniature, this.mapButton, this.mute, this.languageButton, this.moveHint, this.shopHolder, this.wardrobeHolder, this.trophiesHolder, this.languageHolder, this.mapPanel, this.findToasts, this.toast, this.townCompleteDim, this.townCompleteHolder);
+        this.addChild(this.corner, this.progress, this.combo, this.celebration, this.mapHolder, this.miniature, this.mapButton, this.mute, this.languageButton, this.moveHint, this.toast, this.shopHolder, this.wardrobeHolder, this.trophiesHolder, this.languageHolder, this.mapPanel, this.findToasts, this.townCompleteDim, this.townCompleteHolder);
         this.townCompleteHolder.addChild(this.townComplete);
         this.townCompleteDim.visible = false;
         this.townCompleteDim.eventMode = 'static';
@@ -261,8 +263,34 @@ export class MowHud extends PIXI.Container {
         const bar = new PIXI.Container();
         bar.y = 28;
         bar.addChild(UiKit.image('hud', 'barBack', PROGRESS.width, PROGRESS.height), this.progressFill);
-        this.progress.addChild(this.progressText, bar);
+        // What finishing it pays, at the bar's end: a gold coin disc and the bonus under it (a check once restored).
+        this.progressReward.position.set(PROGRESS.width / 2 + REWARD.size / 2 - 6, bar.y);
+        this.progress.addChild(this.progressText, bar, this.progressReward);
     }
+
+    /** The bar's reward: the district's bonus, or a check once it's restored. Rebuilt when either changes. */
+    private drawReward(bonus: number, done: boolean): void {
+        const key = `${bonus}:${done}`;
+        if (key === this.rewardKey) return;
+        const popped = this.rewardKey !== '' && done;
+        this.rewardKey = key;
+        this.progressReward.removeChildren().forEach((child) => child.destroy({ children: true }));
+        const disc = new PIXI.Graphics().lineStyle(3, 0xffffff, 0.95).beginFill(done ? 0x4fc35a : 0xffc53a).drawCircle(0, 0, REWARD.size / 2).endFill();
+        const icon = done ? UiKit.sprite('hud', 'check') : PIXI.Sprite.from(UiKit.imageName('hud', 'moneyIcon'));
+        if (icon instanceof PIXI.Sprite) icon.anchor.set(0.5);
+        icon.scale.set((REWARD.size * 0.62) / Math.max(icon.width / icon.scale.x, icon.height / icon.scale.y, 1));
+        this.progressReward.addChild(disc, icon);
+        if (!done) {
+            const amount = UiKit.text('hud', 'toast', { text: `+$${bonus.toLocaleString('en-US')}` }, { fontSize: 15, strokeThickness: 4, fill: 0xffe27a });
+            amount.anchor.set(0.5, 0);
+            amount.y = REWARD.size / 2 - 2;
+            this.progressReward.addChild(amount);
+        }
+        if (popped) UiAnim.punch(this.progressReward, 0.5);
+    }
+
+    private readonly progressReward = new PIXI.Container();
+    private rewardKey = '';
 
     /** The district shown at the top: its name, restored share and bar. */
     public setDistrict(index: number, share: number): void {
@@ -270,6 +298,7 @@ export class MowHud extends PIXI.Container {
         const district = MOW.districts[index];
         const percent = Math.floor(share * 100);
         this.progressText.text = t('districtProgress', { name: names.district(district).toUpperCase(), percent });
+        this.drawReward(district.bonus, MowProgress.isRestored(district.id));
         UiKit.fit(this.progressText, PROGRESS.width + 40);
         this.progressFill.removeChildren().forEach((child) => child.destroy({ children: true }));
         if (share > 0) {
@@ -286,12 +315,18 @@ export class MowHud extends PIXI.Container {
         gsap.killTweensOf(this.progress.scale);
         this.progress.scale.set(1);
         UiAnim.punch(this.progress, 0.2);
-        const pop = UiKit.text('hud', 'toast', { text: `${percent}%` }, { fontSize: 46, strokeThickness: 8, fill: 0x9cff9c });
-        pop.anchor.set(0.5);
-        pop.position.set(PROGRESS.width / 2 + 52, 28);
+        // In its own pill under the bar's middle (clear of the name over the bar and the reward at its end).
+        const pop = new PIXI.Container();
+        const label = UiKit.text('hud', 'toast', { text: `${percent}%` }, { fontSize: 30, strokeThickness: 6, fill: 0x9cff9c });
+        label.anchor.set(0.5);
+        const width = label.width + 36;
+        const height = 44;
+        pop.addChild(new PIXI.Graphics().lineStyle(3, 0xffffff, 0.9).beginFill(0x1d2633, 0.9)
+            .drawRoundedRect(-width / 2, -height / 2, width, height, height / 2).endFill(), label);
+        pop.position.set(0, 28 + PROGRESS.height / 2 + 6 + height / 2);
         pop.scale.set(0.3);
         this.progress.addChild(pop);
-        UiAnim.sparkBurst(this.progress, pop.x, pop.y, 0x9cff9c, 70);
+        UiAnim.sparkBurst(this.progress, pop.x, pop.y, 0x9cff9c, 60);
         gsap.to(pop.scale, { x: 1, y: 1, duration: 0.35, ease: 'back.out(3)' });
         gsap.to(pop, { y: pop.y - 26, alpha: 0, duration: 0.5, delay: 1, onComplete: () => {
             if (!pop.destroyed) pop.destroy();
@@ -347,8 +382,9 @@ export class MowHud extends PIXI.Container {
     public setTownMap(shares: readonly number[], open: readonly boolean[], restored: readonly boolean[], current: number): void {
         this.townMap.setState(shares, open, restored, current);
         this.panelMap.setState(shares, open, restored, current);
-        // The town's %: every section weighs the same.
+        // The town's %: every section weighs the same (the blown-up fill); its pips in the corner: one per section.
         this.miniature.setShare(shares.reduce((sum, share) => sum + share, 0) / Math.max(1, shares.length));
+        this.miniature.setSections(restored, current);
     }
 
     /** The player's dot on the town map (world x / z). */
@@ -693,7 +729,8 @@ export class MowHud extends PIXI.Container {
         target.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         target.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
             event.stopPropagation();
-            UiAnim.punch(target, 0.12);
+            // Not on the town's picture while it's blown up: the bounce would spring it back to that size as it flies home.
+            if (!(target === this.miniature && this.miniature.celebrating)) UiAnim.punch(target, 0.12);
             action();
         });
     }
@@ -1135,8 +1172,11 @@ export class MowHud extends PIXI.Container {
     private get miniatureHome(): PIXI.IPointData {
         const screen = Game.overlayScreenData;
         if (!screen) return this.miniature.position;
-        // Centred under the trophy (corner y 140).
-        return { x: this.corner.x + CORNER_WIDTH - TROPHY_SIZE / 2, y: this.corner.y + 140 + TROPHY_SIZE / 2 + 12 + this.miniature.pictureHeight / 2 };
+        // Bottom-right, its pips under it (the MAP button's corner's twin).
+        return {
+            x: screen.topLeft.x + screen.width - 20 - MINIATURE_WIDTH / 2,
+            y: screen.topLeft.y + screen.height - 20 - this.miniature.badgeHeight - this.miniature.pictureHeight / 2,
+        };
     }
 
     public reposition(): void {
