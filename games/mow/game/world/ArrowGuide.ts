@@ -1,6 +1,6 @@
 // ArrowGuide.ts
 //
-// The floor arrows (dig's guide trail): small rounded arrowheads with a dark outline along the walking route (GuidePath: around the town's
+// The floor arrows (dig's guide trail, its yellow): small rounded arrowheads with a soft amber outline along the walking route (GuidePath: around the town's
 // obstacles) from the player to a target, flowing towards it with a wave of size and brightness, lying on the ground
 // (the player, props and tall grass pass in front of them). The scene decides the target (bag full -> the SELL bin, something to buy -> the
 // SHOP, a new area -> its grass); null hides the trail.
@@ -9,10 +9,18 @@ import * as THREE from 'three';
 import { BendService } from '../services/BendService';
 import { findPath, Box } from './GuidePath';
 
-/** Purple: reads against the green grass and the grey pavements, apart from the yellow-green clippings. */
-const COLOR = 0xa25cff;
+/** Dig's guide yellow, with a soft dark-amber border (not black). */
+const COLOR = 0xffd23f;
+const OUTLINE = 0x8a5a12;
+const OUTLINE_OPACITY = 0.8;
 /** Above the ground under each arrow (Town.topAt(): a road tile's sidewalk too). */
-const LIFT = 0.04;
+const LIFT = 0.08;
+/**
+ * Depth bias toward the camera (polygonOffset): the bend moves the ground and the arrows a little differently, so a
+ * pavement or kerb just under an arrow could still cover it; this keeps them over the ground while anything standing
+ * (the player, props) still passes in front.
+ */
+const DEPTH_BIAS = -8;
 const TRAIL_START = 0.9;
 const SPACING = 0.75;
 const TRAIL_MAX = 28;
@@ -63,7 +71,8 @@ function roundedTriangle(halfWidth: number, tipRadius: number, baseRadius: numbe
 export class ArrowGuide {
     private readonly trail: THREE.Mesh[] = [];
     private readonly geometries: THREE.BufferGeometry[] = [];
-    private readonly outlineMaterial = new THREE.MeshBasicMaterial({ color: 0x241d18, transparent: true, opacity: 0.95, depthWrite: false });
+    private readonly outlineMaterial = new THREE.MeshBasicMaterial({ color: OUTLINE, transparent: true, opacity: OUTLINE_OPACITY, depthWrite: false,
+        polygonOffset: true, polygonOffsetFactor: DEPTH_BIAS, polygonOffsetUnits: DEPTH_BIAS });
     private route: THREE.Vector3[] = [];
     private readonly routeTarget = new THREE.Vector3(Infinity, 0, 0);
     private repath = 0;
@@ -78,7 +87,8 @@ export class ArrowGuide {
         this.geometries.push(geometry, outlineGeometry);
         BendService.applyBend(this.outlineMaterial);
         for (let i = 0; i < TRAIL_MAX; i++) {
-            const material = new THREE.MeshBasicMaterial({ color: COLOR, transparent: true, depthWrite: false });
+            const material = new THREE.MeshBasicMaterial({ color: COLOR, transparent: true, depthWrite: false,
+                polygonOffset: true, polygonOffsetFactor: DEPTH_BIAS, polygonOffsetUnits: DEPTH_BIAS });
             BendService.applyBend(material);
             const mesh = new THREE.Mesh(geometry, material);
             mesh.visible = false;

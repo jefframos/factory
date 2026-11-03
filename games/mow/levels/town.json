@@ -109,9 +109,9 @@
     {
       "id": "plaza",
       "x": 0,
-      "z": 10.75,
-      "width": 19,
-      "depth": 5.5,
+      "z": 9,
+      "width": 21.5,
+      "depth": 1.5,
       "color": "#d8ccb0"
     },
     {
@@ -126,7 +126,7 @@
       "id": "path-east-west",
       "x": 0,
       "z": 0,
-      "width": 20,
+      "width": 21,
       "depth": 1.5,
       "color": "#d8ccb0"
     },
@@ -145,6 +145,14 @@
       "width": 14.5,
       "depth": 2,
       "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-12",
+      "x": 0,
+      "z": -23.5,
+      "width": 2,
+      "depth": 12.5,
+      "color": "#d8ccb0"
     }
   ],
   "atm": {
@@ -161,9 +169,10 @@
   },
   "atms": [
     {
-      "x": -7.25,
+      "x": -8.25,
       "z": 10.25,
-      "rotationY": 1.5708
+      "rotationY": 1.5708,
+      "appearsWhenFull": true
     },
     {
       "x": -10.75,
@@ -204,10 +213,10 @@
   },
   "wardrobes": [
     {
-      "x": 7.75,
-      "z": 9.75,
-      "rotationY": -1.5708,
-      "appearsAfterSales": 2
+      "x": -8.75,
+      "z": 13.25,
+      "rotationY": 1.5708,
+      "appearsAfterSales": 1
     }
   ],
   "props": [
@@ -232,30 +241,6 @@
       "collider": {
         "halfX": 0.65,
         "halfZ": 0.7
-      },
-      "fade": true
-    },
-    {
-      "model": "town/nature/Tree_2_A_Color1.gltf",
-      "x": -5.5,
-      "z": 4.25,
-      "rotationY": 4.2,
-      "height": 6.4,
-      "collider": {
-        "halfX": 0.3,
-        "halfZ": 0.3
-      },
-      "fade": true
-    },
-    {
-      "model": "town/nature/Tree_2_A_Color1.gltf",
-      "x": 6,
-      "z": 4.25,
-      "rotationY": 4.5,
-      "height": 6.08,
-      "collider": {
-        "halfX": 0.3,
-        "halfZ": 0.3
       },
       "fade": true
     },
@@ -382,17 +367,6 @@
     },
     {
       "model": "town/nature/Bush_1_C_Color1.gltf",
-      "x": -9.3,
-      "z": 13,
-      "rotationY": 0,
-      "height": 1.1,
-      "collider": {
-        "halfX": 0.8,
-        "halfZ": 0.8
-      }
-    },
-    {
-      "model": "town/nature/Bush_1_C_Color1.gltf",
       "x": 9.3,
       "z": 13,
       "rotationY": 0.8,
@@ -405,7 +379,7 @@
     {
       "model": "town/city/building_E_withoutBase.gltf",
       "x": 0,
-      "z": -26.3,
+      "z": -34,
       "rotationY": 0,
       "height": 18,
       "collider": {
@@ -416,8 +390,8 @@
     },
     {
       "model": "town/nature/Bush_4_A_Color1.gltf",
-      "x": -7.6,
-      "z": 15.5,
+      "x": -6.75,
+      "z": 16,
       "rotationY": 0,
       "height": 1.1,
       "collider": {
@@ -427,8 +401,8 @@
     },
     {
       "model": "town/nature/Bush_1_C_Color1.gltf",
-      "x": 7.6,
-      "z": 15.5,
+      "x": 6.75,
+      "z": 15.75,
       "rotationY": 0.6,
       "height": 1.1,
       "collider": {
@@ -574,8 +548,8 @@
     },
     {
       "model": "town/city/building_B_withoutBase.gltf",
-      "x": -12,
-      "z": -37,
+      "x": -16.25,
+      "z": -35,
       "rotationY": 0,
       "height": 16,
       "collider": {
@@ -586,8 +560,8 @@
     },
     {
       "model": "town/city/building_F_withoutBase.gltf",
-      "x": 12,
-      "z": -37,
+      "x": 11,
+      "z": -33.75,
       "rotationY": 0,
       "height": 15,
       "collider": {
@@ -598,7 +572,7 @@
     },
     {
       "model": "town/city/building_H_withoutBase.gltf",
-      "x": 30,
+      "x": 27.25,
       "z": -37,
       "rotationY": 0,
       "height": 13,
@@ -1470,7 +1444,7 @@
       "name": "Front Yard",
       "x": 0,
       "z": 16.5,
-      "width": 12,
+      "width": 10,
       "depth": 5,
       "completeAt": 0.97,
       "bonus": 65,
@@ -1489,6 +1463,7 @@
     {
       "id": "park",
       "name": "Starting Park",
+      "maxGrass": "tallgrass",
       "x": 0,
       "z": 0,
       "width": 20,
@@ -1669,8 +1644,8 @@
     },
     {
       "id": "secret-2",
-      "x": -19.25,
-      "z": -19,
+      "x": 37,
+      "z": -38,
       "width": 2,
       "depth": 2,
       "reward": 50

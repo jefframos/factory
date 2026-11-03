@@ -154,6 +154,11 @@ export interface AtmSpot {
     section?: string;
     /** It only appears once the bag has been sold this many times (the first wardrobe: the tutorial's second sale). */
     appearsAfterSales?: number;
+    /**
+     * It only appears once the bag is full for the first time (the first ATM: the yard is mowed in one bag, nothing to
+     * sell there; it pops up in the park when there is). Once anything's been sold, it's always there.
+     */
+    appearsWhenFull?: boolean;
 }
 
 /** A station kind's look (the ATMs', the wardrobes'): the model (path under models/, fitted to `height`), how far behind the pad, the label's height. */

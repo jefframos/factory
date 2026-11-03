@@ -32,6 +32,14 @@ const COIN_FLIGHT_SEC = 0.6;
 /** Coins (and a flown item) rise this far above the straight line on their way (screen +Y is down, so it's negative). */
 const ARC = -110;
 
+/**
+ * A flown find: its icon's size, how far under `from` it pops up (0: right where the 3D find landed on the player, so
+ * one hands over to the other), and how far it rises before flying.
+ */
+const ITEM_SIZE = 72;
+const ITEM_DROP = 0;
+const ITEM_RISE = 14;
+
 /** How many coins a payout of `amount` flies in as (each carrying a share). */
 export function coinCount(amount: number): number {
     return Math.min(14, Math.max(6, Math.round(amount / 50)));
@@ -88,31 +96,33 @@ export function flyCoins(layer: PIXI.Container, from: PIXI.IPointData, target: (
 }
 
 /**
- * A find's model flying from `from` into `target()` (layer space, re-aimed every frame): popping up big, then along an
- * arc, shrinking; `onArrive` as it lands.
+ * A find's model flying from `from` into `target()` (layer space, re-aimed every frame): popping up where the 3D find
+ * landed on the player (`from`, ITEM_DROP below), then along an arc, shrinking; `onArrive` as it lands.
  */
 export function flyItem(layer: PIXI.Container, model: string, from: PIXI.IPointData, target: () => PIXI.IPointData, onArrive: () => void): void {
-    const item = ModelIcons.sprite(model, 64);
-    item.anchor.set(0.5);
+    // The icon sizes itself once its model is rendered (ModelIcons): the flight scales a holder round it, not it.
+    const item = new PIXI.Container();
+    item.addChild(ModelIcons.sprite(model, ITEM_SIZE));
+    from = { x: from.x, y: from.y + ITEM_DROP };
     item.position.copyFrom(from);
     item.eventMode = 'none';
     layer.addChild(item);
-    const scale = item.scale.x;
+    const scale = 1;
     item.scale.set(0);
     const progress = { t: 0 };
     gsap.timeline({ onComplete: () => {
-        item.destroy();
+        item.destroy({ children: true });
         queueMicrotask(onArrive);
     } })
         .to(item.scale, { x: scale, y: scale, duration: 0.3, ease: 'back.out(2.5)' })
-        .to(item, { y: from.y - 40, duration: 0.3, ease: 'power2.out' }, 0)
+        .to(item, { y: from.y - ITEM_RISE, duration: 0.3, ease: 'power2.out' }, 0)
         .to(progress, {
             t: 1,
             duration: 0.75,
             ease: 'power2.in',
             onUpdate: () => {
                 const k = progress.t;
-                item.position.copyFrom(arcPoint({ x: from.x, y: from.y - 40 }, target(), ARC, k));
+                item.position.copyFrom(arcPoint({ x: from.x, y: from.y - ITEM_RISE }, target(), ARC, k));
                 item.scale.set(scale * (1 - k * 0.6));
                 item.rotation = Math.sin(k * Math.PI) * 0.4;
             },

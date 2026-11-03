@@ -813,6 +813,8 @@ export class Town {
     private shown(kind: StationKind, i: number): boolean {
         const spot = stationSpots(kind)[i];
         if ((spot.appearsAfterSales ?? 0) > MowProgress.timesSold) return false;
+        // The first ATM: not in the yard (its bag fills there on purpose: the first purchases), in the park when it's full.
+        if (spot.appearsWhenFull && MowProgress.timesSold === 0 && !(MowProgress.full && MowProgress.isRestored(MOW.districts[0].id))) return false;
         const section = spot.section;
         if (!section) return true;
         const d = MOW.districts.findIndex((district) => district.id === section);
@@ -914,7 +916,7 @@ export class Town {
     }
 
     /** The nearest ATM's pad that's there (where the arrows lead). */
-    public nearestAtm(from: THREE.Vector3, out = new THREE.Vector3()): THREE.Vector3 {
+    public nearestAtm(from: THREE.Vector3, out = new THREE.Vector3()): THREE.Vector3 | null {
         let best = Infinity;
         TOWN.atms.forEach((spot, i) => {
             const distance = Math.hypot(from.x - spot.x, from.z - spot.z);
@@ -923,7 +925,8 @@ export class Town {
                 out.set(spot.x, 0, spot.z);
             }
         });
-        return out;
+        // None out yet (the first one waits for a full bag): nowhere to lead.
+        return best < Infinity ? out : null;
     }
 
     /** Where an ATM's model stands (the clippings are tossed into it). */

@@ -159,6 +159,9 @@ export class MowHud extends PIXI.Container {
     private readonly shopBody = new PIXI.Container();
     private readonly shopHolder = new PIXI.Container();
     private shopOpen = false;
+    /** The shop held open by the scene (the first purchases after the yard): no closing it, the pad doesn't matter. */
+    private shopForced = false;
+    private shopClose?: PIXI.Container;
     /** The wardrobe (on a wardrobe's pad), sized and placed like the shop. */
     private readonly wardrobe: WardrobePanel;
     private readonly wardrobeHolder = new PIXI.Container();
@@ -723,20 +726,37 @@ export class MowHud extends PIXI.Container {
         title.text = t('titleShop');
         title.y = -SHOP.height / 2 - 5;
         this.shop.addChild(frame, ribbon, title, this.shopBody);
-        this.addClose(this.shop, SHOP, () => this.setShopOpen(false));
+        this.shopClose = this.addClose(this.shop, SHOP, () => this.setShopOpen(false));
         this.shop.visible = false;
         this.shopHolder.addChild(this.shop);
     }
 
-    /** Opens / closes the shop (the scene calls this as the player steps on / off the pad). */
+    /** Opens / closes the shop (the scene calls this as the player steps on / off the pad; not while it's forced). */
     public setShopOpen(open: boolean): void {
-        if (open === this.shopOpen) return;
+        if (this.shopForced || open === this.shopOpen) return;
         this.shopOpen = open;
         this.shop.visible = open;
         if (!open) return;
         this.renderShop();
         UiAnim.popIn(this.shop);
         MowAudio.play('open');
+    }
+
+    /**
+     * The shop held open wherever the player is (the scene's first purchases after the yard: the hand on what to buy,
+     * setShopHint()), on the GEAR tab and without its close button, until released (then it closes).
+     */
+    public setShopForced(forced: boolean): void {
+        if (forced === this.shopForced) return;
+        if (forced) {
+            this.tab = 'gear';
+            this.setShopOpen(true);
+            this.shopForced = true;
+        } else {
+            this.shopForced = false;
+            this.setShopOpen(false);
+        }
+        if (this.shopClose) this.shopClose.visible = !forced;
     }
 
     /** Opens / closes the wardrobe (the scene calls this as the player steps on / off a wardrobe's pad). */
@@ -1014,6 +1034,29 @@ export class MowHud extends PIXI.Container {
 
     // ---------------------------------------------------------------- updates
 
+    /**
+     * What the HUD shows as the game opens up: during the yard (the tutorial) no MAP button, no town icon, no trophy —
+     * the first two come with the yard restored, the trophy with the first treasure found (a treasure flying in shows
+     * it too). Each pops in as it comes (not on a load that already has it).
+     */
+    private refreshUnlocks(): void {
+        const map = MowProgress.isRestored(MOW.districts[0].id);
+        const trophy = this.treasuresFlying > 0 || MOW.treasures.items.some((item) => MowProgress.treasureFound(item.id));
+        const reveal = (target: PIXI.Container, shown: boolean, was: boolean | undefined) => {
+            target.renderable = shown;
+            target.eventMode = shown ? 'static' : 'none';
+            if (shown && was === false) UiAnim.popIn(target);
+        };
+        reveal(this.mapButton, map, this.unlocked.map);
+        reveal(this.miniature, map, this.unlocked.map);
+        reveal(this.mapHolder, map, this.unlocked.map);
+        reveal(this.trophiesButton, trophy, this.unlocked.trophy);
+        this.unlocked = { map, trophy };
+    }
+
+    /** What refreshUnlocks() last showed (undefined before the first refresh: nothing pops on a load). */
+    private unlocked: { map?: boolean; trophy?: boolean } = {};
+
     /** A sale just happened: hold its money back until the clippings land (releaseSale). */
     public holdSale(money: number): void {
         this.heldMoney += money;
@@ -1026,6 +1069,7 @@ export class MowHud extends PIXI.Container {
     }
 
     private refresh(): void {
+        this.refreshUnlocks();
         const waiting = MowProgress.hasUnclaimedTreasure && this.treasuresFlying === 0;
         this.trophiesAlert.visible = waiting;
         if (this.trophiesHand) this.trophiesHand.visible = waiting && !MowProgress.claimedAnyTreasure && !this.trophies.visible;

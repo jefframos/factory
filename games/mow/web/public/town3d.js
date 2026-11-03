@@ -62,6 +62,10 @@ let gameUrl = 'http://localhost:9001/';
 let townUrl = '/api/town';
 let diorama = false;
 const undoStack = [];
+/** Changes made (touch()): a click again on the same spot cycles only if nothing changed since the last pick. */
+let edits = 0;
+/** The last click's pick (where, the edit count then): clicking there again picks the next thing under it (pickAt()). */
+let lastPick = null;
 
 let renderer;
 let scene;
@@ -245,6 +249,7 @@ function setDirty(value) {
 
 /** Snapshot for undo, then mark unsaved. Call before changing `town`. */
 function touch() {
+    edits++;
     undoStack.push(JSON.stringify(town));
     if (undoStack.length > UNDO_LIMIT) undoStack.shift();
     setDirty(true);
@@ -384,8 +389,16 @@ function pickAt(event) {
         while (node && !node.userData.entity) node = node.parent;
         return node?.userData.entity;
     }).filter(Boolean);
-    // A patch over a section wins over the section; anything standing wins over both.
-    const picked = entities.find((e) => !FLAT_TYPES.has(e.type)) ?? entities.find((e) => e.type === 'patch') ?? entities[0] ?? null;
+    // In order: anything standing, then patches, then the rest (a patch over a section wins over the section), each once.
+    const rank = (e) => (!FLAT_TYPES.has(e.type) ? 0 : e.type === 'patch' ? 1 : 2);
+    const candidates = entities.filter((e, i) => entities.findIndex((other) => sameSel(other, e)) === i)
+        .map((e, i) => ({ e, i })).sort((a, b) => rank(a.e) - rank(b.e) || a.i - b.i).map(({ e }) => e);
+    // Clicking the same spot again, the selection untouched since: the next thing under it (round to the first), so
+    // something hidden under another can be reached.
+    const again = lastPick && Math.hypot(event.clientX - lastPick.x, event.clientY - lastPick.y) <= 4 && lastPick.edits === edits;
+    const current = again && selection ? candidates.findIndex((e) => sameSel(e, selection)) : -1;
+    const picked = (current >= 0 ? candidates[(current + 1) % candidates.length] : candidates[0]) ?? null;
+    lastPick = { x: event.clientX, y: event.clientY, edits };
     // Linking: a waypoint clicked with one selected (Alt, or 🔗 Link) links / unlinks the two.
     if (picked?.type === 'waypoint' && selection?.type === 'waypoint' && picked.index !== selection.index && (linking || event.altKey)) {
         toggleLink(selection.index, picked.index);
@@ -877,19 +890,25 @@ function buildProp(prop) {
 
 /** A station's "appears" in a few words, for the lists. */
 function appearsLabel(spot) {
+    if (spot.appearsWhenFull) return 'when the bag first fills';
     if (spot.appearsAfterSales) return `after sale ${spot.appearsAfterSales}`;
     return town.sections.find((s) => s.id === spot.section)?.name ?? 'always';
 }
 
-/** When a station appears: from the start, after the bag's nth sale (`appearsAfterSales`) or with a section. */
+/**
+ * When a station appears: from the start, when the bag first fills (`appearsWhenFull`), after the bag's nth sale
+ * (`appearsAfterSales`) or with a section.
+ */
 function appearsField(data) {
-    const value = data.appearsAfterSales ? `sales:${data.appearsAfterSales}` : data.section ?? '';
-    const options = [['', 'From the start'], ['sales:1', 'After the 1st sale'], ['sales:2', 'After the 2nd sale'], ['sales:3', 'After the 3rd sale'],
+    const value = data.appearsWhenFull ? 'full' : data.appearsAfterSales ? `sales:${data.appearsAfterSales}` : data.section ?? '';
+    const options = [['', 'From the start'], ['full', 'When the bag first fills'], ['sales:1', 'After the 1st sale'], ['sales:2', 'After the 2nd sale'], ['sales:3', 'After the 3rd sale'],
         ...town.sections.map((s) => [s.id, `When ${s.name} opens`])];
     return selectField('Appears', value, options, (v) => edit((d) => {
         delete d.section;
         delete d.appearsAfterSales;
-        if (v.startsWith('sales:')) d.appearsAfterSales = Number(v.slice(6));
+        delete d.appearsWhenFull;
+        if (v === 'full') d.appearsWhenFull = true;
+        else if (v.startsWith('sales:')) d.appearsAfterSales = Number(v.slice(6));
         else if (v) d.section = v;
     }));
 }
@@ -908,7 +927,7 @@ function buildStation(atm, look, name, labelColor) {
     holder.add(stand);
     void fillModel(stand, look.model, look.height, 0);
     const section = town.sections.find((s) => s.id === atm.section);
-    const when = atm.appearsAfterSales ? `after sale ${atm.appearsAfterSales}` : section ? `with ${section.name}` : '';
+    const when = atm.appearsWhenFull ? 'when the bag first fills' : atm.appearsAfterSales ? `after sale ${atm.appearsAfterSales}` : section ? `with ${section.name}` : '';
     const label = labelSprite(when ? `${name}\nappears ${when}` : name, labelColor);
     label.position.set(0, look.label, -look.back);
     holder.add(label);

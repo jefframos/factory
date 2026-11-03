@@ -84,6 +84,8 @@ const SELL_TOSS_INTERVAL = 0.07;
 const CLIPPING_COLOR = new THREE.Color(0x7cc95a);
 /** The move hint goes once the player has walked this far. */
 const MOVE_HINT_DISTANCE = 2.5;
+/** The yard this far mowed: the first purchases at the latest (they come when the starting bag fills, before this). */
+const FIRST_BUY_AT = 0.6;
 /** The town's blown-up miniature closes once the player moves more than this in a frame (world units). */
 const MINIATURE_CLOSE_STEP = 0.005;
 /** Occlusion looks at the torso, not the feet: what a tree in front actually hides. */
@@ -188,6 +190,8 @@ export default class MowScene extends ThreeScene {
     private onWardrobe = -1;
     /** The tutorial's first hat is being forced (the player is held on the wardrobe's pad until it's bought). */
     private hatForced = false;
+    /** The first purchases once the yard's done (firstBuys()): the mower, then the bag; null when not running. */
+    private firstBuy: ShopHint = null;
     private moveHintActive = false;
     /** updateRelief(): seconds to the next stuck check; while grass grows back, the district, clippings still to grow and cells a second. */
     private stuckCheck = STUCK_CHECK_SEC;
@@ -262,6 +266,8 @@ export default class MowScene extends ThreeScene {
             this.effects.floatText(this.player.pickupPoint(new THREE.Vector3()).setY(2.4), t('bagFullFloat'), '#ff8a7a');
             GameAnalytics.bagFull();
             GameAnalytics.tutorialStep('bag-full');
+            // The first ATM waits for this (appearsWhenFull): it pops up now, and the arrows lead to it.
+            this.town.revealStations();
         }, (grass) => {
             const tool = firstToolFor(grass);
             if (tool) {
@@ -346,6 +352,7 @@ export default class MowScene extends ThreeScene {
         panel.monitor('Park', () => `${Math.floor(this.grass.progress(0) * 100)}%`);
         panel.button('ADD $100', () => MowProgress.addMoney(100));
         panel.button('ADD $1000', () => MowProgress.addMoney(1000));
+        panel.button('FILL BAG', () => MowProgress.addClippings(MowProgress.capacity - MowProgress.clippings));
         panel.button('RESTORE CURRENT DISTRICT', () => {
             const d = this.currentDistrict();
             for (const { treasure, at } of this.grass.takeTreasures(d)) this.findTreasure(treasure, at);
@@ -379,6 +386,12 @@ export default class MowScene extends ThreeScene {
         this.updateGuide(delta);
         this.updateMoveHint();
         this.updateMiniatureClose();
+        // The starting mower's small bag full in the yard (about half way: FIRST_BUY_AT as a backstop), or a save past
+        // the yard without a mower: the first purchases (firstBuys()) — a better mower, then the bag it needed.
+        const yardDone = MowProgress.isRestored(MOW.districts[0].id);
+        if (!this.firstBuy && MowProgress.toolLevel === 0 && (MowProgress.full || this.grass.progress(0) >= FIRST_BUY_AT || yardDone)) {
+            this.firstBuys();
+        }
         BendService.updateTime(delta);
         super.update(delta);
     }
@@ -490,6 +503,8 @@ export default class MowScene extends ThreeScene {
 
     /** Standing on any ATM's pad sells the bag (clippings tossed into it) and opens the shop. */
     private updateStations(): void {
+        // The first ATM waits for a full bag (appearsWhenFull): out as soon as it is, wherever it filled.
+        if (MowProgress.full) this.town.revealStations();
         const position = this.player.transform.position;
         const atm = this.town.atmAt(position.x, position.z);
         if (atm >= 0 && MowProgress.clippings > 0) this.sell(atm);
@@ -553,9 +568,36 @@ export default class MowScene extends ThreeScene {
 
     /** After any purchase: the tool cube follows (MowPlayer), the first-session steps are counted. */
     private onBought(): void {
+        // The first purchases: whatever's still missing of the two (bought in either order — the bag first leaves the
+        // mower to buy, its money topped up again), then the player's free.
+        if (this.firstBuy) {
+            this.setFirstBuy(MowProgress.toolLevel === 0 ? 'tool' : MowProgress.upgradeLevel('capacity') === 0 ? 'capacity' : null);
+        }
         if (MowProgress.toolLevel > 0) GameAnalytics.tutorialStep('first-mower');
         if (MOW.upgrades.some((u) => MowProgress.upgradeLevel(u.id) > 0)) GameAnalytics.tutorialStep('first-upgrade');
         this.effects.smoke(this.player.transform.position.clone().setY(0.4), 6, 0.8, new THREE.Color(0xffffff), 0.8);
+    }
+
+    /**
+     * Half the yard mowed (FIRST_BUY_AT): the shop pops up where the player stands and walks them through the first
+     * mower (power 2: the park's grass goes down without a stop), then the first bag upgrade (the hand on each, no closing it, the player held there), any money short
+     * quietly added (there's no ATM in the yard), like the first hat. Then they're free to finish the yard with the new
+     * mower, and leave the tutorial with a mower worth having and a bag for the park.
+     */
+    private firstBuys(): void {
+        if (this.sceneDestroyed || this.firstBuy || MowProgress.toolLevel > 0) return;
+        this.setFirstBuy('tool');
+    }
+
+    private setFirstBuy(step: ShopHint): void {
+        this.firstBuy = step;
+        const capacity = MOW.upgrades.find((u) => u.id === 'capacity');
+        const price = step === 'tool' ? MowProgress.nextTool?.price : step === 'capacity' && capacity ? MowProgress.upgradePrice(capacity) : undefined;
+        if (price !== undefined && MowProgress.money < price) MowProgress.addMoney(price - MowProgress.money);
+        const controller = this.player.movementController;
+        if (controller) controller.enabled = step === null;
+        this.hud.setShopHint(step);
+        this.hud.setShopForced(step !== null);
     }
 
     // ---------------------------------------------------------------- districts
@@ -775,6 +817,12 @@ export default class MowScene extends ThreeScene {
         let target: THREE.Vector3 | null = null;
         let area: Box | undefined;
         let hint: ShopHint = null;
+        if (this.firstBuy) {
+            // The first purchases are on screen: nothing to lead to, the hand's on what to buy.
+            this.hud.setShopHint(this.firstBuy);
+            this.guide.update(delta, this.player.transform.position, null);
+            return;
+        }
         const atmAt = this.town.nearestAtm(this.player.transform.position);
         const next = MowProgress.nextTool;
         const firstUpgrade = MOW.upgrades.every((u) => MowProgress.upgradeLevel(u.id) === 0);
