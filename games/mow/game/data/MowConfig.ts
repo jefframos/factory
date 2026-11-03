@@ -1,11 +1,16 @@
 // MowConfig.ts
 //
 // Typed access to the design data, none of it in code: ui/mow.json (grass types, tools, upgrades, prices) and
-// levels/town.json (the town's layout: sections = districts with their grass mix, bonus, stations and separator;
-// props; pavements), which the editor writes (npm run editor). MOW.districts is the level's sections.
+// the current city's level (levels/<level>.json: the layout: sections = districts with their grass mix, bonus,
+// stations and separator; props; pavements), which the editor writes (npm run editor). MOW.districts is the level's
+// sections. The cities (levels/cities.json, CITIES) are each their own level; which one is played is saved
+// (MowProgress, CURRENT_CITY_KEY) and read here, before anything is built: travelling reloads the game into it.
 
 import data from '../../ui/mow.json';
+import cities from '../../levels/cities.json';
+import tutorial from '../../levels/tutorial.json';
 import town from '../../levels/town.json';
+import city2 from '../../levels/city2.json';
 
 export interface GrassDef {
     id: string;
@@ -111,6 +116,8 @@ export interface UpgradeDef {
 export interface DistrictDef {
     id: string;
     name: string;
+    /** Done from the start (a city's areas the tutorial already did): restored, no bonus, no treasures to find. */
+    startRestored?: boolean;
     /** Centre and size of the overgrown rectangle. */
     x: number;
     z: number;
@@ -461,5 +468,37 @@ export function firstToolFor(grass: GrassDef): ToolDef | undefined {
     return MOW.tools.find((tool) => canCutGrass(grass, tool.power));
 }
 
-export const TOWN: TownLevel = town as unknown as TownLevel;
+/** A city (levels/cities.json): its level and map shot, whether travelling on keeps the gear, or not playable yet. */
+export interface CityDef {
+    id: string;
+    name: string;
+    level?: string;
+    map?: string;
+    keepGear?: boolean;
+    comingSoon?: boolean;
+}
+
+export const CITIES: CityDef[] = cities.cities;
+/** Each finished city (not the tutorial) adds this to every sale's money, in every city after (prestige). */
+export const PRESTIGE_BONUS: number = cities.prestigeBonus;
+/** The localStorage key holding the city being played (MowProgress writes it on travel). */
+export const CURRENT_CITY_KEY = 'mow.city';
+
+const LEVELS: Record<string, unknown> = { tutorial, town, city2 };
+
+function currentCity(): CityDef {
+    let id: string | null = null;
+    try {
+        id = window.localStorage.getItem(CURRENT_CITY_KEY);
+    } catch {
+        // No storage: the first city.
+    }
+    return CITIES.find((city) => city.id === id && city.level && LEVELS[city.level]) ?? CITIES[0];
+}
+
+/** The city being played, and the next one (undefined after the last). */
+export const CITY: CityDef = currentCity();
+export const NEXT_CITY: CityDef | undefined = CITIES[CITIES.indexOf(CITY) + 1];
+
+export const TOWN: TownLevel = LEVELS[CITY.level!] as unknown as TownLevel;
 export const MOW: MowDesign = { ...(data as unknown as Omit<MowDesign, 'districts' | 'start'>), districts: TOWN.sections, start: TOWN.start };

@@ -22,7 +22,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
-import { MOW, TOWN, AtmLook, AtmSpot, DeckDef, DistrictDef, TownProp } from '../data/MowConfig';
+import { CITY, MOW, TOWN, AtmLook, AtmSpot, DeckDef, DistrictDef, TownProp } from '../data/MowConfig';
 import { MowProgress } from '../data/MowProgress';
 import { BendService, OcclusionFadeConfig, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 import { createWaterMaterial } from '../builders/WaterMaterial';
@@ -813,8 +813,10 @@ export class Town {
     private shown(kind: StationKind, i: number): boolean {
         const spot = stationSpots(kind)[i];
         if ((spot.appearsAfterSales ?? 0) > MowProgress.timesSold) return false;
-        // The first ATM: not in the yard (its bag fills there on purpose: the first purchases), in the park when it's full.
-        if (spot.appearsWhenFull && MowProgress.timesSold === 0 && !(MowProgress.full && MowProgress.isRestored(MOW.districts[0].id))) return false;
+        // The first ATM: in the tutorial not in the yard (its bag fills there on purpose: the first purchases), in the
+        // park when it's full; in a city played from scratch, as soon as the bag's full.
+        const firstArea = MowProgress.isRestored(MOW.districts[0].id) || !CITY.keepGear;
+        if (spot.appearsWhenFull && MowProgress.timesSold === 0 && !(MowProgress.full && firstArea)) return false;
         const section = spot.section;
         if (!section) return true;
         const d = MOW.districts.findIndex((district) => district.id === section);

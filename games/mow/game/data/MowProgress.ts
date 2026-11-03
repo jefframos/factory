@@ -2,11 +2,13 @@
 //
 // The player's saved state: money, the tool owned, upgrade levels, the clippings in the container, which grass has
 // been cut (from the grass field, as a compact string), which districts are restored, and the wardrobe (owned and worn
-// looks). One localStorage entry, saved shortly after any change; versioned (SAVE_VERSION): a save from another version
-// starts a new game. Fields added later get their defaults on an older save of the same version (load()).
+// looks). Two localStorage entries, saved shortly after any change: the city's own (`mow.save.<city>`: its gear,
+// money, grass, areas, trophies and secrets — each city is played from scratch, prestige-style) and the player's
+// (`mow.global`: the wardrobe, the cities finished — their bonus — and the one-time analytics). Versioned
+// (SAVE_VERSION): a save from another version starts a new game. Fields added later get their defaults (load()).
 
 import { Signal } from 'signals';
-import { MOW, ToolDef, UpgradeDef, UpgradeId, WardrobeItem } from './MowConfig';
+import { MOW, CITY, CITIES, CityDef, CURRENT_CITY_KEY, PRESTIGE_BONUS, ToolDef, UpgradeDef, UpgradeId, WardrobeItem } from './MowConfig';
 
 export type LookKind = 'colors' | 'faces' | 'hats';
 /** The wardrobe's kinds (its section in ui/mow.json also has a $comment: never walk its keys). */
@@ -19,9 +21,13 @@ export interface Look {
     hat: string;
 }
 
-const SAVE_KEY = 'mow.save';
+const cityKey = (city: string): string => `mow.save.${city}`;
+const SAVE_KEY = cityKey(CITY.id);
+const GLOBAL_KEY = 'mow.global';
 /** Bump when a change can't carry old saves over: a save from another version starts a new game. */
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 4;
+/** What's the player's, not the city's (kept across cities: the wardrobe, the cities finished, the analytics). */
+const GLOBAL_FIELDS = ['owned', 'look', 'freeLooksOffered', 'sent', 'completed'] as const;
 const SAVE_DELAY_MS = 800;
 
 interface SaveData {
@@ -50,6 +56,8 @@ interface SaveData {
     treasuresClaimed: string[];
     /** Secret patches mowed through (ids): their chest found and paid. */
     secretsFound: string[];
+    /** Cities finished (ids): each (not the tutorial) adds PRESTIGE_BONUS to sales. */
+    completed: string[];
 }
 
 /** The claim key of an area's bonus (all its treasures found). */
@@ -59,27 +67,34 @@ export const areaBonusKey = (areaId: string): string => `area:${areaId}`;
 const starterLook = (): Look => ({ color: MOW.wardrobe.colors[0].id, face: MOW.wardrobe.faces[0].id, hat: '' });
 
 const fresh = (): SaveData => ({
-    version: SAVE_VERSION, money: 0, toolLevel: 0, upgrades: {}, clippings: 0, cut: '', restored: [],
+    version: SAVE_VERSION, money: 0, toolLevel: 0, upgrades: {}, clippings: 0, cut: '',
     stats: { cells: 0, earned: 0, sells: 0 }, sent: [],
     owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, freeLooksOffered: false,
-    treasuresFound: [], treasuresClaimed: [], secretsFound: [],
+    treasuresFound: [], treasuresClaimed: [], secretsFound: [], completed: [],
+    // The city's areas the tutorial already did (startRestored).
+    restored: MOW.districts.filter((district) => district.startRestored).map((district) => district.id),
 });
 
-function load(): SaveData {
+function read(key: string): Partial<SaveData> | undefined {
     try {
-        const raw = window.localStorage.getItem(SAVE_KEY);
-        if (raw) {
-            const saved = JSON.parse(raw) as Partial<SaveData>;
-            if (saved.version !== SAVE_VERSION) return fresh();
-            return {
-                ...fresh(), ...saved, upgrades: { ...saved.upgrades }, stats: { ...fresh().stats, ...saved.stats },
-                owned: { ...fresh().owned, ...saved.owned }, look: { ...starterLook(), ...saved.look },
-            };
-        }
+        const raw = window.localStorage.getItem(key);
+        const saved = raw ? (JSON.parse(raw) as Partial<SaveData>) : undefined;
+        return saved?.version === SAVE_VERSION ? saved : undefined;
     } catch {
         // A broken save starts fresh.
+        return undefined;
     }
-    return fresh();
+}
+
+function load(): SaveData {
+    const city = read(SAVE_KEY) ?? {};
+    const global = read(GLOBAL_KEY) ?? {};
+    const own = Object.fromEntries(GLOBAL_FIELDS.filter((field) => field in global).map((field) => [field, global[field]]));
+    const saved = { ...city, ...own } as Partial<SaveData>;
+    return {
+        ...fresh(), ...saved, upgrades: { ...saved.upgrades }, stats: { ...fresh().stats, ...saved.stats },
+        owned: { ...fresh().owned, ...saved.owned }, look: { ...starterLook(), ...saved.look },
+    };
 }
 
 const state = load();
@@ -182,7 +197,7 @@ export const MowProgress = {
 
     /** Sells the container; returns the money earned. */
     sell(): number {
-        const earned = Math.round(state.clippings * MOW.clippingPrice * (1 + this.moneyBonus));
+        const earned = Math.round(state.clippings * MOW.clippingPrice * (1 + this.moneyBonus) * (1 + this.prestige));
         if (state.clippings <= 0) return 0;
         state.clippings = 0;
         state.money += earned;
@@ -374,6 +389,39 @@ export const MowProgress = {
         this.changed();
     },
 
+    // ---------------------------------------------------------------- cities
+
+    /** Cities finished (ids). */
+    get completedCities(): readonly string[] {
+        return state.completed;
+    },
+
+    /** The finished cities' bonus on every sale (PRESTIGE_BONUS each; the tutorial and its like don't count). */
+    get prestige(): number {
+        return PRESTIGE_BONUS * CITIES.filter((city) => !city.keepGear && state.completed.includes(city.id)).length;
+    },
+
+    /**
+     * This city's done: marks it and moves to `next` — kept (a city that keeps the gear: the tutorial) or sold off (any
+     * other: the next starts from scratch, its bonus the reward). Saves both; the caller reloads the game into it.
+     */
+    travel(next: CityDef): void {
+        if (!state.completed.includes(CITY.id)) state.completed.push(CITY.id);
+        this.saveNow();
+        try {
+            window.localStorage.removeItem(cityKey(next.id));
+            if (CITY.keepGear) {
+                const carried: Partial<SaveData> = { version: SAVE_VERSION, money: state.money, toolLevel: state.toolLevel, upgrades: state.upgrades };
+                window.localStorage.setItem(cityKey(next.id), JSON.stringify(carried));
+            }
+            window.localStorage.setItem(CURRENT_CITY_KEY, next.id);
+        } catch {
+            // No storage: the reload starts the first city again.
+        }
+        window.clearTimeout(saveTimer);
+        wiped = true;
+    },
+
     /** True the first time `key` is passed, ever (saved): one-time analytics events. */
     once(key: string): boolean {
         if (state.sent.includes(key)) return false;
@@ -406,7 +454,14 @@ export const MowProgress = {
         if (wiped) return;
         if (cutProvider) state.cut = cutProvider();
         try {
-            window.localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+            const city: Partial<SaveData> = { ...state };
+            const global: Partial<SaveData> = { version: SAVE_VERSION };
+            for (const field of GLOBAL_FIELDS) {
+                (global as Record<string, unknown>)[field] = state[field];
+                delete (city as Record<string, unknown>)[field];
+            }
+            window.localStorage.setItem(SAVE_KEY, JSON.stringify(city));
+            window.localStorage.setItem(GLOBAL_KEY, JSON.stringify(global));
         } catch {
             // Storage full or blocked: keep playing unsaved.
         }
@@ -416,7 +471,10 @@ export const MowProgress = {
     reset(): void {
         window.clearTimeout(saveTimer);
         wiped = true;
-        window.localStorage.removeItem(SAVE_KEY);
+        // Every city and the player's own (debug: a brand-new game, from the tutorial).
+        for (const city of CITIES) window.localStorage.removeItem(cityKey(city.id));
+        window.localStorage.removeItem(GLOBAL_KEY);
+        window.localStorage.removeItem(CURRENT_CITY_KEY);
         window.location.reload();
     },
 };

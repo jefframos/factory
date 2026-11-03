@@ -33,6 +33,8 @@ const PER_ROW = 3;
 const ROWS_PER_PAGE = 2;
 /** Each area's treasures split into rows of PER_ROW (an area with 5 takes two rows). */
 const ROWS: { area: number; items: TreasureDef[] }[] = MOW.districts.flatMap((district, area) => {
+    // This city's own (trophies are per city): not an area done from the start (the tutorial's).
+    if (district.startRestored) return [];
     const items = MOW.treasures.items.filter((item) => item.area === district.id);
     return Array.from({ length: Math.ceil(items.length / PER_ROW) }, (_, i) => ({ area, items: items.slice(i * PER_ROW, (i + 1) * PER_ROW) }));
 });
@@ -79,8 +81,10 @@ export class TrophiesPanel extends PIXI.Container {
         // Stop the old cards' pulses first: a tween left running on a destroyed sprite throws every frame.
         UiAnim.kill(this.body);
         this.body.removeChildren().forEach((child) => child.destroy({ children: true }));
-        const total = MOW.treasures.items.length;
-        const found = MOW.treasures.items.filter((item) => MowProgress.treasureFound(item.id)).length;
+        // This city's (trophies are per city: the rows' treasures).
+        const items = ROWS.flatMap((row) => row.items);
+        const total = items.length;
+        const found = items.filter((item) => MowProgress.treasureFound(item.id)).length;
 
         const progress = UiKit.text('collection', 'progress', { found, total });
         progress.anchor.set(0.5);

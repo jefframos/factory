@@ -49,7 +49,7 @@ import { isRush } from '../data/GameMode';
 import { MowHud, ShopHint, CELEBRATION_SEC } from '../ui/MowHud';
 import { RARITY_COLORS } from '../ui/TrophiesPanel';
 import { MowEffects } from '../vfx/MowEffects';
-import { MOW, TOWN, SecretDef, TreasureDef, firstToolFor, SECRET_CHEST_MODEL } from '../data/MowConfig';
+import { CITY, MOW, NEXT_CITY, TOWN, SecretDef, TreasureDef, firstToolFor, SECRET_CHEST_MODEL } from '../data/MowConfig';
 import { TreasureBeacons } from '../world/TreasureBeacons';
 import { SecretPatches } from '../world/SecretPatches';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
@@ -118,6 +118,12 @@ function cameraOffset(camera: THREE.PerspectiveCamera, zoom: number): THREE.Vect
     const distance = MOW_CAMERA.distance * zoom * Math.max(1, REFERENCE_ASPECT / camera.aspect);
     const horizontal = distance * Math.cos(pitch);
     return new THREE.Vector3(horizontal * Math.sin(yaw), distance * Math.sin(pitch), horizontal * Math.cos(yaw));
+}
+
+/** This city's treasures (trophies are per city): in its areas, not the ones done from the start. */
+function cityTreasures(): typeof MOW.treasures.items {
+    const areas = new Set(MOW.districts.filter((district) => !district.startRestored).map((district) => district.id));
+    return MOW.treasures.items.filter((item) => areas.has(item.area));
 }
 
 /**
@@ -237,6 +243,8 @@ export default class MowScene extends ThreeScene {
             this.grass.cutAll(d);
             this.grass.setRestored(d);
             this.town.bloom(flowerSpots(district, (x, z) => this.grass.isLawn(x, z, d)));
+            // (Not an area done from the start: the tutorial's, nothing was found there in this city.)
+            if (district.startRestored) return;
             for (const item of MOW.treasures.items) if (item.area === district.id && MowProgress.findTreasure(item.id)) GameAnalytics.treasureFound(item.id);
         });
         this.milestones = MOW.districts.map((_, d) => Math.floor(this.grass.progress(d) * 4));
@@ -334,6 +342,7 @@ export default class MowScene extends ThreeScene {
 
     private createHud(): MowHud {
         const hud = new MowHud(() => this.onBought(), () => this.player.applyLook(MowProgress.look), (d) => this.town.isOpen(d));
+        hud.onTravel = () => this.travel();
         this.game.uiLayer.addChild(hud);
         return hud;
     }
@@ -391,7 +400,7 @@ export default class MowScene extends ThreeScene {
         // The starting mower's small bag full in the yard (about half way: FIRST_BUY_AT as a backstop), or a save past
         // the yard without a mower: the first purchases (firstBuys()) — a better mower, then the bag it needed.
         const yardDone = MowProgress.isRestored(MOW.districts[0].id);
-        if (!this.firstBuy && MowProgress.toolLevel === 0 && (MowProgress.full || this.grass.progress(0) >= FIRST_BUY_AT || yardDone)) {
+        if (CITY.keepGear && !this.firstBuy && MowProgress.toolLevel === 0 && (MowProgress.full || this.grass.progress(0) >= FIRST_BUY_AT || yardDone)) {
             this.firstBuys();
         }
         BendService.updateTime(delta);
@@ -795,10 +804,11 @@ export default class MowScene extends ThreeScene {
                 GameAnalytics.townRestored();
                 gsap.delayedCall(CELEBRATION_SEC + 0.4, () => {
                     if (this.sceneDestroyed) return;
+                    GameAnalytics.cityCompleted(CITY.id);
                     this.hud.showTownComplete({
-                        town: Localization.getString('town_name', undefined, TOWN.name),
+                        town: CITY.name,
                         earned: MowProgress.earned,
-                        trophies: { found: MOW.treasures.items.filter((item) => MowProgress.treasureFound(item.id)).length, total: MOW.treasures.items.length },
+                        trophies: { found: cityTreasures().filter((item) => MowProgress.treasureFound(item.id)).length, total: cityTreasures().length },
                         secrets: { found: (TOWN.secrets ?? []).filter((secret) => MowProgress.secretFound(secret.id)).length, total: TOWN.secrets?.length ?? 0 },
                     });
                 });
@@ -872,12 +882,25 @@ export default class MowScene extends ThreeScene {
 
     // ---------------------------------------------------------------- lifecycle
 
+    /** The City Complete screen's button: on to the next city (kept or from scratch: MowProgress.travel()), reloaded into it. */
+    private travel(): void {
+        const next = NEXT_CITY;
+        if (!next || next.comingSoon) return;
+        GameAnalytics.cityTravel(CITY.id, next.id);
+        MowAudio.play('whoosh');
+        this.hud.fadeOut(() => {
+            MowProgress.travel(next);
+            window.location.reload();
+        });
+    }
+
     private readonly onFirstInput = (): void => {
         window.removeEventListener('pointerdown', this.onFirstInput, true);
         window.removeEventListener('keydown', this.onFirstInput, true);
         this.afterFirstInput();
         if (Gameplay.started) return;
         GameAnalytics.sessionStart(MowProgress.cellsCut === 0);
+        GameAnalytics.cityStarted(CITY.id);
         Gameplay.start();
     };
 

@@ -132,9 +132,9 @@
     },
     {
       "id": "pavement-5",
-      "x": 0,
+      "x": -0.5,
       "z": -16.5,
-      "width": 35,
+      "width": 39,
       "depth": 2,
       "color": "#d8ccb0"
     },
@@ -150,6 +150,38 @@
       "id": "pavement-12",
       "x": 0,
       "z": -23.5,
+      "width": 2,
+      "depth": 12.5,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-13",
+      "x": 23.25,
+      "z": -27.75,
+      "width": 6,
+      "depth": 2,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-14",
+      "x": 26.75,
+      "z": -30.25,
+      "width": 2,
+      "depth": 7,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-14-copy",
+      "x": 19.25,
+      "z": -22,
+      "width": 2,
+      "depth": 13.5,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-12-copy",
+      "x": -19,
+      "z": -22.5,
       "width": 2,
       "depth": 12.5,
       "color": "#d8ccb0"
@@ -193,8 +225,8 @@
       "section": "westblock"
     },
     {
-      "x": 21,
-      "z": -35,
+      "x": 37.5,
+      "z": -34,
       "rotationY": 0,
       "section": "field"
     }
@@ -243,28 +275,6 @@
         "halfZ": 0.7
       },
       "fade": true
-    },
-    {
-      "model": "town/city/bench.gltf",
-      "x": -3,
-      "z": -1.75,
-      "rotationY": 0,
-      "height": 0.55,
-      "collider": {
-        "halfX": 1.1,
-        "halfZ": 0.4
-      }
-    },
-    {
-      "model": "town/city/bench.gltf",
-      "x": 3.25,
-      "z": 1.75,
-      "rotationY": 3.1416,
-      "height": 0.55,
-      "collider": {
-        "halfX": 1.1,
-        "halfZ": 0.4
-      }
     },
     {
       "model": "town/city/streetlight_old_double.gltf",
@@ -375,18 +385,6 @@
         "halfX": 0.75,
         "halfZ": 0.75
       }
-    },
-    {
-      "model": "town/city/building_E_withoutBase.gltf",
-      "x": 0,
-      "z": -34,
-      "rotationY": 0,
-      "height": 18,
-      "collider": {
-        "halfX": 8,
-        "halfZ": 4.95
-      },
-      "fade": true
     },
     {
       "model": "town/nature/Bush_4_A_Color1.gltf",
@@ -524,8 +522,8 @@
     },
     {
       "model": "town/city/building_A_withoutBase.gltf",
-      "x": -26.5,
-      "z": -23,
+      "x": -26,
+      "z": -24,
       "rotationY": 0,
       "height": 14,
       "collider": {
@@ -535,33 +533,21 @@
       "fade": true
     },
     {
-      "model": "town/city/building_D_withoutBase.gltf",
-      "x": 24.5,
-      "z": 15,
-      "rotationY": 0,
-      "height": 13,
-      "collider": {
-        "halfX": 4.6,
-        "halfZ": 3.6
-      },
-      "fade": true
-    },
-    {
       "model": "town/city/building_B_withoutBase.gltf",
-      "x": -16.25,
-      "z": -35,
+      "x": -13.75,
+      "z": -34.25,
       "rotationY": 0,
-      "height": 16,
+      "height": 13.6,
       "collider": {
-        "halfX": 8.25,
-        "halfZ": 6.4
+        "halfX": 7,
+        "halfZ": 5.45
       },
       "fade": true
     },
     {
       "model": "town/city/building_F_withoutBase.gltf",
-      "x": 11,
-      "z": -33.75,
+      "x": 13.75,
+      "z": -33,
       "rotationY": 0,
       "height": 15,
       "collider": {
@@ -572,13 +558,13 @@
     },
     {
       "model": "town/city/building_H_withoutBase.gltf",
-      "x": 27.25,
-      "z": -37,
+      "x": 29.5,
+      "z": -38,
       "rotationY": 0,
-      "height": 13,
+      "height": 20.8,
       "collider": {
-        "halfX": 4.4,
-        "halfZ": 2.75
+        "halfX": 7.05,
+        "halfZ": 4.4
       },
       "fade": true
     },
@@ -1287,8 +1273,8 @@
     },
     {
       "model": "town/nature/Tree_2_A_Color1.gltf",
-      "x": 19.5,
-      "z": 8.8,
+      "x": 18.75,
+      "z": 9.25,
       "rotationY": 0.6,
       "height": 5.6,
       "collider": {
@@ -1376,6 +1362,61 @@
         "halfZ": 0.25
       },
       "fade": true
+    },
+    {
+      "model": "town/library/city2-bench-01/city2-bench-01.glb",
+      "x": -5.5,
+      "z": -1.75,
+      "rotationY": 0,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.2,
+        "halfZ": 0.4
+      }
+    },
+    {
+      "model": "town/library/city2-fountain-01/city2-fountain-01.glb",
+      "x": 0,
+      "z": 0,
+      "rotationY": 0,
+      "height": 3.38,
+      "collider": {
+        "halfX": 2.65,
+        "halfZ": 2.65
+      }
+    },
+    {
+      "model": "town/library/city2-building-living-31/city2-building-living-31.glb",
+      "x": 0,
+      "z": -33.75,
+      "rotationY": 0,
+      "height": 11.65,
+      "collider": {
+        "halfX": 7,
+        "halfZ": 6.2
+      }
+    },
+    {
+      "model": "town/library/city2-building-service-07/city2-building-service-07.glb",
+      "x": 26.75,
+      "z": 13.75,
+      "rotationY": -1.5708,
+      "height": 12.08,
+      "collider": {
+        "halfX": 3.15,
+        "halfZ": 4.75
+      }
+    },
+    {
+      "model": "town/library/city2-car-25/city2-car-25.glb",
+      "x": 21.25,
+      "z": 16,
+      "rotationY": 0,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
     }
   ],
   "grassNoise": {
@@ -1458,7 +1499,8 @@
         "z": 13.75,
         "width": 20.5,
         "depth": 11.5
-      }
+      },
+      "startRestored": true
     },
     {
       "id": "park",
@@ -1468,7 +1510,7 @@
       "z": 0,
       "width": 20,
       "depth": 16,
-      "completeAt": 0.97,
+      "completeAt": 0.92,
       "bonus": 160,
       "ground": "#4f7d35",
       "restoredGround": "#6fae47",
@@ -1478,7 +1520,8 @@
         "z": 8,
         "width": 20,
         "rotationY": 0
-      }
+      },
+      "startRestored": true
     },
     {
       "id": "street",
@@ -1501,17 +1544,18 @@
         "pan": false
       },
       "fill": "auto",
-      "maxGrass": "weeds"
+      "maxGrass": "weeds",
+      "grassScale": 1.2
     },
     {
       "id": "eastblock",
       "name": "East Gardens",
       "x": 24.5,
-      "z": 0,
+      "z": 0.25,
       "width": 14,
-      "depth": 14,
+      "depth": 16.5,
       "completeAt": 0.97,
-      "bonus": 1200,
+      "bonus": 600,
       "ground": "#4b7431",
       "restoredGround": "#68a643",
       "separator": {
@@ -1524,7 +1568,7 @@
         "pan": false
       },
       "fill": "auto",
-      "grassScale": 1.1
+      "grassScale": 1.2
     },
     {
       "id": "westblock",
@@ -1534,7 +1578,7 @@
       "width": 13.5,
       "depth": 28,
       "completeAt": 0.97,
-      "bonus": 2500,
+      "bonus": 1200,
       "ground": "#4a722f",
       "restoredGround": "#66a442",
       "separator": {
@@ -1552,12 +1596,12 @@
     {
       "id": "field",
       "name": "Sports Field",
-      "x": 29.25,
+      "x": 29.5,
       "z": -24.5,
-      "width": 20,
+      "width": 18,
       "depth": 18,
       "completeAt": 0.97,
-      "bonus": 6000,
+      "bonus": 3000,
       "ground": "#486f2d",
       "restoredGround": "#64a240",
       "separator": {
@@ -1644,16 +1688,16 @@
     },
     {
       "id": "secret-2",
-      "x": 37,
-      "z": -38,
+      "x": 38.5,
+      "z": -39.75,
       "width": 2,
       "depth": 2,
       "reward": 50
     },
     {
       "id": "secret-3",
-      "x": 18.75,
-      "z": 13.25,
+      "x": 21.5,
+      "z": 12,
       "width": 2,
       "depth": 2,
       "reward": 50

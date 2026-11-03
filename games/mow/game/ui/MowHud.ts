@@ -174,7 +174,9 @@ export class MowHud extends PIXI.Container {
     private readonly trophies: TrophiesPanel;
     private readonly trophiesHolder = new PIXI.Container();
     /** The end of the town (every section restored): its panel over a dim. */
-    private readonly townComplete = new TownCompletePanel(() => this.closeTownComplete());
+    private readonly townComplete = new TownCompletePanel(() => this.onTravel?.());
+    /** The City Complete screen's green button (the scene travels to the next city). */
+    public onTravel?: () => void;
     private readonly townCompleteHolder = new PIXI.Container();
     private readonly townCompleteDim = new PIXI.Graphics();
     /** The wardrobe's close button (hidden while the tutorial's first hat is forced). */
@@ -451,10 +453,14 @@ export class MowHud extends PIXI.Container {
         UiAnim.popIn(this.townComplete, this.townCompleteDim);
     }
 
-    private closeTownComplete(): void {
-        MowAudio.play('click');
-        this.townComplete.visible = false;
-        this.townCompleteDim.visible = false;
+    /** Travelling: the screen fades to black over everything (the game reloads into the next city behind it). */
+    public fadeOut(onDone: () => void): void {
+        const screen = Game.overlayScreenData;
+        const black = new PIXI.Graphics().beginFill(0x000000).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
+        black.alpha = 0;
+        black.eventMode = 'static';
+        this.addChild(black);
+        gsap.to(black, { alpha: 1, duration: 0.6, ease: 'power2.in', onComplete: onDone });
     }
 
     /**

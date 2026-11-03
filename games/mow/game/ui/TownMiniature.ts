@@ -18,6 +18,7 @@ import gsap from 'gsap';
 import { UiKit } from './UiKit';
 import { UiAnim, UiTween } from './UiAnim';
 import { MowAudio } from '../audio/MowAudio';
+import { CITY } from '../data/MowConfig';
 
 const MAP_BASE = './mow/images/non-preload/map/';
 /** The veil: the bright picture tinted this (a dusky violet, the "not restored yet" look). */
@@ -242,7 +243,11 @@ export class TownMiniature extends PIXI.Container {
         super();
         this.visible = false;
         // The corner's own size (the big one if there's no small one yet); the big one for celebrate().
-        this.ready = Promise.all([loadMiniature('town-small'), loadMiniature('town')]).then(([small, big]) => {
+        // This city's pictures (its map shot), the town's while it has none of its own.
+        const name = CITY.map ?? 'town';
+        this.ready = Promise.all([loadMiniature(`${name}-small`), loadMiniature(name)])
+            .then(async ([small, big]) => (small || big ? [small, big] : Promise.all([loadMiniature('town-small'), loadMiniature('town')])))
+            .then(([small, big]) => {
             const texture = small ?? big;
             if (!texture || this.destroyed) return false;
             this.small = texture;

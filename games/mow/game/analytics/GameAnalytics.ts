@@ -25,6 +25,9 @@
 //   bag          full                         complete   the container fills up (once a session)
 //   district     <districtId>                 complete   a district restored
 //   town         restored                     complete   every district restored: the town's done (once per player)
+//   city         <cityId>                     start      a city played for the first time (once per player each)
+//   city         <cityId>                     complete   a city finished (its City Complete screen)
+//   city         <fromId>-to-<toId>           travel     the City Complete screen's button: on to the next city
 //   settings     lang-<code>                  interact   a language picked
 //
 // Add an event here (and to the table) rather than calling PlatformHandler.measure() directly.
@@ -129,6 +132,19 @@ export const GameAnalytics = {
     /** Every district restored: the end of the town. */
     townRestored(): void {
         if (MowProgress.once('town-restored')) send('town', 'restored', 'complete');
+    },
+
+    /** A city entered for the first time. */
+    cityStarted(cityId: string): void {
+        if (MowProgress.once(`city-${cityId}`)) send('city', cityId, 'start');
+    },
+
+    cityCompleted(cityId: string): void {
+        send('city', cityId, 'complete');
+    },
+
+    cityTravel(from: string, to: string): void {
+        send('city', `${from}-to-${to}`, 'travel');
     },
 
     secretFound(id: string): void {
