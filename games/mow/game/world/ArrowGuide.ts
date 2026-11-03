@@ -3,7 +3,8 @@
 // The floor arrows (dig's guide trail, its yellow): small rounded arrowheads with a soft amber outline along the walking route (GuidePath: around the town's
 // obstacles) from the player to a target, flowing towards it with a wave of size and brightness, lying on the ground
 // (the player, props and tall grass pass in front of them). The scene decides the target (bag full -> the SELL bin, something to buy -> the
-// SHOP, a new area -> its grass); null hides the trail.
+// SHOP, a new area -> its grass); null hides the trail. Or point(): a single bigger arrow by the player's feet, turned
+// toward the target and nudging that way (a city whose player knows the game: CityDef.guide 'pointer').
 
 import * as THREE from 'three';
 import { BendService } from '../services/BendService';
@@ -27,6 +28,8 @@ const TRAIL_MAX = 28;
 /** No trail this close to the target. */
 const NEAR = 1.6;
 const REPATH_SEC = 0.3;
+/** point()'s arrow: this far from the player, nudging this much further and back (this fast), this many times a trail arrow's size. */
+const POINTER = { distance: 1.8, nudge: 0.18, speed: 5, scale: 2.4 };
 const WAVE_SPEED = 3.2;
 
 /**
@@ -123,6 +126,23 @@ export class ArrowGuide {
             this.route[0].set(from.x, 0, from.z);
         }
         this.show(this.route);
+    }
+
+    /** One arrow by `from`, pointing at `target` (null, or there already: none). Call every frame instead of update(). */
+    public point(delta: number, from: THREE.Vector3, target: THREE.Vector3 | null): void {
+        this.time += delta;
+        this.show([]);
+        if (!target || Math.hypot(target.x - from.x, target.z - from.z) <= NEAR) return;
+        const angle = Math.atan2(target.x - from.x, target.z - from.z);
+        const reach = POINTER.distance + Math.sin(this.time * POINTER.speed) * POINTER.nudge;
+        const x = from.x + Math.sin(angle) * reach;
+        const z = from.z + Math.cos(angle) * reach;
+        const mesh = this.trail[0];
+        mesh.visible = true;
+        mesh.position.set(x, this.groundAt(x, z) + LIFT, z);
+        mesh.rotation.y = angle;
+        mesh.scale.setScalar(POINTER.scale);
+        (mesh.material as THREE.MeshBasicMaterial).opacity = 1;
     }
 
     private show(route: THREE.Vector3[]): void {

@@ -6,11 +6,12 @@
 //   category     what                         action     when
 //   session      new | returning              start      the player's first input this session
 //   playtime     min-<n>                      reached    n minutes of active play this session
+//   playtime     <cityId>-min-<n>             reached    n minutes of active play in that city this session
 //   mode         calm | rush                  start      with session/start: which mode is played (GameMode)
 //   mode         <mode>-min-<n>               reached    with each playtime event, per mode (to compare them)
 //   tutorial     <nn>-<step>                  complete   each first-session step, once per player, in order
-//   tool         <nn>-<toolId>                complete   a tool / mower bought
-//   upgrade      <upgradeId>-<nn>             complete   an upgrade level bought
+//   tool         <cityId>-<nn>-<toolId>       complete   a tool / mower bought (each city starts over but the tutorial's next)
+//   upgrade      <cityId>-<upgradeId>-<nn>    complete   an upgrade level bought
 //   treasure     <treasureId>                 complete   a treasure found in the grass (or handed over on restoring its area)
 //   treasure     <treasureId> | area-<id>     interact   its reward (or an area's bonus) claimed in the Trophies panel
 //   secret       <secretId>                   complete   a secret patch's chest found (it pays at once)
@@ -21,13 +22,14 @@
 //   tab          wardrobe-<tab> | atm-<tab>   interact   a panel tab opened by the player (once per player each)
 //   gift         colors | faces               visible    a wardrobe gift's FREE badge seen (once per player each)
 //   gift         <kind>-badge | <kind>-unbadged complete a wardrobe gift claimed, after its badge showed or before
-//   sell         count-<n>                    complete   the nth sale, for the first 10
-//   bag          full                         complete   the container fills up (once a session)
-//   district     <districtId>                 complete   a district restored
+//   sell         <cityId>-count-<n>           complete   the city's nth sale, for the first 10
+//   bag          <cityId>-full                complete   the container fills up (once a session in each city)
+//   district     <districtId>                 complete   a district restored (ids are unique across cities)
+//   part         <cityId>-<partId>            open       a part's areas opened together (a city in parts: Big City)
 //   town         restored                     complete   every district restored: the town's done (once per player)
 //   city         <cityId>                     start      a city played for the first time (once per player each)
 //   city         <cityId>                     complete   a city finished (its City Complete screen)
-//   city         <fromId>-to-<toId>           travel     the City Complete screen's button: on to the next city
+//   city         <fromId>-to-<toId>           travel     a city's PLAY in the cities panel
 //   settings     lang-<code>                  interact   a language picked
 //
 // Add an event here (and to the table) rather than calling PlatformHandler.measure() directly.
@@ -35,6 +37,7 @@
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { MowProgress } from '../data/MowProgress';
 import { MODE } from '../data/GameMode';
+import { CITY } from '../data/MowConfig';
 
 /** The first-session steps, in order (the GDD's first five minutes). */
 // New steps go at the end (even when they come earlier in play), so the numbers of the ones before never change.
@@ -50,7 +53,10 @@ function send(category: string, what: string | number, action: string): void {
 const pad = (n: number) => String(n).padStart(2, '0');
 let playSeconds = 0;
 let nextMinute = 0;
-let fullSent = false;
+/** The same, in the city being played (from 0 again in each city this session). */
+const cityPlay = new Map<string, { seconds: number; next: number }>();
+/** Cities whose bag has filled up this session. */
+const fullIn = new Set<string>();
 
 export const GameAnalytics = {
     sessionStart(newGame: boolean): void {
@@ -65,6 +71,13 @@ export const GameAnalytics = {
             send('playtime', `min-${PLAYTIME_MINUTES[nextMinute]}`, 'reached');
             send('mode', `${MODE}-min-${PLAYTIME_MINUTES[nextMinute]}`, 'reached');
             nextMinute++;
+        }
+        const city = cityPlay.get(CITY.id) ?? { seconds: 0, next: 0 };
+        cityPlay.set(CITY.id, city);
+        city.seconds += delta;
+        while (city.next < PLAYTIME_MINUTES.length && city.seconds >= PLAYTIME_MINUTES[city.next] * 60) {
+            send('playtime', `${CITY.id}-min-${PLAYTIME_MINUTES[city.next]}`, 'reached');
+            city.next++;
         }
     },
 
@@ -108,25 +121,30 @@ export const GameAnalytics = {
     },
 
     toolBought(level: number, toolId: string): void {
-        send('tool', `${pad(level)}-${toolId}`, 'complete');
+        send('tool', `${CITY.id}-${pad(level)}-${toolId}`, 'complete');
     },
 
     upgradeBought(upgradeId: string, level: number): void {
-        send('upgrade', `${upgradeId}-${pad(level)}`, 'complete');
+        send('upgrade', `${CITY.id}-${upgradeId}-${pad(level)}`, 'complete');
     },
 
     sold(count: number): void {
-        if (count <= 10) send('sell', `count-${count}`, 'complete');
+        if (count <= 10) send('sell', `${CITY.id}-count-${count}`, 'complete');
     },
 
     bagFull(): void {
-        if (fullSent) return;
-        fullSent = true;
-        send('bag', 'full', 'complete');
+        if (fullIn.has(CITY.id)) return;
+        fullIn.add(CITY.id);
+        send('bag', `${CITY.id}-full`, 'complete');
     },
 
     districtRestored(districtId: string): void {
         send('district', districtId, 'complete');
+    },
+
+    /** A part's areas opened (the one before all restored), once per player each. */
+    partOpened(partId: string): void {
+        if (MowProgress.once(`part-${CITY.id}-${partId}`)) send('part', `${CITY.id}-${partId}`, 'open');
     },
 
     /** Every district restored: the end of the town. */

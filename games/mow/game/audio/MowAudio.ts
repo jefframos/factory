@@ -4,16 +4,17 @@
 // gem hits — the stone one de-boomed and trimmed with ffmpeg into dig-hit — a short rock crackle on a break, stone / metal / gem pickups landing in the backpack, stone
 // footsteps, the build sting, the UI set), wooden hub footsteps from pizza, the celebration set from down (cheers,
 // applause, sparkle, whoosh, the reveal sting) and bandit-controller's purchase set (ka-ching, fanfare, shine, star). Files: raw-assets/audio (`npm run audio` packs them).
-// The soundtrack (MUSIC: Reed Mathis' "Somnia Variation 3") loops quietly under everything on SoundManager's "music"
-// layer, loaded on the first input (startMusic(): it's the biggest file, kept out of the initial download) and faded in.
+// The soundtrack (the city's: cityMusic(), set in the editor's Sounds — by default Reed Mathis' "Somnia Variation 3")
+// loops quietly under everything on SoundManager's "music" layer, loaded on the first input (startMusic(): it's the
+// biggest file, kept out of the initial download) and faded in; another city's crossfades in when travelling.
 // Respects mute (SoundManager) and goes quiet while the page or platform is paused.
 
-import { Howler } from 'howler';
-import SoundManager, { SoundAsset } from 'core/audio/SoundManager';
 import SoundLoadManager from 'core/audio/SoundLoaderManager';
+import SoundManager, { SoundAsset } from 'core/audio/SoundManager';
 import PlatformHandler from 'core/platforms/PlatformHandler';
+import { Howler } from 'howler';
 import audioManifest from '../../manifests/audio.json';
-import { TOWN } from '../data/MowConfig';
+import { MUSIC_TRACKS, TOWN, cityMusic } from '../data/MowConfig';
 
 const five = (name: string) => [1, 2, 3, 4, 5].map((i) => `${name}-${i}`);
 
@@ -23,7 +24,7 @@ const SOUNDS = {
     // the pickaxe and up play it higher (sharper), the shovel lower (duller).
     hitPick: { soundId: five('dig-hit'), volumeMinMax: [0.2, 0.26], pitchMinMax: [1.08, 1.22] },
     // Mowing: a short, bright swish per cut (a placeholder from the collect sounds, pitched up).
-    cut: { soundId: five('collect-stone'), volumeMinMax: [0.07, 0.1], pitchMinMax: [1.35, 1.7] },
+    cut: { soundId: five('hit-gem'), volumeMinMax: [0.07, 0.1], pitchMinMax: [1.35, 1.7] },
     hitStone: { soundId: five('dig-hit'), volumeMinMax: [0.22, 0.28], pitchMinMax: [0.88, 1.0] },
     // Soft ground (dirt, gravel): a low, gritty crunch instead of the stone tick. Placeholder: the stone footsteps
     // pitched down. To use real dirt-dig sounds, add dig-dirt-1..5 to raw-assets/audio (`npm run audio`) and switch
@@ -77,7 +78,8 @@ const SOUNDS = {
 export type Cue = keyof typeof SOUNDS;
 
 /** The soundtrack: its file (raw-assets/audio), volume (low: a bed under the game's sounds) and fade-in (ms). */
-const MUSIC = { id: 'Somnia-Variation-3-relax-and-sleep-Reed-Mathis', volume: 0.18, fadeInMs: 4000, layer: 'music' };
+/** The soundtrack's layer, its fade in (the first), and the crossfade to another city's. */
+const MUSIC = { layer: 'music', fadeInMs: 4000, crossfadeMs: 1500 };
 
 /** Sound effects downloaded at once in the background (loadInBackground()). */
 const BACKGROUND_LOADS = 3;
@@ -95,7 +97,8 @@ export class MowAudio {
     private static volumeBeforePause: number | undefined;
     private static readonly lastPlayed = new Map<Cue, number>();
     private static folderPath = 'mow';
-    private static musicStarted = false;
+    /** The soundtrack playing (startMusic()). */
+    private static music: string | undefined;
     /** The sound effects to download (loadInBackground()), and whether that's started. */
     private static ids: string[] = [];
     private static loading = false;
@@ -119,7 +122,7 @@ export class MowAudio {
         }
         SoundLoadManager.instance.setUpManifests([manifest], ['default']);
         this.ids = manifest.bundles.flatMap((bundle) => bundle.assets.map((asset) => asset.alias[0].replace(/\.[^.]+$/, '')))
-            .filter((id) => !AMBIENT_LOOPS.has(id) && id !== MUSIC.id);
+            .filter((id) => !AMBIENT_LOOPS.has(id) && !MUSIC_TRACKS.has(id));
         this.ready = true;
         document.addEventListener('visibilitychange', this.syncPause);
         PlatformHandler.instance.onPause.add(this.onPause);
@@ -131,11 +134,17 @@ export class MowAudio {
      * The soundtrack, looping on its own layer (the scene calls it on the first input: kept out of the initial
      * download; it loads in the background). Once.
      */
+    /** The city's soundtrack: started (faded in), or another city's crossfaded to; the same one just takes its volume. */
     public static startMusic(): void {
-        if (this.musicStarted) return;
-        this.musicStarted = true;
-        SoundManager.instance.setLayerVolume(MUSIC.layer, MUSIC.volume);
-        void SoundManager.instance.playBackgroundSound(MUSIC.id, MUSIC.fadeInMs, MUSIC.layer).catch(() => {
+        const music = cityMusic();
+        if (this.music === music.sound) {
+            SoundManager.instance.setLayerVolume(MUSIC.layer, music.volume, MUSIC.crossfadeMs);
+            return;
+        }
+        const first = !this.music;
+        this.music = music.sound;
+        SoundManager.instance.setLayerVolume(MUSIC.layer, music.volume);
+        void SoundManager.instance.playBackgroundSound(music.sound, first ? MUSIC.fadeInMs : MUSIC.crossfadeMs, MUSIC.layer).catch(() => {
             // No soundtrack (missing file): the game plays on without it.
         });
     }

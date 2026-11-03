@@ -394,6 +394,14 @@ export interface SecretDef {
 export interface SoundSettings {
     /** Each car's engine: `volume` within `near` of it, nothing from `far`. */
     cars: { volume: number; near: number; far: number };
+    /** This level's soundtrack, instead of MowDesign.music. */
+    music?: MusicDef;
+}
+
+/** A soundtrack: a file in raw-assets/audio (without its extension), and its volume (0-1). */
+export interface MusicDef {
+    sound: string;
+    volume: number;
 }
 
 /**
@@ -448,6 +456,8 @@ export interface MowDesign {
      */
     chewSec: number[];
     traffic?: TrafficDef;
+    /** The soundtrack, unless the level has its own (SoundSettings.music). */
+    music: MusicDef;
     /** The road builder's pieces (a level's `roads`): their base (`elevation`) and the asphalt's top (`roadY`, for the cars). */
     roadKit?: RoadKit & { elevation: number; roadY: number };
     grass: GrassDef[];
@@ -517,11 +527,11 @@ export interface CityDef {
     map?: string;
     keepGear?: boolean;
     comingSoon?: boolean;
-    /** false: no guide arrows (the shop's hand still shows). */
-    guide?: boolean;
+    /** 'pointer': one arrow by the player instead of the trail, only when needed (MowScene.updateGuide()); default the trail. */
+    guide?: 'trail' | 'pointer';
 }
 
-export const CITIES: CityDef[] = cities.cities;
+export const CITIES: CityDef[] = cities.cities as CityDef[];
 /** Each finished city (not the tutorial) adds this to every sale's money, in every city after (prestige). */
 export const PRESTIGE_BONUS: number = cities.prestigeBonus;
 /** The localStorage key holding the city being played (MowProgress writes it on travel). */
@@ -548,6 +558,13 @@ export let NEXT_CITY: CityDef | undefined;
 export let TOWN: TownLevel;
 export let MOW: MowDesign;
 setCity(CITY);
+
+/** The city's soundtrack (its level's, else the game's). */
+export const cityMusic = (): MusicDef => TOWN.soundSettings?.music ?? MOW.music;
+
+/** Every soundtrack any level plays (kept out of the sound effects' background download: each streams when played). */
+export const MUSIC_TRACKS: ReadonlySet<string> = new Set([(data as unknown as MowDesign).music.sound,
+    ...Object.values(LEVELS).map((level) => (level as TownLevel).soundSettings?.music?.sound).filter((sound): sound is string => !!sound)]);
 
 /** A level with its road cells laid: their pieces as flat props (walked over), their network as the traffic's. */
 function withRoads(level: TownLevel, kit: MowDesign['roadKit']): TownLevel {

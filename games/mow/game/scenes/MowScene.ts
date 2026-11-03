@@ -792,6 +792,7 @@ export default class MowScene extends ThreeScene {
             }
             // Whatever this opens: the next area, or (its part done) every area of the next part at once.
             const opened = MOW.districts.map((_, e) => e).filter((e) => !this.town.isOpen(e) && sectionOpen(e, (id) => MowProgress.isRestored(id)));
+            new Set(opened.filter((e) => MOW.districts[e].part).map((e) => MOW.districts[e].part!)).forEach((part) => GameAnalytics.partOpened(part));
             if (opened.length) {
                 for (const e of opened) {
                     this.town.unlock(e);
@@ -866,9 +867,14 @@ export default class MowScene extends ThreeScene {
             if (area) target = new THREE.Vector3(area.x, 0, area.z);
         }
         this.hud.setShopHint(hint);
-        // A city without the arrows (CityDef.guide: by then the player knows the way round).
-        if (CITY.guide === false) target = null;
-        this.guide.update(delta, this.player.transform.position, target, target ? area : undefined);
+        if (CITY.guide === 'pointer') {
+            // One arrow, only when needed (the player knows the game by now): the ATM with the bag full, else — strayed
+            // from every area with grass left (wanderArea()) — the nearest one.
+            const away = MowProgress.full ? undefined : area ?? this.wanderArea();
+            this.guide.point(delta, this.player.transform.position, MowProgress.full ? atmAt : away ? new THREE.Vector3(away.x, 0, away.z) : null);
+            return;
+        }
+        this.guide.update(delta, this.player.transform.position, target, area);
     }
 
     /**
@@ -939,9 +945,10 @@ export default class MowScene extends ThreeScene {
         window.removeEventListener('pointerdown', this.onFirstInput, true);
         window.removeEventListener('keydown', this.onFirstInput, true);
         this.afterFirstInput();
+        // Every city's first play (one travelled to mid-session too: the session's already started).
+        GameAnalytics.cityStarted(CITY.id);
         if (Gameplay.started) return;
         GameAnalytics.sessionStart(MowProgress.cellsCut === 0);
-        GameAnalytics.cityStarted(CITY.id);
         Gameplay.start();
     };
 

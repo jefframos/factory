@@ -1702,12 +1702,28 @@ function renderLists() {
 /** The traffic's sound: each car's engine volume, full within `near`, gone from `far`. */
 function renderSoundSettings() {
     const cars = town.soundSettings.cars;
+    // The soundtrack: this level's own, or the game's (ui/mow.json music) while it has none.
+    const music = town.soundSettings.music;
+    const fallback = mow.music ?? { sound: '', volume: 0.18 };
+    const editMusic = (change) => {
+        touch();
+        change();
+        renderSoundSettings();
+    };
     const editCars = (change) => {
         touch();
         change();
         renderSoundSettings();
     };
     host.querySelector('#townSoundSettings').replaceChildren(
+        el('div', { class: 'inspector-title' }, 'Soundtrack'),
+        selectField('Track', music?.sound ?? '', [['', `Game default (${fallback.sound})`], ...soundFiles.map((s) => [s, s])], (v) => editMusic(() => {
+            if (v) town.soundSettings.music = { sound: v, volume: music?.volume ?? fallback.volume };
+            else delete town.soundSettings.music;
+        })),
+        numberField('Volume (0-1)', music?.volume ?? fallback.volume, 0.01, (v) => editMusic(() => {
+            town.soundSettings.music = { sound: music?.sound ?? fallback.sound, volume: round(Math.min(1, Math.max(0, v)), 0.01) };
+        })),
         el('div', { class: 'inspector-title' }, 'Cars'),
         numberField('Volume (0-1)', cars.volume, 0.05, (v) => editCars(() => { cars.volume = round(Math.min(1, Math.max(0, v)), 0.01); })),
         numberField('Full within', cars.near, 0.5, (v) => editCars(() => { cars.near = Math.max(0, v); })),
