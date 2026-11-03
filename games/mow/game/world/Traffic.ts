@@ -5,7 +5,8 @@
 // between them (two-way roads), and the cars, each starting at a waypoint. A car drives from waypoint to waypoint on
 // the right-hand lane (`lane` off the middle), through each one on a curve: straight down the road in, a short
 // quadratic round where the two lanes cross (TURN_REACH lanes before and after it: a tight corner, never cutting across
-// the block's pavement and trees, however long the roads), straight on down the road out; at
+// the block's pavement and trees, however long the roads; on built roads — TownLevel.roads — the whole tile's curve,
+// edge to edge, as its corner piece is drawn), straight on down the road out; at
 // each waypoint it picks a link at random (never back, unless it's a dead end; the straightest likelier). A car only
 // roams the waypoints linked to its own, so a network of its own keeps it to an area.
 //
@@ -96,12 +97,18 @@ export class Traffic {
     private readonly player = new THREE.Vector2();
     private playerRadius = 0.35;
     private destroyed = false;
+    /** The asphalt's top (the road builder's pieces have their own), and how far before a corner a turn starts. */
+    private roadY = 0;
+    private turnReach = 0;
 
     /** `after`: the cars' models wait for it (the town round the player loads first). */
     public constructor(threeScene: THREE.Scene, after: Promise<unknown> = Promise.resolve()) {
         this.config = MOW.traffic;
         threeScene.add(this.group);
         if (!this.config || !TOWN.traffic) return;
+        const built = Boolean(TOWN.roads && MOW.roadKit);
+        this.roadY = built ? MOW.roadKit!.roadY : this.config.roadY;
+        this.turnReach = built ? Infinity : this.config.lane * TURN_REACH;
         this.buildGraph();
         const config = this.config;
         void after.then(() => this.spawn(config));
@@ -158,7 +165,7 @@ export class Traffic {
             const b = centre.clone().addScaledVector(right(outDir), lane);
             const t = ((b.x - a.x) * outDir.y - (b.y - a.y) * outDir.x) / cross;
             const corner = a.addScaledVector(inDir, t);
-            const reach = Math.min(lane * TURN_REACH, corner.distanceTo(start), corner.distanceTo(end));
+            const reach = Math.min(this.turnReach, corner.distanceTo(start), corner.distanceTo(end));
             curve(corner.clone().addScaledVector(inDir, -reach), corner, corner.clone().addScaledVector(outDir, reach));
         }
         points.push(end);
@@ -227,7 +234,7 @@ export class Traffic {
     /** Puts the car where it is along its leg, facing its way. */
     private place(car: Car, moved: number): void {
         sample(car.leg, Math.min(car.along, car.leg.length), car.position, car.heading);
-        car.root.position.set(car.position.x, this.config!.roadY, car.position.y);
+        car.root.position.set(car.position.x, this.roadY, car.position.y);
         car.root.rotation.y = Math.atan2(car.heading.x, car.heading.y);
         if (moved) car.wheels.forEach((wheel) => (wheel.rotation.x += moved / car.wheelRadius));
     }

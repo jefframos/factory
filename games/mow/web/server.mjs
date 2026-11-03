@@ -3,7 +3,8 @@
 // Reads/writes games/mow/levels/town.json and the `tractor` section of ui/mow.json (the files the game loads), lists
 // the models under public/mow/models,
 // and serves the browser editor in ./public. three.js is served straight from node_modules so the editor needs no
-// build step. The Town tab can also browse the 3D asset library (LIBRARY3D_DIR, default the repo's library3d submodule:
+// build step; the shared engine's plain-data modules (core/roads/…) are served from /core/, their TypeScript stripped
+// on the way (esbuild), so the editor runs the game's own code. The Town tab can also browse the 3D asset library (LIBRARY3D_DIR, default the repo's library3d submodule:
 // `git submodule update --init library3d`) and import a model from it into the game.
 
 import http from 'node:http';
@@ -36,6 +37,7 @@ const MAPSHOTS_FILE = path.join(__dirname, '..', 'levels', 'mapshots.json');
 const REPO_ROOT = path.join(__dirname, '..', '..', '..');
 const MODELS_DIR = path.join(REPO_ROOT, 'public', 'mow', 'models');
 const THREE_DIR = path.join(REPO_ROOT, 'node_modules', 'three');
+const CORE_DIR = path.join(REPO_ROOT, 'core');
 const THUMBS_DIR = path.join(__dirname, '.thumbs');
 const LIBRARY_DIR = path.resolve(process.env.LIBRARY3D_DIR ?? path.join(REPO_ROOT, 'library3d'));
 const LIBRARY_FILES = path.join(LIBRARY_DIR, 'files');
@@ -269,6 +271,20 @@ async function serveFile(res, baseDir, requestPath) {
     }
 }
 
+/** A core module as JavaScript (its types stripped): plain-data code the game and the editor share. */
+async function serveCore(res, requestPath) {
+    const filePath = path.join(CORE_DIR, path.normalize(requestPath));
+    if (!filePath.startsWith(CORE_DIR)) return res.writeHead(403).end('Forbidden');
+    try {
+        const { transform } = await import('esbuild');
+        const { code } = await transform(await fs.readFile(filePath, 'utf-8'), { loader: 'ts', format: 'esm' });
+        res.writeHead(200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'no-store' });
+        res.end(code);
+    } catch (error) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' }).end(String(error.message ?? error));
+    }
+}
+
 async function handleApi(req, res, url) {
     if (url.pathname === '/api/config' && req.method === 'GET') {
         return send(res, 200, { gameUrl: GAME_URL });
@@ -429,6 +445,7 @@ const server = http.createServer(async (req, res) => {
             return res.end();
         }
         if (url.pathname.startsWith('/api/')) return await handleApi(req, res, url);
+        if (url.pathname.startsWith('/core/') && url.pathname.endsWith('.ts')) return await serveCore(res, decodeURIComponent(url.pathname.slice('/core/'.length)));
         const routes = [
             ['/models/', MODELS_DIR],
             ['/library-files/', LIBRARY_FILES],

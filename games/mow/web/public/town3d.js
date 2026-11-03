@@ -9,6 +9,11 @@
 // cyan roads; selecting a waypoint lights up its links (yellow) and everything it connects to (its network: where a
 // car there can drive). Alt+click (or 🔗 Link) another waypoint links / unlinks them.
 //
+// The road builder (🛣 Roads, B): click or drag on the ground to lay road tiles on the kit's grid (ui/mow.json
+// roadKit), Shift to take them up, a click on a laid one for its next variant (a crossing, a stop line …). Each tile's
+// piece and turn come from its neighbours (core/roads/RoadGrid.ts, the game's own code), and so do the traffic's
+// waypoints and links: the cars drive what's built.
+//
 // Shift+click (or Ctrl+click), in the view or the lists, adds to the selection (or takes back out): the gizmo sits on
 // the last one picked, and moving it moves them all together; Del removes them all; Esc lets go.
 //
@@ -28,6 +33,7 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { api, el, toast, isModalOpen } from './shared.js';
 import { openModelPicker, setModelCatalog } from './modelPicker.js';
 import { openLibraryPicker } from './library.js';
+import { roadCellAt, roadCellKey, roadNetwork, solveRoads } from '/core/roads/RoadGrid.ts';
 
 // Mirrors games/mow/game/world/Town.ts and GrassField.ts, so the editor shows what the game builds.
 const PAD_RADIUS = 1.4;
@@ -79,6 +85,12 @@ const grassGroup = new THREE.Group();
 const trafficGroup = new THREE.Group();
 /** A yellow box round each selected thing (the selection outlined). */
 const highlightGroup = new THREE.Group();
+/** The road builder's pieces (not entities: clicks go through them), and the cell under the pointer while building. */
+const roadGroup = new THREE.Group();
+const roadHover = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.35, depthWrite: false }));
+let roadMode = false;
+/** A stroke being painted: taking up (Shift) or laying, the cell it's on, whether it started on road, whether it moved. */
+let roadStroke = null;
 const holders = new Map(); // "type:index" -> THREE.Group
 const loader = createGLTFLoader();
 const modelCache = new Map();
@@ -140,6 +152,7 @@ async function reload() {
     town.sounds ??= [];
     town.secrets ??= [];
     town.traffic ??= { waypoints: [], links: [], cars: [] };
+    if (town.roads) syncRoadTraffic();
     town.soundSettings ??= structuredClone(DEFAULT_SOUND_SETTINGS);
     town.grassNoise ??= { centre: { x: 0, z: 0 }, scale: 0.2, rings: [{ upTo: 999, mix: { grass: 1 } }] };
     // An island without an outline is the ground's rect: start the shore from its corners.
@@ -156,6 +169,7 @@ async function reload() {
 
 function rebuildAll() {
     rebuildGround();
+    rebuildRoads();
     rebuildEntities();
     renderLists();
     renderInspector();
@@ -213,6 +227,11 @@ function buildLayout() {
                 el('ul', { id: 'townSoundList', class: 'list' }),
                 el('div', { id: 'townSoundSettings' })),
             el('section', { class: 'card-section town-only' },
+                el('h2', {}, 'Roads'),
+                el('p', { class: 'muted small' }, '🛣 Roads (B) in the toolbar: click or drag on the ground to lay road tiles, Shift to take them up, click a laid tile for its next variant. The pieces fit themselves to their neighbours, and the cars drive them (the waypoints follow).'),
+                el('div', { id: 'townRoadSummary', class: 'muted small' }),
+                el('button', { class: 'block', onclick: () => clearRoads() }, '🧹 Clear roads')),
+            el('section', { class: 'card-section town-only' },
                 el('h2', {}, 'Traffic'),
                 el('p', { class: 'muted small' }, 'Cars drive the cyan roads between waypoints (two-way, on the right), each starting at a waypoint and roaming what it links to. Select a waypoint to see its network; Alt+click another to link / unlink it. A new waypoint links to the selected one.'),
                 el('div', { id: 'townTrafficSummary', class: 'muted small' }),
@@ -231,6 +250,7 @@ function buildLayout() {
                     el('button', { dataset: { mode: 'translate' }, class: 'active', onclick: () => setMode('translate') }, 'Move (W)'),
                     el('button', { dataset: { mode: 'rotate' }, onclick: () => setMode('rotate') }, 'Turn (E)'),
                     el('button', { dataset: { mode: 'scale' }, onclick: () => setMode('scale') }, 'Scale (R)')),
+                el('button', { id: 'townRoadMode', class: 'town-only', onclick: () => setRoadMode(!roadMode) }, '🛣 Roads (B)'),
                 el('label', {}, el('input', { type: 'checkbox', checked: snap, onchange: (event) => { snap = event.target.checked; applySnap(); } }), ' Snap'),
                 el('label', {}, el('input', { type: 'checkbox', checked: showGrass, onchange: (event) => { showGrass = event.target.checked; grassGroup.visible = showGrass; } }), ' Grass preview'),
                 el('label', { class: 'town-only' }, el('input', { type: 'checkbox', checked: showTraffic, onchange: (event) => { showTraffic = event.target.checked; rebuildEntities(); } }), ' Traffic'),
@@ -282,7 +302,10 @@ function setupViewport(viewport) {
     scene.add(new THREE.HemisphereLight(0xffffff, 0x5a7a4a, 1.6));
     const sun = new THREE.DirectionalLight(0xffffff, 1.5);
     sun.position.set(6, 14, 8);
-    scene.add(sun, groundGroup, grassGroup, trafficGroup, entityGroup, highlightGroup);
+    roadHover.rotation.x = -Math.PI / 2;
+    roadHover.visible = false;
+    roadHover.raycast = () => {};
+    scene.add(sun, groundGroup, roadGroup, grassGroup, trafficGroup, entityGroup, highlightGroup, roadHover);
 
     camera = new THREE.PerspectiveCamera(45, 1, 0.1, 800);
     camera.position.set(0, 34, 30);
@@ -311,8 +334,16 @@ function setupViewport(viewport) {
     setMode('translate');
 
     let down = null;
-    renderer.domElement.addEventListener('pointerdown', (event) => { down = { x: event.clientX, y: event.clientY }; });
+    renderer.domElement.addEventListener('pointerdown', (event) => {
+        down = { x: event.clientX, y: event.clientY };
+        if (roadMode && event.button === 0) startRoadStroke(event);
+    });
+    renderer.domElement.addEventListener('pointermove', (event) => {
+        if (roadMode) moveRoadStroke(event);
+    });
+    renderer.domElement.addEventListener('pointerleave', () => { roadHover.visible = false; });
     renderer.domElement.addEventListener('pointerup', (event) => {
+        if (roadMode) return endRoadStroke();
         // A click (not an orbit/pan drag, not a gizmo drag) selects what's under the pointer.
         if (!down || Math.hypot(event.clientX - down.x, event.clientY - down.y) > 4 || gizmo.dragging || event.button !== 0) return;
         pickAt(event);
@@ -364,7 +395,8 @@ function onKey(event) {
     } else if ((event.ctrlKey || event.metaKey) && key === 'z') {
         event.preventDefault();
         undo();
-    } else if (key === 'w') setMode('translate');
+    } else if (key === 'b' && !diorama) setRoadMode(!roadMode);
+    else if (key === 'w') setMode('translate');
     else if (key === 'e') setMode('rotate');
     else if (key === 'r') setMode('scale');
     else if (key === 'd' && selection) duplicateSelection();
@@ -1366,6 +1398,128 @@ function buildWaypoint(point) {
     label.scale.multiplyScalar(0.7);
     holder.add(disc, post, label);
     return holder;
+}
+
+// ---------------------------------------------------------------- road builder
+
+/** The kit the roads are built from (ui/mow.json roadKit). */
+const roadKit = () => mow.roadKit;
+
+/** Lays the roads' pieces again (each fitted to its neighbours: the game's solveRoads()). */
+function rebuildRoads() {
+    roadGroup.clear();
+    const kit = roadKit();
+    const count = town.roads?.cells.length ?? 0;
+    const summary = host.querySelector('#townRoadSummary');
+    if (summary) summary.textContent = kit ? `${count} road tiles (${kit.tile}×${kit.tile})` : 'No roadKit in ui/mow.json.';
+    if (!kit || !count) return;
+    for (const piece of solveRoads(town.roads, kit)) {
+        const holder = new THREE.Group();
+        holder.position.set(piece.x, 0, piece.z);
+        holder.rotation.y = piece.rotationY;
+        roadGroup.add(holder);
+        void fillModel(holder, piece.model, 0.2, kit.elevation).then((model) => model?.traverse((child) => { child.raycast = () => {}; }));
+    }
+}
+
+/** The waypoints and links from the roads (the cars drive what's built); cars on a tile taken up go. */
+function syncRoadTraffic() {
+    const kit = roadKit();
+    if (!kit || !town.roads) return;
+    const { waypoints, links } = roadNetwork(town.roads, kit.tile);
+    const ids = new Set(waypoints.map((point) => point.id));
+    town.traffic = { waypoints, links, cars: town.traffic.cars.filter((car) => ids.has(car.at)) };
+}
+
+function setRoadMode(on) {
+    if (on && !roadKit()) return toast('No roadKit in ui/mow.json.');
+    roadMode = on;
+    roadStroke = null;
+    roadHover.visible = false;
+    // Left-drag paints: the view still pans (right) and zooms (wheel).
+    orbit.mouseButtons.LEFT = on ? null : THREE.MOUSE.ROTATE;
+    if (on) {
+        select(null);
+        gizmo.detach();
+    }
+    host.querySelector('#townRoadMode')?.classList.toggle('active', on);
+}
+
+/** The road cell under the pointer (on the ground). */
+function roadCellUnder(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    const point = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), new THREE.Vector3());
+    return point ? roadCellAt(point.x, point.z, roadKit().tile) : null;
+}
+
+function roadIndex(i, j) {
+    return town.roads?.cells.findIndex(([ci, cj]) => ci === i && cj === j) ?? -1;
+}
+
+/** Lays (or, taking up, removes) the road at a cell; whether anything changed. */
+function paintRoad([i, j], erase) {
+    const at = roadIndex(i, j);
+    if (erase) {
+        if (at < 0) return false;
+        town.roads.cells.splice(at, 1);
+    } else {
+        if (at >= 0) return false;
+        town.roads ??= { cells: [] };
+        town.roads.cells.push([i, j]);
+    }
+    return true;
+}
+
+function startRoadStroke(event) {
+    const cell = roadCellUnder(event);
+    if (!cell) return;
+    touch();
+    const erase = event.shiftKey;
+    roadStroke = { erase, cell, key: roadCellKey(...cell), wasRoad: roadIndex(...cell) >= 0, moved: false };
+    if (paintRoad(cell, erase)) rebuildRoads();
+}
+
+function moveRoadStroke(event) {
+    const cell = roadCellUnder(event);
+    const tile = roadKit().tile;
+    roadHover.visible = Boolean(cell);
+    if (cell) {
+        roadHover.position.set(cell[0] * tile, 0.25, cell[1] * tile);
+        roadHover.scale.set(tile, tile, 1);
+        roadHover.material.color.set(event.shiftKey ? 0xff6b6b : 0xffd23f);
+    }
+    if (!roadStroke || !cell || roadCellKey(...cell) === roadStroke.key) return;
+    roadStroke.key = roadCellKey(...cell);
+    roadStroke.moved = true;
+    if (paintRoad(cell, roadStroke.erase)) rebuildRoads();
+}
+
+function endRoadStroke() {
+    if (!roadStroke) return;
+    const { erase, cell, wasRoad, moved } = roadStroke;
+    roadStroke = null;
+    // A click on a laid tile: its next variant (back to the first after the last).
+    if (!erase && wasRoad && !moved) {
+        const road = town.roads.cells[roadIndex(...cell)];
+        const piece = solveRoads(town.roads, roadKit()).find((p) => p.i === road[0] && p.j === road[1]);
+        const next = (road[2] ?? 0) + 1;
+        if (piece && next < piece.variants) road[2] = next;
+        else road.length = 2;
+        rebuildRoads();
+    }
+    syncRoadTraffic();
+    rebuildEntities();
+    renderLists();
+}
+
+function clearRoads() {
+    if (!town.roads?.cells.length || !window.confirm('Take up every road tile (and the cars on them)?')) return;
+    touch();
+    town.roads = { cells: [] };
+    syncRoadTraffic();
+    rebuildAll();
 }
 
 /**

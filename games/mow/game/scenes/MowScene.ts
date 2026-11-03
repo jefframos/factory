@@ -261,10 +261,8 @@ export default class MowScene extends ThreeScene {
         // Ridden everywhere once owned (paths, restored sections, the ATMs' pads): it's the reward, not just a mowing tool.
         this.tractor = new TractorRide(this.threeScene, this.player, this.effects, () => true);
         this.player.ridePoint = (out) => this.tractor.cutPoint(out);
-        this.player.groundAt = (x, z) => {
-            const ground = this.town.surfaceAt(x, z);
-            return ground.kind === 'pavement' ? ground.y : 0;
-        };
+        // On pavement: what's drawn there (a road piece's sidewalks stand higher than its asphalt).
+        this.player.groundAt = (x, z) => (this.town.surfaceAt(x, z).kind === 'pavement' ? this.town.topAt(x, z) : 0);
         this.guide = new ArrowGuide(this.threeScene, () => this.town.blockers, () => this.town.unstandable(),
             (x, z) => this.town.topAt(x, z));
         this.hud = this.createHud();

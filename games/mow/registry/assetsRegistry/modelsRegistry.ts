@@ -2996,6 +2996,106 @@ const TownCity2PhoneBooth01 = {
 }
 } as const;
 
+const TownCity2Road009 = {
+  id: 'city2-road-009',
+  path: 'town/library/city2-road-009/city2-road-009',
+  fullPath: 'mow/models/town/library/city2-road-009/city2-road-009.glb',
+  format: 'glb',
+  nodes: {
+  "Road009": "road_009"
+}
+} as const;
+
+const TownCity2Road010 = {
+  id: 'city2-road-010',
+  path: 'town/library/city2-road-010/city2-road-010',
+  fullPath: 'mow/models/town/library/city2-road-010/city2-road-010.glb',
+  format: 'glb',
+  nodes: {
+  "Road010": "road_010"
+}
+} as const;
+
+const TownCity2Road011 = {
+  id: 'city2-road-011',
+  path: 'town/library/city2-road-011/city2-road-011',
+  fullPath: 'mow/models/town/library/city2-road-011/city2-road-011.glb',
+  format: 'glb',
+  nodes: {
+  "Road011": "road_011"
+}
+} as const;
+
+const TownCity2Road012 = {
+  id: 'city2-road-012',
+  path: 'town/library/city2-road-012/city2-road-012',
+  fullPath: 'mow/models/town/library/city2-road-012/city2-road-012.glb',
+  format: 'glb',
+  nodes: {
+  "Road012": "road_012"
+}
+} as const;
+
+const TownCity2Road013 = {
+  id: 'city2-road-013',
+  path: 'town/library/city2-road-013/city2-road-013',
+  fullPath: 'mow/models/town/library/city2-road-013/city2-road-013.glb',
+  format: 'glb',
+  nodes: {
+  "Road013": "road_013"
+}
+} as const;
+
+const TownCity2Road022 = {
+  id: 'city2-road-022',
+  path: 'town/library/city2-road-022/city2-road-022',
+  fullPath: 'mow/models/town/library/city2-road-022/city2-road-022.glb',
+  format: 'glb',
+  nodes: {
+  "Road022": "road_022"
+}
+} as const;
+
+const TownCity2Road023 = {
+  id: 'city2-road-023',
+  path: 'town/library/city2-road-023/city2-road-023',
+  fullPath: 'mow/models/town/library/city2-road-023/city2-road-023.glb',
+  format: 'glb',
+  nodes: {
+  "Road023": "road_023"
+}
+} as const;
+
+const TownCity2Road025 = {
+  id: 'city2-road-025',
+  path: 'town/library/city2-road-025/city2-road-025',
+  fullPath: 'mow/models/town/library/city2-road-025/city2-road-025.glb',
+  format: 'glb',
+  nodes: {
+  "Road025": "road_025"
+}
+} as const;
+
+const TownCity2Road026 = {
+  id: 'city2-road-026',
+  path: 'town/library/city2-road-026/city2-road-026',
+  fullPath: 'mow/models/town/library/city2-road-026/city2-road-026.glb',
+  format: 'glb',
+  nodes: {
+  "Road026": "road_026"
+}
+} as const;
+
+const TownCity2Road029 = {
+  id: 'city2-road-029',
+  path: 'town/library/city2-road-029/city2-road-029',
+  fullPath: 'mow/models/town/library/city2-road-029/city2-road-029.glb',
+  format: 'glb',
+  nodes: {
+  "Road029": "road_029"
+}
+} as const;
+
 const TownCity2Statue01 = {
   id: 'city2-statue-01',
   path: 'town/library/city2-statue-01/city2-statue-01',
@@ -3628,6 +3728,16 @@ export const MODELS = {
     City2Lamp04: TownCity2Lamp04,
     City2Lamppost01: TownCity2Lamppost01,
     City2PhoneBooth01: TownCity2PhoneBooth01,
+    City2Road009: TownCity2Road009,
+    City2Road010: TownCity2Road010,
+    City2Road011: TownCity2Road011,
+    City2Road012: TownCity2Road012,
+    City2Road013: TownCity2Road013,
+    City2Road022: TownCity2Road022,
+    City2Road023: TownCity2Road023,
+    City2Road025: TownCity2Road025,
+    City2Road026: TownCity2Road026,
+    City2Road029: TownCity2Road029,
     City2Statue01: TownCity2Statue01,
     City2TrafficLight01: TownCity2TrafficLight01,
     City2TrashCan02: TownCity2TrashCan02,

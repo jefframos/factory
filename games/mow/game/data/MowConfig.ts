@@ -6,6 +6,7 @@
 // sections. The cities (levels/cities.json, CITIES) are each their own level; which one is played is saved
 // (MowProgress, CURRENT_CITY_KEY) and read here, before anything is built: travelling reloads the game into it.
 
+import { RoadCells, RoadKit, roadNetwork, solveRoads } from 'core/roads/RoadGrid';
 import data from '../../ui/mow.json';
 import cities from '../../levels/cities.json';
 import tutorial from '../../levels/tutorial.json';
@@ -343,6 +344,8 @@ export interface TownLevel {
     secrets?: SecretDef[];
     /** Where the cars drive (Traffic): waypoints, the roads linking them, the cars. Edited in the editor. */
     traffic?: TownTraffic;
+    /** Road cells (the editor's road builder): laid as MowDesign.roadKit's pieces, and the cars' waypoints and links. */
+    roads?: RoadCells;
     /** How loud and how far the traffic is heard. */
     soundSettings?: SoundSettings;
 }
@@ -445,6 +448,8 @@ export interface MowDesign {
      */
     chewSec: number[];
     traffic?: TrafficDef;
+    /** The road builder's pieces (a level's `roads`): their base (`elevation`) and the asphalt's top (`roadY`, for the cars). */
+    roadKit?: RoadKit & { elevation: number; roadY: number };
     grass: GrassDef[];
     tools: ToolDef[];
     upgrades: UpgradeDef[];
@@ -544,11 +549,22 @@ export let TOWN: TownLevel;
 export let MOW: MowDesign;
 setCity(CITY);
 
+/** A level with its road cells laid: their pieces as flat props (walked over), their network as the traffic's. */
+function withRoads(level: TownLevel, kit: MowDesign['roadKit']): TownLevel {
+    if (!level.roads?.cells.length || !kit) return level;
+    // At their own size (the kit's pieces are 0.2 thick).
+    const pieces: TownProp[] = solveRoads(level.roads, kit).map((road) => ({
+        model: road.model, x: road.x, z: road.z, rotationY: road.rotationY, height: 0.2, elevation: kit.elevation, collider: null,
+    }));
+    return { ...level, props: [...pieces, ...level.props], traffic: { ...roadNetwork(level.roads, kit.tile), cars: level.traffic?.cars ?? [] } };
+}
+
 /** Plays `city` from now on (travelling: the scene is rebuilt after, everything reads these live). */
 export function setCity(city: CityDef): void {
     CITY = city;
     NEXT_CITY = CITIES[CITIES.indexOf(city) + 1];
-    TOWN = LEVELS[city.level!] as unknown as TownLevel;
-    MOW = { ...(data as unknown as Omit<MowDesign, 'districts' | 'start'>), districts: TOWN.sections, start: TOWN.start };
+    const design = data as unknown as Omit<MowDesign, 'districts' | 'start'>;
+    TOWN = withRoads(LEVELS[city.level!] as unknown as TownLevel, design.roadKit);
+    MOW = { ...design, districts: TOWN.sections, start: TOWN.start };
     partOrder = undefined;
 }

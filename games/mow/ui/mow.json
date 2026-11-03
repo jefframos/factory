@@ -16,6 +16,19 @@
     1.6,
     3
   ],
+  "roadKit": {
+    "$comment": "The road builder's pieces (core/roads/RoadGrid.ts): a level's road cells (levels/*.json roads) become these, each the first piece fitting its road neighbours (open: its sides as modelled, n = -Z), turned to fit; models: the piece, then its variants (the editor cycles them). tile: their size; elevation: their base; roadY: the asphalt (the cars' wheels).",
+    "tile": 15,
+    "elevation": 0.02,
+    "roadY": 0.03,
+    "pieces": [
+      { "open": ["n", "e", "s", "w"], "models": ["town/library/city2-road-012/city2-road-012.glb", "town/library/city2-road-029/city2-road-029.glb"] },
+      { "open": ["n", "s", "w"], "models": ["town/library/city2-road-011/city2-road-011.glb", "town/library/city2-road-026/city2-road-026.glb"] },
+      { "open": ["n", "s"], "models": ["town/library/city2-road-009/city2-road-009.glb", "town/library/city2-road-010/city2-road-010.glb", "town/library/city2-road-022/city2-road-022.glb", "town/library/city2-road-023/city2-road-023.glb"] },
+      { "open": ["n", "w"], "models": ["town/library/city2-road-013/city2-road-013.glb"] },
+      { "open": ["s"], "models": ["town/library/city2-road-025/city2-road-025.glb"] }
+    ]
+  },
   "traffic": {
     "models": ["town/library/city2-car-07/city2-car-07.glb", "town/library/city2-car-08/city2-car-08.glb", "town/library/city2-car-12/city2-car-12.glb", "town/library/city2-car-16/city2-car-16.glb", "town/library/city2-car-17/city2-car-17.glb", "town/library/city2-car-25/city2-car-25.glb", "town/library/city2-car-26/city2-car-26.glb", "town/library/city2-car-28/city2-car-28.glb", "town/library/city2-car-35/city2-car-35.glb", "town/library/city2-car-36/city2-car-36.glb", "town/library/city2-car-39/city2-car-39.glb", "town/library/city2-car-42/city2-car-42.glb", "town/library/city2-car-45/city2-car-45.glb"],
     "speed": 4.4,
