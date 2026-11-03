@@ -19,7 +19,9 @@ let host;
 let gameUrl = 'http://localhost:9001/';
 let town;
 let shots = { zones: {} };
-let zone = 'town';
+/** The city whose shots these are (the editor's level picker): its level, and its whole-island zone (`map`). */
+let city = { id: 'city1', name: 'Mow Town', level: 'town', map: 'town' };
+let zone = city.map;
 /** The diorama editor (a second town3d.js, its own state), once loaded. */
 let editor = null;
 /** The editor's own element (kept across re-renders: its 3D view lives in it), and the slot it goes in. */
@@ -31,7 +33,8 @@ const zoneSettings = (id) => {
     const saved = shots.zones[id] ?? {};
     return { mode: 'original', stroke: false, strokeWidth: 3, ...saved, camera: { ...DEFAULT_CAMERA, ...saved.camera } };
 };
-const zoneName = (id) => (id === 'town' ? 'Whole town' : town.sections.find((s) => s.id === id)?.name ?? id);
+const zoneName = (id) => (id === city.map ? `Whole ${city.name}` : town.sections.find((s) => s.id === id)?.name ?? id);
+const levelUrl = () => `/api/town?level=${encodeURIComponent(city.level)}`;
 const imageUrl = (id, small = false) => `/map-images/${id}${small ? '-small' : ''}.webp?t=${Date.now()}`;
 
 export const hasUnsavedMapShots = () => Boolean(editor?.hasUnsavedTown());
@@ -39,21 +42,27 @@ export const hasUnsavedMapShots = () => Boolean(editor?.hasUnsavedTown());
 export async function initMapShotsTab(container, options = {}) {
     host = container;
     gameUrl = options.gameUrl ?? gameUrl;
-    town = await api('/api/town');
+    if (options.city) city = options.city;
+    zone = city.map;
+    town = await api(levelUrl());
     shots = await api('/api/mapshots');
     render();
 }
 
-/** Back on the tab: the town may have changed (new sections). */
-export async function refreshMapShotsTab() {
-    town = await api('/api/town');
+/** Back on the tab (or another city picked): the town may have changed (new sections). */
+export async function refreshMapShotsTab(next) {
+    if (next && next.id !== city.id) {
+        city = next;
+        zone = city.map;
+    }
+    town = await api(levelUrl());
     shots = await api('/api/mapshots');
     render();
 }
 
 function render() {
     const settings = zoneSettings(zone);
-    const zones = ['town', ...town.sections.map((s) => s.id)];
+    const zones = [city.map, ...town.sections.map((s) => s.id)];
     preview = el('img', { class: 'mapshot-preview', src: imageUrl(zone, true), alt: '', title: 'The HUD corner\'s picture', onerror: (event) => { event.target.style.visibility = 'hidden'; } });
     const camera = () => ({ yaw: Number(yaw.value) || 0, pitch: Number(pitch.value) || 40, ortho: ortho.checked, fov: Number(fov.value) || 35 });
     const yaw = el('input', { type: 'number', step: 5, value: settings.camera.yaw, onchange: () => saveSettings({ camera: camera() }) });
@@ -94,7 +103,7 @@ function render() {
         el('div', { class: 'mapshots-pair' },
             el('img', { class: 'mapshot-large', src: imageUrl(zone), alt: 'Not taken yet', onerror: (event) => { event.target.replaceWith(el('p', { class: 'muted' }, 'No picture for this zone yet: take one.')); } }),
             el('img', { class: 'mapshot-small', src: imageUrl(zone, true), alt: '', title: 'The HUD corner\'s picture', onerror: (event) => { event.target.style.visibility = 'hidden'; } })),
-        el('p', { class: 'muted small' }, custom ? '' : `Original: ${zone === 'town' ? 'the whole island as it is' : `${zoneName(zone)} cut out of the town as it is, on a slab of earth`}, from yaw ${settings.camera.yaw}° / pitch ${settings.camera.pitch}°${settings.camera.ortho ? ', isometric' : `, perspective ${settings.camera.fov}°`}. Left: the big picture (the reveal); right: the HUD corner's. Switch to Custom to build a diorama of it instead.`));
+        el('p', { class: 'muted small' }, custom ? '' : `Original: ${zone === city.map ? 'the whole island as it is' : `${zoneName(zone)} cut out of the town as it is, on a slab of earth`}, from yaw ${settings.camera.yaw}° / pitch ${settings.camera.pitch}°${settings.camera.ortho ? ', isometric' : `, perspective ${settings.camera.fov}°`}. Left: the big picture (the reveal); right: the HUD corner's. Switch to Custom to build a diorama of it instead.`));
     host.replaceChildren(bar, original, editorHost);
     if (custom) void openEditor();
 }
@@ -139,13 +148,13 @@ async function useView() {
  */
 async function copyFromTown(ask) {
     if (ask && !window.confirm(`Replace ${zoneName(zone)}'s diorama with a fresh copy from the town?`)) return;
-    town = await api('/api/town');
+    town = await api(levelUrl());
     const { _version, traffic, sounds, soundSettings, secrets, ...level } = structuredClone(town);
     level.atms = [];
     level.wardrobes = [];
     level.sections = level.sections.map(({ separator, pen, onUnlock, ...lawn }) => lawn);
     let custom = level;
-    if (zone !== 'town') {
+    if (zone !== city.map) {
         const section = town.sections.find((s) => s.id === zone);
         const pad = (town.island?.deck?.width ?? 0) + DIORAMA_MARGIN;
         const rect = { minX: section.x - section.width / 2 - pad, maxX: section.x + section.width / 2 + pad, minZ: section.z - section.depth / 2 - pad, maxZ: section.z + section.depth / 2 + pad };
@@ -207,6 +216,7 @@ async function takeShot() {
     await saveSettings({});
     const url = new URL(gameUrl);
     url.searchParams.set('mapshots', window.location.origin);
+    url.searchParams.set('city', city.id);
     url.searchParams.set('zone', zone);
     window.open(url.toString(), 'mow-mapshots');
     toast(`Taking ${zoneName(zone)}'s snapshot in the game…`);

@@ -27,6 +27,8 @@ export default class MowGame extends Game {
     private gameContainer = new PIXI.Container();
     private sceneManager!: SceneManager;
     private loaderScene: HtmlLoader;
+    /** Scenes built so far (each city change registers a fresh one: restart()). */
+    private scenes = 0;
 
     public constructor() {
         super({ resolution: Math.min(2, devicePixelRatio), backgroundAlpha: 0 }, false);
@@ -97,10 +99,22 @@ export default class MowGame extends Game {
         camera.slider(MOW_CAMERA, 'distance', 6, 40, 0.5, 'Distance');
         camera.slider(MOW_CAMERA, 'followSpeed', 1, 20, 0.5, 'Follow Speed');
 
-        const scene = this.sceneManager.register<MowScene>('mow', MowScene, this);
-        this.sceneManager.changeScene('mow');
+        return this.buildScene();
+    }
+
+    /** A fresh MowScene (the old one torn down): at boot, and on a city change (behind the transition). */
+    private buildScene(): MowScene {
+        const key = `mow-${this.scenes++}`;
+        const scene = this.sceneManager.register<MowScene>(key, MowScene, this, () => this.restart());
+        this.sceneManager.changeScene(key);
         this.sceneManager.resize();
         return scene;
+    }
+
+    /** Another city: its scene built in place of this one; resolves once it's playable (capped like the boot). */
+    private async restart(): Promise<void> {
+        const scene = this.buildScene();
+        await Promise.race([scene.ready, new Promise((resolve) => window.setTimeout(resolve, MAX_SCENE_WAIT_MS))]);
     }
 
     protected override update(delta: number): void {

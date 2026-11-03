@@ -3,8 +3,9 @@
 // A few cars driving the town's roads, just to make it feel alive. How they drive is `traffic` in ui/mow.json; where,
 // the level's `traffic` (levels/town.json, drawn and edited in the editor): waypoints on the roads' middles, links
 // between them (two-way roads), and the cars, each starting at a waypoint. A car drives from waypoint to waypoint on
-// the right-hand lane (`lane` off the middle), through each one on a curve (a quadratic from half way along the road
-// in to half way along the road out, bent at where the two lanes cross), so corners and junctions turn smoothly; at
+// the right-hand lane (`lane` off the middle), through each one on a curve: straight down the road in, a short
+// quadratic round where the two lanes cross (TURN_REACH lanes before and after it: a tight corner, never cutting across
+// the block's pavement and trees, however long the roads), straight on down the road out; at
 // each waypoint it picks a link at random (never back, unless it's a dead end; the straightest likelier). A car only
 // roams the waypoints linked to its own, so a network of its own keeps it to an area.
 //
@@ -25,6 +26,10 @@ const STRAIGHT_WEIGHT = 2;
 const WIDTH_SHARE = 0.45;
 /** The wheels' radius, as a share of the car's length. */
 const WHEEL_SHARE = 0.085;
+/** A turn's curve starts this many lanes before the corner (and ends as far after it). */
+const TURN_REACH = 2.2;
+/** Points along a turn's curve. */
+const CURVE_STEPS = 14;
 
 interface Node {
     x: number;
@@ -32,14 +37,13 @@ interface Node {
     links: Node[];
 }
 
-/** A car's way through `node`, from the road in (from `prev`) to the road out (to `next`), along a quadratic p0 -> p1 -> p2. */
+/** A car's way through `node`, from the road in (from `prev`) to the road out (to `next`): points, and how far along each is. */
 interface Leg {
     prev: Node;
     node: Node;
     next: Node;
-    p0: THREE.Vector2;
-    p1: THREE.Vector2;
-    p2: THREE.Vector2;
+    points: THREE.Vector2[];
+    distances: number[];
     length: number;
 }
 
@@ -61,16 +65,27 @@ const heading = (a: Node, b: Node): THREE.Vector2 => new THREE.Vector2(b.x - a.x
 /** The right-hand side of a heading (x, z). */
 const right = (dir: THREE.Vector2): THREE.Vector2 => new THREE.Vector2(-dir.y, dir.x);
 
-function bezier(leg: Leg, u: number, out: THREE.Vector2): THREE.Vector2 {
-    const a = (1 - u) * (1 - u);
-    const b = 2 * u * (1 - u);
-    const c = u * u;
-    return out.set(a * leg.p0.x + b * leg.p1.x + c * leg.p2.x, a * leg.p0.y + b * leg.p1.y + c * leg.p2.y);
+/** The quadratic a -> control -> b at u. */
+function quadratic(a: THREE.Vector2, control: THREE.Vector2, b: THREE.Vector2, u: number): THREE.Vector2 {
+    const k = 1 - u;
+    return new THREE.Vector2(k * k * a.x + 2 * u * k * control.x + u * u * b.x, k * k * a.y + 2 * u * k * control.y + u * u * b.y);
 }
 
-function tangent(leg: Leg, u: number, out: THREE.Vector2): THREE.Vector2 {
-    out.set(2 * (1 - u) * (leg.p1.x - leg.p0.x) + 2 * u * (leg.p2.x - leg.p1.x), 2 * (1 - u) * (leg.p1.y - leg.p0.y) + 2 * u * (leg.p2.y - leg.p1.y));
-    return out.lengthSq() > 1e-9 ? out.normalize() : out.set(0, 1);
+/** Where the car is `along` its leg, and which way it faces there (eased between the points' directions). */
+function sample(leg: Leg, along: number, position: THREE.Vector2, dir: THREE.Vector2): void {
+    const { points, distances } = leg;
+    let i = 1;
+    while (i < points.length - 1 && distances[i] < along) i++;
+    const a = points[i - 1];
+    const b = points[i];
+    const span = Math.max(1e-6, distances[i] - distances[i - 1]);
+    const u = THREE.MathUtils.clamp((along - distances[i - 1]) / span, 0, 1);
+    position.copy(a).lerp(b, u);
+    dir.copy(b).sub(a);
+    // Half way into the next stretch, turning toward it (no snapping from one to the next).
+    if (u > 0.5 && i < points.length - 1) dir.normalize().lerp(points[i + 1].clone().sub(b).normalize(), u - 0.5);
+    if (dir.lengthSq() < 1e-9) dir.set(0, 1);
+    dir.normalize();
 }
 
 export class Traffic {
@@ -116,39 +131,40 @@ export class Traffic {
         return options[Math.floor(Math.random() * options.length)];
     }
 
-    /** The way through `node` from `prev` to `next`: half way along the road in, to half way along the road out. */
+    /**
+     * The way through `node` from `prev` to `next`: half way along the road in, to half way along the road out — on the
+     * right-hand lane, turning close round the corner (straight up to it, a short curve, straight on).
+     */
     private leg(prev: Node, node: Node, next: Node): Leg {
         const lane = this.config!.lane;
         const centre = new THREE.Vector2(node.x, node.z);
         const inDir = heading(prev, node);
         const outDir = next === prev ? inDir.clone().negate() : heading(node, next);
-        const p0 = new THREE.Vector2((prev.x + node.x) / 2, (prev.z + node.z) / 2).addScaledVector(right(inDir), lane);
-        const p2 = new THREE.Vector2((node.x + next.x) / 2, (node.z + next.z) / 2).addScaledVector(right(outDir), lane);
+        const start = new THREE.Vector2((prev.x + node.x) / 2, (prev.z + node.z) / 2).addScaledVector(right(inDir), lane);
+        const end = new THREE.Vector2((node.x + next.x) / 2, (node.z + next.z) / 2).addScaledVector(right(outDir), lane);
         const cross = inDir.x * outDir.y - inDir.y * outDir.x;
-        let p1: THREE.Vector2;
+        const points = [start];
+        const curve = (a: THREE.Vector2, control: THREE.Vector2, b: THREE.Vector2) => {
+            for (let i = 0; i <= CURVE_STEPS; i++) points.push(quadratic(a, control, b, i / CURVE_STEPS));
+        };
         if (next === prev || inDir.dot(outDir) < -0.95) {
-            // A dead end: round the waypoint.
-            p1 = centre.clone().addScaledVector(inDir, lane * 2);
-        } else if (Math.abs(cross) < 0.05) {
-            // Straight on.
-            p1 = p0.clone().add(p2).multiplyScalar(0.5);
-        } else {
-            // A turn: where the lane in meets the lane out.
+            // A dead end: round the waypoint, from its lane in to its lane out.
+            const a = centre.clone().addScaledVector(right(inDir), lane);
+            const b = centre.clone().addScaledVector(right(outDir), lane);
+            curve(a, centre.clone().addScaledVector(inDir, lane * 2), b);
+        } else if (Math.abs(cross) > 0.05) {
+            // A turn: round where the lane in meets the lane out, from a little before it to a little after.
             const a = centre.clone().addScaledVector(right(inDir), lane);
             const b = centre.clone().addScaledVector(right(outDir), lane);
             const t = ((b.x - a.x) * outDir.y - (b.y - a.y) * outDir.x) / cross;
-            p1 = a.addScaledVector(inDir, t);
+            const corner = a.addScaledVector(inDir, t);
+            const reach = Math.min(lane * TURN_REACH, corner.distanceTo(start), corner.distanceTo(end));
+            curve(corner.clone().addScaledVector(inDir, -reach), corner, corner.clone().addScaledVector(outDir, reach));
         }
-        const leg: Leg = { prev, node, next, p0, p1, p2, length: 0 };
-        const a = new THREE.Vector2();
-        const b = bezier(leg, 0, new THREE.Vector2());
-        for (let i = 1; i <= 12; i++) {
-            bezier(leg, i / 12, a);
-            leg.length += a.distanceTo(b);
-            b.copy(a);
-        }
-        leg.length = Math.max(leg.length, 1e-3);
-        return leg;
+        points.push(end);
+        const distances = [0];
+        for (let i = 1; i < points.length; i++) distances.push(distances[i - 1] + points[i].distanceTo(points[i - 1]));
+        return { prev, node, next, points, distances, length: Math.max(distances[distances.length - 1], 1e-3) };
     }
 
     /** The leg after `leg`: through the waypoint it heads to. */
@@ -210,9 +226,7 @@ export class Traffic {
 
     /** Puts the car where it is along its leg, facing its way. */
     private place(car: Car, moved: number): void {
-        const u = Math.min(1, car.along / car.leg.length);
-        bezier(car.leg, u, car.position);
-        tangent(car.leg, u, car.heading);
+        sample(car.leg, Math.min(car.along, car.leg.length), car.position, car.heading);
         car.root.position.set(car.position.x, this.config!.roadY, car.position.y);
         car.root.rotation.y = Math.atan2(car.heading.x, car.heading.y);
         if (moved) car.wheels.forEach((wheel) => (wheel.rotation.x += moved / car.wheelRadius));

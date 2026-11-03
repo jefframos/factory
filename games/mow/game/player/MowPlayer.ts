@@ -30,7 +30,7 @@ const HALF_EXTENTS = new THREE.Vector3(0.4, 0.9, 0.4);
 /** The character rig is authored in FBX units; same scale as dig's miner. */
 const CHARACTER_SCALE = 0.0075;
 /** The player's size against the town (MowDesign.playerScale). */
-export const PLAYER_SCALE = MOW.playerScale ?? 1;
+export const playerScale = (): number => MOW.playerScale ?? 1;
 /** Must match CharacterBody's HAT_SINK: ui/hatfits.json (bandit-controller's editor format) measures from the head top. */
 const HAT_SINK = 0.03;
 /** CharacterBody's HAT_WIDTH_FIT: hatfits.json scales are the hat width as a fraction of the head. */
@@ -107,7 +107,7 @@ export default class MowPlayer extends Entity {
 
     /** Head height (pickups fly here, labels float above). */
     public pickupPoint(out = new THREE.Vector3()): THREE.Vector3 {
-        return out.copy(this.transform.position).setY(1.2 * PLAYER_SCALE);
+        return out.copy(this.transform.position).setY(1.2 * playerScale());
     }
 
     public override awake(): void {
@@ -148,7 +148,7 @@ export default class MowPlayer extends Entity {
         await character.registerAnimation(SITTING_STATE, clip('Sitting'));
         character.setUp(config.idleToWalkSpeed, config.walkToRunSpeed);
         // Dressed in the wardrobe's look (applyLook() also rebuilds the head at the rig's natural scale).
-        character.container.scale.setScalar(CHARACTER_SCALE * PLAYER_SCALE);
+        character.container.scale.setScalar(CHARACTER_SCALE * playerScale());
         this.applyLook(MowProgress.look, character);
         if (this.destroyed) {
             character.destroy();
@@ -193,7 +193,7 @@ export default class MowPlayer extends Entity {
         const { grip, gripZ } = handleOf(tool);
         addHandle(model, tool, grip, gripZ, this.handleMaterial);
         // Its length and height with the player (the hands reach its handle); its width is what it cuts.
-        model.group.scale.set(1, PLAYER_SCALE, PLAYER_SCALE);
+        model.group.scale.set(1, playerScale(), playerScale());
         this.tool.add(model.group);
         this.reel = model.reel;
     }
@@ -202,7 +202,7 @@ export default class MowPlayer extends Entity {
     public cutPoint(out = new THREE.Vector3()): THREE.Vector3 {
         if (this.riding && this.ridePoint) return this.ridePoint(out);
         const tool = this.toolDef ?? MowProgress.tool;
-        return out.copy(this.transform.position).addScaledVector(this.facing(), pushAhead(tool) * PLAYER_SCALE).setY(0);
+        return out.copy(this.transform.position).addScaledVector(this.facing(), pushAhead(tool) * playerScale()).setY(0);
     }
 
     /** The way the character faces (on the ground). */
@@ -228,7 +228,7 @@ export default class MowPlayer extends Entity {
         const left = this.left.crossVectors(UP, forward);
         const grip = toolGrip(tool);
         // The grip's along / up with the player's size (the mower's length and height are); across, its width isn't.
-        const gripAt = this.gripAt.copy(this.transform.position).addScaledVector(forward, grip.forward * PLAYER_SCALE).setY(grip.height * PLAYER_SCALE);
+        const gripAt = this.gripAt.copy(this.transform.position).addScaledVector(forward, grip.forward * playerScale()).setY(grip.height * playerScale());
         const container = this.loaded?.container;
         if (container) this.tool.quaternion.copy(container.quaternion);
         this.cutPoint(this.tool.position);
@@ -239,15 +239,15 @@ export default class MowPlayer extends Entity {
         if (this.reel && !changed) {
             const at = this.tool.position;
             const moved = (at.x - this.lastToolAt.x) * forward.x + (at.z - this.lastToolAt.z) * forward.z;
-            this.reel.rotation.x += moved / Math.max(0.05, (tool.size[1] / 2) * REEL_WHEEL * PLAYER_SCALE) * 3;
+            this.reel.rotation.x += moved / Math.max(0.05, (tool.size[1] / 2) * REEL_WHEEL * playerScale()) * 3;
         }
         this.lastToolAt.copy(this.tool.position);
         if (container) {
             // The hands reach the bar moved by the grip's offset (x outward for each hand); the bar stays put.
             const offset = grip.offset;
             const out = grip.spread + (offset?.x ?? 0);
-            const lift = (offset?.y ?? 0) * PLAYER_SCALE;
-            const ahead = (offset?.z ?? 0) * PLAYER_SCALE;
+            const lift = (offset?.y ?? 0) * playerScale();
+            const ahead = (offset?.z ?? 0) * playerScale();
             this.handTarget.copy(gripAt).addScaledVector(left, out).addScaledVector(forward, ahead).setY(gripAt.y + lift);
             this.handTarget2.copy(gripAt).addScaledVector(left, -out).addScaledVector(forward, ahead).setY(gripAt.y + lift);
             this.holdPose(this.handTarget, this.handTarget2, grip);

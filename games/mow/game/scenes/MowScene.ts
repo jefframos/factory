@@ -30,6 +30,7 @@
 import * as THREE from 'three';
 import * as PIXI from 'pixi.js';
 import { Game } from 'core/Game';
+import { RadialTransition } from '../ui/RadialTransition';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import { DebugOverlay } from 'core/debug/DebugOverlay';
 import gsap from 'gsap';
@@ -49,7 +50,7 @@ import { isRush } from '../data/GameMode';
 import { MowHud, ShopHint, CELEBRATION_SEC } from '../ui/MowHud';
 import { RARITY_COLORS } from '../ui/TrophiesPanel';
 import { MowEffects } from '../vfx/MowEffects';
-import { CITY, MOW, NEXT_CITY, TOWN, SecretDef, TreasureDef, firstToolFor, SECRET_CHEST_MODEL } from '../data/MowConfig';
+import { CITIES, CITY, CityDef, MOW, NEXT_CITY, TOWN, partName, sectionOpen, SecretDef, TreasureDef, firstToolFor, SECRET_CHEST_MODEL } from '../data/MowConfig';
 import { TreasureBeacons } from '../world/TreasureBeacons';
 import { SecretPatches } from '../world/SecretPatches';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
@@ -216,7 +217,8 @@ export default class MowScene extends ThreeScene {
     /** Rush mode's combo meter (null in calm mode). */
     private combo: Combo | null = null;
 
-    public constructor(game: Game) {
+    /** `restart`: swaps this scene for a fresh one (another city: MowGame.restart()), resolving once it's playable. */
+    public constructor(game: Game, private readonly restart: () => Promise<void>) {
         super(game);
     }
 
@@ -230,7 +232,7 @@ export default class MowScene extends ThreeScene {
 
     public build(): void {
         this.buildLights();
-        const open = (d: number) => d === 0 || MowProgress.isRestored(MOW.districts[d - 1].id);
+        const open = (d: number) => sectionOpen(d, (id) => MowProgress.isRestored(id));
         this.town = new Town(this.threeScene, open, (d) => MowProgress.isRestored(MOW.districts[d].id));
         this.traffic = new Traffic(this.threeScene, this.town.readyNear);
         this.town.movingBlockers = () => this.traffic.blockers();
@@ -304,6 +306,7 @@ export default class MowScene extends ThreeScene {
         // Gameplay starts on the first input, once the game is loaded (and the big downloads wait for it: afterFirstInput()).
         void this.ready.then(() => {
             if (this.sceneDestroyed) return;
+            if (!CITY.keepGear && MowProgress.completedCities.includes(CITY.id)) this.showNewCity();
             window.addEventListener('pointerdown', this.onFirstInput, true);
             window.addEventListener('keydown', this.onFirstInput, true);
         });
@@ -342,7 +345,7 @@ export default class MowScene extends ThreeScene {
 
     private createHud(): MowHud {
         const hud = new MowHud(() => this.onBought(), () => this.player.applyLook(MowProgress.look), (d) => this.town.isOpen(d));
-        hud.onTravel = () => this.travel();
+        hud.onTravel = (city) => this.travel(city);
         this.game.uiLayer.addChild(hud);
         return hud;
     }
@@ -364,6 +367,12 @@ export default class MowScene extends ThreeScene {
         panel.button('ADD $100', () => MowProgress.addMoney(100));
         panel.button('ADD $1000', () => MowProgress.addMoney(1000));
         panel.button('FILL BAG', () => MowProgress.addClippings(MowProgress.capacity - MowProgress.clippings));
+        // This city counted as finished (its bonus too): the next one opens, the cities panel shows it.
+        panel.button('UNLOCK NEXT CITY', () => {
+            MowProgress.completeCity();
+            if (!CITY.keepGear) this.showNewCity();
+            this.hud.openCities('select');
+        });
         panel.button('RESTORE CURRENT DISTRICT', () => {
             const d = this.currentDistrict();
             for (const { treasure, at } of this.grass.takeTreasures(d)) this.findTreasure(treasure, at);
@@ -783,34 +792,36 @@ export default class MowScene extends ThreeScene {
                     CONFETTI.forEach((color) => this.effects.burst(new THREE.Vector3(at.x + (Math.random() - 0.5) * 3, 0, at.z + (Math.random() - 0.5) * 3), color, 4, 5));
                 });
             }
-            const next = d + 1;
-            if (next < MOW.districts.length && !this.town.isOpen(next)) {
-                this.town.unlock(next);
-                this.fresh.add(next);
-                const nextDistrict = MOW.districts[next];
+            // Whatever this opens: the next area, or (its part done) every area of the next part at once.
+            const opened = MOW.districts.map((_, e) => e).filter((e) => !this.town.isOpen(e) && sectionOpen(e, (id) => MowProgress.isRestored(id)));
+            if (opened.length) {
+                for (const e of opened) {
+                    this.town.unlock(e);
+                    this.fresh.add(e);
+                }
+                const nextDistrict = MOW.districts[opened[0]];
+                const name = nextDistrict.part ? partName(nextDistrict.part) : names.district(nextDistrict);
                 // After the celebration (the RESTORED! banner, then the town filling up): the next area, the camera
                 // panning to it if it asks.
                 gsap.delayedCall(CELEBRATION_SEC + 0.2, () => {
                     if (this.sceneDestroyed) return;
                     if (nextDistrict.onUnlock?.pan) this.pan = { to: this.town.sectionCentre(nextDistrict), time: 0 };
-                    this.hud.say(t('districtUnlocked', { name: names.district(nextDistrict).toUpperCase() }), 0x8fe3ff);
+                    this.hud.say(t('districtUnlocked', { name: name.toUpperCase() }), 0x8fe3ff);
                     // Uplifting: the victory fanfare with a shimmer (dig's "reveal" read as an error here).
                     MowAudio.play('buyFanfare');
                     MowAudio.play('sparkle');
                 });
             }
-            // The last one: the town is done (there's no more game yet), told after its celebration.
+            // The last one: the city's done (its next unlocked), told after its celebration — the tutorial's with the
+            // cities panel (only on from there), a city's with NEW CITY AVAILABLE over the town icon (play on, go when ready).
             if (MOW.districts.every((other) => MowProgress.isRestored(other.id))) {
+                MowProgress.completeCity();
                 GameAnalytics.townRestored();
+                GameAnalytics.cityCompleted(CITY.id);
                 gsap.delayedCall(CELEBRATION_SEC + 0.4, () => {
                     if (this.sceneDestroyed) return;
-                    GameAnalytics.cityCompleted(CITY.id);
-                    this.hud.showTownComplete({
-                        town: CITY.name,
-                        earned: MowProgress.earned,
-                        trophies: { found: cityTreasures().filter((item) => MowProgress.treasureFound(item.id)).length, total: cityTreasures().length },
-                        secrets: { found: (TOWN.secrets ?? []).filter((secret) => MowProgress.secretFound(secret.id)).length, total: TOWN.secrets?.length ?? 0 },
-                    });
+                    if (CITY.keepGear) this.hud.openCities('complete');
+                    else this.showNewCity();
                 });
             }
         });
@@ -847,7 +858,9 @@ export default class MowScene extends ThreeScene {
             // The first wardrobe is out (the second sale): go and get the first hat.
             target = this.town.nearestWardrobe(this.player.transform.position);
         } else if (this.fresh.size) {
-            const d = [...this.fresh][0];
+            // The nearest of the newly opened areas.
+            const p = this.player.transform.position;
+            const d = [...this.fresh].sort((a, b) => Math.hypot(MOW.districts[a].x - p.x, MOW.districts[a].z - p.z) - Math.hypot(MOW.districts[b].x - p.x, MOW.districts[b].z - p.z))[0];
             const district = MOW.districts[d];
             target = new THREE.Vector3(district.x, 0, district.z + district.depth / 2 - 1.5);
         } else {
@@ -855,7 +868,9 @@ export default class MowScene extends ThreeScene {
             if (area) target = new THREE.Vector3(area.x, 0, area.z);
         }
         this.hud.setShopHint(hint);
-        this.guide.update(delta, this.player.transform.position, target, area);
+        // A city without the arrows (CityDef.guide: by then the player knows the way round).
+        if (CITY.guide === false) target = null;
+        this.guide.update(delta, this.player.transform.position, target, target ? area : undefined);
     }
 
     /**
@@ -863,7 +878,10 @@ export default class MowScene extends ThreeScene {
      * off from it (WANDER); undefined when they're there, or all is restored.
      */
     private wanderArea(): Box | undefined {
-        const d = MOW.districts.findIndex((district, i) => this.town.isOpen(i) && !MowProgress.isRestored(district.id));
+        // The nearest open area not restored yet (a part's areas are open together: whichever is closest).
+        const here = this.player.transform.position;
+        const d = MOW.districts.map((_, i) => i).filter((i) => this.town.isOpen(i) && !MowProgress.isRestored(MOW.districts[i].id))
+            .sort((a, b) => Math.hypot(MOW.districts[a].x - here.x, MOW.districts[a].z - here.z) - Math.hypot(MOW.districts[b].x - here.x, MOW.districts[b].z - here.z))[0] ?? -1;
         if (d < 0) {
             this.wandering = false;
             return undefined;
@@ -882,15 +900,40 @@ export default class MowScene extends ThreeScene {
 
     // ---------------------------------------------------------------- lifecycle
 
-    /** The City Complete screen's button: on to the next city (kept or from scratch: MowProgress.travel()), reloaded into it. */
-    private travel(): void {
+    /** The next city is open (this one's done): NEW CITY AVAILABLE over the town icon. */
+    private showNewCity(): void {
         const next = NEXT_CITY;
-        if (!next || next.comingSoon) return;
-        GameAnalytics.cityTravel(CITY.id, next.id);
+        if (!next || next.comingSoon || !MowProgress.cityUnlocked(next)) return;
+        this.hud.setNewCity(!MowProgress.completedCities.includes(next.id) && !this.visited(next.id));
+        if (MowProgress.once(`new-city-${next.id}`)) this.hud.say(t('newCityAvailable'), 0xffe27a);
+    }
+
+    /** Whether `city` has been played (it has a save). */
+    private visited(city: string): boolean {
+        try {
+            return window.localStorage.getItem(`mow.save.${city}`) !== null;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * A city's PLAY (the cities panel): the screen transition covers the game (RadialTransition), the save moves there
+     * (MowProgress.travel(): the city's config and save swapped in place), a fresh scene is built behind the cover, and
+     * the cover opens on it.
+     */
+    private travel(city: CityDef): void {
+        if (city.id === CITY.id) return;
+        GameAnalytics.cityTravel(CITY.id, city.id);
         MowAudio.play('whoosh');
-        this.hud.fadeOut(() => {
-            MowProgress.travel(next);
-            window.location.reload();
+        // Numbered from the first real city (the tutorial isn't one).
+        const index = CITIES.filter((other) => !other.keepGear).indexOf(city) + 1;
+        const transition = new RadialTransition(this.game);
+        void transition.cover(city.name.toUpperCase(), index > 0 ? t('cityNumber', { n: index }) : '').then(async () => {
+            MowProgress.travel(city);
+            await this.restart();
+            await transition.reveal();
+            transition.destroy();
         });
     }
 

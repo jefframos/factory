@@ -14,7 +14,7 @@
 //   treasure     <treasureId>                 complete   a treasure found in the grass (or handed over on restoring its area)
 //   treasure     <treasureId> | area-<id>     interact   its reward (or an area's bonus) claimed in the Trophies panel
 //   secret       <secretId>                   complete   a secret patch's chest found (it pays at once)
-//   panel        map | town | trophies        open       the MAP button's map, the town icon's big view, the Trophies
+//   panel        map | town | trophies | cities open       the MAP button's map, the town icon's big view, the Trophies
 //                                                        panel opened by the player (once per player each)
 //   shop         hat-<id> | face-<id> | color-<id> bought     a wardrobe item bought with cash
 //   shop         hat-<id> | face-<id> | color-<id> equip      an owned wardrobe item put on
@@ -152,7 +152,7 @@ export const GameAnalytics = {
     },
 
     /** A panel opened by the player (the map, the town's big view, Trophies), once per player each. */
-    panelOpened(panel: 'map' | 'town' | 'trophies'): void {
+    panelOpened(panel: 'map' | 'town' | 'trophies' | 'cities'): void {
         if (MowProgress.once(`panel-${panel}`)) send('panel', panel, 'open');
     },
 

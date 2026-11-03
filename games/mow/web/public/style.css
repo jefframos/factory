@@ -252,3 +252,7 @@ button.block { width: 100%; text-align: left; }
 .mapshots-pair { display: flex; align-items: center; gap: 24px; max-width: 100%; max-height: 75%; }
 .mapshot-large { max-width: min(640px, 70vw); max-height: 60vh; object-fit: contain; }
 .mapshot-small { width: auto; height: auto; image-rendering: auto; }
+
+/* The level picker in the top bar: which city's level the Town tab edits. */
+#levelPicker { display: flex; align-items: center; gap: 8px; margin-left: 18px; font-weight: 600; color: #ffd23f; }
+#levelPicker select { font-weight: 700; padding: 4px 8px; border-radius: 6px; background: #1d2633; color: #fff; border: 1px solid #ffd23f; }

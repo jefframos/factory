@@ -17,7 +17,7 @@
     3
   ],
   "traffic": {
-    "models": ["town/city/car_sedan.gltf", "town/city/car_taxi.gltf", "town/city/car_hatchback.gltf", "town/city/car_stationwagon.gltf"],
+    "models": ["town/library/city2-car-07/city2-car-07.glb", "town/library/city2-car-08/city2-car-08.glb", "town/library/city2-car-12/city2-car-12.glb", "town/library/city2-car-16/city2-car-16.glb", "town/library/city2-car-17/city2-car-17.glb", "town/library/city2-car-25/city2-car-25.glb", "town/library/city2-car-26/city2-car-26.glb", "town/library/city2-car-28/city2-car-28.glb", "town/library/city2-car-35/city2-car-35.glb", "town/library/city2-car-36/city2-car-36.glb", "town/library/city2-car-39/city2-car-39.glb", "town/library/city2-car-42/city2-car-42.glb", "town/library/city2-car-45/city2-car-45.glb"],
     "speed": 4.4,
     "accel": 3.5,
     "brake": 10,
@@ -164,8 +164,29 @@
       { "id": "nuggets", "name": "Gold Nuggets", "model": "treasures/gold-bars.glb", "size": 0.7, "area": "westblock", "reward": 1800, "rarity": "epic" },
       { "id": "mascot", "name": "Mascot's Bone", "model": "treasures/bone-a.glb", "size": 0.7, "area": "field", "reward": 1500, "rarity": "common" },
       { "id": "fireworks", "name": "Lost Fireworks", "model": "treasures/dynamite.glb", "size": 0.7, "area": "field", "reward": 2500, "rarity": "rare" },
-      { "id": "trophygold", "name": "Champion's Gold", "model": "treasures/gold-bars.glb", "size": 0.7, "area": "field", "reward": 5000, "rarity": "legendary" }
+      { "id": "trophygold", "name": "Champion's Gold", "model": "treasures/gold-bars.glb", "size": 0.7, "area": "field", "reward": 5000, "rarity": "legendary" },
+      { "id": "c1-park-a", "name": "Park Ranger Badge", "model": "treasures/lantern.glb", "size": 0.7, "area": "central-park", "reward": 30, "rarity": "common" },
+      { "id": "c1-park-b", "name": "Lost Comic", "model": "treasures/comicbook-a.glb", "size": 0.7, "area": "central-park", "reward": 45, "rarity": "common" },
+      { "id": "c1-park-c", "name": "Fountain Coins", "model": "treasures/gold-bars.glb", "size": 0.7, "area": "central-park", "reward": 70, "rarity": "rare" },
+      { "id": "c2-downtown-0-a", "name": "Pirate Skull", "model": "treasures/skull.glb", "size": 0.7, "area": "downtown-0", "reward": 40, "rarity": "common" },
+      { "id": "c2-downtown-0-b", "name": "Brass Lantern", "model": "treasures/lantern.glb", "size": 0.7, "area": "downtown-0", "reward": 60, "rarity": "common" },
+      { "id": "c2-downtown-1-a", "name": "Treasure Map", "model": "treasures/map-rolled.glb", "size": 0.7, "area": "downtown-1", "reward": 40, "rarity": "common" },
+      { "id": "c2-downtown-1-b", "name": "Old Journal", "model": "treasures/journal-closed.glb", "size": 0.7, "area": "downtown-1", "reward": 60, "rarity": "common" },
+      { "id": "c2-downtown-2-a", "name": "Lost Dynamite", "model": "treasures/dynamite.glb", "size": 0.7, "area": "downtown-2", "reward": 40, "rarity": "rare" },
+      { "id": "c2-downtown-2-b", "name": "Gold Bars", "model": "treasures/gold-bars.glb", "size": 0.7, "area": "downtown-2", "reward": 60, "rarity": "rare" },
+      { "id": "c2-residential-0-a", "name": "Rare Comic", "model": "treasures/comicbook-a.glb", "size": 0.7, "area": "residential-0", "reward": 120, "rarity": "common" },
+      { "id": "c2-residential-0-b", "name": "Big Bone", "model": "treasures/bone-a.glb", "size": 0.7, "area": "residential-0", "reward": 180, "rarity": "common" },
+      { "id": "c2-residential-1-a", "name": "Mystery Chest", "model": "treasures/chest.glb", "size": 0.7, "area": "residential-1", "reward": 120, "rarity": "rare" },
+      { "id": "c2-residential-1-b", "name": "Crystal Skull", "model": "treasures/skull.glb", "size": 0.7, "area": "residential-1", "reward": 180, "rarity": "rare" },
+      { "id": "c2-residential-2-a", "name": "Ship Lantern", "model": "treasures/lantern.glb", "size": 0.7, "area": "residential-2", "reward": 120, "rarity": "epic" },
+      { "id": "c2-residential-2-b", "name": "City Map", "model": "treasures/map-rolled.glb", "size": 0.7, "area": "residential-2", "reward": 180, "rarity": "epic" },
+      { "id": "c2-business-0-a", "name": "Secret Diary", "model": "treasures/journal-closed.glb", "size": 0.7, "area": "business-0", "reward": 400, "rarity": "rare" },
+      { "id": "c2-business-0-b", "name": "Party Fireworks", "model": "treasures/dynamite.glb", "size": 0.7, "area": "business-0", "reward": 600, "rarity": "rare" },
+      { "id": "c2-business-1-a", "name": "Bank Gold", "model": "treasures/gold-bars.glb", "size": 0.7, "area": "business-1", "reward": 400, "rarity": "epic" },
+      { "id": "c2-business-1-b", "name": "First Edition", "model": "treasures/comicbook-a.glb", "size": 0.7, "area": "business-1", "reward": 600, "rarity": "epic" },
+      { "id": "c2-business-2-a", "name": "Dino Bone", "model": "treasures/bone-a.glb", "size": 0.7, "area": "business-2", "reward": 400, "rarity": "legendary" },
+      { "id": "c2-business-2-b", "name": "Pirate Chest", "model": "treasures/chest.glb", "size": 0.7, "area": "business-2", "reward": 600, "rarity": "legendary" }
     ],
-    "areaBonus": { "park": 150, "street": 600, "eastblock": 1500, "westblock": 3500, "field": 8000 }
+    "areaBonus": { "park": 150, "central-park": 200, "street": 600, "eastblock": 1500, "westblock": 3500, "field": 8000, "downtown-0": 300, "downtown-1": 360, "downtown-2": 420, "residential-0": 1080, "residential-1": 1320, "residential-2": 1560, "business-0": 3600, "business-1": 4200, "business-2": 5400 }
   }
 }

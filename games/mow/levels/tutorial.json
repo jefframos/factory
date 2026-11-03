@@ -395,7 +395,7 @@
       "id": "yard",
       "name": "Front Yard",
       "x": 0,
-      "z": 16,
+      "z": 15,
       "width": 8,
       "depth": 7,
       "completeAt": 0.97,
@@ -452,5 +452,10 @@
       "far": 14
     }
   },
-  "secrets": []
+  "secrets": [],
+  "traffic": {
+    "waypoints": [],
+    "links": [],
+    "cars": []
+  }
 }

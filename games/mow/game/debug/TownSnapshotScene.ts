@@ -20,7 +20,7 @@
 import * as THREE from 'three';
 import { Game } from 'core/Game';
 import { ThreeScene } from 'core/scene/ThreeScene';
-import { MOW, TOWN, TownLevel } from '../data/MowConfig';
+import { CITY, MOW, TOWN, TownLevel } from '../data/MowConfig';
 import { Town } from '../world/Town';
 import { GrassField } from '../world/GrassField';
 import { BendService } from '../services/BendService';
@@ -164,7 +164,9 @@ export default class TownSnapshotScene extends ThreeScene {
             // The diorama whole: on its island's sides, or (none) on a slab of earth under its ground.
             shots.push({ name: this.zone!, box: this.islandBox(), slab: !TOWN.island });
         } else {
-            if (!this.zone || this.zone === 'town') shots.push({ name: 'town', box: this.islandBox() });
+            // The whole island: `town`, or the city's own map name (its picture: CityDef.map), shot as that name.
+            const whole = CITY.map ?? 'town';
+            if (!this.zone || this.zone === 'town' || this.zone === whole) shots.push({ name: this.zone ?? whole, box: this.islandBox() });
             TOWN.sections.forEach((section) => {
                 if (!this.zone || this.zone === section.id) shots.push({ name: section.id, box: this.sectionBox(section), section });
             });

@@ -18,7 +18,7 @@ import { MOW, ToolDef, toolPaint } from '../data/MowConfig';
 import { isBodyMaterial, paintPixels } from '../utils/Paint';
 import { MowProgress } from '../data/MowProgress';
 import type MowPlayer from './MowPlayer';
-import { PLAYER_SCALE } from './MowPlayer';
+import { playerScale } from './MowPlayer';
 import type { MowEffects } from '../vfx/MowEffects';
 import { MowAudio } from '../audio/MowAudio';
 
@@ -62,7 +62,7 @@ export class TractorRide {
     /** The current mower's size on the tractor (1 = the base height). */
     private get scale(): number {
         // With the player's size (MowDesign.playerScale): the tractor, its seat, wheel grip and exhaust together.
-        return (MowProgress.tool.rideScale ?? 1) * PLAYER_SCALE;
+        return (MowProgress.tool.rideScale ?? 1) * playerScale();
     }
 
     private async load(): Promise<void> {

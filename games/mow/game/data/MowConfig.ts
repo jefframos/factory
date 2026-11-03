@@ -118,6 +118,11 @@ export interface DistrictDef {
     name: string;
     /** Done from the start (a city's areas the tutorial already did): restored, no bonus, no treasures to find. */
     startRestored?: boolean;
+    /**
+     * The part of the city it's in (TownLevel.parts): a part's areas open together — the player picks which to mow —
+     * once every area of the part before is restored. None: it's a part on its own (areas open one after another).
+     */
+    part?: string;
     /** Centre and size of the overgrown rectangle. */
     x: number;
     z: number;
@@ -309,9 +314,16 @@ export interface DeckDef {
     pilingSpacing: number;
 }
 
+/** A part of a city (its areas open together: DistrictDef.part): its name, for the signs and the NEW AREA message. */
+export interface PartDef {
+    id: string;
+    name: string;
+}
+
 export interface TownLevel {
     id: string;
     name: string;
+    parts?: PartDef[];
     ground: { x: number; z: number; width: number; depth: number; color: string };
     island?: IslandDef;
     start: { x: number; z: number };
@@ -448,6 +460,30 @@ export interface MowDesign {
     start: { x: number; z: number };
 }
 
+/** The part a section is in (its own when it has none), and the parts in unlock order (by their first section). */
+export const partOf = (d: number): string => MOW.districts[d].part ?? `#${MOW.districts[d].id}`;
+let partOrder: string[] | undefined;
+const partsInOrder = (): string[] => (partOrder ??= MOW.districts.map((_, d) => partOf(d)).filter((part, i, all) => all.indexOf(part) === i));
+
+/** A part's name: TownLevel.parts', or (a section on its own) the section's. */
+export function partName(part: string): string {
+    return TOWN.parts?.find((entry) => entry.id === part)?.name ?? MOW.districts.find((_, d) => partOf(d) === part)?.name ?? part;
+}
+
+/** Whether section `d` is open: its part is the first, or every section of the part before it is restored. */
+export function sectionOpen(d: number, restored: (id: string) => boolean): boolean {
+    const index = partsInOrder().indexOf(partOf(d));
+    if (index <= 0) return true;
+    const before = partsInOrder()[index - 1];
+    return MOW.districts.every((district, i) => partOf(i) !== before || restored(district.id));
+}
+
+/** What opens section `d` (for its fence's sign): the part before its own. */
+export function openedBy(d: number): string | undefined {
+    const index = partsInOrder().indexOf(partOf(d));
+    return index > 0 ? partName(partsInOrder()[index - 1]) : undefined;
+}
+
 /** How a ridden mower's tractor is painted: 'grey', a colour, or undefined (its own colours). Same as dig's toolPaint. */
 export function toolPaint(tool: ToolDef): string | undefined {
     return tool.tint ?? (tool.greyscale ? 'grey' : undefined);
@@ -476,6 +512,8 @@ export interface CityDef {
     map?: string;
     keepGear?: boolean;
     comingSoon?: boolean;
+    /** false: no guide arrows (the shop's hand still shows). */
+    guide?: boolean;
 }
 
 export const CITIES: CityDef[] = cities.cities;
@@ -489,6 +527,9 @@ const LEVELS: Record<string, unknown> = { tutorial, town, city2 };
 function currentCity(): CityDef {
     let id: string | null = null;
     try {
+        // `?city=<id>` (the editor's ▶ Play, testing): that city, from now on.
+        const asked = new URLSearchParams(window.location.search).get('city');
+        if (asked && CITIES.some((city) => city.id === asked)) window.localStorage.setItem(CURRENT_CITY_KEY, asked);
         id = window.localStorage.getItem(CURRENT_CITY_KEY);
     } catch {
         // No storage: the first city.
@@ -496,9 +537,18 @@ function currentCity(): CityDef {
     return CITIES.find((city) => city.id === id && city.level && LEVELS[city.level]) ?? CITIES[0];
 }
 
-/** The city being played, and the next one (undefined after the last). */
-export const CITY: CityDef = currentCity();
-export const NEXT_CITY: CityDef | undefined = CITIES[CITIES.indexOf(CITY) + 1];
+/** The city being played, and the next one (undefined after the last); its level and design. Swapped by setCity(). */
+export let CITY: CityDef = currentCity();
+export let NEXT_CITY: CityDef | undefined;
+export let TOWN: TownLevel;
+export let MOW: MowDesign;
+setCity(CITY);
 
-export const TOWN: TownLevel = LEVELS[CITY.level!] as unknown as TownLevel;
-export const MOW: MowDesign = { ...(data as unknown as Omit<MowDesign, 'districts' | 'start'>), districts: TOWN.sections, start: TOWN.start };
+/** Plays `city` from now on (travelling: the scene is rebuilt after, everything reads these live). */
+export function setCity(city: CityDef): void {
+    CITY = city;
+    NEXT_CITY = CITIES[CITIES.indexOf(city) + 1];
+    TOWN = LEVELS[city.level!] as unknown as TownLevel;
+    MOW = { ...(data as unknown as Omit<MowDesign, 'districts' | 'start'>), districts: TOWN.sections, start: TOWN.start };
+    partOrder = undefined;
+}

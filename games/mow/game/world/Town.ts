@@ -22,7 +22,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
-import { CITY, MOW, TOWN, AtmLook, AtmSpot, DeckDef, DistrictDef, TownProp } from '../data/MowConfig';
+import { CITY, MOW, TOWN, openedBy, AtmLook, AtmSpot, DeckDef, DistrictDef, TownProp } from '../data/MowConfig';
 import { MowProgress } from '../data/MowProgress';
 import { BendService, OcclusionFadeConfig, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 import { createWaterMaterial } from '../builders/WaterMaterial';
@@ -56,6 +56,10 @@ const GROUND_Y = -0.05;
 const GRASS_Y = 0.01;
 const PAVEMENT_Y = 0.02;
 const PAVEMENT_STEP = 0.012;
+/** The most the pavement layers climb in all (a city of many: their step shrinks, the slabs stay low). */
+const PAVEMENT_STACK = 0.06;
+/** Each pavement layer over the one before (later ones on top, never fighting for depth). */
+const pavementStep = (): number => Math.min(PAVEMENT_STEP, PAVEMENT_STACK / Math.max(1, TOWN.pavements.length));
 /** Props this close to the player's start (world units) load first; the rest after (the constructor). */
 const NEAR_LOAD = 24;
 /** topAt()'s cache cell (world units). */
@@ -64,7 +68,7 @@ const topRay = new THREE.Raycaster();
 const topFrom = new THREE.Vector3();
 const DOWN = new THREE.Vector3(0, -1, 0);
 /** Station pads: just over the top pavement (each pavement sits a step above the one before). */
-const PAD_Y = PAVEMENT_Y + TOWN.pavements.length * PAVEMENT_STEP + 0.03;
+const padY = (): number => PAVEMENT_Y + TOWN.pavements.length * pavementStep() + 0.03;
 /** The island's wooden deck: just over the town's ground, under the sections' grass and the pavements. */
 const DECK_Y = GROUND_Y + 0.03;
 /** One deck plank's width; the plank texture holds PLANKS of them. */
@@ -527,7 +531,7 @@ export class Town {
         this.groundCells(deck ? insetPolygon(this.shore, deck.width / 2) : this.shore, TOWN.ground.color);
         TOWN.pavements.forEach((p, i) => {
             const road = p.id.startsWith('road');
-            this.slab(p.x, p.z, p.width, p.depth, p.color, PAVEMENT_Y + i * PAVEMENT_STEP,
+            this.slab(p.x, p.z, p.width, p.depth, p.color, PAVEMENT_Y + i * pavementStep(),
                 road ? asphaltTexture() : pavingTexture(), road ? STONE_TILE : PAVING_TILE);
         });
         this.buildIsland();
@@ -812,7 +816,8 @@ export class Town {
      */
     private shown(kind: StationKind, i: number): boolean {
         const spot = stationSpots(kind)[i];
-        if ((spot.appearsAfterSales ?? 0) > MowProgress.timesSold) return false;
+        // (Waiting for sales is the tutorial's: in a city the wardrobe is there from the start.)
+        if (CITY.keepGear && (spot.appearsAfterSales ?? 0) > MowProgress.timesSold) return false;
         // The first ATM: in the tutorial not in the yard (its bag fills there on purpose: the first purchases), in the
         // park when it's full; in a city played from scratch, as soon as the bag's full.
         const firstArea = MowProgress.isRestored(MOW.districts[0].id) || !CITY.keepGear;
@@ -837,7 +842,7 @@ export class Town {
         padMaterial.polygonOffsetUnits = -2;
         const pad = new THREE.Mesh(new THREE.RingGeometry(0, PAD_RADIUS, 32, Math.ceil(PAD_RADIUS / BEND_SEGMENT)), padMaterial);
         pad.rotation.x = -Math.PI / 2;
-        pad.position.y = PAD_Y;
+        pad.position.y = padY();
         pad.renderOrder = 1;
         group.add(pad);
         this.loads.push(this.loadModel(look.model, look.height).then((object) => {
@@ -961,7 +966,8 @@ export class Town {
             if (!line || d === 0) return;
             const fence = fenceAround(district, white, post);
             // No sign where it's a pen's side (the first area's fence: a plaque there only distracts a beginner).
-            if (!onPenSide(line.x, line.z)) fence.add(fenceSign(`RESTORE THE ${MOW.districts[d - 1].name.toUpperCase()}`, line.x, line.z));
+            const before = openedBy(d);
+            if (before && !onPenSide(line.x, line.z)) fence.add(fenceSign(`RESTORE THE ${before.toUpperCase()}`, line.x, line.z));
             fence.visible = !this.open[d];
             this.group.add(fence);
             this.separators[d] = fence;
@@ -1083,7 +1089,7 @@ export class Town {
     public surfaceAt(x: number, z: number): { y: number; kind: 'pavement' | 'deck' | 'grass' } {
         let y = -Infinity;
         TOWN.pavements.forEach((p, i) => {
-            if (Math.abs(x - p.x) <= p.width / 2 && Math.abs(z - p.z) <= p.depth / 2) y = Math.max(y, PAVEMENT_Y + i * PAVEMENT_STEP);
+            if (Math.abs(x - p.x) <= p.width / 2 && Math.abs(z - p.z) <= p.depth / 2) y = Math.max(y, PAVEMENT_Y + i * pavementStep());
         });
         for (const f of this.floors) {
             if (x >= f.minX && x <= f.maxX && z >= f.minZ && z <= f.maxZ) y = Math.max(y, f.top);

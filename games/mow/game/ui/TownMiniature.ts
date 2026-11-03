@@ -556,12 +556,34 @@ export class TownMiniature extends PIXI.Container {
     /** Each section's state for the pips: restored, the one being worked on, or neither. Redrawn when it changes. */
     public setSections(restored: readonly boolean[], current: number): void {
         const next = restored.map((done, i): SectionPip => (done ? 'done' : i === current ? 'current' : 'locked'));
+        // Held while the stars fly in (holdPips()): a newly restored pip lights as they land.
+        if (this.pipsHeld) next.forEach((pip, i) => {
+            if (pip === 'done' && this.sections[i] && this.sections[i] !== 'done') next[i] = this.sections[i];
+        });
         if (next.join() === this.sections.join()) return;
         this.sections = next;
         if (this.picture) this.sizeBadge();
     }
 
     private sections: SectionPip[] = [];
+    private pipsHeld = false;
+
+    /** A newly restored section's pip waits (the stars are on their way) until releasePips(). */
+    public holdPips(): void {
+        this.pipsHeld = true;
+    }
+
+    /** The stars landed: the pip lights, the badge pops. */
+    public releasePips(): void {
+        this.pipsHeld = false;
+        this.punchBadge(0.5);
+    }
+
+    /** Where a section's pip is, on screen (the stars fly to it); the badge's middle if it isn't there. */
+    public pipGlobal(index: number): PIXI.Point {
+        const pip = this.pips.children[index];
+        return (pip ?? this.badge).getGlobalPosition();
+    }
     private readonly pips = new PIXI.Container();
     /** Whether the badge was drawn blown up (the % shows) or in the corner (the pips). */
     private badgeHeld = false;

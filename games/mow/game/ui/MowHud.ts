@@ -29,9 +29,9 @@ import { TrophiesPanel, TROPHIES_SIZE } from './TrophiesPanel';
 import { TownMap } from './TownMap';
 import { FindToasts, Find, flyCoins, flyItem } from './FindToasts';
 import { TownMiniature, REVEAL_SEC } from './TownMiniature';
-import { TownCompletePanel, TownCompleteStats, TOWN_COMPLETE_SIZE } from './TownCompletePanel';
+import { CitiesPanel, CitiesMode, CITIES_PANEL_SIZE } from './CitiesPanel';
 import { MowProgress } from '../data/MowProgress';
-import { MOW, TOWN, ToolDef, UpgradeDef } from '../data/MowConfig';
+import { CityDef, MOW, TOWN, ToolDef, UpgradeDef, CITY } from '../data/MowConfig';
 import { ModelIcons } from './ModelIcons';
 import { tabbedBlock, TabSpec } from './TabBar';
 import { t, names, Localization } from '../i18n/Localization';
@@ -48,6 +48,8 @@ const BAR_X = 186;
 const BAR_HEIGHT = 18;
 /** The money / bag column's width: it hangs from the top-right corner. */
 const CORNER_WIDTH = ICON_SIZE / 2 + PILL_WIDTH - 8;
+/** The money / bag / trophy corner's size on a portrait screen. */
+const CORNER_PORTRAIT_SCALE = 0.82;
 const BUTTON_SIZE = 64;
 const PROGRESS = { width: 360, height: 18 };
 /** The area bar's reward disc at its end: its size. */
@@ -83,7 +85,11 @@ const MAP_FLIGHT = { out: 0.35, back: 1.35, home: 0.35 };
  * A restored section's celebration (celebrate(): the banner, then the town's miniature filling up in the middle and
  * flying home), in seconds; the scene shows the next area after it.
  */
-export const CELEBRATION_SEC = BANNER_SEC + Math.max(REVEAL_SEC, MAP_FLIGHT.back + MAP_FLIGHT.home);
+/** Section restored: stars from the banner to the town icon — how many, seconds apart, and each flight. */
+const STAR_COUNT = 3;
+const STAR_STAGGER = 0.15;
+const STAR_FLIGHT = 0.75;
+export const CELEBRATION_SEC = BANNER.hold + Math.max(STAR_STAGGER * (STAR_COUNT - 1) + 0.25 + STAR_FLIGHT, MAP_FLIGHT.back + MAP_FLIGHT.home);
 /** The trophy button's size (under the money / bag pills). */
 const TROPHY_SIZE = 76;
 /**
@@ -92,6 +98,8 @@ const TROPHY_SIZE = 76;
  */
 const MINIATURE_WIDTH = 104;
 const REVEAL_WIDTH = 560;
+/** The miniature grown in its corner takes at most this share of the screen's width and height. */
+const REVEAL_SHARE = 0.5;
 const MAP_BUTTON_SIZE = 84;
 /** The MAP button's map: drawn this wide (at its size, so it stays crisp; only ever scaled down to fit). */
 const PANEL_MAP_WIDTH = 440;
@@ -174,11 +182,16 @@ export class MowHud extends PIXI.Container {
     private readonly trophies: TrophiesPanel;
     private readonly trophiesHolder = new PIXI.Container();
     /** The end of the town (every section restored): its panel over a dim. */
-    private readonly townComplete = new TownCompletePanel(() => this.onTravel?.());
-    /** The City Complete screen's green button (the scene travels to the next city). */
-    public onTravel?: () => void;
-    private readonly townCompleteHolder = new PIXI.Container();
-    private readonly townCompleteDim = new PIXI.Graphics();
+    /** The cities (select / the tutorial's end): their blue panel over a dim. */
+    private readonly cities = new CitiesPanel((city) => this.onTravel?.(city), () => this.closeCities());
+    private citiesMode: CitiesMode = 'select';
+    /** A city's PLAY in the cities panel (the scene travels there). */
+    public onTravel?: (city: CityDef) => void;
+    private readonly citiesHolder = new PIXI.Container();
+    private readonly citiesDim = new PIXI.Graphics();
+    /** The next city's unlocked: a pulsing button over the town icon (opens the cities), rays behind the icon. */
+    private readonly newCity = new PIXI.Container();
+    private newCityRays?: { rays: PIXI.Container; tweens: gsap.core.Animation[] };
     /** The wardrobe's close button (hidden while the tutorial's first hat is forced). */
     private readonly wardrobeClose: PIXI.Container;
     private shopKey = '';
@@ -214,11 +227,16 @@ export class MowHud extends PIXI.Container {
         this.toast.alpha = 0;
         this.mapHolder.addChild(this.townMap);
         this.buildMap();
-        this.addChild(this.corner, this.progress, this.combo, this.celebration, this.mapHolder, this.miniature, this.mapButton, this.mute, this.languageButton, this.moveHint, this.toast, this.shopHolder, this.wardrobeHolder, this.trophiesHolder, this.languageHolder, this.mapPanel, this.findToasts, this.townCompleteDim, this.townCompleteHolder);
-        this.townCompleteHolder.addChild(this.townComplete);
-        this.townCompleteDim.visible = false;
-        this.townCompleteDim.eventMode = 'static';
-        this.townCompleteDim.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
+        this.addChild(this.corner, this.progress, this.combo, this.celebration, this.mapHolder, this.miniature, this.mapButton, this.mute, this.languageButton, this.moveHint, this.toast, this.shopHolder, this.wardrobeHolder, this.trophiesHolder, this.languageHolder, this.mapPanel, this.findToasts, this.newCity, this.citiesDim, this.citiesHolder);
+        this.citiesHolder.addChild(this.cities);
+        this.citiesDim.visible = false;
+        this.citiesDim.eventMode = 'static';
+        this.citiesDim.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
+        // A tap on the dim closes the selector (not the tutorial's end: that one only goes on).
+        this.citiesDim.on('pointertap', () => {
+            if (this.citiesMode === 'select') this.closeCities();
+        });
+        this.buildNewCity();
         MowProgress.onChange.add(this.onChange);
         this.refresh();
         this.reposition();
@@ -342,7 +360,7 @@ export class MowHud extends PIXI.Container {
      * MAP button and its panel.
      */
     private buildMap(): void {
-        this.tappable(this.miniature, () => this.previewMiniature());
+        this.tappable(this.miniature, () => this.openCities('select'));
         void this.miniature.ready.then((ready) => {
             if (!ready || this.destroyed) return;
             this.miniatureReady = true;
@@ -428,76 +446,147 @@ export class MowHud extends PIXI.Container {
      * CELEBRATION_SEC: the scene shows the next area after it.
      */
     public celebrate(name: string, bonus: number, section: number): void {
-        // The section's banner first; as it goes, the town's miniature flies to the middle and fills up to its new %
-        // (its corner % held where it was till then), then home (or the drawn map's flight, no miniature baked).
+        // The section's banner first; as it goes, its stars fly down to the town icon and its pip lights up (held
+        // dark till they land), or (no miniature baked) the drawn map's flight.
         this.showBanner(name, bonus);
-        if (this.miniatureReady) this.miniature.holdShare();
-        gsap.delayedCall(BANNER_SEC, () => {
+        if (this.miniatureReady) this.miniature.holdPips();
+        gsap.delayedCall(BANNER.hold, () => {
             if (this.destroyed) return;
-            // The town's reveal plays alone: the map panel (if open) goes first.
-            if (this.mapPanel.visible) this.toggleMap();
-            if (this.miniatureReady && Game.overlayScreenData) this.miniature.celebrate(this.revealCentre, this.revealScale, () => this.miniatureHome, () => {});
+            if (this.miniatureReady && Game.overlayScreenData) this.flyStars(section);
             else this.flyMap(section);
         });
     }
 
-    /** The whole town restored: the end panel (how it went, more towns to come), over a dim, until CONTINUE. */
-    public showTownComplete(stats: TownCompleteStats): void {
-        if (this.mapPanel.visible) this.toggleMap();
-        if (this.miniature.open) this.miniature.close();
-        Gameplay.stop();
-        MowAudio.play('buyFanfare');
-        this.townComplete.show(stats);
-        this.townComplete.visible = true;
-        this.townCompleteDim.visible = true;
-        UiAnim.popIn(this.townComplete, this.townCompleteDim);
-    }
-
-    /** Travelling: the screen fades to black over everything (the game reloads into the next city behind it). */
-    public fadeOut(onDone: () => void): void {
-        const screen = Game.overlayScreenData;
-        const black = new PIXI.Graphics().beginFill(0x000000).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
-        black.alpha = 0;
-        black.eventMode = 'static';
-        this.addChild(black);
-        gsap.to(black, { alpha: 1, duration: 0.6, ease: 'power2.in', onComplete: onDone });
-    }
-
-    /**
-     * A tap on the corner miniature: blown up in the middle, filling from empty to the town's %, until it's closed (its
-     * close button, another tap on it, or the player moving: closeMiniature()).
-     */
-    private previewMiniature(): void {
-        if (this.miniature.open) {
-            this.closeMiniature();
-            return;
+    /** STAR_COUNT stars from the banner to the town icon's pip for `section`, one after another; it lights as they land. */
+    private flyStars(section: number): void {
+        const from = this.toLocal(this.celebration.getGlobalPosition());
+        let landed = 0;
+        for (let i = 0; i < STAR_COUNT; i++) {
+            const star = PIXI.Sprite.from('ItemIcon_Star_Gold');
+            star.anchor.set(0.5);
+            const size = 58 / Math.max(star.texture.width, star.texture.height, 1);
+            star.scale.set(0);
+            star.position.set(from.x + (i - (STAR_COUNT - 1) / 2) * 70, from.y - 40);
+            star.eventMode = 'none';
+            this.addChild(star);
+            const start = { x: star.x, y: star.y };
+            const progress = { t: 0 };
+            gsap.timeline({ delay: i * STAR_STAGGER, onComplete: () => {
+                star.destroy();
+                if (this.destroyed) return;
+                MowAudio.play('buyStar');
+                UiAnim.punch(this.miniature, 0.2);
+                if (++landed === STAR_COUNT) {
+                    this.miniature.releasePips();
+                    MowAudio.play('sparkle');
+                }
+            } })
+                .to(star.scale, { x: size, y: size, duration: 0.25, ease: 'back.out(3)' })
+                .to(progress, {
+                    t: 1,
+                    duration: STAR_FLIGHT,
+                    ease: 'power2.in',
+                    onUpdate: () => {
+                        const to = this.toLocal(this.miniature.pipGlobal(section));
+                        const k = progress.t;
+                        const u = 1 - k;
+                        // A curve up and over (a raised midpoint), shrinking as it goes, spinning.
+                        const midX = (start.x + to.x) / 2;
+                        const midY = Math.min(start.y, to.y) - 120;
+                        star.position.set(u * u * start.x + 2 * u * k * midX + k * k * to.x, u * u * start.y + 2 * u * k * midY + k * k * to.y);
+                        star.scale.set(size * (1 - k * 0.6));
+                        star.rotation = k * Math.PI * 2;
+                    },
+                });
         }
-        if (this.miniature.celebrating) return;
-        MowAudio.play('toggle');
-        GameAnalytics.panelOpened('town');
-        // One map at a time: the map panel closes.
-        if (this.mapPanel.visible) this.mapPanel.visible = false;
-        this.miniatureClose ??= this.closeButton(() => this.closeMiniature());
-        this.miniature.preview(this.revealCentre, this.revealScale, () => this.miniatureHome, this.miniatureClose);
     }
 
-    /** The miniature's blown-up view (previewMiniature()) back to its corner, if it's up. */
+    /** The cities panel: 'select' (the town icon, NEW CITY AVAILABLE), or 'complete' (the tutorial's end: only on). */
+    public openCities(mode: CitiesMode): void {
+        if (this.cities.visible && this.citiesMode === mode) return;
+        if (this.mapPanel.visible) this.toggleMap();
+        if (this.trophies.visible) this.toggleTrophies();
+        this.citiesMode = mode;
+        Gameplay.stop();
+        GameAnalytics.panelOpened('cities');
+        MowAudio.play(mode === 'complete' ? 'buyFanfare' : 'open');
+        this.cities.show(mode);
+        this.cities.visible = true;
+        this.citiesDim.visible = true;
+        this.citiesDim.alpha = 0;
+        gsap.to(this.citiesDim, { alpha: 1, duration: 0.25 });
+    }
+
+    private closeCities(): void {
+        if (!this.cities.visible) return;
+        MowAudio.play('close');
+        this.cities.visible = false;
+        this.citiesDim.visible = false;
+    }
+
+    /** The NEW CITY AVAILABLE button over the town icon (shown by setNewCity()). */
+    private buildNewCity(): void {
+        const label = UiKit.text('hud', 'toast', { text: t('newCityAvailable') }, { fontSize: 18, strokeThickness: 5 });
+        label.anchor.set(0.5);
+        const width = Math.max(150, label.width + 34);
+        const back = new PIXI.NineSlicePlane(PIXI.Texture.from('Button01_l_Green'), 38, 62, 38, 70);
+        back.width = width * 2;
+        back.height = 52 * 2;
+        back.scale.set(0.5);
+        back.pivot.set(width, 52);
+        label.y = -2;
+        this.newCity.addChild(back, label);
+        this.newCity.visible = false;
+        this.tappable(this.newCity, () => this.openCities('select'));
+    }
+
+    /** The next city is open: the button over the town icon pulses, rays turn behind the icon. Off: both go. */
+    public setNewCity(on: boolean): void {
+        if (on === this.newCity.visible) return;
+        this.newCity.visible = on;
+        UiAnim.kill(this.newCity);
+        this.newCityRays?.tweens.forEach((tween) => tween.kill());
+        this.newCityRays?.rays.destroy({ children: true });
+        this.newCityRays = undefined;
+        if (!on) return;
+        UiAnim.popIn(this.newCity);
+        gsap.delayedCall(0.5, () => {
+            if (this.newCity.visible) UiAnim.pulse(this.newCity, 0.08, 0.5);
+        });
+        const shine = UiAnim.rays(this, MINIATURE_WIDTH * 0.9, 0xfff0a0, 0.75, 6);
+        this.setChildIndex(shine.rays, this.getChildIndex(this.miniature));
+        this.newCityRays = shine;
+        this.reposition();
+    }
+
+    /** The miniature's blown-up view back to its corner, if it's up. */
     public closeMiniature(): void {
         if (!this.miniature.open) return;
         MowAudio.play('toggle');
         this.miniature.close();
     }
 
-    /** Where the miniature is blown up to (its centre), and how much (REVEAL_WIDTH across at most, less on a narrow screen). */
+    /**
+     * Where the miniature is blown up to (its centre): it grows where it is, in its corner — its bottom-right staying
+     * put, kept clear of the screen's top and left — rather than flying to the middle over everything. And how much:
+     * REVEAL_WIDTH across at most, no more than REVEAL_SHARE of the screen either way.
+     */
     private get revealCentre(): PIXI.IPointData {
         const screen = Game.overlayScreenData;
-        if (!screen) return this.miniature.position;
-        return { x: screen.center.x, y: screen.center.y - screen.height * 0.06 };
+        const home = this.miniatureHome;
+        if (!screen) return home;
+        const scale = this.revealScale;
+        const growX = (MINIATURE_WIDTH * (scale - 1)) / 2;
+        const growY = (this.miniature.pictureHeight * (scale - 1)) / 2;
+        // Up and left by how much it grows, a little more for the % under it (its own scale grows less).
+        return { x: home.x - growX, y: home.y - growY - this.miniature.badgeHeight };
     }
 
     private get revealScale(): number {
         const screen = Game.overlayScreenData;
-        return Math.min(REVEAL_WIDTH, (screen?.width ?? REVEAL_WIDTH) * 0.85) / MINIATURE_WIDTH;
+        if (!screen) return 1;
+        const height = Math.max(1, this.miniature.pictureHeight);
+        return Math.max(1, Math.min(REVEAL_WIDTH / MINIATURE_WIDTH, (screen.width * REVEAL_SHARE) / MINIATURE_WIDTH, (screen.height * REVEAL_SHARE) / height));
     }
 
     private showBanner(name: string, bonus: number): void {
@@ -1083,8 +1172,10 @@ export class MowHud extends PIXI.Container {
      * it too). Each pops in as it comes (not on a load that already has it).
      */
     private refreshUnlocks(): void {
-        const map = MowProgress.isRestored(MOW.districts[0].id);
-        const trophy = this.treasuresFlying > 0 || MOW.treasures.items.some((item) => MowProgress.treasureFound(item.id));
+        // (Only the tutorial holds them back: any other city has the map from the start.)
+        const map = !CITY.keepGear || MowProgress.isRestored(MOW.districts[0].id);
+        // (Or a reward waiting: one carried over from the city before.)
+        const trophy = this.treasuresFlying > 0 || MowProgress.hasUnclaimedTreasure || MOW.treasures.items.some((item) => MowProgress.treasureFound(item.id));
         const reveal = (target: PIXI.Container, shown: boolean, was: boolean | undefined) => {
             target.renderable = shown;
             target.eventMode = shown ? 'static' : 'none';
@@ -1188,7 +1279,10 @@ export class MowHud extends PIXI.Container {
     public reposition(): void {
         const screen = Game.overlayScreenData;
         if (!screen) return;
-        this.corner.position.set(screen.topLeft.x + screen.width - 20 - CORNER_WIDTH, screen.topLeft.y + 44);
+        // Money, bag and trophy: smaller on a portrait screen (room for the area bar beside them).
+        const cornerScale = screen.width < screen.height ? CORNER_PORTRAIT_SCALE : 1;
+        this.corner.scale.set(cornerScale);
+        this.corner.position.set(screen.topLeft.x + screen.width - 16 - CORNER_WIDTH * cornerScale, screen.topLeft.y + 36);
         this.mute.position.set(screen.topLeft.x + 20 + BUTTON_SIZE / 2, screen.topLeft.y + 20 + BUTTON_SIZE / 2);
         this.languageButton.position.set(this.mute.x + BUTTON_SIZE + 12, this.mute.y);
         this.progress.position.set(screen.center.x, screen.topLeft.y + 120);
@@ -1221,10 +1315,15 @@ export class MowHud extends PIXI.Container {
         this.wardrobeHolder.position.set(screen.center.x, top + (RIBBON_OVERHANG + WARDROBE_SIZE.height / 2) * wardrobeScale);
         const trophiesScale = Math.min(1, (screen.height - 94) / (TROPHIES_SIZE.height + RIBBON_OVERHANG), (screen.width - 24) / (TROPHIES_SIZE.width + CLOSE_SIZE / 2));
         this.trophiesHolder.scale.set(trophiesScale);
-        const completeScale = Math.min(1, (screen.height - 94) / (TOWN_COMPLETE_SIZE.height + RIBBON_OVERHANG), (screen.width - 24) / TOWN_COMPLETE_SIZE.width);
-        this.townCompleteHolder.scale.set(completeScale);
-        this.townCompleteHolder.position.set(screen.center.x, screen.center.y + (RIBBON_OVERHANG / 2) * completeScale);
-        this.townCompleteDim.clear().beginFill(0x000000, 0.6).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
+        const citiesScale = Math.min(1, (screen.height - 60) / (CITIES_PANEL_SIZE.height + 60), (screen.width - 20) / CITIES_PANEL_SIZE.width);
+        this.citiesHolder.scale.set(citiesScale);
+        this.citiesHolder.position.set(screen.center.x, screen.center.y + 20 * citiesScale);
+        this.citiesDim.clear().beginFill(0x000000, 0.65).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
+        // NEW CITY AVAILABLE over the town icon; its rays behind it.
+        const home = this.miniatureHome;
+        const half = this.newCity.width / 2;
+        this.newCity.position.set(Math.min(home.x, screen.topLeft.x + screen.width - 12 - half), home.y - this.miniature.pictureHeight / 2 - 30);
+        this.newCityRays?.rays.position.set(home.x, home.y);
         this.trophiesHolder.position.set(screen.center.x, screen.center.y + (RIBBON_OVERHANG / 2) * trophiesScale);
         const languageScale = Math.min(1, (screen.height - 94) / (LANGUAGE_SIZE.height + RIBBON_OVERHANG), (screen.width - 24) / (LANGUAGE_SIZE.width + CLOSE_SIZE / 2));
         this.languageHolder.scale.set(languageScale);

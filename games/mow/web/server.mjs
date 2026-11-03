@@ -14,7 +14,17 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const TOWN_FILE = path.join(__dirname, '..', 'levels', 'town.json');
+const LEVELS_DIR = path.join(__dirname, '..', 'levels');
+const TOWN_FILE = path.join(LEVELS_DIR, 'town.json');
+/** The cities (their names and level files) the game travels between: the editor's level picker lists them. */
+const CITIES_FILE = path.join(LEVELS_DIR, 'cities.json');
+
+/** A level's file from `?level=` (a city's level name: town, tutorial, city2…); the town's without one. */
+function levelFile(url) {
+    const level = url.searchParams.get('level') || 'town';
+    if (!/^[\w-]+$/.test(level) || ['cities', 'mapshots'].includes(level)) return null;
+    return path.join(LEVELS_DIR, `${level}.json`);
+}
 const MOW_FILE = path.join(__dirname, '..', 'ui', 'mow.json');
 /**
  * The Map shots tab's settings, by zone (`town` or a section id): `mode` (original: the town as it is; custom: its own
@@ -308,22 +318,30 @@ async function handleApi(req, res, url) {
         const files = await fs.readdir(AUDIO_DIR).catch(() => []);
         return send(res, 200, [...new Set(files.filter((f) => /\.(mp3|ogg|wav)$/i.test(f)).map((f) => f.replace(/\.[^.]+$/, '')))].sort());
     }
+    if (url.pathname === '/api/levels' && req.method === 'GET') {
+        // The cities in travel order, each with its level file (the playable ones: the editor's level picker).
+        const cities = (await readJson(CITIES_FILE, { cities: [] })).cities.filter((city) => city.level);
+        return send(res, 200, cities.map((city) => ({ id: city.id, name: city.name, level: city.level, map: city.map ?? city.level })));
+    }
     if (url.pathname === '/api/town' && req.method === 'GET') {
-        const town = await readJson(TOWN_FILE, null);
-        if (!town) return send(res, 500, { error: 'Could not read levels/town.json' });
-        return send(res, 200, { ...town, _version: await fileVersion(TOWN_FILE) });
+        const file = levelFile(url);
+        const town = file && await readJson(file, null);
+        if (!town) return send(res, 404, { error: `Could not read levels/${url.searchParams.get('level') || 'town'}.json` });
+        return send(res, 200, { ...town, _version: await fileVersion(file) });
     }
     if (url.pathname === '/api/town' && req.method === 'PUT') {
+        const file = levelFile(url);
+        if (!file) return send(res, 400, { error: 'Bad level' });
         const { _version: loaded, ...town } = await readBody(req);
         const problems = validateTown(town);
         if (problems.length) return send(res, 400, { error: problems.join('; ') });
         // Refuse to overwrite a newer file: another tab saved since this copy was loaded.
-        const current = await fileVersion(TOWN_FILE);
+        const current = await fileVersion(file);
         if (loaded === undefined || (current && loaded !== current)) {
-            return send(res, 409, { error: 'town.json was changed since you opened it (another tab saved). Reload to get the latest, then redo your change.' });
+            return send(res, 409, { error: `${path.basename(file)} was changed since you opened it (another tab saved). Reload to get the latest, then redo your change.` });
         }
-        await writeJson(TOWN_FILE, town);
-        return send(res, 200, { ok: true, version: await fileVersion(TOWN_FILE) });
+        await writeJson(file, town);
+        return send(res, 200, { ok: true, version: await fileVersion(file) });
     }
     if (url.pathname === '/api/library' && req.method === 'GET') {
         return send(res, 200, await listLibrary());

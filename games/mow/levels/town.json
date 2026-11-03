@@ -1481,36 +1481,14 @@
   "grassPatches": [],
   "sections": [
     {
-      "id": "yard",
-      "name": "Front Yard",
-      "x": 0,
-      "z": 16,
-      "width": 8,
-      "depth": 7,
-      "completeAt": 0.97,
-      "bonus": 65,
-      "ground": "#557f38",
-      "restoredGround": "#72b04a",
-      "fill": "grass",
-      "grassScale": 0.6,
-      "zoom": 0.72,
-      "pen": {
-        "x": 0,
-        "z": 13.75,
-        "width": 20.5,
-        "depth": 11.5
-      },
-      "startRestored": true
-    },
-    {
-      "id": "park",
-      "name": "Starting Park",
+      "id": "central-park",
+      "name": "Central Park",
       "maxGrass": "tallgrass",
       "x": 0,
       "z": 0,
       "width": 20,
       "depth": 16,
-      "completeAt": 0.92,
+      "completeAt": 0.97,
       "bonus": 160,
       "ground": "#4f7d35",
       "restoredGround": "#6fae47",
@@ -1521,7 +1499,7 @@
         "width": 20,
         "rotationY": 0
       },
-      "startRestored": true
+      "grassScale": 1.2
     },
     {
       "id": "street",
@@ -2061,23 +2039,23 @@
     "cars": [
       {
         "at": "w4",
-        "model": "town/city/car_sedan.gltf"
+        "model": "town/library/city2-car-12/city2-car-12.glb"
       },
       {
         "at": "w11",
-        "model": "town/city/car_taxi.gltf"
+        "model": "town/library/city2-car-42/city2-car-42.glb"
       },
       {
         "at": "w18",
-        "model": "town/city/car_hatchback.gltf"
+        "model": "town/library/city2-car-16/city2-car-16.glb"
       },
       {
         "at": "w25",
-        "model": "town/city/car_stationwagon.gltf"
+        "model": "town/library/city2-car-26/city2-car-26.glb"
       },
       {
         "at": "w32",
-        "model": "town/city/car_sedan.gltf"
+        "model": "town/library/city2-car-39/city2-car-39.glb"
       }
     ]
   }

@@ -16,7 +16,7 @@ import { UiKit } from './UiKit';
 import { UiAnim } from './UiAnim';
 import { ModelIcons } from './ModelIcons';
 import { MOW, Rarity, TreasureDef } from '../data/MowConfig';
-import { MowProgress, areaBonusKey } from '../data/MowProgress';
+import { MowProgress, areaBonusKey, CARRIED_KEY } from '../data/MowProgress';
 import { t, names } from '../i18n/Localization';
 import { MowAudio } from '../audio/MowAudio';
 
@@ -32,13 +32,13 @@ const BAR_WIDTH = 300;
 const PER_ROW = 3;
 const ROWS_PER_PAGE = 2;
 /** Each area's treasures split into rows of PER_ROW (an area with 5 takes two rows). */
-const ROWS: { area: number; items: TreasureDef[] }[] = MOW.districts.flatMap((district, area) => {
+const rows = (): { area: number; items: TreasureDef[] }[] => MOW.districts.flatMap((district, area) => {
     // This city's own (trophies are per city): not an area done from the start (the tutorial's).
     if (district.startRestored) return [];
     const items = MOW.treasures.items.filter((item) => item.area === district.id);
     return Array.from({ length: Math.ceil(items.length / PER_ROW) }, (_, i) => ({ area, items: items.slice(i * PER_ROW, (i + 1) * PER_ROW) }));
 });
-const PAGES = Math.max(1, Math.ceil(ROWS.length / ROWS_PER_PAGE));
+const pages = (): number => Math.max(1, Math.ceil(rows().length / ROWS_PER_PAGE));
 const CLAIM_HEIGHT = 46;
 const FOOTER_BUTTON_WIDTH = 300;
 
@@ -72,8 +72,8 @@ export class TrophiesPanel extends PIXI.Container {
 
     /** Opens on the page with a reward waiting, else the first. */
     public refresh(): void {
-        const row = ROWS.findIndex((r) => r.items.some((item) => MowProgress.unclaimedFor(item.id) > 0));
-        this.page = row >= 0 ? Math.floor(row / ROWS_PER_PAGE) : Math.min(this.page, PAGES - 1);
+        const row = rows().findIndex((r) => r.items.some((item) => MowProgress.unclaimedFor(item.id) > 0));
+        this.page = row >= 0 ? Math.floor(row / ROWS_PER_PAGE) : Math.min(this.page, pages() - 1);
         this.renderPage();
     }
 
@@ -82,7 +82,7 @@ export class TrophiesPanel extends PIXI.Container {
         UiAnim.kill(this.body);
         this.body.removeChildren().forEach((child) => child.destroy({ children: true }));
         // This city's (trophies are per city: the rows' treasures).
-        const items = ROWS.flatMap((row) => row.items);
+        const items = rows().flatMap((row) => row.items);
         const total = items.length;
         const found = items.filter((item) => MowProgress.treasureFound(item.id)).length;
 
@@ -101,7 +101,7 @@ export class TrophiesPanel extends PIXI.Container {
         this.body.addChild(progress, bar);
 
         const top = -HEIGHT / 2 + 108;
-        ROWS.slice(this.page * ROWS_PER_PAGE, (this.page + 1) * ROWS_PER_PAGE).forEach(({ area, items }, row) => {
+        rows().slice(this.page * ROWS_PER_PAGE, (this.page + 1) * ROWS_PER_PAGE).forEach(({ area, items }, row) => {
             const district = MOW.districts[area];
             const y = top + row * ROW_HEIGHT;
             const name = names.district(district).toUpperCase();
@@ -119,16 +119,16 @@ export class TrophiesPanel extends PIXI.Container {
             });
         });
 
-        if (PAGES > 1) {
+        if (pages() > 1) {
             const y = HEIGHT / 2 - 80;
-            const label = UiKit.text('collection', 'page', { page: this.page + 1, pages: PAGES });
+            const label = UiKit.text('collection', 'page', { page: this.page + 1, pages: pages() });
             label.anchor.set(0.5);
             label.y = y;
             this.body.addChild(label, this.arrow('arrowLeft', -140, y, -1), this.arrow('arrowRight', 140, y, 1));
         }
 
         // Anything waiting (found treasures, the bonus of an area with all its treasures found): one CLAIM in the footer.
-        const keys = [...MOW.treasures.items.map((item) => item.id), ...MOW.districts.map((d) => areaBonusKey(d.id))]
+        const keys = [...MOW.treasures.items.map((item) => item.id), ...MOW.districts.map((d) => areaBonusKey(d.id)), CARRIED_KEY]
             .filter((key) => MowProgress.unclaimedFor(key) > 0);
         if (keys.length) {
             const claim = this.claimButton(keys, keys.reduce((sum, key) => sum + MowProgress.unclaimedFor(key), 0), FOOTER_BUTTON_WIDTH);
@@ -152,7 +152,7 @@ export class TrophiesPanel extends PIXI.Container {
         arrow.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         arrow.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
             event.stopPropagation();
-            this.page = (this.page + step + PAGES) % PAGES;
+            this.page = (this.page + step + pages()) % pages();
             MowAudio.play('click');
             this.renderPage();
         });

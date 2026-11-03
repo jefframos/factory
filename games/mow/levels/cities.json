@@ -1,9 +1,9 @@
 {
-  "$comment": "The cities, in travel order (MowConfig CITIES). level: the file in levels/ (without .json). map: the map shot's name (images/non-preload/map/<map>.webp, the editor's Map shots). keepGear: travelling on from here keeps the mower, upgrades and money (the tutorial); otherwise the next city starts from scratch (prestige: its bonus is the reward). comingSoon: a card on the City Complete screen, not playable yet.",
+  "$comment": "The cities, in travel order (MowConfig CITIES). level: the file in levels/ (without .json). map: the map shot's name (images/non-preload/map/<map>.webp, the editor's Map shots). guide: false hides the guide arrows (the player knows the game by then). keepGear: travelling on from here keeps the mower, upgrades and money (the tutorial); otherwise the next city starts from scratch (prestige: its bonus is the reward). comingSoon: a card on the City Complete screen, not playable yet.",
   "cities": [
     { "id": "tutorial", "name": "Tutorial Town", "level": "tutorial", "map": "tutorial", "keepGear": true },
     { "id": "city1", "name": "Mow Town", "level": "town", "map": "town" },
-    { "id": "city2", "name": "Big City", "level": "city2", "map": "city2" },
+    { "id": "city2", "name": "Big City", "level": "city2", "map": "city2", "guide": false },
     { "id": "city3", "name": "Harbour Bay", "comingSoon": true },
     { "id": "city4", "name": "Sunny Hills", "comingSoon": true }
   ],

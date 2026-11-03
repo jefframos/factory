@@ -91,6 +91,7 @@ export async function initTownTab(container, options = {}) {
     host = container;
     gameUrl = options.gameUrl ?? gameUrl;
     townUrl = options.townUrl ?? townUrl;
+    playCity = options.city ?? playCity;
     diorama = Boolean(options.diorama);
     host.classList.toggle('diorama', diorama);
     if (diorama) showTraffic = false;
@@ -101,11 +102,15 @@ export async function initTownTab(container, options = {}) {
     await reload();
 }
 
-/** Loads another document into this editor (the Map shots tab: another zone's diorama). */
-export async function loadTown(url) {
+/** Loads another document into this editor (another city's level; the Map shots tab: a zone's diorama). */
+export async function loadTown(url, city) {
     townUrl = url;
+    if (city) playCity = city;
     await reload();
 }
+
+/** The city ▶ Play opens the game in (the level being edited). */
+let playCity = '';
 
 /** Saves now (the Map shots tab, before taking a shot); false if it failed. */
 export async function saveTown() {
@@ -232,7 +237,7 @@ function buildLayout() {
                 el('span', { class: 'spacer' }),
                 el('span', { id: 'townStatus' }),
                 el('button', { class: 'primary', onclick: () => void save() }, '💾 Save'),
-                diorama ? '' : el('button', { onclick: () => window.open(gameUrl, 'mow-game') }, '▶ Play')),
+                diorama ? '' : el('button', { onclick: () => window.open(playCity ? `${gameUrl}${gameUrl.includes('?') ? '&' : '?'}city=${playCity}` : gameUrl, 'mow-game') }, '▶ Play')),
             el('div', { id: 'townViewport', style: { position: 'relative', flex: '1', minHeight: '0', overflow: 'hidden' } }),
             el('div', { class: 'hint-bar' }, 'Left-drag: orbit · Right-drag: pan · Wheel: zoom · Click: select · Shift+click: add to selection · Ctrl+A: all of a kind · W/E/R: move/turn/scale · D: duplicate · Del: remove · F: focus · Ctrl+Z: undo · Ctrl+S: save')),
         el('aside', { class: 'sidebar right' },
