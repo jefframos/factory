@@ -13,6 +13,7 @@ const FIELDS = {
         ['growth', 'Growth', 'Radius² gained per point of an eaten thing\'s value.'],
         ['valuePower', 'Value power', 'A thing\'s value = its volume ^ this. Lower: big things count for less.'],
         ['growSpeed', 'Grow speed', 'How quickly the saucer eases to its new size.'],
+        ['waterMargin', 'Over the water', 'How far past the shore it can fly before it stops, with arrows pointing back to land.'],
         ['collideShare', 'Collision size', 'The share of its radius that hits things too tall to fly over.'],
     ],
     people: [
@@ -23,10 +24,13 @@ const FIELDS = {
         ['pauseMax', 'Longest stop (seconds)', ''],
     ],
     camera: [
-        ['pitchDeg', 'Pitch (degrees)', 'How steeply it looks down.'],
+        ['pitchDeg', 'Pitch (degrees)', 'How steeply it looks down at the start.'],
+        ['endPitchDeg', 'Pitch when grown', 'It steepens to this as the saucer grows, which keeps the big saucer from looking stretched.'],
+        ['endPitchRadius', 'Grown radius', 'The saucer\'s radius when it reaches that pitch.'],
         ['fov', 'Field of view', ''],
         ['distance', 'Distance', 'From the saucer, at altitude 0.'],
         ['perAltitude', 'Distance per altitude', 'How far it pulls back as the saucer climbs.'],
+        ['maxShare', 'Largest saucer on screen', 'The share of the screen\'s narrower side it can fill (0.3 is 30%) before the camera pulls back further.'],
         ['followSpeed', 'Follow speed', ''],
         ['zoomSpeed', 'Zoom speed', ''],
         ['bend', 'World bend', 'How strongly the world curves away. 0 is flat, 0.002 is the same as the mow game.'],

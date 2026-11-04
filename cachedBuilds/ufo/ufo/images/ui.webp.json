@@ -1,0 +1,96 @@
+{
+  "frames": {
+    "PictoIcon_Sound_Off": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 109,
+        "h": 104
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 12,
+        "w": 109,
+        "h": 104
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "PictoIcon_Sound": {
+      "frame": {
+        "x": 2,
+        "y": 108,
+        "w": 110,
+        "h": 104
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 12,
+        "w": 110,
+        "h": 104
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "ItemIcon_Star_Gold": {
+      "frame": {
+        "x": 114,
+        "y": 2,
+        "w": 289,
+        "h": 288
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 289,
+        "h": 288
+      },
+      "sourceSize": {
+        "w": 289,
+        "h": 288
+      }
+    },
+    "Button_Round03_Dark": {
+      "frame": {
+        "x": 2,
+        "y": 292,
+        "w": 130,
+        "h": 122
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 130,
+        "h": 122
+      },
+      "sourceSize": {
+        "w": 130,
+        "h": 122
+      }
+    }
+  },
+  "meta": {
+    "app": "http://github.com/pixijs/assetpack",
+    "version": "1.0",
+    "image": "ui.webp",
+    "format": "RGBA8888",
+    "size": {
+      "w": 405,
+      "h": 416
+    },
+    "scale": 1,
+    "related_multi_packs": []
+  }
+}

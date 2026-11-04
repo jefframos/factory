@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { DESIGN, Level, MODEL_BASE, TrafficSettings } from '../data/UfoConfig';
+import type { CarSound } from '../audio/SpatialAudio';
 import { bendObject } from '../services/Bend';
 import { Item, UfoTown } from './UfoTown';
 
@@ -216,6 +217,11 @@ export class Cars {
             const t = Math.min(1, Math.max(0, ((position.x - ax) * dx + (position.y - az) * dz) / lengthSq));
             return Math.hypot(position.x - (ax + dx * t), position.y - (az + dz * t)) < radius;
         });
+    }
+
+    /** Where they are and how fast they're going, for their engines (SpatialAudio). */
+    public carSounds(): CarSound[] {
+        return this.cars.map((car) => ({ id: car.id, x: car.position.x, z: car.position.y, speed: car.speed / (this.config.speed || 1) }));
     }
 
     /** That item was a car: it stops driving (the caller animates it away). */

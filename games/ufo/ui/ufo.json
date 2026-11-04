@@ -90,24 +90,33 @@
   },
   "ufo": {
     "startRadius": 1,
-    "speed": 9,
-    "speedPerRadius": 0.5,
+    "speed": 7.5,
+    "speedPerRadius": 0.4,
     "accel": 7,
     "altitudeBase": -1.2,
     "altitudePerRadius": 3,
     "growth": 0.05,
     "valuePower": 0.75,
     "growSpeed": 2.5,
-    "collideShare": 0.85
+    "collideShare": 0.85,
+    "waterMargin": 18
   },
   "camera": {
-    "pitchDeg": 55,
+    "pitchDeg": 50,
+    "endPitchDeg": 62,
+    "endPitchRadius": 8,
     "fov": 45,
-    "distance": 16,
-    "perAltitude": 1.7,
+    "distance": 13,
+    "perAltitude": 1.45,
+    "maxShare": 0.3,
     "followSpeed": 7,
     "zoomSpeed": 2.5,
     "bend": 0.004
+  },
+  "music": {
+    "$comment": "The soundtrack (a file in raw-assets/audio, without its extension) and its volume (0-1); a level's soundSettings.music overrides it (the editor's Sounds).",
+    "sound": "Somnia-Variation-3-relax-and-sleep-Reed-Mathis",
+    "volume": 0.18
   },
   "people": {
     "models": [
@@ -176,5 +185,14 @@
         "#9a9a9a"
       ]
     }
+  },
+  "saucer": {
+    "model": "saucer/saucer.glb",
+    "skins": [
+      "saucer-basecolor1",
+      "saucer-basecolor2",
+      "saucer-basecolor3",
+      "saucer-purple-yellow"
+    ]
   }
 }

@@ -1,0 +1,6638 @@
+{
+  "name": "Big City",
+  "next": "town",
+  "goal": {
+    "model": "town/library/city2-stadium-01/city2-stadium-01.glb",
+    "radius": 11,
+    "name": "Stadium"
+  },
+  "ground": {
+    "x": 0,
+    "z": -27.375,
+    "width": 203,
+    "depth": 257.75,
+    "color": "#8c9a7c"
+  },
+  "island": {
+    "water": "#3aa6e8",
+    "waterLevel": 0.55,
+    "margin": 90,
+    "sideColor": "#9a9488",
+    "sideDepth": 1.6,
+    "outline": [
+      {
+        "x": -101.5,
+        "z": -126.75
+      },
+      {
+        "x": -66.25,
+        "z": -127.25
+      },
+      {
+        "x": -56,
+        "z": -156.25
+      },
+      {
+        "x": 53.25,
+        "z": -155
+      },
+      {
+        "x": 64.5,
+        "z": -126.25
+      },
+      {
+        "x": 101.5,
+        "z": -126.25
+      },
+      {
+        "x": 101.5,
+        "z": 101.5
+      },
+      {
+        "x": -101.5,
+        "z": 101.5
+      }
+    ],
+    "deck": {
+      "width": 2.4,
+      "color": "#b98352"
+    },
+    "fence": {
+      "color": "#f4f1ea",
+      "height": 0.95,
+      "inset": 0.45,
+      "spacing": 1.6
+    },
+    "cornerRadius": 6
+  },
+  "start": {
+    "x": -24.25,
+    "z": 24.75
+  },
+  "pavements": [
+    {
+      "id": "pavement-1",
+      "x": -22.75,
+      "z": -22.5,
+      "width": 30.5,
+      "depth": 3.5,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-2",
+      "x": -22.5,
+      "z": 22.5,
+      "width": 32,
+      "depth": 32,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-2-copy",
+      "x": -68.5,
+      "z": 23,
+      "width": 32,
+      "depth": 32,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-2-copy-copy",
+      "x": 23.25,
+      "z": 23.5,
+      "width": 32,
+      "depth": 32,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-2-copy-copy-copy",
+      "x": 66.75,
+      "z": 23.25,
+      "width": 32,
+      "depth": 32,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-2-copy-copy-copy-copy",
+      "x": 67.5,
+      "z": -21.75,
+      "width": 32,
+      "depth": 32,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-2-copy-copy-copy",
+      "x": 23.25,
+      "z": -23.25,
+      "width": 32,
+      "depth": 32,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-2-copy-copy-copy-copy",
+      "x": -67.5,
+      "z": -23,
+      "width": 32,
+      "depth": 32,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "road-parking",
+      "x": -67.5,
+      "z": 67.5,
+      "width": 21,
+      "depth": 21,
+      "color": "#4a4f57"
+    },
+    {
+      "id": "lawn-park",
+      "x": -22.5,
+      "z": 67.5,
+      "width": 25,
+      "depth": 25,
+      "color": "#4f7d35"
+    },
+    {
+      "id": "shops-square",
+      "x": 22.5,
+      "z": 67.5,
+      "width": 25,
+      "depth": 25,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "plaza-south",
+      "x": 67.5,
+      "z": 67.5,
+      "width": 25,
+      "depth": 25,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "lawn-downtown-0",
+      "x": -67.5,
+      "z": 27,
+      "width": 29,
+      "depth": 17,
+      "color": "#4d7633"
+    },
+    {
+      "id": "lawn-fountain-plaza",
+      "x": -24,
+      "z": 31.5,
+      "width": 15,
+      "depth": 10,
+      "color": "#46692c"
+    },
+    {
+      "id": "lawn-downtown-1",
+      "x": 22.5,
+      "z": 27,
+      "width": 24,
+      "depth": 13,
+      "color": "#4d7633"
+    },
+    {
+      "id": "lawn-downtown-2",
+      "x": 67.5,
+      "z": 27,
+      "width": 24,
+      "depth": 13,
+      "color": "#4d7633"
+    },
+    {
+      "id": "lawn-residential-0",
+      "x": -67.5,
+      "z": -18,
+      "width": 24,
+      "depth": 13,
+      "color": "#4a7030"
+    },
+    {
+      "id": "lawn-residential-1",
+      "x": 22.5,
+      "z": -18,
+      "width": 28,
+      "depth": 17.5,
+      "color": "#4a7030"
+    },
+    {
+      "id": "lawn-residential-2",
+      "x": 67.5,
+      "z": -18,
+      "width": 24,
+      "depth": 13,
+      "color": "#4a7030"
+    },
+    {
+      "id": "lawn-business-0",
+      "x": -67,
+      "z": -62.25,
+      "width": 27.5,
+      "depth": 17,
+      "color": "#46692c"
+    },
+    {
+      "id": "lawn-business-2",
+      "x": 75,
+      "z": -67.25,
+      "width": 14.5,
+      "depth": 29,
+      "color": "#46692c"
+    },
+    {
+      "id": "lawn-stadium",
+      "x": 0,
+      "z": -106,
+      "width": 65,
+      "depth": 37,
+      "color": "#46692c"
+    }
+  ],
+  "props": [
+    {
+      "model": "town/library/city2-tree-04/city2-tree-04.glb",
+      "x": -81.5,
+      "z": 8.5,
+      "rotationY": 0,
+      "height": 4.52,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-04/city2-tree-04.glb",
+      "x": -53.5,
+      "z": 8.5,
+      "rotationY": 0,
+      "height": 4.52,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-01/city2-tree-01.glb",
+      "x": -81.5,
+      "z": 36.5,
+      "rotationY": 0,
+      "height": 5.04,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-02/city2-tree-02.glb",
+      "x": -53.5,
+      "z": 36.5,
+      "rotationY": 0,
+      "height": 5.1,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": -81.5,
+      "z": 24.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": -53.5,
+      "z": 24.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-service-04/city2-building-service-04.glb",
+      "x": -73.17,
+      "z": 14.59,
+      "rotationY": 0,
+      "height": 10.86,
+      "collider": {
+        "halfX": 4.95,
+        "halfZ": 3.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-service-06/city2-building-service-06.glb",
+      "x": -62.5,
+      "z": 14.75,
+      "rotationY": 0,
+      "height": 11.34,
+      "collider": {
+        "halfX": 4.95,
+        "halfZ": 3.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-tree-02/city2-tree-02.glb",
+      "x": -36.5,
+      "z": 8.5,
+      "rotationY": 0,
+      "height": 5.1,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-04/city2-tree-04.glb",
+      "x": -8.5,
+      "z": 8.5,
+      "rotationY": 0,
+      "height": 4.52,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-03/city2-tree-03.glb",
+      "x": -36.5,
+      "z": 36.5,
+      "rotationY": 0,
+      "height": 4.66,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-02/city2-tree-02.glb",
+      "x": -8.5,
+      "z": 36.5,
+      "rotationY": 0,
+      "height": 5.1,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": -36.5,
+      "z": 24.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": -8.5,
+      "z": 24.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-service-10/city2-building-service-10.glb",
+      "x": -11.5,
+      "z": -32,
+      "rotationY": 0,
+      "height": 7.39,
+      "collider": {
+        "halfX": 4.75,
+        "halfZ": 4.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-snack-09/city2-building-snack-09.glb",
+      "x": -17,
+      "z": 14,
+      "rotationY": 0,
+      "height": 9.8,
+      "collider": {
+        "halfX": 5.05,
+        "halfZ": 3.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-fountain-01/city2-fountain-01.glb",
+      "x": -32.75,
+      "z": 22.25,
+      "rotationY": 0,
+      "height": 3.72,
+      "collider": {
+        "halfX": 2.95,
+        "halfZ": 2.95
+      }
+    },
+    {
+      "model": "town/library/city2-bus-stop-01/city2-bus-stop-01.glb",
+      "x": -13.75,
+      "z": 36.75,
+      "rotationY": 3.1416,
+      "height": 2.5,
+      "collider": {
+        "halfX": 1.7,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -16,
+      "z": 36.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-tree-02/city2-tree-02.glb",
+      "x": 8.5,
+      "z": 8.5,
+      "rotationY": 0,
+      "height": 5.1,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-06/city2-tree-06.glb",
+      "x": 36.5,
+      "z": 8.5,
+      "rotationY": 0,
+      "height": 4.82,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-01/city2-tree-01.glb",
+      "x": 8.5,
+      "z": 36.5,
+      "rotationY": 0,
+      "height": 5.04,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-02/city2-tree-02.glb",
+      "x": 36.5,
+      "z": 36.5,
+      "rotationY": 0,
+      "height": 5.1,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": 8.5,
+      "z": 24.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": 36.5,
+      "z": 24.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-service-10/city2-building-service-10.glb",
+      "x": 14.28,
+      "z": 13.75,
+      "rotationY": 0,
+      "height": 7.39,
+      "collider": {
+        "halfX": 4.75,
+        "halfZ": 4.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-supermarket-04/city2-building-supermarket-04.glb",
+      "x": 24.92,
+      "z": 12.78,
+      "rotationY": 0,
+      "height": 7.22,
+      "collider": {
+        "halfX": 5.25,
+        "halfZ": 3.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 14.5,
+      "z": 34.9,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 30.5,
+      "z": 34.9,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-tree-01/city2-tree-01.glb",
+      "x": 53.5,
+      "z": 8.5,
+      "rotationY": 0,
+      "height": 5.04,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-02/city2-tree-02.glb",
+      "x": 81.5,
+      "z": 8.5,
+      "rotationY": 0,
+      "height": 5.1,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-05/city2-tree-05.glb",
+      "x": 53.5,
+      "z": 36.5,
+      "rotationY": 0,
+      "height": 4.9,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-05/city2-tree-05.glb",
+      "x": 81.5,
+      "z": 36.5,
+      "rotationY": 0,
+      "height": 4.9,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": 53.5,
+      "z": 24.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": 81.5,
+      "z": 24.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-service-09/city2-building-service-09.glb",
+      "x": 59.43,
+      "z": 13.56,
+      "rotationY": 0,
+      "height": 13.24,
+      "collider": {
+        "halfX": 4.95,
+        "halfZ": 3.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-supermarket-04/city2-building-supermarket-04.glb",
+      "x": 70.22,
+      "z": 12.78,
+      "rotationY": 0,
+      "height": 7.22,
+      "collider": {
+        "halfX": 5.25,
+        "halfZ": 3.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 59.5,
+      "z": 34.9,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 75.5,
+      "z": 34.9,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-tree-06/city2-tree-06.glb",
+      "x": -81.5,
+      "z": -36.5,
+      "rotationY": 0,
+      "height": 4.82,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-04/city2-tree-04.glb",
+      "x": -53.5,
+      "z": -36.5,
+      "rotationY": 0,
+      "height": 4.52,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-06/city2-tree-06.glb",
+      "x": -81.5,
+      "z": -8.5,
+      "rotationY": 0,
+      "height": 4.82,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-03/city2-tree-03.glb",
+      "x": -53.5,
+      "z": -8.5,
+      "rotationY": 0,
+      "height": 4.66,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": -81.5,
+      "z": -20.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": -53.5,
+      "z": -20.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-living-46/city2-building-living-46.glb",
+      "x": -76.15,
+      "z": -31,
+      "rotationY": 0,
+      "height": 22.02,
+      "collider": {
+        "halfX": 4.35,
+        "halfZ": 4.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-living-31/city2-building-living-31.glb",
+      "x": -66.25,
+      "z": -31,
+      "rotationY": 0,
+      "height": 7.87,
+      "collider": {
+        "halfX": 4.75,
+        "halfZ": 4.2
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-living-09/city2-building-living-09.glb",
+      "x": -57.72,
+      "z": -31,
+      "rotationY": 0,
+      "height": 6.5,
+      "collider": {
+        "halfX": 2.95,
+        "halfZ": 4.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -75.5,
+      "z": -10.1,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -59.5,
+      "z": -10.1,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-tree-01/city2-tree-01.glb",
+      "x": -36.5,
+      "z": -36.5,
+      "rotationY": 0,
+      "height": 5.04,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-05/city2-tree-05.glb",
+      "x": -8.5,
+      "z": -36.5,
+      "rotationY": 0,
+      "height": 4.9,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-04/city2-tree-04.glb",
+      "x": -36.5,
+      "z": -8.5,
+      "rotationY": 0,
+      "height": 4.52,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-03/city2-tree-03.glb",
+      "x": -8.5,
+      "z": -8.5,
+      "rotationY": 0,
+      "height": 4.66,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": -36.5,
+      "z": -20.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": -8.5,
+      "z": -20.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-living-21/city2-building-living-21.glb",
+      "x": -30.07,
+      "z": -31.57,
+      "rotationY": 0,
+      "height": 7.92,
+      "collider": {
+        "halfX": 5.45,
+        "halfZ": 3.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-living-46/city2-building-living-46.glb",
+      "x": -20.25,
+      "z": -31,
+      "rotationY": 0,
+      "height": 22.02,
+      "collider": {
+        "halfX": 4.35,
+        "halfZ": 4.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-statue-01/city2-statue-01.glb",
+      "x": -18.25,
+      "z": -19.5,
+      "rotationY": 0,
+      "height": 5.21,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 1.9
+      }
+    },
+    {
+      "model": "town/library/city2-bus-stop-01/city2-bus-stop-01.glb",
+      "x": -13.5,
+      "z": -8.5,
+      "rotationY": 3.1416,
+      "height": 2.5,
+      "collider": {
+        "halfX": 1.7,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -34.5,
+      "z": -9.25,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-tree-04/city2-tree-04.glb",
+      "x": 8.5,
+      "z": -36.5,
+      "rotationY": 0,
+      "height": 4.52,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-04/city2-tree-04.glb",
+      "x": 36.5,
+      "z": -36.5,
+      "rotationY": 0,
+      "height": 4.52,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-07/city2-tree-07.glb",
+      "x": 8.5,
+      "z": -8.5,
+      "rotationY": 0,
+      "height": 4.21,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-06/city2-tree-06.glb",
+      "x": 36.5,
+      "z": -8.5,
+      "rotationY": 0,
+      "height": 4.82,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": 8.5,
+      "z": -20.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": 36.5,
+      "z": -20.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-living-03/city2-building-living-03.glb",
+      "x": 13.6,
+      "z": -31.92,
+      "rotationY": 0,
+      "height": 7.83,
+      "collider": {
+        "halfX": 3.8,
+        "halfZ": 3.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-living-17/city2-building-living-17.glb",
+      "x": 22.31,
+      "z": -32.22,
+      "rotationY": 0,
+      "height": 7.57,
+      "collider": {
+        "halfX": 4,
+        "halfZ": 3.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-living-19/city2-building-living-19.glb",
+      "x": 31.01,
+      "z": -32.22,
+      "rotationY": 0,
+      "height": 8.79,
+      "collider": {
+        "halfX": 4,
+        "halfZ": 3.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 14.5,
+      "z": -10.1,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 30.5,
+      "z": -10.1,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-tree-05/city2-tree-05.glb",
+      "x": 53.5,
+      "z": -36.5,
+      "rotationY": 0,
+      "height": 4.9,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-02/city2-tree-02.glb",
+      "x": 81.5,
+      "z": -36.5,
+      "rotationY": 0,
+      "height": 5.1,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-05/city2-tree-05.glb",
+      "x": 53.5,
+      "z": -8.5,
+      "rotationY": 0,
+      "height": 4.9,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-02/city2-tree-02.glb",
+      "x": 81.5,
+      "z": -8.5,
+      "rotationY": 0,
+      "height": 5.1,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": 53.5,
+      "z": -20.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": 81.5,
+      "z": -20.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-living-12/city2-building-living-12.glb",
+      "x": 59.01,
+      "z": -31.98,
+      "rotationY": 0,
+      "height": 8.89,
+      "collider": {
+        "halfX": 4,
+        "halfZ": 3.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-living-21/city2-building-living-21.glb",
+      "x": 69.55,
+      "z": -31.57,
+      "rotationY": 0,
+      "height": 7.92,
+      "collider": {
+        "halfX": 5.45,
+        "halfZ": 3.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 59.5,
+      "z": -10.1,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 75.5,
+      "z": -10.1,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-tree-06/city2-tree-06.glb",
+      "x": -81.5,
+      "z": -81.5,
+      "rotationY": 0,
+      "height": 4.82,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-04/city2-tree-04.glb",
+      "x": -53.5,
+      "z": -81.5,
+      "rotationY": 0,
+      "height": 4.52,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-04/city2-tree-04.glb",
+      "x": -81.5,
+      "z": -53.5,
+      "rotationY": 0,
+      "height": 4.52,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-07/city2-tree-07.glb",
+      "x": -53.5,
+      "z": -53.5,
+      "rotationY": 0,
+      "height": 4.21,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": -81.5,
+      "z": -65.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": -53.5,
+      "z": -65.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-business-05/city2-building-business-05.glb",
+      "x": -75.36,
+      "z": -76,
+      "rotationY": 0,
+      "height": 19.97,
+      "collider": {
+        "halfX": 5.15,
+        "halfZ": 4.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-business-09/city2-building-business-09.glb",
+      "x": -64.49,
+      "z": -76,
+      "rotationY": 0,
+      "height": 19.43,
+      "collider": {
+        "halfX": 5.15,
+        "halfZ": 4.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -75.5,
+      "z": -55.1,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -59.5,
+      "z": -55.1,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-tree-06/city2-tree-06.glb",
+      "x": 53.5,
+      "z": -81.5,
+      "rotationY": 0,
+      "height": 4.82,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-05/city2-tree-05.glb",
+      "x": 81.5,
+      "z": -81.5,
+      "rotationY": 0,
+      "height": 4.9,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-04/city2-tree-04.glb",
+      "x": 53.5,
+      "z": -53.5,
+      "rotationY": 0,
+      "height": 4.52,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-01/city2-tree-01.glb",
+      "x": 81.5,
+      "z": -53.5,
+      "rotationY": 0,
+      "height": 5.04,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": 53.5,
+      "z": -65.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-lamppost-01/city2-lamppost-01.glb",
+      "x": 81.5,
+      "z": -65.5,
+      "rotationY": 0,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-business-10/city2-building-business-10.glb",
+      "x": 81.75,
+      "z": -102,
+      "rotationY": 0,
+      "height": 12.6,
+      "collider": {
+        "halfX": 4.55,
+        "halfZ": 4.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-business-05/city2-building-business-05.glb",
+      "x": 91.75,
+      "z": -102.75,
+      "rotationY": 0,
+      "height": 19.97,
+      "collider": {
+        "halfX": 5.15,
+        "halfZ": 4.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 75.5,
+      "z": -55.1,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-traffic-light-01/city2-traffic-light-01.glb",
+      "x": -39.4,
+      "z": -39.4,
+      "rotationY": 0,
+      "height": 3.53,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -50.6,
+      "z": -36,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-traffic-light-01/city2-traffic-light-01.glb",
+      "x": -39.4,
+      "z": 5.6,
+      "rotationY": 0,
+      "height": 3.53,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -50.6,
+      "z": 9,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-traffic-light-01/city2-traffic-light-01.glb",
+      "x": 5.6,
+      "z": -39.4,
+      "rotationY": 0,
+      "height": 3.53,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -5.6,
+      "z": -36,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-traffic-light-01/city2-traffic-light-01.glb",
+      "x": 5.6,
+      "z": 5.6,
+      "rotationY": 0,
+      "height": 3.53,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -5.6,
+      "z": 9,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-traffic-light-01/city2-traffic-light-01.glb",
+      "x": 50.6,
+      "z": -39.4,
+      "rotationY": 0,
+      "height": 3.53,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 39.4,
+      "z": -36,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-traffic-light-01/city2-traffic-light-01.glb",
+      "x": 50.6,
+      "z": 5.6,
+      "rotationY": 0,
+      "height": 3.53,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.15
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 39.4,
+      "z": 9,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-building-business-02/city2-building-business-02.glb",
+      "x": -27,
+      "z": 14.25,
+      "rotationY": 0,
+      "height": 22.8,
+      "collider": {
+        "halfX": 3.7,
+        "halfZ": 4.1
+      }
+    },
+    {
+      "model": "town/library/city2-stadium-01/city2-stadium-01.glb",
+      "x": 0,
+      "z": -106,
+      "rotationY": 0,
+      "height": 23,
+      "collider": {
+        "halfX": 50.9,
+        "halfZ": 46.05
+      },
+      "fade": true,
+      "elevation": 0.1
+    },
+    {
+      "model": "town/library/city2-car-25/city2-car-25.glb",
+      "x": -36.25,
+      "z": -14.75,
+      "rotationY": 0,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-building-living-27/city2-building-living-27.glb",
+      "x": -27,
+      "z": -11.5,
+      "rotationY": 0,
+      "height": 9.35,
+      "collider": {
+        "halfX": 6.5,
+        "halfZ": 3.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-07/city2-car-07.glb",
+      "x": -75.5,
+      "z": 62.5,
+      "rotationY": 0,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-08/city2-car-08.glb",
+      "x": -71.5,
+      "z": 62.5,
+      "rotationY": 0,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-12/city2-car-12.glb",
+      "x": -67.5,
+      "z": 62.5,
+      "rotationY": 0,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-16/city2-car-16.glb",
+      "x": -63.5,
+      "z": 62.5,
+      "rotationY": 0,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-17/city2-car-17.glb",
+      "x": -59.5,
+      "z": 62.5,
+      "rotationY": 0,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-26/city2-car-26.glb",
+      "x": -75.5,
+      "z": 72.5,
+      "rotationY": 3.141592653589793,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-28/city2-car-28.glb",
+      "x": -71.5,
+      "z": 72.5,
+      "rotationY": 3.141592653589793,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-35/city2-car-35.glb",
+      "x": -67.5,
+      "z": 72.5,
+      "rotationY": 3.141592653589793,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-39/city2-car-39.glb",
+      "x": -63.5,
+      "z": 72.5,
+      "rotationY": 3.141592653589793,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-42/city2-car-42.glb",
+      "x": -59.5,
+      "z": 72.5,
+      "rotationY": 3.141592653589793,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-fountain-01/city2-fountain-01.glb",
+      "x": -22.5,
+      "z": 67.5,
+      "rotationY": 0,
+      "height": 3.72,
+      "collider": {
+        "halfX": 2.95,
+        "halfZ": 2.95
+      }
+    },
+    {
+      "model": "town/library/city2-tree-02/city2-tree-02.glb",
+      "x": -31.5,
+      "z": 58.5,
+      "rotationY": 1.4,
+      "height": 4.8,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-03/city2-tree-03.glb",
+      "x": -22.5,
+      "z": 58.5,
+      "rotationY": 2.0999999999999996,
+      "height": 4.8,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-04/city2-tree-04.glb",
+      "x": -13.5,
+      "z": 58.5,
+      "rotationY": 2.8,
+      "height": 4.8,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-05/city2-tree-05.glb",
+      "x": -31.5,
+      "z": 67.5,
+      "rotationY": 3.5,
+      "height": 4.8,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-06/city2-tree-06.glb",
+      "x": -13.5,
+      "z": 67.5,
+      "rotationY": 4.199999999999999,
+      "height": 4.8,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-07/city2-tree-07.glb",
+      "x": -31.5,
+      "z": 76.5,
+      "rotationY": 4.8999999999999995,
+      "height": 4.8,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-01/city2-tree-01.glb",
+      "x": -22.5,
+      "z": 76.5,
+      "rotationY": 5.6,
+      "height": 4.8,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-tree-02/city2-tree-02.glb",
+      "x": -13.5,
+      "z": 76.5,
+      "rotationY": 6.3,
+      "height": 4.8,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.2
+      }
+    },
+    {
+      "model": "town/library/city2-building-snack-09/city2-building-snack-09.glb",
+      "x": 15.5,
+      "z": 60,
+      "rotationY": 0,
+      "height": 9.8,
+      "collider": {
+        "halfX": 5.05,
+        "halfZ": 3.9
+      }
+    },
+    {
+      "model": "town/library/city2-building-supermarket-04/city2-building-supermarket-04.glb",
+      "x": 29.5,
+      "z": 60,
+      "rotationY": 0,
+      "height": 7.22,
+      "collider": {
+        "halfX": 5.25,
+        "halfZ": 3.25
+      }
+    },
+    {
+      "model": "town/library/city2-building-living-12/city2-building-living-12.glb",
+      "x": 15.5,
+      "z": 75.5,
+      "rotationY": 3.141592653589793,
+      "height": 8.89,
+      "collider": {
+        "halfX": 4,
+        "halfZ": 3.3
+      }
+    },
+    {
+      "model": "town/library/city2-building-living-17/city2-building-living-17.glb",
+      "x": 29.5,
+      "z": 75.5,
+      "rotationY": 3.141592653589793,
+      "height": 7.57,
+      "collider": {
+        "halfX": 4,
+        "halfZ": 3.25
+      }
+    },
+    {
+      "model": "town/library/city2-statue-01/city2-statue-01.glb",
+      "x": 67.5,
+      "z": 65.5,
+      "rotationY": 0,
+      "height": 5.21,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 1.9
+      }
+    },
+    {
+      "model": "town/library/city2-car-26/city2-car-26.glb",
+      "x": 59.5,
+      "z": 75.5,
+      "rotationY": 3.141592653589793,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-28/city2-car-28.glb",
+      "x": 63.5,
+      "z": 75.5,
+      "rotationY": 3.141592653589793,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-35/city2-car-35.glb",
+      "x": 67.5,
+      "z": 75.5,
+      "rotationY": 3.141592653589793,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-39/city2-car-39.glb",
+      "x": 71.5,
+      "z": 75.5,
+      "rotationY": 3.141592653589793,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-42/city2-car-42.glb",
+      "x": 75.5,
+      "z": 75.5,
+      "rotationY": 3.141592653589793,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -76.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -73.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -70.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -67.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -64.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -61.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -58.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -76.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -73.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -70.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -67.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -64.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -61.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -58.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -79.5,
+      "z": 58.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -79.5,
+      "z": 61.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -79.5,
+      "z": 64.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -79.5,
+      "z": 67.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -79.5,
+      "z": 70.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -79.5,
+      "z": 73.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -79.5,
+      "z": 76.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -55.5,
+      "z": 58.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -55.5,
+      "z": 61.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -55.5,
+      "z": 64.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -55.5,
+      "z": 67.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -55.5,
+      "z": 70.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -55.5,
+      "z": 73.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -55.5,
+      "z": 76.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -64.5,
+      "z": 10.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -61.5,
+      "z": 10.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -58.5,
+      "z": 10.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -76.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -73.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -70.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -67.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -64.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -61.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -58.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -79.5,
+      "z": 13.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -79.5,
+      "z": 16.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -79.5,
+      "z": 19.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -79.5,
+      "z": 22.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -79.5,
+      "z": 25.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -79.5,
+      "z": 28.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -79.5,
+      "z": 31.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -55.5,
+      "z": 13.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -55.5,
+      "z": 16.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -55.5,
+      "z": 19.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -55.5,
+      "z": 22.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -55.5,
+      "z": 25.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -55.5,
+      "z": 28.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -55.5,
+      "z": 31.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -73.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -70.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -67.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -64.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -61.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -79.5,
+      "z": -25.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -79.5,
+      "z": -22.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -79.5,
+      "z": -19.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -79.5,
+      "z": -16.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -79.5,
+      "z": -13.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -55.5,
+      "z": -25.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -55.5,
+      "z": -22.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -55.5,
+      "z": -19.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -55.5,
+      "z": -16.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -55.5,
+      "z": -13.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -73.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -70.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -79.5,
+      "z": -70.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -79.5,
+      "z": -67.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -79.5,
+      "z": -64.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -79.5,
+      "z": -61.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -79.5,
+      "z": -58.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -31.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -28.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -25.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -22.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -19.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -16.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -13.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -31.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -28.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -25.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -22.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -19.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -16.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -13.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -34.5,
+      "z": 58.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -34.5,
+      "z": 61.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -34.5,
+      "z": 64.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -34.5,
+      "z": 67.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -34.5,
+      "z": 70.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -34.5,
+      "z": 73.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -34.5,
+      "z": 76.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -10.5,
+      "z": 58.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -10.5,
+      "z": 61.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -10.5,
+      "z": 64.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -10.5,
+      "z": 67.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -10.5,
+      "z": 70.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -10.5,
+      "z": 73.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -10.5,
+      "z": 76.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -31.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -28.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -25.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -22.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -19.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -16.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -13.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -34.5,
+      "z": 13.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -34.5,
+      "z": 16.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -34.5,
+      "z": 28.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -34.5,
+      "z": 31.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -10.5,
+      "z": 13.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -10.5,
+      "z": 16.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -10.5,
+      "z": 19.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -10.5,
+      "z": 22.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -10.5,
+      "z": 25.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -10.5,
+      "z": 28.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -10.5,
+      "z": 31.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -19.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -16.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -13.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -34.5,
+      "z": -25.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -34.5,
+      "z": -22.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -34.5,
+      "z": -19.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -10.5,
+      "z": -25.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -10.5,
+      "z": -22.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -10.5,
+      "z": -19.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -10.5,
+      "z": -16.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -10.5,
+      "z": -13.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -31.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -28.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -25.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": -22.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": -19.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -16.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": -13.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": -34.5,
+      "z": -58.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": -10.5,
+      "z": -58.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 22.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 25.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 28.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 31.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 22.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 10.5,
+      "z": 67.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 10.5,
+      "z": 70.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 10.5,
+      "z": 73.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 10.5,
+      "z": 76.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 34.5,
+      "z": 64.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 34.5,
+      "z": 67.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 34.5,
+      "z": 70.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 34.5,
+      "z": 73.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 34.5,
+      "z": 76.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 31.5,
+      "z": 10.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 16.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 19.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 22.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 25.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 28.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 10.5,
+      "z": 19.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 10.5,
+      "z": 22.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 10.5,
+      "z": 25.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 10.5,
+      "z": 28.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 10.5,
+      "z": 31.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 34.5,
+      "z": 13.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 34.5,
+      "z": 16.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 34.5,
+      "z": 19.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 34.5,
+      "z": 22.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 34.5,
+      "z": 25.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 34.5,
+      "z": 28.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 34.5,
+      "z": 31.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 16.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 19.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 22.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 25.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 28.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 10.5,
+      "z": -25.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 10.5,
+      "z": -22.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 10.5,
+      "z": -19.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 10.5,
+      "z": -16.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 10.5,
+      "z": -13.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 34.5,
+      "z": -25.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 34.5,
+      "z": -22.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 34.5,
+      "z": -19.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 34.5,
+      "z": -16.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 34.5,
+      "z": -13.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 13.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 16.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 19.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 22.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 25.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 28.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 31.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 10.5,
+      "z": -58.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 34.5,
+      "z": -58.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 58.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 61.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 64.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 67.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 70.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 73.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 76.5,
+      "z": 55.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 58.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 61.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 64.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 67.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 70.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 73.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 76.5,
+      "z": 79.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 55.5,
+      "z": 58.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 55.5,
+      "z": 61.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 55.5,
+      "z": 64.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 55.5,
+      "z": 67.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 55.5,
+      "z": 70.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 55.5,
+      "z": 73.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 55.5,
+      "z": 76.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 79.5,
+      "z": 58.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 79.5,
+      "z": 61.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 79.5,
+      "z": 64.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 79.5,
+      "z": 67.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 79.5,
+      "z": 70.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 79.5,
+      "z": 73.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 79.5,
+      "z": 76.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 76.5,
+      "z": 10.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 61.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 64.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 67.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 70.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 73.5,
+      "z": 34.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 55.5,
+      "z": 19.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 55.5,
+      "z": 22.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 55.5,
+      "z": 25.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 55.5,
+      "z": 28.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 55.5,
+      "z": 31.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 79.5,
+      "z": 13.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 79.5,
+      "z": 16.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 79.5,
+      "z": 19.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 79.5,
+      "z": 22.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 79.5,
+      "z": 25.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 79.5,
+      "z": 28.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 79.5,
+      "z": 31.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 76.5,
+      "z": -34.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 61.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 64.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 67.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 70.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 73.5,
+      "z": -10.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 55.5,
+      "z": -25.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 55.5,
+      "z": -22.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 55.5,
+      "z": -19.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 55.5,
+      "z": -16.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 55.5,
+      "z": -13.5,
+      "rotationY": -1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 79.5,
+      "z": -31.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 79.5,
+      "z": -28.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 79.5,
+      "z": -25.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 79.5,
+      "z": -22.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 79.5,
+      "z": -19.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 79.5,
+      "z": -16.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 79.5,
+      "z": -13.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 67.5,
+      "z": -79.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 70.5,
+      "z": -79.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 73.5,
+      "z": -79.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 76.5,
+      "z": -79.5,
+      "rotationY": 3.141592653589793,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 67.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 70.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 73.5,
+      "z": -55.5,
+      "rotationY": 0,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 79.5,
+      "z": -76.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 79.5,
+      "z": -73.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-02/city2-trash-can-02.glb",
+      "x": 79.5,
+      "z": -70.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-bench-02/city2-bench-02.glb",
+      "x": 79.5,
+      "z": -67.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-05/city2-trash-can-05.glb",
+      "x": 79.5,
+      "z": -64.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    },
+    {
+      "model": "town/library/city2-hydrant-01/city2-hydrant-01.glb",
+      "x": 79.5,
+      "z": -61.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      }
+    },
+    {
+      "model": "town/library/city2-trash-can-03/city2-trash-can-03.glb",
+      "x": 79.5,
+      "z": -58.5,
+      "rotationY": 1.5707963267948966,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      }
+    }
+  ],
+  "roads": {
+    "cells": [
+      [
+        -6,
+        -6
+      ],
+      [
+        -6,
+        -5
+      ],
+      [
+        -6,
+        -4
+      ],
+      [
+        -6,
+        -3
+      ],
+      [
+        -6,
+        -2
+      ],
+      [
+        -6,
+        -1
+      ],
+      [
+        -6,
+        0
+      ],
+      [
+        -6,
+        1
+      ],
+      [
+        -6,
+        2
+      ],
+      [
+        -6,
+        3
+      ],
+      [
+        -3,
+        -3,
+        1
+      ],
+      [
+        -3,
+        -2
+      ],
+      [
+        -3,
+        -1
+      ],
+      [
+        -3,
+        0,
+        1
+      ],
+      [
+        -3,
+        1
+      ],
+      [
+        -3,
+        2
+      ],
+      [
+        -3,
+        3
+      ],
+      [
+        0,
+        -3,
+        1
+      ],
+      [
+        0,
+        -2
+      ],
+      [
+        0,
+        -1
+      ],
+      [
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        3
+      ],
+      [
+        3,
+        -3,
+        1
+      ],
+      [
+        3,
+        -2,
+        2
+      ],
+      [
+        3,
+        -1
+      ],
+      [
+        3,
+        0,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        3,
+        3
+      ],
+      [
+        6,
+        -6
+      ],
+      [
+        6,
+        -5
+      ],
+      [
+        6,
+        -4
+      ],
+      [
+        6,
+        -3
+      ],
+      [
+        6,
+        -2
+      ],
+      [
+        6,
+        -1
+      ],
+      [
+        6,
+        0
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        3
+      ],
+      [
+        -5,
+        -6
+      ],
+      [
+        -4,
+        -6
+      ],
+      [
+        4,
+        -6
+      ],
+      [
+        5,
+        -6
+      ],
+      [
+        -5,
+        -3
+      ],
+      [
+        -4,
+        -3
+      ],
+      [
+        -2,
+        -3
+      ],
+      [
+        -1,
+        -3
+      ],
+      [
+        1,
+        -3
+      ],
+      [
+        2,
+        -3
+      ],
+      [
+        4,
+        -3
+      ],
+      [
+        5,
+        -3
+      ],
+      [
+        -5,
+        0
+      ],
+      [
+        -4,
+        0
+      ],
+      [
+        -2,
+        0
+      ],
+      [
+        -1,
+        0
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        2,
+        0
+      ],
+      [
+        4,
+        0
+      ],
+      [
+        5,
+        0
+      ],
+      [
+        -5,
+        3
+      ],
+      [
+        -4,
+        3
+      ],
+      [
+        -2,
+        3
+      ],
+      [
+        -1,
+        3
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        4,
+        3
+      ],
+      [
+        5,
+        3
+      ],
+      [
+        4,
+        -5
+      ],
+      [
+        4,
+        -4
+      ],
+      [
+        -4,
+        -5
+      ],
+      [
+        -4,
+        -4
+      ],
+      [
+        -6,
+        4
+      ],
+      [
+        -6,
+        5
+      ],
+      [
+        -6,
+        6
+      ],
+      [
+        -3,
+        4
+      ],
+      [
+        -3,
+        5
+      ],
+      [
+        -3,
+        6
+      ],
+      [
+        0,
+        4
+      ],
+      [
+        0,
+        5
+      ],
+      [
+        0,
+        6
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        3,
+        6
+      ],
+      [
+        6,
+        4
+      ],
+      [
+        6,
+        5
+      ],
+      [
+        6,
+        6
+      ],
+      [
+        -5,
+        6
+      ],
+      [
+        -4,
+        6
+      ],
+      [
+        -2,
+        6
+      ],
+      [
+        -1,
+        6
+      ],
+      [
+        1,
+        6
+      ],
+      [
+        2,
+        6
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        5,
+        6
+      ]
+    ]
+  },
+  "traffic": {
+    "waypoints": [],
+    "links": [],
+    "cars": [
+      {
+        "at": "r-6_-6",
+        "model": "town/library/city2-car-07/city2-car-07.glb"
+      },
+      {
+        "at": "r-6_0",
+        "model": "town/library/city2-car-08/city2-car-08.glb"
+      },
+      {
+        "at": "r-3_0",
+        "model": "town/library/city2-car-16/city2-car-16.glb"
+      },
+      {
+        "at": "r0_0",
+        "model": "town/library/city2-car-25/city2-car-25.glb"
+      },
+      {
+        "at": "r3_0",
+        "model": "town/library/city2-car-28/city2-car-28.glb"
+      },
+      {
+        "at": "r6_-6",
+        "model": "town/library/city2-car-35/city2-car-35.glb"
+      },
+      {
+        "at": "r6_0",
+        "model": "town/library/city2-car-36/city2-car-36.glb"
+      },
+      {
+        "at": "r-3_6",
+        "model": "town/library/city2-car-12/city2-car-12.glb"
+      },
+      {
+        "at": "r0_6",
+        "model": "town/library/city2-car-17/city2-car-17.glb"
+      },
+      {
+        "at": "r3_6",
+        "model": "town/library/city2-car-26/city2-car-26.glb"
+      },
+      {
+        "at": "r-6_5",
+        "model": "town/library/city2-car-39/city2-car-39.glb"
+      },
+      {
+        "at": "r6_5",
+        "model": "town/library/city2-car-42/city2-car-42.glb"
+      },
+      {
+        "at": "r0_4",
+        "model": "town/library/city2-car-45/city2-car-45.glb"
+      }
+    ]
+  },
+  "colliders": [],
+  "people": {
+    "areas": [
+      {
+        "x": -67.5,
+        "z": 27,
+        "width": 27,
+        "depth": 15,
+        "count": 3
+      },
+      {
+        "x": -24,
+        "z": 31.5,
+        "width": 13,
+        "depth": 8,
+        "count": 4
+      },
+      {
+        "x": 22.5,
+        "z": 27,
+        "width": 22,
+        "depth": 11,
+        "count": 3
+      },
+      {
+        "x": 67.5,
+        "z": 27,
+        "width": 22,
+        "depth": 11,
+        "count": 3
+      },
+      {
+        "x": -67.5,
+        "z": -18,
+        "width": 22,
+        "depth": 11,
+        "count": 3
+      },
+      {
+        "x": 22.5,
+        "z": -18,
+        "width": 26,
+        "depth": 15.5,
+        "count": 3
+      },
+      {
+        "x": 67.5,
+        "z": -18,
+        "width": 22,
+        "depth": 11,
+        "count": 3
+      },
+      {
+        "x": -67,
+        "z": -62.25,
+        "width": 25.5,
+        "depth": 15,
+        "count": 3
+      },
+      {
+        "x": 75,
+        "z": -67.25,
+        "width": 12.5,
+        "depth": 27,
+        "count": 3
+      },
+      {
+        "x": -22.5,
+        "z": 67.5,
+        "width": 23,
+        "depth": 23,
+        "count": 8
+      },
+      {
+        "x": 22.5,
+        "z": 67.5,
+        "width": 23,
+        "depth": 7,
+        "count": 5
+      },
+      {
+        "x": 67.5,
+        "z": 64.5,
+        "width": 23,
+        "depth": 15,
+        "count": 7
+      }
+    ],
+    "waypoints": [
+      {
+        "id": "p1",
+        "x": -81.5,
+        "z": 53.5
+      },
+      {
+        "id": "p2",
+        "x": -67.5,
+        "z": 53.5
+      },
+      {
+        "id": "p3",
+        "x": -53.5,
+        "z": 53.5
+      },
+      {
+        "id": "p4",
+        "x": -53.5,
+        "z": 67.5
+      },
+      {
+        "id": "p5",
+        "x": -53.5,
+        "z": 81.5
+      },
+      {
+        "id": "p6",
+        "x": -67.5,
+        "z": 81.5
+      },
+      {
+        "id": "p7",
+        "x": -81.5,
+        "z": 81.5
+      },
+      {
+        "id": "p8",
+        "x": -81.5,
+        "z": 67.5
+      },
+      {
+        "id": "p9",
+        "x": -81.5,
+        "z": 8.5
+      },
+      {
+        "id": "p10",
+        "x": -67.5,
+        "z": 8.5
+      },
+      {
+        "id": "p11",
+        "x": -53.5,
+        "z": 8.5
+      },
+      {
+        "id": "p12",
+        "x": -53.5,
+        "z": 22.5
+      },
+      {
+        "id": "p13",
+        "x": -53.5,
+        "z": 36.5
+      },
+      {
+        "id": "p14",
+        "x": -67.5,
+        "z": 36.5
+      },
+      {
+        "id": "p15",
+        "x": -81.5,
+        "z": 36.5
+      },
+      {
+        "id": "p16",
+        "x": -81.5,
+        "z": 22.5
+      },
+      {
+        "id": "p17",
+        "x": -81.5,
+        "z": -36.5
+      },
+      {
+        "id": "p18",
+        "x": -67.5,
+        "z": -36.5
+      },
+      {
+        "id": "p19",
+        "x": -53.5,
+        "z": -36.5
+      },
+      {
+        "id": "p20",
+        "x": -53.5,
+        "z": -22.5
+      },
+      {
+        "id": "p21",
+        "x": -53.5,
+        "z": -8.5
+      },
+      {
+        "id": "p22",
+        "x": -67.5,
+        "z": -8.5
+      },
+      {
+        "id": "p23",
+        "x": -81.5,
+        "z": -8.5
+      },
+      {
+        "id": "p24",
+        "x": -81.5,
+        "z": -22.5
+      },
+      {
+        "id": "p25",
+        "x": -81.5,
+        "z": -81.5
+      },
+      {
+        "id": "p26",
+        "x": -67.5,
+        "z": -81.5
+      },
+      {
+        "id": "p27",
+        "x": -53.5,
+        "z": -81.5
+      },
+      {
+        "id": "p28",
+        "x": -53.5,
+        "z": -67.5
+      },
+      {
+        "id": "p29",
+        "x": -53.5,
+        "z": -53.5
+      },
+      {
+        "id": "p30",
+        "x": -67.5,
+        "z": -53.5
+      },
+      {
+        "id": "p31",
+        "x": -81.5,
+        "z": -53.5
+      },
+      {
+        "id": "p32",
+        "x": -81.5,
+        "z": -67.5
+      },
+      {
+        "id": "p33",
+        "x": -36.5,
+        "z": 53.5
+      },
+      {
+        "id": "p34",
+        "x": -22.5,
+        "z": 53.5
+      },
+      {
+        "id": "p35",
+        "x": -8.5,
+        "z": 53.5
+      },
+      {
+        "id": "p36",
+        "x": -8.5,
+        "z": 67.5
+      },
+      {
+        "id": "p37",
+        "x": -8.5,
+        "z": 81.5
+      },
+      {
+        "id": "p38",
+        "x": -22.5,
+        "z": 81.5
+      },
+      {
+        "id": "p39",
+        "x": -36.5,
+        "z": 81.5
+      },
+      {
+        "id": "p40",
+        "x": -36.5,
+        "z": 67.5
+      },
+      {
+        "id": "p41",
+        "x": -36.5,
+        "z": 8.5
+      },
+      {
+        "id": "p42",
+        "x": -22.5,
+        "z": 8.5
+      },
+      {
+        "id": "p43",
+        "x": -8.5,
+        "z": 8.5
+      },
+      {
+        "id": "p44",
+        "x": -8.5,
+        "z": 22.5
+      },
+      {
+        "id": "p45",
+        "x": -8.5,
+        "z": 36.5
+      },
+      {
+        "id": "p46",
+        "x": -22.5,
+        "z": 36.5
+      },
+      {
+        "id": "p47",
+        "x": -36.5,
+        "z": 36.5
+      },
+      {
+        "id": "p48",
+        "x": -36.5,
+        "z": 22.5
+      },
+      {
+        "id": "p49",
+        "x": -36.5,
+        "z": -36.5
+      },
+      {
+        "id": "p50",
+        "x": -22.5,
+        "z": -36.5
+      },
+      {
+        "id": "p51",
+        "x": -8.5,
+        "z": -22.5
+      },
+      {
+        "id": "p52",
+        "x": -8.5,
+        "z": -8.5
+      },
+      {
+        "id": "p53",
+        "x": -36.5,
+        "z": -22.5
+      },
+      {
+        "id": "p54",
+        "x": -8.5,
+        "z": -53.5
+      },
+      {
+        "id": "p55",
+        "x": -22.5,
+        "z": -53.5
+      },
+      {
+        "id": "p56",
+        "x": -36.5,
+        "z": -53.5
+      },
+      {
+        "id": "p57",
+        "x": 8.5,
+        "z": 53.5
+      },
+      {
+        "id": "p58",
+        "x": 22.5,
+        "z": 53.5
+      },
+      {
+        "id": "p59",
+        "x": 36.5,
+        "z": 53.5
+      },
+      {
+        "id": "p60",
+        "x": 36.5,
+        "z": 67.5
+      },
+      {
+        "id": "p61",
+        "x": 36.5,
+        "z": 81.5
+      },
+      {
+        "id": "p62",
+        "x": 22.5,
+        "z": 81.5
+      },
+      {
+        "id": "p63",
+        "x": 8.5,
+        "z": 81.5
+      },
+      {
+        "id": "p64",
+        "x": 8.5,
+        "z": 67.5
+      },
+      {
+        "id": "p65",
+        "x": 8.5,
+        "z": 8.5
+      },
+      {
+        "id": "p66",
+        "x": 22.5,
+        "z": 8.5
+      },
+      {
+        "id": "p67",
+        "x": 36.5,
+        "z": 8.5
+      },
+      {
+        "id": "p68",
+        "x": 36.5,
+        "z": 22.5
+      },
+      {
+        "id": "p69",
+        "x": 36.5,
+        "z": 36.5
+      },
+      {
+        "id": "p70",
+        "x": 22.5,
+        "z": 36.5
+      },
+      {
+        "id": "p71",
+        "x": 8.5,
+        "z": 36.5
+      },
+      {
+        "id": "p72",
+        "x": 8.5,
+        "z": 22.5
+      },
+      {
+        "id": "p73",
+        "x": 8.5,
+        "z": -36.5
+      },
+      {
+        "id": "p74",
+        "x": 22.5,
+        "z": -36.5
+      },
+      {
+        "id": "p75",
+        "x": 36.5,
+        "z": -36.5
+      },
+      {
+        "id": "p76",
+        "x": 36.5,
+        "z": -22.5
+      },
+      {
+        "id": "p77",
+        "x": 36.5,
+        "z": -8.5
+      },
+      {
+        "id": "p78",
+        "x": 22.5,
+        "z": -8.5
+      },
+      {
+        "id": "p79",
+        "x": 8.5,
+        "z": -8.5
+      },
+      {
+        "id": "p80",
+        "x": 8.5,
+        "z": -22.5
+      },
+      {
+        "id": "p81",
+        "x": 36.5,
+        "z": -53.5
+      },
+      {
+        "id": "p82",
+        "x": 22.5,
+        "z": -53.5
+      },
+      {
+        "id": "p83",
+        "x": 8.5,
+        "z": -53.5
+      },
+      {
+        "id": "p84",
+        "x": 53.5,
+        "z": 53.5
+      },
+      {
+        "id": "p85",
+        "x": 67.5,
+        "z": 53.5
+      },
+      {
+        "id": "p86",
+        "x": 81.5,
+        "z": 53.5
+      },
+      {
+        "id": "p87",
+        "x": 81.5,
+        "z": 67.5
+      },
+      {
+        "id": "p88",
+        "x": 81.5,
+        "z": 81.5
+      },
+      {
+        "id": "p89",
+        "x": 67.5,
+        "z": 81.5
+      },
+      {
+        "id": "p90",
+        "x": 53.5,
+        "z": 81.5
+      },
+      {
+        "id": "p91",
+        "x": 53.5,
+        "z": 67.5
+      },
+      {
+        "id": "p92",
+        "x": 53.5,
+        "z": 8.5
+      },
+      {
+        "id": "p93",
+        "x": 67.5,
+        "z": 8.5
+      },
+      {
+        "id": "p94",
+        "x": 81.5,
+        "z": 8.5
+      },
+      {
+        "id": "p95",
+        "x": 81.5,
+        "z": 22.5
+      },
+      {
+        "id": "p96",
+        "x": 81.5,
+        "z": 36.5
+      },
+      {
+        "id": "p97",
+        "x": 67.5,
+        "z": 36.5
+      },
+      {
+        "id": "p98",
+        "x": 53.5,
+        "z": 36.5
+      },
+      {
+        "id": "p99",
+        "x": 53.5,
+        "z": 22.5
+      },
+      {
+        "id": "p100",
+        "x": 53.5,
+        "z": -36.5
+      },
+      {
+        "id": "p101",
+        "x": 67.5,
+        "z": -36.5
+      },
+      {
+        "id": "p102",
+        "x": 81.5,
+        "z": -36.5
+      },
+      {
+        "id": "p103",
+        "x": 81.5,
+        "z": -22.5
+      },
+      {
+        "id": "p104",
+        "x": 81.5,
+        "z": -8.5
+      },
+      {
+        "id": "p105",
+        "x": 67.5,
+        "z": -8.5
+      },
+      {
+        "id": "p106",
+        "x": 53.5,
+        "z": -8.5
+      },
+      {
+        "id": "p107",
+        "x": 53.5,
+        "z": -22.5
+      },
+      {
+        "id": "p108",
+        "x": 53.5,
+        "z": -81.5
+      },
+      {
+        "id": "p109",
+        "x": 67.5,
+        "z": -81.5
+      },
+      {
+        "id": "p110",
+        "x": 81.5,
+        "z": -81.5
+      },
+      {
+        "id": "p111",
+        "x": 81.5,
+        "z": -67.5
+      },
+      {
+        "id": "p112",
+        "x": 81.5,
+        "z": -53.5
+      },
+      {
+        "id": "p113",
+        "x": 67.5,
+        "z": -53.5
+      },
+      {
+        "id": "p114",
+        "x": 53.5,
+        "z": -53.5
+      },
+      {
+        "id": "p115",
+        "x": 53.5,
+        "z": -67.5
+      }
+    ],
+    "links": [
+      [
+        "p1",
+        "p2"
+      ],
+      [
+        "p2",
+        "p3"
+      ],
+      [
+        "p3",
+        "p4"
+      ],
+      [
+        "p4",
+        "p5"
+      ],
+      [
+        "p5",
+        "p6"
+      ],
+      [
+        "p6",
+        "p7"
+      ],
+      [
+        "p7",
+        "p8"
+      ],
+      [
+        "p8",
+        "p1"
+      ],
+      [
+        "p9",
+        "p10"
+      ],
+      [
+        "p10",
+        "p11"
+      ],
+      [
+        "p11",
+        "p12"
+      ],
+      [
+        "p12",
+        "p13"
+      ],
+      [
+        "p13",
+        "p14"
+      ],
+      [
+        "p14",
+        "p15"
+      ],
+      [
+        "p15",
+        "p16"
+      ],
+      [
+        "p16",
+        "p9"
+      ],
+      [
+        "p17",
+        "p18"
+      ],
+      [
+        "p18",
+        "p19"
+      ],
+      [
+        "p19",
+        "p20"
+      ],
+      [
+        "p20",
+        "p21"
+      ],
+      [
+        "p21",
+        "p22"
+      ],
+      [
+        "p22",
+        "p23"
+      ],
+      [
+        "p23",
+        "p24"
+      ],
+      [
+        "p24",
+        "p17"
+      ],
+      [
+        "p25",
+        "p26"
+      ],
+      [
+        "p26",
+        "p27"
+      ],
+      [
+        "p27",
+        "p28"
+      ],
+      [
+        "p28",
+        "p29"
+      ],
+      [
+        "p29",
+        "p30"
+      ],
+      [
+        "p30",
+        "p31"
+      ],
+      [
+        "p31",
+        "p32"
+      ],
+      [
+        "p32",
+        "p25"
+      ],
+      [
+        "p33",
+        "p34"
+      ],
+      [
+        "p34",
+        "p35"
+      ],
+      [
+        "p35",
+        "p36"
+      ],
+      [
+        "p36",
+        "p37"
+      ],
+      [
+        "p37",
+        "p38"
+      ],
+      [
+        "p38",
+        "p39"
+      ],
+      [
+        "p39",
+        "p40"
+      ],
+      [
+        "p40",
+        "p33"
+      ],
+      [
+        "p41",
+        "p42"
+      ],
+      [
+        "p42",
+        "p43"
+      ],
+      [
+        "p43",
+        "p44"
+      ],
+      [
+        "p44",
+        "p45"
+      ],
+      [
+        "p46",
+        "p47"
+      ],
+      [
+        "p47",
+        "p48"
+      ],
+      [
+        "p48",
+        "p41"
+      ],
+      [
+        "p49",
+        "p50"
+      ],
+      [
+        "p51",
+        "p52"
+      ],
+      [
+        "p53",
+        "p49"
+      ],
+      [
+        "p54",
+        "p55"
+      ],
+      [
+        "p55",
+        "p56"
+      ],
+      [
+        "p57",
+        "p58"
+      ],
+      [
+        "p58",
+        "p59"
+      ],
+      [
+        "p59",
+        "p60"
+      ],
+      [
+        "p60",
+        "p61"
+      ],
+      [
+        "p61",
+        "p62"
+      ],
+      [
+        "p62",
+        "p63"
+      ],
+      [
+        "p63",
+        "p64"
+      ],
+      [
+        "p64",
+        "p57"
+      ],
+      [
+        "p65",
+        "p66"
+      ],
+      [
+        "p66",
+        "p67"
+      ],
+      [
+        "p67",
+        "p68"
+      ],
+      [
+        "p68",
+        "p69"
+      ],
+      [
+        "p69",
+        "p70"
+      ],
+      [
+        "p70",
+        "p71"
+      ],
+      [
+        "p71",
+        "p72"
+      ],
+      [
+        "p72",
+        "p65"
+      ],
+      [
+        "p73",
+        "p74"
+      ],
+      [
+        "p74",
+        "p75"
+      ],
+      [
+        "p75",
+        "p76"
+      ],
+      [
+        "p76",
+        "p77"
+      ],
+      [
+        "p77",
+        "p78"
+      ],
+      [
+        "p78",
+        "p79"
+      ],
+      [
+        "p79",
+        "p80"
+      ],
+      [
+        "p80",
+        "p73"
+      ],
+      [
+        "p81",
+        "p82"
+      ],
+      [
+        "p82",
+        "p83"
+      ],
+      [
+        "p84",
+        "p85"
+      ],
+      [
+        "p85",
+        "p86"
+      ],
+      [
+        "p86",
+        "p87"
+      ],
+      [
+        "p87",
+        "p88"
+      ],
+      [
+        "p88",
+        "p89"
+      ],
+      [
+        "p89",
+        "p90"
+      ],
+      [
+        "p90",
+        "p91"
+      ],
+      [
+        "p91",
+        "p84"
+      ],
+      [
+        "p92",
+        "p93"
+      ],
+      [
+        "p93",
+        "p94"
+      ],
+      [
+        "p94",
+        "p95"
+      ],
+      [
+        "p95",
+        "p96"
+      ],
+      [
+        "p96",
+        "p97"
+      ],
+      [
+        "p97",
+        "p98"
+      ],
+      [
+        "p98",
+        "p99"
+      ],
+      [
+        "p99",
+        "p92"
+      ],
+      [
+        "p100",
+        "p101"
+      ],
+      [
+        "p101",
+        "p102"
+      ],
+      [
+        "p102",
+        "p103"
+      ],
+      [
+        "p103",
+        "p104"
+      ],
+      [
+        "p104",
+        "p105"
+      ],
+      [
+        "p105",
+        "p106"
+      ],
+      [
+        "p106",
+        "p107"
+      ],
+      [
+        "p107",
+        "p100"
+      ],
+      [
+        "p108",
+        "p109"
+      ],
+      [
+        "p109",
+        "p110"
+      ],
+      [
+        "p110",
+        "p111"
+      ],
+      [
+        "p111",
+        "p112"
+      ],
+      [
+        "p112",
+        "p113"
+      ],
+      [
+        "p113",
+        "p114"
+      ],
+      [
+        "p114",
+        "p115"
+      ],
+      [
+        "p115",
+        "p108"
+      ],
+      [
+        "p4",
+        "p40"
+      ],
+      [
+        "p36",
+        "p64"
+      ],
+      [
+        "p60",
+        "p91"
+      ],
+      [
+        "p12",
+        "p48"
+      ],
+      [
+        "p44",
+        "p72"
+      ],
+      [
+        "p68",
+        "p99"
+      ],
+      [
+        "p20",
+        "p53"
+      ],
+      [
+        "p51",
+        "p80"
+      ],
+      [
+        "p76",
+        "p107"
+      ],
+      [
+        "p2",
+        "p14"
+      ],
+      [
+        "p10",
+        "p22"
+      ],
+      [
+        "p18",
+        "p30"
+      ],
+      [
+        "p34",
+        "p46"
+      ],
+      [
+        "p50",
+        "p55"
+      ],
+      [
+        "p58",
+        "p70"
+      ],
+      [
+        "p66",
+        "p78"
+      ],
+      [
+        "p74",
+        "p82"
+      ],
+      [
+        "p85",
+        "p97"
+      ],
+      [
+        "p93",
+        "p105"
+      ],
+      [
+        "p101",
+        "p113"
+      ]
+    ],
+    "walkers": 42
+  },
+  "atms": [],
+  "wardrobes": [],
+  "sections": [],
+  "grassPatches": [],
+  "sounds": [
+    {
+      "id": "sea-north",
+      "sound": "ocean-ambient",
+      "x": 0,
+      "z": -148.75,
+      "width": 223,
+      "depth": 18.5,
+      "fade": 10,
+      "volume": 0.15
+    },
+    {
+      "id": "sea-south",
+      "sound": "ocean-ambient",
+      "x": 0,
+      "z": 107.5,
+      "width": 223,
+      "depth": 10,
+      "fade": 10,
+      "volume": 0.15
+    },
+    {
+      "id": "sea-west",
+      "sound": "ocean-ambient",
+      "x": -107.5,
+      "z": 0,
+      "width": 10,
+      "depth": 223,
+      "fade": 10,
+      "volume": 0.15
+    },
+    {
+      "id": "sea-east",
+      "sound": "ocean-ambient",
+      "x": 107.5,
+      "z": 0,
+      "width": 10,
+      "depth": 223,
+      "fade": 10,
+      "volume": 0.15
+    },
+    {
+      "id": "park-downtown",
+      "sound": "park-ambience",
+      "x": -22.5,
+      "z": 22.5,
+      "width": 22,
+      "depth": 22,
+      "fade": 8,
+      "volume": 0.25
+    },
+    {
+      "id": "park-south",
+      "sound": "park-ambience",
+      "x": -22.5,
+      "z": 67.5,
+      "width": 25,
+      "depth": 25,
+      "fade": 8,
+      "volume": 0.25
+    }
+  ],
+  "secrets": [],
+  "grassNoise": {
+    "centre": {
+      "x": 0,
+      "z": 0
+    },
+    "scale": 0.2,
+    "rings": [
+      {
+        "upTo": 999,
+        "mix": {}
+      }
+    ]
+  }
+}

@@ -1,5 +1,6 @@
 // UFO: fly a saucer over a town and eat it, growing as you go (see README.md).
 
+import SoundManager from 'core/audio/SoundManager';
 import { Game } from 'core/Game';
 import HtmlLoader from 'core/loader/HtmlLoader';
 import PlatformHandler from 'core/platforms/PlatformHandler';
@@ -10,7 +11,10 @@ import * as PIXI from 'pixi.js';
 
 import loaderConfig from './loader.config';
 import platformConfig from './platforms.config.json';
+import { UfoAudio } from './game/audio/UfoAudio';
 import UfoScene from './game/scenes/UfoScene';
+import { goToNextLevel, nextLevelName } from './game/data/UfoConfig';
+import { RadialTransition } from './game/ui/RadialTransition';
 
 type PlatformConfigEntry = { gameId?: string; enableAds?: boolean; folderPath?: string };
 
@@ -23,12 +27,15 @@ export default class UfoGame extends Game {
     private sceneManager!: SceneManager;
     private loaderScene: HtmlLoader;
     private scenes = 0;
+    /** A transition to another level is under way (a second tap doesn't start another). */
+    private travelling = false;
 
     public constructor() {
         super({ resolution: Math.min(2, devicePixelRatio), backgroundAlpha: 0 }, false);
         this.loaderScene = new HtmlLoader(loaderConfig);
         PIXI.Ticker.shared.maxFPS = 60;
         this.folderPath = 'ufo';
+        SoundManager.STORAGE_ID = 'ufo.';
         this.initialize();
     }
 
@@ -42,12 +49,14 @@ export default class UfoGame extends Game {
             PlatformHandler.ENABLE_VIDEO_ADS = config?.enableAds ?? true;
             await PlatformHandler.instance.initialize(await getPlatformInstance(platformName));
             PlatformHandler.instance.platform.startLoad();
+            UfoAudio.initialize(this.folderPath);
             this.stageContainer.addChild(this.gameContainer);
             this.sceneManager = new SceneManager(this.gameContainer);
             await Promise.all(FONTS.map(async (family) => {
                 const face = new FontFace(family, `url(./${this.folderPath}/fonts/${family}.woff2) format('woff2')`);
                 document.fonts.add(await face.load());
             }));
+            await PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`);
             DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'ufo');
             const scene = this.buildScene();
             await Promise.race([scene.ready, new Promise((resolve) => window.setTimeout(resolve, MAX_SCENE_WAIT_MS))]);
@@ -58,13 +67,28 @@ export default class UfoGame extends Game {
         }
     }
 
-    /** A fresh scene (the old one torn down): at boot, and on PLAY AGAIN. */
+    /** A fresh scene (the old one torn down): at boot, and on to the next level (behind the transition). */
     private buildScene(): UfoScene {
         const key = `ufo-${this.scenes++}`;
-        const scene = this.sceneManager.register<UfoScene>(key, UfoScene, this, () => this.buildScene());
+        const scene = this.sceneManager.register<UfoScene>(key, UfoScene, this, () => void this.nextLevel());
         this.sceneManager.changeScene(key);
         this.sceneManager.resize();
         return scene;
+    }
+
+    /** The screen covers over, showing where it's going; the next level's built behind that; the cover opens on it. */
+    private async nextLevel(): Promise<void> {
+        if (this.travelling) return;
+        this.travelling = true;
+        UfoAudio.whoosh();
+        const transition = new RadialTransition(this);
+        await transition.cover(nextLevelName().toUpperCase(), 'NEXT CITY');
+        goToNextLevel();
+        const scene = this.buildScene();
+        await Promise.race([scene.ready, new Promise((resolve) => window.setTimeout(resolve, MAX_SCENE_WAIT_MS))]);
+        await transition.reveal();
+        transition.destroy();
+        this.travelling = false;
     }
 
     protected override update(delta: number): void {

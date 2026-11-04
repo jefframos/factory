@@ -4,6 +4,7 @@
 // the world.
 
 import * as THREE from 'three';
+import { beamLight, beamLightGlsl } from '../services/BeamLight';
 import { bendUniforms } from '../services/Bend';
 
 /** Pieces per side: the plane is hundreds of units wide, and only its vertices bend. */
@@ -28,12 +29,15 @@ uniform vec3 uDeep;
 uniform vec3 uMid;
 uniform vec3 uBright;
 varying vec2 vWorldXZ;
+${beamLightGlsl}
 void main() {
     float x = vWorldXZ.x * 2.5;
     float z = vWorldXZ.y * 2.5;
     float h = sin(x * 0.35 + time * 1.4) * 0.14 + sin(z * 0.28 + time) * 0.10 + sin((x - z) * 0.22 + time * 1.8) * 0.06;
     float blob = clamp((h + 0.3) / 0.6, 0.0, 1.0);
     vec3 color = blob < 0.35 ? uDeep : blob < 0.7 ? uMid : uBright;
+    // The beam's light where it spills past the shore (its colour is linear; this shader writes straight to the screen).
+    color = mix(color, pow(uBeamColor, vec3(0.4545)), beamLightAt(vec3(vWorldXZ.x, 0.0, vWorldXZ.y)));
     gl_FragColor = vec4(color, 1.0);
 }
 `;
@@ -48,7 +52,7 @@ function tone(color: THREE.Color, shade: number): THREE.Vector3 {
 export function createWater(color: string, width: number, depth: number): THREE.Mesh {
     const base = new THREE.Color(color);
     const material = new THREE.ShaderMaterial({
-        uniforms: { time: { value: 0 }, uDeep: { value: tone(base, -0.12) }, uMid: { value: tone(base, 0) }, uBright: { value: tone(base, 0.12) }, uBendOrigin: bendUniforms.uBendOrigin, uBendStrength: bendUniforms.uBendStrength },
+        uniforms: { time: { value: 0 }, uDeep: { value: tone(base, -0.12) }, uMid: { value: tone(base, 0) }, uBright: { value: tone(base, 0.12) }, uBendOrigin: bendUniforms.uBendOrigin, uBendStrength: bendUniforms.uBendStrength, ...beamLight },
         vertexShader,
         fragmentShader,
     });

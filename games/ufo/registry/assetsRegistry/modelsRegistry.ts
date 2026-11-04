@@ -478,6 +478,17 @@ const PeoplePerson08 = {
 }
 } as const;
 
+const SaucerSaucer = {
+  id: 'saucer',
+  path: 'saucer/saucer',
+  fullPath: 'ufo/models/saucer/saucer.glb',
+  format: 'glb',
+  nodes: {
+  "Saucer": "saucer",
+  "Guns": "guns"
+}
+} as const;
+
 const TownBench = {
   id: 'bench',
   path: 'town/city/bench',
@@ -628,6 +639,126 @@ const TownCity2Bench01 = {
 }
 } as const;
 
+const TownCity2Bench02 = {
+  id: 'city2-bench-02',
+  path: 'town/library/city2-bench-02/city2-bench-02',
+  fullPath: 'ufo/models/town/library/city2-bench-02/city2-bench-02.glb',
+  format: 'glb',
+  nodes: {
+  "Bench02": "Bench_02"
+}
+} as const;
+
+const TownCity2BuildingBusiness02 = {
+  id: 'city2-building-business-02',
+  path: 'town/library/city2-building-business-02/city2-building-business-02',
+  fullPath: 'ufo/models/town/library/city2-building-business-02/city2-building-business-02.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingBusiness02": "Building_Business_02"
+}
+} as const;
+
+const TownCity2BuildingBusiness05 = {
+  id: 'city2-building-business-05',
+  path: 'town/library/city2-building-business-05/city2-building-business-05',
+  fullPath: 'ufo/models/town/library/city2-building-business-05/city2-building-business-05.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingBusiness05": "Building_Business_05"
+}
+} as const;
+
+const TownCity2BuildingBusiness09 = {
+  id: 'city2-building-business-09',
+  path: 'town/library/city2-building-business-09/city2-building-business-09',
+  fullPath: 'ufo/models/town/library/city2-building-business-09/city2-building-business-09.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingBusiness09": "Building_Business_09"
+}
+} as const;
+
+const TownCity2BuildingBusiness10 = {
+  id: 'city2-building-business-10',
+  path: 'town/library/city2-building-business-10/city2-building-business-10',
+  fullPath: 'ufo/models/town/library/city2-building-business-10/city2-building-business-10.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingBusiness10": "Building_Business_10"
+}
+} as const;
+
+const TownCity2BuildingLiving03 = {
+  id: 'city2-building-living-03',
+  path: 'town/library/city2-building-living-03/city2-building-living-03',
+  fullPath: 'ufo/models/town/library/city2-building-living-03/city2-building-living-03.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving03": "Building_Living_03"
+}
+} as const;
+
+const TownCity2BuildingLiving09 = {
+  id: 'city2-building-living-09',
+  path: 'town/library/city2-building-living-09/city2-building-living-09',
+  fullPath: 'ufo/models/town/library/city2-building-living-09/city2-building-living-09.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving09": "Building_Living_09"
+}
+} as const;
+
+const TownCity2BuildingLiving12 = {
+  id: 'city2-building-living-12',
+  path: 'town/library/city2-building-living-12/city2-building-living-12',
+  fullPath: 'ufo/models/town/library/city2-building-living-12/city2-building-living-12.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving12": "Building_Living_12"
+}
+} as const;
+
+const TownCity2BuildingLiving17 = {
+  id: 'city2-building-living-17',
+  path: 'town/library/city2-building-living-17/city2-building-living-17',
+  fullPath: 'ufo/models/town/library/city2-building-living-17/city2-building-living-17.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving17": "Building_Living_17"
+}
+} as const;
+
+const TownCity2BuildingLiving19 = {
+  id: 'city2-building-living-19',
+  path: 'town/library/city2-building-living-19/city2-building-living-19',
+  fullPath: 'ufo/models/town/library/city2-building-living-19/city2-building-living-19.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving19": "Building_Living_19"
+}
+} as const;
+
+const TownCity2BuildingLiving21 = {
+  id: 'city2-building-living-21',
+  path: 'town/library/city2-building-living-21/city2-building-living-21',
+  fullPath: 'ufo/models/town/library/city2-building-living-21/city2-building-living-21.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving21": "Building_Living_21"
+}
+} as const;
+
+const TownCity2BuildingLiving27 = {
+  id: 'city2-building-living-27',
+  path: 'town/library/city2-building-living-27/city2-building-living-27',
+  fullPath: 'ufo/models/town/library/city2-building-living-27/city2-building-living-27.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving27": "Building_Living_27"
+}
+} as const;
+
 const TownCity2BuildingLiving31 = {
   id: 'city2-building-living-31',
   path: 'town/library/city2-building-living-31/city2-building-living-31',
@@ -638,6 +769,36 @@ const TownCity2BuildingLiving31 = {
 }
 } as const;
 
+const TownCity2BuildingLiving46 = {
+  id: 'city2-building-living-46',
+  path: 'town/library/city2-building-living-46/city2-building-living-46',
+  fullPath: 'ufo/models/town/library/city2-building-living-46/city2-building-living-46.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving46": "Building_Living_46"
+}
+} as const;
+
+const TownCity2BuildingService04 = {
+  id: 'city2-building-service-04',
+  path: 'town/library/city2-building-service-04/city2-building-service-04',
+  fullPath: 'ufo/models/town/library/city2-building-service-04/city2-building-service-04.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingService04": "Building_Service_04"
+}
+} as const;
+
+const TownCity2BuildingService06 = {
+  id: 'city2-building-service-06',
+  path: 'town/library/city2-building-service-06/city2-building-service-06',
+  fullPath: 'ufo/models/town/library/city2-building-service-06/city2-building-service-06.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingService06": "Building_Service_06"
+}
+} as const;
+
 const TownCity2BuildingService07 = {
   id: 'city2-building-service-07',
   path: 'town/library/city2-building-service-07/city2-building-service-07',
@@ -645,6 +806,56 @@ const TownCity2BuildingService07 = {
   format: 'glb',
   nodes: {
   "BuildingService07": "Building_Service_07"
+}
+} as const;
+
+const TownCity2BuildingService09 = {
+  id: 'city2-building-service-09',
+  path: 'town/library/city2-building-service-09/city2-building-service-09',
+  fullPath: 'ufo/models/town/library/city2-building-service-09/city2-building-service-09.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingService09": "Building_Service_09"
+}
+} as const;
+
+const TownCity2BuildingService10 = {
+  id: 'city2-building-service-10',
+  path: 'town/library/city2-building-service-10/city2-building-service-10',
+  fullPath: 'ufo/models/town/library/city2-building-service-10/city2-building-service-10.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingService10": "Building_Service_10"
+}
+} as const;
+
+const TownCity2BuildingSnack09 = {
+  id: 'city2-building-snack-09',
+  path: 'town/library/city2-building-snack-09/city2-building-snack-09',
+  fullPath: 'ufo/models/town/library/city2-building-snack-09/city2-building-snack-09.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingSnack09": "Building_Snack_09"
+}
+} as const;
+
+const TownCity2BuildingSupermarket04 = {
+  id: 'city2-building-supermarket-04',
+  path: 'town/library/city2-building-supermarket-04/city2-building-supermarket-04',
+  fullPath: 'ufo/models/town/library/city2-building-supermarket-04/city2-building-supermarket-04.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingSupermarket04": "Building_Supermarket_04"
+}
+} as const;
+
+const TownCity2BusStop01 = {
+  id: 'city2-bus-stop-01',
+  path: 'town/library/city2-bus-stop-01/city2-bus-stop-01',
+  fullPath: 'ufo/models/town/library/city2-bus-stop-01/city2-bus-stop-01.glb',
+  format: 'glb',
+  nodes: {
+  "BusStop01": "Bus_Stop_01"
 }
 } as const;
 
@@ -840,6 +1051,26 @@ const TownCity2Fountain01 = {
 }
 } as const;
 
+const TownCity2Hydrant01 = {
+  id: 'city2-hydrant-01',
+  path: 'town/library/city2-hydrant-01/city2-hydrant-01',
+  fullPath: 'ufo/models/town/library/city2-hydrant-01/city2-hydrant-01.glb',
+  format: 'glb',
+  nodes: {
+  "Hydrant01": "Hydrant_01"
+}
+} as const;
+
+const TownCity2Lamppost01 = {
+  id: 'city2-lamppost-01',
+  path: 'town/library/city2-lamppost-01/city2-lamppost-01',
+  fullPath: 'ufo/models/town/library/city2-lamppost-01/city2-lamppost-01.glb',
+  format: 'glb',
+  nodes: {
+  "Lamppost01": "Lamppost_01"
+}
+} as const;
+
 const TownCity2Road009 = {
   id: 'city2-road-009',
   path: 'town/library/city2-road-009/city2-road-009',
@@ -937,6 +1168,136 @@ const TownCity2Road029 = {
   format: 'glb',
   nodes: {
   "Road029": "road_029"
+}
+} as const;
+
+const TownCity2Stadium01 = {
+  id: 'city2-stadium-01',
+  path: 'town/library/city2-stadium-01/city2-stadium-01',
+  fullPath: 'ufo/models/town/library/city2-stadium-01/city2-stadium-01.glb',
+  format: 'glb',
+  nodes: {
+  "Stadium01": "Stadium_01"
+}
+} as const;
+
+const TownCity2Statue01 = {
+  id: 'city2-statue-01',
+  path: 'town/library/city2-statue-01/city2-statue-01',
+  fullPath: 'ufo/models/town/library/city2-statue-01/city2-statue-01.glb',
+  format: 'glb',
+  nodes: {
+  "Statue01": "Statue_01"
+}
+} as const;
+
+const TownCity2TrafficLight01 = {
+  id: 'city2-traffic-light-01',
+  path: 'town/library/city2-traffic-light-01/city2-traffic-light-01',
+  fullPath: 'ufo/models/town/library/city2-traffic-light-01/city2-traffic-light-01.glb',
+  format: 'glb',
+  nodes: {
+  "TrafficLight01": "Traffic_Light_01"
+}
+} as const;
+
+const TownCity2TrashCan02 = {
+  id: 'city2-trash-can-02',
+  path: 'town/library/city2-trash-can-02/city2-trash-can-02',
+  fullPath: 'ufo/models/town/library/city2-trash-can-02/city2-trash-can-02.glb',
+  format: 'glb',
+  nodes: {
+  "TrashCan02": "Trash_Can_02"
+}
+} as const;
+
+const TownCity2TrashCan03 = {
+  id: 'city2-trash-can-03',
+  path: 'town/library/city2-trash-can-03/city2-trash-can-03',
+  fullPath: 'ufo/models/town/library/city2-trash-can-03/city2-trash-can-03.glb',
+  format: 'glb',
+  nodes: {
+  "TrashCan03": "Trash_Can_03"
+}
+} as const;
+
+const TownCity2TrashCan05 = {
+  id: 'city2-trash-can-05',
+  path: 'town/library/city2-trash-can-05/city2-trash-can-05',
+  fullPath: 'ufo/models/town/library/city2-trash-can-05/city2-trash-can-05.glb',
+  format: 'glb',
+  nodes: {
+  "TrashCan05": "Trash_Can_05"
+}
+} as const;
+
+const TownCity2Tree01 = {
+  id: 'city2-tree-01',
+  path: 'town/library/city2-tree-01/city2-tree-01',
+  fullPath: 'ufo/models/town/library/city2-tree-01/city2-tree-01.glb',
+  format: 'glb',
+  nodes: {
+  "Tree01": "Tree_01"
+}
+} as const;
+
+const TownCity2Tree02 = {
+  id: 'city2-tree-02',
+  path: 'town/library/city2-tree-02/city2-tree-02',
+  fullPath: 'ufo/models/town/library/city2-tree-02/city2-tree-02.glb',
+  format: 'glb',
+  nodes: {
+  "Tree02": "Tree_02"
+}
+} as const;
+
+const TownCity2Tree03 = {
+  id: 'city2-tree-03',
+  path: 'town/library/city2-tree-03/city2-tree-03',
+  fullPath: 'ufo/models/town/library/city2-tree-03/city2-tree-03.glb',
+  format: 'glb',
+  nodes: {
+  "Tree03": "Tree_03"
+}
+} as const;
+
+const TownCity2Tree04 = {
+  id: 'city2-tree-04',
+  path: 'town/library/city2-tree-04/city2-tree-04',
+  fullPath: 'ufo/models/town/library/city2-tree-04/city2-tree-04.glb',
+  format: 'glb',
+  nodes: {
+  "Tree04": "Tree_04"
+}
+} as const;
+
+const TownCity2Tree05 = {
+  id: 'city2-tree-05',
+  path: 'town/library/city2-tree-05/city2-tree-05',
+  fullPath: 'ufo/models/town/library/city2-tree-05/city2-tree-05.glb',
+  format: 'glb',
+  nodes: {
+  "Tree05": "Tree_05"
+}
+} as const;
+
+const TownCity2Tree06 = {
+  id: 'city2-tree-06',
+  path: 'town/library/city2-tree-06/city2-tree-06',
+  fullPath: 'ufo/models/town/library/city2-tree-06/city2-tree-06.glb',
+  format: 'glb',
+  nodes: {
+  "Tree06": "Tree_06"
+}
+} as const;
+
+const TownCity2Tree07 = {
+  id: 'city2-tree-07',
+  path: 'town/library/city2-tree-07/city2-tree-07',
+  fullPath: 'ufo/models/town/library/city2-tree-07/city2-tree-07.glb',
+  format: 'glb',
+  nodes: {
+  "Tree07": "Tree_07"
 }
 } as const;
 
@@ -1085,6 +1446,9 @@ export const MODELS = {
     Person07: PeoplePerson07,
     Person08: PeoplePerson08
   },
+  Saucer: {
+    Saucer: SaucerSaucer
+  },
   Town: {
     Bench: TownBench,
     BuildingAWithoutBase: TownBuildingAWithoutBase,
@@ -1101,8 +1465,28 @@ export const MODELS = {
     StreetlightOldDouble: TownStreetlightOldDouble,
     TrashA: TownTrashA,
     City2Bench01: TownCity2Bench01,
+    City2Bench02: TownCity2Bench02,
+    City2BuildingBusiness02: TownCity2BuildingBusiness02,
+    City2BuildingBusiness05: TownCity2BuildingBusiness05,
+    City2BuildingBusiness09: TownCity2BuildingBusiness09,
+    City2BuildingBusiness10: TownCity2BuildingBusiness10,
+    City2BuildingLiving03: TownCity2BuildingLiving03,
+    City2BuildingLiving09: TownCity2BuildingLiving09,
+    City2BuildingLiving12: TownCity2BuildingLiving12,
+    City2BuildingLiving17: TownCity2BuildingLiving17,
+    City2BuildingLiving19: TownCity2BuildingLiving19,
+    City2BuildingLiving21: TownCity2BuildingLiving21,
+    City2BuildingLiving27: TownCity2BuildingLiving27,
     City2BuildingLiving31: TownCity2BuildingLiving31,
+    City2BuildingLiving46: TownCity2BuildingLiving46,
+    City2BuildingService04: TownCity2BuildingService04,
+    City2BuildingService06: TownCity2BuildingService06,
     City2BuildingService07: TownCity2BuildingService07,
+    City2BuildingService09: TownCity2BuildingService09,
+    City2BuildingService10: TownCity2BuildingService10,
+    City2BuildingSnack09: TownCity2BuildingSnack09,
+    City2BuildingSupermarket04: TownCity2BuildingSupermarket04,
+    City2BusStop01: TownCity2BusStop01,
     City2Car07: TownCity2Car07,
     City2Car08: TownCity2Car08,
     City2Car12: TownCity2Car12,
@@ -1117,6 +1501,8 @@ export const MODELS = {
     City2Car42: TownCity2Car42,
     City2Car45: TownCity2Car45,
     City2Fountain01: TownCity2Fountain01,
+    City2Hydrant01: TownCity2Hydrant01,
+    City2Lamppost01: TownCity2Lamppost01,
     City2Road009: TownCity2Road009,
     City2Road010: TownCity2Road010,
     City2Road011: TownCity2Road011,
@@ -1127,6 +1513,19 @@ export const MODELS = {
     City2Road025: TownCity2Road025,
     City2Road026: TownCity2Road026,
     City2Road029: TownCity2Road029,
+    City2Stadium01: TownCity2Stadium01,
+    City2Statue01: TownCity2Statue01,
+    City2TrafficLight01: TownCity2TrafficLight01,
+    City2TrashCan02: TownCity2TrashCan02,
+    City2TrashCan03: TownCity2TrashCan03,
+    City2TrashCan05: TownCity2TrashCan05,
+    City2Tree01: TownCity2Tree01,
+    City2Tree02: TownCity2Tree02,
+    City2Tree03: TownCity2Tree03,
+    City2Tree04: TownCity2Tree04,
+    City2Tree05: TownCity2Tree05,
+    City2Tree06: TownCity2Tree06,
+    City2Tree07: TownCity2Tree07,
     HalloweenCrypt: TownHalloweenCrypt,
     MixedBag1IdolA: TownMixedBag1IdolA,
     Bush1AColor1: TownBush1AColor1,

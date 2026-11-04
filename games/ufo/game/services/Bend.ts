@@ -6,8 +6,11 @@
 //
 // Three.js culls by an object's unbent position, which the bend leaves well above where it's drawn: things pop out
 // while still on screen. BendCuller does that test at the bent position instead.
+//
+// Going through every material's shader anyway, this is also where the beam's light gets in (BeamLight.ts).
 
 import * as THREE from 'three';
+import { beamLight, beamLightGlsl } from './BeamLight';
 
 /** How long a piece of flat geometry gets (world units). */
 const SEGMENT = 1;
@@ -30,38 +33,48 @@ export function updateBend(origin: THREE.Vector3, strength: number): void {
 /**
  * Bends one material (once). A material's clone doesn't keep this: bend the clone too. Three.js picks compiled shaders
  * by a key, so the bend goes in the key or an unbent copy of the same material could share a program with this one.
+ * `litByBeam`: whether the beam's light falls on it (not on the saucer itself).
  */
-export function applyBend(material: THREE.Material): void {
+export function applyBend(material: THREE.Material, litByBeam = true): void {
     if (bent.has(material)) return;
     bent.add(material);
     const previousKey = material.customProgramCacheKey.bind(material);
-    material.customProgramCacheKey = () => `${previousKey()}|bend`;
+    material.customProgramCacheKey = () => `${previousKey()}|bend${litByBeam ? '|beam' : ''}`;
     const previous = material.onBeforeCompile;
     material.onBeforeCompile = (shader, renderer) => {
         previous(shader, renderer);
         shader.uniforms.uBendOrigin = bendUniforms.uBendOrigin;
         shader.uniforms.uBendStrength = bendUniforms.uBendStrength;
-        shader.vertexShader = `uniform vec3 uBendOrigin;\nuniform float uBendStrength;\n${shader.vertexShader}`.replace('#include <project_vertex>', `
+        shader.vertexShader = `${litByBeam ? 'varying vec3 vBeamWorld;\n' : ''}uniform vec3 uBendOrigin;\nuniform float uBendStrength;\n${shader.vertexShader}`.replace('#include <project_vertex>', `
             vec4 _bendLocal = vec4(transformed, 1.0);
             #ifdef USE_INSTANCING
                 _bendLocal = instanceMatrix * _bendLocal;
             #endif
             vec4 _bendWorld = modelMatrix * _bendLocal;
+            ${litByBeam ? 'vBeamWorld = _bendWorld.xyz;' : ''}
             float _bendX = _bendWorld.x - uBendOrigin.x;
             float _bendZ = _bendWorld.z - uBendOrigin.z;
             _bendWorld.y -= (_bendX * _bendX + _bendZ * _bendZ) * uBendStrength;
             vec4 mvPosition = viewMatrix * _bendWorld;
             gl_Position = projectionMatrix * mvPosition;
         `);
+        if (!litByBeam) return;
+        Object.assign(shader.uniforms, beamLight);
+        // Towards the light's colour, by how bright it was: what's under it still reads, and it never goes white.
+        shader.fragmentShader = `varying vec3 vBeamWorld;\n${beamLightGlsl}\n${shader.fragmentShader}`.replace('#include <opaque_fragment>', `
+            float _beamLum = dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722));
+            outgoingLight = mix(outgoingLight, uBeamColor * (0.35 + 1.1 * _beamLum), beamLightAt(vBeamWorld));
+            #include <opaque_fragment>
+        `);
     };
     material.needsUpdate = true;
 }
 
 /** Bends everything under `object`. */
-export function bendObject(object: THREE.Object3D): void {
+export function bendObject(object: THREE.Object3D, litByBeam = true): void {
     object.traverse((child) => {
         if (!(child instanceof THREE.Mesh)) return;
-        [child.material].flat().forEach((material) => applyBend(material));
+        [child.material].flat().forEach((material) => applyBend(material, litByBeam));
     });
 }
 

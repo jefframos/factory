@@ -8,7 +8,7 @@
 <style>
   /* The shared Town tab, without the mow game's cards. */
   section.card-section:has(#townSectionList), section.card-section:has(#townNoise), section.card-section:has(#townPatchList),
-  section.card-section:has(#townAtmList), section.card-section:has(#townWardrobeList), section.card-section:has(#townSoundList),
+  section.card-section:has(#townAtmList), section.card-section:has(#townWardrobeList),
   section.card-section:has(#townSecretList) { display: none; }
   .ufo-hidden { display: none !important; }
   .ufo-form { padding: 16px; max-width: 460px; overflow: auto; }
@@ -28,11 +28,13 @@
   <label id="levelPicker" title="The level you're editing (▶ Play opens the game in it)">Editing <select id="levelSelect"></select></label>
   <nav id="tabs">
     <button data-tab="town" class="tab active">🏙 Town</button>
+    <button data-tab="hangar" class="tab">👽 Hangar</button>
     <button data-tab="ufo" class="tab">🛸 UFO</button>
   </nav>
 </header>
 
 <section id="tab-town" class="tab-panel workspace"></section>
+<section id="tab-hangar" class="tab-panel workspace" hidden></section>
 <section id="tab-ufo" class="tab-panel" hidden></section>
 
 <div id="toast"></div>
@@ -41,6 +43,7 @@ import { api } from './shared.js';
 import { setModelCatalog } from './modelPicker.js';
 import { initTownTab, hasUnsavedTown, loadTown } from './town3d.js';
 import { initUfoTab, hasUnsavedUfo } from './ufoTab.js';
+import { initHangarTab, hasUnsavedHangar } from './hangar.js';
 
 const config = await api('/api/config');
 setModelCatalog(await api('/api/models'));
@@ -53,7 +56,7 @@ const levelUrl = (entry) => `/api/town?level=${encodeURIComponent(entry.level)}`
 await initTownTab(document.getElementById('tab-town'), { gameUrl: config.gameUrl, townUrl: levelUrl(level), city: level.id, people: true });
 
 // The buttons and the toggle that only mean something in the mow game.
-const MOW_ONLY = /ATM|Wardrobe|patch|Sound zone|Secret|Section|Grass preview/;
+const MOW_ONLY = /ATM|Wardrobe|patch|Secret|Section|Grass preview/;
 for (const control of document.querySelectorAll('#tab-town .sidebar.left button, #tab-town .toolbar label')) {
     if (MOW_ONLY.test(control.textContent)) control.classList.add('ufo-hidden');
 }
@@ -70,11 +73,16 @@ levelSelect.addEventListener('change', async () => {
 });
 
 let ufoReady = false;
+let hangarReady = false;
 for (const button of document.querySelectorAll('#tabs .tab')) {
     button.addEventListener('click', async () => {
         const tab = button.dataset.tab;
         document.querySelectorAll('#tabs .tab').forEach((other) => other.classList.toggle('active', other === button));
         document.querySelectorAll('.tab-panel').forEach((panel) => { panel.hidden = panel.id !== `tab-${tab}`; });
+        if (tab === 'hangar' && !hangarReady) {
+            hangarReady = true;
+            await initHangarTab(document.getElementById('tab-hangar'), { gameUrl: config.gameUrl });
+        }
         if (tab === 'ufo' && !ufoReady) {
             ufoReady = true;
             await initUfoTab(document.getElementById('tab-ufo'));
@@ -82,7 +90,7 @@ for (const button of document.querySelectorAll('#tabs .tab')) {
     });
 }
 window.addEventListener('beforeunload', (event) => {
-    if (hasUnsavedTown() || hasUnsavedUfo()) event.preventDefault();
+    if (hasUnsavedTown() || hasUnsavedUfo() || hasUnsavedHangar()) event.preventDefault();
 });
 </script>
 </body>

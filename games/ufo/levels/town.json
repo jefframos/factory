@@ -2573,7 +2573,58 @@
   "wardrobes": [],
   "sections": [],
   "grassPatches": [],
-  "sounds": [],
+  "sounds": [
+    {
+      "id": "sea-north",
+      "sound": "ocean-ambient",
+      "x": 0,
+      "z": -49,
+      "width": 104,
+      "depth": 10,
+      "fade": 10,
+      "volume": 0.15
+    },
+    {
+      "id": "sea-south",
+      "sound": "ocean-ambient",
+      "x": 0,
+      "z": 38,
+      "width": 104,
+      "depth": 10,
+      "fade": 10,
+      "volume": 0.15
+    },
+    {
+      "id": "sea-west",
+      "sound": "ocean-ambient",
+      "x": -49,
+      "z": -6,
+      "width": 10,
+      "depth": 86,
+      "fade": 10,
+      "volume": 0.15
+    },
+    {
+      "id": "sea-east",
+      "sound": "ocean-ambient",
+      "x": 49,
+      "z": -6,
+      "width": 10,
+      "depth": 86,
+      "fade": 10,
+      "volume": 0.15
+    },
+    {
+      "id": "sound-5",
+      "sound": "park-ambience",
+      "x": 0.5,
+      "z": 7.25,
+      "width": 15.5,
+      "depth": 12.75,
+      "fade": 10,
+      "volume": 0.2
+    }
+  ],
   "secrets": [],
   "grassNoise": {
     "centre": {
@@ -2896,5 +2947,6 @@
       "near": 3,
       "far": 14
     }
-  }
+  },
+  "next": "city2"
 }
