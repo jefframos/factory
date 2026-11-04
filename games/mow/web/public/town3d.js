@@ -30,6 +30,10 @@
 // diorama instead (options.townUrl: /api/mapshots/custom?zone=…), a level shaped like town.json. A diorama is only a
 // picture, so its editor keeps only what makes the view (props, pavements, grass patches, the shore, the lawn): no
 // stations, start, noise rings, sounds, secrets, traffic or unlocking (`town-only` controls are hidden).
+//
+// People (options.people: only a game that asks for it, so far UFO): the level's `people`. Wander areas are rects cast
+// down on what's under them: green dots on the ground, pink ones on a roof, and a game's people stand on those. Street
+// paths are waypoints and links like the traffic's, in violet: D adds the next point, linked to the selected one.
 
 import * as THREE from 'three';
 import { createGLTFLoader } from './gltf.js';
@@ -68,6 +72,8 @@ const moveStarts = new Map();
 let snap = true;
 let showGrass = true;
 let showTraffic = true;
+/** Whether this game has people (options.people). */
+let peopleOn = false;
 /** 🔗 Link: the next waypoint clicked is linked to (or unlinked from) the selected one. */
 let linking = false;
 let gameUrl = 'http://localhost:9001/';
@@ -115,6 +121,7 @@ export async function initTownTab(container, options = {}) {
     townUrl = options.townUrl ?? townUrl;
     playCity = options.city ?? playCity;
     diorama = Boolean(options.diorama);
+    peopleOn = Boolean(options.people);
     host.classList.toggle('diorama', diorama);
     if (diorama) showTraffic = false;
     mow = await api('/api/mow');
@@ -163,6 +170,13 @@ async function reload() {
     town.secrets ??= [];
     town.colliders ??= [];
     town.traffic ??= { waypoints: [], links: [], cars: [] };
+    if (peopleOn) {
+        town.people ??= {};
+        town.people.areas ??= [];
+        town.people.waypoints ??= [];
+        town.people.links ??= [];
+        town.people.walkers ??= 0;
+    }
     if (town.roads) syncRoadTraffic();
     town.soundSettings ??= structuredClone(DEFAULT_SOUND_SETTINGS);
     town.grassNoise ??= { centre: { x: 0, z: 0 }, scale: 0.2, rings: [{ upTo: 999, mix: { grass: 1 } }] };
@@ -275,6 +289,15 @@ function buildLayout() {
                 el('h2', {}, 'Secrets'),
                 el('p', { class: 'muted small' }, 'Secret patches (gold boxes): a clump of lush grass anywhere in town; mowing it through gives up a chest worth its reward. A twinkle shows over it when the player is near.'),
                 el('ul', { id: 'townSecretList', class: 'list' })),
+            peopleOn ? el('section', { class: 'card-section' },
+                el('h2', {}, 'People'),
+                el('p', { class: 'muted small' }, 'Wander areas: people hang around in them, on the ground or on a roof (the dots show where they can stand). Street paths: walkers follow them, and wait for cars where one crosses a road. Alt+click another point links or unlinks it.'),
+                el('div', { class: 'stack' },
+                    el('button', { class: 'block', onclick: () => addPeopleArea() }, '🌳 Wander area'),
+                    el('button', { class: 'block', onclick: () => addPeoplePoint() }, '🚶 Street path point')),
+                el('div', { id: 'townPeopleWalkers' }),
+                el('ul', { id: 'townPeopleAreaList', class: 'list' }),
+                el('div', { id: 'townPeopleSummary', class: 'muted small' })) : '',
             el('section', { class: 'card-section town-only' },
                 el('h2', {}, 'Collider cubes'),
                 el('p', { class: 'muted small' }, 'Boxes for a model its own bounds fit badly (a stadium): solid ones (blue) block walking, and any can fade a prop (amber edge) while the player is in or touching it. Only in the editor: the game doesn\'t draw them.'),
@@ -344,6 +367,7 @@ function setupViewport(viewport) {
     roadHover.visible = false;
     roadHover.raycast = () => {};
     scene.add(sun, groundGroup, roadGroup, grassGroup, trafficGroup, entityGroup, highlightGroup, roadHover);
+    if (peopleOn) scene.add(peopleGroup);
 
     camera = new THREE.PerspectiveCamera(45, 1, 0.1, 800);
     camera.position.set(0, 34, 30);
@@ -458,7 +482,7 @@ function onKey(event) {
 }
 
 /** Flat things (sections, pavements, patches) lose to anything standing on them. */
-const FLAT_TYPES = new Set(['section', 'pavement', 'patch', 'sound', 'pen', 'road']);
+const FLAT_TYPES = new Set(['section', 'pavement', 'patch', 'sound', 'pen', 'road', 'peopleArea']);
 
 function pickAt(event) {
     const rect = renderer.domElement.getBoundingClientRect();
@@ -486,6 +510,11 @@ function pickAt(event) {
     // Linking: a waypoint clicked with one selected (Alt, or 🔗 Link) links / unlinks the two.
     if (picked?.type === 'waypoint' && selection?.type === 'waypoint' && picked.index !== selection.index && (linking || event.altKey)) {
         toggleLink(selection.index, picked.index);
+        linking = false;
+        return select(picked);
+    }
+    if (picked?.type === 'peoplePoint' && selection?.type === 'peoplePoint' && picked.index !== selection.index && (linking || event.altKey)) {
+        togglePeopleLink(selection.index, picked.index);
         linking = false;
         return select(picked);
     }
@@ -753,7 +782,7 @@ function rebuildGrass() {
 
 const keyOf = (sel) => `${sel.type}:${sel.index}`;
 const LISTS = { collider: 'colliders', prop: 'props', atm: 'atms', wardrobe: 'wardrobes', pavement: 'pavements', section: 'sections', patch: 'grassPatches', sound: 'sounds', secret: 'secrets' };
-const listOf = (type) => (type === 'waypoint' ? town.traffic.waypoints : type === 'road' ? town.roads?.cells ?? null : LISTS[type] ? town[LISTS[type]] : null);
+const listOf = (type) => (type === 'peopleArea' ? town.people?.areas ?? null : type === 'peoplePoint' ? town.people?.waypoints ?? null : type === 'waypoint' ? town.traffic.waypoints : type === 'road' ? town.roads?.cells ?? null : LISTS[type] ? town[LISTS[type]] : null);
 const hex = (color) => `#${color.toString(16).padStart(6, '0')}`;
 const grassColor = (id) => (id === 'none' ? '#c9b48a' : id === 'auto' ? '#9be37a' : (mow.grass.find((g) => g.id === id)?.color ?? '#5cbf4a'));
 const grassName = (id) => (id === 'none' ? 'no grass' : id === 'auto' ? 'noise' : (mow.grass.find((g) => g.id === id)?.name ?? id));
@@ -846,6 +875,12 @@ function rebuildEntities() {
     town.wardrobes.forEach((wardrobe, index) => addHolder({ type: 'wardrobe', index }, buildStation(wardrobe, town.wardrobe, 'WARDROBE', '#e266c8')));
     town.island?.outline?.forEach((point, index) => addHolder({ type: 'shore', index }, buildShorePoint(point, index)));
     renderTraffic();
+    if (peopleOn) {
+        town.people.areas.forEach((area, index) => addHolder({ type: 'peopleArea', index }, buildPeopleArea(area, index)));
+        town.people.waypoints.forEach((point, index) => addHolder({ type: 'peoplePoint', index }, buildPeoplePoint(point)));
+        renderPeoplePaths();
+        queuePeopleCast();
+    }
     // A diorama is only a picture: no stations' markers, start, noise centre, sounds, secrets or traffic.
     if (!diorama) {
         town.sounds.forEach((zone, index) => addHolder({ type: 'sound', index }, buildSound(zone)));
@@ -1174,7 +1209,7 @@ const round = (value, step = 0.001) => Number((Math.round(value / step) * step).
 /** Things that turn (the rest only move / resize). */
 const TURNS = new Set(['prop', 'atm', 'wardrobe', 'patch', 'separator']);
 /** Things whose size is width x depth (scaling changes those, not a height). */
-const SIZED = new Set(['pavement', 'section', 'patch', 'sound', 'pen', 'secret', 'collider']);
+const SIZED = new Set(['pavement', 'section', 'patch', 'sound', 'pen', 'secret', 'collider', 'peopleArea']);
 
 /** The gizmo moved/turned the holder: write it back into the data. */
 function syncFromGizmo() {
@@ -1207,6 +1242,8 @@ function syncFromGizmo() {
     const types = new Set(selected().map((sel) => sel.type));
     if (types.has('shore')) rebuildGround();
     if (types.has('waypoint')) renderTraffic();
+    if (types.has('peoplePoint')) renderPeoplePaths();
+    if (types.has('peopleArea')) queuePeopleCast();
     updateHighlights();
     setDirty(true);
 }
@@ -1406,6 +1443,13 @@ function insertShorePoint(index) {
 function duplicateSelection() {
     if (selection?.type === 'shore') return insertShorePoint(selection.index);
     if (selection?.type === 'waypoint') return addWaypoint();
+    if (selection?.type === 'peoplePoint') return addPeoplePoint();
+    if (selection?.type === 'peopleArea') {
+        const area = entityData(selection);
+        touch();
+        town.people.areas.push({ ...area, x: area.x + 1, z: area.z + 1 });
+        return added('peopleArea');
+    }
     if (!selection || !LISTS[selection.type] || selection.type === 'section') return;
     const data = entityData(selection);
     touch();
@@ -1428,6 +1472,7 @@ function removeSelection() {
         if (sel.type === 'separator') delete town.sections[sel.index].separator;
         else if (sel.type === 'pen') delete town.sections[sel.index].pen;
         else if (sel.type === 'waypoint') removeWaypoint(sel.index);
+        else if (sel.type === 'peoplePoint') removePeoplePoint(sel.index);
         else if (sel.type === 'shore') town.island.outline.splice(sel.index, 1);
         else listOf(sel.type).splice(sel.index, 1);
     }
@@ -1528,6 +1573,160 @@ function buildWaypoint(point) {
     label.scale.multiplyScalar(0.7);
     holder.add(disc, post, label);
     return holder;
+}
+
+// ---------------------------------------------------------------- people
+
+/** Paths and cast dots: a picture, so clicks go through. */
+const peopleGroup = new THREE.Group();
+const PEOPLE = { path: 0xb48cff, point: '#b48cff', area: 0x7fe08a, ground: 0x7fe08a, roof: 0xff6bd5, y: 0.36 };
+/** The same rules as the game's cast (game/world/People.ts): every this many units, on props at least this wide each way. */
+const PEOPLE_CELL = 1;
+const ROOF_MIN_HALF = 1.5;
+const FLAT_NORMAL = 0.75;
+let peopleCastTimer = 0;
+
+function buildPeopleArea(area, index) {
+    const holder = new THREE.Group();
+    holder.position.set(area.x, 0, area.z);
+    const fill = plane(area.width, area.depth, hex(PEOPLE.area), 0.26, 0.18);
+    const edge = outline(PEOPLE.area);
+    edge.scale.set(area.width, area.depth, 1);
+    edge.position.y = 0.27;
+    const label = labelSprite(`🌳 Area ${index + 1}\n${area.count} people`, '#c8f5cf');
+    label.position.y = 2;
+    label.scale.multiplyScalar(0.7);
+    holder.add(fill, edge, label);
+    return holder;
+}
+
+function buildPeoplePoint(point) {
+    const holder = new THREE.Group();
+    holder.position.set(point.x, 0, point.z);
+    const material = new THREE.MeshStandardMaterial({ color: PEOPLE.point, emissive: PEOPLE.point, emissiveIntensity: 0.3 });
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.1, 16), material);
+    disc.position.y = PEOPLE.y;
+    holder.add(disc);
+    return holder;
+}
+
+function renderPeoplePaths() {
+    for (const child of [...peopleGroup.children]) {
+        if (child.userData.cast) continue;
+        peopleGroup.remove(child);
+        child.geometry.dispose();
+        child.material.dispose();
+    }
+    const point = (id) => town.people.waypoints.find((p) => p.id === id);
+    for (const [a, b] of town.people.links) {
+        const from = point(a);
+        const to = point(b);
+        if (!from || !to) continue;
+        const length = Math.hypot(to.x - from.x, to.z - from.z);
+        const ribbon = new THREE.Mesh(new THREE.PlaneGeometry(0.22, length), new THREE.MeshBasicMaterial({ color: PEOPLE.path, transparent: true, opacity: 0.85, depthWrite: false }));
+        ribbon.rotation.x = -Math.PI / 2;
+        ribbon.rotation.z = -Math.atan2(to.x - from.x, to.z - from.z);
+        ribbon.position.set((from.x + to.x) / 2, PEOPLE.y, (from.z + to.z) / 2);
+        ribbon.raycast = () => {};
+        peopleGroup.add(ribbon);
+    }
+}
+
+/** Models load in the background: the dots are worked out a moment after a change, and again once more have come in. */
+function queuePeopleCast() {
+    clearTimeout(peopleCastTimer);
+    castPeopleAreas();
+    peopleCastTimer = setTimeout(castPeopleAreas, 1500);
+}
+
+/** Where each area's people could stand: a dot per spot, green on the ground, pink on a roof. */
+function castPeopleAreas() {
+    if (!town?.people) return;
+    for (const child of [...peopleGroup.children]) {
+        if (!child.userData.cast) continue;
+        peopleGroup.remove(child);
+        child.geometry.dispose();
+        child.material.dispose();
+    }
+    const roofs = town.props.map((prop, index) => ({ prop, holder: holders.get(`prop:${index}`) }))
+        .filter(({ prop, holder }) => holder && prop.collider && Math.min(prop.collider.halfX, prop.collider.halfZ) >= ROOF_MIN_HALF)
+        .map(({ holder }) => holder);
+    const caster = new THREE.Raycaster();
+    caster.camera = camera;
+    const down = new THREE.Vector3(0, -1, 0);
+    const normal = new THREE.Vector3();
+    const dots = { ground: [], roof: [] };
+    for (const area of town.people.areas) {
+        for (let x = area.x - area.width / 2 + PEOPLE_CELL / 2; x < area.x + area.width / 2; x += PEOPLE_CELL) {
+            for (let z = area.z - area.depth / 2 + PEOPLE_CELL / 2; z < area.z + area.depth / 2; z += PEOPLE_CELL) {
+                caster.set(new THREE.Vector3(x, 200, z), down);
+                const hit = caster.intersectObjects(roofs, true).find((entry) => entry.object.isMesh);
+                if (!hit) dots.ground.push(x, PEOPLE.y, z);
+                else {
+                    normal.copy(hit.face.normal).transformDirection(hit.object.matrixWorld);
+                    if (normal.y >= FLAT_NORMAL) dots.roof.push(x, hit.point.y + 0.15, z);
+                }
+            }
+        }
+    }
+    for (const [kind, positions] of Object.entries(dots)) {
+        if (!positions.length) continue;
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        const cloud = new THREE.Points(geometry, new THREE.PointsMaterial({ color: PEOPLE[kind], size: 0.28 }));
+        cloud.userData.cast = true;
+        cloud.raycast = () => {};
+        peopleGroup.add(cloud);
+    }
+}
+
+function addPeopleArea() {
+    touch();
+    town.people.areas.push({ ...dropPoint(), width: 12, depth: 12, count: 5 });
+    added('peopleArea');
+}
+
+/** A new point mid view (next to the selected one and linked to it, when one is selected: drawing a path). */
+function addPeoplePoint() {
+    touch();
+    const { waypoints, links } = town.people;
+    let n = waypoints.length + 1;
+    while (waypoints.some((p) => p.id === `p${n}`)) n++;
+    const from = selection?.type === 'peoplePoint' ? waypoints[selection.index] : null;
+    waypoints.push({ id: `p${n}`, ...(from ? { x: from.x + 6, z: from.z } : dropPoint()) });
+    if (from) links.push([from.id, `p${n}`]);
+    added('peoplePoint');
+}
+
+function removePeoplePoint(index) {
+    const id = town.people.waypoints[index]?.id;
+    town.people.waypoints.splice(index, 1);
+    town.people.links = town.people.links.filter(([a, b]) => a !== id && b !== id);
+}
+
+function togglePeopleLink(fromIndex, toIndex) {
+    const a = town.people.waypoints[fromIndex]?.id;
+    const b = town.people.waypoints[toIndex]?.id;
+    if (!a || !b || a === b) return;
+    touch();
+    const { links } = town.people;
+    const at = links.findIndex(([x, y]) => (x === a && y === b) || (x === b && y === a));
+    if (at >= 0) links.splice(at, 1);
+    else links.push([a, b]);
+    rebuildEntities();
+    renderLists();
+    toast(at >= 0 ? `Unlinked ${a} – ${b}` : `Linked ${a} – ${b}`);
+}
+
+function renderPeopleLists() {
+    const { areas, waypoints, links, walkers } = town.people;
+    host.querySelector('#townPeopleWalkers').replaceChildren(numberField('Walkers on the paths', walkers, 1, (v) => {
+        touch();
+        town.people.walkers = Math.max(0, Math.round(v));
+        renderPeopleLists();
+    }));
+    host.querySelector('#townPeopleAreaList').replaceChildren(...areas.map((area, i) => listItem('peopleArea', i, `🌳 Area ${i + 1}`, `${area.count} people · ${area.width}×${area.depth}`)));
+    host.querySelector('#townPeopleSummary').textContent = `${waypoints.length} path points · ${links.length} links`;
 }
 
 // ---------------------------------------------------------------- road builder
@@ -1926,6 +2125,7 @@ function listItem(type, index, label, small) {
 }
 
 function renderLists() {
+    if (peopleOn) renderPeopleLists();
     host.querySelector('#townSectionList').replaceChildren(...town.sections.map((s, i) => listItem('section', i, `${i + 1}. ${s.name}`, `$${s.bonus}`)));
     host.querySelector('#townShoreList').replaceChildren(...(town.island?.outline ?? []).map((p, i) => listItem('shore', i, `Point ${i + 1}`, `${p.x}, ${p.z}`)));
     host.querySelector('#townPatchList').replaceChildren(...town.grassPatches.map((p, i) => listItem('patch', i, `${p.shape === 'round' ? '⬭' : '▭'} ${grassName(p.grass)}`, `${p.width}×${p.depth}`)));
@@ -2075,7 +2275,7 @@ function renderInspector() {
     const titles = {
         prop: () => titleCase(fileName(data.model)), atm: () => `ATM ${selection.index + 1}`, wardrobe: () => `Wardrobe ${selection.index + 1}`, pavement: () => data.id,
         section: () => data.name, patch: () => `Grass patch: ${grassName(data.grass)}`, start: () => 'Player start',
-        collider: () => `Collider cube ${selection.index + 1}`, sound: () => `Sound zone: ${data.id}`, waypoint: () => `Waypoint ${data.id}`, secret: () => `Secret patch: ${data.id}`, pen: () => `${town.sections[selection.index].name} pen`, centre: () => 'Grass noise centre', shore: () => `Shore point ${selection.index + 1}`, separator: () => `${town.sections[selection.index].name} separator`,
+        collider: () => `Collider cube ${selection.index + 1}`, sound: () => `Sound zone: ${data.id}`, waypoint: () => `Waypoint ${data.id}`, peopleArea: () => `Wander area ${selection.index + 1}`, peoplePoint: () => `Street path point ${data.id}`, secret: () => `Secret patch: ${data.id}`, pen: () => `${town.sections[selection.index].name} pen`, centre: () => 'Grass noise centre', shore: () => `Shore point ${selection.index + 1}`, separator: () => `${town.sections[selection.index].name} separator`,
     };
     const rows = [
         el('div', { class: 'inspector-title' }, titles[type](), el('span', { class: 'tag' }, type)),
@@ -2134,6 +2334,17 @@ function renderInspector() {
             el('p', { class: 'muted small' }, 'Full volume inside the box, fading to nothing at the dashed line (Fade distance out from its edges); heard from the box\'s side the player is nearest. A new sound file needs `npm run audio` to reach the game.'));
     }
     if (type === 'waypoint') rows.push(...waypointInspector(data, selection.index));
+    if (type === 'peopleArea') {
+        rows.push(
+            numberField('People', data.count, 1, (v) => edit((d) => { d.count = Math.max(0, Math.round(v)); })),
+            el('p', { class: 'muted small' }, 'They stand on what the area covers: green dots on the ground, pink ones on a roof.'));
+    }
+    if (type === 'peoplePoint') {
+        const links = town.people.links.filter((link) => link.includes(data.id)).map(([a, b]) => (a === data.id ? b : a));
+        rows.push(
+            el('p', { class: 'muted small' }, links.length ? `Linked to ${links.join(', ')}.` : 'Not linked yet: walkers only use linked points.'),
+            el('p', { class: 'muted small' }, 'D: a next point, linked to this one. Alt+click another point: link or unlink it.'));
+    }
     if (type === 'collider') {
         const models = [...new Set([...town.props.map((prop) => prop.model), ...(data.fades ? [data.fades] : [])])]
             .sort((a, b) => fileName(a).localeCompare(fileName(b)));

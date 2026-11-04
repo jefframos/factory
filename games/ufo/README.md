@@ -1,0 +1,23 @@
+# UFO
+
+Fly a saucer over a town and eat it. Everything under the saucer gets pulled up if it fits, and each bite grows the saucer, which also lifts it higher.
+
+- **To eat something:** its middle has to be under the saucer, its footprint has to fit within the saucer's radius, and the saucer has to fly above it.
+- **Too tall to fly over:** the thing blocks the saucer (the prop's `collider`, or a solid collider cube), and the saucer has to go round it.
+- **Cars:** they can be eaten but never block.
+- **End of a level:** when everything is eaten.
+
+## Running it
+
+Set `GAME=ufo` in `.env`, then use `npm run dev` for the game and `npm run editor` for the editor. After a fresh clone, or when `raw-assets` changes, run `npm run models` and `npm run font`.
+
+`?dev=1` shows the debug panel (live tuning, GROW, EAT EVERYTHING). `?city=<level>` plays another file from `levels/`.
+
+## Where things are
+
+- `levels/*.json`: the levels, edited in the Town tab. Every file in the folder is a level.
+- `ui/ufo.json`: the game's numbers, edited in the UFO tab: size, height, growth, camera, plus the road kit and traffic.
+- `web/`: the game's editor. It's a small server over the shared `tools/world-editor/server.mjs`, with its own tabs in `web/public/`. The Town tab's browser code comes from `games/mow/web/public`.
+- `game/player/Saucer.ts`: the stand-in saucer, a plate and a cylinder.
+- `game/world/People.ts`: the people. Wander areas and street paths are placed in the Town tab's People card (the level's `people`); their speed, height and how long they stop are in the UFO tab.
+- `tools/build-people.mjs`: builds the people's models and animations from the library's characters Fun kit and the Mixamo clips in `mixamo/`. To change an outfit, edit its list, run `node games/ufo/tools/build-people.mjs`, then `npm run models`. Their skin and clothes colours are `people.palette` in `ui/ufo.json`.

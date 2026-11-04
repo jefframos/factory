@@ -1,0 +1,9 @@
+{
+    "poki": {
+        "className": "PokiPlatform",
+        "importPath": "core/platforms/PokiPlatform",
+        "gameId": "",
+        "enableAds": false,
+        "folderPath": "ufo"
+    }
+}

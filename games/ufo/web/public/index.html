@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UFO Editor</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* The shared Town tab, without the mow game's cards. */
+  section.card-section:has(#townSectionList), section.card-section:has(#townNoise), section.card-section:has(#townPatchList),
+  section.card-section:has(#townAtmList), section.card-section:has(#townWardrobeList), section.card-section:has(#townSoundList),
+  section.card-section:has(#townSecretList) { display: none; }
+  .ufo-hidden { display: none !important; }
+  .ufo-form { padding: 16px; max-width: 460px; overflow: auto; }
+  .ufo-form h2 { margin: 18px 0 8px; }
+  .ufo-form label { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 6px 0; }
+  .ufo-form input { width: 90px; }
+  .ufo-form small { display: block; opacity: 0.7; }
+  .ufo-form button { margin-top: 14px; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "/vendor/three/build/three.module.js", "three/addons/": "/vendor/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<header id="topbar">
+  <div class="brand"><span class="logo">U</span> UFO Editor</div>
+  <label id="levelPicker" title="The level you're editing (▶ Play opens the game in it)">Editing <select id="levelSelect"></select></label>
+  <nav id="tabs">
+    <button data-tab="town" class="tab active">🏙 Town</button>
+    <button data-tab="ufo" class="tab">🛸 UFO</button>
+  </nav>
+</header>
+
+<section id="tab-town" class="tab-panel workspace"></section>
+<section id="tab-ufo" class="tab-panel" hidden></section>
+
+<div id="toast"></div>
+<script type="module">
+import { api } from './shared.js';
+import { setModelCatalog } from './modelPicker.js';
+import { initTownTab, hasUnsavedTown, loadTown } from './town3d.js';
+import { initUfoTab, hasUnsavedUfo } from './ufoTab.js';
+
+const config = await api('/api/config');
+setModelCatalog(await api('/api/models'));
+const levels = await api('/api/levels');
+const levelSelect = document.getElementById('levelSelect');
+let level = levels.find((entry) => entry.level === localStorage.getItem('ufoEditor.level')) ?? levels.find((entry) => entry.level === 'town') ?? levels[0];
+levelSelect.append(...levels.map((entry) => new Option(`${entry.name}  (${entry.level}.json)`, entry.level)));
+levelSelect.value = level.level;
+const levelUrl = (entry) => `/api/town?level=${encodeURIComponent(entry.level)}`;
+await initTownTab(document.getElementById('tab-town'), { gameUrl: config.gameUrl, townUrl: levelUrl(level), city: level.id, people: true });
+
+// The buttons and the toggle that only mean something in the mow game.
+const MOW_ONLY = /ATM|Wardrobe|patch|Sound zone|Secret|Section|Grass preview/;
+for (const control of document.querySelectorAll('#tab-town .sidebar.left button, #tab-town .toolbar label')) {
+    if (MOW_ONLY.test(control.textContent)) control.classList.add('ufo-hidden');
+}
+
+levelSelect.addEventListener('change', async () => {
+    const next = levels.find((entry) => entry.level === levelSelect.value);
+    if (hasUnsavedTown() && !window.confirm(`Unsaved changes in ${level.name}: switch to ${next.name} and lose them?`)) {
+        levelSelect.value = level.level;
+        return;
+    }
+    level = next;
+    localStorage.setItem('ufoEditor.level', level.level);
+    await loadTown(levelUrl(level), level.id);
+});
+
+let ufoReady = false;
+for (const button of document.querySelectorAll('#tabs .tab')) {
+    button.addEventListener('click', async () => {
+        const tab = button.dataset.tab;
+        document.querySelectorAll('#tabs .tab').forEach((other) => other.classList.toggle('active', other === button));
+        document.querySelectorAll('.tab-panel').forEach((panel) => { panel.hidden = panel.id !== `tab-${tab}`; });
+        if (tab === 'ufo' && !ufoReady) {
+            ufoReady = true;
+            await initUfoTab(document.getElementById('tab-ufo'));
+        }
+    });
+}
+window.addEventListener('beforeunload', (event) => {
+    if (hasUnsavedTown() || hasUnsavedUfo()) event.preventDefault();
+});
+</script>
+</body>
+</html>

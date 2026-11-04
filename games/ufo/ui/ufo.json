@@ -1,0 +1,180 @@
+{
+  "$comment": "The UFO game's settings (the editor's UFO tab). grass, cell, seed: what the shared Town tab asks of a game (no grass here). roadKit, traffic: the road builder's pieces and the cars.",
+  "grass": [],
+  "cell": 0.5,
+  "seed": 1,
+  "roadKit": {
+    "$comment": "The road builder's pieces (core/roads/RoadGrid.ts): a level's road cells (levels/*.json roads) become these, each the first piece fitting its road neighbours (open: its sides as modelled, n = -Z), turned to fit; models: the piece, then its variants (the editor cycles them). tile: their size; elevation: their base; roadY: the asphalt (the cars' wheels).",
+    "tile": 15,
+    "elevation": 0.02,
+    "roadY": 0.03,
+    "pieces": [
+      {
+        "open": [
+          "n",
+          "e",
+          "s",
+          "w"
+        ],
+        "models": [
+          "town/library/city2-road-012/city2-road-012.glb",
+          "town/library/city2-road-029/city2-road-029.glb"
+        ]
+      },
+      {
+        "open": [
+          "n",
+          "s",
+          "w"
+        ],
+        "models": [
+          "town/library/city2-road-011/city2-road-011.glb",
+          "town/library/city2-road-026/city2-road-026.glb"
+        ]
+      },
+      {
+        "open": [
+          "n",
+          "s"
+        ],
+        "models": [
+          "town/library/city2-road-009/city2-road-009.glb",
+          "town/library/city2-road-010/city2-road-010.glb",
+          "town/library/city2-road-022/city2-road-022.glb",
+          "town/library/city2-road-023/city2-road-023.glb"
+        ]
+      },
+      {
+        "open": [
+          "n",
+          "w"
+        ],
+        "models": [
+          "town/library/city2-road-013/city2-road-013.glb"
+        ]
+      },
+      {
+        "open": [
+          "s"
+        ],
+        "models": [
+          "town/library/city2-road-025/city2-road-025.glb"
+        ]
+      }
+    ]
+  },
+  "traffic": {
+    "models": [
+      "town/library/city2-car-07/city2-car-07.glb",
+      "town/library/city2-car-08/city2-car-08.glb",
+      "town/library/city2-car-12/city2-car-12.glb",
+      "town/library/city2-car-16/city2-car-16.glb",
+      "town/library/city2-car-17/city2-car-17.glb",
+      "town/library/city2-car-25/city2-car-25.glb",
+      "town/library/city2-car-26/city2-car-26.glb",
+      "town/library/city2-car-28/city2-car-28.glb",
+      "town/library/city2-car-35/city2-car-35.glb",
+      "town/library/city2-car-36/city2-car-36.glb",
+      "town/library/city2-car-39/city2-car-39.glb",
+      "town/library/city2-car-42/city2-car-42.glb",
+      "town/library/city2-car-45/city2-car-45.glb"
+    ],
+    "speed": 4.4,
+    "accel": 3.5,
+    "brake": 10,
+    "length": 4.2,
+    "lane": 1.75,
+    "tile": 7,
+    "roadY": 0.16,
+    "gap": 1.8
+  },
+  "ufo": {
+    "startRadius": 1,
+    "speed": 9,
+    "speedPerRadius": 0.5,
+    "accel": 7,
+    "altitudeBase": -1.2,
+    "altitudePerRadius": 3,
+    "growth": 0.05,
+    "valuePower": 0.75,
+    "growSpeed": 2.5,
+    "collideShare": 0.85
+  },
+  "camera": {
+    "pitchDeg": 55,
+    "fov": 45,
+    "distance": 16,
+    "perAltitude": 1.7,
+    "followSpeed": 7,
+    "zoomSpeed": 2.5,
+    "bend": 0.004
+  },
+  "people": {
+    "models": [
+      "people/person-01.glb",
+      "people/person-02.glb",
+      "people/person-03.glb",
+      "people/person-04.glb",
+      "people/person-05.glb",
+      "people/person-06.glb",
+      "people/person-07.glb",
+      "people/person-08.glb"
+    ],
+    "speed": 1.4,
+    "height": 1.6,
+    "wander": 9,
+    "pauseMin": 0.5,
+    "pauseMax": 3,
+    "animations": "people/people-anims.glb",
+    "palette": {
+      "skin": [
+        "#ffe0c4",
+        "#f7cba4",
+        "#eab084",
+        "#d09060",
+        "#a86f45",
+        "#7d4e30",
+        "#5a3722"
+      ],
+      "top": [
+        "#e8483f",
+        "#f39a2d",
+        "#f5d547",
+        "#58b957",
+        "#2fa8a0",
+        "#3f86e0",
+        "#7b5be0",
+        "#e65fa8",
+        "#f4f1ea",
+        "#39414f"
+      ],
+      "bottom": [
+        "#2f4a7a",
+        "#4c6ea8",
+        "#39414f",
+        "#5b5148",
+        "#8a7a5c",
+        "#c9b48a",
+        "#6c7d4e",
+        "#7a3f3f"
+      ],
+      "shoes": [
+        "#f4f1ea",
+        "#2b2b2f",
+        "#c0392b",
+        "#2d6cc0",
+        "#8a5a33",
+        "#e6b422"
+      ],
+      "hair": [
+        "#1f1a17",
+        "#3a2a20",
+        "#5e3c23",
+        "#8f5a2c",
+        "#d9b160",
+        "#b5482a",
+        "#9a9a9a"
+      ]
+    }
+  }
+}
