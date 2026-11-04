@@ -10,6 +10,7 @@ import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { UiKit } from './UiKit';
+import { BakedShape } from './BakedShape';
 import { UiAnim } from './UiAnim';
 import { tabbedBlock, tagBadge } from './TabBar';
 import { ModelIcons } from './ModelIcons';
@@ -196,11 +197,11 @@ export class WardrobePanel extends PIXI.Container {
     /** The item itself: a swatch, a face on a head in the current colour, or the hat's model. */
     private art(item: WardrobeItem): PIXI.Container {
         if (this.tab === 'colors') {
-            return new PIXI.Graphics().lineStyle(4, 0xffffff).beginFill(hex(item.id)).drawCircle(0, 0, 30).endFill();
+            return BakedShape.disc(30, { fill: hex(item.id), rim: 0xffffff, rimWidth: 4 });
         }
         if (this.tab === 'faces') {
             const head = new PIXI.Container();
-            head.addChild(new PIXI.Graphics().lineStyle(3, 0x1d140e).beginFill(hex(MowProgress.look.color)).drawRoundedRect(-32, -32, 64, 64, 10).endFill());
+            head.addChild(new BakedShape(64, 64, 10, { fill: hex(MowProgress.look.color), rim: 0x1d140e, rimWidth: 3 }));
             const face = PIXI.Sprite.from(`${FACE_BASE}${item.id}`);
             face.anchor.set(0.5);
             face.width = face.height = 58;

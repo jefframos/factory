@@ -17,6 +17,7 @@
     3
   ],
   "music": { "$comment": "The soundtrack (a file in raw-assets/audio, without its extension) and its volume (0-1); a level's soundSettings.music overrides it (the editor's Sounds).", "sound": "Somnia-Variation-3-relax-and-sleep-Reed-Mathis", "volume": 0.18 },
+  "cutSound": { "$comment": "The grass cut's sound (edited in the editor's Mowers tab): each cut picks a volume (0-1) and a pitch (1 = as recorded) between these two.", "volume": [0.07, 0.1], "pitch": [1.35, 1.7] },
   "roadKit": {
     "$comment": "The road builder's pieces (core/roads/RoadGrid.ts): a level's road cells (levels/*.json roads) become these, each the first piece fitting its road neighbours (open: its sides as modelled, n = -Z), turned to fit; models: the piece, then its variants (the editor cycles them). tile: their size; elevation: their base; roadY: the asphalt (the cars' wheels).",
     "tile": 15,

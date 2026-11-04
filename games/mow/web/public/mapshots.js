@@ -1,5 +1,6 @@
 // Map shots tab: the town map's pictures (the HUD's miniature, images/non-preload/map/<zone>.webp), one per zone
-// (`town`, the whole island, or a section). Each zone is shot one of two ways (levels/mapshots.json):
+// (`town`, the whole island, or a section; a city with a goal also has `<map>-goal`: the goal's model alone, for the
+// HUD's timeline, shot as it is, with a live view of it to find the angle). Each other zone is shot one of two ways (levels/mapshots.json):
 //   - Original: the town as it is (a section cut out of it onto a slab of earth);
 //   - Custom: its own diorama, a little level shaped like town.json, edited right here with the Town tab's editor
 //     (a second copy of town3d.js) — started from the town (↺ Copy from the town), then anything goes: move things
@@ -9,6 +10,9 @@
 // game in snapshot mode for that zone (TownSnapshotScene: the game's own look), which posts two pictures back here
 // (POST /api/map-snapshot): `<zone>` (512 across, the HUD's reveal) and `<zone>-small` (the HUD's corner).
 
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createGLTFLoader } from './gltf.js';
 import { api, el, toast } from './shared.js';
 
 const DEFAULT_CAMERA = { yaw: 0, pitch: 40, ortho: true, fov: 35 };
@@ -28,12 +32,16 @@ let editor = null;
 let editorView = null;
 let editorHost;
 let preview;
+/** The goal zone's live view of its model (openGoalPreview()), while that zone's showing. */
+let goalPreview = null;
 
 const zoneSettings = (id) => {
     const saved = shots.zones[id] ?? {};
     return { mode: 'original', stroke: false, strokeWidth: 3, ...saved, camera: { ...DEFAULT_CAMERA, ...saved.camera } };
 };
-const zoneName = (id) => (id === city.map ? `Whole ${city.name}` : town.sections.find((s) => s.id === id)?.name ?? id);
+const goalSection = () => town.sections.find((s) => s.opensAfter);
+const goalZone = () => `${city.map}-goal`;
+const zoneName = (id) => (id === city.map ? `Whole ${city.name}` : id === goalZone() ? `🎯 Goal: ${goalSection()?.name ?? 'none'}` : town.sections.find((s) => s.id === id)?.name ?? id);
 const levelUrl = () => `/api/town?level=${encodeURIComponent(city.level)}`;
 const imageUrl = (id, small = false) => `/map-images/${id}${small ? '-small' : ''}.webp?t=${Date.now()}`;
 
@@ -61,8 +69,11 @@ export async function refreshMapShotsTab(next) {
 }
 
 function render() {
+    goalPreview?.dispose();
+    goalPreview = null;
     const settings = zoneSettings(zone);
-    const zones = [city.map, ...town.sections.map((s) => s.id)];
+    const zones = [city.map, ...(goalSection() ? [goalZone()] : []), ...town.sections.map((s) => s.id)];
+    const isGoal = zone === goalZone();
     preview = el('img', { class: 'mapshot-preview', src: imageUrl(zone, true), alt: '', title: 'The HUD corner\'s picture', onerror: (event) => { event.target.style.visibility = 'hidden'; } });
     const camera = () => ({ yaw: Number(yaw.value) || 0, pitch: Number(pitch.value) || 40, ortho: ortho.checked, fov: Number(fov.value) || 35 });
     const yaw = el('input', { type: 'number', step: 5, value: settings.camera.yaw, onchange: () => saveSettings({ camera: camera() }) });
@@ -80,11 +91,11 @@ function render() {
         strokeWidthLabel.hidden = !stroke.checked;
         void saveSettings({ stroke: stroke.checked });
     } });
-    const custom = settings.mode === 'custom';
+    const custom = settings.mode === 'custom' && !isGoal;
     const bar = el('div', { class: 'toolbar mapshots-bar' },
         el('label', {}, 'Zone ', el('select', { onchange: (event) => switchZone(event.target.value) },
             ...zones.map((id) => el('option', { value: id, selected: id === zone }, `${zoneName(id)}${shots.zones[id]?.mode === 'custom' ? ' (custom)' : ''}`)))),
-        el('div', { class: 'segmented' },
+        isGoal ? '' : el('div', { class: 'segmented' },
             el('button', { class: custom ? '' : 'active', onclick: () => setMode('original') }, 'Original'),
             el('button', { class: custom ? 'active' : '', onclick: () => setMode('custom') }, 'Custom')),
         el('label', {}, 'Yaw° ', yaw),
@@ -93,19 +104,119 @@ function render() {
         fovLabel,
         el('label', { title: 'A black outline round the HUD corner\'s (small) picture, like the rest of the HUD' }, stroke, ' HUD outline'),
         strokeWidthLabel,
-        custom ? el('button', { title: 'The diorama view\'s angle (orbit it first)', onclick: () => useView() }, '🎯 Use this view') : '',
+        custom || isGoal ? el('button', { title: 'The view\'s angle (orbit it first)', onclick: () => useView() }, '🎯 Use this view') : '',
         custom ? el('button', { title: 'Start the diorama again from the town as it is', onclick: () => copyFromTown(true) }, '↺ Copy from the town') : '',
         el('span', { class: 'spacer' }),
         el('button', { class: 'primary', onclick: () => void takeShot() }, '📸 Take snapshot'),
         preview);
     editorHost = el('section', { class: 'workspace mapshots-editor', hidden: !custom });
+    const goalSlot = el('div', { style: { position: 'relative', flex: '1', minHeight: '240px', width: 'min(900px, 95%)', background: '#9fd4f2', borderRadius: '8px', overflow: 'hidden' } });
     const original = el('div', { class: 'mapshots-original', hidden: custom },
+        isGoal ? goalSlot : '',
         el('div', { class: 'mapshots-pair' },
-            el('img', { class: 'mapshot-large', src: imageUrl(zone), alt: 'Not taken yet', onerror: (event) => { event.target.replaceWith(el('p', { class: 'muted' }, 'No picture for this zone yet: take one.')); } }),
+            el('img', { class: 'mapshot-large', src: imageUrl(zone), alt: 'Not taken yet', onerror: (event) => { event.target.style.visibility = 'hidden'; }, onload: (event) => { event.target.style.visibility = ''; } }),
             el('img', { class: 'mapshot-small', src: imageUrl(zone, true), alt: '', title: 'The HUD corner\'s picture', onerror: (event) => { event.target.style.visibility = 'hidden'; } })),
-        el('p', { class: 'muted small' }, custom ? '' : `Original: ${zone === city.map ? 'the whole island as it is' : `${zoneName(zone)} cut out of the town as it is, on a slab of earth`}, from yaw ${settings.camera.yaw}° / pitch ${settings.camera.pitch}°${settings.camera.ortho ? ', isometric' : `, perspective ${settings.camera.fov}°`}. Left: the big picture (the reveal); right: the HUD corner's. Switch to Custom to build a diorama of it instead.`));
+        el('p', { class: 'muted small' }, custom ? '' : isGoal ? `${goalSection()?.name ?? 'The goal'}'s model on its own: the picture on the HUD's goal timeline. Set the angle above, then take the snapshot.` : `Original: ${zone === city.map ? 'the whole island as it is' : `${zoneName(zone)} cut out of the town as it is, on a slab of earth`}, from yaw ${settings.camera.yaw}° / pitch ${settings.camera.pitch}°${settings.camera.ortho ? ', isometric' : `, perspective ${settings.camera.fov}°`}. Left: the big picture (the reveal); right: the HUD corner's. Switch to Custom to build a diorama of it instead.`));
     host.replaceChildren(bar, original, editorHost);
+    if (isGoal) {
+        const model = goalSection()?.goalModel;
+        if (model) goalPreview = openGoalPreview(goalSlot, model, settings.camera);
+        else goalSlot.replaceChildren(el('p', { class: 'muted', style: { padding: '16px' } }, 'No mesh yet: choose the section\'s "Goal model" in the Town tab.'));
+    }
     if (custom) void openEditor();
+}
+
+/**
+ * The goal's model, live, seen as the shot will see it (yaw, pitch, isometric or the field of view): orbit it, then
+ * "Use this view". Drag to orbit, wheel to zoom.
+ */
+function openGoalPreview(slot, model, angle) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.domElement.style.cssText = 'position:absolute;inset:0;width:100%;height:100%';
+    slot.append(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x5a7a4a, 1.6));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+    sun.position.set(6, 14, 8);
+    scene.add(sun);
+    const target = new THREE.Vector3();
+    let radius = 50;
+    let current = angle;
+    let camera = new THREE.PerspectiveCamera();
+    const controls = new OrbitControls(camera, renderer.domElement);
+    const frame = () => {
+        const width = slot.clientWidth || 1;
+        const height = slot.clientHeight || 1;
+        renderer.setSize(width, height, false);
+        if (camera.isOrthographicCamera) {
+            const half = radius * 1.05;
+            const aspect = width / height;
+            camera.left = -half * aspect;
+            camera.right = half * aspect;
+            camera.top = half;
+            camera.bottom = -half;
+        } else {
+            camera.aspect = width / height;
+        }
+        camera.updateProjectionMatrix();
+    };
+    const aim = (next) => {
+        current = next;
+        const ortho = next.ortho !== false;
+        const fov = Math.min(100, Math.max(5, next.fov ?? 35));
+        camera = ortho ? new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, radius * 8) : new THREE.PerspectiveCamera(fov, 1, 0.1, radius * 12);
+        controls.object = camera;
+        controls.target.copy(target);
+        const yaw = THREE.MathUtils.degToRad(next.yaw);
+        const pitch = THREE.MathUtils.degToRad(Math.min(89.5, Math.max(1, next.pitch)));
+        const reach = ortho ? radius * 3 : radius / Math.sin(THREE.MathUtils.degToRad(fov) / 2);
+        camera.position.copy(target).add(new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).multiplyScalar(reach));
+        frame();
+        controls.update();
+    };
+    aim(angle);
+    let closed = false;
+    createGLTFLoader().loadAsync(`/models/${model}`).then((gltf) => {
+        if (closed) return;
+        scene.add(gltf.scene);
+        const box = new THREE.Box3().setFromObject(gltf.scene);
+        box.getCenter(target);
+        radius = box.getSize(new THREE.Vector3()).length() / 2;
+        aim(current);
+    }, (error) => {
+        if (!closed) slot.replaceChildren(el('p', { class: 'muted', style: { padding: '16px' } }, `Could not load the model: ${error.message}`));
+    });
+    const observer = new ResizeObserver(frame);
+    observer.observe(slot);
+    let raf = 0;
+    const loop = () => {
+        raf = requestAnimationFrame(loop);
+        if (!slot.offsetParent) return;
+        controls.update();
+        renderer.render(scene, camera);
+    };
+    loop();
+    return {
+        aim,
+        viewAngles() {
+            const offset = camera.position.clone().sub(controls.target);
+            return {
+                yaw: Math.round(THREE.MathUtils.radToDeg(Math.atan2(offset.x, offset.z))),
+                pitch: Math.round(THREE.MathUtils.radToDeg(Math.asin(offset.y / Math.max(offset.length(), 1e-6)))),
+                fov: camera.isPerspectiveCamera ? Math.round(camera.fov) : current.fov,
+            };
+        },
+        dispose() {
+            closed = true;
+            cancelAnimationFrame(raf);
+            observer.disconnect();
+            controls.dispose();
+            renderer.dispose();
+            renderer.forceContextLoss();
+        },
+    };
 }
 
 async function saveSettings(change) {
@@ -113,6 +224,7 @@ async function saveSettings(change) {
     try {
         await api(`/api/mapshots?zone=${encodeURIComponent(zone)}`, { method: 'PUT', body: JSON.stringify({ mode: settings.mode, camera: settings.camera, stroke: settings.stroke, strokeWidth: settings.strokeWidth }) });
         shots.zones[zone] = { ...shots.zones[zone], mode: settings.mode, camera: settings.camera, stroke: settings.stroke, strokeWidth: settings.strokeWidth };
+        if (change.camera) goalPreview?.aim(settings.camera);
     } catch (error) {
         toast(`Could not save: ${error.message}`, 'bad');
     }
@@ -131,9 +243,10 @@ async function setMode(mode) {
 }
 
 async function useView() {
-    if (!editor) return;
+    const source = zone === goalZone() ? goalPreview : editor;
+    if (!source) return;
     // The view's angle (and, for a perspective shot, its field of view); isometric or not stays as set.
-    const view = editor.viewAngles();
+    const view = source.viewAngles();
     const current = zoneSettings(zone).camera;
     const camera = { ...current, yaw: view.yaw, pitch: view.pitch, fov: current.ortho ? current.fov : view.fov };
     await saveSettings({ camera });

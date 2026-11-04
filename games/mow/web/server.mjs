@@ -65,6 +65,9 @@ const MIME_TYPES = {
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
     '.webp': 'image/webp',
+    '.ogg': 'audio/ogg',
+    '.mp3': 'audio/mpeg',
+    '.wav': 'audio/wav',
 };
 
 async function readJson(file, fallback) {
@@ -207,6 +210,10 @@ function validateTown(town) {
     const outline = town.island?.outline;
     if (town.sounds !== undefined && !Array.isArray(town.sounds)) problems.push('sounds must be a list');
     if (town.secrets !== undefined && !Array.isArray(town.secrets)) problems.push('secrets must be a list');
+    if (town.colliders !== undefined && !Array.isArray(town.colliders)) problems.push('colliders must be a list');
+    (town.colliders ?? []).forEach((cube, i) => {
+        if (!(cube?.width > 0) || !(cube?.depth > 0)) problems.push(`collider cube ${i + 1} needs a size`);
+    });
     if (town.traffic !== undefined) {
         const { waypoints, links, cars } = town.traffic ?? {};
         if (!Array.isArray(waypoints) || !Array.isArray(links) || !Array.isArray(cars)) problems.push('traffic needs waypoints, links and cars lists');
@@ -301,6 +308,18 @@ async function handleApi(req, res, url) {
         const design = await readJson(MOW_FILE, null);
         if (!design) return send(res, 500, { error: 'Could not read mow.json' });
         design.tractor = tractor;
+        await writeMow(design);
+        return send(res, 200, { ok: true });
+    }
+    if (url.pathname === '/api/mow/cut-sound' && req.method === 'PUT') {
+        // The Mowers tab: the grass cut's volume and pitch ranges.
+        const { volume, pitch } = await readBody(req);
+        const range = (r) => Array.isArray(r) && r.length === 2 && r.every((v) => typeof v === 'number' && Number.isFinite(v) && v >= 0);
+        if (!range(volume) || !range(pitch)) return send(res, 400, { error: 'Invalid cut sound' });
+        const design = await readJson(MOW_FILE, null);
+        if (!design) return send(res, 500, { error: 'Could not read mow.json' });
+        const sorted = (r) => [Math.min(...r), Math.max(...r)];
+        design.cutSound = { ...design.cutSound, volume: sorted(volume), pitch: sorted(pitch) };
         await writeMow(design);
         return send(res, 200, { ok: true });
     }
@@ -453,6 +472,7 @@ const server = http.createServer(async (req, res) => {
             ['/thumbs/', THUMBS_DIR],
             ['/vendor/three/', THREE_DIR],
             ['/map-images/', MAP_PUBLIC_DIR],
+            ['/audio/', AUDIO_DIR],
         ];
         for (const [prefix, dir] of routes) {
             if (url.pathname.startsWith(prefix)) return await serveFile(res, dir, decodeURIComponent(url.pathname.slice(prefix.length)));

@@ -1326,7 +1326,8 @@
       "collider": {
         "halfX": 1.05,
         "halfZ": 1.05
-      }
+      },
+      "fade": true
     },
     {
       "model": "town/library/halloween-crypt/halloween-crypt.gltf",
@@ -1337,7 +1338,8 @@
       "collider": {
         "halfX": 4.45,
         "halfZ": 4.45
-      }
+      },
+      "fade": true
     },
     {
       "model": "town/nature/Tree_2_A_Color1.gltf",
@@ -1394,7 +1396,8 @@
       "collider": {
         "halfX": 7,
         "halfZ": 6.2
-      }
+      },
+      "fade": true
     },
     {
       "model": "town/library/city2-building-service-07/city2-building-service-07.glb",
@@ -1405,7 +1408,8 @@
       "collider": {
         "halfX": 3.15,
         "halfZ": 4.75
-      }
+      },
+      "fade": true
     },
     {
       "model": "town/library/city2-car-25/city2-car-25.glb",
@@ -1485,20 +1489,14 @@
       "name": "Central Park",
       "maxGrass": "tallgrass",
       "x": 0,
-      "z": 0,
+      "z": 6,
       "width": 20,
-      "depth": 16,
+      "depth": 27.5,
       "completeAt": 0.97,
       "bonus": 160,
       "ground": "#4f7d35",
       "restoredGround": "#6fae47",
       "fill": "auto",
-      "separator": {
-        "x": 0,
-        "z": 8,
-        "width": 20,
-        "rotationY": 0
-      },
       "grassScale": 1.2
     },
     {
@@ -1529,9 +1527,9 @@
       "id": "eastblock",
       "name": "East Gardens",
       "x": 24.5,
-      "z": 0.25,
+      "z": 6,
       "width": 14,
-      "depth": 16.5,
+      "depth": 27.5,
       "completeAt": 0.97,
       "bonus": 600,
       "ground": "#4b7431",
@@ -1573,7 +1571,7 @@
     },
     {
       "id": "field",
-      "name": "Sports Field",
+      "name": "North Fields",
       "x": 29.5,
       "z": -24.5,
       "width": 18,
@@ -1674,8 +1672,8 @@
     },
     {
       "id": "secret-3",
-      "x": 21.5,
-      "z": 12,
+      "x": 11.25,
+      "z": 28,
       "width": 2,
       "depth": 2,
       "reward": 50
@@ -2058,5 +2056,6 @@
         "model": "town/library/city2-car-39/city2-car-39.glb"
       }
     ]
-  }
+  },
+  "colliders": []
 }

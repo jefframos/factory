@@ -9,8 +9,13 @@
 // cyan roads; selecting a waypoint lights up its links (yellow) and everything it connects to (its network: where a
 // car there can drive). Alt+click (or 🔗 Link) another waypoint links / unlinks them.
 //
+// Collider cubes (`colliders`, 🧊): boxes placed by hand for a model its own bounds fit badly (a stadium). Solid ones
+// (blue) block walking; any can name a prop it fades (amber edge): the player in or touching it makes that prop
+// see-through, and only such cubes do.
+//
 // The road builder (🛣 Roads, B): click or drag on the ground to lay road tiles on the kit's grid (ui/mow.json
-// roadKit), Shift to take them up, a click on a laid one for its next variant (a crossing, a stop line …). Each tile's
+// roadKit), Shift+drag to take them up. A click on a laid tile selects it (in or out of Roads mode): Del takes it up, V
+// gives it its next look (a crossing, a stop line …), and the inspector shows the same. Each tile's
 // piece and turn come from its neighbours (core/roads/RoadGrid.ts, the game's own code), and so do the traffic's
 // waypoints and links: the cars drive what's built.
 //
@@ -42,6 +47,8 @@ const BLOCK_PAD = 0.25;
 /** Pieces lower than this lose their collider on save (road tiles are walked over). */
 const FLAT_HEIGHT = 0.3;
 const SNAP = 0.25;
+/** How tall a collider cube is drawn (only a picture: it blocks at any height). */
+const COLLIDER_HEIGHT = 4;
 const ROTATE_SNAP = THREE.MathUtils.degToRad(15);
 const UNDO_LIMIT = 60;
 const SECTION_COLORS = [0x8fe3a1, 0x4fc3f7, 0xffd23f, 0xffa94d, 0xe2a6ff, 0xff8a8a];
@@ -85,11 +92,14 @@ const grassGroup = new THREE.Group();
 const trafficGroup = new THREE.Group();
 /** A yellow box round each selected thing (the selection outlined). */
 const highlightGroup = new THREE.Group();
+/** The bottom bar's shortcuts: normally, and while building roads. */
+const TOWN_HINT = 'Left-drag: orbit · Right-drag: pan · Wheel: zoom · Click: select · Shift+click: add to selection · Ctrl+A: all of a kind · W/E/R: move/turn/scale · D or Ctrl+D: duplicate · Del: remove · F: focus · Ctrl+Z: undo · Ctrl+S: save';
+const ROAD_HINT = 'ROADS — Click or drag: lay road · Shift+drag: remove road · Click a laid tile: select it · Del: remove it · V: next look · Right-drag: pan · Wheel: zoom · B: done';
 /** The road builder's pieces (not entities: clicks go through them), and the cell under the pointer while building. */
 const roadGroup = new THREE.Group();
 const roadHover = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.35, depthWrite: false }));
 let roadMode = false;
-/** A stroke being painted: taking up (Shift) or laying, the cell it's on, whether it started on road, whether it moved. */
+/** A stroke being painted: taking up (Shift) or laying, the cell it started on, the one it's on, whether it moved or changed anything. */
 let roadStroke = null;
 const holders = new Map(); // "type:index" -> THREE.Group
 const loader = createGLTFLoader();
@@ -151,6 +161,7 @@ async function reload() {
     town.grassPatches ??= [];
     town.sounds ??= [];
     town.secrets ??= [];
+    town.colliders ??= [];
     town.traffic ??= { waypoints: [], links: [], cars: [] };
     if (town.roads) syncRoadTraffic();
     town.soundSettings ??= structuredClone(DEFAULT_SOUND_SETTINGS);
@@ -165,6 +176,26 @@ async function reload() {
     undoStack.length = 0;
     setDirty(false);
     rebuildAll();
+}
+
+/**
+ * Empties a group, freeing what its children hold on the graphics card (labels' canvas textures, geometries, materials:
+ * dropped without this they stay allocated, and rebuilding a big level again and again loses the WebGL context).
+ * Models are left alone: they share the cached source's (fillModel()).
+ */
+function emptyGroup(group) {
+    const free = (node) => {
+        if (node.userData.shared) return;
+        node.children.forEach(free);
+        // A sprite's geometry is three's own, shared by every sprite.
+        if (!node.isSprite) node.geometry?.dispose();
+        for (const material of [node.material].flat()) {
+            material?.map?.dispose();
+            material?.dispose();
+        }
+    };
+    group.children.forEach(free);
+    group.clear();
 }
 
 function rebuildAll() {
@@ -195,11 +226,13 @@ function buildLayout() {
                     el('button', { class: 'block', onclick: () => addPavement() }, '⬜ Pavement'),
                     el('button', { class: 'block town-only', onclick: () => addSound() }, '🔊 Sound zone'),
                     el('button', { class: 'block town-only', onclick: () => addSecret() }, '🤫 Secret patch (chest)'),
+                    el('button', { class: 'block town-only', onclick: () => addCollider() }, '🧊 Collider cube'),
                     el('button', { class: 'block town-only', onclick: () => addWaypoint() }, '🚦 Traffic waypoint'),
                     el('button', { class: 'block town-only', onclick: () => addSection() }, '🗺 Section (next to unlock)'))),
             el('section', { class: 'card-section town-only' },
                 el('h2', {}, 'Sections'),
                 el('p', { class: 'muted small' }, 'In unlock order: each opens when the one before is restored. Grass grows inside their rect.'),
+                el('div', { id: 'townOpenAll' }),
                 el('ul', { id: 'townSectionList', class: 'list' })),
             el('section', { class: 'card-section town-only' },
                 el('h2', {}, 'Grass noise'),
@@ -228,8 +261,9 @@ function buildLayout() {
                 el('div', { id: 'townSoundSettings' })),
             el('section', { class: 'card-section town-only' },
                 el('h2', {}, 'Roads'),
-                el('p', { class: 'muted small' }, '🛣 Roads (B) in the toolbar: click or drag on the ground to lay road tiles, Shift to take them up, click a laid tile for its next variant. The pieces fit themselves to their neighbours, and the cars drive them (the waypoints follow).'),
+                el('p', { class: 'muted small' }, '🛣 Roads (B) in the toolbar: click or drag on the ground to lay road tiles, Shift+drag to take them up. Click a laid tile to select it: Del removes it, V changes its look. The pieces fit themselves to their neighbours, and the cars drive them (the waypoints follow).'),
                 el('div', { id: 'townRoadSummary', class: 'muted small' }),
+                el('div', { id: 'townCarCount' }),
                 el('button', { class: 'block', onclick: () => clearRoads() }, '🧹 Clear roads')),
             el('section', { class: 'card-section town-only' },
                 el('h2', {}, 'Traffic'),
@@ -241,6 +275,10 @@ function buildLayout() {
                 el('h2', {}, 'Secrets'),
                 el('p', { class: 'muted small' }, 'Secret patches (gold boxes): a clump of lush grass anywhere in town; mowing it through gives up a chest worth its reward. A twinkle shows over it when the player is near.'),
                 el('ul', { id: 'townSecretList', class: 'list' })),
+            el('section', { class: 'card-section town-only' },
+                el('h2', {}, 'Collider cubes'),
+                el('p', { class: 'muted small' }, 'Boxes for a model its own bounds fit badly (a stadium): solid ones (blue) block walking, and any can fade a prop (amber edge) while the player is in or touching it. Only in the editor: the game doesn\'t draw them.'),
+                el('ul', { id: 'townColliderList', class: 'list' })),
             el('section', { class: 'card-section' },
                 el('h2', {}, 'Props'),
                 el('ul', { id: 'townPropList', class: 'list' }))),
@@ -259,7 +297,7 @@ function buildLayout() {
                 el('button', { class: 'primary', onclick: () => void save() }, '💾 Save'),
                 diorama ? '' : el('button', { onclick: () => window.open(playCity ? `${gameUrl}${gameUrl.includes('?') ? '&' : '?'}city=${playCity}` : gameUrl, 'mow-game') }, '▶ Play')),
             el('div', { id: 'townViewport', style: { position: 'relative', flex: '1', minHeight: '0', overflow: 'hidden' } }),
-            el('div', { class: 'hint-bar' }, 'Left-drag: orbit · Right-drag: pan · Wheel: zoom · Click: select · Shift+click: add to selection · Ctrl+A: all of a kind · W/E/R: move/turn/scale · D: duplicate · Del: remove · F: focus · Ctrl+Z: undo · Ctrl+S: save')),
+            el('div', { id: 'townHint', class: 'hint-bar' }, roadMode ? ROAD_HINT : TOWN_HINT)),
         el('aside', { class: 'sidebar right' },
             el('section', { class: 'card-section' }, el('h2', {}, 'Selection'), el('div', { id: 'townInspector' }))),
     );
@@ -396,10 +434,15 @@ function onKey(event) {
         event.preventDefault();
         undo();
     } else if (key === 'b' && !diorama) setRoadMode(!roadMode);
+    else if (key === 'v' && selection?.type === 'road') cycleRoadLook(1);
     else if (key === 'w') setMode('translate');
     else if (key === 'e') setMode('rotate');
     else if (key === 'r') setMode('scale');
-    else if (key === 'd' && selection) duplicateSelection();
+    else if (key === 'd') {
+        // Ctrl+D too (the browser's bookmark otherwise).
+        event.preventDefault();
+        if (selection) duplicateSelection();
+    }
     else if ((key === 'delete' || key === 'backspace') && selection) removeSelection();
     else if (key === 'escape') select(null);
     else if ((event.ctrlKey || event.metaKey) && key === 'a') {
@@ -415,7 +458,7 @@ function onKey(event) {
 }
 
 /** Flat things (sections, pavements, patches) lose to anything standing on them. */
-const FLAT_TYPES = new Set(['section', 'pavement', 'patch', 'sound', 'pen']);
+const FLAT_TYPES = new Set(['section', 'pavement', 'patch', 'sound', 'pen', 'road']);
 
 function pickAt(event) {
     const rect = renderer.domElement.getBoundingClientRect();
@@ -426,8 +469,12 @@ function pickAt(event) {
         while (node && !node.userData.entity) node = node.parent;
         return node?.userData.entity;
     }).filter(Boolean);
-    // In order: anything standing, then patches, then the rest (a patch over a section wins over the section), each once.
-    const rank = (e) => (!FLAT_TYPES.has(e.type) ? 0 : e.type === 'patch' ? 1 : 2);
+    // A road tile under the pointer (they aren't entities in the view: found by their grid cell).
+    const roadCell = roadKit() && town.roads?.cells.length ? roadCellUnder(event) : null;
+    const roadAt = roadCell ? roadIndex(...roadCell) : -1;
+    if (roadAt >= 0) entities.push({ type: 'road', index: roadAt });
+    // In order: anything standing, then patches, road tiles, then the rest (a patch over a section wins over the section), each once.
+    const rank = (e) => (!FLAT_TYPES.has(e.type) ? 0 : e.type === 'patch' ? 1 : e.type === 'road' ? 1.5 : 2);
     const candidates = entities.filter((e, i) => entities.findIndex((other) => sameSel(other, e)) === i)
         .map((e, i) => ({ e, i })).sort((a, b) => rank(a.e) - rank(b.e) || a.i - b.i).map(({ e }) => e);
     // Clicking the same spot again, the selection untouched since: the next thing under it (round to the first), so
@@ -608,8 +655,9 @@ function autoType(x, z, noise) {
 
 /** What blocks grass (Town.isBlocked): pavements, prop colliders, ATM and wardrobe boxes, all padded. */
 function blockers() {
-    const boxes = town.pavements.map((p) => ({ x: p.x, z: p.z, halfX: p.width / 2, halfZ: p.depth / 2 }));
+    const boxes = town.grassOverPavement ? [] : town.pavements.map((p) => ({ x: p.x, z: p.z, halfX: p.width / 2, halfZ: p.depth / 2 }));
     for (const prop of town.props) if (prop.collider) boxes.push({ x: prop.x, z: prop.z, halfX: prop.collider.halfX, halfZ: prop.collider.halfZ });
+    for (const cube of town.colliders) if (cube.solid) boxes.push({ x: cube.x, z: cube.z, halfX: cube.width / 2, halfZ: cube.depth / 2 });
     for (const atm of town.atms) boxes.push(stationBox(atm, town.atm));
     for (const wardrobe of town.wardrobes) boxes.push(stationBox(wardrobe, town.wardrobe));
     return boxes;
@@ -633,8 +681,20 @@ function queueGrass() {
 }
 
 /** Every grass cell, as the game generates it, drawn as one texture over the grid (one texel per cell). */
+/** Past a section's rounded corner (the game's pastCorner()). */
+function pastSectionCorner(section, x, z) {
+    const radius = section.cornerRadius ?? 0;
+    if (radius <= 0) return false;
+    const dx = Math.abs(x - section.x) - (section.width / 2 - radius);
+    const dz = Math.abs(z - section.z) - (section.depth / 2 - radius);
+    return dx > 0 && dz > 0 && dx * dx + dz * dz > radius * radius;
+}
+
+/** How far the level's lawns are drawn lifted: over every pavement (TownLevel.grassOverPavement). */
+const lawnLift = () => (town.grassOverPavement ? 0.1 : 0);
+
 function rebuildGrass() {
-    grassGroup.clear();
+    emptyGroup(grassGroup);
     if (!town.sections.length) return;
     refreshColliders();
     const cell = mow.cell;
@@ -660,6 +720,7 @@ function rebuildGrass() {
                 const x = minX + (ix + 0.5) * cell;
                 const z = minZ + (iz + 0.5) * cell;
                 if (Math.abs(x - section.x) > section.width / 2 || Math.abs(z - section.z) > section.depth / 2) continue;
+                if (pastSectionCorner(section, x, z)) continue;
                 if (taken[ix + iz * width]) continue;
                 if (boxes.some((b) => Math.abs(x - b.x) <= b.halfX + BLOCK_PAD && Math.abs(z - b.z) <= b.halfZ + BLOCK_PAD)) continue;
                 const patch = town.grassPatches.reduce((found, p) => (inPatch(p, x, z) ? p : found), undefined);
@@ -681,7 +742,7 @@ function rebuildGrass() {
     mesh.rotation.x = -Math.PI / 2;
     // PlaneGeometry's v runs +Y; laid flat that's -Z, and flipY false puts row 0 (minZ) at v = 0.
     mesh.scale.y = -1;
-    mesh.position.set(minX + (width * cell) / 2, 0.02, minZ + (depth * cell) / 2);
+    mesh.position.set(minX + (width * cell) / 2, 0.02 + lawnLift(), minZ + (depth * cell) / 2);
     grassGroup.add(mesh);
     grassGroup.visible = showGrass;
     const summary = host.querySelector('#townGrassCount');
@@ -691,8 +752,8 @@ function rebuildGrass() {
 // ---------------------------------------------------------------- entities
 
 const keyOf = (sel) => `${sel.type}:${sel.index}`;
-const LISTS = { prop: 'props', atm: 'atms', wardrobe: 'wardrobes', pavement: 'pavements', section: 'sections', patch: 'grassPatches', sound: 'sounds', secret: 'secrets' };
-const listOf = (type) => (type === 'waypoint' ? town.traffic.waypoints : LISTS[type] ? town[LISTS[type]] : null);
+const LISTS = { collider: 'colliders', prop: 'props', atm: 'atms', wardrobe: 'wardrobes', pavement: 'pavements', section: 'sections', patch: 'grassPatches', sound: 'sounds', secret: 'secrets' };
+const listOf = (type) => (type === 'waypoint' ? town.traffic.waypoints : type === 'road' ? town.roads?.cells ?? null : LISTS[type] ? town[LISTS[type]] : null);
 const hex = (color) => `#${color.toString(16).padStart(6, '0')}`;
 const grassColor = (id) => (id === 'none' ? '#c9b48a' : id === 'auto' ? '#9be37a' : (mow.grass.find((g) => g.id === id)?.color ?? '#5cbf4a'));
 const grassName = (id) => (id === 'none' ? 'no grass' : id === 'auto' ? 'noise' : (mow.grass.find((g) => g.id === id)?.name ?? id));
@@ -722,6 +783,8 @@ async function fillModel(holder, path, height, elevation, stretch) {
     const source = await loadModel(path);
     if (!source || !holder.parent) return null;
     const model = source.clone(true);
+    // Its geometry and materials are the cached source's: never freed with the holder (emptyGroup()).
+    model.userData.shared = true;
     const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
     if (size.y > 1e-4) model.scale.multiplyScalar(height / size.y);
     if (stretch) model.scale.multiply(new THREE.Vector3(stretch.x, 1, stretch.z));
@@ -767,8 +830,9 @@ function outline(color, round = false) {
 
 function rebuildEntities() {
     gizmo.detach();
-    entityGroup.clear();
+    emptyGroup(entityGroup);
     holders.clear();
+    for (const holder of roadGroup.children) holders.set(keyOf(holder.userData.entity), holder);
     town.pavements.forEach((pavement, index) => addHolder({ type: 'pavement', index }, buildPavement(pavement, index)));
     town.sections.forEach((section, index) => {
         addHolder({ type: 'section', index }, buildSection(section, index));
@@ -786,6 +850,7 @@ function rebuildEntities() {
     if (!diorama) {
         town.sounds.forEach((zone, index) => addHolder({ type: 'sound', index }, buildSound(zone)));
         town.secrets.forEach((secret, index) => addHolder({ type: 'secret', index }, buildSecret(secret)));
+        town.colliders.forEach((cube, index) => addHolder({ type: 'collider', index }, buildCollider(cube)));
         if (showTraffic) town.traffic.waypoints.forEach((point, index) => addHolder({ type: 'waypoint', index }, buildWaypoint(point)));
         addHolder({ type: 'start', index: 0 }, buildStart());
         addHolder({ type: 'centre', index: 0 }, buildCentre());
@@ -849,6 +914,20 @@ until ${town.sections[index].name} is restored`, '#ffffff');
 }
 
 /** A secret patch: a translucent gold-green box (the lush grass), its outline and its label. */
+/** A collider cube: a see-through box, blue if solid; an amber edge if it fades a prop. */
+function buildCollider(cube) {
+    const holder = new THREE.Group();
+    holder.position.set(cube.x, 0, cube.z);
+    const box = new THREE.Mesh(new THREE.BoxGeometry(cube.width, COLLIDER_HEIGHT, cube.depth),
+        new THREE.MeshBasicMaterial({ color: cube.solid ? 0x4fa8ff : 0x7fe08a, transparent: true, opacity: 0.3, depthWrite: false }));
+    box.position.y = COLLIDER_HEIGHT / 2;
+    const edge = new THREE.LineSegments(new THREE.EdgesGeometry(box.geometry), new THREE.LineBasicMaterial({ color: cube.fades ? 0xffb020 : 0xffffff }));
+    edge.position.y = COLLIDER_HEIGHT / 2;
+    edge.raycast = () => {};
+    holder.add(box, edge);
+    return holder;
+}
+
 function buildSecret(secret) {
     const holder = new THREE.Group();
     holder.position.set(secret.x, 0, secret.z);
@@ -867,10 +946,10 @@ function buildSection(section, index) {
     const holder = new THREE.Group();
     holder.position.set(section.x, 0, section.z);
     const color = SECTION_COLORS[index % SECTION_COLORS.length];
-    const fill = plane(section.width, section.depth, section.ground ?? '#4f7d35', 0.01);
+    const fill = plane(section.width, section.depth, section.ground ?? '#4f7d35', 0.01 + lawnLift());
     const edge = outline(color);
     edge.scale.set(section.width, section.depth, 1);
-    edge.position.y = 0.08;
+    edge.position.y = 0.08 + lawnLift();
     const label = diorama ? labelSprite(section.name, hex(color)) : labelSprite(`${index + 1}. ${section.name}\n$${section.bonus} bonus · grass: ${grassName(section.fill ?? 'auto')}${(section.grassScale ?? 1) !== 1 ? ` ×${section.grassScale}` : ''}${section.maxGrass ? ` · max ${grassName(section.maxGrass)}` : ''}`, hex(color));
     label.position.y = 4;
     label.scale.multiplyScalar(1.6);
@@ -909,10 +988,10 @@ function buildPatch(patch) {
     const area = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.25, depthWrite: false, side: THREE.DoubleSide }));
     area.rotation.x = -Math.PI / 2;
     area.scale.set(patch.width, patch.depth, 1);
-    area.position.y = 0.06;
+    area.position.y = 0.06 + lawnLift();
     const edge = outline(color.getHex(), patch.shape === 'round');
     edge.scale.set(patch.width, patch.depth, 1);
-    edge.position.y = 0.07;
+    edge.position.y = 0.07 + lawnLift();
     holder.add(area, edge);
     return holder;
 }
@@ -1039,6 +1118,8 @@ const sameSel = (a, b) => a.type === b.type && a.index === b.index;
  * in it, leaves. `keep`: the others stay as they are (Ctrl+A).
  */
 function select(sel, add = false, keep = false) {
+    // Road tiles stay on their grid: never selected along with things the gizmo moves.
+    if (add && sel && selection && (sel.type === 'road') !== (selection.type === 'road')) add = false;
     if (add && sel && selection) {
         if (sameSel(sel, selection)) {
             selection = also.pop() ?? null;
@@ -1061,8 +1142,12 @@ function select(sel, add = false, keep = false) {
 
 /** A yellow box round everything selected (the gizmo's one brighter). */
 function renderHighlights() {
-    highlightGroup.clear();
+    emptyGroup(highlightGroup);
     for (const sel of selected()) {
+        if (sel.type === 'road') {
+            highlightRoad(sel);
+            continue;
+        }
         const holder = holders.get(keyOf(sel));
         if (!holder) continue;
         const box = new THREE.BoxHelper(holder, sameSel(sel, selection) ? 0xffe066 : 0xffb020);
@@ -1075,11 +1160,11 @@ function renderHighlights() {
 
 /** The boxes follow their things (after a move; a model that just loaded). */
 function updateHighlights() {
-    for (const box of highlightGroup.children) box.update();
+    for (const box of highlightGroup.children) box.update?.();
 }
 
 function attachGizmo() {
-    const holder = selection ? holders.get(keyOf(selection)) : null;
+    const holder = selection && selection.type !== 'road' ? holders.get(keyOf(selection)) : null;
     if (holder) gizmo.attach(holder);
     else gizmo.detach();
 }
@@ -1089,7 +1174,7 @@ const round = (value, step = 0.001) => Number((Math.round(value / step) * step).
 /** Things that turn (the rest only move / resize). */
 const TURNS = new Set(['prop', 'atm', 'wardrobe', 'patch', 'separator']);
 /** Things whose size is width x depth (scaling changes those, not a height). */
-const SIZED = new Set(['pavement', 'section', 'patch', 'sound', 'pen', 'secret']);
+const SIZED = new Set(['pavement', 'section', 'patch', 'sound', 'pen', 'secret', 'collider']);
 
 /** The gizmo moved/turned the holder: write it back into the data. */
 function syncFromGizmo() {
@@ -1170,8 +1255,11 @@ function focusSelection() {
 }
 
 /** Where new things go: the orbit target (the middle of the view), on the floor. */
+/** Where something new goes: the ground at the middle of the view (looking above the horizon: the point orbited round). */
 function dropPoint() {
-    return { x: round(orbit.target.x, SNAP), z: round(orbit.target.z, SNAP) };
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    const point = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), new THREE.Vector3()) ?? orbit.target;
+    return { x: round(point.x, SNAP), z: round(point.z, SNAP) };
 }
 
 const fileName = (path) => path.split('/').pop().replace(/\.(glb|gltf)$/i, '');
@@ -1180,6 +1268,42 @@ const titleCase = (text) => text.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => 
 function added(type) {
     rebuildAll();
     select({ type, index: listOf(type).length - 1 });
+}
+
+/**
+ * A goal section's mesh: the one already placed swaps to it (same place, at its own size), else it's placed on the
+ * section. Its snapshot (Map shots) is of the old one until a new one's taken.
+ */
+async function setGoalModel(section, path) {
+    const source = await loadModel(path);
+    const size = source ? new THREE.Box3().setFromObject(source).getSize(new THREE.Vector3()) : null;
+    const height = size && size.y > 1e-4 ? round(size.y, 0.01) : 10;
+    touch();
+    const placed = section.goalModel ? town.props.filter((prop) => prop.model === section.goalModel) : [];
+    placed.forEach((prop) => {
+        prop.model = path;
+        prop.height = height;
+        delete prop.stretch;
+    });
+    if (!placed.length && !town.props.some((prop) => prop.model === path)) {
+        town.props.push({ model: path, x: section.x, z: section.z, rotationY: 0, height, collider: null, fade: true });
+    }
+    section.goalModel = path;
+    rebuildAll();
+    toast(`Goal model: ${titleCase(fileName(path))}. Take a new snapshot in Map shots for the HUD.`);
+}
+
+function chooseGoalModel(section) {
+    openModelPicker({ current: section.goalModel, title: 'Goal model', confirmLabel: 'Use as the goal', onPick: (path) => void setGoalModel(section, path) });
+}
+
+async function importGoalModel(section) {
+    await openLibraryPicker({
+        onImported: async (path) => {
+            setModelCatalog(await api('/api/models'));
+            await setGoalModel(section, path);
+        },
+    });
 }
 
 function addModel(path) {
@@ -1236,6 +1360,12 @@ function addSound() {
     added('sound');
 }
 
+function addCollider() {
+    touch();
+    town.colliders.push({ ...dropPoint(), width: 4, depth: 4, solid: true });
+    added('collider');
+}
+
 function addSecret() {
     touch();
     let n = town.secrets.length + 1;
@@ -1252,8 +1382,7 @@ function addSection() {
     while (town.sections.some((s) => s.id === `section-${n}`)) n++;
     const width = last?.width ?? 20;
     const depth = last?.depth ?? 14;
-    const z = last ? last.z - last.depth / 2 - depth / 2 - 8 : 0;
-    const x = last?.x ?? 0;
+    const { x, z } = dropPoint();
     town.sections.push({
         id: `section-${n}`, name: `Section ${n}`, x, z, width, depth, fill: 'auto',
         completeAt: 0.97, bonus: Math.round((last?.bonus ?? 100) * 2.5), ground: last?.ground ?? '#4d7633', restoredGround: last?.restoredGround ?? '#6aa845',
@@ -1302,6 +1431,7 @@ function removeSelection() {
         else if (sel.type === 'shore') town.island.outline.splice(sel.index, 1);
         else listOf(sel.type).splice(sel.index, 1);
     }
+    if (doomed.some((sel) => sel.type === 'road')) syncRoadTraffic();
     selection = null;
     also = [];
     rebuildAll();
@@ -1407,7 +1537,8 @@ const roadKit = () => mow.roadKit;
 
 /** Lays the roads' pieces again (each fitted to its neighbours: the game's solveRoads()). */
 function rebuildRoads() {
-    roadGroup.clear();
+    emptyGroup(roadGroup);
+    for (const key of [...holders.keys()]) if (key.startsWith('road:')) holders.delete(key);
     const kit = roadKit();
     const count = town.roads?.cells.length ?? 0;
     const summary = host.querySelector('#townRoadSummary');
@@ -1417,6 +1548,8 @@ function rebuildRoads() {
         const holder = new THREE.Group();
         holder.position.set(piece.x, 0, piece.z);
         holder.rotation.y = piece.rotationY;
+        holder.userData.entity = { type: 'road', index: roadIndex(piece.i, piece.j) };
+        holders.set(keyOf(holder.userData.entity), holder);
         roadGroup.add(holder);
         void fillModel(holder, piece.model, 0.2, kit.elevation).then((model) => model?.traverse((child) => { child.raycast = () => {}; }));
     }
@@ -1438,11 +1571,10 @@ function setRoadMode(on) {
     roadHover.visible = false;
     // Left-drag paints: the view still pans (right) and zooms (wheel).
     orbit.mouseButtons.LEFT = on ? null : THREE.MOUSE.ROTATE;
-    if (on) {
-        select(null);
-        gizmo.detach();
-    }
-    host.querySelector('#townRoadMode')?.classList.toggle('active', on);
+    if (on && selection?.type !== 'road') select(null);
+    host.querySelector('#townRoadMode')?.classList.toggle('primary', on);
+    host.querySelector('#townHint').textContent = on ? ROAD_HINT : TOWN_HINT;
+    renderInspector();
 }
 
 /** The road cell under the pointer (on the ground). */
@@ -1472,16 +1604,28 @@ function paintRoad([i, j], erase) {
     return true;
 }
 
+/** Lays or takes up the road at a cell: an undo step for the stroke's first change, and the pieces fitted again. */
+function strokeRoad(cell) {
+    const there = roadIndex(...cell) >= 0;
+    if (there !== roadStroke.erase) return;
+    if (!roadStroke.changed) touch();
+    roadStroke.changed = true;
+    paintRoad(cell, roadStroke.erase);
+    rebuildRoads();
+}
+
 function startRoadStroke(event) {
     const cell = roadCellUnder(event);
     if (!cell) return;
-    touch();
-    const erase = event.shiftKey;
-    roadStroke = { erase, cell, key: roadCellKey(...cell), wasRoad: roadIndex(...cell) >= 0, moved: false };
-    if (paintRoad(cell, erase)) rebuildRoads();
+    roadStroke = { erase: event.shiftKey, cell, key: roadCellKey(...cell), moved: false, changed: false };
+    // Indices shift as tiles come and go: whatever was selected lets go.
+    if (selection?.type === 'road') select(null);
+    strokeRoad(cell);
 }
 
 function moveRoadStroke(event) {
+    // Let go outside the view.
+    if (roadStroke && !(event.buttons & 1)) endRoadStroke();
     const cell = roadCellUnder(event);
     const tile = roadKit().tile;
     roadHover.visible = Boolean(cell);
@@ -1493,25 +1637,97 @@ function moveRoadStroke(event) {
     if (!roadStroke || !cell || roadCellKey(...cell) === roadStroke.key) return;
     roadStroke.key = roadCellKey(...cell);
     roadStroke.moved = true;
-    if (paintRoad(cell, roadStroke.erase)) rebuildRoads();
+    strokeRoad(cell);
 }
 
 function endRoadStroke() {
     if (!roadStroke) return;
-    const { erase, cell, wasRoad, moved } = roadStroke;
+    const { erase, cell, moved, changed } = roadStroke;
     roadStroke = null;
-    // A click on a laid tile: its next variant (back to the first after the last).
-    if (!erase && wasRoad && !moved) {
-        const road = town.roads.cells[roadIndex(...cell)];
-        const piece = solveRoads(town.roads, roadKit()).find((p) => p.i === road[0] && p.j === road[1]);
-        const next = (road[2] ?? 0) + 1;
-        if (piece && next < piece.variants) road[2] = next;
-        else road.length = 2;
-        rebuildRoads();
+    if (changed) {
+        syncRoadTraffic();
+        rebuildEntities();
+        renderLists();
     }
-    syncRoadTraffic();
-    rebuildEntities();
-    renderLists();
+    // A click (not a drag) leaves that tile selected: its look, Del.
+    const at = !erase && !moved ? roadIndex(...cell) : -1;
+    select(at >= 0 ? { type: 'road', index: at } : null);
+}
+
+/** The selected tile's piece as the kit fits it (its model, how many looks it has). */
+function roadPiece(road) {
+    return solveRoads(town.roads, roadKit()).find((piece) => piece.i === road[0] && piece.j === road[1]);
+}
+
+/** The selected tile's next (or previous) look, round to the first. */
+function cycleRoadLook(step) {
+    const road = entityData(selection);
+    const piece = road && roadPiece(road);
+    if (!piece || piece.variants < 2) return toast('This piece has only one look.');
+    touch();
+    const look = ((road[2] ?? 0) + step + piece.variants) % piece.variants;
+    if (look) road[2] = look;
+    else road.length = 2;
+    rebuildRoads();
+    renderInspector();
+}
+
+/** A selected tile's square, lit up. */
+function highlightRoad(sel) {
+    const road = entityData(sel);
+    if (!road) return;
+    const tile = roadKit().tile;
+    const lit = plane(tile, tile, sameSel(sel, selection) ? 0xffe066 : 0xffb020, 0.3, 0.3);
+    const edge = outline(0xffe066);
+    edge.scale.set(tile, tile, 1);
+    edge.position.y = 0.32;
+    for (const part of [lit, edge]) {
+        part.position.x = road[0] * tile;
+        part.position.z = road[1] * tile;
+        highlightGroup.add(part);
+    }
+}
+
+/** A row of the inspector's shortcuts. */
+const shortcut = (keys, what) => el('div', { class: 'muted small' }, el('span', { class: 'tag' }, keys), ` ${what}`);
+
+/** The inspector for a selected road tile: what it is, its look, removing it, and the keys. */
+function roadInspector(road) {
+    const piece = roadPiece(road);
+    const count = also.length + 1;
+    return [
+        el('div', { class: 'inspector-title' }, `Road tile ${road[0]}, ${road[1]}`, el('span', { class: 'tag' }, 'road')),
+        also.length ? el('p', { class: 'muted small' }, `${count} tiles selected (lit up): Del removes them all.`) : '',
+        el('div', { class: 'muted small' }, piece ? fileName(piece.model) : ''),
+        piece && piece.variants > 1 ? el('div', { class: 'stack' },
+            el('div', { class: 'muted small' }, `Look ${((road[2] ?? 0) % piece.variants) + 1} of ${piece.variants}`),
+            el('button', { class: 'block', onclick: () => cycleRoadLook(-1) }, '◀ Previous look'),
+            el('button', { class: 'block', onclick: () => cycleRoadLook(1) }, 'Next look ▶')) : el('p', { class: 'muted small' }, 'This piece has one look.'),
+        el('button', { class: 'block', onclick: () => removeSelection() }, count > 1 ? `🗑 Remove ${count} tiles` : '🗑 Remove this tile'),
+        el('p', { class: 'muted small' }, 'Its neighbours fit themselves again, and the cars follow. Cars starting on a removed tile go too.'),
+        shortcut('Del', 'remove'),
+        shortcut('V', 'next look'),
+        shortcut('F', 'focus the view on it'),
+        shortcut('Esc', 'let go'),
+        shortcut('Ctrl+Z', 'undo'),
+        shortcut('Shift+click', roadMode ? 'remove directly' : 'select more tiles'),
+    ].filter(Boolean);
+}
+
+/** The inspector while building roads, with nothing selected. */
+function roadModeHelp() {
+    return [
+        el('div', { class: 'inspector-title' }, 'Building roads', el('span', { class: 'tag' }, 'B to finish')),
+        el('p', { class: 'muted small' }, 'Pieces fit themselves to their neighbours, and the cars follow.'),
+        shortcut('Click / drag', 'lay road'),
+        shortcut('Shift+drag', 'remove road'),
+        shortcut('Click a laid tile', 'select it'),
+        shortcut('Del', 'remove the selected tile'),
+        shortcut('V', 'its next look'),
+        shortcut('Right-drag', 'pan'),
+        shortcut('Wheel', 'zoom'),
+        shortcut('Ctrl+Z', 'undo'),
+    ];
 }
 
 function clearRoads() {
@@ -1527,7 +1743,7 @@ function clearRoads() {
  * rest of its network (where a car there can get to) pale, everything else faded.
  */
 function renderTraffic() {
-    trafficGroup.clear();
+    emptyGroup(trafficGroup);
     if (!showTraffic || !town?.traffic) return;
     const selected = selection?.type === 'waypoint' ? town.traffic.waypoints[selection.index]?.id : null;
     const network = selected ? reachable(selected) : null;
@@ -1628,9 +1844,33 @@ function waypointsFromRoads() {
     toast(`${points.length} waypoints, ${links.length} links from the road tiles.`);
 }
 
+/**
+ * That many cars: the last ones go, or new ones start as far as they can from every other car, on waypoints with
+ * a road out (each waypoint at most one, so there's as many as there are waypoints).
+ */
+function setCarCount(wanted) {
+    const { waypoints, links, cars } = town.traffic;
+    const models = mow.traffic?.models ?? [];
+    const linked = new Set(links.flat());
+    const spots = waypoints.filter((point) => linked.has(point.id));
+    const count = Math.min(spots.length, Math.max(0, Math.round(wanted)));
+    touch();
+    if (count < cars.length) cars.length = count;
+    while (cars.length < count) {
+        const taken = cars.map((car) => waypoints[waypointIndex(car.at)]).filter(Boolean);
+        const free = spots.filter((point) => !taken.includes(point));
+        const clearance = (point) => Math.min(Infinity, ...taken.map((other) => Math.hypot(point.x - other.x, point.z - other.z)));
+        const at = free.reduce((best, point) => (clearance(point) > clearance(best) ? point : best));
+        cars.push({ at: at.id, ...(models.length ? { model: models[cars.length % models.length] } : {}) });
+    }
+    rebuildEntities();
+    renderLists();
+}
+
 function renderTrafficList() {
     const { waypoints, links, cars } = town.traffic;
     host.querySelector('#townTrafficSummary').textContent = `${waypoints.length} waypoints · ${links.length} roads · ${cars.length} cars`;
+    host.querySelector('#townCarCount').replaceChildren(numberField('Cars', cars.length, 1, (v) => setCarCount(v)));
     host.querySelector('#townCarList').replaceChildren(...cars.map((car) => {
         const index = waypointIndex(car.at);
         return listItem('waypoint', index, `🚗 ${carName(car.model)}`, `at ${car.at}`);
@@ -1693,6 +1933,18 @@ function renderLists() {
     host.querySelector('#townWardrobeList').replaceChildren(...town.wardrobes.map((w, i) => listItem('wardrobe', i, `Wardrobe ${i + 1}`, appearsLabel(w))));
     host.querySelector('#townPavementList').replaceChildren(...town.pavements.map((p, i) => listItem('pavement', i, p.id, `${p.width}×${p.depth}`)));
     renderTrafficList();
+    host.querySelector('#townOpenAll').replaceChildren(checkField('Every section open from the start (the player chooses where to go)', Boolean(town.openAll), (on) => {
+        touch();
+        if (on) town.openAll = true;
+        else delete town.openAll;
+    }), checkField('Grass over pavements (off: a pavement cuts its way through a lawn, like a park path)', Boolean(town.grassOverPavement), (on) => {
+        touch();
+        if (on) town.grassOverPavement = true;
+        else delete town.grassOverPavement;
+        rebuildAll();
+    }));
+    host.querySelector('#townColliderList').replaceChildren(...town.colliders.map((cube, i) => listItem('collider', i, `🧊 Cube ${i + 1}`,
+        [cube.solid ? 'solid' : 'walk through', cube.fades ? `fades ${fileName(cube.fades)}` : ''].filter(Boolean).join(' · '))));
     host.querySelector('#townSecretList').replaceChildren(...town.secrets.map((s, i) => listItem('secret', i, `🤫 ${s.id}`, `$${s.reward} · ${s.width}×${s.depth}`)));
     host.querySelector('#townSoundList').replaceChildren(...town.sounds.map((s, i) => listItem('sound', i, `🔊 ${s.id}`, `${s.sound} · ${s.volume}`)));
     renderSoundSettings();
@@ -1811,14 +2063,19 @@ function renderInspector() {
     const box = host.querySelector('#townInspector');
     const data = entityData(selection);
     if (!data) {
-        box.replaceChildren(el('p', { class: 'muted' }, 'Nothing selected. Click something in the town, or add one on the left.'));
+        if (roadMode) box.replaceChildren(...roadModeHelp());
+        else box.replaceChildren(el('p', { class: 'muted' }, 'Nothing selected. Click something in the town, or add one on the left.'));
+        return;
+    }
+    if (selection.type === 'road') {
+        box.replaceChildren(...roadInspector(data));
         return;
     }
     const type = selection.type;
     const titles = {
         prop: () => titleCase(fileName(data.model)), atm: () => `ATM ${selection.index + 1}`, wardrobe: () => `Wardrobe ${selection.index + 1}`, pavement: () => data.id,
         section: () => data.name, patch: () => `Grass patch: ${grassName(data.grass)}`, start: () => 'Player start',
-        sound: () => `Sound zone: ${data.id}`, waypoint: () => `Waypoint ${data.id}`, secret: () => `Secret patch: ${data.id}`, pen: () => `${town.sections[selection.index].name} pen`, centre: () => 'Grass noise centre', shore: () => `Shore point ${selection.index + 1}`, separator: () => `${town.sections[selection.index].name} separator`,
+        collider: () => `Collider cube ${selection.index + 1}`, sound: () => `Sound zone: ${data.id}`, waypoint: () => `Waypoint ${data.id}`, secret: () => `Secret patch: ${data.id}`, pen: () => `${town.sections[selection.index].name} pen`, centre: () => 'Grass noise centre', shore: () => `Shore point ${selection.index + 1}`, separator: () => `${town.sections[selection.index].name} separator`,
     };
     const rows = [
         el('div', { class: 'inspector-title' }, titles[type](), el('span', { class: 'tag' }, type)),
@@ -1877,6 +2134,17 @@ function renderInspector() {
             el('p', { class: 'muted small' }, 'Full volume inside the box, fading to nothing at the dashed line (Fade distance out from its edges); heard from the box\'s side the player is nearest. A new sound file needs `npm run audio` to reach the game.'));
     }
     if (type === 'waypoint') rows.push(...waypointInspector(data, selection.index));
+    if (type === 'collider') {
+        const models = [...new Set([...town.props.map((prop) => prop.model), ...(data.fades ? [data.fades] : [])])]
+            .sort((a, b) => fileName(a).localeCompare(fileName(b)));
+        rows.push(
+            checkField('Solid (blocks walking, no grass under it)', data.solid, (on) => edit((d) => { d.solid = on; })),
+            selectField('Fades', data.fades ?? '', [['', 'Nothing'], ...models.map((model) => [model, titleCase(fileName(model))])], (v) => edit((d) => {
+                if (v) d.fades = v;
+                else delete d.fades;
+            })),
+            el('p', { class: 'muted small' }, 'While the player is in or touching this cube, that prop goes see-through. Once any cube names a prop, only cubes fade it.'));
+    }
     if (type === 'secret') {
         rows.push(
             textField('Id', data.id, (v) => edit((d) => { d.id = v || d.id; })),
@@ -1911,6 +2179,21 @@ function renderInspector() {
                 const scale = Math.round(Math.min(3, Math.max(0.2, v || 1)) * 100) / 100;
                 if (scale === 1) delete d.grassScale;
                 else d.grassScale = scale;
+            })),
+            numberField('City goal: opens after N areas (0: no)', data.opensAfter ?? 0, 1, (v) => edit((d) => {
+                const count = Math.max(0, Math.round(v || 0));
+                if (count) d.opensAfter = count;
+                else delete d.opensAfter;
+            })),
+            ...(data.opensAfter ? [
+                el('div', { class: 'inspector-title' }, 'Goal model', el('span', { class: 'tag' }, data.goalModel ? titleCase(fileName(data.goalModel)) : 'none')),
+                el('button', { class: 'block', onclick: () => chooseGoalModel(data) }, '🎯 Choose model…'),
+                el('button', { class: 'block', onclick: () => importGoalModel(data) }, '📚 Import from 3D library…'),
+                el('p', { class: 'muted small' }, 'The goal\'s mesh: placed in the level at its own size (move and scale it like any prop), shown on the HUD\'s timeline. Choosing another swaps it in the same place.'),
+            ] : []),
+            numberField('Corner radius (no grass past it)', data.cornerRadius ?? 0, 0.1, (v) => edit((d) => {
+                if (v > 0) d.cornerRadius = v;
+                else delete d.cornerRadius;
             })),
             selectField('Max growth', data.maxGrass ?? '', maxGrassOptions(), (v) => edit((d) => {
                 if (v) d.maxGrass = v;

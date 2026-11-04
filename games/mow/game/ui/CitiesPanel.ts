@@ -166,7 +166,7 @@ export class CitiesPanel extends PIXI.Container {
                 art.addChild(sprite);
             });
         } else {
-            const lock = PIXI.Sprite.from('Icon_Lock02');
+            const lock = PIXI.Sprite.from('Icon_Lock03');
             lock.anchor.set(0.5);
             lock.scale.set(44 / Math.max(lock.texture.width, lock.texture.height, 1));
             art.addChild(lock);

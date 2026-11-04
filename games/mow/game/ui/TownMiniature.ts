@@ -13,6 +13,7 @@
 // The section pictures (<section id>.webp) are baked too, for later; nothing shows them yet.
 // Missing pictures (not baked yet) leave `ready` false: the HUD falls back to the drawn map (TownMap).
 
+import { BakedShape } from './BakedShape';
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { UiKit } from './UiKit';
@@ -224,7 +225,9 @@ export class TownMiniature extends PIXI.Container {
     public readonly ready: Promise<boolean>;
     private picture?: VeiledPicture;
     private readonly badge = new PIXI.Container();
-    private readonly badgePill = new PIXI.Graphics();
+    /** The % pill's art (BakedShape: rebuilt when its width changes). */
+    private readonly badgePill = new PIXI.Container();
+    private badgePillWidth = 0;
     private readonly badgeStar = PIXI.Sprite.from('ItemIcon_Star_Gold');
     private readonly badgeText = UiKit.text('hud', 'toast', { text: '' }, { fontSize: BADGE_FONT, strokeThickness: 5 });
     private target = 0;
@@ -535,8 +538,12 @@ export class TownMiniature extends PIXI.Container {
         const starRoom = BADGE_STAR * 0.45;
         const width = Math.max(pips ? 0 : BADGE_WIDTH, starRoom + contentWidth + BADGE_PAD * 2);
         const left = -width / 2;
-        this.badgePill.clear().lineStyle(3, 0xffffff, 0.95).beginFill(0x2a2350, 0.92)
-            .drawRoundedRect(left, -BADGE_HEIGHT / 2, width, BADGE_HEIGHT, BADGE_HEIGHT / 2).endFill();
+        const pillWidth = Math.ceil(width);
+        if (pillWidth !== this.badgePillWidth) {
+            this.badgePillWidth = pillWidth;
+            this.badgePill.removeChildren().forEach((child) => child.destroy({ children: true }));
+            this.badgePill.addChild(new BakedShape(pillWidth, BADGE_HEIGHT, BADGE_HEIGHT / 2, { fill: 0x2a2350, fillAlpha: 0.92, rim: 0xffffff, rimWidth: 3, rimAlpha: 0.95 }));
+        }
         this.badgeStar.position.set(left + 4, -2);
         const middle = (left + starRoom + width / 2) / 2;
         this.badgeText.x = middle;

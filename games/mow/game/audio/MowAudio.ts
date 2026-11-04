@@ -14,7 +14,7 @@ import SoundManager, { SoundAsset } from 'core/audio/SoundManager';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { Howler } from 'howler';
 import audioManifest from '../../manifests/audio.json';
-import { MUSIC_TRACKS, TOWN, cityMusic } from '../data/MowConfig';
+import { MOW, MUSIC_TRACKS, TOWN, cityMusic } from '../data/MowConfig';
 
 const five = (name: string) => [1, 2, 3, 4, 5].map((i) => `${name}-${i}`);
 
@@ -24,7 +24,7 @@ const SOUNDS = {
     // the pickaxe and up play it higher (sharper), the shovel lower (duller).
     hitPick: { soundId: five('dig-hit'), volumeMinMax: [0.2, 0.26], pitchMinMax: [1.08, 1.22] },
     // Mowing: a short, bright swish per cut (a placeholder from the collect sounds, pitched up).
-    cut: { soundId: five('hit-gem'), volumeMinMax: [0.07, 0.1], pitchMinMax: [1.35, 1.7] },
+    cut: { soundId: five('hit-gem'), volumeMinMax: MOW.cutSound.volume, pitchMinMax: MOW.cutSound.pitch },
     hitStone: { soundId: five('dig-hit'), volumeMinMax: [0.22, 0.28], pitchMinMax: [0.88, 1.0] },
     // Soft ground (dirt, gravel): a low, gritty crunch instead of the stone tick. Placeholder: the stone footsteps
     // pitched down. To use real dirt-dig sounds, add dig-dirt-1..5 to raw-assets/audio (`npm run audio`) and switch

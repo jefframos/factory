@@ -3,7 +3,8 @@
 // The "fill the whole town" meter: a map of the island, drawn from the level (sea, island outline, roads, sections — so
 // it follows the editor with nothing extra to author), with each section filling up in bright green from the bottom as
 // it's restored (a rippling top edge), the one being worked on outlined in pulsing gold, locked ones dark with a lock,
-// restored ones with a check, a dot for the player, and the whole town's %.
+// restored ones with a check, a marker for each ATM and wardrobe that's out (their colour and icon), a dot for the
+// player, and the whole town's %.
 // Two looks (TownMapOptions): the compact one (a dark frame, the % under it) the HUD keeps top-right when no miniature
 // is baked and flies to the centre when a section is done (MowHud.flyMap(); celebrate() is the fill / flash / unlock
 // played there), and the panel the MAP button opens (`panel`: the UI kit's panel with a TOWN MAP ribbon, each
@@ -14,10 +15,11 @@
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
-import { TOWN, DistrictDef, SECRET_CHEST_MODEL } from '../data/MowConfig';
+import { TOWN, AtmLook, AtmSpot, DistrictDef, SECRET_CHEST_MODEL } from '../data/MowConfig';
 import { MowProgress } from '../data/MowProgress';
 import { ModelIcons } from './ModelIcons';
 import { UiKit } from './UiKit';
+import { BakedShape } from './BakedShape';
 import { UiAnim } from './UiAnim';
 import { t, names, Localization } from '../i18n/Localization';
 
@@ -51,6 +53,8 @@ const FILL_EDGE = 0xd8ffb0;
 const LOCKED_SHADE = 0.45;
 const GOLD = 0xffd86b;
 const OUTLINE = 0x1d140e;
+/** A station's marker: its disc's radius, and its icon's size as a share of the disc (x the map's sqrt(k)). */
+const STATION_MARKER = { radius: 9, icon: 1.25 };
 /** How fast the shown fill eases to the real share (per second), and the race to full when a section is done. */
 const EASE_RATE = 5;
 const RACE_SEC = 0.45;
@@ -86,6 +90,9 @@ export class TownMap extends PIXI.Container {
     public readonly panelHeight: number;
     private readonly sections: SectionView[] = [];
     private readonly player = new PIXI.Container();
+    /** The ATMs' and wardrobes' markers, in the level's order (shown as they come out: setStations()). */
+    private readonly atmMarkers: PIXI.Container[] = [];
+    private readonly wardrobeMarkers: PIXI.Container[] = [];
     private readonly playerRing = new PIXI.Graphics();
     private readonly label: PIXI.Text;
     private readonly barFill = new PIXI.Container();
@@ -213,9 +220,12 @@ export class TownMap extends PIXI.Container {
         });
 
         // The player: a white dot with a ring pulsing out of it.
-        this.player.addChild(this.playerRing, new PIXI.Graphics().lineStyle(2 * Math.sqrt(k), OUTLINE).beginFill(0xffffff).drawCircle(0, 0, 4.5 * Math.sqrt(k)).endFill());
+        this.player.addChild(this.playerRing, BakedShape.disc(4.5 * Math.sqrt(k), { fill: 0xffffff, rim: OUTLINE, rimWidth: 2 * Math.sqrt(k) }));
         this.player.visible = false;
-        map.addChild(labels, this.player);
+        const stations = new PIXI.Container();
+        this.addMarkers(stations, TOWN.atms, TOWN.atm, this.atmMarkers);
+        this.addMarkers(stations, TOWN.wardrobes ?? [], TOWN.wardrobe, this.wardrobeMarkers);
+        map.addChild(labels, stations, this.player);
         this.addChild(map);
 
         // The town's %: under the map (compact), or over a bar (panel).
@@ -272,6 +282,34 @@ export class TownMap extends PIXI.Container {
      * Every section's restored share (0..1; 1 once restored), whether it's open, whether it's restored, and the one
      * being worked on (-1: none). Called every frame; the fill eases to it.
      */
+    private addMarkers(parent: PIXI.Container, spots: readonly AtmSpot[], look: AtmLook, markers: PIXI.Container[]): void {
+        const radius = STATION_MARKER.radius * Math.sqrt(this.k);
+        for (const spot of spots) {
+            const marker = new PIXI.Container();
+            marker.position.set(this.mapX(spot.x), this.mapY(spot.z));
+            marker.visible = false;
+            marker.addChild(BakedShape.disc(radius, { fill: hex(look.color, 0x3fd16b), rim: 0xffffff, rimWidth: 2 * Math.sqrt(this.k) }));
+            const icon = PIXI.Sprite.from(look.icon);
+            icon.anchor.set(0.5);
+            icon.scale.set((radius * STATION_MARKER.icon) / Math.max(icon.texture.width, icon.texture.height, 1));
+            marker.addChild(icon);
+            parent.addChild(marker);
+            markers.push(marker);
+        }
+    }
+
+    /** Which ATMs and wardrobes are out: their markers follow (one coming out pops). */
+    public setStations(atms: readonly boolean[], wardrobes: readonly boolean[]): void {
+        const apply = (markers: PIXI.Container[], shown: readonly boolean[]) => markers.forEach((marker, i) => {
+            const on = !!shown[i];
+            if (on === marker.visible) return;
+            marker.visible = on;
+            if (on) UiAnim.punch(marker, 0.5);
+        });
+        apply(this.atmMarkers, atms);
+        apply(this.wardrobeMarkers, wardrobes);
+    }
+
     public setState(shares: readonly number[], open: readonly boolean[], restored: readonly boolean[], current: number): void {
         this.current = current;
         this.sections.forEach((view, i) => {
@@ -345,7 +383,7 @@ export class TownMap extends PIXI.Container {
         view.badge.alpha = 1;
         const size = this.badgeSize(view);
         if (!view.open) {
-            const lock = PIXI.Sprite.from('Icon_Lock02');
+            const lock = PIXI.Sprite.from('Icon_Lock03');
             lock.anchor.set(0.5);
             lock.scale.set(size / Math.max(lock.texture.width, lock.texture.height, 1));
             view.badge.addChild(lock);
@@ -360,7 +398,7 @@ export class TownMap extends PIXI.Container {
 
     /** A lock lifting off a section that just opened. */
     private popLock(view: SectionView): void {
-        const lock = PIXI.Sprite.from('Icon_Lock02');
+        const lock = PIXI.Sprite.from('Icon_Lock03');
         lock.anchor.set(0.5);
         const size = this.badgeSize(view);
         lock.scale.set(size / Math.max(lock.texture.width, lock.texture.height, 1));

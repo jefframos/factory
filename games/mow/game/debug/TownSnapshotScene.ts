@@ -13,6 +13,7 @@
 //     it (what fits in it; the ground clipped to it) onto a slab of earth;
 //   - custom: the zone's own diorama (a level shaped like town.json, built in the editor), loaded in the town's place
 //     (TOWN is swapped before anything is built: this page only ever shoots).
+//   - a city's goal (`<map>-goal`): the goal's model alone (DistrictDef.goalModel), whole, for the HUD's GoalTimeline.
 // Without `zone`, every zone is shot as the original. Each PNG is posted to the editor server
 // (POST /api/map-snapshot?name=…), which saves it under raw-assets/non-preload/map and publishes it as
 // public/mow/images/non-preload/map/<name>.webp at once.
@@ -20,7 +21,7 @@
 import * as THREE from 'three';
 import { Game } from 'core/Game';
 import { ThreeScene } from 'core/scene/ThreeScene';
-import { CITY, MOW, TOWN, TownLevel } from '../data/MowConfig';
+import { CITY, MOW, TOWN, TownLevel, goalSection, goalZone } from '../data/MowConfig';
 import { Town } from '../world/Town';
 import { GrassField } from '../world/GrassField';
 import { BendService } from '../services/BendService';
@@ -160,7 +161,23 @@ export default class TownSnapshotScene extends ThreeScene {
 
         const shots: { name: string; box: THREE.Box3; section?: (typeof TOWN.sections)[number]; slab?: boolean }[] = [];
         const camera = this.settings.camera ?? DEFAULT_CAMERA;
-        if (this.custom) {
+        if (this.zone === goalZone(CITY)) {
+            const goal = goalSection();
+            const object = goal?.goalModel ? this.town.propObject(goal.goalModel) : undefined;
+            if (!object) {
+                this.say('Map snapshots: this city\'s goal has no mesh placed (its section\'s "Goal model" in the editor).');
+                renderer.dispose();
+                return;
+            }
+            // Only it: nothing else in the shot.
+            this.threeScene.traverse((child) => {
+                if (child instanceof THREE.Mesh || child instanceof THREE.Sprite || child instanceof THREE.Line) child.visible = false;
+            });
+            object.traverse((child) => {
+                child.visible = true;
+            });
+            shots.push({ name: this.zone, box: new THREE.Box3().setFromObject(object) });
+        } else if (this.custom) {
             // The diorama whole: on its island's sides, or (none) on a slab of earth under its ground.
             shots.push({ name: this.zone!, box: this.islandBox(), slab: !TOWN.island });
         } else {

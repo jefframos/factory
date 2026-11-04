@@ -50,7 +50,7 @@ import { isRush } from '../data/GameMode';
 import { MowHud, ShopHint, CELEBRATION_SEC } from '../ui/MowHud';
 import { RARITY_COLORS } from '../ui/TrophiesPanel';
 import { MowEffects } from '../vfx/MowEffects';
-import { CITIES, CITY, CityDef, MOW, NEXT_CITY, TOWN, partName, sectionOpen, SecretDef, TreasureDef, firstToolFor, SECRET_CHEST_MODEL } from '../data/MowConfig';
+import { CITIES, CITY, CityDef, MOW, NEXT_CITY, TOWN, goalCount, goalSection, partName, sectionOpen, SecretDef, TreasureDef, firstToolFor, SECRET_CHEST_MODEL } from '../data/MowConfig';
 import { TreasureBeacons } from '../world/TreasureBeacons';
 import { SecretPatches } from '../world/SecretPatches';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
@@ -80,6 +80,9 @@ const MAX_FRAME_SEC = 0.1;
 /** Metres walked per footstep sound. */
 const STEP_DISTANCE = 0.9;
 const FLOOR_HALF_THICKNESS = 0.5;
+/** The floor collider reaches this far from the middle at least, and this much past the level's edge. */
+const FLOOR_MIN_HALF = 80;
+const FLOOR_MARGIN = 20;
 /** Selling: at most this many clumps are tossed into the bin. */
 const SELL_TOSSES = 12;
 const SELL_TOSS_INTERVAL = 0.07;
@@ -94,6 +97,8 @@ const MINIATURE_CLOSE_STEP = 0.005;
 const OCCLUSION_HEIGHT = 0.9;
 /** A newly opened section (onUnlock.pan, after the celebration): the camera glides over, holds, glides back (seconds). */
 const PAN = { delay: 0.4, glide: 0.9, hold: 1.4 };
+/** An area's lock comes off the goal's timeline this long before its celebration ends (the pan to the goal follows it). */
+const GOAL_LOCK_LEAD_SEC = 1.1;
 /**
  * Wandering: further than FAR units from the section being worked on (its rect), the arrows lead back into it, until
  * the player is back inside (BACK units in from its edge counts).
@@ -279,6 +284,7 @@ export default class MowScene extends ThreeScene {
             // The first ATM waits for this (appearsWhenFull): it pops up now, and the arrows lead to it.
             this.town.revealStations();
         }, (grass) => {
+            GameAnalytics.blocked(grass.id);
             const tool = firstToolFor(grass);
             if (tool) {
                 const at = (this.mowing.wall ?? this.player.transform.position).clone().setY(2.2);
@@ -313,10 +319,13 @@ export default class MowScene extends ThreeScene {
     private buildLights(): void {
         this.threeScene.background = new THREE.Color(0x9fd4f2);
         addTownLights(this.threeScene);
-        // A floor collider under the whole town (the character stands on it).
+        // A floor collider under the whole town (the character stands on it), as far as the level's ground and shore go.
+        const { ground: area, island } = TOWN;
+        const reachX = Math.max(FLOOR_MIN_HALF, Math.abs(area.x) + area.width / 2, ...(island?.outline ?? []).map((point) => Math.abs(point.x)));
+        const reachZ = Math.max(FLOOR_MIN_HALF, Math.abs(area.z) + area.depth / 2, ...(island?.outline ?? []).map((point) => Math.abs(point.z)));
         const ground = this.world.spawn();
         ground.addComponent(new RigidBody({
-            halfExtents: new THREE.Vector3(80, FLOOR_HALF_THICKNESS, 80),
+            halfExtents: new THREE.Vector3(reachX + FLOOR_MARGIN, FLOOR_HALF_THICKNESS, reachZ + FLOOR_MARGIN),
             centerOffset: new THREE.Vector3(0, -FLOOR_HALF_THICKNESS, 0),
             isStatic: true,
             layer: Layers.Environment,
@@ -356,12 +365,25 @@ export default class MowScene extends ThreeScene {
         this.resize();
     }
 
+    /** Debug: whether the mower can cut where the player stands, or what's stopping it. */
+    private mowingStatus(): string {
+        if (MowProgress.full) return 'NO: bag full';
+        if (MowProgress.tool.ride && !this.player.riding) return 'NO: on foot with a ridden mower';
+        const { x, z } = this.player.transform.position;
+        const d = MOW.districts.findIndex((district) => Math.abs(x - district.x) <= district.width / 2 && Math.abs(z - district.z) <= district.depth / 2);
+        if (d < 0) return 'NO: not in an area';
+        if (!this.town.isOpen(d)) return `NO: ${MOW.districts[d].name} is locked`;
+        if (MowProgress.isRestored(MOW.districts[d].id)) return `${MOW.districts[d].name} is done`;
+        return `yes: ${MOW.districts[d].name}, power ${MowProgress.power}`;
+    }
+
     private buildDebug(): void {
         const panel = DebugOverlay.instance.panel('Mow', { id: 'mow.progress' });
         panel.monitor('Money', () => MowProgress.money);
         panel.monitor('Bag', () => `${Math.floor(MowProgress.clippings)}/${MowProgress.capacity}`);
         panel.monitor('Tool', () => MowProgress.tool.name);
         panel.monitor('Park', () => `${Math.floor(this.grass.progress(0) * 100)}%`);
+        panel.monitor('Mowing', () => this.mowingStatus());
         panel.button('ADD $100', () => MowProgress.addMoney(100));
         panel.button('ADD $1000', () => MowProgress.addMoney(1000));
         panel.button('FILL BAG', () => MowProgress.addClippings(MowProgress.capacity - MowProgress.clippings));
@@ -370,6 +392,21 @@ export default class MowScene extends ThreeScene {
             MowProgress.completeCity();
             if (!CITY.keepGear) this.showNewCity();
             this.hud.openCities('select');
+        });
+        panel.button('UNLOCK ALL CITIES', () => {
+            MowProgress.openAllCities();
+            this.hud.openCities('select');
+        });
+        // Session only: a goal locked by its count (restoring areas opens it for good).
+        panel.button('OPEN ALL AREAS HERE', () => {
+            MOW.districts.forEach((_, d) => {
+                if (!this.town.isOpen(d)) this.town.unlock(d);
+            });
+        });
+        panel.button('RESET THIS CITY', () => {
+            if (!window.confirm(`Reset ${CITY.name} (its money, gear and grass)?`)) return;
+            MowProgress.resetCity();
+            void this.restart();
         });
         panel.button('RESTORE CURRENT DISTRICT', () => {
             const d = this.currentDistrict();
@@ -744,6 +781,7 @@ export default class MowScene extends ThreeScene {
         const shares = MOW.districts.map((_, i) => (restoredFlags[i] ? 1 : openFlags[i] ? this.grass.progress(i) : 0));
         const working = MOW.districts.findIndex((_, i) => openFlags[i] && !restoredFlags[i]);
         this.hud.setTownMap(shares, openFlags, restoredFlags, working);
+        this.hud.setMapStations(this.town.stationsOut('atm'), this.town.stationsOut('wardrobe'));
         const at = this.player.transform.position;
         this.hud.setMapPlayer(at.x, at.z);
 
@@ -772,8 +810,22 @@ export default class MowScene extends ThreeScene {
             MowProgress.restore(district.id, district.bonus);
             this.town.releasePen(d);
             GameAnalytics.districtRestored(district.id);
-            if (d === 0) GameAnalytics.tutorialStep('yard-restored');
+            if (d === 0 && CITY.keepGear) GameAnalytics.tutorialStep('yard-restored');
             if (district.id === 'park') GameAnalytics.tutorialStep('park-restored');
+            const goal = goalSection();
+            if (goal === district) this.hud.goalDone();
+            else if (goal?.opensAfter) {
+                const count = goalCount((id) => MowProgress.isRestored(id));
+                if (count <= goal.opensAfter) {
+                    GameAnalytics.goalProgress(count);
+                    gsap.delayedCall(Math.max(0, CELEBRATION_SEC - GOAL_LOCK_LEAD_SEC), () => {
+                        if (this.sceneDestroyed) return;
+                        this.hud.goalStep();
+                        MowAudio.play('quest');
+                        MowAudio.play('sparkle');
+                    });
+                }
+            }
             MowAudio.play('applause');
             MowAudio.play('cheer');
             this.hud.celebrate(names.district(district).toUpperCase(), district.bonus, d);
@@ -811,11 +863,11 @@ export default class MowScene extends ThreeScene {
                     MowAudio.play('sparkle');
                 });
             }
-            // The last one: the city's done (its next unlocked), told after its celebration — the tutorial's with the
-            // cities panel (only on from there), a city's with NEW CITY AVAILABLE over the town icon (play on, go when ready).
-            if (MOW.districts.every((other) => MowProgress.isRestored(other.id))) {
+            // The goal (or, a city without one, the last one): the city's done (its next unlocked), told after its celebration
+            // — the tutorial's with the cities panel (only on from there), a city's with NEW CITY AVAILABLE over the town
+            // icon (play on, go when ready).
+            if (goal ? goal === district : MOW.districts.every((other) => MowProgress.isRestored(other.id))) {
                 MowProgress.completeCity();
-                GameAnalytics.townRestored();
                 GameAnalytics.cityCompleted(CITY.id);
                 gsap.delayedCall(CELEBRATION_SEC + 0.4, () => {
                     if (this.sceneDestroyed) return;
@@ -867,14 +919,9 @@ export default class MowScene extends ThreeScene {
             if (area) target = new THREE.Vector3(area.x, 0, area.z);
         }
         this.hud.setShopHint(hint);
-        if (CITY.guide === 'pointer') {
-            // One arrow, only when needed (the player knows the game by now): the ATM with the bag full, else — strayed
-            // from every area with grass left (wanderArea()) — the nearest one.
-            const away = MowProgress.full ? undefined : area ?? this.wanderArea();
-            this.guide.point(delta, this.player.transform.position, MowProgress.full ? atmAt : away ? new THREE.Vector3(away.x, 0, away.z) : null);
-            return;
-        }
-        this.guide.update(delta, this.player.transform.position, target, area);
+        // A city without the arrows (CityDef.guide: by then the player knows the way round).
+        if (CITY.guide === false) target = null;
+        this.guide.update(delta, this.player.transform.position, target, target ? area : undefined);
     }
 
     /**
@@ -948,7 +995,7 @@ export default class MowScene extends ThreeScene {
         // Every city's first play (one travelled to mid-session too: the session's already started).
         GameAnalytics.cityStarted(CITY.id);
         if (Gameplay.started) return;
-        GameAnalytics.sessionStart(MowProgress.cellsCut === 0);
+        GameAnalytics.sessionStart(MowProgress.once('first-session'));
         Gameplay.start();
     };
 

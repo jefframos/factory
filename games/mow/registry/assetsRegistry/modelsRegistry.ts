@@ -3096,6 +3096,16 @@ const TownCity2Road029 = {
 }
 } as const;
 
+const TownCity2Stadium01 = {
+  id: 'city2-stadium-01',
+  path: 'town/library/city2-stadium-01/city2-stadium-01',
+  fullPath: 'mow/models/town/library/city2-stadium-01/city2-stadium-01.glb',
+  format: 'glb',
+  nodes: {
+  "Stadium01": "Stadium_01"
+}
+} as const;
+
 const TownCity2Statue01 = {
   id: 'city2-statue-01',
   path: 'town/library/city2-statue-01/city2-statue-01',
@@ -3738,6 +3748,7 @@ export const MODELS = {
     City2Road025: TownCity2Road025,
     City2Road026: TownCity2Road026,
     City2Road029: TownCity2Road029,
+    City2Stadium01: TownCity2Stadium01,
     City2Statue01: TownCity2Statue01,
     City2TrafficLight01: TownCity2TrafficLight01,
     City2TrashCan02: TownCity2TrashCan02,

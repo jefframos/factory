@@ -15,6 +15,7 @@ import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { UiKit } from './UiKit';
+import { BakedShape } from './BakedShape';
 
 const DURATION_SEC = 0.5;
 const EASE = 'power2.inOut';
@@ -143,8 +144,7 @@ export class RadialTransition {
 
     private showBadge(title: string, subtitle: string): void {
         if (!this.badge.children.length) {
-            const ring = new PIXI.Graphics().beginFill(0x0d4fb0, 0.45).drawCircle(0, 0, 54).endFill()
-                .lineStyle(6, RIM_COLOR).drawCircle(0, 0, 54);
+            const ring = BakedShape.disc(54, { fill: 0x0d4fb0, fillAlpha: 0.45, rim: RIM_COLOR, rimWidth: 6 });
             const star = PIXI.Sprite.from('ItemIcon_Star_Gold');
             star.anchor.set(0.5);
             star.name = 'star';

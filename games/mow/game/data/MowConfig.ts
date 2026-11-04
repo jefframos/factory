@@ -117,6 +117,18 @@ export interface UpgradeDef {
 export interface DistrictDef {
     id: string;
     name: string;
+    /**
+     * The city's goal: opens once this many of its other sections are restored (whichever), the HUD counting them down
+     * (GoalTimeline); restoring it finishes the city.
+     */
+    opensAfter?: number;
+    /**
+     * The goal's mesh (path under public/mow/models/, chosen in the editor, which places it in `props`): what its
+     * Map shots zone shoots, and the HUD's picture until there's a snapshot.
+     */
+    goalModel?: string;
+    /** Its rect's corners are rounded this much: no grass past them (a pitch inside a running track). */
+    cornerRadius?: number;
     /** Done from the start (a city's areas the tutorial already did): restored, no bonus, no treasures to find. */
     startRestored?: boolean;
     /**
@@ -324,6 +336,15 @@ export interface PartDef {
 export interface TownLevel {
     id: string;
     name: string;
+    /** Every section open from the start, the player choosing where to go (no unlocking in order). */
+    openAll?: boolean;
+    /**
+     * The sections' lawns lie over the pavements, and grass grows on them: a level whose paving runs under its lawns.
+     * Otherwise a pavement carves its way through a lawn (a park's paths: no grass on it).
+     */
+    grassOverPavement?: boolean;
+    /** Collider cubes placed by hand (the editor): for a model its bounds fit badly (a stadium). */
+    colliders?: ColliderCube[];
     parts?: PartDef[];
     ground: { x: number; z: number; width: number; depth: number; color: string };
     island?: IslandDef;
@@ -376,6 +397,20 @@ export interface TownTraffic {
     waypoints: { id: string; x: number; z: number }[];
     links: [string, string][];
     cars: { at: string; model?: string }[];
+}
+
+/**
+ * A box placed by hand, drawn only in the editor. `solid`: it blocks walking (and no grass grows under it). `fades`: a
+ * prop's model: the player in or touching this cube makes it see-through, and only such cubes do (not the usual test of
+ * the camera's line against its whole bounds, too blunt for a model that big).
+ */
+export interface ColliderCube {
+    x: number;
+    z: number;
+    width: number;
+    depth: number;
+    solid: boolean;
+    fades?: string;
 }
 
 /** A secret patch's chest model (under public/mow/models; one of the treasures uses it too: loaded with them). */
@@ -458,6 +493,8 @@ export interface MowDesign {
     traffic?: TrafficDef;
     /** The soundtrack, unless the level has its own (SoundSettings.music). */
     music: MusicDef;
+    /** The grass cut's sound: each cut picks a volume and a pitch between these (the editor's Mowers tab). */
+    cutSound: { volume: [number, number]; pitch: [number, number] };
     /** The road builder's pieces (a level's `roads`): their base (`elevation`) and the asphalt's top (`roadY`, for the cars). */
     roadKit?: RoadKit & { elevation: number; roadY: number };
     grass: GrassDef[];
@@ -487,10 +524,38 @@ export function partName(part: string): string {
 
 /** Whether section `d` is open: its part is the first, or every section of the part before it is restored. */
 export function sectionOpen(d: number, restored: (id: string) => boolean): boolean {
+    const { opensAfter } = MOW.districts[d];
+    if (opensAfter) return goalCount(restored) >= opensAfter;
+    if (TOWN.openAll) return true;
     const index = partsInOrder().indexOf(partOf(d));
     if (index <= 0) return true;
     const before = partsInOrder()[index - 1];
     return MOW.districts.every((district, i) => partOf(i) !== before || restored(district.id));
+}
+
+/** The Map shots zone of a city's goal: its model alone, for the HUD (`<zone>-small`). */
+export const goalZone = (city: CityDef): string => `${city.map ?? 'town'}-goal`;
+
+/** How far this level's lawns and what lies on them are lifted: clear of the pavements' stack (TownLevel.grassOverPavement). */
+export const lawnLift = (): number => (TOWN.grassOverPavement ? 0.08 : 0);
+
+/** The city's goal, if it has one (a section with `opensAfter`). */
+export function goalSection(): DistrictDef | undefined {
+    return MOW.districts.find((district) => district.opensAfter);
+}
+
+/** How many sections other than the goal are restored. */
+export function goalCount(restored: (id: string) => boolean): number {
+    return MOW.districts.filter((district) => !district.opensAfter && restored(district.id)).length;
+}
+
+/** Whether (x, z), inside a section's rect, is past one of its rounded corners. */
+export function pastCorner(district: DistrictDef, x: number, z: number): boolean {
+    const radius = district.cornerRadius ?? 0;
+    if (radius <= 0) return false;
+    const dx = Math.abs(x - district.x) - (district.width / 2 - radius);
+    const dz = Math.abs(z - district.z) - (district.depth / 2 - radius);
+    return dx > 0 && dz > 0 && dx * dx + dz * dz > radius * radius;
 }
 
 /** What opens section `d` (for its fence's sign): the part before its own. */
@@ -527,11 +592,11 @@ export interface CityDef {
     map?: string;
     keepGear?: boolean;
     comingSoon?: boolean;
-    /** 'pointer': one arrow by the player instead of the trail, only when needed (MowScene.updateGuide()); default the trail. */
-    guide?: 'trail' | 'pointer';
+    /** false: no guide arrows (the shop's hand still shows). */
+    guide?: boolean;
 }
 
-export const CITIES: CityDef[] = cities.cities as CityDef[];
+export const CITIES: CityDef[] = cities.cities;
 /** Each finished city (not the tutorial) adds this to every sale's money, in every city after (prestige). */
 export const PRESTIGE_BONUS: number = cities.prestigeBonus;
 /** The localStorage key holding the city being played (MowProgress writes it on travel). */

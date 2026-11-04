@@ -22,7 +22,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
-import { CITY, MOW, TOWN, openedBy, AtmLook, AtmSpot, DeckDef, DistrictDef, TownProp } from '../data/MowConfig';
+import { CITY, MOW, TOWN, lawnLift, openedBy, AtmLook, AtmSpot, ColliderCube, DeckDef, DistrictDef, TownProp } from '../data/MowConfig';
 import { MowProgress } from '../data/MowProgress';
 import { BendService, OcclusionFadeConfig, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 import { createWaterMaterial } from '../builders/WaterMaterial';
@@ -76,8 +76,9 @@ const PLANK = 0.42;
 const PLANKS = 4;
 /** Flat things are cut into pieces this small (world units) so they curve with the bend instead of cutting through it. */
 const BEND_SEGMENT = 0.5;
-/** Models flatter than this (the road tiles) get cut up like that. */
+/** Models flatter than this (the road tiles) get cut up too, into pieces this small (the bend's own guide: BendService). */
 const FLAT_HEIGHT = 0.3;
+const FLAT_SEGMENT = 1;
 /** A restored section's flower clumps: how big (a clump's height is about half this, in world units): low, just a dash of colour. */
 const FLOWER_SIZE = 0.55;
 /** The kinds of flower, alternating over a section's spots: their head and the petals' colours (one per clump). */
@@ -141,6 +142,8 @@ const flowerParts = (() => {
 })();
 /** Trees and buildings: the whole model dithers out while the camera->player line runs through it. */
 const FADE: OcclusionFadeConfig = { ...STRUCTURE_OCCLUSION_FADE, radius: 0.4 };
+/** How close counts as touching a collider cube (past the player's own footprint): a solid one stops them right there. */
+const CUBE_TOUCH = 0.15;
 
 /** The bouncing "!" (the pizza game's alert icon, UI atlas), like Dig's stations'. */
 function alertTexture(): THREE.CanvasTexture {
@@ -326,6 +329,16 @@ function stationBox(spot: AtmSpot, look: AtmLook): Box {
     };
 }
 
+/** Flat models cut up so far, by source geometry and scale: a model's clones share one (a city lays dozens of each road tile). */
+const subdivided = new Map<string, THREE.BufferGeometry>();
+
+function subdividedOnce(source: THREE.BufferGeometry, scale: THREE.Vector3): THREE.BufferGeometry {
+    const key = `${source.uuid}:${scale.x},${scale.y},${scale.z}`;
+    let geometry = subdivided.get(key);
+    if (!geometry) subdivided.set(key, geometry = subdivide(source, FLAT_SEGMENT, scale));
+    return geometry;
+}
+
 /**
  * Splits a geometry's triangles (each on its longest edge, again and again) until no edge is longer than `max` at
  * `scale`, so a big flat model curves with the world bend (the shader moves vertices only). Every attribute is
@@ -335,9 +348,10 @@ function subdivide(source: THREE.BufferGeometry, max: number, scale: THREE.Vecto
     const geometry = source.index ? source.toNonIndexed() : source.clone();
     const names = Object.keys(geometry.attributes);
     const attributes = names.map((name) => geometry.getAttribute(name) as THREE.BufferAttribute);
-    // One vertex = every attribute's values, flattened.
+    // One vertex = every attribute's values, flattened. Read through the attribute, not its array: a compressed model's
+    // are quantized (integers up to 32767, its node's scale bringing them back), and often interleaved.
     type Vertex = number[][];
-    const read = (i: number): Vertex => attributes.map((a) => Array.from({ length: a.itemSize }, (_, k) => a.array[i * a.itemSize + k]));
+    const read = (i: number): Vertex => attributes.map((a) => Array.from({ length: a.itemSize }, (_, k) => a.getComponent(i, k)));
     const mid = (a: Vertex, b: Vertex): Vertex => a.map((values, n) => values.map((v, k) => (v + b[n][k]) / 2));
     const position = names.indexOf('position');
     const length = (a: Vertex, b: Vertex) => Math.hypot(
@@ -363,7 +377,8 @@ function subdivide(source: THREE.BufferGeometry, max: number, scale: THREE.Vecto
         const size = attributes[n].itemSize;
         const array = new Float32Array(out.length * size);
         out.forEach((vertex, i) => array.set(vertex[n], i * size));
-        result.setAttribute(name, new THREE.BufferAttribute(array, size, attributes[n].normalized));
+        // Plain floats now (read() undid any quantizing).
+        result.setAttribute(name, new THREE.BufferAttribute(array, size));
     });
     result.computeBoundingBox();
     result.computeBoundingSphere();
@@ -424,7 +439,7 @@ function fenceSign(text: string, x: number, z: number): THREE.Sprite {
     canvas.height = 96;
     const g = canvas.getContext('2d')!;
     CanvasArt.plaque(g, 6, 6, 372, 84, 20);
-    CanvasArt.drawIcon(g, 'Icon_Lock02', 48, 48, 52);
+    CanvasArt.drawIcon(g, 'Icon_Lock03', 48, 48, 52);
     CanvasArt.text(g, text, 220, 50, 30, '#ffe27a', 290);
     const sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: CanvasArt.texture(canvas), depthWrite: false }));
     sign.scale.set(4.2, 1.05, 1);
@@ -486,6 +501,9 @@ export class Town {
         // (readyNear) — the rest once they're in, so they don't compete for the download.
         for (const prop of TOWN.props) {
             if (prop.collider) this.propBoxes.push({ x: prop.x, z: prop.z, halfX: prop.collider.halfX, halfZ: prop.collider.halfZ });
+        }
+        for (const cube of TOWN.colliders ?? []) {
+            if (cube.solid) this.propBoxes.push({ x: cube.x, z: cube.z, halfX: cube.width / 2, halfZ: cube.depth / 2 });
         }
         const away = (prop: TownProp) => Math.hypot(prop.x - TOWN.start.x, prop.z - TOWN.start.z);
         const props = [...TOWN.props].sort((a, b) => away(a) - away(b));
@@ -750,13 +768,32 @@ export class Town {
         this.group.add(pileMesh);
     }
 
+    /** The placed props, for a snapshot of one alone (propObject()). */
+    private readonly placedProps: { model: string; object: THREE.Object3D }[] = [];
+
+    /** The first placed prop of this model, if any. */
+    public propObject(model: string): THREE.Object3D | undefined {
+        return this.placedProps.find((prop) => prop.model === model)?.object;
+    }
+
+    /** Whether the player is in or touching any of these cubes. */
+    private touching(cubes: ColliderCube[]): boolean {
+        const { x, z } = BendService.uniforms.uOccPlayerPos.value;
+        const reach = this.bodyRadius + CUBE_TOUCH;
+        return cubes.some((cube) => Math.abs(x - cube.x) <= cube.width / 2 + reach && Math.abs(z - cube.z) <= cube.depth / 2 + reach);
+    }
+
     /** A prop's model, loaded and placed (its collider is registered up front, in the constructor). */
     private placeProp(prop: TownProp): void {
-        this.loads.push(this.loadModel(prop.model, prop.height, prop.fade, prop.stretch).then((object) => {
+        // Faded by the cubes naming it, when there are any.
+        const cubes = (TOWN.colliders ?? []).filter((cube) => cube.fades === prop.model);
+        const fadeWhen = cubes.length ? () => this.touching(cubes) : undefined;
+        this.loads.push(this.loadModel(prop.model, prop.height, prop.fade || cubes.length > 0, prop.stretch, fadeWhen).then((object) => {
             if (!object) return;
             object.rotation.y = prop.rotationY;
             this.settle(object, prop.x, prop.elevation ?? 0, prop.z);
             this.group.add(object);
+            this.placedProps.push({ model: prop.model, object });
             if (prop.height < FLAT_HEIGHT) {
                 // Its top where it's walked on (the middle: a road tile's kerbs stand higher than the asphalt).
                 object.updateMatrixWorld(true);
@@ -773,7 +810,7 @@ export class Town {
      * Loads a model fitted to `height` (own materials, bent with the world; `fade`: the occlusion fade, measured while
      * it's still untransformed). Not placed yet: settle() does that once it's turned.
      */
-    private async loadModel(model: string, height: number, fade?: boolean, stretch?: { x: number; z: number }): Promise<THREE.Object3D | undefined> {
+    private async loadModel(model: string, height: number, fade?: boolean, stretch?: { x: number; z: number }, fadeWhen?: () => boolean): Promise<THREE.Object3D | undefined> {
         try {
             const object = await ModelLoaderManager.instance.loadModel(`${MODEL_BASE}${model}`);
             if (this.destroyed) return undefined;
@@ -782,7 +819,7 @@ export class Town {
                 child.material = Array.isArray(child.material) ? child.material.map((m) => m.clone()) : child.material.clone();
                 (Array.isArray(child.material) ? child.material : [child.material]).forEach((m) => BendService.applyBend(m));
             });
-            if (fade) BendService.applyOcclusionFadeToObject(object, FADE);
+            if (fade) BendService.applyOcclusionFadeToObject(object, fadeWhen ? { ...FADE, fadeWhen } : FADE);
             object.updateMatrixWorld(true);
             const size = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
             if (size.y > 1e-4) object.scale.multiplyScalar(height / size.y);
@@ -790,7 +827,7 @@ export class Town {
             if (height < FLAT_HEIGHT) {
                 object.updateMatrixWorld(true);
                 object.traverse((child) => {
-                    if (child instanceof THREE.Mesh) child.geometry = subdivide(child.geometry, BEND_SEGMENT, child.getWorldScale(new THREE.Vector3()));
+                    if (child instanceof THREE.Mesh) child.geometry = subdividedOnce(child.geometry, child.getWorldScale(new THREE.Vector3()));
                 });
             }
             return object;
@@ -814,14 +851,18 @@ export class Town {
      * Whether a station is there: its sales are made (`appearsAfterSales`: the first wardrobe waits for the tutorial's
      * second sale) and it has no section, or its section is open.
      */
+    /** Which of a kind's stations are out now, in the level's order (the maps' markers). */
+    public stationsOut(kind: StationKind): boolean[] {
+        return stationSpots(kind).map((_, i) => this.shown(kind, i));
+    }
+
     private shown(kind: StationKind, i: number): boolean {
         const spot = stationSpots(kind)[i];
         // (Waiting for sales is the tutorial's: in a city the wardrobe is there from the start.)
         if (CITY.keepGear && (spot.appearsAfterSales ?? 0) > MowProgress.timesSold) return false;
-        // The first ATM: in the tutorial not in the yard (its bag fills there on purpose: the first purchases), in the
-        // park when it's full; in a city played from scratch, as soon as the bag's full.
-        const firstArea = MowProgress.isRestored(MOW.districts[0].id) || !CITY.keepGear;
-        if (spot.appearsWhenFull && MowProgress.timesSold === 0 && !(MowProgress.full && firstArea)) return false;
+        // The first ATM, in the tutorial: not in the yard (its bag fills there on purpose: the first purchases), in the
+        // park when it's full. In a city it's there from the start.
+        if (CITY.keepGear && spot.appearsWhenFull && MowProgress.timesSold === 0 && !(MowProgress.full && MowProgress.isRestored(MOW.districts[0].id))) return false;
         const section = spot.section;
         if (!section) return true;
         const d = MOW.districts.findIndex((district) => district.id === section);
@@ -967,7 +1008,8 @@ export class Town {
             const fence = fenceAround(district, white, post);
             // No sign where it's a pen's side (the first area's fence: a plaque there only distracts a beginner).
             const before = openedBy(d);
-            if (before && !onPenSide(line.x, line.z)) fence.add(fenceSign(`RESTORE THE ${before.toUpperCase()}`, line.x, line.z));
+            if (district.opensAfter) fence.add(fenceSign(`RESTORE ${district.opensAfter} AREAS`, line.x, line.z));
+            else if (before && !onPenSide(line.x, line.z)) fence.add(fenceSign(`RESTORE THE ${before.toUpperCase()}`, line.x, line.z));
             fence.visible = !this.open[d];
             this.group.add(fence);
             this.separators[d] = fence;
@@ -1037,7 +1079,7 @@ export class Town {
             const spots = points.filter((_, i) => i % FLOWER_KINDS.length === k).map((p) => {
                 const random = Math.abs(Math.sin(p.x * 12.9898 + p.z * 78.233) * 43758.5453) % 1;
                 return {
-                    at: new THREE.Vector3(p.x, 0, p.z),
+                    at: new THREE.Vector3(p.x, lawnLift(), p.z),
                     turn: new THREE.Quaternion().setFromAxisAngle(up, random * Math.PI * 2),
                     size: FLOWER_SIZE * (0.8 + random * 0.45),
                     delay: (Math.hypot(p.x - centre.x, p.z - centre.z) / reach) * 0.9 + random * 0.2,
@@ -1097,7 +1139,7 @@ export class Town {
         if (y > -Infinity) return { y, kind: 'pavement' };
         const deck = TOWN.island?.deck;
         if (deck && containsPoint(this.shore, x, z) && edgeDistance(this.shore, x, z) < deck.width) return { y: DECK_Y, kind: 'deck' };
-        return { y: GRASS_Y, kind: 'grass' };
+        return { y: GRASS_Y + lawnLift(), kind: 'grass' };
     }
 
     /**
@@ -1119,11 +1161,11 @@ export class Town {
         this.tops.set(key, y);
         return y;
     }
-    /** No grass under pavements, props or ATMs. */
+    /** No grass under pavements (unless the level's lawns lie over them), props or ATMs. */
     public isBlocked(x: number, z: number): boolean {
         const pad = 0.25;
         const under = (b: Box) => Math.abs(x - b.x) <= b.halfX + pad && Math.abs(z - b.z) <= b.halfZ + pad;
-        return TOWN.pavements.some((p) => Math.abs(x - p.x) <= p.width / 2 + pad && Math.abs(z - p.z) <= p.depth / 2 + pad)
+        return (!TOWN.grassOverPavement && TOWN.pavements.some((p) => Math.abs(x - p.x) <= p.width / 2 + pad && Math.abs(z - p.z) <= p.depth / 2 + pad))
             || this.propBoxes.some(under) || STATION_KINDS.some((kind) => this.boxes[kind].some(under));
     }
 

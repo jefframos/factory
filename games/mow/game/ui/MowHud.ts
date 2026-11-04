@@ -22,6 +22,8 @@ import { Game } from 'core/Game';
 import SoundToggleButton from 'core/ui/SoundToggleButton';
 import { UiKit } from './UiKit';
 import { UiAnim } from './UiAnim';
+import { GOAL_TIMELINE_HALF_WIDTH, GoalTimeline } from './GoalTimeline';
+import { BakedShape } from './BakedShape';
 import { MoveHint } from './MoveHint';
 import { LanguagePanel, LANGUAGE_SIZE } from './LanguagePanel';
 import { WardrobePanel, WARDROBE_SIZE } from './WardrobePanel';
@@ -31,7 +33,7 @@ import { FindToasts, Find, flyCoins, flyItem } from './FindToasts';
 import { TownMiniature, REVEAL_SEC } from './TownMiniature';
 import { CitiesPanel, CitiesMode, CITIES_PANEL_SIZE } from './CitiesPanel';
 import { MowProgress } from '../data/MowProgress';
-import { CityDef, MOW, TOWN, ToolDef, UpgradeDef, CITY } from '../data/MowConfig';
+import { CityDef, MOW, TOWN, ToolDef, UpgradeDef, CITY, goalCount, goalSection } from '../data/MowConfig';
 import { ModelIcons } from './ModelIcons';
 import { tabbedBlock, TabSpec } from './TabBar';
 import { t, names, Localization } from '../i18n/Localization';
@@ -51,6 +53,8 @@ const CORNER_WIDTH = ICON_SIZE / 2 + PILL_WIDTH - 8;
 /** The money / bag / trophy corner's size on a portrait screen. */
 const CORNER_PORTRAIT_SCALE = 0.82;
 const BUTTON_SIZE = 64;
+/** The language button (off for now: the game's only in English; the browser's language still picks at boot). */
+const SHOW_LANGUAGE_BUTTON = false;
 const PROGRESS = { width: 360, height: 18 };
 /** The area bar's reward disc at its end: its size. */
 const REWARD = { size: 38 };
@@ -135,6 +139,8 @@ export class MowHud extends PIXI.Container {
     private bagFull = false;
     private readonly toast = UiKit.text('hud', 'toast', { text: '' });
     private readonly progress = new PIXI.Container();
+    /** The city's goal counted down (GoalTimeline), while it's not restored. */
+    private goal?: GoalTimeline;
     private readonly progressText = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 22, strokeThickness: 5 });
     private readonly progressFill = new PIXI.Container();
     /** The section-complete banner (celebrate()) and rush mode's combo meter (setCombo()). */
@@ -212,6 +218,7 @@ export class MowHud extends PIXI.Container {
         super();
         this.buildCorner();
         this.buildProgress();
+        this.buildGoal();
         this.buildCombo();
         this.buildButtons();
         this.buildShop();
@@ -288,6 +295,24 @@ export class MowHud extends PIXI.Container {
         this.progress.addChild(this.progressText, bar, this.progressReward);
     }
 
+    private buildGoal(): void {
+        const goal = goalSection();
+        if (!goal?.opensAfter || MowProgress.isRestored(goal.id)) return;
+        this.goal = new GoalTimeline(goal.opensAfter, goal.goalModel && `./mow/models/${goal.goalModel}`, goalCount((id) => MowProgress.isRestored(id)));
+        this.addChild(this.goal);
+    }
+
+    /** An area's restored: the goal's next lock comes off. */
+    public goalStep(): void {
+        this.goal?.setCount(goalCount((id) => MowProgress.isRestored(id)));
+    }
+
+    /** The goal's restored: its timeline's job is done. */
+    public goalDone(): void {
+        this.goal?.destroy({ children: true });
+        this.goal = undefined;
+    }
+
     /** The bar's reward: the district's bonus, or a check once it's restored. Rebuilt when either changes. */
     private drawReward(bonus: number, done: boolean): void {
         const key = `${bonus}:${done}`;
@@ -295,7 +320,7 @@ export class MowHud extends PIXI.Container {
         const popped = this.rewardKey !== '' && done;
         this.rewardKey = key;
         this.progressReward.removeChildren().forEach((child) => child.destroy({ children: true }));
-        const disc = new PIXI.Graphics().lineStyle(3, 0xffffff, 0.95).beginFill(done ? 0x4fc35a : 0xffc53a).drawCircle(0, 0, REWARD.size / 2).endFill();
+        const disc = BakedShape.disc(REWARD.size / 2, { fill: done ? 0x4fc35a : 0xffc53a, rim: 0xffffff, rimWidth: 3, rimAlpha: 0.95 });
         const icon = done ? UiKit.sprite('hud', 'check') : PIXI.Sprite.from(UiKit.imageName('hud', 'moneyIcon'));
         if (icon instanceof PIXI.Sprite) icon.anchor.set(0.5);
         icon.scale.set((REWARD.size * 0.62) / Math.max(icon.width / icon.scale.x, icon.height / icon.scale.y, 1));
@@ -341,8 +366,7 @@ export class MowHud extends PIXI.Container {
         label.anchor.set(0.5);
         const width = label.width + 36;
         const height = 44;
-        pop.addChild(new PIXI.Graphics().lineStyle(3, 0xffffff, 0.9).beginFill(0x1d2633, 0.9)
-            .drawRoundedRect(-width / 2, -height / 2, width, height, height / 2).endFill(), label);
+        pop.addChild(new BakedShape(Math.ceil(width), height, height / 2, { fill: 0x1d2633, fillAlpha: 0.9, rim: 0xffffff, rimWidth: 3, rimAlpha: 0.9 }), label);
         pop.position.set(0, 28 + PROGRESS.height / 2 + 6 + height / 2);
         pop.scale.set(0.3);
         this.progress.addChild(pop);
@@ -408,6 +432,12 @@ export class MowHud extends PIXI.Container {
     }
 
     /** The player's dot on the town map (world x / z). */
+    /** Which ATMs and wardrobes are out, for the maps' markers. */
+    public setMapStations(atms: readonly boolean[], wardrobes: readonly boolean[]): void {
+        this.townMap.setStations(atms, wardrobes);
+        this.panelMap.setStations(atms, wardrobes);
+    }
+
     public setMapPlayer(x: number, z: number): void {
         this.townMap.setPlayer(x, z);
         this.panelMap.setPlayer(x, z);
@@ -712,6 +742,7 @@ export class MowHud extends PIXI.Container {
         flag.scale.set((BUTTON_SIZE * 0.6) / Math.max(flag.texture.width, flag.texture.height, 1));
         this.languageButton.addChild(icon('hud', 'muteButton', BUTTON_SIZE), flag);
         this.tappable(this.languageButton, () => this.toggleLanguage());
+        this.languageButton.visible = SHOW_LANGUAGE_BUTTON;
     }
 
     private toggleLanguage(): void {
@@ -1286,6 +1317,12 @@ export class MowHud extends PIXI.Container {
         this.mute.position.set(screen.topLeft.x + 20 + BUTTON_SIZE / 2, screen.topLeft.y + 20 + BUTTON_SIZE / 2);
         this.languageButton.position.set(this.mute.x + BUTTON_SIZE + 12, this.mute.y);
         this.progress.position.set(screen.center.x, screen.topLeft.y + 120);
+        if (this.goal) {
+            // Between the buttons on the left and the money on the right, smaller if it has to.
+            const room = Math.min(screen.center.x - ((SHOW_LANGUAGE_BUTTON ? this.languageButton : this.mute).x + BUTTON_SIZE / 2), this.corner.x - screen.center.x) - 8;
+            this.goal.scale.set(Math.min(1, room / GOAL_TIMELINE_HALF_WIDTH));
+            this.goal.position.set(screen.center.x, screen.topLeft.y + 52);
+        }
         this.combo.position.set(screen.center.x, screen.topLeft.y + 205);
         // The map hangs right-aligned under the trophy (its origin is its centre).
         this.mapHome.set(screen.topLeft.x + screen.width - 20 - this.townMap.panelWidth / 2, this.corner.y + 190 + this.townMap.panelHeight / 2);

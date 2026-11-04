@@ -38,7 +38,7 @@ function drawBadge(canvas: HTMLCanvasElement, tool?: HTMLCanvasElement): void {
     g.strokeStyle = '#ff7a6a';
     g.stroke();
     if (!tool) {
-        CanvasArt.drawIcon(g, 'Icon_Lock02', c, c - 2, BADGE * 0.6);
+        CanvasArt.drawIcon(g, 'Icon_Lock03', c, c - 2, BADGE * 0.6);
         return;
     }
     const size = BADGE * 0.86;
@@ -54,7 +54,7 @@ function drawBadge(canvas: HTMLCanvasElement, tool?: HTMLCanvasElement): void {
     g.lineWidth = 5;
     g.strokeStyle = '#ff7a6a';
     g.stroke();
-    CanvasArt.drawIcon(g, 'Icon_Lock02', lx, ly - 1, r * 1.45);
+    CanvasArt.drawIcon(g, 'Icon_Lock03', lx, ly - 1, r * 1.45);
 }
 
 export class GrassLocks {

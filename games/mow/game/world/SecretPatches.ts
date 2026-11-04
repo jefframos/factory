@@ -8,7 +8,7 @@
 // (`twinkle`), so a player who looks around spots it.
 
 import * as THREE from 'three';
-import { TOWN, SecretDef } from '../data/MowConfig';
+import { TOWN, SecretDef, lawnLift } from '../data/MowConfig';
 import { BendService } from '../services/BendService';
 
 /** Tufts this far apart in a patch. */
@@ -92,7 +92,7 @@ export class SecretPatches {
             quaternion.setFromAxisAngle(up, j * Math.PI * 2);
             const height = HEIGHT * (0.8 + j * 0.4);
             scale.set(SPACING * 1.8, height, SPACING * 1.8);
-            this.matrix.compose(position.set(spot.x, 0.02, spot.y), quaternion, scale);
+            this.matrix.compose(position.set(spot.x, 0.02 + lawnLift(), spot.y), quaternion, scale);
             mesh.setMatrixAt(i, done ? this.hidden : this.matrix);
             mesh.setColorAt(i, COLORS[i % COLORS.length].clone().multiplyScalar(0.9 + j * 0.2));
         });

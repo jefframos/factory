@@ -26,7 +26,7 @@ const GLOBAL_KEY = 'mow.global';
 /** Bump when a change can't carry old saves over: a save from another version starts a new game. */
 const SAVE_VERSION = 4;
 /** What's the player's, not the city's (kept across cities: the wardrobe, the cities finished, the analytics). */
-const GLOBAL_FIELDS = ['owned', 'look', 'freeLooksOffered', 'sent', 'completed', 'carried'] as const;
+const GLOBAL_FIELDS = ['owned', 'look', 'freeLooksOffered', 'sent', 'completed', 'carried', 'allCitiesOpen'] as const;
 /** The claim key of the rewards left unclaimed in cities travelled from (SaveData.carried). */
 export const CARRIED_KEY = 'carried';
 const SAVE_DELAY_MS = 800;
@@ -61,6 +61,8 @@ interface SaveData {
     completed: string[];
     /** Trophy rewards left unclaimed in the cities travelled from: still claimable (CARRIED_KEY) in any city. */
     carried: number;
+    /** Debug: every playable city can be travelled to (without their bonus: `completed` is untouched). */
+    allCitiesOpen: boolean;
 }
 
 /** The claim key of an area's bonus (all its treasures found). */
@@ -73,7 +75,7 @@ const fresh = (): SaveData => ({
     version: SAVE_VERSION, money: 0, toolLevel: 0, upgrades: {}, clippings: 0, cut: '',
     stats: { cells: 0, earned: 0, sells: 0 }, sent: [],
     owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, freeLooksOffered: false,
-    treasuresFound: [], treasuresClaimed: [], secretsFound: [], completed: [], carried: 0,
+    treasuresFound: [], treasuresClaimed: [], secretsFound: [], completed: [], carried: 0, allCitiesOpen: false,
     // The city's areas the tutorial already did (startRestored).
     restored: MOW.districts.filter((district) => district.startRestored).map((district) => district.id),
 });
@@ -422,7 +424,7 @@ export const MowProgress = {
     cityUnlocked(city: CityDef): boolean {
         if (city.comingSoon || !city.level) return false;
         const index = CITIES.indexOf(city);
-        return index === 0 || state.completed.includes(city.id) || state.completed.includes(CITIES[index - 1]?.id);
+        return index === 0 || state.allCitiesOpen || state.completed.includes(city.id) || state.completed.includes(CITIES[index - 1]?.id);
     },
 
     /**
@@ -498,6 +500,29 @@ export const MowProgress = {
         } catch {
             // Storage full or blocked: keep playing unsaved.
         }
+    },
+
+    /** Debug: every playable city can be travelled to. */
+    openAllCities(): void {
+        state.allCitiesOpen = true;
+        this.changed();
+    },
+
+    /**
+     * Debug: this city from scratch (its save gone, and no longer counted as finished); the wardrobe and the other
+     * cities stay. The caller rebuilds the scene.
+     */
+    resetCity(): void {
+        window.clearTimeout(saveTimer);
+        cutProvider = undefined;
+        try {
+            window.localStorage.removeItem(cityKey(CITY.id));
+        } catch {
+            // No storage: nothing saved to remove.
+        }
+        state = load();
+        state.completed = state.completed.filter((id) => id !== CITY.id);
+        this.saveNow();
     },
 
     /** Debug: wipes the save and reloads. */

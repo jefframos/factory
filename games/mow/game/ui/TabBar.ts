@@ -12,6 +12,7 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { UiKit } from './UiKit';
+import { BakedShape } from './BakedShape';
 
 const BLOCK_FILL = 0x3c4558;
 /** Inactive tabs are gold, so the other pages read as buttons to tap rather than background. */
@@ -125,7 +126,7 @@ export function tagBadge(text: string, x: number, y: number): PIXI.Container {
     label.anchor.set(0.5);
     const w = label.width + 22;
     const h = label.height + 8;
-    tag.addChild(new PIXI.Graphics().lineStyle(3, 0x1f6b2c).beginFill(0x3fd15a).drawRoundedRect(-w / 2, -h / 2, w, h, h / 2).endFill(), label);
+    tag.addChild(new BakedShape(Math.ceil(w), Math.ceil(h), h / 2, { fill: 0x3fd15a, rim: 0x1f6b2c, rimWidth: 3 }), label);
     tag.position.set(x, y);
     tag.rotation = 0.12;
     gsap.to(tag, { y: y - 5, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });

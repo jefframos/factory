@@ -5,7 +5,8 @@
 // aimed at its hand's spot, `spread` off the middle of the grip, over the idle or walk clip; the hands turned by
 // `grip.hand`, mirrored for the right one unless `grip.mirror` is off; `grip.offset` shifts where the hands reach
 // off the bar, its x outward for each hand). Saves each walked tool's grip, gap and size
-// (PUT /api/mow/tools); its price and stats stay in `tools`.
+// (PUT /api/mow/tools); its price and stats stay in `tools`. Also the grass cut's sound (ui/mow.json `cutSound`, PUT
+// /api/mow/cut-sound): each cut picks a volume and a pitch between two values; ▶ Test plays a few as the game would.
 
 import * as THREE from 'three';
 import { createGLTFLoader } from './gltf.js';
@@ -23,6 +24,15 @@ const REEL_WHEEL = 1.35;
 const HANDLE_RADIUS = 0.035;
 const BAR_OVERHANG = 0.12;
 const UP = new THREE.Vector3(0, 1, 0);
+/** The cut's sound files (MowAudio's `cut`), and how Test plays them: this many, this far apart (seconds). */
+const CUT_FILES = [1, 2, 3, 4, 5].map((i) => `/audio/hit-gem-${i}.ogg`);
+const CUT_TEST = { count: 6, gap: 0.14 };
+/** [which range, its label, step, top of the slider] */
+const CUT_FIELDS = [['volume', 'Volume', 0.01, 1], ['pitch', 'Pitch', 0.01, 3]];
+/** The grass cut's sound being edited, and what Test plays it with (made on the first Test: browsers need the click). */
+let cutSound;
+let audio;
+let cutBuffers;
 
 /** [path in the tool, label, step, min, max] */
 const FIELDS = [
@@ -74,6 +84,7 @@ export const hasUnsavedMowerChanges = () => dirty;
 export async function initMowersTab(container) {
     host = container;
     const mow = await api('/api/mow');
+    cutSound = { volume: [...mow.cutSound.volume], pitch: [...mow.cutSound.pitch] };
     tools = mow.tools.filter((tool) => !tool.ride).map((tool) => ({
         ...tool,
         grip: { ...GRIP, ...tool.grip, hand: { x: 0, y: 0, z: 0, ...tool.grip?.hand }, offset: { x: 0, y: 0, z: 0, ...tool.grip?.offset }, mirror: tool.grip?.mirror !== false },
@@ -89,6 +100,45 @@ export async function initMowersTab(container) {
 
 export function refreshMowersTab() {
     resize();
+}
+
+/** A few cuts, each at a volume and a pitch from the ranges, as the game picks them. */
+async function testCutSound() {
+    audio ??= new AudioContext();
+    cutBuffers ??= await Promise.all(CUT_FILES.map(async (file) => audio.decodeAudioData(await (await fetch(file)).arrayBuffer())));
+    const pick = ([min, max]) => min + Math.random() * (max - min);
+    for (let i = 0; i < CUT_TEST.count; i++) {
+        const source = audio.createBufferSource();
+        source.buffer = cutBuffers[Math.floor(Math.random() * cutBuffers.length)];
+        source.playbackRate.value = Math.max(0.01, pick(cutSound.pitch));
+        const gain = audio.createGain();
+        gain.gain.value = pick(cutSound.volume);
+        source.connect(gain).connect(audio.destination);
+        source.start(audio.currentTime + i * CUT_TEST.gap);
+    }
+}
+
+/** The cut sound's card: each range's two ends, with sliders. */
+function cutSoundSection() {
+    const rows = CUT_FIELDS.flatMap(([key, label, step, max]) => ['min', 'max'].map((end, index) => {
+        const number = el('input', { type: 'number', step, min: 0, max, value: cutSound[key][index], style: { width: '72px', flex: 'none' } });
+        const slider = el('input', { type: 'range', min: 0, max, step, value: cutSound[key][index], style: { flex: '1', minWidth: '0' } });
+        const apply = (raw) => {
+            const parsed = Number(raw);
+            if (!Number.isFinite(parsed) || parsed < 0) return;
+            cutSound[key][index] = parsed;
+            number.value = parsed;
+            slider.value = parsed;
+            touch();
+        };
+        number.addEventListener('input', () => apply(number.value));
+        slider.addEventListener('input', () => apply(slider.value));
+        return el('label', { class: 'field' }, el('span', {}, `${label} ${end}`), el('div', { style: { display: 'flex', gap: '6px', alignItems: 'center', minWidth: '0' } }, slider, number));
+    }));
+    return el('section', { class: 'card-section' }, el('h2', {}, 'Grass cut sound'),
+        el('p', { class: 'muted small' }, 'Each cut picks a volume and a pitch between these (pitch 1 = as recorded). Saved with the mowers.'),
+        ...rows,
+        el('button', { class: 'block', onclick: () => void testCutSound() }, '▶ Test'));
 }
 
 const get = (path) => path.split('.').reduce((value, key) => value?.[key], current);
@@ -127,6 +177,7 @@ function buildLayout() {
                 el('p', { class: 'muted' }, current.reel ? 'Reel mower: the handle runs from the barrel\'s axle to the crossbar at the grip.' : 'Pushed: the crossbar sits at the grip.'),
                 el('label', { class: 'field check' }, el('input', { type: 'checkbox', checked: current.grip.mirror, onchange: (event) => { current.grip.mirror = event.target.checked; touch(); } }),
                     el('span', {}, 'Right hand mirrors the left hand\'s turn'))),
+            cutSoundSection(),
             ...sections),
         el('div', { class: 'stage-area' },
             el('div', { class: 'toolbar' },
@@ -160,6 +211,7 @@ async function save() {
     try {
         const edits = tools.map(({ id, grip, gap, size }) => ({ id, grip, gap, size }));
         await api('/api/mow/tools', { method: 'PUT', body: JSON.stringify(edits) });
+        await api('/api/mow/cut-sound', { method: 'PUT', body: JSON.stringify(cutSound) });
         dirty = false;
         renderStatus();
         toast('Mowers saved — reload the game to see them.');

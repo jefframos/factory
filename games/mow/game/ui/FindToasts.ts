@@ -8,6 +8,7 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { UiKit } from './UiKit';
+import { BakedShape } from './BakedShape';
 import { UiTween } from './UiAnim';
 import { ModelIcons } from './ModelIcons';
 
@@ -162,11 +163,10 @@ export class FindToasts extends PIXI.Container {
         const { width, height, icon: iconSize } = TOAST;
         const toast = new PIXI.Container();
         toast.eventMode = 'none';
-        const back = new PIXI.Graphics()
-            .lineStyle(2, 0xffffff, 0.85)
-            .beginFill(0x1d2633, 0.9).drawRoundedRect(0, 0, width, height, height / 2).endFill()
-            .lineStyle(0)
-            .beginFill(find.color, 0.9).drawCircle(height / 2, height / 2, height / 2 - 6).endFill();
+        const back = new BakedShape(width, height, height / 2, { fill: 0x1d2633, fillAlpha: 0.9, rim: 0xffffff, rimWidth: 2, rimAlpha: 0.85 });
+        back.position.set(width / 2, height / 2);
+        const disc = BakedShape.disc(height / 2 - 6, { fill: find.color, fillAlpha: 0.9 });
+        disc.position.set(height / 2, height / 2);
         const icon = ModelIcons.sprite(find.model, iconSize);
         icon.anchor.set(0.5);
         icon.position.set(height / 2, height / 2);
@@ -178,7 +178,7 @@ export class FindToasts extends PIXI.Container {
         name.anchor.set(0, 0.5);
         name.position.set(textX, height / 2 + 11);
         for (const text of [title, name]) UiKit.fit(text, width - textX - 18);
-        toast.addChild(back, icon, title, name);
+        toast.addChild(back, disc, icon, title, name);
         return toast;
     }
 

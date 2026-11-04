@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import type { GrassField } from './GrassField';
 import { BendService } from '../services/BendService';
-import { MOW, Rarity } from '../data/MowConfig';
+import { MOW, Rarity, lawnLift } from '../data/MowConfig';
 
 const POOL = 8;
 const RESCAN_SEC = 0.35;
@@ -148,8 +148,8 @@ export class TreasureBeacons {
             beacon.fade = Math.min(1, (1 - target.distance / range) / EDGE_FADE);
             beacon.beamMaterial.color.setHex(color);
             beacon.ringMaterial.color.setHex(color);
-            beacon.beam.position.set(target.at.x, 0.05, target.at.z);
-            beacon.ring.position.set(target.at.x, 0.06, target.at.z);
+            beacon.beam.position.set(target.at.x, 0.05 + lawnLift(), target.at.z);
+            beacon.ring.position.set(target.at.x, 0.06 + lawnLift(), target.at.z);
             beacon.beam.visible = beacon.ring.visible = true;
         }
     }
