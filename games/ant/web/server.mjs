@@ -8,9 +8,11 @@
 //   POST /api/upload           { id, filename, data (base64) } -> a new picture in raw-assets/pictures, pixelated, last
 //   POST /api/delete           { id } -> out of the game (the source picture moves to raw-assets/pictures/removed)
 //   GET  /previews/<id>.png, /sources/<file>
-// The game (vite dev server) picks the level files up on its own.
+// The game (vite dev server) picks the level files up on its own. The page opens in the browser on start (NO_OPEN=1 to
+// skip), like the other games' editors.
 
 import http from 'node:http';
+import { exec } from 'node:child_process';
 import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
 import path from 'node:path';
@@ -151,4 +153,12 @@ http.createServer(async (req, res) => {
     if (url.pathname.startsWith('/previews/')) return serveFile(res, PREVIEWS, decodeURIComponent(url.pathname.slice('/previews/'.length)));
     if (url.pathname.startsWith('/sources/')) return serveFile(res, PICTURES, decodeURIComponent(url.pathname.slice('/sources/'.length)));
     return serveFile(res, PUBLIC, url.pathname === '/' ? 'index.html' : url.pathname.slice(1));
-}).listen(PORT, () => console.log(`🐜 Ant level editor: http://localhost:${PORT}`));
+}).listen(PORT, () => {
+    const address = `http://localhost:${PORT}`;
+    console.log(`🐜 Ant level editor: ${address}`);
+    // Opens in the browser like the other games' editors (NO_OPEN=1 to skip).
+    if (!process.env.NO_OPEN) {
+        const opener = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start ""' : 'xdg-open';
+        exec(`${opener} ${address}`);
+    }
+});
