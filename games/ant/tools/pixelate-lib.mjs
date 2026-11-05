@@ -11,14 +11,17 @@
 //      "Closest" is measured in OKLab, so it's the tone that looks nearest, not the nearest RGB numbers.
 //   4. Each cell takes its samples' most common colour.
 //   5. The hand edits go on top (`edits`: { "x,y": "#hex" } paints a cell, { "x,y": "." } empties it) — snapped to the
-//      same palette, so a palette change carries them along.
+//      same palette, so a palette change carries them along. `padding` cells all round (plus one more with a stroke)
+//      are left empty: the picture is sampled that much smaller, inside them.
 //   6. The whole grid, edits and all, is shifted by `offsetX` / `offsetY` cells (what slides off the edge is gone).
 //   7. `stroke` (a colour, snapped to the palette; '' = none) outlines the picture: every empty cell touching it (sides
 //      or corners) becomes a block of that colour. With a stroke the picture is sampled a cell smaller all round (1),
 //      so the outline has room at the grid's edges.
 //   8. The level's colours get its `saturation` / `brightness` steps (each step +-15% saturation / +-6% lightness, up
 //      to MAX_STEPS either way) — after the palette, so a master-palette level keeps the master's tones, just more or
-//      less vivid (before it, the snapping would put most colours straight back on the same tone).
+//      less vivid (before it, the snapping would put most colours straight back on the same tone). Then the shading
+//      brushes (`shades`: { "x,y": [saturation, brightness] } steps per cell, in the same coordinates as the edits):
+//      shading for depth — not snapped, so each shade is a colour of its own (its own tiles in the game).
 //   9. The tiles are baked (solver.mjs's bakeDeck: `seed`, `mix`, `columns`) and checked: can it be cleared?
 // Returns the level (id, name, size, palette by use, rows, columns, deck, check), the final grid (hex colours, null =
 // empty: the editor's paint canvas), the pixel count, and a crisp preview PNG.
@@ -36,7 +39,7 @@ const SATURATION_STEP = 0.15;
 const BRIGHTNESS_STEP = 0.06;
 export const MAX_STEPS = 5;
 
-export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {}, stroke: '', columns: 0, seed: 0, mix: 0 };
+export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {}, shades: {}, padding: 0, stroke: '', columns: 0, seed: 0, mix: 0 };
 
 /** Fixed colour sets a picture can use instead of the master palette. */
 export const PALETTES = {
@@ -282,9 +285,9 @@ export async function buildLevel(file, id, settings, master) {
     const width = Math.max(4, Math.min(64, Math.round(options.width)));
     const height = Math.max(4, Math.min(64, Math.round(options.height)));
     const palette = paletteFor(options, master);
-    // With an outline, the picture is sampled a cell smaller all round, so the outline has room.
+    // Padding, and with an outline one cell more: the picture is sampled that much smaller all round (at least 2 x 2).
     const stroked = !!options.stroke && /^#[0-9a-f]{6}$/i.test(options.stroke);
-    const margin = stroked ? 1 : 0;
+    const margin = Math.max(0, Math.min(Math.floor((Math.min(width, height) - 2) / 2), Math.round(options.padding ?? 0) + (stroked ? 1 : 0)));
     const inner = await sampleGrid(file, width - 2 * margin, height - 2 * margin, options, palette);
     const grid = new Array(width * height).fill(null);
     const innerWidth = width - 2 * margin;
@@ -294,9 +297,20 @@ export async function buildLevel(file, id, settings, master) {
         if (!(x >= 0 && y >= 0 && x < width && y < height)) continue;
         grid[x + y * width] = value === '.' || !value ? null : palette.length ? closest(parseHex(value), palette) : value;
     }
-    const final = shift(grid, width, height, Math.round(options.offsetX ?? 0), Math.round(options.offsetY ?? 0));
-    if (options.stroke && /^#[0-9a-f]{6}$/i.test(options.stroke)) outline(final, width, height, palette.length ? closest(parseHex(options.stroke), palette) : options.stroke);
     const steps = (v) => Math.max(-MAX_STEPS, Math.min(MAX_STEPS, Math.round(v ?? 0)));
+    // The brushes' shading, per cell, moved with the picture.
+    const shadeGrid = new Array(width * height).fill(null);
+    for (const [key, value] of Object.entries(options.shades ?? {})) {
+        const [x, y] = key.split(',').map(Number);
+        if (!(x >= 0 && y >= 0 && x < width && y < height) || !Array.isArray(value)) continue;
+        const shade = [steps(value[0]), steps(value[1])];
+        if (shade[0] || shade[1]) shadeGrid[x + y * width] = shade;
+    }
+    const dx = Math.round(options.offsetX ?? 0);
+    const dy = Math.round(options.offsetY ?? 0);
+    const final = shift(grid, width, height, dx, dy);
+    const shading = shift(shadeGrid, width, height, dx, dy);
+    if (stroked) outline(final, width, height, palette.length ? closest(parseHex(options.stroke), palette) : options.stroke);
     const saturation = steps(options.saturation);
     const brightness = steps(options.brightness);
     if (saturation || brightness) {
@@ -307,6 +321,7 @@ export async function buildLevel(file, id, settings, master) {
             final[i] = adjusted.get(final[i]);
         }
     }
+    for (let i = 0; i < final.length; i++) if (final[i] && shading[i]) final[i] = hex(adjust(parseHex(final[i]), shading[i][0], shading[i][1]));
     const { palette: levelPalette, rows } = toLevel(final, width, height);
     const indices = final.map((c) => (c ? levelPalette.indexOf(c) : -1));
     const baked = bakeDeck(indices, width, height, levelPalette.length, { id, seed: Math.round(options.seed ?? 0), mix: Math.max(0, Math.min(5, Math.round(options.mix ?? 0))), columns: Math.round(options.columns ?? 0) });

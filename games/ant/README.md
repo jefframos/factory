@@ -94,13 +94,17 @@ With `GAME=ant` in `.env`, `npm run editor` opens a local page (`web/server.mjs`
   as the game will lay them out (the front row outlined). The list shows each level's check.
 - **Tuning a level**: the source picture next to the level as the game will show it, **live**, which you can draw on:
   **Paint** (a palette colour, or any colour from the picker, snapped to the palette), **Erase** (no block there),
-  **Restore** (drops your edit on a cell); Undo (Ctrl/Cmd+Z), Clear edits. Edited cells show a dot. Then: name;
+  **Restore** (drops your edit and shading on a cell); the **shading brushes** — ☀️＋ / 🌑− brightness, 🎨＋ / 🩶−
+  saturation (keys 1–4) — move a pixel one step per pass (−5 to +5), for depth: a highlight, a shadow. Undo
+  (Ctrl/Cmd+Z), Clear edits (edits and shading). Edited cells show a dot. A shaded pixel is a colour of its own (not
+  snapped to the palette), so it gets its own tiles in the game: shade sparingly. Then: name;
   width × height (proportions locked or not); the most colours; the **palette** its colours snap to (**Master**,
   a preset — cozy / candy / garden / sea / night — or none: its own); **saturation** and **brightness** steps,
   −5 to +5 (applied to the level's final colours, after the palette: a Master level keeps the master's tones, just
   more or less vivid; +1 saturation is 15% more, +1 brightness 6% lighter);
-  the **background** (auto: removed when the picture has no transparency of its own; remove; keep); the **offset**
-  (arrows move the whole picture a cell, ◎ centres it). Pixels and colours used are counted as you go. **Save**
+  the **background** (auto: removed when the picture has no transparency of its own; remove; keep); the **padding**
+  (empty cells all round: the picture is drawn that much smaller — room for an outline on a picture that fills its
+  whole canvas); the **offset** (arrows move the whole picture a cell, ◎ centres it). Pixels and colours used are counted as you go. **Save**
   writes the level, its preview and its settings; **Delete** takes it out of the game (its picture moves to
   `raw-assets/pictures/removed`).
 
@@ -120,8 +124,9 @@ rebuilds every level, drawn ones too):
    same picture always makes the same level) and snapped to the chosen palette — the master palette by default — by
    the tone that *looks* closest (measured in OKLab), so in an all-red palette a green becomes the nearest red.
 3. Each cell takes the colour most of its samples are nearest to: crisp edges, no blended in-between colours.
-4. The hand edits go on top (snapped to the same palette); the whole grid is shifted by the offset; the outline goes
-   round it; the level's colours get its saturation / brightness steps.
+4. The picture sits inside its padding (and one more cell with an outline); the hand edits go on top (snapped to the
+   same palette); the whole grid is shifted by the offset; the outline goes round it; the level's colours get its
+   saturation / brightness steps, then the brushes' shading per pixel.
 5. The tiles are baked and checked (above).
 
 A level drawn in the editor has no picture: just its settings, its size and its edits.
@@ -137,7 +142,7 @@ Per-picture settings, in `raw-assets/pictures/pictures.json` (the editor writes 
 ```json
 { "mushroom": { "name": "Mushroom", "width": 22, "height": 22, "colors": 5, "palette": "master", "background": "auto",
                 "saturation": 1, "brightness": 0, "offsetX": 0, "offsetY": 1, "edits": { "10,3": ".", "11,3": "#f28b8b" },
-                "stroke": "#4a4a5a", "columns": 0, "seed": 0, "mix": 2 } }
+                "stroke": "#4a4a5a", "padding": 1, "shades": { "9,6": [0, 2] }, "columns": 0, "seed": 0, "mix": 2 } }
 ```
 
 Bigger grids keep more detail (a strawberry's seeds need more than 22 × 22). Pictures with flat colours and clear

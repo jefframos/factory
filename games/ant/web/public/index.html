@@ -122,12 +122,17 @@
     <div class="tools">
       <button id="toolPaint" class="on" title="Paint (P)">✏️ Paint</button>
       <button id="toolErase" title="Erase: no block there (E)">🧽 Erase</button>
-      <button id="toolRestore" title="Restore: undo your edit on a cell (R)">↩︎ Restore</button>
+      <button id="toolRestore" title="Restore: undo your edit and shading on a cell (R)">↩︎ Restore</button>
+      <span style="width:6px"></span>
+      <button id="toolBrightUp" title="Brightness brush: one step lighter per pass (1)">☀️＋</button>
+      <button id="toolBrightDown" title="Brightness brush: one step darker per pass (2)">🌑−</button>
+      <button id="toolSatUp" title="Saturation brush: one step more vivid per pass (3)">🎨＋</button>
+      <button id="toolSatDown" title="Saturation brush: one step greyer per pass (4)">🩶−</button>
       <span class="paint" id="paint"></span>
       <input type="color" id="custom" title="Any colour (snapped to the palette)" style="width:34px;padding:0;height:26px">
       <span style="flex:1"></span>
       <button id="undo" title="Undo (Ctrl/Cmd+Z)">Undo</button>
-      <button id="clearEdits" title="Remove every hand edit">Clear edits</button>
+      <button id="clearEdits" title="Remove every hand edit and all shading">Clear edits</button>
     </div>
     <div class="settings">
       <label class="wide">Name <input id="name"></label>
@@ -153,6 +158,9 @@
       </div>
       <div class="field">Brightness
         <span class="stepper"><button id="briDown">−</button><output id="bri">0</output><button id="briUp">＋</button></span>
+      </div>
+      <div class="field">Padding (empty cells round it)
+        <span class="stepper"><button id="padDown">−</button><output id="pad">0</output><button id="padUp">＋</button></span>
       </div>
       <div class="field">Offset <small id="offset">0, 0</small>
         <span class="pad">
@@ -404,7 +412,7 @@ function select(id) {
   $('images').classList.toggle('single', drawn);
   for (const el of document.querySelectorAll('.picture')) el.hidden = drawn;
   $('source').src = selected.source ? `/sources/${encodeURIComponent(selected.source)}` : '';
-  current = { ...selected.settings, edits: { ...(selected.settings.edits || {}) } };
+  current = { ...selected.settings, edits: { ...(selected.settings.edits || {}) }, shades: { ...(selected.settings.shades || {}) } };
   if (!['master', 'none', ...Object.keys(palettes)].includes(current.palette)) current.palette = 'master';
   $('name').value = current.name;
   $('width').value = current.width;
@@ -447,6 +455,8 @@ function showNumbers() {
   $('bri').textContent = current.brightness;
   $('offset').textContent = `${current.offsetX || 0}, ${current.offsetY || 0}`;
   current.mix = Math.max(0, Math.min(5, Math.round(current.mix || 0)));
+  current.padding = Math.max(0, Math.min(10, Math.round(current.padding || 0)));
+  $('pad').textContent = current.padding;
   $('mix').textContent = current.mix;
 }
 
@@ -552,13 +562,29 @@ function cellAt(e) {
   return x >= 0 && y >= 0 && x < size.width && y < size.height ? { x, y } : null;
 }
 
-/** Applies the tool to a cell: the edit is kept in picture coordinates (before the offset), so it moves with it. */
+/** The shading brushes: [saturation, brightness] steps per pass. */
+const BRUSHES = { brightUp: [0, 1], brightDown: [0, -1], satUp: [1, 0], satDown: [-1, 0] };
+/** Cells a brush already passed over in this drag (once per cell per drag). */
+let brushed = new Set();
+
+/** Applies the tool to a cell: edits and shading are kept in picture coordinates (before the offset), so they move with it. */
 function apply(at) {
   const key = `${at.x - (current.offsetX || 0)},${at.y - (current.offsetY || 0)}`;
   const i = at.x + at.y * size.width;
-  if (tool === 'paint') { current.edits[key] = colour; grid[i] = colour; }
+  const brush = BRUSHES[tool];
+  if (brush) {
+    if (brushed.has(key) || !grid[i]) return;
+    brushed.add(key);
+    const [s0, b0] = current.shades[key] || [0, 0];
+    const next = [Math.max(-5, Math.min(5, s0 + brush[0])), Math.max(-5, Math.min(5, b0 + brush[1]))];
+    if (next[0] === s0 && next[1] === b0) return;
+    if (next[0] || next[1]) current.shades[key] = next;
+    else delete current.shades[key];
+    // Shown at once; the server's rebuild follows.
+    grid[i] = adjust(grid[i], brush[0], brush[1]);
+  } else if (tool === 'paint') { current.edits[key] = colour; grid[i] = colour; }
   else if (tool === 'erase') { current.edits[key] = '.'; grid[i] = null; }
-  else delete current.edits[key];
+  else { delete current.edits[key]; delete current.shades[key]; }
   draw();
 }
 
@@ -566,7 +592,8 @@ let painting = false;
 canvas.onpointerdown = (e) => {
   const at = cellAt(e);
   if (!at) return;
-  history.push(JSON.stringify(current.edits));
+  history.push(JSON.stringify({ edits: current.edits, shades: current.shades }));
+  brushed = new Set();
   painting = true;
   canvas.setPointerCapture(e.pointerId);
   apply(at);
@@ -575,24 +602,26 @@ canvas.onpointermove = (e) => { if (painting) { const at = cellAt(e); if (at) ap
 canvas.onpointerup = () => { if (!painting) return; painting = false; changed(); };
 window.onresize = draw;
 
+const TOOLS = [['toolPaint', 'paint'], ['toolErase', 'erase'], ['toolRestore', 'restore'], ['toolBrightUp', 'brightUp'], ['toolBrightDown', 'brightDown'], ['toolSatUp', 'satUp'], ['toolSatDown', 'satDown']];
 function setTool(name) {
   tool = name;
-  for (const [id, t] of [['toolPaint', 'paint'], ['toolErase', 'erase'], ['toolRestore', 'restore']]) $(id).classList.toggle('on', t === tool);
+  for (const [id, t] of TOOLS) $(id).classList.toggle('on', t === tool);
 }
-$('toolPaint').onclick = () => setTool('paint');
-$('toolErase').onclick = () => setTool('erase');
-$('toolRestore').onclick = () => setTool('restore');
+for (const [id, t] of TOOLS) $(id).onclick = () => setTool(t);
 $('custom').oninput = () => { colour = $('custom').value; setTool('paint'); showPaint(); };
 function undo() {
   if (!history.length) return;
-  current.edits = JSON.parse(history.pop());
+  const last = JSON.parse(history.pop());
+  current.edits = last.edits;
+  current.shades = last.shades;
   changed();
 }
 $('undo').onclick = undo;
 $('clearEdits').onclick = () => {
-  if (!Object.keys(current.edits).length) return;
-  history.push(JSON.stringify(current.edits));
+  if (!Object.keys(current.edits).length && !Object.keys(current.shades).length) return;
+  history.push(JSON.stringify({ edits: current.edits, shades: current.shades }));
   current.edits = {};
+  current.shades = {};
   changed();
 };
 window.onkeydown = (e) => {
@@ -601,6 +630,7 @@ window.onkeydown = (e) => {
   else if (e.key === 'p') setTool('paint');
   else if (e.key === 'e') setTool('erase');
   else if (e.key === 'r') setTool('restore');
+  else if (['1', '2', '3', '4'].includes(e.key)) setTool(['brightUp', 'brightDown', 'satUp', 'satDown'][Number(e.key) - 1]);
 };
 
 // ---------- settings ----------
@@ -608,7 +638,7 @@ window.onkeydown = (e) => {
 /** Saturation / brightness go -5..+5 (as pixelate-lib's MAX_STEPS), mix 0..5; the offset is free. */
 const step = (key, by) => {
   const value = (current[key] || 0) + by;
-  current[key] = key === 'saturation' || key === 'brightness' ? Math.max(-5, Math.min(5, value)) : key === 'mix' ? Math.max(0, Math.min(5, value)) : value;
+  current[key] = key === 'saturation' || key === 'brightness' ? Math.max(-5, Math.min(5, value)) : key === 'mix' ? Math.max(0, Math.min(5, value)) : key === 'padding' ? Math.max(0, Math.min(10, value)) : value;
   showNumbers();
   changed();
 };
@@ -620,6 +650,8 @@ $('left').onclick = () => step('offsetX', -1);
 $('right').onclick = () => step('offsetX', 1);
 $('up').onclick = () => step('offsetY', -1);
 $('down').onclick = () => step('offsetY', 1);
+$('padDown').onclick = () => step('padding', -1);
+$('padUp').onclick = () => step('padding', 1);
 $('mixDown').onclick = () => step('mix', -1);
 $('mixUp').onclick = () => step('mix', 1);
 $('reroll').onclick = () => { $('seed').value = Math.floor(Math.random() * 10000); changed(); };
