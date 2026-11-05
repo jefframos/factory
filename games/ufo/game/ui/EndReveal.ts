@@ -32,6 +32,8 @@ export interface EndOptions {
     coins?: number;
     /** All the player's coins, those won included: the bar counts up to this. */
     coinsTotal?: number;
+    /** Stars earned for the ranking, shown under the results. */
+    starsWon?: number;
 }
 
 const LOOK = {
@@ -46,6 +48,8 @@ const COIN_LAYOUT = { titleSize: 76, titleY: -250, pileY: -80, pile: 230, amount
 const LOSE_LAYOUT = { emblemY: -140, emblem: 360, rays: 620, ribbonY: -14, ribbonWidth: 460, ribbonHeight: 86, ribbonScale: 0.6, titleSize: 42, titleY: -5, detailY: 62, buttonY: 142, homeY: 228, button: 290, home: 220, homeHeight: 68, homeIcon: 52, homeIconX: -62, homeWordsX: 22 };
 /** The coins flying up to the bar: how many, how far apart they set off, how long each takes, and their size. */
 const COIN_FLIGHT = { count: 12, gap: 0.07, seconds: 0.55, size: 44, spread: 90 };
+/** Stars for the ranking, under the results. */
+const STARS_WON = { y: 44, size: 58, gap: 66 };
 const ROWS_SHOWN = 5;
 const ROW_WIDTH = ROW.width + 90;
 /** The whole thing's height and width: scaled down to fit a small screen. */
@@ -165,6 +169,21 @@ export class EndReveal extends PIXI.Container {
             bottom = LAYOUT.detailY + 20;
         }
         if (options.results?.length) bottom = this.addResults(options.results, at);
+        if (options.starsWon) {
+            at = Math.max(at, tl.duration());
+            const y = bottom + STARS_WON.y;
+            for (let i = 0; i < options.starsWon; i++) {
+                const star = iconSprite('Icon_Star_On', STARS_WON.size);
+                const scale = star.scale.x;
+                star.position.set((i - (options.starsWon - 1) / 2) * STARS_WON.gap, y);
+                star.scale.set(0);
+                this.content.addChild(star);
+                tl.to(star.scale, { x: scale, y: scale, duration: 0.35, ease: 'back.out(3)' }, at);
+                tl.call(() => UfoAudio.eat(0.2 + i * 0.1), undefined, at);
+                at += 0.2;
+            }
+            bottom = y + STARS_WON.size / 2 - 10;
+        }
         at = Math.max(at, tl.duration());
 
         const button = new PIXI.Container();
@@ -185,7 +204,7 @@ export class EndReveal extends PIXI.Container {
             const home = new PIXI.Container();
             const [plane, words] = buttonParts(LOSE_LAYOUT.home, LOSE_LAYOUT.homeHeight, 'HOME', 'Button01_l_Gray');
             words.x = LOSE_LAYOUT.homeWordsX;
-            const castle = iconSprite('Icon_Castle', LOSE_LAYOUT.homeIcon);
+            const castle = iconSprite('Icon_MapPoint', LOSE_LAYOUT.homeIcon);
             castle.x = LOSE_LAYOUT.homeIconX;
             home.addChild(plane, words, castle);
             tappable(home, onHome);

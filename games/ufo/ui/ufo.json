@@ -272,7 +272,9 @@
     "pitchDeg": 82,
     "zoomOut": 0.45,
     "gatherRadius": 3.2,
-    "spreadSeconds": 1.6
+    "controlAt": 0.65,
+    "rivalsFrom": 0.2,
+    "rivalsTo": 0.6
   },
   "scarcity": {
     "offscreenCooldown": 25,
@@ -284,6 +286,60 @@
   },
   "homeMusic": {
     "sound": "ocean-ambient",
-    "volume": 0.35
+    "volume": 0.06
+  },
+  "ranking": {
+    "$comment": "The competition. A round pays stars by place. Falloff: the share of players still ahead after each star, so lower climbs faster. Goals: `stars`: earn so many; `rank`: reach at least this place; `reward` in coins.",
+    "starsGold": 3,
+    "starsSilver": 2,
+    "starsBronze": 1,
+    "dailyPlayers": 500,
+    "dailyFalloff": 0.55,
+    "weeklyPlayers": 5000,
+    "weeklyFalloff": 0.8,
+    "goals": [
+      {
+        "id": "daily-stars",
+        "period": "daily",
+        "type": "stars",
+        "value": 5,
+        "reward": 100
+      },
+      {
+        "id": "daily-top50",
+        "period": "daily",
+        "type": "rank",
+        "value": 50,
+        "reward": 150
+      },
+      {
+        "id": "daily-first",
+        "period": "daily",
+        "type": "rank",
+        "value": 1,
+        "reward": 300
+      },
+      {
+        "id": "weekly-stars",
+        "period": "weekly",
+        "type": "stars",
+        "value": 20,
+        "reward": 300
+      },
+      {
+        "id": "weekly-top50",
+        "period": "weekly",
+        "type": "rank",
+        "value": 50,
+        "reward": 400
+      },
+      {
+        "id": "weekly-first",
+        "period": "weekly",
+        "type": "rank",
+        "value": 1,
+        "reward": 800
+      }
+    ]
   }
 }

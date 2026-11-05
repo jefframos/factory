@@ -42,6 +42,8 @@ const SLICES: Record<string, [number, number, number, number]> = {
     BorderFrame_Round24: [29, 29, 29, 29],
     BasicFrame_Round20: [20, 20, 20, 20],
     Button_Round02_Blue: [23, 29, 23, 26],
+    ListFrame04_Single_f_Blue: [30, 29, 30, 33],
+    ListFrame04_Single_f_Yellow: [30, 29, 30, 33],
 };
 
 /** A frame stretched to `width` x `height` (in the parent's units), its borders drawn at `scale`, top left at its position. */

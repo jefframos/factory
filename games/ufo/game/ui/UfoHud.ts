@@ -457,7 +457,7 @@ export class UfoHud extends PIXI.Container {
         const back = PIXI.Sprite.from('Button_Round03_Dark');
         back.anchor.set(0.5);
         back.width = back.height = MUTE_SIZE;
-        this.home.addChild(back, iconSprite('Icon_Castle', MUTE_SIZE * 0.72));
+        this.home.addChild(back, iconSprite('Icon_MapPoint', MUTE_SIZE * 0.72));
         tappable(this.home, this.onHome);
     }
 

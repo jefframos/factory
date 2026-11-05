@@ -44,13 +44,24 @@ const FIELDS = {
         ['pauseMin', 'Shortest stop (seconds)', ''],
         ['pauseMax', 'Longest stop (seconds)', ''],
     ],
+    ranking: [
+        ['starsGold', 'Stars for 1st', 'In a competition round.'],
+        ['starsSilver', 'Stars for 2nd', ''],
+        ['starsBronze', 'Stars for 3rd', ''],
+        ['dailyPlayers', 'Daily: players', 'Made up: how far down a new player starts.'],
+        ['dailyFalloff', 'Daily: climb', 'The share of players still ahead after each star. Lower climbs faster: 0.55 reaches 1st in about 11 stars.'],
+        ['weeklyPlayers', 'Weekly: players', ''],
+        ['weeklyFalloff', 'Weekly: climb', '0.8 reaches 1st in about 39 stars.'],
+    ],
     intro: [
         ['hold', 'Wait first (seconds)', 'Before the camera sets off, while the screen opens.'],
         ['seconds', 'Camera time (seconds)', 'From high above down to the player.'],
         ['pitchDeg', 'Starting pitch (degrees)', '90 is straight down.'],
         ['zoomOut', 'Starting distance', 'As a share of what shows the whole island. 1 is all of it.'],
         ['gatherRadius', 'Rivals wait this far off', 'From the player, before they fly out.'],
-        ['spreadSeconds', 'Rivals fly out (seconds)', 'At their normal speed, away from the player. Then the level starts.'],
+        ['controlAt', 'Player can fly from', 'How far through the camera move (0 to 1) the level starts and the player can move. The camera keeps coming down.'],
+        ['rivalsFrom', 'Rivals set off from', 'Each rival leaves at its own random moment between this point of the camera move...'],
+        ['rivalsTo', 'Rivals set off until', '...and this one. Keep it under "Player can fly from".'],
     ],
     scarcity: [
         ['offscreenCooldown', 'Off-screen eat cooldown (seconds)', 'A rival out of sight only pretends to eat a thing: it grows and the thing stays. Rivals leave that thing alone this long.'],
@@ -101,7 +112,7 @@ export const hasUnsavedUfo = () => dirty;
 
 export async function initUfoTab(host) {
     const settings = await api('/api/mow');
-    const edits = { ufo: {}, rivals: {}, camera: {}, home: {}, saucerLook: {}, intro: {}, scarcity: {}, people: {} };
+    const edits = { ufo: {}, rivals: {}, camera: {}, home: {}, saucerLook: {}, intro: {}, scarcity: {}, ranking: {}, people: {} };
     const field = (section, [key, label, hint, kind]) => el('label', {},
         el('span', {}, label, hint ? el('small', {}, hint) : null),
         kind === 'toggle' ? el('input', {
@@ -131,6 +142,7 @@ export async function initUfoTab(host) {
     };
     host.replaceChildren(el('div', { class: 'ufo-form' },
         el('h2', {}, 'UFO'), FIELDS.ufo.map((entry) => field('ufo', entry)),
+        el('h2', {}, 'Competition ranking'), FIELDS.ranking.map((entry) => field('ranking', entry)),
         el('h2', {}, 'Level start'), FIELDS.intro.map((entry) => field('intro', entry)),
         el('h2', {}, 'Never running out'), FIELDS.scarcity.map((entry) => field('scarcity', entry)),
         el('h2', {}, 'UFO look'), FIELDS.saucerLook.map((entry) => field('saucerLook', entry)),

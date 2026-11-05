@@ -338,6 +338,17 @@ interface Design {
     people: PeopleSettings;
     camera: CameraSettings;
     home: HomeSettings;
+    /** The competition's stars, made-up rankings and goals (Ranking.ts). */
+    ranking: {
+        starsGold: number;
+        starsSilver: number;
+        starsBronze: number;
+        dailyPlayers: number;
+        dailyFalloff: number;
+        weeklyPlayers: number;
+        weeklyFalloff: number;
+        goals: unknown[];
+    };
     /** What plays on the home screen. */
     homeMusic: MusicDef;
     /** The start of a level: from high above down to the player, then the rivals fly out from round it. */
@@ -349,7 +360,11 @@ interface Design {
         zoomOut: number;
         /** How far from the player the rivals wait. */
         gatherRadius: number;
-        spreadSeconds: number;
+        /** How far through the camera's move (0..1) the player can fly and the level starts. */
+        controlAt: number;
+        /** The rivals set off one by one, between these points of the camera's move. */
+        rivalsFrom: number;
+        rivalsTo: number;
     };
     /** Never running out of things to eat. */
     scarcity: {

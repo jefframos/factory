@@ -22,9 +22,11 @@ import { Game } from 'core/Game';
 import AnalogInput from 'core/io/AnalogInput';
 import KeyboardInputMovement from 'core/io/KeyboardInputMovement';
 import { DebugOverlay } from 'core/debug/DebugOverlay';
+import PlatformHandler from 'core/platforms/PlatformHandler';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import { CAMERA, DESIGN, LOOKS, Level, Mission, Prop, UFO, currentLevel, currentMission, currentMissionIndex, goToMission, levelTitle } from '../data/UfoConfig';
 import { UfoProgress } from '../data/UfoProgress';
+import { awardRound } from '../data/Ranking';
 import { SpatialAudio } from '../audio/SpatialAudio';
 import { UfoAudio } from '../audio/UfoAudio';
 import { bendUniforms, updateBend } from '../services/Bend';
@@ -60,13 +62,14 @@ const CAMERA_LOOK_HEIGHT = 0.35;
 const FACES = [0, 1, 2, 3, 4, 5, 6, 7].map((n) => `ProfileFace_s_0${n}`);
 const PLAYER_COLORS = [0x5fe87a, 0xff7ab8, 0x6fc3ff, 0xffb347, 0xb98cff, 0x4fe0d0, 0xff6b6b, 0xffe066];
 const RIVAL_NAMES = ['Zorp', 'Blip', 'Gloop', 'Nebby', 'Krill', 'Vex', 'Quark', 'Plonk', 'Oozle', 'Fizz'];
+/** How unevenly the rivals are placed round the player at the start (1: up to half the gap each way). */
+const INTRO_ANGLE_JITTER = 0.7;
 /** A rival's name: this many radii over it. */
 const TAG_LIFT = 1.6;
 /** How often the leaderboard's redrawn (seconds). */
 const BOARD_EVERY = 0.25;
 /** Rivals start at least this far from the player and each other. */
 const SPAWN_APART = 14;
-const NAME_KEY = 'ufo.name';
 /** The goal's line: up at the start for this long; then back with a pulse every so often, and as the bar passes these shares. */
 const BANNER_FLASH = { first: 5, again: 4, every: 45, shares: [0.5, 0.85] };
 /** Points for eating a saucer, and a kill streak's window (seconds) and shouts. */
@@ -112,22 +115,6 @@ interface Flying {
     duration: number;
     from: THREE.Vector3;
     scale: THREE.Vector3;
-}
-
-function savedName(): string {
-    try {
-        return window.localStorage.getItem(NAME_KEY) || 'You';
-    } catch {
-        return 'You';
-    }
-}
-
-function saveName(name: string): void {
-    try {
-        window.localStorage.setItem(NAME_KEY, name);
-    } catch {
-        // No storage: it's only asked again next time.
-    }
 }
 
 /** What a thing's worth when you eat it. */
@@ -183,10 +170,11 @@ export default class UfoScene extends ThreeScene {
     private phase: Phase = 'intro';
     /** The intro: how far along, where the rivals wait and where they go, and the camera's angle while it lasts. */
     private introTime = 0;
+    private introDone = false;
     private introShare = 0;
     private introDistance = 0;
     private introPitch: number | null = null;
-    private readonly introMoves: { saucer: Saucer; steer: THREE.Vector2 }[] = [];
+    private readonly introMoves: { saucer: Saucer; steer: THREE.Vector2; setsOffAt: number }[] = [];
     /** What's been eaten that can come back, and how long since the player ate and things last came back. */
     private readonly eatenProps: { prop: Prop; radius: number; height: number; value: number }[] = [];
     private sinceEaten = 0;
@@ -228,7 +216,7 @@ export default class UfoScene extends ThreeScene {
         this.cars = new Cars(this.threeScene, level, this.town);
         this.people = new People(this.threeScene, level, this.town, this.cars);
         this.saucer = new Saucer(this.threeScene, level.start.x, level.start.z);
-        this.you = { name: savedName(), face: FACES[0], color: PLAYER_COLORS[0], saucer: this.saucer, rival: null, flying: 0, respawn: 0, held: { count: 0, points: 0, value: 0 } };
+        this.you = { name: UfoProgress.username, face: UfoProgress.avatarLook.face, color: UfoProgress.avatarLook.color, saucer: this.saucer, rival: null, flying: 0, respawn: 0, held: { count: 0, points: 0, value: 0 } };
         this.contestants.push(this.you);
         this.spawnRivals();
         this.homeArrows = new HomeArrows(this.threeScene);
@@ -266,13 +254,15 @@ export default class UfoScene extends ThreeScene {
 
     /** Everyone's gathered round the player, and the camera's high above. */
     private startIntro(): void {
-        const { gatherRadius, zoomOut } = DESIGN.intro;
+        const { gatherRadius, zoomOut, rivalsFrom, rivalsTo } = DESIGN.intro;
         const rivals = this.contestants.filter(({ rival }) => rival);
         rivals.forEach(({ saucer }, i) => {
-            const angle = (i / rivals.length) * Math.PI * 2;
+            // Round the player, not quite evenly.
+            const angle = ((i + (Math.random() - 0.5) * INTRO_ANGLE_JITTER) / rivals.length) * Math.PI * 2;
             saucer.position.set(this.level.start.x + Math.sin(angle) * gatherRadius, this.level.start.z + Math.cos(angle) * gatherRadius);
             // Straight out from the player, at a rival's own speed.
-            this.introMoves.push({ saucer, steer: new THREE.Vector2(Math.sin(angle), Math.cos(angle)).multiplyScalar(DESIGN.rivals.speed) });
+            const steer = new THREE.Vector2(Math.sin(angle), Math.cos(angle)).multiplyScalar(DESIGN.rivals.speed);
+            this.introMoves.push({ saucer, steer, setsOffAt: THREE.MathUtils.lerp(rivalsFrom, rivalsTo, Math.random()) });
         });
         const { minX, maxX, minZ, maxZ } = this.town.bounds();
         const halfFov = THREE.MathUtils.degToRad(CAMERA.fov / 2);
@@ -287,19 +277,31 @@ export default class UfoScene extends ThreeScene {
     /** The camera comes down to the player, the rivals fly out, and it starts. */
     private updateIntro(delta: number): void {
         if (!this.loaded) return;
-        const { hold, seconds, spreadSeconds, pitchDeg } = DESIGN.intro;
+        const { hold, seconds, controlAt, pitchDeg } = DESIGN.intro;
         this.introTime += delta;
         const t = THREE.MathUtils.clamp((this.introTime - hold) / seconds, 0, 1);
         this.introShare = t * t * (3 - 2 * t);
         this.introPitch = THREE.MathUtils.lerp(THREE.MathUtils.degToRad(pitchDeg), this.cameraPitch(), this.introShare);
-        const hasRivals = this.introMoves.length > 0;
-        const spreadFrom = hold + seconds;
-        const spread = hasRivals ? THREE.MathUtils.clamp((this.introTime - spreadFrom) / spreadSeconds, 0, 1) : 1;
-        if (spread > 0) for (const { saucer, steer } of this.introMoves) saucer.move(steer, delta, this.town);
-        if (t < 1 || spread < 1) return;
-        this.phase = 'playing';
+        // Close enough: the level's on, while the camera finishes coming down.
+        if (this.phase === 'intro') {
+            for (const { saucer, steer, setsOffAt } of this.introMoves) {
+                if (t >= setsOffAt) saucer.move(steer, delta, this.town);
+            }
+            if (t >= controlAt) {
+                this.phase = 'playing';
+                void PlatformHandler.instance.platform.gameplayStart();
+                gsap.to(this.hud, { alpha: 1, duration: 0.35 });
+            }
+        }
+        if (t < 1) return;
+        this.introDone = true;
         this.introPitch = null;
-        gsap.to(this.hud, { alpha: 1, duration: 0.35 });
+    }
+
+    /** The level's over, or being left: play stops, for the platform too. */
+    private stopPlaying(): void {
+        this.phase = 'ended';
+        void PlatformHandler.instance.platform.gameplayStop();
     }
 
     /** With everything loaded, what the mission's after is known. */
@@ -319,7 +321,7 @@ export default class UfoScene extends ThreeScene {
 
     /** Out of the level, to the home screen: the same level's still next. */
     private leaveToHome(): void {
-        this.phase = 'ended';
+        this.stopPlaying();
         this.travel({ title: 'HOME', subtitle: '', home: true, apply: () => goToMission(currentMissionIndex()) });
     }
 
@@ -372,6 +374,26 @@ export default class UfoScene extends ThreeScene {
         this.keyboard.onMove.add(steer);
         this.analog = new AnalogInput(this);
         this.analog.onMove.add(steer);
+        // Past the screen's edge the browser may cancel a touch without the stick hearing it end, and then the stick ignores
+        // every new finger, waiting for the old one. So it's told here, ahead of PIXI: a finger with none other down (primary)
+        // means whatever the stick was holding is over.
+        window.addEventListener('pointerdown', this.onAnyPointerDown, true);
+        window.addEventListener('pointercancel', this.releaseStick, true);
+        window.addEventListener('blur', this.releaseStick);
+    }
+
+    private readonly onAnyPointerDown = (event: PointerEvent): void => {
+        if (event.isPrimary) this.resetStick();
+    };
+
+    private readonly releaseStick = (): void => {
+        this.resetStick();
+        this.input.set(0, 0);
+    };
+
+    private resetStick(): void {
+        this.analog.setEnabled(false);
+        this.analog.setEnabled(true);
     }
 
     /** With ?dev or ?debug: the numbers to feel out, live (saving them for good is the editor's UFO tab). */
@@ -412,7 +434,7 @@ export default class UfoScene extends ThreeScene {
         delta = Math.min(delta, MAX_FRAME_SEC);
         const playing = this.phase === 'playing';
         const saucers = this.contestants.map(({ saucer }) => saucer);
-        if (this.phase === 'intro') this.updateIntro(delta);
+        if (!this.introDone) this.updateIntro(delta);
         if (playing) this.director?.update(delta, this.input, (saucer) => this.isOnScreen(saucer));
         for (const contestant of this.contestants) {
             const { saucer, rival } = contestant;
@@ -688,13 +710,13 @@ export default class UfoScene extends ThreeScene {
         }
         const goalItem = this.town.goalItem;
         if (goalItem ? this.goalEaten : allGone) {
-            this.phase = 'ended';
+            this.stopPlaying();
             this.hud.showEnd({ title: goal && goalItem ? `${goal.name.toUpperCase()} SWALLOWED!` : 'TOWN ABDUCTED!', outcome: 'win', button: 'CONTINUE' });
         }
     }
 
     private finishMission(won: boolean): void {
-        this.phase = 'ended';
+        this.stopPlaying();
         this.missionWon = won;
         const { mission } = this;
         if (!mission) return;
@@ -709,7 +731,7 @@ export default class UfoScene extends ThreeScene {
     }
 
     private finishRound(): void {
-        this.phase = 'ended';
+        this.stopPlaying();
         if (this.contestants.length < 2) {
             const share = Math.floor((this.townShare()) * 100);
             this.hud.showEnd({
@@ -722,8 +744,10 @@ export default class UfoScene extends ThreeScene {
         const place = results.findIndex((row) => row.you) + 1;
         const nth = `${place}${['ST', 'ND', 'RD'][place - 1] ?? 'TH'} PLACE`;
         const button = 'CONTINUE';
-        if (place === 1) this.hud.showEnd({ title: 'VICTORY!', outcome: 'win', results, button });
-        else if (place <= 3) this.hud.showEnd({ title: nth, outcome: 'place', emblem: place === 2 ? 'ItemIcon_Medal_Silver_1' : 'ItemIcon_Medal_Bronze_1', results, button });
+        const starsWon = awardRound(place);
+        UfoProgress.openRankingOnHome = true;
+        if (place === 1) this.hud.showEnd({ title: 'VICTORY!', outcome: 'win', results, button, starsWon });
+        else if (place <= 3) this.hud.showEnd({ title: nth, outcome: 'place', emblem: place === 2 ? 'ItemIcon_Medal_Silver_1' : 'ItemIcon_Medal_Bronze_1', results, button, starsWon });
         else this.hud.showEnd({ title: nth, outcome: 'lose', results, button });
     }
 
@@ -957,7 +981,7 @@ export default class UfoScene extends ThreeScene {
     private updateCamera(delta: number): void {
         const { x, y: z } = this.saucer.position;
         this.goal.set(x, this.saucer.altitude * CAMERA_LOOK_HEIGHT, z);
-        if (this.phase === 'intro') {
+        if (!this.introDone) {
             this.focus.copy(this.goal);
             this.distance = THREE.MathUtils.lerp(this.introDistance, this.cameraDistance(), this.introShare);
         } else {
@@ -980,6 +1004,11 @@ export default class UfoScene extends ThreeScene {
     }
 
     public destroy(): void {
+        // (Calling it when already stopped does nothing.)
+        void PlatformHandler.instance.platform.gameplayStop();
+        window.removeEventListener('pointerdown', this.onAnyPointerDown, true);
+        window.removeEventListener('pointercancel', this.releaseStick, true);
+        window.removeEventListener('blur', this.releaseStick);
         gsap.killTweensOf(this.hud);
         window.removeEventListener('pointerdown', this.startSound, true);
         window.removeEventListener('keydown', this.startSound, true);

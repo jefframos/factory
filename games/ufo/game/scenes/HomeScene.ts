@@ -2,7 +2,8 @@
 //
 // The main screen: the area's miniature (its own town, ui/areas.json `miniature`) as a little island in the sea, with the
 // saucer you're wearing hovering over it, seen from far off through a long lens. Over it: your coins, the area's name, the
-// button to play the next level, competition, and the bottom tabs: the aliens' shop, home, the spaceships' shop.
+// button to play the next level, a floating icon to the competition's ranking, and the bottom tabs: the aliens' shop, home,
+// the spaceships' shop.
 //
 // With `home.baked` the island and the saucer are images (BakedView.ts), smooth where the live 3D is jagged: the two sit on
 // the PIXI layer over the three canvas, which goes on drawing only the live sea. The view doesn't swing then; the saucer's
@@ -22,9 +23,12 @@ import { ShopKind, UfoProgress } from '../data/UfoProgress';
 import { Saucer } from '../player/Saucer';
 import { updateBend } from '../services/Bend';
 import { Baked, bakeView } from '../ui/BakedView';
+import { AvatarPanel } from '../ui/AvatarPanel';
+import { RankingPanel } from '../ui/RankingPanel';
+import { anyClaimable } from '../data/Ranking';
 import { ShopPanel } from '../ui/ShopPanel';
 import { Snapshots } from '../ui/Snapshots';
-import { COIN_BAR, DARK, buttonParts, fillCoinBar, fitSprite, framePlane, iconSprite, label, plainLabel, tappable } from '../ui/UiParts';
+import { COIN_BAR, DARK, buttonParts, fillCoinBar, fitSprite, framePlane, iconSprite, label, makeAvatar, plainLabel, tappable } from '../ui/UiParts';
 import { UfoTown } from '../world/UfoTown';
 
 /** What's past the end of the sea, in a town without an island of its own. */
@@ -39,10 +43,16 @@ const TABS = {
 };
 const TOP = { y: 48, muteSize: 56, margin: 16 };
 const COINS = COIN_BAR;
-const RIBBON = { y: 134, width: 430, height: 86, scale: 0.6, text: 36, textY: -6 };
+/** Top left: the picture, its username, and the coins under that. In the shops only the coins, in the corner. */
+const PROFILE = { x: 58, y: 58, avatar: 88, nameX: 54, nameY: -28, nameSize: 24, nameWidth: 230, hitWidth: 330, hitHeight: 96, coinsX: 134, coinsY: 74 };
+const RIBBON = { y: 160, width: 430, height: 86, scale: 0.6, text: 36, textY: -6 };
 /** The buttons, up from the top of the tabs. */
-const PLAY = { width: 440, height: 110, up: 148, textSize: 54 };
-const OTHER = { width: 290, height: 64, up: 50 };
+const PLAY = { width: 440, height: 110, up: 92, textSize: 54 };
+/** The floating icon to the ranking: where (from the top left), its size, its bounce, and what's round it. */
+const MEDAL = {
+    x: 96, y: 300, size: 110, bounce: 12, bounceSeconds: 0.55, rays: 230, raysColor: 0xffd23f, raysSeconds: 9, glow: 190, label: 22, labelY: 74,
+    alert: 40, alertX: 44, alertY: -44, hand: 84, handX: 34, handY: 42, handMove: 16, handSeconds: 0.5,
+};
 const PLAY_SLICE = { side: 82, height: 194 };
 const MUTE_ICON = 0.55 / 128;
 /** The play button: a gold glow breathing behind it, and a band of light sweeping across. */
@@ -83,9 +93,17 @@ export default class HomeScene extends ThreeScene {
     private readonly coinsBar = new PIXI.Container();
     private readonly coinsText = label(COINS.textSize);
     private readonly mute = new PIXI.Container();
+    private readonly profile = new PIXI.Container();
+    private readonly profileAvatar = new PIXI.Container();
+    private avatarPanel: AvatarPanel | null = null;
     private readonly ribbon = new PIXI.Container();
     private readonly play = new PIXI.Container();
-    private readonly competition = new PIXI.Container();
+    private readonly medal = new PIXI.Container();
+    private readonly medalIcon = iconSprite('ItemIcon_Medalstand', MEDAL.size);
+    private readonly medalRays = iconSprite('Image_Effect_Rotate', MEDAL.rays);
+    private readonly medalAlert = new PIXI.Container();
+    private readonly medalHand = iconSprite('tutorial_hand_3', MEDAL.hand);
+    private rankingPanel: RankingPanel | null = null;
     private readonly tabBar = new PIXI.Container();
     private readonly tabBack = framePlane('Menu_BottomBtn_Bg', 720, TABS.height);
     private readonly tabFocus = framePlane('Menu_BottomBtn_TabFocus', 240, TABS.height + TABS.rise);
@@ -108,7 +126,7 @@ export default class HomeScene extends ThreeScene {
     private glow: PIXI.Sprite | null = null;
     public ready: Promise<void> = Promise.resolve();
 
-    /** `onPlay`: the level's button; `onCompetition`: the other one. */
+    /** `onPlay`: the level's button; `onCompetition`: the ranking's. */
     public constructor(game: Game, private readonly onPlay: () => void, private readonly onCompetition: () => void) {
         super(game);
     }
@@ -243,6 +261,7 @@ export default class HomeScene extends ThreeScene {
 
     private buildUi(): void {
         fillCoinBar(this.coinsBar, this.coinsText);
+        this.buildProfile();
         this.buildMute();
 
         const ribbonBack = framePlane('Title_Ribbon04_Red', RIBBON.width, RIBBON.height, RIBBON.scale);
@@ -288,8 +307,7 @@ export default class HomeScene extends ThreeScene {
         this.play.addChild(this.glow, playBack, playWords, outline, this.shine);
         tappable(this.play, () => this.onPlay());
         gsap.to(this.play.scale, { x: 1.03, y: 1.03, duration: 0.7, yoyo: true, repeat: -1, ease: 'sine.inOut' });
-        this.competition.addChild(...buttonParts(OTHER.width, OTHER.height, 'COMPETITION', 'Button01_l_Purple'));
-        tappable(this.competition, () => this.onCompetition());
+        this.buildMedal();
 
         this.tabBack.tint = TABS.barColor;
         this.tabFocus.tint = TABS.focusColor;
@@ -299,10 +317,101 @@ export default class HomeScene extends ThreeScene {
         this.addTab('home', 'HOME');
         this.addTab('ufo', 'SPACESHIPS');
         // The shops go in over the buttons, under the coins and the tabs (openTab()).
-        this.ui.addChild(this.ribbon, this.play, this.competition, this.coinsBar, this.mute, this.tabBar);
+        this.ui.addChild(this.ribbon, this.medal, this.play, this.profile, this.coinsBar, this.mute, this.tabBar);
+        // Back from a round: straight to how it changed the ranking.
+        if (UfoProgress.openRankingOnHome) {
+            UfoProgress.openRankingOnHome = false;
+            this.openRanking();
+        }
         this.refreshCoins();
         this.refreshTabIcons();
         this.resize();
+    }
+
+    private buildProfile(): void {
+        const name = label(PROFILE.nameSize);
+        name.text = UfoProgress.username;
+        name.anchor.set(0, 0.5);
+        name.position.set(PROFILE.nameX, PROFILE.nameY);
+        name.scale.set(Math.min(1, PROFILE.nameWidth / Math.max(name.width, 1)));
+        this.profile.addChild(this.profileAvatar, name);
+        this.profile.hitArea = new PIXI.Rectangle(-PROFILE.avatar / 2, -PROFILE.avatar / 2, PROFILE.hitWidth, PROFILE.hitHeight);
+        tappable(this.profile, () => this.openAvatars());
+        this.refreshAvatar();
+    }
+
+    private refreshAvatar(): void {
+        this.profileAvatar.removeChildren().forEach((child) => child.destroy({ children: true }));
+        const { face, color } = UfoProgress.avatarLook;
+        this.profileAvatar.addChild(makeAvatar({ name: UfoProgress.username, face, color }, PROFILE.avatar));
+    }
+
+    private openAvatars(): void {
+        if (this.avatarPanel) return;
+        this.avatarPanel = new AvatarPanel(() => this.refreshAvatar(), () => {
+            this.avatarPanel?.destroy();
+            this.avatarPanel = null;
+        });
+        this.ui.addChild(this.avatarPanel);
+        this.avatarPanel.reposition();
+    }
+
+    /** Where the coins go: under the name at home; in the corner over a shop, where there's no room for it. */
+    private placeTopLeft(): void {
+        const screen = Game.overlayScreenData;
+        if (!screen) return;
+        const atHome = this.tab === 'home';
+        const { x: left, y: top } = screen.topLeft;
+        this.profile.visible = atHome;
+        this.profile.position.set(left + PROFILE.x, top + PROFILE.y);
+        if (atHome) this.coinsBar.position.set(left + PROFILE.coinsX, top + PROFILE.coinsY);
+        else this.coinsBar.position.set(left + TOP.margin + COINS.icon / 2, top + TOP.y);
+    }
+
+    /** Bouncing, with rays and a glow behind; a hand points at it until it's been opened, an exclamation mark for what's claimable. */
+    private buildMedal(): void {
+        const glow = iconSprite('Glow_Circle01', MEDAL.glow);
+        glow.tint = MEDAL.raysColor;
+        glow.blendMode = PIXI.BLEND_MODES.ADD;
+        this.medalRays.tint = MEDAL.raysColor;
+        this.medalRays.blendMode = PIXI.BLEND_MODES.ADD;
+        const words = label(MEDAL.label);
+        words.text = 'RANKING';
+        words.y = MEDAL.labelY;
+        const circle = iconSprite('Alert_Circle_l_Bg', MEDAL.alert);
+        circle.tint = 0xff3b4e;
+        this.medalAlert.addChild(circle, iconSprite('Alert_Circle_Icon_Exclamation', MEDAL.alert * 0.55));
+        this.medalAlert.position.set(MEDAL.alertX, MEDAL.alertY);
+        this.medalHand.anchor.set(0.22, 0.2);
+        this.medalHand.position.set(MEDAL.handX, MEDAL.handY);
+        this.medal.addChild(glow, this.medalRays, this.medalIcon, words, this.medalAlert, this.medalHand);
+        this.medal.hitArea = new PIXI.Circle(0, 0, MEDAL.size * 0.75);
+        tappable(this.medal, () => this.openRanking());
+        gsap.to(this.medalRays, { rotation: Math.PI * 2, duration: MEDAL.raysSeconds, ease: 'none', repeat: -1 });
+        gsap.to(this.medalIcon, { y: -MEDAL.bounce, duration: MEDAL.bounceSeconds, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        gsap.to(this.medalHand, { x: MEDAL.handX + MEDAL.handMove, y: MEDAL.handY + MEDAL.handMove, duration: MEDAL.handSeconds, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        this.refreshMedal();
+    }
+
+    private refreshMedal(): void {
+        this.medalHand.visible = !UfoProgress.rankingSeen;
+        this.medalAlert.visible = !UfoProgress.rankingSeen || anyClaimable();
+    }
+
+    private openRanking(): void {
+        UfoProgress.markRankingSeen();
+        this.refreshMedal();
+        if (this.rankingPanel) return;
+        this.rankingPanel = new RankingPanel(() => this.closeRanking(), () => this.onCompetition());
+        this.ui.addChild(this.rankingPanel);
+        this.rankingPanel.reposition();
+    }
+
+    private closeRanking(): void {
+        this.rankingPanel?.destroy();
+        this.rankingPanel = null;
+        this.refreshCoins();
+        this.refreshMedal();
     }
 
     private buildMute(): void {
@@ -336,8 +445,7 @@ export default class HomeScene extends ThreeScene {
     private refreshTabIcons(): void {
         const home = this.tabs.get('home')?.icon;
         if (home && !home.children.length) {
-            const castle = iconSprite('Icon_Castle', 100);
-            home.addChild(castle);
+            home.addChild(iconSprite('Icon_MapPoint', 100));
         }
         const place = (tab: Tab, texture: PIXI.Texture | null) => {
             const icon = this.tabs.get(tab)?.icon;
@@ -369,6 +477,7 @@ export default class HomeScene extends ThreeScene {
             shop.reposition();
         }
         this.placeTabs();
+        this.placeTopLeft();
         const icon = this.tabs.get(tab)?.icon;
         if (icon) gsap.from(icon.scale, { x: 0.7, y: 0.7, duration: 0.3, ease: 'back.out(3)' });
     }
@@ -418,12 +527,14 @@ export default class HomeScene extends ThreeScene {
         this.frameCamera();
         if (this.bakedIsland && this.bakedFor !== `${window.innerWidth}x${window.innerHeight}`) this.rebakeIn = REBAKE_AFTER;
         const top = screen.topLeft.y;
-        this.coinsBar.position.set(screen.topLeft.x + TOP.margin + COINS.icon / 2, top + TOP.y);
+        this.placeTopLeft();
+        this.avatarPanel?.reposition();
         this.mute.position.set(screen.topLeft.x + screen.width - TOP.margin - TOP.muteSize / 2, top + TOP.y);
         this.ribbon.position.set(screen.center.x, top + RIBBON.y);
         const tabsTop = top + screen.height - TABS.height;
         this.play.position.set(screen.center.x, tabsTop - PLAY.up);
-        this.competition.position.set(screen.center.x, tabsTop - OTHER.up);
+        this.medal.position.set(screen.topLeft.x + MEDAL.x, top + MEDAL.y);
+        this.rankingPanel?.reposition();
         this.placeTabs();
         this.shops.forEach((shop) => shop.reposition());
     }
@@ -431,6 +542,7 @@ export default class HomeScene extends ThreeScene {
     public update(delta: number): void {
         const step = Math.min(delta, 1 / 20);
         this.time += step;
+        this.rankingPanel?.update(step);
         this.placeCamera();
         if (this.bakedUfo) {
             this.bakedUfo.y = this.bakedUfoY + Math.sin(this.time * BAKED_BOB.speed) * BAKED_BOB.height;
@@ -451,6 +563,7 @@ export default class HomeScene extends ThreeScene {
         window.removeEventListener('keydown', this.startSound, true);
         DebugOverlay.instance.removePanel(DEBUG_PANEL);
         gsap.killTweensOf(this.play.scale);
+        gsap.killTweensOf([this.medalRays, this.medalIcon, this.medalHand]);
         if (this.shine) gsap.killTweensOf(this.shine);
         if (this.glow) gsap.killTweensOf(this.glow);
         this.tabs.forEach(({ icon }) => gsap.killTweensOf(icon.scale));

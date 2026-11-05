@@ -20,7 +20,7 @@ async function saveSettings(req, res) {
     const edits = await readBody(req);
     const settings = await readJson(SETTINGS_FILE, null);
     if (!settings) return send(res, 500, { error: 'Could not read ui/ufo.json' });
-    for (const section of ['ufo', 'rivals', 'camera', 'home', 'saucerLook', 'intro', 'scarcity', 'people']) {
+    for (const section of ['ufo', 'rivals', 'camera', 'home', 'saucerLook', 'intro', 'scarcity', 'ranking', 'people']) {
         for (const [key, value] of Object.entries(edits[section] ?? {})) {
             const toggle = typeof settings[section][key] === 'boolean' && typeof value === 'boolean';
             if (!(key in settings[section]) || (!toggle && !Number.isFinite(value))) return send(res, 400, { error: `Bad setting ${section}.${key}` });

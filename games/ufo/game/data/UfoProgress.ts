@@ -4,6 +4,7 @@
 // they're wearing. Styles come in two sections: classics, unlocked at random for watching a video, and specials (those with a
 // `price`), bought with coins.
 
+import { AVATARS, AvatarLook, usernameFrom } from './Profile';
 import { LOOKS, eraseMissionSave } from './UfoConfig';
 
 export type ShopKind = 'ufo' | 'alien';
@@ -18,12 +19,21 @@ interface Saved {
     ufo?: string;
     alien?: string;
     tutorialDone?: boolean;
+    /** The ranking screen's been opened: no more pointing at it. */
+    rankingSeen?: boolean;
+    /** Made once, and can't be changed. */
+    username?: string;
+    avatar?: number;
+    /** Stars this period, by daily/weekly: which period, and how many. */
+    stars?: Record<string, { key: string; count: number }>;
+    /** Which period each goal was last claimed in. */
+    claimed?: Record<string, string>;
 }
 
 function load(): Saved {
     try {
         const saved = JSON.parse(window.localStorage.getItem(KEY) ?? '{}') as Partial<Saved>;
-        return { coins: saved.coins ?? 0, ufos: saved.ufos ?? [], aliens: saved.aliens ?? [], ufo: saved.ufo, alien: saved.alien, tutorialDone: saved.tutorialDone };
+        return { coins: saved.coins ?? 0, ufos: saved.ufos ?? [], aliens: saved.aliens ?? [], ufo: saved.ufo, alien: saved.alien, tutorialDone: saved.tutorialDone, rankingSeen: saved.rankingSeen, username: saved.username, avatar: saved.avatar, stars: saved.stars, claimed: saved.claimed };
     } catch {
         return { coins: 0, ufos: [], aliens: [] };
     }
@@ -60,6 +70,60 @@ export const UfoProgress = {
         state.tutorialDone = true;
         save();
     },
+
+    get username(): string {
+        if (!state.username) {
+            state.username = usernameFrom(Math.floor(Math.random() * 2 ** 32));
+            save();
+        }
+        return state.username;
+    },
+
+    get avatar(): number {
+        return Math.min(state.avatar ?? 0, AVATARS.length - 1);
+    },
+
+    get avatarLook(): AvatarLook {
+        return AVATARS[this.avatar];
+    },
+
+    setAvatar(index: number): void {
+        state.avatar = index;
+        save();
+    },
+
+    get rankingSeen(): boolean {
+        return state.rankingSeen === true;
+    },
+
+    markRankingSeen(): void {
+        state.rankingSeen = true;
+        save();
+    },
+
+    starsIn(period: string, key: string): number {
+        const entry = state.stars?.[period];
+        return entry?.key === key ? entry.count : 0;
+    },
+
+    addStars(period: string, key: string, stars: number): void {
+        state.stars ??= {};
+        state.stars[period] = { key, count: this.starsIn(period, key) + stars };
+        save();
+    },
+
+    isGoalClaimed(id: string, key: string): boolean {
+        return state.claimed?.[id] === key;
+    },
+
+    claimGoal(id: string, key: string): void {
+        state.claimed ??= {};
+        state.claimed[id] = key;
+        save();
+    },
+
+    /** A round's just been played: the home screen opens on the ranking. */
+    openRankingOnHome: false,
 
     /** Forgets everything and starts over, from the tutorial (the debug panel's). */
     eraseAndRestart(): void {
