@@ -1,345 +1,345 @@
 {
-  "$comment": "The UFO game's settings (the editor's UFO tab). grass, cell, seed: what the shared Town tab asks of a game (no grass here). roadKit, traffic: the road builder's pieces and the cars.",
-  "grass": [],
-  "cell": 0.5,
-  "seed": 1,
-  "roadKit": {
-    "$comment": "The road builder's pieces (core/roads/RoadGrid.ts): a level's road cells (levels/*.json roads) become these, each the first piece fitting its road neighbours (open: its sides as modelled, n = -Z), turned to fit; models: the piece, then its variants (the editor cycles them). tile: their size; elevation: their base; roadY: the asphalt (the cars' wheels).",
-    "tile": 15,
-    "elevation": 0.02,
-    "roadY": 0.03,
-    "pieces": [
-      {
-        "open": [
-          "n",
-          "e",
-          "s",
-          "w"
-        ],
-        "models": [
-          "town/library/city2-road-012/city2-road-012.glb",
-          "town/library/city2-road-029/city2-road-029.glb"
+    "$comment": "The UFO game's settings (the editor's UFO tab). grass, cell, seed: what the shared Town tab asks of a game (no grass here). roadKit, traffic: the road builder's pieces and the cars.",
+    "grass": [],
+    "cell": 0.5,
+    "seed": 1,
+    "roadKit": {
+        "$comment": "The road builder's pieces (core/roads/RoadGrid.ts): a level's road cells (levels/*.json roads) become these, each the first piece fitting its road neighbours (open: its sides as modelled, n = -Z), turned to fit; models: the piece, then its variants (the editor cycles them). tile: their size; elevation: their base; roadY: the asphalt (the cars' wheels).",
+        "tile": 15,
+        "elevation": 0.02,
+        "roadY": 0.03,
+        "pieces": [
+            {
+                "open": [
+                    "n",
+                    "e",
+                    "s",
+                    "w"
+                ],
+                "models": [
+                    "town/library/city2-road-012/city2-road-012.glb",
+                    "town/library/city2-road-029/city2-road-029.glb"
+                ]
+            },
+            {
+                "open": [
+                    "n",
+                    "s",
+                    "w"
+                ],
+                "models": [
+                    "town/library/city2-road-011/city2-road-011.glb",
+                    "town/library/city2-road-026/city2-road-026.glb"
+                ]
+            },
+            {
+                "open": [
+                    "n",
+                    "s"
+                ],
+                "models": [
+                    "town/library/city2-road-009/city2-road-009.glb",
+                    "town/library/city2-road-010/city2-road-010.glb",
+                    "town/library/city2-road-022/city2-road-022.glb",
+                    "town/library/city2-road-023/city2-road-023.glb"
+                ]
+            },
+            {
+                "open": [
+                    "n",
+                    "w"
+                ],
+                "models": [
+                    "town/library/city2-road-013/city2-road-013.glb"
+                ]
+            },
+            {
+                "open": [
+                    "s"
+                ],
+                "models": [
+                    "town/library/city2-road-025/city2-road-025.glb"
+                ]
+            }
         ]
-      },
-      {
-        "open": [
-          "n",
-          "s",
-          "w"
-        ],
+    },
+    "traffic": {
         "models": [
-          "town/library/city2-road-011/city2-road-011.glb",
-          "town/library/city2-road-026/city2-road-026.glb"
-        ]
-      },
-      {
-        "open": [
-          "n",
-          "s"
+            "town/library/city2-car-07/city2-car-07.glb",
+            "town/library/city2-car-08/city2-car-08.glb",
+            "town/library/city2-car-12/city2-car-12.glb",
+            "town/library/city2-car-16/city2-car-16.glb",
+            "town/library/city2-car-17/city2-car-17.glb",
+            "town/library/city2-car-25/city2-car-25.glb",
+            "town/library/city2-car-26/city2-car-26.glb",
+            "town/library/city2-car-28/city2-car-28.glb",
+            "town/library/city2-car-35/city2-car-35.glb",
+            "town/library/city2-car-36/city2-car-36.glb",
+            "town/library/city2-car-39/city2-car-39.glb",
+            "town/library/city2-car-42/city2-car-42.glb",
+            "town/library/city2-car-45/city2-car-45.glb"
         ],
+        "speed": 4.4,
+        "accel": 3.5,
+        "brake": 10,
+        "length": 4.2,
+        "lane": 1.75,
+        "tile": 7,
+        "roadY": 0.16,
+        "gap": 1.8
+    },
+    "ufo": {
+        "startRadius": 1,
+        "speed": 7.5,
+        "speedPerRadius": 0.4,
+        "accel": 7,
+        "altitudeBase": -1.2,
+        "altitudePerRadius": 3,
+        "growth": 0.05,
+        "valuePower": 0.75,
+        "growSpeed": 2.5,
+        "collideShare": 0.85,
+        "waterMargin": 18,
+        "sizeStep": 0.75,
+        "firstSizeBoost": 2,
+        "completeShare": 0.97
+    },
+    "camera": {
+        "pitchDeg": 50,
+        "endPitchDeg": 62,
+        "endPitchRadius": 8,
+        "fov": 45,
+        "distance": 13,
+        "perAltitude": 1.45,
+        "maxShare": 0.3,
+        "followSpeed": 7,
+        "zoomSpeed": 2.5,
+        "bend": 0.004,
+        "rivalsZoom": 1.3
+    },
+    "music": {
+        "$comment": "The soundtrack (a file in raw-assets/audio, without its extension) and its volume (0-1); a level's soundSettings.music overrides it (the editor's Sounds).",
+        "sound": "Somnia-Variation-3-relax-and-sleep-Reed-Mathis",
+        "volume": 0.05
+    },
+    "people": {
         "models": [
-          "town/library/city2-road-009/city2-road-009.glb",
-          "town/library/city2-road-010/city2-road-010.glb",
-          "town/library/city2-road-022/city2-road-022.glb",
-          "town/library/city2-road-023/city2-road-023.glb"
-        ]
-      },
-      {
-        "open": [
-          "n",
-          "w"
+            "people/person-01.glb",
+            "people/person-02.glb",
+            "people/person-03.glb",
+            "people/person-04.glb",
+            "people/person-05.glb",
+            "people/person-06.glb",
+            "people/person-07.glb",
+            "people/person-08.glb"
         ],
-        "models": [
-          "town/library/city2-road-013/city2-road-013.glb"
+        "speed": 1.4,
+        "height": 1.6,
+        "wander": 9,
+        "pauseMin": 0.5,
+        "pauseMax": 3,
+        "animations": "people/people-anims.glb",
+        "palette": {
+            "skin": [
+                "#ffe0c4",
+                "#f7cba4",
+                "#eab084",
+                "#d09060",
+                "#a86f45",
+                "#7d4e30",
+                "#5a3722"
+            ],
+            "top": [
+                "#e8483f",
+                "#f39a2d",
+                "#f5d547",
+                "#58b957",
+                "#2fa8a0",
+                "#3f86e0",
+                "#7b5be0",
+                "#e65fa8",
+                "#f4f1ea",
+                "#39414f"
+            ],
+            "bottom": [
+                "#2f4a7a",
+                "#4c6ea8",
+                "#39414f",
+                "#5b5148",
+                "#8a7a5c",
+                "#c9b48a",
+                "#6c7d4e",
+                "#7a3f3f"
+            ],
+            "shoes": [
+                "#f4f1ea",
+                "#2b2b2f",
+                "#c0392b",
+                "#2d6cc0",
+                "#8a5a33",
+                "#e6b422"
+            ],
+            "hair": [
+                "#1f1a17",
+                "#3a2a20",
+                "#5e3c23",
+                "#8f5a2c",
+                "#d9b160",
+                "#b5482a",
+                "#9a9a9a"
+            ]
+        }
+    },
+    "saucer": {
+        "model": "saucer/saucer.glb",
+        "skins": [
+            "saucer-basecolor1",
+            "saucer-basecolor2",
+            "saucer-basecolor3",
+            "saucer-purple-yellow",
+            "saucer-crimson-gold",
+            "saucer-ocean-coral",
+            "saucer-teal-cream",
+            "saucer-pink-mint",
+            "saucer-orange-navy",
+            "saucer-lime-purple",
+            "saucer-black-neon",
+            "saucer-white-blue",
+            "saucer-gold-black",
+            "saucer-violet-pink",
+            "saucer-sky-sun",
+            "saucer-forest-sand",
+            "saucer-rose-grey",
+            "saucer-magma",
+            "saucer-ice",
+            "saucer-candy",
+            "saucer-classic",
+            "saucer-steel",
+            "saucer-rust",
+            "saucer-blue"
         ]
-      },
-      {
-        "open": [
-          "s"
+    },
+    "rivals": {
+        "speed": 0.88,
+        "respawnSeconds": 3,
+        "respawnSize": 0.6,
+        "protectSeconds": 3,
+        "eatMargin": 1.12,
+        "ratios": [
+            0.72,
+            1.28,
+            0.85,
+            0.95,
+            0.65,
+            1
         ],
-        "models": [
-          "town/library/city2-road-025/city2-road-025.glb"
+        "playerKeeps": 0.85,
+        "shrinkPerSecond": 0.06,
+        "huntSeconds": 7,
+        "restSeconds": 14,
+        "afterEatenSeconds": 28,
+        "stillSeconds": 1.5,
+        "seenSeconds": 1.2,
+        "keepAway": 15,
+        "floorShare": 0.82,
+        "catchUp": 0.3,
+        "gentleShare": 0.82
+    },
+    "home": {
+        "baked": true,
+        "pitchDeg": 30,
+        "yawDeg": 20,
+        "fov": 60,
+        "fill": 0.8,
+        "drop": 0.08,
+        "drift": 0.09,
+        "driftSpeed": 0.22,
+        "ufoSize": 0.085,
+        "ufoHeight": 0.2
+    },
+    "saucerLook": {
+        "pop": true,
+        "saturation": 1.55,
+        "brightness": 1.1,
+        "shadow": 0.72,
+        "rim": 0.42,
+        "outline": 0,
+        "rimWidth": 0.6
+    },
+    "intro": {
+        "hold": 0.4,
+        "seconds": 2.2,
+        "pitchDeg": 82,
+        "zoomOut": 0.45,
+        "gatherRadius": 3.2,
+        "controlAt": 0.65,
+        "rivalsFrom": 0.2,
+        "rivalsTo": 0.6
+    },
+    "scarcity": {
+        "offscreenCooldown": 25,
+        "droughtSeconds": 10,
+        "minEatable": 8,
+        "riskShare": 0.7,
+        "batch": 6,
+        "every": 6
+    },
+    "homeMusic": {
+        "sound": "ocean-ambient",
+        "volume": 0.005
+    },
+    "ranking": {
+        "$comment": "The competition. A round pays stars by place. Falloff: the share of players still ahead after each star, so lower climbs faster. Goals: `stars`: earn so many; `rank`: reach at least this place; `reward` in coins.",
+        "starsGold": 3,
+        "starsSilver": 2,
+        "starsBronze": 1,
+        "dailyPlayers": 500,
+        "dailyFalloff": 0.55,
+        "weeklyPlayers": 5000,
+        "weeklyFalloff": 0.8,
+        "goals": [
+            {
+                "id": "daily-stars",
+                "period": "daily",
+                "type": "stars",
+                "value": 5,
+                "reward": 100
+            },
+            {
+                "id": "daily-top50",
+                "period": "daily",
+                "type": "rank",
+                "value": 50,
+                "reward": 150
+            },
+            {
+                "id": "daily-first",
+                "period": "daily",
+                "type": "rank",
+                "value": 1,
+                "reward": 300
+            },
+            {
+                "id": "weekly-stars",
+                "period": "weekly",
+                "type": "stars",
+                "value": 20,
+                "reward": 300
+            },
+            {
+                "id": "weekly-top50",
+                "period": "weekly",
+                "type": "rank",
+                "value": 50,
+                "reward": 400
+            },
+            {
+                "id": "weekly-first",
+                "period": "weekly",
+                "type": "rank",
+                "value": 1,
+                "reward": 800
+            }
         ]
-      }
-    ]
-  },
-  "traffic": {
-    "models": [
-      "town/library/city2-car-07/city2-car-07.glb",
-      "town/library/city2-car-08/city2-car-08.glb",
-      "town/library/city2-car-12/city2-car-12.glb",
-      "town/library/city2-car-16/city2-car-16.glb",
-      "town/library/city2-car-17/city2-car-17.glb",
-      "town/library/city2-car-25/city2-car-25.glb",
-      "town/library/city2-car-26/city2-car-26.glb",
-      "town/library/city2-car-28/city2-car-28.glb",
-      "town/library/city2-car-35/city2-car-35.glb",
-      "town/library/city2-car-36/city2-car-36.glb",
-      "town/library/city2-car-39/city2-car-39.glb",
-      "town/library/city2-car-42/city2-car-42.glb",
-      "town/library/city2-car-45/city2-car-45.glb"
-    ],
-    "speed": 4.4,
-    "accel": 3.5,
-    "brake": 10,
-    "length": 4.2,
-    "lane": 1.75,
-    "tile": 7,
-    "roadY": 0.16,
-    "gap": 1.8
-  },
-  "ufo": {
-    "startRadius": 1,
-    "speed": 7.5,
-    "speedPerRadius": 0.4,
-    "accel": 7,
-    "altitudeBase": -1.2,
-    "altitudePerRadius": 3,
-    "growth": 0.05,
-    "valuePower": 0.75,
-    "growSpeed": 2.5,
-    "collideShare": 0.85,
-    "waterMargin": 18,
-    "sizeStep": 0.75,
-    "firstSizeBoost": 2,
-    "completeShare": 0.97
-  },
-  "camera": {
-    "pitchDeg": 50,
-    "endPitchDeg": 62,
-    "endPitchRadius": 8,
-    "fov": 45,
-    "distance": 13,
-    "perAltitude": 1.45,
-    "maxShare": 0.3,
-    "followSpeed": 7,
-    "zoomSpeed": 2.5,
-    "bend": 0.004,
-    "rivalsZoom": 1.3
-  },
-  "music": {
-    "$comment": "The soundtrack (a file in raw-assets/audio, without its extension) and its volume (0-1); a level's soundSettings.music overrides it (the editor's Sounds).",
-    "sound": "Somnia-Variation-3-relax-and-sleep-Reed-Mathis",
-    "volume": 0.05
-  },
-  "people": {
-    "models": [
-      "people/person-01.glb",
-      "people/person-02.glb",
-      "people/person-03.glb",
-      "people/person-04.glb",
-      "people/person-05.glb",
-      "people/person-06.glb",
-      "people/person-07.glb",
-      "people/person-08.glb"
-    ],
-    "speed": 1.4,
-    "height": 1.6,
-    "wander": 9,
-    "pauseMin": 0.5,
-    "pauseMax": 3,
-    "animations": "people/people-anims.glb",
-    "palette": {
-      "skin": [
-        "#ffe0c4",
-        "#f7cba4",
-        "#eab084",
-        "#d09060",
-        "#a86f45",
-        "#7d4e30",
-        "#5a3722"
-      ],
-      "top": [
-        "#e8483f",
-        "#f39a2d",
-        "#f5d547",
-        "#58b957",
-        "#2fa8a0",
-        "#3f86e0",
-        "#7b5be0",
-        "#e65fa8",
-        "#f4f1ea",
-        "#39414f"
-      ],
-      "bottom": [
-        "#2f4a7a",
-        "#4c6ea8",
-        "#39414f",
-        "#5b5148",
-        "#8a7a5c",
-        "#c9b48a",
-        "#6c7d4e",
-        "#7a3f3f"
-      ],
-      "shoes": [
-        "#f4f1ea",
-        "#2b2b2f",
-        "#c0392b",
-        "#2d6cc0",
-        "#8a5a33",
-        "#e6b422"
-      ],
-      "hair": [
-        "#1f1a17",
-        "#3a2a20",
-        "#5e3c23",
-        "#8f5a2c",
-        "#d9b160",
-        "#b5482a",
-        "#9a9a9a"
-      ]
     }
-  },
-  "saucer": {
-    "model": "saucer/saucer.glb",
-    "skins": [
-      "saucer-basecolor1",
-      "saucer-basecolor2",
-      "saucer-basecolor3",
-      "saucer-purple-yellow",
-      "saucer-crimson-gold",
-      "saucer-ocean-coral",
-      "saucer-teal-cream",
-      "saucer-pink-mint",
-      "saucer-orange-navy",
-      "saucer-lime-purple",
-      "saucer-black-neon",
-      "saucer-white-blue",
-      "saucer-gold-black",
-      "saucer-violet-pink",
-      "saucer-sky-sun",
-      "saucer-forest-sand",
-      "saucer-rose-grey",
-      "saucer-magma",
-      "saucer-ice",
-      "saucer-candy",
-      "saucer-classic",
-      "saucer-steel",
-      "saucer-rust",
-      "saucer-blue"
-    ]
-  },
-  "rivals": {
-    "speed": 0.88,
-    "respawnSeconds": 3,
-    "respawnSize": 0.6,
-    "protectSeconds": 3,
-    "eatMargin": 1.12,
-    "ratios": [
-      0.72,
-      1.28,
-      0.85,
-      0.95,
-      0.65,
-      1
-    ],
-    "playerKeeps": 0.85,
-    "shrinkPerSecond": 0.06,
-    "huntSeconds": 7,
-    "restSeconds": 14,
-    "afterEatenSeconds": 28,
-    "stillSeconds": 1.5,
-    "seenSeconds": 1.2,
-    "keepAway": 15,
-    "floorShare": 0.82,
-    "catchUp": 0.3,
-    "gentleShare": 0.82
-  },
-  "home": {
-    "baked": true,
-    "pitchDeg": 30,
-    "yawDeg": 20,
-    "fov": 60,
-    "fill": 0.8,
-    "drop": 0.08,
-    "drift": 0.09,
-    "driftSpeed": 0.22,
-    "ufoSize": 0.085,
-    "ufoHeight": 0.2
-  },
-  "saucerLook": {
-    "pop": true,
-    "saturation": 1.55,
-    "brightness": 1.1,
-    "shadow": 0.72,
-    "rim": 0.42,
-    "outline": 0,
-    "rimWidth": 0.6
-  },
-  "intro": {
-    "hold": 0.4,
-    "seconds": 2.2,
-    "pitchDeg": 82,
-    "zoomOut": 0.45,
-    "gatherRadius": 3.2,
-    "controlAt": 0.65,
-    "rivalsFrom": 0.2,
-    "rivalsTo": 0.6
-  },
-  "scarcity": {
-    "offscreenCooldown": 25,
-    "droughtSeconds": 10,
-    "minEatable": 8,
-    "riskShare": 0.7,
-    "batch": 6,
-    "every": 6
-  },
-  "homeMusic": {
-    "sound": "ocean-ambient",
-    "volume": 0.06
-  },
-  "ranking": {
-    "$comment": "The competition. A round pays stars by place. Falloff: the share of players still ahead after each star, so lower climbs faster. Goals: `stars`: earn so many; `rank`: reach at least this place; `reward` in coins.",
-    "starsGold": 3,
-    "starsSilver": 2,
-    "starsBronze": 1,
-    "dailyPlayers": 500,
-    "dailyFalloff": 0.55,
-    "weeklyPlayers": 5000,
-    "weeklyFalloff": 0.8,
-    "goals": [
-      {
-        "id": "daily-stars",
-        "period": "daily",
-        "type": "stars",
-        "value": 5,
-        "reward": 100
-      },
-      {
-        "id": "daily-top50",
-        "period": "daily",
-        "type": "rank",
-        "value": 50,
-        "reward": 150
-      },
-      {
-        "id": "daily-first",
-        "period": "daily",
-        "type": "rank",
-        "value": 1,
-        "reward": 300
-      },
-      {
-        "id": "weekly-stars",
-        "period": "weekly",
-        "type": "stars",
-        "value": 20,
-        "reward": 300
-      },
-      {
-        "id": "weekly-top50",
-        "period": "weekly",
-        "type": "rank",
-        "value": 50,
-        "reward": 400
-      },
-      {
-        "id": "weekly-first",
-        "period": "weekly",
-        "type": "rank",
-        "value": 1,
-        "reward": 800
-      }
-    ]
-  }
 }
