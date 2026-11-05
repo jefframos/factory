@@ -3,7 +3,7 @@
   "next": "town",
   "goal": {
     "model": "town/library/city2-stadium-01/city2-stadium-01.glb",
-    "radius": 11,
+    "radius": 9,
     "name": "Stadium"
   },
   "ground": {
@@ -11,13 +11,13 @@
     "z": -27.375,
     "width": 203,
     "depth": 257.75,
-    "color": "#8c9a7c"
+    "color": "#cfc8da"
   },
   "island": {
-    "water": "#3aa6e8",
+    "water": "#2f9df0",
     "waterLevel": 0.55,
     "margin": 90,
-    "sideColor": "#9a9488",
+    "sideColor": "#a9a2bb",
     "sideDepth": 1.6,
     "outline": [
       {
@@ -76,7 +76,7 @@
       "z": -22.5,
       "width": 30.5,
       "depth": 3.5,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "pavement-2",
@@ -84,7 +84,7 @@
       "z": 22.5,
       "width": 32,
       "depth": 32,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "pavement-2-copy",
@@ -92,7 +92,7 @@
       "z": 23,
       "width": 32,
       "depth": 32,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "pavement-2-copy-copy",
@@ -100,7 +100,7 @@
       "z": 23.5,
       "width": 32,
       "depth": 32,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "pavement-2-copy-copy-copy",
@@ -108,7 +108,7 @@
       "z": 23.25,
       "width": 32,
       "depth": 32,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "pavement-2-copy-copy-copy-copy",
@@ -116,7 +116,7 @@
       "z": -21.75,
       "width": 32,
       "depth": 32,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "pavement-2-copy-copy-copy",
@@ -124,7 +124,7 @@
       "z": -23.25,
       "width": 32,
       "depth": 32,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "pavement-2-copy-copy-copy-copy",
@@ -132,7 +132,7 @@
       "z": -23,
       "width": 32,
       "depth": 32,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "road-parking",
@@ -140,7 +140,7 @@
       "z": 67.5,
       "width": 21,
       "depth": 21,
-      "color": "#4a4f57"
+      "color": "#8d84a0"
     },
     {
       "id": "lawn-park",
@@ -148,7 +148,7 @@
       "z": 67.5,
       "width": 25,
       "depth": 25,
-      "color": "#4f7d35"
+      "color": "#7cc65a"
     },
     {
       "id": "shops-square",
@@ -156,7 +156,7 @@
       "z": 67.5,
       "width": 25,
       "depth": 25,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "plaza-south",
@@ -164,7 +164,7 @@
       "z": 67.5,
       "width": 25,
       "depth": 25,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "lawn-downtown-0",
@@ -172,7 +172,7 @@
       "z": 27,
       "width": 29,
       "depth": 17,
-      "color": "#4d7633"
+      "color": "#74bf55"
     },
     {
       "id": "lawn-fountain-plaza",
@@ -180,7 +180,7 @@
       "z": 31.5,
       "width": 15,
       "depth": 10,
-      "color": "#46692c"
+      "color": "#82ca60"
     },
     {
       "id": "lawn-downtown-1",
@@ -188,7 +188,7 @@
       "z": 27,
       "width": 24,
       "depth": 13,
-      "color": "#4d7633"
+      "color": "#6fbb52"
     },
     {
       "id": "lawn-downtown-2",
@@ -196,7 +196,7 @@
       "z": 27,
       "width": 24,
       "depth": 13,
-      "color": "#4d7633"
+      "color": "#79c358"
     },
     {
       "id": "lawn-residential-0",
@@ -204,7 +204,7 @@
       "z": -18,
       "width": 24,
       "depth": 13,
-      "color": "#4a7030"
+      "color": "#7cc65a"
     },
     {
       "id": "lawn-residential-1",
@@ -212,7 +212,7 @@
       "z": -18,
       "width": 28,
       "depth": 17.5,
-      "color": "#4a7030"
+      "color": "#74bf55"
     },
     {
       "id": "lawn-residential-2",
@@ -220,7 +220,7 @@
       "z": -18,
       "width": 24,
       "depth": 13,
-      "color": "#4a7030"
+      "color": "#82ca60"
     },
     {
       "id": "lawn-business-0",
@@ -228,7 +228,7 @@
       "z": -62.25,
       "width": 27.5,
       "depth": 17,
-      "color": "#46692c"
+      "color": "#6fbb52"
     },
     {
       "id": "lawn-business-2",
@@ -236,7 +236,7 @@
       "z": -67.25,
       "width": 14.5,
       "depth": 29,
-      "color": "#46692c"
+      "color": "#79c358"
     },
     {
       "id": "lawn-stadium",
@@ -244,7 +244,7 @@
       "z": -106,
       "width": 65,
       "depth": 37,
-      "color": "#46692c"
+      "color": "#7cc65a"
     }
   ],
   "props": [
@@ -6634,5 +6634,9 @@
         "mix": {}
       }
     ]
+  },
+  "round": {
+    "seconds": 180,
+    "rivals": 5
   }
 }

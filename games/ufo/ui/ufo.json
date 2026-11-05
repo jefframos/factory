@@ -99,7 +99,10 @@
     "valuePower": 0.75,
     "growSpeed": 2.5,
     "collideShare": 0.85,
-    "waterMargin": 18
+    "waterMargin": 18,
+    "sizeStep": 0.75,
+    "firstSizeBoost": 2,
+    "completeShare": 0.97
   },
   "camera": {
     "pitchDeg": 50,
@@ -111,12 +114,13 @@
     "maxShare": 0.3,
     "followSpeed": 7,
     "zoomSpeed": 2.5,
-    "bend": 0.004
+    "bend": 0.004,
+    "rivalsZoom": 1.3
   },
   "music": {
     "$comment": "The soundtrack (a file in raw-assets/audio, without its extension) and its volume (0-1); a level's soundSettings.music overrides it (the editor's Sounds).",
     "sound": "Somnia-Variation-3-relax-and-sleep-Reed-Mathis",
-    "volume": 0.18
+    "volume": 0.05
   },
   "people": {
     "models": [
@@ -192,7 +196,94 @@
       "saucer-basecolor1",
       "saucer-basecolor2",
       "saucer-basecolor3",
-      "saucer-purple-yellow"
+      "saucer-purple-yellow",
+      "saucer-crimson-gold",
+      "saucer-ocean-coral",
+      "saucer-teal-cream",
+      "saucer-pink-mint",
+      "saucer-orange-navy",
+      "saucer-lime-purple",
+      "saucer-black-neon",
+      "saucer-white-blue",
+      "saucer-gold-black",
+      "saucer-violet-pink",
+      "saucer-sky-sun",
+      "saucer-forest-sand",
+      "saucer-rose-grey",
+      "saucer-magma",
+      "saucer-ice",
+      "saucer-candy",
+      "saucer-classic",
+      "saucer-steel",
+      "saucer-rust",
+      "saucer-blue"
     ]
+  },
+  "rivals": {
+    "speed": 0.88,
+    "respawnSeconds": 3,
+    "respawnSize": 0.6,
+    "protectSeconds": 3,
+    "eatMargin": 1.12,
+    "ratios": [
+      0.72,
+      1.28,
+      0.85,
+      0.95,
+      0.65,
+      1
+    ],
+    "playerKeeps": 0.85,
+    "shrinkPerSecond": 0.06,
+    "huntSeconds": 7,
+    "restSeconds": 14,
+    "afterEatenSeconds": 28,
+    "stillSeconds": 1.5,
+    "seenSeconds": 1.2,
+    "keepAway": 15,
+    "floorShare": 0.82,
+    "catchUp": 0.3,
+    "gentleShare": 0.82
+  },
+  "home": {
+    "baked": true,
+    "pitchDeg": 30,
+    "yawDeg": 20,
+    "fov": 60,
+    "fill": 0.8,
+    "drop": 0.08,
+    "drift": 0.09,
+    "driftSpeed": 0.22,
+    "ufoSize": 0.085,
+    "ufoHeight": 0.2
+  },
+  "saucerLook": {
+    "pop": true,
+    "saturation": 1.55,
+    "brightness": 1.1,
+    "shadow": 0.72,
+    "rim": 0.42,
+    "outline": 0,
+    "rimWidth": 0.6
+  },
+  "intro": {
+    "hold": 0.4,
+    "seconds": 2.2,
+    "pitchDeg": 82,
+    "zoomOut": 0.45,
+    "gatherRadius": 3.2,
+    "spreadSeconds": 1.6
+  },
+  "scarcity": {
+    "offscreenCooldown": 25,
+    "droughtSeconds": 10,
+    "minEatable": 8,
+    "riskShare": 0.7,
+    "batch": 6,
+    "every": 6
+  },
+  "homeMusic": {
+    "sound": "ocean-ambient",
+    "volume": 0.35
   }
 }

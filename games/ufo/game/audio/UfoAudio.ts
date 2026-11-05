@@ -14,13 +14,15 @@ import SoundManager from 'core/audio/SoundManager';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { Howl, Howler } from 'howler';
 import audioManifest from '../../manifests/audio.json';
-import { Level, musicOf } from '../data/UfoConfig';
+import { DESIGN, Level, MusicDef, musicOf } from '../data/UfoConfig';
 
 const MUSIC = { layer: 'music', fadeInMs: 4000, crossfadeMs: 1500 };
 
 let folder = 'ufo';
 /** The soundtrack playing. */
 let music: string | undefined;
+let applause: Howl | undefined;
+const APPLAUSE = { file: 'applause.mp3', volume: 0.55 };
 let platformPaused = false;
 let volumeBeforePause: number | undefined;
 
@@ -177,7 +179,26 @@ export const UfoAudio = {
 
     /** The level's soundtrack: started (faded in), or another level's crossfaded to; the same one just takes its volume. */
     startMusic(level: Level): void {
-        const track = musicOf(level);
+        UfoAudio.playTrack(musicOf(level));
+    },
+
+    /** The home screen's: the sea. */
+    startHomeMusic(): void {
+        UfoAudio.playTrack(DESIGN.homeMusic);
+    },
+
+    /** Applause, for a level won. Fetched ahead (startMusic's the first chance, after an input), so it's on time. */
+    loadApplause(): void {
+        applause ??= new Howl({ src: [UfoAudio.url(APPLAUSE.file)], volume: APPLAUSE.volume });
+    },
+
+    applause(): void {
+        UfoAudio.loadApplause();
+        applause?.play();
+    },
+
+    playTrack(track: MusicDef): void {
+        UfoAudio.loadApplause();
         if (music === track.sound) {
             SoundManager.instance.setLayerVolume(MUSIC.layer, track.volume, MUSIC.crossfadeMs);
             return;
@@ -234,6 +255,10 @@ export const UfoAudio = {
         const pitch = 900 - 600 * Math.min(1, size);
         // A quick slurp: from low, shooting up.
         tone('sine', pitch * 0.45, pitch * 2.2, 0.09 + 0.12 * size, 0.12 + 0.06 * size);
+    },
+    /** A new size: a quick rising chime. */
+    milestone(): void {
+        [660, 880, 1320].forEach((note, i) => tone('triangle', note, note, 0.22, 0.1, i * 0.06));
     },
     bump(): void {
         tone('triangle', 130, 55, 0.18, 0.28);

@@ -5,7 +5,9 @@ Fly a saucer over a town and eat it. Everything under the saucer gets pulled up 
 - **To eat something:** its middle has to be under the saucer, its footprint has to fit within the saucer's radius, and the saucer has to fly above it.
 - **Too tall to fly over:** the thing blocks the saucer (the prop's `collider`, or a solid collider cube), and the saucer has to go round it.
 - **Cars:** they can be eaten but never block.
-- **End of a level:** when its goal is eaten (`goal` in the level file: a prop's model, and the size the saucer needs for it), or without a goal, when everything is. Then on to the level named in `next`, from a small saucer again.
+- **Standard mode:** areas in `ui/areas.json` (the editor's Levels tab), each with a `miniature` (the town the home screen shows as its island) and its levels. A level is a town, a time, a number of rivals and a job: `points` (reach `points`, or a `share` of the town's), `all` (eat everything) or `object` (swallow the town's `goal`), so a town can be reused. `all` levels are gentle: rivals never eat the player or outgrow it, and eating one gets you all it ate. `tutorial` in the same file is what a new player plays first; seconds 0 means no clock. Progress is saved. Other saucers show as small arrows in their colour.
+- **Competition:** a level with `round` (`seconds`, `rivals`) is timed, and the biggest saucer at the end wins. Rival saucers play the same rules (`game/player/Rival.ts`, tuned in the UFO tab), and a higher saucer eats a lower one when it gets its middle under its beam. The goal is then a big bonus.
+- **End of a calm level (no `round`):** when its goal is eaten (`goal` in the level file: a prop's model, and the size the saucer needs for it), or without a goal, when everything is. Then on to the level named in `next`, from a small saucer again.
 
 ## Running it
 

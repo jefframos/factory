@@ -34,12 +34,34 @@ const DISC_MESH = 'Ship';
 /** How much of the triangles stay (the bottom gun alone is 14,830 of them), and the most the shape may change. */
 const SIMPLIFY = { ratio: 0.4, error: 0.002 };
 const TEXTURE_SIZE = { base: 1024, normal: 1024, emissive: 512, orm: 512 };
+/** How many times bigger the guns are than in the source, to change the ship's shape. */
+const GUN_SCALE = 2.2;
 /**
  * Skins recoloured from one of the source's: its green hull, its grey panels and its red details each become a colour,
  * keeping their light and dark. `shade` is the brightness in the source that comes out as the colour itself.
  */
 const RECOLOURED = [
-    { name: 'saucer-purple-yellow', from: 'BaseColor1.png', hull: [0.46, 0.13, 0.86], panels: [1, 0.76, 0.1], details: [1, 0.45, 0.75], shade: 0.5 },
+    { name: 'saucer-blue', from: 'BaseColor1.png', hull: [0.05, 0.42, 1], panels: [0.55, 0.85, 1], details: [1, 1, 1], shade: 0.43 },
+    { name: 'saucer-classic', from: 'BaseColor1.png', hull: [0.1, 1, 0.3], panels: [0.9, 0.95, 1], details: [1, 0.3, 0.3], shade: 0.43 },
+    { name: 'saucer-steel', from: 'BaseColor1.png', hull: [0.55, 0.72, 1], panels: [1, 0.75, 0.1], details: [1, 0.3, 0.3], shade: 0.43 },
+    { name: 'saucer-rust', from: 'BaseColor1.png', hull: [1, 0.42, 0.08], panels: [1, 0.9, 0.6], details: [0.2, 0.9, 1], shade: 0.43 },
+    { name: 'saucer-purple-yellow', from: 'BaseColor1.png', hull: [0.62, 0.25, 1], panels: [1, 0.82, 0.1], details: [1, 0.5, 0.8], shade: 0.43 },
+    { name: 'saucer-crimson-gold', from: 'BaseColor1.png', hull: [1, 0.16, 0.2], panels: [1, 0.82, 0.12], details: [1, 1, 0.85], shade: 0.43 },
+    { name: 'saucer-ocean-coral', from: 'BaseColor1.png', hull: [0.08, 0.52, 1], panels: [1, 0.6, 0.42], details: [1, 1, 0.85], shade: 0.43 },
+    { name: 'saucer-teal-cream', from: 'BaseColor1.png', hull: [0.05, 0.85, 0.8], panels: [1, 0.96, 0.8], details: [1, 0.4, 0.3], shade: 0.43 },
+    { name: 'saucer-pink-mint', from: 'BaseColor1.png', hull: [1, 0.35, 0.68], panels: [0.55, 1, 0.85], details: [1, 1, 1], shade: 0.43 },
+    { name: 'saucer-orange-navy', from: 'BaseColor1.png', hull: [1, 0.55, 0.05], panels: [0.18, 0.3, 0.85], details: [1, 1, 0.85], shade: 0.43 },
+    { name: 'saucer-lime-purple', from: 'BaseColor1.png', hull: [0.55, 1, 0.12], panels: [0.6, 0.25, 1], details: [1, 1, 0.5], shade: 0.43 },
+    { name: 'saucer-black-neon', from: 'BaseColor1.png', hull: [0.16, 0.16, 0.26], panels: [0.2, 1, 0.65], details: [1, 0.3, 0.8], shade: 0.43 },
+    { name: 'saucer-white-blue', from: 'BaseColor1.png', hull: [0.97, 0.98, 1], panels: [0.15, 0.5, 1], details: [1, 0.3, 0.3], shade: 0.43 },
+    { name: 'saucer-gold-black', from: 'BaseColor1.png', hull: [1, 0.8, 0.12], panels: [0.2, 0.18, 0.3], details: [1, 1, 1], shade: 0.43 },
+    { name: 'saucer-violet-pink', from: 'BaseColor1.png', hull: [0.5, 0.25, 1], panels: [1, 0.5, 0.8], details: [0.6, 1, 1], shade: 0.43 },
+    { name: 'saucer-sky-sun', from: 'BaseColor1.png', hull: [0.35, 0.8, 1], panels: [1, 0.86, 0.15], details: [1, 1, 1], shade: 0.43 },
+    { name: 'saucer-forest-sand', from: 'BaseColor1.png', hull: [0.1, 0.85, 0.4], panels: [1, 0.85, 0.5], details: [1, 0.45, 0.2], shade: 0.43 },
+    { name: 'saucer-rose-grey', from: 'BaseColor1.png', hull: [1, 0.25, 0.5], panels: [0.85, 0.9, 1], details: [1, 0.9, 0.5], shade: 0.43 },
+    { name: 'saucer-magma', from: 'BaseColor1.png', hull: [0.3, 0.1, 0.14], panels: [1, 0.45, 0.05], details: [1, 0.9, 0.2], shade: 0.43 },
+    { name: 'saucer-ice', from: 'BaseColor1.png', hull: [0.7, 0.95, 1], panels: [1, 1, 1], details: [0.15, 0.55, 1], shade: 0.43 },
+    { name: 'saucer-candy', from: 'BaseColor1.png', hull: [1, 0.65, 0.85], panels: [0.6, 0.9, 1], details: [1, 0.97, 0.5], shade: 0.43 },
 ];
 
 function loadFbx() {
@@ -72,6 +94,25 @@ async function buildModel() {
     const low = new THREE.Vector3(Infinity, Infinity, Infinity);
     const high = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
     let discRadius = 0;
+    // A gun and its holder grow together, from where they meet the ship: a side set from its inner end, the one underneath
+    // from its top. So each set stays on the ship and in one piece.
+    const gunSet = (name) => name.replace(/Gun.*$/i, '');
+    const gunBounds = new Map();
+    fbx.traverse((mesh) => {
+        if (!mesh.isMesh || !/gun/i.test(mesh.name)) return;
+        const position = mesh.geometry.getAttribute('position');
+        matrix.multiplyMatrices(undoTurn, mesh.matrixWorld);
+        const bounds = gunBounds.get(gunSet(mesh.name)) ?? new THREE.Box3();
+        for (let v = 0; v < position.count; v++) bounds.expandByPoint(p.fromBufferAttribute(position, v).applyMatrix4(matrix));
+        gunBounds.set(gunSet(mesh.name), bounds);
+    });
+    const gunAnchors = new Map([...gunBounds].map(([name, bounds]) => {
+        const anchor = bounds.getCenter(new THREE.Vector3());
+        if (Math.abs(anchor.x) > bounds.getSize(n).x) anchor.x = anchor.x > 0 ? bounds.min.x : bounds.max.x;
+        else anchor.y = bounds.max.y;
+        console.log(`${name} guns: grown from ${anchor.toArray().map((c) => c.toFixed(1))}, size ${bounds.getSize(n).toArray().map((c) => c.toFixed(1))}`);
+        return [name, anchor];
+    }));
     fbx.traverse((mesh) => {
         if (!mesh.isMesh) return;
         const { geometry } = mesh;
@@ -82,6 +123,7 @@ async function buildModel() {
         normalMatrix.getNormalMatrix(matrix);
         const materials = [mesh.material].flat();
         const part = /gun/i.test(mesh.name) ? 'guns' : 'saucer';
+        const anchor = part === 'guns' ? gunAnchors.get(gunSet(mesh.name)) : null;
         const groups = geometry.groups.length ? geometry.groups : [{ start: 0, count: position.count, materialIndex: 0 }];
         for (const group of groups) {
             const pile = pileFor(part, materials[group.materialIndex ?? 0].name);
@@ -90,13 +132,15 @@ async function buildModel() {
                 p.fromBufferAttribute(position, v).applyMatrix4(matrix);
                 n.fromBufferAttribute(normal, v).applyMatrix3(normalMatrix).normalize();
                 pile.indices.push(pile.positions.length / 3);
+                // The ship's size and height stay as they were (`low`, `high` below): the guns just reach further.
+                low.min(p);
+                high.max(p);
+                if (mesh === ship) discRadius = Math.max(discRadius, Math.hypot(p.x, p.z));
+                if (anchor) p.sub(anchor).multiplyScalar(GUN_SCALE).add(anchor);
                 pile.positions.push(p.x, p.y, p.z);
                 pile.normals.push(n.x, n.y, n.z);
                 // glTF's V runs down the image.
                 pile.uvs.push(uv.getX(v), 1 - uv.getY(v));
-                low.min(p);
-                high.max(p);
-                if (mesh === ship) discRadius = Math.max(discRadius, Math.hypot(p.x, p.z));
             }
         }
     });

@@ -5,6 +5,14 @@
       "assets": [
         {
           "alias": [
+            "applause.mp3"
+          ],
+          "src": [
+            "applause.mp3"
+          ]
+        },
+        {
+          "alias": [
             "ocean-ambient.mp3"
           ],
           "src": [

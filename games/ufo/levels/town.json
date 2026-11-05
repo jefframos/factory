@@ -5,13 +5,13 @@
     "z": -6.375,
     "width": 86.5,
     "depth": 75.25,
-    "color": "#8c9a7c"
+    "color": "#cfc8da"
   },
   "island": {
-    "water": "#3aa6e8",
+    "water": "#2f9df0",
     "waterLevel": 0.55,
     "margin": 90,
-    "sideColor": "#9a9488",
+    "sideColor": "#a9a2bb",
     "sideDepth": 1.6,
     "outline": [
       {
@@ -63,7 +63,7 @@
       "z": 6,
       "width": 20,
       "depth": 27.5,
-      "color": "#4f7d35"
+      "color": "#7cc65a"
     },
     {
       "id": "lawn-street",
@@ -71,7 +71,7 @@
       "z": -22,
       "width": 35,
       "depth": 14,
-      "color": "#4d7633"
+      "color": "#74bf55"
     },
     {
       "id": "lawn-eastblock",
@@ -79,7 +79,7 @@
       "z": 6,
       "width": 14,
       "depth": 27.5,
-      "color": "#4b7431"
+      "color": "#82ca60"
     },
     {
       "id": "lawn-westblock",
@@ -87,7 +87,7 @@
       "z": 6,
       "width": 13.5,
       "depth": 28,
-      "color": "#4a722f"
+      "color": "#6fbb52"
     },
     {
       "id": "lawn-field",
@@ -95,7 +95,7 @@
       "z": -24.5,
       "width": 18,
       "depth": 18,
-      "color": "#486f2d"
+      "color": "#79c358"
     },
     {
       "id": "road-north",
@@ -103,7 +103,7 @@
       "z": -11.5,
       "width": 77,
       "depth": 7,
-      "color": "#4a4f57"
+      "color": "#8d84a0"
     },
     {
       "id": "road-south",
@@ -111,7 +111,7 @@
       "z": 23.5,
       "width": 77,
       "depth": 7,
-      "color": "#4a4f57"
+      "color": "#8d84a0"
     },
     {
       "id": "road-avenue-east",
@@ -119,7 +119,7 @@
       "z": 6,
       "width": 7,
       "depth": 28,
-      "color": "#4a4f57"
+      "color": "#8d84a0"
     },
     {
       "id": "road-avenue-west",
@@ -127,7 +127,7 @@
       "z": 6,
       "width": 7,
       "depth": 28,
-      "color": "#4a4f57"
+      "color": "#8d84a0"
     },
     {
       "id": "road-outer-east",
@@ -135,7 +135,7 @@
       "z": 6,
       "width": 7,
       "depth": 28,
-      "color": "#4a4f57"
+      "color": "#8d84a0"
     },
     {
       "id": "road-outer-west",
@@ -143,7 +143,7 @@
       "z": 6,
       "width": 7,
       "depth": 28,
-      "color": "#4a4f57"
+      "color": "#8d84a0"
     },
     {
       "id": "plaza",
@@ -151,7 +151,7 @@
       "z": 9,
       "width": 21.5,
       "depth": 1.5,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "path-north-south",
@@ -159,7 +159,7 @@
       "z": 0.25,
       "width": 1.5,
       "depth": 17,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "path-east-west",
@@ -167,7 +167,7 @@
       "z": 0,
       "width": 21,
       "depth": 1.5,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "pavement-5",
@@ -175,7 +175,7 @@
       "z": -16.5,
       "width": 39,
       "depth": 2,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "pavement-11",
@@ -183,7 +183,7 @@
       "z": 4.75,
       "width": 14.5,
       "depth": 2,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "pavement-12",
@@ -191,7 +191,7 @@
       "z": -23.5,
       "width": 2,
       "depth": 12.5,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "pavement-13",
@@ -199,7 +199,7 @@
       "z": -27.75,
       "width": 6,
       "depth": 2,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "pavement-14",
@@ -207,7 +207,7 @@
       "z": -30.25,
       "width": 2,
       "depth": 7,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "pavement-14-copy",
@@ -215,7 +215,7 @@
       "z": -22,
       "width": 2,
       "depth": 13.5,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     },
     {
       "id": "pavement-12-copy",
@@ -223,7 +223,7 @@
       "z": -22.5,
       "width": 2,
       "depth": 12.5,
-      "color": "#d8ccb0"
+      "color": "#e8e3ef"
     }
   ],
   "props": [
@@ -319,8 +319,8 @@
     },
     {
       "model": "town/city/firehydrant.gltf",
-      "x": 8,
-      "z": 13.1,
+      "x": 10,
+      "z": 9.5,
       "rotationY": 0,
       "height": 1,
       "collider": {
@@ -1267,8 +1267,8 @@
     },
     {
       "model": "town/city/dumpster.gltf",
-      "x": 4.75,
-      "z": 2.5,
+      "x": 20,
+      "z": -5.5,
       "rotationY": 4.27,
       "height": 1.4,
       "collider": {
@@ -1278,8 +1278,8 @@
     },
     {
       "model": "town/city/dumpster.gltf",
-      "x": -7,
-      "z": -20.25,
+      "x": -35.75,
+      "z": -21,
       "rotationY": 2.27,
       "height": 1.4,
       "collider": {
@@ -1289,8 +1289,8 @@
     },
     {
       "model": "town/city/dumpster.gltf",
-      "x": 19.25,
-      "z": -20.75,
+      "x": 38.75,
+      "z": -38.5,
       "rotationY": 1.79,
       "height": 1.4,
       "collider": {
@@ -1377,24 +1377,13 @@
     },
     {
       "model": "town/city/firehydrant.gltf",
-      "x": -26.25,
-      "z": 3,
+      "x": -31,
+      "z": 4,
       "rotationY": 3.01,
       "height": 1,
       "collider": {
         "halfX": 0.3,
         "halfZ": 0.3
-      }
-    },
-    {
-      "model": "town/city/trash_A.gltf",
-      "x": -4,
-      "z": 12,
-      "rotationY": 4.55,
-      "height": 0.8,
-      "collider": {
-        "halfX": 1,
-        "halfZ": 1
       }
     },
     {
@@ -1410,8 +1399,8 @@
     },
     {
       "model": "town/city/bench.gltf",
-      "x": -22.5,
-      "z": -4.75,
+      "x": -20.5,
+      "z": -4.25,
       "rotationY": 5.8,
       "height": 0.8,
       "collider": {
@@ -1476,8 +1465,8 @@
     },
     {
       "model": "town/city/firehydrant.gltf",
-      "x": 12.75,
-      "z": -25.25,
+      "x": 7.5,
+      "z": -16.5,
       "rotationY": 0.57,
       "height": 1,
       "collider": {
@@ -1487,8 +1476,8 @@
     },
     {
       "model": "town/city/firehydrant.gltf",
-      "x": 21,
-      "z": -1.25,
+      "x": 18.25,
+      "z": -6.5,
       "rotationY": 5.19,
       "height": 1,
       "collider": {
@@ -1509,8 +1498,8 @@
     },
     {
       "model": "town/city/dumpster.gltf",
-      "x": -26.25,
-      "z": 11.75,
+      "x": -27.75,
+      "z": 18.75,
       "rotationY": 3.1,
       "height": 1.4,
       "collider": {
@@ -1520,8 +1509,8 @@
     },
     {
       "model": "town/city/bench.gltf",
-      "x": -11,
-      "z": -8,
+      "x": -8.5,
+      "z": -3.5,
       "rotationY": 4.82,
       "height": 0.8,
       "collider": {
@@ -1531,8 +1520,8 @@
     },
     {
       "model": "town/city/bench.gltf",
-      "x": -22,
-      "z": 12,
+      "x": -20.5,
+      "z": 16.5,
       "rotationY": 3.9,
       "height": 0.8,
       "collider": {
@@ -1564,8 +1553,8 @@
     },
     {
       "model": "town/city/bench.gltf",
-      "x": -3.25,
-      "z": -18.25,
+      "x": -4.75,
+      "z": -20.25,
       "rotationY": 1.61,
       "height": 0.8,
       "collider": {
@@ -1618,20 +1607,9 @@
       }
     },
     {
-      "model": "town/city/trash_A.gltf",
-      "x": -6.25,
-      "z": 13.5,
-      "rotationY": 0.44,
-      "height": 0.8,
-      "collider": {
-        "halfX": 1,
-        "halfZ": 1
-      }
-    },
-    {
       "model": "town/city/dumpster.gltf",
-      "x": 22.25,
-      "z": -29.5,
+      "x": 22,
+      "z": -31,
       "rotationY": 1.39,
       "height": 1.4,
       "collider": {
@@ -1641,8 +1619,8 @@
     },
     {
       "model": "town/city/dumpster.gltf",
-      "x": 21.75,
-      "z": -21.75,
+      "x": 40,
+      "z": -35,
       "rotationY": 3.83,
       "height": 1.4,
       "collider": {
@@ -1652,8 +1630,8 @@
     },
     {
       "model": "town/city/bench.gltf",
-      "x": -38.5,
-      "z": 25.25,
+      "x": -40,
+      "z": 25,
       "rotationY": 1.22,
       "height": 0.8,
       "collider": {
@@ -1718,8 +1696,8 @@
     },
     {
       "model": "town/city/bench.gltf",
-      "x": -18.5,
-      "z": -23,
+      "x": -15.75,
+      "z": -19.5,
       "rotationY": 2.34,
       "height": 0.8,
       "collider": {
@@ -1839,8 +1817,8 @@
     },
     {
       "model": "town/city/firehydrant.gltf",
-      "x": -24,
-      "z": 2.25,
+      "x": -17.75,
+      "z": 4.25,
       "rotationY": 1.86,
       "height": 1,
       "collider": {
@@ -1894,8 +1872,8 @@
     },
     {
       "model": "town/city/bench.gltf",
-      "x": -6.25,
-      "z": 10.5,
+      "x": -7.5,
+      "z": 12.25,
       "rotationY": 4.96,
       "height": 0.8,
       "collider": {
@@ -1949,8 +1927,8 @@
     },
     {
       "model": "town/city/dumpster.gltf",
-      "x": -12.25,
-      "z": -19.75,
+      "x": -33.5,
+      "z": -22.75,
       "rotationY": 5.35,
       "height": 1.4,
       "collider": {
@@ -1960,8 +1938,8 @@
     },
     {
       "model": "town/city/firehydrant.gltf",
-      "x": 22.75,
-      "z": -18,
+      "x": 19.75,
+      "z": -16,
       "rotationY": 3.38,
       "height": 1,
       "collider": {
@@ -2015,8 +1993,8 @@
     },
     {
       "model": "town/city/bench.gltf",
-      "x": -13.25,
-      "z": 20,
+      "x": 5.75,
+      "z": 13.75,
       "rotationY": 4.42,
       "height": 0.8,
       "collider": {
@@ -2037,8 +2015,8 @@
     },
     {
       "model": "town/city/dumpster.gltf",
-      "x": -1,
-      "z": -21.75,
+      "x": -38,
+      "z": -19.25,
       "rotationY": 2.35,
       "height": 1.4,
       "collider": {
@@ -2114,8 +2092,8 @@
     },
     {
       "model": "town/city/firehydrant.gltf",
-      "x": 27.5,
-      "z": -19,
+      "x": 39,
+      "z": -16,
       "rotationY": 5.22,
       "height": 1,
       "collider": {
@@ -2187,6 +2165,50 @@
       "collider": {
         "halfX": 0.15,
         "halfZ": 0.15
+      }
+    },
+    {
+      "model": "town/library/city2-car-12/city2-car-12.glb",
+      "x": -25.5,
+      "z": 28.75,
+      "rotationY": 0,
+      "height": 1.5,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 1.85
+      }
+    },
+    {
+      "model": "town/library/city2-car-25/city2-car-25.glb",
+      "x": -23,
+      "z": 27.75,
+      "rotationY": 0,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
+      }
+    },
+    {
+      "model": "town/library/city2-car-12/city2-car-12.glb",
+      "x": -20.5,
+      "z": 28.75,
+      "rotationY": 0,
+      "height": 1.5,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 1.85
+      }
+    },
+    {
+      "model": "town/library/city2-car-08/city2-car-08.glb",
+      "x": -18,
+      "z": 29,
+      "rotationY": 0,
+      "height": 1.5,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 1.95
       }
     }
   ],
@@ -2948,5 +2970,9 @@
       "far": 14
     }
   },
-  "next": "city2"
+  "next": "city2",
+  "round": {
+    "seconds": 120,
+    "rivals": 0
+  }
 }

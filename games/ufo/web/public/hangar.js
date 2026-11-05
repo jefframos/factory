@@ -20,6 +20,8 @@ const FIT = { ufo: 0.4, alien: 0.6 };
 const UNDO_LIMIT = 40;
 const IDENTITY = { x: 0, y: 0, z: 0, rx: 0, ry: 0, rz: 0, sx: 1, sy: 1, sz: 1 };
 const round = (value, step = 0.001) => Math.round(value / step) * step;
+/** An alien's shape: its id without the colour on the end of it. */
+const alienFamily = (id) => id.replace(/-(blue|pink|orange|purple|red|teal)$/, '');
 
 let host;
 let doc;
@@ -237,12 +239,14 @@ function renderLists() {
         checkField('Guns (side and bottom)', ufo.guns === true, (on) => edit(() => { ufo.guns = on; })),
         colorField('Dome colour', ufo.domeColor, (v) => edit(() => { ufo.domeColor = v; })),
         numberField('Dome opacity', ufo.domeOpacity, 0.05, (v) => edit(() => { ufo.domeOpacity = Math.max(0, Math.min(1, v)); })),
-        el('button', { class: 'block', onclick: () => { editing = 'ufo'; select('seat'); } }, '🪑 Move the alien in this UFO'),
+        numberField('Shop price (0: a classic, unlocked at random)', ufo.price ?? 0, 50, (v) => edit(() => { if (v > 0) ufo.price = v; else delete ufo.price; })),
+        el('button', { class: 'block', title: 'Where every alien sits in this UFO. To change one alien, use the button in the Aliens card.', onclick: () => { editing = 'ufo'; select('seat'); } }, '🪑 Move the seat (all aliens in this UFO)'),
         el('button', { class: 'block', disabled: doc.ufo === ufo.id, onclick: () => edit(() => { doc.ufo = ufo.id; }) }, doc.ufo === ufo.id ? '▶ In the game' : '▶ Use in the game'));
     const creature = alienStyle();
     host.querySelector('#hangarAlienFields').replaceChildren(
+        el('button', { class: 'block primary', onclick: () => { editing = 'alien'; select('whole'); } }, '📏 Size / move / turn this whole alien'),
         textField('Name', creature.name, (v) => edit(() => { creature.name = v || creature.name; })),
-        el('button', { class: 'block', onclick: () => { editing = 'alien'; select('whole'); } }, '🧩 Size / move the whole alien'),
+        numberField('Shop price (0: a classic, unlocked at random)', creature.price ?? 0, 50, (v) => edit(() => { if (v > 0) creature.price = v; else delete creature.price; })),
         el('button', { class: 'block', disabled: doc.alien === creature.id, onclick: () => edit(() => { doc.alien = creature.id; }) }, doc.alien === creature.id ? '▶ In the game' : '▶ Use in the game'));
 
     host.querySelectorAll('#hangarEditing button').forEach((button) => button.classList.toggle('active', button.dataset.editing === editing));
@@ -314,7 +318,16 @@ function renderInspector() {
                 data.sz = size;
             })),
             ...transform, ...turn,
-            el('p', { class: 'muted small' }, 'Moves, turns and sizes all its pieces together, from its feet. With Scale (R), drag the gizmo\'s middle to keep its shape. This stays with the alien in every UFO.'));
+            el('button', {
+                class: 'block', title: 'The same size, place and turn on the other colours of this alien',
+                onclick: () => {
+                    const family = alienFamily(alienStyle().id);
+                    const others = doc.aliens.filter((other) => other !== alienStyle() && alienFamily(other.id) === family);
+                    edit(() => others.forEach((other) => { other.root = { ...data }; }));
+                    toast(`Copied to ${others.length} other colours`);
+                },
+            }, '🎨 Use on all its colours'),
+            el('p', { class: 'muted small' }, 'Changes only this alien: moves, turns and sizes all its pieces together, from its feet. With Scale (R), drag the gizmo\'s middle to keep its shape. It stays this way in every UFO.'));
         return;
     }
     if (selected === 'seat') {

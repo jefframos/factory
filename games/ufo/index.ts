@@ -12,8 +12,10 @@ import * as PIXI from 'pixi.js';
 import loaderConfig from './loader.config';
 import platformConfig from './platforms.config.json';
 import { UfoAudio } from './game/audio/UfoAudio';
-import UfoScene from './game/scenes/UfoScene';
-import { goToNextLevel, nextLevelName } from './game/data/UfoConfig';
+import HomeScene from './game/scenes/HomeScene';
+import UfoScene, { Travel } from './game/scenes/UfoScene';
+import { UfoProgress } from './game/data/UfoProgress';
+import { competitionName, currentMission, goToCompetition, goToTutorial, levelInAddress, levelTitle } from './game/data/UfoConfig';
 import { RadialTransition } from './game/ui/RadialTransition';
 
 type PlatformConfigEntry = { gameId?: string; enableAds?: boolean; folderPath?: string };
@@ -58,7 +60,9 @@ export default class UfoGame extends Game {
             }));
             await PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`);
             DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'ufo');
-            const scene = this.buildScene();
+            const playFirst = levelInAddress() || !UfoProgress.tutorialDone;
+            if (!levelInAddress() && !UfoProgress.tutorialDone) goToTutorial();
+            const scene = playFirst ? this.buildScene() : this.buildHome();
             await Promise.race([scene.ready, new Promise((resolve) => window.setTimeout(resolve, MAX_SCENE_WAIT_MS))]);
             PlatformHandler.instance.platform.loadFinished();
             this.loaderScene.hide();
@@ -70,21 +74,35 @@ export default class UfoGame extends Game {
     /** A fresh scene (the old one torn down): at boot, and on to the next level (behind the transition). */
     private buildScene(): UfoScene {
         const key = `ufo-${this.scenes++}`;
-        const scene = this.sceneManager.register<UfoScene>(key, UfoScene, this, () => void this.nextLevel());
+        const scene = this.sceneManager.register<UfoScene>(key, UfoScene, this, (travel: Travel) => void this.nextLevel(travel));
+        this.sceneManager.changeScene(key);
+        this.sceneManager.resize();
+        return scene;
+    }
+
+    /** The main screen. */
+    private buildHome(): HomeScene {
+        const key = `ufo-${this.scenes++}`;
+        const scene = this.sceneManager.register<HomeScene>(key, HomeScene, this,
+            () => {
+                const mission = currentMission();
+                void this.nextLevel({ title: mission?.name ?? '', subtitle: mission ? levelTitle(mission.level).toUpperCase() : '', apply: () => undefined });
+            },
+            () => void this.nextLevel({ title: competitionName(), subtitle: 'COMPETITION', apply: () => goToCompetition() }));
         this.sceneManager.changeScene(key);
         this.sceneManager.resize();
         return scene;
     }
 
     /** The screen covers over, showing where it's going; the next level's built behind that; the cover opens on it. */
-    private async nextLevel(): Promise<void> {
+    private async nextLevel(travel: Travel): Promise<void> {
         if (this.travelling) return;
         this.travelling = true;
         UfoAudio.whoosh();
         const transition = new RadialTransition(this);
-        await transition.cover(nextLevelName().toUpperCase(), 'NEXT CITY');
-        goToNextLevel();
-        const scene = this.buildScene();
+        await transition.cover(travel.title.toUpperCase(), travel.subtitle);
+        travel.apply();
+        const scene = travel.home ? this.buildHome() : this.buildScene();
         await Promise.race([scene.ready, new Promise((resolve) => window.setTimeout(resolve, MAX_SCENE_WAIT_MS))]);
         await transition.reveal();
         transition.destroy();

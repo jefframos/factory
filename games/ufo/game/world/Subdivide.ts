@@ -48,6 +48,13 @@ function subdivide(source: THREE.BufferGeometry, scale: THREE.Vector3): THREE.Bu
     return result;
 }
 
+/** A mesh of its own (its geometry not shared): cut up in place, its old geometry freed. */
+export function subdivideOwn(mesh: THREE.Mesh): void {
+    const old = mesh.geometry;
+    mesh.geometry = subdivide(old, new THREE.Vector3(1, 1, 1));
+    old.dispose();
+}
+
 /** Every mesh under `object` cut up, its world scale already final. */
 export function subdivideObject(object: THREE.Object3D): void {
     object.updateMatrixWorld(true);

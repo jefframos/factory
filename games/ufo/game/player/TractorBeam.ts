@@ -54,6 +54,7 @@ uniform float uPhase;
 uniform float uStrength;
 uniform float uSuck;
 uniform float uWarn;
+uniform vec3 uTint;
 varying vec2 vUv;
 void main() {
     // Two arms winding down the cone (u round it, v 0 at the ground, 1 at the saucer).
@@ -63,7 +64,7 @@ void main() {
     // A soft edge at both ends: no hard line on the ground.
     float ends = smoothstep(0.0, 0.3, vUv.y) * (1.0 - smoothstep(0.82, 1.0, vUv.y));
     float haze = mix(0.1, 0.2, uSuck);
-    vec3 green = mix(vec3(0.1, 0.8, 0.3), vec3(0.3, 0.95, 0.45), arm);
+    vec3 green = uTint * mix(0.72, 1.15, arm);
     vec3 orange = mix(vec3(0.95, 0.42, 0.05), vec3(1.0, 0.6, 0.15), arm);
     gl_FragColor = vec4(mix(green, orange, uWarn), (haze + arm * 0.5) * ends * uStrength);
 }
@@ -89,10 +90,11 @@ void main() {
 
 const moteFragment = `
 uniform float uWarn;
+uniform vec3 uTint;
 varying float vAlpha;
 void main() {
     float glow = 1.0 - smoothstep(0.0, 0.5, length(gl_PointCoord - 0.5));
-    vec3 green = mix(vec3(0.15, 0.85, 0.35), vec3(0.45, 1.0, 0.55), glow);
+    vec3 green = mix(uTint * 0.8, min(uTint * 1.25 + 0.15, vec3(1.0)), glow);
     vec3 orange = mix(vec3(0.95, 0.45, 0.05), vec3(1.0, 0.7, 0.25), glow);
     gl_FragColor = vec4(mix(green, orange, uWarn), glow * vAlpha);
 }
@@ -109,7 +111,7 @@ interface Mote {
 
 export class TractorBeam {
     private readonly coneMaterial = new THREE.ShaderMaterial({
-        uniforms: { uPhase: { value: 0 }, uStrength: { value: STRENGTH.rest }, uSuck: { value: 0 }, uWarn: { value: 0 }, uBendOrigin: bendUniforms.uBendOrigin, uBendStrength: bendUniforms.uBendStrength },
+        uniforms: { uPhase: { value: 0 }, uStrength: { value: STRENGTH.rest }, uSuck: { value: 0 }, uWarn: { value: 0 }, uTint: { value: new THREE.Vector3() }, uBendOrigin: bendUniforms.uBendOrigin, uBendStrength: bendUniforms.uBendStrength },
         vertexShader: coneVertex,
         fragmentShader: coneFragment,
         transparent: true,
@@ -118,7 +120,7 @@ export class TractorBeam {
     });
     private readonly cone = new THREE.Mesh(new THREE.CylinderGeometry(CONE_TOP, 1, 1, CONE_SEGMENTS.round, CONE_SEGMENTS.down, true), this.coneMaterial);
     private readonly moteMaterial = new THREE.ShaderMaterial({
-        uniforms: { uPixelHeight: { value: 1 }, uWarn: { value: 0 }, uBendOrigin: bendUniforms.uBendOrigin, uBendStrength: bendUniforms.uBendStrength },
+        uniforms: { uPixelHeight: { value: 1 }, uWarn: { value: 0 }, uTint: { value: new THREE.Vector3() }, uBendOrigin: bendUniforms.uBendOrigin, uBendStrength: bendUniforms.uBendStrength },
         vertexShader: moteVertex,
         fragmentShader: moteFragment,
         transparent: true,
@@ -135,7 +137,11 @@ export class TractorBeam {
     private suck = 0;
     private warn = 0;
 
-    public constructor(threeScene: THREE.Scene) {
+    /** `throwsLight`: its pool of light on the world (there's one: the player's). `color`: the beam's, as written on screen. */
+    public constructor(threeScene: THREE.Scene, private readonly throwsLight = true, color = 0x1ad14f) {
+        const tint = new THREE.Vector3(((color >> 16) & 255) / 255, ((color >> 8) & 255) / 255, (color & 255) / 255);
+        this.coneMaterial.uniforms.uTint.value = tint;
+        this.moteMaterial.uniforms.uTint.value = tint;
         this.motes = Array.from({ length: MOTES }, () => ({
             angle: Math.random() * Math.PI * 2,
             height: Math.random(),
@@ -170,10 +176,12 @@ export class TractorBeam {
         uniforms.uWarn.value = this.warn;
         uniforms.uStrength.value = STRENGTH.rest + STRENGTH.moving * moving + STRENGTH.sucking * suck;
 
-        beamLight.uBeamPool.value.set(x, z, wide, altitude);
-        beamLight.uBeamColor.value.lerpColors(POOL_GREEN, POOL_ORANGE, this.warn);
-        beamLight.uBeamStrength.value = POOL.rest + POOL.moving * moving + POOL.sucking * suck;
-        beamLight.uBeamPhase.value = this.phase;
+        if (this.throwsLight) {
+            beamLight.uBeamPool.value.set(x, z, wide, altitude);
+            beamLight.uBeamColor.value.lerpColors(POOL_GREEN, POOL_ORANGE, this.warn);
+            beamLight.uBeamStrength.value = POOL.rest + POOL.moving * moving + POOL.sucking * suck;
+            beamLight.uBeamPhase.value = this.phase;
+        }
 
         const showing = MOTES * Math.min(1, MOTE_SHARE.rest + MOTE_SHARE.moving * moving + MOTE_SHARE.sucking * suck);
         const rise = MOTE_RISE.rest + MOTE_RISE.sucking * suck;
@@ -198,8 +206,14 @@ export class TractorBeam {
         this.moteMaterial.uniforms.uWarn.value = this.warn;
     }
 
+    public setVisible(on: boolean): void {
+        this.cone.visible = on;
+        this.motePoints.visible = on;
+        if (!on && this.throwsLight) beamLight.uBeamStrength.value = 0;
+    }
+
     public destroy(): void {
-        beamLight.uBeamStrength.value = 0;
+        if (this.throwsLight) beamLight.uBeamStrength.value = 0;
         this.cone.removeFromParent();
         this.motePoints.removeFromParent();
         this.cone.geometry.dispose();

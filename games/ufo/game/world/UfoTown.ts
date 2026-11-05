@@ -11,7 +11,7 @@ import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { FLAT_HEIGHT, Level, MODEL_BASE, Pavement, Point, Prop, SOLID_CUBE_HEIGHT, UFO } from '../data/UfoConfig';
 import { BendCuller, applyBend, bendObject, bendSegments } from '../services/Bend';
 import { containsPoint, insetPolygon, inwardNormals, shoreOutline } from './Shore';
-import { subdivideObject } from './Subdivide';
+import { subdivideObject, subdivideOwn } from './Subdivide';
 import { createWater } from './Water';
 
 /** An axis-aligned box on the ground that blocks a saucer flying lower than `height`. */
@@ -37,6 +37,12 @@ export interface Item extends Point {
     gone?: boolean;
     /** Eating this finishes the level (Level.goal). */
     goal?: boolean;
+    /** Its shadow on the ground: goes with it. */
+    shadow?: THREE.Mesh;
+    /** What it was placed from: it can be put back. */
+    prop?: Prop;
+    /** A rival off screen pretended to eat it: rivals leave it alone till then (seconds, performance.now()). */
+    sparedUntil?: number;
 }
 
 const GROUND_Y = -0.05;
@@ -51,12 +57,16 @@ const FADE_SPEED = 8;
 const SHORE_MARGIN = 1;
 /** World units one repeat of a texture covers. The open ground has 6 cobbles across one. */
 const STONE_TILE = 1.6;
-const GROUND_TILE = 4;
+const GROUND_TILE = 6;
+/** The things' shadows: from how tall, up to how long (their height, up to this), the sun's way (per unit of height), their look; over the road tiles. */
+const SHADOW = { minHeight: 2, maxHeight: 20, x: 0.42, z: 0.34, color: 0x3a2f5c, opacity: 0.2, y: 0.24 };
 /** The ground's cells (world units): small, as it's cut by the shore in steps of this; bigger on a big island, in at most this many a side. */
 const GROUND_CELL = 0.5;
 const GROUND_CELLS_MAX = 250;
 const PAVING_TILE = 2;
 
+/** Over the road tiles' own colours. */
+const ROAD_TINT = 0xd6cce6;
 /** One deck plank's width; the plank texture holds PLANKS of them. */
 const PLANK = 0.42;
 const PLANKS = 4;
@@ -158,47 +168,34 @@ const stoneTexture = () => tiledTexture((g, size) => {
     speckle(g, size, random, 900);
 });
 
-/** The open ground: loose cobbles of mixed sizes (rounded, faint gaps), low contrast. */
-const groundTexture = () => tiledTexture((g, size) => {
+/** The open ground: big flat slabs, thin soft seams, hardly any difference between them. */
+const softTileTexture = () => tiledTexture((g, size) => {
     const random = seeded(31);
-    g.fillStyle = grey(0.84);
+    g.fillStyle = grey(0.9);
     g.fillRect(0, 0, size, size);
-    const cells = 6;
-    const step = size / cells;
-    for (let r = 0; r < cells; r++) {
-        for (let c = 0; c < cells; c++) {
-            const w = step * (0.72 + random() * 0.2);
-            const h = step * (0.72 + random() * 0.2);
-            const x = c * step + (step - w) / 2 + (random() - 0.5) * step * 0.12;
-            const y = r * step + (step - h) / 2 + (random() - 0.5) * step * 0.12;
-            g.fillStyle = grey(0.9 + random() * 0.09);
-            // Drawn at every wrap offset, so a cobble crossing the edge continues on the other side.
-            for (const dx of [-size, 0, size]) {
-                for (const dy of [-size, 0, size]) {
-                    g.beginPath();
-                    g.roundRect(x + dx, y + dy, w, h, Math.min(w, h) * 0.4);
-                    g.fill();
-                }
-            }
+    const tiles = 2;
+    const s = size / tiles;
+    for (let r = 0; r < tiles; r++) {
+        for (let c = 0; c < tiles; c++) {
+            g.fillStyle = grey(0.975 + random() * 0.025);
+            g.fillRect(c * s + 1.5, r * s + 1.5, s - 3, s - 3);
         }
     }
-    speckle(g, size, random, 1200);
 });
 
 /** The plazas and paths: square paving slabs (faint seams, each a slightly different shade). */
 const pavingTexture = () => tiledTexture((g, size) => {
     const random = seeded(11);
-    const slabs = 4;
+    const slabs = 3;
     const s = size / slabs;
     g.fillStyle = grey(0.86);
     g.fillRect(0, 0, size, size);
     for (let r = 0; r < slabs; r++) {
         for (let c = 0; c < slabs; c++) {
-            g.fillStyle = grey(0.94 + random() * 0.06);
+            g.fillStyle = grey(0.97 + random() * 0.03);
             g.fillRect(c * s + 1.5, r * s + 1.5, s - 3, s - 3);
         }
     }
-    speckle(g, size, random, 700);
 });
 
 /** Grain only: tarmac. */
@@ -232,9 +229,11 @@ function grassMaterial(color: string): THREE.MeshStandardMaterial {
             .replace('#include <color_fragment>', `#include <color_fragment>
                 vec2 grassPixel = floor(vGrassXZ * uGrassPixels);
                 float grain = grassHash(grassPixel);
-                float blade = step(0.88, grassHash(grassPixel + 31.7));
-                float clump = grassHash(floor(vGrassXZ * 1.3));
-                diffuseColor.rgb *= (0.86 + grain * 0.16 + blade * 0.16) * (0.94 + clump * 0.1);`);
+                float blade = step(0.965, grassHash(grassPixel + 31.7));
+                // Soft patches of lighter and darker lawn, and only a fleck of grain.
+                vec2 g = vGrassXZ * 0.16;
+                float patches = 0.5 + 0.25 * (sin(g.x * 1.7 + sin(g.y * 1.3) * 1.6) + sin(g.y * 2.1 + sin(g.x * 1.1) * 1.8));
+                diffuseColor.rgb *= (0.93 + patches * 0.13) * (0.985 + grain * 0.03 + blade * 0.09);`);
     };
     return material;
 }
@@ -247,10 +246,13 @@ export class UfoTown {
     private readonly flightLimit: Point[];
     private readonly textures: THREE.Texture[] = [];
     private readonly ownMaterials: THREE.Material[] = [];
+    private shadowMaterial: THREE.MeshBasicMaterial | null = null;
     private readonly ownGeometries: THREE.BufferGeometry[] = [];
     private readonly ray = new THREE.Ray();
     private readonly hit = new THREE.Vector3();
     private destroyed = false;
+    private seaFree: (() => void) | null = null;
+    private sea: THREE.Mesh | null = null;
     /** Everything still there to eat (shrinks as it's eaten; grows as models load). */
     public readonly items: Item[] = [];
     /** Every prop's blocker from the start (a model still loading already blocks), until it's eaten. */
@@ -275,8 +277,47 @@ export class UfoTown {
         this.ready = Promise.all(loads).then(() => undefined);
     }
 
+    /** The sea, made its own thing beside the rest of the town (which setVisible() then shows or hides without it). */
+    public separateSea(): THREE.Mesh | null {
+        if (this.sea && this.sea.parent === this.group) this.group.parent?.add(this.sea);
+        return this.sea;
+    }
+
+    public setVisible(on: boolean): void {
+        this.group.visible = on;
+    }
+
+    /** How far the island reaches. */
+    public bounds(): { minX: number; maxX: number; minZ: number; maxZ: number } {
+        const xs = this.shore.map((p) => p.x);
+        const zs = this.shore.map((p) => p.z);
+        return { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
+    }
+
     public isOverIsland(x: number, z: number): boolean {
         return containsPoint(this.landArea, x, z);
+    }
+
+    /**
+     * Somewhere on the island to appear: clear of anything tall for a small saucer, and at least `apart` from each of
+     * `others`, or as near to that as a fair few tries find.
+     */
+    public findOpenSpot(others: readonly { x: number; y: number }[], apart: number): THREE.Vector2 {
+        const { ground } = this.level;
+        const spot = new THREE.Vector2(this.level.start.x, this.level.start.z);
+        let best = -1;
+        for (let i = 0; i < 80; i++) {
+            const x = ground.x + (Math.random() - 0.5) * ground.width;
+            const z = ground.z + (Math.random() - 0.5) * ground.depth;
+            if (!this.isOverIsland(x, z)) continue;
+            if (this.blockers.some((box) => Math.abs(x - box.x) <= box.halfX + 1.5 && Math.abs(z - box.z) <= box.halfZ + 1.5)) continue;
+            const nearest = others.reduce((least, other) => Math.min(least, Math.hypot(other.x - x, other.y - z)), Infinity);
+            if (nearest <= best) continue;
+            best = nearest;
+            spot.set(x, z);
+            if (nearest >= apart) break;
+        }
+        return spot;
     }
 
     public canFlyTo(x: number, z: number): boolean {
@@ -368,7 +409,7 @@ export class UfoTown {
 
     private buildGround(): void {
         const { ground, pavements } = this.level;
-        const cobbles = this.texture(groundTexture());
+        const cobbles = this.texture(softTileTexture());
         const deck = this.level.island?.deck;
         this.groundCells(deck ? insetPolygon(this.shore, deck.width / 2) : this.shore, this.material(ground.color, cobbles));
         const paving = this.texture(pavingTexture());
@@ -441,7 +482,9 @@ export class UfoTown {
         const [minX, maxX, minZ, maxZ] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
         // Far enough that the bend takes its edges below the horizon, even from as high as the camera ends up.
         const margin = Math.max(island.margin, 400);
-        const sea = createWater(island.water, maxX - minX + margin * 2, maxZ - minZ + margin * 2);
+        const sea = createWater(island.water, maxX - minX + margin * 2, maxZ - minZ + margin * 2, shore, (minX + maxX) / 2, (minZ + maxZ) / 2);
+        this.seaFree = sea.userData.free as () => void;
+        this.sea = sea;
         sea.position.set((minX + maxX) / 2, -island.waterLevel, (minZ + maxZ) / 2);
         sea.renderOrder = -1;
         sea.frustumCulled = false;
@@ -561,9 +604,12 @@ export class UfoTown {
             const shift = (point: Point) => ({ x: point.x + n.x * 0.1, z: point.z + n.z * 0.1 });
             this.beam(shift(p), shift(q), DECK_Y + 0.03, 0.14, 0.2, wood);
         });
+        // A spacing of 0: none (the home screen's miniature).
+        const spacing = deck.pilingSpacing ?? DECK_DEFAULTS.pilingSpacing;
+        if (spacing <= 0) return;
         const bottom = GROUND_Y - sideDepth - 0.3;
         const pilingTop = DECK_Y + 0.16;
-        this.instances(UfoTown.alongEdges(insetPolygon(outer, -0.16), deck.pilingSpacing ?? DECK_DEFAULTS.pilingSpacing),
+        this.instances(UfoTown.alongEdges(insetPolygon(outer, -0.16), spacing),
             new THREE.CylinderGeometry(0.17, 0.2, pilingTop - bottom, 8), wood, (pilingTop + bottom) / 2);
     }
 
@@ -594,7 +640,14 @@ export class UfoTown {
         const base = new THREE.Box3().setFromObject(object).min.y;
         object.position.set(prop.x, (prop.elevation ?? 0) - base, prop.z);
         object.updateMatrixWorld(true);
-        if (flat) subdivideObject(object);
+        if (flat) {
+            subdivideObject(object);
+            // Road tiles in the ground's soft colours.
+            object.traverse((child) => {
+                if (!(child instanceof THREE.Mesh)) return;
+                for (const material of [child.material].flat()) (material as THREE.MeshStandardMaterial).color?.setHex(ROAD_TINT);
+            });
+        }
         bendObject(object);
         this.group.add(object);
         this.culler.addStatic(object);
@@ -609,9 +662,46 @@ export class UfoTown {
             value: UfoTown.valueOf(footprint.x * footprint.y * footprint.z),
             blocker, bounds, opacity: 1,
             goal: Boolean(goal),
+            prop,
         };
         if (goal) this.goalItem = item;
+        this.addShadow(item);
         this.items.push(item);
+    }
+
+    /** A long flat shadow from a thing's foot, away from the sun: the sharp shape that sits it on the ground. */
+    private addShadow(item: Item): void {
+        if (item.height < SHADOW.minHeight) return;
+        const { min, max } = item.bounds;
+        const reach = Math.min(item.height, SHADOW.maxHeight);
+        const sx = reach * SHADOW.x;
+        const sz = reach * SHADOW.z;
+        // The outline of the footprint swept along the sun's way.
+        const corners = [[min.x, min.z], [max.x, min.z], [max.x + sx, min.z + sz], [max.x + sx, max.z + sz], [min.x + sx, max.z + sz], [min.x, max.z]];
+        const middleX = corners.reduce((sum, c) => sum + c[0], 0) / corners.length;
+        const middleZ = corners.reduce((sum, c) => sum + c[1], 0) / corners.length;
+        const positions: number[] = [];
+        corners.forEach(([x, z], i) => {
+            const [nx, nz] = corners[(i + 1) % corners.length];
+            positions.push(middleX, 0, middleZ, nx, 0, nz, x, 0, z);
+        });
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        this.shadowMaterial ??= this.makeShadowMaterial();
+        const mesh = new THREE.Mesh(geometry, this.shadowMaterial);
+        mesh.position.y = SHADOW.y;
+        mesh.renderOrder = 1;
+        this.group.add(mesh);
+        subdivideOwn(mesh);
+        this.culler.addStatic(mesh);
+        item.shadow = mesh;
+    }
+
+    private makeShadowMaterial(): THREE.MeshBasicMaterial {
+        const material = new THREE.MeshBasicMaterial({ color: SHADOW.color, transparent: true, opacity: SHADOW.opacity, depthWrite: false });
+        applyBend(material);
+        this.ownMaterials.push(material);
+        return material;
     }
 
     /** A thing's growth value from its volume. */
@@ -625,8 +715,18 @@ export class UfoTown {
     }
 
     /** Off the list and no longer blocking, its model left for the caller to animate away. */
+    /** A thing that was eaten, back where it was. */
+    public restore(prop: Prop): Promise<void> {
+        return this.placeProp(prop);
+    }
+
     public take(item: Item): void {
         item.gone = true;
+        if (item.shadow) {
+            this.culler.remove(item.shadow);
+            item.shadow.removeFromParent();
+            item.shadow.geometry.dispose();
+        }
         this.items.splice(this.items.indexOf(item), 1);
         this.culler.remove(item.object);
         if (item.blocker) this.blockers.splice(this.blockers.indexOf(item.blocker), 1);
@@ -668,6 +768,7 @@ export class UfoTown {
 
     public destroy(): void {
         this.destroyed = true;
+        this.seaFree?.();
         this.group.removeFromParent();
         this.ownGeometries.forEach((geometry) => geometry.dispose());
         this.ownMaterials.forEach((material) => material.dispose());
