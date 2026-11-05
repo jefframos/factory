@@ -45,8 +45,10 @@ count. The feel's defaults are in
 - **Slots**: 5. A tile in a slot sends one ant every 0.2 s while there's an exposed block of its colour no other ant
   is already going for — the one nearest its slot (no dice) —; its number counts down as they leave, and the tile goes
   once its last ant is home.
-- **Extra slot** (power-up, once a level): the orange ＋1 SLOT button under x2 adds a sixth slot. A lost level offers it
-  too (+1 SLOT on the card), and play goes on.
+- **The item belt** (bottom, `ui/BoosterBelt.ts`): round power-up buttons on a blue checked cloth, each with a green
+  count badge. The first, the **extra slot** (once a level), adds a sixth slot; a lost level offers it too (+1 SLOT on
+  the card), and play goes on. The other three — shuffle, magnet, flower — unlock at levels 6, 9 and 16 (a padlock and
+  "Level N" until then) and do nothing yet: they're placeholders for their effects.
 - **Won**: the picture is gone. **Lost**: all 5 slots hold a tile still waiting, none of their colours has anything
   exposed, and no ant is out. The card offers NEXT or TRY AGAIN; the ↻ button restarts any time.
 - **2x**: the top-left button doubles the game speed (`Game.timeScale`).
@@ -173,6 +175,7 @@ games/ant/
     world/TileRack.ts    the slots (white plates) and the tile columns: two-tone cushions, numbers on canvas textures
     world/Layout.ts      where everything goes, measured off the reference screen
     ui/AntHud.ts         restart (blue), "Level N", x2 (green), the celebration and the lost card (PIXI shapes and text)
+    ui/BoosterBelt.ts    the item belt: power-up buttons, counts, locks by level
   levels/                the levels (index.json = order) and their previews
   raw-assets/pictures/   source pictures + pictures.json (settings) + palette.json (the master palette)
   tools/pixelate-lib.mjs picture (or drawing) + settings + palette -> level
@@ -183,5 +186,5 @@ games/ant/
 
 ## Next steps (not in this first version)
 
-Sounds; more power-ups (shuffle, magnet…); a hint for the next good tile; star ratings that
+Sounds; the belt's power-ups' effects (shuffle, magnet, flower) and real counts; a hint for the next good tile; star ratings that
 mean something; more pictures.
