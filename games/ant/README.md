@@ -25,7 +25,8 @@ Set `GAME=ant` in `.env`, then from the repo root:
 | `npm run ant:pixelate` | Turns every picture in `raw-assets/pictures` into a level (see below). `npm run ant:pixelate -- mushroom` does one. |
 
 On the dev server (or with `?dev=1`) the **Ant** debug panel has: a level dropdown, ant speed and the time between
-ants (live), RESTART / WIN LEVEL / NEXT, and pixels left, ants out, each slot's count. The feel's defaults are in
+ants (live), RESTART / WIN LEVEL / NEXT / +1 SLOT, the level's baked check, and pixels left, ants out, each slot's
+count. The feel's defaults are in
 `game/data/Tuning.ts` (slow and steady: cozy).
 
 ---
@@ -39,18 +40,36 @@ ants (live), RESTART / WIN LEVEL / NEXT, and pixels left, ants out, each slot's 
   corners) to the side nearest their block, then in through the eaten cells. Home: straight down when the way below is
   clear, else the shortest straight line (or path) to the nearest border; along the rim to its bottom; straight down to
   the anthill's row; across into it.
-- **Tiles**: 4 columns under the 5 slots; only the front row (on white plates) can be tapped; the second row waits as
+- **Tiles**: 3 to 5 columns (the level's own: fewer for small pictures) under the 5 slots; only the front row (on white plates) can be tapped; the second row waits as
   it is; rows further back sit lower with faded numbers. Taking a tile moves its column up.
-- **Slots**: 5. A tile in a slot sends one ant every 0.09 s while there's an exposed block of its colour no other ant
-  is already going for; its number counts down as they leave, and the tile goes once its last ant is home.
+- **Slots**: 5. A tile in a slot sends one ant every 0.2 s while there's an exposed block of its colour no other ant
+  is already going for — the one nearest its slot (no dice) —; its number counts down as they leave, and the tile goes
+  once its last ant is home.
+- **Extra slot** (power-up, once a level): the orange ＋1 SLOT button under x2 adds a sixth slot. A lost level offers it
+  too (+1 SLOT on the card), and play goes on.
 - **Won**: the picture is gone. **Lost**: all 5 slots hold a tile still waiting, none of their colours has anything
   exposed, and no ant is out. The card offers NEXT or TRY AGAIN; the ↻ button restarts any time.
 - **2x**: the top-left button doubles the game speed (`Game.timeScale`).
 
-**Every level can be cleared.** The tiles are dealt by playing the picture out with the same rules
-(`Board.dealDeck`): each tile takes blocks of a colour that are reachable by then, so taking the tiles in the order they
-were dealt always works. They're dealt round-robin into the columns, so the front row is always the next four. Tile
-sizes run from about 1/60 to 1/22 of the picture, all that's left of a small run in one tile.
+**Every level is baked and checked.** The tiles — which, in what order, how many columns — are worked out when the level
+is made (`tools/solver.mjs`) and saved in the level file, so a level always plays the same:
+
+1. **Dealt** by playing the picture out with the game's rules: each tile takes blocks of a colour that are reachable by
+   then, so taking the tiles in the order they were dealt always works. The `seed` picks another deal. Tile sizes run
+   from about 1/90 to 1/25 of the grid.
+2. **Mixed** (`mix` 0–5): some later tiles are pulled a few rows forward — a colour that can't be reached yet turning
+   up early, to sit in a slot waiting: the traps that fill the slots and lose the level. Of several mixes, the hardest
+   one that can still be cleared is kept.
+3. **Checked** by a solver that plays it: is there an order of taps that clears it with 5 slots (or only with the
+   extra slot)? Does that still work whichever blocks the ants happen to pick? And how often does a player tapping at
+   random win — the level's difficulty (100% = can't go wrong; the editor calls it easy / gentle / tricky / hard).
+
+The solver plays patiently (the ants finish all they can before the next tap) — a player can always wait. Its rules are
+a copy of `Board.ts` / `AntScene.ts`'s: change one, change the other. Traps need colours the ants can't reach yet:
+a picture whose colours all touch its edge is always easy; an **outline** (it wraps everything) or colours inside
+others make room for them.
+
+The tiles go round-robin into the columns, so the front row is always the next tiles in the deck's order.
 
 Progress (the level reached) is saved in `localStorage` (`ant.save`).
 
@@ -68,6 +87,11 @@ With `GAME=ant` in `.env`, `npm run editor` opens a local page (`web/server.mjs`
 - **Add a picture…**: a `.png` / `.jpg` / `.webp` / `.svg` from disk becomes a new level at the end (Master palette,
   background removed when it's solid), ready to tune. **New drawing…**: an empty grid (any size up to 64 × 64) to
   draw by hand with the master palette, no picture needed.
+- **Tiles & difficulty** (under the tuning): **Outline** (a stroke round the picture in a colour, snapped to the
+  palette — e.g. a dark one round the strawberry; it needs a free cell round the picture), **Columns** (auto: 3 under
+  150 blocks, 4 under 450, else 5), **Seed** (🎲: another deal), **Mix** (0 = easy, up to 5). The check updates live
+  — ✓ can be cleared / ⚠ only with the extra slot / ✗ can't — with how often random taps win, and the tile columns
+  as the game will lay them out (the front row outlined). The list shows each level's check.
 - **Tuning a level**: the source picture next to the level as the game will show it, **live**, which you can draw on:
   **Paint** (a palette colour, or any colour from the picker, snapped to the palette), **Erase** (no block there),
   **Restore** (drops your edit on a cell); Undo (Ctrl/Cmd+Z), Clear edits. Edited cells show a dot. Then: name;
@@ -96,8 +120,9 @@ rebuilds every level, drawn ones too):
    same picture always makes the same level) and snapped to the chosen palette — the master palette by default — by
    the tone that *looks* closest (measured in OKLab), so in an all-red palette a green becomes the nearest red.
 3. Each cell takes the colour most of its samples are nearest to: crisp edges, no blended in-between colours.
-4. The hand edits go on top (snapped to the same palette); the level's colours get its saturation / brightness steps;
-   then the whole grid is shifted by the offset.
+4. The hand edits go on top (snapped to the same palette); the whole grid is shifted by the offset; the outline goes
+   round it; the level's colours get its saturation / brightness steps.
+5. The tiles are baked and checked (above).
 
 A level drawn in the editor has no picture: just its settings, its size and its edits.
 
@@ -111,7 +136,8 @@ Per-picture settings, in `raw-assets/pictures/pictures.json` (the editor writes 
 
 ```json
 { "mushroom": { "name": "Mushroom", "width": 22, "height": 22, "colors": 5, "palette": "master", "background": "auto",
-                "saturation": 1, "brightness": 0, "offsetX": 0, "offsetY": 1, "edits": { "10,3": ".", "11,3": "#f28b8b" } } }
+                "saturation": 1, "brightness": 0, "offsetX": 0, "offsetY": 1, "edits": { "10,3": ".", "11,3": "#f28b8b" },
+                "stroke": "#4a4a5a", "columns": 0, "seed": 0, "mix": 2 } }
 ```
 
 Bigger grids keep more detail (a strawberry's seeds need more than 22 × 22). Pictures with flat colours and clear
@@ -140,11 +166,12 @@ games/ant/
   levels/                the levels (index.json = order) and their previews
   raw-assets/pictures/   source pictures + pictures.json (settings) + palette.json (the master palette)
   tools/pixelate-lib.mjs picture (or drawing) + settings + palette -> level
+  tools/solver.mjs       deals, mixes and checks a level's tiles (the game's rules, played by a solver)
   tools/pixelate.mjs     the command line over it
   web/                   the level editor (server.mjs + public/index.html)
 ```
 
 ## Next steps (not in this first version)
 
-Sounds; the reference's booster bar (add a slot, shuffle, magnet…); a hint for the next good tile; star ratings that
+Sounds; more power-ups (shuffle, magnet…); a hint for the next good tile; star ratings that
 mean something; more pictures.

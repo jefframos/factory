@@ -12,14 +12,18 @@
 //   4. Each cell takes its samples' most common colour.
 //   5. The hand edits go on top (`edits`: { "x,y": "#hex" } paints a cell, { "x,y": "." } empties it) — snapped to the
 //      same palette, so a palette change carries them along.
-//   6. The level's colours get its `saturation` / `brightness` steps (each step +-15% saturation / +-6% lightness, up
+//   6. The whole grid, edits and all, is shifted by `offsetX` / `offsetY` cells (what slides off the edge is gone).
+//   7. `stroke` (a colour, snapped to the palette; '' = none) outlines the picture: every empty cell touching it (sides
+//      or corners) becomes a block of that colour. It needs a free cell round the picture to show all round.
+//   8. The level's colours get its `saturation` / `brightness` steps (each step +-15% saturation / +-6% lightness, up
 //      to MAX_STEPS either way) — after the palette, so a master-palette level keeps the master's tones, just more or
 //      less vivid (before it, the snapping would put most colours straight back on the same tone).
-//   7. The whole grid, edits and all, is shifted by `offsetX` / `offsetY` cells (what slides off the edge is gone).
-// Returns the level (id, name, size, palette by use, rows), the final grid (hex colours, null = empty: the editor's
-// paint canvas), the pixel count, and a crisp preview PNG.
+//   9. The tiles are baked (solver.mjs's bakeDeck: `seed`, `mix`, `columns`) and checked: can it be cleared?
+// Returns the level (id, name, size, palette by use, rows, columns, deck, check), the final grid (hex colours, null =
+// empty: the editor's paint canvas), the pixel count, and a crisp preview PNG.
 
 import sharp from 'sharp';
+import { bakeDeck } from './solver.mjs';
 
 const SAMPLES = 8;
 const ALPHA_CUTOFF = 128;
@@ -31,7 +35,7 @@ const SATURATION_STEP = 0.15;
 const BRIGHTNESS_STEP = 0.06;
 export const MAX_STEPS = 5;
 
-export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {} };
+export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {}, stroke: '', columns: 0, seed: 0, mix: 0 };
 
 /** Fixed colour sets a picture can use instead of the master palette. */
 export const PALETTES = {
@@ -283,21 +287,50 @@ export async function buildLevel(file, id, settings, master) {
         if (!(x >= 0 && y >= 0 && x < width && y < height)) continue;
         grid[x + y * width] = value === '.' || !value ? null : palette.length ? closest(parseHex(value), palette) : value;
     }
+    const final = shift(grid, width, height, Math.round(options.offsetX ?? 0), Math.round(options.offsetY ?? 0));
+    if (options.stroke && /^#[0-9a-f]{6}$/i.test(options.stroke)) outline(final, width, height, palette.length ? closest(parseHex(options.stroke), palette) : options.stroke);
     const steps = (v) => Math.max(-MAX_STEPS, Math.min(MAX_STEPS, Math.round(v ?? 0)));
     const saturation = steps(options.saturation);
     const brightness = steps(options.brightness);
     if (saturation || brightness) {
         const adjusted = new Map();
-        for (let i = 0; i < grid.length; i++) {
-            if (!grid[i]) continue;
-            if (!adjusted.has(grid[i])) adjusted.set(grid[i], hex(adjust(parseHex(grid[i]), saturation, brightness)));
-            grid[i] = adjusted.get(grid[i]);
+        for (let i = 0; i < final.length; i++) {
+            if (!final[i]) continue;
+            if (!adjusted.has(final[i])) adjusted.set(final[i], hex(adjust(parseHex(final[i]), saturation, brightness)));
+            final[i] = adjusted.get(final[i]);
         }
     }
-    const shifted = shift(grid, width, height, Math.round(options.offsetX ?? 0), Math.round(options.offsetY ?? 0));
-    const { palette: levelPalette, rows } = toLevel(shifted, width, height);
-    const level = { id, name: options.name, width, height, palette: levelPalette, rows };
-    return { level, grid: shifted, preview: await previewPng(level), pixels: shifted.filter(Boolean).length };
+    const { palette: levelPalette, rows } = toLevel(final, width, height);
+    const indices = final.map((c) => (c ? levelPalette.indexOf(c) : -1));
+    const baked = bakeDeck(indices, width, height, levelPalette.length, { id, seed: Math.round(options.seed ?? 0), mix: Math.max(0, Math.min(5, Math.round(options.mix ?? 0))), columns: Math.round(options.columns ?? 0) });
+    const level = {
+        id, name: options.name, width, height, palette: levelPalette, rows,
+        columns: baked.columns, deck: baked.deck.map((t) => `${DIGITS[t.color]}x${t.count}`).join(' '), check: baked.check,
+    };
+    return { level, grid: final, preview: await previewPng(level), pixels: final.filter(Boolean).length };
+}
+
+/** Outlines the picture in `color`: each empty cell next to a block (sides or corners) gets one. */
+function outline(grid, width, height, color) {
+    const around = [];
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            if (grid[x + y * width]) continue;
+            let touches = false;
+            for (let dy = -1; dy <= 1 && !touches; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx >= 0 && ny >= 0 && nx < width && ny < height && grid[nx + ny * width]) {
+                        touches = true;
+                        break;
+                    }
+                }
+            }
+            if (touches) around.push(x + y * width);
+        }
+    }
+    for (const i of around) grid[i] = color;
 }
 
 /** A level drawn big: each pixel a PREVIEW_CELL square in its colour (2px gaps), empty cells left dark. */

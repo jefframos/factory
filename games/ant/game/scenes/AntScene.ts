@@ -13,7 +13,10 @@
 // nearest border (straight down when the way down is clear), along the rim to its bottom, straight down to just above
 // the anthill, across and in. They always go round the anthill and its lid on the way out.
 //
-// The deck is dealt from the picture itself (Board.dealDeck), so taking the tiles in the order they come always works.
+// The deck — the tiles, their order, how many columns — is baked into the level (tools/solver.mjs, which also checks
+// it can be cleared), so a level always plays the same; an old level file without one is dealt here (Board.dealDeck).
+// An ant goes for the exposed pixel of its colour nearest its slot (no dice: the solver plays it the same way).
+// The extra-slot power-up (AntHud, once a level) adds a sixth slot — also offered when a level is lost, to play on.
 
 import * as THREE from 'three';
 import { Game } from 'core/Game';
@@ -21,7 +24,7 @@ import { ThreeScene } from 'core/scene/ThreeScene';
 import SetupThree from 'core/scene/SetupThree';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Board, dealDeck, hashString } from '../data/Board';
-import { LEVELS, LevelData, pixelsOf } from '../data/Levels';
+import { LEVELS, LevelData, pixelsOf, deckOf } from '../data/Levels';
 import { AntSave } from '../data/AntSave';
 import { TUNING } from '../data/Tuning';
 import { DebugOverlay } from 'core/debug/DebugOverlay';
@@ -33,8 +36,8 @@ import { AntHud } from '../ui/AntHud';
 
 /** The floor's peach (also the page's: index.html). */
 const FLOOR = 0xf6c597;
-/** An ant goes for one of the few exposed pixels nearest its way in (picked at random among these), so they spread out. */
-const NEAREST_CHOICES = 4;
+/** Columns for an old level file without its own. */
+const DEFAULT_COLUMNS = 4;
 /** An ant is about this many of the picture's pixels long. */
 const ANT_PIXELS = 1.5;
 /** Camera: field of view, tilt from straight down, and how far below the screen's middle it looks (a tilted view
@@ -81,7 +84,7 @@ export default class AntScene extends ThreeScene {
     private rack?: TileRack;
     private swarm?: AntSwarm;
     private readonly hole = new THREE.Group();
-    private readonly slots: (SlotState | null)[] = Array(SLOT_COUNT).fill(null);
+    private readonly slots: (SlotState | null)[] = [];
     private readonly palette: THREE.Color[] = [];
     private ended = false;
     /** What the debug panel's level dropdown shows. */
@@ -112,7 +115,7 @@ export default class AntScene extends ThreeScene {
         this.threeScene.add(floor);
         this.buildHole();
         this.threeCamera.fov = FOV;
-        this.hud = new AntHud(() => this.loadLevel(this.levelIndex));
+        this.hud = new AntHud(() => this.loadLevel(this.levelIndex), () => this.addExtraSlot());
         this.game.uiLayer.addChild(this.hud);
         window.addEventListener('pointerdown', this.onPointerDown);
         window.addEventListener('resize', this.onWindowResize);
@@ -141,7 +144,13 @@ export default class AntScene extends ThreeScene {
             { label: 'RESTART', action: () => this.loadLevel(this.levelIndex) },
             { label: 'WIN LEVEL', action: () => this.debugWin() },
             { label: 'NEXT', action: () => this.loadLevel(this.levelIndex + 1) },
+            { label: '+1 SLOT', action: () => this.addExtraSlot() },
         ]);
+        panel.monitor('Baked check', () => {
+            const check = this.level?.check;
+            if (!check) return 'not baked';
+            return check.clearable ? `clearable${check.slots > SLOT_COUNT ? ' (+1 slot)' : ''}, random wins ${Math.round(check.randomWins * 100)}%` : 'NOT clearable';
+        });
         panel.monitor('Pixels left', () => `${this.board?.remaining ?? 0}`);
         panel.monitor('Ants out', () => `${this.swarm?.count ?? 0}`);
         panel.monitor('Slots', () => this.slots.map((s) => (s ? `${s.left}` : '-')).join(' '));
@@ -188,19 +197,21 @@ export default class AntScene extends ThreeScene {
         this.picture?.destroy();
         this.rack?.destroy();
         this.swarm?.destroy();
-        this.slots.fill(null);
+        this.slots.length = 0;
+        for (let s = 0; s < SLOT_COUNT; s++) this.slots.push(null);
         this.ended = false;
         this.hud.hideResult();
+        this.hud.setExtraSlot(true);
         this.hud.setLevel(this.levelIndex + 1);
 
         const pixels = pixelsOf(this.level);
         this.board = new Board(this.level.width, this.level.height, pixels);
         this.palette.length = 0;
         this.level.palette.forEach((hex) => this.palette.push(new THREE.Color(hex)));
-        // Tiles of about 1/90 to 1/25 of the picture.
+        // The baked deck; an old level file gets tiles of about 1/90 to 1/25 of the picture, dealt here.
         const min = Math.max(6, Math.round(pixels.length / 90));
         const max = Math.max(min + 6, Math.round(pixels.length / 25));
-        const deck = dealDeck(this.board, hashString(this.level.id), min, max);
+        const deck = deckOf(this.level) ?? dealDeck(this.board, hashString(this.level.id), min, max);
 
         const cell = Math.min(LAYOUT.pictureMax.width / this.level.width, LAYOUT.pictureMax.depth / this.level.height);
         const picture = new PictureView(this.level, pixels, cell);
@@ -214,7 +225,7 @@ export default class AntScene extends ThreeScene {
         this.lane.top = picture.group.position.z - lane;
         this.lane.bottom = picture.group.position.z + picture.depth + lane;
 
-        this.rack = new TileRack(this.level.palette, deck);
+        this.rack = new TileRack(this.level.palette, deck, this.level.columns ?? DEFAULT_COLUMNS);
         this.threeScene.add(this.rack.group);
         this.swarm = new AntSwarm(this.threeScene, cell * ANT_PIXELS, cell * 0.55, cell, (x, z) => {
             if (!picture.onTray(x, z)) return 0;
@@ -259,6 +270,15 @@ export default class AntScene extends ThreeScene {
         if (tile) this.slots[slot] = { tile, color: tile.tile.color, left: tile.tile.count, timer: 0.3 };
     };
 
+    /** The power-up: one more slot (once a level). Used on the lost card, the level plays on. */
+    private addExtraSlot(): void {
+        if (!this.rack || !this.hud.extraSlotAvailable || this.board.remaining === 0) return;
+        this.rack.addSlot();
+        this.slots.push(null);
+        this.hud.setExtraSlot(false);
+        this.ended = false;
+    }
+
     private readonly onWindowResize = (): void => {
         if (this.picture) this.fitCamera();
     };
@@ -288,12 +308,16 @@ export default class AntScene extends ThreeScene {
         const options = this.board.claimable(slot.color);
         if (!options.length) return;
         const start = this.rack!.slotPosition(s).add(new THREE.Vector3(0, 0.9, -LAYOUT.tile / 2));
-        // The nearest by the way in: along the bottom of the rim from the slot, then up to the pixel.
-        const near = options
-            .map((i) => ({ i, d: this.picture!.cellCenter(i).distanceToSquared(start) }))
-            .sort((a, b) => a.d - b.d)
-            .slice(0, NEAREST_CHOICES);
-        const pixel = near[Math.floor(Math.random() * near.length)].i;
+        // The nearest to the slot (claimed ones are skipped, so the ants still spread out).
+        let pixel = options[0];
+        let nearest = Infinity;
+        for (const i of options) {
+            const d = this.picture!.cellCenter(i).distanceToSquared(start);
+            if (d < nearest - 1e-6) {
+                nearest = d;
+                pixel = i;
+            }
+        }
         this.board.claim(pixel);
         const color = this.palette[slot.color];
         this.swarm!.send(s, pixel, color, color, start, this.pathIn(start, pixel));

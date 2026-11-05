@@ -1,9 +1,9 @@
 // AntHud.ts
 //
 // The 2D layer over the board, laid out like the reference: restart (blue, top-left), "Level N" (top), x2 (green,
-// top-right), the
+// top-right) and under it the extra-slot power-up (orange, once a level), the
 // celebration when a picture is done (celebrate(): turning rays, confetti, the finished picture, three stars, NEXT) and
-// the card when it's lost ("No moves left" with TRY AGAIN). Drawn with plain shapes and text for now (no atlas).
+// the card when it's lost ("No moves left" with TRY AGAIN, and +1 SLOT to play on while the power-up is unused). Drawn with plain shapes and text for now (no atlas).
 // Laid out on the visible screen (Game.overlayScreenData), so it hugs the edges on any aspect.
 
 import * as PIXI from 'pixi.js';
@@ -49,14 +49,17 @@ export class AntHud extends PIXI.Container {
     /** The 2x speed toggle (Game.timeScale), green while on. */
     private readonly speed = new PIXI.Container();
     private readonly speedBack = new PIXI.Graphics();
+    /** The extra-slot power-up: one more slot, once a level. */
+    private readonly extra = new PIXI.Container();
+    private extraUsed = false;
     private readonly card = new PIXI.Container();
     private readonly dim = new PIXI.Graphics();
     /** The celebration's turning rays and falling confetti (behind / over the card). */
     private readonly rays = new PIXI.Container();
     private readonly confetti = new PIXI.Container();
 
-    /** `onRestart` from the restart button. */
-    public constructor(private readonly onRestart: () => void) {
+    /** `onRestart` from the restart button, `onExtraSlot` from the power-up (here or on the lost card). */
+    public constructor(private readonly onRestart: () => void, private readonly onExtraSlot: () => void) {
         super();
         this.title.anchor.set(0.5);
         // A blue rounded square with a white rim, the reference's top-left button (here: restart the level).
@@ -76,12 +79,13 @@ export class AntHud extends PIXI.Container {
             this.onRestart();
         });
         this.buildSpeed();
+        this.buildExtra();
         this.dim.eventMode = 'static';
         this.dim.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         this.dim.visible = false;
         this.card.visible = false;
         this.rays.visible = false;
-        this.addChild(this.title, this.speed, this.restart, this.dim, this.rays, this.card, this.confetti);
+        this.addChild(this.title, this.speed, this.extra, this.restart, this.dim, this.rays, this.card, this.confetti);
         this.reposition();
     }
 
@@ -112,16 +116,55 @@ export class AntHud extends PIXI.Container {
             .beginFill(on ? 0x8ff05a : 0x5cc23a).drawRoundedRect(-61, -27, 122, 50, 14).endFill();
     }
 
+    /** "＋1 SLOT" in an orange pill with a count badge: greyed out once used. */
+    private buildExtra(): void {
+        const back = new PIXI.Graphics()
+            .beginFill(0xb3561a).drawRoundedRect(-66, -28, 132, 62, 18).endFill()
+            .beginFill(0xfff4e6).drawRoundedRect(-66, -32, 132, 60, 18).endFill()
+            .beginFill(0xff9f3a).drawRoundedRect(-61, -27, 122, 50, 14).endFill();
+        const text = label('＋1 SLOT', 24);
+        text.style.stroke = 0x9a4512;
+        text.y = -3;
+        const badge = new PIXI.Graphics().beginFill(0xe0453a).drawCircle(0, 0, 15).endFill();
+        badge.position.set(60, -28);
+        const one = label('1', 18);
+        one.position.copyFrom(badge.position);
+        this.extra.addChild(back, text, badge, one);
+        this.extra.eventMode = 'static';
+        this.extra.cursor = 'pointer';
+        this.extra.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
+        this.extra.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
+            event.stopPropagation();
+            if (this.extraUsed) return;
+            gsap.fromTo(this.extra.scale, { x: 0.9, y: 0.9 }, { x: 1, y: 1, duration: 0.25, ease: 'back.out(3)' });
+            this.onExtraSlot();
+        });
+    }
+
+    /** The power-up ready (a new level) or spent. */
+    public setExtraSlot(available: boolean): void {
+        this.extraUsed = !available;
+        this.extra.alpha = available ? 1 : 0.4;
+        this.extra.cursor = available ? 'pointer' : 'default';
+    }
+
+    public get extraSlotAvailable(): boolean {
+        return !this.extraUsed;
+    }
+
     public setLevel(number: number): void {
         this.title.text = `Level ${number}`;
     }
 
-    /** The end-of-level card: `won` shows NEXT, otherwise TRY AGAIN; `onButton` from its button. */
+    /** The end-of-level card: `won` shows NEXT, otherwise TRY AGAIN; `onButton` from its button. Lost with the
+     *  power-up unused, +1 SLOT is offered too (it plays on). */
     public showResult(won: boolean, onButton: () => void): void {
         this.card.removeChildren().forEach((child) => child.destroy({ children: true }));
+        const offer = !won && !this.extraUsed;
+        const extraHeight = offer ? 84 : 0;
         const back = new PIXI.Graphics()
-            .beginFill(0x8a5530).drawRoundedRect(-230, -150, 460, 310, 36).endFill()
-            .beginFill(0xfff4e6).drawRoundedRect(-230, -158, 460, 306, 36).endFill();
+            .beginFill(0x8a5530).drawRoundedRect(-230, -150, 460, 310 + extraHeight, 36).endFill()
+            .beginFill(0xfff4e6).drawRoundedRect(-230, -158, 460, 306 + extraHeight, 36).endFill();
         const heading = label(won ? 'PICTURE DONE!' : 'NO MOVES LEFT', 46, won ? 0x7ed957 : 0xff8a7a);
         heading.y = -80;
         const line = label(won ? 'The ants carried it all home.' : 'Every slot is waiting on a colour\nthe ants can\'t reach.', 24, BROWN);
@@ -134,6 +177,16 @@ export class AntHud extends PIXI.Container {
         });
         action.y = 80;
         this.card.addChild(back, heading, line, action);
+        if (offer) {
+            // The power-up first: one more slot, and the ants carry on.
+            const more = button('＋1 SLOT', 0xff9f3a, 260, () => {
+                this.hideResult();
+                this.onExtraSlot();
+            });
+            more.y = 80;
+            action.y = 164;
+            this.card.addChild(more);
+        }
         this.dim.visible = true;
         this.card.visible = true;
         gsap.fromTo(this.card.scale, { x: 0.6, y: 0.6 }, { x: 1, y: 1, duration: 0.45, ease: 'back.out(2)' });
@@ -264,6 +317,7 @@ export class AntHud extends PIXI.Container {
         // Restart top-left, the title in the middle, x2 top-right (the reference's corners).
         this.restart.position.set(screen.topLeft.x + 52, screen.topLeft.y + 52);
         this.speed.position.set(screen.topLeft.x + screen.width - 86, screen.topLeft.y + 52);
+        this.extra.position.set(this.speed.x, this.speed.y + 84);
         this.card.position.set(screen.center.x, screen.center.y);
         this.rays.position.set(screen.center.x, screen.center.y);
         this.dim.clear().beginFill(0x2a1a10, 0.45).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
@@ -273,6 +327,7 @@ export class AntHud extends PIXI.Container {
         gsap.killTweensOf(this.card.scale);
         this.hideResult();
         gsap.killTweensOf(this.speed.scale);
+        gsap.killTweensOf(this.extra.scale);
         gsap.killTweensOf(this.dim);
         super.destroy({ children: true });
     }

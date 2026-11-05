@@ -1,12 +1,12 @@
 // TileRack.ts
 //
-// Under the anthill: the SLOT_COUNT slots (white plates), and under them the tiles in COLUMNS columns, centred under
-// the slots. A tile is two stacked rounded cushions — its colour on top, a darker one under it — with its number (how
+// Under the anthill: the SLOT_COUNT slots (white plates; addSlot() — the extra-slot power-up — adds one, and they all
+// slide to stay centred), and under them the tiles in the level's columns (3 to 5), centred under the slots. A tile is two stacked rounded cushions — its colour on top, a darker one under it — with its number (how
 // many ants) on top, big and white. Only the front row can be taken: those tiles stand tall on white plates. The rows
 // behind squat lower (ROW_HEIGHT), and from the third back their numbers fade. Taking a front tile (take())
 // slides it onto a free slot's plate and its column moves up; in its slot its number counts down as its ants leave
 // (setCount()), and it goes once they're all home (release()). The deck is dealt round-robin into the columns, so the
-// front row is always the next four tiles in dealt order. Sizes and spacing follow the reference layout (Layout.ts).
+// front row is always the next tiles in the deck's order. Sizes and spacing follow the reference layout (Layout.ts).
 
 import * as THREE from 'three';
 import gsap from 'gsap';
@@ -14,7 +14,6 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import type { Tile } from '../data/Board';
 import { LAYOUT } from './Layout';
 
-export const COLUMNS = 4;
 export const SLOT_COUNT = 5;
 /** A tile's footprint, its two cushions' heights, and the plate under the front row's / a slot's tile. */
 const TILE = LAYOUT.tile;
@@ -55,7 +54,10 @@ function plate(geometry: THREE.BufferGeometry, lip: THREE.BufferGeometry, white:
 
 export class TileRack {
     public readonly group = new THREE.Group();
-    private readonly columns: RackTile[][] = Array.from({ length: COLUMNS }, () => []);
+    private readonly columns: RackTile[][];
+    /** The slots' plates, and which tile sits in which slot. */
+    private readonly slotPlates: THREE.Group[] = [];
+    private readonly slotted = new Map<RackTile, number>();
     private readonly bottomGeometry = new RoundedBoxGeometry(TILE, BOTTOM_HEIGHT, TILE, 3, 0.42);
     private readonly topGeometry = new RoundedBoxGeometry(TILE * 0.98, TOP_HEIGHT, TILE * 0.9, 3, 0.4);
     private readonly plateGeometry = new RoundedBoxGeometry(PLATE.size, PLATE.height, PLATE.size, 3, 0.4);
@@ -65,19 +67,39 @@ export class TileRack {
     private readonly white = new THREE.MeshStandardMaterial({ color: 0xfbf1e6, roughness: 0.5 });
     private readonly grey = new THREE.MeshStandardMaterial({ color: 0xc9c2bb, roughness: 0.7 });
 
-    public constructor(private readonly palette: string[], deck: Tile[]) {
-        for (let s = 0; s < SLOT_COUNT; s++) {
-            const slot = plate(this.plateGeometry, this.lipGeometry, this.white, this.grey);
-            slot.position.copy(this.slotPosition(s));
-            this.group.add(slot);
-        }
-        deck.forEach((tile, i) => this.columns[i % COLUMNS].push(this.build(tile, i % COLUMNS)));
+    public constructor(private readonly palette: string[], deck: Tile[], private readonly columnCount: number) {
+        this.columns = Array.from({ length: columnCount }, () => []);
+        for (let s = 0; s < SLOT_COUNT; s++) this.addPlate();
+        this.slotPlates.forEach((p, s) => p.position.copy(this.slotPosition(s)));
+        deck.forEach((tile, i) => this.columns[i % columnCount].push(this.build(tile, i % columnCount)));
         this.layout(false);
     }
 
-    /** A slot's centre on the floor. */
+    public get slotCount(): number {
+        return this.slotPlates.length;
+    }
+
+    /** A slot's centre on the floor (the slots centred under the anthill). */
     public slotPosition(slot: number, out = new THREE.Vector3()): THREE.Vector3 {
-        return out.set((slot - (SLOT_COUNT - 1) / 2) * LAYOUT.slotGap, 0, LAYOUT.slotsZ);
+        return out.set((slot - (this.slotCount - 1) / 2) * LAYOUT.slotGap, 0, LAYOUT.slotsZ);
+    }
+
+    /** The extra slot: a new plate pops in at the end and every slot (and the tile on it) slides over to stay centred. */
+    public addSlot(): number {
+        const plateGroup = this.addPlate();
+        plateGroup.position.copy(this.slotPosition(this.slotCount - 1));
+        gsap.fromTo(plateGroup.scale, { x: 0.01, y: 0.01, z: 0.01 }, { x: 1, y: 1, z: 1, duration: 0.4, ease: 'back.out(2.5)' });
+        this.slotPlates.forEach((p, s) => gsap.to(p.position, { x: this.slotPosition(s).x, duration: 0.3, ease: 'power2.out' }));
+        this.slotted.forEach((s, tile) => gsap.to(tile.group.position, { x: this.slotPosition(s).x, duration: 0.3, ease: 'power2.out' }));
+        return this.slotCount - 1;
+    }
+
+    private addPlate(): THREE.Group {
+        const slot = plate(this.plateGeometry, this.lipGeometry, this.white, this.grey);
+        slot.position.copy(this.slotPosition(this.slotPlates.length));
+        this.slotPlates.push(slot);
+        this.group.add(slot);
+        return slot;
     }
 
     /** The front tiles' bodies (what a tap can hit), each with its column. */
@@ -90,6 +112,7 @@ export class TileRack {
         const tile = this.columns[column].shift();
         if (!tile) return undefined;
         tile.plate.visible = false;
+        this.slotted.set(tile, slot);
         const to = this.slotPosition(slot);
         gsap.to(tile.group.position, { x: to.x, y: PLATE.height, z: to.z, duration: 0.3, ease: 'power2.out' });
         gsap.fromTo(tile.group.scale, { x: 1.12, y: 1.12, z: 1.12 }, { x: 1, y: 1, z: 1, duration: 0.35, ease: 'back.out(2)' });
@@ -104,6 +127,7 @@ export class TileRack {
 
     /** A slot's tile is done: it shrinks away. */
     public release(tile: RackTile): void {
+        this.slotted.delete(tile);
         gsap.to(tile.group.scale, {
             x: 0.01, y: 0.01, z: 0.01, duration: 0.25, ease: 'back.in(2)',
             onComplete: () => this.dispose(tile),
@@ -121,7 +145,7 @@ export class TileRack {
     /** Puts every column's tiles in their rows: the front one on its plate, the far rows lower and faded. */
     private layout(animate: boolean): void {
         this.columns.forEach((column, c) => column.forEach((tile, row) => {
-            const x = (c - (COLUMNS - 1) / 2) * LAYOUT.columnGap;
+            const x = (c - (this.columnCount - 1) / 2) * LAYOUT.columnGap;
             const z = LAYOUT.gridZ + row * LAYOUT.rowGap;
             const faded = row >= FADE_FROM;
             const y = row === 0 ? PLATE.height : faded ? -FADE_DROP : 0;

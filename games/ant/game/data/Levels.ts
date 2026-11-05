@@ -1,9 +1,11 @@
 // Levels.ts
 //
-// The pictures to clear, in play order (levels/index.json), each made by the pixelate script (tools/pixelate.mjs):
-// size, palette, and rows of colour indices (one character per pixel: 0-9 then a-z).
+// The pictures to clear, in play order (levels/index.json), each made by the pixelate script (tools/pixelate.mjs) or
+// the level editor: size, palette, rows of colour indices (one character per pixel: 0-9 then a-z), and the baked
+// tiles — the deck, its columns, and the solver's check (tools/solver.mjs) — so every play of a level is the same.
 
 import index from '../../levels/index.json';
+import type { Tile } from './Board';
 
 export interface LevelData {
     id: string;
@@ -14,6 +16,12 @@ export interface LevelData {
     palette: string[];
     /** One string per row, top first; each character a palette index, or '.' for an empty cell (transparent). */
     rows: string[];
+    /** Tile columns under the slots (3 to 5). */
+    columns?: number;
+    /** The tiles in order, dealt round-robin into the columns: "<colour digit>x<count>" separated by spaces. */
+    deck?: string;
+    /** What the solver found when it was baked. */
+    check?: { clearable: boolean; slots: number; robust: boolean; randomWins: number };
 }
 
 const DIGITS = '0123456789abcdefghijklmnopqrstuvwxyz';
@@ -31,4 +39,13 @@ export function pixelsOf(level: LevelData): Int8Array {
         for (let x = 0; x < level.width; x++) pixels[x + y * level.width] = DIGITS.indexOf(row[x] ?? '0');
     });
     return pixels;
+}
+
+/** A level's baked tiles, or undefined (an old level file: the game deals them). */
+export function deckOf(level: LevelData): Tile[] | undefined {
+    if (!level.deck) return undefined;
+    return level.deck.split(' ').map((entry) => {
+        const [color, count] = entry.split('x');
+        return { color: DIGITS.indexOf(color), count: Number(count) };
+    });
 }
