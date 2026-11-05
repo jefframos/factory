@@ -4,7 +4,7 @@ The plan for two features, and the record of how they're built. Built on what Mo
 see `game/ui/WardrobePanel.ts`), the floor-arrow guide (`MowScene.updateGuide`), the grass grid (`GrassField`) and the
 town's stations (`Town`).
 
-Status: **Part 1 done** (to be tested in game), Part 2 planned.
+Status: **Part 1 and Part 2 built** (to be tested in game).
 
 ---
 
