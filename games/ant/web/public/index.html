@@ -35,7 +35,7 @@
   .images img { width: 100%; height: 300px; object-fit: contain; background: repeating-conic-gradient(#eee 0 25%, #fff 0 50%) 0 0/16px 16px; border-radius: 8px; border: 1px solid var(--line); image-rendering: pixelated; }
   #preview { background: #282828; }
   .settings { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 14px; }
-  label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+  label, .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
   input, select { font: inherit; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); }
   .wide { grid-column: span 2; }
   .swatches { display: flex; gap: 3px; flex-wrap: wrap; min-height: 18px; }
@@ -50,6 +50,27 @@
   .row { display: flex; gap: 8px; align-items: end; }
   .row label { flex: 1; }
   .lock { padding: 7px 9px; }
+  [hidden] { display: none !important; }
+  .master { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+  .master .sw { position: relative; width: 30px; height: 30px; border-radius: 7px; border: 1px solid rgba(0,0,0,.18); cursor: pointer; padding: 0; }
+  .master .sw .x { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 11px; line-height: 16px; text-align: center; display: none; }
+  .master .sw:hover .x { display: block; }
+  .master .plus { width: 30px; height: 30px; padding: 0; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .buttons button { padding: 6px 10px; }
+  #canvas { width: 100%; height: 300px; border-radius: 8px; border: 1px solid var(--line); background: #e7d3c0; cursor: crosshair; touch-action: none; }
+  .tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+  .tools button.on { background: var(--accent); color: #fff; }
+  .paint { display: flex; flex-wrap: wrap; gap: 4px; }
+  .paint button { width: 24px; height: 24px; padding: 0; border-radius: 6px; border: 2px solid rgba(0,0,0,.12); }
+  .paint button.on { border-color: var(--ink); transform: scale(1.12); }
+  .stepper { display: flex; gap: 4px; align-items: center; }
+  .stepper button { padding: 6px 10px; }
+  .stepper output { min-width: 28px; text-align: center; font-weight: 700; color: var(--ink); }
+  .pad { display: grid; grid-template-columns: repeat(3, 32px); gap: 3px; }
+  .pad button { padding: 4px 0; }
+  .images.single { grid-template-columns: 1fr; }
+  .images.single #canvas { height: 420px; }
 </style>
 </head>
 <body>
@@ -58,23 +79,47 @@
   <a class="play" href="http://localhost:9001/" target="_blank">▶ Play the game</a>
 </header>
 <main>
+  <div>
+  <section class="card" style="margin-bottom:16px">
+    <h2>Master palette</h2>
+    <div class="master" id="master"></div>
+    <div class="buttons">
+      <span class="hint" style="margin:0">Saturation</span><button id="msatDown">−</button><button id="msatUp">＋</button>
+      <span class="hint" style="margin:0">Brightness</span><button id="mbriDown">−</button><button id="mbriUp">＋</button>
+    </div>
+    <p class="hint">Levels on the <b>Master</b> palette use only these tones (each colour becomes the closest one). Click a swatch to change it. The level on the right previews your changes; <b>Apply</b> rebuilds every level.</p>
+    <div class="actions" style="margin-top:8px"><button class="primary" id="applyMaster" disabled>Apply to all levels</button><span class="hint" id="masterDirty"></span></div>
+    <input type="color" id="masterPick" hidden>
+  </section>
   <section class="card">
     <h2>Play order</h2>
     <ul id="list"></ul>
     <p class="hint">Drag to reorder. The order is saved at once.</p>
     <button class="add primary" id="add">＋ Add a picture…</button>
+    <button class="add" id="draw" style="margin-top:8px">✏️ New drawing…</button>
     <input type="file" id="file" accept=".png,.jpg,.jpeg,.webp,.svg" hidden>
   </section>
+  </div>
   <section class="card" id="editor" hidden>
     <h2 id="title">Level</h2>
-    <div class="images">
-      <figure><figcaption>Source picture</figcaption><img id="source" alt=""></figure>
-      <figure><figcaption>In the game (live)</figcaption><img id="preview" alt=""></figure>
+    <div class="images" id="images">
+      <figure id="sourceFigure"><figcaption>Source picture</figcaption><img id="source" alt=""></figure>
+      <figure><figcaption>In the game (live) — draw on it</figcaption><canvas id="canvas"></canvas></figure>
+    </div>
+    <div class="tools">
+      <button id="toolPaint" class="on" title="Paint (P)">✏️ Paint</button>
+      <button id="toolErase" title="Erase: no block there (E)">🧽 Erase</button>
+      <button id="toolRestore" title="Restore: undo your edit on a cell (R)">↩︎ Restore</button>
+      <span class="paint" id="paint"></span>
+      <input type="color" id="custom" title="Any colour (snapped to the palette)" style="width:34px;padding:0;height:26px">
+      <span style="flex:1"></span>
+      <button id="undo" title="Undo (Ctrl/Cmd+Z)">Undo</button>
+      <button id="clearEdits" title="Remove every hand edit">Clear edits</button>
     </div>
     <div class="settings">
       <label class="wide">Name <input id="name"></label>
-      <label>Colours (max) <input id="colors" type="number" min="2" max="16"></label>
-      <label>Background
+      <label class="picture">Colours (max) <input id="colors" type="number" min="2" max="16"></label>
+      <label class="picture">Background
         <select id="background">
           <option value="auto">Auto (remove if solid)</option>
           <option value="remove">Remove</option>
@@ -90,13 +135,26 @@
         <select id="palette"></select>
         <div class="swatches" id="swatches"></div>
       </label>
+      <div class="field picture">Saturation
+        <span class="stepper"><button id="satDown">−</button><output id="sat">0</output><button id="satUp">＋</button></span>
+      </div>
+      <div class="field picture">Brightness
+        <span class="stepper"><button id="briDown">−</button><output id="bri">0</output><button id="briUp">＋</button></span>
+      </div>
+      <div class="field">Offset <small id="offset">0, 0</small>
+        <span class="pad">
+          <span></span><button id="up">↑</button><span></span>
+          <button id="left">←</button><button id="center" title="Centre the picture">◎</button><button id="right">→</button>
+          <span></span><button id="down">↓</button><span></span>
+        </span>
+      </div>
     </div>
     <div class="stats">
       <span>Pixels: <b id="pixels">–</b></span>
       <span>Colours: <b id="used">–</b></span>
       <span class="swatches" id="usedSwatches"></span>
     </div>
-    <p class="hint">Fewer pixels and colours = calmer levels. A first level works well at about 18 × 18 with 4 colours.</p>
+    <p class="hint">Fewer pixels and colours = calmer levels. A first level works well at about 18 × 18 with 4 colours. Edits stick to the picture (they move with the offset); changing the size can misplace them.</p>
     <div class="actions">
       <button class="primary" id="save">Save</button>
       <span id="dirty" class="hint"></span>
@@ -110,11 +168,23 @@
 const $ = (id) => document.getElementById(id);
 let levels = [];
 let palettes = {};
+let master = [];
+let savedMaster = '';
 let selected = null;
 let aspect = 1;
 let locked = true;
 let previewTimer = 0;
 let previewSeq = 0;
+/** The level being tuned: its settings (edits included) and its built grid (hex colours, null = empty). */
+let current = null;
+let grid = [];
+let size = { width: 1, height: 1 };
+let tool = 'paint';
+let colour = null;
+let history = [];
+/** One step of the colour adjustments (as in pixelate-lib.mjs). */
+const SATURATION_STEP = 0.15;
+const BRIGHTNESS_STEP = 0.06;
 
 async function api(path, body) {
   const res = await fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {});
@@ -131,15 +201,96 @@ function toast(text) {
   toast.timer = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
+const swatch = (c) => Object.assign(document.createElement('span'), { style: `background:${c}` });
+
 async function load(keep) {
   const data = await api('/api/levels');
   levels = data.levels;
   palettes = data.palettes;
-  $('palette').replaceChildren(...Object.keys(palettes).map((name) => new Option(name === 'none' ? 'None (the picture\'s own)' : name[0].toUpperCase() + name.slice(1), name)));
+  master = data.master.slice();
+  savedMaster = JSON.stringify(master);
+  renderMaster();
+  $('palette').replaceChildren(
+    new Option('Master (the game palette)', 'master'),
+    ...Object.keys(palettes).map((name) => new Option(name[0].toUpperCase() + name.slice(1), name)),
+    new Option('None (the picture\'s own colours)', 'none'),
+  );
   renderList();
   const id = keep ?? selected?.id ?? levels[0]?.id;
   if (id) select(id);
 }
+
+// ---------- master palette ----------
+
+function renderMaster() {
+  const box = $('master');
+  box.replaceChildren(...master.map((c, i) => {
+    const b = document.createElement('button');
+    b.className = 'sw';
+    b.style.background = c;
+    b.title = c;
+    b.onclick = () => {
+      const pick = $('masterPick');
+      pick.value = c;
+      pick.oninput = () => { master[i] = pick.value; masterChanged(); };
+      pick.click();
+    };
+    const x = Object.assign(document.createElement('span'), { className: 'x', textContent: '×' });
+    x.onclick = (e) => { e.stopPropagation(); if (master.length > 1) { master.splice(i, 1); masterChanged(); } };
+    b.append(x);
+    return b;
+  }), Object.assign(document.createElement('button'), { className: 'plus', textContent: '＋', title: 'Add a colour', onclick: () => { master.push(master[master.length - 1] ?? '#f28b8b'); masterChanged(); } }));
+  const dirty = JSON.stringify(master) !== savedMaster;
+  $('applyMaster').disabled = !dirty;
+  $('masterDirty').textContent = dirty ? 'Not applied' : '';
+}
+
+function masterChanged() {
+  renderMaster();
+  if (current?.palette === 'master') { showPaint(); refresh(); }
+}
+
+const hexOf = (rgb) => `#${rgb.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('')}`;
+const rgbOf = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+
+/** A colour with its saturation / lightness moved by steps (HSL, as the pixelate script does). */
+function adjust(h, saturation, brightness) {
+  const [R, G, B] = rgbOf(h).map((v) => v / 255);
+  const max = Math.max(R, G, B);
+  const min = Math.min(R, G, B);
+  let l = (max + min) / 2;
+  let s = max === min ? 0 : l > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min);
+  let hue = 0;
+  if (max !== min) {
+    const d = max - min;
+    hue = (max === R ? (G - B) / d + (G < B ? 6 : 0) : max === G ? (B - R) / d + 2 : (R - G) / d + 4) / 6;
+  }
+  s = Math.max(0, Math.min(1, s * (1 + saturation * SATURATION_STEP)));
+  l = Math.max(0, Math.min(1, l + brightness * BRIGHTNESS_STEP));
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const ch = (t) => {
+    const u = t < 0 ? t + 1 : t > 1 ? t - 1 : t;
+    return u < 1 / 6 ? p + (q - p) * 6 * u : u < 1 / 2 ? q : u < 2 / 3 ? p + (q - p) * (2 / 3 - u) * 6 : p;
+  };
+  return hexOf(s === 0 ? [l * 255, l * 255, l * 255] : [ch(hue + 1 / 3) * 255, ch(hue) * 255, ch(hue - 1 / 3) * 255]);
+}
+
+const shiftMaster = (saturation, brightness) => { master = master.map((c) => adjust(c, saturation, brightness)); masterChanged(); };
+$('msatDown').onclick = () => shiftMaster(-1, 0);
+$('msatUp').onclick = () => shiftMaster(1, 0);
+$('mbriDown').onclick = () => shiftMaster(0, -1);
+$('mbriUp').onclick = () => shiftMaster(0, 1);
+$('applyMaster').onclick = async () => {
+  if (!confirm('Save the master palette and rebuild every level that uses it?')) return;
+  try {
+    const { rebuilt } = await api('/api/palette', { colors: master });
+    toast(`Rebuilt ${rebuilt.length} level${rebuilt.length === 1 ? '' : 's'} — reload the game`);
+    await load(selected?.id);
+  } catch (err) { toast(err.message); }
+};
+
+// ---------- the level list ----------
 
 function renderList() {
   const list = $('list');
@@ -148,7 +299,7 @@ function renderList() {
     li.draggable = true;
     li.dataset.id = level.id;
     li.className = selected?.id === level.id ? 'selected' : '';
-    li.innerHTML = `<span class="grip">⋮⋮</span><span class="num">${i + 1}</span><img src="/previews/${level.id}.png?${Date.now()}"><span class="meta"><b></b><small>${level.width} × ${level.height} · ${level.pixels} px · ${level.palette.length} colours</small></span>`;
+    li.innerHTML = `<span class="grip">⋮⋮</span><span class="num">${i + 1}</span><img src="/previews/${level.id}.png?${Date.now()}"><span class="meta"><b></b><small>${level.width} × ${level.height} · ${level.pixels} px · ${level.palette.length} colours${level.source ? '' : ' · drawn'}</small></span>`;
     li.querySelector('b').textContent = level.name;
     li.onclick = () => select(level.id);
     li.ondragstart = () => li.classList.add('dragging');
@@ -170,68 +321,239 @@ function renderList() {
   }));
 }
 
+// ---------- tuning a level ----------
+
 function select(id) {
   selected = levels.find((l) => l.id === id);
   if (!selected) return;
   renderList();
   $('editor').hidden = false;
   $('title').textContent = `Level ${levels.indexOf(selected) + 1} — ${selected.id}`;
+  const drawn = !selected.source;
+  $('sourceFigure').hidden = drawn;
+  $('images').classList.toggle('single', drawn);
+  for (const el of document.querySelectorAll('.picture')) el.hidden = drawn;
   $('source').src = selected.source ? `/sources/${encodeURIComponent(selected.source)}` : '';
-  $('preview').src = `/previews/${selected.id}.png?${Date.now()}`;
-  const s = selected.settings;
-  $('name').value = s.name;
-  $('width').value = s.width;
-  $('height').value = s.height;
-  $('colors').value = s.colors;
-  $('palette').value = palettes[s.palette] ? s.palette : 'none';
-  $('background').value = ['auto', 'remove', 'keep'].includes(s.background) ? s.background : 'auto';
-  aspect = s.height / s.width;
-  showStats(selected.pixels, selected.palette);
+  current = { ...selected.settings, edits: { ...(selected.settings.edits || {}) } };
+  if (!['master', 'none', ...Object.keys(palettes)].includes(current.palette)) current.palette = 'master';
+  $('name').value = current.name;
+  $('width').value = current.width;
+  $('height').value = current.height;
+  $('colors').value = current.colors;
+  $('palette').value = current.palette;
+  $('background').value = ['auto', 'remove', 'keep'].includes(current.background) ? current.background : 'auto';
+  aspect = current.height / current.width;
+  history = [];
+  showNumbers();
   showSwatches();
+  showStats(selected.pixels, selected.palette);
+  refresh(true);
   $('dirty').textContent = '';
 }
 
+/** The settings from the form + the stepped values and edits kept in `current`. */
 function settings() {
-  return {
+  Object.assign(current, {
     name: $('name').value.trim() || selected.id,
     width: Number($('width').value),
     height: Number($('height').value),
     colors: Number($('colors').value),
     palette: $('palette').value,
     background: $('background').value,
-  };
+  });
+  return current;
 }
 
+function showNumbers() {
+  $('sat').textContent = current.saturation || 0;
+  $('bri').textContent = current.brightness || 0;
+  $('offset').textContent = `${current.offsetX || 0}, ${current.offsetY || 0}`;
+}
+
+/** The colours the level snaps to (master, a preset, or — none — its own). */
+const levelPalette = () => (current.palette === 'master' ? master : palettes[current.palette] || []);
+
 function showSwatches() {
-  $('swatches').replaceChildren(...(palettes[$('palette').value] || []).map((c) => Object.assign(document.createElement('span'), { style: `background:${c}` })));
+  $('swatches').replaceChildren(...levelPalette().map(swatch));
+  showPaint();
+}
+
+/** The paint colours: the level's palette (for "none": the colours it uses). */
+function showPaint() {
+  const colours = levelPalette().length ? levelPalette() : [...new Set(grid.filter(Boolean))];
+  if (!colours.includes(colour)) colour = colours[0] ?? '#f28b8b';
+  $('paint').replaceChildren(...colours.map((c) => {
+    const b = document.createElement('button');
+    b.style.background = c;
+    b.title = c;
+    b.className = c === colour ? 'on' : '';
+    b.onclick = () => { colour = c; setTool('paint'); showPaint(); };
+    return b;
+  }));
+  $('custom').value = colour;
 }
 
 function showStats(pixels, palette) {
   $('pixels').textContent = pixels;
   $('used').textContent = palette.length;
-  $('usedSwatches').replaceChildren(...palette.map((c) => Object.assign(document.createElement('span'), { style: `background:${c}` })));
+  $('usedSwatches').replaceChildren(...palette.map(swatch));
 }
 
-/** Re-pixelates with the current settings (not saved), a moment after the last change. */
-function changed() {
-  $('dirty').textContent = 'Not saved';
+/** Rebuilds the level with the current settings (not saved), a moment after the last change. */
+function refresh(now) {
+  if (!now) $('dirty').textContent = 'Not saved';
   clearTimeout(previewTimer);
   previewTimer = setTimeout(async () => {
     const seq = ++previewSeq;
     try {
-      const result = await api('/api/preview', { id: selected.id, settings: settings() });
+      const result = await api('/api/preview', { id: selected.id, settings: settings(), master });
       if (seq !== previewSeq) return;
-      $('preview').src = result.png;
+      grid = result.grid;
+      size = { width: result.width, height: result.height };
+      draw();
       showStats(result.pixels, result.palette);
+      if (current.palette === 'none') showPaint();
     } catch (err) { toast(err.message); }
-  }, 250);
+  }, now ? 0 : 200);
 }
+const changed = () => refresh(false);
+
+// ---------- the paint canvas ----------
+
+const canvas = $('canvas');
+/** Cell size and where the grid starts on the canvas (centred). */
+function metrics() {
+  const cell = Math.floor(Math.min(canvas.width / size.width, canvas.height / size.height));
+  return { cell, x0: Math.floor((canvas.width - cell * size.width) / 2), y0: Math.floor((canvas.height - cell * size.height) / 2) };
+}
+
+function draw() {
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = canvas.clientWidth * ratio;
+  canvas.height = canvas.clientHeight * ratio;
+  const g = canvas.getContext('2d');
+  const { cell, x0, y0 } = metrics();
+  g.fillStyle = '#e7d3c0';
+  g.fillRect(0, 0, canvas.width, canvas.height);
+  for (let y = 0; y < size.height; y++) {
+    for (let x = 0; x < size.width; x++) {
+      const c = grid[x + y * size.width];
+      // Empty cells: a soft checker (no block there).
+      g.fillStyle = c ?? ((x + y) % 2 ? '#f3e4d4' : '#ecdac8');
+      g.fillRect(x0 + x * cell, y0 + y * cell, cell, cell);
+    }
+  }
+  g.strokeStyle = 'rgba(74,52,36,.12)';
+  g.lineWidth = 1;
+  g.beginPath();
+  for (let x = 0; x <= size.width; x++) { g.moveTo(x0 + x * cell + 0.5, y0); g.lineTo(x0 + x * cell + 0.5, y0 + size.height * cell); }
+  for (let y = 0; y <= size.height; y++) { g.moveTo(x0, y0 + y * cell + 0.5); g.lineTo(x0 + size.width * cell, y0 + y * cell + 0.5); }
+  g.stroke();
+  // Hand-edited cells get a little dot.
+  g.fillStyle = 'rgba(74,52,36,.45)';
+  for (const key of Object.keys(current?.edits || {})) {
+    const [ex, ey] = key.split(',').map(Number);
+    const x = ex + (current.offsetX || 0);
+    const y = ey + (current.offsetY || 0);
+    if (x < 0 || y < 0 || x >= size.width || y >= size.height) continue;
+    g.beginPath();
+    g.arc(x0 + (x + 0.5) * cell, y0 + (y + 0.5) * cell, Math.max(1.5, cell * 0.1), 0, Math.PI * 2);
+    g.fill();
+  }
+}
+
+function cellAt(e) {
+  const rect = canvas.getBoundingClientRect();
+  const ratio = canvas.width / rect.width;
+  const { cell, x0, y0 } = metrics();
+  const x = Math.floor(((e.clientX - rect.left) * ratio - x0) / cell);
+  const y = Math.floor(((e.clientY - rect.top) * ratio - y0) / cell);
+  return x >= 0 && y >= 0 && x < size.width && y < size.height ? { x, y } : null;
+}
+
+/** Applies the tool to a cell: the edit is kept in picture coordinates (before the offset), so it moves with it. */
+function apply(at) {
+  const key = `${at.x - (current.offsetX || 0)},${at.y - (current.offsetY || 0)}`;
+  const i = at.x + at.y * size.width;
+  if (tool === 'paint') { current.edits[key] = colour; grid[i] = colour; }
+  else if (tool === 'erase') { current.edits[key] = '.'; grid[i] = null; }
+  else delete current.edits[key];
+  draw();
+}
+
+let painting = false;
+canvas.onpointerdown = (e) => {
+  const at = cellAt(e);
+  if (!at) return;
+  history.push(JSON.stringify(current.edits));
+  painting = true;
+  canvas.setPointerCapture(e.pointerId);
+  apply(at);
+};
+canvas.onpointermove = (e) => { if (painting) { const at = cellAt(e); if (at) apply(at); } };
+canvas.onpointerup = () => { if (!painting) return; painting = false; changed(); };
+window.onresize = draw;
+
+function setTool(name) {
+  tool = name;
+  for (const [id, t] of [['toolPaint', 'paint'], ['toolErase', 'erase'], ['toolRestore', 'restore']]) $(id).classList.toggle('on', t === tool);
+}
+$('toolPaint').onclick = () => setTool('paint');
+$('toolErase').onclick = () => setTool('erase');
+$('toolRestore').onclick = () => setTool('restore');
+$('custom').oninput = () => { colour = $('custom').value; setTool('paint'); showPaint(); };
+function undo() {
+  if (!history.length) return;
+  current.edits = JSON.parse(history.pop());
+  changed();
+}
+$('undo').onclick = undo;
+$('clearEdits').onclick = () => {
+  if (!Object.keys(current.edits).length) return;
+  history.push(JSON.stringify(current.edits));
+  current.edits = {};
+  changed();
+};
+window.onkeydown = (e) => {
+  if (e.target instanceof HTMLInputElement || $('editor').hidden) return;
+  if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); }
+  else if (e.key === 'p') setTool('paint');
+  else if (e.key === 'e') setTool('erase');
+  else if (e.key === 'r') setTool('restore');
+};
+
+// ---------- settings ----------
+
+const step = (key, by) => { current[key] = (current[key] || 0) + by; showNumbers(); changed(); };
+$('satDown').onclick = () => step('saturation', -1);
+$('satUp').onclick = () => step('saturation', 1);
+$('briDown').onclick = () => step('brightness', -1);
+$('briUp').onclick = () => step('brightness', 1);
+$('left').onclick = () => step('offsetX', -1);
+$('right').onclick = () => step('offsetX', 1);
+$('up').onclick = () => step('offsetY', -1);
+$('down').onclick = () => step('offsetY', 1);
+/** Centres the blocks on the grid: shifts the offset by how far their bounding box is off centre. */
+$('center').onclick = () => {
+  let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
+  grid.forEach((c, i) => {
+    if (!c) return;
+    const x = i % size.width;
+    const y = Math.floor(i / size.width);
+    minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+  });
+  if (maxX < 0) return;
+  current.offsetX = (current.offsetX || 0) + Math.round((size.width - 1 - maxX - minX) / 2);
+  current.offsetY = (current.offsetY || 0) + Math.round((size.height - 1 - maxY - minY) / 2);
+  showNumbers();
+  changed();
+};
 
 $('width').oninput = () => { if (locked) $('height').value = Math.max(4, Math.round(Number($('width').value) * aspect)); changed(); };
 $('height').oninput = () => { if (locked) $('width').value = Math.max(4, Math.round(Number($('height').value) / aspect)); changed(); };
 $('lock').onclick = () => { locked = !locked; $('lock').textContent = locked ? '🔗' : '⛓️‍💥'; aspect = Number($('height').value) / Number($('width').value); };
 for (const id of ['name', 'colors', 'background']) $(id).oninput = changed;
-$('palette').onchange = () => { showSwatches(); changed(); };
+$('palette').onchange = () => { current.palette = $('palette').value; showSwatches(); changed(); };
 
 $('save').onclick = async () => {
   try {
@@ -242,7 +564,7 @@ $('save').onclick = async () => {
 };
 
 $('delete').onclick = async () => {
-  if (!confirm(`Remove "${selected.name}" from the game? (Its picture moves to raw-assets/pictures/removed.)`)) return;
+  if (!confirm(`Remove "${selected.name}" from the game?${selected.source ? ' (Its picture moves to raw-assets/pictures/removed.)' : ''}`)) return;
   try {
     await api('/api/delete', { id: selected.id });
     selected = null;
@@ -252,13 +574,16 @@ $('delete').onclick = async () => {
   } catch (err) { toast(err.message); }
 };
 
+// ---------- new levels ----------
+
+const idFrom = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
 $('add').onclick = () => $('file').click();
 $('file').onchange = async () => {
   const file = $('file').files[0];
   $('file').value = '';
   if (!file) return;
-  const suggested = file.name.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const id = prompt('Level id (lower-case, no spaces):', suggested);
+  const id = prompt('Level id (lower-case, no spaces):', idFrom(file.name.replace(/\.[^.]+$/, '')));
   if (!id) return;
   const data = await new Promise((resolve) => {
     const reader = new FileReader();
@@ -269,6 +594,19 @@ $('file').onchange = async () => {
     await api('/api/upload', { id, filename: file.name, data });
     toast('Added at the end — tune it, then Save');
     await load(id);
+  } catch (err) { toast(err.message); }
+};
+
+$('draw').onclick = async () => {
+  const id = prompt('Level id for the drawing (lower-case, no spaces):');
+  if (!id) return;
+  const answer = prompt('Size (width x height, 4–64):', '16x16');
+  if (!answer) return;
+  const [width, height] = answer.split(/[x× ,]+/).map(Number);
+  try {
+    await api('/api/create', { id: idFrom(id), width, height: height || width });
+    toast('Added at the end — draw it with the master palette, then Save');
+    await load(idFrom(id));
   } catch (err) { toast(err.message); }
 };
 

@@ -3,7 +3,9 @@
     "name": "Strawberry",
     "width": 18,
     "height": 18,
-    "colors": 4
+    "colors": 4,
+    "palette": "candy",
+    "background": "auto"
   },
   "mushroom": {
     "name": "Mushroom",

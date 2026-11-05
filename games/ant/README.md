@@ -60,27 +60,44 @@ Progress (the level reached) is saved in `localStorage` (`ant.save`).
 
 With `GAME=ant` in `.env`, `npm run editor` opens a local page (`web/server.mjs` + `web/public/index.html`):
 
+- **Master palette** (top left): the game's tones (`raw-assets/pictures/palette.json`). Click a swatch to change it,
+  × to remove one, ＋ to add one; Saturation / Brightness −/＋ shift them all. The level being tuned previews the change
+  at once; **Apply to all levels** saves it and rebuilds every level on the Master palette in the new tones.
 - **Play order**: every level as a card (its picture in the game, size, pixels, colours); drag to reorder (saved at
   once to `levels/index.json`).
-- **Add a picture…**: a `.png` / `.jpg` / `.webp` / `.svg` from disk becomes a new level at the end (cozy palette,
-  background removed when it's solid), ready to tune.
-- **Tuning a level**: the source picture next to a **live** preview of the pixels. Name; width × height (proportions
-  locked or not); the most colours; the **palette** its colours snap to (none / cozy / candy / garden / sea / night —
-  a few friendly colours, never too many); the **background** (auto: removed when the picture has no transparency of
-  its own; remove; keep). Pixels and colours used are counted as you go. **Save** writes the level, its preview and
-  its settings; **Delete** takes it out of the game (its picture moves to `raw-assets/pictures/removed`).
+- **Add a picture…**: a `.png` / `.jpg` / `.webp` / `.svg` from disk becomes a new level at the end (Master palette,
+  background removed when it's solid), ready to tune. **New drawing…**: an empty grid (any size up to 64 × 64) to
+  draw by hand with the master palette, no picture needed.
+- **Tuning a level**: the source picture next to the level as the game will show it, **live**, which you can draw on:
+  **Paint** (a palette colour, or any colour from the picker, snapped to the palette), **Erase** (no block there),
+  **Restore** (drops your edit on a cell); Undo (Ctrl/Cmd+Z), Clear edits. Edited cells show a dot. Then: name;
+  width × height (proportions locked or not); the most colours; the **palette** its colours snap to (**Master**,
+  a preset — cozy / candy / garden / sea / night — or none: its own); **saturation** and **brightness** steps
+  (applied to the picture before its colours are picked: +1 saturation is 15% more, +1 brightness 6% lighter);
+  the **background** (auto: removed when the picture has no transparency of its own; remove; keep); the **offset**
+  (arrows move the whole picture a cell, ◎ centres it). Pixels and colours used are counted as you go. **Save**
+  writes the level, its preview and its settings; **Delete** takes it out of the game (its picture moves to
+  `raw-assets/pictures/removed`).
+
+Hand edits are kept apart from the picture (`edits` in its settings), so they survive re-pixelating and palette
+changes, and move with the offset. They're stored by cell, so changing a picture's size can misplace them.
 
 Calm levels are small with few colours: a first level works well at about 18 × 18 with 4 colours and no background.
 
 ## Making levels — `tools/pixelate.mjs`
 
-Drop a picture (`.png`, `.jpg`, `.webp` or `.svg`) into `raw-assets/pictures/` and run `npm run ant:pixelate`:
+Drop a picture (`.png`, `.jpg`, `.webp` or `.svg`) into `raw-assets/pictures/` and run `npm run ant:pixelate` (it
+rebuilds every level, drawn ones too):
 
 1. The picture is sampled 8×8 times per cell of a small grid. Transparent parts are **empty** (no block, a `.` in the
    level's rows); a solid background can be removed (the colour round the border, flood-filled in from the edges).
-2. Its colours are reduced to a handful with k-means (deterministic: the same picture always makes the same level),
-   then snapped to the chosen palette, if any.
+2. Its colours get the saturation / brightness steps, then are reduced to a handful with k-means (deterministic: the
+   same picture always makes the same level) and snapped to the chosen palette — the master palette by default — by
+   the tone that *looks* closest (measured in OKLab), so in an all-red palette a green becomes the nearest red.
 3. Each cell takes the colour most of its samples are nearest to: crisp edges, no blended in-between colours.
+4. The hand edits go on top (snapped to the same palette), then the whole grid is shifted by the offset.
+
+A level drawn in the editor has no picture: just its settings, its size and its edits.
 
 The work is in `tools/pixelate-lib.mjs`, shared by the command line and the editor.
 
@@ -91,7 +108,8 @@ order; reorder that list by hand.
 Per-picture settings, in `raw-assets/pictures/pictures.json` (the editor writes them):
 
 ```json
-{ "mushroom": { "name": "Mushroom", "width": 22, "height": 22, "colors": 5, "palette": "cozy", "background": "auto" } }
+{ "mushroom": { "name": "Mushroom", "width": 22, "height": 22, "colors": 5, "palette": "master", "background": "auto",
+                "saturation": 1, "brightness": 0, "offsetX": 0, "offsetY": 1, "edits": { "10,3": ".", "11,3": "#f28b8b" } } }
 ```
 
 Bigger grids keep more detail (a strawberry's seeds need more than 22 × 22). Pictures with flat colours and clear
@@ -118,8 +136,10 @@ games/ant/
     world/Layout.ts      where everything goes, measured off the reference screen
     ui/AntHud.ts         restart (blue), "Level N", x2 (green), the celebration and the lost card (PIXI shapes and text)
   levels/                the levels (index.json = order) and their previews
-  raw-assets/pictures/   source pictures + pictures.json
-  tools/pixelate.mjs     picture -> level
+  raw-assets/pictures/   source pictures + pictures.json (settings) + palette.json (the master palette)
+  tools/pixelate-lib.mjs picture (or drawing) + settings + palette -> level
+  tools/pixelate.mjs     the command line over it
+  web/                   the level editor (server.mjs + public/index.html)
 ```
 
 ## Next steps (not in this first version)

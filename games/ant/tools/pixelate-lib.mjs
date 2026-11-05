@@ -1,33 +1,37 @@
-// pixelate-lib.mjs — a picture to an Ant level (used by tools/pixelate.mjs and the level editor, web/server.mjs).
+// pixelate-lib.mjs — builds Ant levels (used by tools/pixelate.mjs and the level editor, web/server.mjs).
 //
-// pixelate(file, settings) samples the picture SAMPLES x SAMPLES times per cell of a small grid, reduces the opaque
-// samples' colours to `colors` with k-means (deterministic), optionally snaps those to a palette (PALETTES: so
-// pictures keep to a few friendly colours), and gives each cell its samples' most common colour. A cell whose samples
-// are mostly transparent is empty ('.': no block). The background can be removed: `background: 'remove'` clears the
-// colour around the picture (the most common colour on its border, flood-filled in from the edges, within a tolerance)
-// so only the subject is left; 'auto' does that for a picture without transparency of its own; a hex colour fills
-// transparency instead; 'keep' (default) leaves the picture as it is.
-//
-// Returns the level (id, name, size, palette by use, rows of palette indices) and a crisp preview PNG.
+// buildLevel(file, id, settings, master) makes a level from a picture file — or from nothing, for a level drawn by hand
+// (`file` null: the grid starts empty and the edits draw it):
+//   1. The picture is sampled SAMPLES x SAMPLES times per cell of a small grid; its colours get the picture's
+//      `saturation` / `brightness` steps (each step +-15% saturation / +-6% lightness).
+//   2. The background can be removed: `background: 'remove'` clears the colour round the picture (the most common on
+//      its border, flood-filled in from the edges); 'auto' does that for a picture without transparency of its own;
+//      'keep' leaves it. Transparent parts are empty cells (no block: '.').
+//   3. The opaque samples' colours are reduced to `colors` with k-means (deterministic), then — `palette` — snapped to
+//      the game's MASTER palette ('master', its closest tones), a preset (PALETTES) or left as they are ('none').
+//      "Closest" is measured in OKLab, so it's the tone that looks nearest, not the nearest RGB numbers.
+//   4. Each cell takes its samples' most common colour.
+//   5. The hand edits go on top (`edits`: { "x,y": "#hex" } paints a cell, { "x,y": "." } empties it) — snapped to the
+//      same palette, so a palette change carries them along.
+//   6. The whole grid, edits and all, is shifted by `offsetX` / `offsetY` cells (what slides off the edge is gone).
+// Returns the level (id, name, size, palette by use, rows), the final grid (hex colours, null = empty: the editor's
+// paint canvas), the pixel count, and a crisp preview PNG.
 
 import sharp from 'sharp';
 
-/** Samples per cell, each way: a cell's colour is the most common of its SAMPLES^2. */
 const SAMPLES = 8;
-/** A sample this transparent (alpha below this) counts as empty. */
 const ALPHA_CUTOFF = 128;
-/** Colour indices as one character each (up to 36 colours); '.' = empty. */
 const DIGITS = '0123456789abcdefghijklmnopqrstuvwxyz';
-/** Background removal: how close (RGB distance) a colour must be to the border's to be cleared. */
 const BACKGROUND_TOLERANCE = 48;
-/** Preview: pixels this big, with a thin gap so the grid shows. */
 const PREVIEW_CELL = 16;
+/** One step of the colour adjustments. */
+const SATURATION_STEP = 0.15;
+const BRIGHTNESS_STEP = 0.06;
 
-export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'none', background: 'auto' };
+export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {} };
 
-/** Colour sets a picture can be snapped to (the editor's "Palette"): soft and friendly first. */
+/** Fixed colour sets a picture can use instead of the master palette. */
 export const PALETTES = {
-    none: [],
     cozy: ['#f28b8b', '#f7a8b8', '#ffe08a', '#f9c48f', '#9ed59a', '#6fb27a', '#8fbfe3', '#cfe3f2', '#b8a4d8', '#fdf0dc', '#fff4e4', '#d9a37e', '#7a5646', '#6d7fa8', '#ffffff', '#4a4a5a'],
     candy: ['#ff6b8b', '#ff9ec7', '#ffd166', '#06d6a0', '#4cc9f0', '#7b6cf6', '#c77dff', '#ffffff', '#2b2d42', '#ff8c42'],
     garden: ['#5fa35a', '#9ed59a', '#cfe8b5', '#f6d365', '#f28b8b', '#fdf0dc', '#a07850', '#6b4a2f', '#8fbfe3', '#ffffff'],
@@ -35,15 +39,73 @@ export const PALETTES = {
     night: ['#2b2d6e', '#4b4fa8', '#8f8fd8', '#ffe08a', '#fff4c2', '#ffffff', '#1a1a2e', '#f7a8b8', '#6fd3c8'],
 };
 
-const hex = (c) => `#${c.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
+const hex = (c) => `#${c.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('')}`;
 const parseHex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const distance2 = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+
+/** sRGB (0-255) to OKLab: distances there match how different two colours look. */
+function oklab([r, g, b]) {
+    const lin = (v) => {
+        const c = v / 255;
+        return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    const [R, G, B] = [lin(r), lin(g), lin(b)];
+    const l = Math.cbrt(0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B);
+    const m = Math.cbrt(0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B);
+    const s = Math.cbrt(0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B);
+    return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s, 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s];
+}
+
+/** The palette colour that looks closest to `c` (an RGB triple); returns its hex. */
+export function closest(c, palette) {
+    const lab = oklab(c);
+    let best = palette[0];
+    let bestDistance = Infinity;
+    for (const p of palette) {
+        const d = distance2(lab, oklab(parseHex(p)));
+        if (d < bestDistance) {
+            bestDistance = d;
+            best = p;
+        }
+    }
+    return best;
+}
+
+/** A colour with its saturation and lightness moved by `saturation` / `brightness` steps (HSL). */
+function adjust([r, g, b], saturation, brightness) {
+    if (!saturation && !brightness) return [r, g, b];
+    const R = r / 255;
+    const G = g / 255;
+    const B = b / 255;
+    const max = Math.max(R, G, B);
+    const min = Math.min(R, G, B);
+    let l = (max + min) / 2;
+    let s = max === min ? 0 : l > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min);
+    let h = 0;
+    if (max !== min) {
+        const d = max - min;
+        h = max === R ? (G - B) / d + (G < B ? 6 : 0) : max === G ? (B - R) / d + 2 : (R - G) / d + 4;
+        h /= 6;
+    }
+    s = Math.max(0, Math.min(1, s * (1 + saturation * SATURATION_STEP)));
+    l = Math.max(0, Math.min(1, l + brightness * BRIGHTNESS_STEP));
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    const channel = (t) => {
+        const u = t < 0 ? t + 1 : t > 1 ? t - 1 : t;
+        if (u < 1 / 6) return p + (q - p) * 6 * u;
+        if (u < 1 / 2) return q;
+        if (u < 2 / 3) return p + (q - p) * (2 / 3 - u) * 6;
+        return p;
+    };
+    return s === 0 ? [l * 255, l * 255, l * 255] : [channel(h + 1 / 3) * 255, channel(h) * 255, channel(h - 1 / 3) * 255];
+}
 
 /** k-means over colours: deterministic start (the most common, then the farthest, weighted), 30 rounds. */
 function kmeans(pixels, k) {
     const counts = new Map();
     for (const p of pixels) {
-        const key = p.join(',');
+        const key = p.map(Math.round).join(',');
         counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     const unique = [...counts.entries()].map(([key, n]) => ({ c: key.split(',').map(Number), n }));
@@ -80,15 +142,12 @@ function kmeans(pixels, k) {
     return centres;
 }
 
-/**
- * Clears the background: the most common colour on the sample grid's border, flood-filled in from the edges through
- * samples within BACKGROUND_TOLERANCE of it (so a colour inside the subject that happens to match stays).
- */
+/** Clears the background: the most common border colour, flood-filled in from the edges (within a tolerance). */
 function removeBackground(samples, opaque, width, height) {
     const border = new Map();
     const add = (i) => {
         if (!opaque[i]) return;
-        const key = samples[i].join(',');
+        const key = samples[i].map(Math.round).join(',');
         border.set(key, (border.get(key) ?? 0) + 1);
     };
     for (let x = 0; x < width; x++) {
@@ -128,42 +187,32 @@ function removeBackground(samples, opaque, width, height) {
     }
 }
 
-/** A picture file to a level ({ id, name, width, height, palette, rows }) and its preview PNG (a Buffer). */
-export async function pixelate(file, id, settings) {
-    const options = { ...DEFAULT_SETTINGS, name: id.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), ...settings };
-    const width = Math.max(4, Math.min(64, Math.round(options.width)));
-    const height = Math.max(4, Math.min(64, Math.round(options.height)));
-    const colors = Math.max(2, Math.min(16, Math.round(options.colors)));
+/** The colours a picture's settings snap to: the master palette, a preset, or none (its own). */
+function paletteFor(settings, master) {
+    if (settings.palette === 'master') return master;
+    return PALETTES[settings.palette] ?? [];
+}
+
+/** A picture file's cells as hex colours (or null: empty), from the settings; `file` null = an empty grid. */
+async function sampleGrid(file, width, height, settings, palette) {
+    const grid = new Array(width * height).fill(null);
+    if (!file) return grid;
     const sampleWidth = width * SAMPLES;
     const sampleHeight = height * SAMPLES;
-    let image = sharp(file, { density: 300 });
-    const fill = /^#[0-9a-f]{6}$/i.test(options.background) ? parseHex(options.background) : null;
-    if (fill) image = image.flatten({ background: { r: fill[0], g: fill[1], b: fill[2] } });
     const meta = await sharp(file, { density: 300 }).metadata();
-    const { data } = await image.resize(sampleWidth, sampleHeight, { fit: 'fill', kernel: 'nearest' }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const { data } = await sharp(file, { density: 300 }).resize(sampleWidth, sampleHeight, { fit: 'fill', kernel: 'nearest' }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
     const samples = [];
     const opaque = [];
     for (let i = 0; i < sampleWidth * sampleHeight; i++) {
-        samples.push([data[i * 4], data[i * 4 + 1], data[i * 4 + 2]]);
+        samples.push(adjust([data[i * 4], data[i * 4 + 1], data[i * 4 + 2]], settings.saturation ?? 0, settings.brightness ?? 0));
         opaque.push(data[i * 4 + 3] >= ALPHA_CUTOFF);
     }
-    // 'auto': a picture with transparency of its own keeps it; one without gets its background removed.
     const hasAlpha = meta.hasAlpha && opaque.some((o) => !o);
-    if (options.background === 'remove' || (options.background === 'auto' && !hasAlpha)) removeBackground(samples, opaque, sampleWidth, sampleHeight);
-
-    let centres = kmeans(samples.filter((_, i) => opaque[i]), colors);
-    // Snapped to the palette: each colour becomes the palette's nearest (two that land on the same one merge).
-    const palette = PALETTES[options.palette] ?? (Array.isArray(options.palette) ? options.palette : []);
-    if (palette.length) {
-        const snapped = new Map();
-        for (const c of centres) {
-            const near = palette.map(parseHex).reduce((best, p) => (distance2(p, c) < distance2(best, c) ? p : best));
-            snapped.set(near.join(','), near);
-        }
-        centres = [...snapped.values()];
-    }
+    if (settings.background === 'remove' || (settings.background === 'auto' && !hasAlpha)) removeBackground(samples, opaque, sampleWidth, sampleHeight);
+    const centres = kmeans(samples.filter((_, i) => opaque[i]), Math.max(2, Math.min(16, Math.round(settings.colors))));
+    // Each centre as its final colour: snapped to the palette (closest tone), or itself.
+    const finals = centres.map((c) => (palette.length ? closest(c, palette) : hex(c)));
     const nearest = (p) => centres.reduce((best, c, i) => (distance2(p, c) < distance2(p, centres[best]) ? i : best), 0);
-    const indices = [];
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const votes = new Array(centres.length).fill(0);
@@ -175,20 +224,66 @@ export async function pixelate(file, id, settings) {
                     else empty++;
                 }
             }
-            indices.push(!centres.length || empty * 2 > SAMPLES * SAMPLES ? -1 : votes.indexOf(Math.max(...votes)));
+            // Two centres snapped to the same palette colour vote together.
+            const byColour = new Map();
+            votes.forEach((v, i) => byColour.set(finals[i], (byColour.get(finals[i]) ?? 0) + v));
+            if (!centres.length || empty * 2 > SAMPLES * SAMPLES) continue;
+            grid[x + y * width] = [...byColour.entries()].sort((a, b) => b[1] - a[1])[0][0];
         }
     }
-    // Unused colours go; the palette is ordered by use (most first).
-    const usage = centres.map((_, i) => indices.filter((n) => n === i).length);
-    const order = centres.map((_, i) => i).filter((i) => usage[i] > 0).sort((a, b) => usage[b] - usage[a]);
-    const remap = new Map(order.map((old, i) => [old, i]));
-    const levelPalette = order.map((i) => hex(centres[i]));
+    return grid;
+}
+
+/** The grid shifted by (dx, dy) cells: what slides off is gone, what slides in is empty. */
+function shift(grid, width, height, dx, dy) {
+    if (!dx && !dy) return grid;
+    const out = new Array(width * height).fill(null);
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const tx = x + dx;
+            const ty = y + dy;
+            if (tx >= 0 && ty >= 0 && tx < width && ty < height) out[tx + ty * width] = grid[x + y * width];
+        }
+    }
+    return out;
+}
+
+/** A grid of hex colours (null = empty) as a level's palette (by use) and rows. */
+function toLevel(grid, width, height) {
+    const usage = new Map();
+    for (const c of grid) if (c) usage.set(c, (usage.get(c) ?? 0) + 1);
+    const palette = [...usage.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c);
     const rows = [];
     for (let y = 0; y < height; y++) {
-        rows.push(indices.slice(y * width, (y + 1) * width).map((n) => (n < 0 ? '.' : DIGITS[remap.get(n)])).join(''));
+        let row = '';
+        for (let x = 0; x < width; x++) {
+            const c = grid[x + y * width];
+            row += c ? DIGITS[palette.indexOf(c)] : '.';
+        }
+        rows.push(row);
     }
+    return { palette, rows };
+}
+
+/**
+ * Builds a level from a picture `file` (null for a level drawn by hand) with `settings` (DEFAULT_SETTINGS) and the
+ * game's `master` palette.
+ */
+export async function buildLevel(file, id, settings, master) {
+    const options = { ...DEFAULT_SETTINGS, name: id.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), ...settings };
+    const width = Math.max(4, Math.min(64, Math.round(options.width)));
+    const height = Math.max(4, Math.min(64, Math.round(options.height)));
+    const palette = paletteFor(options, master);
+    const grid = await sampleGrid(file, width, height, options, palette);
+    for (const [key, value] of Object.entries(options.edits ?? {})) {
+        const [x, y] = key.split(',').map(Number);
+        if (!(x >= 0 && y >= 0 && x < width && y < height)) continue;
+        grid[x + y * width] = value === '.' || !value ? null : palette.length ? closest(parseHex(value), palette) : value;
+    }
+    const shifted = shift(grid, width, height, Math.round(options.offsetX ?? 0), Math.round(options.offsetY ?? 0));
+    const { palette: levelPalette, rows } = toLevel(shifted, width, height);
     const level = { id, name: options.name, width, height, palette: levelPalette, rows };
-    return { level, preview: await previewPng(level), pixels: indices.filter((n) => n >= 0).length };
+    return { level, grid: shifted, preview: await previewPng(level), pixels: shifted.filter(Boolean).length };
 }
 
 /** A level drawn big: each pixel a PREVIEW_CELL square in its colour (2px gaps), empty cells left dark. */

@@ -1,11 +1,15 @@
 // Ant level editor server — `npm run editor` with GAME=ant (tools/editor/run-editor.mjs starts it).
 //
 // Serves the editor page (web/public) and a small JSON API over the game's level files:
-//   GET  /api/levels           every level in play order (levels/index.json) with its settings and stats, + PALETTES
-//   POST /api/preview          { id, settings } -> a pixelated preview (not saved): PNG data URL, pixels, palette
+//   GET  /api/levels           every level in play order (levels/index.json) with its settings and stats, + the
+//                              preset PALETTES and the master palette (raw-assets/pictures/palette.json)
+//   POST /api/preview          { id, settings, master? } -> the level built (not saved): PNG data URL, pixels, palette,
+//                              its grid (hex colours, null = empty: the paint canvas); `master` tries a palette unsaved
 //   POST /api/save             { id, settings } -> writes levels/<id>.json, its preview, and pictures.json's settings
+//   POST /api/palette          { colors } -> saves the master palette and rebuilds every level that uses it
 //   POST /api/order            { levels: [ids] } -> levels/index.json
 //   POST /api/upload           { id, filename, data (base64) } -> a new picture in raw-assets/pictures, pixelated, last
+//   POST /api/create           { id, width, height } -> a new empty level to draw (no picture), last
 //   POST /api/delete           { id } -> out of the game (the source picture moves to raw-assets/pictures/removed)
 //   GET  /previews/<id>.png, /sources/<file>
 // The game (vite dev server) picks the level files up on its own. The page opens in the browser on start (NO_OPEN=1 to
@@ -17,13 +21,14 @@ import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { pixelate, PALETTES, DEFAULT_SETTINGS } from '../tools/pixelate-lib.mjs';
+import { buildLevel, PALETTES, DEFAULT_SETTINGS } from '../tools/pixelate-lib.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const PUBLIC = path.join(__dirname, 'public');
 const PICTURES = path.join(ROOT, 'raw-assets/pictures');
 const SETTINGS_FILE = path.join(PICTURES, 'pictures.json');
+const PALETTE_FILE = path.join(PICTURES, 'palette.json');
 const LEVELS = path.join(ROOT, 'levels');
 const PREVIEWS = path.join(LEVELS, 'previews');
 const INDEX = path.join(LEVELS, 'index.json');
@@ -42,6 +47,9 @@ const writeJson = (file, data) => fs.writeFile(file, `${JSON.stringify(data, nul
 /** The source picture of a level (its file in raw-assets/pictures), or undefined. */
 const sourceOf = (id) => fsSync.readdirSync(PICTURES).find((f) => IMAGE.test(f) && path.parse(f).name === id);
 const validId = (id) => typeof id === 'string' && /^[a-z0-9][a-z0-9-_]*$/.test(id);
+const titleOf = (id) => id.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const HEX = /^#[0-9a-f]{6}$/i;
+const readMaster = async () => (await readJson(PALETTE_FILE, { colors: [] })).colors;
 
 async function listLevels() {
     const index = await readJson(INDEX, { levels: [] });
@@ -56,14 +64,14 @@ async function listLevels() {
             settings: { ...DEFAULT_SETTINGS, name: level.name, ...settings[id] }, source: sourceOf(id),
         });
     }
-    return { levels, palettes: PALETTES };
+    return { levels, palettes: PALETTES, master: await readMaster() };
 }
 
-/** Pixelates a level's source with `settings`; `save` writes the level, its preview and its settings. */
-async function run(id, settings, save) {
+/** Builds a level from its picture (none: drawn by hand) with `settings`; `save` writes the level, its preview and its
+ *  settings. `master` overrides the saved master palette (trying one out). */
+async function run(id, settings, save, master) {
     const source = sourceOf(id);
-    if (!source) throw new Error(`No picture for ${id} in raw-assets/pictures`);
-    const result = await pixelate(path.join(PICTURES, source), id, settings);
+    const result = await buildLevel(source ? path.join(PICTURES, source) : null, id, settings, master ?? (await readMaster()));
     if (save) {
         await fs.mkdir(PREVIEWS, { recursive: true });
         await writeJson(path.join(LEVELS, `${id}.json`), result.level);
@@ -72,13 +80,35 @@ async function run(id, settings, save) {
         all[id] = settings;
         await writeJson(SETTINGS_FILE, all);
     }
-    return { png: `data:image/png;base64,${result.preview.toString('base64')}`, pixels: result.pixels, palette: result.level.palette, width: result.level.width, height: result.level.height };
+    return { png: `data:image/png;base64,${result.preview.toString('base64')}`, pixels: result.pixels, palette: result.level.palette, width: result.level.width, height: result.level.height, grid: result.grid };
+}
+
+/** Adds a level at the end of the play order. */
+async function append(id) {
+    const index = await readJson(INDEX, { levels: [] });
+    if (!index.levels.includes(id)) index.levels.push(id);
+    await writeJson(INDEX, index);
 }
 
 const api = {
     'GET /api/levels': () => listLevels(),
-    'POST /api/preview': ({ id, settings }) => run(id, settings, false),
+    'POST /api/preview': ({ id, settings, master }) => run(id, settings, false, Array.isArray(master) ? master.filter((c) => HEX.test(c)) : undefined),
     'POST /api/save': ({ id, settings }) => run(id, settings, true),
+    'POST /api/palette': async ({ colors }) => {
+        if (!Array.isArray(colors) || !colors.length || !colors.every((c) => HEX.test(c))) throw new Error('The palette needs at least one #rrggbb colour');
+        const file = await readJson(PALETTE_FILE, {});
+        await writeJson(PALETTE_FILE, { ...file, colors: colors.map((c) => c.toLowerCase()) });
+        // Every level on the master palette is rebuilt in the new tones.
+        const all = await readJson(SETTINGS_FILE, {});
+        const rebuilt = [];
+        for (const id of (await readJson(INDEX, { levels: [] })).levels) {
+            const settings = { ...DEFAULT_SETTINGS, name: titleOf(id), ...all[id] };
+            if (settings.palette !== 'master') continue;
+            await run(id, all[id] ?? settings, true);
+            rebuilt.push(id);
+        }
+        return { rebuilt };
+    },
     'POST /api/order': async ({ levels }) => {
         const known = (await readJson(INDEX, { levels: [] })).levels;
         // Only reorders: every level stays, none is added by mistake.
@@ -92,11 +122,15 @@ const api = {
         if (!IMAGE.test(ext)) throw new Error('A .png, .jpg, .webp or .svg picture');
         if (sourceOf(id)) throw new Error(`There's already a picture called ${id}`);
         await fs.writeFile(path.join(PICTURES, `${id}${ext}`), Buffer.from(data, 'base64'));
-        const settings = { ...DEFAULT_SETTINGS, name: id.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), palette: 'cozy' };
-        await run(id, settings, true);
-        const index = await readJson(INDEX, { levels: [] });
-        if (!index.levels.includes(id)) index.levels.push(id);
-        await writeJson(INDEX, index);
+        await run(id, { ...DEFAULT_SETTINGS, name: titleOf(id) }, true);
+        await append(id);
+        return { ok: true };
+    },
+    'POST /api/create': async ({ id, width, height }) => {
+        if (!validId(id)) throw new Error('Id: lower-case letters, digits, - or _');
+        if (sourceOf(id) || fsSync.existsSync(path.join(LEVELS, `${id}.json`))) throw new Error(`There's already a level called ${id}`);
+        await run(id, { ...DEFAULT_SETTINGS, name: titleOf(id), width: Number(width) || 16, height: Number(height) || 16 }, true);
+        await append(id);
         return { ok: true };
     },
     'POST /api/delete': async ({ id }) => {
