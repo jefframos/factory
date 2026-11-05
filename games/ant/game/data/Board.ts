@@ -2,8 +2,8 @@
 //
 // The game's rules, with no drawing: the picture as a grid of colours that ants eat away.
 //
-// - A pixel is **exposed** when it's on the picture's bottom edge or next to (left, right, above or below) a pixel
-//   already taken: the picture is eaten from the bottom, inwards, the way the ants come up from the anthill.
+// - A pixel is **exposed** when it's on the picture's edge (any side: the ants walk round the tray) or next to (left,
+//   right, above or below) a pixel already taken: the picture is eaten from its outline inwards.
 // - An ant takes one exposed pixel of its colour; it **claims** it first (so two ants never go for the same one) and
 //   it's gone once the ant reaches it, which may expose the ones around it.
 //
@@ -35,12 +35,12 @@ export class Board {
         return new Board(this.width, this.height, this.colors);
     }
 
-    /** Bottom edge, or next to a pixel already taken. */
+    /** On the picture's edge, or next to a pixel already taken. */
     public exposed(i: number): boolean {
         if (this.colors[i] < 0) return false;
         const x = i % this.width;
         const y = Math.floor(i / this.width);
-        if (y === this.height - 1) return true;
+        if (this.onEdge(i)) return true;
         return (x > 0 && this.colors[i - 1] < 0) || (x < this.width - 1 && this.colors[i + 1] < 0)
             || (y > 0 && this.colors[i - this.width] < 0) || this.colors[i + this.width] < 0;
     }
@@ -86,6 +86,61 @@ export class Board {
             frontier = [...next];
         }
         return order;
+    }
+
+    /** On the picture's outline (any side). */
+    public onEdge(i: number): boolean {
+        const x = i % this.width;
+        const y = Math.floor(i / this.width);
+        return x === 0 || y === 0 || x === this.width - 1 || y === this.height - 1;
+    }
+
+    /**
+     * The way from a pixel out of the picture, as straight as it can be: straight down when every cell under it is
+     * taken; else the shortest straight line out to another side; else the shortest way through cells already taken to
+     * the outline (every taken cell was exposed when it went, so they always connect to it). Returns the cells from the
+     * pixel to an outline cell, the pixel first — just the pixel when it's on the outline itself.
+     */
+    public pathOut(pixel: number): number[] {
+        if (this.onEdge(pixel)) return [pixel];
+        const straight = [this.width, -1, 1, -this.width]
+            .map((step) => this.straightOut(pixel, step))
+            .filter((line): line is number[] => !!line);
+        // Down first (the way to the anthill), then the shortest.
+        if (straight.length) return straight.find((line) => line[1] === pixel + this.width) ?? straight.sort((a, b) => a.length - b.length)[0];
+        const came = new Map<number, number>([[pixel, -1]]);
+        const queue = [pixel];
+        let exit = -1;
+        while (queue.length) {
+            const i = queue.shift()!;
+            if (this.onEdge(i)) {
+                exit = i;
+                break;
+            }
+            for (const n of this.neighbours(i)) {
+                if (came.has(n) || this.colors[n] >= 0) continue;
+                came.set(n, i);
+                queue.push(n);
+            }
+        }
+        if (exit < 0) return [pixel];
+        const path: number[] = [];
+        for (let i = exit; i >= 0; i = came.get(i)!) path.push(i);
+        return path.reverse();
+    }
+
+    /** The cells from a pixel straight to the outline in one direction (`step`), if every one after it is taken. */
+    private straightOut(pixel: number, step: number): number[] | undefined {
+        const line = [pixel];
+        let i = pixel;
+        while (!this.onEdge(i)) {
+            const x = i % this.width;
+            if ((step === -1 && x === 0) || (step === 1 && x === this.width - 1)) break;
+            i += step;
+            if (this.colors[i] >= 0) return undefined;
+            line.push(i);
+        }
+        return line;
     }
 
     private neighbours(i: number): number[] {

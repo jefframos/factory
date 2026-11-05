@@ -1,12 +1,15 @@
 // AntHud.ts
 //
-// The 2D layer over the board: the level's number and name at the top, a 2x speed toggle, a restart button, and the end-of-level card
-// ("Picture done!" with NEXT, or "No moves left" with TRY AGAIN). Drawn with plain shapes and text for now (no atlas).
+// The 2D layer over the board, laid out like the reference: restart (blue, top-left), "Level N" (top), x2 (green,
+// top-right), the
+// celebration when a picture is done (celebrate(): turning rays, confetti, the finished picture, three stars, NEXT) and
+// the card when it's lost ("No moves left" with TRY AGAIN). Drawn with plain shapes and text for now (no atlas).
 // Laid out on the visible screen (Game.overlayScreenData), so it hugs the edges on any aspect.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
+import { LevelData, pixelsOf } from '../data/Levels';
 
 const FONT = 'Arial Rounded MT Bold, Arial Black, Arial, sans-serif';
 const BROWN = 0x6b3f22;
@@ -40,20 +43,31 @@ function button(text: string, color: number, width: number, onTap: () => void): 
 }
 
 export class AntHud extends PIXI.Container {
-    private readonly title = label('', 34);
+    /** "Level N": the reference's plain brown title. */
+    private readonly title = new PIXI.Text('', { fontFamily: FONT, fontSize: 46, fill: 0x7b4a28, fontWeight: '900', lineJoin: 'round' });
     private readonly restart: PIXI.Container;
     /** The 2x speed toggle (Game.timeScale), green while on. */
     private readonly speed = new PIXI.Container();
     private readonly speedBack = new PIXI.Graphics();
     private readonly card = new PIXI.Container();
     private readonly dim = new PIXI.Graphics();
+    /** The celebration's turning rays and falling confetti (behind / over the card). */
+    private readonly rays = new PIXI.Container();
+    private readonly confetti = new PIXI.Container();
 
     /** `onRestart` from the restart button. */
     public constructor(private readonly onRestart: () => void) {
         super();
+        this.title.anchor.set(0.5);
+        // A blue rounded square with a white rim, the reference's top-left button (here: restart the level).
         this.restart = new PIXI.Container();
-        const disc = new PIXI.Graphics().beginFill(0x8a5530).drawCircle(0, 4, 32).endFill().beginFill(0xb0784a).drawCircle(0, 0, 32).endFill();
-        this.restart.addChild(disc, label('↻', 40));
+        const square = new PIXI.Graphics()
+            .beginFill(0x1f3f8a).drawRoundedRect(-32, -28, 64, 64, 16).endFill()
+            .beginFill(0xffffff).drawRoundedRect(-32, -32, 64, 62, 16).endFill()
+            .beginFill(0x4a78d8).drawRoundedRect(-27, -27, 54, 52, 12).endFill();
+        const icon = label('↻', 36);
+        icon.y = -2;
+        this.restart.addChild(square, icon);
         this.restart.eventMode = 'static';
         this.restart.cursor = 'pointer';
         this.restart.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
@@ -66,13 +80,16 @@ export class AntHud extends PIXI.Container {
         this.dim.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         this.dim.visible = false;
         this.card.visible = false;
-        this.addChild(this.title, this.speed, this.restart, this.dim, this.card);
+        this.rays.visible = false;
+        this.addChild(this.title, this.speed, this.restart, this.dim, this.rays, this.card, this.confetti);
         this.reposition();
     }
 
-    /** "▶▶ 2x": doubles the game's speed (every update's delta: Game.timeScale) until tapped again. */
+    /** "▶▶ x2" (the reference's green pill): doubles the game's speed (every update's delta: Game.timeScale) until tapped again. */
     private buildSpeed(): void {
-        const text = label('▶▶ 2x', 26);
+        const text = label('▶▶ x2', 26);
+        text.style.stroke = 0x2f6e1f;
+        text.y = -3;
         this.speed.addChild(this.speedBack, text);
         this.drawSpeed();
         this.speed.eventMode = 'static';
@@ -87,14 +104,16 @@ export class AntHud extends PIXI.Container {
     }
 
     private drawSpeed(): void {
+        // Green with a white rim like the reference; brighter (and lit) while it's on.
         const on = Game.timeScale > 1;
         this.speedBack.clear()
-            .beginFill(on ? 0x3f9a3d : 0x8a5530).drawRoundedRect(-62, -26, 124, 56, 26).endFill()
-            .beginFill(on ? 0x58c35a : 0xb0784a).drawRoundedRect(-62, -30, 124, 56, 26).endFill();
+            .beginFill(0x2f7a24).drawRoundedRect(-66, -28, 132, 62, 18).endFill()
+            .beginFill(0xffffff).drawRoundedRect(-66, -32, 132, 60, 18).endFill()
+            .beginFill(on ? 0x8ff05a : 0x5cc23a).drawRoundedRect(-61, -27, 122, 50, 14).endFill();
     }
 
-    public setLevel(number: number, name: string): void {
-        this.title.text = `LEVEL ${number} · ${name.toUpperCase()}`;
+    public setLevel(number: number): void {
+        this.title.text = `Level ${number}`;
     }
 
     /** The end-of-level card: `won` shows NEXT, otherwise TRY AGAIN; `onButton` from its button. */
@@ -121,23 +140,137 @@ export class AntHud extends PIXI.Container {
         gsap.fromTo(this.dim, { alpha: 0 }, { alpha: 1, duration: 0.3 });
     }
 
+    /**
+     * A picture is done: the screen dims behind slowly turning golden rays, confetti in the picture's colours bursts
+     * over it, and the card pops in — LEVEL COMPLETE!, the finished picture, three stars landing one after another, NEXT.
+     */
+    public celebrate(level: LevelData, onNext: () => void): void {
+        this.card.removeChildren().forEach((child) => child.destroy({ children: true }));
+        const back = new PIXI.Graphics()
+            .beginFill(0x8a5530).drawRoundedRect(-250, -300, 500, 610, 40).endFill()
+            .beginFill(0xfff4e6).drawRoundedRect(-250, -308, 500, 606, 40).endFill();
+        const heading = label('LEVEL COMPLETE!', 50, 0xffd23f);
+        heading.y = -248;
+        const picture = this.miniPicture(level, 300);
+        picture.y = -50;
+        const name = label(level.name.toUpperCase(), 28, BROWN);
+        name.style.stroke = 0xffffff;
+        name.style.strokeThickness = 6;
+        name.y = 126;
+        const stars = new PIXI.Container();
+        stars.y = -180;
+        [-1, 0, 1].forEach((n, i) => {
+            const star = this.star(n === 0 ? 46 : 36);
+            star.position.set(n * 96, n === 0 ? -6 : 8);
+            star.scale.set(0);
+            stars.addChild(star);
+            gsap.to(star.scale, { x: 1, y: 1, duration: 0.45, delay: 0.35 + i * 0.22, ease: 'back.out(3)' });
+        });
+        const next = button('NEXT', 0x58c35a, 280, () => {
+            this.hideResult();
+            onNext();
+        });
+        next.y = 222;
+        this.card.addChild(back, heading, stars, picture, name, next);
+        this.dim.visible = true;
+        this.card.visible = true;
+        gsap.fromTo(this.card.scale, { x: 0.5, y: 0.5 }, { x: 1, y: 1, duration: 0.5, ease: 'back.out(1.8)' });
+        gsap.fromTo(this.dim, { alpha: 0 }, { alpha: 1, duration: 0.3 });
+        this.showRays();
+        this.burstConfetti(level.palette);
+    }
+
+    /** The finished picture, `size` px across its longer side: one rounded square per pixel. */
+    private miniPicture(level: LevelData, size: number): PIXI.Container {
+        const holder = new PIXI.Container();
+        const pixels = pixelsOf(level);
+        const cell = size / Math.max(level.width, level.height);
+        const width = cell * level.width;
+        const height = cell * level.height;
+        const g = new PIXI.Graphics();
+        g.beginFill(0xd9b79a).drawRoundedRect(-width / 2 - 12, -height / 2 - 12, width + 24, height + 24, 18).endFill();
+        for (let i = 0; i < pixels.length; i++) {
+            const x = -width / 2 + (i % level.width) * cell;
+            const y = -height / 2 + Math.floor(i / level.width) * cell;
+            g.beginFill(new PIXI.Color(level.palette[pixels[i]]).toNumber()).drawRoundedRect(x + 0.5, y + 0.5, cell - 1, cell - 1, cell * 0.25).endFill();
+        }
+        holder.addChild(g);
+        return holder;
+    }
+
+    /** A gold star with a darker rim. */
+    private star(radius: number): PIXI.Graphics {
+        const points = (r: number) => Array.from({ length: 10 }, (_, i) => {
+            const a = -Math.PI / 2 + (i * Math.PI) / 5;
+            const d = i % 2 === 0 ? r : r * 0.46;
+            return [Math.cos(a) * d, Math.sin(a) * d];
+        }).flat();
+        return new PIXI.Graphics()
+            .beginFill(0xc98a12).drawPolygon(points(radius + 6)).endFill()
+            .beginFill(0xffd23f).drawPolygon(points(radius)).endFill();
+    }
+
+    /** Golden rays behind the card, turning slowly. */
+    private showRays(): void {
+        this.rays.removeChildren().forEach((child) => child.destroy());
+        const g = new PIXI.Graphics();
+        const count = 16;
+        for (let i = 0; i < count; i++) {
+            const a = (i / count) * Math.PI * 2;
+            const b = a + Math.PI / count;
+            g.beginFill(0xffe27a, 0.22).moveTo(0, 0).lineTo(Math.cos(a) * 900, Math.sin(a) * 900).lineTo(Math.cos(b) * 900, Math.sin(b) * 900).closePath().endFill();
+        }
+        this.rays.addChild(g);
+        this.rays.visible = true;
+        gsap.fromTo(this.rays, { alpha: 0 }, { alpha: 1, duration: 0.5 });
+        gsap.to(this.rays, { rotation: Math.PI * 2, duration: 24, ease: 'none', repeat: -1 });
+    }
+
+    /** Confetti in the picture's colours (and gold), bursting up from the card and fluttering down. */
+    private burstConfetti(palette: string[]): void {
+        const colors = [...palette.map((hex) => new PIXI.Color(hex).toNumber()), 0xffd23f, 0xffffff];
+        const screen = Game.overlayScreenData;
+        const floor = screen ? screen.topLeft.y + screen.height + 40 : 1200;
+        for (let n = 0; n < 90; n++) {
+            const piece = new PIXI.Graphics().beginFill(colors[n % colors.length]).drawRect(-6, -4, 12, 8).endFill();
+            piece.position.set(this.card.x, this.card.y - 120);
+            piece.rotation = Math.random() * Math.PI;
+            this.confetti.addChild(piece);
+            const angle = -Math.PI / 2 + (Math.random() - 0.5) * 2.4;
+            const speed = 380 + Math.random() * 420;
+            const upX = piece.x + Math.cos(angle) * speed;
+            const upY = piece.y + Math.sin(angle) * speed;
+            gsap.timeline({ onComplete: () => piece.destroy() })
+                .to(piece, { x: upX, y: upY, duration: 0.55, ease: 'power2.out' })
+                .to(piece, { x: upX + (Math.random() - 0.5) * 160, y: floor, duration: 1.8 + Math.random() * 1.2, ease: 'power1.in' })
+                .to(piece, { rotation: piece.rotation + (Math.random() - 0.5) * 18, duration: 2.6, ease: 'none' }, 0);
+        }
+    }
+
     public hideResult(): void {
         this.dim.visible = false;
         this.card.visible = false;
+        this.rays.visible = false;
+        gsap.killTweensOf(this.rays);
+        this.confetti.children.forEach((piece) => gsap.killTweensOf(piece));
+        this.confetti.removeChildren().forEach((child) => child.destroy());
     }
 
     public reposition(): void {
         const screen = Game.overlayScreenData;
         if (!screen) return;
         this.title.position.set(screen.center.x, screen.topLeft.y + 52);
-        this.restart.position.set(screen.topLeft.x + screen.width - 52, screen.topLeft.y + 52);
-        this.speed.position.set(screen.topLeft.x + 82, screen.topLeft.y + 52);
+        // Restart top-left, the title in the middle, x2 top-right (the reference's corners).
+        this.restart.position.set(screen.topLeft.x + 52, screen.topLeft.y + 52);
+        this.speed.position.set(screen.topLeft.x + screen.width - 86, screen.topLeft.y + 52);
         this.card.position.set(screen.center.x, screen.center.y);
+        this.rays.position.set(screen.center.x, screen.center.y);
         this.dim.clear().beginFill(0x2a1a10, 0.45).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
     }
 
     public override destroy(): void {
         gsap.killTweensOf(this.card.scale);
+        this.hideResult();
         gsap.killTweensOf(this.speed.scale);
         gsap.killTweensOf(this.dim);
         super.destroy({ children: true });

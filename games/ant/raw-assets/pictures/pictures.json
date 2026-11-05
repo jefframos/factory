@@ -1,5 +1,5 @@
 {
-  "strawberry": { "name": "Strawberry", "width": 22, "height": 22, "colors": 5 },
-  "mushroom": { "name": "Mushroom", "width": 24, "height": 24, "colors": 6 },
-  "sunset": { "name": "Sunset", "width": 28, "height": 22, "colors": 6 }
+  "strawberry": { "name": "Strawberry", "width": 36, "height": 36, "colors": 5 },
+  "mushroom": { "name": "Mushroom", "width": 40, "height": 40, "colors": 6 },
+  "sunset": { "name": "Sunset", "width": 44, "height": 36, "colors": 6 }
 }

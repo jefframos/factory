@@ -1,11 +1,17 @@
 // AntScene.ts
 //
-// Ant's one scene: the board seen from above. The picture (PictureView) on its tray at the top, the anthill under it,
-// then the SLOT_COUNT slots and the tile columns (TileRack). Tapping a column's front tile slides it into a free slot;
-// from there its ants (AntSwarm), one per number on the tile, set off one after another, each to a pixel of the tile's
-// colour that's exposed (Board: on the bottom edge, or next to one already taken), carry it back and drop it down the
-// anthill. A tile whose colour has nothing exposed just waits in its slot — that's the puzzle: with every slot waiting on
-// a colour the ants can't reach yet, the level is lost; with the picture gone, it's won.
+// Ant's one scene: the board seen from above, laid out like the reference (Layout.ts): the picture (PictureView) on its
+// tray across the top, the anthill with its wooden lid under it, the SLOT_COUNT slots, then the tile columns
+// (TileRack). Tapping a column's front tile slides it onto a free slot; from there its ants (AntSwarm), one per number
+// on the tile, set off one after another, each to a pixel of the tile's colour that's exposed (Board: on the picture's
+// outline, or next to one already taken), carry it back and drop it down the anthill. A tile whose colour has nothing
+// exposed just waits in its slot — that's the puzzle: with every slot waiting on a colour the ants can't reach yet, the
+// level is lost; with the picture gone, it's won (AntHud.celebrate).
+//
+// Ants walk in straight lines, turning at right angles: up from their slot to the tray's rim, along the rim (round its
+// corners) to the side nearest their pixel, then in through the cells already eaten. Home, it's the reverse: out to the
+// nearest border (straight down when the way down is clear), along the rim to its bottom, straight down to the
+// anthill's row and across into it.
 //
 // The deck is dealt from the picture itself (Board.dealDeck), so taking the tiles in the order they come always works.
 
@@ -13,32 +19,27 @@ import * as THREE from 'three';
 import { Game } from 'core/Game';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import SetupThree from 'core/scene/SetupThree';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Board, dealDeck, hashString } from '../data/Board';
 import { LEVELS, LevelData, pixelsOf } from '../data/Levels';
 import { AntSave } from '../data/AntSave';
-import { PictureView } from '../world/PictureView';
+import { PictureView, TRAY_TOP } from '../world/PictureView';
 import { AntSwarm, Ant } from '../world/AntSwarm';
 import { TileRack, RackTile, SLOT_COUNT } from '../world/TileRack';
+import { LAYOUT } from '../world/Layout';
 import { AntHud } from '../ui/AntHud';
 
-/** The floor colour (warm sand), also the page's (index.html). */
-const FLOOR = 0xf2c9a3;
-/** The picture is fitted into this many world units across (and PICTURE_MAX_DEPTH down). */
-const PICTURE_WIDTH = 22;
-const PICTURE_MAX_DEPTH = 20;
-/** Gaps down the board: picture -> anthill -> slots -> tiles. */
-const HOLE_GAP = 3.2;
-const SLOTS_GAP = 3.9;
-const GRID_GAP = 5.2;
-const HOLE_RADIUS = 1.5;
+/** The floor's peach (also the page's: index.html). */
+const FLOOR = 0xf6c597;
 /** Seconds between two ants leaving the same slot. */
 const RELEASE_SEC = 0.09;
-/** An ant goes for one of the few exposed pixels nearest its slot (picked at random among these), so they spread out. */
+/** An ant goes for one of the few exposed pixels nearest its way in (picked at random among these), so they spread out. */
 const NEAREST_CHOICES = 4;
-/** Camera: field of view, tilt from straight down, and margin around the board. */
-const FOV = 30;
-const TILT_DEG = 12;
-const MARGIN = 1.06;
+/** An ant is about this many of the picture's pixels long. */
+const ANT_PIXELS = 2.6;
+/** Camera: field of view and tilt from straight down. */
+const FOV = 26;
+const TILT_DEG = 6;
 
 /** A tile in a slot: its ants still to send, and when the next leaves. */
 interface SlotState {
@@ -46,6 +47,27 @@ interface SlotState {
     color: number;
     left: number;
     timer: number;
+}
+
+/** The floor: the reference's soft peach checker, turned 45° into diamonds. */
+function floorTexture(): THREE.CanvasTexture {
+    const size = 256;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const g = canvas.getContext('2d')!;
+    g.fillStyle = '#f2b583';
+    g.fillRect(0, 0, size, size);
+    g.fillStyle = '#f5c294';
+    g.fillRect(0, 0, size / 2, size / 2);
+    g.fillRect(size / 2, size / 2, size / 2, size / 2);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(70, 70);
+    texture.rotation = Math.PI / 4;
+    texture.magFilter = THREE.LinearFilter;
+    texture.anisotropy = 4;
+    return texture;
 }
 
 export default class AntScene extends ThreeScene {
@@ -62,9 +84,8 @@ export default class AntScene extends ThreeScene {
     private ended = false;
     private readonly raycaster = new THREE.Raycaster();
     private readonly pointer = new THREE.Vector2();
-    private readonly from = new THREE.Vector3();
-    /** The board's extent (world units), for the camera. */
-    private readonly bounds = { minZ: 0, maxZ: 0, width: 0 };
+    /** The lane round the picture on its rim (world x / z of its sides), where ants walk. */
+    private readonly lane = { left: 0, right: 0, top: 0, bottom: 0 };
 
     public constructor(game: Game) {
         super(game);
@@ -72,13 +93,18 @@ export default class AntScene extends ThreeScene {
 
     public build(): void {
         this.threeScene.background = new THREE.Color(FLOOR);
-        this.threeScene.add(new THREE.HemisphereLight(0xffffff, 0xd8b090, 1.2));
-        const sun = new THREE.DirectionalLight(0xffffff, 1.5);
-        sun.position.set(6, 20, 10);
+        // A soft studio light to reflect: what gives the jelly cubes and tiles their shine.
+        const pmrem = new THREE.PMREMGenerator(SetupThree.renderer);
+        this.threeScene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+        this.threeScene.environmentIntensity = 0.3;
+        pmrem.dispose();
+        this.threeScene.add(new THREE.HemisphereLight(0xfff4ea, 0xc98f62, 0.75));
+        const sun = new THREE.DirectionalLight(0xffffff, 0.95);
+        sun.position.set(5, 30, 18);
         this.threeScene.add(sun);
-        const floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: FLOOR, roughness: 1 }));
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ map: floorTexture(), roughness: 1 }));
         floor.rotation.x = -Math.PI / 2;
-        floor.position.y = -0.55;
+        floor.position.set(0, -0.02, LAYOUT.screen.centreZ);
         this.threeScene.add(floor);
         this.buildHole();
         this.threeCamera.fov = FOV;
@@ -89,15 +115,25 @@ export default class AntScene extends ThreeScene {
         this.loadLevel(Math.min(AntSave.level, LEVELS.length - 1));
     }
 
-    /** The anthill: a dark opening ringed with packed earth. */
+    /** The anthill: a dark opening in a raised earth ring, its wooden lid set beside it. */
     private buildHole(): void {
-        const opening = new THREE.Mesh(new THREE.CircleGeometry(HOLE_RADIUS, 40), new THREE.MeshBasicMaterial({ color: 0x2e1a0e }));
+        const r = LAYOUT.holeRadius;
+        const opening = new THREE.Mesh(new THREE.CircleGeometry(r, 40), new THREE.MeshBasicMaterial({ color: 0x3a2213 }));
         opening.rotation.x = -Math.PI / 2;
-        opening.position.y = 0.02;
-        const rim = new THREE.Mesh(new THREE.TorusGeometry(HOLE_RADIUS + 0.15, 0.35, 12, 40), new THREE.MeshStandardMaterial({ color: 0xa8714a, roughness: 1 }));
+        opening.scale.y = 0.62;
+        opening.position.y = 0.03;
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(r, 0.22, 10, 40), new THREE.MeshStandardMaterial({ color: 0xb07a50, roughness: 1 }));
         rim.rotation.x = -Math.PI / 2;
-        rim.scale.z = 0.5;
-        this.hole.add(opening, rim);
+        rim.scale.set(1, 0.62, 0.6);
+        const lid = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.92, r * 0.98, 0.32, 40), new THREE.MeshStandardMaterial({ color: 0xd59a6c, roughness: 0.75 }));
+        lid.scale.z = 0.66;
+        lid.position.set(LAYOUT.lidX, 0.16, 0.15);
+        const grooves = new THREE.Mesh(new THREE.TorusGeometry(r * 0.6, 0.05, 6, 32), new THREE.MeshStandardMaterial({ color: 0xb37a4f }));
+        grooves.rotation.x = -Math.PI / 2;
+        grooves.scale.set(1, 0.66, 1);
+        grooves.position.set(LAYOUT.lidX, 0.33, 0.15);
+        this.hole.add(opening, rim, lid, grooves);
+        this.hole.position.set(0, 0, LAYOUT.holeZ);
         this.threeScene.add(this.hole);
     }
 
@@ -111,50 +147,49 @@ export default class AntScene extends ThreeScene {
         this.slots.fill(null);
         this.ended = false;
         this.hud.hideResult();
-        this.hud.setLevel(this.levelIndex + 1, this.level.name);
+        this.hud.setLevel(this.levelIndex + 1);
 
         const pixels = pixelsOf(this.level);
         this.board = new Board(this.level.width, this.level.height, pixels);
         this.palette.length = 0;
         this.level.palette.forEach((hex) => this.palette.push(new THREE.Color(hex)));
-        // Tiles of about 1/60 to 1/22 of the picture: a handful of rows per column.
-        const min = Math.max(6, Math.round(pixels.length / 60));
-        const max = Math.max(min + 6, Math.round(pixels.length / 22));
+        // Tiles of about 1/90 to 1/25 of the picture.
+        const min = Math.max(6, Math.round(pixels.length / 90));
+        const max = Math.max(min + 6, Math.round(pixels.length / 25));
         const deck = dealDeck(this.board, hashString(this.level.id), min, max);
 
-        const cell = Math.min(PICTURE_WIDTH / this.level.width, PICTURE_MAX_DEPTH / this.level.height);
-        this.picture = new PictureView(this.level, pixels, cell);
-        this.picture.group.position.set(-this.picture.width / 2, 0, 0);
-        this.threeScene.add(this.picture.group);
-        const holeZ = this.picture.depth + HOLE_GAP;
-        this.hole.position.set(0, 0, holeZ);
-        const slotsZ = holeZ + SLOTS_GAP;
-        this.rack = new TileRack(this.level.palette, deck, slotsZ, slotsZ + GRID_GAP);
+        const cell = Math.min(LAYOUT.pictureMax.width / this.level.width, LAYOUT.pictureMax.depth / this.level.height);
+        const picture = new PictureView(this.level, pixels, cell);
+        picture.group.position.set(-picture.width / 2, TRAY_TOP, LAYOUT.trayZ - picture.depth / 2);
+        this.picture = picture;
+        this.threeScene.add(picture.group);
+        // The ants' lane: the middle of the rim, all round.
+        const lane = LAYOUT.rim / 2;
+        this.lane.left = picture.group.position.x - lane;
+        this.lane.right = picture.group.position.x + picture.width + lane;
+        this.lane.top = picture.group.position.z - lane;
+        this.lane.bottom = picture.group.position.z + picture.depth + lane;
+
+        this.rack = new TileRack(this.level.palette, deck);
         this.threeScene.add(this.rack.group);
-        const picture = this.picture;
-        this.swarm = new AntSwarm(this.threeScene, cell * 1.1, this.hole.position.clone(), (x, z) => {
+        this.swarm = new AntSwarm(this.threeScene, cell * ANT_PIXELS * 0.9, cell * 0.88, (x, z) => {
+            if (!picture.onTray(x, z)) return 0;
             const i = picture.cellAt(x, z);
-            return i >= 0 && this.board.colors[i] >= 0 ? picture.blockTop : 0;
+            return TRAY_TOP + (i >= 0 && this.board.colors[i] >= 0 ? picture.blockTop : 0);
         }, (ant) => this.pickUp(ant), () => undefined);
-        this.bounds.minZ = -1.4;
-        this.bounds.maxZ = this.rack.bottom + 0.6;
-        this.bounds.width = Math.max(this.picture.width + 2.4, this.rack.width + 0.6);
         this.fitCamera();
     }
 
-    /** Frames the whole board, tilted a little so the blocks show their sides. */
+    /** Frames the reference screen (LAYOUT.screen), tilted a little so the blocks show their sides. */
     private fitCamera(): void {
         const camera = this.threeCamera;
         camera.aspect = window.innerWidth / Math.max(1, window.innerHeight);
         const half = THREE.MathUtils.degToRad(camera.fov / 2);
-        const depth = this.bounds.maxZ - this.bounds.minZ;
-        const distance = Math.max(depth / 2 / Math.tan(half), this.bounds.width / 2 / (Math.tan(half) * camera.aspect)) * MARGIN
-            // The HUD's title over the top of the board.
-            + 2;
+        const { width, height, centreZ } = LAYOUT.screen;
+        const distance = Math.max(height / 2 / Math.tan(half), width / 2 / (Math.tan(half) * camera.aspect));
         const tilt = THREE.MathUtils.degToRad(TILT_DEG);
-        const centre = (this.bounds.minZ + this.bounds.maxZ) / 2 - 0.8;
-        camera.position.set(0, Math.cos(tilt) * distance, centre + Math.sin(tilt) * distance);
-        camera.lookAt(0, 0, centre);
+        camera.position.set(0, Math.cos(tilt) * distance, centreZ + Math.sin(tilt) * distance);
+        camera.lookAt(0, 0, centreZ);
         camera.updateProjectionMatrix();
     }
 
@@ -196,34 +231,105 @@ export default class AntScene extends ThreeScene {
             }
         });
         this.swarm.update(delta);
+        this.picture.update(delta);
         this.checkEnd();
     }
 
-    /** Sends a slot's next ant when its time comes, to an exposed pixel of its colour near the slot (if there is one). */
+    /** Sends a slot's next ant when its time comes, to an exposed pixel of its colour (if there is one). */
     private release(slot: SlotState, s: number, delta: number): void {
         slot.timer -= delta;
         if (slot.timer > 0) return;
         const options = this.board.claimable(slot.color);
         if (!options.length) return;
-        this.rack!.slotPosition(s, this.from);
+        const start = this.rack!.slotPosition(s).add(new THREE.Vector3(0, 0.9, -LAYOUT.tile / 2));
+        // The nearest by the way in: along the bottom of the rim from the slot, then up to the pixel.
         const near = options
-            .map((i) => ({ i, d: this.picture!.cellCenter(i).distanceToSquared(this.from) }))
+            .map((i) => ({ i, d: this.picture!.cellCenter(i).distanceToSquared(start) }))
             .sort((a, b) => a.d - b.d)
             .slice(0, NEAREST_CHOICES);
         const pixel = near[Math.floor(Math.random() * near.length)].i;
         this.board.claim(pixel);
         const color = this.palette[slot.color];
-        this.from.z -= 1.4;
-        this.swarm!.send(s, pixel, color, color, this.from, this.picture!.cellCenter(pixel));
+        this.swarm!.send(s, pixel, color, color, start, this.pathIn(start, pixel));
         slot.left--;
         slot.timer = RELEASE_SEC;
         this.rack!.setCount(slot.tile, slot.left);
     }
 
-    /** An ant reached its pixel: the block comes off the picture (it's carrying it now). */
-    private pickUp(ant: Ant): void {
+    /** Slot -> pixel: straight up to the rim, along it to the side the pixel's way in opens on, then in through the eaten cells. */
+    private pathIn(start: THREE.Vector3, pixel: number): THREE.Vector3[] {
+        const cells = this.board.pathOut(pixel);
+        const door = this.door(cells[cells.length - 1]);
+        const onRim = new THREE.Vector3(THREE.MathUtils.clamp(start.x, this.lane.left, this.lane.right), TRAY_TOP, this.lane.bottom);
+        return [onRim, ...this.alongRim(onRim, door), door, ...cells.slice().reverse().map((i) => this.picture!.cellCenter(i))];
+    }
+
+    /** Pixel -> anthill: out to its nearest border, along the rim to the bottom, straight down to the anthill's row, across into it. */
+    private pathHome(pixel: number): THREE.Vector3[] {
+        const cells = this.board.pathOut(pixel);
+        const door = this.door(cells[cells.length - 1]);
+        // Down the rim at the bottom: where it came out, or the bottom corner on its side.
+        const bottomX = door.z >= this.lane.bottom - 1e-3 ? door.x : door.x < 0 ? this.lane.left : this.lane.right;
+        const down = new THREE.Vector3(bottomX, TRAY_TOP, this.lane.bottom);
+        const path = [...cells.slice(1).map((i) => this.picture!.cellCenter(i)), door, ...this.alongRim(door, down), down];
+        const hole = this.hole.position;
+        if (Math.abs(bottomX - hole.x) > LAYOUT.holeRadius * 0.6) path.push(new THREE.Vector3(bottomX, 0, hole.z));
+        path.push(hole.clone());
+        return path;
+    }
+
+    /** Where a cell on the picture's outline opens onto the rim's lane: straight out from its side (bottom, left, right, top). */
+    private door(cell: number): THREE.Vector3 {
+        const at = this.picture!.cellCenter(cell);
+        const x = cell % this.level.width;
+        const y = Math.floor(cell / this.level.width);
+        if (y === this.level.height - 1) at.z = this.lane.bottom;
+        else if (x === 0) at.x = this.lane.left;
+        else if (x === this.level.width - 1) at.x = this.lane.right;
+        else at.z = this.lane.top;
+        return at;
+    }
+
+    /** The lane's corners passed going round the rim from `a` to `b` (both on the lane), the shorter way round. */
+    private alongRim(a: THREE.Vector3, b: THREE.Vector3): THREE.Vector3[] {
+        const { left, right, top, bottom } = this.lane;
+        const width = right - left;
+        const depth = bottom - top;
+        const perimeter = 2 * (width + depth);
+        // Distance along the lane from the bottom-left corner, going right along the bottom, up the right, left along
+        // the top, down the left.
+        const along = (p: THREE.Vector3): number => {
+            if (Math.abs(p.z - bottom) < 1e-3) return p.x - left;
+            if (Math.abs(p.x - right) < 1e-3) return width + (bottom - p.z);
+            if (Math.abs(p.z - top) < 1e-3) return width + depth + (right - p.x);
+            return 2 * width + depth + (p.z - top);
+        };
+        const corners = [
+            { at: 0, point: new THREE.Vector3(left, TRAY_TOP, bottom) },
+            { at: width, point: new THREE.Vector3(right, TRAY_TOP, bottom) },
+            { at: width + depth, point: new THREE.Vector3(right, TRAY_TOP, top) },
+            { at: 2 * width + depth, point: new THREE.Vector3(left, TRAY_TOP, top) },
+        ];
+        const from = along(a);
+        const to = along(b);
+        const forward = (to - from + perimeter) % perimeter;
+        const passed: { at: number; point: THREE.Vector3 }[] = [];
+        if (forward <= perimeter - forward) {
+            for (const c of corners) if (((c.at - from + perimeter) % perimeter) > 1e-3 && ((c.at - from + perimeter) % perimeter) < forward) passed.push(c);
+            passed.sort((m, n) => ((m.at - from + perimeter) % perimeter) - ((n.at - from + perimeter) % perimeter));
+        } else {
+            const back = perimeter - forward;
+            for (const c of corners) if (((from - c.at + perimeter) % perimeter) > 1e-3 && ((from - c.at + perimeter) % perimeter) < back) passed.push(c);
+            passed.sort((m, n) => ((from - m.at + perimeter) % perimeter) - ((from - n.at + perimeter) % perimeter));
+        }
+        return passed.map((c) => c.point.clone());
+    }
+
+    /** An ant reached its pixel: the block pops out of the picture (it's carrying it now), and the way home is handed back. */
+    private pickUp(ant: Ant): THREE.Vector3[] {
         this.board.take(ant.pixel);
-        this.picture?.hide(ant.pixel);
+        this.picture?.pop(ant.pixel);
+        return this.pathHome(ant.pixel);
     }
 
     /** Won: the picture's gone. Lost: every slot waits on a colour with nothing exposed, and no ant is out. */
@@ -232,7 +338,7 @@ export default class AntScene extends ThreeScene {
         if (this.board.remaining === 0 && this.swarm.count === 0) {
             this.ended = true;
             AntSave.level = Math.min(this.levelIndex + 1, LEVELS.length - 1);
-            this.hud.showResult(true, () => this.loadLevel(this.levelIndex + 1));
+            this.hud.celebrate(this.level, () => this.loadLevel(this.levelIndex + 1));
             return;
         }
         const stuck = this.swarm.count === 0 && this.slots.every((slot) => slot && slot.left > 0 && !this.board.claimable(slot.color).length);

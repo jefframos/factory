@@ -1,7 +1,9 @@
 // AntSwarm.ts
 //
-// The ants: each walks from its slot to the pixel it claimed, picks the block up (onPickUp: the scene hides the
-// picture's block, the ant now carries a copy over its head), walks it to the anthill and drops in (onHome). All the
+// The ants: each follows a path of waypoints from its slot to the pixel it claimed — round the tray, never across the
+// picture: up to the tray's bottom edge, then in through the cells already eaten — picks the block up (onPickUp: the
+// scene hides the picture's block and hands back the way home; the ant carries a copy over its head), walks it back
+// out and down the anthill (onHome). All the
 // ants are one InstancedMesh (an ant in its tile's colour: abdomen, thorax, head, six legs that swing as it walks)
 // and the blocks they carry another, so a big swarm costs two draw calls.
 
@@ -10,7 +12,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 
 const MAX_ANTS = 400;
 /** Walking speed (world units a second) and how fast an ant turns to face its way. */
-const SPEED = 9;
+const SPEED = 12;
 const TURN = 14;
 /** How long picking a block up takes. */
 const PICK_SEC = 0.12;
@@ -23,7 +25,8 @@ export interface Ant {
     carried: THREE.Color;
     position: THREE.Vector3;
     heading: number;
-    target: THREE.Vector3;
+    /** Waypoints still to walk, the next first. */
+    path: THREE.Vector3[];
     phase: 'out' | 'pick' | 'home';
     wait: number;
     step: number;
@@ -63,13 +66,13 @@ export class AntSwarm {
     private readonly lift = new THREE.Vector3();
 
     /**
-     * `size`: an ant's length in world units (about a pixel); `groundAt(x, z)`: the height it walks at there (on top of
-     * the picture's blocks, on the floor elsewhere); `onPickUp(ant)` as it lifts its pixel, `onHome(ant)` as it drops into
-     * the anthill at `home`.
+     * `size`: an ant's scale (about two of the picture's pixels long); `carried`: the size of the block on its back (a
+     * pixel's); `groundAt(x, z)`: the height it walks at there;
+     * `onPickUp(ant)` as it lifts its pixel, returning its way home (ending in the anthill); `onHome(ant)` as it drops in.
      */
-    public constructor(scene: THREE.Scene, private readonly size: number, private readonly home: THREE.Vector3,
+    public constructor(scene: THREE.Scene, private readonly size: number, private readonly carried: number,
         private readonly groundAt: (x: number, z: number) => number,
-        private readonly onPickUp: (ant: Ant) => void, private readonly onHome: (ant: Ant) => void) {
+        private readonly onPickUp: (ant: Ant) => THREE.Vector3[], private readonly onHome: (ant: Ant) => void) {
         this.bodies = new THREE.InstancedMesh(antGeometry(), new THREE.MeshStandardMaterial({ roughness: 0.4 }), MAX_ANTS);
         this.blocks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.6, 1), new THREE.MeshStandardMaterial({ roughness: 0.55 }), MAX_ANTS);
         for (const mesh of [this.bodies, this.blocks]) {
@@ -88,11 +91,11 @@ export class AntSwarm {
         return this.ants.filter((a) => a.slot === slot).length;
     }
 
-    /** Sends an ant from `from` to the pixel at `to`. */
-    public send(slot: number, pixel: number, color: THREE.Color, carried: THREE.Color, from: THREE.Vector3, to: THREE.Vector3): void {
-        if (this.ants.length >= MAX_ANTS) return;
-        const heading = Math.atan2(to.x - from.x, to.z - from.z);
-        this.ants.push({ slot, pixel, color, carried, position: from.clone(), heading, target: to.clone(), phase: 'out', wait: 0, step: Math.random() * 6 });
+    /** Sends an ant from `from` along `path` (its last point: the pixel it's after). */
+    public send(slot: number, pixel: number, color: THREE.Color, carried: THREE.Color, from: THREE.Vector3, path: THREE.Vector3[]): void {
+        if (this.ants.length >= MAX_ANTS || !path.length) return;
+        const heading = Math.atan2(path[0].x - from.x, path[0].z - from.z);
+        this.ants.push({ slot, pixel, color, carried, position: from.clone(), heading, path, phase: 'out', wait: 0, step: Math.random() * 6 });
     }
 
     public update(delta: number): void {
@@ -100,21 +103,28 @@ export class AntSwarm {
             const ant = this.ants[n];
             if (ant.phase === 'pick') {
                 ant.wait -= delta;
-                if (ant.wait > 0) continue;
-                ant.phase = 'home';
-                ant.target.copy(this.home);
+                if (ant.wait <= 0) ant.phase = 'home';
                 continue;
             }
-            const dx = ant.target.x - ant.position.x;
-            const dz = ant.target.z - ant.position.z;
+            const target = ant.path[0];
+            if (!target) {
+                // Nowhere left to walk (never expected): home at once.
+                this.ants.splice(n, 1);
+                if (ant.phase === 'home') this.onHome(ant);
+                continue;
+            }
+            const dx = target.x - ant.position.x;
+            const dz = target.z - ant.position.z;
             const distance = Math.hypot(dx, dz);
             const stride = SPEED * delta;
             if (distance <= stride) {
-                ant.position.set(ant.target.x, ant.position.y, ant.target.z);
+                ant.position.set(target.x, ant.position.y, target.z);
+                ant.path.shift();
+                if (ant.path.length) continue;
                 if (ant.phase === 'out') {
                     ant.phase = 'pick';
                     ant.wait = PICK_SEC;
-                    this.onPickUp(ant);
+                    ant.path = this.onPickUp(ant);
                 } else {
                     this.ants.splice(n, 1);
                     this.onHome(ant);
@@ -143,9 +153,10 @@ export class AntSwarm {
             this.matrix.compose(ant.position, this.quaternion, this.scale);
             this.bodies.setMatrixAt(i, this.matrix);
             this.bodies.setColorAt(i, ant.color);
-            if (ant.phase !== 'out') {
-                this.lift.copy(ant.position).setY(ant.position.y + this.size * 0.85);
-                this.matrix.compose(this.lift, this.quaternion, this.scale.setScalar(this.size * 0.7));
+            // Carried once it's lifted (the picture's block pops out meanwhile).
+            if (ant.phase === 'home') {
+                this.lift.copy(ant.position).setY(ant.position.y + this.size * 0.48 + this.carried * 0.3);
+                this.matrix.compose(this.lift, this.quaternion, this.scale.setScalar(this.carried));
                 this.blocks.setMatrixAt(carrying, this.matrix);
                 this.blocks.setColorAt(carrying, ant.carried);
                 carrying++;

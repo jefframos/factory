@@ -6,7 +6,10 @@ that many ants of its colour stream out, each fetching one block of that colour 
 picture to win. The puzzle is the order: ants can only reach blocks that are **exposed**, so a tile whose colour isn't
 reachable yet just waits in its slot — fill all five slots with waiting colours and the level is lost.
 
-Built on the factory's engine (`core/`): one THREE scene for the board, a small PIXI layer for the HUD.
+Built on the factory's engine (`core/`): one THREE scene for the board, a small PIXI layer for the HUD. The layout
+follows the reference screens (a 1080 × 1920 portrait, measured in `game/world/Layout.ts`): the picture's tray across
+the top, the anthill and its lid under it, the slots, the tile columns; the picture's pixels are glossy jelly cubes,
+the floor a peach checker. A finished picture gets a celebration (rays, confetti, the picture, three stars, NEXT).
 
 ---
 
@@ -24,9 +27,14 @@ Set `GAME=ant` in `.env`, then from the repo root:
 
 ## How it plays
 
-- **Exposed**: a block on the picture's bottom edge, or next to (left, right, above, below) a block already taken. The
-  picture is eaten from the bottom inwards, the way the ants come up from the anthill.
-- **Tiles**: 4 columns; only each column's front tile (white outline) can be tapped. Taking it moves the column up.
+- **Exposed**: a block on the picture's outline (any side: the ants walk round the tray's rim), or next to (left,
+  right, above, below) a block already taken. The picture is eaten from its outline inwards.
+- **Ants walk in straight lines**, turning at right angles: up from their slot to the rim, along the rim (round its
+  corners) to the side nearest their block, then in through the eaten cells. Home: straight down when the way below is
+  clear, else the shortest straight line (or path) to the nearest border; along the rim to its bottom; straight down to
+  the anthill's row; across into it.
+- **Tiles**: 4 columns under the 5 slots; only the front row (on white plates) can be tapped; the second row waits as
+  it is; rows further back sit lower with faded numbers. Taking a tile moves its column up.
 - **Slots**: 5. A tile in a slot sends one ant every 0.09 s while there's an exposed block of its colour no other ant
   is already going for; its number counts down as they leave, and the tile goes once its last ant is home.
 - **Won**: the picture is gone. **Lost**: all 5 slots hold a tile still waiting, none of their colours has anything
@@ -79,8 +87,9 @@ games/ant/
     data/AntSave.ts      the level reached
     world/PictureView.ts the picture: one InstancedMesh of rounded blocks on a tray
     world/AntSwarm.ts    the ants (one InstancedMesh) and the blocks they carry (another): out, pick up, home
-    world/TileRack.ts    the slots and the tile columns (numbers drawn on canvas textures)
-    ui/AntHud.ts         level title, 2x, restart, the end card (plain PIXI shapes and text)
+    world/TileRack.ts    the slots (white plates) and the tile columns: two-tone cushions, numbers on canvas textures
+    world/Layout.ts      where everything goes, measured off the reference screen
+    ui/AntHud.ts         restart (blue), "Level N", x2 (green), the celebration and the lost card (PIXI shapes and text)
   levels/                the levels (index.json = order) and their previews
   raw-assets/pictures/   source pictures + pictures.json
   tools/pixelate.mjs     picture -> level
@@ -88,5 +97,5 @@ games/ant/
 
 ## Next steps (not in this first version)
 
-Sounds; a nicer HUD (the factory's UI kit); ants walking round the picture's edge instead of straight across; a hint
-for the next good tile; star ratings; more pictures.
+Sounds; the reference's booster bar (add a slot, shuffle, magnet…); a hint for the next good tile; star ratings that
+mean something; more pictures.
