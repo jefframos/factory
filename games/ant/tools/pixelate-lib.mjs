@@ -11,7 +11,7 @@
 //      "Closest" is measured in OKLab, so it's the tone that looks nearest, not the nearest RGB numbers.
 //   4. Each cell takes its samples' most common colour.
 //   5. The hand edits go on top (`edits`: { "x,y": "#hex" } paints a cell, { "x,y": "." } empties it) — snapped to the
-//      same palette, so a palette change carries them along. `padding` cells all round (plus one more with a stroke)
+//      same palette, so a palette change carries them along — except "!#hex", a custom colour kept exactly as it is. `padding` cells all round (plus one more with a stroke)
 //      are left empty: the picture is sampled that much smaller, inside them.
 //   6. The whole grid, edits and all, is shifted by `offsetX` / `offsetY` cells (what slides off the edge is gone).
 //   7. `stroke` (a colour, snapped to the palette; '' = none) outlines the picture: every empty cell touching it (sides
@@ -295,7 +295,7 @@ export async function buildLevel(file, id, settings, master) {
     for (const [key, value] of Object.entries(options.edits ?? {})) {
         const [x, y] = key.split(',').map(Number);
         if (!(x >= 0 && y >= 0 && x < width && y < height)) continue;
-        grid[x + y * width] = value === '.' || !value ? null : palette.length ? closest(parseHex(value), palette) : value;
+        grid[x + y * width] = value === '.' || !value ? null : value[0] === '!' ? value.slice(1).toLowerCase() : palette.length ? closest(parseHex(value), palette) : value;
     }
     const steps = (v) => Math.max(-MAX_STEPS, Math.min(MAX_STEPS, Math.round(v ?? 0)));
     // The brushes' shading, per cell, moved with the picture.

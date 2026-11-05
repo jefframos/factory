@@ -70,6 +70,7 @@
   .pad { display: grid; grid-template-columns: repeat(3, 32px); gap: 3px; }
   .pad button { padding: 4px 0; }
   .images.single { grid-template-columns: 1fr; }
+  .selectbar { background: #f3e9dc; border-radius: 10px; padding: 6px 10px; }
   .images.single #canvas { height: 420px; }
   h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 18px 0 8px; border-top: 1px solid var(--line); padding-top: 14px; }
   .inline { display: flex; gap: 6px; align-items: center; }
@@ -128,11 +129,21 @@
       <button id="toolBrightDown" title="Brightness brush: one step darker per pass (2)">🌑−</button>
       <button id="toolSatUp" title="Saturation brush: one step more vivid per pass (3)">🎨＋</button>
       <button id="toolSatDown" title="Saturation brush: one step greyer per pass (4)">🩶−</button>
+      <button id="toolSelect" title="Select a colour: the pixels of that colour joined to the one you click (F)">🪣 Select</button>
       <span class="paint" id="paint"></span>
       <input type="color" id="custom" title="Any colour (snapped to the palette)" style="width:34px;padding:0;height:26px">
       <span style="flex:1"></span>
       <button id="undo" title="Undo (Ctrl/Cmd+Z)">Undo</button>
       <button id="clearEdits" title="Remove every hand edit and all shading">Clear edits</button>
+    </div>
+    <div class="tools selectbar" id="selectBar" hidden>
+      <b id="selCount"></b>
+      <label style="flex-direction:row;align-items:center;gap:4px;color:var(--ink)"><input type="checkbox" id="selAll"> whole picture</label>
+      <span class="hint" style="margin:0 0 0 8px">Swap to:</span>
+      <span class="paint" id="swapTo"></span>
+      <input type="color" id="swapCustom" title="A custom colour (kept exactly, not snapped)" style="width:34px;padding:0;height:26px">
+      <button id="useCustom">Use custom</button>
+      <button id="selClear" title="Drop the selection (Esc)">✕</button>
     </div>
     <div class="settings">
       <label class="wide">Name <input id="name"></label>
@@ -426,6 +437,9 @@ function select(id) {
   $('seed').value = current.seed || 0;
   aspect = current.height / current.width;
   history = [];
+  selection = new Set();
+  selectedFrom = -1;
+  $('selectBar').hidden = true;
   showNumbers();
   showSwatches();
   showStats(selected.pixels, selected.palette);
@@ -540,6 +554,31 @@ function draw() {
   for (let x = 0; x <= size.width; x++) { g.moveTo(x0 + x * cell + 0.5, y0); g.lineTo(x0 + x * cell + 0.5, y0 + size.height * cell); }
   for (let y = 0; y <= size.height; y++) { g.moveTo(x0, y0 + y * cell + 0.5); g.lineTo(x0 + size.width * cell, y0 + y * cell + 0.5); }
   g.stroke();
+  // The selection: a light veil and a dashed border round it.
+  if (selection.size) {
+    g.fillStyle = 'rgba(255,255,255,.28)';
+    for (const i of selection) g.fillRect(x0 + (i % size.width) * cell, y0 + Math.floor(i / size.width) * cell, cell, cell);
+    g.beginPath();
+    for (const i of selection) {
+      const x = i % size.width;
+      const y = Math.floor(i / size.width);
+      const px = x0 + x * cell;
+      const py = y0 + y * cell;
+      if (y === 0 || !selection.has(i - size.width)) { g.moveTo(px, py); g.lineTo(px + cell, py); }
+      if (y === size.height - 1 || !selection.has(i + size.width)) { g.moveTo(px, py + cell); g.lineTo(px + cell, py + cell); }
+      if (x === 0 || !selection.has(i - 1)) { g.moveTo(px, py); g.lineTo(px, py + cell); }
+      if (x === size.width - 1 || !selection.has(i + 1)) { g.moveTo(px + cell, py); g.lineTo(px + cell, py + cell); }
+    }
+    g.lineWidth = 3;
+    g.strokeStyle = '#fff';
+    g.setLineDash([]);
+    g.stroke();
+    g.lineWidth = 1.5;
+    g.strokeStyle = '#4a3424';
+    g.setLineDash([5, 4]);
+    g.stroke();
+    g.setLineDash([]);
+  }
   // Hand-edited cells get a little dot.
   g.fillStyle = 'rgba(74,52,36,.45)';
   for (const key of Object.keys(current?.edits || {})) {
@@ -588,10 +627,79 @@ function apply(at) {
   draw();
 }
 
+// ---------- select a colour, swap it ----------
+
+/** Selected cells (canvas indices), and the cell the selection grew from. */
+let selection = new Set();
+let selectedFrom = -1;
+
+/** The pixels of the clicked one's colour: joined to it (flood fill), or — whole picture — all of them. */
+function selectFrom(i) {
+  selectedFrom = i;
+  const color = grid[i];
+  selection = new Set();
+  if (!color) return showSelection();
+  if ($('selAll').checked) {
+    grid.forEach((c, j) => { if (c === color) selection.add(j); });
+  } else {
+    const stack = [i];
+    selection.add(i);
+    while (stack.length) {
+      const j = stack.pop();
+      const x = j % size.width;
+      for (const n of [x > 0 ? j - 1 : -1, x < size.width - 1 ? j + 1 : -1, j - size.width, j + size.width]) {
+        if (n < 0 || n >= grid.length || selection.has(n) || grid[n] !== color) continue;
+        selection.add(n);
+        stack.push(n);
+      }
+    }
+  }
+  showSelection();
+}
+
+function showSelection() {
+  $('selectBar').hidden = !selection.size;
+  if (selection.size) {
+    const color = grid[[...selection][0]];
+    $('selCount').textContent = `${selection.size} pixel${selection.size === 1 ? '' : 's'} of`;
+    $('selCount').append(Object.assign(document.createElement('span'), { style: `display:inline-block;width:16px;height:16px;border-radius:4px;vertical-align:-3px;margin-left:6px;background:${color};border:1px solid rgba(0,0,0,.2)` }));
+    if (color) $('swapCustom').value = color;
+    const colours = levelPalette().length ? levelPalette() : [...new Set(grid.filter(Boolean))];
+    $('swapTo').replaceChildren(...colours.map((c) => {
+      const b = document.createElement('button');
+      b.style.background = c;
+      b.title = c;
+      b.onclick = () => swapSelection(c);
+      return b;
+    }));
+  }
+  draw();
+}
+
+/** The selected pixels become `value` (a palette colour, or "!#hex": a custom one kept exactly), as edits. */
+function swapSelection(value) {
+  if (!selection.size) return;
+  history.push(JSON.stringify({ edits: current.edits, shades: current.shades }));
+  const shown = value[0] === '!' ? value.slice(1) : value;
+  for (const i of selection) {
+    const key = `${(i % size.width) - (current.offsetX || 0)},${Math.floor(i / size.width) - (current.offsetY || 0)}`;
+    current.edits[key] = value;
+    grid[i] = shown;
+  }
+  draw();
+  changed();
+}
+
+const clearSelection = () => { selection = new Set(); selectedFrom = -1; showSelection(); };
+$('selAll').onchange = () => { if (selectedFrom >= 0) selectFrom(selectedFrom); };
+$('useCustom').onclick = () => swapSelection(`!${$('swapCustom').value}`);
+$('selClear').onclick = clearSelection;
+
 let painting = false;
 canvas.onpointerdown = (e) => {
   const at = cellAt(e);
   if (!at) return;
+  if (tool === 'select') { selectFrom(at.x + at.y * size.width); return; }
   history.push(JSON.stringify({ edits: current.edits, shades: current.shades }));
   brushed = new Set();
   painting = true;
@@ -602,7 +710,7 @@ canvas.onpointermove = (e) => { if (painting) { const at = cellAt(e); if (at) ap
 canvas.onpointerup = () => { if (!painting) return; painting = false; changed(); };
 window.onresize = draw;
 
-const TOOLS = [['toolPaint', 'paint'], ['toolErase', 'erase'], ['toolRestore', 'restore'], ['toolBrightUp', 'brightUp'], ['toolBrightDown', 'brightDown'], ['toolSatUp', 'satUp'], ['toolSatDown', 'satDown']];
+const TOOLS = [['toolPaint', 'paint'], ['toolErase', 'erase'], ['toolRestore', 'restore'], ['toolBrightUp', 'brightUp'], ['toolBrightDown', 'brightDown'], ['toolSatUp', 'satUp'], ['toolSatDown', 'satDown'], ['toolSelect', 'select']];
 function setTool(name) {
   tool = name;
   for (const [id, t] of TOOLS) $(id).classList.toggle('on', t === tool);
@@ -630,6 +738,8 @@ window.onkeydown = (e) => {
   else if (e.key === 'p') setTool('paint');
   else if (e.key === 'e') setTool('erase');
   else if (e.key === 'r') setTool('restore');
+  else if (e.key === 'f') setTool('select');
+  else if (e.key === 'Escape') clearSelection();
   else if (['1', '2', '3', '4'].includes(e.key)) setTool(['brightUp', 'brightDown', 'satUp', 'satDown'][Number(e.key) - 1]);
 };
 
@@ -638,6 +748,8 @@ window.onkeydown = (e) => {
 /** Saturation / brightness go -5..+5 (as pixelate-lib's MAX_STEPS), mix 0..5; the offset is free. */
 const step = (key, by) => {
   const value = (current[key] || 0) + by;
+  // The picture moves: a selection would point at the wrong cells.
+  if (['offsetX', 'offsetY', 'padding'].includes(key)) clearSelection();
   current[key] = key === 'saturation' || key === 'brightness' ? Math.max(-5, Math.min(5, value)) : key === 'mix' ? Math.max(0, Math.min(5, value)) : key === 'padding' ? Math.max(0, Math.min(10, value)) : value;
   showNumbers();
   changed();
@@ -671,8 +783,8 @@ $('center').onclick = () => {
   changed();
 };
 
-$('width').oninput = () => { if (locked) $('height').value = Math.max(4, Math.round(Number($('width').value) * aspect)); changed(); };
-$('height').oninput = () => { if (locked) $('width').value = Math.max(4, Math.round(Number($('height').value) / aspect)); changed(); };
+$('width').oninput = () => { clearSelection(); if (locked) $('height').value = Math.max(4, Math.round(Number($('width').value) * aspect)); changed(); };
+$('height').oninput = () => { clearSelection(); if (locked) $('width').value = Math.max(4, Math.round(Number($('height').value) / aspect)); changed(); };
 $('lock').onclick = () => { locked = !locked; $('lock').textContent = locked ? '🔗' : '⛓️‍💥'; aspect = Number($('height').value) / Number($('width').value); };
 for (const id of ['name', 'colors', 'background', 'strokeOn', 'stroke', 'columns', 'seed']) $(id).oninput = changed;
 $('palette').onchange = () => { current.palette = $('palette').value; showSwatches(); changed(); };

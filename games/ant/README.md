@@ -95,7 +95,10 @@ With `GAME=ant` in `.env`, `npm run editor` opens a local page (`web/server.mjs`
 - **Tuning a level**: the source picture next to the level as the game will show it, **live**, which you can draw on:
   **Paint** (a palette colour, or any colour from the picker, snapped to the palette), **Erase** (no block there),
   **Restore** (drops your edit and shading on a cell); the **shading brushes** — ☀️＋ / 🌑− brightness, 🎨＋ / 🩶−
-  saturation (keys 1–4) — move a pixel one step per pass (−5 to +5), for depth: a highlight, a shadow. Undo
+  saturation (keys 1–4) — move a pixel one step per pass (−5 to +5), for depth: a highlight, a shadow; **🪣 Select**
+  (F) picks the pixels of a colour joined to the one clicked (or, *whole picture*, all of that colour) and the bar
+  under the tools swaps them to a palette colour, or to **a custom colour** kept exactly (not snapped: saved as
+  `"!#hex"` edits); Esc drops the selection. Undo
   (Ctrl/Cmd+Z), Clear edits (edits and shading). Edited cells show a dot. A shaded pixel is a colour of its own (not
   snapped to the palette), so it gets its own tiles in the game: shade sparingly. Then: name;
   width × height (proportions locked or not); the most colours; the **palette** its colours snap to (**Master**,

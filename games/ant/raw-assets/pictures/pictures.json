@@ -43,11 +43,60 @@
     "stroke": "#4a4a5a"
   },
   "apple": {
-    "name": "Apple",
+    "width": 19,
+    "height": 19,
+    "colors": 5,
     "palette": "master",
-    "width": 14,
-    "height": 14,
-    "colors": 3
+    "background": "auto",
+    "saturation": 0,
+    "brightness": 0,
+    "offsetX": 0,
+    "offsetY": 0,
+    "edits": {},
+    "shades": {
+      "9,5": [
+        0,
+        1
+      ],
+      "8,5": [
+        0,
+        1
+      ],
+      "9,6": [
+        0,
+        1
+      ],
+      "10,3": [
+        0,
+        -1
+      ],
+      "14,4": [
+        0,
+        -1
+      ],
+      "13,4": [
+        0,
+        -1
+      ],
+      "12,7": [
+        0,
+        1
+      ],
+      "13,7": [
+        0,
+        1
+      ],
+      "13,8": [
+        0,
+        1
+      ]
+    },
+    "padding": 1,
+    "stroke": "",
+    "columns": 0,
+    "seed": 0,
+    "mix": 0,
+    "name": "Apple"
   },
   "star": {
     "name": "Star",
@@ -58,11 +107,23 @@
     "stroke": "#4a4a5a"
   },
   "cherries": {
-    "name": "Cherries",
+    "width": 18,
+    "height": 18,
+    "colors": 4,
     "palette": "master",
-    "width": 16,
-    "height": 16,
-    "colors": 3
+    "background": "auto",
+    "saturation": 0,
+    "brightness": 0,
+    "offsetX": 0,
+    "offsetY": 0,
+    "edits": {},
+    "shades": {},
+    "padding": 1,
+    "stroke": "",
+    "columns": 0,
+    "seed": 0,
+    "mix": 0,
+    "name": "Cherries"
   },
   "ghost": {
     "name": "Ghost",
