@@ -2,8 +2,7 @@
 //
 // buildLevel(file, id, settings, master) makes a level from a picture file — or from nothing, for a level drawn by hand
 // (`file` null: the grid starts empty and the edits draw it):
-//   1. The picture is sampled SAMPLES x SAMPLES times per cell of a small grid; its colours get the picture's
-//      `saturation` / `brightness` steps (each step +-15% saturation / +-6% lightness).
+//   1. The picture is sampled SAMPLES x SAMPLES times per cell of a small grid.
 //   2. The background can be removed: `background: 'remove'` clears the colour round the picture (the most common on
 //      its border, flood-filled in from the edges); 'auto' does that for a picture without transparency of its own;
 //      'keep' leaves it. Transparent parts are empty cells (no block: '.').
@@ -13,7 +12,10 @@
 //   4. Each cell takes its samples' most common colour.
 //   5. The hand edits go on top (`edits`: { "x,y": "#hex" } paints a cell, { "x,y": "." } empties it) — snapped to the
 //      same palette, so a palette change carries them along.
-//   6. The whole grid, edits and all, is shifted by `offsetX` / `offsetY` cells (what slides off the edge is gone).
+//   6. The level's colours get its `saturation` / `brightness` steps (each step +-15% saturation / +-6% lightness, up
+//      to MAX_STEPS either way) — after the palette, so a master-palette level keeps the master's tones, just more or
+//      less vivid (before it, the snapping would put most colours straight back on the same tone).
+//   7. The whole grid, edits and all, is shifted by `offsetX` / `offsetY` cells (what slides off the edge is gone).
 // Returns the level (id, name, size, palette by use, rows), the final grid (hex colours, null = empty: the editor's
 // paint canvas), the pixel count, and a crisp preview PNG.
 
@@ -27,6 +29,7 @@ const PREVIEW_CELL = 16;
 /** One step of the colour adjustments. */
 const SATURATION_STEP = 0.15;
 const BRIGHTNESS_STEP = 0.06;
+export const MAX_STEPS = 5;
 
 export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {} };
 
@@ -204,7 +207,7 @@ async function sampleGrid(file, width, height, settings, palette) {
     const samples = [];
     const opaque = [];
     for (let i = 0; i < sampleWidth * sampleHeight; i++) {
-        samples.push(adjust([data[i * 4], data[i * 4 + 1], data[i * 4 + 2]], settings.saturation ?? 0, settings.brightness ?? 0));
+        samples.push([data[i * 4], data[i * 4 + 1], data[i * 4 + 2]]);
         opaque.push(data[i * 4 + 3] >= ALPHA_CUTOFF);
     }
     const hasAlpha = meta.hasAlpha && opaque.some((o) => !o);
@@ -279,6 +282,17 @@ export async function buildLevel(file, id, settings, master) {
         const [x, y] = key.split(',').map(Number);
         if (!(x >= 0 && y >= 0 && x < width && y < height)) continue;
         grid[x + y * width] = value === '.' || !value ? null : palette.length ? closest(parseHex(value), palette) : value;
+    }
+    const steps = (v) => Math.max(-MAX_STEPS, Math.min(MAX_STEPS, Math.round(v ?? 0)));
+    const saturation = steps(options.saturation);
+    const brightness = steps(options.brightness);
+    if (saturation || brightness) {
+        const adjusted = new Map();
+        for (let i = 0; i < grid.length; i++) {
+            if (!grid[i]) continue;
+            if (!adjusted.has(grid[i])) adjusted.set(grid[i], hex(adjust(parseHex(grid[i]), saturation, brightness)));
+            grid[i] = adjusted.get(grid[i]);
+        }
     }
     const shifted = shift(grid, width, height, Math.round(options.offsetX ?? 0), Math.round(options.offsetY ?? 0));
     const { palette: levelPalette, rows } = toLevel(shifted, width, height);

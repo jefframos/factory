@@ -8,10 +8,17 @@
     "background": "auto"
   },
   "mushroom": {
-    "name": "Mushroom",
     "width": 22,
     "height": 22,
-    "colors": 5
+    "colors": 5,
+    "palette": "master",
+    "background": "auto",
+    "saturation": 1,
+    "brightness": 0,
+    "offsetX": 0,
+    "offsetY": -3,
+    "edits": {},
+    "name": "Mushroom"
   },
   "teacup": {
     "name": "Teacup",

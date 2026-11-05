@@ -72,8 +72,9 @@ With `GAME=ant` in `.env`, `npm run editor` opens a local page (`web/server.mjs`
   **Paint** (a palette colour, or any colour from the picker, snapped to the palette), **Erase** (no block there),
   **Restore** (drops your edit on a cell); Undo (Ctrl/Cmd+Z), Clear edits. Edited cells show a dot. Then: name;
   width × height (proportions locked or not); the most colours; the **palette** its colours snap to (**Master**,
-  a preset — cozy / candy / garden / sea / night — or none: its own); **saturation** and **brightness** steps
-  (applied to the picture before its colours are picked: +1 saturation is 15% more, +1 brightness 6% lighter);
+  a preset — cozy / candy / garden / sea / night — or none: its own); **saturation** and **brightness** steps,
+  −5 to +5 (applied to the level's final colours, after the palette: a Master level keeps the master's tones, just
+  more or less vivid; +1 saturation is 15% more, +1 brightness 6% lighter);
   the **background** (auto: removed when the picture has no transparency of its own; remove; keep); the **offset**
   (arrows move the whole picture a cell, ◎ centres it). Pixels and colours used are counted as you go. **Save**
   writes the level, its preview and its settings; **Delete** takes it out of the game (its picture moves to
@@ -91,11 +92,12 @@ rebuilds every level, drawn ones too):
 
 1. The picture is sampled 8×8 times per cell of a small grid. Transparent parts are **empty** (no block, a `.` in the
    level's rows); a solid background can be removed (the colour round the border, flood-filled in from the edges).
-2. Its colours get the saturation / brightness steps, then are reduced to a handful with k-means (deterministic: the
+2. Its colours are reduced to a handful with k-means (deterministic: the
    same picture always makes the same level) and snapped to the chosen palette — the master palette by default — by
    the tone that *looks* closest (measured in OKLab), so in an all-red palette a green becomes the nearest red.
 3. Each cell takes the colour most of its samples are nearest to: crisp edges, no blended in-between colours.
-4. The hand edits go on top (snapped to the same palette), then the whole grid is shifted by the offset.
+4. The hand edits go on top (snapped to the same palette); the level's colours get its saturation / brightness steps;
+   then the whole grid is shifted by the offset.
 
 A level drawn in the editor has no picture: just its settings, its size and its edits.
 

@@ -135,10 +135,10 @@
         <select id="palette"></select>
         <div class="swatches" id="swatches"></div>
       </label>
-      <div class="field picture">Saturation
+      <div class="field">Saturation
         <span class="stepper"><button id="satDown">−</button><output id="sat">0</output><button id="satUp">＋</button></span>
       </div>
-      <div class="field picture">Brightness
+      <div class="field">Brightness
         <span class="stepper"><button id="briDown">−</button><output id="bri">0</output><button id="briUp">＋</button></span>
       </div>
       <div class="field">Offset <small id="offset">0, 0</small>
@@ -365,8 +365,9 @@ function settings() {
 }
 
 function showNumbers() {
-  $('sat').textContent = current.saturation || 0;
-  $('bri').textContent = current.brightness || 0;
+  for (const key of ['saturation', 'brightness']) current[key] = Math.max(-5, Math.min(5, Math.round(current[key] || 0)));
+  $('sat').textContent = current.saturation;
+  $('bri').textContent = current.brightness;
   $('offset').textContent = `${current.offsetX || 0}, ${current.offsetY || 0}`;
 }
 
@@ -524,7 +525,13 @@ window.onkeydown = (e) => {
 
 // ---------- settings ----------
 
-const step = (key, by) => { current[key] = (current[key] || 0) + by; showNumbers(); changed(); };
+/** Saturation / brightness go -5..+5 (as pixelate-lib's MAX_STEPS); the offset is free. */
+const step = (key, by) => {
+  const value = (current[key] || 0) + by;
+  current[key] = key === 'saturation' || key === 'brightness' ? Math.max(-5, Math.min(5, value)) : value;
+  showNumbers();
+  changed();
+};
 $('satDown').onclick = () => step('saturation', -1);
 $('satUp').onclick = () => step('saturation', 1);
 $('briDown').onclick = () => step('brightness', -1);
