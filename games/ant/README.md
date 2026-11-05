@@ -143,8 +143,10 @@ Per-picture settings, in `raw-assets/pictures/pictures.json` (the editor writes 
 Bigger grids keep more detail (a strawberry's seeds need more than 22 × 22). Pictures with flat colours and clear
 shapes pixelate best; few colours (4–8) suit the game.
 
-The starting pictures (`strawberry`, `mushroom`, `teacup`, `sunset`) are simple pastel SVGs drawn for the game; the
-first three have transparent backgrounds (just the subject), the sunset keeps its sky.
+The 28 test levels: `strawberry`, `mushroom`, `teacup`, `sunset` and five patterns (`rings`, `frames`, `checker`,
+`zigzag`, `polka`) are SVGs drawn for the game; the other 19 are Twemoji (CC BY 4.0 — credit needed if they ship:
+`raw-assets/pictures/CREDITS.md`). They're ordered by the solver's difficulty: plain pictures first, the outlined
+ones with traps (cloud, frames, blossom, ice cream, cat, frog) last.
 
 ---
 

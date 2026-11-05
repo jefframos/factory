@@ -31,6 +31,204 @@
     "width": 28,
     "height": 22,
     "colors": 6,
+    "background": "keep",
+    "mix": 4
+  },
+  "heart": {
+    "name": "Heart",
+    "palette": "master",
+    "width": 14,
+    "height": 14,
+    "colors": 2,
+    "stroke": "#4a4a5a"
+  },
+  "apple": {
+    "name": "Apple",
+    "palette": "master",
+    "width": 14,
+    "height": 14,
+    "colors": 3
+  },
+  "star": {
+    "name": "Star",
+    "palette": "master",
+    "width": 16,
+    "height": 16,
+    "colors": 2,
+    "stroke": "#4a4a5a"
+  },
+  "cherries": {
+    "name": "Cherries",
+    "palette": "master",
+    "width": 16,
+    "height": 16,
+    "colors": 3
+  },
+  "ghost": {
+    "name": "Ghost",
+    "palette": "master",
+    "width": 16,
+    "height": 16,
+    "colors": 3
+  },
+  "rings": {
+    "name": "Rings",
+    "palette": "master",
+    "width": 18,
+    "height": 18,
+    "colors": 5,
     "background": "keep"
+  },
+  "lemon": {
+    "name": "Lemon",
+    "palette": "master",
+    "width": 18,
+    "height": 18,
+    "colors": 3
+  },
+  "tulip": {
+    "name": "Tulip",
+    "palette": "master",
+    "width": 18,
+    "height": 18,
+    "colors": 3
+  },
+  "cloud": {
+    "name": "Cloud",
+    "palette": "master",
+    "width": 18,
+    "height": 18,
+    "colors": 2,
+    "stroke": "#4a4a5a"
+  },
+  "sun": {
+    "name": "Sun",
+    "palette": "master",
+    "width": 20,
+    "height": 20,
+    "colors": 3,
+    "mix": 1,
+    "stroke": "#4a4a5a"
+  },
+  "frames": {
+    "name": "Frames",
+    "palette": "master",
+    "width": 16,
+    "height": 16,
+    "colors": 4,
+    "background": "keep",
+    "mix": 1
+  },
+  "watermelon": {
+    "name": "Watermelon",
+    "palette": "master",
+    "width": 20,
+    "height": 20,
+    "colors": 4,
+    "mix": 1
+  },
+  "fish": {
+    "name": "Fish",
+    "palette": "master",
+    "width": 20,
+    "height": 20,
+    "colors": 4,
+    "stroke": "#4a4a5a",
+    "mix": 1
+  },
+  "carrot": {
+    "name": "Carrot",
+    "palette": "master",
+    "width": 20,
+    "height": 20,
+    "colors": 3,
+    "mix": 2
+  },
+  "house": {
+    "name": "House",
+    "palette": "master",
+    "width": 22,
+    "height": 22,
+    "colors": 5,
+    "mix": 2
+  },
+  "checker": {
+    "name": "Checker",
+    "palette": "master",
+    "width": 16,
+    "height": 16,
+    "colors": 2,
+    "background": "keep",
+    "mix": 4
+  },
+  "frog": {
+    "name": "Frog",
+    "palette": "master",
+    "width": 22,
+    "height": 22,
+    "colors": 4,
+    "stroke": "#4a4a5a",
+    "mix": 2
+  },
+  "tree": {
+    "name": "Tree",
+    "palette": "master",
+    "width": 22,
+    "height": 22,
+    "colors": 4,
+    "mix": 2
+  },
+  "icecream": {
+    "name": "Ice Cream",
+    "palette": "master",
+    "width": 22,
+    "height": 22,
+    "colors": 5,
+    "stroke": "#4a4a5a",
+    "mix": 3
+  },
+  "zigzag": {
+    "name": "Zigzag",
+    "palette": "master",
+    "width": 20,
+    "height": 20,
+    "colors": 4,
+    "background": "keep",
+    "mix": 4
+  },
+  "blossom": {
+    "name": "Blossom",
+    "palette": "master",
+    "width": 22,
+    "height": 22,
+    "colors": 4,
+    "stroke": "#4a4a5a",
+    "mix": 3
+  },
+  "polka": {
+    "name": "Polka",
+    "palette": "master",
+    "width": 20,
+    "height": 20,
+    "colors": 3,
+    "background": "keep",
+    "mix": 5
+  },
+  "rainbow": {
+    "name": "Rainbow",
+    "palette": "master",
+    "width": 24,
+    "height": 24,
+    "colors": 6,
+    "mix": 5
+  },
+  "cat": {
+    "name": "Cat",
+    "palette": "master",
+    "width": 24,
+    "height": 24,
+    "colors": 5,
+    "stroke": "#4a4a5a",
+    "mix": 4
   }
 }

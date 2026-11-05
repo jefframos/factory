@@ -14,7 +14,8 @@
 //      same palette, so a palette change carries them along.
 //   6. The whole grid, edits and all, is shifted by `offsetX` / `offsetY` cells (what slides off the edge is gone).
 //   7. `stroke` (a colour, snapped to the palette; '' = none) outlines the picture: every empty cell touching it (sides
-//      or corners) becomes a block of that colour. It needs a free cell round the picture to show all round.
+//      or corners) becomes a block of that colour. With a stroke the picture is sampled a cell smaller all round (1),
+//      so the outline has room at the grid's edges.
 //   8. The level's colours get its `saturation` / `brightness` steps (each step +-15% saturation / +-6% lightness, up
 //      to MAX_STEPS either way) — after the palette, so a master-palette level keeps the master's tones, just more or
 //      less vivid (before it, the snapping would put most colours straight back on the same tone).
@@ -281,7 +282,13 @@ export async function buildLevel(file, id, settings, master) {
     const width = Math.max(4, Math.min(64, Math.round(options.width)));
     const height = Math.max(4, Math.min(64, Math.round(options.height)));
     const palette = paletteFor(options, master);
-    const grid = await sampleGrid(file, width, height, options, palette);
+    // With an outline, the picture is sampled a cell smaller all round, so the outline has room.
+    const stroked = !!options.stroke && /^#[0-9a-f]{6}$/i.test(options.stroke);
+    const margin = stroked ? 1 : 0;
+    const inner = await sampleGrid(file, width - 2 * margin, height - 2 * margin, options, palette);
+    const grid = new Array(width * height).fill(null);
+    const innerWidth = width - 2 * margin;
+    for (let i = 0; i < inner.length; i++) grid[(Math.floor(i / innerWidth) + margin) * width + (i % innerWidth) + margin] = inner[i];
     for (const [key, value] of Object.entries(options.edits ?? {})) {
         const [x, y] = key.split(',').map(Number);
         if (!(x >= 0 && y >= 0 && x < width && y < height)) continue;
