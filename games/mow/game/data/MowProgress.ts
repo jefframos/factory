@@ -2,11 +2,13 @@
 //
 // The player's saved state: money, the tool owned, upgrade levels, the clippings in the container, which grass has
 // been cut (from the grass field, as a compact string), which districts are restored, and the wardrobe (owned and worn
-// looks). One localStorage entry, saved shortly after any change; versioned (SAVE_VERSION): a save from another version
-// starts a new game. Fields added later get their defaults on an older save of the same version (load()).
+// looks). Two localStorage entries, saved shortly after any change: the city's own (`mow.save.<city>`: its gear,
+// money, grass, areas, trophies and secrets — each city is played from scratch, prestige-style) and the player's
+// (`mow.global`: the wardrobe, the cities finished — their bonus — and the one-time analytics). Versioned
+// (SAVE_VERSION): a save from another version starts a new game. Fields added later get their defaults (load()).
 
 import { Signal } from 'signals';
-import { MOW, ToolDef, UpgradeDef, UpgradeId, WardrobeItem } from './MowConfig';
+import { MOW, CITY, CITIES, CityDef, CURRENT_CITY_KEY, PRESTIGE_BONUS, ToolDef, UpgradeDef, UpgradeId, WardrobeItem, setCity } from './MowConfig';
 
 export type LookKind = 'colors' | 'faces' | 'hats';
 /** The wardrobe's kinds (its section in ui/mow.json also has a $comment: never walk its keys). */
@@ -19,9 +21,14 @@ export interface Look {
     hat: string;
 }
 
-const SAVE_KEY = 'mow.save';
+const cityKey = (city: string): string => `mow.save.${city}`;
+const GLOBAL_KEY = 'mow.global';
 /** Bump when a change can't carry old saves over: a save from another version starts a new game. */
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 4;
+/** What's the player's, not the city's (kept across cities: the wardrobe, the cities finished, the analytics). */
+const GLOBAL_FIELDS = ['owned', 'look', 'freeLooksOffered', 'sent', 'completed', 'carried', 'allCitiesOpen'] as const;
+/** The claim key of the rewards left unclaimed in cities travelled from (SaveData.carried). */
+export const CARRIED_KEY = 'carried';
 const SAVE_DELAY_MS = 800;
 
 interface SaveData {
@@ -43,9 +50,19 @@ interface SaveData {
     look: Look;
     /** Money when the wardrobe was last opened: things that became affordable since get its "!". */
     wardrobeBudget: number;
+    /** The wardrobe was opened again after the first hat: an unclaimed gift (free colour / face) now shows its FREE badge. */
+    freeLooksOffered: boolean;
     /** Treasures found (ids), and rewards claimed (treasure ids, and `area:<section id>` for an area's bonus). */
     treasuresFound: string[];
     treasuresClaimed: string[];
+    /** Secret patches mowed through (ids): their chest found and paid. */
+    secretsFound: string[];
+    /** Cities finished (ids): each (not the tutorial) adds PRESTIGE_BONUS to sales. */
+    completed: string[];
+    /** Trophy rewards left unclaimed in the cities travelled from: still claimable (CARRIED_KEY) in any city. */
+    carried: number;
+    /** Debug: every playable city can be travelled to (without their bonus: `completed` is untouched). */
+    allCitiesOpen: boolean;
 }
 
 /** The claim key of an area's bonus (all its treasures found). */
@@ -55,30 +72,37 @@ export const areaBonusKey = (areaId: string): string => `area:${areaId}`;
 const starterLook = (): Look => ({ color: MOW.wardrobe.colors[0].id, face: MOW.wardrobe.faces[0].id, hat: '' });
 
 const fresh = (): SaveData => ({
-    version: SAVE_VERSION, money: 0, toolLevel: 0, upgrades: {}, clippings: 0, cut: '', restored: [],
+    version: SAVE_VERSION, money: 0, toolLevel: 0, upgrades: {}, clippings: 0, cut: '',
     stats: { cells: 0, earned: 0, sells: 0 }, sent: [],
-    owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0,
-    treasuresFound: [], treasuresClaimed: [],
+    owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, freeLooksOffered: false,
+    treasuresFound: [], treasuresClaimed: [], secretsFound: [], completed: [], carried: 0, allCitiesOpen: false,
+    // The city's areas the tutorial already did (startRestored).
+    restored: MOW.districts.filter((district) => district.startRestored).map((district) => district.id),
 });
 
-function load(): SaveData {
+function read(key: string): Partial<SaveData> | undefined {
     try {
-        const raw = window.localStorage.getItem(SAVE_KEY);
-        if (raw) {
-            const saved = JSON.parse(raw) as Partial<SaveData>;
-            if (saved.version !== SAVE_VERSION) return fresh();
-            return {
-                ...fresh(), ...saved, upgrades: { ...saved.upgrades }, stats: { ...fresh().stats, ...saved.stats },
-                owned: { ...fresh().owned, ...saved.owned }, look: { ...starterLook(), ...saved.look },
-            };
-        }
+        const raw = window.localStorage.getItem(key);
+        const saved = raw ? (JSON.parse(raw) as Partial<SaveData>) : undefined;
+        return saved?.version === SAVE_VERSION ? saved : undefined;
     } catch {
         // A broken save starts fresh.
+        return undefined;
     }
-    return fresh();
 }
 
-const state = load();
+function load(): SaveData {
+    const city = read(cityKey(CITY.id)) ?? {};
+    const global = read(GLOBAL_KEY) ?? {};
+    const own = Object.fromEntries(GLOBAL_FIELDS.filter((field) => field in global).map((field) => [field, global[field]]));
+    const saved = { ...city, ...own } as Partial<SaveData>;
+    return {
+        ...fresh(), ...saved, upgrades: { ...saved.upgrades }, stats: { ...fresh().stats, ...saved.stats },
+        owned: { ...fresh().owned, ...saved.owned }, look: { ...starterLook(), ...saved.look },
+    };
+}
+
+let state = load();
 let saveTimer: number | undefined;
 let wiped = false;
 let cutProvider: (() => string) | undefined;
@@ -178,7 +202,7 @@ export const MowProgress = {
 
     /** Sells the container; returns the money earned. */
     sell(): number {
-        const earned = Math.round(state.clippings * MOW.clippingPrice * (1 + this.moneyBonus));
+        const earned = Math.round(state.clippings * MOW.clippingPrice * (1 + this.moneyBonus) * (1 + this.prestige));
         if (state.clippings <= 0) return 0;
         state.clippings = 0;
         state.money += earned;
@@ -212,14 +236,30 @@ export const MowProgress = {
         return state.look;
     },
 
-    /** Something in the wardrobe became affordable since it was last opened (its "!"). */
+    /** Something in the wardrobe became affordable since it was last opened (its "!"), or a gift waits there after the first hat. */
     get wardrobeHasNews(): boolean {
+        if (this.boughtFirstHat && LOOK_KINDS.some((kind) => this.unclaimedFreeLook(kind))) return true;
         return LOOK_KINDS.some((kind) => MOW.wardrobe[kind].some((item) =>
-            !this.ownsLook(kind, item) && item.price <= state.money && item.price > state.wardrobeBudget));
+            !item.free && !this.ownsLook(kind, item) && item.price <= state.money && item.price > state.wardrobeBudget));
+    },
+
+    /** The kind's free look, while it's still unclaimed. */
+    unclaimedFreeLook(kind: LookKind): WardrobeItem | undefined {
+        return MOW.wardrobe[kind].find((item) => item.free && !this.ownsLook(kind, item));
+    },
+
+    /**
+     * Whether the kind's unclaimed free look shows its FREE badge: only from a wardrobe visit after the one where the
+     * first hat was bought — a gift claimed on that first visit never gets one.
+     */
+    freeLookBadge(kind: LookKind): boolean {
+        return state.freeLooksOffered && !!this.unclaimedFreeLook(kind);
     },
 
     /** The wardrobe was opened: everything affordable now has been seen. */
     markWardrobeSeen(): void {
+        // Opened (again) with the first hat already bought: a return visit, so unclaimed gifts get badged.
+        if (this.boughtFirstHat) state.freeLooksOffered = true;
         state.wardrobeBudget = state.money;
         this.scheduleSave();
     },
@@ -239,11 +279,13 @@ export const MowProgress = {
         return item.price === 0 || state.owned[kind].includes(item.id);
     },
 
-    /** Buys (if needed) and wears a look; false when it costs more than the money there is. */
+    /** Buys (if needed) and wears a look; false when it costs more than the money there is. Gifts (`free`) cost nothing. */
     wearLook(kind: LookKind, item: WardrobeItem): boolean {
         if (!this.ownsLook(kind, item)) {
-            if (state.money < item.price) return false;
-            state.money -= item.price;
+            if (!item.free) {
+                if (state.money < item.price) return false;
+                state.money -= item.price;
+            }
             state.owned[kind].push(item.id);
         }
         if (kind === 'colors') state.look.color = item.id;
@@ -275,6 +317,7 @@ export const MowProgress = {
 
     /** Cash waiting to be claimed for a key (a treasure id, or areaBonusKey(area)); 0 if nothing (or claimed). */
     unclaimedFor(key: string): number {
+        if (key === CARRIED_KEY) return state.carried;
         if (state.treasuresClaimed.includes(key)) return 0;
         if (key.startsWith('area:')) {
             const area = key.slice('area:'.length);
@@ -287,14 +330,40 @@ export const MowProgress = {
 
     /** Anything waiting in the Trophies panel (its button's "!"). */
     get hasUnclaimedTreasure(): boolean {
-        return MOW.treasures.items.some((i) => this.unclaimedFor(i.id) > 0)
+        return state.carried > 0 || MOW.treasures.items.some((i) => this.unclaimedFor(i.id) > 0)
             || MOW.districts.some((d) => this.unclaimedFor(areaBonusKey(d.id)) > 0);
+    },
+
+    /** A treasure reward (or an area's bonus) has ever been claimed (the hand stops pointing at the Trophies button). */
+    get claimedAnyTreasure(): boolean {
+        return state.treasuresClaimed.length > 0;
+    },
+
+    /** A secret patch's chest was found (its patch stays mowed). */
+    secretFound(id: string): boolean {
+        return state.secretsFound.includes(id);
+    },
+
+    /** Pays a secret patch's chest (once); returns how much (0 = already found). */
+    claimSecret(id: string, reward: number): number {
+        if (state.secretsFound.includes(id)) return 0;
+        state.secretsFound.push(id);
+        state.money += reward;
+        state.stats.earned += reward;
+        this.changed();
+        return reward;
     },
 
     /** Pays a waiting reward (a treasure id, or an area's bonus); returns how much (0 = nothing waiting). */
     claimTreasure(key: string): number {
         const amount = this.unclaimedFor(key);
         if (amount <= 0) return 0;
+        if (key === CARRIED_KEY) {
+            state.carried = 0;
+            state.money += amount;
+            this.changed();
+            return amount;
+        }
         state.treasuresClaimed.push(key);
         state.money += amount;
         state.stats.earned += amount;
@@ -319,6 +388,10 @@ export const MowProgress = {
     get timesSold(): number {
         return state.stats.sells;
     },
+    /** All the money ever earned (sales, bonuses, rewards). */
+    get earned(): number {
+        return state.stats.earned;
+    },
     get cellsCut(): number {
         return state.stats.cells;
     },
@@ -326,6 +399,62 @@ export const MowProgress = {
     addMoney(amount: number): void {
         state.money += amount;
         this.changed();
+    },
+
+    // ---------------------------------------------------------------- cities
+
+    /** Cities finished (ids). */
+    get completedCities(): readonly string[] {
+        return state.completed;
+    },
+
+    /** The finished cities' bonus on every sale (PRESTIGE_BONUS each; the tutorial and its like don't count). */
+    get prestige(): number {
+        return PRESTIGE_BONUS * CITIES.filter((city) => !city.keepGear && state.completed.includes(city.id)).length;
+    },
+
+    /** This city is done (every area restored): marked, its next city unlocked. */
+    completeCity(): void {
+        if (state.completed.includes(CITY.id)) return;
+        state.completed.push(CITY.id);
+        this.changed();
+    },
+
+    /** Whether `city` can be played: the first, any finished, or the one after a finished one (not "coming soon"). */
+    cityUnlocked(city: CityDef): boolean {
+        if (city.comingSoon || !city.level) return false;
+        const index = CITIES.indexOf(city);
+        return index === 0 || state.allCitiesOpen || state.completed.includes(city.id) || state.completed.includes(CITIES[index - 1]?.id);
+    },
+
+    /**
+     * Leaves for `city` (the city selector): its own save is played as it was left, or — never played — started: with
+     * this city's gear if this one keeps it (the tutorial into the next), else from scratch (prestige: its bonus the
+     * reward). Rewards not claimed here aren't lost: they move to the claimable pile every city shows (carried).
+     * Saves, and switches over (setCity(), its save loaded): the caller rebuilds the scene.
+     */
+    travel(city: CityDef): void {
+        const keys = [...MOW.treasures.items.map((item) => item.id), ...MOW.districts.map((district) => areaBonusKey(district.id))];
+        for (const key of keys) {
+            const left = this.unclaimedFor(key);
+            if (left <= 0) continue;
+            state.carried += left;
+            state.treasuresClaimed.push(key);
+        }
+        this.saveNow();
+        try {
+            if (!window.localStorage.getItem(cityKey(city.id)) && CITY.keepGear && city === CITIES[CITIES.indexOf(CITY) + 1]) {
+                const carried: Partial<SaveData> = { version: SAVE_VERSION, money: state.money, toolLevel: state.toolLevel, upgrades: state.upgrades };
+                window.localStorage.setItem(cityKey(city.id), JSON.stringify(carried));
+            }
+            window.localStorage.setItem(CURRENT_CITY_KEY, city.id);
+        } catch {
+            // No storage: played unsaved.
+        }
+        window.clearTimeout(saveTimer);
+        cutProvider = undefined;
+        setCity(city);
+        state = load();
     },
 
     /** True the first time `key` is passed, ever (saved): one-time analytics events. */
@@ -360,17 +489,50 @@ export const MowProgress = {
         if (wiped) return;
         if (cutProvider) state.cut = cutProvider();
         try {
-            window.localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+            const city: Partial<SaveData> = { ...state };
+            const global: Partial<SaveData> = { version: SAVE_VERSION };
+            for (const field of GLOBAL_FIELDS) {
+                (global as Record<string, unknown>)[field] = state[field];
+                delete (city as Record<string, unknown>)[field];
+            }
+            window.localStorage.setItem(cityKey(CITY.id), JSON.stringify(city));
+            window.localStorage.setItem(GLOBAL_KEY, JSON.stringify(global));
         } catch {
             // Storage full or blocked: keep playing unsaved.
         }
+    },
+
+    /** Debug: every playable city can be travelled to. */
+    openAllCities(): void {
+        state.allCitiesOpen = true;
+        this.changed();
+    },
+
+    /**
+     * Debug: this city from scratch (its save gone, and no longer counted as finished); the wardrobe and the other
+     * cities stay. The caller rebuilds the scene.
+     */
+    resetCity(): void {
+        window.clearTimeout(saveTimer);
+        cutProvider = undefined;
+        try {
+            window.localStorage.removeItem(cityKey(CITY.id));
+        } catch {
+            // No storage: nothing saved to remove.
+        }
+        state = load();
+        state.completed = state.completed.filter((id) => id !== CITY.id);
+        this.saveNow();
     },
 
     /** Debug: wipes the save and reloads. */
     reset(): void {
         window.clearTimeout(saveTimer);
         wiped = true;
-        window.localStorage.removeItem(SAVE_KEY);
+        // Every city and the player's own (debug: a brand-new game, from the tutorial).
+        for (const city of CITIES) window.localStorage.removeItem(cityKey(city.id));
+        window.localStorage.removeItem(GLOBAL_KEY);
+        window.localStorage.removeItem(CURRENT_CITY_KEY);
         window.location.reload();
     },
 };

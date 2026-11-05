@@ -14,6 +14,7 @@ import { BendService } from '../services/BendService';
 const DEBRIS_POOL = 260;
 const GRAVITY = -22;
 const PICKUP_FLIGHT_SEC = 0.45;
+const BREAK_PULSE_SEC = 0.22;
 
 interface Chip {
     velocity: THREE.Vector3;
@@ -133,6 +134,9 @@ export class DigEffects {
     private readonly crackMaterial: THREE.MeshBasicMaterial;
     private readonly crackHome = new THREE.Vector3();
     private crackJolt = 0;
+    private readonly breakPulse: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>;
+    private breakPulseLeft = 0;
+    private breakPulseSize = 1;
     private readonly matrix = new THREE.Matrix4();
     private readonly position = new THREE.Vector3();
     private readonly rotation = new THREE.Quaternion();
@@ -164,6 +168,13 @@ export class DigEffects {
         this.crack.geometry.translate(0, (blockHeight + 0.03) / 2, 0);
         this.crack.visible = false;
         threeScene.add(this.crack);
+
+        const pulseMaterial = new THREE.MeshBasicMaterial({ color: 0xffe6ae, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+        BendService.applyBend(pulseMaterial);
+        this.breakPulse = new THREE.Mesh(new THREE.RingGeometry(0.7, 1, 24), pulseMaterial);
+        this.breakPulse.rotation.x = -Math.PI / 2;
+        this.breakPulse.visible = false;
+        threeScene.add(this.breakPulse);
     }
 
     /** Shows cracks on the block at `center` (floor level), `damage` 0..1; null hides them. */
@@ -221,6 +232,17 @@ export class DigEffects {
     /** A block broke: a big burst of chips. */
     public shatter(center: THREE.Vector3, color: THREE.Color): void {
         this.burst(center, color, 22, 5.5);
+    }
+
+    /** One shared pulse per wide swing, not one effect per block. */
+    public wideBreak(center: THREE.Vector3, count: number): void {
+        if (count < 2) return;
+        this.breakPulse.position.set(center.x, 0.08, center.z);
+        this.breakPulseSize = Math.min(1.6, 0.6 + Math.sqrt(count) * 0.2);
+        this.breakPulseLeft = BREAK_PULSE_SEC;
+        this.breakPulse.scale.setScalar(this.breakPulseSize * 0.35);
+        this.breakPulse.material.opacity = 0.45;
+        this.breakPulse.visible = true;
     }
 
     private burst(center: THREE.Vector3, color: THREE.Color, count: number, power: number): void {
@@ -301,6 +323,13 @@ export class DigEffects {
     }
 
     public update(delta: number): void {
+        if (this.breakPulseLeft > 0) {
+            this.breakPulseLeft = Math.max(0, this.breakPulseLeft - delta);
+            const progress = 1 - this.breakPulseLeft / BREAK_PULSE_SEC;
+            this.breakPulse.scale.setScalar(this.breakPulseSize * (0.35 + progress * 0.65));
+            this.breakPulse.material.opacity = 0.45 * (1 - progress) ** 2;
+            this.breakPulse.visible = this.breakPulseLeft > 0;
+        }
         for (let i = this.puffs.length - 1; i >= 0; i--) {
             const puff = this.puffs[i];
             puff.life -= delta;
@@ -406,6 +435,9 @@ export class DigEffects {
     }
 
     public destroy(): void {
+        this.breakPulse.removeFromParent();
+        this.breakPulse.geometry.dispose();
+        this.breakPulse.material.dispose();
         this.puffs.forEach((puff) => puff.sprite.removeFromParent());
         this.sparkles.forEach((sparkle) => sparkle.sprite.removeFromParent());
         this.starTexture.dispose();

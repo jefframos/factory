@@ -22,7 +22,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
-import { MOW, TOWN, AtmLook, AtmSpot, DeckDef, DistrictDef, TownProp } from '../data/MowConfig';
+import { CITY, MOW, TOWN, lawnLift, openedBy, AtmLook, AtmSpot, ColliderCube, DeckDef, DistrictDef, TownProp } from '../data/MowConfig';
 import { MowProgress } from '../data/MowProgress';
 import { BendService, OcclusionFadeConfig, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 import { createWaterMaterial } from '../builders/WaterMaterial';
@@ -52,10 +52,23 @@ export const PAD_RADIUS = 1.4;
  * slabs under them never show through.
  */
 const GROUND_Y = -0.05;
+/** The sections' grass ground (GrassField). */
+const GRASS_Y = 0.01;
 const PAVEMENT_Y = 0.02;
 const PAVEMENT_STEP = 0.012;
+/** The most the pavement layers climb in all (a city of many: their step shrinks, the slabs stay low). */
+const PAVEMENT_STACK = 0.06;
+/** Each pavement layer over the one before (later ones on top, never fighting for depth). */
+const pavementStep = (): number => Math.min(PAVEMENT_STEP, PAVEMENT_STACK / Math.max(1, TOWN.pavements.length));
+/** Props this close to the player's start (world units) load first; the rest after (the constructor). */
+const NEAR_LOAD = 24;
+/** topAt()'s cache cell (world units). */
+const TOP_CELL = 0.1;
+const topRay = new THREE.Raycaster();
+const topFrom = new THREE.Vector3();
+const DOWN = new THREE.Vector3(0, -1, 0);
 /** Station pads: just over the top pavement (each pavement sits a step above the one before). */
-const PAD_Y = PAVEMENT_Y + TOWN.pavements.length * PAVEMENT_STEP + 0.03;
+const padY = (): number => PAVEMENT_Y + TOWN.pavements.length * pavementStep() + 0.03;
 /** The island's wooden deck: just over the town's ground, under the sections' grass and the pavements. */
 const DECK_Y = GROUND_Y + 0.03;
 /** One deck plank's width; the plank texture holds PLANKS of them. */
@@ -63,8 +76,9 @@ const PLANK = 0.42;
 const PLANKS = 4;
 /** Flat things are cut into pieces this small (world units) so they curve with the bend instead of cutting through it. */
 const BEND_SEGMENT = 0.5;
-/** Models flatter than this (the road tiles) get cut up like that. */
+/** Models flatter than this (the road tiles) get cut up too, into pieces this small (the bend's own guide: BendService). */
 const FLAT_HEIGHT = 0.3;
+const FLAT_SEGMENT = 1;
 /** A restored section's flower clumps: how big (a clump's height is about half this, in world units): low, just a dash of colour. */
 const FLOWER_SIZE = 0.55;
 /** The kinds of flower, alternating over a section's spots: their head and the petals' colours (one per clump). */
@@ -128,6 +142,8 @@ const flowerParts = (() => {
 })();
 /** Trees and buildings: the whole model dithers out while the camera->player line runs through it. */
 const FADE: OcclusionFadeConfig = { ...STRUCTURE_OCCLUSION_FADE, radius: 0.4 };
+/** How close counts as touching a collider cube (past the player's own footprint): a solid one stops them right there. */
+const CUBE_TOUCH = 0.15;
 
 /** The bouncing "!" (the pizza game's alert icon, UI atlas), like Dig's stations'. */
 function alertTexture(): THREE.CanvasTexture {
@@ -313,6 +329,16 @@ function stationBox(spot: AtmSpot, look: AtmLook): Box {
     };
 }
 
+/** Flat models cut up so far, by source geometry and scale: a model's clones share one (a city lays dozens of each road tile). */
+const subdivided = new Map<string, THREE.BufferGeometry>();
+
+function subdividedOnce(source: THREE.BufferGeometry, scale: THREE.Vector3): THREE.BufferGeometry {
+    const key = `${source.uuid}:${scale.x},${scale.y},${scale.z}`;
+    let geometry = subdivided.get(key);
+    if (!geometry) subdivided.set(key, geometry = subdivide(source, FLAT_SEGMENT, scale));
+    return geometry;
+}
+
 /**
  * Splits a geometry's triangles (each on its longest edge, again and again) until no edge is longer than `max` at
  * `scale`, so a big flat model curves with the world bend (the shader moves vertices only). Every attribute is
@@ -322,9 +348,10 @@ function subdivide(source: THREE.BufferGeometry, max: number, scale: THREE.Vecto
     const geometry = source.index ? source.toNonIndexed() : source.clone();
     const names = Object.keys(geometry.attributes);
     const attributes = names.map((name) => geometry.getAttribute(name) as THREE.BufferAttribute);
-    // One vertex = every attribute's values, flattened.
+    // One vertex = every attribute's values, flattened. Read through the attribute, not its array: a compressed model's
+    // are quantized (integers up to 32767, its node's scale bringing them back), and often interleaved.
     type Vertex = number[][];
-    const read = (i: number): Vertex => attributes.map((a) => Array.from({ length: a.itemSize }, (_, k) => a.array[i * a.itemSize + k]));
+    const read = (i: number): Vertex => attributes.map((a) => Array.from({ length: a.itemSize }, (_, k) => a.getComponent(i, k)));
     const mid = (a: Vertex, b: Vertex): Vertex => a.map((values, n) => values.map((v, k) => (v + b[n][k]) / 2));
     const position = names.indexOf('position');
     const length = (a: Vertex, b: Vertex) => Math.hypot(
@@ -350,22 +377,94 @@ function subdivide(source: THREE.BufferGeometry, max: number, scale: THREE.Vecto
         const size = attributes[n].itemSize;
         const array = new Float32Array(out.length * size);
         out.forEach((vertex, i) => array.set(vertex[n], i * size));
-        result.setAttribute(name, new THREE.BufferAttribute(array, size, attributes[n].normalized));
+        // Plain floats now (read() undid any quantizing).
+        result.setAttribute(name, new THREE.BufferAttribute(array, size));
     });
     result.computeBoundingBox();
     result.computeBoundingSphere();
     return result;
 }
 
+/** How far inside a pen's fence the player's footprint stops. */
+const PEN_CLEARANCE = 0.15;
+
+/**
+ * A white fence all round a rect (two rails per side, posts every ~1.5 units), its rails cut along their length so
+ * they curve with the world bend.
+ */
+function fenceAround(rect: { x: number; z: number; width: number; depth: number }, white: THREE.Material, post: THREE.BufferGeometry): THREE.Group {
+    const fence = new THREE.Group();
+    const hx = rect.width / 2;
+    const hz = rect.depth / 2;
+    const sides: [number, number, number, boolean][] = [
+        [rect.x, rect.z - hz, rect.width, true], [rect.x, rect.z + hz, rect.width, true],
+        [rect.x - hx, rect.z, rect.depth, false], [rect.x + hx, rect.z, rect.depth, false],
+    ];
+    const spots: [number, number][] = [];
+    for (const [x, z, length, alongX] of sides) {
+        // Cut along their length so they curve with the bend (a single long box stays straight through it).
+        const segments = Math.max(1, Math.ceil(length / BEND_SEGMENT));
+        for (const y of [0.45, 0.95]) {
+            const rail = new THREE.Mesh(alongX
+                ? new THREE.BoxGeometry(length, 0.12, 0.08, segments, 1, 1)
+                : new THREE.BoxGeometry(0.08, 0.12, length, 1, 1, segments), white);
+            rail.position.set(x, y, z);
+            fence.add(rail);
+        }
+        const count = Math.max(1, Math.round(length / 1.5));
+        for (let i = 0; i <= count; i++) {
+            const t = -length / 2 + (length * i) / count;
+            spots.push(alongX ? [x + t, z] : [x, z + t]);
+        }
+    }
+    const posts = new THREE.InstancedMesh(post, white, spots.length);
+    const matrix = new THREE.Matrix4();
+    spots.forEach(([x, z], i) => posts.setMatrixAt(i, matrix.makeTranslation(x, 0.6, z)));
+    posts.computeBoundingSphere();
+    fence.add(posts);
+    return fence;
+}
+
+/** Whether (x, z) lies on a side of a section's pen (within half a unit). */
+function onPenSide(x: number, z: number): boolean {
+    return MOW.districts.some(({ pen }) => !!pen && (
+        (Math.abs(Math.abs(z - pen.z) - pen.depth / 2) < 0.5 && Math.abs(x - pen.x) <= pen.width / 2)
+        || (Math.abs(Math.abs(x - pen.x) - pen.width / 2) < 0.5 && Math.abs(z - pen.z) <= pen.depth / 2)));
+}
+
+/** A padlock plaque saying `text`, floating over (x, z). */
+function fenceSign(text: string, x: number, z: number): THREE.Sprite {
+    const canvas = document.createElement('canvas');
+    canvas.width = 384;
+    canvas.height = 96;
+    const g = canvas.getContext('2d')!;
+    CanvasArt.plaque(g, 6, 6, 372, 84, 20);
+    CanvasArt.drawIcon(g, 'Icon_Lock03', 48, 48, 52);
+    CanvasArt.text(g, text, 220, 50, 30, '#ffe27a', 290);
+    const sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: CanvasArt.texture(canvas), depthWrite: false }));
+    sign.scale.set(4.2, 1.05, 1);
+    sign.position.set(x, 2.1, z);
+    return sign;
+}
+
 export class Town {
     private readonly group = new THREE.Group();
+    /** The sea round the island (buildIsland()). */
+    private sea?: THREE.Mesh;
     /** What the props block (fixed). */
     private readonly propBoxes: Box[] = [];
+    /** Flat props laid on the ground (road tiles): their footprint, top (for surfaceAt()) and model (for topAt()). */
+    private readonly floors: { minX: number; maxX: number; minZ: number; maxZ: number; top: number; object: THREE.Object3D }[] = [];
+    /** topAt()'s answers by TOP_CELL cell (the floors never move). */
+    private readonly tops = new Map<string, number>();
     /** Each station's box, by kind (no grass under any of them; blocking once it's there). */
     private readonly boxes: Record<StationKind, Box[]> = {
         atm: stationSpots('atm').map((spot) => stationBox(spot, stationLook('atm'))),
         wardrobe: stationSpots('wardrobe').map((spot) => stationBox(spot, stationLook('wardrobe'))),
     };
+    /** Per section: its pen (DistrictDef.pen) still stands (the player is kept inside it), and its fence. */
+    private readonly penned: boolean[];
+    private readonly pens: (THREE.Group | undefined)[] = [];
     /** Each section's separator (index = section) and its box while it stands. */
     private readonly separators: (THREE.Group | undefined)[] = [];
     private readonly separatorBoxes: (Box | undefined)[] = [];
@@ -386,17 +485,40 @@ export class Town {
     public movingBlockers?: () => readonly Box[];
     /** Resolves once every model has loaded (or failed: the town still plays without one). */
     public readonly ready: Promise<void>;
+    /** Resolves once the models near the player's start (NEAR_LOAD) and the stations are in: enough to play. */
+    public readonly readyNear: Promise<void>;
 
-    /** `open(d)`: whether section d is unlocked from the start (its predecessor restored). */
-    public constructor(threeScene: THREE.Scene, open: (district: number) => boolean) {
+    /**
+     * `open(d)`: whether section d is unlocked from the start (its predecessor restored); `restored(d)`: whether it's
+     * restored (its pen, if any, is gone then).
+     */
+    public constructor(threeScene: THREE.Scene, open: (district: number) => boolean, restored: (district: number) => boolean = () => false) {
         this.open = MOW.districts.map((_, d) => open(d));
+        this.penned = MOW.districts.map((district, d) => !!district.pen && !restored(d));
         this.buildGround();
-        TOWN.props.forEach((prop) => this.placeProp(prop));
+        // Every prop's collider now (the grass and the walking need them from the start), its model by distance from
+        // where the player starts: the near ones (and the stations) first — all the loading screen waits for
+        // (readyNear) — the rest once they're in, so they don't compete for the download.
+        for (const prop of TOWN.props) {
+            if (prop.collider) this.propBoxes.push({ x: prop.x, z: prop.z, halfX: prop.collider.halfX, halfZ: prop.collider.halfZ });
+        }
+        for (const cube of TOWN.colliders ?? []) {
+            if (cube.solid) this.propBoxes.push({ x: cube.x, z: cube.z, halfX: cube.width / 2, halfZ: cube.depth / 2 });
+        }
+        const away = (prop: TownProp) => Math.hypot(prop.x - TOWN.start.x, prop.z - TOWN.start.z);
+        const props = [...TOWN.props].sort((a, b) => away(a) - away(b));
+        props.filter((prop) => away(prop) <= NEAR_LOAD).forEach((prop) => this.placeProp(prop));
         for (const kind of STATION_KINDS) stationSpots(kind).forEach((spot) => this.buildStation(kind, spot));
         this.buildSeparators();
+        this.buildPens();
         threeScene.add(this.group);
         setWalkabilityQuery(this.walkability);
-        this.ready = Promise.all(this.loads).then(() => undefined);
+        this.readyNear = Promise.all(this.loads).then(() => undefined);
+        this.ready = this.readyNear.then(() => {
+            if (this.destroyed) return undefined;
+            props.filter((prop) => away(prop) > NEAR_LOAD).forEach((prop) => this.placeProp(prop));
+            return Promise.all(this.loads).then(() => undefined);
+        });
         void this.ready.then(() => window.setTimeout(() => {
             if (!this.destroyed) this.redraws.forEach((redraw) => redraw());
         }, 300));
@@ -427,7 +549,7 @@ export class Town {
         this.groundCells(deck ? insetPolygon(this.shore, deck.width / 2) : this.shore, TOWN.ground.color);
         TOWN.pavements.forEach((p, i) => {
             const road = p.id.startsWith('road');
-            this.slab(p.x, p.z, p.width, p.depth, p.color, PAVEMENT_Y + i * PAVEMENT_STEP,
+            this.slab(p.x, p.z, p.width, p.depth, p.color, PAVEMENT_Y + i * pavementStep(),
                 road ? asphaltTexture() : pavingTexture(), road ? STONE_TILE : PAVING_TILE);
         });
         this.buildIsland();
@@ -487,14 +609,27 @@ export class Town {
         this.group.add(mesh);
     }
 
-    /** Points every ~`spacing` along a closed polygon's edges (each corner included). */
+    /** Points every ~`spacing` round a closed polygon, evenly spaced along its whole length. */
     private static alongEdges(points: readonly ShorePoint[], spacing: number): ShorePoint[] {
-        const out: ShorePoint[] = [];
-        points.forEach((p, i) => {
+        // Round the whole loop at one spacing (a rounded corner's short edges don't each get a post).
+        const lengths = points.map((p, i) => {
             const q = points[(i + 1) % points.length];
-            const count = Math.max(1, Math.round(Math.hypot(q.x - p.x, q.z - p.z) / spacing));
-            for (let k = 0; k < count; k++) out.push({ x: p.x + ((q.x - p.x) * k) / count, z: p.z + ((q.z - p.z) * k) / count });
+            return Math.hypot(q.x - p.x, q.z - p.z);
         });
+        const total = lengths.reduce((sum, length) => sum + length, 0);
+        const count = Math.max(3, Math.round(total / spacing));
+        const step = total / count;
+        const out: ShorePoint[] = [];
+        let edge = 0;
+        let start = 0;
+        for (let k = 0; k < count; k++) {
+            const at = k * step;
+            while (edge < points.length - 1 && at > start + lengths[edge]) start += lengths[edge++];
+            const p = points[edge];
+            const q = points[(edge + 1) % points.length];
+            const t = lengths[edge] > 0 ? (at - start) / lengths[edge] : 0;
+            out.push({ x: p.x + (q.x - p.x) * t, z: p.z + (q.z - p.z) * t });
+        }
         return out;
     }
 
@@ -528,6 +663,7 @@ export class Town {
         geometry.rotateX(-Math.PI / 2);
         const material = createWaterMaterial(island.water, -island.waterLevel);
         const sea = new THREE.Mesh(geometry, material);
+        this.sea = sea;
         sea.position.set((minX + maxX) / 2, 0, (minZ + maxZ) / 2);
         sea.frustumCulled = false;
         sea.renderOrder = -1;
@@ -632,13 +768,41 @@ export class Town {
         this.group.add(pileMesh);
     }
 
+    /** The placed props, for a snapshot of one alone (propObject()). */
+    private readonly placedProps: { model: string; object: THREE.Object3D }[] = [];
+
+    /** The first placed prop of this model, if any. */
+    public propObject(model: string): THREE.Object3D | undefined {
+        return this.placedProps.find((prop) => prop.model === model)?.object;
+    }
+
+    /** Whether the player is in or touching any of these cubes. */
+    private touching(cubes: ColliderCube[]): boolean {
+        const { x, z } = BendService.uniforms.uOccPlayerPos.value;
+        const reach = this.bodyRadius + CUBE_TOUCH;
+        return cubes.some((cube) => Math.abs(x - cube.x) <= cube.width / 2 + reach && Math.abs(z - cube.z) <= cube.depth / 2 + reach);
+    }
+
+    /** A prop's model, loaded and placed (its collider is registered up front, in the constructor). */
     private placeProp(prop: TownProp): void {
-        if (prop.collider) this.propBoxes.push({ x: prop.x, z: prop.z, halfX: prop.collider.halfX, halfZ: prop.collider.halfZ });
-        this.loads.push(this.loadModel(prop.model, prop.height, prop.fade, prop.stretch).then((object) => {
+        // Faded by the cubes naming it, when there are any.
+        const cubes = (TOWN.colliders ?? []).filter((cube) => cube.fades === prop.model);
+        const fadeWhen = cubes.length ? () => this.touching(cubes) : undefined;
+        this.loads.push(this.loadModel(prop.model, prop.height, prop.fade || cubes.length > 0, prop.stretch, fadeWhen).then((object) => {
             if (!object) return;
             object.rotation.y = prop.rotationY;
             this.settle(object, prop.x, prop.elevation ?? 0, prop.z);
             this.group.add(object);
+            this.placedProps.push({ model: prop.model, object });
+            if (prop.height < FLAT_HEIGHT) {
+                // Its top where it's walked on (the middle: a road tile's kerbs stand higher than the asphalt).
+                object.updateMatrixWorld(true);
+                const box = new THREE.Box3().setFromObject(object);
+                const ray = new THREE.Raycaster(new THREE.Vector3(prop.x, box.max.y + 1, prop.z), new THREE.Vector3(0, -1, 0));
+                const top = ray.intersectObject(object, true)[0]?.point.y ?? box.max.y;
+                this.floors.push({ minX: box.min.x, maxX: box.max.x, minZ: box.min.z, maxZ: box.max.z, top, object });
+                this.tops.clear();
+            }
         }));
     }
 
@@ -646,7 +810,7 @@ export class Town {
      * Loads a model fitted to `height` (own materials, bent with the world; `fade`: the occlusion fade, measured while
      * it's still untransformed). Not placed yet: settle() does that once it's turned.
      */
-    private async loadModel(model: string, height: number, fade?: boolean, stretch?: { x: number; z: number }): Promise<THREE.Object3D | undefined> {
+    private async loadModel(model: string, height: number, fade?: boolean, stretch?: { x: number; z: number }, fadeWhen?: () => boolean): Promise<THREE.Object3D | undefined> {
         try {
             const object = await ModelLoaderManager.instance.loadModel(`${MODEL_BASE}${model}`);
             if (this.destroyed) return undefined;
@@ -655,7 +819,7 @@ export class Town {
                 child.material = Array.isArray(child.material) ? child.material.map((m) => m.clone()) : child.material.clone();
                 (Array.isArray(child.material) ? child.material : [child.material]).forEach((m) => BendService.applyBend(m));
             });
-            if (fade) BendService.applyOcclusionFadeToObject(object, FADE);
+            if (fade) BendService.applyOcclusionFadeToObject(object, fadeWhen ? { ...FADE, fadeWhen } : FADE);
             object.updateMatrixWorld(true);
             const size = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
             if (size.y > 1e-4) object.scale.multiplyScalar(height / size.y);
@@ -663,7 +827,7 @@ export class Town {
             if (height < FLAT_HEIGHT) {
                 object.updateMatrixWorld(true);
                 object.traverse((child) => {
-                    if (child instanceof THREE.Mesh) child.geometry = subdivide(child.geometry, BEND_SEGMENT, child.getWorldScale(new THREE.Vector3()));
+                    if (child instanceof THREE.Mesh) child.geometry = subdividedOnce(child.geometry, child.getWorldScale(new THREE.Vector3()));
                 });
             }
             return object;
@@ -687,9 +851,18 @@ export class Town {
      * Whether a station is there: its sales are made (`appearsAfterSales`: the first wardrobe waits for the tutorial's
      * second sale) and it has no section, or its section is open.
      */
+    /** Which of a kind's stations are out now, in the level's order (the maps' markers). */
+    public stationsOut(kind: StationKind): boolean[] {
+        return stationSpots(kind).map((_, i) => this.shown(kind, i));
+    }
+
     private shown(kind: StationKind, i: number): boolean {
         const spot = stationSpots(kind)[i];
-        if ((spot.appearsAfterSales ?? 0) > MowProgress.timesSold) return false;
+        // (Waiting for sales is the tutorial's: in a city the wardrobe is there from the start.)
+        if (CITY.keepGear && (spot.appearsAfterSales ?? 0) > MowProgress.timesSold) return false;
+        // The first ATM, in the tutorial: not in the yard (its bag fills there on purpose: the first purchases), in the
+        // park when it's full. In a city it's there from the start.
+        if (CITY.keepGear && spot.appearsWhenFull && MowProgress.timesSold === 0 && !(MowProgress.full && MowProgress.isRestored(MOW.districts[0].id))) return false;
         const section = spot.section;
         if (!section) return true;
         const d = MOW.districts.findIndex((district) => district.id === section);
@@ -710,7 +883,7 @@ export class Town {
         padMaterial.polygonOffsetUnits = -2;
         const pad = new THREE.Mesh(new THREE.RingGeometry(0, PAD_RADIUS, 32, Math.ceil(PAD_RADIUS / BEND_SEGMENT)), padMaterial);
         pad.rotation.x = -Math.PI / 2;
-        pad.position.y = PAD_Y;
+        pad.position.y = padY();
         pad.renderOrder = 1;
         group.add(pad);
         this.loads.push(this.loadModel(look.model, look.height).then((object) => {
@@ -791,7 +964,7 @@ export class Town {
     }
 
     /** The nearest ATM's pad that's there (where the arrows lead). */
-    public nearestAtm(from: THREE.Vector3, out = new THREE.Vector3()): THREE.Vector3 {
+    public nearestAtm(from: THREE.Vector3, out = new THREE.Vector3()): THREE.Vector3 | null {
         let best = Infinity;
         TOWN.atms.forEach((spot, i) => {
             const distance = Math.hypot(from.x - spot.x, from.z - spot.z);
@@ -800,7 +973,8 @@ export class Town {
                 out.set(spot.x, 0, spot.z);
             }
         });
-        return out;
+        // None out yet (the first one waits for a full bag): nowhere to lead.
+        return best < Infinity ? out : null;
     }
 
     /** Where an ATM's model stands (the clippings are tossed into it). */
@@ -831,46 +1005,11 @@ export class Town {
         MOW.districts.forEach((district, d) => {
             const line = district.separator;
             if (!line || d === 0) return;
-            const fence = new THREE.Group();
-            const hx = district.width / 2;
-            const hz = district.depth / 2;
-            const sides: [number, number, number, boolean][] = [
-                [district.x, district.z - hz, district.width, true], [district.x, district.z + hz, district.width, true],
-                [district.x - hx, district.z, district.depth, false], [district.x + hx, district.z, district.depth, false],
-            ];
-            const spots: [number, number][] = [];
-            for (const [x, z, length, alongX] of sides) {
-                // Cut along their length so they curve with the bend (a single long box stays straight through it).
-                const segments = Math.max(1, Math.ceil(length / BEND_SEGMENT));
-                for (const y of [0.45, 0.95]) {
-                    const rail = new THREE.Mesh(alongX
-                        ? new THREE.BoxGeometry(length, 0.12, 0.08, segments, 1, 1)
-                        : new THREE.BoxGeometry(0.08, 0.12, length, 1, 1, segments), white);
-                    rail.position.set(x, y, z);
-                    fence.add(rail);
-                }
-                const count = Math.max(1, Math.round(length / 1.5));
-                for (let i = 0; i <= count; i++) {
-                    const t = -length / 2 + (length * i) / count;
-                    spots.push(alongX ? [x + t, z] : [x, z + t]);
-                }
-            }
-            const posts = new THREE.InstancedMesh(post, white, spots.length);
-            const matrix = new THREE.Matrix4();
-            spots.forEach(([x, z], i) => posts.setMatrixAt(i, matrix.makeTranslation(x, 0.6, z)));
-            posts.computeBoundingSphere();
-            fence.add(posts);
-            const canvas = document.createElement('canvas');
-            canvas.width = 384;
-            canvas.height = 96;
-            const g = canvas.getContext('2d')!;
-            CanvasArt.plaque(g, 6, 6, 372, 84, 20);
-            CanvasArt.drawIcon(g, 'Icon_Lock02', 48, 48, 52);
-            CanvasArt.text(g, `RESTORE THE ${MOW.districts[d - 1].name.toUpperCase()}`, 220, 50, 30, '#ffe27a', 290);
-            const sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: CanvasArt.texture(canvas), depthWrite: false }));
-            sign.scale.set(4.2, 1.05, 1);
-            sign.position.set(line.x, 2.1, line.z);
-            fence.add(sign);
+            const fence = fenceAround(district, white, post);
+            // No sign where it's a pen's side (the first area's fence: a plaque there only distracts a beginner).
+            const before = openedBy(d);
+            if (district.opensAfter) fence.add(fenceSign(`RESTORE ${district.opensAfter} AREAS`, line.x, line.z));
+            else if (before && !onPenSide(line.x, line.z)) fence.add(fenceSign(`RESTORE THE ${before.toUpperCase()}`, line.x, line.z));
             fence.visible = !this.open[d];
             this.group.add(fence);
             this.separators[d] = fence;
@@ -878,6 +1017,30 @@ export class Town {
             const half = line.width / 2;
             this.separatorBoxes[d] = { x: line.x, z: line.z, halfX: sideways ? 0.25 : half, halfZ: sideways ? half : 0.25 };
         });
+    }
+
+    /**
+     * Each pen (DistrictDef.pen) still standing: the white fence all round its rect, no signs (it's the very start of
+     * the game: nothing to read). The player can't leave it (standable()) until releasePen().
+     */
+    private buildPens(): void {
+        const white = this.material(0xffffff);
+        const post = new THREE.BoxGeometry(0.2, 1.2, 0.2);
+        MOW.districts.forEach((district, d) => {
+            const pen = district.pen;
+            if (!pen || !this.penned[d]) return;
+            const fence = fenceAround(pen, white, post);
+            this.group.add(fence);
+            this.pens[d] = fence;
+        });
+    }
+
+    /** A section restored: its pen (if any) sinks away and the player is free to go. */
+    public releasePen(district: number): void {
+        if (!this.penned[district]) return;
+        this.penned[district] = false;
+        const fence = this.pens[district];
+        if (fence) gsap.to(fence.position, { y: -1.6, duration: 0.9, ease: 'power2.in', onComplete: () => void (fence.visible = false) });
     }
 
     /** Opens a section: its fence sinks away (walkable now) and its ATMs pop in. */
@@ -916,7 +1079,7 @@ export class Town {
             const spots = points.filter((_, i) => i % FLOWER_KINDS.length === k).map((p) => {
                 const random = Math.abs(Math.sin(p.x * 12.9898 + p.z * 78.233) * 43758.5453) % 1;
                 return {
-                    at: new THREE.Vector3(p.x, 0, p.z),
+                    at: new THREE.Vector3(p.x, lawnLift(), p.z),
                     turn: new THREE.Quaternion().setFromAxisAngle(up, random * Math.PI * 2),
                     size: FLOWER_SIZE * (0.8 + random * 0.45),
                     delay: (Math.hypot(p.x - centre.x, p.z - centre.z) / reach) * 0.9 + random * 0.2,
@@ -961,11 +1124,48 @@ export class Town {
 
     // ---------------------------------------------------------------- layout queries
 
-    /** No grass under pavements, props or ATMs. */
+    /**
+     * The ground at (x, z): its height (the top pavement or road tile over it, else the grass) and what it is (for
+     * footsteps): `pavement`, `deck` (the island's wooden band), or `grass`.
+     */
+    public surfaceAt(x: number, z: number): { y: number; kind: 'pavement' | 'deck' | 'grass' } {
+        let y = -Infinity;
+        TOWN.pavements.forEach((p, i) => {
+            if (Math.abs(x - p.x) <= p.width / 2 && Math.abs(z - p.z) <= p.depth / 2) y = Math.max(y, PAVEMENT_Y + i * pavementStep());
+        });
+        for (const f of this.floors) {
+            if (x >= f.minX && x <= f.maxX && z >= f.minZ && z <= f.maxZ) y = Math.max(y, f.top);
+        }
+        if (y > -Infinity) return { y, kind: 'pavement' };
+        const deck = TOWN.island?.deck;
+        if (deck && containsPoint(this.shore, x, z) && edgeDistance(this.shore, x, z) < deck.width) return { y: DECK_Y, kind: 'deck' };
+        return { y: GRASS_Y + lawnLift(), kind: 'grass' };
+    }
+
+    /**
+     * The top of whatever is drawn at (x, z): surfaceAt()'s height, or a road tile's own surface there (its raised
+     * kerbs and sidewalks too, where surfaceAt() keeps to the asphalt's height), for things laid on the ground (the
+     * guide's arrows). Cached by TOP_CELL cell.
+     */
+    public topAt(x: number, z: number): number {
+        const key = `${Math.round(x / TOP_CELL)},${Math.round(z / TOP_CELL)}`;
+        const cached = this.tops.get(key);
+        if (cached !== undefined) return cached;
+        let y = this.surfaceAt(x, z).y;
+        for (const f of this.floors) {
+            if (x < f.minX || x > f.maxX || z < f.minZ || z > f.maxZ) continue;
+            topRay.set(topFrom.set(x, f.top + 5, z), DOWN);
+            const hit = topRay.intersectObject(f.object, true)[0];
+            if (hit) y = Math.max(y, hit.point.y);
+        }
+        this.tops.set(key, y);
+        return y;
+    }
+    /** No grass under pavements (unless the level's lawns lie over them), props or ATMs. */
     public isBlocked(x: number, z: number): boolean {
         const pad = 0.25;
         const under = (b: Box) => Math.abs(x - b.x) <= b.halfX + pad && Math.abs(z - b.z) <= b.halfZ + pad;
-        return TOWN.pavements.some((p) => Math.abs(x - p.x) <= p.width / 2 + pad && Math.abs(z - p.z) <= p.depth / 2 + pad)
+        return (!TOWN.grassOverPavement && TOWN.pavements.some((p) => Math.abs(x - p.x) <= p.width / 2 + pad && Math.abs(z - p.z) <= p.depth / 2 + pad))
             || this.propBoxes.some(under) || STATION_KINDS.some((kind) => this.boxes[kind].some(under));
     }
 
@@ -1001,15 +1201,40 @@ export class Town {
         return MOW.districts.filter((_, i) => !this.open[i]).map((d) => [d.x, d.z, d.width / 2, d.depth / 2] as const);
     }
 
-    /** A footprint `r` round (x, z) inside the island's fence (the shore without one) and off the locked rects. */
+    /**
+     * A footprint `r` round (x, z) inside the island's fence (the shore without one), off the locked rects, and inside
+     * every pen still standing.
+     */
     private standable(x: number, z: number, r: number, locked: readonly (readonly [number, number, number, number])[]): boolean {
         const edge = (TOWN.island?.fence?.inset ?? 0) + ISLAND_FENCE_CLEARANCE;
         if (!containsPoint(this.shore, x, z) || edgeDistance(this.shore, x, z) < edge + r) return false;
+        for (let d = 0; d < this.penned.length; d++) {
+            const pen = MOW.districts[d].pen;
+            if (!this.penned[d] || !pen) continue;
+            if (Math.abs(x - pen.x) > pen.width / 2 - PEN_CLEARANCE - r || Math.abs(z - pen.z) > pen.depth / 2 - PEN_CLEARANCE - r) return false;
+        }
         return !locked.some(([lx, lz, hx, hz]) => Math.abs(x - lx) < hx + r && Math.abs(z - lz) < hz + r);
+    }
+
+    /**
+     * For the map snapshots (TownSnapshotScene): every station shown, no sea, no labels or "!" (the miniature is the
+     * town itself, floating on nothing).
+     */
+    public prepareSnapshot(): void {
+        for (const kind of STATION_KINDS) this.groups[kind].forEach((group) => {
+            gsap.killTweensOf(group.scale);
+            group.visible = true;
+            group.scale.setScalar(1);
+        });
+        if (this.sea) this.sea.visible = false;
+        this.group.traverse((child) => {
+            if (child instanceof THREE.Sprite) child.visible = false;
+        });
     }
 
     public destroy(): void {
         this.destroyed = true;
+        this.pens.forEach((fence) => fence && gsap.killTweensOf(fence.position));
         clearWalkabilityQuery(this.walkability);
         for (const kind of STATION_KINDS) this.groups[kind].forEach((group) => gsap.killTweensOf(group.scale));
         this.wardrobeAlerts.forEach((alert) => gsap.killTweensOf(alert.position));

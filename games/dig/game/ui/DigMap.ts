@@ -12,6 +12,7 @@ import { DIG, FindDef } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
 import { VoxelTerrain, AIR, BEDROCK, CHEST_KINDS } from '../world/VoxelTerrain';
 import { RARITY_COLORS } from './CollectionPanel';
+import { TRACTOR_SPOT_COLOR } from '../mining/PowerChestSpawner';
 
 const CELL_PX = 3;
 const DUG_COLOR = '#2b1e16';
@@ -188,7 +189,7 @@ export class DigMap extends PIXI.Container {
             if (!terrain.chests[index] || terrain.cells[index] === AIR) continue;
             const x = this.map.x + ((index % size) + 0.5 - size / 2) * scale;
             const y = this.map.y + (Math.floor(index / size) + 0.5 - size / 2) * scale;
-            const color = CHEST_KINDS[terrain.chests[index] - 1] === 'power' ? 0x6fe3ff : 0xffd23f;
+            const color = CHEST_KINDS[terrain.chests[index] - 1] === 'power' ? TRACTOR_SPOT_COLOR : 0xffd23f;
             this.findMarkers.lineStyle(2, 0x000000).beginFill(color).drawRect(x - FIND_MARKER_PX, y - FIND_MARKER_PX, FIND_MARKER_PX * 2, FIND_MARKER_PX * 2).endFill();
         }
         this.setFindCount(this.buried.length);

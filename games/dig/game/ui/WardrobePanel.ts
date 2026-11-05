@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { UiKit } from './UiKit';
 import { UiAnim } from './UiAnim';
-import { tabbedBlock } from './TabBar';
+import { tabbedBlock, tagBadge } from './TabBar';
 import { ModelIcons } from './ModelIcons';
 import { DIG, WardrobeItem } from '../data/DigConfig';
 import { DigProgress, LookKind } from '../data/DigProgress';
@@ -107,16 +107,18 @@ export class WardrobePanel extends PIXI.Container {
 
     /** The tabs over the content block (TabBar); while a hat is forced they don't switch. */
     private tabs(): PIXI.Container {
+        for (const [kind] of TABS) if (DigProgress.freeLookBadge(kind)) GameAnalytics.giftBadgeShown(kind);
         const block = tabbedBlock({
             width: BLOCK.width,
             height: BLOCK.height,
             tabWidth: BLOCK.tabWidth,
             tabHeight: BLOCK.tabHeight,
-            tabs: TABS.map(([kind, label]) => ({ id: kind, label: t(label) })),
+            tabs: TABS.map(([kind, label]) => ({ id: kind, label: t(label), badge: DigProgress.freeLookBadge(kind) ? t('free') : undefined })),
             active: this.tab,
             onSelect: (id) => {
                 if (this.forcedItem) return;
                 this.tab = id as LookKind;
+                GameAnalytics.tabOpened('wardrobe', id);
                 DigAudio.play('tab');
                 this.page = 0;
                 this.refresh();
@@ -161,6 +163,13 @@ export class WardrobePanel extends PIXI.Container {
             lock.position.set(CARD_W / 2 - 18, -CARD / 2 + 18);
             card.addChild(lock);
             status = UiKit.text('wardrobe', 'owned', { text: t('crownLock', { count: crownGoal() }) }, { fill: 0xffd23f });
+        } else if (item.free) {
+            // A gift: "FREE" instead of a price; on a return visit (freeLookBadge) it also wears the tag and pulses.
+            status = UiKit.text('wardrobe', 'owned', { text: t('free') }, { fill: 0x7dff8f });
+            if (DigProgress.freeLookBadge(this.tab) && !this.forcedItem) {
+                card.addChild(tagBadge(t('free'), CARD_W / 2 - 28, -CARD / 2 + 10));
+                UiAnim.pulse(card, 0.05, 0.6);
+            }
         } else {
             const affordable = DigProgress.money >= item.price;
             status = UiKit.text('wardrobe', 'price', { price: item.price.toLocaleString('en-US') }, affordable ? {} : { fill: 0xff8a7a });
@@ -214,6 +223,7 @@ export class WardrobePanel extends PIXI.Container {
     private choose(item: WardrobeItem, card: PIXI.Container): void {
         if (this.worn(item)) return;
         const wasOwned = DigProgress.ownsLook(this.tab, item);
+        const badged = DigProgress.freeLookBadge(this.tab);
         if (!DigProgress.wearLook(this.tab, item)) {
             this.say(item.unlock ? t('earnCrown', { count: crownGoal() }) : t('notEnoughCash'), 0xff8a7a);
             DigAudio.play('error');
@@ -225,6 +235,7 @@ export class WardrobePanel extends PIXI.Container {
         }
         if (wasOwned) GameAnalytics.lookEquipped(this.tab, item.id);
         else GameAnalytics.lookBought(this.tab, item.id);
+        if (!wasOwned && item.free) GameAnalytics.giftClaimed(this.tab, badged);
         if (wasOwned) {
             DigAudio.play('item');
         } else {

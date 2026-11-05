@@ -235,3 +235,24 @@ details summary:hover { color: var(--text); }
 .stack { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
 button.block { width: 100%; text-align: left; }
 .hint-bar { flex: none; min-height: 28px; padding: 5px 12px; background: var(--panel); border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+
+/* A diorama's editor (Map shots): only what makes the picture. */
+.diorama .town-only { display: none !important; }
+
+/* Map shots tab: the bar on top, then the diorama editor (custom) or the picture (original). */
+.mapshots { display: flex; flex-direction: column; }
+.mapshots[hidden] { display: none; }
+.mapshots-bar { flex: none; gap: 10px; flex-wrap: wrap; }
+.mapshots-bar input[type=number] { width: 64px; }
+.mapshots-editor { flex: 1; min-height: 0; }
+.mapshots-editor[hidden] { display: none; }
+.mapshot-preview { height: 40px; max-width: 90px; object-fit: contain; border-radius: 4px; background: #0f1216; }
+.mapshots-original { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px; background: #0f1216; }
+.mapshots-original[hidden] { display: none; }
+.mapshots-pair { display: flex; align-items: center; gap: 24px; max-width: 100%; max-height: 75%; }
+.mapshot-large { max-width: min(640px, 70vw); max-height: 60vh; object-fit: contain; }
+.mapshot-small { width: auto; height: auto; image-rendering: auto; }
+
+/* The level picker in the top bar: which city's level the Town tab edits. */
+#levelPicker { display: flex; align-items: center; gap: 8px; margin-left: 18px; font-weight: 600; color: #ffd23f; }
+#levelPicker select { font-weight: 700; padding: 4px 8px; border-radius: 6px; background: #1d2633; color: #fff; border: 1px solid #ffd23f; }

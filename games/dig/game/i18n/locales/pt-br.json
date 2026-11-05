@@ -1,4 +1,8 @@
 {
+    "tractorOfferTitle": "IMPULSO DO TRATOR",
+    "tractorOfferBody": "Assista a um vídeo para escavar com força e ganhar dinheiro na hora por {seconds}s. Depois sua ferramenta volta. Um uso por mina.",
+    "tractorWatch": "ASSISTIR VÍDEO",
+    "tractorAdFailed": "Vídeo não concluído. Afaste-se e volte para tentar de novo.",
     "titleUpgrades": "MELHORIAS",
     "titleCollection": "COLEÇÃO",
     "titleWardrobe": "GUARDA-ROUPA",
@@ -67,6 +71,7 @@
     "tabHats": "CHAPÉUS",
     "wearing": "USANDO",
     "owned": "SEU",
+    "free": "GRÁTIS",
     "collectionLock": "COLEÇÃO",
     "completeCollection": "COMPLETE A COLEÇÃO!",
     "lookBought": "{name} COMPRADO!",

@@ -5,9 +5,10 @@
 // page. Found ones show their model, name and rarity; missing ones a dark silhouette and "???", so the player knows how
 // many are still hidden in each area. A bar counts them all.
 //
-// Rewards are claimed here: a found treasure whose reward waits has a pulsing CLAIM button and a "!" on its card (the
-// panel opens on the page with one), and an area whose treasures are all found pays its bonus from a CLAIM button in
-// the footer. Tapping one hands it to the HUD (onClaim), which pays it and flies the coins in.
+// Rewards are claimed here, all at once: a found treasure whose reward waits has a "!" on its card (the panel opens on
+// the page with one), and one CLAIM button in the footer (in place of its line) pays every waiting reward — those
+// treasures and the bonus of any area whose treasures are all found. Tapping it hands them to the HUD (onClaim), which
+// pays them and flies the coins in.
 // Styles come from ui/uikit.json (screen "collection"); the claim buttons from "achievements".
 
 import * as PIXI from 'pixi.js';
@@ -15,7 +16,7 @@ import { UiKit } from './UiKit';
 import { UiAnim } from './UiAnim';
 import { ModelIcons } from './ModelIcons';
 import { MOW, Rarity, TreasureDef } from '../data/MowConfig';
-import { MowProgress, areaBonusKey } from '../data/MowProgress';
+import { MowProgress, areaBonusKey, CARRIED_KEY } from '../data/MowProgress';
 import { t, names } from '../i18n/Localization';
 import { MowAudio } from '../audio/MowAudio';
 
@@ -31,27 +32,29 @@ const BAR_WIDTH = 300;
 const PER_ROW = 3;
 const ROWS_PER_PAGE = 2;
 /** Each area's treasures split into rows of PER_ROW (an area with 5 takes two rows). */
-const ROWS: { area: number; items: TreasureDef[] }[] = MOW.districts.flatMap((district, area) => {
+const rows = (): { area: number; items: TreasureDef[] }[] => MOW.districts.flatMap((district, area) => {
+    // This city's own (trophies are per city): not an area done from the start (the tutorial's).
+    if (district.startRestored) return [];
     const items = MOW.treasures.items.filter((item) => item.area === district.id);
     return Array.from({ length: Math.ceil(items.length / PER_ROW) }, (_, i) => ({ area, items: items.slice(i * PER_ROW, (i + 1) * PER_ROW) }));
 });
-const PAGES = Math.max(1, Math.ceil(ROWS.length / ROWS_PER_PAGE));
+const pages = (): number => Math.max(1, Math.ceil(rows().length / ROWS_PER_PAGE));
 const CLAIM_HEIGHT = 46;
 const FOOTER_BUTTON_WIDTH = 300;
 
 /** Kit frame per rarity, for found cards (and the rarity's colour on its tag). */
 const RARITY_FRAME: Record<Rarity, string> = { common: 'cardCommon', rare: 'cardRare', epic: 'cardEpic', legendary: 'cardLegendary' };
-const RARITY_COLORS: Record<Rarity, number> = { common: 0xffffff, rare: 0x6fb4ff, epic: 0xc77dff, legendary: 0xffd23f };
+export const RARITY_COLORS: Record<Rarity, number> = { common: 0xffffff, rare: 0x6fb4ff, epic: 0xc77dff, legendary: 0xffd23f };
 
 export class TrophiesPanel extends PIXI.Container {
     private readonly body = new PIXI.Container();
     private page = 0;
 
     /**
-     * `onClaim` with a waiting reward's key (a treasure id, or an area's bonus) and where its button is on screen;
+     * `onClaim` with every waiting reward's key (a treasure id, or an area's bonus) and where the button is on screen;
      * `isOpen(area)`: whether that area (a district index) is open yet.
      */
-    public constructor(private readonly onClaim: (key: string, from: PIXI.Point) => void, private readonly isOpen: (area: number) => boolean) {
+    public constructor(private readonly onClaim: (keys: string[], from: PIXI.Point) => void, private readonly isOpen: (area: number) => boolean) {
         super();
         const frame = UiKit.image('collection', 'panel', WIDTH, HEIGHT);
         const ribbon = UiKit.sprite('collection', 'ribbon', 0.55);
@@ -69,8 +72,8 @@ export class TrophiesPanel extends PIXI.Container {
 
     /** Opens on the page with a reward waiting, else the first. */
     public refresh(): void {
-        const row = ROWS.findIndex((r) => r.items.some((item) => MowProgress.unclaimedFor(item.id) > 0));
-        this.page = row >= 0 ? Math.floor(row / ROWS_PER_PAGE) : Math.min(this.page, PAGES - 1);
+        const row = rows().findIndex((r) => r.items.some((item) => MowProgress.unclaimedFor(item.id) > 0));
+        this.page = row >= 0 ? Math.floor(row / ROWS_PER_PAGE) : Math.min(this.page, pages() - 1);
         this.renderPage();
     }
 
@@ -78,8 +81,10 @@ export class TrophiesPanel extends PIXI.Container {
         // Stop the old cards' pulses first: a tween left running on a destroyed sprite throws every frame.
         UiAnim.kill(this.body);
         this.body.removeChildren().forEach((child) => child.destroy({ children: true }));
-        const total = MOW.treasures.items.length;
-        const found = MOW.treasures.items.filter((item) => MowProgress.treasureFound(item.id)).length;
+        // This city's (trophies are per city: the rows' treasures).
+        const items = rows().flatMap((row) => row.items);
+        const total = items.length;
+        const found = items.filter((item) => MowProgress.treasureFound(item.id)).length;
 
         const progress = UiKit.text('collection', 'progress', { found, total });
         progress.anchor.set(0.5);
@@ -96,7 +101,7 @@ export class TrophiesPanel extends PIXI.Container {
         this.body.addChild(progress, bar);
 
         const top = -HEIGHT / 2 + 108;
-        ROWS.slice(this.page * ROWS_PER_PAGE, (this.page + 1) * ROWS_PER_PAGE).forEach(({ area, items }, row) => {
+        rows().slice(this.page * ROWS_PER_PAGE, (this.page + 1) * ROWS_PER_PAGE).forEach(({ area, items }, row) => {
             const district = MOW.districts[area];
             const y = top + row * ROW_HEIGHT;
             const name = names.district(district).toUpperCase();
@@ -114,19 +119,19 @@ export class TrophiesPanel extends PIXI.Container {
             });
         });
 
-        if (PAGES > 1) {
+        if (pages() > 1) {
             const y = HEIGHT / 2 - 80;
-            const label = UiKit.text('collection', 'page', { page: this.page + 1, pages: PAGES });
+            const label = UiKit.text('collection', 'page', { page: this.page + 1, pages: pages() });
             label.anchor.set(0.5);
             label.y = y;
             this.body.addChild(label, this.arrow('arrowLeft', -140, y, -1), this.arrow('arrowRight', 140, y, 1));
         }
 
-        // An area with all its treasures found: its bonus is the footer's CLAIM button.
-        const bonusArea = MOW.districts.find((d) => MowProgress.unclaimedFor(areaBonusKey(d.id)) > 0);
-        if (bonusArea) {
-            const key = areaBonusKey(bonusArea.id);
-            const claim = this.claimButton(key, MowProgress.unclaimedFor(key), FOOTER_BUTTON_WIDTH);
+        // Anything waiting (found treasures, the bonus of an area with all its treasures found): one CLAIM in the footer.
+        const keys = [...MOW.treasures.items.map((item) => item.id), ...MOW.districts.map((d) => areaBonusKey(d.id)), CARRIED_KEY]
+            .filter((key) => MowProgress.unclaimedFor(key) > 0);
+        if (keys.length) {
+            const claim = this.claimButton(keys, keys.reduce((sum, key) => sum + MowProgress.unclaimedFor(key), 0), FOOTER_BUTTON_WIDTH);
             claim.y = HEIGHT / 2 - 40;
             this.body.addChild(claim);
             return;
@@ -147,7 +152,7 @@ export class TrophiesPanel extends PIXI.Container {
         arrow.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         arrow.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
             event.stopPropagation();
-            this.page = (this.page + step + PAGES) % PAGES;
+            this.page = (this.page + step + pages()) % pages();
             MowAudio.play('click');
             this.renderPage();
         });
@@ -173,12 +178,8 @@ export class TrophiesPanel extends PIXI.Container {
             rarity.position.set(0, CARD / 2 - 26);
             card.addChild(rarity);
         }
-        const waiting = MowProgress.unclaimedFor(item.id);
-        if (waiting > 0) {
-            // Its reward waits here: a CLAIM button over the card's lower half and a "!" on its corner.
-            const claim = this.claimButton(item.id, waiting, CARD_W - 24);
-            claim.y = CARD / 2 - 24;
-            card.addChild(claim);
+        if (MowProgress.unclaimedFor(item.id) > 0) {
+            // Its reward waits (the footer's CLAIM): a "!" on its corner.
             const alert = UiKit.sprite('hud', 'alert');
             alert.scale.set(34 / Math.max(alert.height, 1));
             alert.position.set(CARD_W / 2 - 2, -CARD / 2 - 12);
@@ -188,8 +189,8 @@ export class TrophiesPanel extends PIXI.Container {
         return card;
     }
 
-    /** A pulsing "CLAIM $X" button for a waiting reward. */
-    private claimButton(key: string, amount: number, width: number): PIXI.Container {
+    /** A pulsing "CLAIM $X" button for waiting rewards (`keys`, worth `amount` together). */
+    private claimButton(keys: string[], amount: number, width: number): PIXI.Container {
         const button = new PIXI.Container();
         button.addChild(UiKit.image('achievements', 'buttonClaim', width, CLAIM_HEIGHT));
         const label = UiKit.text('achievements', 'buttonLabel', { text: t('claimAmount', { amount: amount.toLocaleString('en-US') }) });
@@ -200,7 +201,7 @@ export class TrophiesPanel extends PIXI.Container {
         button.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         button.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
             event.stopPropagation();
-            this.onClaim(key, button.getGlobalPosition());
+            this.onClaim(keys, button.getGlobalPosition());
             this.renderPage();
         });
         UiAnim.pulse(button, 0.06, 0.5);

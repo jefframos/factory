@@ -12,10 +12,12 @@
 <body>
 <header id="topbar">
   <div class="brand"><span class="logo">M</span> Mow Town Editor</div>
+  <label id="levelPicker" title="The city whose level you're editing (Town tab; ▶ Play opens the game in it)">Editing <select id="levelSelect"></select></label>
   <nav id="tabs">
     <button data-tab="town" class="tab active">🏙 Town</button>
     <button data-tab="tractor" class="tab">🚜 Tractor</button>
     <button data-tab="mowers" class="tab">🧹 Mowers</button>
+    <button data-tab="mapshots" class="tab">📸 Map shots</button>
   </nav>
 </header>
 
@@ -25,19 +27,41 @@
 
 <section id="tab-mowers" class="tab-panel workspace" hidden></section>
 
+<section id="tab-mapshots" class="tab-panel mapshots" hidden></section>
+
 <div id="toast"></div>
 <script type="module">
 import { api } from './shared.js';
 import { setModelCatalog } from './modelPicker.js';
-import { initTownTab, hasUnsavedTown } from './town3d.js';
+import { initTownTab, hasUnsavedTown, loadTown } from './town3d.js';
 import { initTractorTab, refreshTractorTab, hasUnsavedTractorChanges } from './tractor.js';
 import { initMowersTab, refreshMowersTab, hasUnsavedMowerChanges } from './mowers.js';
+import { initMapShotsTab, refreshMapShotsTab, hasUnsavedMapShots } from './mapshots.js';
 
 const config = await api('/api/config');
 setModelCatalog(await api('/api/models'));
-await initTownTab(document.getElementById('tab-town'), { gameUrl: config.gameUrl });
+// The level being edited: picked in the top bar, remembered; each city's own file (levels/<level>.json).
+const levels = await api('/api/levels');
+const levelSelect = document.getElementById('levelSelect');
+let level = levels.find((entry) => entry.level === localStorage.getItem('mowEditor.level')) ?? levels.find((entry) => entry.level === 'town') ?? levels[0];
+levelSelect.append(...levels.map((entry) => new Option(`${entry.name}  (${entry.level}.json)`, entry.level)));
+levelSelect.value = level.level;
+const levelUrl = (entry) => `/api/town?level=${encodeURIComponent(entry.level)}`;
+await initTownTab(document.getElementById('tab-town'), { gameUrl: config.gameUrl, townUrl: levelUrl(level), city: level.id });
+levelSelect.addEventListener('change', async () => {
+    const next = levels.find((entry) => entry.level === levelSelect.value);
+    if (hasUnsavedTown() && !window.confirm(`Unsaved changes in ${level.name}: switch to ${next.name} and lose them?`)) {
+        levelSelect.value = level.level;
+        return;
+    }
+    level = next;
+    localStorage.setItem('mowEditor.level', level.level);
+    await loadTown(levelUrl(level), level.id);
+    if (mapShotsReady) await refreshMapShotsTab(level);
+});
 let tractorReady = false;
 let mowersReady = false;
+let mapShotsReady = false;
 
 // Tabs: one panel shown at a time; the Tractor and Mowers tabs are built the first time they're opened.
 for (const button of document.querySelectorAll('#tabs .tab')) {
@@ -53,6 +77,14 @@ for (const button of document.querySelectorAll('#tabs .tab')) {
                 refreshTractorTab();
             }
         }
+        if (tab === 'mapshots') {
+            if (!mapShotsReady) {
+                mapShotsReady = true;
+                await initMapShotsTab(document.getElementById('tab-mapshots'), { gameUrl: config.gameUrl, city: level });
+            } else {
+                await refreshMapShotsTab(level);
+            }
+        }
         if (tab === 'mowers') {
             if (!mowersReady) {
                 mowersReady = true;
@@ -64,7 +96,7 @@ for (const button of document.querySelectorAll('#tabs .tab')) {
     });
 }
 window.addEventListener('beforeunload', (event) => {
-    if (hasUnsavedTown() || hasUnsavedTractorChanges() || hasUnsavedMowerChanges()) event.preventDefault();
+    if (hasUnsavedTown() || hasUnsavedTractorChanges() || hasUnsavedMowerChanges() || hasUnsavedMapShots()) event.preventDefault();
 });
 </script>
 </body>

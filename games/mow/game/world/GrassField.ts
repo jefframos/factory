@@ -34,7 +34,7 @@
 
 import * as THREE from 'three';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
-import { MOW, TOWN, DistrictDef, GrassDef, GrassPatch, TreasureDef, canCutGrass } from '../data/MowConfig';
+import { MOW, TOWN, DistrictDef, GrassDef, GrassPatch, TreasureDef, canCutGrass, lawnLift, pastCorner } from '../data/MowConfig';
 import { BendService } from '../services/BendService';
 
 const CHUNK = 16;
@@ -261,6 +261,7 @@ export class GrassField {
                 for (let ix = 0; ix < this.width; ix++) {
                     const { x, z } = this.center(ix, iz);
                     if (Math.abs(x - district.x) > district.width / 2 || Math.abs(z - district.z) > district.depth / 2) continue;
+                    if (pastCorner(district, x, z)) continue;
                     const i = ix + iz * this.width;
                     if (this.types[i] || isBlocked(x, z)) continue;
                     // The last patch over the cell wins over the section's fill.
@@ -290,7 +291,7 @@ export class GrassField {
             const geometry = new THREE.PlaneGeometry(district.width, district.depth, Math.ceil(district.width), Math.ceil(district.depth));
             geometry.rotateX(-Math.PI / 2);
             const ground = new THREE.Mesh(geometry, material);
-            ground.position.set(district.x, 0.01, district.z);
+            ground.position.set(district.x, 0.01 + lawnLift(), district.z);
             this.grounds.push(ground);
             this.group.add(ground);
         }
@@ -390,7 +391,7 @@ export class GrassField {
         const { x, z } = this.center(ix, iz);
         const j = this.jitter[i];
         const cut = this.cutFlags[i] === 1;
-        this.position.set(x + (j - 0.5) * this.cell * 0.4, 0.02, z + (0.5 - j) * this.cell * 0.4);
+        this.position.set(x + (j - 0.5) * this.cell * 0.4, 0.02 + lawnLift(), z + (0.5 - j) * this.cell * 0.4);
         this.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), j * Math.PI * 2);
         const spread = this.cell * (1.35 + j * 0.3);
         // A cut tuft is gone: the ground shows the mowed lawn there (cutMap).
@@ -549,6 +550,15 @@ export class GrassField {
             this.treasures.delete(i);
         }
         return taken;
+    }
+
+    /** Whether (x, z) is lawn of `district` (a cell its grass grows on): not a road, the deck, the sea or a prop. */
+    public isLawn(x: number, z: number, district: number): boolean {
+        const ix = Math.floor((x - this.minX) / this.cell);
+        const iz = Math.floor((z - this.minZ) / this.cell);
+        if (ix < 0 || iz < 0 || ix >= this.width || iz >= this.depth) return false;
+        const i = iz * this.width + ix;
+        return this.types[i] > 0 && this.districtOf[i] === district;
     }
 
     /** A district's grass cells (built once, on first use). */

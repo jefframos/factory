@@ -10,8 +10,9 @@ import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { UiKit } from './UiKit';
+import { BakedShape } from './BakedShape';
 import { UiAnim } from './UiAnim';
-import { tabbedBlock } from './TabBar';
+import { tabbedBlock, tagBadge } from './TabBar';
 import { ModelIcons } from './ModelIcons';
 import { MOW, WardrobeItem } from '../data/MowConfig';
 import { MowProgress, LookKind } from '../data/MowProgress';
@@ -104,16 +105,18 @@ export class WardrobePanel extends PIXI.Container {
 
     /** The tabs over the content block (TabBar); while a hat is forced they don't switch. */
     private tabs(): PIXI.Container {
+        for (const [kind] of TABS) if (MowProgress.freeLookBadge(kind)) GameAnalytics.giftBadgeShown(kind);
         const block = tabbedBlock({
             width: BLOCK.width,
             height: BLOCK.height,
             tabWidth: BLOCK.tabWidth,
             tabHeight: BLOCK.tabHeight,
-            tabs: TABS.map(([kind, label]) => ({ id: kind, label: t(label) })),
+            tabs: TABS.map(([kind, label]) => ({ id: kind, label: t(label), badge: MowProgress.freeLookBadge(kind) ? t('free') : undefined })),
             active: this.tab,
             onSelect: (id) => {
                 if (this.forcedItem) return;
                 this.tab = id as LookKind;
+                GameAnalytics.tabOpened('wardrobe', id);
                 MowAudio.play('tab');
                 this.page = 0;
                 this.refresh();
@@ -152,6 +155,13 @@ export class WardrobePanel extends PIXI.Container {
         let status: PIXI.DisplayObject;
         if (worn || owned) {
             status = UiKit.text('wardrobe', 'owned', { text: worn ? t('wearing') : t('owned') });
+        } else if (item.free) {
+            // A gift: "FREE" instead of a price; on a return visit (freeLookBadge) it also wears the tag and pulses.
+            status = UiKit.text('wardrobe', 'owned', { text: t('free') }, { fill: 0x7dff8f });
+            if (MowProgress.freeLookBadge(this.tab) && !this.forcedItem) {
+                card.addChild(tagBadge(t('free'), CARD_W / 2 - 28, -CARD / 2 + 10));
+                UiAnim.pulse(card, 0.05, 0.6);
+            }
         } else {
             const affordable = MowProgress.money >= item.price;
             status = UiKit.text('wardrobe', 'price', { price: item.price.toLocaleString('en-US') }, affordable ? {} : { fill: 0xff8a7a });
@@ -187,11 +197,11 @@ export class WardrobePanel extends PIXI.Container {
     /** The item itself: a swatch, a face on a head in the current colour, or the hat's model. */
     private art(item: WardrobeItem): PIXI.Container {
         if (this.tab === 'colors') {
-            return new PIXI.Graphics().lineStyle(4, 0xffffff).beginFill(hex(item.id)).drawCircle(0, 0, 30).endFill();
+            return BakedShape.disc(30, { fill: hex(item.id), rim: 0xffffff, rimWidth: 4 });
         }
         if (this.tab === 'faces') {
             const head = new PIXI.Container();
-            head.addChild(new PIXI.Graphics().lineStyle(3, 0x1d140e).beginFill(hex(MowProgress.look.color)).drawRoundedRect(-32, -32, 64, 64, 10).endFill());
+            head.addChild(new BakedShape(64, 64, 10, { fill: hex(MowProgress.look.color), rim: 0x1d140e, rimWidth: 3 }));
             const face = PIXI.Sprite.from(`${FACE_BASE}${item.id}`);
             face.anchor.set(0.5);
             face.width = face.height = 58;
@@ -205,6 +215,7 @@ export class WardrobePanel extends PIXI.Container {
     private choose(item: WardrobeItem, card: PIXI.Container): void {
         if (this.worn(item)) return;
         const wasOwned = MowProgress.ownsLook(this.tab, item);
+        const badged = MowProgress.freeLookBadge(this.tab);
         if (!MowProgress.wearLook(this.tab, item)) {
             this.say(t('notEnoughCash'), 0xff8a7a);
             MowAudio.play('error');
@@ -216,6 +227,7 @@ export class WardrobePanel extends PIXI.Container {
         }
         if (wasOwned) GameAnalytics.lookEquipped(this.tab, item.id);
         else GameAnalytics.lookBought(this.tab, item.id);
+        if (!wasOwned && item.free) GameAnalytics.giftClaimed(this.tab, badged);
         if (wasOwned) {
             MowAudio.play('item');
         } else {

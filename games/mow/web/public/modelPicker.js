@@ -2,12 +2,12 @@
 // Thumbnails are rendered once in the browser and cached on the server (web/.thumbs).
 
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createGLTFLoader } from './gltf.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { el, openModal, createQueue } from './shared.js';
 
 const THUMB_SIZE = 192;
-const loader = new GLTFLoader();
+const loader = createGLTFLoader();
 const sourceCache = new Map();
 const enqueue = createQueue();
 let catalog = [];

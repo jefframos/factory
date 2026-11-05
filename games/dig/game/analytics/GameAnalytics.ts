@@ -20,6 +20,10 @@
 //   shop         hat-<id> | face-<id> | color-<nn> bought     a wardrobe item bought with cash (colours by their
 //                                                             place in wardrobe.colors, 01 = the first)
 //   shop         hat-<id> | face-<id> | color-<nn> equip      an owned wardrobe item put on
+//   tab          wardrobe-<kind> | atm-<tab>       interact   a panel tab tapped (once per player per tab)
+//   gift         colors | faces                    visible    that kind's free look shows its FREE badge (once)
+//   gift         <kind>-badge | <kind>-unbadged    complete   the free look claimed after its badge / before any badge
+//                                                             (it's also sent as shop .. bought, as before)
 //   build        <buildableId>                     complete   a hub piece bought
 //   hub          set-<areaId>                      complete   every piece of a hub room bought (its set bonus on)
 //   area         <areaId>                          visible    a hidden hub area appears
@@ -42,6 +46,8 @@
 //   phone        sell-x2                           interact   the phone tapped (the video starts)
 //   phone        sell-x2                           complete   the video was watched: the backpack sold at x2
 //   phone        sell-x2                           fail       the video was closed / failed: nothing sold
+//   phone        sell-x2-free                      visible / interact / complete   the same for the first free
+//                                                             sales (no video; the first with the hand)
 //   boost        <boostId>-<nn>                    complete   a boost level bought (nn = the level reached)
 //   prestige     mine-<n>                          visible    "open mine #n?" asked (the confirmation shows)
 //   prestige     mine-<n>                          complete   mine #n opened (a fresh run there, the bonus up everywhere)
@@ -54,6 +60,12 @@
 //   chest        power-<zoneId> | cash-<zoneId>    complete   a chest dug up (in that zone)
 //   power        <toolId>                          start      a power chest's surge starts (the tool it lends)
 //   power        <toolId>                          complete   the surge ran out
+//   tractor      rewarded-offer                    visible    the fixed tractor spot revealed nearby
+//   tractor      rewarded-offer                    start      stepped onto the spot; offer opened
+//   tractor      rewarded-offer                    interact   WATCH VIDEO tapped
+//   tractor      rewarded-offer                    skip       NOT YET tapped
+//   tractor      rewarded-offer                    complete   video completed; this mine's ride consumed
+//   tractor      rewarded-offer                    fail       video incomplete, unavailable or failed
 //
 // Time stamps: every event except the frequent ones (UNTIMED) is sent a second time under category `time`, with
 // what = <category>-<what>-<bucket> and the same action, where <bucket> is the player's active play time so far, all
@@ -182,6 +194,21 @@ export const GameAnalytics = {
         send('shop', lookId(kind, id), 'equip');
     },
 
+    /** A panel tab tapped, once per player per tab: do players find the other pages (wardrobe colours/faces, ATM boosts)? */
+    tabOpened(panel: 'wardrobe' | 'atm', tab: string): void {
+        if (DigProgress.once(`tab-${panel}-${tab}`)) send('tab', `${panel}-${tab}`, 'interact');
+    },
+
+    /** A wardrobe gift's FREE badge seen (the return visit after the first hat, still unclaimed), once per kind. */
+    giftBadgeShown(kind: string): void {
+        if (DigProgress.once(`gift-badge-${kind}`)) send('gift', kind, 'visible');
+    },
+
+    /** A wardrobe gift claimed: on its own (no badge yet) or after its FREE badge showed. */
+    giftClaimed(kind: string, afterBadge: boolean): void {
+        send('gift', `${kind}-${afterBadge ? 'badge' : 'unbadged'}`, 'complete');
+    },
+
     built(buildableId: string): void {
         send('build', buildableId, 'complete');
     },
@@ -236,16 +263,22 @@ export const GameAnalytics = {
         send('achievement', `${achievementId}-${level}`, 'complete');
     },
 
-    phoneShown(): void {
-        send('phone', 'sell-x2', 'visible');
+    /** `free`: one of the first sales, no video (item `sell-x2-free`), kept apart from the rewarded ones. */
+    phoneShown(free = false): void {
+        send('phone', free ? 'sell-x2-free' : 'sell-x2', 'visible');
     },
 
-    phoneTapped(): void {
-        send('phone', 'sell-x2', 'interact');
+    phoneTapped(free = false): void {
+        send('phone', free ? 'sell-x2-free' : 'sell-x2', 'interact');
     },
 
-    phoneResult(watched: boolean): void {
-        send('phone', 'sell-x2', watched ? 'complete' : 'fail');
+    phoneResult(watched: boolean, free = false): void {
+        send('phone', free ? 'sell-x2-free' : 'sell-x2', watched ? 'complete' : 'fail');
+    },
+
+    /** Fixed tractor reward: revealed, stepped onto, accepted, skipped, paid, or failed. */
+    tractorOffer(action: 'visible' | 'start' | 'interact' | 'skip' | 'complete' | 'fail'): void {
+        send('tractor', 'rewarded-offer', action);
     },
 
     boostBought(boostId: string, level: number): void {

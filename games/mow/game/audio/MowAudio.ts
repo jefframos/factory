@@ -4,13 +4,17 @@
 // gem hits — the stone one de-boomed and trimmed with ffmpeg into dig-hit — a short rock crackle on a break, stone / metal / gem pickups landing in the backpack, stone
 // footsteps, the build sting, the UI set), wooden hub footsteps from pizza, the celebration set from down (cheers,
 // applause, sparkle, whoosh, the reveal sting) and bandit-controller's purchase set (ka-ching, fanfare, shine, star). Files: raw-assets/audio (`npm run audio` packs them).
+// The soundtrack (the city's: cityMusic(), set in the editor's Sounds — by default Reed Mathis' "Somnia Variation 3")
+// loops quietly under everything on SoundManager's "music" layer, loaded on the first input (startMusic(): it's the
+// biggest file, kept out of the initial download) and faded in; another city's crossfades in when travelling.
 // Respects mute (SoundManager) and goes quiet while the page or platform is paused.
 
-import { Howler } from 'howler';
-import SoundManager, { SoundAsset } from 'core/audio/SoundManager';
 import SoundLoadManager from 'core/audio/SoundLoaderManager';
+import SoundManager, { SoundAsset } from 'core/audio/SoundManager';
 import PlatformHandler from 'core/platforms/PlatformHandler';
+import { Howler } from 'howler';
 import audioManifest from '../../manifests/audio.json';
+import { MOW, MUSIC_TRACKS, TOWN, cityMusic } from '../data/MowConfig';
 
 const five = (name: string) => [1, 2, 3, 4, 5].map((i) => `${name}-${i}`);
 
@@ -20,7 +24,7 @@ const SOUNDS = {
     // the pickaxe and up play it higher (sharper), the shovel lower (duller).
     hitPick: { soundId: five('dig-hit'), volumeMinMax: [0.2, 0.26], pitchMinMax: [1.08, 1.22] },
     // Mowing: a short, bright swish per cut (a placeholder from the collect sounds, pitched up).
-    cut: { soundId: five('collect-stone'), volumeMinMax: [0.07, 0.1], pitchMinMax: [1.35, 1.7] },
+    cut: { soundId: five('hit-gem'), volumeMinMax: MOW.cutSound.volume, pitchMinMax: MOW.cutSound.pitch },
     hitStone: { soundId: five('dig-hit'), volumeMinMax: [0.22, 0.28], pitchMinMax: [0.88, 1.0] },
     // Soft ground (dirt, gravel): a low, gritty crunch instead of the stone tick. Placeholder: the stone footsteps
     // pitched down. To use real dirt-dig sounds, add dig-dirt-1..5 to raw-assets/audio (`npm run audio`) and switch
@@ -39,6 +43,8 @@ const SOUNDS = {
     // walking
     stepStone: { soundId: five('step-stone'), volumeMinMax: [0.12, 0.16], pitchMinMax: [0.92, 1.08] },
     stepWood: { soundId: [0, 1, 2, 3, 4].map((i) => `step-wood-${i}`), volumeMinMax: [0.16, 0.2], pitchMinMax: [0.92, 1.08] },
+    // On the lawn: the stone steps pitched down and quieter (a soft, dull pad rather than a click).
+    stepGrass: { soundId: five('step-stone'), volumeMinMax: [0.07, 0.09], pitchMinMax: [0.7, 0.8] },
     // money
     coins: { soundId: ['coins-1', 'coins-2'], volumeMinMax: [0.18, 0.22], pitchMinMax: [0.95, 1.12] },
     // ui
@@ -65,12 +71,24 @@ const SOUNDS = {
     applause: { soundId: 'applause', volumeMinMax: 0.22 },
     reveal: { soundId: 'reveal', volumeMinMax: 0.3 },
     whoosh: { soundId: 'whoosh', volumeMinMax: 0.24, pitchMinMax: [0.92, 1.05] },
+    // The bag filling up: a soft stuffed-sack "fwump" (made with ffmpeg: a cloth rustle over a low thump).
+    bagFull: { soundId: 'bag-full', volumeMinMax: 0.5, pitchMinMax: [0.95, 1.05] },
 } satisfies Record<string, SoundAsset>;
 
 export type Cue = keyof typeof SOUNDS;
 
+/** The soundtrack: its file (raw-assets/audio), volume (low: a bed under the game's sounds) and fade-in (ms). */
+/** The soundtrack's layer, its fade in (the first), and the crossfade to another city's. */
+const MUSIC = { layer: 'music', fadeInMs: 4000, crossfadeMs: 1500 };
+
+/** Sound effects downloaded at once in the background (loadInBackground()). */
+const BACKGROUND_LOADS = 3;
+
+/** Long loops SpatialAudio plays itself (Web Audio, placed in 3D): not loaded as Howler cues. */
+const AMBIENT_LOOPS = new Set(['ocean-ambient', ...(TOWN.sounds ?? []).map((zone) => zone.sound)]);
+
 /** Repeats closer than this are dropped (a burst of pickups or coins doesn't stack into noise). */
-const COOLDOWN_MS: Partial<Record<Cue, number>> = { cut: 90, stepStone: 120, stepWood: 120, coins: 55, collectStone: 45, collectMetal: 45, collectGem: 45 };
+const COOLDOWN_MS: Partial<Record<Cue, number>> = { cut: 90, stepStone: 120, stepWood: 120, stepGrass: 120, coins: 55, collectStone: 45, collectMetal: 45, collectGem: 45 };
 const DEFAULT_COOLDOWN_MS = 60;
 
 export class MowAudio {
@@ -78,9 +96,24 @@ export class MowAudio {
     private static platformPaused = false;
     private static volumeBeforePause: number | undefined;
     private static readonly lastPlayed = new Map<Cue, number>();
+    private static folderPath = 'mow';
+    /** The soundtrack playing (startMusic()). */
+    private static music: string | undefined;
+    /** The sound effects to download (loadInBackground()), and whether that's started. */
+    private static ids: string[] = [];
+    private static loading = false;
 
-    /** Loads every sound of the packed manifest (call once at boot). */
+    /** Where an audio file is served from (for the ambient loops SpatialAudio loads itself). */
+    public static url(file: string): string {
+        return `./${this.folderPath}/audio/${file}`;
+    }
+
+    /**
+     * Sets every sound of the packed manifest up (call once at boot; nothing downloads yet: loadInBackground(), once
+     * the game is up, so the sounds stay out of the initial download).
+     */
     public static async initialize(folderPath: string): Promise<void> {
+        this.folderPath = folderPath;
         const manifest = structuredClone(audioManifest);
         for (const bundle of manifest.bundles) {
             for (const asset of bundle.assets) {
@@ -88,8 +121,8 @@ export class MowAudio {
             }
         }
         SoundLoadManager.instance.setUpManifests([manifest], ['default']);
-        const ids = manifest.bundles.flatMap((bundle) => bundle.assets.map((asset) => asset.alias[0].replace(/\.[^.]+$/, '')));
-        await Promise.all(ids.map((id) => SoundLoadManager.instance.loadSoundByName(id)));
+        this.ids = manifest.bundles.flatMap((bundle) => bundle.assets.map((asset) => asset.alias[0].replace(/\.[^.]+$/, '')))
+            .filter((id) => !AMBIENT_LOOPS.has(id) && !MUSIC_TRACKS.has(id));
         this.ready = true;
         document.addEventListener('visibilitychange', this.syncPause);
         PlatformHandler.instance.onPause.add(this.onPause);
@@ -97,8 +130,47 @@ export class MowAudio {
         this.syncPause();
     }
 
+    /**
+     * The soundtrack, looping on its own layer (the scene calls it on the first input: kept out of the initial
+     * download; it loads in the background). Once.
+     */
+    /** The city's soundtrack: started (faded in), or another city's crossfaded to; the same one just takes its volume. */
+    public static startMusic(): void {
+        const music = cityMusic();
+        if (this.music === music.sound) {
+            SoundManager.instance.setLayerVolume(MUSIC.layer, music.volume, MUSIC.crossfadeMs);
+            return;
+        }
+        const first = !this.music;
+        this.music = music.sound;
+        SoundManager.instance.setLayerVolume(MUSIC.layer, music.volume);
+        void SoundManager.instance.playBackgroundSound(music.sound, first ? MUSIC.fadeInMs : MUSIC.crossfadeMs, MUSIC.layer).catch(() => {
+            // No soundtrack (missing file): the game plays on without it.
+        });
+    }
+
+    /**
+     * Downloads the sound effects in the background, a few at a time (call once the game is up). A cue played before
+     * its file is in is skipped, not played late.
+     */
+    public static loadInBackground(): void {
+        if (this.loading) return;
+        this.loading = true;
+        const queue = [...this.ids];
+        const next = async (): Promise<void> => {
+            for (let id = queue.shift(); id; id = queue.shift()) await SoundLoadManager.instance.loadSoundByName(id).catch(() => undefined);
+        };
+        for (let i = 0; i < BACKGROUND_LOADS; i++) void next();
+    }
+
+    /** Every file of `cue` is in (its variants load together). */
+    private static loaded(cue: Cue): boolean {
+        const ids = SOUNDS[cue].soundId;
+        return (Array.isArray(ids) ? ids : [ids]).every((id) => SoundLoadManager.instance.getSound(id)?.isLoaded);
+    }
+
     public static play(cue: Cue): void {
-        if (!this.ready || this.isPaused() || SoundManager.instance.isMuted) return;
+        if (!this.ready || this.isPaused() || SoundManager.instance.isMuted || !this.loaded(cue)) return;
         const now = performance.now();
         if (now - (this.lastPlayed.get(cue) ?? -Infinity) < (COOLDOWN_MS[cue] ?? DEFAULT_COOLDOWN_MS)) return;
         this.lastPlayed.set(cue, now);

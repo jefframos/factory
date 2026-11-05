@@ -2,11 +2,12 @@
 //
 // Treasure nearby: little stars drift up off the top of every block hiding a find (VoxelTerrain.finds) or a chest
 // (VoxelTerrain.chests) within RANGE blocks of the miner, in the find's rarity colour (a chest's own: gold for cash,
-// cyan for power) — a few far out, thicker the closer the miner gets — so buried treasure can be spotted and dug
-// towards before its block is ever opened (TreasureBeacons mark it from further away). Rich-vein ore twinkles now and
-// then too, so the big nuggets catch the eye. Checked a few times a second.
+// green for power) — a few far out, thicker the closer the miner gets — so buried treasure can be spotted and dug
+// towards before its block is ever opened (TreasureBeacons mark it from further away). Ore twinkles now and then
+// (rich veins more often), so valuable blocks catch the eye against plain rock. Checked a few times a second.
 
 import * as THREE from 'three';
+import { TRACTOR_SPOT_COLOR } from '../mining/PowerChestSpawner';
 import { VoxelTerrain } from './VoxelTerrain';
 import type { DigEffects } from '../vfx/DigEffects';
 import type { ChestKind } from '../data/DigConfig';
@@ -21,9 +22,10 @@ const FAR = 0.2;
 const NEAR = 1.8;
 /** Chests sparkle this much more than finds. */
 const CHEST_BOOST = 1.5;
-/** Chance per tick that a rich-vein ore block in range twinkles. */
+/** Chance per tick that an ore block in range twinkles: a rich vein, or plain ore. */
 const RICH_CHANCE = 0.06;
-const CHEST_COLORS: Record<ChestKind, number> = { power: 0x6fe3ff, cash: 0xffd23f };
+const ORE_CHANCE = 0.03;
+const CHEST_COLORS: Record<ChestKind, number> = { power: TRACTOR_SPOT_COLOR, cash: 0xffd23f };
 
 export class TreasureSparkles {
     private timer = 0;
@@ -45,10 +47,11 @@ export class TreasureSparkles {
                 const chest = terrain.chestAt(ix, iz);
                 const find = chest ? undefined : terrain.findAt(ix, iz);
                 if (!chest && !find) {
-                    if (terrain.isRich(ix, iz) && terrain.cellValue(ix, iz) !== 0 && Math.random() < RICH_CHANCE) {
-                        const material = terrain.material(ix, iz);
-                        if (material) this.burst(ix, iz, this.color(material.color), 0.3, 0.6);
-                    }
+                    if (terrain.cellValue(ix, iz) === 0) continue;
+                    const rich = terrain.isRich(ix, iz);
+                    if (Math.random() >= (rich ? RICH_CHANCE : ORE_CHANCE)) continue;
+                    const material = terrain.material(ix, iz);
+                    if (material && (rich || material.ore)) this.burst(ix, iz, this.oreColor(material.color), rich ? 0.3 : 0.24, 0.6);
                     continue;
                 }
                 const closeness = 1 - distance / RANGE;
@@ -78,6 +81,17 @@ export class TreasureSparkles {
         if (!color) {
             color = new THREE.Color(value);
             this.colors.set(value, color);
+        }
+        return color;
+    }
+
+    /** An ore's colour pushed toward white, so its twinkle reads as a glint rather than another patch of colour. */
+    private oreColor(value: string): THREE.Color {
+        const key = `ore:${value}`;
+        let color = this.colors.get(key);
+        if (!color) {
+            color = new THREE.Color(value).lerp(new THREE.Color(0xffffff), 0.45);
+            this.colors.set(key, color);
         }
         return color;
     }

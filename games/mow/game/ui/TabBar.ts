@@ -2,8 +2,8 @@
 //
 // Tabs that look like tabs: a content block (a lighter inset area holding the panel's content) with a row of tabs
 // along its top edge. The active tab is the block's own colour and runs into it seamlessly (a gold rim round its
-// arch, bright label); the others sit a little lower and darker, behind the block, with muted labels — so it reads
-// as "this page, and others to switch to". Used by the wardrobe (COLORS / FACES / HATS) and the ATM (GEAR / BOOSTS).
+// arch, bright label); the others are gold (white labels), a little lower, behind the block — so they read as
+// buttons to tap ("other pages here"), not as background. Used by the wardrobe (COLORS / FACES / HATS) and the ATM (GEAR / BOOSTS).
 //
 // Art: the Layer Lab kit's tab arch (Menu_BottomBtn_TabFocus, rounded top / flat bottom) and its lit rim
 // (Menu_BottomBtn_TabFocus_Light), white masks tinted here; the block is the kit's rounded frame
@@ -12,11 +12,13 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { UiKit } from './UiKit';
+import { BakedShape } from './BakedShape';
 
 const BLOCK_FILL = 0x3c4558;
-const TAB_IDLE = 0x252b38;
+/** Inactive tabs are gold, so the other pages read as buttons to tap rather than background. */
+const TAB_IDLE = 0xd9971f;
+const TAB_HOVER = 0xf0b23a;
 const ACCENT = 0xffd23f;
-const LABEL_IDLE = 0x9aa3b5;
 /** Inactive tabs sit this much lower than the active one. */
 const SINK = 6;
 /** Tabs reach this far down into the block, so the active one joins it without a seam. */
@@ -27,6 +29,8 @@ export interface TabSpec {
     label: string;
     /** Something new to see there (an affordable boost): the kit's bobbing "!" on the tab's corner. */
     alert?: boolean;
+    /** A short green tag on the tab's corner (the wardrobe's "FREE" for an unclaimed gift); it bobs like the alert. */
+    badge?: string;
 }
 
 export interface TabBarOptions {
@@ -85,7 +89,7 @@ function tabButton(tab: TabSpec, x: number, width: number, height: number, activ
         // The kit's lit rim round the arch, in gold: "this one".
         button.addChild(sliced('Menu_BottomBtn_TabFocus_Light', [16, 22, 16, 2], ACCENT, 0, -height, width, height));
     }
-    const label = UiKit.fit(UiKit.text('wardrobe', 'tabLabel', { text: tab.label }, active ? {} : { fill: LABEL_IDLE }), width - 24);
+    const label = UiKit.fit(UiKit.text('wardrobe', 'tabLabel', { text: tab.label }), width - 24);
     label.anchor.set(0.5);
     label.position.set(width / 2, -height / 2 + 3);
     button.addChild(label);
@@ -98,11 +102,12 @@ function tabButton(tab: TabSpec, x: number, width: number, height: number, activ
         gsap.to(alert, { y: alert.y - 6, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
         button.addChild(alert);
     }
+    if (tab.badge) button.addChild(tagBadge(tab.badge, width - 8, -height - 2));
     if (!active) {
         button.eventMode = 'static';
         button.cursor = 'pointer';
         button.hitArea = new PIXI.Rectangle(0, -height, width, height);
-        button.on('pointerover', () => (shape.tint = 0x323a4b));
+        button.on('pointerover', () => (shape.tint = TAB_HOVER));
         button.on('pointerout', () => (shape.tint = TAB_IDLE));
         button.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         button.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
@@ -111,4 +116,19 @@ function tabButton(tab: TabSpec, x: number, width: number, height: number, activ
         });
     }
     return button;
+}
+
+/** A green rounded tag with a short word ("FREE"), centred on (x, y), tilted and bobbing; also used on cards. */
+export function tagBadge(text: string, x: number, y: number): PIXI.Container {
+    const tag = new PIXI.Container();
+    tag.eventMode = 'none';
+    const label = UiKit.fit(UiKit.text('wardrobe', 'tabLabel', { text }), 90);
+    label.anchor.set(0.5);
+    const w = label.width + 22;
+    const h = label.height + 8;
+    tag.addChild(new BakedShape(Math.ceil(w), Math.ceil(h), h / 2, { fill: 0x3fd15a, rim: 0x1f6b2c, rimWidth: 3 }), label);
+    tag.position.set(x, y);
+    tag.rotation = 0.12;
+    gsap.to(tag, { y: y - 5, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+    return tag;
 }

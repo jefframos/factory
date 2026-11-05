@@ -1,11 +1,17 @@
 // MowConfig.ts
 //
 // Typed access to the design data, none of it in code: ui/mow.json (grass types, tools, upgrades, prices) and
-// levels/town.json (the town's layout: sections = districts with their grass mix, bonus, stations and separator;
-// props; pavements), which the editor writes (npm run editor). MOW.districts is the level's sections.
+// the current city's level (levels/<level>.json: the layout: sections = districts with their grass mix, bonus,
+// stations and separator; props; pavements), which the editor writes (npm run editor). MOW.districts is the level's
+// sections. The cities (levels/cities.json, CITIES) are each their own level; which one is played is saved
+// (MowProgress, CURRENT_CITY_KEY) and read here, before anything is built: travelling reloads the game into it.
 
+import { RoadCells, RoadKit, roadNetwork, solveRoads } from 'core/roads/RoadGrid';
 import data from '../../ui/mow.json';
+import cities from '../../levels/cities.json';
+import tutorial from '../../levels/tutorial.json';
 import town from '../../levels/town.json';
+import city2 from '../../levels/city2.json';
 
 export interface GrassDef {
     id: string;
@@ -86,6 +92,11 @@ export interface TractorConfig {
     smoke: { count: number; size: number; color: string };
     /** Puffs from the exhaust while it moves. */
     exhaust: { x: number; y: number; z: number; interval: number; size: number };
+    /**
+     * The steering wheel the hands hold (in its frame, x rideScale): its middle, the hands `spread` either side, turned
+     * by `hand` (degrees, like a mower's grip). None: the hands stay as the sitting pose has them.
+     */
+    steer?: { x: number; y: number; z: number; spread: number; hand?: { x: number; y: number; z: number } };
 }
 
 export type UpgradeId = 'capacity' | 'speed' | 'money' | 'width' | 'blades';
@@ -106,6 +117,25 @@ export interface UpgradeDef {
 export interface DistrictDef {
     id: string;
     name: string;
+    /**
+     * The city's goal: opens once this many of its other sections are restored (whichever), the HUD counting them down
+     * (GoalTimeline); restoring it finishes the city.
+     */
+    opensAfter?: number;
+    /**
+     * The goal's mesh (path under public/mow/models/, chosen in the editor, which places it in `props`): what its
+     * Map shots zone shoots, and the HUD's picture until there's a snapshot.
+     */
+    goalModel?: string;
+    /** Its rect's corners are rounded this much: no grass past them (a pitch inside a running track). */
+    cornerRadius?: number;
+    /** Done from the start (a city's areas the tutorial already did): restored, no bonus, no treasures to find. */
+    startRestored?: boolean;
+    /**
+     * The part of the city it's in (TownLevel.parts): a part's areas open together — the player picks which to mow —
+     * once every area of the part before is restored. None: it's a part on its own (areas open one after another).
+     */
+    part?: string;
     /** Centre and size of the overgrown rectangle. */
     x: number;
     z: number;
@@ -123,6 +153,11 @@ export interface DistrictDef {
     separator?: { x: number; z: number; width: number; rotationY?: number };
     /** What happens when it opens: the camera glides over to show it (its ATMs and fence come with it anyway). */
     onUnlock?: { pan?: boolean };
+    /**
+     * A fence all round this rect (centre, size) keeping the player inside it until the section is restored (the
+     * first one: the yard and the plaza with its ATM), sinking away then. Drawn by Town, edited in the editor.
+     */
+    pen?: { x: number; z: number; width: number; depth: number };
     /**
      * Its grass's size (default 1): the tufts' height and the effort to chew through grass too tough both
      * scale by it — under 1 an easier section, over 1 a harder one. Clippings per cell stay the same.
@@ -149,6 +184,11 @@ export interface AtmSpot {
     section?: string;
     /** It only appears once the bag has been sold this many times (the first wardrobe: the tutorial's second sale). */
     appearsAfterSales?: number;
+    /**
+     * It only appears once the bag is full for the first time (the first ATM: the yard is mowed in one bag, nothing to
+     * sell there; it pops up in the park when there is). Once anything's been sold, it's always there.
+     */
+    appearsWhenFull?: boolean;
 }
 
 /** A station kind's look (the ATMs', the wardrobes'): the model (path under models/, fitted to `height`), how far behind the pad, the label's height. */
@@ -193,6 +233,11 @@ export interface WardrobeItem {
     id: string;
     name?: string;
     price: number;
+    /**
+     * A gift (one colour and one face): claimed for nothing. If it's still unclaimed when the player comes back to
+     * the wardrobe after buying the first hat, its tab and card get a FREE badge (MowProgress.freeLookBadge).
+     */
+    free?: boolean;
 }
 
 export interface WardrobeCatalog {
@@ -266,6 +311,8 @@ export interface IslandDef {
     sideDepth: number;
     /** The island's shape: a polygon on the ground (any order, no self-crossing). Without one, the ground's rect. */
     outline?: { x: number; z: number }[];
+    /** How round the outline's corners are drawn (radius, default 3.5; 0: sharp). The points stay where they are. */
+    cornerRadius?: number;
     /** A wooden deck round the edge: `width` in from the shore, planks across it, pilings into the sea. */
     deck?: DeckDef;
     /** The fence round the edge: posts every `spacing`, rails, a kerb under them (with `kerbColor`); `inset` in from the edge. */
@@ -280,9 +327,25 @@ export interface DeckDef {
     pilingSpacing: number;
 }
 
+/** A part of a city (its areas open together: DistrictDef.part): its name, for the signs and the NEW AREA message. */
+export interface PartDef {
+    id: string;
+    name: string;
+}
+
 export interface TownLevel {
     id: string;
     name: string;
+    /** Every section open from the start, the player choosing where to go (no unlocking in order). */
+    openAll?: boolean;
+    /**
+     * The sections' lawns lie over the pavements, and grass grows on them: a level whose paving runs under its lawns.
+     * Otherwise a pavement carves its way through a lawn (a park's paths: no grass on it).
+     */
+    grassOverPavement?: boolean;
+    /** Collider cubes placed by hand (the editor): for a model its bounds fit badly (a stadium). */
+    colliders?: ColliderCube[];
+    parts?: PartDef[];
     ground: { x: number; z: number; width: number; depth: number; color: string };
     island?: IslandDef;
     start: { x: number; z: number };
@@ -296,6 +359,84 @@ export interface TownLevel {
     grassNoise: GrassNoise;
     grassPatches: GrassPatch[];
     sections: DistrictDef[];
+    /** Sound zones (the sea round the island, …): edited in the editor's town, played by SpatialAudio. */
+    sounds?: SoundZone[];
+    /** Secret patches: a clump of lush grass anywhere in town hiding a chest (SecretPatches), placed in the editor. */
+    secrets?: SecretDef[];
+    /** Where the cars drive (Traffic): waypoints, the roads linking them, the cars. Edited in the editor. */
+    traffic?: TownTraffic;
+    /** Road cells (the editor's road builder): laid as MowDesign.roadKit's pieces, and the cars' waypoints and links. */
+    roads?: RoadCells;
+    /** How loud and how far the traffic is heard. */
+    soundSettings?: SoundSettings;
+}
+
+/**
+ * A looping sound over a box on the ground: full `volume` inside it, fading to nothing `fade` units out from its
+ * edges, heard from the box's nearest point (left / right of the screen). Zones playing the same `sound` share one
+ * loop (the loudest zone wins), so they can overlap at the corners.
+ */
+export interface SoundZone {
+    id: string;
+    /** The file in raw-assets/audio, without its extension (`ocean-ambient`). */
+    sound: string;
+    x: number;
+    z: number;
+    width: number;
+    depth: number;
+    fade: number;
+    volume: number;
+}
+
+/**
+ * The traffic's network: waypoints (on the roads' middles), links between them (two-way roads; cars keep to the
+ * right-hand lane), and the cars, each starting at a waypoint (and roaming the waypoints linked to it, so a network
+ * of its own keeps a car to its area).
+ */
+export interface TownTraffic {
+    waypoints: { id: string; x: number; z: number }[];
+    links: [string, string][];
+    cars: { at: string; model?: string }[];
+}
+
+/**
+ * A box placed by hand, drawn only in the editor. `solid`: it blocks walking (and no grass grows under it). `fades`: a
+ * prop's model: the player in or touching this cube makes it see-through, and only such cubes do (not the usual test of
+ * the camera's line against its whole bounds, too blunt for a model that big).
+ */
+export interface ColliderCube {
+    x: number;
+    z: number;
+    width: number;
+    depth: number;
+    solid: boolean;
+    fades?: string;
+}
+
+/** A secret patch's chest model (under public/mow/models; one of the treasures uses it too: loaded with them). */
+export const SECRET_CHEST_MODEL = 'treasures/chest.glb';
+
+/** A secret patch: its rect (centre, size) of lush grass, and the cash in the chest mowing it through uncovers. */
+export interface SecretDef {
+    id: string;
+    x: number;
+    z: number;
+    width: number;
+    depth: number;
+    reward: number;
+}
+
+export interface SoundSettings {
+    /** Each car's engine: `volume` within `near` of it, nothing from `far`. */
+    cars: { volume: number; near: number; far: number };
+    /** This level's soundtrack, instead of MowDesign.music. */
+    music?: MusicDef;
+}
+
+/** A soundtrack: a file in raw-assets/audio (without its extension), and its volume (0-1). */
+export interface MusicDef {
+    sound: string;
+    volume: number;
 }
 
 /**
@@ -311,9 +452,9 @@ export interface ComboDef {
 }
 
 /** A few cars driving the roads (world/Traffic.ts): the town's road tiles (props whose model has `road_`) are the lanes. */
+/** How the cars drive (ui/mow.json); where they drive is the level's (TownTraffic). */
 export interface TrafficDef {
-    count: number;
-    /** Car models (paths under models/; front facing +Z), picked in turn. */
+    /** Car models (paths under models/; front facing +Z), picked in turn for a car without its own. */
     models: string[];
     /** Cruising speed (units / s), and how fast they speed up / brake. */
     speed: number;
@@ -323,7 +464,7 @@ export interface TrafficDef {
     length: number;
     /** A lane's middle off the road's middle (driving on the right). */
     lane: number;
-    /** The road tiles' size (they sit on this grid). */
+    /** The road tiles' size (they sit on this grid): the editor's "waypoints from road tiles" links tiles this far apart. */
     tile: number;
     /** The road's top (the cars' wheels sit on it). */
     roadY: number;
@@ -337,6 +478,12 @@ export interface MowDesign {
     combo: ComboDef;
     cell: number;
     seed: number;
+    /**
+     * The player's size against the town (1 = the rig as authored): the character, a pushed mower's length and height
+     * (not its width: that's what it cuts), where the hands hold it, and the tractor. Gameplay (cut widths, speeds,
+     * the body's footprint) doesn't change with it.
+     */
+    playerScale?: number;
     clippingPrice: number;
     /**
      * Seconds of contact to chew through one cell of grass n powers too tough (entry n - 1); grass more powers too
@@ -344,6 +491,12 @@ export interface MowDesign {
      */
     chewSec: number[];
     traffic?: TrafficDef;
+    /** The soundtrack, unless the level has its own (SoundSettings.music). */
+    music: MusicDef;
+    /** The grass cut's sound: each cut picks a volume and a pitch between these (the editor's Mowers tab). */
+    cutSound: { volume: [number, number]; pitch: [number, number] };
+    /** The road builder's pieces (a level's `roads`): their base (`elevation`) and the asphalt's top (`roadY`, for the cars). */
+    roadKit?: RoadKit & { elevation: number; roadY: number };
     grass: GrassDef[];
     tools: ToolDef[];
     upgrades: UpgradeDef[];
@@ -357,6 +510,58 @@ export interface MowDesign {
     /** The level's sections, in unlock order. */
     districts: DistrictDef[];
     start: { x: number; z: number };
+}
+
+/** The part a section is in (its own when it has none), and the parts in unlock order (by their first section). */
+export const partOf = (d: number): string => MOW.districts[d].part ?? `#${MOW.districts[d].id}`;
+let partOrder: string[] | undefined;
+const partsInOrder = (): string[] => (partOrder ??= MOW.districts.map((_, d) => partOf(d)).filter((part, i, all) => all.indexOf(part) === i));
+
+/** A part's name: TownLevel.parts', or (a section on its own) the section's. */
+export function partName(part: string): string {
+    return TOWN.parts?.find((entry) => entry.id === part)?.name ?? MOW.districts.find((_, d) => partOf(d) === part)?.name ?? part;
+}
+
+/** Whether section `d` is open: its part is the first, or every section of the part before it is restored. */
+export function sectionOpen(d: number, restored: (id: string) => boolean): boolean {
+    const { opensAfter } = MOW.districts[d];
+    if (opensAfter) return goalCount(restored) >= opensAfter;
+    if (TOWN.openAll) return true;
+    const index = partsInOrder().indexOf(partOf(d));
+    if (index <= 0) return true;
+    const before = partsInOrder()[index - 1];
+    return MOW.districts.every((district, i) => partOf(i) !== before || restored(district.id));
+}
+
+/** The Map shots zone of a city's goal: its model alone, for the HUD (`<zone>-small`). */
+export const goalZone = (city: CityDef): string => `${city.map ?? 'town'}-goal`;
+
+/** How far this level's lawns and what lies on them are lifted: clear of the pavements' stack (TownLevel.grassOverPavement). */
+export const lawnLift = (): number => (TOWN.grassOverPavement ? 0.08 : 0);
+
+/** The city's goal, if it has one (a section with `opensAfter`). */
+export function goalSection(): DistrictDef | undefined {
+    return MOW.districts.find((district) => district.opensAfter);
+}
+
+/** How many sections other than the goal are restored. */
+export function goalCount(restored: (id: string) => boolean): number {
+    return MOW.districts.filter((district) => !district.opensAfter && restored(district.id)).length;
+}
+
+/** Whether (x, z), inside a section's rect, is past one of its rounded corners. */
+export function pastCorner(district: DistrictDef, x: number, z: number): boolean {
+    const radius = district.cornerRadius ?? 0;
+    if (radius <= 0) return false;
+    const dx = Math.abs(x - district.x) - (district.width / 2 - radius);
+    const dz = Math.abs(z - district.z) - (district.depth / 2 - radius);
+    return dx > 0 && dz > 0 && dx * dx + dz * dz > radius * radius;
+}
+
+/** What opens section `d` (for its fence's sign): the part before its own. */
+export function openedBy(d: number): string | undefined {
+    const index = partsInOrder().indexOf(partOf(d));
+    return index > 0 ? partName(partsInOrder()[index - 1]) : undefined;
 }
 
 /** How a ridden mower's tractor is painted: 'grey', a colour, or undefined (its own colours). Same as dig's toolPaint. */
@@ -379,5 +584,69 @@ export function firstToolFor(grass: GrassDef): ToolDef | undefined {
     return MOW.tools.find((tool) => canCutGrass(grass, tool.power));
 }
 
-export const TOWN: TownLevel = town as unknown as TownLevel;
-export const MOW: MowDesign = { ...(data as unknown as Omit<MowDesign, 'districts' | 'start'>), districts: TOWN.sections, start: TOWN.start };
+/** A city (levels/cities.json): its level and map shot, whether travelling on keeps the gear, or not playable yet. */
+export interface CityDef {
+    id: string;
+    name: string;
+    level?: string;
+    map?: string;
+    keepGear?: boolean;
+    comingSoon?: boolean;
+    /** false: no guide arrows (the shop's hand still shows). */
+    guide?: boolean;
+}
+
+export const CITIES: CityDef[] = cities.cities;
+/** Each finished city (not the tutorial) adds this to every sale's money, in every city after (prestige). */
+export const PRESTIGE_BONUS: number = cities.prestigeBonus;
+/** The localStorage key holding the city being played (MowProgress writes it on travel). */
+export const CURRENT_CITY_KEY = 'mow.city';
+
+const LEVELS: Record<string, unknown> = { tutorial, town, city2 };
+
+function currentCity(): CityDef {
+    let id: string | null = null;
+    try {
+        // `?city=<id>` (the editor's ▶ Play, testing): that city, from now on.
+        const asked = new URLSearchParams(window.location.search).get('city');
+        if (asked && CITIES.some((city) => city.id === asked)) window.localStorage.setItem(CURRENT_CITY_KEY, asked);
+        id = window.localStorage.getItem(CURRENT_CITY_KEY);
+    } catch {
+        // No storage: the first city.
+    }
+    return CITIES.find((city) => city.id === id && city.level && LEVELS[city.level]) ?? CITIES[0];
+}
+
+/** The city being played, and the next one (undefined after the last); its level and design. Swapped by setCity(). */
+export let CITY: CityDef = currentCity();
+export let NEXT_CITY: CityDef | undefined;
+export let TOWN: TownLevel;
+export let MOW: MowDesign;
+setCity(CITY);
+
+/** The city's soundtrack (its level's, else the game's). */
+export const cityMusic = (): MusicDef => TOWN.soundSettings?.music ?? MOW.music;
+
+/** Every soundtrack any level plays (kept out of the sound effects' background download: each streams when played). */
+export const MUSIC_TRACKS: ReadonlySet<string> = new Set([(data as unknown as MowDesign).music.sound,
+    ...Object.values(LEVELS).map((level) => (level as TownLevel).soundSettings?.music?.sound).filter((sound): sound is string => !!sound)]);
+
+/** A level with its road cells laid: their pieces as flat props (walked over), their network as the traffic's. */
+function withRoads(level: TownLevel, kit: MowDesign['roadKit']): TownLevel {
+    if (!level.roads?.cells.length || !kit) return level;
+    // At their own size (the kit's pieces are 0.2 thick).
+    const pieces: TownProp[] = solveRoads(level.roads, kit).map((road) => ({
+        model: road.model, x: road.x, z: road.z, rotationY: road.rotationY, height: 0.2, elevation: kit.elevation, collider: null,
+    }));
+    return { ...level, props: [...pieces, ...level.props], traffic: { ...roadNetwork(level.roads, kit.tile), cars: level.traffic?.cars ?? [] } };
+}
+
+/** Plays `city` from now on (travelling: the scene is rebuilt after, everything reads these live). */
+export function setCity(city: CityDef): void {
+    CITY = city;
+    NEXT_CITY = CITIES[CITIES.indexOf(city) + 1];
+    const design = data as unknown as Omit<MowDesign, 'districts' | 'start'>;
+    TOWN = withRoads(LEVELS[city.level!] as unknown as TownLevel, design.roadKit);
+    MOW = { ...design, districts: TOWN.sections, start: TOWN.start };
+    partOrder = undefined;
+}

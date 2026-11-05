@@ -21,7 +21,7 @@ import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { UiKit } from './UiKit';
 import { UiAnim, type UiTween } from './UiAnim';
-import { tabbedBlock, type TabSpec } from './TabBar';
+import { tabbedBlock, tagBadge, type TabSpec } from './TabBar';
 import { DigProgress, COLLECTION_REWARD } from '../data/DigProgress';
 import { CollectionPanel, COLLECTION_SIZE } from './CollectionPanel';
 import { WardrobePanel, WARDROBE_SIZE } from './WardrobePanel';
@@ -81,8 +81,8 @@ const NODE_SIZE = 60;
 const GOAL_SIZE = 78;
 const TIMELINE_WIDTH = 600;
 const LINE_DONE = 0x5fd35a;
-/** The backpack's segmented upgrade bar, under its offer's text. */
-const BAG_BAR = { width: 400, height: 9 };
+/** The segmented upgrade bar under the backpack's offer and each boost's text. */
+const LEVEL_BAR = { width: 400, height: 9 };
 const LINE_TODO = 0x4a5263;
 /** GEAR tab layout (y): the tool timeline, the tool offer, the backpack offer. */
 const GEAR_Y = { timeline: -110, tool: 28, bag: 146 };
@@ -94,6 +94,8 @@ const PANEL_FOOTER_Y = 238;
 const BOOST_ROW = { firstY: -110, step: 94, height: 86 };
 /** The "open a new mine?" confirmation. */
 const NEW_MINE_SIZE = { width: 560, height: 400 };
+/** The rewarded tractor offer: taller than the new-mine card, for the tractor on its shine. */
+const TRACTOR_OFFER_SIZE = { width: 560, height: 520 };
 /** Offer rows: frame left, name + details, buy button right. */
 const OFFER = { frameX: -296, textX: -240, textWidth: 400, buttonX: 266, buttonWidth: 150, rowWidth: 696 };
 /** How far a panel's title ribbon sticks out above its frame. */
@@ -184,6 +186,8 @@ export class DigHud extends PIXI.Container {
     private readonly panelTitle = UiKit.text('upgrades', 'title');
     /** "Open a new mine?" — asked before the reset (a full-screen confirmation). */
     private readonly newMineConfirm = new PIXI.Container();
+    private readonly tractorConfirm = new PIXI.Container();
+    private readonly tractorBadge = new PIXI.Container();
     /** panelKey() when the upgrade panel was last built (see refresh()). */
     private renderedPanelKey = '';
     /** "Drag to move" (a brand-new game only; DigScene shows / hides it). */
@@ -191,6 +195,9 @@ export class DigHud extends PIXI.Container {
     private readonly phone = new PIXI.Container();
     /** A rewarded video for the phone is playing (the phone hides until it's over). */
     private phoneBusy = false;
+    private phoneVideo!: PIXI.Sprite;
+    private phoneFree!: PIXI.Container;
+    private phoneHand!: PIXI.Container;
     private readonly panel = new PIXI.Container();
     private readonly panelBody = new PIXI.Container();
     private panelOpen = false;
@@ -297,7 +304,7 @@ export class DigHud extends PIXI.Container {
         this.powerTimer.visible = false;
         this.powerVignette.visible = false;
         this.powerVignette.eventMode = 'none';
-        this.addChild(this.powerVignette, this.corner, this.toolChip, this.buildPhone(), this.buildNewMineCta(), this.buildMute(), this.buildSettings(), this.guide, this.powerTimer, this.moveHint, this.blocker, this.forcedTitle,
+        this.addChild(this.tractorBadge, this.powerVignette, this.corner, this.toolChip, this.buildPhone(), this.buildNewMineCta(), this.buildMute(), this.buildSettings(), this.guide, this.powerTimer, this.moveHint, this.blocker, this.forcedTitle,
             this.slot(this.panel, UPGRADE_SIZE),
             this.slot(this.collection, COLLECTION_SIZE),
             this.slot(this.wardrobe, WARDROBE_SIZE),
@@ -305,7 +312,10 @@ export class DigHud extends PIXI.Container {
             this.slot(this.language, LANGUAGE_SIZE, true),
             this.slot(this.mines, MINES_SIZE, true),
             this.buildNewMineConfirm(),
+            this.tractorConfirm,
             this.findBanner, this.toast, this.rewardPopup);
+        this.tractorConfirm.visible = false;
+        this.tractorBadge.visible = false;
         DigProgress.onChange.add(this.onChange);
         this.refresh();
         this.reposition();
@@ -431,9 +441,13 @@ export class DigHud extends PIXI.Container {
         video.anchor.set(0.5);
         video.scale.set(40 / Math.max(video.texture.width, video.texture.height, 1));
         video.position.set(PHONE.width / 2 - 10, -PHONE.height / 2 + 14);
-        body.addChild(picto, label, video);
+        this.phoneVideo = video;
+        // While sales are free (DigProgress.freeSellsLeft): a FREE tag where the video badge goes; the first also gets the hand.
+        this.phoneFree = tagBadge(t('free'), PHONE.width / 2 - 14, -PHONE.height / 2 + 12);
+        this.phoneHand = this.pointingHand(-6, -20);
+        body.addChild(picto, label, video, this.phoneFree);
         UiAnim.pulse(body, 0.06, 0.55);
-        this.phone.addChild(shine, body);
+        this.phone.addChild(shine, body, this.phoneHand);
         this.phone.visible = false;
         this.phone.eventMode = 'static';
         this.phone.cursor = 'pointer';
@@ -455,8 +469,12 @@ export class DigHud extends PIXI.Container {
         if (show === this.phone.visible) return;
         this.phone.visible = show;
         if (!show) return;
+        const free = DigProgress.freeSellsLeft > 0;
+        this.phoneVideo.visible = !free;
+        this.phoneFree.visible = free;
+        this.phoneHand.visible = DigProgress.firstPhoneSell;
         UiAnim.popIn(this.phone);
-        GameAnalytics.phoneShown();
+        GameAnalytics.phoneShown(free);
     }
 
     /** A rewarded video for the phone started / ended (the phone stays hidden meanwhile). */
@@ -605,7 +623,7 @@ export class DigHud extends PIXI.Container {
     /** The NEW MINE button shows while a new mine can be opened and nothing else is up. */
     private updateNewMineCta(): void {
         const show = DigProgress.canOpenNewMine && this.forced === null && this.station === null && !this.achievements.visible
-            && !this.language.visible && !this.mines.visible && !this.newMineConfirm.visible;
+            && !this.language.visible && !this.mines.visible && !this.newMineConfirm.visible && !this.tractorConfirm.visible;
         if (show === this.newMineCta.visible) return;
         this.newMineCta.visible = show;
         if (show) UiAnim.popIn(this.newMineCta);
@@ -850,7 +868,7 @@ export class DigHud extends PIXI.Container {
 
     /** The dim layer is up while a purchase is forced or the new-mine question is asked. */
     private updateBlocker(): void {
-        const on = this.forced !== null || this.newMineConfirm.visible;
+        const on = this.forced !== null || this.newMineConfirm.visible || this.tractorConfirm.visible;
         if (on && !this.blocker.visible) gsap.fromTo(this.blocker, { alpha: 0 }, { alpha: 1, duration: 0.3 });
         this.blocker.visible = on;
     }
@@ -917,8 +935,9 @@ export class DigHud extends PIXI.Container {
             UiAnim.popIn(this.collection);
             DigAudio.play('open');
         } else if (kind === 'wardrobe') {
-            this.wardrobe.refresh();
+            // Marked first: a return visit after the first hat badges the free looks in this very refresh.
             DigProgress.markWardrobeSeen();
+            this.wardrobe.refresh();
             UiAnim.popIn(this.wardrobe);
             DigAudio.play('open');
         }
@@ -1094,7 +1113,7 @@ export class DigHud extends PIXI.Container {
             },
             { disabled: this.forced === 'tool' },
         );
-        bagRow.addChild(this.backpackLevels());
+        bagRow.addChild(this.levelBar(DigProgress.backpackLevel, DIG.backpack.length - 1, 38));
         this.panelBody.addChild(bagRow);
         // After the offer rows, so its labels (the goal's price) draw over the tool row's top edge, not under it.
         this.panelBody.addChild(this.timeline(GEAR_Y.timeline));
@@ -1136,6 +1155,7 @@ export class DigHud extends PIXI.Container {
             active: this.tab,
             onSelect: (id) => {
                 this.tab = id as 'gear' | 'boosts';
+                GameAnalytics.tabOpened('atm', id);
                 DigAudio.play('tab');
                 this.renderPanel();
             },
@@ -1180,7 +1200,7 @@ export class DigHud extends PIXI.Container {
             name: t(`boost_${boost.id}` as StringId).toUpperCase(),
         }), OFFER.textWidth);
         name.anchor.set(0, 0.5);
-        name.position.set(OFFER.textX, -12);
+        name.position.set(OFFER.textX, -20);
         const percent = (value: number) => `+${Math.round(value * 100)}%`;
         const now = percent(DigProgress.boostEffect(boost));
         const price = DigProgress.boostPrice(boost);
@@ -1188,8 +1208,8 @@ export class DigHud extends PIXI.Container {
             text: `${t('boostLevel', { level, max: boost.maxLevel })}  ·  ${price === undefined ? now : `${now}  →  ${percent(DigProgress.boostEffect(boost, level + 1))}`}`,
         }), OFFER.textWidth);
         info.anchor.set(0, 0.5);
-        info.position.set(OFFER.textX, 16);
-        row.addChild(frame, art, name, info);
+        info.position.set(OFFER.textX, 7);
+        row.addChild(frame, art, name, info, this.levelBar(level, boost.maxLevel, 30));
 
         const button = new PIXI.Container();
         button.position.set(OFFER.buttonX, 0);
@@ -1294,6 +1314,143 @@ export class DigHud extends PIXI.Container {
         this.updateNewMineCta();
     }
 
+    public get canOfferTractor(): boolean {
+        return this.forced === null && this.station === null && !this.achievements.visible
+            && !this.language.visible && !this.mines.visible && !this.newMineConfirm.visible && !this.tractorConfirm.visible;
+    }
+
+    public showTractorOffer(onWatch: () => void, onSkip: () => void): void {
+        const box = this.tractorConfirm;
+        UiAnim.kill(box);
+        box.removeChildren().forEach((child) => child.destroy({ children: true }));
+        const { width, height } = TRACTOR_OFFER_SIZE;
+        const frame = UiKit.image('upgrades', 'panel', width, height);
+        frame.eventMode = 'static';
+        frame.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
+        const ribbon = UiKit.sprite('upgrades', 'ribbon', 0.55);
+        ribbon.y = -height / 2;
+        const title = UiKit.text('upgrades', 'title');
+        title.text = t('tractorOfferTitle');
+        UiKit.fit(title, 260);
+        title.y = -height / 2 - 5;
+
+        // The hero: the surge tractor turning on a double shine (a fast gold one over a slow cyan one), bobbing.
+        const hero = new PIXI.Container();
+        hero.y = -70;
+        const tractor = ModelIcons.sprite(`./dig/models/${DIG.chests.power.model}`, 200);
+        hero.addChild(tractor);
+        UiAnim.rays(hero, 120, 0xfff0a0, 0.95, 5);
+        UiAnim.rays(hero, 175, 0x6fe3ff, 0.8, 12);
+        gsap.to(tractor.position, { y: -8, duration: 0.9, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+        const timer = UiKit.text('hud', 'toast', { text: `${DIG.chests.power.seconds}s` }, { fontSize: 34, fill: 0xffe14d, strokeThickness: 7 });
+        timer.position.set(115, 45);
+        timer.rotation = -0.18;
+        UiAnim.pulse(timer, 0.1, 0.5);
+        hero.addChild(timer);
+
+        const body = UiKit.text('upgrades', 'itemInfo', {}, {
+            fill: 0xffffff, fontSize: 22, lineHeight: 27, strokeThickness: 3,
+            wordWrap: true, breakWords: true, wordWrapWidth: width - 80, align: 'center',
+        });
+        body.style.wordWrap = true;
+        body.style.breakWords = true;
+        body.style.wordWrapWidth = width - 80;
+        body.text = t('tractorOfferBody', { seconds: DIG.chests.power.seconds });
+        body.anchor.set(0.5);
+        body.y = 70;
+        box.addChild(frame, hero, ribbon, title, body);
+
+        const buttonY = height / 2 - 60;
+        const tap = (b: PIXI.Container, onTap: () => void) => {
+            b.eventMode = 'static';
+            b.cursor = 'pointer';
+            b.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
+            b.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
+                event.stopPropagation();
+                onTap();
+            });
+        };
+        const skip = new PIXI.Container();
+        skip.position.set(-135, buttonY);
+        const skipText = UiKit.text('upgrades', 'buyLabel', { price: '' });
+        skipText.text = t('cancel');
+        UiKit.fit(skipText, 160);
+        skip.addChild(UiKit.image('upgrades', 'lockedButton', 180, 64), skipText);
+        tap(skip, onSkip);
+
+        // The standard rewarded-video button: green, video icon + label, its own shine, a pulse and a glint sweeping across.
+        const watch = new PIXI.Container();
+        watch.position.set(105, buttonY);
+        const watchW = 270;
+        const watchH = 78;
+        const face = new PIXI.Container();
+        face.addChild(UiKit.image('upgrades', 'buyButton', watchW, watchH));
+        const video = PIXI.Sprite.from('ItemIcon_Video');
+        video.anchor.set(0.5);
+        video.scale.set(52 / Math.max(video.texture.width, video.texture.height, 1));
+        video.x = -watchW / 2 + 40;
+        const watchText = UiKit.text('upgrades', 'buyLabel', { price: '' });
+        watchText.text = t('tractorWatch');
+        UiKit.fit(watchText, watchW - 95);
+        watchText.x = 24;
+        const glintMask = new PIXI.Graphics().beginFill(0xffffff).drawRoundedRect(-watchW / 2 + 4, -watchH / 2 + 4, watchW - 8, watchH - 12, 18).endFill();
+        const glint = new PIXI.Graphics().beginFill(0xffffff, 0.45).drawPolygon([-14, -50, 14, -50, -6, 50, -34, 50]).endFill();
+        glint.mask = glintMask;
+        glint.eventMode = 'none';
+        glint.x = -watchW;
+        gsap.to(glint, { x: watchW, duration: 0.8, ease: 'power1.in', repeat: -1, repeatDelay: 1.1 });
+        face.addChild(glint, glintMask, video, watchText);
+        watch.addChild(face);
+        UiAnim.rays(watch, 170, 0xfff0a0, 0.9, 6);
+        UiAnim.pulse(face, 0.06, 0.55);
+        tap(watch, onWatch);
+        box.addChild(skip, watch);
+        box.interactiveChildren = true;
+        box.visible = true;
+        this.updateBlocker();
+        this.updateNewMineCta();
+        UiAnim.popIn(box);
+        DigAudio.play('open');
+    }
+
+    public setTractorBusy(): void {
+        this.tractorConfirm.interactiveChildren = false;
+    }
+
+    /**
+     * The video badge floating over the rewarded tractor spot in the world: the standard video button (green, video icon)
+     * on a turning shine, bobbing and pulsing. `at` is in this HUD's space; null hides it.
+     */
+    public setTractorBadge(at: PIXI.IPointData | null): void {
+        const badge = this.tractorBadge;
+        if (!at || this.tractorConfirm.visible) {
+            badge.visible = false;
+            return;
+        }
+        if (badge.children.length === 0) {
+            const face = new PIXI.Container();
+            face.addChild(UiKit.image('upgrades', 'buyButton', 104, 72));
+            const video = PIXI.Sprite.from('ItemIcon_Video');
+            video.anchor.set(0.5);
+            video.scale.set(54 / Math.max(video.texture.width, video.texture.height, 1));
+            video.y = -3;
+            face.addChild(video);
+            badge.addChild(face);
+            UiAnim.rays(badge, 95, 0xfff0a0, 0.9, 6);
+            UiAnim.pulse(face, 0.08, 0.55);
+            badge.eventMode = 'none';
+        }
+        badge.visible = true;
+        badge.position.set(at.x, at.y + Math.sin(performance.now() / 300) * 6);
+    }
+
+    public hideTractorOffer(): void {
+        UiAnim.kill(this.tractorConfirm);
+        this.tractorConfirm.visible = false;
+        this.updateBlocker();
+        this.updateNewMineCta();
+    }
+
     /** Every tool on a line: owned ones lit with a check, the next one pulsing, the rest dimmed with their price; the last (the tractor) bigger. */
     private timeline(y: number): PIXI.Container {
         const row = new PIXI.Container();
@@ -1356,19 +1513,17 @@ export class DigHud extends PIXI.Container {
     }
 
     /**
-     * The backpack's upgrade path as a little segmented bar under its offer: one segment per upgrade, owned ones
-     * green, the next one gold and pulsing, the rest grey.
+     * An upgrade path (the backpack's, a boost's) as a little segmented bar under its row's text: one segment per
+     * upgrade, owned ones green, the next one gold and pulsing, the rest grey.
      */
-    private backpackLevels(): PIXI.Container {
+    private levelBar(owned: number, count: number, y: number): PIXI.Container {
         const bar = new PIXI.Container();
-        bar.position.set(OFFER.textX, 38);
-        const count = DIG.backpack.length - 1;
-        const owned = DigProgress.backpackLevel;
-        const gap = 3;
-        const width = (BAG_BAR.width - gap * (count - 1)) / count;
+        bar.position.set(OFFER.textX, y);
+        const gap = count > 16 ? 2 : 3;
+        const width = (LEVEL_BAR.width - gap * (count - 1)) / count;
         for (let i = 0; i < count; i++) {
             const color = i < owned ? LINE_DONE : i === owned ? 0xffd86b : LINE_TODO;
-            const segment = new PIXI.Graphics().beginFill(color).drawRoundedRect(-width / 2, -BAG_BAR.height / 2, width, BAG_BAR.height, 3).endFill();
+            const segment = new PIXI.Graphics().beginFill(color).drawRoundedRect(-width / 2, -LEVEL_BAR.height / 2, width, LEVEL_BAR.height, 3).endFill();
             segment.x = width / 2 + i * (width + gap);
             if (i === owned) UiAnim.pulse(segment, 0.25, 0.5);
             bar.addChild(segment);
@@ -1498,6 +1653,8 @@ export class DigHud extends PIXI.Container {
         // At the bottom of the screen, under the miner (the card's own height plus a margin up from the edge).
         this.newMineConfirm.position.set(screen.center.x, screen.center.y);
         this.newMineConfirm.scale.set(Math.min(1, (screen.width - 24) / NEW_MINE_SIZE.width, (screen.height - 80) / (NEW_MINE_SIZE.height + RIBBON_OVERHANG)));
+        this.tractorConfirm.position.copyFrom(this.newMineConfirm.position);
+        this.tractorConfirm.scale.set(Math.min(1, (screen.width - 24) / TRACTOR_OFFER_SIZE.width, (screen.height - 80) / (TRACTOR_OFFER_SIZE.height + RIBBON_OVERHANG)));
         this.findBanner.position.set(screen.center.x, screen.topLeft.y + screen.height - FIND_BANNER_SIZE.height / 2 - 30);
     }
 

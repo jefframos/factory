@@ -8,6 +8,7 @@
 // being hunted (`focus`, RelicHunt) always has its beam, full and bright, however far away it is.
 
 import * as THREE from 'three';
+import { TRACTOR_SPOT_COLOR } from '../mining/PowerChestSpawner';
 import { VoxelTerrain } from './VoxelTerrain';
 import { BendService } from '../services/BendService';
 import { ChestKind, FindDef } from '../data/DigConfig';
@@ -25,7 +26,7 @@ const EDGE_FADE = 0.25;
 const CHEST_OPACITY = 0.75;
 const FIND_OPACITY = 0.55;
 
-const CHEST_COLORS: Record<ChestKind, number> = { power: 0x6fe3ff, cash: 0xffd23f };
+const CHEST_COLORS: Record<ChestKind, number> = { power: TRACTOR_SPOT_COLOR, cash: 0xffd23f };
 const COMMON_FIND_COLOR = 0xffd86b;
 
 /** Bright at the bottom, gone at the top. */

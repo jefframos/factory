@@ -1,21 +1,28 @@
-// Library picker popup: browses the 3D asset library (D:/projects/PIXI3d/library3d, glTF/GLB only, the formats the
+// Library picker popup: browses the 3D asset library (the repo's library3d submodule, glTF/GLB only, the formats the
 // game loads), previews a model in 3D and imports it into the game (server: /api/library/import copies it and its
 // textures under raw-assets/models/town{m}/library/ and public/mow/models/town/library/). Pack chips + search like the library viewer.
+// A model with no thumbnail gets one as its card scrolls into view (like the library app: rendered here, one at a time,
+// and saved into the library's thumbs by the server, POST /api/library/thumb, so it's drawn once for both).
 
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createGLTFLoader } from './gltf.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { api, el, openModal, toast } from './shared.js';
+import { api, el, openModal, toast, createQueue } from './shared.js';
 
 const PAGE = 240;
-const loader = new GLTFLoader();
+const THUMB_SIZE = 160;
+const loader = createGLTFLoader();
+const enqueueThumb = createQueue();
 let library;
+let thumbRenderer;
+let thumbScene;
+let thumbCamera;
 
 /** Opens the picker; `onImported(path)` gets the imported model's path under models/. */
 export async function openLibraryPicker({ onImported }) {
     library ??= await api('/api/library');
     if (!library.available) {
-        toast(`3D library not found at ${library.dir} (set LIBRARY3D_DIR)`, 'bad');
+        toast(`3D library not found at ${library.dir}: run git submodule update --init library3d (or set LIBRARY3D_DIR)`, 'bad');
         return;
     }
     let selected = null;
@@ -23,7 +30,19 @@ export async function openLibraryPicker({ onImported }) {
     let query = '';
     let shown = PAGE;
 
-    const modal = openModal({ title: '📚 Import from the 3D library', wide: true, onClose: () => preview.dispose() });
+    // Cards without a thumbnail render one as they come into view (and only then: a pack can hold hundreds).
+    const thumbWatch = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            thumbWatch.unobserve(entry.target);
+            const asset = library.assets.find((a) => a.id === entry.target.dataset.id);
+            if (asset) makeThumb(asset, entry.target.querySelector('.thumb'));
+        }
+    });
+    const modal = openModal({ title: '📚 Import from the 3D library', wide: true, onClose: () => {
+        preview.dispose();
+        thumbWatch.disconnect();
+    } });
     modal.dialog.classList.add('picker');
     const search = el('input', { class: 'search', type: 'search', placeholder: 'Search the library (name, tag, pack)…' });
     const count = el('span', { class: 'muted' });
@@ -92,6 +111,10 @@ export async function openLibraryPicker({ onImported }) {
         }, el('div', { class: 'thumb' }, asset.thumb ? el('img', { src: asset.thumb, alt: '', loading: 'lazy', draggable: false }) : el('div', { class: 'ph' }, '🧊')),
         el('div', { class: 'label' }, asset.name),
         el('div', { class: 'sub' }, asset.collection || asset.pack)));
+        thumbWatch.disconnect();
+        cards.forEach((card, i) => {
+            if (!visible[i].thumb) thumbWatch.observe(card);
+        });
         if (visible.length > shown) {
             cards.push(el('button', { onclick: () => { shown += PAGE; renderGrid(); } }, `Show more (${visible.length - shown} left)`));
         }
@@ -102,6 +125,54 @@ export async function openLibraryPicker({ onImported }) {
     renderChips();
     renderGrid();
     search.focus();
+}
+
+/** Renders `asset`'s thumbnail into `holder` (queued: one at a time) and has the server keep it. */
+function makeThumb(asset, holder) {
+    if (asset.thumb || asset.thumbPending || !holder) return;
+    asset.thumbPending = true;
+    enqueueThumb(async () => {
+        try {
+            const blob = await renderThumb(`/library-files/${asset.file}`);
+            const { thumb } = await api(`/api/library/thumb?id=${encodeURIComponent(asset.id)}`, { method: 'POST', body: blob });
+            asset.thumb = thumb;
+            holder.replaceChildren(el('img', { src: `${thumb}?v=${Date.now()}`, alt: '', draggable: false }));
+        } catch {
+            holder.querySelector('.ph')?.replaceChildren('⚠');
+        } finally {
+            asset.thumbPending = false;
+        }
+    });
+}
+
+/** A model rendered small (three-quarter view, framed on it), as a PNG. */
+async function renderThumb(url) {
+    if (!thumbRenderer) {
+        thumbRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+        thumbRenderer.setSize(THUMB_SIZE, THUMB_SIZE);
+        thumbRenderer.setPixelRatio(1);
+        thumbScene = new THREE.Scene();
+        thumbScene.add(new THREE.HemisphereLight(0xffffff, 0x6b7280, 1.6));
+        const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+        sun.position.set(4, 8, 6);
+        thumbScene.add(sun);
+        thumbCamera = new THREE.PerspectiveCamera(32, 1, 0.01, 1000);
+    }
+    const object = (await loader.loadAsync(url)).scene;
+    const box = new THREE.Box3().setFromObject(object);
+    const center = box.getCenter(new THREE.Vector3());
+    object.position.sub(center);
+    const radius = Math.max(box.getSize(new THREE.Vector3()).length() / 2, 0.01);
+    const distance = radius / Math.sin(THREE.MathUtils.degToRad(thumbCamera.fov / 2));
+    thumbCamera.near = distance / 100;
+    thumbCamera.far = distance * 100;
+    thumbCamera.position.set(distance * 0.55, distance * 0.4, distance * 0.8);
+    thumbCamera.updateProjectionMatrix();
+    thumbCamera.lookAt(0, 0, 0);
+    thumbScene.add(object);
+    thumbRenderer.render(thumbScene, thumbCamera);
+    thumbScene.remove(object);
+    return new Promise((resolve, reject) => thumbRenderer.domElement.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))), 'image/png'));
 }
 
 function createPreview(host) {

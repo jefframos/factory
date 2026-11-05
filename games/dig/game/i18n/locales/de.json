@@ -1,4 +1,8 @@
 {
+    "tractorOfferTitle": "TRAKTOR-BOOST",
+    "tractorOfferBody": "Sieh ein Video für {seconds}s starkes Graben und sofortiges Geld. Danach kehrt dein Werkzeug zurück. Eine Fahrt pro Mine.",
+    "tractorWatch": "VIDEO ANSEHEN",
+    "tractorAdFailed": "Video nicht abgeschlossen. Geh weg und komm zurück, um es erneut zu versuchen.",
     "titleUpgrades": "UPGRADES",
     "titleCollection": "SAMMLUNG",
     "titleWardrobe": "GARDEROBE",
@@ -67,6 +71,7 @@
     "tabHats": "HÜTE",
     "wearing": "AN",
     "owned": "GEKAUFT",
+    "free": "GRATIS",
     "collectionLock": "SAMMLUNG",
     "completeCollection": "VERVOLLSTÄNDIGE DIE SAMMLUNG!",
     "lookBought": "{name} GEKAUFT!",

@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { createGLTFLoader } from 'core/three/GLTFLoaders';
 import AnimatorBoard from './AnimationBoard';
 import { loadCompressedFile, releaseObjectURL } from '../../utils/GzipLoader';
 
@@ -38,7 +38,7 @@ export default class AnimatorController {
                 const animObject = await new FBXLoader().loadAsync(resolvedUrl);
                 clip = animObject.animations[0];
             } else if (extension === 'glb' || extension === 'gltf') {
-                const gltf = await new GLTFLoader().loadAsync(resolvedUrl);
+                const gltf = await createGLTFLoader().loadAsync(resolvedUrl);
                 clip = gltf.animations[0];
             } else {
                 console.error(`AnimatorController: unsupported animation format "${extension}" in "${animationUrl}"`);

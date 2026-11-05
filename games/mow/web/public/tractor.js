@@ -1,18 +1,17 @@
 // Tractor tab: the tractor the ridden mowers use (ui/mow.json `tractor`, read by TractorRide.ts): mounted in the
 // sections not restored yet. The preview puts the player (the game's rig in its Sitting clip) on the seat exactly as
 // the game does — tractor stood on the floor at `height`, turned by `rotationY`, the player's feet at `seat` — and
-// marks the exhaust and where it cuts. "Puff" plays the smoke. Saves only the tractor section of mow.json
+// marks the exhaust, where it cuts and where the hands hold the steering wheel (`steer`). "Puff" plays the smoke. Saves only the tractor section of mow.json
 // (PUT /api/mow/tractor); each ridden mower's price, stats, colour and size (`rideScale`) are its entry in `tools`.
 
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { createGLTFLoader } from './gltf.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { api, el, toast } from './shared.js';
 
 /** Same as MowPlayer: the rig is authored in FBX units. */
 const CHARACTER_SCALE = 0.0075;
-const CHARACTER = 'characters/default/characterMedium.fbx';
+const CHARACTER = 'characters/default/characterMedium.glb';
 const SIT_CLIP = 'characters/default/Sitting.glb';
 const DEG = Math.PI / 180;
 
@@ -28,6 +27,15 @@ const FIELDS = [
         ['seat.x', 'Left / right', 0.01, -2, 2],
         ['seat.y', 'Up / down', 0.01, -1, 3],
         ['seat.z', 'Back / front', 0.01, -2, 2],
+    ]],
+    ['Steering wheel (where the hands hold, yellow dots)', [
+        ['steer.x', 'Left / right', 0.01, -2, 2],
+        ['steer.y', 'Up / down', 0.01, 0, 4],
+        ['steer.z', 'Back / front', 0.01, -2, 2],
+        ['steer.spread', 'Hands apart (each side)', 0.01, 0, 1],
+        ['steer.hand.x', 'Hand turn X (°)', 1, -180, 180],
+        ['steer.hand.y', 'Hand turn Y (°)', 1, -180, 180],
+        ['steer.hand.z', 'Hand turn Z (°)', 1, -180, 180],
     ]],
     ['Smoke puff (getting on / off)', [
         ['smoke.count', 'Puffs', 1, 1, 60],
@@ -54,6 +62,13 @@ let mixer;
 let puffTexture;
 const tractorHolder = new THREE.Group();
 const seatHolder = new THREE.Group();
+/** Where the hands hold the wheel (the game's IK targets: steer ± spread). */
+const handMarkers = [0, 1].map(() => {
+    const marker = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffd23f, depthTest: false, transparent: true }));
+    // Over everything (the rig sits in front of the wheel).
+    marker.renderOrder = 10;
+    return marker;
+});
 const exhaustMarker = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 8), new THREE.MeshBasicMaterial({ color: 0xff7043 }));
 /** Where it cuts: a line from under the tractor to `cutAhead`. */
 const cutMarker = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 1), new THREE.MeshBasicMaterial({ color: 0x5fd35a }));
@@ -66,6 +81,9 @@ export async function initTractorTab(container) {
     host = container;
     mow = await api('/api/mow');
     tractor = mow.tractor;
+    // Older configs have no steering wheel: one in front of the seat to start from.
+    tractor.steer ??= { x: 0, y: tractor.seat.y + 0.3, z: tractor.seat.z + 0.6, spread: 0.17, hand: { x: 0, y: 63, z: 0 } };
+    tractor.steer.hand ??= { x: 0, y: 0, z: 0 };
     buildLayout();
     setupViewport(host.querySelector('#tractorViewport'));
     void loadTractor();
@@ -156,7 +174,7 @@ function setupViewport(viewport) {
     sun.position.set(4, 8, 6);
     scene.add(sun);
     scene.add(new THREE.GridHelper(8, 32, 0x4a4038, 0x3a322c), new THREE.AxesHelper(1.2));
-    scene.add(tractorHolder, seatHolder, exhaustMarker, cutMarker);
+    scene.add(tractorHolder, seatHolder, exhaustMarker, cutMarker, ...handMarkers);
     camera = new THREE.PerspectiveCamera(40, 1, 0.05, 200);
     camera.position.set(3.2, 2.6, 3.6);
     controls = new OrbitControls(camera, renderer.domElement);
@@ -200,12 +218,13 @@ function place() {
     }
     seatHolder.position.set(tractor.seat.x, tractor.seat.y, tractor.seat.z);
     exhaustMarker.position.set(tractor.exhaust.x, tractor.exhaust.y, tractor.exhaust.z);
+    handMarkers.forEach((marker, i) => marker.position.set(tractor.steer.x + (i ? -1 : 1) * tractor.steer.spread, tractor.steer.y, tractor.steer.z));
     cutMarker.scale.z = Math.max(0.01, tractor.cutAhead);
     cutMarker.position.set(0, 0.03, tractor.cutAhead / 2);
 }
 
 async function loadTractor() {
-    const gltf = await new GLTFLoader().loadAsync(`/models/${tractor.model}`).catch((error) => {
+    const gltf = await createGLTFLoader().loadAsync(`/models/${tractor.model}`).catch((error) => {
         toast(`Could not load ${tractor.model}: ${error.message}`, 'bad');
         return null;
     });
@@ -218,7 +237,7 @@ async function loadTractor() {
 /** The game's rig in its Sitting clip (the game's CharacterBody swaps the head for a cube; the bare rig is close enough to place the seat). */
 async function loadPlayer() {
     try {
-        const [rig, sit] = await Promise.all([new FBXLoader().loadAsync(`/models/${CHARACTER}`), new GLTFLoader().loadAsync(`/models/${SIT_CLIP}`)]);
+        const [rig, sit] = await Promise.all([createGLTFLoader().loadAsync(`/models/${CHARACTER}`).then((gltf) => gltf.scene), createGLTFLoader().loadAsync(`/models/${SIT_CLIP}`)]);
         rig.scale.setScalar(CHARACTER_SCALE);
         rig.traverse((node) => {
             if (node.isMesh) node.material = new THREE.MeshStandardMaterial({ color: 0x42a5f5, roughness: 0.7 });

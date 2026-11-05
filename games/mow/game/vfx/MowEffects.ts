@@ -32,6 +32,8 @@ interface Pickup {
     hop: number;
     /** Size while flying: shrinks into the miner, stays whole when tossed out. */
     shrink: number;
+    /** Its scale when it set off (a treasure's model is fitted to its size): the shrink is from there. */
+    scale: number;
     onArrive: () => void;
 }
 
@@ -266,7 +268,8 @@ export class MowEffects {
     /** A find bursts out of its block in a big, slow arc before landing in the miner. */
     public reveal(from: THREE.Vector3, onArrive: () => void, model?: THREE.Object3D): void {
         this.burst(from, new THREE.Color(0xffe27a), 26, 6);
-        this.fly(from, this.pickupTarget, new THREE.Color(0xffe27a), onArrive, model, { delay: 0, flight: 1.1, hop: 3.2, shrink: 0.4 });
+        // A low hop (a high one rises over the player on screen: the camera looks down on them), shrinking into them.
+        this.fly(from, this.pickupTarget, new THREE.Color(0xffe27a), onArrive, model, { delay: 0, flight: 1.1, hop: 1.4, shrink: 0.45 });
     }
 
     /** A "+$12"-style label that rises from `at` and fades. */
@@ -298,7 +301,7 @@ export class MowEffects {
         mesh.position.copy(from);
         this.threeScene.add(mesh);
         mesh.visible = motion.delay <= 0;
-        this.pickups.push({ mesh, material, from: from.clone(), to, age: -motion.delay, flight: motion.flight, hop: motion.hop, shrink: motion.shrink, onArrive });
+        this.pickups.push({ mesh, material, from: from.clone(), to, age: -motion.delay, flight: motion.flight, hop: motion.hop, shrink: motion.shrink, onArrive, scale: mesh.scale.x });
     }
 
     public update(delta: number): void {
@@ -380,7 +383,8 @@ export class MowEffects {
             pickup.mesh.position.lerpVectors(pickup.from, pickup.to(), eased);
             pickup.mesh.position.y += Math.sin(t * Math.PI) * pickup.hop;
             pickup.mesh.rotation.y += delta * 8;
-            pickup.mesh.scale.setScalar(1 - t * pickup.shrink);
+            // From its own scale (a treasure's model is fitted to its size), not 1.
+            pickup.mesh.scale.setScalar(pickup.scale * (1 - t * pickup.shrink));
             if (t >= 1) {
                 pickup.onArrive();
                 pickup.mesh.removeFromParent();

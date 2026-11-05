@@ -1,4 +1,8 @@
 {
+    "tractorOfferTitle": "TRACTORBOOST",
+    "tractorOfferBody": "Bekijk een video voor {seconds}s krachtig graven en direct geld. Daarna krijg je je eigen gereedschap terug. Eén rit per mijn.",
+    "tractorWatch": "BEKIJK VIDEO",
+    "tractorAdFailed": "Video niet voltooid. Loop weg en kom terug om opnieuw te proberen.",
     "titleUpgrades": "UPGRADES",
     "titleCollection": "COLLECTIE",
     "titleWardrobe": "KLEDINGKAST",
@@ -67,6 +71,7 @@
     "tabHats": "HOEDEN",
     "wearing": "AAN",
     "owned": "IN BEZIT",
+    "free": "GRATIS",
     "collectionLock": "COLLECTIE",
     "completeCollection": "MAAK DE COLLECTIE COMPLEET!",
     "lookBought": "{name} GEKOCHT!",

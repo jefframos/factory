@@ -13,6 +13,14 @@
         },
         {
           "alias": [
+            "bag-full.ogg"
+          ],
+          "src": [
+            "bag-full.mp3"
+          ]
+        },
+        {
+          "alias": [
             "break-1.ogg"
           ],
           "src": [
@@ -365,10 +373,34 @@
         },
         {
           "alias": [
+            "ocean-ambient.mp3"
+          ],
+          "src": [
+            "ocean-ambient.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "park-ambience.mp3"
+          ],
+          "src": [
+            "park-ambience.mp3"
+          ]
+        },
+        {
+          "alias": [
             "reveal.ogg"
           ],
           "src": [
             "reveal.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Somnia-Variation-3-relax-and-sleep-Reed-Mathis.mp3"
+          ],
+          "src": [
+            "Somnia-Variation-3-relax-and-sleep-Reed-Mathis.mp3"
           ]
         },
         {

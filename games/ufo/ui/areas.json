@@ -1,0 +1,49 @@
+{
+  "tutorial": {
+    "level": "town",
+    "type": "all",
+    "seconds": 0,
+    "rivals": 0,
+    "reward": 100
+  },
+  "areas": [
+    {
+      "id": "city",
+      "name": "City",
+      "miniature": "citymini",
+      "levels": [
+        {
+          "level": "town",
+          "type": "points",
+          "share": 0.45,
+          "seconds": 240,
+          "rivals": 3,
+          "reward": 200
+        },
+        {
+          "level": "city2",
+          "type": "object",
+          "seconds": 360,
+          "rivals": 4,
+          "reward": 250
+        },
+        {
+          "level": "town",
+          "type": "all",
+          "seconds": 300,
+          "rivals": 2,
+          "reward": 300
+        },
+        {
+          "level": "city2",
+          "type": "points",
+          "share": 0.4,
+          "seconds": 420,
+          "rivals": 6,
+          "reward": 350
+        }
+      ],
+      "miniaturePoles": false
+    }
+  ]
+}

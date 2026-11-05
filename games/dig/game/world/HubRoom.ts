@@ -33,7 +33,7 @@ import { t, names } from '../i18n/Localization';
 const ORIGIN = new THREE.Vector3();
 const WALL_SETUP: WallSetupConfig = { height: 2.2, thickness: 0.3, doorHeight: 2, tallDoorHeight: 2.2, windowHeight: 1 };
 const WALL_STYLE: WallStyleConfig = { bottomColor: '#5d4030', topColor: '#c49a6c', bottomHeight: 0.8 };
-const FLOOR: FloorCheckerConfig = { colorA: '#d9c29b', colorB: '#c9ae84', scale: 1 };
+const FLOOR: FloorCheckerConfig = { colorA: '#d8c39e', colorB: '#cfb88f', scale: 1 };
 const MODEL_BASE = './dig/models/';
 
 /**

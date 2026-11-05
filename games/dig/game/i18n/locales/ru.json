@@ -1,4 +1,8 @@
 {
+    "tractorOfferTitle": "УСИЛЕНИЕ ТРАКТОРОМ",
+    "tractorOfferBody": "Посмотри видео: мощное копание и мгновенные деньги на {seconds} с. Потом вернётся твой инструмент. Один заезд на шахту.",
+    "tractorWatch": "СМОТРЕТЬ ВИДЕО",
+    "tractorAdFailed": "Видео не завершено. Отойди и вернись, чтобы попробовать снова.",
     "titleUpgrades": "УЛУЧШЕНИЯ",
     "titleCollection": "КОЛЛЕКЦИЯ",
     "titleWardrobe": "ГАРДЕРОБ",
@@ -67,6 +71,7 @@
     "tabHats": "ШЛЯПЫ",
     "wearing": "НАДЕТО",
     "owned": "ЕСТЬ",
+    "free": "БЕСПЛАТНО",
     "collectionLock": "КОЛЛЕКЦИЯ",
     "completeCollection": "СОБЕРИ КОЛЛЕКЦИЮ!",
     "lookBought": "{name} КУПЛЕНО!",

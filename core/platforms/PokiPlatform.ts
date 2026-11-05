@@ -80,16 +80,19 @@ export default class PokiPlatform implements IPlatformConnection {
         }
     }
 
-    public async showRewardedVideo(): Promise<void> {
+    public async showRewardedVideo(): Promise<boolean> {
         console.debug("Poki Platform: Showing rewarded video...");
         // Example Poki SDK rewarded video
         if (window['PokiSDK']) {
             SoundManager.instance.muteAllSounds()
-            await window['PokiSDK'].rewardedBreak();
-            SoundManager.instance.restoreSound()
-
+            try {
+                return await window['PokiSDK'].rewardedBreak() === true;
+            } finally {
+                SoundManager.instance.restoreSound();
+            }
         } else {
-            await Promise.resolve();
+            console.warn("Poki Platform: Rewarded video unavailable; SDK not loaded.");
+            return false;
         }
     }
 

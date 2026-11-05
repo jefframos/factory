@@ -50,10 +50,17 @@ export interface OcclusionFadeConfig {
      *     still completely hides the player. Applied per model, see applyOcclusionFadeToObject().
      */
     test?: 'point' | 'bounds';
+    /**
+     * applyOcclusionFadeToObject() only: faded whenever this says so, easing there, instead of any
+     * test against the camera->player line (a big model faded by trigger boxes the player walks into).
+     */
+    fadeWhen?: () => boolean;
 }
 
 /** Per-vertex alpha read by a material patched for BendService.applyOcclusionFadeToParts(). */
 const OCCLUSION_ALPHA_ATTRIBUTE = 'aOccAlpha';
+/** OcclusionFadeConfig.fadeWhen: how much of the way to its opacity it goes each frame. */
+const FADE_WHEN_EASE = 0.12;
 
 /** One part of a mesh for BendService.applyOcclusionFadeToParts(): vertices [start, start + count) and their LOCAL bounding box. */
 export interface OcclusionPart {
@@ -519,6 +526,10 @@ export class BendService {
             }
             lastFrame = frame;
 
+            if (config.fadeWhen) {
+                uOccAlpha.value += ((config.fadeWhen() ? minOpacity : maxOpacity) - uOccAlpha.value) * FADE_WHEN_EASE;
+                return;
+            }
             worldBox.copy(localBox).applyMatrix4(root.matrixWorld);
             if (worldBox.getSize(size).y < minOccluderHeight) {
                 uOccAlpha.value = maxOpacity;

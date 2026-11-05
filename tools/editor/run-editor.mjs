@@ -24,10 +24,11 @@ import path from 'node:path';
 import { execSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-// dotenv never overrides a variable already set in the shell, so a stale
-// `$env:GAME=...` silently wins over .env — say where GAME came from.
+// .env picks the game, even over a GAME left set in the terminal (dotenv alone never overrides one) — same as
+// vite.config.ts and every asset tool, so `npm run dev` and `npm run editor` always agree.
 const shellGame = process.env.GAME;
 const fileGame = dotenv.config().parsed?.GAME;
+process.env.GAME = fileGame ?? shellGame;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
@@ -38,9 +39,9 @@ if (!GAME) {
     process.exit(1);
 }
 if (shellGame && fileGame && shellGame !== fileGame) {
-    console.warn(`[editor] GAME=${shellGame} from the shell overrides GAME=${fileGame} in .env — run \`Remove-Item Env:GAME\` (PowerShell) to use .env.`);
+    console.warn(`[editor] Ignoring GAME=${shellGame} from the shell: .env says GAME=${fileGame}.`);
 }
-console.log(`[editor] GAME=${GAME} (${shellGame ? 'shell environment' : '.env'})`);
+console.log(`[editor] GAME=${GAME} (${fileGame ? '.env' : 'shell environment'})`);
 
 const webDir = path.join(REPO_ROOT, 'games', GAME, 'web');
 const serverEntry = path.join(webDir, 'server.mjs');
@@ -121,7 +122,9 @@ async function stopPreviousEditor(port) {
 const port = editorPort();
 await stopPreviousEditor(port);
 
-const child = spawn(process.execPath, [serverEntry], {
+// --watch: the server restarts itself when its code changes (an editor left running from before a change kept saving
+// through the old code, dropping the fields it didn't know).
+const child = spawn(process.execPath, ['--watch', serverEntry], {
     stdio: 'inherit',
     cwd: webDir,
 });

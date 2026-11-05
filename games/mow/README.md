@@ -13,6 +13,10 @@ in code, `Town.bloom()`, springing up in a wave; sparse and low — `FLOWER_DENS
 (`player/MowerModel.ts`: the two reel mowers a spinning bladed barrel between two wheels, the three push mowers a long
 deck on four wheels with the engine — a capped cylinder — in its middle), each pushed by a U handle with a crossbar
 the hands hold; the ridden ones are dig's tractor. The shop's mower icons are rendered from these same models.
+Holding the mower (`MowPlayer.holdPose()`): the legs walk with the clip, but each arm (shoulder, upper arm, forearm)
+is frozen in the idle pose and solved as a two-bone IK chain pinned at its grip on the bar, the elbow bending toward
+`ELBOW_POLE` (back, out, a little down); the fingers stay closed round the bar (the idle clip's first frame). The
+mower rolls on top of pavements and road tiles (`Town.surfaceAt()`), its handle and the hands lifting with it.
 
 ---
 
@@ -54,16 +58,61 @@ save.
    goal — two reel mowers, three push mowers, three tractors: **Reel Mower** (bag 120) → Wide Reel ($15, bag 280) → Push Mower ($120) →
    Powered ($450) → Pro ($1800) → Lawn Tractor ($5000, the first ride) → Turbo → **Mega** — the next mower's offer, and
    the bag's capacity with its levels. **BOOSTS** (after the first mower; "!" when one is affordable): Speed, Money
-   Gain, Cutting Width, Sharp Blades (chew through tough grass faster). Powered and bigger mowers run an engine.
+   Gain, Cutting Width, Sharp Blades (chew through tough grass faster), each with the bag's segmented level bar under
+   its name. The tabs are dig's (`ui/TabBar.ts`: gold when inactive, the active one joined to the block). Each kind of mower sounds different
+   (`audio/EngineSound.ts`, synthesised, kept low under the music): the reel mowers click as the blades pass (faster
+   as you walk, silent standing still), the push / powered / pro mowers hum like an electric motor, the ridden ones
+   chug like a petrol engine (all under one `MOWER_VOLUME`, 0.6; a mower left standing fades slowly to silence). Footsteps follow what's underfoot: stone on pavements and roads, wood on the island's
+   deck, a soft pad on grass (`MowScene.updateFootsteps()`). **Ambient sound is placed in the world**
+   (`audio/SpatialAudio.ts`, Web Audio panners through Howler's master, heard from the player facing up the screen):
+   the sea comes from the editor's sound zones round the island (silent inland, rising on the deck), and each car
+   nearby runs its own engine, panned to where it is (`soundSettings.cars` in the level).
 4. **Dress up** — the first **wardrobe** appears with the second sale and the arrows lead to it; its first (cheapest)
    hat is a must (the wardrobe locks onto it, money topped up if short). Every wardrobe (Dig's closet, a pink pad with a
    heart) opens Dig's wardrobe: COLORS / FACES / HATS,
    the same catalogue, prices and assets (`wardrobe` in `ui/mow.json`; hats placed by `ui/hatfits.json`). Buying
    puts it on at once; it's saved, and the wardrobe shows a bouncing "!" while something new there is affordable.
+   **Gifts** (dig's): one colour (red) and one face (Cool) are `free` in the catalogue. Claimed on the first visit, nothing
+   more; still unclaimed when the player comes back after the first hat (`freeLooksOffered` in the save), their tabs
+   and cards get a green FREE badge (and the wardrobe its "!") until taken.
 5. **Restore** — each section shows its restored % at the top, with a pop and a chime at 25 / 50 / 75%. At its goal
    (97%) the last stragglers are cleared, flowers spring up, a banner celebrates it (rays, its name, RESTORED!, the
    bonus counting up, confetti), and the next section opens: its fence sinks, its ATMs pop in, and the camera can
    glide over to show it.
+
+**The town miniature** (`ui/TownMiniature.ts`) is the "fill the whole town" meter, top-right under the trophy: a
+picture of the whole island baked from the 3D world, under a dusky violet veil that drains from the bottom up to the
+town's % (a rippling edge with a glow), and a badge with the %.
+- **Town %:** the mean of the sections' shares (a restored section counts as 100%), so every section weighs the same.
+- **Completing a section** (`MowHud.celebrate()` → `TownMiniature.celebrate()`, about 2.6 s, `MAP_FLIGHT_SEC`): the
+  miniature flies to the middle, big, with rays; the veil drains to the new % (sparks off its edge, the % counting
+  up); a flash, a spark burst and confetti; it flies home. Then the RESTORED! banner (rays, ribbon, bonus), and only
+  once that's gone (`BANNER_SEC`) the scene's "NEW AREA" message.
+- **Baking the pictures:** the editor's **📸 Map shots** tab (`web/public/mapshots.js`), one zone at a time: `town`
+  (the island) or a section (not shown in the game yet). Each zone is shot as the **Original** (the saved town as it
+  is: a section cut out of it — only the props that fit inside it, the ground clipped to it — onto a slab of earth) or
+  as its **Custom** diorama: a little level shaped like `town.json`, started from the town (↺ Copy from the town: a
+  section on its own island, the deck round it) and edited right there with the Town tab's editor (a second copy of
+  `town3d.js`). Each zone has a camera (yaw round, pitch above; 0° / 40° unless set; **Isometric** on, an
+  orthographic camera, or off, a perspective one with its FOV; 🎯 Use this view takes the diorama view's) and a
+  **HUD outline** toggle (a black stroke round the small picture's silhouette, like the rest of the HUD; its width
+  in pixels beside it). The frame reaches the top of the tallest thing in the shot, so nothing is cut off. Settings and dioramas: `levels/mapshots.json`. **📸 Take snapshot** opens the game with
+  `?mapshots=<editor url>&zone=<zone>` (`debug/TownSnapshotScene.ts`): it builds the level (a custom diorama swapped in
+  for the town) fully restored (every section open, mowed, in bloom, every station out; no player, traffic, sea, labels
+  or bend), in the game's light, and renders it with an orthographic camera on a transparent background, cropped to
+  what was drawn, 2048 across. Two pictures come of it, each shrunk in halving steps (a big shrink on the fly turned
+  jagged): `<zone>` (512 across: the reveal, the corner miniature blown up) and `<zone>-small` (192: the HUD corner,
+  about its size on screen). Each goes to the editor server (`POST /api/map-snapshot`), saved as
+  `raw-assets/non-preload/map/<name>.png` and published as `public/mow/images/non-preload/map/<name>.webp` straight
+  away. Re-shoot after changing the town. Not baked: the drawn map below stands in, in the corner.
+
+**The map** (`ui/TownMap.ts`, the MAP button bottom-left, or a tap on the miniature): the island drawn from the level
+(sea, `outline`, `pavements`, `sections`, so it follows the editor with nothing to author), big over a dim.
+- Locked sections: grey with a lock. Open: the overgrown colour, with bright green rising from the bottom to the
+  section's restored share. The one being worked on: a pulsing gold outline. Restored: full green with a check. A white
+  dot is the player.
+- **Wiring:** `MowScene.updateDistrictBar()` sends every section's share to the HUD each frame
+  (`hud.setTownMap(shares, open, restored, current)`), and the player's position (`hud.setMapPlayer(x, z)`).
 
 Cut lawn is striped like a real one: each cell is lighter or darker by the way the mower was heading when it cut it
 (`PATH_SHADES` in `GrassField.ts`), so mowing up and down leaves stripes the mower's width. Cells cut without a
@@ -102,13 +151,24 @@ island inside its fence is free to roam from the start (roads, verges, the plaza
 each has a white fence all round it (its lock sign on the side facing the section before it), which sinks away when it
 opens. Road tiles sit at `elevation` 0.06, above the road slabs under them (the slabs come first in `pavements`).
 
-**Traffic** (`world/Traffic.ts`, `traffic` in `ui/mow.json`) — a few cars (the city kit's sedan, taxi, hatchback,
-station wagon) drive the roads to make the town feel alive. The lanes come from the road tiles themselves (props
-whose model has `road_`, on the 7-unit `tile` grid): each car crosses a tile at a time in the right-hand lane
-(`lane` off the middle), curving through corners and junctions and picking its way at random (straight on likelier).
+**Traffic** (`world/Traffic.ts`) — a few cars (the city kit's sedan, taxi, hatchback, station wagon) drive the roads
+to make the town feel alive. How they drive is `traffic` in `ui/mow.json`; where is the level's `traffic`
+(`levels/town.json`, edited in the editor): **waypoints** on the roads' middles, **links** between them (two-way roads)
+and the **cars**, each starting at a waypoint. A car drives waypoint to waypoint in the right-hand lane (`lane` off the
+middle), curving through each one (half way along the road in to half way along the road out, bent where the lanes
+meet), picking a link at random (the straightest likelier, back only at a dead end). It only roams what its waypoint
+links to, so a network of its own keeps a car to an area.
 A car brakes for the player (or the car ahead) within `gap` of its front and drives on once the way is clear; two
 blocking each other at a junction: the older goes first. Cars are solid to walk into (not to the guide's route); one
-the player is already in isn't, so they can always step out. Treasures and an area bonus wait in every section but the yard.
+the player is already in isn't, so they can always step out.
+
+**Finds** — nothing stops play. A treasure mowed out of the grass (every section, the yard's Toy Chest the first) or
+a secret patch's chest pops out and hops into the player, and a **toast** slides in on the left
+(`ui/FindToasts.ts`, under the area bar: its model, "TREASURE FOUND!" / "SECRET FOUND!" in its colour, its name; several stack, each gone
+after 3 s). A treasure then flies from the player into the **Trophies** button, whose "!" shows as it lands; until the
+player has ever claimed something, a hand points at it too. Its reward waits in the Trophies panel: one **CLAIM** in
+the footer pays everything waiting (found treasures, and the bonus of an area with all its treasures found), the coins
+flying into the money. A secret chest pays at once instead, its coins flying from the player.
 
 **Grass size** — a section's `grassScale` (default 1; "Grass size ×" in the editor) multiplies its tufts' height and
 the contact needed to chew through grass too tough: under 1 an easier section, over 1 a harder one.
@@ -138,7 +198,7 @@ Cut grass never grows back on its own. Only when the player is stuck — nothing
 can cut (or chew), and the next mower out of reach even with the bag sold — does just enough grass they can cut grow
 back to earn the difference ("Fresh grass is growing back!").
 
-The guide is just the floor arrows (purple): full bag → the nearest ATM; the first mower / first upgrade affordable → the
+The guide is just the floor arrows (purple, dig's rounded arrowheads with a dark outline): full bag → the nearest ATM; the first mower / first upgrade affordable → the
 nearest ATM (with the hand on BUY); a newly opened section → its grass; wandered off (more than 7 units outside the
 section being worked on, the first open one not restored) → back into it, the nearest way in, until you're inside. Routes
 follow walkable ground — round the locked sections, never through them.
@@ -151,18 +211,19 @@ follow walkable ground — round the locked sections, never through them.
 games/mow/
   index.ts              boot (platform, language, audio, fonts, atlas, then the scene)
   game/
-    scenes/MowScene.ts  the game: town, grass, player, stations, restoration, guide, engine sound
+    scenes/MowScene.ts  the game: town, grass, player, stations, restoration, guide, mower sound, footsteps
+    audio/              MowAudio (sound cues), EngineSound (the synthesised reel / electric / petrol mower voices and the cars), SpatialAudio (sound zones and cars placed in 3D)
     world/GrassField.ts the vegetation: a cell grid over the sections, instanced tufts per 16x16 chunk, the mowed-lawn
                         ground shader (pixel-noise grass + a cut map), cut states, resistance
     world/Town.ts       builds levels/town.json: ground, island (deck, sides, sea, fence), pavements, props, ATMs,
-                        fences, flowers; walkability, "no grass here"
+                        fences, flowers; walkability, "no grass here", surfaceAt (ground height / kind)
     world/Shore.ts      the island's outline and its polygon maths (insets, inside, edge distance)
     world/ArrowGuide.ts the floor arrows
     world/GrassLocks.ts padlocks (with the mower it takes) over grass the mower can't cut
     world/Traffic.ts    a few cars driving the road tiles, stopping for the player
     mowing/MowingSystem.ts  automatic cutting while moving
     mowing/Combo.ts     rush mode's combo meter
-    player/MowPlayer.ts the character with the tool cube in front
+    player/MowPlayer.ts the character pushing the mower (arm IK, finger grip, the mower lifted onto pavements)
     ui/MowHud.ts        money / bag / district bar and milestones / restored banner / combo / shop / language
     data/               MowConfig (typed ui/mow.json), MowProgress (the save, versioned), GameMode (calm / rush)
     analytics/          GameAnalytics (every event; first-session funnel)
@@ -176,7 +237,9 @@ games/mow/
 
 A local web tool (`web/server.mjs`, port 4710) that reads and writes `levels/town.json`, the file the game loads;
 reload the game to see saved changes. The **Town** tab, in 3D as the game draws it: click to select, W / E / R to
-move / turn / scale, D duplicate, Del remove, Ctrl+Z undo, Ctrl+S save. The **Mowers** tab fits each walked mower's
+move / turn / scale, D duplicate, Del remove, Ctrl+Z undo, Ctrl+S save. **Shift+click** (or Ctrl+click), in the view or
+the lists, adds to the selection (or takes back out; outlined in yellow), **Ctrl+A** selects everything of the
+selected kind: moving the gizmo moves them all together, Del removes them all, Esc lets go. The **Mowers** tab fits each walked mower's
 handle grip, the hands' turn on the bar and offset from it (`grip.offset`: x outward for each hand, y up, z forward — the bar stays put), gap and size on the walking character, hands marked; it saves to `ui/mow.json`
 (`PUT /api/mow/tools`).
 
@@ -190,8 +253,12 @@ handle grip, the hands' turn on the bar and offset from it (`grip.offset`: x out
 | **ATMs** | Sell and shop. As many as you like; one can wait for a section to open. |
 | **Wardrobes** | Open the wardrobe (Dig's closet behind the pad). Placed like ATMs, one can wait for a section too; their look is `wardrobe` in the level. |
 | **Pavements** | Paved rects, no grass (plaza, road, park paths). |
+| **Sound zones** | 🔊 Violet boxes (`sounds`): a looping sound (any file in `raw-assets/audio`; a new one needs `npm run audio`) at full `volume` (0-1) inside, fading to nothing at the dashed line `fade` units out, heard from the box's nearest side. Zones with the same sound share one loop (the loudest wins). Four seed the sea round the island. The **Sounds** panel also sets the cars' volume, "full within" and "silent from" distances (`soundSettings.cars`). |
+| **Traffic** | 🚦 Orange waypoints and cyan roads (`traffic`). Selecting a waypoint lights its links yellow and the rest of its network pale (where a car there can drive); **Alt+click** another (or 🔗 Link) links / unlinks the two; a new waypoint (🚦 Traffic waypoint) is linked to the selected one. Its inspector lists its links (✕ unlinks) and its cars (model, ✕; 🚗 Add a car here). **🛣 Waypoints from road tiles** rebuilds them from the road props (one per tile, linked to its neighbours `tile` apart). The toolbar's Traffic box hides them. |
+| **Secret patches** | 🤫 Gold boxes (`secrets`): a clump of lush, bright grass anywhere in town (`world/SecretPatches.ts`), apart from the sections' grass. Any mower cuts it, even with the bag full (no clippings); mowed through (85%), its chest pops out with a claim card worth its `reward`, once per save (by id: `secretsFound`). A twinkle shows over a hidden one when the player is near. |
+| **Pen** | 🚧 A section's `pen` (its inspector: "Add a pen"): a white fence all round the rect keeping the player inside until the section is restored, then sinking away (`Town.releasePen()`). The Front Yard's holds the yard and the plaza with its ATM and wardrobe. No signs on it (nothing to read at the very start); the park's separator, on the pen's side, has none either. |
 | **Start** | Where the player starts. |
-| **Island shore** | The island's outline: orange numbered posts, dragged to reshape it; D (or "Add a point after") inserts one half way to the next, Del removes one (3 at least). The deck band, fence line and sea follow; the inspector also edits the deck (width, colours, pilings) and the sides' colour. On save the ground's rect becomes the shore's bounds. Keep sections and roads a deck width in from the shore. |
+| **Island shore** | The island's outline: orange numbered posts, dragged to reshape it (its corners are drawn round: `island.cornerRadius`, default 3.5, `Shore.roundCorners()`; the points stay where they are); D (or "Add a point after") inserts one half way to the next, Del removes one (3 at least). The deck band, fence line and sea follow; the inspector also edits the deck (width, colours, pilings) and the sides' colour. On save the ground's rect becomes the shore's bounds. Keep sections and roads a deck width in from the shore. |
 
 The **grass preview** (toolbar) shows every cell as the game will generate it, with the count per type under the
 Grass noise panel. Imported library models work right away in dev; run `GAME=mow npm run models` before a build.
@@ -223,4 +290,5 @@ the town's grid, so a new layout needs one: version 3 is the city grid with the 
 The first-session funnel (`analytics/GameAnalytics.ts` `TUTORIAL`) appends new steps so earlier numbers never
 change: `10-yard-restored` is the Front Yard, `07-park-restored` is still the park (now the second section).
 Every session also sends `mode/<calm|rush>/start`, and each playtime minute a `mode/<mode>-min-<n>/reached`, so the two
-modes' play time can be compared.
+modes' play time can be compared. The first open of each tab sends `tab/<atm|wardrobe>-<tab>/interact`; wardrobe gifts send
+`gift/<kind>/visible` when the FREE badge is first shown and `gift/<kind>-<badge|unbadged>/complete` when claimed.

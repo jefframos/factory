@@ -24,6 +24,7 @@ core/          # Shared engine (PIXI-based game loop, input, audio, platforms, U
 games/<name>/  # One folder per game, each with index.ts entry point
 public/<name>/ # Built asset bundles per game
 tools/         # Asset pipeline (AssetPack → manifests)
+library3d/     # Git submodule: the 3D asset library the game editors import models from (git submodule update --init library3d)
 ```
 
 Each game's `index.ts` creates a class extending `core/Game.ts`, loads its asset manifests, registers scenes via `SceneManager`, then transitions to the first scene. `Game` owns the PIXI `Application` and drives the fixed/variable update loop.

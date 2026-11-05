@@ -776,7 +776,7 @@
         },
         "lockIcon": {
           "type": "image",
-          "image": "Icon_Lock02",
+          "image": "Icon_Lock03",
           "slice": null,
           "tint": "#ffffff"
         },

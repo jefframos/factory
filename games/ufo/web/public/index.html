@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UFO Editor</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* The shared Town tab, without the mow game's cards. */
+  section.card-section:has(#townSectionList), section.card-section:has(#townNoise), section.card-section:has(#townPatchList),
+  section.card-section:has(#townAtmList), section.card-section:has(#townWardrobeList),
+  section.card-section:has(#townSecretList) { display: none; }
+  .ufo-hidden { display: none !important; }
+  #tab-ufo, #tab-levels { overflow-y: auto; }
+  .ufo-form { padding: 16px; max-width: 460px; }
+  .ufo-form h2 { margin: 18px 0 8px; }
+  .ufo-form label { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 6px 0; }
+  .ufo-form input { width: 90px; }
+  .ufo-form small { display: block; opacity: 0.7; }
+  .levels-tab { padding: 16px; }
+  .levels-toolbar { display: flex; gap: 8px; margin-bottom: 14px; }
+  .levels-area { border: 1px solid #3a3f55; border-radius: 10px; padding: 12px; margin-bottom: 14px; }
+  .levels-area-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 10px; font-weight: 600; }
+  .levels-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; padding: 8px 0; border-top: 1px solid #2c3042; }
+  .levels-number { min-width: 64px; padding-bottom: 6px; }
+  .levels-field { display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
+  .levels-field span { opacity: 0.7; }
+  .levels-field input[type=number] { width: 72px; }
+  .levels-buttons { display: flex; gap: 4px; margin-left: auto; }
+  .ufo-form button { margin-top: 14px; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "/vendor/three/build/three.module.js", "three/addons/": "/vendor/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<header id="topbar">
+  <div class="brand"><span class="logo">U</span> UFO Editor</div>
+  <label id="levelPicker" title="The level you're editing (▶ Play opens the game in it)">Editing <select id="levelSelect"></select></label>
+  <button id="eraseTown" title="Removes everything placed in this town, and keeps the island">🧹 Erase town</button>
+  <nav id="tabs">
+    <button data-tab="town" class="tab active">🏙 Town</button>
+    <button data-tab="levels" class="tab">🗺 Levels</button>
+    <button data-tab="hangar" class="tab">👽 Hangar</button>
+    <button data-tab="ufo" class="tab">🛸 UFO</button>
+  </nav>
+</header>
+
+<section id="tab-town" class="tab-panel workspace"></section>
+<section id="tab-levels" class="tab-panel" hidden></section>
+<section id="tab-hangar" class="tab-panel workspace" hidden></section>
+<section id="tab-ufo" class="tab-panel" hidden></section>
+
+<div id="toast"></div>
+<script type="module">
+import { api, toast } from './shared.js';
+import { setModelCatalog } from './modelPicker.js';
+import { initTownTab, hasUnsavedTown, loadTown } from './town3d.js';
+import { initUfoTab, hasUnsavedUfo } from './ufoTab.js';
+import { initHangarTab, hasUnsavedHangar } from './hangar.js';
+import { initLevelsTab, hasUnsavedLevels } from './levelsTab.js';
+
+const config = await api('/api/config');
+setModelCatalog(await api('/api/models'));
+const levels = await api('/api/levels');
+const levelSelect = document.getElementById('levelSelect');
+let level = levels.find((entry) => entry.level === localStorage.getItem('ufoEditor.level')) ?? levels.find((entry) => entry.level === 'town') ?? levels[0];
+levelSelect.append(...levels.map((entry) => new Option(`${entry.name}  (${entry.level}.json)`, entry.level)));
+levelSelect.value = level.level;
+const levelUrl = (entry) => `/api/town?level=${encodeURIComponent(entry.level)}`;
+await initTownTab(document.getElementById('tab-town'), { gameUrl: config.gameUrl, townUrl: levelUrl(level), city: level.id, people: true });
+
+// The buttons and the toggle that only mean something in the mow game.
+const MOW_ONLY = /ATM|Wardrobe|patch|Secret|Section|Grass preview/;
+for (const control of document.querySelectorAll('#tab-town .sidebar.left button, #tab-town .toolbar label')) {
+    if (MOW_ONLY.test(control.textContent)) control.classList.add('ufo-hidden');
+}
+
+levelSelect.addEventListener('change', async () => {
+    const next = levels.find((entry) => entry.level === levelSelect.value);
+    if (hasUnsavedTown() && !window.confirm(`Unsaved changes in ${level.name}: switch to ${next.name} and lose them?`)) {
+        levelSelect.value = level.level;
+        return;
+    }
+    level = next;
+    localStorage.setItem('ufoEditor.level', level.level);
+    await loadTown(levelUrl(level), level.id);
+});
+
+const eraseButton = document.getElementById('eraseTown');
+eraseButton.addEventListener('click', async () => {
+    const warning = `Erase everything in ${level.name}? Buildings, roads, pavements, cars and people all go; the island stays. This can't be undone here.`;
+    if (!window.confirm(hasUnsavedTown() ? `${warning} Your unsaved changes go too.` : warning)) return;
+    try {
+        await api('/api/towns/erase', { method: 'POST', body: JSON.stringify({ level: level.level }) });
+        await loadTown(levelUrl(level), level.id);
+        toast(`${level.name} erased`);
+    } catch (error) {
+        toast(error.message, 'error');
+    }
+});
+
+let levelsReady = false;
+let ufoReady = false;
+let hangarReady = false;
+for (const button of document.querySelectorAll('#tabs .tab')) {
+    button.addEventListener('click', async () => {
+        const tab = button.dataset.tab;
+        document.querySelectorAll('#tabs .tab').forEach((other) => other.classList.toggle('active', other === button));
+        document.querySelectorAll('.tab-panel').forEach((panel) => { panel.hidden = panel.id !== `tab-${tab}`; });
+        eraseButton.hidden = tab !== 'town';
+        if (tab === 'levels' && !levelsReady) {
+            levelsReady = true;
+            await initLevelsTab(document.getElementById('tab-levels'), {
+                onNewTown: (entry) => {
+                    levels.push(entry);
+                    levelSelect.append(new Option(`${entry.name}  (${entry.level}.json)`, entry.level));
+                },
+                openTown: (file) => {
+                    levelSelect.value = file;
+                    levelSelect.dispatchEvent(new Event('change'));
+                    document.querySelector('#tabs .tab[data-tab="town"]').click();
+                },
+            });
+        }
+        if (tab === 'hangar' && !hangarReady) {
+            hangarReady = true;
+            await initHangarTab(document.getElementById('tab-hangar'), { gameUrl: config.gameUrl });
+        }
+        if (tab === 'ufo' && !ufoReady) {
+            ufoReady = true;
+            await initUfoTab(document.getElementById('tab-ufo'));
+        }
+    });
+}
+window.addEventListener('beforeunload', (event) => {
+    if (hasUnsavedTown() || hasUnsavedUfo() || hasUnsavedHangar() || hasUnsavedLevels()) event.preventDefault();
+});
+</script>
+</body>
+</html>

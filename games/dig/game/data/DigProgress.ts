@@ -56,6 +56,8 @@ const SAVE_KEY = 'dig.save';
  */
 const SAVE_VERSION = 3;
 const SAVE_DELAY_MS = 800;
+/** The phone's first sales are free (the first with the hand on it); after these it asks for a rewarded video. */
+const PHONE_FREE_SELLS = 2;
 
 interface SaveData {
     /** SAVE_VERSION when it was written. */
@@ -77,6 +79,10 @@ interface SaveData {
     wardrobeBudget: number;
     /** The wardrobe has been opened at least once (until then the guide leads the miner to it). */
     wardrobeVisited: boolean;
+    /** The wardrobe was opened again after the first hat: unclaimed free looks get their FREE badge from then on. */
+    freeLooksOffered: boolean;
+    /** Phone sales taken for free so far (the first PHONE_FREE_SELLS skip the video). */
+    freeSells: number;
     dug: string;
     /** Hub buildables bought so far (levels/hub.json `buildables`), by id. */
     built: string[];
@@ -127,7 +133,7 @@ const starterLook = (): Look => ({ color: DIG.wardrobe.colors[0].id, face: DIG.w
 const fresh = (): SaveData => ({
     version: SAVE_VERSION,
     money: 0, toolLevel: 0, backpackLevel: 0, backpack: {}, found: {}, seen: [], collectionDone: false, deepestZone: 0,
-    owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, wardrobeVisited: false, dug: '', built: [],
+    owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, wardrobeVisited: false, freeLooksOffered: false, freeSells: 0, dug: '', built: [],
     stats: { blocks: 0, ores: 0, earned: 0, sells: 0 }, achievements: {}, revealedAt: {}, sent: [],
     boosts: {}, prestige: 0, currentMine: 0, mines: [], crownEarned: false, unclaimed: {}, playSeconds: 0, hubCash: 0,
 });
@@ -326,13 +332,44 @@ export const DigProgress = {
         this.changed();
     },
 
-    /** Something in the wardrobe became affordable (or was unlocked) since it was last opened. */
+    /** Something in the wardrobe became affordable (or was unlocked) since it was last opened, or a gift waits there. */
     get wardrobeHasNews(): boolean {
+        if (this.boughtFirstHat && (Object.keys(DIG.wardrobe) as LookKind[]).some((kind) => this.unclaimedFreeLook(kind))) return true;
         return (Object.keys(DIG.wardrobe) as LookKind[]).some((kind) => DIG.wardrobe[kind].some((item) => {
             if (this.ownsLook(kind, item) && !item.unlock) return false;
             if (item.unlock) return this.ownsLook(kind, item) && !state.owned[kind].includes(item.id);
+            if (item.free) return false;
             return item.price <= state.money && item.price > state.wardrobeBudget;
         }));
+    },
+
+    /** The kind's free look, while it's still unclaimed. */
+    unclaimedFreeLook(kind: LookKind): WardrobeItem | undefined {
+        return DIG.wardrobe[kind].find((item) => item.free && !this.ownsLook(kind, item));
+    },
+
+    /**
+     * Whether the kind's unclaimed free look shows its FREE badge: only from a wardrobe visit after the one where the
+     * first hat was bought — a gift claimed on that first visit never gets one.
+     */
+    freeLookBadge(kind: LookKind): boolean {
+        return state.freeLooksOffered && !!this.unclaimedFreeLook(kind);
+    },
+
+    /** Phone sales still free (no video): PHONE_FREE_SELLS down to 0. */
+    get freeSellsLeft(): number {
+        return Math.max(0, PHONE_FREE_SELLS - state.freeSells);
+    },
+
+    /** The phone's very first sale: free, and the hand points at it. */
+    get firstPhoneSell(): boolean {
+        return state.freeSells === 0;
+    },
+
+    /** One free phone sale used up. */
+    useFreeSell(): void {
+        state.freeSells++;
+        this.scheduleSave();
     },
 
     /** The wardrobe was opened: everything affordable now has been seen. */
@@ -341,6 +378,8 @@ export const DigProgress = {
     },
 
     markWardrobeSeen(): void {
+        // Opened (again) with the first hat already bought: this is a return visit, so unclaimed gifts get badged.
+        if (this.boughtFirstHat) state.freeLooksOffered = true;
         state.wardrobeVisited = true;
         state.wardrobeBudget = state.money;
         for (const kind of Object.keys(DIG.wardrobe) as LookKind[]) {
@@ -370,8 +409,11 @@ export const DigProgress = {
     /** Buys (if needed) and wears a look; false when it costs more than the money there is, or is still locked. */
     wearLook(kind: LookKind, item: WardrobeItem): boolean {
         if (!this.ownsLook(kind, item)) {
-            if (item.unlock || state.money < item.price) return false;
-            state.money -= item.price;
+            if (item.unlock) return false;
+            if (!item.free) {
+                if (state.money < item.price) return false;
+                state.money -= item.price;
+            }
             state.owned[kind].push(item.id);
         }
         if (kind === 'colors') state.look.color = item.id;
@@ -579,6 +621,14 @@ export const DigProgress = {
     /** Whether once(`key`) was ever passed (without passing it). */
     hasOnce(key: string): boolean {
         return state.sent.includes(key);
+    },
+
+    /** Debug: forgets a once(`key`) flag so it can pass again. */
+    clearOnce(key: string): void {
+        const index = state.sent.indexOf(key);
+        if (index < 0) return;
+        state.sent.splice(index, 1);
+        this.scheduleSave();
     },
 
     /** A block was dug (the Digger / Ore Hunter achievements count them). */

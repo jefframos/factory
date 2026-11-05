@@ -8,6 +8,14 @@ export interface ModelDefinition {
   readonly nodes: Record<string, string>;
 }
 
+const CharactersCharacterMedium = {
+  id: 'characterMedium',
+  path: 'characters/default/characterMedium',
+  fullPath: 'mow/models/characters/default/characterMedium.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
 const CharactersDigging = {
   id: 'Digging',
   path: 'characters/default/Digging',
@@ -225,6 +233,171 @@ const CharactersHappyIdle = {
   "RightLeg": "RightLeg",
   "RightFoot": "RightFoot",
   "RightToes": "RightToes"
+}
+} as const;
+
+const CharactersIdle = {
+  id: 'idle',
+  path: 'characters/default/idle',
+  fullPath: 'mow/models/characters/default/idle.glb',
+  format: 'glb',
+  nodes: {
+  "RightUpLeg": "RightUpLeg",
+  "RightHandIndex3": "RightHandIndex3",
+  "LeftToeRoll": "LeftToeRoll",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "Hips": "Hips",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "RightHeelRoll": "RightHeelRoll",
+  "RightHandThumb1": "RightHandThumb1",
+  "Neck": "Neck",
+  "RightLeg": "RightLeg",
+  "RightShoulder": "RightShoulder",
+  "RightKneeCtrl": "RightKneeCtrl",
+  "UpperChest": "UpperChest",
+  "LeftToes": "LeftToes",
+  "RightArm": "RightArm",
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "Chest": "Chest",
+  "RightHandIndex2": "RightHandIndex2",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftFootIK": "LeftFootIK",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "RightToeRoll": "RightToeRoll",
+  "RightHand": "RightHand",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "Spine": "Spine",
+  "RightFootIK": "RightFootIK",
+  "RightFootCtrl": "RightFootCtrl",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftLeg": "LeftLeg",
+  "RightForeArm": "RightForeArm",
+  "Head": "Head",
+  "LeftFoot": "LeftFoot",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightFoot": "RightFoot",
+  "HipsCtrl": "HipsCtrl",
+  "RightToes": "RightToes",
+  "LeftShoulder": "LeftShoulder",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "Root": "Root",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "RightHandIndex1": "RightHandIndex1"
+}
+} as const;
+
+const CharactersIdle2 = {
+  id: 'idle2',
+  path: 'characters/default/idle2',
+  fullPath: 'mow/models/characters/default/idle2.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "Root",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "LeftToeRoll": "LeftToeRoll",
+  "LeftFootIK": "LeftFootIK",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "RightFootCtrl": "RightFootCtrl",
+  "RightHeelRoll": "RightHeelRoll",
+  "RightToeRoll": "RightToeRoll",
+  "RightFootIK": "RightFootIK",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "RightKneeCtrl": "RightKneeCtrl",
+  "HipsCtrl": "HipsCtrl",
+  "Hips": "Hips",
+  "Spine": "Spine",
+  "Chest": "Chest",
+  "UpperChest": "UpperChest",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandIndex3": "RightHandIndex3",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToes": "LeftToes",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToes": "RightToes"
+}
+} as const;
+
+const CharactersJump = {
+  id: 'jump',
+  path: 'characters/default/jump',
+  fullPath: 'mow/models/characters/default/jump.glb',
+  format: 'glb',
+  nodes: {
+  "RightKneeCtrl": "RightKneeCtrl",
+  "RightUpLeg": "RightUpLeg",
+  "Hips": "Hips",
+  "LeftHand": "LeftHand",
+  "RightFoot": "RightFoot",
+  "RightFootCtrl": "RightFootCtrl",
+  "LeftForeArm": "LeftForeArm",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightFootIK": "RightFootIK",
+  "RightForeArm": "RightForeArm",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "RightShoulder": "RightShoulder",
+  "Spine": "Spine",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftLeg": "LeftLeg",
+  "RightArm": "RightArm",
+  "HipsCtrl": "HipsCtrl",
+  "LeftFootIK": "LeftFootIK",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightToes": "RightToes",
+  "Root": "Root",
+  "RightHeelRoll": "RightHeelRoll",
+  "LeftToeRoll": "LeftToeRoll",
+  "LeftShoulder": "LeftShoulder",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "LeftToes": "LeftToes",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "Neck": "Neck",
+  "LeftFoot": "LeftFoot",
+  "Chest": "Chest",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "RightHand": "RightHand",
+  "UpperChest": "UpperChest",
+  "RightHandIndex3": "RightHandIndex3",
+  "RightLeg": "RightLeg",
+  "Head": "Head",
+  "LeftArm": "LeftArm",
+  "RightToeRoll": "RightToeRoll",
+  "RightHandThumb1": "RightHandThumb1"
 }
 } as const;
 
@@ -503,6 +676,61 @@ const CharactersRoll = {
 }
 } as const;
 
+const CharactersRun = {
+  id: 'run',
+  path: 'characters/default/run',
+  fullPath: 'mow/models/characters/default/run.glb',
+  format: 'glb',
+  nodes: {
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "RightHandIndex3": "RightHandIndex3",
+  "RightToeRoll": "RightToeRoll",
+  "RightHandIndex1": "RightHandIndex1",
+  "LeftForeArm": "LeftForeArm",
+  "Hips": "Hips",
+  "RightUpLeg": "RightUpLeg",
+  "RightHeelRoll": "RightHeelRoll",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "Spine": "Spine",
+  "RightFoot": "RightFoot",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "RightHandThumb2": "RightHandThumb2",
+  "Root": "Root",
+  "RightKneeCtrl": "RightKneeCtrl",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftToes": "LeftToes",
+  "Chest": "Chest",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "RightForeArm": "RightForeArm",
+  "LeftArm": "LeftArm",
+  "RightFootIK": "RightFootIK",
+  "LeftHand": "LeftHand",
+  "RightToes": "RightToes",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftToeRoll": "LeftToeRoll",
+  "RightFootCtrl": "RightFootCtrl",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftUpLeg": "LeftUpLeg",
+  "RightShoulder": "RightShoulder",
+  "LeftFoot": "LeftFoot",
+  "RightHand": "RightHand",
+  "LeftFootIK": "LeftFootIK",
+  "RightLeg": "RightLeg",
+  "HipsCtrl": "HipsCtrl",
+  "Head": "Head",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "RightHandIndex2": "RightHandIndex2",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "UpperChest": "UpperChest",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "LeftLeg": "LeftLeg",
+  "RightArm": "RightArm",
+  "LeftShoulder": "LeftShoulder",
+  "RightHandThumb1": "RightHandThumb1",
+  "Neck": "Neck"
+}
+} as const;
+
 const CharactersRunning = {
   id: 'Running',
   path: 'characters/default/Running',
@@ -562,116 +790,6 @@ const CharactersSitting = {
   id: 'Sitting',
   path: 'characters/default/Sitting',
   fullPath: 'mow/models/characters/default/Sitting.glb',
-  format: 'glb',
-  nodes: {
-  "Root": "Root",
-  "LeftFootCtrl": "LeftFootCtrl",
-  "LeftHeelRoll": "LeftHeelRoll",
-  "LeftToeRoll": "LeftToeRoll",
-  "LeftFootIK": "LeftFootIK",
-  "LeftFootRollCtrl": "LeftFootRollCtrl",
-  "LeftKneeCtrl": "LeftKneeCtrl",
-  "RightFootCtrl": "RightFootCtrl",
-  "RightHeelRoll": "RightHeelRoll",
-  "RightToeRoll": "RightToeRoll",
-  "RightFootIK": "RightFootIK",
-  "RightFootRollCtrl": "RightFootRollCtrl",
-  "RightKneeCtrl": "RightKneeCtrl",
-  "HipsCtrl": "HipsCtrl",
-  "Hips": "Hips",
-  "Spine": "Spine",
-  "Chest": "Chest",
-  "UpperChest": "UpperChest",
-  "Neck": "Neck",
-  "Head": "Head",
-  "LeftShoulder": "LeftShoulder",
-  "LeftArm": "LeftArm",
-  "LeftForeArm": "LeftForeArm",
-  "LeftHand": "LeftHand",
-  "LeftHandIndex1": "LeftHandIndex1",
-  "LeftHandIndex2": "LeftHandIndex2",
-  "LeftHandIndex3": "LeftHandIndex3",
-  "LeftHandThumb1": "LeftHandThumb1",
-  "LeftHandThumb2": "LeftHandThumb2",
-  "RightShoulder": "RightShoulder",
-  "RightArm": "RightArm",
-  "RightForeArm": "RightForeArm",
-  "RightHand": "RightHand",
-  "RightHandIndex1": "RightHandIndex1",
-  "RightHandIndex2": "RightHandIndex2",
-  "RightHandIndex3": "RightHandIndex3",
-  "RightHandThumb1": "RightHandThumb1",
-  "RightHandThumb2": "RightHandThumb2",
-  "LeftUpLeg": "LeftUpLeg",
-  "LeftLeg": "LeftLeg",
-  "LeftFoot": "LeftFoot",
-  "LeftToes": "LeftToes",
-  "RightUpLeg": "RightUpLeg",
-  "RightLeg": "RightLeg",
-  "RightFoot": "RightFoot",
-  "RightToes": "RightToes"
-}
-} as const;
-
-const CharactersStandToRoll = {
-  id: 'StandToRoll',
-  path: 'characters/default/StandToRoll',
-  fullPath: 'mow/models/characters/default/StandToRoll.glb',
-  format: 'glb',
-  nodes: {
-  "Root": "Root",
-  "LeftFootCtrl": "LeftFootCtrl",
-  "LeftHeelRoll": "LeftHeelRoll",
-  "LeftToeRoll": "LeftToeRoll",
-  "LeftFootIK": "LeftFootIK",
-  "LeftFootRollCtrl": "LeftFootRollCtrl",
-  "LeftKneeCtrl": "LeftKneeCtrl",
-  "RightFootCtrl": "RightFootCtrl",
-  "RightHeelRoll": "RightHeelRoll",
-  "RightToeRoll": "RightToeRoll",
-  "RightFootIK": "RightFootIK",
-  "RightFootRollCtrl": "RightFootRollCtrl",
-  "RightKneeCtrl": "RightKneeCtrl",
-  "HipsCtrl": "HipsCtrl",
-  "Hips": "Hips",
-  "Spine": "Spine",
-  "Chest": "Chest",
-  "UpperChest": "UpperChest",
-  "Neck": "Neck",
-  "Head": "Head",
-  "LeftShoulder": "LeftShoulder",
-  "LeftArm": "LeftArm",
-  "LeftForeArm": "LeftForeArm",
-  "LeftHand": "LeftHand",
-  "LeftHandIndex1": "LeftHandIndex1",
-  "LeftHandIndex2": "LeftHandIndex2",
-  "LeftHandIndex3": "LeftHandIndex3",
-  "LeftHandThumb1": "LeftHandThumb1",
-  "LeftHandThumb2": "LeftHandThumb2",
-  "RightShoulder": "RightShoulder",
-  "RightArm": "RightArm",
-  "RightForeArm": "RightForeArm",
-  "RightHand": "RightHand",
-  "RightHandIndex1": "RightHandIndex1",
-  "RightHandIndex2": "RightHandIndex2",
-  "RightHandIndex3": "RightHandIndex3",
-  "RightHandThumb1": "RightHandThumb1",
-  "RightHandThumb2": "RightHandThumb2",
-  "LeftUpLeg": "LeftUpLeg",
-  "LeftLeg": "LeftLeg",
-  "LeftFoot": "LeftFoot",
-  "LeftToes": "LeftToes",
-  "RightUpLeg": "RightUpLeg",
-  "RightLeg": "RightLeg",
-  "RightFoot": "RightFoot",
-  "RightToes": "RightToes"
-}
-} as const;
-
-const CharactersStandToSit = {
-  id: 'StandToSit',
-  path: 'characters/default/StandToSit',
-  fullPath: 'mow/models/characters/default/StandToSit.glb',
   format: 'glb',
   nodes: {
   "Root": "Root",
@@ -833,6 +951,116 @@ const CharactersStandingPICKAXE = {
 }
 } as const;
 
+const CharactersStandToRoll = {
+  id: 'StandToRoll',
+  path: 'characters/default/StandToRoll',
+  fullPath: 'mow/models/characters/default/StandToRoll.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "Root",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "LeftToeRoll": "LeftToeRoll",
+  "LeftFootIK": "LeftFootIK",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "RightFootCtrl": "RightFootCtrl",
+  "RightHeelRoll": "RightHeelRoll",
+  "RightToeRoll": "RightToeRoll",
+  "RightFootIK": "RightFootIK",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "RightKneeCtrl": "RightKneeCtrl",
+  "HipsCtrl": "HipsCtrl",
+  "Hips": "Hips",
+  "Spine": "Spine",
+  "Chest": "Chest",
+  "UpperChest": "UpperChest",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandIndex3": "RightHandIndex3",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToes": "LeftToes",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToes": "RightToes"
+}
+} as const;
+
+const CharactersStandToSit = {
+  id: 'StandToSit',
+  path: 'characters/default/StandToSit',
+  fullPath: 'mow/models/characters/default/StandToSit.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "Root",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "LeftToeRoll": "LeftToeRoll",
+  "LeftFootIK": "LeftFootIK",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "RightFootCtrl": "RightFootCtrl",
+  "RightHeelRoll": "RightHeelRoll",
+  "RightToeRoll": "RightToeRoll",
+  "RightFootIK": "RightFootIK",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "RightKneeCtrl": "RightKneeCtrl",
+  "HipsCtrl": "HipsCtrl",
+  "Hips": "Hips",
+  "Spine": "Spine",
+  "Chest": "Chest",
+  "UpperChest": "UpperChest",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandIndex3": "RightHandIndex3",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToes": "LeftToes",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToes": "RightToes"
+}
+} as const;
+
 const CharactersTalking = {
   id: 'Talking',
   path: 'characters/default/Talking',
@@ -885,6 +1113,74 @@ const CharactersTalking = {
   "RightLeg": "RightLeg",
   "RightFoot": "RightFoot",
   "RightToes": "RightToes"
+}
+} as const;
+
+const CharactersTestIdle = {
+  id: 'test_idle',
+  path: 'characters/default/test_idle',
+  fullPath: 'mow/models/characters/default/test_idle.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "Root",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "LeftToeRoll": "LeftToeRoll",
+  "LeftFootIK": "LeftFootIK",
+  "LeftFootIKEnd": "LeftFootIK_end",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "LeftFootRollCtrlEnd": "LeftFootRollCtrl_end",
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "LeftKneeCtrlEnd": "LeftKneeCtrl_end",
+  "RightFootCtrl": "RightFootCtrl",
+  "RightHeelRoll": "RightHeelRoll",
+  "RightToeRoll": "RightToeRoll",
+  "RightFootIK": "RightFootIK",
+  "RightFootIKEnd": "RightFootIK_end",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "RightFootRollCtrlEnd": "RightFootRollCtrl_end",
+  "RightKneeCtrl": "RightKneeCtrl",
+  "RightKneeCtrlEnd": "RightKneeCtrl_end",
+  "HipsCtrl": "HipsCtrl",
+  "Hips": "Hips",
+  "Spine": "Spine",
+  "Chest": "Chest",
+  "UpperChest": "UpperChest",
+  "Neck": "Neck",
+  "Head": "Head",
+  "HeadEnd": "Head_end",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "LeftHandIndex3End": "LeftHandIndex3_end",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "LeftHandThumb2End": "LeftHandThumb2_end",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandIndex3": "RightHandIndex3",
+  "RightHandIndex3End": "RightHandIndex3_end",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightHandThumb2End": "RightHandThumb2_end",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToes": "LeftToes",
+  "LeftToesEnd": "LeftToes_end",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToes": "RightToes",
+  "RightToesEnd": "RightToes_end"
 }
 } as const;
 
@@ -995,302 +1291,6 @@ const CharactersWatering = {
   "RightLeg": "RightLeg",
   "RightFoot": "RightFoot",
   "RightToes": "RightToes"
-}
-} as const;
-
-const CharactersCharacterMedium = {
-  id: 'characterMedium',
-  path: 'characters/default/characterMedium',
-  fullPath: 'mow/models/characters/default/characterMedium.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersIdle = {
-  id: 'idle',
-  path: 'characters/default/idle',
-  fullPath: 'mow/models/characters/default/idle.glb',
-  format: 'glb',
-  nodes: {
-  "RightUpLeg": "RightUpLeg",
-  "RightHandIndex3": "RightHandIndex3",
-  "LeftToeRoll": "LeftToeRoll",
-  "LeftHeelRoll": "LeftHeelRoll",
-  "RightFootRollCtrl": "RightFootRollCtrl",
-  "Hips": "Hips",
-  "LeftHand": "LeftHand",
-  "LeftHandIndex2": "LeftHandIndex2",
-  "RightHeelRoll": "RightHeelRoll",
-  "RightHandThumb1": "RightHandThumb1",
-  "Neck": "Neck",
-  "RightLeg": "RightLeg",
-  "RightShoulder": "RightShoulder",
-  "RightKneeCtrl": "RightKneeCtrl",
-  "UpperChest": "UpperChest",
-  "LeftToes": "LeftToes",
-  "RightArm": "RightArm",
-  "LeftKneeCtrl": "LeftKneeCtrl",
-  "Chest": "Chest",
-  "RightHandIndex2": "RightHandIndex2",
-  "LeftHandIndex1": "LeftHandIndex1",
-  "LeftFootIK": "LeftFootIK",
-  "LeftFootCtrl": "LeftFootCtrl",
-  "RightToeRoll": "RightToeRoll",
-  "RightHand": "RightHand",
-  "LeftFootRollCtrl": "LeftFootRollCtrl",
-  "Spine": "Spine",
-  "RightFootIK": "RightFootIK",
-  "RightFootCtrl": "RightFootCtrl",
-  "LeftHandThumb2": "LeftHandThumb2",
-  "LeftArm": "LeftArm",
-  "LeftForeArm": "LeftForeArm",
-  "LeftLeg": "LeftLeg",
-  "RightForeArm": "RightForeArm",
-  "Head": "Head",
-  "LeftFoot": "LeftFoot",
-  "RightHandThumb2": "RightHandThumb2",
-  "RightFoot": "RightFoot",
-  "HipsCtrl": "HipsCtrl",
-  "RightToes": "RightToes",
-  "LeftShoulder": "LeftShoulder",
-  "LeftHandIndex3": "LeftHandIndex3",
-  "Root": "Root",
-  "LeftUpLeg": "LeftUpLeg",
-  "LeftHandThumb1": "LeftHandThumb1",
-  "RightHandIndex1": "RightHandIndex1"
-}
-} as const;
-
-const CharactersIdle2 = {
-  id: 'idle2',
-  path: 'characters/default/idle2',
-  fullPath: 'mow/models/characters/default/idle2.glb',
-  format: 'glb',
-  nodes: {
-  "Root": "Root",
-  "LeftFootCtrl": "LeftFootCtrl",
-  "LeftHeelRoll": "LeftHeelRoll",
-  "LeftToeRoll": "LeftToeRoll",
-  "LeftFootIK": "LeftFootIK",
-  "LeftFootRollCtrl": "LeftFootRollCtrl",
-  "LeftKneeCtrl": "LeftKneeCtrl",
-  "RightFootCtrl": "RightFootCtrl",
-  "RightHeelRoll": "RightHeelRoll",
-  "RightToeRoll": "RightToeRoll",
-  "RightFootIK": "RightFootIK",
-  "RightFootRollCtrl": "RightFootRollCtrl",
-  "RightKneeCtrl": "RightKneeCtrl",
-  "HipsCtrl": "HipsCtrl",
-  "Hips": "Hips",
-  "Spine": "Spine",
-  "Chest": "Chest",
-  "UpperChest": "UpperChest",
-  "Neck": "Neck",
-  "Head": "Head",
-  "LeftShoulder": "LeftShoulder",
-  "LeftArm": "LeftArm",
-  "LeftForeArm": "LeftForeArm",
-  "LeftHand": "LeftHand",
-  "LeftHandIndex1": "LeftHandIndex1",
-  "LeftHandIndex2": "LeftHandIndex2",
-  "LeftHandIndex3": "LeftHandIndex3",
-  "LeftHandThumb1": "LeftHandThumb1",
-  "LeftHandThumb2": "LeftHandThumb2",
-  "RightShoulder": "RightShoulder",
-  "RightArm": "RightArm",
-  "RightForeArm": "RightForeArm",
-  "RightHand": "RightHand",
-  "RightHandIndex1": "RightHandIndex1",
-  "RightHandIndex2": "RightHandIndex2",
-  "RightHandIndex3": "RightHandIndex3",
-  "RightHandThumb1": "RightHandThumb1",
-  "RightHandThumb2": "RightHandThumb2",
-  "LeftUpLeg": "LeftUpLeg",
-  "LeftLeg": "LeftLeg",
-  "LeftFoot": "LeftFoot",
-  "LeftToes": "LeftToes",
-  "RightUpLeg": "RightUpLeg",
-  "RightLeg": "RightLeg",
-  "RightFoot": "RightFoot",
-  "RightToes": "RightToes"
-}
-} as const;
-
-const CharactersJump = {
-  id: 'jump',
-  path: 'characters/default/jump',
-  fullPath: 'mow/models/characters/default/jump.glb',
-  format: 'glb',
-  nodes: {
-  "RightKneeCtrl": "RightKneeCtrl",
-  "RightUpLeg": "RightUpLeg",
-  "Hips": "Hips",
-  "LeftHand": "LeftHand",
-  "RightFoot": "RightFoot",
-  "RightFootCtrl": "RightFootCtrl",
-  "LeftForeArm": "LeftForeArm",
-  "RightHandIndex1": "RightHandIndex1",
-  "RightHandThumb2": "RightHandThumb2",
-  "RightHandIndex2": "RightHandIndex2",
-  "RightFootIK": "RightFootIK",
-  "RightForeArm": "RightForeArm",
-  "LeftFootRollCtrl": "LeftFootRollCtrl",
-  "RightShoulder": "RightShoulder",
-  "Spine": "Spine",
-  "LeftHandIndex3": "LeftHandIndex3",
-  "LeftHandIndex2": "LeftHandIndex2",
-  "LeftUpLeg": "LeftUpLeg",
-  "LeftFootCtrl": "LeftFootCtrl",
-  "LeftHandIndex1": "LeftHandIndex1",
-  "LeftLeg": "LeftLeg",
-  "RightArm": "RightArm",
-  "HipsCtrl": "HipsCtrl",
-  "LeftFootIK": "LeftFootIK",
-  "LeftHandThumb2": "LeftHandThumb2",
-  "RightToes": "RightToes",
-  "Root": "Root",
-  "RightHeelRoll": "RightHeelRoll",
-  "LeftToeRoll": "LeftToeRoll",
-  "LeftShoulder": "LeftShoulder",
-  "LeftHandThumb1": "LeftHandThumb1",
-  "LeftKneeCtrl": "LeftKneeCtrl",
-  "LeftToes": "LeftToes",
-  "LeftHeelRoll": "LeftHeelRoll",
-  "Neck": "Neck",
-  "LeftFoot": "LeftFoot",
-  "Chest": "Chest",
-  "RightFootRollCtrl": "RightFootRollCtrl",
-  "RightHand": "RightHand",
-  "UpperChest": "UpperChest",
-  "RightHandIndex3": "RightHandIndex3",
-  "RightLeg": "RightLeg",
-  "Head": "Head",
-  "LeftArm": "LeftArm",
-  "RightToeRoll": "RightToeRoll",
-  "RightHandThumb1": "RightHandThumb1"
-}
-} as const;
-
-const CharactersRun = {
-  id: 'run',
-  path: 'characters/default/run',
-  fullPath: 'mow/models/characters/default/run.glb',
-  format: 'glb',
-  nodes: {
-  "LeftKneeCtrl": "LeftKneeCtrl",
-  "RightHandIndex3": "RightHandIndex3",
-  "RightToeRoll": "RightToeRoll",
-  "RightHandIndex1": "RightHandIndex1",
-  "LeftForeArm": "LeftForeArm",
-  "Hips": "Hips",
-  "RightUpLeg": "RightUpLeg",
-  "RightHeelRoll": "RightHeelRoll",
-  "LeftHeelRoll": "LeftHeelRoll",
-  "Spine": "Spine",
-  "RightFoot": "RightFoot",
-  "RightFootRollCtrl": "RightFootRollCtrl",
-  "RightHandThumb2": "RightHandThumb2",
-  "Root": "Root",
-  "RightKneeCtrl": "RightKneeCtrl",
-  "LeftHandIndex1": "LeftHandIndex1",
-  "LeftToes": "LeftToes",
-  "Chest": "Chest",
-  "LeftFootRollCtrl": "LeftFootRollCtrl",
-  "RightForeArm": "RightForeArm",
-  "LeftArm": "LeftArm",
-  "RightFootIK": "RightFootIK",
-  "LeftHand": "LeftHand",
-  "RightToes": "RightToes",
-  "LeftHandThumb1": "LeftHandThumb1",
-  "LeftToeRoll": "LeftToeRoll",
-  "RightFootCtrl": "RightFootCtrl",
-  "LeftHandIndex2": "LeftHandIndex2",
-  "LeftUpLeg": "LeftUpLeg",
-  "RightShoulder": "RightShoulder",
-  "LeftFoot": "LeftFoot",
-  "RightHand": "RightHand",
-  "LeftFootIK": "LeftFootIK",
-  "RightLeg": "RightLeg",
-  "HipsCtrl": "HipsCtrl",
-  "Head": "Head",
-  "LeftFootCtrl": "LeftFootCtrl",
-  "RightHandIndex2": "RightHandIndex2",
-  "LeftHandIndex3": "LeftHandIndex3",
-  "UpperChest": "UpperChest",
-  "LeftHandThumb2": "LeftHandThumb2",
-  "LeftLeg": "LeftLeg",
-  "RightArm": "RightArm",
-  "LeftShoulder": "LeftShoulder",
-  "RightHandThumb1": "RightHandThumb1",
-  "Neck": "Neck"
-}
-} as const;
-
-const CharactersTestIdle = {
-  id: 'test_idle',
-  path: 'characters/default/test_idle',
-  fullPath: 'mow/models/characters/default/test_idle.glb',
-  format: 'glb',
-  nodes: {
-  "Root": "Root",
-  "LeftFootCtrl": "LeftFootCtrl",
-  "LeftHeelRoll": "LeftHeelRoll",
-  "LeftToeRoll": "LeftToeRoll",
-  "LeftFootIK": "LeftFootIK",
-  "LeftFootIKEnd": "LeftFootIK_end",
-  "LeftFootRollCtrl": "LeftFootRollCtrl",
-  "LeftFootRollCtrlEnd": "LeftFootRollCtrl_end",
-  "LeftKneeCtrl": "LeftKneeCtrl",
-  "LeftKneeCtrlEnd": "LeftKneeCtrl_end",
-  "RightFootCtrl": "RightFootCtrl",
-  "RightHeelRoll": "RightHeelRoll",
-  "RightToeRoll": "RightToeRoll",
-  "RightFootIK": "RightFootIK",
-  "RightFootIKEnd": "RightFootIK_end",
-  "RightFootRollCtrl": "RightFootRollCtrl",
-  "RightFootRollCtrlEnd": "RightFootRollCtrl_end",
-  "RightKneeCtrl": "RightKneeCtrl",
-  "RightKneeCtrlEnd": "RightKneeCtrl_end",
-  "HipsCtrl": "HipsCtrl",
-  "Hips": "Hips",
-  "Spine": "Spine",
-  "Chest": "Chest",
-  "UpperChest": "UpperChest",
-  "Neck": "Neck",
-  "Head": "Head",
-  "HeadEnd": "Head_end",
-  "LeftShoulder": "LeftShoulder",
-  "LeftArm": "LeftArm",
-  "LeftForeArm": "LeftForeArm",
-  "LeftHand": "LeftHand",
-  "LeftHandIndex1": "LeftHandIndex1",
-  "LeftHandIndex2": "LeftHandIndex2",
-  "LeftHandIndex3": "LeftHandIndex3",
-  "LeftHandIndex3End": "LeftHandIndex3_end",
-  "LeftHandThumb1": "LeftHandThumb1",
-  "LeftHandThumb2": "LeftHandThumb2",
-  "LeftHandThumb2End": "LeftHandThumb2_end",
-  "RightShoulder": "RightShoulder",
-  "RightArm": "RightArm",
-  "RightForeArm": "RightForeArm",
-  "RightHand": "RightHand",
-  "RightHandIndex1": "RightHandIndex1",
-  "RightHandIndex2": "RightHandIndex2",
-  "RightHandIndex3": "RightHandIndex3",
-  "RightHandIndex3End": "RightHandIndex3_end",
-  "RightHandThumb1": "RightHandThumb1",
-  "RightHandThumb2": "RightHandThumb2",
-  "RightHandThumb2End": "RightHandThumb2_end",
-  "LeftUpLeg": "LeftUpLeg",
-  "LeftLeg": "LeftLeg",
-  "LeftFoot": "LeftFoot",
-  "LeftToes": "LeftToes",
-  "LeftToesEnd": "LeftToes_end",
-  "RightUpLeg": "RightUpLeg",
-  "RightLeg": "RightLeg",
-  "RightFoot": "RightFoot",
-  "RightToes": "RightToes",
-  "RightToesEnd": "RightToes_end"
 }
 } as const;
 
@@ -1777,26 +1777,6 @@ const ToolsScissors = {
 }
 } as const;
 
-const ToolsScrewA = {
-  id: 'screw_A',
-  path: 'tools/gltf/screw_A',
-  fullPath: 'mow/models/tools/gltf/screw_A.gltf',
-  format: 'gltf',
-  nodes: {
-  "ScrewA": "screw_A"
-}
-} as const;
-
-const ToolsScrewB = {
-  id: 'screw_B',
-  path: 'tools/gltf/screw_B',
-  fullPath: 'mow/models/tools/gltf/screw_B.gltf',
-  format: 'gltf',
-  nodes: {
-  "ScrewB": "screw_B"
-}
-} as const;
-
 const ToolsScrewdriverALong = {
   id: 'screwdriver_A_long',
   path: 'tools/gltf/screwdriver_A_long',
@@ -1874,6 +1854,26 @@ const ToolsScrewdriverBShortColor = {
   format: 'gltf',
   nodes: {
   "ScrewdriverBShortColor": "screwdriver_B_short_color"
+}
+} as const;
+
+const ToolsScrewA = {
+  id: 'screw_A',
+  path: 'tools/gltf/screw_A',
+  fullPath: 'mow/models/tools/gltf/screw_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "ScrewA": "screw_A"
+}
+} as const;
+
+const ToolsScrewB = {
+  id: 'screw_B',
+  path: 'tools/gltf/screw_B',
+  fullPath: 'mow/models/tools/gltf/screw_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "ScrewB": "screw_B"
 }
 } as const;
 
@@ -2244,6 +2244,1008 @@ const TownTrashA = {
 }
 } as const;
 
+const TownCity2Bench01 = {
+  id: 'city2-bench-01',
+  path: 'town/library/city2-bench-01/city2-bench-01',
+  fullPath: 'mow/models/town/library/city2-bench-01/city2-bench-01.glb',
+  format: 'glb',
+  nodes: {
+  "Bench01": "Bench_01"
+}
+} as const;
+
+const TownCity2Bench02 = {
+  id: 'city2-bench-02',
+  path: 'town/library/city2-bench-02/city2-bench-02',
+  fullPath: 'mow/models/town/library/city2-bench-02/city2-bench-02.glb',
+  format: 'glb',
+  nodes: {
+  "Bench02": "Bench_02"
+}
+} as const;
+
+const TownCity2Billboard01 = {
+  id: 'city2-billboard-01',
+  path: 'town/library/city2-billboard-01/city2-billboard-01',
+  fullPath: 'mow/models/town/library/city2-billboard-01/city2-billboard-01.glb',
+  format: 'glb',
+  nodes: {
+  "Billboard01": "Billboard_01"
+}
+} as const;
+
+const TownCity2Billboard02 = {
+  id: 'city2-billboard-02',
+  path: 'town/library/city2-billboard-02/city2-billboard-02',
+  fullPath: 'mow/models/town/library/city2-billboard-02/city2-billboard-02.glb',
+  format: 'glb',
+  nodes: {
+  "Billboard02": "Billboard_02"
+}
+} as const;
+
+const TownCity2BuildingBusiness02 = {
+  id: 'city2-building-business-02',
+  path: 'town/library/city2-building-business-02/city2-building-business-02',
+  fullPath: 'mow/models/town/library/city2-building-business-02/city2-building-business-02.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingBusiness02": "Building_Business_02"
+}
+} as const;
+
+const TownCity2BuildingBusiness05 = {
+  id: 'city2-building-business-05',
+  path: 'town/library/city2-building-business-05/city2-building-business-05',
+  fullPath: 'mow/models/town/library/city2-building-business-05/city2-building-business-05.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingBusiness05": "Building_Business_05"
+}
+} as const;
+
+const TownCity2BuildingBusiness06 = {
+  id: 'city2-building-business-06',
+  path: 'town/library/city2-building-business-06/city2-building-business-06',
+  fullPath: 'mow/models/town/library/city2-building-business-06/city2-building-business-06.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingBusiness06": "Building_Business_06"
+}
+} as const;
+
+const TownCity2BuildingBusiness07 = {
+  id: 'city2-building-business-07',
+  path: 'town/library/city2-building-business-07/city2-building-business-07',
+  fullPath: 'mow/models/town/library/city2-building-business-07/city2-building-business-07.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingBusiness07": "Building_Business_07"
+}
+} as const;
+
+const TownCity2BuildingBusiness09 = {
+  id: 'city2-building-business-09',
+  path: 'town/library/city2-building-business-09/city2-building-business-09',
+  fullPath: 'mow/models/town/library/city2-building-business-09/city2-building-business-09.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingBusiness09": "Building_Business_09"
+}
+} as const;
+
+const TownCity2BuildingBusiness10 = {
+  id: 'city2-building-business-10',
+  path: 'town/library/city2-building-business-10/city2-building-business-10',
+  fullPath: 'mow/models/town/library/city2-building-business-10/city2-building-business-10.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingBusiness10": "Building_Business_10"
+}
+} as const;
+
+const TownCity2BuildingHotel01 = {
+  id: 'city2-building-hotel-01',
+  path: 'town/library/city2-building-hotel-01/city2-building-hotel-01',
+  fullPath: 'mow/models/town/library/city2-building-hotel-01/city2-building-hotel-01.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingHotel01": "Building_Hotel_01"
+}
+} as const;
+
+const TownCity2BuildingHotel03 = {
+  id: 'city2-building-hotel-03',
+  path: 'town/library/city2-building-hotel-03/city2-building-hotel-03',
+  fullPath: 'mow/models/town/library/city2-building-hotel-03/city2-building-hotel-03.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingHotel03": "Building_Hotel_03"
+}
+} as const;
+
+const TownCity2BuildingHotel05 = {
+  id: 'city2-building-hotel-05',
+  path: 'town/library/city2-building-hotel-05/city2-building-hotel-05',
+  fullPath: 'mow/models/town/library/city2-building-hotel-05/city2-building-hotel-05.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingHotel05": "Building_Hotel_05"
+}
+} as const;
+
+const TownCity2BuildingHotel08 = {
+  id: 'city2-building-hotel-08',
+  path: 'town/library/city2-building-hotel-08/city2-building-hotel-08',
+  fullPath: 'mow/models/town/library/city2-building-hotel-08/city2-building-hotel-08.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingHotel08": "Building_Hotel_08"
+}
+} as const;
+
+const TownCity2BuildingLiving01 = {
+  id: 'city2-building-living-01',
+  path: 'town/library/city2-building-living-01/city2-building-living-01',
+  fullPath: 'mow/models/town/library/city2-building-living-01/city2-building-living-01.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving01": "Building_Living_01"
+}
+} as const;
+
+const TownCity2BuildingLiving03 = {
+  id: 'city2-building-living-03',
+  path: 'town/library/city2-building-living-03/city2-building-living-03',
+  fullPath: 'mow/models/town/library/city2-building-living-03/city2-building-living-03.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving03": "Building_Living_03"
+}
+} as const;
+
+const TownCity2BuildingLiving05 = {
+  id: 'city2-building-living-05',
+  path: 'town/library/city2-building-living-05/city2-building-living-05',
+  fullPath: 'mow/models/town/library/city2-building-living-05/city2-building-living-05.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving05": "Building_Living_05"
+}
+} as const;
+
+const TownCity2BuildingLiving09 = {
+  id: 'city2-building-living-09',
+  path: 'town/library/city2-building-living-09/city2-building-living-09',
+  fullPath: 'mow/models/town/library/city2-building-living-09/city2-building-living-09.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving09": "Building_Living_09"
+}
+} as const;
+
+const TownCity2BuildingLiving12 = {
+  id: 'city2-building-living-12',
+  path: 'town/library/city2-building-living-12/city2-building-living-12',
+  fullPath: 'mow/models/town/library/city2-building-living-12/city2-building-living-12.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving12": "Building_Living_12"
+}
+} as const;
+
+const TownCity2BuildingLiving13 = {
+  id: 'city2-building-living-13',
+  path: 'town/library/city2-building-living-13/city2-building-living-13',
+  fullPath: 'mow/models/town/library/city2-building-living-13/city2-building-living-13.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving13": "Building_Living_13"
+}
+} as const;
+
+const TownCity2BuildingLiving16 = {
+  id: 'city2-building-living-16',
+  path: 'town/library/city2-building-living-16/city2-building-living-16',
+  fullPath: 'mow/models/town/library/city2-building-living-16/city2-building-living-16.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving16": "Building_Living_16"
+}
+} as const;
+
+const TownCity2BuildingLiving17 = {
+  id: 'city2-building-living-17',
+  path: 'town/library/city2-building-living-17/city2-building-living-17',
+  fullPath: 'mow/models/town/library/city2-building-living-17/city2-building-living-17.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving17": "Building_Living_17"
+}
+} as const;
+
+const TownCity2BuildingLiving18 = {
+  id: 'city2-building-living-18',
+  path: 'town/library/city2-building-living-18/city2-building-living-18',
+  fullPath: 'mow/models/town/library/city2-building-living-18/city2-building-living-18.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving18": "Building_Living_18"
+}
+} as const;
+
+const TownCity2BuildingLiving19 = {
+  id: 'city2-building-living-19',
+  path: 'town/library/city2-building-living-19/city2-building-living-19',
+  fullPath: 'mow/models/town/library/city2-building-living-19/city2-building-living-19.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving19": "Building_Living_19"
+}
+} as const;
+
+const TownCity2BuildingLiving21 = {
+  id: 'city2-building-living-21',
+  path: 'town/library/city2-building-living-21/city2-building-living-21',
+  fullPath: 'mow/models/town/library/city2-building-living-21/city2-building-living-21.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving21": "Building_Living_21"
+}
+} as const;
+
+const TownCity2BuildingLiving25 = {
+  id: 'city2-building-living-25',
+  path: 'town/library/city2-building-living-25/city2-building-living-25',
+  fullPath: 'mow/models/town/library/city2-building-living-25/city2-building-living-25.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving25": "Building_Living_25"
+}
+} as const;
+
+const TownCity2BuildingLiving27 = {
+  id: 'city2-building-living-27',
+  path: 'town/library/city2-building-living-27/city2-building-living-27',
+  fullPath: 'mow/models/town/library/city2-building-living-27/city2-building-living-27.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving27": "Building_Living_27"
+}
+} as const;
+
+const TownCity2BuildingLiving28 = {
+  id: 'city2-building-living-28',
+  path: 'town/library/city2-building-living-28/city2-building-living-28',
+  fullPath: 'mow/models/town/library/city2-building-living-28/city2-building-living-28.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving28": "Building_Living_28"
+}
+} as const;
+
+const TownCity2BuildingLiving31 = {
+  id: 'city2-building-living-31',
+  path: 'town/library/city2-building-living-31/city2-building-living-31',
+  fullPath: 'mow/models/town/library/city2-building-living-31/city2-building-living-31.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving31": "Building_Living_31"
+}
+} as const;
+
+const TownCity2BuildingLiving41 = {
+  id: 'city2-building-living-41',
+  path: 'town/library/city2-building-living-41/city2-building-living-41',
+  fullPath: 'mow/models/town/library/city2-building-living-41/city2-building-living-41.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving41": "Building_Living_41"
+}
+} as const;
+
+const TownCity2BuildingLiving43 = {
+  id: 'city2-building-living-43',
+  path: 'town/library/city2-building-living-43/city2-building-living-43',
+  fullPath: 'mow/models/town/library/city2-building-living-43/city2-building-living-43.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving43": "Building_Living_43"
+}
+} as const;
+
+const TownCity2BuildingLiving45 = {
+  id: 'city2-building-living-45',
+  path: 'town/library/city2-building-living-45/city2-building-living-45',
+  fullPath: 'mow/models/town/library/city2-building-living-45/city2-building-living-45.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving45": "Building_Living_45"
+}
+} as const;
+
+const TownCity2BuildingLiving46 = {
+  id: 'city2-building-living-46',
+  path: 'town/library/city2-building-living-46/city2-building-living-46',
+  fullPath: 'mow/models/town/library/city2-building-living-46/city2-building-living-46.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving46": "Building_Living_46"
+}
+} as const;
+
+const TownCity2BuildingLiving47 = {
+  id: 'city2-building-living-47',
+  path: 'town/library/city2-building-living-47/city2-building-living-47',
+  fullPath: 'mow/models/town/library/city2-building-living-47/city2-building-living-47.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving47": "Building_Living_47"
+}
+} as const;
+
+const TownCity2BuildingService03 = {
+  id: 'city2-building-service-03',
+  path: 'town/library/city2-building-service-03/city2-building-service-03',
+  fullPath: 'mow/models/town/library/city2-building-service-03/city2-building-service-03.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingService03": "Building_Service_03"
+}
+} as const;
+
+const TownCity2BuildingService04 = {
+  id: 'city2-building-service-04',
+  path: 'town/library/city2-building-service-04/city2-building-service-04',
+  fullPath: 'mow/models/town/library/city2-building-service-04/city2-building-service-04.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingService04": "Building_Service_04"
+}
+} as const;
+
+const TownCity2BuildingService06 = {
+  id: 'city2-building-service-06',
+  path: 'town/library/city2-building-service-06/city2-building-service-06',
+  fullPath: 'mow/models/town/library/city2-building-service-06/city2-building-service-06.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingService06": "Building_Service_06"
+}
+} as const;
+
+const TownCity2BuildingService07 = {
+  id: 'city2-building-service-07',
+  path: 'town/library/city2-building-service-07/city2-building-service-07',
+  fullPath: 'mow/models/town/library/city2-building-service-07/city2-building-service-07.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingService07": "Building_Service_07"
+}
+} as const;
+
+const TownCity2BuildingService09 = {
+  id: 'city2-building-service-09',
+  path: 'town/library/city2-building-service-09/city2-building-service-09',
+  fullPath: 'mow/models/town/library/city2-building-service-09/city2-building-service-09.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingService09": "Building_Service_09"
+}
+} as const;
+
+const TownCity2BuildingService10 = {
+  id: 'city2-building-service-10',
+  path: 'town/library/city2-building-service-10/city2-building-service-10',
+  fullPath: 'mow/models/town/library/city2-building-service-10/city2-building-service-10.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingService10": "Building_Service_10"
+}
+} as const;
+
+const TownCity2BuildingSkyscraper02 = {
+  id: 'city2-building-skyscraper-02',
+  path: 'town/library/city2-building-skyscraper-02/city2-building-skyscraper-02',
+  fullPath: 'mow/models/town/library/city2-building-skyscraper-02/city2-building-skyscraper-02.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingSkyscraper02": "Building_Skyscraper_02"
+}
+} as const;
+
+const TownCity2BuildingSkyscraper04 = {
+  id: 'city2-building-skyscraper-04',
+  path: 'town/library/city2-building-skyscraper-04/city2-building-skyscraper-04',
+  fullPath: 'mow/models/town/library/city2-building-skyscraper-04/city2-building-skyscraper-04.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingSkyscraper04": "Building_Skyscraper_04"
+}
+} as const;
+
+const TownCity2BuildingSnack01 = {
+  id: 'city2-building-snack-01',
+  path: 'town/library/city2-building-snack-01/city2-building-snack-01',
+  fullPath: 'mow/models/town/library/city2-building-snack-01/city2-building-snack-01.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingSnack01": "Building_Snack_01"
+}
+} as const;
+
+const TownCity2BuildingSnack02 = {
+  id: 'city2-building-snack-02',
+  path: 'town/library/city2-building-snack-02/city2-building-snack-02',
+  fullPath: 'mow/models/town/library/city2-building-snack-02/city2-building-snack-02.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingSnack02": "Building_Snack_02"
+}
+} as const;
+
+const TownCity2BuildingSnack06 = {
+  id: 'city2-building-snack-06',
+  path: 'town/library/city2-building-snack-06/city2-building-snack-06',
+  fullPath: 'mow/models/town/library/city2-building-snack-06/city2-building-snack-06.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingSnack06": "Building_Snack_06"
+}
+} as const;
+
+const TownCity2BuildingSnack07 = {
+  id: 'city2-building-snack-07',
+  path: 'town/library/city2-building-snack-07/city2-building-snack-07',
+  fullPath: 'mow/models/town/library/city2-building-snack-07/city2-building-snack-07.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingSnack07": "Building_Snack_07"
+}
+} as const;
+
+const TownCity2BuildingSnack09 = {
+  id: 'city2-building-snack-09',
+  path: 'town/library/city2-building-snack-09/city2-building-snack-09',
+  fullPath: 'mow/models/town/library/city2-building-snack-09/city2-building-snack-09.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingSnack09": "Building_Snack_09"
+}
+} as const;
+
+const TownCity2BuildingSupermarket01 = {
+  id: 'city2-building-supermarket-01',
+  path: 'town/library/city2-building-supermarket-01/city2-building-supermarket-01',
+  fullPath: 'mow/models/town/library/city2-building-supermarket-01/city2-building-supermarket-01.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingSupermarket01": "Building_Supermarket_01"
+}
+} as const;
+
+const TownCity2BuildingSupermarket04 = {
+  id: 'city2-building-supermarket-04',
+  path: 'town/library/city2-building-supermarket-04/city2-building-supermarket-04',
+  fullPath: 'mow/models/town/library/city2-building-supermarket-04/city2-building-supermarket-04.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingSupermarket04": "Building_Supermarket_04"
+}
+} as const;
+
+const TownCity2BuildingSupermarket07 = {
+  id: 'city2-building-supermarket-07',
+  path: 'town/library/city2-building-supermarket-07/city2-building-supermarket-07',
+  fullPath: 'mow/models/town/library/city2-building-supermarket-07/city2-building-supermarket-07.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingSupermarket07": "Building_Supermarket_07"
+}
+} as const;
+
+const TownCity2BusStop01 = {
+  id: 'city2-bus-stop-01',
+  path: 'town/library/city2-bus-stop-01/city2-bus-stop-01',
+  fullPath: 'mow/models/town/library/city2-bus-stop-01/city2-bus-stop-01.glb',
+  format: 'glb',
+  nodes: {
+  "BusStop01": "Bus_Stop_01"
+}
+} as const;
+
+const TownCity2Bush01 = {
+  id: 'city2-bush-01',
+  path: 'town/library/city2-bush-01/city2-bush-01',
+  fullPath: 'mow/models/town/library/city2-bush-01/city2-bush-01.glb',
+  format: 'glb',
+  nodes: {
+  "Bush01": "Bush_01"
+}
+} as const;
+
+const TownCity2Car07 = {
+  id: 'city2-car-07',
+  path: 'town/library/city2-car-07/city2-car-07',
+  fullPath: 'mow/models/town/library/city2-car-07/city2-car-07.glb',
+  format: 'glb',
+  nodes: {
+  "Car07": "Car_07",
+  "Wheel269": "Wheel_269",
+  "Wheel270": "Wheel_270",
+  "Wheel271": "Wheel_271",
+  "Wheel272": "Wheel_272"
+}
+} as const;
+
+const TownCity2Car08 = {
+  id: 'city2-car-08',
+  path: 'town/library/city2-car-08/city2-car-08',
+  fullPath: 'mow/models/town/library/city2-car-08/city2-car-08.glb',
+  format: 'glb',
+  nodes: {
+  "Car08": "Car_08",
+  "Wheel037": "Wheel_037",
+  "Wheel038": "Wheel_038",
+  "Wheel039": "Wheel_039",
+  "Wheel040": "Wheel_040"
+}
+} as const;
+
+const TownCity2Car12 = {
+  id: 'city2-car-12',
+  path: 'town/library/city2-car-12/city2-car-12',
+  fullPath: 'mow/models/town/library/city2-car-12/city2-car-12.glb',
+  format: 'glb',
+  nodes: {
+  "Car12": "Car_12",
+  "Wheel013": "Wheel_013",
+  "Wheel014": "Wheel_014",
+  "Wheel015": "Wheel_015",
+  "Wheel016": "Wheel_016"
+}
+} as const;
+
+const TownCity2Car16 = {
+  id: 'city2-car-16',
+  path: 'town/library/city2-car-16/city2-car-16',
+  fullPath: 'mow/models/town/library/city2-car-16/city2-car-16.glb',
+  format: 'glb',
+  nodes: {
+  "Car16": "Car_16",
+  "Wheel161": "Wheel_161",
+  "Wheel162": "Wheel_162",
+  "Wheel163": "Wheel_163",
+  "Wheel164": "Wheel_164"
+}
+} as const;
+
+const TownCity2Car17 = {
+  id: 'city2-car-17',
+  path: 'town/library/city2-car-17/city2-car-17',
+  fullPath: 'mow/models/town/library/city2-car-17/city2-car-17.glb',
+  format: 'glb',
+  nodes: {
+  "Car17": "Car_17",
+  "Wheel121": "Wheel_121",
+  "Wheel122": "Wheel_122",
+  "Wheel123": "Wheel_123",
+  "Wheel124": "Wheel_124"
+}
+} as const;
+
+const TownCity2Car25 = {
+  id: 'city2-car-25',
+  path: 'town/library/city2-car-25/city2-car-25',
+  fullPath: 'mow/models/town/library/city2-car-25/city2-car-25.glb',
+  format: 'glb',
+  nodes: {
+  "Car25": "Car_25",
+  "Wheel265": "Wheel_265",
+  "Wheel266": "Wheel_266",
+  "Wheel267": "Wheel_267",
+  "Wheel268": "Wheel_268"
+}
+} as const;
+
+const TownCity2Car26 = {
+  id: 'city2-car-26',
+  path: 'town/library/city2-car-26/city2-car-26',
+  fullPath: 'mow/models/town/library/city2-car-26/city2-car-26.glb',
+  format: 'glb',
+  nodes: {
+  "Car26": "Car_26",
+  "Wheel141": "Wheel_141",
+  "Wheel142": "Wheel_142",
+  "Wheel143": "Wheel_143",
+  "Wheel144": "Wheel_144"
+}
+} as const;
+
+const TownCity2Car28 = {
+  id: 'city2-car-28',
+  path: 'town/library/city2-car-28/city2-car-28',
+  fullPath: 'mow/models/town/library/city2-car-28/city2-car-28.glb',
+  format: 'glb',
+  nodes: {
+  "Car28": "Car_28",
+  "Wheel105": "Wheel_105",
+  "Wheel106": "Wheel_106",
+  "Wheel107": "Wheel_107",
+  "Wheel108": "Wheel_108"
+}
+} as const;
+
+const TownCity2Car35 = {
+  id: 'city2-car-35',
+  path: 'town/library/city2-car-35/city2-car-35',
+  fullPath: 'mow/models/town/library/city2-car-35/city2-car-35.glb',
+  format: 'glb',
+  nodes: {
+  "Car35": "Car_35",
+  "Wheel061": "Wheel_061",
+  "Wheel062": "Wheel_062",
+  "Wheel063": "Wheel_063",
+  "Wheel064": "Wheel_064"
+}
+} as const;
+
+const TownCity2Car36 = {
+  id: 'city2-car-36',
+  path: 'town/library/city2-car-36/city2-car-36',
+  fullPath: 'mow/models/town/library/city2-car-36/city2-car-36.glb',
+  format: 'glb',
+  nodes: {
+  "Car36": "Car_36",
+  "Wheel081": "Wheel_081",
+  "Wheel082": "Wheel_082",
+  "Wheel083": "Wheel_083",
+  "Wheel084": "Wheel_084"
+}
+} as const;
+
+const TownCity2Car39 = {
+  id: 'city2-car-39',
+  path: 'town/library/city2-car-39/city2-car-39',
+  fullPath: 'mow/models/town/library/city2-car-39/city2-car-39.glb',
+  format: 'glb',
+  nodes: {
+  "Car39": "Car_39",
+  "Wheel109": "Wheel_109",
+  "Wheel110": "Wheel_110",
+  "Wheel111": "Wheel_111",
+  "Wheel112": "Wheel_112"
+}
+} as const;
+
+const TownCity2Car42 = {
+  id: 'city2-car-42',
+  path: 'town/library/city2-car-42/city2-car-42',
+  fullPath: 'mow/models/town/library/city2-car-42/city2-car-42.glb',
+  format: 'glb',
+  nodes: {
+  "Car42": "Car_42",
+  "Wheel157": "Wheel_157",
+  "Wheel158": "Wheel_158",
+  "Wheel159": "Wheel_159",
+  "Wheel160": "Wheel_160"
+}
+} as const;
+
+const TownCity2Car45 = {
+  id: 'city2-car-45',
+  path: 'town/library/city2-car-45/city2-car-45',
+  fullPath: 'mow/models/town/library/city2-car-45/city2-car-45.glb',
+  format: 'glb',
+  nodes: {
+  "Car45": "Car_45",
+  "Wheel245": "Wheel_245",
+  "Wheel246": "Wheel_246",
+  "Wheel247": "Wheel_247",
+  "Wheel248": "Wheel_248"
+}
+} as const;
+
+const TownCity2Fountain01 = {
+  id: 'city2-fountain-01',
+  path: 'town/library/city2-fountain-01/city2-fountain-01',
+  fullPath: 'mow/models/town/library/city2-fountain-01/city2-fountain-01.glb',
+  format: 'glb',
+  nodes: {
+  "Fountain01": "Fountain_01"
+}
+} as const;
+
+const TownCity2Hydrant01 = {
+  id: 'city2-hydrant-01',
+  path: 'town/library/city2-hydrant-01/city2-hydrant-01',
+  fullPath: 'mow/models/town/library/city2-hydrant-01/city2-hydrant-01.glb',
+  format: 'glb',
+  nodes: {
+  "Hydrant01": "Hydrant_01"
+}
+} as const;
+
+const TownCity2Lamp04 = {
+  id: 'city2-lamp-04',
+  path: 'town/library/city2-lamp-04/city2-lamp-04',
+  fullPath: 'mow/models/town/library/city2-lamp-04/city2-lamp-04.glb',
+  format: 'glb',
+  nodes: {
+  "Lamp04": "Lamp_04"
+}
+} as const;
+
+const TownCity2Lamppost01 = {
+  id: 'city2-lamppost-01',
+  path: 'town/library/city2-lamppost-01/city2-lamppost-01',
+  fullPath: 'mow/models/town/library/city2-lamppost-01/city2-lamppost-01.glb',
+  format: 'glb',
+  nodes: {
+  "Lamppost01": "Lamppost_01"
+}
+} as const;
+
+const TownCity2PhoneBooth01 = {
+  id: 'city2-phone-booth-01',
+  path: 'town/library/city2-phone-booth-01/city2-phone-booth-01',
+  fullPath: 'mow/models/town/library/city2-phone-booth-01/city2-phone-booth-01.glb',
+  format: 'glb',
+  nodes: {
+  "PhoneBooth01": "Phone_Booth_01"
+}
+} as const;
+
+const TownCity2Road009 = {
+  id: 'city2-road-009',
+  path: 'town/library/city2-road-009/city2-road-009',
+  fullPath: 'mow/models/town/library/city2-road-009/city2-road-009.glb',
+  format: 'glb',
+  nodes: {
+  "Road009": "road_009"
+}
+} as const;
+
+const TownCity2Road010 = {
+  id: 'city2-road-010',
+  path: 'town/library/city2-road-010/city2-road-010',
+  fullPath: 'mow/models/town/library/city2-road-010/city2-road-010.glb',
+  format: 'glb',
+  nodes: {
+  "Road010": "road_010"
+}
+} as const;
+
+const TownCity2Road011 = {
+  id: 'city2-road-011',
+  path: 'town/library/city2-road-011/city2-road-011',
+  fullPath: 'mow/models/town/library/city2-road-011/city2-road-011.glb',
+  format: 'glb',
+  nodes: {
+  "Road011": "road_011"
+}
+} as const;
+
+const TownCity2Road012 = {
+  id: 'city2-road-012',
+  path: 'town/library/city2-road-012/city2-road-012',
+  fullPath: 'mow/models/town/library/city2-road-012/city2-road-012.glb',
+  format: 'glb',
+  nodes: {
+  "Road012": "road_012"
+}
+} as const;
+
+const TownCity2Road013 = {
+  id: 'city2-road-013',
+  path: 'town/library/city2-road-013/city2-road-013',
+  fullPath: 'mow/models/town/library/city2-road-013/city2-road-013.glb',
+  format: 'glb',
+  nodes: {
+  "Road013": "road_013"
+}
+} as const;
+
+const TownCity2Road022 = {
+  id: 'city2-road-022',
+  path: 'town/library/city2-road-022/city2-road-022',
+  fullPath: 'mow/models/town/library/city2-road-022/city2-road-022.glb',
+  format: 'glb',
+  nodes: {
+  "Road022": "road_022"
+}
+} as const;
+
+const TownCity2Road023 = {
+  id: 'city2-road-023',
+  path: 'town/library/city2-road-023/city2-road-023',
+  fullPath: 'mow/models/town/library/city2-road-023/city2-road-023.glb',
+  format: 'glb',
+  nodes: {
+  "Road023": "road_023"
+}
+} as const;
+
+const TownCity2Road025 = {
+  id: 'city2-road-025',
+  path: 'town/library/city2-road-025/city2-road-025',
+  fullPath: 'mow/models/town/library/city2-road-025/city2-road-025.glb',
+  format: 'glb',
+  nodes: {
+  "Road025": "road_025"
+}
+} as const;
+
+const TownCity2Road026 = {
+  id: 'city2-road-026',
+  path: 'town/library/city2-road-026/city2-road-026',
+  fullPath: 'mow/models/town/library/city2-road-026/city2-road-026.glb',
+  format: 'glb',
+  nodes: {
+  "Road026": "road_026"
+}
+} as const;
+
+const TownCity2Road029 = {
+  id: 'city2-road-029',
+  path: 'town/library/city2-road-029/city2-road-029',
+  fullPath: 'mow/models/town/library/city2-road-029/city2-road-029.glb',
+  format: 'glb',
+  nodes: {
+  "Road029": "road_029"
+}
+} as const;
+
+const TownCity2Stadium01 = {
+  id: 'city2-stadium-01',
+  path: 'town/library/city2-stadium-01/city2-stadium-01',
+  fullPath: 'mow/models/town/library/city2-stadium-01/city2-stadium-01.glb',
+  format: 'glb',
+  nodes: {
+  "Stadium01": "Stadium_01"
+}
+} as const;
+
+const TownCity2Statue01 = {
+  id: 'city2-statue-01',
+  path: 'town/library/city2-statue-01/city2-statue-01',
+  fullPath: 'mow/models/town/library/city2-statue-01/city2-statue-01.glb',
+  format: 'glb',
+  nodes: {
+  "Statue01": "Statue_01"
+}
+} as const;
+
+const TownCity2TrafficLight01 = {
+  id: 'city2-traffic-light-01',
+  path: 'town/library/city2-traffic-light-01/city2-traffic-light-01',
+  fullPath: 'mow/models/town/library/city2-traffic-light-01/city2-traffic-light-01.glb',
+  format: 'glb',
+  nodes: {
+  "TrafficLight01": "Traffic_Light_01"
+}
+} as const;
+
+const TownCity2TrashCan02 = {
+  id: 'city2-trash-can-02',
+  path: 'town/library/city2-trash-can-02/city2-trash-can-02',
+  fullPath: 'mow/models/town/library/city2-trash-can-02/city2-trash-can-02.glb',
+  format: 'glb',
+  nodes: {
+  "TrashCan02": "Trash_Can_02"
+}
+} as const;
+
+const TownCity2TrashCan03 = {
+  id: 'city2-trash-can-03',
+  path: 'town/library/city2-trash-can-03/city2-trash-can-03',
+  fullPath: 'mow/models/town/library/city2-trash-can-03/city2-trash-can-03.glb',
+  format: 'glb',
+  nodes: {
+  "TrashCan03": "Trash_Can_03"
+}
+} as const;
+
+const TownCity2TrashCan05 = {
+  id: 'city2-trash-can-05',
+  path: 'town/library/city2-trash-can-05/city2-trash-can-05',
+  fullPath: 'mow/models/town/library/city2-trash-can-05/city2-trash-can-05.glb',
+  format: 'glb',
+  nodes: {
+  "TrashCan05": "Trash_Can_05"
+}
+} as const;
+
+const TownCity2Tree01 = {
+  id: 'city2-tree-01',
+  path: 'town/library/city2-tree-01/city2-tree-01',
+  fullPath: 'mow/models/town/library/city2-tree-01/city2-tree-01.glb',
+  format: 'glb',
+  nodes: {
+  "Tree01": "Tree_01"
+}
+} as const;
+
+const TownCity2Tree02 = {
+  id: 'city2-tree-02',
+  path: 'town/library/city2-tree-02/city2-tree-02',
+  fullPath: 'mow/models/town/library/city2-tree-02/city2-tree-02.glb',
+  format: 'glb',
+  nodes: {
+  "Tree02": "Tree_02"
+}
+} as const;
+
+const TownCity2Tree03 = {
+  id: 'city2-tree-03',
+  path: 'town/library/city2-tree-03/city2-tree-03',
+  fullPath: 'mow/models/town/library/city2-tree-03/city2-tree-03.glb',
+  format: 'glb',
+  nodes: {
+  "Tree03": "Tree_03"
+}
+} as const;
+
+const TownCity2Tree04 = {
+  id: 'city2-tree-04',
+  path: 'town/library/city2-tree-04/city2-tree-04',
+  fullPath: 'mow/models/town/library/city2-tree-04/city2-tree-04.glb',
+  format: 'glb',
+  nodes: {
+  "Tree04": "Tree_04"
+}
+} as const;
+
+const TownCity2Tree05 = {
+  id: 'city2-tree-05',
+  path: 'town/library/city2-tree-05/city2-tree-05',
+  fullPath: 'mow/models/town/library/city2-tree-05/city2-tree-05.glb',
+  format: 'glb',
+  nodes: {
+  "Tree05": "Tree_05"
+}
+} as const;
+
+const TownCity2Tree06 = {
+  id: 'city2-tree-06',
+  path: 'town/library/city2-tree-06/city2-tree-06',
+  fullPath: 'mow/models/town/library/city2-tree-06/city2-tree-06.glb',
+  format: 'glb',
+  nodes: {
+  "Tree06": "Tree_06"
+}
+} as const;
+
+const TownCity2Tree07 = {
+  id: 'city2-tree-07',
+  path: 'town/library/city2-tree-07/city2-tree-07',
+  fullPath: 'mow/models/town/library/city2-tree-07/city2-tree-07.glb',
+  format: 'glb',
+  nodes: {
+  "Tree07": "Tree_07"
+}
+} as const;
+
+const TownHalloweenCrypt = {
+  id: 'halloween-crypt',
+  path: 'town/library/halloween-crypt/halloween-crypt',
+  fullPath: 'mow/models/town/library/halloween-crypt/halloween-crypt.gltf',
+  format: 'gltf',
+  nodes: {
+  "Crypt": "crypt"
+}
+} as const;
+
+const TownMixedBag1IdolA = {
+  id: 'mixed-bag-1-idol-a',
+  path: 'town/library/mixed-bag-1-idol-a/mixed-bag-1-idol-a',
+  fullPath: 'mow/models/town/library/mixed-bag-1-idol-a/mixed-bag-1-idol-a.gltf',
+  format: 'gltf',
+  nodes: {
+  "IdolA": "idol_A"
+}
+} as const;
+
 const TownBush1AColor1 = {
   id: 'Bush_1_A_Color1',
   path: 'town/nature/Bush_1_A_Color1',
@@ -2291,6 +3293,26 @@ const TownBush4AColor1 = {
   format: 'gltf',
   nodes: {
   "Bush4AColor1": "Bush_4_A_Color1"
+}
+} as const;
+
+const TownFlaxFlowerA = {
+  id: 'flax_flower_A',
+  path: 'town/nature/flax_flower_A',
+  fullPath: 'mow/models/town/nature/flax_flower_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "FlaxFlowerA": "flax_flower_A"
+}
+} as const;
+
+const TownFlaxFlowerB = {
+  id: 'flax_flower_B',
+  path: 'town/nature/flax_flower_B',
+  fullPath: 'mow/models/town/nature/flax_flower_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "FlaxFlowerB": "flax_flower_B"
 }
 } as const;
 
@@ -2354,26 +3376,6 @@ const TownTree4AColor1 = {
 }
 } as const;
 
-const TownFlaxFlowerA = {
-  id: 'flax_flower_A',
-  path: 'town/nature/flax_flower_A',
-  fullPath: 'mow/models/town/nature/flax_flower_A.gltf',
-  format: 'gltf',
-  nodes: {
-  "FlaxFlowerA": "flax_flower_A"
-}
-} as const;
-
-const TownFlaxFlowerB = {
-  id: 'flax_flower_B',
-  path: 'town/nature/flax_flower_B',
-  fullPath: 'mow/models/town/nature/flax_flower_B.gltf',
-  format: 'gltf',
-  nodes: {
-  "FlaxFlowerB": "flax_flower_B"
-}
-} as const;
-
 const TownAtm01 = {
   id: 'atm-01',
   path: 'town/station/atm-01',
@@ -2393,6 +3395,25 @@ const TownCloset02 = {
   "Closet02": "Closet_02",
   "Closet02Door01": "Closet_02_Door_01",
   "Closet02Door02": "Closet_02_Door_02"
+}
+} as const;
+
+const TownLawnTractor = {
+  id: 'lawn-tractor',
+  path: 'town/vehicles/lawn-tractor/lawn-tractor',
+  fullPath: 'mow/models/town/vehicles/lawn-tractor/lawn-tractor.glb',
+  format: 'glb',
+  nodes: {
+  "SketchfabModel": "Sketchfab_model",
+  "Root": "root",
+  "GLTFSceneRootNode": "GLTF_SceneRootNode",
+  "Truck0020": "Truck.002_0",
+  "Object4": "Object_4",
+  "Object5": "Object_5",
+  "Truck0061": "Truck.006_1",
+  "Object7": "Object_7",
+  "Object8": "Object_8",
+  "Object9": "Object_9"
 }
 } as const;
 
@@ -2521,30 +3542,30 @@ const TreasuresSkull = {
 // containing folder land in MODELS.Root.
 export const MODELS = {
   Characters: {
+    CharacterMedium: CharactersCharacterMedium,
     Digging: CharactersDigging,
     Excited: CharactersExcited,
     FallingIdle: CharactersFallingIdle,
     HappyIdle: CharactersHappyIdle,
+    Idle: CharactersIdle,
+    Idle2: CharactersIdle2,
+    Jump: CharactersJump,
     JumpingUp: CharactersJumpingUp,
     Landing: CharactersLanding,
     PickFruit: CharactersPickFruit,
     PlantTree: CharactersPlantTree,
     Roll: CharactersRoll,
+    Run: CharactersRun,
     Running: CharactersRunning,
     Sitting: CharactersSitting,
-    StandToRoll: CharactersStandToRoll,
-    StandToSit: CharactersStandToSit,
     StandingMeleeAttackDownwardCHOP: CharactersStandingMeleeAttackDownwardCHOP,
     StandingPICKAXE: CharactersStandingPICKAXE,
+    StandToRoll: CharactersStandToRoll,
+    StandToSit: CharactersStandToSit,
     Talking: CharactersTalking,
+    TestIdle: CharactersTestIdle,
     Walking: CharactersWalking,
-    Watering: CharactersWatering,
-    CharacterMedium: CharactersCharacterMedium,
-    Idle: CharactersIdle,
-    Idle2: CharactersIdle2,
-    Jump: CharactersJump,
-    Run: CharactersRun,
-    TestIdle: CharactersTestIdle
+    Watering: CharactersWatering
   },
   Hats: {
     AmericanHat: HatsAmericanHat,
@@ -2600,8 +3621,6 @@ export const MODELS = {
     RopeBundleB: ToolsRopeBundleB,
     Saw: ToolsSaw,
     Scissors: ToolsScissors,
-    ScrewA: ToolsScrewA,
-    ScrewB: ToolsScrewB,
     ScrewdriverALong: ToolsScrewdriverALong,
     ScrewdriverALongColor: ToolsScrewdriverALongColor,
     ScrewdriverAShort: ToolsScrewdriverAShort,
@@ -2610,6 +3629,8 @@ export const MODELS = {
     ScrewdriverBLongColor: ToolsScrewdriverBLongColor,
     ScrewdriverBShort: ToolsScrewdriverBShort,
     ScrewdriverBShortColor: ToolsScrewdriverBShortColor,
+    ScrewA: ToolsScrewA,
+    ScrewB: ToolsScrewB,
     Shovel: ToolsShovel,
     Tongs: ToolsTongs,
     Torch: ToolsTorch,
@@ -2647,21 +3668,117 @@ export const MODELS = {
     StreetlightOldDouble: TownStreetlightOldDouble,
     StreetlightOldSingle: TownStreetlightOldSingle,
     TrashA: TownTrashA,
+    City2Bench01: TownCity2Bench01,
+    City2Bench02: TownCity2Bench02,
+    City2Billboard01: TownCity2Billboard01,
+    City2Billboard02: TownCity2Billboard02,
+    City2BuildingBusiness02: TownCity2BuildingBusiness02,
+    City2BuildingBusiness05: TownCity2BuildingBusiness05,
+    City2BuildingBusiness06: TownCity2BuildingBusiness06,
+    City2BuildingBusiness07: TownCity2BuildingBusiness07,
+    City2BuildingBusiness09: TownCity2BuildingBusiness09,
+    City2BuildingBusiness10: TownCity2BuildingBusiness10,
+    City2BuildingHotel01: TownCity2BuildingHotel01,
+    City2BuildingHotel03: TownCity2BuildingHotel03,
+    City2BuildingHotel05: TownCity2BuildingHotel05,
+    City2BuildingHotel08: TownCity2BuildingHotel08,
+    City2BuildingLiving01: TownCity2BuildingLiving01,
+    City2BuildingLiving03: TownCity2BuildingLiving03,
+    City2BuildingLiving05: TownCity2BuildingLiving05,
+    City2BuildingLiving09: TownCity2BuildingLiving09,
+    City2BuildingLiving12: TownCity2BuildingLiving12,
+    City2BuildingLiving13: TownCity2BuildingLiving13,
+    City2BuildingLiving16: TownCity2BuildingLiving16,
+    City2BuildingLiving17: TownCity2BuildingLiving17,
+    City2BuildingLiving18: TownCity2BuildingLiving18,
+    City2BuildingLiving19: TownCity2BuildingLiving19,
+    City2BuildingLiving21: TownCity2BuildingLiving21,
+    City2BuildingLiving25: TownCity2BuildingLiving25,
+    City2BuildingLiving27: TownCity2BuildingLiving27,
+    City2BuildingLiving28: TownCity2BuildingLiving28,
+    City2BuildingLiving31: TownCity2BuildingLiving31,
+    City2BuildingLiving41: TownCity2BuildingLiving41,
+    City2BuildingLiving43: TownCity2BuildingLiving43,
+    City2BuildingLiving45: TownCity2BuildingLiving45,
+    City2BuildingLiving46: TownCity2BuildingLiving46,
+    City2BuildingLiving47: TownCity2BuildingLiving47,
+    City2BuildingService03: TownCity2BuildingService03,
+    City2BuildingService04: TownCity2BuildingService04,
+    City2BuildingService06: TownCity2BuildingService06,
+    City2BuildingService07: TownCity2BuildingService07,
+    City2BuildingService09: TownCity2BuildingService09,
+    City2BuildingService10: TownCity2BuildingService10,
+    City2BuildingSkyscraper02: TownCity2BuildingSkyscraper02,
+    City2BuildingSkyscraper04: TownCity2BuildingSkyscraper04,
+    City2BuildingSnack01: TownCity2BuildingSnack01,
+    City2BuildingSnack02: TownCity2BuildingSnack02,
+    City2BuildingSnack06: TownCity2BuildingSnack06,
+    City2BuildingSnack07: TownCity2BuildingSnack07,
+    City2BuildingSnack09: TownCity2BuildingSnack09,
+    City2BuildingSupermarket01: TownCity2BuildingSupermarket01,
+    City2BuildingSupermarket04: TownCity2BuildingSupermarket04,
+    City2BuildingSupermarket07: TownCity2BuildingSupermarket07,
+    City2BusStop01: TownCity2BusStop01,
+    City2Bush01: TownCity2Bush01,
+    City2Car07: TownCity2Car07,
+    City2Car08: TownCity2Car08,
+    City2Car12: TownCity2Car12,
+    City2Car16: TownCity2Car16,
+    City2Car17: TownCity2Car17,
+    City2Car25: TownCity2Car25,
+    City2Car26: TownCity2Car26,
+    City2Car28: TownCity2Car28,
+    City2Car35: TownCity2Car35,
+    City2Car36: TownCity2Car36,
+    City2Car39: TownCity2Car39,
+    City2Car42: TownCity2Car42,
+    City2Car45: TownCity2Car45,
+    City2Fountain01: TownCity2Fountain01,
+    City2Hydrant01: TownCity2Hydrant01,
+    City2Lamp04: TownCity2Lamp04,
+    City2Lamppost01: TownCity2Lamppost01,
+    City2PhoneBooth01: TownCity2PhoneBooth01,
+    City2Road009: TownCity2Road009,
+    City2Road010: TownCity2Road010,
+    City2Road011: TownCity2Road011,
+    City2Road012: TownCity2Road012,
+    City2Road013: TownCity2Road013,
+    City2Road022: TownCity2Road022,
+    City2Road023: TownCity2Road023,
+    City2Road025: TownCity2Road025,
+    City2Road026: TownCity2Road026,
+    City2Road029: TownCity2Road029,
+    City2Stadium01: TownCity2Stadium01,
+    City2Statue01: TownCity2Statue01,
+    City2TrafficLight01: TownCity2TrafficLight01,
+    City2TrashCan02: TownCity2TrashCan02,
+    City2TrashCan03: TownCity2TrashCan03,
+    City2TrashCan05: TownCity2TrashCan05,
+    City2Tree01: TownCity2Tree01,
+    City2Tree02: TownCity2Tree02,
+    City2Tree03: TownCity2Tree03,
+    City2Tree04: TownCity2Tree04,
+    City2Tree05: TownCity2Tree05,
+    City2Tree06: TownCity2Tree06,
+    City2Tree07: TownCity2Tree07,
+    HalloweenCrypt: TownHalloweenCrypt,
+    MixedBag1IdolA: TownMixedBag1IdolA,
     Bush1AColor1: TownBush1AColor1,
     Bush1CColor1: TownBush1CColor1,
     Bush2AColor1: TownBush2AColor1,
     Bush3AColor1: TownBush3AColor1,
     Bush4AColor1: TownBush4AColor1,
+    FlaxFlowerA: TownFlaxFlowerA,
+    FlaxFlowerB: TownFlaxFlowerB,
     Grass1ASinglesidedColor1: TownGrass1ASinglesidedColor1,
     Grass2ASinglesidedColor1: TownGrass2ASinglesidedColor1,
     Tree1AColor1: TownTree1AColor1,
     Tree2AColor1: TownTree2AColor1,
     Tree3AColor1: TownTree3AColor1,
     Tree4AColor1: TownTree4AColor1,
-    FlaxFlowerA: TownFlaxFlowerA,
-    FlaxFlowerB: TownFlaxFlowerB,
     Atm01: TownAtm01,
     Closet02: TownCloset02,
+    LawnTractor: TownLawnTractor,
     Tractor: TownTractor,
     TractorShovel: TownTractorShovel
   },

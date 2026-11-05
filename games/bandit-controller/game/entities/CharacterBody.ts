@@ -9,6 +9,7 @@
 
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import { createGLTFLoader } from 'core/three/GLTFLoaders';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { BendService, WorldBendService } from 'core/services/BendService';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
@@ -109,11 +110,16 @@ export default class CharacterBody {
         this.bendService = bendService;
     }
 
+    /**
+     * The character's mesh: a .glb (what the model build publishes from the raw FBX: welded, much smaller —
+     * tools/models/fbx-mesh-to-glb.mjs) or an .fbx as is. Same bones either way, so the animations bind the same.
+     */
     public async loadMesh(url: string): Promise<void> {
         const resolvedUrl = await loadCompressedFile(url);
         try {
-            const loader = new FBXLoader();
-            const object = await loader.loadAsync(resolvedUrl);
+            const object = /\.(glb|gltf)(\.gz)?$/i.test(url)
+                ? (await createGLTFLoader().loadAsync(resolvedUrl)).scene
+                : await new FBXLoader().loadAsync(resolvedUrl);
             this.applyFallbackMaterial(object);
             this.container.add(object);
 

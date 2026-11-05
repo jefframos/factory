@@ -1,4 +1,8 @@
 {
+    "tractorOfferTitle": "TĂNG SỨC MÁY KÉO",
+    "tractorOfferBody": "Xem video để đào mạnh và nhận tiền ngay trong {seconds} giây. Sau đó bạn dùng lại dụng cụ cũ. Mỗi mỏ một lượt.",
+    "tractorWatch": "XEM VIDEO",
+    "tractorAdFailed": "Video chưa hoàn tất. Đi ra xa rồi quay lại để thử lại.",
     "titleUpgrades": "NÂNG CẤP",
     "titleCollection": "BỘ SƯU TẬP",
     "titleWardrobe": "TỦ ĐỒ",
@@ -67,6 +71,7 @@
     "tabHats": "MŨ",
     "wearing": "ĐANG MẶC",
     "owned": "ĐÃ CÓ",
+    "free": "MIỄN PHÍ",
     "collectionLock": "BỘ SƯU TẬP",
     "completeCollection": "HOÀN THÀNH BỘ SƯU TẬP!",
     "lookBought": "ĐÃ MUA {name}!",

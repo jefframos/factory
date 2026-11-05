@@ -40,6 +40,10 @@ const CULL_MARGIN = 8;
 /** Pickups (nuggets, gems) are about this big. */
 const PICKUP_SIZE = 0.42;
 const DECOR_SIZE = 0.55;
+/** Ore decor glow: emissive strength breathing between these, ORE_GLOW_SPEED radians a second. */
+const ORE_GLOW_MIN = 0.18;
+const ORE_GLOW_MAX = 0.42;
+const ORE_GLOW_SPEED = 2.4;
 /** Finds stick this share of their height out of the block top. */
 const FIND_SHOWING = 0.65;
 /** Fewest blocks between two buried finds (rerolled up to 32 times to keep it). */
@@ -171,6 +175,9 @@ export class VoxelTerrain {
     private readonly bedrockTint = DIG.terrain.bedrockTint ? new THREE.Color(DIG.terrain.bedrockTint) : undefined;
     /** Per grid value: the material's `decorTint` over its decor (the amethyst's purple gems). */
     private readonly decorTints: (THREE.Color | undefined)[] = [undefined, ...DIG.materials.map((m) => (m.decorTint ? new THREE.Color(m.decorTint) : undefined))];
+    /** Ore decor materials that glow (prepareOreGlow()), and the clock their glow breathes on. */
+    private readonly oreGlow: THREE.MeshStandardMaterial[] = [];
+    private glowTime = 0;
 
     /** `seed`: the layout (each new mine has its own: DigProgress.mineSeed). */
     public constructor(threeScene: THREE.Scene, dugSave?: string, private readonly seed = DIG.terrain.seed, theme?: MineTheme) {
@@ -227,6 +234,32 @@ export class VoxelTerrain {
             this.models.loadDecor(DIG.chests.cash.model, DIG.chests.cash.size),
             this.models.loadPickup(DIG.chests.cash.model, DIG.chests.cash.size),
         ]);
+        this.prepareOreGlow();
+    }
+
+    /**
+     * Ore decor (nuggets, gems) glows softly in its own colours — the texture as emissive, times the per-vertex tint
+     * and shade — so valuable blocks lift off the plain rock around them. The glow breathes in update().
+     */
+    private prepareOreGlow(): void {
+        for (const material of DIG.materials) {
+            const glow = material.ore && material.decor ? this.models.decors.get(material.decor)?.material : undefined;
+            if (!glow || this.oreGlow.includes(glow)) continue;
+            glow.emissive.set(0xffffff);
+            glow.emissiveMap = glow.map;
+            glow.emissiveIntensity = ORE_GLOW_MIN;
+            const previous = glow.onBeforeCompile;
+            glow.onBeforeCompile = (shader, renderer) => {
+                previous(shader, renderer);
+                shader.fragmentShader = shader.fragmentShader.replace(
+                    '#include <emissivemap_fragment>',
+                    '#include <emissivemap_fragment>\n#ifdef USE_COLOR\n    totalEmissiveRadiance *= vColor.rgb;\n#endif',
+                );
+            };
+            glow.customProgramCacheKey = () => 'dig-ore-glow';
+            glow.needsUpdate = true;
+            this.oreGlow.push(glow);
+        }
     }
 
     /** Every chunk is redrawn (more models are in): over the next frames, nearest first (update()). */
@@ -577,7 +610,12 @@ export class VoxelTerrain {
      * Redraws the chunks that changed. A few (digging) all at once; a whole redraw (more models came in) a
      * REBUILD_BUDGET of chunks a frame, nearest the miner first, so it never stalls a frame.
      */
-    public update(): void {
+    public update(delta = 0): void {
+        if (this.oreGlow.length) {
+            this.glowTime += delta;
+            const breath = Math.sin(this.glowTime * ORE_GLOW_SPEED) * 0.5 + 0.5;
+            for (const glow of this.oreGlow) glow.emissiveIntensity = ORE_GLOW_MIN + (ORE_GLOW_MAX - ORE_GLOW_MIN) * breath;
+        }
         if (!this.loaded || !this.dirty.size) return;
         let chunks = [...this.dirty];
         if (chunks.length > REBUILD_BUDGET) {

@@ -2,10 +2,10 @@
   "id": "town",
   "name": "Mow Town",
   "ground": {
-    "x": 0,
-    "z": -6,
-    "width": 88,
-    "depth": 78,
+    "x": -0.75,
+    "z": -6.375,
+    "width": 86.5,
+    "depth": 75.25,
     "color": "#8c9a7c"
   },
   "island": {
@@ -16,15 +16,7 @@
     "sideDepth": 1.6,
     "outline": [
       {
-        "x": -18,
-        "z": -44
-      },
-      {
-        "x": 4,
-        "z": -45
-      },
-      {
-        "x": 25,
+        "x": -26.25,
         "z": -44
       },
       {
@@ -32,59 +24,19 @@
         "z": -44
       },
       {
-        "x": 43,
-        "z": -27
-      },
-      {
-        "x": 42,
-        "z": -15
-      },
-      {
-        "x": 44,
-        "z": -6
-      },
-      {
-        "x": 44,
-        "z": 18
-      },
-      {
         "x": 41,
         "z": 31
       },
       {
-        "x": 20,
-        "z": 33
-      },
-      {
-        "x": -6,
-        "z": 32
-      },
-      {
-        "x": -30,
-        "z": 32
-      },
-      {
-        "x": -41,
-        "z": 30
+        "x": -43.75,
+        "z": 31.25
       },
       {
         "x": -44,
-        "z": 20
-      },
-      {
-        "x": -44,
-        "z": 8
-      },
-      {
-        "x": -42,
         "z": -16
       },
       {
-        "x": -34,
-        "z": -30
-      },
-      {
-        "x": -26,
+        "x": -26.25,
         "z": -39
       }
     ],
@@ -103,7 +55,7 @@
   },
   "start": {
     "x": 0,
-    "z": 12
+    "z": 11.5
   },
   "pavements": [
     {
@@ -157,33 +109,81 @@
     {
       "id": "plaza",
       "x": 0,
-      "z": 10.75,
-      "width": 19,
-      "depth": 5.5,
+      "z": 9,
+      "width": 21.5,
+      "depth": 1.5,
       "color": "#d8ccb0"
     },
     {
       "id": "path-north-south",
       "x": 0,
-      "z": 0,
+      "z": 0.25,
       "width": 1.5,
-      "depth": 16,
+      "depth": 17,
       "color": "#d8ccb0"
     },
     {
       "id": "path-east-west",
       "x": 0,
       "z": 0,
-      "width": 20,
+      "width": 21,
       "depth": 1.5,
       "color": "#d8ccb0"
     },
     {
       "id": "pavement-5",
-      "x": 0,
+      "x": -0.5,
       "z": -16.5,
-      "width": 35,
+      "width": 39,
       "depth": 2,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-11",
+      "x": -24.5,
+      "z": 4.75,
+      "width": 14.5,
+      "depth": 2,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-12",
+      "x": 0,
+      "z": -23.5,
+      "width": 2,
+      "depth": 12.5,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-13",
+      "x": 23.25,
+      "z": -27.75,
+      "width": 6,
+      "depth": 2,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-14",
+      "x": 26.75,
+      "z": -30.25,
+      "width": 2,
+      "depth": 7,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-14-copy",
+      "x": 19.25,
+      "z": -22,
+      "width": 2,
+      "depth": 13.5,
+      "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-12-copy",
+      "x": -19,
+      "z": -22.5,
+      "width": 2,
+      "depth": 12.5,
       "color": "#d8ccb0"
     }
   ],
@@ -201,9 +201,10 @@
   },
   "atms": [
     {
-      "x": -7.25,
+      "x": -8.25,
       "z": 10.25,
-      "rotationY": 1.5708
+      "rotationY": 1.5708,
+      "appearsWhenFull": true
     },
     {
       "x": -10.75,
@@ -219,13 +220,13 @@
     },
     {
       "x": -20.5,
-      "z": 5,
+      "z": 4.75,
       "rotationY": -1.5708,
       "section": "westblock"
     },
     {
-      "x": 21,
-      "z": -17,
+      "x": 37.5,
+      "z": -34,
       "rotationY": 0,
       "section": "field"
     }
@@ -244,10 +245,10 @@
   },
   "wardrobes": [
     {
-      "x": 7.75,
-      "z": 9.75,
-      "rotationY": -1.5708,
-      "appearsAfterSales": 2
+      "x": -8.75,
+      "z": 13.25,
+      "rotationY": 1.5708,
+      "appearsAfterSales": 1
     }
   ],
   "props": [
@@ -274,52 +275,6 @@
         "halfZ": 0.7
       },
       "fade": true
-    },
-    {
-      "model": "town/nature/Tree_2_A_Color1.gltf",
-      "x": -5.5,
-      "z": 4.25,
-      "rotationY": 4.2,
-      "height": 6.4,
-      "collider": {
-        "halfX": 0.3,
-        "halfZ": 0.3
-      },
-      "fade": true
-    },
-    {
-      "model": "town/nature/Tree_2_A_Color1.gltf",
-      "x": 6,
-      "z": 4.25,
-      "rotationY": 4.5,
-      "height": 6.08,
-      "collider": {
-        "halfX": 0.3,
-        "halfZ": 0.3
-      },
-      "fade": true
-    },
-    {
-      "model": "town/city/bench.gltf",
-      "x": -3,
-      "z": -1.75,
-      "rotationY": 0,
-      "height": 0.55,
-      "collider": {
-        "halfX": 1.1,
-        "halfZ": 0.4
-      }
-    },
-    {
-      "model": "town/city/bench.gltf",
-      "x": 3.25,
-      "z": 1.75,
-      "rotationY": 3.1416,
-      "height": 0.55,
-      "collider": {
-        "halfX": 1.1,
-        "halfZ": 0.4
-      }
     },
     {
       "model": "town/city/streetlight_old_double.gltf",
@@ -422,17 +377,6 @@
     },
     {
       "model": "town/nature/Bush_1_C_Color1.gltf",
-      "x": -9.3,
-      "z": 13,
-      "rotationY": 0,
-      "height": 1.1,
-      "collider": {
-        "halfX": 0.8,
-        "halfZ": 0.8
-      }
-    },
-    {
-      "model": "town/nature/Bush_1_C_Color1.gltf",
       "x": 9.3,
       "z": 13,
       "rotationY": 0.8,
@@ -443,43 +387,9 @@
       }
     },
     {
-      "model": "town/city/car_sedan.gltf",
-      "x": -27,
-      "z": -14,
-      "rotationY": 1.5708,
-      "height": 2.2,
-      "collider": {
-        "halfX": 2.8,
-        "halfZ": 1.25
-      }
-    },
-    {
-      "model": "town/city/car_taxi.gltf",
-      "x": 27,
-      "z": -9,
-      "rotationY": -1.5708,
-      "height": 2.5,
-      "collider": {
-        "halfX": 2.7,
-        "halfZ": 1.2
-      }
-    },
-    {
-      "model": "town/city/building_E_withoutBase.gltf",
-      "x": 0,
-      "z": -26.3,
-      "rotationY": 0,
-      "height": 18,
-      "collider": {
-        "halfX": 8,
-        "halfZ": 4.95
-      },
-      "fade": true
-    },
-    {
       "model": "town/nature/Bush_4_A_Color1.gltf",
-      "x": -7.6,
-      "z": 15.5,
+      "x": -6.75,
+      "z": 16,
       "rotationY": 0,
       "height": 1.1,
       "collider": {
@@ -489,8 +399,8 @@
     },
     {
       "model": "town/nature/Bush_1_C_Color1.gltf",
-      "x": 7.6,
-      "z": 15.5,
+      "x": 6.75,
+      "z": 15.75,
       "rotationY": 0.6,
       "height": 1.1,
       "collider": {
@@ -612,8 +522,8 @@
     },
     {
       "model": "town/city/building_A_withoutBase.gltf",
-      "x": -26.5,
-      "z": -23,
+      "x": -26,
+      "z": -24,
       "rotationY": 0,
       "height": 14,
       "collider": {
@@ -623,45 +533,21 @@
       "fade": true
     },
     {
-      "model": "town/city/building_G_withoutBase.gltf",
-      "x": -24,
-      "z": 15,
-      "rotationY": 0,
-      "height": 12,
-      "collider": {
-        "halfX": 5.35,
-        "halfZ": 3.3
-      },
-      "fade": true
-    },
-    {
-      "model": "town/city/building_D_withoutBase.gltf",
-      "x": 24.5,
-      "z": 15,
-      "rotationY": 0,
-      "height": 13,
-      "collider": {
-        "halfX": 4.6,
-        "halfZ": 3.6
-      },
-      "fade": true
-    },
-    {
       "model": "town/city/building_B_withoutBase.gltf",
-      "x": -12,
-      "z": -37,
+      "x": -13.75,
+      "z": -34.25,
       "rotationY": 0,
-      "height": 16,
+      "height": 13.6,
       "collider": {
-        "halfX": 8.25,
-        "halfZ": 6.4
+        "halfX": 7,
+        "halfZ": 5.45
       },
       "fade": true
     },
     {
       "model": "town/city/building_F_withoutBase.gltf",
-      "x": 12,
-      "z": -37,
+      "x": 13.75,
+      "z": -33,
       "rotationY": 0,
       "height": 15,
       "collider": {
@@ -672,37 +558,15 @@
     },
     {
       "model": "town/city/building_H_withoutBase.gltf",
-      "x": 30,
-      "z": -37,
+      "x": 29.5,
+      "z": -38,
       "rotationY": 0,
-      "height": 13,
+      "height": 20.8,
       "collider": {
-        "halfX": 4.4,
-        "halfZ": 2.75
+        "halfX": 7.05,
+        "halfZ": 4.4
       },
       "fade": true
-    },
-    {
-      "model": "town/city/car_hatchback.gltf",
-      "x": -31,
-      "z": -9.5,
-      "rotationY": -1.5708,
-      "height": 2,
-      "collider": {
-        "halfX": 2.2,
-        "halfZ": 1.15
-      }
-    },
-    {
-      "model": "town/city/car_stationwagon.gltf",
-      "x": -5.5,
-      "z": -14,
-      "rotationY": 1.5708,
-      "height": 2.2,
-      "collider": {
-        "halfX": 2.8,
-        "halfZ": 1.25
-      }
     },
     {
       "model": "town/city/dumpster.gltf",
@@ -1212,7 +1076,7 @@
     {
       "model": "town/nature/Bush_1_C_Color1.gltf",
       "x": -30.6,
-      "z": -5,
+      "z": -5.5,
       "rotationY": 2,
       "height": 1.1,
       "collider": {
@@ -1221,31 +1085,9 @@
       }
     },
     {
-      "model": "town/nature/Bush_4_A_Color1.gltf",
-      "x": -30.6,
-      "z": -1.5,
-      "rotationY": 0.6000000000000001,
-      "height": 1.1,
-      "collider": {
-        "halfX": 0.95,
-        "halfZ": 0.95
-      }
-    },
-    {
-      "model": "town/nature/Bush_3_A_Color1.gltf",
-      "x": -30.6,
-      "z": 2,
-      "rotationY": 0.8,
-      "height": 1.1,
-      "collider": {
-        "halfX": 1.15,
-        "halfZ": 1.15
-      }
-    },
-    {
       "model": "town/nature/Bush_1_C_Color1.gltf",
       "x": -30.6,
-      "z": 5.5,
+      "z": 18.25,
       "rotationY": 2.2,
       "height": 1.1,
       "collider": {
@@ -1431,8 +1273,8 @@
     },
     {
       "model": "town/nature/Tree_2_A_Color1.gltf",
-      "x": 19.5,
-      "z": 8.8,
+      "x": 18.75,
+      "z": 9.25,
       "rotationY": 0.6,
       "height": 5.6,
       "collider": {
@@ -1476,25 +1318,108 @@
       }
     },
     {
-      "model": "town/city/car_sedan.gltf",
-      "x": -24,
-      "z": 24.8,
-      "rotationY": 1.5707963267948966,
-      "height": 2.2,
+      "model": "town/library/mixed-bag-1-idol-a/mixed-bag-1-idol-a.gltf",
+      "x": -24.25,
+      "z": -0.5,
+      "rotationY": 0,
+      "height": 5.7,
       "collider": {
-        "halfX": 2.8,
-        "halfZ": 1.25
+        "halfX": 1.05,
+        "halfZ": 1.05
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-crypt/halloween-crypt.gltf",
+      "x": 33.25,
+      "z": -25.25,
+      "rotationY": -0.7854,
+      "height": 7.2,
+      "collider": {
+        "halfX": 4.45,
+        "halfZ": 4.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_2_A_Color1.gltf",
+      "x": 24.5,
+      "z": 0.25,
+      "rotationY": 0.6,
+      "height": 5.6,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_4_A_Color1.gltf",
+      "x": -29.75,
+      "z": 16.5,
+      "rotationY": 2.1,
+      "height": 5.4,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-bench-01/city2-bench-01.glb",
+      "x": -5.5,
+      "z": -1.75,
+      "rotationY": 0,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.2,
+        "halfZ": 0.4
       }
     },
     {
-      "model": "town/city/car_taxi.gltf",
-      "x": 9,
-      "z": 22.2,
-      "rotationY": -1.5707963267948966,
-      "height": 2.5,
+      "model": "town/library/city2-fountain-01/city2-fountain-01.glb",
+      "x": 0,
+      "z": 0,
+      "rotationY": 0,
+      "height": 3.38,
       "collider": {
-        "halfX": 2.7,
-        "halfZ": 1.2
+        "halfX": 2.65,
+        "halfZ": 2.65
+      }
+    },
+    {
+      "model": "town/library/city2-building-living-31/city2-building-living-31.glb",
+      "x": 0,
+      "z": -33.75,
+      "rotationY": 0,
+      "height": 11.65,
+      "collider": {
+        "halfX": 7,
+        "halfZ": 6.2
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-building-service-07/city2-building-service-07.glb",
+      "x": 26.75,
+      "z": 13.75,
+      "rotationY": -1.5708,
+      "height": 12.08,
+      "collider": {
+        "halfX": 3.15,
+        "halfZ": 4.75
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/city2-car-25/city2-car-25.glb",
+      "x": 21.25,
+      "z": 16,
+      "rotationY": 0,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 2.3
       }
     }
   ],
@@ -1560,38 +1485,19 @@
   "grassPatches": [],
   "sections": [
     {
-      "id": "yard",
-      "name": "Front Yard",
+      "id": "central-park",
+      "name": "Central Park",
+      "maxGrass": "tallgrass",
       "x": 0,
-      "z": 16,
-      "width": 12,
-      "depth": 5,
-      "completeAt": 0.97,
-      "bonus": 65,
-      "ground": "#557f38",
-      "restoredGround": "#72b04a",
-      "fill": "grass",
-      "grassScale": 0.6,
-      "zoom": 0.72
-    },
-    {
-      "id": "park",
-      "name": "Starting Park",
-      "x": 0,
-      "z": 0,
+      "z": 6,
       "width": 20,
-      "depth": 16,
+      "depth": 27.5,
       "completeAt": 0.97,
       "bonus": 160,
       "ground": "#4f7d35",
       "restoredGround": "#6fae47",
       "fill": "auto",
-      "separator": {
-        "x": 0,
-        "z": 8,
-        "width": 20,
-        "rotationY": 0
-      }
+      "grassScale": 1.2
     },
     {
       "id": "street",
@@ -1611,20 +1517,21 @@
         "rotationY": 0
       },
       "onUnlock": {
-        "pan": true
+        "pan": false
       },
       "fill": "auto",
-      "maxGrass": "weeds"
+      "maxGrass": "weeds",
+      "grassScale": 1.2
     },
     {
       "id": "eastblock",
       "name": "East Gardens",
       "x": 24.5,
-      "z": 0,
+      "z": 6,
       "width": 14,
-      "depth": 14,
+      "depth": 27.5,
       "completeAt": 0.97,
-      "bonus": 1200,
+      "bonus": 600,
       "ground": "#4b7431",
       "restoredGround": "#68a643",
       "separator": {
@@ -1634,20 +1541,20 @@
         "rotationY": 1.5708
       },
       "onUnlock": {
-        "pan": true
+        "pan": false
       },
       "fill": "auto",
-      "grassScale": 1.1
+      "grassScale": 1.2
     },
     {
       "id": "westblock",
       "name": "West Lawns",
       "x": -24.5,
-      "z": 0,
-      "width": 14,
-      "depth": 14,
+      "z": 6,
+      "width": 13.5,
+      "depth": 28,
       "completeAt": 0.97,
-      "bonus": 2500,
+      "bonus": 1200,
       "ground": "#4a722f",
       "restoredGround": "#66a442",
       "separator": {
@@ -1657,20 +1564,20 @@
         "rotationY": 1.5708
       },
       "onUnlock": {
-        "pan": true
+        "pan": false
       },
       "fill": "auto",
-      "grassScale": 1.2
+      "grassScale": 1.8
     },
     {
       "id": "field",
-      "name": "Sports Field",
-      "x": 29.25,
-      "z": -27.75,
-      "width": 20,
-      "depth": 24,
+      "name": "North Fields",
+      "x": 29.5,
+      "z": -24.5,
+      "width": 18,
+      "depth": 18,
       "completeAt": 0.97,
-      "bonus": 6000,
+      "bonus": 3000,
       "ground": "#486f2d",
       "restoredGround": "#64a240",
       "separator": {
@@ -1680,11 +1587,475 @@
         "rotationY": 0
       },
       "onUnlock": {
-        "pan": true
+        "pan": false
       },
       "fill": "auto",
-      "grassScale": 1.35,
+      "grassScale": 1.6,
       "maxGrass": "weeds"
     }
-  ]
+  ],
+  "sounds": [
+    {
+      "id": "sea-north",
+      "sound": "ocean-ambient",
+      "x": 0,
+      "z": -49,
+      "width": 104,
+      "depth": 10,
+      "fade": 10,
+      "volume": 0.15
+    },
+    {
+      "id": "sea-south",
+      "sound": "ocean-ambient",
+      "x": 0,
+      "z": 38,
+      "width": 104,
+      "depth": 10,
+      "fade": 10,
+      "volume": 0.15
+    },
+    {
+      "id": "sea-west",
+      "sound": "ocean-ambient",
+      "x": -49,
+      "z": -6,
+      "width": 10,
+      "depth": 86,
+      "fade": 10,
+      "volume": 0.15
+    },
+    {
+      "id": "sea-east",
+      "sound": "ocean-ambient",
+      "x": 49,
+      "z": -6,
+      "width": 10,
+      "depth": 86,
+      "fade": 10,
+      "volume": 0.15
+    },
+    {
+      "id": "sound-5",
+      "sound": "park-ambience",
+      "x": 0.5,
+      "z": 7.25,
+      "width": 15.5,
+      "depth": 12.75,
+      "fade": 10,
+      "volume": 0.2
+    }
+  ],
+  "soundSettings": {
+    "cars": {
+      "volume": 0.35,
+      "near": 3,
+      "far": 14
+    }
+  },
+  "secrets": [
+    {
+      "id": "secret-west-trees",
+      "x": -40.25,
+      "z": 10,
+      "width": 2,
+      "depth": 2,
+      "reward": 60
+    },
+    {
+      "id": "secret-2",
+      "x": 38.5,
+      "z": -39.75,
+      "width": 2,
+      "depth": 2,
+      "reward": 50
+    },
+    {
+      "id": "secret-3",
+      "x": 11.25,
+      "z": 28,
+      "width": 2,
+      "depth": 2,
+      "reward": 50
+    }
+  ],
+  "traffic": {
+    "waypoints": [
+      {
+        "id": "w1",
+        "x": -35,
+        "z": -11.5
+      },
+      {
+        "id": "w2",
+        "x": -28,
+        "z": -11.5
+      },
+      {
+        "id": "w3",
+        "x": -21,
+        "z": -11.5
+      },
+      {
+        "id": "w4",
+        "x": -14,
+        "z": -11.5
+      },
+      {
+        "id": "w5",
+        "x": -7,
+        "z": -11.5
+      },
+      {
+        "id": "w6",
+        "x": 0,
+        "z": -11.5
+      },
+      {
+        "id": "w7",
+        "x": 7,
+        "z": -11.5
+      },
+      {
+        "id": "w8",
+        "x": 14,
+        "z": -11.5
+      },
+      {
+        "id": "w9",
+        "x": 21,
+        "z": -11.5
+      },
+      {
+        "id": "w10",
+        "x": 28,
+        "z": -11.5
+      },
+      {
+        "id": "w11",
+        "x": 35,
+        "z": -11.5
+      },
+      {
+        "id": "w12",
+        "x": -35,
+        "z": -4.5
+      },
+      {
+        "id": "w13",
+        "x": -14,
+        "z": -4.5
+      },
+      {
+        "id": "w14",
+        "x": 14,
+        "z": -4.5
+      },
+      {
+        "id": "w15",
+        "x": 35,
+        "z": -4.5
+      },
+      {
+        "id": "w16",
+        "x": -35,
+        "z": 2.5
+      },
+      {
+        "id": "w17",
+        "x": -14,
+        "z": 2.5
+      },
+      {
+        "id": "w18",
+        "x": 14,
+        "z": 2.5
+      },
+      {
+        "id": "w19",
+        "x": 35,
+        "z": 2.5
+      },
+      {
+        "id": "w20",
+        "x": -35,
+        "z": 9.5
+      },
+      {
+        "id": "w21",
+        "x": -14,
+        "z": 9.5
+      },
+      {
+        "id": "w22",
+        "x": 14,
+        "z": 9.5
+      },
+      {
+        "id": "w23",
+        "x": 35,
+        "z": 9.5
+      },
+      {
+        "id": "w24",
+        "x": -35,
+        "z": 16.5
+      },
+      {
+        "id": "w25",
+        "x": -14,
+        "z": 16.5
+      },
+      {
+        "id": "w26",
+        "x": 14,
+        "z": 16.5
+      },
+      {
+        "id": "w27",
+        "x": 35,
+        "z": 16.5
+      },
+      {
+        "id": "w28",
+        "x": -35,
+        "z": 23.5
+      },
+      {
+        "id": "w29",
+        "x": -28,
+        "z": 23.5
+      },
+      {
+        "id": "w30",
+        "x": -21,
+        "z": 23.5
+      },
+      {
+        "id": "w31",
+        "x": -14,
+        "z": 23.5
+      },
+      {
+        "id": "w32",
+        "x": -7,
+        "z": 23.5
+      },
+      {
+        "id": "w33",
+        "x": 0,
+        "z": 23.5
+      },
+      {
+        "id": "w34",
+        "x": 7,
+        "z": 23.5
+      },
+      {
+        "id": "w35",
+        "x": 14,
+        "z": 23.5
+      },
+      {
+        "id": "w36",
+        "x": 21,
+        "z": 23.5
+      },
+      {
+        "id": "w37",
+        "x": 28,
+        "z": 23.5
+      },
+      {
+        "id": "w38",
+        "x": 35,
+        "z": 23.5
+      }
+    ],
+    "links": [
+      [
+        "w1",
+        "w2"
+      ],
+      [
+        "w1",
+        "w12"
+      ],
+      [
+        "w2",
+        "w3"
+      ],
+      [
+        "w3",
+        "w4"
+      ],
+      [
+        "w4",
+        "w5"
+      ],
+      [
+        "w4",
+        "w13"
+      ],
+      [
+        "w5",
+        "w6"
+      ],
+      [
+        "w6",
+        "w7"
+      ],
+      [
+        "w7",
+        "w8"
+      ],
+      [
+        "w8",
+        "w9"
+      ],
+      [
+        "w8",
+        "w14"
+      ],
+      [
+        "w9",
+        "w10"
+      ],
+      [
+        "w10",
+        "w11"
+      ],
+      [
+        "w11",
+        "w15"
+      ],
+      [
+        "w12",
+        "w16"
+      ],
+      [
+        "w13",
+        "w17"
+      ],
+      [
+        "w14",
+        "w18"
+      ],
+      [
+        "w15",
+        "w19"
+      ],
+      [
+        "w16",
+        "w20"
+      ],
+      [
+        "w17",
+        "w21"
+      ],
+      [
+        "w18",
+        "w22"
+      ],
+      [
+        "w19",
+        "w23"
+      ],
+      [
+        "w20",
+        "w24"
+      ],
+      [
+        "w21",
+        "w25"
+      ],
+      [
+        "w22",
+        "w26"
+      ],
+      [
+        "w23",
+        "w27"
+      ],
+      [
+        "w24",
+        "w28"
+      ],
+      [
+        "w25",
+        "w31"
+      ],
+      [
+        "w26",
+        "w35"
+      ],
+      [
+        "w27",
+        "w38"
+      ],
+      [
+        "w28",
+        "w29"
+      ],
+      [
+        "w29",
+        "w30"
+      ],
+      [
+        "w30",
+        "w31"
+      ],
+      [
+        "w31",
+        "w32"
+      ],
+      [
+        "w32",
+        "w33"
+      ],
+      [
+        "w33",
+        "w34"
+      ],
+      [
+        "w34",
+        "w35"
+      ],
+      [
+        "w35",
+        "w36"
+      ],
+      [
+        "w36",
+        "w37"
+      ],
+      [
+        "w37",
+        "w38"
+      ]
+    ],
+    "cars": [
+      {
+        "at": "w4",
+        "model": "town/library/city2-car-12/city2-car-12.glb"
+      },
+      {
+        "at": "w11",
+        "model": "town/library/city2-car-42/city2-car-42.glb"
+      },
+      {
+        "at": "w18",
+        "model": "town/library/city2-car-16/city2-car-16.glb"
+      },
+      {
+        "at": "w25",
+        "model": "town/library/city2-car-26/city2-car-26.glb"
+      },
+      {
+        "at": "w32",
+        "model": "town/library/city2-car-39/city2-car-39.glb"
+      }
+    ]
+  },
+  "colliders": []
 }

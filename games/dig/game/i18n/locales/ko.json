@@ -1,4 +1,8 @@
 {
+    "tractorOfferTitle": "트랙터 부스트",
+    "tractorOfferBody": "영상을 보면 {seconds}초 동안 강력한 채굴과 즉시 환금을 이용할 수 있어요. 이후 원래 도구로 돌아옵니다. 광산당 한 번!",
+    "tractorWatch": "영상 보기",
+    "tractorAdFailed": "영상을 완료하지 못했어요. 멀리 갔다 돌아와 다시 시도하세요.",
     "titleUpgrades": "업그레이드",
     "titleCollection": "컬렉션",
     "titleWardrobe": "옷장",
@@ -67,6 +71,7 @@
     "tabHats": "모자",
     "wearing": "착용 중",
     "owned": "보유",
+    "free": "무료",
     "collectionLock": "컬렉션",
     "completeCollection": "컬렉션을 완성해!",
     "lookBought": "{name} 구매 완료!",

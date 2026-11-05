@@ -168,7 +168,10 @@ export default class HtmlLoader {
         this.root.style.setProperty('--loader-bar-shadow', bar.shadow ?? 'none');
         this.root.style.setProperty('--loader-bar-margin-top', bar.marginTop ?? '0');
         this.root.style.setProperty('--loader-accent', config.accentColor ?? '#ffffff');
-        this.root.style.setProperty('--loader-accent-shadow', config.accentShadow ?? 'none');
+        this.root.style.setProperty(
+            '--loader-accent-filter',
+            config.accentShadow ? `drop-shadow(${config.accentShadow})` : 'none',
+        );
 
         if (config.pattern?.image) {
             const pattern = document.createElement('div');

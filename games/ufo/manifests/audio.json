@@ -1,0 +1,41 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "applause.mp3"
+          ],
+          "src": [
+            "applause.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ocean-ambient.mp3"
+          ],
+          "src": [
+            "ocean-ambient.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "park-ambience.mp3"
+          ],
+          "src": [
+            "park-ambience.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Somnia-Variation-3-relax-and-sleep-Reed-Mathis.mp3"
+          ],
+          "src": [
+            "Somnia-Variation-3-relax-and-sleep-Reed-Mathis.mp3"
+          ]
+        }
+      ]
+    }
+  ]
+}
