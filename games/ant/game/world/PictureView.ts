@@ -11,17 +11,17 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import type { LevelData } from '../data/Levels';
 import { LAYOUT } from './Layout';
 
-/** A block's footprint, height and corner rounding (shares of the cell). */
-const BLOCK = 0.9;
+/** A block's footprint (the whole cell: blocks touch, their rounded edges show the grid), height and rounding (shares of the cell). */
+const BLOCK = 1;
 const BLOCK_HEIGHT = 0.78;
-const ROUNDING = 0.24;
+const ROUNDING = 0.2;
 /** A pulled pixel squashes and stretches for POP_SEC (the ant's pick-up), then goes; its neighbours wobble for WOBBLE_SEC. */
 const POP_SEC = 0.12;
 const WOBBLE_SEC = 0.45;
 /** The board's top: where the picture's blocks (and the ants on the rim) stand. */
 export const TRAY_TOP = 0.3;
 /** The board (cream) and its wooden border (and how much wider it is). */
-const BOARD = 0xfff8ee;
+const BOARD = 0xf3dcc3;
 const BORDER = 0xe9c49c;
 const BORDER_WIDTH = 0.85;
 
@@ -46,14 +46,16 @@ export class PictureView {
         const rim = LAYOUT.rim;
         const board = new THREE.Mesh(
             new RoundedBoxGeometry(this.width + rim * 2, 0.2, this.depth + rim * 2, 4, 0.5),
-            new THREE.MeshStandardMaterial({ color: BOARD, roughness: 0.9 }),
+            // A light tan from the border's family (not white: easy on the eyes), lit a touch so it stays light.
+            new THREE.MeshStandardMaterial({ color: BOARD, emissive: BOARD, emissiveIntensity: 0.12, roughness: 0.9 }),
         );
         board.position.set(this.width / 2, -0.1, this.depth / 2);
         const border = new THREE.Mesh(
             new RoundedBoxGeometry(this.width + (rim + BORDER_WIDTH) * 2, TRAY_TOP + 0.3, this.depth + (rim + BORDER_WIDTH) * 2, 4, 1.1),
             new THREE.MeshStandardMaterial({ color: BORDER, roughness: 0.85 }),
         );
-        border.position.set(this.width / 2, -(TRAY_TOP + 0.3) / 2 + 0.14, this.depth / 2);
+        // Its top just under the board's, so the cream board shows and the wood frames it.
+        border.position.set(this.width / 2, -(TRAY_TOP + 0.3) / 2 - 0.03, this.depth / 2);
         this.group.add(border, board);
 
         const geometry = new RoundedBoxGeometry(cell * BLOCK, cell * BLOCK_HEIGHT, cell * BLOCK, 3, cell * ROUNDING);
@@ -63,6 +65,13 @@ export class PictureView {
         const color = new THREE.Color();
         for (let i = 0; i < pixels.length; i++) {
             const at = this.cellCenter(i);
+            // An empty cell (a transparent part of the picture) has no block.
+            if (pixels[i] < 0) {
+                this.gone.add(i);
+                this.matrix.makeScale(0, 0, 0);
+                this.blocks.setMatrixAt(i, this.matrix);
+                continue;
+            }
             this.matrix.makeTranslation(at.x, cell * BLOCK_HEIGHT / 2, at.z);
             this.blocks.setMatrixAt(i, this.matrix);
             this.blocks.setColorAt(i, color.set(level.palette[pixels[i]] ?? '#ffffff'));
@@ -100,9 +109,13 @@ export class PictureView {
         return this.cell * BLOCK_HEIGHT;
     }
 
-    /** A pixel is pulled out: it squashes and stretches, then goes; the blocks around it wobble. */
+    /** A pixel is lifted out (the ant carries the block from here: AntSwarm): it leaves the picture at once, and the
+     *  blocks around it wobble. */
     public pop(i: number): void {
-        this.popping.set(i, 0);
+        this.gone.add(i);
+        this.wobbling.delete(i);
+        this.place(i, 0, 0);
+        this.blocks.instanceMatrix.needsUpdate = true;
         const x = i % this.level.width;
         for (const n of [x > 0 ? i - 1 : -1, x < this.level.width - 1 ? i + 1 : -1, i - this.level.width, i + this.level.width]) {
             if (n >= 0 && n < this.level.width * this.level.height && !this.popping.has(n) && !this.gone.has(n)) this.wobbling.set(n, 0);

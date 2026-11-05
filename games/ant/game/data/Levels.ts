@@ -12,7 +12,7 @@ export interface LevelData {
     height: number;
     /** Hex colours, most used first. */
     palette: string[];
-    /** One string per row, top first; each character a palette index. */
+    /** One string per row, top first; each character a palette index, or '.' for an empty cell (transparent). */
     rows: string[];
 }
 
@@ -24,7 +24,7 @@ export const LEVELS: LevelData[] = (index as { levels: string[] }).levels
     .map((id) => files[`../../levels/${id}.json`]?.default)
     .filter((level): level is LevelData => !!level);
 
-/** A level's pixels as palette indices, row by row from the top (index = x + y * width). */
+/** A level's pixels as palette indices, row by row from the top (index = x + y * width); -1 for an empty cell. */
 export function pixelsOf(level: LevelData): Int8Array {
     const pixels = new Int8Array(level.width * level.height);
     level.rows.forEach((row, y) => {

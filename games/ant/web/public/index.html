@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ant — level editor</title>
+<style>
+  :root { --bg: #f6e7d8; --panel: #fffaf4; --ink: #4a3424; --muted: #9a7f6a; --line: #ead7c3; --accent: #e8925a; --green: #5cb85c; --red: #e05d5d; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.4 -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); }
+  header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 18px; margin: 0; flex: 1; }
+  a.play { color: var(--accent); font-weight: 600; text-decoration: none; }
+  main { display: grid; grid-template-columns: 340px 1fr; gap: 16px; padding: 16px 20px; align-items: start; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 10px; }
+  #list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  #list li { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 10px; border: 2px solid transparent; background: #fff; cursor: pointer; }
+  #list li.selected { border-color: var(--accent); }
+  #list li.dragging { opacity: .4; }
+  #list li.over { border-style: dashed; border-color: var(--muted); }
+  #list img { width: 56px; height: 56px; object-fit: contain; background: #282828; border-radius: 6px; image-rendering: pixelated; }
+  #list .num { font-weight: 800; color: var(--muted); width: 22px; text-align: right; }
+  #list .grip { color: var(--muted); cursor: grab; padding: 0 4px; }
+  #list .meta { flex: 1; }
+  #list .meta b { display: block; }
+  #list .meta small { color: var(--muted); }
+  button { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer; background: #efe0d0; color: var(--ink); }
+  button.primary { background: var(--accent); color: #fff; }
+  button.danger { background: transparent; color: var(--red); }
+  button:disabled { opacity: .5; cursor: default; }
+  .add { margin-top: 12px; width: 100%; }
+  .images { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .images figure { margin: 0; }
+  .images figcaption { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+  .images img { width: 100%; height: 300px; object-fit: contain; background: repeating-conic-gradient(#eee 0 25%, #fff 0 50%) 0 0/16px 16px; border-radius: 8px; border: 1px solid var(--line); image-rendering: pixelated; }
+  #preview { background: #282828; }
+  .settings { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 14px; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+  input, select { font: inherit; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); }
+  .wide { grid-column: span 2; }
+  .swatches { display: flex; gap: 3px; flex-wrap: wrap; min-height: 18px; }
+  .swatches span { width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(0,0,0,.15); }
+  .stats { display: flex; gap: 18px; margin-top: 12px; color: var(--muted); align-items: center; flex-wrap: wrap; }
+  .stats b { color: var(--ink); }
+  .actions { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+  .actions .spacer { flex: 1; }
+  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 10px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .row { display: flex; gap: 8px; align-items: end; }
+  .row label { flex: 1; }
+  .lock { padding: 7px 9px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🐜 Ant — levels</h1>
+  <a class="play" href="http://localhost:9001/" target="_blank">▶ Play the game</a>
+</header>
+<main>
+  <section class="card">
+    <h2>Play order</h2>
+    <ul id="list"></ul>
+    <p class="hint">Drag to reorder. The order is saved at once.</p>
+    <button class="add primary" id="add">＋ Add a picture…</button>
+    <input type="file" id="file" accept=".png,.jpg,.jpeg,.webp,.svg" hidden>
+  </section>
+  <section class="card" id="editor" hidden>
+    <h2 id="title">Level</h2>
+    <div class="images">
+      <figure><figcaption>Source picture</figcaption><img id="source" alt=""></figure>
+      <figure><figcaption>In the game (live)</figcaption><img id="preview" alt=""></figure>
+    </div>
+    <div class="settings">
+      <label class="wide">Name <input id="name"></label>
+      <label>Colours (max) <input id="colors" type="number" min="2" max="16"></label>
+      <label>Background
+        <select id="background">
+          <option value="auto">Auto (remove if solid)</option>
+          <option value="remove">Remove</option>
+          <option value="keep">Keep</option>
+        </select>
+      </label>
+      <div class="row wide">
+        <label>Width (pixels) <input id="width" type="number" min="4" max="64"></label>
+        <button class="lock" id="lock" title="Keep the picture's proportions">🔗</button>
+        <label>Height (pixels) <input id="height" type="number" min="4" max="64"></label>
+      </div>
+      <label class="wide">Palette (colours are snapped to it)
+        <select id="palette"></select>
+        <div class="swatches" id="swatches"></div>
+      </label>
+    </div>
+    <div class="stats">
+      <span>Pixels: <b id="pixels">–</b></span>
+      <span>Colours: <b id="used">–</b></span>
+      <span class="swatches" id="usedSwatches"></span>
+    </div>
+    <p class="hint">Fewer pixels and colours = calmer levels. A first level works well at about 18 × 18 with 4 colours.</p>
+    <div class="actions">
+      <button class="primary" id="save">Save</button>
+      <span id="dirty" class="hint"></span>
+      <span class="spacer"></span>
+      <button class="danger" id="delete">Delete level</button>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+const $ = (id) => document.getElementById(id);
+let levels = [];
+let palettes = {};
+let selected = null;
+let aspect = 1;
+let locked = true;
+let previewTimer = 0;
+let previewSeq = 0;
+
+async function api(path, body) {
+  const res = await fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {});
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+function toast(text) {
+  const t = $('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+async function load(keep) {
+  const data = await api('/api/levels');
+  levels = data.levels;
+  palettes = data.palettes;
+  $('palette').replaceChildren(...Object.keys(palettes).map((name) => new Option(name === 'none' ? 'None (the picture\'s own)' : name[0].toUpperCase() + name.slice(1), name)));
+  renderList();
+  const id = keep ?? selected?.id ?? levels[0]?.id;
+  if (id) select(id);
+}
+
+function renderList() {
+  const list = $('list');
+  list.replaceChildren(...levels.map((level, i) => {
+    const li = document.createElement('li');
+    li.draggable = true;
+    li.dataset.id = level.id;
+    li.className = selected?.id === level.id ? 'selected' : '';
+    li.innerHTML = `<span class="grip">⋮⋮</span><span class="num">${i + 1}</span><img src="/previews/${level.id}.png?${Date.now()}"><span class="meta"><b></b><small>${level.width} × ${level.height} · ${level.pixels} px · ${level.palette.length} colours</small></span>`;
+    li.querySelector('b').textContent = level.name;
+    li.onclick = () => select(level.id);
+    li.ondragstart = () => li.classList.add('dragging');
+    li.ondragend = () => li.classList.remove('dragging');
+    li.ondragover = (e) => { e.preventDefault(); li.classList.add('over'); };
+    li.ondragleave = () => li.classList.remove('over');
+    li.ondrop = (e) => {
+      e.preventDefault();
+      li.classList.remove('over');
+      const from = levels.findIndex((l) => l.id === list.querySelector('.dragging')?.dataset.id);
+      const to = levels.findIndex((l) => l.id === level.id);
+      if (from < 0 || from === to) return;
+      const [moved] = levels.splice(from, 1);
+      levels.splice(to, 0, moved);
+      renderList();
+      api('/api/order', { levels: levels.map((l) => l.id) }).then(() => toast('Order saved'), (err) => toast(err.message));
+    };
+    return li;
+  }));
+}
+
+function select(id) {
+  selected = levels.find((l) => l.id === id);
+  if (!selected) return;
+  renderList();
+  $('editor').hidden = false;
+  $('title').textContent = `Level ${levels.indexOf(selected) + 1} — ${selected.id}`;
+  $('source').src = selected.source ? `/sources/${encodeURIComponent(selected.source)}` : '';
+  $('preview').src = `/previews/${selected.id}.png?${Date.now()}`;
+  const s = selected.settings;
+  $('name').value = s.name;
+  $('width').value = s.width;
+  $('height').value = s.height;
+  $('colors').value = s.colors;
+  $('palette').value = palettes[s.palette] ? s.palette : 'none';
+  $('background').value = ['auto', 'remove', 'keep'].includes(s.background) ? s.background : 'auto';
+  aspect = s.height / s.width;
+  showStats(selected.pixels, selected.palette);
+  showSwatches();
+  $('dirty').textContent = '';
+}
+
+function settings() {
+  return {
+    name: $('name').value.trim() || selected.id,
+    width: Number($('width').value),
+    height: Number($('height').value),
+    colors: Number($('colors').value),
+    palette: $('palette').value,
+    background: $('background').value,
+  };
+}
+
+function showSwatches() {
+  $('swatches').replaceChildren(...(palettes[$('palette').value] || []).map((c) => Object.assign(document.createElement('span'), { style: `background:${c}` })));
+}
+
+function showStats(pixels, palette) {
+  $('pixels').textContent = pixels;
+  $('used').textContent = palette.length;
+  $('usedSwatches').replaceChildren(...palette.map((c) => Object.assign(document.createElement('span'), { style: `background:${c}` })));
+}
+
+/** Re-pixelates with the current settings (not saved), a moment after the last change. */
+function changed() {
+  $('dirty').textContent = 'Not saved';
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(async () => {
+    const seq = ++previewSeq;
+    try {
+      const result = await api('/api/preview', { id: selected.id, settings: settings() });
+      if (seq !== previewSeq) return;
+      $('preview').src = result.png;
+      showStats(result.pixels, result.palette);
+    } catch (err) { toast(err.message); }
+  }, 250);
+}
+
+$('width').oninput = () => { if (locked) $('height').value = Math.max(4, Math.round(Number($('width').value) * aspect)); changed(); };
+$('height').oninput = () => { if (locked) $('width').value = Math.max(4, Math.round(Number($('height').value) / aspect)); changed(); };
+$('lock').onclick = () => { locked = !locked; $('lock').textContent = locked ? '🔗' : '⛓️‍💥'; aspect = Number($('height').value) / Number($('width').value); };
+for (const id of ['name', 'colors', 'background']) $(id).oninput = changed;
+$('palette').onchange = () => { showSwatches(); changed(); };
+
+$('save').onclick = async () => {
+  try {
+    await api('/api/save', { id: selected.id, settings: settings() });
+    toast('Saved — reload the game to play it');
+    await load(selected.id);
+  } catch (err) { toast(err.message); }
+};
+
+$('delete').onclick = async () => {
+  if (!confirm(`Remove "${selected.name}" from the game? (Its picture moves to raw-assets/pictures/removed.)`)) return;
+  try {
+    await api('/api/delete', { id: selected.id });
+    selected = null;
+    $('editor').hidden = true;
+    await load();
+    toast('Removed');
+  } catch (err) { toast(err.message); }
+};
+
+$('add').onclick = () => $('file').click();
+$('file').onchange = async () => {
+  const file = $('file').files[0];
+  $('file').value = '';
+  if (!file) return;
+  const suggested = file.name.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const id = prompt('Level id (lower-case, no spaces):', suggested);
+  if (!id) return;
+  const data = await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1]);
+    reader.readAsDataURL(file);
+  });
+  try {
+    await api('/api/upload', { id, filename: file.name, data });
+    toast('Added at the end — tune it, then Save');
+    await load(id);
+  } catch (err) { toast(err.message); }
+};
+
+load();
+</script>
+</body>
+</html>

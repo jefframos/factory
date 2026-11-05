@@ -21,12 +21,18 @@ Set `GAME=ant` in `.env`, then from the repo root:
 |---|---|
 | `npm run dev` | Dev server on `:9001`. |
 | `npm run build` | Production build. |
+| `npm run editor` | The **level editor** on `:4720` (see below). |
 | `npm run ant:pixelate` | Turns every picture in `raw-assets/pictures` into a level (see below). `npm run ant:pixelate -- mushroom` does one. |
+
+On the dev server (or with `?dev=1`) the **Ant** debug panel has: a level dropdown, ant speed and the time between
+ants (live), RESTART / WIN LEVEL / NEXT, and pixels left, ants out, each slot's count. The feel's defaults are in
+`game/data/Tuning.ts` (slow and steady: cozy).
 
 ---
 
 ## How it plays
 
+- **Empty cells** (a transparent part of the picture) have no block and count as open ground from the start.
 - **Exposed**: a block on the picture's outline (any side: the ants walk round the tray's rim), or next to (left,
   right, above, below) a block already taken. The picture is eaten from its outline inwards.
 - **Ants walk in straight lines**, turning at right angles: up from their slot to the rim, along the rim (round its
@@ -50,28 +56,49 @@ Progress (the level reached) is saved in `localStorage` (`ant.save`).
 
 ---
 
+## The level editor — `npm run editor`
+
+With `GAME=ant` in `.env`, `npm run editor` opens a local page (`web/server.mjs` + `web/public/index.html`):
+
+- **Play order**: every level as a card (its picture in the game, size, pixels, colours); drag to reorder (saved at
+  once to `levels/index.json`).
+- **Add a picture…**: a `.png` / `.jpg` / `.webp` / `.svg` from disk becomes a new level at the end (cozy palette,
+  background removed when it's solid), ready to tune.
+- **Tuning a level**: the source picture next to a **live** preview of the pixels. Name; width × height (proportions
+  locked or not); the most colours; the **palette** its colours snap to (none / cozy / candy / garden / sea / night —
+  a few friendly colours, never too many); the **background** (auto: removed when the picture has no transparency of
+  its own; remove; keep). Pixels and colours used are counted as you go. **Save** writes the level, its preview and
+  its settings; **Delete** takes it out of the game (its picture moves to `raw-assets/pictures/removed`).
+
+Calm levels are small with few colours: a first level works well at about 18 × 18 with 4 colours and no background.
+
 ## Making levels — `tools/pixelate.mjs`
 
 Drop a picture (`.png`, `.jpg`, `.webp` or `.svg`) into `raw-assets/pictures/` and run `npm run ant:pixelate`:
 
-1. The picture is sampled 8×8 times per cell of a small grid (transparent parts become the `background` colour).
-2. Its colours are reduced to a handful with k-means (deterministic: the same picture always makes the same level).
+1. The picture is sampled 8×8 times per cell of a small grid. Transparent parts are **empty** (no block, a `.` in the
+   level's rows); a solid background can be removed (the colour round the border, flood-filled in from the edges).
+2. Its colours are reduced to a handful with k-means (deterministic: the same picture always makes the same level),
+   then snapped to the chosen palette, if any.
 3. Each cell takes the colour most of its samples are nearest to: crisp edges, no blended in-between colours.
+
+The work is in `tools/pixelate-lib.mjs`, shared by the command line and the editor.
 
 Out come `levels/<name>.json` (size, palette ordered by use, one string per row of colour indices) and a big preview,
 `levels/previews/<name>.png`, to check by eye. New pictures are added at the end of `levels/index.json`, the play
 order; reorder that list by hand.
 
-Per-picture settings, in `raw-assets/pictures/pictures.json` (defaults: 24 × 24, 6 colours, the file name, white):
+Per-picture settings, in `raw-assets/pictures/pictures.json` (the editor writes them):
 
 ```json
-{ "mushroom": { "name": "Mushroom", "width": 24, "height": 24, "colors": 6, "background": "#ffffff" } }
+{ "mushroom": { "name": "Mushroom", "width": 22, "height": 22, "colors": 5, "palette": "cozy", "background": "auto" } }
 ```
 
 Bigger grids keep more detail (a strawberry's seeds need more than 22 × 22). Pictures with flat colours and clear
 shapes pixelate best; few colours (4–8) suit the game.
 
-The three starting pictures (`strawberry`, `mushroom`, `sunset`) are simple SVGs drawn for the game.
+The starting pictures (`strawberry`, `mushroom`, `teacup`, `sunset`) are simple pastel SVGs drawn for the game; the
+first three have transparent backgrounds (just the subject), the sunset keeps its sky.
 
 ---
 

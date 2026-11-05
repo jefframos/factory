@@ -9,13 +9,13 @@
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { TUNING } from '../data/Tuning';
 
 const MAX_ANTS = 400;
-/** Walking speed (world units a second) and how fast an ant turns to face its way. */
-const SPEED = 12;
+/** How fast an ant turns to face its way (its walking speed: TUNING.antSpeed). */
 const TURN = 14;
 /** How long picking a block up takes. */
-const PICK_SEC = 0.12;
+const PICK_SEC = 0.28;
 
 export interface Ant {
     /** Whose ant it is (the slot index) and the pixel it's after. */
@@ -66,11 +66,12 @@ export class AntSwarm {
     private readonly lift = new THREE.Vector3();
 
     /**
-     * `size`: an ant's scale (about two of the picture's pixels long); `carried`: the size of the block on its back (a
-     * pixel's); `groundAt(x, z)`: the height it walks at there;
+     * `size`: an ant's scale; `carried`: the size of the block on its back; `pixel`: a picture block's size (a lifted
+     * block starts at it and shrinks to `carried` as it rises onto the ant's back); `groundAt(x, z)`: the height it
+     * walks at there;
      * `onPickUp(ant)` as it lifts its pixel, returning its way home (ending in the anthill); `onHome(ant)` as it drops in.
      */
-    public constructor(scene: THREE.Scene, private readonly size: number, private readonly carried: number,
+    public constructor(scene: THREE.Scene, private readonly size: number, private readonly carried: number, private readonly pixel: number,
         private readonly groundAt: (x: number, z: number) => number,
         private readonly onPickUp: (ant: Ant) => THREE.Vector3[], private readonly onHome: (ant: Ant) => void) {
         this.bodies = new THREE.InstancedMesh(antGeometry(), new THREE.MeshStandardMaterial({ roughness: 0.4 }), MAX_ANTS);
@@ -116,7 +117,7 @@ export class AntSwarm {
             const dx = target.x - ant.position.x;
             const dz = target.z - ant.position.z;
             const distance = Math.hypot(dx, dz);
-            const stride = SPEED * delta;
+            const stride = TUNING.antSpeed * delta;
             if (distance <= stride) {
                 ant.position.set(target.x, ant.position.y, target.z);
                 ant.path.shift();
@@ -153,10 +154,15 @@ export class AntSwarm {
             this.matrix.compose(ant.position, this.quaternion, this.scale);
             this.bodies.setMatrixAt(i, this.matrix);
             this.bodies.setColorAt(i, ant.color);
-            // Carried once it's lifted (the picture's block pops out meanwhile).
-            if (ant.phase === 'home') {
-                this.lift.copy(ant.position).setY(ant.position.y + this.size * 0.48 + this.carried * 0.3);
-                this.matrix.compose(this.lift, this.quaternion, this.scale.setScalar(this.carried));
+            // The block it took: while picking up it rises from where it stood onto the ant's back, easing from a full
+            // block's size down to the carried one; then it rides there home.
+            if (ant.phase !== 'out') {
+                const t = ant.phase === 'pick' ? 1 - Math.max(0, ant.wait) / PICK_SEC : 1;
+                const ease = t * t * (3 - 2 * t);
+                const back = ant.position.y + this.size * 0.48 + this.carried * 0.3;
+                const stood = ant.position.y - this.pixel * 0.35;
+                this.lift.copy(ant.position).setY(stood + (back - stood) * ease);
+                this.matrix.compose(this.lift, this.quaternion, this.scale.setScalar(this.pixel + (this.carried - this.pixel) * ease));
                 this.blocks.setMatrixAt(carrying, this.matrix);
                 this.blocks.setColorAt(carrying, ant.carried);
                 carrying++;

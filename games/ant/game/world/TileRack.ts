@@ -2,8 +2,8 @@
 //
 // Under the anthill: the SLOT_COUNT slots (white plates), and under them the tiles in COLUMNS columns, centred under
 // the slots. A tile is two stacked rounded cushions — its colour on top, a darker one under it — with its number (how
-// many ants) on top, big and white. Only the front row can be taken: those tiles stand on white plates. The second row
-// looks the same, waiting its turn; rows further back sit lower, their numbers faded. Taking a front tile (take())
+// many ants) on top, big and white. Only the front row can be taken: those tiles stand tall on white plates. The rows
+// behind squat lower (ROW_HEIGHT), and from the third back their numbers fade. Taking a front tile (take())
 // slides it onto a free slot's plate and its column moves up; in its slot its number counts down as its ants leave
 // (setCount()), and it goes once they're all home (release()). The deck is dealt round-robin into the columns, so the
 // front row is always the next four tiles in dealt order. Sizes and spacing follow the reference layout (Layout.ts).
@@ -18,14 +18,17 @@ export const COLUMNS = 4;
 export const SLOT_COUNT = 5;
 /** A tile's footprint, its two cushions' heights, and the plate under the front row's / a slot's tile. */
 const TILE = LAYOUT.tile;
-const BOTTOM_HEIGHT = 0.62;
-const TOP_HEIGHT = 0.62;
+const BOTTOM_HEIGHT = 1.05;
+const TOP_HEIGHT = 0.95;
 const PLATE = { size: LAYOUT.tile + 0.45, height: 0.28 };
 /** Rows shown per column; from FADE_FROM back, tiles sit FADE_DROP lower with their numbers FADE_OPACITY. */
 const VISIBLE_ROWS = 4;
 const FADE_FROM = 2;
 const FADE_DROP = 0.35;
 const FADE_OPACITY = 0.55;
+/** How tall a tile stands by row (1 = full): the front row (the ones that can be taken) stands tall — two cushions on
+ *  a plate — the rest lie flat, just their top cushion's thickness. */
+const ROW_HEIGHT = [1, 0.32, 0.32];
 const FONT = 'Arial Rounded MT Bold, Arial Black, Arial, sans-serif';
 
 export interface RackTile {
@@ -58,7 +61,8 @@ export class TileRack {
     private readonly plateGeometry = new RoundedBoxGeometry(PLATE.size, PLATE.height, PLATE.size, 3, 0.4);
     private readonly lipGeometry = new RoundedBoxGeometry(PLATE.size + 0.08, PLATE.height, PLATE.size + 0.12, 3, 0.42);
     private readonly labelGeometry = new THREE.PlaneGeometry(TILE * 0.98, TILE * 0.78);
-    private readonly white = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+    // Warm off-white plates (not pure white: easy on the eyes).
+    private readonly white = new THREE.MeshStandardMaterial({ color: 0xfbf1e6, roughness: 0.5 });
     private readonly grey = new THREE.MeshStandardMaterial({ color: 0xc9c2bb, roughness: 0.7 });
 
     public constructor(private readonly palette: string[], deck: Tile[]) {
@@ -121,11 +125,18 @@ export class TileRack {
             const z = LAYOUT.gridZ + row * LAYOUT.rowGap;
             const faded = row >= FADE_FROM;
             const y = row === 0 ? PLATE.height : faded ? -FADE_DROP : 0;
+            const tall = ROW_HEIGHT[Math.min(row, ROW_HEIGHT.length - 1)];
             tile.plate.visible = row === 0;
             (tile.label.material as THREE.MeshBasicMaterial).opacity = faded ? FADE_OPACITY : 1;
             tile.group.visible = row < VISIBLE_ROWS;
-            if (animate) gsap.to(tile.group.position, { x, y, z, duration: 0.25, ease: 'power2.out' });
-            else tile.group.position.set(x, y, z);
+            if (animate) {
+                gsap.to(tile.group.position, { x, y, z, duration: 0.25, ease: 'power2.out' });
+                // Stepping up to the front, it grows to full height with a little bounce.
+                gsap.to(tile.group.scale, { y: tall, duration: 0.35, ease: row === 0 ? 'back.out(2.5)' : 'power2.out' });
+            } else {
+                tile.group.position.set(x, y, z);
+                tile.group.scale.y = tall;
+            }
         }));
     }
 
@@ -136,7 +147,7 @@ export class TileRack {
         // under the cushions).
         const plateGroup = plate(this.plateGeometry, this.lipGeometry, this.white, this.grey);
         plateGroup.position.y = -PLATE.height;
-        const body = new THREE.Mesh(this.bottomGeometry, new THREE.MeshStandardMaterial({ color: color.clone().multiplyScalar(0.7), roughness: 0.6 }));
+        const body = new THREE.Mesh(this.bottomGeometry, new THREE.MeshStandardMaterial({ color: color.clone().multiplyScalar(0.8), roughness: 0.6 }));
         body.position.y = BOTTOM_HEIGHT / 2;
         const top = new THREE.Mesh(this.topGeometry, new THREE.MeshPhysicalMaterial({ color, roughness: 0.45, clearcoat: 0.4, clearcoatRoughness: 0.3 }));
         top.position.y = BOTTOM_HEIGHT + TOP_HEIGHT / 2 - 0.14;

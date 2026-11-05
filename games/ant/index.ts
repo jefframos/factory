@@ -7,6 +7,7 @@ import HtmlLoader from 'core/loader/HtmlLoader';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { getPlatformInstance } from 'core/platforms/PlatformFactory';
 import { SceneManager } from 'core/scene/SceneManager';
+import { DebugOverlay } from 'core/debug/DebugOverlay';
 import * as PIXI from 'pixi.js';
 
 import loaderConfig from './loader.config';
@@ -37,6 +38,8 @@ export default class AntGame extends Game {
             PlatformHandler.ENABLE_VIDEO_ADS = config?.enableAds ?? true;
             await PlatformHandler.instance.initialize(await getPlatformInstance(platformName));
             PlatformHandler.instance.platform.startLoad();
+            // The debug panels: on the dev server, or with ?dev=1 / ?debug=1.
+            DebugOverlay.instance.initialize(Boolean(import.meta.env.DEV || Game.debugParams.dev || Game.debugParams.debug), 'ant');
             this.stageContainer.addChild(this.gameContainer);
             this.sceneManager = new SceneManager(this.gameContainer);
             this.sceneManager.register<AntScene>('ant', AntScene, this);

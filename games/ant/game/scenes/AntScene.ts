@@ -10,8 +10,8 @@
 //
 // Ants walk in straight lines, turning at right angles: up from their slot to the tray's rim, along the rim (round its
 // corners) to the side nearest their pixel, then in through the cells already eaten. Home, it's the reverse: out to the
-// nearest border (straight down when the way down is clear), along the rim to its bottom, straight down to the
-// anthill's row and across into it.
+// nearest border (straight down when the way down is clear), along the rim to its bottom, straight down to just above
+// the anthill, across and in. They always go round the anthill and its lid on the way out.
 //
 // The deck is dealt from the picture itself (Board.dealDeck), so taking the tiles in the order they come always works.
 
@@ -23,6 +23,8 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { Board, dealDeck, hashString } from '../data/Board';
 import { LEVELS, LevelData, pixelsOf } from '../data/Levels';
 import { AntSave } from '../data/AntSave';
+import { TUNING } from '../data/Tuning';
+import { DebugOverlay } from 'core/debug/DebugOverlay';
 import { PictureView, TRAY_TOP } from '../world/PictureView';
 import { AntSwarm, Ant } from '../world/AntSwarm';
 import { TileRack, RackTile, SLOT_COUNT } from '../world/TileRack';
@@ -31,15 +33,15 @@ import { AntHud } from '../ui/AntHud';
 
 /** The floor's peach (also the page's: index.html). */
 const FLOOR = 0xf6c597;
-/** Seconds between two ants leaving the same slot. */
-const RELEASE_SEC = 0.09;
 /** An ant goes for one of the few exposed pixels nearest its way in (picked at random among these), so they spread out. */
 const NEAREST_CHOICES = 4;
 /** An ant is about this many of the picture's pixels long. */
-const ANT_PIXELS = 2.6;
-/** Camera: field of view and tilt from straight down. */
+const ANT_PIXELS = 1.5;
+/** Camera: field of view, tilt from straight down, and how far below the screen's middle it looks (a tilted view
+ *  squeezes the far end and stretches the near one: aiming lower keeps the board where the reference has it). */
 const FOV = 26;
-const TILT_DEG = 6;
+const TILT_DEG = 24;
+const AIM_LOWER = 2.2;
 
 /** A tile in a slot: its ants still to send, and when the next leaves. */
 interface SlotState {
@@ -82,6 +84,8 @@ export default class AntScene extends ThreeScene {
     private readonly slots: (SlotState | null)[] = Array(SLOT_COUNT).fill(null);
     private readonly palette: THREE.Color[] = [];
     private ended = false;
+    /** What the debug panel's level dropdown shows. */
+    private readonly debug = { level: 0 };
     private readonly raycaster = new THREE.Raycaster();
     private readonly pointer = new THREE.Vector2();
     /** The lane round the picture on its rim (world x / z of its sides), where ants walk. */
@@ -113,6 +117,44 @@ export default class AntScene extends ThreeScene {
         window.addEventListener('pointerdown', this.onPointerDown);
         window.addEventListener('resize', this.onWindowResize);
         this.loadLevel(Math.min(AntSave.level, LEVELS.length - 1));
+        this.buildDebug();
+    }
+
+    /**
+     * The debug panel (dev server, or ?dev=1): pick any level, win it at once, restart; ant speed and release spacing
+     * live; what's left of the picture and how many ants are out.
+     */
+    private buildDebug(): void {
+        const panel = DebugOverlay.instance.panel('Ant', { id: 'ant.debug' });
+        const choices: Record<string, number> = {};
+        LEVELS.forEach((level, i) => (choices[`${i + 1} · ${level.name} (${level.width}x${level.height})`] = i));
+        panel.select(this.debug, 'level', choices, {
+            label: 'Level', style: 'dropdown', persist: false,
+            onChange: (index) => {
+                AntSave.level = index;
+                this.loadLevel(index);
+            },
+        });
+        panel.number(TUNING, 'antSpeed', { label: 'Ant speed', min: 1, max: 20, step: 0.5 });
+        panel.number(TUNING, 'releaseSec', { label: 'Between ants (s)', min: 0.02, max: 0.6, step: 0.01 });
+        panel.buttons([
+            { label: 'RESTART', action: () => this.loadLevel(this.levelIndex) },
+            { label: 'WIN LEVEL', action: () => this.debugWin() },
+            { label: 'NEXT', action: () => this.loadLevel(this.levelIndex + 1) },
+        ]);
+        panel.monitor('Pixels left', () => `${this.board?.remaining ?? 0}`);
+        panel.monitor('Ants out', () => `${this.swarm?.count ?? 0}`);
+        panel.monitor('Slots', () => this.slots.map((s) => (s ? `${s.left}` : '-')).join(' '));
+    }
+
+    /** Debug: the picture cleared at once (the celebration plays). */
+    private debugWin(): void {
+        for (let i = 0; i < this.board.colors.length; i++) {
+            if (this.board.colors[i] < 0) continue;
+            this.board.take(i);
+            this.picture?.pop(i);
+        }
+        this.swarm?.clear();
     }
 
     /** The anthill: a dark opening in a raised earth ring, its wooden lid set beside it. */
@@ -140,6 +182,8 @@ export default class AntScene extends ThreeScene {
     /** Sets up a level (also a restart): the picture, its dealt tiles, empty slots, no ants. */
     private loadLevel(index: number): void {
         this.levelIndex = (index + LEVELS.length) % LEVELS.length;
+        this.debug.level = this.levelIndex;
+        DebugOverlay.instance.getPanel('ant.debug')?.refresh();
         this.level = LEVELS[this.levelIndex];
         this.picture?.destroy();
         this.rack?.destroy();
@@ -172,7 +216,7 @@ export default class AntScene extends ThreeScene {
 
         this.rack = new TileRack(this.level.palette, deck);
         this.threeScene.add(this.rack.group);
-        this.swarm = new AntSwarm(this.threeScene, cell * ANT_PIXELS * 0.9, cell * 0.88, (x, z) => {
+        this.swarm = new AntSwarm(this.threeScene, cell * ANT_PIXELS, cell * 0.55, cell, (x, z) => {
             if (!picture.onTray(x, z)) return 0;
             const i = picture.cellAt(x, z);
             return TRAY_TOP + (i >= 0 && this.board.colors[i] >= 0 ? picture.blockTop : 0);
@@ -186,10 +230,12 @@ export default class AntScene extends ThreeScene {
         camera.aspect = window.innerWidth / Math.max(1, window.innerHeight);
         const half = THREE.MathUtils.degToRad(camera.fov / 2);
         const { width, height, centreZ } = LAYOUT.screen;
-        const distance = Math.max(height / 2 / Math.tan(half), width / 2 / (Math.tan(half) * camera.aspect));
         const tilt = THREE.MathUtils.degToRad(TILT_DEG);
-        camera.position.set(0, Math.cos(tilt) * distance, centreZ + Math.sin(tilt) * distance);
-        camera.lookAt(0, 0, centreZ);
+        // Tilted, the board's depth looks shorter (x cos(tilt)): frame that, and the width.
+        const distance = Math.max((height * Math.cos(tilt)) / 2 / Math.tan(half), width / 2 / (Math.tan(half) * camera.aspect));
+        const aim = centreZ + AIM_LOWER;
+        camera.position.set(0, Math.cos(tilt) * distance, aim + Math.sin(tilt) * distance);
+        camera.lookAt(0, 0, aim);
         camera.updateProjectionMatrix();
     }
 
@@ -252,16 +298,36 @@ export default class AntScene extends ThreeScene {
         const color = this.palette[slot.color];
         this.swarm!.send(s, pixel, color, color, start, this.pathIn(start, pixel));
         slot.left--;
-        slot.timer = RELEASE_SEC;
+        slot.timer = TUNING.releaseSec;
         this.rack!.setCount(slot.tile, slot.left);
     }
 
-    /** Slot -> pixel: straight up to the rim, along it to the side the pixel's way in opens on, then in through the eaten cells. */
+    /**
+     * Slot -> pixel: straight up to the rim — stepping sideways round the anthill and its lid first, in the gap above the
+     * slots, when they're in the way — along the rim to the side the pixel's way in opens on, then in through the eaten
+     * cells.
+     */
     private pathIn(start: THREE.Vector3, pixel: number): THREE.Vector3[] {
         const cells = this.board.pathOut(pixel);
         const door = this.door(cells[cells.length - 1]);
-        const onRim = new THREE.Vector3(THREE.MathUtils.clamp(start.x, this.lane.left, this.lane.right), TRAY_TOP, this.lane.bottom);
-        return [onRim, ...this.alongRim(onRim, door), door, ...cells.slice().reverse().map((i) => this.picture!.cellCenter(i))];
+        const path: THREE.Vector3[] = [];
+        let x = start.x;
+        const { left, right } = this.holeBand();
+        if (x > left && x < right) {
+            // Round the anthill: across in the gap above the slots, to the nearer side of the hole-and-lid.
+            const gapZ = (LAYOUT.holeZ + LAYOUT.slotsZ) / 2 + 0.3;
+            x = x - left < right - x ? left : right;
+            path.push(new THREE.Vector3(start.x, 0, gapZ), new THREE.Vector3(x, 0, gapZ));
+        }
+        const onRim = new THREE.Vector3(THREE.MathUtils.clamp(x, this.lane.left, this.lane.right), TRAY_TOP, this.lane.bottom);
+        if (onRim.x !== x) path.push(new THREE.Vector3(x, 0, this.lane.bottom + 1.2), new THREE.Vector3(onRim.x, 0, this.lane.bottom + 1.2));
+        return [...path, onRim, ...this.alongRim(onRim, door), door, ...cells.slice().reverse().map((i) => this.picture!.cellCenter(i))];
+    }
+
+    /** The anthill and its lid, across (world x): the band ants walking up from the slots go round. */
+    private holeBand(): { left: number; right: number } {
+        const margin = 0.6;
+        return { left: -LAYOUT.holeRadius - margin, right: LAYOUT.lidX + LAYOUT.holeRadius + margin };
     }
 
     /** Pixel -> anthill: out to its nearest border, along the rim to the bottom, straight down to the anthill's row, across into it. */
@@ -272,8 +338,12 @@ export default class AntScene extends ThreeScene {
         const bottomX = door.z >= this.lane.bottom - 1e-3 ? door.x : door.x < 0 ? this.lane.left : this.lane.right;
         const down = new THREE.Vector3(bottomX, TRAY_TOP, this.lane.bottom);
         const path = [...cells.slice(1).map((i) => this.picture!.cellCenter(i)), door, ...this.alongRim(door, down), down];
+        // Down to just above the anthill's row, across, and in from above (never over the lid beside it).
         const hole = this.hole.position;
-        if (Math.abs(bottomX - hole.x) > LAYOUT.holeRadius * 0.6) path.push(new THREE.Vector3(bottomX, 0, hole.z));
+        const aboveZ = hole.z - LAYOUT.holeRadius * 0.9;
+        if (Math.abs(bottomX - hole.x) > LAYOUT.holeRadius * 0.4) {
+            path.push(new THREE.Vector3(bottomX, 0, aboveZ), new THREE.Vector3(hole.x, 0, aboveZ));
+        }
         path.push(hole.clone());
         return path;
     }
@@ -356,6 +426,7 @@ export default class AntScene extends ThreeScene {
     public destroy(): void {
         window.removeEventListener('pointerdown', this.onPointerDown);
         window.removeEventListener('resize', this.onWindowResize);
+        DebugOverlay.instance.removePanel('ant.debug');
         this.picture?.destroy();
         this.rack?.destroy();
         this.swarm?.destroy();

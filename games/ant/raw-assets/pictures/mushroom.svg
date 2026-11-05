@@ -1,10 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
-  <rect width="240" height="240" fill="#9fd8ff"/>
-  <rect y="185" width="240" height="55" fill="#58c35a"/>
-  <rect x="88" y="120" width="64" height="85" rx="18" fill="#f6e7c9"/>
-  <path d="M25 130 C25 55 215 55 215 130 Z" fill="#e23b3b"/>
-  <g fill="#ffffff">
-    <circle cx="75" cy="100" r="15"/><circle cx="125" cy="78" r="17"/><circle cx="170" cy="105" r="14"/><circle cx="110" cy="115" r="9"/>
-  </g>
-  <g fill="#3a2a2a"><rect x="102" y="150" width="9" height="16" rx="4"/><rect x="129" y="150" width="9" height="16" rx="4"/></g>
+  <ellipse cx="120" cy="214" rx="96" ry="20" fill="#a6d49f"/>
+  <rect x="86" y="118" width="68" height="94" rx="20" fill="#f6e3c9"/>
+  <path d="M22 132 C22 50 218 50 218 132 Z" fill="#f4978e"/>
+  <g fill="#fff4e4"><circle cx="72" cy="98" r="17"/><circle cx="124" cy="74" r="19"/><circle cx="172" cy="104" r="15"/><circle cx="112" cy="116" r="10"/></g>
+  <g fill="#7a5646"><rect x="102" y="150" width="10" height="18" rx="5"/><rect x="128" y="150" width="10" height="18" rx="5"/></g>
 </svg>

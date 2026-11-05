@@ -190,6 +190,7 @@ export class AntHud extends PIXI.Container {
         const g = new PIXI.Graphics();
         g.beginFill(0xd9b79a).drawRoundedRect(-width / 2 - 12, -height / 2 - 12, width + 24, height + 24, 18).endFill();
         for (let i = 0; i < pixels.length; i++) {
+            if (pixels[i] < 0) continue;
             const x = -width / 2 + (i % level.width) * cell;
             const y = -height / 2 + Math.floor(i / level.width) * cell;
             g.beginFill(new PIXI.Color(level.palette[pixels[i]]).toNumber()).drawRoundedRect(x + 0.5, y + 0.5, cell - 1, cell - 1, cell * 0.25).endFill();

@@ -28,7 +28,8 @@ export class Board {
     public constructor(public readonly width: number, public readonly height: number, pixels: Int8Array) {
         this.colors = Int8Array.from(pixels);
         this.claimed = new Uint8Array(pixels.length);
-        this.remaining = pixels.length;
+        // Empty cells (a transparent part of the picture: -1) count as taken from the start: open ground for the ants.
+        this.remaining = pixels.reduce((count, c) => count + (c >= 0 ? 1 : 0), 0);
     }
 
     public clone(): Board {
