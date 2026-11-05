@@ -1,6 +1,8 @@
 // Ant — a chill pixel-picture puzzle: tap coloured tiles into the slots, and their ants carry the picture away, pixel by
 // pixel, into the anthill. Getting the order right is the whole game (see README.md).
-// Boot: platform, then the scene (no fonts or atlas yet: the first version draws its UI itself).
+// Boot: platform, the font and the UI atlas (the Layer Lab pack's sprites, raw-assets/images/ui{tps}), then the main
+// screen (HomeScene); PLAY goes to the game (AntScene), whose pause popup's HOME comes back. Each switch builds the scene
+// afresh (the old one is torn down), as the UFO game does.
 
 import { Game } from 'core/Game';
 import HtmlLoader from 'core/loader/HtmlLoader';
@@ -13,13 +15,23 @@ import * as PIXI from 'pixi.js';
 import loaderConfig from './loader.config';
 import platformConfig from './platforms.config.json';
 import AntScene from './game/scenes/AntScene';
+import HomeScene from './game/scenes/HomeScene';
+import { AntAudio } from './game/audio/AntAudio';
+import { RadialTransition } from './game/ui/RadialTransition';
+import { AntSave } from './game/data/AntSave';
+import { LEVELS } from './game/data/Levels';
 
 type PlatformConfigEntry = { gameId?: string; enableAds?: boolean };
+
+const FONTS = ['Baloo2-ExtraBold'];
 
 export default class AntGame extends Game {
     private readonly gameContainer = new PIXI.Container();
     private sceneManager!: SceneManager;
     private readonly loaderScene: HtmlLoader;
+    private scenes = 0;
+    /** A transition is under way (a second tap doesn't start another). */
+    private travelling = false;
 
     public constructor() {
         super({ resolution: Math.min(2, devicePixelRatio), backgroundAlpha: 0 }, false);
@@ -42,14 +54,60 @@ export default class AntGame extends Game {
             DebugOverlay.instance.initialize(Boolean(import.meta.env.DEV || Game.debugParams.dev || Game.debugParams.debug), 'ant');
             this.stageContainer.addChild(this.gameContainer);
             this.sceneManager = new SceneManager(this.gameContainer);
-            this.sceneManager.register<AntScene>('ant', AntScene, this);
-            this.sceneManager.changeScene('ant');
-            this.sceneManager.resize();
+            await Promise.all(FONTS.map(async (family) => {
+                const face = new FontFace(family, `url(./${this.folderPath}/fonts/${family}.woff2) format('woff2')`);
+                document.fonts.add(await face.load());
+            }));
+            await PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`);
+            AntAudio.initialize(this.folderPath);
+            // Browsers only start audio after an input: the music begins on the first one.
+            const unlock = () => {
+                window.removeEventListener('pointerdown', unlock, true);
+                window.removeEventListener('keydown', unlock, true);
+                AntAudio.unlock();
+            };
+            window.addEventListener('pointerdown', unlock, true);
+            window.addEventListener('keydown', unlock, true);
+            // ?play=1 goes straight to the game (testing).
+            if (new URLSearchParams(window.location.search).has('play')) this.showGame();
+            else this.showHome();
             PlatformHandler.instance.platform.loadFinished();
             this.loaderScene.hide();
         } catch (error) {
             console.error('Failed to initialize:', error);
         }
+    }
+
+    /** Covers the screen (RadialTransition: where it's going), swaps the scene underneath, opens on it. */
+    private travel(title: string, subtitle: string, withPicture: boolean, swap: () => void): void {
+        if (this.travelling) return;
+        this.travelling = true;
+        const level = LEVELS[Math.max(0, Math.min(AntSave.selected, LEVELS.length - 1))];
+        void RadialTransition.go(this, title, subtitle, withPicture ? level ?? null : null, swap).then(() => {
+            this.travelling = false;
+        });
+    }
+
+    /** To the game, at the level the main screen shows (the transition shows its picture). */
+    private playLevel(): void {
+        const index = Math.max(0, Math.min(AntSave.selected, LEVELS.length - 1));
+        this.travel(`LEVEL ${index + 1}`, (LEVELS[index]?.name ?? '').toUpperCase(), true, () => this.showGame());
+    }
+
+    /** The main screen. */
+    private showHome(): void {
+        const key = `ant-${this.scenes++}`;
+        this.sceneManager.register<HomeScene>(key, HomeScene, this, () => this.playLevel());
+        this.sceneManager.changeScene(key);
+        this.sceneManager.resize();
+    }
+
+    /** The game, at the level the player is on. */
+    private showGame(): void {
+        const key = `ant-${this.scenes++}`;
+        this.sceneManager.register<AntScene>(key, AntScene, this, () => this.travel('HOME', '', false, () => this.showHome()));
+        this.sceneManager.changeScene(key);
+        this.sceneManager.resize();
     }
 
     protected override update(delta: number): void {

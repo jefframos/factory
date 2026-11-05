@@ -33,13 +33,16 @@ import { AntSwarm, Ant } from '../world/AntSwarm';
 import { TileRack, RackTile, SLOT_COUNT } from '../world/TileRack';
 import { LAYOUT } from '../world/Layout';
 import { AntHud } from '../ui/AntHud';
+import { AntAudio } from '../audio/AntAudio';
+import { RadialTransition } from '../ui/RadialTransition';
 
-/** The floor's peach (also the page's: index.html). */
-const FLOOR = 0xf6c597;
+/** The floor's peach (also the page's: index.html, and the home screen's). */
+export const FLOOR = 0xf6c597;
 /** Columns for an old level file without its own. */
 const DEFAULT_COLUMNS = 4;
-/** An ant is about this many of the picture's pixels long. */
-const ANT_PIXELS = 1.5;
+/** An ant is about this many of the picture's pixels long, and the block it carries this big (of a pixel). */
+const ANT_PIXELS = 1.05;
+const CARRIED = 0.45;
 /** Camera: field of view, tilt from straight down, and how far below the screen's middle it looks (a tilted view
  *  squeezes the far end and stretches the near one: aiming lower keeps the board where the reference has it). */
 const FOV = 26;
@@ -55,7 +58,7 @@ interface SlotState {
 }
 
 /** The floor: the reference's soft peach checker, turned 45° into diamonds. */
-function floorTexture(): THREE.CanvasTexture {
+export function floorTexture(): THREE.CanvasTexture {
     const size = 256;
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = size;
@@ -94,7 +97,13 @@ export default class AntScene extends ThreeScene {
     /** The lane round the picture on its rim (world x / z of its sides), where ants walk. */
     private readonly lane = { left: 0, right: 0, top: 0, bottom: 0 };
 
-    public constructor(game: Game) {
+    /** The pause popup is up: the game's time stands still (Game.timeScale 0) — this is what it was before. */
+    private paused = false;
+    private travelling = false;
+    private resumeScale = 1;
+
+    /** `onHome`: the pause popup's HOME. */
+    public constructor(game: Game, private readonly onHome: () => void = () => undefined) {
         super(game);
     }
 
@@ -115,11 +124,11 @@ export default class AntScene extends ThreeScene {
         this.threeScene.add(floor);
         this.buildHole();
         this.threeCamera.fov = FOV;
-        this.hud = new AntHud(() => this.loadLevel(this.levelIndex), () => this.addExtraSlot());
+        this.hud = new AntHud(() => this.openPause(), () => this.addExtraSlot());
         this.game.uiLayer.addChild(this.hud);
         window.addEventListener('pointerdown', this.onPointerDown);
         window.addEventListener('resize', this.onWindowResize);
-        this.loadLevel(Math.min(AntSave.level, LEVELS.length - 1));
+        this.loadLevel(Math.min(AntSave.selected, LEVELS.length - 1));
         this.buildDebug();
     }
 
@@ -191,6 +200,7 @@ export default class AntScene extends ThreeScene {
     /** Sets up a level (also a restart): the picture, its dealt tiles, empty slots, no ants. */
     private loadLevel(index: number): void {
         this.levelIndex = (index + LEVELS.length) % LEVELS.length;
+        AntSave.selected = this.levelIndex;
         this.debug.level = this.levelIndex;
         DebugOverlay.instance.getPanel('ant.debug')?.refresh();
         this.level = LEVELS[this.levelIndex];
@@ -227,7 +237,7 @@ export default class AntScene extends ThreeScene {
 
         this.rack = new TileRack(this.level.palette, deck, this.level.columns ?? DEFAULT_COLUMNS);
         this.threeScene.add(this.rack.group);
-        this.swarm = new AntSwarm(this.threeScene, cell * ANT_PIXELS, cell * 0.55, cell, (x, z) => {
+        this.swarm = new AntSwarm(this.threeScene, cell * ANT_PIXELS, cell * CARRIED, cell, (x, z) => {
             if (!picture.onTray(x, z)) return 0;
             const i = picture.cellAt(x, z);
             return TRAY_TOP + (i >= 0 && this.board.colors[i] >= 0 ? picture.blockTop : 0);
@@ -253,7 +263,7 @@ export default class AntScene extends ThreeScene {
     // ---------------------------------------------------------------- input
 
     private readonly onPointerDown = (event: PointerEvent): void => {
-        if (this.ended || !this.rack) return;
+        if (this.ended || this.paused || !this.rack) return;
         const rect = SetupThree.renderer.domElement.getBoundingClientRect();
         this.pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
         this.raycaster.setFromCamera(this.pointer, this.threeCamera);
@@ -263,12 +273,51 @@ export default class AntScene extends ThreeScene {
         const column = fronts.find((f) => f.body === hit.object)!.column;
         const slot = this.slots.indexOf(null);
         if (slot < 0) {
+            AntAudio.play('full');
             this.rack.shake(column);
             return;
         }
+        AntAudio.play('tile');
         const tile = this.rack.take(column, slot);
         if (tile) this.slots[slot] = { tile, color: tile.tile.color, left: tile.tile.count, timer: 0.3 };
     };
+
+    /** A level (the next, or this one again) behind the screen transition, which shows its picture. */
+    private travelTo(index: number): void {
+        if (this.travelling) return;
+        this.travelling = true;
+        const next = (index + LEVELS.length) % LEVELS.length;
+        const level = LEVELS[next];
+        void RadialTransition.go(this.game, `LEVEL ${next + 1}`, level.name.toUpperCase(), level, () => this.loadLevel(next)).then(() => {
+            this.travelling = false;
+        });
+    }
+
+    /** The pause popup: time stops; its cross plays on, RETRY starts the level again, HOME goes to the main screen. */
+    private openPause(): void {
+        if (this.ended || this.paused) return;
+        this.paused = true;
+        this.resumeScale = Game.timeScale;
+        Game.timeScale = 0;
+        this.hud.showPause({
+            resume: () => this.closePause(),
+            retry: () => {
+                this.closePause();
+                this.travelTo(this.levelIndex);
+            },
+            home: () => {
+                this.closePause();
+                this.onHome();
+            },
+        });
+    }
+
+    private closePause(): void {
+        if (!this.paused) return;
+        this.paused = false;
+        Game.timeScale = this.resumeScale;
+        this.hud.hidePause();
+    }
 
     /** The power-up: one more slot (once a level). Used on the lost card, the level plays on. */
     private addExtraSlot(): void {
@@ -421,6 +470,8 @@ export default class AntScene extends ThreeScene {
 
     /** An ant reached its pixel: the block pops out of the picture (it's carrying it now), and the way home is handed back. */
     private pickUp(ant: Ant): THREE.Vector3[] {
+        // A soft pop, a little higher as the picture empties.
+        AntAudio.play('pick', 0.9 + 0.4 * (1 - this.board.remaining / Math.max(1, this.board.colors.length)));
         this.board.take(ant.pixel);
         this.picture?.pop(ant.pixel);
         return this.pathHome(ant.pixel);
@@ -431,14 +482,14 @@ export default class AntScene extends ThreeScene {
         if (this.ended || !this.swarm) return;
         if (this.board.remaining === 0 && this.swarm.count === 0) {
             this.ended = true;
-            AntSave.level = Math.min(this.levelIndex + 1, LEVELS.length - 1);
-            this.hud.celebrate(this.level, () => this.loadLevel(this.levelIndex + 1));
+            AntSave.reach(Math.min(this.levelIndex + 1, LEVELS.length - 1));
+            this.hud.celebrate(this.level, () => this.travelTo(this.levelIndex + 1));
             return;
         }
         const stuck = this.swarm.count === 0 && this.slots.every((slot) => slot && slot.left > 0 && !this.board.claimable(slot.color).length);
         if (stuck) {
             this.ended = true;
-            this.hud.showResult(false, () => this.loadLevel(this.levelIndex));
+            this.hud.showResult(false, () => this.travelTo(this.levelIndex));
         }
     }
 
@@ -448,6 +499,7 @@ export default class AntScene extends ThreeScene {
     }
 
     public destroy(): void {
+        if (this.paused) Game.timeScale = this.resumeScale;
         window.removeEventListener('pointerdown', this.onPointerDown);
         window.removeEventListener('resize', this.onWindowResize);
         DebugOverlay.instance.removePanel('ant.debug');

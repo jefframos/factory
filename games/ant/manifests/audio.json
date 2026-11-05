@@ -1,0 +1,113 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "applause.mp3"
+          ],
+          "src": [
+            "applause.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "bubbles.wav"
+          ],
+          "src": [
+            "bubbles.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-gem-1.ogg"
+          ],
+          "src": [
+            "collect-gem-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-gem-2.ogg"
+          ],
+          "src": [
+            "collect-gem-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-gem-3.ogg"
+          ],
+          "src": [
+            "collect-gem-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-gem-4.ogg"
+          ],
+          "src": [
+            "collect-gem-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-gem-5.ogg"
+          ],
+          "src": [
+            "collect-gem-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "lose.wav"
+          ],
+          "src": [
+            "lose.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "music.mp3"
+          ],
+          "src": [
+            "music.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "tap.wav"
+          ],
+          "src": [
+            "tap.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-complete.ogg"
+          ],
+          "src": [
+            "ui-complete.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-error.ogg"
+          ],
+          "src": [
+            "ui-error.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "whoosh.wav"
+          ],
+          "src": [
+            "whoosh.mp3"
+          ]
+        }
+      ]
+    }
+  ]
+}

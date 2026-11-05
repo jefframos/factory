@@ -1,6 +1,7 @@
 // AntHud.ts
 //
-// The 2D layer over the board, laid out like the reference: restart (blue, top-left), "Level N" (top), x2 (green,
+// The 2D layer over the board, laid out like the reference: pause (blue, top-left: the pause popup, PausePopup.ts, with
+// sound, retry and home), "Level N" (top), x2 (green,
 // top-right), the item belt along the bottom (BoosterBelt: the extra slot, once a level, and the power-ups to come), the
 // celebration when a picture is done (celebrate(): turning rays, confetti, the finished picture, three stars, NEXT) and
 // the card when it's lost ("No moves left" with TRY AGAIN, and +1 SLOT to play on while the power-up is unused). Drawn with plain shapes and text for now (no atlas).
@@ -11,8 +12,14 @@ import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { LevelData, pixelsOf } from '../data/Levels';
 import { BoosterBelt } from './BoosterBelt';
+import { PausePopup } from './PausePopup';
+import { FONT, buttonParts, roundButton, tappable } from './UiParts';
+import { AntAudio } from '../audio/AntAudio';
 
-const FONT = 'Arial Rounded MT Bold, Arial Black, Arial, sans-serif';
+/** The pause button's size (design units, 720 wide) and its distance from the corner. */
+const PAUSE = { size: 64, margin: 46 };
+/** The x2 button: the pack's glossy button, green, yellow while it's on. */
+const SPEED = { width: 116, height: 58, x: 74 };
 const BROWN = 0x6b3f22;
 
 function label(text: string, size: number, fill = 0xffffff): PIXI.Text {
@@ -25,31 +32,23 @@ function label(text: string, size: number, fill = 0xffffff): PIXI.Text {
     return t;
 }
 
-/** A rounded button: a coloured pill with a darker lip and its text. */
-function button(text: string, color: number, width: number, onTap: () => void): PIXI.Container {
+/** One of the pack's glossy buttons (`frame`: Button01_l_<Colour>) with its words. */
+function button(text: string, frame: string, width: number, onTap: () => void): PIXI.Container {
     const holder = new PIXI.Container();
-    const shape = new PIXI.Graphics()
-        .beginFill(new PIXI.Color(color).multiply(0xb0b0b0).toNumber()).drawRoundedRect(-width / 2, -30, width, 66, 30).endFill()
-        .beginFill(color).drawRoundedRect(-width / 2, -34, width, 62, 30).endFill();
-    holder.addChild(shape, label(text, 30));
-    holder.eventMode = 'static';
-    holder.cursor = 'pointer';
-    holder.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
-    holder.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
-        event.stopPropagation();
-        gsap.fromTo(holder.scale, { x: 0.9, y: 0.9 }, { x: 1, y: 1, duration: 0.25, ease: 'back.out(3)' });
-        onTap();
-    });
+    holder.addChild(...buttonParts(width, 66, text, frame));
+    tappable(holder, onTap);
     return holder;
 }
 
 export class AntHud extends PIXI.Container {
     /** "Level N": the reference's plain brown title. */
     private readonly title = new PIXI.Text('', { fontFamily: FONT, fontSize: 46, fill: 0x7b4a28, fontWeight: '900', lineJoin: 'round' });
-    private readonly restart: PIXI.Container;
-    /** The 2x speed toggle (Game.timeScale), green while on. */
+    private readonly pause: PIXI.Container;
+    private pausePopup: PausePopup | null = null;
+    /** The 2x speed toggle (Game.timeScale): green, yellow while on. */
     private readonly speed = new PIXI.Container();
-    private readonly speedBack = new PIXI.Graphics();
+    private readonly speedOff = new PIXI.Container();
+    private readonly speedOn = new PIXI.Container();
     /** The item belt; its first power-up is the extra slot (one more slot, once a level). */
     private readonly belt: BoosterBelt;
     private extraUsed = false;
@@ -59,26 +58,13 @@ export class AntHud extends PIXI.Container {
     private readonly rays = new PIXI.Container();
     private readonly confetti = new PIXI.Container();
 
-    /** `onRestart` from the restart button, `onExtraSlot` from the power-up (here or on the lost card). */
-    public constructor(private readonly onRestart: () => void, private readonly onExtraSlot: () => void) {
+    /** `onPause` from the pause button, `onExtraSlot` from the power-up (on the belt or the lost card). */
+    public constructor(private readonly onPause: () => void, private readonly onExtraSlot: () => void) {
         super();
         this.title.anchor.set(0.5);
-        // A blue rounded square with a white rim, the reference's top-left button (here: restart the level).
-        this.restart = new PIXI.Container();
-        const square = new PIXI.Graphics()
-            .beginFill(0x1f3f8a).drawRoundedRect(-32, -28, 64, 64, 16).endFill()
-            .beginFill(0xffffff).drawRoundedRect(-32, -32, 64, 62, 16).endFill()
-            .beginFill(0x4a78d8).drawRoundedRect(-27, -27, 54, 52, 12).endFill();
-        const icon = label('↻', 36);
-        icon.y = -2;
-        this.restart.addChild(square, icon);
-        this.restart.eventMode = 'static';
-        this.restart.cursor = 'pointer';
-        this.restart.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
-        this.restart.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
-            event.stopPropagation();
-            this.onRestart();
-        });
+        // The pack's blue round button with the pause sign, the reference's top-left button.
+        this.pause = roundButton('Button_Round02_Blue', 'PictoIcon_Pause_1', PAUSE.size);
+        tappable(this.pause, () => this.onPause(), null);
         this.buildSpeed();
         this.belt = new BoosterBelt((id) => {
             if (id === 'slot' && !this.extraUsed) this.onExtraSlot();
@@ -88,35 +74,37 @@ export class AntHud extends PIXI.Container {
         this.dim.visible = false;
         this.card.visible = false;
         this.rays.visible = false;
-        this.addChild(this.title, this.speed, this.belt, this.restart, this.dim, this.rays, this.card, this.confetti);
+        this.addChild(this.title, this.speed, this.belt, this.pause, this.dim, this.rays, this.card, this.confetti);
         this.reposition();
     }
 
-    /** "▶▶ x2" (the reference's green pill): doubles the game's speed (every update's delta: Game.timeScale) until tapped again. */
+    /** "▶▶ x2" on the pack's glossy button (as the game's other buttons): doubles the game's speed (every update's
+     *  delta: Game.timeScale) until tapped again. */
     private buildSpeed(): void {
-        const text = label('▶▶ x2', 26);
-        text.style.stroke = 0x2f6e1f;
-        text.y = -3;
-        this.speed.addChild(this.speedBack, text);
+        const sign = (holder: PIXI.Container) => {
+            // Two small play triangles, white with a dark outline, then x2.
+            const g = new PIXI.Graphics().lineStyle(4, 0x10123a, 1, 1, false);
+            for (const x of [-40, -24]) g.beginFill(0xffffff).drawPolygon([x, -12, x + 16, -2, x, 8]).endFill();
+            const words = holder.getChildAt(1) as PIXI.Text;
+            words.x = 16;
+            holder.addChild(g);
+        };
+        this.speedOff.addChild(...buttonParts(SPEED.width, SPEED.height, 'x2', 'Button01_l_Green'));
+        this.speedOn.addChild(...buttonParts(SPEED.width, SPEED.height, 'x2', 'Button01_l_Yellow'));
+        sign(this.speedOff);
+        sign(this.speedOn);
+        this.speed.addChild(this.speedOff, this.speedOn);
         this.drawSpeed();
-        this.speed.eventMode = 'static';
-        this.speed.cursor = 'pointer';
-        this.speed.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
-        this.speed.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
-            event.stopPropagation();
+        tappable(this.speed, () => {
             Game.timeScale = Game.timeScale > 1 ? 1 : 2;
             this.drawSpeed();
-            gsap.fromTo(this.speed.scale, { x: 0.9, y: 0.9 }, { x: 1, y: 1, duration: 0.25, ease: 'back.out(3)' });
-        });
+        }, 'toggle');
     }
 
     private drawSpeed(): void {
-        // Green with a white rim like the reference; brighter (and lit) while it's on.
         const on = Game.timeScale > 1;
-        this.speedBack.clear()
-            .beginFill(0x2f7a24).drawRoundedRect(-66, -28, 132, 62, 18).endFill()
-            .beginFill(0xffffff).drawRoundedRect(-66, -32, 132, 60, 18).endFill()
-            .beginFill(on ? 0x8ff05a : 0x5cc23a).drawRoundedRect(-61, -27, 122, 50, 14).endFill();
+        this.speedOn.visible = on;
+        this.speedOff.visible = !on;
     }
 
     /** The power-up ready (a new level) or spent. */
@@ -127,6 +115,18 @@ export class AntHud extends PIXI.Container {
 
     public get extraSlotAvailable(): boolean {
         return !this.extraUsed;
+    }
+
+    /** The pause popup up (`actions` from its buttons and its close cross), or down. */
+    public showPause(actions: { resume: () => void; retry: () => void; home: () => void }): void {
+        if (this.pausePopup) return;
+        this.pausePopup = new PausePopup(actions);
+        this.addChild(this.pausePopup);
+    }
+
+    public hidePause(): void {
+        this.pausePopup?.destroy();
+        this.pausePopup = null;
     }
 
     public setLevel(number: number): void {
@@ -149,7 +149,8 @@ export class AntHud extends PIXI.Container {
         line.style.stroke = 0xffffff;
         line.style.strokeThickness = 0;
         line.y = -10;
-        const action = button(won ? 'NEXT' : 'TRY AGAIN', won ? 0x58c35a : 0xff9f0a, 260, () => {
+        if (!won) AntAudio.play('lose');
+        const action = button(won ? 'NEXT' : 'TRY AGAIN', won ? 'Button01_l_Green' : 'Button01_l_Yellow', 260, () => {
             this.hideResult();
             onButton();
         });
@@ -157,7 +158,7 @@ export class AntHud extends PIXI.Container {
         this.card.addChild(back, heading, line, action);
         if (offer) {
             // The power-up first: one more slot, and the ants carry on.
-            const more = button('＋1 SLOT', 0xff9f3a, 260, () => {
+            const more = button('+1 SLOT', 'Button01_l_Sky', 260, () => {
                 this.hideResult();
                 this.onExtraSlot();
             });
@@ -197,7 +198,9 @@ export class AntHud extends PIXI.Container {
             stars.addChild(star);
             gsap.to(star.scale, { x: 1, y: 1, duration: 0.45, delay: 0.35 + i * 0.22, ease: 'back.out(3)' });
         });
-        const next = button('NEXT', 0x58c35a, 280, () => {
+        AntAudio.play('win');
+        AntAudio.play('applause');
+        const next = button('NEXT', 'Button01_l_Green', 280, () => {
             this.hideResult();
             onNext();
         });
@@ -260,6 +263,7 @@ export class AntHud extends PIXI.Container {
 
     /** Confetti in the picture's colours (and gold), bursting up from the card and fluttering down. */
     private burstConfetti(palette: string[]): void {
+        return
         const colors = [...palette.map((hex) => new PIXI.Color(hex).toNumber()), 0xffd23f, 0xffffff];
         const screen = Game.overlayScreenData;
         const floor = screen ? screen.topLeft.y + screen.height + 40 : 1200;
@@ -272,7 +276,7 @@ export class AntHud extends PIXI.Container {
             const speed = 380 + Math.random() * 420;
             const upX = piece.x + Math.cos(angle) * speed;
             const upY = piece.y + Math.sin(angle) * speed;
-            gsap.timeline({ onComplete: () => piece.destroy() })
+            gsap.timeline({ onComplete: () => piece?.destroy() })
                 .to(piece, { x: upX, y: upY, duration: 0.55, ease: 'power2.out' })
                 .to(piece, { x: upX + (Math.random() - 0.5) * 160, y: floor, duration: 1.8 + Math.random() * 1.2, ease: 'power1.in' })
                 .to(piece, { rotation: piece.rotation + (Math.random() - 0.5) * 18, duration: 2.6, ease: 'none' }, 0);
@@ -291,10 +295,11 @@ export class AntHud extends PIXI.Container {
     public reposition(): void {
         const screen = Game.overlayScreenData;
         if (!screen) return;
-        this.title.position.set(screen.center.x, screen.topLeft.y + 52);
-        // Restart top-left, the title in the middle, x2 top-right (the reference's corners).
-        this.restart.position.set(screen.topLeft.x + 52, screen.topLeft.y + 52);
-        this.speed.position.set(screen.topLeft.x + screen.width - 86, screen.topLeft.y + 52);
+        this.title.position.set(screen.center.x, screen.topLeft.y + PAUSE.margin);
+        // Pause top-left, the title in the middle, x2 top-right (the reference's corners).
+        this.pause.position.set(screen.topLeft.x + PAUSE.margin, screen.topLeft.y + PAUSE.margin);
+        this.pausePopup?.reposition();
+        this.speed.position.set(screen.topLeft.x + screen.width - SPEED.x, screen.topLeft.y + PAUSE.margin);
         this.belt.layout(screen.topLeft.x, screen.topLeft.y + screen.height, screen.width);
         this.card.position.set(screen.center.x, screen.center.y);
         this.rays.position.set(screen.center.x, screen.center.y);
@@ -305,6 +310,8 @@ export class AntHud extends PIXI.Container {
         gsap.killTweensOf(this.card.scale);
         this.hideResult();
         gsap.killTweensOf(this.speed.scale);
+        gsap.killTweensOf(this.pause.scale);
+        this.hidePause();
         gsap.killTweensOf(this.dim);
         super.destroy({ children: true });
     }

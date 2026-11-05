@@ -1,129 +1,40 @@
 // BoosterBelt.ts
 //
-// The item belt along the bottom of the screen, like the reference: a blue checked cloth with round cream buttons on
-// it, one per power-up, each with a green count badge. A power-up unlocks at its level (BOOSTERS): before that it
-// shows a padlock and "Level N". Only the extra slot does something for now; the others are there, waiting for their
-// effect (tapping one gives a little bounce).
+// The item belt along the bottom of the screen, like the reference: a blue checked cloth with round buttons on it, one
+// per power-up, each with a green count badge — the UI pack's blue round button and white icons (UiParts). A power-up
+// unlocks at its level (BOOSTERS): before that it's a dark button with a padlock and its level. Only the extra slot does
+// something for now; the others are there, waiting for their effect (tapping one gives a little bounce).
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
+import { framePlane, iconSprite, label, roundButton } from './UiParts';
+import { AntAudio } from '../audio/AntAudio';
 
-const FONT = 'Arial Rounded MT Bold, Arial Black, Arial, sans-serif';
-const BROWN = 0x6b3f22;
+export type BoosterId = 'slot' | 'shuffle' | 'hammer' | 'bomb';
 
-export type BoosterId = 'slot' | 'shuffle' | 'magnet' | 'flower';
-
-/** The power-ups in belt order, and the level each unlocks at. */
-export const BOOSTERS: { id: BoosterId; unlock: number }[] = [
-    { id: 'slot', unlock: 1 },
-    { id: 'shuffle', unlock: 6 },
-    { id: 'magnet', unlock: 9 },
-    { id: 'flower', unlock: 16 },
+/** The power-ups in belt order, their icon, and the level each unlocks at. */
+export const BOOSTERS: { id: BoosterId; icon: string; unlock: number }[] = [
+    { id: 'slot', icon: 'PictoIcon_Plus_1', unlock: 1 },
+    { id: 'shuffle', icon: 'PictoIcon_Change', unlock: 6 },
+    { id: 'hammer', icon: 'PictoIcon_Hammer_Claw', unlock: 9 },
+    { id: 'bomb', icon: 'PictoIcon_Bomb_1', unlock: 16 },
 ];
 
-/** A button's radius, the gap between button middles (at most), and the cloth's height. */
-const RADIUS = 78;
-const GAP = 232;
-const CLOTH = 190;
-
-function text(value: string, size: number, stroke = BROWN): PIXI.Text {
-    const t = new PIXI.Text(value, {
-        fontFamily: FONT, fontSize: size, fill: 0xffffff, fontWeight: '900', stroke, strokeThickness: Math.round(size * 0.2), lineJoin: 'round',
-    });
-    t.anchor.set(0.5);
-    return t;
-}
-
-/** A tray of white cards with a green plus: one more slot. */
-function slotIcon(): PIXI.Graphics {
-    const g = new PIXI.Graphics();
-    g.beginFill(0x7a4a26).drawRoundedRect(-42, -4, 84, 40, 12).endFill();
-    g.beginFill(0xb5763f).drawRoundedRect(-42, -8, 84, 36, 12).endFill();
-    g.beginFill(0x8c5730).drawRoundedRect(-34, -4, 68, 22, 8).endFill();
-    for (const [x, y, r] of [[-6, -18, -0.12], [0, -24, 0.08]] as const) {
-        const card = new PIXI.Graphics()
-            .beginFill(0xc9c9d4).drawRoundedRect(-26, -20, 52, 40, 8).endFill()
-            .beginFill(0xfafaff).drawRoundedRect(-26, -23, 52, 40, 8).endFill();
-        card.position.set(x, y);
-        card.rotation = r;
-        g.addChild(card);
-    }
-    const plus = new PIXI.Graphics()
-        .beginFill(0x2f7a24).drawRoundedRect(-9, -24, 18, 50, 7).drawRoundedRect(-25, -8, 50, 18, 7).endFill()
-        .beginFill(0x6fd34a).drawRoundedRect(-7, -22, 14, 44, 6).drawRoundedRect(-23, -6, 46, 14, 6).endFill();
-    plus.position.set(24, 22);
-    g.addChild(plus);
-    return g;
-}
-
-/** Two crossing arrows, pink and blue: shuffle. */
-function shuffleIcon(): PIXI.Graphics {
-    const g = new PIXI.Graphics();
-    const arrow = (color: number, dark: number, from: [number, number], c1: [number, number], c2: [number, number], to: [number, number], angle: number) => {
-        for (const [width, tint] of [[22, dark], [14, color]] as const) {
-            g.lineStyle(width, tint, 1, 0.5).moveTo(...from).bezierCurveTo(...c1, ...c2, ...to);
-        }
-        g.lineStyle(0);
-        const head = (size: number, tint: number) => {
-            const points = [0, -size, size * 1.1, 0, 0, size];
-            const rotated: number[] = [];
-            for (let i = 0; i < points.length; i += 2) {
-                const x = points[i];
-                const y = points[i + 1];
-                rotated.push(to[0] + x * Math.cos(angle) - y * Math.sin(angle), to[1] + x * Math.sin(angle) + y * Math.cos(angle));
-            }
-            g.beginFill(tint).drawPolygon(rotated).endFill();
-        };
-        head(22, dark);
-        head(16, color);
-    };
-    arrow(0x5aa0f0, 0x2a5fb0, [-42, 20], [-10, 20], [0, -6], [30, 4], 0.3);
-    arrow(0xd884e8, 0x8a3fa8, [-30, 34], [-20, 0], [10, -30], [30, -34], -0.6);
-    return g;
-}
-
-/** A blue claw with a grey cap: the magnet. */
-function magnetIcon(): PIXI.Graphics {
-    const g = new PIXI.Graphics();
-    g.lineStyle(24, 0x2a5fb0).arc(0, 6, 28, 0, Math.PI).lineStyle(16, 0x5aa0f0).arc(0, 6, 28, 0, Math.PI);
-    g.lineStyle(0);
-    for (const x of [-28, 28]) {
-        g.beginFill(0x2a5fb0).drawRoundedRect(x - 12, -18, 24, 28, 6).endFill();
-        g.beginFill(0x5aa0f0).drawRoundedRect(x - 8, -16, 16, 26, 5).endFill();
-    }
-    g.beginFill(0x9aa6b8).drawRoundedRect(-16, -44, 32, 30, 8).endFill();
-    g.beginFill(0xdfe6f0).drawRoundedRect(-13, -44, 26, 24, 7).endFill();
-    g.beginFill(0x2a5fb0).drawRoundedRect(-6, -18, 12, 20, 4).endFill();
-    return g;
-}
-
-/** A blue flower with a pink middle. */
-function flowerIcon(): PIXI.Graphics {
-    const g = new PIXI.Graphics();
-    for (let i = 0; i < 5; i++) {
-        const a = -Math.PI / 2 + (i * Math.PI * 2) / 5;
-        g.beginFill(0x2a5fb0).drawCircle(Math.cos(a) * 24, Math.sin(a) * 24, 21).endFill();
-    }
-    for (let i = 0; i < 5; i++) {
-        const a = -Math.PI / 2 + (i * Math.PI * 2) / 5;
-        g.beginFill(0x8fc0f8).drawCircle(Math.cos(a) * 24, Math.sin(a) * 24, 17).endFill();
-    }
-    g.beginFill(0xa83f9a).drawCircle(0, 0, 18).endFill();
-    g.beginFill(0xf08ad8).drawCircle(0, -1, 15).endFill();
-    g.beginFill(0xffffff).drawCircle(-3, -4, 6).endFill();
-    return g;
-}
-
-const ICONS: Record<BoosterId, () => PIXI.Graphics> = { slot: slotIcon, shuffle: shuffleIcon, magnet: magnetIcon, flower: flowerIcon };
+/** Design units (720 wide): a button's size, the gap between button middles, the cloth's height and checks, the badge. */
+const BUTTON = 74;
+const GAP = 118;
+const CLOTH = { height: 74, square: 22, light: 0x7397dc, dark: 0x6488d0, line: 0x2b2d4d };
+const BADGE = { size: 30, x: 27, y: 25, color: 0x4cc23a, text: 18 };
+const LOCK = { icon: 34, iconY: -8, text: 13, textY: 22 };
 
 interface BeltButton {
     id: BoosterId;
     unlock: number;
     holder: PIXI.Container;
-    icon: PIXI.Graphics;
+    open: PIXI.Container;
+    locked: PIXI.Container;
     badge: PIXI.Container;
     count: PIXI.Text;
-    lock: PIXI.Container;
 }
 
 export class BoosterBelt extends PIXI.Container {
@@ -131,7 +42,7 @@ export class BoosterBelt extends PIXI.Container {
     private readonly buttons: BeltButton[] = [];
     private level = 1;
     /** How many of each the player has (for now: one extra slot a level, one of each other). */
-    private readonly counts: Record<BoosterId, number> = { slot: 1, shuffle: 1, magnet: 1, flower: 1 };
+    private readonly counts: Record<BoosterId, number> = { slot: 1, shuffle: 1, hammer: 1, bomb: 1 };
 
     /** `onUse` when an unlocked power-up with some left is tapped. */
     public constructor(private readonly onUse: (id: BoosterId) => void) {
@@ -139,39 +50,31 @@ export class BoosterBelt extends PIXI.Container {
         this.cloth.eventMode = 'static';
         this.cloth.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         this.addChild(this.cloth);
-        for (const { id, unlock } of BOOSTERS) this.buttons.push(this.buildButton(id, unlock));
+        for (const { id, icon, unlock } of BOOSTERS) this.buttons.push(this.buildButton(id, icon, unlock));
     }
 
-    private buildButton(id: BoosterId, unlock: number): BeltButton {
+    private buildButton(id: BoosterId, icon: string, unlock: number): BeltButton {
         const holder = new PIXI.Container();
-        const back = new PIXI.Graphics()
-            .beginFill(0x000000, 0.18).drawCircle(0, 8, RADIUS).endFill()
-            .beginFill(0xd8bfa2).drawCircle(0, 4, RADIUS).endFill()
-            .beginFill(0xfdf1e2).drawCircle(0, 0, RADIUS - 4).endFill()
-            .beginFill(0xfff8ee).drawEllipse(0, -RADIUS * 0.45, RADIUS * 0.62, RADIUS * 0.3).endFill();
-        const icon = ICONS[id]();
+        const open = roundButton('Button_Round02_Blue', icon, BUTTON);
+        // Locked: the dark button, a padlock, and the level it opens at.
+        const locked = new PIXI.Container();
+        const dark = framePlane('Button_Round03_Dark', BUTTON, BUTTON, BUTTON / 110);
+        dark.position.set(-BUTTON / 2, -BUTTON / 2);
+        const padlock = iconSprite('Icon_Lock01_l', LOCK.icon);
+        padlock.y = LOCK.iconY;
+        const level = label(LOCK.text);
+        level.text = `LEVEL ${unlock}`;
+        level.y = LOCK.textY;
+        locked.addChild(dark, padlock, level);
         // A green badge, bottom right, with how many are left.
         const badge = new PIXI.Container();
-        badge.addChild(new PIXI.Graphics().beginFill(0x2f7a24).drawCircle(0, 2, 27).endFill().beginFill(0xffffff).drawCircle(0, 0, 26).endFill().beginFill(0x6cc04a).drawCircle(0, 0, 21).endFill());
-        const count = text('1', 30, 0x2f7a24);
-        badge.addChild(count);
-        badge.position.set(RADIUS * 0.68, RADIUS * 0.68);
-        // Locked: a padlock over the faded icon, and the level it opens at.
-        const lock = new PIXI.Container();
-        const padlock = new PIXI.Graphics()
-            .lineStyle(10, 0x5c5c6e).arc(0, -6, 16, Math.PI, 0).lineStyle(0)
-            .beginFill(0x5c5c6e).drawRoundedRect(-26, -8, 52, 40, 9).endFill()
-            .beginFill(0x9898aa).drawRoundedRect(-22, -6, 44, 34, 7).endFill()
-            .beginFill(0x4a4a5a).drawCircle(0, 8, 6).drawRect(-2.5, 8, 5, 12).endFill();
-        padlock.y = -10;
-        const pill = new PIXI.Graphics().beginFill(0x8a5530).drawRoundedRect(-62, -18, 124, 38, 19).endFill().beginFill(0xb87a4b).drawRoundedRect(-60, -19, 120, 34, 17).endFill();
-        const levelText = text(`Level ${unlock}`, 22);
-        levelText.y = -2;
-        const label = new PIXI.Container();
-        label.addChild(pill, levelText);
-        label.y = RADIUS * 0.82;
-        lock.addChild(padlock, label);
-        holder.addChild(back, icon, badge, lock);
+        const circle = iconSprite('Alert_Circle_l_Bg', BADGE.size);
+        circle.tint = BADGE.color;
+        const count = label(BADGE.text);
+        count.y = -1;
+        badge.addChild(circle, count);
+        badge.position.set(BADGE.x, BADGE.y);
+        holder.addChild(open, locked, badge);
         holder.eventMode = 'static';
         holder.cursor = 'pointer';
         holder.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
@@ -180,17 +83,21 @@ export class BoosterBelt extends PIXI.Container {
             this.tap(button);
         });
         this.addChild(holder);
-        const button: BeltButton = { id, unlock, holder, icon, badge, count, lock };
+        const button: BeltButton = { id, unlock, holder, open, locked, badge, count };
         return button;
     }
 
     private tap(button: BeltButton): void {
+        gsap.killTweensOf([button.holder, button.holder.scale]);
         if (this.level < button.unlock) {
             // Locked: a little shake.
-            gsap.fromTo(button.holder, { x: button.holder.x - 8 }, { x: button.holder.x, duration: 0.35, ease: 'elastic.out(3, 0.3)' });
+            AntAudio.play('full');
+            const x = button.holder.x;
+            gsap.fromTo(button.holder, { x: x - 6 }, { x, duration: 0.35, ease: 'elastic.out(3, 0.3)' });
             return;
         }
         gsap.fromTo(button.holder.scale, { x: 0.88, y: 0.88 }, { x: 1, y: 1, duration: 0.3, ease: 'back.out(3)' });
+        AntAudio.play(this.counts[button.id] > 0 && button.id === 'slot' ? 'slot' : 'click');
         if (this.counts[button.id] > 0) this.onUse(button.id);
     }
 
@@ -210,30 +117,32 @@ export class BoosterBelt extends PIXI.Container {
         for (const b of this.buttons) {
             const locked = this.level < b.unlock;
             const left = this.counts[b.id];
-            b.lock.visible = locked;
-            b.badge.visible = !locked;
-            b.icon.alpha = locked ? 0.25 : left > 0 ? 1 : 0.45;
+            b.open.visible = !locked;
+            b.locked.visible = locked;
+            // None left: no badge (not a 0).
+            b.badge.visible = !locked && left > 0;
+            b.open.alpha = left > 0 ? 1 : 0.5;
             b.count.text = String(left);
             b.holder.cursor = locked || left === 0 ? 'default' : 'pointer';
         }
     }
 
-    /** Along the bottom of the visible screen (`left`, `bottom`, `width`): the cloth, the buttons spread over it. */
+    /** Along the bottom of the visible screen (`left`, `bottom`, `width`): the cloth, the buttons on its top edge. */
     public layout(left: number, bottom: number, width: number): void {
-        // The cloth: blue checks with a lighter top edge and rounded top corners.
-        const top = bottom - CLOTH;
+        const top = bottom - CLOTH.height;
         const g = this.cloth.clear();
-        g.beginFill(0x3f62a8).drawRoundedRect(left - 20, top - 6, width + 40, CLOTH + 40, 44).endFill();
-        g.beginFill(0x6f92d6).drawRoundedRect(left - 14, top, width + 28, CLOTH + 40, 40).endFill();
-        const square = 34;
-        for (let y = top + 10; y < bottom; y += square) {
-            for (let x = left - 14 + ((y - top) / square) % 2 * square; x < left + width + 14; x += square * 2) {
-                const w = Math.min(square, left + width + 14 - x);
-                g.beginFill(0x5f82c8).drawRect(x, y, w, Math.min(square, bottom - y)).endFill();
+        // A dark line along the top (like the pack's bars), then blue checks.
+        g.beginFill(CLOTH.line).drawRoundedRect(left - 10, top - 3, width + 20, CLOTH.height + 20, 18).endFill();
+        g.beginFill(CLOTH.light).drawRoundedRect(left - 8, top, width + 16, CLOTH.height + 20, 16).endFill();
+        const { square } = CLOTH;
+        for (let row = 0; top + 6 + row * square < bottom; row++) {
+            const y = top + 6 + row * square;
+            for (let x = left - 8 + (row % 2) * square; x < left + width + 8; x += square * 2) {
+                g.beginFill(CLOTH.dark).drawRect(x, y, Math.min(square, left + width + 8 - x), Math.min(square, bottom - y)).endFill();
             }
         }
         const gap = Math.min(GAP, width / BOOSTERS.length);
-        this.buttons.forEach((b, i) => b.holder.position.set(left + width / 2 + (i - (this.buttons.length - 1) / 2) * gap, top + 10));
+        this.buttons.forEach((b, i) => b.holder.position.set(left + width / 2 + (i - (this.buttons.length - 1) / 2) * gap, top + 4));
     }
 
     public override destroy(): void {
