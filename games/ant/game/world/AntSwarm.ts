@@ -5,8 +5,10 @@
 // facing it, and picks it up (onPickUp: the scene hides the picture's block and hands back the way home; the block
 // rises from its spot onto the ant's back — the same jelly block, the same size — tipping over to ride corner down), walks it back out and down the anthill (onHome). Each ant wanders a little either side of its
 // way and keeps its own pace, so a line of them looks alive (drawn only: where it really is stays on the path). All the
-// ants are one InstancedMesh (an ant in its tile's colour: abdomen, thorax, head, six legs that swing as it walks)
-// and the blocks they carry another, so a big swarm costs two draw calls.
+// ants are one InstancedMesh (an ant in its tile's colour, its edges darker as the UFO's saucers' are: abdomen, thorax,
+// a big head, six chunky legs that swing as it walks),
+// their eyes another (white with black pupils, in vertex colours: not tinted), and the blocks they carry a third, so a
+// big swarm costs three draw calls.
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -51,7 +53,13 @@ export interface Ant {
     pace: number;
 }
 
-/** An ant, nose along +Z: abdomen, thorax, head, and three pairs of legs (thin boxes). */
+/** The ant's head: big, for personality (the eyes go on its front). */
+const HEAD = { radius: 0.27, y: 0.36, z: 0.36 };
+/** The ants' dark edge (as the UFO's saucers have, PopMaterial.ts): how much darker their outline goes (0..1), and how
+ *  far in it reaches (of how much the surface faces the camera). */
+const RIM = { amount: 0.55, width: 0.6 };
+
+/** An ant, nose along +Z: abdomen, thorax, a big head, and three pairs of chunky legs. */
 function antGeometry(): THREE.BufferGeometry {
     const parts: THREE.BufferGeometry[] = [];
     const sphere = (r: number, z: number, sx = 1, sy = 0.85, sz = 1.2) => {
@@ -60,10 +68,13 @@ function antGeometry(): THREE.BufferGeometry {
         g.translate(0, 0.32, z);
         return g;
     };
-    parts.push(sphere(0.26, -0.32), sphere(0.17, 0.02, 1, 0.9, 1.1), sphere(0.19, 0.3, 1, 0.95, 0.95));
+    parts.push(sphere(0.26, -0.32), sphere(0.17, 0.02, 1, 0.9, 1.1));
+    const head = new THREE.SphereGeometry(HEAD.radius, 12, 10);
+    head.translate(0, HEAD.y, HEAD.z);
+    parts.push(head);
     for (const z of [-0.08, 0.04, 0.16]) {
         for (const side of [-1, 1]) {
-            const leg = new THREE.BoxGeometry(0.42, 0.05, 0.05);
+            const leg = new THREE.BoxGeometry(0.44, 0.09, 0.09);
             leg.rotateZ(side * 0.5);
             leg.translate(side * 0.2, 0.22, z);
             parts.push(leg);
@@ -74,9 +85,46 @@ function antGeometry(): THREE.BufferGeometry {
     return merged;
 }
 
+/** Two big eyes on the front of the ant's head (HEAD), white with black pupils, as vertex colours — the eyes' mesh
+ *  isn't tinted per ant. */
+function eyesGeometry(): THREE.BufferGeometry {
+    const parts: THREE.BufferGeometry[] = [];
+    const ball = (r: number, x: number, y: number, z: number, shade: number) => {
+        const g = new THREE.SphereGeometry(r, 8, 6).toNonIndexed();
+        g.translate(x, y, z);
+        const colors = new Float32Array(g.getAttribute('position').count * 3).fill(shade);
+        g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        parts.push(g);
+    };
+    const front = HEAD.z + HEAD.radius * 0.8;
+    for (const side of [-1, 1]) {
+        ball(0.1, side * 0.12, HEAD.y + 0.07, front, 1);
+        ball(0.055, side * 0.13, HEAD.y + 0.08, front + 0.07, 0.05);
+    }
+    const merged = mergeGeometries(parts);
+    parts.forEach((p) => p.dispose());
+    return merged;
+}
+
+/** A standard material whose edges go darker, where the surface turns away from the camera (RIM). */
+function rimmed(material: THREE.MeshStandardMaterial): THREE.MeshStandardMaterial {
+    material.onBeforeCompile = (shader) => {
+        shader.uniforms.uRim = { value: RIM.amount };
+        shader.uniforms.uRimWidth = { value: RIM.width };
+        shader.fragmentShader = `uniform float uRim;\nuniform float uRimWidth;\n${shader.fragmentShader}`.replace(
+            '#include <opaque_fragment>',
+            `float facing = max(dot(normalize(normal), normalize(vViewPosition)), 0.0);
+            outgoingLight *= pow(1.0 - uRim * (1.0 - smoothstep(0.0, uRimWidth, facing)), 2.2);
+            #include <opaque_fragment>`,
+        );
+    };
+    return material;
+}
+
 export class AntSwarm {
     private readonly ants: Ant[] = [];
     private readonly bodies: THREE.InstancedMesh;
+    private readonly eyes: THREE.InstancedMesh;
     private readonly blocks: THREE.InstancedMesh;
     private readonly matrix = new THREE.Matrix4();
     private readonly quaternion = new THREE.Quaternion();
@@ -96,11 +144,12 @@ export class AntSwarm {
     public constructor(scene: THREE.Scene, private readonly carried: number, private readonly pixel: number,
         private readonly groundAt: (x: number, z: number) => number,
         private readonly onPickUp: (ant: Ant) => THREE.Vector3[], private readonly onHome: (ant: Ant) => void) {
-        this.bodies = new THREE.InstancedMesh(antGeometry(), new THREE.MeshStandardMaterial({ roughness: 0.4 }), MAX_ANTS);
+        this.bodies = new THREE.InstancedMesh(antGeometry(), rimmed(new THREE.MeshStandardMaterial({ roughness: 0.4 })), MAX_ANTS);
+        this.eyes = new THREE.InstancedMesh(eyesGeometry(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.25 }), MAX_ANTS);
         // The picture's own jelly block (PictureView), at its full size.
         this.blocks = new THREE.InstancedMesh(new RoundedBoxGeometry(BLOCK, BLOCK_HEIGHT, BLOCK, 2, ROUNDING),
             new THREE.MeshPhysicalMaterial({ roughness: 0.4, clearcoat: 0.8, clearcoatRoughness: 0.12 }), MAX_ANTS);
-        for (const mesh of [this.bodies, this.blocks]) {
+        for (const mesh of [this.bodies, this.eyes, this.blocks]) {
             mesh.count = 0;
             mesh.frustumCulled = false;
             scene.add(mesh);
@@ -201,6 +250,7 @@ export class AntSwarm {
             this.matrix.compose(this.drawn, this.quaternion, this.scale);
             this.bodies.setMatrixAt(i, this.matrix);
             this.bodies.setColorAt(i, ant.color);
+            this.eyes.setMatrixAt(i, this.matrix);
             // The block it took: while picking up it rises from its spot in front of the ant onto its back, tipping over
             // to a corner down (`carried`: a full block's size); then it rides there home.
             if (ant.phase !== 'out') {
@@ -224,6 +274,8 @@ export class AntSwarm {
             }
         });
         this.bodies.count = this.ants.length;
+        this.eyes.count = this.ants.length;
+        this.eyes.instanceMatrix.needsUpdate = true;
         this.blocks.count = carrying;
         this.bodies.instanceMatrix.needsUpdate = true;
         this.blocks.instanceMatrix.needsUpdate = true;
@@ -238,7 +290,7 @@ export class AntSwarm {
     }
 
     public destroy(): void {
-        for (const mesh of [this.bodies, this.blocks]) {
+        for (const mesh of [this.bodies, this.eyes, this.blocks]) {
             mesh.removeFromParent();
             mesh.geometry.dispose();
             (mesh.material as THREE.Material).dispose();

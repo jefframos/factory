@@ -5,7 +5,7 @@
 
 export const TUNING = {
     /** An ant's length, world units: the same in every level, whatever the picture's pixel size. */
-    antSize: 0.85,
+    antSize: 1.1,
     /** Ant walking speed, world units a second. */
     antSpeed: 5.5,
     /** Seconds between two ants leaving the same slot. */
