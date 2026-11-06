@@ -310,11 +310,60 @@ export function columnsFor(pixels, wanted) {
  * `mix` (0 = dealt order, the easiest; each step more traps), `columns` (0 = by size). Returns the deck, the columns and
  * the check.
  */
-export function bakeDeck(pixels, width, height, colorCount, { id, seed = 0, mix = 0, columns = 0 }) {
+/**
+ * A level's difficulty goal from its place in the play order (0-based `index`): how often a player tapping at random
+ * should win. The first levels are left easy (null: no goal); then it falls a little each level, to TARGET.floor; hard
+ * levels (ending in 5) and super hard ones (every tenth) aim lower.
+ */
+const TARGET = { easyLevels: 3, start: 0.9, perLevel: 0.025, floor: 0.35, hard: 0.15, superHard: 0.3, lowest: 0.1 };
+
+export function difficultyTarget(index) {
+    if (index < TARGET.easyLevels) return null;
+    const number = index + 1;
+    const base = Math.max(TARGET.floor, TARGET.start - (index - TARGET.easyLevels) * TARGET.perLevel);
+    const tier = number % 10 === 0 ? TARGET.superHard : number % 5 === 0 ? TARGET.hard : 0;
+    return Math.max(TARGET.lowest, base - tier);
+}
+
+/** Searching for a difficulty goal: the mixes tried, and the deals (seeds) per mix — `quick` for the editor's preview. */
+const SEARCH = { mixes: [0, 1, 2, 3, 4, 5], seeds: 3, tries: 4, quick: { mixes: [0, 2, 4], seeds: 1, tries: 2 } };
+
+/**
+ * Bakes a level's deck for a difficulty goal (`target`: random taps win this often): every mix and a few deals, the
+ * clearable, robust deck nearest the goal (one at or under it first).
+ */
+function bakeForTarget(start, width, height, columnCount, id, seed, target, quick) {
+    const search = quick ? SEARCH.quick : SEARCH;
+    const min = Math.max(6, Math.round((width * height) / 90));
+    const max = Math.max(min + 6, Math.round((width * height) / 25));
+    let best = null;
+    const score = (c) => Math.abs(c.randomWins - target) + (c.randomWins > target ? 0.05 : 0);
+    for (let n = 0; n < search.seeds; n++) {
+        const dealSeed = (hashString(id) + Math.imul(seed + n, 0x9e3779b1)) >>> 0;
+        const dealt = deal(start, dealSeed, min, max);
+        const random = seeded(dealSeed ^ 0x5bd1e995);
+        for (const mix of search.mixes) {
+            for (let attempt = 0; attempt < (mix === 0 ? 1 : search.tries); attempt++) {
+                const deck = mix === 0 ? dealt : mixDeck(dealt, mix, columnCount, random);
+                const result = check(start, deck, columnCount);
+                if (!result.clearable || result.slots !== SLOTS || !result.robust) continue;
+                if (!best || score(result) < score(best.check)) best = { deck, columns: columnCount, check: { ...result, target } };
+            }
+        }
+    }
+    return best;
+}
+
+export function bakeDeck(pixels, width, height, colorCount, { id, seed = 0, mix = 0, columns = 0, target = null, quick = false }) {
     const start = new Board(width, height, pixels, colorCount);
     const filled = start.remaining;
     const columnCount = columnsFor(filled, columns);
     if (!filled) return { deck: [], columns: columnCount, check: { clearable: true, slots: SLOTS, robust: true, randomWins: 1 } };
+    // A difficulty goal: searched for (the level's own mix is then ignored).
+    if (target !== null && target !== undefined) {
+        const found = bakeForTarget(start, width, height, columnCount, id, seed, target, quick);
+        if (found) return found;
+    }
     // Tiles of about 1/90 to 1/25 of the grid (as the game used to deal them).
     const min = Math.max(6, Math.round((width * height) / 90));
     const max = Math.max(min + 6, Math.round((width * height) / 25));

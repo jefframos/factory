@@ -192,7 +192,13 @@
       <div class="field">Seed (another deal)
         <span class="inline"><input type="number" id="seed" min="0" step="1"><button id="reroll" title="Another seed">🎲</button></span>
       </div>
-      <div class="field">Mix (traps: 0 = easy)
+      <label>Auto shading
+        <span class="inline"><input type="checkbox" id="autoShade"> lighter top-left, darker bottom-right edges</span>
+      </label>
+      <label>Difficulty
+        <select id="difficulty"><option value="auto">Auto (by its place in the order)</option><option value="manual">Manual (the mix)</option></select>
+      </label>
+      <div class="field">Mix (traps: 0 = easy; manual only)
         <span class="stepper"><button id="mixDown">−</button><output id="mix">0</output><button id="mixUp">＋</button></span>
       </div>
     </div>
@@ -393,7 +399,7 @@ function showCheck(result) {
   } else {
     box.className = `check ${c.slots > 5 || !c.robust ? 'warn' : 'ok'}`;
     box.innerHTML = `${c.slots > 5 ? '⚠ Can only be cleared with the extra slot' : '✓ Can be cleared'} · ${tiles.length} tiles in ${result.columns} columns · ${feel}`
-      + `<small>A player tapping at random wins ${pct}% of the time.${c.robust ? '' : ' ⚠ The win depends on which pixels the ants pick — try another seed.'}</small>`;
+      + `<small>A player tapping at random wins ${pct}% of the time${c.target !== undefined ? ` (aiming at ${Math.round(c.target * 100)}% for its place in the order)` : ''}.${c.robust ? '' : ' ⚠ The win depends on which pixels the ants pick — try another seed.'}</small>`;
   }
   const columns = Array.from({ length: result.columns || 1 }, () => []);
   tiles.forEach((t, i) => columns[i % columns.length].push(t));
@@ -435,6 +441,8 @@ function select(id) {
   $('stroke').value = current.stroke || '#4a4a5a';
   $('columns').value = String([3, 4, 5].includes(current.columns) ? current.columns : 0);
   $('seed').value = current.seed || 0;
+  $('autoShade').checked = current.autoShade !== false;
+  $('difficulty').value = current.difficulty === 'manual' ? 'manual' : 'auto';
   aspect = current.height / current.width;
   history = [];
   selection = new Set();
@@ -459,6 +467,8 @@ function settings() {
     stroke: $('strokeOn').checked ? $('stroke').value : '',
     columns: Number($('columns').value),
     seed: Math.max(0, Math.round(Number($('seed').value) || 0)),
+    autoShade: $('autoShade').checked,
+    difficulty: $('difficulty').value,
   });
   return current;
 }
@@ -786,7 +796,7 @@ $('center').onclick = () => {
 $('width').oninput = () => { clearSelection(); if (locked) $('height').value = Math.max(4, Math.round(Number($('width').value) * aspect)); changed(); };
 $('height').oninput = () => { clearSelection(); if (locked) $('width').value = Math.max(4, Math.round(Number($('height').value) / aspect)); changed(); };
 $('lock').onclick = () => { locked = !locked; $('lock').textContent = locked ? '🔗' : '⛓️‍💥'; aspect = Number($('height').value) / Number($('width').value); };
-for (const id of ['name', 'colors', 'background', 'strokeOn', 'stroke', 'columns', 'seed']) $(id).oninput = changed;
+for (const id of ['name', 'colors', 'background', 'strokeOn', 'stroke', 'columns', 'seed', 'autoShade', 'difficulty']) $(id).oninput = changed;
 $('palette').onchange = () => { current.palette = $('palette').value; showSwatches(); changed(); };
 
 $('save').onclick = async () => {

@@ -21,6 +21,13 @@ Done once the level's won (saved).
 
 **Debug** — the "Ant data" panel: +500 COINS, RESET DATA (back to a new player: the tutorial again).
 
+**Depth and difficulty** — pictures are shaded automatically (`autoShade`, on unless switched off: lighter top and
+left edges, darker bottom and right ones, in tones of their own), which makes them less flat and makes their areas
+onions (an area's inside is shut in by its own rims). And each level aims at a difficulty for its place in the play
+order (`difficulty: 'auto'`, `solver.mjs`'s difficultyTarget: random taps win about 90% at level 4, falling to 35%,
+lower on hard and super hard levels): the baker tries every mix and a few deals and keeps the clearable one nearest
+the goal. 'manual' uses the level's own mix. Both are in the editor (Tiles & difficulty).
+
 **Colours** — the blocks, tiles and ants are drawn a quarter more saturated than the level file (`world/Vivid.ts`),
 under a white sky light and a light ground (a brown one muddied them).
 

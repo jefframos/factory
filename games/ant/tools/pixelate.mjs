@@ -39,7 +39,9 @@ const index = readJson(path.join(LEVELS, 'index.json'), { levels: [] });
 
 for (const id of ids) {
     const file = pictures.has(id) ? path.join(PICTURES, pictures.get(id)) : null;
-    const { level, preview, pixels } = await buildLevel(file, id, settings[id] ?? {}, master);
+    // Its place in the play order sets its difficulty goal (a new level goes last).
+    const order = index.levels.includes(id) ? index.levels.indexOf(id) : index.levels.length;
+    const { level, preview, pixels } = await buildLevel(file, id, { ...settings[id], order }, master);
     fs.writeFileSync(path.join(LEVELS, `${id}.json`), `${JSON.stringify(level, null, 2)}\n`);
     fs.writeFileSync(path.join(PREVIEWS, `${id}.png`), preview);
     if (!index.levels.includes(id)) index.levels.push(id);

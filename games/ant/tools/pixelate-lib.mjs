@@ -17,6 +17,10 @@
 //   7. `stroke` (a colour, snapped to the palette; '' = none) outlines the picture: every empty cell touching it (sides
 //      or corners) becomes a block of that colour. With a stroke the picture is sampled a cell smaller all round (1),
 //      so the outline has room at the grid's edges.
+//   7b. `autoShade` (on unless set false) gives each colour area depth, lit from the top left: its pixels along a top or
+//      left edge a lighter tone, along a bottom or right edge a darker one (areas of at least SHADE.minArea, where the
+//      area goes on past the edge pixel). Distinct colours, not snapped: they make a picture less flat, and its areas
+//      onions — the inside of an area is shut in by its own rims until they're taken.
 //   8. The level's colours get its `saturation` / `brightness` steps (each step +-15% saturation / +-6% lightness, up
 //      to MAX_STEPS either way) — after the palette, so a master-palette level keeps the master's tones, just more or
 //      less vivid (before it, the snapping would put most colours straight back on the same tone). Then the shading
@@ -27,7 +31,7 @@
 // empty: the editor's paint canvas), the pixel count, and a crisp preview PNG.
 
 import sharp from 'sharp';
-import { bakeDeck } from './solver.mjs';
+import { bakeDeck, difficultyTarget } from './solver.mjs';
 
 const SAMPLES = 8;
 const ALPHA_CUTOFF = 128;
@@ -39,7 +43,9 @@ const SATURATION_STEP = 0.15;
 const BRIGHTNESS_STEP = 0.06;
 export const MAX_STEPS = 5;
 
-export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {}, shades: {}, padding: 0, stroke: '', columns: 0, seed: 0, mix: 0 };
+export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {}, shades: {}, padding: 0, stroke: '', autoShade: true, columns: 0, seed: 0, mix: 0 };
+/** Auto-shading: the smallest area shaded, and the edge tones' steps (as the brushes': [saturation, brightness]). */
+const SHADE = { minArea: 10, light: [-1, 2], dark: [1, -2], maxLight: 0.93 };
 
 /** Fixed colour sets a picture can use instead of the master palette. */
 export const PALETTES = {
@@ -310,7 +316,9 @@ export async function buildLevel(file, id, settings, master) {
     const dy = Math.round(options.offsetY ?? 0);
     const final = shift(grid, width, height, dx, dy);
     const shading = shift(shadeGrid, width, height, dx, dy);
-    if (stroked) outline(final, width, height, palette.length ? closest(parseHex(options.stroke), palette) : options.stroke);
+    const strokeColor = stroked ? (palette.length ? closest(parseHex(options.stroke), palette) : options.stroke) : null;
+    if (strokeColor) outline(final, width, height, strokeColor);
+    if (options.autoShade !== false) autoShade(final, width, height, strokeColor);
     const saturation = steps(options.saturation);
     const brightness = steps(options.brightness);
     if (saturation || brightness) {
@@ -324,12 +332,70 @@ export async function buildLevel(file, id, settings, master) {
     for (let i = 0; i < final.length; i++) if (final[i] && shading[i]) final[i] = hex(adjust(parseHex(final[i]), shading[i][0], shading[i][1]));
     const { palette: levelPalette, rows } = toLevel(final, width, height);
     const indices = final.map((c) => (c ? levelPalette.indexOf(c) : -1));
-    const baked = bakeDeck(indices, width, height, levelPalette.length, { id, seed: Math.round(options.seed ?? 0), mix: Math.max(0, Math.min(5, Math.round(options.mix ?? 0))), columns: Math.round(options.columns ?? 0) });
+    // Difficulty: 'auto' (the default) aims at the goal for the level's place in the play order (`order`, when known);
+    // 'manual' uses its own mix.
+    const target = options.difficulty === 'manual' || options.order === undefined ? null : difficultyTarget(options.order);
+    const baked = bakeDeck(indices, width, height, levelPalette.length, {
+        id, seed: Math.round(options.seed ?? 0), mix: Math.max(0, Math.min(5, Math.round(options.mix ?? 0))), columns: Math.round(options.columns ?? 0),
+        target, quick: !!options.quick,
+    });
     const level = {
         id, name: options.name, width, height, palette: levelPalette, rows,
         columns: baked.columns, deck: baked.deck.map((t) => `${DIGITS[t.color]}x${t.count}`).join(' '), check: baked.check,
     };
     return { level, grid: final, preview: await previewPng(level), pixels: final.filter(Boolean).length };
+}
+
+/** Depth for each colour area (not the outline's): lighter along its top and left edges, darker along its bottom and
+ *  right ones, where the area goes on past that pixel (a one-pixel-thin line stays as it is). See SHADE. */
+function autoShade(grid, width, height, skip) {
+    const area = new Int32Array(width * height).fill(-1);
+    const sizes = [];
+    for (let start = 0; start < grid.length; start++) {
+        if (!grid[start] || area[start] >= 0) continue;
+        const id = sizes.length;
+        const stack = [start];
+        area[start] = id;
+        let size = 0;
+        while (stack.length) {
+            const i = stack.pop();
+            size++;
+            const x = i % width;
+            for (const n of [x > 0 ? i - 1 : -1, x < width - 1 ? i + 1 : -1, i - width, i + width]) {
+                if (n < 0 || n >= grid.length || area[n] >= 0 || grid[n] !== grid[start]) continue;
+                area[n] = id;
+                stack.push(n);
+            }
+        }
+        sizes.push(size);
+    }
+    const tone = (hexColor, [saturation, brightness], light) => {
+        const rgb = adjust(parseHex(hexColor), saturation, brightness);
+        // A light tone's kept off pure white.
+        const top = 255 * SHADE.maxLight;
+        return hex(light ? rgb.map((v) => Math.min(v, top + (v - top) * 0.2)) : rgb);
+    };
+    const tones = new Map();
+    const shaded = grid.slice();
+    for (let i = 0; i < grid.length; i++) {
+        const c = grid[i];
+        if (!c || c === skip || sizes[area[i]] < SHADE.minArea) continue;
+        const x = i % width;
+        const y = Math.floor(i / width);
+        const same = (dx, dy) => {
+            const nx = x + dx;
+            const ny = y + dy;
+            return nx >= 0 && ny >= 0 && nx < width && ny < height && grid[nx + ny * width] === c;
+        };
+        let kind = null;
+        if ((!same(0, 1) && same(0, -1)) || (!same(1, 0) && same(-1, 0))) kind = 'dark';
+        else if ((!same(0, -1) && same(0, 1)) || (!same(-1, 0) && same(1, 0))) kind = 'light';
+        if (!kind) continue;
+        const key = `${c}${kind}`;
+        if (!tones.has(key)) tones.set(key, tone(c, SHADE[kind], kind === 'light'));
+        shaded[i] = tones.get(key);
+    }
+    for (let i = 0; i < grid.length; i++) grid[i] = shaded[i];
 }
 
 /** Outlines the picture in `color`: each empty cell next to a block (sides or corners) gets one. */

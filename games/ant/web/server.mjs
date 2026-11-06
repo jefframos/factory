@@ -72,7 +72,10 @@ async function listLevels() {
  *  settings. `master` overrides the saved master palette (trying one out). */
 async function run(id, settings, save, master) {
     const source = sourceOf(id);
-    const result = await buildLevel(source ? path.join(PICTURES, source) : null, id, settings, master ?? (await readMaster()));
+    // Its place in the play order sets its difficulty goal; the live preview searches for it quickly, Save fully.
+    const levels = (await readJson(INDEX, { levels: [] })).levels;
+    const order = levels.includes(id) ? levels.indexOf(id) : levels.length;
+    const result = await buildLevel(source ? path.join(PICTURES, source) : null, id, { ...settings, order, quick: !save }, master ?? (await readMaster()));
     if (save) {
         await fs.mkdir(PREVIEWS, { recursive: true });
         await writeJson(path.join(LEVELS, `${id}.json`), result.level);
