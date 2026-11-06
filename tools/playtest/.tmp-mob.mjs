@@ -1,0 +1,30 @@
+import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { chromium } from 'playwright-core';
+const ROOT = process.cwd();
+const OUT = 'C:/Users/jfbod/AppData/Local/Temp/claude/486b42321dc8a3a2/b38931da-53ec-41d5-9e0b-705f03679a5c/scratchpad';
+const port = 9184;
+const vite = spawn(process.execPath, [path.join(ROOT, 'node_modules/vite/bin/vite.js'), '--port', String(port), '--strictPort'], { cwd: ROOT, env: { ...process.env, PLAYTEST_SERVER: '1' } });
+await new Promise((res) => { let o = ''; vite.stdout.on('data', (c) => { o += c; if (/Local:/.test(o.replace(/\x1b\[[0-9;]*m/g, ''))) res(); }); });
+const cache = path.join(os.homedir(), 'AppData', 'Local', 'ms-playwright');
+const dir = fs.readdirSync(cache).filter((n) => /^chromium-\d+$/.test(n)).sort().pop();
+const browser = await chromium.launch({ executablePath: path.join(cache, dir, 'chrome-win64', 'chrome.exe'), args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+const errors = [];
+for (const [name, w, h] of [['energy-phone', 432, 860], ['energy-tall', 566, 1226], ['energy-wide', 1280, 720]]) {
+    const page = await browser.newPage({ viewport: { width: w, height: h } });
+    page.on('pageerror', (e) => errors.push(String(e)));
+    await page.goto(`http://localhost:${port}/?level=twin-towers`);
+    await page.waitForTimeout(6000);
+    await page.mouse.move(w / 2, h * 0.5);
+    await page.mouse.down();
+    await page.waitForTimeout(4000);
+    await page.screenshot({ path: `${OUT}/mob-${name}.png` });
+    await page.mouse.up();
+    await page.close();
+}
+console.log('errors', errors);
+await browser.close();
+vite.kill();
+process.exit(0);

@@ -1,0 +1,45 @@
+{
+  "name": "Islands",
+  "kind": "Water holes",
+  "gates": [
+    {
+      "x": 2.6,
+      "z": -11.5,
+      "width": 3.4,
+      "value": 3
+    },
+    {
+      "x": -2.6,
+      "z": -17.5,
+      "width": 3.4,
+      "value": 2
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "water",
+      "x": -2.75,
+      "z": -11.5,
+      "width": 4.5,
+      "depth": 5
+    },
+    {
+      "kind": "water",
+      "x": 2.75,
+      "z": -17.5,
+      "width": 4.5,
+      "depth": 4.6
+    },
+    {
+      "kind": "water",
+      "x": -3.6,
+      "z": -5.2,
+      "radius": 1.1
+    }
+  ],
+  "redRate": 3,
+  "redRateEnd": 5.2,
+  "redRamp": 55,
+  "baseHp": 520,
+  "reward": 150
+}

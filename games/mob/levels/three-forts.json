@@ -1,0 +1,42 @@
+{
+  "name": "Three Forts",
+  "kind": "Multiple targets",
+  "gates": [
+    {
+      "x": -2.6,
+      "z": -7,
+      "width": 3.4,
+      "value": 3
+    },
+    {
+      "x": 2.6,
+      "z": -7,
+      "width": 3.4,
+      "value": 2
+    }
+  ],
+  "targets": [
+    {
+      "x": 0,
+      "hp": 300,
+      "width": 3.6
+    },
+    {
+      "x": -3.6,
+      "hp": 70,
+      "width": 2,
+      "z": -19
+    },
+    {
+      "x": 3.6,
+      "hp": 70,
+      "width": 2,
+      "z": -19
+    }
+  ],
+  "redRate": 2.5,
+  "redRateEnd": 4.4,
+  "redRamp": 55,
+  "baseHp": 440,
+  "reward": 160
+}

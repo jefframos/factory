@@ -1,0 +1,67 @@
+{
+  "name": "Shield Wall",
+  "kind": "Helmets",
+  "gates": [
+    {
+      "x": -2.45,
+      "z": -9,
+      "width": 3.6,
+      "value": 2
+    },
+    {
+      "x": 2.45,
+      "z": -9,
+      "width": 3.6,
+      "value": 3
+    }
+  ],
+  "helmets": [
+    {
+      "x": 0,
+      "z": -3.4,
+      "width": 6.5
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "points": [
+        [
+          -5,
+          -12
+        ],
+        [
+          -3.2,
+          -14
+        ],
+        [
+          -5,
+          -16
+        ]
+      ]
+    },
+    {
+      "kind": "wall",
+      "points": [
+        [
+          5,
+          -12
+        ],
+        [
+          3.2,
+          -14
+        ],
+        [
+          5,
+          -16
+        ]
+      ]
+    }
+  ],
+  "redGiantEvery": 15,
+  "redRate": 3.1,
+  "redRateEnd": 5.3,
+  "redRamp": 55,
+  "baseHp": 600,
+  "reward": 200
+}

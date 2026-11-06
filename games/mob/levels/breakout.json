@@ -1,0 +1,54 @@
+{
+  "name": "Breakout",
+  "kind": "Breakable",
+  "gates": [
+    {
+      "x": -2.65,
+      "z": -13,
+      "width": 3.6,
+      "value": 4
+    },
+    {
+      "x": 2.65,
+      "z": -7,
+      "width": 3.6,
+      "value": 2
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "points": [
+        [
+          -0.3,
+          -3.5
+        ],
+        [
+          0.3,
+          -3.5
+        ],
+        [
+          0.3,
+          -19
+        ],
+        [
+          -0.3,
+          -19
+        ]
+      ]
+    },
+    {
+      "kind": "breakable",
+      "x": -2.65,
+      "z": -9,
+      "width": 4.7,
+      "depth": 0.9,
+      "hp": 70
+    }
+  ],
+  "redRate": 2.9,
+  "redRateEnd": 5.1,
+  "redRamp": 55,
+  "baseHp": 600,
+  "reward": 150
+}

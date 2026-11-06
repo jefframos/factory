@@ -6,6 +6,9 @@
 // InstancedMesh; a mob is drawn by the pose its own point in the cycle is at (its phase + time), so the crowd's steps
 // don't line up.
 //
+// Helmets (mob-helmet.glb: the kit's hat on the same skeleton) are baked in the same poses, fitted the same way, and drawn
+// over the mobs wearing one (Battle.helmet), one InstancedMesh per pose too.
+//
 // Colour: the model's COLOR_0 alpha says which vertices the team colour paints (its RGB is then the shading to keep,
 // 0.5 = as is); the face keeps its own. Each instance has its team colour (a `teamColor` instance attribute), applied
 // in the material's vertex shader.
@@ -14,7 +17,7 @@ import * as THREE from 'three';
 import { createGLTFLoader } from 'core/three/GLTFLoaders';
 import { COLORS, TUNING } from '../data/MobConfig';
 import { applyBend } from '../services/Bend';
-import { BLUE, Battle } from './Battle';
+import { BLUE, Battle, CAR, TRUCK } from './Battle';
 
 /** Poses of the run cycle baked. */
 const FRAMES = 10;
@@ -26,10 +29,14 @@ const CYCLES_PER_UNIT = 0.5;
 const POP_SECONDS = 0.18;
 const POP_FROM = 0.3;
 
+/** How the baked poses are fitted: scaled to unit height, feet at 0, centred. */
+interface Fit { scale: number; x: number; y: number; z: number }
+
 export class CrowdView {
     public readonly group = new THREE.Group();
     private meshes: THREE.InstancedMesh[] = [];
     private teamColors: THREE.InstancedBufferAttribute[] = [];
+    private helmets: THREE.InstancedMesh[] = [];
     private readonly blue = new THREE.Color(COLORS.blue);
     private readonly red = new THREE.Color(COLORS.red);
     private readonly matrix = new THREE.Matrix4();
@@ -42,7 +49,11 @@ export class CrowdView {
     /** Loads the model and bakes its poses; nothing's drawn until it's done. */
     public async load(base: string, capacity: number): Promise<void> {
         const loader = createGLTFLoader();
-        const [model, anims] = await Promise.all([loader.loadAsync(`${base}mob.glb`), loader.loadAsync(`${base}mob-anims.glb`)]);
+        const [model, anims, helmetModel] = await Promise.all([
+            loader.loadAsync(`${base}mob.glb`),
+            loader.loadAsync(`${base}mob-anims.glb`),
+            loader.loadAsync(`${base}mob-helmet.glb`).catch(() => null),
+        ]);
         let skinned: THREE.SkinnedMesh | undefined;
         model.scene.traverse((object) => {
             if ((object as THREE.SkinnedMesh).isSkinnedMesh) skinned = object as THREE.SkinnedMesh;
@@ -51,7 +62,7 @@ export class CrowdView {
         const clip = CLIP_NAMES.map((name) => anims.animations.find((a) => a.name === name)).find(Boolean);
         if (!clip) throw new Error('mob-anims.glb has no run or walk clip');
 
-        const poses = this.bake(model.scene, skinned, clip);
+        const { poses, fit } = this.bake(model.scene, skinned, clip);
         const material = this.material();
         applyBend(material);
         for (const geometry of poses) {
@@ -67,11 +78,28 @@ export class CrowdView {
             this.teamColors.push(colors);
             this.group.add(mesh);
         }
+        // The helmet: the same poses, the same fit (so it sits on the head).
+        let helmetSkinned: THREE.SkinnedMesh | undefined;
+        helmetModel?.scene.traverse((object) => {
+            if ((object as THREE.SkinnedMesh).isSkinnedMesh) helmetSkinned = object as THREE.SkinnedMesh;
+        });
+        if (helmetModel && helmetSkinned) {
+            const helmetMaterial = new THREE.MeshLambertMaterial({ vertexColors: true });
+            applyBend(helmetMaterial);
+            for (const geometry of this.bake(helmetModel.scene, helmetSkinned, clip, fit).poses) {
+                const mesh = new THREE.InstancedMesh(geometry, helmetMaterial, capacity);
+                mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                mesh.count = 0;
+                mesh.frustumCulled = false;
+                this.helmets.push(mesh);
+                this.group.add(mesh);
+            }
+        }
         this.ready = true;
     }
 
     /** FRAMES poses of the clip, each the skinned mesh's vertices where the clip has them then, fitted to the mob height. */
-    private bake(root: THREE.Object3D, skinned: THREE.SkinnedMesh, clip: THREE.AnimationClip): THREE.BufferGeometry[] {
+    private bake(root: THREE.Object3D, skinned: THREE.SkinnedMesh, clip: THREE.AnimationClip, fitted?: Fit): { poses: THREE.BufferGeometry[]; fit: Fit } {
         const mixer = new THREE.AnimationMixer(root);
         mixer.clipAction(clip).play();
         const source = skinned.geometry;
@@ -80,7 +108,7 @@ export class CrowdView {
         const poses: THREE.BufferGeometry[] = [];
         // Fitted from the first pose: unit height (TUNING.mobHeight scales each mob as it's drawn, live), feet on the
         // ground, centred.
-        let fit: { scale: number; x: number; y: number; z: number } | null = null;
+        let fit: Fit | null = fitted ?? null;
         for (let f = 0; f < FRAMES; f++) {
             mixer.setTime((f / FRAMES) * clip.duration);
             root.updateMatrixWorld(true);
@@ -107,7 +135,7 @@ export class CrowdView {
             poses.push(geometry);
         }
         mixer.stopAllAction();
-        return poses;
+        return { poses, fit: fit! };
     }
 
     /** Vertex colours, with the painted ones (alpha 1) taking the instance's team colour times their shading. */
@@ -126,7 +154,10 @@ export class CrowdView {
     public update(battle: Battle, time: number): void {
         if (!this.ready) return;
         for (const mesh of this.meshes) mesh.count = 0;
+        for (const mesh of this.helmets) mesh.count = 0;
         for (let i = 0; i < battle.count; i++) {
+            // Trucks are drawn by the arena (a model of their own).
+            if (battle.big[i] === TRUCK || battle.big[i] === CAR) continue;
             const speed = battle.team[i] === BLUE ? TUNING.blueSpeed : TUNING.redSpeed;
             const cycle = (time * speed * CYCLES_PER_UNIT + battle.phase[i]) % 1;
             const pose = Math.min(FRAMES - 1, Math.floor(cycle * FRAMES));
@@ -135,9 +166,13 @@ export class CrowdView {
             const grow = battle.age[i] < POP_SECONDS ? POP_FROM + (1 - POP_FROM) * (battle.age[i] / POP_SECONDS) : 1;
             this.position.set(battle.x[i], 0, battle.z[i]);
             this.rotation.setFromAxisAngle(this.up, battle.heading[i] + Math.PI);
-            this.scale.setScalar(grow * TUNING.mobHeight);
+            const leave = battle.leaving[i];
+            const shrink = leave > 0 ? (leave < 0.3 ? 1 + leave : 1.3 * (1 - (leave - 0.3) / 0.7)) : 1;
+            this.scale.setScalar(grow * shrink * TUNING.mobHeight * (battle.big[i] ? TUNING.giantScale : 1));
             this.matrix.compose(this.position, this.rotation, this.scale);
             mesh.setMatrixAt(slot, this.matrix);
+            const helmet = battle.helmet[i] ? this.helmets[pose] : undefined;
+            if (helmet) helmet.setMatrixAt(helmet.count++, this.matrix);
             const color = battle.team[i] === BLUE ? this.blue : this.red;
             this.teamColors[pose].setXYZ(slot, color.r, color.g, color.b);
         }
@@ -145,6 +180,7 @@ export class CrowdView {
             const mesh = this.meshes[p];
             mesh.instanceMatrix.needsUpdate = true;
             this.teamColors[p].needsUpdate = true;
+            if (this.helmets[p]) this.helmets[p].instanceMatrix.needsUpdate = true;
         }
     }
 }

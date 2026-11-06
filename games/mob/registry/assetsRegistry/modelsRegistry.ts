@@ -38,6 +38,61 @@ const MobMobAnims = {
 }
 } as const;
 
+const MobMobHelmet = {
+  id: 'mob-helmet',
+  path: 'mob/mob-helmet',
+  fullPath: 'mob/models/mob/mob-helmet.glb',
+  format: 'glb',
+  nodes: {
+  "Skeleton": "Skeleton",
+  "MobHelmet": "mob-helmet",
+  "Root": "Root",
+  "Hips": "Hips",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToeBase": "LeftToeBase",
+  "Spine": "Spine",
+  "Spine1": "Spine1",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandMiddle1": "LeftHandMiddle1",
+  "LeftHandMiddle2": "LeftHandMiddle2",
+  "LeftHandPinky1": "LeftHandPinky1",
+  "LeftHandPinky2": "LeftHandPinky2",
+  "LeftHandProp": "LeftHandProp",
+  "LeftHandRing1": "LeftHandRing1",
+  "LeftHandRing2": "LeftHandRing2",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandMiddle1": "RightHandMiddle1",
+  "RightHandMiddle2": "RightHandMiddle2",
+  "RightHandPinky1": "RightHandPinky1",
+  "RightHandPinky2": "RightHandPinky2",
+  "RightHandProp": "RightHandProp",
+  "RightHandRing1": "RightHandRing1",
+  "RightHandRing2": "RightHandRing2",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToeBase": "RightToeBase"
+}
+} as const;
+
 const MobMob = {
   id: 'mob',
   path: 'mob/mob',
@@ -99,6 +154,7 @@ const MobMob = {
 export const MODELS = {
   Mob: {
     MobAnims: MobMobAnims,
+    MobHelmet: MobMobHelmet,
     Mob: MobMob
   }
 } as const;

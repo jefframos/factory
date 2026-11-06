@@ -13,6 +13,16 @@ const SEGMENTS = 160;
 const DISTANCE_SIZE = 128;
 const DEEP_AT = 45;
 
+/** A smaller patch of water (a hole in the field): deep sooner, a round mesh for a round hole, set a little higher. */
+export interface WaterOptions {
+    deepAt?: number;
+    round?: boolean;
+    /** A polygon hole: the mesh is the outline itself (`shore`), not a box or a circle. */
+    polygon?: boolean;
+    y?: number;
+    segments?: number;
+}
+
 export interface Point { x: number; z: number }
 
 const vertexShader = `
@@ -38,7 +48,7 @@ uniform vec2 uAreaMin;
 uniform vec2 uAreaSize;
 varying vec2 vWorldXZ;
 void main() {
-    // How far out: 0 at the shore, 1 at DEEP_AT and beyond.
+    // How far out: 0 at the shore, 1 at deepAt and beyond.
     float out_ = texture2D(uShoreDistance, (vWorldXZ - uAreaMin) / uAreaSize).r;
     vec3 color = mix(uShallow, uMid, smoothstep(0.0, 0.28, out_));
     color = mix(color, uDeep, smoothstep(0.2, 1.0, out_));
@@ -64,7 +74,7 @@ function tone(color: THREE.Color, r: number, g: number, b: number): THREE.Vector
 }
 
 /** Over the sea's area: each texel's distance from the shore (a closed outline), as a share of DEEP_AT. */
-function shoreDistanceTexture(shore: readonly Point[], minX: number, minZ: number, width: number, depth: number): THREE.DataTexture {
+function shoreDistanceTexture(shore: readonly Point[], minX: number, minZ: number, width: number, depth: number, deepAt: number): THREE.DataTexture {
     const data = new Uint8Array(DISTANCE_SIZE * DISTANCE_SIZE);
     for (let r = 0; r < DISTANCE_SIZE; r++) {
         const z = minZ + ((r + 0.5) / DISTANCE_SIZE) * depth;
@@ -79,7 +89,7 @@ function shoreDistanceTexture(shore: readonly Point[], minX: number, minZ: numbe
                 const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz || 1)));
                 best = Math.min(best, Math.hypot(x - (a.x + dx * t), z - (a.z + dz * t)));
             }
-            data[r * DISTANCE_SIZE + c] = Math.round(Math.min(1, best / DEEP_AT) * 255);
+            data[r * DISTANCE_SIZE + c] = Math.round(Math.min(1, best / deepAt) * 255);
         }
     }
     const texture = new THREE.DataTexture(data, DISTANCE_SIZE, DISTANCE_SIZE, THREE.RedFormat);
@@ -88,12 +98,12 @@ function shoreDistanceTexture(shore: readonly Point[], minX: number, minZ: numbe
     return texture;
 }
 
-/** A sea `width` x `depth`, centred on (`centreX`, `centreZ`), round the land outlined by `shore`. */
-export function createWater(color: string, width: number, depth: number, shore: readonly Point[], centreX: number, centreZ: number): THREE.Mesh {
+/** A sea `width` x `depth`, centred on (`centreX`, `centreZ`), round the land outlined by `shore` (or, for a hole, inside it). */
+export function createWater(color: string, width: number, depth: number, shore: readonly Point[], centreX: number, centreZ: number, options: WaterOptions = {}): THREE.Mesh {
     const base = new THREE.Color(color);
     const minX = centreX - width / 2;
     const minZ = centreZ - depth / 2;
-    const distance = shoreDistanceTexture(shore, minX, minZ, width, depth);
+    const distance = shoreDistanceTexture(shore, minX, minZ, width, depth, options.deepAt ?? DEEP_AT);
     const material = new THREE.ShaderMaterial({
         uniforms: {
             time: { value: 0 },
@@ -109,11 +119,24 @@ export function createWater(color: string, width: number, depth: number, shore: 
         vertexShader,
         fragmentShader,
     });
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, depth, SEGMENTS, SEGMENTS).rotateX(-Math.PI / 2), material);
-    mesh.position.set(centreX, -0.05, centreZ);
+    const segments = options.segments ?? SEGMENTS;
+    const geometry = options.polygon
+        ? polygonGeometry(shore, centreX, centreZ)
+        : options.round
+        ? new THREE.CircleGeometry(width / 2, Math.max(24, segments * 2), 0, Math.PI * 2).rotateX(-Math.PI / 2)
+        : new THREE.PlaneGeometry(width, depth, segments, segments).rotateX(-Math.PI / 2);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(centreX, options.y ?? -0.05, centreZ);
     mesh.onBeforeRender = () => {
         material.uniforms.time.value = performance.now() / 1000;
     };
     mesh.userData.free = () => distance.dispose();
     return mesh;
+}
+
+/** A flat mesh filling an outline (points in world X/Z), centred on (cx, cz) like the other water meshes. */
+function polygonGeometry(outline: readonly Point[], cx: number, cz: number): THREE.BufferGeometry {
+    // Drawn in x / y, then laid flat: y becomes -z.
+    const shape = new THREE.Shape(outline.map((p) => new THREE.Vector2(p.x - cx, -(p.z - cz))));
+    return new THREE.ShapeGeometry(shape).rotateX(-Math.PI / 2);
 }

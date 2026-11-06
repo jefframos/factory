@@ -1,0 +1,38 @@
+{
+  "name": "The Spinner",
+  "kind": "Spinner",
+  "gates": [
+    {
+      "x": -2.6,
+      "z": -6.5,
+      "width": 3.4,
+      "value": 3
+    },
+    {
+      "x": 2.6,
+      "z": -6.5,
+      "width": 3.4,
+      "value": 2
+    },
+    {
+      "x": 0,
+      "z": -18.5,
+      "width": 3,
+      "value": 2
+    }
+  ],
+  "spinners": [
+    {
+      "x": 0,
+      "z": -12.5,
+      "length": 3.4,
+      "arms": 4,
+      "speed": 0.22
+    }
+  ],
+  "redRate": 2.4,
+  "redRateEnd": 4.4,
+  "redRamp": 50,
+  "baseHp": 500,
+  "reward": 120
+}

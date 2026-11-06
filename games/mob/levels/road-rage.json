@@ -1,0 +1,58 @@
+{
+  "name": "Road Rage",
+  "kind": "Car + helmets",
+  "gates": [
+    {
+      "x": 2.62,
+      "z": -9,
+      "width": 4.4,
+      "value": 3
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "points": [
+        [
+          -0.25,
+          -6.5
+        ],
+        [
+          0.25,
+          -6.5
+        ],
+        [
+          0.25,
+          -18
+        ],
+        [
+          -0.25,
+          -18
+        ]
+      ]
+    }
+  ],
+  "helmets": [
+    {
+      "x": 2.62,
+      "z": -4,
+      "width": 4.4
+    }
+  ],
+  "pads": [
+    {
+      "kind": "car",
+      "x": -2.62,
+      "z": -4.4,
+      "width": 2.6,
+      "depth": 2,
+      "need": 18
+    }
+  ],
+  "redGiantEvery": 20,
+  "redRate": 2.1,
+  "redRateEnd": 3.9,
+  "redRamp": 55,
+  "baseHp": 480,
+  "reward": 210
+}

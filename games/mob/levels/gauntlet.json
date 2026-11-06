@@ -1,0 +1,58 @@
+{
+  "name": "Gauntlet",
+  "kind": "Mixed",
+  "gates": [
+    {
+      "x": 0,
+      "z": -6.5,
+      "width": 3.8,
+      "value": 2
+    },
+    {
+      "x": 3.65,
+      "z": -6.5,
+      "width": 2.2,
+      "value": 3
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "x": -2.35,
+      "z": -6.5,
+      "width": 0.45,
+      "depth": 6
+    },
+    {
+      "kind": "wall",
+      "x": 2.35,
+      "z": -6.5,
+      "width": 0.45,
+      "depth": 6
+    }
+  ],
+  "pads": [
+    {
+      "x": -3.65,
+      "z": -7,
+      "width": 2.2,
+      "depth": 1.8,
+      "need": 18
+    }
+  ],
+  "spinners": [
+    {
+      "x": 0,
+      "z": -15,
+      "length": 2.8,
+      "arms": 3,
+      "speed": 0.3
+    }
+  ],
+  "redGiantEvery": 20,
+  "redRate": 2.3,
+  "redRateEnd": 4,
+  "redRamp": 60,
+  "baseHp": 340,
+  "reward": 180
+}

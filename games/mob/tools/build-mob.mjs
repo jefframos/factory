@@ -5,6 +5,9 @@
 // colour in COLOR_0, and its alpha says whether the team colour paints it: 1 = paint (the RGB is then only the shading
 // to keep, 0.5 = as is), 0 = keep its own colour (the face). game/battle/CrowdView.ts bakes the run cycle from it.
 //
+// The helmet, mob-helmet.glb: the kit's Hat_057 alone on the same skeleton (its own colours), so the crowd bakes it in
+// the same run poses as the body and draws it on the mobs that went through a helmet barrier.
+//
 // The animations, mob-anims.glb: Mixamo clips converted onto the kit's skeleton the way UFO's people's are
 // (games/ufo/tools/build-people.mjs): Mixamo rigged the kit's body in its T-pose (kit-skeleton.mjs), so each bone's turn
 // from the T-pose on Mixamo's rig is the same turn on the kit's. `run` is games/mob/mixamo/Running.fbx (in place);
@@ -41,6 +44,7 @@ const OUT = path.resolve(HERE, '../raw-assets/models/mob{m}');
 /** The pieces: the body is painted with the team colour, the face keeps its own. */
 const BODY = 'Body_010';
 const FACE = 'Male_emotion_happy_002';
+const HELMET = 'Hat_057';
 /** Mobs are small and many: keep a quarter of the triangles, the shape barely changing. */
 const SIMPLIFY = { ratio: 0.25, error: 0.004 };
 
@@ -96,14 +100,24 @@ function addPiece(pile, document, painted) {
 }
 
 async function buildMob() {
-    // The body's file is the base: it has the skeleton and skin the face shares.
+    await buildSkinned('mob', [{ file: BODY, painted: true }, { file: FACE, painted: false }], SIMPLIFY);
+}
+
+async function buildHelmet() {
+    await buildSkinned('mob-helmet', [{ file: HELMET, painted: false }], { ratio: 0.5, error: 0.004 });
+}
+
+/** One skinned mesh on the body's skeleton from kit pieces (each painted with the team colour or keeping its own), as `name`.glb. */
+async function buildSkinned(name, pieces, simplifyOptions) {
+    // The body's file is the base: it has the skeleton and skin the pieces share.
     const document = await io.read(path.join(KIT, `${BODY}.glb`));
     const root = document.getRoot();
     const node = root.listNodes().find((candidate) => candidate.getMesh());
     const mesh = node.getMesh();
     const pile = { positions: [], normals: [], joints: [], weights: [], colors: [], indices: [] };
-    addPiece(pile, document, true);
-    addPiece(pile, await io.read(path.join(KIT, `${FACE}.glb`)), false);
+    for (const piece of pieces) {
+        addPiece(pile, piece.file === BODY ? document : await io.read(path.join(KIT, `${piece.file}.glb`)), piece.painted);
+    }
 
     const buffer = root.listBuffers()[0];
     const accessor = (type, array) => document.createAccessor().setType(type).setArray(array).setBuffer(buffer);
@@ -119,13 +133,13 @@ async function buildMob() {
         .setAttribute('COLOR_0', accessor('VEC4', new Float32Array(pile.colors)))
         .setAttribute('JOINTS_0', accessor('VEC4', new Uint16Array(pile.joints)))
         .setAttribute('WEIGHTS_0', accessor('VEC4', new Float32Array(pile.weights))));
-    node.setName('mob');
-    mesh.setName('mob');
-    await document.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ...SIMPLIFY }), prune());
+    node.setName(name);
+    mesh.setName(name);
+    await document.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ...simplifyOptions }), prune());
     const kept = mesh.listPrimitives()[0].getIndices().getCount() / 3;
-    const file = path.join(OUT, 'mob.glb');
+    const file = path.join(OUT, `${name}.glb`);
     await io.write(file, document);
-    console.log(`mob: ${pile.indices.length / 3} -> ${kept} triangles, ${(fs.statSync(file).size / 1024) | 0} KB`);
+    console.log(`${name}: ${pile.indices.length / 3} -> ${kept} triangles, ${(fs.statSync(file).size / 1024) | 0} KB`);
 }
 
 function loadFbx(dir, file) {
@@ -221,4 +235,5 @@ async function buildAnimations() {
 await MeshoptSimplifier.ready;
 fs.mkdirSync(OUT, { recursive: true });
 await buildMob();
+await buildHelmet();
 await buildAnimations();

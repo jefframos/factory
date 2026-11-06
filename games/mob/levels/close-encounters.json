@@ -1,0 +1,52 @@
+{
+  "name": "Close Encounters",
+  "kind": "Gold UFO",
+  "gates": [
+    {
+      "x": 0,
+      "z": -7,
+      "width": 3.4,
+      "value": 3
+    },
+    {
+      "x": -3.4,
+      "z": -10,
+      "width": 2.8,
+      "value": 2
+    }
+  ],
+  "pads": [
+    {
+      "kind": "saucer",
+      "x": 3.4,
+      "z": -4.4,
+      "width": 2.4,
+      "depth": 2,
+      "need": 30
+    }
+  ],
+  "targets": [
+    {
+      "x": 0,
+      "hp": 340,
+      "width": 4.4
+    },
+    {
+      "x": -3.6,
+      "hp": 60,
+      "width": 2,
+      "z": -18.5
+    },
+    {
+      "x": 3.6,
+      "hp": 60,
+      "width": 2,
+      "z": -18.5
+    }
+  ],
+  "redRate": 2,
+  "redRateEnd": 3.7,
+  "redRamp": 55,
+  "baseHp": 580,
+  "reward": 200
+}

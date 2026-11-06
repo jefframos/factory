@@ -1,0 +1,456 @@
+{
+  "frames": {
+    "Tutorial_Hand": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 189,
+        "h": 214
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 33,
+        "y": 21,
+        "w": 189,
+        "h": 214
+      },
+      "sourceSize": {
+        "w": 256,
+        "h": 256
+      }
+    },
+    "Title_Ribbon02_White1": {
+      "frame": {
+        "x": 193,
+        "y": 2,
+        "w": 178,
+        "h": 116
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 178,
+        "h": 116
+      },
+      "sourceSize": {
+        "w": 178,
+        "h": 116
+      }
+    },
+    "Title_Line01_Divider_Right": {
+      "frame": {
+        "x": 2,
+        "y": 218,
+        "w": 65,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 42
+      }
+    },
+    "Title_Line01_Divider_Left": {
+      "frame": {
+        "x": 69,
+        "y": 218,
+        "w": 65,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 42
+      }
+    },
+    "Slider_Play01_FillMask": {
+      "frame": {
+        "x": 136,
+        "y": 218,
+        "w": 10,
+        "h": 10
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 10,
+        "h": 10
+      },
+      "sourceSize": {
+        "w": 10,
+        "h": 10
+      }
+    },
+    "Slider_Play01_Bg": {
+      "frame": {
+        "x": 136,
+        "y": 230,
+        "w": 18,
+        "h": 18
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 18,
+        "h": 18
+      },
+      "sourceSize": {
+        "w": 18,
+        "h": 18
+      }
+    },
+    "Slider_Level02_Icon_Up_Green": {
+      "frame": {
+        "x": 193,
+        "y": 182,
+        "w": 54,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 54,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 54,
+        "h": 64
+      }
+    },
+    "Slider_Level02_Icon_Badge_Yellow": {
+      "frame": {
+        "x": 2,
+        "y": 262,
+        "w": 102,
+        "h": 107
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 102,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 102,
+        "h": 107
+      }
+    },
+    "ResourceBar_Single_Icon_Energy": {
+      "frame": {
+        "x": 249,
+        "y": 182,
+        "w": 57,
+        "h": 79
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 57,
+        "h": 79
+      },
+      "sourceSize": {
+        "w": 57,
+        "h": 79
+      }
+    },
+    "ResourceBar_Single_Icon_Coin": {
+      "frame": {
+        "x": 156,
+        "y": 248,
+        "w": 67,
+        "h": 75
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 67,
+        "h": 75
+      },
+      "sourceSize": {
+        "w": 67,
+        "h": 75
+      }
+    },
+    "ResourceBar_Single_Bg": {
+      "frame": {
+        "x": 156,
+        "y": 218,
+        "w": 26,
+        "h": 26
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 26,
+        "h": 26
+      },
+      "sourceSize": {
+        "w": 26,
+        "h": 26
+      }
+    },
+    "ItemIcon_Skull": {
+      "frame": {
+        "x": 311,
+        "y": 2,
+        "w": 124,
+        "h": 99
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 2,
+        "y": 14,
+        "w": 124,
+        "h": 99
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "ItemIcon_Energy_Blue": {
+      "frame": {
+        "x": 2,
+        "y": 366,
+        "w": 165,
+        "h": 217
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 45,
+        "y": 19,
+        "w": 165,
+        "h": 217
+      },
+      "sourceSize": {
+        "w": 256,
+        "h": 256
+      }
+    },
+    "Image_Effect_Rotate": {
+      "frame": {
+        "x": 412,
+        "y": 2,
+        "w": 270,
+        "h": 275
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 270,
+        "h": 275
+      },
+      "sourceSize": {
+        "w": 270,
+        "h": 275
+      }
+    },
+    "Image_Demo_Coin": {
+      "frame": {
+        "x": 311,
+        "y": 128,
+        "w": 74,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 74,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 74,
+        "h": 49
+      }
+    },
+    "Image_Bagde_Wing1": {
+      "frame": {
+        "x": 233,
+        "y": 279,
+        "w": 536,
+        "h": 449
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 536,
+        "h": 449
+      },
+      "sourceSize": {
+        "w": 536,
+        "h": 449
+      }
+    },
+    "Image_Badge_Skull": {
+      "frame": {
+        "x": 684,
+        "y": 2,
+        "w": 562,
+        "h": 329
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 562,
+        "h": 329
+      },
+      "sourceSize": {
+        "w": 562,
+        "h": 329
+      }
+    },
+    "Button01_l_Sky": {
+      "frame": {
+        "x": 2,
+        "y": 817,
+        "w": 80,
+        "h": 142
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 142
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 142
+      }
+    },
+    "Button01_l_Green": {
+      "frame": {
+        "x": 84,
+        "y": 533,
+        "w": 80,
+        "h": 142
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 142
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 142
+      }
+    },
+    "Button01_l_Gray": {
+      "frame": {
+        "x": 2,
+        "y": 533,
+        "w": 80,
+        "h": 142
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 142
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 142
+      }
+    },
+    "BorderFrame_Round24": {
+      "frame": {
+        "x": 308,
+        "y": 182,
+        "w": 62,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 62,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 62,
+        "h": 62
+      }
+    },
+    "ActionText_Go": {
+      "frame": {
+        "x": 684,
+        "y": 566,
+        "w": 351,
+        "h": 180
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 351,
+        "h": 180
+      },
+      "sourceSize": {
+        "w": 351,
+        "h": 180
+      }
+    }
+  },
+  "meta": {
+    "app": "http://github.com/pixijs/assetpack",
+    "version": "1.0",
+    "image": "ui.webp",
+    "format": "RGBA8888",
+    "size": {
+      "w": 1015,
+      "h": 961
+    },
+    "scale": 1,
+    "related_multi_packs": []
+  }
+}

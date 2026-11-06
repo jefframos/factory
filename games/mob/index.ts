@@ -12,6 +12,7 @@ import * as PIXI from 'pixi.js';
 import loaderConfig from './loader.config';
 import platformConfig from './platforms.config.json';
 import MobScene from './game/scenes/MobScene';
+import { MobAudio } from './game/audio/MobAudio';
 
 type PlatformConfigEntry = { gameId?: string; enableAds?: boolean; folderPath?: string };
 
@@ -43,12 +44,15 @@ export default class MobGame extends Game {
             PlatformHandler.ENABLE_VIDEO_ADS = config?.enableAds ?? true;
             await PlatformHandler.instance.initialize(await getPlatformInstance(platformName));
             PlatformHandler.instance.platform.startLoad();
+            MobAudio.initialize(this.folderPath);
             this.stageContainer.addChild(this.gameContainer);
             this.sceneManager = new SceneManager(this.gameContainer);
             await Promise.all(FONTS.map(async (family) => {
                 const face = new FontFace(family, `url(./${this.folderPath}/fonts/${family}.woff2) format('woff2')`);
                 document.fonts.add(await face.load());
             }));
+            // The UI's sprites (picked from library3d/2d's pack: raw-assets/images/ui{tps}, `npm run image`).
+            await PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`);
             // The debug panels: only with ?dev=1 / ?debug=1.
             DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'mob');
             const scene = this.sceneManager.register<MobScene>('battle', MobScene, this);

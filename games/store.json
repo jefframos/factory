@@ -9,6 +9,7 @@
         "hex",
         "mow",
         "tower",
+        "mob",
         "ufo"
     ],
     "names": {
@@ -16,6 +17,7 @@
         "dig": "Dig and Discover",
         "clog": "Whale.io",
         "ant": "Ant",
+        "mob": "Mob Defense",
         "merge1": "Cat Garden",
         "mow": "Mow",
         "ufo": "UFO.io",

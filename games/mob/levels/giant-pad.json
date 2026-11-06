@@ -1,0 +1,32 @@
+{
+  "name": "Giant Pad",
+  "kind": "Giant pad",
+  "gates": [
+    {
+      "x": -3.25,
+      "z": -6.5,
+      "width": 2.7,
+      "value": 2
+    },
+    {
+      "x": 3.25,
+      "z": -6.5,
+      "width": 2.7,
+      "value": 3
+    }
+  ],
+  "pads": [
+    {
+      "x": 0,
+      "z": -11.5,
+      "width": 3.2,
+      "depth": 2.2,
+      "need": 16
+    }
+  ],
+  "redRate": 2.6,
+  "redRateEnd": 4.6,
+  "redRamp": 50,
+  "baseHp": 500,
+  "reward": 130
+}

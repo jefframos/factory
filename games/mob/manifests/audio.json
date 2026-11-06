@@ -1,0 +1,153 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "applause.mp3"
+          ],
+          "src": [
+            "applause.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "bubbles.wav"
+          ],
+          "src": [
+            "bubbles.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "coins-1.ogg"
+          ],
+          "src": [
+            "coins-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "dig-hit-1.ogg"
+          ],
+          "src": [
+            "dig-hit-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "dig-hit-2.ogg"
+          ],
+          "src": [
+            "dig-hit-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "dig-hit-3.ogg"
+          ],
+          "src": [
+            "dig-hit-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "drop-1.ogg"
+          ],
+          "src": [
+            "drop-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "drop-2.ogg"
+          ],
+          "src": [
+            "drop-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "drop-3.ogg"
+          ],
+          "src": [
+            "drop-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "drop-4.ogg"
+          ],
+          "src": [
+            "drop-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "drop-5.ogg"
+          ],
+          "src": [
+            "drop-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "explosion.mp3"
+          ],
+          "src": [
+            "explosion.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "lose.wav"
+          ],
+          "src": [
+            "lose.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "music.mp3"
+          ],
+          "src": [
+            "music.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "reveal.ogg"
+          ],
+          "src": [
+            "reveal.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "tap.wav"
+          ],
+          "src": [
+            "tap.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-complete.ogg"
+          ],
+          "src": [
+            "ui-complete.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "whoosh.wav"
+          ],
+          "src": [
+            "whoosh.mp3"
+          ]
+        }
+      ]
+    }
+  ]
+}

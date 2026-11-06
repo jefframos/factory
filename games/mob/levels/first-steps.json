@@ -1,0 +1,23 @@
+{
+  "name": "First Steps",
+  "kind": "Classic",
+  "gates": [
+    {
+      "x": -2.45,
+      "z": -9,
+      "width": 3.6,
+      "value": 2
+    },
+    {
+      "x": 2.45,
+      "z": -9,
+      "width": 3.6,
+      "value": 3
+    }
+  ],
+  "redRate": 2,
+  "redRateEnd": 3.6,
+  "redRamp": 45,
+  "baseHp": 200,
+  "reward": 100
+}

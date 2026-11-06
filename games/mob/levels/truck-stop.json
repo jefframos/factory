@@ -1,0 +1,64 @@
+{
+  "name": "Truck Stop",
+  "kind": "Truck garage",
+  "gates": [
+    {
+      "x": -2.62,
+      "z": -2.6,
+      "width": 4.4,
+      "value": 2
+    },
+    {
+      "x": 2.62,
+      "z": -8,
+      "width": 4.4,
+      "value": 3
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "points": [
+        [
+          -0.25,
+          -5
+        ],
+        [
+          0.25,
+          -5
+        ],
+        [
+          0.25,
+          -19
+        ],
+        [
+          -0.25,
+          -19
+        ]
+      ]
+    },
+    {
+      "kind": "breakable",
+      "x": -2.62,
+      "z": -12.5,
+      "width": 4.6,
+      "depth": 1,
+      "hp": 120
+    }
+  ],
+  "pads": [
+    {
+      "kind": "truck",
+      "x": -2.62,
+      "z": -5.4,
+      "width": 2.6,
+      "depth": 1.8,
+      "need": 24
+    }
+  ],
+  "redRate": 3.1,
+  "redRateEnd": 5.3,
+  "redRamp": 55,
+  "baseHp": 600,
+  "reward": 190
+}

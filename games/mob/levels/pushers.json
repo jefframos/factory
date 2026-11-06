@@ -1,0 +1,42 @@
+{
+  "name": "Pushers",
+  "kind": "Pushers",
+  "gates": [
+    {
+      "x": -2.45,
+      "z": -6,
+      "width": 3.6,
+      "value": 2
+    },
+    {
+      "x": 2.45,
+      "z": -6,
+      "width": 3.6,
+      "value": 3
+    }
+  ],
+  "pushers": [
+    {
+      "x": 0,
+      "z": -10.5,
+      "width": 3.4,
+      "depth": 0.7,
+      "range": 3.1,
+      "seconds": 3.2
+    },
+    {
+      "x": 0,
+      "z": -15.5,
+      "width": 3.4,
+      "depth": 0.7,
+      "range": 3.1,
+      "seconds": 4,
+      "phase": 0.5
+    }
+  ],
+  "redRate": 2.8,
+  "redRateEnd": 5,
+  "redRamp": 55,
+  "baseHp": 520,
+  "reward": 140
+}
