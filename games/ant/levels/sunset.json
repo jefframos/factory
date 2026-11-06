@@ -48,12 +48,12 @@
     "dddddddddddd4444444444dddddd"
   ],
   "columns": 5,
-  "deck": "8x29 2x35 bx25 1x44 ex14 3x24 gx2 5x31 7x31 0x58 1x12 0x47 4x5 4x28 6x18 ax11 0x18 ax11 3x26 dx24 9x29 6x11 hx1 gx11 cx24 ax6 fx14 2x17 hx6 6x2 ex2",
+  "deck": "fx14 hx1 9x29 ex14 1x44 0x18 cx24 0x47 hx6 gx11 6x18 gx2 4x28 bx25 ax11 8x29 3x24 ex2 0x58 ax11 2x35 4x5 dx24 6x11 7x31 ax6 3x26 5x31 2x17 1x12 6x2",
   "check": {
     "clearable": true,
     "slots": 5,
     "robust": true,
-    "randomWins": 0.48,
-    "target": 0.425
+    "randomWins": 0.28,
+    "target": 0.35
   }
 }

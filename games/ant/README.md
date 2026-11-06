@@ -205,7 +205,8 @@ Per-picture settings, in `raw-assets/pictures/pictures.json` (the editor writes 
 Bigger grids keep more detail (a strawberry's seeds need more than 22 × 22). Pictures with flat colours and clear
 shapes pixelate best; few colours (4–8) suit the game.
 
-The 28 test levels: `strawberry`, `mushroom`, `teacup`, `sunset` and five patterns (`rings`, `frames`, `checker`,
+The 40 playtest levels: Cherry Pop (drawn in the editor), 12 item icons from the UI pack (outlined: blue star,
+clover, gifts, bolt, gem, trophy, earth, potion, book, key, chest), and these — `strawberry`, `mushroom`, `teacup`, `sunset` and five patterns (`rings`, `frames`, `checker`,
 `zigzag`, `polka`) are SVGs drawn for the game; the other 19 are Twemoji (CC BY 4.0 — credit needed if they ship:
 `raw-assets/pictures/CREDITS.md`). They're ordered by the solver's difficulty: plain pictures first, the outlined
 ones with traps (cloud, frames, blossom, ice cream, cat, frog) last.

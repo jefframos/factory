@@ -43,12 +43,12 @@
     "......................"
   ],
   "columns": 4,
-  "deck": "0x24 1x27 0x25 5x10 3x4 8x8 1x47 2x13 3x13 0x32 7x7 ax1 4x12 0x45 6x8 1x8 3x2 7x2 2x7 6x2 9x3 4x4 bx1 ax1 cx1",
+  "deck": "2x9 3x4 7x9 2x11 0x38 4x16 0x24 1x38 9x3 6x10 8x8 1x28 5x10 1x16 3x7 0x22 0x42 3x8 ax2 cx1 bx1",
   "check": {
     "clearable": true,
     "slots": 5,
     "robust": true,
-    "randomWins": 0.65,
-    "target": 0.675
+    "randomWins": 0.43,
+    "target": 0.525
   }
 }

@@ -4,9 +4,12 @@ These pictures are from **Twemoji** (https://github.com/jdecked/twemoji, v15.1.0
 contributors, licensed under **CC BY 4.0** (https://creativecommons.org/licenses/by/4.0/). They're pixelated (resized,
 recoloured to the game's palette, sometimes outlined) to make levels:
 
-apple, cherries, watermelon, lemon, carrot, heart, star, sun, cloud, cat, fish, blossom, tulip, icecream, house, tree,
+apple, watermelon, lemon, carrot, heart, star, sun, cloud, cat, fish, blossom, tulip, icecream, house, tree,
 rainbow, ghost, frog.
 
 Credit them in the game's credits / store page if they ship.
+
+star-blue, clover, gift-blue, gift-green, bolt, gem-purple, trophy, earth, potion, book, key and chest are item icons
+from the Layer Lab GUI pack the factory's UI uses (`library3d/2d/ResourcesData`, the same licence as the game's UI).
 
 strawberry, mushroom, teacup, sunset and the patterns (rings, frames, checker, zigzag, polka) were drawn for the game.

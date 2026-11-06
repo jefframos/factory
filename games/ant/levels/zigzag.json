@@ -40,12 +40,12 @@
     "77777777777777777777"
   ],
   "columns": 4,
-  "deck": "8x1 3x36 2x14 1x16 ax10 5x10 2x23 1x20 7x6 9x16 8x11 0x15 7x8 6x12 8x5 4x8 7x2 bx16 0x17 1x14 0x15 2x13 7x9 4x13 5x11 3x14 0x21 ax6 6x14 0x11 4x6 5x5 8x2",
+  "deck": "4x8 4x13 9x16 1x16 5x11 ax10 2x23 7x9 5x10 4x6 7x6 8x5 6x12 3x36 8x1 0x15 1x20 0x15 0x17 1x14 0x21 2x13 0x11 2x14 7x8 5x5 3x14 8x11 ax6 bx16 7x2 6x14 8x2",
   "check": {
     "clearable": true,
     "slots": 5,
     "robust": true,
-    "randomWins": 0.55,
-    "target": 0.575
+    "randomWins": 0.45,
+    "target": 0.225
   }
 }

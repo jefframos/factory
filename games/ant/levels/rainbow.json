@@ -50,12 +50,12 @@
     "0022446688aa............"
   ],
   "columns": 4,
-  "deck": "6x10 3x11 9x6 9x8 2x10 0x11 cx1 bx15 8x12 4x10 2x4 7x12 8x7 7x4 0x9 cx1 6x6 cx2 ax19 cx2 4x10 3x5 3x4 2x6 1x31 5x18 6x5 3x4 9x5 4x4 dx7 2x4 cx2 ex4 fx5 6x4 ex2 bx2 2x1 5x6 4x2 hx3 2x6 4x2 gx4 0x14 3x5 7x6 8x3 9x1 ex1 5x2 7x1",
+  "deck": "7x4 8x12 4x10 9x8 0x11 4x10 cx1 6x6 6x10 ax19 9x6 2x10 ex1 cx1 2x4 0x9 8x7 3x11 hx3 cx2 6x5 3x5 4x4 2x4 1x31 3x4 7x12 bx15 dx7 2x6 cx2 3x4 4x2 gx4 0x14 5x6 5x18 9x5 6x4 2x6 cx2 ex4 fx5 9x1 8x3 bx2 4x2 ex2 3x5 7x6 2x1 5x2 7x1",
   "check": {
     "clearable": true,
     "slots": 5,
     "robust": true,
-    "randomWins": 0.54,
-    "target": 0.55
+    "randomWins": 0.35,
+    "target": 0.35
   }
 }

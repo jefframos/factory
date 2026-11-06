@@ -45,6 +45,6 @@
     "slots": 5,
     "robust": true,
     "randomWins": 0.63,
-    "target": 0.7
+    "target": 0.55
   }
 }
