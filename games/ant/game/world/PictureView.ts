@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import type { LevelData } from '../data/Levels';
 import { LAYOUT } from './Layout';
+import { currentFrame } from '../data/Shop';
 
 /** A block's footprint (the whole cell: blocks touch, their rounded edges show the grid), height and rounding (shares of the cell). */
 export const BLOCK = 1;
@@ -21,9 +22,7 @@ const POP_SEC = 0.12;
 const WOBBLE_SEC = 0.45;
 /** The board's top: where the picture's blocks (and the ants on the rim) stand. */
 export const TRAY_TOP = 0.3;
-/** The board (cream) and its wooden border (and how much wider it is). */
-const BOARD = 0xf3dcc3;
-const BORDER = 0xe9c49c;
+/** How much wider the border is than the board (their colours: the frame in use, data/Shop.ts). */
 const BORDER_WIDTH = 0.85;
 
 export class PictureView {
@@ -45,15 +44,16 @@ export class PictureView {
         this.width = level.width * cell;
         this.depth = level.height * cell;
         const rim = LAYOUT.rim;
+        const frame = currentFrame();
         const board = new THREE.Mesh(
             new RoundedBoxGeometry(this.width + rim * 2, 0.2, this.depth + rim * 2, 4, 0.5),
             // A light tan from the border's family (not white: easy on the eyes), lit a touch so it stays light.
-            new THREE.MeshStandardMaterial({ color: BOARD, emissive: BOARD, emissiveIntensity: 0.12, roughness: 0.9 }),
+            new THREE.MeshStandardMaterial({ color: frame.board, emissive: frame.board, emissiveIntensity: 0.12, roughness: 0.9 }),
         );
         board.position.set(this.width / 2, -0.1, this.depth / 2);
         const border = new THREE.Mesh(
             new RoundedBoxGeometry(this.width + (rim + BORDER_WIDTH) * 2, TRAY_TOP + 0.3, this.depth + (rim + BORDER_WIDTH) * 2, 4, 1.1),
-            new THREE.MeshStandardMaterial({ color: BORDER, roughness: 0.85 }),
+            new THREE.MeshStandardMaterial({ color: frame.border, roughness: 0.85 }),
         );
         // Its top just under the board's, so the cream board shows and the wood frames it.
         border.position.set(this.width / 2, -(TRAY_TOP + 0.3) / 2 - 0.03, this.depth / 2);

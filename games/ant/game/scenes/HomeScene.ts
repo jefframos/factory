@@ -2,8 +2,8 @@
 //
 // The main screen, after the UFO game's (games/ufo/game/scenes/HomeScene.ts): the picture of the level the player is on
 // — its jelly cubes on their tray (PictureView), swaying gently on the peach floor — with LEVEL N on a red ribbon over
-// it, the sound button top right, the big yellow PLAY under it, and the bottom tabs: a gift (nothing yet), home, and the
-// shop (an empty panel for now). Arrows either side of the picture go through the levels already reached (to replay
+// it, the coins top left, the sound button top right, the big yellow PLAY under it, and the bottom tabs: the power-ups'
+// shop, home, and the deco shop (backgrounds and frames: ui/ShopPanel.ts, as UFO's). What's bought and used shows at once. Arrows either side of the picture go through the levels already reached (to replay
 // one); the ▶| under the right one jumps back to the furthest.
 
 import * as PIXI from 'pixi.js';
@@ -19,8 +19,9 @@ import { AntSave } from '../data/AntSave';
 import { LEVELS, pixelsOf } from '../data/Levels';
 import { PictureView, TRAY_TOP } from '../world/PictureView';
 import { LAYOUT } from '../world/Layout';
-import { FLOOR, floorTexture } from './AntScene';
-import { DARK, dimmer, framePlane, iconSprite, label, plainLabel, roundButton, tappable } from '../ui/UiParts';
+import { floorColor, floorTexture } from './AntScene';
+import { COIN_BAR, DARK, fillCoinBar, framePlane, iconSprite, label, plainLabel, roundButton, tappable } from '../ui/UiParts';
+import { ShopKind, ShopPanel } from '../ui/ShopPanel';
 
 /** Design units (720 x 1080). The bottom tabs (as UFO's), the ribbon, the PLAY button, the sound button. */
 const TABS = {
@@ -34,18 +35,16 @@ const SHINE = { glowWidth: 1.35, glowHeight: 2.2, glowColor: 0xffd23f, glowFrom:
 const MUTE = { size: 56, margin: 16, y: 48, icon: 0.55 / 128 };
 /** The level arrows: their size, how far in from the screen's sides, how far above the middle; the latest button under the right one. */
 const ARROWS = { size: 64, margin: 44, up: 60, latest: 54, latestDown: 76 };
-/** The shop panel (empty for now): its frame's margins from the screen's edges. */
-const SHOP = { top: 110, bottom: 30, side: 22, scale: 0.9, title: 40, titleY: 34 };
 /** The camera: field of view, tilt from straight down, how much of the screen's width the tray fills, and how far the
  *  picture sits above the screen's middle (world units); the picture's sway. */
 const VIEW = { fov: 30, tiltDeg: 28, fill: 0.86, lift: 1.6, swayDeg: 3, swaySpeed: 0.5, bob: 0.25 };
 
-type Tab = 'gift' | 'home' | 'shop';
-const TAB_ORDER: Tab[] = ['gift', 'home', 'shop'];
+type Tab = 'boosts' | 'home' | 'deco';
+const TAB_ORDER: Tab[] = ['boosts', 'home', 'deco'];
 const TAB_ICONS: Record<Tab, { frame: string; name: string }> = {
-    gift: { frame: 'ItemIcon_Gift_Blue', name: 'SOON' },
+    boosts: { frame: 'ItemIcon_Pot', name: 'POWER-UPS' },
     home: { frame: 'Icon_MapPoint', name: 'HOME' },
-    shop: { frame: 'ItemIcon_Shop', name: 'SHOP' },
+    deco: { frame: 'ItemIcon_Shop', name: 'DECO' },
 };
 
 /** A soft band of white, across a small canvas: the PLAY button's shine. */
@@ -79,7 +78,10 @@ export default class HomeScene extends ThreeScene {
     private readonly tabFocus = framePlane('Menu_BottomBtn_TabFocus', 240, TABS.height + TABS.rise);
     private readonly tabLight = framePlane('Menu_BottomBtn_TabFocus_Light', 230, TABS.height + TABS.rise - TABS.lightInset);
     private readonly tabs = new Map<Tab, { holder: PIXI.Container; icon: PIXI.Container; words: PIXI.Text }>();
-    private shop: PIXI.Container | null = null;
+    private readonly shops = new Map<ShopKind, ShopPanel>();
+    private readonly coinsBar = new PIXI.Container();
+    private readonly coinsText = label(COIN_BAR.textSize);
+    private floor?: THREE.Mesh;
     private tab: Tab = 'home';
     /** The picture and the stand it sways on. */
     private readonly stand = new THREE.Group();
@@ -94,7 +96,7 @@ export default class HomeScene extends ThreeScene {
     }
 
     public build(): void {
-        this.threeScene.background = new THREE.Color(FLOOR);
+        this.threeScene.background = floorColor();
         const pmrem = new THREE.PMREMGenerator(SetupThree.renderer);
         this.threeScene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
         this.threeScene.environmentIntensity = 0.3;
@@ -103,10 +105,10 @@ export default class HomeScene extends ThreeScene {
         const sun = new THREE.DirectionalLight(0xffffff, 0.95);
         sun.position.set(5, 30, 18);
         this.threeScene.add(sun);
-        const floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ map: floorTexture(), roughness: 1 }));
-        floor.rotation.x = -Math.PI / 2;
-        floor.position.y = -0.4;
-        this.threeScene.add(floor);
+        this.floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ map: floorTexture(), roughness: 1 }));
+        this.floor.rotation.x = -Math.PI / 2;
+        this.floor.position.y = -0.4;
+        this.threeScene.add(this.floor);
         this.threeCamera.fov = VIEW.fov;
 
         this.threeScene.add(this.stand);
@@ -165,7 +167,9 @@ export default class HomeScene extends ThreeScene {
         this.tabLight.tint = TABS.lightColor;
         this.tabBar.addChild(this.tabBack, this.tabFocus, this.tabLight);
         for (const tab of TAB_ORDER) this.addTab(tab);
-        this.ui.addChild(this.ribbon, this.prev, this.next, this.latest, this.play, this.mute, this.tabBar);
+        fillCoinBar(this.coinsBar, this.coinsText);
+        this.refreshCoins();
+        this.ui.addChild(this.ribbon, this.prev, this.next, this.latest, this.play, this.mute, this.coinsBar, this.tabBar);
     }
 
     /** The pack's big PLAY: a tapered yellow button, dark words with no outline, a gold glow breathing and a shine sweeping. */
@@ -243,50 +247,41 @@ export default class HomeScene extends ThreeScene {
     }
 
     private openTab(tab: Tab): void {
-        if (tab === 'gift') {
-            // Nothing there yet: a little wiggle.
-            const icon = this.tabs.get(tab)?.icon;
-            if (icon) gsap.fromTo(icon, { rotation: -0.25 }, { rotation: 0, duration: 0.5, ease: 'elastic.out(3, 0.3)' });
-            return;
-        }
         if (tab === this.tab) return;
         this.tab = tab;
-        if (tab === 'shop') this.openShop();
-        else this.closeShop();
+        this.shops.forEach((shop) => { shop.visible = false; });
+        if (tab !== 'home') {
+            let shop = this.shops.get(tab);
+            if (!shop) {
+                shop = new ShopPanel(tab, () => this.onShopChange());
+                this.shops.set(tab, shop);
+                // Over the buttons, under the coins and the tabs.
+                this.ui.addChildAt(shop, this.ui.getChildIndex(this.coinsBar));
+            }
+            shop.visible = true;
+            shop.refresh();
+            shop.reposition();
+        }
         this.placeTabs();
         const icon = this.tabs.get(tab)?.icon;
         if (icon) gsap.from(icon.scale, { x: 0.7, y: 0.7, duration: 0.3, ease: 'back.out(3)' });
     }
 
-    /** The shop: the pack's popup frame over the screen (down to the tabs), empty for now. */
-    private openShop(): void {
-        if (this.shop) return;
-        const screen = Game.overlayScreenData;
-        const shop = new PIXI.Container();
-        const dim = dimmer();
-        dim.beginFill(0x10123a, 0.35).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
-        const width = screen.width - SHOP.side * 2;
-        const height = screen.height - TABS.height - SHOP.top - SHOP.bottom;
-        const frame = framePlane('Popup04_Topber_Single', width, height, SHOP.scale);
-        frame.position.set(screen.topLeft.x + SHOP.side, screen.topLeft.y + SHOP.top);
-        const title = label(SHOP.title);
-        title.text = 'SHOP';
-        title.position.set(screen.center.x, frame.y + SHOP.titleY);
-        const soon = label(30);
-        soon.text = 'Coming soon!';
-        soon.position.set(screen.center.x, frame.y + height / 2);
-        const icon = iconSprite('ItemIcon_Shop', 140);
-        icon.position.set(screen.center.x, soon.y - 110);
-        shop.addChild(dim, frame, title, icon, soon);
-        this.shop = shop;
-        // Under the tabs, so they still switch back.
-        this.ui.addChildAt(shop, this.ui.getChildIndex(this.tabBar));
-        gsap.from(frame, { y: frame.y + 40, alpha: 0, duration: 0.25, ease: 'power2.out' });
+    /** Coins spent, or another background or frame in use: the coins, the floor and the picture show it. */
+    private onShopChange(): void {
+        this.refreshCoins();
+        this.threeScene.background = floorColor();
+        const material = this.floor?.material as THREE.MeshStandardMaterial | undefined;
+        if (material) {
+            material.map?.dispose();
+            material.map = floorTexture();
+            material.needsUpdate = true;
+        }
+        this.showLevel(this.index);
     }
 
-    private closeShop(): void {
-        this.shop?.destroy({ children: true });
-        this.shop = null;
+    private refreshCoins(): void {
+        this.coinsText.text = String(AntSave.coins);
     }
 
     private placeTabs(): void {
@@ -348,10 +343,8 @@ export default class HomeScene extends ThreeScene {
         this.latest.position.set(this.next.x, arrowsY + ARROWS.latestDown);
         this.play.position.set(screen.center.x, top + screen.height - TABS.height - PLAY.up);
         this.placeTabs();
-        if (this.shop) {
-            this.closeShop();
-            this.openShop();
-        }
+        this.coinsBar.position.set(screen.topLeft.x + COIN_BAR.left + COIN_BAR.icon / 2, top + COIN_BAR.top);
+        this.shops.forEach((shop) => shop.reposition());
     }
 
     public update(delta: number): void {

@@ -1,8 +1,9 @@
 // AntAudio.ts
 //
 // Ant's sounds: short effects for the buttons, the tiles, the ants picking up their blocks, a won or lost level, and a
-// calm soundtrack looping quietly under it all. Files: raw-assets/audio (`npm run audio` packs them as mp3 into
-// public/ant/audio), taken from the dig, down, bandit and UFO games. Played through Howler, so the sound toggle
+// soundtrack ("Redding Rainbow" by Benjamin Andrews, from library3d/sounds) looping quietly under it all. Files:
+// raw-assets/audio (`npm run audio` packs them as mp3 into public/ant/audio); the effects come from the dig, down,
+// bandit and UFO games. Played through Howler (the music streamed), so the sound toggle
 // (SoundManager's saved mute) silences everything; the music has its own saved setting (the pause popup's MUSIC).
 
 import { Howl, Howler } from 'howler';

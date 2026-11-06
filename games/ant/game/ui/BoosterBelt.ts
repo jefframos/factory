@@ -2,13 +2,15 @@
 //
 // The item belt along the bottom of the screen, like the reference: a blue checked cloth with round buttons on it, one
 // per power-up, each with a green count badge — the UI pack's blue round button and white icons (UiParts). A power-up
-// unlocks at its level (BOOSTERS): before that it's a dark button with a padlock and its level. Only the extra slot does
-// something for now; the others are there, waiting for their effect (tapping one gives a little bounce).
+// unlocks at its level (BOOSTERS): before that it's a dark button with a padlock and its level. The badge is how many
+// the player has (AntSave: bought in the power-ups' shop); none, no badge. Only the extra slot does something for now
+// (once a level); the others are there, waiting for their effect (tapping one gives a little bounce).
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { framePlane, iconSprite, label, roundButton } from './UiParts';
 import { AntAudio } from '../audio/AntAudio';
+import { AntSave } from '../data/AntSave';
 
 export type BoosterId = 'slot' | 'shuffle' | 'hammer' | 'bomb';
 
@@ -41,8 +43,8 @@ export class BoosterBelt extends PIXI.Container {
     private readonly cloth = new PIXI.Graphics();
     private readonly buttons: BeltButton[] = [];
     private level = 1;
-    /** How many of each the player has (for now: one extra slot a level, one of each other). */
-    private readonly counts: Record<BoosterId, number> = { slot: 1, shuffle: 1, hammer: 1, bomb: 1 };
+    /** Power-ups already used this level (greyed out: once a level). */
+    private readonly used = new Set<BoosterId>();
 
     /** `onUse` when an unlocked power-up with some left is tapped. */
     public constructor(private readonly onUse: (id: BoosterId) => void) {
@@ -97,8 +99,9 @@ export class BoosterBelt extends PIXI.Container {
             return;
         }
         gsap.fromTo(button.holder.scale, { x: 0.88, y: 0.88 }, { x: 1, y: 1, duration: 0.3, ease: 'back.out(3)' });
-        AntAudio.play(this.counts[button.id] > 0 && button.id === 'slot' ? 'slot' : 'click');
-        if (this.counts[button.id] > 0) this.onUse(button.id);
+        const ready = AntSave.boosters(button.id) > 0 && !this.used.has(button.id);
+        AntAudio.play(ready && button.id === 'slot' ? 'slot' : 'click');
+        if (ready) this.onUse(button.id);
     }
 
     /** The level being played: what's unlocked. */
@@ -107,23 +110,26 @@ export class BoosterBelt extends PIXI.Container {
         this.refresh();
     }
 
-    /** How many of a power-up are left (0: greyed out). */
-    public setCount(id: BoosterId, count: number): void {
-        this.counts[id] = count;
+    /** A power-up used this level (greyed out), or ready again (a new level). */
+    public setUsed(id: BoosterId, used: boolean): void {
+        if (used) this.used.add(id);
+        else this.used.delete(id);
         this.refresh();
     }
 
-    private refresh(): void {
+    /** The badges and greys as they now are (how many the player has: AntSave). */
+    public refresh(): void {
         for (const b of this.buttons) {
             const locked = this.level < b.unlock;
-            const left = this.counts[b.id];
+            const left = AntSave.boosters(b.id);
+            const ready = left > 0 && !this.used.has(b.id);
             b.open.visible = !locked;
             b.locked.visible = locked;
             // None left: no badge (not a 0).
             b.badge.visible = !locked && left > 0;
-            b.open.alpha = left > 0 ? 1 : 0.5;
+            b.open.alpha = ready ? 1 : 0.5;
             b.count.text = String(left);
-            b.holder.cursor = locked || left === 0 ? 'default' : 'pointer';
+            b.holder.cursor = locked || !ready ? 'default' : 'pointer';
         }
     }
 

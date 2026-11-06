@@ -11,12 +11,19 @@ sprites (`raw-assets/images/ui{tps}`, see `tools/ui-kit/README.md`) and the Balo
 
 **Screens.** The main screen (`scenes/HomeScene.ts`, after UFO's) shows the level's picture as it'll look in the game,
 LEVEL N on a ribbon, ← / → to go through the levels already reached (to replay one; ▶| back to the furthest — replaying
-never lowers progress), PLAY, sound, and the bottom tabs: a gift (nothing yet), home, the shop (empty for now). In the
+never lowers progress), PLAY, the coins (top left), sound, and the bottom tabs: the power-ups' shop, home, the deco
+shop (`ui/ShopPanel.ts`, as UFO's).
+
+**Coins and shops** (`data/Shop.ts`, saved in `data/AntSave.ts`). A finished level pays coins — 20 + 3 per level the
+first time, a quarter of that for a replay — shown on the celebration card, flying up to the coin bar. The power-ups'
+shop sells one more of a power-up already unlocked (the belt's badges are how many you have: the extra slot uses one,
+once a level). The deco shop sells backgrounds (the floor's checker colours) and frames (the picture's tray); tap one
+you own to use it — the game and the main screen dress themselves with what's in use. In the
 game, the pause button (top left) opens the pause popup: sound and music toggles, RETRY, HOME. Going between them, and
 on to the next level, the screen closes and opens in a circle (`ui/RadialTransition.ts`) showing the level's picture.
 
 **Sounds** (`audio/AntAudio.ts`, files in `raw-assets/audio`, `npm run audio`): soft taps and bubbles for buttons and
-tiles, pops as the ants pick up blocks, a chime and applause for a finished picture, a calm soundtrack. The layout
+tiles, pops as the ants pick up blocks, a chime and applause for a finished picture, a soundtrack ("Redding Rainbow", Benjamin Andrews). The layout
 follows the reference screens (a 1080 × 1920 portrait, measured in `game/world/Layout.ts`): the picture's tray across
 the top, the anthill and its lid under it, the slots, the tile columns; the picture's pixels are glossy jelly cubes,
 the floor a peach checker. A finished picture gets a celebration (rays, confetti, the picture, three stars, NEXT).

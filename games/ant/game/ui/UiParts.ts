@@ -48,6 +48,11 @@ const SLICES: Record<string, [number, number, number, number]> = {
     Button_Round02_Blue: [23, 29, 23, 26],
     Button_Round03_Dark: [20, 19, 20, 21],
     Popup04_Topber_Single: [45, 51, 46, 82],
+    ResourceBar_Single_Bg: [11, 11, 11, 11],
+    PanelFrame03_Bg: [0, 8, 0, 4],
+    CardFrame03_n_Bg: [30, 29, 30, 33],
+    CardFrame03_n_InnerBg: [18, 18, 18, 18],
+    BorderFrame_Round24: [29, 29, 29, 29],
 };
 
 /** A frame stretched to `width` x `height` (in the parent's units), its borders drawn at `scale`, top left at its position. */
@@ -58,6 +63,20 @@ export function framePlane(frame: string, width: number, height: number, scale =
     plane.width = width / scale;
     plane.height = height / scale;
     return plane;
+}
+
+/** The coins at the top of the screen (home, the shops, a finished level), as in UFO. */
+export const COIN_BAR = { width: 170, height: 44, icon: 52, color: 0x1c1d33, textX: 42, textSize: 28, left: 16, top: 48 };
+
+/** Puts the bar, the coin and `amount` in `holder`, whose position is the coin's middle. */
+export function fillCoinBar(holder: PIXI.Container, amount: PIXI.Text): void {
+    const bar = framePlane('ResourceBar_Single_Bg', COIN_BAR.width, COIN_BAR.height);
+    bar.tint = COIN_BAR.color;
+    bar.position.set(0, -COIN_BAR.height / 2);
+    const coin = iconSprite('ResourceBar_Single_Icon_Coin', COIN_BAR.icon);
+    amount.anchor.set(0, 0.5);
+    amount.position.set(COIN_BAR.textX, -1);
+    holder.addChild(bar, coin, amount);
 }
 
 /** The Button01_l sprites (80x142): the borders that don't stretch, the most they're drawn at, and the height of those at scale 1. */

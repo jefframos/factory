@@ -26,6 +26,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { Board, dealDeck, hashString } from '../data/Board';
 import { LEVELS, LevelData, pixelsOf, deckOf } from '../data/Levels';
 import { AntSave } from '../data/AntSave';
+import { Background, currentBackground, levelReward } from '../data/Shop';
 import { TUNING } from '../data/Tuning';
 import { DebugOverlay } from 'core/debug/DebugOverlay';
 import { PictureView, TRAY_TOP } from '../world/PictureView';
@@ -36,8 +37,8 @@ import { AntHud } from '../ui/AntHud';
 import { AntAudio } from '../audio/AntAudio';
 import { RadialTransition } from '../ui/RadialTransition';
 
-/** The floor's peach (also the page's: index.html, and the home screen's). */
-export const FLOOR = 0xf6c597;
+/** The floor's colour past its checker (the background in use's light colour; the page's own peach is index.html's). */
+export const floorColor = (): THREE.Color => new THREE.Color(currentBackground().light);
 /** Columns for an old level file without its own. */
 const DEFAULT_COLUMNS = 4;
 /** The block an ant carries is a whole pixel's (as it was). The ants themselves are the same size in every level
@@ -58,14 +59,14 @@ interface SlotState {
 }
 
 /** The floor: the reference's soft peach checker, turned 45° into diamonds. */
-export function floorTexture(): THREE.CanvasTexture {
+export function floorTexture(background: Background = currentBackground()): THREE.CanvasTexture {
     const size = 256;
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = size;
     const g = canvas.getContext('2d')!;
-    g.fillStyle = '#f2b583';
+    g.fillStyle = `#${background.dark.toString(16).padStart(6, '0')}`;
     g.fillRect(0, 0, size, size);
-    g.fillStyle = '#f5c294';
+    g.fillStyle = `#${background.light.toString(16).padStart(6, '0')}`;
     g.fillRect(0, 0, size / 2, size / 2);
     g.fillRect(size / 2, size / 2, size / 2, size / 2);
     const texture = new THREE.CanvasTexture(canvas);
@@ -108,7 +109,7 @@ export default class AntScene extends ThreeScene {
     }
 
     public build(): void {
-        this.threeScene.background = new THREE.Color(FLOOR);
+        this.threeScene.background = floorColor();
         // A soft studio light to reflect: what gives the jelly cubes and tiles their shine.
         const pmrem = new THREE.PMREMGenerator(SetupThree.renderer);
         this.threeScene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -325,6 +326,8 @@ export default class AntScene extends ThreeScene {
         if (!this.rack || !this.hud.extraSlotAvailable || this.board.remaining === 0) return;
         this.rack.addSlot();
         this.slots.push(null);
+        // One fewer owned (the power-ups' shop sells more), and no more this level.
+        AntSave.addBooster('slot', -1);
         this.hud.setExtraSlot(false);
         this.ended = false;
     }
@@ -484,8 +487,12 @@ export default class AntScene extends ThreeScene {
         if (this.ended || !this.swarm) return;
         if (this.board.remaining === 0 && this.swarm.count === 0) {
             this.ended = true;
+            // The coins: the full reward the first time, a little for a replay.
+            const reward = levelReward(this.levelIndex, AntSave.hasWon(this.levelIndex));
+            AntSave.markWon(this.levelIndex);
+            AntSave.addCoins(reward);
             AntSave.reach(Math.min(this.levelIndex + 1, LEVELS.length - 1));
-            this.hud.celebrate(this.level, () => this.travelTo(this.levelIndex + 1));
+            this.hud.celebrate(this.level, reward, () => this.travelTo(this.levelIndex + 1));
             return;
         }
         const stuck = this.swarm.count === 0 && this.slots.every((slot) => slot && slot.left > 0 && !this.board.claimable(slot.color).length);

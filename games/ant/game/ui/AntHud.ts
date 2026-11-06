@@ -13,13 +13,18 @@ import { Game } from 'core/Game';
 import { LevelData, pixelsOf } from '../data/Levels';
 import { BoosterBelt } from './BoosterBelt';
 import { PausePopup } from './PausePopup';
-import { FONT, buttonParts, roundButton, tappable } from './UiParts';
+import { COIN_BAR, FONT, buttonParts, fillCoinBar, iconSprite, label as kitLabel, roundButton, tappable } from './UiParts';
+import { AntSave } from '../data/AntSave';
 import { AntAudio } from '../audio/AntAudio';
 
 /** The pause button's size (design units, 720 wide) and its distance from the corner. */
 const PAUSE = { size: 64, margin: 46 };
 /** The x2 button: the pack's glossy button, green, yellow while it's on. */
 const SPEED = { width: 116, height: 58, x: 74 };
+/** The celebration card: its size, and where its pieces sit (y, from its middle). */
+const WIN = { width: 500, height: 660, headingY: -275, starsY: -200, star: 64, middleStar: 84, picture: 210, pictureY: -40, nameY: 108, coinsY: 166, nextY: 252 };
+/** The coins won: the coin bar shown over the dim, the coins flying up to it (how many, how far apart, how long). */
+const COIN_FLIGHT = { barY: 112, count: 10, gap: 0.06, seconds: 0.55, size: 40, startAt: 1.2 };
 const BROWN = 0x6b3f22;
 
 function label(text: string, size: number, fill = 0xffffff): PIXI.Text {
@@ -52,6 +57,11 @@ export class AntHud extends PIXI.Container {
     /** The item belt; its first power-up is the extra slot (one more slot, once a level). */
     private readonly belt: BoosterBelt;
     private extraUsed = false;
+    /** The coin bar (shown over a finished level), and the coins flying up to it. */
+    private readonly coinBar = new PIXI.Container();
+    private readonly coinText = kitLabel(COIN_BAR.textSize);
+    private readonly flying = new PIXI.Container();
+    private coinTweens: gsap.core.Animation[] = [];
     private readonly card = new PIXI.Container();
     private readonly dim = new PIXI.Graphics();
     /** The celebration's turning rays and falling confetti (behind / over the card). */
@@ -76,7 +86,9 @@ export class AntHud extends PIXI.Container {
         this.dim.visible = false;
         this.card.visible = false;
         this.rays.visible = false;
-        this.addChild(this.title, this.speed, this.belt, this.pause, this.dim, this.rays, this.card, this.confetti);
+        fillCoinBar(this.coinBar, this.coinText);
+        this.coinBar.visible = false;
+        this.addChild(this.title, this.speed, this.belt, this.pause, this.dim, this.rays, this.card, this.coinBar, this.flying, this.confetti);
         this.reposition();
     }
 
@@ -110,13 +122,15 @@ export class AntHud extends PIXI.Container {
     }
 
     /** The power-up ready (a new level) or spent. */
-    public setExtraSlot(available: boolean): void {
-        this.extraUsed = !available;
-        this.belt.setCount('slot', available ? 1 : 0);
+    /** A new level (`ready`: the extra slot can be used again) or the extra slot just used (one fewer owned). */
+    public setExtraSlot(ready: boolean): void {
+        this.extraUsed = !ready;
+        this.belt.setUsed('slot', !ready);
     }
 
+    /** One owned, and not used this level yet (a sixth slot is all there's room for). */
     public get extraSlotAvailable(): boolean {
-        return !this.extraUsed;
+        return !this.extraUsed && AntSave.boosters('slot') > 0;
     }
 
     /** The pause popup up (`actions` from its buttons and its close cross), or down. */
@@ -140,7 +154,7 @@ export class AntHud extends PIXI.Container {
      *  power-up unused, +1 SLOT is offered too (it plays on). */
     public showResult(won: boolean, onButton: () => void): void {
         this.card.removeChildren().forEach((child) => child.destroy({ children: true }));
-        const offer = !won && !this.extraUsed;
+        const offer = !won && this.extraSlotAvailable;
         const extraHeight = offer ? 84 : 0;
         const back = new PIXI.Graphics()
             .beginFill(0x8a5530).drawRoundedRect(-230, -150, 460, 310 + extraHeight, 36).endFill()
@@ -176,45 +190,92 @@ export class AntHud extends PIXI.Container {
 
     /**
      * A picture is done: the screen dims behind slowly turning golden rays, confetti in the picture's colours bursts
-     * over it, and the card pops in — LEVEL COMPLETE!, the finished picture, three stars landing one after another, NEXT.
+     * over it, and the card pops in — LEVEL COMPLETE!, three gold stars landing one after another, the finished picture,
+     * the coins won (`reward`) — and then the coins fly up to the coin bar, which counts up to the player's coins; NEXT.
      */
-    public celebrate(level: LevelData, onNext: () => void): void {
+    public celebrate(level: LevelData, reward: number, onNext: () => void): void {
         this.card.removeChildren().forEach((child) => child.destroy({ children: true }));
         const back = new PIXI.Graphics()
-            .beginFill(0x8a5530).drawRoundedRect(-250, -300, 500, 610, 40).endFill()
-            .beginFill(0xfff4e6).drawRoundedRect(-250, -308, 500, 606, 40).endFill();
+            .beginFill(0x8a5530).drawRoundedRect(-WIN.width / 2, -WIN.height / 2 + 8, WIN.width, WIN.height, 40).endFill()
+            .beginFill(0xfff4e6).drawRoundedRect(-WIN.width / 2, -WIN.height / 2, WIN.width, WIN.height - 2, 40).endFill();
         const heading = label('LEVEL COMPLETE!', 50, 0xffd23f);
-        heading.y = -252;
-        // The stars between the heading and the picture, clear of it (and drawn over it, in case).
-        const picture = this.miniPicture(level, 250);
-        picture.y = -8;
+        heading.y = WIN.headingY;
+        // The pack's gold stars, between the heading and the picture: the middle one bigger and higher.
+        const stars = new PIXI.Container();
+        stars.y = WIN.starsY;
+        [-1, 0, 1].forEach((n, i) => {
+            const star = iconSprite('ItemIcon_Star_Gold', n === 0 ? WIN.middleStar : WIN.star);
+            const size = star.scale.x;
+            star.position.set(n * 92, n === 0 ? -8 : 6);
+            star.rotation = n * 0.18;
+            star.scale.set(0);
+            stars.addChild(star);
+            gsap.to(star.scale, { x: size, y: size, duration: 0.45, delay: 0.35 + i * 0.22, ease: 'back.out(3)' });
+        });
+        const picture = this.miniPicture(level, WIN.picture);
+        picture.y = WIN.pictureY;
         const name = label(level.name.toUpperCase(), 28, BROWN);
         name.style.stroke = 0xffffff;
         name.style.strokeThickness = 6;
-        name.y = 150;
-        const stars = new PIXI.Container();
-        stars.y = -190;
-        [-1, 0, 1].forEach((n, i) => {
-            const star = this.star(n === 0 ? 46 : 36);
-            star.position.set(n * 96, n === 0 ? -6 : 8);
-            star.scale.set(0);
-            stars.addChild(star);
-            gsap.to(star.scale, { x: 1, y: 1, duration: 0.45, delay: 0.35 + i * 0.22, ease: 'back.out(3)' });
-        });
+        name.y = WIN.nameY;
+        // The coins won.
+        const coins = new PIXI.Container();
+        const coin = iconSprite('Icon_Coin', 46);
+        const amount = kitLabel(40, 0xffd23f);
+        amount.text = `+${reward}`;
+        amount.anchor.set(0, 0.5);
+        coin.x = -(amount.width + 54) / 2 + 23;
+        amount.x = coin.x + 32;
+        coins.addChild(coin, amount);
+        coins.y = WIN.coinsY;
         AntAudio.play('win');
         AntAudio.play('applause');
         const next = button('NEXT', 'Button01_l_Green', 280, () => {
             this.hideResult();
             onNext();
         });
-        next.y = 228;
-        this.card.addChild(back, heading, picture, stars, name, next);
+        next.y = WIN.nextY;
+        this.card.addChild(back, heading, picture, stars, name, coins, next);
         this.dim.visible = true;
         this.card.visible = true;
         gsap.fromTo(this.card.scale, { x: 0.5, y: 0.5 }, { x: 1, y: 1, duration: 0.5, ease: 'back.out(1.8)' });
         gsap.fromTo(this.dim, { alpha: 0 }, { alpha: 1, duration: 0.3 });
         this.showRays();
         this.burstConfetti(level.palette);
+        this.flyCoins(reward, coins);
+    }
+
+    /** The coin bar shows the coins before the reward; the coins fly from `from` up to it, each counting in. */
+    private flyCoins(reward: number, from: PIXI.Container): void {
+        const screen = Game.overlayScreenData;
+        if (!screen) return;
+        const total = AntSave.coins;
+        let shown = total - reward;
+        this.coinText.text = String(shown);
+        this.coinBar.position.set(screen.center.x - COIN_BAR.width / 2 + COIN_BAR.icon / 2, screen.topLeft.y + COIN_FLIGHT.barY);
+        this.coinBar.visible = true;
+        this.coinTweens.push(gsap.fromTo(this.coinBar, { alpha: 0 }, { alpha: 1, duration: 0.3, delay: 0.3 }));
+        const count = Math.min(COIN_FLIGHT.count, Math.max(1, reward));
+        for (let n = 0; n < count; n++) {
+            const piece = iconSprite('Icon_Coin', COIN_FLIGHT.size);
+            piece.position.set(this.card.x + from.x - 30 + Math.random() * 40, this.card.y + from.y + (Math.random() - 0.5) * 20);
+            piece.visible = false;
+            this.flying.addChild(piece);
+            const step = n === count - 1 ? total - (total - reward + Math.floor((reward * (count - 1)) / count)) : Math.floor(reward / count);
+            this.coinTweens.push(gsap.to(piece, {
+                x: this.coinBar.x, y: this.coinBar.y, duration: COIN_FLIGHT.seconds, delay: COIN_FLIGHT.startAt + n * COIN_FLIGHT.gap, ease: 'power2.in',
+                onStart: () => {
+                    piece.visible = true;
+                },
+                onComplete: () => {
+                    piece.visible = false;
+                    shown = n === count - 1 ? total : shown + step;
+                    this.coinText.text = String(shown);
+                    AntAudio.play('pick', 1.2 + n * 0.04);
+                    gsap.fromTo(this.coinBar.scale, { x: 1.12, y: 1.12 }, { x: 1, y: 1, duration: 0.2, ease: 'back.out(3)' });
+                },
+            }));
+        }
     }
 
     /** The finished picture, `size` px across its longer side: one square per pixel. */
@@ -235,18 +296,6 @@ export class AntHud extends PIXI.Container {
         }
         holder.addChild(g);
         return holder;
-    }
-
-    /** A gold star with a darker rim. */
-    private star(radius: number): PIXI.Graphics {
-        const points = (r: number) => Array.from({ length: 10 }, (_, i) => {
-            const a = -Math.PI / 2 + (i * Math.PI) / 5;
-            const d = i % 2 === 0 ? r : r * 0.46;
-            return [Math.cos(a) * d, Math.sin(a) * d];
-        }).flat();
-        return new PIXI.Graphics()
-            .beginFill(0xc98a12).drawPolygon(points(radius + 6)).endFill()
-            .beginFill(0xffd23f).drawPolygon(points(radius)).endFill();
     }
 
     /** Golden rays behind the card, turning slowly. */
@@ -294,6 +343,11 @@ export class AntHud extends PIXI.Container {
     }
 
     public hideResult(): void {
+        this.coinTweens.forEach((tween) => tween.kill());
+        this.coinTweens = [];
+        gsap.killTweensOf(this.coinBar.scale);
+        this.coinBar.visible = false;
+        this.flying.removeChildren().forEach((child) => child.destroy());
         this.dim.visible = false;
         this.card.visible = false;
         this.rays.visible = false;
