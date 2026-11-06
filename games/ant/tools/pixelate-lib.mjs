@@ -10,18 +10,20 @@
 //      the game's MASTER palette ('master', its closest tones), a preset (PALETTES) or left as they are ('none').
 //      "Closest" is measured in OKLab, so it's the tone that looks nearest, not the nearest RGB numbers.
 //   4. Each cell takes its samples' most common colour.
+//   4b. `autoShade` (on unless set false; a picture's, not a drawing's) gives each colour area depth, lit from the top
+//      left: its pixels along a top or left edge a lighter tone, along a bottom or right edge a darker one (areas of at
+//      least SHADE.minArea, where the area goes on past the edge pixel). Distinct colours, not snapped: they make a
+//      picture less flat, and its areas onions — the inside of an area is shut in by its own rims until they're taken.
+//      `shadeColors` limits it to that many colours (the biggest first; -1: all): each adds up to two tones. Done
+//      before the hand edits, so a painted pixel is just that pixel.
 //   5. The hand edits go on top (`edits`: { "x,y": "#hex" } paints a cell, { "x,y": "." } empties it) — snapped to the
-//      same palette, so a palette change carries them along — except "!#hex", a custom colour kept exactly as it is. `padding` cells all round (plus one more with a stroke)
-//      are left empty: the picture is sampled that much smaller, inside them.
+//      same palette, so a palette change carries them along — except "!#hex", a custom colour kept exactly as it is.
+//      `padding` cells all round (plus one more with a stroke) are left empty: the picture is sampled that much
+//      smaller, inside them.
 //   6. The whole grid, edits and all, is shifted by `offsetX` / `offsetY` cells (what slides off the edge is gone).
 //   7. `stroke` (a colour, snapped to the palette; '' = none) outlines the picture: every empty cell touching it (sides
 //      or corners) becomes a block of that colour. With a stroke the picture is sampled a cell smaller all round (1),
 //      so the outline has room at the grid's edges.
-//   7b. `autoShade` (on unless set false) gives each colour area depth, lit from the top left: its pixels along a top or
-//      left edge a lighter tone, along a bottom or right edge a darker one (areas of at least SHADE.minArea, where the
-//      area goes on past the edge pixel). Distinct colours, not snapped: they make a picture less flat, and its areas
-//      onions — the inside of an area is shut in by its own rims until they're taken. `shadeColors` limits it to that
-//      many colours (the biggest first; -1: all): each shaded colour adds up to two tones to the level's colours.
 //   8. The level's colours get its `saturation` / `brightness` steps (each step +-15% saturation / +-6% lightness, up
 //      to MAX_STEPS either way) — after the palette, so a master-palette level keeps the master's tones, just more or
 //      less vivid (before it, the snapping would put most colours straight back on the same tone). Then the shading
@@ -46,7 +48,7 @@ export const MAX_STEPS = 5;
 
 export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {}, shades: {}, padding: 0, stroke: '', autoShade: true, shadeColors: -1, columns: 0, seed: 0, mix: 0 };
 /** Auto-shading: the smallest area shaded, and the edge tones' steps (as the brushes': [saturation, brightness]). */
-const SHADE = { minArea: 10, light: [-1, 2], dark: [1, -2], maxLight: 0.93 };
+const SHADE = { minArea: 10, light: [0, 2], dark: [1, -2], maxLight: 0.93 };
 
 /** Fixed colour sets a picture can use instead of the master palette. */
 export const PALETTES = {
@@ -299,6 +301,10 @@ export async function buildLevel(file, id, settings, master) {
     const grid = new Array(width * height).fill(null);
     const innerWidth = width - 2 * margin;
     for (let i = 0; i < inner.length; i++) grid[(Math.floor(i / innerWidth) + margin) * width + (i % innerWidth) + margin] = inner[i];
+    // The picture's shading goes on before the hand edits, so a painted pixel is just that pixel: its neighbours keep
+    // their tones (shading after the edits re-shaded round every one).
+    const baseColors = new Set(grid.filter(Boolean)).size;
+    if (options.autoShade !== false && file) autoShade(grid, width, height, null, Math.round(options.shadeColors ?? -1));
     for (const [key, value] of Object.entries(options.edits ?? {})) {
         const [x, y] = key.split(',').map(Number);
         if (!(x >= 0 && y >= 0 && x < width && y < height)) continue;
@@ -319,8 +325,6 @@ export async function buildLevel(file, id, settings, master) {
     const shading = shift(shadeGrid, width, height, dx, dy);
     const strokeColor = stroked ? (palette.length ? closest(parseHex(options.stroke), palette) : options.stroke) : null;
     if (strokeColor) outline(final, width, height, strokeColor);
-    const baseColors = new Set(final.filter(Boolean)).size;
-    if (options.autoShade !== false) autoShade(final, width, height, strokeColor, Math.round(options.shadeColors ?? -1));
     const saturation = steps(options.saturation);
     const brightness = steps(options.brightness);
     if (saturation || brightness) {
