@@ -67,16 +67,20 @@ const END_RUSH = { speed: 3, seconds: 0.6 };
  *  before it in the deal have been taken. */
 const HIDDEN = { level: 8, every: 3, offset: 1 };
 const LOCKED = { level: 12, every: 5, offset: 2 };
-/** Each mechanic's first appearance: its level, what the card says, and — a power-up — which one (it's pointed out). */
-const INTRODUCTIONS: { level: number; key: string; booster?: BoosterId; name: string; text: string }[] = [
+/** Each mechanic's first appearance: its level, what the card says, — a power-up — which one (it's pointed out), and
+ *  `when`: at the level's start, or once a tile's in a slot (pick up needs one to pick). */
+const INTRODUCTIONS: { level: number; key: string; booster?: BoosterId; name: string; text: string; when?: 'start' | 'slot' }[] = [
     { level: 3, key: 'slot', booster: 'slot', name: 'EXTRA SLOT', text: 'Every slot full? Tap this for a sixth one — once a level.' },
     { level: 4, key: 'shuffle', booster: 'shuffle', name: 'SHUFFLE', text: 'Mixes up every tile still waiting. Handy when the front row has nothing you can use.' },
-    { level: 6, key: 'pickup', booster: 'pickup', name: 'PICK UP', text: 'Tap it, then a tile in a slot: it goes back to the rack, with the ants it hasn\'t sent.' },
+    { level: 6, key: 'pickup', booster: 'pickup', name: 'PICK UP', text: 'Tap it, then a tile in a slot: it goes back to the rack, with the ants it hasn\'t sent.', when: 'slot' },
     { level: 8, key: 'hidden', name: 'HIDDEN TILES', text: 'Some tiles are face down. You\'ll see their colour when they reach the front row.' },
     { level: 9, key: 'vacuum', booster: 'vacuum', name: 'VACUUM', text: 'Tap it, then a colour: every block of it comes off the picture, and its tiles go too.' },
     { level: 12, key: 'locked', name: 'LOCKED TILES', text: 'A locked tile shows how many more tiles must go before it opens. Plan round it!' },
     { level: SPLIT.from, key: 'split', name: 'SPLIT BOARD', text: 'Two anthills! Tiles on the left fetch only the left half\'s pixels, tiles on the right the right half\'s.' },
 ];
+
+/** A 'slot' introduction waits this long after the tile's put in (it hops onto the slot first). */
+const INTRO_AFTER_TAP_MS = 700;
 
 /** What to tap, for a power-up waiting for its target. */
 const BOOSTER_HINTS: Partial<Record<BoosterId, string>> = {
@@ -358,14 +362,14 @@ export default class AntScene extends ThreeScene {
             return TRAY_TOP + (i >= 0 && this.board.colors[i] >= 0 ? picture.blockTop : 0);
         }, (ant) => this.pickUp(ant), () => undefined);
         this.fitCamera();
-        this.introduce();
+        this.introduce('start');
     }
 
     /** This level's new mechanic, if it has one the player hasn't been shown: play stops for its card; after GOT IT a
      *  power-up is pointed out on the belt (one to try, if they have none). */
-    private introduce(): void {
-        const intro = INTRODUCTIONS.find((i) => i.level === this.levelIndex + 1 && !AntSave.explained(i.key));
-        if (!intro) return;
+    private introduce(when: 'start' | 'slot'): void {
+        const intro = INTRODUCTIONS.find((i) => i.level === this.levelIndex + 1 && (i.when ?? 'start') === when && !AntSave.explained(i.key));
+        if (!intro || this.ended || this.paused) return;
         this.paused = true;
         this.resumeScale = Game.timeScale;
         Game.timeScale = 0;
@@ -459,6 +463,11 @@ export default class AntScene extends ThreeScene {
             side.slots[slot] = { tile, color: tile.tile.color, left: tile.count, timer: 0.3 };
             this.taps++;
             for (const each of this.sides) each.rack.setTaps(this.taps);
+            // A power-up that needs a tile in a slot is explained now (once it's landed), if it's this level's.
+            const level = this.levelIndex;
+            window.setTimeout(() => {
+                if (this.levelIndex === level && this.sides.some((each) => each.slots.some((s) => s && s.left > 0))) this.introduce('slot');
+            }, INTRO_AFTER_TAP_MS);
         }
         if (tile && tutorial) {
             tutorial.taps++;
