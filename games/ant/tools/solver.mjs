@@ -245,6 +245,9 @@ export function check(start, deck, columnCount) {
 
 /** How much less likely a colour is when it was the last tile, or among the few before (a row of one colour is dull). */
 const REPEAT = { last: 0.08, recent: 0.35, window: 3 };
+/** A colour's tiles grow with how much of the picture it is, against the average colour (so a big colour isn't a long
+ *  run of tiles): their size range is scaled by its share, between these. */
+const SHARE_SCALE = { least: 0.8, most: 2.5 };
 
 /**
  * Deals by playing the picture out, as Board.ts's dealDeck(): every tile reachable when its turn comes. The colour is
@@ -268,7 +271,12 @@ function deal(start, seed, min, max) {
         const total = options.reduce((sum, o) => sum + o.weight, 0);
         let pick = random() * total;
         const chosen = options.find((o) => (pick -= o.weight) < 0) ?? options[options.length - 1];
-        let count = Math.min(chosen.reach.length, min + Math.floor(random() * (max - min + 1)));
+        const present = left.filter((n) => n > 0);
+        const average = present.reduce((sum, n) => sum + n, 0) / Math.max(1, present.length);
+        const scale = Math.max(SHARE_SCALE.least, Math.min(SHARE_SCALE.most, left[chosen.color] / Math.max(1, average)));
+        const low = Math.round(min * Math.max(1, scale));
+        const high = Math.max(low, Math.round(max * scale));
+        let count = Math.min(chosen.reach.length, low + Math.floor(random() * (high - low + 1)));
         if (chosen.reach.length - count < min) count = chosen.reach.length;
         for (const i of chosen.reach.slice(0, count)) board.take(i);
         left[chosen.color] -= count;

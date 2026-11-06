@@ -44,6 +44,10 @@ export const BACKGROUNDS: Background[] = [
     { id: 'lemon', name: 'Lemon', light: 0xf6e3a2, dark: 0xf1d98a, price: 200 },
     { id: 'rose', name: 'Rose', light: 0xf6c6d0, dark: 0xf0b4c2, price: 250 },
     { id: 'cocoa', name: 'Cocoa', light: 0xc9a487, dark: 0xbb9475, price: 300 },
+    { id: 'coral', name: 'Coral', light: 0xf9c2b2, dark: 0xf4ad99, price: 250 },
+    { id: 'sage', name: 'Sage', light: 0xd6e0bd, dark: 0xc8d5aa, price: 250 },
+    { id: 'ocean', name: 'Ocean', light: 0x9fd4dd, dark: 0x8bc8d3, price: 300 },
+    { id: 'berry', name: 'Berry', light: 0xe2b3d3, dark: 0xd7a0c6, price: 300 },
     { id: 'night', name: 'Night', light: 0x5d6390, dark: 0x515783, price: 400 },
 ];
 
@@ -54,7 +58,12 @@ export const FRAMES: Frame[] = [
     { id: 'berry', name: 'Berry', board: 0xfbe8ee, border: 0xe59ab0, price: 180 },
     { id: 'sky', name: 'Sky', board: 0xe9f2fb, border: 0x93bfe6, price: 220 },
     { id: 'gold', name: 'Gold', board: 0xfdf3d6, border: 0xe9be4f, price: 350 },
-    { id: 'navy', name: 'Navy', board: 0xe6e8f4, border: 0x4f5a8c, price: 350 },
+    { id: 'lilac', name: 'Lilac', board: 0xf3ecfb, border: 0xb79be0, price: 220 },
+    { id: 'peach', name: 'Peach', board: 0xfff0e4, border: 0xf2a37c, price: 220 },
+    { id: 'forest', name: 'Forest', board: 0xeef6e6, border: 0x5f9c5a, price: 300 },
+    { id: 'cherry', name: 'Cherry', board: 0xfdeaea, border: 0xd9485f, price: 300 },
+    { id: 'slate', name: 'Slate', board: 0xeceff3, border: 0x6b7280, price: 350 },
+    { id: 'navy', name: 'Navy', board: 0xe6e8f4, border: 0x4f5a8c, price: 400 },
 ];
 
 export function decoOf(kind: DecoKind): (Background | Frame)[] {

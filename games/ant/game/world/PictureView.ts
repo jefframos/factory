@@ -11,6 +11,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import type { LevelData } from '../data/Levels';
 import { LAYOUT } from './Layout';
 import { currentFrame } from '../data/Shop';
+import { vivid } from './Vivid';
 
 /** A block's footprint (the whole cell: blocks touch, their rounded edges show the grid), height and rounding (shares of the cell). */
 export const BLOCK = 1;
@@ -61,7 +62,7 @@ export class PictureView {
 
         const geometry = new RoundedBoxGeometry(cell * BLOCK, cell * BLOCK_HEIGHT, cell * BLOCK, 3, cell * ROUNDING);
         // Jelly: a glossy clearcoat over a soft, slightly sheeny body.
-        const jelly = new THREE.MeshPhysicalMaterial({ roughness: 0.4, clearcoat: 0.8, clearcoatRoughness: 0.12 });
+        const jelly = new THREE.MeshPhysicalMaterial({ roughness: 0.45, clearcoat: 0.6, clearcoatRoughness: 0.15 });
         this.blocks = new THREE.InstancedMesh(geometry, jelly, pixels.length);
         const color = new THREE.Color();
         for (let i = 0; i < pixels.length; i++) {
@@ -75,7 +76,7 @@ export class PictureView {
             }
             this.matrix.makeTranslation(at.x, cell * BLOCK_HEIGHT / 2, at.z);
             this.blocks.setMatrixAt(i, this.matrix);
-            this.blocks.setColorAt(i, color.set(level.palette[pixels[i]] ?? '#ffffff'));
+            this.blocks.setColorAt(i, vivid(level.palette[pixels[i]] ?? '#ffffff', color));
         }
         this.blocks.instanceMatrix.needsUpdate = true;
         if (this.blocks.instanceColor) this.blocks.instanceColor.needsUpdate = true;

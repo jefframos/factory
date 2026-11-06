@@ -31,11 +31,11 @@
     ".......0000......."
   ],
   "columns": 4,
-  "deck": "0x10 0x13 1x8 1x13 1x13 0x9 0x13 1x6 0x12 2x7 1x10 1x10 0x11 2x8 2x6 1x8 3x13 0x10 0x14 2x12 4x12 2x8 2x15 3x7",
+  "deck": "0x19 1x19 2x11 3x10 0x25 1x13 2x18 1x8 0x23 4x6 1x15 2x17 0x25 3x10 2x10 1x13 4x6",
   "check": {
     "clearable": true,
     "slots": 5,
     "robust": true,
-    "randomWins": 0.99
+    "randomWins": 0.71
   }
 }

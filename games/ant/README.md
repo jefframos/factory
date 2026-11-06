@@ -14,6 +14,16 @@ LEVEL N on a ribbon, ← / → to go through the levels already reached (to repl
 never lowers progress), PLAY, the coins (top left), sound, and the bottom tabs: the power-ups' shop, home, the deco
 shop (`ui/ShopPanel.ts`, as UFO's).
 
+**First time** — a new player goes straight into the first level, Cherry Pop (a tiny, bright picture drawn in the
+editor), as a tutorial: the screen darkens all but the next tile to tap (in the dealt order, which always clears it),
+the pack's hand points at it with a word of what to do, and only that tile can be tapped (`ui/TutorialOverlay.ts`).
+Done once the level's won (saved).
+
+**Debug** — the "Ant data" panel: +500 COINS, RESET DATA (back to a new player: the tutorial again).
+
+**Colours** — the blocks, tiles and ants are drawn a quarter more saturated than the level file (`world/Vivid.ts`),
+under a white sky light and a light ground (a brown one muddied them).
+
 **Coins and shops** (`data/Shop.ts`, saved in `data/AntSave.ts`). A finished level pays coins — 20 + 3 per level the
 first time, a quarter of that for a replay — shown on the celebration card, flying up to the coin bar. The power-ups'
 shop sells one more of a power-up already unlocked (the belt's badges are how many you have: the extra slot uses one,
@@ -76,7 +86,8 @@ is made (`tools/solver.mjs`) and saved in the level file, so a level always play
 
 1. **Dealt** by playing the picture out with the game's rules: each tile takes blocks of a colour that are reachable by
    then, so taking the tiles in the order they were dealt always works. Colours take turns as much as the picture
-   allows (one used in the last few tiles is much less likely; the small colours are spread through the deck). The `seed` picks another deal. Tile sizes run
+   allows (one used in the last few tiles is much less likely; the small colours are spread through the deck), and a
+   colour's tiles grow with its share of the picture (up to 2.5x), so a big colour isn't a long run of small tiles. The `seed` picks another deal. Tile sizes run
    from about 1/90 to 1/25 of the grid.
 2. **Mixed** (`mix` 0–5): some later tiles are pulled a few rows forward — a colour that can't be reached yet turning
    up early, to sit in a slot waiting: the traps that fill the slots and lose the level. Of several mixes, the hardest

@@ -33,7 +33,7 @@
     "...................."
   ],
   "columns": 3,
-  "deck": "3x7 0x10 0x8 0x7 0x11 0x16 1x11 0x16 0x15 1x9 2x11 3x2 4x3",
+  "deck": "3x7 0x25 1x8 1x12 0x28 2x11 0x30 3x2 4x3",
   "check": {
     "clearable": true,
     "slots": 5,

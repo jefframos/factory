@@ -1,0 +1,32 @@
+In Colony Flow, keeping your ant queues moving efficiently requires a careful balance between your in-game coins, booster tools, and emerging board hazards. Below is a detailed breakdown of the available boosts, how to afford them, and the progression obstacles you will face as the game scales in difficulty.
+
+🐜 The 4 Core Boosters
+
+
+Booster	Unlocks At	Coin Cost	How It Works & Tactical Usage
+Extra Slot	Level 3	40 Coins	Adds a 6th temporary slot to your waiting queue for the current level. It is the ultimate safety net against getting completely clogged when you pull an un-clearsable color early.
+Shuffle	Level 4	40 Coins	Rerolls and randomises the layout of unselected cubes on your active tray. Use this as a problem solver when you are staring at a completely stuck tray with no visible paths.
+Pick Up	Level 6	50 Coins	Extracts a single box out of your active waiting queue and throws it back onto the tray. It serves as a precision "undo" button for when you accidentally bury a critical color you need down the line.
+Vacuum	Level 9	60 Coins	Completely deletes every single block of one chosen color right off the screen. This is your high-cost emergency button for clearing a choked path or deleting massive blocks of a stubborn color.
+
+
+Coin Economy & Free Drops
+
+• Earning Coins: You earn roughly 20 coins for an easy level, 40 coins for medium-tier levels, and up to 100 coins for super-hard levels. You can also claim daily rewards by watching optional ad videos.
+• Free Drop Chance: Every single time you win a level without activating a booster, you stand a 55% chance of receiving a free booster drop.
+
+🚧 Progression Obstacles & Difficulty Spikes
+
+As your levels progress into the hundreds and thousands, the pixel pictures grow in size and complexity. The difficulty scales based on fixed patterns and new hazard mechanics introduced at specific levels:
+
+1. Level Multiplier Spikes
+
+• Hard Levels: Every level ending in a 5 (e.g., 15, 25, 35) is pre-set to be a Hard Level with an expanded number of blocks.
+• Super Hard Levels: Every level that is a multiplier of 10 (e.g., 20, 30, 40) is a Super Hard Level featuring significantly more complex block layers and a wider variety of colors.
+
+2. Mechanical Obstacles
+
+• Level 8 — Hidden ? Cubes: Cubes are turned face-down with a question mark. You cannot see what color you are pulling until you clear the blocks sitting directly on top of them, forcing blind sequencing.
+• Level 12 — Locked Cubes: Blocks become locked in place. Ants cannot move them or path through them until you complete specific adjacent requirements to unlock them.
+• Level 18 — Secondary Nest Holes: The map introduces a second ant hole. Your worker flows split up, meaning you must carefully manage pathing across two distinct origins without creating a cross-traffic bottleneck.
+• Level 20+ — The Real Ramp: Up until Level 20, you are given a couple of free starter boosts. Veterans recommend saving your starting items until after Level 20, which is where the game stops holding your hand and demands serious structural path planning.

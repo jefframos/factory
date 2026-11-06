@@ -24,6 +24,8 @@ import { LEVELS } from './game/data/Levels';
 type PlatformConfigEntry = { gameId?: string; enableAds?: boolean };
 
 const FONTS = ['Baloo2-ExtraBold'];
+/** The debug panel's coins. */
+const DEBUG_COINS = 500;
 
 export default class AntGame extends Game {
     private readonly gameContainer = new PIXI.Container();
@@ -32,6 +34,8 @@ export default class AntGame extends Game {
     private scenes = 0;
     /** A transition is under way (a second tap doesn't start another). */
     private travelling = false;
+    /** The main screen's up (not the game). */
+    private atHome = false;
 
     public constructor() {
         super({ resolution: Math.min(2, devicePixelRatio), backgroundAlpha: 0 }, false);
@@ -68,8 +72,9 @@ export default class AntGame extends Game {
             };
             window.addEventListener('pointerdown', unlock, true);
             window.addEventListener('keydown', unlock, true);
-            // ?play=1 goes straight to the game (testing).
-            if (new URLSearchParams(window.location.search).has('play')) this.showGame();
+            this.buildDebug();
+            // A new player goes straight into the tutorial (the first level); ?play=1 goes straight to the game (testing).
+            if (!AntSave.tutorialDone || new URLSearchParams(window.location.search).has('play')) this.showGame();
             else this.showHome();
             PlatformHandler.instance.platform.loadFinished();
             this.loaderScene.hide();
@@ -94,8 +99,28 @@ export default class AntGame extends Game {
         this.travel(`LEVEL ${index + 1}`, (LEVELS[index]?.name ?? '').toUpperCase(), true, () => this.showGame());
     }
 
+    /** The debug panel's data tools (dev server, or ?dev=1): coins to spend, and a fresh start. */
+    private buildDebug(): void {
+        const panel = DebugOverlay.instance.panel('Ant data', { id: 'ant.data' });
+        panel.button(`+${DEBUG_COINS} COINS`, () => {
+            AntSave.addCoins(DEBUG_COINS);
+            // The main screen shows them at once (built again).
+            if (this.atHome) this.showHome();
+        });
+        panel.button('RESET DATA', () => {
+            AntSave.erase();
+            try {
+                window.localStorage.removeItem('ant.music');
+            } catch {
+                // No storage: nothing to erase.
+            }
+            window.location.reload();
+        });
+    }
+
     /** The main screen. */
     private showHome(): void {
+        this.atHome = true;
         const key = `ant-${this.scenes++}`;
         this.sceneManager.register<HomeScene>(key, HomeScene, this, () => this.playLevel());
         this.sceneManager.changeScene(key);
@@ -104,6 +129,7 @@ export default class AntGame extends Game {
 
     /** The game, at the level the player is on. */
     private showGame(): void {
+        this.atHome = false;
         const key = `ant-${this.scenes++}`;
         this.sceneManager.register<AntScene>(key, AntScene, this, () => this.travel('HOME', '', false, () => this.showHome()));
         this.sceneManager.changeScene(key);

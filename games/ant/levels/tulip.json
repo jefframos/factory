@@ -29,7 +29,7 @@
     "........11........"
   ],
   "columns": 3,
-  "deck": "1x6 2x13 0x10 0x12 0x10 0x9 1x13 0x11 1x10 0x10 2x9 1x9 1x12 0x9",
+  "deck": "1x7 2x10 0x16 1x14 0x16 1x10 2x12 0x15 1x9 0x13 1x10 0x11",
   "check": {
     "clearable": true,
     "slots": 5,

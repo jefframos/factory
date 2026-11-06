@@ -13,6 +13,7 @@ import { Game } from 'core/Game';
 import { LevelData, pixelsOf } from '../data/Levels';
 import { BoosterBelt } from './BoosterBelt';
 import { PausePopup } from './PausePopup';
+import { TutorialOverlay } from './TutorialOverlay';
 import { COIN_BAR, FONT, buttonParts, fillCoinBar, iconSprite, label as kitLabel, roundButton, tappable } from './UiParts';
 import { AntSave } from '../data/AntSave';
 import { AntAudio } from '../audio/AntAudio';
@@ -62,6 +63,8 @@ export class AntHud extends PIXI.Container {
     private readonly coinText = kitLabel(COIN_BAR.textSize);
     private readonly flying = new PIXI.Container();
     private coinTweens: gsap.core.Animation[] = [];
+    /** The first-time tutorial's dark, hand and words (over everything). */
+    private readonly tutorial = new TutorialOverlay();
     private readonly card = new PIXI.Container();
     private readonly dim = new PIXI.Graphics();
     /** The celebration's turning rays and falling confetti (behind / over the card). */
@@ -88,7 +91,7 @@ export class AntHud extends PIXI.Container {
         this.rays.visible = false;
         fillCoinBar(this.coinBar, this.coinText);
         this.coinBar.visible = false;
-        this.addChild(this.title, this.speed, this.belt, this.pause, this.dim, this.rays, this.card, this.coinBar, this.flying, this.confetti);
+        this.addChild(this.title, this.speed, this.belt, this.pause, this.dim, this.rays, this.card, this.coinBar, this.flying, this.confetti, this.tutorial);
         this.reposition();
     }
 
@@ -122,6 +125,20 @@ export class AntHud extends PIXI.Container {
     }
 
     /** The power-up ready (a new level) or spent. */
+    /**
+     * The tutorial's hole over a tile and its hand: (`x`, `y`) and `radius` in window pixels (the 3D view's,
+     * worldToScreen()), turned into this layer's units; `text` over it.
+     */
+    public showTutorial(x: number, y: number, radius: number, text: string): void {
+        const at = this.toLocal(new PIXI.Point(x, y));
+        const edge = this.toLocal(new PIXI.Point(x + radius, y));
+        this.tutorial.show(at.x, at.y, Math.abs(edge.x - at.x), text);
+    }
+
+    public hideTutorial(): void {
+        this.tutorial.hide();
+    }
+
     /** A new level (`ready`: the extra slot can be used again) or the extra slot just used (one fewer owned). */
     public setExtraSlot(ready: boolean): void {
         this.extraUsed = !ready;

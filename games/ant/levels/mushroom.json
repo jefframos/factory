@@ -4,7 +4,7 @@
   "width": 22,
   "height": 22,
   "palette": [
-    "#ff2e2e",
+    "#ff819b",
     "#0dd732",
     "#ffd89d",
     "#ffe0a6",
@@ -35,7 +35,7 @@
     "......................"
   ],
   "columns": 4,
-  "deck": "3x9 0x17 0x7 1x17 0x8 3x16 1x7 2x15 2x19 0x9 1x12 1x8 0x16 2x6 4x2",
+  "deck": "3x8 0x31 1x12 2x29 0x12 3x17 1x16 4x2 2x11 0x14 1x16",
   "check": {
     "clearable": true,
     "slots": 5,

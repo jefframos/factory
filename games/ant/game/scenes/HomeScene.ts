@@ -99,9 +99,10 @@ export default class HomeScene extends ThreeScene {
         this.threeScene.background = floorColor();
         const pmrem = new THREE.PMREMGenerator(SetupThree.renderer);
         this.threeScene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-        this.threeScene.environmentIntensity = 0.3;
+        this.threeScene.environmentIntensity = 0.2;
         pmrem.dispose();
-        this.threeScene.add(new THREE.HemisphereLight(0xfff4ea, 0xc98f62, 0.75));
+        // A soft white sky and a light warm ground (a brown one muddied the colours), a strong sun: colours stay vivid.
+        this.threeScene.add(new THREE.HemisphereLight(0xffffff, 0xe6cdb8, 0.85));
         const sun = new THREE.DirectionalLight(0xffffff, 0.95);
         sun.position.set(5, 30, 18);
         this.threeScene.add(sun);

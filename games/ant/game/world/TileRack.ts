@@ -14,6 +14,7 @@ import gsap from 'gsap';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import type { Tile } from '../data/Board';
 import { LAYOUT } from './Layout';
+import { vivid } from './Vivid';
 
 export const SLOT_COUNT = 5;
 /** A tile's footprint, its two cushions' heights, and the plate under the front row's / a slot's tile. */
@@ -131,6 +132,20 @@ export class TileRack {
     }
 
     /** The front tiles' bodies (what a tap can hit), each with its column. */
+    /** The top of a column's front tile, in the world (where the tutorial points); null if the column's empty. */
+    public frontTop(column: number, out = new THREE.Vector3()): THREE.Vector3 | null {
+        const tile = this.columns[column]?.[0];
+        if (!tile) return null;
+        tile.group.getWorldPosition(out);
+        out.y += (BOTTOM_HEIGHT + TOP_HEIGHT) * tile.group.scale.y;
+        return out;
+    }
+
+    /** A tile's footprint, across. */
+    public get tileSize(): number {
+        return TILE;
+    }
+
     public frontBodies(): { body: THREE.Mesh; column: number }[] {
         return this.columns.flatMap((column, c) => (column.length ? [{ body: column[0].body, column: c }] : []));
     }
@@ -178,7 +193,7 @@ export class TileRack {
 
     /** Little cubes of a tile's colour flying out from it, up and down again, shrinking away. */
     private burst(tile: RackTile): void {
-        const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(this.palette[tile.tile.color]), roughness: 0.45 });
+        const material = new THREE.MeshStandardMaterial({ color: vivid(this.palette[tile.tile.color]), roughness: 0.45 });
         const from = tile.group.position.clone().add(new THREE.Vector3(0, BOTTOM_HEIGHT, 0));
         let left = POP.chips;
         for (let n = 0; n < POP.chips; n++) {
@@ -234,7 +249,7 @@ export class TileRack {
 
     private build(tile: Tile, column: number): RackTile {
         const group = new THREE.Group();
-        const color = new THREE.Color(this.palette[tile.color]);
+        const color = vivid(this.palette[tile.color]);
         // The plate stays under the tile's spot in the front row (it moves with the group, so it's built in the group,
         // under the cushions).
         const plateGroup = plate(this.plateGeometry, this.lipGeometry, this.white, this.grey);

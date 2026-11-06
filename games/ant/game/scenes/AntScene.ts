@@ -17,6 +17,8 @@
 // it can be cleared), so a level always plays the same; an old level file without one is dealt here (Board.dealDeck).
 // An ant goes for the exposed pixel of its colour nearest its slot (no dice: the solver plays it the same way).
 // The extra-slot power-up (AntHud, once a level) adds a sixth slot — also offered when a level is lost, to play on.
+// The first time, the first level is a tutorial: the screen darkens all but the next tile to tap (in the dealt order,
+// which always clears it), the hand points at it, and only it can be tapped.
 
 import * as THREE from 'three';
 import { Game } from 'core/Game';
@@ -33,6 +35,7 @@ import { PictureView, TRAY_TOP } from '../world/PictureView';
 import { AntSwarm, Ant } from '../world/AntSwarm';
 import { TileRack, RackTile, SLOT_COUNT } from '../world/TileRack';
 import { LAYOUT } from '../world/Layout';
+import { vivid } from '../world/Vivid';
 import { AntHud } from '../ui/AntHud';
 import { AntAudio } from '../audio/AntAudio';
 import { RadialTransition } from '../ui/RadialTransition';
@@ -41,6 +44,12 @@ import { RadialTransition } from '../ui/RadialTransition';
 export const floorColor = (): THREE.Color => new THREE.Color(currentBackground().light);
 /** Columns for an old level file without its own. */
 const DEFAULT_COLUMNS = 4;
+/** The tutorial: how long it waits after a tap before pointing at the next tile, how big its hole is (x a tile), and
+ *  what it says. */
+const TUTORIAL = {
+    wait: 0.9, hole: 0.85,
+    first: 'Tap the tile!\nIts ants fetch pixels of its colour.', next: 'Now this one!', last: 'The last one!',
+};
 /** The block an ant carries is a whole pixel's (as it was). The ants themselves are the same size in every level
  *  (TUNING.antSize). */
 const CARRIED = 1;
@@ -101,6 +110,8 @@ export default class AntScene extends ThreeScene {
     /** The pause popup is up: the game's time stands still (Game.timeScale 0) — this is what it was before. */
     private paused = false;
     private travelling = false;
+    /** The tutorial under way: tiles tapped so far, of how many, in how many columns; time to the next pointer. */
+    private tutorial: { taps: number; tiles: number; columns: number; wait: number } | null = null;
     private resumeScale = 1;
 
     /** `onHome`: the pause popup's HOME. */
@@ -113,9 +124,10 @@ export default class AntScene extends ThreeScene {
         // A soft studio light to reflect: what gives the jelly cubes and tiles their shine.
         const pmrem = new THREE.PMREMGenerator(SetupThree.renderer);
         this.threeScene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-        this.threeScene.environmentIntensity = 0.3;
+        this.threeScene.environmentIntensity = 0.2;
         pmrem.dispose();
-        this.threeScene.add(new THREE.HemisphereLight(0xfff4ea, 0xc98f62, 0.75));
+        // A soft white sky and a light warm ground (a brown one muddied the colours), a strong sun: colours stay vivid.
+        this.threeScene.add(new THREE.HemisphereLight(0xffffff, 0xe6cdb8, 0.85));
         const sun = new THREE.DirectionalLight(0xffffff, 0.95);
         sun.position.set(5, 30, 18);
         this.threeScene.add(sun);
@@ -219,7 +231,7 @@ export default class AntScene extends ThreeScene {
         const pixels = pixelsOf(this.level);
         this.board = new Board(this.level.width, this.level.height, pixels);
         this.palette.length = 0;
-        this.level.palette.forEach((hex) => this.palette.push(new THREE.Color(hex)));
+        this.level.palette.forEach((hex) => this.palette.push(vivid(hex)));
         // The baked deck; an old level file gets tiles of about 1/90 to 1/25 of the picture, dealt here.
         const min = Math.max(6, Math.round(pixels.length / 90));
         const max = Math.max(min + 6, Math.round(pixels.length / 25));
@@ -238,6 +250,10 @@ export default class AntScene extends ThreeScene {
         this.lane.bottom = picture.group.position.z + picture.depth + lane;
 
         this.rack = new TileRack(this.level.palette, deck, this.level.columns ?? DEFAULT_COLUMNS);
+        this.hud.hideTutorial();
+        this.tutorial = this.levelIndex === 0 && !AntSave.tutorialDone
+            ? { taps: 0, tiles: deck.length, columns: this.level.columns ?? DEFAULT_COLUMNS, wait: TUTORIAL.wait }
+            : null;
         this.threeScene.add(this.rack.group);
         this.swarm = new AntSwarm(this.threeScene, cell * CARRIED, cell, (x, z) => {
             if (!picture.onTray(x, z)) return 0;
@@ -273,6 +289,9 @@ export default class AntScene extends ThreeScene {
         const hit = this.raycaster.intersectObjects(fronts.map((f) => f.body), false)[0];
         if (!hit) return;
         const column = fronts.find((f) => f.body === hit.object)!.column;
+        // The tutorial: only the tile it points at (the next in the dealt order: round-robin through the columns).
+        const tutorial = this.tutorial;
+        if (tutorial && tutorial.taps < tutorial.tiles && column !== tutorial.taps % tutorial.columns) return;
         const slot = this.slots.indexOf(null);
         if (slot < 0) {
             AntAudio.play('full');
@@ -282,6 +301,11 @@ export default class AntScene extends ThreeScene {
         AntAudio.play('tile');
         const tile = this.rack.take(column, slot);
         if (tile) this.slots[slot] = { tile, color: tile.tile.color, left: tile.tile.count, timer: 0.3 };
+        if (tile && tutorial) {
+            tutorial.taps++;
+            tutorial.wait = TUTORIAL.wait;
+            this.hud.hideTutorial();
+        }
     };
 
     /** A level (the next, or this one again) behind the screen transition, which shows its picture. */
@@ -330,6 +354,37 @@ export default class AntScene extends ThreeScene {
         AntSave.addBooster('slot', -1);
         this.hud.setExtraSlot(false);
         this.ended = false;
+    }
+
+    public update(delta: number): void {
+        this.updateTutorial(Math.min(delta, 0.1));
+        super.update(delta);
+    }
+
+    /** Points at the next tile to tap (after a moment), following it as the rack moves; out of the way when done. */
+    private updateTutorial(delta: number): void {
+        const tutorial = this.tutorial;
+        if (!tutorial || !this.rack) return;
+        if (this.ended || this.paused || tutorial.taps >= tutorial.tiles) {
+            this.hud.hideTutorial();
+            return;
+        }
+        if (tutorial.wait > 0) {
+            tutorial.wait -= delta;
+            return;
+        }
+        const column = tutorial.taps % tutorial.columns;
+        const top = this.rack.frontTop(column);
+        // No free slot yet: wait for one.
+        if (!top || !this.slots.includes(null)) {
+            this.hud.hideTutorial();
+            return;
+        }
+        const at = this.worldToScreen(top);
+        const edge = this.worldToScreen(top.clone().add(new THREE.Vector3((this.rack.tileSize / 2) * TUTORIAL.hole * 2, 0, 0)));
+        if (!at || !edge) return;
+        const text = tutorial.taps === 0 ? TUTORIAL.first : tutorial.taps === tutorial.tiles - 1 ? TUTORIAL.last : TUTORIAL.next;
+        this.hud.showTutorial(at.x, at.y, Math.abs(edge.x - at.x), text);
     }
 
     private readonly onWindowResize = (): void => {
@@ -487,6 +542,11 @@ export default class AntScene extends ThreeScene {
         if (this.ended || !this.swarm) return;
         if (this.board.remaining === 0 && this.swarm.count === 0) {
             this.ended = true;
+            if (this.tutorial) {
+                AntSave.finishTutorial();
+                this.tutorial = null;
+                this.hud.hideTutorial();
+            }
             // The coins: the full reward the first time, a little for a replay.
             const reward = levelReward(this.levelIndex, AntSave.hasWon(this.levelIndex));
             AntSave.markWon(this.levelIndex);

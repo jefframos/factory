@@ -1,8 +1,9 @@
 // AntSave.ts
 //
 // What the player keeps between sessions, in one small localStorage entry (if storage isn't available, it lasts the
-// session): the furthest level reached (cleared levels are the ones before it), the levels won at least once, coins,
-// how many of each power-up they have, and the deco (backgrounds, frames) they own and use. `selected` is the level the
+// session): whether the first-time tutorial's done, the furthest level reached (cleared levels are the ones before
+// it), the levels won at least once, coins, how many of each power-up they have, and the deco (backgrounds, frames)
+// they own and use. `selected` is the level the
 // main screen shows and PLAY starts — the furthest, or an older one to replay (not saved).
 
 import type { BoosterId } from '../ui/BoosterBelt';
@@ -12,6 +13,7 @@ const KEY = 'ant.save';
 export type DecoKind = 'background' | 'frame';
 
 interface SaveData {
+    tutorialDone: boolean;
     level: number;
     won: number[];
     coins: number;
@@ -22,6 +24,7 @@ interface SaveData {
 
 /** What a new player starts with: a few power-ups to try, the default background and frame. */
 const START: SaveData = {
+    tutorialDone: false,
     level: 0,
     won: [],
     coins: 0,
@@ -34,6 +37,7 @@ function load(): SaveData {
     try {
         const saved = JSON.parse(window.localStorage.getItem(KEY) ?? 'null') as Partial<SaveData> | null;
         return {
+            tutorialDone: saved?.tutorialDone ?? false,
             level: Math.max(0, Math.floor(saved?.level ?? 0)),
             won: saved?.won ?? [],
             coins: Math.max(0, Math.floor(saved?.coins ?? 0)),
@@ -58,6 +62,24 @@ function save(): void {
 }
 
 export const AntSave = {
+    get tutorialDone(): boolean {
+        return state.tutorialDone;
+    },
+
+    finishTutorial(): void {
+        state.tutorialDone = true;
+        save();
+    },
+
+    /** Everything back to a new player's (the debug panel's RESET): call before reloading the page. */
+    erase(): void {
+        try {
+            window.localStorage.removeItem(KEY);
+        } catch {
+            // No storage: nothing to erase.
+        }
+    },
+
     get selected(): number {
         return Math.min(selected, state.level);
     },

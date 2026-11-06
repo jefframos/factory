@@ -6,7 +6,7 @@
   "palette": [
     "#fcd66f",
     "#36364f",
-    "#fcacac",
+    "#ffffff",
     "#fa8714",
     "#2a2a3d"
   ],
@@ -38,11 +38,11 @@
     "........................."
   ],
   "columns": 4,
-  "deck": "1x8 0x23 0x24 1x22 0x13 2x11 0x7 1x7 0x7 1x19 0x19 1x13 0x10 1x15 0x8 0x8 4x1 0x19 0x8 0x9 0x13 3x9 1x18 0x9 0x7 0x9 3x2",
+  "deck": "1x13 0x58 0x61 1x52 0x33 3x3 1x14 2x11 0x16 3x4 1x23 3x4 0x25 4x1",
   "check": {
     "clearable": true,
     "slots": 5,
     "robust": true,
-    "randomWins": 0.98
+    "randomWins": 0.99
   }
 }
