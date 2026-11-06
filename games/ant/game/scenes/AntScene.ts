@@ -40,9 +40,9 @@ import { RadialTransition } from '../ui/RadialTransition';
 export const FLOOR = 0xf6c597;
 /** Columns for an old level file without its own. */
 const DEFAULT_COLUMNS = 4;
-/** An ant is about this many of the picture's pixels long, and the block it carries this big (of a pixel). */
+/** An ant is about this many of the picture's pixels long; the block it carries is a whole pixel's (as it was). */
 const ANT_PIXELS = 1.05;
-const CARRIED = 0.45;
+const CARRIED = 1;
 /** Camera: field of view, tilt from straight down, and how far below the screen's middle it looks (a tilted view
  *  squeezes the far end and stretches the near one: aiming lower keeps the board where the reference has it). */
 const FOV = 26;

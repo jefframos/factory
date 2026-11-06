@@ -6,7 +6,17 @@ that many ants of its colour stream out, each fetching one block of that colour 
 picture to win. The puzzle is the order: ants can only reach blocks that are **exposed**, so a tile whose colour isn't
 reachable yet just waits in its slot — fill all five slots with waiting colours and the level is lost.
 
-Built on the factory's engine (`core/`): one THREE scene for the board, a small PIXI layer for the HUD. The layout
+Built on the factory's engine (`core/`): one THREE scene for the board, a PIXI layer for the UI — the Layer Lab pack's
+sprites (`raw-assets/images/ui{tps}`, see `tools/ui-kit/README.md`) and the Baloo font, as in the UFO game.
+
+**Screens.** The main screen (`scenes/HomeScene.ts`, after UFO's) shows the level's picture as it'll look in the game,
+LEVEL N on a ribbon, ← / → to go through the levels already reached (to replay one; ▶| back to the furthest — replaying
+never lowers progress), PLAY, sound, and the bottom tabs: a gift (nothing yet), home, the shop (empty for now). In the
+game, the pause button (top left) opens the pause popup: sound and music toggles, RETRY, HOME. Going between them, and
+on to the next level, the screen closes and opens in a circle (`ui/RadialTransition.ts`) showing the level's picture.
+
+**Sounds** (`audio/AntAudio.ts`, files in `raw-assets/audio`, `npm run audio`): soft taps and bubbles for buttons and
+tiles, pops as the ants pick up blocks, a chime and applause for a finished picture, a calm soundtrack. The layout
 follows the reference screens (a 1080 × 1920 portrait, measured in `game/world/Layout.ts`): the picture's tray across
 the top, the anthill and its lid under it, the slots, the tile columns; the picture's pixels are glossy jelly cubes,
 the floor a peach checker. A finished picture gets a celebration (rays, confetti, the picture, three stars, NEXT).
@@ -40,7 +50,8 @@ count. The feel's defaults are in
   corners) to the side nearest their block, then in through the eaten cells. Home: straight down when the way below is
   clear, else the shortest straight line (or path) to the nearest border; along the rim to its bottom; straight down to
   the anthill's row; across into it.
-- **Tiles**: 3 to 5 columns (the level's own: fewer for small pictures) under the 5 slots; only the front row (on white plates) can be tapped; the second row waits as
+- **Tiles**: 3 to 5 columns (the level's own: fewer for small pictures) under the 5 slots; the front row stands tall
+  with a black outline; only the front row (on white plates) can be tapped; the second row waits as
   it is; rows further back sit lower with faded numbers. Taking a tile moves its column up.
 - **Slots**: 5. A tile in a slot sends one ant every 0.2 s while there's an exposed block of its colour no other ant
   is already going for — the one nearest its slot (no dice) —; its number counts down as they leave, and the tile goes
@@ -57,7 +68,8 @@ count. The feel's defaults are in
 is made (`tools/solver.mjs`) and saved in the level file, so a level always plays the same:
 
 1. **Dealt** by playing the picture out with the game's rules: each tile takes blocks of a colour that are reachable by
-   then, so taking the tiles in the order they were dealt always works. The `seed` picks another deal. Tile sizes run
+   then, so taking the tiles in the order they were dealt always works. Colours take turns as much as the picture
+   allows (one used in the last few tiles is much less likely; the small colours are spread through the deck). The `seed` picks another deal. Tile sizes run
    from about 1/90 to 1/25 of the grid.
 2. **Mixed** (`mix` 0–5): some later tiles are pulled a few rows forward — a colour that can't be reached yet turning
    up early, to sit in a slot waiting: the traps that fill the slots and lose the level. Of several mixes, the hardest

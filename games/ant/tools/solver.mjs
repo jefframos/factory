@@ -243,20 +243,35 @@ export function check(start, deck, columnCount) {
     return { clearable: true, slots, robust, randomWins: Math.round((wins / PLAYOUTS) * 100) / 100 };
 }
 
-/** Deals by playing the picture out, as Board.ts's dealDeck(): every tile reachable when its turn comes. */
+/** How much less likely a colour is when it was the last tile, or among the few before (a row of one colour is dull). */
+const REPEAT = { last: 0.08, recent: 0.35, window: 3 };
+
+/**
+ * Deals by playing the picture out, as Board.ts's dealDeck(): every tile reachable when its turn comes. The colour is
+ * picked at random among the reachable ones — by how much of it is left in the picture (so the small colours are spread
+ * through the deck rather than used up first) and much less likely if the last few tiles were that colour — so colours
+ * take turns as long as the picture allows.
+ */
 function deal(start, seed, min, max) {
     const board = start.clone();
     const random = seeded(seed);
     const colors = board.exposed.map((_, c) => c);
+    // Pixels of each colour still in the picture.
+    const left = colors.map(() => 0);
+    for (const c of board.colors) if (c >= 0) left[c]++;
     const deck = [];
     while (board.remaining > 0) {
-        const options = colors.map((color) => ({ color, reach: board.reachable(color) })).filter((o) => o.reach.length > 0);
-        const total = options.reduce((sum, o) => sum + o.reach.length, 0);
+        const recent = deck.slice(-REPEAT.window).map((t) => t.color);
+        const last = recent[recent.length - 1];
+        const options = colors.map((color) => ({ color, reach: board.reachable(color) })).filter((o) => o.reach.length > 0)
+            .map((o) => ({ ...o, weight: left[o.color] * (o.color === last ? REPEAT.last : recent.includes(o.color) ? REPEAT.recent : 1) }));
+        const total = options.reduce((sum, o) => sum + o.weight, 0);
         let pick = random() * total;
-        const chosen = options.find((o) => (pick -= o.reach.length) < 0) ?? options[options.length - 1];
+        const chosen = options.find((o) => (pick -= o.weight) < 0) ?? options[options.length - 1];
         let count = Math.min(chosen.reach.length, min + Math.floor(random() * (max - min + 1)));
         if (chosen.reach.length - count < min) count = chosen.reach.length;
         for (const i of chosen.reach.slice(0, count)) board.take(i);
+        left[chosen.color] -= count;
         deck.push({ color: chosen.color, count });
     }
     return deck;

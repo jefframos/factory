@@ -1,11 +1,65 @@
 {
   "strawberry": {
-    "name": "Strawberry",
-    "width": 18,
-    "height": 18,
-    "colors": 4,
+    "width": 16,
+    "height": 16,
+    "colors": 6,
     "palette": "candy",
-    "background": "auto"
+    "background": "auto",
+    "saturation": 0,
+    "brightness": 0,
+    "offsetX": 0,
+    "offsetY": 0,
+    "edits": {
+      "5,6": "#06d6a0",
+      "10,6": "#06d6a0",
+      "8,12": "#ffd166",
+      "9,8": "#ffd166",
+      "5,8": "#ffd166"
+    },
+    "shades": {
+      "7,3": [
+        0,
+        -2
+      ],
+      "8,3": [
+        0,
+        -2
+      ],
+      "7,2": [
+        0,
+        -2
+      ],
+      "8,2": [
+        0,
+        -2
+      ],
+      "8,1": [
+        0,
+        -2
+      ],
+      "7,1": [
+        0,
+        -2
+      ],
+      "11,8": [
+        0,
+        3
+      ],
+      "11,7": [
+        0,
+        3
+      ],
+      "10,7": [
+        0,
+        3
+      ]
+    },
+    "padding": 0,
+    "stroke": "",
+    "columns": 0,
+    "seed": 0,
+    "mix": 0,
+    "name": "Strawberry"
   },
   "mushroom": {
     "width": 22,

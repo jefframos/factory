@@ -12,9 +12,9 @@ import type { LevelData } from '../data/Levels';
 import { LAYOUT } from './Layout';
 
 /** A block's footprint (the whole cell: blocks touch, their rounded edges show the grid), height and rounding (shares of the cell). */
-const BLOCK = 1;
-const BLOCK_HEIGHT = 0.78;
-const ROUNDING = 0.2;
+export const BLOCK = 1;
+export const BLOCK_HEIGHT = 0.78;
+export const ROUNDING = 0.2;
 /** A pulled pixel squashes and stretches for POP_SEC (the ant's pick-up), then goes; its neighbours wobble for WOBBLE_SEC. */
 const POP_SEC = 0.12;
 const WOBBLE_SEC = 0.45;

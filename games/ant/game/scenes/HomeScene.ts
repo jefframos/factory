@@ -143,7 +143,7 @@ export default class HomeScene extends ThreeScene {
         const index = Math.max(0, Math.min(to, furthest));
         if (index === this.index) return;
         this.showLevel(index);
-        this.stand.scale.set(0.85);
+        this.stand.scale.setScalar(0.85);
         gsap.to(this.stand.scale, { x: 1, y: 1, z: 1, duration: 0.35, ease: 'back.out(2.5)' });
         gsap.fromTo(this.ribbon.scale, { x: 0.9, y: 0.9 }, { x: 1, y: 1, duration: 0.3, ease: 'back.out(3)' });
     }

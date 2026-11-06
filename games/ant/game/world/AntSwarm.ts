@@ -2,20 +2,26 @@
 //
 // The ants: each follows a path of waypoints from its slot to the pixel it claimed — round the tray, never across the
 // picture: up to the tray's bottom edge, then in through the cells already eaten — picks the block up (onPickUp: the
-// scene hides the picture's block and hands back the way home; the ant carries a copy over its head), walks it back
-// out and down the anthill (onHome). All the
+// scene hides the picture's block and hands back the way home; the ant carries it — the same jelly block, the same
+// size — over its head), walks it back out and down the anthill (onHome). Each ant wanders a little either side of its
+// way and keeps its own pace, so a line of them looks alive (drawn only: where it really is stays on the path). All the
 // ants are one InstancedMesh (an ant in its tile's colour: abdomen, thorax, head, six legs that swing as it walks)
 // and the blocks they carry another, so a big swarm costs two draw calls.
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { TUNING } from '../data/Tuning';
+import { BLOCK, BLOCK_HEIGHT, ROUNDING } from './PictureView';
 
 const MAX_ANTS = 400;
 /** How fast an ant turns to face its way (its walking speed: TUNING.antSpeed). */
 const TURN = 14;
 /** How long picking a block up takes. */
 const PICK_SEC = 0.28;
+/** The wander either side of the way: how far (of a pixel, and at most in world units), how often (per unit walked);
+ *  and how much an ant's pace differs from the next's. */
+const WANDER = { amount: 0.22, max: 0.2, frequency: 1.6, pace: 0.12 };
 
 export interface Ant {
     /** Whose ant it is (the slot index) and the pixel it's after. */
@@ -30,6 +36,10 @@ export interface Ant {
     phase: 'out' | 'pick' | 'home';
     wait: number;
     step: number;
+    /** Its wander's phase and size (-1..1 of WANDER), and its pace (x the walking speed). */
+    wander: number;
+    sway: number;
+    pace: number;
 }
 
 /** An ant, nose along +Z: abdomen, thorax, head, and three pairs of legs (thin boxes). */
@@ -64,6 +74,7 @@ export class AntSwarm {
     private readonly scale = new THREE.Vector3();
     private readonly up = new THREE.Vector3(0, 1, 0);
     private readonly lift = new THREE.Vector3();
+    private readonly drawn = new THREE.Vector3();
 
     /**
      * `size`: an ant's scale; `carried`: the size of the block on its back; `pixel`: a picture block's size (a lifted
@@ -75,7 +86,9 @@ export class AntSwarm {
         private readonly groundAt: (x: number, z: number) => number,
         private readonly onPickUp: (ant: Ant) => THREE.Vector3[], private readonly onHome: (ant: Ant) => void) {
         this.bodies = new THREE.InstancedMesh(antGeometry(), new THREE.MeshStandardMaterial({ roughness: 0.4 }), MAX_ANTS);
-        this.blocks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.6, 1), new THREE.MeshStandardMaterial({ roughness: 0.55 }), MAX_ANTS);
+        // The picture's own jelly block (PictureView), at its full size.
+        this.blocks = new THREE.InstancedMesh(new RoundedBoxGeometry(BLOCK, BLOCK_HEIGHT, BLOCK, 2, ROUNDING),
+            new THREE.MeshPhysicalMaterial({ roughness: 0.4, clearcoat: 0.8, clearcoatRoughness: 0.12 }), MAX_ANTS);
         for (const mesh of [this.bodies, this.blocks]) {
             mesh.count = 0;
             mesh.frustumCulled = false;
@@ -96,7 +109,10 @@ export class AntSwarm {
     public send(slot: number, pixel: number, color: THREE.Color, carried: THREE.Color, from: THREE.Vector3, path: THREE.Vector3[]): void {
         if (this.ants.length >= MAX_ANTS || !path.length) return;
         const heading = Math.atan2(path[0].x - from.x, path[0].z - from.z);
-        this.ants.push({ slot, pixel, color, carried, position: from.clone(), heading, path, phase: 'out', wait: 0, step: Math.random() * 6 });
+        this.ants.push({
+            slot, pixel, color, carried, position: from.clone(), heading, path, phase: 'out', wait: 0, step: Math.random() * 6,
+            wander: Math.random() * Math.PI * 2, sway: 0.5 + Math.random() * 0.5, pace: 1 + (Math.random() * 2 - 1) * WANDER.pace,
+        });
     }
 
     public update(delta: number): void {
@@ -117,7 +133,7 @@ export class AntSwarm {
             const dx = target.x - ant.position.x;
             const dz = target.z - ant.position.z;
             const distance = Math.hypot(dx, dz);
-            const stride = TUNING.antSpeed * delta;
+            const stride = TUNING.antSpeed * ant.pace * delta;
             if (distance <= stride) {
                 ant.position.set(target.x, ant.position.y, target.z);
                 ant.path.shift();
@@ -137,6 +153,7 @@ export class AntSwarm {
             // Climbs onto the picture (and back down) over a few frames rather than in one jump.
             ant.position.y += (this.groundAt(ant.position.x, ant.position.z) - ant.position.y) * Math.min(1, 18 * delta);
             ant.step += stride * 3;
+            ant.wander += stride * WANDER.frequency;
             // Turn smoothly towards the way it's going (the shortest way round).
             const want = Math.atan2(dx, dz);
             const turn = Math.atan2(Math.sin(want - ant.heading), Math.cos(want - ant.heading));
@@ -147,21 +164,25 @@ export class AntSwarm {
 
     private draw(): void {
         let carrying = 0;
+        const reach = Math.min(WANDER.max, this.pixel * WANDER.amount);
         this.ants.forEach((ant, i) => {
-            // A little waddle: the body rocks side to side with its steps.
-            this.quaternion.setFromAxisAngle(this.up, ant.heading + Math.sin(ant.step) * 0.08);
+            // A little waddle: the body rocks side to side with its steps; and a wander either side of its way (none
+            // while it picks a block up).
+            const side = ant.phase === 'pick' ? 0 : Math.sin(ant.wander) * reach * ant.sway;
+            this.drawn.set(ant.position.x + Math.cos(ant.heading) * side, ant.position.y, ant.position.z - Math.sin(ant.heading) * side);
+            this.quaternion.setFromAxisAngle(this.up, ant.heading + Math.sin(ant.step) * 0.08 + Math.cos(ant.wander) * 0.25 * ant.sway);
             this.scale.setScalar(this.size);
-            this.matrix.compose(ant.position, this.quaternion, this.scale);
+            this.matrix.compose(this.drawn, this.quaternion, this.scale);
             this.bodies.setMatrixAt(i, this.matrix);
             this.bodies.setColorAt(i, ant.color);
-            // The block it took: while picking up it rises from where it stood onto the ant's back, easing from a full
-            // block's size down to the carried one; then it rides there home.
+            // The block it took: while picking up it rises from where it stood onto the ant's back (`carried`: a full
+            // block's size); then it rides there home.
             if (ant.phase !== 'out') {
                 const t = ant.phase === 'pick' ? 1 - Math.max(0, ant.wait) / PICK_SEC : 1;
                 const ease = t * t * (3 - 2 * t);
-                const back = ant.position.y + this.size * 0.48 + this.carried * 0.3;
+                const back = ant.position.y + this.size * 0.45 + this.carried * BLOCK_HEIGHT * 0.5;
                 const stood = ant.position.y - this.pixel * 0.35;
-                this.lift.copy(ant.position).setY(stood + (back - stood) * ease);
+                this.lift.copy(this.drawn).setY(stood + (back - stood) * ease);
                 this.matrix.compose(this.lift, this.quaternion, this.scale.setScalar(this.pixel + (this.carried - this.pixel) * ease));
                 this.blocks.setMatrixAt(carrying, this.matrix);
                 this.blocks.setColorAt(carrying, ant.carried);

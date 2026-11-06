@@ -57,6 +57,8 @@ export class AntHud extends PIXI.Container {
     /** The celebration's turning rays and falling confetti (behind / over the card). */
     private readonly rays = new PIXI.Container();
     private readonly confetti = new PIXI.Container();
+    /** The confetti pieces' falls under way. */
+    private falling: gsap.core.Timeline[] = [];
 
     /** `onPause` from the pause button, `onExtraSlot` from the power-up (on the belt or the lost card). */
     public constructor(private readonly onPause: () => void, private readonly onExtraSlot: () => void) {
@@ -263,7 +265,6 @@ export class AntHud extends PIXI.Container {
 
     /** Confetti in the picture's colours (and gold), bursting up from the card and fluttering down. */
     private burstConfetti(palette: string[]): void {
-        return
         const colors = [...palette.map((hex) => new PIXI.Color(hex).toNumber()), 0xffd23f, 0xffffff];
         const screen = Game.overlayScreenData;
         const floor = screen ? screen.topLeft.y + screen.height + 40 : 1200;
@@ -276,8 +277,15 @@ export class AntHud extends PIXI.Container {
             const speed = 380 + Math.random() * 420;
             const upX = piece.x + Math.cos(angle) * speed;
             const upY = piece.y + Math.sin(angle) * speed;
-            gsap.timeline({ onComplete: () => piece?.destroy() })
-                .to(piece, { x: upX, y: upY, duration: 0.55, ease: 'power2.out' })
+            // Kept, so hideResult() can stop it: a piece cleared away early mustn't be destroyed again when its fall ends.
+            const fall = gsap.timeline({
+                onComplete: () => {
+                    this.falling = this.falling.filter((t) => t !== fall);
+                    if (!piece.destroyed) piece.destroy();
+                },
+            });
+            this.falling.push(fall);
+            fall.to(piece, { x: upX, y: upY, duration: 0.55, ease: 'power2.out' })
                 .to(piece, { x: upX + (Math.random() - 0.5) * 160, y: floor, duration: 1.8 + Math.random() * 1.2, ease: 'power1.in' })
                 .to(piece, { rotation: piece.rotation + (Math.random() - 0.5) * 18, duration: 2.6, ease: 'none' }, 0);
         }
@@ -288,7 +296,8 @@ export class AntHud extends PIXI.Container {
         this.card.visible = false;
         this.rays.visible = false;
         gsap.killTweensOf(this.rays);
-        this.confetti.children.forEach((piece) => gsap.killTweensOf(piece));
+        this.falling.forEach((fall) => fall.kill());
+        this.falling = [];
         this.confetti.removeChildren().forEach((child) => child.destroy());
     }
 
