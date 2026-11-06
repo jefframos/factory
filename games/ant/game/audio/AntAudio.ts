@@ -1,6 +1,7 @@
 // AntAudio.ts
 //
-// Ant's sounds: short effects for the buttons, the tiles, the ants picking up their blocks, a won or lost level, and a
+// Ant's sounds: short effects for the buttons, the tiles, the ants picking up their blocks and dropping them down the
+// anthill, a won or lost level, and a
 // soundtrack ("Redding Rainbow" by Benjamin Andrews, from library3d/sounds) looping quietly under it all. Files:
 // raw-assets/audio (`npm run audio` packs them as mp3 into public/ant/audio, listed in manifests/audio.json); the
 // effects come from the dig, down, bandit and UFO games.
@@ -18,7 +19,7 @@ import PlatformHandler from 'core/platforms/PlatformHandler';
 import audioManifest from '../../manifests/audio.json';
 
 export type Sfx =
-    | 'click' | 'open' | 'close' | 'toggle' | 'tab' | 'tile' | 'slot' | 'full' | 'win' | 'applause' | 'lose' | 'whoosh' | 'pick';
+    | 'click' | 'open' | 'close' | 'toggle' | 'tab' | 'tile' | 'slot' | 'full' | 'win' | 'applause' | 'lose' | 'whoosh' | 'pick' | 'drop';
 
 /** Each effect's sound(s) (one is picked at random), its volume, and the least time between two plays (seconds). */
 const SFX: Record<Sfx, { files: string[]; volume: number; gap?: number }> = {
@@ -37,8 +38,12 @@ const SFX: Record<Sfx, { files: string[]; volume: number; gap?: number }> = {
     whoosh: { files: ['whoosh'], volume: 0.5 },
     // Many ants at once: soft, quick pops, never too many together.
     pick: { files: ['collect-gem-1', 'collect-gem-2', 'collect-gem-3', 'collect-gem-4', 'collect-gem-5'], volume: 0.18, gap: 0.07 },
+    // An ant dropping its block down the anthill: a soft little thud (from the down game).
+    drop: { files: ['drop-1', 'drop-2', 'drop-3', 'drop-4', 'drop-5'], volume: 0.3, gap: 0.06 },
 };
-const MUSIC = { sound: 'music', layer: 'music', volume: 0.3, fadeMs: 2500 };
+/** Every effect's volume is scaled by this — one knob for the whole mix. */
+const SFX_LEVEL = 0.65;
+const MUSIC = { sound: 'music', layer: 'music', volume: 0.22, fadeMs: 2500 };
 const MUSIC_KEY = 'ant.music';
 
 const lastPlayed = new Map<Sfx, number>();
@@ -83,7 +88,7 @@ export const AntAudio = {
         if (gap && now - (lastPlayed.get(name) ?? -Infinity) < gap) return;
         lastPlayed.set(name, now);
         const file = files[Math.floor(Math.random() * files.length)];
-        void SoundManager.instance.playSoundById(file, { volume: volume * SoundManager.instance.sfxVolume, pitch: rate }).catch(() => undefined);
+        void SoundManager.instance.playSoundById(file, { volume: volume * SFX_LEVEL * SoundManager.instance.sfxVolume, pitch: rate }).catch(() => undefined);
     },
 
     /** The soundtrack, faded in on its layer (browsers only start audio after an input: call it from one). */

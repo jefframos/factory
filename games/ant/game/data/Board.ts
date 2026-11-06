@@ -50,13 +50,28 @@ export class Board {
             || (y > 0 && this.colors[i - this.width] < 0) || this.colors[i + this.width] < 0;
     }
 
-    /** Exposed pixels of a colour no ant is on its way to. */
+    /**
+     * Pixels of a colour no ant is on its way to that an ant can go for: exposed, or next in line — right behind one an
+     * ant is already heading to (it'll be gone by the time this one's ant gets there, so the slot needn't wait for it).
+     */
     public claimable(color: number): number[] {
         const found: number[] = [];
         for (let i = 0; i < this.colors.length; i++) {
-            if (this.colors[i] === color && !this.claimed[i] && this.exposed(i)) found.push(i);
+            if (this.colors[i] === color && !this.claimed[i] && (this.exposed(i) || this.behindClaimed(i))) found.push(i);
         }
         return found;
+    }
+
+    /** Next to (left, right, above or below) a pixel an ant is heading to. */
+    private behindClaimed(i: number): boolean {
+        const x = i % this.width;
+        return (x > 0 && this.claimed[i - 1] === 1) || (x < this.width - 1 && this.claimed[i + 1] === 1)
+            || (i >= this.width && this.claimed[i - this.width] === 1) || (i + this.width < this.colors.length && this.claimed[i + this.width] === 1);
+    }
+
+    /** Gone, or about to be (an ant's heading to it): an ant may walk through it. */
+    private passable(i: number): boolean {
+        return this.colors[i] < 0 || this.claimed[i] === 1;
     }
 
     public claim(i: number): void {
@@ -128,7 +143,7 @@ export class Board {
                 break;
             }
             for (const n of this.neighbours(i)) {
-                if (came.has(n) || this.colors[n] >= 0) continue;
+                if (came.has(n) || !this.passable(n)) continue;
                 came.set(n, i);
                 queue.push(n);
             }
@@ -147,7 +162,7 @@ export class Board {
             const x = i % this.width;
             if ((step === -1 && x === 0) || (step === 1 && x === this.width - 1)) break;
             i += step;
-            if (this.colors[i] >= 0) return undefined;
+            if (!this.passable(i)) return undefined;
             line.push(i);
         }
         return line;

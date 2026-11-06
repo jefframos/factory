@@ -1,7 +1,8 @@
 // AntEvents.ts
 //
 // What Ant tells the platform (PlatformHandler): gameplay start / stop (only on a change: while a level's being
-// played, not paused, between levels or on the main screen), happy time on a finished picture, and analytics events
+// played, not paused, between levels or on the main screen — and never before the player's first touch), happy time
+// on a finished picture, and analytics events
 // (PlatformHandler.measure: category, what, action) — stable ids, no display text:
 //   level <n> start | complete | fail | retry        level-time <n> <bucket>   (how long it took: 0-30s ... 8m+)
 //   tutorial first-level start | complete           intro <mechanic> visible
@@ -16,9 +17,33 @@ const TIME_BUCKETS = [30, 60, 120, 240, 480];
 /** Minutes of play (this session) that are marked as they're reached. */
 const PLAYTIME_MARKS = [1, 3, 5, 10, 15, 20, 30, 45];
 
+/** Gameplay as last told to the platform. */
 let playing = false;
+/** Gameplay as the game has it — told to the platform once the player has touched it (see `touched`). */
+let wantsPlaying = false;
+/**
+ * The player's first input (press, touch or key) this session: gameplay start is only sent after it — a level shown
+ * on load isn't play yet. Listened for in the capture phase, before the game handles it.
+ */
+let touched = false;
 let playedSeconds = 0;
 let nextMark = 0;
+
+function sendPlaying(on: boolean): void {
+    if (on === playing) return;
+    playing = on;
+    const platform = PlatformHandler.instance.platform;
+    void (on ? platform?.gameplayStart() : platform?.gameplayStop())?.catch?.(() => undefined);
+}
+
+const FIRST_INPUT_EVENTS = ['pointerdown', 'touchstart', 'keydown'] as const;
+function onFirstInput(): void {
+    if (touched) return;
+    touched = true;
+    for (const type of FIRST_INPUT_EVENTS) window.removeEventListener(type, onFirstInput, true);
+    if (wantsPlaying) sendPlaying(true);
+}
+for (const type of FIRST_INPUT_EVENTS) window.addEventListener(type, onFirstInput, true);
 
 const measure = (category: string, what: string | number, action: string): void => PlatformHandler.instance.measure(category, what, action);
 
@@ -32,12 +57,11 @@ function bucket(seconds: number): string {
 }
 
 export const AntEvents = {
-    /** Gameplay on or off, for the platform (sent only when it changes). */
+    /** Gameplay on or off, for the platform (sent only when it changes; a start waits for the player's first input). */
     playing(on: boolean): void {
-        if (on === playing) return;
-        playing = on;
-        const platform = PlatformHandler.instance.platform;
-        void (on ? platform?.gameplayStart() : platform?.gameplayStop())?.catch?.(() => undefined);
+        wantsPlaying = on;
+        if (on && !touched) return;
+        sendPlaying(on);
     },
 
     /** Time going by while playing: the session's play-time marks. */

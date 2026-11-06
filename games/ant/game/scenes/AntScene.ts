@@ -386,7 +386,7 @@ export default class AntScene extends ThreeScene {
             if (!picture.onTray(x, z)) return 0;
             const i = picture.cellAt(x, z);
             return TRAY_TOP + (i >= 0 && this.board.colors[i] >= 0 ? picture.blockTop : 0);
-        }, (ant) => this.pickUp(ant), () => undefined);
+        }, (ant) => this.pickUp(ant), () => AntAudio.play('drop', 0.92 + Math.random() * 0.2));
         this.fitCamera();
         this.introduce('start');
     }

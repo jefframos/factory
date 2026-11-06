@@ -31,7 +31,9 @@
 //      less vivid (before it, the snapping would put most colours straight back on the same tone). Then the shading
 //      brushes (`shades`: { "x,y": [saturation, brightness] } steps per cell, in the same coordinates as the edits):
 //      shading for depth — not snapped, so each shade is a colour of its own (its own tiles in the game).
-//   9. The tiles are baked (solver.mjs's bakeDeck: `seed`, `mix`, `columns`) and checked: can it be cleared?
+//   9. Tones too close to tell apart (`minToneDistance`, OKLab — under it two tiles look the same colour but their ants
+//      can't take each other's pixels) are merged: each into the closest one covering more pixels (mergeCloseTones).
+//  10. The tiles are baked (solver.mjs's bakeDeck: `seed`, `mix`, `columns`) and checked: can it be cleared?
 // Returns the level (id, name, size, palette by use, rows, columns, deck, check), the final grid (hex colours, null =
 // empty: the editor's paint canvas), the pixel count, and a crisp preview PNG.
 
@@ -49,8 +51,14 @@ const OUTLINE_DARK = 70;
 const SATURATION_STEP = 0.15;
 const BRIGHTNESS_STEP = 0.06;
 export const MAX_STEPS = 5;
+/**
+ * Two tones closer than this (OKLab distance) are merged at the end of a build. ~0.03 is barely visible side by side;
+ * a level's tiles need to read apart at a glance, small and in 3D light: 0.075 folds near-twins (two light greens 0.03
+ * apart, two browns 0.06) and keeps clear pairs (a mid and a dark green 0.08 apart, dark red and brown 0.09).
+ */
+export const MIN_TONE_DISTANCE = 0.075;
 
-export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {}, shades: {}, padding: 0, stroke: '', dropOutline: false, autoShade: true, shadeColors: -1, columns: 0, seed: 0, mix: 0 };
+export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {}, shades: {}, padding: 0, stroke: '', dropOutline: false, autoShade: true, shadeColors: -1, columns: 0, seed: 0, mix: 0, minToneDistance: MIN_TONE_DISTANCE };
 /** Auto-shading: the smallest area shaded, and the edge tones' steps (as the brushes': [saturation, brightness]). */
 const SHADE = { minArea: 10, light: [0, 2], dark: [1, -2], maxLight: 0.93 };
 
@@ -261,6 +269,39 @@ async function sampleGrid(file, width, height, settings, palette) {
 }
 
 /** The grid shifted by (dx, dy) cells: what slides off is gone, what slides in is empty. */
+/**
+ * Merges tones closer than `minDistance` (OKLab), in place: the most-used first stays; each next one joins the closest
+ * kept tone within reach, else is kept too. Returns the merges ([from, into] hex pairs) for the editor to show.
+ */
+function mergeCloseTones(grid, minDistance) {
+    if (!(minDistance > 0)) return [];
+    const counts = new Map();
+    for (const c of grid) if (c) counts.set(c, (counts.get(c) ?? 0) + 1);
+    const kept = [];
+    const into = new Map();
+    const merges = [];
+    for (const tone of [...counts.keys()].sort((a, b) => counts.get(b) - counts.get(a) || (a < b ? -1 : 1))) {
+        const lab = oklab(parseHex(tone));
+        let best = null;
+        let bestDistance = minDistance;
+        for (const k of kept) {
+            const d = Math.sqrt(distance2(lab, k.lab));
+            if (d < bestDistance) {
+                bestDistance = d;
+                best = k.tone;
+            }
+        }
+        if (best) {
+            into.set(tone, best);
+            merges.push([tone, best]);
+        } else {
+            kept.push({ tone, lab });
+        }
+    }
+    if (merges.length) for (let i = 0; i < grid.length; i++) if (grid[i] && into.has(grid[i])) grid[i] = into.get(grid[i]);
+    return merges;
+}
+
 function shift(grid, width, height, dx, dy) {
     if (!dx && !dy) return grid;
     const out = new Array(width * height).fill(null);
@@ -331,6 +372,9 @@ export async function buildLevel(file, id, settings, master) {
     const shading = shift(shadeGrid, width, height, dx, dy);
     const strokeColor = stroked ? (palette.length ? closest(parseHex(options.stroke), palette) : options.stroke) : null;
     if (strokeColor) outline(final, width, height, strokeColor);
+    // The editor's colour picker reads these: the tones before the level's saturation / brightness and the brushes, so
+    // painting a picked one (kept exactly) comes out as the tone it was picked from.
+    const pickGrid = final.slice();
     const saturation = steps(options.saturation);
     const brightness = steps(options.brightness);
     if (saturation || brightness) {
@@ -342,6 +386,7 @@ export async function buildLevel(file, id, settings, master) {
         }
     }
     for (let i = 0; i < final.length; i++) if (final[i] && shading[i]) final[i] = hex(adjust(parseHex(final[i]), shading[i][0], shading[i][1]));
+    const mergedTones = mergeCloseTones(final, Math.max(0, Number(options.minToneDistance ?? MIN_TONE_DISTANCE)));
     const { palette: levelPalette, rows } = toLevel(final, width, height);
     const indices = final.map((c) => (c ? levelPalette.indexOf(c) : -1));
     // Difficulty: 'auto' (the default) aims at the goal for the level's place in the play order (`order`, when known);
@@ -355,7 +400,7 @@ export async function buildLevel(file, id, settings, master) {
         id, name: options.name, width, height, palette: levelPalette, rows,
         columns: baked.columns, deck: baked.deck.map((t) => `${DIGITS[t.color]}x${t.count}`).join(' '), check: baked.check,
     };
-    return { level, grid: final, preview: await previewPng(level), pixels: final.filter(Boolean).length, baseColors };
+    return { level, grid: final, pickGrid, preview: await previewPng(level), pixels: final.filter(Boolean).length, baseColors, mergedTones };
 }
 
 /** Depth for each colour area (not the outline's): lighter along its top and left edges, darker along its bottom and

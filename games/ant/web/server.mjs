@@ -4,7 +4,8 @@
 //   GET  /api/levels           every level in play order (levels/index.json) with its settings and stats, + the
 //                              preset PALETTES and the master palette (raw-assets/pictures/palette.json)
 //   POST /api/preview          { id, settings, master? } -> the level built (not saved): PNG data URL, pixels, palette,
-//                              its grid (hex colours, null = empty: the paint canvas), its baked tiles (columns, deck)
+//                              its grid (hex colours, null = empty: the paint canvas) and pickGrid (the same before
+//                              the level's saturation / brightness and brushes: the colour picker), its baked tiles (columns, deck)
 //                              and the solver's check; `master` tries a palette unsaved
 //   POST /api/save             { id, settings } -> writes levels/<id>.json, its preview, and pictures.json's settings
 //   POST /api/palette          { colors } -> saves the master palette and rebuilds every level that uses it
@@ -84,8 +85,8 @@ async function run(id, settings, save, master) {
         all[id] = settings;
         await writeJson(SETTINGS_FILE, all);
     }
-    return { png: `data:image/png;base64,${result.preview.toString('base64')}`, pixels: result.pixels, palette: result.level.palette, width: result.level.width, height: result.level.height, grid: result.grid,
-        columns: result.level.columns, deck: result.level.deck, check: result.level.check, baseColors: result.baseColors };
+    return { png: `data:image/png;base64,${result.preview.toString('base64')}`, pixels: result.pixels, palette: result.level.palette, width: result.level.width, height: result.level.height, grid: result.grid, pickGrid: result.pickGrid,
+        columns: result.level.columns, deck: result.level.deck, check: result.level.check, baseColors: result.baseColors, mergedTones: result.mergedTones };
 }
 
 /** Adds a level at the end of the play order. */

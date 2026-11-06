@@ -64,6 +64,7 @@
   .paint { display: flex; flex-wrap: wrap; gap: 4px; }
   .paint button { width: 24px; height: 24px; padding: 0; border-radius: 6px; border: 2px solid rgba(0,0,0,.12); }
   .paint button.on { border-color: var(--ink); transform: scale(1.12); }
+  .customColour.on { outline: 2px solid var(--ink); outline-offset: 1px; border-radius: 6px; }
   .stepper { display: flex; gap: 4px; align-items: center; }
   .stepper button { padding: 6px 10px; }
   .stepper output { min-width: 28px; text-align: center; font-weight: 700; color: var(--ink); }
@@ -130,8 +131,9 @@
       <button id="toolSatUp" title="Saturation brush: one step more vivid per pass (3)">🎨＋</button>
       <button id="toolSatDown" title="Saturation brush: one step greyer per pass (4)">🩶−</button>
       <button id="toolSelect" title="Select a colour: the pixels of that colour joined to the one you click (F)">🪣 Select</button>
+      <button id="toolPick" title="Pick a colour from the picture to paint with (I, or Alt+click with any tool)">💧 Pick</button>
       <span class="paint" id="paint"></span>
-      <input type="color" id="custom" title="Any colour (snapped to the palette)" style="width:34px;padding:0;height:26px">
+      <input type="color" id="custom" class="customColour" title="Any colour, kept exactly (not snapped to the palette)" style="width:34px;padding:0;height:26px">
       <span style="flex:1"></span>
       <button id="undo" title="Undo (Ctrl/Cmd+Z)">Undo</button>
       <button id="clearEdits" title="Remove every hand edit and all shading">Clear edits</button>
@@ -198,6 +200,9 @@
       <div class="field">Shaded colours (biggest first)
         <span class="stepper"><button id="shadeDown">−</button><output id="shade">all</output><button id="shadeUp">＋</button></span>
       </div>
+      <div class="field" title="Tones closer than this (OKLab) are merged into the bigger one — two tiles that look the same colour but can't take each other's pixels are frustrating. 0 = off.">Merge tones closer than
+        <span class="stepper"><button id="mergeDown">−</button><output id="merge">0.075</output><button id="mergeUp">＋</button></span>
+      </div>
       <label>Difficulty
         <select id="difficulty"><option value="auto">Auto (by its place in the order)</option><option value="manual">Manual (the mix)</option></select>
       </label>
@@ -236,8 +241,11 @@ let previewSeq = 0;
 /** The level being tuned: its settings (edits included) and its built grid (hex colours, null = empty). */
 let current = null;
 let grid = [];
+/** The built grid before the level's saturation / brightness and the brushes: what the colour picker reads. */
+let pickGrid = [];
 let size = { width: 1, height: 1 };
 let tool = 'paint';
+/** The paint colour: a palette tone (snapped, so it follows palette changes), or "!#hex" — kept exactly as it is. */
 let colour = null;
 let history = [];
 /** The last preview's colours before shading. */
@@ -487,6 +495,8 @@ function showNumbers() {
   current.padding = Math.max(0, Math.min(10, Math.round(current.padding || 0)));
   current.shadeColors = Math.round(current.shadeColors ?? -1);
   $('shade').textContent = current.shadeColors < 0 ? 'all' : current.shadeColors;
+  const merge = current.minToneDistance ?? MIN_TONE_DISTANCE;
+  $('merge').textContent = merge > 0 ? merge.toFixed(3) : 'off';
   $('pad').textContent = current.padding;
   $('mix').textContent = current.mix;
 }
@@ -502,7 +512,8 @@ function showSwatches() {
 /** The paint colours: the level's palette (for "none": the colours it uses). */
 function showPaint() {
   const colours = levelPalette().length ? levelPalette() : [...new Set(grid.filter(Boolean))];
-  if (!colours.includes(colour)) colour = colours[0] ?? '#f28b8b';
+  // A custom colour ("!#hex") stays the paint colour; a palette tone that's gone (the palette changed) falls back.
+  if (!isExact(colour) && !colours.includes(colour)) colour = colours[0] ?? '#f28b8b';
   $('paint').replaceChildren(...colours.map((c) => {
     const b = document.createElement('button');
     b.style.background = c;
@@ -511,7 +522,21 @@ function showPaint() {
     b.onclick = () => { colour = c; setTool('paint'); showPaint(); };
     return b;
   }));
-  $('custom').value = colour;
+  $('custom').value = shownColour(colour);
+  $('custom').classList.toggle('on', isExact(colour));
+}
+const isExact = (value) => typeof value === 'string' && value[0] === '!';
+/** What a paint value looks like (a custom one without its "!"). */
+const shownColour = (value) => (isExact(value) ? value.slice(1) : value);
+
+/** The colour picker: the cell's tone becomes the paint colour — its palette swatch if it's one, else kept exactly. */
+function pickFrom(at) {
+  const picked = pickGrid[at.x + at.y * size.width];
+  if (!picked) { toast('Nothing to pick there (empty cell)'); return; }
+  const colours = levelPalette().length ? levelPalette() : [...new Set(grid.filter(Boolean))];
+  colour = colours.includes(picked) ? picked : `!${picked}`;
+  setTool('paint');
+  showPaint();
 }
 
 function showStats(pixels, palette) {
@@ -530,12 +555,15 @@ function refresh(now) {
       const result = await api('/api/preview', { id: selected.id, settings: settings(), master });
       if (seq !== previewSeq) return;
       grid = result.grid;
+      pickGrid = result.pickGrid || result.grid;
       size = { width: result.width, height: result.height };
       draw();
       showStats(result.pixels, result.palette);
       showCheck(result);
       lastBase = result.baseColors || 0;
-      $('used').textContent = `${result.palette.length} (${lastBase} + ${result.palette.length - lastBase} from shading)`;
+      const merged = result.mergedTones?.length ?? 0;
+      $('used').textContent = `${result.palette.length} (${lastBase} + ${result.palette.length - lastBase} from shading)${merged ? ` · ${merged} too-close tone${merged === 1 ? '' : 's'} merged` : ''}`;
+      $('used').title = (result.mergedTones ?? []).map(([from, into]) => `${from} → ${into}`).join(', ');
       if (current.palette === 'none') showPaint();
     } catch (err) { toast(err.message); }
   }, now ? 0 : 200);
@@ -598,6 +626,23 @@ function draw() {
     g.stroke();
     g.setLineDash([]);
   }
+  // Brush-shaded cells get a corner: light for lighter, dark for darker (the steps go on top of any colour painted).
+  for (const [key, [, bright]] of Object.entries(current?.shades || {})) {
+    const [ex, ey] = key.split(',').map(Number);
+    const x = ex + (current.offsetX || 0);
+    const y = ey + (current.offsetY || 0);
+    if (x < 0 || y < 0 || x >= size.width || y >= size.height) continue;
+    const px = x0 + x * cell;
+    const py = y0 + y * cell;
+    const corner = Math.max(4, cell * 0.32);
+    g.fillStyle = bright < 0 ? 'rgba(40,24,16,.7)' : 'rgba(255,255,255,.9)';
+    g.beginPath();
+    g.moveTo(px + cell - corner, py);
+    g.lineTo(px + cell, py);
+    g.lineTo(px + cell, py + corner);
+    g.closePath();
+    g.fill();
+  }
   // Hand-edited cells get a little dot.
   g.fillStyle = 'rgba(74,52,36,.45)';
   for (const key of Object.keys(current?.edits || {})) {
@@ -640,8 +685,13 @@ function apply(at) {
     else delete current.shades[key];
     // Shown at once; the server's rebuild follows.
     grid[i] = adjust(grid[i], brush[0], brush[1]);
-  } else if (tool === 'paint') { current.edits[key] = colour; grid[i] = colour; }
-  else if (tool === 'erase') { current.edits[key] = '.'; grid[i] = null; }
+  } else if (tool === 'paint') {
+    // Painting is exact: a brush's lighter / darker steps on the cell go (they'd shift every colour painted there).
+    current.edits[key] = colour;
+    delete current.shades[key];
+    grid[i] = shownColour(colour);
+  }
+  else if (tool === 'erase') { current.edits[key] = '.'; delete current.shades[key]; grid[i] = null; }
   else { delete current.edits[key]; delete current.shades[key]; }
   draw();
 }
@@ -703,6 +753,7 @@ function swapSelection(value) {
   for (const i of selection) {
     const key = `${(i % size.width) - (current.offsetX || 0)},${Math.floor(i / size.width) - (current.offsetY || 0)}`;
     current.edits[key] = value;
+    delete current.shades[key];
     grid[i] = shown;
   }
   draw();
@@ -718,6 +769,8 @@ let painting = false;
 canvas.onpointerdown = (e) => {
   const at = cellAt(e);
   if (!at) return;
+  // The picker: its tool, or Alt+click with any tool.
+  if (tool === 'pick' || e.altKey) { pickFrom(at); return; }
   if (tool === 'select') { selectFrom(at.x + at.y * size.width); return; }
   history.push(JSON.stringify({ edits: current.edits, shades: current.shades }));
   brushed = new Set();
@@ -729,13 +782,14 @@ canvas.onpointermove = (e) => { if (painting) { const at = cellAt(e); if (at) ap
 canvas.onpointerup = () => { if (!painting) return; painting = false; changed(); };
 window.onresize = draw;
 
-const TOOLS = [['toolPaint', 'paint'], ['toolErase', 'erase'], ['toolRestore', 'restore'], ['toolBrightUp', 'brightUp'], ['toolBrightDown', 'brightDown'], ['toolSatUp', 'satUp'], ['toolSatDown', 'satDown'], ['toolSelect', 'select']];
+const TOOLS = [['toolPaint', 'paint'], ['toolErase', 'erase'], ['toolRestore', 'restore'], ['toolBrightUp', 'brightUp'], ['toolBrightDown', 'brightDown'], ['toolSatUp', 'satUp'], ['toolSatDown', 'satDown'], ['toolSelect', 'select'], ['toolPick', 'pick']];
 function setTool(name) {
   tool = name;
   for (const [id, t] of TOOLS) $(id).classList.toggle('on', t === tool);
 }
 for (const [id, t] of TOOLS) $(id).onclick = () => setTool(t);
-$('custom').oninput = () => { colour = $('custom').value; setTool('paint'); showPaint(); };
+// A custom colour is kept exactly (not snapped to the palette — the nearest tone could be the one you're painting over).
+$('custom').oninput = () => { colour = `!${$('custom').value}`; setTool('paint'); showPaint(); };
 function undo() {
   if (!history.length) return;
   const last = JSON.parse(history.pop());
@@ -758,6 +812,7 @@ window.onkeydown = (e) => {
   else if (e.key === 'e') setTool('erase');
   else if (e.key === 'r') setTool('restore');
   else if (e.key === 'f') setTool('select');
+  else if (e.key === 'i') setTool('pick');
   else if (e.key === 'Escape') clearSelection();
   else if (['1', '2', '3', '4'].includes(e.key)) setTool(['brightUp', 'brightDown', 'satUp', 'satDown'][Number(e.key) - 1]);
 };
@@ -784,6 +839,16 @@ $('down').onclick = () => step('offsetY', 1);
 $('padDown').onclick = () => step('padding', -1);
 $('padUp').onclick = () => step('padding', 1);
 // Shaded colours: 'all' (-1), then down to 0; up from 'all' stays all.
+/** As pixelate-lib.mjs's MIN_TONE_DISTANCE (a level without its own setting uses it). */
+const MIN_TONE_DISTANCE = 0.075;
+const stepMerge = (by) => {
+  const value = Math.round(((current.minToneDistance ?? MIN_TONE_DISTANCE) + by) * 1000) / 1000;
+  current.minToneDistance = Math.max(0, Math.min(0.2, value));
+  showNumbers();
+  changed();
+};
+$('mergeDown').onclick = () => stepMerge(-0.005);
+$('mergeUp').onclick = () => stepMerge(0.005);
 $('shadeDown').onclick = () => { current.shadeColors = current.shadeColors < 0 ? Math.max(0, (lastBase || 6) - 1) : Math.max(0, current.shadeColors - 1); showNumbers(); changed(); };
 $('shadeUp').onclick = () => { if (current.shadeColors < 0) return; current.shadeColors += 1; if (lastBase && current.shadeColors >= lastBase) current.shadeColors = -1; showNumbers(); changed(); };
 $('mixDown').onclick = () => step('mix', -1);
