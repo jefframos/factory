@@ -10,6 +10,8 @@
 //
 // Obstacles: a hidden tile is grey with a ? until it reaches the front row (then it flips to its colour); a locked one
 // is dark with a padlock and how many more tiles must be taken first (setTaps()), and pops open when that's done.
+// On a split level there are two racks, one under each half of the picture (smaller, each with its own slots: the
+// options' x, scale and slots).
 // Power-ups: shuffle() mixes the tiles still in the columns; putBack() returns a slot's tile to the front of the
 // shortest column; removeColor() takes every tile of a colour away. The deck is dealt round-robin into the columns, so the
 // front row is always the next tiles in the deck's order. Sizes and spacing follow the reference layout (Layout.ts).
@@ -111,9 +113,15 @@ export class TileRack {
     private readonly white = new THREE.MeshStandardMaterial({ color: PLATE.color, roughness: 0.45 });
     private readonly grey = new THREE.MeshStandardMaterial({ color: PLATE.lipColor, roughness: 0.7 });
 
-    public constructor(private readonly palette: string[], deck: Tile[], private readonly columnCount: number) {
+    /** `options`: where its middle is (world x), how big it's drawn (1: as the layout says), how many slots. Scaled about
+     *  the slots' row, so the slots stay on it. */
+    public constructor(private readonly palette: string[], deck: Tile[], private readonly columnCount: number,
+        options: { x?: number; scale?: number; slots?: number } = {}) {
+        const scale = options.scale ?? 1;
+        this.group.scale.setScalar(scale);
+        this.group.position.set(options.x ?? 0, 0, LAYOUT.slotsZ * (1 - scale));
         this.columns = Array.from({ length: columnCount }, () => []);
-        for (let s = 0; s < SLOT_COUNT; s++) this.addPlate();
+        for (let s = 0; s < (options.slots ?? SLOT_COUNT); s++) this.addPlate();
         this.slotPlates.forEach((p, s) => p.position.copy(this.slotPosition(s)));
         deck.forEach((tile, i) => this.columns[i % columnCount].push(this.build(tile, i % columnCount)));
         this.layout(false);
@@ -126,6 +134,21 @@ export class TileRack {
     /** A slot's centre on the floor (the slots centred under the anthill). */
     public slotPosition(slot: number, out = new THREE.Vector3()): THREE.Vector3 {
         return out.set((slot - (this.slotCount - 1) / 2) * LAYOUT.slotGap, 0, LAYOUT.slotsZ);
+    }
+
+    /** A slot's centre in the world (where its ants set off from). */
+    public slotWorld(slot: number, out = new THREE.Vector3()): THREE.Vector3 {
+        return this.group.localToWorld(this.slotPosition(slot, out));
+    }
+
+    /** How big the rack's drawn (a split level's are smaller). */
+    public get scale(): number {
+        return this.group.scale.x;
+    }
+
+    /** Slots with no tile on them. */
+    public get freeSlots(): number {
+        return this.slotCount - this.slotted.size;
     }
 
     /** The extra slot: a new plate pops in at the end and every slot (and the tile on it) slides over to stay centred. */

@@ -32,8 +32,10 @@ put them away. A level won without one: 55% chance of a free one.
 
 **Obstacles** (`design.txt`, put on the dealt tiles so the dealt order still clears the level — `AntScene.withObstacles`):
 **hidden tiles** (L8: grey with a ? until they reach the front row, then they flip), **locked tiles** (L12: dark with a
-padlock and how many more tiles must be taken first; they pop open), **a second anthill** (L18: each ant goes home to
-the one nearest where it comes off the rim). Hard levels (ending in 5) and super hard ones (every tenth) are tagged
+padlock and how many more tiles must be taken first; they pop open), **a split board** (L18, then every third level:
+an empty corridor down the middle of the picture; each half has its own anthill, three slots and two tile columns
+under it, and its tiles' ants only take that half's pixels — two puzzles side by side, each dealt on its own; the extra
+slot goes to the side with fewer free slots; a level's lost only when neither side can do anything). Hard levels (ending in 5) and super hard ones (every tenth) are tagged
 and pay more.
 
 **Coins and shops** (`data/Shop.ts`, saved in `data/AntSave.ts`). A finished level pays coins — 20 + 3 per level the

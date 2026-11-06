@@ -23,8 +23,9 @@
 // hidden (a ? until they reach the front), from level 12 some are locked (until enough tiles have been taken).
 // Power-ups (the belt): the extra slot; shuffle mixes the tiles not taken yet; pick up puts a slot's tile back (tap
 // it); vacuum takes every block of a colour off the picture, and its tiles with them (tap a block or a tile).
-// From level 18 there are two anthills (design.txt's second nest): each ant goes home to the one nearest where it comes
-// down off the rim, so the traffic splits.
+// From level 18 (then every third level) the board's split (design.txt's second nest): an empty corridor down the
+// middle of the picture, and each half with its own anthill, slots and tile columns under it — its tiles' ants only take
+// its half's pixels. Two puzzles side by side, each dealt on its own.
 
 import * as THREE from 'three';
 import { Game } from 'core/Game';
@@ -51,9 +52,16 @@ import { RadialTransition } from '../ui/RadialTransition';
 export const floorColor = (): THREE.Color => new THREE.Color(currentBackground().light);
 /** Columns for an old level file without its own. */
 const DEFAULT_COLUMNS = 4;
-/** The anthills' x (world units) by how many there are; two from NEST_LEVEL on. */
-const NESTS: Record<number, number[]> = { 1: [0], 2: [-6.3, 3.3] };
-const NEST_LEVEL = 18;
+/** Split levels: from which, how often after, how small each half's rack is drawn, where its middle is (world x, either
+ *  side), its slots and columns. */
+const SPLIT = { from: 18, every: 3, scale: 0.8, x: 6.6, slots: 3, columns: 2 };
+const isSplit = (number: number): boolean => number >= SPLIT.from && (number - SPLIT.from) % SPLIT.every === 0;
+
+/** A level with an empty corridor (a column of '.') down its middle: the split. Its baked deck doesn't fit any more. */
+function withCorridor(level: LevelData): LevelData {
+    const mid = Math.floor(level.width / 2);
+    return { ...level, width: level.width + 1, rows: level.rows.map((row) => `${row.slice(0, mid)}.${row.slice(mid)}`), deck: undefined };
+}
 /** The end, when every tile's taken and every ant sent (just ants walking home): they speed up to this, over this long. */
 const END_RUSH = { speed: 3, seconds: 0.6 };
 /** Obstacles: from which level, and which dealt tiles (k: their place in the deal). Hidden: from the second row on,
@@ -80,6 +88,14 @@ const CARRIED = 1;
 const FOV = 26;
 const TILT_DEG = 24;
 const AIM_LOWER = 2.2;
+
+/** One side of the board: its rack and slots, and the picture's columns its tiles' ants work (all, or a half). */
+interface Side {
+    rack: TileRack;
+    slots: (SlotState | null)[];
+    minX: number;
+    maxX: number;
+}
 
 /** A tile in a slot: its ants still to send, and when the next leaves. */
 interface SlotState {
@@ -116,11 +132,13 @@ export default class AntScene extends ThreeScene {
     private level!: LevelData;
     private board!: Board;
     private picture?: PictureView;
-    private rack?: TileRack;
     private swarm?: AntSwarm;
-    /** The anthills (one, or two from NEST_LEVEL). */
+    /** The board's sides: one, or two on a split level (left, right). */
+    private sides: Side[] = [];
+    /** The anthills: one, or one per half on a split level (left, right). */
     private holes: THREE.Group[] = [];
-    private readonly slots: (SlotState | null)[] = [];
+    /** A split level's corridor (picture column); -1 when it isn't split. */
+    private corridor = -1;
     private readonly palette: THREE.Color[] = [];
     private ended = false;
     /** What the debug panel's level dropdown shows. */
@@ -206,7 +224,7 @@ export default class AntScene extends ThreeScene {
         });
         panel.monitor('Pixels left', () => `${this.board?.remaining ?? 0}`);
         panel.monitor('Ants out', () => `${this.swarm?.count ?? 0}`);
-        panel.monitor('Slots', () => this.slots.map((s) => (s ? `${s.left}` : '-')).join(' '));
+        panel.monitor('Slots', () => this.sides.map((side) => side.slots.map((s) => (s ? `${s.left}` : '-')).join(' ')).join(' | '));
     }
 
     /** Debug: the picture cleared at once (the celebration plays). */
@@ -219,8 +237,8 @@ export default class AntScene extends ThreeScene {
         this.swarm?.clear();
     }
 
-    /** The level's anthills: the old ones gone, `count` of them in place. */
-    private placeNests(count: number): void {
+    /** The level's anthills: the old ones gone, new ones at `xs`. */
+    private placeNests(xs: number[]): void {
         for (const hole of this.holes) {
             hole.removeFromParent();
             hole.traverse((child) => {
@@ -229,7 +247,7 @@ export default class AntScene extends ThreeScene {
                 (child.material as THREE.Material).dispose();
             });
         }
-        this.holes = (NESTS[count] ?? NESTS[1]).map((x) => this.buildHole(x));
+        this.holes = xs.map((x) => this.buildHole(x));
     }
 
     /** An anthill at `x`: a dark opening in a raised earth ring, its wooden lid set beside it. */
@@ -262,27 +280,25 @@ export default class AntScene extends ThreeScene {
         AntSave.selected = this.levelIndex;
         this.debug.level = this.levelIndex;
         DebugOverlay.instance.getPanel('ant.debug')?.refresh();
-        this.level = LEVELS[this.levelIndex];
+        const split = isSplit(this.levelIndex + 1);
+        this.level = split ? withCorridor(LEVELS[this.levelIndex]) : LEVELS[this.levelIndex];
+        this.corridor = split ? Math.floor(LEVELS[this.levelIndex].width / 2) : -1;
         this.picture?.destroy();
-        this.rack?.destroy();
+        this.sides.forEach((side) => side.rack.destroy());
+        this.sides = [];
         this.swarm?.destroy();
-        this.slots.length = 0;
-        for (let s = 0; s < SLOT_COUNT; s++) this.slots.push(null);
         this.ended = false;
         this.hud.hideResult();
         this.hud.setExtraSlot(true);
         this.hud.setLevel(this.levelIndex + 1, levelTier(this.levelIndex));
-        this.placeNests(this.levelIndex + 1 >= NEST_LEVEL ? 2 : 1);
+        // An anthill under each half (hole and lid centred there), or one in the middle.
+        this.placeNests(split ? [-SPLIT.x - LAYOUT.lidX / 2, SPLIT.x - LAYOUT.lidX / 2] : [0]);
         this.boosterUsed = false;
 
         const pixels = pixelsOf(this.level);
         this.board = new Board(this.level.width, this.level.height, pixels);
         this.palette.length = 0;
         this.level.palette.forEach((hex) => this.palette.push(vivid(hex)));
-        // The baked deck; an old level file gets tiles of about 1/90 to 1/25 of the picture, dealt here.
-        const min = Math.max(6, Math.round(pixels.length / 90));
-        const max = Math.max(min + 6, Math.round(pixels.length / 25));
-        const deck = this.withObstacles(deckOf(this.level) ?? dealDeck(this.board, hashString(this.level.id), min, max));
         this.taps = 0;
         this.rush = 1;
         this.armed = null;
@@ -300,18 +316,42 @@ export default class AntScene extends ThreeScene {
         this.lane.top = picture.group.position.z - lane;
         this.lane.bottom = picture.group.position.z + picture.depth + lane;
 
-        this.rack = new TileRack(this.level.palette, deck, this.level.columns ?? DEFAULT_COLUMNS);
+        if (split) {
+            // Each half dealt on its own (the other half's pixels left out), with its own rack and slots.
+            const halves = [{ minX: 0, maxX: this.corridor - 1, x: -SPLIT.x }, { minX: this.corridor + 1, maxX: this.level.width - 1, x: SPLIT.x }];
+            halves.forEach((half, n) => {
+                const only = pixels.map((c, i) => ((i % this.level.width) >= half.minX && (i % this.level.width) <= half.maxX ? c : -1));
+                const { min, max } = this.tileSizes(only.filter((c) => c >= 0).length * 2);
+                const deck = this.withObstacles(dealDeck(new Board(this.level.width, this.level.height, Int8Array.from(only)), hashString(this.level.id) + n, min, max), SPLIT.columns);
+                const rack = new TileRack(this.level.palette, deck, SPLIT.columns, { x: half.x, scale: SPLIT.scale, slots: SPLIT.slots });
+                this.sides.push({ rack, slots: new Array(SPLIT.slots).fill(null), minX: half.minX, maxX: half.maxX });
+            });
+        } else {
+            // The baked deck; an old level file gets its tiles dealt here.
+            const { min, max } = this.tileSizes(pixels.length);
+            const columns = this.level.columns ?? DEFAULT_COLUMNS;
+            const deck = this.withObstacles(deckOf(this.level) ?? dealDeck(this.board, hashString(this.level.id), min, max), columns);
+            const rack = new TileRack(this.level.palette, deck, columns);
+            this.sides.push({ rack, slots: new Array(SLOT_COUNT).fill(null), minX: 0, maxX: this.level.width - 1 });
+        }
+        for (const side of this.sides) this.threeScene.add(side.rack.group);
         this.hud.hideTutorial();
-        this.tutorial = this.levelIndex === 0 && !AntSave.tutorialDone
-            ? { taps: 0, tiles: deck.length, columns: this.level.columns ?? DEFAULT_COLUMNS, wait: TUTORIAL.wait }
+        const first = this.sides[0];
+        this.tutorial = this.levelIndex === 0 && !AntSave.tutorialDone && !split
+            ? { taps: 0, tiles: first.rack.tilesLeft, columns: this.level.columns ?? DEFAULT_COLUMNS, wait: TUTORIAL.wait }
             : null;
-        this.threeScene.add(this.rack.group);
         this.swarm = new AntSwarm(this.threeScene, cell * CARRIED, cell, (x, z) => {
             if (!picture.onTray(x, z)) return 0;
             const i = picture.cellAt(x, z);
             return TRAY_TOP + (i >= 0 && this.board.colors[i] >= 0 ? picture.blockTop : 0);
         }, (ant) => this.pickUp(ant), () => undefined);
         this.fitCamera();
+    }
+
+    /** Tiles of about 1/90 to 1/25 of a grid of `cells`, as the solver deals them. */
+    private tileSizes(cells: number): { min: number; max: number } {
+        const min = Math.max(6, Math.round(cells / 90));
+        return { min, max: Math.max(min + 6, Math.round(cells / 25)) };
     }
 
     /** Frames the reference screen (LAYOUT.screen), tilted a little so the blocks show their sides. */
@@ -332,7 +372,7 @@ export default class AntScene extends ThreeScene {
     // ---------------------------------------------------------------- input
 
     private readonly onPointerDown = (event: PointerEvent): void => {
-        if (this.ended || this.paused || !this.rack) return;
+        if (this.ended || this.paused || !this.sides.length) return;
         const rect = SetupThree.renderer.domElement.getBoundingClientRect();
         this.pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
         this.raycaster.setFromCamera(this.pointer, this.threeCamera);
@@ -340,25 +380,26 @@ export default class AntScene extends ThreeScene {
             this.pickTarget();
             return;
         }
-        const fronts = this.rack.frontBodies();
+        const fronts = this.sides.flatMap((side) => side.rack.frontBodies().map((f) => ({ ...f, side })));
         const hit = this.raycaster.intersectObjects(fronts.map((f) => f.body), false)[0];
         if (!hit) return;
-        const column = fronts.find((f) => f.body === hit.object)!.column;
+        const { column, side } = fronts.find((f) => f.body === hit.object)!;
         // The tutorial: only the tile it points at (the next in the dealt order: round-robin through the columns).
         const tutorial = this.tutorial;
         if (tutorial && tutorial.taps < tutorial.tiles && column !== tutorial.taps % tutorial.columns) return;
-        const slot = this.slots.indexOf(null);
-        if (slot < 0 || this.rack.isLocked(column)) {
+        // Its own side's slots.
+        const slot = side.slots.indexOf(null);
+        if (slot < 0 || side.rack.isLocked(column)) {
             AntAudio.play('full');
-            this.rack.shake(column);
+            side.rack.shake(column);
             return;
         }
         AntAudio.play('tile');
-        const tile = this.rack.take(column, slot);
+        const tile = side.rack.take(column, slot);
         if (tile) {
-            this.slots[slot] = { tile, color: tile.tile.color, left: tile.count, timer: 0.3 };
+            side.slots[slot] = { tile, color: tile.tile.color, left: tile.count, timer: 0.3 };
             this.taps++;
-            this.rack.setTaps(this.taps);
+            for (const each of this.sides) each.rack.setTaps(this.taps);
         }
         if (tile && tutorial) {
             tutorial.taps++;
@@ -406,9 +447,8 @@ export default class AntScene extends ThreeScene {
 
     /** The dealt tiles with the level's obstacles on them (design.txt): hidden from HIDDEN.level, locked from
      *  LOCKED.level. A lock opens after fewer tiles than come before it in the deal, so the dealt order still works. */
-    private withObstacles(deck: Tile[]): Tile[] {
+    private withObstacles(deck: Tile[], columns: number): Tile[] {
         const number = this.levelIndex + 1;
-        const columns = this.level.columns ?? DEFAULT_COLUMNS;
         return deck.map((tile, k) => {
             const out: Tile = { color: tile.color, count: tile.count };
             if (number >= HIDDEN.level && k >= columns && k % HIDDEN.every === HIDDEN.offset) out.hidden = true;
@@ -420,9 +460,9 @@ export default class AntScene extends ThreeScene {
     /** A power-up from the belt (not the extra slot): shuffle at once; pick up and vacuum wait for their target (tap the
      *  power-up again to put it away). */
     private useBooster(id: BoosterId): void {
-        if (this.ended || this.paused || !this.rack) return;
+        if (this.ended || this.paused || !this.sides.length) return;
         if (id === 'shuffle') {
-            this.rack.shuffle();
+            for (const side of this.sides) side.rack.shuffle();
             this.spend('shuffle');
             AntAudio.play('whoosh');
             return;
@@ -440,15 +480,17 @@ export default class AntScene extends ThreeScene {
 
     /** The tap for a waiting power-up: pick up — a tile in a slot; vacuum — a block of the picture, or a tile. */
     private pickTarget(): void {
-        if (!this.rack || !this.picture) return;
+        if (!this.sides.length || !this.picture) return;
         if (this.armed === 'pickup') {
-            const hit = this.raycaster.intersectObjects(this.rack.meshes(true), false)[0];
-            const tile = hit && this.rack.tileOf(hit.object, true);
-            const s = tile ? this.slots.findIndex((slot) => slot?.tile === tile) : -1;
-            const slot = s >= 0 ? this.slots[s] : null;
-            if (!slot || slot.left === 0) return;
-            this.rack.putBack(slot.tile, slot.left);
-            this.slots[s] = null;
+            const hit = this.raycaster.intersectObjects(this.sides.flatMap((side) => side.rack.meshes(true)), false)[0];
+            if (!hit) return;
+            const side = this.sides.find((each) => each.rack.tileOf(hit.object, true));
+            const tile = side?.rack.tileOf(hit.object, true);
+            const s = side && tile ? side.slots.findIndex((slot) => slot?.tile === tile) : -1;
+            const slot = side && s >= 0 ? side.slots[s] : null;
+            if (!side || !slot || slot.left === 0) return;
+            side.rack.putBack(slot.tile, slot.left);
+            side.slots[s] = null;
             this.disarm('pickup');
             AntAudio.play('slot');
             return;
@@ -458,8 +500,8 @@ export default class AntScene extends ThreeScene {
             const pixel = this.picture.blockAt(this.raycaster);
             if (pixel >= 0) color = this.board.colors[pixel];
             if (color < 0) {
-                const hit = this.raycaster.intersectObjects([...this.rack.meshes(true), ...this.rack.meshes(false)], false)[0];
-                const tile = hit && (this.rack.tileOf(hit.object, true) ?? this.rack.tileOf(hit.object, false));
+                const hit = this.raycaster.intersectObjects(this.sides.flatMap((side) => [...side.rack.meshes(true), ...side.rack.meshes(false)]), false)[0];
+                const tile = hit && this.sides.map((side) => side.rack.tileOf(hit.object, true) ?? side.rack.tileOf(hit.object, false)).find(Boolean);
                 if (tile && !tile.covered) color = tile.tile.color;
             }
             if (color < 0) return;
@@ -483,21 +525,25 @@ export default class AntScene extends ThreeScene {
         pixels.forEach((i, n) => window.setTimeout(() => {
             if (this.picture === picture) picture.pop(i);
         }, n * 12));
-        this.slots.forEach((slot, s) => {
-            if (!slot || slot.color !== color) return;
-            this.rack!.release(slot.tile);
-            this.slots[s] = null;
-        });
-        this.rack!.removeColor(color);
+        for (const side of this.sides) {
+            side.slots.forEach((slot, s) => {
+                if (!slot || slot.color !== color) return;
+                side.rack.release(slot.tile);
+                side.slots[s] = null;
+            });
+            side.rack.removeColor(color);
+        }
         AntAudio.play('whoosh');
         AntAudio.play('slot');
     }
 
     /** The power-up: one more slot (once a level). Used on the lost card, the level plays on. */
     private addExtraSlot(): void {
-        if (!this.rack || !this.hud.extraSlotAvailable || this.board.remaining === 0) return;
-        this.rack.addSlot();
-        this.slots.push(null);
+        if (!this.sides.length || !this.hud.extraSlotAvailable || this.board.remaining === 0) return;
+        // To the side with the fewest free slots (the one that needs it).
+        const side = this.sides.reduce((best, each) => (each.rack.freeSlots < best.rack.freeSlots ? each : best));
+        side.rack.addSlot();
+        side.slots.push(null);
         // One fewer owned (the power-ups' shop sells more), and no more this level.
         AntSave.addBooster('slot', -1);
         this.boosterUsed = true;
@@ -513,7 +559,8 @@ export default class AntScene extends ThreeScene {
     /** Points at the next tile to tap (after a moment), following it as the rack moves; out of the way when done. */
     private updateTutorial(delta: number): void {
         const tutorial = this.tutorial;
-        if (!tutorial || !this.rack) return;
+        const rack = this.sides[0]?.rack;
+        if (!tutorial || !rack) return;
         if (this.ended || this.paused || tutorial.taps >= tutorial.tiles) {
             this.hud.hideTutorial();
             return;
@@ -523,14 +570,14 @@ export default class AntScene extends ThreeScene {
             return;
         }
         const column = tutorial.taps % tutorial.columns;
-        const top = this.rack.frontTop(column);
+        const top = rack.frontTop(column);
         // No free slot yet: wait for one.
-        if (!top || !this.slots.includes(null)) {
+        if (!top || !this.sides[0].slots.includes(null)) {
             this.hud.hideTutorial();
             return;
         }
         const at = this.worldToScreen(top);
-        const edge = this.worldToScreen(top.clone().add(new THREE.Vector3((this.rack.tileSize / 2) * TUTORIAL.hole * 2, 0, 0)));
+        const edge = this.worldToScreen(top.clone().add(new THREE.Vector3((rack.tileSize / 2) * TUTORIAL.hole * 2, 0, 0)));
         if (!at || !edge) return;
         const text = tutorial.taps === 0 ? TUTORIAL.first : tutorial.taps === tutorial.tiles - 1 ? TUTORIAL.last : TUTORIAL.next;
         this.hud.showTutorial(at.x, at.y, Math.abs(edge.x - at.x), text);
@@ -543,19 +590,21 @@ export default class AntScene extends ThreeScene {
     // ---------------------------------------------------------------- play
 
     public fixedUpdate(delta: number): void {
-        if (!this.swarm || !this.picture || !this.rack) return;
-        this.slots.forEach((slot, s) => {
-            if (!slot) return;
-            if (slot.left > 0) this.release(slot, s, delta);
-            // Its last ant has left: the tile pops and the slot is free at once (no waiting for the ants to get home).
-            if (slot.left === 0) {
-                AntAudio.play('slot');
-                this.rack!.release(slot.tile);
-                this.slots[s] = null;
-            }
-        });
+        if (!this.swarm || !this.picture || !this.sides.length) return;
+        for (const side of this.sides) {
+            side.slots.forEach((slot, s) => {
+                if (!slot) return;
+                if (slot.left > 0) this.release(slot, side, s, delta);
+                // Its last ant has left: the tile pops and the slot is free at once (no waiting for the ants to get home).
+                if (slot.left === 0) {
+                    AntAudio.play('slot');
+                    side.rack.release(slot.tile);
+                    side.slots[s] = null;
+                }
+            });
+        }
         // Nothing left to tap, every ant sent: only waiting for them to get home — so they hurry.
-        const allSent = this.rack.tilesLeft === 0 && this.slots.every((slot) => !slot || slot.left === 0);
+        const allSent = this.sides.every((side) => side.rack.tilesLeft === 0 && side.slots.every((slot) => !slot || slot.left === 0));
         const rushTo = allSent && !this.ended ? END_RUSH.speed : 1;
         this.rush += (rushTo - this.rush) * Math.min(1, delta / END_RUSH.seconds);
         this.swarm.update(delta * this.rush);
@@ -563,13 +612,21 @@ export default class AntScene extends ThreeScene {
         this.checkEnd();
     }
 
-    /** Sends a slot's next ant when its time comes, to an exposed pixel of its colour (if there is one). */
-    private release(slot: SlotState, s: number, delta: number): void {
+    /** Exposed pixels of `color` no ant's going for, on `side`'s part of the picture. */
+    private claimableOn(side: Side, color: number): number[] {
+        return this.board.claimable(color).filter((i) => {
+            const x = i % this.level.width;
+            return x >= side.minX && x <= side.maxX;
+        });
+    }
+
+    /** Sends a slot's next ant when its time comes, to an exposed pixel of its colour on its side (if there is one). */
+    private release(slot: SlotState, side: Side, s: number, delta: number): void {
         slot.timer -= delta;
         if (slot.timer > 0) return;
-        const options = this.board.claimable(slot.color);
+        const options = this.claimableOn(side, slot.color);
         if (!options.length) return;
-        const start = this.rack!.slotPosition(s).add(new THREE.Vector3(0, 0.9, -LAYOUT.tile / 2));
+        const start = side.rack.slotWorld(s).add(new THREE.Vector3(0, 0.9, (-LAYOUT.tile / 2) * side.rack.scale));
         // The nearest to the slot (claimed ones are skipped, so the ants still spread out).
         let pixel = options[0];
         let nearest = Infinity;
@@ -585,7 +642,7 @@ export default class AntScene extends ThreeScene {
         this.swarm!.send(s, pixel, color, color, start, this.pathIn(start, pixel));
         slot.left--;
         slot.timer = TUNING.releaseSec;
-        this.rack!.setCount(slot.tile, slot.left);
+        side.rack.setCount(slot.tile, slot.left);
     }
 
     /**
@@ -624,9 +681,10 @@ export default class AntScene extends ThreeScene {
         const bottomX = door.z >= this.lane.bottom - 1e-3 ? door.x : door.x < 0 ? this.lane.left : this.lane.right;
         const down = new THREE.Vector3(bottomX, TRAY_TOP, this.lane.bottom);
         const path = [...cells.slice(1).map((i) => this.picture!.cellCenter(i)), door, ...this.alongRim(door, down), down];
-        // Down to just above the anthill's row, across, and in from above (never over the lid beside it) — the nearest
-        // anthill, when there are two.
-        const hole = this.holes.reduce((best, h) => (Math.abs(h.position.x - bottomX) < Math.abs(best.position.x - bottomX) ? h : best)).position;
+        // Down to just above the anthill's row, across, and in from above (never over the lid beside it) — on a split
+        // level, its own half's anthill.
+        const half = this.corridor >= 0 && pixel % this.level.width > this.corridor ? 1 : 0;
+        const hole = (this.holes[half] ?? this.holes[0]).position;
         const aboveZ = hole.z - LAYOUT.holeRadius * 0.9;
         if (Math.abs(bottomX - hole.x) > LAYOUT.holeRadius * 0.4) {
             path.push(new THREE.Vector3(bottomX, 0, aboveZ), new THREE.Vector3(hole.x, 0, aboveZ));
@@ -718,10 +776,11 @@ export default class AntScene extends ThreeScene {
             this.hud.celebrate(this.level, reward, drop, () => this.travelTo(this.levelIndex + 1));
             return;
         }
-        const waiting = (slot: SlotState | null) => !!slot && slot.left > 0 && !this.board.claimable(slot.color).length;
-        // Every slot waiting on a colour with nothing exposed; or nothing in any slot and every front tile locked.
-        const allLocked = this.slots.every((slot) => !slot) && this.rack!.frontBodies().every((f) => this.rack!.isLocked(f.column));
-        const stuck = this.swarm.count === 0 && (this.slots.every(waiting) || (allLocked && this.rack!.frontBodies().length > 0));
+        // Nothing can move: no ant out, and on every side no slot has anything of its colour to fetch, and there's no free
+        // slot with a tile (not locked) to put in it.
+        const canTake = (side: Side) => side.slots.includes(null) && side.rack.frontBodies().some((f) => !side.rack.isLocked(f.column));
+        const canWork = (side: Side) => side.slots.some((slot) => !!slot && slot.left > 0 && this.claimableOn(side, slot.color).length > 0);
+        const stuck = this.swarm.count === 0 && !this.sides.some((side) => canTake(side) || canWork(side));
         if (stuck) {
             this.ended = true;
             this.hud.showResult(false, () => this.travelTo(this.levelIndex));
@@ -739,7 +798,7 @@ export default class AntScene extends ThreeScene {
         window.removeEventListener('resize', this.onWindowResize);
         DebugOverlay.instance.removePanel('ant.debug');
         this.picture?.destroy();
-        this.rack?.destroy();
+        this.sides.forEach((side) => side.rack.destroy());
         this.swarm?.destroy();
         this.hud?.destroy();
         super.destroy();
