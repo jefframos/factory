@@ -530,7 +530,7 @@ export class AntHud extends PIXI.Container {
         this.intro?.reposition();
         this.speed.position.set(screen.topLeft.x + screen.width - SPEED.x, screen.topLeft.y + PAUSE.margin);
         this.belt.layout(screen.topLeft.x, screen.topLeft.y + screen.height, screen.width);
-        this.hint.position.set(screen.center.x, screen.topLeft.y + screen.height - 150);
+        this.hint.position.set(screen.center.x, screen.topLeft.y + screen.height - 160);
         this.card.position.set(screen.center.x, screen.center.y);
         this.rays.position.set(screen.center.x, screen.center.y);
         this.dim.clear().beginFill(0x2a1a10, 0.45).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();

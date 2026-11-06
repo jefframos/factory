@@ -25,9 +25,9 @@ export const BOOSTERS: { id: BoosterId; icon: string; unlock: number }[] = [
 ];
 
 /** Design units (720 wide): a button's size, the gap between button middles, the cloth's height and checks, the badge. */
-const BUTTON = 74;
-const GAP = 118;
-const CLOTH = { height: 74, square: 22, light: 0x7397dc, dark: 0x6488d0, line: 0x2b2d4d };
+const BUTTON = 80;
+const GAP = 124;
+const CLOTH = { height: 112, square: 22, light: 0x7397dc, dark: 0x6488d0, line: 0x2b2d4d };
 const BADGE = { size: 30, x: 27, y: 25, color: 0x4cc23a, text: 18 };
 const LOCK = { icon: 34, iconY: -8, text: 13, textY: 22 };
 
@@ -162,7 +162,8 @@ export class BoosterBelt extends PIXI.Container {
         }
     }
 
-    /** Along the bottom of the visible screen (`left`, `bottom`, `width`): the cloth, the buttons on its top edge. */
+    /** Along the bottom of the visible screen (`left`, `bottom`, `width`): the cloth, the buttons sitting on it (clear of
+     *  its top line). */
     public layout(left: number, bottom: number, width: number): void {
         const top = bottom - CLOTH.height;
         const g = this.cloth.clear();
@@ -177,7 +178,7 @@ export class BoosterBelt extends PIXI.Container {
             }
         }
         const gap = Math.min(GAP, width / BOOSTERS.length);
-        this.buttons.forEach((b, i) => b.holder.position.set(left + width / 2 + (i - (this.buttons.length - 1) / 2) * gap, top + 4));
+        this.buttons.forEach((b, i) => b.holder.position.set(left + width / 2 + (i - (this.buttons.length - 1) / 2) * gap, top + CLOTH.height * 0.46));
     }
 
     public override destroy(): void {
