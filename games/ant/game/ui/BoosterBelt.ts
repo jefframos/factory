@@ -3,7 +3,7 @@
 // The item belt along the bottom of the screen, like the reference (shown once the first power-up's unlocked: AntHud): a blue checked cloth with round buttons on it, one
 // per power-up, each with a green count badge — the UI pack's blue round button and white icons (UiParts). A power-up
 // unlocks at its level (BOOSTERS): before that it's a dark button with a padlock and its level. The badge is how many
-// the player has (AntSave: bought in the power-ups' shop); none, no badge. Only the extra slot does something for now
+// the player has (AntSave: bought in the power-ups' shop); none, a VIDEO badge instead (a rewarded video for one). Only the extra slot does something for now
 // (once a level); the others are there, waiting for their effect (tapping one gives a little bounce).
 
 import * as PIXI from 'pixi.js';
@@ -30,6 +30,8 @@ const GAP = 124;
 const CLOTH = { height: 112, square: 22, light: 0x7397dc, dark: 0x6488d0, line: 0x2b2d4d };
 const BADGE = { size: 30, x: 27, y: 25, color: 0x4cc23a, text: 18 };
 const LOCK = { icon: 34, iconY: -8, text: 13, textY: 22 };
+/** The VIDEO pill under a button with none left. */
+const VIDEO = { width: 92, height: 30, y: 38, icon: 24, text: 15 };
 
 interface BeltButton {
     id: BoosterId;
@@ -41,6 +43,8 @@ interface BeltButton {
     locked: PIXI.Container;
     badge: PIXI.Container;
     count: PIXI.Text;
+    /** None left (and unlocked): watch a video for one. */
+    video: PIXI.Container;
 }
 
 export class BoosterBelt extends PIXI.Container {
@@ -50,8 +54,8 @@ export class BoosterBelt extends PIXI.Container {
     /** Power-ups already used this level (greyed out: once a level). */
     private readonly used = new Set<BoosterId>();
 
-    /** `onUse` when an unlocked power-up with some left is tapped. */
-    public constructor(private readonly onUse: (id: BoosterId) => void) {
+    /** `onUse` when an unlocked power-up with some left is tapped; `onVideo` when one with none is (a video for one). */
+    public constructor(private readonly onUse: (id: BoosterId) => void, private readonly onVideo: (id: BoosterId) => void) {
         super();
         this.cloth.eventMode = 'static';
         this.cloth.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
@@ -80,10 +84,22 @@ export class BoosterBelt extends PIXI.Container {
         count.y = -1;
         badge.addChild(circle, count);
         badge.position.set(BADGE.x, BADGE.y);
+        // None left: a VIDEO pill under the button (the video icon, and the word).
+        const video = new PIXI.Container();
+        const pill = framePlane('Button_Round03_Dark', VIDEO.width, VIDEO.height, VIDEO.height / 120);
+        pill.position.set(-VIDEO.width / 2, -VIDEO.height / 2);
+        const camera = iconSprite('ItemIcon_Video', VIDEO.icon);
+        camera.x = -VIDEO.width / 2 + VIDEO.icon / 2 + 4;
+        const words = label(VIDEO.text);
+        words.text = 'VIDEO';
+        words.x = camera.x + VIDEO.icon / 2 + 4 + words.width / 2;
+        video.addChild(pill, camera, words);
+        video.y = VIDEO.y;
+        video.visible = false;
         const glow = iconSprite('Glow_Circle01', BUTTON * 2);
         glow.tint = 0xffd23f;
         glow.visible = false;
-        holder.addChild(glow, open, locked, badge);
+        holder.addChild(glow, open, locked, badge, video);
         holder.eventMode = 'static';
         holder.cursor = 'pointer';
         holder.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
@@ -92,7 +108,7 @@ export class BoosterBelt extends PIXI.Container {
             this.tap(button);
         });
         this.addChild(holder);
-        const button: BeltButton = { id, glow, unlock, holder, open, locked, badge, count };
+        const button: BeltButton = { id, glow, unlock, holder, open, locked, badge, count, video };
         return button;
     }
 
@@ -106,9 +122,11 @@ export class BoosterBelt extends PIXI.Container {
             return;
         }
         gsap.fromTo(button.holder.scale, { x: 0.88, y: 0.88 }, { x: 1, y: 1, duration: 0.3, ease: 'back.out(3)' });
-        const ready = AntSave.boosters(button.id) > 0 && !this.used.has(button.id);
+        const left = AntSave.boosters(button.id);
+        const ready = left > 0 && !this.used.has(button.id);
         AntAudio.play(ready && button.id === 'slot' ? 'slot' : 'click');
         if (ready) this.onUse(button.id);
+        else if (left === 0 && !this.used.has(button.id)) this.onVideo(button.id);
     }
 
     /** A power-up in play (waiting for its target: glowing, pulsing), or none. */
@@ -156,9 +174,12 @@ export class BoosterBelt extends PIXI.Container {
             b.locked.visible = locked;
             // None left: no badge (not a 0).
             b.badge.visible = !locked && left > 0;
-            b.open.alpha = ready ? 1 : 0.5;
+            // None left: a video can get one (the button stays bright: it can be tapped).
+            const forVideo = !locked && left === 0 && !this.used.has(b.id);
+            b.video.visible = forVideo;
+            b.open.alpha = ready || forVideo ? 1 : 0.5;
             b.count.text = String(left);
-            b.holder.cursor = locked || !ready ? 'default' : 'pointer';
+            b.holder.cursor = locked || (!ready && !forVideo) ? 'default' : 'pointer';
         }
     }
 

@@ -94,7 +94,7 @@ export class AntHud extends PIXI.Container {
     /** `onPause` from the pause button, `onExtraSlot` from the extra slot (on the belt or the lost card), `onBooster`
      *  from the belt's other power-ups. */
     public constructor(private readonly onPause: () => void, private readonly onExtraSlot: () => void,
-        private readonly onBooster: (id: BoosterId) => void) {
+        private readonly onBooster: (id: BoosterId) => void, private readonly onVideo: (id: BoosterId) => void) {
         super();
         this.title.anchor.set(0.5);
         // The pack's blue round button with the pause sign, the reference's top-left button.
@@ -109,7 +109,7 @@ export class AntHud extends PIXI.Container {
             } else {
                 this.onBooster(id);
             }
-        });
+        }, (id) => this.onVideo(id));
         this.hintBack.tint = 0x1c1d33;
         this.hintBack.alpha = 0.9;
         this.hint.addChild(this.hintBack, this.hintText);

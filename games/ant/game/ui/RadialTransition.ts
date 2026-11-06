@@ -65,11 +65,13 @@ export class RadialTransition {
         game.popupLayer.addChild(this.graphics, this.badge);
     }
 
-    /** Covers the screen, runs `swap` (the new screen or level built underneath), reveals it, and cleans up. */
-    public static async go(game: Game, title: string, subtitle: string, level: LevelData | null, swap: () => void): Promise<void> {
+    /** Covers the screen, waits for `during` (an ad between levels), runs `swap` (the new screen or level built
+     *  underneath), reveals it, and cleans up. */
+    public static async go(game: Game, title: string, subtitle: string, level: LevelData | null, swap: () => void, during?: () => Promise<void>): Promise<void> {
         const transition = new RadialTransition(game);
         AntAudio.play('whoosh');
         await transition.cover(title, subtitle, level);
+        if (during) await during();
         swap();
         await transition.reveal();
         transition.destroy();

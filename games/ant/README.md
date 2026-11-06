@@ -58,6 +58,11 @@ end, each mechanic's intro shown, power-ups used / dropped / bought, deco bought
 shops), play-time marks (1–45 minutes this session), and all levels done. After the last level a card says more are
 coming, then the main screen.
 
+**Ads** (`data/AntAds.ts`): a commercial break after every level (on NEXT or a retry, while the transition covers the
+screen — the platform, Poki, decides how often one really plays), and a rewarded video for a power-up you have none of
+(the belt shows VIDEO, with the video icon, instead of its count): watched through, one of it. Gameplay's off and the
+sound silent while an ad plays.
+
 **Coins and shops** (`data/Shop.ts`, saved in `data/AntSave.ts`). A finished level pays coins — 20 + 3 per level the
 first time, a quarter of that for a replay — shown on the celebration card, flying up to the coin bar. The power-ups'
 shop sells one more of a power-up already unlocked (the belt's badges are how many you have: the extra slot uses one,

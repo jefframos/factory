@@ -7,6 +7,7 @@
 // (SoundManager's saved mute) silences everything; the music has its own saved setting (the pause popup's MUSIC).
 
 import { Howl, Howler } from 'howler';
+import SoundManager from 'core/audio/SoundManager';
 
 export type Sfx =
     | 'click' | 'open' | 'close' | 'toggle' | 'tab' | 'tile' | 'slot' | 'full' | 'win' | 'applause' | 'lose' | 'whoosh' | 'pick';
@@ -93,6 +94,11 @@ export const AntAudio = {
             // Private mode: it lasts this session.
         }
         if (music) music.fade(music.volume(), on ? MUSIC.volume : 0, 400);
+    },
+
+    /** Everything silent (an ad playing), or back as the player's mute says. */
+    silence(on: boolean): void {
+        Howler.mute(on || SoundManager.instance.isMuted);
     },
 
     /** Audio can start (the first input). */

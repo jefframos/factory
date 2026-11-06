@@ -52,6 +52,7 @@ import { label as kitLabel, roundButton } from '../ui/UiParts';
 import { AntAudio } from '../audio/AntAudio';
 import { RadialTransition } from '../ui/RadialTransition';
 import { AntEvents } from '../data/AntEvents';
+import { AntAds } from '../data/AntAds';
 
 /** The floor's colour past its checker (the background in use's light colour; the page's own peach is index.html's). */
 export const floorColor = (): THREE.Color => new THREE.Color(currentBackground().light);
@@ -171,6 +172,8 @@ export default class AntScene extends ThreeScene {
     private armed: BoosterId | null = null;
     /** A new power-up's button being pointed out (its first time): the game waits too. */
     private pointing = false;
+    /** A rewarded video playing. */
+    private watching = false;
     /** Seconds this level's been played (not paused): for the level-time event. */
     private levelSeconds = 0;
     /** Tiles taken so far this level (locked tiles count them). */
@@ -203,7 +206,7 @@ export default class AntScene extends ThreeScene {
         floor.position.set(0, -0.02, LAYOUT.screen.centreZ);
         this.threeScene.add(floor);
         this.threeCamera.fov = FOV;
-        this.hud = new AntHud(() => this.openPause(), () => this.addExtraSlot(), (id) => this.useBooster(id));
+        this.hud = new AntHud(() => this.openPause(), () => this.addExtraSlot(), (id) => this.useBooster(id), (id) => void this.watchVideo(id));
         this.game.uiLayer.addChild(this.hud);
         window.addEventListener('pointerdown', this.onPointerDown);
         window.addEventListener('resize', this.onWindowResize);
@@ -501,7 +504,8 @@ export default class AntScene extends ThreeScene {
         if (index === this.levelIndex) AntEvents.levelRetry(this.levelIndex + 1);
         const next = (index + LEVELS.length) % LEVELS.length;
         const level = LEVELS[next];
-        void RadialTransition.go(this.game, `LEVEL ${next + 1}`, level.name.toUpperCase(), level, () => this.loadLevel(next)).then(() => {
+        // An ad between levels, while the screen's covered (the platform decides how often one plays).
+        void RadialTransition.go(this.game, `LEVEL ${next + 1}`, level.name.toUpperCase(), level, () => this.loadLevel(next), () => AntAds.between()).then(() => {
             this.travelling = false;
         });
     }
@@ -630,6 +634,24 @@ export default class AntScene extends ThreeScene {
         this.hud.hideTutorial();
         this.hud.hideMarkers();
         this.hud.setActiveBooster(null);
+    }
+
+    /** A power-up the player has none of: a rewarded video for one (the game waits while it plays). */
+    private async watchVideo(id: BoosterId): Promise<void> {
+        if (this.ended || this.paused || this.watching) return;
+        this.watching = true;
+        this.paused = true;
+        this.resumeScale = Game.timeScale;
+        Game.timeScale = 0;
+        const rewarded = await AntAds.rewarded(`booster-${id}`);
+        this.paused = false;
+        Game.timeScale = this.resumeScale;
+        this.watching = false;
+        if (!rewarded) return;
+        AntSave.addBooster(id, 1);
+        AntEvents.booster(id, 'video');
+        this.hud.refreshBelt();
+        AntAudio.play('slot');
     }
 
     /** One of a power-up used. */

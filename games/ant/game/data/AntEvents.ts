@@ -5,7 +5,7 @@
 // (PlatformHandler.measure: category, what, action) — stable ids, no display text:
 //   level <n> start | complete | fail | retry        level-time <n> <bucket>   (how long it took: 0-30s ... 8m+)
 //   tutorial first-level start | complete           intro <mechanic> visible
-//   booster <id> use | drop | buy                   deco <id> buy | use
+//   booster <id> use | drop | buy | video           deco <id> buy | use
 //   screen home | shop-boosts | shop-deco visible   playtime <1m ... 45m> reach (minutes of play, this session)
 //   game all-levels complete
 
@@ -73,7 +73,7 @@ export const AntEvents = {
         measure('intro', key, 'visible');
     },
 
-    booster(id: string, action: 'use' | 'drop' | 'buy'): void {
+    booster(id: string, action: 'use' | 'drop' | 'buy' | 'video'): void {
         measure('booster', id, action);
     },
 
