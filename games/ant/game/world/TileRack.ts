@@ -5,7 +5,8 @@
 // many ants) on top, big and white. Only the front row can be taken: those tiles stand tall on white plates. The rows
 // behind squat lower (ROW_HEIGHT), from the third back lower still, and every tile that can't be taken has its number
 // faded. Taking a front tile (take()) hops it in an arc onto a free slot's plate and its column moves up; in its slot its number counts down as its ants leave
-// (setCount()), and it goes once they're all home (release()). The deck is dealt round-robin into the columns, so the
+// (setCount()), and once its last ant has left it goes (release()): the number goes, the tile hops, puffs up and pops
+// into a burst of little cubes of its colour, and the slot is free at once. The deck is dealt round-robin into the columns, so the
 // front row is always the next tiles in the deck's order. Sizes and spacing follow the reference layout (Layout.ts).
 
 import * as THREE from 'three';
@@ -21,7 +22,9 @@ const BOTTOM_HEIGHT = 1.05;
 const TOP_HEIGHT = 0.95;
 /** The plate: the tile's own rounded square a little bigger (its rim shows round the tile like a white stroke), with
  *  a soft lip under it. */
-const PLATE = { size: LAYOUT.tile + 0.3, corner: 0.42 + 0.15, height: 0.28, lip: 0.06, color: 0xfffaf3, lipColor: 0xd9cdbf };
+/** The top cushion is this much wider than the base (the number's on it). */
+const TOP_GROW = 1.1;
+const PLATE = { size: LAYOUT.tile * TOP_GROW + 0.3, corner: 0.42 + 0.15, height: 0.28, lip: 0.06, color: 0xfffaf3, lipColor: 0xd9cdbf };
 /** Rows shown per column; from FADE_FROM back, tiles sit FADE_DROP lower. Every tile that can't be taken (all but the
  *  front row) has its number at FADE_OPACITY. */
 const VISIBLE_ROWS = 4;
@@ -30,6 +33,8 @@ const FADE_DROP = 0.35;
 const FADE_OPACITY = 0.45;
 /** Taking a tile: it hops this high on its way to the slot, in this long. */
 const HOP = { height: 2.2, seconds: 0.38 };
+/** A finished tile's pop: its hop, its puff, and the burst of cubes (how many, how big, how far, how long). */
+const POP = { hop: 1.4, hopSeconds: 0.2, puff: 1.25, puffSeconds: 0.1, shrinkSeconds: 0.1, chips: 14, chip: 0.5, spread: 3.2, rise: 2.4, chipSeconds: 0.55 };
 /** How tall a tile stands by row (1 = full): the front row (the ones that can be taken) stands tall — two cushions on
  *  a plate — the rest lie flat, just their top cushion's thickness; the second row a little sunk. */
 const ROW_HEIGHT = [1.3, 0.32, 0.32];
@@ -80,10 +85,11 @@ export class TileRack {
     private readonly slotPlates: THREE.Group[] = [];
     private readonly slotted = new Map<RackTile, number>();
     private readonly bottomGeometry = new RoundedBoxGeometry(TILE, BOTTOM_HEIGHT, TILE, 3, 0.42);
-    private readonly topGeometry = new RoundedBoxGeometry(TILE * 0.98, TOP_HEIGHT, TILE * 0.9, 3, 0.4);
+    private readonly topGeometry = new RoundedBoxGeometry(TILE * TOP_GROW, TOP_HEIGHT, TILE * TOP_GROW * 0.94, 3, 0.4);
+    private readonly chipGeometry = new RoundedBoxGeometry(POP.chip, POP.chip, POP.chip, 2, POP.chip * 0.2);
     private readonly plateGeometry = slab(PLATE.size, PLATE.corner, PLATE.height);
     private readonly lipGeometry = slab(PLATE.size + PLATE.lip * 2, PLATE.corner + PLATE.lip, PLATE.height);
-    private readonly labelGeometry = new THREE.PlaneGeometry(TILE * 0.98, TILE * 0.78);
+    private readonly labelGeometry = new THREE.PlaneGeometry(TILE * TOP_GROW, TILE * TOP_GROW * 0.8);
     // Warm off-white plates (not pure white: easy on the eyes).
     // Nearly white (not pure white: easy on the eyes), its lip a soft warm grey.
     private readonly white = new THREE.MeshStandardMaterial({ color: PLATE.color, roughness: 0.45 });
@@ -156,10 +162,44 @@ export class TileRack {
     /** A slot's tile is done: it shrinks away. */
     public release(tile: RackTile): void {
         this.slotted.delete(tile);
-        gsap.to(tile.group.scale, {
-            x: 0.01, y: 0.01, z: 0.01, duration: 0.25, ease: 'back.in(2)',
-            onComplete: () => this.dispose(tile),
-        });
+        tile.label.visible = false;
+        const { position, scale } = tile.group;
+        const base = { x: scale.x, y: scale.y, z: scale.z };
+        gsap.killTweensOf([position, scale]);
+        gsap.timeline({ onComplete: () => this.dispose(tile) })
+            // A hop...
+            .to(position, { y: position.y + POP.hop, duration: POP.hopSeconds, ease: 'power2.out' })
+            // ... a puff ...
+            .to(scale, { x: base.x * POP.puff, y: base.y * POP.puff, z: base.z * POP.puff, duration: POP.puffSeconds, ease: 'power2.out' })
+            // ... and pop: gone, in a burst of little cubes of its colour.
+            .call(() => this.burst(tile))
+            .to(scale, { x: 0.01, y: 0.01, z: 0.01, duration: POP.shrinkSeconds, ease: 'power2.in' });
+    }
+
+    /** Little cubes of a tile's colour flying out from it, up and down again, shrinking away. */
+    private burst(tile: RackTile): void {
+        const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(this.palette[tile.tile.color]), roughness: 0.45 });
+        const from = tile.group.position.clone().add(new THREE.Vector3(0, BOTTOM_HEIGHT, 0));
+        let left = POP.chips;
+        for (let n = 0; n < POP.chips; n++) {
+            const chip = new THREE.Mesh(this.chipGeometry, material);
+            chip.position.copy(from);
+            chip.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+            this.group.add(chip);
+            const angle = (n / POP.chips) * Math.PI * 2 + Math.random() * 0.4;
+            const reach = POP.spread * (0.6 + Math.random() * 0.4);
+            const seconds = POP.chipSeconds * (0.8 + Math.random() * 0.4);
+            const done = () => {
+                chip.removeFromParent();
+                if (--left === 0) material.dispose();
+            };
+            gsap.to(chip.position, { x: from.x + Math.cos(angle) * reach, z: from.z + Math.sin(angle) * reach, duration: seconds, ease: 'power1.out' });
+            gsap.timeline({ onComplete: done })
+                .to(chip.position, { y: from.y + POP.rise * (0.6 + Math.random() * 0.6), duration: seconds * 0.45, ease: 'power2.out' })
+                .to(chip.position, { y: 0.2, duration: seconds * 0.55, ease: 'power2.in' });
+            gsap.to(chip.rotation, { x: chip.rotation.x + 4, y: chip.rotation.y + 3, duration: seconds });
+            gsap.to(chip.scale, { x: 0.01, y: 0.01, z: 0.01, duration: seconds * 0.5, delay: seconds * 0.5, ease: 'power1.in' });
+        }
     }
 
     /** A tile no one can take (no free slot): it shakes. */
@@ -237,12 +277,14 @@ export class TileRack {
     private dispose(tile: RackTile): void {
         tile.group.removeFromParent();
         tile.texture.dispose();
-        (tile.label.material as THREE.Material).dispose();
-        (tile.body.material as THREE.Material).dispose();
+        // Its own materials (the cushions' and the number's), not the plates' shared ones.
+        tile.group.traverse((child) => {
+            if (child instanceof THREE.Mesh && child.material !== this.white && child.material !== this.grey) (child.material as THREE.Material).dispose();
+        });
     }
 
     public destroy(): void {
-        this.group.traverse((child) => gsap.killTweensOf([child.position, child.scale]));
+        this.group.traverse((child) => gsap.killTweensOf([child.position, child.scale, child.rotation]));
         this.group.removeFromParent();
         this.group.traverse((child) => {
             if (!(child instanceof THREE.Mesh) || child.material === this.white || child.material === this.grey) return;
@@ -250,7 +292,7 @@ export class TileRack {
             material.map?.dispose();
             material.dispose();
         });
-        for (const geometry of [this.bottomGeometry, this.topGeometry, this.plateGeometry, this.lipGeometry, this.labelGeometry]) geometry.dispose();
+        for (const geometry of [this.bottomGeometry, this.topGeometry, this.chipGeometry, this.plateGeometry, this.lipGeometry, this.labelGeometry]) geometry.dispose();
         this.white.dispose();
         this.grey.dispose();
     }

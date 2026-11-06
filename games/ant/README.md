@@ -54,8 +54,8 @@ count. The feel's defaults are in
   with a black outline; only the front row (on white plates) can be tapped; the second row waits as
   it is; rows further back sit lower with faded numbers. Taking a tile moves its column up.
 - **Slots**: 5. A tile in a slot sends one ant every 0.2 s while there's an exposed block of its colour no other ant
-  is already going for — the one nearest its slot (no dice) —; its number counts down as they leave, and the tile goes
-  once its last ant is home.
+  is already going for — the one nearest its slot (no dice) —; its number counts down as they leave, and as its last
+  ant sets off the tile pops (a hop, a puff, a burst of little cubes) and the slot is free at once.
 - **The item belt** (bottom, `ui/BoosterBelt.ts`): round power-up buttons on a blue checked cloth, each with a green
   count badge. The first, the **extra slot** (once a level), adds a sixth slot; a lost level offers it too (+1 SLOT on
   the card), and play goes on. The other three — shuffle, magnet, flower — unlock at levels 6, 9 and 16 (a padlock and

@@ -340,8 +340,9 @@ export default class AntScene extends ThreeScene {
         this.slots.forEach((slot, s) => {
             if (!slot) return;
             if (slot.left > 0) this.release(slot, s, delta);
-            // All its ants out and home: the tile goes and the slot is free.
-            if (slot.left === 0 && this.swarm!.countFor(s) === 0) {
+            // Its last ant has left: the tile pops and the slot is free at once (no waiting for the ants to get home).
+            if (slot.left === 0) {
+                AntAudio.play('slot');
                 this.rack!.release(slot.tile);
                 this.slots[s] = null;
             }
