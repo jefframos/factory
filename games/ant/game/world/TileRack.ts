@@ -2,10 +2,9 @@
 //
 // Under the anthill: the SLOT_COUNT slots (white plates; addSlot() — the extra-slot power-up — adds one, and they all
 // slide to stay centred), and under them the tiles in the level's columns (3 to 5), centred under the slots. A tile is two stacked rounded cushions — its colour on top, a darker one under it — with its number (how
-// many ants) on top, big and white. Only the front row can be taken: those tiles stand tall on white plates, with a
-// black outline (as in the reference: what tells them apart at a glance; they keep it in a slot). The rows
-// behind squat lower (ROW_HEIGHT), and from the third back their numbers fade. Taking a front tile (take())
-// slides it onto a free slot's plate and its column moves up; in its slot its number counts down as its ants leave
+// many ants) on top, big and white. Only the front row can be taken: those tiles stand tall on white plates. The rows
+// behind squat lower (ROW_HEIGHT), from the third back lower still, and every tile that can't be taken has its number
+// faded. Taking a front tile (take()) hops it in an arc onto a free slot's plate and its column moves up; in its slot its number counts down as its ants leave
 // (setCount()), and it goes once they're all home (release()). The deck is dealt round-robin into the columns, so the
 // front row is always the next tiles in the deck's order. Sizes and spacing follow the reference layout (Layout.ts).
 
@@ -21,17 +20,18 @@ const TILE = LAYOUT.tile;
 const BOTTOM_HEIGHT = 1.05;
 const TOP_HEIGHT = 0.95;
 const PLATE = { size: LAYOUT.tile + 0.45, height: 0.28 };
-/** Rows shown per column; from FADE_FROM back, tiles sit FADE_DROP lower with their numbers FADE_OPACITY. */
+/** Rows shown per column; from FADE_FROM back, tiles sit FADE_DROP lower. Every tile that can't be taken (all but the
+ *  front row) has its number at FADE_OPACITY. */
 const VISIBLE_ROWS = 4;
 const FADE_FROM = 2;
 const FADE_DROP = 0.35;
-const FADE_OPACITY = 0.55;
+const FADE_OPACITY = 0.45;
+/** Taking a tile: it hops this high on its way to the slot, in this long. */
+const HOP = { height: 2.2, seconds: 0.38 };
 /** How tall a tile stands by row (1 = full): the front row (the ones that can be taken) stands tall — two cushions on
  *  a plate — the rest lie flat, just their top cushion's thickness; the second row a little sunk. */
 const ROW_HEIGHT = [1.3, 0.32, 0.32];
 const SECOND_ROW_DROP = 0.15;
-/** The front row's outline: a dark copy of the cushions behind them, this much bigger. */
-const OUTLINE = { color: 0x1c1420, grow: 0.12 };
 const FONT = 'Arial Rounded MT Bold, Arial Black, Arial, sans-serif';
 
 export interface RackTile {
@@ -40,7 +40,6 @@ export interface RackTile {
     body: THREE.Mesh;
     label: THREE.Mesh;
     plate: THREE.Group;
-    outline: THREE.Group;
     canvas: HTMLCanvasElement;
     texture: THREE.CanvasTexture;
     column: number;
@@ -71,8 +70,6 @@ export class TileRack {
     // Warm off-white plates (not pure white: easy on the eyes).
     private readonly white = new THREE.MeshStandardMaterial({ color: 0xfbf1e6, roughness: 0.5 });
     private readonly grey = new THREE.MeshStandardMaterial({ color: 0xc9c2bb, roughness: 0.7 });
-    /** The outline: drawn on the inside faces only, so just its rim shows round the cushions. */
-    private readonly ink = new THREE.MeshBasicMaterial({ color: OUTLINE.color, side: THREE.BackSide });
 
     public constructor(private readonly palette: string[], deck: Tile[], private readonly columnCount: number) {
         this.columns = Array.from({ length: columnCount }, () => []);
@@ -121,7 +118,12 @@ export class TileRack {
         tile.plate.visible = false;
         this.slotted.set(tile, slot);
         const to = this.slotPosition(slot);
-        gsap.to(tile.group.position, { x: to.x, y: PLATE.height, z: to.z, duration: 0.3, ease: 'power2.out' });
+        // A little hop onto the slot: across and along steadily, up and back down.
+        const from = tile.group.position.y;
+        gsap.to(tile.group.position, { x: to.x, z: to.z, duration: HOP.seconds, ease: 'power1.inOut' });
+        gsap.timeline()
+            .to(tile.group.position, { y: Math.max(from, PLATE.height) + HOP.height, duration: HOP.seconds / 2, ease: 'power2.out' })
+            .to(tile.group.position, { y: PLATE.height, duration: HOP.seconds / 2, ease: 'power2.in' });
         const tall = ROW_HEIGHT[0];
         gsap.fromTo(tile.group.scale, { x: 1.12, y: tall * 1.12, z: 1.12 }, { x: 1, y: tall, z: 1, duration: 0.35, ease: 'back.out(2)' });
         this.layout(true);
@@ -159,8 +161,7 @@ export class TileRack {
             const y = row === 0 ? PLATE.height : faded ? -FADE_DROP : -SECOND_ROW_DROP;
             const tall = ROW_HEIGHT[Math.min(row, ROW_HEIGHT.length - 1)];
             tile.plate.visible = row === 0;
-            tile.outline.visible = row === 0;
-            (tile.label.material as THREE.MeshBasicMaterial).opacity = faded ? FADE_OPACITY : 1;
+            (tile.label.material as THREE.MeshBasicMaterial).opacity = row === 0 ? 1 : FADE_OPACITY;
             tile.group.visible = row < VISIBLE_ROWS;
             if (animate) {
                 gsap.to(tile.group.position, { x, y, z, duration: 0.25, ease: 'power2.out' });
@@ -192,19 +193,9 @@ export class TileRack {
         const label = new THREE.Mesh(this.labelGeometry, new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false }));
         label.rotation.x = -Math.PI / 2;
         label.position.y = BOTTOM_HEIGHT + TOP_HEIGHT - 0.12;
-        // The outline: the two cushions again, a little bigger, dark, inside out.
-        const outline = new THREE.Group();
-        for (const part of [body, top]) {
-            const shell = new THREE.Mesh(part.geometry, this.ink);
-            shell.position.copy(part.position);
-            const grow = 1 + OUTLINE.grow;
-            shell.scale.set(grow, 1 + OUTLINE.grow * 0.6, grow);
-            outline.add(shell);
-        }
-        outline.visible = false;
-        group.add(plateGroup, outline, body, top, label);
+        group.add(plateGroup, body, top, label);
         this.group.add(group);
-        const rackTile: RackTile = { tile, group, body, label, plate: plateGroup, outline, canvas, texture, column };
+        const rackTile: RackTile = { tile, group, body, label, plate: plateGroup, canvas, texture, column };
         this.drawLabel(rackTile, tile.count);
         return rackTile;
     }
@@ -236,7 +227,7 @@ export class TileRack {
         this.group.traverse((child) => gsap.killTweensOf([child.position, child.scale]));
         this.group.removeFromParent();
         this.group.traverse((child) => {
-            if (!(child instanceof THREE.Mesh) || child.material === this.white || child.material === this.grey || child.material === this.ink) return;
+            if (!(child instanceof THREE.Mesh) || child.material === this.white || child.material === this.grey) return;
             const material = child.material as THREE.MeshBasicMaterial;
             material.map?.dispose();
             material.dispose();
@@ -244,6 +235,5 @@ export class TileRack {
         for (const geometry of [this.bottomGeometry, this.topGeometry, this.plateGeometry, this.lipGeometry, this.labelGeometry]) geometry.dispose();
         this.white.dispose();
         this.grey.dispose();
-        this.ink.dispose();
     }
 }
