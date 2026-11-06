@@ -381,6 +381,7 @@ export default class AntScene extends ThreeScene {
             ? { taps: 0, tiles: first.rack.tilesLeft, columns: this.level.columns ?? DEFAULT_COLUMNS, wait: TUTORIAL.wait }
             : null;
         if (this.tutorial) AntEvents.tutorial('start');
+        this.hud.setControlsVisible(!this.tutorial);
         this.swarm = new AntSwarm(this.threeScene, cell * CARRIED, cell, (x, z) => {
             if (!picture.onTray(x, z)) return 0;
             const i = picture.cellAt(x, z);

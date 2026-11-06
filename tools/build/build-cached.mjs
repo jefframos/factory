@@ -50,7 +50,7 @@ function buildGame(game) {
     return platform;
 }
 
-function run() {
+async function run() {
     fs.mkdirSync(cachedBuildsRoot, { recursive: true });
     const registry = loadRegistry(registryPath);
 
@@ -107,12 +107,12 @@ function run() {
         }
     }
 
-    writeIndexPage(cachedBuildsRoot, registry);
+    await writeIndexPage(cachedBuildsRoot, registry);
     console.log(`\n✨ Done. Rebuilt ${rebuilt}, reused ${skipped}, failed ${failedGames.length}.`);
     if (failedGames.length > 0) {
         console.log(`   Failed: ${failedGames.join(', ')}`);
     }
-    console.log(`   Page: cachedBuilds/index.html`);
+    console.log(`   Pages: cachedBuilds/index.html (store), cachedBuilds/all/index.html (every build)`);
 }
 
 run();

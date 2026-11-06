@@ -149,6 +149,16 @@ export class AntHud extends PIXI.Container {
         }, 'toggle');
     }
 
+    /** The pause and x2 buttons: hidden during the tutorial level (which also runs at normal speed). */
+    public setControlsVisible(visible: boolean): void {
+        this.pause.visible = visible;
+        this.speed.visible = visible;
+        if (!visible && Game.timeScale > 1) {
+            Game.timeScale = 1;
+            this.drawSpeed();
+        }
+    }
+
     private drawSpeed(): void {
         const on = Game.timeScale > 1;
         this.speedOn.visible = on;

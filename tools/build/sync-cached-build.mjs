@@ -59,6 +59,6 @@ promoteToCache(cachedBuildsRoot, GAME, distDir);
 writeMeta(cachedBuildsRoot, GAME, hashGame(projectRoot, GAME), platform);
 
 const registry = ensureRegistered(registryPath, GAME);
-writeIndexPage(cachedBuildsRoot, registry);
+await writeIndexPage(cachedBuildsRoot, registry);
 
 console.log(`📦 Synced cachedBuilds/${GAME} from dist/_builds_${GAME}/${platform}`);
