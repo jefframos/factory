@@ -88,12 +88,12 @@ export class AntSwarm {
     private readonly blockTurn = new THREE.Quaternion();
 
     /**
-     * `size`: an ant's scale; `carried`: the size of the block on its back; `pixel`: a picture block's size (a lifted
+     * An ant's size is TUNING.antSize (the same in every level); `carried`: the size of the block on its back; `pixel`: a picture block's size (a lifted
      * block starts at it and shrinks to `carried` as it rises onto the ant's back); `groundAt(x, z)`: the height it
      * walks at there;
      * `onPickUp(ant)` as it lifts its pixel, returning its way home (ending in the anthill); `onHome(ant)` as it drops in.
      */
-    public constructor(scene: THREE.Scene, private readonly size: number, private readonly carried: number, private readonly pixel: number,
+    public constructor(scene: THREE.Scene, private readonly carried: number, private readonly pixel: number,
         private readonly groundAt: (x: number, z: number) => number,
         private readonly onPickUp: (ant: Ant) => THREE.Vector3[], private readonly onHome: (ant: Ant) => void) {
         this.bodies = new THREE.InstancedMesh(antGeometry(), new THREE.MeshStandardMaterial({ roughness: 0.4 }), MAX_ANTS);
@@ -197,7 +197,7 @@ export class AntSwarm {
             const side = ant.phase === 'pick' ? 0 : Math.sin(ant.wander) * reach * ant.sway;
             this.drawn.set(ant.position.x + Math.cos(ant.heading) * side, ant.position.y, ant.position.z - Math.sin(ant.heading) * side);
             this.quaternion.setFromAxisAngle(this.up, ant.heading + Math.sin(ant.step) * 0.08 + Math.cos(ant.wander) * 0.25 * ant.sway);
-            this.scale.setScalar(this.size);
+            this.scale.setScalar(TUNING.antSize);
             this.matrix.compose(this.drawn, this.quaternion, this.scale);
             this.bodies.setMatrixAt(i, this.matrix);
             this.bodies.setColorAt(i, ant.color);
@@ -206,7 +206,7 @@ export class AntSwarm {
             if (ant.phase !== 'out') {
                 const t = ant.phase === 'pick' ? 1 - Math.max(0, ant.wait) / PICK_SEC : 1;
                 const ease = t * t * (3 - 2 * t);
-                const back = this.drawn.y + this.size * 0.45 + this.carried * HALF_DIAGONAL;
+                const back = this.drawn.y + TUNING.antSize * 0.45 + this.carried * HALF_DIAGONAL;
                 // Up first, then over onto the back: an arc rather than a slide.
                 const up = Math.sin(ease * Math.PI) * this.pixel * 0.5;
                 this.lift.set(

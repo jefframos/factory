@@ -40,8 +40,8 @@ import { RadialTransition } from '../ui/RadialTransition';
 export const FLOOR = 0xf6c597;
 /** Columns for an old level file without its own. */
 const DEFAULT_COLUMNS = 4;
-/** An ant is about this many of the picture's pixels long; the block it carries is a whole pixel's (as it was). */
-const ANT_PIXELS = 1.05;
+/** The block an ant carries is a whole pixel's (as it was). The ants themselves are the same size in every level
+ *  (TUNING.antSize). */
 const CARRIED = 1;
 /** Camera: field of view, tilt from straight down, and how far below the screen's middle it looks (a tilted view
  *  squeezes the far end and stretches the near one: aiming lower keeps the board where the reference has it). */
@@ -147,6 +147,7 @@ export default class AntScene extends ThreeScene {
                 this.loadLevel(index);
             },
         });
+        panel.number(TUNING, 'antSize', { label: 'Ant size', min: 0.3, max: 2, step: 0.05 });
         panel.number(TUNING, 'antSpeed', { label: 'Ant speed', min: 1, max: 20, step: 0.5 });
         panel.number(TUNING, 'releaseSec', { label: 'Between ants (s)', min: 0.02, max: 0.6, step: 0.01 });
         panel.buttons([
@@ -237,7 +238,7 @@ export default class AntScene extends ThreeScene {
 
         this.rack = new TileRack(this.level.palette, deck, this.level.columns ?? DEFAULT_COLUMNS);
         this.threeScene.add(this.rack.group);
-        this.swarm = new AntSwarm(this.threeScene, cell * ANT_PIXELS, cell * CARRIED, cell, (x, z) => {
+        this.swarm = new AntSwarm(this.threeScene, cell * CARRIED, cell, (x, z) => {
             if (!picture.onTray(x, z)) return 0;
             const i = picture.cellAt(x, z);
             return TRAY_TOP + (i >= 0 && this.board.colors[i] >= 0 ? picture.blockTop : 0);
