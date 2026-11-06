@@ -1,6 +1,15 @@
 {
     "_doc": "The games on the store page (the published root, cachedBuilds/index.html), in this order. Every cached build is still listed on /all/. A game shows here once it has a cached build; its tile uses games/<id>/icon/icon.png (square) — without one, its first letter. `names` is each game's shown name on both pages (default: the id, capitalised). Regenerate the pages with `npm run pages` (builds do it too).",
-    "games": ["down", "dig", "clog", "ant", "merge1", "mow", "ufo"],
+    "games": [
+        "down",
+        "dig",
+        "clog",
+        "ant",
+        "merge1",
+        "hex",
+        "mow",
+        "ufo"
+    ],
     "names": {
         "down": "Pop Cat",
         "dig": "Dig and Discover",

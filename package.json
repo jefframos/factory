@@ -13,6 +13,7 @@
         "build-all": "node tools/build/build-platforms.mjs",
         "build:cached": "node tools/build/build-cached.mjs",
         "pages": "node tools/build/write-pages.mjs",
+        "store": "node tools/build/serve-store.mjs",
         "assets": "cross-env node tools/build-assets.mjs && npm run build:json",
         "json": "node tools/json/build-json.mjs",
         "json:watch": "cross-env WATCH=true node tools/json/build-json.mjs",
