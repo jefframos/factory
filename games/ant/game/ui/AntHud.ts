@@ -53,7 +53,8 @@ function button(text: string, frame: string, width: number, onTap: () => void): 
 
 export class AntHud extends PIXI.Container {
     /** "Level N": the reference's plain brown title. */
-    private readonly tierTag = kitLabel(24);
+    /** HARD / SUPER HARD, on the title's line just right of it (under it, it would cover the picture's tray). */
+    private readonly tierTag = kitLabel(20);
     /** A power-up waiting for its target: what to tap, in a dark pill over the belt. */
     private readonly hint = new PIXI.Container();
     private readonly hintBack = framePlane('BasicFrame_Round20', 520, 64);
@@ -208,6 +209,12 @@ export class AntHud extends PIXI.Container {
         }
         this.belt.setLevel(number);
         this.belt.visible = number >= BOOSTERS[0].unlock;
+        this.placeTierTag();
+    }
+
+    private placeTierTag(): void {
+        this.tierTag.anchor.set(0, 0.5);
+        this.tierTag.position.set(this.title.x + this.title.width / 2 + 12, this.title.y + 2);
     }
 
     /** The end-of-level card: `won` shows NEXT, otherwise TRY AGAIN; `onButton` from its button. Lost with the
@@ -436,7 +443,7 @@ export class AntHud extends PIXI.Container {
         const screen = Game.overlayScreenData;
         if (!screen) return;
         this.title.position.set(screen.center.x, screen.topLeft.y + PAUSE.margin);
-        this.tierTag.position.set(screen.center.x, this.title.y + 38);
+        this.placeTierTag();
         // Pause top-left, the title in the middle, x2 top-right (the reference's corners).
         this.pause.position.set(screen.topLeft.x + PAUSE.margin, screen.topLeft.y + PAUSE.margin);
         this.pausePopup?.reposition();
