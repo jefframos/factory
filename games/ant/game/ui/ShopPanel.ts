@@ -13,6 +13,7 @@ import { Game } from 'core/Game';
 import { AntSave, DecoKind } from '../data/AntSave';
 import { BOOSTER_PRICES, Background, Frame, decoOf } from '../data/Shop';
 import { AntAudio } from '../audio/AntAudio';
+import { AntEvents } from '../data/AntEvents';
 import { BOOSTERS, BoosterId } from './BoosterBelt';
 import { buttonParts, framePlane, iconSprite, label, plainLabel, roundButton } from './UiParts';
 
@@ -257,15 +258,18 @@ export class ShopPanel extends PIXI.Container {
         if (section === 'boosts') {
             if (!AntSave.spend(BOOSTER_PRICES[id as BoosterId])) return this.refuse(cell);
             AntSave.addBooster(id as BoosterId, 1);
+            AntEvents.booster(id, 'buy');
             AntAudio.play('slot');
         } else if (AntSave.owns(section, id)) {
             if (AntSave.using(section) === id) return;
             AntSave.use(section, id);
+            AntEvents.deco(`${section}-${id}`, 'use');
             AntAudio.play('click');
         } else {
             if (!AntSave.spend(this.priceOf(section, id))) return this.refuse(cell);
             AntSave.own(section, id);
             AntSave.use(section, id);
+            AntEvents.deco(`${section}-${id}`, 'buy');
             AntAudio.play('win');
         }
         gsap.fromTo(cell.holder.scale, { x: 0.85, y: 0.85 }, { x: 1, y: 1, duration: 0.4, ease: 'back.out(3)' });

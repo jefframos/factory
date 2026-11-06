@@ -51,6 +51,13 @@ INTRODUCTIONS, `ui/IntroCard.ts`): play stops for a card (NEW POWER-UP! / NEW OB
 works, GOT IT); a power-up's then pointed out on the belt by the hand (and given, if the player has none). Seen once
 (saved); RESET DATA shows them again.
 
+**Platform events** (`data/AntEvents.ts`, through `PlatformHandler`): gameplayStart / gameplayStop on a change only
+(a level being played — not paused, on a card, over, or between levels; never on the main screen), happyTime on a
+finished picture, and analytics: level start / complete / fail / retry and its time (bucketed), the tutorial's start and
+end, each mechanic's intro shown, power-ups used / dropped / bought, deco bought / used, screens shown (home, the
+shops), play-time marks (1–45 minutes this session), and all levels done. After the last level a card says more are
+coming, then the main screen.
+
 **Coins and shops** (`data/Shop.ts`, saved in `data/AntSave.ts`). A finished level pays coins — 20 + 3 per level the
 first time, a quarter of that for a replay — shown on the celebration card, flying up to the coin bar. The power-ups'
 shop sells one more of a power-up already unlocked (the belt's badges are how many you have: the extra slot uses one,

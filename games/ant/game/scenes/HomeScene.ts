@@ -23,6 +23,7 @@ import { floorColor, floorTexture } from './AntScene';
 import { COIN_BAR, DARK, fillCoinBar, framePlane, iconSprite, label, plainLabel, roundButton, tappable } from '../ui/UiParts';
 import { ShopKind, ShopPanel } from '../ui/ShopPanel';
 import { levelTier } from '../data/Shop';
+import { AntEvents } from '../data/AntEvents';
 
 /** Design units (720 x 1080). The bottom tabs (as UFO's), the ribbon, the PLAY button, the sound button. */
 const TABS = {
@@ -120,6 +121,7 @@ export default class HomeScene extends ThreeScene {
         this.showLevel(Math.max(0, Math.min(AntSave.selected, LEVELS.length - 1)));
         this.game.uiLayer.addChild(this.ui);
         this.resize();
+        AntEvents.screen('home');
     }
 
     /** The level `index`, as it'll look in the game: its picture, LEVEL N, which arrows show. */
@@ -259,6 +261,7 @@ export default class HomeScene extends ThreeScene {
         if (tab === this.tab) return;
         this.tab = tab;
         this.shops.forEach((shop) => { shop.visible = false; });
+        AntEvents.screen(tab === 'home' ? 'home' : `shop-${tab}`);
         if (tab !== 'home') {
             let shop = this.shops.get(tab);
             if (!shop) {

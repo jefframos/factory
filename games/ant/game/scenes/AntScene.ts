@@ -51,6 +51,7 @@ import * as PIXI from 'pixi.js';
 import { label as kitLabel, roundButton } from '../ui/UiParts';
 import { AntAudio } from '../audio/AntAudio';
 import { RadialTransition } from '../ui/RadialTransition';
+import { AntEvents } from '../data/AntEvents';
 
 /** The floor's colour past its checker (the background in use's light colour; the page's own peach is index.html's). */
 export const floorColor = (): THREE.Color => new THREE.Color(currentBackground().light);
@@ -170,6 +171,8 @@ export default class AntScene extends ThreeScene {
     private armed: BoosterId | null = null;
     /** A new power-up's button being pointed out (its first time): the game waits too. */
     private pointing = false;
+    /** Seconds this level's been played (not paused): for the level-time event. */
+    private levelSeconds = 0;
     /** Tiles taken so far this level (locked tiles count them). */
     private taps = 0;
     /** The ants' speed-up at the end (1: none). */
@@ -318,6 +321,8 @@ export default class AntScene extends ThreeScene {
         this.rush = 1;
         this.armed = null;
         this.pointing = false;
+        this.levelSeconds = 0;
+        AntEvents.levelStart(this.levelIndex + 1);
         this.hud.hideMarkers();
         this.hud.setActiveBooster(null);
         this.hud.showHint(null);
@@ -361,6 +366,7 @@ export default class AntScene extends ThreeScene {
         this.tutorial = this.levelIndex === 0 && !AntSave.tutorialDone && !split
             ? { taps: 0, tiles: first.rack.tilesLeft, columns: this.level.columns ?? DEFAULT_COLUMNS, wait: TUTORIAL.wait }
             : null;
+        if (this.tutorial) AntEvents.tutorial('start');
         this.swarm = new AntSwarm(this.threeScene, cell * CARRIED, cell, (x, z) => {
             if (!picture.onTray(x, z)) return 0;
             const i = picture.cellAt(x, z);
@@ -378,6 +384,7 @@ export default class AntScene extends ThreeScene {
         this.paused = true;
         this.resumeScale = Game.timeScale;
         Game.timeScale = 0;
+        AntEvents.intro(intro.key);
         const picture = this.introPicture(intro.key, intro.booster);
         this.hud.showIntro(intro.booster ? 'NEW POWER-UP!' : 'NEW OBSTACLE!', picture, intro.name, intro.text, () => {
             AntSave.markExplained(intro.key);
@@ -491,6 +498,7 @@ export default class AntScene extends ThreeScene {
     private travelTo(index: number): void {
         if (this.travelling) return;
         this.travelling = true;
+        if (index === this.levelIndex) AntEvents.levelRetry(this.levelIndex + 1);
         const next = (index + LEVELS.length) % LEVELS.length;
         const level = LEVELS[next];
         void RadialTransition.go(this.game, `LEVEL ${next + 1}`, level.name.toUpperCase(), level, () => this.loadLevel(next)).then(() => {
@@ -626,6 +634,7 @@ export default class AntScene extends ThreeScene {
 
     /** One of a power-up used. */
     private spend(id: BoosterId): void {
+        AntEvents.booster(id, 'use');
         AntSave.addBooster(id, -1);
         this.boosterUsed = true;
         this.hud.refreshBelt();
@@ -701,6 +710,7 @@ export default class AntScene extends ThreeScene {
         side.slots.push(null);
         // One fewer owned (the power-ups' shop sells more), and no more this level.
         AntSave.addBooster('slot', -1);
+        AntEvents.booster('slot', 'use');
         this.boosterUsed = true;
         this.hud.setExtraSlot(false);
         this.ended = false;
@@ -708,6 +718,14 @@ export default class AntScene extends ThreeScene {
 
     public update(delta: number): void {
         this.updateTutorial(Math.min(delta, 0.1));
+        // Gameplay, for the platform: a level being played — not paused (or on a card), not over, not between levels.
+        const playing = !this.ended && !this.paused && !this.travelling && !!this.sides.length;
+        AntEvents.playing(playing);
+        if (playing) {
+            const seconds = Math.min(delta, 0.25);
+            this.levelSeconds += seconds;
+            AntEvents.tick(seconds);
+        }
         super.update(delta);
     }
 
@@ -916,7 +934,9 @@ export default class AntScene extends ThreeScene {
         if (this.ended || !this.swarm) return;
         if (this.board.remaining === 0 && this.swarm.count === 0) {
             this.ended = true;
+            AntEvents.levelEnd(this.levelIndex + 1, true, this.levelSeconds);
             if (this.tutorial) {
+                AntEvents.tutorial('complete');
                 AntSave.finishTutorial();
                 this.tutorial = null;
                 this.hud.hideTutorial();
@@ -931,8 +951,13 @@ export default class AntScene extends ThreeScene {
             const drop = !this.boosterUsed && unlocked.length && Math.random() < FREE_DROP_CHANCE
                 ? unlocked[Math.floor(Math.random() * unlocked.length)].id
                 : null;
-            if (drop) AntSave.addBooster(drop, 1);
-            this.hud.celebrate(this.level, reward, drop, () => this.travelTo(this.levelIndex + 1));
+            if (drop) {
+                AntSave.addBooster(drop, 1);
+                AntEvents.booster(drop, 'drop');
+            }
+            // The last level: no next one yet — a card says more are coming, then the main screen.
+            const last = this.levelIndex === LEVELS.length - 1;
+            this.hud.celebrate(this.level, reward, drop, () => (last ? this.allDone() : this.travelTo(this.levelIndex + 1)));
             return;
         }
         // Nothing can move: no ant out, and on every side no slot has anything of its colour to fetch, and there's no free
@@ -942,8 +967,21 @@ export default class AntScene extends ThreeScene {
         const stuck = this.swarm.count === 0 && !this.sides.some((side) => canTake(side) || canWork(side));
         if (stuck) {
             this.ended = true;
+            AntEvents.levelEnd(this.levelIndex + 1, false, this.levelSeconds);
             this.hud.showResult(false, () => this.travelTo(this.levelIndex));
         }
+    }
+
+    /** Every level done: a card says more are on their way, then the main screen. */
+    private allDone(): void {
+        AntEvents.allLevelsDone();
+        const star = PIXI.Sprite.from('ItemIcon_Star_Gold');
+        star.anchor.set(0.5);
+        star.scale.set(120 / Math.max(star.texture.width, star.texture.height, 1));
+        const picture = new PIXI.Container();
+        picture.addChild(star);
+        this.hud.showIntro('ALL DONE!', picture, 'MORE LEVELS SOON',
+            'You\'ve finished every picture! New levels are on their way — check back soon.', () => this.onHome());
     }
 
     public resize(): void {
@@ -952,6 +990,7 @@ export default class AntScene extends ThreeScene {
     }
 
     public destroy(): void {
+        AntEvents.playing(false);
         if (this.paused) Game.timeScale = this.resumeScale;
         window.removeEventListener('pointerdown', this.onPointerDown);
         window.removeEventListener('resize', this.onWindowResize);
