@@ -22,13 +22,13 @@ interface SaveData {
     using: Record<DecoKind, string>;
 }
 
-/** What a new player starts with: a few power-ups to try, the default background and frame. */
+/** What a new player starts with: a couple of starter power-ups (design.txt), the default background and frame. */
 const START: SaveData = {
     tutorialDone: false,
     level: 0,
     won: [],
     coins: 0,
-    boosters: { slot: 3, shuffle: 1, hammer: 1, bomb: 1 },
+    boosters: { slot: 2, shuffle: 2, pickup: 1, vacuum: 1 },
     owned: { background: ['peach'], frame: ['wood'] },
     using: { background: 'peach', frame: 'wood' },
 };

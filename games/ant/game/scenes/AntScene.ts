@@ -28,7 +28,8 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { Board, dealDeck, hashString } from '../data/Board';
 import { LEVELS, LevelData, pixelsOf, deckOf } from '../data/Levels';
 import { AntSave } from '../data/AntSave';
-import { Background, currentBackground, levelReward } from '../data/Shop';
+import { Background, FREE_DROP_CHANCE, currentBackground, levelReward, levelTier } from '../data/Shop';
+import { BOOSTERS } from '../ui/BoosterBelt';
 import { TUNING } from '../data/Tuning';
 import { DebugOverlay } from 'core/debug/DebugOverlay';
 import { PictureView, TRAY_TOP } from '../world/PictureView';
@@ -110,6 +111,8 @@ export default class AntScene extends ThreeScene {
     /** The pause popup is up: the game's time stands still (Game.timeScale 0) — this is what it was before. */
     private paused = false;
     private travelling = false;
+    /** A power-up used this level (no free drop then). */
+    private boosterUsed = false;
     /** The tutorial under way: tiles tapped so far, of how many, in how many columns; time to the next pointer. */
     private tutorial: { taps: number; tiles: number; columns: number; wait: number } | null = null;
     private resumeScale = 1;
@@ -226,7 +229,8 @@ export default class AntScene extends ThreeScene {
         this.ended = false;
         this.hud.hideResult();
         this.hud.setExtraSlot(true);
-        this.hud.setLevel(this.levelIndex + 1);
+        this.hud.setLevel(this.levelIndex + 1, levelTier(this.levelIndex));
+        this.boosterUsed = false;
 
         const pixels = pixelsOf(this.level);
         this.board = new Board(this.level.width, this.level.height, pixels);
@@ -352,6 +356,7 @@ export default class AntScene extends ThreeScene {
         this.slots.push(null);
         // One fewer owned (the power-ups' shop sells more), and no more this level.
         AntSave.addBooster('slot', -1);
+        this.boosterUsed = true;
         this.hud.setExtraSlot(false);
         this.ended = false;
     }
@@ -552,7 +557,13 @@ export default class AntScene extends ThreeScene {
             AntSave.markWon(this.levelIndex);
             AntSave.addCoins(reward);
             AntSave.reach(Math.min(this.levelIndex + 1, LEVELS.length - 1));
-            this.hud.celebrate(this.level, reward, () => this.travelTo(this.levelIndex + 1));
+            // Won without a power-up: maybe a free one (one already unlocked).
+            const unlocked = BOOSTERS.filter((b) => b.unlock <= this.levelIndex + 1);
+            const drop = !this.boosterUsed && unlocked.length && Math.random() < FREE_DROP_CHANCE
+                ? unlocked[Math.floor(Math.random() * unlocked.length)].id
+                : null;
+            if (drop) AntSave.addBooster(drop, 1);
+            this.hud.celebrate(this.level, reward, drop, () => this.travelTo(this.levelIndex + 1));
             return;
         }
         const stuck = this.swarm.count === 0 && this.slots.every((slot) => slot && slot.left > 0 && !this.board.claimable(slot.color).length);

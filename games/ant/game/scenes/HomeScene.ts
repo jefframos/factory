@@ -22,6 +22,7 @@ import { LAYOUT } from '../world/Layout';
 import { floorColor, floorTexture } from './AntScene';
 import { COIN_BAR, DARK, fillCoinBar, framePlane, iconSprite, label, plainLabel, roundButton, tappable } from '../ui/UiParts';
 import { ShopKind, ShopPanel } from '../ui/ShopPanel';
+import { levelTier } from '../data/Shop';
 
 /** Design units (720 x 1080). The bottom tabs (as UFO's), the ribbon, the PLAY button, the sound button. */
 const TABS = {
@@ -66,6 +67,8 @@ export default class HomeScene extends ThreeScene {
     private readonly ui = new PIXI.Container();
     private readonly ribbon = new PIXI.Container();
     private readonly ribbonText = label(RIBBON.text);
+    /** HARD / SUPER HARD under the ribbon, on those levels (design.txt). */
+    private readonly tierTag = label(26);
     private readonly prev = roundButton('Button_Round02_Blue', 'Icon_Arrow_Prev1', ARROWS.size, ARROWS.size * 0.5);
     private readonly next = roundButton('Button_Round02_Blue', 'Icon_Arrow_Next1', ARROWS.size, ARROWS.size * 0.5);
     private readonly latest = roundButton('Button_Round02_Blue', 'Icon_Skip', ARROWS.latest, ARROWS.latest * 0.55);
@@ -124,6 +127,10 @@ export default class HomeScene extends ThreeScene {
         this.index = index;
         AntSave.selected = index;
         this.ribbonText.text = `LEVEL ${index + 1}`;
+        const tier = levelTier(index);
+        this.tierTag.visible = tier !== 'normal';
+        this.tierTag.text = tier === 'super' ? 'SUPER HARD' : 'HARD';
+        this.tierTag.style.fill = tier === 'super' ? 0xff4d6d : 0xff9f3a;
         this.picture?.destroy();
         this.picture = undefined;
         const level = LEVELS[index];
@@ -155,7 +162,8 @@ export default class HomeScene extends ThreeScene {
         const ribbonBack = framePlane('Title_Ribbon04_Red', RIBBON.width, RIBBON.height, RIBBON.scale);
         ribbonBack.position.set(-RIBBON.width / 2, -RIBBON.height / 2);
         this.ribbonText.y = RIBBON.textY;
-        this.ribbon.addChild(ribbonBack, this.ribbonText);
+        this.tierTag.y = RIBBON.height / 2 + 14;
+        this.ribbon.addChild(ribbonBack, this.ribbonText, this.tierTag);
         tappable(this.prev, () => this.browse(this.index - 1));
         tappable(this.next, () => this.browse(this.index + 1));
         tappable(this.latest, () => this.browse(AntSave.level));

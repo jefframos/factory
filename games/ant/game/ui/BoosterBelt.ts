@@ -1,6 +1,6 @@
 // BoosterBelt.ts
 //
-// The item belt along the bottom of the screen, like the reference: a blue checked cloth with round buttons on it, one
+// The item belt along the bottom of the screen, like the reference (shown once the first power-up's unlocked: AntHud): a blue checked cloth with round buttons on it, one
 // per power-up, each with a green count badge — the UI pack's blue round button and white icons (UiParts). A power-up
 // unlocks at its level (BOOSTERS): before that it's a dark button with a padlock and its level. The badge is how many
 // the player has (AntSave: bought in the power-ups' shop); none, no badge. Only the extra slot does something for now
@@ -12,14 +12,16 @@ import { framePlane, iconSprite, label, roundButton } from './UiParts';
 import { AntAudio } from '../audio/AntAudio';
 import { AntSave } from '../data/AntSave';
 
-export type BoosterId = 'slot' | 'shuffle' | 'hammer' | 'bomb';
+export type BoosterId = 'slot' | 'shuffle' | 'pickup' | 'vacuum';
 
-/** The power-ups in belt order, their icon, and the level each unlocks at. */
+/** The power-ups in belt order, their icon, and the level each unlocks at (design.txt): the extra slot (a sixth slot),
+ *  shuffle (the tiles not taken yet, mixed), pick up (a slot's tile back to the rack), vacuum (every block of a colour,
+ *  gone). */
 export const BOOSTERS: { id: BoosterId; icon: string; unlock: number }[] = [
-    { id: 'slot', icon: 'PictoIcon_Plus_1', unlock: 1 },
-    { id: 'shuffle', icon: 'PictoIcon_Change', unlock: 6 },
-    { id: 'hammer', icon: 'PictoIcon_Hammer_Claw', unlock: 9 },
-    { id: 'bomb', icon: 'PictoIcon_Bomb_1', unlock: 16 },
+    { id: 'slot', icon: 'PictoIcon_Plus_1', unlock: 3 },
+    { id: 'shuffle', icon: 'PictoIcon_Change', unlock: 4 },
+    { id: 'pickup', icon: 'PictoIcon_Hammer_Claw', unlock: 6 },
+    { id: 'vacuum', icon: 'PictoIcon_Bomb_1', unlock: 9 },
 ];
 
 /** Design units (720 wide): a button's size, the gap between button middles, the cloth's height and checks, the badge. */
@@ -102,6 +104,11 @@ export class BoosterBelt extends PIXI.Container {
         const ready = AntSave.boosters(button.id) > 0 && !this.used.has(button.id);
         AntAudio.play(ready && button.id === 'slot' ? 'slot' : 'click');
         if (ready) this.onUse(button.id);
+    }
+
+    /** Unlocked at the level being played. */
+    public unlocked(id: BoosterId): boolean {
+        return this.level >= (BOOSTERS.find((b) => b.id === id)?.unlock ?? Infinity);
     }
 
     /** The level being played: what's unlocked. */

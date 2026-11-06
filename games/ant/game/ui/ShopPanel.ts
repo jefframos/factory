@@ -41,7 +41,7 @@ const TAP_MOVE = 12;
 const SECTIONS_OF: Record<ShopKind, Section[]> = { boosts: ['boosts'], deco: ['background', 'frame'] };
 const TITLE: Record<ShopKind, string> = { boosts: 'POWER-UPS', deco: 'DECO' };
 const SECTION_NAME: Record<Section, string> = { boosts: 'POWER-UPS', background: 'BACKGROUNDS', frame: 'FRAMES' };
-const BOOSTER_NAMES: Record<BoosterId, string> = { slot: 'Extra slot', shuffle: 'Shuffle', hammer: 'Hammer', bomb: 'Bomb' };
+export const BOOSTER_NAMES: Record<BoosterId, string> = { slot: 'Extra slot', shuffle: 'Shuffle', pickup: 'Pick up', vacuum: 'Vacuum' };
 
 interface Cell {
     id: string;

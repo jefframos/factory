@@ -7,16 +7,28 @@
 import { AntSave, DecoKind } from './AntSave';
 import type { BoosterId } from '../ui/BoosterBelt';
 
-/** A level's coins: more for later ones; a replay of a level already won pays REPLAY of that. */
-const REWARD = { base: 20, perLevel: 3, replay: 0.25 };
+/** design.txt: every level ending in 5 is a hard one, every tenth a super hard one. */
+export type LevelTier = 'normal' | 'hard' | 'super';
 
-export function levelReward(index: number, replay: boolean): number {
-    const full = REWARD.base + REWARD.perLevel * index;
-    return replay ? Math.max(1, Math.round(full * REWARD.replay)) : full;
+export function levelTier(index: number): LevelTier {
+    const number = index + 1;
+    return number % 10 === 0 ? 'super' : number % 5 === 0 ? 'hard' : 'normal';
 }
 
-/** One more of a power-up, for this many coins. */
-export const BOOSTER_PRICES: Record<BoosterId, number> = { slot: 60, shuffle: 80, hammer: 100, bomb: 120 };
+/** A level's coins by its tier (design.txt); a replay of a level already won pays REPLAY of that. */
+const REWARD: Record<LevelTier, number> = { normal: 20, hard: 40, super: 100 };
+const REPLAY = 0.25;
+
+export function levelReward(index: number, replay: boolean): number {
+    const full = REWARD[levelTier(index)];
+    return replay ? Math.max(1, Math.round(full * REPLAY)) : full;
+}
+
+/** A level won without a power-up: the chance of a free one (one of those unlocked). */
+export const FREE_DROP_CHANCE = 0.55;
+
+/** One more of a power-up, for this many coins (design.txt). */
+export const BOOSTER_PRICES: Record<BoosterId, number> = { slot: 40, shuffle: 40, pickup: 50, vacuum: 60 };
 
 export interface Background {
     id: string;

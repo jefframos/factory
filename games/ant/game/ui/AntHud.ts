@@ -11,7 +11,8 @@ import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { LevelData, pixelsOf } from '../data/Levels';
-import { BoosterBelt } from './BoosterBelt';
+import { BOOSTERS, BoosterBelt, BoosterId } from './BoosterBelt';
+import type { LevelTier } from '../data/Shop';
 import { PausePopup } from './PausePopup';
 import { TutorialOverlay } from './TutorialOverlay';
 import { COIN_BAR, FONT, buttonParts, fillCoinBar, iconSprite, label as kitLabel, roundButton, tappable } from './UiParts';
@@ -25,6 +26,10 @@ const SPEED = { width: 116, height: 58, x: 74 };
 /** The celebration card: its size, and where its pieces sit (y, from its middle). */
 const WIN = { width: 500, height: 660, headingY: -275, starsY: -200, star: 64, middleStar: 84, picture: 210, pictureY: -40, nameY: 108, coinsY: 166, nextY: 252 };
 /** The coins won: the coin bar shown over the dim, the coins flying up to it (how many, how far apart, how long). */
+/** The tag under the title on a hard / super hard level (design.txt). */
+const TIER_TAG: Record<LevelTier, { text: string; color: number } | null> = {
+    normal: null, hard: { text: 'HARD', color: 0xff9f3a }, super: { text: 'SUPER HARD', color: 0xff4d6d },
+};
 const COIN_FLIGHT = { barY: 112, count: 10, gap: 0.06, seconds: 0.55, size: 40, startAt: 1.2 };
 const BROWN = 0x6b3f22;
 
@@ -48,6 +53,7 @@ function button(text: string, frame: string, width: number, onTap: () => void): 
 
 export class AntHud extends PIXI.Container {
     /** "Level N": the reference's plain brown title. */
+    private readonly tierTag = kitLabel(24);
     private readonly title = new PIXI.Text('', { fontFamily: FONT, fontSize: 46, fill: 0x7b4a28, fontWeight: '900', lineJoin: 'round' });
     private readonly pause: PIXI.Container;
     private pausePopup: PausePopup | null = null;
@@ -91,7 +97,7 @@ export class AntHud extends PIXI.Container {
         this.rays.visible = false;
         fillCoinBar(this.coinBar, this.coinText);
         this.coinBar.visible = false;
-        this.addChild(this.title, this.speed, this.belt, this.pause, this.dim, this.rays, this.card, this.coinBar, this.flying, this.confetti, this.tutorial);
+        this.addChild(this.title, this.tierTag, this.speed, this.belt, this.pause, this.dim, this.rays, this.card, this.coinBar, this.flying, this.confetti, this.tutorial);
         this.reposition();
     }
 
@@ -147,7 +153,7 @@ export class AntHud extends PIXI.Container {
 
     /** One owned, and not used this level yet (a sixth slot is all there's room for). */
     public get extraSlotAvailable(): boolean {
-        return !this.extraUsed && AntSave.boosters('slot') > 0;
+        return this.belt.unlocked('slot') && !this.extraUsed && AntSave.boosters('slot') > 0;
     }
 
     /** The pause popup up (`actions` from its buttons and its close cross), or down. */
@@ -162,9 +168,17 @@ export class AntHud extends PIXI.Container {
         this.pausePopup = null;
     }
 
-    public setLevel(number: number): void {
+    /** The level being played: its title (and tier's tag); the belt only once the first power-up's unlocked. */
+    public setLevel(number: number, tier: LevelTier = 'normal'): void {
         this.title.text = `Level ${number}`;
+        const tag = TIER_TAG[tier];
+        this.tierTag.visible = !!tag;
+        if (tag) {
+            this.tierTag.text = tag.text;
+            this.tierTag.style.fill = tag.color;
+        }
         this.belt.setLevel(number);
+        this.belt.visible = number >= BOOSTERS[0].unlock;
     }
 
     /** The end-of-level card: `won` shows NEXT, otherwise TRY AGAIN; `onButton` from its button. Lost with the
@@ -208,9 +222,9 @@ export class AntHud extends PIXI.Container {
     /**
      * A picture is done: the screen dims behind slowly turning golden rays, confetti in the picture's colours bursts
      * over it, and the card pops in — LEVEL COMPLETE!, three gold stars landing one after another, the finished picture,
-     * the coins won (`reward`) — and then the coins fly up to the coin bar, which counts up to the player's coins; NEXT.
+     * the coins won (`reward`) and a free power-up (`drop`, if one dropped) — and then the coins fly up to the coin bar, which counts up to the player's coins; NEXT.
      */
-    public celebrate(level: LevelData, reward: number, onNext: () => void): void {
+    public celebrate(level: LevelData, reward: number, drop: BoosterId | null, onNext: () => void): void {
         this.card.removeChildren().forEach((child) => child.destroy({ children: true }));
         const back = new PIXI.Graphics()
             .beginFill(0x8a5530).drawRoundedRect(-WIN.width / 2, -WIN.height / 2 + 8, WIN.width, WIN.height, 40).endFill()
@@ -245,6 +259,21 @@ export class AntHud extends PIXI.Container {
         amount.x = coin.x + 32;
         coins.addChild(coin, amount);
         coins.y = WIN.coinsY;
+        // A free power-up beside the coins: its button, +1.
+        const free = new PIXI.Container();
+        if (drop) {
+            const icon = BOOSTERS.find((b) => b.id === drop)?.icon ?? 'PictoIcon_Plus_1';
+            const button = roundButton('Button_Round02_Blue', icon, 58);
+            const plus = kitLabel(36, 0x7ff0a8);
+            plus.text = '+1';
+            plus.anchor.set(0, 0.5);
+            plus.x = 38;
+            free.addChild(button, plus);
+            free.position.set(90, WIN.coinsY);
+            coins.x = -90;
+            free.scale.set(0);
+            gsap.to(free.scale, { x: 1, y: 1, duration: 0.4, delay: 1.1, ease: 'back.out(3)' });
+        }
         AntAudio.play('win');
         AntAudio.play('applause');
         const next = button('NEXT', 'Button01_l_Green', 280, () => {
@@ -252,7 +281,7 @@ export class AntHud extends PIXI.Container {
             onNext();
         });
         next.y = WIN.nextY;
-        this.card.addChild(back, heading, picture, stars, name, coins, next);
+        this.card.addChild(back, heading, picture, stars, name, coins, free, next);
         this.dim.visible = true;
         this.card.visible = true;
         gsap.fromTo(this.card.scale, { x: 0.5, y: 0.5 }, { x: 1, y: 1, duration: 0.5, ease: 'back.out(1.8)' });
@@ -378,6 +407,7 @@ export class AntHud extends PIXI.Container {
         const screen = Game.overlayScreenData;
         if (!screen) return;
         this.title.position.set(screen.center.x, screen.topLeft.y + PAUSE.margin);
+        this.tierTag.position.set(screen.center.x, this.title.y + 38);
         // Pause top-left, the title in the middle, x2 top-right (the reference's corners).
         this.pause.position.set(screen.topLeft.x + PAUSE.margin, screen.topLeft.y + PAUSE.margin);
         this.pausePopup?.reposition();
