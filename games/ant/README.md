@@ -85,7 +85,7 @@ Set `GAME=ant` in `.env`, then from the repo root:
 | `npm run editor` | The **level editor** on `:4720` (see below). |
 | `npm run ant:pixelate` | Turns every picture in `raw-assets/pictures` into a level (see below). `npm run ant:pixelate -- mushroom` does one. |
 
-On the dev server (or with `?dev=1`) the **Ant** debug panel has: a level dropdown, ant speed and the time between
+With `?dev=1` (or `?debug=1`) the **Ant** debug panel has: a level dropdown, ant speed and the time between
 ants (live), RESTART / WIN LEVEL / NEXT / +1 SLOT, the level's baked check, and pixels left, ants out, each slot's
 count. The feel's defaults are in
 `game/data/Tuning.ts` (slow and steady: cozy).

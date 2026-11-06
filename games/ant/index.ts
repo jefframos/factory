@@ -54,8 +54,8 @@ export default class AntGame extends Game {
             PlatformHandler.ENABLE_VIDEO_ADS = config?.enableAds ?? true;
             await PlatformHandler.instance.initialize(await getPlatformInstance(platformName));
             PlatformHandler.instance.platform.startLoad();
-            // The debug panels: on the dev server, or with ?dev=1 / ?debug=1.
-            DebugOverlay.instance.initialize(Boolean(import.meta.env.DEV || Game.debugParams.dev || Game.debugParams.debug), 'ant');
+            // The debug panels: only with ?dev=1 / ?debug=1 (as UFO's), not just for being on the dev server.
+            DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'ant');
             this.stageContainer.addChild(this.gameContainer);
             this.sceneManager = new SceneManager(this.gameContainer);
             await Promise.all(FONTS.map(async (family) => {
