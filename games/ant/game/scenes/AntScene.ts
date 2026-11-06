@@ -84,8 +84,8 @@ const INTRO_AFTER_TAP_MS = 700;
 
 /** What to tap, for a power-up waiting for its target. */
 const BOOSTER_HINTS: Partial<Record<BoosterId, string>> = {
-    pickup: 'Tap a tile in a slot to put it back',
-    vacuum: 'Tap a colour to vacuum it all away',
+    pickup: 'Tap a tile in a slot\nto put it back',
+    vacuum: 'Tap a colour\nto vacuum it all away',
 };
 /** The tutorial: how long it waits after a tap before pointing at the next tile, how big its hole is (x a tile), and
  *  what it says. */
@@ -490,6 +490,7 @@ export default class AntScene extends ThreeScene {
     /** The pause popup: time stops; its cross plays on, RETRY starts the level again, HOME goes to the main screen. */
     private openPause(): void {
         if (this.ended || this.paused) return;
+        if (this.armed) this.cancelArmed();
         this.paused = true;
         this.resumeScale = Game.timeScale;
         Game.timeScale = 0;
@@ -525,8 +526,8 @@ export default class AntScene extends ThreeScene {
         });
     }
 
-    /** A power-up from the belt (not the extra slot): shuffle at once; pick up and vacuum wait for their target (tap the
-     *  power-up again to put it away). */
+    /** A power-up from the belt (not the extra slot): shuffle at once; pick up and vacuum stop the game and wait for
+     *  their target, everything but it dark (a tap outside puts the power-up away, unspent). */
     private useBooster(id: BoosterId): void {
         if (this.ended || this.paused || !this.sides.length) return;
         if (id === 'shuffle') {
@@ -535,8 +536,60 @@ export default class AntScene extends ThreeScene {
             AntAudio.play('whoosh');
             return;
         }
-        this.armed = this.armed === id ? null : id;
-        this.hud.showHint(this.armed ? BOOSTER_HINTS[this.armed] ?? null : null);
+        // Pick up needs a tile in a slot with ants still to send.
+        if (id === 'pickup' && !this.sides.some((side) => side.slots.some((slot) => slot && slot.left > 0))) {
+            AntAudio.play('full');
+            this.hud.showHint('Put a tile in a slot first');
+            window.setTimeout(() => this.hud.showHint(null), 1800);
+            return;
+        }
+        this.armed = id;
+        this.focusArmed();
+    }
+
+    /** The waiting power-up's target, lit (all else dark): the slots (pick up), the picture (vacuum); the hand on it. */
+    private focusArmed(): void {
+        if (!this.armed || !this.picture) return;
+        const corners: THREE.Vector3[] = [];
+        const hand = new THREE.Vector3();
+        if (this.armed === 'pickup') {
+            for (const side of this.sides) {
+                const half = (LAYOUT.tile / 2 + 0.4) * side.rack.scale;
+                const first = side.rack.slotWorld(0);
+                const last = side.rack.slotWorld(side.rack.slotCount - 1);
+                corners.push(new THREE.Vector3(first.x - half, 1, first.z - half), new THREE.Vector3(last.x + half, 1, last.z + half));
+            }
+            // The hand on a tile there's something to pick up from.
+            for (const side of this.sides) {
+                const s = side.slots.findIndex((slot) => slot && slot.left > 0);
+                if (s >= 0) {
+                    side.rack.slotWorld(s, hand).setY(1.6);
+                    break;
+                }
+            }
+        } else {
+            const { group, width, depth } = this.picture;
+            const rim = LAYOUT.rim;
+            corners.push(new THREE.Vector3(group.position.x - rim, TRAY_TOP, group.position.z - rim),
+                new THREE.Vector3(group.position.x + width + rim, TRAY_TOP, group.position.z + depth + rim));
+            hand.set(group.position.x + width / 2, TRAY_TOP + this.picture.blockTop, group.position.z + depth / 2);
+        }
+        // The corners on screen (the near edge looks wider through the tilt: both rows of corners count).
+        const points = corners.flatMap((c) => [c, new THREE.Vector3(corners[0].x, c.y, c.z), new THREE.Vector3(c.x, c.y, corners[0].z)])
+            .map((c) => this.worldToScreen(c)).filter((p): p is { x: number; y: number } => !!p);
+        const at = this.worldToScreen(hand);
+        if (!points.length || !at) return;
+        const area = {
+            left: Math.min(...points.map((p) => p.x)), right: Math.max(...points.map((p) => p.x)),
+            top: Math.min(...points.map((p) => p.y)), bottom: Math.max(...points.map((p) => p.y)),
+        };
+        this.hud.showFocus(area, at, BOOSTER_HINTS[this.armed] ?? '', () => this.cancelArmed());
+    }
+
+    /** The waiting power-up put away (not spent): the game goes on. */
+    private cancelArmed(): void {
+        this.armed = null;
+        this.hud.hideTutorial();
     }
 
     /** One of a power-up used. */
@@ -580,7 +633,7 @@ export default class AntScene extends ThreeScene {
 
     private disarm(id: BoosterId): void {
         this.armed = null;
-        this.hud.showHint(null);
+        this.hud.hideTutorial();
         this.spend(id);
     }
 
@@ -653,12 +706,15 @@ export default class AntScene extends ThreeScene {
 
     private readonly onWindowResize = (): void => {
         if (this.picture) this.fitCamera();
+        if (this.armed) this.focusArmed();
     };
 
     // ---------------------------------------------------------------- play
 
     public fixedUpdate(delta: number): void {
         if (!this.swarm || !this.picture || !this.sides.length) return;
+        // A power-up waiting for its target: everything stands still (no ant gets there first, no tile leaves).
+        if (this.armed) return;
         for (const side of this.sides) {
             side.slots.forEach((slot, s) => {
                 if (!slot) return;

@@ -1,8 +1,9 @@
 // TutorialOverlay.ts
 //
-// The first-time tutorial's look (AntScene runs it): the screen darkens all but a round hole over the tile to tap, the
-// pack's hand points at it, bobbing, and a bubble over it says what to do. The dark eats taps on the UI under it; the
-// scene only lets the highlighted tile be taken.
+// The tutorial's look (AntScene runs it): the screen darkens all but a hole — round over a tile or a button, or a
+// rectangle (showArea(): the slots, the picture, for a power-up waiting for its target) — the pack's hand points at it,
+// bobbing, and a bubble over it says what to do. Taps in the hole go through to what's under it; the dark eats the rest
+// (`onTap`, if set, hears them: carry on, or put a power-up away).
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
@@ -40,6 +41,9 @@ export class TutorialOverlay extends PIXI.Container {
         back.position.set(-BUBBLE.width / 2, -BUBBLE.height / 2);
         this.words.style.align = 'center';
         this.bubble.addChild(back, this.words);
+        // The hand and the words over the hole never take a tap meant for what's in it.
+        this.hand.eventMode = 'none';
+        this.bubble.eventMode = 'none';
         this.eventMode = 'none';
         this.visible = false;
         this.addChild(this.dim, this.bubble, this.hand);
@@ -47,23 +51,36 @@ export class TutorialOverlay extends PIXI.Container {
 
     /** Shows the hole at (`x`, `y`) (this container's units), `radius` round, the hand on it and `text` over it. */
     public show(x: number, y: number, radius: number, text: string): void {
+        this.draw((g) => g.drawCircle(x, y, radius), (px, py) => Math.hypot(px - x, py - y) <= radius, x, y - radius, text, x, y);
+    }
+
+    /** A rectangular hole (`x`, `y` its top left), the bubble over it, the hand at (`handX`, `handY`). */
+    public showArea(x: number, y: number, width: number, height: number, text: string, handX: number, handY: number): void {
+        this.draw((g) => g.drawRoundedRect(x, y, width, height, 24), (px, py) => px >= x && px <= x + width && py >= y && py <= y + height,
+            x + width / 2, y, text, handX, handY);
+    }
+
+    /** The dark round `hole` (drawn by `shape`, `inside` it for taps), the bubble over (`topX`, `topY`), the hand. */
+    private draw(shape: (g: PIXI.Graphics) => void, inside: (x: number, y: number) => boolean, topX: number, topY: number, text: string, pointX: number, pointY: number): void {
         const screen = Game.overlayScreenData;
         if (!screen) return;
         const first = !this.visible;
         this.visible = true;
         this.eventMode = 'static';
         const margin = 400;
-        this.dim.clear()
-            .beginFill(DIM.color, DIM.alpha)
+        this.dim.clear().beginFill(DIM.color, DIM.alpha)
             .drawRect(screen.topLeft.x - margin, screen.topLeft.y - margin, screen.width + margin * 2, screen.height + margin * 2)
-            .beginHole().drawCircle(x, y, radius).endHole()
-            .endFill()
-            .lineStyle(DIM.ringWidth, DIM.ring, 0.9).drawCircle(x, y, radius);
+            .beginHole();
+        shape(this.dim);
+        this.dim.endHole().endFill().lineStyle(DIM.ringWidth, DIM.ring, 0.9);
+        shape(this.dim);
+        // Taps in the hole go through (to the button or tile there).
+        this.dim.hitArea = { contains: (x: number, y: number) => !inside(x, y) };
         this.words.text = text;
-        const bubbleY = y - radius - BUBBLE.above - BUBBLE.height / 2;
-        this.bubble.position.set(Math.max(screen.topLeft.x + BUBBLE.width / 2 + 10, Math.min(screen.topLeft.x + screen.width - BUBBLE.width / 2 - 10, x)), bubbleY);
-        const handX = x + HAND.x;
-        const handY = y + HAND.y;
+        const bubbleY = topY - BUBBLE.above - BUBBLE.height / 2;
+        this.bubble.position.set(Math.max(screen.topLeft.x + BUBBLE.width / 2 + 10, Math.min(screen.topLeft.x + screen.width - BUBBLE.width / 2 - 10, topX)), bubbleY);
+        const handX = pointX + HAND.x;
+        const handY = pointY + HAND.y;
         if (first || !this.bob || Math.hypot(this.handAt.x - handX, this.handAt.y - handY) > 2) {
             this.bob?.kill();
             this.handAt.set(handX, handY);

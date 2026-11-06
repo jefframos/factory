@@ -99,6 +99,8 @@ export class AntHud extends PIXI.Container {
         tappable(this.pause, () => this.onPause(), null);
         this.buildSpeed();
         this.belt = new BoosterBelt((id) => {
+            // Used from the hand's pointing (its first time): the dark goes, so the power-up can be seen working.
+            this.hideTutorial();
             if (id === 'slot') {
                 if (!this.extraUsed) this.onExtraSlot();
             } else {
@@ -164,6 +166,22 @@ export class AntHud extends PIXI.Container {
         this.tutorial.hide();
         this.tutorial.onTap = null;
         this.pointTimer?.kill();
+    }
+
+    /**
+     * A power-up waiting for its target: the dark over all but `area` (window pixels: the 3D view's, worldToScreen()),
+     * the hand at `hand`, `text` over it. A tap outside it calls `onCancel` (the power-up's put away).
+     */
+    public showFocus(area: { left: number; top: number; right: number; bottom: number }, hand: { x: number; y: number }, text: string, onCancel: () => void): void {
+        const a = this.toLocal(new PIXI.Point(area.left, area.top));
+        const b = this.toLocal(new PIXI.Point(area.right, area.bottom));
+        const h = this.toLocal(new PIXI.Point(hand.x, hand.y));
+        this.pointTimer?.kill();
+        this.tutorial.showArea(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y), text, h.x, h.y);
+        this.tutorial.onTap = () => {
+            this.hideTutorial();
+            onCancel();
+        };
     }
 
     /** A new mechanic's card (IntroCard); `onDone` from its GOT IT. */
