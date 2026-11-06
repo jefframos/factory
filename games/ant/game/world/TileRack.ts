@@ -19,7 +19,9 @@ export const SLOT_COUNT = 5;
 const TILE = LAYOUT.tile;
 const BOTTOM_HEIGHT = 1.05;
 const TOP_HEIGHT = 0.95;
-const PLATE = { size: LAYOUT.tile + 0.45, height: 0.28 };
+/** The plate: the tile's own rounded square a little bigger (its rim shows round the tile like a white stroke), with
+ *  a soft lip under it. */
+const PLATE = { size: LAYOUT.tile + 0.3, corner: 0.42 + 0.15, height: 0.28, lip: 0.06, color: 0xfffaf3, lipColor: 0xd9cdbf };
 /** Rows shown per column; from FADE_FROM back, tiles sit FADE_DROP lower. Every tile that can't be taken (all but the
  *  front row) has its number at FADE_OPACITY. */
 const VISIBLE_ROWS = 4;
@@ -45,15 +47,30 @@ export interface RackTile {
     column: number;
 }
 
-/** A white plate with a grey lip (a slot, or what a front-row tile stands on). */
+/** A white plate with a grey lip (a slot, or what a front-row tile stands on), from y = 0 up to PLATE.height. */
 function plate(geometry: THREE.BufferGeometry, lip: THREE.BufferGeometry, white: THREE.Material, grey: THREE.Material): THREE.Group {
     const group = new THREE.Group();
+    // The lip a little lower, so it shows as a soft rim under the white.
     const under = new THREE.Mesh(lip, grey);
-    under.position.y = PLATE.height / 2 - 0.06;
+    under.position.y = -PLATE.lip;
     const top = new THREE.Mesh(geometry, white);
-    top.position.y = PLATE.height / 2;
     group.add(under, top);
     return group;
+}
+
+/** A flat rounded square, `size` across with `corner` rounding (as seen from above), `height` thick, lying on y = 0. */
+function slab(size: number, corner: number, height: number): THREE.BufferGeometry {
+    const h = size / 2;
+    const shape = new THREE.Shape()
+        .moveTo(-h + corner, -h).lineTo(h - corner, -h).quadraticCurveTo(h, -h, h, -h + corner)
+        .lineTo(h, h - corner).quadraticCurveTo(h, h, h - corner, h)
+        .lineTo(-h + corner, h).quadraticCurveTo(-h, h, -h, h - corner)
+        .lineTo(-h, -h + corner).quadraticCurveTo(-h, -h, -h + corner, -h);
+    const bevel = Math.min(0.06, height / 3);
+    const geometry = new THREE.ExtrudeGeometry(shape, { depth: height - bevel * 2, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2, curveSegments: 8 });
+    geometry.rotateX(-Math.PI / 2);
+    geometry.translate(0, bevel, 0);
+    return geometry;
 }
 
 export class TileRack {
@@ -64,12 +81,13 @@ export class TileRack {
     private readonly slotted = new Map<RackTile, number>();
     private readonly bottomGeometry = new RoundedBoxGeometry(TILE, BOTTOM_HEIGHT, TILE, 3, 0.42);
     private readonly topGeometry = new RoundedBoxGeometry(TILE * 0.98, TOP_HEIGHT, TILE * 0.9, 3, 0.4);
-    private readonly plateGeometry = new RoundedBoxGeometry(PLATE.size, PLATE.height, PLATE.size, 3, 0.4);
-    private readonly lipGeometry = new RoundedBoxGeometry(PLATE.size + 0.08, PLATE.height, PLATE.size + 0.12, 3, 0.42);
+    private readonly plateGeometry = slab(PLATE.size, PLATE.corner, PLATE.height);
+    private readonly lipGeometry = slab(PLATE.size + PLATE.lip * 2, PLATE.corner + PLATE.lip, PLATE.height);
     private readonly labelGeometry = new THREE.PlaneGeometry(TILE * 0.98, TILE * 0.78);
     // Warm off-white plates (not pure white: easy on the eyes).
-    private readonly white = new THREE.MeshStandardMaterial({ color: 0xfbf1e6, roughness: 0.5 });
-    private readonly grey = new THREE.MeshStandardMaterial({ color: 0xc9c2bb, roughness: 0.7 });
+    // Nearly white (not pure white: easy on the eyes), its lip a soft warm grey.
+    private readonly white = new THREE.MeshStandardMaterial({ color: PLATE.color, roughness: 0.45 });
+    private readonly grey = new THREE.MeshStandardMaterial({ color: PLATE.lipColor, roughness: 0.7 });
 
     public constructor(private readonly palette: string[], deck: Tile[], private readonly columnCount: number) {
         this.columns = Array.from({ length: columnCount }, () => []);
