@@ -46,6 +46,11 @@ and one side can wait on the other; the extra slot goes to the side with fewer f
 neither side can do anything). Hard levels (ending in 5) and super hard ones (every tenth) are tagged
 and pay more.
 
+**First appearances** — each power-up and obstacle is explained the first time it turns up (`AntScene`'s
+INTRODUCTIONS, `ui/IntroCard.ts`): play stops for a card (NEW POWER-UP! / NEW OBSTACLE!, its picture, name, how it
+works, GOT IT); a power-up's then pointed out on the belt by the hand (and given, if the player has none). Seen once
+(saved); RESET DATA shows them again.
+
 **Coins and shops** (`data/Shop.ts`, saved in `data/AntSave.ts`). A finished level pays coins — 20 + 3 per level the
 first time, a quarter of that for a replay — shown on the celebration card, flying up to the coin bar. The power-ups'
 shop sells one more of a power-up already unlocked (the belt's badges are how many you have: the extra slot uses one,

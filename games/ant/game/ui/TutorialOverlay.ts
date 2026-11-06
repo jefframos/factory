@@ -22,12 +22,17 @@ export class TutorialOverlay extends PIXI.Container {
     private bob?: gsap.core.Tween;
     /** Where the hand was put (it bobs from there): it starts over only when the tile it points at has moved. */
     private readonly handAt = new PIXI.Point(NaN, NaN);
+    /** A tap anywhere on the dark (when set): pointing out a button, any tap carries on. */
+    public onTap: (() => void) | null = null;
 
     public constructor() {
         super();
         this.dim.eventMode = 'static';
         this.dim.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
-        this.dim.on('pointertap', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
+        this.dim.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
+            event.stopPropagation();
+            this.onTap?.();
+        });
         // The fingertip's where the hand is placed.
         this.hand.anchor.set(0.22, 0.2);
         const back = framePlane('BasicFrame_Round20', BUBBLE.width, BUBBLE.height);

@@ -106,6 +106,12 @@ export class BoosterBelt extends PIXI.Container {
         if (ready) this.onUse(button.id);
     }
 
+    /** Where a power-up's button is (this belt's parent's units). */
+    public buttonAt(id: BoosterId): PIXI.Point {
+        const button = this.buttons.find((b) => b.id === id);
+        return new PIXI.Point(this.x + (button?.holder.x ?? 0), this.y + (button?.holder.y ?? 0));
+    }
+
     /** Unlocked at the level being played. */
     public unlocked(id: BoosterId): boolean {
         return this.level >= (BOOSTERS.find((b) => b.id === id)?.unlock ?? Infinity);

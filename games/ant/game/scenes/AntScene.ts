@@ -23,6 +23,8 @@
 // hidden (a ? until they reach the front), from level 12 some are locked (until enough tiles have been taken).
 // Power-ups (the belt): the extra slot; shuffle mixes the tiles not taken yet; pick up puts a slot's tile back (tap
 // it); vacuum takes every block of a colour off the picture, and its tiles with them (tap a block or a tile).
+// Each new mechanic is explained the first time it turns up (INTRODUCTIONS: a card, then — a power-up — the hand on its
+// button, and one to try if the player has none).
 // From level 18 (then every third level) the board's split (design.txt's second nest): the picture stays whole, but its
 // left and right halves each have their own anthill, slots and tile columns under them — a side's tiles' ants only take
 // its half's pixels. Dealt as one (Board.dealSplit): the halves touch, so one side can wait on the other.
@@ -45,6 +47,8 @@ import { TileRack, RackTile, SLOT_COUNT } from '../world/TileRack';
 import { LAYOUT } from '../world/Layout';
 import { vivid } from '../world/Vivid';
 import { AntHud } from '../ui/AntHud';
+import * as PIXI from 'pixi.js';
+import { label as kitLabel, roundButton } from '../ui/UiParts';
 import { AntAudio } from '../audio/AntAudio';
 import { RadialTransition } from '../ui/RadialTransition';
 
@@ -63,6 +67,17 @@ const END_RUSH = { speed: 3, seconds: 0.6 };
  *  before it in the deal have been taken. */
 const HIDDEN = { level: 8, every: 3, offset: 1 };
 const LOCKED = { level: 12, every: 5, offset: 2 };
+/** Each mechanic's first appearance: its level, what the card says, and — a power-up — which one (it's pointed out). */
+const INTRODUCTIONS: { level: number; key: string; booster?: BoosterId; name: string; text: string }[] = [
+    { level: 3, key: 'slot', booster: 'slot', name: 'EXTRA SLOT', text: 'Every slot full? Tap this for a sixth one — once a level.' },
+    { level: 4, key: 'shuffle', booster: 'shuffle', name: 'SHUFFLE', text: 'Mixes up every tile still waiting. Handy when the front row has nothing you can use.' },
+    { level: 6, key: 'pickup', booster: 'pickup', name: 'PICK UP', text: 'Tap it, then a tile in a slot: it goes back to the rack, with the ants it hasn\'t sent.' },
+    { level: 8, key: 'hidden', name: 'HIDDEN TILES', text: 'Some tiles are face down. You\'ll see their colour when they reach the front row.' },
+    { level: 9, key: 'vacuum', booster: 'vacuum', name: 'VACUUM', text: 'Tap it, then a colour: every block of it comes off the picture, and its tiles go too.' },
+    { level: 12, key: 'locked', name: 'LOCKED TILES', text: 'A locked tile shows how many more tiles must go before it opens. Plan round it!' },
+    { level: SPLIT.from, key: 'split', name: 'SPLIT BOARD', text: 'Two anthills! Tiles on the left fetch only the left half\'s pixels, tiles on the right the right half\'s.' },
+];
+
 /** What to tap, for a power-up waiting for its target. */
 const BOOSTER_HINTS: Partial<Record<BoosterId, string>> = {
     pickup: 'Tap a tile in a slot to put it back',
@@ -343,6 +358,53 @@ export default class AntScene extends ThreeScene {
             return TRAY_TOP + (i >= 0 && this.board.colors[i] >= 0 ? picture.blockTop : 0);
         }, (ant) => this.pickUp(ant), () => undefined);
         this.fitCamera();
+        this.introduce();
+    }
+
+    /** This level's new mechanic, if it has one the player hasn't been shown: play stops for its card; after GOT IT a
+     *  power-up is pointed out on the belt (one to try, if they have none). */
+    private introduce(): void {
+        const intro = INTRODUCTIONS.find((i) => i.level === this.levelIndex + 1 && !AntSave.explained(i.key));
+        if (!intro) return;
+        this.paused = true;
+        this.resumeScale = Game.timeScale;
+        Game.timeScale = 0;
+        const picture = this.introPicture(intro.key, intro.booster);
+        this.hud.showIntro(intro.booster ? 'NEW POWER-UP!' : 'NEW OBSTACLE!', picture, intro.name, intro.text, () => {
+            AntSave.markExplained(intro.key);
+            this.paused = false;
+            Game.timeScale = this.resumeScale;
+            if (!intro.booster) return;
+            if (AntSave.boosters(intro.booster) === 0) AntSave.addBooster(intro.booster, 1);
+            this.hud.refreshBelt();
+            this.hud.pointAtBooster(intro.booster, 'Tap it when you need it');
+        });
+    }
+
+    /** An intro card's picture: the power-up's button, or the obstacle drawn small. */
+    private introPicture(key: string, booster?: BoosterId): PIXI.Container {
+        if (booster) return roundButton('Button_Round02_Blue', BOOSTERS.find((b) => b.id === booster)?.icon ?? 'PictoIcon_Plus_1', 110);
+        const holder = new PIXI.Container();
+        if (key === 'hidden') {
+            holder.addChild(new PIXI.Graphics().beginFill(0x6b7088).drawRoundedRect(-54, -44, 108, 96, 22).endFill().beginFill(0x9aa1b8).drawRoundedRect(-54, -50, 108, 92, 22).endFill());
+            const mark = kitLabel(70);
+            mark.text = '?';
+            mark.y = -6;
+            holder.addChild(mark);
+        } else if (key === 'locked') {
+            holder.addChild(new PIXI.Graphics().beginFill(0x3a2f45).drawRoundedRect(-54, -44, 108, 96, 22).endFill().beginFill(0x5c4f6b).drawRoundedRect(-54, -50, 108, 92, 22).endFill());
+            const lock = PIXI.Sprite.from('Icon_Lock01_l');
+            lock.anchor.set(0.5);
+            lock.scale.set(64 / Math.max(lock.texture.width, lock.texture.height, 1));
+            lock.y = -6;
+            holder.addChild(lock);
+        } else {
+            // Two anthills.
+            const g = new PIXI.Graphics();
+            for (const x of [-56, 56]) g.beginFill(0xb07a50).drawEllipse(x, 0, 46, 30).endFill().beginFill(0x3a2213).drawEllipse(x, 0, 34, 20).endFill();
+            holder.addChild(g);
+        }
+        return holder;
     }
 
     /** Tiles of about 1/90 to 1/25 of a grid of `cells`, as the solver deals them. */

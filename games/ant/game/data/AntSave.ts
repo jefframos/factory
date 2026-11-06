@@ -14,6 +14,8 @@ export type DecoKind = 'background' | 'frame';
 
 interface SaveData {
     tutorialDone: boolean;
+    /** The mechanics already explained (their first time: AntScene's intro cards). */
+    explained: string[];
     level: number;
     won: number[];
     coins: number;
@@ -25,6 +27,7 @@ interface SaveData {
 /** What a new player starts with: a couple of starter power-ups (design.txt), the default background and frame. */
 const START: SaveData = {
     tutorialDone: false,
+    explained: [],
     level: 0,
     won: [],
     coins: 0,
@@ -38,6 +41,7 @@ function load(): SaveData {
         const saved = JSON.parse(window.localStorage.getItem(KEY) ?? 'null') as Partial<SaveData> | null;
         return {
             tutorialDone: saved?.tutorialDone ?? false,
+            explained: saved?.explained ?? [],
             level: Math.max(0, Math.floor(saved?.level ?? 0)),
             won: saved?.won ?? [],
             coins: Math.max(0, Math.floor(saved?.coins ?? 0)),
@@ -68,6 +72,16 @@ export const AntSave = {
 
     finishTutorial(): void {
         state.tutorialDone = true;
+        save();
+    },
+
+    explained(key: string): boolean {
+        return state.explained.includes(key);
+    },
+
+    markExplained(key: string): void {
+        if (state.explained.includes(key)) return;
+        state.explained.push(key);
         save();
     },
 

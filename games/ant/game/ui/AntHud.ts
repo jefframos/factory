@@ -15,6 +15,7 @@ import { BOOSTERS, BoosterBelt, BoosterId } from './BoosterBelt';
 import type { LevelTier } from '../data/Shop';
 import { PausePopup } from './PausePopup';
 import { TutorialOverlay } from './TutorialOverlay';
+import { IntroCard } from './IntroCard';
 import { COIN_BAR, FONT, buttonParts, fillCoinBar, framePlane, iconSprite, label as kitLabel, roundButton, tappable } from './UiParts';
 import { AntSave } from '../data/AntSave';
 import { AntAudio } from '../audio/AntAudio';
@@ -76,6 +77,9 @@ export class AntHud extends PIXI.Container {
     private coinTweens: gsap.core.Animation[] = [];
     /** The first-time tutorial's dark, hand and words (over everything). */
     private readonly tutorial = new TutorialOverlay();
+    private intro: IntroCard | null = null;
+    /** Pointing out a power-up's button: when it lets go by itself. */
+    private pointTimer?: gsap.core.Tween;
     private readonly card = new PIXI.Container();
     private readonly dim = new PIXI.Graphics();
     /** The celebration's turning rays and falling confetti (behind / over the card). */
@@ -158,6 +162,29 @@ export class AntHud extends PIXI.Container {
 
     public hideTutorial(): void {
         this.tutorial.hide();
+        this.tutorial.onTap = null;
+        this.pointTimer?.kill();
+    }
+
+    /** A new mechanic's card (IntroCard); `onDone` from its GOT IT. */
+    public showIntro(heading: string, picture: PIXI.Container, name: string, text: string, onDone: () => void): void {
+        this.intro?.destroy();
+        this.intro = new IntroCard(heading, picture, name, text, () => {
+            this.intro?.destroy();
+            this.intro = null;
+            onDone();
+        });
+        this.addChild(this.intro);
+    }
+
+    /** The dark with a hole over a power-up's belt button and the hand on it, `text` over it; any tap (or a few
+     *  seconds) lets it go. */
+    public pointAtBooster(id: BoosterId, text: string): void {
+        const at = this.belt.buttonAt(id);
+        this.tutorial.show(at.x, at.y, 56, text);
+        this.tutorial.onTap = () => this.hideTutorial();
+        this.pointTimer?.kill();
+        this.pointTimer = gsap.delayedCall(4, () => this.hideTutorial());
     }
 
     /** What to tap for a power-up waiting for its target (null: gone). */
@@ -447,6 +474,7 @@ export class AntHud extends PIXI.Container {
         // Pause top-left, the title in the middle, x2 top-right (the reference's corners).
         this.pause.position.set(screen.topLeft.x + PAUSE.margin, screen.topLeft.y + PAUSE.margin);
         this.pausePopup?.reposition();
+        this.intro?.reposition();
         this.speed.position.set(screen.topLeft.x + screen.width - SPEED.x, screen.topLeft.y + PAUSE.margin);
         this.belt.layout(screen.topLeft.x, screen.topLeft.y + screen.height, screen.width);
         this.hint.position.set(screen.center.x, screen.topLeft.y + screen.height - 150);
@@ -461,6 +489,8 @@ export class AntHud extends PIXI.Container {
         gsap.killTweensOf(this.speed.scale);
         gsap.killTweensOf(this.pause.scale);
         gsap.killTweensOf(this.hint.scale);
+        this.pointTimer?.kill();
+        this.intro?.destroy();
         this.hidePause();
         gsap.killTweensOf(this.dim);
         super.destroy({ children: true });
