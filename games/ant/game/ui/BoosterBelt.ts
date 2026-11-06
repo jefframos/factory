@@ -33,6 +33,8 @@ const LOCK = { icon: 34, iconY: -8, text: 13, textY: 22 };
 
 interface BeltButton {
     id: BoosterId;
+    /** A gold glow behind it while it's in play (waiting for its target). */
+    glow: PIXI.Sprite;
     unlock: number;
     holder: PIXI.Container;
     open: PIXI.Container;
@@ -78,7 +80,10 @@ export class BoosterBelt extends PIXI.Container {
         count.y = -1;
         badge.addChild(circle, count);
         badge.position.set(BADGE.x, BADGE.y);
-        holder.addChild(open, locked, badge);
+        const glow = iconSprite('Glow_Circle01', BUTTON * 2);
+        glow.tint = 0xffd23f;
+        glow.visible = false;
+        holder.addChild(glow, open, locked, badge);
         holder.eventMode = 'static';
         holder.cursor = 'pointer';
         holder.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
@@ -87,7 +92,7 @@ export class BoosterBelt extends PIXI.Container {
             this.tap(button);
         });
         this.addChild(holder);
-        const button: BeltButton = { id, unlock, holder, open, locked, badge, count };
+        const button: BeltButton = { id, glow, unlock, holder, open, locked, badge, count };
         return button;
     }
 
@@ -104,6 +109,17 @@ export class BoosterBelt extends PIXI.Container {
         const ready = AntSave.boosters(button.id) > 0 && !this.used.has(button.id);
         AntAudio.play(ready && button.id === 'slot' ? 'slot' : 'click');
         if (ready) this.onUse(button.id);
+    }
+
+    /** A power-up in play (waiting for its target: glowing, pulsing), or none. */
+    public setActive(id: BoosterId | null): void {
+        for (const b of this.buttons) {
+            const on = b.id === id;
+            b.glow.visible = on;
+            gsap.killTweensOf(b.open.scale);
+            b.open.scale.set(1);
+            if (on) gsap.to(b.open.scale, { x: 1.12, y: 1.12, duration: 0.45, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        }
     }
 
     /** Where a power-up's button is (this belt's parent's units). */
@@ -165,7 +181,7 @@ export class BoosterBelt extends PIXI.Container {
     }
 
     public override destroy(): void {
-        for (const b of this.buttons) gsap.killTweensOf([b.holder, b.holder.scale]);
+        for (const b of this.buttons) gsap.killTweensOf([b.holder, b.holder.scale, b.open.scale]);
         super.destroy({ children: true });
     }
 }

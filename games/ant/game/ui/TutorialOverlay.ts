@@ -54,10 +54,15 @@ export class TutorialOverlay extends PIXI.Container {
         this.draw((g) => g.drawCircle(x, y, radius), (px, py) => Math.hypot(px - x, py - y) <= radius, x, y - radius, text, x, y);
     }
 
-    /** A rectangular hole (`x`, `y` its top left), the bubble over it, the hand at (`handX`, `handY`). */
-    public showArea(x: number, y: number, width: number, height: number, text: string, handX: number, handY: number): void {
-        this.draw((g) => g.drawRoundedRect(x, y, width, height, 24), (px, py) => px >= x && px <= x + width && py >= y && py <= y + height,
-            x + width / 2, y, text, handX, handY);
+    /** A rectangular hole (`x`, `y` its top left), the bubble over it, the hand at (`handX`, `handY`); and `extra`, a
+     *  round one besides (the power-up's own button, kept in sight and in reach). */
+    public showArea(x: number, y: number, width: number, height: number, text: string, handX: number, handY: number,
+        extra?: { x: number; y: number; radius: number }): void {
+        this.draw((g) => {
+            g.drawRoundedRect(x, y, width, height, 24);
+            if (extra) g.drawCircle(extra.x, extra.y, extra.radius);
+        }, (px, py) => (px >= x && px <= x + width && py >= y && py <= y + height) || (!!extra && Math.hypot(px - extra.x, py - extra.y) <= extra.radius),
+        x + width / 2, y, text, handX, handY);
     }
 
     /** The dark round `hole` (drawn by `shape`, `inside` it for taps), the bubble over (`topX`, `topY`), the hand. */

@@ -78,8 +78,11 @@ export class AntHud extends PIXI.Container {
     /** The first-time tutorial's dark, hand and words (over everything). */
     private readonly tutorial = new TutorialOverlay();
     private intro: IntroCard | null = null;
-    /** Pointing out a power-up's button: when it lets go by itself. */
+    /** Pointing out a power-up's button: when it lets go by itself, and who to tell when it's gone. */
     private pointTimer?: gsap.core.Tween;
+    private pointDone: (() => void) | null = null;
+    /** Icons over what a waiting power-up can be used on (the hammer over the slots' tiles). */
+    private readonly markers = new PIXI.Container();
     private readonly card = new PIXI.Container();
     private readonly dim = new PIXI.Graphics();
     /** The celebration's turning rays and falling confetti (behind / over the card). */
@@ -118,7 +121,8 @@ export class AntHud extends PIXI.Container {
         this.rays.visible = false;
         fillCoinBar(this.coinBar, this.coinText);
         this.coinBar.visible = false;
-        this.addChild(this.title, this.tierTag, this.speed, this.belt, this.hint, this.pause, this.dim, this.rays, this.card, this.coinBar, this.flying, this.confetti, this.tutorial);
+        this.addChild(this.title, this.tierTag, this.speed, this.belt, this.hint, this.pause, this.dim, this.rays, this.card, this.coinBar, this.flying, this.confetti, this.tutorial, this.markers);
+        this.markers.eventMode = 'none';
         this.reposition();
     }
 
@@ -166,18 +170,47 @@ export class AntHud extends PIXI.Container {
         this.tutorial.hide();
         this.tutorial.onTap = null;
         this.pointTimer?.kill();
+        const done = this.pointDone;
+        this.pointDone = null;
+        done?.();
+    }
+
+    /** A power-up in play (its button glowing), or none. */
+    public setActiveBooster(id: BoosterId | null): void {
+        this.belt.setActive(id);
+    }
+
+    /** `frame` icons over these spots (window pixels), bobbing; [] for none. */
+    public showMarkers(spots: { x: number; y: number }[], frame: string): void {
+        this.hideMarkers();
+        for (const spot of spots) {
+            const at = this.toLocal(new PIXI.Point(spot.x, spot.y));
+            const icon = roundButton('Button_Round02_Blue', frame, 56);
+            icon.position.set(at.x, at.y);
+            this.markers.addChild(icon);
+            gsap.fromTo(icon, { y: at.y }, { y: at.y - 10, duration: 0.45, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        }
+    }
+
+    public hideMarkers(): void {
+        this.markers.children.forEach((child) => gsap.killTweensOf(child));
+        this.markers.removeChildren().forEach((child) => child.destroy({ children: true }));
     }
 
     /**
      * A power-up waiting for its target: the dark over all but `area` (window pixels: the 3D view's, worldToScreen()),
      * the hand at `hand`, `text` over it. A tap outside it calls `onCancel` (the power-up's put away).
      */
-    public showFocus(area: { left: number; top: number; right: number; bottom: number }, hand: { x: number; y: number }, text: string, onCancel: () => void): void {
+    public showFocus(area: { left: number; top: number; right: number; bottom: number }, hand: { x: number; y: number }, text: string,
+        onCancel: () => void, button?: BoosterId): void {
         const a = this.toLocal(new PIXI.Point(area.left, area.top));
         const b = this.toLocal(new PIXI.Point(area.right, area.bottom));
         const h = this.toLocal(new PIXI.Point(hand.x, hand.y));
         this.pointTimer?.kill();
-        this.tutorial.showArea(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y), text, h.x, h.y);
+        // The power-up's own button stays in sight (glowing) and in reach (tap it again to put it away).
+        const at = button ? this.belt.buttonAt(button) : null;
+        this.tutorial.showArea(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y), text, h.x, h.y,
+            at ? { x: at.x, y: at.y, radius: 50 } : undefined);
         this.tutorial.onTap = () => {
             this.hideTutorial();
             onCancel();
@@ -197,12 +230,14 @@ export class AntHud extends PIXI.Container {
 
     /** The dark with a hole over a power-up's belt button and the hand on it, `text` over it; any tap (or a few
      *  seconds) lets it go. */
-    public pointAtBooster(id: BoosterId, text: string): void {
+    public pointAtBooster(id: BoosterId, text: string, onDone: () => void, waitForTap = false): void {
         const at = this.belt.buttonAt(id);
         this.tutorial.show(at.x, at.y, 56, text);
         this.tutorial.onTap = () => this.hideTutorial();
+        this.pointDone = onDone;
         this.pointTimer?.kill();
-        this.pointTimer = gsap.delayedCall(4, () => this.hideTutorial());
+        // A power-up that needs its target (pick up, vacuum) waits for the tap; the others let go after a while.
+        if (!waitForTap) this.pointTimer = gsap.delayedCall(4, () => this.hideTutorial());
     }
 
     /** What to tap for a power-up waiting for its target (null: gone). */
@@ -508,6 +543,8 @@ export class AntHud extends PIXI.Container {
         gsap.killTweensOf(this.pause.scale);
         gsap.killTweensOf(this.hint.scale);
         this.pointTimer?.kill();
+        this.pointDone = null;
+        this.hideMarkers();
         this.intro?.destroy();
         this.hidePause();
         gsap.killTweensOf(this.dim);

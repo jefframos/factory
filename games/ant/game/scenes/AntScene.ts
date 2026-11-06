@@ -168,6 +168,8 @@ export default class AntScene extends ThreeScene {
     private boosterUsed = false;
     /** A power-up waiting for its target (pick up, vacuum). */
     private armed: BoosterId | null = null;
+    /** A new power-up's button being pointed out (its first time): the game waits too. */
+    private pointing = false;
     /** Tiles taken so far this level (locked tiles count them). */
     private taps = 0;
     /** The ants' speed-up at the end (1: none). */
@@ -315,6 +317,9 @@ export default class AntScene extends ThreeScene {
         this.taps = 0;
         this.rush = 1;
         this.armed = null;
+        this.pointing = false;
+        this.hud.hideMarkers();
+        this.hud.setActiveBooster(null);
         this.hud.showHint(null);
 
         const cell = Math.min(LAYOUT.pictureMax.width / this.level.width, LAYOUT.pictureMax.depth / this.level.height);
@@ -381,7 +386,12 @@ export default class AntScene extends ThreeScene {
             if (!intro.booster) return;
             if (AntSave.boosters(intro.booster) === 0) AntSave.addBooster(intro.booster, 1);
             this.hud.refreshBelt();
-            this.hud.pointAtBooster(intro.booster, 'Tap it when you need it');
+            // Everything waits while it's pointed out (a tile mustn't leave its slot before pick up's tried).
+            this.pointing = true;
+            const needsTarget = intro.booster === 'pickup' || intro.booster === 'vacuum';
+            this.hud.pointAtBooster(intro.booster, needsTarget ? 'Tap it to try it' : 'Tap it when you need it', () => {
+                this.pointing = false;
+            }, needsTarget);
         });
     }
 
@@ -435,7 +445,8 @@ export default class AntScene extends ThreeScene {
     // ---------------------------------------------------------------- input
 
     private readonly onPointerDown = (event: PointerEvent): void => {
-        if (this.ended || this.paused || !this.sides.length) return;
+        // (Pointing out a new power-up: only its button counts, on the HUD.)
+        if (this.ended || this.paused || this.pointing || !this.sides.length) return;
         const rect = SetupThree.renderer.domElement.getBoundingClientRect();
         this.pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
         this.raycaster.setFromCamera(this.pointer, this.threeCamera);
@@ -536,6 +547,12 @@ export default class AntScene extends ThreeScene {
             AntAudio.play('whoosh');
             return;
         }
+        // Tapped again while it's waiting: put away (unspent).
+        if (this.armed === id) {
+            this.cancelArmed();
+            return;
+        }
+        if (this.armed) this.cancelArmed();
         // Pick up needs a tile in a slot with ants still to send.
         if (id === 'pickup' && !this.sides.some((side) => side.slots.some((slot) => slot && slot.left > 0))) {
             AntAudio.play('full');
@@ -544,6 +561,7 @@ export default class AntScene extends ThreeScene {
             return;
         }
         this.armed = id;
+        this.hud.setActiveBooster(id);
         this.focusArmed();
     }
 
@@ -583,13 +601,27 @@ export default class AntScene extends ThreeScene {
             left: Math.min(...points.map((p) => p.x)), right: Math.max(...points.map((p) => p.x)),
             top: Math.min(...points.map((p) => p.y)), bottom: Math.max(...points.map((p) => p.y)),
         };
-        this.hud.showFocus(area, at, BOOSTER_HINTS[this.armed] ?? '', () => this.cancelArmed());
+        this.hud.showFocus(area, at, BOOSTER_HINTS[this.armed] ?? '', () => this.cancelArmed(), this.armed);
+        // Pick up: the hammer over every tile it can take back (a slot's, ants still to send).
+        const spots: { x: number; y: number }[] = [];
+        if (this.armed === 'pickup') {
+            for (const side of this.sides) {
+                side.slots.forEach((slot, s) => {
+                    if (!slot || slot.left === 0) return;
+                    const spot = this.worldToScreen(side.rack.slotWorld(s).setY(3.2 * side.rack.scale));
+                    if (spot) spots.push(spot);
+                });
+            }
+        }
+        this.hud.showMarkers(spots, 'PictoIcon_Hammer_Claw');
     }
 
     /** The waiting power-up put away (not spent): the game goes on. */
     private cancelArmed(): void {
         this.armed = null;
         this.hud.hideTutorial();
+        this.hud.hideMarkers();
+        this.hud.setActiveBooster(null);
     }
 
     /** One of a power-up used. */
@@ -634,6 +666,8 @@ export default class AntScene extends ThreeScene {
     private disarm(id: BoosterId): void {
         this.armed = null;
         this.hud.hideTutorial();
+        this.hud.hideMarkers();
+        this.hud.setActiveBooster(null);
         this.spend(id);
     }
 
@@ -714,7 +748,8 @@ export default class AntScene extends ThreeScene {
     public fixedUpdate(delta: number): void {
         if (!this.swarm || !this.picture || !this.sides.length) return;
         // A power-up waiting for its target: everything stands still (no ant gets there first, no tile leaves).
-        if (this.armed) return;
+        // (So does a new power-up being pointed out.)
+        if (this.armed || this.pointing) return;
         for (const side of this.sides) {
             side.slots.forEach((slot, s) => {
                 if (!slot) return;
