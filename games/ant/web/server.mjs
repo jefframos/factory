@@ -85,7 +85,7 @@ async function run(id, settings, save, master) {
         await writeJson(SETTINGS_FILE, all);
     }
     return { png: `data:image/png;base64,${result.preview.toString('base64')}`, pixels: result.pixels, palette: result.level.palette, width: result.level.width, height: result.level.height, grid: result.grid,
-        columns: result.level.columns, deck: result.level.deck, check: result.level.check };
+        columns: result.level.columns, deck: result.level.deck, check: result.level.check, baseColors: result.baseColors };
 }
 
 /** Adds a level at the end of the play order. */

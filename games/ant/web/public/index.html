@@ -195,6 +195,9 @@
       <label>Auto shading
         <span class="inline"><input type="checkbox" id="autoShade"> lighter top-left, darker bottom-right edges</span>
       </label>
+      <div class="field">Shaded colours (biggest first)
+        <span class="stepper"><button id="shadeDown">−</button><output id="shade">all</output><button id="shadeUp">＋</button></span>
+      </div>
       <label>Difficulty
         <select id="difficulty"><option value="auto">Auto (by its place in the order)</option><option value="manual">Manual (the mix)</option></select>
       </label>
@@ -237,6 +240,8 @@ let size = { width: 1, height: 1 };
 let tool = 'paint';
 let colour = null;
 let history = [];
+/** The last preview's colours before shading. */
+let lastBase = 0;
 /** One step of the colour adjustments (as in pixelate-lib.mjs). */
 const SATURATION_STEP = 0.15;
 const BRIGHTNESS_STEP = 0.06;
@@ -480,6 +485,8 @@ function showNumbers() {
   $('offset').textContent = `${current.offsetX || 0}, ${current.offsetY || 0}`;
   current.mix = Math.max(0, Math.min(5, Math.round(current.mix || 0)));
   current.padding = Math.max(0, Math.min(10, Math.round(current.padding || 0)));
+  current.shadeColors = Math.round(current.shadeColors ?? -1);
+  $('shade').textContent = current.shadeColors < 0 ? 'all' : current.shadeColors;
   $('pad').textContent = current.padding;
   $('mix').textContent = current.mix;
 }
@@ -527,6 +534,8 @@ function refresh(now) {
       draw();
       showStats(result.pixels, result.palette);
       showCheck(result);
+      lastBase = result.baseColors || 0;
+      $('used').textContent = `${result.palette.length} (${lastBase} + ${result.palette.length - lastBase} from shading)`;
       if (current.palette === 'none') showPaint();
     } catch (err) { toast(err.message); }
   }, now ? 0 : 200);
@@ -774,6 +783,9 @@ $('up').onclick = () => step('offsetY', -1);
 $('down').onclick = () => step('offsetY', 1);
 $('padDown').onclick = () => step('padding', -1);
 $('padUp').onclick = () => step('padding', 1);
+// Shaded colours: 'all' (-1), then down to 0; up from 'all' stays all.
+$('shadeDown').onclick = () => { current.shadeColors = current.shadeColors < 0 ? Math.max(0, (lastBase || 6) - 1) : Math.max(0, current.shadeColors - 1); showNumbers(); changed(); };
+$('shadeUp').onclick = () => { if (current.shadeColors < 0) return; current.shadeColors += 1; if (lastBase && current.shadeColors >= lastBase) current.shadeColors = -1; showNumbers(); changed(); };
 $('mixDown').onclick = () => step('mix', -1);
 $('mixUp').onclick = () => step('mix', 1);
 $('reroll').onclick = () => { $('seed').value = Math.floor(Math.random() * 10000); changed(); };

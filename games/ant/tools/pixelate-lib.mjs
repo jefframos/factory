@@ -20,7 +20,8 @@
 //   7b. `autoShade` (on unless set false) gives each colour area depth, lit from the top left: its pixels along a top or
 //      left edge a lighter tone, along a bottom or right edge a darker one (areas of at least SHADE.minArea, where the
 //      area goes on past the edge pixel). Distinct colours, not snapped: they make a picture less flat, and its areas
-//      onions — the inside of an area is shut in by its own rims until they're taken.
+//      onions — the inside of an area is shut in by its own rims until they're taken. `shadeColors` limits it to that
+//      many colours (the biggest first; -1: all): each shaded colour adds up to two tones to the level's colours.
 //   8. The level's colours get its `saturation` / `brightness` steps (each step +-15% saturation / +-6% lightness, up
 //      to MAX_STEPS either way) — after the palette, so a master-palette level keeps the master's tones, just more or
 //      less vivid (before it, the snapping would put most colours straight back on the same tone). Then the shading
@@ -43,7 +44,7 @@ const SATURATION_STEP = 0.15;
 const BRIGHTNESS_STEP = 0.06;
 export const MAX_STEPS = 5;
 
-export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {}, shades: {}, padding: 0, stroke: '', autoShade: true, columns: 0, seed: 0, mix: 0 };
+export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {}, shades: {}, padding: 0, stroke: '', autoShade: true, shadeColors: -1, columns: 0, seed: 0, mix: 0 };
 /** Auto-shading: the smallest area shaded, and the edge tones' steps (as the brushes': [saturation, brightness]). */
 const SHADE = { minArea: 10, light: [-1, 2], dark: [1, -2], maxLight: 0.93 };
 
@@ -318,7 +319,8 @@ export async function buildLevel(file, id, settings, master) {
     const shading = shift(shadeGrid, width, height, dx, dy);
     const strokeColor = stroked ? (palette.length ? closest(parseHex(options.stroke), palette) : options.stroke) : null;
     if (strokeColor) outline(final, width, height, strokeColor);
-    if (options.autoShade !== false) autoShade(final, width, height, strokeColor);
+    const baseColors = new Set(final.filter(Boolean)).size;
+    if (options.autoShade !== false) autoShade(final, width, height, strokeColor, Math.round(options.shadeColors ?? -1));
     const saturation = steps(options.saturation);
     const brightness = steps(options.brightness);
     if (saturation || brightness) {
@@ -343,12 +345,16 @@ export async function buildLevel(file, id, settings, master) {
         id, name: options.name, width, height, palette: levelPalette, rows,
         columns: baked.columns, deck: baked.deck.map((t) => `${DIGITS[t.color]}x${t.count}`).join(' '), check: baked.check,
     };
-    return { level, grid: final, preview: await previewPng(level), pixels: final.filter(Boolean).length };
+    return { level, grid: final, preview: await previewPng(level), pixels: final.filter(Boolean).length, baseColors };
 }
 
 /** Depth for each colour area (not the outline's): lighter along its top and left edges, darker along its bottom and
  *  right ones, where the area goes on past that pixel (a one-pixel-thin line stays as it is). See SHADE. */
-function autoShade(grid, width, height, skip) {
+function autoShade(grid, width, height, skip, limit = -1) {
+    // Which colours get shaded: the biggest (by pixels), up to `limit` of them.
+    const counts = new Map();
+    for (const c of grid) if (c && c !== skip) counts.set(c, (counts.get(c) ?? 0) + 1);
+    const allowed = new Set([...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit < 0 ? Infinity : limit).map(([c]) => c));
     const area = new Int32Array(width * height).fill(-1);
     const sizes = [];
     for (let start = 0; start < grid.length; start++) {
@@ -379,7 +385,7 @@ function autoShade(grid, width, height, skip) {
     const shaded = grid.slice();
     for (let i = 0; i < grid.length; i++) {
         const c = grid[i];
-        if (!c || c === skip || sizes[area[i]] < SHADE.minArea) continue;
+        if (!c || c === skip || !allowed.has(c) || sizes[area[i]] < SHADE.minArea) continue;
         const x = i % width;
         const y = Math.floor(i / width);
         const same = (dx, dy) => {
