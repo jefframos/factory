@@ -91,16 +91,47 @@
             text-align: center;
             text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
         }
-        footer {
-            max-width: 1100px;
-            margin: 40px auto 0;
-            text-align: center;
+        .settings {
+            margin-left: auto;
+            position: relative;
         }
-        footer a {
-            color: #fff;
-            opacity: 0.8;
-            font-size: 14px;
+        .settings-button {
+            width: 52px;
+            height: 52px;
+            border: 0;
+            border-radius: 16px;
+            background: #fff;
+            color: #7b4dff;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.12);
+            transition: transform 0.15s ease;
         }
+        .settings-button:hover { transform: rotate(30deg); }
+        .settings-button svg { width: 28px; height: 28px; }
+        .menu {
+            position: absolute;
+            top: 62px;
+            right: 0;
+            min-width: 200px;
+            background: #fff;
+            border-radius: 16px;
+            padding: 8px;
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.12), 0 16px 32px rgba(40, 0, 60, 0.3);
+            z-index: 10;
+        }
+        .menu[hidden] { display: none; }
+        .menu a {
+            display: block;
+            padding: 12px 14px;
+            border-radius: 10px;
+            color: #3b2a6b;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        .menu a:hover { background: #f1ecff; }
         @media (max-width: 480px) {
             .grid { grid-template-columns: repeat(3, 1fr); gap: 16px 12px; }
             .tile { border-radius: 20px; border-width: 3px; }
@@ -113,41 +144,60 @@
     <header>
         <div class="logo">▶</div>
         <h1>Games</h1>
+        <div class="settings">
+            <button class="settings-button" type="button" aria-label="Settings" aria-haspopup="true" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+            <nav class="menu" hidden>
+                <a href="./all/">Prototypes</a>
+            </nav>
+        </div>
     </header>
     <div class="grid">
-        <a class="game" href="./down/index.html">
+        <a class="game" href="./play.html?game=down">
             <span class="tile"><img src="./icons/down.webp" alt="" loading="lazy" /></span>
             <span class="name">Pop Cat</span>
         </a>
-        <a class="game" href="./dig/index.html">
+        <a class="game" href="./play.html?game=dig">
             <span class="tile"><img src="./icons/dig.webp" alt="" loading="lazy" /></span>
             <span class="name">Dig and Discover</span>
         </a>
-        <a class="game" href="./clog/index.html">
+        <a class="game" href="./play.html?game=clog">
             <span class="tile"><img src="./icons/clog.webp" alt="" loading="lazy" /></span>
             <span class="name">Whale.io</span>
         </a>
-        <a class="game" href="./ant/index.html">
+        <a class="game" href="./play.html?game=ant">
             <span class="tile"><img src="./icons/ant.webp" alt="" loading="lazy" /></span>
             <span class="name">Ant</span>
         </a>
-        <a class="game" href="./merge1/index.html">
+        <a class="game" href="./play.html?game=merge1">
             <span class="tile"><img src="./icons/merge1.webp" alt="" loading="lazy" /></span>
             <span class="name">Cat Garden</span>
         </a>
-        <a class="game" href="./hex/index.html">
+        <a class="game" href="./play.html?game=hex">
             <span class="tile"><img src="./icons/hex.webp" alt="" loading="lazy" /></span>
             <span class="name">Hex Merge</span>
         </a>
-        <a class="game" href="./mow/index.html">
+        <a class="game" href="./play.html?game=mow">
             <span class="tile"><img src="./icons/mow.webp" alt="" loading="lazy" /></span>
             <span class="name">Mow</span>
         </a>
-        <a class="game" href="./ufo/index.html">
+        <a class="game" href="./play.html?game=tower">
+            <span class="tile"><img src="./icons/tower.webp" alt="" loading="lazy" /></span>
+            <span class="name">Block Tower</span>
+        </a>
+        <a class="game" href="./play.html?game=ufo">
             <span class="tile"><img src="./icons/ufo.webp" alt="" loading="lazy" /></span>
             <span class="name">UFO.io</span>
         </a>
     </div>
-    <footer><a href="./all/">All builds and prototypes →</a></footer>
+    <script>
+        const button = document.querySelector('.settings-button');
+        const menu = document.querySelector('.menu');
+        const setOpen = (open) => { menu.hidden = !open; button.setAttribute('aria-expanded', String(open)); };
+        button.addEventListener('click', (event) => { event.stopPropagation(); setOpen(menu.hidden); });
+        document.addEventListener('click', (event) => { if (!menu.contains(event.target)) setOpen(false); });
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setOpen(false); });
+    </script>
 </body>
 </html>

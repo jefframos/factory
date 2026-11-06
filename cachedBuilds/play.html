@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Games</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&display=swap" rel="stylesheet" />
+    <style>
+        html, body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+        }
+        iframe {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            display: block;
+        }
+        /* A tab poking in from off the left edge, below the corner games put their own buttons in. */
+        .back {
+            position: fixed;
+            top: calc(180px + env(safe-area-inset-top));
+            left: -18px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            width: 58px;
+            height: 40px;
+            padding-right: 7px;
+            box-sizing: border-box;
+            border-radius: 0 20px 20px 0;
+            background: linear-gradient(160deg, #ff7a59, #ff4f8b 55%, #7b4dff);
+            box-shadow: 0 3px 0 rgba(0, 0, 0, 0.18), 0 6px 14px rgba(0, 0, 0, 0.25);
+            opacity: 0.85;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+        .back:hover, .back:focus-visible {
+            opacity: 1;
+            transform: translateX(8px);
+        }
+        .back svg {
+            width: 26px;
+            height: 26px;
+            background: #fff;
+            color: #ff4f8b;
+            border-radius: 50%;
+            padding: 4px;
+            box-sizing: border-box;
+        }
+        .missing {
+            color: #fff;
+            font: 700 18px 'Fredoka', sans-serif;
+            display: grid;
+            place-items: center;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <a class="back" href="./" aria-label="Back to the games">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <script>
+        const GAMES = {"down":"Pop Cat","dig":"Dig and Discover","clog":"Whale.io","ant":"Ant","merge1":"Cat Garden","hex":"Hex Merge","mow":"Mow","tower":"Block Tower","ufo":"UFO.io"};
+        const id = new URLSearchParams(location.search).get('game');
+        if (id && Object.prototype.hasOwnProperty.call(GAMES, id)) {
+            document.title = GAMES[id];
+            const frame = document.createElement('iframe');
+            frame.src = './' + id + '/index.html';
+            frame.title = GAMES[id];
+            frame.allow = 'autoplay; fullscreen; gamepad; accelerometer; gyroscope';
+            frame.allowFullscreen = true;
+            document.body.appendChild(frame);
+            // Keys go to the game straight away, not to this page.
+            frame.addEventListener('load', () => frame.focus());
+        } else {
+            const note = document.createElement('div');
+            note.className = 'missing';
+            note.textContent = 'Game not found';
+            document.body.appendChild(note);
+        }
+    </script>
+</body>
+</html>

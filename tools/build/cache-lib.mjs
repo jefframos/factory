@@ -309,7 +309,7 @@ function writeStorePage(cachedBuildsRoot, store, playable, icons) {
             const art = icons.has(game)
                 ? `<img src="./icons/${game}.webp" alt="" loading="lazy" />`
                 : `<span class="letter" style="background:linear-gradient(155deg, hsl(${hue}, 75%, 60%), hsl(${(hue + 40) % 360}, 80%, 42%))">${name.charAt(0)}</span>`;
-            return `        <a class="game" href="./${game}/index.html">
+            return `        <a class="game" href="./play.html?game=${encodeURIComponent(game)}">
             <span class="tile">${art}</span>
             <span class="name">${name}</span>
         </a>`;
@@ -409,16 +409,47 @@ function writeStorePage(cachedBuildsRoot, store, playable, icons) {
             text-align: center;
             text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
         }
-        footer {
-            max-width: 1100px;
-            margin: 40px auto 0;
-            text-align: center;
+        .settings {
+            margin-left: auto;
+            position: relative;
         }
-        footer a {
-            color: #fff;
-            opacity: 0.8;
-            font-size: 14px;
+        .settings-button {
+            width: 52px;
+            height: 52px;
+            border: 0;
+            border-radius: 16px;
+            background: #fff;
+            color: #7b4dff;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.12);
+            transition: transform 0.15s ease;
         }
+        .settings-button:hover { transform: rotate(30deg); }
+        .settings-button svg { width: 28px; height: 28px; }
+        .menu {
+            position: absolute;
+            top: 62px;
+            right: 0;
+            min-width: 200px;
+            background: #fff;
+            border-radius: 16px;
+            padding: 8px;
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.12), 0 16px 32px rgba(40, 0, 60, 0.3);
+            z-index: 10;
+        }
+        .menu[hidden] { display: none; }
+        .menu a {
+            display: block;
+            padding: 12px 14px;
+            border-radius: 10px;
+            color: #3b2a6b;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        .menu a:hover { background: #f1ecff; }
         @media (max-width: 480px) {
             .grid { grid-template-columns: repeat(3, 1fr); gap: 16px 12px; }
             .tile { border-radius: 20px; border-width: 3px; }
@@ -431,13 +462,130 @@ function writeStorePage(cachedBuildsRoot, store, playable, icons) {
     <header>
         <div class="logo">▶</div>
         <h1>Games</h1>
+        <div class="settings">
+            <button class="settings-button" type="button" aria-label="Settings" aria-haspopup="true" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+            <nav class="menu" hidden>
+                <a href="./all/">Prototypes</a>
+            </nav>
+        </div>
     </header>
     <div class="grid">
 ${tiles || '        <p>No games yet.</p>'}
     </div>
-    <footer><a href="./all/">All builds and prototypes →</a></footer>
+    <script>
+        const button = document.querySelector('.settings-button');
+        const menu = document.querySelector('.menu');
+        const setOpen = (open) => { menu.hidden = !open; button.setAttribute('aria-expanded', String(open)); };
+        button.addEventListener('click', (event) => { event.stopPropagation(); setOpen(menu.hidden); });
+        document.addEventListener('click', (event) => { if (!menu.contains(event.target)) setOpen(false); });
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setOpen(false); });
+    </script>
 </body>
 </html>
 `;
     fs.writeFileSync(resolve(cachedBuildsRoot, 'index.html'), html);
+    writePlayerPage(cachedBuildsRoot, store, shown);
+}
+
+/**
+ * cachedBuilds/play.html?game=<id> — how the store opens a game: full screen in a frame, with a
+ * small tag top-left back to the store (like Poki's). Only the store's games load; the builds
+ * themselves stay untouched (opened directly from /all/, they have no tag).
+ */
+function writePlayerPage(cachedBuildsRoot, store, shown) {
+    const games = Object.fromEntries(shown.map((game) => [game, store.names[game] ?? displayName(game)]));
+    const html = `<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Games</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&display=swap" rel="stylesheet" />
+    <style>
+        html, body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+        }
+        iframe {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            display: block;
+        }
+        /* A tab poking in from off the left edge, below the corner games put their own buttons in. */
+        .back {
+            position: fixed;
+            top: calc(180px + env(safe-area-inset-top));
+            left: -18px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            width: 58px;
+            height: 40px;
+            padding-right: 7px;
+            box-sizing: border-box;
+            border-radius: 0 20px 20px 0;
+            background: linear-gradient(160deg, #ff7a59, #ff4f8b 55%, #7b4dff);
+            box-shadow: 0 3px 0 rgba(0, 0, 0, 0.18), 0 6px 14px rgba(0, 0, 0, 0.25);
+            opacity: 0.85;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+        .back:hover, .back:focus-visible {
+            opacity: 1;
+            transform: translateX(8px);
+        }
+        .back svg {
+            width: 26px;
+            height: 26px;
+            background: #fff;
+            color: #ff4f8b;
+            border-radius: 50%;
+            padding: 4px;
+            box-sizing: border-box;
+        }
+        .missing {
+            color: #fff;
+            font: 700 18px 'Fredoka', sans-serif;
+            display: grid;
+            place-items: center;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <a class="back" href="./" aria-label="Back to the games">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <script>
+        const GAMES = ${JSON.stringify(games)};
+        const id = new URLSearchParams(location.search).get('game');
+        if (id && Object.prototype.hasOwnProperty.call(GAMES, id)) {
+            document.title = GAMES[id];
+            const frame = document.createElement('iframe');
+            frame.src = './' + id + '/index.html';
+            frame.title = GAMES[id];
+            frame.allow = 'autoplay; fullscreen; gamepad; accelerometer; gyroscope';
+            frame.allowFullscreen = true;
+            document.body.appendChild(frame);
+            // Keys go to the game straight away, not to this page.
+            frame.addEventListener('load', () => frame.focus());
+        } else {
+            const note = document.createElement('div');
+            note.className = 'missing';
+            note.textContent = 'Game not found';
+            document.body.appendChild(note);
+        }
+    </script>
+</body>
+</html>
+`;
+    fs.writeFileSync(resolve(cachedBuildsRoot, 'play.html'), html);
 }
