@@ -19,17 +19,23 @@
 // The extra-slot power-up (AntHud, once a level) adds a sixth slot — also offered when a level is lost, to play on.
 // The first time, the first level is a tutorial: the screen darkens all but the next tile to tap (in the dealt order,
 // which always clears it), the hand points at it, and only it can be tapped.
+// Obstacles (design.txt), put on the dealt tiles so the dealt order still clears the level: from level 8 some tiles are
+// hidden (a ? until they reach the front), from level 12 some are locked (until enough tiles have been taken).
+// Power-ups (the belt): the extra slot; shuffle mixes the tiles not taken yet; pick up puts a slot's tile back (tap
+// it); vacuum takes every block of a colour off the picture, and its tiles with them (tap a block or a tile).
+// From level 18 there are two anthills (design.txt's second nest): each ant goes home to the one nearest where it comes
+// down off the rim, so the traffic splits.
 
 import * as THREE from 'three';
 import { Game } from 'core/Game';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import SetupThree from 'core/scene/SetupThree';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { Board, dealDeck, hashString } from '../data/Board';
+import { Board, Tile, dealDeck, hashString } from '../data/Board';
 import { LEVELS, LevelData, pixelsOf, deckOf } from '../data/Levels';
 import { AntSave } from '../data/AntSave';
 import { Background, FREE_DROP_CHANCE, currentBackground, levelReward, levelTier } from '../data/Shop';
-import { BOOSTERS } from '../ui/BoosterBelt';
+import { BOOSTERS, BoosterId } from '../ui/BoosterBelt';
 import { TUNING } from '../data/Tuning';
 import { DebugOverlay } from 'core/debug/DebugOverlay';
 import { PictureView, TRAY_TOP } from '../world/PictureView';
@@ -45,6 +51,19 @@ import { RadialTransition } from '../ui/RadialTransition';
 export const floorColor = (): THREE.Color => new THREE.Color(currentBackground().light);
 /** Columns for an old level file without its own. */
 const DEFAULT_COLUMNS = 4;
+/** The anthills' x (world units) by how many there are; two from NEST_LEVEL on. */
+const NESTS: Record<number, number[]> = { 1: [0], 2: [-6.3, 3.3] };
+const NEST_LEVEL = 18;
+/** Obstacles: from which level, and which dealt tiles (k: their place in the deal). Hidden: from the second row on,
+ *  every HIDDEN.every-th; locked: from the third row on, every LOCKED.every-th, opening once all but a row's tiles
+ *  before it in the deal have been taken. */
+const HIDDEN = { level: 8, every: 3, offset: 1 };
+const LOCKED = { level: 12, every: 5, offset: 2 };
+/** What to tap, for a power-up waiting for its target. */
+const BOOSTER_HINTS: Partial<Record<BoosterId, string>> = {
+    pickup: 'Tap a tile in a slot to put it back',
+    vacuum: 'Tap a colour to vacuum it all away',
+};
 /** The tutorial: how long it waits after a tap before pointing at the next tile, how big its hole is (x a tile), and
  *  what it says. */
 const TUTORIAL = {
@@ -97,7 +116,8 @@ export default class AntScene extends ThreeScene {
     private picture?: PictureView;
     private rack?: TileRack;
     private swarm?: AntSwarm;
-    private readonly hole = new THREE.Group();
+    /** The anthills (one, or two from NEST_LEVEL). */
+    private holes: THREE.Group[] = [];
     private readonly slots: (SlotState | null)[] = [];
     private readonly palette: THREE.Color[] = [];
     private ended = false;
@@ -113,6 +133,10 @@ export default class AntScene extends ThreeScene {
     private travelling = false;
     /** A power-up used this level (no free drop then). */
     private boosterUsed = false;
+    /** A power-up waiting for its target (pick up, vacuum). */
+    private armed: BoosterId | null = null;
+    /** Tiles taken so far this level (locked tiles count them). */
+    private taps = 0;
     /** The tutorial under way: tiles tapped so far, of how many, in how many columns; time to the next pointer. */
     private tutorial: { taps: number; tiles: number; columns: number; wait: number } | null = null;
     private resumeScale = 1;
@@ -138,9 +162,8 @@ export default class AntScene extends ThreeScene {
         floor.rotation.x = -Math.PI / 2;
         floor.position.set(0, -0.02, LAYOUT.screen.centreZ);
         this.threeScene.add(floor);
-        this.buildHole();
         this.threeCamera.fov = FOV;
-        this.hud = new AntHud(() => this.openPause(), () => this.addExtraSlot());
+        this.hud = new AntHud(() => this.openPause(), () => this.addExtraSlot(), (id) => this.useBooster(id));
         this.game.uiLayer.addChild(this.hud);
         window.addEventListener('pointerdown', this.onPointerDown);
         window.addEventListener('resize', this.onWindowResize);
@@ -192,8 +215,22 @@ export default class AntScene extends ThreeScene {
         this.swarm?.clear();
     }
 
-    /** The anthill: a dark opening in a raised earth ring, its wooden lid set beside it. */
-    private buildHole(): void {
+    /** The level's anthills: the old ones gone, `count` of them in place. */
+    private placeNests(count: number): void {
+        for (const hole of this.holes) {
+            hole.removeFromParent();
+            hole.traverse((child) => {
+                if (!(child instanceof THREE.Mesh)) return;
+                child.geometry.dispose();
+                (child.material as THREE.Material).dispose();
+            });
+        }
+        this.holes = (NESTS[count] ?? NESTS[1]).map((x) => this.buildHole(x));
+    }
+
+    /** An anthill at `x`: a dark opening in a raised earth ring, its wooden lid set beside it. */
+    private buildHole(x: number): THREE.Group {
+        const hole = new THREE.Group();
         const r = LAYOUT.holeRadius;
         const opening = new THREE.Mesh(new THREE.CircleGeometry(r, 40), new THREE.MeshBasicMaterial({ color: 0x3a2213 }));
         opening.rotation.x = -Math.PI / 2;
@@ -209,9 +246,10 @@ export default class AntScene extends ThreeScene {
         grooves.rotation.x = -Math.PI / 2;
         grooves.scale.set(1, 0.66, 1);
         grooves.position.set(LAYOUT.lidX, 0.33, 0.15);
-        this.hole.add(opening, rim, lid, grooves);
-        this.hole.position.set(0, 0, LAYOUT.holeZ);
-        this.threeScene.add(this.hole);
+        hole.add(opening, rim, lid, grooves);
+        hole.position.set(x, 0, LAYOUT.holeZ);
+        this.threeScene.add(hole);
+        return hole;
     }
 
     /** Sets up a level (also a restart): the picture, its dealt tiles, empty slots, no ants. */
@@ -230,6 +268,7 @@ export default class AntScene extends ThreeScene {
         this.hud.hideResult();
         this.hud.setExtraSlot(true);
         this.hud.setLevel(this.levelIndex + 1, levelTier(this.levelIndex));
+        this.placeNests(this.levelIndex + 1 >= NEST_LEVEL ? 2 : 1);
         this.boosterUsed = false;
 
         const pixels = pixelsOf(this.level);
@@ -239,7 +278,10 @@ export default class AntScene extends ThreeScene {
         // The baked deck; an old level file gets tiles of about 1/90 to 1/25 of the picture, dealt here.
         const min = Math.max(6, Math.round(pixels.length / 90));
         const max = Math.max(min + 6, Math.round(pixels.length / 25));
-        const deck = deckOf(this.level) ?? dealDeck(this.board, hashString(this.level.id), min, max);
+        const deck = this.withObstacles(deckOf(this.level) ?? dealDeck(this.board, hashString(this.level.id), min, max));
+        this.taps = 0;
+        this.armed = null;
+        this.hud.showHint(null);
 
         const cell = Math.min(LAYOUT.pictureMax.width / this.level.width, LAYOUT.pictureMax.depth / this.level.height);
         const picture = new PictureView(this.level, pixels, cell);
@@ -289,6 +331,10 @@ export default class AntScene extends ThreeScene {
         const rect = SetupThree.renderer.domElement.getBoundingClientRect();
         this.pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
         this.raycaster.setFromCamera(this.pointer, this.threeCamera);
+        if (this.armed) {
+            this.pickTarget();
+            return;
+        }
         const fronts = this.rack.frontBodies();
         const hit = this.raycaster.intersectObjects(fronts.map((f) => f.body), false)[0];
         if (!hit) return;
@@ -297,14 +343,18 @@ export default class AntScene extends ThreeScene {
         const tutorial = this.tutorial;
         if (tutorial && tutorial.taps < tutorial.tiles && column !== tutorial.taps % tutorial.columns) return;
         const slot = this.slots.indexOf(null);
-        if (slot < 0) {
+        if (slot < 0 || this.rack.isLocked(column)) {
             AntAudio.play('full');
             this.rack.shake(column);
             return;
         }
         AntAudio.play('tile');
         const tile = this.rack.take(column, slot);
-        if (tile) this.slots[slot] = { tile, color: tile.tile.color, left: tile.tile.count, timer: 0.3 };
+        if (tile) {
+            this.slots[slot] = { tile, color: tile.tile.color, left: tile.count, timer: 0.3 };
+            this.taps++;
+            this.rack.setTaps(this.taps);
+        }
         if (tile && tutorial) {
             tutorial.taps++;
             tutorial.wait = TUTORIAL.wait;
@@ -347,6 +397,95 @@ export default class AntScene extends ThreeScene {
         this.paused = false;
         Game.timeScale = this.resumeScale;
         this.hud.hidePause();
+    }
+
+    /** The dealt tiles with the level's obstacles on them (design.txt): hidden from HIDDEN.level, locked from
+     *  LOCKED.level. A lock opens after fewer tiles than come before it in the deal, so the dealt order still works. */
+    private withObstacles(deck: Tile[]): Tile[] {
+        const number = this.levelIndex + 1;
+        const columns = this.level.columns ?? DEFAULT_COLUMNS;
+        return deck.map((tile, k) => {
+            const out: Tile = { color: tile.color, count: tile.count };
+            if (number >= HIDDEN.level && k >= columns && k % HIDDEN.every === HIDDEN.offset) out.hidden = true;
+            if (number >= LOCKED.level && k >= columns * 2 && k % LOCKED.every === LOCKED.offset) out.lockAt = k - columns;
+            return out;
+        });
+    }
+
+    /** A power-up from the belt (not the extra slot): shuffle at once; pick up and vacuum wait for their target (tap the
+     *  power-up again to put it away). */
+    private useBooster(id: BoosterId): void {
+        if (this.ended || this.paused || !this.rack) return;
+        if (id === 'shuffle') {
+            this.rack.shuffle();
+            this.spend('shuffle');
+            AntAudio.play('whoosh');
+            return;
+        }
+        this.armed = this.armed === id ? null : id;
+        this.hud.showHint(this.armed ? BOOSTER_HINTS[this.armed] ?? null : null);
+    }
+
+    /** One of a power-up used. */
+    private spend(id: BoosterId): void {
+        AntSave.addBooster(id, -1);
+        this.boosterUsed = true;
+        this.hud.refreshBelt();
+    }
+
+    /** The tap for a waiting power-up: pick up — a tile in a slot; vacuum — a block of the picture, or a tile. */
+    private pickTarget(): void {
+        if (!this.rack || !this.picture) return;
+        if (this.armed === 'pickup') {
+            const hit = this.raycaster.intersectObjects(this.rack.meshes(true), false)[0];
+            const tile = hit && this.rack.tileOf(hit.object, true);
+            const s = tile ? this.slots.findIndex((slot) => slot?.tile === tile) : -1;
+            const slot = s >= 0 ? this.slots[s] : null;
+            if (!slot || slot.left === 0) return;
+            this.rack.putBack(slot.tile, slot.left);
+            this.slots[s] = null;
+            this.disarm('pickup');
+            AntAudio.play('slot');
+            return;
+        }
+        if (this.armed === 'vacuum') {
+            let color = -1;
+            const pixel = this.picture.blockAt(this.raycaster);
+            if (pixel >= 0) color = this.board.colors[pixel];
+            if (color < 0) {
+                const hit = this.raycaster.intersectObjects([...this.rack.meshes(true), ...this.rack.meshes(false)], false)[0];
+                const tile = hit && (this.rack.tileOf(hit.object, true) ?? this.rack.tileOf(hit.object, false));
+                if (tile && !tile.covered) color = tile.tile.color;
+            }
+            if (color < 0) return;
+            this.vacuum(color);
+            this.disarm('vacuum');
+        }
+    }
+
+    private disarm(id: BoosterId): void {
+        this.armed = null;
+        this.hud.showHint(null);
+        this.spend(id);
+    }
+
+    /** Every block of `color`, gone off the picture (popping in a quick ripple), and every tile of it with them. */
+    private vacuum(color: number): void {
+        const picture = this.picture!;
+        const pixels: number[] = [];
+        for (let i = 0; i < this.board.colors.length; i++) if (this.board.colors[i] === color) pixels.push(i);
+        for (const i of pixels) this.board.take(i);
+        pixels.forEach((i, n) => window.setTimeout(() => {
+            if (this.picture === picture) picture.pop(i);
+        }, n * 12));
+        this.slots.forEach((slot, s) => {
+            if (!slot || slot.color !== color) return;
+            this.rack!.release(slot.tile);
+            this.slots[s] = null;
+        });
+        this.rack!.removeColor(color);
+        AntAudio.play('whoosh');
+        AntAudio.play('slot');
     }
 
     /** The power-up: one more slot (once a level). Used on the lost card, the level plays on. */
@@ -450,11 +589,11 @@ export default class AntScene extends ThreeScene {
         const door = this.door(cells[cells.length - 1]);
         const path: THREE.Vector3[] = [];
         let x = start.x;
-        const { left, right } = this.holeBand();
-        if (x > left && x < right) {
+        const band = this.holes.map((hole) => this.holeBand(hole.position.x)).find((b) => x > b.left && x < b.right);
+        if (band) {
             // Round the anthill: across in the gap above the slots, to the nearer side of the hole-and-lid.
             const gapZ = (LAYOUT.holeZ + LAYOUT.slotsZ) / 2 + 0.3;
-            x = x - left < right - x ? left : right;
+            x = x - band.left < band.right - x ? band.left : band.right;
             path.push(new THREE.Vector3(start.x, 0, gapZ), new THREE.Vector3(x, 0, gapZ));
         }
         const onRim = new THREE.Vector3(THREE.MathUtils.clamp(x, this.lane.left, this.lane.right), TRAY_TOP, this.lane.bottom);
@@ -462,10 +601,10 @@ export default class AntScene extends ThreeScene {
         return [...path, onRim, ...this.alongRim(onRim, door), door, ...cells.slice().reverse().map((i) => this.picture!.cellCenter(i))];
     }
 
-    /** The anthill and its lid, across (world x): the band ants walking up from the slots go round. */
-    private holeBand(): { left: number; right: number } {
+    /** An anthill (at `x`) and its lid, across (world x): the band ants walking up from the slots go round. */
+    private holeBand(x: number): { left: number; right: number } {
         const margin = 0.6;
-        return { left: -LAYOUT.holeRadius - margin, right: LAYOUT.lidX + LAYOUT.holeRadius + margin };
+        return { left: x - LAYOUT.holeRadius - margin, right: x + LAYOUT.lidX + LAYOUT.holeRadius + margin };
     }
 
     /** Pixel -> anthill: out to its nearest border, along the rim to the bottom, straight down to the anthill's row, across into it. */
@@ -476,8 +615,9 @@ export default class AntScene extends ThreeScene {
         const bottomX = door.z >= this.lane.bottom - 1e-3 ? door.x : door.x < 0 ? this.lane.left : this.lane.right;
         const down = new THREE.Vector3(bottomX, TRAY_TOP, this.lane.bottom);
         const path = [...cells.slice(1).map((i) => this.picture!.cellCenter(i)), door, ...this.alongRim(door, down), down];
-        // Down to just above the anthill's row, across, and in from above (never over the lid beside it).
-        const hole = this.hole.position;
+        // Down to just above the anthill's row, across, and in from above (never over the lid beside it) — the nearest
+        // anthill, when there are two.
+        const hole = this.holes.reduce((best, h) => (Math.abs(h.position.x - bottomX) < Math.abs(best.position.x - bottomX) ? h : best)).position;
         const aboveZ = hole.z - LAYOUT.holeRadius * 0.9;
         if (Math.abs(bottomX - hole.x) > LAYOUT.holeRadius * 0.4) {
             path.push(new THREE.Vector3(bottomX, 0, aboveZ), new THREE.Vector3(hole.x, 0, aboveZ));
@@ -537,8 +677,11 @@ export default class AntScene extends ThreeScene {
     private pickUp(ant: Ant): THREE.Vector3[] {
         // A soft pop, a little higher as the picture empties.
         AntAudio.play('pick', 0.9 + 0.4 * (1 - this.board.remaining / Math.max(1, this.board.colors.length)));
-        this.board.take(ant.pixel);
-        this.picture?.pop(ant.pixel);
+        // (Already gone if the vacuum took it while the ant was on its way: it carries one home all the same.)
+        if (this.board.colors[ant.pixel] >= 0) {
+            this.board.take(ant.pixel);
+            this.picture?.pop(ant.pixel);
+        }
         return this.pathHome(ant.pixel);
     }
 
@@ -566,7 +709,10 @@ export default class AntScene extends ThreeScene {
             this.hud.celebrate(this.level, reward, drop, () => this.travelTo(this.levelIndex + 1));
             return;
         }
-        const stuck = this.swarm.count === 0 && this.slots.every((slot) => slot && slot.left > 0 && !this.board.claimable(slot.color).length);
+        const waiting = (slot: SlotState | null) => !!slot && slot.left > 0 && !this.board.claimable(slot.color).length;
+        // Every slot waiting on a colour with nothing exposed; or nothing in any slot and every front tile locked.
+        const allLocked = this.slots.every((slot) => !slot) && this.rack!.frontBodies().every((f) => this.rack!.isLocked(f.column));
+        const stuck = this.swarm.count === 0 && (this.slots.every(waiting) || (allLocked && this.rack!.frontBodies().length > 0));
         if (stuck) {
             this.ended = true;
             this.hud.showResult(false, () => this.travelTo(this.levelIndex));

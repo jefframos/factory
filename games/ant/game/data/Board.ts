@@ -16,6 +16,10 @@
 export interface Tile {
     color: number;
     count: number;
+    /** A hidden tile (level 8 on): face down, a ?, until it reaches the front row. */
+    hidden?: boolean;
+    /** A locked tile (level 12 on): it can't be taken until this many tiles have been, in all. */
+    lockAt?: number;
 }
 
 export class Board {

@@ -24,6 +24,18 @@ Done once the level's won (saved).
 **Colours** — the blocks, tiles and ants are drawn a quarter more saturated than the level file (`world/Vivid.ts`),
 under a white sky light and a light ground (a brown one muddied them).
 
+**Power-ups** (the belt, from level 3; `design.txt`): **extra slot** (L3: a sixth slot, once a level), **shuffle** (L4:
+the tiles not taken yet, mixed), **pick up** (L6: tap a tile in a slot — it goes back to the front of the shortest
+column, with the ants it hadn't sent), **vacuum** (L9: tap a block or a tile — every block of that colour comes off the
+picture, and its tiles with them). Pick up and vacuum wait for their target (a hint over the belt); tap them again to
+put them away. A level won without one: 55% chance of a free one.
+
+**Obstacles** (`design.txt`, put on the dealt tiles so the dealt order still clears the level — `AntScene.withObstacles`):
+**hidden tiles** (L8: grey with a ? until they reach the front row, then they flip), **locked tiles** (L12: dark with a
+padlock and how many more tiles must be taken first; they pop open), **a second anthill** (L18: each ant goes home to
+the one nearest where it comes off the rim). Hard levels (ending in 5) and super hard ones (every tenth) are tagged
+and pay more.
+
 **Coins and shops** (`data/Shop.ts`, saved in `data/AntSave.ts`). A finished level pays coins — 20 + 3 per level the
 first time, a quarter of that for a replay — shown on the celebration card, flying up to the coin bar. The power-ups'
 shop sells one more of a power-up already unlocked (the belt's badges are how many you have: the extra slot uses one,

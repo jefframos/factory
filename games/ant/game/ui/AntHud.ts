@@ -15,7 +15,7 @@ import { BOOSTERS, BoosterBelt, BoosterId } from './BoosterBelt';
 import type { LevelTier } from '../data/Shop';
 import { PausePopup } from './PausePopup';
 import { TutorialOverlay } from './TutorialOverlay';
-import { COIN_BAR, FONT, buttonParts, fillCoinBar, iconSprite, label as kitLabel, roundButton, tappable } from './UiParts';
+import { COIN_BAR, FONT, buttonParts, fillCoinBar, framePlane, iconSprite, label as kitLabel, roundButton, tappable } from './UiParts';
 import { AntSave } from '../data/AntSave';
 import { AntAudio } from '../audio/AntAudio';
 
@@ -54,6 +54,10 @@ function button(text: string, frame: string, width: number, onTap: () => void): 
 export class AntHud extends PIXI.Container {
     /** "Level N": the reference's plain brown title. */
     private readonly tierTag = kitLabel(24);
+    /** A power-up waiting for its target: what to tap, in a dark pill over the belt. */
+    private readonly hint = new PIXI.Container();
+    private readonly hintBack = framePlane('BasicFrame_Round20', 520, 64);
+    private readonly hintText = kitLabel(26);
     private readonly title = new PIXI.Text('', { fontFamily: FONT, fontSize: 46, fill: 0x7b4a28, fontWeight: '900', lineJoin: 'round' });
     private readonly pause: PIXI.Container;
     private pausePopup: PausePopup | null = null;
@@ -79,8 +83,10 @@ export class AntHud extends PIXI.Container {
     /** The confetti pieces' falls under way. */
     private falling: gsap.core.Timeline[] = [];
 
-    /** `onPause` from the pause button, `onExtraSlot` from the power-up (on the belt or the lost card). */
-    public constructor(private readonly onPause: () => void, private readonly onExtraSlot: () => void) {
+    /** `onPause` from the pause button, `onExtraSlot` from the extra slot (on the belt or the lost card), `onBooster`
+     *  from the belt's other power-ups. */
+    public constructor(private readonly onPause: () => void, private readonly onExtraSlot: () => void,
+        private readonly onBooster: (id: BoosterId) => void) {
         super();
         this.title.anchor.set(0.5);
         // The pack's blue round button with the pause sign, the reference's top-left button.
@@ -88,8 +94,16 @@ export class AntHud extends PIXI.Container {
         tappable(this.pause, () => this.onPause(), null);
         this.buildSpeed();
         this.belt = new BoosterBelt((id) => {
-            if (id === 'slot' && !this.extraUsed) this.onExtraSlot();
+            if (id === 'slot') {
+                if (!this.extraUsed) this.onExtraSlot();
+            } else {
+                this.onBooster(id);
+            }
         });
+        this.hintBack.tint = 0x1c1d33;
+        this.hintBack.alpha = 0.9;
+        this.hint.addChild(this.hintBack, this.hintText);
+        this.hint.visible = false;
         this.dim.eventMode = 'static';
         this.dim.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         this.dim.visible = false;
@@ -97,7 +111,7 @@ export class AntHud extends PIXI.Container {
         this.rays.visible = false;
         fillCoinBar(this.coinBar, this.coinText);
         this.coinBar.visible = false;
-        this.addChild(this.title, this.tierTag, this.speed, this.belt, this.pause, this.dim, this.rays, this.card, this.coinBar, this.flying, this.confetti, this.tutorial);
+        this.addChild(this.title, this.tierTag, this.speed, this.belt, this.hint, this.pause, this.dim, this.rays, this.card, this.coinBar, this.flying, this.confetti, this.tutorial);
         this.reposition();
     }
 
@@ -143,6 +157,21 @@ export class AntHud extends PIXI.Container {
 
     public hideTutorial(): void {
         this.tutorial.hide();
+    }
+
+    /** What to tap for a power-up waiting for its target (null: gone). */
+    public showHint(text: string | null): void {
+        this.hint.visible = !!text;
+        if (!text) return;
+        this.hintText.text = text;
+        this.hintBack.width = Math.max(320, this.hintText.width + 60);
+        this.hintBack.position.set(-this.hintBack.width / 2, -32);
+        gsap.fromTo(this.hint.scale, { x: 0.8, y: 0.8 }, { x: 1, y: 1, duration: 0.25, ease: 'back.out(3)' });
+    }
+
+    /** The belt's badges as the saved counts now are (after a power-up's used). */
+    public refreshBelt(): void {
+        this.belt.refresh();
     }
 
     /** A new level (`ready`: the extra slot can be used again) or the extra slot just used (one fewer owned). */
@@ -413,6 +442,7 @@ export class AntHud extends PIXI.Container {
         this.pausePopup?.reposition();
         this.speed.position.set(screen.topLeft.x + screen.width - SPEED.x, screen.topLeft.y + PAUSE.margin);
         this.belt.layout(screen.topLeft.x, screen.topLeft.y + screen.height, screen.width);
+        this.hint.position.set(screen.center.x, screen.topLeft.y + screen.height - 150);
         this.card.position.set(screen.center.x, screen.center.y);
         this.rays.position.set(screen.center.x, screen.center.y);
         this.dim.clear().beginFill(0x2a1a10, 0.45).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
@@ -423,6 +453,7 @@ export class AntHud extends PIXI.Container {
         this.hideResult();
         gsap.killTweensOf(this.speed.scale);
         gsap.killTweensOf(this.pause.scale);
+        gsap.killTweensOf(this.hint.scale);
         this.hidePause();
         gsap.killTweensOf(this.dim);
         super.destroy({ children: true });

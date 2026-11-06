@@ -107,6 +107,12 @@ export class PictureView {
     }
 
     /** The height of a block's top (where ants walk over the picture). */
+    /** The block a ray hits (a tap on the picture: the vacuum's pick), its pixel; -1 for none. */
+    public blockAt(raycaster: THREE.Raycaster): number {
+        const hit = raycaster.intersectObject(this.blocks, false).find((h) => h.instanceId !== undefined && !this.gone.has(h.instanceId));
+        return hit?.instanceId ?? -1;
+    }
+
     public get blockTop(): number {
         return this.cell * BLOCK_HEIGHT;
     }

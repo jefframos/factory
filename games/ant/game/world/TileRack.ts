@@ -6,7 +6,12 @@
 // behind squat lower (ROW_HEIGHT), from the third back lower still, and every tile that can't be taken has its number
 // faded. Taking a front tile (take()) hops it in an arc onto a free slot's plate and its column moves up; in its slot its number counts down as its ants leave
 // (setCount()), and once its last ant has left it goes (release()): the number goes, the tile hops, puffs up and pops
-// into a burst of little cubes of its colour, and the slot is free at once. The deck is dealt round-robin into the columns, so the
+// into a burst of little cubes of its colour, and the slot is free at once.
+//
+// Obstacles: a hidden tile is grey with a ? until it reaches the front row (then it flips to its colour); a locked one
+// is dark with a padlock and how many more tiles must be taken first (setTaps()), and pops open when that's done.
+// Power-ups: shuffle() mixes the tiles still in the columns; putBack() returns a slot's tile to the front of the
+// shortest column; removeColor() takes every tile of a colour away. The deck is dealt round-robin into the columns, so the
 // front row is always the next tiles in the deck's order. Sizes and spacing follow the reference layout (Layout.ts).
 
 import * as THREE from 'three';
@@ -35,6 +40,9 @@ const FADE_OPACITY = 0.45;
 /** Taking a tile: it hops this high on its way to the slot, in this long. */
 const HOP = { height: 2.2, seconds: 0.38 };
 /** A finished tile's pop: its hop, its puff, and the burst of cubes (how many, how big, how far, how long). */
+/** A hidden tile's grey, and a locked one's shade (x its colour). */
+const HIDDEN_COLOR = 0x9aa1b8;
+const LOCKED_SHADE = 0.55;
 const POP = { hop: 1.4, hopSeconds: 0.2, puff: 1.25, puffSeconds: 0.1, shrinkSeconds: 0.1, chips: 14, chip: 0.5, spread: 3.2, rise: 2.4, chipSeconds: 0.55 };
 /** How tall a tile stands by row (1 = full): the front row (the ones that can be taken) stands tall — two cushions on
  *  a plate — the rest lie flat, just their top cushion's thickness; the second row a little sunk. */
@@ -46,11 +54,18 @@ export interface RackTile {
     tile: Tile;
     group: THREE.Group;
     body: THREE.Mesh;
+    top: THREE.Mesh;
     label: THREE.Mesh;
     plate: THREE.Group;
     canvas: HTMLCanvasElement;
     texture: THREE.CanvasTexture;
     column: number;
+    /** Its number now (ants still to send, in a slot). */
+    count: number;
+    /** Still face down (a hidden tile not yet at the front). */
+    covered: boolean;
+    /** Tiles still to be taken before it opens (a locked one); 0 when open. */
+    lockedFor: number;
 }
 
 /** A white plate with a grey lip (a slot, or what a front-row tile stands on), from y = 0 up to PLATE.height. */
@@ -131,7 +146,6 @@ export class TileRack {
         return slot;
     }
 
-    /** The front tiles' bodies (what a tap can hit), each with its column. */
     /** The top of a column's front tile, in the world (where the tutorial points); null if the column's empty. */
     public frontTop(column: number, out = new THREE.Vector3()): THREE.Vector3 | null {
         const tile = this.columns[column]?.[0];
@@ -146,6 +160,7 @@ export class TileRack {
         return TILE;
     }
 
+    /** The front tiles' bodies (what a tap can hit), each with its column. */
     public frontBodies(): { body: THREE.Mesh; column: number }[] {
         return this.columns.flatMap((column, c) => (column.length ? [{ body: column[0].body, column: c }] : []));
     }
@@ -171,7 +186,87 @@ export class TileRack {
 
     /** A slot's tile shows its ants still to leave. */
     public setCount(tile: RackTile, count: number): void {
-        this.drawLabel(tile, count);
+        tile.count = count;
+        this.drawLabel(tile);
+    }
+
+    /** A column's front tile is locked (can't be taken yet). */
+    public isLocked(column: number): boolean {
+        return (this.columns[column]?.[0]?.lockedFor ?? 0) > 0;
+    }
+
+    /** `taps` tiles taken so far: locked tiles count down, and open (with a pop) when it's enough. */
+    public setTaps(taps: number): void {
+        for (const tile of this.columns.flat()) {
+            if (tile.tile.lockAt === undefined || tile.lockedFor === 0) continue;
+            tile.lockedFor = Math.max(0, tile.tile.lockAt - taps);
+            if (tile.lockedFor === 0) {
+                this.paint(tile);
+                gsap.fromTo(tile.group.scale, { x: 1.2, z: 1.2 }, { x: 1, z: 1, duration: 0.4, ease: 'back.out(3)' });
+            }
+            this.drawLabel(tile);
+        }
+    }
+
+    /** Every tile still in the columns, mixed (`random`: 0..1) and dealt back round-robin; they slide to their places. */
+    public shuffle(random: () => number = Math.random): void {
+        const tiles = this.columns.flat();
+        for (let i = tiles.length - 1; i > 0; i--) {
+            const j = Math.floor(random() * (i + 1));
+            [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+        }
+        this.columns.forEach((column) => (column.length = 0));
+        tiles.forEach((tile, i) => {
+            tile.column = i % this.columnCount;
+            this.columns[tile.column].push(tile);
+            gsap.fromTo(tile.group.rotation, { y: 0 }, { y: Math.PI * 2, duration: 0.45, ease: 'power2.out' });
+        });
+        this.layout(true);
+    }
+
+    /** A slot's tile back to the rack, `count` ants left on it: the front of the shortest column (it hops there). */
+    public putBack(tile: RackTile, count: number): void {
+        this.slotted.delete(tile);
+        tile.count = count;
+        tile.tile.count = count;
+        let column = 0;
+        this.columns.forEach((c, i) => {
+            if (c.length < this.columns[column].length) column = i;
+        });
+        tile.column = column;
+        this.columns[column].unshift(tile);
+        gsap.killTweensOf([tile.group.position, tile.group.scale]);
+        gsap.to(tile.group.position, { y: tile.group.position.y + HOP.height, duration: HOP.seconds / 2, ease: 'power2.out', yoyo: true, repeat: 1 });
+        this.drawLabel(tile);
+        this.layout(true);
+    }
+
+    /** Every tile of `color` still in the columns, popped away; the columns close up. How many went. */
+    public removeColor(color: number): number {
+        let removed = 0;
+        this.columns.forEach((column, c) => {
+            this.columns[c] = column.filter((tile) => {
+                if (tile.tile.color !== color) return true;
+                removed++;
+                tile.group.visible = true;
+                this.release(tile);
+                return false;
+            });
+        });
+        this.layout(true);
+        return removed;
+    }
+
+    /** The tile a tapped mesh belongs to, if it's in a slot (`inSlot`) or in the columns. */
+    public tileOf(mesh: THREE.Object3D, inSlot: boolean): RackTile | undefined {
+        const tiles = inSlot ? [...this.slotted.keys()] : this.columns.flat();
+        return tiles.find((tile) => tile.body === mesh || tile.top === mesh);
+    }
+
+    /** The meshes a tap can hit: the slots' tiles', or every tile's in the columns. */
+    public meshes(inSlot: boolean): THREE.Mesh[] {
+        const tiles = inSlot ? [...this.slotted.keys()] : this.columns.flat().filter((tile) => tile.group.visible);
+        return tiles.flatMap((tile) => [tile.body, tile.top]);
     }
 
     /** A slot's tile is done: it shrinks away. */
@@ -234,6 +329,8 @@ export class TileRack {
             const y = row === 0 ? PLATE.height : faded ? -FADE_DROP : -SECOND_ROW_DROP;
             const tall = ROW_HEIGHT[Math.min(row, ROW_HEIGHT.length - 1)];
             tile.plate.visible = row === 0;
+            // A hidden tile turns face up as it comes to the front.
+            if (row === 0 && tile.covered) this.reveal(tile);
             (tile.label.material as THREE.MeshBasicMaterial).opacity = row === 0 ? 1 : FADE_OPACITY;
             tile.group.visible = row < VISIBLE_ROWS;
             if (animate) {
@@ -254,7 +351,7 @@ export class TileRack {
         // under the cushions).
         const plateGroup = plate(this.plateGeometry, this.lipGeometry, this.white, this.grey);
         plateGroup.position.y = -PLATE.height;
-        const body = new THREE.Mesh(this.bottomGeometry, new THREE.MeshStandardMaterial({ color: color.clone().multiplyScalar(0.8), roughness: 0.6 }));
+        const body = new THREE.Mesh(this.bottomGeometry, new THREE.MeshStandardMaterial({ color, roughness: 0.6 }));
         body.position.y = BOTTOM_HEIGHT / 2;
         const top = new THREE.Mesh(this.topGeometry, new THREE.MeshPhysicalMaterial({ color, roughness: 0.45, clearcoat: 0.4, clearcoatRoughness: 0.3 }));
         top.position.y = BOTTOM_HEIGHT + TOP_HEIGHT / 2 - 0.14;
@@ -268,24 +365,75 @@ export class TileRack {
         label.position.y = BOTTOM_HEIGHT + TOP_HEIGHT - 0.12;
         group.add(plateGroup, body, top, label);
         this.group.add(group);
-        const rackTile: RackTile = { tile, group, body, label, plate: plateGroup, canvas, texture, column };
-        this.drawLabel(rackTile, tile.count);
+        const rackTile: RackTile = {
+            tile, group, body, top, label, plate: plateGroup, canvas, texture, column, count: tile.count,
+            covered: !!tile.hidden, lockedFor: tile.lockAt ?? 0,
+        };
+        this.paint(rackTile);
+        this.drawLabel(rackTile);
         return rackTile;
     }
 
-    /** The number on a tile: big and white, outlined in a dark shade of the tile's own colour. */
-    private drawLabel(tile: RackTile, count: number): void {
+    /** A tile's cushions coloured as it is: grey face down, darker locked, else its colour (the base a shade darker). */
+    private paint(tile: RackTile): void {
+        const color = tile.covered ? new THREE.Color(HIDDEN_COLOR) : vivid(this.palette[tile.tile.color]);
+        if (tile.lockedFor > 0) color.multiplyScalar(LOCKED_SHADE);
+        (tile.top.material as THREE.MeshPhysicalMaterial).color.copy(color);
+        (tile.body.material as THREE.MeshStandardMaterial).color.copy(color).multiplyScalar(0.8);
+    }
+
+    /** A hidden tile turns face up: a quick flip, its colour and number showing. */
+    private reveal(tile: RackTile): void {
+        tile.covered = false;
+        gsap.timeline()
+            .to(tile.group.scale, { x: 0.05, duration: 0.12, ease: 'power2.in' })
+            .call(() => {
+                this.paint(tile);
+                this.drawLabel(tile);
+            })
+            .to(tile.group.scale, { x: 1, duration: 0.25, ease: 'back.out(3)' });
+    }
+
+    /** The number on a tile: big and white, outlined in a dark shade of the tile's own colour — a ? face down, a padlock
+     *  and how many tiles are still to go while locked. */
+    private drawLabel(tile: RackTile): void {
         const g = tile.canvas.getContext('2d')!;
         g.clearRect(0, 0, tile.canvas.width, tile.canvas.height);
-        g.font = `900 138px ${FONT}`;
         g.textAlign = 'center';
         g.textBaseline = 'middle';
         g.lineJoin = 'round';
         g.lineWidth = 24;
-        g.strokeStyle = `#${new THREE.Color(this.palette[tile.tile.color]).multiplyScalar(0.3).getHexString()}`;
-        g.strokeText(String(count), 128, 106);
+        const dark = tile.covered ? '#3a3f55' : `#${new THREE.Color(this.palette[tile.tile.color]).multiplyScalar(0.3).getHexString()}`;
+        g.strokeStyle = dark;
         g.fillStyle = '#ffffff';
-        g.fillText(String(count), 128, 106);
+        if (tile.covered) {
+            g.font = `900 150px ${FONT}`;
+            g.strokeText('?', 128, 106);
+            g.fillText('?', 128, 106);
+        } else if (tile.lockedFor > 0) {
+            // A padlock, and the count to go beside it.
+            g.lineWidth = 14;
+            g.strokeStyle = '#ffffff';
+            g.beginPath();
+            g.arc(78, 92, 26, Math.PI, 0);
+            g.stroke();
+            g.fillStyle = '#ffffff';
+            g.fillRect(44, 92, 68, 58);
+            g.fillStyle = dark;
+            g.beginPath();
+            g.arc(78, 116, 9, 0, Math.PI * 2);
+            g.fill();
+            g.font = `900 110px ${FONT}`;
+            g.lineWidth = 20;
+            g.strokeStyle = dark;
+            g.strokeText(String(tile.lockedFor), 172, 110);
+            g.fillStyle = '#ffffff';
+            g.fillText(String(tile.lockedFor), 172, 110);
+        } else {
+            g.font = `900 138px ${FONT}`;
+            g.strokeText(String(tile.count), 128, 106);
+            g.fillText(String(tile.count), 128, 106);
+        }
         tile.texture.needsUpdate = true;
     }
 
