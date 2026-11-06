@@ -54,6 +54,8 @@ const DEFAULT_COLUMNS = 4;
 /** The anthills' x (world units) by how many there are; two from NEST_LEVEL on. */
 const NESTS: Record<number, number[]> = { 1: [0], 2: [-6.3, 3.3] };
 const NEST_LEVEL = 18;
+/** The end, when every tile's taken and every ant sent (just ants walking home): they speed up to this, over this long. */
+const END_RUSH = { speed: 3, seconds: 0.6 };
 /** Obstacles: from which level, and which dealt tiles (k: their place in the deal). Hidden: from the second row on,
  *  every HIDDEN.every-th; locked: from the third row on, every LOCKED.every-th, opening once all but a row's tiles
  *  before it in the deal have been taken. */
@@ -137,6 +139,8 @@ export default class AntScene extends ThreeScene {
     private armed: BoosterId | null = null;
     /** Tiles taken so far this level (locked tiles count them). */
     private taps = 0;
+    /** The ants' speed-up at the end (1: none). */
+    private rush = 1;
     /** The tutorial under way: tiles tapped so far, of how many, in how many columns; time to the next pointer. */
     private tutorial: { taps: number; tiles: number; columns: number; wait: number } | null = null;
     private resumeScale = 1;
@@ -280,6 +284,7 @@ export default class AntScene extends ThreeScene {
         const max = Math.max(min + 6, Math.round(pixels.length / 25));
         const deck = this.withObstacles(deckOf(this.level) ?? dealDeck(this.board, hashString(this.level.id), min, max));
         this.taps = 0;
+        this.rush = 1;
         this.armed = null;
         this.hud.showHint(null);
 
@@ -549,7 +554,11 @@ export default class AntScene extends ThreeScene {
                 this.slots[s] = null;
             }
         });
-        this.swarm.update(delta);
+        // Nothing left to tap, every ant sent: only waiting for them to get home — so they hurry.
+        const allSent = this.rack.tilesLeft === 0 && this.slots.every((slot) => !slot || slot.left === 0);
+        const rushTo = allSent && !this.ended ? END_RUSH.speed : 1;
+        this.rush += (rushTo - this.rush) * Math.min(1, delta / END_RUSH.seconds);
+        this.swarm.update(delta * this.rush);
         this.picture.update(delta);
         this.checkEnd();
     }

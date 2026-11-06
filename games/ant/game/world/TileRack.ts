@@ -190,6 +190,11 @@ export class TileRack {
         this.drawLabel(tile);
     }
 
+    /** Tiles still in the columns (not taken yet). */
+    public get tilesLeft(): number {
+        return this.columns.reduce((sum, column) => sum + column.length, 0);
+    }
+
     /** A column's front tile is locked (can't be taken yet). */
     public isLocked(column: number): boolean {
         return (this.columns[column]?.[0]?.lockedFor ?? 0) > 0;
