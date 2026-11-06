@@ -23,16 +23,16 @@
 // hidden (a ? until they reach the front), from level 12 some are locked (until enough tiles have been taken).
 // Power-ups (the belt): the extra slot; shuffle mixes the tiles not taken yet; pick up puts a slot's tile back (tap
 // it); vacuum takes every block of a colour off the picture, and its tiles with them (tap a block or a tile).
-// From level 18 (then every third level) the board's split (design.txt's second nest): an empty corridor down the
-// middle of the picture, and each half with its own anthill, slots and tile columns under it — its tiles' ants only take
-// its half's pixels. Two puzzles side by side, each dealt on its own.
+// From level 18 (then every third level) the board's split (design.txt's second nest): the picture stays whole, but its
+// left and right halves each have their own anthill, slots and tile columns under them — a side's tiles' ants only take
+// its half's pixels. Dealt as one (Board.dealSplit): the halves touch, so one side can wait on the other.
 
 import * as THREE from 'three';
 import { Game } from 'core/Game';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import SetupThree from 'core/scene/SetupThree';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { Board, Tile, dealDeck, hashString } from '../data/Board';
+import { Board, Tile, dealDeck, dealSplit, hashString } from '../data/Board';
 import { LEVELS, LevelData, pixelsOf, deckOf } from '../data/Levels';
 import { AntSave } from '../data/AntSave';
 import { Background, FREE_DROP_CHANCE, currentBackground, levelReward, levelTier } from '../data/Shop';
@@ -56,12 +56,6 @@ const DEFAULT_COLUMNS = 4;
  *  side), its slots and columns. */
 const SPLIT = { from: 18, every: 3, scale: 0.8, x: 6.6, slots: 3, columns: 2 };
 const isSplit = (number: number): boolean => number >= SPLIT.from && (number - SPLIT.from) % SPLIT.every === 0;
-
-/** A level with an empty corridor (a column of '.') down its middle: the split. Its baked deck doesn't fit any more. */
-function withCorridor(level: LevelData): LevelData {
-    const mid = Math.floor(level.width / 2);
-    return { ...level, width: level.width + 1, rows: level.rows.map((row) => `${row.slice(0, mid)}.${row.slice(mid)}`), deck: undefined };
-}
 /** The end, when every tile's taken and every ant sent (just ants walking home): they speed up to this, over this long. */
 const END_RUSH = { speed: 3, seconds: 0.6 };
 /** Obstacles: from which level, and which dealt tiles (k: their place in the deal). Hidden: from the second row on,
@@ -137,8 +131,8 @@ export default class AntScene extends ThreeScene {
     private sides: Side[] = [];
     /** The anthills: one, or one per half on a split level (left, right). */
     private holes: THREE.Group[] = [];
-    /** A split level's corridor (picture column); -1 when it isn't split. */
-    private corridor = -1;
+    /** A split level's right half's first column; -1 when it isn't split. */
+    private mid = -1;
     private readonly palette: THREE.Color[] = [];
     private ended = false;
     /** What the debug panel's level dropdown shows. */
@@ -281,8 +275,8 @@ export default class AntScene extends ThreeScene {
         this.debug.level = this.levelIndex;
         DebugOverlay.instance.getPanel('ant.debug')?.refresh();
         const split = isSplit(this.levelIndex + 1);
-        this.level = split ? withCorridor(LEVELS[this.levelIndex]) : LEVELS[this.levelIndex];
-        this.corridor = split ? Math.floor(LEVELS[this.levelIndex].width / 2) : -1;
+        this.level = LEVELS[this.levelIndex];
+        this.mid = split ? Math.floor(this.level.width / 2) : -1;
         this.picture?.destroy();
         this.sides.forEach((side) => side.rack.destroy());
         this.sides = [];
@@ -317,15 +311,18 @@ export default class AntScene extends ThreeScene {
         this.lane.bottom = picture.group.position.z + picture.depth + lane;
 
         if (split) {
-            // Each half dealt on its own (the other half's pixels left out), with its own rack and slots.
-            const halves = [{ minX: 0, maxX: this.corridor - 1, x: -SPLIT.x }, { minX: this.corridor + 1, maxX: this.level.width - 1, x: SPLIT.x }];
-            halves.forEach((half, n) => {
-                const only = pixels.map((c, i) => ((i % this.level.width) >= half.minX && (i % this.level.width) <= half.maxX ? c : -1));
-                const { min, max } = this.tileSizes(only.filter((c) => c >= 0).length * 2);
-                const deck = this.withObstacles(dealDeck(new Board(this.level.width, this.level.height, Int8Array.from(only)), hashString(this.level.id) + n, min, max), SPLIT.columns);
+            // Both halves dealt as one (each tile from one half), each with its own rack and slots.
+            const { min, max } = this.tileSizes(pixels.length);
+            const decks = dealSplit(this.board, hashString(this.level.id), min, max, this.mid);
+            const halves = [
+                { minX: 0, maxX: this.mid - 1, x: -SPLIT.x, deck: decks.left },
+                { minX: this.mid, maxX: this.level.width - 1, x: SPLIT.x, deck: decks.right },
+            ];
+            for (const half of halves) {
+                const deck = this.withObstacles(half.deck, SPLIT.columns);
                 const rack = new TileRack(this.level.palette, deck, SPLIT.columns, { x: half.x, scale: SPLIT.scale, slots: SPLIT.slots });
                 this.sides.push({ rack, slots: new Array(SPLIT.slots).fill(null), minX: half.minX, maxX: half.maxX });
-            });
+            }
         } else {
             // The baked deck; an old level file gets its tiles dealt here.
             const { min, max } = this.tileSizes(pixels.length);
@@ -683,7 +680,7 @@ export default class AntScene extends ThreeScene {
         const path = [...cells.slice(1).map((i) => this.picture!.cellCenter(i)), door, ...this.alongRim(door, down), down];
         // Down to just above the anthill's row, across, and in from above (never over the lid beside it) — on a split
         // level, its own half's anthill.
-        const half = this.corridor >= 0 && pixel % this.level.width > this.corridor ? 1 : 0;
+        const half = this.mid >= 0 && pixel % this.level.width >= this.mid ? 1 : 0;
         const hole = (this.holes[half] ?? this.holes[0]).position;
         const aboveZ = hole.z - LAYOUT.holeRadius * 0.9;
         if (Math.abs(bottomX - hole.x) > LAYOUT.holeRadius * 0.4) {

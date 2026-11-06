@@ -73,12 +73,17 @@ export class Board {
 
     /**
      * The pixels of a colour that can be taken, in order, by taking only that colour from now on (each one taken may
-     * expose more of the same colour): how far a tile of that colour can get on its own.
+     * expose more of the same colour): how far a tile of that colour can get on its own — only in columns `minX` to
+     * `maxX` (a split board's half), if given.
      */
-    public reachable(color: number): number[] {
+    public reachable(color: number, minX = 0, maxX = this.width - 1): number[] {
+        const inRange = (i: number) => {
+            const x = i % this.width;
+            return x >= minX && x <= maxX;
+        };
         const board = this.clone();
         const order: number[] = [];
-        let frontier = board.claimable(color);
+        let frontier = board.claimable(color).filter(inRange);
         while (frontier.length) {
             const next = new Set<number>();
             for (const i of frontier) {
@@ -86,7 +91,7 @@ export class Board {
                 order.push(i);
             }
             for (const i of frontier) {
-                for (const n of board.neighbours(i)) if (board.colors[n] === color && board.exposed(n)) next.add(n);
+                for (const n of board.neighbours(i)) if (board.colors[n] === color && board.exposed(n) && inRange(n)) next.add(n);
             }
             frontier = [...next];
         }
@@ -201,4 +206,30 @@ export function dealDeck(start: Board, seed: number, min: number, max: number): 
         deck.push({ color: chosen.color, count });
     }
     return deck;
+}
+
+/**
+ * Deals a split board's two decks (left: columns before `mid`, right: from it on) by playing the whole picture out, as
+ * dealDeck() does, each tile taking pixels of one colour from one half only. Taken in the dealt order — each tile from
+ * its own side's rack, round-robin into its columns — it always clears: the halves touch, so it's dealt as one.
+ */
+export function dealSplit(start: Board, seed: number, min: number, max: number, mid: number): { left: Tile[]; right: Tile[] } {
+    const board = start.clone();
+    const random = seeded(seed);
+    const colors = new Set<number>();
+    for (const c of board.colors) if (c >= 0) colors.add(c);
+    const halves = [{ minX: 0, maxX: mid - 1, deck: [] as Tile[] }, { minX: mid, maxX: board.width - 1, deck: [] as Tile[] }];
+    while (board.remaining > 0) {
+        const options = [...colors].flatMap((color) => halves.map((half) => ({ color, half, reach: board.reachable(color, half.minX, half.maxX) })))
+            .filter((o) => o.reach.length > 0);
+        if (!options.length) break;
+        const total = options.reduce((sum, o) => sum + o.reach.length, 0);
+        let pick = random() * total;
+        const chosen = options.find((o) => (pick -= o.reach.length) < 0) ?? options[options.length - 1];
+        let count = Math.min(chosen.reach.length, min + Math.floor(random() * (max - min + 1)));
+        if (chosen.reach.length - count < min) count = chosen.reach.length;
+        for (const i of chosen.reach.slice(0, count)) board.take(i);
+        chosen.half.deck.push({ color: chosen.color, count });
+    }
+    return { left: halves[0].deck, right: halves[1].deck };
 }

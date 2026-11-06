@@ -982,13 +982,23 @@
     "stroke": "#4a4a5a"
   },
   "sun": {
-    "name": "Sun",
-    "palette": "master",
-    "width": 20,
-    "height": 20,
+    "width": 21,
+    "height": 21,
     "colors": 3,
+    "palette": "master",
+    "background": "auto",
+    "saturation": 0,
+    "brightness": 0,
+    "offsetX": 0,
+    "offsetY": 0,
+    "edits": {},
+    "shades": {},
+    "padding": 0,
+    "stroke": "#4a4a5a",
+    "columns": 0,
+    "seed": 0,
     "mix": 1,
-    "stroke": "#4a4a5a"
+    "name": "Sun"
   },
   "frames": {
     "name": "Frames",
