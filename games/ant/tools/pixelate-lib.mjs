@@ -3,6 +3,8 @@
 // buildLevel(file, id, settings, master) makes a level from a picture file — or from nothing, for a level drawn by hand
 // (`file` null: the grid starts empty and the edits draw it):
 //   1. The picture is sampled SAMPLES x SAMPLES times per cell of a small grid.
+//   1b. `dropOutline` leaves out the picture's own near-black outline (as see-through): a drawn icon's thin black
+//      line pixelates into broken bits; the auto-shading draws the edges instead.
 //   2. The background can be removed: `background: 'remove'` clears the colour round the picture (the most common on
 //      its border, flood-filled in from the edges); 'auto' does that for a picture without transparency of its own;
 //      'keep' leaves it. Transparent parts are empty cells (no block: '.').
@@ -41,12 +43,14 @@ const ALPHA_CUTOFF = 128;
 const DIGITS = '0123456789abcdefghijklmnopqrstuvwxyz';
 const BACKGROUND_TOLERANCE = 48;
 const PREVIEW_CELL = 16;
+/** `dropOutline`: samples darker than this (their brightest channel, 0-255) are left out. */
+const OUTLINE_DARK = 70;
 /** One step of the colour adjustments. */
 const SATURATION_STEP = 0.15;
 const BRIGHTNESS_STEP = 0.06;
 export const MAX_STEPS = 5;
 
-export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {}, shades: {}, padding: 0, stroke: '', autoShade: true, shadeColors: -1, columns: 0, seed: 0, mix: 0 };
+export const DEFAULT_SETTINGS = { width: 24, height: 24, colors: 6, palette: 'master', background: 'auto', saturation: 0, brightness: 0, offsetX: 0, offsetY: 0, edits: {}, shades: {}, padding: 0, stroke: '', dropOutline: false, autoShade: true, shadeColors: -1, columns: 0, seed: 0, mix: 0 };
 /** Auto-shading: the smallest area shaded, and the edge tones' steps (as the brushes': [saturation, brightness]). */
 const SHADE = { minArea: 10, light: [0, 2], dark: [1, -2], maxLight: 0.93 };
 
@@ -225,7 +229,9 @@ async function sampleGrid(file, width, height, settings, palette) {
     const opaque = [];
     for (let i = 0; i < sampleWidth * sampleHeight; i++) {
         samples.push([data[i * 4], data[i * 4 + 1], data[i * 4 + 2]]);
-        opaque.push(data[i * 4 + 3] >= ALPHA_CUTOFF);
+        // `dropOutline`: a picture's own near-black outline counts as see-through (it pixelates into broken lines).
+        const dark = settings.dropOutline && Math.max(data[i * 4], data[i * 4 + 1], data[i * 4 + 2]) < OUTLINE_DARK;
+        opaque.push(data[i * 4 + 3] >= ALPHA_CUTOFF && !dark);
     }
     const hasAlpha = meta.hasAlpha && opaque.some((o) => !o);
     if (settings.background === 'remove' || (settings.background === 'auto' && !hasAlpha)) removeBackground(samples, opaque, sampleWidth, sampleHeight);

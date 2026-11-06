@@ -31,12 +31,12 @@
     "........1....1.."
   ],
   "columns": 4,
-  "deck": "0x24 3x7 1x18 2x2 0x19 3x3 3x4 5x3 1x23 0x23 6x3 2x27 4x8 1x4",
+  "deck": "5x3 3x10 4x7 1x22 1x2 6x1 3x4 2x15 2x14 0x30 1x14 0x26 0x10 1x7 4x1 6x2",
   "check": {
     "clearable": true,
     "slots": 5,
     "robust": true,
-    "randomWins": 0.66,
-    "target": 0.675
+    "randomWins": 0.61,
+    "target": 0.575
   }
 }

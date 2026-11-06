@@ -36,12 +36,12 @@
     "0000000000000000"
   ],
   "columns": 4,
-  "deck": "1x7 ax4 8x2 6x7 1x17 1x29 2x16 0x26 7x5 9x4 2x23 8x2 3x20 4x15 3x9 5x21 0x29 3x8 bx4 4x8",
+  "deck": "4x8 6x7 9x4 0x29 0x26 ax4 4x15 1x29 1x17 2x23 8x2 3x20 1x7 3x9 5x21 8x2 2x16 bx4 3x8 7x5",
   "check": {
     "clearable": true,
     "slots": 5,
     "robust": true,
-    "randomWins": 0.35,
-    "target": 0.35
+    "randomWins": 0.21,
+    "target": 0.2
   }
 }

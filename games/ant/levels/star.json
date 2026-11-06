@@ -38,12 +38,12 @@
     "........................."
   ],
   "columns": 4,
-  "deck": "0x58 0x61 4x1 3x3 1x52 0x33 0x16 1x14 1x13 3x4 0x25 2x11 1x23 3x4",
+  "deck": "0x16 3x3 0x58 0x61 3x4 0x33 2x11 1x13 1x52 3x4 1x14 1x23 0x25 4x1",
   "check": {
     "clearable": true,
     "slots": 5,
     "robust": true,
-    "randomWins": 0.74,
-    "target": 0.775
+    "randomWins": 0.63,
+    "target": 0.65
   }
 }
