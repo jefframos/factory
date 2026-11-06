@@ -9,7 +9,7 @@ rainbow, ghost, frog.
 
 Credit them in the game's credits / store page if they ship.
 
-star-blue, clover, gift-blue, gift-green, bolt, gem-purple, trophy, earth, potion, book, key and chest are item icons
+gift-blue, gift-green, bolt, gem-purple, trophy, earth, potion, book, key and chest are item icons
 from the Layer Lab GUI pack the factory's UI uses (`library3d/2d/ResourcesData`, the same licence as the game's UI).
 
-strawberry, mushroom, teacup, sunset and the patterns (rings, frames, checker, zigzag, polka) were drawn for the game.
+Cherry Pop, Blue Star and Clover (pixel art drawn in the editor), strawberry, mushroom, teacup, sunset and the patterns (rings, frames, checker, zigzag, polka) were drawn for the game.
