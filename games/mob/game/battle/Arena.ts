@@ -583,7 +583,7 @@ export class Arena {
             pole.position.set(side * (gate.width / 2 + GATE.post / 2), 0, 0);
             group.add(pole);
         }
-        const label = new Label(1.6, 0.8);
+        const label = new Label(1.6 * 2, 0.8 * 2);
         label.set(`x${gate.value}`);
         label.mesh.position.set(0, 1.25, 0);
         label.mesh.rotation.x = -0.6;
@@ -647,7 +647,7 @@ export class Arena {
         mesh.position.set(cx, 0, cz);
         this.group.add(mesh);
         if (!breakable) return undefined;
-        const label = new Label(1.8, 0.8);
+        const label = new Label(1.8 * 2, 0.8 * 2);
         label.set(String(o.hp ?? 40));
         label.mesh.position.set(cx, BLOCK.brickHeight + 0.7, cz);
         label.mesh.rotation.x = -0.6;
@@ -911,7 +911,7 @@ export class Arena {
         const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.5), new THREE.MeshLambertMaterial({ color: COLORS.red, side: THREE.DoubleSide }));
         flag.position.set(0.42, height + 1.45, 0);
         group.add(flag);
-        const label = new Label(Math.max(1.8, width * 0.6), 0.8);
+        const label = new Label(Math.max(1.8, width * 0.6) * 2, 0.8 * 2);
         label.set(String(target.hp));
         // Above the door (in front of the wall, clear of the door box), not on it.
         label.mesh.position.set(0, 1.2 * scale + 0.3 + 0.45, (BASE.depth * (0.7 + 0.3 * scale)) / 2 + 0.16);

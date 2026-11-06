@@ -18,7 +18,11 @@
       "x": 0,
       "z": -18.5,
       "width": 3,
-      "value": 2
+      "value": 2,
+      "swing": {
+        "range": 2.5,
+        "seconds": 5
+      }
     }
   ],
   "spinners": [
@@ -33,6 +37,6 @@
   "redRate": 2.4,
   "redRateEnd": 4.4,
   "redRamp": 50,
-  "baseHp": 500,
+  "baseHp": 150,
   "reward": 120
 }

@@ -42,6 +42,14 @@ let musicStarted = false;
 /** The platform's paused the game: everything silent until it resumes. */
 let platformPaused = false;
 
+/** Paused: by the platform, or the tab is hidden (unless the platform does its own pausing, as YouTube Playables). */
+const isPaused = (): boolean => platformPaused || (PlatformHandler.instance.platform?.usesPageVisibilityApi !== false && document.hidden);
+
+/** Silent while paused (the game's updates stop with a hidden tab too: core/Game.ts), back to full when not. */
+function syncPause(): void {
+    Howler.volume(isPaused() ? 0 : 1);
+}
+
 export const MobAudio = {
     /** Call once at boot (`gameFolder`: where public/<game>/audio is): the sounds are listed, then loaded in the background. */
     initialize(gameFolder: string): void {
@@ -52,19 +60,21 @@ export const MobAudio = {
         SoundLoadManager.instance.setUpManifests([manifest], ['default']);
         for (const { files } of Object.values(SFX)) for (const file of files) SoundLoadManager.instance.loadInBackground(file);
         SoundManager.instance.setLayerVolume(MUSIC.layer, MUSIC.volume);
+        document.addEventListener('visibilitychange', syncPause);
         PlatformHandler.instance.onPause.add(() => {
             platformPaused = true;
-            Howler.volume(0);
+            syncPause();
         });
         PlatformHandler.instance.onResume.add(() => {
             platformPaused = false;
-            Howler.volume(1);
+            syncPause();
         });
+        syncPause();
     },
 
     /** An effect, a little higher or lower with `rate`. */
     play(name: Sfx, rate = 1): void {
-        if (platformPaused) return;
+        if (isPaused()) return;
         const { files, volume, gap } = SFX[name];
         const now = performance.now() / 1000;
         if (gap && now - (lastPlayed.get(name) ?? -Infinity) < gap) return;

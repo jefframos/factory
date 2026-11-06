@@ -1,6 +1,6 @@
 // build-props.mjs — node games/mob/tools/build-props.mjs
 //
-// The game pieces' models, into public/mob/models/props/ (each a GLB with its texture inside):
+// The game pieces' models, into public/mob/models/props/ (each a GLB with its texture inside, meshopt-compressed):
 // - buildings (library3d KayKit City Builder Bits, medieval, FBX): the blue home (giant house), the blue barracks (truck
 //   garage), the yellow home (the gold saucer house), the red barracks (the enemy's main base) and the red tower (a
 //   smaller fort). All the meshes merged into one, centred on X/Z with its base at y 0, in the file's own units (the
@@ -10,12 +10,12 @@
 // - the saucer (games/ufo's, built by its build-saucer.mjs) with the gold-and-black skin.
 // - the car (library3d City2 Car_23): its textures cut to 256 px.
 // - the desert theme's plants (library3d 3D Desert Plants Pack) into public/mob/models/desert/: their textures cut to
-//   256 px and their metal map dropped (megabytes each otherwise).
+//   128 px, their meshes simplified hard (props at the field's edge) and their metal map dropped (megabytes each otherwise).
 
 import { Document, NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { prune, simplify, weld } from '@gltf-transform/functions';
-import { MeshoptSimplifier } from 'meshoptimizer';
+import { meshopt, prune, simplify, weld } from '@gltf-transform/functions';
+import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
@@ -39,7 +39,14 @@ const BUILDINGS = [
     { out: 'tower-red', file: 'red/building_tower_A_red.fbx' },
 ];
 
-const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
+await MeshoptEncoder.ready;
+const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder });
+
+/** Writes a model meshopt-compressed (the game's GLTFLoader has the decoder: core/three/GLTFLoaders.ts), a fraction of the size. */
+async function write(file, document) {
+    await document.transform(meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
+    await io.write(file, document);
+}
 // FBXLoader tries to load the FBX's textures, which needs a DOM: an empty texture will do (the atlas goes in below).
 THREE.TextureLoader.prototype.load = () => new THREE.Texture();
 
@@ -101,7 +108,7 @@ async function buildBuilding({ out, file }) {
         .setAttribute('TEXCOORD_0', accessor('VEC2', Float32Array.from(uvs))));
     document.createScene(out).addChild(document.createNode(out).setMesh(mesh));
     await document.transform(weld(), prune());
-    await io.write(path.join(OUT, `${out}.glb`), document);
+    await write(path.join(OUT, `${out}.glb`), document);
     const size = box.getSize(new THREE.Vector3());
     console.log(`${out}: ${positions.length / 9} triangles, size ${size.toArray().map((c) => c.toFixed(2)).join(' x ')}`);
 }
@@ -132,7 +139,7 @@ async function buildTruck() {
         }
     }
     await document.transform(prune());
-    await io.write(path.join(OUT, 'truck.glb'), document);
+    await write(path.join(OUT, 'truck.glb'), document);
     console.log(`truck: ${moved} UVs moved to blue`);
 }
 
@@ -148,7 +155,7 @@ async function buildSaucer() {
             material.setBaseColorTexture(texture).setBaseColorFactor([1, 1, 1, 1]).setRoughnessFactor(0.4).setMetallicFactor(0.5);
         }
     }
-    await io.write(path.join(OUT, 'saucer.glb'), document);
+    await write(path.join(OUT, 'saucer.glb'), document);
     console.log(`saucer: materials ${document.getRoot().listMaterials().map((m) => m.getName()).join(', ')}`);
 }
 
@@ -163,7 +170,7 @@ async function buildCar() {
         if (image) texture.setImage(await sharp(Buffer.from(image)).resize(256, 256, { fit: 'inside' }).png().toBuffer()).setMimeType('image/png');
     }
     await document.transform(prune());
-    await io.write(path.join(OUT, 'car.glb'), document);
+    await write(path.join(OUT, 'car.glb'), document);
     console.log(`car: ${Math.round(fs.statSync(path.join(OUT, 'car.glb')).size / 1024)} KB`);
 }
 
@@ -177,12 +184,12 @@ async function buildDesert() {
         for (const texture of document.getRoot().listTextures()) {
             const image = texture.getImage();
             if (!image) continue;
-            texture.setImage(await sharp(Buffer.from(image)).resize(256, 256, { fit: 'inside' }).png().toBuffer()).setMimeType('image/png');
+            texture.setImage(await sharp(Buffer.from(image)).resize(128, 128, { fit: 'inside' }).png().toBuffer()).setMimeType('image/png');
         }
         // Their meshes carry many unused vertices: weld + simplify compacts them (and halves the triangles).
-        await document.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ratio: 0.5, error: 0.002 }), prune());
+        await document.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ratio: 0.15, error: 0.04 }), prune());
         const name = file.replace(/^[0-9]+_/, '').replace(/_/g, '-');
-        await io.write(path.join(DESERT_OUT, `${name}.glb`), document);
+        await write(path.join(DESERT_OUT, `${name}.glb`), document);
         console.log(`desert/${name}: ${Math.round(fs.statSync(path.join(DESERT_OUT, `${name}.glb`)).size / 1024)} KB`);
     }
 }

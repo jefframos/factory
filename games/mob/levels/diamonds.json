@@ -4,27 +4,25 @@
   "gates": [
     {
       "x": -2.6,
-      "z": -7.5,
+      "z": -11,
       "width": 2.6,
       "value": 3
     },
     {
       "x": 2.6,
-      "z": -7.5,
+      "z": -11,
       "width": 2.6,
       "value": 2
     },
     {
-      "x": -2.6,
+      "x": 0.1,
       "z": -17,
       "width": 2.6,
-      "value": 2
-    },
-    {
-      "x": 2.6,
-      "z": -17,
-      "width": 2.6,
-      "value": 3
+      "value": 4,
+      "swing": {
+        "range": 2.5,
+        "seconds": 5
+      }
     }
   ],
   "obstacles": [
@@ -87,6 +85,16 @@
   "redRate": 2.9,
   "redRateEnd": 5.1,
   "redRamp": 55,
-  "baseHp": 620,
-  "reward": 145
+  "baseHp": 550,
+  "reward": 145,
+  "pads": [
+    {
+      "kind": "car",
+      "x": 2.5,
+      "z": -6.25,
+      "width": 2.4,
+      "depth": 1.8,
+      "need": 30
+    }
+  ]
 }

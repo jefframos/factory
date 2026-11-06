@@ -220,14 +220,54 @@
         "h": 26
       }
     },
-    "ItemIcon_Skull": {
+    "PictoIcon_Sound_Off": {
       "frame": {
         "x": 311,
         "y": 2,
+        "w": 109,
+        "h": 104
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 12,
+        "w": 109,
+        "h": 104
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "PictoIcon_Sound": {
+      "frame": {
+        "x": 311,
+        "y": 113,
+        "w": 110,
+        "h": 104
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 12,
+        "w": 110,
+        "h": 104
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "ItemIcon_Skull": {
+      "frame": {
+        "x": 233,
+        "y": 263,
         "w": 124,
         "h": 99
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 2,
@@ -262,7 +302,7 @@
     },
     "Image_Effect_Rotate": {
       "frame": {
-        "x": 412,
+        "x": 417,
         "y": 2,
         "w": 270,
         "h": 275
@@ -282,12 +322,12 @@
     },
     "Image_Demo_Coin": {
       "frame": {
-        "x": 311,
-        "y": 128,
+        "x": 359,
+        "y": 225,
         "w": 74,
         "h": 49
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -302,12 +342,12 @@
     },
     "Image_Bagde_Wing1": {
       "frame": {
-        "x": 233,
-        "y": 279,
+        "x": 2,
+        "y": 533,
         "w": 536,
         "h": 449
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -322,7 +362,7 @@
     },
     "Image_Badge_Skull": {
       "frame": {
-        "x": 684,
+        "x": 689,
         "y": 2,
         "w": 562,
         "h": 329
@@ -340,14 +380,34 @@
         "h": 329
       }
     },
+    "Button_Round03_Dark": {
+      "frame": {
+        "x": 540,
+        "y": 279,
+        "w": 130,
+        "h": 122
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 130,
+        "h": 122
+      },
+      "sourceSize": {
+        "w": 130,
+        "h": 122
+      }
+    },
     "Button01_l_Sky": {
       "frame": {
-        "x": 2,
-        "y": 817,
+        "x": 540,
+        "y": 403,
         "w": 80,
         "h": 142
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -362,8 +422,8 @@
     },
     "Button01_l_Green": {
       "frame": {
-        "x": 84,
-        "y": 533,
+        "x": 540,
+        "y": 485,
         "w": 80,
         "h": 142
       },
@@ -382,8 +442,8 @@
     },
     "Button01_l_Gray": {
       "frame": {
-        "x": 2,
-        "y": 533,
+        "x": 221,
+        "y": 364,
         "w": 80,
         "h": 142
       },
@@ -402,8 +462,8 @@
     },
     "BorderFrame_Round24": {
       "frame": {
-        "x": 308,
-        "y": 182,
+        "x": 410,
+        "y": 279,
         "w": 62,
         "h": 62
       },
@@ -422,8 +482,8 @@
     },
     "ActionText_Go": {
       "frame": {
-        "x": 684,
-        "y": 566,
+        "x": 540,
+        "y": 567,
         "w": 351,
         "h": 180
       },
@@ -447,8 +507,8 @@
     "image": "ui.webp",
     "format": "RGBA8888",
     "size": {
-      "w": 1015,
-      "h": 961
+      "w": 1020,
+      "h": 984
     },
     "scale": 1,
     "related_multi_packs": []

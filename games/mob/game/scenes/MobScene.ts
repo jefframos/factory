@@ -48,11 +48,11 @@ const DEBUG_PANEL = 'mob.debug';
  * (world units), moving the framing without changing the angle. `distance` is for a 9:16 screen: narrower ones move
  * back so the field's width still fits.
  */
-const CAMERA = { pitchDeg: 45, fov: 42, distance: 35, offsetX: 0, offsetY: -1.9 };
-const CAMERA_TARGET = new THREE.Vector3(0, 0, -11.5);
+const CAMERA = { pitchDeg: 50, fov: 46, distance: 15, offsetX: 0, offsetY: 6 };
+const CAMERA_TARGET = new THREE.Vector3(0, 0, -12.5);
 const REFERENCE_ASPECT = 9 / 16;
 /** The forts' roof line and how far behind the base line their back is (Arena's BASE), and the gap kept under the HUD (px). */
-const FORT_TOP_Y = 2.6;
+const FORT_TOP_Y = 2.9;
 const FORT_BACK = 2.6;
 const HUD_CLEARANCE = 10;
 /** The cannon's front edge (z) and the room kept under it at the bottom of the screen (px). */
@@ -349,6 +349,8 @@ export default class MobScene extends ThreeScene {
 
     private readonly onPointerDown = (event: PointerEvent): void => {
         MobAudio.unlock();
+        // A press on the mute button isn't a press on the field (no start, no firing).
+        if (this.hud.onButton(event.clientX, event.clientY)) return;
         if (this.state === 'over') return;
         this.dragging = true;
         this.battle.firing = true;

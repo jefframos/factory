@@ -73,6 +73,10 @@ const CLEAR_OUT = { start: 0.5, spread: 1.6, seconds: 0.25 };
 /** How far ahead a mob looks for a wall or hole (units), and how hard it turns away. */
 const LOOK_AHEAD = 1.5;
 const AVOID_TURN = 1.4;
+/** Below this (the cosine between the way it wants to go and an edge), a mob meets a block head-on. */
+const HEAD_ON = 0.35;
+/** How far to the side a red steering round something moves its lane. */
+const LANE_SHIFT = 2;
 /** Every gate bit set: a giant never uses a gate. */
 const ALL_GATES = 0xff;
 
@@ -118,6 +122,8 @@ export interface Pad extends PadConfig {
     count: number;
     /** The house's footprint (reds and giants steer round it). */
     shape: Shape;
+    /** Which of its sides are wide enough to get past, by mob radius (openSides()). */
+    open: Map<number, { left: boolean; right: boolean }>;
 }
 
 export interface PushBlock extends PushBlockConfig {
@@ -263,7 +269,7 @@ export class Battle {
         });
         this.spinners = config.spinners ?? [];
         this.pushers = (config.pushers ?? []).map((pusher) => ({ ...pusher, nowX: pusher.x, speedX: 0 }));
-        this.pads = (config.pads ?? []).map((pad) => ({ ...pad, count: 0, shape: boxShape(pad.x, pad.z, pad.width, pad.depth) }));
+        this.pads = (config.pads ?? []).map((pad) => ({ ...pad, count: 0, shape: boxShape(pad.x, pad.z, pad.width, pad.depth), open: new Map() }));
         this.pushBlocks = (config.pushBlocks ?? []).map((block) => ({ ...block, nowZ: block.z, speed: 0, blues: 0, reds: 0, alive: true }));
         this.targets = (config.targets ?? [{ x: 0, hp: config.baseHp, width: BASE_HALF_WIDTH * 2 }]).map((target) => ({
             x: target.x, z: target.z ?? ARENA.baseZ, halfWidth: (target.width ?? BASE_HALF_WIDTH * 2) / 2,
@@ -532,29 +538,70 @@ export class Battle {
     private slideAround(x: number, z: number, dx: number, dz: number, r: number, houses: boolean): Contact | null {
         const ahead = LOOK_AHEAD;
         const c = this.contactOut;
-        let hit = false;
+        let hit: Shape | null = null;
         for (const block of this.blocks) {
             if (!block.alive || block.breakable) continue;
             if (touch(block.shape, x + dx * ahead, z + dz * ahead, r, c)) {
-                hit = true;
+                hit = block.shape;
                 break;
             }
         }
+        let open = 0;
         if (!hit && houses) {
             for (const pad of this.pads) {
+                const sides = this.openSides(pad, r);
+                if (!sides.left && !sides.right) continue;
                 if (touch(pad.shape, x + dx * ahead, z + dz * ahead, r, c)) {
-                    hit = true;
+                    hit = pad.shape;
+                    // Only one side to go round: that one (-1 left, +1 right).
+                    open = sides.left && sides.right ? 0 : sides.left ? -1 : 1;
                     break;
                 }
             }
         }
         if (!hit) return null;
-        // Along the edge, whichever way is nearer the wanted direction.
-        if (c.tx * dx + c.tz * dz < 0) {
+        // Along the edge, whichever way is nearer the wanted direction — but head-on (both ways about as good, which
+        // flips frame to frame and leaves it stuck), round the nearer end: away from the shape's middle.
+        const along = c.tx * dx + c.tz * dz;
+        const choice = open !== 0
+            ? c.tx * open + (Math.abs(c.tx) < 0.3 ? along : 0)
+            : Math.abs(along) < HEAD_ON
+                ? c.tx * (x - (hit.minX + hit.maxX) / 2) + c.tz * (z - (hit.minZ + hit.maxZ) / 2)
+                : along;
+        if (choice < 0) {
             c.tx = -c.tx;
             c.tz = -c.tz;
         }
         return c;
+    }
+
+    /**
+     * Which sides of a house one of radius `r` can get past: a strip that wide down each side, clear of the field's edge
+     * and of every wall, hole or breakable (worked out once per house and size).
+     */
+    private openSides(pad: Pad, r: number): { left: boolean; right: boolean } {
+        const key = Math.round(r * 100);
+        let sides = pad.open.get(key);
+        if (sides) return sides;
+        const hw = pad.width / 2;
+        const hd = pad.depth / 2;
+        const fits = (side: number): boolean => {
+            const x = pad.x + side * (hw + r + 0.05);
+            if (Math.abs(x) > ARENA.halfWidth - r) return false;
+            for (let z = pad.z - hd - r; z <= pad.z + hd + r; z += 0.25) {
+                for (const block of this.blocks) if (touch(block.shape, x, z, r, this.contactOut)) return false;
+            }
+            return true;
+        };
+        sides = { left: fits(-1), right: fits(1) };
+        pad.open.set(key, sides);
+        return sides;
+    }
+
+    /** Whether a house blocks one of radius `r` (it does when there's a way round it). */
+    private passable(pad: Pad, r: number): boolean {
+        const sides = this.openSides(pad, r);
+        return sides.left || sides.right;
     }
 
     /** The PUSH blocks slide by last step's pressure: the lead (blues minus reds) times TUNING.pushPerMob, capped. */
@@ -634,6 +681,9 @@ export class Battle {
                 dx = slide.tx * AVOID_TURN + slide.nx * 0.35;
                 dz = slide.tz * AVOID_TURN + slide.nz * 0.35;
                 length = Math.sqrt(dx * dx + dz * dz) || 1;
+                // A red steering round something takes the side it's going round as its lane: else the pull back to its
+                // old lane (through the obstacle) drags it straight back in front of it, and it hovers there.
+                if (!blue && Math.abs(slide.tx) > 0.3) this.lane[i] = Math.max(-RED_LANE_SPREAD, Math.min(RED_LANE_SPREAD, x + Math.sign(slide.tx) * LANE_SHIFT));
             }
             const kind = this.big[i];
             const speed = (blue ? TUNING.blueSpeed : TUNING.redSpeed) * (kind === TRUCK ? TUNING.truckSpeed : kind === CAR ? TUNING.carSpeed : kind ? TUNING.giantSpeed : 1);
@@ -676,6 +726,8 @@ export class Battle {
             // Houses: solid to reds and giants (plain blues walking in are taken in: feedPads).
             if (!blue || this.big[i]) {
                 for (const pad of this.pads) {
+                    // Only where there's a way round it for one this size (else it'd wedge there: it walks through).
+                    if (!this.passable(pad, r)) continue;
                     [x, z] = this.outOfBox(x, z, r, pad.x, pad.z, pad.width / 2, pad.depth / 2);
                 }
             }

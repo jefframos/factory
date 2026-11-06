@@ -1,7 +1,8 @@
 // MobEvents.ts
 //
 // What Mob tells the platform (PlatformHandler): gameplay start / stop (only on a change: while a battle's being played —
-// not on the end card, not before the player's first touch, not while the platform has the game paused), and analytics
+// not on the end card, not before the player's first touch, not while the platform has the game paused or the tab is
+// hidden), and analytics
 // events (PlatformHandler.measure: category, what, action), stable ids, no display text. Every event lives here.
 //
 //   category      what                         action     when
@@ -42,8 +43,11 @@ let touched = false;
 let playedSeconds = 0;
 let nextMark = 0;
 
+/** The tab is hidden (the game's updates stop then: core/Game.ts), unless the platform does its own pausing. */
+const hidden = (): boolean => PlatformHandler.instance.platform?.usesPageVisibilityApi !== false && document.hidden;
+
 function sendPlaying(): void {
-    const on = wantsPlaying && touched && !paused;
+    const on = wantsPlaying && touched && !paused && !hidden();
     if (on === playing) return;
     playing = on;
     const platform = PlatformHandler.instance.platform;
@@ -58,6 +62,7 @@ function onFirstInput(): void {
     sendPlaying();
 }
 for (const type of FIRST_INPUT_EVENTS) window.addEventListener(type, onFirstInput, true);
+document.addEventListener('visibilitychange', sendPlaying);
 
 const measure = (category: string, what: string | number, action: string): void => PlatformHandler.instance.measure(category, what, action);
 

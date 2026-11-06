@@ -15,6 +15,7 @@
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
+import SoundToggleButton from 'core/ui/SoundToggleButton';
 import { Game } from 'core/Game';
 import { UPGRADES, UpgradeKind } from '../data/MobConfig';
 import { COIN_BAR, GlossyButton, fillCoinBar, framePlane, glossyButton, iconSprite, label, tappable } from './UiParts';
@@ -28,6 +29,8 @@ const RIBBON = { width: 440, height: 92, won: 0x3d6dff, lost: 0xff3d4f };
 const EMBLEM_LOST_DROP = 34;
 /** Where the level text sits on the VICTORY badge (px below its middle: the shield's centre). */
 const EMBLEM_LEVEL_Y = 48;
+/** The mute button (top right): its size, the gap to the corner, and its icon's scale (128 px icons). */
+const MUTE = { size: 60, margin: 14, icon: 0.55 / 128 };
 /** The energy bar (across the bottom of the screen): its size, how far up from the bottom edge, its colours (full, low, locked). */
 const ENERGY = { width: 420, height: 40, bottom: 30, fill: 0x45d4ff, low: 0xffc23d, locked: 0xff4f63, back: 0x1b1e3a, track: 0x0f2a3d };
 /** An upgrade button on the end card. */
@@ -60,6 +63,7 @@ export class MobHud extends PIXI.Container {
     /** The battle number (setTitle), shown on the VICTORY badge too. */
     private battleNumber = 1;
     private readonly coinPill = new PIXI.Container();
+    private readonly mute = new PIXI.Container();
     private readonly coinText = label(COIN_BAR.textSize, 0xffffff);
     private readonly hint = new PIXI.Container();
     private readonly hand = iconSprite('Tutorial_Hand', 120);
@@ -130,7 +134,8 @@ export class MobHud extends PIXI.Container {
         this.energyIcon.position.set(-8, ENERGY.height / 2);
         this.energy.addChild(this.energyBack, this.energyTrack, this.energyFill, this.energyIcon);
         this.energy.pivot.set(ENERGY.width / 2, ENERGY.height / 2);
-        this.addChild(this.vignette, this.giantLabels, this.pops, this.top, this.coinPill, this.energy);
+        this.buildMute();
+        this.addChild(this.vignette, this.giantLabels, this.pops, this.top, this.coinPill, this.energy, this.mute);
 
         // The hint: the glove sweeping over the words.
         const hintText = label(40);
@@ -194,6 +199,8 @@ export class MobHud extends PIXI.Container {
         this.top.scale.set(scale);
         this.top.position.set(center.x - (BAR.width * scale) / 2, topLeft.y + 96);
         this.coinPill.position.set(topLeft.x + 46, topLeft.y + 44);
+        // The mute button in the top right corner.
+        this.mute.position.set(topLeft.x + width - MUTE.margin - MUTE.size / 2, topLeft.y + 44);
         this.hint.position.set(center.x, bottomLeft.y - Math.min(300, height * 0.24));
         this.go.position.set(center.x, center.y - 80);
         this.dim.clear().beginFill(0x0b1030, 0.72).drawRect(topLeft.x, topLeft.y, width, height).endFill();
@@ -210,9 +217,32 @@ export class MobHud extends PIXI.Container {
         // Across the bottom, centred (narrower on a narrow screen).
         this.energy.scale.set(Math.min(1, (width - 90) / (ENERGY.width + 40)));
         this.energy.position.set(center.x + 8, bottomLeft.y - ENERGY.bottom - ENERGY.height / 2);
-        this.next.position.set(center.x, cardTop + 700);
+        this.next.position.set(center.x, cardTop + 750);
         this.drawVignette();
         this.drawBar();
+    }
+
+    /** The mute button: the shared sound toggle (it mutes everything and remembers it) on a dark round button. */
+    private buildMute(): void {
+        const back = PIXI.Sprite.from('Button_Round03_Dark');
+        back.anchor.set(0.5);
+        back.width = back.height = MUTE.size;
+        const icons = new SoundToggleButton('PictoIcon_Sound', 'PictoIcon_Sound_Off');
+        icons.scale.set(MUTE.size * MUTE.icon);
+        this.mute.addChild(back, icons);
+        this.mute.eventMode = 'static';
+        this.mute.cursor = 'pointer';
+        this.mute.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
+            // The icons do the toggling; a tap on the round button round them is passed on to them.
+            if (event.target !== icons) icons.emit('pointertap', event);
+            gsap.killTweensOf(this.mute.scale);
+            gsap.fromTo(this.mute.scale, { x: 0.86, y: 0.86 }, { x: 1, y: 1, duration: 0.25, ease: 'back.out(3)' });
+        });
+    }
+
+    /** Whether a screen point (CSS px) is on a HUD button the field shouldn't also take (the mute button). */
+    public onButton(screenX: number, screenY: number): boolean {
+        return this.mute.visible && this.mute.getBounds().contains(screenX, screenY);
     }
 
     /** Where the top block (HP bar, badge, level name) ends, in screen pixels (layout() first). */

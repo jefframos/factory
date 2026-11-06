@@ -13,6 +13,16 @@
       "z": -9,
       "width": 3.6,
       "value": 3
+    },
+    {
+      "x": 0,
+      "z": -15,
+      "width": 3,
+      "value": 4,
+      "swing": {
+        "range": 2.5,
+        "seconds": 5
+      }
     }
   ],
   "redRate": 2,

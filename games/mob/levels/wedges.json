@@ -21,10 +21,14 @@
       "value": 2
     },
     {
-      "x": -1,
+      "x": 1.25,
       "z": -9.6,
       "width": 2.4,
-      "value": 2
+      "value": 2,
+      "swing": {
+        "range": 2.5,
+        "seconds": 5
+      }
     }
   ],
   "obstacles": [
@@ -91,6 +95,6 @@
   "redRate": 3.4,
   "redRateEnd": 6,
   "redRamp": 55,
-  "baseHp": 700,
+  "baseHp": 350,
   "reward": 140
 }

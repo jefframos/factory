@@ -37,6 +37,34 @@ function trimPlatformConfig(platform: string | undefined): Plugin {
     };
 }
 
+// A build copies the whole public/ folder, which still holds the asset folders of whatever games were built before
+// (7.9 MB of Ant's in Mob's build, 12 MB of Mow's in UFO's). After the build only the game's own are kept: public/<GAME>
+// and any folderPath its platforms.config.json names. Vite's own output (assets/, index.html) stays.
+function keepOnlyGameAssets(gameRoot: string, outDir: string): Plugin {
+    return {
+        name: 'keep-only-game-assets',
+        apply: 'build',
+        closeBundle() {
+            const keep = new Set<string>([GAME!]);
+            try {
+                const config = JSON.parse(fs.readFileSync(resolve(gameRoot, 'platforms.config.json'), 'utf8')) as Record<string, { folderPath?: string }>;
+                for (const entry of Object.values(config)) if (entry?.folderPath) keep.add(entry.folderPath);
+            } catch {
+                // No platforms config: just the game's own folder.
+            }
+            const publicRoot = resolve(__dirname, 'public');
+            if (!fs.existsSync(publicRoot) || !fs.existsSync(outDir)) return;
+            for (const entry of fs.readdirSync(publicRoot, { withFileTypes: true })) {
+                if (!entry.isDirectory() || keep.has(entry.name)) continue;
+                const copied = resolve(outDir, entry.name);
+                if (!fs.existsSync(copied)) continue;
+                fs.rmSync(copied, { recursive: true, force: true });
+                console.log(`🧹 Left out public/${entry.name} (another game's assets)`);
+            }
+        },
+    };
+}
+
 function syncGameRegistry(): Plugin {
     return {
         name: 'sync-game-registry',
@@ -104,7 +132,13 @@ export default defineConfig({
     root: `games/${GAME}`,
     base: './',
     publicDir: resolve(__dirname, 'public'),
-    plugins: [injectPlatformApiScript(resolve(__dirname, `games/${GAME}`), PLATFORM), trimPlatformConfig(process.env.VITE_PLATFORM), syncGameRegistry(), restartOnGameChange()],
+    plugins: [
+        injectPlatformApiScript(resolve(__dirname, `games/${GAME}`), PLATFORM),
+        trimPlatformConfig(process.env.VITE_PLATFORM),
+        syncGameRegistry(),
+        restartOnGameChange(),
+        keepOnlyGameAssets(resolve(__dirname, `games/${GAME}`), resolve(__dirname, `dist/_builds_${GAME}/${PLATFORM}`)),
+    ],
     resolve: {
         alias: {
             'core': resolve(__dirname, 'core'),

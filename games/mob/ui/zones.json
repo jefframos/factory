@@ -14,10 +14,7 @@
         "diamonds",
         "breakout",
         "twin-towers",
-        "three-forts",
-        "islands",
-        "fortress",
-        "gauntlet"
+        "islands"
       ]
     },
     {
@@ -28,7 +25,10 @@
         "push-it",
         "push-lanes",
         "giant-push",
-        "shield-wall"
+        "shield-wall",
+        "fortress",
+        "three-forts",
+        "gauntlet"
       ]
     },
     {

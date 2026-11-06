@@ -50,8 +50,8 @@
     }
   ],
   "redGiantEvery": 20,
-  "redRate": 2.1,
-  "redRateEnd": 3.9,
+  "redRate": 1.9,
+  "redRateEnd": 3.5,
   "redRamp": 55,
   "baseHp": 480,
   "reward": 210

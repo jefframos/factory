@@ -29,7 +29,7 @@ export const TUNING = {
     /** A mob's radius (world units): its spacing, and its reach in a fight (two radii). */
     radius: 0.4,
     /** The model's height on the field (applied live: the debug panel's Mob size). */
-    mobHeight: 1.6,
+    mobHeight: 2.6,
     /** The most mobs alive at once (both teams): past it, the cannon waits and gates make fewer. */
     maxMobs: 520,
     /** How hard mobs push apart, and how far a red looks for a blue to run at. */
