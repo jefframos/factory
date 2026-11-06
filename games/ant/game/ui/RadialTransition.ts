@@ -34,7 +34,7 @@ const SMOOTH_FRAMES = 6;
 const SMOOTH_MS = 45;
 const MAX_WAIT_MS = 2500;
 
-/** A level's picture as flat rounded squares, `size` across its longer side, on a cream plate. */
+/** A level's picture as flat squares, `size` across its longer side, on a cream plate. */
 function miniPicture(level: LevelData, size: number): PIXI.Graphics {
     const pixels = pixelsOf(level);
     const cell = size / Math.max(level.width, level.height);
@@ -47,7 +47,7 @@ function miniPicture(level: LevelData, size: number): PIXI.Graphics {
         if (pixels[i] < 0) continue;
         const x = -width / 2 + (i % level.width) * cell;
         const y = -height / 2 + Math.floor(i / level.width) * cell;
-        g.beginFill(new PIXI.Color(level.palette[pixels[i]]).toNumber()).drawRoundedRect(x + 0.4, y + 0.4, cell - 0.8, cell - 0.8, cell * 0.25).endFill();
+        g.beginFill(new PIXI.Color(level.palette[pixels[i]]).toNumber()).drawRect(x + 0.4, y + 0.4, cell - 0.8, cell - 0.8).endFill();
     }
     return g;
 }

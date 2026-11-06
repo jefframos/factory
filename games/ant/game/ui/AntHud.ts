@@ -184,15 +184,16 @@ export class AntHud extends PIXI.Container {
             .beginFill(0x8a5530).drawRoundedRect(-250, -300, 500, 610, 40).endFill()
             .beginFill(0xfff4e6).drawRoundedRect(-250, -308, 500, 606, 40).endFill();
         const heading = label('LEVEL COMPLETE!', 50, 0xffd23f);
-        heading.y = -248;
-        const picture = this.miniPicture(level, 300);
-        picture.y = -50;
+        heading.y = -252;
+        // The stars between the heading and the picture, clear of it (and drawn over it, in case).
+        const picture = this.miniPicture(level, 250);
+        picture.y = -8;
         const name = label(level.name.toUpperCase(), 28, BROWN);
         name.style.stroke = 0xffffff;
         name.style.strokeThickness = 6;
-        name.y = 126;
+        name.y = 150;
         const stars = new PIXI.Container();
-        stars.y = -180;
+        stars.y = -190;
         [-1, 0, 1].forEach((n, i) => {
             const star = this.star(n === 0 ? 46 : 36);
             star.position.set(n * 96, n === 0 ? -6 : 8);
@@ -206,8 +207,8 @@ export class AntHud extends PIXI.Container {
             this.hideResult();
             onNext();
         });
-        next.y = 222;
-        this.card.addChild(back, heading, stars, picture, name, next);
+        next.y = 228;
+        this.card.addChild(back, heading, picture, stars, name, next);
         this.dim.visible = true;
         this.card.visible = true;
         gsap.fromTo(this.card.scale, { x: 0.5, y: 0.5 }, { x: 1, y: 1, duration: 0.5, ease: 'back.out(1.8)' });
@@ -216,7 +217,7 @@ export class AntHud extends PIXI.Container {
         this.burstConfetti(level.palette);
     }
 
-    /** The finished picture, `size` px across its longer side: one rounded square per pixel. */
+    /** The finished picture, `size` px across its longer side: one square per pixel. */
     private miniPicture(level: LevelData, size: number): PIXI.Container {
         const holder = new PIXI.Container();
         const pixels = pixelsOf(level);
@@ -229,7 +230,8 @@ export class AntHud extends PIXI.Container {
             if (pixels[i] < 0) continue;
             const x = -width / 2 + (i % level.width) * cell;
             const y = -height / 2 + Math.floor(i / level.width) * cell;
-            g.beginFill(new PIXI.Color(level.palette[pixels[i]]).toNumber()).drawRoundedRect(x + 0.5, y + 0.5, cell - 1, cell - 1, cell * 0.25).endFill();
+            // Square pixels, a hairline apart.
+            g.beginFill(new PIXI.Color(level.palette[pixels[i]]).toNumber()).drawRect(x + 0.5, y + 0.5, cell - 1, cell - 1).endFill();
         }
         holder.addChild(g);
         return holder;

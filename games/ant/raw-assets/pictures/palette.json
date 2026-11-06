@@ -1,7 +1,7 @@
 {
   "$comment": "The game's master palette: pictures set to palette 'master' use only these tones (the closest one to each of their colours). Edit it in the level editor (npm run editor) — Apply rebuilds every level.",
   "colors": [
-    "#fc6363",
+    "#f95353",
     "#fd849c",
     "#fcd66f",
     "#fcb56e",
@@ -15,6 +15,7 @@
     "#fa8b3f",
     "#813f22",
     "#3660c1",
-    "#36364f"
+    "#36364f",
+    "#ffffff"
   ]
 }
