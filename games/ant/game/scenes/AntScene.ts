@@ -53,6 +53,7 @@ import { AntAudio } from '../audio/AntAudio';
 import { RadialTransition } from '../ui/RadialTransition';
 import { AntEvents } from '../data/AntEvents';
 import { AntAds } from '../data/AntAds';
+import PlatformHandler from 'core/platforms/PlatformHandler';
 
 /** The floor's colour past its checker (the background in use's light colour; the page's own peach is index.html's). */
 export const floorColor = (): THREE.Color => new THREE.Color(currentBackground().light);
@@ -174,6 +175,14 @@ export default class AntScene extends ThreeScene {
     private pointing = false;
     /** A rewarded video playing. */
     private watching = false;
+    /** The platform's paused the game (its own pause: YouTube's, say). */
+    private platformPaused = false;
+    private readonly onPlatformPause = (): void => {
+        this.platformPaused = true;
+    };
+    private readonly onPlatformResume = (): void => {
+        this.platformPaused = false;
+    };
     /** Seconds this level's been played (not paused): for the level-time event. */
     private levelSeconds = 0;
     /** Tiles taken so far this level (locked tiles count them). */
@@ -210,6 +219,8 @@ export default class AntScene extends ThreeScene {
         this.game.uiLayer.addChild(this.hud);
         window.addEventListener('pointerdown', this.onPointerDown);
         window.addEventListener('resize', this.onWindowResize);
+        PlatformHandler.instance.onPause.add(this.onPlatformPause);
+        PlatformHandler.instance.onResume.add(this.onPlatformResume);
         this.loadLevel(Math.min(AntSave.selected, LEVELS.length - 1));
         this.buildDebug();
     }
@@ -455,8 +466,9 @@ export default class AntScene extends ThreeScene {
     // ---------------------------------------------------------------- input
 
     private readonly onPointerDown = (event: PointerEvent): void => {
-        // (Pointing out a new power-up: only its button counts, on the HUD.)
-        if (this.ended || this.paused || this.pointing || !this.sides.length) return;
+        // (Pointing out a new power-up: only its button counts, on the HUD. Paused by the platform: nothing does — the
+        // game's ticker's stopped, but this listener is the page's.)
+        if (this.ended || this.paused || this.pointing || this.platformPaused || !this.sides.length) return;
         const rect = SetupThree.renderer.domElement.getBoundingClientRect();
         this.pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
         this.raycaster.setFromCamera(this.pointer, this.threeCamera);
@@ -1016,6 +1028,8 @@ export default class AntScene extends ThreeScene {
         if (this.paused) Game.timeScale = this.resumeScale;
         window.removeEventListener('pointerdown', this.onPointerDown);
         window.removeEventListener('resize', this.onWindowResize);
+        PlatformHandler.instance.onPause.remove(this.onPlatformPause);
+        PlatformHandler.instance.onResume.remove(this.onPlatformResume);
         DebugOverlay.instance.removePanel('ant.debug');
         this.picture?.destroy();
         this.sides.forEach((side) => side.rack.destroy());

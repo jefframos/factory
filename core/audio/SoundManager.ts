@@ -309,6 +309,11 @@ export default class SoundManager {
 		this.backgroundLayers.delete(layer);
 	}
 
+	/** The effects' volume now (0 while an ad's muted everything: muteAllSounds) — for a game that sets each effect's own volume and scales it by this, so platform and ad muting still reach it. */
+	public get sfxVolume(): number {
+		return this.masterSfxVolume;
+	}
+
 	public setMasterSfxVolume(volume: number): void {
 		this.masterSfxVolume = volume;
 		// Note: We don't set Howler.volume() here because that affects everything.

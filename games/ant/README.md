@@ -60,8 +60,9 @@ coming, then the main screen.
 
 **Ads** (`data/AntAds.ts`): a commercial break after every level (on NEXT or a retry, while the transition covers the
 screen — the platform, Poki, decides how often one really plays), and a rewarded video for a power-up you have none of
-(the belt shows VIDEO, with the video icon, instead of its count): watched through, one of it. Gameplay's off and the
-sound silent while an ad plays.
+(the belt shows VIDEO, with the video icon, instead of its count): watched through, one of it. Gameplay's off while an ad plays; the sound's muted by the platform itself (Poki's and YouTube's
+wrappers mute SoundManager round every ad — all of Ant's audio plays through SoundManager, `audio/AntAudio.ts`, so
+that and the platform's own mute and pause reach it).
 
 **Coins and shops** (`data/Shop.ts`, saved in `data/AntSave.ts`). A finished level pays coins — 20 + 3 per level the
 first time, a quarter of that for a replay — shown on the celebration card, flying up to the coin bar. The power-ups'

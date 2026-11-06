@@ -8,7 +8,7 @@
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
-import { framePlane, iconSprite, label, roundButton } from './UiParts';
+import { buttonParts, framePlane, iconSprite, label, roundButton } from './UiParts';
 import { AntAudio } from '../audio/AntAudio';
 import { AntSave } from '../data/AntSave';
 
@@ -84,10 +84,9 @@ export class BoosterBelt extends PIXI.Container {
         count.y = -1;
         badge.addChild(circle, count);
         badge.position.set(BADGE.x, BADGE.y);
-        // None left: a VIDEO pill under the button (the video icon, and the word).
+        // None left: a green VIDEO pill under the button (the pack's green button, the video icon, the word).
         const video = new PIXI.Container();
-        const pill = framePlane('Button_Round03_Dark', VIDEO.width, VIDEO.height, VIDEO.height / 120);
-        pill.position.set(-VIDEO.width / 2, -VIDEO.height / 2);
+        const [pill] = buttonParts(VIDEO.width, VIDEO.height, '', 'Button01_l_Green');
         const camera = iconSprite('ItemIcon_Video', VIDEO.icon);
         camera.x = -VIDEO.width / 2 + VIDEO.icon / 2 + 4;
         const words = label(VIDEO.text);

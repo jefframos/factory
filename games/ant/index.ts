@@ -5,6 +5,7 @@
 // afresh (the old one is torn down), as the UFO game does.
 
 import { Game } from 'core/Game';
+import SoundManager from 'core/audio/SoundManager';
 import HtmlLoader from 'core/loader/HtmlLoader';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { getPlatformInstance } from 'core/platforms/PlatformFactory';
@@ -42,6 +43,8 @@ export default class AntGame extends Game {
         this.loaderScene = new HtmlLoader(loaderConfig);
         PIXI.Ticker.shared.maxFPS = 60;
         this.folderPath = 'ant';
+        // The saved mute is Ant's own (not shared with the other games on the same site).
+        SoundManager.STORAGE_ID = 'ant.';
         void this.initialize();
     }
 

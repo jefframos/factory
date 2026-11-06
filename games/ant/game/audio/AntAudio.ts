@@ -2,17 +2,25 @@
 //
 // Ant's sounds: short effects for the buttons, the tiles, the ants picking up their blocks, a won or lost level, and a
 // soundtrack ("Redding Rainbow" by Benjamin Andrews, from library3d/sounds) looping quietly under it all. Files:
-// raw-assets/audio (`npm run audio` packs them as mp3 into public/ant/audio); the effects come from the dig, down,
-// bandit and UFO games. Played through Howler (the music streamed), so the sound toggle
-// (SoundManager's saved mute) silences everything; the music has its own saved setting (the pause popup's MUSIC).
+// raw-assets/audio (`npm run audio` packs them as mp3 into public/ant/audio, listed in manifests/audio.json); the
+// effects come from the dig, down, bandit and UFO games.
+//
+// Everything plays through core's SoundManager (as the other games' sounds do), so the platforms' own handling reaches
+// it: the ads mute it (PokiPlatform / YouTubePlayablePlatform call muteAllSounds / restoreSound round every ad), a
+// platform mute (YouTube's button) and the in-game toggle silence it, and it goes quiet while the platform pauses the
+// game. Effects get their own volume x SoundManager's effects volume; the music's on its "music" layer (the pause
+// popup's MUSIC sets that layer, saved).
 
-import { Howl, Howler } from 'howler';
+import { Howler } from 'howler';
+import SoundLoadManager from 'core/audio/SoundLoaderManager';
 import SoundManager from 'core/audio/SoundManager';
+import PlatformHandler from 'core/platforms/PlatformHandler';
+import audioManifest from '../../manifests/audio.json';
 
 export type Sfx =
     | 'click' | 'open' | 'close' | 'toggle' | 'tab' | 'tile' | 'slot' | 'full' | 'win' | 'applause' | 'lose' | 'whoosh' | 'pick';
 
-/** Each effect's file(s) (one is picked at random), its volume, and the least time between two plays (seconds). */
+/** Each effect's sound(s) (one is picked at random), its volume, and the least time between two plays (seconds). */
 const SFX: Record<Sfx, { files: string[]; volume: number; gap?: number }> = {
     // Soft taps and bubbles for the buttons and tiles (not beeps).
     click: { files: ['tap'], volume: 0.45 },
@@ -30,22 +38,13 @@ const SFX: Record<Sfx, { files: string[]; volume: number; gap?: number }> = {
     // Many ants at once: soft, quick pops, never too many together.
     pick: { files: ['collect-gem-1', 'collect-gem-2', 'collect-gem-3', 'collect-gem-4', 'collect-gem-5'], volume: 0.18, gap: 0.07 },
 };
-const MUSIC = { file: 'music', volume: 0.3, fadeMs: 2500 };
+const MUSIC = { sound: 'music', layer: 'music', volume: 0.3, fadeMs: 2500 };
 const MUSIC_KEY = 'ant.music';
 
-let folder = 'ant';
-const howls = new Map<string, Howl>();
 const lastPlayed = new Map<Sfx, number>();
-let music: Howl | undefined;
-
-function howl(file: string): Howl {
-    let sound = howls.get(file);
-    if (!sound) {
-        sound = new Howl({ src: [`${folder}/audio/${file}.mp3`], preload: true });
-        howls.set(file, sound);
-    }
-    return sound;
-}
+let musicStarted = false;
+/** The platform's paused the game (its own pause, e.g. YouTube's): everything silent until it resumes. */
+let platformPaused = false;
 
 function savedMusic(): boolean {
     try {
@@ -56,49 +55,56 @@ function savedMusic(): boolean {
 }
 
 export const AntAudio = {
-    /** Where the files are (the game's folder), and the effects loaded ahead. */
+    /** Call once at boot (`gameFolder`: where public/<game>/audio is): the sounds are listed, then loaded in the background. */
     initialize(gameFolder: string): void {
-        folder = gameFolder;
-        for (const { files } of Object.values(SFX)) for (const file of files) howl(file);
+        const manifest = structuredClone(audioManifest);
+        for (const bundle of manifest.bundles) {
+            for (const asset of bundle.assets) asset.src = asset.src.map((src) => `./${gameFolder}/audio/${src}`);
+        }
+        SoundLoadManager.instance.setUpManifests([manifest], ['default']);
+        for (const { files } of Object.values(SFX)) for (const file of files) SoundLoadManager.instance.loadInBackground(file);
+        // The music layer as the saved setting says (ads mute it and put it back).
+        SoundManager.instance.setLayerVolume(MUSIC.layer, savedMusic() ? MUSIC.volume : 0);
+        PlatformHandler.instance.onPause.add(() => {
+            platformPaused = true;
+            Howler.volume(0);
+        });
+        PlatformHandler.instance.onResume.add(() => {
+            platformPaused = false;
+            Howler.volume(1);
+        });
     },
 
     /** An effect, a little higher or lower with `rate`. */
     play(name: Sfx, rate = 1): void {
+        if (platformPaused) return;
         const { files, volume, gap } = SFX[name];
         const now = performance.now() / 1000;
         if (gap && now - (lastPlayed.get(name) ?? -Infinity) < gap) return;
         lastPlayed.set(name, now);
-        const sound = howl(files[Math.floor(Math.random() * files.length)]);
-        const id = sound.play();
-        sound.volume(volume, id);
-        sound.rate(rate, id);
+        const file = files[Math.floor(Math.random() * files.length)];
+        void SoundManager.instance.playSoundById(file, { volume: volume * SoundManager.instance.sfxVolume, pitch: rate }).catch(() => undefined);
     },
 
-    /** The soundtrack, faded in (browsers only start audio after an input: call it from one, or it waits for one). */
+    /** The soundtrack, faded in on its layer (browsers only start audio after an input: call it from one). */
     startMusic(): void {
-        if (music) return;
-        music = new Howl({ src: [`${folder}/audio/${MUSIC.file}.mp3`], loop: true, html5: true, volume: 0 });
-        music.play();
-        if (savedMusic()) music.fade(0, MUSIC.volume, MUSIC.fadeMs);
+        if (musicStarted) return;
+        musicStarted = true;
+        void SoundManager.instance.playBackgroundSound(MUSIC.sound, MUSIC.fadeMs, MUSIC.layer).catch(() => undefined);
     },
 
     get musicOn(): boolean {
         return savedMusic();
     },
 
-    /** The music on or off (saved). */
+    /** The music on or off (saved): its layer's volume. */
     set musicOn(on: boolean) {
         try {
             window.localStorage.setItem(MUSIC_KEY, on ? 'on' : 'off');
         } catch {
             // Private mode: it lasts this session.
         }
-        if (music) music.fade(music.volume(), on ? MUSIC.volume : 0, 400);
-    },
-
-    /** Everything silent (an ad playing), or back as the player's mute says. */
-    silence(on: boolean): void {
-        Howler.mute(on || SoundManager.instance.isMuted);
+        SoundManager.instance.setLayerVolume(MUSIC.layer, on ? MUSIC.volume : 0, 400);
     },
 
     /** Audio can start (the first input). */
