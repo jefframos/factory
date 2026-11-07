@@ -17,7 +17,9 @@ Set `GAME=mob` in `.env`, then `npm run dev`. After a fresh clone, or when `raw-
 editor`, saved to `ui/units.json`): each one's colours (the giant's body; a tint over the giant's building or the
 vehicle; the plain houses' walls and roofs), its charge (blues into its house to make one — a level's house can set its
 own in the Levels tab, else it uses this), its hp (the car's 0: nothing stops it) and the most it takes off the enemy's
-building (the UFO: its crash). The debug panel's **Colours** folder picks the upgrades' colours live: the giant's body, a tint over the giant's building and each
+building (the UFO: its crash). And how its house is drawn: its building (a model), the plain house made in the game, or a coloured
+pad on the floor. In the **Zones** tab, *plain forts* draws a zone's enemy forts as the plain ones made in the game
+instead of the red barracks and tower models. The debug panel's **Colours** folder picks the upgrades' colours live: the giant's body, a tint over the giant's building and each
 vehicle (truck, UFO, car), and the truck / UFO / car houses' walls and roofs. "Log colours" prints them for
 `UNIT_COLORS` in `game/data/MobConfig.ts`.
 

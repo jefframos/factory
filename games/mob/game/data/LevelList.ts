@@ -15,6 +15,8 @@ export interface ZoneConfig {
     theme: string;
     /** Level ids (levels/<id>.json), in play order. */
     levels: string[];
+    /** The enemy's forts drawn as the plain ones made in the game, not the red barracks and tower models. */
+    plainForts?: boolean;
 }
 
 export interface PlayEntry {

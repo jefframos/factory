@@ -15,7 +15,7 @@
 // The rules are Battle's; this only follows it (update()).
 
 import * as THREE from 'three';
-import { ARENA, BattleConfig, COLORS, UNIT_COLORS, needOf, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig } from '../data/MobConfig';
+import { ARENA, BattleConfig, COLORS, UNIT_COLORS, houseStyle, needOf, padColor, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig } from '../data/MobConfig';
 import { bendObject, bendSegments } from '../services/Bend';
 import { createWater } from '../services/Water';
 import { BASE_HALF_WIDTH, Battle, CAR, TRUCK, Target, obstacleShape } from './Battle';
@@ -44,6 +44,8 @@ const BLOCK = { bevel: 0.16, brickHeight: 1.1 };
 const SPINNER = { thickness: 0.36, height: 0.55, post: 0.5 };
 const PUSHER_HEIGHT = 0.7;
 /** The giant house: wall and roof heights, the roof's overhang, colours. */
+/** The floor-pad house style: its thickness, and its glowing rim's width. */
+const PAD_STYLE = { height: 0.12, rim: 0.12 };
 const HOUSE = { wallHeight: 1.5, roofHeight: 0.9, overhang: 0.18, wall: 0xe8f1ff, roof: 0x3d6dff };
 /** A helmet barrier: its height and colours. */
 const HELMET = { height: 1.5, olive: 0x6f8236, sand: 0xd8c690 };
@@ -55,10 +57,11 @@ const PUSH_BLOCK = { height: 1.2, body: 0x3a4466, plate: 0xff4757 };
  * A piece is drawn from plain shapes until its model has loaded (or if it can't).
  */
 const PROPS = {
+    /** Each house's building (the `model` style); the car has none (a plain house). */
     houses: { giant: 'home-blue', truck: 'barracks-blue', saucer: 'home-yellow' } as Record<string, string>,
     houseTitles: { giant: 'GIANT', truck: 'TRUCK', saucer: 'UFO', car: 'CAR' } as Record<string, string>,
     /** The plain houses (all but the giant's, which is a building): their wall and roof colours' keys in UNIT_COLORS. */
-    houseColours: { truck: ['truckWall', 'truckRoof'], saucer: ['ufoWall', 'ufoRoof'], car: ['carWall', 'carRoof'] } as Record<string, [UnitColor, UnitColor]>,
+    houseColours: { giant: ['giantWall', 'giantRoof'], truck: ['truckWall', 'truckRoof'], saucer: ['ufoWall', 'ufoRoof'], car: ['carWall', 'carRoof'] } as Record<string, [UnitColor, UnitColor]>,
     base: 'barracks-red',
     tower: 'tower-red',
     /** A target narrower than this is a tower, wider the barracks. */
@@ -344,7 +347,9 @@ export class Arena {
     /** Each obstacle's breakable view, by the obstacle's index (undefined for the rest). */
     private readonly breakables: (BreakableView | undefined)[] = [];
 
-    public constructor(config: BattleConfig, targets: readonly Target[], private readonly theme: Theme, private readonly modelRoot = './mob/models/') {
+    /** `plainForts`: the enemy's forts as the plain ones made here, not the barracks and tower models (a zone's choice). */
+    public constructor(config: BattleConfig, targets: readonly Target[], private readonly theme: Theme, private readonly modelRoot = './mob/models/',
+        private readonly plainForts = false) {
         this.danger = this.buildGround();
         if (theme.kit) void this.buildKit();
         this.buildCannon();
@@ -753,10 +758,14 @@ export class Arena {
         const group = new THREE.Group();
         const wallHeight = HOUSE.wallHeight;
         const kind = p.kind ?? 'giant';
+        const style = houseStyle(kind);
+        // The plain house's own parts (walls, roof, doors): hidden for a floor pad, or under a building.
+        const houseParts: THREE.Object3D[] = [];
         const keys = PROPS.houseColours[kind];
         const colours = keys ? [UNIT_COLORS[keys[0]], UNIT_COLORS[keys[1]]] : [HOUSE.wall, HOUSE.roof];
         const walls = roundedBox(p.width, wallHeight, p.depth, 0.25, lambert(colours[0]));
         group.add(walls);
+        houseParts.push(walls);
         // The roof: a triangle across, run the house's depth, with a little overhang.
         const roofShape = new THREE.Shape();
         const half = p.width / 2 + HOUSE.overhang;
@@ -770,6 +779,7 @@ export class Arena {
         const roof = new THREE.Mesh(roofGeometry, lambert(colours[1]));
         roof.position.y = wallHeight;
         group.add(roof);
+        houseParts.push(roof);
         if (keys) this.houseMaterials.push({ keys, wall: walls.material as THREE.MeshLambertMaterial, roof: roof.material as THREE.MeshLambertMaterial });
         // The doors: dark openings with a glowing frame (it pulses as blues go in).
         const glow = new THREE.MeshBasicMaterial({ color: 0x7fd0ff, transparent: true, opacity: 0.6 });
@@ -779,9 +789,11 @@ export class Arena {
             const frame = new THREE.Mesh(new THREE.BoxGeometry(doorWidth + 0.24, doorHeight + 0.12, 0.06), glow);
             frame.position.set(0, (doorHeight + 0.12) / 2, side * (p.depth / 2 + 0.02));
             group.add(frame);
+            houseParts.push(frame);
             const door = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, doorHeight, 0.08), lambert(0x14183a));
             door.position.set(0, doorHeight / 2, side * (p.depth / 2 + 0.04));
             group.add(door);
+            houseParts.push(door);
         }
         // The fill bar, on the front wall over the door.
         const barWidth = p.width * 0.8;
@@ -808,12 +820,29 @@ export class Arena {
         this.group.add(group);
         // The building, when it loads: the plain house goes; the bar and the labels float over the roof.
         const keep = [track, fill, label.mesh, title.mesh];
-        // The giant's is the blue home building (when it loads); the others stay plain houses, clearer at a glance, with
-        // what they make spinning over them (updateHouseIcon).
-        if (kind === 'giant') {
-            void this.dress(group, PROPS.houses.giant, p.width * 1.15, p.depth * 1.35, keep, (height, model) => {
-                this.giantHouses.push(model);
-                tintModel(model, UNIT_COLORS.giantHouse);
+        // Its style (the Units tab): its building (when it loads), the plain house, or a coloured pad on the floor; the
+        // non-giants have what they make spinning over them (updateHouseIcon).
+        if (style === 'pad') {
+            for (const part of houseParts) part.visible = false;
+            const slab = roundedBox(p.width, PAD_STYLE.height, p.depth, Math.min(0.35, p.width / 4), lambert(padColor(kind)));
+            group.add(slab);
+            // A glowing rim (it pulses as blues go in, as the doors do).
+            for (const [w, d, x, z] of [[p.width, PAD_STYLE.rim, 0, p.depth / 2], [p.width, PAD_STYLE.rim, 0, -p.depth / 2], [PAD_STYLE.rim, p.depth, p.width / 2, 0], [PAD_STYLE.rim, p.depth, -p.width / 2, 0]]) {
+                const edge = new THREE.Mesh(new THREE.BoxGeometry(w, PAD_STYLE.height + 0.04, d), glow);
+                edge.position.set(x, (PAD_STYLE.height + 0.04) / 2, z);
+                group.add(edge);
+            }
+            const low = PAD_STYLE.height;
+            track.position.set(0, low + 0.5, 0.2);
+            fill.position.set(0, low + 0.5, 0.22);
+            label.mesh.position.y = low + 1.15;
+            title.mesh.position.y = low + 1.8;
+        } else if (style === 'model' && PROPS.houses[kind]) {
+            void this.dress(group, PROPS.houses[kind], p.width * 1.15, p.depth * 1.35, keep, (height, model) => {
+                if (kind === 'giant') {
+                    this.giantHouses.push(model);
+                    tintModel(model, UNIT_COLORS.giantHouse);
+                }
                 track.position.set(0, height + 0.3, 0.2);
                 fill.position.set(0, height + 0.3, 0.22);
                 label.mesh.position.y = height + 0.95;
@@ -821,7 +850,7 @@ export class Arena {
                 view.top = height;
             });
         }
-        const view: PadView = { group, fill, label, glow, width: barWidth, pulse: 0, kind, title: title.mesh, top: top, icon: null };
+        const view: PadView = { group, fill, label, glow, width: barWidth, pulse: 0, kind, title: title.mesh, top: style === 'pad' ? PAD_STYLE.height : top, icon: null };
         return view;
     }
 
@@ -941,9 +970,10 @@ export class Arena {
         group.position.set(target.x, 0, target.z - BASE.depth / 2);
         this.group.add(group);
         const view: TargetView = { group, flashes: [body.material as THREE.MeshLambertMaterial], label, x: target.x, shake: 0, flash: 0, punch: 0, fall: 0, down: false };
-        // The red barracks (a tower for a narrow one), when it loads; its number over the roof, facing the camera.
+        // The red barracks (a tower for a narrow one), when it loads — unless the zone keeps the plain ones; its number
+        // over the roof, facing the camera.
         const tower = width < PROPS.towerBelow;
-        void this.dress(group, tower ? PROPS.tower : PROPS.base, tower ? width * 0.8 : width * 1.05, BASE.depth * 1.6, [label.mesh], (height, model) => {
+        if (!this.plainForts) void this.dress(group, tower ? PROPS.tower : PROPS.base, tower ? width * 0.8 : width * 1.05, BASE.depth * 1.6, [label.mesh], (height, model) => {
             label.mesh.position.set(0, height + 0.55, 0.4);
             label.mesh.rotation.x = -0.5;
             const flashes: THREE.MeshStandardMaterial[] = [];

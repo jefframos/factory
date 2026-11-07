@@ -225,7 +225,7 @@ export default class MobScene extends ThreeScene {
         // Fires only while the player holds (a press starts the battle and fires; letting go stops).
         this.battle.firing = false;
         // The field after the battle: its forts are the battle's targets (the events above only fire once it runs).
-        this.arena = new Arena(config, this.battle.targets, theme);
+        this.arena = new Arena(config, this.battle.targets, theme, undefined, !!battleZone(index).plainForts);
         this.arena.onLayout = () => this.resize();
         this.threeScene.add(this.arena.group);
         this.time = 0;

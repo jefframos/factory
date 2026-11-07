@@ -1132,6 +1132,7 @@ function renderZones() {
             el('div', { class: 'field' }, el('label', {}, 'name'), name),
             el('div', { class: 'field' }, el('label', {}, 'id'), el('span', { class: 'hint' }, zone.id)),
             el('div', { class: 'field' }, el('label', {}, 'theme'), theme),
+            plainFortsField(zone),
             el('h3', { class: 'hint' }, `Levels (${zone.levels.length})`),
             list,
             add,
@@ -1141,6 +1142,17 @@ function renderZones() {
                 el('button', { class: 'danger', onclick: () => { if (confirm(`Remove zone ${zone.name}? (Its levels stay.)`)) { zones.splice(z, 1); zonesChanged(); } } }, 'Remove'))));
     });
     statusLine.textContent = zonesDirty ? 'Zones not saved' : '';
+}
+
+/** A zone's "plain forts": the enemy's forts made in the game, not the barracks and tower models. */
+function plainFortsField(zone) {
+    const box = el('input', { type: 'checkbox', checked: !!zone.plainForts });
+    box.addEventListener('change', () => {
+        if (box.checked) zone.plainForts = true;
+        else delete zone.plainForts;
+        zonesChanged();
+    });
+    return el('div', { class: 'field' }, el('label', { title: 'The red barracks and tower models off: the plain forts made in the game' }, 'plain forts'), box);
 }
 
 // ------------------------------------------------------------------ themes tab
@@ -1458,15 +1470,19 @@ function renderUnitForm() {
     unitForm.replaceChildren();
     if (!unit) return;
     const label = UNIT_ORDER.find(([kind]) => kind === unitId)[1];
+    // Its house: the building (a model; the car has none), the plain house made in the game, or a pad on the floor.
+    const styles = unitId === 'car' ? [['house', 'plain house'], ['pad', 'pad on the floor']] : [['model', 'building (model)'], ['house', 'plain house'], ['pad', 'pad on the floor']];
+    const current = unit.style ?? (unitId === 'giant' ? 'model' : 'house');
+    const style = el('select', { onchange: (e) => { unit.style = e.target.value; unitsChanged(); renderUnitForm(); } },
+        ...styles.map(([value, text]) => el('option', { value, selected: value === current }, text)));
+    unitForm.append(el('h3', {}, `${label} · house`), el('div', { class: 'field' }, el('label', {}, 'style'), style));
+    // (The giant's building can be tinted; the others' `tint` is their vehicle's, below.)
+    if (current === 'model' && unitId === 'giant') unitForm.append(unitColour(unit, 'tint', 'building tint (white = as it is)'));
+    if (current === 'house') unitForm.append(unitColour(unit, 'wall', 'wall'), unitColour(unit, 'roof', 'roof'));
+    if (current === 'pad') unitForm.append(unitColour(unit, 'pad', 'pad colour'));
     unitForm.append(el('h3', {}, `${label} · colours`));
-    if (unitId === 'giant') {
-        unitForm.append(unitColour(unit, 'color', 'body'), unitColour(unit, 'tint', 'house (tint over its building)'));
-    } else {
-        unitForm.append(
-            unitColour(unit, 'tint', `${label.toLowerCase()} (tint over its model; white = as it is)`),
-            unitColour(unit, 'wall', 'house wall'),
-            unitColour(unit, 'roof', 'house roof'));
-    }
+    if (unitId === 'giant') unitForm.append(unitColour(unit, 'color', 'body'));
+    else unitForm.append(unitColour(unit, 'tint', `${label.toLowerCase()} (tint over its model; white = as it is)`));
     unitForm.append(el('h3', {}, 'Numbers'), unitNumber(unit, 'need', 'charge', 'Blues walking into its house to make one'));
     if (unitId !== 'saucer') {
         unitForm.append(unitNumber(unit, 'hp', 'hp', unitId === 'car' ? 'Hits it takes (0: nothing stops it)' : 'Hits it takes'));

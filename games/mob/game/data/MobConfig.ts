@@ -237,6 +237,10 @@ export const UPGRADES: Record<UpgradeKind, { name: string; max: number; cost: nu
  * takes (the car's 0: nothing stops it), `damage`: the most it takes off the enemy's building (the UFO: what it does).
  */
 export interface UnitSettings {
+    /** How its house is drawn: `model` (its building, props/<…>.glb; the car has none: a house), `house` (the plain
+     *  house made in the game), `pad` (a coloured rectangle on the floor, `pad`). */
+    style?: 'model' | 'house' | 'pad';
+    pad?: string;
     color?: string;
     tint: string;
     wall?: string;
@@ -254,6 +258,8 @@ const hex = (colour: string | undefined, fallback: number): number => (colour ? 
 export const UNIT_COLORS = {
     giant: hex(UNITS.giant.color, 0x1366ff),
     giantHouse: hex(UNITS.giant.tint, 0xffffff),
+    giantWall: hex(UNITS.giant.wall, 0xe8f1ff),
+    giantRoof: hex(UNITS.giant.roof, 0x3d6dff),
     truck: hex(UNITS.truck.tint, 0xffffff),
     truckWall: hex(UNITS.truck.wall, 0xcfe0ff),
     truckRoof: hex(UNITS.truck.roof, 0x1f4fbf),
@@ -272,6 +278,12 @@ TUNING.truckHp = UNITS.truck.hp ?? TUNING.truckHp;
 TUNING.truckDamage = UNITS.truck.damage;
 TUNING.saucerDamage = UNITS.saucer.damage;
 TUNING.carDamage = UNITS.car.damage;
+
+/** How a unit's house is drawn (the Units tab's; the giant's building and the others' plain houses unless set). */
+export const houseStyle = (kind: HouseKind): 'model' | 'house' | 'pad' => UNITS[kind].style ?? (kind === 'giant' ? 'model' : 'house');
+
+/** A unit's floor-pad colour (the `pad` house style), as a number. */
+export const padColor = (kind: HouseKind): number => hex(UNITS[kind].pad ?? UNITS[kind].roof, 0x3d6dff);
 
 /** A car's hits: the Units tab's, or (0) nothing stops it. */
 export const carHp = (): number => (UNITS.car.hp && UNITS.car.hp > 0 ? UNITS.car.hp : Infinity);

@@ -64,7 +64,8 @@ function unitsProblem(units) {
     for (const kind of ['giant', 'truck', 'saucer', 'car']) {
         const unit = units?.[kind];
         if (!unit) return `${kind} is missing`;
-        for (const key of ['color', 'tint', 'wall', 'roof']) if (unit[key] !== undefined && !colour(unit[key])) return `${kind}: ${key} must be a #rrggbb colour`;
+        for (const key of ['color', 'tint', 'wall', 'roof', 'pad']) if (unit[key] !== undefined && !colour(unit[key])) return `${kind}: ${key} must be a #rrggbb colour`;
+        if (unit.style !== undefined && !['model', 'house', 'pad'].includes(unit.style)) return `${kind}: style is model, house or pad`;
         if (!(isNumber(unit.need) && unit.need >= 1)) return `${kind}: charge (need) must be 1 or more`;
         if (unit.hp !== undefined && !(isNumber(unit.hp) && unit.hp >= 0)) return `${kind}: hp must be 0 or more`;
         if (!(isNumber(unit.damage) && unit.damage >= 0)) return `${kind}: damage must be 0 or more`;
