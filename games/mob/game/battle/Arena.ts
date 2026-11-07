@@ -965,7 +965,7 @@ export class Arena {
         const label = new Label(Math.max(1.8, width * 0.6) * 2, 0.8 * 2);
         label.set(String(target.hp));
         // Above the door (in front of the wall, clear of the door box), not on it.
-        label.mesh.position.set(0, 1.2 * scale + 0.3 + 0.45, (BASE.depth * (0.7 + 0.3 * scale)) / 2 + 0.16);
+        label.mesh.position.set(0, 1.2 * scale + 0.3 + 0.45, (BASE.depth * (0.7 + 0.3 * scale)) / 2 + 0.516);
         group.add(label.mesh);
         group.position.set(target.x, 0, target.z - BASE.depth / 2);
         this.group.add(group);

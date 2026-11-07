@@ -1,0 +1,48 @@
+{
+  "name": "Spinning Giants",
+  "kind": "Custom",
+  "gates": [
+    {
+      "x": -0.45,
+      "z": -5,
+      "width": 3.6,
+      "value": 2,
+      "swing": {
+        "range": 2.5,
+        "seconds": 5
+      }
+    },
+    {
+      "x": 0.2,
+      "z": -14.75,
+      "width": 3.6,
+      "value": 3,
+      "swing": {
+        "range": 2.5,
+        "seconds": 5
+      }
+    }
+  ],
+  "redRate": 4,
+  "redRateEnd": 11,
+  "redRamp": 100,
+  "baseHp": 400,
+  "reward": 120,
+  "spinners": [
+    {
+      "x": -2,
+      "z": -10,
+      "length": 2.8,
+      "arms": 3,
+      "speed": -0.25
+    },
+    {
+      "x": 1.5,
+      "z": -19,
+      "length": 2.8,
+      "arms": 3,
+      "speed": 0.25
+    }
+  ],
+  "redGiantEvery": 14
+}

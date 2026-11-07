@@ -15,7 +15,8 @@
         "pushers",
         "twin-towers",
         "islands"
-      ]
+      ],
+      "plainForts": true
     },
     {
       "id": "castle",
@@ -28,8 +29,12 @@
         "shield-wall",
         "fortress",
         "three-forts",
-        "gauntlet"
-      ]
+        "gauntlet",
+        "large-fortress",
+        "shield-wall-2",
+        "giant-pad-2"
+      ],
+      "plainForts": true
     },
     {
       "id": "desert",
@@ -38,8 +43,16 @@
       "levels": [
         "truck-stop",
         "close-encounters",
-        "road-rage"
-      ]
+        "road-rage",
+        "gauntlet2",
+        "traffic-1",
+        "new-level-desert",
+        "lanes3",
+        "new-level-desert-2",
+        "trucks",
+        "new-level-hard"
+      ],
+      "plainForts": true
     }
   ]
 }

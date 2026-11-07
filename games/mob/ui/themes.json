@@ -5,14 +5,33 @@
       "name": "Beach",
       "sky": "#8fd8ff",
       "sea": "#3fb6ff",
-      "ground": "#6cc24a",
+      "ground": "#71512f",
       "field": "#e8a35c",
       "stripe": "#d9914c",
-      "hedge": ["#4ea83a", "#3f9130"],
-      "block": { "top": "#6fc94f", "side": "#9a6a3c" },
-      "breakable": { "top": "#d4d8e6", "side": "#7d849e" },
+      "hedge": [
+        "#9bca91",
+        "#66f566"
+      ],
+      "block": {
+        "top": "#6fc94f",
+        "side": "#9a6a3c"
+      },
+      "breakable": {
+        "top": "#ff9214",
+        "side": "#7d849e"
+      },
       "rim": "#8a5a30",
-      "surround": "sea"
+      "surround": "valley",
+      "kit": {
+        "scale": 1.25,
+        "props": [],
+        "pillarEvery": 4
+      },
+      "cliff": {
+        "height": 2,
+        "top": "#79e156",
+        "side": "#a8774a"
+      }
     },
     {
       "id": "castle",
@@ -22,24 +41,54 @@
       "ground": "#6f9e43",
       "field": "#c99a62",
       "stripe": "#bb8c56",
-      "hedge": ["#8d877c", "#7c766c"],
-      "block": { "top": "#a59f94", "side": "#6f6a62" },
-      "breakable": { "top": "#d29a5a", "side": "#8a5a2b" },
+      "hedge": [
+        "#8d877c",
+        "#7c766c"
+      ],
+      "block": {
+        "top": "#a59f94",
+        "side": "#6f6a62"
+      },
+      "breakable": {
+        "top": "#d29a5a",
+        "side": "#8a5a2b"
+      },
       "rim": "#6f6a62",
       "surround": "valley",
-      "cliff": { "height": 3, "top": "#74b04a", "side": "#a8774a" },
+      "cliff": {
+        "height": 3,
+        "top": "#74b04a",
+        "side": "#a8774a"
+      },
       "kit": {
         "scale": 1.25,
-        "tower": ["castle/tower-square.glb", "castle/tower-square-top-roof.glb"],
+        "tower": [],
         "props": [
-          { "model": "castle/tree-large.glb", "height": 3.1, "count": 26 },
-          { "model": "castle/tree-small.glb", "height": 2.2, "count": 18 },
-          { "model": "castle/rocks-large.glb", "height": 0.65, "count": 8 },
-          { "model": "castle/rocks-small.glb", "height": 0.55, "count": 5 },
-          { "model": "castle/flag-banner-long.glb", "height": 3, "count": 6 },
-          { "model": "castle/siege-catapult.glb", "height": 2, "count": 1 },
-          { "model": "castle/siege-trebuchet.glb", "height": 2.4, "count": 1 },
-          { "model": "castle/siege-ballista.glb", "height": 1.6, "count": 1 }
+          {
+            "model": "town/library/city2-tree-02/city2-tree-02.glb",
+            "height": 3.1,
+            "count": 26
+          },
+          {
+            "model": "town/library/city2-tree-01/city2-tree-01.glb",
+            "height": 2.2,
+            "count": 18
+          },
+          {
+            "model": "town/library/forest-nature-rock-1-b-color1/forest-nature-rock-1-b-color1.gltf",
+            "height": 0.65,
+            "count": 8
+          },
+          {
+            "model": "town/library/forest-nature-rock-1-e-color1/forest-nature-rock-1-e-color1.gltf",
+            "height": 0.55,
+            "count": 5
+          },
+          {
+            "model": "town/library/castle-kit-flag-wide/castle-kit-flag-wide.glb",
+            "height": 3,
+            "count": 6
+          }
         ]
       }
     },
@@ -51,26 +100,28 @@
       "ground": "#e7c07a",
       "field": "#d9a35c",
       "stripe": "#cb9550",
-      "hedge": ["#c9965a", "#b8874f"],
-      "block": { "top": "#ddb06e", "side": "#a8743e" },
-      "breakable": { "top": "#d4d8e6", "side": "#7d849e" },
+      "hedge": [
+        "#c9965a",
+        "#b8874f"
+      ],
+      "block": {
+        "top": "#ddb06e",
+        "side": "#a8743e"
+      },
+      "breakable": {
+        "top": "#d4d8e6",
+        "side": "#7d849e"
+      },
       "rim": "#a8743e",
       "surround": "valley",
-      "cliff": { "height": 3.2, "top": "#e9c27f", "side": "#c48a4c" },
+      "cliff": {
+        "height": 3.2,
+        "top": "#e9c27f",
+        "side": "#c48a4c"
+      },
       "kit": {
         "scale": 1.25,
-        "props": [
-          { "model": "desert/saguaro-cactus.glb", "height": 3.2, "count": 14 },
-          { "model": "desert/organ-pipe-cactus.glb", "height": 2.4, "count": 8 },
-          { "model": "desert/golden-barrel-cactus.glb", "height": 0.8, "count": 10 },
-          { "model": "desert/prickly-pear-cactus.glb", "height": 1.3, "count": 8 },
-          { "model": "desert/joshua-tree.glb", "height": 3, "count": 6 },
-          { "model": "desert/date-palm.glb", "height": 4, "count": 5 },
-          { "model": "desert/century-plant-agave.glb", "height": 1, "count": 6 },
-          { "model": "desert/dead-desert-snag.glb", "height": 2.2, "count": 4 },
-          { "model": "desert/saguaro-skeleton.glb", "height": 2.4, "count": 3 },
-          { "model": "castle/rocks-large.glb", "height": 0.7, "count": 8 }
-        ]
+        "props": []
       }
     }
   ]

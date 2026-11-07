@@ -62,6 +62,6 @@
   "redRate": 3.1,
   "redRateEnd": 5.3,
   "redRamp": 55,
-  "baseHp": 600,
+  "baseHp": 400,
   "reward": 200
 }

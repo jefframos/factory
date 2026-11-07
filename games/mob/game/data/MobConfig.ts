@@ -88,6 +88,8 @@ export const TUNING = {
     carDamage: 35,
     /** A helmet barrier: each blue going through gets a helmet, its hits times this (giants too), once. */
     helmetHp: 2,
+    /** A viking hat (an attack barrier): the damage a mob does, times this (to reds, blocks and the base). */
+    vikingDamage: 2,
 };
 
 /** A multiplier gate: a span across the field at a z; a mob crossing it becomes `value` mobs. */
@@ -174,6 +176,9 @@ export interface HelmetConfig {
     x: number;
     z: number;
     width: number;
+    /** What it gives (once each; they stack): `hp` — the helmet, hits x TUNING.helmetHp (the default); `attack` — the
+     *  viking hat, the damage it does x TUNING.vikingDamage. */
+    kind?: 'hp' | 'attack';
 }
 export interface PadConfig {
     kind?: HouseKind;
@@ -224,10 +229,29 @@ export interface BattleConfig {
 /** The cannon's upgrades (bought after a battle): fire rate (TUNING.fireRatePerLevel), energy capacity
  *  (TUNING.energyPerLevel) and recharge speed (TUNING.rechargePerLevel). Levels 1 to max; cost[level - 1] buys the next. */
 export type UpgradeKind = 'fire' | 'capacity' | 'recharge';
+// export const UPGRADES: Record<UpgradeKind, { name: string; max: number; cost: number[] }> = {
+//     fire: { name: 'FIRE RATE', max: 5, cost: [50, 100, 175, 275] },
+//     capacity: { name: 'ENERGY', max: 5, cost: [60, 120, 200, 300] },
+//     recharge: { name: 'RECHARGE', max: 5, cost: [60, 120, 200, 300] },
+// };
+
+
 export const UPGRADES: Record<UpgradeKind, { name: string; max: number; cost: number[] }> = {
-    fire: { name: 'FIRE RATE', max: 5, cost: [50, 100, 175, 275] },
-    capacity: { name: 'ENERGY', max: 5, cost: [60, 120, 200, 300] },
-    recharge: { name: 'RECHARGE', max: 5, cost: [60, 120, 200, 300] },
+    fire: {
+        name: 'FIRE RATE',
+        max: 10,
+        cost: [50, 100, 175, 275, 400, 550, 725, 925, 1150],
+    },
+    capacity: {
+        name: 'ENERGY',
+        max: 10,
+        cost: [60, 120, 200, 300, 425, 575, 750, 950, 1175],
+    },
+    recharge: {
+        name: 'RECHARGE',
+        max: 10,
+        cost: [60, 120, 200, 300, 425, 575, 750, 950, 1175],
+    },
 };
 
 /**

@@ -45,6 +45,15 @@
   "redRate": 2.6,
   "redRateEnd": 4.5,
   "redRamp": 55,
-  "baseHp": 460,
-  "reward": 160
+  "baseHp": 400,
+  "reward": 160,
+  "pads": [
+    {
+      "kind": "giant",
+      "x": 0,
+      "z": -10,
+      "width": 2.4,
+      "depth": 1.8
+    }
+  ]
 }

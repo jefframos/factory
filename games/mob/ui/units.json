@@ -1,6 +1,40 @@
 {
-  "giant": { "color": "#a600ff", "style": "model", "tint": "#ffffff", "wall": "#e8f1ff", "roof": "#3d6dff", "pad": "#3d6dff", "need": 16, "hp": 40, "damage": 30 },
-  "truck": { "style": "house", "tint": "#ffffff", "wall": "#cfe0ff", "roof": "#1f4fbf", "need": 24, "hp": 60, "damage": 45, "pad": "#1f4fbf" },
-  "saucer": { "style": "house", "tint": "#ffffff", "wall": "#ffe27a", "roof": "#ffb31a", "need": 40, "damage": 90, "pad": "#ffb31a" },
-  "car": { "style": "house", "tint": "#ffffff", "wall": "#ffe3d6", "roof": "#ff6a3d", "need": 30, "hp": 0, "damage": 35, "pad": "#ff6a3d" }
+  "giant": {
+    "color": "#a600ff",
+    "tint": "#ffffff",
+    "need": 16,
+    "hp": 40,
+    "damage": 40,
+    "style": "house",
+    "roof": "#d80bf4"
+  },
+  "truck": {
+    "tint": "#ffffff",
+    "wall": "#cfe0ff",
+    "roof": "#0ff0ec",
+    "need": 24,
+    "hp": 60,
+    "damage": 35,
+    "style": "pad",
+    "pad": "#0efb1e"
+  },
+  "saucer": {
+    "tint": "#ffffff",
+    "wall": "#ffe27a",
+    "roof": "#ffb31a",
+    "need": 40,
+    "damage": 90,
+    "style": "pad",
+    "pad": "#fff700"
+  },
+  "car": {
+    "tint": "#ffffff",
+    "wall": "#ffe3d6",
+    "roof": "#ff6a3d",
+    "need": 30,
+    "hp": 0,
+    "damage": 40,
+    "style": "pad",
+    "pad": "#fb8804"
+  }
 }

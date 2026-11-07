@@ -9,10 +9,26 @@
       "value": 2
     },
     {
-      "x": 3.65,
+      "x": 3.9,
       "z": -6.5,
-      "width": 2.2,
+      "width": 2,
       "value": 3
+    },
+    {
+      "x": -4,
+      "z": -6.5,
+      "width": 2,
+      "value": 2
+    },
+    {
+      "x": -2.25,
+      "z": -10,
+      "width": 3,
+      "value": 2,
+      "swing": {
+        "range": 2.5,
+        "seconds": 5
+      }
     }
   ],
   "obstacles": [
@@ -29,14 +45,6 @@
       "z": -6.5,
       "width": 0.45,
       "depth": 6
-    }
-  ],
-  "pads": [
-    {
-      "x": -3.65,
-      "z": -7,
-      "width": 2.2,
-      "depth": 1.8
     }
   ],
   "spinners": [

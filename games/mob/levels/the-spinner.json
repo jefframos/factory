@@ -34,7 +34,7 @@
       "speed": 0.22
     }
   ],
-  "redRate": 2.4,
+  "redRate": 2.8,
   "redRateEnd": 4.4,
   "redRamp": 50,
   "baseHp": 150,

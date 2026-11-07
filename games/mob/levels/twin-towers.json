@@ -54,7 +54,7 @@
       "width": 3.2
     }
   ],
-  "redRate": 2.5,
+  "redRate": 3.2,
   "redRateEnd": 4.3,
   "redRamp": 55,
   "baseHp": 560,
@@ -62,8 +62,8 @@
   "pads": [
     {
       "kind": "saucer",
-      "x": -2.5,
-      "z": -13.25,
+      "x": -2.75,
+      "z": -13.75,
       "width": 2.4,
       "depth": 1.8
     }

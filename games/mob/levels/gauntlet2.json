@@ -1,0 +1,79 @@
+{
+  "name": "Gauntlet Double",
+  "kind": "Mixed",
+  "gates": [
+    {
+      "x": 0,
+      "z": -5.25,
+      "width": 3.8,
+      "value": 2
+    },
+    {
+      "x": 3.65,
+      "z": -6.5,
+      "width": 2.2,
+      "value": 3
+    },
+    {
+      "x": -4,
+      "z": -10.25,
+      "width": 2.2,
+      "value": 4
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "x": -2.35,
+      "z": -6.5,
+      "width": 0.45,
+      "depth": 6
+    },
+    {
+      "kind": "wall",
+      "x": 2.35,
+      "z": -6.5,
+      "width": 0.45,
+      "depth": 6
+    }
+  ],
+  "spinners": [
+    {
+      "x": 1.25,
+      "z": -14.25,
+      "length": 2.6,
+      "arms": 2,
+      "speed": 0.3
+    }
+  ],
+  "redGiantEvery": 20,
+  "redRate": 1.9,
+  "redRateEnd": 3.4,
+  "redRamp": 60,
+  "baseHp": 400,
+  "reward": 180,
+  "targets": [
+    {
+      "x": 0,
+      "hp": 350,
+      "width": 4.4,
+      "z": -24.25
+    },
+    {
+      "x": -3.5,
+      "hp": 100,
+      "width": 2.5,
+      "z": -19.25
+    }
+  ],
+  "pushBlocks": [
+    {
+      "x": -4,
+      "z": -6.75,
+      "width": 2.5,
+      "depth": 1.3,
+      "far": -9.9,
+      "near": -3.45
+    }
+  ]
+}

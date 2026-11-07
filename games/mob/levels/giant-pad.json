@@ -3,22 +3,26 @@
   "kind": "Giant pad",
   "gates": [
     {
-      "x": -2.2,
+      "x": 0.05,
       "z": -6.5,
-      "width": 4.3,
-      "value": 2
+      "width": 3,
+      "value": 2,
+      "swing": {
+        "range": 2.5,
+        "seconds": 5
+      }
     },
     {
-      "x": 3.25,
-      "z": -6.5,
+      "x": 0,
+      "z": -10,
       "width": 2.7,
-      "value": 3
+      "value": 2
     }
   ],
   "pads": [
     {
       "x": 0,
-      "z": -11.5,
+      "z": -14,
       "width": 3.2,
       "depth": 2.2
     }
@@ -27,5 +31,41 @@
   "redRateEnd": 4.6,
   "redRamp": 50,
   "baseHp": 200,
-  "reward": 130
+  "reward": 130,
+  "obstacles": [
+    {
+      "kind": "wall",
+      "points": [
+        [
+          5,
+          -15.75
+        ],
+        [
+          5,
+          -10.25
+        ],
+        [
+          2.5,
+          -13.25
+        ]
+      ]
+    },
+    {
+      "kind": "wall",
+      "points": [
+        [
+          -5,
+          -10.25
+        ],
+        [
+          -2.5,
+          -13.25
+        ],
+        [
+          -5,
+          -16.25
+        ]
+      ]
+    }
+  ]
 }

@@ -18,6 +18,8 @@
 //   they scatter, they don't kill.
 // - A blue and a red that touch both go (the brief's "remove one blue and one red"); a giant crushes what it touches,
 //   losing one of its hits for each.
+// - A blue crossing an attack barrier gets a viking hat (once): the damage it does — to reds, blocks and the base —
+//   times TUNING.vikingDamage, its hits as they were. The two stack; copies a gate makes keep both.
 // - A blue crossing a helmet barrier gets a helmet (once): its hits times TUNING.helmetHp; copies a gate makes of it
 //   wear one too.
 // - A car can't be destroyed: it wears down the reds it touches (TUNING.carDps), pushed back by the crowd meanwhile.
@@ -96,7 +98,7 @@ export interface BattleEvents {
     /** A gold saucer sucked up a red at (x, z), and one crashed into target `target`. */
     suck?(x: number, z: number): void;
     /** A blue got a helmet at (x, z). */
-    helmet?(x: number, z: number): void;
+    helmet?(x: number, z: number, kind: 'hp' | 'attack'): void;
     saucerHit?(target: number, x: number, z: number): void;
     /** A mob vanished as the field cleared out after the battle. */
     vanish?(x: number, z: number, team: number): void;
@@ -200,6 +202,8 @@ export class Battle {
     public readonly phase = new Float32Array(CAPACITY);
     /** 1 for a mob wearing a helmet (from a helmet barrier). */
     public readonly helmet = new Uint8Array(CAPACITY);
+    /** 1 for a mob wearing a viking hat (from an attack barrier): it does TUNING.vikingDamage times the damage. */
+    public readonly viking = new Uint8Array(CAPACITY);
     /** Once the battle's over, how far each mob is through vanishing (0..1; the view shrinks it). */
     public readonly leaving = new Float32Array(CAPACITY);
     private readonly gatesCrossed = new Uint8Array(CAPACITY);
@@ -416,6 +420,7 @@ export class Battle {
         this.big[i] = kind;
         this.hp[i] = kind === TRUCK ? TUNING.truckHp : kind === CAR ? carHp() : big ? (team === BLUE ? TUNING.blueGiantHp : TUNING.redGiantHp) : 1;
         this.helmet[i] = 0;
+        this.viking[i] = 0;
         this.chip[i] = 0;
         if (big) {
             if (team === BLUE) this.giantStats.blue++;
@@ -803,7 +808,7 @@ export class Battle {
         } else {
             this.dead[i] = 1;
         }
-        block.hp -= 1;
+        block.hp -= this.attackOf(i);
         this.events.blockHit?.(b, block.hp, this.x[i], this.z[i]);
         if (block.hp <= 0) {
             block.alive = false;
@@ -830,8 +835,10 @@ export class Battle {
         const x = (this.x[i] + this.x[j]) / 2;
         const z = (this.z[i] + this.z[j]) / 2;
         const big = !!(this.big[i] || this.big[j]);
-        this.hp[i] -= 1;
-        this.hp[j] -= 1;
+        // Each takes the other's hit (a viking hat's is bigger).
+        const fromJ = this.attackOf(j);
+        this.hp[j] -= this.attackOf(i);
+        this.hp[i] -= fromJ;
         if (this.hp[i] <= 0) this.dead[i] = 1;
         if (this.hp[j] <= 0) this.dead[j] = 1;
         // A giant's tally: the plain mob it just took out.
@@ -867,18 +874,26 @@ export class Battle {
         this.events.clash?.(this.x[j], this.z[j], !!this.big[j]);
     }
 
-    /** Blues going through a helmet barrier (no helmet yet) get one: their hits times TUNING.helmetHp. */
+    /** Blues going through a barrier get what it gives, once each: a helmet (their hits times TUNING.helmetHp) or a
+     *  viking hat (their damage times TUNING.vikingDamage). */
     private crossHelmets(): void {
         for (const barrier of this.helmets) {
             const half = barrier.width / 2;
+            const attack = barrier.kind === 'attack';
+            const worn = attack ? this.viking : this.helmet;
             for (let i = 0; i < this.count; i++) {
-                if (this.dead[i] || this.team[i] !== BLUE || this.helmet[i] || this.big[i] === CAR) continue;
+                if (this.dead[i] || this.team[i] !== BLUE || worn[i] || this.big[i] === CAR) continue;
                 if (!(this.prevZ[i] > barrier.z && this.z[i] <= barrier.z) || Math.abs(this.x[i] - barrier.x) > half) continue;
-                this.helmet[i] = 1;
-                this.hp[i] *= TUNING.helmetHp;
-                this.events.helmet?.(this.x[i], this.z[i]);
+                worn[i] = 1;
+                if (!attack) this.hp[i] *= TUNING.helmetHp;
+                this.events.helmet?.(this.x[i], this.z[i], attack ? 'attack' : 'hp');
             }
         }
+    }
+
+    /** The damage mob i does with a hit: 1, times TUNING.vikingDamage with a viking hat. */
+    private attackOf(i: number): number {
+        return this.viking[i] ? TUNING.vikingDamage : 1;
     }
 
     private crossGates(): void {
@@ -900,11 +915,12 @@ export class Battle {
                     const cx = Math.max(gate.nowX - half, Math.min(gate.nowX + half, this.x[i] + side * GATE_SPREAD + (Math.random() - 0.5) * 0.1));
                     const j = this.add(BLUE, cx, this.z[i] + Math.random() * GATE_DEPTH, crossed);
                     if (j < 0) break;
-                    // A copy of a helmeted mob wears one too.
+                    // A copy of a helmeted mob wears one too (and a viking hat).
                     if (this.helmet[i]) {
                         this.helmet[j] = 1;
                         this.hp[j] = TUNING.helmetHp;
                     }
+                    this.viking[j] = this.viking[i];
                     this.vz[j] = this.vz[i];
                     this.prevZ[j] = gate.z - 0.01;
                     made++;
@@ -963,7 +979,7 @@ export class Battle {
                 this.dead[i] = 1;
                 const kind = this.big[i];
                 const most = kind === TRUCK ? TUNING.truckDamage : kind === CAR ? TUNING.carDamage : TUNING.giantDamage;
-                const damage = kind ? Math.min(most, Math.ceil(this.hp[i])) : 1;
+                const damage = (kind ? Math.min(most, Math.ceil(this.hp[i])) : 1) * this.attackOf(i);
                 this.damageTarget(k, damage, this.x[i], this.z[i]);
                 break;
             }
@@ -1068,6 +1084,7 @@ export class Battle {
         this.age[to] = this.age[from];
         this.phase[to] = this.phase[from];
         this.helmet[to] = this.helmet[from];
+        this.viking[to] = this.viking[from];
         this.leaving[to] = this.leaving[from];
         this.gatesCrossed[to] = this.gatesCrossed[from];
         this.dead[to] = this.dead[from];

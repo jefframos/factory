@@ -9,6 +9,8 @@
 //   of colour swatches, so a UV shift recolours a part).
 // - the saucer (games/ufo's, built by its build-saucer.mjs) with the gold-and-black skin.
 // - the car (library3d City2 Car_23): its textures cut to 256 px.
+// - the viking hat (an attack barrier's: library3d's stylized hats pack, its Viking_Hat_0 alone): its texture cut to
+//   256 px. The crowd puts it on the mobs' heads (CrowdView), at the helmet's place.
 // - the desert theme's plants (library3d 3D Desert Plants Pack) into public/mob/models/desert/: their textures cut to
 //   128 px, their meshes simplified hard (props at the field's edge) and their metal map dropped (megabytes each otherwise).
 
@@ -174,6 +176,21 @@ async function buildCar() {
     console.log(`car: ${Math.round(fs.statSync(path.join(OUT, 'car.glb')).size / 1024)} KB`);
 }
 
+async function buildViking() {
+    const document = await io.read(path.join(REPO, 'library3d/files/hats/3d_props_stylized_hats_pack.glb'));
+    // The pack's 18 hats, one per node: all but the viking's go (their meshes and textures with them, by prune).
+    for (const node of document.getRoot().listNodes()) {
+        if (/(_Hat_\d+|^Crown_\d+)$/.test(node.getName()) && node.getName() !== 'Viking_Hat_0') node.dispose();
+    }
+    await document.transform(prune());
+    for (const texture of document.getRoot().listTextures()) {
+        const image = texture.getImage();
+        if (image) texture.setImage(await sharp(Buffer.from(image)).resize(256, 256, { fit: 'inside' }).png().toBuffer()).setMimeType('image/png');
+    }
+    await write(path.join(OUT, 'viking.glb'), document);
+    console.log(`viking: ${Math.round(fs.statSync(path.join(OUT, 'viking.glb')).size / 1024)} KB`);
+}
+
 async function buildDesert() {
     fs.mkdirSync(DESERT_OUT, { recursive: true });
     for (const file of DESERT_PLANTS) {
@@ -199,4 +216,5 @@ for (const building of BUILDINGS) await buildBuilding(building);
 await buildTruck();
 await buildSaucer();
 await buildCar();
+await buildViking();
 if (!process.argv.includes('--no-desert')) await buildDesert();

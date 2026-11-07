@@ -19,6 +19,12 @@
       "z": -3,
       "width": 3,
       "value": 2
+    },
+    {
+      "x": 0,
+      "z": -18.25,
+      "width": 3,
+      "value": 2
     }
   ],
   "obstacles": [
@@ -95,5 +101,14 @@
   "redRateEnd": 5.2,
   "redRamp": 55,
   "baseHp": 480,
-  "reward": 180
+  "reward": 180,
+  "pads": [
+    {
+      "kind": "car",
+      "x": 3.25,
+      "z": -20.25,
+      "width": 2.4,
+      "depth": 1.8
+    }
+  ]
 }
