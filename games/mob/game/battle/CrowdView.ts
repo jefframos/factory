@@ -15,9 +15,9 @@
 
 import * as THREE from 'three';
 import { createGLTFLoader } from 'core/three/GLTFLoaders';
-import { COLORS, TUNING } from '../data/MobConfig';
+import { COLORS, TUNING, UNIT_COLORS } from '../data/MobConfig';
 import { applyBend } from '../services/Bend';
-import { BLUE, Battle, CAR, TRUCK } from './Battle';
+import { BLUE, Battle, CAR, TRUCK, GIANT } from './Battle';
 
 /** Poses of the run cycle baked. */
 const FRAMES = 10;
@@ -38,6 +38,8 @@ export class CrowdView {
     private teamColors: THREE.InstancedBufferAttribute[] = [];
     private helmets: THREE.InstancedMesh[] = [];
     private readonly blue = new THREE.Color(COLORS.blue);
+    /** The blue giant's own colour (UNIT_COLORS.giant: picked live in the debug panel). */
+    private readonly giantBlue = new THREE.Color(UNIT_COLORS.giant);
     private readonly red = new THREE.Color(COLORS.red);
     private readonly matrix = new THREE.Matrix4();
     private readonly position = new THREE.Vector3();
@@ -154,6 +156,7 @@ export class CrowdView {
     public update(battle: Battle, time: number): void {
         if (!this.ready) return;
         for (const mesh of this.meshes) mesh.count = 0;
+        this.giantBlue.setHex(UNIT_COLORS.giant);
         for (const mesh of this.helmets) mesh.count = 0;
         for (let i = 0; i < battle.count; i++) {
             // Trucks are drawn by the arena (a model of their own).
@@ -173,7 +176,7 @@ export class CrowdView {
             mesh.setMatrixAt(slot, this.matrix);
             const helmet = battle.helmet[i] ? this.helmets[pose] : undefined;
             if (helmet) helmet.setMatrixAt(helmet.count++, this.matrix);
-            const color = battle.team[i] === BLUE ? this.blue : this.red;
+            const color = battle.team[i] === BLUE ? (battle.big[i] === GIANT ? this.giantBlue : this.blue) : this.red;
             this.teamColors[pose].setXYZ(slot, color.r, color.g, color.b);
         }
         for (let p = 0; p < this.meshes.length; p++) {

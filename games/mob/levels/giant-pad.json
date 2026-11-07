@@ -3,9 +3,9 @@
   "kind": "Giant pad",
   "gates": [
     {
-      "x": -3.25,
+      "x": -2.2,
       "z": -6.5,
-      "width": 2.7,
+      "width": 4.3,
       "value": 2
     },
     {

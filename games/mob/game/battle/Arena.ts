@@ -15,7 +15,7 @@
 // The rules are Battle's; this only follows it (update()).
 
 import * as THREE from 'three';
-import { ARENA, BattleConfig, COLORS, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig } from '../data/MobConfig';
+import { ARENA, BattleConfig, COLORS, UNIT_COLORS, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig } from '../data/MobConfig';
 import { bendObject, bendSegments } from '../services/Bend';
 import { createWater } from '../services/Water';
 import { BASE_HALF_WIDTH, Battle, CAR, TRUCK, Target, obstacleShape } from './Battle';
@@ -57,8 +57,8 @@ const PUSH_BLOCK = { height: 1.2, body: 0x3a4466, plate: 0xff4757 };
 const PROPS = {
     houses: { giant: 'home-blue', truck: 'barracks-blue', saucer: 'home-yellow' } as Record<string, string>,
     houseTitles: { giant: 'GIANT', truck: 'TRUCK', saucer: 'UFO', car: 'CAR' } as Record<string, string>,
-    /** The plain houses (all but the giant's, which is a building): wall and roof colours. */
-    houseColours: { truck: [0xcfe0ff, 0x1f4fbf], saucer: [0xffe27a, 0xffb31a], car: [0xffe3d6, 0xff6a3d] } as Record<string, [number, number]>,
+    /** The plain houses (all but the giant's, which is a building): their wall and roof colours' keys in UNIT_COLORS. */
+    houseColours: { truck: ['truckWall', 'truckRoof'], saucer: ['ufoWall', 'ufoRoof'], car: ['carWall', 'carRoof'] } as Record<string, [UnitColor, UnitColor]>,
     base: 'barracks-red',
     tower: 'tower-red',
     /** A target narrower than this is a tower, wider the barracks. */
@@ -141,6 +141,20 @@ function grow(outline: readonly { x: number; z: number }[], by: number): { x: nu
 }
 
 /** A model's clone sized so its `axis` extent is `size`, centred on X/Z, base at 0 (wrapped in a group). */
+type UnitColor = keyof typeof UNIT_COLORS;
+
+/** A model's materials tinted `hex` over their own colour (kept the first time: white puts it back). */
+function tintModel(model: THREE.Object3D, hex: number): void {
+    model.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+        for (const material of Array.isArray(child.material) ? child.material : [child.material]) {
+            if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+            if (!material.userData.base) material.userData.base = material.color.clone();
+            material.color.copy(material.userData.base).multiply(new THREE.Color(hex));
+        }
+    });
+}
+
 function fitted(source: THREE.Object3D, size: number, axis: 'x' | 'y' | 'z'): THREE.Object3D {
     source.updateWorldMatrix(true, true);
     const box = new THREE.Box3().setFromObject(source);
@@ -307,6 +321,10 @@ export class Arena {
     /** Truck models in use (one per live truck, by order), and spares; saucer models by the saucer they show. */
     private readonly trucks: THREE.Object3D[] = [];
     private truckModel: THREE.Object3D | null = null;
+    /** The plain houses' wall and roof materials (with their UNIT_COLORS keys), and the giant's buildings: recoloured
+     *  live (refreshColors). */
+    private readonly houseMaterials: { keys: [UnitColor, UnitColor]; wall: THREE.MeshLambertMaterial; roof: THREE.MeshLambertMaterial }[] = [];
+    private readonly giantHouses: THREE.Object3D[] = [];
     private carModel: THREE.Object3D | null = null;
     private readonly cars: THREE.Object3D[] = [];
     /** Each helmet barrier's floating helmet (it spins). */
@@ -735,7 +753,8 @@ export class Arena {
         const group = new THREE.Group();
         const wallHeight = HOUSE.wallHeight;
         const kind = p.kind ?? 'giant';
-        const colours = PROPS.houseColours[kind] ?? [HOUSE.wall, HOUSE.roof];
+        const keys = PROPS.houseColours[kind];
+        const colours = keys ? [UNIT_COLORS[keys[0]], UNIT_COLORS[keys[1]]] : [HOUSE.wall, HOUSE.roof];
         const walls = roundedBox(p.width, wallHeight, p.depth, 0.25, lambert(colours[0]));
         group.add(walls);
         // The roof: a triangle across, run the house's depth, with a little overhang.
@@ -751,6 +770,7 @@ export class Arena {
         const roof = new THREE.Mesh(roofGeometry, lambert(colours[1]));
         roof.position.y = wallHeight;
         group.add(roof);
+        if (keys) this.houseMaterials.push({ keys, wall: walls.material as THREE.MeshLambertMaterial, roof: roof.material as THREE.MeshLambertMaterial });
         // The doors: dark openings with a glowing frame (it pulses as blues go in).
         const glow = new THREE.MeshBasicMaterial({ color: 0x7fd0ff, transparent: true, opacity: 0.6 });
         const doorWidth = Math.min(p.width * 0.55, 1.6);
@@ -791,7 +811,9 @@ export class Arena {
         // The giant's is the blue home building (when it loads); the others stay plain houses, clearer at a glance, with
         // what they make spinning over them (updateHouseIcon).
         if (kind === 'giant') {
-            void this.dress(group, PROPS.houses.giant, p.width * 1.15, p.depth * 1.35, keep, (height) => {
+            void this.dress(group, PROPS.houses.giant, p.width * 1.15, p.depth * 1.35, keep, (height, model) => {
+                this.giantHouses.push(model);
+                tintModel(model, UNIT_COLORS.giantHouse);
                 track.position.set(0, height + 0.3, 0.2);
                 fill.position.set(0, height + 0.3, 0.22);
                 label.mesh.position.y = height + 0.95;
@@ -983,9 +1005,23 @@ export class Arena {
             this.truckModel = fitted(truck, PROPS.truck.length, 'z');
             this.carModel = fitted(car, PROPS.car.length, 'z');
             this.saucerModel = fitted(saucer, PROPS.saucer.radius * 2, 'x');
+            this.refreshColors();
         } catch (error) {
             console.warn('[mob] unit models', error);
         }
+    }
+
+    /** The upgrades' colours (UNIT_COLORS) on everything already built: the plain houses, the giant's buildings, the
+     *  vehicles (their live clones share these materials). The debug panel calls it as colours are picked. */
+    public refreshColors(): void {
+        for (const { keys, wall, roof } of this.houseMaterials) {
+            wall.color.setHex(UNIT_COLORS[keys[0]]);
+            roof.color.setHex(UNIT_COLORS[keys[1]]);
+        }
+        for (const model of this.giantHouses) tintModel(model, UNIT_COLORS.giantHouse);
+        if (this.truckModel) tintModel(this.truckModel, UNIT_COLORS.truck);
+        if (this.carModel) tintModel(this.carModel, UNIT_COLORS.car);
+        if (this.saucerModel) tintModel(this.saucerModel, UNIT_COLORS.ufo);
     }
 
     /** Trucks and cars: one model per live one, placed and turned like the mob it is (spares hidden). */

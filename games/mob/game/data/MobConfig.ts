@@ -228,6 +228,26 @@ export const UPGRADES: Record<UpgradeKind, { name: string; max: number; cost: nu
     recharge: { name: 'RECHARGE', max: 5, cost: [60, 120, 200, 300] },
 };
 
+/**
+ * The upgrades' colours — picked live in the debug panel's Colours folder (?dev=1; Apply keeps them, Log colours prints
+ * them to paste here). `giant`: the blue giant's body (the plain mobs keep COLORS.blue); `giantHouse`, `truck`, `ufo`,
+ * `car`: a tint over the giant's building and each vehicle's own texture (white: as it is); `…Wall` / `…Roof`: the
+ * plain houses' walls and roofs.
+ */
+export const UNIT_COLORS = {
+    giant: 0x1366ff,
+    giantHouse: 0xffffff,
+    truck: 0xffffff,
+    truckWall: 0xcfe0ff,
+    truckRoof: 0x1f4fbf,
+    ufo: 0xffffff,
+    ufoWall: 0xffe27a,
+    ufoRoof: 0xffb31a,
+    car: 0xffffff,
+    carWall: 0xffe3d6,
+    carRoof: 0xff6a3d,
+};
+
 /** Team colours: the mobs, the cannon and the gates. */
 export const COLORS = {
     blue: 0x3b8cff,

@@ -18,19 +18,11 @@
   "pushers": [
     {
       "x": 0,
-      "z": -10.5,
-      "width": 3.4,
-      "depth": 0.7,
-      "range": 3.1,
-      "seconds": 3.2
-    },
-    {
-      "x": 0,
       "z": -15.5,
       "width": 3.4,
       "depth": 0.7,
       "range": 3.1,
-      "seconds": 4,
+      "seconds": 5,
       "phase": 0.5
     }
   ],
@@ -38,5 +30,12 @@
   "redRateEnd": 5,
   "redRamp": 55,
   "baseHp": 300,
-  "reward": 140
+  "reward": 140,
+  "helmets": [
+    {
+      "x": 0,
+      "z": -11.25,
+      "width": 6
+    }
+  ]
 }

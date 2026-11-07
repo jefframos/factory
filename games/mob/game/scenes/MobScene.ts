@@ -18,7 +18,7 @@ import { Game } from 'core/Game';
 import { DebugOverlay } from 'core/debug/DebugOverlay';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { ThreeScene } from 'core/scene/ThreeScene';
-import { ARENA, COLORS, TUNING } from '../data/MobConfig';
+import { ARENA, COLORS, TUNING, UNIT_COLORS } from '../data/MobConfig';
 import { LEVELS_BY_ID, PLAY, battleConfig, battleInfo, battleZone } from '../data/MobLevels';
 import { MobEvents } from '../data/MobEvents';
 import { THEMES, ThemeFile, parseTheme, themeById } from '../data/Themes';
@@ -545,6 +545,20 @@ export default class MobScene extends ThreeScene {
         camera.slider(BEND, 'strength', 0, 0.012, 0.0001, 'Bend').onChange(apply);
         camera.slider(SHAKE_LEVEL, 'value', 0, 2, 0.05, 'Camera shake');
         camera.button('Log camera', () => console.log('[Mob] CAMERA', JSON.stringify({ ...CAMERA, bend: BEND.strength })));
+        // The upgrades' colours, live (Apply keeps them; Log colours prints them for MobConfig's UNIT_COLORS).
+        const colours = panel.folder('Colours');
+        const recolour = () => this.arena?.refreshColors();
+        const COLOUR_LABELS: Record<keyof typeof UNIT_COLORS, string> = {
+            giant: 'Giant (body)', giantHouse: 'Giant house (tint)',
+            truck: 'Truck (tint)', truckWall: 'Truck house wall', truckRoof: 'Truck house roof',
+            ufo: 'UFO (tint)', ufoWall: 'UFO house wall', ufoRoof: 'UFO house roof',
+            car: 'Car (tint)', carWall: 'Car house wall', carRoof: 'Car house roof',
+        };
+        for (const key of Object.keys(COLOUR_LABELS) as (keyof typeof UNIT_COLORS)[]) {
+            colours.color(UNIT_COLORS, key, { label: COLOUR_LABELS[key] }).onChange(recolour);
+        }
+        colours.button('Log colours', () => console.log('[Mob] UNIT_COLORS', JSON.stringify(Object.fromEntries(
+            Object.entries(UNIT_COLORS).map(([key, value]) => [key, `0x${value.toString(16).padStart(6, '0')}`])))));
         const look = panel.folder('Mobs');
         look.slider(TUNING, 'mobHeight', 0.6, 3, 0.05, 'Mob size (mesh)');
         const tuning = panel.folder('Tuning');

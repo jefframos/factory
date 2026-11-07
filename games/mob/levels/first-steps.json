@@ -3,9 +3,9 @@
   "kind": "Classic",
   "gates": [
     {
-      "x": -2.45,
-      "z": -9,
-      "width": 3.6,
+      "x": -0.2,
+      "z": -5,
+      "width": 8.2,
       "value": 2
     },
     {
@@ -18,7 +18,7 @@
       "x": 0,
       "z": -15,
       "width": 3,
-      "value": 4,
+      "value": 3,
       "swing": {
         "range": 2.5,
         "seconds": 5
@@ -28,6 +28,6 @@
   "redRate": 2,
   "redRateEnd": 3.6,
   "redRamp": 45,
-  "baseHp": 200,
+  "baseHp": 150,
   "reward": 100
 }
