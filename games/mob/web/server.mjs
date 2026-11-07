@@ -8,6 +8,8 @@
 // - PUT    /api/mob/zones             write it (every level it names must exist)
 // - GET    /api/mob/themes            ui/themes.json (each zone's look: colours, surroundings, props)
 // - PUT    /api/mob/themes            write it (every model it names must be under public/mob/models)
+// - GET    /api/mob/units             ui/units.json (the upgrades: colours, charge, hits, damage)
+// - PUT    /api/mob/units             write it (checked first)
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -19,6 +21,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const LEVELS_DIR = path.join(HERE, '..', 'levels');
 const ZONES_FILE = path.join(HERE, '..', 'ui', 'zones.json');
 const THEMES_FILE = path.join(HERE, '..', 'ui', 'themes.json');
+const UNITS_FILE = path.join(HERE, '..', 'ui', 'units.json');
 const MODELS_DIR = path.join(HERE, '..', '..', '..', 'public', 'mob', 'models');
 
 const goodId = (id) => /^[a-z0-9][a-z0-9-]*$/.test(id ?? '');
@@ -40,14 +43,32 @@ function levelProblem(level) {
     for (const [list, keys] of [
         ['spinners', ['x', 'z', 'length', 'arms', 'speed']],
         ['pushers', ['x', 'z', 'width', 'depth', 'range', 'seconds']],
-        ['pads', ['x', 'z', 'width', 'depth', 'need']],
+        ['pads', ['x', 'z', 'width', 'depth']],
         ['pushBlocks', ['x', 'z', 'width', 'depth', 'far', 'near']],
         ['targets', ['x', 'hp']],
         ['helmets', ['x', 'z', 'width']],
     ]) {
         for (const item of level[list] ?? []) if (!keys.every((key) => isNumber(item[key]))) return `Each of ${list} needs ${keys.join(', ')}`;
     }
-    for (const pad of level.pads ?? []) if (pad.kind !== undefined && !['giant', 'truck', 'saucer', 'car'].includes(pad.kind)) return `Unknown house kind ${pad.kind}`;
+    for (const pad of level.pads ?? []) {
+        if (pad.kind !== undefined && !['giant', 'truck', 'saucer', 'car'].includes(pad.kind)) return `Unknown house kind ${pad.kind}`;
+        // Its own charge, or (none) its unit's.
+        if (pad.need !== undefined && !(isNumber(pad.need) && pad.need >= 1)) return 'A house\'s need must be 1 or more (or empty)';
+    }
+    return null;
+}
+
+/** What's wrong with the units file, if anything: every unit, its colours as #rrggbb, its numbers. */
+function unitsProblem(units) {
+    const colour = (value) => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
+    for (const kind of ['giant', 'truck', 'saucer', 'car']) {
+        const unit = units?.[kind];
+        if (!unit) return `${kind} is missing`;
+        for (const key of ['color', 'tint', 'wall', 'roof']) if (unit[key] !== undefined && !colour(unit[key])) return `${kind}: ${key} must be a #rrggbb colour`;
+        if (!(isNumber(unit.need) && unit.need >= 1)) return `${kind}: charge (need) must be 1 or more`;
+        if (unit.hp !== undefined && !(isNumber(unit.hp) && unit.hp >= 0)) return `${kind}: hp must be 0 or more`;
+        if (!(isNumber(unit.damage) && unit.damage >= 0)) return `${kind}: damage must be 0 or more`;
+    }
     return null;
 }
 
@@ -103,6 +124,14 @@ async function handle(req, res, url) {
         const problem = await themesProblem(data);
         if (problem) return send(res, 400, { error: problem }), true;
         await writeJson(THEMES_FILE, { themes: data.themes });
+        return send(res, 200, { ok: true }), true;
+    }
+    if (url.pathname === '/api/mob/units' && req.method === 'GET') return send(res, 200, await readJson(UNITS_FILE, {})), true;
+    if (url.pathname === '/api/mob/units' && req.method === 'PUT') {
+        const units = await readBody(req);
+        const problem = unitsProblem(units);
+        if (problem) return send(res, 400, { error: problem }), true;
+        await writeJson(UNITS_FILE, units);
         return send(res, 200, { ok: true }), true;
     }
     if (url.pathname === '/api/mob/zones' && req.method === 'GET') return send(res, 200, await readJson(ZONES_FILE, { zones: [] })), true;

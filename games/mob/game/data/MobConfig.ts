@@ -7,6 +7,7 @@
 // A battle is a BattleConfig: the shared TUNING plus a level (MobLevels.ts: its gates, walls, water, spinners, pushers,
 // giant pads, enemy pressure). After the last level they repeat, a little harder each loop (battleConfig()).
 
+import unitsFile from '../../ui/units.json';
 export const ARENA = {
     /** Half the field's width (world units): 10 wide, as the brief. */
     halfWidth: 5,
@@ -180,7 +181,8 @@ export interface PadConfig {
     z: number;
     width: number;
     depth: number;
-    need: number;
+    /** Blues per one it makes; unset: the unit's (the Units tab's: needOf). */
+    need?: number;
 }
 
 /**
@@ -229,24 +231,53 @@ export const UPGRADES: Record<UpgradeKind, { name: string; max: number; cost: nu
 };
 
 /**
- * The upgrades' colours — picked live in the debug panel's Colours folder (?dev=1; Apply keeps them, Log colours prints
- * them to paste here). `giant`: the blue giant's body (the plain mobs keep COLORS.blue); `giantHouse`, `truck`, `ufo`,
- * `car`: a tint over the giant's building and each vehicle's own texture (white: as it is); `…Wall` / `…Roof`: the
- * plain houses' walls and roofs.
+ * The upgrades — what each house makes (giant, truck, UFO, car) — as set in the editor's Units tab (ui/units.json):
+ * colours (`color`: the giant's body; `tint`: over the giant's building or the vehicle's own texture, white = as it is;
+ * `wall` / `roof`: the plain houses), `need`: blues to charge one (a level's house can set its own), `hp`: hits it
+ * takes (the car's 0: nothing stops it), `damage`: the most it takes off the enemy's building (the UFO: what it does).
  */
+export interface UnitSettings {
+    color?: string;
+    tint: string;
+    wall?: string;
+    roof?: string;
+    /** Blues per one it makes; unset: the unit's (the Units tab's: needOf). */
+    need?: number;
+    hp?: number;
+    damage: number;
+}
+export const UNITS = unitsFile as Record<HouseKind, UnitSettings>;
+
+const hex = (colour: string | undefined, fallback: number): number => (colour ? parseInt(colour.replace('#', ''), 16) : fallback);
+
+/** The upgrades' colours, as numbers (from UNITS) — the debug panel's Colours folder changes these live. */
 export const UNIT_COLORS = {
-    giant: 0x1366ff,
-    giantHouse: 0xffffff,
-    truck: 0xffffff,
-    truckWall: 0xcfe0ff,
-    truckRoof: 0x1f4fbf,
-    ufo: 0xffffff,
-    ufoWall: 0xffe27a,
-    ufoRoof: 0xffb31a,
-    car: 0xffffff,
-    carWall: 0xffe3d6,
-    carRoof: 0xff6a3d,
+    giant: hex(UNITS.giant.color, 0x1366ff),
+    giantHouse: hex(UNITS.giant.tint, 0xffffff),
+    truck: hex(UNITS.truck.tint, 0xffffff),
+    truckWall: hex(UNITS.truck.wall, 0xcfe0ff),
+    truckRoof: hex(UNITS.truck.roof, 0x1f4fbf),
+    ufo: hex(UNITS.saucer.tint, 0xffffff),
+    ufoWall: hex(UNITS.saucer.wall, 0xffe27a),
+    ufoRoof: hex(UNITS.saucer.roof, 0xffb31a),
+    car: hex(UNITS.car.tint, 0xffffff),
+    carWall: hex(UNITS.car.wall, 0xffe3d6),
+    carRoof: hex(UNITS.car.roof, 0xff6a3d),
 };
+
+// The units' hits and damage, from the editor (TUNING keeps the names the battle reads).
+TUNING.blueGiantHp = UNITS.giant.hp ?? TUNING.blueGiantHp;
+TUNING.giantDamage = UNITS.giant.damage;
+TUNING.truckHp = UNITS.truck.hp ?? TUNING.truckHp;
+TUNING.truckDamage = UNITS.truck.damage;
+TUNING.saucerDamage = UNITS.saucer.damage;
+TUNING.carDamage = UNITS.car.damage;
+
+/** A car's hits: the Units tab's, or (0) nothing stops it. */
+export const carHp = (): number => (UNITS.car.hp && UNITS.car.hp > 0 ? UNITS.car.hp : Infinity);
+
+/** A house's blues to charge one: its own (the level's), else its unit's (the Units tab). */
+export const needOf = (pad: { kind?: HouseKind; need?: number }): number => pad.need ?? UNITS[pad.kind ?? 'giant'].need;
 
 /** Team colours: the mobs, the cannon and the gates. */
 export const COLORS = {

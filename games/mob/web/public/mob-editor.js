@@ -1,6 +1,7 @@
 // The Mob editor's page: a Levels tab (the field top-down: draw polygons, place gates, houses, PUSH blocks, spinners,
 // pushers and forts, edit their numbers; the game itself on the right as a live 3D preview, rebuilt on every change)
-// and a Zones tab (each zone's theme and its levels, in play order). Saves go through games/mob/web/server.mjs to
+// a Zones tab (each zone's theme and its levels, in play order), a Themes tab, and a Units tab (the upgrades: colours,
+// charge, hits, damage: ui/units.json). Saves go through games/mob/web/server.mjs to
 // games/mob/levels/<id>.json and games/mob/ui/zones.json, which the game bundles.
 //
 // The field (MobConfig.ts ARENA): x across from -5 to 5, z along it from the cannon (0.35) up to the base's front
@@ -25,7 +26,8 @@ const DEFAULTS = {
     gates: (x, z) => ({ x, z, width: 3, value: 2 }),
     spinners: (x, z) => ({ x, z, length: 2.8, arms: 3, speed: 0.25 }),
     pushers: (x, z) => ({ x, z, width: 3.2, depth: 0.7, range: 3, seconds: 3.5 }),
-    pads: (x, z) => ({ kind: state.houseKind, x, z, width: 2.4, depth: 1.8, need: HOUSE_KINDS[state.houseKind].need }),
+    // No `need`: it charges as its unit does (the Units tab), unless one's set here.
+    pads: (x, z) => ({ kind: state.houseKind, x, z, width: 2.4, depth: 1.8 }),
     pushBlocks: (x, z) => ({ x, z, width: 4.4, depth: 1.3, far: round(z - 8), near: round(z + 4) }),
     helmets: (x, z) => ({ x, z, width: 3 }),
     targets: (x, z) => ({ x, hp: 200, width: 3.2, z: Math.abs(z - BASE_Z) < 1 ? undefined : z }),
@@ -47,7 +49,7 @@ const LEVEL_FIELDS = [
 const FIELD_HINTS = {
     redRate: 'reds a second at the start', redRateEnd: 'reds a second at the end of the ramp', redRamp: 'ramp seconds',
     redGiantEvery: 'a red giant every N s (0 = none)', baseHp: 'the one base\'s hits (no forts)', far: 'z: pushed here, the blues open it',
-    near: 'z: pushed here, the reds open it', need: 'blues per giant', hp: 'hits', value: 'multiplier', speed: 'turns a second',
+    near: 'z: pushed here, the reds open it', need: 'blues per one it makes (empty = the Units tab\'s)', hp: 'hits', value: 'multiplier', speed: 'turns a second',
 };
 
 // ------------------------------------------------------------------ helpers
@@ -133,10 +135,12 @@ const statusLine = document.getElementById('status');
 const levelsTab = document.getElementById('tab-levels');
 const zonesTab = document.getElementById('tab-zones');
 const themesTab = document.getElementById('tab-themes');
+const unitsTab = document.getElementById('tab-units');
 
 async function boot() {
     try {
-        const [config, themes, zones, levels] = await Promise.all([api('/api/config'), api('/api/mob/themes'), api('/api/mob/zones'), api('/api/mob/levels')]);
+        const [config, themes, zones, levels, units] = await Promise.all([api('/api/config'), api('/api/mob/themes'), api('/api/mob/zones'), api('/api/mob/levels'), api('/api/mob/units')]);
+        state.units = units;
         state.gameUrl = config.gameUrl;
         state.themes = themes.themes;
         state.zones = zones;
@@ -149,18 +153,21 @@ async function boot() {
     buildLevelsTab();
     buildZonesTab();
     buildThemesTab();
+    buildUnitsTab();
     openLevel(firstLevelId());
     document.querySelectorAll('header [data-tab]').forEach((button) => button.addEventListener('click', () => {
         document.querySelectorAll('header [data-tab]').forEach((b) => b.classList.toggle('on', b === button));
         levelsTab.hidden = button.dataset.tab !== 'levels';
         zonesTab.hidden = button.dataset.tab !== 'zones';
         themesTab.hidden = button.dataset.tab !== 'themes';
+        unitsTab.hidden = button.dataset.tab !== 'units';
         if (!themesTab.hidden) renderThemes();
+        if (!unitsTab.hidden) renderUnits();
         if (!zonesTab.hidden) renderZones();
         else resizeCanvas();
     }));
     window.addEventListener('beforeunload', (event) => {
-        if (state.dirty.size || zonesDirty || themesDirty) event.preventDefault();
+        if (state.dirty.size || zonesDirty || themesDirty || unitsDirty) event.preventDefault();
     });
 }
 
@@ -1367,3 +1374,130 @@ function sendThemePreview() {
 }
 
 boot();
+
+// ------------------------------------------------------------------ units tab
+
+/** The upgrades, in the order shown: what each house makes. */
+const UNIT_ORDER = [['giant', 'GIANT'], ['truck', 'TRUCK'], ['saucer', 'UFO'], ['car', 'CAR']];
+let unitsDirty = false;
+let unitId = 'giant';
+let unitList;
+let unitForm;
+let unitPreview;
+let unitLevel = null;
+
+function buildUnitsTab() {
+    unitList = el('div', { class: 'list' });
+    unitForm = el('div', { class: 'theme-form' });
+    unitPreview = el('iframe', { title: 'Unit preview' });
+    // The preview game asks for its level when it's ready: this tab's (saved) level.
+    window.addEventListener('message', (event) => {
+        if (event.source !== unitPreview.contentWindow || event.data?.type !== 'mob-ready') return;
+        const data = unitLevel ? state.levels.get(unitLevel) : null;
+        if (data) unitPreview.contentWindow.postMessage({ type: 'mob-level', level: data }, '*');
+    });
+    unitsTab.append(
+        el('aside', {}, unitList),
+        el('div', { class: 'editor' },
+            el('div', { class: 'toolbar' },
+                el('span', { class: 'hint' }, 'What each house makes, in every level. A level\'s house can set its own charge.'),
+                el('span', { style: { flex: 1 } }),
+                el('button', { class: 'primary', onclick: saveUnits }, 'Save units')),
+            unitForm),
+        el('div', { class: 'preview' },
+            el('div', { class: 'bar' }, el('span', { class: 'hint' }, 'A level with it (saved values)'), el('span', { style: { flex: 1 } }),
+                el('button', { onclick: reloadUnitPreview }, 'Reload')),
+            unitPreview),
+    );
+}
+
+/** A level whose house makes `kind` (the preview), if there is one. */
+function levelWithUnit(kind) {
+    for (const [id, data] of state.levels) if ((data.pads ?? []).some((pad) => (pad.kind ?? 'giant') === kind)) return id;
+    return null;
+}
+
+function renderUnits() {
+    unitList.replaceChildren(...UNIT_ORDER.map(([kind, label]) => el('div', {
+        class: `row${kind === unitId ? ' sel' : ''}`,
+        onclick: () => { unitId = kind; renderUnits(); },
+    }, el('span', {}, label), el('small', {}, `charge ${state.units[kind]?.need ?? '?'}`))));
+    renderUnitForm();
+    const level = levelWithUnit(unitId);
+    if (level !== unitLevel) {
+        unitLevel = level;
+        reloadUnitPreview();
+    }
+    statusLine.textContent = unitsDirty ? 'Units not saved' : '';
+}
+
+function unitsChanged() {
+    unitsDirty = true;
+    statusLine.textContent = 'Units not saved';
+}
+
+function unitColour(unit, key, label) {
+    const input = el('input', { type: 'color', value: unit[key] ?? '#ffffff' });
+    input.addEventListener('input', () => { unit[key] = input.value; unitsChanged(); });
+    return el('div', { class: 'field' }, el('label', {}, label), input);
+}
+
+function unitNumber(unit, key, label, hint) {
+    const input = el('input', { type: 'number', step: 1, min: 0, value: unit[key] ?? '', title: hint });
+    input.addEventListener('change', () => {
+        unit[key] = Math.max(0, Math.round(Number(input.value) || 0));
+        input.value = unit[key];
+        unitsChanged();
+        if (key === 'need') renderUnits();
+    });
+    return el('div', { class: 'field' }, el('label', { title: hint }, label), input);
+}
+
+function renderUnitForm() {
+    const unit = state.units[unitId];
+    unitForm.replaceChildren();
+    if (!unit) return;
+    const label = UNIT_ORDER.find(([kind]) => kind === unitId)[1];
+    unitForm.append(el('h3', {}, `${label} · colours`));
+    if (unitId === 'giant') {
+        unitForm.append(unitColour(unit, 'color', 'body'), unitColour(unit, 'tint', 'house (tint over its building)'));
+    } else {
+        unitForm.append(
+            unitColour(unit, 'tint', `${label.toLowerCase()} (tint over its model; white = as it is)`),
+            unitColour(unit, 'wall', 'house wall'),
+            unitColour(unit, 'roof', 'house roof'));
+    }
+    unitForm.append(el('h3', {}, 'Numbers'), unitNumber(unit, 'need', 'charge', 'Blues walking into its house to make one'));
+    if (unitId !== 'saucer') {
+        unitForm.append(unitNumber(unit, 'hp', 'hp', unitId === 'car' ? 'Hits it takes (0: nothing stops it)' : 'Hits it takes'));
+    }
+    unitForm.append(unitNumber(unit, 'damage', unitId === 'saucer' ? 'damage (crashing in)' : 'base damage (most)',
+        unitId === 'saucer' ? 'What it takes off the enemy\'s building when it crashes in' : 'The most it takes off the enemy\'s building when it reaches it (less if it\'s been hurt)'));
+    if (unitId === 'car') unitForm.append(el('p', { class: 'hint' }, 'hp 0: the car can\'t be stopped.'));
+}
+
+async function saveUnits() {
+    try {
+        await api('/api/mob/units', { method: 'PUT', body: state.units });
+        unitsDirty = false;
+        statusLine.textContent = '';
+        toast('Saved ui/units.json', 'ok');
+        renderUnits();
+        // The game picks the file up and reloads itself; the preview with it, a moment later.
+        setTimeout(reloadUnitPreview, 800);
+    } catch (error) {
+        toast(error.message, 'error');
+    }
+}
+
+function reloadUnitPreview() {
+    if (!unitPreview) return;
+    if (!unitLevel) {
+        unitPreview.removeAttribute('src');
+        return;
+    }
+    const url = new URL(state.gameUrl);
+    url.searchParams.set('preview', '1');
+    url.searchParams.set('level', unitLevel);
+    unitPreview.src = url.toString();
+}

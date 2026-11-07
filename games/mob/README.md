@@ -13,7 +13,11 @@ Aim a cannon, multiply your crowd through gates, and overrun the enemy base befo
 Set `GAME=mob` in `.env`, then `npm run dev`. After a fresh clone, or when `raw-assets` changes, run `npm run font` and `npm run models`.
 
 `?dev=1` shows the debug panel: WIN / LOSE / RESTART, coins, reset the save, the camera (pitch, field of view, aim, zoom or distance, bend) and the battle's tuning. Press the panel's Apply to keep your settings; "Log camera" prints the camera's values to put in the code.
-Its **Colours** folder picks the upgrades' colours live: the giant's body, a tint over the giant's building and each
+**The upgrades** (what the houses make: giant, truck, UFO, car) are set in the editor's **Units** tab (`npm run
+editor`, saved to `ui/units.json`): each one's colours (the giant's body; a tint over the giant's building or the
+vehicle; the plain houses' walls and roofs), its charge (blues into its house to make one — a level's house can set its
+own in the Levels tab, else it uses this), its hp (the car's 0: nothing stops it) and the most it takes off the enemy's
+building (the UFO: its crash). The debug panel's **Colours** folder picks the upgrades' colours live: the giant's body, a tint over the giant's building and each
 vehicle (truck, UFO, car), and the truck / UFO / car houses' walls and roofs. "Log colours" prints them for
 `UNIT_COLORS` in `game/data/MobConfig.ts`.
 

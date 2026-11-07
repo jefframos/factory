@@ -15,7 +15,7 @@
 // The rules are Battle's; this only follows it (update()).
 
 import * as THREE from 'three';
-import { ARENA, BattleConfig, COLORS, UNIT_COLORS, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig } from '../data/MobConfig';
+import { ARENA, BattleConfig, COLORS, UNIT_COLORS, needOf, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig } from '../data/MobConfig';
 import { bendObject, bendSegments } from '../services/Bend';
 import { createWater } from '../services/Water';
 import { BASE_HALF_WIDTH, Battle, CAR, TRUCK, Target, obstacleShape } from './Battle';
@@ -795,7 +795,7 @@ export class Arena {
         group.add(fill);
         const top = wallHeight + HOUSE.roofHeight;
         const label = new Label(2.2, 0.9);
-        label.set(`0/${p.need}`);
+        label.set(`0/${needOf(p)}`);
         label.mesh.position.set(0, top + 0.55, 0.3);
         label.mesh.rotation.x = -0.6;
         group.add(label.mesh);

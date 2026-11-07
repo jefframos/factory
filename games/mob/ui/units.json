@@ -1,0 +1,6 @@
+{
+  "giant": { "color": "#1366ff", "tint": "#ffffff", "need": 16, "hp": 40, "damage": 30 },
+  "truck": { "tint": "#ffffff", "wall": "#cfe0ff", "roof": "#1f4fbf", "need": 24, "hp": 60, "damage": 45 },
+  "saucer": { "tint": "#ffffff", "wall": "#ffe27a", "roof": "#ffb31a", "need": 40, "damage": 90 },
+  "car": { "tint": "#ffffff", "wall": "#ffe3d6", "roof": "#ff6a3d", "need": 30, "hp": 0, "damage": 35 }
+}

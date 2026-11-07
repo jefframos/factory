@@ -34,7 +34,7 @@
 //
 // Events (shots, hits, gate crossings, giants, the end) go to `events`, for the view's effects and the HUD.
 
-import { ARENA, BattleConfig, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig, TUNING } from '../data/MobConfig';
+import { ARENA, BattleConfig, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig, TUNING, carHp, needOf } from '../data/MobConfig';
 import { Contact, Shape, boxShape, circleShape, polygonShape, shapeCentre, touch } from './Shapes';
 
 export const BLUE = 0;
@@ -269,7 +269,7 @@ export class Battle {
         });
         this.spinners = config.spinners ?? [];
         this.pushers = (config.pushers ?? []).map((pusher) => ({ ...pusher, nowX: pusher.x, speedX: 0 }));
-        this.pads = (config.pads ?? []).map((pad) => ({ ...pad, count: 0, shape: boxShape(pad.x, pad.z, pad.width, pad.depth), open: new Map() }));
+        this.pads = (config.pads ?? []).map((pad) => ({ ...pad, need: needOf(pad), count: 0, shape: boxShape(pad.x, pad.z, pad.width, pad.depth), open: new Map() }));
         this.pushBlocks = (config.pushBlocks ?? []).map((block) => ({ ...block, nowZ: block.z, speed: 0, blues: 0, reds: 0, alive: true }));
         this.targets = (config.targets ?? [{ x: 0, hp: config.baseHp, width: BASE_HALF_WIDTH * 2 }]).map((target) => ({
             x: target.x, z: target.z ?? ARENA.baseZ, halfWidth: (target.width ?? BASE_HALF_WIDTH * 2) / 2,
@@ -414,7 +414,7 @@ export class Battle {
         this.prevZ[i] = z;
         this.team[i] = team;
         this.big[i] = kind;
-        this.hp[i] = kind === TRUCK ? TUNING.truckHp : kind === CAR ? Infinity : big ? (team === BLUE ? TUNING.blueGiantHp : TUNING.redGiantHp) : 1;
+        this.hp[i] = kind === TRUCK ? TUNING.truckHp : kind === CAR ? carHp() : big ? (team === BLUE ? TUNING.blueGiantHp : TUNING.redGiantHp) : 1;
         this.helmet[i] = 0;
         this.chip[i] = 0;
         if (big) {
