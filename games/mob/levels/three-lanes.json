@@ -47,8 +47,8 @@
       "depth": 12
     }
   ],
-  "redRate": 2.4,
-  "redRateEnd": 4,
+  "redRate": 1.6,
+  "redRateEnd": 3.6,
   "redRamp": 45,
   "baseHp": 200,
   "reward": 110

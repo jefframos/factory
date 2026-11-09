@@ -3,34 +3,69 @@
     {
       "id": "beach",
       "name": "Beach",
-      "sky": "#8fd8ff",
-      "sea": "#3fb6ff",
-      "ground": "#71512f",
-      "field": "#e8a35c",
-      "stripe": "#d9914c",
+      "sky": "#8fdcff",
+      "sea": "#2fc4ee",
+      "ground": "#f6dc9c",
+      "field": "#f0c27a",
+      "stripe": "#e6b46a",
       "hedge": [
-        "#9bca91",
-        "#66f566"
+        "#7cc95a",
+        "#62b347"
       ],
       "block": {
-        "top": "#6fc94f",
-        "side": "#9a6a3c"
+        "top": "#f3d79a",
+        "side": "#c8955a"
       },
       "breakable": {
-        "top": "#ff9214",
-        "side": "#7d849e"
+        "top": "#d9a066",
+        "side": "#9c6a3c"
       },
-      "rim": "#8a5a30",
-      "surround": "valley",
+      "rim": "#d8b072",
+      "surround": "sea",
       "kit": {
         "scale": 1.25,
-        "props": [],
-        "pillarEvery": 4
-      },
-      "cliff": {
-        "height": 2,
-        "top": "#79e156",
-        "side": "#a8774a"
+        "props": [
+          {
+            "model": "beach/palmtree-1.glb",
+            "height": 4.2,
+            "count": 4
+          },
+          {
+            "model": "beach/palmtree-2.glb",
+            "height": 3.8,
+            "count": 4
+          },
+          {
+            "model": "beach/palmtree-3.glb",
+            "height": 4.4,
+            "count": 4
+          },
+          {
+            "model": "beach/palmtree-4.glb",
+            "height": 3.6,
+            "count": 4
+          },
+          {
+            "model": "beach/bush-1.glb",
+            "height": 0.9,
+            "count": 6
+          },
+          {
+            "model": "beach/bush-2.glb",
+            "height": 0.8,
+            "count": 6
+          },
+          {
+            "model": "beach/rock-1.glb",
+            "height": 0.55,
+            "count": 5
+          },
+          {
+            "model": "beach/rock-2.glb",
+            "height": 0.45,
+            "count": 5
+          }
+        ]
       }
     },
     {

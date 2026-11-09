@@ -8,6 +8,7 @@
 // giant pads, enemy pressure). After the last level they repeat, a little harder each loop (battleConfig()).
 
 import unitsFile from '../../ui/units.json';
+import { SETTINGS } from './Settings';
 /**
  * A level's field size (BattleConfig `width` x `length`): the default, the most there is room for, and the editor's
  * presets. It grows from the bottom centre: the cannon's end (z 0) and the middle (x 0) stay put, the sides move out
@@ -51,7 +52,7 @@ export function useField(config: BattleConfig): void {
 export const TUNING = {
     /** Blue mobs a second at fire level 1, and how much each level adds (x level-1). */
     fireRate: 5,
-    fireRatePerLevel: 0.22,
+    fireRatePerLevel: SETTINGS.upgrades.fire.perLevel,
     /** Units a second. */
     blueSpeed: 4.2,
     redSpeed: 3.2,
@@ -89,10 +90,10 @@ export const TUNING = {
     /** The cannon's energy: shots it holds at energy level 1, and how many more each level adds. Each shot uses one;
      *  empty, the cannon locks until it has fully recharged. */
     energyCapacity: 40,
-    energyPerLevel: 10,
+    energyPerLevel: SETTINGS.upgrades.capacity.perLevel,
     /** Seconds to recharge from empty at recharge level 1, how much faster each level is, and the shortest it gets. */
     rechargeSeconds: 2,
-    rechargePerLevel: 0.25,
+    rechargePerLevel: SETTINGS.upgrades.recharge.perLevel,
     rechargeMin: 1,
     /** After letting go (not empty), seconds before it starts topping up. */
     rechargeDelay: 0.35,
@@ -118,6 +119,12 @@ export const TUNING = {
     helmetHp: 2,
     /** A viking hat (an attack barrier): the damage a mob does, times this (to reds, blocks and the base). */
     vikingDamage: 2,
+    /** A pipe: how fast a mob goes through it (units a second, along the pipe). */
+    pipeSpeed: 10,
+    /** A grinder: the hits a second it takes off a giant or a truck on it (a plain mob goes at once), and how fast a
+     *  standing one spins (turns a second). */
+    grinderDps: 6,
+    grinderSpin: 1.2,
 };
 
 /** A multiplier gate: a span across the field at a z; a mob crossing it becomes `value` mobs. */
@@ -141,9 +148,11 @@ export interface GateConfig {
  * - `water`: a hole in the field (the sea shows through); the same for mobs. Boxes and circles only.
  * - `breakable`: a brick block mobs walk straight into: each one touching it is spent and takes one off its `hp` (a
  *   giant chips at it over time); at zero it shatters and the way is open — for both sides.
+ * - `enemyWall`: invisible, and solid to the reds only (blues walk through it): where the enemy mustn't go. Reds steer
+ *   round it as round a wall.
  */
 export interface ObstacleConfig {
-    kind: 'wall' | 'water' | 'breakable';
+    kind: 'wall' | 'water' | 'breakable' | 'enemyWall';
     x?: number;
     z?: number;
     width?: number;
@@ -152,6 +161,96 @@ export interface ObstacleConfig {
     points?: [number, number][];
     /** A breakable's hits. */
     hp?: number;
+}
+
+/**
+ * A pipe (a tunnel): an end at (x, z) and one at (toX, toZ), joined by a pipe arching over the field. Each end opens
+ * along the field: the one nearer the cannon towards it, the other towards the base. A plain mob walking into an
+ * opening (blues into the near one, reds into the far one) goes through and comes out of the other, carrying on —
+ * blues up the field, reds down it. Giants and the vehicles don't fit: the ends are solid to them.
+ */
+export interface PipeConfig {
+    x: number;
+    z: number;
+    toX: number;
+    toZ: number;
+    /** Who can go through it: 'blue' (a blue pipe), 'red' (red), 'both' (purple; the default for a pipe with none set). The
+     *  others steer round its ends. */
+    team?: PipeTeam;
+}
+export type PipeTeam = 'blue' | 'red' | 'both';
+
+/**
+ * A pipe's shape (the battle's and the arena's): its opening's radius (the pipe's), how wide the way in is (`mouth`: a
+ * mob walking into the opening this close to its middle goes in — a little wider than the pipe, so a crowd doesn't jam
+ * it; nothing is drawn towards it), and how a mob that can't go in steers round an end (from `steer` before it, this
+ * fast sideways), how far back from the opening the end's elbow goes (solid), and its hill over
+ * the field: as high as `rise` of the distance between the ends, kept between `height` and `most`.
+ */
+export const PIPE = { radius: 0.75, body: 1.6, height: 3.6, rise: 0.35, most: 6, mouth: 1.1, steer: 2.2, steerSpeed: 3.5 };
+
+/** A pipe's two ends: where each opening is and which way it opens (+1 towards the cannon, -1 towards the base). */
+export function pipeEnds(pipe: PipeConfig): [{ x: number; z: number; facing: number }, { x: number; z: number; facing: number }] {
+    const nearFirst = pipe.z >= pipe.toZ;
+    return [{ x: pipe.x, z: pipe.z, facing: nearFirst ? 1 : -1 }, { x: pipe.toX, z: pipe.toZ, facing: nearFirst ? -1 : 1 }];
+}
+
+/**
+ * The pipe's centre line, `samples` + 1 points [x, y, z] from the first end's opening to the other's, like a roller
+ * coaster's hill: seen from above, a smooth curve leaving each opening straight back along the field (a cubic Bézier,
+ * its handles a third of the way along); its height a smooth bump (flat at the openings, the pipe's radius up, its
+ * top in the middle).
+ */
+export function pipePath(pipe: PipeConfig, samples = 96): [number, number, number][] {
+    const [a, b] = pipeEnds(pipe);
+    const span = Math.hypot(b.x - a.x, b.z - a.z);
+    const handle = Math.max(PIPE.body, span / 3);
+    const top = Math.min(PIPE.most, Math.max(PIPE.height, span * PIPE.rise));
+    // Bézier: from a, back out of its opening; into b, arriving through its back (the way a mob leaves it).
+    const p0 = [a.x, a.z];
+    const p1 = [a.x, a.z - a.facing * handle];
+    const p2 = [b.x, b.z - b.facing * handle];
+    const p3 = [b.x, b.z];
+    const points: [number, number, number][] = [];
+    for (let k = 0; k <= samples; k++) {
+        const t = k / samples;
+        const u = 1 - t;
+        const w0 = u * u * u, w1 = 3 * u * u * t, w2 = 3 * u * t * t, w3 = t * t * t;
+        const x = w0 * p0[0] + w1 * p1[0] + w2 * p2[0] + w3 * p3[0];
+        const z = w0 * p0[1] + w1 * p1[1] + w2 * p2[1] + w3 * p3[1];
+        // A raised cosine: level at both ends, rounded over the top.
+        const y = PIPE.radius + (top - PIPE.radius) * (0.5 - 0.5 * Math.cos(t * Math.PI * 2));
+        points.push([x, y, z]);
+    }
+    return points;
+}
+
+/** How far a mob goes through a pipe: along its centre line, from one opening to the other. */
+export function pipeLength(pipe: PipeConfig): number {
+    const points = pipePath(pipe);
+    let length = 0;
+    for (let k = 1; k < points.length; k++) {
+        const [ax, ay, az] = points[k - 1];
+        const [bx, by, bz] = points[k];
+        length += Math.hypot(bx - ax, by - ay, bz - az);
+    }
+    return length;
+}
+
+/**
+ * A grinder: a spiked roller lying on the field, `length` long and `thickness` across, centred on (x, z): `axis` 'x'
+ * lies across the field (horizontal), 'z' along it (vertical). Anything touching it is ground up — a plain mob of
+ * either side at once, a giant or a truck TUNING.grinderDps hits a second; the car rolls over it. It stands spinning,
+ * or with `move` rolls back and forth (`range` either way, a full trip in `seconds`): a horizontal one up and down the
+ * field, a vertical one across it.
+ */
+export interface GrinderConfig {
+    x: number;
+    z: number;
+    length: number;
+    thickness: number;
+    axis: 'x' | 'z';
+    move?: { range: number; seconds: number };
 }
 
 /** A rotating cross (the references' big spinner): it shoves mobs aside, it doesn't kill. `speed`: turns a second. */
@@ -246,6 +345,8 @@ export interface BattleConfig {
     pads?: PadConfig[];
     pushBlocks?: PushBlockConfig[];
     helmets?: HelmetConfig[];
+    pipes?: PipeConfig[];
+    grinders?: GrinderConfig[];
     /** Red mobs a second at the start, and at the end of the ramp (seconds). */
     redRate: number;
     redRateEnd: number;
@@ -260,8 +361,9 @@ export interface BattleConfig {
     reward: number;
 }
 
-/** Each loss in a row on a level makes its next try this much easier, up to `most` (back to none on the next level). */
-export const RETRY_EASE = { step: 0.1, most: 0.7 };
+/** Each loss in a row on a level makes its next try this much easier, up to `most` (back to none on the next level):
+ *  ui/settings.json `retry`. */
+export const RETRY_EASE = { step: SETTINGS.retry.step, most: SETTINGS.retry.most };
 
 /**
  * `config` made `ease` (0..1) easier: fewer reds a second, red giants less often, and a base / forts with fewer hits.
@@ -283,29 +385,23 @@ export function easedConfig(config: BattleConfig, ease: number): BattleConfig {
 /** The cannon's upgrades (bought after a battle): fire rate (TUNING.fireRatePerLevel), energy capacity
  *  (TUNING.energyPerLevel) and recharge speed (TUNING.rechargePerLevel). Levels 1 to max; cost[level - 1] buys the next. */
 export type UpgradeKind = 'fire' | 'capacity' | 'recharge';
-// export const UPGRADES: Record<UpgradeKind, { name: string; max: number; cost: number[] }> = {
-//     fire: { name: 'FIRE RATE', max: 5, cost: [50, 100, 175, 275] },
-//     capacity: { name: 'ENERGY', max: 5, cost: [60, 120, 200, 300] },
-//     recharge: { name: 'RECHARGE', max: 5, cost: [60, 120, 200, 300] },
-// };
-
-
+/** Their names, levels and prices: ui/settings.json `upgrades` (what a level adds goes to TUNING, above). A level with no
+ *  price set costs as much more than the last as that one did over the one before. */
+const upgradeOf = (kind: UpgradeKind): { name: string; max: number; cost: number[] } => {
+    const setting = SETTINGS.upgrades[kind];
+    const max = Math.max(1, Math.floor(setting.max));
+    const cost = setting.cost.slice(0, max - 1);
+    while (cost.length < max - 1) {
+        const last = cost[cost.length - 1] ?? 50;
+        const before = cost[cost.length - 2] ?? last / 2;
+        cost.push(Math.round(last + Math.max(1, last - before)));
+    }
+    return { name: setting.name, max, cost };
+};
 export const UPGRADES: Record<UpgradeKind, { name: string; max: number; cost: number[] }> = {
-    fire: {
-        name: 'FIRE RATE',
-        max: 10,
-        cost: [50, 100, 175, 275, 400, 550, 725, 925, 1150],
-    },
-    capacity: {
-        name: 'ENERGY',
-        max: 10,
-        cost: [60, 120, 200, 300, 425, 575, 750, 950, 1175],
-    },
-    recharge: {
-        name: 'RECHARGE',
-        max: 10,
-        cost: [60, 120, 200, 300, 425, 575, 750, 950, 1175],
-    },
+    fire: upgradeOf('fire'),
+    capacity: upgradeOf('capacity'),
+    recharge: upgradeOf('recharge'),
 };
 
 /**
@@ -327,6 +423,9 @@ export interface UnitSettings {
     need?: number;
     hp?: number;
     damage: number;
+    /** Its body against the world (walls, holes, blocks, houses, the field's sides) as a share of its size (0.3 .. 1;
+     *  unset: BODY_SHARE): smaller, so it doesn't wedge in gaps; it still fights and feeds houses at its full size. */
+    body?: number;
 }
 export const UNITS = unitsFile as Record<HouseKind, UnitSettings>;
 
@@ -356,6 +455,11 @@ TUNING.truckHp = UNITS.truck.hp ?? TUNING.truckHp;
 TUNING.truckDamage = UNITS.truck.damage;
 TUNING.saucerDamage = UNITS.saucer.damage;
 TUNING.carDamage = UNITS.car.damage;
+
+/** A big unit's body against the world, as a share of its size, when units.json doesn't set one. */
+export const BODY_SHARE = 0.65;
+/** A unit's body share (UnitSettings.body, kept to 0.3 .. 1). */
+export const bodyShare = (kind: HouseKind): number => Math.max(0.3, Math.min(1, UNITS[kind]?.body ?? BODY_SHARE));
 
 /** How a unit's house is drawn (the Units tab's; the giant's building and the others' plain houses unless set). */
 export const houseStyle = (kind: HouseKind): 'model' | 'house' | 'pad' => UNITS[kind].style ?? (kind === 'giant' ? 'model' : 'house');

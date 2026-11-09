@@ -76,8 +76,13 @@ export interface Contact {
 /**
  * Whether a mob of radius `r` at (x, z) touches the shape; if so `out` says where it'd be just clear of it, the way out
  * and the way along the nearest edge.
+ *
+ * `limitX`: how far from the middle (|x|) the mob may be, the field's side. An edge that would push it out past that isn't
+ * the way out: a polygon reaching the field's side has edges along it or beyond it, and out through one of those the side
+ * pushes the mob straight back in, every step, and it's stuck. The nearest edge that keeps it on the field is used instead
+ * (the nearest of all only if none does).
  */
-export function touch(shape: Shape, x: number, z: number, r: number, out: Contact): boolean {
+export function touch(shape: Shape, x: number, z: number, r: number, out: Contact, limitX = Infinity): boolean {
     if (x < shape.minX - r || x > shape.maxX + r || z < shape.minZ - r || z > shape.maxZ + r) return false;
     if (shape.circle) {
         const { x: cx, z: cz, r: cr } = shape.circle;
@@ -95,14 +100,17 @@ export function touch(shape: Shape, x: number, z: number, r: number, out: Contac
         out.z = cz + out.nz * reach;
         return true;
     }
-    // The nearest point on the outline.
     const points = shape.points;
     const n = points.length / 2;
+    const isIn = inside(points, x, z);
+    const flip = isIn ? -1 : 1;
+    // The nearest point on the outline whose way out keeps the mob on the field; and the nearest of all, to fall back on.
     let best = Infinity;
-    let px = 0;
-    let pz = 0;
-    let ex = 1;
-    let ez = 0;
+    let any = Infinity;
+    let found = false;
+    let anyFound = false;
+    const pick = { px: 0, pz: 0, ex: 1, ez: 0, nx: 0, nz: 0, corner: false };
+    const fallback = { px: 0, pz: 0, ex: 1, ez: 0, nx: 0, nz: 0, corner: false };
     for (let i = 0, j = n - 1; i < n; j = i++) {
         const ax = points[j * 2];
         const az = points[j * 2 + 1];
@@ -115,35 +123,57 @@ export function touch(shape: Shape, x: number, z: number, r: number, out: Contac
         const qx = ax + abx * t;
         const qz = az + abz * t;
         const d2 = (x - qx) * (x - qx) + (z - qz) * (z - qz);
-        if (d2 < best) {
+        if (d2 >= best && d2 >= any) continue;
+        const length = Math.sqrt(length2);
+        const ex = abx / length;
+        const ez = abz / length;
+        let nx: number;
+        let nz: number;
+        const d = Math.sqrt(d2);
+        if (d > 1e-4) {
+            // From the outline towards the mob — flipped when the mob's inside.
+            nx = ((x - qx) / d) * flip;
+            nz = ((z - qz) / d) * flip;
+        } else {
+            // Right on the outline: out is square to the edge, away from the middle.
+            const [cx, cz] = shapeCentre(shape);
+            nx = -ez;
+            nz = ex;
+            if ((qx - cx) * nx + (qz - cz) * nz < 0) {
+                nx = -nx;
+                nz = -nz;
+            }
+        }
+        // Nearest to one of its corners, not along the edge: round a corner, the way along is square to the way out.
+        const corner = t <= 0 || t >= 1;
+        const candidate = d2 < any ? fallback : null;
+        if (candidate) {
+            any = d2;
+            anyFound = true;
+            Object.assign(candidate, { px: qx, pz: qz, ex, ez, nx, nz, corner });
+        }
+        if (d2 < best && Math.abs(qx + nx * r) <= limitX + 1e-3) {
             best = d2;
-            px = qx;
-            pz = qz;
-            const length = Math.sqrt(length2);
-            ex = abx / length;
-            ez = abz / length;
+            found = true;
+            Object.assign(pick, { px: qx, pz: qz, ex, ez, nx, nz, corner });
         }
     }
-    const isIn = inside(points, x, z);
-    if (!isIn && best >= r * r) return false;
-    const d = Math.sqrt(best);
-    if (d > 1e-4) {
-        // From the outline towards the mob — flipped when the mob's inside.
-        out.nx = ((x - px) / d) * (isIn ? -1 : 1);
-        out.nz = ((z - pz) / d) * (isIn ? -1 : 1);
+    if (!anyFound) return false;
+    const use = found ? pick : fallback;
+    // Outside and clear of every edge (by the nearest one of all: a far edge it could use doesn't make it touch).
+    if (!isIn && any >= r * r) return false;
+    out.nx = use.nx;
+    out.nz = use.nz;
+    // Round a corner from outside: square to the way out, so it curves round the point. (Along an edge it'd flip from one
+    // edge's way to the other's each step as the nearest edge changed, and the mob would stand at the point.)
+    if (use.corner && !isIn) {
+        out.tx = -use.nz;
+        out.tz = use.nx;
     } else {
-        // Right on the outline: out is square to the edge, away from the middle.
-        const [cx, cz] = shapeCentre(shape);
-        out.nx = -ez;
-        out.nz = ex;
-        if ((px - cx) * out.nx + (pz - cz) * out.nz < 0) {
-            out.nx = -out.nx;
-            out.nz = -out.nz;
-        }
+        out.tx = use.ex;
+        out.tz = use.ez;
     }
-    out.tx = ex;
-    out.tz = ez;
-    out.x = px + out.nx * r;
-    out.z = pz + out.nz * r;
+    out.x = use.px + use.nx * r;
+    out.z = use.pz + use.nz * r;
     return true;
 }

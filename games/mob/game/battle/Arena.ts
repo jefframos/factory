@@ -15,6 +15,7 @@
 // The rules are Battle's; this only follows it (update()).
 
 import * as THREE from 'three';
+import { GrinderConfig, PIPE, PipeConfig, pipeEnds, pipePath } from '../data/MobConfig';
 import { ARENA, BattleConfig, COLORS, TUNING, UNIT_COLORS, houseStyle, needOf, padColor, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig } from '../data/MobConfig';
 import { bendObject, bendSegments } from '../services/Bend';
 import { createWater } from '../services/Water';
@@ -30,12 +31,31 @@ const HEDGE = { width: 1.1, height: 0.8 };
 /** Hedge blocks' length, the grass edge round the field (to the shore), and the sea's colour. */
 const HEDGE_BLOCK = 2;
 const GRASS_EDGE = 1.4;
+/** An island's coast: the least sand past the hedges, how far its ends round off past the field's, how finely its
+ *  ground is cut (rows along the field, columns across it), and the waves along it (lengths, a seed per side). */
+const COAST = { least: 0.6, cap: 3, row: 0.8, waves: [7.3, 3.1, 1.7], seed: [1.7, 4.2] };
 /** With a kit wall the ground round the field is wider (room for its props). */
-const KIT_GRASS_EDGE = 4.5;
+const KIT_GRASS_EDGE = 3.2;
 /** A valley's layout: how far the ground reaches, the gap between the field and the cliffs, the cliff band's width,
  *  how far past the cannon the side cliffs run, and how deep the top behind the base goes. */
 const VALLEY = { groundHalf: 40, groundLength: 120, gap: 0.25, band: 2.2, nearExtra: 10, back: 30 };
 const GATE = { height: 0.12, depth: 0.35, post: 0.22, postHeight: 1 };
+/** A grinder: its roller's core (a share of its radius) and the spikes' length (the rest), how many to a ring and how
+ *  far apart the rings are (x its thickness); the colours; a standing one's posts. */
+const GRINDER = { core: 0.62, perRing: 7, ringGap: 0.45, roller: 0x3a3f4b, spike: 0xd5dae2, band: 0xff4757, post: 0x5a6270, postWidth: 0.26 };
+/** A grinder as drawn: its group (moved), the roller that turns (round its own length), its radius, how far it's turned. */
+interface GrinderView { holder: THREE.Group; roller: THREE.Group; radius: number; angle: number }
+
+/** A pipe's colours (the pipe, its openings' rims, the dark inside) and how thick the rim is. */
+const PIPE_LOOK = { rimTube: 0.16 };
+/** Each pipe's colours by who can go through it (PipeConfig.team): blue, red, or purple (both). */
+const PIPE_COLOURS = {
+    blue: { body: 0x3d6dff, rim: 0x9fc2ff, inside: 0x0f1c4a },
+    red: { body: 0xff3d4f, rim: 0xffa3ad, inside: 0x4a0f18 },
+    both: { body: 0x7b5cff, rim: 0xa58bff, inside: 0x1a1240 },
+};
+const pipeColours = (pipe: PipeConfig) => PIPE_COLOURS[pipe.team ?? 'both'];
+
 /** A locked gate: grey (panel, glow, posts), barred across its span, a padlock with its hits left on it; its "x" label
  *  lifted over the padlock. */
 const LOCK = { grey: 0x9aa0a8, dark: 0x5e646d, metal: 0xc9ced6, barHeight: 1.1, barGap: 0.45, labelY: 2.7, padlockY: 0.85, padlockTilt: -0.6 };
@@ -51,6 +71,8 @@ const PUSHER_HEIGHT = 0.7;
 /** The floor-pad house style: its thickness, and its glowing rim's width. */
 const PAD_STYLE = { height: 0.12, rim: 0.12 };
 const HOUSE = { wallHeight: 1.5, roofHeight: 0.9, overhang: 0.18, wall: 0xe8f1ff, roof: 0x3d6dff };
+/** The unit spinning over a truck / UFO / car house: its size (x its own), and how far over the house's count it floats. */
+const HOUSE_ICON = { truck: 0.55, other: 0.8, over: 0.75 };
 /** A helmet barrier: its height and colours (an attack barrier's: `attack`), and how wide the floating viking hat is. */
 const HELMET = { height: 1.5, olive: 0x6f8236, sand: 0xd8c690, curtain: 0x9ccf5a, dark: 0x5d6e2c, text: '#d8ff9a' };
 const ATTACK = { olive: 0xb8332e, sand: 0xf2c14e, curtain: 0xff8a4c, dark: 0x7a1f1c, text: '#ffd27a', hatWidth: 1.3 };
@@ -72,9 +94,10 @@ const PROPS = {
     /** A target narrower than this is a tower, wider the barracks. */
     towerBelow: 3.4,
     turn: Math.PI,
-    truck: { model: 'truck', length: 2.2, turn: 0 },
+    truck: { model: 'truck', length: 4, turn: 0 },
     car: { model: 'car', length: 2.3, turn: 0 },
-    saucer: { model: 'saucer', radius: 0.9, height: 3.2 },
+    // `radius`: its beam's (the reds it sucks up: TUNING.saucerSuck); `size`: its model, x that (bigger than its beam).
+    saucer: { model: 'saucer', radius: 0.9, size: 1.7, height: 3.7 },
 };
 /** Clash puffs: how many at most at once, how long each lasts (seconds), how big it grows. */
 const PUFFS = 48;
@@ -211,6 +234,8 @@ class Label {
         this.texture.colorSpace = THREE.SRGBColorSpace;
         this.texture.anisotropy = 4;
         this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map: this.texture, transparent: true, depthWrite: false }));
+        // Arena.hideLabels() finds them by this.
+        this.mesh.userData.label = true;
     }
 
     public set(text: string): void {
@@ -340,6 +365,8 @@ export class Arena {
     private readonly giantHouses: THREE.Object3D[] = [];
     private carModel: THREE.Object3D | null = null;
     private readonly cars: THREE.Object3D[] = [];
+    /** The grinders' views, by the level's order. */
+    private readonly grinders: GrinderView[] = [];
     /** Each helmet barrier's floating helmet (it spins). */
     private readonly helmetIcons: THREE.Object3D[] = [];
     private saucerModel: THREE.Object3D | null = null;
@@ -357,9 +384,13 @@ export class Arena {
     /** Each obstacle's breakable view, by the obstacle's index (undefined for the rest). */
     private readonly breakables: (BreakableView | undefined)[] = [];
 
-    /** `plainForts`: the enemy's forts as the plain ones made here, not the barracks and tower models (a zone's choice). */
+    /**
+     * `plainForts`: the enemy's forts as the plain ones made here, not the barracks and tower models (a zone's choice).
+     * `edge`: how far an island's ground reaches past the hedges, every side (unset: as the theme has it; the main
+     * screen's is much wider).
+     */
     public constructor(config: BattleConfig, targets: readonly Target[], private readonly theme: Theme, private readonly modelRoot = './mob/models/',
-        private readonly plainForts = false) {
+        private readonly plainForts = false, private readonly edge?: number) {
         this.danger = this.buildGround();
         if (theme.kit) void this.buildKit();
         this.buildCannon();
@@ -372,11 +403,20 @@ export class Arena {
         (config.pads ?? []).forEach((pad) => this.pads.push(this.buildPad(pad)));
         (config.pushBlocks ?? []).forEach((block) => this.pushBlocks.push(this.buildPushBlock(block)));
         (config.helmets ?? []).forEach((barrier) => this.helmetIcons.push(this.buildHelmetBarrier(barrier)));
+        (config.pipes ?? []).forEach((pipe) => this.buildPipe(pipe));
+        (config.grinders ?? []).forEach((grinder) => this.grinders.push(this.buildGrinder(grinder)));
         void this.loadUnits();
         targets.forEach((target) => this.targets.push(this.buildTarget(target)));
         this.buildPuffs();
         this.group.add(this.bits.mesh);
         bendObject(this.group);
+    }
+
+    /** Every number and word over the field hidden (the main screen's view of a level: just the pieces). */
+    public hideLabels(): void {
+        this.group.traverse((object) => {
+            if (object.userData.label) object.visible = false;
+        });
     }
 
     /** Frees what isn't freed with the scene (the waters' shore textures). */
@@ -387,29 +427,111 @@ export class Arena {
 
     // ------------------------------------------------------------------ building
 
+    /** How far an island's ground reaches past the hedges at its sides. */
+    private islandEdge(): number {
+        return this.edge ?? (this.theme.kit ? KIT_GRASS_EDGE : GRASS_EDGE);
+    }
+
+    /** The island's ends (z): where its sand starts past the cannon's end and stops behind the base, before they round off. */
+    private coastEnds(): { near: number; far: number } {
+        const ends = this.edge ?? GRASS_EDGE;
+        return { near: FIELD_NEAR + ends, far: fieldFar() - ends };
+    }
+
+    /**
+     * How far the island's sand reaches from the middle at `z`, on one `side` (-1 left, 1 right): past the hedges by
+     * COAST.least at the least, out to the island's edge at the most, in smooth waves (each side its own); its ends round
+     * off over COAST.cap (0 past them).
+     */
+    private coastHalf(z: number, side: number): number {
+        const inner = ARENA.halfWidth + HEDGE.width;
+        const seed = COAST.seed[side < 0 ? 0 : 1];
+        const [a, b, c] = COAST.waves;
+        const wave = 0.5 * Math.sin(z / a * 2.1 + seed) + 0.3 * Math.sin(z / b * 1.7 + seed * 2.3) + 0.2 * Math.sin(z / c * 1.3 + seed * 3.1);
+        const reach = this.islandEdge() - COAST.least;
+        let half = inner + COAST.least + reach * (0.55 + 0.45 * wave);
+        const { near, far } = this.coastEnds();
+        const past = z > near ? z - near : z < far ? far - z : 0;
+        if (past > 0) half *= Math.sqrt(Math.max(0, 1 - (past / COAST.cap) ** 2));
+        return half;
+    }
+
+    /**
+     * The island's ground: rows along the field (COAST.row apart), each from the left coast to the right in even steps
+     * (fine enough to follow the bend), from one rounded end to the other.
+     */
+    private coastGround(): THREE.BufferGeometry {
+        const { near, far } = this.coastEnds();
+        const top = near + COAST.cap;
+        const bottom = far - COAST.cap;
+        const rows = Math.ceil((top - bottom) / COAST.row);
+        const columns = bendSegments((ARENA.halfWidth + HEDGE.width + this.islandEdge()) * 2);
+        const positions: number[] = [];
+        const index: number[] = [];
+        for (let r = 0; r <= rows; r++) {
+            const z = top - (r / rows) * (top - bottom);
+            const left = -this.coastHalf(z, -1);
+            const right = this.coastHalf(z, 1);
+            for (let c = 0; c <= columns; c++) positions.push(left + (c / columns) * (right - left), 0, z);
+        }
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < columns; c++) {
+                const a = r * (columns + 1) + c;
+                const b = a + columns + 1;
+                // Wound to face up.
+                index.push(a, a + 1, b, a + 1, b + 1, b);
+            }
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geometry.setIndex(index);
+        geometry.computeVertexNormals();
+        return geometry;
+    }
+
+    /** The island's coast as a closed outline (the sea's shore): down the right side, back up the left. */
+    private coastOutline(): { x: number; z: number }[] {
+        const { near, far } = this.coastEnds();
+        const top = near + COAST.cap;
+        const bottom = far - COAST.cap;
+        const steps = Math.ceil((top - bottom) / 0.5);
+        const right: { x: number; z: number }[] = [];
+        const left: { x: number; z: number }[] = [];
+        for (let k = 0; k <= steps; k++) {
+            const z = top - (k / steps) * (top - bottom);
+            right.push({ x: this.coastHalf(z, 1), z });
+            left.push({ x: -this.coastHalf(z, -1), z });
+        }
+        return [...right, ...left.reverse()];
+    }
+
     private buildGround(): THREE.Mesh {
         const length = FIELD_NEAR - fieldFar();
         const middle = (FIELD_NEAR + fieldFar()) / 2;
         const valley = this.theme.surround === 'valley';
         // The island: the field, its hedges, and a grass edge round them; the sea all round (UFO's water). A valley:
         // grass everywhere, cliffs either side and behind the base.
-        const islandHalf = valley ? VALLEY.groundHalf : ARENA.halfWidth + HEDGE.width + (this.theme.kit ? KIT_GRASS_EDGE : GRASS_EDGE);
+        const islandHalf = VALLEY.groundHalf;
         if (valley) {
             this.buildCliffs();
         } else {
-            const shore = [
-                { x: -islandHalf, z: FIELD_NEAR + GRASS_EDGE }, { x: islandHalf, z: FIELD_NEAR + GRASS_EDGE },
-                { x: islandHalf, z: fieldFar() - GRASS_EDGE }, { x: -islandHalf, z: fieldFar() - GRASS_EDGE },
-            ];
-            const sea = createWater(this.theme.sea, 130, 170, shore, 0, middle);
+            // The coast: wavy sides, rounded ends (coastHalf).
+            const sea = createWater(this.theme.sea, 130, 170, this.coastOutline(), 0, middle);
             this.waters.push(sea);
             this.group.add(sea);
         }
-        const grassLength = valley ? VALLEY.groundLength : length + GRASS_EDGE * 2;
-        const grass = new THREE.Mesh(new THREE.PlaneGeometry(islandHalf * 2, grassLength, valley ? 24 : 2, bendSegments(grassLength)), lambert(this.theme.ground));
-        grass.rotation.x = -Math.PI / 2;
-        grass.position.set(0, -0.01, middle);
-        this.group.add(grass);
+        if (valley) {
+            const grass = new THREE.Mesh(new THREE.PlaneGeometry(islandHalf * 2, VALLEY.groundLength, 24, bendSegments(VALLEY.groundLength)), lambert(this.theme.ground));
+            grass.rotation.x = -Math.PI / 2;
+            grass.position.set(0, -0.01, middle);
+            this.group.add(grass);
+        } else {
+            // The island's ground, to its wavy coast (cut finely: the bend drops it sideways too, and a wide piece would
+            // sag under the sea between its corners).
+            const sand = new THREE.Mesh(this.coastGround(), lambert(this.theme.ground));
+            sand.position.y = -0.01;
+            this.group.add(sand);
+        }
         const field = new THREE.Mesh(new THREE.PlaneGeometry(ARENA.halfWidth * 2, length, 4, bendSegments(length)), lambert(this.theme.field));
         field.rotation.x = -Math.PI / 2;
         field.position.set(0, 0, middle);
@@ -422,10 +544,10 @@ export class Arena {
             band.position.set(0, 0.005, z);
             this.group.add(band);
         }
-        // The hedges either side: a row of bush blocks (short pieces follow the bend). A kit theme has its walls instead.
+        // The hedges either side: a row of bush blocks (short pieces follow the bend). A kit with wall pieces has those instead.
         const hedge = lambert(this.theme.hedge[0]);
         const hedgeDark = lambert(this.theme.hedge[1]);
-        const blocks = this.theme.kit || valley ? 0 : Math.ceil(length / HEDGE_BLOCK);
+        const blocks = this.theme.kit?.wall || valley ? 0 : Math.ceil(length / HEDGE_BLOCK);
         for (const side of [-1, 1]) {
             for (let b = 0; b < blocks; b++) {
                 const block = roundedBox(HEDGE.width, HEDGE.height, HEDGE_BLOCK - 0.08, 0.28, b % 2 ? hedgeDark : hedge);
@@ -502,12 +624,14 @@ export class Arena {
         const random = seeded(7);
         // In a valley, near the cliff edge (where the camera sees them), a few further back.
         const inner = valley ? ARENA.halfWidth + VALLEY.gap + 1.6 : wallX + kit.scale * 0.9;
-        const outer = valley ? inner + 4.5 : ARENA.halfWidth + HEDGE.width + KIT_GRASS_EDGE - 0.5;
+        const outer = valley ? inner + 4.5 : ARENA.halfWidth + HEDGE.width + this.islandEdge() - 0.5;
         for (const prop of kit.props ?? []) {
             for (let n = 0; n < prop.count; n++) {
                 const side = random() < 0.5 ? -1 : 1;
-                const x = side * (inner + random() * (outer - inner));
+                let x = side * (inner + random() * (outer - inner));
                 const z = FIELD_NEAR + (valley ? 6 : -1) - random() * (length + (valley ? 6 : -2));
+                // On an island, on the sand: in from the coast where it comes in.
+                if (!valley) x = side * Math.min(Math.abs(x), Math.max(inner, this.coastHalf(z, side) - 0.7));
                 const model = models.get(prop.model);
                 if (!model) continue;
                 // Its base on the ground, scaled to its height.
@@ -628,6 +752,88 @@ export class Arena {
         return view;
     }
 
+    /**
+     * A pipe: along its centre line (pipePath: a roller coaster's hill from one opening, lying on the field and open
+     * along it, over to the other); a rim round each opening and the dark inside.
+     */
+    private buildPipe(pipe: PipeConfig): void {
+        const [a, b] = pipeEnds(pipe);
+        const r = PIPE.radius;
+        const path = new THREE.CatmullRomCurve3(pipePath(pipe).map(([x, y, z]) => new THREE.Vector3(x, y, z)));
+        const body = new THREE.Mesh(new THREE.TubeGeometry(path, Math.max(96, bendSegments(path.getLength()) * 3), r, 20, false), lambert(pipeColours(pipe).body));
+        this.group.add(body);
+        for (const end of [a, b]) {
+            // The opening faces along the field: the rim stood up across it, the dark inside just within.
+            const rim = new THREE.Mesh(new THREE.TorusGeometry(r, PIPE_LOOK.rimTube, 10, 28), lambert(pipeColours(pipe).rim));
+            rim.position.set(end.x, r, end.z);
+            this.group.add(rim);
+            const inside = new THREE.Mesh(new THREE.CircleGeometry(r - 0.02, 28), new THREE.MeshBasicMaterial({ color: pipeColours(pipe).inside }));
+            inside.position.set(end.x, r, end.z - end.facing * 0.05);
+            if (end.facing < 0) inside.rotation.y = Math.PI;
+            this.group.add(inside);
+        }
+    }
+
+    /**
+     * A grinder: a dark steel roller lying on the field (along x, turned to lie along z for a vertical one), rings of
+     * spikes round it and red bands at its ends; a standing one held up by a post at each end.
+     */
+    private buildGrinder(grinder: GrinderConfig): GrinderView {
+        const radius = grinder.thickness / 2;
+        const length = grinder.length;
+        const holder = new THREE.Group();
+        const roller = new THREE.Group();
+        const core = radius * GRINDER.core;
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(core, core, length, 18, 1).rotateZ(Math.PI / 2), lambert(GRINDER.roller));
+        roller.add(body);
+        for (const side of [-1, 1]) {
+            const band = new THREE.Mesh(new THREE.CylinderGeometry(core * 1.08, core * 1.08, Math.min(0.22, length * 0.08), 18).rotateZ(Math.PI / 2), lambert(GRINDER.band));
+            band.position.x = side * (length / 2 - Math.min(0.11, length * 0.04));
+            roller.add(band);
+        }
+        // The spikes: a ring every ringGap x thickness, each ring turned half a step from the last.
+        const spikeLength = radius - core;
+        const spike = new THREE.ConeGeometry(Math.max(0.05, spikeLength * 0.42), spikeLength * 1.15, 6);
+        const spikeMaterial = lambert(GRINDER.spike);
+        const rings = Math.max(2, Math.floor(length / Math.max(0.2, grinder.thickness * GRINDER.ringGap)));
+        for (let k = 0; k < rings; k++) {
+            const x = -length / 2 + ((k + 0.5) / rings) * length;
+            for (let n = 0; n < GRINDER.perRing; n++) {
+                const angle = ((n + (k % 2) * 0.5) / GRINDER.perRing) * Math.PI * 2;
+                const cone = new THREE.Mesh(spike, spikeMaterial);
+                cone.position.set(x, Math.cos(angle) * (core + spikeLength * 0.5), Math.sin(angle) * (core + spikeLength * 0.5));
+                cone.rotation.x = angle;
+                roller.add(cone);
+            }
+        }
+        holder.add(roller);
+        roller.position.y = radius;
+        if (!grinder.move) {
+            // Standing: a post at each end, the roller's axle through them.
+            for (const side of [-1, 1]) {
+                const post = roundedBox(GRINDER.postWidth, radius * 2 + 0.25, GRINDER.postWidth * 1.6, 0.06, lambert(GRINDER.post));
+                post.position.set(side * (length / 2 + GRINDER.postWidth / 2), 0, 0);
+                holder.add(post);
+            }
+        }
+        // Built along x; a vertical one lies along the field.
+        if (grinder.axis === 'z') holder.rotation.y = Math.PI / 2;
+        holder.position.set(grinder.x, 0, grinder.z);
+        this.group.add(holder);
+        return { holder, roller, radius, angle: 0 };
+    }
+
+    /** A mob ground up at (x, z): bits of it in its colour, and grit. */
+    public ground(x: number, z: number, color: number, big: boolean): void {
+        this.bits.burst(x, 0.5, z, [color, 0x7a0f1c, GRINDER.spike], big ? 24 : 6, big ? 4.5 : 3, big ? 6 : 4.5, big ? 0.8 : 0.5, big ? 0.2 : 0.12);
+    }
+
+    /** A mob went into a pipe, or came out of one, at that end: a little puff there. */
+    public pipeMouth(pipe: PipeConfig, end: number, team: number): void {
+        const at = pipeEnds(pipe)[end];
+        this.bits.burst(at.x, PIPE.radius, at.z + at.facing * 0.3, [pipeColours(pipe).rim, team === 0 ? COLORS.blue : COLORS.red], 2, 1.8, 3, 0.4, 0.12);
+    }
+
     /** A locked gate's lock: its materials greyed, bars across its span, a padlock in the middle with the hits left. */
     private buildLock(gate: GateConfig, group: THREE.Group, materials: (THREE.MeshLambertMaterial | THREE.MeshBasicMaterial)[]): NonNullable<GateView['lock']> {
         const greyed = materials.map((material) => {
@@ -698,6 +904,8 @@ export class Arena {
 
     /** A water hole with a dark rim, a raised grass block, or a brick block to break (its view returned). */
     private buildObstacle(o: ObstacleConfig): BreakableView | undefined {
+        // An enemy wall: not seen.
+        if (o.kind === 'enemyWall') return undefined;
         const x = o.x ?? 0;
         const z = o.z ?? 0;
         if (o.kind === 'water' && o.points && o.points.length >= 3) {
@@ -1150,7 +1358,7 @@ export class Arena {
             if (this.disposed) return;
             this.truckModel = fitted(truck, PROPS.truck.length, 'z');
             this.carModel = fitted(car, PROPS.car.length, 'z');
-            this.saucerModel = fitted(saucer, PROPS.saucer.radius * 2, 'x');
+            this.saucerModel = fitted(saucer, PROPS.saucer.radius * 2 * PROPS.saucer.size, 'x');
             this.refreshColors();
         } catch (error) {
             console.warn('[mob] unit models', error);
@@ -1239,15 +1447,16 @@ export class Arena {
         if (!source) return;
         if (!view.icon) {
             view.icon = source.clone();
-            view.icon.scale.setScalar(view.kind === 'truck' ? 0.75 : 0.85);
+            view.icon.scale.setScalar(view.kind === 'truck' ? HOUSE_ICON.truck : HOUSE_ICON.other);
             bendObject(view.icon);
             view.group.add(view.icon);
             view.title.visible = false;
         }
         const bounce = 1 + view.pulse * 0.25;
-        view.icon.position.set(0, view.top + 1.35 + Math.sin(this.time * 2.5) * 0.12, 0);
+        // Over its count (not on it: the number stays in sight).
+        view.icon.position.set(0, view.label.mesh.position.y + HOUSE_ICON.over + Math.sin(this.time * 2.5) * 0.12, 0);
         view.icon.rotation.y = this.time * 1.4;
-        view.icon.scale.setScalar((view.kind === 'truck' ? 0.75 : 0.85) * bounce);
+        view.icon.scale.setScalar((view.kind === 'truck' ? HOUSE_ICON.truck : HOUSE_ICON.other) * bounce);
     }
 
     /** Each standing fort's highest point, its number included (world space), for the camera to keep in view. */
@@ -1392,6 +1601,14 @@ export class Arena {
                 view.lock.shake = Math.max(0, view.lock.shake - dt);
                 view.lock.group.position.x = view.lock.shake > 0 ? (Math.random() - 0.5) * 0.12 : 0;
             }
+        });
+        // The grinders: where they are now; a moving one rolls as it goes (no skid), a standing one spins.
+        battle.grinders.forEach((grinder, i) => {
+            const view = this.grinders[i];
+            if (!view) return;
+            view.holder.position.set(grinder.nowX, 0, grinder.nowZ);
+            view.angle += grinder.move ? (grinder.speed / Math.max(0.05, view.radius)) * dt : TUNING.grinderSpin * Math.PI * 2 * dt;
+            view.roller.rotation.x = view.angle;
         });
         // Locked gates' hits left, on their padlocks.
         for (const block of battle.blocks) {

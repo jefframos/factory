@@ -5,6 +5,14 @@
       "assets": [
         {
           "alias": [
+            "entities"
+          ],
+          "src": [
+            "entities.webp.json"
+          ]
+        },
+        {
+          "alias": [
             "ui"
           ],
           "src": [

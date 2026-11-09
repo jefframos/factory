@@ -23,6 +23,11 @@
 // - A blue crossing a helmet barrier gets a helmet (once): its hits times TUNING.helmetHp; copies a gate makes of it
 //   wear one too.
 // - A car can't be destroyed: it wears down the reds it touches (TUNING.carDps), pushed back by the crowd meanwhile.
+// - A pipe: a plain mob walking into an opening (blues the near one, reds the far one) is
+//   gone from the field for as long as the pipe takes it (TUNING.pipeSpeed), then comes out of the other, as it went
+//   in (hits, helmet, hat, gates crossed). Its ends' elbows are solid: anything else is pushed out of them.
+// - A grinder (a spiked roller) grinds up what touches it: a plain mob of either side at once, a giant or a truck
+//   TUNING.grinderDps hits a second; the car rolls over. A moving one rolls back and forth.
 // - A locked gate (`lock` hits) is a breakable across its span till it's worn down (a Block with its `gate`): then it
 //   unlocks and works as any gate.
 // - A blue crossing a gate's line inside its span becomes `value` mobs, spread round it; each mob remembers the gates it
@@ -38,7 +43,9 @@
 //
 // Events (shots, hits, gate crossings, giants, the end) go to `events`, for the view's effects and the HUD.
 
-import { ARENA, BattleConfig, FIELD, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig, TUNING, carHp, needOf } from '../data/MobConfig';
+import { GrinderConfig, PIPE, PipeConfig, pipeEnds, pipeLength } from '../data/MobConfig';
+import { SETTINGS } from '../data/Settings';
+import { ARENA, BattleConfig, FIELD, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig, TUNING, bodyShare, carHp, needOf } from '../data/MobConfig';
 import { Contact, Shape, boxShape, circleShape, polygonShape, shapeCentre, touch } from './Shapes';
 
 export const BLUE = 0;
@@ -77,6 +84,16 @@ const SPAWN_JITTER = 0.8;
 const CLEAR_OUT = { start: 0.5, spread: 1.6, seconds: 0.25 };
 /** How far ahead a mob looks for a wall or hole (units), and how hard it turns away. */
 const LOOK_AHEAD = 1.5;
+/** Where it looks, nearest first: a thin part of a wall (a point) would be missed looking only far ahead, past it. */
+const LOOK_STEPS = [0.2, 0.6, 1];
+/**
+ * Going round something head-on (both ways along about as good), a mob keeps the way it chose (for this long after it
+ * last touched): choosing afresh each step, it'd turn back and forth there. If it's barely moving for STUCK_SECONDS while
+ * going round (under STUCK_SPEED of its speed: pressed into a corner), it tries the other way.
+ */
+const SLIDE_MEMORY = 0.8;
+const STUCK_SECONDS = 0.6;
+const STUCK_SPEED = 0.25;
 const AVOID_TURN = 1.4;
 /** Below this (the cosine between the way it wants to go and an edge), a mob meets a block head-on. */
 const HEAD_ON = 0.35;
@@ -99,6 +116,11 @@ export interface BattleEvents {
     pushCleared?(block: number): void;
     blockHit?(block: number, hpLeft: number, x: number, z: number): void;
     blockBroken?(block: number): void;
+    /** A mob was ground up by a grinder at (x, z) (`big`: a giant or a truck worn out on it). */
+    ground?(x: number, z: number, team: number, big: boolean): void;
+    /** A mob went into pipe `pipe` at end `end` (0: x, z; 1: toX, toZ), and one came out of it at `end`. */
+    pipeIn?(pipe: number, end: number, team: number): void;
+    pipeOut?(pipe: number, end: number, team: number): void;
     /** A locked gate was worn down (its block `block` broke): it works now. */
     gateUnlocked?(gate: number, block: number): void;
     giant?(team: number, x: number, z: number, kind: number): void;
@@ -166,7 +188,12 @@ export interface Saucer {
     age: number;
     /** Reds it has sucked up. */
     sucked: number;
+    /** What it takes off its target when it gets there (a card's level's; unset: TUNING.saucerDamage). */
+    damage?: number;
 }
+
+/** A unit's own stats (a card's, at its level): its hits and the most it takes off a building. */
+export interface UnitStats { hp?: number; damage?: number }
 
 /** An enemy target as the battle has it: where its front is, its half width, its hits. */
 export interface Target {
@@ -178,11 +205,29 @@ export interface Target {
     alive: boolean;
 }
 
+/** A grinder as the battle has it: where its middle is now, and how fast it's moving (units a second, along its move). */
+export interface Grinder extends GrinderConfig {
+    nowX: number;
+    nowZ: number;
+    speed: number;
+}
+
+/** A pipe as the battle has it: its ends (where each opening is, which way it opens) and how long going through takes. */
+export interface Pipe extends PipeConfig {
+    ends: ReturnType<typeof pipeEnds>;
+    seconds: number;
+}
+
+/** A mob in a pipe: when it comes out, of which pipe and end, and what it was. */
+interface InPipe { due: number; pipe: number; end: number; team: number; hp: number; helmet: number; viking: number; crossed: number }
+
 /** An obstacle as the battle has it: its shape, and for a breakable, its hits left (gone at 0). */
 export interface Block {
     config: ObstacleConfig;
     shape: Shape;
     breakable: boolean;
+    /** An enemy wall: solid to reds only (ObstacleConfig `enemyWall`). */
+    redOnly?: boolean;
     hp: number;
     hpMax: number;
     alive: boolean;
@@ -224,10 +269,20 @@ export class Battle {
     private readonly prevZ = new Float32Array(CAPACITY);
     private readonly vx = new Float32Array(CAPACITY);
     private readonly vz = new Float32Array(CAPACITY);
+    /** Going round something: the way it chose (unit), for how much longer it keeps it, and how long it's been stuck. */
+    private readonly slideX = new Float32Array(CAPACITY);
+    private readonly slideZ = new Float32Array(CAPACITY);
+    private readonly slideFor = new Float32Array(CAPACITY);
+    private readonly stuckFor = new Float32Array(CAPACITY);
+    /** Where it was a step ago, after everything pushed it (how far it really got). */
+    private readonly lastX = new Float32Array(CAPACITY);
+    private readonly lastZ = new Float32Array(CAPACITY);
     /** A red's lane: the x it drifts towards on its way down. */
     private readonly lane = new Float32Array(CAPACITY);
     /** A giant's time to its next chip at a breakable. */
     private readonly chip = new Float32Array(CAPACITY);
+    /** The most a big one takes off a building (a card's unit's own; 0: its kind's, TUNING). */
+    private readonly unitDamage = new Float32Array(CAPACITY);
     private readonly contactOut: Contact = { x: 0, z: 0, nx: 0, nz: 0, tx: 0, tz: 0 };
     /** Mobs alive: indices 0 .. count-1. */
     public count = 0;
@@ -237,6 +292,12 @@ export class Battle {
 
     public readonly gates: Gate[];
     public readonly blocks: Block[];
+    public readonly pipes: Pipe[];
+    public readonly grinders: Grinder[];
+    /** The mobs in the pipes now. */
+    private inPipes: InPipe[] = [];
+    /** This step's length (for what's worked out per mob in usePipes). */
+    private stepDt = 0;
     public readonly spinners: readonly SpinnerConfig[];
     public readonly pushers: Pusher[];
     public readonly pads: Pad[];
@@ -262,6 +323,8 @@ export class Battle {
     /** Shots left, and whether it's locked until full (it ran dry). */
     public energy = -1;
     public overheated = false;
+    /** The cannon wanted to fire but the field's full (TUNING.maxMobs): nothing came out, nothing was spent. */
+    public capped = false;
     private idle = 0;
     /** How close the nearest red is to the danger line (0 far .. 1 on it): the view's warning. */
     public danger = 0;
@@ -277,12 +340,14 @@ export class Battle {
     public constructor(public readonly config: BattleConfig, public events: BattleEvents = {}) {
         this.gates = config.gates.map((gate) => ({ ...gate, nowX: gate.x, locked: (gate.lock ?? 0) > 0, swingFrom: 0 }));
         this.helmets = config.helmets ?? [];
+        this.grinders = (config.grinders ?? []).map((grinder) => ({ ...grinder, nowX: grinder.x, nowZ: grinder.z, speed: 0 }));
+        this.pipes = (config.pipes ?? []).map((pipe) => ({ ...pipe, ends: pipeEnds(pipe), seconds: pipeLength(pipe) / TUNING.pipeSpeed }));
         this.blocks = (config.obstacles ?? []).map((o) => {
             const shape = obstacleShape(o);
             const [centreX, centreZ] = shapeCentre(shape);
             const breakable = o.kind === 'breakable';
             const hp = breakable ? o.hp ?? 40 : 0;
-            return { config: o, shape, breakable, hp, hpMax: hp, alive: true, centreX, centreZ };
+            return { config: o, shape, breakable, hp, hpMax: hp, alive: true, centreX, centreZ, redOnly: o.kind === 'enemyWall' };
         });
         // Each locked gate's breakable, after the obstacles' (so theirs keep their indices).
         this.gates.forEach((gate, g) => {
@@ -311,6 +376,27 @@ export class Battle {
     }
 
     /** Debug: a blue giant, truck or gold saucer, as if a house had just made it (from the cannon). */
+    /**
+     * A unit out of the cannon (a card that's charged): a giant, a truck, the gold UFO, a car, with its own `stats` (the
+     * card's level's hits and damage; a car with no hits set can't be destroyed).
+     */
+    public spawnUnit(kind: 'giant' | 'truck' | 'saucer' | 'car', stats: UnitStats = {}): void {
+        if (kind === 'saucer') {
+            const target = this.mainTarget();
+            if (target >= 0) this.saucers.push({ x: this.cannonX, z: -2, target, alive: true, age: 0, sucked: 0, damage: stats.damage });
+            this.events.giant?.(BLUE, this.cannonX, -2, -1);
+            return;
+        }
+        const mob = kind === 'truck' ? TRUCK : kind === 'car' ? CAR : GIANT;
+        const x = this.cannonX + (Math.random() * 2 - 1) * 1.2;
+        const z = -2.5 - Math.random() * SPAWN_JITTER;
+        const i = this.add(BLUE, x, z, ALL_GATES, mob);
+        if (i < 0) return;
+        if (stats.hp !== undefined) this.hp[i] = stats.hp > 0 ? stats.hp : Infinity;
+        if (stats.damage !== undefined) this.unitDamage[i] = stats.damage;
+        this.events.giant?.(BLUE, x, z, mob);
+    }
+
     public debugSpawn(kind: 'giant' | 'truck' | 'saucer' | 'car'): void {
         if (kind === 'saucer') {
             const target = this.mainTarget();
@@ -375,9 +461,43 @@ export class Battle {
         return this.time * spinner.speed * Math.PI * 2;
     }
 
+    /** Its size (its hurt box): what it fights with, what the crowd keeps clear of, what walks into a house. */
+    /** Whether the mob slideAround() is steering is a blue (enemy walls aren't in its way). */
+    private movingBlue = false;
+
     public radiusOf(i: number): number {
         const kind = this.big[i];
         return TUNING.radius * (kind === TRUCK ? TUNING.truckScale : kind === CAR ? TUNING.carScale : kind ? TUNING.giantScale : 1);
+    }
+
+    /** Its body against the world (its hit box): the field's sides, walls, holes, blocks, houses, PUSH blocks, sliding
+     *  bars, spinners and pipes. A big one's is smaller than it looks (ui/units.json `body`: bodyShare), so it slips
+     *  through a gap its looks would wedge in. */
+    public bodyOf(i: number): number {
+        const kind = this.big[i];
+        return this.radiusOf(i) * (kind === TRUCK ? bodyShare('truck') : kind === CAR ? bodyShare('car') : kind ? bodyShare('giant') : 1);
+    }
+
+    /** Whether one with body `r` fits at (x, z) on the field as it is now (the field's sides, walls, holes, blocks
+     *  standing, PUSH blocks, and the houses when `houses`: solid to reds and giants) — the editor's gap check. */
+    public fitsAt(x: number, z: number, r: number, houses: boolean, red = false): boolean {
+        if (Math.abs(x) > ARENA.halfWidth - r) return false;
+        for (const block of this.blocks) if (block.alive && (red || !block.redOnly) && touch(block.shape, x, z, r, this.contactOut)) return false;
+        if (houses && SETTINGS.housesBlockReds) {
+            for (const pad of this.pads) {
+                if (this.passable(pad, r) && Math.abs(x - pad.x) < pad.width / 2 + r && Math.abs(z - pad.z) < pad.depth / 2 + r) return false;
+            }
+        }
+        for (const block of this.pushBlocks) {
+            if (block.alive && Math.abs(x - block.x) < block.width / 2 + r && Math.abs(z - block.nowZ) < block.depth / 2 + r) return false;
+        }
+        for (const pipe of this.pipes) {
+            for (const end of pipe.ends) {
+                const ahead = (z - end.z) * end.facing;
+                if (Math.abs(x - end.x) < PIPE.radius + r && ahead < 0 && ahead > -PIPE.body - r) return false;
+            }
+        }
+        return true;
     }
 
     public step(dt: number): void {
@@ -385,6 +505,15 @@ export class Battle {
         this.cannonX += (this.aimX - this.cannonX) * Math.min(1, CANNON_FOLLOW * dt);
         for (const gate of this.gates) {
             gate.nowX = gate.x + (gate.swing && !gate.locked ? Math.sin(((this.time - gate.swingFrom) / gate.swing.seconds) * Math.PI * 2) * gate.swing.range : 0);
+        }
+        for (const grinder of this.grinders) {
+            if (!grinder.move) continue;
+            // A horizontal one rolls up and down the field, a vertical one across it.
+            const angle = (this.time / grinder.move.seconds) * Math.PI * 2;
+            const offset = Math.sin(angle) * grinder.move.range;
+            grinder.speed = Math.cos(angle) * grinder.move.range * ((Math.PI * 2) / grinder.move.seconds);
+            if (grinder.axis === 'x') grinder.nowZ = grinder.z + offset;
+            else grinder.nowX = grinder.x + offset;
         }
         for (const pusher of this.pushers) {
             const angle = (this.time / pusher.seconds + (pusher.phase ?? 0)) * Math.PI * 2;
@@ -398,9 +527,11 @@ export class Battle {
         }
         this.move(dt);
         this.collide(dt);
+        this.useGrinders(dt);
         this.fight(dt);
         this.crossHelmets();
         this.crossGates();
+        this.usePipes(dt);
         this.feedPads();
         this.flySaucers(dt);
         this.hitBase();
@@ -441,6 +572,7 @@ export class Battle {
         this.helmet[i] = 0;
         this.viking[i] = 0;
         this.chip[i] = 0;
+        this.unitDamage[i] = 0;
         if (big) {
             if (team === BLUE) this.giantStats.blue++;
             else this.giantStats.red++;
@@ -453,6 +585,10 @@ export class Battle {
         this.dead[i] = 0;
         this.vx[i] = 0;
         this.vz[i] = 0;
+        this.slideFor[i] = 0;
+        this.stuckFor[i] = 0;
+        this.lastX[i] = x;
+        this.lastZ[i] = z;
         this.lane[i] = (Math.random() * 2 - 1) * redLaneSpread();
         return i;
     }
@@ -471,6 +607,7 @@ export class Battle {
         const max = this.energyMax;
         if (this.energy < 0) this.energy = max;
         const shooting = this.firing && !this.overheated && this.energy >= 1;
+        this.capped = false;
         if (!shooting) {
             // Recharging: straight away once it's run dry (and locked until full), else after a short pause.
             this.fireDue = 0;
@@ -482,9 +619,15 @@ export class Battle {
         this.idle = 0;
         this.fireDue += this.fireRate * dt;
         while (this.fireDue >= 1 && this.energy >= 1) {
+            // The field's full: it waits (a shot that can't come out isn't spent).
+            if (this.add(BLUE, this.cannonX + (Math.random() - 0.5) * MUZZLE_SPREAD, MUZZLE_Z, 0) < 0) {
+                this.capped = true;
+                this.fireDue = Math.min(this.fireDue, 1);
+                break;
+            }
             this.fireDue -= 1;
             this.energy -= 1;
-            if (this.add(BLUE, this.cannonX + (Math.random() - 0.5) * MUZZLE_SPREAD, MUZZLE_Z, 0) >= 0) this.events.fire?.(this.cannonX);
+            this.events.fire?.(this.cannonX);
         }
         if (this.energy < 1) {
             this.overheated = true;
@@ -559,31 +702,43 @@ export class Battle {
      * About to run into a solid obstacle (a wall or water — not a breakable, which it walks into)? Then the way along its
      * nearest edge that's closest to where it wants to go, nudged out from it; else null. Reuses `contactOut`.
      */
-    private slideAround(x: number, z: number, dx: number, dz: number, r: number, houses: boolean): Contact | null {
-        const ahead = LOOK_AHEAD;
+    private slideAround(x: number, z: number, dx: number, dz: number, r: number, houses: boolean, keepX = 0, keepZ = 0): Contact | null {
         const c = this.contactOut;
         let hit: Shape | null = null;
-        for (const block of this.blocks) {
-            if (!block.alive || block.breakable) continue;
-            if (touch(block.shape, x + dx * ahead, z + dz * ahead, r, c)) {
-                hit = block.shape;
-                break;
-            }
-        }
         let open = 0;
-        if (!hit && houses) {
-            for (const pad of this.pads) {
-                const sides = this.openSides(pad, r);
-                if (!sides.left && !sides.right) continue;
-                if (touch(pad.shape, x + dx * ahead, z + dz * ahead, r, c)) {
-                    hit = pad.shape;
-                    // Only one side to go round: that one (-1 left, +1 right).
-                    open = sides.left && sides.right ? 0 : sides.left ? -1 : 1;
+        for (const step of LOOK_STEPS) {
+            const ahead = LOOK_AHEAD * step;
+            for (const block of this.blocks) {
+                if (!block.alive || block.breakable || (block.redOnly && this.movingBlue)) continue;
+                // (Kept on the field: else a wall reaching the field's side steers it along its edge there, into the wall.)
+                if (touch(block.shape, x + dx * ahead, z + dz * ahead, r, c, ARENA.halfWidth - r)) {
+                    hit = block.shape;
                     break;
                 }
             }
+            if (!hit && houses) {
+                for (const pad of this.pads) {
+                    const sides = this.openSides(pad, r);
+                    if (!sides.left && !sides.right) continue;
+                    if (touch(pad.shape, x + dx * ahead, z + dz * ahead, r, c)) {
+                        hit = pad.shape;
+                        // Only one side to go round: that one (-1 left, +1 right).
+                        open = sides.left && sides.right ? 0 : sides.left ? -1 : 1;
+                        break;
+                    }
+                }
+            }
+            if (hit) break;
         }
         if (!hit) return null;
+        // Head-on, and already going round: the same way as it was.
+        if (open === 0 && (keepX !== 0 || keepZ !== 0) && Math.abs(c.tx * dx + c.tz * dz) < HEAD_ON) {
+            if (c.tx * keepX + c.tz * keepZ < 0) {
+                c.tx = -c.tx;
+                c.tz = -c.tz;
+            }
+            return c;
+        }
         // Along the edge, whichever way is nearer the wanted direction — but head-on (both ways about as good, which
         // flips frame to frame and leaves it stuck), round the nearer end: away from the shape's middle.
         const along = c.tx * dx + c.tz * dz;
@@ -613,7 +768,7 @@ export class Battle {
             const x = pad.x + side * (hw + r + 0.05);
             if (Math.abs(x) > ARENA.halfWidth - r) return false;
             for (let z = pad.z - hd - r; z <= pad.z + hd + r; z += 0.25) {
-                for (const block of this.blocks) if (touch(block.shape, x, z, r, this.contactOut)) return false;
+                for (const block of this.blocks) if (!block.redOnly && touch(block.shape, x, z, r, this.contactOut)) return false;
             }
             return true;
         };
@@ -699,9 +854,29 @@ export class Battle {
                 dz += (tz / d) * 0.9;
             }
             let length = Math.sqrt(dx * dx + dz * dz) || 1;
+            // How far it really got last step, after the crowd and the walls pushed it.
+            const moved = Math.hypot(x - this.lastX[i], z - this.lastZ[i]) / Math.max(dt, 1e-4);
+            this.lastX[i] = x;
+            this.lastZ[i] = z;
+            const remembering = this.slideFor[i] > 0;
             // A wall or hole ahead: slide along its edge instead (and a little away from it).
-            const slide = this.slideAround(x, z, dx / length, dz / length, radius, !blue || !!this.big[i]);
+            this.movingBlue = blue;
+            const slide = this.slideAround(x, z, dx / length, dz / length, this.bodyOf(i), SETTINGS.housesBlockReds && (!blue || !!this.big[i]),
+                remembering ? this.slideX[i] : 0, remembering ? this.slideZ[i] : 0);
+            this.slideFor[i] = Math.max(0, this.slideFor[i] - dt);
             if (slide) {
+                const kindNow = this.big[i];
+                const speedNow = (blue ? TUNING.blueSpeed : TUNING.redSpeed) * (kindNow === TRUCK ? TUNING.truckSpeed : kindNow === CAR ? TUNING.carSpeed : kindNow ? TUNING.giantSpeed : 1);
+                // Going round but getting nowhere (pressed into a corner): the other way round.
+                this.stuckFor[i] = moved < speedNow * STUCK_SPEED ? this.stuckFor[i] + dt : 0;
+                if (this.stuckFor[i] > STUCK_SECONDS) {
+                    this.stuckFor[i] = 0;
+                    slide.tx = -slide.tx;
+                    slide.tz = -slide.tz;
+                }
+                this.slideX[i] = slide.tx;
+                this.slideZ[i] = slide.tz;
+                this.slideFor[i] = SLIDE_MEMORY;
                 dx = slide.tx * AVOID_TURN + slide.nx * 0.35;
                 dz = slide.tz * AVOID_TURN + slide.nz * 0.35;
                 length = Math.sqrt(dx * dx + dz * dz) || 1;
@@ -734,21 +909,23 @@ export class Battle {
         const shove = TUNING.shove;
         for (let i = 0; i < this.count; i++) {
             if (this.dead[i]) continue;
-            const r = this.radiusOf(i);
+            const r = this.bodyOf(i);
             const wallX = ARENA.halfWidth - r;
             let x = Math.max(-wallX, Math.min(wallX, this.x[i]));
             let z = Math.max(ARENA.baseZ - 0.5, this.z[i]);
             for (let b = 0; b < this.blocks.length; b++) {
                 const block = this.blocks[b];
-                if (!block.alive || !touch(block.shape, x, z, r, this.contactOut)) continue;
+                // Out the way that keeps it on the field (else the field's side pushes it back in, each step: stuck).
+                if (!block.alive || (block.redOnly && this.team[i] === BLUE) || !touch(block.shape, x, z, r, this.contactOut, wallX)) continue;
                 if (block.breakable && this.hitBreakable(i, b, dt)) break;
                 x = this.contactOut.x;
                 z = this.contactOut.z;
             }
             if (this.dead[i]) continue;
             const blue = this.team[i] === BLUE;
-            // Houses: solid to reds and giants (plain blues walking in are taken in: feedPads).
-            if (!blue || this.big[i]) {
+            // Houses: solid to reds and giants (plain blues walking in are taken in: feedPads), unless the settings have
+            // them walk over (ui/settings.json housesBlockReds).
+            if (SETTINGS.housesBlockReds && (!blue || this.big[i])) {
                 for (const pad of this.pads) {
                     // Only where there's a way round it for one this size (else it'd wedge there: it walks through).
                     if (!this.passable(pad, r)) continue;
@@ -916,6 +1093,97 @@ export class Battle {
         }
     }
 
+    /** Mobs touching a grinder: a plain one's gone, a giant or a truck wears down; the car and the saucers aren't hurt. */
+    private useGrinders(dt: number): void {
+        if (!this.grinders.length) return;
+        for (let i = 0; i < this.count; i++) {
+            if (this.dead[i] || this.leaving[i] > 0 || this.big[i] === CAR) continue;
+            const r = this.radiusOf(i) * 0.7;
+            for (const grinder of this.grinders) {
+                const across = grinder.axis === 'x' ? grinder.length / 2 : grinder.thickness / 2;
+                const along = grinder.axis === 'x' ? grinder.thickness / 2 : grinder.length / 2;
+                if (Math.abs(this.x[i] - grinder.nowX) > across + r || Math.abs(this.z[i] - grinder.nowZ) > along + r) continue;
+                if (this.big[i] === PLAIN) {
+                    this.dead[i] = 1;
+                } else {
+                    this.hp[i] -= TUNING.grinderDps * dt;
+                    if (this.hp[i] <= 0) this.dead[i] = 1;
+                }
+                if (this.dead[i]) this.events.ground?.(this.x[i], this.z[i], this.team[i], this.big[i] !== PLAIN);
+                break;
+            }
+        }
+    }
+
+    /**
+     * The pipes: plain mobs walking into an opening are taken in (off the field till they come out of the other end);
+     * anything walking into an end's elbow slides round it; and those due come out, a little in front of their
+     * opening, carrying on.
+     */
+    private usePipes(dt: number): void {
+        if (!this.pipes.length) return;
+        this.stepDt = dt;
+        for (let i = 0; i < this.count; i++) {
+            if (this.dead[i] || this.leaving[i] > 0) continue;
+            const plain = this.big[i] === PLAIN;
+            // Blues walk up the field (-z), reds down it: each goes into the openings facing it.
+            const travel = this.team[i] === BLUE ? -1 : 1;
+            for (let p = 0; p < this.pipes.length && !this.dead[i]; p++) {
+                const pipe = this.pipes[p];
+                for (let e = 0; e < 2; e++) {
+                    const end = pipe.ends[e];
+                    const across = this.x[i] - end.x;
+                    // How far in front of the opening (negative: behind it, in the elbow).
+                    const ahead = (this.z[i] - end.z) * end.facing;
+                    const r = this.bodyOf(i);
+                    const allowed = pipe.team === undefined || pipe.team === 'both' || (pipe.team === 'blue') === (this.team[i] === BLUE);
+                    const goingIn = plain && allowed && travel === -end.facing;
+                    if (!goingIn && Math.abs(across) < PIPE.radius + r + 0.2) {
+                        // Not for it: the end is solid, opening and all. Steering round it as it comes, out sideways
+                        // once at it (so it slides past, never stuck pushing on it).
+                        const side = across >= 0 ? 1 : -1;
+                        const before = travel === -end.facing ? ahead - PIPE.radius : -ahead - PIPE.body;
+                        // Pushed out only if it's actually in it: the steering band's extra beside it would pull one leaving
+                        // sideways back against it every step, and pinned there it can't get round whatever's past it.
+                        if (ahead > -PIPE.body - r && ahead < PIPE.radius + r) {
+                            if (Math.abs(across) < PIPE.radius + r) this.x[i] = end.x + side * (PIPE.radius + r + 0.02);
+                            continue;
+                        }
+                        if (before > 0 && before < PIPE.steer) this.x[i] += side * PIPE.steerSpeed * this.stepDt * (1 - before / PIPE.steer);
+                        continue;
+                    }
+                    if (ahead < -0.25 && ahead > -PIPE.body - r && Math.abs(across) < PIPE.radius + r) {
+                        // In the elbow (from behind it or its side): out sideways, so it slides round and carries on
+                        // (pushed back the way it came, it would walk into it again and again).
+                        this.x[i] = end.x + (across >= 0 ? 1 : -1) * (PIPE.radius + r + 0.02);
+                        continue;
+                    }
+                    // In: walking into the opening, anywhere across the way in (a little wider than the pipe).
+                    if (goingIn && ahead >= -0.25 && ahead < PIPE.radius && Math.abs(across) < PIPE.mouth) {
+                        this.inPipes.push({ due: this.time + pipe.seconds, pipe: p, end: 1 - e, team: this.team[i], hp: this.hp[i], helmet: this.helmet[i], viking: this.viking[i], crossed: this.gatesCrossed[i] });
+                        this.dead[i] = 1;
+                        this.events.pipeIn?.(p, e, this.team[i]);
+                        break;
+                    }
+                }
+            }
+        }
+        if (!this.inPipes.length) return;
+        this.inPipes = this.inPipes.filter((mob) => {
+            if (mob.due > this.time) return true;
+            const end = this.pipes[mob.pipe].ends[mob.end];
+            const j = this.add(mob.team, end.x + (Math.random() - 0.5) * PIPE.radius * 0.6, end.z + end.facing * (PIPE.radius + TUNING.radius + 0.1), mob.crossed);
+            // The field's full: it waits in the pipe.
+            if (j < 0) return true;
+            this.hp[j] = mob.hp;
+            this.helmet[j] = mob.helmet;
+            this.viking[j] = mob.viking;
+            this.heading[j] = end.facing > 0 ? Math.PI : 0;
+            this.events.pipeOut?.(mob.pipe, mob.end, mob.team);
+            return false;
+        });
+    }
+
     /** The damage mob i does with a hit: 1, times TUNING.vikingDamage with a viking hat. */
     private attackOf(i: number): number {
         return this.viking[i] ? TUNING.vikingDamage : 1;
@@ -1004,7 +1272,7 @@ export class Battle {
                 if (!target.alive || this.z[i] - r > target.z + 0.15 || Math.abs(this.x[i] - target.x) > target.halfWidth + r) continue;
                 this.dead[i] = 1;
                 const kind = this.big[i];
-                const most = kind === TRUCK ? TUNING.truckDamage : kind === CAR ? TUNING.carDamage : TUNING.giantDamage;
+                const most = this.unitDamage[i] || (kind === TRUCK ? TUNING.truckDamage : kind === CAR ? TUNING.carDamage : TUNING.giantDamage);
                 const damage = (kind ? Math.min(most, Math.ceil(this.hp[i])) : 1) * this.attackOf(i);
                 this.damageTarget(k, damage, this.x[i], this.z[i]);
                 break;
@@ -1056,7 +1324,7 @@ export class Battle {
             if (distance <= step) {
                 saucer.alive = false;
                 this.events.saucerHit?.(saucer.target, target.x, target.z);
-                this.damageTarget(saucer.target, TUNING.saucerDamage, target.x, target.z);
+                this.damageTarget(saucer.target, saucer.damage ?? TUNING.saucerDamage, target.x, target.z);
                 continue;
             }
             saucer.x += (dx / distance) * step;
@@ -1117,7 +1385,14 @@ export class Battle {
         this.prevZ[to] = this.prevZ[from];
         this.vx[to] = this.vx[from];
         this.vz[to] = this.vz[from];
+        this.slideX[to] = this.slideX[from];
+        this.slideZ[to] = this.slideZ[from];
+        this.slideFor[to] = this.slideFor[from];
+        this.stuckFor[to] = this.stuckFor[from];
+        this.lastX[to] = this.lastX[from];
+        this.lastZ[to] = this.lastZ[from];
         this.lane[to] = this.lane[from];
         this.chip[to] = this.chip[from];
+        this.unitDamage[to] = this.unitDamage[from];
     }
 }

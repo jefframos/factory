@@ -16,6 +16,8 @@ const DEEP_AT = 45;
 /** A smaller patch of water (a hole in the field): deep sooner, a round mesh for a round hole, set a little higher. */
 export interface WaterOptions {
     deepAt?: number;
+    /** How fine the ripple lines are (1: the battle's; more: smaller, for a smaller world like the main screen's map). */
+    pattern?: number;
     round?: boolean;
     /** A polygon hole: the mesh is the outline itself (`shore`), not a box or a circle. */
     polygon?: boolean;
@@ -46,6 +48,7 @@ uniform vec3 uDeep;
 uniform sampler2D uShoreDistance;
 uniform vec2 uAreaMin;
 uniform vec2 uAreaSize;
+uniform float uPattern;
 varying vec2 vWorldXZ;
 void main() {
     // How far out: 0 at the shore, 1 at deepAt and beyond.
@@ -54,7 +57,7 @@ void main() {
     color = mix(color, uDeep, smoothstep(0.2, 1.0, out_));
 
     // Wave lines: thin contours of a slowly drifting field.
-    vec2 p = vWorldXZ * 0.11;
+    vec2 p = vWorldXZ * 0.11 * uPattern;
     float field = sin(p.x * 1.7 + sin(p.y * 1.3 + time * 0.13) * 1.6 + time * 0.09)
         + sin(p.y * 2.1 + sin(p.x * 1.1 - time * 0.11) * 1.8 - time * 0.07);
     float lines = 1.0 - smoothstep(0.0, 0.05, abs(fract(field * 1.6) - 0.5));
@@ -113,6 +116,7 @@ export function createWater(color: string, width: number, depth: number, shore: 
             uShoreDistance: { value: distance },
             uAreaMin: { value: new THREE.Vector2(minX, minZ) },
             uAreaSize: { value: new THREE.Vector2(width, depth) },
+            uPattern: { value: options.pattern ?? 1 },
             uBendOrigin: bendUniforms.uBendOrigin,
             uBendStrength: bendUniforms.uBendStrength,
         },

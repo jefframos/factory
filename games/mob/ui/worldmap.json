@@ -1,0 +1,290 @@
+{
+  "lift": 0.2,
+  "saturation": 1.2,
+  "brightness": 1.45,
+  "tiles": [
+    {
+      "q": 0,
+      "r": 3,
+      "model": "hex_coast_A",
+      "zone": "beach"
+    },
+    {
+      "q": -1,
+      "r": 3,
+      "model": "hex_grass",
+      "rot": 5,
+      "zone": "beach"
+    },
+    {
+      "q": 0,
+      "r": 2,
+      "model": "hex_grass",
+      "decor": "trees_A_small",
+      "zone": "beach"
+    },
+    {
+      "q": 1,
+      "r": 2,
+      "model": "hex_grass",
+      "decor": "trees_B_large",
+      "y": 0.1
+    },
+    {
+      "q": -1,
+      "r": 2,
+      "model": "hex_grass",
+      "decor": "building_home_A_green",
+      "zone": "beach"
+    },
+    {
+      "q": 0,
+      "r": 1,
+      "model": "hex_grass",
+      "decor": "building_windmill_blue",
+      "zone": "castle",
+      "y": 0.4
+    },
+    {
+      "q": 1,
+      "r": 1,
+      "model": "hex_grass",
+      "decor": "trees_B_medium",
+      "zone": "castle",
+      "y": 0.5
+    },
+    {
+      "q": -1,
+      "r": 1,
+      "model": "hex_grass",
+      "decor": "hills_A_trees",
+      "zone": "castle",
+      "y": 0.2
+    },
+    {
+      "q": 0,
+      "r": 0,
+      "model": "hex_grass",
+      "decor": "building_market_blue",
+      "zone": "castle",
+      "y": 0.3
+    },
+    {
+      "q": 1,
+      "r": 0,
+      "model": "hex_grass",
+      "decor": "building_castle_blue",
+      "rot": 3,
+      "zone": "castle",
+      "y": 0.7
+    },
+    {
+      "q": 0,
+      "r": -1,
+      "model": "hex_grass",
+      "decor": "rock_single_A",
+      "zone": "desert",
+      "hue": -46
+    },
+    {
+      "q": 1,
+      "r": -1,
+      "model": "hex_grass",
+      "decor": "mountain_A_grass",
+      "zone": "desert",
+      "hue": -46
+    },
+    {
+      "q": -1,
+      "r": -1,
+      "model": "hex_grass",
+      "decor": "building_mine_yellow",
+      "rot": 1,
+      "zone": "desert",
+      "hue": -46
+    },
+    {
+      "q": 0,
+      "r": -2,
+      "model": "hex_grass",
+      "decor": "hills_B",
+      "zone": "desert",
+      "hue": -41
+    },
+    {
+      "q": 1,
+      "r": -2,
+      "model": "hex_grass",
+      "decor": "building_tower_B_yellow",
+      "zone": "desert",
+      "hue": -49
+    },
+    {
+      "q": 2,
+      "r": 1,
+      "model": "hex_grass",
+      "decor": "trees_A_large",
+      "y": 0.1
+    },
+    {
+      "q": 2,
+      "r": 0,
+      "model": "hex_grass",
+      "decor": "hills_C_trees"
+    },
+    {
+      "q": -1,
+      "r": 0,
+      "model": "hex_grass",
+      "decor": "trees_A_medium"
+    },
+    {
+      "q": 2,
+      "r": -1,
+      "model": "hex_grass",
+      "decor": "mountain_B_grass_trees"
+    },
+    {
+      "q": -2,
+      "r": -1,
+      "model": "hex_grass",
+      "decor": "mountain_C_grass"
+    },
+    {
+      "q": 2,
+      "r": -2,
+      "model": "hex_grass",
+      "decor": "mountain_A"
+    },
+    {
+      "q": -1,
+      "r": -2,
+      "model": "hex_grass",
+      "decor": "mountain_B"
+    },
+    {
+      "q": 0,
+      "r": -3,
+      "model": "hex_grass",
+      "decor": "mountain_C_grass_trees"
+    },
+    {
+      "q": 1,
+      "r": -3,
+      "model": "hex_grass",
+      "decor": "hills_A"
+    },
+    {
+      "q": 2,
+      "r": 2,
+      "model": "hex_grass",
+      "decor": "mountain_A_grass_trees",
+      "y": 0.2
+    },
+    {
+      "q": -2,
+      "r": 4,
+      "model": "hex_coast_B_waterless"
+    },
+    {
+      "q": -3,
+      "r": 4,
+      "model": "hex_coast_C_waterless",
+      "rot": 5
+    },
+    {
+      "q": -3,
+      "r": 3,
+      "model": "hex_coast_C_waterless",
+      "rot": 4
+    },
+    {
+      "q": -2,
+      "r": 2,
+      "model": "hex_coast_A_waterless",
+      "rot": 4
+    },
+    {
+      "q": -2,
+      "r": 3,
+      "model": "hex_grass",
+      "decor": "trees_B_medium",
+      "zone": "beach"
+    },
+    {
+      "q": -1,
+      "r": 4,
+      "model": "hex_coast_C_waterless"
+    },
+    {
+      "q": 1,
+      "r": 3,
+      "model": "hex_coast_D_waterless"
+    },
+    {
+      "q": -2,
+      "r": 1,
+      "model": "hex_coast_C_waterless",
+      "rot": 4
+    },
+    {
+      "q": -1,
+      "r": -3,
+      "model": "hex_grass",
+      "hue": -74
+    },
+    {
+      "q": -2,
+      "r": 0,
+      "model": "hex_coast_D_waterless",
+      "rot": 4
+    },
+    {
+      "q": 3,
+      "r": -1,
+      "model": "hex_grass",
+      "decor": "wall_corner_A_inside"
+    },
+    {
+      "q": 3,
+      "r": 0,
+      "model": "hex_grass"
+    },
+    {
+      "q": 3,
+      "r": 1,
+      "model": "hex_grass",
+      "hue": 103,
+      "saturation": 0.65,
+      "brightness": 1.75
+    },
+    {
+      "q": 3,
+      "r": -2,
+      "model": "hex_grass",
+      "decor": "building_tower_base_blue",
+      "y": 1
+    },
+    {
+      "q": 4,
+      "r": -2,
+      "model": "hex_grass",
+      "decor": "wall_corner_A_inside",
+      "rot": 1
+    },
+    {
+      "q": 4,
+      "r": -3,
+      "model": "hex_grass",
+      "decor": "wall_corner_A_inside",
+      "rot": 2
+    },
+    {
+      "q": 3,
+      "r": -3,
+      "model": "hex_grass",
+      "decor": "wall_corner_A_inside",
+      "rot": 3
+    }
+  ]
+}

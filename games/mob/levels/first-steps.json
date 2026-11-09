@@ -3,8 +3,8 @@
   "kind": "Classic",
   "gates": [
     {
-      "x": -0.2,
-      "z": -5,
+      "x": 0.05,
+      "z": -4.75,
       "width": 8.2,
       "value": 2
     },
@@ -30,12 +30,13 @@
   "redRamp": 45,
   "baseHp": 120,
   "reward": 100,
-  "helmets": [
+  "grinders": [
     {
-      "kind": "attack",
-      "x": -0.5,
-      "z": -8.75,
-      "width": 3
+      "x": -2.5,
+      "z": -18.75,
+      "length": 1.5,
+      "thickness": 0.9,
+      "axis": "x"
     }
   ]
 }

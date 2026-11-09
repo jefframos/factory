@@ -4,12 +4,16 @@
 // stage's 720 x 1080 design units), copying the pack's own screens (library3d/2d/ResourcesData/Preview):
 // - top (4_Play_UI_Action): the battle's name, then the enemy base's HP on a dark play bar (a red fill over a dark track), a skull at its start
 //   and the battle's number on the gold level badge at its end; the coins top left;
-// - before the first touch: the white glove sweeping left and right over "HOLD TO SHOOT", then "GO!" as the battle starts;
-// - the cannon's energy: a bar across the bottom of the screen with the energy bolt at its end, draining as it fires,
-//   flashing red while it's locked recharging;
+// - before the first touch: the white glove sweeping left and right just under the cannon (HINT), then "GO!" as the
+//   battle starts;
+// - the cannon's energy: a small upright bar beside the cannon (placeEnergy: it follows it), the energy bolt on top,
+//   draining as it fires: cyan, amber when low, flashing red while it's locked recharging;
+// - the unit cards across the bottom (CardTray): each charging, then sending its unit out of the cannon;
 // - the end card (9_Play_Result_Victory / _Defeat): the winged gold badge or the skull shield over turning rays, the
-//   blue or red ribbon with VICTORY / DEFEAT, the REWARDS divider and a coin card, the cannon's three upgrades (fire
-//   rate, energy, recharge) and CONTINUE / RETRY;
+//   blue or red ribbon with VICTORY / DEFEAT (its bottom about a third of the way down), the REWARDS divider and a
+//   coin card, the cannon's three upgrades (UpgradeCard: icon, segmented level bar, price), how far through the area
+//   the player is (AreaBar), and HOME (to the main screen) beside CONTINUE / RETRY; all of it scaled down to fit a short
+//   screen;
 // - the juice: words popping up over the field ("+12" at a gate, "GIANT!"), red edges pulsing as reds near the line (a
 //   red flash when they break through), the HP bar easing down with a white trail, coins flying to the counter.
 
@@ -17,8 +21,14 @@ import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import SoundToggleButton from 'core/ui/SoundToggleButton';
 import { Game } from 'core/Game';
-import { UPGRADES, UpgradeKind } from '../data/MobConfig';
-import { COIN_BAR, GlossyButton, fillCoinBar, framePlane, glossyButton, iconSprite, label, tappable } from './UiParts';
+import { UpgradeKind } from '../data/MobConfig';
+import { COIN_BAR, GlossyButton, fillCoinBar, framePlane, glossyButton, iconButton, iconSprite, label, tappable } from './UiParts';
+import { UpgradeCard, UPGRADE_CARD } from './UpgradeCard';
+import { AreaBar, AreaView } from './AreaBar';
+import { CardTray, CARD } from './CardTray';
+import { CardReveal } from './CardReveal';
+import { CardKind } from '../data/Settings';
+import { ZoneConfig } from '../data/LevelList';
 
 /** The HP bar: its size, the frame's tint, the empty track inside it, the fill and the white trail behind it. */
 const BAR = { width: 430, height: 46, back: 0x1b1e3a, track: 0x4a1a26, fill: 0xff3d4f, trail: 0xffffff };
@@ -31,11 +41,36 @@ const EMBLEM_LOST_DROP = 34;
 const EMBLEM_LEVEL_Y = 48;
 /** The mute button (top right): its size, the gap to the corner, and its icon's scale (128 px icons). */
 const MUTE = { size: 60, margin: 14, icon: 0.55 / 128 };
-/** The energy bar (across the bottom of the screen): its size, how far up from the bottom edge, its colours (full, low, locked). */
-const ENERGY = { width: 420, height: 40, bottom: 30, fill: 0x45d4ff, low: 0xffc23d, locked: 0xff4f63, back: 0x1b1e3a, track: 0x0f2a3d };
-/** An upgrade button on the end card. */
-const UPGRADE_TILE = { width: 200, height: 132, gap: 14 };
+/** The first-touch hint: the glove's middle this far under the cannon's, sweeping this far either way of it. */
+const HINT = { down: 70, sweep: 110 };
+
+/** The energy bar (upright, beside the cannon): its size, its colours (full, low, locked), and where it sits from the
+ *  cannon's middle on the screen (px: to its right, its bottom this far up). */
+const ENERGY = {
+    width: 24, height: 116, fill: 0x45d4ff, low: 0xffc23d, locked: 0xff3d4f, lockedBack: 0x6a0f1c, capped: 0x8a90a8, back: 0x1b1e3a, track: 0x0f2a3d,
+    right: 62, up: -6, icon: 42, pulse: 9, pulseScale: 0.08,
+};
+/** The card tray: how far up from the screen's bottom. */
+const TRAY = { bottom: 16 };
+/** `a` towards `b` by `t` (0..1), channel by channel. */
+function lerpColour(a: number, b: number, t: number): number {
+    const mix = (shift: number) => Math.round(((a >> shift) & 255) + ((((b >> shift) & 255) - ((a >> shift) & 255)) * t));
+    return (mix(16) << 16) | (mix(8) << 8) | mix(0);
+}
+
+/** The end card's upgrade cards: the gap between them. */
+const UPGRADE_GAP = 14;
 const UPGRADE_KINDS: UpgradeKind[] = ['fire', 'capacity', 'recharge'];
+/**
+ * The end card's panel, from the badge's middle down (design px): where each part sits, how far it reaches up and
+ * down, and where the ribbon's bottom goes on the screen (a share of its height). A short screen scales it all down.
+ */
+const PANEL = {
+    emblem: 0, rays: 10, ribbon: 125, rewards: 225, reward: 322, rewardScale: 0.8, upgradeInfo: 414, upgrades: 562,
+    area: 754, buttons: 878, top: -150, bottom: 927, ribbonBottomAt: 0.35, margin: 14,
+};
+/** The buttons under it: HOME (red, a house on it) and CONTINUE, side by side. */
+const BUTTONS = { height: 92, home: 112, next: 300, gap: 18 };
 
 /** An upgrade as the end card shows it. */
 export interface UpgradeView { kind: UpgradeKind; level: number; cost: number | null }
@@ -45,9 +80,13 @@ export interface EndCard {
     reward: number;
     upgrades: UpgradeView[];
     coins: number;
+    /** Where the next battle is in its area; `finished`: this win was the last of the area before it. */
+    area: AreaView;
+    finished: { zone: ZoneConfig; number: number; total: number } | null;
+    /** Cards won for the first time: revealed over the card (CardReveal). */
+    newCards?: CardKind[];
 }
 
-interface UpgradeTile { button: GlossyButton; name: PIXI.Text; level: PIXI.Text; cost: PIXI.Text; enabled: boolean }
 
 export class MobHud extends PIXI.Container {
     private readonly top = new PIXI.Container();
@@ -66,6 +105,8 @@ export class MobHud extends PIXI.Container {
     private readonly mute = new PIXI.Container();
     private readonly coinText = label(COIN_BAR.textSize, 0xffffff);
     private readonly hint = new PIXI.Container();
+    /** The hint has been put by the cannon (placeEnergy). */
+    private hintPlaced = false;
     private readonly hand = iconSprite('Tutorial_Hand', 120);
     private readonly go = iconSprite('ActionText_Go', 300);
     private readonly vignette = new PIXI.Graphics();
@@ -74,6 +115,8 @@ export class MobHud extends PIXI.Container {
     private readonly giantLabels = new PIXI.Container();
     // The end card.
     private readonly card = new PIXI.Container();
+    /** All of the card but the dim, laid out from the badge's middle (PANEL), scaled to fit. */
+    private readonly panel = new PIXI.Container();
     private readonly dim = new PIXI.Graphics();
     private readonly rays = iconSprite('Image_Effect_Rotate', 640);
     private readonly emblem = new PIXI.Container();
@@ -87,16 +130,26 @@ export class MobHud extends PIXI.Container {
     private readonly rewardText = label(30);
     private readonly upgradeInfo = label(24);
     private readonly upgrades = new PIXI.Container();
-    private readonly upgradeTiles = new Map<UpgradeKind, UpgradeTile>();
+    private readonly upgradeCards = new Map<UpgradeKind, UpgradeCard>();
+    private readonly area = new AreaBar();
     private readonly next: GlossyButton;
+    private readonly home: GlossyButton;
     // The energy bar.
     private readonly energy = new PIXI.Container();
-    private readonly energyBack = framePlane('Slider_Play01_Bg', ENERGY.width, ENERGY.height, 1.4);
-    private readonly energyTrack = framePlane('Slider_Play01_FillMask', ENERGY.width - 16, ENERGY.height - 16, 1.4);
-    private readonly energyFill = framePlane('Slider_Play01_FillMask', ENERGY.width - 16, ENERGY.height - 16, 1.4);
-    private readonly energyIcon = iconSprite('ResourceBar_Single_Icon_Energy', 64);
+    private readonly energyBack = framePlane('Slider_Play01_Bg', ENERGY.width, ENERGY.height, 1);
+    private readonly energyTrack = framePlane('Slider_Play01_FillMask', ENERGY.width - 10, ENERGY.height - 10, 1);
+    private readonly energyFill = framePlane('Slider_Play01_FillMask', ENERGY.width - 10, ENERGY.height - 10, 1);
+    private readonly energyIcon = iconSprite('ResourceBar_Single_Icon_Energy', ENERGY.icon);
+    /** The unit cards, and a new one's reveal. */
+    private readonly cardTray = new CardTray();
+    private readonly reveal = new CardReveal();
+    /** The reveal waiting to start over the end card (stopped if the card goes first). */
+    private revealCall: gsap.core.Tween | null = null;
     private energyShown = 1;
     private energyLocked = false;
+    /** The field's full: the cannon's waiting (MAX over the bar). */
+    private energyCapped = false;
+    private readonly energyMaxText = label(16, 0xdfe3f0);
     private hpShown = 1;
     /** The bar's share as drawn (eases after hpShown), and the white trail behind it (eases slower). */
     private hpBar = 1;
@@ -106,8 +159,10 @@ export class MobHud extends PIXI.Container {
     private time = 0;
     private goScale = 1;
 
-    public constructor(onNext: () => void, onUpgrade: (kind: UpgradeKind) => void) {
+    /** `onHome`: the end card's HOME (to the main screen); `onCard`: a charged unit card tapped. */
+    public constructor(onNext: () => void, onUpgrade: (kind: UpgradeKind) => void, onHome: () => void, onCard: (kind: CardKind) => void = () => undefined) {
         super();
+        this.cardTray.onTap = onCard;
         // Top: the bar with its skull and badge, the title, the coins.
         this.barBack.tint = BAR.back;
         this.barTrack.tint = BAR.track;
@@ -128,23 +183,25 @@ export class MobHud extends PIXI.Container {
         // The energy bar: frame, dark track, the fill rising from the bottom, the bolt on top.
         this.energyBack.tint = ENERGY.back;
         this.energyTrack.tint = ENERGY.track;
-        this.energyTrack.position.set(8, 8);
-        this.energyFill.position.set(8, 8);
+        this.energyTrack.position.set(5, 5);
+        this.energyFill.position.set(5, 5);
         // The bolt at its left end, like the skull on the HP bar.
-        this.energyIcon.position.set(-8, ENERGY.height / 2);
-        this.energy.addChild(this.energyBack, this.energyTrack, this.energyFill, this.energyIcon);
-        this.energy.pivot.set(ENERGY.width / 2, ENERGY.height / 2);
+        // The bolt on top of it.
+        this.energyIcon.position.set(ENERGY.width / 2, -6);
+        this.energyMaxText.text = 'MAX';
+        this.energyMaxText.position.set(ENERGY.width / 2, -ENERGY.icon - 4);
+        this.energyMaxText.visible = false;
+        this.energy.addChild(this.energyBack, this.energyTrack, this.energyFill, this.energyIcon, this.energyMaxText);
+        // Its position is its bottom middle (placeEnergy).
+        this.energy.pivot.set(ENERGY.width / 2, ENERGY.height);
         this.buildMute();
-        this.addChild(this.vignette, this.giantLabels, this.pops, this.top, this.coinPill, this.energy, this.mute);
+        this.addChild(this.vignette, this.giantLabels, this.pops, this.top, this.coinPill, this.energy, this.cardTray, this.mute);
 
-        // The hint: the glove sweeping over the words.
-        const hintText = label(40);
-        hintText.text = 'HOLD TO SHOOT';
-        hintText.y = 90;
+        // The hint: the glove sweeping under the cannon (placeEnergy puts it there).
         this.hand.rotation = -0.3;
-        this.hint.addChild(hintText, this.hand);
+        this.hint.addChild(this.hand);
         this.addChild(this.hint);
-        gsap.fromTo(this.hand, { x: -120 }, { x: 120, duration: 0.9, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        gsap.fromTo(this.hand, { x: -HINT.sweep }, { x: HINT.sweep, duration: 0.9, yoyo: true, repeat: -1, ease: 'sine.inOut' });
         this.goScale = this.go.scale.x;
         this.go.visible = false;
         this.addChild(this.go);
@@ -163,31 +220,39 @@ export class MobHud extends PIXI.Container {
         this.rewardText.anchor.set(1, 1);
         this.rewardText.position.set(66, 70);
         this.rewardCard.addChild(cardBack, coin, this.rewardText);
-        // The upgrades: a tile each (its name, level, and the next level's cost), side by side.
+        // The upgrades: a card each (UpgradeCard), side by side.
         this.upgradeInfo.text = 'UPGRADE YOUR CANNON';
         UPGRADE_KINDS.forEach((kind, i) => {
-            const button = glossyButton(UPGRADE_TILE.width, UPGRADE_TILE.height, '', 'Button01_l_Green');
-            const name = label(24);
-            name.text = UPGRADES[kind].name;
-            name.y = -36;
-            const level = label(20, 0xfff3b0);
-            level.y = -8;
-            const cost = label(30);
-            cost.y = 28;
-            const arrow = iconSprite('Slider_Level02_Icon_Up_Green', 40);
-            arrow.position.set(UPGRADE_TILE.width / 2 - 22, -UPGRADE_TILE.height / 2 + 18);
-            button.addChild(name, level, cost, arrow);
-            button.x = (i - 1) * (UPGRADE_TILE.width + UPGRADE_TILE.gap);
-            const tile: UpgradeTile = { button, name, level, cost, enabled: false };
-            tappable(button, () => { if (tile.enabled) onUpgrade(kind); }, null);
-            this.upgradeTiles.set(kind, tile);
-            this.upgrades.addChild(button);
+            const card = new UpgradeCard(kind, onUpgrade);
+            card.x = (i - 1) * (UPGRADE_CARD.width + UPGRADE_GAP);
+            this.upgradeCards.set(kind, card);
+            this.upgrades.addChild(card);
         });
-        this.next = glossyButton(300, 92, 'CONTINUE', 'Button01_l_Sky');
+        this.next = glossyButton(BUTTONS.next, BUTTONS.height, 'CONTINUE', 'Button01_l_Sky');
         tappable(this.next, onNext, null);
-        this.card.addChild(this.dim, this.rays, this.emblem, this.ribbon, this.dividerLeft, this.dividerRight, this.rewardsTitle, this.rewardCard, this.upgradeInfo, this.upgrades, this.next);
+        this.home = iconButton(BUTTONS.home, BUTTONS.height, 'Button01_l_Red', 'PictoIcon_Home_1', 46);
+        tappable(this.home, onHome);
+        // Side by side, centred together: HOME on the left.
+        const row = BUTTONS.home + BUTTONS.gap + BUTTONS.next;
+        this.home.x = -row / 2 + BUTTONS.home / 2;
+        this.next.x = row / 2 - BUTTONS.next / 2;
+        this.rewardCard.scale.set(PANEL.rewardScale);
+        this.emblem.y = PANEL.emblem;
+        this.rays.y = PANEL.rays;
+        this.ribbon.y = PANEL.ribbon;
+        this.rewardsTitle.y = PANEL.rewards;
+        this.dividerLeft.position.set(-100 - 170, PANEL.rewards - 15);
+        this.dividerRight.position.set(100, PANEL.rewards - 15);
+        this.rewardCard.y = PANEL.reward;
+        this.upgradeInfo.y = PANEL.upgradeInfo;
+        this.upgrades.y = PANEL.upgrades;
+        this.area.y = PANEL.area;
+        this.next.y = PANEL.buttons;
+        this.home.y = PANEL.buttons;
+        this.panel.addChild(this.rays, this.emblem, this.ribbon, this.dividerLeft, this.dividerRight, this.rewardsTitle, this.rewardCard, this.upgradeInfo, this.upgrades, this.area, this.home, this.next);
+        this.card.addChild(this.dim, this.panel);
         this.card.visible = false;
-        this.addChild(this.card);
+        this.addChild(this.card, this.reveal);
         this.layout();
     }
 
@@ -201,25 +266,27 @@ export class MobHud extends PIXI.Container {
         this.coinPill.position.set(topLeft.x + 46, topLeft.y + 44);
         // The mute button in the top right corner.
         this.mute.position.set(topLeft.x + width - MUTE.margin - MUTE.size / 2, topLeft.y + 44);
-        this.hint.position.set(center.x, bottomLeft.y - Math.min(300, height * 0.24));
+        // Till the cannon's been seen (placeEnergy then keeps it just under it).
+        if (!this.hintPlaced) this.hint.position.set(center.x, topLeft.y + height * 0.62);
         this.go.position.set(center.x, center.y - 80);
         this.dim.clear().beginFill(0x0b1030, 0.72).drawRect(topLeft.x, topLeft.y, width, height).endFill();
-        const cardTop = center.y - 290;
-        this.rays.position.set(center.x, cardTop + 40);
-        this.emblem.position.set(center.x, cardTop + 30);
-        this.ribbon.position.set(center.x, cardTop + 175);
-        this.rewardsTitle.position.set(center.x, cardTop + 300);
-        this.dividerLeft.position.set(center.x - 100 - 170, cardTop + 300 - 15);
-        this.dividerRight.position.set(center.x + 100, cardTop + 300 - 15);
-        this.rewardCard.position.set(center.x, cardTop + 410);
-        this.upgradeInfo.position.set(center.x, cardTop + 510);
-        this.upgrades.position.set(center.x, cardTop + 600);
+        // The panel: as big as fits (the screen's height and width), the ribbon's bottom about a third of the way down,
+        // all of it kept on the screen.
+        const fit = Math.min(1, (height - PANEL.margin * 2) / (PANEL.bottom - PANEL.top), (width - PANEL.margin * 2) / (UPGRADE_CARD.width * 3 + UPGRADE_GAP * 2 + 20));
+        const ribbonBottom = PANEL.ribbon + RIBBON.height / 2;
+        let y = topLeft.y + height * PANEL.ribbonBottomAt - ribbonBottom * fit;
+        y = Math.min(y, topLeft.y + height - PANEL.margin - PANEL.bottom * fit);
+        y = Math.max(y, topLeft.y + PANEL.margin - PANEL.top * fit);
+        this.panel.scale.set(fit);
+        this.panel.position.set(center.x, y);
         // Across the bottom, centred (narrower on a narrow screen).
-        this.energy.scale.set(Math.min(1, (width - 90) / (ENERGY.width + 40)));
-        this.energy.position.set(center.x + 8, bottomLeft.y - ENERGY.bottom - ENERGY.height / 2);
-        this.next.position.set(center.x, cardTop + 750);
+        // The cards across the bottom (narrower on a narrow screen).
+        const trayScale = Math.min(1, (width - 30) / (4 * CARD.width + 3 * CARD.gap));
+        this.cardTray.scale.set(trayScale);
+        this.cardTray.position.set(center.x, bottomLeft.y - TRAY.bottom - (CARD.height / 2) * trayScale);
         this.drawVignette();
         this.drawBar();
+        this.reveal.layout();
     }
 
     /** The mute button: the shared sound toggle (it mutes everything and remembers it) on a dark round button. */
@@ -242,7 +309,7 @@ export class MobHud extends PIXI.Container {
 
     /** Whether a screen point (CSS px) is on a HUD button the field shouldn't also take (the mute button). */
     public onButton(screenX: number, screenY: number): boolean {
-        return this.mute.visible && this.mute.getBounds().contains(screenX, screenY);
+        return (this.mute.visible && this.mute.getBounds().contains(screenX, screenY)) || this.cardTray.hits(screenX, screenY);
     }
 
     /** Where the top block (HP bar, badge, level name) ends, in screen pixels (layout() first). */
@@ -251,15 +318,26 @@ export class MobHud extends PIXI.Container {
     }
 
     /** The energy fill: its width the share left, from the left; cyan, amber when low, flashing red while locked. */
+    /**
+     * The energy: upright, filling from the bottom (empty is empty). Cyan, amber when low; run dry it's locked till
+     * full: red, the whole bar beating in a sine (its back glowing red, a little bigger and back), as it refills; the
+     * field full (the cannon waiting): grey, MAX over it.
+     */
     private drawEnergy(): void {
-        const inner = ENERGY.width - 16;
-        const width = Math.max(26, inner * this.energyShown);
-        this.energyFill.width = width / this.energyFill.scale.x;
-        this.energyFill.visible = this.energyShown > 0.01;
-        const pulse = 0.5 + 0.5 * Math.sin(this.time * 14);
-        this.energyFill.tint = this.energyLocked ? ENERGY.locked : this.energyShown < 0.25 ? ENERGY.low : ENERGY.fill;
-        this.energyFill.alpha = this.energyLocked ? 0.55 + 0.45 * pulse : 1;
-        this.energyIcon.tint = this.energyLocked ? 0xff9aa5 : 0xffffff;
+        const inner = ENERGY.height - 10;
+        const height = inner * this.energyShown;
+        this.energyFill.height = Math.max(1, height) / this.energyFill.scale.y;
+        this.energyFill.y = 5 + inner - height;
+        this.energyFill.visible = height > 1;
+        const wave = 0.5 + 0.5 * Math.sin(this.time * ENERGY.pulse);
+        const locked = this.energyLocked;
+        this.energyFill.tint = locked ? ENERGY.locked : this.energyCapped ? ENERGY.capped : this.energyShown < 0.25 ? ENERGY.low : ENERGY.fill;
+        this.energyFill.alpha = locked ? 0.6 + 0.4 * wave : 1;
+        this.energyBack.tint = locked ? lerpColour(ENERGY.back, ENERGY.lockedBack, wave) : ENERGY.back;
+        this.energyIcon.tint = locked ? lerpColour(0xffffff, ENERGY.locked, wave) : this.energyCapped ? ENERGY.capped : 0xffffff;
+        if (locked) this.energy.scale.set(1 + ENERGY.pulseScale * wave);
+        else if (!gsap.isTweening(this.energy.scale)) this.energy.scale.set(1);
+        this.energyMaxText.visible = this.energyCapped && !locked;
     }
 
     private drawBar(): void {
@@ -296,6 +374,8 @@ export class MobHud extends PIXI.Container {
         this.time += dt;
         this.danger = danger;
         this.drawEnergy();
+        this.cardTray.update(dt);
+        this.reveal.update(dt);
         this.redFlash = Math.max(0, this.redFlash - dt * 1.5);
         const before = this.hpBar + this.hpTrail;
         this.hpBar += (this.hpShown - this.hpBar) * Math.min(1, dt * 12);
@@ -303,7 +383,11 @@ export class MobHud extends PIXI.Container {
         if (this.hpTrail < this.hpBar) this.hpTrail = this.hpBar;
         if (Math.abs(this.hpBar + this.hpTrail - before) > 0.0001) this.drawBar();
         this.drawVignette();
-        if (this.card.visible) this.rays.rotation += dt * RAYS_SPEED;
+        if (this.card.visible) {
+            this.rays.rotation += dt * RAYS_SPEED;
+            this.upgradeCards.forEach((card) => card.update(dt));
+            this.area.update(dt);
+        }
     }
 
     public setTitle(battle: number, name: string): void {
@@ -392,7 +476,7 @@ export class MobHud extends PIXI.Container {
     /** Coins flying from the reward card to the counter, adding to it as they land (`from` -> `to`). */
     public flyCoins(from: number, to: number, onLand?: () => void): void {
         const count = 12;
-        const start = this.rewardCard.position;
+        const start = this.toLocal(this.rewardCard.getGlobalPosition());
         const target = this.coinPill.position;
         for (let n = 0; n < count; n++) {
             const coin = iconSprite('Image_Demo_Coin', 46);
@@ -431,39 +515,68 @@ export class MobHud extends PIXI.Container {
         this.rays.alpha = card.won ? 0.6 : 0.3;
         this.ribbonBack.tint = card.won ? RIBBON.won : RIBBON.lost;
         this.ribbonText.text = card.won ? 'VICTORY' : 'DEFEAT';
-        this.rewardText.text = card.won ? `${card.reward}` : '0';
-        this.rewardCard.alpha = card.won ? 1 : 0.55;
+        this.rewardText.text = `${card.reward}`;
+        this.rewardCard.alpha = card.won || card.reward > 0 ? 1 : 0.55;
         this.next.words.text = card.won ? 'CONTINUE' : 'RETRY';
         this.refreshUpgrade(card);
+        this.area.set(card.area, card.won ? card.finished : null);
+        this.area.play(0.7);
+        // The battle's own bar would sit behind the badge: it goes while the card's up.
+        this.top.visible = false;
         this.card.visible = true;
         this.card.alpha = 0;
         gsap.to(this.card, { alpha: 1, duration: 0.3 });
         gsap.fromTo(this.emblem.scale, { x: 0.3, y: 0.3 }, { x: 1, y: 1, duration: 0.55, ease: 'back.out(2.2)' });
         gsap.fromTo(this.ribbon.scale, { x: 0.2, y: 1 }, { x: 1, y: 1, duration: 0.45, delay: 0.15, ease: 'back.out(2)' });
         gsap.fromTo(this.rewardCard.scale, { x: 0, y: 0 }, { x: 1, y: 1, duration: 0.4, delay: 0.3, ease: 'back.out(3)' });
+        // A card won for the first time: a big deal, revealed over it once it's in.
+        this.revealCall?.kill();
+        this.revealCall = card.newCards?.length ? gsap.delayedCall(1.1, () => this.reveal.play(card.newCards!)) : null;
     }
 
     public refreshUpgrade(card: Pick<EndCard, 'upgrades' | 'coins'>): void {
-        for (const view of card.upgrades) {
-            const tile = this.upgradeTiles.get(view.kind);
-            if (!tile) continue;
-            const max = view.cost === null;
-            tile.enabled = !max && card.coins >= (view.cost ?? Infinity);
-            tile.level.text = `LV ${view.level}/${UPGRADES[view.kind].max}`;
-            tile.cost.text = max ? 'MAX' : `${view.cost}`;
-            tile.button.setFrame(tile.enabled ? 'Button01_l_Green' : 'Button01_l_Gray');
-            tile.button.cursor = tile.enabled ? 'pointer' : 'default';
-        }
+        for (const view of card.upgrades) this.upgradeCards.get(view.kind)?.set(view, card.coins);
+    }
+
+    /** The energy bar beside the cannon: the cannon's middle at this screen point (CSS px). */
+    public placeEnergy(screenX: number, screenY: number): void {
+        const at = this.toLocal(new PIXI.Point(screenX, screenY));
+        this.energy.position.set(at.x + ENERGY.right, at.y + ENERGY.up);
+        this.hint.position.set(at.x, at.y + HINT.down);
+        this.hintPlaced = true;
+    }
+
+    /** The unit cards the player has (`fresh`: just unlocked). */
+    public setCards(kinds: readonly CardKind[], fresh: readonly CardKind[] = []): void {
+        this.cardTray.setCards(kinds, fresh);
+    }
+
+    public setCardCharge(kind: CardKind, charge: number): void {
+        this.cardTray.setCharge(kind, charge);
+    }
+
+    /** Debug: the new-card reveal for `kinds`. */
+    public revealCards(kinds: CardKind[]): void {
+        this.reveal.play(kinds);
+    }
+
+    /** A card's full: it pops (its unit's coming out of the cannon). */
+    public cardFired(kind: CardKind): void {
+        this.cardTray.fired(kind);
     }
 
     /** The cannon's energy (0..1 of full), and whether it's locked recharging (ran dry). */
-    public setEnergy(share: number, locked: boolean): void {
+    public setEnergy(share: number, locked: boolean, capped = false): void {
+        this.energyCapped = capped;
         this.energyShown = Math.max(0, Math.min(1, share));
         if (locked && !this.energyLocked) gsap.fromTo(this.energy.scale, { x: 1.18, y: 1.18 }, { x: 1, y: 1, duration: 0.3, ease: 'back.out(3)' });
         this.energyLocked = locked;
     }
 
     public hideEnd(): void {
+        this.revealCall?.kill();
+        this.revealCall = null;
         this.card.visible = false;
+        this.top.visible = true;
     }
 }

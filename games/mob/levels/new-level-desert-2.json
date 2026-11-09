@@ -158,5 +158,6 @@
       "depth": 1.8
     }
   ],
-  "redGiantEvery": 9
+  "redGiantEvery": 9,
+  "width": 11
 }

@@ -1,0 +1,76 @@
+{
+  "frames": {
+    "card-giant": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 401,
+        "h": 507
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 53,
+        "y": 4,
+        "w": 401,
+        "h": 507
+      },
+      "sourceSize": {
+        "w": 512,
+        "h": 512
+      }
+    },
+    "card-giant-viking": {
+      "frame": {
+        "x": 405,
+        "y": 2,
+        "w": 433,
+        "h": 506
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 34,
+        "y": 4,
+        "w": 433,
+        "h": 506
+      },
+      "sourceSize": {
+        "w": 512,
+        "h": 512
+      }
+    },
+    "card-giant-green": {
+      "frame": {
+        "x": 2,
+        "y": 511,
+        "w": 254,
+        "h": 487
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 128,
+        "y": 4,
+        "w": 254,
+        "h": 487
+      },
+      "sourceSize": {
+        "w": 512,
+        "h": 512
+      }
+    }
+  },
+  "meta": {
+    "app": "http://github.com/pixijs/assetpack",
+    "version": "1.0",
+    "image": "entities.webp",
+    "format": "RGBA8888",
+    "size": {
+      "w": 840,
+      "h": 767
+    },
+    "scale": 1,
+    "related_multi_packs": []
+  }
+}

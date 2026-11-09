@@ -135,6 +135,10 @@ export const DEBUG_OVERLAY_CSS = `
     scrollbar-width: none;
 }
 .dbo-stack::-webkit-scrollbar { display: none; }
+/* Docked, a panel's no taller than the screen (its own body scrolls), and a wheel over a body that can't scroll any
+   further goes on to the stack (contain would stop it there: nothing below the screen's bottom could be reached). */
+.dbo-stack .dbo-panel { max-height: calc(100vh - 80px - env(safe-area-inset-top, 0px)); }
+.dbo-stack .dbo-body { overscroll-behavior: auto; }
 .dbo-root.is-hidden .dbo-stack { display: none; }
 
 /* ---------- panel ---------- */

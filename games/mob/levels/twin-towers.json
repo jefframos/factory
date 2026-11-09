@@ -58,14 +58,5 @@
   "redRateEnd": 4.3,
   "redRamp": 55,
   "baseHp": 560,
-  "reward": 155,
-  "pads": [
-    {
-      "kind": "saucer",
-      "x": -2.75,
-      "z": -13.75,
-      "width": 2.4,
-      "depth": 1.8
-    }
-  ]
+  "reward": 155
 }

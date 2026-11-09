@@ -1,0 +1,252 @@
+{
+  "levels": {
+    "close-encounters": {
+      "hash": "3c9ae5b1",
+      "at": "2026-11-09T22:49:20.060Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 27
+    },
+    "breakout": {
+      "hash": "0b65b3bb",
+      "at": "2026-11-09T22:49:20.092Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 7,
+      "runs": 30
+    },
+    "first-steps": {
+      "hash": "e021bb22",
+      "at": "2026-11-09T22:49:27.450Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 27
+    },
+    "diamonds": {
+      "hash": "f9934251",
+      "at": "2026-11-09T22:49:20.112Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 30
+    },
+    "fortress": {
+      "hash": "73220573",
+      "at": "2026-11-09T22:49:20.122Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 39
+    },
+    "giant-pad-2": {
+      "hash": "b5a207fe",
+      "at": "2026-11-09T22:49:20.123Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 4,
+      "runs": 30
+    },
+    "gauntlet": {
+      "hash": "984d3190",
+      "at": "2026-11-09T22:49:20.145Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 6,
+      "runs": 36
+    },
+    "gauntlet2": {
+      "hash": "24664cce",
+      "at": "2026-11-09T22:49:20.200Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 25,
+      "runs": 36
+    },
+    "giant-pad": {
+      "hash": "2ea01217",
+      "at": "2026-11-09T22:49:20.247Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 30
+    },
+    "giant-push": {
+      "hash": "a0698d0c",
+      "at": "2026-11-09T22:49:20.347Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 39
+    },
+    "new-level-desert": {
+      "hash": "b63a995b",
+      "at": "2026-11-09T22:49:56.671Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 2,
+      "runs": 36
+    },
+    "large-fortress": {
+      "hash": "b20622c1",
+      "at": "2026-11-09T22:49:20.372Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 11,
+      "runs": 36
+    },
+    "islands": {
+      "hash": "3907041e",
+      "at": "2026-11-09T22:49:20.384Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 36
+    },
+    "new-level-desert-2": {
+      "hash": "9e868f43",
+      "at": "2026-11-09T22:49:48.440Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 39
+    },
+    "lanes3": {
+      "hash": "deac0aa0",
+      "at": "2026-11-09T22:49:20.402Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 39
+    },
+    "new-level": {
+      "hash": "e5a97ca5",
+      "at": "2026-11-09T22:49:20.435Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 4,
+      "runs": 27
+    },
+    "new-level-hard": {
+      "hash": "ac4434c7",
+      "at": "2026-11-09T22:49:20.512Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 7,
+      "runs": 36
+    },
+    "pushers": {
+      "hash": "d5f82d78",
+      "at": "2026-11-09T22:49:20.527Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 27
+    },
+    "push-it": {
+      "hash": "d291b892",
+      "at": "2026-11-09T22:49:20.546Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 27
+    },
+    "the-spinner": {
+      "hash": "79bc6436",
+      "at": "2026-11-09T22:49:20.598Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 27
+    },
+    "road-rage": {
+      "hash": "087ed8c7",
+      "at": "2026-11-09T22:49:20.598Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 5,
+      "runs": 42
+    },
+    "shield-wall": {
+      "hash": "b1483f82",
+      "at": "2026-11-09T22:49:20.625Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 36
+    },
+    "shield-wall-2": {
+      "hash": "c9d18c2a",
+      "at": "2026-11-09T22:49:20.636Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 36
+    },
+    "push-lanes": {
+      "hash": "930247b0",
+      "at": "2026-11-09T22:49:20.637Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 30
+    },
+    "three-forts": {
+      "hash": "451ecc6e",
+      "at": "2026-11-09T22:49:20.668Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 30
+    },
+    "three-lanes": {
+      "hash": "6eb47f89",
+      "at": "2026-11-09T22:49:20.698Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 27
+    },
+    "twin-towers": {
+      "hash": "c90b7146",
+      "at": "2026-11-09T22:49:20.764Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 27
+    },
+    "truck-stop": {
+      "hash": "21c4116b",
+      "at": "2026-11-09T22:49:20.765Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 4,
+      "runs": 30
+    },
+    "traffic-1": {
+      "hash": "6a606d33",
+      "at": "2026-11-09T22:49:20.782Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 4,
+      "runs": 42
+    },
+    "wedges": {
+      "hash": "2976ac27",
+      "at": "2026-11-09T22:49:20.788Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 27
+    },
+    "trucks": {
+      "hash": "a2f838f9",
+      "at": "2026-11-09T22:49:20.807Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 39
+    }
+  }
+}

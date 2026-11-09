@@ -16,7 +16,7 @@
     "hp": 60,
     "damage": 35,
     "style": "pad",
-    "pad": "#0efb1e"
+    "pad": "#f73636"
   },
   "saucer": {
     "tint": "#ffffff",
@@ -25,7 +25,7 @@
     "need": 40,
     "damage": 90,
     "style": "pad",
-    "pad": "#fff700"
+    "pad": "#ffbb00"
   },
   "car": {
     "tint": "#ffffff",

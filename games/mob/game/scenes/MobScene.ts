@@ -20,7 +20,7 @@ import { DebugOverlay } from 'core/debug/DebugOverlay';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import { ARENA, COLORS, TUNING, UNIT_COLORS } from '../data/MobConfig';
-import { LEVELS_BY_ID, PLAY, battleConfig, battleInfo, battleZone } from '../data/MobLevels';
+import { LEVELS_BY_ID, PLAY, areaProgress, battleConfig, battleInfo, battleZone } from '../data/MobLevels';
 import { MobEvents } from '../data/MobEvents';
 import { THEMES, ThemeFile, parseTheme, themeById } from '../data/Themes';
 import { BattleConfig, FIELD, UPGRADES, UpgradeKind, easedConfig, useField } from '../data/MobConfig';
@@ -33,6 +33,7 @@ import { CrowdView } from '../battle/CrowdView';
 import { Arena } from '../battle/Arena';
 import { MobHud } from '../ui/MobHud';
 import { applyBend, bendDrop, updateBend } from '../services/Bend';
+import { CARD_KINDS, CardKind, SETTINGS, cardStat } from '../data/Settings';
 
 const MODEL_BASE = './mob/models/mob/';
 
@@ -59,7 +60,7 @@ const MOST_BACK = 4;
 const SAFE_MARGIN = 4;
 /** Debug: a pink spear on each corner the camera keeps in the safe area (tip down on the point), and the safe area
  *  outlined in pink over everything. */
-const SHOW_FRAMING = true;
+const SHOW_FRAMING = false;
 const FRAMING_PINK = 0xff3dc8;
 const REFERENCE_ASPECT = 9 / 16;
 /** The forts' roof line and how far behind the base line their back is (Arena's BASE), and the gap kept under the HUD (px). */
@@ -69,7 +70,9 @@ const HUD_CLEARANCE = 10;
 /** The cannon's front edge (z) and the room kept under it at the bottom of the screen (px). */
 const CANNON_FRONT_Z = 1.2;
 /** Where the cannon's front sits on the screen (a share of its height from the top; under it, the energy bar). CAMERA.offsetY nudges it (10 px a unit). */
-const CANNON_PIN = 0.86;
+const CANNON_PIN = 0.78;
+/** How high over a truck its hits show (world units: over its roof). */
+const TRUCK_LABEL_HEIGHT = 2.4;
 /** The world bends away from here (the cannon), this strongly (Bend.ts): the base end drops like a horizon. */
 const BEND = { origin: new THREE.Vector3(0, 0, 1.5), strength: 0.0028 };
 /** Light: the sky's fill and the sun. */
@@ -98,6 +101,8 @@ export default class MobScene extends ThreeScene {
     private battle!: Battle;
     private arena!: Arena;
     private state: 'waiting' | 'playing' | 'over' = 'waiting';
+    /** The player's unit cards this battle, and how charged each is (0..1: full, its unit comes out of the cannon). */
+    private cards: { kind: CardKind; charge: number }[] = [];
     private time = 0;
     private dragging = false;
     private gameplayOn = false;
@@ -117,7 +122,8 @@ export default class MobScene extends ThreeScene {
         theme: QUERY.get('theme') ?? undefined,
     };
 
-    public constructor(game: Game) {
+    /** `onHome`: the end card's HOME (the main screen). */
+    public constructor(game: Game, private readonly onHome: () => void = () => undefined) {
         super(game);
         this.threeScene.background = new THREE.Color(0x8fd8ff);
         updateBend(BEND.origin, BEND.strength);
@@ -127,7 +133,7 @@ export default class MobScene extends ThreeScene {
         this.threeScene.add(sun);
         this.threeScene.add(this.crowd.group);
 
-        this.hud = new MobHud(() => this.nextBattle(), (kind) => this.buyUpgrade(kind));
+        this.hud = new MobHud(() => this.nextBattle(), (kind) => this.buyUpgrade(kind), () => this.onHome(), (kind) => this.playCard(kind));
         this.addChild(this.hud);
         if (SHOW_FRAMING) {
             // The scene is laid out in the design resolution: its 0,0 .. DESIGN_WIDTH x DESIGN_HEIGHT is the safe area.
@@ -159,7 +165,7 @@ export default class MobScene extends ThreeScene {
 
     /** A fresh battle: the save's next one, the field rebuilt for its gates. */
     private startBattle(): void {
-        const index = MobSave.battle;
+        const index = MobSave.selected;
         // A level lost before comes back easier (MobSave.ease); a pinned one (the URL, the editor) is played as it is.
         const config = this.pinned.config ?? easedConfig(battleConfig(index), MobSave.ease);
         const theme = this.pinned.themeData ? parseTheme(this.pinned.themeData) : themeById(this.pinned.theme ?? battleZone(index).theme);
@@ -209,6 +215,13 @@ export default class MobScene extends ThreeScene {
                 else this.arena.hitBlock(b, x, z);
                 MobAudio.play('baseHit', 1.3 + Math.random() * 0.2);
             },
+            ground: (x, z, team, big) => {
+                this.arena.ground(x, z, team === BLUE ? COLORS.blue : COLORS.red, big);
+                if (big || Math.random() < 0.3) MobAudio.play('clash', big ? 0.6 : 0.7 + Math.random() * 0.3);
+                if (big) this.kick(SHAKE.bigHit);
+            },
+            pipeIn: (p, end, team) => this.arena.pipeMouth(this.battle.pipes[p], end, team),
+            pipeOut: (p, end, team) => this.arena.pipeMouth(this.battle.pipes[p], end, team),
             gateUnlocked: (g) => {
                 this.arena.unlockGate(g);
                 MobAudio.play('bigHit', 1.3);
@@ -265,6 +278,7 @@ export default class MobScene extends ThreeScene {
         this.hud.hideEnd();
         this.hud.setTitle(index + 1, config.name);
         this.hud.reset();
+        this.dealCards(config);
         this.hud.setBaseHp(this.battle.baseHp, this.battle.baseHpMax);
         this.hud.setCoins(MobSave.coins);
     }
@@ -276,8 +290,8 @@ export default class MobScene extends ThreeScene {
         this.setGameplay(true);
         // Analytics: not for a level pinned by the URL or the editor (that isn't the player's progress).
         if (!this.pinned.config) {
-            const number = MobSave.battle + 1;
-            const info = battleInfo(MobSave.battle);
+            const number = MobSave.selected + 1;
+            const info = battleInfo(MobSave.selected);
             MobEvents.levelStart(number, info.id, { id: info.zone, first: info.firstInZone }, MobSave.best);
             MobSave.reach(number);
         }
@@ -289,17 +303,24 @@ export default class MobScene extends ThreeScene {
         this.setGameplay(false);
         const config = this.battle.config;
         if (!this.pinned.config) {
-            const number = MobSave.battle + 1;
-            const info = battleInfo(MobSave.battle);
+            const number = MobSave.selected + 1;
+            const info = battleInfo(MobSave.selected);
             if (won) MobEvents.levelComplete(number, info.id, this.battle.time, { id: info.zone, last: info.lastInZone }, info.lastOfAll);
             else MobEvents.levelFail(number, info.id, 1 - this.battle.baseHp / Math.max(1, this.battle.baseHpMax));
             if (!won) MobSave.lost();
         }
         this.lastWon = won;
         const coinsBefore = MobSave.coins;
+        // A replay (a level already beaten) pays its share of the reward; a loss, the loss's coins.
+        const replay = !this.pinned.config && MobSave.selected < MobSave.battle;
+        const reward = won ? Math.round(config.reward * (replay ? SETTINGS.replayReward : 1)) : SETTINGS.loseCoins;
+        const newCards = won ? this.unlockCards(config) : [];
+        // The area the battle was in, if it was its last (a win opens the next area on the end card).
+        const played = MobSave.selected;
+        const finished = won && !this.pinned.config && battleInfo(played).lastInZone ? areaProgress(played) : null;
         if (won) {
-            MobSave.addCoins(config.reward);
-            MobSave.nextBattle();
+            MobSave.addCoins(reward);
+            MobSave.won(played);
             // The last target blows apart (Battle's targetDown) in slow motion, confetti over the field.
             this.kick(SHAKE.won);
             MobAudio.play('explosion');
@@ -319,8 +340,12 @@ export default class MobScene extends ThreeScene {
         }
         const card = () => {
             if (this.torndown) return;
-            this.hud.showEnd({ won, reward: config.reward, upgrades: this.upgradeViews(), coins: MobSave.coins });
-            if (won) this.hud.flyCoins(coinsBefore, MobSave.coins, () => MobAudio.play('coins', 0.9 + Math.random() * 0.3));
+            this.hud.showEnd({
+                won, reward, upgrades: this.upgradeViews(), coins: MobSave.coins, newCards,
+                area: areaProgress(MobSave.selected),
+                finished: finished ? { zone: finished.zone, number: finished.number, total: finished.total } : null,
+            });
+            if (MobSave.coins > coinsBefore) this.hud.flyCoins(coinsBefore, MobSave.coins, () => MobAudio.play('coins', 0.9 + Math.random() * 0.3));
             else this.hud.setCoins(MobSave.coins);
         };
         gsap.delayedCall(won ? WON_CARD_DELAY : LOST_CARD_DELAY, card);
@@ -328,7 +353,7 @@ export default class MobScene extends ThreeScene {
 
     private nextBattle(): void {
         MobAudio.play('whoosh');
-        if (!this.lastWon && !this.pinned.config) MobEvents.levelRetry(MobSave.battle + 1);
+        if (!this.lastWon && !this.pinned.config) MobEvents.levelRetry(MobSave.selected + 1);
         this.startBattle();
     }
 
@@ -416,7 +441,11 @@ export default class MobScene extends ThreeScene {
         this.crowd.update(this.battle, this.time);
         this.arena.update(this.battle, dt);
         this.hud.setBaseHp(this.battle.baseHp, this.battle.baseHpMax);
-        this.hud.setEnergy(this.battle.energy < 0 ? 1 : this.battle.energy / this.battle.energyMax, this.battle.overheated);
+        this.hud.setEnergy(this.battle.energy < 0 ? 1 : this.battle.energy / this.battle.energyMax, this.battle.overheated, this.battle.capped);
+        // The energy bar rides beside the cannon.
+        const cannon = this.worldToScreen(this.projected.set(this.battle.cannonX, 0.6, CANNON_FRONT_Z - 0.6));
+        if (cannon) this.hud.placeEnergy(cannon.x, cannon.y);
+        this.chargeCards(dt);
         this.hud.update(dt, this.state === 'playing' ? this.battle.danger : 0);
         this.popGates(dt);
         this.labelGiants();
@@ -430,6 +459,47 @@ export default class MobScene extends ThreeScene {
             this.cameraBase.z + (Math.random() - 0.5) * amount * 0.5,
         );
         super.update(delta);
+    }
+
+    /** The battle's cards: the player's (in the cards' order), none charged. */
+    private dealCards(_config: BattleConfig): void {
+        this.cards = CARD_KINDS.filter((kind) => MobSave.hasCard(kind)).map((kind) => ({ kind, charge: 0 }));
+        this.hud.setCards(this.cards.map((card) => card.kind));
+    }
+
+    /**
+     * A win: each unit with a house in the level gets its card, the first time (the end card reveals it). A level
+     * pinned by the URL or the editor gives nothing.
+     */
+    private unlockCards(config: BattleConfig): CardKind[] {
+        if (this.pinned.config) return [];
+        const fresh: CardKind[] = [];
+        for (const pad of config.pads ?? []) {
+            const kind = (pad.kind ?? 'giant') as CardKind;
+            if (CARD_KINDS.includes(kind) && !fresh.includes(kind) && MobSave.unlockCard(kind)) fresh.push(kind);
+        }
+        return fresh;
+    }
+
+    /** While the battle's on, each card charges (SETTINGS.cards: its seconds), up to full: then it waits to be tapped. */
+    private chargeCards(dt: number): void {
+        for (const card of this.cards) {
+            const seconds = cardStat(card.kind, 'seconds', MobSave.cardLevel(card.kind)) ?? 20;
+            if (this.state === 'playing') card.charge = Math.min(1, card.charge + dt / Math.max(0.1, seconds));
+            this.hud.setCardCharge(card.kind, card.charge);
+        }
+    }
+
+    /** A charged card tapped: its unit out of the cannon, and it starts charging again. */
+    private playCard(kind: CardKind): void {
+        const card = this.cards.find((entry) => entry.kind === kind);
+        if (!card || card.charge < 1 || this.state !== 'playing') return;
+        card.charge = 0;
+        // Its level's own hits and damage (not the houses' units').
+        const level = MobSave.cardLevel(kind);
+        this.battle.spawnUnit(kind, { hp: cardStat(kind, 'hp', level), damage: cardStat(kind, 'damage', level) });
+        this.hud.cardFired(kind);
+        this.hud.setCardCharge(kind, 0);
     }
 
     /** Shakes the camera (strengths add up, to a limit). */
@@ -448,10 +518,12 @@ export default class MobScene extends ThreeScene {
     /** Each giant's hits left, over its head. */
     private labelGiants(): void {
         const labels: { x: number; y: number; hp: number; blue: boolean }[] = [];
-        const height = TUNING.mobHeight * TUNING.giantScale + 0.5;
+        // Over each one's head: a giant's is the crowd's model grown; a truck's is its own (much lower).
+        const giantHeight = TUNING.mobHeight * TUNING.giantScale + 0.5;
         for (let i = 0; i < this.battle.count && labels.length < 12; i++) {
             // Giants and trucks show their hits; a car can't be destroyed (no number).
             if (!this.battle.big[i] || this.battle.big[i] === CAR) continue;
+            const height = this.battle.big[i] === TRUCK ? TRUCK_LABEL_HEIGHT : giantHeight;
             const at = this.worldToScreen(this.projected.set(this.battle.x[i], height, this.battle.z[i]));
             if (at) labels.push({ x: at.x, y: at.y, hp: Math.ceil(this.battle.hp[i]), blue: this.battle.team[i] === BLUE });
         }
@@ -576,10 +648,13 @@ export default class MobScene extends ThreeScene {
     private buildDebug(): void {
         const panel = DebugOverlay.instance.panel('Mob', { id: DEBUG_PANEL });
         panel.monitor('Mobs', () => `${this.battle.count} (peak ${this.battle.peak})`);
-        panel.monitor('Battle', () => `${MobSave.battle + 1} · ${this.battle.time.toFixed(1)}s`);
+        panel.monitor('Battle', () => `${MobSave.selected + 1} · ${this.battle.time.toFixed(1)}s`);
+        // Two to a row: more side by side can't be read.
         panel.buttons([
             { label: 'WIN', action: () => this.battle.destroyAll() },
             { label: 'LOSE', variant: 'danger', action: () => { this.battle.state = 'lost'; this.finish(false); } },
+        ]);
+        panel.buttons([
             { label: 'RESTART', action: () => this.startBattle() },
             {
                 label: 'RESET',
@@ -591,12 +666,16 @@ export default class MobScene extends ThreeScene {
                     this.startBattle();
                 },
             },
+        ]);
+        panel.buttons([
             { label: 'GIANT', action: () => this.battle.debugSpawn('giant') },
             { label: 'TRUCK', action: () => this.battle.debugSpawn('truck') },
+        ]);
+        panel.buttons([
             { label: 'UFO', action: () => this.battle.debugSpawn('saucer') },
             { label: 'CAR', action: () => this.battle.debugSpawn('car') },
         ]);
-        const levels = { level: MobSave.battle % PLAY.length };
+        const levels = { level: MobSave.selected % PLAY.length };
         const choices = Object.fromEntries(PLAY.map((entry, i) => [`${i + 1}. ${entry.zone.name} · ${entry.config.name} (${entry.config.kind})`, i]));
         panel.select(levels, 'level', choices, {
             label: 'Level',
@@ -619,6 +698,22 @@ export default class MobScene extends ThreeScene {
         panel.buttons([
             { label: '+500 coins', action: () => { MobSave.addCoins(500); this.hud.setCoins(MobSave.coins); } },
         ]);
+        // The unit cards, each on or off (later: the shop's).
+        const cards = panel.folder('Cards');
+        cards.button('REVEAL (all four)', () => this.hud.revealCards([...CARD_KINDS]));
+        const owned = Object.fromEntries(CARD_KINDS.map((kind) => [kind, MobSave.hasCard(kind)])) as Record<CardKind, boolean>;
+        const CARD_LABELS: Record<CardKind, string> = { giant: 'Giant card', truck: 'Truck card', saucer: 'UFO card', car: 'Car card' };
+        for (const kind of CARD_KINDS) {
+            cards.toggle(owned, kind, {
+                label: CARD_LABELS[kind],
+                persist: false,
+                onChange: (on: boolean) => {
+                    MobSave.setCard(kind, on);
+                    this.cards = CARD_KINDS.filter((k) => MobSave.hasCard(k)).map((k) => this.cards.find((card) => card.kind === k) ?? { kind: k, charge: 0 });
+                    this.hud.setCards(this.cards.map((card) => card.kind));
+                },
+            });
+        }
         const camera = panel.folder('Camera');
         const apply = () => this.resize();
         camera.slider(CAMERA, 'pitchDeg', 25, 89, 1, 'Pitch (deg)').onChange(apply);
@@ -665,6 +760,8 @@ export default class MobScene extends ThreeScene {
 
     public override destroy(): void {
         this.torndown = true;
+        // Nothing of the end card left to start (a card reveal waiting) once it's gone.
+        this.hud.hideEnd();
         this.setGameplay(false);
         window.removeEventListener('message', this.onEditorMessage);
         PlatformHandler.instance.onPause.remove(this.onPlatformPause);

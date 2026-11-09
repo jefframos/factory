@@ -1,7 +1,8 @@
 // The Mob editor's page: a Levels tab (the field top-down: draw polygons, place gates, houses, PUSH blocks, spinners,
 // pushers and forts, edit their numbers; the game itself on the right as a live 3D preview, rebuilt on every change)
 // a Zones tab (each zone's theme and its levels, in play order), a Themes tab, and a Units tab (the upgrades: colours,
-// charge, hits, damage: ui/units.json). Saves go through games/mob/web/server.mjs to
+// charge, hits, damage: ui/units.json). Each level's difficulty grade (robot players: mob-grades.js) shows as a coloured
+// badge in the level list and the Zones tab, with letters for what's in it; a level's panel grades it. Saves go through games/mob/web/server.mjs to
 // games/mob/levels/<id>.json and games/mob/ui/zones.json, which the game bundles.
 //
 // The field (MobConfig.ts ARENA): x across from -width/2 to width/2, z along it from the cannon (0.35) up to the base's
@@ -9,6 +10,12 @@
 // end and the middle stay put). Blues go up (-z). Polygons are [x, z] corner lists, as the game reads them.
 
 // ------------------------------------------------------------------ constants
+
+import { buildWorldTab } from './mob-world.js';
+import { buildSettingsTab } from './mob-settings.js';
+import { createGrades } from './mob-grades.js';
+import { buildCurveTab } from './mob-curve.js';
+import { createGaps } from './mob-gaps.js';
 
 /** The field sizes (MobConfig.ts FIELD): the default, the most, and the presets offered. */
 const FIELD = { width: 10, length: 24, maxWidth: 20, maxLength: 60 };
@@ -42,6 +49,11 @@ const DEFAULTS = {
     pads: (x, z) => ({ kind: state.houseKind, x, z, width: 2.4, depth: 1.8 }),
     pushBlocks: (x, z) => ({ x, z, width: 4.4, depth: 1.3, far: round(z - 8), near: round(z + 4) }),
     // A helmet (hits x2) leaves `kind` out; a viking hat (damage x2) is `attack`.
+    // A grinder: a spiked roller lying across the field, standing (it spins in place).
+    grinders: (x, z) => ({ x, z, length: 4, thickness: 0.9, axis: 'x' }),
+    // A pipe: its first end where clicked, the other further up the field.
+    // A new one's blue (only blues go through it); a pipe with no `team` is purple (both).
+    pipes: (x, z) => ({ x, z, toX: x, toZ: round(z - 8), team: 'blue' }),
     helmets: (x, z) => (state.helmetKind === 'attack' ? { kind: 'attack', x, z, width: 3 } : { x, z, width: 3 }),
     targets: (x, z) => ({ x, hp: 200, width: 3.2, z: Math.abs(z - baseZ()) < 1 ? undefined : z }),
 };
@@ -57,9 +69,27 @@ const HOUSE_KINDS = {
     saucer: { label: 'UFO', wall: '#ffe27a', roof: '#ffb31a', need: 40 },
     car: { label: 'CAR', wall: '#ffe3d6', roof: '#ff6a3d', need: 30 },
 };
-const LIST_NAMES = { gates: 'Gate', obstacles: 'Obstacle', spinners: 'Spinner', pushers: 'Pusher', pads: 'House', pushBlocks: 'PUSH block', helmets: 'Barrier', targets: 'Fort' };
+const LIST_NAMES = { gates: 'Gate', obstacles: 'Obstacle', spinners: 'Spinner', pushers: 'Pusher', pads: 'House', pushBlocks: 'PUSH block', helmets: 'Barrier', pipes: 'Pipe', grinders: 'Grinder', targets: 'Fort' };
 /** Hit-test order: smaller things on top. */
-const PICK_ORDER = ['targets', 'pushBlocks', 'pads', 'pushers', 'spinners', 'helmets', 'gates', 'obstacles'];
+const PICK_ORDER = ['pipes', 'grinders', 'targets', 'pushBlocks', 'pads', 'pushers', 'spinners', 'helmets', 'gates', 'obstacles'];
+/** A pipe's colours and words by who can go through it (MobConfig PipeConfig.team). */
+const PIPE_TEAMS = {
+    blue: { label: 'blue (blues only)', word: 'BLUE', fill: '#3d6dff', edge: '#1d3a99', line: '#9fc2ff' },
+    red: { label: 'red (reds only)', word: 'RED', fill: '#ff3d4f', edge: '#8a1a26', line: '#ffa3ad' },
+    both: { label: 'purple (both)', word: 'BOTH', fill: '#7b5cff', edge: '#3b2a8a', line: '#a58bff' },
+};
+/** A pipe's opening (MobConfig PIPE.radius) and how far back its elbow goes (PIPE.body). */
+const PIPE = { radius: 0.75, body: 1.6 };
+/** A pipe's ends: [x, z, facing] each (the nearer the cannon opens towards it, +1; the other towards the base, -1). */
+const pipeEnds = (p) => (p.z >= p.toZ ? [[p.x, p.z, 1], [p.toX, p.toZ, -1]] : [[p.x, p.z, -1], [p.toX, p.toZ, 1]]);
+/** Which end of a pipe is under (x, z): 'from' (x, z), 'to' (toX, toZ), or null. */
+function pipeEndAt(p, x, z) {
+    const reach = Math.max(PIPE.radius + 0.2, 10 / view.scale);
+    const from = Math.hypot(x - p.x, z - p.z);
+    const to = Math.hypot(x - p.toX, z - p.toZ);
+    if (Math.min(from, to) > reach) return null;
+    return from <= to ? 'from' : 'to';
+}
 const LEVEL_FIELDS = [
     ['name', 'text'], ['kind', 'text'], ['redRate', 'number'], ['redRateEnd', 'number'], ['redRamp', 'number'],
     ['redGiantEvery', 'number'], ['baseHp', 'number'], ['reward', 'number'],
@@ -155,6 +185,111 @@ const levelsTab = document.getElementById('tab-levels');
 const zonesTab = document.getElementById('tab-zones');
 const themesTab = document.getElementById('tab-themes');
 const unitsTab = document.getElementById('tab-units');
+const worldTab = document.getElementById('tab-world');
+/** The World map tab (mob-world.js), once built. */
+let worldEditor = null;
+const settingsTab = document.getElementById('tab-settings');
+const curveTab = document.getElementById('tab-curve');
+/** The Settings tab (mob-settings.js), once built. */
+let settingsEditor = null;
+/** The levels' difficulty grades (mob-grades.js). */
+let grades = null;
+/** The level panel's Check gaps, and its overlay on the field (mob-gaps.js). */
+const gaps = createGaps({
+    el: (...args) => el(...args),
+    api: (...args) => api(...args),
+    toast: (...args) => toast(...args),
+    // The panel again (`panel`: its buttons changed) and the field.
+    redraw: (panel) => {
+        if (panel && !state.selection) renderProps();
+        draw();
+    },
+    // The levels' ✓ ! ✗ marks changed.
+    onSummary: () => {
+        const button = document.getElementById('check-gaps');
+        if (button) {
+            button.disabled = gaps.checkingAll;
+            button.textContent = gaps.checkingAll ? 'Checking gaps…' : 'Check all gaps';
+        }
+        if (!state.levels?.size) return;
+        renderLevelList();
+        if (!zonesTab.hidden) renderZones();
+    },
+});
+/** The Curve tab (mob-curve.js). */
+let curveEditor = null;
+
+/**
+ * Every side panel in every tab (the lists on the left, the properties and previews on the right) gets a handle on its
+ * inner edge to drag it wider or narrower; each one's width is kept (localStorage) and a double-click on the handle puts
+ * it back.
+ */
+const PANEL_WIDTH = { least: 140, most: 900, handle: 6 };
+
+/** What the editor keeps across a refresh (the tab shown, the level open), in localStorage. */
+function remember(key, value) {
+    try {
+        if (value) window.localStorage.setItem(`mob.editor.${key}`, value);
+        else window.localStorage.removeItem(`mob.editor.${key}`);
+    } catch {
+        // No storage: it starts at the beginning.
+    }
+}
+function remembered(key) {
+    try {
+        return window.localStorage.getItem(`mob.editor.${key}`);
+    } catch {
+        return null;
+    }
+}
+function makePanelsResizable() {
+    document.querySelectorAll('.tab-panel').forEach((tab) => {
+        const panels = [...tab.querySelectorAll(':scope aside, :scope .props, :scope .preview')];
+        panels.forEach((panel, i) => {
+            const key = `mob.editor.width.${tab.id}.${i}`;
+            // Left of the work area (a list): its handle on the right; right of it: on the left.
+            const left = panel.tagName === 'ASIDE';
+            panel.style.position = 'relative';
+            panel.style.flex = '0 0 auto';
+            try {
+                const kept = Number(window.localStorage.getItem(key));
+                if (kept) panel.style.width = `${kept}px`;
+            } catch {
+                // No storage: the default width.
+            }
+            const handle = el('div', {
+                title: 'Drag to resize (double-click: back to its width)',
+                style: { position: 'absolute', top: 0, bottom: 0, [left ? 'right' : 'left']: `-${PANEL_WIDTH.handle / 2}px`, width: `${PANEL_WIDTH.handle}px`, cursor: 'col-resize', zIndex: 20 },
+            });
+            handle.addEventListener('pointerenter', () => { handle.style.background = 'rgba(79,140,255,0.6)'; });
+            handle.addEventListener('pointerleave', () => { handle.style.background = ''; });
+            handle.addEventListener('dblclick', () => {
+                panel.style.width = '';
+                try { window.localStorage.removeItem(key); } catch { /* nothing kept */ }
+                window.dispatchEvent(new Event('resize'));
+            });
+            handle.addEventListener('pointerdown', (event) => {
+                event.preventDefault();
+                handle.setPointerCapture(event.pointerId);
+                const startX = event.clientX;
+                const startWidth = panel.getBoundingClientRect().width;
+                const move = (e) => {
+                    const width = Math.min(PANEL_WIDTH.most, Math.max(PANEL_WIDTH.least, startWidth + (left ? 1 : -1) * (e.clientX - startX)));
+                    panel.style.width = `${width}px`;
+                    window.dispatchEvent(new Event('resize'));
+                };
+                const up = () => {
+                    handle.removeEventListener('pointermove', move);
+                    handle.removeEventListener('pointerup', up);
+                    try { window.localStorage.setItem(key, String(Math.round(panel.getBoundingClientRect().width))); } catch { /* not kept */ }
+                };
+                handle.addEventListener('pointermove', move);
+                handle.addEventListener('pointerup', up);
+            });
+            panel.append(handle);
+        });
+    });
+}
 
 async function boot() {
     try {
@@ -173,20 +308,60 @@ async function boot() {
     buildZonesTab();
     buildThemesTab();
     buildUnitsTab();
-    openLevel(firstLevelId());
+    worldEditor = buildWorldTab(worldTab, { el, api, toast, state, statusLine });
+    settingsEditor = buildSettingsTab(settingsTab, { el, api, toast, statusLine });
+    makePanelsResizable();
+    grades = createGrades({
+        el, api, toast, state, statusLine,
+        onChange: () => {
+            renderLevelList();
+            if (!itemOf(state.selection)) renderProps();
+            if (!zonesTab.hidden) renderZones();
+            if (!curveTab.hidden && !grades?.running) curveEditor?.show();
+        },
+    });
+    grades.load();
+    curveEditor = buildCurveTab(curveTab, {
+        el, api, toast, state, grades,
+        onLevelChanged: (id) => {
+            state.dirty.add(id);
+            renderLevelList();
+            if (id === state.id) {
+                renderProps();
+                draw();
+                queuePreview();
+            }
+        },
+        openLevel: (id) => {
+            document.querySelector('header [data-tab="levels"]').click();
+            openLevel(id);
+        },
+    });
+    // Where you were (kept across a refresh): the level open, the tab shown.
+    const keptLevel = remembered('level');
+    openLevel(keptLevel && state.levels.has(keptLevel) ? keptLevel : firstLevelId());
     document.querySelectorAll('header [data-tab]').forEach((button) => button.addEventListener('click', () => {
+        remember('tab', button.dataset.tab);
         document.querySelectorAll('header [data-tab]').forEach((b) => b.classList.toggle('on', b === button));
         levelsTab.hidden = button.dataset.tab !== 'levels';
         zonesTab.hidden = button.dataset.tab !== 'zones';
         themesTab.hidden = button.dataset.tab !== 'themes';
         unitsTab.hidden = button.dataset.tab !== 'units';
+        worldTab.hidden = button.dataset.tab !== 'world';
+        settingsTab.hidden = button.dataset.tab !== 'settings';
+        curveTab.hidden = button.dataset.tab !== 'curve';
+        if (!curveTab.hidden) curveEditor?.show();
+        if (!settingsTab.hidden) settingsEditor?.show();
+        if (!worldTab.hidden) worldEditor?.show();
         if (!themesTab.hidden) renderThemes();
         if (!unitsTab.hidden) renderUnits();
         if (!zonesTab.hidden) renderZones();
         else resizeCanvas();
     }));
+    const keptTab = remembered('tab');
+    if (keptTab && keptTab !== 'levels') document.querySelector(`header [data-tab="${keptTab}"]`)?.click();
     window.addEventListener('beforeunload', (event) => {
-        if (state.dirty.size || zonesDirty || themesDirty || unitsDirty) event.preventDefault();
+        if (state.dirty.size || zonesDirty || themesDirty || unitsDirty || worldEditor?.dirty || settingsEditor?.dirty) event.preventDefault();
     });
 }
 
@@ -212,6 +387,8 @@ function buildLevelsTab() {
             el('button', { onclick: newLevel }, '+ New'),
             el('button', { onclick: duplicateLevel }, 'Duplicate'),
             el('button', { class: 'danger', onclick: deleteLevel }, 'Delete'),
+            el('button', { title: 'Robot players grade every level where it is in the game (a minute or two): the badges', onclick: () => grades?.run([]) }, 'Grade all'),
+            el('button', { id: 'check-gaps', title: 'Check every level for where giants, trucks and cars get stuck (a few seconds): ✓ pass, ! units stall, ✗ one stuck for good', disabled: gaps.checkingAll, onclick: () => gaps.checkAll(Object.fromEntries(state.levels)) }, gaps.checkingAll ? 'Checking gaps…' : 'Check all gaps'),
         ),
     );
     const tool = (id, label, title) => {
@@ -220,7 +397,8 @@ function buildLevelsTab() {
         return button;
     };
     const polygonKind = el('select', { title: 'What a drawn polygon becomes', onchange: (e) => { state.polygonKind = e.target.value; } },
-        el('option', { value: 'wall' }, 'wall'), el('option', { value: 'water' }, 'water'), el('option', { value: 'breakable' }, 'breakable'));
+        el('option', { value: 'wall' }, 'wall'), el('option', { value: 'water' }, 'water'), el('option', { value: 'breakable' }, 'breakable'),
+        el('option', { value: 'enemyWall', title: 'Invisible in the game; only the reds bump into it' }, 'enemy wall'));
     const snap = el('select', { title: 'Snap', onchange: (e) => { state.snap = Number(e.target.value); } },
         ...[0, 0.05, 0.1, 0.25, 0.5].map((v) => el('option', { value: v, selected: v === state.snap }, v ? `snap ${v}` : 'no snap')));
     const toolbar = el('div', { class: 'toolbar' },
@@ -236,6 +414,8 @@ function buildLevelsTab() {
         tool('helmets', 'Barrier', 'Barrier: blues going through get a helmet (double hits) or a viking hat (double damage); pick which'),
         el('select', { title: 'What a new barrier gives', onchange: (e) => { state.helmetKind = e.target.value; } },
             ...Object.entries(HELMET_KINDS).map(([kind, info]) => el('option', { value: kind }, info.label))),
+        tool('pipes', 'Pipe', 'Pipe: two ends joined over the field; blues go in the one nearer the cannon and out the other, reds the other way (drag an end to move it)'),
+        tool('grinders', 'Grinder', 'Grinder: a spiked roller that grinds up anything touching it; horizontal or vertical, standing (it spins) or rolling back and forth'),
         tool('spinners', 'Spinner', 'Spinner'),
         tool('pushers', 'Pusher', 'Sliding bar'),
         tool('targets', 'Fort', 'An enemy fort (several make a multi-target level)'),
@@ -277,8 +457,11 @@ function renderLevelList() {
     const row = (id, number) => {
         const data = state.levels.get(id);
         const node = el('div', { class: `row${id === state.id ? ' sel' : ''}`, onclick: () => openLevel(id) },
-            el('span', { class: state.dirty.has(id) ? 'dirty' : '' }, `${number ? `${number}. ` : ''}${data?.name ?? id}`),
-            el('small', {}, data?.kind ?? ''));
+            el('div', { class: 'row-main' },
+                el('span', { class: state.dirty.has(id) ? 'dirty' : '' }, `${number ? `${number}. ` : ''}${data?.name ?? id}`),
+                el('div', { class: 'row-sub' }, grades?.chips(data), el('small', {}, data?.kind ?? ''))),
+            gaps.mark(id, data),
+            grades?.badge(id) ?? null);
         levelList.append(node);
     };
     let number = 0;
@@ -307,6 +490,7 @@ function setTool(tool) {
 
 function openLevel(id) {
     state.id = id;
+    remember('level', id);
     state.selection = null;
     state.undo = [];
     state.redo = [];
@@ -459,8 +643,13 @@ function duplicateSelected() {
     changed();
 }
 
-/** Moves an item (or its copy) by (dx, dz). */
-function moveItem(list, item, dx, dz) {
+/** Moves an item (or its copy) by (dx, dz); a pipe's one end (`end`: 'from' / 'to'), or the whole pipe without one. */
+function moveItem(list, item, dx, dz, end) {
+    if (list === 'pipes') {
+        if (end !== 'to') { item.x = fix(item.x + dx); item.z = fix(item.z + dz); }
+        if (end !== 'from') { item.toX = fix(item.toX + dx); item.toZ = fix(item.toZ + dz); }
+        return;
+    }
     if (item.points) {
         item.points = item.points.map(([x, z]) => [fix(x + dx), fix(z + dz)]);
         return;
@@ -608,11 +797,15 @@ function draw() {
     (data.obstacles ?? []).forEach((o, i) => {
         const outline = obstacleOutline(o);
         polygonPath(outline);
-        ctx.fillStyle = o.kind === 'water' ? COLORS.water : o.kind === 'breakable' ? COLORS.breakable : COLORS.wall;
+        const enemy = o.kind === 'enemyWall';
+        // An enemy wall (invisible in the game): see-through red, dashed.
+        ctx.fillStyle = enemy ? 'rgba(255, 40, 60, 0.18)' : o.kind === 'water' ? COLORS.water : o.kind === 'breakable' ? COLORS.breakable : COLORS.wall;
         ctx.fill();
         ctx.lineWidth = 2;
-        ctx.strokeStyle = o.kind === 'water' ? '#1f6fae' : o.kind === 'breakable' ? '#7d849e' : COLORS.wallSide;
+        ctx.strokeStyle = enemy ? '#ff3d4f' : o.kind === 'water' ? '#1f6fae' : o.kind === 'breakable' ? '#7d849e' : COLORS.wallSide;
+        if (enemy) ctx.setLineDash([6, 4]);
         ctx.stroke();
+        ctx.setLineDash([]);
         const cx = outline.reduce((s, p) => s + p[0], 0) / outline.length;
         const cz = outline.reduce((s, p) => s + p[1], 0) / outline.length;
         if (o.kind === 'breakable') text(`${o.hp ?? 40}`, cx, cz, 13);
@@ -640,6 +833,53 @@ function draw() {
             ctx.setLineDash([]);
         }
         text(`x${g.value}`, g.x, g.z - 0.55, 14);
+    });
+    // Grinders: the roller (spiked edges), its rolling range dashed.
+    (data.grinders ?? []).forEach((g, i) => {
+        const across = g.axis === 'z' ? g.thickness : g.length;
+        const along = g.axis === 'z' ? g.length : g.thickness;
+        if (g.move) {
+            ctx.strokeStyle = 'rgba(255,71,87,0.7)';
+            ctx.setLineDash([5, 4]);
+            const reachX = g.axis === 'z' ? g.move.range : 0;
+            const reachZ = g.axis === 'x' ? g.move.range : 0;
+            const [ax, ay] = toScreen(g.x - across / 2 - reachX, g.z - along / 2 - reachZ);
+            const [bx, by] = toScreen(g.x + across / 2 + reachX, g.z + along / 2 + reachZ);
+            ctx.strokeRect(Math.min(ax, bx), Math.min(ay, by), Math.abs(bx - ax), Math.abs(by - ay));
+            ctx.setLineDash([]);
+        }
+        rect(g.x, g.z, across, along, '#3a3f4b', isSelected('grinders', i) ? COLORS.select : '#ff4757');
+        // Spikes along its length.
+        ctx.fillStyle = '#d5dae2';
+        const count = Math.max(2, Math.round(g.length / 0.4));
+        for (let k = 0; k < count; k++) {
+            const t = -g.length / 2 + ((k + 0.5) / count) * g.length;
+            const [sx, sy] = g.axis === 'z' ? toScreen(g.x, g.z + t) : toScreen(g.x + t, g.z);
+            ctx.beginPath();
+            ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        text('GRINDER', g.x, g.z - along / 2 - 0.45, 11, '#ffd0d4');
+    });
+    // Pipes: each end (its opening a line across, its elbow behind it), joined by a dashed line; the near end "IN".
+    (data.pipes ?? []).forEach((p, i) => {
+        const selected = isSelected('pipes', i);
+        const look = PIPE_TEAMS[p.team ?? 'both'];
+        ctx.strokeStyle = selected ? COLORS.select : look.line;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([6, 5]);
+        ctx.beginPath();
+        ctx.moveTo(...toScreen(p.x, p.z));
+        ctx.lineTo(...toScreen(p.toX, p.toZ));
+        ctx.stroke();
+        ctx.setLineDash([]);
+        pipeEnds(p).forEach(([x, z, facing], e) => {
+            rect(x, z - facing * PIPE.body / 2, PIPE.radius * 2, PIPE.body, look.fill, selected ? COLORS.select : look.edge);
+            rect(x, z, PIPE.radius * 2, 0.18, '#1a1240');
+            text(`${look.word} ${facing > 0 ? 'in' : 'out'}`, x, z - facing * PIPE.body / 2, 11, '#ffffff');
+            // pipeEnds keeps the order: [0] is (x, z), [1] is (toX, toZ).
+            if (selected) handle(x, z, drag?.end === (e === 0 ? 'from' : 'to'));
+        });
     });
     // Helmet barriers.
     (data.helmets ?? []).forEach((h, i) => {
@@ -714,6 +954,8 @@ function draw() {
         rect(0, baseZ() - BASE.depth / 2, BASE.width, BASE.depth, COLORS.red, '#7a1220');
         text(`${data.baseHp}`, 0, baseZ() - BASE.depth / 2, 13);
     }
+    // Check gaps' overlay (where its units get stuck).
+    gaps.draw(ctx, state.id, toScreen, view.scale);
     // The polygon being drawn.
     if (state.tool === 'polygon' && state.draft.length) {
         ctx.strokeStyle = COLORS.select;
@@ -766,6 +1008,8 @@ function hits(list, item, x, z) {
         case 'spinners': return Math.hypot(x - item.x, z - item.z) <= item.length;
         case 'pushers': return inRect(item.x, item.z, item.width, Math.max(0.6, item.depth));
         case 'pads': case 'pushBlocks': return inRect(item.x, item.z, item.width, item.depth);
+        case 'pipes': return pipeEndAt(item, x, z) !== null;
+        case 'grinders': return item.axis === 'z' ? inRect(item.x, item.z, Math.max(0.6, item.thickness), item.length) : inRect(item.x, item.z, item.length, Math.max(0.6, item.thickness));
         case 'targets': return inRect(item.x, (item.z ?? baseZ()) - BASE.depth / 2, item.width ?? BASE.width, BASE.depth);
         case 'obstacles': return pointInPolygon(x, z, obstacleOutline(item));
         default: return false;
@@ -823,7 +1067,9 @@ function onPointerDown(event) {
     renderProps();
     draw();
     if (state.selection) {
-        drag = { kind: 'item', before: JSON.stringify(level()), start: [x, z], original: clone(itemOf(state.selection)), moved: false };
+        // A pipe's end under the pointer moves alone.
+        const end = state.selection.list === 'pipes' ? pipeEndAt(itemOf(state.selection), rx, rz) : undefined;
+        drag = { kind: 'item', before: JSON.stringify(level()), start: [x, z], original: clone(itemOf(state.selection)), moved: false, end };
         canvas.setPointerCapture(event.pointerId);
     }
 }
@@ -843,7 +1089,7 @@ function onPointerMove(event) {
         const dx = pointerWorld[0] - drag.start[0];
         const dz = pointerWorld[1] - drag.start[1];
         const fresh = clone(drag.original);
-        moveItem(state.selection.list, fresh, dx, dz);
+        moveItem(state.selection.list, fresh, dx, dz, drag.end);
         level()[state.selection.list][state.selection.index] = fresh;
     }
     drag.moved = true;
@@ -1039,6 +1285,8 @@ function renderProps() {
         propsPanel.append(el('p', { class: 'hint' }, data.targets?.length
             ? `${data.targets.length} forts (baseHp is not used).`
             : 'One base, baseHp hits. Place forts (Fort) for a multi-target level.'));
+        propsPanel.append(gaps.panel(state.id, data));
+        if (grades) propsPanel.append(grades.panel(state.id));
         propsPanel.append(el('p', { class: 'hint' }, 'Zones (the order levels play in, and each one\'s look) are in the Zones tab at the top: + Zone adds one (pick its theme), "+ add a level…" puts levels in it, ↑ ↓ reorder, Save zones.'));
         propsPanel.append(el('p', { class: 'hint' }, 'Click a piece to edit it. Polygon: click corners, Enter closes. Double-click an edge to add a corner, Delete removes the selection, arrows nudge (Shift: 1 unit), Ctrl+D duplicates, Ctrl+Z undoes, Ctrl+S saves.'));
         return;
@@ -1053,8 +1301,9 @@ function renderProps() {
                 else delete item.hp;
                 changed();
             },
-        }, ...['wall', 'water', 'breakable'].map((k) => el('option', { value: k, selected: item.kind === k }, k)));
+        }, ...['wall', 'water', 'breakable', 'enemyWall'].map((k) => el('option', { value: k, selected: item.kind === k }, k === 'enemyWall' ? 'enemy wall' : k)));
         propsPanel.append(el('div', { class: 'field' }, el('label', {}, 'kind'), kind));
+        if (item.kind === 'enemyWall') propsPanel.append(el('p', { class: 'hint' }, 'Enemy wall: not seen in the game. Reds steer round it as round a wall; blues walk straight through.'));
         if (item.kind === 'breakable') propsPanel.append(numberField(item, 'hp', null, { step: 1 }));
         if (item.points) {
             propsPanel.append(el('p', { class: 'hint' }, `${item.points.length} corners. Drag a corner to move it; double-click an edge to add one.`));
@@ -1076,7 +1325,7 @@ function renderProps() {
             }, 'Turn into a polygon'));
         }
     } else {
-        const keys = { gates: ['x', 'z', 'width', 'value', 'lock'], spinners: ['x', 'z', 'length', 'arms', 'speed'], pushers: ['x', 'z', 'width', 'depth', 'range', 'seconds', 'phase'], pads: ['x', 'z', 'width', 'depth', 'need'], pushBlocks: ['x', 'z', 'width', 'depth', 'far', 'near'], helmets: ['x', 'z', 'width'], targets: ['x', 'z', 'width', 'hp'] }[s.list];
+        const keys = { gates: ['x', 'z', 'width', 'value', 'lock'], spinners: ['x', 'z', 'length', 'arms', 'speed'], pushers: ['x', 'z', 'width', 'depth', 'range', 'seconds', 'phase'], pads: ['x', 'z', 'width', 'depth', 'need'], pushBlocks: ['x', 'z', 'width', 'depth', 'far', 'near'], helmets: ['x', 'z', 'width'], pipes: ['x', 'z', 'toX', 'toZ'], grinders: ['x', 'z', 'length', 'thickness'], targets: ['x', 'z', 'width', 'hp'] }[s.list];
         if (s.list === 'pads') {
             const kind = el('select', {
                 onchange: (e) => {
@@ -1109,6 +1358,35 @@ function renderProps() {
             });
             propsPanel.append(el('div', { class: 'field' }, el('label', {}, 'swings'), swing));
             if (item.swing) propsPanel.append(numberField(item.swing, 'range'), numberField(item.swing, 'seconds'));
+        }
+        if (s.list === 'pipes') {
+            const team = el('select', {
+                onchange: (e) => {
+                    checkpoint();
+                    item.team = e.target.value;
+                    changed();
+                },
+            }, ...Object.entries(PIPE_TEAMS).map(([key, info]) => el('option', { value: key, selected: (item.team ?? 'both') === key }, info.label)));
+            propsPanel.append(el('div', { class: 'field' }, el('label', { title: 'Who can go through it: the others steer round its ends' }, 'who'), team));
+        }
+        if (s.list === 'grinders') {
+            const axis = el('select', {
+                onchange: (e) => {
+                    checkpoint();
+                    item.axis = e.target.value;
+                    changed();
+                },
+            }, el('option', { value: 'x', selected: item.axis !== 'z' }, 'horizontal (across)'), el('option', { value: 'z', selected: item.axis === 'z' }, 'vertical (along)'));
+            propsPanel.append(el('div', { class: 'field' }, el('label', { title: 'Which way it lies' }, 'lies'), axis));
+            const moves = el('input', { type: 'checkbox', checked: !!item.move });
+            moves.addEventListener('change', () => {
+                checkpoint();
+                if (moves.checked) item.move = { range: 3, seconds: 4 };
+                else delete item.move;
+                changed();
+            });
+            propsPanel.append(el('div', { class: 'field' }, el('label', { title: 'Rolls back and forth (a horizontal one up and down the field, a vertical one across it); unticked it stands and spins' }, 'rolls'), moves));
+            if (item.move) propsPanel.append(numberField(item.move, 'range', null, { hint: 'how far either way' }), numberField(item.move, 'seconds', null, { hint: 'a full trip there and back' }));
         }
         if (s.list === 'targets') propsPanel.append(el('p', { class: 'hint' }, `z empty = the base line (${baseZ()}).`));
         if (s.list === 'pushBlocks') propsPanel.append(el('p', { class: 'hint' }, 'Blue dashes: the far stop (blues open the lane there). Red dashes: the near stop (the reds open it).'));
@@ -1206,6 +1484,9 @@ function renderZones() {
             };
             list.append(el('div', { class: 'lv' },
                 el('span', { title: id }, `${i + 1}. ${state.levels.get(id)?.name ?? `${id} (missing)`}`),
+                grades?.chips(state.levels.get(id)) ?? null,
+                gaps.mark(id, state.levels.get(id)),
+                grades?.badge(id) ?? null,
                 el('button', { title: 'Up', disabled: i === 0, onclick: () => move(i - 1) }, '↑'),
                 el('button', { title: 'Down', disabled: i === zone.levels.length - 1, onclick: () => move(i + 1) }, '↓'),
                 el('button', { title: 'Edit', onclick: () => { document.querySelector('header [data-tab="levels"]').click(); openLevel(id); } }, '✎'),
@@ -1581,6 +1862,18 @@ function renderUnitForm() {
     unitForm.append(unitNumber(unit, 'damage', unitId === 'saucer' ? 'damage (crashing in)' : 'base damage (most)',
         unitId === 'saucer' ? 'What it takes off the enemy\'s building when it crashes in' : 'The most it takes off the enemy\'s building when it reaches it (less if it\'s been hurt)'));
     if (unitId === 'car') unitForm.append(el('p', { class: 'hint' }, 'hp 0: the car can\'t be stopped.'));
+    if (unitId !== 'saucer') {
+        // Its body against the world (walls, holes, blocks, houses, the field's sides): a share of its size.
+        const hint = 'Its body against walls, holes, blocks, houses and the field sides, as a share of its size (0.3 to 1; empty: 0.65). Smaller: it slips through gaps instead of wedging; it still fights and walks into houses at its full size. Check gaps (in a level panel) shows where it still gets stuck.';
+        const input = el('input', { type: 'number', step: 0.05, min: 0.3, max: 1, value: unit.body ?? '', placeholder: '0.65', title: hint });
+        input.addEventListener('change', () => {
+            if (input.value === '') delete unit.body;
+            else unit.body = Math.max(0.3, Math.min(1, Math.round(Number(input.value) * 100) / 100 || 0.65));
+            input.value = unit.body ?? '';
+            unitsChanged();
+        });
+        unitForm.append(el('div', { class: 'field' }, el('label', { title: hint }, 'body (walls)'), input));
+    }
 }
 
 async function saveUnits() {

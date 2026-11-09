@@ -57,6 +57,48 @@
         .zone .lv span { flex: 1; }
         .zone .lv button { padding: 1px 6px; }
         .dirty::after { content: ' •'; color: #ffcf4a; }
+        aside .row { align-items: center; }
+        .row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+        .row-sub { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .chips { display: inline-flex; gap: 2px; flex-wrap: wrap; }
+        .chip { display: inline-block; min-width: 13px; height: 13px; line-height: 13px; padding: 0 2px; border-radius: 3px; font-size: 9px; font-weight: 700; color: #fff; text-align: center; text-shadow: 0 1px 1px rgba(0,0,0,0.45); }
+        .grade { display: inline-block; min-width: 26px; padding: 2px 4px; border-radius: 6px; font-size: 12px; font-weight: 700; color: #fff; text-align: center; text-shadow: 0 1px 1px rgba(0,0,0,0.4); flex: none; }
+        .grade.big { min-width: 44px; font-size: 20px; padding: 4px 8px; margin-right: 8px; }
+        .grade.stale { background: #4a4f66; color: #a9afc6; text-decoration: line-through; }
+        .grade.none { background: transparent; color: var(--dim); }
+        .grade.busy { background: #2f3a7a; color: #c9d0ff; }
+        .difficulty { margin: 14px 0 10px; padding-top: 8px; border-top: 1px solid #23284a; }
+        .gap-mark { flex: none; min-width: 14px; font-weight: 900; font-size: 14px; text-align: center; margin-right: 2px; }
+        .gap-mark.stale { color: #6b7088; }
+        .gap-mark.busy { color: #8f9bd6; }
+        .zone .lv .gap-mark { flex: none; }
+        .gap-units { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+        .gap-units button.on { outline: 2px solid #6f9bff; }
+        .gap-units small { font-weight: 700; }
+        .gap-units small.bad { color: #ff5a68; }
+        .gap-units small.warn { color: #ffb020; }
+        .gap-units small.good { color: #4fd06a; }
+        .grade-table { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+        .grade-row { display: grid; grid-template-columns: 34px 1fr; column-gap: 8px; align-items: center; }
+        .grade-row small { grid-column: 2; color: var(--dim); }
+        .chip-key { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; color: var(--dim); margin-top: 8px; }
+        .zone .lv .chips, .zone .lv .chip, .zone .lv .grade { flex: none; }
+        .curve-body { display: flex; gap: 14px; padding: 12px 14px; align-items: flex-start; }
+        .curve-main { flex: 1; min-width: 0; }
+        .curve-side { width: 280px; flex: none; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+        .curve-side h3 { margin: 2px 0 6px; font-size: 13px; color: var(--dim); text-transform: uppercase; letter-spacing: .05em; }
+        .curve-legend, .curve-summary { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 8px 0; font-size: 12px; align-items: center; }
+        .curve-legend label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+        .swatch { display: inline-block; width: 18px; height: 4px; border-radius: 2px; vertical-align: middle; }
+        .swatch.dashed { background: repeating-linear-gradient(90deg, #fff 0 5px, transparent 5px 9px); }
+        .curve-table { display: flex; flex-direction: column; margin-top: 8px; }
+        .curve-row { display: grid; grid-template-columns: 26px minmax(140px, 1.2fr) 40px 34px 40px 40px 2.4fr auto; gap: 8px; align-items: center; padding: 3px 4px; border-bottom: 1px solid #23284a; }
+        .curve-row.head { color: var(--dim); font-size: 11px; }
+        .curve-row.on { background: var(--panel2); }
+        .curve-row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .curve-row .name small { color: var(--dim); }
+        .curve-row .why { font-size: 12px; color: #cfd6ff; }
+        .curve-row button { padding: 1px 6px; margin-left: 3px; }
         header { flex: none; }
         .theme-form { flex: 1; overflow: auto; padding: 12px 16px; max-width: 560px; }
         .theme-form h3 { margin: 16px 0 6px; font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
@@ -72,6 +114,9 @@
         <button data-tab="zones">Zones</button>
         <button data-tab="themes">Themes</button>
         <button data-tab="units">Units</button>
+        <button data-tab="world">World map</button>
+        <button data-tab="settings">Settings</button>
+        <button data-tab="curve">Curve</button>
         <span style="flex:1"></span>
         <span id="status" class="hint"></span>
     </header>
@@ -79,6 +124,9 @@
     <section id="tab-zones" class="tab-panel" hidden></section>
     <section id="tab-themes" class="tab-panel" hidden></section>
     <section id="tab-units" class="tab-panel" hidden></section>
+    <section id="tab-world" class="tab-panel" hidden></section>
+    <section id="tab-curve" class="tab-panel" hidden></section>
+    <section id="tab-settings" class="tab-panel" hidden></section>
     <div id="toast"></div>
     <script type="module" src="./mob-editor.js"></script>
 </body>

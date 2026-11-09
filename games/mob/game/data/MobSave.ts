@@ -1,20 +1,31 @@
 // MobSave.ts
 //
 // What carries over between battles, in localStorage: coins, the cannon's upgrade levels (fire rate, energy capacity,
-// recharge speed: MobConfig's UPGRADES), and which battle is next. A loss never takes any of it away (the brief:
+// recharge speed: MobConfig's UPGRADES), which battle is next (the player's progress), and which one is picked to play
+// (the main screen's arrows go back through those already reached, to replay one; progress never goes back). A loss never takes any of it away (the brief:
 // permanent progression isn't erased).
 
 import { RETRY_EASE, UPGRADES, UpgradeKind } from './MobConfig';
+import { PLAY } from './MobLevels';
+import { CARD_KINDS, CardKind, SETTINGS, cardCost, cardMaxLevel } from './Settings';
 
 const KEY = 'mob.save';
 
 interface SaveData {
     coins: number;
+    /** The next battle to beat (0-based): the furthest the player can pick. */
     battle: number;
+    /** The battle picked to play (the main screen's, PLAY starts it): `battle` unless an earlier one's been picked. */
+    selected: number;
+    /** Debug: every level can be picked (to try every area). */
+    unlockAll: boolean;
+    /** The units' cards the player has (each unlocked by the first level with its house), and each one's level. */
+    cards: CardKind[];
+    cardLevels: Partial<Record<CardKind, number>>;
     /** The furthest battle reached (1-based; 0 = none yet): for the progress event, sent once per new best. */
     best: number;
     levels: Record<UpgradeKind, number>;
-    /** Losses in a row on the next battle (each makes it RETRY_EASE.step easier); 0 once it's won. */
+    /** Losses in a row on the picked battle (each makes it RETRY_EASE.step easier); 0 once it's won or another's picked. */
     retries: number;
 }
 
@@ -30,9 +41,13 @@ function load(): SaveData {
             const level = stored.levels?.[kind] ?? (kind === 'fire' ? stored.fireLevel : undefined) ?? 1;
             levels[kind] = Math.min(UPGRADES[kind].max, Math.max(1, Math.floor(level)));
         }
-        return { coins: Math.max(0, stored.coins ?? 0), battle: Math.max(0, stored.battle ?? 0), best: Math.max(0, stored.best ?? 0), levels, retries: Math.max(0, Math.floor(stored.retries ?? 0)) };
+        const battle = Math.max(0, stored.battle ?? 0);
+        return {
+            coins: Math.max(0, stored.coins ?? SETTINGS.startCoins), battle, selected: Math.max(0, Math.floor(stored.selected ?? battle)),
+            unlockAll: !!stored.unlockAll, cards: (stored.cards ?? []).filter((kind) => CARD_KINDS.includes(kind)), cardLevels: stored.cardLevels ?? {}, best: Math.max(0, stored.best ?? 0), levels, retries: Math.max(0, Math.floor(stored.retries ?? 0)),
+        };
     } catch {
-        return { coins: 0, battle: 0, best: 0, levels: freshLevels(), retries: 0 };
+        return { coins: SETTINGS.startCoins, battle: 0, selected: 0, unlockAll: false, cards: [], cardLevels: {}, best: 0, levels: freshLevels(), retries: 0 };
     }
 }
 
@@ -48,16 +63,82 @@ function save(): void {
 
 export const MobSave = {
     get coins(): number { return data.coins; },
-    /** The next battle to play (0-based, counting up forever: battleConfig() loops the presets). */
+    /** The next battle to beat (0-based, counting up forever: battleConfig() loops the presets): the progress. */
     get battle(): number { return data.battle; },
+    /** The battle picked to play (PLAY starts it; the battle scene plays it). */
+    get selected(): number { return Math.min(data.selected, MobSave.furthest); },
+    /** The furthest battle that can be picked: the next to beat, or (debug) the last level of every area. */
+    get furthest(): number { return Math.max(data.battle, data.unlockAll ? PLAY.length - 1 : 0); },
+    get unlockAll(): boolean { return data.unlockAll; },
     get fireLevel(): number { return data.levels.fire; },
     get best(): number { return data.best; },
     /** How much easier the next battle is played (0 .. RETRY_EASE.most): RETRY_EASE.step a loss in a row on it. */
     get ease(): number { return Math.min(RETRY_EASE.most, data.retries * RETRY_EASE.step); },
 
-    /** Lost the next battle: its next try is easier. */
+    /** Lost the picked battle: its next try is easier. */
     lost(): void {
         data.retries++;
+        save();
+    },
+
+    /** Picks battle `index` to play (the main screen's arrows; the debug picker can pick any). */
+    select(index: number): void {
+        const next = Math.max(0, Math.floor(index));
+        if (next !== data.selected) data.retries = 0;
+        data.selected = next;
+        save();
+    },
+
+    /** Won battle `index`: on to the one after it; past the furthest, that's progress. */
+    won(index: number): void {
+        data.selected = index + 1;
+        data.battle = Math.max(data.battle, index + 1);
+        data.retries = 0;
+        save();
+    },
+
+    /** Whether the player has `kind`'s card. */
+    hasCard(kind: CardKind): boolean {
+        return data.cards.includes(kind);
+    },
+
+    /** A level with `kind`'s house was reached: its card is the player's; whether it's new. */
+    unlockCard(kind: CardKind): boolean {
+        if (data.cards.includes(kind)) return false;
+        data.cards.push(kind);
+        save();
+        return true;
+    },
+
+    /** `kind`'s card's level (1 to its top). */
+    cardLevel(kind: CardKind): number {
+        return Math.min(cardMaxLevel(kind), Math.max(1, data.cardLevels[kind] ?? 1));
+    },
+
+    /** The price of `kind`'s card's next level (null at the top). */
+    cardCost(kind: CardKind): number | null {
+        return cardCost(kind, MobSave.cardLevel(kind));
+    },
+
+    /** Buys `kind`'s card's next level if there are the coins; whether it did. */
+    buyCard(kind: CardKind): boolean {
+        const cost = MobSave.cardCost(kind);
+        if (cost === null || data.coins < cost || !data.cards.includes(kind)) return false;
+        data.coins -= cost;
+        data.cardLevels[kind] = MobSave.cardLevel(kind) + 1;
+        save();
+        return true;
+    },
+
+    /** Debug: a card given or taken away. */
+    setCard(kind: CardKind, on: boolean): void {
+        data.cards = on ? [...new Set([...data.cards, kind])] : data.cards.filter((card) => card !== kind);
+        save();
+    },
+
+    /** Debug: every level can be picked (or back to the player's own progress). */
+    setUnlockAll(on: boolean): void {
+        data.unlockAll = on;
         save();
     },
 
@@ -94,25 +175,29 @@ export const MobSave = {
         save();
     },
 
-    /** Debug: play battle `index` next (the level picker). */
+    /** Debug: play battle `index` (the level picker), whatever's been reached. */
     setBattle(index: number): void {
-        data.battle = Math.max(0, Math.floor(index));
-        data.retries = 0;
-        save();
-    },
-
-    /** Won: on to the next battle. */
-    nextBattle(): void {
-        data.battle++;
+        data.selected = Math.max(0, Math.floor(index));
+        data.battle = Math.max(data.battle, data.selected);
         data.retries = 0;
         save();
     },
 
     /** Debug: back to a new player. */
     reset(): void {
-        data.coins = 0;
+        data.coins = SETTINGS.startCoins;
         data.battle = 0;
+        data.selected = 0;
+        data.unlockAll = false;
+        data.cards = [];
+        data.cardLevels = {};
         data.best = 0;
+        // The world map's tiles shown filled in (WorldMapView): none now.
+        try {
+            window.localStorage.removeItem('mob.mapSeen');
+        } catch {
+            // No storage.
+        }
         data.levels = freshLevels();
         data.retries = 0;
         save();

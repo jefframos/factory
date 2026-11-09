@@ -7,6 +7,7 @@
 // A zone is pure looks: its `theme` picks the environment (Themes.ts) a level is drawn in; any level plays in any theme.
 
 import { BattleConfig } from './MobConfig';
+import { SETTINGS } from './Settings';
 
 export interface ZoneConfig {
     id: string;
@@ -26,7 +27,7 @@ export interface PlayEntry {
 }
 
 /** How much harder each loop through all the levels gets (red rates and base HP). */
-const LOOP_HARDER = 0.15;
+const LOOP_HARDER = SETTINGS.loopHarder;
 
 /** Every zone's levels in order (ids with no file are skipped, with a warning). */
 export function buildPlayList(levels: Record<string, BattleConfig>, zones: readonly ZoneConfig[]): PlayEntry[] {
