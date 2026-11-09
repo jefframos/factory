@@ -5,7 +5,8 @@
 // order and the looping.
 //
 // The field: x from -ARENA.halfWidth to +ARENA.halfWidth (-5..5), z from the cannon (0) to the base's front
-// (ARENA.baseZ, -24). Blues come up from z = -1; reds come down from the base.
+// (ARENA.baseZ, -24) — a level's `width` / `length` make it bigger (MobConfig FIELD; it grows from the bottom centre).
+// Blues come up from z = -1; reds come down from the base.
 
 import { BattleConfig } from './MobConfig';
 import { PlayEntry, ZoneConfig, buildPlayList, loopedBattle } from './LevelList';

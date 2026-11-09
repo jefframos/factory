@@ -148,6 +148,96 @@ const MobMob = {
 }
 } as const;
 
+const TownBlockBricksA = {
+  id: 'block-bricks-a',
+  path: 'town/library/block-bricks-a/block-bricks-a',
+  fullPath: 'mob/models/town/library/block-bricks-a/block-bricks-a.gltf',
+  format: 'gltf',
+  nodes: {
+  "BricksA": "bricks_A"
+}
+} as const;
+
+const TownBlockColoredBlockGreen = {
+  id: 'block-colored-block-green',
+  path: 'town/library/block-colored-block-green/block-colored-block-green',
+  fullPath: 'mob/models/town/library/block-colored-block-green/block-colored-block-green.gltf',
+  format: 'gltf',
+  nodes: {
+  "ColoredBlockGreen": "colored_block_green"
+}
+} as const;
+
+const TownCastleKitFlagWide = {
+  id: 'castle-kit-flag-wide',
+  path: 'town/library/castle-kit-flag-wide/castle-kit-flag-wide',
+  fullPath: 'mob/models/town/library/castle-kit-flag-wide/castle-kit-flag-wide.glb',
+  format: 'glb',
+  nodes: {
+  "FlagWide": "flag-wide"
+}
+} as const;
+
+const TownCastleKitWall = {
+  id: 'castle-kit-wall',
+  path: 'town/library/castle-kit-wall/castle-kit-wall',
+  fullPath: 'mob/models/town/library/castle-kit-wall/castle-kit-wall.glb',
+  format: 'glb',
+  nodes: {
+  "Wall": "wall"
+}
+} as const;
+
+const TownCity2Tree01 = {
+  id: 'city2-tree-01',
+  path: 'town/library/city2-tree-01/city2-tree-01',
+  fullPath: 'mob/models/town/library/city2-tree-01/city2-tree-01.glb',
+  format: 'glb',
+  nodes: {
+  "Tree01": "Tree_01"
+}
+} as const;
+
+const TownCity2Tree02 = {
+  id: 'city2-tree-02',
+  path: 'town/library/city2-tree-02/city2-tree-02',
+  fullPath: 'mob/models/town/library/city2-tree-02/city2-tree-02.glb',
+  format: 'glb',
+  nodes: {
+  "Tree02": "Tree_02"
+}
+} as const;
+
+const TownForestNatureRock1BColor1 = {
+  id: 'forest-nature-rock-1-b-color1',
+  path: 'town/library/forest-nature-rock-1-b-color1/forest-nature-rock-1-b-color1',
+  fullPath: 'mob/models/town/library/forest-nature-rock-1-b-color1/forest-nature-rock-1-b-color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Rock1BColor1": "Rock_1_B_Color1"
+}
+} as const;
+
+const TownForestNatureRock1EColor1 = {
+  id: 'forest-nature-rock-1-e-color1',
+  path: 'town/library/forest-nature-rock-1-e-color1/forest-nature-rock-1-e-color1',
+  fullPath: 'mob/models/town/library/forest-nature-rock-1-e-color1/forest-nature-rock-1-e-color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Rock1EColor1": "Rock_1_E_Color1"
+}
+} as const;
+
+const TownInfernoRockBig001 = {
+  id: 'inferno-rock-big-001',
+  path: 'town/library/inferno-rock-big-001/inferno-rock-big-001',
+  fullPath: 'mob/models/town/library/inferno-rock-big-001/inferno-rock-big-001.glb',
+  format: 'glb',
+  nodes: {
+  "RockBig001": "RockBig_001"
+}
+} as const;
+
 // Grouped by top-level raw-assets/models folder (the '{...}' tag stripped) — e.g.
 // raw-assets/models/characters{m}/... becomes MODELS.Characters.<name>. Files with no
 // containing folder land in MODELS.Root.
@@ -156,6 +246,17 @@ export const MODELS = {
     MobAnims: MobMobAnims,
     MobHelmet: MobMobHelmet,
     Mob: MobMob
+  },
+  Town: {
+    BlockBricksA: TownBlockBricksA,
+    BlockColoredBlockGreen: TownBlockColoredBlockGreen,
+    CastleKitFlagWide: TownCastleKitFlagWide,
+    CastleKitWall: TownCastleKitWall,
+    City2Tree01: TownCity2Tree01,
+    City2Tree02: TownCity2Tree02,
+    ForestNatureRock1BColor1: TownForestNatureRock1BColor1,
+    ForestNatureRock1EColor1: TownForestNatureRock1EColor1,
+    InfernoRockBig001: TownInfernoRockBig001
   }
 } as const;
 

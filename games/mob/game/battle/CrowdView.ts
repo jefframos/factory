@@ -9,6 +9,10 @@
 // Helmets (mob-helmet.glb: the kit's hat on the same skeleton) are baked in the same poses, fitted the same way, and drawn
 // over the mobs wearing one (Battle.helmet), one InstancedMesh per pose too.
 //
+// Viking hats (props/viking.glb, from an attack barrier: Battle.viking) aren't skinned: the hat is fitted to the head
+// (the vertices skinned to the Head bone) the way Dig and Mow fit theirs (VIKING), then each pose puts it where the head
+// bone is then, so it bobs with the run; drawn the same way.
+//
 // Colour: the model's COLOR_0 alpha says which vertices the team colour paints (its RGB is then the shading to keep,
 // 0.5 = as is); the face keeps its own. Each instance has its team colour (a `teamColor` instance attribute), applied
 // in the material's vertex shader.
@@ -29,6 +33,32 @@ const CYCLES_PER_UNIT = 0.5;
 const POP_SECONDS = 0.18;
 const POP_FROM = 0.3;
 
+/**
+ * The viking hat on the head, as Dig and Mow wear it (their ui/hatfits.json Viking_Hat, applied as CharacterBody.setHat
+ * does): its widest side widthFit x scale head widths, its bottom (sink - y) head widths below the head's top, centred on
+ * the head; the model's front is +Z, as the mob's face is.
+ */
+const VIKING = { scale: 1.75, y: -0.27, widthFit: 1.05, sink: 0.03 };
+
+/**
+ * A copy of `source` with every attribute plain float. The props are meshopt-quantized (normalized 16-bit positions,
+ * scaled back by their node): moved in place, their values leave the [-1, 1] a normalized attribute holds and clip.
+ */
+function floatGeometry(source: THREE.BufferGeometry): THREE.BufferGeometry {
+    const geometry = new THREE.BufferGeometry();
+    for (const [name, attribute] of Object.entries(source.attributes)) {
+        const size = attribute.itemSize;
+        const array = new Float32Array(attribute.count * size);
+        const read = [attribute.getX, attribute.getY, attribute.getZ, attribute.getW];
+        for (let i = 0; i < attribute.count; i++) {
+            for (let k = 0; k < size; k++) array[i * size + k] = read[k].call(attribute, i);
+        }
+        geometry.setAttribute(name, new THREE.BufferAttribute(array, size));
+    }
+    if (source.index) geometry.setIndex(source.index.clone());
+    return geometry;
+}
+
 /** How the baked poses are fitted: scaled to unit height, feet at 0, centred. */
 interface Fit { scale: number; x: number; y: number; z: number }
 
@@ -37,6 +67,8 @@ export class CrowdView {
     private meshes: THREE.InstancedMesh[] = [];
     private teamColors: THREE.InstancedBufferAttribute[] = [];
     private helmets: THREE.InstancedMesh[] = [];
+    /** The viking hat's parts (a mesh per material) in each pose: vikings[pose][part]. */
+    private vikings: THREE.InstancedMesh[][] = [];
     private readonly blue = new THREE.Color(COLORS.blue);
     /** The blue giant's own colour (UNIT_COLORS.giant: picked live in the debug panel). */
     private readonly giantBlue = new THREE.Color(UNIT_COLORS.giant);
@@ -51,10 +83,11 @@ export class CrowdView {
     /** Loads the model and bakes its poses; nothing's drawn until it's done. */
     public async load(base: string, capacity: number): Promise<void> {
         const loader = createGLTFLoader();
-        const [model, anims, helmetModel] = await Promise.all([
+        const [model, anims, helmetModel, vikingModel] = await Promise.all([
             loader.loadAsync(`${base}mob.glb`),
             loader.loadAsync(`${base}mob-anims.glb`),
             loader.loadAsync(`${base}mob-helmet.glb`).catch(() => null),
+            loader.loadAsync(`${base}../props/viking.glb`).catch(() => null),
         ]);
         let skinned: THREE.SkinnedMesh | undefined;
         model.scene.traverse((object) => {
@@ -64,7 +97,7 @@ export class CrowdView {
         const clip = CLIP_NAMES.map((name) => anims.animations.find((a) => a.name === name)).find(Boolean);
         if (!clip) throw new Error('mob-anims.glb has no run or walk clip');
 
-        const { poses, fit } = this.bake(model.scene, skinned, clip);
+        const { poses, fit, heads, headBox } = this.bake(model.scene, skinned, clip);
         const material = this.material();
         applyBend(material);
         for (const geometry of poses) {
@@ -97,17 +130,72 @@ export class CrowdView {
                 this.group.add(mesh);
             }
         }
+        if (vikingModel && headBox) this.bakeViking(vikingModel.scene, heads, headBox, capacity);
         this.ready = true;
     }
 
+    /**
+     * The viking hat in each pose: fitted to the head (headBox: the head's vertices in the first pose, fitted space) as
+     * VIKING says, then carried by the head bone (heads[f]: where it is in pose f, in the fitted space) in the others.
+     */
+    private bakeViking(scene: THREE.Object3D, heads: THREE.Matrix4[], headBox: THREE.Box3, capacity: number): void {
+        if (!heads.length) return;
+        scene.updateMatrixWorld(true);
+        const box = new THREE.Box3().setFromObject(scene);
+        const size = box.getSize(new THREE.Vector3());
+        const headSize = headBox.getSize(new THREE.Vector3());
+        const headWidth = Math.max(headSize.x, headSize.z);
+        const scale = (headWidth * VIKING.widthFit * VIKING.scale) / Math.max(1e-6, size.x, size.z);
+        const head = headBox.getCenter(new THREE.Vector3());
+        // The hat in the first pose: centred on the head, its bottom just under the head's top.
+        const seat = new THREE.Matrix4()
+            .makeTranslation(head.x, headBox.max.y - headWidth * (VIKING.sink - VIKING.y), head.z)
+            .multiply(new THREE.Matrix4().makeScale(scale, scale, scale))
+            .multiply(new THREE.Matrix4().makeTranslation(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2));
+        // In head space, so each pose's head carries it.
+        const inHead = heads[0].clone().invert().multiply(seat);
+        const parts: { geometry: THREE.BufferGeometry; material: THREE.Material }[] = [];
+        scene.traverse((object) => {
+            const mesh = object as THREE.Mesh;
+            if (!mesh.isMesh) return;
+            const source = mesh.material as THREE.MeshStandardMaterial;
+            const material = new THREE.MeshLambertMaterial({ map: source.map ?? null, color: source.color ?? 0xffffff });
+            applyBend(material);
+            const geometry = floatGeometry(mesh.geometry).applyMatrix4(mesh.matrixWorld);
+            parts.push({ geometry, material });
+        });
+        const matrix = new THREE.Matrix4();
+        for (const pose of heads) {
+            matrix.multiplyMatrices(pose, inHead);
+            this.vikings.push(parts.map(({ geometry, material }) => {
+                const mesh = new THREE.InstancedMesh(geometry.clone().applyMatrix4(matrix), material, capacity);
+                mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                mesh.count = 0;
+                mesh.frustumCulled = false;
+                this.group.add(mesh);
+                return mesh;
+            }));
+        }
+        for (const { geometry } of parts) geometry.dispose();
+    }
+
     /** FRAMES poses of the clip, each the skinned mesh's vertices where the clip has them then, fitted to the mob height. */
-    private bake(root: THREE.Object3D, skinned: THREE.SkinnedMesh, clip: THREE.AnimationClip, fitted?: Fit): { poses: THREE.BufferGeometry[]; fit: Fit } {
+    private bake(root: THREE.Object3D, skinned: THREE.SkinnedMesh, clip: THREE.AnimationClip, fitted?: Fit): { poses: THREE.BufferGeometry[]; fit: Fit; heads: THREE.Matrix4[]; headBox: THREE.Box3 | null } {
         const mixer = new THREE.AnimationMixer(root);
         mixer.clipAction(clip).play();
         const source = skinned.geometry;
         const count = source.getAttribute('position').count;
         const vertex = new THREE.Vector3();
         const poses: THREE.BufferGeometry[] = [];
+        // The head bone in each pose (in the mesh's own space, then fitted like the vertices), for what sits on it.
+        const headBone = skinned.skeleton.bones.find((bone) => /head$/i.test(bone.name) && !/top/i.test(bone.name));
+        const heads: THREE.Matrix4[] = [];
+        const toMesh = new THREE.Matrix4();
+        // The head itself, in the first pose: the vertices the Head bone moves most (fitted space).
+        const headIndex = headBone ? skinned.skeleton.bones.indexOf(headBone) : -1;
+        const skinIndex = source.getAttribute('skinIndex');
+        const skinWeight = source.getAttribute('skinWeight');
+        let headBox: THREE.Box3 | null = null;
         // Fitted from the first pose: unit height (TUNING.mobHeight scales each mob as it's drawn, live), feet on the
         // ground, centred.
         let fit: Fit | null = fitted ?? null;
@@ -124,10 +212,27 @@ export class CrowdView {
                 const box = new THREE.Box3().setFromArray(positions);
                 fit = { scale: 1 / Math.max(0.01, box.max.y - box.min.y), x: (box.min.x + box.max.x) / 2, y: box.min.y, z: (box.min.z + box.max.z) / 2 };
             }
+            if (headBone) {
+                toMesh.copy(skinned.matrixWorld).invert();
+                heads.push(new THREE.Matrix4()
+                    .makeScale(fit.scale, fit.scale, fit.scale)
+                    .multiply(new THREE.Matrix4().makeTranslation(-fit.x, -fit.y, -fit.z))
+                    .multiply(toMesh)
+                    .multiply(headBone.matrixWorld));
+            }
             for (let i = 0; i < count; i++) {
                 positions[i * 3] = (positions[i * 3] - fit.x) * fit.scale;
                 positions[i * 3 + 1] = (positions[i * 3 + 1] - fit.y) * fit.scale;
                 positions[i * 3 + 2] = (positions[i * 3 + 2] - fit.z) * fit.scale;
+            }
+            if (f === 0 && headIndex >= 0 && skinIndex && skinWeight) {
+                headBox = new THREE.Box3();
+                for (let i = 0; i < count; i++) {
+                    let most = 0;
+                    for (let k = 1; k < 4; k++) if (skinWeight.getComponent(i, k) > skinWeight.getComponent(i, most)) most = k;
+                    if (skinIndex.getComponent(i, most) === headIndex) headBox.expandByPoint(vertex.fromArray(positions, i * 3));
+                }
+                if (headBox.isEmpty()) headBox = null;
             }
             const geometry = new THREE.BufferGeometry();
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -137,7 +242,7 @@ export class CrowdView {
             poses.push(geometry);
         }
         mixer.stopAllAction();
-        return { poses, fit: fit! };
+        return { poses, fit: fit!, heads, headBox };
     }
 
     /** Vertex colours, with the painted ones (alpha 1) taking the instance's team colour times their shading. */
@@ -158,6 +263,7 @@ export class CrowdView {
         for (const mesh of this.meshes) mesh.count = 0;
         this.giantBlue.setHex(UNIT_COLORS.giant);
         for (const mesh of this.helmets) mesh.count = 0;
+        for (const parts of this.vikings) for (const mesh of parts) mesh.count = 0;
         for (let i = 0; i < battle.count; i++) {
             // Trucks are drawn by the arena (a model of their own).
             if (battle.big[i] === TRUCK || battle.big[i] === CAR) continue;
@@ -176,6 +282,7 @@ export class CrowdView {
             mesh.setMatrixAt(slot, this.matrix);
             const helmet = battle.helmet[i] ? this.helmets[pose] : undefined;
             if (helmet) helmet.setMatrixAt(helmet.count++, this.matrix);
+            if (battle.viking[i] && this.vikings[pose]) for (const part of this.vikings[pose]) part.setMatrixAt(part.count++, this.matrix);
             const color = battle.team[i] === BLUE ? (battle.big[i] === GIANT ? this.giantBlue : this.blue) : this.red;
             this.teamColors[pose].setXYZ(slot, color.r, color.g, color.b);
         }
@@ -184,6 +291,7 @@ export class CrowdView {
             mesh.instanceMatrix.needsUpdate = true;
             this.teamColors[p].needsUpdate = true;
             if (this.helmets[p]) this.helmets[p].instanceMatrix.needsUpdate = true;
+            for (const part of this.vikings[p] ?? []) part.instanceMatrix.needsUpdate = true;
         }
     }
 }

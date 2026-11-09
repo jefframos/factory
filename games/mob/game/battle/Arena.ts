@@ -15,7 +15,7 @@
 // The rules are Battle's; this only follows it (update()).
 
 import * as THREE from 'three';
-import { ARENA, BattleConfig, COLORS, UNIT_COLORS, houseStyle, needOf, padColor, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig } from '../data/MobConfig';
+import { ARENA, BattleConfig, COLORS, TUNING, UNIT_COLORS, houseStyle, needOf, padColor, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig } from '../data/MobConfig';
 import { bendObject, bendSegments } from '../services/Bend';
 import { createWater } from '../services/Water';
 import { BASE_HALF_WIDTH, Battle, CAR, TRUCK, Target, obstacleShape } from './Battle';
@@ -24,7 +24,8 @@ import { createGLTFLoader } from 'core/three/GLTFLoaders';
 import { Theme } from '../data/Themes';
 
 const FIELD_NEAR = 3;
-const FIELD_FAR = ARENA.baseZ - 5;
+/** The far end of the ground: a little behind the base (the field is sized per level: ARENA). */
+const fieldFar = (): number => ARENA.baseZ - 5;
 const HEDGE = { width: 1.1, height: 0.8 };
 /** Hedge blocks' length, the grass edge round the field (to the shore), and the sea's colour. */
 const HEDGE_BLOCK = 2;
@@ -35,6 +36,9 @@ const KIT_GRASS_EDGE = 4.5;
  *  how far past the cannon the side cliffs run, and how deep the top behind the base goes. */
 const VALLEY = { groundHalf: 40, groundLength: 120, gap: 0.25, band: 2.2, nearExtra: 10, back: 30 };
 const GATE = { height: 0.12, depth: 0.35, post: 0.22, postHeight: 1 };
+/** A locked gate: grey (panel, glow, posts), barred across its span, a padlock with its hits left on it; its "x" label
+ *  lifted over the padlock. */
+const LOCK = { grey: 0x9aa0a8, dark: 0x5e646d, metal: 0xc9ced6, barHeight: 1.1, barGap: 0.45, labelY: 2.7, padlockY: 0.85, padlockTilt: -0.6 };
 const BASE = { depth: 2.6, height: 2.4 };
 const CANNON_Z = 0.35;
 const WALL_HEIGHT = 0.9;
@@ -47,8 +51,9 @@ const PUSHER_HEIGHT = 0.7;
 /** The floor-pad house style: its thickness, and its glowing rim's width. */
 const PAD_STYLE = { height: 0.12, rim: 0.12 };
 const HOUSE = { wallHeight: 1.5, roofHeight: 0.9, overhang: 0.18, wall: 0xe8f1ff, roof: 0x3d6dff };
-/** A helmet barrier: its height and colours. */
-const HELMET = { height: 1.5, olive: 0x6f8236, sand: 0xd8c690 };
+/** A helmet barrier: its height and colours (an attack barrier's: `attack`), and how wide the floating viking hat is. */
+const HELMET = { height: 1.5, olive: 0x6f8236, sand: 0xd8c690, curtain: 0x9ccf5a, dark: 0x5d6e2c, text: '#d8ff9a' };
+const ATTACK = { olive: 0xb8332e, sand: 0xf2c14e, curtain: 0xff8a4c, dark: 0x7a1f1c, text: '#ffd27a', hatWidth: 1.3 };
 /** The PUSH block: its height and colours (a dark slab, a red plate). */
 const PUSH_BLOCK = { height: 1.2, body: 0x3a4466, plate: 0xff4757 };
 /**
@@ -227,7 +232,12 @@ class Label {
     }
 }
 
-interface GateView { group: THREE.Group; panel: THREE.Mesh; label: THREE.Mesh; pulse: number }
+/** A gate: its group, panel, label, pulse; a locked one's lock (bars and padlock), its hits label, the materials that
+ *  are grey till it unlocks (with their own colours), and its jolt when hit. */
+interface GateView {
+    group: THREE.Group; panel: THREE.Mesh; label: THREE.Mesh; pulse: number;
+    lock?: { group: THREE.Group; hits: Label; greyed: { material: THREE.MeshLambertMaterial | THREE.MeshBasicMaterial; color: number; emissive?: number }[]; shake: number; open: boolean };
+}
 /** A house: its group, fill bar, counter, door glow; what it makes, its title, how high its roof is (for what floats over
  *  it), and the spinning model of what it makes (a truck or UFO house), once loaded. */
 interface PadView { group: THREE.Group; fill: THREE.Mesh; label: Label; glow: THREE.MeshBasicMaterial; width: number; pulse: number; kind: string; title: THREE.Mesh; top: number; icon: THREE.Object3D | null }
@@ -378,8 +388,8 @@ export class Arena {
     // ------------------------------------------------------------------ building
 
     private buildGround(): THREE.Mesh {
-        const length = FIELD_NEAR - FIELD_FAR;
-        const middle = (FIELD_NEAR + FIELD_FAR) / 2;
+        const length = FIELD_NEAR - fieldFar();
+        const middle = (FIELD_NEAR + fieldFar()) / 2;
         const valley = this.theme.surround === 'valley';
         // The island: the field, its hedges, and a grass edge round them; the sea all round (UFO's water). A valley:
         // grass everywhere, cliffs either side and behind the base.
@@ -389,7 +399,7 @@ export class Arena {
         } else {
             const shore = [
                 { x: -islandHalf, z: FIELD_NEAR + GRASS_EDGE }, { x: islandHalf, z: FIELD_NEAR + GRASS_EDGE },
-                { x: islandHalf, z: FIELD_FAR - GRASS_EDGE }, { x: -islandHalf, z: FIELD_FAR - GRASS_EDGE },
+                { x: islandHalf, z: fieldFar() - GRASS_EDGE }, { x: -islandHalf, z: fieldFar() - GRASS_EDGE },
             ];
             const sea = createWater(this.theme.sea, 130, 170, shore, 0, middle);
             this.waters.push(sea);
@@ -406,7 +416,7 @@ export class Arena {
         this.group.add(field);
         // Soft stripes across the field (darker sand), for a sense of distance.
         const stripe = lambert(this.theme.stripe);
-        for (let z = FIELD_NEAR - 2; z > FIELD_FAR; z -= 4) {
+        for (let z = FIELD_NEAR - 2; z > fieldFar(); z -= 4) {
             const band = new THREE.Mesh(new THREE.PlaneGeometry(ARENA.halfWidth * 2, 2, 4, 2), stripe);
             band.rotation.x = -Math.PI / 2;
             band.position.set(0, 0.005, z);
@@ -464,7 +474,7 @@ export class Arena {
             decor.add(piece);
         };
         // The walls: 1-unit pieces along X in the kit, turned to run along the field.
-        const length = FIELD_NEAR - FIELD_FAR;
+        const length = FIELD_NEAR - fieldFar();
         const pieces = Math.ceil(length / kit.scale);
         const wallX = ARENA.halfWidth + kit.scale * 0.5;
         for (const side of kit.wall ? [-1, 1] : []) {
@@ -478,7 +488,7 @@ export class Arena {
         const towerScale = kit.scale * 1.2;
         // In a valley, the towers stand on the cliffs by the far end.
         const towerX = valley ? ARENA.halfWidth + VALLEY.gap + VALLEY.band + 1.2 : wallX;
-        const towerZs = valley ? [FIELD_FAR + 3] : [FIELD_NEAR - kit.scale * 0.5, FIELD_FAR + kit.scale * 0.5];
+        const towerZs = valley ? [fieldFar() + 3] : [FIELD_NEAR - kit.scale * 0.5, fieldFar() + kit.scale * 0.5];
         for (const x of [-towerX, towerX]) {
             for (const z of towerZs) {
                 let y = ground;
@@ -520,7 +530,7 @@ export class Arena {
         const cliff = this.theme.cliff ?? { height: 2.4, top: this.theme.ground, side: 0xa8774a };
         const wave = (v: number) => 0.35 * Math.sin(v * 0.7) + 0.22 * Math.sin(v * 1.9 + 1.3) + 0.12 * Math.sin(v * 3.7 + 0.4);
         const near = FIELD_NEAR + VALLEY.nearExtra;
-        const back = FIELD_FAR - 0.3;
+        const back = fieldFar() - 0.3;
         // Sides: the inner edge just off the field (never over it), the band VALLEY.band wide.
         for (const side of [-1, 1]) {
             const inner: [number, number][] = [];
@@ -608,12 +618,82 @@ export class Arena {
         }
         const label = new Label(1.6 * 2, 0.8 * 2);
         label.set(`x${gate.value}`);
-        label.mesh.position.set(0, 1.25, 0);
+        label.mesh.position.set(0, (gate.lock ?? 0) > 0 ? LOCK.labelY : 1.25, 0);
         label.mesh.rotation.x = -0.6;
         group.add(label.mesh);
         group.position.set(gate.x, 0, gate.z);
         this.group.add(group);
-        return { group, panel, label: label.mesh, pulse: 0 };
+        const view: GateView = { group, panel, label: label.mesh, pulse: 0 };
+        if ((gate.lock ?? 0) > 0) view.lock = this.buildLock(gate, group, [panel.material as THREE.MeshLambertMaterial, glow.material as THREE.MeshBasicMaterial, post]);
+        return view;
+    }
+
+    /** A locked gate's lock: its materials greyed, bars across its span, a padlock in the middle with the hits left. */
+    private buildLock(gate: GateConfig, group: THREE.Group, materials: (THREE.MeshLambertMaterial | THREE.MeshBasicMaterial)[]): NonNullable<GateView['lock']> {
+        const greyed = materials.map((material) => {
+            const was = { material, color: material.color.getHex(), emissive: material instanceof THREE.MeshLambertMaterial ? material.emissive.getHex() : undefined };
+            material.color.setHex(LOCK.grey);
+            if (material instanceof THREE.MeshLambertMaterial) material.emissive.setHex(0x000000);
+            return was;
+        });
+        const lock = new THREE.Group();
+        const bar = lambert(LOCK.dark);
+        const bars = Math.max(2, Math.round(gate.width / LOCK.barGap));
+        for (let k = 0; k <= bars; k++) {
+            const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, LOCK.barHeight, 8), bar);
+            rod.position.set(-gate.width / 2 + (k / bars) * gate.width, LOCK.barHeight / 2, 0);
+            lock.add(rod);
+        }
+        for (const y of [0.18, LOCK.barHeight - 0.08]) {
+            const rail = new THREE.Mesh(new THREE.BoxGeometry(gate.width, 0.1, 0.12), bar);
+            rail.position.y = y;
+            lock.add(rail);
+        }
+        // The padlock: a shackle over a rounded body, its hits on the front.
+        const padlock = new THREE.Group();
+        const metal = lambert(LOCK.metal);
+        const shackle = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.1, 8, 20, Math.PI), metal);
+        shackle.position.y = 0.55;
+        const body = roundedBox(1.6, 1.15, 0.36, 0.14, lambert(LOCK.grey));
+        body.position.y = -0.575;
+        padlock.add(shackle, body);
+        // Big, flat on the body's face (inside its edges: three digits fit); the padlock is tipped back towards the
+        // camera, so it reads from above.
+        const hits = new Label(1.5, 1.0, 256, '#ffffff');
+        hits.set(String(gate.lock));
+        hits.mesh.position.set(0, 0, 0.19);
+        padlock.add(hits.mesh);
+        padlock.rotation.x = LOCK.padlockTilt;
+        padlock.position.set(0, LOCK.padlockY, 0.12);
+        lock.add(padlock);
+        group.add(lock);
+        return { group: lock, hits, greyed, shake: 0, open: false };
+    }
+
+    /** A locked gate hit at (x, z): its lock jolts, a grey chip flies. */
+    public hitLock(index: number, x: number, z: number): void {
+        const lock = this.gates[index]?.lock;
+        if (!lock || lock.open) return;
+        lock.shake = 0.12;
+        this.bits.burst(x, 0.7, z, [LOCK.grey, LOCK.dark], 2, 2.5, 3.5, 0.5, 0.14);
+    }
+
+    /** A locked gate worn down: the lock bursts off, its colours come back, it pulses. */
+    public unlockGate(index: number): void {
+        const view = this.gates[index];
+        const lock = view?.lock;
+        if (!view || !lock || lock.open) return;
+        lock.open = true;
+        lock.group.visible = false;
+        for (const { material, color, emissive } of lock.greyed) {
+            material.color.setHex(color);
+            if (emissive !== undefined && material instanceof THREE.MeshLambertMaterial) material.emissive.setHex(emissive);
+        }
+        view.label.position.y = 1.25;
+        view.pulse = 1;
+        const { x, z } = view.group.position;
+        this.bits.burst(x, 0.7, z, [LOCK.grey, LOCK.dark, LOCK.metal, 0x9fe6ff], 40, 5, 6, 1, 0.22);
+        this.puff(x, z, 0xdfe6ee, 2.5);
     }
 
     /** A water hole with a dark rim, a raised grass block, or a brick block to break (its view returned). */
@@ -856,11 +936,14 @@ export class Arena {
 
     /**
      * A helmet barrier: an olive arch across the field (posts, a striped bar overhead, a soft green curtain), "x2 HP"
-     * and an army helmet floating over it.
+     * and an army helmet floating over it. An attack barrier: the same in red and gold, "x2 ATK", a viking hat over it
+     * (props/viking.glb; plain shapes till it loads).
      */
     private buildHelmetBarrier(h: HelmetConfig): THREE.Object3D {
         const group = new THREE.Group();
-        const olive = lambert(HELMET.olive);
+        const attack = h.kind === 'attack';
+        const look = attack ? ATTACK : HELMET;
+        const olive = lambert(look.olive);
         for (const side of [-1, 1]) {
             const post = roundedBox(0.26, HELMET.height, 0.26, 0.08, olive);
             post.position.set(side * (h.width / 2 + 0.13), 0, 0);
@@ -869,26 +952,35 @@ export class Arena {
         const stripes = Math.max(2, Math.round(h.width / 0.5));
         for (let k = 0; k < stripes; k++) {
             const width = (h.width + 0.5) / stripes;
-            const bar = new THREE.Mesh(new THREE.BoxGeometry(width, 0.22, 0.22), lambert(k % 2 ? HELMET.olive : HELMET.sand));
+            const bar = new THREE.Mesh(new THREE.BoxGeometry(width, 0.22, 0.22), lambert(k % 2 ? look.olive : look.sand));
             bar.position.set(-(h.width + 0.5) / 2 + (k + 0.5) * width, HELMET.height, 0);
             group.add(bar);
         }
-        const curtain = new THREE.Mesh(new THREE.PlaneGeometry(h.width, HELMET.height, 4, 1), new THREE.MeshBasicMaterial({ color: 0x9ccf5a, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false }));
+        const curtain = new THREE.Mesh(new THREE.PlaneGeometry(h.width, HELMET.height, 4, 1), new THREE.MeshBasicMaterial({ color: look.curtain, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false }));
         curtain.position.y = HELMET.height / 2;
         group.add(curtain);
-        const strip = new THREE.Mesh(new THREE.BoxGeometry(h.width, 0.08, 0.3), lambert(0x9ccf5a, { emissive: 0x9ccf5a, emissiveIntensity: 0.3 }));
+        const strip = new THREE.Mesh(new THREE.BoxGeometry(h.width, 0.08, 0.3), lambert(look.curtain, { emissive: look.curtain, emissiveIntensity: 0.3 }));
         strip.position.y = 0.04;
         group.add(strip);
-        const label = new Label(2, 0.7, 256, '#d8ff9a');
-        label.set('x2 HP');
+        const label = new Label(2, 0.7, 256, look.text);
+        label.set(attack ? `x${TUNING.vikingDamage} ATK` : `x${TUNING.helmetHp} HP`);
         label.mesh.position.set(0, HELMET.height + 0.55, 0);
         label.mesh.rotation.x = -0.6;
         group.add(label.mesh);
-        // The helmet: a dome with a brim.
+        // The helmet: a dome with a brim (a viking hat: horns too, then the model).
         const helmet = new THREE.Group();
-        const dome = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), olive);
-        const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.58, 0.07, 20), lambert(0x5d6e2c));
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), attack ? lambert(0x9aa3ad) : olive);
+        const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.58, 0.07, 20), lambert(attack ? 0x8a5a2b : look.dark));
         helmet.add(dome, brim);
+        if (attack) {
+            for (const side of [-1, 1]) {
+                const horn = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.5, 10), lambert(0xf3ead2));
+                horn.position.set(side * 0.47, 0.32, 0);
+                horn.rotation.z = -side * 0.7;
+                helmet.add(horn);
+            }
+            void this.dressViking(helmet);
+        }
         helmet.position.set(0, HELMET.height + 1.7, 0);
         group.add(helmet);
         group.position.set(h.x, 0, h.z);
@@ -896,9 +988,33 @@ export class Arena {
         return helmet;
     }
 
-    /** A blue just got a helmet: a little green puff. */
-    public helmetOn(x: number, z: number): void {
-        this.bits.burst(x, 1.4, z, [HELMET.olive, 0x9ccf5a], 2, 1.5, 3, 0.4, 0.12);
+    /** The viking hat model in place of the floating hat's plain shapes, once it loads. */
+    private async dressViking(icon: THREE.Group): Promise<void> {
+        let source: THREE.Object3D;
+        try {
+            source = await loadKitModel(`${this.modelRoot}props/viking.glb`);
+        } catch (error) {
+            console.warn('[mob] model viking', error);
+            return;
+        }
+        if (this.disposed) return;
+        source.updateWorldMatrix(true, true);
+        const box = new THREE.Box3().setFromObject(source);
+        const size = box.getSize(new THREE.Vector3());
+        const scale = ATTACK.hatWidth / Math.max(0.01, size.x);
+        const model = source.clone();
+        // Centred, its bottom at the icon's (the plain brim's) height.
+        model.scale.setScalar(scale);
+        model.position.set(-((box.min.x + box.max.x) / 2) * scale, -box.min.y * scale, -((box.min.z + box.max.z) / 2) * scale);
+        for (const child of icon.children) child.visible = false;
+        icon.add(model);
+        bendObject(model);
+    }
+
+    /** A blue just got a helmet (a little green puff) or a viking hat (a red-gold one). */
+    public helmetOn(x: number, z: number, kind: 'hp' | 'attack' = 'hp'): void {
+        const look = kind === 'attack' ? ATTACK : HELMET;
+        this.bits.burst(x, 1.4, z, [look.olive, look.curtain], 2, 1.5, 3, 0.4, 0.12);
     }
 
     /** A PUSH block: a heavy dark slab with a red PUSH plate on its front and top. */
@@ -1272,7 +1388,17 @@ export class Arena {
             view.pulse = Math.max(0, view.pulse - dt * 4);
             view.panel.scale.set(1 + view.pulse * 0.08, 1 + view.pulse * 2, 1 + view.pulse * 0.4);
             view.label.scale.setScalar(1 + view.pulse * 0.25);
+            if (view.lock && !view.lock.open) {
+                view.lock.shake = Math.max(0, view.lock.shake - dt);
+                view.lock.group.position.x = view.lock.shake > 0 ? (Math.random() - 0.5) * 0.12 : 0;
+            }
         });
+        // Locked gates' hits left, on their padlocks.
+        for (const block of battle.blocks) {
+            if (block.gate === undefined) continue;
+            const lock = this.gates[block.gate]?.lock;
+            if (lock && !lock.open) lock.hits.set(String(Math.max(0, Math.ceil(block.hp))));
+        }
         battle.spinners.forEach((spinner, i) => {
             this.spinners[i].rotation.y = battle.spinnerAngle(spinner);
         });

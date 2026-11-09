@@ -4,7 +4,7 @@
 // recharge speed: MobConfig's UPGRADES), and which battle is next. A loss never takes any of it away (the brief:
 // permanent progression isn't erased).
 
-import { UPGRADES, UpgradeKind } from './MobConfig';
+import { RETRY_EASE, UPGRADES, UpgradeKind } from './MobConfig';
 
 const KEY = 'mob.save';
 
@@ -14,6 +14,8 @@ interface SaveData {
     /** The furthest battle reached (1-based; 0 = none yet): for the progress event, sent once per new best. */
     best: number;
     levels: Record<UpgradeKind, number>;
+    /** Losses in a row on the next battle (each makes it RETRY_EASE.step easier); 0 once it's won. */
+    retries: number;
 }
 
 const KINDS = Object.keys(UPGRADES) as UpgradeKind[];
@@ -28,9 +30,9 @@ function load(): SaveData {
             const level = stored.levels?.[kind] ?? (kind === 'fire' ? stored.fireLevel : undefined) ?? 1;
             levels[kind] = Math.min(UPGRADES[kind].max, Math.max(1, Math.floor(level)));
         }
-        return { coins: Math.max(0, stored.coins ?? 0), battle: Math.max(0, stored.battle ?? 0), best: Math.max(0, stored.best ?? 0), levels };
+        return { coins: Math.max(0, stored.coins ?? 0), battle: Math.max(0, stored.battle ?? 0), best: Math.max(0, stored.best ?? 0), levels, retries: Math.max(0, Math.floor(stored.retries ?? 0)) };
     } catch {
-        return { coins: 0, battle: 0, best: 0, levels: freshLevels() };
+        return { coins: 0, battle: 0, best: 0, levels: freshLevels(), retries: 0 };
     }
 }
 
@@ -50,6 +52,14 @@ export const MobSave = {
     get battle(): number { return data.battle; },
     get fireLevel(): number { return data.levels.fire; },
     get best(): number { return data.best; },
+    /** How much easier the next battle is played (0 .. RETRY_EASE.most): RETRY_EASE.step a loss in a row on it. */
+    get ease(): number { return Math.min(RETRY_EASE.most, data.retries * RETRY_EASE.step); },
+
+    /** Lost the next battle: its next try is easier. */
+    lost(): void {
+        data.retries++;
+        save();
+    },
 
     /** Battle `number` (1-based) was reached: remembered if it's the furthest yet. */
     reach(number: number): void {
@@ -87,12 +97,14 @@ export const MobSave = {
     /** Debug: play battle `index` next (the level picker). */
     setBattle(index: number): void {
         data.battle = Math.max(0, Math.floor(index));
+        data.retries = 0;
         save();
     },
 
     /** Won: on to the next battle. */
     nextBattle(): void {
         data.battle++;
+        data.retries = 0;
         save();
     },
 
@@ -102,6 +114,7 @@ export const MobSave = {
         data.battle = 0;
         data.best = 0;
         data.levels = freshLevels();
+        data.retries = 0;
         save();
     },
 };

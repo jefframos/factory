@@ -23,6 +23,8 @@
 // - A blue crossing a helmet barrier gets a helmet (once): its hits times TUNING.helmetHp; copies a gate makes of it
 //   wear one too.
 // - A car can't be destroyed: it wears down the reds it touches (TUNING.carDps), pushed back by the crowd meanwhile.
+// - A locked gate (`lock` hits) is a breakable across its span till it's worn down (a Block with its `gate`): then it
+//   unlocks and works as any gate.
 // - A blue crossing a gate's line inside its span becomes `value` mobs, spread round it; each mob remembers the gates it
 //   has crossed (a bit each), and so do its copies, so a gate never multiplies the same crowd twice. Giants don't use
 //   gates.
@@ -36,7 +38,7 @@
 //
 // Events (shots, hits, gate crossings, giants, the end) go to `events`, for the view's effects and the HUD.
 
-import { ARENA, BattleConfig, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig, TUNING, carHp, needOf } from '../data/MobConfig';
+import { ARENA, BattleConfig, FIELD, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig, TUNING, carHp, needOf } from '../data/MobConfig';
 import { Contact, Shape, boxShape, circleShape, polygonShape, shapeCentre, touch } from './Shapes';
 
 export const BLUE = 0;
@@ -44,11 +46,11 @@ export const RED = 1;
 
 /** Room in the arrays (the population is capped lower, by TUNING.maxMobs). */
 const CAPACITY = 1200;
-/** The spatial grid: cell size (units) and the area it covers (a little past the field). */
+/** The spatial grid: cell size (units) and the area it covers (a little past the biggest field there can be). */
 const CELL = 0.7;
-const GRID_MIN_X = -ARENA.halfWidth - 1;
-const GRID_MIN_Z = ARENA.baseZ - 3;
-const GRID_COLS = Math.ceil((ARENA.halfWidth * 2 + 2) / CELL);
+const GRID_MIN_X = -FIELD.maxWidth / 2 - 1;
+const GRID_MIN_Z = -FIELD.maxLength - 3;
+const GRID_COLS = Math.ceil((FIELD.maxWidth + 2) / CELL);
 const GRID_ROWS = Math.ceil((-GRID_MIN_Z + 2) / CELL);
 /** Where blue mobs leave the cannon, and how wide the muzzle spreads them. */
 const MUZZLE_Z = -1.1;
@@ -56,11 +58,12 @@ const MUZZLE_SPREAD = 0.35;
 /** The usual base (a level with no `targets`): its half width. Reds come out of a target's front, this far out. */
 export const BASE_HALF_WIDTH = 2.2;
 const RED_SPAWN_OUT = 1.4;
-/** Blues this close to the base (z) steer towards it, this hard. */
-const HOMING_FROM = ARENA.baseZ + 10;
+/** Blues this close to the base (z: HOMING_FROM past its line) steer towards it, this hard. */
+const HOMING_FROM = 10;
 const HOMING_PULL = 0.45;
-/** Reds fan out to lanes this far either side, drifting there this hard (share of the gap a unit). */
-const RED_LANE_SPREAD = ARENA.halfWidth - 0.8;
+/** Reds fan out to lanes this far in from either side, drifting there this hard (share of the gap a unit). */
+const RED_LANE_MARGIN = 0.8;
+const redLaneSpread = (): number => ARENA.halfWidth - RED_LANE_MARGIN;
 const RED_LANE_PULL = 0.35;
 /** How a gate spreads the copies it makes (units across, and back). */
 const GATE_SPREAD = 0.34;
@@ -81,6 +84,8 @@ const HEAD_ON = 0.35;
 const LANE_SHIFT = 2;
 /** Every gate bit set: a giant never uses a gate. */
 const ALL_GATES = 0xff;
+/** A locked gate's breakable: this deep (along z), across the gate's span. */
+const LOCK_DEPTH = 0.6;
 
 export interface BattleEvents {
     fire?(x: number): void;
@@ -94,6 +99,8 @@ export interface BattleEvents {
     pushCleared?(block: number): void;
     blockHit?(block: number, hpLeft: number, x: number, z: number): void;
     blockBroken?(block: number): void;
+    /** A locked gate was worn down (its block `block` broke): it works now. */
+    gateUnlocked?(gate: number, block: number): void;
     giant?(team: number, x: number, z: number, kind: number): void;
     /** A gold saucer sucked up a red at (x, z), and one crashed into target `target`. */
     suck?(x: number, z: number): void;
@@ -111,6 +118,10 @@ export interface BattleEvents {
 export interface Gate extends GateConfig {
     /** Where it is now (it may swing). */
     nowX: number;
+    /** Still locked (its block stands): it multiplies no one and doesn't swing. */
+    locked: boolean;
+    /** When its swing started (a locked one's: when it unlocked, so it sets off from where it stood). */
+    swingFrom: number;
 }
 
 export interface Pusher extends PusherConfig {
@@ -178,6 +189,8 @@ export interface Block {
     /** Where its middle is (its label, its pieces flying). */
     centreX: number;
     centreZ: number;
+    /** A locked gate's block: that gate's index (it unlocks when this breaks). */
+    gate?: number;
 }
 
 /** An obstacle config's shape: its polygon, circle or box. */
@@ -262,7 +275,7 @@ export class Battle {
     private redGiantDue = 0;
 
     public constructor(public readonly config: BattleConfig, public events: BattleEvents = {}) {
-        this.gates = config.gates.map((gate) => ({ ...gate, nowX: gate.x }));
+        this.gates = config.gates.map((gate) => ({ ...gate, nowX: gate.x, locked: (gate.lock ?? 0) > 0, swingFrom: 0 }));
         this.helmets = config.helmets ?? [];
         this.blocks = (config.obstacles ?? []).map((o) => {
             const shape = obstacleShape(o);
@@ -270,6 +283,12 @@ export class Battle {
             const breakable = o.kind === 'breakable';
             const hp = breakable ? o.hp ?? 40 : 0;
             return { config: o, shape, breakable, hp, hpMax: hp, alive: true, centreX, centreZ };
+        });
+        // Each locked gate's breakable, after the obstacles' (so theirs keep their indices).
+        this.gates.forEach((gate, g) => {
+            if (!gate.locked) return;
+            const o: ObstacleConfig = { kind: 'breakable', x: gate.x, z: gate.z, width: gate.width, depth: LOCK_DEPTH, hp: gate.lock };
+            this.blocks.push({ config: o, shape: obstacleShape(o), breakable: true, hp: gate.lock!, hpMax: gate.lock!, alive: true, centreX: gate.x, centreZ: gate.z, gate: g });
         });
         this.spinners = config.spinners ?? [];
         this.pushers = (config.pushers ?? []).map((pusher) => ({ ...pusher, nowX: pusher.x, speedX: 0 }));
@@ -365,7 +384,7 @@ export class Battle {
         this.time += dt;
         this.cannonX += (this.aimX - this.cannonX) * Math.min(1, CANNON_FOLLOW * dt);
         for (const gate of this.gates) {
-            gate.nowX = gate.x + (gate.swing ? Math.sin((this.time / gate.swing.seconds) * Math.PI * 2) * gate.swing.range : 0);
+            gate.nowX = gate.x + (gate.swing && !gate.locked ? Math.sin(((this.time - gate.swingFrom) / gate.swing.seconds) * Math.PI * 2) * gate.swing.range : 0);
         }
         for (const pusher of this.pushers) {
             const angle = (this.time / pusher.seconds + (pusher.phase ?? 0)) * Math.PI * 2;
@@ -434,7 +453,7 @@ export class Battle {
         this.dead[i] = 0;
         this.vx[i] = 0;
         this.vz[i] = 0;
-        this.lane[i] = (Math.random() * 2 - 1) * RED_LANE_SPREAD;
+        this.lane[i] = (Math.random() * 2 - 1) * redLaneSpread();
         return i;
     }
 
@@ -642,7 +661,7 @@ export class Battle {
             // Where it wants to go.
             let dx = 0;
             let dz = blue ? -1 : 1;
-            if (blue && z < HOMING_FROM) {
+            if (blue && z < ARENA.baseZ + HOMING_FROM) {
                 const target = this.nearestTarget(x);
                 if (target) dx = Math.max(-0.9, Math.min(0.9, (target.x - x) * HOMING_PULL));
             }
@@ -688,7 +707,7 @@ export class Battle {
                 length = Math.sqrt(dx * dx + dz * dz) || 1;
                 // A red steering round something takes the side it's going round as its lane: else the pull back to its
                 // old lane (through the obstacle) drags it straight back in front of it, and it hovers there.
-                if (!blue && Math.abs(slide.tx) > 0.3) this.lane[i] = Math.max(-RED_LANE_SPREAD, Math.min(RED_LANE_SPREAD, x + Math.sign(slide.tx) * LANE_SHIFT));
+                if (!blue && Math.abs(slide.tx) > 0.3) this.lane[i] = Math.max(-redLaneSpread(), Math.min(redLaneSpread(), x + Math.sign(slide.tx) * LANE_SHIFT));
             }
             const kind = this.big[i];
             const speed = (blue ? TUNING.blueSpeed : TUNING.redSpeed) * (kind === TRUCK ? TUNING.truckSpeed : kind === CAR ? TUNING.carSpeed : kind ? TUNING.giantSpeed : 1);
@@ -812,7 +831,13 @@ export class Battle {
         this.events.blockHit?.(b, block.hp, this.x[i], this.z[i]);
         if (block.hp <= 0) {
             block.alive = false;
-            this.events.blockBroken?.(b);
+            if (block.gate !== undefined) {
+                this.gates[block.gate].locked = false;
+                this.gates[block.gate].swingFrom = this.time;
+                this.events.gateUnlocked?.(block.gate, b);
+            } else {
+                this.events.blockBroken?.(b);
+            }
         }
         return !!this.dead[i];
     }
@@ -900,6 +925,7 @@ export class Battle {
         const before = this.count;
         for (let g = 0; g < this.gates.length; g++) {
             const gate = this.gates[g];
+            if (gate.locked) continue;
             const bit = 1 << g;
             const half = gate.width / 2;
             for (let i = 0; i < before; i++) {

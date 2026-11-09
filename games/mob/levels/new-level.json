@@ -1,0 +1,24 @@
+{
+  "name": "New Level",
+  "kind": "Custom",
+  "gates": [
+    {
+      "x": -2.45,
+      "z": -9,
+      "width": 3.6,
+      "value": 2,
+      "lock": 50
+    },
+    {
+      "x": 2.45,
+      "z": -9,
+      "width": 3.6,
+      "value": 3
+    }
+  ],
+  "redRate": 2.4,
+  "redRateEnd": 4.4,
+  "redRamp": 50,
+  "baseHp": 400,
+  "reward": 120
+}

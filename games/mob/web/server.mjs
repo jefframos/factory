@@ -33,7 +33,10 @@ function levelProblem(level) {
     if (!level.name) return 'It needs a name';
     for (const key of ['redRate', 'redRateEnd', 'redRamp', 'baseHp', 'reward']) if (!isNumber(level[key])) return `${key} must be a number`;
     if (!Array.isArray(level.gates)) return 'gates must be a list';
-    for (const gate of level.gates) if (![gate.x, gate.z, gate.width, gate.value].every(isNumber)) return 'A gate needs x, z, width and value';
+    for (const gate of level.gates) {
+        if (![gate.x, gate.z, gate.width, gate.value].every(isNumber)) return 'A gate needs x, z, width and value';
+        if (gate.lock !== undefined && !(isNumber(gate.lock) && gate.lock >= 1)) return "A gate's lock must be 1 or more hits (or empty)";
+    }
     for (const o of level.obstacles ?? []) {
         if (!['wall', 'water', 'breakable'].includes(o.kind)) return `Unknown obstacle kind ${o.kind}`;
         if (o.points) {
@@ -49,6 +52,12 @@ function levelProblem(level) {
         ['helmets', ['x', 'z', 'width']],
     ]) {
         for (const item of level[list] ?? []) if (!keys.every((key) => isNumber(item[key]))) return `Each of ${list} needs ${keys.join(', ')}`;
+    }
+    // The field's size (MobConfig.ts FIELD): unset is the default 10 x 24.
+    if (level.width !== undefined && !(isNumber(level.width) && level.width >= 4 && level.width <= 20)) return 'width must be 4 to 20 (or unset)';
+    if (level.length !== undefined && !(isNumber(level.length) && level.length >= 4 && level.length <= 60)) return 'length must be 4 to 60 (or unset)';
+    for (const helmet of level.helmets ?? []) {
+        if (helmet.kind !== undefined && !['hp', 'attack'].includes(helmet.kind)) return `Unknown barrier kind ${helmet.kind}`;
     }
     for (const pad of level.pads ?? []) {
         if (pad.kind !== undefined && !['giant', 'truck', 'saucer', 'car'].includes(pad.kind)) return `Unknown house kind ${pad.kind}`;

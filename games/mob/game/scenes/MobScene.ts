@@ -14,6 +14,7 @@
 
 import * as THREE from 'three';
 import gsap from 'gsap';
+import * as PIXI from 'pixi.js';
 import { Game } from 'core/Game';
 import { DebugOverlay } from 'core/debug/DebugOverlay';
 import PlatformHandler from 'core/platforms/PlatformHandler';
@@ -22,7 +23,7 @@ import { ARENA, COLORS, TUNING, UNIT_COLORS } from '../data/MobConfig';
 import { LEVELS_BY_ID, PLAY, battleConfig, battleInfo, battleZone } from '../data/MobLevels';
 import { MobEvents } from '../data/MobEvents';
 import { THEMES, ThemeFile, parseTheme, themeById } from '../data/Themes';
-import { BattleConfig, UPGRADES, UpgradeKind } from '../data/MobConfig';
+import { BattleConfig, FIELD, UPGRADES, UpgradeKind, easedConfig, useField } from '../data/MobConfig';
 import { UpgradeView } from '../ui/MobHud';
 import { MobAudio } from '../audio/MobAudio';
 import { BLUE, CAR, TRUCK } from '../battle/Battle';
@@ -31,7 +32,7 @@ import { Battle } from '../battle/Battle';
 import { CrowdView } from '../battle/CrowdView';
 import { Arena } from '../battle/Arena';
 import { MobHud } from '../ui/MobHud';
-import { updateBend } from '../services/Bend';
+import { applyBend, bendDrop, updateBend } from '../services/Bend';
 
 const MODEL_BASE = './mob/models/mob/';
 
@@ -49,7 +50,17 @@ const DEBUG_PANEL = 'mob.debug';
  * back so the field's width still fits.
  */
 const CAMERA = { pitchDeg: 50, fov: 46, distance: 15, offsetX: 0, offsetY: 6 };
+/** What the camera looks at: this share of the way up the field (-12.5 on the default 24), set per field in resize(). */
 const CAMERA_TARGET = new THREE.Vector3(0, 0, -12.5);
+const TARGET_SHARE = 12.5 / FIELD.length;
+/** How much further back the camera may go than its usual distance, to fit the forts' tops and a bigger field's sides. */
+const MOST_BACK = 4;
+/** How far (px) inside the safe area (the design resolution, as it fits the screen) the field's corners are kept. */
+const SAFE_MARGIN = 4;
+/** Debug: a pink spear on each corner the camera keeps in the safe area (tip down on the point), and the safe area
+ *  outlined in pink over everything. */
+const SHOW_FRAMING = true;
+const FRAMING_PINK = 0xff3dc8;
 const REFERENCE_ASPECT = 9 / 16;
 /** The forts' roof line and how far behind the base line their back is (Arena's BASE), and the gap kept under the HUD (px). */
 const FORT_TOP_Y = 2.9;
@@ -81,6 +92,9 @@ export default class MobScene extends ThreeScene {
     public readonly ready: Promise<void>;
     private readonly crowd = new CrowdView();
     private readonly hud: MobHud;
+    /** Debug (SHOW_FRAMING): the corner spears and the safe area's outline. */
+    private readonly framingSpears = new THREE.Group();
+    private readonly safeFrame = new PIXI.Graphics();
     private battle!: Battle;
     private arena!: Arena;
     private state: 'waiting' | 'playing' | 'over' = 'waiting';
@@ -115,6 +129,12 @@ export default class MobScene extends ThreeScene {
 
         this.hud = new MobHud(() => this.nextBattle(), (kind) => this.buyUpgrade(kind));
         this.addChild(this.hud);
+        if (SHOW_FRAMING) {
+            // The scene is laid out in the design resolution: its 0,0 .. DESIGN_WIDTH x DESIGN_HEIGHT is the safe area.
+            this.safeFrame.lineStyle(4, FRAMING_PINK).drawRect(0, 0, Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT);
+            this.addChild(this.safeFrame);
+            this.threeScene.add(this.framingSpears);
+        }
         this.ready = this.crowd.load(MODEL_BASE, TUNING.maxMobs + 64);
         this.startBattle();
         PlatformHandler.instance.onPause.add(this.onPlatformPause);
@@ -140,7 +160,8 @@ export default class MobScene extends ThreeScene {
     /** A fresh battle: the save's next one, the field rebuilt for its gates. */
     private startBattle(): void {
         const index = MobSave.battle;
-        const config = this.pinned.config ?? battleConfig(index);
+        // A level lost before comes back easier (MobSave.ease); a pinned one (the URL, the editor) is played as it is.
+        const config = this.pinned.config ?? easedConfig(battleConfig(index), MobSave.ease);
         const theme = this.pinned.themeData ? parseTheme(this.pinned.themeData) : themeById(this.pinned.theme ?? battleZone(index).theme);
         (this.threeScene.background as THREE.Color).setHex(theme.sky);
         if (this.arena) {
@@ -149,6 +170,8 @@ export default class MobScene extends ThreeScene {
         }
         this.gateTally = config.gates.map(() => 0);
         this.gatePopIn = config.gates.map(() => 0);
+        // The level's field size, before anything is built on it (Battle and Arena read ARENA).
+        useField(config);
         this.battle = new Battle(config, {
             fire: () => {
                 this.arena.fired();
@@ -181,8 +204,16 @@ export default class MobScene extends ThreeScene {
                 this.popAt('OPEN!', block.x, 1.8, block.nowZ, 0x9fd8ff, 44);
             },
             blockHit: (b, _hp, x, z) => {
-                this.arena.hitBlock(b, x, z);
+                const gate = this.battle.blocks[b].gate;
+                if (gate !== undefined) this.arena.hitLock(gate, x, z);
+                else this.arena.hitBlock(b, x, z);
                 MobAudio.play('baseHit', 1.3 + Math.random() * 0.2);
+            },
+            gateUnlocked: (g) => {
+                this.arena.unlockGate(g);
+                MobAudio.play('bigHit', 1.3);
+                const gate = this.battle.gates[g];
+                this.popAt('UNLOCKED!', gate.nowX, 1.8, gate.z, 0x9fe6ff, 40);
             },
             blockBroken: (b) => {
                 this.arena.breakBlock(b);
@@ -198,7 +229,7 @@ export default class MobScene extends ThreeScene {
                 const word = kind < 0 ? 'UFO!' : kind === TRUCK ? 'TRUCK!' : kind === CAR ? 'CAR!' : team === BLUE ? 'GIANT!' : 'RED GIANT!';
                 this.popAt(word, x, 2.5, z, kind < 0 ? 0xffd23f : team === BLUE ? 0x9fd8ff : 0xff6b7a, 46);
             },
-            helmet: (x, z) => this.arena.helmetOn(x, z),
+            helmet: (x, z, kind) => this.arena.helmetOn(x, z, kind),
             suck: (x, z) => {
                 this.arena.suck(x, z);
                 if (Math.random() < 0.4) MobAudio.play('whoosh', 1.4 + Math.random() * 0.3);
@@ -228,6 +259,7 @@ export default class MobScene extends ThreeScene {
         this.arena = new Arena(config, this.battle.targets, theme, undefined, !!battleZone(index).plainForts);
         this.arena.onLayout = () => this.resize();
         this.threeScene.add(this.arena.group);
+        if (SHOW_FRAMING) this.placeFramingSpears();
         this.time = 0;
         this.state = 'waiting';
         this.hud.hideEnd();
@@ -261,6 +293,7 @@ export default class MobScene extends ThreeScene {
             const info = battleInfo(MobSave.battle);
             if (won) MobEvents.levelComplete(number, info.id, this.battle.time, { id: info.zone, last: info.lastInZone }, info.lastOfAll);
             else MobEvents.levelFail(number, info.id, 1 - this.battle.baseHp / Math.max(1, this.battle.baseHpMax));
+            if (!won) MobSave.lost();
         }
         this.lastWon = won;
         const coinsBefore = MobSave.coins;
@@ -453,13 +486,60 @@ export default class MobScene extends ThreeScene {
         this.hud.layout();
         const hudBottom = this.hud.topBottom() + HUD_CLEARANCE;
         const tops = this.arena?.fortTops() ?? [new THREE.Vector3(0, FORT_TOP_Y, ARENA.baseZ - FORT_BACK)];
+        // A longer field moves the look-at point up it.
+        CAMERA_TARGET.z = ARENA.baseZ * TARGET_SHARE;
+        // The grid's four corners (the cannon's end, the base's line, either side) must be inside the safe area: the
+        // design resolution (Game.DESIGN_WIDTH x DESIGN_HEIGHT), scaled to fit the screen and centred, as the HUD is.
+        const fit = Math.min(window.innerWidth / Game.DESIGN_WIDTH, window.innerHeight / Game.DESIGN_HEIGHT);
+        const safe = {
+            left: (window.innerWidth - Game.DESIGN_WIDTH * fit) / 2 + SAFE_MARGIN,
+            right: (window.innerWidth + Game.DESIGN_WIDTH * fit) / 2 - SAFE_MARGIN,
+            top: (window.innerHeight - Game.DESIGN_HEIGHT * fit) / 2 + SAFE_MARGIN,
+            bottom: (window.innerHeight + Game.DESIGN_HEIGHT * fit) / 2 - SAFE_MARGIN,
+        };
+        // Where they're drawn: the world's bend drops each one (Bend.ts), so that's where they're checked.
+        const corners = this.framingCorners().map((corner) => corner.setY(-bendDrop(corner.x, corner.z)));
+        // Every corner within the safe area's sides, and the far ones under its top. The near ones are on the cannon's row,
+        // which keeps its place at the bottom (over the energy bar), safe area or not.
+        const cornersFit = (): boolean => corners.every((corner) => {
+            const at = this.worldToScreen(corner);
+            return !!at && at.x >= safe.left && at.x <= safe.right && (corner.z === 0 || at.y >= safe.top);
+        });
         const base = CAMERA.distance * Math.max(1, REFERENCE_ASPECT / camera.aspect);
-        for (let back = 1; back < 2.2; back += 0.03) {
+        for (let back = 1; back < MOST_BACK; back += 0.03) {
             this.frame(base * back);
+            // The forts' tops (their numbers too) under the HUD, and the whole grid inside the safe area.
             const highest = Math.min(...tops.map((top) => this.worldToScreen(top)?.y ?? -Infinity));
-            if (highest >= hudBottom) break;
+            if (highest >= hudBottom && cornersFit()) break;
         }
         this.cameraBase.copy(camera.position);
+    }
+
+    /** The grid's corners the camera frames (see resize()): ±ARENA.halfWidth at the cannon's end (z 0) and the base line. */
+    private framingCorners(): THREE.Vector3[] {
+        return [0, ARENA.baseZ].flatMap((z) => [-1, 1].map((side) => new THREE.Vector3(side * ARENA.halfWidth, 0, z)));
+    }
+
+    /** Debug: a pink spear on each framing corner, its tip on the point (bent with the world, so it shows where the
+     *  corner is drawn). */
+    private placeFramingSpears(): void {
+        for (const child of [...this.framingSpears.children]) {
+            this.framingSpears.remove(child);
+            child.traverse((object) => { if (object instanceof THREE.Mesh) object.geometry.dispose(); });
+        }
+        const material = new THREE.MeshBasicMaterial({ color: FRAMING_PINK });
+        applyBend(material);
+        for (const corner of this.framingCorners()) {
+            const spear = new THREE.Group();
+            const tip = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.7, 10), material);
+            tip.rotation.x = Math.PI;
+            tip.position.y = 0.35;
+            const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.6, 8), material);
+            shaft.position.y = 0.7 + 1.3;
+            spear.add(tip, shaft);
+            spear.position.copy(corner);
+            this.framingSpears.add(spear);
+        }
     }
 
     /** The camera `distance` back at the pitch, then slid up or down (its own up) so the cannon sits at CANNON_PIN. */
@@ -473,16 +553,20 @@ export default class MobScene extends ThreeScene {
         const up = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
         camera.position.addScaledVector(right, CAMERA.offsetX);
         camera.updateMatrixWorld(true);
-        const cannon = new THREE.Vector3(0, 0, CANNON_FRONT_Z);
-        const pinned = window.innerHeight * CANNON_PIN + CAMERA.offsetY * 10;
+        this.pinOnScreen(new THREE.Vector3(0, 0, CANNON_FRONT_Z), window.innerHeight * CANNON_PIN + CAMERA.offsetY * 10, up);
+    }
+
+    /** Slides the camera along `up` until `point` is at screen height `y`. */
+    private pinOnScreen(point: THREE.Vector3, y: number, up: THREE.Vector3): void {
+        const camera = this.threeCamera;
         const forward = camera.getWorldDirection(new THREE.Vector3());
         for (let pass = 0; pass < 4; pass++) {
-            const at = this.worldToScreen(cannon);
-            if (!at || Math.abs(at.y - pinned) < 0.5) break;
-            const depth = cannon.clone().sub(camera.position).dot(forward);
+            const at = this.worldToScreen(point);
+            if (!at || Math.abs(at.y - y) < 0.5) break;
+            const depth = point.clone().sub(camera.position).dot(forward);
             const worldPerPixel = (2 * depth * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2)) / window.innerHeight;
             // Camera up: the field moves down the screen.
-            camera.position.addScaledVector(up, (pinned - at.y) * worldPerPixel);
+            camera.position.addScaledVector(up, (y - at.y) * worldPerPixel);
             camera.updateMatrixWorld(true);
         }
     }

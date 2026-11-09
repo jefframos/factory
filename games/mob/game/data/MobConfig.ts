@@ -8,16 +8,44 @@
 // giant pads, enemy pressure). After the last level they repeat, a little harder each loop (battleConfig()).
 
 import unitsFile from '../../ui/units.json';
+/**
+ * A level's field size (BattleConfig `width` x `length`): the default, the most there is room for, and the editor's
+ * presets. It grows from the bottom centre: the cannon's end (z 0) and the middle (x 0) stay put, the sides move out
+ * evenly and the base back, so a level's pieces keep their places.
+ */
+export const FIELD = {
+    width: 10,
+    length: 24,
+    maxWidth: 20,
+    maxLength: 60,
+};
+
+/** The field of the battle being played: set from its level by useField() before the battle and arena are built. */
 export const ARENA = {
-    /** Half the field's width (world units): 10 wide, as the brief. */
-    halfWidth: 5,
-    /** Where the enemy base's front edge is (z). */
-    baseZ: -24,
+    /** Half the field's width (world units): 10 wide by default, as the brief. */
+    halfWidth: FIELD.width / 2,
+    /** Where the enemy base's front edge is (z): the field's length up from the cannon. */
+    baseZ: -FIELD.length,
     /** The danger line: a red mob past it (z greater) loses the battle. Just in front of the cannon. */
     dangerZ: -0.6,
-    /** How far the cannon slides either way. */
-    cannonRange: 4.2,
+    /** How far the cannon slides either way (CANNON_MARGIN short of the side). */
+    cannonRange: FIELD.width / 2 - 0.8,
 };
+const CANNON_MARGIN = 0.8;
+
+/** A level's field size, its own or the default (clamped to what there's room for). */
+export function fieldOf(config: BattleConfig): { width: number; length: number } {
+    const clamp = (value: number | undefined, fallback: number, most: number) => Math.min(most, Math.max(4, value ?? fallback));
+    return { width: clamp(config.width, FIELD.width, FIELD.maxWidth), length: clamp(config.length, FIELD.length, FIELD.maxLength) };
+}
+
+/** Sets ARENA to `config`'s field: call before building its Battle and Arena. */
+export function useField(config: BattleConfig): void {
+    const { width, length } = fieldOf(config);
+    ARENA.halfWidth = width / 2;
+    ARENA.baseZ = -length;
+    ARENA.cannonRange = width / 2 - CANNON_MARGIN;
+}
 
 /** The shared feel: speeds, sizes, the cannon. The debug panel's sliders change these live. */
 export const TUNING = {
@@ -100,6 +128,9 @@ export interface GateConfig {
     value: number;
     /** Slides side to side: how far either way (units) and how long a full swing takes (seconds). */
     swing?: { range: number; seconds: number };
+    /** Locked: grey, barred and padlocked, it's a breakable with these hits across its span (both sides wear it down,
+     *  as a brick block) and multiplies no one, nor swings; at zero it unlocks and works as a gate. Unset = open. */
+    lock?: number;
 }
 
 /**
@@ -203,6 +234,9 @@ export interface TargetConfig {
 
 export interface BattleConfig {
     name: string;
+    /** The field's size (FIELD: 10 x 24 when unset; it grows from the bottom centre). */
+    width?: number;
+    length?: number;
     /** What the level is about, for the debug panel's picker. */
     kind: string;
     gates: GateConfig[];
@@ -224,6 +258,26 @@ export interface BattleConfig {
     targets?: TargetConfig[];
     /** Coins for a win. */
     reward: number;
+}
+
+/** Each loss in a row on a level makes its next try this much easier, up to `most` (back to none on the next level). */
+export const RETRY_EASE = { step: 0.1, most: 0.7 };
+
+/**
+ * `config` made `ease` (0..1) easier: fewer reds a second, red giants less often, and a base / forts with fewer hits.
+ * Its layout and reward are the same.
+ */
+export function easedConfig(config: BattleConfig, ease: number): BattleConfig {
+    if (ease <= 0) return config;
+    const keep = 1 - ease;
+    return {
+        ...config,
+        redRate: config.redRate * keep,
+        redRateEnd: config.redRateEnd * keep,
+        redGiantEvery: config.redGiantEvery ? config.redGiantEvery / keep : config.redGiantEvery,
+        baseHp: Math.max(1, Math.ceil(config.baseHp * keep)),
+        targets: config.targets?.map((target) => ({ ...target, hp: Math.max(1, Math.ceil(target.hp * keep)) })),
+    };
 }
 
 /** The cannon's upgrades (bought after a battle): fire rate (TUNING.fireRatePerLevel), energy capacity

@@ -29,5 +29,13 @@
   "redRateEnd": 3.6,
   "redRamp": 45,
   "baseHp": 120,
-  "reward": 100
+  "reward": 100,
+  "helmets": [
+    {
+      "kind": "attack",
+      "x": -0.5,
+      "z": -8.75,
+      "width": 3
+    }
+  ]
 }

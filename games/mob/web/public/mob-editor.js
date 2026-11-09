@@ -4,18 +4,30 @@
 // charge, hits, damage: ui/units.json). Saves go through games/mob/web/server.mjs to
 // games/mob/levels/<id>.json and games/mob/ui/zones.json, which the game bundles.
 //
-// The field (MobConfig.ts ARENA): x across from -5 to 5, z along it from the cannon (0.35) up to the base's front
-// (-24); blues go up (-z). Polygons are [x, z] corner lists, as the game reads them.
+// The field (MobConfig.ts ARENA): x across from -width/2 to width/2, z along it from the cannon (0.35) up to the base's
+// front (-length); 10 x 24 unless the level sets its `width` / `length` (it grows from the bottom centre: the cannon's
+// end and the middle stay put). Blues go up (-z). Polygons are [x, z] corner lists, as the game reads them.
 
 // ------------------------------------------------------------------ constants
 
-const HALF_WIDTH = 5;
-const BASE_Z = -24;
+/** The field sizes (MobConfig.ts FIELD): the default, the most, and the presets offered. */
+const FIELD = { width: 10, length: 24, maxWidth: 20, maxLength: 60 };
+const FIELD_SIZES = [
+    { label: 'default 10 x 24', width: 10, length: 24 },
+    { label: 'long 10 x 32', width: 10, length: 32 },
+    { label: 'wide 14 x 24', width: 14, length: 24 },
+    { label: 'big 14 x 32', width: 14, length: 32 },
+    { label: 'huge 18 x 44', width: 18, length: 44 },
+];
+const fieldWidth = () => Math.min(FIELD.maxWidth, Math.max(4, level()?.width ?? FIELD.width));
+const fieldLength = () => Math.min(FIELD.maxLength, Math.max(4, level()?.length ?? FIELD.length));
+const halfWidth = () => fieldWidth() / 2;
+const baseZ = () => -fieldLength();
 const CANNON_Z = 0.35;
 const DANGER_Z = -0.6;
 const BASE = { width: 4.4, depth: 2.6 };
-/** The part of the field drawn (z): a little past the cannon, a little behind the base. */
-const VIEW = { near: 2.5, far: -27.5, side: 6.5 };
+/** The part of the field drawn (z): a little past the cannon, a little behind the base; a little past each side. */
+const viewBox = () => ({ near: 2.5, far: baseZ() - 3.5, side: halfWidth() + 1.5 });
 const COLORS = {
     sand: '#e8a35c', stripe: '#d9914c', grass: '#4f9a3c', hedge: '#3d7d2e', wall: '#6fc94f', wallSide: '#3f8a2c',
     water: '#3fb6ff', breakable: '#c9cedd', gate: '#4fb6ff', red: '#ff3d4f', house: '#e8f1ff', roof: '#3d6dff',
@@ -29,8 +41,14 @@ const DEFAULTS = {
     // No `need`: it charges as its unit does (the Units tab), unless one's set here.
     pads: (x, z) => ({ kind: state.houseKind, x, z, width: 2.4, depth: 1.8 }),
     pushBlocks: (x, z) => ({ x, z, width: 4.4, depth: 1.3, far: round(z - 8), near: round(z + 4) }),
-    helmets: (x, z) => ({ x, z, width: 3 }),
-    targets: (x, z) => ({ x, hp: 200, width: 3.2, z: Math.abs(z - BASE_Z) < 1 ? undefined : z }),
+    // A helmet (hits x2) leaves `kind` out; a viking hat (damage x2) is `attack`.
+    helmets: (x, z) => (state.helmetKind === 'attack' ? { kind: 'attack', x, z, width: 3 } : { x, z, width: 3 }),
+    targets: (x, z) => ({ x, hp: 200, width: 3.2, z: Math.abs(z - baseZ()) < 1 ? undefined : z }),
+};
+/** What a barrier gives, and how it's drawn here. */
+const HELMET_KINDS = {
+    hp: { label: 'helmet (hits x2)', text: 'HELMET x2', fill: '#9ccf5a', stroke: '#5d6e2c', ink: '#e4ffb8' },
+    attack: { label: 'viking hat (damage x2)', text: 'VIKING x2', fill: '#ff8a4c', stroke: '#7a1f1c', ink: '#ffe0b0' },
 };
 /** What a house makes, how it's drawn here, and a new one's `need`. */
 const HOUSE_KINDS = {
@@ -39,7 +57,7 @@ const HOUSE_KINDS = {
     saucer: { label: 'UFO', wall: '#ffe27a', roof: '#ffb31a', need: 40 },
     car: { label: 'CAR', wall: '#ffe3d6', roof: '#ff6a3d', need: 30 },
 };
-const LIST_NAMES = { gates: 'Gate', obstacles: 'Obstacle', spinners: 'Spinner', pushers: 'Pusher', pads: 'House', pushBlocks: 'PUSH block', helmets: 'Helmet barrier', targets: 'Fort' };
+const LIST_NAMES = { gates: 'Gate', obstacles: 'Obstacle', spinners: 'Spinner', pushers: 'Pusher', pads: 'House', pushBlocks: 'PUSH block', helmets: 'Barrier', targets: 'Fort' };
 /** Hit-test order: smaller things on top. */
 const PICK_ORDER = ['targets', 'pushBlocks', 'pads', 'pushers', 'spinners', 'helmets', 'gates', 'obstacles'];
 const LEVEL_FIELDS = [
@@ -49,7 +67,7 @@ const LEVEL_FIELDS = [
 const FIELD_HINTS = {
     redRate: 'reds a second at the start', redRateEnd: 'reds a second at the end of the ramp', redRamp: 'ramp seconds',
     redGiantEvery: 'a red giant every N s (0 = none)', baseHp: 'the one base\'s hits (no forts)', far: 'z: pushed here, the blues open it',
-    near: 'z: pushed here, the reds open it', need: 'blues per one it makes (empty = the Units tab\'s)', hp: 'hits', value: 'multiplier', speed: 'turns a second',
+    near: 'z: pushed here, the reds open it', need: 'blues per one it makes (empty = the Units tab\'s)', hp: 'hits', value: 'multiplier', lock: 'locked: hits to unlock it (empty = open)', speed: 'turns a second',
 };
 
 // ------------------------------------------------------------------ helpers
@@ -121,6 +139,7 @@ const state = {
     tool: 'select',
     polygonKind: 'wall',
     houseKind: 'giant',
+    helmetKind: 'hp',
     draft: [],
     snap: 0.25,
     theme: 'beach',
@@ -214,7 +233,9 @@ function buildLevelsTab() {
         el('select', { title: 'What a new house makes', onchange: (e) => { state.houseKind = e.target.value; } },
             ...Object.entries(HOUSE_KINDS).map(([kind, info]) => el('option', { value: kind }, info.label.toLowerCase()))),
         tool('pushBlocks', 'PUSH', 'PUSH block'),
-        tool('helmets', 'Helmet', 'Helmet barrier: blues going through get a helmet (double hits)'),
+        tool('helmets', 'Barrier', 'Barrier: blues going through get a helmet (double hits) or a viking hat (double damage); pick which'),
+        el('select', { title: 'What a new barrier gives', onchange: (e) => { state.helmetKind = e.target.value; } },
+            ...Object.entries(HELMET_KINDS).map(([kind, info]) => el('option', { value: kind }, info.label))),
         tool('spinners', 'Spinner', 'Spinner'),
         tool('pushers', 'Pusher', 'Sliding bar'),
         tool('targets', 'Fort', 'An enemy fort (several make a multi-target level)'),
@@ -446,8 +467,8 @@ function moveItem(list, item, dx, dz) {
     }
     item.x = fix((item.x ?? 0) + dx);
     if (list === 'targets') {
-        const z = (item.z ?? BASE_Z) + dz;
-        item.z = Math.abs(z - BASE_Z) < 0.01 ? undefined : fix(z);
+        const z = (item.z ?? baseZ()) + dz;
+        item.z = Math.abs(z - baseZ()) < 0.01 ? undefined : fix(z);
         if (item.z === undefined) delete item.z;
         return;
     }
@@ -496,8 +517,9 @@ function resizeCanvas() {
     canvas.width = Math.max(1, rect.width * ratio);
     canvas.height = Math.max(1, rect.height * ratio);
     const margin = 16;
+    const VIEW = viewBox();
     const scale = Math.min((rect.width - margin * 2) / (VIEW.side * 2), (rect.height - margin * 2) / (VIEW.near - VIEW.far));
-    view = { scale, ox: rect.width / 2, oy: margin - VIEW.far * scale, ratio };
+    view = { scale, ox: rect.width / 2, oy: margin - VIEW.far * scale, ratio, size: `${fieldWidth()}x${fieldLength()}` };
     draw();
 }
 
@@ -548,17 +570,23 @@ function obstacleOutline(o) {
 function draw() {
     if (!ctx) return;
     const data = level();
+    // Another field size (a level opened, its size changed): framed again first.
+    if (data && view.size !== `${fieldWidth()}x${fieldLength()}`) {
+        resizeCanvas();
+        return;
+    }
+    const VIEW = viewBox();
     ctx.setTransform(view.ratio ?? 1, 0, 0, view.ratio ?? 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (!data) return;
     // Ground, field, stripes, hedges, danger line, cannon.
     rect(0, (VIEW.near + VIEW.far) / 2, VIEW.side * 2, VIEW.near - VIEW.far, COLORS.grass);
-    rect(0, (VIEW.near + VIEW.far) / 2, HALF_WIDTH * 2, VIEW.near - VIEW.far, COLORS.sand);
-    for (let z = 0.5; z > VIEW.far; z -= 4) rect(0, z, HALF_WIDTH * 2, 2, COLORS.stripe);
-    for (const side of [-1, 1]) rect(side * (HALF_WIDTH + 0.55), (VIEW.near + VIEW.far) / 2, 1.1, VIEW.near - VIEW.far, COLORS.hedge);
+    rect(0, (VIEW.near + VIEW.far) / 2, halfWidth() * 2, VIEW.near - VIEW.far, COLORS.sand);
+    for (let z = 0.5; z > VIEW.far; z -= 4) rect(0, z, halfWidth() * 2, 2, COLORS.stripe);
+    for (const side of [-1, 1]) rect(side * (halfWidth() + 0.55), (VIEW.near + VIEW.far) / 2, 1.1, VIEW.near - VIEW.far, COLORS.hedge);
     // A light grid every unit, stronger every 5.
     ctx.lineWidth = 1;
-    for (let x = -HALF_WIDTH; x <= HALF_WIDTH; x += 1) {
+    for (let x = -halfWidth(); x <= halfWidth(); x += 1) {
         ctx.strokeStyle = x % 5 === 0 ? 'rgba(0,0,0,0.22)' : 'rgba(0,0,0,0.08)';
         ctx.beginPath();
         ctx.moveTo(...toScreen(x, VIEW.near));
@@ -568,12 +596,12 @@ function draw() {
     for (let z = 0; z >= VIEW.far; z -= 1) {
         ctx.strokeStyle = z % 5 === 0 ? 'rgba(0,0,0,0.22)' : 'rgba(0,0,0,0.08)';
         ctx.beginPath();
-        ctx.moveTo(...toScreen(-HALF_WIDTH, z));
-        ctx.lineTo(...toScreen(HALF_WIDTH, z));
+        ctx.moveTo(...toScreen(-halfWidth(), z));
+        ctx.lineTo(...toScreen(halfWidth(), z));
         ctx.stroke();
-        if (z % 5 === 0) text(`${z}`, -HALF_WIDTH - 0.9, z, 10, '#d8f5c8');
+        if (z % 5 === 0) text(`${z}`, -halfWidth() - 0.9, z, 10, '#d8f5c8');
     }
-    rect(0, DANGER_Z, HALF_WIDTH * 2, 0.15, COLORS.red);
+    rect(0, DANGER_Z, halfWidth() * 2, 0.15, COLORS.red);
     rect(0, CANNON_Z, 8.4, 0.12, '#ffffff');
     rect(0, CANNON_Z, 1.1, 1, COLORS.cannon, '#1b2a55');
     // Obstacles.
@@ -598,7 +626,10 @@ function draw() {
     });
     // Gates.
     (data.gates ?? []).forEach((g, i) => {
-        rect(g.x, g.z, g.width, 0.35, COLORS.gate, isSelected('gates', i) ? COLORS.select : '#1d5fae');
+        // A locked one: grey, its hits on a padlock under its multiplier.
+        const locked = (g.lock ?? 0) > 0;
+        rect(g.x, g.z, g.width, locked ? 0.6 : 0.35, locked ? '#9aa0a8' : COLORS.gate, isSelected('gates', i) ? COLORS.select : locked ? '#5e646d' : '#1d5fae');
+        if (locked) text(`🔒 ${g.lock}`, g.x, g.z + 0.6, 12, '#ffffff');
         if (g.swing) {
             ctx.strokeStyle = 'rgba(79,182,255,0.6)';
             ctx.setLineDash([4, 4]);
@@ -612,8 +643,9 @@ function draw() {
     });
     // Helmet barriers.
     (data.helmets ?? []).forEach((h, i) => {
-        rect(h.x, h.z, h.width, 0.35, '#9ccf5a', isSelected('helmets', i) ? COLORS.select : '#5d6e2c');
-        text('HELMET x2', h.x, h.z - 0.55, 12, '#e4ffb8');
+        const look = HELMET_KINDS[h.kind === 'attack' ? 'attack' : 'hp'];
+        rect(h.x, h.z, h.width, 0.35, look.fill, isSelected('helmets', i) ? COLORS.select : look.stroke);
+        text(look.text, h.x, h.z - 0.55, 12, look.ink);
     });
     // Spinners.
     (data.spinners ?? []).forEach((s, i) => {
@@ -673,14 +705,14 @@ function draw() {
     const targets = data.targets?.length ? data.targets : null;
     if (targets) {
         targets.forEach((t, i) => {
-            const z = t.z ?? BASE_Z;
+            const z = t.z ?? baseZ();
             const width = t.width ?? BASE.width;
             rect(t.x, z - BASE.depth / 2, width, BASE.depth, COLORS.red, isSelected('targets', i) ? COLORS.select : '#7a1220');
             text(`${t.hp}`, t.x, z - BASE.depth / 2, 13);
         });
     } else {
-        rect(0, BASE_Z - BASE.depth / 2, BASE.width, BASE.depth, COLORS.red, '#7a1220');
-        text(`${data.baseHp}`, 0, BASE_Z - BASE.depth / 2, 13);
+        rect(0, baseZ() - BASE.depth / 2, BASE.width, BASE.depth, COLORS.red, '#7a1220');
+        text(`${data.baseHp}`, 0, baseZ() - BASE.depth / 2, 13);
     }
     // The polygon being drawn.
     if (state.tool === 'polygon' && state.draft.length) {
@@ -734,7 +766,7 @@ function hits(list, item, x, z) {
         case 'spinners': return Math.hypot(x - item.x, z - item.z) <= item.length;
         case 'pushers': return inRect(item.x, item.z, item.width, Math.max(0.6, item.depth));
         case 'pads': case 'pushBlocks': return inRect(item.x, item.z, item.width, item.depth);
-        case 'targets': return inRect(item.x, (item.z ?? BASE_Z) - BASE.depth / 2, item.width ?? BASE.width, BASE.depth);
+        case 'targets': return inRect(item.x, (item.z ?? baseZ()) - BASE.depth / 2, item.width ?? BASE.width, BASE.depth);
         case 'obstacles': return pointInPolygon(x, z, obstacleOutline(item));
         default: return false;
     }
@@ -919,6 +951,53 @@ function numberField(object, key, onChange, { step = 0.05, hint } = {}) {
     return el('div', { class: 'field' }, el('label', { title: hint ?? FIELD_HINTS[key] ?? '' }, key), input);
 }
 
+/**
+ * The field's size: a preset, or its own width / length. Unset = the default (10 x 24). It grows from the bottom centre,
+ * so nothing placed moves; pieces left outside a smaller field are flagged.
+ */
+function fieldSizeFields(data) {
+    const set = (width, length) => {
+        checkpoint();
+        if (width === FIELD.width) delete data.width; else data.width = width;
+        if (length === FIELD.length) delete data.length; else data.length = length;
+        changed();
+    };
+    const current = FIELD_SIZES.findIndex((size) => size.width === fieldWidth() && size.length === fieldLength());
+    const preset = el('select', { onchange: (e) => { if (e.target.value !== '') { const size = FIELD_SIZES[Number(e.target.value)]; set(size.width, size.length); } } },
+        ...FIELD_SIZES.map((size, i) => el('option', { value: i, selected: i === current }, size.label)),
+        ...(current < 0 ? [el('option', { value: '', selected: true }, `custom ${fieldWidth()} x ${fieldLength()}`)] : []));
+    const number = (key, value, most) => {
+        const input = el('input', { type: 'number', step: 1, min: 4, max: most, value, title: key === 'width' ? 'across (x), centred' : 'cannon to base (z): the base moves back' });
+        input.addEventListener('change', () => {
+            const v = Math.min(most, Math.max(4, Math.round(Number(input.value) || 0)));
+            if (key === 'width') set(v, fieldLength()); else set(fieldWidth(), v);
+        });
+        return el('div', { class: 'field' }, el('label', {}, key), input);
+    };
+    const box = el('div', {},
+        el('div', { class: 'field' }, el('label', { title: "The field's size: it grows from the bottom centre (the cannon's end)" }, 'size'), preset),
+        number('width', fieldWidth(), FIELD.maxWidth),
+        number('length', fieldLength(), FIELD.maxLength));
+    const outside = outsideField(data);
+    if (outside) box.append(el('p', { class: 'hint', style: { color: '#ff8a8a' } }, `${outside} piece(s) are outside the field.`));
+    return box;
+}
+
+/** How many of the level's pieces are past the field's sides or behind its base (after it was made smaller). */
+function outsideField(data) {
+    const hw = halfWidth() + 0.01;
+    const far = baseZ() - 0.01;
+    const out = (x, z) => Math.abs(x) > hw || (z !== undefined && z < far);
+    let count = 0;
+    for (const list of ['gates', 'spinners', 'pushers', 'pads', 'pushBlocks', 'helmets', 'targets']) {
+        for (const item of data[list] ?? []) if (out(item.x, item.z)) count++;
+    }
+    for (const o of data.obstacles ?? []) {
+        if (o.points ? o.points.some(([x, z]) => out(x, z)) : out(o.x, o.z)) count++;
+    }
+    return count;
+}
+
 function textField(object, key) {
     const input = el('input', { type: 'text', value: object[key] ?? '' });
     input.addEventListener('change', () => {
@@ -955,6 +1034,7 @@ function renderProps() {
             },
         }, el('option', { value: '' }, '(no zone)'), ...state.zones.zones.map((z) => el('option', { value: z.id, selected: z === current }, `${z.name} · ${z.theme}`)));
         propsPanel.append(el('div', { class: 'field' }, el('label', {}, 'zone'), zone));
+        propsPanel.append(fieldSizeFields(data));
         for (const [key, type] of LEVEL_FIELDS) propsPanel.append(type === 'text' ? textField(data, key) : numberField(data, key, null, { step: 0.1 }));
         propsPanel.append(el('p', { class: 'hint' }, data.targets?.length
             ? `${data.targets.length} forts (baseHp is not used).`
@@ -996,7 +1076,7 @@ function renderProps() {
             }, 'Turn into a polygon'));
         }
     } else {
-        const keys = { gates: ['x', 'z', 'width', 'value'], spinners: ['x', 'z', 'length', 'arms', 'speed'], pushers: ['x', 'z', 'width', 'depth', 'range', 'seconds', 'phase'], pads: ['x', 'z', 'width', 'depth', 'need'], pushBlocks: ['x', 'z', 'width', 'depth', 'far', 'near'], helmets: ['x', 'z', 'width'], targets: ['x', 'z', 'width', 'hp'] }[s.list];
+        const keys = { gates: ['x', 'z', 'width', 'value', 'lock'], spinners: ['x', 'z', 'length', 'arms', 'speed'], pushers: ['x', 'z', 'width', 'depth', 'range', 'seconds', 'phase'], pads: ['x', 'z', 'width', 'depth', 'need'], pushBlocks: ['x', 'z', 'width', 'depth', 'far', 'near'], helmets: ['x', 'z', 'width'], targets: ['x', 'z', 'width', 'hp'] }[s.list];
         if (s.list === 'pads') {
             const kind = el('select', {
                 onchange: (e) => {
@@ -1007,7 +1087,18 @@ function renderProps() {
             }, ...Object.entries(HOUSE_KINDS).map(([k, info]) => el('option', { value: k, selected: (item.kind ?? 'giant') === k }, info.label.toLowerCase())));
             propsPanel.append(el('div', { class: 'field' }, el('label', { title: 'What it makes' }, 'makes'), kind));
         }
-        for (const key of keys) propsPanel.append(numberField(item, key, null, { step: ['value', 'arms', 'need', 'hp'].includes(key) ? 1 : 0.05 }));
+        if (s.list === 'helmets') {
+            const kind = el('select', {
+                onchange: (e) => {
+                    checkpoint();
+                    if (e.target.value === 'attack') item.kind = 'attack';
+                    else delete item.kind;
+                    changed();
+                },
+            }, ...Object.entries(HELMET_KINDS).map(([k, info]) => el('option', { value: k, selected: (item.kind ?? 'hp') === k }, info.label)));
+            propsPanel.append(el('div', { class: 'field' }, el('label', { title: 'What blues going through get' }, 'gives'), kind));
+        }
+        for (const key of keys) propsPanel.append(numberField(item, key, null, { step: ['value', 'arms', 'need', 'hp', 'lock'].includes(key) ? 1 : 0.05 }));
         if (s.list === 'gates') {
             const swing = el('input', { type: 'checkbox', checked: !!item.swing });
             swing.addEventListener('change', () => {
@@ -1019,7 +1110,7 @@ function renderProps() {
             propsPanel.append(el('div', { class: 'field' }, el('label', {}, 'swings'), swing));
             if (item.swing) propsPanel.append(numberField(item.swing, 'range'), numberField(item.swing, 'seconds'));
         }
-        if (s.list === 'targets') propsPanel.append(el('p', { class: 'hint' }, `z empty = the base line (${BASE_Z}).`));
+        if (s.list === 'targets') propsPanel.append(el('p', { class: 'hint' }, `z empty = the base line (${baseZ()}).`));
         if (s.list === 'pushBlocks') propsPanel.append(el('p', { class: 'hint' }, 'Blue dashes: the far stop (blues open the lane there). Red dashes: the near stop (the reds open it).'));
     }
     propsPanel.append(el('div', { class: 'field', style: { marginTop: '12px' } },
