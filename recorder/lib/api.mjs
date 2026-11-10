@@ -62,6 +62,10 @@ export function createApi({ outDir, cwd }) {
         const dir = dirOf(id);
         const meta = readMeta(id);
         const raw = path.join(dir, meta.raw);
+        if (!fs.existsSync(raw) || fs.statSync(raw).size < 1024) {
+            fs.rmSync(dir, { recursive: true, force: true });
+            throw new Error('The recording was empty: the browser recorded nothing (its encoder may refuse this size or frame rate). Try again: the recorder now checks each format first.');
+        }
         const rawFacts = await probe(raw);
         const h264 = /h264|avc/i.test(rawFacts.codec);
         const source = h264 ? 'source.mp4' : 'source.webm';
@@ -229,7 +233,13 @@ export function createApi({ outDir, cwd }) {
             fs.appendFileSync(path.join(dirOf(id), meta.raw), await readBody(req));
             return send(res, 200, { ok: true });
         }
-        if (route === 'finish' && req.method === 'POST') return send(res, 200, await finish(query.get('id')));
+        if (route === 'finish' && req.method === 'POST') {
+            try {
+                return send(res, 200, await finish(query.get('id')));
+            } catch (error) {
+                return send(res, 500, { error: String(error.message ?? error) });
+            }
+        }
         if (route === 'estimate' && req.method === 'POST') {
             const body = await readJson(req);
             try {

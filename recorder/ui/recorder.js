@@ -38,8 +38,9 @@ let layerFrame = 0;
 
 const composite = document.createElement('canvas');
 const draw = composite.getContext('2d', { alpha: false });
-// In the page (off to the side), so the browser keeps feeding its stream.
-composite.style.cssText = 'position:fixed;left:-100000px;top:0;pointer-events:none';
+// In the page and on screen (shown tiny and almost clear; its pixels stay full size), so the browser keeps feeding its
+// stream: a canvas off screen can stop giving frames.
+composite.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;pointer-events:none;z-index:-1';
 document.body.append(composite);
 
 const hook = () => {
@@ -207,9 +208,45 @@ const step = () => hook()?.step();
 let recorder = null;
 let recording = null;
 
-function pickMime() {
-    const types = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
-    return types.find((type) => MediaRecorder.isTypeSupported(type)) ?? '';
+const MIMES = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+/** The format that worked at a size (`w`x`h`@fps), so it's tested once. */
+const workingMime = new Map();
+
+/**
+ * The first format the browser really records `stream` in: "supported" isn't enough (an H.264 encoder can refuse a
+ * size or frame rate and record nothing, with no error), so each is tried for a moment and must give some data.
+ */
+async function findMime(stream, bitrate) {
+    const key = `${composite.width}x${composite.height}@${ui.fps.value}`;
+    if (workingMime.has(key)) return workingMime.get(key);
+    for (const mime of MIMES.filter((type) => MediaRecorder.isTypeSupported(type))) {
+        ui.recInfo.textContent = `Checking the browser can record ${mime.split('codecs=')[1] ?? mime}…`;
+        const ok = await new Promise((resolve) => {
+            let bytes = 0;
+            let failed = false;
+            let test;
+            try {
+                test = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bitrate });
+            } catch {
+                resolve(false);
+                return;
+            }
+            test.ondataavailable = (event) => { bytes += event.data.size; };
+            test.onerror = () => { failed = true; };
+            test.onstop = () => resolve(!failed && bytes > 0);
+            test.start();
+            const pump = setInterval(compose, 16);
+            setTimeout(() => {
+                clearInterval(pump);
+                if (test.state !== 'inactive') test.stop();
+            }, 700);
+        });
+        if (ok) {
+            workingMime.set(key, mime);
+            return mime;
+        }
+    }
+    return null;
 }
 
 async function startRecording() {
@@ -217,13 +254,19 @@ async function startRecording() {
     if (!game || recording) return;
     compose();
     const fps = +ui.fps.value;
-    const mime = pickMime();
     const stream = composite.captureStream(fps);
     const tracks = ui.audio.checked ? game.audioTracks() : [];
     tracks.forEach((track) => stream.addTrack(track));
+    ui.record.disabled = true;
+    const mime = await findMime(stream, +ui.bitrate.value * 1e6);
+    ui.record.disabled = false;
+    if (!mime) {
+        ui.recInfo.innerHTML = '<span class="hint bad">The browser can&#39;t record this size in any format. Try a smaller size, 30 fps, or a lower quality.</span>';
+        return;
+    }
     const { id } = await fetch('api/start', { method: 'POST', body: JSON.stringify({ width: format.width, height: format.height, fps, mime, game: ui.gameTitle.textContent }) }).then((r) => r.json());
     recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: +ui.bitrate.value * 1e6, audioBitsPerSecond: 192000 });
-    recording = { id, bytes: 0, uploaded: 0, chain: Promise.resolve(), started: performance.now(), pausedFor: 0, pausedAt: 0, sound: tracks.length > 0, failed: '' };
+    recording = { id, bytes: 0, uploaded: 0, chain: Promise.resolve(), started: performance.now(), pausedFor: 0, pausedAt: 0, sound: tracks.length > 0, failed: '', mime: mime.split('codecs=')[1] ?? mime };
     recorder.ondataavailable = (event) => {
         if (!event.data.size) return;
         const take = recording;
@@ -232,6 +275,10 @@ async function startRecording() {
             if (!r.ok) throw new Error('upload failed');
             take.uploaded += event.data.size;
         }).catch((error) => { take.failed = String(error.message ?? error); });
+    };
+    recorder.onerror = (event) => {
+        recording.failed = `The browser stopped recording: ${event.error?.message ?? event.error?.name ?? 'unknown error'}`;
+        void stopRecording();
     };
     recorder.onpause = () => { recording.pausedAt = performance.now(); };
     recorder.onresume = () => { recording.pausedFor += performance.now() - recording.pausedAt; recording.pausedAt = 0; };
@@ -246,9 +293,11 @@ async function startRecording() {
 async function stopRecording() {
     if (!recording || !recorder) return;
     const take = recording;
-    const stopped = new Promise((resolve) => { recorder.onstop = resolve; });
-    recorder.stop();
-    await stopped;
+    if (recorder.state !== 'inactive') {
+        const stopped = new Promise((resolve) => { recorder.onstop = resolve; });
+        recorder.stop();
+        await stopped;
+    }
     recording = null;
     ui.record.textContent = '● Record';
     ui.record.classList.remove('on');
@@ -260,10 +309,10 @@ async function stopRecording() {
     try {
         const meta = await fetch(`api/finish?id=${take.id}`, { method: 'POST' }).then((r) => r.json());
         if (meta.error) throw new Error(meta.error);
-        ui.recInfo.innerHTML = `Saved <b>${meta.duration.toFixed(1)} s</b> (${mb(meta.bytes)}). <a href="editor?id=${meta.id}" target="_blank">Open in the editor</a>`;
+        ui.recInfo.innerHTML = `${take.failed ? `<span class="hint bad">${take.failed}</span><br>` : ''}Saved <b>${meta.duration.toFixed(1)} s</b> (${mb(meta.bytes)}). <a href="editor?id=${meta.id}" target="_blank">Open in the editor</a>`;
         window.open(`editor?id=${meta.id}`, '_blank');
     } catch (error) {
-        ui.recInfo.textContent = `Couldn't finish the recording: ${error.message}`;
+        ui.recInfo.innerHTML = `<span class="hint bad">Couldn't finish the recording: ${error.message.split(String.fromCharCode(10))[0]}${take.failed ? ` (${take.failed})` : ''}</span>`;
     }
     ui.record.disabled = false;
     for (const input of [ui.width, ui.height, ui.dpr, ui.format, ui.fps, ui.bitrate, ui.audio, ui.reload, ui.swap, ui.query]) input.disabled = false;
@@ -282,7 +331,7 @@ function showRecording() {
     const paused = recorder?.state === 'paused';
     const length = performance.now() - recording.started - recording.pausedFor - (paused ? performance.now() - recording.pausedAt : 0);
     ui.recBadge.textContent = `${paused ? '❚❚' : '●'} REC ${clock(length)} · ${mb(recording.bytes)}`;
-    ui.recInfo.textContent = `${paused ? 'Paused with the game. ' : ''}${recording.sound ? 'With sound.' : 'No sound (none playing yet, or off).'} Uploaded ${mb(recording.uploaded)}.${recording.failed ? ` ${recording.failed}` : ''}`;
+    ui.recInfo.textContent = `${recording.mime} · ${paused ? 'Paused with the game. ' : ''}${recording.sound ? 'With sound.' : 'No sound (none playing yet, or off).'} Uploaded ${mb(recording.uploaded)}.${recording.failed ? ` ${recording.failed}` : ''}`;
 }
 
 // ------------------------------------------------------------------ recent
