@@ -47,7 +47,9 @@ import ladderFile from '../../ui/arena-ladder.json';
 import { DuelRobot } from '../sim/DuelRobot';
 import { SKILLS } from '../sim/Grading';
 import { BuildingBar, DuelHud } from '../ui/DuelHud';
+import { MatchPlayer } from '../ui/Matchmaking';
 import { RED, Target } from '../battle/Battle';
+import { matchOver, storyWon } from '../data/Ranking';
 
 const MODEL_BASE = './mob/models/mob/';
 
@@ -81,6 +83,8 @@ const REFERENCE_ASPECT = 9 / 16;
 const FORT_TOP_Y = 2.9;
 const FORT_BACK = 2.6;
 const HUD_CLEARANCE = 10;
+/** An arena match: the room kept over the far buildings for their life bars (px). */
+const DUEL_BAR_ROOM = 64;
 /** The cannon's front edge (z) and the room kept under it at the bottom of the screen (px). */
 const CANNON_FRONT_Z = 1.2;
 /** Where the cannon's front sits on the screen (a share of its height from the top; under it, the energy bar). CAMERA.offsetY nudges it (10 px a unit). */
@@ -101,17 +105,26 @@ const SHAKE = { giantClash: 0, baseHit: 0, bigHit: 0.16, giant: 0, won: 0.38, lo
 const SHAKE_LEVEL = { value: 1 };
 /** The base falls: the game slows to this, then eases back to full speed over this long (seconds). */
 const SLOW_MOTION = { scale: 0.25, seconds: 1.2 };
+/** An arena match's end: the beaten side's cannon blows up in slow motion, then (this long after) the end card. */
+const DUEL_END = { card: 2 };
 /** A gate's "+N" pop-up gathers its copies over this long (seconds), so a stream doesn't pop every frame. */
 const GATE_POP_SECONDS = 0.35;
 const LADDER = ladderFile as Ladder;
+/** How an arena match was started from the main screen: online (against a "player": `opponent`, counted) or practice
+ *  (against the bot, shown as one; not counted). */
+export interface MatchStart { online: boolean; opponent?: MatchPlayer }
+/** An arena match's countdown before it starts (seconds: 3, 2, 1, then GO). */
+const COUNTDOWN = 3;
 /** An arena match to play instead of the levels: the arena (by id or as sent), and what the test pins (see the top). */
 interface DuelSpec {
     arena: ArenaConfig;
     ai?: SkillId;
     rating?: number;
     watch?: SkillId;
-    /** Counted on the player's arena record (not a test). */
+    /** Counted on the player's arena record (not a test, not practice). */
     counted: boolean;
+    /** Online: the opponent shown as a player (their name); else a bot. */
+    opponent?: MatchPlayer;
 }
 
 export default class MobScene extends ThreeScene {
@@ -156,13 +169,16 @@ export default class MobScene extends ThreeScene {
         counted: false,
     } : null;
     private duel: { robot: DuelRobot; watch: DuelRobot | null; opponent: Opponent; spec: DuelSpec } | null = null;
+    /** An arena match's countdown left (seconds): it starts by itself at the end (no tap). */
+    private countdown = 0;
     private readonly duelHud: DuelHud;
 
     /** `onHome`: the end card's HOME (the main screen). */
     /** `arena`: an arena's id, a counted match there (the main screen's ARENA) instead of the story's level. */
-    public constructor(game: Game, private readonly onHome: () => void = () => undefined, arena?: string) {
+    public constructor(game: Game, private readonly onHome: () => void = () => undefined, arena?: string, match?: MatchStart) {
         super(game);
-        if (arena && ARENAS_BY_ID[arena]) this.duelSpec = { arena: ARENAS_BY_ID[arena], counted: true };
+        // From the main screen: online counts (trophies, crowns, quests), practice doesn't.
+        if (arena && ARENAS_BY_ID[arena]) this.duelSpec = { arena: ARENAS_BY_ID[arena], counted: !!match?.online, opponent: match?.opponent };
         this.threeScene.background = new THREE.Color(0x8fd8ff);
         updateBend(BEND.origin, BEND.strength);
         this.threeScene.add(new THREE.HemisphereLight(0xffffff, 0x6b8f4a, LIGHT.sky));
@@ -173,10 +189,7 @@ export default class MobScene extends ThreeScene {
 
         this.hud = new MobHud(() => this.nextBattle(), (kind) => this.buyUpgrade(kind), () => this.onHome(), (kind) => this.playCard(kind));
         this.addChild(this.hud);
-        this.duelHud = new DuelHud(() => this.nextBattle(), () => this.onHome(), () => {
-            // The comeback boost: the player's (a robot playing their side boosts by itself).
-            if (this.state === 'playing' && this.duel && !this.duel.watch) this.battle.boost(BLUE);
-        });
+        this.duelHud = new DuelHud(() => this.nextBattle(), () => this.onHome());
         this.duelHud.visible = false;
         this.addChild(this.duelHud);
         if (SHOW_FRAMING) {
@@ -241,9 +254,11 @@ export default class MobScene extends ThreeScene {
                 if (special) this.kick(SHAKE.bigHit);
             },
             ownDown: (target) => {
+                const own = this.battle.blueTargets[target];
+                // The cannon: the match lost (finishDuel blows it up).
+                if (own.kind === 'cannon') return;
                 this.arena.destroyOwn(target);
                 MobAudio.play('explosion', 0.8);
-                const own = this.battle.blueTargets[target];
                 this.popAt('LOST!', own.x, 3, own.z, 0xff8a96, 42);
             },
             draw: () => this.finishDuel('draw'),
@@ -254,13 +269,12 @@ export default class MobScene extends ThreeScene {
                 const z = blue ? 0.35 + this.battle.cannonZ : ARENA.baseZ - 0.35 - this.battle.cannonZ;
                 MobAudio.play('bigHit', 0.7);
                 this.popAt(blue ? 'DEFEND THE CANNON!' : 'CANNON OPEN!', x, 2.6, z, blue ? 0xff8a96 : 0xffd23f, 46);
-            },
-            boosted: (team) => {
-                const blue = team === BLUE;
-                MobAudio.play('confirm', blue ? 1.2 : 0.9);
-                const x = blue ? this.battle.cannonX : this.battle.red.cannonX;
-                const z = blue ? 0.35 + this.battle.cannonZ : ARENA.baseZ - 0.35 - this.battle.cannonZ;
-                this.popAt('SPEED!', x, 2.2, z, blue ? 0x9fe6ff : 0xff8a96, 40);
+                // On its cannon: it fires faster from now on (the comeback), by itself.
+                gsap.delayedCall(0.6, () => {
+                    if (this.state !== 'playing') return;
+                    MobAudio.play('confirm', blue ? 1.2 : 0.9);
+                    this.popAt('SPEED UP!', x, 2.0, z, blue ? 0x9fe6ff : 0xff8a96, 40);
+                });
             },
             clash: (x, z, big) => {
                 this.arena.clash(x, z, big);
@@ -322,6 +336,14 @@ export default class MobScene extends ThreeScene {
                 const word = kind < 0 ? 'UFO!' : kind === TRUCK ? 'TRUCK!' : kind === CAR ? 'RAMMER!' : team === BLUE ? 'GIANT!' : 'RED GIANT!';
                 this.popAt(word, x, 2.5, z, kind < 0 ? 0xffd23f : team === BLUE ? 0x9fd8ff : 0xff6b7a, 46);
             },
+            shockwave: (team, x, z, radius) => {
+                this.arena.shockwave(x, z, radius, team === BLUE ? COLORS.blue : COLORS.red);
+                MobAudio.play('bigHit', 0.7);
+            },
+            knocked: (x, z, team) => {
+                if (Math.random() < 0.5) this.arena.clash(x, z, false);
+                else this.arena.puffAt(x, z, team === BLUE ? COLORS.blue : COLORS.red);
+            },
             king: (x, z) => {
                 this.arena.giant(x, z, COLORS.red);
                 MobAudio.play('giant', 0.65);
@@ -340,6 +362,8 @@ export default class MobScene extends ThreeScene {
                 this.popAt('BOOM!', x, 3.5, z, 0xffd23f, 52);
             },
             targetDown: (target) => {
+                // A match's cannon: the match won (finishDuel blows it up).
+                if (this.duel && this.battle.targets[target].kind === 'cannon') return;
                 const last = this.battle.targets.every((other) => !other.alive);
                 this.arena.destroyTarget(target, last);
                 if (!last) {
@@ -396,7 +420,10 @@ export default class MobScene extends ThreeScene {
         const robot = new DuelRobot(this.battle, RED, SKILLS[opponent.skill], cardsOf(opponent.cards));
         const watch = spec.watch ? new DuelRobot(this.battle, BLUE, SKILLS[spec.watch], cardsOf(player.cards)) : null;
         this.duel = { robot, watch, opponent, spec };
-        this.duelHud.reset(`${SKILLS[opponent.skill].name.toUpperCase()} · ${opponent.tier.name.toUpperCase()}`, this.battle.ownHpMax, this.battle.baseHpMax);
+        // Online, the opponent's a "player" (their name); practice and tests: the bot, as it is.
+        const caption = spec.opponent ? spec.opponent.name.toUpperCase() : `BOT · ${SKILLS[opponent.skill].name.toUpperCase()}`;
+        this.duelHud.reset(caption, this.battle.ownHpMax, this.battle.baseHpMax);
+        this.countdown = COUNTDOWN + 0.5;
         this.duelHud.setTime(this.battle.timeLeft);
     }
 
@@ -427,9 +454,28 @@ export default class MobScene extends ThreeScene {
         const spec = this.duel.spec;
         const before = MobSave.arena;
         const after = spec.counted ? MobSave.arenaResult(LADDER, result) : null;
+        // The competition: what it destroyed (each enemy tower, their cannon) and a win (a test isn't counted).
+        const towers = this.battle.targets.filter((target) => target.kind !== 'cannon' && !target.alive).length;
+        const cannon = !this.battle.timedOut && this.battle.targets.some((target) => target.kind === 'cannon' && !target.alive);
+        const crowns = spec.counted ? matchOver(result === 'won', towers, cannon) : 0;
+        // The beaten side's cannon blows up (fallen or not: the clock ran out), in slow motion.
+        if (result !== 'draw') {
+            const list = result === 'won' ? this.battle.targets : this.battle.blueTargets;
+            const k = list.findIndex((target) => target.kind === 'cannon');
+            if (k >= 0) {
+                if (result === 'won') this.arena.destroyTarget(k, true);
+                else this.arena.destroyOwn(k, true);
+                const at = list[k];
+                this.popAt(result === 'won' ? 'DEFEATED!' : 'DESTROYED!', at.x, 3.5, at.z, result === 'won' ? 0xffd23f : 0xff8a96, 56);
+                if (this.battle.timedOut) this.popAt('TIME UP!', 0, 4.5, ARENA.baseZ / 2, 0xffffff, 64);
+            }
+            MobAudio.play('explosion');
+            Game.timeScale = SLOW_MOTION.scale;
+            const speed = { scale: SLOW_MOTION.scale };
+            gsap.to(speed, { scale: 1, duration: SLOW_MOTION.seconds, ease: 'power2.in', onUpdate: () => { Game.timeScale = speed.scale; } });
+        }
         if (result === 'won') {
             this.kick(SHAKE.won);
-            MobAudio.play('explosion');
             gsap.delayedCall(0.5, () => {
                 if (this.torndown) return;
                 this.arena.confetti();
@@ -443,10 +489,10 @@ export default class MobScene extends ThreeScene {
         }
         const own = this.battle.ownHp;
         const theirs = this.battle.baseHp;
-        gsap.delayedCall(result === 'won' ? WON_CARD_DELAY : LOST_CARD_DELAY, () => {
+        gsap.delayedCall(result === 'draw' ? LOST_CARD_DELAY : DUEL_END.card, () => {
             if (this.torndown) return;
             this.duelHud.showEnd({
-                result, own, theirs,
+                result, own, theirs, crowns,
                 rating: after ? { before: before.rating, after: after.rating, tier: LADDER.tiers[tierFor(LADDER, after)].name } : null,
             });
         });
@@ -490,6 +536,8 @@ export default class MobScene extends ThreeScene {
         if (won) {
             MobSave.addCoins(reward);
             MobSave.won(played);
+            // The competition's crowns (a level pinned by the URL or the editor isn't the player's).
+            if (!this.pinned.config) storyWon();
             // The last target blows apart (Battle's targetDown) in slow motion, confetti over the field.
             this.kick(SHAKE.won);
             MobAudio.play('explosion');
@@ -589,13 +637,12 @@ export default class MobScene extends ThreeScene {
         // The first-card tutorial: only the card goes (the field's paused). A robot playing the player's side (watching a
         // match): a press only starts it.
         if (this.state === 'over' || this.cardTutorial) return;
-        if (this.duel?.watch) {
-            this.begin();
-            return;
-        }
+        if (this.duel?.watch) return;
         this.dragging = true;
-        this.battle.firing = true;
         this.aimAt(event.clientX);
+        // (A match starts with its countdown, not a press: till then the finger only aims.)
+        if (this.duel && this.state === 'waiting') return;
+        this.battle.firing = true;
         this.begin();
     };
 
@@ -630,11 +677,24 @@ export default class MobScene extends ThreeScene {
         this.crowd.update(this.battle, this.time);
         this.arena.update(this.battle, dt);
         this.hud.setBaseHp(this.battle.baseHp, this.battle.baseHpMax);
+        if (this.duel && this.state === 'waiting' && this.countdown > 0) {
+            const before = Math.ceil(this.countdown - 0.5);
+            this.countdown -= dt;
+            const now = Math.ceil(this.countdown - 0.5);
+            if (now !== before && now > 0) {
+                this.duelHud.showCount(String(now));
+                MobAudio.play('click', 1 + (COUNTDOWN - now) * 0.1);
+            }
+            if (this.countdown <= 0) {
+                // GO (the battle's own): the player holding already fires.
+                this.begin();
+                if (this.dragging) this.battle.firing = true;
+            }
+        }
         if (this.duel) {
             this.duelHud.setLife(this.battle.ownHp, this.battle.ownHpMax, this.battle.baseHp, this.battle.baseHpMax);
             this.duelHud.setTime(this.battle.timeLeft);
             this.duelHud.update(dt);
-            this.duelHud.setBoost(this.state === 'playing' && !this.duel.watch && this.battle.canBoost(BLUE), this.state === 'playing' ? this.battle.boostLeft(BLUE) : 0);
             this.placeBuildingBars();
         }
         this.hud.setEnergy(this.battle.energy < 0 ? 1 : this.battle.energy / this.battle.energyMax, this.battle.overheated, this.battle.capped);
@@ -767,7 +827,8 @@ export default class MobScene extends ThreeScene {
         updateBend(BEND.origin, BEND.strength);
         this.hud.layout();
         this.duelHud.layout();
-        const hudBottom = (this.duel ? this.duelHud.topBottom() : this.hud.topBottom()) + HUD_CLEARANCE;
+        // (A match: room too for the bars over the far buildings, under the clock and the life bars.)
+        const hudBottom = (this.duel ? this.duelHud.topBottom() + DUEL_BAR_ROOM : this.hud.topBottom()) + HUD_CLEARANCE;
         const tops = this.arena?.fortTops() ?? [new THREE.Vector3(0, FORT_TOP_Y, ARENA.baseZ - FORT_BACK)];
         // A longer field moves the look-at point up it.
         CAMERA_TARGET.z = ARENA.baseZ * TARGET_SHARE;

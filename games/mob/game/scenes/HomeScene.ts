@@ -32,12 +32,18 @@ import { WorldMapView } from '../world/WorldMapView';
 import { MapMarkers } from '../ui/MapMarkers';
 import { CardKind } from '../data/Settings';
 import { ArenaConfig, arenaBattle } from '../data/ArenaConfig';
-import { arenaFor } from '../data/Arenas';
+import { arenaFor, arenaNeeds } from '../data/Arenas';
 import { Ladder, tierFor } from '../data/ArenaLadder';
 import ladderFile from '../../ui/arena-ladder.json';
 import { bendDrop, updateBend } from '../services/Bend';
 import { HomePanel, PanelKind } from '../ui/HomePanels';
-import { COIN_BAR, DARK, fillCoinBar, framePlane, iconSprite, label, plainLabel, tappable } from '../ui/UiParts';
+import { RankingPanel } from '../ui/RankingPanel';
+import { MatchPlayer, Matchmaking } from '../ui/Matchmaking';
+import { MatchStart } from './MobScene';
+import { AVATARS, usernameFrom } from '../data/Profile';
+import { opponentFor } from '../data/ArenaLadder';
+import { anyClaimable } from '../data/Ranking';
+import { COIN_BAR, DARK, fillCoinBar, fillGemBar, glossyButton, framePlane, iconSprite, label, plainLabel, tappable } from '../ui/UiParts';
 
 /** Design units (720 x 1080). The bottom tabs (as Ant's and UFO's), the ribbon, the PLAY button, the sound button. */
 const TABS = {
@@ -46,11 +52,17 @@ const TABS = {
 };
 const RIBBON = { y: 128, width: 430, height: 86, scale: 0.6, text: 36, textY: -6, areaY: 62, areaSize: 26 };
 /** The mode tabs' plates (always up, a colour each; the one not shown sits `drop` lower) and their icons. */
-const MODE_TABS = { story: 0x2fa36b, arena: 0x8a3dff, drop: 16, icon: 84, focusIcon: 100, rise: 22 };
+const MODE_TABS = { story: 0x18c25a, arena: 0x8f45ff, drop: 16, icon: 84, focusIcon: 100, rise: 22, inset: 5 };
+/** Each mode tab's shine (over its plate, as the side tabs' focus has one). */
+const MODE_LIGHTS = { story: 0x8cf7b4, arena: 0xc9a2ff };
+/** The arena's PRACTICE button, over PLAY. */
+const PRACTICE = { width: 250, height: 70, over: 96 };
 const PLAY = { width: 440, height: 110, up: 92, textSize: 54 };
 const PLAY_SLICE = { side: 82, height: 194 };
 const SHINE = { glowWidth: 1.35, glowHeight: 2.2, glowColor: 0xffd23f, glowFrom: 0.3, glowTo: 0.75, glowSeconds: 0.9, band: 90, tilt: 0.35, sweep: 0.75, wait: 1.5, alpha: 0.85, corner: 0.32 };
 const MUTE = { size: 56, margin: 16, y: 48, icon: 0.55 / 128 };
+/** The RANKING tab's badge (a quest's reward waiting): its size and where on the tab. */
+const RANKING_BADGE = { size: 36, x: 34, y: -40 };
 /** The view: the camera's tilt and field of view, its sway (radians either way, and how fast), where the field goes on
  *  the screen (a share of its height: from under the ribbon to well over PLAY; of its width: the margin either side),
  *  and how far the island's sand reaches past the hedges (much wider than in a battle). */
@@ -74,10 +86,11 @@ function mapProgress(): { index: number; furthest: number; preview: boolean } {
 const MAP_SKY = 0x8fd8ff;
 
 type Mode = 'story' | 'arena';
-type Tab = 'upgrades' | Mode | 'areas';
-const TAB_ORDER: Tab[] = ['upgrades', 'arena', 'story', 'areas'];
+type Tab = 'upgrades' | 'ranking' | Mode | 'areas';
+const TAB_ORDER: Tab[] = ['upgrades', 'ranking', 'arena', 'story', 'areas'];
 const TAB_ICONS: Record<Tab, { frame: string; name: string }> = {
     upgrades: { frame: 'ItemIcon_Gear', name: 'UPGRADES' },
+    ranking: { frame: 'ItemIcon_Medalstand', name: 'RANKING' },
     story: { frame: 'Icon_Castle', name: 'STORY' },
     arena: { frame: 'ItemIcon_Battle', name: 'ARENA' },
     areas: { frame: 'Icon_MapPoint', name: 'AREAS' },
@@ -117,6 +130,14 @@ export default class HomeScene extends ThreeScene {
     private shownArena: { id: string; arena: ArenaConfig } | null = null;
     private arenaLocked = false;
     private readonly modePlates = new Map<Mode, PIXI.NineSlicePlane>();
+    private readonly modeLights = new Map<Mode, PIXI.NineSlicePlane>();
+    /** PLAY's words (PLAY ONLINE in the arena), PRACTICE (the arena's, against the bot), and the matchmaking window. */
+    private playWords: PIXI.Text | null = null;
+    private readonly practice = glossyButton(PRACTICE.width, PRACTICE.height, 'PRACTICE', 'Button01_l_Sky');
+    private matchmaking: Matchmaking | null = null;
+    /** The RANKING tab's badge, and its page once it's been opened. */
+    private readonly rankingBadge = new PIXI.Container();
+    private rankingPanel: RankingPanel | null = null;
     private readonly play = new PIXI.Container();
     /** The level shown (and PLAY starts). */
     private index = 0;
@@ -129,6 +150,9 @@ export default class HomeScene extends ThreeScene {
     private readonly panels = new Map<PanelKind, HomePanel>();
     private readonly coinsBar = new PIXI.Container();
     private readonly coinsText = label(COIN_BAR.textSize);
+    /** The gems (the competition's quests pay them), beside the coins. */
+    private readonly gemsBar = new PIXI.Container();
+    private readonly gemsText = label(COIN_BAR.textSize);
     private tab: Tab = lastMode;
     /** The world map (when one's made), or the level's field (when not). */
     private map: WorldMapView | null = null;
@@ -144,8 +168,8 @@ export default class HomeScene extends ThreeScene {
     private shine: PIXI.Sprite | null = null;
     private glow: PIXI.Sprite | null = null;
 
-    /** `onPlay`: the PLAY button (an arena's id: a match there). */
-    public constructor(game: Game, private readonly onPlay: (arena?: string) => void) {
+    /** `onPlay`: the PLAY button (an arena's id: a match there, online or practice). */
+    public constructor(game: Game, private readonly onPlay: (arena?: string, match?: MatchStart) => void) {
         super(game);
     }
 
@@ -177,7 +201,7 @@ export default class HomeScene extends ThreeScene {
         this.arena = null;
         this.battle = null;
         if (this.mode === 'arena') {
-            const { current, open, next } = arenaFor(MobSave.battle + 1);
+            const { current, open, next } = arenaFor(MobSave.battle + 1, MobSave.arena.rating);
             this.shownArena = current;
             this.arenaLocked = !open;
             // Flat, as the map is: the sea then reaches every edge of the screen (bent, the sky shows past it).
@@ -201,6 +225,12 @@ export default class HomeScene extends ThreeScene {
         this.storyRibbon.visible = this.mode === 'story';
         this.arenaRibbon.visible = this.mode === 'arena';
         this.play.alpha = this.mode === 'arena' && this.arenaLocked ? 0.55 : 1;
+        // The arena: PLAY ONLINE (a "player"), and PRACTICE (the bot) over it.
+        if (this.playWords) {
+            this.playWords.text = this.mode === 'arena' ? 'PLAY ONLINE' : 'PLAY';
+            this.playWords.scale.set(this.mode === 'arena' ? 0.78 : 1);
+        }
+        this.practice.visible = this.mode === 'arena' && !this.arenaLocked && !!this.shownArena;
     }
 
     /** An arena's field as a match has it (both halves, both sides' cannons and towers), not played. */
@@ -221,12 +251,15 @@ export default class HomeScene extends ThreeScene {
         const arena = this.shownArena?.arena;
         this.arenaText.text = (arena?.name ?? 'ARENA').toUpperCase();
         if (!arena) this.ratingText.text = 'COMING SOON';
-        else if (this.arenaLocked) this.ratingText.text = `🔒 REACH LEVEL ${arena.unlockAt ?? 1}`;
-        else {
+        else if (this.arenaLocked) {
+            const needs = arenaNeeds(arena, MobSave.battle + 1, MobSave.arena.rating);
+            this.ratingText.text = needs?.level ? `🔒 REACH LEVEL ${needs.level}` : `🔒 ${needs?.trophies ?? 0} TROPHIES`;
+        } else {
             const record = MobSave.arena;
             const tier = LADDER.tiers[tierFor(LADDER, record)];
-            this.ratingText.text = `RATING ${record.rating} · ${tier.name.toUpperCase()}`;
-            void next;
+            // The next arena's trophies, when that's what it needs.
+            const more = next?.trophies ? ` / ${next.trophies}` : '';
+            this.ratingText.text = `${record.rating}${more} TROPHIES · ${tier.name.toUpperCase()}`;
         }
     }
 
@@ -238,7 +271,28 @@ export default class HomeScene extends ThreeScene {
             MobAudio.play('click');
             return;
         }
-        this.onPlay(this.shownArena.id);
+        this.findOpponent(this.shownArena.id);
+    }
+
+    /** PLAY ONLINE: the matchmaking window finds a "player" (the ladder's robot, given a name and face), then the match. */
+    private findOpponent(arena: string): void {
+        if (this.matchmaking) return;
+        const record = MobSave.arena;
+        const opponent = opponentFor(LADDER, record, MobSave.arenaLoadout());
+        const seed = Math.floor(Math.random() * 2 ** 32);
+        const look = AVATARS[seed % AVATARS.length];
+        // Trophies near the player's (a fair match, as it'd be).
+        const trophies = Math.max(0, record.rating + Math.round((Math.random() - 0.5) * 60));
+        const them: MatchPlayer = { name: usernameFrom(seed), face: look.face, color: look.color, trophies, tier: opponent.tier.name };
+        const mine = AVATARS[MobSave.avatar % AVATARS.length];
+        const you: MatchPlayer = { name: MobSave.username, face: mine.face, color: mine.color, trophies: record.rating, tier: LADDER.tiers[tierFor(LADDER, record)].name };
+        this.matchmaking = new Matchmaking(you, them, () => this.onPlay(arena, { online: true, opponent: them }), () => this.closeMatchmaking());
+        this.ui.addChild(this.matchmaking);
+    }
+
+    private closeMatchmaking(): void {
+        this.matchmaking?.destroy();
+        this.matchmaking = null;
     }
 
     /** The level PLAY starts, as the battle will draw it: its field size, its area's look, its pieces. */
@@ -284,13 +338,21 @@ export default class HomeScene extends ThreeScene {
         for (const mode of ['story', 'arena'] as Mode[]) {
             const plate = framePlane('Menu_BottomBtn_TabFocus', 180, TABS.height + MODE_TABS.rise);
             plate.tint = MODE_TABS[mode];
+            const light = framePlane('Menu_BottomBtn_TabFocus_Light', 170, TABS.height + MODE_TABS.rise - MODE_TABS.inset);
+            light.tint = MODE_LIGHTS[mode];
             this.modePlates.set(mode, plate);
-            this.tabBar.addChild(plate);
+            this.modeLights.set(mode, light);
+            this.tabBar.addChild(plate, light);
         }
         for (const tab of TAB_ORDER) this.addTab(tab);
         fillCoinBar(this.coinsBar, this.coinsText);
+        fillGemBar(this.gemsBar, this.gemsText);
         this.refreshCoins();
-        this.ui.addChild(this.ribbon, this.play, this.mute, this.coinsBar, this.tabBar);
+        this.buildRankingBadge();
+        tappable(this.practice, () => {
+            if (this.shownArena && !this.arenaLocked) this.onPlay(this.shownArena.id, { online: false });
+        });
+        this.ui.addChild(this.ribbon, this.play, this.practice, this.mute, this.coinsBar, this.gemsBar, this.tabBar);
     }
 
     /** Level `index` shown (and picked: PLAY starts it): its ribbon, which arrows show; its field, once built. */
@@ -333,6 +395,7 @@ export default class HomeScene extends ThreeScene {
         back.position.set(-PLAY.width / 2, -PLAY.height / 2);
         const words = plainLabel(PLAY.textSize, DARK);
         words.text = 'PLAY';
+        this.playWords = words;
         words.y = -6;
         this.glow = iconSprite('Glow_Circle01', PLAY.width);
         this.glow.width = PLAY.width * SHINE.glowWidth;
@@ -359,6 +422,33 @@ export default class HomeScene extends ThreeScene {
         this.play.hitArea = new PIXI.Rectangle(-PLAY.width / 2, -PLAY.height / 2, PLAY.width, PLAY.height);
         tappable(this.play, () => this.pressPlay());
         gsap.to(this.play.scale, { x: 1.03, y: 1.03, duration: 0.7, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+    }
+
+    /** The RANKING tab's red badge (on its icon) while a quest's reward waits. */
+    private buildRankingBadge(): void {
+        const circle = iconSprite('Alert_Circle_l_Bg', RANKING_BADGE.size);
+        circle.tint = 0xff3b4e;
+        this.rankingBadge.addChild(circle, iconSprite('Alert_Circle_Icon_Exclamation', RANKING_BADGE.size * 0.55));
+        this.rankingBadge.position.set(RANKING_BADGE.x, RANKING_BADGE.y);
+        this.tabs.get('ranking')?.holder.addChild(this.rankingBadge);
+        this.refreshRanking();
+    }
+
+    private refreshRanking(): void {
+        this.rankingBadge.visible = anyClaimable();
+    }
+
+    /** The RANKING tab's page (as the other tabs' panels: over the ribbon and PLAY, under the coins and the tab bar). */
+    private showRanking(): void {
+        if (!this.rankingPanel) {
+            this.rankingPanel = new RankingPanel(null, null, () => {
+                this.refreshCoins();
+                this.refreshRanking();
+            }, TABS.height);
+            this.ui.addChildAt(this.rankingPanel, this.ui.getChildIndex(this.mute));
+        }
+        this.rankingPanel.visible = true;
+        this.rankingPanel.refresh();
     }
 
     /** Sound on / off (the shared toggle, as in the battle), top right. */
@@ -394,6 +484,8 @@ export default class HomeScene extends ThreeScene {
         if (tab === this.tab) return;
         this.tab = tab;
         this.panels.forEach((panel) => { panel.visible = false; });
+        if (this.rankingPanel) this.rankingPanel.visible = false;
+        if (tab === 'ranking') this.showRanking();
         // A mode: the whole screen changes to it (what's behind, the ribbon, what PLAY does).
         if (isMode(tab) && tab !== this.mode) {
             this.mode = tab;
@@ -402,11 +494,11 @@ export default class HomeScene extends ThreeScene {
             this.frameCamera();
             gsap.fromTo(this.ribbon.scale, { x: 0.6, y: 0.6 }, { x: 1, y: 1, duration: 0.35, ease: 'back.out(2.5)' });
         }
-        if (!isMode(tab)) {
-            let panel = this.panels.get(tab);
+        if (!isMode(tab) && tab !== 'ranking') {
+            let panel = this.panels.get(tab as PanelKind);
             if (!panel) {
-                panel = new HomePanel(tab, (kind) => this.buy(kind), (index) => this.playLevel(index), (kind) => this.buyCard(kind));
-                this.panels.set(tab, panel);
+                panel = new HomePanel(tab as PanelKind, (kind) => this.buy(kind), (index) => this.playLevel(index), (kind) => this.buyCard(kind));
+                this.panels.set(tab as PanelKind, panel);
                 // Over the ribbon and PLAY, under the coins, the sound button and the tabs.
                 this.ui.addChildAt(panel, this.ui.getChildIndex(this.mute));
             }
@@ -441,17 +533,18 @@ export default class HomeScene extends ThreeScene {
         gsap.fromTo(this.coinsBar.scale, { x: 1.15, y: 1.15 }, { x: 1, y: 1, duration: 0.2 });
     }
 
-    /** A unit card's next level tapped in the UPGRADES tab: bought if there are the coins. */
+    /** A unit card's next level tapped in the UPGRADES tab: bought if there are the gems. */
     private buyCard(kind: CardKind): void {
         if (!MobSave.buyCard(kind)) return;
         MobAudio.play('coins');
         this.refreshCoins();
         this.panels.forEach((panel) => panel.refresh());
-        gsap.fromTo(this.coinsBar.scale, { x: 1.15, y: 1.15 }, { x: 1, y: 1, duration: 0.2 });
+        gsap.fromTo(this.gemsBar.scale, { x: 1.15, y: 1.15 }, { x: 1, y: 1, duration: 0.2 });
     }
 
     private refreshCoins(): void {
         this.coinsText.text = String(MobSave.coins);
+        this.gemsText.text = String(MobSave.gems);
     }
 
     private placeTabs(): void {
@@ -473,13 +566,16 @@ export default class HomeScene extends ThreeScene {
             // A mode tab: always its name, up on its plate; the mode not shown sits a little lower (not faded).
             const down = mode && tab !== this.mode ? MODE_TABS.drop : 0;
             entry.holder.y += down;
-            entry.words.visible = focused || mode;
+            entry.words.visible = mode ? tab === this.mode : focused;
             entry.icon.y = focused || mode ? TABS.focusIconY : 0;
             entry.icon.scale.set((mode ? (tab === this.mode ? MODE_TABS.focusIcon : MODE_TABS.icon) : focused ? TABS.focusIcon : TABS.icon) / 100);
             if (mode) {
                 const plate = this.modePlates.get(tab)!;
                 plate.position.set(left + third * i + 4, barTop - MODE_TABS.rise + down);
                 plate.width = third - 8;
+                const light = this.modeLights.get(tab)!;
+                light.position.set(left + third * i + 4 + MODE_TABS.inset, barTop - MODE_TABS.rise + down + MODE_TABS.inset);
+                light.width = third - 8 - MODE_TABS.inset * 2;
             }
         });
         // The blue focus is the side tabs' (a mode tab shows its own plate).
@@ -554,8 +650,12 @@ export default class HomeScene extends ThreeScene {
         this.mute.position.set(screen.topLeft.x + screen.width - MUTE.margin - MUTE.size / 2, top + MUTE.y);
         this.ribbon.position.set(screen.center.x, top + RIBBON.y);
         this.play.position.set(screen.center.x, top + screen.height - TABS.height - PLAY.up);
+        this.practice.position.set(screen.center.x, this.play.y - PRACTICE.over);
+        this.matchmaking?.layout();
         this.placeTabs();
         this.coinsBar.position.set(screen.topLeft.x + 30 + COIN_BAR.icon / 2, top + MUTE.y);
+        this.gemsBar.position.set(this.coinsBar.x + COIN_BAR.width + 24, top + MUTE.y);
+        this.rankingPanel?.reposition();
         this.panels.forEach((panel) => panel.reposition());
     }
 
@@ -577,6 +677,8 @@ export default class HomeScene extends ThreeScene {
             });
         }
         this.panels.forEach((panel) => { if (panel.visible) panel.update(step); });
+        if (this.rankingPanel?.visible) this.rankingPanel.update(step);
+        this.matchmaking?.update(step);
         super.update(step);
     }
 
@@ -586,6 +688,9 @@ export default class HomeScene extends ThreeScene {
         if (this.shine) gsap.killTweensOf(this.shine);
         if (this.glow) gsap.killTweensOf(this.glow);
         this.tabs.forEach(({ icon }) => gsap.killTweensOf([icon, icon.scale]));
+        this.rankingPanel?.destroy();
+        this.rankingPanel = null;
+        this.closeMatchmaking();
         this.ui.destroy({ children: true });
         this.arena?.dispose();
         this.map?.dispose();

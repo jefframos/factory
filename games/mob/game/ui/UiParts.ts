@@ -48,6 +48,12 @@ const SLICES: Record<string, [number, number, number, number]> = {
     Menu_BottomBtn_TabFocus: [25, 25, 25, 0],
     Menu_BottomBtn_TabFocus_Light: [20, 29, 20, 0],
     Title_Ribbon04_Red: [150, 0, 150, 0],
+    // (The arena's: the red one recoloured, the same shape.)
+    Title_Ribbon04_Purple: [150, 0, 150, 0],
+    // The rankings' (RankingPanel, as the UFO game's).
+    ListFrame04_Single_f_Blue: [30, 29, 30, 33],
+    ListFrame04_Single_f_Yellow: [30, 29, 30, 33],
+    BasicFrame_Round20: [20, 20, 20, 20],
     PanelFrame03_Bg: [0, 8, 0, 4],
     CardFrame03_n_Bg: [30, 29, 30, 33],
     CardFrame03_n_InnerBg: [18, 18, 18, 18],
@@ -72,11 +78,12 @@ export function framePlane(frame: string, width: number, height: number, scale =
 export const COIN_BAR = { width: 170, height: 44, icon: 52, color: 0x1c1d33, textX: 42, textSize: 28 };
 
 /** Puts the bar, the coin and `amount` in `holder`, whose position is the coin's middle. */
-export function fillCoinBar(holder: PIXI.Container, amount: PIXI.Text): void {
+export function fillCoinBar(holder: PIXI.Container, amount: PIXI.Text, icon = 'ResourceBar_Single_Icon_Coin'): void {
     const bar = framePlane('ResourceBar_Single_Bg', COIN_BAR.width, COIN_BAR.height);
     bar.tint = COIN_BAR.color;
     bar.position.set(0, -COIN_BAR.height / 2);
-    const coin = iconSprite('ResourceBar_Single_Icon_Coin', COIN_BAR.icon);
+    // (The gems' bar is the same with the gem: fillGemBar.)
+    const coin = iconSprite(icon, COIN_BAR.icon);
     amount.anchor.set(0, 0.5);
     amount.position.set(COIN_BAR.textX, -1);
     holder.addChild(bar, coin, amount);
@@ -142,4 +149,18 @@ export function tappable(button: PIXI.Container, onTap: () => void, sound: Sfx |
         if (sound) MobAudio.play(sound);
         onTap();
     });
+}
+
+/** The gems' bar: as the coins', with the gem. */
+export function fillGemBar(holder: PIXI.Container, amount: PIXI.Text): void {
+    fillCoinBar(holder, amount, 'ResourceBar_Single_Icon_Gem');
+}
+
+/** A player's avatar (the rankings'): their face on a circle in their colour. */
+export function makeAvatar(look: { face: string; color: number }, size: number): PIXI.Container {
+    const avatar = new PIXI.Container();
+    const circle = iconSprite('BorderFrame_Circle60', size);
+    circle.tint = look.color;
+    avatar.addChild(circle, iconSprite(look.face, size * 0.68));
+    return avatar;
 }

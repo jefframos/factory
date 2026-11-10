@@ -8,7 +8,7 @@
 //   replayReward     — the share of a level's reward a win pays when it's replayed (one already beaten);
 //   cards            — the units' cards (the bottom of the battle: each unlocked one charges, then a tap on it sends its
 //                      unit out of the cannon), each with its own progression: how many levels, each level's price
-//                      (`cost[level - 1]` buys the next), and its stats at level 1 and at the top (in even steps between):
+//                      in gems (`cost[level - 1]` buys the next), and its stats at level 1 and at the top (in even steps between):
 //                      `hp` (its hits; 0: it can't be destroyed), `damage` (the most it takes off a building), `seconds`
 //                      (to charge); and how its picture sits on the card (`icon`: offset, a share of the picture, and
 //                      zoom). The units the houses make are another thing: the Units tab's (ui/units.json);

@@ -85,8 +85,14 @@ const GATE_SPREAD = 0.34;
 const GATE_DEPTH = 0.45;
 /** How fast the cannon follows the aim (per second, of the distance). */
 const CANNON_FOLLOW = 18;
+/** An arena match: how far past its cannon's line a mob still hits it (the cannon's open, the last tower): the ones
+ *  further on when it opened went by it, and don't (else every one between it and the towers hit it at once). */
+const CANNON_DEPTH = 1;
 /** How far (z) a unit a house makes may come out past its far side, at random (with a random x along it). */
 const SPAWN_JITTER = 0.8;
+/** A special unit out of a cannon comes with a shockwave from the cannon's centre: the foes within `radius` of it — a plain one's gone, a big
+ *  one loses `bigDamage` hits. */
+export const SHOCKWAVE = { radius: 4, bigDamage: 3 };
 /** The field clearing out after a battle: how long before the first mob goes (seconds), the spread over which they
  *  all go, and how long each one takes to shrink away. */
 const CLEAR_OUT = { start: 0.5, spread: 1.6, seconds: 0.25 };
@@ -135,6 +141,9 @@ export interface BattleEvents {
     /** A locked gate was worn down (its block `block` broke): it works now. */
     gateUnlocked?(gate: number, block: number): void;
     giant?(team: number, x: number, z: number, kind: number): void;
+    /** A special unit's landing shockwave at (x, z), `team`'s, `radius` wide; `x`, `z` of each foe it knocked out. */
+    shockwave?(team: number, x: number, z: number, radius: number): void;
+    knocked?(x: number, z: number, team: number): void;
     /** A gold saucer sucked up a red at (x, z), and one crashed into target `target`. */
     suck?(x: number, z: number): void;
     /** A blue got a helmet at (x, z). */
@@ -154,8 +163,6 @@ export interface BattleEvents {
     draw?(): void;
     /** An arena match: a side's towers have all fallen, its cannon's open to hits (`team`: whose). */
     exposed?(team: number): void;
-    /** A side boosted its cannon (the comeback). */
-    boosted?(team: number): void;
 }
 
 /** A cannon: where it's aimed and is, whether it's held, its energy, its upgrades (the blues' is the Battle itself, the
@@ -174,9 +181,8 @@ export interface Cannon {
     fireLevel: number;
     capacityLevel: number;
     rechargeLevel: number;
-    /** An arena match's boost: on till this time, and ready again at this one. */
-    boostUntil?: number;
-    boostReadyAt?: number;
+    /** An arena match: its towers are all down, it's on its cannon, which fires faster (the comeback). */
+    boosted?: boolean;
 }
 
 export interface Gate extends GateConfig {
@@ -393,6 +399,8 @@ export class Battle {
 
     /** When the battle ended (its time; -1 while playing): the field clears out after it. */
     private endedAt = -1;
+    /** An arena match ended on the clock (not a cannon falling). */
+    public timedOut = false;
     /** (The Cannon's: shots due.) */
     public fireDue = 0;
     private redDue = 0;
@@ -461,6 +469,7 @@ export class Battle {
                 target.shielded = towers;
                 if (was && !towers) this.events.exposed?.(team);
             }
+            this.cannonOf(team).boosted = !towers;
         }
     }
 
@@ -469,31 +478,6 @@ export class Battle {
         return team === BLUE ? this : this.red;
     }
 
-    /** An arena match: whether `team` may boost its cannon now (behind by enough, its boost ready, not on already). */
-    public canBoost(team: number): boolean {
-        if (!this.duel || this.state !== 'playing') return false;
-        const c = this.cannonOf(team);
-        if ((c.boostReadyAt ?? 0) > this.time || (c.boostUntil ?? 0) > this.time) return false;
-        const own = team === BLUE ? this.ownHp : this.baseHp;
-        const theirs = team === BLUE ? this.baseHp : this.ownHp;
-        return theirs - own >= this.duel.boost.behind * (team === BLUE ? this.ownHpMax : this.baseHpMax);
-    }
-
-    /** `team` boosts its cannon (if it may): faster fire for a while. */
-    public boost(team: number): boolean {
-        if (!this.canBoost(team)) return false;
-        const c = this.cannonOf(team);
-        const rules = this.duel!.boost;
-        c.boostUntil = this.time + rules.seconds;
-        c.boostReadyAt = this.time + rules.seconds + rules.cooldown;
-        this.events.boosted?.(team);
-        return true;
-    }
-
-    /** Seconds of `team`'s boost left (0: off). */
-    public boostLeft(team: number): number {
-        return Math.max(0, (this.cannonOf(team).boostUntil ?? 0) - this.time);
-    }
 
     /** An arena match: seconds left (0 once it's up). */
     public get timeLeft(): number {
@@ -554,6 +538,7 @@ export class Battle {
         if (stats.hp !== undefined) this.hp[i] = stats.hp > 0 ? stats.hp : Infinity;
         if (stats.damage !== undefined) this.unitDamage[i] = stats.damage;
         this.events.giant?.(BLUE, x, z, mob);
+        this.shockwave(BLUE, this.cannonX, this.cannonZ);
     }
 
     /** An arena match's reds playing a card: out of their cannon, down the field. */
@@ -574,6 +559,25 @@ export class Battle {
         if (stats.hp !== undefined) this.hp[i] = stats.hp > 0 ? stats.hp : Infinity;
         if (stats.damage !== undefined) this.unitDamage[i] = stats.damage;
         this.events.giant?.(RED, x, z, mob);
+        this.shockwave(RED, c.cannonX, this.mirrorZ(this.cannonZ));
+    }
+
+    /** `team`'s special unit landed at (x, z): the foes round it knocked out (a big one hurt). */
+    private shockwave(team: number, x: number, z: number): void {
+        const reach = SHOCKWAVE.radius * SHOCKWAVE.radius;
+        for (let j = 0; j < this.count; j++) {
+            if (this.dead[j] || this.leaving[j] > 0 || this.team[j] === team) continue;
+            const dx = this.x[j] - x;
+            const dz = this.z[j] - z;
+            if (dx * dx + dz * dz > reach) continue;
+            if (this.big[j]) {
+                this.hp[j] -= SHOCKWAVE.bigDamage;
+                if (this.hp[j] > 0) continue;
+            }
+            this.dead[j] = 1;
+            this.events.knocked?.(this.x[j], this.z[j], this.team[j]);
+        }
+        this.events.shockwave?.(team, x, z, SHOCKWAVE.radius);
     }
 
     public debugSpawn(kind: 'giant' | 'truck' | 'saucer' | 'car'): void {
@@ -630,8 +634,8 @@ export class Battle {
     /** A cannon's shots a second, shots held and seconds to recharge from empty, at its levels. */
     public fireRateOf(c: Cannon): number {
         const rate = TUNING.fireRate * (1 + TUNING.fireRatePerLevel * (c.fireLevel - 1));
-        // An arena match's boost.
-        return c.boostUntil !== undefined && this.time < c.boostUntil ? rate * this.duel!.boost.rate : rate;
+        // An arena match: a side down to its cannon fires faster.
+        return c.boosted && this.duel ? rate * this.duel.boost.rate : rate;
     }
 
     public energyMaxOf(c: Cannon): number {
@@ -1575,6 +1579,7 @@ export class Battle {
             for (let k = 0; k < this.targets.length; k++) {
                 const target = this.targets[k];
                 if (!target.alive || target.shielded || this.z[i] - r > target.z + 0.15 || Math.abs(this.x[i] - target.x) > target.halfWidth + r) continue;
+                if (target.kind === 'cannon' && this.z[i] + r < target.z - CANNON_DEPTH) continue;
                 this.dead[i] = 1;
                 const kind = this.big[i];
                 const most = this.unitDamage[i] || (kind === TRUCK ? TUNING.truckDamage : kind === CAR ? TUNING.carDamage : TUNING.giantDamage);
@@ -1600,19 +1605,29 @@ export class Battle {
     private hitOwn(): void {
         if (this.state !== 'playing') return;
         const behind = -ARENA.dangerZ - 0.4;
+        // A side down to its cannon: a mob past its line missed it, and is gone.
+        const blueCannon = this.openCannon(this.blueTargets);
+        const redCannon = this.openCannon(this.targets);
         for (let i = 0; i < this.count; i++) {
             if (this.dead[i] || this.leaving[i] > 0) continue;
             const r = this.radiusOf(i);
             const x = this.x[i];
             const z = this.z[i];
-            if (this.team[i] === RED) {
-                let k = this.blueTargets.findIndex((target) => target.alive && !target.shielded && z + r >= target.z - 0.15 && Math.abs(x - target.x) <= target.halfWidth + r);
-                if (k < 0 && z >= behind) k = this.blueTargets.indexOf(this.nearestOf(this.blueTargets, x)!);
+            const red = this.team[i] === RED;
+            if (red ? blueCannon && z - r > blueCannon.z + CANNON_DEPTH : redCannon && z + r < redCannon.z - CANNON_DEPTH) {
+                this.dead[i] = 1;
+                this.events.vanish?.(x, z, this.team[i]);
+                continue;
+            }
+            if (red) {
+                let k = this.blueTargets.findIndex((target) => target.alive && !target.shielded && z + r >= target.z - 0.15 && Math.abs(x - target.x) <= target.halfWidth + r
+                    && (target.kind !== 'cannon' || z - r <= target.z + CANNON_DEPTH));
+                if (k < 0 && z >= behind) k = this.blueTargets.indexOf(this.nearestOf(this.blueTargets, x, true)!);
                 if (k < 0) continue;
                 this.dead[i] = 1;
                 this.damageOwn(k, this.impactOf(i), x, z, this.big[i] !== PLAIN);
             } else if (z <= this.mirrorZ(behind)) {
-                const k = this.targets.indexOf(this.nearestOf(this.targets, x)!);
+                const k = this.targets.indexOf(this.nearestOf(this.targets, x, true)!);
                 if (k < 0) continue;
                 this.dead[i] = 1;
                 this.damageTarget(k, this.impactOf(i), x, z, this.big[i] !== PLAIN);
@@ -1642,16 +1657,37 @@ export class Battle {
         if (this.state !== 'playing' || this.time < this.duel!.seconds) return;
         const own = this.ownHp;
         const theirs = this.baseHp;
+        this.timedOut = true;
         this.state = own > theirs ? 'won' : own < theirs ? 'lost' : 'draw';
+        // The side behind is beaten: its cannon's life runs out (the bars read it).
+        if (this.state !== 'draw') {
+            for (const target of this.state === 'won' ? this.targets : this.blueTargets) {
+                if (target.kind !== 'cannon') continue;
+                target.hp = 0;
+                target.alive = false;
+            }
+        }
         if (this.state === 'won') this.events.won?.();
         else if (this.state === 'lost') this.events.lost?.();
         else this.events.draw?.();
     }
 
-    /** The standing building in `list` nearest x, if any. */
-    private nearestOf(list: readonly Target[], x: number): Target | undefined {
+    /** `list`'s cannon, if it's all that stands (its towers down): the last tower. */
+    private openCannon(list: readonly Target[]): Target | undefined {
+        let cannon: Target | undefined;
+        for (const target of list) {
+            if (!target.alive) continue;
+            if (target.kind !== 'cannon') return undefined;
+            cannon = target;
+        }
+        return cannon;
+    }
+
+    /** The standing building in `list` nearest x, if any (`towers`: not a cannon). */
+    private nearestOf(list: readonly Target[], x: number, towers = false): Target | undefined {
         let best: Target | undefined;
         for (const target of list) {
+            if (towers && target.kind === 'cannon') continue;
             if (target.alive && !target.shielded && (!best || Math.abs(target.x - x) < Math.abs(best.x - x))) best = target;
         }
         return best;

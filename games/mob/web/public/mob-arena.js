@@ -29,15 +29,17 @@ export function newArena(name) {
 /** The enemy's half: the arena's pieces mirrored across the middle (z' = -length - z), as the game makes it. */
 export function mirrorArena(data, length) {
     const m = (z) => -length - z;
-    const z = (item) => ({ ...item, z: m(item.z ?? 0) });
+    // 'both': left for right too (turned half a turn).
+    const mx = (x) => (data.mirror === 'both' ? -x : x);
+    const z = (item) => ({ ...item, x: mx(item.x ?? 0), z: m(item.z ?? 0) });
     return {
         gates: (data.gates ?? []).map(z),
-        obstacles: (data.obstacles ?? []).map((o) => (o.points ? { ...o, points: o.points.map(([x, pz]) => [x, m(pz)]).reverse() } : z(o))),
+        obstacles: (data.obstacles ?? []).map((o) => (o.points ? { ...o, points: o.points.map(([x, pz]) => [mx(x), m(pz)]) } : z(o))),
         spinners: (data.spinners ?? []).map(z),
         pushers: (data.pushers ?? []).map(z),
         pads: (data.pads ?? []).map(z),
         helmets: (data.helmets ?? []).map(z),
-        pipes: (data.pipes ?? []).map((p) => ({ ...p, z: m(p.z), toZ: m(p.toZ), team: (p.team ?? 'blue') === 'both' ? 'both' : p.team === 'red' ? 'blue' : 'red' })),
+        pipes: (data.pipes ?? []).map((p) => ({ ...p, x: mx(p.x), toX: mx(p.toX), z: m(p.z), toZ: m(p.toZ), team: (p.team ?? 'blue') === 'both' ? 'both' : p.team === 'red' ? 'blue' : 'red' })),
         grinders: (data.grinders ?? []).map(z),
     };
 }
@@ -215,6 +217,11 @@ export function createArenaTab(editor) {
         box.append(editor.textField(data, 'name'));
         box.append(row('theme', select(data.theme ?? 'beach', state.themes.map((t) => [t.id, t.name]), (v) => { editor.checkpoint(); data.theme = v; editor.changed(); })));
         box.append(editor.fieldSizeFields(data));
+        box.append(row('mirror', select(data.mirror ?? 'vertical', [['vertical', 'across the middle'], ['both', 'and left for right (turned)']], (v) => {
+            editor.checkpoint();
+            if (v === 'both') data.mirror = 'both'; else delete data.mirror;
+            editor.changed();
+        }), "How the enemy's half is made from yours: straight across the middle (a gate in front of its copy), or turned half a turn (your left is their right: a big gate on one side faces the other side's)"));
         box.append(el('h3', { style: { marginTop: '10px' } }, 'Cannon'));
         for (const [key, hint, fallback] of [
             ['cannonZ', 'its row: how far up the field (negative: up, in front of the towers)', ARENA_RULES.cannonZ],
@@ -224,8 +231,12 @@ export function createArenaTab(editor) {
             if (data[key] === undefined) data[key] = fallback;
             box.append(editor.numberField(data, key, null, { step: 0.1, hint }));
         }
+        box.append(el('h3', { style: { marginTop: '10px' } }, 'Comeback boost'));
+        if (data.boostRate === undefined) data.boostRate = 1.6;
+        for (const key of ['boostSeconds', 'boostCooldown', 'boostBehind']) delete data[key];
+        box.append(editor.numberField(data, 'boostRate', null, { step: 0.1, hint: 'once a side\'s towers are all down, its cannon fires this many times faster (by itself, till the end)' }));
         box.append(el('p', { class: 'hint' }, 'Towers: the Tower tool adds one; drag them on the field (z is a tower\'s front, the line the reds hit). A tower\'s hp empty: towerHp.'));
-        for (const [key, hint] of [['unlockAt', 'it opens when the player reaches this story level (empty: from the start)'], ['seconds', 'the match\'s length'], ['towerHp', 'each tower\'s life'], ['cannonHp', 'the cannon\'s life (it falling loses at once)']]) {
+        for (const [key, hint] of [['unlockAt', 'it opens when the player reaches this story level (the first arena: empty for the rest)'], ['trophies', 'and once the player has this many trophies (the later arenas)'], ['seconds', 'the match\'s length'], ['towerHp', 'each tower\'s life'], ['cannonHp', 'the cannon\'s life (it falling loses at once)']]) {
             box.append(editor.numberField(data, key, null, { step: 1, hint }));
         }
         if ((data.gates ?? []).length > ARENA_RULES.mostGates) box.append(el('p', { class: 'hint', style: { color: '#ff8a8a' } }, `At most ${ARENA_RULES.mostGates} gates on your half (a mob remembers 8 on the field): the rest are left out.`));

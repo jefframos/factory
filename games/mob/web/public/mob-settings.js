@@ -281,7 +281,7 @@ export function buildSettingsTab(panel, { el, api, toast, statusLine }) {
                     c.hp ? range('hp', 'hits', 'Its hits at level 1 → at the top (0: it can\'t be destroyed)', 1) : null,
                     range('damage', 'damage', 'The most it takes off a building, at level 1 → at the top', 1),
                     range('seconds', 'charge (s)', 'Seconds to charge, at level 1 → at the top', 0.5),
-                    el('div', { class: 'hint', style: { margin: '8px 0 4px' } }, `Prices, level 2 to ${c.maxLevel}`),
+                    el('div', { class: 'hint', style: { margin: '8px 0 4px' } }, `Prices in gems, level 2 to ${c.maxLevel}`),
                     costs),
                 el('div', {},
                     el('div', { class: 'hint', style: { margin: '0 0 4px' } }, 'Its picture on the card'),

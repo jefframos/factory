@@ -10,18 +10,27 @@ import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { GlossyButton, framePlane, glossyButton, iconButton, label, tappable } from './UiParts';
 
-const BAR = { width: 250, height: 40, back: 0x1b1e3a, blue: 0x3d8cff, blueTrack: 0x1b2a5a, red: 0xff3d4f, redTrack: 0x4a1a26, gap: 120 };
+const BAR = { width: 250, height: 40, inset: 3, pad: 3, back: 0x1b1e3a, blue: 0x3d8cff, blueTrack: 0x1b2a5a, red: 0xff3d4f, redTrack: 0x4a1a26, gap: 120 };
 const CLOCK = { width: 150, height: 64, back: 0x1b1e3a, hurry: 10 };
 const CARD = { width: 560, height: 520, back: 0x1b1e3a };
 const BUTTONS = { height: 92, home: 112, rematch: 300, gap: 18 };
 /** The bars over the buildings: a tower's, and an open cannon's (bigger, gold-edged, TARGET over it, pulsing). */
-const TOWER_BAR = { width: 96, height: 16, cannon: 140, cannonHeight: 22, back: 0x10123a, blue: 0x3d8cff, red: 0xff3d4f, gold: 0xffd23f, text: 18, pulse: 6 };
-/** The comeback boost's button (right, over the cards), and how high over the bottom it sits. */
-const BOOST = { width: 190, height: 78, right: 24, up: 300, text: 'SPEED' };
+const TOWER_BAR = { width: 110, height: 22, cannon: 150, cannonHeight: 28, back: 0x10123a, blue: 0x3d8cff, red: 0xff3d4f, gold: 0xffd23f, text: 18, pulse: 6 };
+/** The baked bar textures (Bar_Trough, Bar_Segment: white, 48 px tall, tinted; the cards' charge bars use them too). */
+const BAKED = { texture: 48, troughSlice: 16, fillSlice: 12, inset: 3 };
 
-/** One side's life bar: its frame, track and fill, the number on it, the caption under it. */
+/** A baked nine-slice drawn at (x, y), `width` x `height`: its corners scaled to the height, so they stay round. */
+function place(plane: PIXI.NineSlicePlane, x: number, y: number, width: number, height: number): void {
+    const scale = height / BAKED.texture;
+    plane.scale.set(scale);
+    plane.width = width / scale;
+    plane.height = BAKED.texture;
+    plane.position.set(x, y);
+}
+
+/** One side's life bar: the baked trough (a white edge round a dark one) and fill, the number on it, the caption under it. */
 class LifeBar extends PIXI.Container {
-    private readonly fill: PIXI.NineSlicePlane;
+    private readonly fill = new PIXI.NineSlicePlane(PIXI.Texture.from('Bar_Segment'), BAKED.fillSlice, BAKED.fillSlice, BAKED.fillSlice, BAKED.fillSlice);
     private readonly number = label(26);
     public readonly caption = label(20);
     private shown = 1;
@@ -29,17 +38,17 @@ class LifeBar extends PIXI.Container {
 
     public constructor(colour: number, track: number, private readonly fromRight: boolean) {
         super();
-        const back = framePlane('Slider_Play01_Bg', BAR.width, BAR.height, 1.2);
-        back.tint = BAR.back;
-        const trackPlane = framePlane('Slider_Play01_FillMask', BAR.width - 14, BAR.height - 14, 1.2);
-        trackPlane.tint = track;
-        trackPlane.position.set(7, 7);
-        this.fill = framePlane('Slider_Play01_FillMask', BAR.width - 14, BAR.height - 14, 1.2);
+        const edge = new PIXI.NineSlicePlane(PIXI.Texture.from('Bar_Trough'), BAKED.troughSlice, BAKED.troughSlice, BAKED.troughSlice, BAKED.troughSlice);
+        place(edge, 0, 0, BAR.width, BAR.height);
+        edge.tint = BAR.back;
+        const trough = new PIXI.NineSlicePlane(PIXI.Texture.from('Bar_Trough'), BAKED.troughSlice, BAKED.troughSlice, BAKED.troughSlice, BAKED.troughSlice);
+        place(trough, BAR.inset, BAR.inset, BAR.width - BAR.inset * 2, BAR.height - BAR.inset * 2);
+        trough.tint = track;
         this.fill.tint = colour;
-        this.fill.position.set(7, 7);
         this.number.position.set(BAR.width / 2, BAR.height / 2 - 1);
         this.caption.position.set(BAR.width / 2, BAR.height + 16);
-        this.addChild(back, trackPlane, this.fill, this.number, this.caption);
+        this.addChild(edge, trough, this.fill, this.number, this.caption);
+        this.draw();
     }
 
     public set(hp: number, max: number): void {
@@ -59,12 +68,13 @@ class LifeBar extends PIXI.Container {
     }
 
     private draw(): void {
-        const inner = BAR.width - 14;
-        const width = Math.max(24, inner * this.shown);
-        this.fill.width = width / this.fill.scale.x;
+        const inner = BAR.width - BAR.inset * 2 - BAR.pad * 2;
+        const height = BAR.height - BAR.inset * 2 - BAR.pad * 2;
+        const width = Math.max(height * 0.6, inner * this.shown);
         this.fill.visible = this.shown > 0.001;
         // The opponent's empties towards the middle too (from its right end).
-        this.fill.x = this.fromRight ? 7 + inner - width : 7;
+        const x = BAR.inset + BAR.pad + (this.fromRight ? inner - width : 0);
+        place(this.fill, x, BAR.inset + BAR.pad, width, height);
     }
 }
 
@@ -72,6 +82,8 @@ export interface DuelEnd {
     result: 'won' | 'lost' | 'draw';
     own: number;
     theirs: number;
+    /** Crowns earned (the competition: Ranking.ts). */
+    crowns: number;
     /** The rating before and after (null: not counted, the editor's test). */
     rating: { before: number; after: number; tier: string } | null;
 }
@@ -82,8 +94,6 @@ export interface BuildingBar { x: number; y: number; hp: number; max: number; bl
 export class DuelHud extends PIXI.Container {
     private readonly top = new PIXI.Container();
     private readonly bars = new PIXI.Container();
-    private readonly boostButton: GlossyButton;
-    private boostShown = false;
     private time = 0;
     private readonly clock = new PIXI.Container();
     private readonly clockText = label(40);
@@ -99,11 +109,8 @@ export class DuelHud extends PIXI.Container {
     private readonly home: GlossyButton;
     private lastSecond = -1;
 
-    public constructor(onRematch: () => void, onHome: () => void, onBoost: () => void = () => undefined) {
+    public constructor(onRematch: () => void, onHome: () => void) {
         super();
-        this.boostButton = glossyButton(BOOST.width, BOOST.height, BOOST.text, 'Button01_l_Green');
-        tappable(this.boostButton, onBoost);
-        this.boostButton.visible = false;
         const clockBack = framePlane('Slider_Play01_Bg', CLOCK.width, CLOCK.height, 1.4);
         clockBack.tint = CLOCK.back;
         clockBack.position.set(-CLOCK.width / 2, 0);
@@ -132,7 +139,7 @@ export class DuelHud extends PIXI.Container {
         this.panel.addChild(back, this.title, this.score, this.ratingText, this.home, this.rematch);
         this.card.addChild(this.dim, this.panel);
         this.card.visible = false;
-        this.addChild(this.bars, this.top, this.boostButton, this.card);
+        this.addChild(this.bars, this.top, this.card);
         this.layout();
     }
 
@@ -146,19 +153,21 @@ export class DuelHud extends PIXI.Container {
         this.dim.clear().beginFill(0x0b1030, 0.72).drawRect(topLeft.x, topLeft.y, width, height).endFill();
         this.panel.scale.set(Math.min(1, (width - 40) / CARD.width, (height - 40) / CARD.height));
         this.panel.position.set(center.x, center.y);
-        this.boostButton.position.set(topLeft.x + width - BOOST.right - BOOST.width / 2, topLeft.y + height - BOOST.up);
     }
 
-    /** Each building's life, over it (screen points, CSS px): a bar and its number; a cannon only once it's open, and
-     *  then plainly the target (bigger, gold, TARGET over it). */
+    /** Each building's life, over it (screen points, CSS px): a bar (the baked trough and fill: crisp at any size) and its
+     *  number; a cannon only once it's open, and then plainly the target (bigger, gold, TARGET over it). */
     public setBuildingBars(entries: readonly BuildingBar[]): void {
         while (this.bars.children.length < entries.length) {
             const holder = new PIXI.Container();
-            const back = new PIXI.Graphics();
+            const edge = new PIXI.NineSlicePlane(PIXI.Texture.from('Bar_Trough'), BAKED.troughSlice, BAKED.troughSlice, BAKED.troughSlice, BAKED.troughSlice);
+            const trough = new PIXI.NineSlicePlane(PIXI.Texture.from('Bar_Trough'), BAKED.troughSlice, BAKED.troughSlice, BAKED.troughSlice, BAKED.troughSlice);
+            trough.tint = TOWER_BAR.back;
+            const fill = new PIXI.NineSlicePlane(PIXI.Texture.from('Bar_Segment'), BAKED.fillSlice, BAKED.fillSlice, BAKED.fillSlice, BAKED.fillSlice);
             const tag = label(TOWER_BAR.text + 4, 0xffe066);
             tag.text = 'TARGET';
             const text = label(TOWER_BAR.text);
-            holder.addChild(back, tag, text);
+            holder.addChild(edge, trough, fill, tag, text);
             this.bars.addChild(holder);
         }
         this.bars.children.forEach((child, i) => {
@@ -167,31 +176,26 @@ export class DuelHud extends PIXI.Container {
             holder.visible = !!entry;
             if (!entry) return;
             holder.position.copyFrom(this.toLocal(new PIXI.Point(entry.x, entry.y)));
-            const [back, tag, text] = holder.children as [PIXI.Graphics, PIXI.Text, PIXI.Text];
+            const [edge, trough, fill, tag, text] = holder.children as [PIXI.NineSlicePlane, PIXI.NineSlicePlane, PIXI.NineSlicePlane, PIXI.Text, PIXI.Text];
             const width = entry.cannon ? TOWER_BAR.cannon : TOWER_BAR.width;
             const height = entry.cannon ? TOWER_BAR.cannonHeight : TOWER_BAR.height;
+            const border = entry.cannon ? 3 : 2;
             const share = Math.max(0, Math.min(1, entry.hp / Math.max(1, entry.max)));
-            const edge = entry.cannon ? TOWER_BAR.gold : 0xffffff;
-            back.clear()
-                .lineStyle(entry.cannon ? 4 : 2, edge).beginFill(TOWER_BAR.back).drawRoundedRect(-width / 2, -height / 2, width, height, height / 2).endFill()
-                .lineStyle(0).beginFill(entry.blue ? TOWER_BAR.blue : TOWER_BAR.red).drawRoundedRect(-width / 2 + 3, -height / 2 + 3, Math.max(0, (width - 6) * share), height - 6, (height - 6) / 2).endFill();
+            // The edge (white, gold for an open cannon), the dark trough in it, the fill in that.
+            place(edge, -width / 2 - border, -height / 2 - border, width + border * 2, height + border * 2);
+            edge.tint = entry.cannon ? TOWER_BAR.gold : 0xffffff;
+            place(trough, -width / 2, -height / 2, width, height);
+            const inner = height - BAKED.inset * 2;
+            const fillWidth = Math.max(0, (width - BAKED.inset * 2) * share);
+            fill.visible = fillWidth >= inner * 0.6;
+            place(fill, -width / 2 + BAKED.inset, -height / 2 + BAKED.inset, Math.max(inner * 0.6, fillWidth), inner);
+            fill.tint = entry.blue ? TOWER_BAR.blue : TOWER_BAR.red;
             text.text = `${Math.ceil(entry.hp)}`;
             text.y = -1;
             tag.visible = entry.cannon;
-            tag.y = -height / 2 - 16;
+            tag.y = -height / 2 - 18;
             holder.scale.set(entry.cannon ? 1 + 0.08 * Math.sin(this.time * TOWER_BAR.pulse) : 1);
         });
-    }
-
-    /** The comeback boost's button: shown while the player may use it, its seconds while it's on. */
-    public setBoost(ready: boolean, left: number): void {
-        const show = ready || left > 0;
-        if (show && !this.boostShown) gsap.fromTo(this.boostButton.scale, { x: 0.3, y: 0.3 }, { x: 1, y: 1, duration: 0.35, ease: 'back.out(3)' });
-        this.boostShown = show;
-        this.boostButton.visible = show;
-        this.boostButton.words.text = left > 0 ? `${BOOST.text} ${Math.ceil(left)}` : BOOST.text;
-        this.boostButton.alpha = left > 0 ? 0.7 : 1;
-        if (ready && !gsap.isTweening(this.boostButton.scale)) this.boostButton.scale.set(1 + 0.06 * Math.sin(this.time * 8));
     }
 
     /** Where the top block ends (screen pixels), for the camera to keep the field under it. */
@@ -240,14 +244,28 @@ export class DuelHud extends PIXI.Container {
         this.score.text = `${Math.ceil(end.own)}  -  ${Math.ceil(end.theirs)}`;
         const r = end.rating;
         const change = r ? r.after - r.before : 0;
-        this.ratingText.text = r ? `${change >= 0 ? '+' : ''}${change}  ★ ${r.after}  ${r.tier.toUpperCase()}` : 'TEST MATCH (not counted)';
+        this.ratingText.text = r
+            ? `${change >= 0 ? '+' : ''}${change} TROPHIES (${r.after}) · ${r.tier.toUpperCase()}${end.crowns ? `
++${end.crowns} CROWN${end.crowns === 1 ? '' : 'S'}` : ''}`
+            : 'TEST MATCH (not counted)';
         this.top.visible = false;
         this.bars.visible = false;
-        this.boostButton.visible = false;
         this.card.visible = true;
         this.card.alpha = 0;
         gsap.to(this.card, { alpha: 1, duration: 0.3 });
         gsap.fromTo(this.title.scale, { x: 0.3, y: 0.3 }, { x: 1, y: 1, duration: 0.5, ease: 'back.out(2.2)' });
+    }
+
+    /** The countdown's number, big in the middle, popping in and fading. */
+    public showCount(text: string): void {
+        const screen = Game.gameScreenData;
+        if (!screen) return;
+        const word = label(150, 0xffe066);
+        word.text = text;
+        word.position.set(screen.center.x, screen.center.y - 60);
+        this.addChild(word);
+        gsap.fromTo(word.scale, { x: 2.2, y: 2.2 }, { x: 1, y: 1, duration: 0.35, ease: 'back.out(2)' });
+        gsap.to(word, { alpha: 0, duration: 0.3, delay: 0.6, onComplete: () => word.destroy() });
     }
 
     public hideEnd(): void {

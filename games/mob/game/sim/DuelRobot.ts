@@ -52,8 +52,6 @@ export class DuelRobot {
     private smart = false;
     private modeUntil = 0;
     private feeding = false;
-    /** When it'll press the boost it may use (NaN: it may not now). */
-    private boostAt = NaN;
 
     public constructor(private readonly battle: Battle, private readonly team: number, private readonly skill: Skill, cards: readonly RobotCard[], private readonly random: () => number = Math.random) {
         this.cards = cards.map((card) => ({ ...card, charge: 0, playAt: NaN, aimingSince: NaN }));
@@ -79,14 +77,6 @@ export class DuelRobot {
         if (this.skill.burst && !c.overheated && c.firing && c.energy >= 0 && c.energy < 2) this.releaseUntil = t + TUNING.rechargeDelay + 0.45;
         c.firing = t >= this.releaseUntil;
         if (card) this.tryPlay(card, t);
-        // Behind: the boost, once it's noticed (as a card is).
-        if (b.canBoost(this.team)) {
-            if (Number.isNaN(this.boostAt)) this.boostAt = t + this.skill.cardDelay * (0.5 + this.random());
-            if (t >= this.boostAt) {
-                b.boost(this.team);
-                this.boostAt = NaN;
-            }
-        } else this.boostAt = NaN;
     }
 
     // ------------------------------------------------------------------ the field from its side

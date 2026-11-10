@@ -19,6 +19,7 @@ import MobScene from './game/scenes/MobScene';
 import { MobAudio } from './game/audio/MobAudio';
 import HomeScene from './game/scenes/HomeScene';
 import { ARENAS_BY_ID } from './game/data/Arenas';
+import { MatchStart } from './game/scenes/MobScene';
 import { RadialTransition } from './game/ui/RadialTransition';
 import { MobSave } from './game/data/MobSave';
 import { areaProgress } from './game/data/MobLevels';
@@ -110,25 +111,26 @@ export default class MobGame extends Game {
     private showHome(): void {
         this.atHome = true;
         const key = `mob-${this.scenes++}`;
-        this.sceneManager.register<HomeScene>(key, HomeScene, this, (arena?: string) => this.play(arena));
+        this.sceneManager.register<HomeScene>(key, HomeScene, this, (arena?: string, match?: MatchStart) => this.play(arena, match));
         this.sceneManager.changeScene(key);
         this.sceneManager.resize();
     }
 
     /** The battle (the save's next one), its end card's HOME back to the main screen. */
-    private showBattle(arena?: string): MobScene {
+    private showBattle(arena?: string, match?: MatchStart): MobScene {
         this.atHome = false;
         const key = `mob-${this.scenes++}`;
-        const scene = this.sceneManager.register<MobScene>(key, MobScene, this, () => this.travel('HOME', '', () => this.showHome()), arena);
+        const scene = this.sceneManager.register<MobScene>(key, MobScene, this, () => this.travel('HOME', '', () => this.showHome()), arena, match);
         this.sceneManager.changeScene(key);
         this.sceneManager.resize();
         return scene;
     }
 
     /** PLAY: the wipe shows the level and its area, the battle's built under it (an arena's id: a match there). */
-    private play(arena?: string): void {
+    private play(arena?: string, match?: MatchStart): void {
         if (arena) {
-            this.travel('ARENA', (ARENAS_BY_ID[arena]?.name ?? '').toUpperCase(), () => this.showBattle(arena));
+            const title = match?.opponent ? `VS ${match.opponent.name}` : 'PRACTICE';
+            this.travel(title, (ARENAS_BY_ID[arena]?.name ?? '').toUpperCase(), () => this.showBattle(arena, match));
             return;
         }
         const area = areaProgress(MobSave.selected);

@@ -5,6 +5,7 @@
 // (the main screen's arrows go back through those already reached, to replay one; progress never goes back). A loss never takes any of it away (the brief:
 // permanent progression isn't erased).
 
+import { AVATARS, usernameFrom } from './Profile';
 import { ArenaRecord, Ladder, Loadout, afterMatch, freshRecord } from './ArenaLadder';
 import { RETRY_EASE, UPGRADES, UpgradeKind } from './MobConfig';
 import { PLAY } from './MobLevels';
@@ -32,7 +33,19 @@ interface SaveData {
     cardTutorial: boolean;
     /** The arena (ArenaLadder): its rating, streak and tally. */
     arena: ArenaRecord;
+    /** The player's name in the rankings (made once: Profile), and their avatar. */
+    username?: string;
+    avatar?: number;
+    /** The competition's counts (Ranking.ts), by period key (a day's, a week's: only the current ones are kept), and the
+     *  quests claimed (`id@periodKey`). */
+    stats: Record<string, Partial<Record<RankStat, number>>>;
+    claimed: string[];
+    /** Gems: the premium currency (the competition's quests pay them; what they buy comes later). */
+    gems: number;
 }
+
+/** What the competition counts (Ranking.ts): crowns, arena matches won, story levels won, enemy towers destroyed. */
+export type RankStat = 'crowns' | 'arenaWins' | 'levels' | 'towers';
 
 const KINDS = Object.keys(UPGRADES) as UpgradeKind[];
 const freshLevels = (): Record<UpgradeKind, number> => Object.fromEntries(KINDS.map((kind) => [kind, 1])) as Record<UpgradeKind, number>;
@@ -51,9 +64,11 @@ function load(): SaveData {
             coins: Math.max(0, stored.coins ?? SETTINGS.startCoins), battle, selected: Math.max(0, Math.floor(stored.selected ?? battle)),
             unlockAll: !!stored.unlockAll, cards: (stored.cards ?? []).filter((kind) => CARD_KINDS.includes(kind)), cardLevels: stored.cardLevels ?? {}, best: Math.max(0, stored.best ?? 0), levels, retries: Math.max(0, Math.floor(stored.retries ?? 0)), cardTutorial: !!stored.cardTutorial,
             arena: { ...freshRecord(), ...(stored.arena ?? {}) },
+            username: stored.username, avatar: stored.avatar, stats: stored.stats ?? {}, claimed: stored.claimed ?? [],
+            gems: Math.max(0, Math.floor(stored.gems ?? 0)),
         };
     } catch {
-        return { coins: SETTINGS.startCoins, battle: 0, selected: 0, unlockAll: false, cards: [], cardLevels: {}, best: 0, levels: freshLevels(), retries: 0, cardTutorial: false, arena: freshRecord() };
+        return { coins: SETTINGS.startCoins, battle: 0, selected: 0, unlockAll: false, cards: [], cardLevels: {}, best: 0, levels: freshLevels(), retries: 0, cardTutorial: false, arena: freshRecord(), stats: {}, claimed: [], gems: 0 };
     }
 }
 
@@ -123,6 +138,40 @@ export const MobSave = {
         save();
     },
 
+    /** The player's name in the rankings (made the first time it's asked for), and their avatar (an AVATARS index). */
+    get username(): string {
+        if (!data.username) {
+            data.username = usernameFrom(Math.floor(Math.random() * 2 ** 32));
+            data.avatar = Math.floor(Math.random() * AVATARS.length);
+            save();
+        }
+        return data.username;
+    },
+    get avatar(): number { return data.avatar ?? 0; },
+
+    /** A competition count in a period (its key: Ranking.periodKey). */
+    stat(stat: RankStat, key: string): number {
+        return data.stats[key]?.[stat] ?? 0;
+    },
+    /** Adds to a count in each of the periods `keys` (the day's and the week's); older periods are dropped. */
+    addStat(stat: RankStat, amount: number, keys: string[]): void {
+        if (amount <= 0) return;
+        for (const key of Object.keys(data.stats)) if (!keys.includes(key)) delete data.stats[key];
+        data.claimed = data.claimed.filter((entry) => keys.some((key) => entry.endsWith(`@${key}`)));
+        for (const key of keys) {
+            const counts = (data.stats[key] ??= {});
+            counts[stat] = (counts[stat] ?? 0) + amount;
+        }
+        save();
+    },
+    isClaimed(id: string, key: string): boolean {
+        return data.claimed.includes(`${id}@${key}`);
+    },
+    claim(id: string, key: string): void {
+        if (!data.claimed.includes(`${id}@${key}`)) data.claimed.push(`${id}@${key}`);
+        save();
+    },
+
     /** Whether the first-card tutorial's been done. */
     get cardTutorial(): boolean { return data.cardTutorial; },
     cardTutorialDone(): void {
@@ -148,16 +197,16 @@ export const MobSave = {
         return Math.min(cardMaxLevel(kind), Math.max(1, data.cardLevels[kind] ?? 1));
     },
 
-    /** The price of `kind`'s card's next level (null at the top). */
+    /** The price of `kind`'s card's next level, in gems (null at the top). */
     cardCost(kind: CardKind): number | null {
         return cardCost(kind, MobSave.cardLevel(kind));
     },
 
-    /** Buys `kind`'s card's next level if there are the coins; whether it did. */
+    /** Buys `kind`'s card's next level if there are the gems; whether it did. */
     buyCard(kind: CardKind): boolean {
         const cost = MobSave.cardCost(kind);
-        if (cost === null || data.coins < cost || !data.cards.includes(kind)) return false;
-        data.coins -= cost;
+        if (cost === null || data.gems < cost || !data.cards.includes(kind)) return false;
+        data.gems -= cost;
         data.cardLevels[kind] = MobSave.cardLevel(kind) + 1;
         save();
         return true;
@@ -203,6 +252,12 @@ export const MobSave = {
         return true;
     },
 
+    get gems(): number { return data.gems; },
+    addGems(amount: number): void {
+        data.gems = Math.max(0, data.gems + amount);
+        save();
+    },
+
     addCoins(amount: number): void {
         data.coins = Math.max(0, data.coins + amount);
         save();
@@ -234,6 +289,9 @@ export const MobSave = {
         data.levels = freshLevels();
         data.retries = 0;
         data.arena = freshRecord();
+        data.stats = {};
+        data.claimed = [];
+        data.gems = 0;
         save();
     },
 };

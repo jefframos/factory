@@ -20,7 +20,7 @@
 import { Battle } from '../battle/Battle';
 import { BattleConfig, RETRY_EASE, UPGRADES, UpgradeKind, easedConfig, useField } from '../data/MobConfig';
 import { PlayEntry, loopedBattle } from '../data/LevelList';
-import { CARD_KINDS, CardKind, SETTINGS, cardCost } from '../data/Settings';
+import { CARD_KINDS, CardKind, SETTINGS } from '../data/Settings';
 import { Robot, RobotCard, Skill } from './Robot';
 
 export const SKILLS: Record<'pro' | 'average' | 'casual' | 'newbie', Skill> = {
@@ -86,10 +86,7 @@ export function loadoutAt(play: readonly PlayEntry[], index: number, spend: numb
             const cost = upgrade.cost[levels[kind] - 1];
             if (cost !== undefined && cost <= budget && (!best || cost < best.cost)) best = { cost, buy: () => { levels[kind]++; } };
         }
-        for (const kind of owned) {
-            const cost = cardCost(kind, cards[kind] ?? 1);
-            if (cost !== null && cost <= budget && (!best || cost < best.cost)) best = { cost, buy: () => { cards[kind] = (cards[kind] ?? 1) + 1; } };
-        }
+        // (The cards' levels cost gems, not coins: a career's cards stay at level 1.)
         if (!best) break;
         best.buy();
         budget -= best.cost;

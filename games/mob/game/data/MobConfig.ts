@@ -355,9 +355,8 @@ export interface DuelRules {
      *  reds' is its mirror). */
     cannonRange: number;
     cannonZ: number;
-    /** The comeback: the side behind by `behind` (a share of its life at the start) can boost its cannon's fire rate
-     *  `rate` times for `seconds`, then waits `cooldown` seconds before it can again. */
-    boost: { rate: number; seconds: number; cooldown: number; behind: number };
+    /** The comeback: a side whose towers are all down (on its cannon) fires `rate` times faster. */
+    boost: { rate: number };
 }
 
 export interface BattleConfig {

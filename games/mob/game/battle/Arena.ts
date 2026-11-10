@@ -166,6 +166,8 @@ const PROPS = {
 };
 /** Clash puffs: how many at most at once, how long each lasts (seconds), how big it grows. */
 const PUFFS = 48;
+/** Shockwave rings: how many at once, how long one takes to grow out. */
+const RINGS = { count: 8, seconds: 0.4 };
 const PUFF_SECONDS = 0.35;
 const PUFF_SIZE = 0.55;
 /** Flying bits: how many at most at once, and the pull down on them. */
@@ -448,6 +450,9 @@ export class Arena {
     private readonly bits = new Bits();
     private readonly puffs: { mesh: THREE.Mesh; life: number }[] = [];
     private nextPuff = 0;
+    /** Special units' landing shockwaves: flat rings growing out and fading. */
+    private readonly rings: { mesh: THREE.Mesh; life: number; radius: number }[] = [];
+    private nextRing = 0;
     private recoil = 0;
     private flashLife = 0;
     private time = 0;
@@ -506,6 +511,7 @@ export class Arena {
             }
         }
         this.buildPuffs();
+        this.buildRings();
         this.group.add(this.bits.mesh);
         bendObject(this.group);
     }
@@ -1654,6 +1660,32 @@ export class Arena {
         for (let i = 0; i < 5; i++) this.puff(x + (Math.random() - 0.5) * 3, at + (Math.random() - 0.5) * 1.5, 0xffe27a, 3);
     }
 
+    private buildRings(): void {
+        const geometry = new THREE.RingGeometry(0.82, 1, 48);
+        geometry.rotateX(-Math.PI / 2);
+        for (let i = 0; i < RINGS.count; i++) {
+            const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
+            mesh.visible = false;
+            this.group.add(mesh);
+            this.rings.push({ mesh, life: 0, radius: 1 });
+        }
+    }
+
+    /** A special unit's landing shockwave at (x, z), `radius` wide, in its team's colour. */
+    public shockwave(x: number, z: number, radius: number, color: number): void {
+        for (const [delay, tint] of [[0, 0xffffff], [0.08, color]] as [number, number][]) {
+            const ring = this.rings[this.nextRing];
+            this.nextRing = (this.nextRing + 1) % this.rings.length;
+            ring.life = RINGS.seconds + delay;
+            ring.radius = radius;
+            ring.mesh.position.set(x, 0.12, z);
+            ring.mesh.visible = true;
+            ring.mesh.scale.setScalar(0.01);
+            (ring.mesh.material as THREE.MeshBasicMaterial).color.setHex(tint);
+        }
+        this.bits.burst(x, 0.3, z, [color, 0xffffff], 26, 7, 3, 0.5, 0.16);
+    }
+
     private buildPuffs(): void {
         const geometry = new THREE.IcosahedronGeometry(0.5, 0);
         for (let i = 0; i < PUFFS; i++) {
@@ -1709,13 +1741,14 @@ export class Arena {
         this.bits.burst(x, 1.2, z - 0.3, [COLORS.blue, 0x2f6fd1, 0xffffff], heavy ? 22 : 4, heavy ? 6 : 3.5, heavy ? 7 : 4.5, 0.7, heavy ? 0.26 : 0.16);
     }
 
-    public destroyOwn(index: number): void {
+    /** The blues' building `index` falls (`last`: the one that loses the match, a bigger blast). */
+    public destroyOwn(index: number, last = false): void {
         const view = this.ownTargets[index];
         if (!view || view.down) return;
         view.down = true;
         const z = view.group.position.z;
-        this.bits.burst(view.x, 1.5, z, [COLORS.blue, 0x2f6fd1, 0x14183a, 0xffffff], 70, 11, 11, 1.4, 0.4);
-        for (let i = 0; i < 3; i++) this.puff(view.x + (Math.random() - 0.5) * 3, z + (Math.random() - 0.5) * 2, 0xffffff, 3);
+        this.bits.burst(view.x, 1.5, z, [COLORS.blue, 0x2f6fd1, 0x14183a, 0xffffff], last ? 140 : 70, 11, 11, last ? 2 : 1.4, 0.4);
+        for (let i = 0; i < (last ? 6 : 3); i++) this.puff(view.x + (Math.random() - 0.5) * (last ? 4 : 3), z + (Math.random() - 0.5) * 2, 0xffffff, 3);
     }
 
     public redFired(): void {
@@ -1893,6 +1926,15 @@ export class Arena {
         const pulse = 0.5 + 0.5 * Math.sin(this.time * (6 + battle.danger * 10));
         (this.danger.material as THREE.MeshBasicMaterial).opacity = 0.45 + battle.danger * (0.3 + pulse * 0.25);
         this.danger.scale.y = 1 + battle.danger * pulse * 1.5;
+        for (const ring of this.rings) {
+            if (ring.life <= 0) continue;
+            ring.life -= dt;
+            const t = Math.min(1, 1 - ring.life / RINGS.seconds);
+            if (t < 0) continue;
+            ring.mesh.scale.setScalar(Math.max(0.01, ring.radius * (1 - (1 - t) * (1 - t))));
+            (ring.mesh.material as THREE.MeshBasicMaterial).opacity = 0.9 * (1 - t);
+            if (ring.life <= 0) ring.mesh.visible = false;
+        }
         for (const puff of this.puffs) {
             if (puff.life <= 0) continue;
             puff.life -= dt;

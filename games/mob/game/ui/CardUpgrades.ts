@@ -2,7 +2,7 @@
 //
 // The unit cards' levels, in the main screen's UPGRADES tab (under the cannon's): a tile for each card. One the player
 // has: its face (CardFace), its name, its level (LV 3/10 and a segmented bar), what its next level does to each of its
-// stats (HITS 26 → 29, DAMAGE, CHARGE), and the price button (green with the coins, grey without, MAX at the top): a tap
+// stats (HITS 26 → 29, DAMAGE, CHARGE), and the price button in gems (green with the gems, grey without, MAX at the top): a tap
 // buys the next level. One not won yet: dark, a padlock, and how to win it.
 
 import * as PIXI from 'pixi.js';
@@ -20,7 +20,7 @@ const SEGMENT = { on: 0xffd23f, off: 0x1c2c5c, edge: 0x10123a, height: 12, gap: 
 const shown = (stat: CardStat, value: number): string => (stat === 'hp' && value <= 0 ? '∞' : stat === 'seconds' ? `${value}s` : `${value}`);
 
 export class CardUpgrades extends PIXI.Container {
-    /** `onBuy`: a card's next level tapped (bought if there are the coins). */
+    /** `onBuy`: a card's next level tapped (bought if there are the gems). */
     public constructor(private readonly onBuy: (kind: CardKind) => void) {
         super();
         this.refresh();
@@ -57,7 +57,7 @@ export class CardUpgrades extends PIXI.Container {
         const level = MobSave.cardLevel(kind);
         const max = cardMaxLevel(kind);
         const cost = MobSave.cardCost(kind);
-        const canBuy = cost !== null && MobSave.coins >= cost;
+        const canBuy = cost !== null && MobSave.gems >= cost;
         const tile = new PIXI.Container();
         tile.addChild(this.back(cardColour(kind), 0x93c2ff));
         const faceX = -CARD_TILE.width / 2 + 14 + CARD_TILE.face.width / 2;
@@ -97,7 +97,7 @@ export class CardUpgrades extends PIXI.Container {
         const price: GlossyButton = glossyButton(CARD_TILE.price.width, CARD_TILE.price.height, cost === null ? 'MAX' : '', cost === null ? 'Button01_l_Sky' : canBuy ? 'Button01_l_Green' : 'Button01_l_Gray');
         price.position.set(CARD_TILE.width / 2 - 14 - CARD_TILE.price.width / 2, CARD_TILE.height / 2 - 14 - CARD_TILE.price.height / 2);
         if (cost !== null) {
-            const coin = iconSprite('Image_Demo_Coin', 30);
+            const coin = iconSprite('Icon_Gem', 30);
             const amount = label(24);
             amount.anchor.set(0, 0.5);
             amount.text = `${cost}`;

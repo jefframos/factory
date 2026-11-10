@@ -1,0 +1,70 @@
+{
+  "$comment": "The arena's competition (game/data/Ranking.ts): crowns earned (a story level won, each enemy tower and cannon destroyed in a counted arena match) rank the player in made-up daily and weekly rankings; quests pay gems. Falloff: the share of players still ahead after each crown (lower climbs faster). Quest types: crowns, arenaWins, levels, towers (earn so many in the period), rank (reach at least this place).",
+  "crowns": {
+    "story": 1,
+    "tower": 1,
+    "cannon": 3
+  },
+  "dailyPlayers": 500,
+  "dailyFalloff": 0.6,
+  "weeklyPlayers": 5000,
+  "weeklyFalloff": 0.86,
+  "quests": [
+    {
+      "id": "daily-crowns",
+      "period": "daily",
+      "type": "crowns",
+      "value": 6,
+      "reward": 10
+    },
+    {
+      "id": "daily-arena",
+      "period": "daily",
+      "type": "arenaWins",
+      "value": 2,
+      "reward": 15
+    },
+    {
+      "id": "daily-levels",
+      "period": "daily",
+      "type": "levels",
+      "value": 2,
+      "reward": 5
+    },
+    {
+      "id": "daily-top50",
+      "period": "daily",
+      "type": "rank",
+      "value": 50,
+      "reward": 20
+    },
+    {
+      "id": "weekly-crowns",
+      "period": "weekly",
+      "type": "crowns",
+      "value": 40,
+      "reward": 50
+    },
+    {
+      "id": "weekly-towers",
+      "period": "weekly",
+      "type": "towers",
+      "value": 15,
+      "reward": 40
+    },
+    {
+      "id": "weekly-arena",
+      "period": "weekly",
+      "type": "arenaWins",
+      "value": 12,
+      "reward": 60
+    },
+    {
+      "id": "weekly-top10",
+      "period": "weekly",
+      "type": "rank",
+      "value": 10,
+      "reward": 80
+    }
+  ]
+}

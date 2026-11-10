@@ -948,9 +948,10 @@ function draw() {
             for (const red of [true, false]) {
                 const front = red ? -fieldLength() - t.z : t.z;
                 const z = red ? front - BASE.depth / 2 : front + BASE.depth / 2;
+                const x = red && data.mirror === 'both' ? -t.x : t.x;
                 ctx.globalAlpha = red ? 0.55 : 1;
-                rect(t.x, z, t.width, BASE.depth, red ? COLORS.red : COLORS.cannon, !red && isSelected('targets', i) ? COLORS.select : red ? '#7a1220' : '#1b2a55');
-                text(`${t.hp}`, t.x, z, 13);
+                rect(x, z, t.width, BASE.depth, red ? COLORS.red : COLORS.cannon, !red && isSelected('targets', i) ? COLORS.select : red ? '#7a1220' : '#1b2a55');
+                text(`${t.hp}`, x, z, 13);
             }
             ctx.globalAlpha = 1;
         });

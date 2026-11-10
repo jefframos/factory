@@ -19,8 +19,10 @@ export interface ArenaConfig {
     name: string;
     /** Its look (a Themes id): the beach when unset. */
     theme?: string;
-    /** It opens once the player reaches this story level (1-based; unset: from the start). */
+    /** It opens once the player reaches this story level (1-based: the first arena's way in) and has this many trophies
+     *  (the arena rating: the later arenas' way in, as Clash Royale's trophy road). Unset: no need. */
     unlockAt?: number;
+    trophies?: number;
     /** The whole field (both halves): 10 x 30 when unset. */
     width?: number;
     length?: number;
@@ -41,12 +43,9 @@ export interface ArenaConfig {
      *  its copy) or 'both' (and left for right: turned half a turn, so a big gate on one side faces the other side's).
      *  Unset: vertical. */
     mirror?: 'vertical' | 'both';
-    /** The comeback boost (BOOST in ARENA_RULES): fire rate times `boostRate` for `boostSeconds`, every `boostCooldown`
-     *  seconds at most, for the side behind by `boostBehind` of its starting life. */
+    /** The comeback (boost in ARENA_RULES): once a side's towers are all down, its cannon fires `boostRate` times
+     *  faster, by itself, till the end. */
     boostRate?: number;
-    boostSeconds?: number;
-    boostCooldown?: number;
-    boostBehind?: number;
     /** The player's half (z from the cannon, 0, up to the middle, -length/2), as a level has it. */
     gates?: GateConfig[];
     obstacles?: ObstacleConfig[];
@@ -75,7 +74,7 @@ export const ARENA_RULES = {
     cannonMargin: 0.8,
     /** A cannon's life is hit this far in front of its row (its muzzle's side). */
     cannonFront: 0.6,
-    boost: { rate: 1.6, seconds: 6, cooldown: 20, behind: 0.08 },
+    boost: { rate: 1.6 },
     /** Gates the whole field can have (a mob remembers the ones it's crossed in 8 bits): half for each side. */
     mostGates: 4,
 };
@@ -185,10 +184,7 @@ export function arenaBattle(arena: ArenaConfig): BattleConfig {
         blueTargets: buildings,
         duel: {
             seconds, cannonRange: arenaCannonRange(arena), cannonZ: arenaCannon(arena).z,
-            boost: {
-                rate: arena.boostRate ?? ARENA_RULES.boost.rate, seconds: arena.boostSeconds ?? ARENA_RULES.boost.seconds,
-                cooldown: arena.boostCooldown ?? ARENA_RULES.boost.cooldown, behind: arena.boostBehind ?? ARENA_RULES.boost.behind,
-            },
+            boost: { rate: arena.boostRate ?? ARENA_RULES.boost.rate },
         },
     };
 }
