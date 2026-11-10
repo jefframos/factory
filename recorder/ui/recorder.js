@@ -207,6 +207,20 @@ const step = () => hook()?.step();
 
 let recorder = null;
 let recording = null;
+/** The recorder's own sound mix: the game's tracks into an AudioContext that's always running (silence when the game's
+ *  quiet or paused). A game's own track can stop giving samples (its context suspended), and a WebM recorder then
+ *  holds the video back waiting for sound: nothing is recorded. */
+let mixer = null;
+
+function soundTrack(game) {
+    const tracks = game.audioTracks();
+    if (!tracks.length) return null;
+    mixer ??= new AudioContext();
+    void mixer.resume();
+    const out = mixer.createMediaStreamDestination();
+    for (const track of tracks) mixer.createMediaStreamSource(new MediaStream([track])).connect(out);
+    return out.stream.getAudioTracks()[0] ?? null;
+}
 
 const MIMES = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
 /** The format that worked at a size (`w`x`h`@fps), so it's tested once. */
@@ -233,13 +247,14 @@ async function findMime(stream, bitrate) {
             }
             test.ondataavailable = (event) => { bytes += event.data.size; };
             test.onerror = () => { failed = true; };
-            test.onstop = () => resolve(!failed && bytes > 0);
-            test.start();
+            // Real frames, not just the file's header (an encoder that takes the format and then gives nothing).
+            test.onstop = () => resolve(!failed && bytes > 4096);
+            test.start(250);
             const pump = setInterval(compose, 16);
             setTimeout(() => {
                 clearInterval(pump);
                 if (test.state !== 'inactive') test.stop();
-            }, 700);
+            }, 1000);
         });
         if (ok) {
             workingMime.set(key, mime);
@@ -255,8 +270,9 @@ async function startRecording() {
     compose();
     const fps = +ui.fps.value;
     const stream = composite.captureStream(fps);
-    const tracks = ui.audio.checked ? game.audioTracks() : [];
-    tracks.forEach((track) => stream.addTrack(track));
+    const sound = ui.audio.checked ? soundTrack(game) : null;
+    if (sound) stream.addTrack(sound);
+    const tracks = sound ? [sound] : [];
     ui.record.disabled = true;
     const mime = await findMime(stream, +ui.bitrate.value * 1e6);
     ui.record.disabled = false;
@@ -283,6 +299,13 @@ async function startRecording() {
     recorder.onpause = () => { recording.pausedAt = performance.now(); };
     recorder.onresume = () => { recording.pausedFor += performance.now() - recording.pausedAt; recording.pausedAt = 0; };
     recorder.start(1000);
+    // Nothing coming from the browser after a few seconds: say so now, not after the take.
+    const take = recording;
+    setTimeout(() => {
+        if (recording === take && take.bytes === 0 && recorder.state === 'recording') {
+            take.failed = 'The browser isn’t giving any video. Stop, untick "Record the game’s sound" or pick a smaller size or 30 fps, and try again.';
+        }
+    }, 3500);
     if (hook()?.paused && ui.linkPause.checked) recorder.pause();
     ui.record.textContent = '■ Stop';
     ui.record.classList.add('on');
