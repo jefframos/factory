@@ -16,13 +16,23 @@ import { cardColour, loadIcon, panelColour, panelShine } from './CardFace';
 import { framePlane, iconSprite, label, tappable } from './UiParts';
 
 /** A card's size, gap, its frames' scale, the inner panel's inset and dark tint, the picture's size, the name. */
-export const CARD = { width: 124, height: 152, gap: 12, frameScale: 0.55, inset: 9, picture: 150, barHeight: 16, barGap: 6 };
-/** The charge bar along the card's bottom: its back (its fill is the unit's colour). */
-const BAR = { back: 0x10123a };
-/** The grey picture under the coloured one: how dark. */
-const GREY = { tint: 0xb8bcc8, alpha: 0.9 };
-/** Charging: how dim the card is; ready: its glow, bounce and shine. */
-const DIM = { alpha: 0.82, tint: 0x8a90b0 };
+export const CARD = { width: 124, height: 152, gap: 12, frameScale: 0.55, inset: 9, picture: 118, barHeight: 16, barGap: 6 };
+/** The charge bar along the card's bottom, from the baked bar textures (Bar_Trough, Bar_Segment: white, tinted; see
+ *  SegmentBar): its back, the fill's inset (its colour is the unit's), the textures' height and nine-slice borders. */
+const BAR = { back: 0x10123a, inset: 2, texture: 48, troughSlice: 16, fillSlice: 12 };
+/** Charging: the card sits this much lower (it rises when it's ready), and a clock on its corner (ticking) says it's
+ *  charging, not ready (a tap on it does nothing). */
+const CHARGING = { drop: 14, ease: 10, clock: 'Icon_Timer', clockSize: 42, clockX: 10, clockY: 12, tick: 0.18, tickSpeed: 7 };
+/** The grey picture under the coloured one: just greyscale, not darkened or see-through (that read as dull). */
+const GREY = { tint: 0xffffff, alpha: 1 };
+/** A navy shade rising from the panel's bottom over the picture (baked: Card_Vignette, white, tinted): strong while
+ *  charging (depth on the grey picture), lighter when it's ready. */
+const VIGNETTE = { tint: 0x0b1550, charging: 0.5, ready: 0.25 };
+/** A soft drop shadow under each card (baked: Card_Shadow, the card's rect with `margin` px of blur round it, white,
+ *  tinted): how far down it's dropped, its colour and strength. */
+const SHADOW = { margin: 24, drop: 7, tint: 0x060a2a, alpha: 0.55 };
+/** Charging: the card's frame blue (not grey: a tray of grey cards looked dead), and not see-through. */
+const DIM = { alpha: 1, tint: 0x3f6bf5 };
 const READY = { glow: 1.75, glowFrom: 0.35, glowTo: 0.85, bounce: 0.06, speed: 5, shineEvery: 1.4, tap: 26, rays: 2.1, raysTint: 0xffe27a, raysSpin: 0.9, sparkles: 6, edge: 0xfff3b0 };
 /** A colour's lighter version (towards white by `t`). */
 const lighter = (colour: number, t: number): number => {
@@ -33,9 +43,9 @@ const colourOf = cardColour;
 
 /** A card: its parts, the panel its colour rises in (and that colour), and its charge. */
 interface Card {
-    kind: CardKind; holder: PIXI.Container; body: PIXI.Container; outer: PIXI.NineSlicePlane; inner: PIXI.NineSlicePlane; reveal: PIXI.Graphics; picture: PIXI.Sprite; grey: PIXI.Sprite;
-    glow: PIXI.Sprite; rays: PIXI.Sprite; sparkles: PIXI.Graphics; edge: PIXI.Graphics; bar: PIXI.Graphics; shine: PIXI.Graphics; tap: PIXI.Text; flash: PIXI.Graphics;
-    charge: number; ready: boolean;
+    kind: CardKind; holder: PIXI.Container; body: PIXI.Container; outer: PIXI.NineSlicePlane; inner: PIXI.NineSlicePlane; reveal: PIXI.Graphics; picture: PIXI.Sprite; grey: PIXI.Sprite; vignette: PIXI.Sprite;
+    glow: PIXI.Sprite; rays: PIXI.Sprite; sparkles: PIXI.Graphics; edge: PIXI.Graphics; bar: PIXI.Container; barFill: PIXI.NineSlicePlane; shine: PIXI.Graphics; tap: PIXI.Text; flash: PIXI.Graphics;
+    clock: PIXI.Sprite; charge: number; ready: boolean;
     panel: { left: number; top: number; width: number; height: number; colour: number };
 }
 
@@ -52,6 +62,7 @@ export class CardTray extends PIXI.Container {
         this.cards = kinds.map((kind, i) => {
             const card = this.buildCard(kind, fresh.includes(kind));
             card.holder.x = (i - (kinds.length - 1) / 2) * (CARD.width + CARD.gap);
+            card.holder.y = CHARGING.drop;
             this.addChild(card.holder);
             return card;
         });
@@ -72,6 +83,13 @@ export class CardTray extends PIXI.Container {
         rays.visible = false;
         const sparkles = new PIXI.Graphics();
         sparkles.visible = false;
+        const shadow = new PIXI.Sprite(PIXI.Texture.from('Card_Shadow'));
+        shadow.anchor.set(0.5);
+        shadow.width = width + SHADOW.margin * 2;
+        shadow.height = height + SHADOW.margin * 2;
+        shadow.y = SHADOW.drop;
+        shadow.tint = SHADOW.tint;
+        shadow.alpha = SHADOW.alpha;
         const outer = framePlane('CardFrame03_n_Bg', width, height, CARD.frameScale);
         outer.tint = colour;
         outer.position.set(-width / 2, -height / 2);
@@ -99,8 +117,33 @@ export class CardTray extends PIXI.Container {
         picture.mask = reveal;
         // Framed as the settings say (cards.<kind>.icon: offset and zoom).
         loadIcon(kind, [grey, picture], CARD.picture, -height / 2 + inset + innerHeight / 2);
-        const bar = new PIXI.Graphics();
+        // The navy shade up from the panel's bottom, over the picture (cropped to the panel as it is).
+        const vignette = new PIXI.Sprite(PIXI.Texture.from('Card_Vignette'));
+        vignette.tint = VIGNETTE.tint;
+        vignette.position.set(-innerWidth / 2 + 2, -height / 2 + inset + 2);
+        vignette.width = innerWidth - 4;
+        vignette.height = innerHeight - 4;
+        const vignetteMask = new PIXI.Graphics().beginFill(0xffffff).drawRoundedRect(-innerWidth / 2 + 2, -height / 2 + inset + 2, innerWidth - 4, innerHeight - 4, 10).endFill();
+        vignette.mask = vignetteMask;
+        // The charge bar: a dark trough, and the fill (its width set as it charges: paint).
+        const bar = new PIXI.Container();
         bar.y = height / 2 - inset - CARD.barHeight / 2;
+        const troughScale = CARD.barHeight / BAR.texture;
+        const trough = new PIXI.NineSlicePlane(PIXI.Texture.from('Bar_Trough'), BAR.troughSlice, BAR.troughSlice, BAR.troughSlice, BAR.troughSlice);
+        trough.scale.set(troughScale);
+        trough.width = innerWidth / troughScale;
+        trough.height = BAR.texture;
+        trough.position.set(-innerWidth / 2, -CARD.barHeight / 2);
+        trough.tint = BAR.back;
+        const fillScale = (CARD.barHeight - BAR.inset * 2) / BAR.texture;
+        const barFill = new PIXI.NineSlicePlane(PIXI.Texture.from('Bar_Segment'), BAR.fillSlice, BAR.fillSlice, BAR.fillSlice, BAR.fillSlice);
+        barFill.scale.set(fillScale);
+        barFill.height = BAR.texture;
+        barFill.position.set(-innerWidth / 2 + BAR.inset, -CARD.barHeight / 2 + BAR.inset);
+        bar.addChild(trough, barFill);
+        // The clock on its top right corner while it charges.
+        const clock = iconSprite(CHARGING.clock, CHARGING.clockSize);
+        clock.position.set(width / 2 - CHARGING.clockX, -height / 2 + CHARGING.clockY);
         // Its edge, flashing when it's ready.
         const edge = new PIXI.Graphics().lineStyle(4, READY.edge).drawRoundedRect(-width / 2 + 2, -height / 2 + 2, width - 4, height - 4, 16);
         edge.visible = false;
@@ -115,8 +158,8 @@ export class CardTray extends PIXI.Container {
         tap.visible = false;
         const flash = new PIXI.Graphics().beginFill(0xffffff).drawRoundedRect(-width / 2, -height / 2, width, height, 18).endFill();
         flash.alpha = 0;
-        body.addChild(outer, inner, panelLight, grey, greyMask, picture, reveal, bar, shine, shineMask, edge, flash, tap);
-        holder.addChild(rays, glow, sparkles, body);
+        body.addChild(outer, inner, panelLight, grey, greyMask, picture, reveal, vignette, vignetteMask, bar, shine, shineMask, edge, flash, clock, tap);
+        holder.addChild(shadow, rays, glow, sparkles, body);
         if (fresh) {
             const tag = label(22, 0xffd23f);
             tag.text = 'NEW!';
@@ -126,7 +169,7 @@ export class CardTray extends PIXI.Container {
             gsap.fromTo(tag.scale, { x: 1.3, y: 1.3 }, { x: 1, y: 1, duration: 0.5, yoyo: true, repeat: 7, ease: 'sine.inOut' });
         }
         const card: Card = {
-            kind, holder, body, outer, inner, reveal, picture, grey, glow, rays, sparkles, edge, bar, shine, tap, flash, charge: 0, ready: false,
+            kind, holder, body, outer, inner, reveal, picture, grey, vignette, glow, rays, sparkles, edge, bar, barFill, shine, tap, flash, clock, charge: 0, ready: false,
             panel: { left: -innerWidth / 2, top: -height / 2 + inset, width: innerWidth, height: innerHeight, colour },
         };
         body.hitArea = new PIXI.Rectangle(-width / 2, -height / 2, width, height);
@@ -150,14 +193,17 @@ export class CardTray extends PIXI.Container {
         card.picture.visible = filled > 0.5;
         card.inner.tint = panelColour(card.kind, card.ready);
         card.body.alpha = card.ready ? 1 : DIM.alpha;
+        card.vignette.alpha = card.ready ? VIGNETTE.ready : VIGNETTE.charging;
         card.outer.tint = card.ready ? data.colour : DIM.tint;
         for (const part of [card.glow, card.rays, card.sparkles, card.edge, card.shine, card.tap]) part.visible = card.ready;
-        // The charge bar along the bottom, in the unit's colour (brighter when it's ready).
-        const width = CARD.width - CARD.inset * 2;
-        const h = CARD.barHeight;
-        card.bar.clear().beginFill(BAR.back).drawRoundedRect(-width / 2, -h / 2, width, h, h / 2).endFill();
-        const fill = Math.max(0, Math.min(1, card.charge)) * (width - 4);
-        if (fill > 1) card.bar.beginFill(card.ready ? lighter(data.colour, 0.25) : data.colour).drawRoundedRect(-width / 2 + 2, -h / 2 + 2, fill, h - 4, (h - 4) / 2).endFill();
+        card.clock.visible = !card.ready;
+        // The charge bar along the bottom, in the unit's colour (brighter when it's ready); too short for its rounded
+        // ends, it's not drawn yet.
+        const fillScale = card.barFill.scale.x;
+        const fill = Math.max(0, Math.min(1, card.charge)) * (CARD.width - CARD.inset * 2 - BAR.inset * 2);
+        card.barFill.visible = fill >= BAR.fillSlice * 2 * fillScale;
+        card.barFill.width = Math.max(BAR.fillSlice * 2, fill / fillScale);
+        card.barFill.tint = card.ready ? lighter(data.colour, 0.25) : data.colour;
         card.body.cursor = card.ready ? 'pointer' : 'default';
     }
 
@@ -187,6 +233,13 @@ export class CardTray extends PIXI.Container {
         gsap.to(go, { y: go.y - 50, alpha: 0, duration: 0.8, ease: 'power1.out', onComplete: () => go.destroy() });
     }
 
+    /** A point on `kind`'s card (`x`, `y`: shares of its size from its middle, e.g. 0.5, 0 its right edge), in `to`'s
+     *  space (null: no such card). */
+    public cardPoint(kind: CardKind, x: number, y: number, to: PIXI.Container): PIXI.IPointData | null {
+        const card = this.cards.find((entry) => entry.kind === kind);
+        return card ? to.toLocal(new PIXI.Point(x * CARD.width, y * CARD.height), card.body) : null;
+    }
+
     /** Whether a screen point (CSS px) is on one of the cards (the field shouldn't take it too). */
     public hits(screenX: number, screenY: number): boolean {
         return this.visible && this.cards.some((card) => card.body.getBounds().contains(screenX, screenY));
@@ -211,8 +264,12 @@ export class CardTray extends PIXI.Container {
         this.time += dt;
         const wave = 0.5 + 0.5 * Math.sin(this.time * READY.speed);
         for (const card of this.cards) {
+            // Charging, it sits lower; ready, it rises (eased).
+            const drop = card.ready ? 0 : CHARGING.drop;
+            card.holder.y += (drop - card.holder.y) * Math.min(1, dt * CHARGING.ease);
             if (!card.ready) {
                 if (!gsap.isTweening(card.body)) card.body.y = 0;
+                card.clock.rotation = Math.sin(this.time * CHARGING.tickSpeed) * CHARGING.tick;
                 continue;
             }
             card.body.y = -Math.abs(Math.sin(this.time * READY.speed * 0.7)) * 8;

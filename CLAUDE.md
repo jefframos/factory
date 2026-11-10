@@ -9,6 +9,7 @@ npm run dev          # Start dev server on :9001 (reads GAME from .env)
 npm run build        # Build current game to /dist
 npm run build-all    # Build all platform variants
 npm run assets       # Process all asset bundles (images, fonts, audio, JSON)
+npm run record       # Gameplay recorder + video editor on :9300 (recorder/, works for any Vite project)
 ```
 
 Game selection is controlled by `GAME=<name>` in `.env` (e.g. `GAME=clog`). The Vite config roots itself at `games/${GAME}`, so only one game builds at a time.

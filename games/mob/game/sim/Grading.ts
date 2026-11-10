@@ -38,6 +38,9 @@ export interface Profile {
     spend: number;
     /** How much they count towards a level's grade. */
     weight: number;
+    /** Only played on the levels before this one in the play order (a newbie doesn't get further): the rest are graded
+     *  without them, the others' weights sharing the grade. */
+    upTo?: number;
 }
 
 export const PROFILES: Profile[] = [
@@ -46,7 +49,7 @@ export const PROFILES: Profile[] = [
     { id: 'average', name: 'Average, upgrades everything', skill: SKILLS.average, spend: 1, weight: 0.3 },
     { id: 'average-raw', name: 'Average, never upgrades', skill: SKILLS.average, spend: 0, weight: 0.2 },
     { id: 'casual', name: 'Casual, spends half', skill: SKILLS.casual, spend: 0.5, weight: 0.2 },
-    { id: 'newbie', name: 'Newbie, never upgrades', skill: SKILLS.newbie, spend: 0, weight: 0.1 },
+    { id: 'newbie', name: 'Newbie, never upgrades', skill: SKILLS.newbie, spend: 0, weight: 0.1, upTo: 10 },
 ];
 
 /** What a profile has at a level: its coins by then, what it spent, its upgrades' levels and its cards'. */

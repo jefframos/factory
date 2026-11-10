@@ -27,6 +27,8 @@ interface SaveData {
     levels: Record<UpgradeKind, number>;
     /** Losses in a row on the picked battle (each makes it RETRY_EASE.step easier); 0 once it's won or another's picked. */
     retries: number;
+    /** The first-card tutorial's been done (the battle paused on the first charged card, for the player to tap it). */
+    cardTutorial: boolean;
 }
 
 const KINDS = Object.keys(UPGRADES) as UpgradeKind[];
@@ -44,10 +46,10 @@ function load(): SaveData {
         const battle = Math.max(0, stored.battle ?? 0);
         return {
             coins: Math.max(0, stored.coins ?? SETTINGS.startCoins), battle, selected: Math.max(0, Math.floor(stored.selected ?? battle)),
-            unlockAll: !!stored.unlockAll, cards: (stored.cards ?? []).filter((kind) => CARD_KINDS.includes(kind)), cardLevels: stored.cardLevels ?? {}, best: Math.max(0, stored.best ?? 0), levels, retries: Math.max(0, Math.floor(stored.retries ?? 0)),
+            unlockAll: !!stored.unlockAll, cards: (stored.cards ?? []).filter((kind) => CARD_KINDS.includes(kind)), cardLevels: stored.cardLevels ?? {}, best: Math.max(0, stored.best ?? 0), levels, retries: Math.max(0, Math.floor(stored.retries ?? 0)), cardTutorial: !!stored.cardTutorial,
         };
     } catch {
-        return { coins: SETTINGS.startCoins, battle: 0, selected: 0, unlockAll: false, cards: [], cardLevels: {}, best: 0, levels: freshLevels(), retries: 0 };
+        return { coins: SETTINGS.startCoins, battle: 0, selected: 0, unlockAll: false, cards: [], cardLevels: {}, best: 0, levels: freshLevels(), retries: 0, cardTutorial: false };
     }
 }
 
@@ -94,6 +96,13 @@ export const MobSave = {
         data.selected = index + 1;
         data.battle = Math.max(data.battle, index + 1);
         data.retries = 0;
+        save();
+    },
+
+    /** Whether the first-card tutorial's been done. */
+    get cardTutorial(): boolean { return data.cardTutorial; },
+    cardTutorialDone(): void {
+        data.cardTutorial = true;
         save();
     },
 

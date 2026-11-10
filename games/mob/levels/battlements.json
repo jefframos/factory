@@ -1,0 +1,97 @@
+{
+  "name": "Battlements",
+  "kind": "Mixed",
+  "width": 12,
+  "length": 28,
+  "gates": [
+    {
+      "x": -3.5,
+      "z": -5.5,
+      "width": 3,
+      "value": 2
+    },
+    {
+      "x": 3.5,
+      "z": -5.5,
+      "width": 3,
+      "value": 2
+    },
+    {
+      "x": 0,
+      "z": -15,
+      "width": 3.2,
+      "value": 3
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "x": -4,
+      "z": -10,
+      "width": 1,
+      "depth": 1
+    },
+    {
+      "kind": "wall",
+      "x": -1.4,
+      "z": -10,
+      "width": 1,
+      "depth": 1
+    },
+    {
+      "kind": "wall",
+      "x": 1.4,
+      "z": -10,
+      "width": 1,
+      "depth": 1
+    },
+    {
+      "kind": "wall",
+      "x": 4,
+      "z": -10,
+      "width": 1,
+      "depth": 1
+    },
+    {
+      "kind": "wall",
+      "x": -3,
+      "z": -19.5,
+      "width": 1.4,
+      "depth": 1
+    },
+    {
+      "kind": "wall",
+      "x": 0,
+      "z": -19.5,
+      "width": 1.4,
+      "depth": 1
+    },
+    {
+      "kind": "wall",
+      "x": 3,
+      "z": -19.5,
+      "width": 1.4,
+      "depth": 1
+    }
+  ],
+  "helmets": [
+    {
+      "x": -3,
+      "z": -8,
+      "width": 3,
+      "kind": "hp"
+    },
+    {
+      "x": 3,
+      "z": -8,
+      "width": 3,
+      "kind": "attack"
+    }
+  ],
+  "redRate": 5.5,
+  "redRateEnd": 10,
+  "redRamp": 60,
+  "redGiantEvery": 13,
+  "baseHp": 400,
+  "reward": 260
+}

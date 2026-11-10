@@ -14,7 +14,7 @@
 import { buildWorldTab } from './mob-world.js';
 import { buildSettingsTab } from './mob-settings.js';
 import { createGrades } from './mob-grades.js';
-import { buildCurveTab } from './mob-curve.js';
+import { buildCurveTab, loadCurve, targetCurve } from './mob-curve.js';
 import { createGaps } from './mob-gaps.js';
 
 /** The field sizes (MobConfig.ts FIELD): the default, the most, and the presets offered. */
@@ -67,7 +67,7 @@ const HOUSE_KINDS = {
     giant: { label: 'GIANT', wall: '#e8f1ff', roof: '#3d6dff', need: 16 },
     truck: { label: 'TRUCK', wall: '#cfe0ff', roof: '#1f4fbf', need: 24 },
     saucer: { label: 'UFO', wall: '#ffe27a', roof: '#ffb31a', need: 40 },
-    car: { label: 'CAR', wall: '#ffe3d6', roof: '#ff6a3d', need: 30 },
+    car: { label: 'RAMMER', wall: '#ffe3d6', roof: '#ff6a3d', need: 30 },
 };
 const LIST_NAMES = { gates: 'Gate', obstacles: 'Obstacle', spinners: 'Spinner', pushers: 'Pusher', pads: 'House', pushBlocks: 'PUSH block', helmets: 'Barrier', pipes: 'Pipe', grinders: 'Grinder', targets: 'Fort' };
 /** Hit-test order: smaller things on top. */
@@ -92,11 +92,12 @@ function pipeEndAt(p, x, z) {
 }
 const LEVEL_FIELDS = [
     ['name', 'text'], ['kind', 'text'], ['redRate', 'number'], ['redRateEnd', 'number'], ['redRamp', 'number'],
-    ['redGiantEvery', 'number'], ['baseHp', 'number'], ['reward', 'number'],
+    ['redGiantEvery', 'number'], ['kingAt', 'number'], ['baseHp', 'number'], ['reward', 'number'],
 ];
 const FIELD_HINTS = {
     redRate: 'reds a second at the start', redRateEnd: 'reds a second at the end of the ramp', redRamp: 'ramp seconds',
-    redGiantEvery: 'a red giant every N s (0 = none)', baseHp: 'the one base\'s hits (no forts)', far: 'z: pushed here, the blues open it',
+    redGiantEvery: 'a red giant every N s (0 = none)',
+    kingAt: 'boss: the Giant King comes out once, when the enemy\'s HP is down to this (empty or 0 = none)', baseHp: 'the one base\'s hits (no forts)', far: 'z: pushed here, the blues open it',
     near: 'z: pushed here, the reds open it', need: 'blues per one it makes (empty = the Units tab\'s)', hp: 'hits', value: 'multiplier', lock: 'locked: hits to unlock it (empty = open)', speed: 'turns a second',
 };
 
@@ -387,7 +388,7 @@ function buildLevelsTab() {
             el('button', { onclick: newLevel }, '+ New'),
             el('button', { onclick: duplicateLevel }, 'Duplicate'),
             el('button', { class: 'danger', onclick: deleteLevel }, 'Delete'),
-            el('button', { title: 'Robot players grade every level where it is in the game (a minute or two): the badges', onclick: () => grades?.run([]) }, 'Grade all'),
+            el('button', { title: 'Robot players grade the levels whose grade is missing or out of date (the level, those before it, the settings or the grading itself changed), each where it is in the game: the badges. Shift+click: every level, from scratch', onclick: (event) => grades?.run([], event.shiftKey) }, 'Grade all'),
             el('button', { id: 'check-gaps', title: 'Check every level for where giants, trucks and cars get stuck (a few seconds): ✓ pass, ! units stall, ✗ one stuck for good', disabled: gaps.checkingAll, onclick: () => gaps.checkAll(Object.fromEntries(state.levels)) }, gaps.checkingAll ? 'Checking gaps…' : 'Check all gaps'),
         ),
     );
@@ -451,33 +452,104 @@ function buildLevelsTab() {
     setTool('select');
 }
 
+/** The zones folded away in the level list (kept in this browser). */
+const CLOSED_ZONES_KEY = 'mob-editor.closedZones';
+/** Levels that take longer than this to win (seconds, the robots' average) are flagged: long levels are bad. */
+const LONG_LEVEL = 55;
+function closedZones() {
+    try {
+        return new Set(JSON.parse(localStorage.getItem(CLOSED_ZONES_KEY) ?? '[]'));
+    } catch {
+        return new Set();
+    }
+}
+function toggleZone(id) {
+    const closed = closedZones();
+    if (closed.has(id)) closed.delete(id);
+    else closed.add(id);
+    try {
+        localStorage.setItem(CLOSED_ZONES_KEY, JSON.stringify([...closed]));
+    } catch {
+        // Not kept: it folds for now.
+    }
+    renderLevelList();
+}
+
+/**
+ * Each level in play order against the Curve tab's curve: how far its grade is off the aim, past the curve's
+ * tolerance (+ too hard, - too easy), or 0; null if it's not graded.
+ */
+function offTheCurve() {
+    const order = state.zones.zones.flatMap((zone) => zone.levels.filter((id) => state.levels.has(id)).map((id) => ({ id, zone: zone.id })));
+    const curve = loadCurve();
+    const target = targetCurve(order.map(({ zone }) => ({ zone })), curve);
+    const off = new Map();
+    order.forEach(({ id }, i) => {
+        const score = grades?.score(id) ?? null;
+        if (score === null) return off.set(id, null);
+        const delta = score - target[i];
+        off.set(id, Math.abs(delta) > curve.tolerance ? Math.round(delta) : 0);
+    });
+    return off;
+}
+
 function renderLevelList() {
     levelList.replaceChildren();
     const used = new Set();
+    const off = offTheCurve();
+    const closed = closedZones();
+    /** Too easy or too hard for where it is: by how much (the Curve tab says what to change). */
+    const fit = (id) => {
+        const delta = off.get(id);
+        if (!delta) return null;
+        return delta < 0
+            ? el('span', { class: 'fit easy', title: `Easier than the curve wants here by ${-delta} (Curve tab: its suggestion)` }, `EASY ${delta}`)
+            : el('span', { class: 'fit hard', title: `Harder than the curve wants here by ${delta} (Curve tab: its suggestion)` }, `HARD +${delta}`);
+    };
+    /** How long it takes to win (the robots' average), flagged when it's long. */
+    const length = (id) => {
+        const time = grades?.seconds(id) ?? null;
+        if (time === null) return null;
+        return time > LONG_LEVEL
+            ? el('span', { class: 'fit hard', title: `Takes ${time}s to win on average: long levels are bad, make it shorter (more pressure, not more HP)` }, `LONG ${time}s`)
+            : el('small', { title: 'How long it takes to win, on average (the casual and average robots)' }, `${time}s`);
+    };
     const row = (id, number) => {
         const data = state.levels.get(id);
         const node = el('div', { class: `row${id === state.id ? ' sel' : ''}`, onclick: () => openLevel(id) },
             el('div', { class: 'row-main' },
                 el('span', { class: state.dirty.has(id) ? 'dirty' : '' }, `${number ? `${number}. ` : ''}${data?.name ?? id}`),
-                el('div', { class: 'row-sub' }, grades?.chips(data), el('small', {}, data?.kind ?? ''))),
+                el('div', { class: 'row-sub' }, fit(id), length(id), grades?.chips(data), el('small', {}, data?.kind ?? ''))),
             gaps.mark(id, data),
             grades?.badge(id) ?? null);
         levelList.append(node);
     };
+    /** A zone's heading: click to fold it away or open it; folded, it still says how many are off the curve. */
+    const heading = (key, title, ids) => {
+        const isClosed = closed.has(key);
+        const easy = ids.filter((id) => (off.get(id) ?? 0) < 0).length;
+        const hard = ids.filter((id) => (off.get(id) ?? 0) > 0).length;
+        levelList.append(el('div', { class: 'zone-head', title: isClosed ? 'Show its levels' : 'Hide its levels', onclick: () => toggleZone(key) },
+            el('span', { class: 'arrow' }, isClosed ? '▸' : '▾'),
+            el('span', { class: 'zone-name' }, title),
+            el('small', {}, `${ids.length}`),
+            easy ? el('span', { class: 'fit easy', title: `${easy} too easy` }, `${easy} easy`) : null,
+            hard ? el('span', { class: 'fit hard', title: `${hard} too hard` }, `${hard} hard`) : null));
+        return isClosed;
+    };
     let number = 0;
     for (const zone of state.zones.zones) {
-        levelList.append(el('div', { class: 'hint', style: { padding: '8px 10px 2px' } }, `${zone.name} · ${zone.theme}`));
-        for (const id of zone.levels) {
-            if (!state.levels.has(id)) continue;
+        const ids = zone.levels.filter((id) => state.levels.has(id));
+        const isClosed = heading(zone.id, `${zone.name} · ${zone.theme}`, ids);
+        for (const id of ids) {
             used.add(id);
-            row(id, ++number);
+            // (Numbered through, folded or not: the numbers are the play order.)
+            number++;
+            if (!isClosed) row(id, number);
         }
     }
     const loose = [...state.levels.keys()].filter((id) => !used.has(id));
-    if (loose.length) {
-        levelList.append(el('div', { class: 'hint', style: { padding: '8px 10px 2px' } }, 'In no zone'));
-        loose.forEach((id) => row(id, 0));
-    }
+    if (loose.length && !heading('(none)', 'In no zone', loose)) loose.forEach((id) => row(id, 0));
 }
 
 function setTool(tool) {
@@ -1762,7 +1834,7 @@ boot();
 // ------------------------------------------------------------------ units tab
 
 /** The upgrades, in the order shown: what each house makes. */
-const UNIT_ORDER = [['giant', 'GIANT'], ['truck', 'TRUCK'], ['saucer', 'UFO'], ['car', 'CAR']];
+const UNIT_ORDER = [['giant', 'GIANT'], ['truck', 'TRUCK'], ['saucer', 'UFO'], ['car', 'RAMMER']];
 let unitsDirty = false;
 let unitId = 'giant';
 let unitList;

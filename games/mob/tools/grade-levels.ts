@@ -4,7 +4,9 @@
 //
 //   node games/mob/tools/grade-run.mjs                 every level in the play order
 //   node games/mob/tools/grade-run.mjs first-steps …   just those (each graded where it is in the order)
-//   options: --careers N (goes per profile, default 3), --workers N, --no-save, --json (progress lines for the editor),
+//   options: --changed (of all the levels, only those whose grade is missing or out of date: the level, those before it
+//            or the settings changed, or the grading itself did: --grader-hash, which grade-run.mjs passes),
+//            --careers N (goes per profile, default 3), --workers N, --no-save, --json (progress lines for the editor),
 //            --state <file> (a JSON { zones?, levels?: { id: level } } used instead of what's on disk: the editor's
 //            unsaved order and level).
 //
@@ -68,7 +70,7 @@ async function main(): Promise<void> {
     const inputs: Inputs = { root: option('--root') ?? path.resolve(__dirname, '..'), statePath: option('--state') };
     const careers = Math.max(1, Number(option('--careers') ?? 3));
     const workers = Math.max(1, Number(option('--workers') ?? Math.min(16, os.cpus().length - 2)));
-    const named = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && ['--root', '--state', '--careers', '--workers', '--profiles'].includes(args[i - 1])));
+    const named = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && ['--root', '--state', '--careers', '--workers', '--profiles', '--grader-hash'].includes(args[i - 1])));
     // --profiles a,b: only those (for trying the robots out; a grade needs them all, so nothing's saved).
     const only = option('--profiles')?.split(',');
     const profiles = only ? PROFILES.filter((p) => only.includes(p.id)) : PROFILES;
@@ -84,17 +86,39 @@ async function main(): Promise<void> {
         if (index < 0) say({ type: 'skipped', id, reason: 'not in any zone' });
         else levels.push({ id, index });
     }
+    // Who plays a level: a profile with an `upTo` only the levels before it (in the play order).
+    const profilesAt = (index: number) => profiles.filter((profile) => profile.upTo === undefined || index < profile.upTo);
+    const graderHash = option('--grader-hash') ?? '';
+    const gradesFile = path.join(inputs.root, 'ui', 'grades.json');
+    // --changed (all levels asked for): only those whose grade is missing or out of date.
+    const playedCount = levels.length;
+    if (args.includes('--changed') && !named.length) {
+        let stored: Record<string, StoredGrade> = {};
+        try {
+            stored = JSON.parse(fs.readFileSync(gradesFile, 'utf8')).levels ?? {};
+        } catch {
+            // None yet: every level.
+        }
+        const upToDate = (id: string, index: number): boolean => {
+            const grade = stored[id];
+            return !!grade && grade.index === index && grade.levelHash === levelHash(play[index].config)
+                && grade.contextHash === contextHash(index, play.slice(0, index).map((e) => e.config), settings)
+                && (!graderHash || grade.graderHash === graderHash);
+        };
+        const changed = levels.filter(({ id, index }) => !upToDate(id, index));
+        levels.splice(0, levels.length, ...changed);
+        if (!json) console.log(`${playedCount - changed.length} level(s) up to date, ${changed.length} to grade.`);
+    }
     const jobs: Job[] = [];
     for (const { id, index } of levels) {
-        for (const profile of profiles) for (let c = 0; c < careers; c++) jobs.push({ index, profile: profile.id, seed: parseInt(hashString(`${id}:${profile.id}:${c}`), 16) });
+        for (const profile of profilesAt(index)) for (let c = 0; c < careers; c++) jobs.push({ index, profile: profile.id, seed: parseInt(hashString(`${id}:${profile.id}:${c}`), 16) });
     }
     const total = jobs.length;
     say({ type: 'start', total, levels: levels.map((l) => l.id) });
     if (!json) console.log(`Grading ${levels.length} level(s): ${profiles.length} profiles x ${careers} goes each, on ${workers} threads…`);
 
     const goes = new Map<string, Go[]>();
-    const left = new Map(levels.map((l) => [l.index, profiles.length * careers]));
-    const gradesFile = path.join(inputs.root, 'ui', 'grades.json');
+    const left = new Map(levels.map((l) => [l.index, profilesAt(l.index).length * careers]));
     const save = !args.includes('--no-save');
     const summary: string[] = [];
     let done = 0;
@@ -103,12 +127,13 @@ async function main(): Promise<void> {
     const finishLevel = (index: number): void => {
         const entry = play[index];
         const config = loopedBattle(play, index).config;
-        const grades = profiles.map((profile) => profileGrade(profile.id, loadoutAt(play, index, profile.spend), goes.get(`${index}:${profile.id}`) ?? []));
+        const grades = profilesAt(index).map((profile) => profileGrade(profile.id, loadoutAt(play, index, profile.spend), goes.get(`${index}:${profile.id}`) ?? []));
         const score = Math.round(levelScore(grades));
         const grade = {
             index,
             levelHash: levelHash(entry.config),
             contextHash: contextHash(index, play.slice(0, index).map((e) => e.config), settings),
+            graderHash,
             score,
             at: new Date().toISOString(),
             careers,
@@ -183,7 +208,8 @@ async function main(): Promise<void> {
         if (!jobs.length) resolve();
     });
     if (save) {
-        const written = writeReport(inputs.root, play, settings, gradesFile, { full: !named.length, careers });
+        // (A dated copy only when every level was graded this time.)
+        const written = writeReport(inputs.root, play, settings, gradesFile, { full: !named.length && levels.length === playedCount, careers });
         if (!json) console.log(`Report: ${written.map((file) => path.relative(process.cwd(), file)).join(', ')}`);
     }
     say({ type: 'done' });
@@ -233,6 +259,8 @@ interface StoredGrade {
     index: number;
     levelHash: string;
     contextHash: string;
+    /** The grading algorithm that made it (grade-run.mjs). */
+    graderHash?: string;
     score: number;
     at: string;
     profiles: { id: string; score: number; firstWin: number; never: number; tries: number | null }[];

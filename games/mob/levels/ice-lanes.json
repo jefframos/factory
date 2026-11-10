@@ -1,0 +1,56 @@
+{
+  "name": "Ice Lanes",
+  "kind": "Lanes",
+  "width": 12,
+  "length": 26,
+  "gates": [
+    {
+      "x": -4,
+      "z": -7,
+      "width": 2.6,
+      "value": 2
+    },
+    {
+      "x": 0,
+      "z": -7,
+      "width": 2.6,
+      "value": 3
+    },
+    {
+      "x": 4,
+      "z": -7,
+      "width": 2.6,
+      "value": 2
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "x": -2,
+      "z": -9,
+      "width": 0.45,
+      "depth": 9
+    },
+    {
+      "kind": "wall",
+      "x": 2,
+      "z": -9,
+      "width": 0.45,
+      "depth": 9
+    }
+  ],
+  "helmets": [
+    {
+      "x": 0,
+      "z": -11.5,
+      "width": 2.8,
+      "kind": "hp"
+    }
+  ],
+  "redRate": 4,
+  "redRateEnd": 7,
+  "redRamp": 55,
+  "redGiantEvery": 16,
+  "baseHp": 380,
+  "reward": 215
+}

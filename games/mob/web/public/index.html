@@ -59,6 +59,13 @@
         .dirty::after { content: ' •'; color: #ffcf4a; }
         aside .row { align-items: center; }
         .row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+        .zone-head { display: flex; align-items: center; gap: 6px; padding: 8px 10px 4px; cursor: pointer; color: var(--dim); font-size: 12px; user-select: none; }
+        .zone-head:hover { color: inherit; background: var(--panel2); }
+        .zone-head .arrow { width: 10px; }
+        .zone-head .zone-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .fit { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 6px; white-space: nowrap; }
+        .fit.easy { background: #1d3f66; color: #7fd1ff; }
+        .fit.hard { background: #5a2330; color: #ff9b9b; }
         .row-sub { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         .chips { display: inline-flex; gap: 2px; flex-wrap: wrap; }
         .chip { display: inline-block; min-width: 13px; height: 13px; line-height: 13px; padding: 0 2px; border-radius: 3px; font-size: 9px; font-weight: 700; color: #fff; text-align: center; text-shadow: 0 1px 1px rgba(0,0,0,0.45); }

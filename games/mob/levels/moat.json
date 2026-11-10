@@ -1,0 +1,75 @@
+{
+  "name": "Moat",
+  "kind": "Pipe",
+  "width": 12,
+  "length": 26,
+  "gates": [
+    {
+      "x": -3.8,
+      "z": -5.5,
+      "width": 3,
+      "value": 2
+    },
+    {
+      "x": 3.2,
+      "z": -5.5,
+      "width": 3.4,
+      "value": 2
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "water",
+      "x": -4.6,
+      "z": -12,
+      "width": 2.8,
+      "depth": 1.6
+    },
+    {
+      "kind": "water",
+      "x": 0,
+      "z": -12,
+      "width": 3.2,
+      "depth": 1.6
+    },
+    {
+      "kind": "water",
+      "x": 4.6,
+      "z": -12,
+      "width": 2.8,
+      "depth": 1.6
+    }
+  ],
+  "spinners": [
+    {
+      "x": 3,
+      "z": -17,
+      "length": 2.4,
+      "arms": 3,
+      "speed": -0.3
+    }
+  ],
+  "helmets": [
+    {
+      "x": 3.2,
+      "z": -9,
+      "width": 3,
+      "kind": "attack"
+    }
+  ],
+  "pipes": [
+    {
+      "x": -1.2,
+      "z": -7.5,
+      "toX": -1.5,
+      "toZ": -15.5,
+      "team": "blue"
+    }
+  ],
+  "redRate": 9,
+  "redRateEnd": 15,
+  "redRamp": 60,
+  "redGiantEvery": 9,
+  "baseHp": 240,
+  "reward": 265
+}

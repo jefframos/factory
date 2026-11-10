@@ -28,6 +28,7 @@ import { AreaBar, AreaView } from './AreaBar';
 import { CardTray, CARD } from './CardTray';
 import { CardReveal } from './CardReveal';
 import { CardKind } from '../data/Settings';
+import { MobAudio } from '../audio/MobAudio';
 import { ZoneConfig } from '../data/LevelList';
 
 /** The HP bar: its size, the frame's tint, the empty track inside it, the fill and the white trail behind it. */
@@ -52,6 +53,9 @@ const ENERGY = {
 };
 /** The card tray: how far up from the screen's bottom. */
 const TRAY = { bottom: 16 };
+/** The first-card tutorial: the screen darkened (the cards over it), and a hand tapping at the card from its right,
+ *  its fingertip on the card's edge (`at`: shares of the card from its middle), turned to point in at it. */
+const CARD_TUTORIAL = { dim: 0x0b1030, alpha: 0.6, hand: 110, at: { x: 0.42, y: 0.05 }, rotation: -0.75, tap: 0.35 };
 /** `a` towards `b` by `t` (0..1), channel by channel. */
 function lerpColour(a: number, b: number, t: number): number {
     const mix = (shift: number) => Math.round(((a >> shift) & 255) + ((((b >> shift) & 255) - ((a >> shift) & 255)) * t));
@@ -142,6 +146,11 @@ export class MobHud extends PIXI.Container {
     private readonly energyIcon = iconSprite('ResourceBar_Single_Icon_Energy', ENERGY.icon);
     /** The unit cards, and a new one's reveal. */
     private readonly cardTray = new CardTray();
+    /** The first-card tutorial: the darkening under the cards, and the hand and words over them. */
+    private readonly tutorialDim = new PIXI.Graphics();
+    private readonly tutorialHint = new PIXI.Container();
+    private readonly tutorialHand = iconSprite('Tutorial_Hand', CARD_TUTORIAL.hand);
+    private tutorialCard: CardKind | null = null;
     private readonly reveal = new CardReveal();
     /** The reveal waiting to start over the end card (stopped if the card goes first). */
     private revealCall: gsap.core.Tween | null = null;
@@ -178,6 +187,8 @@ export class MobHud extends PIXI.Container {
         this.badge.addChild(badgeBack, this.badgeText);
         this.badge.position.set(BAR.width + 4, BAR.height / 2);
         this.title.position.set(BAR.width / 2, -24);
+        // The level's name isn't shown in a battle (not needed: the badge has its number).
+        this.title.visible = false;
         this.top.addChild(this.barBack, this.barTrack, this.barTrail, this.barFill, this.hpText, this.skull, this.badge, this.title);
         fillCoinBar(this.coinPill, this.coinText);
         // The energy bar: frame, dark track, the fill rising from the bottom, the bolt on top.
@@ -195,7 +206,14 @@ export class MobHud extends PIXI.Container {
         // Its position is its bottom middle (placeEnergy).
         this.energy.pivot.set(ENERGY.width / 2, ENERGY.height);
         this.buildMute();
-        this.addChild(this.vignette, this.giantLabels, this.pops, this.top, this.coinPill, this.energy, this.cardTray, this.mute);
+        this.tutorialDim.visible = false;
+        this.tutorialHint.visible = false;
+        this.tutorialHint.eventMode = 'none';
+        // Its fingertip is its anchor.
+        this.tutorialHand.anchor.set(0.3, 0.05);
+        this.tutorialHand.rotation = CARD_TUTORIAL.rotation;
+        this.tutorialHint.addChild(this.tutorialHand);
+        this.addChild(this.vignette, this.giantLabels, this.pops, this.top, this.coinPill, this.energy, this.tutorialDim, this.cardTray, this.tutorialHint, this.mute);
 
         // The hint: the glove sweeping under the cannon (placeEnergy puts it there).
         this.hand.rotation = -0.3;
@@ -262,7 +280,7 @@ export class MobHud extends PIXI.Container {
         const { topLeft, center, width, height, bottomLeft } = screen;
         const scale = Math.min(1, (width - 60) / (BAR.width + 120));
         this.top.scale.set(scale);
-        this.top.position.set(center.x - (BAR.width * scale) / 2, topLeft.y + 96);
+        this.top.position.set(center.x - (BAR.width * scale) / 2, topLeft.y + 72);
         this.coinPill.position.set(topLeft.x + 46, topLeft.y + 44);
         // The mute button in the top right corner.
         this.mute.position.set(topLeft.x + width - MUTE.margin - MUTE.size / 2, topLeft.y + 44);
@@ -284,6 +302,8 @@ export class MobHud extends PIXI.Container {
         const trayScale = Math.min(1, (width - 30) / (4 * CARD.width + 3 * CARD.gap));
         this.cardTray.scale.set(trayScale);
         this.cardTray.position.set(center.x, bottomLeft.y - TRAY.bottom - (CARD.height / 2) * trayScale);
+        this.tutorialDim.clear().beginFill(CARD_TUTORIAL.dim, CARD_TUTORIAL.alpha).drawRect(topLeft.x, topLeft.y, width, height).endFill();
+        this.placeTutorial();
         this.drawVignette();
         this.drawBar();
         this.reveal.layout();
@@ -375,6 +395,8 @@ export class MobHud extends PIXI.Container {
         this.danger = danger;
         this.drawEnergy();
         this.cardTray.update(dt);
+        // The hand follows its card (rising as it's ready, bouncing).
+        this.placeTutorial();
         this.reveal.update(dt);
         this.redFlash = Math.max(0, this.redFlash - dt * 1.5);
         const before = this.hpBar + this.hpTrail;
@@ -561,6 +583,32 @@ export class MobHud extends PIXI.Container {
     }
 
     /** A card's full: it pops (its unit's coming out of the cannon). */
+    /** The first-card tutorial: the screen darkens round the cards, and a hand taps at `kind`'s. */
+    public showCardTutorial(kind: CardKind): void {
+        this.tutorialCard = kind;
+        this.tutorialDim.visible = true;
+        this.tutorialHint.visible = true;
+        gsap.fromTo([this.tutorialDim, this.tutorialHint], { alpha: 0 }, { alpha: 1, duration: 0.3 });
+        gsap.killTweensOf(this.tutorialHand.scale);
+        const size = this.tutorialHand.scale.x;
+        gsap.fromTo(this.tutorialHand.scale, { x: size, y: size }, { x: size * 0.85, y: size * 0.85, duration: CARD_TUTORIAL.tap, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        this.placeTutorial();
+    }
+
+    /** The tutorial's over (the card was tapped). */
+    public hideCardTutorial(): void {
+        if (!this.tutorialCard) return;
+        this.tutorialCard = null;
+        gsap.to([this.tutorialDim, this.tutorialHint], { alpha: 0, duration: 0.25, onComplete: () => { this.tutorialDim.visible = false; this.tutorialHint.visible = false; } });
+    }
+
+    /** The hand's fingertip on the tutorial's card's right edge. */
+    private placeTutorial(): void {
+        if (!this.tutorialCard) return;
+        const at = this.cardTray.cardPoint(this.tutorialCard, CARD_TUTORIAL.at.x, CARD_TUTORIAL.at.y, this);
+        if (at) this.tutorialHand.position.copyFrom(at);
+    }
+
     public cardFired(kind: CardKind): void {
         this.cardTray.fired(kind);
     }
@@ -569,8 +617,29 @@ export class MobHud extends PIXI.Container {
     public setEnergy(share: number, locked: boolean, capped = false): void {
         this.energyCapped = capped;
         this.energyShown = Math.max(0, Math.min(1, share));
-        if (locked && !this.energyLocked) gsap.fromTo(this.energy.scale, { x: 1.18, y: 1.18 }, { x: 1, y: 1, duration: 0.3, ease: 'back.out(3)' });
+        if (locked && !this.energyLocked) {
+            // Run dry: a power-down, the bar jolts, EMPTY! pops over it.
+            gsap.fromTo(this.energy.scale, { x: 1.35, y: 1.35 }, { x: 1, y: 1, duration: 0.4, ease: 'back.out(3)' });
+            gsap.fromTo(this.energy, { rotation: 0.25 }, { rotation: 0, duration: 0.5, ease: 'elastic.out(1.2, 0.25)' });
+            MobAudio.play('energyEmpty');
+            this.energyWord('EMPTY!', ENERGY.locked);
+        } else if (!locked && this.energyLocked) {
+            // Full again: a rising zap, the bar pops, READY! over it.
+            gsap.fromTo(this.energy.scale, { x: 1.3, y: 1.3 }, { x: 1, y: 1, duration: 0.35, ease: 'back.out(3)' });
+            MobAudio.play('energyFull');
+            this.energyWord('READY!', ENERGY.fill);
+        }
         this.energyLocked = locked;
+    }
+
+    /** A word popping up over the energy bar and floating off. */
+    private energyWord(text: string, colour: number): void {
+        const word = label(26, colour);
+        word.text = text;
+        word.position.set(ENERGY.width / 2, -ENERGY.icon - 18);
+        this.energy.addChild(word);
+        gsap.fromTo(word.scale, { x: 0.4, y: 0.4 }, { x: 1, y: 1, duration: 0.3, ease: 'back.out(3)' });
+        gsap.to(word, { y: word.y - 34, alpha: 0, delay: 0.5, duration: 0.6, ease: 'power1.in', onComplete: () => word.destroy() });
     }
 
     public hideEnd(): void {

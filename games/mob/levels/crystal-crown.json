@@ -1,0 +1,72 @@
+{
+  "name": "Crystal Crown",
+  "kind": "Mixed",
+  "width": 12,
+  "length": 26,
+  "gates": [
+    {
+      "x": 0,
+      "z": -5.5,
+      "width": 3.2,
+      "value": 2,
+      "swing": {
+        "range": 4,
+        "seconds": 5.5
+      }
+    },
+    {
+      "x": 0,
+      "z": -16,
+      "width": 3.2,
+      "value": 3,
+      "swing": {
+        "range": 4,
+        "seconds": 4.5
+      }
+    }
+  ],
+  "helmets": [
+    {
+      "x": -3.5,
+      "z": -8,
+      "width": 3.4,
+      "kind": "hp"
+    },
+    {
+      "x": 3.5,
+      "z": -8,
+      "width": 3.4,
+      "kind": "attack"
+    }
+  ],
+  "grinders": [
+    {
+      "x": 0,
+      "z": -11,
+      "length": 2.4,
+      "thickness": 0.9,
+      "axis": "x",
+      "move": {
+        "range": 4,
+        "seconds": 4.2
+      }
+    },
+    {
+      "x": 0,
+      "z": -18.5,
+      "length": 2.4,
+      "thickness": 0.9,
+      "axis": "x",
+      "move": {
+        "range": 4,
+        "seconds": 5.4
+      }
+    }
+  ],
+  "redRate": 11,
+  "redRateEnd": 19,
+  "redRamp": 60,
+  "redGiantEvery": 7,
+  "baseHp": 260,
+  "reward": 295
+}

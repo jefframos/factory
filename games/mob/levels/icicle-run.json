@@ -1,0 +1,64 @@
+{
+  "name": "Icicle Run",
+  "kind": "Grinder",
+  "width": 9,
+  "length": 24,
+  "gates": [
+    {
+      "x": -2,
+      "z": -5,
+      "width": 3,
+      "value": 2
+    },
+    {
+      "x": 2,
+      "z": -5,
+      "width": 3,
+      "value": 2
+    },
+    {
+      "x": 0,
+      "z": -15,
+      "width": 3.2,
+      "value": 2
+    }
+  ],
+  "helmets": [
+    {
+      "x": 0,
+      "z": -7,
+      "width": 3.4,
+      "kind": "attack"
+    }
+  ],
+  "grinders": [
+    {
+      "x": 0,
+      "z": -8.5,
+      "length": 2.2,
+      "thickness": 0.9,
+      "axis": "x",
+      "move": {
+        "range": 2.4,
+        "seconds": 3.6
+      }
+    },
+    {
+      "x": 0,
+      "z": -17,
+      "length": 2.2,
+      "thickness": 0.9,
+      "axis": "x",
+      "move": {
+        "range": 2.4,
+        "seconds": 3.2
+      }
+    }
+  ],
+  "redRate": 3.5,
+  "redRateEnd": 7.5,
+  "redRamp": 50,
+  "redGiantEvery": 12,
+  "baseHp": 300,
+  "reward": 245
+}

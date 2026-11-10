@@ -1,0 +1,85 @@
+{
+  "name": "Keep Towers",
+  "kind": "Forts",
+  "width": 13,
+  "length": 28,
+  "gates": [
+    {
+      "x": -4,
+      "z": -5.5,
+      "width": 3.2,
+      "value": 2
+    },
+    {
+      "x": 0,
+      "z": -5.5,
+      "width": 3.2,
+      "value": 3
+    },
+    {
+      "x": 4,
+      "z": -5.5,
+      "width": 3.2,
+      "value": 2
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "breakable",
+      "x": 0,
+      "z": -21,
+      "width": 2.4,
+      "depth": 0.8,
+      "hp": 12
+    }
+  ],
+  "spinners": [
+    {
+      "x": -3.6,
+      "z": -18.5,
+      "length": 1.5,
+      "arms": 2,
+      "speed": 0.3
+    },
+    {
+      "x": 3.6,
+      "z": -18.5,
+      "length": 1.5,
+      "arms": 2,
+      "speed": -0.3
+    }
+  ],
+  "helmets": [
+    {
+      "x": 0,
+      "z": -10,
+      "width": 4,
+      "kind": "hp"
+    }
+  ],
+  "redRate": 5,
+  "redRateEnd": 10,
+  "redRamp": 60,
+  "redGiantEvery": 12,
+  "targets": [
+    {
+      "x": -4.2,
+      "hp": 160,
+      "width": 2.4,
+      "z": -24
+    },
+    {
+      "x": 0,
+      "hp": 220,
+      "width": 2.8
+    },
+    {
+      "x": 4.2,
+      "hp": 160,
+      "width": 2.4,
+      "z": -24
+    }
+  ],
+  "baseHp": 300,
+  "reward": 275
+}

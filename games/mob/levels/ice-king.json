@@ -1,0 +1,89 @@
+{
+  "name": "Ice King",
+  "kind": "Boss",
+  "width": 12,
+  "length": 28,
+  "gates": [
+    {
+      "x": -3.5,
+      "z": -5.5,
+      "width": 3.2,
+      "value": 2
+    },
+    {
+      "x": 3.5,
+      "z": -5.5,
+      "width": 3.2,
+      "value": 2
+    },
+    {
+      "x": 0,
+      "z": -12,
+      "width": 3.2,
+      "value": 3
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "x": -2.2,
+      "z": -12,
+      "width": 1.2,
+      "depth": 0.8
+    },
+    {
+      "kind": "wall",
+      "x": 2.2,
+      "z": -12,
+      "width": 1.2,
+      "depth": 0.8
+    }
+  ],
+  "grinders": [
+    {
+      "x": 0,
+      "z": -20,
+      "length": 2.2,
+      "thickness": 0.9,
+      "axis": "x",
+      "move": {
+        "range": 2.4,
+        "seconds": 4.6
+      }
+    }
+  ],
+  "redRate": 3.2,
+  "redRateEnd": 7,
+  "redRamp": 60,
+  "redGiantEvery": 12,
+  "targets": [
+    {
+      "x": 0,
+      "hp": 200,
+      "width": 3.4
+    },
+    {
+      "x": -4.2,
+      "hp": 60,
+      "width": 2,
+      "z": -26
+    },
+    {
+      "x": 4.2,
+      "hp": 60,
+      "width": 2,
+      "z": -26
+    }
+  ],
+  "baseHp": 300,
+  "reward": 300,
+  "kingAt": 100,
+  "helmets": [
+    {
+      "x": 0,
+      "z": -9,
+      "width": 4,
+      "kind": "hp"
+    }
+  ]
+}

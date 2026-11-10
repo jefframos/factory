@@ -23,6 +23,15 @@ const POINTS_PER_PERCENT = 0.75;
 const PROFILE_COLOURS = { pro: '#7fd1ff', 'pro-raw': '#3f8cff', average: '#9cff8a', 'average-raw': '#3fcf5e', casual: '#ffd23f', newbie: '#ff7b7b' };
 const CHART = { height: 360, padLeft: 40, padRight: 16, padTop: 26, padBottom: 34 };
 
+/** The curve's numbers as set in the Curve tab (kept in this browser), so the level list judges by the same. */
+export function loadCurve() {
+    try {
+        return { ...DEFAULT_CURVE, ...JSON.parse(localStorage.getItem(CURVE_KEY) ?? '{}') };
+    } catch {
+        return { ...DEFAULT_CURVE };
+    }
+}
+
 /** The curve to aim for at each level of `levels` (in play order, each with its `zone`). */
 export function targetCurve(levels, curve) {
     const n = levels.length;
@@ -56,12 +65,7 @@ export function targetCurve(levels, curve) {
 }
 
 export function buildCurveTab(panel, { el, api, toast, state, grades, onLevelChanged, openLevel }) {
-    let curve = { ...DEFAULT_CURVE };
-    try {
-        curve = { ...curve, ...JSON.parse(localStorage.getItem(CURVE_KEY) ?? '{}') };
-    } catch {
-        // Nothing kept.
-    }
+    let curve = loadCurve();
     let reports = [];
     let report = null;
     let compare = null;

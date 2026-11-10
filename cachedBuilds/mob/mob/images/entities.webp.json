@@ -1,8 +1,48 @@
 {
   "frames": {
-    "card-giant": {
+    "card-truck": {
       "frame": {
         "x": 2,
+        "y": 2,
+        "w": 324,
+        "h": 313
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 324,
+        "h": 313
+      },
+      "sourceSize": {
+        "w": 324,
+        "h": 313
+      }
+    },
+    "card-saucer": {
+      "frame": {
+        "x": 2,
+        "y": 317,
+        "w": 466,
+        "h": 343
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 466,
+        "h": 343
+      },
+      "sourceSize": {
+        "w": 466,
+        "h": 343
+      }
+    },
+    "card-giant": {
+      "frame": {
+        "x": 347,
         "y": 2,
         "w": 401,
         "h": 507
@@ -22,7 +62,7 @@
     },
     "card-giant-viking": {
       "frame": {
-        "x": 405,
+        "x": 750,
         "y": 2,
         "w": 433,
         "h": 506
@@ -42,7 +82,7 @@
     },
     "card-giant-green": {
       "frame": {
-        "x": 2,
+        "x": 347,
         "y": 511,
         "w": 254,
         "h": 487
@@ -59,6 +99,26 @@
         "w": 512,
         "h": 512
       }
+    },
+    "card-car": {
+      "frame": {
+        "x": 2,
+        "y": 785,
+        "w": 375,
+        "h": 299
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 375,
+        "h": 299
+      },
+      "sourceSize": {
+        "w": 375,
+        "h": 299
+      }
     }
   },
   "meta": {
@@ -67,8 +127,8 @@
     "image": "entities.webp",
     "format": "RGBA8888",
     "size": {
-      "w": 840,
-      "h": 767
+      "w": 1185,
+      "h": 1086
     },
     "scale": 1,
     "related_multi_packs": []

@@ -45,8 +45,8 @@ const OUT = path.resolve(HERE, '../raw-assets/models/mob{m}');
 const BODY = 'Body_010';
 const FACE = 'Male_emotion_happy_002';
 const HELMET = 'Hat_057';
-/** Mobs are small and many: keep a quarter of the triangles, the shape barely changing. */
-const SIMPLIFY = { ratio: 0.25, error: 0.004 };
+/** Mobs are small and many: keep 40% of the triangles, the shape barely changing (a quarter was a little rough up close). */
+const SIMPLIFY = { ratio: 0.4, error: 0.002 };
 
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 const atlas = await sharp(path.join(KIT, 'Textures_4.png')).removeAlpha().raw().toBuffer({ resolveWithObject: true });

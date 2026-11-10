@@ -16,7 +16,7 @@ import { levelHash } from './mob-grade-key.js';
 const UNITS = [
     ['giant', 'Giant', 'giant'],
     ['truck', 'Truck', 'truck'],
-    ['car', 'Car', 'car'],
+    ['car', 'Rammer', 'car'],
     ['redGiant', 'Red giant', 'redGiant'],
 ];
 /** Where it only just fits: the room it has (across or along, the narrower) under this, in world units. */

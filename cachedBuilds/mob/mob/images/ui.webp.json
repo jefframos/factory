@@ -680,6 +680,46 @@
         "h": 101
       }
     },
+    "Icon_Boss_Small": {
+      "frame": {
+        "x": 425,
+        "y": 514,
+        "w": 30,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 30,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 30,
+        "h": 24
+      }
+    },
+    "Icon_Boss": {
+      "frame": {
+        "x": 300,
+        "y": 366,
+        "w": 60,
+        "h": 47
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 60,
+        "h": 47
+      },
+      "sourceSize": {
+        "w": 60,
+        "h": 48
+      }
+    },
     "Icon_Arrow_Prev1": {
       "frame": {
         "x": 221,
@@ -740,6 +780,46 @@
         "h": 361
       }
     },
+    "Card_Vignette": {
+      "frame": {
+        "x": 725,
+        "y": 147,
+        "w": 8,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 48,
+        "w": 8,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 8,
+        "h": 128
+      }
+    },
+    "Card_Shadow": {
+      "frame": {
+        "x": 843,
+        "y": 540,
+        "w": 171,
+        "h": 199
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 1,
+        "w": 171,
+        "h": 199
+      },
+      "sourceSize": {
+        "w": 172,
+        "h": 200
+      }
+    },
     "CardFrame03_n_Light": {
       "frame": {
         "x": 428,
@@ -762,8 +842,8 @@
     },
     "CardFrame03_n_InnerBg": {
       "frame": {
-        "x": 300,
-        "y": 366,
+        "x": 680,
+        "y": 260,
         "w": 40,
         "h": 40
       },
@@ -803,7 +883,7 @@
     "Button_Tapered_Yellow": {
       "frame": {
         "x": 843,
-        "y": 540,
+        "y": 713,
         "w": 185,
         "h": 194
       },
@@ -822,7 +902,7 @@
     },
     "Button_Round03_Dark": {
       "frame": {
-        "x": 1039,
+        "x": 1044,
         "y": 540,
         "w": 130,
         "h": 122
@@ -903,7 +983,7 @@
     "Button01_l_Sky": {
       "frame": {
         "x": 1039,
-        "y": 664,
+        "y": 713,
         "w": 80,
         "h": 142
       },
@@ -922,8 +1002,8 @@
     },
     "Button01_l_Red": {
       "frame": {
-        "x": 843,
-        "y": 727,
+        "x": 1039,
+        "y": 795,
         "w": 80,
         "h": 142
       },
@@ -942,8 +1022,8 @@
     },
     "Button01_l_Green": {
       "frame": {
-        "x": 987,
-        "y": 746,
+        "x": 1039,
+        "y": 877,
         "w": 80,
         "h": 142
       },
@@ -962,12 +1042,12 @@
     },
     "Button01_l_Gray": {
       "frame": {
-        "x": 843,
-        "y": 809,
+        "x": 365,
+        "y": 959,
         "w": 80,
         "h": 142
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -982,8 +1062,8 @@
     },
     "BorderFrame_Round24": {
       "frame": {
-        "x": 987,
-        "y": 828,
+        "x": 365,
+        "y": 871,
         "w": 62,
         "h": 62
       },
@@ -1000,9 +1080,49 @@
         "h": 62
       }
     },
+    "Bar_Trough": {
+      "frame": {
+        "x": 680,
+        "y": 302,
+        "w": 48,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 48
+      }
+    },
+    "Bar_Segment": {
+      "frame": {
+        "x": 701,
+        "y": 352,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      }
+    },
     "ActionText_Go": {
       "frame": {
-        "x": 365,
+        "x": 447,
         "y": 871,
         "w": 351,
         "h": 180

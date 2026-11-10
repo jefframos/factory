@@ -1,0 +1,106 @@
+{
+  "name": "Frozen Siege",
+  "kind": "Swarm",
+  "width": 14,
+  "length": 30,
+  "gates": [
+    {
+      "x": -4.5,
+      "z": -5.5,
+      "width": 3.4,
+      "value": 2
+    },
+    {
+      "x": 0,
+      "z": -5.5,
+      "width": 3.4,
+      "value": 2
+    },
+    {
+      "x": 4.5,
+      "z": -5.5,
+      "width": 3.4,
+      "value": 2
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "x": -2.3,
+      "z": -13,
+      "width": 0.45,
+      "depth": 8
+    },
+    {
+      "kind": "wall",
+      "x": 2.3,
+      "z": -13,
+      "width": 0.45,
+      "depth": 8
+    }
+  ],
+  "pads": [
+    {
+      "kind": "truck",
+      "x": -4.6,
+      "z": -15,
+      "width": 2.6,
+      "depth": 1.8
+    },
+    {
+      "kind": "car",
+      "x": 4.6,
+      "z": -15,
+      "width": 2.6,
+      "depth": 1.8
+    }
+  ],
+  "pushBlocks": [
+    {
+      "x": 0,
+      "z": -11,
+      "width": 4.1,
+      "depth": 1.2,
+      "far": -18,
+      "near": -7.5
+    }
+  ],
+  "helmets": [
+    {
+      "x": 0,
+      "z": -8.5,
+      "width": 4,
+      "kind": "attack"
+    }
+  ],
+  "grinders": [
+    {
+      "x": -4.6,
+      "z": -20.5,
+      "length": 2.4,
+      "thickness": 0.9,
+      "axis": "x",
+      "move": {
+        "range": 1.6,
+        "seconds": 4
+      }
+    },
+    {
+      "x": 4.6,
+      "z": -20.5,
+      "length": 2.4,
+      "thickness": 0.9,
+      "axis": "x",
+      "move": {
+        "range": 1.6,
+        "seconds": 4.6
+      }
+    }
+  ],
+  "redRate": 11,
+  "redRateEnd": 18,
+  "redRamp": 70,
+  "redGiantEvery": 6,
+  "baseHp": 440,
+  "reward": 290
+}

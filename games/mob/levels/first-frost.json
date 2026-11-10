@@ -1,0 +1,61 @@
+{
+  "name": "First Frost",
+  "kind": "Gates",
+  "gates": [
+    {
+      "x": -2.5,
+      "z": -6,
+      "width": 3.2,
+      "value": 2
+    },
+    {
+      "x": 2.5,
+      "z": -6,
+      "width": 3.2,
+      "value": 3
+    },
+    {
+      "x": 0,
+      "z": -13,
+      "width": 3.6,
+      "value": 2
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "x": 0,
+      "z": -9.5,
+      "width": 1.2,
+      "depth": 1.2
+    },
+    {
+      "kind": "wall",
+      "x": -2.5,
+      "z": -16,
+      "width": 1.2,
+      "depth": 1.2
+    },
+    {
+      "kind": "wall",
+      "x": 2.5,
+      "z": -16,
+      "width": 1.2,
+      "depth": 1.2
+    }
+  ],
+  "helmets": [
+    {
+      "x": 0,
+      "z": -11,
+      "width": 4,
+      "kind": "hp"
+    }
+  ],
+  "redRate": 4.5,
+  "redRateEnd": 7,
+  "redRamp": 55,
+  "redGiantEvery": 0,
+  "baseHp": 320,
+  "reward": 210
+}

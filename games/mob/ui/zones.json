@@ -53,6 +53,42 @@
         "new-level-hard"
       ],
       "plainForts": true
+    },
+    {
+      "id": "ice",
+      "name": "Ice",
+      "theme": "ice",
+      "levels": [
+        "first-frost",
+        "ice-lanes",
+        "frozen-mill",
+        "glacier-pipe",
+        "crevasse",
+        "snow-plough",
+        "twin-peaks",
+        "icicle-run",
+        "blizzard",
+        "ice-king"
+      ],
+      "plainForts": true
+    },
+    {
+      "id": "ice-castle",
+      "name": "Ice Castle",
+      "theme": "ice-castle",
+      "levels": [
+        "frost-gate",
+        "battlements",
+        "moat",
+        "drawbridge",
+        "keep-towers",
+        "throne-hall",
+        "ice-maze",
+        "frozen-siege",
+        "crystal-crown",
+        "ice-castle"
+      ],
+      "plainForts": true
     }
   ]
 }

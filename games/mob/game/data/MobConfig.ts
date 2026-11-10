@@ -75,6 +75,8 @@ export const TUNING = {
      *  the base. */
     blueGiantHp: 40,
     redGiantHp: 80,
+    /** The Giant King's hits, as a share of a red giant's. */
+    kingHp: 1.6,
     giantScale: 2.2,
     giantSpeed: 0.62,
     giantDamage: 30,
@@ -353,6 +355,9 @@ export interface BattleConfig {
     redRamp: number;
     /** A red giant comes out of the base this often (seconds; 0 = never). */
     redGiantEvery?: number;
+    /** A boss level: once the enemy's HP left (all its targets') is down to this, it sends out the Giant King, once: a red
+     *  giant in viking horns (a viking: double damage) with TUNING.kingHp times a red giant's hits. Unset: none. */
+    kingAt?: number;
     /** One-hit blue impacts the base takes (a level with `targets` uses theirs instead). */
     baseHp: number;
     /** Several targets instead of the one base (all of them have to fall). */

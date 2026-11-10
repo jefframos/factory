@@ -9,6 +9,10 @@
 // Helmets (mob-helmet.glb: the kit's hat on the same skeleton) are baked in the same poses, fitted the same way, and drawn
 // over the mobs wearing one (Battle.helmet), one InstancedMesh per pose too.
 //
+// Giants are the same model baked a second time, buff (GIANT_BUILD): a wider chest, thicker arms, a smaller head, sturdier
+// legs, the arms set a little further out, so a giant reads as strong, not just as a mob drawn bigger. It costs nothing a
+// frame: a second set of baked poses (and its hats).
+//
 // Viking hats (props/viking.glb, from an attack barrier: Battle.viking) aren't skinned: the hat is fitted to the head
 // (the vertices skinned to the Head bone) the way Dig and Mow fit theirs (VIKING), then each pose puts it where the head
 // bone is then, so it bobs with the run; drawn the same way.
@@ -41,6 +45,43 @@ const POP_FROM = 0.3;
 const VIKING = { scale: 1.75, y: -0.27, widthFit: 1.05, sink: 0.03 };
 
 /**
+ * The giant's build. `thicken`: each bone's own skin scaled round the bone (x, y, z, in the bone's axes: each runs along
+ * its y, so x and z thicken it, y lengthens it). Only the skin it carries: what hangs off it isn't moved or stretched (so
+ * a wider chest doesn't lengthen the arms out of it, and nothing's skewed where bones meet at an angle). `armsOut`: the
+ * arms' joints moved this share further out along the shoulders, for the wider chest.
+ */
+interface Build {
+    thicken: Record<string, [number, number, number]>;
+    armsOut: number;
+}
+
+const GIANT_BUILD: Build = {
+    thicken: {
+        Spine: [1.15, 1, 1.12],
+        Spine1: [1.32, 1, 1.22],
+        LeftShoulder: [1.12, 1, 1.12],
+        RightShoulder: [1.12, 1, 1.12],
+        Head: [0.88, 0.88, 0.88],
+        LeftArm: [1.22, 1, 1.22],
+        RightArm: [1.22, 1, 1.22],
+        LeftForeArm: [1.1, 1, 1.1],
+        RightForeArm: [1.1, 1, 1.1],
+        LeftUpLeg: [1.15, 1, 1.15],
+        RightUpLeg: [1.15, 1, 1.15],
+    },
+    armsOut: 0.25,
+};
+
+/** One build's baked poses: the mobs, their team colours, and the helmets and viking hats in the same poses. */
+interface PoseSet {
+    meshes: THREE.InstancedMesh[];
+    teamColors: THREE.InstancedBufferAttribute[];
+    helmets: THREE.InstancedMesh[];
+    /** vikings[pose][part]: a mesh per material. */
+    vikings: THREE.InstancedMesh[][];
+}
+
+/**
  * A copy of `source` with every attribute plain float. The props are meshopt-quantized (normalized 16-bit positions,
  * scaled back by their node): moved in place, their values leave the [-1, 1] a normalized attribute holds and clip.
  */
@@ -64,11 +105,9 @@ interface Fit { scale: number; x: number; y: number; z: number }
 
 export class CrowdView {
     public readonly group = new THREE.Group();
-    private meshes: THREE.InstancedMesh[] = [];
-    private teamColors: THREE.InstancedBufferAttribute[] = [];
-    private helmets: THREE.InstancedMesh[] = [];
-    /** The viking hat's parts (a mesh per material) in each pose: vikings[pose][part]. */
-    private vikings: THREE.InstancedMesh[][] = [];
+    /** The plain mobs' poses, and the giants' (GIANT_BUILD). */
+    private plain: PoseSet = { meshes: [], teamColors: [], helmets: [], vikings: [] };
+    private giant: PoseSet = { meshes: [], teamColors: [], helmets: [], vikings: [] };
     private readonly blue = new THREE.Color(COLORS.blue);
     /** The blue giant's own colour (UNIT_COLORS.giant: picked live in the debug panel). */
     private readonly giantBlue = new THREE.Color(UNIT_COLORS.giant);
@@ -97,11 +136,29 @@ export class CrowdView {
         const clip = CLIP_NAMES.map((name) => anims.animations.find((a) => a.name === name)).find(Boolean);
         if (!clip) throw new Error('mob-anims.glb has no run or walk clip');
 
-        const { poses, fit, heads, headBox } = this.bake(model.scene, skinned, clip);
+        let helmetSkinned: THREE.SkinnedMesh | undefined;
+        helmetModel?.scene.traverse((object) => {
+            if ((object as THREE.SkinnedMesh).isSkinnedMesh) helmetSkinned = object as THREE.SkinnedMesh;
+        });
         const material = this.material();
         applyBend(material);
+        const helmetMaterial = new THREE.MeshLambertMaterial({ vertexColors: true });
+        applyBend(helmetMaterial);
+        // The plain build first: its fit (unit height) is the giants' too, so a giant's extra width and height are its own.
+        const plainFit = this.buildSet(this.plain, { model: model.scene, skinned, helmetModel: helmetModel?.scene, helmetSkinned, vikingModel: vikingModel?.scene, clip, capacity, material, helmetMaterial });
+        this.buildSet(this.giant, { model: model.scene, skinned, helmetModel: helmetModel?.scene, helmetSkinned, vikingModel: vikingModel?.scene, clip, capacity, material, helmetMaterial }, GIANT_BUILD, plainFit);
+        this.ready = true;
+    }
+
+    /** One build's poses (mobs, helmets, viking hats) into `set`; returns their fit. */
+    private buildSet(set: PoseSet, from: {
+        model: THREE.Object3D; skinned: THREE.SkinnedMesh; helmetModel?: THREE.Object3D; helmetSkinned?: THREE.SkinnedMesh; vikingModel?: THREE.Object3D;
+        clip: THREE.AnimationClip; capacity: number; material: THREE.Material; helmetMaterial: THREE.Material;
+    }, build?: Build, fitted?: Fit): Fit {
+        const { capacity } = from;
+        const { poses, fit, heads, headBox } = this.bake(from.model, from.skinned, from.clip, fitted, build);
         for (const geometry of poses) {
-            const mesh = new THREE.InstancedMesh(geometry, material, capacity);
+            const mesh = new THREE.InstancedMesh(geometry, from.material, capacity);
             const colors = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3);
             colors.setUsage(THREE.DynamicDrawUsage);
             geometry.setAttribute('teamColor', colors);
@@ -109,37 +166,32 @@ export class CrowdView {
             mesh.count = 0;
             // Mobs move all over the field: the instances' bounds aren't worth keeping up.
             mesh.frustumCulled = false;
-            this.meshes.push(mesh);
-            this.teamColors.push(colors);
+            set.meshes.push(mesh);
+            set.teamColors.push(colors);
             this.group.add(mesh);
         }
-        // The helmet: the same poses, the same fit (so it sits on the head).
-        let helmetSkinned: THREE.SkinnedMesh | undefined;
-        helmetModel?.scene.traverse((object) => {
-            if ((object as THREE.SkinnedMesh).isSkinnedMesh) helmetSkinned = object as THREE.SkinnedMesh;
-        });
-        if (helmetModel && helmetSkinned) {
-            const helmetMaterial = new THREE.MeshLambertMaterial({ vertexColors: true });
-            applyBend(helmetMaterial);
-            for (const geometry of this.bake(helmetModel.scene, helmetSkinned, clip, fit).poses) {
-                const mesh = new THREE.InstancedMesh(geometry, helmetMaterial, capacity);
+        // The helmet: the same poses, the same fit and build (so it sits on the head).
+        if (from.helmetModel && from.helmetSkinned) {
+            for (const geometry of this.bake(from.helmetModel, from.helmetSkinned, from.clip, fit, build).poses) {
+                const mesh = new THREE.InstancedMesh(geometry, from.helmetMaterial, capacity);
                 mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
                 mesh.count = 0;
                 mesh.frustumCulled = false;
-                this.helmets.push(mesh);
+                set.helmets.push(mesh);
                 this.group.add(mesh);
             }
         }
-        if (vikingModel && headBox) this.bakeViking(vikingModel.scene, heads, headBox, capacity);
-        this.ready = true;
+        if (from.vikingModel && headBox) set.vikings = this.bakeViking(from.vikingModel, heads, headBox, capacity);
+        return fit;
     }
 
     /**
      * The viking hat in each pose: fitted to the head (headBox: the head's vertices in the first pose, fitted space) as
      * VIKING says, then carried by the head bone (heads[f]: where it is in pose f, in the fitted space) in the others.
      */
-    private bakeViking(scene: THREE.Object3D, heads: THREE.Matrix4[], headBox: THREE.Box3, capacity: number): void {
-        if (!heads.length) return;
+    private bakeViking(scene: THREE.Object3D, heads: THREE.Matrix4[], headBox: THREE.Box3, capacity: number): THREE.InstancedMesh[][] {
+        const vikings: THREE.InstancedMesh[][] = [];
+        if (!heads.length) return vikings;
         scene.updateMatrixWorld(true);
         const box = new THREE.Box3().setFromObject(scene);
         const size = box.getSize(new THREE.Vector3());
@@ -167,7 +219,7 @@ export class CrowdView {
         const matrix = new THREE.Matrix4();
         for (const pose of heads) {
             matrix.multiplyMatrices(pose, inHead);
-            this.vikings.push(parts.map(({ geometry, material }) => {
+            vikings.push(parts.map(({ geometry, material }) => {
                 const mesh = new THREE.InstancedMesh(geometry.clone().applyMatrix4(matrix), material, capacity);
                 mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
                 mesh.count = 0;
@@ -177,10 +229,11 @@ export class CrowdView {
             }));
         }
         for (const { geometry } of parts) geometry.dispose();
+        return vikings;
     }
 
     /** FRAMES poses of the clip, each the skinned mesh's vertices where the clip has them then, fitted to the mob height. */
-    private bake(root: THREE.Object3D, skinned: THREE.SkinnedMesh, clip: THREE.AnimationClip, fitted?: Fit): { poses: THREE.BufferGeometry[]; fit: Fit; heads: THREE.Matrix4[]; headBox: THREE.Box3 | null } {
+    private bake(root: THREE.Object3D, skinned: THREE.SkinnedMesh, clip: THREE.AnimationClip, fitted?: Fit, build?: Build): { poses: THREE.BufferGeometry[]; fit: Fit; heads: THREE.Matrix4[]; headBox: THREE.Box3 | null } {
         const mixer = new THREE.AnimationMixer(root);
         mixer.clipAction(clip).play();
         const source = skinned.geometry;
@@ -199,8 +252,22 @@ export class CrowdView {
         // Fitted from the first pose: unit height (TUNING.mobHeight scales each mob as it's drawn, live), feet on the
         // ground, centred.
         let fit: Fit | null = fitted ?? null;
+        // The build. Thickening: a bone's skin is placed by its matrix times its inverse rest pose, so a scale between the
+        // two scales just that skin, round the bone; the inverses are put back after (the next bake's on this skeleton).
+        const { bones, boneInverses } = skinned.skeleton;
+        const thickened = Object.entries(build?.thicken ?? {}).map(([name, [x, y, z]]) => {
+            const index = bones.findIndex((bone) => bone.name === name);
+            return index < 0 ? null : { index, rest: boneInverses[index].clone(), scale: new THREE.Matrix4().makeScale(x, y, z) };
+        }).filter((entry): entry is NonNullable<typeof entry> => !!entry);
+        for (const { index, rest, scale } of thickened) boneInverses[index].multiplyMatrices(scale, rest);
+        // The arms out: their joints moved along the shoulders (each frame, after the clip: it may move them itself).
+        const arms = build ? bones.filter((bone) => /^(Left|Right)Arm$/.test(bone.name)).map((bone) => ({ bone, rest: bone.position.clone() })) : [];
         for (let f = 0; f < FRAMES; f++) {
             mixer.setTime((f / FRAMES) * clip.duration);
+            for (const { bone, rest } of arms) {
+                if (!clip.tracks.some((track) => track.name === `${bone.name}.position`)) bone.position.copy(rest);
+                bone.position.multiplyScalar(1 + (build?.armsOut ?? 0));
+            }
             root.updateMatrixWorld(true);
             skinned.skeleton.update();
             const positions = new Float32Array(count * 3);
@@ -242,6 +309,9 @@ export class CrowdView {
             poses.push(geometry);
         }
         mixer.stopAllAction();
+        for (const { index, rest } of thickened) boneInverses[index].copy(rest);
+        for (const { bone, rest } of arms) bone.position.copy(rest);
+        root.updateMatrixWorld(true);
         return { poses, fit: fit!, heads, headBox };
     }
 
@@ -260,17 +330,20 @@ export class CrowdView {
     /** Every live mob into its pose's instances. */
     public update(battle: Battle, time: number): void {
         if (!this.ready) return;
-        for (const mesh of this.meshes) mesh.count = 0;
         this.giantBlue.setHex(UNIT_COLORS.giant);
-        for (const mesh of this.helmets) mesh.count = 0;
-        for (const parts of this.vikings) for (const mesh of parts) mesh.count = 0;
+        for (const set of [this.plain, this.giant]) {
+            for (const mesh of set.meshes) mesh.count = 0;
+            for (const mesh of set.helmets) mesh.count = 0;
+            for (const parts of set.vikings) for (const mesh of parts) mesh.count = 0;
+        }
         for (let i = 0; i < battle.count; i++) {
             // Trucks are drawn by the arena (a model of their own).
             if (battle.big[i] === TRUCK || battle.big[i] === CAR) continue;
             const speed = battle.team[i] === BLUE ? TUNING.blueSpeed : TUNING.redSpeed;
             const cycle = (time * speed * CYCLES_PER_UNIT + battle.phase[i]) % 1;
             const pose = Math.min(FRAMES - 1, Math.floor(cycle * FRAMES));
-            const mesh = this.meshes[pose];
+            const set = battle.big[i] === GIANT && this.giant.meshes.length ? this.giant : this.plain;
+            const mesh = set.meshes[pose];
             const slot = mesh.count++;
             const grow = battle.age[i] < POP_SECONDS ? POP_FROM + (1 - POP_FROM) * (battle.age[i] / POP_SECONDS) : 1;
             this.position.set(battle.x[i], 0, battle.z[i]);
@@ -280,18 +353,19 @@ export class CrowdView {
             this.scale.setScalar(grow * shrink * TUNING.mobHeight * (battle.big[i] ? TUNING.giantScale : 1));
             this.matrix.compose(this.position, this.rotation, this.scale);
             mesh.setMatrixAt(slot, this.matrix);
-            const helmet = battle.helmet[i] ? this.helmets[pose] : undefined;
+            const helmet = battle.helmet[i] ? set.helmets[pose] : undefined;
             if (helmet) helmet.setMatrixAt(helmet.count++, this.matrix);
-            if (battle.viking[i] && this.vikings[pose]) for (const part of this.vikings[pose]) part.setMatrixAt(part.count++, this.matrix);
+            if (battle.viking[i] && set.vikings[pose]) for (const part of set.vikings[pose]) part.setMatrixAt(part.count++, this.matrix);
             const color = battle.team[i] === BLUE ? (battle.big[i] === GIANT ? this.giantBlue : this.blue) : this.red;
-            this.teamColors[pose].setXYZ(slot, color.r, color.g, color.b);
+            set.teamColors[pose].setXYZ(slot, color.r, color.g, color.b);
         }
-        for (let p = 0; p < this.meshes.length; p++) {
-            const mesh = this.meshes[p];
-            mesh.instanceMatrix.needsUpdate = true;
-            this.teamColors[p].needsUpdate = true;
-            if (this.helmets[p]) this.helmets[p].instanceMatrix.needsUpdate = true;
-            for (const part of this.vikings[p] ?? []) part.instanceMatrix.needsUpdate = true;
+        for (const set of [this.plain, this.giant]) {
+            for (let p = 0; p < set.meshes.length; p++) {
+                set.meshes[p].instanceMatrix.needsUpdate = true;
+                set.teamColors[p].needsUpdate = true;
+                if (set.helmets[p]) set.helmets[p].instanceMatrix.needsUpdate = true;
+                for (const part of set.vikings[p] ?? []) part.instanceMatrix.needsUpdate = true;
+            }
         }
     }
 }

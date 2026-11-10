@@ -68,14 +68,5 @@
   "redRateEnd": 5.1,
   "redRamp": 55,
   "baseHp": 350,
-  "reward": 150,
-  "pads": [
-    {
-      "kind": "truck",
-      "x": 2.75,
-      "z": -15.25,
-      "width": 2.4,
-      "depth": 1.8
-    }
-  ]
+  "reward": 150
 }

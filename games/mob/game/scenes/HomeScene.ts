@@ -35,7 +35,7 @@ const TABS = {
     height: 118, rise: 14, barColor: 0x2b2d4d, focusColor: 0x4a6ef5, lightColor: 0x86a2ff, lightInset: 5,
     icon: 74, focusIcon: 92, focusIconY: -18, labelY: 36, labelSize: 22,
 };
-const RIBBON = { y: 160, width: 430, height: 86, scale: 0.6, text: 36, textY: -6, areaY: 62, areaSize: 26 };
+const RIBBON = { y: 128, width: 430, height: 86, scale: 0.6, text: 36, textY: -6, areaY: 62, areaSize: 26 };
 const PLAY = { width: 440, height: 110, up: 92, textSize: 54 };
 const PLAY_SLICE = { side: 82, height: 194 };
 const SHINE = { glowWidth: 1.35, glowHeight: 2.2, glowColor: 0xffd23f, glowFrom: 0.3, glowTo: 0.75, glowSeconds: 0.9, band: 90, tilt: 0.35, sweep: 0.75, wait: 1.5, alpha: 0.85, corner: 0.32 };
@@ -123,6 +123,7 @@ export default class HomeScene extends ThreeScene {
     }
 
     public build(): void {
+        MobAudio.music('menu');
         this.threeScene.add(new THREE.HemisphereLight(0xffffff, 0x6b8f4a, LIGHT.sky));
         const sun = new THREE.DirectionalLight(0xffffff, LIGHT.sun);
         sun.position.set(6, 14, 8);

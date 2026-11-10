@@ -3,9 +3,9 @@
   "kind": "Water holes",
   "gates": [
     {
-      "x": -3.4,
+      "x": -2.65,
       "z": -5.25,
-      "width": 4.55,
+      "width": 6.6,
       "value": 3
     },
     {
@@ -13,12 +13,18 @@
       "z": -21,
       "width": 3.4,
       "value": 2
+    },
+    {
+      "x": -5.25,
+      "z": -21.75,
+      "width": 3,
+      "value": 2
     }
   ],
   "redRate": 7,
   "redRateEnd": 7.9,
   "redRamp": 55,
-  "baseHp": 400,
+  "baseHp": 330,
   "reward": 150,
   "redGiantEvery": 12,
   "pipes": [
@@ -96,5 +102,6 @@
         "seconds": 5.2
       }
     }
-  ]
+  ],
+  "kingAt": 90
 }

@@ -158,6 +158,70 @@
         "scale": 1.25,
         "props": []
       }
+    },
+    {
+      "id": "ice",
+      "name": "Ice",
+      "sky": "#cdeeff",
+      "sea": "#6fd3f0",
+      "ground": "#eef6fb",
+      "field": "#cfe8f5",
+      "stripe": "#bedcee",
+      "hedge": [
+        "#dbeef8",
+        "#c7e4f3"
+      ],
+      "block": {
+        "top": "#eaf6ff",
+        "side": "#8fc3df"
+      },
+      "breakable": {
+        "top": "#a8e2ff",
+        "side": "#4f9fcf"
+      },
+      "rim": "#9fc9e2",
+      "surround": "valley",
+      "cliff": {
+        "height": 1.2,
+        "top": "#f4f9fc",
+        "side": "#9ccbe4"
+      },
+      "kit": {
+        "scale": 1.25,
+        "props": []
+      }
+    },
+    {
+      "id": "ice-castle",
+      "name": "Ice Castle",
+      "sky": "#b8dcf5",
+      "sea": "#4fb6e0",
+      "ground": "#e2eef6",
+      "field": "#c3def0",
+      "stripe": "#b2d2e7",
+      "hedge": [
+        "#cfe4f2",
+        "#bad6ea"
+      ],
+      "block": {
+        "top": "#dcecf7",
+        "side": "#6f9fc2"
+      },
+      "breakable": {
+        "top": "#9fd6f5",
+        "side": "#3f86b8"
+      },
+      "rim": "#7fa9c8",
+      "surround": "valley",
+      "cliff": {
+        "height": 5.2,
+        "top": "#eef6fb",
+        "side": "#7fb0d2"
+      },
+      "kit": {
+        "scale": 1.25,
+        "props": []
+      }
     }
   ]
 }

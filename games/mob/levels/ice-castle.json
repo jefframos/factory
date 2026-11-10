@@ -1,0 +1,114 @@
+{
+  "name": "Ice Castle",
+  "kind": "Boss",
+  "width": 14,
+  "length": 32,
+  "gates": [
+    {
+      "x": -4.5,
+      "z": -5.5,
+      "width": 3.4,
+      "value": 2
+    },
+    {
+      "x": 4.5,
+      "z": -5.5,
+      "width": 3.4,
+      "value": 2
+    },
+    {
+      "x": 0,
+      "z": -13,
+      "width": 3.4,
+      "value": 3,
+      "lock": 32
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "x": -3.6,
+      "z": -13,
+      "width": 3.8,
+      "depth": 0.9
+    },
+    {
+      "kind": "wall",
+      "x": 3.6,
+      "z": -13,
+      "width": 3.8,
+      "depth": 0.9
+    }
+  ],
+  "spinners": [
+    {
+      "x": -4.2,
+      "z": -18.5,
+      "length": 2.4,
+      "arms": 3,
+      "speed": 0.32
+    },
+    {
+      "x": 4.2,
+      "z": -18.5,
+      "length": 2.4,
+      "arms": 3,
+      "speed": -0.32
+    }
+  ],
+  "pads": [
+    {
+      "kind": "giant",
+      "x": -4.6,
+      "z": -9,
+      "width": 2.4,
+      "depth": 1.6
+    },
+    {
+      "kind": "saucer",
+      "x": 4.6,
+      "z": -9,
+      "width": 2.4,
+      "depth": 1.6
+    }
+  ],
+  "grinders": [
+    {
+      "x": 0,
+      "z": -22.5,
+      "length": 2.6,
+      "thickness": 0.9,
+      "axis": "x",
+      "move": {
+        "range": 3.4,
+        "seconds": 4.6
+      }
+    }
+  ],
+  "redRate": 6,
+  "redRateEnd": 12,
+  "redRamp": 70,
+  "redGiantEvery": 8,
+  "targets": [
+    {
+      "x": 0,
+      "hp": 380,
+      "width": 3.6
+    },
+    {
+      "x": -5,
+      "hp": 140,
+      "width": 2.2,
+      "z": -26
+    },
+    {
+      "x": 5,
+      "hp": 140,
+      "width": 2.2,
+      "z": -26
+    }
+  ],
+  "baseHp": 300,
+  "reward": 320,
+  "kingAt": 100
+}

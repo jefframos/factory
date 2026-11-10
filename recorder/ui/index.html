@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Game Recorder</title>
+    <link rel="stylesheet" href="ui/style.css">
+</head>
+<body>
+    <header>
+        <h1>🎬 Game Recorder</h1>
+        <span class="sub" id="gameTitle"></span>
+        <span class="spacer"></span>
+        <span class="hint"><kbd>F9</kbd> pause · <kbd>F7</kbd> step · <kbd>F8</kbd> record</span>
+        <a href="editor"><button class="small">Recordings &amp; editor</button></a>
+    </header>
+    <div class="app">
+        <aside>
+            <section>
+                <h2>Screen format</h2>
+                <div class="row"><select id="format" class="grow"></select></div>
+                <div class="row">
+                    <label>Size</label>
+                    <input id="width" type="number" min="64" step="2"> ×
+                    <input id="height" type="number" min="64" step="2">
+                    <button class="small" id="swap" title="Swap width and height">⇄</button>
+                </div>
+                <div class="row">
+                    <label>UI scale</label>
+                    <input id="dpr" type="number" min="0.5" max="4" step="0.25">
+                    <span class="hint" id="logical"></span>
+                </div>
+                <div class="row">
+                    <label>URL</label>
+                    <input id="query" class="grow" placeholder="extra game params, e.g. level=5">
+                </div>
+                <div class="buttons"><button id="reload">↻ Reload game</button></div>
+                <p class="hint">The game's page is <b>size ÷ UI scale</b> CSS pixels, rendered at the full size. A higher scale makes the
+                    UI bigger. Changing the scale reloads the game.</p>
+            </section>
+            <section>
+                <h2>Game</h2>
+                <div class="buttons">
+                    <button id="pause">⏸ Pause</button>
+                    <button id="step" disabled>⏭ Step</button>
+                </div>
+                <div class="row">
+                    <label>Speed</label>
+                    <select id="speed" class="grow">
+                        <option value="0.25">0.25× (slow motion)</option>
+                        <option value="0.5">0.5×</option>
+                        <option value="1" selected>1× (normal)</option>
+                        <option value="1.5">1.5×</option>
+                        <option value="2">2×</option>
+                    </select>
+                </div>
+                <div class="row tight">
+                    <label><input id="fit" type="checkbox" checked> Fit to window</label>
+                    <label><input id="pip" type="checkbox"> Show what's recorded</label>
+                </div>
+            </section>
+            <section>
+                <h2>Record</h2>
+                <div class="row">
+                    <label>Frame rate</label>
+                    <select id="fps" class="grow"><option value="60" selected>60 fps</option><option value="30">30 fps</option></select>
+                </div>
+                <div class="row">
+                    <label>Quality</label>
+                    <select id="bitrate" class="grow">
+                        <option value="12">12 Mbps (light)</option>
+                        <option value="25">25 Mbps</option>
+                        <option value="40" selected>40 Mbps (raw)</option>
+                        <option value="80">80 Mbps (huge)</option>
+                    </select>
+                </div>
+                <div class="row tight"><label><input id="audio" type="checkbox" checked> Record the game's sound</label></div>
+                <div class="row tight"><label><input id="linkPause" type="checkbox" checked> Pausing the game pauses the recording</label></div>
+                <button class="rec big" id="record">● Record</button>
+                <div class="row"><span class="hint" id="recInfo">Records only the game's canvases: page elements (dev GUI, overlays) are left out.</span></div>
+            </section>
+            <section>
+                <h2>Layers recorded</h2>
+                <div class="list" id="layers"></div>
+                <p class="hint">Small canvases (stats panels, dev GUI widgets) are left out by default.</p>
+            </section>
+            <section>
+                <h2>Recent recordings</h2>
+                <div class="list" id="recent"></div>
+            </section>
+        </aside>
+        <main class="stage" id="stage">
+            <div class="frame-box" id="frameBox"><iframe id="game" allow="autoplay; fullscreen; gamepad"></iframe></div>
+            <div class="badge" id="sizeBadge"></div>
+            <div class="badge paused" id="pausedBadge" hidden>PAUSED</div>
+            <div class="badge rec" id="recBadge" hidden></div>
+            <canvas class="pip" id="pipCanvas" hidden></canvas>
+        </main>
+    </div>
+    <script type="module" src="ui/recorder.js"></script>
+</body>
+</html>

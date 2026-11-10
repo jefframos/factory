@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 
-const CARDS = [['giant', 'Giant'], ['truck', 'Truck'], ['saucer', 'UFO'], ['car', 'Car']];
+const CARDS = [['giant', 'Giant'], ['truck', 'Truck'], ['saucer', 'UFO'], ['car', 'Rammer']];
 /** The drawers left open (kept as the form's drawn again). */
 const openDrawers = new Set();
 

@@ -101,14 +101,5 @@
   "redRateEnd": 5.2,
   "redRamp": 55,
   "baseHp": 480,
-  "reward": 180,
-  "pads": [
-    {
-      "kind": "car",
-      "x": 3.25,
-      "z": -20.25,
-      "width": 2.4,
-      "depth": 1.8
-    }
-  ]
+  "reward": 180
 }

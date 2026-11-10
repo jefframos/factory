@@ -1,0 +1,86 @@
+{
+  "name": "Ice Maze",
+  "kind": "Breakables",
+  "width": 12,
+  "length": 24,
+  "gates": [
+    {
+      "x": -4.2,
+      "z": -5.5,
+      "width": 2.6,
+      "value": 2
+    },
+    {
+      "x": 4.2,
+      "z": -5.5,
+      "width": 2.6,
+      "value": 2
+    },
+    {
+      "x": 0,
+      "z": -17,
+      "width": 3,
+      "value": 2
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "x": -1.5,
+      "z": -9,
+      "width": 5,
+      "depth": 0.8
+    },
+    {
+      "kind": "breakable",
+      "x": 2.2,
+      "z": -9,
+      "width": 2.4,
+      "depth": 0.8,
+      "hp": 14
+    },
+    {
+      "kind": "wall",
+      "x": 4.7,
+      "z": -9,
+      "width": 2.6,
+      "depth": 0.8
+    },
+    {
+      "kind": "wall",
+      "x": 1.5,
+      "z": -14,
+      "width": 5,
+      "depth": 0.8
+    },
+    {
+      "kind": "breakable",
+      "x": -2.2,
+      "z": -14,
+      "width": 2.4,
+      "depth": 0.8,
+      "hp": 14
+    },
+    {
+      "kind": "wall",
+      "x": -4.7,
+      "z": -14,
+      "width": 2.6,
+      "depth": 0.8
+    }
+  ],
+  "helmets": [
+    {
+      "x": 0,
+      "z": -11.5,
+      "width": 3.4,
+      "kind": "attack"
+    }
+  ],
+  "redRate": 12,
+  "redRateEnd": 20,
+  "redRamp": 60,
+  "redGiantEvery": 7,
+  "baseHp": 320,
+  "reward": 285
+}

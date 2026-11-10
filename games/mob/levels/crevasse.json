@@ -1,0 +1,93 @@
+{
+  "name": "Crevasse",
+  "kind": "Grinder",
+  "width": 12,
+  "length": 26,
+  "gates": [
+    {
+      "x": -3.5,
+      "z": -5.5,
+      "width": 3.2,
+      "value": 2
+    },
+    {
+      "x": 3.5,
+      "z": -5.5,
+      "width": 3.2,
+      "value": 3
+    },
+    {
+      "x": 0,
+      "z": -16,
+      "width": 3.4,
+      "value": 2
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "water",
+      "points": [
+        [
+          -4.4,
+          -9
+        ],
+        [
+          -2.4,
+          -10
+        ],
+        [
+          -2.4,
+          -11
+        ],
+        [
+          -4.4,
+          -10.4
+        ]
+      ]
+    },
+    {
+      "kind": "water",
+      "points": [
+        [
+          4.4,
+          -9
+        ],
+        [
+          2.4,
+          -10
+        ],
+        [
+          2.4,
+          -11
+        ],
+        [
+          4.4,
+          -10.4
+        ]
+      ]
+    }
+  ],
+  "helmets": [
+    {
+      "x": 0,
+      "z": -8,
+      "width": 3,
+      "kind": "hp"
+    }
+  ],
+  "grinders": [
+    {
+      "x": 1.2,
+      "z": -12.5,
+      "length": 1.6,
+      "thickness": 0.9,
+      "axis": "x"
+    }
+  ],
+  "redRate": 3.6,
+  "redRateEnd": 6.5,
+  "redRamp": 55,
+  "redGiantEvery": 13,
+  "baseHp": 400,
+  "reward": 230
+}

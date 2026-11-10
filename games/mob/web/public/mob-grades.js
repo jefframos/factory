@@ -109,7 +109,8 @@ export function createGrades({ el, api, toast, state, statusLine, onChange }) {
     }
 
     /** Grades `ids` (none: every level) in the background, then shows the new grades. */
-    async function run(ids = []) {
+    /** `ids`: those (none: all). `everything`: with no ids, every level, not only the out-of-date ones. */
+    async function run(ids = [], everything = false) {
         if (status?.running) {
             toast('Already grading', 'error');
             return;
@@ -122,7 +123,7 @@ export function createGrades({ el, api, toast, state, statusLine, onChange }) {
         // The editor's unsaved levels go with it (graded as they are here).
         const levels = Object.fromEntries([...state.dirty].filter((id) => state.levels.has(id)).map((id) => [id, state.levels.get(id)]));
         try {
-            await api('/api/mob/grade', { method: 'POST', body: { ids: ids_, zones: state.zones, levels } });
+            await api('/api/mob/grade', { method: 'POST', body: { ids: ids_, changedOnly: !everything, zones: state.zones, levels } });
         } catch (error) {
             toast(error.message, 'error');
             return;
@@ -150,8 +151,11 @@ export function createGrades({ el, api, toast, state, statusLine, onChange }) {
                 if (status.running) {
                     poll();
                 } else {
-                    statusLine.textContent = status.error ? `Grading stopped: ${status.error}` : `Graded ${status.finished.length} level(s)`;
-                    toast(status.error ? `Grading: ${status.error}` : `Graded ${status.finished.length} level(s)`, status.error ? 'error' : 'ok');
+                    const graded = status.finished.length
+                        ? `Graded ${status.finished.length} level(s)`
+                        : 'Every grade was up to date: nothing to grade (Shift+click Grade all to grade them all anyway)';
+                    statusLine.textContent = status.error ? `Grading stopped: ${status.error}` : graded;
+                    toast(status.error ? `Grading: ${status.error}` : graded, status.error ? 'error' : 'ok');
                 }
             } catch (error) {
                 toast(`Grading: ${error.message}`, 'error');
@@ -195,5 +199,28 @@ export function createGrades({ el, api, toast, state, statusLine, onChange }) {
         return el('div', { class: 'difficulty' }, ...children);
     }
 
-    return { load, badge, chips, panel, run, get running() { return !!status?.running; } };
+    /**
+     * How long a level takes: the robots' winning tries, averaged (seconds; the casual and average players, those most
+     * like the people playing), from its grade (out of date or not); null if it's never been graded or never won.
+     */
+    function seconds(id) {
+        const grade = gradeOf(id)?.grade;
+        if (!grade) return null;
+        const wins = [];
+        for (const profile of grade.profiles ?? []) {
+            if (profile.id !== 'casual' && profile.id !== 'average') continue;
+            for (const go of profile.goes ?? []) {
+                const won = go.find((attempt) => attempt[0] === 1);
+                if (won) wins.push(won[1]);
+            }
+        }
+        return wins.length ? Math.round(wins.reduce((sum, time) => sum + time, 0) / wins.length) : null;
+    }
+
+    /** A level's grade score (out of date or not), or null if it's never been graded. */
+    function score(id) {
+        return gradeOf(id)?.grade.score ?? null;
+    }
+
+    return { load, badge, chips, panel, run, score, seconds, get running() { return !!status?.running; } };
 }

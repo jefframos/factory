@@ -1,0 +1,57 @@
+{
+  "name": "Frozen Mill",
+  "kind": "Spinners",
+  "width": 11,
+  "length": 26,
+  "gates": [
+    {
+      "x": -3,
+      "z": -5.5,
+      "width": 3,
+      "value": 2
+    },
+    {
+      "x": 3,
+      "z": -5.5,
+      "width": 3,
+      "value": 2
+    },
+    {
+      "x": 0,
+      "z": -15.5,
+      "width": 3,
+      "value": 3
+    }
+  ],
+  "spinners": [
+    {
+      "x": -2.6,
+      "z": -10.5,
+      "length": 2.4,
+      "arms": 3,
+      "speed": 0.3
+    },
+    {
+      "x": 2.6,
+      "z": -19,
+      "length": 2.4,
+      "arms": 3,
+      "speed": -0.3
+    }
+  ],
+  "pads": [
+    {
+      "kind": "giant",
+      "x": 2.8,
+      "z": -11,
+      "width": 2.4,
+      "depth": 1.8
+    }
+  ],
+  "redRate": 3.5,
+  "redRateEnd": 6.5,
+  "redRamp": 55,
+  "redGiantEvery": 14,
+  "baseHp": 380,
+  "reward": 220
+}

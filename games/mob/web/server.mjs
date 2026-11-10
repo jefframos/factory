@@ -11,7 +11,8 @@
 // - GET    /api/mob/units             ui/units.json (the upgrades: colours, charge, hits, damage)
 // - PUT    /api/mob/units             write it (checked first)
 // - GET    /api/mob/grades            ui/grades.json: each level's difficulty grade (tools/grade-levels.ts, robot players)
-// - POST   /api/mob/grade             grade levels in the background: { ids?: [...] (none: all), zones?, levels? } — the
+// - POST   /api/mob/grade             grade levels in the background: { ids?: [...] (none: all), changedOnly? (with no ids:
+//                                     only those out of date or never graded), zones?, levels? } — the
 //                                     editor's order and unsaved levels, graded as they are there
 // - GET    /api/mob/grade-status      how that's going: { running, done, total, finished: [{ id, score }], error }
 // - POST   /api/mob/grade-cancel      stop it (the levels already graded stay saved)
@@ -205,12 +206,13 @@ async function themesProblem(data) {
 }
 
 /** Starts grading `ids` (none: every level) with the editor's `zones` and unsaved `levels` over what's on disk. */
-async function startGradingJob({ ids, zones, levels }) {
+async function startGradingJob({ ids, zones, levels, changedOnly }) {
     const stateFile = path.join(os.tmpdir(), 'mob-grader', `state-${Date.now()}.json`);
     await fs.mkdir(path.dirname(stateFile), { recursive: true });
     await fs.writeFile(stateFile, JSON.stringify({ zones, levels }));
     Object.assign(grading, { running: true, done: 0, total: 0, levels: [], finished: [], error: null });
-    grading.child = await startGrading([...(ids ?? []), '--state', stateFile, '--careers', '3'], {
+    const only = changedOnly && !(ids ?? []).length ? ['--changed'] : [];
+    grading.child = await startGrading([...(ids ?? []), ...only, '--state', stateFile, '--careers', '3'], {
         onMessage: (message) => {
             if (message.type === 'start') Object.assign(grading, { total: message.total, levels: message.levels });
             if (message.type === 'progress') grading.done = message.done;
@@ -284,7 +286,7 @@ async function handle(req, res, url) {
         const body = await readBody(req);
         const ids = Array.isArray(body.ids) ? body.ids.filter(goodId) : [];
         try {
-            await startGradingJob({ ids, zones: body.zones, levels: body.levels ?? {} });
+            await startGradingJob({ ids, zones: body.zones, levels: body.levels ?? {}, changedOnly: body.changedOnly === true });
         } catch (error) {
             grading.running = false;
             return send(res, 500, { error: `Could not start the grader: ${error.message}` }), true;

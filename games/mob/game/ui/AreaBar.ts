@@ -8,11 +8,12 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { ZoneConfig } from '../data/LevelList';
+import { SegmentBar } from './SegmentBar';
 import { framePlane, iconSprite, label } from './UiParts';
 
 /** The strip's size and tint; the bar's segments (done, next, to come, their outline); the next area's badge. */
 export const AREA_BAR = { width: 620, height: 108, back: 0x34365a, frameScale: 0.7 };
-const BAR = { y: 22, height: 22, gap: 4, left: -AREA_BAR.width / 2 + 34, right: AREA_BAR.width / 2 - 128, done: 0x4cdc6a, next: 0xffd23f, off: 0x1c1d33, edge: 0x10123a };
+const BAR = { y: 22, height: 22, gap: 4, pad: 4, boss: 36, left: -AREA_BAR.width / 2 + 34, right: AREA_BAR.width / 2 - 128 };
 const NEXT = { x: AREA_BAR.width / 2 - 64, castle: 72, lock: 34, nameY: 46, nameSize: 18 };
 const TITLE = { x: -AREA_BAR.width / 2 + 34, y: -22, size: 26, pin: 40 };
 
@@ -20,7 +21,7 @@ export interface AreaView { zone: ZoneConfig; number: number; done: number; tota
 
 export class AreaBar extends PIXI.Container {
     private readonly title = label(TITLE.size);
-    private readonly bar = new PIXI.Graphics();
+    private readonly bar = new SegmentBar({ width: BAR.right - BAR.left, height: BAR.height, gap: BAR.gap, pad: BAR.pad, boss: BAR.boss });
     private readonly castle = iconSprite('Icon_Castle', NEXT.castle);
     private readonly lock = iconSprite('Icon_Lock03', NEXT.lock);
     private readonly nextName = label(NEXT.nameSize, 0xc9d3ff);
@@ -41,7 +42,7 @@ export class AreaBar extends PIXI.Container {
         this.lock.position.set(NEXT.x + 22, 8);
         this.nextName.y = NEXT.nameY - 8;
         this.nextName.x = NEXT.x;
-        this.bar.y = BAR.y;
+        this.bar.position.set((BAR.left + BAR.right) / 2, BAR.y);
         this.addChild(back, pin, this.title, this.bar, this.castle, this.lock, this.nextName);
     }
 
@@ -60,7 +61,7 @@ export class AreaBar extends PIXI.Container {
         this.lock.alpha = 1;
         this.lock.scale.set(NEXT.lock / Math.max(this.lock.texture.width, this.lock.texture.height));
         this.castle.tint = this.complete ? 0xffffff : 0x9aa3c8;
-        this.drawBar(1);
+        this.bar.set(shown.total, shown.done, this.complete ? -1 : undefined);
     }
 
     /** The card's shown: a finished area's lock pops off its next one. */
@@ -73,25 +74,8 @@ export class AreaBar extends PIXI.Container {
             .fromTo(this.castle.scale, { x: this.castle.scale.x * 0.8, y: this.castle.scale.y * 0.8 }, { x: this.castle.scale.x, y: this.castle.scale.y, duration: 0.4, ease: 'back.out(3)' }, '<');
     }
 
-    private drawBar(pulse: number): void {
-        const view = this.view;
-        if (!view) return;
-        const inner = BAR.right - BAR.left;
-        const width = (inner - BAR.gap * (view.total - 1)) / Math.max(1, view.total);
-        const h = BAR.height;
-        const g = this.bar.clear();
-        g.beginFill(BAR.edge).drawRoundedRect(BAR.left - 4, -h / 2 - 4, inner + 8, h + 8, 9).endFill();
-        for (let k = 0; k < view.total; k++) {
-            const x = BAR.left + k * (width + BAR.gap);
-            const done = k < view.done;
-            const next = !this.complete && k === view.done;
-            g.beginFill(done ? BAR.done : next ? BAR.next : BAR.off, next ? 0.45 + 0.55 * pulse : 1).drawRoundedRect(x, -h / 2, width, h, 4).endFill();
-            if (done || next) g.beginFill(0xffffff, 0.3).drawRoundedRect(x + 1, -h / 2 + 1, width - 2, h * 0.35, 3).endFill();
-        }
-    }
-
     public update(dt: number): void {
         this.time += dt;
-        if (!this.complete) this.drawBar(0.5 + 0.5 * Math.sin(this.time * 6));
+        if (!this.complete) this.bar.pulse(0.5 + 0.5 * Math.sin(this.time * 6));
     }
 }

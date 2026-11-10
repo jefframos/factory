@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Recording Editor</title>
+    <link rel="stylesheet" href="ui/style.css">
+</head>
+<body>
+    <header>
+        <h1>✂️ Recording Editor</h1>
+        <select id="pick"></select>
+        <span class="sub" id="facts"></span>
+        <span class="spacer"></span>
+        <button class="small" id="openFolder">📂 Folder</button>
+        <button class="small" id="remove">🗑 Delete</button>
+        <a href="./"><button class="small">🎬 Recorder</button></a>
+    </header>
+    <div class="app" id="app">
+        <div class="editor-main">
+            <div class="viewer" id="viewer">
+                <video id="video" preload="auto" playsinline></video>
+                <div class="crop-layer" id="cropLayer" hidden>
+                    <div class="crop-box" id="cropBox">
+                        <span class="size" id="cropSize"></span>
+                        <span class="handle nw" data-corner="nw"></span>
+                        <span class="handle ne" data-corner="ne"></span>
+                        <span class="handle sw" data-corner="sw"></span>
+                        <span class="handle se" data-corner="se"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="transport">
+                <button id="play" title="Space">▶</button>
+                <button id="back" class="small" title="←: a frame back">◀︎|</button>
+                <button id="fwd" class="small" title="→: a frame on">|▶︎</button>
+                <span class="time" id="time"></span>
+                <label><input type="checkbox" id="previewEdits" checked> Play as edited</label>
+                <label><input type="checkbox" id="loop" checked> Loop</label>
+                <span class="spacer" style="flex:1"></span>
+                <label>Crop <input type="checkbox" id="cropOn"></label>
+                <select id="cropAspect">
+                    <option value="free">Free shape</option>
+                    <option value="output">Output's shape</option>
+                    <option value="0.5625">9:16</option>
+                    <option value="1.7778">16:9</option>
+                    <option value="1">1:1</option>
+                    <option value="0.8">4:5</option>
+                    <option value="0.75">3:4</option>
+                    <option value="1.3333">4:3</option>
+                </select>
+                <button id="frameShot" class="small" title="Save this frame (cropped) as a PNG">📷 Frame</button>
+            </div>
+            <div class="timeline-wrap">
+                <div class="timeline" id="timeline"></div>
+                <div class="transport" style="padding: 8px 0 0; border: 0; background: none">
+                    <button id="setIn" class="small" title="I">[ Start here</button>
+                    <button id="setOut" class="small" title="O">End here ]</button>
+                    <button id="keep" title="K">Keep only selection</button>
+                    <button id="cut" title="X or Delete">✂ Cut selection</button>
+                    <select id="speedPick">
+                        <option value="0.5">0.5×</option>
+                        <option value="1">1×</option>
+                        <option value="1.5">1.5×</option>
+                        <option value="2" selected>2×</option>
+                        <option value="3">3×</option>
+                        <option value="4">4×</option>
+                        <option value="8">8×</option>
+                    </select>
+                    <button id="speedSel" title="S">⏩ Speed selection</button>
+                    <button id="undo" class="small" title="Ctrl+Z">↶ Undo</button>
+                    <button id="reset" class="small">Reset edits</button>
+                    <span class="hint">Drag on the timeline to select. Blue: kept · purple: sped up · teal: slowed · red: cut.</span>
+                </div>
+            </div>
+        </div>
+        <aside class="right">
+            <section>
+                <h2>Output</h2>
+                <div class="row"><select id="preset" class="grow"></select></div>
+                <div class="row">
+                    <label>Format</label>
+                    <select id="format" class="grow">
+                        <option value="mp4">MP4 (H.264): everywhere</option>
+                        <option value="webm">WebM (VP9): web, smaller</option>
+                        <option value="gif">GIF: no sound, big</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <label>Size</label>
+                    <input id="outW" type="number" min="0" step="2" placeholder="auto"> ×
+                    <input id="outH" type="number" min="0" step="2" placeholder="auto">
+                    <button class="small" id="outSwap" title="Swap">⇄</button>
+                </div>
+                <div class="row">
+                    <label>Fit</label>
+                    <select id="fit" class="grow">
+                        <option value="cover">Fill (cut the edges off)</option>
+                        <option value="contain">Fit (black bars)</option>
+                        <option value="stretch">Stretch</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <label>Frame rate</label>
+                    <select id="fps" class="grow">
+                        <option value="0">As recorded</option>
+                        <option value="60">60 fps</option>
+                        <option value="30">30 fps</option>
+                        <option value="24">24 fps</option>
+                        <option value="15">15 fps</option>
+                        <option value="10">10 fps</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <label>Sound</label>
+                    <label class="row tight" style="margin:0"><input id="audio" type="checkbox"> on</label>
+                    <select id="audioKbps" class="grow">
+                        <option value="64">64 kbps</option>
+                        <option value="96">96 kbps</option>
+                        <option value="128" selected>128 kbps</option>
+                        <option value="192">192 kbps</option>
+                        <option value="256">256 kbps</option>
+                    </select>
+                </div>
+                <p class="hint" id="resolution"></p>
+            </section>
+            <section>
+                <h2>Compression</h2>
+                <div class="row">
+                    <label>Mode</label>
+                    <select id="mode" class="grow">
+                        <option value="quality">Quality</option>
+                        <option value="size">Target file size</option>
+                    </select>
+                </div>
+                <div class="row" id="qualityRow">
+                    <label>Quality</label>
+                    <input id="quality" type="range" min="0" max="100" class="grow">
+                    <span id="qualityValue" style="min-width: 26px; text-align: right"></span>
+                </div>
+                <div class="row" id="sizeRow" hidden>
+                    <label>At most</label>
+                    <input id="targetMb" type="number" min="0.2" step="0.1"> MB
+                </div>
+                <div class="row">
+                    <label>Encoding</label>
+                    <select id="encSpeed" class="grow">
+                        <option value="fast">Fast</option>
+                        <option value="balanced" selected>Balanced</option>
+                        <option value="small">Smallest file (slow)</option>
+                    </select>
+                </div>
+                <div class="estimate" id="estimate">–</div>
+                <div class="hint" id="estimateNote">The file size it'll come out at, worked out before exporting.</div>
+            </section>
+            <section>
+                <h2>Platform limits</h2>
+                <div class="row">
+                    <label>Max size</label><input id="limitMb" type="number" min="0" step="0.1" placeholder="none"> MB
+                </div>
+                <div class="row">
+                    <label>Length</label>
+                    <input id="limitMin" type="number" min="0" step="1" placeholder="min"> to
+                    <input id="limitMax" type="number" min="0" step="1" placeholder="max"> s
+                </div>
+                <div id="warnings"></div>
+            </section>
+            <section>
+                <h2>Export</h2>
+                <div class="row"><label>Name</label><input id="name" class="grow"></div>
+                <div class="buttons">
+                    <button class="primary big" id="export">Export</button>
+                </div>
+                <div class="progress" id="progress" hidden><div></div></div>
+                <div class="hint" id="exportInfo"></div>
+            </section>
+            <section>
+                <h2>Exports</h2>
+                <div class="list" id="exports"></div>
+            </section>
+        </aside>
+    </div>
+    <script type="module" src="ui/editor.js"></script>
+</body>
+</html>

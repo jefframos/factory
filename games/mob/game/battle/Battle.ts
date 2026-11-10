@@ -38,6 +38,8 @@
 //   to the enemy's main building, sucking up the plain reds it passes over, and crashes into it.
 // - A PUSH block fills a lane: blues pressing its near face push it up the field, reds pressing its far face push it
 //   back, the side with more mobs on it winning (TUNING.push*). Shoved out at either end, it drops away.
+// - A boss level (`kingAt`): once the enemy's HP left is down to that, it sends out the Giant King, once a match: a red
+//   giant in viking horns (double damage, TUNING.kingHp times the hits).
 // - A blue reaching a target takes one HP off it (a giant, TUNING.giantDamage); blues head for the nearest one still
 //   standing. Every target down: won. A red past the danger line: lost.
 //
@@ -112,6 +114,8 @@ export interface BattleEvents {
     /** A target fell (the battle's won once they all have). */
     targetDown?(target: number): void;
     pad?(pad: number, count: number): void;
+    /** A boss level's Giant King came out at (x, z). */
+    king?(x: number, z: number): void;
     /** A PUSH block was pushed out at its far stop: the lane is open. */
     pushCleared?(block: number): void;
     blockHit?(block: number, hpLeft: number, x: number, z: number): void;
@@ -336,6 +340,8 @@ export class Battle {
     private fireDue = 0;
     private redDue = 0;
     private redGiantDue = 0;
+    /** The Giant King's been sent out (once a match). */
+    private kingSent = false;
 
     public constructor(public readonly config: BattleConfig, public events: BattleEvents = {}) {
         this.gates = config.gates.map((gate) => ({ ...gate, nowX: gate.x, locked: (gate.lock ?? 0) > 0, swingFrom: 0 }));
@@ -364,6 +370,22 @@ export class Battle {
             hp: target.hp, hpMax: target.hp, alive: true,
         }));
         this.redGiantDue = config.redGiantEvery ?? 0;
+    }
+
+    /** A boss level's Giant King, once the enemy's down to `kingAt`: out of a target still standing. */
+    private sendKing(): void {
+        const at = this.config.kingAt;
+        if (this.kingSent || !at || this.baseHp > at || this.baseHp <= 0) return;
+        const target = this.someTarget();
+        if (!target) return;
+        this.kingSent = true;
+        const x = target.x;
+        const z = target.z + RED_SPAWN_OUT + 0.5;
+        const i = this.add(RED, x, z, 0, GIANT);
+        if (i < 0) return;
+        this.hp[i] *= TUNING.kingHp;
+        this.viking[i] = 1;
+        this.events.king?.(x, z);
     }
 
     /** All the targets' HP left, and at the start. */
@@ -637,6 +659,7 @@ export class Battle {
 
     /** Waves: reds come for TUNING.waveSeconds, then a TUNING.wavePause breather — at the same average rate. Giants on their own clock. */
     private spawnReds(dt: number): void {
+        this.sendKing();
         const rate = this.redRate;
         if (rate <= 0) return;
         const every = this.config.redGiantEvery ?? 0;

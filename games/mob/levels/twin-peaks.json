@@ -1,0 +1,97 @@
+{
+  "name": "Twin Peaks",
+  "kind": "Forts",
+  "width": 12,
+  "length": 28,
+  "gates": [
+    {
+      "x": 0,
+      "z": -6,
+      "width": 3.4,
+      "value": 2,
+      "swing": {
+        "range": 3.2,
+        "seconds": 5
+      }
+    },
+    {
+      "x": 0,
+      "z": -14,
+      "width": 3,
+      "value": 3,
+      "swing": {
+        "range": 3.6,
+        "seconds": 6
+      }
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "enemyWall",
+      "points": [
+        [
+          -1.2,
+          -19
+        ],
+        [
+          1.2,
+          -19
+        ],
+        [
+          0.4,
+          -16.5
+        ],
+        [
+          -0.4,
+          -16.5
+        ]
+      ]
+    },
+    {
+      "kind": "wall",
+      "x": 0,
+      "z": -22.5,
+      "width": 2.4,
+      "depth": 1.2
+    }
+  ],
+  "helmets": [
+    {
+      "x": 0,
+      "z": -12,
+      "width": 4,
+      "kind": "attack"
+    }
+  ],
+  "grinders": [
+    {
+      "x": 0,
+      "z": -10,
+      "length": 2.4,
+      "thickness": 0.9,
+      "axis": "x",
+      "move": {
+        "range": 3.6,
+        "seconds": 5
+      }
+    }
+  ],
+  "redRate": 4,
+  "redRateEnd": 8,
+  "redRamp": 55,
+  "redGiantEvery": 14,
+  "targets": [
+    {
+      "x": -3.8,
+      "hp": 230,
+      "width": 2.6
+    },
+    {
+      "x": 3.8,
+      "hp": 230,
+      "width": 2.6
+    }
+  ],
+  "baseHp": 300,
+  "reward": 240
+}

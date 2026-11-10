@@ -49,7 +49,7 @@
   "reward": 160,
   "pads": [
     {
-      "kind": "giant",
+      "kind": "saucer",
       "x": -3.5,
       "z": -12.5,
       "width": 2.4,

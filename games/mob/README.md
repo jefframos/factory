@@ -25,6 +25,8 @@ vehicle (truck, UFO, car), and the truck / UFO / car houses' walls and roofs. "L
 
 ## Where things are
 
+- `LEVEL_GUIDE.md`: every element a level can use (what it does, its settings, its editor tool) and tips for building
+  and checking levels.
 - `game/data/MobConfig.ts`: every number: the arena, speeds, sizes, the three presets (gates, red rates, base HP, reward), the upgrade's costs, the colours.
 - `game/battle/Battle.ts`: the rules, with no drawing: a 2D simulation in typed arrays, a spatial grid for pushing apart and fights, gate crossings, base hits, win and lose.
 - `game/battle/CrowdView.ts`: draws the mobs. The run cycle is baked at load into 10 poses, each one instanced mesh, coloured per mob by team.

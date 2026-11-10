@@ -1,0 +1,96 @@
+{
+  "name": "Glacier Pipe",
+  "kind": "Pipe",
+  "width": 10,
+  "length": 28,
+  "gates": [
+    {
+      "x": 2.5,
+      "z": -5.5,
+      "width": 3.6,
+      "value": 2
+    },
+    {
+      "x": 0,
+      "z": -18,
+      "width": 4,
+      "value": 2
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "points": [
+        [
+          -5,
+          -12.6
+        ],
+        [
+          -1.2,
+          -10.6
+        ],
+        [
+          -1.2,
+          -11.6
+        ],
+        [
+          -5,
+          -13.6
+        ]
+      ]
+    },
+    {
+      "kind": "wall",
+      "points": [
+        [
+          5,
+          -12.6
+        ],
+        [
+          1.2,
+          -10.6
+        ],
+        [
+          1.2,
+          -11.6
+        ],
+        [
+          5,
+          -13.6
+        ]
+      ]
+    },
+    {
+      "kind": "breakable",
+      "x": 0,
+      "z": -11.1,
+      "width": 2.4,
+      "depth": 1,
+      "hp": 14
+    }
+  ],
+  "spinners": [
+    {
+      "x": 1,
+      "z": -21,
+      "length": 2,
+      "arms": 3,
+      "speed": 0.3
+    }
+  ],
+  "pipes": [
+    {
+      "x": -2.1,
+      "z": -6.5,
+      "toX": -2.4,
+      "toZ": -16.5,
+      "team": "blue"
+    }
+  ],
+  "redRate": 6.5,
+  "redRateEnd": 12,
+  "redRamp": 55,
+  "redGiantEvery": 12,
+  "baseHp": 280,
+  "reward": 225
+}

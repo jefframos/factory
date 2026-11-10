@@ -76,6 +76,9 @@ const HOUSE_ICON = { truck: 0.55, other: 0.8, over: 0.75 };
 /** A helmet barrier: its height and colours (an attack barrier's: `attack`), and how wide the floating viking hat is. */
 const HELMET = { height: 1.5, olive: 0x6f8236, sand: 0xd8c690, curtain: 0x9ccf5a, dark: 0x5d6e2c, text: '#d8ff9a' };
 const ATTACK = { olive: 0xb8332e, sand: 0xf2c14e, curtain: 0xff8a4c, dark: 0x7a1f1c, text: '#ffd27a', hatWidth: 1.3 };
+/** A boss level's main building wears the Giant King's viking hat: its width (a share of the building's, at most `most`),
+ *  sitting this far into the roof, and how far its number moves up to stay clear of it. */
+const KING_HAT = { share: 0.7, most: 2.4, sink: 0.12, labelLift: 1.1 };
 /** The PUSH block: its height and colours (a dark slab, a red plate). */
 const PUSH_BLOCK = { height: 1.2, body: 0x3a4466, plate: 0xff4757 };
 /**
@@ -86,7 +89,7 @@ const PUSH_BLOCK = { height: 1.2, body: 0x3a4466, plate: 0xff4757 };
 const PROPS = {
     /** Each house's building (the `model` style); the car has none (a plain house). */
     houses: { giant: 'home-blue', truck: 'barracks-blue', saucer: 'home-yellow' } as Record<string, string>,
-    houseTitles: { giant: 'GIANT', truck: 'TRUCK', saucer: 'UFO', car: 'CAR' } as Record<string, string>,
+    houseTitles: { giant: 'GIANT', truck: 'TRUCK', saucer: 'UFO', car: 'RAMMER' } as Record<string, string>,
     /** The plain houses (all but the giant's, which is a building): their wall and roof colours' keys in UNIT_COLORS. */
     houseColours: { giant: ['giantWall', 'giantRoof'], truck: ['truckWall', 'truckRoof'], saucer: ['ufoWall', 'ufoRoof'], car: ['carWall', 'carRoof'] } as Record<string, [UnitColor, UnitColor]>,
     base: 'barracks-red',
@@ -406,7 +409,9 @@ export class Arena {
         (config.pipes ?? []).forEach((pipe) => this.buildPipe(pipe));
         (config.grinders ?? []).forEach((grinder) => this.grinders.push(this.buildGrinder(grinder)));
         void this.loadUnits();
-        targets.forEach((target) => this.targets.push(this.buildTarget(target)));
+        // A boss level (a Giant King): the main building (the one with the most HP) wears his hat.
+        const crowned = config.kingAt ? targets.reduce((best, target, i) => (target.hp > targets[best].hp ? i : best), 0) : -1;
+        targets.forEach((target, i) => this.targets.push(this.buildTarget(target, i === crowned)));
         this.buildPuffs();
         this.group.add(this.bits.mesh);
         bendObject(this.group);
@@ -1196,6 +1201,27 @@ export class Arena {
         return helmet;
     }
 
+    /** The Giant King's viking hat (props/viking.glb), `width` across, its bottom at `holder`'s height. */
+    private async dressKingHat(holder: THREE.Group, width: number): Promise<void> {
+        let source: THREE.Object3D;
+        try {
+            source = await loadKitModel(`${this.modelRoot}props/viking.glb`);
+        } catch (error) {
+            console.warn('[mob] model viking', error);
+            return;
+        }
+        if (this.disposed) return;
+        source.updateWorldMatrix(true, true);
+        const box = new THREE.Box3().setFromObject(source);
+        const size = box.getSize(new THREE.Vector3());
+        const scale = width / Math.max(0.01, size.x);
+        const model = source.clone();
+        model.scale.setScalar(scale);
+        model.position.set(-((box.min.x + box.max.x) / 2) * scale, -box.min.y * scale, -((box.min.z + box.max.z) / 2) * scale);
+        holder.add(model);
+        bendObject(model);
+    }
+
     /** The viking hat model in place of the floating hat's plain shapes, once it loads. */
     private async dressViking(icon: THREE.Group): Promise<void> {
         let source: THREE.Object3D;
@@ -1260,8 +1286,9 @@ export class Arena {
         this.bits.burst(x, 1, z, [PUSH_BLOCK.body, PUSH_BLOCK.plate, 0xffffff], 40, 6, 7, 1, 0.25);
     }
 
-    /** A red fort for a target: the usual base's look, scaled to its width (a narrow one is a tower). */
-    private buildTarget(target: Target): TargetView {
+    /** A red fort for a target: the usual base's look, scaled to its width (a narrow one is a tower). `crowned`: the Giant
+     *  King's viking hat on its roof (in place of the flag). */
+    private buildTarget(target: Target, crowned = false): TargetView {
         const group = new THREE.Group();
         const red = lambert(COLORS.red);
         const width = target.halfWidth * 2;
@@ -1286,6 +1313,14 @@ export class Arena {
         const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.5), new THREE.MeshLambertMaterial({ color: COLORS.red, side: THREE.DoubleSide }));
         flag.position.set(0.42, height + 1.45, 0);
         group.add(flag);
+        const hat = new THREE.Group();
+        if (crowned) {
+            flagPole.visible = false;
+            flag.visible = false;
+            hat.position.set(0, height + 0.35 - KING_HAT.sink, 0);
+            group.add(hat);
+            void this.dressKingHat(hat, Math.min(KING_HAT.most, width * KING_HAT.share));
+        }
         const label = new Label(Math.max(1.8, width * 0.6) * 2, 0.8 * 2);
         label.set(String(target.hp));
         // Above the door (in front of the wall, clear of the door box), not on it.
@@ -1298,8 +1333,9 @@ export class Arena {
         // over the roof, facing the camera.
         const tower = width < PROPS.towerBelow;
         if (!this.plainForts) void this.dress(group, tower ? PROPS.tower : PROPS.base, tower ? width * 0.8 : width * 1.05, BASE.depth * 1.6, [label.mesh], (height, model) => {
-            label.mesh.position.set(0, height + 0.55, 0.4);
+            label.mesh.position.set(0, height + 0.55 + (crowned ? KING_HAT.labelLift : 0), 0.4);
             label.mesh.rotation.x = -0.5;
+            hat.position.y = height - KING_HAT.sink;
             const flashes: THREE.MeshStandardMaterial[] = [];
             model.traverse((child) => {
                 if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) flashes.push(child.material);

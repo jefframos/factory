@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "scripts": {
         "dev": "vite",
+        "record": "node recorder/record.mjs",
         "start": "vite",
         "editor": "node tools/editor/run-editor.mjs",
         "level": "node tools/editor/run-editor.mjs",

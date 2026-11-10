@@ -32,7 +32,7 @@
     "wall": "#ffe3d6",
     "roof": "#ff6a3d",
     "need": 30,
-    "hp": 0,
+    "hp": 30,
     "damage": 40,
     "style": "pad",
     "pad": "#fb8804"

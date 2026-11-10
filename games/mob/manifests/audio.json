@@ -13,6 +13,38 @@
         },
         {
           "alias": [
+            "big-hit-1.ogg"
+          ],
+          "src": [
+            "big-hit-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "big-hit-2.ogg"
+          ],
+          "src": [
+            "big-hit-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "block-1.ogg"
+          ],
+          "src": [
+            "block-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "block-2.ogg"
+          ],
+          "src": [
+            "block-2.mp3"
+          ]
+        },
+        {
+          "alias": [
             "bubbles.wav"
           ],
           "src": [
@@ -21,10 +53,42 @@
         },
         {
           "alias": [
+            "card-won.ogg"
+          ],
+          "src": [
+            "card-won.mp3"
+          ]
+        },
+        {
+          "alias": [
             "coins-1.ogg"
           ],
           "src": [
             "coins-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "confirm.ogg"
+          ],
+          "src": [
+            "confirm.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "crumble.ogg"
+          ],
+          "src": [
+            "crumble.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "derp-nugget.mp3"
+          ],
+          "src": [
+            "derp-nugget.mp3"
           ]
         },
         {
@@ -93,10 +157,50 @@
         },
         {
           "alias": [
+            "energy-empty.ogg"
+          ],
+          "src": [
+            "energy-empty.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "energy-full.ogg"
+          ],
+          "src": [
+            "energy-full.mp3"
+          ]
+        },
+        {
+          "alias": [
             "explosion.mp3"
           ],
           "src": [
             "explosion.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-1.ogg"
+          ],
+          "src": [
+            "hit-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-2.ogg"
+          ],
+          "src": [
+            "hit-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-3.ogg"
+          ],
+          "src": [
+            "hit-3.mp3"
           ]
         },
         {
@@ -121,6 +225,14 @@
           ],
           "src": [
             "reveal.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "spawn.ogg"
+          ],
+          "src": [
+            "spawn.mp3"
           ]
         },
         {

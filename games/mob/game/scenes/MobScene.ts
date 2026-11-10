@@ -103,6 +103,8 @@ export default class MobScene extends ThreeScene {
     private state: 'waiting' | 'playing' | 'over' = 'waiting';
     /** The player's unit cards this battle, and how charged each is (0..1: full, its unit comes out of the cannon). */
     private cards: { kind: CardKind; charge: number }[] = [];
+    /** The first-card tutorial's on (the battle paused till the player taps that card): its card. */
+    private cardTutorial: CardKind | null = null;
     private time = 0;
     private dragging = false;
     private gameplayOn = false;
@@ -165,6 +167,7 @@ export default class MobScene extends ThreeScene {
 
     /** A fresh battle: the save's next one, the field rebuilt for its gates. */
     private startBattle(): void {
+        MobAudio.music('battle');
         const index = MobSave.selected;
         // A level lost before comes back easier (MobSave.ease); a pinned one (the URL, the editor) is played as it is.
         const config = this.pinned.config ?? easedConfig(battleConfig(index), MobSave.ease);
@@ -205,7 +208,7 @@ export default class MobScene extends ThreeScene {
             },
             pushCleared: (b) => {
                 this.arena.clearPush(b);
-                MobAudio.play('bigHit', 1.2);
+                MobAudio.play('crumble', 0.9);
                 const block = this.battle.pushBlocks[b];
                 this.popAt('OPEN!', block.x, 1.8, block.nowZ, 0x9fd8ff, 44);
             },
@@ -213,7 +216,7 @@ export default class MobScene extends ThreeScene {
                 const gate = this.battle.blocks[b].gate;
                 if (gate !== undefined) this.arena.hitLock(gate, x, z);
                 else this.arena.hitBlock(b, x, z);
-                MobAudio.play('baseHit', 1.3 + Math.random() * 0.2);
+                MobAudio.play('blockHit', 0.9 + Math.random() * 0.25);
             },
             ground: (x, z, team, big) => {
                 this.arena.ground(x, z, team === BLUE ? COLORS.blue : COLORS.red, big);
@@ -230,7 +233,7 @@ export default class MobScene extends ThreeScene {
             },
             blockBroken: (b) => {
                 this.arena.breakBlock(b);
-                MobAudio.play('bigHit', 1.1);
+                MobAudio.play('crumble', 1);
                 const block = this.battle.blocks[b];
                 this.popAt('BROKEN!', block.centreX, 1.8, block.centreZ, 0xffd08a, 40);
             },
@@ -239,8 +242,14 @@ export default class MobScene extends ThreeScene {
                 this.arena.giant(x, z, kind < 0 ? 0xffd23f : team === BLUE ? COLORS.blue : COLORS.red);
                 MobAudio.play('giant', team === BLUE ? 1 : 0.8);
                 this.kick(SHAKE.giant);
-                const word = kind < 0 ? 'UFO!' : kind === TRUCK ? 'TRUCK!' : kind === CAR ? 'CAR!' : team === BLUE ? 'GIANT!' : 'RED GIANT!';
+                const word = kind < 0 ? 'UFO!' : kind === TRUCK ? 'TRUCK!' : kind === CAR ? 'RAMMER!' : team === BLUE ? 'GIANT!' : 'RED GIANT!';
                 this.popAt(word, x, 2.5, z, kind < 0 ? 0xffd23f : team === BLUE ? 0x9fd8ff : 0xff6b7a, 46);
+            },
+            king: (x, z) => {
+                this.arena.giant(x, z, COLORS.red);
+                MobAudio.play('giant', 0.65);
+                this.kick(SHAKE.giant * 1.6);
+                this.popAt('GIANT KING!', x, 3.2, z, 0xffd23f, 58);
             },
             helmet: (x, z, kind) => this.arena.helmetOn(x, z, kind),
             suck: (x, z) => {
@@ -275,6 +284,8 @@ export default class MobScene extends ThreeScene {
         if (SHOW_FRAMING) this.placeFramingSpears();
         this.time = 0;
         this.state = 'waiting';
+        this.cardTutorial = null;
+        this.hud.hideCardTutorial();
         this.hud.hideEnd();
         this.hud.setTitle(index + 1, config.name);
         this.hud.reset();
@@ -409,7 +420,8 @@ export default class MobScene extends ThreeScene {
         MobAudio.unlock();
         // A press on the mute button isn't a press on the field (no start, no firing).
         if (this.hud.onButton(event.clientX, event.clientY)) return;
-        if (this.state === 'over') return;
+        // The first-card tutorial: only the card goes (the field's paused).
+        if (this.state === 'over' || this.cardTutorial) return;
         this.dragging = true;
         this.battle.firing = true;
         this.aimAt(event.clientX);
@@ -417,9 +429,10 @@ export default class MobScene extends ThreeScene {
     };
 
     private readonly onPointerMove = (event: PointerEvent): void => {
-        // A mouse aims just by moving over the field; a finger by dragging.
-        if (this.state === 'over' || (!this.dragging && event.pointerType !== 'mouse')) return;
-        if (this.state === 'playing' || this.dragging) this.aimAt(event.clientX);
+        // Aiming is dragging, for a mouse as for a finger: aiming on a mouse just moving over the field, the cannon
+        // followed it down to the cards, and a card's unit always came out under the card, not where it was aimed.
+        if (this.state === 'over' || !this.dragging) return;
+        this.aimAt(event.clientX);
     };
 
     private readonly onPointerUp = (): void => {
@@ -430,7 +443,8 @@ export default class MobScene extends ThreeScene {
     // ------------------------------------------------------------------ frame
 
     public override fixedUpdate(delta: number): void {
-        if (this.state === 'waiting') return;
+        // Paused for the first-card tutorial.
+        if (this.state === 'waiting' || this.cardTutorial) return;
         this.battle.step(delta);
     }
 
@@ -485,8 +499,15 @@ export default class MobScene extends ThreeScene {
     private chargeCards(dt: number): void {
         for (const card of this.cards) {
             const seconds = cardStat(card.kind, 'seconds', MobSave.cardLevel(card.kind)) ?? 20;
-            if (this.state === 'playing') card.charge = Math.min(1, card.charge + dt / Math.max(0.1, seconds));
+            if (this.state === 'playing' && !this.cardTutorial) card.charge = Math.min(1, card.charge + dt / Math.max(0.1, seconds));
             this.hud.setCardCharge(card.kind, card.charge);
+            // The first card charged, the first time: the battle pauses for the player to use it.
+            if (card.charge >= 1 && this.state === 'playing' && !this.cardTutorial && !MobSave.cardTutorial && !this.pinned.config) {
+                this.cardTutorial = card.kind;
+                this.dragging = false;
+                this.battle.firing = false;
+                this.hud.showCardTutorial(card.kind);
+            }
         }
     }
 
@@ -494,6 +515,13 @@ export default class MobScene extends ThreeScene {
     private playCard(kind: CardKind): void {
         const card = this.cards.find((entry) => entry.kind === kind);
         if (!card || card.charge < 1 || this.state !== 'playing') return;
+        // The first-card tutorial: only its card, and that ends it (the battle goes on).
+        if (this.cardTutorial) {
+            if (kind !== this.cardTutorial) return;
+            this.cardTutorial = null;
+            MobSave.cardTutorialDone();
+            this.hud.hideCardTutorial();
+        }
         card.charge = 0;
         // Its level's own hits and damage (not the houses' units').
         const level = MobSave.cardLevel(kind);
@@ -673,7 +701,7 @@ export default class MobScene extends ThreeScene {
         ]);
         panel.buttons([
             { label: 'UFO', action: () => this.battle.debugSpawn('saucer') },
-            { label: 'CAR', action: () => this.battle.debugSpawn('car') },
+            { label: 'RAMMER', action: () => this.battle.debugSpawn('car') },
         ]);
         const levels = { level: MobSave.selected % PLAY.length };
         const choices = Object.fromEntries(PLAY.map((entry, i) => [`${i + 1}. ${entry.zone.name} · ${entry.config.name} (${entry.config.kind})`, i]));

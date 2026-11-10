@@ -16,7 +16,10 @@ import { framePlane, iconSprite, label } from './UiParts';
 /** The card's size, the rays', the confetti's colours. */
 const CARD = { width: 250, height: 320 };
 const RAYS = { size: 900, spin: 0.35 };
-const CONFETTI = { count: 46, colours: [0xffd23f, 0xffffff, 0x4cdc6a, 0xff6b9e, 0x7ad7ff] };
+const CONFETTI = { count: 70, colours: [0xffd23f, 0xffffff, 0x4cdc6a, 0xff6b9e, 0x7ad7ff, 0xb46bff] };
+/** The confetti raining down the whole screen as the card's shown: how many, over how long they start, how long each
+ *  takes to fall, how far they sway. */
+const RAIN = { count: 110, spread: 1.6, fall: [2.4, 3.6], sway: 60 };
 
 export class CardReveal extends PIXI.Container {
     private readonly dim = new PIXI.Graphics();
@@ -137,8 +140,10 @@ export class CardReveal extends PIXI.Container {
                 back.visible = false;
                 face.visible = true;
                 flash.alpha = 1;
-                MobAudio.play('win');
+                MobAudio.play('cardWon');
+                MobAudio.play('applause');
                 this.burst(confetti);
+                this.rain(confetti);
             })
             .to(card.scale, { x: 1.12, y: 1.12, duration: 0.3, ease: 'back.out(3)' })
             .to(flash, { alpha: 0, duration: 0.45 }, '<')
@@ -165,9 +170,31 @@ export class CardReveal extends PIXI.Container {
         }
     }
 
+    /** Confetti raining down over the whole screen, fluttering (each piece flipping as it sways). */
+    private rain(into: PIXI.Container): void {
+        const screen = Game.gameScreenData;
+        if (!screen) return;
+        // In the stage's space (it's centred on the screen).
+        const left = screen.topLeft.x - this.stage.x;
+        const top = screen.topLeft.y - this.stage.y;
+        for (let n = 0; n < RAIN.count; n++) {
+            const colour = CONFETTI.colours[n % CONFETTI.colours.length];
+            const bit = new PIXI.Graphics().beginFill(colour).drawRect(-7, -4, 14, 8).endFill();
+            bit.position.set(left + Math.random() * screen.width, top - 20 - Math.random() * 80);
+            bit.rotation = Math.random() * Math.PI;
+            into.addChild(bit);
+            const delay = Math.random() * RAIN.spread;
+            const fall = RAIN.fall[0] + Math.random() * (RAIN.fall[1] - RAIN.fall[0]);
+            this.keep(gsap.to(bit, { y: top + screen.height + 40, rotation: bit.rotation + (Math.random() - 0.5) * 8, duration: fall, delay, ease: 'none' }));
+            this.keep(gsap.to(bit, { x: bit.x + (Math.random() - 0.5) * 2 * RAIN.sway, duration: 0.6 + Math.random() * 0.5, delay, yoyo: true, repeat: -1, ease: 'sine.inOut' }));
+            this.keep(gsap.to(bit.scale, { x: -1, duration: 0.25 + Math.random() * 0.3, delay, yoyo: true, repeat: -1, ease: 'sine.inOut' }));
+        }
+    }
+
     private close(): void {
         if (!this.canClose) return;
         this.canClose = false;
+        MobAudio.play('confirm');
         this.next();
     }
 

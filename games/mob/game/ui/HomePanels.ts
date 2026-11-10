@@ -19,6 +19,7 @@ import { MobSave } from '../data/MobSave';
 import { AreaState, areaStates } from '../data/MobLevels';
 import { UpgradeCard, UPGRADE_CARD } from './UpgradeCard';
 import { CardUpgrades } from './CardUpgrades';
+import { SegmentBar } from './SegmentBar';
 import { CardKind } from '../data/Settings';
 import { framePlane, iconSprite, label, plainLabel, tappable } from './UiParts';
 
@@ -38,7 +39,9 @@ const ROW_LOOK = {
     open: { outer: 0x3f8cff, inner: 0x93c2ff, name: 0x10123a },
     locked: { outer: 0x1c2c5c, inner: 0x2c4380, name: 0xc3cdea },
 };
-const SEGMENT = { done: 0x25c465, off: 0x1c1d33, edge: 0x10123a, height: 18, gap: 4 };
+/** The soundtrack's credit, at the bottom of the upgrades (see CREDITS.md). */
+const CREDIT = { line: 'Music: "Derp Nugget" Kevin MacLeod (incompetech.com), licensed under CC BY 4.0', text: 16, gap: 20 };
+const SEGMENT = { height: 18, gap: 4, pad: 4, boss: 32 };
 /** Scrolling: under this much of a drag a tap's a tap; the wheel's pace; the room left under the last row. */
 const DRAG = { tap: 10, wheel: 0.8, bottom: 30 };
 /** The scroll bar: its width, how far in from the right edge, its ends' room, its thumb's least height, colours. */
@@ -96,6 +99,11 @@ export class HomePanel extends PIXI.Container {
             this.cardUpgrades = new CardUpgrades(onBuyCard);
             this.cardUpgrades.y = this.hint.y + UPGRADES_LAYOUT.cardsGap;
             this.content.addChild(cardsTitle, this.cardUpgrades);
+            // The music's credit (CC BY: it must be shown in the game), under the cards.
+            const credit = label(CREDIT.text, 0x8f9bd6);
+            credit.text = CREDIT.line;
+            credit.y = this.hint.y + UPGRADES_LAYOUT.cardsGap + this.cardUpgrades.tilesHeight + CREDIT.gap;
+            this.content.addChild(credit);
         }
         this.refresh();
     }
@@ -147,15 +155,9 @@ export class HomePanel extends PIXI.Container {
         // The levels.
         const left = -ROW.width / 2 + 36;
         const span = ROW.width - 36 - 130;
-        const width = (span - SEGMENT.gap * (area.total - 1)) / Math.max(1, area.total);
-        const bar = new PIXI.Graphics();
-        bar.beginFill(SEGMENT.edge).drawRoundedRect(left - 4, 22 - SEGMENT.height / 2 - 4, span + 8, SEGMENT.height + 8, 9).endFill();
-        for (let k = 0; k < area.total; k++) {
-            const x = left + k * (width + SEGMENT.gap);
-            const done = k < area.done;
-            const here = area.state === 'current' && k === area.done;
-            bar.beginFill(done ? SEGMENT.done : here ? 0xffd23f : SEGMENT.off).drawRoundedRect(x, 22 - SEGMENT.height / 2, width, SEGMENT.height, 4).endFill();
-        }
+        const bar = new SegmentBar({ width: span, height: SEGMENT.height, gap: SEGMENT.gap, pad: SEGMENT.pad, boss: SEGMENT.boss });
+        bar.position.set(left + span / 2, 22);
+        bar.set(area.total, area.done, area.state === 'current' ? area.done : -1);
         row.addChild(bar);
         // Its badge on the right: a check, the map pin, or a padlock.
         const icon = iconSprite(area.state === 'done' ? 'Icon_Check03_l' : area.state === 'locked' ? 'Icon_Lock03' : 'Icon_MapPoint', 84);
@@ -305,7 +307,7 @@ export class HomePanel extends PIXI.Container {
         if (this.kind === 'upgrades') {
             // The cannon's three, then the cards.
             top = UPGRADE_CARD.height / 2 + 24;
-            tall = top + UPGRADE_CARD.height / 2 + UPGRADES_LAYOUT.hintGap + UPGRADES_LAYOUT.cardsGap + (this.cardUpgrades?.tilesHeight ?? 0);
+            tall = top + UPGRADE_CARD.height / 2 + UPGRADES_LAYOUT.hintGap + UPGRADES_LAYOUT.cardsGap + (this.cardUpgrades?.tilesHeight ?? 0) + CREDIT.gap + CREDIT.text;
             scale = Math.min(1, (width - 60) / (UPGRADE_CARD.width * 3 + UPGRADES_LAYOUT.gap * 2));
         } else {
             top = 0;

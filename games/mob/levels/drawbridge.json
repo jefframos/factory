@@ -1,0 +1,75 @@
+{
+  "name": "Drawbridge",
+  "kind": "Pushers",
+  "width": 11,
+  "length": 28,
+  "gates": [
+    {
+      "x": -2.8,
+      "z": -5.5,
+      "width": 3.4,
+      "value": 2
+    },
+    {
+      "x": 2.8,
+      "z": -5.5,
+      "width": 3.4,
+      "value": 2
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "water",
+      "x": -3.75,
+      "z": -12,
+      "width": 3.5,
+      "depth": 1.8
+    },
+    {
+      "kind": "water",
+      "x": 3.75,
+      "z": -12,
+      "width": 3.5,
+      "depth": 1.8
+    }
+  ],
+  "pushers": [
+    {
+      "x": 0,
+      "z": -9.5,
+      "width": 0.9,
+      "depth": 0.5,
+      "range": 2.2,
+      "seconds": 4,
+      "phase": 0
+    }
+  ],
+  "pads": [
+    {
+      "kind": "giant",
+      "x": -3.2,
+      "z": -8.5,
+      "width": 2.6,
+      "depth": 1.8
+    }
+  ],
+  "grinders": [
+    {
+      "x": 0,
+      "z": -18.5,
+      "length": 2.4,
+      "thickness": 0.9,
+      "axis": "x",
+      "move": {
+        "range": 3.6,
+        "seconds": 4.6
+      }
+    }
+  ],
+  "redRate": 11,
+  "redRateEnd": 19,
+  "redRamp": 60,
+  "redGiantEvery": 6,
+  "baseHp": 280,
+  "reward": 270
+}
