@@ -327,3 +327,7 @@ if (fs.existsSync(HEXA)) {
 fs.mkdirSync(BEACH_OUT, { recursive: true });
 for (const name of BEACH_MODELS) await buildNature(name);
 if (!process.argv.includes('--no-desert')) await buildDesert();
+
+// What this script built, for vite.config.ts's ensureGameProps: it reruns this when the list or any folder on it is gone.
+const BUILT = ['props', 'beach', 'hexa', ...(process.argv.includes('--no-desert') ? [] : ['desert'])];
+fs.writeFileSync(path.join(REPO, 'public/mob/models/.props-built.json'), JSON.stringify({ folders: BUILT }, null, 2));

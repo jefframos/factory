@@ -18,6 +18,7 @@ import platformConfig from './platforms.config.json';
 import MobScene from './game/scenes/MobScene';
 import { MobAudio } from './game/audio/MobAudio';
 import HomeScene from './game/scenes/HomeScene';
+import { ARENAS_BY_ID } from './game/data/Arenas';
 import { RadialTransition } from './game/ui/RadialTransition';
 import { MobSave } from './game/data/MobSave';
 import { areaProgress } from './game/data/MobLevels';
@@ -109,23 +110,27 @@ export default class MobGame extends Game {
     private showHome(): void {
         this.atHome = true;
         const key = `mob-${this.scenes++}`;
-        this.sceneManager.register<HomeScene>(key, HomeScene, this, () => this.play());
+        this.sceneManager.register<HomeScene>(key, HomeScene, this, (arena?: string) => this.play(arena));
         this.sceneManager.changeScene(key);
         this.sceneManager.resize();
     }
 
     /** The battle (the save's next one), its end card's HOME back to the main screen. */
-    private showBattle(): MobScene {
+    private showBattle(arena?: string): MobScene {
         this.atHome = false;
         const key = `mob-${this.scenes++}`;
-        const scene = this.sceneManager.register<MobScene>(key, MobScene, this, () => this.travel('HOME', '', () => this.showHome()));
+        const scene = this.sceneManager.register<MobScene>(key, MobScene, this, () => this.travel('HOME', '', () => this.showHome()), arena);
         this.sceneManager.changeScene(key);
         this.sceneManager.resize();
         return scene;
     }
 
-    /** PLAY: the wipe shows the level and its area, the battle's built under it. */
-    private play(): void {
+    /** PLAY: the wipe shows the level and its area, the battle's built under it (an arena's id: a match there). */
+    private play(arena?: string): void {
+        if (arena) {
+            this.travel('ARENA', (ARENAS_BY_ID[arena]?.name ?? '').toUpperCase(), () => this.showBattle(arena));
+            return;
+        }
         const area = areaProgress(MobSave.selected);
         this.travel(`LEVEL ${MobSave.selected + 1}`, `AREA ${area.number} · ${area.zone.name.toUpperCase()}`, () => this.showBattle());
     }

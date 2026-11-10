@@ -1,0 +1,2449 @@
+{
+  "at": "2026-11-10T17:57:04.895Z",
+  "full": true,
+  "careers": 3,
+  "profiles": [
+    {
+      "id": "pro",
+      "name": "Pro, upgrades everything",
+      "weight": 0.1
+    },
+    {
+      "id": "pro-raw",
+      "name": "Pro, never upgrades",
+      "weight": 0.1
+    },
+    {
+      "id": "average",
+      "name": "Average, upgrades everything",
+      "weight": 0.3
+    },
+    {
+      "id": "average-raw",
+      "name": "Average, never upgrades",
+      "weight": 0.2
+    },
+    {
+      "id": "casual",
+      "name": "Casual, spends half",
+      "weight": 0.2
+    },
+    {
+      "id": "newbie",
+      "name": "Newbie, never upgrades",
+      "weight": 0.1
+    }
+  ],
+  "levels": [
+    {
+      "index": 0,
+      "id": "first-steps",
+      "name": "First Steps",
+      "kind": "Classic",
+      "zone": "beach",
+      "zoneName": "Beach",
+      "reward": 100,
+      "redRate": 2,
+      "redRateEnd": 3.6,
+      "baseHp": 120,
+      "score": 0,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:42:42.234Z",
+      "profiles": {
+        "pro": {
+          "score": 0,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 0,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 0,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 0,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 0,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "newbie": {
+          "score": 0,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        }
+      }
+    },
+    {
+      "index": 1,
+      "id": "giant-pad",
+      "name": "Giant Pad",
+      "kind": "Giant pad",
+      "zone": "beach",
+      "zoneName": "Beach",
+      "reward": 130,
+      "redRate": 2.6,
+      "redRateEnd": 4.6,
+      "baseHp": 200,
+      "score": 12,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:42:49.090Z",
+      "profiles": {
+        "pro": {
+          "score": 8,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 10,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 10,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 15,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 13,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "newbie": {
+          "score": 21,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        }
+      }
+    },
+    {
+      "index": 2,
+      "id": "three-lanes",
+      "name": "Three Lanes",
+      "kind": "Lanes",
+      "zone": "beach",
+      "zoneName": "Beach",
+      "reward": 110,
+      "redRate": 1.6,
+      "redRateEnd": 3.6,
+      "baseHp": 200,
+      "score": 11,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:43:00.789Z",
+      "profiles": {
+        "pro": {
+          "score": 4,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 9,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 6,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 11,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 9,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "newbie": {
+          "score": 34,
+          "firstWin": 0.3333333333333333,
+          "never": 0,
+          "tries": 1.7
+        }
+      }
+    },
+    {
+      "index": 3,
+      "id": "the-spinner",
+      "name": "The Spinner",
+      "kind": "Spinner",
+      "zone": "beach",
+      "zoneName": "Beach",
+      "reward": 120,
+      "redRate": 2.8,
+      "redRateEnd": 4.4,
+      "baseHp": 150,
+      "score": 11,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:43:13.264Z",
+      "profiles": {
+        "pro": {
+          "score": 9,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 12,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 9,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 11,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 9,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "newbie": {
+          "score": 23,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        }
+      }
+    },
+    {
+      "index": 4,
+      "id": "wedges",
+      "name": "Wedges",
+      "kind": "Polygons",
+      "zone": "beach",
+      "zoneName": "Beach",
+      "reward": 140,
+      "redRate": 8,
+      "redRateEnd": 8.84,
+      "baseHp": 300,
+      "score": 15,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:45:33.734Z",
+      "profiles": {
+        "pro": {
+          "score": 13,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 15,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 13,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 17,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 13,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "newbie": {
+          "score": 18,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        }
+      }
+    },
+    {
+      "index": 5,
+      "id": "diamonds",
+      "name": "Diamonds",
+      "kind": "Polygons",
+      "zone": "beach",
+      "zoneName": "Beach",
+      "reward": 145,
+      "redRate": 2.9,
+      "redRateEnd": 5.1,
+      "baseHp": 300,
+      "score": 16,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:44:26.187Z",
+      "profiles": {
+        "pro": {
+          "score": 3,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 16,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 8,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 17,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 19,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "newbie": {
+          "score": 43,
+          "firstWin": 0.3333333333333333,
+          "never": 0,
+          "tries": 2.3
+        }
+      }
+    },
+    {
+      "index": 6,
+      "id": "breakout",
+      "name": "Breakout",
+      "kind": "Breakable",
+      "zone": "beach",
+      "zoneName": "Beach",
+      "reward": 150,
+      "redRate": 2.9,
+      "redRateEnd": 5.1,
+      "baseHp": 350,
+      "score": 21,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:45:45.584Z",
+      "profiles": {
+        "pro": {
+          "score": 12,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 19,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 15,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 20,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 28,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "newbie": {
+          "score": 32,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        }
+      }
+    },
+    {
+      "index": 7,
+      "id": "pushers",
+      "name": "Pushers",
+      "kind": "Pushers",
+      "zone": "beach",
+      "zoneName": "Beach",
+      "reward": 140,
+      "redRate": 2.8,
+      "redRateEnd": 5,
+      "baseHp": 300,
+      "score": 22,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:45:44.424Z",
+      "profiles": {
+        "pro": {
+          "score": 9,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 20,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 12,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 23,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 23,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "newbie": {
+          "score": 58,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 4
+        }
+      }
+    },
+    {
+      "index": 8,
+      "id": "twin-towers",
+      "name": "Twin Towers",
+      "kind": "Multiple targets",
+      "zone": "beach",
+      "zoneName": "Beach",
+      "reward": 155,
+      "redRate": 3.2,
+      "redRateEnd": 4.3,
+      "baseHp": 560,
+      "score": 16,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:45:58.460Z",
+      "profiles": {
+        "pro": {
+          "score": 9,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 18,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 11,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 22,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 15,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "newbie": {
+          "score": 23,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        }
+      }
+    },
+    {
+      "index": 9,
+      "id": "islands",
+      "name": "Islands",
+      "kind": "Water holes",
+      "zone": "beach",
+      "zoneName": "Beach",
+      "reward": 150,
+      "redRate": 7,
+      "redRateEnd": 7.9,
+      "baseHp": 330,
+      "score": 29,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:47:13.731Z",
+      "profiles": {
+        "pro": {
+          "score": 17,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 37,
+          "firstWin": 0.3333333333333333,
+          "never": 0,
+          "tries": 1.7
+        },
+        "average": {
+          "score": 19,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 31,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "casual": {
+          "score": 24,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "newbie": {
+          "score": 73,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 6
+        }
+      }
+    },
+    {
+      "index": 10,
+      "id": "push-it",
+      "name": "Push It",
+      "kind": "Push blocks",
+      "zone": "castle",
+      "zoneName": "Castle",
+      "reward": 170,
+      "redRate": 4,
+      "redRateEnd": 6,
+      "baseHp": 330,
+      "score": 20,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:46:26.849Z",
+      "profiles": {
+        "pro": {
+          "score": 13,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 31,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "average": {
+          "score": 11,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 23,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 27,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        }
+      }
+    },
+    {
+      "index": 11,
+      "id": "push-lanes",
+      "name": "Push Lanes",
+      "kind": "Push blocks",
+      "zone": "castle",
+      "zoneName": "Castle",
+      "reward": 180,
+      "redRate": 3,
+      "redRateEnd": 5.2,
+      "baseHp": 480,
+      "score": 10,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:47:14.705Z",
+      "profiles": {
+        "pro": {
+          "score": 7,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 22,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 4,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 18,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 8,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        }
+      }
+    },
+    {
+      "index": 12,
+      "id": "giant-push",
+      "name": "Giant Push",
+      "kind": "House + push",
+      "zone": "castle",
+      "zoneName": "Castle",
+      "reward": 190,
+      "redRate": 1.9,
+      "redRateEnd": 3.4,
+      "baseHp": 500,
+      "score": 21,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:47:14.312Z",
+      "profiles": {
+        "pro": {
+          "score": 13,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 26,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 14,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 25,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 30,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        }
+      }
+    },
+    {
+      "index": 13,
+      "id": "shield-wall",
+      "name": "Shield Wall",
+      "kind": "Helmets",
+      "zone": "castle",
+      "zoneName": "Castle",
+      "reward": 200,
+      "redRate": 3.1,
+      "redRateEnd": 5.3,
+      "baseHp": 400,
+      "score": 19,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:47:57.208Z",
+      "profiles": {
+        "pro": {
+          "score": 10,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 22,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 13,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 24,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 25,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        }
+      }
+    },
+    {
+      "index": 14,
+      "id": "fortress",
+      "name": "Fortress",
+      "kind": "Red giants",
+      "zone": "castle",
+      "zoneName": "Castle",
+      "reward": 160,
+      "redRate": 2.6,
+      "redRateEnd": 4.5,
+      "baseHp": 400,
+      "score": 22,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:48:03.049Z",
+      "profiles": {
+        "pro": {
+          "score": 11,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 21,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 16,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 31,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 29,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        }
+      }
+    },
+    {
+      "index": 15,
+      "id": "three-forts",
+      "name": "Three Forts",
+      "kind": "Multiple targets",
+      "zone": "castle",
+      "zoneName": "Castle",
+      "reward": 160,
+      "redRate": 2.5,
+      "redRateEnd": 4.4,
+      "baseHp": 440,
+      "score": 24,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:47:52.197Z",
+      "profiles": {
+        "pro": {
+          "score": 14,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 24,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 13,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 34,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "casual": {
+          "score": 34,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        }
+      }
+    },
+    {
+      "index": 16,
+      "id": "gauntlet",
+      "name": "Gauntlet",
+      "kind": "Mixed",
+      "zone": "castle",
+      "zoneName": "Castle",
+      "reward": 180,
+      "redRate": 1.9,
+      "redRateEnd": 3.4,
+      "baseHp": 400,
+      "score": 32,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:48:19.634Z",
+      "profiles": {
+        "pro": {
+          "score": 14,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 41,
+          "firstWin": 0.3333333333333333,
+          "never": 0,
+          "tries": 2
+        },
+        "average": {
+          "score": 22,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 45,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 2.3
+        },
+        "casual": {
+          "score": 39,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 2.3
+        }
+      }
+    },
+    {
+      "index": 17,
+      "id": "large-fortress",
+      "name": "Large Fortress",
+      "kind": "Red giants",
+      "zone": "castle",
+      "zoneName": "Castle",
+      "reward": 160,
+      "redRate": 1.5,
+      "redRateEnd": 4.5,
+      "baseHp": 400,
+      "score": 19,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:48:43.405Z",
+      "profiles": {
+        "pro": {
+          "score": 12,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 31,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "average": {
+          "score": 14,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 23,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 19,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        }
+      }
+    },
+    {
+      "index": 18,
+      "id": "shield-wall-2",
+      "name": "Shield Wall",
+      "kind": "Helmets",
+      "zone": "castle",
+      "zoneName": "Castle",
+      "reward": 200,
+      "redRate": 3.1,
+      "redRateEnd": 5.3,
+      "baseHp": 400,
+      "score": 31,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:49:03.536Z",
+      "profiles": {
+        "pro": {
+          "score": 17,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 30,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 30,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "average-raw": {
+          "score": 36,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "casual": {
+          "score": 35,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        }
+      }
+    },
+    {
+      "index": 19,
+      "id": "giant-pad-2",
+      "name": "Giant Pad Break",
+      "kind": "Giant pad",
+      "zone": "castle",
+      "zoneName": "Castle",
+      "reward": 130,
+      "redRate": 2.6,
+      "redRateEnd": 4.6,
+      "baseHp": 280,
+      "score": 28,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:48:41.304Z",
+      "profiles": {
+        "pro": {
+          "score": 10,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 69,
+          "firstWin": 0.3333333333333333,
+          "never": 0.3333333333333333,
+          "tries": 3.5
+        },
+        "average": {
+          "score": 9,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 37,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.7
+        },
+        "casual": {
+          "score": 36,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        }
+      }
+    },
+    {
+      "index": 20,
+      "id": "truck-stop",
+      "name": "Truck Stop",
+      "kind": "Truck garage",
+      "zone": "desert",
+      "zoneName": "Desert",
+      "reward": 190,
+      "redRate": 3.1,
+      "redRateEnd": 5.3,
+      "baseHp": 500,
+      "score": 19,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:49:09.104Z",
+      "profiles": {
+        "pro": {
+          "score": 15,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 31,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "average": {
+          "score": 10,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 23,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 27,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        }
+      }
+    },
+    {
+      "index": 21,
+      "id": "close-encounters",
+      "name": "Close Encounters",
+      "kind": "Gold UFO",
+      "zone": "desert",
+      "zoneName": "Desert",
+      "reward": 200,
+      "redRate": 2,
+      "redRateEnd": 3.7,
+      "baseHp": 580,
+      "score": 24,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:49:03.870Z",
+      "profiles": {
+        "pro": {
+          "score": 5,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 24,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 9,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 34,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "casual": {
+          "score": 48,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 2.7
+        }
+      }
+    },
+    {
+      "index": 22,
+      "id": "road-rage",
+      "name": "Road Rage",
+      "kind": "Car + helmets",
+      "zone": "desert",
+      "zoneName": "Desert",
+      "reward": 210,
+      "redRate": 1.9,
+      "redRateEnd": 3.5,
+      "baseHp": 480,
+      "score": 25,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:49:32.975Z",
+      "profiles": {
+        "pro": {
+          "score": 12,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 34,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "average": {
+          "score": 16,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 34,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "casual": {
+          "score": 32,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        }
+      }
+    },
+    {
+      "index": 23,
+      "id": "gauntlet2",
+      "name": "Gauntlet Double",
+      "kind": "Mixed",
+      "zone": "desert",
+      "zoneName": "Desert",
+      "reward": 180,
+      "redRate": 1.9,
+      "redRateEnd": 3.4,
+      "baseHp": 400,
+      "score": 24,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:49:47.739Z",
+      "profiles": {
+        "pro": {
+          "score": 13,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 44,
+          "firstWin": 0.3333333333333333,
+          "never": 0,
+          "tries": 2.3
+        },
+        "average": {
+          "score": 11,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 30,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 31,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        }
+      }
+    },
+    {
+      "index": 24,
+      "id": "traffic-1",
+      "name": "Traffic",
+      "kind": "Truck garage",
+      "zone": "desert",
+      "zoneName": "Desert",
+      "reward": 190,
+      "redRate": 2.8,
+      "redRateEnd": 8.2,
+      "baseHp": 500,
+      "score": 31,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:49:43.754Z",
+      "profiles": {
+        "pro": {
+          "score": 18,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 48,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 2.7
+        },
+        "average": {
+          "score": 19,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 48,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 2.7
+        },
+        "casual": {
+          "score": 29,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        }
+      }
+    },
+    {
+      "index": 25,
+      "id": "new-level-desert",
+      "name": "Spinning Giants",
+      "kind": "Custom",
+      "zone": "desert",
+      "zoneName": "Desert",
+      "reward": 120,
+      "redRate": 4,
+      "redRateEnd": 11,
+      "baseHp": 400,
+      "score": 41,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:49:47.936Z",
+      "profiles": {
+        "pro": {
+          "score": 24,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 55,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 3.7
+        },
+        "average": {
+          "score": 30,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "average-raw": {
+          "score": 65,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 5
+        },
+        "casual": {
+          "score": 34,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        }
+      }
+    },
+    {
+      "index": 26,
+      "id": "lanes3",
+      "name": "Lanes",
+      "kind": "Custom",
+      "zone": "desert",
+      "zoneName": "Desert",
+      "reward": 120,
+      "redRate": 3,
+      "redRateEnd": 5,
+      "baseHp": 400,
+      "score": 25,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:52:12.840Z",
+      "profiles": {
+        "pro": {
+          "score": 11,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 27,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 16,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 34,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "casual": {
+          "score": 35,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 2
+        }
+      }
+    },
+    {
+      "index": 27,
+      "id": "new-level-desert-2",
+      "name": "Diamonds",
+      "kind": "Custom",
+      "zone": "desert",
+      "zoneName": "Desert",
+      "reward": 120,
+      "redRate": 8,
+      "redRateEnd": 14,
+      "baseHp": 400,
+      "score": 52,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:50:45.971Z",
+      "profiles": {
+        "pro": {
+          "score": 30,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 80,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 7
+        },
+        "average": {
+          "score": 33,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 73,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 6
+        },
+        "casual": {
+          "score": 58,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 4
+        }
+      }
+    },
+    {
+      "index": 28,
+      "id": "trucks",
+      "name": "Trucks",
+      "kind": "Custom",
+      "zone": "desert",
+      "zoneName": "Desert",
+      "reward": 120,
+      "redRate": 7.5,
+      "redRateEnd": 14,
+      "baseHp": 500,
+      "score": 49,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:50:51.505Z",
+      "profiles": {
+        "pro": {
+          "score": 29,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 80,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 7
+        },
+        "average": {
+          "score": 35,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "average-raw": {
+          "score": 65,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 5
+        },
+        "casual": {
+          "score": 50,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 3
+        }
+      }
+    },
+    {
+      "index": 29,
+      "id": "new-level-hard",
+      "name": "The End",
+      "kind": "Custom",
+      "zone": "desert",
+      "zoneName": "Desert",
+      "reward": 120,
+      "redRate": 5.1,
+      "redRateEnd": 13.4,
+      "baseHp": 400,
+      "score": 51,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:52:15.573Z",
+      "profiles": {
+        "pro": {
+          "score": 36,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "pro-raw": {
+          "score": 68,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 5.3
+        },
+        "average": {
+          "score": 32,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 78,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 6.7
+        },
+        "casual": {
+          "score": 53,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 3.3
+        }
+      }
+    },
+    {
+      "index": 30,
+      "id": "first-frost",
+      "name": "First Frost",
+      "kind": "Gates",
+      "zone": "ice",
+      "zoneName": "Ice",
+      "reward": 210,
+      "redRate": 4.5,
+      "redRateEnd": 7,
+      "baseHp": 320,
+      "score": 13,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:52:25.641Z",
+      "profiles": {
+        "pro": {
+          "score": 1,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 13,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 4,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 16,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "casual": {
+          "score": 31,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 2
+        }
+      }
+    },
+    {
+      "index": 31,
+      "id": "ice-lanes",
+      "name": "Ice Lanes",
+      "kind": "Lanes",
+      "zone": "ice",
+      "zoneName": "Ice",
+      "reward": 215,
+      "redRate": 4,
+      "redRateEnd": 7,
+      "baseHp": 380,
+      "score": 25,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:53:09.649Z",
+      "profiles": {
+        "pro": {
+          "score": 11,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 25,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 14,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 35,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "casual": {
+          "score": 39,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 2
+        }
+      }
+    },
+    {
+      "index": 32,
+      "id": "frozen-mill",
+      "name": "Frozen Mill",
+      "kind": "Spinners",
+      "zone": "ice",
+      "zoneName": "Ice",
+      "reward": 220,
+      "redRate": 3.5,
+      "redRateEnd": 6.5,
+      "baseHp": 380,
+      "score": 28,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:52:37.457Z",
+      "profiles": {
+        "pro": {
+          "score": 15,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 32,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average": {
+          "score": 17,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 40,
+          "firstWin": 0.3333333333333333,
+          "never": 0,
+          "tries": 1.7
+        },
+        "casual": {
+          "score": 37,
+          "firstWin": 0.3333333333333333,
+          "never": 0,
+          "tries": 1.7
+        }
+      }
+    },
+    {
+      "index": 33,
+      "id": "glacier-pipe",
+      "name": "Glacier Pipe",
+      "kind": "Pipe",
+      "zone": "ice",
+      "zoneName": "Ice",
+      "reward": 225,
+      "redRate": 6.5,
+      "redRateEnd": 12,
+      "baseHp": 280,
+      "score": 41,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:53:03.428Z",
+      "profiles": {
+        "pro": {
+          "score": 25,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 58,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 4
+        },
+        "average": {
+          "score": 27,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 70,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 5.7
+        },
+        "casual": {
+          "score": 33,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        }
+      }
+    },
+    {
+      "index": 34,
+      "id": "crevasse",
+      "name": "Crevasse",
+      "kind": "Grinder",
+      "zone": "ice",
+      "zoneName": "Ice",
+      "reward": 230,
+      "redRate": 3.6,
+      "redRateEnd": 6.5,
+      "baseHp": 400,
+      "score": 38,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:53:51.829Z",
+      "profiles": {
+        "pro": {
+          "score": 19,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 36,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "average": {
+          "score": 21,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 58,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 4
+        },
+        "casual": {
+          "score": 53,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 3.3
+        }
+      }
+    },
+    {
+      "index": 35,
+      "id": "snow-plough",
+      "name": "Snow Plough",
+      "kind": "Push",
+      "zone": "ice",
+      "zoneName": "Ice",
+      "reward": 235,
+      "redRate": 7.5,
+      "redRateEnd": 13,
+      "baseHp": 380,
+      "score": 49,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:53:36.204Z",
+      "profiles": {
+        "pro": {
+          "score": 25,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 73,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 6
+        },
+        "average": {
+          "score": 34,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "average-raw": {
+          "score": 78,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 6.7
+        },
+        "casual": {
+          "score": 43,
+          "firstWin": 0.3333333333333333,
+          "never": 0,
+          "tries": 2.3
+        }
+      }
+    },
+    {
+      "index": 36,
+      "id": "twin-peaks",
+      "name": "Twin Peaks",
+      "kind": "Forts",
+      "zone": "ice",
+      "zoneName": "Ice",
+      "reward": 240,
+      "redRate": 4,
+      "redRateEnd": 8,
+      "baseHp": 300,
+      "score": 45,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:53:52.040Z",
+      "profiles": {
+        "pro": {
+          "score": 22,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 58,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 4
+        },
+        "average": {
+          "score": 29,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 70,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 5.7
+        },
+        "casual": {
+          "score": 47,
+          "firstWin": 0.3333333333333333,
+          "never": 0,
+          "tries": 2.7
+        }
+      }
+    },
+    {
+      "index": 37,
+      "id": "icicle-run",
+      "name": "Icicle Run",
+      "kind": "Grinder",
+      "zone": "ice",
+      "zoneName": "Ice",
+      "reward": 245,
+      "redRate": 3.5,
+      "redRateEnd": 7.5,
+      "baseHp": 300,
+      "score": 49,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:53:42.368Z",
+      "profiles": {
+        "pro": {
+          "score": 19,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 60,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 4.3
+        },
+        "average": {
+          "score": 31,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "average-raw": {
+          "score": 73,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 6
+        },
+        "casual": {
+          "score": 63,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 4.7
+        }
+      }
+    },
+    {
+      "index": 38,
+      "id": "blizzard",
+      "name": "Blizzard",
+      "kind": "Swarm",
+      "zone": "ice",
+      "zoneName": "Ice",
+      "reward": 250,
+      "redRate": 9,
+      "redRateEnd": 15,
+      "baseHp": 420,
+      "score": 48,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:54:35.773Z",
+      "profiles": {
+        "pro": {
+          "score": 26,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 68,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 5.3
+        },
+        "average": {
+          "score": 28,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 75,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 6.3
+        },
+        "casual": {
+          "score": 50,
+          "firstWin": 0.3333333333333333,
+          "never": 0,
+          "tries": 3
+        }
+      }
+    },
+    {
+      "index": 39,
+      "id": "ice-king",
+      "name": "Ice King",
+      "kind": "Boss",
+      "zone": "ice",
+      "zoneName": "Ice",
+      "reward": 300,
+      "redRate": 3.2,
+      "redRateEnd": 7,
+      "baseHp": 300,
+      "score": 51,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:54:32.272Z",
+      "profiles": {
+        "pro": {
+          "score": 16,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 86,
+          "firstWin": 0,
+          "never": 0.6666666666666666,
+          "tries": 4
+        },
+        "average": {
+          "score": 26,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 93,
+          "firstWin": 0,
+          "never": 0.6666666666666666,
+          "tries": 7
+        },
+        "casual": {
+          "score": 44,
+          "firstWin": 0.3333333333333333,
+          "never": 0,
+          "tries": 2.7
+        }
+      }
+    },
+    {
+      "index": 40,
+      "id": "frost-gate",
+      "name": "Frost Gate",
+      "kind": "Gates",
+      "zone": "ice-castle",
+      "zoneName": "Ice Castle",
+      "reward": 255,
+      "redRate": 10,
+      "redRateEnd": 16,
+      "baseHp": 360,
+      "score": 26,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:55:20.119Z",
+      "profiles": {
+        "pro": {
+          "score": 15,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 34,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        },
+        "average": {
+          "score": 17,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 48,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 2.7
+        },
+        "casual": {
+          "score": 20,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        }
+      }
+    },
+    {
+      "index": 41,
+      "id": "battlements",
+      "name": "Battlements",
+      "kind": "Mixed",
+      "zone": "ice-castle",
+      "zoneName": "Ice Castle",
+      "reward": 260,
+      "redRate": 5.5,
+      "redRateEnd": 10,
+      "baseHp": 400,
+      "score": 34,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:56:44.370Z",
+      "profiles": {
+        "pro": {
+          "score": 21,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 40,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.7
+        },
+        "average": {
+          "score": 20,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 53,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 3.3
+        },
+        "casual": {
+          "score": 40,
+          "firstWin": 0.3333333333333333,
+          "never": 0,
+          "tries": 1.7
+        }
+      }
+    },
+    {
+      "index": 42,
+      "id": "moat",
+      "name": "Moat",
+      "kind": "Pipe",
+      "zone": "ice-castle",
+      "zoneName": "Ice Castle",
+      "reward": 265,
+      "redRate": 9,
+      "redRateEnd": 15,
+      "baseHp": 240,
+      "score": 40,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:55:29.711Z",
+      "profiles": {
+        "pro": {
+          "score": 23,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 70,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 5.7
+        },
+        "average": {
+          "score": 24,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 65,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 5
+        },
+        "casual": {
+          "score": 33,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        }
+      }
+    },
+    {
+      "index": 43,
+      "id": "drawbridge",
+      "name": "Drawbridge",
+      "kind": "Pushers",
+      "zone": "ice-castle",
+      "zoneName": "Ice Castle",
+      "reward": 270,
+      "redRate": 11,
+      "redRateEnd": 19,
+      "baseHp": 280,
+      "score": 40,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:55:55.063Z",
+      "profiles": {
+        "pro": {
+          "score": 22,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 65,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 5
+        },
+        "average": {
+          "score": 26,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 68,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 5.3
+        },
+        "casual": {
+          "score": 31,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        }
+      }
+    },
+    {
+      "index": 44,
+      "id": "keep-towers",
+      "name": "Keep Towers",
+      "kind": "Forts",
+      "zone": "ice-castle",
+      "zoneName": "Ice Castle",
+      "reward": 275,
+      "redRate": 5,
+      "redRateEnd": 10,
+      "baseHp": 300,
+      "score": 40,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:56:10.783Z",
+      "profiles": {
+        "pro": {
+          "score": 18,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 53,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 3.3
+        },
+        "average": {
+          "score": 23,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 63,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 4.7
+        },
+        "casual": {
+          "score": 47,
+          "firstWin": 0.3333333333333333,
+          "never": 0,
+          "tries": 2.7
+        }
+      }
+    },
+    {
+      "index": 45,
+      "id": "throne-hall",
+      "name": "Throne Hall",
+      "kind": "Spinners",
+      "zone": "ice-castle",
+      "zoneName": "Ice Castle",
+      "reward": 280,
+      "redRate": 9.5,
+      "redRateEnd": 16,
+      "baseHp": 260,
+      "score": 45,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:56:07.315Z",
+      "profiles": {
+        "pro": {
+          "score": 23,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 65,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 5
+        },
+        "average": {
+          "score": 25,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 75,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 6.3
+        },
+        "casual": {
+          "score": 48,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 2.7
+        }
+      }
+    },
+    {
+      "index": 46,
+      "id": "ice-maze",
+      "name": "Ice Maze",
+      "kind": "Breakables",
+      "zone": "ice-castle",
+      "zoneName": "Ice Castle",
+      "reward": 285,
+      "redRate": 12,
+      "redRateEnd": 20,
+      "baseHp": 320,
+      "score": 52,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:56:41.937Z",
+      "profiles": {
+        "pro": {
+          "score": 26,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 80,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 7
+        },
+        "average": {
+          "score": 29,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 78,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 6.7
+        },
+        "casual": {
+          "score": 63,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 4.7
+        }
+      }
+    },
+    {
+      "index": 47,
+      "id": "frozen-siege",
+      "name": "Frozen Siege",
+      "kind": "Swarm",
+      "zone": "ice-castle",
+      "zoneName": "Ice Castle",
+      "reward": 290,
+      "redRate": 11,
+      "redRateEnd": 18,
+      "baseHp": 440,
+      "score": 46,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:57:04.872Z",
+      "profiles": {
+        "pro": {
+          "score": 25,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 75,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 6.3
+        },
+        "average": {
+          "score": 29,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 68,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 5.3
+        },
+        "casual": {
+          "score": 48,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 2.7
+        }
+      }
+    },
+    {
+      "index": 48,
+      "id": "crystal-crown",
+      "name": "Crystal Crown",
+      "kind": "Mixed",
+      "zone": "ice-castle",
+      "zoneName": "Ice Castle",
+      "reward": 295,
+      "redRate": 11,
+      "redRateEnd": 19,
+      "baseHp": 260,
+      "score": 54,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:56:43.383Z",
+      "profiles": {
+        "pro": {
+          "score": 28,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 80,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 7
+        },
+        "average": {
+          "score": 28,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 87,
+          "firstWin": 0,
+          "never": 0.3333333333333333,
+          "tries": 7
+        },
+        "casual": {
+          "score": 60,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 4.3
+        }
+      }
+    },
+    {
+      "index": 49,
+      "id": "ice-castle",
+      "name": "Ice Castle",
+      "kind": "Boss",
+      "zone": "ice-castle",
+      "zoneName": "Ice Castle",
+      "reward": 320,
+      "redRate": 6,
+      "redRateEnd": 12,
+      "baseHp": 300,
+      "score": 53,
+      "stale": false,
+      "gradedAt": "2026-11-10T17:57:00.559Z",
+      "profiles": {
+        "pro": {
+          "score": 26,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 87,
+          "firstWin": 0,
+          "never": 0.3333333333333333,
+          "tries": 7
+        },
+        "average": {
+          "score": 29,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 87,
+          "firstWin": 0,
+          "never": 0.3333333333333333,
+          "tries": 7
+        },
+        "casual": {
+          "score": 53,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 3.3
+        }
+      }
+    }
+  ]
+}

@@ -22,6 +22,11 @@
 // - POST   /api/mob/gaps-all          { levels: { id: level } }: every one checked (a few at a time), kept; the summaries
 // - GET    /api/mob/reports           the grading reports in reports/ (newest first): [{ name, at, full }]
 // - GET    /api/mob/report?name=<f>   one of them
+// - GET    /api/mob/arenas            every arena (the arena mode: game/data/ArenaConfig): [{ id, arena }]
+// - PUT    /api/mob/arena?id=<id>     write arenas/<id>.json;  DELETE: delete it
+// - GET    /api/mob/arena-ladder      ui/arena-ladder.json (who the player meets: game/data/ArenaLadder);  PUT: write it
+// - POST   /api/mob/duel-sim          robot-against-robot matches (tools/duel-run.mjs): { arena, blue, red | against,
+//                                     matches } or a ladder climb { arena, ladder, player, matches }
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -30,6 +35,7 @@ import os from 'node:os';
 import { readBody, readJson, readRawBody, send, startWorldEditor, writeJson } from '../../../tools/world-editor/server.mjs';
 import { startGrading } from '../tools/grade-run.mjs';
 import { checkGaps } from '../tools/gap-run.mjs';
+import { simulateDuel } from '../tools/duel-run.mjs';
 import { levelHash } from './public/mob-grade-key.js';
 
 const PORT = process.env.EDITOR_PORT ? Number(process.env.EDITOR_PORT) : 4712;
@@ -42,6 +48,24 @@ const WORLD_FILE = path.join(HERE, '..', 'ui', 'worldmap.json');
 const SETTINGS_FILE = path.join(HERE, '..', 'ui', 'settings.json');
 const GRADES_FILE = path.join(HERE, '..', 'ui', 'grades.json');
 const GAPS_FILE = path.join(HERE, '..', 'ui', 'gaps.json');
+const ARENAS_DIR = path.join(HERE, '..', 'arenas');
+const LADDER_FILE = path.join(HERE, '..', 'ui', 'arena-ladder.json');
+
+/** What's wrong with the arena ladder, if anything (the game trusts the file: ArenaLadder.ts). */
+function ladderProblem(l) {
+    if (!l || typeof l !== 'object') return 'The ladder must be an object';
+    if (!['win', 'loss', 'draw'].every((k) => isNumber(l.points?.[k]) && l.points[k] >= 0)) return 'points: win, loss and draw, each 0 or more';
+    if (!(Number.isInteger(l.streak?.after) && l.streak.after >= 1 && Number.isInteger(l.streak?.tiers) && l.streak.tiers >= 0)) return 'streak: after 1 or more, tiers 0 or more (whole numbers)';
+    if (!Array.isArray(l.tiers) || !l.tiers.length) return 'At least one tier';
+    for (const [i, t] of l.tiers.entries()) {
+        if (!isNumber(t.from) || t.from < 0 || (i > 0 && t.from <= l.tiers[i - 1].from)) return `Tier ${i + 1}: its rating must be above the one before`;
+        if (!['newbie', 'casual', 'average', 'pro'].includes(t.skill)) return `Tier ${i + 1}: skill newbie, casual, average or pro`;
+        if (!Array.isArray(t.cards) || !t.cards.every((c) => ['giant', 'truck', 'saucer', 'car'].includes(c))) return `Tier ${i + 1}: cards from giant, truck, saucer, car`;
+        if (!(isNumber(t.cardLevel) && t.cardLevel >= 0 && t.cardLevel <= 1 && isNumber(t.cannon) && t.cannon >= 0 && t.cannon <= 1)) return `Tier ${i + 1}: card level and cannon 0 to 1`;
+    }
+    if (l.tiers[0].from !== 0) return 'The first tier starts at rating 0';
+    return null;
+}
 
 /** A gap check in short: fail (a test unit stuck for good), stall (one stood still a while), else pass. */
 function gapSummary(level, data) {
@@ -298,6 +322,39 @@ async function handle(req, res, url) {
         return send(res, 200, { ok: true }), true;
     }
     if (url.pathname === '/api/mob/levels' && req.method === 'GET') return send(res, 200, await listLevels()), true;
+    if (url.pathname === '/api/mob/arenas' && req.method === 'GET') {
+        const files = (await fs.readdir(ARENAS_DIR).catch(() => [])).filter((f) => f.endsWith('.json')).sort();
+        return send(res, 200, await Promise.all(files.map(async (f) => ({ id: f.replace(/\.json$/, ''), arena: await readJson(path.join(ARENAS_DIR, f), null) })))), true;
+    }
+    if (url.pathname === '/api/mob/arena' && (req.method === 'PUT' || req.method === 'DELETE')) {
+        const id = url.searchParams.get('id');
+        if (!goodId(id)) return send(res, 400, { error: 'Arena ids: lower case letters, digits and dashes' }), true;
+        if (req.method === 'DELETE') {
+            await fs.rm(path.join(ARENAS_DIR, `${id}.json`), { force: true });
+            return send(res, 200, { ok: true }), true;
+        }
+        const arena = await readBody(req);
+        if (!arena || typeof arena.name !== 'string') return send(res, 400, { error: 'An arena needs a name' }), true;
+        if ((arena.gates ?? []).length > 4) return send(res, 400, { error: 'At most 4 gates on a side (8 on the field: a mob remembers 8)' }), true;
+        await fs.mkdir(ARENAS_DIR, { recursive: true });
+        await writeJson(path.join(ARENAS_DIR, `${id}.json`), arena);
+        return send(res, 200, { ok: true }), true;
+    }
+    if (url.pathname === '/api/mob/arena-ladder' && req.method === 'GET') return send(res, 200, await readJson(LADDER_FILE, null)), true;
+    if (url.pathname === '/api/mob/arena-ladder' && req.method === 'PUT') {
+        const ladder = await readBody(req);
+        const problem = ladderProblem(ladder);
+        if (problem) return send(res, 400, { error: problem }), true;
+        await writeJson(LADDER_FILE, ladder);
+        return send(res, 200, { ok: true }), true;
+    }
+    if (url.pathname === '/api/mob/duel-sim' && req.method === 'POST') {
+        try {
+            return send(res, 200, await simulateDuel(await readBody(req))), true;
+        } catch (error) {
+            return send(res, 500, { error: error.message }), true;
+        }
+    }
     if (url.pathname === '/api/mob/themes' && req.method === 'GET') return send(res, 200, await readJson(THEMES_FILE, { themes: [] })), true;
     if (url.pathname === '/api/mob/themes' && req.method === 'PUT') {
         const data = await readBody(req);

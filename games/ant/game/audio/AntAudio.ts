@@ -43,7 +43,8 @@ const SFX: Record<Sfx, { files: string[]; volume: number; gap?: number }> = {
 };
 /** Every effect's volume is scaled by this — one knob for the whole mix. */
 const SFX_LEVEL = 0.65;
-const MUSIC = { sound: 'music', layer: 'music', volume: 0.22, fadeMs: 2500 };
+/** The soundtrack: "With You" (Everet Almond). */
+const MUSIC = { sound: 'with-you', layer: 'music', volume: 0.22, fadeMs: 2500 };
 const MUSIC_KEY = 'ant.music';
 
 const lastPlayed = new Map<Sfx, number>();

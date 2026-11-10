@@ -133,6 +133,8 @@ export function playBattle(config: BattleConfig, skill: Skill, loadout: Loadout,
     try {
         useField(config);
         const battle = new Battle(config, {});
+        // Nobody's looking: no turning to face the way they go (it changes nothing else).
+        battle.faces = false;
         battle.fireLevel = loadout.fire;
         battle.capacityLevel = loadout.capacity;
         battle.rechargeLevel = loadout.recharge;
@@ -170,6 +172,12 @@ export function harderConfig(config: BattleConfig, factor: number): BattleConfig
     };
 }
 
+/** A stress probe on its own: probe number `probe` (its luck) at STRESS.ladder[`mid`]. The grader can play these in
+ *  parallel ahead of the binary search (grade-levels.ts), so this is the one place a probe's battle is defined. */
+export function stressRun(config: BattleConfig, skill: Skill, loadout: Loadout, seed: number, probe: number, mid: number): BattleRun {
+    return playBattle(harderConfig(config, STRESS.ladder[mid]), skill, loadout, seed * 17 + probe * 104729 + 1);
+}
+
 /** How many of STRESS.ladder's steps a go won first time survives (0 .. ladder length), by binary search. */
 function stressSteps(config: BattleConfig, skill: Skill, loadout: Loadout, seed: number): number {
     // The first step lost is in [lo, hi] (hi = length: none lost).
@@ -177,7 +185,7 @@ function stressSteps(config: BattleConfig, skill: Skill, loadout: Loadout, seed:
     let hi = STRESS.ladder.length;
     for (let probe = 0; probe < STRESS.probes && lo < hi; probe++) {
         const mid = Math.floor((lo + hi) / 2);
-        const run = playBattle(harderConfig(config, STRESS.ladder[mid]), skill, loadout, seed * 17 + probe * 104729 + 1);
+        const run = stressRun(config, skill, loadout, seed, probe, mid);
         if (run.won) lo = mid + 1;
         else hi = mid;
     }
@@ -195,12 +203,16 @@ export interface Go {
     score: number;
 }
 
+/** Try `t` of a go on its own (each eased a step more than the last); like stressRun, for playing them in parallel. */
+export function tryRun(config: BattleConfig, skill: Skill, loadout: Loadout, seed: number, t: number): BattleRun {
+    return playBattle(easedConfig(config, Math.min(RETRY_EASE.most, t * RETRY_EASE.step)), skill, loadout, seed * 31 + t * 7919);
+}
+
 /** Tries until a win (each loss easier, as the game does), at most MAX_TRIES. */
 export function playGo(config: BattleConfig, skill: Skill, loadout: Loadout, seed: number): Go {
     const tries: BattleRun[] = [];
     for (let t = 0; t < MAX_TRIES; t++) {
-        const ease = Math.min(RETRY_EASE.most, t * RETRY_EASE.step);
-        const run = playBattle(easedConfig(config, ease), skill, loadout, seed * 31 + t * 7919);
+        const run = tryRun(config, skill, loadout, seed, t);
         tries.push(run);
         if (run.won) break;
     }

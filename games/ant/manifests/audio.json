@@ -109,14 +109,6 @@
         },
         {
           "alias": [
-            "music.mp3"
-          ],
-          "src": [
-            "music.mp3"
-          ]
-        },
-        {
-          "alias": [
             "tap.wav"
           ],
           "src": [
@@ -145,6 +137,14 @@
           ],
           "src": [
             "whoosh.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "with-you.mp3"
+          ],
+          "src": [
+            "with-you.mp3"
           ]
         }
       ]

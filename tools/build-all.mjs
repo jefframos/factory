@@ -60,3 +60,11 @@ execSync('npm run image && npm run font && npm run audio && npm run models && np
     cwd: root,
     env: { ...process.env, GAME: currentGame },
 });
+
+// A game's own models built straight into public/ (e.g. mob's props, beach, hexa and desert, from library3d): the
+// clean-up above deletes them with the rest of the folder when switching games, so they're rebuilt here too.
+const propsScript = path.resolve(root, 'games', currentGame, 'tools/build-props.mjs');
+if (fs.existsSync(propsScript)) {
+    console.log(`📦 Building games/${currentGame}/tools/build-props.mjs`);
+    execSync(`node "${propsScript}"`, { stdio: 'inherit', cwd: root, env: { ...process.env, GAME: currentGame } });
+}

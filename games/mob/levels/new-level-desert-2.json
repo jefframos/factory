@@ -12,13 +12,14 @@
   "redRate": 8,
   "redRateEnd": 14,
   "redRamp": 95,
-  "baseHp": 400,
+  "baseHp": 380,
   "reward": 120,
   "helmets": [
     {
-      "x": -2.75,
-      "z": -15.25,
-      "width": 3
+      "x": -3.25,
+      "z": -18,
+      "width": 3,
+      "kind": "attack"
     }
   ],
   "obstacles": [
@@ -147,6 +148,48 @@
           -5.75
         ]
       ]
+    },
+    {
+      "kind": "enemyWall",
+      "points": [
+        [
+          -5.75,
+          -10.5
+        ],
+        [
+          -5.5,
+          -20
+        ],
+        [
+          -2.25,
+          -18.75
+        ],
+        [
+          -2.75,
+          -12.5
+        ]
+      ]
+    },
+    {
+      "kind": "enemyWall",
+      "points": [
+        [
+          2.25,
+          -7.25
+        ],
+        [
+          5.75,
+          -15
+        ],
+        [
+          6.5,
+          -10
+        ],
+        [
+          6,
+          -4.25
+        ]
+      ]
     }
   ],
   "pads": [
@@ -158,6 +201,15 @@
       "depth": 1.8
     }
   ],
-  "redGiantEvery": 9,
-  "width": 11
+  "redGiantEvery": 14,
+  "width": 11,
+  "pipes": [
+    {
+      "x": 3.75,
+      "z": -7,
+      "toX": -3.5,
+      "toZ": -16.75,
+      "team": "blue"
+    }
+  ]
 }

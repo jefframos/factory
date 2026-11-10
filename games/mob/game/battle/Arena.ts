@@ -60,6 +60,66 @@ const pipeColours = (pipe: PipeConfig) => PIPE_COLOURS[pipe.team ?? 'both'];
  *  lifted over the padlock. */
 const LOCK = { grey: 0x9aa0a8, dark: 0x5e646d, metal: 0xc9ced6, barHeight: 1.1, barGap: 0.45, labelY: 2.7, padlockY: 0.85, padlockTilt: -0.6 };
 const BASE = { depth: 2.6, height: 2.4 };
+/** An arena match: the reds' pieces' colours (their gates, houses), and how high a cannon's life floats over it. */
+const RED_SIDE = { gate: 0xff5a6a, post: 0xb8243a, wall: 0xffd6da, roof: 0xff3d4f, house: 0xff6b7a, title: '#ffb3bb' };
+const CANNON_LIFE_Y = 2.1;
+/** The cannon's tracks: a strip of track image (sleepers and two steel rails, trackTexture) across its slide, a little
+ *  past it either side: `depth` across, a tile of the image every `tile` along, cut every `segment` (the bend curves it). */
+const TRACKS = { depth: 1.35, tile: 1.35, past: 0.9, segment: 0.25, y: 0.015 };
+
+/** The track's image, drawn once: wooden sleepers (grain, dark ends) across, two steel rails (shine, shadow) along. */
+let trackImage: THREE.Texture | null = null;
+function trackTexture(): THREE.Texture {
+    if (trackImage) return trackImage;
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const c = canvas.getContext('2d')!;
+    c.clearRect(0, 0, 256, 256);
+    // Two sleepers a tile (x is along the track, y across it).
+    for (const at of [32, 160]) {
+        const wood = c.createLinearGradient(at - 22, 0, at + 22, 0);
+        wood.addColorStop(0, '#5a3a1e');
+        wood.addColorStop(0.18, '#8a5a30');
+        wood.addColorStop(0.5, '#9a6838');
+        wood.addColorStop(0.82, '#8a5a30');
+        wood.addColorStop(1, '#5a3a1e');
+        c.fillStyle = 'rgba(0,0,0,0.25)';
+        c.fillRect(at - 22 + 3, 18 + 4, 44, 220);
+        c.fillStyle = wood;
+        c.fillRect(at - 22, 18, 44, 220);
+        c.strokeStyle = 'rgba(60,35,15,0.55)';
+        c.lineWidth = 2;
+        for (const g of [-10, 2, 12]) {
+            c.beginPath();
+            c.moveTo(at + g, 26);
+            c.lineTo(at + g + 3, 230);
+            c.stroke();
+        }
+        c.strokeStyle = '#3d2610';
+        c.lineWidth = 3;
+        c.strokeRect(at - 22, 18, 44, 220);
+    }
+    // The rails: a shadow, the steel, its shine.
+    for (const y of [70, 186]) {
+        c.fillStyle = 'rgba(0,0,0,0.35)';
+        c.fillRect(0, y - 9 + 5, 256, 18);
+        const steel = c.createLinearGradient(0, y - 9, 0, y + 9);
+        steel.addColorStop(0, '#5d6472');
+        steel.addColorStop(0.35, '#dfe5ef');
+        steel.addColorStop(0.55, '#aab3c2');
+        steel.addColorStop(1, '#4a505c');
+        c.fillStyle = steel;
+        c.fillRect(0, y - 9, 256, 18);
+    }
+    trackImage = new THREE.CanvasTexture(canvas);
+    trackImage.wrapS = THREE.RepeatWrapping;
+    trackImage.anisotropy = 8;
+    trackImage.colorSpace = THREE.SRGBColorSpace;
+    return trackImage;
+}
+/** An arena match's open cannon: the ring round it (its team's colour), pulsing. */
+const EXPOSED = { radius: 1.4, tube: 0.09, y: 0.06, pulse: 5 };
 const CANNON_Z = 0.35;
 const WALL_HEIGHT = 0.9;
 /** A raised block's bevel (round its top edge), and its colours: grass on top, dirt down its sides; a breakable's stone
@@ -94,6 +154,8 @@ const PROPS = {
     houseColours: { giant: ['giantWall', 'giantRoof'], truck: ['truckWall', 'truckRoof'], saucer: ['ufoWall', 'ufoRoof'], car: ['carWall', 'carRoof'] } as Record<string, [UnitColor, UnitColor]>,
     base: 'barracks-red',
     tower: 'tower-red',
+    /** An arena match's blue towers. */
+    blueTower: 'barracks-blue',
     /** A target narrower than this is a tower, wider the barracks. */
     towerBelow: 3.4,
     turn: Math.PI,
@@ -375,6 +437,13 @@ export class Arena {
     private saucerModel: THREE.Object3D | null = null;
     private readonly saucerViews = new Map<object, { model: THREE.Object3D; beam: THREE.Mesh }>();
     private readonly targets: TargetView[] = [];
+    /** An arena match: the blues' own buildings (the reds' aim), and the reds' cannon at the far end. */
+    private readonly ownTargets: TargetView[] = [];
+    private readonly redCannon = new THREE.Group();
+    private redRecoil = 0;
+    /** An arena match: the cannons' row (z up the field: the reds' is its mirror). */
+    private cannonRow = 0;
+    private redFlashLife = 0;
     private readonly danger: THREE.Mesh;
     private readonly bits = new Bits();
     private readonly puffs: { mesh: THREE.Mesh; life: number }[] = [];
@@ -393,10 +462,10 @@ export class Arena {
      * screen's is much wider).
      */
     public constructor(config: BattleConfig, targets: readonly Target[], private readonly theme: Theme, private readonly modelRoot = './mob/models/',
-        private readonly plainForts = false, private readonly edge?: number) {
+        private readonly plainForts = false, private readonly edge?: number, ownTargets: readonly Target[] = []) {
         this.danger = this.buildGround();
         if (theme.kit) void this.buildKit();
-        this.buildCannon();
+        this.buildCannon(this.cannon, COLORS.blue);
         this.barrel = this.cannon.getObjectByName('barrel')!;
         this.flash = this.cannon.getObjectByName('flash') as THREE.Mesh;
         config.gates.forEach((gate) => this.gates.push(this.buildGate(gate)));
@@ -412,6 +481,30 @@ export class Arena {
         // A boss level (a Giant King): the main building (the one with the most HP) wears his hat.
         const crowned = config.kingAt ? targets.reduce((best, target, i) => (target.hp > targets[best].hp ? i : best), 0) : -1;
         targets.forEach((target, i) => this.targets.push(this.buildTarget(target, i === crowned)));
+        // An arena match: the reds' cannon at the far end (facing down the field), the blues' buildings by theirs; no
+        // danger line (the reds hit the buildings instead).
+        // The cannon's tracks, across its slide.
+        this.buildTracks(CANNON_Z + (config.duel?.cannonZ ?? 0), ARENA.cannonRange);
+        if (config.duel) {
+            this.cannonRow = config.duel.cannonZ;
+            this.buildTracks(ARENA.baseZ - CANNON_Z - this.cannonRow, ARENA.cannonRange);
+            this.cannon.position.z = CANNON_Z + this.cannonRow;
+            this.buildCannon(this.redCannon, COLORS.red);
+            this.redCannon.rotation.y = Math.PI;
+            this.redCannon.position.set(0, 0, ARENA.baseZ - CANNON_Z - this.cannonRow);
+            ownTargets.forEach((target) => this.ownTargets.push(this.buildTarget(target, false, true)));
+            this.danger.visible = false;
+            // A match's life shows as bars over each building (the HUD's), not numbers on them.
+            for (const view of [...this.targets, ...this.ownTargets]) view.label.mesh.visible = false;
+            for (const [cannon, colour] of [[this.cannon, 0xffd23f], [this.redCannon, 0xffd23f]] as [THREE.Group, number][]) {
+                const ring = new THREE.Mesh(new THREE.TorusGeometry(EXPOSED.radius, EXPOSED.tube, 8, 40), new THREE.MeshBasicMaterial({ color: colour, transparent: true, opacity: 0.9 }));
+                ring.rotation.x = Math.PI / 2;
+                ring.position.y = EXPOSED.y;
+                ring.visible = false;
+                ring.name = 'exposed';
+                cannon.add(ring);
+            }
+        }
         this.buildPuffs();
         this.group.add(this.bits.mesh);
         bendObject(this.group);
@@ -521,7 +614,9 @@ export class Arena {
             this.buildCliffs();
         } else {
             // The coast: wavy sides, rounded ends (coastHalf).
-            const sea = createWater(this.theme.sea, 130, 170, this.coastOutline(), 0, middle);
+            // (The main screen's island, seen from further off: a sea to every edge of the screen.)
+            const seaSize = this.edge !== undefined ? 420 : 0;
+            const sea = createWater(this.theme.sea, seaSize || 130, seaSize || 170, this.coastOutline(), 0, middle);
             this.waters.push(sea);
             this.group.add(sea);
         }
@@ -694,18 +789,42 @@ export class Arena {
         this.group.add(mesh);
     }
 
-    private buildCannon(): void {
-        const blue = lambert(COLORS.blue);
+    /** Train tracks across the cannon's slide at row z: the track image on a flat strip, cut finely so the bend curves it. */
+    private buildTracks(z: number, range: number): void {
+        const length = range * 2 + TRACKS.past * 2;
+        const geometry = new THREE.PlaneGeometry(length, TRACKS.depth, Math.max(8, Math.ceil(length / TRACKS.segment)), 2);
+        // The image tiles along it (a whole number of tiles, centred).
+        const tiles = Math.max(1, Math.round(length / TRACKS.tile));
+        const uv = geometry.attributes.uv as THREE.BufferAttribute;
+        for (let k = 0; k < uv.count; k++) uv.setX(k, uv.getX(k) * tiles);
+        const material = new THREE.MeshLambertMaterial({ map: trackTexture(), transparent: true, alphaTest: 0.05, depthWrite: false });
+        const strip = new THREE.Mesh(geometry, material);
+        strip.rotation.x = -Math.PI / 2;
+        strip.position.set(0, TRACKS.y, z);
+        strip.renderOrder = 1;
+        this.group.add(strip);
+    }
+
+    /** An arena match: whose cannon is open to hits now (the ring round it pulses). */
+    public showExposed(blue: boolean, red: boolean): void {
+        const own = this.cannon.getObjectByName('exposed');
+        const theirs = this.redCannon.getObjectByName('exposed');
+        if (own) own.visible = blue;
+        if (theirs) theirs.visible = red;
+    }
+
+    private buildCannon(cannon: THREE.Group, colour: number): void {
+        const blue = lambert(colour);
         const dark = lambert(0x24304f);
         const body = roundedBox(1.1, 0.5, 1, 0.3, blue);
         body.position.y = 0.25;
-        this.cannon.add(body);
+        cannon.add(body);
         for (const side of [-1, 1]) {
             for (const end of [-1, 1]) {
                 const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.2, 14), dark);
                 wheel.rotation.z = Math.PI / 2;
                 wheel.position.set(side * 0.6, 0.22, end * 0.32);
-                this.cannon.add(wheel);
+                cannon.add(wheel);
             }
         }
         const barrel = new THREE.Group();
@@ -723,23 +842,25 @@ export class Arena {
         barrel.add(flash);
         barrel.position.y = 0.75;
         barrel.rotation.x = 0.18;
-        this.cannon.add(barrel);
-        this.cannon.position.set(0, 0, CANNON_Z);
-        this.group.add(this.cannon);
+        cannon.add(barrel);
+        cannon.position.set(0, 0, CANNON_Z);
+        this.group.add(cannon);
     }
 
     private buildGate(gate: GateConfig): GateView {
         const group = new THREE.Group();
+        // An arena match's red gate (it multiplies the reds): red.
+        const colour = gate.team === 'red' ? RED_SIDE.gate : COLORS.gate;
         const panel = new THREE.Mesh(
             new THREE.BoxGeometry(gate.width, GATE.height, GATE.depth),
-            new THREE.MeshLambertMaterial({ color: COLORS.gate, emissive: COLORS.gate, emissiveIntensity: 0.35, transparent: true, opacity: 0.85 }),
+            new THREE.MeshLambertMaterial({ color: colour, emissive: colour, emissiveIntensity: 0.35, transparent: true, opacity: 0.85 }),
         );
         panel.position.y = GATE.height / 2;
         group.add(panel);
-        const glow = new THREE.Mesh(new THREE.PlaneGeometry(gate.width, 1.2), new THREE.MeshBasicMaterial({ color: COLORS.gate, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
+        const glow = new THREE.Mesh(new THREE.PlaneGeometry(gate.width, 1.2), new THREE.MeshBasicMaterial({ color: colour, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
         glow.position.y = 0.6;
         group.add(glow);
-        const post = lambert(0x2f6fd1);
+        const post = lambert(gate.team === 'red' ? RED_SIDE.post : 0x2f6fd1);
         for (const side of [-1, 1]) {
             const pole = roundedBox(GATE.post, GATE.postHeight, GATE.post * 1.6, 0.08, post);
             pole.position.set(side * (gate.width / 2 + GATE.post / 2), 0, 0);
@@ -1054,8 +1175,10 @@ export class Arena {
         const style = houseStyle(kind);
         // The plain house's own parts (walls, roof, doors): hidden for a floor pad, or under a building.
         const houseParts: THREE.Object3D[] = [];
-        const keys = PROPS.houseColours[kind];
-        const colours = keys ? [UNIT_COLORS[keys[0]], UNIT_COLORS[keys[1]]] : [HOUSE.wall, HOUSE.roof];
+        // An arena match's red house (the reds walk in): red, not recoloured with the upgrades' colours.
+        const red = p.team === 'red';
+        const keys = red ? undefined : PROPS.houseColours[kind];
+        const colours = red ? [RED_SIDE.wall, RED_SIDE.roof] : keys ? [UNIT_COLORS[keys[0]], UNIT_COLORS[keys[1]]] : [HOUSE.wall, HOUSE.roof];
         const walls = roundedBox(p.width, wallHeight, p.depth, 0.25, lambert(colours[0]));
         group.add(walls);
         houseParts.push(walls);
@@ -1104,7 +1227,7 @@ export class Arena {
         label.mesh.position.set(0, top + 0.55, 0.3);
         label.mesh.rotation.x = -0.6;
         group.add(label.mesh);
-        const title = new Label(2.4, 0.6, 256, '#ffe066');
+        const title = new Label(2.4, 0.6, 256, red ? RED_SIDE.title : '#ffe066');
         title.set(PROPS.houseTitles[kind] ?? 'GIANT');
         title.mesh.position.set(0, top + 1.2, 0.1);
         title.mesh.rotation.x = -0.6;
@@ -1132,7 +1255,8 @@ export class Arena {
             title.mesh.position.y = low + 1.8;
         } else if (style === 'model' && PROPS.houses[kind]) {
             void this.dress(group, PROPS.houses[kind], p.width * 1.15, p.depth * 1.35, keep, (height, model) => {
-                if (kind === 'giant') {
+                if (red) tintModel(model, RED_SIDE.house);
+                else if (kind === 'giant') {
                     this.giantHouses.push(model);
                     tintModel(model, UNIT_COLORS.giantHouse);
                 }
@@ -1288,15 +1412,16 @@ export class Arena {
 
     /** A red fort for a target: the usual base's look, scaled to its width (a narrow one is a tower). `crowned`: the Giant
      *  King's viking hat on its roof (in place of the flag). */
-    private buildTarget(target: Target, crowned = false): TargetView {
+    private buildTarget(target: Target, crowned = false, own = false): TargetView {
+        if (target.kind === 'cannon') return this.buildCannonLife(target, own);
         const group = new THREE.Group();
-        const red = lambert(COLORS.red);
+        const red = lambert(own ? COLORS.blue : COLORS.red);
         const width = target.halfWidth * 2;
         const scale = Math.min(1, width / (BASE_HALF_WIDTH * 2));
         const height = BASE.height * (0.75 + 0.25 * scale);
         const body = roundedBox(width, height, BASE.depth * (0.7 + 0.3 * scale), 0.35, red);
         group.add(body);
-        const roof = roundedBox(width + 0.4, 0.35, BASE.depth * (0.7 + 0.3 * scale) + 0.4, 0.3, lambert(0xc42335));
+        const roof = roundedBox(width + 0.4, 0.35, BASE.depth * (0.7 + 0.3 * scale) + 0.4, 0.3, lambert(own ? 0x2350c4 : 0xc42335));
         roof.position.y = height;
         group.add(roof);
         const door = roundedBox(Math.min(1.3, width * 0.4), 1.2 * scale + 0.3, 0.2, 0.2, lambert(0x3a1520));
@@ -1310,7 +1435,7 @@ export class Arena {
         const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.4, 6), lambert(0xffffff));
         flagPole.position.set(0, height + 1, 0);
         group.add(flagPole);
-        const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.5), new THREE.MeshLambertMaterial({ color: COLORS.red, side: THREE.DoubleSide }));
+        const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.5), new THREE.MeshLambertMaterial({ color: own ? COLORS.blue : COLORS.red, side: THREE.DoubleSide }));
         flag.position.set(0.42, height + 1.45, 0);
         group.add(flag);
         const hat = new THREE.Group();
@@ -1326,13 +1451,15 @@ export class Arena {
         // Above the door (in front of the wall, clear of the door box), not on it.
         label.mesh.position.set(0, 1.2 * scale + 0.3 + 0.45, (BASE.depth * (0.7 + 0.3 * scale)) / 2 + 0.516);
         group.add(label.mesh);
-        group.position.set(target.x, 0, target.z - BASE.depth / 2);
+        // (An arena match's own tower stands behind its front, towards the cannon's end.)
+        group.position.set(target.x, 0, target.z + (own ? BASE.depth / 2 : -BASE.depth / 2));
         this.group.add(group);
         const view: TargetView = { group, flashes: [body.material as THREE.MeshLambertMaterial], label, x: target.x, shake: 0, flash: 0, punch: 0, fall: 0, down: false };
         // The red barracks (a tower for a narrow one), when it loads — unless the zone keeps the plain ones; its number
-        // over the roof, facing the camera.
+        // over the roof, facing the camera. An arena match's own towers: the blue barracks.
         const tower = width < PROPS.towerBelow;
-        if (!this.plainForts) void this.dress(group, tower ? PROPS.tower : PROPS.base, tower ? width * 0.8 : width * 1.05, BASE.depth * 1.6, [label.mesh], (height, model) => {
+        const model = own ? PROPS.blueTower : tower ? PROPS.tower : PROPS.base;
+        if (!this.plainForts) void this.dress(group, model, own ? width * 1.05 : tower ? width * 0.8 : width * 1.05, BASE.depth * 1.6, [label.mesh], (height, model) => {
             label.mesh.position.set(0, height + 0.55 + (crowned ? KING_HAT.labelLift : 0), 0.4);
             label.mesh.rotation.x = -0.5;
             hat.position.y = height - KING_HAT.sink;
@@ -1344,6 +1471,19 @@ export class Arena {
             this.onLayout?.();
         });
         return view;
+    }
+
+    /** An arena match's cannon's life: its number floating over the cannon (it follows it: update). */
+    private buildCannonLife(target: Target, own: boolean): TargetView {
+        const group = new THREE.Group();
+        const label = new Label(2.4 * 2, 0.8 * 2, 256, own ? '#cfe0ff' : '#ffd0d6');
+        label.set(String(target.hp));
+        label.mesh.position.set(0, CANNON_LIFE_Y, 0);
+        label.mesh.rotation.x = -0.6;
+        group.add(label.mesh);
+        group.position.set(target.x, 0, own ? CANNON_Z + this.cannonRow : ARENA.baseZ - CANNON_Z - this.cannonRow);
+        this.group.add(group);
+        return { group, flashes: [], label, x: target.x, shake: 0, flash: 0, punch: 0, fall: 0, down: false };
     }
 
     /**
@@ -1558,6 +1698,31 @@ export class Arena {
         this.bits.burst(x, 1.2, z + 0.3, [COLORS.red, 0xc42335, 0xffffff], heavy ? 22 : 4, heavy ? 6 : 3.5, heavy ? 7 : 4.5, 0.7, heavy ? 0.26 : 0.16);
     }
 
+    /** An arena match: the blues' building `index` hit (as hitBase), falling (as destroyTarget), the reds' cannon fired. */
+    public hitOwn(index: number, x: number, z: number, damage: number): void {
+        const view = this.ownTargets[index];
+        if (!view) return;
+        const heavy = damage > 1;
+        view.shake = heavy ? 0.45 : 0.18;
+        view.flash = 0.12;
+        view.punch = heavy ? 1 : 0.5;
+        this.bits.burst(x, 1.2, z - 0.3, [COLORS.blue, 0x2f6fd1, 0xffffff], heavy ? 22 : 4, heavy ? 6 : 3.5, heavy ? 7 : 4.5, 0.7, heavy ? 0.26 : 0.16);
+    }
+
+    public destroyOwn(index: number): void {
+        const view = this.ownTargets[index];
+        if (!view || view.down) return;
+        view.down = true;
+        const z = view.group.position.z;
+        this.bits.burst(view.x, 1.5, z, [COLORS.blue, 0x2f6fd1, 0x14183a, 0xffffff], 70, 11, 11, 1.4, 0.4);
+        for (let i = 0; i < 3; i++) this.puff(view.x + (Math.random() - 0.5) * 3, z + (Math.random() - 0.5) * 2, 0xffffff, 3);
+    }
+
+    public redFired(): void {
+        this.redRecoil = 1;
+        this.redFlashLife = 0.07;
+    }
+
     /** A gate multiplied someone at x: it pulses and sparkles. */
     public pulseGate(index: number, x: number): void {
         const gate = this.gates[index];
@@ -1627,6 +1792,19 @@ export class Arena {
         this.flashLife = Math.max(0, this.flashLife - dt);
         (this.flash.material as THREE.MeshBasicMaterial).opacity = this.flashLife > 0 ? 0.9 : 0;
         this.flash.scale.setScalar(0.8 + Math.random() * 0.5);
+        if (battle.duel) {
+            for (const cannon of [this.cannon, this.redCannon]) {
+                const ring = cannon.getObjectByName('exposed');
+                if (ring?.visible) ring.scale.setScalar(1 + 0.12 * Math.sin(this.time * EXPOSED.pulse));
+            }
+            this.redCannon.position.x = battle.red.cannonX;
+            this.redRecoil = Math.max(0, this.redRecoil - dt * 8);
+            const barrel = this.redCannon.getObjectByName('barrel');
+            if (barrel) barrel.position.z = this.redRecoil * 0.14;
+            this.redFlashLife = Math.max(0, this.redFlashLife - dt);
+            const flash = this.redCannon.getObjectByName('flash') as THREE.Mesh | undefined;
+            if (flash) (flash.material as THREE.MeshBasicMaterial).opacity = this.redFlashLife > 0 ? 0.9 : 0;
+        }
         battle.gates.forEach((gate, i) => {
             const view = this.gates[i];
             view.group.position.x = gate.nowX;
@@ -1685,8 +1863,12 @@ export class Arena {
             view.label.mesh.scale.setScalar(1 + view.pulse * 0.2);
             this.updateHouseIcon(view);
         });
-        battle.targets.forEach((target, i) => {
-            const view = this.targets[i];
+        const sides: [readonly Target[], TargetView[], number][] = [[battle.targets, this.targets, battle.red.cannonX], [battle.blueTargets, this.ownTargets, battle.cannonX]];
+        for (const [list, views, cannonX] of sides) list.forEach((target, i) => {
+            const view = views[i];
+            if (!view) return;
+            // A cannon's life follows its cannon.
+            if (target.kind === 'cannon') view.x = cannonX;
             view.label.set(String(target.hp));
             view.punch = Math.max(0, view.punch - dt * 5);
             view.label.mesh.scale.setScalar(1 + view.punch * 0.35);

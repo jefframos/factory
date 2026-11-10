@@ -146,7 +146,6 @@ export default class UfoScene extends ThreeScene {
     private readonly missionIndex = currentMissionIndex();
     /** A level to eat everything: rivals never eat the player or outgrow it, and whoever eats one gets what it ate. */
     private readonly gentle = this.mission?.type === 'all';
-    private catchAnnounced = false;
     private score = 0;
     private target = 0;
     private kills = 0;
@@ -499,13 +498,12 @@ export default class UfoScene extends ThreeScene {
         else this.updateTags();
     }
 
-    /** How much of the town's in the player: what the rivals hold doesn't count until they're eaten. */
+    /**
+     * How much of what's left of the town the player has: what the rivals ate is gone from it (eating a rival still gives
+     * its haul, as a bonus), so the map eaten bare is the town done, without having to hunt the rivals for the rest.
+     */
     private townShare(): number {
-        return this.eaten / Math.max(1, this.eaten + this.town.items.length + this.flying.length + this.heldByRivals());
-    }
-
-    private heldByRivals(): number {
-        return this.contestants.reduce((sum, { held }) => sum + held.count, 0);
+        return this.eaten / Math.max(1, this.eaten + this.town.items.length + this.flying.length);
     }
 
     /** The ring timer, the points bar (or how far along the mission is), the kills. */
@@ -685,16 +683,10 @@ export default class UfoScene extends ThreeScene {
     private checkEnd(delta: number): void {
         const { round, goal } = this.level;
         const left = this.town.items.length + this.flying.length;
-        const heldBack = this.heldByRivals();
-        const allGone = this.loaded && this.eaten > 0 && left === 0 && heldBack === 0;
-        // Eating everything's done with a little to spare: the last thing can be too small to find.
-        const allEaten = this.loaded && this.eaten > 0 && this.townShare() >= UFO.completeShare;
-        // The town's gone but the rivals still have some of it: they're all that's left to eat.
-        if (left === 0 && heldBack > 0 && !this.catchAnnounced) {
-            this.catchAnnounced = true;
-            this.sayTimer = SAY_EVERY;
-            this.hud.say('EAT THE OTHERS TO GET THE REST!');
-        }
+        // The map eaten (by anyone: what the rivals took doesn't have to be won back from them), with a little to spare
+        // (UFO.completeShare): once the saucer's big, the last small things are too hard to spot.
+        const allEaten = this.loaded && this.eaten > 0 && (left === 0 || this.townShare() >= UFO.completeShare);
+        const allGone = allEaten;
         if (this.mission) {
             this.clock -= delta;
             const won = this.mission.type === 'points' ? this.target > 0 && this.score >= this.target

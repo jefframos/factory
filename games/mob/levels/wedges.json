@@ -3,15 +3,19 @@
   "kind": "Polygons",
   "gates": [
     {
-      "x": -3.3,
-      "z": -3.5,
+      "x": 0.2,
+      "z": -5.75,
       "width": 2.6,
-      "value": 2
+      "value": 2,
+      "swing": {
+        "range": 2.5,
+        "seconds": 5
+      }
     },
     {
       "x": 0,
       "z": -3.5,
-      "width": 2.6,
+      "width": 6,
       "value": 3
     },
     {
@@ -90,5 +94,21 @@
   "redRateEnd": 8.84,
   "redRamp": 55,
   "baseHp": 300,
-  "reward": 140
+  "reward": 140,
+  "grinders": [
+    {
+      "x": 4,
+      "z": -3.5,
+      "length": 1,
+      "thickness": 0.9,
+      "axis": "x"
+    },
+    {
+      "x": -4,
+      "z": -3.5,
+      "length": 1,
+      "thickness": 0.9,
+      "axis": "x"
+    }
+  ]
 }

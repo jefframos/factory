@@ -8,7 +8,7 @@
 const $ = (id) => document.getElementById(id);
 const ui = {
     format: $('format'), width: $('width'), height: $('height'), dpr: $('dpr'), logical: $('logical'), query: $('query'),
-    reload: $('reload'), swap: $('swap'), pause: $('pause'), step: $('step'), speed: $('speed'), fit: $('fit'), pip: $('pip'),
+    reload: $('reload'), swap: $('swap'), lockShape: $('lockShape'), half: $('half'), double: $('double'), pause: $('pause'), step: $('step'), speed: $('speed'), fit: $('fit'), pip: $('pip'),
     fps: $('fps'), bitrate: $('bitrate'), audio: $('audio'), linkPause: $('linkPause'), record: $('record'), recInfo: $('recInfo'),
     layers: $('layers'), recent: $('recent'), stage: $('stage'), frameBox: $('frameBox'), game: $('game'), sizeBadge: $('sizeBadge'),
     pausedBadge: $('pausedBadge'), recBadge: $('recBadge'), pipCanvas: $('pipCanvas'), gameTitle: $('gameTitle'),
@@ -19,7 +19,7 @@ const saved = (() => { try { return JSON.parse(localStorage.getItem(STORE) ?? '{
 const persist = () => {
     try {
         localStorage.setItem(STORE, JSON.stringify({
-            width: +ui.width.value, height: +ui.height.value, dpr: +ui.dpr.value, query: ui.query.value, fit: ui.fit.checked, pip: ui.pip.checked,
+            width: +ui.width.value, height: +ui.height.value, dpr: +ui.dpr.value, query: ui.query.value, fit: ui.fit.checked, pip: ui.pip.checked, lockShape: ui.lockShape.checked,
             fps: ui.fps.value, bitrate: ui.bitrate.value, audio: ui.audio.checked, linkPause: ui.linkPause.checked,
         }));
     } catch {
@@ -310,7 +310,7 @@ async function startRecording() {
     ui.record.textContent = '■ Stop';
     ui.record.classList.add('on');
     ui.recBadge.hidden = false;
-    for (const input of [ui.width, ui.height, ui.dpr, ui.format, ui.fps, ui.bitrate, ui.audio, ui.reload, ui.swap, ui.query]) input.disabled = true;
+    for (const input of [ui.width, ui.height, ui.dpr, ui.format, ui.fps, ui.bitrate, ui.audio, ui.reload, ui.swap, ui.query, ui.half, ui.double]) input.disabled = true;
 }
 
 async function stopRecording() {
@@ -338,7 +338,7 @@ async function stopRecording() {
         ui.recInfo.innerHTML = `<span class="hint bad">Couldn't finish the recording: ${error.message.split(String.fromCharCode(10))[0]}${take.failed ? ` (${take.failed})` : ''}</span>`;
     }
     ui.record.disabled = false;
-    for (const input of [ui.width, ui.height, ui.dpr, ui.format, ui.fps, ui.bitrate, ui.audio, ui.reload, ui.swap, ui.query]) input.disabled = false;
+    for (const input of [ui.width, ui.height, ui.dpr, ui.format, ui.fps, ui.bitrate, ui.audio, ui.reload, ui.swap, ui.query, ui.half, ui.double]) input.disabled = false;
     void showRecent();
 }
 
@@ -392,7 +392,30 @@ ui.format.onchange = () => {
     }
     applyFormat();
 };
-for (const input of [ui.width, ui.height, ui.dpr]) input.onchange = () => { ui.format.value = 'custom'; applyFormat(); };
+/**
+ * The output scaled by `ratio` (from the format applied): with "Keep shape and layout", both sides and the UI scale
+ * together, so the game's page (and so its layout) stays the same and only the pixels change.
+ */
+function scaleFormat(ratio) {
+    if (!(ratio > 0)) return;
+    ui.width.value = Math.max(64, Math.round((format.width * ratio) / 2) * 2);
+    ui.height.value = Math.max(64, Math.round((format.height * ratio) / 2) * 2);
+    ui.dpr.value = Math.round(Math.max(0.5, Math.min(4, format.dpr * ratio)) * 100) / 100;
+}
+ui.width.onchange = () => {
+    if (ui.lockShape.checked) scaleFormat(+ui.width.value / format.width);
+    ui.format.value = 'custom';
+    applyFormat();
+};
+ui.height.onchange = () => {
+    if (ui.lockShape.checked) scaleFormat(+ui.height.value / format.height);
+    ui.format.value = 'custom';
+    applyFormat();
+};
+ui.dpr.onchange = () => { ui.format.value = 'custom'; applyFormat(); };
+ui.half.onclick = () => { scaleFormat(0.5); ui.format.value = 'custom'; applyFormat(); };
+ui.double.onclick = () => { scaleFormat(2); ui.format.value = 'custom'; applyFormat(); };
+ui.lockShape.onchange = persist;
 ui.query.onchange = applyFormat;
 ui.swap.onclick = () => {
     [ui.width.value, ui.height.value] = [ui.height.value, ui.width.value];
@@ -423,6 +446,7 @@ setInterval(() => { if (!recording) refreshLayers(); }, 2000);
 
 ui.query.value = saved.query ?? '';
 ui.fit.checked = saved.fit ?? true;
+ui.lockShape.checked = saved.lockShape ?? true;
 ui.pip.checked = !!saved.pip;
 ui.pipCanvas.hidden = !ui.pip.checked;
 if (saved.fps) ui.fps.value = saved.fps;

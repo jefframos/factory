@@ -25,6 +25,12 @@
                     <input id="height" type="number" min="64" step="2">
                     <button class="small" id="swap" title="Swap width and height">⇄</button>
                 </div>
+                <div class="row tight">
+                    <label><input id="lockShape" type="checkbox" checked> Keep shape and layout</label>
+                    <span class="grow"></span>
+                    <button class="small" id="half" title="Half the size">½×</button>
+                    <button class="small" id="double" title="Double the size">2×</button>
+                </div>
                 <div class="row">
                     <label>UI scale</label>
                     <input id="dpr" type="number" min="0.5" max="4" step="0.25">
@@ -36,7 +42,8 @@
                 </div>
                 <div class="buttons"><button id="reload">↻ Reload game</button></div>
                 <p class="hint">The game's page is <b>size ÷ UI scale</b> CSS pixels, rendered at the full size. A higher scale makes the
-                    UI bigger. Changing the scale reloads the game.</p>
+                    UI bigger. Changing the scale reloads the game. With <b>Keep shape and layout</b> on, changing the width or
+                    height changes the other and the UI scale with it: the same shot, more or fewer pixels.</p>
             </section>
             <section>
                 <h2>Game</h2>

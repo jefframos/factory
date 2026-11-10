@@ -8,6 +8,9 @@
 // The field (MobConfig.ts ARENA): x across from -width/2 to width/2, z along it from the cannon (0.35) up to the base's
 // front (-length); 10 x 24 unless the level sets its `width` / `length` (it grows from the bottom centre: the cannon's
 // end and the middle stay put). Blues go up (-z). Polygons are [x, z] corner lists, as the game reads them.
+//
+// The Arena tab is this same editor on the arenas (games/mob/arenas/: the arena mode, mob-arena.js): setMode() swaps
+// which files the list, the field and the preview work on (`state.levels` holds the arenas while it's on).
 
 // ------------------------------------------------------------------ constants
 
@@ -16,6 +19,7 @@ import { buildSettingsTab } from './mob-settings.js';
 import { createGrades } from './mob-grades.js';
 import { buildCurveTab, loadCurve, targetCurve } from './mob-curve.js';
 import { createGaps } from './mob-gaps.js';
+import { ARENA_RULES, arenaCannon, arenaTowers, createArenaTab, defaultTowers, mirrorArena, newArena } from './mob-arena.js';
 
 /** The field sizes (MobConfig.ts FIELD): the default, the most, and the presets offered. */
 const FIELD = { width: 10, length: 24, maxWidth: 20, maxLength: 60 };
@@ -26,8 +30,10 @@ const FIELD_SIZES = [
     { label: 'big 14 x 32', width: 14, length: 32 },
     { label: 'huge 18 x 44', width: 18, length: 44 },
 ];
-const fieldWidth = () => Math.min(FIELD.maxWidth, Math.max(4, level()?.width ?? FIELD.width));
-const fieldLength = () => Math.min(FIELD.maxLength, Math.max(4, level()?.length ?? FIELD.length));
+const fieldWidth = () => Math.min(FIELD.maxWidth, Math.max(4, level()?.width ?? (arenaMode() ? ARENA_RULES.width : FIELD.width)));
+const fieldLength = () => Math.min(FIELD.maxLength, Math.max(4, level()?.length ?? (arenaMode() ? ARENA_RULES.length : FIELD.length)));
+/** The Arena tab is on (the field, list and preview are the arenas'). */
+const arenaMode = () => state.mode === 'arena';
 const halfWidth = () => fieldWidth() / 2;
 const baseZ = () => -fieldLength();
 const CANNON_Z = 0.35;
@@ -55,7 +61,8 @@ const DEFAULTS = {
     // A new one's blue (only blues go through it); a pipe with no `team` is purple (both).
     pipes: (x, z) => ({ x, z, toX: x, toZ: round(z - 8), team: 'blue' }),
     helmets: (x, z) => (state.helmetKind === 'attack' ? { kind: 'attack', x, z, width: 3 } : { x, z, width: 3 }),
-    targets: (x, z) => ({ x, hp: 200, width: 3.2, z: Math.abs(z - baseZ()) < 1 ? undefined : z }),
+    // (An arena's tower: its life the arena's towerHp unless set.)
+    targets: (x, z) => (arenaMode() ? { x, z, width: ARENA_RULES.tower.width } : { x, hp: 200, width: 3.2, z: Math.abs(z - baseZ()) < 1 ? undefined : z }),
 };
 /** What a barrier gives, and how it's drawn here. */
 const HELMET_KINDS = {
@@ -176,6 +183,9 @@ const state = {
     theme: 'beach',
     undo: [],
     redo: [],
+    /** 'levels' or 'arena' (the Arena tab): which files the editing works on; the other's kept in `stash`. */
+    mode: 'levels',
+    stash: null,
 };
 const level = () => state.levels.get(state.id);
 
@@ -300,6 +310,8 @@ async function boot() {
         state.themes = themes.themes;
         state.zones = zones;
         for (const { id, level: data } of levels) if (data) state.levels.set(id, data);
+        const arenas = await api('/api/mob/arenas').catch(() => []);
+        state.stash = { levels: new Map(arenas.filter((a) => a.arena).map((a) => [a.id, a.arena])), id: null, dirty: new Set(), undo: [], redo: [] };
         state.theme = zones.zones[0]?.theme ?? themes[0]?.id ?? 'beach';
     } catch (error) {
         toast(`Could not load: ${error.message}`, 'error');
@@ -344,7 +356,11 @@ async function boot() {
     document.querySelectorAll('header [data-tab]').forEach((button) => button.addEventListener('click', () => {
         remember('tab', button.dataset.tab);
         document.querySelectorAll('header [data-tab]').forEach((b) => b.classList.toggle('on', b === button));
-        levelsTab.hidden = button.dataset.tab !== 'levels';
+        // The Arena tab is the Levels tab's editing on the arenas.
+        const editing = button.dataset.tab === 'levels' || button.dataset.tab === 'arena';
+        levelsTab.hidden = !editing;
+        // (Every other tab works on the levels.)
+        setMode(button.dataset.tab === 'arena' ? 'arena' : 'levels');
         zonesTab.hidden = button.dataset.tab !== 'zones';
         themesTab.hidden = button.dataset.tab !== 'themes';
         unitsTab.hidden = button.dataset.tab !== 'units';
@@ -362,11 +378,33 @@ async function boot() {
     const keptTab = remembered('tab');
     if (keptTab && keptTab !== 'levels') document.querySelector(`header [data-tab="${keptTab}"]`)?.click();
     window.addEventListener('beforeunload', (event) => {
-        if (state.dirty.size || zonesDirty || themesDirty || unitsDirty || worldEditor?.dirty || settingsEditor?.dirty) event.preventDefault();
+        if (state.dirty.size || state.stash?.dirty.size || arenaTab?.dirty || zonesDirty || themesDirty || unitsDirty || worldEditor?.dirty || settingsEditor?.dirty) event.preventDefault();
     });
 }
 
+/** The Arena tab's own parts (mob-arena.js). */
+let arenaTab = null;
+
+/** Swaps the editing to the levels or the arenas: the list, the field, the props and the preview (each keeps its own
+ *  open file, unsaved ones and undo). */
+function setMode(mode) {
+    if (state.mode === mode) return;
+    const away = { levels: state.levels, id: state.id, dirty: state.dirty, undo: state.undo, redo: state.redo };
+    const back = state.stash;
+    state.stash = away;
+    state.mode = mode;
+    Object.assign(state, { levels: back.levels, dirty: back.dirty });
+    arenaTab ??= createArenaTab({ el, api, toast, state, numberField, textField, fieldSizeFields, sendPreview, changed, checkpoint });
+    for (const [id, button] of Object.entries(toolButtons)) button.hidden = mode === 'arena' && id === 'pushBlocks';
+    if (toolButtons.targets) toolButtons.targets.textContent = mode === 'arena' ? 'Tower' : 'Fort';
+    const id = back.id && state.levels.has(back.id) ? back.id : (mode === 'arena' ? remembered('arena') : remembered('level'));
+    openLevel(id && state.levels.has(id) ? id : firstLevelId());
+    state.undo = back.undo;
+    state.redo = back.redo;
+}
+
 function firstLevelId() {
+    if (arenaMode()) return state.levels.keys().next().value ?? null;
     for (const zone of state.zones.zones) for (const id of zone.levels) if (state.levels.has(id)) return id;
     return state.levels.keys().next().value ?? null;
 }
@@ -495,6 +533,14 @@ function offTheCurve() {
 
 function renderLevelList() {
     levelList.replaceChildren();
+    if (arenaMode()) {
+        for (const [id, data] of state.levels) {
+            levelList.append(el('div', { class: `row${id === state.id ? ' sel' : ''}`, onclick: () => openLevel(id) },
+                el('div', { class: 'row-main' }, el('span', { class: state.dirty.has(id) ? 'dirty' : '' }, data?.name ?? id), el('div', { class: 'row-sub' }, el('small', {}, `${id} · ${data.seconds ?? ARENA_RULES.seconds}s`)))));
+        }
+        if (!state.levels.size) levelList.append(el('p', { class: 'hint', style: { padding: '8px' } }, 'No arena yet: + New.'));
+        return;
+    }
     const used = new Set();
     const off = offTheCurve();
     const closed = closedZones();
@@ -562,14 +608,15 @@ function setTool(tool) {
 
 function openLevel(id) {
     state.id = id;
-    remember('level', id);
+    remember(arenaMode() ? 'arena' : 'level', id);
     state.selection = null;
     state.undo = [];
     state.redo = [];
     state.draft = [];
     // The zone it's in picks the preview's theme.
     const zone = state.zones.zones.find((z) => z.levels.includes(id));
-    if (zone) state.theme = zone.theme;
+    if (arenaMode()) state.theme = level()?.theme ?? 'beach';
+    else if (zone) state.theme = zone.theme;
     const select = document.querySelector('.preview select');
     if (select) select.value = state.theme;
     renderLevelList();
@@ -583,10 +630,10 @@ function openLevel(id) {
 async function saveLevel() {
     if (!state.id) return;
     try {
-        await api(`/api/mob/level?id=${state.id}`, { method: 'PUT', body: level() });
+        await api(`/api/mob/${arenaMode() ? 'arena' : 'level'}?id=${state.id}`, { method: 'PUT', body: level() });
         state.dirty.delete(state.id);
         renderLevelList();
-        toast(`Saved levels/${state.id}.json`, 'ok');
+        toast(`Saved ${arenaMode() ? 'arenas' : 'levels'}/${state.id}.json`, 'ok');
     } catch (error) {
         toast(error.message, 'error');
     }
@@ -596,7 +643,7 @@ function askId(question, suggestion) {
     const id = (prompt(question, suggestion) ?? '').trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
     if (!id) return null;
     if (state.levels.has(id)) {
-        toast(`There's already a level "${id}"`, 'error');
+        toast(`There's already ${arenaMode() ? 'an arena' : 'a level'} "${id}"`, 'error');
         return null;
     }
     return id;
@@ -605,7 +652,7 @@ function askId(question, suggestion) {
 async function addLevel(id, data) {
     state.levels.set(id, data);
     try {
-        await api(`/api/mob/level?id=${id}`, { method: 'PUT', body: data });
+        await api(`/api/mob/${arenaMode() ? 'arena' : 'level'}?id=${id}`, { method: 'PUT', body: data });
     } catch (error) {
         toast(error.message, 'error');
         state.dirty.add(id);
@@ -614,6 +661,11 @@ async function addLevel(id, data) {
 }
 
 function newLevel() {
+    if (arenaMode()) {
+        const id = askId('New arena id (lower case, dashes):', 'new-arena');
+        if (id) addLevel(id, newArena(id.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())));
+        return;
+    }
     const id = askId('New level id (lower case, dashes):', 'new-level');
     if (!id) return;
     addLevel(id, {
@@ -634,9 +686,9 @@ function duplicateLevel() {
 }
 
 async function deleteLevel() {
-    if (!state.id || !confirm(`Delete levels/${state.id}.json?`)) return;
+    if (!state.id || !confirm(`Delete ${arenaMode() ? 'arenas' : 'levels'}/${state.id}.json?`)) return;
     try {
-        await api(`/api/mob/level?id=${state.id}`, { method: 'DELETE' });
+        await api(`/api/mob/${arenaMode() ? 'arena' : 'level'}?id=${state.id}`, { method: 'DELETE' });
         state.levels.delete(state.id);
         state.dirty.delete(state.id);
         openLevel(firstLevelId());
@@ -862,9 +914,66 @@ function draw() {
         ctx.stroke();
         if (z % 5 === 0) text(`${z}`, -halfWidth() - 0.9, z, 10, '#d8f5c8');
     }
-    rect(0, DANGER_Z, halfWidth() * 2, 0.15, COLORS.red);
-    rect(0, CANNON_Z, 8.4, 0.12, '#ffffff');
-    rect(0, CANNON_Z, 1.1, 1, COLORS.cannon, '#1b2a55');
+    if (!arenaMode()) rect(0, DANGER_Z, halfWidth() * 2, 0.15, COLORS.red);
+    if (!arenaMode()) {
+        rect(0, CANNON_Z, 8.4, 0.12, '#ffffff');
+        rect(0, CANNON_Z, 1.1, 1, COLORS.cannon, '#1b2a55');
+    }
+    if (arenaMode()) {
+        // An arena's towers (yours, draggable) and their mirror; an older arena with none gets the default two.
+        if (!data.targets) data.targets = defaultTowers(fieldWidth());
+        // The middle (the mirror line) and the enemy's cannon at the far end.
+        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+        ctx.setLineDash([10, 6]);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(...toScreen(-halfWidth(), baseZ() / 2));
+        ctx.lineTo(...toScreen(halfWidth(), baseZ() / 2));
+        ctx.stroke();
+        ctx.setLineDash([]);
+        text('ENEMY HALF (mirrored)', 0, baseZ() / 2 - 0.6, 12, '#ffd0d6');
+        text('YOUR HALF', 0, baseZ() / 2 + 0.6, 12, '#cfe0ff');
+        // The mirror, faded (nothing in it can be picked: it follows your half).
+        const kept = state.selection;
+        state.selection = null;
+        ctx.globalAlpha = 0.38;
+        pieces(mirrorArena(data, fieldLength()));
+        ctx.globalAlpha = 1;
+        state.selection = kept;
+    }
+    pieces(data);
+    if (arenaMode()) {
+        // Each tower's front faces the middle; it stands behind it, towards its own cannon (the reds' mirrored, faded).
+        arenaTowers(data, fieldWidth()).forEach((t, i) => {
+            for (const red of [true, false]) {
+                const front = red ? -fieldLength() - t.z : t.z;
+                const z = red ? front - BASE.depth / 2 : front + BASE.depth / 2;
+                ctx.globalAlpha = red ? 0.55 : 1;
+                rect(t.x, z, t.width, BASE.depth, red ? COLORS.red : COLORS.cannon, !red && isSelected('targets', i) ? COLORS.select : red ? '#7a1220' : '#1b2a55');
+                text(`${t.hp}`, t.x, z, 13);
+            }
+            ctx.globalAlpha = 1;
+        });
+        // Each cannon on its row: its slide (the rail, its length), the cannon in the middle, the width the reds hit.
+        const cannon = arenaCannon(data, fieldWidth());
+        for (const red of [false, true]) {
+            const z = red ? -fieldLength() - (CANNON_Z + cannon.z) : CANNON_Z + cannon.z;
+            const colour = red ? COLORS.red : COLORS.cannon;
+            ctx.globalAlpha = red ? 0.55 : 1;
+            rect(0, z, cannon.range * 2 + 1.1, 0.14, '#ffffff');
+            rect(0, z, cannon.width, 1, colour, red ? '#7a1220' : '#1b2a55');
+            text(`cannon ${data.cannonHp ?? ARENA_RULES.cannonHp}`, 0, red ? z - 1 : z + 1, 12, red ? '#ffd0d6' : '#cfe0ff');
+            ctx.globalAlpha = 1;
+        }
+        drawDraft();
+        return;
+    }
+    // Forts (or the one base).
+    fortsAndRest(data);
+}
+
+/** The pieces of `data` (a level, or an arena's half and its mirror) on the field. */
+function pieces(data) {
     // Obstacles.
     (data.obstacles ?? []).forEach((o, i) => {
         const outline = obstacleOutline(o);
@@ -1013,7 +1122,10 @@ function draw() {
         rect(b.x, b.z, b.width - 0.3, b.depth * 0.45, COLORS.pushPlate);
         text('PUSH', b.x, b.z, 12);
     });
-    // Forts (or the one base).
+}
+
+/** A level's forts (or its one base), then the rest drawn over the field. */
+function fortsAndRest(data) {
     const targets = data.targets?.length ? data.targets : null;
     if (targets) {
         targets.forEach((t, i) => {
@@ -1028,7 +1140,11 @@ function draw() {
     }
     // Check gaps' overlay (where its units get stuck).
     gaps.draw(ctx, state.id, toScreen, view.scale);
-    // The polygon being drawn.
+    drawDraft();
+}
+
+/** The polygon being drawn, and where the pointer is. */
+function drawDraft() {
     if (state.tool === 'polygon' && state.draft.length) {
         ctx.strokeStyle = COLORS.select;
         ctx.lineWidth = 2;
@@ -1082,7 +1198,10 @@ function hits(list, item, x, z) {
         case 'pads': case 'pushBlocks': return inRect(item.x, item.z, item.width, item.depth);
         case 'pipes': return pipeEndAt(item, x, z) !== null;
         case 'grinders': return item.axis === 'z' ? inRect(item.x, item.z, Math.max(0.6, item.thickness), item.length) : inRect(item.x, item.z, item.length, Math.max(0.6, item.thickness));
-        case 'targets': return inRect(item.x, (item.z ?? baseZ()) - BASE.depth / 2, item.width ?? BASE.width, BASE.depth);
+        // (An arena's tower stands behind its front, towards the cannon's end.)
+        case 'targets': return arenaMode()
+            ? inRect(item.x, (item.z ?? ARENA_RULES.towerZ) + BASE.depth / 2, item.width ?? ARENA_RULES.tower.width, BASE.depth)
+            : inRect(item.x, (item.z ?? baseZ()) - BASE.depth / 2, item.width ?? BASE.width, BASE.depth);
         case 'obstacles': return pointInPolygon(x, z, obstacleOutline(item));
         default: return false;
     }
@@ -1276,8 +1395,8 @@ function numberField(object, key, onChange, { step = 0.05, hint } = {}) {
 function fieldSizeFields(data) {
     const set = (width, length) => {
         checkpoint();
-        if (width === FIELD.width) delete data.width; else data.width = width;
-        if (length === FIELD.length) delete data.length; else data.length = length;
+        if (width === FIELD.width && !arenaMode()) delete data.width; else data.width = width;
+        if (length === FIELD.length && !arenaMode()) delete data.length; else data.length = length;
         changed();
     };
     const current = FIELD_SIZES.findIndex((size) => size.width === fieldWidth() && size.length === fieldLength());
@@ -1336,6 +1455,10 @@ function renderProps() {
     }
     const s = state.selection;
     const item = itemOf(s);
+    if (!item && arenaMode()) {
+        propsPanel.append(arenaTab.panel(data, () => { if (!state.selection) renderProps(); }));
+        return;
+    }
     if (!item) {
         propsPanel.append(el('h3', {}, `Level · ${state.id}`));
         // Its zone (the play order and its look): moving it here edits the Zones tab's list (save it there, or here).
@@ -1475,7 +1598,7 @@ let previewTimer = 0;
 function previewUrl() {
     const url = new URL(state.gameUrl);
     url.searchParams.set('preview', '1');
-    if (state.id) url.searchParams.set('level', state.id);
+    if (state.id) url.searchParams.set(arenaMode() ? 'arena' : 'level', state.id);
     url.searchParams.set('theme', state.theme);
     return url.toString();
 }
@@ -1492,6 +1615,10 @@ function queuePreview() {
 
 function sendPreview() {
     if (!preview?.contentWindow || !level()) return;
+    if (arenaMode()) {
+        preview.contentWindow.postMessage({ type: 'mob-arena', arena: level(), theme: level().theme ?? 'beach', ...arenaTab.testMessage() }, '*');
+        return;
+    }
     preview.contentWindow.postMessage({ type: 'mob-level', level: level(), theme: state.theme }, '*');
 }
 

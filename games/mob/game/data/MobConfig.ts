@@ -45,7 +45,7 @@ export function useField(config: BattleConfig): void {
     const { width, length } = fieldOf(config);
     ARENA.halfWidth = width / 2;
     ARENA.baseZ = -length;
-    ARENA.cannonRange = width / 2 - CANNON_MARGIN;
+    ARENA.cannonRange = config.duel ? config.duel.cannonRange : width / 2 - CANNON_MARGIN;
 }
 
 /** The shared feel: speeds, sizes, the cannon. The debug panel's sliders change these live. */
@@ -140,6 +140,9 @@ export interface GateConfig {
     /** Locked: grey, barred and padlocked, it's a breakable with these hits across its span (both sides wear it down,
      *  as a brick block) and multiplies no one, nor swings; at zero it unlocks and works as a gate. Unset = open. */
     lock?: number;
+    /** Whose it is (an arena's mirrored half: game/data/ArenaConfig): 'red' works for the reds coming down the field
+     *  instead. Unset: the blues'. */
+    team?: 'blue' | 'red';
 }
 
 /**
@@ -263,6 +266,8 @@ export interface SpinnerConfig {
     length: number;
     arms: number;
     speed: number;
+    /** Where in its turn it starts (turns: 0..1; an arena's mirrored copy turns the other way from half a turn). */
+    phase?: number;
 }
 
 /** A bar sliding across the field, sweeping mobs along: `width` x `depth`, swinging `range` either way of x. */
@@ -311,6 +316,9 @@ export interface HelmetConfig {
     /** What it gives (once each; they stack): `hp` — the helmet, hits x TUNING.helmetHp (the default); `attack` — the
      *  viking hat, the damage it does x TUNING.vikingDamage. */
     kind?: 'hp' | 'attack';
+    /** Whose it is (an arena's mirrored half: game/data/ArenaConfig): 'red' works for the reds coming down the field
+     *  instead. Unset: the blues'. */
+    team?: 'blue' | 'red';
 }
 export interface PadConfig {
     kind?: HouseKind;
@@ -320,6 +328,9 @@ export interface PadConfig {
     depth: number;
     /** Blues per one it makes; unset: the unit's (the Units tab's: needOf). */
     need?: number;
+    /** Whose it is (an arena's mirrored half: game/data/ArenaConfig): 'red' works for the reds: they walk in and its units come out
+     *  of its near side, down the field. Unset: the blues'. */
+    team?: 'blue' | 'red';
 }
 
 /**
@@ -331,6 +342,22 @@ export interface TargetConfig {
     hp: number;
     width?: number;
     z?: number;
+    /** An arena's cannon (its life): no building, its number over the cannon. Unset: a fort. */
+    kind?: 'cannon';
+}
+
+/** An arena match's rules (BattleConfig.duel: game/data/ArenaConfig builds them). The enemy's cannon is at the far end
+ *  of the field, firing reds down it, and it plays cards too; each side has its cannon's life and its towers. */
+export interface DuelRules {
+    /** The match's length: when it's up, the side with more life left wins. */
+    seconds: number;
+    /** How far either cannon slides from the middle, and the blues' cannon's row (z: up the field from a level's 0; the
+     *  reds' is its mirror). */
+    cannonRange: number;
+    cannonZ: number;
+    /** The comeback: the side behind by `behind` (a share of its life at the start) can boost its cannon's fire rate
+     *  `rate` times for `seconds`, then waits `cooldown` seconds before it can again. */
+    boost: { rate: number; seconds: number; cooldown: number; behind: number };
 }
 
 export interface BattleConfig {
@@ -364,6 +391,9 @@ export interface BattleConfig {
     targets?: TargetConfig[];
     /** Coins for a win. */
     reward: number;
+    /** An arena match (both sides play): its rules. The blues' own buildings are `blueTargets` (the reds' aim). */
+    duel?: DuelRules;
+    blueTargets?: TargetConfig[];
 }
 
 /** Each loss in a row on a level makes its next try this much easier, up to `most` (back to none on the next level):

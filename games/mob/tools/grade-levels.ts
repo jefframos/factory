@@ -10,8 +10,13 @@
 //            --state <file> (a JSON { zones?, levels?: { id: level } } used instead of what's on disk: the editor's
 //            unsaved order and level).
 //
-// The work (each level x profile x go) is shared out over worker threads; each level's grade is saved as soon as it's
-// done (so stopping it part way keeps those). At the end, a report of the whole game as it stands (every level in play
+// The work is shared out over worker threads a battle at a time: each go (a level x profile x career) is its tries and
+// its stress probes, and a free thread takes the battle most surely needed (the next try, the next probe; then ones a go
+// may need, ahead of what came back: the tries after the one still playing, the probes either way the search could go).
+// So a full run plays what it would anyway, and a run of a level or two spreads each go over the threads instead of
+// leaving them idle while a few goes play their tries one after another. The grades are the same either way (each
+// battle has the luck it always had). Each level's grade is saved as soon as it's done (so stopping it part way keeps
+// those). At the end, a report of the whole game as it stands (every level in play
 // order with its latest grade, marked when that's out of date) goes to reports/latest.json, and a run of every level
 // is also kept as reports/grades-<date>.json (the editor's Curve tab draws them, against the curve to aim for).
 
@@ -21,12 +26,18 @@ import * as path from 'path';
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
 import { BattleConfig } from '../game/data/MobConfig';
 import { PlayEntry, ZoneConfig, buildPlayList, loopedBattle } from '../game/data/LevelList';
-import { Go, MAX_TRIES, PROFILES, levelScore, loadoutAt, playGo, profileGrade, STRESS } from '../game/sim/Grading';
+import { BattleRun, Go, MAX_TRIES, PROFILES, goScore, levelScore, loadoutAt, profileGrade, STRESS, stressRun, tryRun } from '../game/sim/Grading';
 import { contextHash, hashString, levelHash } from '../web/public/mob-grade-key.js';
 
 interface Inputs { root: string; statePath?: string }
-interface Job { index: number; profile: string; seed: number }
-interface JobResult { job: Job; go: Go }
+/** A go: a level (its place in the play order) played by a profile, on its own luck. */
+interface Job { index: number; profile: string; seed: number; career: number }
+/** One battle of a go: try `t`, or stress probe `probe` at STRESS.ladder[`mid`]. */
+type Fight = { key: string; t: number } | { key: string; probe: number; mid: number };
+type FightJob = Fight & { go: number; index: number; profile: string; seed: number };
+interface FightResult { go: number; key: string; run: BattleRun }
+/** A battle a go could need, `depth` results away from being sure it does (0: it does). */
+type Wanted = Fight & { depth: number };
 
 const args = process.argv.slice(2);
 const option = (name: string): string | undefined => {
@@ -48,16 +59,65 @@ function load(inputs: Inputs): { play: PlayEntry[]; settings: unknown } {
     return { play: buildPlayList(byId, zones), settings };
 }
 
-function runJob(play: PlayEntry[], job: Job): Go {
+function runFight(play: PlayEntry[], job: FightJob): BattleRun {
     const profile = PROFILES.find((p) => p.id === job.profile)!;
     const loadout = loadoutAt(play, job.index, profile.spend);
-    return playGo(loopedBattle(play, job.index).config, profile.skill, loadout, job.seed);
+    const config = loopedBattle(play, job.index).config;
+    return 't' in job ? tryRun(config, profile.skill, loadout, job.seed, job.t) : stressRun(config, profile.skill, loadout, job.seed, job.probe, job.mid);
+}
+
+/**
+ * Where a go's battles stand (`runs`: those back, by key): the go itself when it's settled, else the battles it could
+ * still need, each with its depth. The same steps as Grading's playGo: tries until a win (at most MAX_TRIES), then, won
+ * first time, the stress probes' binary search.
+ */
+function plan(runs: Map<string, BattleRun>): { go?: Go; wanted: Wanted[] } {
+    const wanted: Wanted[] = [];
+    // The probes from (probe, lo, hi) on, either way each could go.
+    const probes = (probe: number, lo: number, hi: number, depth: number): void => {
+        if (probe >= STRESS.probes || lo >= hi) return;
+        const mid = Math.floor((lo + hi) / 2);
+        wanted.push({ key: `s${probe}:${mid}`, probe, mid, depth });
+        probes(probe + 1, mid + 1, hi, depth + 1);
+        probes(probe + 1, lo, mid, depth + 1);
+    };
+    const tries: BattleRun[] = [];
+    let wonAt = -1;
+    while (tries.length < MAX_TRIES) {
+        const run = runs.get(`t${tries.length}`);
+        if (!run) break;
+        tries.push(run);
+        if (run.won) {
+            wonAt = tries.length - 1;
+            break;
+        }
+    }
+    if (wonAt < 0 && tries.length < MAX_TRIES) {
+        for (let t = tries.length; t < MAX_TRIES; t++) wanted.push({ key: `t${t}`, t, depth: t - tries.length });
+        // Won first time (not known yet): the probes come next.
+        if (tries.length === 0) probes(0, 0, STRESS.ladder.length, 1);
+        return { wanted };
+    }
+    if (wonAt !== 0) return { go: { tries, stress: null, score: goScore(tries, null) }, wanted };
+    let lo = 0;
+    let hi = STRESS.ladder.length;
+    let probe = 0;
+    for (; probe < STRESS.probes && lo < hi; probe++) {
+        const mid = Math.floor((lo + hi) / 2);
+        const run = runs.get(`s${probe}:${mid}`);
+        if (!run) break;
+        if (run.won) lo = mid + 1;
+        else hi = mid;
+    }
+    if (probe >= STRESS.probes || lo >= hi) return { go: { tries, stress: lo, score: goScore(tries, lo) }, wanted };
+    probes(probe, lo, hi, 0);
+    return { wanted };
 }
 
 if (!isMainThread) {
-    // A worker: plays the jobs it's sent.
+    // A worker: plays the battles it's sent.
     const { play } = load(workerData as Inputs);
-    parentPort!.on('message', (job: Job) => parentPort!.postMessage({ job, go: runJob(play, job) } satisfies JobResult));
+    parentPort!.on('message', (job: FightJob) => parentPort!.postMessage({ go: job.go, key: job.key, run: runFight(play, job) } satisfies FightResult));
 } else {
     main().catch((error) => {
         console.error(error);
@@ -111,7 +171,7 @@ async function main(): Promise<void> {
     }
     const jobs: Job[] = [];
     for (const { id, index } of levels) {
-        for (const profile of profilesAt(index)) for (let c = 0; c < careers; c++) jobs.push({ index, profile: profile.id, seed: parseInt(hashString(`${id}:${profile.id}:${c}`), 16) });
+        for (const profile of profilesAt(index)) for (let c = 0; c < careers; c++) jobs.push({ index, profile: profile.id, seed: parseInt(hashString(`${id}:${profile.id}:${c}`), 16), career: c });
     }
     const total = jobs.length;
     say({ type: 'start', total, levels: levels.map((l) => l.id) });
@@ -174,38 +234,93 @@ async function main(): Promise<void> {
     };
 
     await new Promise<void>((resolve, reject) => {
-        let next = 0;
-        let busy = 0;
-        const pool: Worker[] = [];
-        const feed = (worker: Worker): void => {
-            if (next >= jobs.length) {
-                if (busy === 0) {
-                    pool.forEach((w) => w.terminate());
-                    resolve();
-                }
-                return;
+        const gos = jobs.map((job) => ({ job, runs: new Map<string, BattleRun>(), started: new Set<string>(), running: new Set<string>(), wanted: plan(new Map()).wanted, done: false }));
+        let open = 0;
+        let settled = 0;
+        // Battles still playing for goes already settled (their threads are busy till they're back).
+        let orphans = 0;
+        /** Threads playing battles not sure to be needed: those may only take the threads beyond one per unsettled go
+         *  (each of those needs one at any moment: else a sure battle waits behind a maybe). */
+        const playingMaybes = (): number => {
+            let n = orphans;
+            for (let g = open; g < gos.length; g++) {
+                const go = gos[g];
+                if (go.done || !go.running.size) continue;
+                for (const key of go.running) if (go.wanted.find((w) => w.key === key)?.depth !== 0) n++;
             }
-            busy++;
-            worker.postMessage(jobs[next++]);
+            return n;
         };
-        for (let w = 0; w < Math.min(workers, jobs.length || 1); w++) {
+        const idle: Worker[] = [];
+        const pool: Worker[] = [];
+        /** The battle to play next: the least deep one any go wants (the oldest go's first), not started yet. */
+        const pick = (): FightJob | null => {
+            while (open < gos.length && gos[open].done) open++;
+            let best: Wanted | null = null;
+            let bestGo = -1;
+            for (let g = open; g < gos.length; g++) {
+                const go = gos[g];
+                if (go.done) continue;
+                for (const want of go.wanted) {
+                    if (go.started.has(want.key) || (best && want.depth >= best.depth)) continue;
+                    best = want;
+                    bestGo = g;
+                }
+                if (best?.depth === 0) break;
+            }
+            if (!best) return null;
+            if (best.depth > 0 && playingMaybes() >= workers - (gos.length - settled)) return null;
+            const go = gos[bestGo];
+            go.started.add(best.key);
+            go.running.add(best.key);
+            const { depth: _depth, ...fight } = best;
+            return { ...fight, go: bestGo, index: go.job.index, profile: go.job.profile, seed: go.job.seed };
+        };
+        const pump = (): void => {
+            while (idle.length) {
+                const job = pick();
+                if (!job) break;
+                idle.pop()!.postMessage(job);
+            }
+        };
+        if (!jobs.length) return resolve();
+        for (let w = 0; w < Math.min(workers, jobs.length * MAX_TRIES); w++) {
             const worker = new Worker(__filename, { workerData: inputs });
-            worker.on('message', ({ job, go }: JobResult) => {
-                busy--;
-                done++;
-                const key = `${job.index}:${job.profile}`;
-                goes.set(key, [...(goes.get(key) ?? []), go]);
-                say({ type: 'progress', done, total });
-                const remaining = left.get(job.index)! - 1;
-                left.set(job.index, remaining);
-                if (remaining === 0) finishLevel(job.index);
-                feed(worker);
+            worker.on('message', ({ go: g, key, run }: FightResult) => {
+                idle.push(worker);
+                const go = gos[g];
+                go.running.delete(key);
+                if (go.done) orphans--;
+                else {
+                    go.runs.set(key, run);
+                    const now = plan(go.runs);
+                    go.wanted = now.wanted;
+                    if (now.go) {
+                        go.done = true;
+                        orphans += go.running.size;
+                        settled++;
+                        done++;
+                        const at = `${go.job.index}:${go.job.profile}`;
+                        // In career order, however they finish (so the saved goes don't shuffle from run to run).
+                        const list = goes.get(at) ?? [];
+                        list[go.job.career] = now.go;
+                        goes.set(at, list);
+                        say({ type: 'progress', done, total });
+                        const remaining = left.get(go.job.index)! - 1;
+                        left.set(go.job.index, remaining);
+                        if (remaining === 0) finishLevel(go.job.index);
+                        if (settled === gos.length) {
+                            pool.forEach((w) => w.terminate());
+                            return resolve();
+                        }
+                    }
+                }
+                pump();
             });
             worker.on('error', reject);
             pool.push(worker);
-            feed(worker);
+            idle.push(worker);
         }
-        if (!jobs.length) resolve();
+        pump();
     });
     if (save) {
         // (A dated copy only when every level was graded this time.)

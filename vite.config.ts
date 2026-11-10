@@ -1,3 +1,4 @@
+import { execSync } from 'child_process';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import { resolve } from 'path';
@@ -128,6 +129,36 @@ function injectPlatformApiScript(gameRoot: string, platformName: string): Plugin
     };
 }
 
+// A game's own models built straight into public/ by games/<GAME>/tools/build-props.mjs (mob's props, beach, hexa and
+// desert, from library3d). Nothing else rebuilds them, so anything that empties public/<GAME> (npm run all switching
+// games, keepOnlyGameAssets, a hand clean-up) would lose them for good. The script lists what it built in
+// public/<GAME>/models/.props-built.json; when that list, or any folder on it, is missing, it's run again here before
+// the dev server or the build starts.
+function ensureGameProps(): Plugin {
+    const script = resolve(__dirname, `games/${GAME}/tools/build-props.mjs`);
+    const models = resolve(__dirname, `public/${GAME}/models`);
+    const missing = () => {
+        const list = resolve(models, '.props-built.json');
+        if (!fs.existsSync(list)) return 'never built';
+        const folders: string[] = JSON.parse(fs.readFileSync(list, 'utf-8')).folders ?? [];
+        const gone = folders.filter((folder) => {
+            const dir = resolve(models, folder);
+            return !fs.existsSync(dir) || fs.readdirSync(dir).length === 0;
+        });
+        return gone.length ? `missing ${gone.join(', ')}` : null;
+    };
+    return {
+        name: 'ensure-game-props',
+        config() {
+            if (!fs.existsSync(script)) return;
+            const why = missing();
+            if (!why) return;
+            console.log(`📦 public/${GAME}/models: ${why}, running games/${GAME}/tools/build-props.mjs`);
+            execSync(`node "${script}"`, { stdio: 'inherit', cwd: __dirname });
+        },
+    };
+}
+
 export default defineConfig({
     root: `games/${GAME}`,
     base: './',
@@ -137,6 +168,7 @@ export default defineConfig({
         trimPlatformConfig(process.env.VITE_PLATFORM),
         syncGameRegistry(),
         restartOnGameChange(),
+        ensureGameProps(),
         keepOnlyGameAssets(resolve(__dirname, `games/${GAME}`), resolve(__dirname, `dist/_builds_${GAME}/${PLATFORM}`)),
     ],
     resolve: {

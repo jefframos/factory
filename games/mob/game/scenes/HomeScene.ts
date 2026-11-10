@@ -7,6 +7,11 @@
 // each beaten area, the pin on the next tile, the next area padlocked; the camera swaying slowly over it. With no map
 // made, the level PLAY starts instead: its field in 3D in its area's look (the battle's own Arena). A level already
 // beaten is replayed from the AREAS tab (an area's levels open under its row).
+//
+// The two middle tabs are the game modes (bigger, each on its own coloured plate, their names always shown): STORY (the
+// above) and ARENA (the arena mode, the fake multiplayer: game/data/ArenaConfig). ARENA changes the whole screen: the
+// arena's field behind (the last one the player has opened: they open as the story goes on, `unlockAt`), the purple
+// ribbon with its name and the player's arena rating and tier, PLAY a match; padlocked till the first one opens.
 
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
@@ -26,6 +31,10 @@ import { WORLD_MAP } from '../data/WorldMap';
 import { WorldMapView } from '../world/WorldMapView';
 import { MapMarkers } from '../ui/MapMarkers';
 import { CardKind } from '../data/Settings';
+import { ArenaConfig, arenaBattle } from '../data/ArenaConfig';
+import { arenaFor } from '../data/Arenas';
+import { Ladder, tierFor } from '../data/ArenaLadder';
+import ladderFile from '../../ui/arena-ladder.json';
 import { bendDrop, updateBend } from '../services/Bend';
 import { HomePanel, PanelKind } from '../ui/HomePanels';
 import { COIN_BAR, DARK, fillCoinBar, framePlane, iconSprite, label, plainLabel, tappable } from '../ui/UiParts';
@@ -36,6 +45,8 @@ const TABS = {
     icon: 74, focusIcon: 92, focusIconY: -18, labelY: 36, labelSize: 22,
 };
 const RIBBON = { y: 128, width: 430, height: 86, scale: 0.6, text: 36, textY: -6, areaY: 62, areaSize: 26 };
+/** The mode tabs' plates (always up, a colour each; the one not shown sits `drop` lower) and their icons. */
+const MODE_TABS = { story: 0x2fa36b, arena: 0x8a3dff, drop: 16, icon: 84, focusIcon: 100, rise: 22 };
 const PLAY = { width: 440, height: 110, up: 92, textSize: 54 };
 const PLAY_SLICE = { side: 82, height: 194 };
 const SHINE = { glowWidth: 1.35, glowHeight: 2.2, glowColor: 0xffd23f, glowFrom: 0.3, glowTo: 0.75, glowSeconds: 0.9, band: 90, tilt: 0.35, sweep: 0.75, wait: 1.5, alpha: 0.85, corner: 0.32 };
@@ -62,13 +73,19 @@ function mapProgress(): { index: number; furthest: number; preview: boolean } {
 /** The sky over the world map. */
 const MAP_SKY = 0x8fd8ff;
 
-type Tab = 'upgrades' | 'home' | 'areas';
-const TAB_ORDER: Tab[] = ['upgrades', 'home', 'areas'];
+type Mode = 'story' | 'arena';
+type Tab = 'upgrades' | Mode | 'areas';
+const TAB_ORDER: Tab[] = ['upgrades', 'arena', 'story', 'areas'];
 const TAB_ICONS: Record<Tab, { frame: string; name: string }> = {
     upgrades: { frame: 'ItemIcon_Gear', name: 'UPGRADES' },
-    home: { frame: 'Icon_Castle', name: 'HOME' },
+    story: { frame: 'Icon_Castle', name: 'STORY' },
+    arena: { frame: 'ItemIcon_Battle', name: 'ARENA' },
     areas: { frame: 'Icon_MapPoint', name: 'AREAS' },
 };
+const isMode = (tab: Tab): tab is Mode => tab === 'story' || tab === 'arena';
+const LADDER = ladderFile as Ladder;
+/** The mode last shown (back from a match, the main screen's on it again). */
+let lastMode: Mode = 'story';
 
 /** A soft band of white, across a small canvas: the PLAY button's shine. */
 function shineTexture(): PIXI.Texture {
@@ -90,6 +107,16 @@ export default class HomeScene extends ThreeScene {
     private readonly ribbon = new PIXI.Container();
     private readonly ribbonText = label(RIBBON.text);
     private readonly areaText = label(RIBBON.areaSize, 0xdbe8ff);
+    /** The story's ribbon (red, stretched) and the arena's (purple, fixed), with its words and rating. */
+    private readonly storyRibbon = new PIXI.Container();
+    private readonly arenaRibbon = new PIXI.Container();
+    private readonly arenaText = label(RIBBON.text);
+    private readonly ratingText = label(RIBBON.areaSize, 0xffe066);
+    /** The mode on (STORY / ARENA), and the arena shown (null: none made), whether it's open. */
+    private mode: Mode = lastMode;
+    private shownArena: { id: string; arena: ArenaConfig } | null = null;
+    private arenaLocked = false;
+    private readonly modePlates = new Map<Mode, PIXI.NineSlicePlane>();
     private readonly play = new PIXI.Container();
     /** The level shown (and PLAY starts). */
     private index = 0;
@@ -102,7 +129,7 @@ export default class HomeScene extends ThreeScene {
     private readonly panels = new Map<PanelKind, HomePanel>();
     private readonly coinsBar = new PIXI.Container();
     private readonly coinsText = label(COIN_BAR.textSize);
-    private tab: Tab = 'home';
+    private tab: Tab = lastMode;
     /** The world map (when one's made), or the level's field (when not). */
     private map: WorldMapView | null = null;
     /** The map's markers (2D, over its areas). */
@@ -117,8 +144,8 @@ export default class HomeScene extends ThreeScene {
     private shine: PIXI.Sprite | null = null;
     private glow: PIXI.Sprite | null = null;
 
-    /** `onPlay`: the PLAY button. */
-    public constructor(game: Game, private readonly onPlay: () => void) {
+    /** `onPlay`: the PLAY button (an arena's id: a match there). */
+    public constructor(game: Game, private readonly onPlay: (arena?: string) => void) {
         super(game);
     }
 
@@ -129,25 +156,94 @@ export default class HomeScene extends ThreeScene {
         sun.position.set(6, 14, 8);
         this.threeScene.add(sun);
         this.index = MobSave.selected;
-        if (WORLD_MAP.tiles.length) {
+        this.buildUi();
+        this.showLevel(this.index);
+        this.buildMode();
+        this.game.uiLayer.addChild(this.ui);
+        this.resize();
+    }
+
+    /** What's behind for the mode on: the story's world map (or its level's field), or the arena's field. */
+    private buildMode(): void {
+        this.map?.dispose();
+        if (this.map) this.threeScene.remove(this.map.group);
+        this.map = null;
+        this.marks?.destroy({ children: true });
+        this.marks = null;
+        if (this.arena) {
+            this.threeScene.remove(this.arena.group);
+            this.arena.dispose();
+        }
+        this.arena = null;
+        this.battle = null;
+        if (this.mode === 'arena') {
+            const { current, open, next } = arenaFor(MobSave.battle + 1);
+            this.shownArena = current;
+            this.arenaLocked = !open;
+            // Flat, as the map is: the sea then reaches every edge of the screen (bent, the sky shows past it).
+            updateBend(BEND.origin, 0);
+            if (current) this.buildArenaField(current.arena);
+            this.showArenaRibbon(next?.arena ?? null);
+        } else if (WORLD_MAP.tiles.length) {
             // The map isn't bent: the tiles are separate pieces, and it's seen whole.
             updateBend(BEND.origin, 0);
             this.threeScene.background = new THREE.Color(MAP_SKY);
             const progress = mapProgress();
             this.map = new WorldMapView(progress.index, progress.furthest, undefined, !progress.preview, MAP_VIEW === 'all');
             this.threeScene.add(this.map.group);
+            // The map's markers under everything else.
+            this.marks = new MapMarkers(this.map.areas);
+            this.ui.addChildAt(this.marks, 0);
         } else {
             updateBend(BEND.origin, BEND.strength);
             this.buildField();
         }
-        this.buildUi();
-        this.showLevel(this.index);
-        this.game.uiLayer.addChild(this.ui);
-        this.resize();
+        this.storyRibbon.visible = this.mode === 'story';
+        this.arenaRibbon.visible = this.mode === 'arena';
+        this.play.alpha = this.mode === 'arena' && this.arenaLocked ? 0.55 : 1;
+    }
+
+    /** An arena's field as a match has it (both halves, both sides' cannons and towers), not played. */
+    private buildArenaField(arena: ArenaConfig): void {
+        const config = arenaBattle(arena);
+        const theme = themeById(arena.theme ?? 'beach');
+        this.threeScene.background = new THREE.Color(theme.sky);
+        useField(config);
+        this.battle = new Battle(config);
+        this.battle.state = 'won';
+        this.arena = new Arena(config, this.battle.targets, theme, undefined, true, VIEW.island, this.battle.blueTargets);
+        this.arena.hideLabels();
+        this.threeScene.add(this.arena.group);
+    }
+
+    /** The arena's ribbon: its name, and the player's rating and tier (padlocked: the story level that opens it). */
+    private showArenaRibbon(next: ArenaConfig | null): void {
+        const arena = this.shownArena?.arena;
+        this.arenaText.text = (arena?.name ?? 'ARENA').toUpperCase();
+        if (!arena) this.ratingText.text = 'COMING SOON';
+        else if (this.arenaLocked) this.ratingText.text = `🔒 REACH LEVEL ${arena.unlockAt ?? 1}`;
+        else {
+            const record = MobSave.arena;
+            const tier = LADDER.tiers[tierFor(LADDER, record)];
+            this.ratingText.text = `RATING ${record.rating} · ${tier.name.toUpperCase()}`;
+            void next;
+        }
+    }
+
+    /** PLAY: the story's level, or a match in the arena shown (a padlocked one just shakes). */
+    private pressPlay(): void {
+        if (this.mode === 'story') return this.onPlay();
+        if (!this.shownArena || this.arenaLocked) {
+            gsap.fromTo(this.arenaRibbon, { x: this.arenaRibbon.x - 12 }, { x: this.arenaRibbon.x, duration: 0.4, ease: 'elastic.out(1.2, 0.3)' });
+            MobAudio.play('click');
+            return;
+        }
+        this.onPlay(this.shownArena.id);
     }
 
     /** The level PLAY starts, as the battle will draw it: its field size, its area's look, its pieces. */
     private buildField(): void {
+        // (The story's level field, when there's no world map.)
         const index = this.index;
         const config = battleConfig(index);
         const zone = battleZone(index);
@@ -168,7 +264,14 @@ export default class HomeScene extends ThreeScene {
         ribbonBack.position.set(-RIBBON.width / 2, -RIBBON.height / 2);
         this.ribbonText.y = RIBBON.textY;
         this.areaText.y = RIBBON.areaY;
-        this.ribbon.addChild(ribbonBack, this.ribbonText, this.areaText);
+        this.storyRibbon.addChild(ribbonBack, this.ribbonText, this.areaText);
+        // The arena's: the same ribbon in purple (its own image), the rating under it as the area is under the story's.
+        const arenaBack = framePlane('Title_Ribbon04_Purple', RIBBON.width, RIBBON.height, RIBBON.scale);
+        arenaBack.position.set(-RIBBON.width / 2, -RIBBON.height / 2);
+        this.arenaText.y = RIBBON.textY;
+        this.ratingText.y = RIBBON.areaY;
+        this.arenaRibbon.addChild(arenaBack, this.arenaText, this.ratingText);
+        this.ribbon.addChild(this.storyRibbon, this.arenaRibbon);
 
         this.buildPlay();
         this.buildMute();
@@ -177,14 +280,16 @@ export default class HomeScene extends ThreeScene {
         this.tabFocus.tint = TABS.focusColor;
         this.tabLight.tint = TABS.lightColor;
         this.tabBar.addChild(this.tabBack, this.tabFocus, this.tabLight);
+        // The mode tabs' own plates (under the tabs' icons, over the bar).
+        for (const mode of ['story', 'arena'] as Mode[]) {
+            const plate = framePlane('Menu_BottomBtn_TabFocus', 180, TABS.height + MODE_TABS.rise);
+            plate.tint = MODE_TABS[mode];
+            this.modePlates.set(mode, plate);
+            this.tabBar.addChild(plate);
+        }
         for (const tab of TAB_ORDER) this.addTab(tab);
         fillCoinBar(this.coinsBar, this.coinsText);
         this.refreshCoins();
-        // The map's markers under everything else.
-        if (this.map) {
-            this.marks = new MapMarkers(this.map.areas);
-            this.ui.addChild(this.marks);
-        }
         this.ui.addChild(this.ribbon, this.play, this.mute, this.coinsBar, this.tabBar);
     }
 
@@ -252,7 +357,7 @@ export default class HomeScene extends ThreeScene {
         this.play.addChild(this.glow, back, words, outline, this.shine);
         // Only the button itself is a tap, not the glow round it.
         this.play.hitArea = new PIXI.Rectangle(-PLAY.width / 2, -PLAY.height / 2, PLAY.width, PLAY.height);
-        tappable(this.play, () => this.onPlay());
+        tappable(this.play, () => this.pressPlay());
         gsap.to(this.play.scale, { x: 1.03, y: 1.03, duration: 0.7, yoyo: true, repeat: -1, ease: 'sine.inOut' });
     }
 
@@ -289,7 +394,15 @@ export default class HomeScene extends ThreeScene {
         if (tab === this.tab) return;
         this.tab = tab;
         this.panels.forEach((panel) => { panel.visible = false; });
-        if (tab !== 'home') {
+        // A mode: the whole screen changes to it (what's behind, the ribbon, what PLAY does).
+        if (isMode(tab) && tab !== this.mode) {
+            this.mode = tab;
+            lastMode = tab;
+            this.buildMode();
+            this.frameCamera();
+            gsap.fromTo(this.ribbon.scale, { x: 0.6, y: 0.6 }, { x: 1, y: 1, duration: 0.35, ease: 'back.out(2.5)' });
+        }
+        if (!isMode(tab)) {
             let panel = this.panels.get(tab);
             if (!panel) {
                 panel = new HomePanel(tab, (kind) => this.buy(kind), (index) => this.playLevel(index), (kind) => this.buyCard(kind));
@@ -308,6 +421,12 @@ export default class HomeScene extends ThreeScene {
 
     /** A level tapped in the AREAS tab: picked and played (a win goes on to the level after it). */
     private playLevel(index: number): void {
+        // (From the arena: the story's level, so back to the story's screen first.)
+        if (this.mode !== 'story') {
+            this.mode = 'story';
+            lastMode = 'story';
+            this.buildMode();
+        }
         this.browse(index);
         this.onPlay();
     }
@@ -347,13 +466,25 @@ export default class HomeScene extends ThreeScene {
             const entry = this.tabs.get(tab);
             if (!entry) return;
             const focused = tab === this.tab;
+            const mode = isMode(tab);
             entry.holder.position.set(left + third * (i + 0.5), barTop + TABS.height / 2);
-            // All of its third of the bar is the tab, not just its icon.
-            entry.holder.hitArea = new PIXI.Rectangle(-third / 2, -TABS.height / 2 - TABS.rise, third, TABS.height + TABS.rise);
-            entry.words.visible = focused;
-            entry.icon.y = focused ? TABS.focusIconY : 0;
-            entry.icon.scale.set((focused ? TABS.focusIcon : TABS.icon) / 100);
+            // All of its share of the bar is the tab, not just its icon.
+            entry.holder.hitArea = new PIXI.Rectangle(-third / 2, -TABS.height / 2 - MODE_TABS.rise, third, TABS.height + MODE_TABS.rise);
+            // A mode tab: always its name, up on its plate; the mode not shown sits a little lower (not faded).
+            const down = mode && tab !== this.mode ? MODE_TABS.drop : 0;
+            entry.holder.y += down;
+            entry.words.visible = focused || mode;
+            entry.icon.y = focused || mode ? TABS.focusIconY : 0;
+            entry.icon.scale.set((mode ? (tab === this.mode ? MODE_TABS.focusIcon : MODE_TABS.icon) : focused ? TABS.focusIcon : TABS.icon) / 100);
+            if (mode) {
+                const plate = this.modePlates.get(tab)!;
+                plate.position.set(left + third * i + 4, barTop - MODE_TABS.rise + down);
+                plate.width = third - 8;
+            }
         });
+        // The blue focus is the side tabs' (a mode tab shows its own plate).
+        const sideOn = !isMode(this.tab);
+        this.tabFocus.visible = this.tabLight.visible = sideOn;
         const at = left + third * TAB_ORDER.indexOf(this.tab);
         this.tabFocus.position.set(at, barTop - TABS.rise);
         this.tabFocus.width = third;
@@ -450,7 +581,7 @@ export default class HomeScene extends ThreeScene {
     }
 
     public destroy(): void {
-        gsap.killTweensOf([this.play.scale, this.ribbon.scale, this.coinsBar.scale]);
+        gsap.killTweensOf([this.play.scale, this.ribbon.scale, this.coinsBar.scale, this.arenaRibbon]);
         if (this.arena) gsap.killTweensOf(this.arena.group.scale);
         if (this.shine) gsap.killTweensOf(this.shine);
         if (this.glow) gsap.killTweensOf(this.glow);

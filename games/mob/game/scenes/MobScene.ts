@@ -11,6 +11,12 @@
 //
 // The juice lives here too, fed by the battle's events: the arena's effects, the sounds (MobAudio), the HUD's pop-ups,
 // the camera shaking (base hits, giants, the end), a moment of slow motion as the base falls, coins flying home.
+//
+// An arena match (the fake multiplayer: game/data/ArenaConfig) is played here too: the arena's mirrored field, the
+// opponent's cannon at the far end played by a robot (DuelRobot) the arena ladder picks (ArenaLadder: its skill, cards
+// and cannon from the player's rating, their streak and what they have), the clock and both sides' life (DuelHud).
+// ?arena=<id> plays one (the editor's Arena tab: with ?ai=<skill> to pick the opponent's hands, ?rating=<n> to meet that
+// rating's opponent, ?watch=<skill> to have a robot play the player's side; those test matches aren't counted).
 
 import * as THREE from 'three';
 import gsap from 'gsap';
@@ -34,6 +40,14 @@ import { Arena } from '../battle/Arena';
 import { MobHud } from '../ui/MobHud';
 import { applyBend, bendDrop, updateBend } from '../services/Bend';
 import { CARD_KINDS, CardKind, SETTINGS, cardStat } from '../data/Settings';
+import { ArenaConfig, arenaBattle } from '../data/ArenaConfig';
+import { ARENAS_BY_ID } from '../data/Arenas';
+import { Ladder, Opponent, SkillId, opponentFor, tierFor } from '../data/ArenaLadder';
+import ladderFile from '../../ui/arena-ladder.json';
+import { DuelRobot } from '../sim/DuelRobot';
+import { SKILLS } from '../sim/Grading';
+import { BuildingBar, DuelHud } from '../ui/DuelHud';
+import { RED, Target } from '../battle/Battle';
 
 const MODEL_BASE = './mob/models/mob/';
 
@@ -89,6 +103,16 @@ const SHAKE_LEVEL = { value: 1 };
 const SLOW_MOTION = { scale: 0.25, seconds: 1.2 };
 /** A gate's "+N" pop-up gathers its copies over this long (seconds), so a stream doesn't pop every frame. */
 const GATE_POP_SECONDS = 0.35;
+const LADDER = ladderFile as Ladder;
+/** An arena match to play instead of the levels: the arena (by id or as sent), and what the test pins (see the top). */
+interface DuelSpec {
+    arena: ArenaConfig;
+    ai?: SkillId;
+    rating?: number;
+    watch?: SkillId;
+    /** Counted on the player's arena record (not a test). */
+    counted: boolean;
+}
 
 export default class MobScene extends ThreeScene {
     /** Resolves once the crowd's model is loaded and baked (the loading screen waits for it). */
@@ -123,10 +147,22 @@ export default class MobScene extends ThreeScene {
         config: QUERY.get('level') ? LEVELS_BY_ID[QUERY.get('level')!] : undefined,
         theme: QUERY.get('theme') ?? undefined,
     };
+    /** An arena match to play (the URL, the editor, the debug panel), and the one on: its robots and opponent. */
+    private duelSpec: DuelSpec | null = QUERY.get('arena') && ARENAS_BY_ID[QUERY.get('arena')!] ? {
+        arena: ARENAS_BY_ID[QUERY.get('arena')!],
+        ai: (QUERY.get('ai') as SkillId) || undefined,
+        rating: QUERY.get('rating') ? Number(QUERY.get('rating')) : undefined,
+        watch: (QUERY.get('watch') as SkillId) || undefined,
+        counted: false,
+    } : null;
+    private duel: { robot: DuelRobot; watch: DuelRobot | null; opponent: Opponent; spec: DuelSpec } | null = null;
+    private readonly duelHud: DuelHud;
 
     /** `onHome`: the end card's HOME (the main screen). */
-    public constructor(game: Game, private readonly onHome: () => void = () => undefined) {
+    /** `arena`: an arena's id, a counted match there (the main screen's ARENA) instead of the story's level. */
+    public constructor(game: Game, private readonly onHome: () => void = () => undefined, arena?: string) {
         super(game);
+        if (arena && ARENAS_BY_ID[arena]) this.duelSpec = { arena: ARENAS_BY_ID[arena], counted: true };
         this.threeScene.background = new THREE.Color(0x8fd8ff);
         updateBend(BEND.origin, BEND.strength);
         this.threeScene.add(new THREE.HemisphereLight(0xffffff, 0x6b8f4a, LIGHT.sky));
@@ -137,6 +173,12 @@ export default class MobScene extends ThreeScene {
 
         this.hud = new MobHud(() => this.nextBattle(), (kind) => this.buyUpgrade(kind), () => this.onHome(), (kind) => this.playCard(kind));
         this.addChild(this.hud);
+        this.duelHud = new DuelHud(() => this.nextBattle(), () => this.onHome(), () => {
+            // The comeback boost: the player's (a robot playing their side boosts by itself).
+            if (this.state === 'playing' && this.duel && !this.duel.watch) this.battle.boost(BLUE);
+        });
+        this.duelHud.visible = false;
+        this.addChild(this.duelHud);
         if (SHOW_FRAMING) {
             // The scene is laid out in the design resolution: its 0,0 .. DESIGN_WIDTH x DESIGN_HEIGHT is the safe area.
             this.safeFrame.lineStyle(4, FRAMING_PINK).drawRect(0, 0, Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT);
@@ -169,9 +211,11 @@ export default class MobScene extends ThreeScene {
     private startBattle(): void {
         MobAudio.music('battle');
         const index = MobSave.selected;
+        const spec = this.duelSpec;
         // A level lost before comes back easier (MobSave.ease); a pinned one (the URL, the editor) is played as it is.
-        const config = this.pinned.config ?? easedConfig(battleConfig(index), MobSave.ease);
-        const theme = this.pinned.themeData ? parseTheme(this.pinned.themeData) : themeById(this.pinned.theme ?? battleZone(index).theme);
+        // An arena match: its mirrored field, in its theme (the beach unless it says).
+        const config = spec ? arenaBattle(spec.arena) : this.pinned.config ?? easedConfig(battleConfig(index), MobSave.ease);
+        const theme = this.pinned.themeData ? parseTheme(this.pinned.themeData) : themeById(spec ? spec.arena.theme ?? this.pinned.theme ?? 'beach' : this.pinned.theme ?? battleZone(index).theme);
         (this.threeScene.background as THREE.Color).setHex(theme.sky);
         if (this.arena) {
             this.threeScene.remove(this.arena.group);
@@ -186,6 +230,38 @@ export default class MobScene extends ThreeScene {
                 this.arena.fired();
                 MobAudio.play('shot', 0.9 + Math.random() * 0.2);
             },
+            // An arena match: the opponent's cannon, the player's buildings hit and falling, the time up level.
+            redFire: () => {
+                this.arena.redFired();
+                if (Math.random() < 0.5) MobAudio.play('shot', 0.7 + Math.random() * 0.15);
+            },
+            ownHit: (x, z, _hp, damage, target, special) => {
+                this.arena.hitOwn(target, x, z, damage);
+                MobAudio.play(damage > 1 ? 'bigHit' : 'baseHit', 0.8 + Math.random() * 0.15);
+                if (special) this.kick(SHAKE.bigHit);
+            },
+            ownDown: (target) => {
+                this.arena.destroyOwn(target);
+                MobAudio.play('explosion', 0.8);
+                const own = this.battle.blueTargets[target];
+                this.popAt('LOST!', own.x, 3, own.z, 0xff8a96, 42);
+            },
+            draw: () => this.finishDuel('draw'),
+            // A side's towers all down: its cannon's open now (plainly the target).
+            exposed: (team) => {
+                const blue = team === BLUE;
+                const x = blue ? this.battle.cannonX : this.battle.red.cannonX;
+                const z = blue ? 0.35 + this.battle.cannonZ : ARENA.baseZ - 0.35 - this.battle.cannonZ;
+                MobAudio.play('bigHit', 0.7);
+                this.popAt(blue ? 'DEFEND THE CANNON!' : 'CANNON OPEN!', x, 2.6, z, blue ? 0xff8a96 : 0xffd23f, 46);
+            },
+            boosted: (team) => {
+                const blue = team === BLUE;
+                MobAudio.play('confirm', blue ? 1.2 : 0.9);
+                const x = blue ? this.battle.cannonX : this.battle.red.cannonX;
+                const z = blue ? 0.35 + this.battle.cannonZ : ARENA.baseZ - 0.35 - this.battle.cannonZ;
+                this.popAt('SPEED!', x, 2.2, z, blue ? 0x9fe6ff : 0xff8a96, 40);
+            },
             clash: (x, z, big) => {
                 this.arena.clash(x, z, big);
                 MobAudio.play('clash', big ? 0.7 : 0.95 + Math.random() * 0.25);
@@ -196,10 +272,11 @@ export default class MobScene extends ThreeScene {
                 this.gateTally[g] += made;
                 MobAudio.play('gate', 1 + Math.min(4, made) * 0.08);
             },
-            baseHit: (x, z, _hp, damage, target) => {
+            baseHit: (x, z, _hp, damage, target, special) => {
                 this.arena.hitBase(target, x, z, damage);
                 MobAudio.play(damage > 1 ? 'bigHit' : 'baseHit', 0.9 + Math.random() * 0.2);
-                this.kick(damage > 1 ? SHAKE.bigHit : SHAKE.baseHit);
+                // Only the sparse special units shake it: helmeted mobs hit hard too, but they come in swarms.
+                this.kick(special ? SHAKE.bigHit : SHAKE.baseHit);
             },
             pad: (p) => this.arena.padFed(p),
             vanish: (x, z, team) => {
@@ -271,14 +348,16 @@ export default class MobScene extends ThreeScene {
                     this.popAt('DESTROYED!', fort.x, 3, fort.z, 0xffd23f, 42);
                 }
             },
-            won: () => this.finish(true),
-            lost: () => this.finish(false),
+            won: () => (this.duel ? this.finishDuel('won') : this.finish(true)),
+            lost: () => (this.duel ? this.finishDuel('lost') : this.finish(false)),
         });
         this.applyUpgrades();
+        this.setUpDuel(spec);
         // Fires only while the player holds (a press starts the battle and fires; letting go stops).
         this.battle.firing = false;
         // The field after the battle: its forts are the battle's targets (the events above only fire once it runs).
-        this.arena = new Arena(config, this.battle.targets, theme, undefined, !!battleZone(index).plainForts);
+        // (An arena match's towers are the plain ones: flat colours, no models.)
+        this.arena = new Arena(config, this.battle.targets, theme, undefined, !!spec || !!battleZone(index).plainForts, undefined, this.battle.blueTargets);
         this.arena.onLayout = () => this.resize();
         this.threeScene.add(this.arena.group);
         if (SHOW_FRAMING) this.placeFramingSpears();
@@ -292,6 +371,85 @@ export default class MobScene extends ThreeScene {
         this.dealCards(config);
         this.hud.setBaseHp(this.battle.baseHp, this.battle.baseHpMax);
         this.hud.setCoins(MobSave.coins);
+        this.resize();
+    }
+
+    /**
+     * An arena match's other side (or none: back to the levels' HUD): the opponent the ladder gives (the test's skill or
+     * rating over it), its robot on the reds' cannon with its cards and upgrades; a robot on the player's too when
+     * watching.
+     */
+    private setUpDuel(spec: DuelSpec | null): void {
+        this.duel = null;
+        this.hud.setDuel(!!spec);
+        this.duelHud.visible = !!spec;
+        if (!spec) return;
+        const player = MobSave.arenaLoadout();
+        const record = spec.rating !== undefined ? { rating: spec.rating, streak: 0 } : MobSave.arena;
+        const opponent = opponentFor(LADDER, record, player);
+        if (spec.ai) opponent.skill = spec.ai;
+        const red = this.battle.red;
+        red.fireLevel = opponent.fire;
+        red.capacityLevel = opponent.capacity;
+        red.rechargeLevel = opponent.recharge;
+        const cardsOf = (cards: Opponent['cards']) => CARD_KINDS.filter((kind) => cards[kind] !== undefined).map((kind) => ({ kind, level: cards[kind]! }));
+        const robot = new DuelRobot(this.battle, RED, SKILLS[opponent.skill], cardsOf(opponent.cards));
+        const watch = spec.watch ? new DuelRobot(this.battle, BLUE, SKILLS[spec.watch], cardsOf(player.cards)) : null;
+        this.duel = { robot, watch, opponent, spec };
+        this.duelHud.reset(`${SKILLS[opponent.skill].name.toUpperCase()} · ${opponent.tier.name.toUpperCase()}`, this.battle.ownHpMax, this.battle.baseHpMax);
+        this.duelHud.setTime(this.battle.timeLeft);
+    }
+
+    /** An arena match: a bar over each building standing (a cannon's only once it's open), and the open cannons' rings. */
+    private placeBuildingBars(): void {
+        const b = this.battle;
+        const bars: BuildingBar[] = [];
+        const add = (target: Target, blue: boolean): void => {
+            if (!target.alive) return;
+            const cannon = target.kind === 'cannon';
+            if (cannon && target.shielded) return;
+            const z = cannon ? (blue ? 0.35 + b.cannonZ : ARENA.baseZ - 0.35 - b.cannonZ) : target.z + (blue ? 1.3 : -1.3);
+            const at = this.worldToScreen(this.projected.set(cannon ? target.x : target.x, cannon ? 2 : 3.6, z));
+            if (at) bars.push({ x: at.x, y: at.y, hp: target.hp, max: target.hpMax, blue, cannon });
+        };
+        b.targets.forEach((target) => add(target, false));
+        b.blueTargets.forEach((target) => add(target, true));
+        this.duelHud.setBuildingBars(bars);
+        const open = (list: Target[]) => list.some((target) => target.kind === 'cannon' && target.alive && !target.shielded);
+        this.arena.showExposed(open(b.blueTargets), open(b.targets));
+    }
+
+    /** An arena match is over: the field's last moments, then its result card (a counted one moves the rating). */
+    private finishDuel(result: 'won' | 'lost' | 'draw'): void {
+        if (this.state === 'over' || !this.duel) return;
+        this.state = 'over';
+        this.setGameplay(false);
+        const spec = this.duel.spec;
+        const before = MobSave.arena;
+        const after = spec.counted ? MobSave.arenaResult(LADDER, result) : null;
+        if (result === 'won') {
+            this.kick(SHAKE.won);
+            MobAudio.play('explosion');
+            gsap.delayedCall(0.5, () => {
+                if (this.torndown) return;
+                this.arena.confetti();
+                MobAudio.play('win');
+                MobAudio.play('applause');
+            });
+        } else if (result === 'lost') {
+            this.hud.flashRed();
+            this.kick(SHAKE.lost);
+            MobAudio.play('lose');
+        }
+        const own = this.battle.ownHp;
+        const theirs = this.battle.baseHp;
+        gsap.delayedCall(result === 'won' ? WON_CARD_DELAY : LOST_CARD_DELAY, () => {
+            if (this.torndown) return;
+            this.duelHud.showEnd({
+                result, own, theirs,
+                rating: after ? { before: before.rating, after: after.rating, tier: LADDER.tiers[tierFor(LADDER, after)].name } : null,
+            });
+        });
     }
 
     private begin(): void {
@@ -299,8 +457,8 @@ export default class MobScene extends ThreeScene {
         this.state = 'playing';
         this.hud.start();
         this.setGameplay(true);
-        // Analytics: not for a level pinned by the URL or the editor (that isn't the player's progress).
-        if (!this.pinned.config) {
+        // Analytics: not for a level pinned by the URL or the editor (that isn't the player's progress), nor a match.
+        if (!this.pinned.config && !this.duel) {
             const number = MobSave.selected + 1;
             const info = battleInfo(MobSave.selected);
             MobEvents.levelStart(number, info.id, { id: info.zone, first: info.firstInZone }, MobSave.best);
@@ -364,7 +522,7 @@ export default class MobScene extends ThreeScene {
 
     private nextBattle(): void {
         MobAudio.play('whoosh');
-        if (!this.lastWon && !this.pinned.config) MobEvents.levelRetry(MobSave.selected + 1);
+        if (!this.lastWon && !this.pinned.config && !this.duel) MobEvents.levelRetry(MobSave.selected + 1);
         this.startBattle();
     }
 
@@ -398,7 +556,7 @@ export default class MobScene extends ThreeScene {
 
     /** The cannon follows the finger: the point on the cannon's row under its x. */
     private aimAt(screenX: number): void {
-        const cannonRow = this.worldToScreen(new THREE.Vector3(0, 0, 0.35));
+        const cannonRow = this.worldToScreen(new THREE.Vector3(0, 0, 0.35 + this.battle.cannonZ));
         const point = this.screenToGround(screenX, cannonRow?.y ?? window.innerHeight * 0.85);
         if (!point) return;
         this.battle.aimX = Math.max(-ARENA.cannonRange, Math.min(ARENA.cannonRange, point.x));
@@ -409,8 +567,16 @@ export default class MobScene extends ThreeScene {
 
     /** The editor's live preview: a level (and theme) to show now. */
     private readonly onEditorMessage = (event: MessageEvent): void => {
-        const data = event.data as { type?: string; level?: BattleConfig; theme?: string; themeData?: ThemeFile } | null;
+        const data = event.data as { type?: string; level?: BattleConfig; theme?: string; themeData?: ThemeFile; arena?: ArenaConfig; ai?: SkillId; rating?: number; watch?: SkillId } | null;
+        // The Arena tab: a match on the arena as it's being edited (a test: not counted).
+        if (data?.type === 'mob-arena' && data.arena) {
+            this.duelSpec = { arena: data.arena, ai: data.ai || undefined, rating: data.rating, watch: data.watch || undefined, counted: false };
+            this.pinned = { theme: data.theme };
+            this.startBattle();
+            return;
+        }
         if (!data || data.type !== 'mob-level' || !data.level) return;
+        this.duelSpec = null;
         // themeData: a theme being edited (not saved yet), drawn as it is.
         this.pinned = { config: data.level, theme: data.theme, themeData: data.themeData };
         this.startBattle();
@@ -420,8 +586,13 @@ export default class MobScene extends ThreeScene {
         MobAudio.unlock();
         // A press on the mute button isn't a press on the field (no start, no firing).
         if (this.hud.onButton(event.clientX, event.clientY)) return;
-        // The first-card tutorial: only the card goes (the field's paused).
+        // The first-card tutorial: only the card goes (the field's paused). A robot playing the player's side (watching a
+        // match): a press only starts it.
         if (this.state === 'over' || this.cardTutorial) return;
+        if (this.duel?.watch) {
+            this.begin();
+            return;
+        }
         this.dragging = true;
         this.battle.firing = true;
         this.aimAt(event.clientX);
@@ -431,13 +602,13 @@ export default class MobScene extends ThreeScene {
     private readonly onPointerMove = (event: PointerEvent): void => {
         // Aiming is dragging, for a mouse as for a finger: aiming on a mouse just moving over the field, the cannon
         // followed it down to the cards, and a card's unit always came out under the card, not where it was aimed.
-        if (this.state === 'over' || !this.dragging) return;
+        if (this.state === 'over' || !this.dragging || this.duel?.watch) return;
         this.aimAt(event.clientX);
     };
 
     private readonly onPointerUp = (): void => {
         this.dragging = false;
-        this.battle.firing = false;
+        if (!this.duel?.watch) this.battle.firing = false;
     };
 
     // ------------------------------------------------------------------ frame
@@ -445,6 +616,10 @@ export default class MobScene extends ThreeScene {
     public override fixedUpdate(delta: number): void {
         // Paused for the first-card tutorial.
         if (this.state === 'waiting' || this.cardTutorial) return;
+        if (this.duel) {
+            this.duel.watch?.step(delta);
+            this.duel.robot.step(delta);
+        }
         this.battle.step(delta);
     }
 
@@ -455,9 +630,16 @@ export default class MobScene extends ThreeScene {
         this.crowd.update(this.battle, this.time);
         this.arena.update(this.battle, dt);
         this.hud.setBaseHp(this.battle.baseHp, this.battle.baseHpMax);
+        if (this.duel) {
+            this.duelHud.setLife(this.battle.ownHp, this.battle.ownHpMax, this.battle.baseHp, this.battle.baseHpMax);
+            this.duelHud.setTime(this.battle.timeLeft);
+            this.duelHud.update(dt);
+            this.duelHud.setBoost(this.state === 'playing' && !this.duel.watch && this.battle.canBoost(BLUE), this.state === 'playing' ? this.battle.boostLeft(BLUE) : 0);
+            this.placeBuildingBars();
+        }
         this.hud.setEnergy(this.battle.energy < 0 ? 1 : this.battle.energy / this.battle.energyMax, this.battle.overheated, this.battle.capped);
         // The energy bar rides beside the cannon.
-        const cannon = this.worldToScreen(this.projected.set(this.battle.cannonX, 0.6, CANNON_FRONT_Z - 0.6));
+        const cannon = this.worldToScreen(this.projected.set(this.battle.cannonX, 0.6, CANNON_FRONT_Z - 0.6 + this.battle.cannonZ));
         if (cannon) this.hud.placeEnergy(cannon.x, cannon.y);
         this.chargeCards(dt);
         this.hud.update(dt, this.state === 'playing' ? this.battle.danger : 0);
@@ -502,7 +684,7 @@ export default class MobScene extends ThreeScene {
             if (this.state === 'playing' && !this.cardTutorial) card.charge = Math.min(1, card.charge + dt / Math.max(0.1, seconds));
             this.hud.setCardCharge(card.kind, card.charge);
             // The first card charged, the first time: the battle pauses for the player to use it.
-            if (card.charge >= 1 && this.state === 'playing' && !this.cardTutorial && !MobSave.cardTutorial && !this.pinned.config) {
+            if (card.charge >= 1 && this.state === 'playing' && !this.cardTutorial && !MobSave.cardTutorial && !this.pinned.config && !this.duel) {
                 this.cardTutorial = card.kind;
                 this.dragging = false;
                 this.battle.firing = false;
@@ -584,7 +766,8 @@ export default class MobScene extends ThreeScene {
         camera.updateProjectionMatrix();
         updateBend(BEND.origin, BEND.strength);
         this.hud.layout();
-        const hudBottom = this.hud.topBottom() + HUD_CLEARANCE;
+        this.duelHud.layout();
+        const hudBottom = (this.duel ? this.duelHud.topBottom() : this.hud.topBottom()) + HUD_CLEARANCE;
         const tops = this.arena?.fortTops() ?? [new THREE.Vector3(0, FORT_TOP_Y, ARENA.baseZ - FORT_BACK)];
         // A longer field moves the look-at point up it.
         CAMERA_TARGET.z = ARENA.baseZ * TARGET_SHARE;
@@ -726,6 +909,18 @@ export default class MobScene extends ThreeScene {
         panel.buttons([
             { label: '+500 coins', action: () => { MobSave.addCoins(500); this.hud.setCoins(MobSave.coins); } },
         ]);
+        // The arena (not on the main screen yet): a match counted on the save's arena record, or back to the levels.
+        const arenaIds = Object.keys(ARENAS_BY_ID);
+        if (arenaIds.length) {
+            panel.buttons([
+                { label: 'ARENA', action: () => { this.duelSpec = { arena: ARENAS_BY_ID[arenaIds[0]], counted: true }; this.startBattle(); } },
+                { label: 'LEVELS', action: () => { this.duelSpec = null; this.startBattle(); } },
+            ]);
+            panel.monitor('Arena', () => {
+                const record = MobSave.arena;
+                return `★ ${record.rating} ${LADDER.tiers[tierFor(LADDER, record)].name} · ${record.won}W ${record.lost}L · streak ${record.streak}`;
+            });
+        }
         // The unit cards, each on or off (later: the shop's).
         const cards = panel.folder('Cards');
         cards.button('REVEAL (all four)', () => this.hud.revealCards([...CARD_KINDS]));

@@ -5,6 +5,7 @@
 // (the main screen's arrows go back through those already reached, to replay one; progress never goes back). A loss never takes any of it away (the brief:
 // permanent progression isn't erased).
 
+import { ArenaRecord, Ladder, Loadout, afterMatch, freshRecord } from './ArenaLadder';
 import { RETRY_EASE, UPGRADES, UpgradeKind } from './MobConfig';
 import { PLAY } from './MobLevels';
 import { CARD_KINDS, CardKind, SETTINGS, cardCost, cardMaxLevel } from './Settings';
@@ -29,6 +30,8 @@ interface SaveData {
     retries: number;
     /** The first-card tutorial's been done (the battle paused on the first charged card, for the player to tap it). */
     cardTutorial: boolean;
+    /** The arena (ArenaLadder): its rating, streak and tally. */
+    arena: ArenaRecord;
 }
 
 const KINDS = Object.keys(UPGRADES) as UpgradeKind[];
@@ -47,9 +50,10 @@ function load(): SaveData {
         return {
             coins: Math.max(0, stored.coins ?? SETTINGS.startCoins), battle, selected: Math.max(0, Math.floor(stored.selected ?? battle)),
             unlockAll: !!stored.unlockAll, cards: (stored.cards ?? []).filter((kind) => CARD_KINDS.includes(kind)), cardLevels: stored.cardLevels ?? {}, best: Math.max(0, stored.best ?? 0), levels, retries: Math.max(0, Math.floor(stored.retries ?? 0)), cardTutorial: !!stored.cardTutorial,
+            arena: { ...freshRecord(), ...(stored.arena ?? {}) },
         };
     } catch {
-        return { coins: SETTINGS.startCoins, battle: 0, selected: 0, unlockAll: false, cards: [], cardLevels: {}, best: 0, levels: freshLevels(), retries: 0, cardTutorial: false };
+        return { coins: SETTINGS.startCoins, battle: 0, selected: 0, unlockAll: false, cards: [], cardLevels: {}, best: 0, levels: freshLevels(), retries: 0, cardTutorial: false, arena: freshRecord() };
     }
 }
 
@@ -96,6 +100,26 @@ export const MobSave = {
         data.selected = index + 1;
         data.battle = Math.max(data.battle, index + 1);
         data.retries = 0;
+        save();
+    },
+
+    /** The arena record (rating, streak, tally: ArenaLadder). */
+    get arena(): ArenaRecord { return { ...data.arena }; },
+    /** An arena match ended: the record after it (the ladder's points). */
+    arenaResult(ladder: Ladder, result: 'won' | 'lost' | 'draw'): ArenaRecord {
+        data.arena = afterMatch(ladder, data.arena, result);
+        save();
+        return { ...data.arena };
+    },
+    /** What the player brings to the arena: their cards' levels and their cannon's. */
+    arenaLoadout(): Loadout {
+        const cards: Loadout['cards'] = {};
+        for (const kind of data.cards) cards[kind] = MobSave.cardLevel(kind);
+        return { cards, fire: data.levels.fire, capacity: data.levels.capacity, recharge: data.levels.recharge };
+    },
+    /** Debug: the arena record set (to try a rating). */
+    setArena(record: Partial<ArenaRecord>): void {
+        data.arena = { ...data.arena, ...record };
         save();
     },
 
@@ -209,6 +233,7 @@ export const MobSave = {
         }
         data.levels = freshLevels();
         data.retries = 0;
+        data.arena = freshRecord();
         save();
     },
 };

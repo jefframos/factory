@@ -167,6 +167,8 @@ export class MobHud extends PIXI.Container {
     private redFlash = 0;
     private time = 0;
     private goScale = 1;
+    /** An arena match is on (setDuel): the top bar stays hidden. */
+    private duel = false;
 
     /** `onHome`: the end card's HOME (to the main screen); `onCard`: a charged unit card tapped. */
     public constructor(onNext: () => void, onUpgrade: (kind: UpgradeKind) => void, onHome: () => void, onCard: (kind: CardKind) => void = () => undefined) {
@@ -412,6 +414,12 @@ export class MobHud extends PIXI.Container {
         }
     }
 
+    /** An arena match: its own HUD (DuelHud) has the life and the clock, so the battle's top bar goes. */
+    public setDuel(on: boolean): void {
+        this.duel = on;
+        this.top.visible = !on;
+    }
+
     public setTitle(battle: number, name: string): void {
         this.battleNumber = battle;
         this.badgeText.text = `${battle}`;
@@ -646,6 +654,6 @@ export class MobHud extends PIXI.Container {
         this.revealCall?.kill();
         this.revealCall = null;
         this.card.visible = false;
-        this.top.visible = true;
+        this.top.visible = !this.duel;
     }
 }
