@@ -37,7 +37,7 @@
       "z": -8.5,
       "length": 2.2,
       "thickness": 0.9,
-      "axis": "x",
+      "axis": "z",
       "move": {
         "range": 2.4,
         "seconds": 3.6
@@ -48,7 +48,7 @@
       "z": -17,
       "length": 2.2,
       "thickness": 0.9,
-      "axis": "x",
+      "axis": "z",
       "move": {
         "range": 2.4,
         "seconds": 3.2

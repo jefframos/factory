@@ -328,6 +328,10 @@ fs.mkdirSync(BEACH_OUT, { recursive: true });
 for (const name of BEACH_MODELS) await buildNature(name);
 if (!process.argv.includes('--no-desert')) await buildDesert();
 
+// The card units' characters (build-characters.mjs: skipped if library3d's character packs aren't there).
+const { buildCharacters } = await import('./build-characters.mjs');
+const characters = await buildCharacters();
+
 // What this script built, for vite.config.ts's ensureGameProps: it reruns this when the list or any folder on it is gone.
-const BUILT = ['props', 'beach', 'hexa', ...(process.argv.includes('--no-desert') ? [] : ['desert'])];
+const BUILT = ['props', 'beach', 'hexa', ...(process.argv.includes('--no-desert') ? [] : ['desert']), ...(characters ? ['characters'] : [])];
 fs.writeFileSync(path.join(REPO, 'public/mob/models/.props-built.json'), JSON.stringify({ folders: BUILT }, null, 2));

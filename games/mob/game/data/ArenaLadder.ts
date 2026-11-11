@@ -25,6 +25,8 @@ export interface LadderTier {
     /** 0..1: its cards' levels and its cannon's, from level 1 (0) to the player's own (1). */
     cardLevel: number;
     cannon: number;
+    /** Its grade badge (the pack's Icon_GradeBadge_*: raw-assets/images/ui{tps}), shown by a player's name. */
+    badge?: string;
 }
 
 export interface Ladder {
@@ -60,6 +62,15 @@ export interface Opponent extends Loadout {
 }
 
 /** The tier for a record: the rating's, moved by the streak. */
+/** The badges by rank, for a tier with none set (by its place in the ladder). */
+const BADGES = ['Beginner', 'Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster', 'Challenger'];
+
+/** Tier `index`'s grade badge (its own, or by its place). */
+export function tierBadge(ladder: Ladder, index: number): string {
+    const tier = ladder.tiers[Math.max(0, Math.min(ladder.tiers.length - 1, index))];
+    return tier?.badge ?? `Icon_GradeBadge_${BADGES[Math.min(BADGES.length - 1, Math.round((index / Math.max(1, ladder.tiers.length - 1)) * (BADGES.length - 1)))]}`;
+}
+
 export function tierFor(ladder: Ladder, record: Pick<ArenaRecord, 'rating' | 'streak'>): number {
     const tiers = ladder.tiers;
     let index = 0;

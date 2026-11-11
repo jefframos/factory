@@ -52,7 +52,7 @@
 // Events (shots, hits, gate crossings, giants, the end) go to `events`, for the view's effects and the HUD.
 
 import { GrinderConfig, PIPE, PipeConfig, pipeEnds, pipeLength } from '../data/MobConfig';
-import { SETTINGS } from '../data/Settings';
+import { CardKind, SETTINGS } from '../data/Settings';
 import { ARENA, BattleConfig, DuelRules, FIELD, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig, TUNING, bodyShare, carHp, needOf } from '../data/MobConfig';
 import { Contact, Shape, boxShape, circleShape, polygonShape, shapeCentre, touch } from './Shapes';
 
@@ -140,7 +140,10 @@ export interface BattleEvents {
     pipeOut?(pipe: number, end: number, team: number): void;
     /** A locked gate was worn down (its block `block` broke): it works now. */
     gateUnlocked?(gate: number, block: number): void;
-    giant?(team: number, x: number, z: number, kind: number): void;
+    /** A bomb went off at (x, z), `team`'s, `radius` wide. */
+    explode?(team: number, x: number, z: number, radius: number): void;
+    /** A special unit came out at (x, z): `kind` its big kind (-1: the saucer); `card`: a character card's batch. */
+    giant?(team: number, x: number, z: number, kind: number, card?: CardKind): void;
     /** A special unit's landing shockwave at (x, z), `team`'s, `radius` wide; `x`, `z` of each foe it knocked out. */
     shockwave?(team: number, x: number, z: number, radius: number): void;
     knocked?(x: number, z: number, team: number): void;
@@ -245,6 +248,46 @@ export interface Saucer {
 /** A unit's own stats (a card's, at its level): its hits and the most it takes off a building. */
 export interface UnitStats { hp?: number; damage?: number }
 
+/**
+ * A unit's look (which model draws it: `look`), apart from how it behaves (`big`): the crowd's mob (0), or a card's
+ * character (CharacterView): the skeleton minions (plain units, a batch of them, more hits) and warriors (giants:
+ * bigger, quicker, their own hits).
+ */
+export const LOOK = { mob: 0, minion: 1, warrior: 2, golem: 3, bomb: 4, bat: 5, turtle: 6 } as const;
+
+/**
+ * The turtle (the spiked shell): it can't be destroyed, its hit (its card's damage) knocks out what it touches, it never
+ * hurts a building (one it reaches, it crumbles away at), and it's very slow, walking `walk` seconds then stopping
+ * `stop` (each its own beat).
+ */
+export const TURTLE = { walk: 2.2, stop: 1.3 };
+/** Whether a turtle at its point `phase` (0..1) in its walk-stop cycle is walking at battle time `time`. */
+export function turtleWalking(time: number, phase: number): boolean {
+    const cycle = TURTLE.walk + TURTLE.stop;
+    return (time + phase * cycle) % cycle < TURTLE.walk;
+}
+/** The crowd's giants in another colour (TINT: the armoured one green, the viking orange), the player's side only. */
+export const TINT = { none: 0, green: 1, orange: 2 } as const;
+/** The character cards: the look each makes, how it behaves (big), how much quicker than its kind it goes, and how far
+ *  apart a batch lands round the cannon's front. */
+export const CHARACTER_CARDS: Partial<Record<CardKind, { look: number; big: number; speed: number; spread: number; fly?: boolean; helmet?: boolean; viking?: boolean; tint?: number }>> = {
+    skeletons: { look: LOOK.minion, big: 0, speed: 1, spread: 1.3 },
+    warriors: { look: LOOK.warrior, big: 1, speed: 1.7, spread: 1.4 },
+    golem: { look: LOOK.golem, big: 1, speed: 0.7, spread: 0 },
+    bomb: { look: LOOK.bomb, big: 1, speed: 1.2, spread: 0 },
+    // Flying: over the ground units, the walls, blocks, houses, spinners, grinders and pipes (FLY).
+    bats: { look: LOOK.bat, big: 0, speed: 2.1, spread: 1.2, fly: true },
+    turtle: { look: LOOK.turtle, big: 1, speed: 0.45, spread: 0 },
+    // The crowd's giant in its helmet (armoured: slow, sturdy) or its viking hat (its hits harder).
+    'giant-green': { look: LOOK.mob, big: 1, speed: 0.75, spread: 0, helmet: true, tint: TINT.green },
+    'giant-viking': { look: LOOK.mob, big: 1, speed: 1.05, spread: 0, viking: true, tint: TINT.orange },
+};
+
+/** The bomb (the stone monster): when it falls (or hits a building), it goes off — every foe within `radius` takes its
+ *  card's damage (a plain one's gone; a big one loses that many hits, times `bigShare`), and each enemy building in reach
+ *  takes it times `buildingShare`. */
+export const BOMB = { radius: 3.2, bigShare: 0.5, buildingShare: 0.6 };
+
 /** An enemy target as the battle has it: where its front is, its half width, its hits. */
 export interface Target {
     x: number;
@@ -307,6 +350,12 @@ export class Battle {
     public readonly team = new Uint8Array(CAPACITY);
     /** 1 for a giant. */
     public readonly big = new Uint8Array(CAPACITY);
+    /** Which model draws each (LOOK), and how much quicker than its kind it goes. */
+    public readonly look = new Uint8Array(CAPACITY);
+    private readonly speedMul = new Float32Array(CAPACITY);
+    /** Flying (the bats): over the ground and what's on it (FLY); a giant's colour of its own (TINT). */
+    public readonly fly = new Uint8Array(CAPACITY);
+    public readonly tint = new Uint8Array(CAPACITY);
     /** Hits left (1 for a plain mob). */
     public readonly hp = new Float32Array(CAPACITY);
     /** Seconds since it appeared (the view pops new ones in), and its own step in the run cycle. */
@@ -401,6 +450,8 @@ export class Battle {
     private endedAt = -1;
     /** An arena match ended on the clock (not a cannon falling). */
     public timedOut = false;
+    /** An arena match: the reds' cannon's fire rate, times this (a new player's first matches: much slower). */
+    public redFireScale = 1;
     /** (The Cannon's: shots due.) */
     public fireDue = 0;
     private redDue = 0;
@@ -519,9 +570,14 @@ export class Battle {
      * A unit out of the cannon (a card that's charged): a giant, a truck, the gold UFO, a car, with its own `stats` (the
      * card's level's hits and damage; a car with no hits set can't be destroyed).
      */
-    public spawnUnit(kind: 'giant' | 'truck' | 'saucer' | 'car', stats: UnitStats = {}, team: number = BLUE): void {
+    public spawnUnit(kind: CardKind, stats: UnitStats = {}, team: number = BLUE): void {
+        const character = CHARACTER_CARDS[kind];
+        if (character) {
+            this.spawnBatch(kind, character, stats, team);
+            return;
+        }
         if (team === RED) {
-            this.spawnRedUnit(kind, stats);
+            this.spawnRedUnit(kind as 'giant' | 'truck' | 'saucer' | 'car', stats);
             return;
         }
         if (kind === 'saucer') {
@@ -542,6 +598,40 @@ export class Battle {
     }
 
     /** An arena match's reds playing a card: out of their cannon, down the field. */
+    /**
+     * A character card's batch (its settings' `count`: the skeletons' eight, the warriors' two) out of `team`'s cannon,
+     * spread round its front, each with the card's hits and damage, its look and speed; one shockwave for the lot.
+     */
+    private spawnBatch(kind: CardKind, character: NonNullable<(typeof CHARACTER_CARDS)[CardKind]>, stats: UnitStats, team: number): void {
+        const count = Math.max(1, Math.round(SETTINGS.cards[kind].count ?? 1));
+        const red = team === RED;
+        const c = this.cannonOf(team);
+        const front = this.cannonZ - 2.6;
+        let first = -1;
+        for (let k = 0; k < count; k++) {
+            // A ring round the middle one (a pair side by side).
+            const angle = (k / count) * Math.PI * 2 + Math.random() * 0.3;
+            const reach = count > 2 ? character.spread * (k === 0 ? 0 : 0.55 + 0.45 * (k % 2)) : character.spread * 0.5;
+            const x = c.cannonX + (count > 2 ? Math.cos(angle) * reach : (k - 0.5) * 2 * reach);
+            const zOff = count > 2 ? Math.sin(angle) * reach * 0.6 : 0;
+            const z = red ? this.mirrorZ(front + zOff) : front + zOff;
+            const i = this.add(team, Math.max(-ARENA.halfWidth + 0.4, Math.min(ARENA.halfWidth - 0.4, x)), z, ALL_GATES, character.big);
+            if (i < 0) break;
+            if (first < 0) first = i;
+            this.look[i] = character.look;
+            this.speedMul[i] = character.speed;
+            this.fly[i] = character.fly ? 1 : 0;
+            this.tint[i] = team === BLUE ? character.tint ?? TINT.none : TINT.none;
+            if (character.helmet) this.helmet[i] = 1;
+            if (character.viking) this.viking[i] = 1;
+            if (stats.hp !== undefined) this.hp[i] = stats.hp > 0 ? stats.hp : Infinity;
+            if (stats.damage !== undefined) this.unitDamage[i] = stats.damage;
+        }
+        if (first < 0) return;
+        this.events.giant?.(team, c.cannonX, red ? this.mirrorZ(front) : front, character.big, kind);
+        this.shockwave(team, c.cannonX, red ? this.mirrorZ(this.cannonZ) : this.cannonZ);
+    }
+
     private spawnRedUnit(kind: 'giant' | 'truck' | 'saucer' | 'car', stats: UnitStats): void {
         const c = this.red;
         if (kind === 'saucer') {
@@ -562,6 +652,46 @@ export class Battle {
         this.shockwave(RED, c.cannonX, this.mirrorZ(this.cannonZ));
     }
 
+    /** Each bomb that fell this step (not one vanishing as the field clears out after the battle) goes off. */
+    private detonate(): void {
+        if (this.state !== 'playing') return;
+        for (let i = 0; i < this.count; i++) {
+            if (!this.dead[i] || this.look[i] !== LOOK.bomb || this.leaving[i] > 0) continue;
+            // (Once: it's gone at the end of the step.)
+            this.look[i] = LOOK.mob;
+            this.explodeAt(this.team[i], this.x[i], this.z[i], this.unitDamage[i] || TUNING.giantDamage);
+        }
+    }
+
+    /** A blast at (x, z): `team`'s foes in BOMB.radius hurt or gone, their buildings in reach hit. */
+    private explodeAt(team: number, x: number, z: number, damage: number): void {
+        const reach = BOMB.radius * BOMB.radius;
+        for (let j = 0; j < this.count; j++) {
+            if (this.dead[j] || this.leaving[j] > 0 || this.team[j] === team) continue;
+            const dx = this.x[j] - x;
+            const dz = this.z[j] - z;
+            if (dx * dx + dz * dz > reach) continue;
+            if (this.big[j]) {
+                this.hp[j] -= damage * BOMB.bigShare;
+                if (this.hp[j] > 0) continue;
+            }
+            this.dead[j] = 1;
+            this.events.knocked?.(this.x[j], this.z[j], this.team[j]);
+        }
+        // The buildings: the reds' for a blue bomb, the blues' (an arena match) for a red one.
+        const hit = Math.round(damage * BOMB.buildingShare);
+        if (team === BLUE) {
+            this.targets.forEach((target, k) => {
+                if (target.alive && !target.shielded && Math.abs(target.x - x) <= target.halfWidth + BOMB.radius && Math.abs(target.z - z) <= BOMB.radius) this.damageTarget(k, hit, x, z, true);
+            });
+        } else if (this.duel) {
+            this.blueTargets.forEach((target, k) => {
+                if (target.alive && !target.shielded && Math.abs(target.x - x) <= target.halfWidth + BOMB.radius && Math.abs(target.z - z) <= BOMB.radius) this.damageOwn(k, hit, x, z, true);
+            });
+        }
+        this.events.explode?.(team, x, z, BOMB.radius);
+    }
+
     /** `team`'s special unit landed at (x, z): the foes round it knocked out (a big one hurt). */
     private shockwave(team: number, x: number, z: number): void {
         const reach = SHOCKWAVE.radius * SHOCKWAVE.radius;
@@ -580,7 +710,11 @@ export class Battle {
         this.events.shockwave?.(team, x, z, SHOCKWAVE.radius);
     }
 
-    public debugSpawn(kind: 'giant' | 'truck' | 'saucer' | 'car'): void {
+    public debugSpawn(kind: CardKind): void {
+        if (CHARACTER_CARDS[kind]) {
+            this.spawnUnit(kind, {});
+            return;
+        }
         if (kind === 'saucer') {
             const target = this.mainTarget();
             if (target >= 0) this.saucers.push({ x: this.cannonX, z: -2, target, alive: true, age: 0, sucked: 0 });
@@ -633,7 +767,7 @@ export class Battle {
 
     /** A cannon's shots a second, shots held and seconds to recharge from empty, at its levels. */
     public fireRateOf(c: Cannon): number {
-        const rate = TUNING.fireRate * (1 + TUNING.fireRatePerLevel * (c.fireLevel - 1));
+        const rate = TUNING.fireRate * (1 + TUNING.fireRatePerLevel * (c.fireLevel - 1)) * (c === this.red ? this.redFireScale : 1);
         // An arena match: a side down to its cannon fires faster.
         return c.boosted && this.duel ? rate * this.duel.boost.rate : rate;
     }
@@ -756,6 +890,7 @@ export class Battle {
         if (this.duel) this.checkDuel();
         else this.checkBreakthrough();
         this.clearOut(dt);
+        this.detonate();
         this.compact();
         if (this.count > this.peak) this.peak = this.count;
     }
@@ -792,6 +927,10 @@ export class Battle {
         this.viking[i] = 0;
         this.chip[i] = 0;
         this.unitDamage[i] = 0;
+        this.look[i] = LOOK.mob;
+        this.speedMul[i] = 1;
+        this.fly[i] = 0;
+        this.tint[i] = TINT.none;
         if (big) {
             if (team === BLUE) this.giantStats.blue++;
             else this.giantStats.red++;
@@ -1073,6 +1212,8 @@ export class Battle {
                         const ox = x - this.x[j];
                         const oz = z - this.z[j];
                         const d2 = ox * ox + oz * oz;
+                        // (Flying over the ground's crowd, and it under the flyers.)
+                        if (this.fly[i] !== this.fly[j]) continue;
                         const space = radius + this.radiusOf(j);
                         if (d2 < space * space && d2 > 1e-6) {
                             const d = Math.sqrt(d2);
@@ -1109,12 +1250,12 @@ export class Battle {
             // A wall or hole ahead: slide along its edge instead (and a little away from it).
             this.movingBlue = blue;
             this.movingBig = !!this.big[i];
-            const slide = this.slideAround(x, z, dx / length, dz / length, this.bodyOf(i), SETTINGS.housesBlockReds && (!blue || !!this.big[i] || this.hasRedPads),
+            const slide = this.fly[i] ? null : this.slideAround(x, z, dx / length, dz / length, this.bodyOf(i), SETTINGS.housesBlockReds && (!blue || !!this.big[i] || this.hasRedPads),
                 remembering ? this.slideX[i] : 0, remembering ? this.slideZ[i] : 0);
             this.slideFor[i] = Math.max(0, this.slideFor[i] - dt);
             if (slide) {
                 const kindNow = this.big[i];
-                const speedNow = (blue || this.duel ? TUNING.blueSpeed : TUNING.redSpeed) * (kindNow === TRUCK ? TUNING.truckSpeed : kindNow === CAR ? TUNING.carSpeed : kindNow ? TUNING.giantSpeed : 1);
+                const speedNow = (blue || this.duel ? TUNING.blueSpeed : TUNING.redSpeed) * (kindNow === TRUCK ? TUNING.truckSpeed : kindNow === CAR ? TUNING.carSpeed : kindNow ? TUNING.giantSpeed : 1) * this.speedMul[i];
                 // Going round but getting nowhere (pressed into a corner): the other way round.
                 this.stuckFor[i] = moved < speedNow * STUCK_SPEED ? this.stuckFor[i] + dt : 0;
                 if (this.stuckFor[i] > STUCK_SECONDS) {
@@ -1133,7 +1274,8 @@ export class Battle {
                 if (!blue && Math.abs(slide.tx) > 0.3) this.lane[i] = Math.max(-redLaneSpread(), Math.min(redLaneSpread(), x + Math.sign(slide.tx) * LANE_SHIFT));
             }
             const kind = this.big[i];
-            const speed = (blue || this.duel ? TUNING.blueSpeed : TUNING.redSpeed) * (kind === TRUCK ? TUNING.truckSpeed : kind === CAR ? TUNING.carSpeed : kind ? TUNING.giantSpeed : 1);
+            const walking = this.look[i] !== LOOK.turtle || turtleWalking(this.time, this.phase[i]);
+            const speed = walking ? (blue || this.duel ? TUNING.blueSpeed : TUNING.redSpeed) * (kind === TRUCK ? TUNING.truckSpeed : kind === CAR ? TUNING.carSpeed : kind ? TUNING.giantSpeed : 1) * this.speedMul[i] : 0;
             const targetVx = (dx / length) * speed + pushX * TUNING.separation;
             const targetVz = (dz / length) * speed + pushZ * TUNING.separation * 0.5;
             // A little inertia, so the crowd flows rather than jitters (and a shove carries on for a moment).
@@ -1177,6 +1319,12 @@ export class Battle {
             let z = Math.max(ARENA.baseZ - 0.5, this.z[i]);
             // A match's field ends behind the blues' buildings too.
             if (this.duel) z = Math.min(-ARENA.dangerZ, z);
+            // Flying: over the blocks, houses, spinners and pushers.
+            if (this.fly[i]) {
+                this.x[i] = x;
+                this.z[i] = z;
+                continue;
+            }
             for (let b = 0; b < this.blocks.length; b++) {
                 const block = this.blocks[b];
                 // Out the way that keeps it on the field (else the field's side pushes it back in, each step: stuck).
@@ -1345,6 +1493,7 @@ export class Battle {
                 for (let col = Math.max(0, c0 - cells); col <= c0 + cells && col < GRID_COLS; col++) {
                     for (let j = this.redHead[row * GRID_COLS + col]; j >= 0; j = this.redNext[j]) {
                         if (this.dead[j]) continue;
+                        if (this.fly[i] !== this.fly[j] && !(this.fly[i] ? this.big[j] && this.big[j] !== CAR : this.big[i] && !car)) continue;
                         // A car reaches a little past its body (it's pushing them).
                         const reach = (ri + this.radiusOf(j)) * (car || this.big[j] === CAR ? 1.08 : 0.95);
                         const ox = this.x[i] - this.x[j];
@@ -1384,7 +1533,8 @@ export class Battle {
             const red = barrier.team === 'red';
             const team = red ? RED : BLUE;
             for (let i = 0; i < this.count; i++) {
-                if (this.dead[i] || this.team[i] !== team || worn[i] || this.big[i] === CAR) continue;
+                // (Not a card's character: it has no helmet or hat to wear.)
+                if (this.dead[i] || this.team[i] !== team || worn[i] || this.big[i] === CAR || this.look[i] !== LOOK.mob) continue;
                 const crossed = red ? this.prevZ[i] < barrier.z && this.z[i] >= barrier.z : this.prevZ[i] > barrier.z && this.z[i] <= barrier.z;
                 if (!crossed || Math.abs(this.x[i] - barrier.x) > half) continue;
                 worn[i] = 1;
@@ -1398,7 +1548,7 @@ export class Battle {
     private useGrinders(dt: number): void {
         if (!this.grinders.length) return;
         for (let i = 0; i < this.count; i++) {
-            if (this.dead[i] || this.leaving[i] > 0 || this.big[i] === CAR) continue;
+            if (this.dead[i] || this.leaving[i] > 0 || this.big[i] === CAR || this.fly[i]) continue;
             const r = this.radiusOf(i) * 0.7;
             for (const grinder of this.grinders) {
                 const across = grinder.axis === 'x' ? grinder.length / 2 : grinder.thickness / 2;
@@ -1425,7 +1575,7 @@ export class Battle {
         if (!this.pipes.length) return;
         this.stepDt = dt;
         for (let i = 0; i < this.count; i++) {
-            if (this.dead[i] || this.leaving[i] > 0) continue;
+            if (this.dead[i] || this.leaving[i] > 0 || this.fly[i]) continue;
             const plain = this.big[i] === PLAIN;
             // Blues walk up the field (-z), reds down it: each goes into the openings facing it.
             const travel = this.team[i] === BLUE ? -1 : 1;
@@ -1487,6 +1637,7 @@ export class Battle {
 
     /** The damage mob i does with a hit: 1, times TUNING.vikingDamage with a viking hat. */
     private attackOf(i: number): number {
+        if (this.look[i] === LOOK.turtle) return this.unitDamage[i] || 3;
         return this.viking[i] ? TUNING.vikingDamage : 1;
     }
 
@@ -1540,7 +1691,8 @@ export class Battle {
             const out = team === RED ? 1 : -1;
             let fed = false;
             for (let i = 0; i < this.count; i++) {
-                if (this.dead[i] || this.team[i] !== team || this.big[i]) continue;
+                // Only the crowd's own mobs feed a house (a card's skeletons walk past it).
+                if (this.dead[i] || this.team[i] !== team || this.big[i] || this.look[i] !== LOOK.mob) continue;
                 if (Math.abs(this.x[i] - pad.x) > hw || Math.abs(this.z[i] - pad.z) > hd) continue;
                 this.dead[i] = 1;
                 pad.count++;
@@ -1581,9 +1733,13 @@ export class Battle {
                 if (!target.alive || target.shielded || this.z[i] - r > target.z + 0.15 || Math.abs(this.x[i] - target.x) > target.halfWidth + r) continue;
                 if (target.kind === 'cannon' && this.z[i] + r < target.z - CANNON_DEPTH) continue;
                 this.dead[i] = 1;
+                if (this.look[i] === LOOK.turtle) {
+                    this.events.vanish?.(this.x[i], this.z[i], this.team[i]);
+                    break;
+                }
                 const kind = this.big[i];
                 const most = this.unitDamage[i] || (kind === TRUCK ? TUNING.truckDamage : kind === CAR ? TUNING.carDamage : TUNING.giantDamage);
-                const damage = (kind ? Math.min(most, Math.ceil(this.hp[i])) : 1) * this.attackOf(i);
+                const damage = (kind ? Math.min(most, Math.ceil(this.hp[i])) : this.unitDamage[i] || 1) * this.attackOf(i);
                 this.damageTarget(k, damage, this.x[i], this.z[i], kind !== PLAIN);
                 break;
             }
@@ -1595,7 +1751,7 @@ export class Battle {
     private impactOf(i: number): number {
         const kind = this.big[i];
         const most = this.unitDamage[i] || (kind === TRUCK ? TUNING.truckDamage : kind === CAR ? TUNING.carDamage : TUNING.giantDamage);
-        return (kind ? Math.min(most, Math.ceil(this.hp[i])) : 1) * this.attackOf(i);
+        return (kind ? Math.min(most, Math.ceil(this.hp[i])) : this.unitDamage[i] || 1) * this.attackOf(i);
     }
 
     /**
@@ -1625,12 +1781,14 @@ export class Battle {
                 if (k < 0 && z >= behind) k = this.blueTargets.indexOf(this.nearestOf(this.blueTargets, x, true)!);
                 if (k < 0) continue;
                 this.dead[i] = 1;
-                this.damageOwn(k, this.impactOf(i), x, z, this.big[i] !== PLAIN);
+                if (this.look[i] === LOOK.turtle) this.events.vanish?.(x, z, this.team[i]);
+                else this.damageOwn(k, this.impactOf(i), x, z, this.big[i] !== PLAIN);
             } else if (z <= this.mirrorZ(behind)) {
                 const k = this.targets.indexOf(this.nearestOf(this.targets, x, true)!);
                 if (k < 0) continue;
                 this.dead[i] = 1;
-                this.damageTarget(k, this.impactOf(i), x, z, this.big[i] !== PLAIN);
+                if (this.look[i] === LOOK.turtle) this.events.vanish?.(x, z, this.team[i]);
+                else this.damageTarget(k, this.impactOf(i), x, z, this.big[i] !== PLAIN);
             }
         }
     }
@@ -1822,5 +1980,9 @@ export class Battle {
         this.lane[to] = this.lane[from];
         this.chip[to] = this.chip[from];
         this.unitDamage[to] = this.unitDamage[from];
+        this.look[to] = this.look[from];
+        this.speedMul[to] = this.speedMul[from];
+        this.fly[to] = this.fly[from];
+        this.tint[to] = this.tint[from];
     }
 }

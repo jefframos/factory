@@ -25,7 +25,7 @@ import * as THREE from 'three';
 import { createGLTFLoader } from 'core/three/GLTFLoaders';
 import { COLORS, TUNING, UNIT_COLORS } from '../data/MobConfig';
 import { applyBend } from '../services/Bend';
-import { BLUE, Battle, CAR, TRUCK, GIANT } from './Battle';
+import { BLUE, Battle, CAR, TRUCK, GIANT, TINT } from './Battle';
 
 /** Poses of the run cycle baked. */
 const FRAMES = 10;
@@ -112,6 +112,8 @@ export class CrowdView {
     /** The blue giant's own colour (UNIT_COLORS.giant: picked live in the debug panel). */
     private readonly giantBlue = new THREE.Color(UNIT_COLORS.giant);
     private readonly red = new THREE.Color(COLORS.red);
+    /** The tinted giants' colours (Battle TINT: the armoured one, the viking). */
+    private readonly tints: Record<number, THREE.Color> = { [TINT.green]: new THREE.Color(0x7cc23a), [TINT.orange]: new THREE.Color(0xf07a22) };
     private readonly matrix = new THREE.Matrix4();
     private readonly position = new THREE.Vector3();
     private readonly rotation = new THREE.Quaternion();
@@ -339,6 +341,8 @@ export class CrowdView {
         for (let i = 0; i < battle.count; i++) {
             // Trucks are drawn by the arena (a model of their own).
             if (battle.big[i] === TRUCK || battle.big[i] === CAR) continue;
+            // (A card's character: CharacterView draws it.)
+            if (battle.look[i]) continue;
             const speed = battle.team[i] === BLUE ? TUNING.blueSpeed : TUNING.redSpeed;
             const cycle = (time * speed * CYCLES_PER_UNIT + battle.phase[i]) % 1;
             const pose = Math.min(FRAMES - 1, Math.floor(cycle * FRAMES));
@@ -356,7 +360,7 @@ export class CrowdView {
             const helmet = battle.helmet[i] ? set.helmets[pose] : undefined;
             if (helmet) helmet.setMatrixAt(helmet.count++, this.matrix);
             if (battle.viking[i] && set.vikings[pose]) for (const part of set.vikings[pose]) part.setMatrixAt(part.count++, this.matrix);
-            const color = battle.team[i] === BLUE ? (battle.big[i] === GIANT ? this.giantBlue : this.blue) : this.red;
+            const color = battle.team[i] === BLUE ? (this.tints[battle.tint[i]] ?? (battle.big[i] === GIANT ? this.giantBlue : this.blue)) : this.red;
             set.teamColors[pose].setXYZ(slot, color.r, color.g, color.b);
         }
         for (const set of [this.plain, this.giant]) {

@@ -1,0 +1,73 @@
+{
+  "name": "Desert Arena",
+  "theme": "desert",
+  "trophies": 100,
+  "width": 16,
+  "length": 30,
+  "seconds": 90,
+  "towerHp": 150,
+  "cannonHp": 200,
+  "cannonZ": -2.4,
+  "cannonRange": 7.1,
+  "cannonWidth": 1.8,
+  "targets": [
+    {
+      "x": -4,
+      "z": -0.4,
+      "width": 2
+    },
+    {
+      "x": 4,
+      "z": -0.4,
+      "width": 2
+    }
+  ],
+  "boostRate": 1.6,
+  "mirror": "both",
+  "gates": [
+    {
+      "x": 0,
+      "z": -7.5,
+      "width": 3.5,
+      "value": 2
+    },
+    {
+      "x": -4.6,
+      "z": -11,
+      "width": 2.6,
+      "value": 3
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "wall",
+      "points": [
+        [
+          3,
+          -10
+        ],
+        [
+          5.5,
+          -10
+        ],
+        [
+          5.5,
+          -12.5
+        ],
+        [
+          3,
+          -12.5
+        ]
+      ]
+    }
+  ],
+  "spinners": [
+    {
+      "x": 1.5,
+      "z": -13,
+      "length": 1.8,
+      "arms": 2,
+      "speed": 0.3
+    }
+  ]
+}

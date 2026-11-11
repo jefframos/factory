@@ -49,6 +49,8 @@ const SETTINGS_FILE = path.join(HERE, '..', 'ui', 'settings.json');
 const GRADES_FILE = path.join(HERE, '..', 'ui', 'grades.json');
 const GAPS_FILE = path.join(HERE, '..', 'ui', 'gaps.json');
 const ARENAS_DIR = path.join(HERE, '..', 'arenas');
+/** The unit cards (game/data/Settings.ts CARD_KINDS; the houses make only the first four). */
+const CARD_KINDS = ['giant', 'truck', 'saucer', 'car', 'skeletons', 'warriors', 'golem', 'bomb', 'bats', 'turtle', 'giant-green', 'giant-viking'];
 const LADDER_FILE = path.join(HERE, '..', 'ui', 'arena-ladder.json');
 
 /** What's wrong with the arena ladder, if anything (the game trusts the file: ArenaLadder.ts). */
@@ -60,7 +62,7 @@ function ladderProblem(l) {
     for (const [i, t] of l.tiers.entries()) {
         if (!isNumber(t.from) || t.from < 0 || (i > 0 && t.from <= l.tiers[i - 1].from)) return `Tier ${i + 1}: its rating must be above the one before`;
         if (!['newbie', 'casual', 'average', 'pro'].includes(t.skill)) return `Tier ${i + 1}: skill newbie, casual, average or pro`;
-        if (!Array.isArray(t.cards) || !t.cards.every((c) => ['giant', 'truck', 'saucer', 'car'].includes(c))) return `Tier ${i + 1}: cards from giant, truck, saucer, car`;
+        if (!Array.isArray(t.cards) || !t.cards.every((c) => CARD_KINDS.includes(c))) return `Tier ${i + 1}: cards from ${CARD_KINDS.join(', ')}`;
         if (!(isNumber(t.cardLevel) && t.cardLevel >= 0 && t.cardLevel <= 1 && isNumber(t.cannon) && t.cannon >= 0 && t.cannon <= 1)) return `Tier ${i + 1}: card level and cannon 0 to 1`;
     }
     if (l.tiers[0].from !== 0) return 'The first tier starts at rating 0';
@@ -92,11 +94,18 @@ function settingsProblem(s) {
     if (!(isNumber(s.retry?.step) && s.retry.step >= 0 && isNumber(s.retry?.most) && s.retry.most >= 0 && s.retry.most < 1)) return 'retry: step 0 or more, most from 0 up to (not) 1';
     if (!(isNumber(s.loopHarder) && s.loopHarder >= 0)) return 'loopHarder must be 0 or more';
     if (!(isNumber(s.startCoins) && s.startCoins >= 0)) return 'startCoins must be 0 or more';
+    if (s.camera !== undefined) {
+        const c = s.camera;
+        if (!(isNumber(c.pitchDeg) && c.pitchDeg >= 10 && c.pitchDeg <= 90)) return 'camera.pitchDeg: 10 to 90';
+        if (!(isNumber(c.yawDeg) && Math.abs(c.yawDeg) <= 90)) return 'camera.yawDeg: -90 to 90';
+        if (!(isNumber(c.fov) && c.fov >= 15 && c.fov <= 100)) return 'camera.fov: 15 to 100';
+        if (!(isNumber(c.homePitchDeg) && c.homePitchDeg >= 10 && c.homePitchDeg <= 90)) return 'camera.homePitchDeg: 10 to 90';
+    }
     if (typeof s.housesBlockReds !== 'boolean') return 'housesBlockReds must be true or false';
     if (!(isNumber(s.loseCoins) && s.loseCoins >= 0)) return 'loseCoins must be 0 or more';
     if (!(isNumber(s.replayReward) && s.replayReward >= 0)) return 'replayReward must be 0 or more';
     const range = (r) => Array.isArray(r) && r.length === 2 && r.every((v) => isNumber(v) && v >= 0);
-    for (const kind of ['giant', 'truck', 'saucer', 'car']) {
+    for (const kind of CARD_KINDS) {
         const c = s.cards?.[kind];
         if (!c) return `cards.${kind} is missing`;
         if (!(Number.isInteger(c.maxLevel) && c.maxLevel >= 1 && c.maxLevel <= 50)) return `cards.${kind}: levels 1 to 50`;
@@ -408,11 +417,11 @@ async function handle(req, res, url) {
     }
     if (url.pathname === '/api/mob/card-pictures' && req.method === 'GET') {
         const files = await fs.readdir(CARD_PICTURES_DIR).catch(() => []);
-        return send(res, 200, files.filter((file) => /^card-[a-z]+\.png$/.test(file))), true;
+        return send(res, 200, files.filter((file) => /^card-[a-z-]+\.png$/.test(file))), true;
     }
     if (url.pathname === '/api/mob/card-picture' && req.method === 'GET') {
         const kind = url.searchParams.get('kind') ?? '';
-        if (!['giant', 'truck', 'saucer', 'car'].includes(kind)) return send(res, 400, { error: 'Unknown card' }), true;
+        if (!CARD_KINDS.includes(kind)) return send(res, 400, { error: 'Unknown card' }), true;
         const file = await fs.readFile(path.join(CARD_PICTURES_DIR, `card-${kind}.png`)).catch(() => null);
         if (!file) return send(res, 404, { error: 'No picture saved' }), true;
         res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' }).end(file);
@@ -420,7 +429,7 @@ async function handle(req, res, url) {
     }
     if (url.pathname === '/api/mob/card-picture' && req.method === 'POST') {
         const kind = url.searchParams.get('kind') ?? '';
-        if (!['giant', 'truck', 'saucer', 'car'].includes(kind)) return send(res, 400, { error: 'Unknown card' }), true;
+        if (!CARD_KINDS.includes(kind)) return send(res, 400, { error: 'Unknown card' }), true;
         await fs.mkdir(CARD_PICTURES_DIR, { recursive: true });
         await fs.writeFile(path.join(CARD_PICTURES_DIR, `card-${kind}.png`), await readRawBody(req));
         return send(res, 200, { ok: true }), true;

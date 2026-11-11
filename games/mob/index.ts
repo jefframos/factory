@@ -22,6 +22,7 @@ import { ARENAS_BY_ID } from './game/data/Arenas';
 import { MatchStart } from './game/scenes/MobScene';
 import { RadialTransition } from './game/ui/RadialTransition';
 import { MobSave } from './game/data/MobSave';
+import { CARD_KINDS } from './game/data/Settings';
 import { areaProgress } from './game/data/MobLevels';
 
 type PlatformConfigEntry = { gameId?: string; enableAds?: boolean; folderPath?: string };
@@ -101,6 +102,11 @@ export default class MobGame extends Game {
             { label: 'UNLOCK ALL', action: () => { MobSave.setUnlockAll(true); refresh(); } },
             { label: 'LOCK BACK', action: () => { MobSave.setUnlockAll(false); refresh(); } },
         ]);
+        // Every unit card the player's (each new one NEW in the CARDS tab), to try them.
+        panel.buttons([
+            { label: 'ALL CARDS', action: () => { for (const kind of CARD_KINDS) MobSave.setCard(kind, true); refresh(); } },
+            { label: '+100 GEMS', action: () => { MobSave.addGems(100); refresh(); } },
+        ]);
         panel.buttons([
             { label: '+500 COINS', action: () => { MobSave.addCoins(500); refresh(); } },
             { label: 'RESET DATA', variant: 'danger', action: () => { MobSave.reset(); refresh(); } },
@@ -130,15 +136,15 @@ export default class MobGame extends Game {
     private play(arena?: string, match?: MatchStart): void {
         if (arena) {
             const title = match?.opponent ? `VS ${match.opponent.name}` : 'PRACTICE';
-            this.travel(title, (ARENAS_BY_ID[arena]?.name ?? '').toUpperCase(), () => this.showBattle(arena, match));
+            this.travel(title, (ARENAS_BY_ID[arena]?.name ?? '').toUpperCase(), () => this.showBattle(arena, match).ready);
             return;
         }
         const area = areaProgress(MobSave.selected);
-        this.travel(`LEVEL ${MobSave.selected + 1}`, `AREA ${area.number} · ${area.zone.name.toUpperCase()}`, () => this.showBattle());
+        this.travel(`LEVEL ${MobSave.selected + 1}`, `AREA ${area.number} · ${area.zone.name.toUpperCase()}`, () => this.showBattle().ready);
     }
 
     /** Covers the screen, swaps the scene underneath, opens on it. */
-    private travel(title: string, subtitle: string, swap: () => void): void {
+    private travel(title: string, subtitle: string, swap: () => void | Promise<unknown>): void {
         if (this.travelling) return;
         this.travelling = true;
         void RadialTransition.go(this, title, subtitle, swap).then(() => {

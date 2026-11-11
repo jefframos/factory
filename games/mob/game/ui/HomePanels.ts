@@ -1,9 +1,10 @@
 // HomePanels.ts
 //
-// The main screen's two side tabs, filling the screen above the bottom tabs as Ant's and UFO's shops do (a dark blue
+// The main screen's side tabs, filling the screen above the bottom tabs as Ant's and UFO's shops do (a dark blue
 // back, a blue strip with the title):
 //   'upgrades' — the cannon's three upgrades (UpgradeCard, the same cards as the end card's): tap one to buy its next
-//                level; and the unit cards' (CardUpgrades).
+//                level.
+//   'cards'    — the unit cards (CardDeck): the arena's battle deck and the collection; tap one for its details.
 // Both scroll (drag, or the wheel) when they're taller than the room under the strip, as Ant's and UFO's shops do, a
 // scroll bar down the right side showing where in it you are.
 //   'areas'    — every area (zone) as a row: done (green, a check), the one being played (blue, how far through it,
@@ -18,19 +19,22 @@ import { UpgradeKind } from '../data/MobConfig';
 import { MobSave } from '../data/MobSave';
 import { AreaState, areaStates } from '../data/MobLevels';
 import { UpgradeCard, UPGRADE_CARD } from './UpgradeCard';
-import { CardUpgrades } from './CardUpgrades';
+import { CardDeck } from './CardDeck';
 import { SegmentBar } from './SegmentBar';
 import { CardKind } from '../data/Settings';
 import { framePlane, iconSprite, label, plainLabel, tappable } from './UiParts';
+import { PANEL_LOOK, Pattern } from './Pattern';
 
-export type PanelKind = 'upgrades' | 'areas';
+export type PanelKind = 'upgrades' | 'areas' | 'cards';
 
 const BACK = 0x12305e;
 const HEADER = { strip: 96, stripColor: 0x3f6bf5, title: 34, titleY: 48 };
 const TABS_HEIGHT = 118;
-const TITLES: Record<PanelKind, string> = { upgrades: 'UPGRADES', areas: 'AREAS' };
+const TITLES: Record<PanelKind, string> = { upgrades: 'UPGRADES', areas: 'AREAS', cards: 'CARDS' };
 const UPGRADE_KINDS: UpgradeKind[] = ['fire', 'capacity', 'recharge'];
-const UPGRADES_LAYOUT = { gap: 14, hint: 24, hintGap: 46, cardsTitle: 30, cardsTitleGap: 100, cardsGap: 130 };
+const UPGRADES_LAYOUT = { gap: 14, hint: 24, hintGap: 46, creditGap: 110 };
+/** The CARDS page: its top, and the width it's fitted to. */
+const DECK_LAYOUT = { top: 34, width: 780 };
 /** An area's row: its size, gap, and tints by state (as Ant's shop cards: green in use, blue yours, dark locked). */
 const ROW = { width: 640, height: 150, gap: 18, top: 40, frameScale: 0.7 };
 const ROW_LOOK = {
@@ -53,19 +57,22 @@ export class HomePanel extends PIXI.Container {
     private readonly back = new PIXI.Sprite(PIXI.Texture.WHITE);
     private readonly strip = new PIXI.Sprite(PIXI.Texture.WHITE);
     private readonly title = label(HEADER.title);
+    /** The moving pattern over the back, and the strip's (brighter, no glows). */
+    private readonly pattern = new Pattern(PANEL_LOOK);
+    private readonly stripPattern = new Pattern({ top: 0x5a86ff, bottom: 0x2f5be0, strength: 0.12, glows: 0, tile: 60, speed: 14 });
     private readonly content = new PIXI.Container();
     private readonly cards: UpgradeCard[] = [];
     private readonly hint = label(UPGRADES_LAYOUT.hint, 0xc9d3ff);
-    /** The unit cards' levels (upgrades), under the cannon's. */
-    private cardUpgrades: CardUpgrades | null = null;
+    /** The CARDS page's deck and collection. */
+    private deck: CardDeck | null = null;
 
     /** The area whose levels are open under its row (none: -1): the one being played, to start with. */
     private openArea = Math.max(-1, areaStates(MobSave.battle, MobSave.furthest).findIndex((area) => area.state === 'current'));
 
     /** `onBuy`: an upgrade card tapped (upgrades); `onPick`: a level tapped in an area (areas: its index, to play it);
-     *  `onBuyCard`: a unit card's next level tapped (upgrades). */
+     *  `onCard`: a unit card tapped (cards: its details). */
     public constructor(private readonly kind: PanelKind, onBuy: (kind: UpgradeKind) => void = () => undefined, private readonly onPick: (index: number) => void = () => undefined,
-        onBuyCard: (kind: CardKind) => void = () => undefined) {
+        onCard: (kind: CardKind) => void = () => undefined) {
         super();
         this.back.tint = BACK;
         // It takes the taps that miss its cards: nothing reaches the home screen under it.
@@ -74,7 +81,8 @@ export class HomePanel extends PIXI.Container {
         this.title.text = TITLES[kind];
         // The content scrolls under the strip, cut to the room there (view).
         this.content.mask = this.view;
-        this.addChild(this.back, this.view, this.content, this.scrollBar, this.strip, this.title);
+        this.pattern.eventMode = this.stripPattern.eventMode = 'none';
+        this.addChild(this.back, this.pattern, this.view, this.content, this.scrollBar, this.strip, this.stripPattern, this.title);
         // A drag anywhere on it scrolls (caught on the way down: the cards stop their own presses going further).
         this.addEventListener('pointerdown', (event) => this.startDrag(event as PIXI.FederatedPointerEvent), { capture: true });
         this.eventMode = 'static';
@@ -92,18 +100,14 @@ export class HomePanel extends PIXI.Container {
             this.hint.text = 'Upgrades are kept for every battle';
             this.hint.y = UPGRADE_CARD.height / 2 + UPGRADES_LAYOUT.hintGap;
             this.content.addChild(this.hint);
-            // The unit cards, under a heading.
-            const cardsTitle = label(UPGRADES_LAYOUT.cardsTitle);
-            cardsTitle.text = 'CARDS';
-            cardsTitle.y = this.hint.y + UPGRADES_LAYOUT.cardsTitleGap;
-            this.cardUpgrades = new CardUpgrades(onBuyCard);
-            this.cardUpgrades.y = this.hint.y + UPGRADES_LAYOUT.cardsGap;
-            this.content.addChild(cardsTitle, this.cardUpgrades);
-            // The music's credit (CC BY: it must be shown in the game), under the cards.
+            // The music's credit (CC BY: it must be shown in the game), under the upgrades.
             const credit = label(CREDIT.text, 0x8f9bd6);
             credit.text = CREDIT.line;
-            credit.y = this.hint.y + UPGRADES_LAYOUT.cardsGap + this.cardUpgrades.tilesHeight + CREDIT.gap;
+            credit.y = this.hint.y + UPGRADES_LAYOUT.creditGap;
             this.content.addChild(credit);
+        } else if (kind === 'cards') {
+            this.deck = new CardDeck(onCard);
+            this.content.addChild(this.deck);
         }
         this.refresh();
     }
@@ -112,7 +116,10 @@ export class HomePanel extends PIXI.Container {
     public refresh(): void {
         if (this.kind === 'upgrades') {
             this.cards.forEach((card) => card.set({ level: MobSave.level(card.kind), cost: MobSave.cost(card.kind) }, MobSave.coins));
-            this.cardUpgrades?.refresh();
+            return;
+        }
+        if (this.kind === 'cards') {
+            this.deck?.refresh();
             return;
         }
         this.content.removeChildren().forEach((child) => child.destroy({ children: true }));
@@ -295,6 +302,8 @@ export class HomePanel extends PIXI.Container {
         this.strip.position.set(topLeft.x, stripTop);
         this.strip.width = width;
         this.strip.height = HEADER.strip;
+        this.pattern.place(topLeft.x, topLeft.y, width, bottom - topLeft.y);
+        this.stripPattern.place(topLeft.x, stripTop, width, HEADER.strip);
         this.title.position.set(screen.center.x, stripTop + HEADER.titleY);
         const viewTop = stripTop + HEADER.strip;
         const room = bottom - viewTop;
@@ -307,8 +316,12 @@ export class HomePanel extends PIXI.Container {
         if (this.kind === 'upgrades') {
             // The cannon's three, then the cards.
             top = UPGRADE_CARD.height / 2 + 24;
-            tall = top + UPGRADE_CARD.height / 2 + UPGRADES_LAYOUT.hintGap + UPGRADES_LAYOUT.cardsGap + (this.cardUpgrades?.tilesHeight ?? 0) + CREDIT.gap + CREDIT.text;
+            tall = top + UPGRADE_CARD.height / 2 + UPGRADES_LAYOUT.hintGap + UPGRADES_LAYOUT.creditGap + CREDIT.text;
             scale = Math.min(1, (width - 60) / (UPGRADE_CARD.width * 3 + UPGRADES_LAYOUT.gap * 2));
+        } else if (this.kind === 'cards') {
+            top = DECK_LAYOUT.top;
+            tall = top + (this.deck?.contentHeight ?? 0);
+            scale = Math.min(1, (width - 30) / DECK_LAYOUT.width);
         } else {
             top = 0;
             tall = Math.max(this.contentHeight, ROW.top + ROW.height);
@@ -322,6 +335,8 @@ export class HomePanel extends PIXI.Container {
     }
 
     public update(dt: number): void {
+        this.pattern.update(dt);
+        this.stripPattern.update(dt);
         this.cards.forEach((card) => card.update(dt));
     }
 }

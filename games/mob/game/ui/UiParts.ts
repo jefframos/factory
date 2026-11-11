@@ -151,6 +151,13 @@ export function tappable(button: PIXI.Container, onTap: () => void, sound: Sfx |
     });
 }
 
+/** Every tween on `root` and what's in it (and their scales) stopped: before it's destroyed (a button's squash may still run). */
+export function killTweensDeep(root: PIXI.DisplayObject): void {
+    gsap.killTweensOf(root);
+    gsap.killTweensOf(root.scale);
+    if (root instanceof PIXI.Container) root.children.forEach((child) => killTweensDeep(child));
+}
+
 /** The gems' bar: as the coins', with the gem. */
 export function fillGemBar(holder: PIXI.Container, amount: PIXI.Text): void {
     fillCoinBar(holder, amount, 'ResourceBar_Single_Icon_Gem');

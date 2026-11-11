@@ -11,7 +11,7 @@ import { MobAudio } from '../audio/MobAudio';
 import { framePlane, glossyButton, iconSprite, label, makeAvatar, tappable } from './UiParts';
 
 /** Someone in a match: their name, face, colour, trophies, and their tier's name. */
-export interface MatchPlayer { name: string; face: string; color: number; trophies: number; tier: string }
+export interface MatchPlayer { name: string; face: string; color: number; trophies: number; tier: string; badge?: string }
 
 const PANEL = { width: 560, height: 470, back: 0x1b1e3a, edge: 0x8a3dff };
 const SEARCH = { least: 1.6, most: 3.4, spinner: 150, dots: 12, dotRadius: 13, spin: 1.1, icon: 64 };
@@ -114,6 +114,12 @@ export class Matchmaking extends PIXI.Container {
             tier.text = who.tier.toUpperCase();
             tier.position.set(x, FOUND.avatar / 2 + 84);
             this.found.addChild(avatar, name, trophies, tier);
+            // Their grade badge, on the avatar's corner.
+            if (who.badge) {
+                const badge = iconSprite(who.badge, 64);
+                badge.position.set(x + FOUND.avatar * 0.38, FOUND.avatar * 0.32);
+                this.found.addChild(badge);
+            }
         };
         side(you, -FOUND.gap);
         side(opponent, FOUND.gap);

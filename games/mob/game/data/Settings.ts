@@ -13,6 +13,8 @@
 //                      (to charge); and how its picture sits on the card (`icon`: offset, a share of the picture, and
 //                      zoom). The units the houses make are another thing: the Units tab's (ui/units.json);
 //   housesBlockReds  — whether reds (and giants) bump into houses and go round them (true) or walk over them;
+//   camera           — the battle camera's tilt (`pitchDeg`, down from level), its turn round the field (`yawDeg`, 0:
+//                      straight down it) and its field of view (`fov`); the main screen's tilt (`homePitchDeg`);
 //   upgrades         — the cannon's three: each one's name, how many levels it has, what a level adds (`perLevel`: fire
 //                      rate share, energy shots, recharge seconds off: TUNING.fireRatePerLevel / energyPerLevel /
 //                      rechargePerLevel), and the price of each level after the first (`cost[level - 1]` buys the next).
@@ -20,8 +22,8 @@
 import settingsFile from '../../ui/settings.json';
 
 /** The units with a card (as the houses make them: MobConfig HouseKind). */
-export type CardKind = 'giant' | 'truck' | 'saucer' | 'car';
-export const CARD_KINDS: CardKind[] = ['giant', 'truck', 'saucer', 'car'];
+export type CardKind = 'giant' | 'truck' | 'saucer' | 'car' | 'skeletons' | 'warriors' | 'golem' | 'bomb' | 'bats' | 'turtle' | 'giant-green' | 'giant-viking';
+export const CARD_KINDS: CardKind[] = ['giant', 'truck', 'saucer', 'car', 'skeletons', 'warriors', 'golem', 'bomb', 'bats', 'turtle', 'giant-green', 'giant-viking'];
 
 /** A stat at level 1 and at the top level. */
 export type StatRange = [number, number];
@@ -34,6 +36,8 @@ export interface CardSetting {
     icon: { x: number; y: number; zoom: number };
     /** Its main colour (#rrggbb): the card's frame, its bar and glow; its panel a lighter one. */
     colour: string;
+    /** How many units one card sends (a batch: the skeletons; unset: one). */
+    count?: number;
 }
 export type CardStat = 'hp' | 'damage' | 'seconds';
 
@@ -71,6 +75,7 @@ export interface GameSettings {
     cards: Record<CardKind, CardSetting>;
     housesBlockReds: boolean;
     upgrades: { fire: UpgradeSetting; capacity: UpgradeSetting; recharge: UpgradeSetting };
+    camera?: { pitchDeg?: number; yawDeg?: number; fov?: number; homePitchDeg?: number };
 }
 
-export const SETTINGS: GameSettings = settingsFile as GameSettings;
+export const SETTINGS: GameSettings = settingsFile as unknown as GameSettings;

@@ -5,7 +5,8 @@
 // small transparent texture,
 // through the game's renderer into an offscreen target, then kept (as UFO's Snapshots.ts). The giant is the crowd's
 // model (mob.glb) caught mid-run, painted the giant's blue; the truck, the UFO and the car are their models
-// (props/<name>.glb).
+// (props/<name>.glb). The character cards' (the skeletons): their models (characters/<name>.glb) caught mid-run, a few
+// of them for a batch.
 
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
@@ -18,7 +19,16 @@ import { CardKind } from '../data/Settings';
 /** About twice the largest size a picture's shown at, so it stays crisp. */
 const SIZE = 256;
 const BASE = './mob/models/';
-const PROP_MODEL: Record<Exclude<CardKind, 'giant'>, string> = { truck: 'truck', saucer: 'saucer', car: 'car' };
+const PROP_MODEL: Record<'truck' | 'saucer' | 'car', string> = { truck: 'truck', saucer: 'saucer', car: 'car' };
+/** The character cards: their model, and how many stand in the picture (a batch: a few, side by side). */
+const CHARACTER_MODEL: Partial<Record<CardKind, { model: string; count: number; baked?: boolean }>> = {
+    skeletons: { model: 'skeleton-minion', count: 3 },
+    warriors: { model: 'skeleton-warrior', count: 1 },
+    golem: { model: 'golem', count: 1, baked: true },
+    bomb: { model: 'stone-monster', count: 1, baked: true },
+    bats: { model: 'bat', count: 1, baked: true },
+    turtle: { model: 'turtle', count: 1, baked: true },
+};
 const cache = new Map<CardKind, Promise<PIXI.Texture | null>>();
 
 /** Draws `object`, framed by its bounds, from the front and a little above. */
@@ -97,7 +107,37 @@ async function renderGiant(): Promise<PIXI.Texture | null> {
     return snapshot(figure);
 }
 
-async function renderProp(kind: Exclude<CardKind, 'giant'>): Promise<PIXI.Texture | null> {
+/** A character card: its model a little way into its run, a few of them for a batch (the middle one in front). */
+async function renderCharacter(spec: { model: string; count: number; baked?: boolean }): Promise<PIXI.Texture | null> {
+    const loader = createGLTFLoader();
+    if (spec.baked) {
+        // Baked poses (one mesh each): one of them, a little way into the run.
+        const gltf = await loader.loadAsync(`${BASE}characters/${spec.model}.glb`);
+        // (A still one has only pose_0.)
+        const shown = gltf.scene.getObjectByName('pose_2') ?? gltf.scene.getObjectByName('pose_0');
+        if (!shown) return null;
+        gltf.scene.remove(shown);
+        return snapshot(shown);
+    }
+    const [model, rig] = await Promise.all([loader.loadAsync(`${BASE}characters/${spec.model}.glb`), loader.loadAsync(`${BASE}characters/rig-medium.glb`)]);
+    const clip = rig.animations.find((a) => a.name === 'Running_A') ?? rig.animations[0];
+    const group = new THREE.Group();
+    for (let k = 0; k < spec.count; k++) {
+        const figure = cloneSkinned(model.scene);
+        if (clip) {
+            const mixer = new THREE.AnimationMixer(figure);
+            mixer.clipAction(clip).play();
+            mixer.setTime(clip.duration * (0.25 + k * 0.3));
+        }
+        const side = spec.count > 1 ? k - (spec.count - 1) / 2 : 0;
+        figure.position.set(side * 0.9, 0, side === 0 ? 0.4 : 0);
+        group.add(figure);
+    }
+    group.updateMatrixWorld(true);
+    return snapshot(group);
+}
+
+async function renderProp(kind: 'truck' | 'saucer' | 'car'): Promise<PIXI.Texture | null> {
     const gltf = await createGLTFLoader().loadAsync(`${BASE}props/${PROP_MODEL[kind]}.glb`);
     return snapshot(gltf.scene.clone(true));
 }
@@ -114,7 +154,8 @@ export const UnitIcons = {
                 cache.set(kind, texture);
                 return texture;
             }
-            texture = (kind === 'giant' ? renderGiant() : renderProp(kind)).catch((error) => {
+            const character = CHARACTER_MODEL[kind];
+            texture = (kind === 'giant' ? renderGiant() : character ? renderCharacter(character) : renderProp(kind as 'truck' | 'saucer' | 'car')).catch((error) => {
                 console.warn('[mob] unit icon', kind, error);
                 return null;
             });

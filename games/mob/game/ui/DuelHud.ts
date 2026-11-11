@@ -2,18 +2,25 @@
 //
 // An arena match's HUD, over the battle's own (MobHud: its cards and energy stay; its top bar goes): the clock at the
 // top, both sides' life (the player's blue on the left, the opponent's red on the right, the opponent's name and tier
-// under it), and the result card at the end: VICTORY / DEFEAT / DRAW, the life left on each side, the rating it
-// brought, REMATCH and HOME.
+// under it), and the match-over card at the end (Clash Royale's): the opponent's banner on top, the player's under it,
+// VS between, each with three crown slots filling one by one (a crown a tower brought down, all three for the cannon),
+// WINNER! on the winner's; then what it brought (the trophies, the chest won: opened back on the main screen), HOME and
+// REMATCH.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
-import { GlossyButton, framePlane, glossyButton, iconButton, label, tappable } from './UiParts';
+import { GlossyButton, framePlane, glossyButton, iconButton, iconSprite, killTweensDeep, label, makeAvatar, tappable } from './UiParts';
+import { MobAudio } from '../audio/MobAudio';
+import { ChestKind, REWARDS } from '../data/ArenaRewards';
+import { MatchPlayer } from './Matchmaking';
 
 const BAR = { width: 250, height: 40, inset: 3, pad: 3, back: 0x1b1e3a, blue: 0x3d8cff, blueTrack: 0x1b2a5a, red: 0xff3d4f, redTrack: 0x4a1a26, gap: 120 };
 const CLOCK = { width: 150, height: 64, back: 0x1b1e3a, hurry: 10 };
-const CARD = { width: 560, height: 520, back: 0x1b1e3a };
-const BUTTONS = { height: 92, home: 112, rematch: 300, gap: 18 };
+const CARD = { width: 600, height: 860, back: 0x1b1e3a };
+/** A side's banner on the match-over card: its size, colours, its crown slots; where the two sit. */
+const BANNER = { width: 540, height: 190, red: 0xc8304a, blue: 0x2f6fe0, crown: 70, crownGap: 86, theirsY: -222, oursY: 36, empty: 0x0a0c22 };
+const BUTTONS = { height: 92, home: 112, rematch: 300, gap: 18, y: 345 };
 /** The bars over the buildings: a tower's, and an open cannon's (bigger, gold-edged, TARGET over it, pulsing). */
 const TOWER_BAR = { width: 110, height: 22, cannon: 150, cannonHeight: 28, back: 0x10123a, blue: 0x3d8cff, red: 0xff3d4f, gold: 0xffd23f, text: 18, pulse: 6 };
 /** The baked bar textures (Bar_Trough, Bar_Segment: white, 48 px tall, tinted; the cards' charge bars use them too). */
@@ -80,12 +87,15 @@ class LifeBar extends PIXI.Container {
 
 export interface DuelEnd {
     result: 'won' | 'lost' | 'draw';
-    own: number;
-    theirs: number;
-    /** Crowns earned (the competition: Ranking.ts). */
-    crowns: number;
-    /** The rating before and after (null: not counted, the editor's test). */
+    /** Who played: the player, and the opponent. */
+    you: MatchPlayer;
+    them: MatchPlayer;
+    /** Each side's crowns in the match (0..3: a tower down 1, the cannon down 3). */
+    crowns: { you: number; them: number };
+    /** The rating before and after (null: not counted: practice, the editor's test). */
     rating: { before: number; after: number; tier: string } | null;
+    /** The chest won (null: none). */
+    chest: ChestKind | null;
 }
 
 /** One building's bar (a screen point over it). */
@@ -102,9 +112,9 @@ export class DuelHud extends PIXI.Container {
     private readonly card = new PIXI.Container();
     private readonly dim = new PIXI.Graphics();
     private readonly panel = new PIXI.Container();
-    private readonly title = label(72);
-    private readonly score = label(44);
-    private readonly ratingText = label(30, 0xffe066);
+    /** The match-over card's changing part (the banners, crowns, rewards: built for each match). */
+    private readonly result = new PIXI.Container();
+    private readonly calls: gsap.core.Tween[] = [];
     private readonly rematch: GlossyButton;
     private readonly home: GlossyButton;
     private lastSecond = -1;
@@ -125,18 +135,15 @@ export class DuelHud extends PIXI.Container {
         const back = framePlane('BorderFrame_Round24', CARD.width, CARD.height, 1);
         back.tint = CARD.back;
         back.position.set(-CARD.width / 2, -CARD.height / 2);
-        this.title.y = -170;
-        this.score.y = -60;
-        this.ratingText.y = 20;
-        this.rematch = glossyButton(BUTTONS.rematch, BUTTONS.height, 'REMATCH', 'Button01_l_Sky');
+        this.rematch = glossyButton(BUTTONS.rematch, BUTTONS.height, 'PLAY AGAIN', 'Button01_l_Sky');
         tappable(this.rematch, onRematch, null);
-        this.home = iconButton(BUTTONS.home, BUTTONS.height, 'Button01_l_Red', 'PictoIcon_Home_1', 46);
+        this.home = iconButton(BUTTONS.home, BUTTONS.height, 'Button01_l_Blue', 'PictoIcon_Home_1', 46);
         tappable(this.home, onHome);
         const row = BUTTONS.home + BUTTONS.gap + BUTTONS.rematch;
         this.home.x = -row / 2 + BUTTONS.home / 2;
         this.rematch.x = row / 2 - BUTTONS.rematch / 2;
-        this.home.y = this.rematch.y = 150;
-        this.panel.addChild(back, this.title, this.score, this.ratingText, this.home, this.rematch);
+        this.home.y = this.rematch.y = BUTTONS.y;
+        this.panel.addChild(back, this.result, this.home, this.rematch);
         this.card.addChild(this.dim, this.panel);
         this.card.visible = false;
         this.addChild(this.bars, this.top, this.card);
@@ -203,6 +210,15 @@ export class DuelHud extends PIXI.Container {
         return this.top.getBounds().bottom;
     }
 
+    /** A story level: only the bars over the buildings (no clock, no life, no result card). */
+    public setStory(on: boolean): void {
+        this.story = on;
+        this.top.visible = !on;
+        if (on) this.card.visible = false;
+    }
+
+    private story = false;
+
     /** A fresh match: the opponent's caption (its name and tier), both bars full. */
     public reset(opponent: string, own: number, theirs: number): void {
         this.theirs.caption.text = opponent;
@@ -211,7 +227,8 @@ export class DuelHud extends PIXI.Container {
         this.own.reset();
         this.theirs.reset();
         this.card.visible = false;
-        this.top.visible = true;
+        this.clearResult();
+        this.top.visible = !this.story;
         this.bars.visible = true;
         this.lastSecond = -1;
     }
@@ -239,21 +256,151 @@ export class DuelHud extends PIXI.Container {
     }
 
     public showEnd(end: DuelEnd): void {
-        this.title.text = end.result === 'won' ? 'VICTORY' : end.result === 'lost' ? 'DEFEAT' : 'DRAW';
-        this.title.tint = end.result === 'won' ? 0x9fd8ff : end.result === 'lost' ? 0xff8a96 : 0xffffff;
-        this.score.text = `${Math.ceil(end.own)}  -  ${Math.ceil(end.theirs)}`;
-        const r = end.rating;
-        const change = r ? r.after - r.before : 0;
-        this.ratingText.text = r
-            ? `${change >= 0 ? '+' : ''}${change} TROPHIES (${r.after}) · ${r.tier.toUpperCase()}${end.crowns ? `
-+${end.crowns} CROWN${end.crowns === 1 ? '' : 'S'}` : ''}`
-            : 'TEST MATCH (not counted)';
+        this.clearResult();
+        const title = label(64, end.result === 'won' ? 0x9fd8ff : end.result === 'lost' ? 0xff8a96 : 0xffffff);
+        title.text = end.result === 'draw' ? 'DRAW' : 'MATCH OVER';
+        title.y = -CARD.height / 2 + 48;
+        const theirs = this.banner(end.them, end.crowns.them, BANNER.red);
+        theirs.y = BANNER.theirsY;
+        const ours = this.banner(end.you, end.crowns.you, BANNER.blue);
+        ours.y = BANNER.oursY;
+        const vs = label(48, 0xffd23f);
+        vs.text = 'VS';
+        vs.y = (BANNER.theirsY + BANNER.oursY) / 2;
+        this.result.addChild(title, theirs, ours, vs);
+        // The banners slide in, then each side's crowns fill one by one (theirs first), then WINNER! and the rewards.
+        gsap.fromTo(theirs, { x: -700 }, { x: 0, duration: 0.4, ease: 'back.out(1.4)' });
+        gsap.fromTo(ours, { x: 700 }, { x: 0, duration: 0.4, ease: 'back.out(1.4)' });
+        let at = 0.6;
+        for (const [banner, count] of [[theirs, end.crowns.them], [ours, end.crowns.you]] as [PIXI.Container, number][]) {
+            const crowns = banner.getChildByName('crowns') as PIXI.Container;
+            for (let k = 0; k < count; k++) {
+                const crown = crowns.children[k] as PIXI.Sprite;
+                this.calls.push(gsap.delayedCall(at, () => {
+                    crown.tint = 0xffd23f;
+                    crown.alpha = 1;
+                    gsap.fromTo(crown.scale, { x: crown.scale.x * 1.8, y: crown.scale.y * 1.8 }, { x: crown.scale.x, y: crown.scale.y, duration: 0.3, ease: 'back.out(3)' });
+                    MobAudio.play('confirm', 1 + k * 0.12);
+                }));
+                at += 0.3;
+            }
+        }
+        if (end.result !== 'draw') {
+            const winner = end.result === 'won' ? ours : theirs;
+            // A gold tag on the winner's banner, its top right corner (clear of the crowns and the title).
+            const tag = new PIXI.Container();
+            const plate = framePlane('BasicFrame_Round20', 150, 46, 0.5);
+            plate.tint = 0xffd23f;
+            plate.position.set(-75, -23);
+            const words = label(26, 0x10123a, 0xffffff);
+            words.text = 'WINNER!';
+            tag.addChild(plate, words);
+            tag.rotation = 0.12;
+            tag.position.set(BANNER.width / 2 - 70, winner.y - BANNER.height / 2 + 4);
+            tag.alpha = 0;
+            this.result.addChild(tag);
+            this.calls.push(gsap.delayedCall(at + 0.1, () => {
+                tag.alpha = 1;
+                gsap.fromTo(tag.scale, { x: 0.3, y: 0.3 }, { x: 1, y: 1, duration: 0.4, ease: 'back.out(3)' });
+            }));
+        }
+        const rewards = this.rewards(end);
+        rewards.y = 222;
+        rewards.alpha = 0;
+        this.result.addChild(rewards);
+        this.calls.push(gsap.delayedCall(at + 0.4, () => {
+            gsap.to(rewards, { alpha: 1, duration: 0.3 });
+            gsap.fromTo(rewards.scale, { x: 0.7, y: 0.7 }, { x: 1, y: 1, duration: 0.35, ease: 'back.out(2.5)' });
+        }));
         this.top.visible = false;
         this.bars.visible = false;
         this.card.visible = true;
         this.card.alpha = 0;
         gsap.to(this.card, { alpha: 1, duration: 0.3 });
-        gsap.fromTo(this.title.scale, { x: 0.3, y: 0.3 }, { x: 1, y: 1, duration: 0.5, ease: 'back.out(2.2)' });
+        gsap.fromTo(title.scale, { x: 0.3, y: 0.3 }, { x: 1, y: 1, duration: 0.5, ease: 'back.out(2.2)' });
+    }
+
+    /** A side's banner: its colour, the avatar, name and trophies, and three crown slots (dark till they fill). */
+    private banner(who: MatchPlayer, _crowns: number, colour: number): PIXI.Container {
+        const banner = new PIXI.Container();
+        const back = framePlane('BasicFrame_Round20', BANNER.width, BANNER.height, 0.8);
+        back.tint = colour;
+        back.position.set(-BANNER.width / 2, -BANNER.height / 2);
+        const avatar = makeAvatar({ face: who.face, color: who.color }, 84);
+        avatar.position.set(-BANNER.width / 2 + 66, 34);
+        const name = label(30);
+        name.anchor.set(0, 0.5);
+        name.text = who.name;
+        name.position.set(-BANNER.width / 2 + 122, 18);
+        name.scale.set(Math.min(1, 260 / Math.max(1, name.width)));
+        const cup = iconSprite('ItemIcon_Trophy_Gold', 34);
+        cup.position.set(-BANNER.width / 2 + 138, 54);
+        const trophies = label(22, 0xffe066);
+        trophies.anchor.set(0, 0.5);
+        trophies.text = `${who.trophies} · ${who.tier.toUpperCase()}`;
+        trophies.position.set(-BANNER.width / 2 + 160, 54);
+        // Their grade badge, on the banner's right.
+        if (who.badge) {
+            const badge = iconSprite(who.badge, 92);
+            badge.position.set(BANNER.width / 2 - 66, 30);
+            banner.addChild(badge);
+        }
+        const crowns = new PIXI.Container();
+        crowns.name = 'crowns';
+        for (let k = 0; k < 3; k++) {
+            const crown = iconSprite('Icon_Crown', BANNER.crown);
+            crown.tint = BANNER.empty;
+            crown.alpha = 0.55;
+            crown.x = (k - 1) * BANNER.crownGap;
+            crowns.addChild(crown);
+        }
+        crowns.y = -44;
+        banner.addChild(back, avatar, name, cup, trophies, crowns);
+        return banner;
+    }
+
+    /** What the match brought: the trophies (and the tier), the chest (or the slots full); practice: not counted. */
+    private rewards(end: DuelEnd): PIXI.Container {
+        const holder = new PIXI.Container();
+        const back = new PIXI.Graphics().beginFill(0x10123a, 0.75).drawRoundedRect(-260, -60, 520, 120, 22).endFill();
+        holder.addChild(back);
+        const r = end.rating;
+        if (!r) {
+            const words = label(28, 0xc9d3ff);
+            words.text = 'PRACTICE · NOT COUNTED';
+            holder.addChild(words);
+            return holder;
+        }
+        const change = r.after - r.before;
+        const cup = iconSprite('ItemIcon_Trophy_Gold', 64);
+        cup.x = -200;
+        const trophies = label(36, change >= 0 ? 0xffe066 : 0xff8a96);
+        trophies.anchor.set(0, 0.5);
+        trophies.text = `${change >= 0 ? '+' : ''}${change}`;
+        trophies.position.set(-160, -12);
+        const total = label(20, 0xc9d3ff);
+        total.anchor.set(0, 0.5);
+        total.text = `${r.after} · ${r.tier.toUpperCase()}`;
+        total.position.set(-160, 24);
+        holder.addChild(cup, trophies, total);
+        if (end.chest) {
+            const chest = iconSprite(REWARDS.chests[end.chest].icon, 96);
+            chest.x = 60;
+            const name = label(22);
+            name.anchor.set(0, 0.5);
+            name.text = REWARDS.chests[end.chest].name.toUpperCase().replace(' ', '\n');
+            name.x = 116;
+            holder.addChild(chest, name);
+            gsap.to(chest.scale, { x: chest.scale.x * 1.08, y: chest.scale.y * 1.08, duration: 0.5, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        }
+        return holder;
+    }
+
+    private clearResult(): void {
+        this.calls.forEach((call) => call.kill());
+        this.calls.length = 0;
+        killTweensDeep(this.result);
+        this.result.removeChildren().forEach((child) => child.destroy({ children: true }));
     }
 
     /** The countdown's number, big in the middle, popping in and fading. */
@@ -270,5 +417,11 @@ export class DuelHud extends PIXI.Container {
 
     public hideEnd(): void {
         this.card.visible = false;
+        this.clearResult();
+    }
+
+    public override destroy(options?: boolean | PIXI.IDestroyOptions): void {
+        this.clearResult();
+        super.destroy(options);
     }
 }

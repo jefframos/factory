@@ -18,7 +18,7 @@ import * as THREE from 'three';
 import { GrinderConfig, PIPE, PipeConfig, pipeEnds, pipePath } from '../data/MobConfig';
 import { ARENA, BattleConfig, COLORS, TUNING, UNIT_COLORS, houseStyle, needOf, padColor, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig } from '../data/MobConfig';
 import { bendObject, bendSegments } from '../services/Bend';
-import { createWater } from '../services/Water';
+import { createGround, createWater } from '../services/Water';
 import { BASE_HALF_WIDTH, Battle, CAR, TRUCK, Target, obstacleShape } from './Battle';
 import { shapeCentre } from './Shapes';
 import { createGLTFLoader } from 'core/three/GLTFLoaders';
@@ -39,6 +39,10 @@ const KIT_GRASS_EDGE = 3.2;
 /** A valley's layout: how far the ground reaches, the gap between the field and the cliffs, the cliff band's width,
  *  how far past the cannon the side cliffs run, and how deep the top behind the base goes. */
 const VALLEY = { groundHalf: 40, groundLength: 120, gap: 0.25, band: 2.2, nearExtra: 10, back: 30 };
+/** A cliff band's pieces: this many of its edge points (0.5 apart) each. */
+const CLIFF_PIECE = 6;
+/** The main screen's ground and cliff tops (seen from further off): this wide, past every edge of the screen. */
+const WIDE_GROUND = 420;
 const GATE = { height: 0.12, depth: 0.35, post: 0.22, postHeight: 1 };
 /** A grinder: its roller's core (a share of its radius) and the spikes' length (the rest), how many to a ring and how
  *  far apart the rings are (x its thickness); the colours; a standing one's posts. */
@@ -160,7 +164,8 @@ const PROPS = {
     towerBelow: 3.4,
     turn: Math.PI,
     truck: { model: 'truck', length: 4, turn: 0 },
-    car: { model: 'car', length: 2.3, turn: 0 },
+    // (Drawn bigger than it hits: its collider is the battle's, radiusOf and bodyShare.)
+    car: { model: 'car', length: 3.1, turn: 0 },
     // `radius`: its beam's (the reds it sucks up: TUNING.saucerSuck); `size`: its model, x that (bigger than its beam).
     saucer: { model: 'saucer', radius: 0.9, size: 1.7, height: 3.7 },
 };
@@ -517,6 +522,11 @@ export class Arena {
     }
 
     /** Every number and word over the field hidden (the main screen's view of a level: just the pieces). */
+    /** The forts' own numbers hidden (the battle shows a bar over each instead). */
+    public hideTargetLabels(): void {
+        for (const view of this.targets) view.label.mesh.visible = false;
+    }
+
     public hideLabels(): void {
         this.group.traverse((object) => {
             if (object.userData.label) object.visible = false;
@@ -627,9 +637,11 @@ export class Arena {
             this.group.add(sea);
         }
         if (valley) {
-            const grass = new THREE.Mesh(new THREE.PlaneGeometry(islandHalf * 2, VALLEY.groundLength, 24, bendSegments(VALLEY.groundLength)), lambert(this.theme.ground));
-            grass.rotation.x = -Math.PI / 2;
-            grass.position.set(0, -0.01, middle);
+            // The ground (the water's shading, still: light by the field, darker off), out to every edge of the screen on
+            // the main screen (seen from further off).
+            const wide = this.edge !== undefined;
+            const grass = createGround(this.theme.ground, wide ? WIDE_GROUND : islandHalf * 2, wide ? WIDE_GROUND : VALLEY.groundLength, this.coastOutline(), 0, middle, -0.01, wide ? 48 : undefined);
+            this.waters.push(grass);
             this.group.add(grass);
         } else {
             // The island's ground, to its wavy coast (cut finely: the bend drops it sideways too, and a wide piece would
@@ -638,14 +650,18 @@ export class Arena {
             sand.position.y = -0.01;
             this.group.add(sand);
         }
-        const field = new THREE.Mesh(new THREE.PlaneGeometry(ARENA.halfWidth * 2, length, 4, bendSegments(length)), lambert(this.theme.field));
+        // Cut finely across too: the bend drops it sideways as well, and a coarse piece sags under the ground below it.
+        const across = bendSegments(ARENA.halfWidth * 2);
+        const field = new THREE.Mesh(new THREE.PlaneGeometry(ARENA.halfWidth * 2, length, across, bendSegments(length)), lambert(this.theme.field));
         field.rotation.x = -Math.PI / 2;
         field.position.set(0, 0, middle);
         this.group.add(field);
         // Soft stripes across the field (darker sand), for a sense of distance.
-        const stripe = lambert(this.theme.stripe);
+        // (Pulled toward the camera in the depth test, and cut finer than the field: the bend curves it at least as much,
+        // so from further off — the arena's camera — it never fights the field under it.)
+        const stripe = lambert(this.theme.stripe, { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
         for (let z = FIELD_NEAR - 2; z > fieldFar(); z -= 4) {
-            const band = new THREE.Mesh(new THREE.PlaneGeometry(ARENA.halfWidth * 2, 2, 4, 2), stripe);
+            const band = new THREE.Mesh(new THREE.PlaneGeometry(ARENA.halfWidth * 2, 2, across * 2, 4), stripe);
             band.rotation.x = -Math.PI / 2;
             band.position.set(0, 0.005, z);
             this.group.add(band);
@@ -666,10 +682,7 @@ export class Arena {
         danger.rotation.x = -Math.PI / 2;
         danger.position.set(0, 0.01, ARENA.dangerZ);
         this.group.add(danger);
-        // The cannon's rail.
-        const rail = roundedBox(ARENA.cannonRange * 2 + 1.2, 0.08, 0.22, 0.1, lambert(0xffffff));
-        rail.position.set(0, 0.01, CANNON_Z);
-        this.group.add(rail);
+        // (The cannon runs on its train tracks: buildTracks.)
         return danger;
     }
 
@@ -757,6 +770,8 @@ export class Arena {
      * the bend reaches its far side too).
      */
     private buildCliffs(): void {
+        // The main screen's (seen from further off): the cliffs' tops out to every edge of the screen.
+        const wide = this.edge !== undefined;
         const cliff = this.theme.cliff ?? { height: 2.4, top: this.theme.ground, side: 0xa8774a };
         const wave = (v: number) => 0.35 * Math.sin(v * 0.7) + 0.22 * Math.sin(v * 1.9 + 1.3) + 0.12 * Math.sin(v * 3.7 + 0.4);
         const near = FIELD_NEAR + VALLEY.nearExtra;
@@ -765,23 +780,39 @@ export class Arena {
         for (const side of [-1, 1]) {
             const inner: [number, number][] = [];
             for (let z = near; z >= back - VALLEY.band; z -= 0.5) inner.push([side * (ARENA.halfWidth + VALLEY.gap + Math.abs(wave(z + side * 3))), z]);
-            const outer = inner.map(([x, z]) => [x + side * VALLEY.band, z] as [number, number]).reverse();
-            this.addCliffBand([...inner, ...outer], cliff);
-            const topWidth = VALLEY.groundHalf - ARENA.halfWidth - VALLEY.gap - VALLEY.band * 0.6;
-            const length = near - (back - VALLEY.back);
-            const top = new THREE.Mesh(new THREE.PlaneGeometry(topWidth, length, 16, bendSegments(length)).rotateX(-Math.PI / 2), lambert(cliff.top));
-            top.position.set(side * (ARENA.halfWidth + VALLEY.gap + VALLEY.band * 0.6 + topWidth / 2), cliff.height - 0.02, (near + back - VALLEY.back) / 2);
+            this.addCliffBands(inner, ([x, z]) => [x + side * VALLEY.band, z], cliff);
+            // Its top: the ground's still shading (as the ground below: no hard-edged flat colour), out to the screen's
+            // edges on the main screen.
+            const innerX = ARENA.halfWidth + VALLEY.gap + VALLEY.band * 0.6;
+            const topWidth = (wide ? WIDE_GROUND / 2 : VALLEY.groundHalf) - innerX;
+            const from = wide ? WIDE_GROUND / 2 : near;
+            const to = back - (wide ? WIDE_GROUND / 2 : VALLEY.back);
+            const top = createGround(cliff.top, topWidth, from - to, this.coastOutline(), side * (innerX + topWidth / 2), (from + to) / 2, cliff.height - 0.02, wide ? 48 : undefined);
+            this.waters.push(top);
             this.group.add(top);
         }
         // Behind the base: a band across, then the top.
         const across: [number, number][] = [];
         const half = ARENA.halfWidth + VALLEY.gap + 0.8;
         for (let x = -half; x <= half; x += 0.5) across.push([x, back - Math.abs(wave(x * 1.3))]);
-        const beyond = across.map(([x, z]) => [x, z - VALLEY.band] as [number, number]).reverse();
-        this.addCliffBand([...across, ...beyond], cliff);
-        const top = new THREE.Mesh(new THREE.PlaneGeometry(half * 2 + 1, VALLEY.back, 12, 12).rotateX(-Math.PI / 2), lambert(cliff.top));
-        top.position.set(0, cliff.height - 0.02, back - VALLEY.band * 0.6 - VALLEY.back / 2);
+        this.addCliffBands(across, ([x, z]) => [x, z - VALLEY.band], cliff);
+        const depth = wide ? WIDE_GROUND / 2 : VALLEY.back;
+        const width = half * 2 + 1;
+        const top = createGround(cliff.top, width, depth, this.coastOutline(), 0, back - VALLEY.band * 0.6 - depth / 2, cliff.height - 0.025, wide ? 48 : undefined);
+        this.waters.push(top);
         this.group.add(top);
+    }
+
+    /**
+     * A cliff band along `edge` (its inner edge's points; `out` gives each one's outer point), in short pieces: one long
+     * piece's top is cut into triangles the whole band long, which sag under the bend (the cliff top beside it shows over).
+     */
+    private addCliffBands(edge: [number, number][], out: (point: [number, number]) => [number, number], cliff: { height: number; top: number; side: number }): void {
+        for (let start = 0; start < edge.length - 1; start += CLIFF_PIECE) {
+            const piece = edge.slice(start, start + CLIFF_PIECE + 1);
+            if (piece.length < 2) break;
+            this.addCliffBand([...piece, ...piece.map(out).reverse()], cliff);
+        }
     }
 
     /** One cliff band from its outline ([x, z] corners): extruded to the cliff's height, grass on top, dirt down its face. */
@@ -803,7 +834,7 @@ export class Arena {
         const tiles = Math.max(1, Math.round(length / TRACKS.tile));
         const uv = geometry.attributes.uv as THREE.BufferAttribute;
         for (let k = 0; k < uv.count; k++) uv.setX(k, uv.getX(k) * tiles);
-        const material = new THREE.MeshLambertMaterial({ map: trackTexture(), transparent: true, alphaTest: 0.05, depthWrite: false });
+        const material = new THREE.MeshLambertMaterial({ map: trackTexture(), transparent: true, alphaTest: 0.05, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
         const strip = new THREE.Mesh(geometry, material);
         strip.rotation.x = -Math.PI / 2;
         strip.position.set(0, TRACKS.y, z);
@@ -1475,7 +1506,7 @@ export class Arena {
             });
             view.flashes = flashes;
             this.onLayout?.();
-        });
+        }, undefined, own ? 0 : PROPS.turn);
         return view;
     }
 
@@ -1497,7 +1528,7 @@ export class Arena {
      * the model goes in scaled to `width` across (its own materials, so it can flash alone) and turned to face the
      * cannon; `placed(height, model)` then moves the labels to suit.
      */
-    private async dress(group: THREE.Group, name: string, width: number, depth: number, keep: THREE.Object3D[], placed: (height: number, model: THREE.Object3D) => void, tint?: number): Promise<void> {
+    private async dress(group: THREE.Group, name: string, width: number, depth: number, keep: THREE.Object3D[], placed: (height: number, model: THREE.Object3D) => void, tint?: number, turn: number = PROPS.turn): Promise<void> {
         let source: THREE.Object3D;
         try {
             source = await loadKitModel(`${this.modelRoot}props/${name}.glb`);
@@ -1522,7 +1553,7 @@ export class Arena {
         // As wide as asked, unless that makes it deeper than its footprint allows.
         const scale = Math.min(width / Math.max(0.01, size.x), depth / Math.max(0.01, size.z));
         model.scale.setScalar(scale);
-        model.rotation.y = PROPS.turn;
+        model.rotation.y = turn;
         for (const child of [...group.children]) if (!keep.includes(child)) child.visible = false;
         group.add(model);
         bendObject(model);
@@ -1699,6 +1730,16 @@ export class Arena {
     // ------------------------------------------------------------------ effects
 
     /** A puff where two mobs clashed, with bits of both flying; bigger for a giant. */
+    /** A bomb's blast at (x, z), `radius` wide: fire and rock flying, smoke round it. */
+    public blast(x: number, z: number, radius: number): void {
+        this.bits.burst(x, 0.8, z, [0xffd23f, 0xff8a1f, 0xff4d2e, 0x6b5a4a, 0x9a8a78], 120, 12, 12, 1.3, 0.32);
+        this.puff(x, z, 0xffe0a0, radius * 0.9);
+        for (let k = 0; k < 6; k++) {
+            const angle = (k / 6) * Math.PI * 2;
+            this.puff(x + Math.cos(angle) * radius * 0.6, z + Math.sin(angle) * radius * 0.6, 0xd8cbb8, 2.2);
+        }
+    }
+
     public clash(x: number, z: number, big: boolean): void {
         this.puff(x, z, big ? 0xffffff : 0xffd0e0, big ? 1.8 : 1);
         this.bits.burst(x, 0.4, z, [COLORS.blue, COLORS.red], big ? 8 : 3, big ? 5 : 3.2, big ? 5 : 3.5, 0.6, big ? 0.22 : 0.13);

@@ -10,7 +10,7 @@ import { CardKind, SETTINGS } from '../data/Settings';
 import { UnitIcons } from './UnitIcons';
 import { framePlane } from './UiParts';
 
-export const CARD_NAMES: Record<CardKind, string> = { giant: 'GIANT', truck: 'TRUCK', saucer: 'UFO', car: 'RAMMER' };
+export const CARD_NAMES: Record<CardKind, string> = { giant: 'GIANT', truck: 'TRUCK', saucer: 'UFO', car: 'RAMMER', skeletons: 'SKELETONS', warriors: 'WARRIORS', golem: 'GOLEM', bomb: 'BOMB', bats: 'BATS', turtle: 'TURTLE', 'giant-green': 'ARMORED GIANT', 'giant-viking': 'VIKING GIANT' };
 /** How much lighter than its main colour a card's panel is (more when it's ready); the shine over it. */
 export const CARD_PANEL = { light: 0.45, ready: 0.62, shine: 0.75 };
 

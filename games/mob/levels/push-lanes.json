@@ -97,8 +97,8 @@
       "near": -7
     }
   ],
-  "redRate": 3,
-  "redRateEnd": 5.2,
+  "redRate": 6,
+  "redRateEnd": 8.5,
   "redRamp": 55,
   "baseHp": 480,
   "reward": 180

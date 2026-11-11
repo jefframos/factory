@@ -1,9 +1,49 @@
 {
   "frames": {
-    "card-truck": {
+    "card-warriors": {
       "frame": {
         "x": 2,
         "y": 2,
+        "w": 235,
+        "h": 363
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 235,
+        "h": 363
+      },
+      "sourceSize": {
+        "w": 235,
+        "h": 363
+      }
+    },
+    "card-turtle": {
+      "frame": {
+        "x": 239,
+        "y": 2,
+        "w": 350,
+        "h": 338
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 350,
+        "h": 338
+      },
+      "sourceSize": {
+        "w": 350,
+        "h": 338
+      }
+    },
+    "card-truck": {
+      "frame": {
+        "x": 2,
+        "y": 367,
         "w": 324,
         "h": 313
       },
@@ -20,14 +60,34 @@
         "h": 313
       }
     },
+    "card-skeletons": {
+      "frame": {
+        "x": 579,
+        "y": 2,
+        "w": 339,
+        "h": 254
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 339,
+        "h": 254
+      },
+      "sourceSize": {
+        "w": 339,
+        "h": 254
+      }
+    },
     "card-saucer": {
       "frame": {
         "x": 2,
-        "y": 317,
+        "y": 682,
         "w": 466,
         "h": 343
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -40,10 +100,30 @@
         "h": 343
       }
     },
+    "card-golem": {
+      "frame": {
+        "x": 835,
+        "y": 2,
+        "w": 370,
+        "h": 474
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 370,
+        "h": 474
+      },
+      "sourceSize": {
+        "w": 370,
+        "h": 474
+      }
+    },
     "card-giant": {
       "frame": {
-        "x": 347,
-        "y": 2,
+        "x": 470,
+        "y": 478,
         "w": 401,
         "h": 507
       },
@@ -62,12 +142,12 @@
     },
     "card-giant-viking": {
       "frame": {
-        "x": 750,
-        "y": 2,
+        "x": 2,
+        "y": 1027,
         "w": 433,
         "h": 506
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 34,
@@ -82,12 +162,12 @@
     },
     "card-giant-green": {
       "frame": {
-        "x": 347,
-        "y": 511,
+        "x": 873,
+        "y": 478,
         "w": 254,
         "h": 487
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 128,
@@ -100,14 +180,34 @@
         "h": 512
       }
     },
+    "card-ghosts": {
+      "frame": {
+        "x": 873,
+        "y": 967,
+        "w": 252,
+        "h": 284
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 252,
+        "h": 284
+      },
+      "sourceSize": {
+        "w": 252,
+        "h": 284
+      }
+    },
     "card-car": {
       "frame": {
-        "x": 2,
-        "y": 785,
+        "x": 510,
+        "y": 987,
         "w": 375,
         "h": 299
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -119,6 +219,46 @@
         "w": 375,
         "h": 299
       }
+    },
+    "card-bomb": {
+      "frame": {
+        "x": 1207,
+        "y": 2,
+        "w": 269,
+        "h": 302
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 269,
+        "h": 302
+      },
+      "sourceSize": {
+        "w": 269,
+        "h": 302
+      }
+    },
+    "card-bats": {
+      "frame": {
+        "x": 811,
+        "y": 1221,
+        "w": 435,
+        "h": 221
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 435,
+        "h": 221
+      },
+      "sourceSize": {
+        "w": 435,
+        "h": 221
+      }
     }
   },
   "meta": {
@@ -127,8 +267,8 @@
     "image": "entities.webp",
     "format": "RGBA8888",
     "size": {
-      "w": 1185,
-      "h": 1086
+      "w": 1478,
+      "h": 1462
     },
     "scale": 1,
     "related_multi_packs": []

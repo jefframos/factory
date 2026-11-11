@@ -1,5 +1,5 @@
 {
-  "at": "2026-11-10T18:04:23.708Z",
+  "at": "2026-11-11T14:38:43.069Z",
   "full": false,
   "careers": 3,
   "profiles": [
@@ -48,7 +48,7 @@
       "baseHp": 120,
       "score": 0,
       "stale": false,
-      "gradedAt": "2026-11-10T17:42:42.234Z",
+      "gradedAt": "2026-11-11T14:14:45.455Z",
       "profiles": {
         "pro": {
           "score": 0,
@@ -101,7 +101,7 @@
       "baseHp": 200,
       "score": 12,
       "stale": false,
-      "gradedAt": "2026-11-10T17:42:49.090Z",
+      "gradedAt": "2026-11-11T14:14:51.603Z",
       "profiles": {
         "pro": {
           "score": 8,
@@ -154,7 +154,7 @@
       "baseHp": 220,
       "score": 11,
       "stale": false,
-      "gradedAt": "2026-11-10T18:01:46.980Z",
+      "gradedAt": "2026-11-11T14:15:04.789Z",
       "profiles": {
         "pro": {
           "score": 4,
@@ -205,12 +205,12 @@
       "redRate": 2.8,
       "redRateEnd": 4.4,
       "baseHp": 150,
-      "score": 11,
+      "score": 10,
       "stale": false,
-      "gradedAt": "2026-11-10T17:43:13.264Z",
+      "gradedAt": "2026-11-11T14:15:11.344Z",
       "profiles": {
         "pro": {
-          "score": 9,
+          "score": 7,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -222,7 +222,7 @@
           "tries": 1
         },
         "average": {
-          "score": 9,
+          "score": 7,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -258,9 +258,9 @@
       "redRate": 8,
       "redRateEnd": 8.84,
       "baseHp": 300,
-      "score": 15,
+      "score": 14,
       "stale": false,
-      "gradedAt": "2026-11-10T17:45:33.734Z",
+      "gradedAt": "2026-11-11T14:17:28.578Z",
       "profiles": {
         "pro": {
           "score": 13,
@@ -275,7 +275,7 @@
           "tries": 1
         },
         "average": {
-          "score": 13,
+          "score": 11,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -311,9 +311,9 @@
       "redRate": 2.9,
       "redRateEnd": 5.1,
       "baseHp": 300,
-      "score": 16,
+      "score": 17,
       "stale": false,
-      "gradedAt": "2026-11-10T17:44:26.187Z",
+      "gradedAt": "2026-11-11T14:16:27.433Z",
       "profiles": {
         "pro": {
           "score": 3,
@@ -334,16 +334,16 @@
           "tries": 1
         },
         "average-raw": {
-          "score": 17,
+          "score": 14,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "casual": {
-          "score": 19,
-          "firstWin": 1,
+          "score": 27,
+          "firstWin": 0.6666666666666666,
           "never": 0,
-          "tries": 1
+          "tries": 1.7
         },
         "newbie": {
           "score": 43,
@@ -364,9 +364,9 @@
       "redRate": 2.9,
       "redRateEnd": 5.1,
       "baseHp": 350,
-      "score": 21,
+      "score": 19,
       "stale": false,
-      "gradedAt": "2026-11-10T17:45:45.584Z",
+      "gradedAt": "2026-11-11T14:17:55.597Z",
       "profiles": {
         "pro": {
           "score": 12,
@@ -381,7 +381,7 @@
           "tries": 1
         },
         "average": {
-          "score": 15,
+          "score": 13,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -393,7 +393,7 @@
           "tries": 1
         },
         "casual": {
-          "score": 28,
+          "score": 22,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -417,12 +417,12 @@
       "redRate": 2.8,
       "redRateEnd": 5,
       "baseHp": 300,
-      "score": 22,
+      "score": 23,
       "stale": false,
-      "gradedAt": "2026-11-10T17:45:44.424Z",
+      "gradedAt": "2026-11-11T14:17:47.422Z",
       "profiles": {
         "pro": {
-          "score": 9,
+          "score": 7,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -434,7 +434,7 @@
           "tries": 1
         },
         "average": {
-          "score": 12,
+          "score": 11,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -446,7 +446,7 @@
           "tries": 1
         },
         "casual": {
-          "score": 23,
+          "score": 35,
           "firstWin": 0.6666666666666666,
           "never": 0,
           "tries": 1.3
@@ -470,45 +470,45 @@
       "redRate": 3.2,
       "redRateEnd": 4.3,
       "baseHp": 560,
-      "score": 16,
+      "score": 32,
       "stale": false,
-      "gradedAt": "2026-11-10T17:45:58.460Z",
+      "gradedAt": "2026-11-11T14:38:43.042Z",
       "profiles": {
         "pro": {
-          "score": 9,
+          "score": 13,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "pro-raw": {
-          "score": 18,
+          "score": 29,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "average": {
-          "score": 11,
-          "firstWin": 1,
-          "never": 0,
-          "tries": 1
-        },
-        "average-raw": {
           "score": 22,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
-        "casual": {
-          "score": 15,
-          "firstWin": 1,
+        "average-raw": {
+          "score": 41,
+          "firstWin": 0.3333333333333333,
           "never": 0,
-          "tries": 1
+          "tries": 2
+        },
+        "casual": {
+          "score": 35,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
         },
         "newbie": {
-          "score": 23,
-          "firstWin": 1,
+          "score": 65,
+          "firstWin": 0,
           "never": 0,
-          "tries": 1
+          "tries": 5
         }
       }
     },
@@ -521,35 +521,35 @@
       "zoneName": "Beach",
       "reward": 150,
       "redRate": 7,
-      "redRateEnd": 7.9,
+      "redRateEnd": 10,
       "baseHp": 330,
-      "score": 30,
+      "score": 31,
       "stale": false,
-      "gradedAt": "2026-11-10T18:01:30.222Z",
+      "gradedAt": "2026-11-11T14:19:17.618Z",
       "profiles": {
         "pro": {
-          "score": 15,
+          "score": 18,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "pro-raw": {
-          "score": 37,
-          "firstWin": 0.3333333333333333,
+          "score": 43,
+          "firstWin": 0,
           "never": 0,
-          "tries": 1.7
+          "tries": 2
         },
         "average": {
-          "score": 19,
+          "score": 18,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "average-raw": {
-          "score": 32,
-          "firstWin": 0.6666666666666666,
+          "score": 39,
+          "firstWin": 0.3333333333333333,
           "never": 0,
-          "tries": 1.3
+          "tries": 1.7
         },
         "casual": {
           "score": 24,
@@ -576,9 +576,9 @@
       "redRate": 4,
       "redRateEnd": 6,
       "baseHp": 330,
-      "score": 20,
-      "stale": false,
-      "gradedAt": "2026-11-10T17:46:26.849Z",
+      "score": 21,
+      "stale": true,
+      "gradedAt": "2026-11-11T14:18:24.616Z",
       "profiles": {
         "pro": {
           "score": 13,
@@ -593,7 +593,7 @@
           "tries": 1.3
         },
         "average": {
-          "score": 11,
+          "score": 14,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -620,15 +620,15 @@
       "zone": "castle",
       "zoneName": "Castle",
       "reward": 180,
-      "redRate": 3,
-      "redRateEnd": 5.2,
+      "redRate": 6,
+      "redRateEnd": 8.5,
       "baseHp": 480,
-      "score": 10,
-      "stale": false,
-      "gradedAt": "2026-11-10T17:47:14.705Z",
+      "score": 9,
+      "stale": true,
+      "gradedAt": "2026-11-11T14:19:56.160Z",
       "profiles": {
         "pro": {
-          "score": 7,
+          "score": 3,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -652,7 +652,7 @@
           "tries": 1
         },
         "casual": {
-          "score": 8,
+          "score": 5,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -670,12 +670,12 @@
       "redRate": 1.9,
       "redRateEnd": 3.4,
       "baseHp": 500,
-      "score": 21,
+      "score": 18,
       "stale": false,
-      "gradedAt": "2026-11-10T17:47:14.312Z",
+      "gradedAt": "2026-11-11T14:19:10.634Z",
       "profiles": {
         "pro": {
-          "score": 13,
+          "score": 11,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -687,7 +687,7 @@
           "tries": 1
         },
         "average": {
-          "score": 14,
+          "score": 13,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -699,10 +699,10 @@
           "tries": 1
         },
         "casual": {
-          "score": 30,
-          "firstWin": 0.6666666666666666,
+          "score": 18,
+          "firstWin": 1,
           "never": 0,
-          "tries": 1.3
+          "tries": 1
         }
       }
     },
@@ -717,12 +717,12 @@
       "redRate": 3.1,
       "redRateEnd": 5.3,
       "baseHp": 400,
-      "score": 19,
+      "score": 17,
       "stale": false,
-      "gradedAt": "2026-11-10T17:47:57.208Z",
+      "gradedAt": "2026-11-11T14:20:27.259Z",
       "profiles": {
         "pro": {
-          "score": 10,
+          "score": 9,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -734,7 +734,7 @@
           "tries": 1
         },
         "average": {
-          "score": 13,
+          "score": 12,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -746,7 +746,7 @@
           "tries": 1
         },
         "casual": {
-          "score": 25,
+          "score": 18,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -766,7 +766,7 @@
       "baseHp": 400,
       "score": 22,
       "stale": false,
-      "gradedAt": "2026-11-10T17:48:03.049Z",
+      "gradedAt": "2026-11-11T14:20:25.897Z",
       "profiles": {
         "pro": {
           "score": 11,
@@ -813,22 +813,22 @@
       "baseHp": 440,
       "score": 24,
       "stale": false,
-      "gradedAt": "2026-11-10T17:47:52.197Z",
+      "gradedAt": "2026-11-11T14:20:02.077Z",
       "profiles": {
         "pro": {
-          "score": 14,
+          "score": 9,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "pro-raw": {
-          "score": 24,
+          "score": 25,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "average": {
-          "score": 13,
+          "score": 15,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -840,10 +840,10 @@
           "tries": 1.3
         },
         "casual": {
-          "score": 34,
+          "score": 35,
           "firstWin": 0.6666666666666666,
           "never": 0,
-          "tries": 1.3
+          "tries": 1.7
         }
       }
     },
@@ -858,12 +858,12 @@
       "redRate": 1.9,
       "redRateEnd": 3.4,
       "baseHp": 400,
-      "score": 32,
+      "score": 29,
       "stale": false,
-      "gradedAt": "2026-11-10T17:48:19.634Z",
+      "gradedAt": "2026-11-11T14:21:11.666Z",
       "profiles": {
         "pro": {
-          "score": 14,
+          "score": 13,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -875,7 +875,7 @@
           "tries": 2
         },
         "average": {
-          "score": 22,
+          "score": 15,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -887,10 +887,10 @@
           "tries": 2.3
         },
         "casual": {
-          "score": 39,
+          "score": 34,
           "firstWin": 0.6666666666666666,
           "never": 0,
-          "tries": 2.3
+          "tries": 1.7
         }
       }
     },
@@ -902,15 +902,15 @@
       "zone": "castle",
       "zoneName": "Castle",
       "reward": 160,
-      "redRate": 1.5,
-      "redRateEnd": 4.5,
+      "redRate": 3.5,
+      "redRateEnd": 5,
       "baseHp": 400,
-      "score": 19,
-      "stale": false,
-      "gradedAt": "2026-11-10T17:48:43.405Z",
+      "score": 17,
+      "stale": true,
+      "gradedAt": "2026-11-11T14:21:35.250Z",
       "profiles": {
         "pro": {
-          "score": 12,
+          "score": 9,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -922,7 +922,7 @@
           "tries": 1.3
         },
         "average": {
-          "score": 14,
+          "score": 9,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -934,7 +934,7 @@
           "tries": 1
         },
         "casual": {
-          "score": 19,
+          "score": 17,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -952,12 +952,12 @@
       "redRate": 3.1,
       "redRateEnd": 5.3,
       "baseHp": 400,
-      "score": 31,
+      "score": 27,
       "stale": false,
-      "gradedAt": "2026-11-10T17:49:03.536Z",
+      "gradedAt": "2026-11-11T14:22:17.243Z",
       "profiles": {
         "pro": {
-          "score": 17,
+          "score": 15,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -969,10 +969,10 @@
           "tries": 1
         },
         "average": {
-          "score": 30,
-          "firstWin": 0.6666666666666666,
+          "score": 19,
+          "firstWin": 1,
           "never": 0,
-          "tries": 1.3
+          "tries": 1
         },
         "average-raw": {
           "score": 36,
@@ -981,10 +981,10 @@
           "tries": 1.3
         },
         "casual": {
-          "score": 35,
+          "score": 33,
           "firstWin": 0.6666666666666666,
           "never": 0,
-          "tries": 1.3
+          "tries": 1.7
         }
       }
     },
@@ -996,15 +996,15 @@
       "zone": "castle",
       "zoneName": "Castle",
       "reward": 130,
-      "redRate": 2.6,
-      "redRateEnd": 4.6,
+      "redRate": 4,
+      "redRateEnd": 6.5,
       "baseHp": 280,
-      "score": 28,
-      "stale": false,
-      "gradedAt": "2026-11-10T17:48:41.304Z",
+      "score": 24,
+      "stale": true,
+      "gradedAt": "2026-11-11T14:21:34.684Z",
       "profiles": {
         "pro": {
-          "score": 10,
+          "score": 5,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1016,7 +1016,7 @@
           "tries": 3.5
         },
         "average": {
-          "score": 9,
+          "score": 5,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1028,10 +1028,10 @@
           "tries": 1.7
         },
         "casual": {
-          "score": 36,
+          "score": 27,
           "firstWin": 0.6666666666666666,
           "never": 0,
-          "tries": 1.3
+          "tries": 1.7
         }
       }
     },
@@ -1046,12 +1046,12 @@
       "redRate": 3.1,
       "redRateEnd": 5.3,
       "baseHp": 500,
-      "score": 19,
+      "score": 15,
       "stale": false,
-      "gradedAt": "2026-11-10T17:49:09.104Z",
+      "gradedAt": "2026-11-11T14:22:11.185Z",
       "profiles": {
         "pro": {
-          "score": 15,
+          "score": 9,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1063,7 +1063,7 @@
           "tries": 1.3
         },
         "average": {
-          "score": 10,
+          "score": 6,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1075,10 +1075,10 @@
           "tries": 1
         },
         "casual": {
-          "score": 27,
-          "firstWin": 0.6666666666666666,
+          "score": 16,
+          "firstWin": 1,
           "never": 0,
-          "tries": 1.3
+          "tries": 1
         }
       }
     },
@@ -1093,12 +1093,12 @@
       "redRate": 2,
       "redRateEnd": 3.7,
       "baseHp": 580,
-      "score": 24,
+      "score": 17,
       "stale": false,
-      "gradedAt": "2026-11-10T17:49:03.870Z",
+      "gradedAt": "2026-11-11T14:22:08.467Z",
       "profiles": {
         "pro": {
-          "score": 5,
+          "score": 8,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1110,7 +1110,7 @@
           "tries": 1
         },
         "average": {
-          "score": 9,
+          "score": 2,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1122,10 +1122,10 @@
           "tries": 1.3
         },
         "casual": {
-          "score": 48,
-          "firstWin": 0,
+          "score": 25,
+          "firstWin": 0.6666666666666666,
           "never": 0,
-          "tries": 2.7
+          "tries": 1.3
         }
       }
     },
@@ -1140,12 +1140,12 @@
       "redRate": 1.9,
       "redRateEnd": 3.5,
       "baseHp": 480,
-      "score": 25,
+      "score": 23,
       "stale": false,
-      "gradedAt": "2026-11-10T17:49:32.975Z",
+      "gradedAt": "2026-11-11T14:22:54.309Z",
       "profiles": {
         "pro": {
-          "score": 12,
+          "score": 13,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1157,7 +1157,7 @@
           "tries": 1.3
         },
         "average": {
-          "score": 16,
+          "score": 13,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1169,10 +1169,10 @@
           "tries": 1.3
         },
         "casual": {
-          "score": 32,
-          "firstWin": 0.6666666666666666,
+          "score": 28,
+          "firstWin": 1,
           "never": 0,
-          "tries": 1.3
+          "tries": 1
         }
       }
     },
@@ -1187,12 +1187,12 @@
       "redRate": 1.9,
       "redRateEnd": 3.4,
       "baseHp": 400,
-      "score": 24,
+      "score": 21,
       "stale": false,
-      "gradedAt": "2026-11-10T17:49:47.739Z",
+      "gradedAt": "2026-11-11T14:23:14.715Z",
       "profiles": {
         "pro": {
-          "score": 13,
+          "score": 11,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1204,7 +1204,7 @@
           "tries": 2.3
         },
         "average": {
-          "score": 11,
+          "score": 9,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1216,10 +1216,10 @@
           "tries": 1
         },
         "casual": {
-          "score": 31,
-          "firstWin": 0.6666666666666666,
+          "score": 21,
+          "firstWin": 1,
           "never": 0,
-          "tries": 1.3
+          "tries": 1
         }
       }
     },
@@ -1234,12 +1234,12 @@
       "redRate": 2.8,
       "redRateEnd": 8.2,
       "baseHp": 500,
-      "score": 31,
+      "score": 29,
       "stale": false,
-      "gradedAt": "2026-11-10T17:49:43.754Z",
+      "gradedAt": "2026-11-11T14:22:46.512Z",
       "profiles": {
         "pro": {
-          "score": 18,
+          "score": 17,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1263,7 +1263,7 @@
           "tries": 2.7
         },
         "casual": {
-          "score": 29,
+          "score": 22,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1281,12 +1281,12 @@
       "redRate": 4,
       "redRateEnd": 11,
       "baseHp": 400,
-      "score": 41,
+      "score": 37,
       "stale": false,
-      "gradedAt": "2026-11-10T17:49:47.936Z",
+      "gradedAt": "2026-11-11T14:23:09.329Z",
       "profiles": {
         "pro": {
-          "score": 24,
+          "score": 22,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1298,19 +1298,19 @@
           "tries": 3.7
         },
         "average": {
-          "score": 30,
-          "firstWin": 0.6666666666666666,
+          "score": 22,
+          "firstWin": 1,
           "never": 0,
-          "tries": 1.3
+          "tries": 1
         },
         "average-raw": {
-          "score": 65,
+          "score": 68,
           "firstWin": 0,
           "never": 0,
-          "tries": 5
+          "tries": 5.3
         },
         "casual": {
-          "score": 34,
+          "score": 28,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1328,12 +1328,12 @@
       "redRate": 3,
       "redRateEnd": 5,
       "baseHp": 400,
-      "score": 25,
+      "score": 22,
       "stale": false,
-      "gradedAt": "2026-11-10T17:52:12.840Z",
+      "gradedAt": "2026-11-11T14:26:09.036Z",
       "profiles": {
         "pro": {
-          "score": 11,
+          "score": 10,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1345,7 +1345,7 @@
           "tries": 1
         },
         "average": {
-          "score": 16,
+          "score": 17,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1357,10 +1357,10 @@
           "tries": 1.3
         },
         "casual": {
-          "score": 35,
-          "firstWin": 0.6666666666666666,
+          "score": 22,
+          "firstWin": 1,
           "never": 0,
-          "tries": 2
+          "tries": 1
         }
       }
     },
@@ -1375,24 +1375,24 @@
       "redRate": 8,
       "redRateEnd": 14,
       "baseHp": 380,
-      "score": 50,
+      "score": 47,
       "stale": false,
-      "gradedAt": "2026-11-10T18:04:23.681Z",
+      "gradedAt": "2026-11-11T14:24:43.630Z",
       "profiles": {
         "pro": {
-          "score": 31,
+          "score": 26,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "pro-raw": {
-          "score": 70,
+          "score": 65,
           "firstWin": 0,
           "never": 0,
-          "tries": 5.7
+          "tries": 5
         },
         "average": {
-          "score": 36,
+          "score": 35,
           "firstWin": 0.6666666666666666,
           "never": 0,
           "tries": 1.3
@@ -1404,10 +1404,10 @@
           "tries": 6
         },
         "casual": {
-          "score": 48,
-          "firstWin": 0,
+          "score": 42,
+          "firstWin": 0.3333333333333333,
           "never": 0,
-          "tries": 2.7
+          "tries": 2
         }
       }
     },
@@ -1422,27 +1422,27 @@
       "redRate": 7.5,
       "redRateEnd": 14,
       "baseHp": 500,
-      "score": 49,
+      "score": 42,
       "stale": false,
-      "gradedAt": "2026-11-10T17:50:51.505Z",
+      "gradedAt": "2026-11-11T14:24:10.387Z",
       "profiles": {
         "pro": {
-          "score": 29,
+          "score": 27,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "pro-raw": {
-          "score": 80,
+          "score": 68,
           "firstWin": 0,
           "never": 0,
-          "tries": 7
+          "tries": 5.3
         },
         "average": {
-          "score": 35,
-          "firstWin": 0.6666666666666666,
+          "score": 25,
+          "firstWin": 1,
           "never": 0,
-          "tries": 1.3
+          "tries": 1
         },
         "average-raw": {
           "score": 65,
@@ -1451,10 +1451,10 @@
           "tries": 5
         },
         "casual": {
-          "score": 50,
-          "firstWin": 0,
+          "score": 38,
+          "firstWin": 0.3333333333333333,
           "never": 0,
-          "tries": 3
+          "tries": 1.7
         }
       }
     },
@@ -1469,15 +1469,15 @@
       "redRate": 5.1,
       "redRateEnd": 13.4,
       "baseHp": 400,
-      "score": 51,
+      "score": 50,
       "stale": false,
-      "gradedAt": "2026-11-10T17:52:15.573Z",
+      "gradedAt": "2026-11-11T14:26:19.640Z",
       "profiles": {
         "pro": {
-          "score": 36,
-          "firstWin": 0.6666666666666666,
+          "score": 29,
+          "firstWin": 1,
           "never": 0,
-          "tries": 1.3
+          "tries": 1
         },
         "pro-raw": {
           "score": 68,
@@ -1486,10 +1486,10 @@
           "tries": 5.3
         },
         "average": {
-          "score": 32,
-          "firstWin": 1,
+          "score": 35,
+          "firstWin": 0.6666666666666666,
           "never": 0,
-          "tries": 1
+          "tries": 1.3
         },
         "average-raw": {
           "score": 78,
@@ -1498,10 +1498,10 @@
           "tries": 6.7
         },
         "casual": {
-          "score": 53,
+          "score": 48,
           "firstWin": 0,
           "never": 0,
-          "tries": 3.3
+          "tries": 2.7
         }
       }
     },
@@ -1516,12 +1516,12 @@
       "redRate": 4.5,
       "redRateEnd": 7,
       "baseHp": 320,
-      "score": 13,
+      "score": 10,
       "stale": false,
-      "gradedAt": "2026-11-10T17:52:25.641Z",
+      "gradedAt": "2026-11-11T14:25:51.566Z",
       "profiles": {
         "pro": {
-          "score": 1,
+          "score": 2,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1533,7 +1533,7 @@
           "tries": 1
         },
         "average": {
-          "score": 4,
+          "score": 3,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1545,10 +1545,10 @@
           "tries": 1
         },
         "casual": {
-          "score": 31,
-          "firstWin": 0.6666666666666666,
+          "score": 17,
+          "firstWin": 1,
           "never": 0,
-          "tries": 2
+          "tries": 1
         }
       }
     },
@@ -1563,12 +1563,12 @@
       "redRate": 4,
       "redRateEnd": 7,
       "baseHp": 380,
-      "score": 25,
+      "score": 22,
       "stale": false,
-      "gradedAt": "2026-11-10T17:53:09.649Z",
+      "gradedAt": "2026-11-11T14:27:00.225Z",
       "profiles": {
         "pro": {
-          "score": 11,
+          "score": 9,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1580,7 +1580,7 @@
           "tries": 1
         },
         "average": {
-          "score": 14,
+          "score": 12,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1592,10 +1592,10 @@
           "tries": 1.3
         },
         "casual": {
-          "score": 39,
+          "score": 29,
           "firstWin": 0.6666666666666666,
           "never": 0,
-          "tries": 2
+          "tries": 1.3
         }
       }
     },
@@ -1612,10 +1612,10 @@
       "baseHp": 380,
       "score": 28,
       "stale": false,
-      "gradedAt": "2026-11-10T17:52:37.457Z",
+      "gradedAt": "2026-11-11T14:26:51.984Z",
       "profiles": {
         "pro": {
-          "score": 15,
+          "score": 13,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1627,7 +1627,7 @@
           "tries": 1
         },
         "average": {
-          "score": 17,
+          "score": 18,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1639,10 +1639,10 @@
           "tries": 1.7
         },
         "casual": {
-          "score": 37,
-          "firstWin": 0.3333333333333333,
+          "score": 35,
+          "firstWin": 0.6666666666666666,
           "never": 0,
-          "tries": 1.7
+          "tries": 1.3
         }
       }
     },
@@ -1659,7 +1659,7 @@
       "baseHp": 280,
       "score": 41,
       "stale": false,
-      "gradedAt": "2026-11-10T17:53:03.428Z",
+      "gradedAt": "2026-11-11T14:27:09.128Z",
       "profiles": {
         "pro": {
           "score": 25,
@@ -1686,7 +1686,7 @@
           "tries": 5.7
         },
         "casual": {
-          "score": 33,
+          "score": 31,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1704,12 +1704,12 @@
       "redRate": 3.6,
       "redRateEnd": 6.5,
       "baseHp": 400,
-      "score": 38,
+      "score": 35,
       "stale": false,
-      "gradedAt": "2026-11-10T17:53:51.829Z",
+      "gradedAt": "2026-11-11T14:28:13.721Z",
       "profiles": {
         "pro": {
-          "score": 19,
+          "score": 18,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1721,7 +1721,7 @@
           "tries": 1.3
         },
         "average": {
-          "score": 21,
+          "score": 22,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1733,10 +1733,10 @@
           "tries": 4
         },
         "casual": {
-          "score": 53,
-          "firstWin": 0,
+          "score": 39,
+          "firstWin": 0.3333333333333333,
           "never": 0,
-          "tries": 3.3
+          "tries": 1.7
         }
       }
     },
@@ -1751,150 +1751,9 @@
       "redRate": 7.5,
       "redRateEnd": 13,
       "baseHp": 380,
-      "score": 49,
+      "score": 43,
       "stale": false,
-      "gradedAt": "2026-11-10T17:53:36.204Z",
-      "profiles": {
-        "pro": {
-          "score": 25,
-          "firstWin": 1,
-          "never": 0,
-          "tries": 1
-        },
-        "pro-raw": {
-          "score": 73,
-          "firstWin": 0,
-          "never": 0,
-          "tries": 6
-        },
-        "average": {
-          "score": 34,
-          "firstWin": 0.6666666666666666,
-          "never": 0,
-          "tries": 1.3
-        },
-        "average-raw": {
-          "score": 78,
-          "firstWin": 0,
-          "never": 0,
-          "tries": 6.7
-        },
-        "casual": {
-          "score": 43,
-          "firstWin": 0.3333333333333333,
-          "never": 0,
-          "tries": 2.3
-        }
-      }
-    },
-    {
-      "index": 36,
-      "id": "twin-peaks",
-      "name": "Twin Peaks",
-      "kind": "Forts",
-      "zone": "ice",
-      "zoneName": "Ice",
-      "reward": 240,
-      "redRate": 4,
-      "redRateEnd": 8,
-      "baseHp": 300,
-      "score": 45,
-      "stale": false,
-      "gradedAt": "2026-11-10T17:53:52.040Z",
-      "profiles": {
-        "pro": {
-          "score": 22,
-          "firstWin": 1,
-          "never": 0,
-          "tries": 1
-        },
-        "pro-raw": {
-          "score": 58,
-          "firstWin": 0,
-          "never": 0,
-          "tries": 4
-        },
-        "average": {
-          "score": 29,
-          "firstWin": 1,
-          "never": 0,
-          "tries": 1
-        },
-        "average-raw": {
-          "score": 70,
-          "firstWin": 0,
-          "never": 0,
-          "tries": 5.7
-        },
-        "casual": {
-          "score": 47,
-          "firstWin": 0.3333333333333333,
-          "never": 0,
-          "tries": 2.7
-        }
-      }
-    },
-    {
-      "index": 37,
-      "id": "icicle-run",
-      "name": "Icicle Run",
-      "kind": "Grinder",
-      "zone": "ice",
-      "zoneName": "Ice",
-      "reward": 245,
-      "redRate": 3.5,
-      "redRateEnd": 7.5,
-      "baseHp": 300,
-      "score": 49,
-      "stale": false,
-      "gradedAt": "2026-11-10T17:53:42.368Z",
-      "profiles": {
-        "pro": {
-          "score": 19,
-          "firstWin": 1,
-          "never": 0,
-          "tries": 1
-        },
-        "pro-raw": {
-          "score": 60,
-          "firstWin": 0,
-          "never": 0,
-          "tries": 4.3
-        },
-        "average": {
-          "score": 31,
-          "firstWin": 0.6666666666666666,
-          "never": 0,
-          "tries": 1.3
-        },
-        "average-raw": {
-          "score": 73,
-          "firstWin": 0,
-          "never": 0,
-          "tries": 6
-        },
-        "casual": {
-          "score": 63,
-          "firstWin": 0,
-          "never": 0,
-          "tries": 4.7
-        }
-      }
-    },
-    {
-      "index": 38,
-      "id": "blizzard",
-      "name": "Blizzard",
-      "kind": "Swarm",
-      "zone": "ice",
-      "zoneName": "Ice",
-      "reward": 250,
-      "redRate": 9,
-      "redRateEnd": 15,
-      "baseHp": 420,
-      "score": 48,
-      "stale": false,
-      "gradedAt": "2026-11-10T17:54:35.773Z",
+      "gradedAt": "2026-11-11T14:27:39.275Z",
       "profiles": {
         "pro": {
           "score": 26,
@@ -1909,7 +1768,148 @@
           "tries": 5.3
         },
         "average": {
+          "score": 26,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 78,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 6.7
+        },
+        "casual": {
           "score": 28,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        }
+      }
+    },
+    {
+      "index": 36,
+      "id": "twin-peaks",
+      "name": "Twin Peaks",
+      "kind": "Forts",
+      "zone": "ice",
+      "zoneName": "Ice",
+      "reward": 240,
+      "redRate": 4,
+      "redRateEnd": 8,
+      "baseHp": 300,
+      "score": 42,
+      "stale": false,
+      "gradedAt": "2026-11-11T14:28:03.367Z",
+      "profiles": {
+        "pro": {
+          "score": 25,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 58,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 4
+        },
+        "average": {
+          "score": 27,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 70,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 5.7
+        },
+        "casual": {
+          "score": 37,
+          "firstWin": 0.6666666666666666,
+          "never": 0,
+          "tries": 1.3
+        }
+      }
+    },
+    {
+      "index": 37,
+      "id": "icicle-run",
+      "name": "Icicle Run",
+      "kind": "Grinder",
+      "zone": "ice",
+      "zoneName": "Ice",
+      "reward": 245,
+      "redRate": 3.5,
+      "redRateEnd": 7.5,
+      "baseHp": 300,
+      "score": 53,
+      "stale": true,
+      "gradedAt": "2026-11-11T14:27:53.512Z",
+      "profiles": {
+        "pro": {
+          "score": 22,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 55,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 3.7
+        },
+        "average": {
+          "score": 28,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "average-raw": {
+          "score": 73,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 6
+        },
+        "casual": {
+          "score": 87,
+          "firstWin": 0,
+          "never": 0.3333333333333333,
+          "tries": 7
+        }
+      }
+    },
+    {
+      "index": 38,
+      "id": "blizzard",
+      "name": "Blizzard",
+      "kind": "Swarm",
+      "zone": "ice",
+      "zoneName": "Ice",
+      "reward": 250,
+      "redRate": 9,
+      "redRateEnd": 15,
+      "baseHp": 420,
+      "score": 50,
+      "stale": false,
+      "gradedAt": "2026-11-11T14:28:57.566Z",
+      "profiles": {
+        "pro": {
+          "score": 28,
+          "firstWin": 1,
+          "never": 0,
+          "tries": 1
+        },
+        "pro-raw": {
+          "score": 68,
+          "firstWin": 0,
+          "never": 0,
+          "tries": 5.3
+        },
+        "average": {
+          "score": 26,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1921,10 +1921,10 @@
           "tries": 6.3
         },
         "casual": {
-          "score": 50,
-          "firstWin": 0.3333333333333333,
+          "score": 63,
+          "firstWin": 0,
           "never": 0,
-          "tries": 3
+          "tries": 4.7
         }
       }
     },
@@ -1939,12 +1939,12 @@
       "redRate": 3.2,
       "redRateEnd": 7,
       "baseHp": 300,
-      "score": 51,
+      "score": 53,
       "stale": false,
-      "gradedAt": "2026-11-10T17:54:32.272Z",
+      "gradedAt": "2026-11-11T14:30:07.732Z",
       "profiles": {
         "pro": {
-          "score": 16,
+          "score": 18,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1956,7 +1956,7 @@
           "tries": 4
         },
         "average": {
-          "score": 26,
+          "score": 21,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1968,10 +1968,10 @@
           "tries": 7
         },
         "casual": {
-          "score": 44,
-          "firstWin": 0.3333333333333333,
+          "score": 60,
+          "firstWin": 0,
           "never": 0,
-          "tries": 2.7
+          "tries": 4.3
         }
       }
     },
@@ -1988,7 +1988,7 @@
       "baseHp": 360,
       "score": 26,
       "stale": false,
-      "gradedAt": "2026-11-10T17:55:20.119Z",
+      "gradedAt": "2026-11-11T14:30:26.836Z",
       "profiles": {
         "pro": {
           "score": 15,
@@ -2003,7 +2003,7 @@
           "tries": 1.3
         },
         "average": {
-          "score": 17,
+          "score": 18,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -2033,12 +2033,12 @@
       "redRate": 5.5,
       "redRateEnd": 10,
       "baseHp": 400,
-      "score": 34,
+      "score": 35,
       "stale": false,
-      "gradedAt": "2026-11-10T17:56:44.370Z",
+      "gradedAt": "2026-11-11T14:33:06.451Z",
       "profiles": {
         "pro": {
-          "score": 21,
+          "score": 22,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -2050,19 +2050,19 @@
           "tries": 1.7
         },
         "average": {
-          "score": 20,
+          "score": 24,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "average-raw": {
-          "score": 53,
+          "score": 50,
           "firstWin": 0,
           "never": 0,
-          "tries": 3.3
+          "tries": 3
         },
         "casual": {
-          "score": 40,
+          "score": 39,
           "firstWin": 0.3333333333333333,
           "never": 0,
           "tries": 1.7
@@ -2080,9 +2080,9 @@
       "redRate": 9,
       "redRateEnd": 15,
       "baseHp": 240,
-      "score": 40,
+      "score": 41,
       "stale": false,
-      "gradedAt": "2026-11-10T17:55:29.711Z",
+      "gradedAt": "2026-11-11T14:30:52.846Z",
       "profiles": {
         "pro": {
           "score": 23,
@@ -2097,7 +2097,7 @@
           "tries": 5.7
         },
         "average": {
-          "score": 24,
+          "score": 23,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -2109,10 +2109,10 @@
           "tries": 5
         },
         "casual": {
-          "score": 33,
-          "firstWin": 1,
+          "score": 38,
+          "firstWin": 0.3333333333333333,
           "never": 0,
-          "tries": 1
+          "tries": 1.7
         }
       }
     },
@@ -2127,12 +2127,12 @@
       "redRate": 11,
       "redRateEnd": 19,
       "baseHp": 280,
-      "score": 40,
+      "score": 41,
       "stale": false,
-      "gradedAt": "2026-11-10T17:55:55.063Z",
+      "gradedAt": "2026-11-11T14:31:23.919Z",
       "profiles": {
         "pro": {
-          "score": 22,
+          "score": 25,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -2144,7 +2144,7 @@
           "tries": 5
         },
         "average": {
-          "score": 26,
+          "score": 25,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -2156,10 +2156,10 @@
           "tries": 5.3
         },
         "casual": {
-          "score": 31,
-          "firstWin": 1,
+          "score": 33,
+          "firstWin": 0.6666666666666666,
           "never": 0,
-          "tries": 1
+          "tries": 1.3
         }
       }
     },
@@ -2174,9 +2174,9 @@
       "redRate": 5,
       "redRateEnd": 10,
       "baseHp": 300,
-      "score": 40,
+      "score": 34,
       "stale": false,
-      "gradedAt": "2026-11-10T17:56:10.783Z",
+      "gradedAt": "2026-11-11T14:31:43.907Z",
       "profiles": {
         "pro": {
           "score": 18,
@@ -2185,28 +2185,28 @@
           "tries": 1
         },
         "pro-raw": {
-          "score": 53,
+          "score": 48,
           "firstWin": 0,
           "never": 0,
-          "tries": 3.3
+          "tries": 2.7
         },
         "average": {
-          "score": 23,
+          "score": 16,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "average-raw": {
-          "score": 63,
+          "score": 58,
           "firstWin": 0,
           "never": 0,
-          "tries": 4.7
+          "tries": 4
         },
         "casual": {
-          "score": 47,
+          "score": 37,
           "firstWin": 0.3333333333333333,
           "never": 0,
-          "tries": 2.7
+          "tries": 1.7
         }
       }
     },
@@ -2221,12 +2221,12 @@
       "redRate": 9.5,
       "redRateEnd": 16,
       "baseHp": 260,
-      "score": 45,
+      "score": 44,
       "stale": false,
-      "gradedAt": "2026-11-10T17:56:07.315Z",
+      "gradedAt": "2026-11-11T14:31:36.809Z",
       "profiles": {
         "pro": {
-          "score": 23,
+          "score": 24,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -2250,10 +2250,10 @@
           "tries": 6.3
         },
         "casual": {
-          "score": 48,
-          "firstWin": 0,
+          "score": 39,
+          "firstWin": 0.3333333333333333,
           "never": 0,
-          "tries": 2.7
+          "tries": 1.7
         }
       }
     },
@@ -2268,12 +2268,12 @@
       "redRate": 12,
       "redRateEnd": 20,
       "baseHp": 320,
-      "score": 52,
+      "score": 46,
       "stale": false,
-      "gradedAt": "2026-11-10T17:56:41.937Z",
+      "gradedAt": "2026-11-11T14:32:18.940Z",
       "profiles": {
         "pro": {
-          "score": 26,
+          "score": 27,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -2285,7 +2285,7 @@
           "tries": 7
         },
         "average": {
-          "score": 29,
+          "score": 26,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -2297,10 +2297,10 @@
           "tries": 6.7
         },
         "casual": {
-          "score": 63,
-          "firstWin": 0,
+          "score": 35,
+          "firstWin": 0.6666666666666666,
           "never": 0,
-          "tries": 4.7
+          "tries": 1.3
         }
       }
     },
@@ -2315,9 +2315,9 @@
       "redRate": 11,
       "redRateEnd": 18,
       "baseHp": 440,
-      "score": 46,
+      "score": 45,
       "stale": false,
-      "gradedAt": "2026-11-10T17:57:04.872Z",
+      "gradedAt": "2026-11-11T14:33:15.844Z",
       "profiles": {
         "pro": {
           "score": 25,
@@ -2332,7 +2332,7 @@
           "tries": 6.3
         },
         "average": {
-          "score": 29,
+          "score": 28,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -2344,10 +2344,10 @@
           "tries": 5.3
         },
         "casual": {
-          "score": 48,
+          "score": 45,
           "firstWin": 0,
           "never": 0,
-          "tries": 2.7
+          "tries": 2.3
         }
       }
     },
@@ -2364,10 +2364,10 @@
       "baseHp": 260,
       "score": 54,
       "stale": false,
-      "gradedAt": "2026-11-10T17:56:43.383Z",
+      "gradedAt": "2026-11-11T14:32:41.699Z",
       "profiles": {
         "pro": {
-          "score": 28,
+          "score": 33,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -2379,7 +2379,7 @@
           "tries": 7
         },
         "average": {
-          "score": 28,
+          "score": 31,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -2391,10 +2391,10 @@
           "tries": 7
         },
         "casual": {
-          "score": 60,
-          "firstWin": 0,
+          "score": 52,
+          "firstWin": 0.3333333333333333,
           "never": 0,
-          "tries": 4.3
+          "tries": 3.3
         }
       }
     },
@@ -2409,12 +2409,12 @@
       "redRate": 6,
       "redRateEnd": 12,
       "baseHp": 300,
-      "score": 53,
+      "score": 56,
       "stale": false,
-      "gradedAt": "2026-11-10T17:57:00.559Z",
+      "gradedAt": "2026-11-11T14:33:06.279Z",
       "profiles": {
         "pro": {
-          "score": 26,
+          "score": 27,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -2426,7 +2426,7 @@
           "tries": 7
         },
         "average": {
-          "score": 29,
+          "score": 30,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -2438,10 +2438,10 @@
           "tries": 7
         },
         "casual": {
-          "score": 53,
+          "score": 65,
           "firstWin": 0,
           "never": 0,
-          "tries": 3.3
+          "tries": 5
         }
       }
     }

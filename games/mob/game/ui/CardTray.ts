@@ -12,11 +12,17 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { CardKind } from '../data/Settings';
-import { cardColour, loadIcon, panelColour, panelShine } from './CardFace';
-import { framePlane, iconSprite, label, tappable } from './UiParts';
+import { cardColour, loadIcon, panelColour, panelShine, cardFace } from './CardFace';
+import { framePlane, iconSprite, label, tappable, killTweensDeep } from './UiParts';
 
 /** A card's size, gap, its frames' scale, the inner panel's inset and dark tint, the picture's size, the name. */
 export const CARD = { width: 124, height: 152, gap: 12, frameScale: 0.55, inset: 9, picture: 118, barHeight: 16, barGap: 6 };
+/** The hand: at most this many cards at once (the rest wait their turn: a card used, the next takes its place). */
+export const HAND = 4;
+/** The waiting cards' pile, right of the hand: the next one small, how many wait on it; its size and the gap to the hand. */
+export const PILE = { width: 72, height: 90, gap: 16 };
+/** The tray's whole width (the hand and the pile), for fitting it to the screen. */
+export const TRAY_WIDTH = HAND * CARD.width + (HAND - 1) * CARD.gap + 2 * (PILE.gap + PILE.width);
 /** The charge bar along the card's bottom, from the baked bar textures (Bar_Trough, Bar_Segment: white, tinted; see
  *  SegmentBar): its back, the fill's inset (its colour is the unit's), the textures' height and nine-slice borders. */
 const BAR = { back: 0x10123a, inset: 2, texture: 48, troughSlice: 16, fillSlice: 12 };
@@ -54,10 +60,13 @@ export class CardTray extends PIXI.Container {
     public onTap: (kind: CardKind) => void = () => undefined;
     private cards: Card[] = [];
     private time = 0;
+    /** The waiting cards' pile (the next, how many). */
+    private pile = new PIXI.Container();
 
     /** The player's cards (`fresh`: just unlocked: NEW! on it). */
     public setCards(kinds: readonly CardKind[], fresh: readonly CardKind[] = []): void {
-        for (const card of this.cards) gsap.killTweensOf([card.holder.scale, card.flash, card.body]);
+        // (Everything on it still moving — a card's pop, a GO! floating up, the pile's — stopped before it's destroyed.)
+        killTweensDeep(this);
         this.removeChildren().forEach((child) => child.destroy({ children: true }));
         this.cards = kinds.map((kind, i) => {
             const card = this.buildCard(kind, fresh.includes(kind));
@@ -66,7 +75,58 @@ export class CardTray extends PIXI.Container {
             this.addChild(card.holder);
             return card;
         });
+        this.pile = new PIXI.Container();
+        this.pile.visible = false;
+        this.addChild(this.pile);
         this.visible = kinds.length > 0;
+    }
+
+    /** `old`'s card used: `next` takes its place (popping in from the pile's side), uncharged. */
+    public replace(old: CardKind, next: CardKind): void {
+        const at = this.cards.findIndex((entry) => entry.kind === old);
+        if (at < 0) return;
+        const before = this.cards[at];
+        // Everything still moving on it (its fired pop, its glow...) stopped first: it's destroyed now.
+        killTweensDeep(before.holder);
+        const card = this.buildCard(next, false);
+        card.holder.position.copyFrom(before.holder.position);
+        this.removeChild(before.holder);
+        before.holder.destroy({ children: true });
+        this.addChildAt(card.holder, Math.min(at, this.children.length));
+        this.cards[at] = card;
+        gsap.fromTo(card.holder, { x: this.pile.x }, { x: card.holder.x, duration: 0.35, ease: 'power2.out' });
+        gsap.fromTo(card.holder.scale, { x: 0.45, y: 0.45 }, { x: 1, y: 1, duration: 0.4, ease: 'back.out(2.2)' });
+    }
+
+    /** The waiting cards: the next (small, its face), how many wait on a badge; hidden when none wait. */
+    public setPile(next: CardKind | null, waiting: number): void {
+        killTweensDeep(this.pile);
+        this.pile.removeChildren().forEach((child) => child.destroy({ children: true }));
+        this.pile.visible = !!next && waiting > 0;
+        if (!next || waiting <= 0) return;
+        const handRight = (Math.max(1, this.cards.length) / 2) * (CARD.width + CARD.gap) - CARD.gap / 2;
+        // Level with the cards' middle (its badge inside the tray: the screen's edge is just under the cards).
+        this.pile.position.set(handRight + PILE.gap + PILE.width / 2, CHARGING.drop - 8);
+        // A card or two showing under it: a pile.
+        for (let k = Math.min(2, waiting - 1); k > 0; k--) {
+            const under = framePlane('CardFrame03_n_Bg', PILE.width, PILE.height, 0.4);
+            under.tint = 0x2a3a7a;
+            under.position.set(-PILE.width / 2 + k * 5, -PILE.height / 2 - k * 5);
+            this.pile.addChild(under);
+        }
+        const face = cardFace(next, PILE.width, PILE.height, 0, 0.4);
+        const words = label(16, 0xffffff);
+        words.text = 'NEXT';
+        words.y = -PILE.height / 2 - 14;
+        const badge = new PIXI.Container();
+        const circle = iconSprite('Alert_Circle_l_Bg', 36);
+        circle.tint = 0x3d6dff;
+        const count = label(18);
+        count.text = `${waiting}`;
+        badge.addChild(circle, count);
+        badge.position.set(PILE.width / 2 - 6, PILE.height / 2 - 18);
+        this.pile.addChild(face, words, badge);
+        gsap.fromTo(this.pile.scale, { x: 0.8, y: 0.8 }, { x: 1, y: 1, duration: 0.3, ease: 'back.out(2.5)' });
     }
 
     private buildCard(kind: CardKind, fresh: boolean): Card {
@@ -226,10 +286,11 @@ export class CardTray extends PIXI.Container {
         if (!card) return;
         gsap.fromTo(card.flash, { alpha: 0.9 }, { alpha: 0, duration: 0.45 });
         gsap.fromTo(card.holder.scale, { x: 1.18, y: 1.18 }, { x: 1, y: 1, duration: 0.4, ease: 'back.out(3)' });
+        // GO! on the tray itself, over the card (the card may be swapped for the next one at once).
         const go = label(34, 0x9fff8a);
         go.text = 'GO!';
-        go.y = -CARD.height / 2;
-        card.holder.addChild(go);
+        go.position.set(card.holder.x, card.holder.y - CARD.height / 2);
+        this.addChild(go);
         gsap.to(go, { y: go.y - 50, alpha: 0, duration: 0.8, ease: 'power1.out', onComplete: () => go.destroy() });
     }
 

@@ -6,8 +6,11 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
-const CARDS = [['giant', 'Giant'], ['truck', 'Truck'], ['saucer', 'UFO'], ['car', 'Rammer']];
+const CARDS = [['giant', 'Giant'], ['truck', 'Truck'], ['saucer', 'UFO'], ['car', 'Rammer'], ['skeletons', 'Skeletons'], ['warriors', 'Warriors'], ['golem', 'Golem'], ['bomb', 'Bomb'], ['bats', 'Bats'], ['turtle', 'Turtle'], ['giant-green', 'Armored giant'], ['giant-viking', 'Viking giant']];
+/** The character cards (the game's UnitIcons): their model (public/mob/models/characters/), how many in the picture. */
+const CHARACTERS = { skeletons: { model: 'skeleton-minion', count: 3 }, warriors: { model: 'skeleton-warrior', count: 1 }, golem: { model: 'golem', count: 1, baked: true }, bomb: { model: 'stone-monster', count: 1, baked: true }, bats: { model: 'bat', count: 1, baked: true }, turtle: { model: 'turtle', count: 1, baked: true } };
 /** The drawers left open (kept as the form's drawn again). */
 const openDrawers = new Set();
 
@@ -49,9 +52,32 @@ function renderPicture(kind, giantColour) {
             previewRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
             previewRenderer.setSize(256, 256);
         }
-        const loader = new GLTFLoader();
+        const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
         let object;
-        if (kind === 'giant') {
+        if (CHARACTERS[kind]) {
+            // A character card: its model a little way into its run (a few of them for a batch).
+            const { model, count, baked } = CHARACTERS[kind];
+            if (baked) {
+                // Baked poses (one mesh each): one of them.
+                const gltf = await loader.loadAsync(`/models/characters/${model}.glb`);
+                object = gltf.scene.getObjectByName('pose_2') ?? gltf.scene.getObjectByName('pose_0') ?? gltf.scene;
+                if (object !== gltf.scene) gltf.scene.remove(object);
+            }
+            const [gltf, rig] = baked ? [null, null] : await Promise.all([loader.loadAsync(`/models/characters/${model}.glb`), loader.loadAsync('/models/characters/rig-medium.glb')]);
+            const clip = rig ? rig.animations.find((a) => a.name === 'Running_A') ?? rig.animations[0] : null;
+            if (!baked) object = new THREE.Group();
+            for (let k = 0; !baked && k < count; k++) {
+                const figure = cloneSkinned(gltf.scene);
+                if (clip) {
+                    const mixer = new THREE.AnimationMixer(figure);
+                    mixer.clipAction(clip).play();
+                    mixer.setTime(clip.duration * (0.25 + k * 0.3));
+                }
+                const side = count > 1 ? k - (count - 1) / 2 : 0;
+                figure.position.set(side * 0.9, 0, side === 0 ? 0.4 : 0);
+                object.add(figure);
+            }
+        } else if (kind === 'giant') {
             const [gltf, anims] = await Promise.all([loader.loadAsync('/models/mob/mob.glb'), loader.loadAsync('/models/mob/mob-anims.glb')]);
             object = cloneSkinned(gltf.scene);
             const team = new THREE.Color(giantColour);
@@ -171,6 +197,7 @@ export function buildSettingsTab(panel, { el, api, toast, statusLine }) {
 
     function render() {
         const s = settings;
+        s.camera ??= { pitchDeg: 50, yawDeg: 0, fov: 46, homePitchDeg: 52 };
         const houses = el('input', { type: 'checkbox', checked: s.housesBlockReds });
         houses.addEventListener('change', () => {
             s.housesBlockReds = houses.checked;
@@ -184,6 +211,12 @@ export function buildSettingsTab(panel, { el, api, toast, statusLine }) {
             card('Levels',
                 number(s, 'loopHarder', 'each loop harder', 'After the last level they play again: each time round this much harder (0.15 = 15%)', 0.05),
                 number(s, 'startCoins', 'new player coins', 'The coins a new player starts with', 10)),
+            card('Camera',
+                number(s.camera, 'pitchDeg', 'battle tilt', 'How far down the battle camera looks, in degrees (90: straight down)', 1),
+                number(s.camera, 'yawDeg', 'battle turn', 'The battle camera turned round the field, in degrees (0: straight down it, from behind the cannon)', 1),
+                number(s.camera, 'fov', 'field of view', 'The battle camera\'s field of view, in degrees (wider: more of the field, smaller)', 1),
+                number(s.camera, 'homePitchDeg', 'main screen tilt', 'How far down the main screen\'s camera looks at the map or the arena, in degrees', 1),
+                el('p', { class: 'hint' }, 'The battle debug panel\'s Camera sliders try these live (they start from here).')),
             card('Coins',
                 number(s, 'loseCoins', 'for a loss', 'The coins a lost battle still gives', 5),
                 number(s, 'replayReward', 'replay share', 'A replayed level (one already beaten) pays this share of its reward (0.2 = 20%)', 0.05)),

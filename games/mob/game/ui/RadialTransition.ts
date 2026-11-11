@@ -14,6 +14,7 @@ import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { MobAudio } from '../audio/MobAudio';
 import { label } from './UiParts';
+import { Pattern } from './Pattern';
 
 const DURATION_SEC = 0.5;
 const EASE = 'power2.inOut';
@@ -29,26 +30,42 @@ const RING_WIDTH = 5;
 const SMOOTH_FRAMES = 6;
 const SMOOTH_MS = 45;
 const MAX_WAIT_MS = 2500;
+/** The most the cover waits for the new screen's loading (a battle's card characters) before it opens anyway. */
+const LOAD_WAIT_MS = 8000;
+
+/** The wipe's inside: the game's moving pattern in Mob's blue. */
+const LOOK = { top: 0x5a86ff, bottom: 0x2448c8, strength: 0.11, tile: 110, speed: 22 };
 
 export class RadialTransition {
+    /** The wipe's shape (the pattern's mask), the pattern, and the rim and ring drawn round the shape. */
     private readonly graphics = new PIXI.Graphics();
+    private readonly pattern = new Pattern(LOOK);
+    private readonly rims = new PIXI.Graphics();
+    private readonly tick = (): void => this.pattern.update(gsap.ticker.deltaRatio() / 60);
     private readonly badge = new PIXI.Container();
     private badgeTweens: gsap.core.Animation[] = [];
 
     public constructor(game: Game) {
-        this.graphics.eventMode = 'static';
-        this.graphics.visible = false;
+        this.pattern.eventMode = 'static';
+        this.pattern.mask = this.graphics;
+        this.pattern.visible = false;
+        this.rims.eventMode = 'none';
         this.badge.eventMode = 'none';
         this.badge.visible = false;
-        game.popupLayer.addChild(this.graphics, this.badge);
+        const screen = Game.overlayScreenData;
+        this.pattern.place(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height);
+        game.popupLayer.addChild(this.pattern, this.graphics, this.rims, this.badge);
+        gsap.ticker.add(this.tick);
     }
 
-    /** Covers the screen, runs `swap` (the new screen built underneath), reveals it, and cleans up. */
-    public static async go(game: Game, title: string, subtitle: string, swap: () => void): Promise<void> {
+    /** Covers the screen, runs `swap` (the new screen built underneath: what it returns, waited for, LOAD_WAIT_MS at
+     *  most), reveals it, and cleans up. */
+    public static async go(game: Game, title: string, subtitle: string, swap: () => void | Promise<unknown>): Promise<void> {
         const transition = new RadialTransition(game);
         MobAudio.play('whoosh');
         await transition.cover(title, subtitle);
-        swap();
+        const loading = swap();
+        if (loading) await Promise.race([loading.catch(() => undefined), new Promise((resolve) => setTimeout(resolve, LOAD_WAIT_MS))]);
         await transition.reveal();
         transition.destroy();
     }
@@ -64,9 +81,10 @@ export class RadialTransition {
 
     private drawCircle(radius: number): void {
         const { x, y } = this.center;
-        this.graphics.clear().beginFill(FILL_COLOR).drawCircle(x, y, radius).endFill();
+        this.graphics.clear().beginFill(FILL_COLOR).drawCircle(x, y, Math.max(1, radius)).endFill();
+        this.rims.clear();
         if (radius > RIM_WIDTH) {
-            this.graphics.lineStyle(RING_WIDTH, RING_COLOR).drawCircle(x, y, radius - RIM_WIDTH / 2 - RING_WIDTH)
+            this.rims.lineStyle(RING_WIDTH, RING_COLOR).drawCircle(x, y, radius - RIM_WIDTH / 2 - RING_WIDTH)
                 .lineStyle(RIM_WIDTH, RIM_COLOR).drawCircle(x, y, radius).lineStyle(0);
         }
     }
@@ -74,7 +92,7 @@ export class RadialTransition {
     /** Grows the circle over the screen, then the destination pops in. */
     public cover(title: string, subtitle: string): Promise<void> {
         const progress = { radius: 0 };
-        this.graphics.visible = true;
+        this.pattern.visible = true;
         return new Promise((resolve) => {
             gsap.to(progress, {
                 radius: this.maxRadius + RIM_WIDTH,
@@ -84,7 +102,8 @@ export class RadialTransition {
                 onComplete: () => {
                     const { x, y } = this.center;
                     this.graphics.clear().beginFill(FILL_COLOR).drawCircle(x, y, this.maxRadius * HOST_MARGIN_SCALE).endFill();
-                    this.showBadge(title, subtitle);
+                    this.rims.clear();
+                    if (title || subtitle) this.showBadge(title, subtitle);
                     // A frame drawn covered before the caller's heavy work (the new scene) stalls it.
                     requestAnimationFrame(() => resolve());
                 },
@@ -115,7 +134,7 @@ export class RadialTransition {
         const maxRadius = this.maxRadius;
         const host = maxRadius * HOST_MARGIN_SCALE;
         const progress = { radius: 0 };
-        this.hideBadge();
+        if (this.badge.visible) this.hideBadge();
         return new Promise((resolve) => {
             gsap.to(progress, {
                 radius: maxRadius + RIM_WIDTH,
@@ -127,14 +146,16 @@ export class RadialTransition {
                     this.graphics.clear().beginFill(FILL_COLOR).drawRect(x - host, y - host, host * 2, host * 2);
                     if (progress.radius > 1) this.graphics.beginHole().drawCircle(x, y, progress.radius).endHole();
                     this.graphics.endFill();
+                    this.rims.clear();
                     if (progress.radius > 1) {
-                        this.graphics.lineStyle(RING_WIDTH, RING_COLOR).drawCircle(x, y, progress.radius + RIM_WIDTH / 2 + RING_WIDTH)
+                        this.rims.lineStyle(RING_WIDTH, RING_COLOR).drawCircle(x, y, progress.radius + RIM_WIDTH / 2 + RING_WIDTH)
                             .lineStyle(RIM_WIDTH, RIM_COLOR).drawCircle(x, y, progress.radius).lineStyle(0);
                     }
                 },
                 onComplete: () => {
                     this.graphics.clear();
-                    this.graphics.visible = false;
+                    this.rims.clear();
+                    this.pattern.visible = false;
                     resolve();
                 },
             });
@@ -173,6 +194,9 @@ export class RadialTransition {
 
     public destroy(): void {
         this.killBadge();
+        gsap.ticker.remove(this.tick);
+        this.pattern.destroy({ children: true });
+        this.rims.destroy();
         this.graphics.destroy();
         this.badge.destroy({ children: true });
     }

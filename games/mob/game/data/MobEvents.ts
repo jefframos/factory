@@ -126,7 +126,7 @@ export const MobEvents = {
         measure('level', number, 'retry');
     },
 
-    unitMade(unit: 'giant' | 'truck' | 'car' | 'ufo'): void {
+    unitMade(unit: string): void {
         measure('unit', unit, 'make');
     },
 

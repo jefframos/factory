@@ -25,9 +25,10 @@ import { UpgradeKind } from '../data/MobConfig';
 import { COIN_BAR, GlossyButton, fillCoinBar, framePlane, glossyButton, iconButton, iconSprite, label, tappable } from './UiParts';
 import { UpgradeCard, UPGRADE_CARD } from './UpgradeCard';
 import { AreaBar, AreaView } from './AreaBar';
-import { CardTray, CARD } from './CardTray';
+import { CardTray, CARD, TRAY_WIDTH } from './CardTray';
 import { CardReveal } from './CardReveal';
 import { CardKind } from '../data/Settings';
+import { cardTile } from './CardTile';
 import { MobAudio } from '../audio/MobAudio';
 import { ZoneConfig } from '../data/LevelList';
 
@@ -42,6 +43,30 @@ const EMBLEM_LOST_DROP = 34;
 const EMBLEM_LEVEL_Y = 48;
 /** The mute button (top right): its size, the gap to the corner, and its icon's scale (128 px icons). */
 const MUTE = { size: 60, margin: 14, icon: 0.55 / 128 };
+/** HOME's call-out on the end card: its glow's size, the hand's. */
+const HOME_CALL = { glow: 230, hand: 96 };
+/** The dark band at the top, behind the HUD: how tall, its colour, how dark at its top (it fades to nothing). */
+const TOP_SHADE = { height: 240, colour: 0x050a26, alpha: 0.7 };
+
+/** A vertical fade, white at the top to clear (tinted: the top band's). */
+let shadeTexture: PIXI.Texture | null = null;
+function topShadeTexture(): PIXI.Texture {
+    if (shadeTexture) return shadeTexture;
+    const canvas = document.createElement('canvas');
+    canvas.width = 4;
+    canvas.height = 128;
+    const context = canvas.getContext('2d')!;
+    const fade = context.createLinearGradient(0, 0, 0, 128);
+    fade.addColorStop(0, 'rgba(255,255,255,1)');
+    fade.addColorStop(0.45, 'rgba(255,255,255,0.55)');
+    fade.addColorStop(1, 'rgba(255,255,255,0)');
+    context.fillStyle = fade;
+    context.fillRect(0, 0, 4, 128);
+    shadeTexture = PIXI.Texture.from(canvas);
+    return shadeTexture;
+}
+/** GIVE UP: the gap under the mute button; its are-you-sure box's size. */
+const GIVE_UP = { gap: 12, width: 480, height: 300 };
 /** The first-touch hint: the glove's middle this far under the cannon's, sweeping this far either way of it. */
 const HINT = { down: 70, sweep: 110 };
 
@@ -69,6 +94,8 @@ const UPGRADE_KINDS: UpgradeKind[] = ['fire', 'capacity', 'recharge'];
  * The end card's panel, from the badge's middle down (design px): where each part sits, how far it reaches up and
  * down, and where the ribbon's bottom goes on the screen (a share of its height). A short screen scales it all down.
  */
+/** A win's copies card beside the coins: how far either side of the middle the two go, the card's size. */
+const COPIES_CARD = { x: 78, scale: 0.72 };
 const PANEL = {
     emblem: 0, rays: 10, ribbon: 125, rewards: 225, reward: 322, rewardScale: 0.8, upgradeInfo: 414, upgrades: 562,
     area: 754, buttons: 878, top: -150, bottom: 927, ribbonBottomAt: 0.35, margin: 14,
@@ -89,6 +116,10 @@ export interface EndCard {
     finished: { zone: ZoneConfig; number: number; total: number } | null;
     /** Cards won for the first time: revealed over the card (CardReveal). */
     newCards?: CardKind[];
+    /** Versus mode open and not tried yet: HOME called out (it leads to its tutorial). */
+    homeCall?: boolean;
+    /** A win's card copies (one card's: MobSave.storyCopies), shown beside the coins. */
+    copies?: { kind: CardKind; count: number } | null;
 }
 
 
@@ -107,6 +138,10 @@ export class MobHud extends PIXI.Container {
     private battleNumber = 1;
     private readonly coinPill = new PIXI.Container();
     private readonly mute = new PIXI.Container();
+    /** GIVE UP (under the mute button, while a battle's on), and its are-you-sure box. */
+    private readonly giveUp = new PIXI.Container();
+    private readonly giveUpAsk = new PIXI.Container();
+    private onGiveUp: () => void = () => undefined;
     private readonly coinText = label(COIN_BAR.textSize, 0xffffff);
     private readonly hint = new PIXI.Container();
     /** The hint has been put by the cannon (placeEnergy). */
@@ -114,6 +149,8 @@ export class MobHud extends PIXI.Container {
     private readonly hand = iconSprite('Tutorial_Hand', 120);
     private readonly go = iconSprite('ActionText_Go', 300);
     private readonly vignette = new PIXI.Graphics();
+    /** The dark band from the top of the screen, behind the HUD (it reads over a bright field). */
+    private readonly topShade = new PIXI.Sprite(topShadeTexture());
     private readonly pops = new PIXI.Container();
     /** Giants' hit counts (a few labels reused). */
     private readonly giantLabels = new PIXI.Container();
@@ -131,6 +168,8 @@ export class MobHud extends PIXI.Container {
     private readonly dividerLeft = framePlane('Title_Line01_Divider_Left', 170, 30, 0.7);
     private readonly dividerRight = framePlane('Title_Line01_Divider_Right', 170, 30, 0.7);
     private readonly rewardCard = new PIXI.Container();
+    /** A win's card copies, beside the coins (its card, ×N). */
+    private readonly copiesCard = new PIXI.Container();
     private readonly rewardText = label(30);
     private readonly upgradeInfo = label(24);
     private readonly upgrades = new PIXI.Container();
@@ -138,6 +177,8 @@ export class MobHud extends PIXI.Container {
     private readonly area = new AreaBar();
     private readonly next: GlossyButton;
     private readonly home: GlossyButton;
+    /** HOME's call-out (a glow, a hand, VERSUS!): the end card's while versus mode waits to be tried. */
+    private readonly homeCall = new PIXI.Container();
     // The energy bar.
     private readonly energy = new PIXI.Container();
     private readonly energyBack = framePlane('Slider_Play01_Bg', ENERGY.width, ENERGY.height, 1);
@@ -208,6 +249,7 @@ export class MobHud extends PIXI.Container {
         // Its position is its bottom middle (placeEnergy).
         this.energy.pivot.set(ENERGY.width / 2, ENERGY.height);
         this.buildMute();
+        this.buildGiveUp();
         this.tutorialDim.visible = false;
         this.tutorialHint.visible = false;
         this.tutorialHint.eventMode = 'none';
@@ -215,7 +257,9 @@ export class MobHud extends PIXI.Container {
         this.tutorialHand.anchor.set(0.3, 0.05);
         this.tutorialHand.rotation = CARD_TUTORIAL.rotation;
         this.tutorialHint.addChild(this.tutorialHand);
-        this.addChild(this.vignette, this.giantLabels, this.pops, this.top, this.coinPill, this.energy, this.tutorialDim, this.cardTray, this.tutorialHint, this.mute);
+        this.topShade.tint = TOP_SHADE.colour;
+        this.topShade.alpha = TOP_SHADE.alpha;
+        this.addChild(this.topShade, this.vignette, this.giantLabels, this.pops, this.top, this.coinPill, this.energy, this.tutorialDim, this.cardTray, this.tutorialHint, this.mute, this.giveUp, this.giveUpAsk);
 
         // The hint: the glove sweeping under the cannon (placeEnergy puts it there).
         this.hand.rotation = -0.3;
@@ -250,7 +294,8 @@ export class MobHud extends PIXI.Container {
         });
         this.next = glossyButton(BUTTONS.next, BUTTONS.height, 'CONTINUE', 'Button01_l_Sky');
         tappable(this.next, onNext, null);
-        this.home = iconButton(BUTTONS.home, BUTTONS.height, 'Button01_l_Red', 'PictoIcon_Home_1', 46);
+        // (Blue: going home isn't a bad thing, red would say it is.)
+        this.home = iconButton(BUTTONS.home, BUTTONS.height, 'Button01_l_Blue', 'PictoIcon_Home_1', 46);
         tappable(this.home, onHome);
         // Side by side, centred together: HOME on the left.
         const row = BUTTONS.home + BUTTONS.gap + BUTTONS.next;
@@ -264,12 +309,34 @@ export class MobHud extends PIXI.Container {
         this.dividerLeft.position.set(-100 - 170, PANEL.rewards - 15);
         this.dividerRight.position.set(100, PANEL.rewards - 15);
         this.rewardCard.y = PANEL.reward;
+        this.copiesCard.y = PANEL.reward;
         this.upgradeInfo.y = PANEL.upgradeInfo;
         this.upgrades.y = PANEL.upgrades;
         this.area.y = PANEL.area;
         this.next.y = PANEL.buttons;
         this.home.y = PANEL.buttons;
-        this.panel.addChild(this.rays, this.emblem, this.ribbon, this.dividerLeft, this.dividerRight, this.rewardsTitle, this.rewardCard, this.upgradeInfo, this.upgrades, this.area, this.home, this.next);
+        // The call-out round HOME: a glow behind it, VERSUS! over it, a hand tapping at it.
+        const callGlow = iconSprite('Glow_Circle01', HOME_CALL.glow);
+        callGlow.tint = 0xffd23f;
+        callGlow.blendMode = PIXI.BLEND_MODES.ADD;
+        // VERSUS! on a green plate over HOME.
+        const callWords = label(24);
+        callWords.text = 'VERSUS!';
+        const callPlate = framePlane('BasicFrame_Round20', Math.max(120, callWords.width + 32), 42, 0.5);
+        callPlate.tint = 0x2fd35c;
+        callPlate.position.set(-callPlate.width / 2, -BUTTONS.height / 2 - 30 - 21);
+        callWords.y = -BUTTONS.height / 2 - 30 - 1;
+        const callHand = iconSprite('Tutorial_Hand', HOME_CALL.hand);
+        callHand.position.set(BUTTONS.home * 0.45, BUTTONS.height * 0.45);
+        callHand.name = 'hand';
+        this.homeCall.addChild(callGlow, callPlate, callWords);
+        this.homeCall.position.set(this.home.x, this.home.y);
+        this.homeCall.visible = false;
+        this.homeCall.addChild(callHand);
+        this.panel.addChild(this.rays, this.emblem, this.ribbon, this.dividerLeft, this.dividerRight, this.rewardsTitle, this.rewardCard, this.copiesCard, this.upgradeInfo, this.upgrades, this.area, this.homeCall, this.home, this.next);
+        // (The hand over HOME, not under it.)
+        const hand = this.homeCall.getChildByName('hand');
+        if (hand) this.panel.addChild(hand);
         this.card.addChild(this.dim, this.panel);
         this.card.visible = false;
         this.addChild(this.card, this.reveal);
@@ -284,8 +351,16 @@ export class MobHud extends PIXI.Container {
         this.top.scale.set(scale);
         this.top.position.set(center.x - (BAR.width * scale) / 2, topLeft.y + 72);
         this.coinPill.position.set(topLeft.x + 46, topLeft.y + 44);
+        this.topShade.position.set(topLeft.x, topLeft.y);
+        this.topShade.width = width;
+        this.topShade.height = TOP_SHADE.height;
         // The mute button in the top right corner.
         this.mute.position.set(topLeft.x + width - MUTE.margin - MUTE.size / 2, topLeft.y + 44);
+        // Under the mute button; in an arena match (its life bars across the top there) left of it.
+        if (this.duel) this.giveUp.position.set(this.mute.x - MUTE.size - GIVE_UP.gap, this.mute.y);
+        else this.giveUp.position.set(this.mute.x, this.mute.y + MUTE.size + GIVE_UP.gap);
+        this.giveUpAsk.position.copyFrom(center);
+        (this.giveUpAsk.getChildByName('dim') as PIXI.Graphics | null)?.clear().beginFill(0x0b1030, 0.72).drawRect(topLeft.x - center.x, topLeft.y - center.y, width, height).endFill();
         // Till the cannon's been seen (placeEnergy then keeps it just under it).
         if (!this.hintPlaced) this.hint.position.set(center.x, topLeft.y + height * 0.62);
         this.go.position.set(center.x, center.y - 80);
@@ -301,7 +376,7 @@ export class MobHud extends PIXI.Container {
         this.panel.position.set(center.x, y);
         // Across the bottom, centred (narrower on a narrow screen).
         // The cards across the bottom (narrower on a narrow screen).
-        const trayScale = Math.min(1, (width - 30) / (4 * CARD.width + 3 * CARD.gap));
+        const trayScale = Math.min(1, (width - 30) / TRAY_WIDTH);
         this.cardTray.scale.set(trayScale);
         this.cardTray.position.set(center.x, bottomLeft.y - TRAY.bottom - (CARD.height / 2) * trayScale);
         this.tutorialDim.clear().beginFill(CARD_TUTORIAL.dim, CARD_TUTORIAL.alpha).drawRect(topLeft.x, topLeft.y, width, height).endFill();
@@ -329,9 +404,60 @@ export class MobHud extends PIXI.Container {
         });
     }
 
-    /** Whether a screen point (CSS px) is on a HUD button the field shouldn't also take (the mute button). */
+    /** GIVE UP: the white flag on a round button like the mute's; a tap asks first (GIVE UP? YES / NO). */
+    private buildGiveUp(): void {
+        const back = PIXI.Sprite.from('Button_Round03_Dark');
+        back.anchor.set(0.5);
+        back.width = back.height = MUTE.size;
+        const flag = iconSprite('PictoIcon_Flag', MUTE.size * 0.55);
+        this.giveUp.addChild(back, flag);
+        this.giveUp.visible = false;
+        tappable(this.giveUp, () => this.askGiveUp(true));
+        // The box: over a dim (a tap there: NO), its question, YES (red) and NO.
+        const dim = new PIXI.Graphics();
+        dim.name = 'dim';
+        dim.eventMode = 'static';
+        dim.on('pointertap', () => this.askGiveUp(false));
+        const box = framePlane('BorderFrame_Round24', GIVE_UP.width, GIVE_UP.height, 1);
+        box.tint = 0x1b2a5a;
+        box.position.set(-GIVE_UP.width / 2, -GIVE_UP.height / 2);
+        box.eventMode = 'static';
+        const question = label(44);
+        question.text = 'GIVE UP?';
+        question.y = -GIVE_UP.height / 2 + 64;
+        const note = label(22, 0xc9d3ff);
+        note.text = 'You will lose this battle';
+        note.y = question.y + 52;
+        const yes = glossyButton(190, 84, 'YES', 'Button01_l_Red');
+        yes.position.set(-105, GIVE_UP.height / 2 - 70);
+        tappable(yes, () => {
+            this.askGiveUp(false);
+            this.onGiveUp();
+        });
+        const no = glossyButton(190, 84, 'NO', 'Button01_l_Sky');
+        no.position.set(105, GIVE_UP.height / 2 - 70);
+        tappable(no, () => this.askGiveUp(false));
+        this.giveUpAsk.addChild(dim, box, question, note, yes, no);
+        this.giveUpAsk.visible = false;
+    }
+
+    /** The are-you-sure box up (or down). */
+    private askGiveUp(open: boolean): void {
+        this.giveUpAsk.visible = open;
+        if (open) gsap.fromTo(this.giveUpAsk.scale, { x: 0.7, y: 0.7 }, { x: 1, y: 1, duration: 0.3, ease: 'back.out(2.2)' });
+    }
+
+    /** GIVE UP shown (a battle on) or not; `onGiveUp`: YES (the battle's lost). */
+    public setGiveUp(shown: boolean, onGiveUp?: () => void): void {
+        if (onGiveUp) this.onGiveUp = onGiveUp;
+        this.giveUp.visible = shown;
+        if (!shown) this.giveUpAsk.visible = false;
+    }
+
+    /** Whether a screen point (CSS px) is on a HUD button the field shouldn't also take (the mute button, GIVE UP, its box). */
     public onButton(screenX: number, screenY: number): boolean {
-        return (this.mute.visible && this.mute.getBounds().contains(screenX, screenY)) || this.cardTray.hits(screenX, screenY);
+        if (this.giveUpAsk.visible) return true;
+        return (this.mute.visible && this.mute.getBounds().contains(screenX, screenY)) || (this.giveUp.visible && this.giveUp.getBounds().contains(screenX, screenY)) || this.cardTray.hits(screenX, screenY);
     }
 
     /** Where the top block (HP bar, badge, level name) ends, in screen pixels (layout() first). */
@@ -418,6 +544,7 @@ export class MobHud extends PIXI.Container {
     public setDuel(on: boolean): void {
         this.duel = on;
         this.top.visible = !on;
+        this.layout();
     }
 
     public setTitle(battle: number, name: string): void {
@@ -547,7 +674,22 @@ export class MobHud extends PIXI.Container {
         this.ribbonText.text = card.won ? 'VICTORY' : 'DEFEAT';
         this.rewardText.text = `${card.reward}`;
         this.rewardCard.alpha = card.won || card.reward > 0 ? 1 : 0.55;
+        // Copies won: their card beside the coins (the two side by side).
+        this.copiesCard.removeChildren().forEach((child) => child.destroy({ children: true }));
+        this.rewardCard.x = card.copies ? -COPIES_CARD.x : 0;
+        this.copiesCard.x = COPIES_CARD.x;
+        this.copiesCard.visible = !!card.copies;
+        if (card.copies) {
+            const tile = cardTile(card.copies.kind, COPIES_CARD.scale);
+            const count = label(30);
+            count.anchor.set(1, 1);
+            count.text = `×${card.copies.count}`;
+            count.position.set(52, 64);
+            this.copiesCard.addChild(tile, count);
+            gsap.fromTo(this.copiesCard.scale, { x: 0, y: 0 }, { x: 1, y: 1, duration: 0.4, delay: 0.45, ease: 'back.out(3)' });
+        }
         this.next.words.text = card.won ? 'CONTINUE' : 'RETRY';
+        this.callHome(!!card.homeCall);
         this.refreshUpgrade(card);
         this.area.set(card.area, card.won ? card.finished : null);
         this.area.play(0.7);
@@ -562,6 +704,26 @@ export class MobHud extends PIXI.Container {
         // A card won for the first time: a big deal, revealed over it once it's in.
         this.revealCall?.kill();
         this.revealCall = card.newCards?.length ? gsap.delayedCall(1.1, () => this.reveal.play(card.newCards!)) : null;
+    }
+
+    /** HOME called out (or not): its glow and VERSUS!, a hand tapping at it, the button bouncing. */
+    private callHome(on: boolean): void {
+        const hand = this.panel.getChildByName('hand') as PIXI.Sprite | null;
+        gsap.killTweensOf([this.home.scale, this.homeCall, hand].filter(Boolean));
+        this.homeCall.visible = on;
+        if (hand) hand.visible = on;
+        this.home.scale.set(1);
+        if (!on) return;
+        gsap.to(this.home.scale, { x: 1.14, y: 1.14, duration: 0.45, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        gsap.fromTo(this.homeCall, { alpha: 0.55 }, { alpha: 1, duration: 0.6, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        if (hand) {
+            // On HOME's left (nothing's there: CONTINUE's on its right; under it, it'd be off the screen's bottom),
+            // mirrored and turned to point down-right at it.
+            hand.scale.x = -Math.abs(hand.scale.x);
+            hand.rotation = Math.PI / 2;
+            hand.position.set(this.home.x - BUTTONS.home * 0.62, this.home.y - BUTTONS.height * 0.05);
+            gsap.to(hand, { x: hand.x + 10, y: hand.y + 10, duration: 0.4, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        }
     }
 
     public refreshUpgrade(card: Pick<EndCard, 'upgrades' | 'coins'>): void {
@@ -579,6 +741,15 @@ export class MobHud extends PIXI.Container {
     /** The unit cards the player has (`fresh`: just unlocked). */
     public setCards(kinds: readonly CardKind[], fresh: readonly CardKind[] = []): void {
         this.cardTray.setCards(kinds, fresh);
+    }
+
+    /** A used card's place taken by the next waiting one; the waiting pile (the next, how many). */
+    public replaceCard(old: CardKind, next: CardKind): void {
+        this.cardTray.replace(old, next);
+    }
+
+    public setCardPile(next: CardKind | null, waiting: number): void {
+        this.cardTray.setPile(next, waiting);
     }
 
     public setCardCharge(kind: CardKind, charge: number): void {

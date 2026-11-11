@@ -41,17 +41,27 @@ import { MobHud } from '../ui/MobHud';
 import { applyBend, bendDrop, updateBend } from '../services/Bend';
 import { CARD_KINDS, CardKind, SETTINGS, cardStat } from '../data/Settings';
 import { ArenaConfig, arenaBattle } from '../data/ArenaConfig';
-import { ARENAS_BY_ID } from '../data/Arenas';
-import { Ladder, Opponent, SkillId, opponentFor, tierFor } from '../data/ArenaLadder';
+import { ARENAS_BY_ID, arenaFor } from '../data/Arenas';
+import { Ladder, Opponent, SkillId, opponentFor, tierBadge, tierFor } from '../data/ArenaLadder';
 import ladderFile from '../../ui/arena-ladder.json';
 import { DuelRobot } from '../sim/DuelRobot';
 import { SKILLS } from '../sim/Grading';
-import { BuildingBar, DuelHud } from '../ui/DuelHud';
+import { BuildingBar, DuelEnd, DuelHud } from '../ui/DuelHud';
+import { CharacterView } from '../battle/CharacterView';
+import { HAND } from '../ui/CardTray';
+import { CARD_NAMES } from '../ui/CardFace';
+import { CHARACTER_CARDS } from '../battle/Battle';
+import { RadialTransition } from '../ui/RadialTransition';
+import { AVATARS } from '../data/Profile';
 import { MatchPlayer } from '../ui/Matchmaking';
 import { RED, Target } from '../battle/Battle';
 import { matchOver, storyWon } from '../data/Ranking';
 
 const MODEL_BASE = './mob/models/mob/';
+/** A new player's first counted versus matches (how many), made easy: the opponent's fire rate and buildings' hits, shares. */
+const EASY_MATCHES = { count: 3, fire: 0.35, buildings: 0.55 };
+/** The debug panel's FAST CARDS: the cards charge this many times as fast. */
+const DEBUG_CARD_PACE = 4;
 
 /**
  * The URL can pin what's played (the editor's live preview uses these): ?level=<id> plays that level (levels/<id>.json)
@@ -66,7 +76,7 @@ const DEBUG_PANEL = 'mob.debug';
  * (world units), moving the framing without changing the angle. `distance` is for a 9:16 screen: narrower ones move
  * back so the field's width still fits.
  */
-const CAMERA = { pitchDeg: 50, fov: 46, distance: 15, offsetX: 0, offsetY: 6 };
+const CAMERA = { pitchDeg: SETTINGS.camera?.pitchDeg ?? 50, yawDeg: SETTINGS.camera?.yawDeg ?? 0, fov: SETTINGS.camera?.fov ?? 46, distance: 15, offsetX: 0, offsetY: 6 };
 /** What the camera looks at: this share of the way up the field (-12.5 on the default 24), set per field in resize(). */
 const CAMERA_TARGET = new THREE.Vector3(0, 0, -12.5);
 const TARGET_SHARE = 12.5 / FIELD.length;
@@ -131,6 +141,12 @@ export default class MobScene extends ThreeScene {
     /** Resolves once the crowd's model is loaded and baked (the loading screen waits for it). */
     public readonly ready: Promise<void>;
     private readonly crowd = new CrowdView();
+    /** The debug panel's switches. */
+    private readonly debugFlags = { fastCards: false };
+    /** The card units with characters of their own (skeletons...): loaded only when a battle's cards can make them. */
+    private readonly characters = new CharacterView();
+    /** The characters this battle's cards need, loaded (the transition waits for it). */
+    private charactersReady: Promise<void> = Promise.resolve();
     private readonly hud: MobHud;
     /** Debug (SHOW_FRAMING): the corner spears and the safe area's outline. */
     private readonly framingSpears = new THREE.Group();
@@ -185,9 +201,10 @@ export default class MobScene extends ThreeScene {
         const sun = new THREE.DirectionalLight(0xffffff, LIGHT.sun);
         sun.position.set(6, 14, 8);
         this.threeScene.add(sun);
-        this.threeScene.add(this.crowd.group);
+        this.threeScene.add(this.crowd.group, this.characters.group);
 
         this.hud = new MobHud(() => this.nextBattle(), (kind) => this.buyUpgrade(kind), () => this.onHome(), (kind) => this.playCard(kind));
+        this.hud.setGiveUp(false, () => this.surrender());
         this.addChild(this.hud);
         this.duelHud = new DuelHud(() => this.nextBattle(), () => this.onHome());
         this.duelHud.visible = false;
@@ -198,8 +215,9 @@ export default class MobScene extends ThreeScene {
             this.addChild(this.safeFrame);
             this.threeScene.add(this.framingSpears);
         }
-        this.ready = this.crowd.load(MODEL_BASE, TUNING.maxMobs + 64);
+        const crowd = this.crowd.load(MODEL_BASE, TUNING.maxMobs + 64);
         this.startBattle();
+        this.ready = Promise.all([crowd, this.charactersReady]).then(() => undefined);
         PlatformHandler.instance.onPause.add(this.onPlatformPause);
         PlatformHandler.instance.onResume.add(this.onPlatformResume);
         if (QUERY.get('preview')) {
@@ -328,13 +346,20 @@ export default class MobScene extends ThreeScene {
                 const block = this.battle.blocks[b];
                 this.popAt('BROKEN!', block.centreX, 1.8, block.centreZ, 0xffd08a, 40);
             },
-            giant: (team, x, z, kind) => {
-                if (team === BLUE && !this.pinned.config) MobEvents.unitMade(kind < 0 ? 'ufo' : kind === TRUCK ? 'truck' : kind === CAR ? 'car' : 'giant');
+            giant: (team, x, z, kind, card) => {
+                if (team === BLUE && !this.pinned.config) MobEvents.unitMade(card ?? (kind < 0 ? 'ufo' : kind === TRUCK ? 'truck' : kind === CAR ? 'car' : 'giant'));
                 this.arena.giant(x, z, kind < 0 ? 0xffd23f : team === BLUE ? COLORS.blue : COLORS.red);
                 MobAudio.play('giant', team === BLUE ? 1 : 0.8);
                 this.kick(SHAKE.giant);
-                const word = kind < 0 ? 'UFO!' : kind === TRUCK ? 'TRUCK!' : kind === CAR ? 'RAMMER!' : team === BLUE ? 'GIANT!' : 'RED GIANT!';
+                const word = card ? `${CARD_NAMES[card]}!` : kind < 0 ? 'UFO!' : kind === TRUCK ? 'TRUCK!' : kind === CAR ? 'RAMMER!' : team === BLUE ? 'GIANT!' : 'RED GIANT!';
                 this.popAt(word, x, 2.5, z, kind < 0 ? 0xffd23f : team === BLUE ? 0x9fd8ff : 0xff6b7a, 46);
+            },
+            explode: (team, x, z, radius) => {
+                this.arena.blast(x, z, radius);
+                this.arena.shockwave(x, z, radius, team === BLUE ? 0xffb347 : 0xff6b4a);
+                MobAudio.play('explosion', 0.9);
+                this.kick(SHAKE.bigHit * 1.6);
+                this.popAt('BOOM!', x, 2.6, z, 0xffd23f, 50);
             },
             shockwave: (team, x, z, radius) => {
                 this.arena.shockwave(x, z, radius, team === BLUE ? COLORS.blue : COLORS.red);
@@ -381,7 +406,9 @@ export default class MobScene extends ThreeScene {
         this.battle.firing = false;
         // The field after the battle: its forts are the battle's targets (the events above only fire once it runs).
         // (An arena match's towers are the plain ones: flat colours, no models.)
-        this.arena = new Arena(config, this.battle.targets, theme, undefined, !!spec || !!battleZone(index).plainForts, undefined, this.battle.blueTargets);
+        this.arena = new Arena(config, this.battle.targets, theme, undefined, !spec && !!battleZone(index).plainForts, undefined, this.battle.blueTargets);
+        // Each building's life: the bars over them (DuelHud's), story and arena alike.
+        this.arena.hideTargetLabels();
         this.arena.onLayout = () => this.resize();
         this.threeScene.add(this.arena.group);
         if (SHOW_FRAMING) this.placeFramingSpears();
@@ -393,9 +420,15 @@ export default class MobScene extends ThreeScene {
         this.hud.setTitle(index + 1, config.name);
         this.hud.reset();
         this.dealCards(config);
+        this.charactersReady = this.characters.need(this.charactersNeeded());
         this.hud.setBaseHp(this.battle.baseHp, this.battle.baseHpMax);
         this.hud.setCoins(MobSave.coins);
         this.resize();
+        // Framed again once things have settled (the HUD's words in their font, the scene on the screen at its size):
+        // framed only now, the camera could keep a wrong zoom till the window's next resize.
+        requestAnimationFrame(() => { if (!this.torndown) this.resize(); });
+        gsap.delayedCall(0.35, () => { if (!this.torndown) this.resize(); });
+        void document.fonts?.ready.then(() => { if (!this.torndown) this.resize(); });
     }
 
     /**
@@ -406,12 +439,24 @@ export default class MobScene extends ThreeScene {
     private setUpDuel(spec: DuelSpec | null): void {
         this.duel = null;
         this.hud.setDuel(!!spec);
-        this.duelHud.visible = !!spec;
+        // (The story: just its bars over the buildings.)
+        this.duelHud.visible = true;
+        this.duelHud.setStory(!spec);
         if (!spec) return;
         const player = MobSave.arenaLoadout();
         const record = spec.rating !== undefined ? { rating: spec.rating, streak: 0 } : MobSave.arena;
         const opponent = opponentFor(LADDER, record, player);
         if (spec.ai) opponent.skill = spec.ai;
+        // A new player's first counted matches: the opponent barely fights back (the slowest hands, no cards, a cannon
+        // firing a fraction as fast, buildings with fewer hits).
+        if (spec.counted && MobSave.arena.played < EASY_MATCHES.count) {
+            opponent.skill = 'newbie';
+            opponent.cards = {};
+            this.battle.redFireScale = EASY_MATCHES.fire;
+            for (const target of this.battle.targets) {
+                target.hp = target.hpMax = Math.round(target.hpMax * EASY_MATCHES.buildings);
+            }
+        }
         const red = this.battle.red;
         red.fireLevel = opponent.fire;
         red.capacityLevel = opponent.capacity;
@@ -431,6 +476,11 @@ export default class MobScene extends ThreeScene {
     private placeBuildingBars(): void {
         const b = this.battle;
         const bars: BuildingBar[] = [];
+        // A story level over: no bars (its end card's up, over the field).
+        if (!this.duel && this.state === 'over') {
+            this.duelHud.setBuildingBars(bars);
+            return;
+        }
         const add = (target: Target, blue: boolean): void => {
             if (!target.alive) return;
             const cannon = target.kind === 'cannon';
@@ -442,6 +492,7 @@ export default class MobScene extends ThreeScene {
         b.targets.forEach((target) => add(target, false));
         b.blueTargets.forEach((target) => add(target, true));
         this.duelHud.setBuildingBars(bars);
+        if (!this.duel) return;
         const open = (list: Target[]) => list.some((target) => target.kind === 'cannon' && target.alive && !target.shielded);
         this.arena.showExposed(open(b.blueTargets), open(b.targets));
     }
@@ -457,7 +508,17 @@ export default class MobScene extends ThreeScene {
         // The competition: what it destroyed (each enemy tower, their cannon) and a win (a test isn't counted).
         const towers = this.battle.targets.filter((target) => target.kind !== 'cannon' && !target.alive).length;
         const cannon = !this.battle.timedOut && this.battle.targets.some((target) => target.kind === 'cannon' && !target.alive);
-        const crowns = spec.counted ? matchOver(result === 'won', towers, cannon) : 0;
+        if (spec.counted) matchOver(result === 'won', towers, cannon);
+        // The match's crowns, each side: a tower down 1, the cannon down all 3.
+        const ownTowers = this.battle.blueTargets.filter((target) => target.kind !== 'cannon' && !target.alive).length;
+        const ownCannon = !this.battle.timedOut && this.battle.blueTargets.some((target) => target.kind === 'cannon' && !target.alive);
+        const matchCrowns = { you: cannon ? 3 : Math.min(3, towers), them: ownCannon ? 3 : Math.min(3, ownTowers) };
+        // A counted win: a chest (opened back on the main screen); all three crowns, the profile's tally.
+        let chest: DuelEnd['chest'] = null;
+        if (spec.counted && result === 'won') {
+            chest = MobSave.winChest();
+            if (matchCrowns.you === 3) MobSave.addThreeCrown();
+        }
         // The beaten side's cannon blows up (fallen or not: the clock ran out), in slow motion.
         if (result !== 'draw') {
             const list = result === 'won' ? this.battle.targets : this.battle.blueTargets;
@@ -487,12 +548,16 @@ export default class MobScene extends ThreeScene {
             this.kick(SHAKE.lost);
             MobAudio.play('lose');
         }
-        const own = this.battle.ownHp;
-        const theirs = this.battle.baseHp;
+        const mine = AVATARS[MobSave.avatar % AVATARS.length];
+        const record = after ?? before;
+        const you: MatchPlayer = { name: MobSave.username, face: mine.face, color: mine.color, trophies: record.rating, tier: LADDER.tiers[tierFor(LADDER, record)].name, badge: tierBadge(LADDER, tierFor(LADDER, record)) };
+        // The opponent: online, the "player" found; practice and tests, the bot.
+        const bot = AVATARS[(this.duel.opponent.tierIndex * 3 + 5) % AVATARS.length];
+        const them: MatchPlayer = spec.opponent ?? { name: `BOT · ${SKILLS[this.duel.opponent.skill].name.toUpperCase()}`, face: bot.face, color: bot.color, trophies: before.rating, tier: this.duel.opponent.tier.name, badge: tierBadge(LADDER, this.duel.opponent.tierIndex) };
         gsap.delayedCall(result === 'draw' ? LOST_CARD_DELAY : DUEL_END.card, () => {
             if (this.torndown) return;
             this.duelHud.showEnd({
-                result, own, theirs, crowns,
+                result, you, them, crowns: matchCrowns, chest,
                 rating: after ? { before: before.rating, after: after.rating, tier: LADDER.tiers[tierFor(LADDER, after)].name } : null,
             });
         });
@@ -510,6 +575,14 @@ export default class MobScene extends ThreeScene {
             MobEvents.levelStart(number, info.id, { id: info.zone, first: info.firstInZone }, MobSave.best);
             MobSave.reach(number);
         }
+    }
+
+    /** GIVE UP's YES: the battle (or the match) lost now. */
+    private surrender(): void {
+        if (this.state !== 'playing') return;
+        this.battle.state = 'lost';
+        if (this.duel) this.finishDuel('lost');
+        else this.finish(false);
     }
 
     private finish(won: boolean): void {
@@ -530,6 +603,8 @@ export default class MobScene extends ThreeScene {
         const replay = !this.pinned.config && MobSave.selected < MobSave.battle;
         const reward = won ? Math.round(config.reward * (replay ? SETTINGS.replayReward : 1)) : SETTINGS.loseCoins;
         const newCards = won ? this.unlockCards(config) : [];
+        // A win: copies of one of the player's cards (their levels: the CARDS tab); fewer on a replay.
+        const copies = won && !this.pinned.config ? MobSave.storyCopies(!replay) : null;
         // The area the battle was in, if it was its last (a win opens the next area on the end card).
         const played = MobSave.selected;
         const finished = won && !this.pinned.config && battleInfo(played).lastInZone ? areaProgress(played) : null;
@@ -558,7 +633,8 @@ export default class MobScene extends ThreeScene {
         const card = () => {
             if (this.torndown) return;
             this.hud.showEnd({
-                won, reward, upgrades: this.upgradeViews(), coins: MobSave.coins, newCards,
+                won, reward, upgrades: this.upgradeViews(), coins: MobSave.coins, newCards, copies,
+                homeCall: !this.pinned.config && arenaFor(MobSave.battle + 1, MobSave.bestTrophies).open && !MobSave.arenaTutorial,
                 area: areaProgress(MobSave.selected),
                 finished: finished ? { zone: finished.zone, number: finished.number, total: finished.total } : null,
             });
@@ -569,10 +645,21 @@ export default class MobScene extends ThreeScene {
     }
 
     private nextBattle(): void {
-        MobAudio.play('whoosh');
+        if (this.travelling) return;
         if (!this.lastWon && !this.pinned.config && !this.duel) MobEvents.levelRetry(MobSave.selected + 1);
-        this.startBattle();
+        // The wipe (no words: it's the same screen, just not a dry cut), the next battle built under it.
+        this.travelling = true;
+        void RadialTransition.go(this.game, '', '', () => {
+            if (this.torndown) return undefined;
+            this.startBattle();
+            return this.charactersReady;
+        }).then(() => {
+            this.travelling = false;
+        });
     }
+
+    /** A wipe to the next battle under way (a second tap doesn't start another). */
+    private travelling = false;
 
     private buyUpgrade(kind: UpgradeKind): void {
         if (!MobSave.buy(kind)) return;
@@ -675,8 +762,11 @@ export default class MobScene extends ThreeScene {
         MobEvents.tick(dt);
         this.time += dt;
         this.crowd.update(this.battle, this.time);
+        this.characters.update(this.battle, this.time);
         this.arena.update(this.battle, dt);
         this.hud.setBaseHp(this.battle.baseHp, this.battle.baseHpMax);
+        // GIVE UP while a battle's on (not a robot's watched match).
+        this.hud.setGiveUp(this.state === 'playing' && !this.duel?.watch);
         if (this.duel && this.state === 'waiting' && this.countdown > 0) {
             const before = Math.ceil(this.countdown - 0.5);
             this.countdown -= dt;
@@ -694,6 +784,10 @@ export default class MobScene extends ThreeScene {
         if (this.duel) {
             this.duelHud.setLife(this.battle.ownHp, this.battle.ownHpMax, this.battle.baseHp, this.battle.baseHpMax);
             this.duelHud.setTime(this.battle.timeLeft);
+            this.duelHud.update(dt);
+            this.placeBuildingBars();
+        } else {
+            // A story level: the bars over its buildings.
             this.duelHud.update(dt);
             this.placeBuildingBars();
         }
@@ -717,10 +811,19 @@ export default class MobScene extends ThreeScene {
         super.update(delta);
     }
 
-    /** The battle's cards: the player's (in the cards' order), none charged. */
+    /** The characters this battle can make: its cards' (the player's, and an arena opponent's). */
+    private charactersNeeded(): number[] {
+        const kinds = new Set<CardKind>(this.cards.map((card) => card.kind));
+        if (this.duel) for (const kind of Object.keys(this.duel.opponent.cards) as CardKind[]) kinds.add(kind);
+        return [...kinds].map((kind) => CHARACTER_CARDS[kind]?.look ?? 0).filter((look) => look > 0);
+    }
+
+    /** The battle's cards: the player's battle deck (the CARDS tab's: up to DECK_SIZE; HAND of them in hand, the rest
+     *  waiting their turn), none charged. */
     private dealCards(_config: BattleConfig): void {
-        this.cards = CARD_KINDS.filter((kind) => MobSave.hasCard(kind)).map((kind) => ({ kind, charge: 0 }));
-        this.hud.setCards(this.cards.map((card) => card.kind));
+        const deck = MobSave.deck;
+        this.cards = deck.map((kind) => ({ kind, charge: 0 }));
+        this.showHand();
     }
 
     /**
@@ -737,11 +840,19 @@ export default class MobScene extends ThreeScene {
         return fresh;
     }
 
-    /** While the battle's on, each card charges (SETTINGS.cards: its seconds), up to full: then it waits to be tapped. */
+    /** The hand (the first HAND cards) into the tray, and the rest waiting in its pile. */
+    private showHand(): void {
+        this.hud.setCards(this.cards.slice(0, HAND).map((card) => card.kind));
+        this.hud.setCardPile(this.cards[HAND]?.kind ?? null, Math.max(0, this.cards.length - HAND));
+    }
+
+    /** While the battle's on, each card in the hand charges (SETTINGS.cards: its seconds), up to full: then it waits to
+     *  be tapped. (The waiting ones don't: each comes in uncharged.) */
     private chargeCards(dt: number): void {
-        for (const card of this.cards) {
+        for (const card of this.cards.slice(0, HAND)) {
             const seconds = cardStat(card.kind, 'seconds', MobSave.cardLevel(card.kind)) ?? 20;
-            if (this.state === 'playing' && !this.cardTutorial) card.charge = Math.min(1, card.charge + dt / Math.max(0.1, seconds));
+            const pace = this.debugFlags.fastCards ? DEBUG_CARD_PACE : 1;
+            if (this.state === 'playing' && !this.cardTutorial) card.charge = Math.min(1, card.charge + (dt * pace) / Math.max(0.1, seconds));
             this.hud.setCardCharge(card.kind, card.charge);
             // The first card charged, the first time: the battle pauses for the player to use it.
             if (card.charge >= 1 && this.state === 'playing' && !this.cardTutorial && !MobSave.cardTutorial && !this.pinned.config && !this.duel) {
@@ -755,8 +866,9 @@ export default class MobScene extends ThreeScene {
 
     /** A charged card tapped: its unit out of the cannon, and it starts charging again. */
     private playCard(kind: CardKind): void {
-        const card = this.cards.find((entry) => entry.kind === kind);
-        if (!card || card.charge < 1 || this.state !== 'playing') return;
+        const at = this.cards.findIndex((entry) => entry.kind === kind);
+        const card = this.cards[at];
+        if (!card || at >= HAND || card.charge < 1 || this.state !== 'playing') return;
         // The first-card tutorial: only its card, and that ends it (the battle goes on).
         if (this.cardTutorial) {
             if (kind !== this.cardTutorial) return;
@@ -770,6 +882,16 @@ export default class MobScene extends ThreeScene {
         this.battle.spawnUnit(kind, { hp: cardStat(kind, 'hp', level), damage: cardStat(kind, 'damage', level) });
         this.hud.cardFired(kind);
         this.hud.setCardCharge(kind, 0);
+        // More cards than the hand holds: the next waiting one takes its place; it goes to the back of the line.
+        if (this.cards.length > HAND) {
+            const next = this.cards[HAND];
+            this.cards.splice(HAND, 1);
+            this.cards[at] = next;
+            this.cards.push(card);
+            this.hud.replaceCard(kind, next.kind);
+            this.hud.setCardCharge(next.kind, next.charge);
+            this.hud.setCardPile(this.cards[HAND]?.kind ?? null, this.cards.length - HAND);
+        }
     }
 
     /** Shakes the camera (strengths add up, to a limit). */
@@ -890,7 +1012,9 @@ export default class MobScene extends ThreeScene {
     private frame(distance: number): void {
         const camera = this.threeCamera;
         const pitch = THREE.MathUtils.degToRad(CAMERA.pitchDeg);
-        camera.position.set(0, Math.sin(pitch), Math.cos(pitch)).multiplyScalar(distance).add(CAMERA_TARGET);
+        // Turned round the field by the yaw (0: straight down it, from behind the cannon).
+        const yaw = THREE.MathUtils.degToRad(CAMERA.yawDeg);
+        camera.position.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).multiplyScalar(distance).add(CAMERA_TARGET);
         camera.lookAt(CAMERA_TARGET);
         camera.updateMatrixWorld(true);
         const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
@@ -982,25 +1106,27 @@ export default class MobScene extends ThreeScene {
                 return `★ ${record.rating} ${LADDER.tiers[tierFor(LADDER, record)].name} · ${record.won}W ${record.lost}L · streak ${record.streak}`;
             });
         }
-        // The unit cards, each on or off (later: the shop's).
+        // The unit cards, each on or off (later: the shop's); FAST CARDS: they charge 4x as fast (to try them).
         const cards = panel.folder('Cards');
+        cards.toggle(this.debugFlags, 'fastCards', { label: 'Fast cards (4x charge)', persist: false });
         cards.button('REVEAL (all four)', () => this.hud.revealCards([...CARD_KINDS]));
         const owned = Object.fromEntries(CARD_KINDS.map((kind) => [kind, MobSave.hasCard(kind)])) as Record<CardKind, boolean>;
-        const CARD_LABELS: Record<CardKind, string> = { giant: 'Giant card', truck: 'Truck card', saucer: 'UFO card', car: 'Car card' };
+        const CARD_LABELS: Record<CardKind, string> = { giant: 'Giant card', truck: 'Truck card', saucer: 'UFO card', car: 'Car card', skeletons: 'Skeletons card', warriors: 'Warriors card', golem: 'Golem card', bomb: 'Bomb card', bats: 'Bats card', turtle: 'Turtle card', 'giant-green': 'Armored giant card', 'giant-viking': 'Viking giant card' };
         for (const kind of CARD_KINDS) {
             cards.toggle(owned, kind, {
                 label: CARD_LABELS[kind],
                 persist: false,
                 onChange: (on: boolean) => {
                     MobSave.setCard(kind, on);
-                    this.cards = CARD_KINDS.filter((k) => MobSave.hasCard(k)).map((k) => this.cards.find((card) => card.kind === k) ?? { kind: k, charge: 0 });
-                    this.hud.setCards(this.cards.map((card) => card.kind));
+                    this.cards = MobSave.deck.map((k) => this.cards.find((card) => card.kind === k) ?? { kind: k, charge: 0 });
+                    this.showHand();
                 },
             });
         }
         const camera = panel.folder('Camera');
         const apply = () => this.resize();
         camera.slider(CAMERA, 'pitchDeg', 25, 89, 1, 'Pitch (deg)').onChange(apply);
+        camera.slider(CAMERA, 'yawDeg', -45, 45, 1, 'Yaw (deg)').onChange(apply);
         camera.slider(CAMERA, 'distance', 10, 80, 0.5, 'Distance').onChange(apply);
         camera.slider(CAMERA, 'offsetY', -15, 15, 0.1, 'Offset up / down').onChange(apply);
         camera.slider(CAMERA, 'offsetX', -10, 10, 0.1, 'Offset left / right').onChange(apply);

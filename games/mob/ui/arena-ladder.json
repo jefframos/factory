@@ -1,11 +1,11 @@
 {
-  "points": { "win": 30, "loss": 20, "draw": 5 },
-  "streak": { "after": 3, "tiers": 1 },
+  "points": {"win": 30, "loss": 20, "draw": 5},
+  "streak": {"after": 3, "tiers": 1},
   "tiers": [
-    { "from": 0, "name": "Rookie", "skill": "newbie", "cards": ["giant"], "cardLevel": 0, "cannon": 0 },
-    { "from": 60, "name": "Bronze", "skill": "newbie", "cards": ["giant", "truck"], "cardLevel": 0.25, "cannon": 0.25 },
-    { "from": 150, "name": "Silver", "skill": "casual", "cards": ["giant", "truck", "car"], "cardLevel": 0.5, "cannon": 0.5 },
-    { "from": 280, "name": "Gold", "skill": "average", "cards": ["giant", "truck", "car", "saucer"], "cardLevel": 0.75, "cannon": 0.75 },
-    { "from": 450, "name": "Champion", "skill": "pro", "cards": ["giant", "truck", "car", "saucer"], "cardLevel": 1, "cannon": 1 }
+    {"from": 0, "name": "Rookie", "skill": "newbie", "cards": ["giant"], "cardLevel": 0, "cannon": 0, "badge": "Icon_GradeBadge_Beginner"},
+    {"from": 60, "name": "Bronze", "skill": "newbie", "cards": ["giant", "truck"], "cardLevel": 0.25, "cannon": 0.25, "badge": "Icon_GradeBadge_Bronze"},
+    {"from": 150, "name": "Silver", "skill": "casual", "cards": ["giant", "truck", "car", "skeletons", "bats"], "cardLevel": 0.5, "cannon": 0.5, "badge": "Icon_GradeBadge_Silver"},
+    {"from": 280, "name": "Gold", "skill": "average", "cards": ["giant", "truck", "car", "saucer", "skeletons", "warriors", "bomb", "bats", "giant-green", "turtle"], "cardLevel": 0.75, "cannon": 0.75, "badge": "Icon_GradeBadge_Gold"},
+    {"from": 450, "name": "Champion", "skill": "pro", "cards": ["giant", "truck", "car", "saucer", "skeletons", "warriors", "bomb", "golem", "bats", "turtle", "giant-green", "giant-viking"], "cardLevel": 1, "cannon": 1, "badge": "Icon_GradeBadge_Challenger"}
   ]
 }

@@ -1,5 +1,6 @@
 {
   "name": "Beach Arena",
+  "unlockAt": 11,
   "width": 16,
   "length": 30,
   "seconds": 90,

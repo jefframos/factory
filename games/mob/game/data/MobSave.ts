@@ -10,8 +10,17 @@ import { ArenaRecord, Ladder, Loadout, afterMatch, freshRecord } from './ArenaLa
 import { RETRY_EASE, UPGRADES, UpgradeKind } from './MobConfig';
 import { PLAY } from './MobLevels';
 import { CARD_KINDS, CardKind, SETTINGS, cardCost, cardMaxLevel } from './Settings';
+import { ChestKind, Loot, REWARDS, ROAD, RoadStep, copiesFor, rollChest, spreadCopies } from './ArenaRewards';
+
+/** The arena deck's most cards. */
+export const DECK_SIZE = 6;
 
 const KEY = 'mob.save';
+/**
+ * The save's version: a save from before it (a different one, or none) starts the player afresh — once, when the game
+ * changed too much for an old save to carry over (the cards, decks, arena and chests). Raised only when that's wanted.
+ */
+const SAVE_VERSION = 2;
 
 interface SaveData {
     coins: number;
@@ -40,19 +49,56 @@ interface SaveData {
      *  quests claimed (`id@periodKey`). */
     stats: Record<string, Partial<Record<RankStat, number>>>;
     claimed: string[];
-    /** Gems: the premium currency (the competition's quests pay them; what they buy comes later). */
+    /** Gems: the premium currency (the competition's quests and the arena's chests pay them; cards' levels cost them). */
     gems: number;
+    /** Each card's copies (a level costs some: ArenaRewards.copiesFor). */
+    copies: Partial<Record<CardKind, number>>;
+    /** The cards taken out of the battle deck (the deck: the rest the player has, the first DECK_SIZE). */
+    benched?: CardKind[];
+    /** The battle deck's DECK_SIZE slots, each a card or empty (null): what the player picked to bring to battles. */
+    slots: (CardKind | null)[];
+    /** Chests won in the arena, to open back on the main screen; where in the chest cycle the next win is; when the
+     *  free (video) chest is ready (ms since 1970). */
+    pending: ChestKind[];
+    chestCycle: number;
+    adChestAt: number;
+    /** The trophy road's steps claimed (their trophies). */
+    road: number[];
+    /** The cards the player's looked at (one not looked at yet: NEW). */
+    seen: CardKind[];
+    /** The profile's: the most trophies ever, and the matches won with all three crowns. */
+    bestTrophies: number;
+    threeCrowns: number;
+    /** The arenas whose opening has been shown (NEW ARENA!). */
+    arenasSeen: string[];
+    /** The versus mode's tutorial done (the first match started from it). */
+    arenaTutorial: boolean;
 }
 
 /** What the competition counts (Ranking.ts): crowns, arena matches won, story levels won, enemy towers destroyed. */
 export type RankStat = 'crowns' | 'arenaWins' | 'levels' | 'towers';
 
 const KINDS = Object.keys(UPGRADES) as UpgradeKind[];
+const emptySlots = (): (CardKind | null)[] => Array.from({ length: DECK_SIZE }, () => null);
+/** The deck's slots as stored (an older save: its cards less the ones taken out, the first DECK_SIZE). */
+function deckSlots(stored: Partial<SaveData>): (CardKind | null)[] {
+    const slots = emptySlots();
+    const owned = (stored.cards ?? []).filter((kind) => CARD_KINDS.includes(kind));
+    const from = stored.slots ?? owned.filter((kind) => !(stored.benched ?? []).includes(kind));
+    from.slice(0, DECK_SIZE).forEach((kind, i) => { slots[i] = kind && owned.includes(kind) ? kind : null; });
+    return slots;
+}
 const freshLevels = (): Record<UpgradeKind, number> => Object.fromEntries(KINDS.map((kind) => [kind, 1])) as Record<UpgradeKind, number>;
 
 function load(): SaveData {
     try {
-        const stored = JSON.parse(window.localStorage.getItem(KEY) ?? '{}') as Partial<SaveData> & { fireLevel?: number };
+        const raw = window.localStorage.getItem(KEY);
+        const stored = JSON.parse(raw ?? '{}') as Partial<SaveData> & { fireLevel?: number; version?: number };
+        // An older version's save: a fresh start (the world map's progress too).
+        if (raw && stored.version !== SAVE_VERSION) {
+            window.localStorage.removeItem('mob.mapSeen');
+            throw new Error('old save');
+        }
         const levels = freshLevels();
         for (const kind of KINDS) {
             // Older saves had only the fire rate, as `fireLevel`.
@@ -66,17 +112,27 @@ function load(): SaveData {
             arena: { ...freshRecord(), ...(stored.arena ?? {}) },
             username: stored.username, avatar: stored.avatar, stats: stored.stats ?? {}, claimed: stored.claimed ?? [],
             gems: Math.max(0, Math.floor(stored.gems ?? 0)),
+            copies: stored.copies ?? {}, slots: deckSlots(stored),
+            pending: (stored.pending ?? []).filter((kind) => !!REWARDS.chests[kind]), adChestAt: Math.max(0, stored.adChestAt ?? 0), chestCycle: Math.max(0, Math.floor(stored.chestCycle ?? 0)), road: stored.road ?? [],
+            seen: stored.seen ?? [...(stored.cards ?? [])], bestTrophies: Math.max(0, stored.bestTrophies ?? stored.arena?.rating ?? 0), threeCrowns: Math.max(0, stored.threeCrowns ?? 0),
+            arenasSeen: stored.arenasSeen ?? [],
+            arenaTutorial: !!stored.arenaTutorial || (stored.arena?.played ?? 0) > 0,
         };
     } catch {
-        return { coins: SETTINGS.startCoins, battle: 0, selected: 0, unlockAll: false, cards: [], cardLevels: {}, best: 0, levels: freshLevels(), retries: 0, cardTutorial: false, arena: freshRecord(), stats: {}, claimed: [], gems: 0 };
+        return {
+            coins: SETTINGS.startCoins, battle: 0, selected: 0, unlockAll: false, cards: [], cardLevels: {}, best: 0, levels: freshLevels(), retries: 0, cardTutorial: false, arena: freshRecord(), stats: {}, claimed: [], gems: 0,
+            copies: {}, slots: emptySlots(), pending: [], adChestAt: 0, chestCycle: 0, road: [], seen: [], bestTrophies: 0, threeCrowns: 0, arenasSeen: [], arenaTutorial: false,
+        };
     }
 }
 
 const data = load();
+// (Written at once: a fresh start after an old version's save sticks, versioned.)
+save();
 
 function save(): void {
     try {
-        window.localStorage.setItem(KEY, JSON.stringify(data));
+        window.localStorage.setItem(KEY, JSON.stringify({ ...data, version: SAVE_VERSION }));
     } catch {
         // Private mode: it lasts this session.
     }
@@ -123,13 +179,14 @@ export const MobSave = {
     /** An arena match ended: the record after it (the ladder's points). */
     arenaResult(ladder: Ladder, result: 'won' | 'lost' | 'draw'): ArenaRecord {
         data.arena = afterMatch(ladder, data.arena, result);
+        data.bestTrophies = Math.max(data.bestTrophies, data.arena.rating);
         save();
         return { ...data.arena };
     },
-    /** What the player brings to the arena: their cards' levels and their cannon's. */
+    /** What the player brings to the arena: their deck's cards' levels and their cannon's. */
     arenaLoadout(): Loadout {
         const cards: Loadout['cards'] = {};
-        for (const kind of data.cards) cards[kind] = MobSave.cardLevel(kind);
+        for (const kind of MobSave.deck) cards[kind] = MobSave.cardLevel(kind);
         return { cards, fire: data.levels.fire, capacity: data.levels.capacity, recharge: data.levels.recharge };
     },
     /** Debug: the arena record set (to try a rating). */
@@ -148,6 +205,10 @@ export const MobSave = {
         return data.username;
     },
     get avatar(): number { return data.avatar ?? 0; },
+    setAvatar(index: number): void {
+        data.avatar = Math.max(0, Math.floor(index));
+        save();
+    },
 
     /** A competition count in a period (its key: Ranking.periodKey). */
     stat(stat: RankStat, key: string): number {
@@ -188,6 +249,9 @@ export const MobSave = {
     unlockCard(kind: CardKind): boolean {
         if (data.cards.includes(kind)) return false;
         data.cards.push(kind);
+        // Into the deck if it has an empty slot.
+        const at = data.slots.indexOf(null);
+        if (at >= 0) data.slots[at] = kind;
         save();
         return true;
     },
@@ -202,19 +266,185 @@ export const MobSave = {
         return cardCost(kind, MobSave.cardLevel(kind));
     },
 
-    /** Buys `kind`'s card's next level if there are the gems; whether it did. */
-    buyCard(kind: CardKind): boolean {
+    /** `kind`'s copies, and how many its next level needs (null at the top). */
+    copies(kind: CardKind): number {
+        return data.copies[kind] ?? 0;
+    },
+    copiesNeeded(kind: CardKind): number | null {
+        const level = MobSave.cardLevel(kind);
+        return level >= cardMaxLevel(kind) ? null : copiesFor(level);
+    },
+
+    /** Whether `kind`'s next level has its copies (the gems aside), and whether it can be bought now (the gems too). */
+    upgradeReady(kind: CardKind): boolean {
+        const need = MobSave.copiesNeeded(kind);
+        return data.cards.includes(kind) && need !== null && MobSave.copies(kind) >= need;
+    },
+    canUpgrade(kind: CardKind): boolean {
         const cost = MobSave.cardCost(kind);
-        if (cost === null || data.gems < cost || !data.cards.includes(kind)) return false;
-        data.gems -= cost;
+        return MobSave.upgradeReady(kind) && cost !== null && data.gems >= cost;
+    },
+
+    /** Buys `kind`'s card's next level (its copies and its gems); whether it did. */
+    buyCard(kind: CardKind): boolean {
+        if (!MobSave.canUpgrade(kind)) return false;
+        data.gems -= MobSave.cardCost(kind)!;
+        data.copies[kind] = MobSave.copies(kind) - MobSave.copiesNeeded(kind)!;
         data.cardLevels[kind] = MobSave.cardLevel(kind) + 1;
         save();
         return true;
     },
 
+    /** Copies added (a chest, the road, a story win). */
+    addCopies(cards: Partial<Record<CardKind, number>>): void {
+        for (const [kind, count] of Object.entries(cards) as [CardKind, number][]) data.copies[kind] = MobSave.copies(kind) + count;
+        save();
+    },
+
+    /** A story level won: copies of one of the player's cards (fewer on a replay); what they were (null: no cards yet). */
+    storyCopies(first: boolean): { kind: CardKind; count: number } | null {
+        const count = first ? REWARDS.story.first : REWARDS.story.replay;
+        if (!data.cards.length || count <= 0) return null;
+        const kind = data.cards[Math.floor(Math.random() * data.cards.length)];
+        MobSave.addCopies({ [kind]: count });
+        return { kind, count };
+    },
+
+    /** The battle deck (every battle's, story and arena): the cards in its slots, in order (the empty ones skipped). */
+    get deck(): CardKind[] {
+        return data.slots.filter((kind): kind is CardKind => !!kind && data.cards.includes(kind));
+    },
+    /** The deck's slots as they are (null: empty). */
+    get deckSlots(): (CardKind | null)[] {
+        return [...data.slots];
+    },
+    /** The cards the player has that aren't in the deck. */
+    get bench(): CardKind[] {
+        const deck = MobSave.deck;
+        return data.cards.filter((kind) => !deck.includes(kind));
+    },
+    /** `kind` into the deck: the first empty slot (none: `instead`'s, the card it takes the place of). */
+    useCard(kind: CardKind, instead?: CardKind): void {
+        if (data.slots.includes(kind)) return;
+        let at = data.slots.indexOf(null);
+        if (at < 0 && instead) at = data.slots.indexOf(instead);
+        if (at < 0) return;
+        data.slots[at] = kind;
+        save();
+    },
+    /** `kind` out of the deck, its slot left empty (never the last card). */
+    removeCard(kind: CardKind): boolean {
+        const at = data.slots.indexOf(kind);
+        if (at < 0 || MobSave.deck.length <= 1) return false;
+        data.slots[at] = null;
+        save();
+        return true;
+    },
+
+    /** Whether the player's looked at `kind` since getting it (not: NEW on it), and looked at now. */
+    isNew(kind: CardKind): boolean {
+        return data.cards.includes(kind) && !data.seen.includes(kind);
+    },
+    markSeen(kind: CardKind): void {
+        if (data.seen.includes(kind)) return;
+        data.seen.push(kind);
+        save();
+    },
+
+    /** An arena win: the cycle's next chest, kept to open back on the main screen; which it is. */
+    winChest(): ChestKind {
+        const kind = REWARDS.cycle[data.chestCycle % REWARDS.cycle.length] ?? 'wood';
+        data.chestCycle++;
+        data.pending.push(kind);
+        save();
+        return kind;
+    },
+    /** The next chest won and not opened yet: opened (what it held, added); null: none. */
+    openPending(): { kind: ChestKind; loot: Loot } | null {
+        const kind = data.pending.shift();
+        if (!kind) return null;
+        const loot = rollChest(kind, data.cards);
+        MobSave.addLoot(loot);
+        return { kind, loot };
+    },
+    /** When the free (video) chest is ready (ms since 1970; past: it is). */
+    get adChestAt(): number { return data.adChestAt; },
+    /** The free chest opened (its video watched): what it held, added; the next one's in REWARDS.adChest.seconds. */
+    openAdChest(now = Date.now()): { kind: ChestKind; loot: Loot } | null {
+        if (data.adChestAt > now) return null;
+        const { kind, seconds } = REWARDS.adChest;
+        data.adChestAt = now + seconds * 1000;
+        const loot = rollChest(kind, data.cards);
+        MobSave.addLoot(loot);
+        return { kind, loot };
+    },
+    /** Loot added: its coins, gems and copies. */
+    addLoot(loot: Loot): void {
+        data.coins += loot.coins;
+        data.gems += loot.gems;
+        MobSave.addCopies(loot.cards);
+    },
+
+    /** Whether the road's step at `trophies` has been claimed. */
+    roadClaimed(trophies: number): boolean {
+        return data.road.includes(trophies);
+    },
+    /** The road's steps reached and not claimed yet. */
+    get roadWaiting(): RoadStep[] {
+        return ROAD.filter((step) => step.trophies <= data.bestTrophies && !data.road.includes(step.trophies));
+    },
+    /** Claims the road's step (if reached): what it gave (a chest's: opened there and then). */
+    claimRoad(step: RoadStep): { chest?: ChestKind; card?: CardKind; loot: Loot } | null {
+        if (step.trophies > data.bestTrophies || data.road.includes(step.trophies)) return null;
+        data.road.push(step.trophies);
+        const { reward } = step;
+        // A card: the player's now (one they have already: some copies of it instead).
+        if (reward.card) {
+            const fresh = MobSave.unlockCard(reward.card);
+            const loot: Loot = { coins: 0, gems: 0, cards: fresh ? {} : { [reward.card]: 5 } };
+            MobSave.addLoot(loot);
+            return { card: fresh ? reward.card : undefined, loot };
+        }
+        const loot: Loot = reward.chest
+            ? rollChest(reward.chest, data.cards)
+            : { coins: reward.coins ?? 0, gems: reward.gems ?? 0, cards: spreadCopies(reward.copies ?? 0, data.cards) };
+        if (!reward.chest && reward.copies && !data.cards.length) loot.coins += reward.copies * 5;
+        MobSave.addLoot(loot);
+        return { chest: reward.chest, loot };
+    },
+
+    /** The profile's: the most trophies ever, the three-crown wins. */
+    get bestTrophies(): number { return data.bestTrophies; },
+    get threeCrowns(): number { return data.threeCrowns; },
+    addThreeCrown(): void {
+        data.threeCrowns++;
+        save();
+    },
+
+    /** Whether the versus mode's tutorial's been done; done now. */
+    get arenaTutorial(): boolean { return data.arenaTutorial; },
+    finishArenaTutorial(): void {
+        data.arenaTutorial = true;
+        save();
+    },
+
+    /** Whether arena `id`'s opening has been shown; shown now. */
+    arenaSeen(id: string): boolean {
+        return data.arenasSeen.includes(id);
+    },
+    markArenaSeen(id: string): void {
+        if (data.arenasSeen.includes(id)) return;
+        data.arenasSeen.push(id);
+        save();
+    },
+
     /** Debug: a card given or taken away. */
     setCard(kind: CardKind, on: boolean): void {
-        data.cards = on ? [...new Set([...data.cards, kind])] : data.cards.filter((card) => card !== kind);
+        if (on) MobSave.unlockCard(kind);
+        else {
+            data.cards = data.cards.filter((card) => card !== kind);
+            data.slots = data.slots.map((card) => (card === kind ? null : card));
+        }
         save();
     },
 
@@ -292,6 +522,17 @@ export const MobSave = {
         data.stats = {};
         data.claimed = [];
         data.gems = 0;
+        data.copies = {};
+        data.slots = emptySlots();
+        data.pending = [];
+        data.adChestAt = 0;
+        data.chestCycle = 0;
+        data.road = [];
+        data.seen = [];
+        data.bestTrophies = 0;
+        data.threeCrowns = 0;
+        data.arenasSeen = [];
+        data.arenaTutorial = false;
         save();
     },
 };

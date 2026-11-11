@@ -2,7 +2,7 @@
   "levels": {
     "close-encounters": {
       "hash": "3c9ae5b1",
-      "at": "2026-11-09T22:49:20.060Z",
+      "at": "2026-11-11T14:14:07.727Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
@@ -10,7 +10,7 @@
     },
     "breakout": {
       "hash": "be3f224a",
-      "at": "2026-11-10T10:29:58.137Z",
+      "at": "2026-11-11T14:14:07.755Z",
       "result": "stall",
       "stuck": 0,
       "stalls": 7,
@@ -18,7 +18,7 @@
     },
     "first-steps": {
       "hash": "e021bb22",
-      "at": "2026-11-09T22:49:27.450Z",
+      "at": "2026-11-11T14:14:07.886Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
@@ -26,7 +26,7 @@
     },
     "diamonds": {
       "hash": "f9934251",
-      "at": "2026-11-09T22:49:20.112Z",
+      "at": "2026-11-11T14:14:07.816Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
@@ -34,15 +34,15 @@
     },
     "fortress": {
       "hash": "73220573",
-      "at": "2026-11-09T22:49:20.122Z",
+      "at": "2026-11-11T14:14:07.960Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
       "runs": 39
     },
     "giant-pad-2": {
-      "hash": "b5a207fe",
-      "at": "2026-11-09T22:49:20.123Z",
+      "hash": "2bcb15df",
+      "at": "2026-11-11T14:14:08.038Z",
       "result": "stall",
       "stuck": 0,
       "stalls": 4,
@@ -50,7 +50,7 @@
     },
     "gauntlet": {
       "hash": "984d3190",
-      "at": "2026-11-09T22:49:20.145Z",
+      "at": "2026-11-11T14:14:08.026Z",
       "result": "stall",
       "stuck": 0,
       "stalls": 6,
@@ -58,7 +58,7 @@
     },
     "gauntlet2": {
       "hash": "24664cce",
-      "at": "2026-11-09T22:49:20.200Z",
+      "at": "2026-11-11T14:14:08.092Z",
       "result": "stall",
       "stuck": 0,
       "stalls": 25,
@@ -66,7 +66,7 @@
     },
     "giant-pad": {
       "hash": "2ea01217",
-      "at": "2026-11-09T22:49:20.247Z",
+      "at": "2026-11-11T14:14:08.065Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
@@ -74,7 +74,7 @@
     },
     "giant-push": {
       "hash": "a0698d0c",
-      "at": "2026-11-09T22:49:20.347Z",
+      "at": "2026-11-11T14:14:08.232Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
@@ -82,7 +82,7 @@
     },
     "new-level-desert": {
       "hash": "b63a995b",
-      "at": "2026-11-09T22:49:56.671Z",
+      "at": "2026-11-11T14:29:20.798Z",
       "result": "stall",
       "stuck": 0,
       "stalls": 2,
@@ -90,23 +90,23 @@
     },
     "large-fortress": {
       "hash": "b20622c1",
-      "at": "2026-11-09T22:49:20.372Z",
+      "at": "2026-11-11T14:14:08.468Z",
       "result": "stall",
       "stuck": 0,
       "stalls": 11,
       "runs": 36
     },
     "islands": {
-      "hash": "3907041e",
-      "at": "2026-11-09T22:49:20.384Z",
+      "hash": "31c4ca2d",
+      "at": "2026-11-11T14:14:08.371Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
       "runs": 36
     },
     "new-level-desert-2": {
-      "hash": "c58bac5d",
-      "at": "2026-11-10T17:53:35.359Z",
+      "hash": "c3ebcdde",
+      "at": "2026-11-11T14:14:08.529Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
@@ -114,7 +114,7 @@
     },
     "lanes3": {
       "hash": "deac0aa0",
-      "at": "2026-11-09T22:49:20.402Z",
+      "at": "2026-11-11T14:14:08.505Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
@@ -122,15 +122,15 @@
     },
     "new-level": {
       "hash": "e5a97ca5",
-      "at": "2026-11-09T22:49:20.435Z",
+      "at": "2026-11-11T14:14:08.559Z",
       "result": "stall",
       "stuck": 0,
       "stalls": 4,
       "runs": 27
     },
     "new-level-hard": {
-      "hash": "ac4434c7",
-      "at": "2026-11-09T22:49:20.512Z",
+      "hash": "77c73c82",
+      "at": "2026-11-11T14:14:08.581Z",
       "result": "stall",
       "stuck": 0,
       "stalls": 7,
@@ -138,23 +138,23 @@
     },
     "pushers": {
       "hash": "d5f82d78",
-      "at": "2026-11-09T22:49:20.527Z",
+      "at": "2026-11-11T14:14:08.659Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
       "runs": 27
     },
     "push-it": {
-      "hash": "dff01ebf",
-      "at": "2026-11-10T12:46:35.851Z",
-      "result": "pass",
+      "hash": "057f302d",
+      "at": "2026-11-11T14:14:08.647Z",
+      "result": "stall",
       "stuck": 0,
-      "stalls": 0,
-      "runs": 27
+      "stalls": 3,
+      "runs": 30
     },
     "the-spinner": {
       "hash": "79bc6436",
-      "at": "2026-11-09T22:49:20.598Z",
+      "at": "2026-11-11T14:14:08.742Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
@@ -162,7 +162,7 @@
     },
     "road-rage": {
       "hash": "087ed8c7",
-      "at": "2026-11-09T22:49:20.598Z",
+      "at": "2026-11-11T14:14:08.694Z",
       "result": "stall",
       "stuck": 0,
       "stalls": 5,
@@ -170,7 +170,7 @@
     },
     "shield-wall": {
       "hash": "b1483f82",
-      "at": "2026-11-09T22:49:20.625Z",
+      "at": "2026-11-11T14:14:08.719Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
@@ -178,47 +178,47 @@
     },
     "shield-wall-2": {
       "hash": "c9d18c2a",
-      "at": "2026-11-09T22:49:20.636Z",
+      "at": "2026-11-11T14:14:08.731Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
       "runs": 36
     },
     "push-lanes": {
-      "hash": "930247b0",
-      "at": "2026-11-09T22:49:20.637Z",
+      "hash": "a0e1d8de",
+      "at": "2026-11-11T14:14:08.707Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
-      "runs": 30
+      "runs": 27
     },
     "three-forts": {
-      "hash": "451ecc6e",
-      "at": "2026-11-09T22:49:20.668Z",
+      "hash": "ba133c74",
+      "at": "2026-11-11T14:14:08.784Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
-      "runs": 30
+      "runs": 27
     },
     "three-lanes": {
-      "hash": "6eb47f89",
-      "at": "2026-11-09T22:49:20.698Z",
+      "hash": "cf9f4153",
+      "at": "2026-11-11T14:14:08.816Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
       "runs": 27
     },
     "twin-towers": {
-      "hash": "c90b7146",
-      "at": "2026-11-09T22:49:20.764Z",
+      "hash": "51492a1b",
+      "at": "2026-11-11T14:14:08.951Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
-      "runs": 27
+      "runs": 36
     },
     "truck-stop": {
       "hash": "21c4116b",
-      "at": "2026-11-09T22:49:20.765Z",
+      "at": "2026-11-11T14:14:08.887Z",
       "result": "stall",
       "stuck": 0,
       "stalls": 4,
@@ -226,15 +226,15 @@
     },
     "traffic-1": {
       "hash": "6a606d33",
-      "at": "2026-11-09T22:49:20.782Z",
+      "at": "2026-11-11T14:29:35.190Z",
       "result": "stall",
       "stuck": 0,
       "stalls": 4,
       "runs": 42
     },
     "wedges": {
-      "hash": "2976ac27",
-      "at": "2026-11-09T22:49:20.788Z",
+      "hash": "e0345b3a",
+      "at": "2026-11-11T14:14:08.959Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
@@ -242,11 +242,171 @@
     },
     "trucks": {
       "hash": "a2f838f9",
-      "at": "2026-11-09T22:49:20.807Z",
+      "at": "2026-11-11T14:14:08.941Z",
       "result": "pass",
       "stuck": 0,
       "stalls": 0,
       "runs": 39
+    },
+    "crystal-crown": {
+      "hash": "02a6cba4",
+      "at": "2026-11-11T14:14:07.782Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 36
+    },
+    "battlements": {
+      "hash": "5f2319eb",
+      "at": "2026-11-11T14:14:07.793Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 36
+    },
+    "blizzard": {
+      "hash": "9d24a6e9",
+      "at": "2026-11-11T14:14:07.794Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 16,
+      "runs": 39
+    },
+    "crevasse": {
+      "hash": "372b71b7",
+      "at": "2026-11-11T14:14:07.815Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 36
+    },
+    "drawbridge": {
+      "hash": "e1d798d2",
+      "at": "2026-11-11T14:14:07.847Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 3,
+      "runs": 39
+    },
+    "first-frost": {
+      "hash": "fc93e056",
+      "at": "2026-11-11T14:14:07.875Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 27
+    },
+    "frozen-mill": {
+      "hash": "b18a0cc6",
+      "at": "2026-11-11T14:14:07.991Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 39
+    },
+    "frost-gate": {
+      "hash": "d30e7d7b",
+      "at": "2026-11-11T14:14:08.008Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 17,
+      "runs": 36
+    },
+    "frozen-siege": {
+      "hash": "3c2bdbed",
+      "at": "2026-11-11T14:14:08.079Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 42
+    },
+    "glacier-pipe": {
+      "hash": "cd250c27",
+      "at": "2026-11-11T14:14:08.245Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 36
+    },
+    "ice-king": {
+      "hash": "dbf9da80",
+      "at": "2026-11-11T14:14:08.245Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 36
+    },
+    "icicle-run": {
+      "hash": "580827d3",
+      "at": "2026-11-11T14:14:08.260Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 36
+    },
+    "ice-lanes": {
+      "hash": "5a6b2360",
+      "at": "2026-11-11T14:14:08.261Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 36
+    },
+    "ice-castle": {
+      "hash": "b78d6c82",
+      "at": "2026-11-11T14:14:08.293Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 15,
+      "runs": 39
+    },
+    "ice-maze": {
+      "hash": "c0b44f44",
+      "at": "2026-11-11T14:14:08.304Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 5,
+      "runs": 36
+    },
+    "keep-towers": {
+      "hash": "233cddfd",
+      "at": "2026-11-11T14:14:08.427Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 36
+    },
+    "moat": {
+      "hash": "3b84263d",
+      "at": "2026-11-11T14:14:08.518Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 5,
+      "runs": 36
+    },
+    "snow-plough": {
+      "hash": "86730f58",
+      "at": "2026-11-11T14:14:08.806Z",
+      "result": "stall",
+      "stuck": 0,
+      "stalls": 1,
+      "runs": 39
+    },
+    "throne-hall": {
+      "hash": "577f9391",
+      "at": "2026-11-11T14:14:08.867Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 39
+    },
+    "twin-peaks": {
+      "hash": "e6815be6",
+      "at": "2026-11-11T14:14:08.923Z",
+      "result": "pass",
+      "stuck": 0,
+      "stalls": 0,
+      "runs": 36
     }
   }
 }

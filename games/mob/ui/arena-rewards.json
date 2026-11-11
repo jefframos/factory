@@ -1,0 +1,159 @@
+{
+  "$comment": "The arena's rewards (game/data/ArenaRewards.ts). copies: card copies a card needs for each next level (copies[level - 1] takes it from level to level + 1; past the list, the last one), with its gem price (settings.json cards.<kind>.cost). story: copies of a card the player has, for a story level won (first: the first time, replay: again). cycle: the chest an arena win gives, in turn (opened back on the main screen). adChest: the free chest on the arena's main screen: ready every `seconds`, opened by watching a video. chests: each one's name, icon, coins (from-to), card copies, gems (from-to). road: the trophy road, a reward at each trophy count (coins, gems, copies of the player's cards, a chest, opened there and then, or a card (`card`: a card kind, new to the player; one they have: copies of it)).",
+  "copies": [
+    2,
+    4,
+    6,
+    10,
+    15,
+    20,
+    30,
+    40,
+    50
+  ],
+  "story": {
+    "first": 2,
+    "replay": 1
+  },
+  "cycle": [
+    "wood",
+    "wood",
+    "gold",
+    "wood",
+    "wood",
+    "gold",
+    "wood",
+    "gem"
+  ],
+  "adChest": {
+    "kind": "gold",
+    "seconds": 600
+  },
+  "chests": {
+    "wood": {
+      "name": "Wooden Chest",
+      "icon": "ItemIcon_Chest_Wood",
+      "coins": [
+        20,
+        40
+      ],
+      "copies": 4,
+      "gems": [
+        0,
+        0
+      ]
+    },
+    "gold": {
+      "name": "Golden Chest",
+      "icon": "ItemIcon_Chest_Gold",
+      "coins": [
+        60,
+        100
+      ],
+      "copies": 10,
+      "gems": [
+        0,
+        2
+      ]
+    },
+    "gem": {
+      "name": "Gem Chest",
+      "icon": "ItemIcon_Chest_Gem",
+      "coins": [
+        100,
+        160
+      ],
+      "copies": 18,
+      "gems": [
+        4,
+        8
+      ]
+    }
+  },
+  "road": [
+    {
+      "trophies": 20,
+      "reward": {
+        "chest": "wood"
+      }
+    },
+    {
+      "trophies": 40,
+      "reward": {
+        "gems": 10
+      }
+    },
+    {
+      "trophies": 60,
+      "reward": {
+        "card": "skeletons"
+      }
+    },
+    {
+      "trophies": 90,
+      "reward": {
+        "card": "bats"
+      }
+    },
+    {
+      "trophies": 120,
+      "reward": {
+        "chest": "gold"
+      }
+    },
+    {
+      "trophies": 150,
+      "reward": {
+        "card": "giant-green"
+      }
+    },
+    {
+      "trophies": 190,
+      "reward": {
+        "card": "warriors"
+      }
+    },
+    {
+      "trophies": 230,
+      "reward": {
+        "chest": "gold"
+      }
+    },
+    {
+      "trophies": 280,
+      "reward": {
+        "card": "bomb"
+      }
+    },
+    {
+      "trophies": 330,
+      "reward": {
+        "card": "turtle"
+      }
+    },
+    {
+      "trophies": 380,
+      "reward": {
+        "chest": "gem"
+      }
+    },
+    {
+      "trophies": 450,
+      "reward": {
+        "card": "giant-viking"
+      }
+    },
+    {
+      "trophies": 520,
+      "reward": {
+        "card": "golem"
+      }
+    },
+    {
+      "trophies": 600,
+      "reward": {
+        "chest": "gem"
+      }
+    }
+  ]
+}
