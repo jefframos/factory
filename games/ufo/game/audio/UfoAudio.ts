@@ -22,6 +22,9 @@ let folder = 'ufo';
 /** The soundtrack playing. */
 let music: string | undefined;
 let applause: Howl | undefined;
+/** A kill's cheer: one of these, at random (raw-assets/audio kill-yay-*). */
+const CHEERS = { files: ['kill-yay-1.mp3', 'kill-yay-2.mp3', 'kill-yay-3.mp3', 'kill-yay-4.mp3'], volume: 0.7 };
+let cheers: Howl[] = [];
 const APPLAUSE = { file: 'applause.mp3', volume: 0.55 };
 let platformPaused = false;
 let volumeBeforePause: number | undefined;
@@ -190,6 +193,14 @@ export const UfoAudio = {
     /** Applause, for a level won. Fetched ahead (startMusic's the first chance, after an input), so it's on time. */
     loadApplause(): void {
         applause ??= new Howl({ src: [UfoAudio.url(APPLAUSE.file)], volume: APPLAUSE.volume });
+        if (!cheers.length) cheers = CHEERS.files.map((file) => new Howl({ src: [UfoAudio.url(file)], volume: CHEERS.volume }));
+    },
+
+    /** The player ate a saucer: a cheer (a different one each time, at random), over a quick rising chime. */
+    kill(): void {
+        UfoAudio.loadApplause();
+        cheers[Math.floor(Math.random() * cheers.length)]?.play();
+        [784, 1175].forEach((note, i) => tone('triangle', note, note, 0.16, 0.08, i * 0.05));
     },
 
     applause(): void {
@@ -268,6 +279,11 @@ export const UfoAudio = {
     },
     toggle(): void {
         tone('sine', 620, 880, 0.08, 0.14);
+    },
+    /** A button pressed: a short soft pop. */
+    click(): void {
+        tone('sine', 520, 340, 0.06, 0.12);
+        tone('triangle', 1040, 900, 0.03, 0.05);
     },
     /** The transition to another level. */
     whoosh(): void {

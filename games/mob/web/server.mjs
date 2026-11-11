@@ -172,7 +172,7 @@ function levelProblem(level) {
         if (helmet.kind !== undefined && !['hp', 'attack'].includes(helmet.kind)) return `Unknown barrier kind ${helmet.kind}`;
     }
     for (const pad of level.pads ?? []) {
-        if (pad.kind !== undefined && !['giant', 'truck', 'saucer', 'car'].includes(pad.kind)) return `Unknown house kind ${pad.kind}`;
+        if (pad.kind !== undefined && !['giant', 'bomb', 'saucer', 'car'].includes(pad.kind)) return `Unknown house kind ${pad.kind}`;
         // Its own charge, or (none) its unit's.
         if (pad.need !== undefined && !(isNumber(pad.need) && pad.need >= 1)) return 'A house\'s need must be 1 or more (or empty)';
     }
@@ -182,7 +182,7 @@ function levelProblem(level) {
 /** What's wrong with the units file, if anything: every unit, its colours as #rrggbb, its numbers. */
 function unitsProblem(units) {
     const colour = (value) => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
-    for (const kind of ['giant', 'truck', 'saucer', 'car']) {
+    for (const kind of ['giant', 'bomb', 'saucer', 'car']) {
         const unit = units?.[kind];
         if (!unit) return `${kind} is missing`;
         for (const key of ['color', 'tint', 'wall', 'roof', 'pad']) if (unit[key] !== undefined && !colour(unit[key])) return `${kind}: ${key} must be a #rrggbb colour`;

@@ -110,16 +110,27 @@ export interface SoundSettings {
  * A level of the standard mode: what to do against the clock, with other saucers about. `points`: reach a share of all the
  * points in the level. `all`: eat everything. `object`: swallow the level's goal (rivals leave it alone).
  */
+/**
+ * A level's job: `points` (reach so many before the clock runs out), `all` (eat the whole town), `object` (swallow the
+ * landmark), `race` (reach the points before any rival does), `top` (be the biggest saucer when the clock runs out: the
+ * round's look, its leaderboard and names).
+ */
+export type MissionType = 'points' | 'all' | 'object' | 'race' | 'top';
+
 export interface Mission {
     name: string;
     level: string;
-    type: 'points' | 'all' | 'object';
-    /** `points`: how many to reach. */
+    type: MissionType;
+    /** `points` / `race`: how many to reach. */
     points?: number;
-    /** `points`, without `points`: the share of the level's points to reach (rivals eat too, so not near all). */
+    /** `points` / `race`, without `points`: the share of the level's points to reach (rivals eat too, so not near all). */
     share?: number;
     seconds: number;
     rivals: number;
+    /** The rivals' shares of the player's size (else ui/ufo.json rivals.ratios): smaller is easier. */
+    ratios?: number[];
+    /** `object`: the landmark, if not the level's own goal (any prop of the map, by its model). */
+    goal?: LevelGoal;
     /** Coins for winning it. */
     reward?: number;
     /** The first thing a new player plays. */
@@ -430,6 +441,31 @@ function savedMission(): number {
 /** Every level of every area in play order, numbered through. */
 const MISSIONS: Mission[] = AREAS.flatMap((area) => area.levels).map((level, i) => ({ ...level, name: `Level ${i + 1}` }));
 
+export const MISSION_COUNT = MISSIONS.length;
+
+/** Where story level `index` is: its area (and which, 1-based), how far through it (levels before it), how many it has,
+ *  and the area after. */
+export function areaProgress(index: number): { area: Area; number: number; done: number; total: number; next: Area | null } {
+    let left = Math.max(0, Math.min(index, MISSIONS.length - 1));
+    for (let i = 0; i < AREAS.length; i++) {
+        const area = AREAS[i];
+        if (left < area.levels.length) return { area, number: i + 1, done: left, total: area.levels.length, next: AREAS[i + 1] ?? null };
+        left -= area.levels.length;
+    }
+    const last = AREAS[AREAS.length - 1];
+    return { area: last, number: AREAS.length, done: last.levels.length, total: last.levels.length, next: null };
+}
+
+/** Whether story level `index` is the last of its area. */
+export const endsArea = (index: number): boolean => {
+    const where = areaProgress(index);
+    return where.done === where.total - 1;
+};
+
+/** The versus arena being played (its id), or null. */
+let arena: string | null = null;
+export const currentArena = (): string | null => arena;
+
 const askedLevel = new URLSearchParams(window.location.search).get('city');
 let missionIndex = savedMission();
 /** The mission being played; null in competition (the level's `round`), which the address's `?city=` goes straight to. */
@@ -444,6 +480,7 @@ export const missionUpTo = (): Mission => MISSIONS[missionIndex];
 
 /** Plays that mission from now on (the caller builds a fresh scene). */
 export function goToMission(index: number): void {
+    arena = null;
     missionIndex = ((index % MISSIONS.length) + MISSIONS.length) % MISSIONS.length;
     mission = MISSIONS[missionIndex];
     levelName = mission.level;
@@ -456,6 +493,7 @@ export function goToMission(index: number): void {
 
 /** Plays the tutorial from now on (the caller builds a fresh scene). */
 export function goToTutorial(): void {
+    arena = null;
     mission = { ...(areas.tutorial as Omit<Mission, 'name'>), name: 'Tutorial', tutorial: true };
     levelName = mission.level;
 }
@@ -484,15 +522,28 @@ export function currentArea(): Area {
 /** The town the home screen shows: the area's miniature. */
 export function homeLevel(): Level {
     const area = currentArea();
-    const file = LEVELS[levelPath(area.miniature)] ?? LEVELS[levelPath(missionUpTo().level)] ?? LEVELS[levelPath('town')];
-    const level = withRoads(file.default);
-    if (!level.island || area.miniaturePoles) return level;
+    return islandLevel(LEVELS[levelPath(area.miniature)] ? area.miniature : missionUpTo().level, area.miniaturePoles);
+}
+
+/** Level `file` as the home screen shows it, an island (no fence or pilings unless `poles`). */
+export function islandLevel(file: string, poles = false): Level {
+    const found = LEVELS[levelPath(file)] ?? LEVELS[levelPath('town')];
+    const level = withRoads(found.default);
+    if (!level.island || poles) return level;
     const { deck } = level.island;
     return { ...level, island: { ...level.island, fence: undefined, deck: deck && { ...deck, pilingSpacing: 0 } } };
 }
 
 /** Plays a level's competition round from now on: the first with rivals without a name (the caller builds a fresh scene). */
 export function goToCompetition(file = competitionLevel()): void {
+    arena = null;
+    mission = null;
+    levelName = file;
+}
+
+/** Plays versus arena `id` on its level `file` from now on (the caller builds a fresh scene). */
+export function goToArena(id: string, file: string): void {
+    arena = id;
     mission = null;
     levelName = file;
 }
@@ -506,8 +557,13 @@ function competitionLevel(): string {
 export const competitionName = (): string => LEVELS[levelPath(competitionLevel())]?.default.name ?? '';
 
 export function currentLevel(): Level {
-    return withRoads((LEVELS[levelPath(levelName)] ?? LEVELS[levelPath('town')]).default);
+    const level = withRoads((LEVELS[levelPath(levelName)] ?? LEVELS[levelPath('town')]).default);
+    // A level's own landmark to swallow, if it names one.
+    return mission?.goal ? { ...level, goal: mission.goal } : level;
 }
+
+/** Whether there's a level file of this name. */
+export const hasLevel = (file: string): boolean => Boolean(LEVELS[levelPath(file)]);
 
 /** What a level's called. */
 export const levelTitle = (file: string): string => LEVELS[levelPath(file)]?.default.name ?? '';

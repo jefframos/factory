@@ -94,7 +94,7 @@ const FORT_TOP_Y = 2.9;
 const FORT_BACK = 2.6;
 const HUD_CLEARANCE = 10;
 /** An arena match: the room kept over the far buildings for their life bars (px). */
-const DUEL_BAR_ROOM = 64;
+const DUEL_BAR_ROOM = 18;
 /** The cannon's front edge (z) and the room kept under it at the bottom of the screen (px). */
 const CANNON_FRONT_Z = 1.2;
 /** Where the cannon's front sits on the screen (a share of its height from the top; under it, the energy bar). CAMERA.offsetY nudges it (10 px a unit). */
@@ -407,6 +407,8 @@ export default class MobScene extends ThreeScene {
         // The field after the battle: its forts are the battle's targets (the events above only fire once it runs).
         // (An arena match's towers are the plain ones: flat colours, no models.)
         this.arena = new Arena(config, this.battle.targets, theme, undefined, !spec && !!battleZone(index).plainForts, undefined, this.battle.blueTargets);
+        // (The forts' models load after the first framing and lift their numbers: framed again then.)
+        this.arena.onFortsChanged = () => { if (!this.torndown) this.resize(); };
         // Each building's life: the bars over them (DuelHud's), story and arena alike.
         this.arena.hideTargetLabels();
         this.arena.onLayout = () => this.resize();
@@ -509,10 +511,16 @@ export default class MobScene extends ThreeScene {
         const towers = this.battle.targets.filter((target) => target.kind !== 'cannon' && !target.alive).length;
         const cannon = !this.battle.timedOut && this.battle.targets.some((target) => target.kind === 'cannon' && !target.alive);
         if (spec.counted) matchOver(result === 'won', towers, cannon);
+        const tierBefore = LADDER.tiers[tierFor(LADDER, before)].name;
         // The match's crowns, each side: a tower down 1, the cannon down all 3.
         const ownTowers = this.battle.blueTargets.filter((target) => target.kind !== 'cannon' && !target.alive).length;
         const ownCannon = !this.battle.timedOut && this.battle.blueTargets.some((target) => target.kind === 'cannon' && !target.alive);
         const matchCrowns = { you: cannon ? 3 : Math.min(3, towers), them: ownCannon ? 3 : Math.min(3, ownTowers) };
+        if (spec.counted) {
+            MobEvents.arenaEnd(this.duelArenaId(), result === 'won' ? 'win' : result === 'lost' ? 'loss' : 'draw', matchCrowns.you);
+            const tierAfter = after ? LADDER.tiers[tierFor(LADDER, after)].name : tierBefore;
+            if (tierAfter !== tierBefore) MobEvents.arenaTier(tierAfter);
+        }
         // A counted win: a chest (opened back on the main screen); all three crowns, the profile's tally.
         let chest: DuelEnd['chest'] = null;
         if (spec.counted && result === 'won') {
@@ -568,6 +576,8 @@ export default class MobScene extends ThreeScene {
         this.state = 'playing';
         this.hud.start();
         this.setGameplay(true);
+        // A match (not the editor's test): which arena, online or practice.
+        if (this.duel && (this.duel.spec.counted || !this.pinned.config)) MobEvents.arenaStart(this.duelArenaId(), this.duel.spec.counted);
         // Analytics: not for a level pinned by the URL or the editor (that isn't the player's progress), nor a match.
         if (!this.pinned.config && !this.duel) {
             const number = MobSave.selected + 1;
@@ -580,6 +590,7 @@ export default class MobScene extends ThreeScene {
     /** GIVE UP's YES: the battle (or the match) lost now. */
     private surrender(): void {
         if (this.state !== 'playing') return;
+        if (!this.pinned.config || this.duel) MobEvents.gaveUp(this.duel ? `arena-${this.duelArenaId()}` : `level-${MobSave.selected + 1}`);
         this.battle.state = 'lost';
         if (this.duel) this.finishDuel('lost');
         else this.finish(false);
@@ -635,6 +646,7 @@ export default class MobScene extends ThreeScene {
             this.hud.showEnd({
                 won, reward, upgrades: this.upgradeViews(), coins: MobSave.coins, newCards, copies,
                 homeCall: !this.pinned.config && arenaFor(MobSave.battle + 1, MobSave.bestTrophies).open && !MobSave.arenaTutorial,
+                home: MobSave.homeOpen,
                 area: areaProgress(MobSave.selected),
                 finished: finished ? { zone: finished.zone, number: finished.number, total: finished.total } : null,
             });
@@ -765,8 +777,8 @@ export default class MobScene extends ThreeScene {
         this.characters.update(this.battle, this.time);
         this.arena.update(this.battle, dt);
         this.hud.setBaseHp(this.battle.baseHp, this.battle.baseHpMax);
-        // GIVE UP while a battle's on (not a robot's watched match).
-        this.hud.setGiveUp(this.state === 'playing' && !this.duel?.watch);
+        // GIVE UP while a battle's on (not a robot's watched match; in the story, only once the main screen's open).
+        this.hud.setGiveUp(this.state === 'playing' && !this.duel?.watch && (!!this.duel || MobSave.homeOpen));
         if (this.duel && this.state === 'waiting' && this.countdown > 0) {
             const before = Math.ceil(this.countdown - 0.5);
             this.countdown -= dt;
@@ -814,6 +826,8 @@ export default class MobScene extends ThreeScene {
     /** The characters this battle can make: its cards' (the player's, and an arena opponent's). */
     private charactersNeeded(): number[] {
         const kinds = new Set<CardKind>(this.cards.map((card) => card.kind));
+        // A house making a character's unit (a bomb house).
+        for (const pad of this.battle.config.pads ?? []) if (pad.kind === 'bomb') kinds.add('bomb');
         if (this.duel) for (const kind of Object.keys(this.duel.opponent.cards) as CardKind[]) kinds.add(kind);
         return [...kinds].map((kind) => CHARACTER_CARDS[kind]?.look ?? 0).filter((look) => look > 0);
     }
@@ -835,9 +849,18 @@ export default class MobScene extends ThreeScene {
         const fresh: CardKind[] = [];
         for (const pad of config.pads ?? []) {
             const kind = (pad.kind ?? 'giant') as CardKind;
-            if (CARD_KINDS.includes(kind) && !fresh.includes(kind) && MobSave.unlockCard(kind)) fresh.push(kind);
+            if (CARD_KINDS.includes(kind) && !fresh.includes(kind) && MobSave.unlockCard(kind)) {
+                fresh.push(kind);
+                MobEvents.cardUnlock(kind);
+            }
         }
         return fresh;
+    }
+
+    /** The match's arena's id (its file's name; the analytics'). */
+    private duelArenaId(): string {
+        const arena = this.duel?.spec.arena;
+        return Object.entries(ARENAS_BY_ID).find(([, config]) => config === arena)?.[0] ?? 'arena';
     }
 
     /** The hand (the first HAND cards) into the tray, and the rest waiting in its pile. */

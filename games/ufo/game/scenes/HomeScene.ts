@@ -2,8 +2,13 @@
 //
 // The main screen: the area's miniature (its own town, ui/areas.json `miniature`) as a little island in the sea, with the
 // saucer you're wearing hovering over it, seen from far off through a long lens. Over it: your coins, the area's name, the
-// button to play the next level, a floating icon to the competition's ranking, and the bottom tabs: the aliens' shop, home,
-// the spaceships' shop.
+// button to play the next level with the area's progress bar over it, a floating icon to the competition's ranking, and
+// the bottom tabs: the aliens' shop, home, versus, the spaceships' shop.
+//
+// VERSUS (as Mob's arena screen): the arena's own island instead (← / → through the arenas, a padlock and what it takes
+// on one not open yet), its name on the ribbon, the player's strip and the bar to the next arena under it, the trophy
+// road's button, PLAY ONLINE (the matchmaking window, then the match). A new arena gets its NEW ARENA moment. The first
+// time versus is open, a spotlight walks the player to it: the VERSUS tab, then PLAY ONLINE.
 //
 // With `home.baked` the island and the saucer are images (BakedView.ts), smooth where the live 3D is jagged: the two sit on
 // the PIXI layer over the three canvas, which goes on drawing only the live sea. The view doesn't swing then; the saucer's
@@ -18,7 +23,15 @@ import SoundToggleButton from 'core/ui/SoundToggleButton';
 import SetupThree from 'core/scene/SetupThree';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import { UfoAudio } from '../audio/UfoAudio';
-import { DESIGN, LOOKS, currentArea, homeLevel, missionUpTo } from '../data/UfoConfig';
+import { DESIGN, LOOKS, Level, areaProgress, currentArea, currentMissionIndex, hasLevel, homeLevel, islandLevel, missionUpTo } from '../data/UfoConfig';
+import { ARENAS, RoadStep, arenaNeeds, arenaOpen, findPlayers, newestOpen, setMatchPlayers, versusOpen } from '../data/Versus';
+import { AREA_BAR, AreaBar } from '../ui/AreaBar';
+import { ArenaUnlocked } from '../ui/ArenaUnlocked';
+import { Matchmaking } from '../ui/Matchmaking';
+import { Overlay } from '../ui/Overlay';
+import { Spotlight } from '../ui/Spotlight';
+import { TrophyRoad } from '../ui/TrophyRoad';
+import { VersusHome } from '../ui/VersusHome';
 import { ShopKind, UfoProgress } from '../data/UfoProgress';
 import { Saucer } from '../player/Saucer';
 import { updateBend } from '../services/Bend';
@@ -83,8 +96,15 @@ function shineTexture(): PIXI.Texture {
     return PIXI.Texture.from(canvas);
 }
 
-type Tab = 'alien' | 'home' | 'ufo';
-const TAB_ORDER: Tab[] = ['alien', 'home', 'ufo'];
+type Tab = 'alien' | 'home' | 'versus' | 'ufo';
+const TAB_ORDER: Tab[] = ['alien', 'home', 'versus', 'ufo'];
+/** VERSUS's layout: the ribbon a little higher (no profile there), the strip under it, the ranking's and the road's
+ *  buttons under that; the arrows' inset; the padlock on an arena not open yet. */
+const VERSUS_LAYOUT = { ribbonY: 140, stripGap: 92, arrows: 56, arrowSize: 76, lock: 150, lockWords: 30 };
+/** RANKING and ROAD: a row just over the tabs, either side of PLAY: their scale, how far in from the edge, how far up. */
+const SIDE_ROW = { scale: 0.72, x: 66, up: 72 };
+/** The area bar on HOME: its scale, and the room between it and PLAY. */
+const HOME_AREA = { scale: 0.95, gap: 18 };
 
 export default class HomeScene extends ThreeScene {
     private town!: UfoTown;
@@ -124,10 +144,31 @@ export default class HomeScene extends ThreeScene {
     private bakedFor = '';
     private shine: PIXI.Sprite | null = null;
     private glow: PIXI.Sprite | null = null;
+    private playWords: PIXI.Text | null = null;
+    private ribbonText: PIXI.Text | null = null;
+    /** HOME's area bar; VERSUS's parts, its arrows, its padlock. */
+    private readonly areaBar = new AreaBar();
+    private versusHome: VersusHome | null = null;
+    private readonly arenaPrev = new PIXI.Container();
+    private readonly arenaNext = new PIXI.Container();
+    private readonly arenaLock = new PIXI.Container();
+    private readonly arenaLockWords = label(VERSUS_LAYOUT.lockWords);
+    /** The arena VERSUS shows (ARENAS index), and whether it's open. */
+    private arenaIndex = 0;
+    private arenaLocked = false;
+    /** Which island's shown (its map and poles), and every island built so far (kept, hidden, for coming back to). */
+    private islandKey = '';
+    private readonly islands = new Map<string, { level: Level; town: UfoTown }>();
+    private matchmaking: Matchmaking | null = null;
+    private overlay: Overlay | TrophyRoad | null = null;
+    private spotlight: Spotlight | null = null;
+    /** The versus tutorial's step, while it's on. */
+    private tutorialStep: 'tab' | 'play' | null = null;
     public ready: Promise<void> = Promise.resolve();
 
-    /** `onPlay`: the level's button; `onCompetition`: the ranking's. */
-    public constructor(game: Game, private readonly onPlay: () => void, private readonly onCompetition: () => void) {
+    /** `onPlay`: the level's button; `onCompetition`: the ranking's (without versus); `onVersus`: a match in an arena. */
+    public constructor(game: Game, private readonly onPlay: () => void, private readonly onCompetition: () => void,
+        private readonly onVersus: (arena: string) => void = () => undefined) {
         super(game);
     }
 
@@ -139,22 +180,12 @@ export default class HomeScene extends ThreeScene {
         this.threeCamera.fov = VIEW.fov;
         updateBend(new THREE.Vector3(), 0);
 
-        const level = homeLevel();
-        this.threeScene.background = level.island ? deepSea(level.island.water) : new THREE.Color(FAR_SEA);
-        this.town = new UfoTown(this.threeScene, level);
-        const { minX, maxX, minZ, maxZ } = this.town.bounds();
-        const span = Math.max(maxX - minX, maxZ - minZ);
-        // The town's player point is the pivot, and where the saucer hovers. Framed so the island still fits round it.
-        const { x, z } = level.start;
-        this.span = 2 * Math.max(x - minX, maxX - x, z - minZ, maxZ - z);
-        this.target.set(x, 0, z);
-        this.saucer = new Saucer(this.threeScene, x, z);
-        this.saucer.respawn(x, z, span * VIEW.ufoSize, 0);
-        this.saucer.hover(span * VIEW.ufoHeight);
-        this.frameCamera();
-        this.ready = Promise.all([this.town.ready, this.saucer.loaded]).then(() => {
-            if (VIEW.baked && !this.destroyedScene) this.bake();
-        });
+        // Back from a versus match: VERSUS, on the newest arena.
+        if (UfoProgress.openVersusOnHome && versusOpen()) this.tab = 'versus';
+        UfoProgress.openVersusOnHome = false;
+        this.arenaIndex = newestOpen();
+        this.saucer = new Saucer(this.threeScene, 0, 0);
+        this.buildIsland();
         this.buildUi();
         this.game.uiLayer.addChild(this.ui);
         this.buildDebug();
@@ -163,6 +194,57 @@ export default class HomeScene extends ThreeScene {
             window.addEventListener('pointerdown', this.startSound, true);
             window.addEventListener('keydown', this.startSound, true);
         }
+    }
+
+    /** The island the tab shows (VERSUS: its arena's; else the area's miniature), built if it's another than now's. */
+    private buildIsland(): void {
+        const arena = ARENAS[this.arenaIndex];
+        const versus = this.tab === 'versus' && !!arena;
+        if (!versus && this.tab !== 'home' && this.islandKey) return;
+        // By the map it shows: an arena on the area's own map is the same island (nothing's built again).
+        const area = currentArea();
+        const file = versus ? (hasLevel(arena.level) ? arena.level : 'town') : hasLevel(area.miniature) ? area.miniature : missionUpTo().level;
+        const poles = !versus && area.miniaturePoles === true;
+        const key = `${file}:${poles}`;
+        if (key === this.islandKey) return;
+        this.islandKey = key;
+        // The old island's pictures go; its town and sea are hidden, kept for coming back to; the saucer's live again
+        // till the island's baked.
+        this.bakedIsland?.destroy({ texture: true, baseTexture: true });
+        this.bakedUfo?.destroy({ texture: true, baseTexture: true });
+        this.bakedIsland = null;
+        this.bakedUfo = null;
+        if (this.town) {
+            this.town.setVisible(false);
+            const oldSea = this.town.separateSea();
+            if (oldSea) oldSea.visible = false;
+        }
+        this.saucer.setShown(true);
+        this.saucer.showBeam(true);
+        let entry = this.islands.get(key);
+        if (!entry) {
+            const built = islandLevel(file, poles);
+            entry = { level: built, town: new UfoTown(this.threeScene, built) };
+            this.islands.set(key, entry);
+        }
+        const { level, town } = entry;
+        town.setVisible(true);
+        const sea = town.separateSea();
+        if (sea) sea.visible = true;
+        this.threeScene.background = level.island ? deepSea(level.island.water) : new THREE.Color(FAR_SEA);
+        this.town = town;
+        const { minX, maxX, minZ, maxZ } = town.bounds();
+        const span = Math.max(maxX - minX, maxZ - minZ);
+        // The town's player point is the pivot, and where the saucer hovers. Framed so the island still fits round it.
+        const { x, z } = level.start;
+        this.span = 2 * Math.max(x - minX, maxX - x, z - minZ, maxZ - z);
+        this.target.set(x, 0, z);
+        this.saucer.respawn(x, z, span * VIEW.ufoSize, 0);
+        this.saucer.hover(span * VIEW.ufoHeight);
+        this.frameCamera();
+        this.ready = Promise.all([town.ready, this.saucer.loaded]).then(() => {
+            if (VIEW.baked && !this.destroyedScene && town === this.town) this.bake();
+        });
     }
 
     /** Pictures of the island and the saucer, from where the camera is, then only the sea stays live under them. */
@@ -223,6 +305,10 @@ export default class HomeScene extends ThreeScene {
             UfoProgress.addCoins(DEBUG_COINS);
             this.refreshCoins();
         });
+        panel.button('+100 TROPHIES', () => {
+            UfoProgress.debugTrophies(100);
+            this.applyTab();
+        });
         panel.button('ERASE DATA', () => UfoProgress.eraseAndRestart());
     }
 
@@ -269,6 +355,7 @@ export default class HomeScene extends ThreeScene {
         const ribbonText = label(RIBBON.text);
         ribbonText.text = currentArea().name.toUpperCase();
         ribbonText.y = RIBBON.textY;
+        this.ribbonText = ribbonText;
         this.ribbon.addChild(ribbonBack, ribbonText);
 
         // The pack's big PLAY: a tapered yellow button, dark words with no outline.
@@ -281,6 +368,7 @@ export default class HomeScene extends ThreeScene {
         const playWords = plainLabel(PLAY.textSize, DARK);
         playWords.text = missionUpTo().name.toUpperCase();
         playWords.y = -6;
+        this.playWords = playWords;
         this.glow = iconSprite('Glow_Circle01', PLAY.width);
         this.glow.width = PLAY.width * SHINE.glowWidth;
         this.glow.height = PLAY.height * SHINE.glowHeight;
@@ -305,7 +393,7 @@ export default class HomeScene extends ThreeScene {
         this.shine.mask = outline;
         gsap.fromTo(this.shine, { x: -w * 0.65 }, { x: w * 0.65, duration: SHINE.sweep, ease: 'sine.inOut', repeat: -1, repeatDelay: SHINE.wait });
         this.play.addChild(this.glow, playBack, playWords, outline, this.shine);
-        tappable(this.play, () => this.onPlay());
+        tappable(this.play, () => this.pressPlay());
         gsap.to(this.play.scale, { x: 1.03, y: 1.03, duration: 0.7, yoyo: true, repeat: -1, ease: 'sine.inOut' });
         this.buildMedal();
 
@@ -315,9 +403,14 @@ export default class HomeScene extends ThreeScene {
         this.tabBar.addChild(this.tabBack, this.tabFocus, this.tabLight);
         this.addTab('alien', 'ALIENS');
         this.addTab('home', 'HOME');
+        this.addTab('versus', 'VERSUS');
         this.addTab('ufo', 'SPACESHIPS');
+        this.buildVersus();
+        const where = areaProgress(currentMissionIndex());
+        this.areaBar.set({ name: where.area.name, number: where.number, done: where.done, total: where.total, next: where.next?.name ?? null });
+        this.areaBar.scale.set(HOME_AREA.scale);
         // The shops go in over the buttons, under the coins and the tabs (openTab()).
-        this.ui.addChild(this.ribbon, this.medal, this.play, this.profile, this.coinsBar, this.mute, this.tabBar);
+        this.ui.addChild(this.ribbon, this.areaBar, this.versusHome!, this.arenaPrev, this.arenaNext, this.arenaLock, this.medal, this.play, this.profile, this.coinsBar, this.mute, this.tabBar);
         // Back from a round: straight to how it changed the ranking.
         if (UfoProgress.openRankingOnHome) {
             UfoProgress.openRankingOnHome = false;
@@ -325,7 +418,195 @@ export default class HomeScene extends ThreeScene {
         }
         this.refreshCoins();
         this.refreshTabIcons();
+        this.applyTab();
+        // Versus just opened (and not tried): its tutorial.
+        if (versusOpen() && !UfoProgress.versusTutorial) {
+            this.tutorialStep = this.tab === 'versus' ? 'play' : 'tab';
+            gsap.delayedCall(0.5, () => {
+                if (!this.destroyedScene && this.tutorialStep === 'tab') this.showTutorialStep();
+            });
+        }
+        this.refreshMedal();
         this.resize();
+    }
+
+    /** VERSUS's parts: the strip and road bar, the road's button, the arrows, the padlock. */
+    private buildVersus(): void {
+        this.versusHome = new VersusHome(() => this.openRoad());
+        const arrow = (holder: PIXI.Container, frame: string, step: number) => {
+            const icon = iconSprite(frame, VERSUS_LAYOUT.arrowSize);
+            holder.addChild(icon);
+            holder.hitArea = new PIXI.Circle(0, 0, VERSUS_LAYOUT.arrowSize * 0.7);
+            tappable(holder, () => this.lookAtArena(step));
+            gsap.to(icon, { x: step * 8, duration: 0.6, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        };
+        arrow(this.arenaPrev, 'Icon_Arrow_Prev1', -1);
+        arrow(this.arenaNext, 'Icon_Arrow_Next1', 1);
+        const lock = iconSprite('Icon_Lock03', VERSUS_LAYOUT.lock);
+        this.arenaLockWords.y = VERSUS_LAYOUT.lock / 2 + 40;
+        this.arenaLock.addChild(lock, this.arenaLockWords);
+        this.arenaLock.eventMode = 'none';
+    }
+
+    /** What the tab shows: its island, its ribbon, PLAY's words, its own parts. */
+    private applyTab(): void {
+        const versus = this.tab === 'versus';
+        if (versus || this.tab === 'home') this.buildIsland();
+        const arena = ARENAS[this.arenaIndex];
+        this.arenaLocked = versus && !!arena && !arenaOpen(arena, UfoProgress.levelsWon, UfoProgress.bestTrophies);
+        if (this.ribbonText) {
+            this.ribbonText.text = (versus ? arena?.name ?? 'VERSUS' : currentArea().name).toUpperCase();
+            this.ribbonText.scale.set(Math.min(1, (RIBBON.width - 120) / Math.max(1, this.ribbonText.width / this.ribbonText.scale.x)));
+        }
+        if (this.playWords) {
+            this.playWords.text = versus ? 'PLAY ONLINE' : missionUpTo().name.toUpperCase();
+            this.playWords.scale.set(versus ? 0.8 : 1);
+        }
+        this.play.alpha = this.arenaLocked ? 0.55 : 1;
+        this.areaBar.visible = this.tab === 'home';
+        if (this.versusHome) {
+            this.versusHome.visible = versus;
+            if (versus) this.versusHome.refresh();
+        }
+        this.arenaPrev.visible = versus && this.arenaIndex > 0;
+        this.arenaNext.visible = versus && this.arenaIndex < ARENAS.length - 1;
+        this.arenaLock.visible = this.arenaLocked;
+        if (this.arenaLocked && arena) {
+            const needs = arenaNeeds(arena, UfoProgress.levelsWon, UfoProgress.bestTrophies);
+            this.arenaLockWords.text = `ARENA ${this.arenaIndex + 1}/${ARENAS.length}\n${needs?.level ? `WIN LEVEL ${needs.level} TO OPEN` : `REACH ${needs?.trophies ?? 0} TROPHIES`}`;
+        }
+        this.resize();
+        if (versus) gsap.delayedCall(0.3, () => this.arenaMoments());
+    }
+
+    /** ← / →: the arena before or after. */
+    private lookAtArena(step: number): void {
+        const next = Math.max(0, Math.min(ARENAS.length - 1, this.arenaIndex + step));
+        if (next === this.arenaIndex) return;
+        this.arenaIndex = next;
+        this.applyTab();
+        gsap.fromTo(this.ribbon.scale, { x: 0.7, y: 0.7 }, { x: 1, y: 1, duration: 0.3, ease: 'back.out(2.5)' });
+    }
+
+    /** PLAY: the next level, or (VERSUS) a match in the arena shown (a padlocked one just shakes). */
+    private pressPlay(): void {
+        if (this.tab !== 'versus') {
+            this.onPlay();
+            return;
+        }
+        if (this.arenaLocked) {
+            gsap.fromTo(this.arenaLock, { x: this.arenaLock.x - 14 }, { x: this.arenaLock.x, duration: 0.4, ease: 'elastic.out(1.2, 0.3)' });
+            UfoAudio.bump();
+            return;
+        }
+        this.findMatch();
+    }
+
+    /** PLAY ONLINE: the matchmaking window finds the players (made up), then the match. */
+    private findMatch(): void {
+        const arena = ARENAS[this.arenaIndex];
+        if (this.matchmaking || !arena) return;
+        const players = findPlayers(arena.rivals);
+        const look = UfoProgress.avatarLook;
+        const you = { name: UfoProgress.username, face: look.face, color: look.color, trophies: UfoProgress.trophies, you: true };
+        this.matchmaking = new Matchmaking(arena.name, you, players, () => {
+            setMatchPlayers(players);
+            this.onVersus(arena.id);
+        }, () => this.closeMatchmaking());
+        this.ui.addChild(this.matchmaking);
+    }
+
+    private closeMatchmaking(): void {
+        this.matchmaking?.destroy();
+        this.matchmaking = null;
+    }
+
+    /** VERSUS's moments: a new arena opened (NEW ARENA!, then it's the one shown), then the trophies a match just changed,
+     *  then the tutorial's PLAY ONLINE. */
+    private arenaMoments(): void {
+        if (this.destroyedScene || this.tab !== 'versus' || this.overlay) return;
+        const fresh = ARENAS.map((arena, index) => ({ arena, index }))
+            .filter(({ arena }) => arenaOpen(arena, UfoProgress.levelsWon, UfoProgress.bestTrophies) && !UfoProgress.arenaSeen(arena.id));
+        if (fresh.length) {
+            fresh.forEach(({ arena }) => UfoProgress.markArenaSeen(arena.id));
+            const newest = fresh[fresh.length - 1];
+            this.openOverlay(new ArenaUnlocked(newest.arena, newest.index + 1, () => {
+                this.overlay = null;
+                this.arenaIndex = newest.index;
+                this.applyTab();
+            }));
+            return;
+        }
+        this.trophiesPop();
+        if (this.tutorialStep === 'play' && !this.spotlight) this.showTutorialStep();
+    }
+
+    /** Back from a match: how the trophies changed, floating up off the strip. */
+    private trophiesPop(): void {
+        const before = UfoProgress.trophiesBefore;
+        UfoProgress.trophiesBefore = -1;
+        if (before < 0 || !this.versusHome) return;
+        const change = UfoProgress.trophies - before;
+        const words = label(44, change >= 0 ? 0x6dff5a : 0xff6b6b);
+        words.text = change >= 0 ? `+${change}` : `${change}`;
+        words.position.set(this.versusHome.top.x + 230, this.versusHome.top.y - 10);
+        this.ui.addChild(words);
+        gsap.fromTo(words.scale, { x: 0.3, y: 0.3 }, { x: 1, y: 1, duration: 0.35, ease: 'back.out(3)' });
+        gsap.to(words, { y: words.y - 60, alpha: 0, duration: 0.9, delay: 0.9, ease: 'power1.in', onComplete: () => words.destroy() });
+        UfoAudio.milestone();
+    }
+
+    /** The versus tutorial's step on screen: a spotlight on the VERSUS tab, then on PLAY ONLINE. */
+    private showTutorialStep(): void {
+        this.closeSpotlight();
+        if (this.tutorialStep === 'tab') {
+            const tab = this.tabs.get('versus');
+            if (!tab) return;
+            this.spotlight = new Spotlight(tab.holder, 'VERSUS MODE IS OPEN!\nTAP VERSUS', () => {
+                this.closeSpotlight();
+                this.tutorialStep = 'play';
+                this.openTab('versus');
+            });
+        } else if (this.tutorialStep === 'play') {
+            this.spotlight = new Spotlight(this.play, 'PLAY YOUR FIRST\nVERSUS MATCH!', () => {
+                this.closeSpotlight();
+                this.tutorialStep = null;
+                UfoProgress.finishVersusTutorial();
+                this.refreshMedal();
+                this.findMatch();
+            });
+        }
+        if (this.spotlight) this.ui.addChild(this.spotlight);
+        this.refreshMedal();
+    }
+
+    private closeSpotlight(): void {
+        this.spotlight?.destroy({ children: true });
+        this.spotlight = null;
+    }
+
+    private openOverlay(overlay: Overlay | TrophyRoad): void {
+        this.overlay = overlay;
+        this.ui.addChild(overlay);
+        if (overlay instanceof TrophyRoad) overlay.layout();
+        else overlay.show();
+    }
+
+    private openRoad(): void {
+        if (this.overlay || this.tutorialStep) return;
+        this.openOverlay(new TrophyRoad((step) => this.claimRoad(step), () => {
+            this.overlay = null;
+            this.versusHome?.refresh();
+        }));
+    }
+
+    /** A road step's CLAIM: its coins, or its spaceship or alien (owned and worn: the saucer and the tabs change). */
+    private claimRoad(step: RoadStep): void {
+        UfoProgress.claimRoad(step.trophies, step.reward);
+        UfoAudio.milestone();
+        if (step.reward.ufo || step.reward.alien) this.onShopChange();
+        else this.refreshCoins();
+        this.versusHome?.refresh();
     }
 
     private buildProfile(): void {
@@ -394,7 +675,8 @@ export default class HomeScene extends ThreeScene {
     }
 
     private refreshMedal(): void {
-        this.medalHand.visible = !UfoProgress.rankingSeen;
+        // (Not while the versus tutorial's pointing somewhere else.)
+        this.medalHand.visible = !UfoProgress.rankingSeen && !this.tutorialStep;
         this.medalAlert.visible = !UfoProgress.rankingSeen || anyClaimable();
     }
 
@@ -402,7 +684,7 @@ export default class HomeScene extends ThreeScene {
         UfoProgress.markRankingSeen();
         this.refreshMedal();
         if (this.rankingPanel) return;
-        this.rankingPanel = new RankingPanel(() => this.closeRanking(), () => this.onCompetition());
+        this.rankingPanel = new RankingPanel(() => this.closeRanking());
         this.ui.addChild(this.rankingPanel);
         this.rankingPanel.reposition();
     }
@@ -447,6 +729,15 @@ export default class HomeScene extends ThreeScene {
         if (home && !home.children.length) {
             home.addChild(iconSprite('Icon_MapPoint', 100));
         }
+        const versus = this.tabs.get('versus')?.icon;
+        if (versus && !versus.children.length) {
+            versus.addChild(iconSprite('ItemIcon_Trophy_Gold', 100));
+            if (!versusOpen()) {
+                const lock = iconSprite('Icon_Lock03', 54);
+                lock.position.set(30, 26);
+                versus.addChild(lock);
+            }
+        }
         const place = (tab: Tab, texture: PIXI.Texture | null) => {
             const icon = this.tabs.get(tab)?.icon;
             if (!texture || !icon || this.destroyedScene) return;
@@ -464,9 +755,16 @@ export default class HomeScene extends ThreeScene {
 
     private openTab(tab: Tab): void {
         if (tab === this.tab) return;
+        // VERSUS, not open yet: what it takes.
+        if (tab === 'versus' && !versusOpen()) {
+            const icon = this.tabs.get('versus')?.icon;
+            if (icon) gsap.fromTo(icon, { x: icon.x - 10 }, { x: icon.x, duration: 0.4, ease: 'elastic.out(1.2, 0.3)' });
+            UfoAudio.bump();
+            return;
+        }
         this.tab = tab;
         this.shops.forEach((shop) => { shop.visible = false; });
-        if (tab !== 'home') {
+        if (tab === 'alien' || tab === 'ufo') {
             let shop = this.shops.get(tab);
             if (!shop) {
                 shop = new ShopPanel(tab, () => this.onShopChange());
@@ -476,6 +774,7 @@ export default class HomeScene extends ThreeScene {
             shop.visible = true;
             shop.reposition();
         }
+        this.applyTab();
         this.placeTabs();
         this.placeTopLeft();
         const icon = this.tabs.get(tab)?.icon;
@@ -530,10 +829,30 @@ export default class HomeScene extends ThreeScene {
         this.placeTopLeft();
         this.avatarPanel?.reposition();
         this.mute.position.set(screen.topLeft.x + screen.width - TOP.margin - TOP.muteSize / 2, top + TOP.y);
-        this.ribbon.position.set(screen.center.x, top + RIBBON.y);
+        const versus = this.tab === 'versus';
+        this.ribbon.position.set(screen.center.x, top + (versus ? VERSUS_LAYOUT.ribbonY : RIBBON.y));
         const tabsTop = top + screen.height - TABS.height;
         this.play.position.set(screen.center.x, tabsTop - PLAY.up);
-        this.medal.position.set(screen.topLeft.x + MEDAL.x, top + MEDAL.y);
+        // RANKING (and on VERSUS, ROAD) as a row just over the tabs, either side of PLAY, the same on every tab.
+        this.medal.scale.set(SIDE_ROW.scale);
+        this.medal.position.set(screen.topLeft.x + SIDE_ROW.x, tabsTop - SIDE_ROW.up);
+        // HOME: the area bar over PLAY, shrunk to fit a narrow screen.
+        const areaScale = Math.min(HOME_AREA.scale, (screen.width - 24) / AREA_BAR.width);
+        this.areaBar.scale.set(areaScale);
+        this.areaBar.position.set(screen.center.x, this.play.y - PLAY.height / 2 - HOME_AREA.gap - (AREA_BAR.height * areaScale) / 2);
+        // VERSUS: the strip under the ribbon, the ranking and the road under it either side, the arrows by the island.
+        if (this.versusHome) {
+            const stripScale = Math.min(1, (screen.width - 24) / 600);
+            this.versusHome.top.scale.set(stripScale);
+            this.versusHome.top.position.set(screen.center.x, this.ribbon.y + VERSUS_LAYOUT.stripGap);
+            this.versusHome.roadButton.scale.set(SIDE_ROW.scale);
+            this.versusHome.roadButton.position.set(screen.topLeft.x + screen.width - SIDE_ROW.x, tabsTop - SIDE_ROW.up);
+        }
+        this.arenaPrev.position.set(screen.topLeft.x + VERSUS_LAYOUT.arrows, screen.center.y + 40);
+        this.arenaNext.position.set(screen.topLeft.x + screen.width - VERSUS_LAYOUT.arrows, screen.center.y + 40);
+        this.arenaLock.position.set(screen.center.x, screen.center.y + 20);
+        this.matchmaking?.layout();
+        this.overlay?.layout();
         this.rankingPanel?.reposition();
         this.placeTabs();
         this.shops.forEach((shop) => shop.reposition());
@@ -543,6 +862,11 @@ export default class HomeScene extends ThreeScene {
         const step = Math.min(delta, 1 / 20);
         this.time += step;
         this.rankingPanel?.update(step);
+        this.areaBar.update(step);
+        this.versusHome?.update(step);
+        this.matchmaking?.update(step);
+        this.overlay?.update(step);
+        this.spotlight?.update(step);
         this.placeCamera();
         if (this.bakedUfo) {
             this.bakedUfo.y = this.bakedUfoY + Math.sin(this.time * BAKED_BOB.speed) * BAKED_BOB.height;
@@ -566,12 +890,23 @@ export default class HomeScene extends ThreeScene {
         gsap.killTweensOf([this.medalRays, this.medalIcon, this.medalHand]);
         if (this.shine) gsap.killTweensOf(this.shine);
         if (this.glow) gsap.killTweensOf(this.glow);
-        this.tabs.forEach(({ icon }) => gsap.killTweensOf(icon.scale));
+        this.tabs.forEach(({ icon }) => {
+            gsap.killTweensOf(icon);
+            gsap.killTweensOf(icon.scale);
+        });
+        gsap.killTweensOf([this.ribbon.scale, this.arenaLock]);
+        this.arenaPrev.children.forEach((child) => gsap.killTweensOf(child));
+        this.arenaNext.children.forEach((child) => gsap.killTweensOf(child));
+        this.matchmaking?.destroy();
+        this.matchmaking = null;
         this.bakedIsland?.texture.destroy(true);
         this.bakedUfo?.texture.destroy(true);
         this.ui.destroy({ children: true });
         this.saucer?.destroy();
-        this.town?.destroy();
+        this.islands.forEach(({ town }) => {
+            town.separateSea()?.removeFromParent();
+            town.destroy();
+        });
         super.destroy();
     }
 }

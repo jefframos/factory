@@ -5,5 +5,13 @@
         "gameId": "",
         "enableAds": false,
         "folderPath": "ufo"
+    },
+    "youtube": {
+        "className": "YouTubePlayablePlatform",
+        "importPath": "core/platforms/YouTubePlayablePlatform",
+        "gameId": "f7cdc30e8fd14e50a3170c485f207936",
+        "enableAds": true,
+        "folderPath": "ufo",
+        "apiScript": "https://www.youtube.com/game_api/v1"
     }
 }

@@ -8,7 +8,9 @@ const GOALS = [
     ['all', 'Eat everything'],
     ['points', 'Reach this many points'],
     ['share', 'Reach this share of the town\'s points'],
-    ['object', 'Swallow the town\'s goal'],
+    ['object', 'Swallow the town\'s goal (or the level\'s own landmark)'],
+    ['race', 'Race: reach this share of the points before any rival'],
+    ['top', 'Come out on top: the biggest when the clock runs out'],
 ];
 
 let dirty = false;
@@ -87,13 +89,14 @@ export async function initLevelsTab(host, { onNewTown, openTown }) {
                 level.type = chosen === 'share' ? 'points' : chosen;
                 if (chosen === 'points') level.points = 500;
                 if (chosen === 'share') level.share = 0.5;
+                if (chosen === 'race') level.share = 0.3;
                 changed();
                 render();
             },
         }, GOALS.map(([value, name]) => new Option(name, value)));
         goal.value = goalOf(level);
         const amount = goal.value === 'points' ? number('Points', level.points, (value) => { level.points = value; }, 10)
-            : goal.value === 'share' ? number('Share (0-1)', level.share, (value) => { level.share = value; }, 0.05) : null;
+            : goal.value === 'share' || goal.value === 'race' ? number('Share (0-1)', level.share, (value) => { level.share = value; }, 0.05) : null;
         return el('div', { class: 'levels-row' },
             el('strong', { class: 'levels-number' }, fixed ? 'Tutorial' : `Level ${number1}`),
             el('label', { class: 'levels-field' }, el('span', {}, 'Town'), townSelect(level.level, (value) => { level.level = value; })),

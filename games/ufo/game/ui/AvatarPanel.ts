@@ -8,6 +8,7 @@ import { AVATARS } from '../data/Profile';
 import { UfoProgress } from '../data/UfoProgress';
 import { UfoAudio } from '../audio/UfoAudio';
 import { buttonParts, iconSprite, label, makeAvatar, tappable } from './UiParts';
+import { PANEL_LOOK, Pattern } from './Pattern';
 
 const BACK = 0x12305e;
 const STRIP = { height: 96, color: 0x3f6bf5, title: 34 };
@@ -16,6 +17,8 @@ const BUTTON = { width: 260, height: 84, fromBottom: 64 };
 
 export class AvatarPanel extends PIXI.Container {
     private readonly back = new PIXI.Sprite(PIXI.Texture.WHITE);
+    /** The starfield over the back (taps go through it to the back). */
+    private readonly pattern = new Pattern(PANEL_LOOK);
     private readonly strip = new PIXI.Sprite(PIXI.Texture.WHITE);
     private readonly title = label(STRIP.title);
     private readonly userName = label(GRID.nameSize);
@@ -42,7 +45,7 @@ export class AvatarPanel extends PIXI.Container {
         this.grid.addChild(this.check);
         this.close.addChild(...buttonParts(BUTTON.width, BUTTON.height, 'DONE', 'Button01_l_Green'));
         tappable(this.close, onClose);
-        this.addChild(this.back, this.strip, this.title, this.userName, this.grid, this.close);
+        this.addChild(this.back, this.pattern, this.strip, this.title, this.userName, this.grid, this.close);
         this.placeCheck();
     }
 
@@ -66,6 +69,7 @@ export class AvatarPanel extends PIXI.Container {
         this.back.position.copyFrom(screen.center);
         this.back.width = screen.width + 4;
         this.back.height = screen.height + 4;
+        this.pattern.place(screen.topLeft.x - 2, screen.topLeft.y - 2, screen.width + 4, screen.height + 4);
         this.strip.position.set(screen.topLeft.x, top);
         this.strip.width = screen.width;
         this.strip.height = STRIP.height;

@@ -38,8 +38,8 @@ export class Rival {
     /** It's the one after the player right now (RivalDirector). */
     public huntsPlayer = false;
 
-    /** `leaveGoal`: the level's goal isn't for it. */
-    public constructor(private readonly me: Saucer, private readonly leaveGoal = false) {
+    /** `leaveGoal`: the level's goal isn't for it; `speed`: its share of the player's speed (versus: by the tier). */
+    public constructor(private readonly me: Saucer, private readonly leaveGoal = false, private readonly speed = DESIGN.rivals.speed) {
         this.target.copy(me.position);
     }
 
@@ -74,7 +74,7 @@ export class Rival {
             this.dodging -= delta;
             this.toTarget.rotateAround(new THREE.Vector2(), DODGE.turn * this.dodgeSide);
         }
-        this.input.copy(this.toTarget).multiplyScalar(DESIGN.rivals.speed);
+        this.input.copy(this.toTarget).multiplyScalar(this.speed);
     }
 
     private decide(others: readonly Saucer[], town: UfoTown, player: Saucer): void {

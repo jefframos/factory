@@ -15,7 +15,8 @@ import { UfoAudio } from './game/audio/UfoAudio';
 import HomeScene from './game/scenes/HomeScene';
 import UfoScene, { Travel } from './game/scenes/UfoScene';
 import { UfoProgress } from './game/data/UfoProgress';
-import { competitionName, currentMission, goToCompetition, goToTutorial, levelInAddress, levelTitle } from './game/data/UfoConfig';
+import { competitionName, currentMission, currentMissionIndex, goToArena, goToCompetition, goToMission, goToTutorial, hasLevel, levelInAddress, levelTitle } from './game/data/UfoConfig';
+import { arenaById } from './game/data/Versus';
 import { RadialTransition } from './game/ui/RadialTransition';
 
 type PlatformConfigEntry = { gameId?: string; enableAds?: boolean; folderPath?: string };
@@ -60,8 +61,10 @@ export default class UfoGame extends Game {
             }));
             await PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`);
             DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'ufo');
-            const playFirst = levelInAddress() || !UfoProgress.tutorialDone;
+            // A new player: the tutorial, then straight on into the first level; the main screen once that's won.
+            const playFirst = levelInAddress() || !UfoProgress.tutorialDone || UfoProgress.levelsWon === 0;
             if (!levelInAddress() && !UfoProgress.tutorialDone) goToTutorial();
+            else if (!levelInAddress() && UfoProgress.levelsWon === 0) goToMission(currentMissionIndex());
             const scene = playFirst ? this.buildScene() : this.buildHome();
             await Promise.race([scene.ready, new Promise((resolve) => window.setTimeout(resolve, MAX_SCENE_WAIT_MS))]);
             PlatformHandler.instance.platform.loadFinished();
@@ -88,7 +91,13 @@ export default class UfoGame extends Game {
                 const mission = currentMission();
                 void this.nextLevel({ title: mission?.name ?? '', subtitle: mission ? levelTitle(mission.level).toUpperCase() : '', apply: () => undefined });
             },
-            () => void this.nextLevel({ title: competitionName(), subtitle: 'COMPETITION', apply: () => goToCompetition() }));
+            () => void this.nextLevel({ title: competitionName(), subtitle: 'COMPETITION', apply: () => goToCompetition() }),
+            (id: string) => {
+                // A versus match in arena `id` (its players already found: Versus.setMatchPlayers).
+                const arena = arenaById(id);
+                if (!arena) return;
+                void this.nextLevel({ title: 'VERSUS', subtitle: arena.name.toUpperCase(), apply: () => goToArena(id, hasLevel(arena.level) ? arena.level : 'town') });
+            });
         this.sceneManager.changeScene(key);
         this.sceneManager.resize();
         return scene;

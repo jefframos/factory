@@ -14,7 +14,7 @@
 export const ARENA_RULES = { width: 10, length: 30, seconds: 90, towerHp: 150, cannonHp: 300, tower: { width: 2, inset: 1 }, towerZ: -0.4, cannonZ: -2.4, cannonWidth: 1.8, cannonMargin: 0.8, cannonFront: 0.6, mostGates: 4 };
 const SKILLS = ['newbie', 'casual', 'average', 'pro'];
 const fieldHalf = (data) => (data.width ?? ARENA_RULES.width) / 2;
-const CARDS = ['giant', 'truck', 'car', 'saucer', 'skeletons', 'warriors', 'golem', 'bomb', 'bats', 'turtle', 'giant-green', 'giant-viking'];
+const CARDS = ['giant', 'car', 'saucer', 'skeletons', 'warriors', 'golem', 'bomb', 'bats', 'turtle', 'giant-green', 'giant-viking'];
 
 /** A new arena. */
 export function newArena(name) {

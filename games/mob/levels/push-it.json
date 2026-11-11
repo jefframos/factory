@@ -55,7 +55,7 @@
   "reward": 170,
   "pads": [
     {
-      "kind": "truck",
+      "kind": "bomb",
       "x": -2.75,
       "z": -7.5,
       "width": 2.4,

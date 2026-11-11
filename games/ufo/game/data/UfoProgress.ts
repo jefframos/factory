@@ -5,7 +5,7 @@
 // `price`), bought with coins.
 
 import { AVATARS, AvatarLook, usernameFrom } from './Profile';
-import { LOOKS, eraseMissionSave } from './UfoConfig';
+import { LOOKS, currentMissionIndex, eraseMissionSave } from './UfoConfig';
 
 export type ShopKind = 'ufo' | 'alien';
 export type ShopSection = 'classics' | 'specials';
@@ -28,18 +28,35 @@ interface Saved {
     stars?: Record<string, { key: string; count: number }>;
     /** Which period each goal was last claimed in. */
     claimed?: Record<string, string>;
+    /** How many story levels have been won (the next one's the one after). */
+    levelsWon?: number;
+    /** Versus: trophies now, the most ever (arenas and the road stay open by it), matches played and won. */
+    trophies?: number;
+    bestTrophies?: number;
+    versusPlayed?: number;
+    versusWins?: number;
+    /** Arenas whose NEW ARENA moment has been shown; the trophy road's steps claimed (by trophies). */
+    arenasSeen?: string[];
+    road?: number[];
+    /** The versus tutorial's been through (the VERSUS tab, then PLAY ONLINE pointed at). */
+    versusTutorial?: boolean;
 }
 
 function load(): Saved {
     try {
         const saved = JSON.parse(window.localStorage.getItem(KEY) ?? '{}') as Partial<Saved>;
-        return { coins: saved.coins ?? 0, ufos: saved.ufos ?? [], aliens: saved.aliens ?? [], ufo: saved.ufo, alien: saved.alien, tutorialDone: saved.tutorialDone, rankingSeen: saved.rankingSeen, username: saved.username, avatar: saved.avatar, stars: saved.stars, claimed: saved.claimed };
+        return {
+            coins: saved.coins ?? 0, ufos: saved.ufos ?? [], aliens: saved.aliens ?? [], ufo: saved.ufo, alien: saved.alien, tutorialDone: saved.tutorialDone, rankingSeen: saved.rankingSeen, username: saved.username, avatar: saved.avatar, stars: saved.stars, claimed: saved.claimed,
+            levelsWon: saved.levelsWon, trophies: saved.trophies, bestTrophies: saved.bestTrophies, versusPlayed: saved.versusPlayed, versusWins: saved.versusWins, arenasSeen: saved.arenasSeen, road: saved.road, versusTutorial: saved.versusTutorial,
+        };
     } catch {
         return { coins: 0, ufos: [], aliens: [] };
     }
 }
 
 const state = load();
+// A save from before levels won were counted: the level it's up to says how many were.
+state.levelsWon = Math.max(state.levelsWon ?? 0, currentMissionIndex());
 // What's in the data as worn at the start is owned from the start.
 if (!state.ufos.includes(LOOKS.ufo)) state.ufos.push(LOOKS.ufo);
 if (!state.aliens.includes(LOOKS.alien)) state.aliens.push(LOOKS.alien);
@@ -124,6 +141,89 @@ export const UfoProgress = {
 
     /** A round's just been played: the home screen opens on the ranking. */
     openRankingOnHome: false,
+
+    /** A versus match has just been played: the home screen opens on VERSUS, the trophies counting from `trophiesBefore`. */
+    openVersusOnHome: false,
+    trophiesBefore: -1,
+
+    get levelsWon(): number {
+        return state.levelsWon ?? 0;
+    },
+
+    /** Story level `index` (0-based) won. */
+    wonLevel(index: number): void {
+        state.levelsWon = Math.max(state.levelsWon ?? 0, index + 1);
+        save();
+    },
+
+    get trophies(): number {
+        return state.trophies ?? 0;
+    },
+
+    get bestTrophies(): number {
+        return state.bestTrophies ?? 0;
+    },
+
+    get versusPlayed(): number {
+        return state.versusPlayed ?? 0;
+    },
+
+    get versusWins(): number {
+        return state.versusWins ?? 0;
+    },
+
+    /** A match finished in `place`, worth `trophies` (+ or -) and `coins`. */
+    versusResult(place: number, trophies: number, coins: number): void {
+        state.trophies = Math.max(0, (state.trophies ?? 0) + trophies);
+        state.bestTrophies = Math.max(state.bestTrophies ?? 0, state.trophies);
+        state.versusPlayed = (state.versusPlayed ?? 0) + 1;
+        if (place === 1) state.versusWins = (state.versusWins ?? 0) + 1;
+        state.coins += coins;
+        save();
+    },
+
+    /** Debug: trophies added (the arenas and the road open by them). */
+    debugTrophies(amount: number): void {
+        state.trophies = Math.max(0, (state.trophies ?? 0) + amount);
+        state.bestTrophies = Math.max(state.bestTrophies ?? 0, state.trophies);
+        save();
+    },
+
+    arenaSeen(id: string): boolean {
+        return (state.arenasSeen ?? []).includes(id);
+    },
+
+    markArenaSeen(id: string): void {
+        state.arenasSeen = [...new Set([...(state.arenasSeen ?? []), id])];
+        save();
+    },
+
+    roadClaimed(trophies: number): boolean {
+        return (state.road ?? []).includes(trophies);
+    },
+
+    /** A road step claimed: its coins, or its style (owned, and worn). */
+    claimRoad(trophies: number, reward: { coins?: number; ufo?: string; alien?: string }): void {
+        if (this.roadClaimed(trophies) || trophies > this.bestTrophies) return;
+        state.road = [...(state.road ?? []), trophies];
+        if (reward.coins) state.coins += reward.coins;
+        for (const kind of ['ufo', 'alien'] as ShopKind[]) {
+            const id = reward[kind];
+            if (!id || !stylesOf(kind).some((style) => style.id === id)) continue;
+            if (!ownedOf(kind).includes(id)) ownedOf(kind).push(id);
+            this.wear(kind, id);
+        }
+        save();
+    },
+
+    get versusTutorial(): boolean {
+        return state.versusTutorial === true;
+    },
+
+    finishVersusTutorial(): void {
+        state.versusTutorial = true;
+        save();
+    },
 
     /** Forgets everything and starts over, from the tutorial (the debug panel's). */
     eraseAndRestart(): void {

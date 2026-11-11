@@ -22,6 +22,7 @@ import { ARENAS_BY_ID } from './game/data/Arenas';
 import { MatchStart } from './game/scenes/MobScene';
 import { RadialTransition } from './game/ui/RadialTransition';
 import { MobSave } from './game/data/MobSave';
+import { UnitIcons } from './game/ui/UnitIcons';
 import { CARD_KINDS } from './game/data/Settings';
 import { areaProgress } from './game/data/MobLevels';
 
@@ -69,14 +70,17 @@ export default class MobGame extends Game {
             }));
             // The UI's sprites (picked from library3d/2d's pack: raw-assets/images/ui{tps}, `npm run image`).
             await PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`);
-            // The cards' pictures (raw-assets/images/entities{tps}), if they've been made: else they're rendered (UnitIcons).
-            await PIXI.Assets.load(`${this.folderPath}/images/entities.webp.json`).catch(() => undefined);
+            // The cards' pictures (raw-assets/images/entities{tps}): in the background (a new player's first battle has no
+            // card; the pictures wait for it: UnitIcons.atlas), else they're rendered (UnitIcons).
+            UnitIcons.atlas(PIXI.Assets.load(`${this.folderPath}/images/entities.webp.json`).catch(() => undefined));
             // The debug panels: only with ?dev=1 / ?debug=1.
             DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'mob');
             this.buildDebug();
             const query = new URLSearchParams(window.location.search);
-            // ?home=1: the main screen whatever (the editor's world map preview).
-            const straightIn = !query.has('home') && (MobSave.best === 0 || ['level', 'preview', 'play'].some((key) => query.has(key)));
+            // ?home=1: the main screen whatever (the editor's world map preview). Before versus mode (MobSave.homeOpen)
+            // there's no main screen: straight into the next level.
+            const straightIn = !query.has('home') && (!MobSave.homeOpen || ['level', 'preview', 'play'].some((key) => query.has(key)));
+            if (!MobSave.homeOpen && !query.has('level')) MobSave.select(MobSave.battle);
             if (straightIn) {
                 const scene = this.showBattle();
                 await Promise.race([scene.ready, new Promise((resolve) => window.setTimeout(resolve, MAX_SCENE_WAIT_MS))]);

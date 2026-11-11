@@ -8,6 +8,7 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { UfoAudio } from '../audio/UfoAudio';
+import { AreaBar, AreaView } from './AreaBar';
 import { COIN_BAR, PlayerLook, PlayerRow, ROW, buttonParts, fillCoinBar, fitSprite, framePlane, iconSprite, label, tappable } from './UiParts';
 
 export interface EndResult extends PlayerLook {
@@ -34,6 +35,11 @@ export interface EndOptions {
     coinsTotal?: number;
     /** Stars earned for the ranking, shown under the results. */
     starsWon?: number;
+    /** A versus match: the trophies won (or lost) and the coins, on a line under them. */
+    trophies?: number;
+    coinsWon?: number;
+    /** A story level: how far through its area (complete: this win finished it), over the button. */
+    area?: { view: AreaView; complete: boolean };
 }
 
 const LOOK = {
@@ -50,6 +56,10 @@ const LOSE_LAYOUT = { emblemY: -140, emblem: 360, rays: 620, ribbonY: -14, ribbo
 const COIN_FLIGHT = { count: 12, gap: 0.07, seconds: 0.55, size: 44, spread: 90 };
 /** Stars for the ranking, under the results. */
 const STARS_WON = { y: 44, size: 58, gap: 66 };
+/** A match's trophies and coins, a line under that: its height, the icons' size, the gap between the two. */
+const REWARD_LINE = { y: 46, icon: 50, text: 40, gap: 46 };
+/** The area bar: its scale (it's wider than the rest), how far under what's over it, and the room it adds. */
+const AREA = { scale: 0.68, y: 66, room: 130 };
 const ROWS_SHOWN = 5;
 const ROW_WIDTH = ROW.width + 90;
 /** The whole thing's height and width: scaled down to fit a small screen. */
@@ -63,7 +73,10 @@ export class EndReveal extends PIXI.Container {
     private readonly coinBar = new PIXI.Container();
     private readonly coinBarAmount = label(COIN_BAR.textSize);
     private readonly flyingCoins = new PIXI.Container();
+    private areaBar: AreaBar | null = null;
     private emblemY = 0;
+    /** Its height, for fitting it to the screen (more with the area bar). */
+    private fitHeight = FIT.height;
     private readonly timeline = gsap.timeline();
     private readonly spin: gsap.core.Tween;
 
@@ -184,12 +197,63 @@ export class EndReveal extends PIXI.Container {
             }
             bottom = y + STARS_WON.size / 2 - 10;
         }
+        if (options.trophies !== undefined || options.coinsWon) {
+            at = Math.max(at, tl.duration());
+            const line = new PIXI.Container();
+            line.y = bottom + REWARD_LINE.y;
+            const parts: PIXI.Container[] = [];
+            if (options.trophies !== undefined) {
+                const cup = iconSprite('ItemIcon_Trophy_Gold', REWARD_LINE.icon);
+                const amount = label(REWARD_LINE.text, options.trophies >= 0 ? 0x6dff5a : 0xff6b6b);
+                amount.anchor.set(0, 0.5);
+                amount.text = options.trophies >= 0 ? `+${options.trophies}` : `${options.trophies}`;
+                parts.push(this.pair(cup, amount));
+            }
+            if (options.coinsWon) {
+                const coin = iconSprite('Icon_Coin', REWARD_LINE.icon * 0.85);
+                const amount = label(REWARD_LINE.text, 0xffe066);
+                amount.anchor.set(0, 0.5);
+                amount.text = `+${options.coinsWon}`;
+                parts.push(this.pair(coin, amount));
+            }
+            const width = parts.reduce((sum, part) => sum + part.width, 0) + REWARD_LINE.gap * (parts.length - 1);
+            let x = -width / 2;
+            for (const part of parts) {
+                part.x = x;
+                x += part.width + REWARD_LINE.gap;
+                line.addChild(part);
+            }
+            line.scale.set(0);
+            this.content.addChild(line);
+            tl.to(line.scale, { x: 1, y: 1, duration: 0.35, ease: 'back.out(2.6)' }, at);
+            tl.call(() => UfoAudio.milestone(), undefined, at);
+            at += 0.35;
+            bottom = line.y + REWARD_LINE.icon / 2 - 10;
+        }
         at = Math.max(at, tl.duration());
+        // A story level's area: how far through it, over the button (complete: the next one's lock pops off).
+        let areaShift = 0;
+        if (options.area) {
+            const bar = new AreaBar();
+            bar.set(options.area.view, options.area.complete);
+            bar.scale.set(AREA.scale);
+            bar.alpha = 0;
+            this.areaBar = bar;
+            this.content.addChild(bar);
+            areaShift = AREA.room;
+            this.fitHeight = FIT.height + AREA.room;
+            const barAt = at;
+            tl.to(bar, { alpha: 1, duration: 0.3 }, barAt);
+            tl.call(() => bar.play(0.1), undefined, barAt);
+            at += 0.3;
+        }
 
         const button = new PIXI.Container();
         button.addChild(...buttonParts(lost ? LOSE_LAYOUT.button : 270, 78, options.button, lost ? 'Button01_l_Sky' : 'Button01_l_Green'));
         tappable(button, onNext);
-        button.y = lost ? LOSE_LAYOUT.buttonY : bottom + LAYOUT.buttonGap;
+        button.y = (lost ? LOSE_LAYOUT.buttonY : bottom + LAYOUT.buttonGap) + areaShift;
+        // (Between what's over it and the button.)
+        if (this.areaBar) this.areaBar.y = button.y - areaShift - LAYOUT.buttonGap + AREA.y;
         button.scale.set(0);
         button.eventMode = 'none';
         this.content.addChild(button);
@@ -208,7 +272,7 @@ export class EndReveal extends PIXI.Container {
             castle.x = LOSE_LAYOUT.homeIconX;
             home.addChild(plane, words, castle);
             tappable(home, onHome);
-            home.y = lost ? LOSE_LAYOUT.homeY : button.y + LAYOUT.buttonGap + 30;
+            home.y = lost ? LOSE_LAYOUT.homeY + areaShift : button.y + LAYOUT.buttonGap + 30;
             home.scale.set(0);
             home.eventMode = 'none';
             this.content.addChild(home);
@@ -217,6 +281,20 @@ export class EndReveal extends PIXI.Container {
                 home.eventMode = 'static';
             }, undefined, at + 0.3);
         }
+    }
+
+    /** An icon and its words beside it, as one, left-aligned at 0. */
+    private pair(icon: PIXI.Sprite, words: PIXI.Text): PIXI.Container {
+        const holder = new PIXI.Container();
+        icon.x = icon.width / 2;
+        words.x = icon.width + 6;
+        holder.addChild(icon, words);
+        return holder;
+    }
+
+    /** The area bar's pulse. */
+    public update(dt: number): void {
+        this.areaBar?.update(dt);
     }
 
     /** The rows, from last place up to first; returns how far down they reach. */
@@ -298,8 +376,10 @@ export class EndReveal extends PIXI.Container {
         this.dim.width = width + 4;
         this.dim.height = height + 4;
         this.coinBar.position.set(x - width / 2 + COIN_BAR.left + COIN_BAR.icon / 2, y - height / 2 + COIN_BAR.top);
-        this.content.position.set(x, y + 40 * Math.min(1, height / FIT.height));
-        this.content.scale.set(Math.min(1, height / FIT.height, (width - 16) / FIT.width));
+        const scale = Math.min(1, height / this.fitHeight, (width - 16) / FIT.width);
+        // (The area bar under it all: the rest moves up to make room.)
+        this.content.position.set(x, y + (40 - (this.fitHeight - FIT.height) / 2) * scale);
+        this.content.scale.set(scale);
     }
 
     public override destroy(): void {

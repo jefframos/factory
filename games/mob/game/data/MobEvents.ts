@@ -17,9 +17,29 @@
 //   zone          <zoneId>                     start      a zone's first battle starts (each loop)
 //   zone          <zoneId>                     complete   its last battle is won
 //   game          all-levels                   complete   the last battle of the last zone is won (each loop)
-//   unit          giant | truck | car | ufo    make       a house makes one
+//   unit          <unit>                       make       a house or a card makes one (giant, bomb, car, ufo, or a card's
+//                                                         kind: skeletons, warriors, golem, bats, turtle, giant-green...)
 //   upgrade       <kind>-<level>               buy        an upgrade is bought (fire / capacity / recharge)
+//   giveup        level-<n> | arena-<arenaId>  quit       the player gave up a battle (GIVE UP's YES)
 //   playtime      <1m ... 45m>                 reach      minutes of play this session
+//
+// The arena (versus mode) and its loop:
+//   arena         <arenaId>                    unlock     an arena opened (its NEW ARENA moment)
+//   arena         <arenaId>                    start      a match starts (practice included: arena-mode tells)
+//   arena-mode    online | practice            start      which kind of match
+//   arena         <arenaId>                    win / loss / draw   a match's result
+//   arena-crowns  <0..3>                       win / loss / draw   the player's crowns in it
+//   arena-tier    <tierName>                   reach      the player's tier after a counted match, the first time
+//   arena-match   search                       cancel     the matchmaking window cancelled
+//   tutorial      versus-tab | versus-play     step       the versus tutorial's steps, as each is tapped
+//   tutorial      versus                       complete   its last step (the first match starts)
+//   card          <kind>                       unlock     a card won (story house or the trophy road)
+//   card          <kind>-<level>               upgrade    a card's level bought (copies and gems)
+//   deck          <kind>                       use / remove   a card put in the battle deck, or taken out
+//   chest         <chestKind>                  open-win / open-ad / open-road   a chest opened, by where it came from
+//   ad            free-chest                   request / reward / skip   the free chest's video
+//   road          <trophies>                   claim      a trophy road step claimed
+//   quest         <questId>                    claim      a ranking quest's reward claimed
 //
 // Add an event here (and to the table) rather than calling PlatformHandler.measure() directly.
 
@@ -132,5 +152,67 @@ export const MobEvents = {
 
     upgradeBought(kind: string, level: number): void {
         measure('upgrade', `${kind}-${level}`, 'buy');
+    },
+
+    gaveUp(what: string): void {
+        measure('giveup', what, 'quit');
+    },
+
+    arenaUnlock(arena: string): void {
+        measure('arena', arena, 'unlock');
+    },
+
+    arenaStart(arena: string, online: boolean): void {
+        measure('arena', arena, 'start');
+        measure('arena-mode', online ? 'online' : 'practice', 'start');
+    },
+
+    arenaEnd(arena: string, result: 'win' | 'loss' | 'draw', crowns: number): void {
+        measure('arena', arena, result);
+        measure('arena-crowns', crowns, result);
+    },
+
+    arenaTier(tier: string): void {
+        measure('arena-tier', tier, 'reach');
+    },
+
+    matchmakingCancel(): void {
+        measure('arena-match', 'search', 'cancel');
+    },
+
+    tutorialStep(step: string): void {
+        measure('tutorial', step, 'step');
+    },
+
+    tutorialComplete(name: string): void {
+        measure('tutorial', name, 'complete');
+    },
+
+    cardUnlock(kind: string): void {
+        measure('card', kind, 'unlock');
+    },
+
+    cardUpgrade(kind: string, level: number): void {
+        measure('card', `${kind}-${level}`, 'upgrade');
+    },
+
+    deckChange(kind: string, action: 'use' | 'remove'): void {
+        measure('deck', kind, action);
+    },
+
+    chestOpen(kind: string, from: 'win' | 'ad' | 'road'): void {
+        measure('chest', kind, `open-${from}`);
+    },
+
+    ad(what: string, action: 'request' | 'reward' | 'skip'): void {
+        measure('ad', what, action);
+    },
+
+    roadClaim(trophies: number): void {
+        measure('road', trophies, 'claim');
+    },
+
+    questClaim(id: string): void {
+        measure('quest', id, 'claim');
     },
 };

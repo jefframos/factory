@@ -118,6 +118,8 @@ export interface EndCard {
     newCards?: CardKind[];
     /** Versus mode open and not tried yet: HOME called out (it leads to its tutorial). */
     homeCall?: boolean;
+    /** HOME there at all (false before versus mode: CONTINUE / RETRY alone, in the middle). Default true. */
+    home?: boolean;
     /** A win's card copies (one card's: MobSave.storyCopies), shown beside the coins. */
     copies?: { kind: CardKind; count: number } | null;
 }
@@ -179,6 +181,8 @@ export class MobHud extends PIXI.Container {
     private readonly home: GlossyButton;
     /** HOME's call-out (a glow, a hand, VERSUS!): the end card's while versus mode waits to be tried. */
     private readonly homeCall = new PIXI.Container();
+    /** The call-out's VERSUS! tag, on HOME's top edge (over the button). */
+    private readonly callTag = new PIXI.Container();
     // The energy bar.
     private readonly energy = new PIXI.Container();
     private readonly energyBack = framePlane('Slider_Play01_Bg', ENERGY.width, ENERGY.height, 1);
@@ -322,18 +326,27 @@ export class MobHud extends PIXI.Container {
         // VERSUS! on a green plate over HOME.
         const callWords = label(24);
         callWords.text = 'VERSUS!';
-        const callPlate = framePlane('BasicFrame_Round20', Math.max(120, callWords.width + 32), 42, 0.5);
+        // A tag on HOME's top edge (above it there's only a little room: the area bar's just over it). (The plate's own
+        // `width` reads back unscaled: its size from here.)
+        const plateWidth = Math.max(120, callWords.width + 28);
+        const plateHeight = 36;
+        const plateY = -BUTTONS.height / 2 - 12;
+        const callPlate = framePlane('BasicFrame_Round20', plateWidth, plateHeight, 0.5);
         callPlate.tint = 0x2fd35c;
-        callPlate.position.set(-callPlate.width / 2, -BUTTONS.height / 2 - 30 - 21);
-        callWords.y = -BUTTONS.height / 2 - 30 - 1;
+        callPlate.position.set(-plateWidth / 2, plateY - plateHeight / 2);
+        callWords.y = plateY;
         const callHand = iconSprite('Tutorial_Hand', HOME_CALL.hand);
         callHand.position.set(BUTTONS.home * 0.45, BUTTONS.height * 0.45);
         callHand.name = 'hand';
-        this.homeCall.addChild(callGlow, callPlate, callWords);
+        // (Glow behind HOME; the tag in a container of its own, over it: `callTag`.)
+        this.callTag.addChild(callPlate, callWords);
+        this.homeCall.addChild(callGlow);
         this.homeCall.position.set(this.home.x, this.home.y);
         this.homeCall.visible = false;
+        this.callTag.position.set(this.home.x, this.home.y);
+        this.callTag.visible = false;
         this.homeCall.addChild(callHand);
-        this.panel.addChild(this.rays, this.emblem, this.ribbon, this.dividerLeft, this.dividerRight, this.rewardsTitle, this.rewardCard, this.copiesCard, this.upgradeInfo, this.upgrades, this.area, this.homeCall, this.home, this.next);
+        this.panel.addChild(this.rays, this.emblem, this.ribbon, this.dividerLeft, this.dividerRight, this.rewardsTitle, this.rewardCard, this.copiesCard, this.upgradeInfo, this.upgrades, this.area, this.homeCall, this.home, this.next, this.callTag);
         // (The hand over HOME, not under it.)
         const hand = this.homeCall.getChildByName('hand');
         if (hand) this.panel.addChild(hand);
@@ -689,7 +702,11 @@ export class MobHud extends PIXI.Container {
             gsap.fromTo(this.copiesCard.scale, { x: 0, y: 0 }, { x: 1, y: 1, duration: 0.4, delay: 0.45, ease: 'back.out(3)' });
         }
         this.next.words.text = card.won ? 'CONTINUE' : 'RETRY';
-        this.callHome(!!card.homeCall);
+        const home = card.home ?? true;
+        this.home.visible = home;
+        const row = BUTTONS.home + BUTTONS.gap + BUTTONS.next;
+        this.next.x = home ? row / 2 - BUTTONS.next / 2 : 0;
+        this.callHome(home && !!card.homeCall);
         this.refreshUpgrade(card);
         this.area.set(card.area, card.won ? card.finished : null);
         this.area.play(0.7);
@@ -711,6 +728,7 @@ export class MobHud extends PIXI.Container {
         const hand = this.panel.getChildByName('hand') as PIXI.Sprite | null;
         gsap.killTweensOf([this.home.scale, this.homeCall, hand].filter(Boolean));
         this.homeCall.visible = on;
+        this.callTag.visible = on;
         if (hand) hand.visible = on;
         this.home.scale.set(1);
         if (!on) return;

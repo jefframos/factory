@@ -20,8 +20,8 @@ const RUN = { dt: 1 / 30, seconds: 45, sample: 0.25, across: 9, perHouse: 3 };
 /** Stalled: moved less than `distance` in `window` seconds; given up on after `giveUp` seconds stalled in a row. */
 const STALL = { window: 2, distance: 0.35, giveUp: 6 };
 
-type UnitId = 'giant' | 'truck' | 'car' | 'redGiant';
-const MOB: Record<UnitId, number> = { giant: GIANT, truck: 2, car: 3, redGiant: GIANT };
+type UnitId = 'giant' | 'bomb' | 'car' | 'redGiant';
+const MOB: Record<UnitId, number> = { giant: GIANT, bomb: GIANT, car: 3, redGiant: GIANT };
 
 interface Run {
     unit: UnitId;
@@ -67,7 +67,7 @@ function fieldMap(): { x0: number; z0: number; nx: number; nz: number; step: num
         redPlain: [TUNING.radius, false, true],
         redGiant: [TUNING.radius * TUNING.giantScale * bodyShare('giant'), true, true],
         giant: [TUNING.radius * TUNING.giantScale * bodyShare('giant'), true],
-        truck: [TUNING.radius * TUNING.truckScale * bodyShare('truck'), true],
+        bomb: [TUNING.radius * TUNING.giantScale * bodyShare('bomb'), true],
         car: [TUNING.radius * TUNING.carScale * bodyShare('car'), true],
     };
     const rows: Record<string, string[]> = {};
@@ -154,7 +154,7 @@ function main(): void {
     const range = ARENA.cannonRange;
     const kinds = new Set((level.pads ?? []).map((p) => p.kind ?? 'giant'));
     // From the cannon: each card's unit (all three: any of them can be a card), across the cannon's reach.
-    for (const unit of ['giant', 'truck', 'car'] as UnitId[]) {
+    for (const unit of ['giant', 'bomb', 'car'] as UnitId[]) {
         for (let k = 0; k < RUN.across; k++) {
             const x = -range + (2 * range * k) / (RUN.across - 1);
             runs.push(run(unit, 'cannon', x, -2.8, seed++));
@@ -165,7 +165,7 @@ function main(): void {
         const kind = (pad.kind ?? 'giant') as string;
         if (kind === 'saucer') continue;
         const unit = kind as UnitId;
-        const r = TUNING.radius * (unit === 'truck' ? TUNING.truckScale : unit === 'car' ? TUNING.carScale : TUNING.giantScale);
+        const r = TUNING.radius * (unit === 'car' ? TUNING.carScale : TUNING.giantScale);
         const spread = Math.max(0, pad.width / 2 - r * 0.5);
         for (let k = 0; k < RUN.perHouse; k++) {
             const x = pad.x + (RUN.perHouse > 1 ? -spread + (2 * spread * k) / (RUN.perHouse - 1) : 0);
@@ -182,7 +182,7 @@ function main(): void {
     const bodies = {
         plain: { size: TUNING.radius, body: TUNING.radius },
         giant: { size: TUNING.radius * TUNING.giantScale, body: TUNING.radius * TUNING.giantScale * bodyShare('giant') },
-        truck: { size: TUNING.radius * TUNING.truckScale, body: TUNING.radius * TUNING.truckScale * bodyShare('truck') },
+        bomb: { size: TUNING.radius * TUNING.giantScale, body: TUNING.radius * TUNING.giantScale * bodyShare('bomb') },
         car: { size: TUNING.radius * TUNING.carScale, body: TUNING.radius * TUNING.carScale * bodyShare('car') },
     };
     process.stdout.write(JSON.stringify({ field: { halfWidth: ARENA.halfWidth, baseZ: ARENA.baseZ }, bodies, houses: [...kinds], map, runs }));

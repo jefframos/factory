@@ -4,6 +4,8 @@
 // leaderboard rows.
 
 import * as PIXI from 'pixi.js';
+import gsap from 'gsap';
+import { UfoAudio } from '../audio/UfoAudio';
 
 export const FONT = 'Baloo2-ExtraBold, sans-serif';
 export const DARK = 0x10123a;
@@ -34,6 +36,7 @@ const SLICES: Record<string, [number, number, number, number]> = {
     Menu_BottomBtn_TabFocus_Light: [20, 29, 20, 0],
     ResourceBar_Single_Bg: [11, 11, 11, 11],
     Title_Ribbon04_Red: [150, 0, 150, 0],
+    Title_Ribbon04_Purple: [150, 0, 150, 0],
     PanelFrame03_Bg: [0, 8, 0, 4],
     PanelFrame03_Oblique: [30, 0, 0, 0],
     CardFrame03_n_Bg: [30, 29, 30, 33],
@@ -95,12 +98,15 @@ export function buttonParts(width: number, height: number, text: string, frame: 
     return [back, words];
 }
 
-export function tappable(button: PIXI.Container, onTap: () => void): void {
+/** Tappable, with a click (`sound` false: none, for one that makes its own); the press isn't a steer of the saucer. */
+export function tappable(button: PIXI.Container, onTap: () => void, sound = true): void {
     button.eventMode = 'static';
     button.cursor = 'pointer';
-    // Not a steer of the saucer.
     button.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
-    button.on('pointertap', onTap);
+    button.on('pointertap', () => {
+        if (sound) UfoAudio.click();
+        onTap();
+    });
 }
 
 /** A dark rounded pill behind a line of text, for depth over the busy world. */
@@ -172,6 +178,8 @@ export class PlayerRow extends PIXI.Container {
     private avatar: PIXI.Container | null = null;
     private avatarFace = '';
     private place = -1;
+    /** Its number's whole (a race's points), not a size. */
+    public whole = false;
 
     public constructor(width = ROW.width) {
         super();
@@ -244,7 +252,24 @@ export class PlayerRow extends PIXI.Container {
     }
 
     public setSize(size: number): void {
-        const text = size.toFixed(1);
+        const text = this.whole ? String(Math.floor(size)) : size.toFixed(1);
         if (this.sizeText.text !== text) this.sizeText.text = text;
     }
+}
+
+/** Stops every tween on `root`, its scale, and everything in it. */
+export function killTweensDeep(root: PIXI.DisplayObject): void {
+    gsap.killTweensOf(root);
+    gsap.killTweensOf(root.scale);
+    if (root instanceof PIXI.Container) root.children.forEach((child) => killTweensDeep(child));
+}
+
+/** A glossy button (buttonParts) in a container of its own, centred, tappable as a whole; its words to change later. */
+export function glossyButton(width: number, height: number, text: string, frame: string): PIXI.Container & { words: PIXI.Text } {
+    const holder = new PIXI.Container() as PIXI.Container & { words: PIXI.Text };
+    const parts = buttonParts(width, height, text, frame);
+    holder.addChild(...parts);
+    holder.words = parts[1] as PIXI.Text;
+    holder.hitArea = new PIXI.Rectangle(-width / 2, -height / 2, width, height);
+    return holder;
 }

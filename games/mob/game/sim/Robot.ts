@@ -327,9 +327,9 @@ export class Robot {
                 // A unit's hit is counted as it's made (below), not again here.
                 if (hit <= 2) damage += hit;
             },
-            giant: (team, _x, _z, kind) => {
+            giant: (team, _x, _z, kind, card) => {
                 if (team !== BLUE) return;
-                const unit = kind === 2 ? 'truck' : kind === 3 ? 'car' : kind === -1 ? 'saucer' : 'giant';
+                const unit = card === 'bomb' ? 'bomb' : kind === 3 ? 'car' : kind === -1 ? 'saucer' : 'giant';
                 made += UNITS[unit].damage * PROBE.house;
             },
         });

@@ -53,7 +53,7 @@
 
 import { GrinderConfig, PIPE, PipeConfig, pipeEnds, pipeLength } from '../data/MobConfig';
 import { CardKind, SETTINGS } from '../data/Settings';
-import { ARENA, BattleConfig, DuelRules, FIELD, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig, TUNING, bodyShare, carHp, needOf } from '../data/MobConfig';
+import { ARENA, BattleConfig, DuelRules, FIELD, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig, TUNING, UNITS, bodyShare, carHp, needOf } from '../data/MobConfig';
 import { Contact, Shape, boxShape, circleShape, polygonShape, shapeCentre, touch } from './Shapes';
 
 export const BLUE = 0;
@@ -1707,15 +1707,26 @@ export class Battle {
                             this.events.giant?.(team, pad.x, pad.z + out * hd, -1);
                         }
                     } else {
-                        const mob = kind === 'truck' ? TRUCK : kind === 'car' ? CAR : GIANT;
-                        const size = TUNING.radius * (mob === TRUCK ? TUNING.truckScale : mob === CAR ? TUNING.carScale : TUNING.giantScale);
+                        const mob = kind === 'car' ? CAR : GIANT;
+                        const size = TUNING.radius * (mob === CAR ? TUNING.carScale : TUNING.giantScale);
                         const gz = team === RED ? pad.z + hd + size : pad.z - hd - size;
                         // Out somewhere along its far side (not all on one spot: they'd pile up on whatever is in front).
-                        const radius = TUNING.radius * (mob === TRUCK ? TUNING.truckScale : mob === CAR ? TUNING.carScale : TUNING.giantScale);
+                        const radius = TUNING.radius * (mob === CAR ? TUNING.carScale : TUNING.giantScale);
                         const spread = Math.max(0, pad.width / 2 - radius * 0.5);
                         const gx = pad.x + (Math.random() * 2 - 1) * spread;
                         const jz = gz + out * Math.random() * SPAWN_JITTER;
-                        if (this.add(team, gx, jz, ALL_GATES, mob) >= 0) this.events.giant?.(team, gx, jz, mob);
+                        const j = this.add(team, gx, jz, ALL_GATES, mob);
+                        if (j >= 0) {
+                            // A bomb: the bomb card's unit (its look, its pace), with the house's hits and blast.
+                            const bomb = kind === 'bomb' ? CHARACTER_CARDS.bomb : undefined;
+                            if (bomb) {
+                                this.look[j] = bomb.look;
+                                this.speedMul[j] = bomb.speed;
+                                this.hp[j] = UNITS.bomb.hp ?? this.hp[j];
+                                this.unitDamage[j] = UNITS.bomb.damage;
+                            }
+                            this.events.giant?.(team, gx, jz, mob, bomb ? 'bomb' : undefined);
+                        }
                     }
                 }
             }

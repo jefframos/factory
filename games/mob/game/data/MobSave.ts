@@ -7,6 +7,7 @@
 
 import { AVATARS, usernameFrom } from './Profile';
 import { ArenaRecord, Ladder, Loadout, afterMatch, freshRecord } from './ArenaLadder';
+import { arenaFor } from './Arenas';
 import { RETRY_EASE, UPGRADES, UpgradeKind } from './MobConfig';
 import { PLAY } from './MobLevels';
 import { CARD_KINDS, CardKind, SETTINGS, cardCost, cardMaxLevel } from './Settings';
@@ -147,6 +148,9 @@ export const MobSave = {
     /** The furthest battle that can be picked: the next to beat, or (debug) the last level of every area. */
     get furthest(): number { return Math.max(data.battle, data.unlockAll ? PLAY.length - 1 : 0); },
     get unlockAll(): boolean { return data.unlockAll; },
+    /** The main screen open: versus mode reached (story level 10 beaten), or (debug) every level unlocked. Till then the
+     *  player only plays on: no HOME, no GIVE UP, and a reload goes straight into their next level. */
+    get homeOpen(): boolean { return data.unlockAll || arenaFor(data.battle + 1, data.bestTrophies).open; },
     get fireLevel(): number { return data.levels.fire; },
     get best(): number { return data.best; },
     /** How much easier the next battle is played (0 .. RETRY_EASE.most): RETRY_EASE.step a loss in a row on it. */

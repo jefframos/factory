@@ -11,13 +11,14 @@ import { RankingGoal, RankingPeriod, RankingRow, anyClaimable, claimGoal, endsIn
 import { UfoProgress } from '../data/UfoProgress';
 import { UfoAudio } from '../audio/UfoAudio';
 import { COIN_BAR, buttonParts, fillCoinBar, framePlane, iconSprite, label, makeAvatar, tappable } from './UiParts';
+import { PANEL_LOOK, Pattern } from './Pattern';
 
 const BACK = 0x12305e;
 const HEADER = { strip: 96, stripColor: 0x3f6bf5, title: 34, titleY: 48 };
 const TABS = { zone: 96, zoneColor: 0x34365a, zoneScale: 0.7, width: 640, height: 62, trackColor: 0x1c1d33, trackY: 48, button: 72, words: 26, slide: 0.18, badge: 34, badgeX: 74, badgeY: -26 };
 const LIST = { top: 16, ends: 22, width: 672, rowHeight: 88, rowGap: 8, dots: 40, avatar: 62, rankX: 44, avatarX: 112, nameX: 158, nameWidth: 340, starX: -118, starsX: -92, star: 40, medal: 62 };
 const REWARD = { rowHeight: 104, rowGap: 8, iconX: 56, icon: 64, titleX: 104, titleY: -18, titleSize: 22, progressY: 18, buttonWidth: 158, buttonHeight: 68, buttonX: -92, coin: 30, check: 56 };
-const BOTTOM = { y: 62, back: 170, play: 450, height: 84, gap: 16 };
+const BOTTOM = { y: 62, back: 260, height: 84 };
 const MEDALS = ['ItemIcon_Medal_Gold_1', 'ItemIcon_Medal_Silver_1', 'ItemIcon_Medal_Bronze_1'];
 const TIMER_EVERY = 20;
 
@@ -26,6 +27,8 @@ const TAB_ORDER: { tab: Tab; words: string }[] = [{ tab: 'daily', words: 'DAILY'
 
 export class RankingPanel extends PIXI.Container {
     private readonly back = new PIXI.Sprite(PIXI.Texture.WHITE);
+    /** The starfield over the back (taps go through it to the back). */
+    private readonly pattern = new Pattern(PANEL_LOOK);
     private readonly strip = new PIXI.Sprite(PIXI.Texture.WHITE);
     private readonly title = label(HEADER.title);
     private readonly coinBar = new PIXI.Container();
@@ -37,12 +40,11 @@ export class RankingPanel extends PIXI.Container {
     private readonly ends = label(22);
     private readonly list = new PIXI.Container();
     private readonly backButton = new PIXI.Container();
-    private readonly playButton = new PIXI.Container();
     private tab: Tab = 'daily';
     private timer = 0;
 
-    /** `onClose`: back to the home screen. `onPlay`: into a round. */
-    public constructor(private readonly onClose: () => void, private readonly onPlay: () => void) {
+    /** `onClose`: back to the home screen. (Its matches are played from the VERSUS tab.) */
+    public constructor(private readonly onClose: () => void) {
         super();
         this.back.tint = BACK;
         this.back.anchor.set(0.5);
@@ -54,10 +56,7 @@ export class RankingPanel extends PIXI.Container {
         this.buildTabs();
         this.backButton.addChild(...buttonParts(BOTTOM.back, BOTTOM.height, 'BACK', 'Button01_l_Gray'));
         tappable(this.backButton, () => this.onClose());
-        this.playButton.addChild(...buttonParts(BOTTOM.play, BOTTOM.height, 'PLAY', 'Button01_l_Green'));
-        tappable(this.playButton, () => this.onPlay());
-        gsap.to(this.playButton.scale, { x: 1.03, y: 1.03, duration: 0.7, yoyo: true, repeat: -1, ease: 'sine.inOut' });
-        this.addChild(this.back, this.strip, this.title, this.coinBar, this.zone, this.tabs, this.ends, this.list, this.backButton, this.playButton);
+        this.addChild(this.back, this.pattern, this.strip, this.title, this.coinBar, this.zone, this.tabs, this.ends, this.list, this.backButton);
         this.show('daily');
     }
 
@@ -227,6 +226,7 @@ export class RankingPanel extends PIXI.Container {
         this.back.position.copyFrom(screen.center);
         this.back.width = screen.width + 4;
         this.back.height = screen.height + 4;
+        this.pattern.place(screen.topLeft.x - 2, screen.topLeft.y - 2, screen.width + 4, screen.height + 4);
         this.strip.position.set(left, top);
         this.strip.width = screen.width;
         this.strip.height = HEADER.strip;
@@ -239,14 +239,11 @@ export class RankingPanel extends PIXI.Container {
         this.ends.position.set(screen.center.x, zoneY + TABS.zone + LIST.ends);
         this.list.position.set(screen.center.x, zoneY + TABS.zone + LIST.top);
         const bottomY = top + screen.height - BOTTOM.y;
-        const total = BOTTOM.back + BOTTOM.gap + BOTTOM.play;
-        this.backButton.position.set(screen.center.x - total / 2 + BOTTOM.back / 2, bottomY);
-        this.playButton.position.set(screen.center.x + total / 2 - BOTTOM.play / 2, bottomY);
+        this.backButton.position.set(screen.center.x, bottomY);
     }
 
     public override destroy(): void {
         gsap.killTweensOf(this.chosen);
-        gsap.killTweensOf(this.playButton.scale);
         super.destroy({ children: true });
     }
 }

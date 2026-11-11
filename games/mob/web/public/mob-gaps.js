@@ -15,7 +15,7 @@ import { levelHash } from './mob-grade-key.js';
 
 const UNITS = [
     ['giant', 'Giant', 'giant'],
-    ['truck', 'Truck', 'truck'],
+    ['bomb', 'Bomb', 'bomb'],
     ['car', 'Rammer', 'car'],
     ['redGiant', 'Red giant', 'redGiant'],
 ];

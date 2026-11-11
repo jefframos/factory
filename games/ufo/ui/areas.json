@@ -8,40 +8,41 @@
   },
   "areas": [
     {
+      "id": "town",
+      "name": "Small Town",
+      "miniature": "town",
+      "levels": [
+        { "level": "town", "type": "top", "seconds": 90, "rivals": 3, "ratios": [0.55, 0.6, 0.65], "reward": 150 },
+        { "level": "town", "type": "points", "share": 0.4, "seconds": 180, "rivals": 2, "reward": 150 },
+        { "level": "town", "type": "object", "goal": { "model": "town/library/city2-fountain-01/city2-fountain-01.glb", "radius": 2.7, "name": "Fountain" }, "seconds": 200, "rivals": 2, "reward": 200 },
+        { "level": "town", "type": "race", "share": 0.3, "seconds": 200, "rivals": 3, "reward": 200 },
+        { "level": "town", "type": "object", "goal": { "model": "town/library/halloween-crypt/halloween-crypt.gltf", "radius": 4.5, "name": "Old Crypt" }, "seconds": 260, "rivals": 3, "reward": 300 }
+      ],
+      "miniaturePoles": false
+    },
+    {
       "id": "city",
-      "name": "City",
+      "name": "Big City",
       "miniature": "citymini",
       "levels": [
-        {
-          "level": "town",
-          "type": "points",
-          "share": 0.45,
-          "seconds": 240,
-          "rivals": 3,
-          "reward": 200
-        },
-        {
-          "level": "city2",
-          "type": "object",
-          "seconds": 360,
-          "rivals": 4,
-          "reward": 250
-        },
-        {
-          "level": "town",
-          "type": "all",
-          "seconds": 300,
-          "rivals": 2,
-          "reward": 300
-        },
-        {
-          "level": "city2",
-          "type": "points",
-          "share": 0.4,
-          "seconds": 420,
-          "rivals": 6,
-          "reward": 350
-        }
+        { "level": "city2", "type": "top", "seconds": 150, "rivals": 4, "reward": 250 },
+        { "level": "city2", "type": "points", "share": 0.35, "seconds": 240, "rivals": 4, "reward": 250 },
+        { "level": "city2", "type": "race", "share": 0.25, "seconds": 240, "rivals": 5, "reward": 300 },
+        { "level": "city2", "type": "object", "goal": { "model": "town/library/city2-building-business-02/city2-building-business-02.glb", "radius": 6, "name": "Skyscraper" }, "seconds": 300, "rivals": 4, "reward": 300 },
+        { "level": "city2", "type": "object", "seconds": 360, "rivals": 4, "reward": 400 }
+      ],
+      "miniaturePoles": false
+    },
+    {
+      "id": "desert",
+      "name": "Desert",
+      "miniature": "desert",
+      "levels": [
+        { "level": "desert", "type": "top", "seconds": 150, "rivals": 4, "reward": 350 },
+        { "level": "desert", "type": "points", "share": 0.4, "seconds": 220, "rivals": 4, "reward": 350 },
+        { "level": "desert", "type": "race", "share": 0.3, "seconds": 220, "rivals": 5, "reward": 400 },
+        { "level": "desert", "type": "all", "seconds": 300, "rivals": 3, "reward": 400 },
+        { "level": "desert", "type": "object", "seconds": 320, "rivals": 5, "reward": 500 }
       ],
       "miniaturePoles": false
     }

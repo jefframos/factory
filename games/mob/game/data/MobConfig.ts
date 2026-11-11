@@ -306,7 +306,7 @@ export interface PushBlockConfig {
  * - `saucer` (the gold house): a gold saucer, flying straight at the enemy's main building, sucking up plain reds on its
  *   way, crashing into it for TUNING.saucerDamage.
  */
-export type HouseKind = 'giant' | 'truck' | 'saucer' | 'car';
+export type HouseKind = 'giant' | 'bomb' | 'saucer' | 'car';
 
 /** A helmet barrier: a span across the field at a z (`width` wide, centred on x); blues going through get a helmet. */
 export interface HelmetConfig {
@@ -471,9 +471,10 @@ export const UNIT_COLORS = {
     giantHouse: hex(UNITS.giant.tint, 0xffffff),
     giantWall: hex(UNITS.giant.wall, 0xe8f1ff),
     giantRoof: hex(UNITS.giant.roof, 0x3d6dff),
-    truck: hex(UNITS.truck.tint, 0xffffff),
-    truckWall: hex(UNITS.truck.wall, 0xcfe0ff),
-    truckRoof: hex(UNITS.truck.roof, 0x1f4fbf),
+    // (The truck's keys: the bomb house has the truck house's look; the truck itself isn't made any more.)
+    truck: hex(UNITS.bomb.tint, 0xffffff),
+    truckWall: hex(UNITS.bomb.wall, 0xcfe0ff),
+    truckRoof: hex(UNITS.bomb.roof, 0x1f4fbf),
     ufo: hex(UNITS.saucer.tint, 0xffffff),
     ufoWall: hex(UNITS.saucer.wall, 0xffe27a),
     ufoRoof: hex(UNITS.saucer.roof, 0xffb31a),
@@ -485,15 +486,13 @@ export const UNIT_COLORS = {
 // The units' hits and damage, from the editor (TUNING keeps the names the battle reads).
 TUNING.blueGiantHp = UNITS.giant.hp ?? TUNING.blueGiantHp;
 TUNING.giantDamage = UNITS.giant.damage;
-TUNING.truckHp = UNITS.truck.hp ?? TUNING.truckHp;
-TUNING.truckDamage = UNITS.truck.damage;
 TUNING.saucerDamage = UNITS.saucer.damage;
 TUNING.carDamage = UNITS.car.damage;
 
 /** A big unit's body against the world, as a share of its size, when units.json doesn't set one. */
 export const BODY_SHARE = 0.65;
 /** A unit's body share (UnitSettings.body, kept to 0.3 .. 1). */
-export const bodyShare = (kind: HouseKind): number => Math.max(0.3, Math.min(1, UNITS[kind]?.body ?? BODY_SHARE));
+export const bodyShare = (kind: HouseKind | 'truck'): number => Math.max(0.3, Math.min(1, UNITS[kind as HouseKind]?.body ?? BODY_SHARE));
 
 /** How a unit's house is drawn (the Units tab's; the giant's building and the others' plain houses unless set). */
 export const houseStyle = (kind: HouseKind): 'model' | 'house' | 'pad' => UNITS[kind].style ?? (kind === 'giant' ? 'model' : 'house');

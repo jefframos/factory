@@ -629,6 +629,16 @@ const TownTrashA = {
 }
 } as const;
 
+const TownCityBuilderWatertower = {
+  id: 'city-builder-watertower',
+  path: 'town/library/city-builder-watertower/city-builder-watertower',
+  fullPath: 'ufo/models/town/library/city-builder-watertower/city-builder-watertower.gltf',
+  format: 'gltf',
+  nodes: {
+  "Watertower": "watertower"
+}
+} as const;
+
 const TownCity2Bench01 = {
   id: 'city2-bench-01',
   path: 'town/library/city2-bench-01/city2-bench-01',
@@ -1301,6 +1311,150 @@ const TownCity2Tree07 = {
 }
 } as const;
 
+const TownDesertPlantsBigSagebrush = {
+  id: 'desert-plants-big-sagebrush',
+  path: 'town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush',
+  fullPath: 'ufo/models/town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb',
+  format: 'glb',
+  nodes: {
+  "World": "world",
+  "Geometry0": "geometry_0"
+}
+} as const;
+
+const TownDesertPlantsCaliforniaFanPalm = {
+  id: 'desert-plants-california-fan-palm',
+  path: 'town/library/desert-plants-california-fan-palm/desert-plants-california-fan-palm',
+  fullPath: 'ufo/models/town/library/desert-plants-california-fan-palm/desert-plants-california-fan-palm.glb',
+  format: 'glb',
+  nodes: {
+  "World": "world",
+  "Geometry0": "geometry_0"
+}
+} as const;
+
+const TownDesertPlantsCenturyPlantAgave = {
+  id: 'desert-plants-century-plant-agave',
+  path: 'town/library/desert-plants-century-plant-agave/desert-plants-century-plant-agave',
+  fullPath: 'ufo/models/town/library/desert-plants-century-plant-agave/desert-plants-century-plant-agave.glb',
+  format: 'glb',
+  nodes: {
+  "World": "world",
+  "Geometry0": "geometry_0"
+}
+} as const;
+
+const TownDesertPlantsDatePalm = {
+  id: 'desert-plants-date-palm',
+  path: 'town/library/desert-plants-date-palm/desert-plants-date-palm',
+  fullPath: 'ufo/models/town/library/desert-plants-date-palm/desert-plants-date-palm.glb',
+  format: 'glb',
+  nodes: {
+  "World": "world",
+  "Geometry0": "geometry_0"
+}
+} as const;
+
+const TownDesertPlantsDeadDesertSnag = {
+  id: 'desert-plants-dead-desert-snag',
+  path: 'town/library/desert-plants-dead-desert-snag/desert-plants-dead-desert-snag',
+  fullPath: 'ufo/models/town/library/desert-plants-dead-desert-snag/desert-plants-dead-desert-snag.glb',
+  format: 'glb',
+  nodes: {
+  "AuxScene": "AuxScene",
+  "World": "world",
+  "Geometry0": "geometry_0"
+}
+} as const;
+
+const TownDesertPlantsGoldenBarrelCactus = {
+  id: 'desert-plants-golden-barrel-cactus',
+  path: 'town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus',
+  fullPath: 'ufo/models/town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus.glb',
+  format: 'glb',
+  nodes: {
+  "World": "world",
+  "Geometry0": "geometry_0"
+}
+} as const;
+
+const TownDesertPlantsHedgehogCactusCluster = {
+  id: 'desert-plants-hedgehog-cactus-cluster',
+  path: 'town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster',
+  fullPath: 'ufo/models/town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster.glb',
+  format: 'glb',
+  nodes: {
+  "World": "world",
+  "Geometry0": "geometry_0"
+}
+} as const;
+
+const TownDesertPlantsJoshuaTree = {
+  id: 'desert-plants-joshua-tree',
+  path: 'town/library/desert-plants-joshua-tree/desert-plants-joshua-tree',
+  fullPath: 'ufo/models/town/library/desert-plants-joshua-tree/desert-plants-joshua-tree.glb',
+  format: 'glb',
+  nodes: {
+  "AuxScene": "AuxScene",
+  "World": "world",
+  "Geometry0": "geometry_0"
+}
+} as const;
+
+const TownDesertPlantsOcotillo = {
+  id: 'desert-plants-ocotillo',
+  path: 'town/library/desert-plants-ocotillo/desert-plants-ocotillo',
+  fullPath: 'ufo/models/town/library/desert-plants-ocotillo/desert-plants-ocotillo.glb',
+  format: 'glb',
+  nodes: {
+  "World": "world",
+  "Geometry0": "geometry_0"
+}
+} as const;
+
+const TownDesertPlantsOrganPipeCactus = {
+  id: 'desert-plants-organ-pipe-cactus',
+  path: 'town/library/desert-plants-organ-pipe-cactus/desert-plants-organ-pipe-cactus',
+  fullPath: 'ufo/models/town/library/desert-plants-organ-pipe-cactus/desert-plants-organ-pipe-cactus.glb',
+  format: 'glb',
+  nodes: {
+  "World": "world",
+  "Geometry0": "geometry_0"
+}
+} as const;
+
+const TownDesertPlantsPricklyPearCactus = {
+  id: 'desert-plants-prickly-pear-cactus',
+  path: 'town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus',
+  fullPath: 'ufo/models/town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus.glb',
+  format: 'glb',
+  nodes: {
+  "World": "world",
+  "Geometry0": "geometry_0"
+}
+} as const;
+
+const TownDesertPlantsSaguaroCactus = {
+  id: 'desert-plants-saguaro-cactus',
+  path: 'town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus',
+  fullPath: 'ufo/models/town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb',
+  format: 'glb',
+  nodes: {
+  "World": "world",
+  "Geometry0": "geometry_0"
+}
+} as const;
+
+const TownFurnitureCactusMediumA = {
+  id: 'furniture-cactus-medium-a',
+  path: 'town/library/furniture-cactus-medium-a/furniture-cactus-medium-a',
+  fullPath: 'ufo/models/town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf',
+  format: 'gltf',
+  nodes: {
+  "CactusMediumA": "cactus_medium_A"
+}
+} as const;
+
 const TownHalloweenCrypt = {
   id: 'halloween-crypt',
   path: 'town/library/halloween-crypt/halloween-crypt',
@@ -1311,6 +1465,168 @@ const TownHalloweenCrypt = {
 }
 } as const;
 
+const TownHalloweenPostSkull = {
+  id: 'halloween-post-skull',
+  path: 'town/library/halloween-post-skull/halloween-post-skull',
+  fullPath: 'ufo/models/town/library/halloween-post-skull/halloween-post-skull.gltf',
+  format: 'gltf',
+  nodes: {
+  "PostSkull": "post_skull",
+  "PostSkullSkull": "post_skull_skull"
+}
+} as const;
+
+const TownHalloweenSignBoth = {
+  id: 'halloween-sign-both',
+  path: 'town/library/halloween-sign-both/halloween-sign-both',
+  fullPath: 'ufo/models/town/library/halloween-sign-both/halloween-sign-both.gltf',
+  format: 'gltf',
+  nodes: {
+  "SignBoth": "sign_both"
+}
+} as const;
+
+const TownHalloweenSkull = {
+  id: 'halloween-skull',
+  path: 'town/library/halloween-skull/halloween-skull',
+  fullPath: 'ufo/models/town/library/halloween-skull/halloween-skull.gltf',
+  format: 'gltf',
+  nodes: {
+  "Skull": "skull"
+}
+} as const;
+
+const TownHalloweenWagon = {
+  id: 'halloween-wagon',
+  path: 'town/library/halloween-wagon/halloween-wagon',
+  fullPath: 'ufo/models/town/library/halloween-wagon/halloween-wagon.gltf',
+  format: 'gltf',
+  nodes: {
+  "Wagon": "wagon",
+  "WagonWheelFrontLeft": "wagon_wheel_front_left",
+  "WagonWheelFrontRight": "wagon_wheel_front_right",
+  "WagonWheelRearLeft": "wagon_wheel_rear_left",
+  "WagonWheelRearRight": "wagon_wheel_rear_right"
+}
+} as const;
+
+const TownHalloweenWagonHay = {
+  id: 'halloween-wagon-hay',
+  path: 'town/library/halloween-wagon-hay/halloween-wagon-hay',
+  fullPath: 'ufo/models/town/library/halloween-wagon-hay/halloween-wagon-hay.gltf',
+  format: 'gltf',
+  nodes: {
+  "WagonHay": "wagon_hay",
+  "WagonHayWheelFrontLeft": "wagon_hay_wheel_front_left",
+  "WagonHayWheelFrontRight": "wagon_hay_wheel_front_right",
+  "WagonHayWheelRearLeft": "wagon_hay_wheel_rear_left",
+  "WagonHayWheelRearRight": "wagon_hay_wheel_rear_right"
+}
+} as const;
+
+const TownMedievalHexaBuildingBlacksmithYellow = {
+  id: 'medieval-hexa-building-blacksmith-yellow',
+  path: 'town/library/medieval-hexa-building-blacksmith-yellow/medieval-hexa-building-blacksmith-yellow',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-blacksmith-yellow/medieval-hexa-building-blacksmith-yellow.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingBlacksmithYellow": "building_blacksmith_yellow"
+}
+} as const;
+
+const TownMedievalHexaBuildingChurchYellow = {
+  id: 'medieval-hexa-building-church-yellow',
+  path: 'town/library/medieval-hexa-building-church-yellow/medieval-hexa-building-church-yellow',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-church-yellow/medieval-hexa-building-church-yellow.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingChurchYellow": "building_church_yellow"
+}
+} as const;
+
+const TownMedievalHexaBuildingHomeAYellow = {
+  id: 'medieval-hexa-building-home-a-yellow',
+  path: 'town/library/medieval-hexa-building-home-a-yellow/medieval-hexa-building-home-a-yellow',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-home-a-yellow/medieval-hexa-building-home-a-yellow.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingHomeAYellow": "building_home_A_yellow"
+}
+} as const;
+
+const TownMedievalHexaBuildingHomeBYellow = {
+  id: 'medieval-hexa-building-home-b-yellow',
+  path: 'town/library/medieval-hexa-building-home-b-yellow/medieval-hexa-building-home-b-yellow',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-home-b-yellow/medieval-hexa-building-home-b-yellow.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingHomeBYellow": "building_home_B_yellow"
+}
+} as const;
+
+const TownMedievalHexaBuildingMarketYellow = {
+  id: 'medieval-hexa-building-market-yellow',
+  path: 'town/library/medieval-hexa-building-market-yellow/medieval-hexa-building-market-yellow',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-market-yellow/medieval-hexa-building-market-yellow.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingMarketYellow": "building_market_yellow"
+}
+} as const;
+
+const TownMedievalHexaBuildingMineYellow = {
+  id: 'medieval-hexa-building-mine-yellow',
+  path: 'town/library/medieval-hexa-building-mine-yellow/medieval-hexa-building-mine-yellow',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-mine-yellow/medieval-hexa-building-mine-yellow.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingMineYellow": "building_mine_yellow"
+}
+} as const;
+
+const TownMedievalHexaBuildingTavernYellow = {
+  id: 'medieval-hexa-building-tavern-yellow',
+  path: 'town/library/medieval-hexa-building-tavern-yellow/medieval-hexa-building-tavern-yellow',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-tavern-yellow/medieval-hexa-building-tavern-yellow.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingTavernYellow": "building_tavern_yellow"
+}
+} as const;
+
+const TownMedievalHexaBuildingTowerAYellow = {
+  id: 'medieval-hexa-building-tower-a-yellow',
+  path: 'town/library/medieval-hexa-building-tower-a-yellow/medieval-hexa-building-tower-a-yellow',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-tower-a-yellow/medieval-hexa-building-tower-a-yellow.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingTowerAYellow": "building_tower_A_yellow",
+  "BuildingTowerATopYellow": "building_tower_A_top_yellow"
+}
+} as const;
+
+const TownMedievalHexaBuildingWellYellow = {
+  id: 'medieval-hexa-building-well-yellow',
+  path: 'town/library/medieval-hexa-building-well-yellow/medieval-hexa-building-well-yellow',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-well-yellow/medieval-hexa-building-well-yellow.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingWellYellow": "building_well_yellow"
+}
+} as const;
+
+const TownMedievalHexaBuildingWindmillYellow = {
+  id: 'medieval-hexa-building-windmill-yellow',
+  path: 'town/library/medieval-hexa-building-windmill-yellow/medieval-hexa-building-windmill-yellow',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-windmill-yellow/medieval-hexa-building-windmill-yellow.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingWindmillYellow": "building_windmill_yellow",
+  "BuildingWindmillTopYellow": "building_windmill_top_yellow",
+  "BuildingWindmillTopFanYellow": "building_windmill_top_fan_yellow"
+}
+} as const;
+
 const TownMixedBag1IdolA = {
   id: 'mixed-bag-1-idol-a',
   path: 'town/library/mixed-bag-1-idol-a/mixed-bag-1-idol-a',
@@ -1318,6 +1634,66 @@ const TownMixedBag1IdolA = {
   format: 'gltf',
   nodes: {
   "IdolA": "idol_A"
+}
+} as const;
+
+const TownPrototypeBarrelA = {
+  id: 'prototype-barrel-a',
+  path: 'town/library/prototype-barrel-a/prototype-barrel-a',
+  fullPath: 'ufo/models/town/library/prototype-barrel-a/prototype-barrel-a.gltf',
+  format: 'gltf',
+  nodes: {
+  "BarrelA": "Barrel_A"
+}
+} as const;
+
+const TownSurvivalKitRockSandA = {
+  id: 'survival-kit-rock-sand-a',
+  path: 'town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a',
+  fullPath: 'ufo/models/town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb',
+  format: 'glb',
+  nodes: {
+  "RockSandA": "rock-sand-a"
+}
+} as const;
+
+const TownSurvivalKitRockSandB = {
+  id: 'survival-kit-rock-sand-b',
+  path: 'town/library/survival-kit-rock-sand-b/survival-kit-rock-sand-b',
+  fullPath: 'ufo/models/town/library/survival-kit-rock-sand-b/survival-kit-rock-sand-b.glb',
+  format: 'glb',
+  nodes: {
+  "RockSandB": "rock-sand-b"
+}
+} as const;
+
+const TownSurvivalKitRockSandC = {
+  id: 'survival-kit-rock-sand-c',
+  path: 'town/library/survival-kit-rock-sand-c/survival-kit-rock-sand-c',
+  fullPath: 'ufo/models/town/library/survival-kit-rock-sand-c/survival-kit-rock-sand-c.glb',
+  format: 'glb',
+  nodes: {
+  "RockSandC": "rock-sand-c"
+}
+} as const;
+
+const TownSurvivalKitSignpost = {
+  id: 'survival-kit-signpost',
+  path: 'town/library/survival-kit-signpost/survival-kit-signpost',
+  fullPath: 'ufo/models/town/library/survival-kit-signpost/survival-kit-signpost.glb',
+  format: 'glb',
+  nodes: {
+  "Signpost": "signpost"
+}
+} as const;
+
+const TownSurvivalKitTentCanvas = {
+  id: 'survival-kit-tent-canvas',
+  path: 'town/library/survival-kit-tent-canvas/survival-kit-tent-canvas',
+  fullPath: 'ufo/models/town/library/survival-kit-tent-canvas/survival-kit-tent-canvas.glb',
+  format: 'glb',
+  nodes: {
+  "TentCanvas": "tent-canvas"
 }
 } as const;
 
@@ -1464,6 +1840,7 @@ export const MODELS = {
     Streetlight: TownStreetlight,
     StreetlightOldDouble: TownStreetlightOldDouble,
     TrashA: TownTrashA,
+    CityBuilderWatertower: TownCityBuilderWatertower,
     City2Bench01: TownCity2Bench01,
     City2Bench02: TownCity2Bench02,
     City2BuildingBusiness02: TownCity2BuildingBusiness02,
@@ -1526,8 +1903,42 @@ export const MODELS = {
     City2Tree05: TownCity2Tree05,
     City2Tree06: TownCity2Tree06,
     City2Tree07: TownCity2Tree07,
+    DesertPlantsBigSagebrush: TownDesertPlantsBigSagebrush,
+    DesertPlantsCaliforniaFanPalm: TownDesertPlantsCaliforniaFanPalm,
+    DesertPlantsCenturyPlantAgave: TownDesertPlantsCenturyPlantAgave,
+    DesertPlantsDatePalm: TownDesertPlantsDatePalm,
+    DesertPlantsDeadDesertSnag: TownDesertPlantsDeadDesertSnag,
+    DesertPlantsGoldenBarrelCactus: TownDesertPlantsGoldenBarrelCactus,
+    DesertPlantsHedgehogCactusCluster: TownDesertPlantsHedgehogCactusCluster,
+    DesertPlantsJoshuaTree: TownDesertPlantsJoshuaTree,
+    DesertPlantsOcotillo: TownDesertPlantsOcotillo,
+    DesertPlantsOrganPipeCactus: TownDesertPlantsOrganPipeCactus,
+    DesertPlantsPricklyPearCactus: TownDesertPlantsPricklyPearCactus,
+    DesertPlantsSaguaroCactus: TownDesertPlantsSaguaroCactus,
+    FurnitureCactusMediumA: TownFurnitureCactusMediumA,
     HalloweenCrypt: TownHalloweenCrypt,
+    HalloweenPostSkull: TownHalloweenPostSkull,
+    HalloweenSignBoth: TownHalloweenSignBoth,
+    HalloweenSkull: TownHalloweenSkull,
+    HalloweenWagon: TownHalloweenWagon,
+    HalloweenWagonHay: TownHalloweenWagonHay,
+    MedievalHexaBuildingBlacksmithYellow: TownMedievalHexaBuildingBlacksmithYellow,
+    MedievalHexaBuildingChurchYellow: TownMedievalHexaBuildingChurchYellow,
+    MedievalHexaBuildingHomeAYellow: TownMedievalHexaBuildingHomeAYellow,
+    MedievalHexaBuildingHomeBYellow: TownMedievalHexaBuildingHomeBYellow,
+    MedievalHexaBuildingMarketYellow: TownMedievalHexaBuildingMarketYellow,
+    MedievalHexaBuildingMineYellow: TownMedievalHexaBuildingMineYellow,
+    MedievalHexaBuildingTavernYellow: TownMedievalHexaBuildingTavernYellow,
+    MedievalHexaBuildingTowerAYellow: TownMedievalHexaBuildingTowerAYellow,
+    MedievalHexaBuildingWellYellow: TownMedievalHexaBuildingWellYellow,
+    MedievalHexaBuildingWindmillYellow: TownMedievalHexaBuildingWindmillYellow,
     MixedBag1IdolA: TownMixedBag1IdolA,
+    PrototypeBarrelA: TownPrototypeBarrelA,
+    SurvivalKitRockSandA: TownSurvivalKitRockSandA,
+    SurvivalKitRockSandB: TownSurvivalKitRockSandB,
+    SurvivalKitRockSandC: TownSurvivalKitRockSandC,
+    SurvivalKitSignpost: TownSurvivalKitSignpost,
+    SurvivalKitTentCanvas: TownSurvivalKitTentCanvas,
     Bush1AColor1: TownBush1AColor1,
     Bush1CColor1: TownBush1CColor1,
     Bush2AColor1: TownBush2AColor1,

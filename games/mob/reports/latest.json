@@ -1,5 +1,5 @@
 {
-  "at": "2026-11-11T14:38:43.069Z",
+  "at": "2026-11-11T15:54:06.672Z",
   "full": false,
   "careers": 3,
   "profiles": [
@@ -577,38 +577,38 @@
       "redRateEnd": 6,
       "baseHp": 330,
       "score": 21,
-      "stale": true,
-      "gradedAt": "2026-11-11T14:18:24.616Z",
+      "stale": false,
+      "gradedAt": "2026-11-11T15:53:27.031Z",
       "profiles": {
         "pro": {
-          "score": 13,
+          "score": 16,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "pro-raw": {
-          "score": 31,
-          "firstWin": 0.6666666666666666,
+          "score": 25,
+          "firstWin": 1,
           "never": 0,
-          "tries": 1.3
+          "tries": 1
         },
         "average": {
-          "score": 14,
+          "score": 12,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "average-raw": {
-          "score": 23,
+          "score": 25,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "casual": {
-          "score": 27,
-          "firstWin": 0.6666666666666666,
+          "score": 34,
+          "firstWin": 0.3333333333333333,
           "never": 0,
-          "tries": 1.3
+          "tries": 1.7
         }
       }
     },
@@ -671,7 +671,7 @@
       "redRateEnd": 3.4,
       "baseHp": 500,
       "score": 18,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:19:10.634Z",
       "profiles": {
         "pro": {
@@ -718,7 +718,7 @@
       "redRateEnd": 5.3,
       "baseHp": 400,
       "score": 17,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:20:27.259Z",
       "profiles": {
         "pro": {
@@ -765,7 +765,7 @@
       "redRateEnd": 4.5,
       "baseHp": 400,
       "score": 22,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:20:25.897Z",
       "profiles": {
         "pro": {
@@ -812,7 +812,7 @@
       "redRateEnd": 4.4,
       "baseHp": 440,
       "score": 24,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:20:02.077Z",
       "profiles": {
         "pro": {
@@ -859,7 +859,7 @@
       "redRateEnd": 3.4,
       "baseHp": 400,
       "score": 29,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:21:11.666Z",
       "profiles": {
         "pro": {
@@ -953,7 +953,7 @@
       "redRateEnd": 5.3,
       "baseHp": 400,
       "score": 27,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:22:17.243Z",
       "profiles": {
         "pro": {
@@ -1046,36 +1046,36 @@
       "redRate": 3.1,
       "redRateEnd": 5.3,
       "baseHp": 500,
-      "score": 15,
+      "score": 17,
       "stale": false,
-      "gradedAt": "2026-11-11T14:22:11.185Z",
+      "gradedAt": "2026-11-11T15:54:06.642Z",
       "profiles": {
         "pro": {
-          "score": 9,
+          "score": 10,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "pro-raw": {
-          "score": 31,
-          "firstWin": 0.6666666666666666,
+          "score": 26,
+          "firstWin": 1,
           "never": 0,
-          "tries": 1.3
+          "tries": 1
         },
         "average": {
-          "score": 6,
+          "score": 10,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "average-raw": {
-          "score": 23,
+          "score": 29,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "casual": {
-          "score": 16,
+          "score": 17,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1094,7 +1094,7 @@
       "redRateEnd": 3.7,
       "baseHp": 580,
       "score": 17,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:22:08.467Z",
       "profiles": {
         "pro": {
@@ -1141,7 +1141,7 @@
       "redRateEnd": 3.5,
       "baseHp": 480,
       "score": 23,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:22:54.309Z",
       "profiles": {
         "pro": {
@@ -1188,7 +1188,7 @@
       "redRateEnd": 3.4,
       "baseHp": 400,
       "score": 21,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:23:14.715Z",
       "profiles": {
         "pro": {
@@ -1234,36 +1234,36 @@
       "redRate": 2.8,
       "redRateEnd": 8.2,
       "baseHp": 500,
-      "score": 29,
+      "score": 35,
       "stale": false,
-      "gradedAt": "2026-11-11T14:22:46.512Z",
+      "gradedAt": "2026-11-11T15:53:45.413Z",
       "profiles": {
         "pro": {
-          "score": 17,
+          "score": 20,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "pro-raw": {
-          "score": 48,
+          "score": 50,
           "firstWin": 0,
           "never": 0,
-          "tries": 2.7
+          "tries": 3
         },
         "average": {
-          "score": 19,
-          "firstWin": 1,
+          "score": 31,
+          "firstWin": 0.6666666666666666,
           "never": 0,
-          "tries": 1
+          "tries": 1.3
         },
         "average-raw": {
-          "score": 48,
+          "score": 50,
           "firstWin": 0,
           "never": 0,
-          "tries": 2.7
+          "tries": 3
         },
         "casual": {
-          "score": 22,
+          "score": 27,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1282,7 +1282,7 @@
       "redRateEnd": 11,
       "baseHp": 400,
       "score": 37,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:23:09.329Z",
       "profiles": {
         "pro": {
@@ -1329,7 +1329,7 @@
       "redRateEnd": 5,
       "baseHp": 400,
       "score": 22,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:26:09.036Z",
       "profiles": {
         "pro": {
@@ -1376,7 +1376,7 @@
       "redRateEnd": 14,
       "baseHp": 380,
       "score": 47,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:24:43.630Z",
       "profiles": {
         "pro": {
@@ -1423,7 +1423,7 @@
       "redRateEnd": 14,
       "baseHp": 500,
       "score": 42,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:24:10.387Z",
       "profiles": {
         "pro": {
@@ -1470,7 +1470,7 @@
       "redRateEnd": 13.4,
       "baseHp": 400,
       "score": 50,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:26:19.640Z",
       "profiles": {
         "pro": {
@@ -1517,7 +1517,7 @@
       "redRateEnd": 7,
       "baseHp": 320,
       "score": 10,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:25:51.566Z",
       "profiles": {
         "pro": {
@@ -1564,7 +1564,7 @@
       "redRateEnd": 7,
       "baseHp": 380,
       "score": 22,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:27:00.225Z",
       "profiles": {
         "pro": {
@@ -1611,7 +1611,7 @@
       "redRateEnd": 6.5,
       "baseHp": 380,
       "score": 28,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:26:51.984Z",
       "profiles": {
         "pro": {
@@ -1658,7 +1658,7 @@
       "redRateEnd": 12,
       "baseHp": 280,
       "score": 41,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:27:09.128Z",
       "profiles": {
         "pro": {
@@ -1705,7 +1705,7 @@
       "redRateEnd": 6.5,
       "baseHp": 400,
       "score": 35,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:28:13.721Z",
       "profiles": {
         "pro": {
@@ -1752,7 +1752,7 @@
       "redRateEnd": 13,
       "baseHp": 380,
       "score": 43,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:27:39.275Z",
       "profiles": {
         "pro": {
@@ -1799,7 +1799,7 @@
       "redRateEnd": 8,
       "baseHp": 300,
       "score": 42,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:28:03.367Z",
       "profiles": {
         "pro": {
@@ -1892,12 +1892,12 @@
       "redRate": 9,
       "redRateEnd": 15,
       "baseHp": 420,
-      "score": 50,
+      "score": 45,
       "stale": false,
-      "gradedAt": "2026-11-11T14:28:57.566Z",
+      "gradedAt": "2026-11-11T15:54:05.383Z",
       "profiles": {
         "pro": {
-          "score": 28,
+          "score": 25,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -1909,22 +1909,22 @@
           "tries": 5.3
         },
         "average": {
-          "score": 26,
+          "score": 28,
           "firstWin": 1,
           "never": 0,
           "tries": 1
         },
         "average-raw": {
-          "score": 75,
+          "score": 73,
           "firstWin": 0,
           "never": 0,
-          "tries": 6.3
+          "tries": 6
         },
         "casual": {
-          "score": 63,
-          "firstWin": 0,
+          "score": 42,
+          "firstWin": 0.3333333333333333,
           "never": 0,
-          "tries": 4.7
+          "tries": 2
         }
       }
     },
@@ -1940,7 +1940,7 @@
       "redRateEnd": 7,
       "baseHp": 300,
       "score": 53,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:30:07.732Z",
       "profiles": {
         "pro": {
@@ -1987,7 +1987,7 @@
       "redRateEnd": 16,
       "baseHp": 360,
       "score": 26,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:30:26.836Z",
       "profiles": {
         "pro": {
@@ -2034,7 +2034,7 @@
       "redRateEnd": 10,
       "baseHp": 400,
       "score": 35,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:33:06.451Z",
       "profiles": {
         "pro": {
@@ -2081,7 +2081,7 @@
       "redRateEnd": 15,
       "baseHp": 240,
       "score": 41,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:30:52.846Z",
       "profiles": {
         "pro": {
@@ -2128,7 +2128,7 @@
       "redRateEnd": 19,
       "baseHp": 280,
       "score": 41,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:31:23.919Z",
       "profiles": {
         "pro": {
@@ -2175,7 +2175,7 @@
       "redRateEnd": 10,
       "baseHp": 300,
       "score": 34,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:31:43.907Z",
       "profiles": {
         "pro": {
@@ -2222,7 +2222,7 @@
       "redRateEnd": 16,
       "baseHp": 260,
       "score": 44,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:31:36.809Z",
       "profiles": {
         "pro": {
@@ -2269,7 +2269,7 @@
       "redRateEnd": 20,
       "baseHp": 320,
       "score": 46,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:32:18.940Z",
       "profiles": {
         "pro": {
@@ -2315,12 +2315,12 @@
       "redRate": 11,
       "redRateEnd": 18,
       "baseHp": 440,
-      "score": 45,
+      "score": 52,
       "stale": false,
-      "gradedAt": "2026-11-11T14:33:15.844Z",
+      "gradedAt": "2026-11-11T15:54:05.902Z",
       "profiles": {
         "pro": {
-          "score": 25,
+          "score": 27,
           "firstWin": 1,
           "never": 0,
           "tries": 1
@@ -2338,16 +2338,16 @@
           "tries": 1
         },
         "average-raw": {
-          "score": 68,
+          "score": 80,
           "firstWin": 0,
           "never": 0,
-          "tries": 5.3
+          "tries": 7
         },
         "casual": {
-          "score": 45,
+          "score": 63,
           "firstWin": 0,
           "never": 0,
-          "tries": 2.3
+          "tries": 4.7
         }
       }
     },
@@ -2363,7 +2363,7 @@
       "redRateEnd": 19,
       "baseHp": 260,
       "score": 54,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:32:41.699Z",
       "profiles": {
         "pro": {
@@ -2410,7 +2410,7 @@
       "redRateEnd": 12,
       "baseHp": 300,
       "score": 56,
-      "stale": false,
+      "stale": true,
       "gradedAt": "2026-11-11T14:33:06.279Z",
       "profiles": {
         "pro": {

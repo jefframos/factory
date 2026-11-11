@@ -4,28 +4,28 @@
         "importPath": "core/platforms/PokiPlatform",
         "gameId": "poki-game-123",
         "enableAds": true,
-        "folderPath": "car"
+        "folderPath": "mow"
     },
     "crazygames": {
         "className": "CrazyGamesPlatform",
         "importPath": "core/platforms/CrazyGamesPlatform",
         "gameId": "cg-456",
         "enableAds": true,
-        "folderPath": "car-cg"
+        "folderPath": "mow"
     },
     "crazygames-no-ads": {
         "className": "CrazyGamesPlatform",
         "importPath": "core/platforms/CrazyGamesPlatform",
         "gameId": "cg-456",
         "enableAds": false,
-        "folderPath": "car-cg"
+        "folderPath": "mow"
     },
     "youtube": {
         "className": "YouTubePlayablePlatform",
         "importPath": "core/platforms/YouTubePlayablePlatform",
         "gameId": "f7cdc30e8fd14e50a3170c485f207936",
         "enableAds": true,
-        "folderPath": "merge1",
+        "folderPath": "mow",
         "apiScript": "https://www.youtube.com/game_api/v1"
     }
 }

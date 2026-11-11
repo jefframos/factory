@@ -24,7 +24,9 @@ import KeyboardInputMovement from 'core/io/KeyboardInputMovement';
 import { DebugOverlay } from 'core/debug/DebugOverlay';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { ThreeScene } from 'core/scene/ThreeScene';
-import { CAMERA, DESIGN, LOOKS, Level, Mission, Prop, UFO, currentLevel, currentMission, currentMissionIndex, goToMission, levelTitle } from '../data/UfoConfig';
+import { CAMERA, DESIGN, LOOKS, Level, Mission, Prop, UFO, areaProgress, currentArena, currentLevel, currentMission, currentMissionIndex, goToMission, levelTitle, missionUpTo } from '../data/UfoConfig';
+import { arenaById, coinsFor, currentMatchPlayers, rivalsNow, trophiesFor } from '../data/Versus';
+import type { AreaView } from '../ui/AreaBar';
 import { UfoProgress } from '../data/UfoProgress';
 import { awardRound } from '../data/Ranking';
 import { SpatialAudio } from '../audio/SpatialAudio';
@@ -82,6 +84,8 @@ const SIZE_BAR_AT = 1.2;
 const BIG_POINTS = 8;
 /** A solo round's a win with this much of the town eaten (%). */
 const SOLO_WIN = 30;
+/** A rival's points count this much of what it eats (a race: a little behind the player's pace, eating as much). */
+const RACE_PACE = 0.85;
 /** The markers at the screen's edge for rivals out of view: only this many, the nearest, and only within this far. */
 const MARKERS = { most: 3, range: 110 };
 
@@ -105,6 +109,8 @@ interface Contestant extends PlayerLook {
     respawn: number;
     /** In a level to eat everything: what a rival's eaten, which whoever eats it gets. */
     held: { count: number; points: number; value: number };
+    /** A rival's points (a race's: the player's are the score). */
+    points: number;
 }
 
 interface Flying {
@@ -144,6 +150,8 @@ export default class UfoScene extends ThreeScene {
     private readonly flying: Flying[] = [];
     private readonly mission: Mission | null = currentMission();
     private readonly missionIndex = currentMissionIndex();
+    /** A versus match's arena (null: a story level, or the competition's round). */
+    private readonly arena = arenaById(currentArena() ?? '') ?? null;
     /** A level to eat everything: rivals never eat the player or outgrow it, and whoever eats one gets what it ate. */
     private readonly gentle = this.mission?.type === 'all';
     private score = 0;
@@ -167,6 +175,8 @@ export default class UfoScene extends ThreeScene {
     /** Where the camera started: the world's curve is `camera.bend` from here. */
     private startDistance: number = CAMERA.distance;
     private phase: Phase = 'intro';
+    /** The quit box is up: the round's paused under it. */
+    private quitAsked = false;
     /** The intro: how far along, where the rivals wait and where they go, and the camera's angle while it lasts. */
     private introTime = 0;
     private introDone = false;
@@ -215,7 +225,7 @@ export default class UfoScene extends ThreeScene {
         this.cars = new Cars(this.threeScene, level, this.town);
         this.people = new People(this.threeScene, level, this.town, this.cars);
         this.saucer = new Saucer(this.threeScene, level.start.x, level.start.z);
-        this.you = { name: UfoProgress.username, face: UfoProgress.avatarLook.face, color: UfoProgress.avatarLook.color, saucer: this.saucer, rival: null, flying: 0, respawn: 0, held: { count: 0, points: 0, value: 0 } };
+        this.you = { name: UfoProgress.username, face: UfoProgress.avatarLook.face, color: UfoProgress.avatarLook.color, saucer: this.saucer, rival: null, flying: 0, respawn: 0, held: { count: 0, points: 0, value: 0 }, points: 0 };
         this.contestants.push(this.you);
         this.spawnRivals();
         this.homeArrows = new HomeArrows(this.threeScene);
@@ -228,17 +238,21 @@ export default class UfoScene extends ThreeScene {
         this.placeCamera();
         updateBend(this.focus, CAMERA.bend);
 
-        this.hud = new UfoHud(() => this.onEndButton(), () => this.leaveToHome());
+        this.hud = new UfoHud(() => this.onEndButton(), () => this.onHomeButton());
         if (this.mission?.tutorial) {
             this.hud.hideHome();
             this.hud.hideTopBar();
+        } else if (this.mission && UfoProgress.levelsWon === 0) {
+            // A new player's first level: no way out to the main screen till it's won (it opens after it).
+            this.hud.hideHome();
         }
         this.startIntro();
         this.game.uiLayer.addChild(this.hud);
         this.buildInput();
         this.buildDebug();
-        this.clock = this.mission?.seconds ?? level.round?.seconds ?? 0;
-        if (this.mission) {
+        this.clock = this.mission?.seconds ?? this.roundSpec?.seconds ?? 0;
+        if (this.roundLike && this.contestants.length > 1) this.hud.showRoundKills();
+        if (this.mission && !this.roundLike) {
             this.hud.setMission(true);
             this.hud.setRing(this.clock, this.clock);
             this.hud.setKills(0);
@@ -315,7 +329,51 @@ export default class UfoScene extends ThreeScene {
             const wanted = mission.points ?? Math.round((total * (mission.share ?? 0.5)) / TARGET_ROUND) * TARGET_ROUND;
             this.target = Math.max(TARGET_ROUND, Math.min(wanted, total));
             hud.setBanner([{ text: 'EAT EVERYTHING', green: true }, { text: ' UNTIL YOU GET ' }, { text: `${this.target} POINTS`, green: true }, { text: '!' }]);
+        } else if (mission.type === 'race') {
+            const total = this.town.items.reduce((sum, item) => sum + pointsOf(item), 0);
+            const wanted = mission.points ?? Math.round((total * (mission.share ?? 0.3)) / TARGET_ROUND) * TARGET_ROUND;
+            this.target = Math.max(TARGET_ROUND, Math.min(wanted, total));
+            hud.setBanner([{ text: `FIRST TO ${this.target} POINTS`, green: true }, { text: ' WINS!' }]);
+        } else if (mission.type === 'top') {
+            hud.setBanner([{ text: 'BE THE BIGGEST', green: true }, { text: ' WHEN TIME RUNS OUT!' }]);
         } else hud.setBanner([{ text: 'EAT THE WHOLE TOWN', green: true }, { text: ' TO WIN!' }]);
+    }
+
+    /** A versus arena's clock and rivals, or (the competition) the level's round; null in a story level. */
+    private get roundSpec(): { seconds: number; rivals: number } | null {
+        if (this.mission) return null;
+        if (this.arena) return { seconds: this.arena.seconds, rivals: this.arena.rivals };
+        return this.level?.round ?? null;
+    }
+
+    /** Played as a round: the clock on the bar, the leaderboard, names over the rivals (a round, a `top` or `race` level). */
+    private get roundLike(): boolean {
+        return this.mission ? this.mission.type === 'top' || this.mission.type === 'race' : Boolean(this.roundSpec);
+    }
+
+    /**
+     * The HUD's home button. A competition round asks first (paused meanwhile): QUIT ends it there, on the end screen
+     * with the place the player has (before it's started: home). Anything else: home.
+     */
+    private onHomeButton(): void {
+        if (!this.roundSpec || this.phase === 'ended') {
+            this.leaveToHome();
+            return;
+        }
+        if (this.quitAsked) return;
+        this.quitAsked = true;
+        void PlatformHandler.instance.platform.gameplayStop();
+        // (The engine's hum and the beam quiet while paused.)
+        UfoAudio.setHum(0, this.saucer.radius);
+        UfoAudio.setSucking(false);
+        this.hud.askQuit(() => {
+            this.quitAsked = false;
+            if (this.phase === 'playing') this.finishRound();
+            else this.leaveToHome();
+        }, () => {
+            this.quitAsked = false;
+            if (this.phase === 'playing') void PlatformHandler.instance.platform.gameplayStart();
+        });
     }
 
     /** Out of the level, to the home screen: the same level's still next. */
@@ -327,6 +385,12 @@ export default class UfoScene extends ThreeScene {
     /** The end screen's button: home (a mission won: the next one's up), or a mission lost, again. */
     private onEndButton(): void {
         const { mission } = this;
+        // The tutorial, the first time: straight on into the first level (the main screen comes after it).
+        if (mission?.tutorial && UfoProgress.levelsWon === 0) {
+            const first = missionUpTo();
+            this.travel({ title: first.name, subtitle: levelTitle(first.level).toUpperCase(), apply: () => goToMission(currentMissionIndex()) });
+            return;
+        }
         if (mission && !this.missionWon) {
             this.travel({ title: mission.name, subtitle: levelTitle(mission.level).toUpperCase(), apply: () => goToMission(this.missionIndex) });
             return;
@@ -337,20 +401,31 @@ export default class UfoScene extends ThreeScene {
 
     /** The rivals asked for: each in another style, alien and colour, scattered round the map. */
     private spawnRivals(): void {
-        const count = this.mission?.rivals ?? this.level.round?.rivals ?? 0;
+        const count = this.mission?.rivals ?? this.roundSpec?.rivals ?? 0;
         const taken: { x: number; y: number }[] = [this.saucer.position];
         const directed: Directed[] = [];
-        const { ratios } = DESIGN.rivals;
+        // A level's own shares, else the settings'; a versus match: the tier's (easy the first few times), its pace too.
+        const base = this.mission?.ratios ?? DESIGN.rivals.ratios;
+        const versus = this.arena ? rivalsNow(count, base) : null;
+        const ratios = versus?.ratios ?? base;
+        const speed = versus?.speed ?? DESIGN.rivals.speed;
+        // The players the matchmaking found, else made-up names.
+        const players = this.arena ? currentMatchPlayers() : [];
         const first = Math.floor(Math.random() * RIVAL_NAMES.length);
         for (let i = 0; i < count; i++) {
             const at = this.town.findOpenSpot(taken, SPAWN_APART);
             const ufo = LOOKS.ufos[(i + 1) % LOOKS.ufos.length];
             const alien = LOOKS.aliens[(i + 1) % LOOKS.aliens.length];
-            const saucer = new Saucer(this.threeScene, at.x, at.y, { look: () => ({ ufo, alien }), throwsLight: false, beamColor: PLAYER_COLORS[(i + 1) % PLAYER_COLORS.length] });
+            const player = players[i];
+            const color = player?.color ?? PLAYER_COLORS[(i + 1) % PLAYER_COLORS.length];
+            const saucer = new Saucer(this.threeScene, at.x, at.y, { look: () => ({ ufo, alien }), throwsLight: false, beamColor: color });
             taken.push(saucer.position);
-            const rival = new Rival(saucer, this.mission?.type === 'object');
+            const rival = new Rival(saucer, this.mission?.type === 'object', speed);
             directed.push({ saucer, rival, ratio: ratios[i % ratios.length], seen: 0 });
-            this.contestants.push({ name: RIVAL_NAMES[(first + i) % RIVAL_NAMES.length], face: FACES[(i + 1) % FACES.length], color: PLAYER_COLORS[(i + 1) % PLAYER_COLORS.length], saucer, rival, flying: 0, respawn: 0, held: { count: 0, points: 0, value: 0 } });
+            this.contestants.push({
+                name: player?.name ?? RIVAL_NAMES[(first + i) % RIVAL_NAMES.length], face: player?.face ?? FACES[(i + 1) % FACES.length], color,
+                saucer, rival, flying: 0, respawn: 0, held: { count: 0, points: 0, value: 0 }, points: 0,
+            });
         }
         if (directed.length) this.director = new RivalDirector(directed, this.saucer, this.gentle);
     }
@@ -430,6 +505,8 @@ export default class UfoScene extends ThreeScene {
     }
 
     public update(delta: number): void {
+        // (Paused while the quit box asks.)
+        if (this.quitAsked) return;
         delta = Math.min(delta, MAX_FRAME_SEC);
         const playing = this.phase === 'playing';
         const saucers = this.contestants.map(({ saucer }) => saucer);
@@ -476,11 +553,13 @@ export default class UfoScene extends ThreeScene {
 
     private updateHud(delta: number): void {
         const { hud } = this;
+        hud.updateEnd(delta);
         this.updateSizeBar();
         const { round, goal } = this.level;
         const goalItem = this.town.goalItem;
-        if (this.mission) this.updateMissionHud();
-        else if (round) hud.setClock(this.clock, round.seconds);
+        if (this.roundLike) hud.setKills(this.kills);
+        if (this.mission && !this.roundLike) this.updateMissionHud();
+        else if (this.roundLike) hud.setClock(this.clock, this.mission?.seconds ?? this.roundSpec?.seconds ?? round?.seconds ?? 1);
         else if (goal && goalItem) hud.setProgress(Math.min(1, this.saucer.radius / goal.radius), goal.name.toUpperCase());
         else hud.setProgress(this.townShare(), 'TOWN');
         const forYou = this.mission ? this.mission.type === 'object' : true;
@@ -492,9 +571,9 @@ export default class UfoScene extends ThreeScene {
         this.boardTimer -= delta;
         if (this.boardTimer <= 0) {
             this.boardTimer = BOARD_EVERY;
-            hud.setBoard(this.contestants.length > 1 && !this.mission ? this.ranking() : []);
+            hud.setBoard(this.contestants.length > 1 && this.roundLike ? this.ranking() : [], this.mission?.type === 'race');
         }
-        if (this.mission) this.updateArrows();
+        if (this.mission && !this.roundLike) this.updateArrows();
         else this.updateTags();
     }
 
@@ -556,7 +635,7 @@ export default class UfoScene extends ThreeScene {
             return;
         }
         this.bannerTimer -= delta;
-        const share = mission.type === 'points' ? this.score / Math.max(1, this.target) : 0;
+        const share = mission.type === 'points' || mission.type === 'race' ? this.score / Math.max(1, this.target) : 0;
         const passed = this.bannerShares.length > 0 && share >= this.bannerShares[0];
         if (passed) this.bannerShares.shift();
         if (this.bannerTimer > 0 && !passed) return;
@@ -611,9 +690,17 @@ export default class UfoScene extends ThreeScene {
         for (let i = index; i < this.contestants.length + 1; i++) this.hud.setArrow(i, null, 0);
     }
 
+    /** Everyone, best first: by size, or (a race) by points. */
     private ranking(): (PlayerLook & { size: number; you: boolean })[] {
-        return [...this.contestants].sort((a, b) => b.saucer.targetRadius - a.saucer.targetRadius)
-            .map(({ name, face, color, saucer }) => ({ name, face, color, size: saucer.targetRadius, you: saucer === this.saucer }));
+        const race = this.mission?.type === 'race';
+        const value = (contestant: Contestant) => (race ? this.pointsOf(contestant) : contestant.saucer.targetRadius);
+        return [...this.contestants].sort((a, b) => value(b) - value(a))
+            .map((contestant) => ({ name: contestant.name, face: contestant.face, color: contestant.color, size: value(contestant), you: contestant === this.you }));
+    }
+
+    /** A contestant's points: the player's score, a rival's own. */
+    private pointsOf(contestant: Contestant): number {
+        return contestant === this.you ? this.score : Math.floor(contestant.points);
     }
 
     /**
@@ -689,13 +776,24 @@ export default class UfoScene extends ThreeScene {
         const allGone = allEaten;
         if (this.mission) {
             this.clock -= delta;
+            if (this.mission.type === 'top') {
+                if (this.clock <= 0 || allEaten) this.finishTop();
+                return;
+            }
+            if (this.mission.type === 'race') {
+                const ahead = this.target > 0 ? this.contestants.find((contestant) => contestant.rival && contestant.points >= this.target) : undefined;
+                if (this.target > 0 && this.score >= this.target) this.finishMission(true);
+                else if (ahead) this.finishMission(false, `${ahead.name.toUpperCase()} GOT THERE FIRST`);
+                else if (this.mission.seconds > 0 && this.clock <= 0) this.finishMission(false);
+                return;
+            }
             const won = this.mission.type === 'points' ? this.target > 0 && this.score >= this.target
                 : this.mission.type === 'object' && this.town.goalItem ? this.goalEaten : allEaten;
             if (won) this.finishMission(true);
             else if (this.mission.seconds > 0 && this.clock <= 0) this.finishMission(false);
             return;
         }
-        if (round) {
+        if (this.roundSpec) {
             this.clock -= delta;
             if (this.clock <= 0 || allGone) this.finishRound();
             return;
@@ -707,19 +805,51 @@ export default class UfoScene extends ThreeScene {
         }
     }
 
-    private finishMission(won: boolean): void {
+    /** `why`: a lost race's (who got there first). */
+    private finishMission(won: boolean, why?: string): void {
         this.stopPlaying();
         this.missionWon = won;
         const { mission } = this;
         if (!mission) return;
+        const area = this.areaView(won);
         if (won) {
             const reward = mission.reward ?? 200;
             UfoProgress.addCoins(reward);
             if (mission.tutorial) UfoProgress.finishTutorial();
-            this.hud.showEnd({ title: 'WELL DONE!', outcome: 'win', coins: reward, coinsTotal: UfoProgress.coins, button: 'CONTINUE' });
+            else {
+                // Kept at once: the next level's up, even if the game's closed on the end screen.
+                UfoProgress.wonLevel(this.missionIndex);
+                goToMission(this.missionIndex + 1);
+            }
+            this.hud.showEnd({ title: 'WELL DONE!', outcome: 'win', coins: reward, coinsTotal: UfoProgress.coins, button: 'CONTINUE', area });
         } else {
-            this.hud.showEnd({ title: 'TIME UP!', detail: mission.name.toUpperCase(), outcome: 'lose', button: 'TRY AGAIN' });
+            this.hud.showEnd({ title: why ? 'TOO SLOW!' : 'TIME UP!', detail: why ?? mission.name.toUpperCase(), outcome: 'lose', button: 'TRY AGAIN', area });
         }
+    }
+
+    /** A `top` level's clock run out: first is a win; else where the player came, and again. */
+    private finishTop(): void {
+        const results = this.ranking();
+        const place = results.findIndex((row) => row.you) + 1;
+        if (place === 1) {
+            this.finishMission(true);
+            return;
+        }
+        this.stopPlaying();
+        this.missionWon = false;
+        const nth = `${place}${['ST', 'ND', 'RD'][place - 1] ?? 'TH'} PLACE`;
+        const area = this.areaView(false);
+        if (place <= 3) this.hud.showEnd({ title: nth, detail: 'COME FIRST TO WIN', outcome: 'place', emblem: place === 2 ? 'ItemIcon_Medal_Silver_1' : 'ItemIcon_Medal_Bronze_1', results, button: 'TRY AGAIN', area });
+        else this.hud.showEnd({ title: nth, outcome: 'lose', results, button: 'TRY AGAIN', area });
+    }
+
+    /** The area bar for a story level's end: its area, the levels done (this one too, won), whether it's finished. */
+    private areaView(won: boolean): { view: AreaView; complete: boolean } | undefined {
+        const { mission } = this;
+        if (!mission || mission.tutorial) return undefined;
+        const where = areaProgress(this.missionIndex);
+        const done = where.done + (won ? 1 : 0);
+        return { view: { name: where.area.name, number: where.number, done, total: where.total, next: where.next?.name ?? null }, complete: won && done >= where.total };
     }
 
     private finishRound(): void {
@@ -737,10 +867,21 @@ export default class UfoScene extends ThreeScene {
         const nth = `${place}${['ST', 'ND', 'RD'][place - 1] ?? 'TH'} PLACE`;
         const button = 'CONTINUE';
         const starsWon = awardRound(place);
-        UfoProgress.openRankingOnHome = true;
-        if (place === 1) this.hud.showEnd({ title: 'VICTORY!', outcome: 'win', results, button, starsWon });
-        else if (place <= 3) this.hud.showEnd({ title: nth, outcome: 'place', emblem: place === 2 ? 'ItemIcon_Medal_Silver_1' : 'ItemIcon_Medal_Bronze_1', results, button, starsWon });
-        else this.hud.showEnd({ title: nth, outcome: 'lose', results, button });
+        // A versus match: trophies won or lost, coins by place; back home on VERSUS.
+        let trophies: number | undefined;
+        let coinsWon: number | undefined;
+        if (this.arena) {
+            trophies = trophiesFor(place);
+            coinsWon = coinsFor(this.arena, place);
+            UfoProgress.trophiesBefore = UfoProgress.trophies;
+            UfoProgress.versusResult(place, trophies, coinsWon);
+            UfoProgress.openVersusOnHome = true;
+        } else {
+            UfoProgress.openRankingOnHome = true;
+        }
+        if (place === 1) this.hud.showEnd({ title: 'VICTORY!', outcome: 'win', results, button, starsWon, trophies, coinsWon });
+        else if (place <= 3) this.hud.showEnd({ title: nth, outcome: 'place', emblem: place === 2 ? 'ItemIcon_Medal_Silver_1' : 'ItemIcon_Medal_Bronze_1', results, button, starsWon, trophies, coinsWon });
+        else this.hud.showEnd({ title: nth, outcome: 'lose', results, button, trophies, coinsWon });
     }
 
     private checkBump(): void {
@@ -765,7 +906,7 @@ export default class UfoScene extends ThreeScene {
             if (item.height > altitude) {
                 if (isYou) saucer.warn();
             } else if (item.radius <= radius) {
-                if (!isYou && !this.isThingOnScreen(item)) this.pretendToEat(item, saucer);
+                if (!isYou && !this.isThingOnScreen(item)) this.pretendToEat(item, contestant);
                 else this.eat(item, contestant);
             } else if (isYou) {
                 saucer.warn();
@@ -778,16 +919,17 @@ export default class UfoScene extends ThreeScene {
     }
 
     /** Out of sight, a rival grows as if it ate the thing, and the thing stays: the player can't run out because of it. */
-    private pretendToEat(item: Item, saucer: Saucer): void {
+    private pretendToEat(item: Item, contestant: Contestant): void {
         const now = performance.now() / 1000;
         if (item.sparedUntil !== undefined && item.sparedUntil > now) return;
         item.sparedUntil = now + DESIGN.scarcity.offscreenCooldown;
-        saucer.grow(item.value);
+        contestant.saucer.grow(item.value);
+        contestant.points += pointsOf(item) * RACE_PACE;
     }
 
     /** Whether things eaten here ever come back: not where eating everything is the point. */
     private restoresThings(): boolean {
-        return this.mission ? this.mission.type !== 'all' : Boolean(this.level.round);
+        return this.mission ? this.mission.type !== 'all' : Boolean(this.roundSpec);
     }
 
     /** Things come back, out of sight and near the player, if it's going short. */
@@ -799,7 +941,7 @@ export default class UfoScene extends ThreeScene {
         const { radius, altitude, position } = this.saucer;
         const eatable = this.town.items.filter((item) => item.radius <= radius && item.height <= altitude).length;
         const left = this.town.items.reduce((sum, item) => sum + pointsOf(item), 0);
-        const pointsShort = this.mission?.type === 'points' && this.score + left * settings.riskShare < this.target;
+        const pointsShort = (this.mission?.type === 'points' || this.mission?.type === 'race') && this.score + left * settings.riskShare < this.target;
         if (this.sinceEaten < settings.droughtSeconds && eatable >= settings.minEatable && !pointsShort) return;
         const worth = ({ prop, value }: { prop: Prop; value: number }) => Math.sqrt(value + 0.5) / (Math.hypot(prop.x - position.x, prop.z - position.y) + 10);
         const picks = this.eatenProps
@@ -839,7 +981,9 @@ export default class UfoScene extends ThreeScene {
                     UfoAudio.bump();
                 } else if (eater === this.you) {
                     this.onKill(prey);
-                    UfoAudio.eat(1);
+                    UfoAudio.kill();
+                } else {
+                    eater.points += KILL.points;
                 }
             }
         }
@@ -904,7 +1048,7 @@ export default class UfoScene extends ThreeScene {
         });
         eater.flying++;
         this.threeScene.attach(item.object);
-        if (item.goal && this.level.round) {
+        if (item.goal && this.roundLike) {
             this.sayTimer = SAY_EVERY;
             this.hud.say(eater === this.you ? `YOU SWALLOWED THE ${this.level.goal?.name.toUpperCase()}!` : `${eater.name.toUpperCase()} SWALLOWED THE ${this.level.goal?.name.toUpperCase()}!`);
         }
@@ -932,6 +1076,7 @@ export default class UfoScene extends ThreeScene {
             flight.eater.flying--;
             object.removeFromParent();
             flight.item.materials?.forEach((material) => material.dispose());
+            if (flight.eater !== this.you) flight.eater.points += flight.points * RACE_PACE;
             if (this.gentle && flight.eater !== this.you) {
                 flight.eater.held.count++;
                 flight.eater.held.points += flight.points;
@@ -962,7 +1107,7 @@ export default class UfoScene extends ThreeScene {
         const { aspect } = this.threeCamera;
         const { radius, altitude } = this.saucer;
         const portrait = Math.pow(Math.max(1, REFERENCE_ASPECT / aspect), PORTRAIT_PULL);
-        const rivals = (this.level?.round?.rivals ?? 0) > 0 ? CAMERA.rivalsZoom : 1;
+        const rivals = this.contestants.length > 1 ? CAMERA.rivalsZoom : 1;
         const usual = (CAMERA.distance + CAMERA.perAltitude * altitude) * portrait * rivals;
         // The saucer's nearer than the focus by its height over it, so that's added back.
         const halfSide = Math.tan(THREE.MathUtils.degToRad(CAMERA.fov / 2)) * Math.min(1, aspect);

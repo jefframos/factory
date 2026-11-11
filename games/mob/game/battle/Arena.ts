@@ -136,7 +136,7 @@ const PUSHER_HEIGHT = 0.7;
 const PAD_STYLE = { height: 0.12, rim: 0.12 };
 const HOUSE = { wallHeight: 1.5, roofHeight: 0.9, overhang: 0.18, wall: 0xe8f1ff, roof: 0x3d6dff };
 /** The unit spinning over a truck / UFO / car house: its size (x its own), and how far over the house's count it floats. */
-const HOUSE_ICON = { truck: 0.55, other: 0.8, over: 0.75 };
+const HOUSE_ICON = { truck: 0.55, other: 0.8, over: 0.75, bomb: 1.1 };
 /** A helmet barrier: its height and colours (an attack barrier's: `attack`), and how wide the floating viking hat is. */
 const HELMET = { height: 1.5, olive: 0x6f8236, sand: 0xd8c690, curtain: 0x9ccf5a, dark: 0x5d6e2c, text: '#d8ff9a' };
 const ATTACK = { olive: 0xb8332e, sand: 0xf2c14e, curtain: 0xff8a4c, dark: 0x7a1f1c, text: '#ffd27a', hatWidth: 1.3 };
@@ -152,10 +152,10 @@ const PUSH_BLOCK = { height: 1.2, body: 0x3a4466, plate: 0xff4757 };
  */
 const PROPS = {
     /** Each house's building (the `model` style); the car has none (a plain house). */
-    houses: { giant: 'home-blue', truck: 'barracks-blue', saucer: 'home-yellow' } as Record<string, string>,
-    houseTitles: { giant: 'GIANT', truck: 'TRUCK', saucer: 'UFO', car: 'RAMMER' } as Record<string, string>,
+    houses: { giant: 'home-blue', bomb: 'barracks-blue', truck: 'barracks-blue', saucer: 'home-yellow' } as Record<string, string>,
+    houseTitles: { giant: 'GIANT', bomb: 'BOMB', truck: 'TRUCK', saucer: 'UFO', car: 'RAMMER' } as Record<string, string>,
     /** The plain houses (all but the giant's, which is a building): their wall and roof colours' keys in UNIT_COLORS. */
-    houseColours: { giant: ['giantWall', 'giantRoof'], truck: ['truckWall', 'truckRoof'], saucer: ['ufoWall', 'ufoRoof'], car: ['carWall', 'carRoof'] } as Record<string, [UnitColor, UnitColor]>,
+    houseColours: { giant: ['giantWall', 'giantRoof'], bomb: ['truckWall', 'truckRoof'], truck: ['truckWall', 'truckRoof'], saucer: ['ufoWall', 'ufoRoof'], car: ['carWall', 'carRoof'] } as Record<string, [UnitColor, UnitColor]>,
     base: 'barracks-red',
     tower: 'tower-red',
     /** An arena match's blue towers. */
@@ -442,6 +442,8 @@ export class Arena {
     /** Each helmet barrier's floating helmet (it spins). */
     private readonly helmetIcons: THREE.Object3D[] = [];
     private saucerModel: THREE.Object3D | null = null;
+    /** A bomb house's icon: the bomb's model (its first pose), loaded only for a level with one. */
+    private bombModel: THREE.Object3D | null = null;
     private readonly saucerViews = new Map<object, { model: THREE.Object3D; beam: THREE.Mesh }>();
     private readonly targets: TargetView[] = [];
     /** An arena match: the blues' own buildings (the reds' aim), and the reds' cannon at the far end. */
@@ -462,6 +464,8 @@ export class Arena {
     private flashLife = 0;
     private time = 0;
     private disposed = false;
+    /** A fort's model loaded (its number lifted over its roof): the camera frames the forts' tops again. */
+    public onFortsChanged?: () => void;
     private readonly waters: THREE.Mesh[] = [];
     /** Each obstacle's breakable view, by the obstacle's index (undefined for the rest). */
     private readonly breakables: (BreakableView | undefined)[] = [];
@@ -488,6 +492,7 @@ export class Arena {
         (config.pipes ?? []).forEach((pipe) => this.buildPipe(pipe));
         (config.grinders ?? []).forEach((grinder) => this.grinders.push(this.buildGrinder(grinder)));
         void this.loadUnits();
+        if ((config.pads ?? []).some((pad) => pad.kind === 'bomb')) void this.loadBombIcon();
         // A boss level (a Giant King): the main building (the one with the most HP) wears his hat.
         const crowned = config.kingAt ? targets.reduce((best, target, i) => (target.hp > targets[best].hp ? i : best), 0) : -1;
         targets.forEach((target, i) => this.targets.push(this.buildTarget(target, i === crowned)));
@@ -1499,6 +1504,7 @@ export class Arena {
         if (!this.plainForts) void this.dress(group, model, own ? width * 1.05 : tower ? width * 0.8 : width * 1.05, BASE.depth * 1.6, [label.mesh], (height, model) => {
             label.mesh.position.set(0, height + 0.55 + (crowned ? KING_HAT.labelLift : 0), 0.4);
             label.mesh.rotation.x = -0.5;
+            this.onFortsChanged?.();
             hat.position.y = height - KING_HAT.sink;
             const flashes: THREE.MeshStandardMaterial[] = [];
             model.traverse((child) => {
@@ -1656,11 +1662,11 @@ export class Arena {
      * and bouncing as blues go in.
      */
     private updateHouseIcon(view: PadView): void {
-        const source = view.kind === 'truck' ? this.truckModel : view.kind === 'saucer' ? this.saucerModel : view.kind === 'car' ? this.carModel : null;
+        const source = view.kind === 'bomb' ? this.bombModel : view.kind === 'truck' ? this.truckModel : view.kind === 'saucer' ? this.saucerModel : view.kind === 'car' ? this.carModel : null;
         if (!source) return;
         if (!view.icon) {
             view.icon = source.clone();
-            view.icon.scale.setScalar(view.kind === 'truck' ? HOUSE_ICON.truck : HOUSE_ICON.other);
+            view.icon.scale.setScalar(this.iconScale(view.kind));
             bendObject(view.icon);
             view.group.add(view.icon);
             view.title.visible = false;
@@ -1669,7 +1675,28 @@ export class Arena {
         // Over its count (not on it: the number stays in sight).
         view.icon.position.set(0, view.label.mesh.position.y + HOUSE_ICON.over + Math.sin(this.time * 2.5) * 0.12, 0);
         view.icon.rotation.y = this.time * 1.4;
-        view.icon.scale.setScalar((view.kind === 'truck' ? HOUSE_ICON.truck : HOUSE_ICON.other) * bounce);
+        view.icon.scale.setScalar(this.iconScale(view.kind) * bounce);
+    }
+
+    private iconScale(kind: string | undefined): number {
+        return kind === 'bomb' ? HOUSE_ICON.bomb : kind === 'truck' ? HOUSE_ICON.truck : HOUSE_ICON.other;
+    }
+
+    /** The bomb house's icon model (the bomb's baked first pose), when a level has one. */
+    private async loadBombIcon(): Promise<void> {
+        try {
+            const gltf = await createGLTFLoader().loadAsync(`${this.modelRoot}characters/stone-monster.glb`);
+            if (this.disposed) return;
+            const pose = gltf.scene.getObjectByName('pose_0') ?? gltf.scene;
+            pose.traverse((child) => {
+                if (child instanceof THREE.Mesh) child.material = new THREE.MeshLambertMaterial({ vertexColors: true });
+            });
+            const holder = new THREE.Group();
+            holder.add(pose);
+            this.bombModel = holder;
+        } catch (error) {
+            console.warn('[mob] bomb icon', error);
+        }
     }
 
     /** Each standing fort's highest point, its number included (world space), for the camera to keep in view. */

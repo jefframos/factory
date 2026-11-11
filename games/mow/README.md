@@ -1,5 +1,17 @@
 # Mow Town
 
+## Description
+
+Mow an overgrown town back to life: cut the grass, cash in your clippings, buy bigger mowers and restore every district.
+
+## Controls
+
+- **Move:** WASD or arrow keys; on touch screens, the on-screen joystick. Walking over grass mows it.
+- **Sell:** walk onto an ATM's pad to empty your bag for cash; the shop opens there too.
+- **Shop and menus:** tap or click the buttons and tabs.
+
+---
+
 A casual mowing / city-restoration game for web portals (Poki, CrazyGames, YouTube Playables): walk, and the grass
 in front of you is cut. Fill your container, empty it for cash, buy better mowers and upgrades, restore each district
 of an overgrown town and unlock the next. Design: the Mow Town GDD (MVP scope: the Starting Park and the

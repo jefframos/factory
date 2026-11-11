@@ -1,5 +1,18 @@
 # Dig & Discover
 
+## Description
+
+Dig through a block mine, fill your backpack with rock, ore and gems, sell it and buy better tools to go deeper.
+
+## Controls
+
+- **Move:** WASD or arrow keys; on touch screens, the on-screen joystick; on desktop you can also click and drag.
+- **Dig:** walk into rock; the miner swings automatically.
+- **Sell:** walk onto the ATM's pad; upgrades are bought there and at the boost machine.
+- **Menus:** tap or click the buttons and tabs.
+
+---
+
 A top-down mining idle/incremental game for web portals (Poki, CrazyGames, YouTube Playables…). The player digs
 out from a hub through a block-voxel mine, fills a backpack with rock and ore, sells it at the ATM, and spends the
 cash on better tools, bigger bags, boosts, cosmetics and hub pieces — then opens new mines for a lasting bonus.

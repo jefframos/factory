@@ -13,6 +13,8 @@ import { ShopKind, ShopSection, UfoProgress } from '../data/UfoProgress';
 import { UfoAudio } from '../audio/UfoAudio';
 import { Snapshots } from './Snapshots';
 import { buttonParts, fitSprite, framePlane, iconSprite, label, plainLabel, tappable } from './UiParts';
+import { roadTrophiesFor } from '../data/Versus';
+import { PANEL_LOOK, Pattern } from './Pattern';
 
 const BACK = 0x12305e;
 const HEADER = { strip: 96, stripColor: 0x3f6bf5, title: 34, titleY: 48 };
@@ -63,6 +65,8 @@ interface Cell {
 
 export class ShopPanel extends PIXI.Container {
     private readonly back = new PIXI.Sprite(PIXI.Texture.WHITE);
+    /** The starfield over the back (taps go through it to the back). */
+    private readonly pattern = new Pattern(PANEL_LOOK);
     private readonly strip = new PIXI.Sprite(PIXI.Texture.WHITE);
     private readonly title = label(HEADER.title);
     private readonly zone = framePlane('PanelFrame03_Bg', 720, SECTIONS.zone, SECTIONS.zoneScale);
@@ -93,7 +97,7 @@ export class ShopPanel extends PIXI.Container {
         this.grid.mask = this.gridMask;
         this.buildTabs();
         this.buildUnlock();
-        this.addChild(this.back, this.gridMask, this.grid, this.strip, this.title, this.zone, this.tabs, this.unlock);
+        this.addChild(this.back, this.pattern, this.gridMask, this.grid, this.strip, this.title, this.zone, this.tabs, this.unlock);
         for (const section of SECTION_ORDER) {
             UfoProgress.inSection(kind, section).forEach((style) => this.addCell(style.id, style.name, section));
         }
@@ -180,12 +184,14 @@ export class ShopPanel extends PIXI.Container {
         const wear = label(22);
         wear.text = 'WEAR';
         const price = new PIXI.Container();
-        const coin = iconSprite('Icon_Coin', PRICE.coin);
+        // A trophy road reward: only won there (the trophies it takes), not bought.
+        const road = roadTrophiesFor(this.kind, id);
+        const coin = iconSprite(road !== null ? 'ItemIcon_Trophy_Gold' : 'Icon_Coin', PRICE.coin);
         coin.x = PRICE.coinX;
-        const amount = label(PRICE.size);
+        const amount = label(PRICE.size, road !== null ? 0xffe066 : 0xffffff);
         amount.anchor.set(0, 0.5);
         amount.position.set(PRICE.textX, -1);
-        amount.text = String(UfoProgress.priceOf(this.kind, id));
+        amount.text = String(road ?? UfoProgress.priceOf(this.kind, id));
         price.addChild(coin, amount);
         for (const mark of [lock, check, wear, price]) mark.y = statusY;
         holder.addChild(outer, inner, picture, words, lock, check, wear, price);
@@ -235,7 +241,7 @@ export class ShopPanel extends PIXI.Container {
             UfoProgress.wear(this.kind, id);
             UfoAudio.eat(0.2);
         } else if (UfoProgress.priceOf(this.kind, id) > 0) {
-            if (UfoProgress.buy(this.kind, id)) {
+            if (roadTrophiesFor(this.kind, id) === null && UfoProgress.buy(this.kind, id)) {
                 UfoAudio.win();
                 this.pop(id);
             } else {
@@ -336,6 +342,7 @@ export class ShopPanel extends PIXI.Container {
         this.back.position.copyFrom(screen.center);
         this.back.width = screen.width + 4;
         this.back.height = screen.height + 4;
+        this.pattern.place(screen.topLeft.x - 2, screen.topLeft.y - 2, screen.width + 4, screen.height + 4);
         this.strip.position.set(left, top);
         this.strip.width = screen.width;
         this.strip.height = HEADER.strip;

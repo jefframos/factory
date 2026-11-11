@@ -23,7 +23,8 @@ import settingsFile from '../../ui/settings.json';
 
 /** The units with a card (as the houses make them: MobConfig HouseKind). */
 export type CardKind = 'giant' | 'truck' | 'saucer' | 'car' | 'skeletons' | 'warriors' | 'golem' | 'bomb' | 'bats' | 'turtle' | 'giant-green' | 'giant-viking';
-export const CARD_KINDS: CardKind[] = ['giant', 'truck', 'saucer', 'car', 'skeletons', 'warriors', 'golem', 'bomb', 'bats', 'turtle', 'giant-green', 'giant-viking'];
+/** (The truck stays a kind — old data names it — but isn't a card any more: the bomb took its houses.) */
+export const CARD_KINDS: CardKind[] = ['giant', 'saucer', 'car', 'skeletons', 'warriors', 'golem', 'bomb', 'bats', 'turtle', 'giant-green', 'giant-viking'];
 
 /** A stat at level 1 and at the top level. */
 export type StatRange = [number, number];

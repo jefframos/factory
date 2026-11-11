@@ -31,7 +31,7 @@ const FEATURES = [
     ['B', '#b9773e', 'breakable blocks', (l) => (l.obstacles ?? []).filter((o) => o.kind === 'breakable').length],
     ['W', '#3fa9f5', 'water holes', (l) => (l.obstacles ?? []).filter((o) => o.kind === 'water').length],
     ['H', '#a600ff', 'giant houses', (l) => (l.pads ?? []).filter((p) => (p.kind ?? 'giant') === 'giant').length],
-    ['T', '#ff3d4f', 'truck houses', (l) => (l.pads ?? []).filter((p) => p.kind === 'truck').length],
+    ['B', '#ff3d4f', 'bomb houses', (l) => (l.pads ?? []).filter((p) => p.kind === 'bomb').length],
     ['U', '#e6b400', 'UFO houses', (l) => (l.pads ?? []).filter((p) => p.kind === 'saucer').length],
     ['C', '#ff8a1f', 'car houses', (l) => (l.pads ?? []).filter((p) => p.kind === 'car').length],
     ['K', '#c0392b', 'PUSH blocks', (l) => (l.pushBlocks ?? []).length],

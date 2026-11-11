@@ -6,6 +6,7 @@
 // to claim their gems. The list scrolls (drag, or the wheel) when it's taller than the room over the buttons.
 
 import * as PIXI from 'pixi.js';
+import { MobEvents } from '../data/MobEvents';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { Quest, RankingPeriod, RankingRow, anyClaimable, claimQuest, endsIn, questClaimable, questClaimed, questDone, questProgress, questShare, questTitle, quests, topRows, yourRow } from '../data/Ranking';
@@ -263,6 +264,7 @@ export class RankingPanel extends PIXI.Container {
         if (ready) {
             tappable(button, () => {
                 claimQuest(quest);
+                MobEvents.questClaim(quest.id);
                 MobAudio.play('coins');
                 this.onCoins();
                 this.refresh();

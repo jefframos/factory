@@ -1,0 +1,32 @@
+{
+  "$comment": "Versus mode (game/data/Versus.ts): a fake multiplayer, the arena's round against computer saucers given players' names. places: trophies won (or lost) by finishing place, 1st first; past the list, its last. firstMatches: the first `count` matches' rivals stay this small (a share of your size, each). tiers: by trophies, how strong the rivals are (`strength` scales their share of your size, `speed` their flying speed) and the badge shown by your name. arenas: in the order they open, each a level (its map), how many rivals and seconds, the story level it opens after (`afterLevel`: 0, from the start) and the trophies it needs, the coins per place, and its colours (the trophy road's section). road: a reward at each trophy count: `coins`, or a spaceship (`ufo`) or alien (`alien`) style by id (ui/saucers.json).",
+  "places": [30, 18, 8, -6, -10, -14],
+  "firstMatches": { "count": 3, "ratios": [0.5, 0.6, 0.55, 0.65, 0.6] },
+  "tiers": [
+    { "from": 0, "name": "Rookie", "badge": "Icon_GradeBadge_Beginner", "strength": 0.75, "speed": 0.8 },
+    { "from": 100, "name": "Bronze", "badge": "Icon_GradeBadge_Bronze", "strength": 0.85, "speed": 0.84 },
+    { "from": 250, "name": "Silver", "badge": "Icon_GradeBadge_Silver", "strength": 0.95, "speed": 0.88 },
+    { "from": 450, "name": "Gold", "badge": "Icon_GradeBadge_Gold", "strength": 1.05, "speed": 0.92 },
+    { "from": 700, "name": "Champion", "badge": "Icon_GradeBadge_Challenger", "strength": 1.15, "speed": 0.96 }
+  ],
+  "arenas": [
+    { "id": "town", "name": "Small Town", "level": "town", "rivals": 4, "seconds": 100, "afterLevel": 1, "trophies": 0, "coins": [60, 40, 25, 10], "colours": { "top": "#7ad66a", "bottom": "#3a9a48" } },
+    { "id": "city", "name": "Big City", "level": "city2", "rivals": 5, "seconds": 150, "afterLevel": 1, "trophies": 150, "coins": [90, 60, 35, 15], "colours": { "top": "#6fb8ff", "bottom": "#2f6fd8" } },
+    { "id": "desert", "name": "Desert", "level": "desert", "rivals": 5, "seconds": 150, "afterLevel": 1, "trophies": 400, "coins": [120, 80, 45, 20], "colours": { "top": "#f0b860", "bottom": "#c47a2c" } }
+  ],
+  "road": [
+    { "trophies": 30, "reward": { "coins": 100 } },
+    { "trophies": 70, "reward": { "alien": "cyclops" } },
+    { "trophies": 110, "reward": { "coins": 200 } },
+    { "trophies": 150, "reward": { "ufo": "steel" } },
+    { "trophies": 200, "reward": { "coins": 250 } },
+    { "trophies": 260, "reward": { "alien": "cyclops-blue" } },
+    { "trophies": 330, "reward": { "coins": 350 } },
+    { "trophies": 400, "reward": { "ufo": "rust" } },
+    { "trophies": 480, "reward": { "coins": 450 } },
+    { "trophies": 560, "reward": { "alien": "cyclops-purple" } },
+    { "trophies": 650, "reward": { "ufo": "black-neon" } },
+    { "trophies": 750, "reward": { "coins": 800 } },
+    { "trophies": 850, "reward": { "ufo": "magma" } }
+  ]
+}

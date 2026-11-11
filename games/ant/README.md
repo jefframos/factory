@@ -1,5 +1,17 @@
 # Ant
 
+## Description
+
+A chill pixel-picture puzzle: tap tiles to send ants out to carry the picture's blocks home, in the right order, before your slots fill up.
+
+## Controls
+
+- **Play:** tap (or click) the front tile of a column; it moves into a slot and its ants go fetch their colour.
+- **Power-ups:** tap one on the belt, then (for pick up and vacuum) tap the tile or block to use it on.
+- **Menus:** tap the buttons and tabs.
+
+---
+
 A chill pixel-picture puzzle for web portals. A picture made of coloured blocks sits on a tray; under it, an anthill,
 five slots, and columns of coloured tiles, each with a number. Tap a column's front tile: it moves into a free slot and
 that many ants of its colour stream out, each fetching one block of that colour back down the anthill. Clear the whole

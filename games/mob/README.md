@@ -1,5 +1,18 @@
 # Mob
 
+## Description
+
+Fire a crowd from your cannon, multiply it through gates and smash the enemy base. Then build a card deck and battle in versus mode!
+
+## Controls
+
+- **Aim:** drag across the screen (or move the mouse); the cannon follows and fires on its own.
+- **Big units:** send your crowd into a house to fill it; it makes a giant, a bomb or a vehicle.
+- **Cards:** tap a charged card at the bottom of the screen to send its unit out of the cannon.
+- **Menus:** tap the buttons and tabs (levels, upgrades, cards, versus).
+
+---
+
 Aim a cannon, multiply your crowd through gates, and overrun the enemy base before its crowd breaks through. Based on Mob Control; the brief and references are in `refs/mob/` (`mob_control_gameplay_and_web_mvp.pdf`). This is its MVP: one arena, three presets, one upgrade.
 
 - **Control:** drag across the screen (or move the mouse) and the cannon follows. It fires blue mobs all the time. The battle starts on the first touch.

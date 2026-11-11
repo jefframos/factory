@@ -5,5 +5,13 @@
         "gameId": "",
         "enableAds": false,
         "folderPath": "mob"
+    },
+    "youtube": {
+        "className": "YouTubePlayablePlatform",
+        "importPath": "core/platforms/YouTubePlayablePlatform",
+        "gameId": "",
+        "enableAds": true,
+        "folderPath": "mob",
+        "apiScript": "https://www.youtube.com/game_api/v1"
     }
 }

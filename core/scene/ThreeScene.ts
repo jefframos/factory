@@ -23,7 +23,8 @@ export abstract class ThreeScene extends GameScene {
         this.threeScene = new THREE.Scene();
 
         // 3. Setup Camera
-        const aspect = window.innerWidth / window.innerHeight;
+        // (A frame that boots 0 high: a usable aspect till it's sized.)
+        const aspect = window.innerWidth / Math.max(1, window.innerHeight);
         this.threeCamera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
         this.threeCamera.position.z = 5;
 
@@ -87,6 +88,9 @@ export abstract class ThreeScene extends GameScene {
     public update(delta: number): void {
         // Render the 3D Scene every frame (every Game.renderEvery-th one, for headless playtests)
         if (Game.shouldRender()) {
+            // The canvas kept to the window (a missed resize event: a frame grown after a cold boot); the scene lays
+            // itself out again when it changed.
+            if (SetupThree.syncSize(this.threeCamera)) this.resize();
             SetupThree.renderer.render(this.threeScene, this.threeCamera);
         }
     }

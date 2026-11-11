@@ -59,7 +59,7 @@ async function areasProblem(data) {
         if (!await townExists(area.miniature)) return `${area.name}: its miniature's town is gone`;
         for (const level of area.levels ?? []) {
             if (!await townExists(level.level)) return `${area.name}: a level's town (${level.level}) is gone`;
-            if (!['points', 'all', 'object'].includes(level.type)) return `${area.name}: a level has no goal`;
+            if (!['points', 'all', 'object', 'race', 'top'].includes(level.type)) return `${area.name}: a level has no goal`;
             if (!(level.seconds > 0) || !(level.rivals >= 0)) return `${area.name}: a level needs seconds and rivals`;
         }
     }

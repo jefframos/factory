@@ -44,13 +44,35 @@ export default class SetupThree {
         }, 10);
     }
 
+    /** The cameras already listening for the window's resize (each listens once, however often resize() is called). */
+    private static readonly watched = new WeakSet<THREE.PerspectiveCamera>();
+    private static readonly size = new THREE.Vector2();
+
+    /** The canvas and `camera` fitted to the window now, and again on each resize event. */
     static resize(camera: THREE.PerspectiveCamera) {
-        window.addEventListener('resize', () => {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            this.renderer.setSize(width, height);
+        this.syncSize(camera, true);
+        if (this.watched.has(camera)) return;
+        this.watched.add(camera);
+        window.addEventListener('resize', () => this.syncSize(camera, true));
+    }
+
+    /**
+     * The canvas fitted to the window if it isn't (and `camera`'s aspect with it); whether it changed. Called every frame
+     * (ThreeScene.update), since a resize event can be missed: an iframe (YouTube Playables) can boot tiny or 0 high and be
+     * grown without one, leaving the 3D at its boot size while the UI (Game's own size check) is right. A 0-sized window
+     * is skipped (its aspect would be broken).
+     */
+    static syncSize(camera: THREE.PerspectiveCamera, updateCamera = false): boolean {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        if (!this.renderer || width <= 0 || height <= 0) return false;
+        const now = this.renderer.getSize(this.size);
+        const changed = now.x !== width || now.y !== height;
+        if (changed) this.renderer.setSize(width, height);
+        if (changed || updateCamera || Math.abs(camera.aspect - width / height) > 1e-6) {
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
-        });
+        }
+        return changed;
     }
 }

@@ -8,13 +8,13 @@
     "style": "house",
     "roof": "#d80bf4"
   },
-  "truck": {
+  "bomb": {
     "tint": "#ffffff",
     "wall": "#cfe0ff",
     "roof": "#0ff0ec",
     "need": 24,
-    "hp": 60,
-    "damage": 35,
+    "hp": 16,
+    "damage": 45,
     "style": "pad",
     "pad": "#f73636"
   },

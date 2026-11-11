@@ -1962,7 +1962,7 @@ boot();
 // ------------------------------------------------------------------ units tab
 
 /** The upgrades, in the order shown: what each house makes. */
-const UNIT_ORDER = [['giant', 'GIANT'], ['truck', 'TRUCK'], ['saucer', 'UFO'], ['car', 'RAMMER']];
+const UNIT_ORDER = [['giant', 'GIANT'], ['bomb', 'BOMB'], ['saucer', 'UFO'], ['car', 'RAMMER']];
 let unitsDirty = false;
 let unitId = 'giant';
 let unitList;

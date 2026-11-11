@@ -254,6 +254,7 @@ export default class HomeScene extends ThreeScene {
             if (!tab) return;
             this.spotlight = new Spotlight(tab.holder, 'VERSUS MODE IS OPEN!\nTAP ARENA', () => {
                 this.closeSpotlight();
+                MobEvents.tutorialStep('versus-tab');
                 this.tutorialStep = 'play';
                 this.openTab('arena');
             });
@@ -262,6 +263,8 @@ export default class HomeScene extends ThreeScene {
                 this.closeSpotlight();
                 this.tutorialStep = null;
                 MobSave.finishArenaTutorial();
+                MobEvents.tutorialStep('versus-play');
+                MobEvents.tutorialComplete('versus');
                 this.pressPlay();
                 this.tutorialHides();
             });
@@ -361,7 +364,10 @@ export default class HomeScene extends ThreeScene {
         const fresh = ARENA_ORDER.map((entry, index) => ({ ...entry, index }))
             .filter((entry) => arenaOpen(entry.arena, reached, MobSave.bestTrophies) && !MobSave.arenaSeen(entry.id));
         if (fresh.length) {
-            fresh.forEach((entry) => MobSave.markArenaSeen(entry.id));
+            fresh.forEach((entry) => {
+                MobSave.markArenaSeen(entry.id);
+                MobEvents.arenaUnlock(entry.id);
+            });
             const newest = fresh[fresh.length - 1];
             this.openOverlay(new ArenaUnlocked(newest.arena, newest.index + 1, () => {
                 this.overlay = null;
@@ -373,6 +379,7 @@ export default class HomeScene extends ThreeScene {
         }
         const opened = MobSave.openPending();
         if (!opened) return;
+        MobEvents.chestOpen(opened.kind, 'win');
         this.refreshCoins();
         this.openOverlay(new ChestOpen(opened.kind, opened.loot, () => {
             this.overlayClosed();
@@ -384,11 +391,14 @@ export default class HomeScene extends ThreeScene {
     private async watchAdChest(): Promise<void> {
         if (this.watching || this.overlay) return;
         this.watching = true;
+        MobEvents.ad('free-chest', 'request');
         const rewarded = await PlatformHandler.instance.platform.showRewardedVideo('mob-free-chest').catch(() => false);
         this.watching = false;
+        MobEvents.ad('free-chest', rewarded ? 'reward' : 'skip');
         if (this.ui.destroyed || !rewarded) return;
         const opened = MobSave.openAdChest();
         if (!opened) return;
+        MobEvents.chestOpen(opened.kind, 'ad');
         this.refreshCoins();
         this.openOverlay(new ChestOpen(opened.kind, opened.loot, () => this.overlayClosed()));
     }
@@ -442,7 +452,10 @@ export default class HomeScene extends ThreeScene {
         const them: MatchPlayer = { name: usernameFrom(seed), face: look.face, color: look.color, trophies, tier: opponent.tier.name, badge: tierBadge(LADDER, opponent.tierIndex) };
         const mine = AVATARS[MobSave.avatar % AVATARS.length];
         const you: MatchPlayer = { name: MobSave.username, face: mine.face, color: mine.color, trophies: record.rating, tier: LADDER.tiers[tierFor(LADDER, record)].name, badge: tierBadge(LADDER, tierFor(LADDER, record)) };
-        this.matchmaking = new Matchmaking(you, them, () => this.onPlay(arena, { online: true, opponent: them }), () => this.closeMatchmaking());
+        this.matchmaking = new Matchmaking(you, them, () => this.onPlay(arena, { online: true, opponent: them }), () => {
+            MobEvents.matchmakingCancel();
+            this.closeMatchmaking();
+        });
         this.ui.addChild(this.matchmaking);
     }
 
@@ -658,17 +671,22 @@ export default class HomeScene extends ThreeScene {
             upgrade: (card) => {
                 const from = MobSave.cardLevel(card);
                 if (!MobSave.buyCard(card)) return;
+                MobEvents.cardUpgrade(card, from + 1);
                 MobAudio.play('coins');
                 this.overlay?.close();
                 this.openOverlay(new UpgradeShow(card, from, () => this.overlayClosed()));
             },
             use: (card, instead) => {
                 MobSave.useCard(card, instead);
+                MobEvents.deckChange(card, 'use');
                 MobAudio.play('confirm');
                 this.overlay?.close();
             },
             remove: (card) => {
-                if (MobSave.removeCard(card)) MobAudio.play('click');
+                if (MobSave.removeCard(card)) {
+                    MobAudio.play('click');
+                    MobEvents.deckChange(card, 'remove');
+                }
                 this.overlay?.close();
             },
         }, () => this.overlayClosed()));
@@ -678,6 +696,9 @@ export default class HomeScene extends ThreeScene {
     private claimRoad(step: RoadStep): void {
         const got = MobSave.claimRoad(step);
         if (!got) return;
+        MobEvents.roadClaim(step.trophies);
+        if (got.card) MobEvents.cardUnlock(got.card);
+        if (got.chest) MobEvents.chestOpen(got.chest, 'road');
         MobAudio.play('coins');
         this.refreshCoins();
         if (got.card) {

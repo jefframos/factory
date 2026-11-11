@@ -30,6 +30,8 @@ const CHARACTER_MODEL: Partial<Record<CardKind, { model: string; count: number; 
     turtle: { model: 'turtle', count: 1, baked: true },
 };
 const cache = new Map<CardKind, Promise<PIXI.Texture | null>>();
+/** The card pictures' atlas loading (in the background): a picture waits for it before it looks there. */
+let atlasLoading: Promise<unknown> = Promise.resolve();
 
 /** Draws `object`, framed by its bounds, from the front and a little above. */
 function snapshot(object: THREE.Object3D): PIXI.Texture | null {
@@ -143,24 +145,29 @@ async function renderProp(kind: 'truck' | 'saucer' | 'car'): Promise<PIXI.Textur
 }
 
 export const UnitIcons = {
+    /** The card pictures' atlas is loading (`loading`: done when it's in, or failed). */
+    atlas(loading: Promise<unknown>): void {
+        atlasLoading = loading;
+    },
+
     /** `kind`'s picture (rendered the first time it's asked for; null if it can't be). */
     get(kind: CardKind): Promise<PIXI.Texture | null> {
         let texture = cache.get(kind);
         if (!texture) {
-            // The atlas's, if it has it.
-            const saved = PIXI.utils.TextureCache[`card-${kind}`] as PIXI.Texture | undefined;
-            if (saved) {
-                texture = Promise.resolve(saved);
-                cache.set(kind, texture);
-                return texture;
-            }
-            const character = CHARACTER_MODEL[kind];
-            texture = (kind === 'giant' ? renderGiant() : character ? renderCharacter(character) : renderProp(kind as 'truck' | 'saucer' | 'car')).catch((error) => {
-                console.warn('[mob] unit icon', kind, error);
-                return null;
-            });
+            texture = atlasLoading.then(() => UnitIcons.find(kind));
             cache.set(kind, texture);
         }
         return texture;
+    },
+
+    /** `kind`'s picture: the atlas's, else rendered (get() keeps it). */
+    find(kind: CardKind): Promise<PIXI.Texture | null> {
+        const saved = PIXI.utils.TextureCache[`card-${kind}`] as PIXI.Texture | undefined;
+        if (saved) return Promise.resolve(saved);
+        const character = CHARACTER_MODEL[kind];
+        return (kind === 'giant' ? renderGiant() : character ? renderCharacter(character) : renderProp(kind as 'truck' | 'saucer' | 'car')).catch((error) => {
+            console.warn('[mob] unit icon', kind, error);
+            return null;
+        });
     },
 };

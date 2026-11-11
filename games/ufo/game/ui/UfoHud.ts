@@ -15,7 +15,7 @@ import { UfoAudio } from '../audio/UfoAudio';
 import { BakedShape } from './BakedShape';
 import { DARK } from './UiParts';
 import { EndOptions, EndReveal } from './EndReveal';
-import { PlayerLook, PlayerRow, ROW, fitPill, iconSprite, label, pill, placeScale, strokedArrow, tappable } from './UiParts';
+import { PlayerLook, PlayerRow, ROW, buttonParts, fitPill, framePlane, iconSprite, label, pill, placeScale, strokedArrow, tappable } from './UiParts';
 
 export { label };
 
@@ -28,6 +28,8 @@ const GOAL_POP = { from: 0.2, seconds: 0.5, ease: 'back.out(2.6)' };
 /** How to fly: where it is, as a share of the screen's height. */
 const MOVE_HINT_Y = 0.72;
 const HOME_GAP = 10;
+/** The quit box (a round: QUIT ends it where you are): its size, words, buttons. */
+const QUIT = { width: 520, height: 330, title: 40, note: 24, noteY: -30, titleY: -100, buttonY: 90, button: { width: 210, height: 78, gap: 24 }, dim: 0.7 };
 /** The icon's share of the button; the icons are 128 wide. */
 const MUTE_ICON = 0.55 / 128;
 const MARGIN = 16;
@@ -130,6 +132,8 @@ export class UfoHud extends PIXI.Container {
     private readonly reveal = new PIXI.Graphics();
     private readonly percent = label(20);
     private missionMode = false;
+    /** A round with rivals: the kill count under the clock. */
+    private roundKills = false;
     private readonly barFill: BakedShape;
     private readonly ring = new PIXI.Container();
     private readonly ringPicture = new PIXI.Sprite(ringTexture(RING_BAKE.steps));
@@ -156,6 +160,11 @@ export class UfoHud extends PIXI.Container {
     private readonly moveHint = new MoveHint();
     private readonly mute = new PIXI.Container();
     private readonly home = new PIXI.Container();
+    /** "Quit the round?" over everything (a dim that takes every tap), and what YES does. */
+    private readonly quitAsk = new PIXI.Container();
+    private readonly quitDim = new PIXI.Graphics();
+    private onQuit: (() => void) | null = null;
+    private onKeepPlaying: (() => void) | null = null;
     private readonly board = new PIXI.Container();
     private readonly boardRows: PlayerRow[] = [];
     private youPlace = 0;
@@ -205,8 +214,9 @@ export class UfoHud extends PIXI.Container {
         this.board.visible = false;
         this.buildMute();
         this.buildHome();
+        this.buildQuitAsk();
         this.addChild(this.tags, this.sizeBar, this.pops, this.arrows, this.bar, this.ring, this.kills, this.bannerPill, this.bannerRow, this.callout, this.calloutSkull,
-            this.messagePill, this.message, this.hintPill, this.hintText, this.moveHint, this.markers, this.board, this.mute, this.home);
+            this.messagePill, this.message, this.hintPill, this.hintText, this.moveHint, this.markers, this.board, this.mute, this.home, this.quitAsk);
         this.setProgress(0, 'TOWN');
         this.reposition();
     }
@@ -238,6 +248,13 @@ export class UfoHud extends PIXI.Container {
         this.ring.visible = on;
         this.kills.visible = on;
         if (on) this.barFill.setLook({ fill: BAR_GREEN });
+        this.reposition();
+    }
+
+    /** A round with rivals (versus, a `top` or `race` level): the player's kills, under the clock. */
+    public showRoundKills(): void {
+        this.roundKills = true;
+        this.kills.visible = true;
         this.reposition();
     }
 
@@ -468,6 +485,66 @@ export class UfoHud extends PIXI.Container {
     /** No leaving (the tutorial). */
     public hideHome(): void {
         this.home.visible = false;
+        this.homeAllowed = false;
+    }
+
+    /** Whether there's a way home (not in the tutorial, nor a new player's first level: the end screen has none either). */
+    private homeAllowed = true;
+
+    /** The quit box: a dim taking every tap, the question, KEEP PLAYING and QUIT. */
+    private buildQuitAsk(): void {
+        this.quitDim.eventMode = 'static';
+        this.quitDim.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
+        const { width, height, button } = QUIT;
+        const box = framePlane('BorderFrame_Round24', width, height);
+        box.position.set(-width / 2, -height / 2);
+        box.tint = 0x2a4fb8;
+        box.eventMode = 'static';
+        const title = label(QUIT.title);
+        title.text = 'QUIT THE ROUND?';
+        title.y = QUIT.titleY;
+        const note = label(QUIT.note, 0xc9d3ff);
+        note.text = 'It ends now, and you keep\nthe place you have.';
+        note.style.align = 'center';
+        note.y = QUIT.noteY;
+        const keep = new PIXI.Container();
+        keep.addChild(...buttonParts(button.width, button.height, 'PLAY ON', 'Button01_l_Green'));
+        keep.position.set(-(button.width + button.gap) / 2, QUIT.buttonY);
+        tappable(keep, () => {
+            this.showQuitAsk(false);
+            this.onKeepPlaying?.();
+        });
+        const quit = new PIXI.Container();
+        quit.addChild(...buttonParts(button.width, button.height, 'QUIT', 'Button01_l_Gray'));
+        quit.position.set((button.width + button.gap) / 2, QUIT.buttonY);
+        tappable(quit, () => {
+            this.showQuitAsk(false);
+            this.onQuit?.();
+        });
+        const panel = new PIXI.Container();
+        panel.name = 'panel';
+        panel.addChild(box, title, note, keep, quit);
+        this.quitAsk.addChild(this.quitDim, panel);
+        this.quitAsk.visible = false;
+    }
+
+    /** Asks before quitting the round: `onQuit` on QUIT, `onKeepPlaying` on PLAY ON. */
+    public askQuit(onQuit: () => void, onKeepPlaying: () => void): void {
+        this.onQuit = onQuit;
+        this.onKeepPlaying = onKeepPlaying;
+        this.showQuitAsk(true);
+    }
+
+    private showQuitAsk(open: boolean): void {
+        this.quitAsk.visible = open;
+        const panel = this.quitAsk.getChildByName('panel');
+        if (open && panel) gsap.fromTo(panel.scale, { x: 0.7, y: 0.7 }, { x: 1, y: 1, duration: 0.3, ease: 'back.out(2.2)' });
+    }
+
+    private placeQuitAsk(screen: NonNullable<typeof Game.overlayScreenData>): void {
+        this.quitDim.clear().beginFill(0x060a26, QUIT.dim).drawRect(screen.topLeft.x - 10, screen.topLeft.y - 10, screen.width + 20, screen.height + 20).endFill();
+        this.quitAsk.getChildByName('panel')?.position.copyFrom(screen.center);
+        this.addChild(this.quitAsk);
     }
 
     private buildMute(): void {
@@ -540,9 +617,10 @@ export class UfoHud extends PIXI.Container {
         else this.moveHint.hide();
     }
 
-    /** The biggest few, always with the player. */
-    public setBoard(rows: readonly BoardRow[]): void {
+    /** The biggest few (`whole`: by points, a race), always with the player. */
+    public setBoard(rows: readonly BoardRow[], whole = false): void {
         this.board.visible = rows.length > 0;
+        this.boardRows.forEach((view) => { view.whole = whole; });
         const youAt = rows.findIndex((row) => row.you);
         this.boardRows.forEach((view, i) => {
             const isYouLast = i === BOARD.rows - 1 && youAt >= BOARD.rows;
@@ -639,6 +717,11 @@ export class UfoHud extends PIXI.Container {
     }
 
     /** The end of the level: everything else clears off, and the reveal plays. */
+    /** The end screen's own animation (its area bar's pulse). */
+    public updateEnd(dt: number): void {
+        this.end?.update(dt);
+    }
+
     public showEnd(options: EndOptions): void {
         this.hint(null);
         this.showMoveHand(false);
@@ -657,8 +740,9 @@ export class UfoHud extends PIXI.Container {
         this.sizeBar.visible = false;
         this.arrows.visible = false;
         this.home.visible = false;
+        this.quitAsk.visible = false;
         // Lost: going home's an option. (Won, the main button already goes there.)
-        this.end = new EndReveal(options, this.onRestart, options.outcome === 'lose' ? this.onHome : undefined);
+        this.end = new EndReveal(options, this.onRestart, options.outcome === 'lose' && this.homeAllowed ? this.onHome : undefined);
         this.addChild(this.end);
         this.reposition();
     }
@@ -702,8 +786,11 @@ export class UfoHud extends PIXI.Container {
         this.fitLine(this.message, this.messagePill);
         this.fitLine(this.hintText, this.hintPill);
         this.placeMissionParts(screen);
+        // A round's kills: under the clock, a little left so the count sits in the middle.
+        if (this.roundKills && !this.missionMode) this.kills.position.set(middle - 14, this.bar.y + (BAR.height / 2) * fit + 26);
         this.callout.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.3);
         this.end?.place(screen.center.x, screen.center.y, screen.width, screen.height);
+        this.placeQuitAsk(screen);
     }
 
     /** The standard layout's top row: ring timer, points bar, mute; the kill count and the goal under them. */
