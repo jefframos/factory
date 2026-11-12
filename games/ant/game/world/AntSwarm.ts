@@ -5,8 +5,10 @@
 // facing it, and picks it up (onPickUp: the scene hides the picture's block and hands back the way home; the block
 // rises from its spot onto the ant's back — the same jelly block, the same size — tipping over to ride corner down), walks it back out and down the anthill (onHome). Each ant wanders a little either side of its
 // way and keeps its own pace, so a line of them looks alive (drawn only: where it really is stays on the path). All the
-// ants are one InstancedMesh (an ant in its tile's colour, its edges darker as the UFO's saucers' are: abdomen, thorax,
-// a big head, six chunky legs that swing as it walks),
+// ants are drawn as a walk cycle baked into WALK.frames poses, one InstancedMesh each (an ant in its tile's colour, its
+// edges darker as the UFO's saucers' are: abdomen, thorax, a big head, six jointed legs spread along the body, walking
+// a tripod gait: front and back legs of one side with the other side's middle one) — each ant in the pose of its own
+// stride,
 // their eyes another (white with black pupils, in vertex colours: not tinted), and the blocks they carry a third, so a
 // big swarm costs three draw calls.
 
@@ -59,8 +61,54 @@ const HEAD = { radius: 0.27, y: 0.36, z: 0.36 };
  *  far in it reaches (of how much the surface faces the camera). */
 const RIM = { amount: 0.55, width: 0.6 };
 
-/** An ant, nose along +Z: abdomen, thorax, a big head, and three pairs of chunky legs. */
-function antGeometry(): THREE.BufferGeometry {
+/**
+ * The walk: how many baked poses, how far a leg swings forward and back (radians round its hip), how high a foot lifts
+ * as it swings forward. The legs: each pair's hip (z along the body), which way it points at rest (radians: + forward),
+ * the hip's height and how far out from the middle; the thigh's and the shin's lengths, how thick they are.
+ */
+const WALK = { frames: 8, swing: 0.42, lift: 0.1 };
+/** The flat shadow under each ant (so it stands out on the picture and the floor): its half width and half length (x
+ *  the ant's size), how far back its middle is, how dark, how far over the ground (no flicker with it). */
+const SHADOW = { width: 0.6, length: 0.9, back: -0.06, opacity: 0.5, lift: 0.015 };
+
+/** The shadow's picture: a soft dark blot, darkest in the middle and fading out to nothing at its edge. Drawn once. */
+let shadowTexture: THREE.Texture | null = null;
+function softShadow(): THREE.Texture {
+    if (shadowTexture) return shadowTexture;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 64;
+    const c = canvas.getContext('2d')!;
+    const blot = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+    blot.addColorStop(0, 'rgba(255,255,255,1)');
+    blot.addColorStop(0.45, 'rgba(255,255,255,0.7)');
+    blot.addColorStop(1, 'rgba(255,255,255,0)');
+    c.fillStyle = blot;
+    c.fillRect(0, 0, 64, 64);
+    shadowTexture = new THREE.CanvasTexture(canvas);
+    return shadowTexture;
+}
+const LEGS = {
+    pairs: [{ z: 0.15, angle: 0.65 }, { z: 0.02, angle: 0 }, { z: -0.11, angle: -0.6 }],
+    hipY: 0.27, hipX: 0.1, thigh: 0.24, shin: 0.3, thick: 0.065, kneeUp: 0.13,
+};
+
+/** A stick between `a` and `b`, `thick` across (a box along the line). */
+function segment(a: THREE.Vector3, b: THREE.Vector3, thick: number): THREE.BufferGeometry {
+    const length = a.distanceTo(b);
+    const g = new THREE.BoxGeometry(thick, thick, length + thick * 0.6);
+    const holder = new THREE.Object3D();
+    holder.position.copy(a).add(b).multiplyScalar(0.5);
+    holder.lookAt(b);
+    holder.updateMatrix();
+    g.applyMatrix4(holder.matrix);
+    return g;
+}
+
+/**
+ * An ant, nose along +Z, in walk pose `frame` (of WALK.frames; -1: standing): abdomen, thorax, a big head, and six legs —
+ * each a thigh up and out to its knee, then a shin down to the ground — swinging in a tripod gait.
+ */
+function antGeometry(frame: number): THREE.BufferGeometry {
     const parts: THREE.BufferGeometry[] = [];
     const sphere = (r: number, z: number, sx = 1, sy = 0.85, sz = 1.2) => {
         const g = new THREE.SphereGeometry(r, 10, 8);
@@ -72,15 +120,25 @@ function antGeometry(): THREE.BufferGeometry {
     const head = new THREE.SphereGeometry(HEAD.radius, 12, 10);
     head.translate(0, HEAD.y, HEAD.z);
     parts.push(head);
-    for (const z of [-0.08, 0.04, 0.16]) {
+    const t = frame < 0 ? 0 : (frame / WALK.frames) * Math.PI * 2;
+    LEGS.pairs.forEach(({ z, angle }, pair) => {
         for (const side of [-1, 1]) {
-            const leg = new THREE.BoxGeometry(0.44, 0.09, 0.09);
-            leg.rotateZ(side * 0.5);
-            leg.translate(side * 0.2, 0.22, z);
-            parts.push(leg);
+            // The tripod: front and back of one side with the middle of the other (half a cycle apart from the rest).
+            const group = (pair === 1 ? side > 0 : side < 0) ? 0 : Math.PI;
+            const phase = t + group;
+            const swing = frame < 0 ? 0 : Math.sin(phase) * WALK.swing;
+            // Lifted while it swings forward (the first half of its cycle), on the ground while it pushes back.
+            const lift = frame < 0 ? 0 : Math.max(0, Math.cos(phase)) * WALK.lift;
+            const yaw = angle + swing;
+            // Out sideways, turned forward or back by its yaw.
+            const out = new THREE.Vector3(side * Math.cos(yaw), 0, Math.sin(yaw));
+            const hip = new THREE.Vector3(side * LEGS.hipX, LEGS.hipY, z);
+            const knee = hip.clone().addScaledVector(out, LEGS.thigh).add(new THREE.Vector3(0, LEGS.kneeUp + lift * 0.5, 0));
+            const foot = knee.clone().addScaledVector(out, LEGS.shin * 0.55).setY(0.02 + lift);
+            parts.push(segment(hip, knee, LEGS.thick), segment(knee, foot, LEGS.thick * 0.85));
         }
-    }
-    const merged = mergeGeometries(parts.map((p) => p.toNonIndexed()));
+    });
+    const merged = mergeGeometries(parts.map((p) => (p.index ? p.toNonIndexed() : p)));
     parts.forEach((p) => p.dispose());
     return merged;
 }
@@ -123,7 +181,11 @@ function rimmed(material: THREE.MeshStandardMaterial): THREE.MeshStandardMateria
 
 export class AntSwarm {
     private readonly ants: Ant[] = [];
-    private readonly bodies: THREE.InstancedMesh;
+    /** The flat shadows under the ants (one quad each: cheap). */
+    private readonly shadows: THREE.InstancedMesh;
+    private readonly shadowAt = new THREE.Vector3();
+    /** The bodies: one mesh per walk pose (WALK.frames), and a standing one (an ant lifting its block). */
+    private readonly poses: THREE.InstancedMesh[] = [];
     private readonly eyes: THREE.InstancedMesh;
     private readonly blocks: THREE.InstancedMesh;
     private readonly matrix = new THREE.Matrix4();
@@ -144,12 +206,22 @@ export class AntSwarm {
     public constructor(scene: THREE.Scene, private readonly carried: number, private readonly pixel: number,
         private readonly groundAt: (x: number, z: number) => number,
         private readonly onPickUp: (ant: Ant) => THREE.Vector3[], private readonly onHome: (ant: Ant) => void) {
-        this.bodies = new THREE.InstancedMesh(antGeometry(), rimmed(new THREE.MeshStandardMaterial({ roughness: 0.4 })), MAX_ANTS);
+        // A soft dark blot on the ground under each ant (a square with a fading round picture: no hard edge), drawn
+        // before them, never hiding anything.
+        const oval = new THREE.PlaneGeometry(2, 2);
+        oval.rotateX(-Math.PI / 2);
+        oval.scale(SHADOW.width, 1, SHADOW.length);
+        oval.translate(0, 0, SHADOW.back);
+        this.shadows = new THREE.InstancedMesh(oval, new THREE.MeshBasicMaterial({ color: 0x2a1408, map: softShadow(), transparent: true, opacity: SHADOW.opacity, depthWrite: false }), MAX_ANTS);
+        this.shadows.renderOrder = -1;
+        const material = rimmed(new THREE.MeshStandardMaterial({ roughness: 0.4 }));
+        for (let frame = 0; frame < WALK.frames; frame++) this.poses.push(new THREE.InstancedMesh(antGeometry(frame), material, MAX_ANTS));
+        this.poses.push(new THREE.InstancedMesh(antGeometry(-1), material, MAX_ANTS));
         this.eyes = new THREE.InstancedMesh(eyesGeometry(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.25 }), MAX_ANTS);
         // The picture's own jelly block (PictureView), at its full size.
         this.blocks = new THREE.InstancedMesh(new RoundedBoxGeometry(BLOCK, BLOCK_HEIGHT, BLOCK, 2, ROUNDING),
             new THREE.MeshPhysicalMaterial({ roughness: 0.4, clearcoat: 0.8, clearcoatRoughness: 0.12 }), MAX_ANTS);
-        for (const mesh of [this.bodies, this.eyes, this.blocks]) {
+        for (const mesh of [this.shadows, ...this.poses, this.eyes, this.blocks]) {
             mesh.count = 0;
             mesh.frustumCulled = false;
             scene.add(mesh);
@@ -239,6 +311,8 @@ export class AntSwarm {
 
     private draw(): void {
         let carrying = 0;
+        // How many ants each pose has drawn so far.
+        const counts = this.poses.map(() => 0);
         const reach = Math.min(WANDER.max, this.pixel * WANDER.amount);
         this.ants.forEach((ant, i) => {
             // A little waddle: the body rocks side to side with its steps; and a wander either side of its way (none
@@ -247,9 +321,18 @@ export class AntSwarm {
             this.drawn.set(ant.position.x + Math.cos(ant.heading) * side, ant.position.y, ant.position.z - Math.sin(ant.heading) * side);
             this.quaternion.setFromAxisAngle(this.up, ant.heading + Math.sin(ant.step) * 0.08 + Math.cos(ant.wander) * 0.25 * ant.sway);
             this.scale.setScalar(TUNING.antSize);
+            // Its shadow, flat on the ground just under it, turned with it.
+            this.shadowAt.copy(this.drawn).setY(this.drawn.y + SHADOW.lift * TUNING.antSize);
+            this.matrix.compose(this.shadowAt, this.quaternion, this.scale);
+            this.shadows.setMatrixAt(i, this.matrix);
             this.matrix.compose(this.drawn, this.quaternion, this.scale);
-            this.bodies.setMatrixAt(i, this.matrix);
-            this.bodies.setColorAt(i, ant.color);
+            // Its pose: its own stride through the walk (ant.step: radians, a cycle a step pair); lifting a block, standing.
+            const cycle = ((ant.step % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+            const pose = ant.phase === 'pick' ? WALK.frames : Math.floor((cycle / (Math.PI * 2)) * WALK.frames) % WALK.frames;
+            const mesh = this.poses[pose];
+            mesh.setMatrixAt(counts[pose], this.matrix);
+            mesh.setColorAt(counts[pose], ant.color);
+            counts[pose]++;
             this.eyes.setMatrixAt(i, this.matrix);
             // The block it took: while picking up it rises from its spot in front of the ant onto its back, tipping over
             // to a corner down (`carried`: a full block's size); then it rides there home.
@@ -273,13 +356,17 @@ export class AntSwarm {
                 carrying++;
             }
         });
-        this.bodies.count = this.ants.length;
+        this.poses.forEach((mesh, k) => {
+            mesh.count = counts[k];
+            mesh.instanceMatrix.needsUpdate = true;
+            if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+        });
         this.eyes.count = this.ants.length;
+        this.shadows.count = this.ants.length;
+        this.shadows.instanceMatrix.needsUpdate = true;
         this.eyes.instanceMatrix.needsUpdate = true;
         this.blocks.count = carrying;
-        this.bodies.instanceMatrix.needsUpdate = true;
         this.blocks.instanceMatrix.needsUpdate = true;
-        if (this.bodies.instanceColor) this.bodies.instanceColor.needsUpdate = true;
         if (this.blocks.instanceColor) this.blocks.instanceColor.needsUpdate = true;
     }
 
@@ -290,10 +377,14 @@ export class AntSwarm {
     }
 
     public destroy(): void {
-        for (const mesh of [this.bodies, this.eyes, this.blocks]) {
+        for (const mesh of [this.shadows, ...this.poses, this.eyes, this.blocks]) {
             mesh.removeFromParent();
             mesh.geometry.dispose();
-            (mesh.material as THREE.Material).dispose();
         }
+        (this.shadows.material as THREE.Material).dispose();
+        // (The poses share one material.)
+        (this.poses[0]?.material as THREE.Material | undefined)?.dispose();
+        (this.eyes.material as THREE.Material).dispose();
+        (this.blocks.material as THREE.Material).dispose();
     }
 }

@@ -10,12 +10,21 @@ import { ArenaRecord, Ladder, Loadout, afterMatch, freshRecord } from './ArenaLa
 import { arenaFor } from './Arenas';
 import { RETRY_EASE, UPGRADES, UpgradeKind } from './MobConfig';
 import { PLAY } from './MobLevels';
-import { CARD_KINDS, CardKind, SETTINGS, cardCost, cardMaxLevel } from './Settings';
+import { CARD_KINDS, CardKind, SETTINGS, cardCost, cardMaxLevel, isStoryCard } from './Settings';
 import { ChestKind, Loot, REWARDS, ROAD, RoadStep, copiesFor, rollChest, spreadCopies } from './ArenaRewards';
 
 /** The arena deck's most cards. */
-export const DECK_SIZE = 6;
+/**
+ * The battle deck: two rows of STORY_ROW. The first is the story's (its cards only: STORY_CARDS): story battles bring
+ * it alone; the second takes the rest of the cards: versus brings both rows.
+ */
+export const DECK_SIZE = 8;
+export const STORY_ROW = 4;
+/** The slots `kind` goes in: the story row for a story card, else the versus row ([from, to)). */
+const rowOf = (kind: CardKind): [number, number] => (isStoryCard(kind) ? [0, STORY_ROW] : [STORY_ROW, DECK_SIZE]);
 
+/** The main screen opens once this many story levels are won (versus opens later: arenas/beach.json unlockAt). */
+const HOME_AFTER = 10;
 const KEY = 'mob.save';
 /**
  * The save's version: a save from before it (a different one, or none) starts the player afresh — once, when the game
@@ -81,12 +90,18 @@ export type RankStat = 'crowns' | 'arenaWins' | 'levels' | 'towers';
 
 const KINDS = Object.keys(UPGRADES) as UpgradeKind[];
 const emptySlots = (): (CardKind | null)[] => Array.from({ length: DECK_SIZE }, () => null);
-/** The deck's slots as stored (an older save: its cards less the ones taken out, the first DECK_SIZE). */
+/** The deck's slots as stored, each card in its row: where it was if that's in its row, else its row's first free slot
+ *  (an older save: its cards less the ones taken out; a one-row deck: its story cards up, the rest down, in order). */
 function deckSlots(stored: Partial<SaveData>): (CardKind | null)[] {
     const slots = emptySlots();
     const owned = (stored.cards ?? []).filter((kind) => CARD_KINDS.includes(kind));
     const from = stored.slots ?? owned.filter((kind) => !(stored.benched ?? []).includes(kind));
-    from.slice(0, DECK_SIZE).forEach((kind, i) => { slots[i] = kind && owned.includes(kind) ? kind : null; });
+    from.forEach((kind, was) => {
+        if (!kind || !owned.includes(kind) || slots.includes(kind)) return;
+        const [start, end] = rowOf(kind);
+        const at = stored.slots && was >= start && was < end && !slots[was] ? was : slots.findIndex((slot, i) => i >= start && i < end && !slot);
+        if (at >= 0) slots[at] = kind;
+    });
     return slots;
 }
 const freshLevels = (): Record<UpgradeKind, number> => Object.fromEntries(KINDS.map((kind) => [kind, 1])) as Record<UpgradeKind, number>;
@@ -150,7 +165,7 @@ export const MobSave = {
     get unlockAll(): boolean { return data.unlockAll; },
     /** The main screen open: versus mode reached (story level 10 beaten), or (debug) every level unlocked. Till then the
      *  player only plays on: no HOME, no GIVE UP, and a reload goes straight into their next level. */
-    get homeOpen(): boolean { return data.unlockAll || arenaFor(data.battle + 1, data.bestTrophies).open; },
+    get homeOpen(): boolean { return data.unlockAll || data.battle >= HOME_AFTER; },
     get fireLevel(): number { return data.levels.fire; },
     get best(): number { return data.best; },
     /** How much easier the next battle is played (0 .. RETRY_EASE.most): RETRY_EASE.step a loss in a row on it. */
@@ -253,8 +268,9 @@ export const MobSave = {
     unlockCard(kind: CardKind): boolean {
         if (data.cards.includes(kind)) return false;
         data.cards.push(kind);
-        // Into the deck if it has an empty slot.
-        const at = data.slots.indexOf(null);
+        // Into its row of the deck if there's room.
+        const [start, end] = rowOf(kind);
+        const at = data.slots.findIndex((slot, i) => i >= start && i < end && !slot);
         if (at >= 0) data.slots[at] = kind;
         save();
         return true;
@@ -314,9 +330,22 @@ export const MobSave = {
         return { kind, count };
     },
 
-    /** The battle deck (every battle's, story and arena): the cards in its slots, in order (the empty ones skipped). */
+    /** The versus deck: both rows' cards, in order (the empty slots skipped). */
     get deck(): CardKind[] {
         return data.slots.filter((kind): kind is CardKind => !!kind && data.cards.includes(kind));
+    },
+    /** The story's: the first row's cards, in order. */
+    get storyDeck(): CardKind[] {
+        return data.slots.slice(0, STORY_ROW).filter((kind): kind is CardKind => !!kind && data.cards.includes(kind));
+    },
+    /** The cards in `kind`'s row, and whether that row has no empty slot. */
+    rowCards(kind: CardKind): CardKind[] {
+        const [start, end] = rowOf(kind);
+        return data.slots.slice(start, end).filter((card): card is CardKind => !!card && data.cards.includes(card));
+    },
+    rowFull(kind: CardKind): boolean {
+        const [start, end] = rowOf(kind);
+        return data.slots.slice(start, end).every((card) => !!card);
     },
     /** The deck's slots as they are (null: empty). */
     get deckSlots(): (CardKind | null)[] {
@@ -327,11 +356,15 @@ export const MobSave = {
         const deck = MobSave.deck;
         return data.cards.filter((kind) => !deck.includes(kind));
     },
-    /** `kind` into the deck: the first empty slot (none: `instead`'s, the card it takes the place of). */
+    /** `kind` into its row of the deck: its first empty slot (none: `instead`'s, the card there it takes the place of). */
     useCard(kind: CardKind, instead?: CardKind): void {
         if (data.slots.includes(kind)) return;
-        let at = data.slots.indexOf(null);
-        if (at < 0 && instead) at = data.slots.indexOf(instead);
+        const [start, end] = rowOf(kind);
+        let at = data.slots.findIndex((slot, i) => i >= start && i < end && !slot);
+        if (at < 0 && instead) {
+            const there = data.slots.indexOf(instead);
+            if (there >= start && there < end) at = there;
+        }
         if (at < 0) return;
         data.slots[at] = kind;
         save();

@@ -1,7 +1,12 @@
 // grade-run.mjs — bundles the level grader (grade-levels.ts, with the settings as they are now: esbuild inlines the
 // JSON) and runs it. From the command line, with grade-levels.ts's arguments:
 //
-//   node games/mob/tools/grade-run.mjs [level ids…] [--changed] [--careers N] [--workers N] [--no-save]
+//   node games/mob/tools/grade-run.mjs [level ids…] [--changed] [--new-grader] [--complete] [--careers N] [--workers N] [--no-save]
+//
+// --changed: only the levels that changed (or what's before them, or the economy settings). --new-grader: those graded
+// by an older version of the grader's code too (by default a code change alone regrades nothing).
+//
+// By default a quick grade: 3 profiles (average, casual, newbie). --complete: all 6 (pro and pro-raw, average-raw too).
 //
 // The editor's server uses startGrading() to run it in the background (its progress as JSON lines).
 //
@@ -23,6 +28,15 @@ const OUT = path.join(os.tmpdir(), 'mob-grader', 'grade-levels.cjs');
 /** What a grade's fingerprint leaves out: the levels, their order, and what the tools write. */
 const NOT_THE_ALGORITHM = /(^|[\\/])(levels[\\/][^\\/]+\.json|ui[\\/](zones|grades|gaps)\.json)$/;
 
+/** A source file as code alone (its comments and spacing left out: editing those doesn't change the fingerprint). */
+function codeOnly(file, text) {
+    if (!/\.(ts|js|mjs)$/.test(file)) return text;
+    return text
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1')
+        .replace(/\s+/g, ' ');
+}
+
 /** Bundles grade-levels.ts into one script (outside the repo): its path, and the grading algorithm's fingerprint. */
 export async function buildGrader() {
     const esbuild = await import('esbuild');
@@ -40,7 +54,7 @@ export async function buildGrader() {
     for (const input of Object.keys(result.metafile.inputs).sort()) {
         if (NOT_THE_ALGORITHM.test(input)) continue;
         hash.update(input);
-        hash.update(fs.readFileSync(path.resolve(process.cwd(), input)));
+        hash.update(codeOnly(input, fs.readFileSync(path.resolve(process.cwd(), input), 'utf8')));
     }
     return { script: OUT, hash: hash.digest('hex').slice(0, 16) };
 }

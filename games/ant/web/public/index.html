@@ -18,6 +18,12 @@
   #list li.selected { border-color: var(--accent); }
   #list li.dragging { opacity: .4; }
   #list li.over { border-style: dashed; border-color: var(--muted); }
+  .pace { display: inline-flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  .pace span { font: 800 10px/16px -apple-system, sans-serif; padding: 0 6px; border-radius: 8px; color: #fff; letter-spacing: .03em; }
+  .pace .hard { background: #f08a2a; } .pace .super { background: #e8455f; } .pace .breather { background: #6fb27a; }
+  .pace .split { background: #5b8fd8; cursor: pointer; } .pace .split.off { background: transparent; color: #8aa6cf; border: 1px dashed #8aa6cf; }
+  .pace .ob { background: #9a7a5a; } .pace .intro { background: #8a5ad8; }
+  #curve { width: 100%; height: 74px; display: block; margin: 4px 0 10px; background: #fbf4ea; border-radius: 8px; border: 1px solid var(--line); }
   #list img { width: 56px; height: 56px; object-fit: contain; background: #282828; border-radius: 6px; image-rendering: pixelated; }
   #list .num { font-weight: 800; color: var(--muted); width: 22px; text-align: right; }
   #list .grip { color: var(--muted); cursor: grab; padding: 0 4px; }
@@ -108,6 +114,8 @@
   </section>
   <section class="card">
     <h2>Play order</h2>
+    <svg id="curve" preserveAspectRatio="none"></svg>
+    <p class="hint" style="margin-top:0">The curve: each level's difficulty (how often random taps lose), orange the hard levels (ending in 5), red the super hard (every tenth), a blue dot the split boards. On each card: its tier, <b>SPLIT</b> (click to switch it on or off: it's by level number, so the pacing stays put when pictures move), its obstacles and what it introduces.</p>
     <ul id="list"></ul>
     <p class="hint">Drag to reorder. The order is saved at once.</p>
     <button class="add primary" id="add">＋ Add a picture…</button>
@@ -274,6 +282,7 @@ const swatch = (c) => Object.assign(document.createElement('span'), { style: `ba
 async function load(keep) {
   const data = await api('/api/levels');
   levels = data.levels;
+  pacing = data.pacing ?? { split: [], hiddenFrom: 8, lockedFrom: 12 };
   palettes = data.palettes;
   master = data.master.slice();
   savedMaster = JSON.stringify(master);
@@ -360,15 +369,65 @@ $('applyMaster').onclick = async () => {
 
 // ---------- the level list ----------
 
+// ---------- the pacing (levels/index.json: split levels by number; obstacles from a level on) ----------
+
+let pacing = { split: [], hiddenFrom: 8, lockedFrom: 12 };
+/** What each power-up / obstacle's first level is (the game's AntScene INTRODUCTIONS). */
+const INTRO_AT = { 3: 'EXTRA SLOT', 4: 'SHUFFLE', 6: 'HAMMER', 9: 'BOMB' };
+
+/** A level number's tags: its tier, split, obstacles, what it introduces. */
+function paceTags(number) {
+  const tags = [];
+  if (number % 10 === 0) tags.push(['super', 'SUPER HARD']);
+  else if (number % 5 === 0) tags.push(['hard', 'HARD']);
+  else if (number % 10 === 1 && number > 10) tags.push(['breather', 'BREATHER']);
+  const split = pacing.split.includes(number);
+  tags.push([`split${split ? '' : ' off'}`, split ? 'SPLIT' : '+ split', 'split']);
+  if (number >= pacing.lockedFrom) tags.push(['ob', 'HIDDEN · LOCKED']);
+  else if (number >= pacing.hiddenFrom) tags.push(['ob', 'HIDDEN']);
+  const intro = INTRO_AT[number] ?? (number === pacing.hiddenFrom ? 'HIDDEN TILES' : number === pacing.lockedFrom ? 'LOCKED TILES' : number === Math.min(...pacing.split) ? 'SPLIT BOARD' : null);
+  if (intro) tags.push(['intro', `NEW: ${intro}`]);
+  return tags;
+}
+
+/** A level number's split on or off (saved at once, with the order). */
+function toggleSplit(number) {
+  const set = new Set(pacing.split);
+  if (set.has(number)) set.delete(number); else set.add(number);
+  pacing.split = [...set].sort((a, b) => a - b);
+  renderList();
+  api('/api/order', { levels: levels.map((l) => l.id), split: pacing.split }).then(() => toast(`Level ${number}: ${set.has(number) ? 'split' : 'one board'}`), (err) => toast(err.message));
+}
+
+/** The curve over the list: a bar per level (how hard: 1 - random wins), its tier's colour, a dot on a split level. */
+function renderCurve() {
+  const svg = $('curve');
+  const w = 1000;
+  const h = 100;
+  const step = w / Math.max(1, levels.length);
+  const bars = levels.map((level, i) => {
+    const number = i + 1;
+    const hard = level.check ? 1 - level.check.randomWins : 0;
+    const colour = number % 10 === 0 ? '#e8455f' : number % 5 === 0 ? '#f08a2a' : '#c9a27e';
+    const height = Math.max(3, hard * (h - 16));
+    const dot = pacing.split.includes(number) ? `<circle cx="${i * step + step / 2}" cy="8" r="${Math.min(5, step / 2.5)}" fill="#5b8fd8"/>` : '';
+    return `<rect x="${i * step + step * 0.12}" y="${h - height}" width="${step * 0.76}" height="${height}" fill="${colour}" rx="1"><title>Level ${number}: ${level.name}</title></rect>${dot}`;
+  });
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.innerHTML = bars.join('');
+}
+
 function renderList() {
+  renderCurve();
   const list = $('list');
   list.replaceChildren(...levels.map((level, i) => {
     const li = document.createElement('li');
     li.draggable = true;
     li.dataset.id = level.id;
     li.className = selected?.id === level.id ? 'selected' : '';
-    li.innerHTML = `<span class="grip">⋮⋮</span><span class="num">${i + 1}</span><img src="/previews/${level.id}.png?${Date.now()}"><span class="meta"><b></b><small>${level.width} × ${level.height} · ${level.pixels} px · ${level.palette.length} colours${level.source ? '' : ' · drawn'}</small><br>${badge(level.check)}</span>`;
+    li.innerHTML = `<span class="grip">⋮⋮</span><span class="num">${i + 1}</span><img src="/previews/${level.id}.png?${Date.now()}"><span class="meta"><b></b><small>${level.width} × ${level.height} · ${level.pixels} px · ${level.palette.length} colours${level.source ? '' : ' · drawn'}</small><br>${badge(level.check)}<br><span class="pace">${paceTags(i + 1).map(([cls, text, act]) => `<span class="${cls}"${act ? ` data-act="${act}"` : ''}>${text}</span>`).join('')}</span></span>`;
     li.querySelector('b').textContent = level.name;
+    li.querySelector('[data-act="split"]').onclick = (e) => { e.stopPropagation(); toggleSplit(i + 1); };
     li.onclick = () => select(level.id);
     li.ondragstart = () => li.classList.add('dragging');
     li.ondragend = () => li.classList.remove('dragging');

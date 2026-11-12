@@ -1,11 +1,14 @@
 // AntSave.ts
 //
-// What the player keeps between sessions, in one small localStorage entry (if storage isn't available, it lasts the
-// session): whether the first-time tutorial's done, the furthest level reached (cleared levels are the ones before
+// What the player keeps between sessions, as one small entry kept through the platform (PlatformHandler's getItem /
+// setItem: on YouTube Playables its cloud save — the browser's own storage isn't kept there) and in localStorage too
+// (read at once, before the platform's up; init() then takes the platform's). If neither is there, it lasts the
+// session: whether the first-time tutorial's done, the furthest level reached (cleared levels are the ones before
 // it), the levels won at least once, coins, how many of each power-up they have, and the deco (backgrounds, frames)
 // they own and use. `selected` is the level the
 // main screen shows and PLAY starts — the furthest, or an older one to replay (not saved).
 
+import PlatformHandler from 'core/platforms/PlatformHandler';
 import type { BoosterId } from '../ui/BoosterBelt';
 
 const KEY = 'ant.save';
@@ -36,9 +39,10 @@ const START: SaveData = {
     using: { background: 'peach', frame: 'wood' },
 };
 
-function load(): SaveData {
+/** A save's text as the game's data (anything missing: a new player's). */
+function parse(text: string | null): SaveData {
     try {
-        const saved = JSON.parse(window.localStorage.getItem(KEY) ?? 'null') as Partial<SaveData> | null;
+        const saved = JSON.parse(text ?? 'null') as Partial<SaveData> | null;
         return {
             tutorialDone: saved?.tutorialDone ?? false,
             explained: saved?.explained ?? [],
@@ -54,18 +58,46 @@ function load(): SaveData {
     }
 }
 
-const state = load();
-let selected = state.level;
-
-function save(): void {
+/** The browser's copy, at once (the platform's comes with init()). */
+function localCopy(): string | null {
     try {
-        window.localStorage.setItem(KEY, JSON.stringify(state));
+        return window.localStorage.getItem(KEY);
     } catch {
-        // No storage (private mode): it lasts this session only.
+        return null;
     }
 }
 
+const state = parse(localCopy());
+let selected = state.level;
+
+function save(): void {
+    const text = JSON.stringify(state);
+    try {
+        window.localStorage.setItem(KEY, text);
+    } catch {
+        // No storage (private mode): the platform's copy, or this session only.
+    }
+    // The platform's copy (YouTube Playables: its save, the one that lasts there).
+    void PlatformHandler.instance.platform?.setItem(KEY, text).catch(() => undefined);
+}
+
 export const AntSave = {
+    /** Once the platform's up (before any screen): its save, if it has one, is the one played (YouTube keeps only it). */
+    async init(): Promise<void> {
+        try {
+            const text = await PlatformHandler.instance.platform?.getItem(KEY);
+            if (!text) {
+                // None there yet (a first run on it, or a save from before): the browser's copy goes to it.
+                if (localCopy()) save();
+                return;
+            }
+            Object.assign(state, parse(text));
+            selected = state.level;
+        } catch {
+            // No platform storage: the browser's copy stands.
+        }
+    },
+
     get tutorialDone(): boolean {
         return state.tutorialDone;
     },
@@ -92,6 +124,7 @@ export const AntSave = {
         } catch {
             // No storage: nothing to erase.
         }
+        void PlatformHandler.instance.platform?.removeItem(KEY).catch(() => undefined);
     },
 
     get selected(): number {

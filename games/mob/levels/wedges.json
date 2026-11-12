@@ -21,7 +21,7 @@
     {
       "x": 1.25,
       "z": -9.6,
-      "width": 2.4,
+      "width": 3.5,
       "value": 2,
       "swing": {
         "range": 2.5,
@@ -88,10 +88,27 @@
           -21
         ]
       ]
+    },
+    {
+      "kind": "enemyWall",
+      "points": [
+        [
+          4.75,
+          -24.5
+        ],
+        [
+          0.25,
+          -10.75
+        ],
+        [
+          5.25,
+          -10.75
+        ]
+      ]
     }
   ],
-  "redRate": 8,
-  "redRateEnd": 8.84,
+  "redRate": 5,
+  "redRateEnd": 8.5,
   "redRamp": 55,
   "baseHp": 300,
   "reward": 140,

@@ -128,9 +128,8 @@ export class CardPopup extends Overlay {
                 if (!lone) this.actions.remove(kind);
                 return;
             }
-            const deck = MobSave.deck;
-            // A full deck (no empty slot): the weakest card there makes way.
-            const instead = deck.length >= DECK_SIZE ? [...deck].sort((a, b) => MobSave.cardLevel(a) - MobSave.cardLevel(b))[0] : undefined;
+            // Its row full (story cards in the story row, the rest in the versus row): the weakest card there makes way.
+            const instead = MobSave.rowFull(kind) ? [...MobSave.rowCards(kind)].sort((a, b) => MobSave.cardLevel(a) - MobSave.cardLevel(b))[0] : undefined;
             this.actions.use(kind, instead);
         });
         upgrade.position.set(-110, y);

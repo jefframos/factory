@@ -16,7 +16,8 @@ import type { LevelTier } from '../data/Shop';
 import { PausePopup } from './PausePopup';
 import { TutorialOverlay } from './TutorialOverlay';
 import { IntroCard } from './IntroCard';
-import { COIN_BAR, FONT, buttonParts, fillCoinBar, framePlane, iconSprite, label as kitLabel, roundButton, tappable } from './UiParts';
+import { COIN_BAR, COZY, FONT, buttonParts, circleButton, fillCoinBar, framePlane, iconSprite, label as kitLabel, popupBox, roundButton, tappable } from './UiParts';
+import { CELEBRATE_LOOK, Pattern } from './Pattern';
 import { AntSave } from '../data/AntSave';
 import { AntAudio } from '../audio/AntAudio';
 
@@ -87,6 +88,8 @@ export class AntHud extends PIXI.Container {
     private readonly dim = new PIXI.Graphics();
     /** The celebration's turning rays and falling confetti (behind / over the card). */
     private readonly rays = new PIXI.Container();
+    /** The celebration's screen: the bright moving pattern behind the rays (made when it starts, gone with it). */
+    private celebration: Pattern | null = null;
     private readonly confetti = new PIXI.Container();
     /** The confetti pieces' falls under way. */
     private falling: gsap.core.Timeline[] = [];
@@ -130,12 +133,12 @@ export class AntHud extends PIXI.Container {
      *  delta: Game.timeScale) until tapped again. */
     private buildSpeed(): void {
         const sign = (holder: PIXI.Container) => {
-            // Two small play triangles, white with a dark outline, then x2.
-            const g = new PIXI.Graphics().lineStyle(4, 0x10123a, 1, 1, false);
-            for (const x of [-40, -24]) g.beginFill(0xffffff).drawPolygon([x, -12, x + 16, -2, x, 8]).endFill();
+            // The fast-forward sign (raw-assets/images/ui{tps}/Icon_FastForward: drawn big and shrunk, smooth), then x2.
+            const icon = iconSprite('Icon_FastForward', 40);
+            icon.position.set(-24, -3);
             const words = holder.getChildAt(1) as PIXI.Text;
-            words.x = 16;
-            holder.addChild(g);
+            words.x = 22;
+            holder.addChild(icon);
         };
         this.speedOff.addChild(...buttonParts(SPEED.width, SPEED.height, 'x2', 'Button01_l_Green'));
         this.speedOn.addChild(...buttonParts(SPEED.width, SPEED.height, 'x2', 'Button01_l_Yellow'));
@@ -157,6 +160,12 @@ export class AntHud extends PIXI.Container {
             Game.timeScale = 1;
             this.drawSpeed();
         }
+    }
+
+    /** A new level: back to normal speed (x2 off). */
+    public resetSpeed(): void {
+        if (Game.timeScale > 1) Game.timeScale = 1;
+        this.drawSpeed();
     }
 
     private drawSpeed(): void {
@@ -331,7 +340,7 @@ export class AntHud extends PIXI.Container {
         this.card.addChild(back, heading, line, action);
         if (offer) {
             // The power-up first: one more slot, and the ants carry on.
-            const more = button('+1 SLOT', 'Button01_l_Sky', 260, () => {
+            const more = button('+1 SLOT', 'Button01_l_Green', 260, () => {
                 this.hideResult();
                 this.onExtraSlot();
             });
@@ -352,9 +361,12 @@ export class AntHud extends PIXI.Container {
      */
     public celebrate(level: LevelData, reward: number, drop: BoosterId | null, onNext: () => void): void {
         this.card.removeChildren().forEach((child) => child.destroy({ children: true }));
-        const back = new PIXI.Graphics()
-            .beginFill(0x8a5530).drawRoundedRect(-WIN.width / 2, -WIN.height / 2 + 8, WIN.width, WIN.height, 40).endFill()
-            .beginFill(0xfff4e6).drawRoundedRect(-WIN.width / 2, -WIN.height / 2, WIN.width, WIN.height - 2, 40).endFill();
+        // The popups' box (a warm frame, the moving pattern in it), over the bright celebration screen.
+        const back = popupBox(WIN.width, WIN.height);
+        this.celebration?.destroy();
+        this.celebration = new Pattern(CELEBRATE_LOOK);
+        this.addChildAt(this.celebration, this.getChildIndex(this.rays));
+        this.placeCelebration();
         const heading = label('LEVEL COMPLETE!', 50, 0xffd23f);
         heading.y = WIN.headingY;
         // The pack's gold stars, between the heading and the picture: the middle one bigger and higher.
@@ -389,7 +401,7 @@ export class AntHud extends PIXI.Container {
         const free = new PIXI.Container();
         if (drop) {
             const icon = BOOSTERS.find((b) => b.id === drop)?.icon ?? 'PictoIcon_Plus_1';
-            const button = roundButton('Button_Round02_Blue', icon, 58);
+            const button = circleButton(icon, 58, COZY.powerFace, 58 * 0.72);
             const plus = kitLabel(36, 0x7ff0a8);
             plus.text = '+1';
             plus.anchor.set(0, 0.5);
@@ -458,13 +470,15 @@ export class AntHud extends PIXI.Container {
         const width = cell * level.width;
         const height = cell * level.height;
         const g = new PIXI.Graphics();
-        g.beginFill(0xd9b79a).drawRoundedRect(-width / 2 - 12, -height / 2 - 12, width + 24, height + 24, 18).endFill();
+        // On a clean white panel (a soft warm edge round it), the pixels solid: no gaps between them.
+        g.beginFill(0xe8d2b8).drawRoundedRect(-width / 2 - 16, -height / 2 - 14, width + 32, height + 32, 20).endFill();
+        g.beginFill(0xffffff).drawRoundedRect(-width / 2 - 16, -height / 2 - 16, width + 32, height + 32, 20).endFill();
         for (let i = 0; i < pixels.length; i++) {
             if (pixels[i] < 0) continue;
             const x = -width / 2 + (i % level.width) * cell;
             const y = -height / 2 + Math.floor(i / level.width) * cell;
-            // Square pixels, a hairline apart.
-            g.beginFill(new PIXI.Color(level.palette[pixels[i]]).toNumber()).drawRect(x + 0.5, y + 0.5, cell - 1, cell - 1).endFill();
+            // (A hair over its cell: no seam shows between neighbours.)
+            g.beginFill(new PIXI.Color(level.palette[pixels[i]]).toNumber()).drawRect(x - 0.25, y - 0.25, cell + 0.5, cell + 0.5).endFill();
         }
         holder.addChild(g);
         return holder;
@@ -478,7 +492,7 @@ export class AntHud extends PIXI.Container {
         for (let i = 0; i < count; i++) {
             const a = (i / count) * Math.PI * 2;
             const b = a + Math.PI / count;
-            g.beginFill(0xffe27a, 0.22).moveTo(0, 0).lineTo(Math.cos(a) * 900, Math.sin(a) * 900).lineTo(Math.cos(b) * 900, Math.sin(b) * 900).closePath().endFill();
+            g.beginFill(0xffffff, 0.2).moveTo(0, 0).lineTo(Math.cos(a) * 900, Math.sin(a) * 900).lineTo(Math.cos(b) * 900, Math.sin(b) * 900).closePath().endFill();
         }
         this.rays.addChild(g);
         this.rays.visible = true;
@@ -524,9 +538,18 @@ export class AntHud extends PIXI.Container {
         this.card.visible = false;
         this.rays.visible = false;
         gsap.killTweensOf(this.rays);
+        this.celebration?.destroy();
+        this.celebration = null;
         this.falling.forEach((fall) => fall.kill());
         this.falling = [];
         this.confetti.removeChildren().forEach((child) => child.destroy());
+    }
+
+    /** The celebration's screen over the whole screen. */
+    private placeCelebration(): void {
+        const screen = Game.overlayScreenData;
+        if (!this.celebration || !screen) return;
+        this.celebration.place(screen.topLeft.x - 2, screen.topLeft.y - 2, screen.width + 4, screen.height + 4);
     }
 
     public reposition(): void {
@@ -543,6 +566,7 @@ export class AntHud extends PIXI.Container {
         this.hint.position.set(screen.center.x, screen.topLeft.y + screen.height - 160);
         this.card.position.set(screen.center.x, screen.center.y);
         this.rays.position.set(screen.center.x, screen.center.y);
+        this.placeCelebration();
         this.dim.clear().beginFill(0x2a1a10, 0.45).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
     }
 

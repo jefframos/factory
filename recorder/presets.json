@@ -1,28 +1,252 @@
 {
     "_comment": "capture: the screen formats the recorder can set the game to (width x height in output pixels; dpr: the pixel ratio faked for the game, so its page is width/dpr x height/dpr CSS pixels). export: the editor's output presets; limits are warnings only. A project can add its own in recorder.presets.json at its root (same shape). Platform rules change: check them before uploading.",
     "capture": [
-        { "name": "Phone portrait 9:16 · 1080×1920", "width": 1080, "height": 1920, "dpr": 2 },
-        { "name": "Phone portrait 9:16 · 720×1280", "width": 720, "height": 1280, "dpr": 2 },
-        { "name": "Tall phone 19.5:9 · 1170×2532", "width": 1170, "height": 2532, "dpr": 2 },
-        { "name": "App Store preview · 886×1920", "width": 886, "height": 1920, "dpr": 2 },
-        { "name": "Tablet portrait 3:4 · 1536×2048", "width": 1536, "height": 2048, "dpr": 2 },
-        { "name": "Square 1:1 · 1080×1080", "width": 1080, "height": 1080, "dpr": 2 },
-        { "name": "Portrait 4:5 · 1080×1350", "width": 1080, "height": 1350, "dpr": 2 },
-        { "name": "Landscape 16:9 · 1920×1080", "width": 1920, "height": 1080, "dpr": 1.5 },
-        { "name": "Landscape 16:9 · 1280×720", "width": 1280, "height": 720, "dpr": 1 },
-        { "name": "Landscape 16:9 · 2560×1440", "width": 2560, "height": 1440, "dpr": 2 }
+        {
+            "name": "Phone portrait 9:16 · 1080×1920",
+            "width": 1080,
+            "height": 1920,
+            "dpr": 2
+        },
+        {
+            "name": "CrazyGames Portrait 2:3",
+            "width": 1080,
+            "height": 1620,
+            "dpr": 2
+        },
+        {
+            "name": "Phone portrait 9:16 · 720×1280",
+            "width": 720,
+            "height": 1280,
+            "dpr": 2
+        },
+        {
+            "name": "Tall phone 19.5:9 · 1170×2532",
+            "width": 1170,
+            "height": 2532,
+            "dpr": 2
+        },
+        {
+            "name": "App Store preview · 886×1920",
+            "width": 886,
+            "height": 1920,
+            "dpr": 2
+        },
+        {
+            "name": "Tablet portrait 3:4 · 1536×2048",
+            "width": 1536,
+            "height": 2048,
+            "dpr": 2
+        },
+        {
+            "name": "Square 1:1 · 1080×1080",
+            "width": 1080,
+            "height": 1080,
+            "dpr": 2
+        },
+        {
+            "name": "Portrait 4:5 · 1080×1350",
+            "width": 1080,
+            "height": 1350,
+            "dpr": 2
+        },
+        {
+            "name": "Landscape 16:9 · 1920×1080",
+            "width": 1920,
+            "height": 1080,
+            "dpr": 1.5
+        },
+        {
+            "name": "Landscape 16:9 · 1280×720",
+            "width": 1280,
+            "height": 720,
+            "dpr": 1
+        },
+        {
+            "name": "Landscape 16:9 · 2560×1440",
+            "width": 2560,
+            "height": 1440,
+            "dpr": 2
+        }
     ],
     "export": [
-        { "name": "Vertical 1080×1920 MP4 (Shorts, Reels, TikTok)", "format": "mp4", "width": 1080, "height": 1920, "fit": "cover", "fps": 30, "compression": { "mode": "quality", "quality": 75 }, "speed": "balanced", "audio": true, "audioKbps": 128 },
-        { "name": "Landscape 1920×1080 MP4 (YouTube, trailer)", "format": "mp4", "width": 1920, "height": 1080, "fit": "cover", "fps": 60, "compression": { "mode": "quality", "quality": 80 }, "speed": "balanced", "audio": true, "audioKbps": 192 },
-        { "name": "Landscape 1280×720 MP4 · under 20 MB", "format": "mp4", "width": 1280, "height": 720, "fit": "cover", "fps": 30, "compression": { "mode": "size", "mb": 20 }, "speed": "small", "audio": true, "audioKbps": 128, "limits": { "maxMB": 20 } },
-        { "name": "Square 1080×1080 MP4 (feed post)", "format": "mp4", "width": 1080, "height": 1080, "fit": "cover", "fps": 30, "compression": { "mode": "quality", "quality": 75 }, "speed": "balanced", "audio": true, "audioKbps": 128 },
-        { "name": "Portrait 1080×1350 MP4 (4:5 feed post)", "format": "mp4", "width": 1080, "height": 1350, "fit": "cover", "fps": 30, "compression": { "mode": "quality", "quality": 75 }, "speed": "balanced", "audio": true, "audioKbps": 128 },
-        { "name": "App Store app preview 886×1920 (15–30 s, 30 fps)", "format": "mp4", "width": 886, "height": 1920, "fit": "cover", "fps": 30, "compression": { "mode": "quality", "quality": 85 }, "speed": "small", "audio": true, "audioKbps": 256, "limits": { "minSeconds": 15, "maxSeconds": 30, "maxMB": 500 } },
-        { "name": "Web portal preview 16:9 640×360 · silent, under 2 MB", "format": "mp4", "width": 640, "height": 360, "fit": "cover", "fps": 30, "compression": { "mode": "size", "mb": 2 }, "speed": "small", "audio": false, "audioKbps": 0, "limits": { "maxMB": 2 } },
-        { "name": "Web portal preview 9:16 360×640 · silent, under 2 MB", "format": "mp4", "width": 360, "height": 640, "fit": "cover", "fps": 30, "compression": { "mode": "size", "mb": 2 }, "speed": "small", "audio": false, "audioKbps": 0, "limits": { "maxMB": 2 } },
-        { "name": "WebM VP9 1920×1080 (web pages)", "format": "webm", "width": 1920, "height": 1080, "fit": "cover", "fps": 60, "compression": { "mode": "quality", "quality": 75 }, "speed": "balanced", "audio": true, "audioKbps": 128 },
-        { "name": "GIF 480 wide, 15 fps", "format": "gif", "width": 480, "height": 0, "fit": "cover", "fps": 15, "compression": { "mode": "quality", "quality": 70 }, "speed": "balanced", "audio": false, "audioKbps": 0 },
-        { "name": "Same size as recorded (MP4, high quality)", "format": "mp4", "width": 0, "height": 0, "fit": "cover", "fps": 0, "compression": { "mode": "quality", "quality": 90 }, "speed": "balanced", "audio": true, "audioKbps": 192 }
+        {
+            "name": "Same size as recorded (MP4, high quality)",
+            "format": "mp4",
+            "width": 0,
+            "height": 0,
+            "fit": "cover",
+            "fps": 0,
+            "compression": {
+                "mode": "quality",
+                "quality": 90
+            },
+            "speed": "balanced",
+            "audio": true,
+            "audioKbps": 192
+        }
+        {
+            "name": "Vertical 1080×1920 MP4 (Shorts, Reels, TikTok)",
+            "format": "mp4",
+            "width": 1080,
+            "height": 1920,
+            "fit": "cover",
+            "fps": 30,
+            "compression": {
+                "mode": "quality",
+                "quality": 75
+            },
+            "speed": "balanced",
+            "audio": true,
+            "audioKbps": 128
+        },
+        {
+            "name": "Landscape 1920×1080 MP4 (YouTube, trailer)",
+            "format": "mp4",
+            "width": 1920,
+            "height": 1080,
+            "fit": "cover",
+            "fps": 60,
+            "compression": {
+                "mode": "quality",
+                "quality": 80
+            },
+            "speed": "balanced",
+            "audio": true,
+            "audioKbps": 192
+        },
+        {
+            "name": "Landscape 1280×720 MP4 · under 20 MB",
+            "format": "mp4",
+            "width": 1280,
+            "height": 720,
+            "fit": "cover",
+            "fps": 30,
+            "compression": {
+                "mode": "size",
+                "mb": 20
+            },
+            "speed": "small",
+            "audio": true,
+            "audioKbps": 128,
+            "limits": {
+                "maxMB": 20
+            }
+        },
+        {
+            "name": "Square 1080×1080 MP4 (feed post)",
+            "format": "mp4",
+            "width": 1080,
+            "height": 1080,
+            "fit": "cover",
+            "fps": 30,
+            "compression": {
+                "mode": "quality",
+                "quality": 75
+            },
+            "speed": "balanced",
+            "audio": true,
+            "audioKbps": 128
+        },
+        {
+            "name": "Portrait 1080×1350 MP4 (4:5 feed post)",
+            "format": "mp4",
+            "width": 1080,
+            "height": 1350,
+            "fit": "cover",
+            "fps": 30,
+            "compression": {
+                "mode": "quality",
+                "quality": 75
+            },
+            "speed": "balanced",
+            "audio": true,
+            "audioKbps": 128
+        },
+        {
+            "name": "App Store app preview 886×1920 (15–30 s, 30 fps)",
+            "format": "mp4",
+            "width": 886,
+            "height": 1920,
+            "fit": "cover",
+            "fps": 30,
+            "compression": {
+                "mode": "quality",
+                "quality": 85
+            },
+            "speed": "small",
+            "audio": true,
+            "audioKbps": 256,
+            "limits": {
+                "minSeconds": 15,
+                "maxSeconds": 30,
+                "maxMB": 500
+            }
+        },
+        {
+            "name": "Web portal preview 16:9 640×360 · silent, under 2 MB",
+            "format": "mp4",
+            "width": 640,
+            "height": 360,
+            "fit": "cover",
+            "fps": 30,
+            "compression": {
+                "mode": "size",
+                "mb": 2
+            },
+            "speed": "small",
+            "audio": false,
+            "audioKbps": 0,
+            "limits": {
+                "maxMB": 2
+            }
+        },
+        {
+            "name": "Web portal preview 9:16 360×640 · silent, under 2 MB",
+            "format": "mp4",
+            "width": 360,
+            "height": 640,
+            "fit": "cover",
+            "fps": 30,
+            "compression": {
+                "mode": "size",
+                "mb": 2
+            },
+            "speed": "small",
+            "audio": false,
+            "audioKbps": 0,
+            "limits": {
+                "maxMB": 2
+            }
+        },
+        {
+            "name": "WebM VP9 1920×1080 (web pages)",
+            "format": "webm",
+            "width": 1920,
+            "height": 1080,
+            "fit": "cover",
+            "fps": 60,
+            "compression": {
+                "mode": "quality",
+                "quality": 75
+            },
+            "speed": "balanced",
+            "audio": true,
+            "audioKbps": 128
+        },
+        {
+            "name": "GIF 480 wide, 15 fps",
+            "format": "gif",
+            "width": 480,
+            "height": 0,
+            "fit": "cover",
+            "fps": 15,
+            "compression": {
+                "mode": "quality",
+                "quality": 70
+            },
+            "speed": "balanced",
+            "audio": false,
+            "audioKbps": 0
+        },
     ]
 }

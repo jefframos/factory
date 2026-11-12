@@ -3,16 +3,10 @@
   "kind": "Spinner",
   "gates": [
     {
-      "x": -2.6,
-      "z": -6.5,
-      "width": 3.4,
+      "x": 0,
+      "z": -4,
+      "width": 9.65,
       "value": 3
-    },
-    {
-      "x": 2.6,
-      "z": -6.5,
-      "width": 3.4,
-      "value": 2
     },
     {
       "x": 0,
@@ -29,14 +23,41 @@
     {
       "x": 0,
       "z": -12.5,
-      "length": 3.4,
+      "length": 2,
       "arms": 4,
       "speed": 0.22
     }
   ],
-  "redRate": 2.8,
-  "redRateEnd": 4.4,
+  "redRate": 2,
+  "redRateEnd": 4,
   "redRamp": 50,
   "baseHp": 150,
-  "reward": 120
+  "reward": 120,
+  "obstacles": [
+    {
+      "kind": "wall",
+      "points": [
+        [
+          0,
+          -6.5
+        ],
+        [
+          -1.25,
+          -8.25
+        ],
+        [
+          -1.25,
+          -8.25
+        ],
+        [
+          0,
+          -9.5
+        ],
+        [
+          1.25,
+          -8.25
+        ]
+      ]
+    }
+  ]
 }

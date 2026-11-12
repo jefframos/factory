@@ -1,7 +1,8 @@
 // ShopPanel.ts
 //
-// A shop filling the screen above the bottom tabs, as the UFO game's (games/ufo/game/ui/ShopPanel.ts): the title, the
-// section tabs, and cards in rows under them. Drag to scroll.
+// A shop filling the screen above the bottom tabs, as the UFO game's (games/ufo/game/ui/ShopPanel.ts), in the game's cozy
+// colours over the moving pattern: the title, the section tabs, and cards in rows under them, with a scroll bar at the
+// side when they don't all fit. Drag or the wheel scrolls.
 //   'boosts' — the power-ups (one section): each card one more of a power-up for its price (how many you have on it);
 //              one not unlocked yet is dark, with a padlock and its level.
 //   'deco'   — BACKGROUNDS (the floor's checker) and FRAMES (the picture's tray): green, in use; blue, yours (tap to
@@ -15,23 +16,26 @@ import { BOOSTER_PRICES, Background, Frame, decoOf } from '../data/Shop';
 import { AntAudio } from '../audio/AntAudio';
 import { AntEvents } from '../data/AntEvents';
 import { BOOSTERS, BoosterId } from './BoosterBelt';
-import { buttonParts, framePlane, iconSprite, label, plainLabel, roundButton } from './UiParts';
+import { COZY, buttonParts, framePlane, iconSprite, label, plainLabel } from './UiParts';
+import { PANEL_LOOK, Pattern } from './Pattern';
 
 export type ShopKind = 'boosts' | 'deco';
 type Section = 'boosts' | DecoKind;
 
-const BACK = 0x12305e;
-const HEADER = { strip: 96, stripColor: 0x3f6bf5, title: 34, titleY: 48 };
-/** The section tabs: a dark track, the chosen one a raised sky button on it. */
-const SECTIONS = { zone: 112, zoneColor: 0x34365a, zoneScale: 0.7, width: 580, height: 62, trackColor: 0x1c1d33, trackY: 56, button: 72, words: 28, slide: 0.18 };
+const BACK = COZY.cream;
+const HEADER = { strip: 96, stripColor: COZY.coral, title: 34, titleY: 48 };
+/** The section tabs: a brown track, the chosen one a raised yellow button on it. */
+const SECTIONS = { zone: 112, zoneColor: COZY.tan, zoneScale: 0.7, width: 580, height: 62, trackColor: COZY.brown, trackY: 56, button: 72, words: 28, slide: 0.18 };
+/** The scroll bar: its width, how far in from the right edge, its ends' room, its thumb's least height, colours. */
+const SCROLL_BAR = { width: 12, inset: 14, pad: 10, minThumb: 56, track: COZY.tan, thumb: COZY.deepBrown, wheel: 0.8 };
 const GRID = { cols: 3, cellWidth: 226, cellHeight: 286, gap: 12, inset: 12, strip: 56, picture: 140, pictureY: -22, nameSize: 19, top: 12 };
 /** The card, and the lighter panel in it, by state. */
 const CARD = {
-    using: { outer: 0x25c465, inner: 0x7ff0a8 },
-    owned: { outer: 0x3f8cff, inner: 0x93c2ff },
-    locked: { outer: 0x1c2c5c, inner: 0x2c4380 },
+    using: { outer: COZY.green, inner: COZY.greenLight },
+    owned: { outer: COZY.orange, inner: COZY.orangeLight },
+    locked: { outer: 0xb08560, inner: 0xd2ae86 },
 };
-const NAME_COLOR = { mine: 0x10123a, locked: 0xc3cdea };
+const NAME_COLOR = { mine: COZY.ink, locked: 0xfff3e2 };
 const PRICE = { coin: 34, coinX: -36, textX: -12, size: 26 };
 const COUNT = { x: 72, y: -104, size: 26 };
 const ROOM_BELOW = 20;
@@ -42,7 +46,7 @@ const TAP_MOVE = 12;
 const SECTIONS_OF: Record<ShopKind, Section[]> = { boosts: ['boosts'], deco: ['background', 'frame'] };
 const TITLE: Record<ShopKind, string> = { boosts: 'POWER-UPS', deco: 'DECO' };
 const SECTION_NAME: Record<Section, string> = { boosts: 'POWER-UPS', background: 'BACKGROUNDS', frame: 'FRAMES' };
-export const BOOSTER_NAMES: Record<BoosterId, string> = { slot: 'Extra slot', shuffle: 'Shuffle', pickup: 'Pick up', vacuum: 'Vacuum' };
+export const BOOSTER_NAMES: Record<BoosterId, string> = { slot: 'Extra slot', shuffle: 'Shuffle', pickup: 'Hammer', vacuum: 'Bomb' };
 
 interface Cell {
     id: string;
@@ -93,6 +97,10 @@ function framePreview(frame: Frame, size: number): PIXI.Container {
 
 export class ShopPanel extends PIXI.Container {
     private readonly back = new PIXI.Sprite(PIXI.Texture.WHITE);
+    /** The moving pattern over the back (taps go through to it). */
+    private readonly pattern = new Pattern(PANEL_LOOK);
+    private readonly scrollTrack = new PIXI.Graphics();
+    private readonly scrollThumb = new PIXI.Graphics();
     private readonly strip = new PIXI.Sprite(PIXI.Texture.WHITE);
     private readonly title = label(HEADER.title);
     private readonly zone = framePlane('PanelFrame03_Bg', 720, SECTIONS.zone, SECTIONS.zoneScale);
@@ -122,9 +130,10 @@ export class ShopPanel extends PIXI.Container {
         this.title.text = TITLE[kind];
         this.grid.mask = this.gridMask;
         this.buildTabs();
-        this.addChild(this.back, this.gridMask, this.grid, this.strip, this.title, this.zone, this.tabs);
+        this.pattern.eventMode = 'none';
+        this.addChild(this.back, this.pattern, this.gridMask, this.grid, this.scrollTrack, this.scrollThumb, this.strip, this.title, this.zone, this.tabs);
         if (kind === 'boosts') {
-            for (const { id, icon } of BOOSTERS) this.addCell(id, BOOSTER_NAMES[id], 'boosts', roundButton('Button_Round02_Blue', icon, GRID.picture * 0.8));
+            for (const { id, icon } of BOOSTERS) this.addCell(id, BOOSTER_NAMES[id], 'boosts', this.boosterPicture(icon));
         } else {
             for (const kindOf of ['background', 'frame'] as DecoKind[]) {
                 for (const item of decoOf(kindOf)) {
@@ -137,6 +146,7 @@ export class ShopPanel extends PIXI.Container {
         this.back.on('globalpointermove', (event: PIXI.FederatedPointerEvent) => this.moveDrag(event));
         this.back.on('pointerup', () => this.endDrag());
         this.back.on('pointerupoutside', () => this.endDrag());
+        window.addEventListener('wheel', this.onWheel, { passive: true });
         this.showSection(this.section);
     }
 
@@ -146,7 +156,7 @@ export class ShopPanel extends PIXI.Container {
         const track = framePlane('BasicFrame_Round20', SECTIONS.width, SECTIONS.height);
         track.tint = SECTIONS.trackColor;
         track.position.set(-SECTIONS.width / 2, -SECTIONS.height / 2);
-        this.chosen.addChild(...buttonParts(each + 10, SECTIONS.button, '', 'Button01_l_Sky'));
+        this.chosen.addChild(...buttonParts(each + 10, SECTIONS.button, '', 'Button01_l_Yellow'));
         this.tabs.addChild(track, this.chosen);
         this.sections.forEach((section, i) => {
             const holder = new PIXI.Container();
@@ -188,7 +198,7 @@ export class ShopPanel extends PIXI.Container {
         const statusY = height / 2 - GRID.strip / 2 - 2;
         // Locked (a power-up not unlocked yet): a padlock and its level.
         const lock = new PIXI.Container();
-        const padlock = iconSprite('Icon_Lock01_l', 34);
+        const padlock = iconSprite('Icon_Lock01_s', 34);
         padlock.x = -48;
         const unlockAt = label(20);
         unlockAt.anchor.set(0, 0.5);
@@ -219,6 +229,15 @@ export class ShopPanel extends PIXI.Container {
         holder.on('pointertap', () => this.tapCell(id, section));
         this.grid.addChild(holder);
         this.cells.push({ id, section, holder, outer, inner, picture, name: words, lock, check, use, price, count });
+    }
+
+    /** A power-up's picture on its card: its full-colour icon alone, big (no button round it). */
+    private boosterPicture(icon: string): PIXI.Container {
+        const holder = new PIXI.Container();
+        const picture = iconSprite(icon, GRID.picture * 0.92);
+        picture.name = 'icon';
+        holder.addChild(picture);
+        return holder;
     }
 
     private priceOf(section: Section, id: string): number {
@@ -292,7 +311,11 @@ export class ShopPanel extends PIXI.Container {
                 const look = locked ? CARD.locked : CARD.owned;
                 cell.outer.tint = look.outer;
                 cell.inner.tint = look.inner;
-                cell.picture.alpha = locked ? 0.35 : 1;
+                // Locked: the button brown and its icon dimmed (still solid: not see-through).
+                // Locked: the icon dimmed (still solid).
+                const icon = cell.picture.getChildByName('icon') as PIXI.Sprite | null;
+                if (icon) icon.tint = locked ? 0x9c8670 : 0xffffff;
+                cell.picture.alpha = 1;
                 cell.name.style.fill = locked ? NAME_COLOR.locked : NAME_COLOR.mine;
                 cell.lock.visible = locked;
                 cell.price.visible = !locked;
@@ -327,8 +350,37 @@ export class ShopPanel extends PIXI.Container {
         if (this.dragFrom === null) return;
         const moved = (event.global.y - this.dragFrom) / Game.scale;
         this.dragged = Math.max(this.dragged, Math.abs(moved));
-        this.scroll = Math.max(this.minScroll(), Math.min(0, this.dragScroll + moved));
+        this.scrollTo(this.dragScroll + moved);
+    }
+
+    /** The wheel scrolls the cards (only while the shop's on screen). */
+    private readonly onWheel = (event: WheelEvent): void => {
+        if (!this.worldVisible) return;
+        this.scrollTo(this.scroll - event.deltaY * SCROLL_BAR.wheel);
+    };
+
+    private scrollTo(value: number): void {
+        this.scroll = Math.max(this.minScroll(), Math.min(0, value));
         this.grid.y = this.gridTop() + this.scroll;
+        this.placeThumb();
+    }
+
+    /** The scroll bar at the side: its thumb as big as the share shown and where it is; none when everything fits. */
+    private placeThumb(): void {
+        const screen = Game.overlayScreenData;
+        const min = this.minScroll();
+        const shown = min < 0;
+        this.scrollTrack.visible = this.scrollThumb.visible = shown;
+        if (!screen || !shown) return;
+        const x = screen.topLeft.x + screen.width - SCROLL_BAR.inset - SCROLL_BAR.width;
+        const top = this.gridTop() + SCROLL_BAR.pad;
+        const length = this.viewHeight - SCROLL_BAR.pad * 2;
+        const total = this.viewHeight - min;
+        const thumb = Math.max(SCROLL_BAR.minThumb, length * (this.viewHeight / total));
+        const at = top + (length - thumb) * (this.scroll / min);
+        const r = SCROLL_BAR.width / 2;
+        this.scrollTrack.clear().beginFill(SCROLL_BAR.track, 0.7).drawRoundedRect(x, top, SCROLL_BAR.width, length, r).endFill();
+        this.scrollThumb.clear().beginFill(SCROLL_BAR.thumb).drawRoundedRect(x, at, SCROLL_BAR.width, thumb, r).endFill();
     }
 
     private endDrag(): void {
@@ -352,6 +404,7 @@ export class ShopPanel extends PIXI.Container {
         this.back.position.copyFrom(screen.center);
         this.back.width = screen.width + 4;
         this.back.height = screen.height + 4;
+        this.pattern.place(left - 2, top - 2, screen.width + 4, screen.height + 4);
         this.strip.position.set(left, top);
         this.strip.width = screen.width;
         this.strip.height = HEADER.strip;
@@ -366,9 +419,11 @@ export class ShopPanel extends PIXI.Container {
         this.gridMask.clear().beginFill(0xffffff).drawRect(left, gridTop, screen.width, this.viewHeight).endFill();
         this.scroll = Math.max(this.minScroll(), Math.min(0, this.scroll));
         this.grid.position.set(screen.center.x, gridTop + this.scroll);
+        this.placeThumb();
     }
 
     public override destroy(): void {
+        window.removeEventListener('wheel', this.onWheel);
         gsap.killTweensOf(this.chosen);
         this.cells.forEach((cell) => gsap.killTweensOf([cell.holder, cell.holder.scale]));
         super.destroy({ children: true });

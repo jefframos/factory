@@ -3,8 +3,7 @@
 // The screen transition (the UFO game's circular wipe, games/ufo/game/ui/RadialTransition.ts, in Ant's colours): drawn
 // in the game's top PIXI layer (game.popupLayer, over the 3D world and all the UI).
 //   cover()  — a peach circle with a cream rim and a white ring inside it grows from the screen's middle out to the
-//              corners; then where the player's going pops in: the level's picture (small, pixel by pixel), its title
-//              and name.
+//              corners; nothing's shown on it (showBadge() is kept, unused: where the player's going).
 //   reveal() — the mirror: a hole grows from the middle out, the new screen appearing from the centre.
 // A change of screen or level: cover(), the new one built underneath, reveal(), destroy() — or all of it: go().
 //
@@ -108,7 +107,7 @@ export class RadialTransition {
                 onComplete: () => {
                     const { x, y } = this.center;
                     this.graphics.clear().beginFill(FILL_COLOR).drawCircle(x, y, this.maxRadius * HOST_MARGIN_SCALE).endFill();
-                    this.showBadge(title, subtitle, level);
+                    // (Nothing shown on it: just the wipe.)
                     // A frame drawn covered before the caller's heavy work (the new scene) stalls it.
                     requestAnimationFrame(() => resolve());
                 },

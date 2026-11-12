@@ -53,7 +53,7 @@
 
 import { GrinderConfig, PIPE, PipeConfig, pipeEnds, pipeLength } from '../data/MobConfig';
 import { CardKind, SETTINGS } from '../data/Settings';
-import { ARENA, BattleConfig, DuelRules, FIELD, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig, TUNING, UNITS, bodyShare, carHp, needOf } from '../data/MobConfig';
+import { ARENA, BattleConfig, DuelRules, FIELD, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig, TUNING, UNITS, bodyShare, carHp, isCharacterHouse, needOf } from '../data/MobConfig';
 import { Contact, Shape, boxShape, circleShape, polygonShape, shapeCentre, touch } from './Shapes';
 
 export const BLUE = 0;
@@ -602,11 +602,12 @@ export class Battle {
      * A character card's batch (its settings' `count`: the skeletons' eight, the warriors' two) out of `team`'s cannon,
      * spread round its front, each with the card's hits and damage, its look and speed; one shockwave for the lot.
      */
-    private spawnBatch(kind: CardKind, character: NonNullable<(typeof CHARACTER_CARDS)[CardKind]>, stats: UnitStats, team: number): void {
+    private spawnBatch(kind: CardKind, character: NonNullable<(typeof CHARACTER_CARDS)[CardKind]>, stats: UnitStats, team: number, at?: { x: number; z: number }): void {
         const count = Math.max(1, Math.round(SETTINGS.cards[kind].count ?? 1));
-        const red = team === RED;
-        const c = this.cannonOf(team);
-        const front = this.cannonZ - 2.6;
+        // Out of a house (`at`: where, as it is on the field), or out of the cannon (the reds' mirrored).
+        const red = team === RED && !at;
+        const c = at ? { cannonX: at.x } : this.cannonOf(team);
+        const front = at ? at.z : this.cannonZ - 2.6;
         let first = -1;
         for (let k = 0; k < count; k++) {
             // A ring round the middle one (a pair side by side).
@@ -629,7 +630,8 @@ export class Battle {
         }
         if (first < 0) return;
         this.events.giant?.(team, c.cannonX, red ? this.mirrorZ(front) : front, character.big, kind);
-        this.shockwave(team, c.cannonX, red ? this.mirrorZ(this.cannonZ) : this.cannonZ);
+        // (A house's: no shockwave, that's the cannon's.)
+        if (!at) this.shockwave(team, c.cannonX, red ? this.mirrorZ(this.cannonZ) : this.cannonZ);
     }
 
     private spawnRedUnit(kind: 'giant' | 'truck' | 'saucer' | 'car', stats: UnitStats): void {
@@ -1706,6 +1708,10 @@ export class Battle {
                             this.saucers.push({ x: pad.x, z: pad.z + out * hd, target, alive: true, age: 0, sucked: 0, ...(team === RED ? { team } : {}) });
                             this.events.giant?.(team, pad.x, pad.z + out * hd, -1);
                         }
+                    } else if (isCharacterHouse(kind)) {
+                        // A card unit's house: the card's batch (its look, pace, flying, helmet), out of the house's far side.
+                        const character = CHARACTER_CARDS[kind];
+                        if (character) this.spawnBatch(kind, character, { hp: UNITS[kind].hp, damage: UNITS[kind].damage }, team, { x: pad.x, z: pad.z + out * (hd + 0.7) });
                     } else {
                         const mob = kind === 'car' ? CAR : GIANT;
                         const size = TUNING.radius * (mob === CAR ? TUNING.carScale : TUNING.giantScale);
@@ -1943,6 +1949,12 @@ export class Battle {
             if (this.dead[i] || this.team[i] !== RED) continue;
             if (this.z[i] > nearest) nearest = this.z[i];
             if (this.state === 'playing' && this.z[i] >= ARENA.dangerZ) {
+                // A level that can't be lost (the first): the red just goes.
+                if (this.config.safe) {
+                    this.dead[i] = 1;
+                    this.events.vanish?.(this.x[i], this.z[i], this.team[i]);
+                    continue;
+                }
                 this.state = 'lost';
                 this.events.lost?.();
             }

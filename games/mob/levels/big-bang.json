@@ -1,0 +1,61 @@
+{
+  "name": "Big Bang",
+  "kind": "Bomb house",
+  "gates": [
+    {
+      "x": 0,
+      "z": -3.2,
+      "width": 7.4,
+      "value": 2
+    },
+    {
+      "x": -2.6,
+      "z": -8,
+      "width": 3.4,
+      "value": 3
+    },
+    {
+      "x": 2.6,
+      "z": -8,
+      "width": 3.4,
+      "value": 2,
+      "swing": {
+        "range": 1.2,
+        "seconds": 4
+      }
+    }
+  ],
+  "pads": [
+    {
+      "kind": "bomb",
+      "x": 0,
+      "z": -12,
+      "width": 3,
+      "depth": 2,
+      "need": 18
+    }
+  ],
+  "obstacles": [
+    {
+      "kind": "breakable",
+      "x": -3,
+      "z": -15.5,
+      "width": 3.4,
+      "depth": 1,
+      "hp": 60
+    },
+    {
+      "kind": "breakable",
+      "x": 3,
+      "z": -15.5,
+      "width": 3.4,
+      "depth": 1,
+      "hp": 60
+    }
+  ],
+  "redRate": 2.4,
+  "redRateEnd": 4,
+  "redRamp": 50,
+  "baseHp": 240,
+  "reward": 140
+}

@@ -7,6 +7,7 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { AntAudio, Sfx } from '../audio/AntAudio';
+import { POPUP_LOOK, Pattern } from './Pattern';
 
 export const FONT = 'Baloo2-ExtraBold, Arial Rounded MT Bold, sans-serif';
 export const DARK = 0x10123a;
@@ -53,6 +54,16 @@ const SLICES: Record<string, [number, number, number, number]> = {
     CardFrame03_n_Bg: [30, 29, 30, 33],
     CardFrame03_n_InnerBg: [18, 18, 18, 18],
     BorderFrame_Round24: [29, 29, 29, 29],
+    Button_Round02_White_Bg: [23, 23, 23, 26],
+    Button_Round02_White_Light: [18, 0, 18, 0],
+};
+
+/** The game's cozy colours (the floor's peach and the tray's cream, not the UI pack's blues). */
+export const COZY = {
+    cream: 0xf8e9d2, peach: 0xeccba0, tan: 0xd9a877, brown: 0x9a6440, deepBrown: 0x6b4430, coral: 0xef7f5a,
+    orange: 0xf3a35f, orangeLight: 0xffd9a8,
+    /** A power-up's round button (its full-colour icon on it). */
+    powerFace: 0xfff1dc, green: 0x4cb860, greenLight: 0xb8efb0, ink: 0x5a3a22, dim: 0x2a1810,
 };
 
 /** A frame stretched to `width` x `height` (in the parent's units), its borders drawn at `scale`, top left at its position. */
@@ -100,11 +111,82 @@ export function buttonParts(width: number, height: number, text: string, frame: 
 /** A round button (a pack frame, `size` across) with an icon on it. */
 export function roundButton(frame: string, icon: string, size: number, iconSize = size * 0.62): PIXI.Container {
     const holder = new PIXI.Container();
-    const back = framePlane(frame, size, size, size / 110);
-    back.position.set(-size / 2, -size / 2);
+    // (The pack's blue round button: its big white rounded one (Button_Round06_White, 94 x 96: only ever shrunk, so it
+    // stays sharp) in the game's warm orange, at its own proportions. A plain sprite: the packer may turn it on its side.)
+    if (frame === 'Button_Round02_Blue') {
+        const body = PIXI.Sprite.from('Button_Round06_White');
+        body.anchor.set(0.5);
+        body.width = size;
+        body.height = size * (96 / 94);
+        body.tint = COZY.orange;
+        body.name = 'body';
+        holder.addChild(body);
+    } else {
+        const back = framePlane(frame, size, size, size / 110);
+        back.position.set(-size / 2, -size / 2);
+        holder.addChild(back);
+    }
     const picture = iconSprite(icon, iconSize);
     picture.y = -size * 0.04;
-    holder.addChild(back, picture);
+    picture.name = 'icon';
+    holder.addChild(picture);
+    return holder;
+}
+
+/**
+ * A round button: the UI pack's circle (BorderFrame_Circle75_Bg: a white face with its dark outline and lip, tinted
+ * `colour`) with its shine across the top (BorderFrame_Circle75_Light), and `icon` on it (none: ''). Its face is named
+ * 'face' (retint it: setCircleColour).
+ */
+export function circleButton(icon: string, size: number, colour: number = COZY.orange, iconSize = size * 0.58): PIXI.Container {
+    const holder = new PIXI.Container();
+    const face = PIXI.Sprite.from('BorderFrame_Circle75_Bg');
+    face.anchor.set(0.5);
+    face.width = size;
+    face.height = size * (75 / 72);
+    face.tint = colour;
+    face.name = 'face';
+    const shine = PIXI.Sprite.from('BorderFrame_Circle75_Light');
+    shine.anchor.set(0.5, 0);
+    shine.width = size * (64 / 72);
+    shine.height = size * (40 / 72);
+    shine.y = -face.height / 2 + size * 0.05;
+    shine.alpha = 0.9;
+    holder.addChild(face, shine);
+    if (icon) {
+        const picture = iconSprite(icon, iconSize);
+        picture.y = -size * 0.03;
+        picture.name = 'icon';
+        holder.addChild(picture);
+    }
+    return holder;
+}
+
+/** A circleButton's face in another colour. */
+export function setCircleColour(button: PIXI.Container, colour: number): void {
+    const face = button.getChildByName('face') as PIXI.Sprite | null;
+    if (face) face.tint = colour;
+}
+
+/** Mob's popups' close: the pack's red round button with the cross on it, `size` across (place it on a corner). */
+export function closeButton(size = 64): PIXI.Container {
+    const button = new PIXI.Container();
+    button.addChild(iconSprite('Button_Round06_Red', size), iconSprite('Icon_Close02', size * 0.5));
+    return button;
+}
+
+/** A popup's box, as Mob's: a warm brown frame, the moving cozy pattern inside it, `width` x `height`, centred. */
+export function popupBox(width: number, height: number): PIXI.Container {
+    const holder = new PIXI.Container();
+    const frame = framePlane('BorderFrame_Round24', width, height, 1);
+    frame.tint = COZY.brown;
+    frame.position.set(-width / 2, -height / 2);
+    const inset = 9;
+    const pattern = new Pattern(POPUP_LOOK);
+    pattern.place(-width / 2 + inset, -height / 2 + inset, width - inset * 2, height - inset * 2);
+    const mask = new PIXI.Graphics().beginFill(0xffffff).drawRoundedRect(-width / 2 + inset, -height / 2 + inset, width - inset * 2, height - inset * 2, 20).endFill();
+    pattern.mask = mask;
+    holder.addChild(frame, pattern, mask);
     return holder;
 }
 

@@ -168,6 +168,8 @@ export default class HomeScene extends ThreeScene {
     private readonly rankingBadge = new PIXI.Container();
     /** The CARDS tab's badge (a card ready to upgrade, or new). */
     private readonly cardsBadge = new PIXI.Container();
+    /** The ARENA tab's badge: versus open and never looked at. */
+    private readonly arenaBadge = new PIXI.Container();
     /** The arena's strip, road bar and chest slots (shown in the arena, once it's open), and a window over it all. */
     private readonly arenaHome = new ArenaHome({
         profile: () => this.openOverlay(new ProfilePanel(() => this.arenaHome.refresh(), () => this.overlayClosed())),
@@ -234,8 +236,8 @@ export default class HomeScene extends ThreeScene {
         this.buildMode();
         this.game.uiLayer.addChild(this.ui);
         this.resize();
-        // Versus mode just opened (and not tried): its tutorial.
-        if (arenaFor(MobSave.battle + 1, MobSave.bestTrophies).open && !MobSave.arenaTutorial) this.tutorialStep = this.mode === 'arena' ? 'play' : 'tab';
+        // (No versus tutorial: it lost players. Versus waits on its tab, with a badge till it's been opened; the story
+        // stays what PLAY plays.)
         this.tutorialHides();
     }
 
@@ -522,6 +524,7 @@ export default class HomeScene extends ThreeScene {
         this.arenaTabLock.position.set(RANKING_BADGE.x, RANKING_BADGE.y);
         this.tabs.get('arena')?.holder.addChild(this.arenaTabLock);
         this.buildCardsBadge();
+        this.buildArenaBadge();
         this.practice.words.scale.set(0.78);
         tappable(this.practice, () => {
             if (this.shownArena && !this.arenaLocked) this.onPlay(this.shownArena.id, { online: false });
@@ -637,6 +640,20 @@ export default class HomeScene extends ThreeScene {
 
     private refreshCards(): void {
         this.cardsBadge.visible = CARD_KINDS.some((kind) => MobSave.isNew(kind) || MobSave.canUpgrade(kind));
+    }
+
+    /** The ARENA tab's red badge while versus is open and hasn't been looked at (no more than that: nothing leads there). */
+    private buildArenaBadge(): void {
+        const circle = iconSprite('Alert_Circle_l_Bg', RANKING_BADGE.size);
+        circle.tint = 0xff3b4e;
+        this.arenaBadge.addChild(circle, iconSprite('Alert_Circle_Icon_Exclamation', RANKING_BADGE.size * 0.55));
+        this.arenaBadge.position.set(RANKING_BADGE.x, RANKING_BADGE.y);
+        this.tabs.get('arena')?.holder.addChild(this.arenaBadge);
+        this.refreshArenaBadge();
+    }
+
+    private refreshArenaBadge(): void {
+        this.arenaBadge.visible = arenaFor(MobSave.battle + 1, MobSave.bestTrophies).open && !MobSave.arenaTutorial;
     }
 
     /** A window over everything (a card, a chest, the road, the profile). */
@@ -776,6 +793,12 @@ export default class HomeScene extends ThreeScene {
         this.refreshCards();
         if (tab === 'ranking') this.showRanking();
         // A mode: the whole screen changes to it (what's behind, the ribbon, what PLAY does).
+        // Versus looked at for the first time: its badge goes.
+        if (tab === 'arena' && !MobSave.arenaTutorial && arenaFor(MobSave.battle + 1, MobSave.bestTrophies).open) {
+            MobSave.finishArenaTutorial();
+            MobEvents.tutorialStep('versus-tab');
+            this.refreshArenaBadge();
+        }
         if (isMode(tab) && tab !== this.mode) {
             this.mode = tab;
             lastMode = tab;

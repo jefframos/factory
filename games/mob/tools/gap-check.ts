@@ -11,7 +11,8 @@
 // Moving things (sliding bars, spinners, swinging gates) aren't in the map; the runs have them as they move.
 
 import fs from 'fs';
-import { BLUE, Battle, GIANT, RED } from '../game/battle/Battle';
+import { BLUE, Battle, CHARACTER_CARDS, GIANT, RED } from '../game/battle/Battle';
+import type { CardKind } from '../game/data/Settings';
 import { ARENA, BattleConfig, TUNING, bodyShare, useField } from '../game/data/MobConfig';
 import { seeded } from '../game/sim/Grading';
 
@@ -164,7 +165,10 @@ function main(): void {
     for (const pad of level.pads ?? []) {
         const kind = (pad.kind ?? 'giant') as string;
         if (kind === 'saucer') continue;
-        const unit = kind as UnitId;
+        // A card unit's house: its big units walk as a giant does (the small ones, and the flyers, aren't checked).
+        const character = CHARACTER_CARDS[kind as CardKind];
+        const unit: UnitId | null = kind in MOB ? (kind as UnitId) : character && character.big && !character.fly ? 'giant' : null;
+        if (!unit) continue;
         const r = TUNING.radius * (unit === 'car' ? TUNING.carScale : TUNING.giantScale);
         const spread = Math.max(0, pad.width / 2 - r * 0.5);
         for (let k = 0; k < RUN.perHouse; k++) {

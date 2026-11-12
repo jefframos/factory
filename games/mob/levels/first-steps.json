@@ -28,7 +28,7 @@
   "redRate": 2,
   "redRateEnd": 3.6,
   "redRamp": 45,
-  "baseHp": 120,
+  "baseHp": 140,
   "reward": 100,
   "grinders": [
     {
@@ -38,5 +38,6 @@
       "thickness": 0.9,
       "axis": "x"
     }
-  ]
+  ],
+  "safe": true
 }

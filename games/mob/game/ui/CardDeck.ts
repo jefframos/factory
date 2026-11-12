@@ -1,18 +1,24 @@
 // CardDeck.ts
 //
-// The CARDS tab's page: BATTLE DECK — the arena deck's slots (DECK_SIZE; one with no card: a padlock, SOON), each card
-// with its level and copies bar (CardTile) — and under it the COLLECTION: the cards the player has out of the deck,
-// then the ones not found yet. A tap on a card opens its details (CardPopup: upgrade, use, remove). The deck goes to
-// every battle, story and arena (HAND of it in hand, the rest coming in turn).
+// The CARDS tab's page: BATTLE DECK in two rows — STORY (the story cards: story battles bring this row alone) and VERSUS
+// ONLY (the rest: versus brings both rows, 4 in hand, the rest coming in turn), each its own colour and tag; an empty
+// slot says so — each card with its level and copies bar (CardTile). Under it the COLLECTION: the cards the player has
+// out of the deck, then the ones not found yet. A tap on a card opens its details (CardPopup: upgrade, use, remove).
 
 import * as PIXI from 'pixi.js';
-import { DECK_SIZE, MobSave } from '../data/MobSave';
+import { DECK_SIZE, MobSave, STORY_ROW } from '../data/MobSave';
 import { CARD_KINDS, CardKind } from '../data/Settings';
 import { TILE, TILE_HEIGHT, cardTile, lockedTile } from './CardTile';
 import { framePlane, killTweensDeep, label, tappable } from './UiParts';
 
 const GRID = { gap: 12, rowGap: 22, headY: 0, deckY: 64, frame: 0x0d2147, framePad: 16 };
 const PER_ROW = 6;
+/** The deck's two rows: each one's tag (over its frame, on the left), its frame's tint, and the room between them. */
+const DECK_ROWS = [
+    { tag: 'STORY · STORY AND VERSUS', colour: 0x2fd35c, frame: 0x0f3a2a },
+    { tag: 'VERSUS ONLY', colour: 0xa86bff, frame: 0x24164a },
+];
+const ROW_TAG = { height: 34, size: 20, gap: 8 };
 
 export class CardDeck extends PIXI.Container {
     private tall = 0;
@@ -32,31 +38,44 @@ export class CardDeck extends PIXI.Container {
         this.removeChildren().forEach((child) => child.destroy({ children: true }));
         const rowWidth = PER_ROW * TILE.width + (PER_ROW - 1) * GRID.gap;
         const x = (i: number) => -rowWidth / 2 + TILE.width / 2 + (i % PER_ROW) * (TILE.width + GRID.gap);
-        // The deck, on a darker frame.
         const deckTitle = label(30);
         deckTitle.text = 'BATTLE DECK';
         deckTitle.y = GRID.headY;
-        const frameHeight = TILE_HEIGHT + GRID.framePad * 2;
-        const frame = framePlane('BorderFrame_Round24', rowWidth + GRID.framePad * 2, frameHeight, 0.8);
-        frame.tint = GRID.frame;
-        frame.position.set(-rowWidth / 2 - GRID.framePad, GRID.deckY - GRID.framePad);
-        this.addChild(deckTitle, frame);
-        // Each slot: its card, or empty (a card's USE fills it).
+        this.addChild(deckTitle);
+        // The deck's two rows, each on its own tinted frame under its tag: the story's, then versus'.
         const slots = MobSave.deckSlots;
-        const cardY = GRID.deckY + TILE.height / 2;
-        for (let i = 0; i < DECK_SIZE; i++) {
-            const kind = slots[i];
-            const tile = kind ? cardTile(kind) : lockedTile(1, 'EMPTY', false);
-            tile.position.set(x(i), cardY);
-            if (kind) tappable(tile, () => this.onCard(kind));
-            this.addChild(tile);
-        }
-        let y = GRID.deckY + frameHeight + 8;
+        const deckWidth = STORY_ROW * TILE.width + (STORY_ROW - 1) * GRID.gap;
+        const deckX = (k: number) => -deckWidth / 2 + TILE.width / 2 + k * (TILE.width + GRID.gap);
+        const frameHeight = TILE_HEIGHT + GRID.framePad * 2;
+        let y = GRID.deckY - 24;
+        DECK_ROWS.forEach((row, r) => {
+            const tag = label(ROW_TAG.size, row.colour);
+            tag.anchor.set(0, 0.5);
+            tag.text = row.tag;
+            tag.position.set(-deckWidth / 2 - GRID.framePad + 4, y + ROW_TAG.height / 2);
+            y += ROW_TAG.height + ROW_TAG.gap;
+            const frame = framePlane('BorderFrame_Round24', deckWidth + GRID.framePad * 2, frameHeight, 0.8);
+            frame.tint = row.frame;
+            frame.position.set(-deckWidth / 2 - GRID.framePad, y);
+            this.addChild(tag, frame);
+            for (let k = 0; k < STORY_ROW; k++) {
+                const i = r * STORY_ROW + k;
+                if (i >= DECK_SIZE) break;
+                const kind = slots[i];
+                // An empty slot says what goes there.
+                const tile = kind ? cardTile(kind) : lockedTile(1, r === 0 ? 'STORY\nCARD' : 'EMPTY', false);
+                tile.position.set(deckX(k), y + GRID.framePad + TILE.height / 2);
+                if (kind) tappable(tile, () => this.onCard(kind));
+                this.addChild(tile);
+            }
+            y += frameHeight + 14;
+        });
         const hint = label(18, 0x9fb4ff);
-        hint.text = 'Your deck goes to every battle · 4 in hand, the rest come in turn';
-        hint.y = y + 12;
+        hint.text = 'Story battles bring the top row · Versus brings both (4 in hand, the rest come in turn)';
+        hint.y = y + 6;
+        hint.scale.set(Math.min(1, (rowWidth + 20) / Math.max(1, hint.width)));
         this.addChild(hint);
-        y += 64;
+        y += 58;
         // The collection: the rest the player has, then the ones to find.
         const bench = MobSave.bench;
         const missing = CARD_KINDS.filter((kind) => !MobSave.hasCard(kind));

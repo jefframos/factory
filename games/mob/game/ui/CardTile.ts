@@ -91,7 +91,10 @@ export function lockedTile(scale = 1, words = '???', lock = true): PIXI.Containe
     back.position.set(-TILE.width / 2, -TILE.height / 2);
     const text = label(22, 0xc3cdea);
     text.text = words;
+    text.style.align = 'center';
     text.y = lock ? 38 : 0;
+    // Kept inside the card (a long word shrinks).
+    text.scale.set(Math.min(1, (TILE.width - 14) / Math.max(1, text.width)));
     tile.addChild(back, text);
     if (lock) {
         const padlock = iconSprite('Icon_Lock03', 54);

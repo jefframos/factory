@@ -12,6 +12,7 @@ import { cardTile } from './CardTile';
 import { Overlay } from './Overlay';
 import { MOMENT_LOOK } from './Pattern';
 import { iconSprite, label } from './UiParts';
+import { isStoryCard } from '../data/Settings';
 
 const SIZE = { width: 620, height: 820 };
 
@@ -40,7 +41,7 @@ export class NewCardShow extends Overlay {
         name.text = CARD_NAMES[kind];
         name.y = 200;
         const where = label(24, 0xc9d3ff);
-        where.text = 'In your deck · for every battle';
+        where.text = isStoryCard(kind) ? 'In the story · and in your versus deck' : 'A versus card · put it in your deck';
         where.y = 252;
         const tap = label(24, 0xc9d3ff);
         tap.text = 'TAP TO CONTINUE';

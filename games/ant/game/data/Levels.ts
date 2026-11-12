@@ -27,6 +27,15 @@ export interface LevelData {
 const DIGITS = '0123456789abcdefghijklmnopqrstuvwxyz';
 const files = import.meta.glob<{ default: LevelData }>('../../levels/*.json', { eager: true });
 
+/** The pacing beside the order (levels/index.json; the editor's level cards set it): the level numbers whose board is
+ *  split (1-based), and from which level on tiles can be hidden or locked. */
+const PACING = index as { levels: string[]; split?: number[]; hiddenFrom?: number; lockedFrom?: number };
+export const SPLIT_LEVELS: ReadonlySet<number> = new Set(PACING.split ?? []);
+export const HIDDEN_FROM = PACING.hiddenFrom ?? 8;
+export const LOCKED_FROM = PACING.lockedFrom ?? 12;
+/** The first split level (its introduction), or none. */
+export const FIRST_SPLIT = Math.min(...(PACING.split ?? [Infinity]));
+
 /** Every level, in index.json's order (a level listed there without its file is skipped). */
 export const LEVELS: LevelData[] = (index as { levels: string[] }).levels
     .map((id) => files[`../../levels/${id}.json`]?.default)

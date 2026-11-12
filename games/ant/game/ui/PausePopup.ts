@@ -1,46 +1,41 @@
 // PausePopup.ts
 //
-// The pause popup (the pause button, top left of the game): the UI pack's blue popup with its top bar — PAUSED — the
-// sound and music toggles, RETRY (the level again) and HOME (the main screen), and a close cross (play on). The game is
-// paused (Game.timeScale 0) while it's up: AntScene does that.
+// The pause popup (the pause button, top left of the game), as Mob's popups in the game's cozy colours: a warm framed
+// box with the moving pattern in it — PAUSED — the sound toggle (all of it, on or off), RETRY (the level again) and HOME (the main
+// screen), and the red round close on its corner (play on). The game is paused (Game.timeScale 0) while it's up:
+// AntScene does that.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import SoundManager from 'core/audio/SoundManager';
 import { Game } from 'core/Game';
 import { AntAudio } from '../audio/AntAudio';
-import { buttonParts, dimmer, framePlane, iconSprite, label, roundButton, tappable } from './UiParts';
+import { COZY, buttonParts, closeButton, dimmer, iconSprite, label, popupBox, roundButton, tappable } from './UiParts';
 
 /** Design units. The panel, where its top bar's title sits, the toggles and the buttons. */
-const PANEL = { width: 440, height: 430, scale: 0.9, titleY: -176, titleSize: 40 };
-const CLOSE = { size: 52, x: 196, y: -186 };
-const TOGGLE = { size: 92, gap: 150, y: -60, labelY: 66, labelSize: 22 };
+const PANEL = { width: 440, height: 430, titleY: -168, titleSize: 40 };
+const CLOSE = { size: 64, inset: 8 };
+const TOGGLE = { size: 92, y: -60, labelY: 66, labelSize: 22 };
 const BUTTONS = { width: 300, height: 72, retryY: 76, homeY: 160 };
 
 export class PausePopup extends PIXI.Container {
     private readonly dim = dimmer();
     private readonly panel = new PIXI.Container();
     private readonly sound: { on: PIXI.Sprite; off: PIXI.Sprite };
-    private readonly music: { on: PIXI.Sprite; off: PIXI.Sprite };
 
     public constructor(private readonly actions: { resume: () => void; retry: () => void; home: () => void }) {
         super();
-        const back = framePlane('Popup04_Topber_Single', PANEL.width, PANEL.height, PANEL.scale);
-        back.position.set(-PANEL.width / 2, -PANEL.height / 2);
+        const back = popupBox(PANEL.width, PANEL.height);
         const title = label(PANEL.titleSize);
         title.text = 'PAUSED';
         title.y = PANEL.titleY;
-        const close = new PIXI.Container();
-        close.addChild(iconSprite('Icon_Close02', CLOSE.size));
-        close.position.set(CLOSE.x, CLOSE.y);
+        const close = closeButton(CLOSE.size);
+        close.position.set(PANEL.width / 2 - CLOSE.inset, -PANEL.height / 2 + CLOSE.inset);
         tappable(close, () => this.actions.resume(), 'close');
 
-        this.sound = this.toggle('PictoIcon_Sound', 'PictoIcon_Sound_Off', 'SOUND', -TOGGLE.gap / 2, () => {
+        // One sound button (everything on or off), in the middle.
+        this.sound = this.toggle('PictoIcon_Sound_Stroke', 'PictoIcon_Sound_Off_Stroke', 'SOUND', 0, () => {
             SoundManager.instance.toggleMute();
-            this.refresh();
-        });
-        this.music = this.toggle('PictoIcon_Music_1', 'PictoIcon_Music_1_Off', 'MUSIC', TOGGLE.gap / 2, () => {
-            AntAudio.musicOn = !AntAudio.musicOn;
             this.refresh();
         });
 
@@ -49,7 +44,7 @@ export class PausePopup extends PIXI.Container {
         retry.y = BUTTONS.retryY;
         tappable(retry, () => this.actions.retry());
         const home = new PIXI.Container();
-        home.addChild(...buttonParts(BUTTONS.width, BUTTONS.height, 'HOME', 'Button01_l_Sky'));
+        home.addChild(...buttonParts(BUTTONS.width, BUTTONS.height, 'HOME', 'Button01_l_Green'));
         home.y = BUTTONS.homeY;
         tappable(home, () => this.actions.home());
 
@@ -84,14 +79,12 @@ export class PausePopup extends PIXI.Container {
         const soundOn = !SoundManager.instance.isMuted;
         this.sound.on.visible = soundOn;
         this.sound.off.visible = !soundOn;
-        this.music.on.visible = AntAudio.musicOn;
-        this.music.off.visible = !AntAudio.musicOn;
     }
 
     public reposition(): void {
         const screen = Game.overlayScreenData;
         if (!screen) return;
-        this.dim.clear().beginFill(0x10123a, 0.55).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
+        this.dim.clear().beginFill(COZY.dim, 0.55).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
         this.panel.position.set(screen.center.x, screen.center.y);
     }
 

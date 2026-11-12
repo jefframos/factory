@@ -16,7 +16,7 @@
 
 import * as THREE from 'three';
 import { GrinderConfig, PIPE, PipeConfig, pipeEnds, pipePath } from '../data/MobConfig';
-import { ARENA, BattleConfig, COLORS, TUNING, UNIT_COLORS, houseStyle, needOf, padColor, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig } from '../data/MobConfig';
+import { ARENA, BattleConfig, CHARACTER_HOUSE, COLORS, TUNING, UNIT_COLORS, houseStyle, needOf, padColor, GateConfig, HelmetConfig, ObstacleConfig, PadConfig, PushBlockConfig, PusherConfig, SpinnerConfig } from '../data/MobConfig';
 import { bendObject, bendSegments } from '../services/Bend';
 import { createGround, createWater } from '../services/Water';
 import { BASE_HALF_WIDTH, Battle, CAR, TRUCK, Target, obstacleShape } from './Battle';
@@ -136,7 +136,11 @@ const PUSHER_HEIGHT = 0.7;
 const PAD_STYLE = { height: 0.12, rim: 0.12 };
 const HOUSE = { wallHeight: 1.5, roofHeight: 0.9, overhang: 0.18, wall: 0xe8f1ff, roof: 0x3d6dff };
 /** The unit spinning over a truck / UFO / car house: its size (x its own), and how far over the house's count it floats. */
-const HOUSE_ICON = { truck: 0.55, other: 0.8, over: 0.75, bomb: 1.1 };
+const HOUSE_ICON = { truck: 0.55, other: 0.8, over: 0.75, unit: 1 };
+/** A card unit's house: the unit's baked model spinning over it (characters/<file>.glb, its first pose), this tall. The
+ *  rigged ones (skeletons) and the giants have their title only. */
+const UNIT_ICONS: Record<string, string> = { bomb: 'stone-monster', golem: 'golem', bats: 'bat', turtle: 'turtle' };
+const UNIT_ICON_HEIGHT = 1.3;
 /** A helmet barrier: its height and colours (an attack barrier's: `attack`), and how wide the floating viking hat is. */
 const HELMET = { height: 1.5, olive: 0x6f8236, sand: 0xd8c690, curtain: 0x9ccf5a, dark: 0x5d6e2c, text: '#d8ff9a' };
 const ATTACK = { olive: 0xb8332e, sand: 0xf2c14e, curtain: 0xff8a4c, dark: 0x7a1f1c, text: '#ffd27a', hatWidth: 1.3 };
@@ -153,7 +157,7 @@ const PUSH_BLOCK = { height: 1.2, body: 0x3a4466, plate: 0xff4757 };
 const PROPS = {
     /** Each house's building (the `model` style); the car has none (a plain house). */
     houses: { giant: 'home-blue', bomb: 'barracks-blue', truck: 'barracks-blue', saucer: 'home-yellow' } as Record<string, string>,
-    houseTitles: { giant: 'GIANT', bomb: 'BOMB', truck: 'TRUCK', saucer: 'UFO', car: 'RAMMER' } as Record<string, string>,
+    houseTitles: { giant: 'GIANT', bomb: 'BOMB', truck: 'TRUCK', saucer: 'UFO', car: 'RAMMER', ...Object.fromEntries(Object.entries(CHARACTER_HOUSE).map(([kind, house]) => [kind, house.title])) } as Record<string, string>,
     /** The plain houses (all but the giant's, which is a building): their wall and roof colours' keys in UNIT_COLORS. */
     houseColours: { giant: ['giantWall', 'giantRoof'], bomb: ['truckWall', 'truckRoof'], truck: ['truckWall', 'truckRoof'], saucer: ['ufoWall', 'ufoRoof'], car: ['carWall', 'carRoof'] } as Record<string, [UnitColor, UnitColor]>,
     base: 'barracks-red',
@@ -442,8 +446,8 @@ export class Arena {
     /** Each helmet barrier's floating helmet (it spins). */
     private readonly helmetIcons: THREE.Object3D[] = [];
     private saucerModel: THREE.Object3D | null = null;
-    /** A bomb house's icon: the bomb's model (its first pose), loaded only for a level with one. */
-    private bombModel: THREE.Object3D | null = null;
+    /** A card unit house's icon (its unit's model, first pose), by kind: loaded only for a level with one. */
+    private readonly unitIcons = new Map<string, THREE.Object3D>();
     private readonly saucerViews = new Map<object, { model: THREE.Object3D; beam: THREE.Mesh }>();
     private readonly targets: TargetView[] = [];
     /** An arena match: the blues' own buildings (the reds' aim), and the reds' cannon at the far end. */
@@ -492,7 +496,7 @@ export class Arena {
         (config.pipes ?? []).forEach((pipe) => this.buildPipe(pipe));
         (config.grinders ?? []).forEach((grinder) => this.grinders.push(this.buildGrinder(grinder)));
         void this.loadUnits();
-        if ((config.pads ?? []).some((pad) => pad.kind === 'bomb')) void this.loadBombIcon();
+        for (const kind of new Set((config.pads ?? []).map((pad) => pad.kind ?? 'giant'))) if (UNIT_ICONS[kind]) void this.loadUnitIcon(kind);
         // A boss level (a Giant King): the main building (the one with the most HP) wears his hat.
         const crowned = config.kingAt ? targets.reduce((best, target, i) => (target.hp > targets[best].hp ? i : best), 0) : -1;
         targets.forEach((target, i) => this.targets.push(this.buildTarget(target, i === crowned)));
@@ -1662,7 +1666,7 @@ export class Arena {
      * and bouncing as blues go in.
      */
     private updateHouseIcon(view: PadView): void {
-        const source = view.kind === 'bomb' ? this.bombModel : view.kind === 'truck' ? this.truckModel : view.kind === 'saucer' ? this.saucerModel : view.kind === 'car' ? this.carModel : null;
+        const source = this.unitIcons.has(view.kind) ? this.unitIcons.get(view.kind)! : view.kind === 'truck' ? this.truckModel : view.kind === 'saucer' ? this.saucerModel : view.kind === 'car' ? this.carModel : null;
         if (!source) return;
         if (!view.icon) {
             view.icon = source.clone();
@@ -1679,23 +1683,30 @@ export class Arena {
     }
 
     private iconScale(kind: string | undefined): number {
-        return kind === 'bomb' ? HOUSE_ICON.bomb : kind === 'truck' ? HOUSE_ICON.truck : HOUSE_ICON.other;
+        return this.unitIcons.has(kind ?? '') ? HOUSE_ICON.unit : kind === 'truck' ? HOUSE_ICON.truck : HOUSE_ICON.other;
     }
 
-    /** The bomb house's icon model (the bomb's baked first pose), when a level has one. */
-    private async loadBombIcon(): Promise<void> {
+    /** A card unit house's icon: its unit's baked first pose, sized to UNIT_ICON_HEIGHT, its base at 0. */
+    private async loadUnitIcon(kind: string): Promise<void> {
         try {
-            const gltf = await createGLTFLoader().loadAsync(`${this.modelRoot}characters/stone-monster.glb`);
+            const gltf = await createGLTFLoader().loadAsync(`${this.modelRoot}characters/${UNIT_ICONS[kind]}.glb`);
             if (this.disposed) return;
             const pose = gltf.scene.getObjectByName('pose_0') ?? gltf.scene;
             pose.traverse((child) => {
-                if (child instanceof THREE.Mesh) child.material = new THREE.MeshLambertMaterial({ vertexColors: true });
+                // Its colours in the vertices (the baked ones), unless it has a texture of its own (the bat, the turtle).
+                if (child instanceof THREE.Mesh && child.geometry.getAttribute('color') && !(child.material as THREE.MeshStandardMaterial).map) {
+                    child.material = new THREE.MeshLambertMaterial({ vertexColors: true });
+                }
             });
             const holder = new THREE.Group();
             holder.add(pose);
-            this.bombModel = holder;
+            const box = new THREE.Box3().setFromObject(holder);
+            const height = Math.max(1e-3, box.max.y - box.min.y);
+            pose.scale.multiplyScalar(UNIT_ICON_HEIGHT / height);
+            pose.position.y -= box.min.y * (UNIT_ICON_HEIGHT / height);
+            this.unitIcons.set(kind, holder);
         } catch (error) {
-            console.warn('[mob] bomb icon', error);
+            console.warn(`[mob] ${kind} house icon`, error);
         }
     }
 

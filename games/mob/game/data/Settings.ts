@@ -26,6 +26,7 @@ export type CardKind = 'giant' | 'truck' | 'saucer' | 'car' | 'skeletons' | 'war
 /** (The truck stays a kind — old data names it — but isn't a card any more: the bomb took its houses.) */
 export const CARD_KINDS: CardKind[] = ['giant', 'saucer', 'car', 'skeletons', 'warriors', 'golem', 'bomb', 'bats', 'turtle', 'giant-green', 'giant-viking'];
 
+
 /** A stat at level 1 and at the top level. */
 export type StatRange = [number, number];
 export interface CardSetting {
@@ -77,6 +78,22 @@ export interface GameSettings {
     housesBlockReds: boolean;
     upgrades: { fire: UpgradeSetting; capacity: UpgradeSetting; recharge: UpgradeSetting };
     camera?: { pitchDeg?: number; yawDeg?: number; fov?: number; homePitchDeg?: number };
+    /** The story's cards and the level whose win gives each (STORY_CARDS). */
+    storyCards?: { kind: CardKind; after: number }[];
 }
 
 export const SETTINGS: GameSettings = settingsFile as unknown as GameSettings;
+
+/**
+ * The story's cards: the only ones a story battle deals (kept simple: the rest are versus cards, won in versus), each
+ * given by winning story level `after` (1-based), in this order. Houses don't give cards.
+ */
+export const STORY_CARDS: { kind: CardKind; after: number }[] = SETTINGS.storyCards ?? [
+    { kind: 'giant', after: 5 },
+    { kind: 'car', after: 10 },
+    { kind: 'bomb', after: 15 },
+    { kind: 'saucer', after: 20 },
+];
+export const isStoryCard = (kind: CardKind): boolean => STORY_CARDS.some((card) => card.kind === kind);
+/** The story cards had once `won` story levels are won. */
+export const storyCardsBy = (won: number): CardKind[] => STORY_CARDS.filter((card) => won >= card.after).map((card) => card.kind);

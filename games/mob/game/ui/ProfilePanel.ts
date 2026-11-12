@@ -6,7 +6,7 @@
 import * as PIXI from 'pixi.js';
 import { Ladder, tierBadge, tierFor } from '../data/ArenaLadder';
 import gsap from 'gsap';
-import { DECK_SIZE, MobSave } from '../data/MobSave';
+import { DECK_SIZE, STORY_ROW, MobSave } from '../data/MobSave';
 import { AVATARS } from '../data/Profile';
 import ladderFile from '../../ui/arena-ladder.json';
 import { cardTile, lockedTile } from './CardTile';
@@ -97,12 +97,14 @@ export class ProfilePanel extends Overlay {
         deckTitle.y = top + 440;
         this.panel.addChild(deckTitle);
         const deck = MobSave.deckSlots;
-        const scale = 0.7;
-        const step = 116 * scale + 10;
+        const scale = 0.56;
+        const step = 116 * scale + 8;
+        // (The story row and the versus row a little apart.)
+        const split = 18;
         for (let i = 0; i < DECK_SIZE; i++) {
             const kind = deck[i];
             const tile = kind ? cardTile(kind, scale, false) : lockedTile(scale, 'EMPTY', false);
-            tile.position.set((i - (DECK_SIZE - 1) / 2) * step, top + 540);
+            tile.position.set((i - (DECK_SIZE - 1) / 2) * step + (i < STORY_ROW ? -split / 2 : split / 2), top + 530);
             this.panel.addChild(tile);
         }
     }

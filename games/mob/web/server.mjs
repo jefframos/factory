@@ -172,7 +172,7 @@ function levelProblem(level) {
         if (helmet.kind !== undefined && !['hp', 'attack'].includes(helmet.kind)) return `Unknown barrier kind ${helmet.kind}`;
     }
     for (const pad of level.pads ?? []) {
-        if (pad.kind !== undefined && !['giant', 'bomb', 'saucer', 'car'].includes(pad.kind)) return `Unknown house kind ${pad.kind}`;
+        if (pad.kind !== undefined && !['giant', 'bomb', 'saucer', 'car', 'skeletons', 'warriors', 'golem', 'bats', 'turtle', 'giant-green', 'giant-viking'].includes(pad.kind)) return `Unknown house kind ${pad.kind}`;
         // Its own charge, or (none) its unit's.
         if (pad.need !== undefined && !(isNumber(pad.need) && pad.need >= 1)) return 'A house\'s need must be 1 or more (or empty)';
     }

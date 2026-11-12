@@ -6,13 +6,13 @@
       "theme": "beach",
       "levels": [
         "first-steps",
-        "giant-pad",
         "three-lanes",
         "the-spinner",
+        "giant-pad",
+        "big-bang",
         "wedges",
         "diamonds",
         "breakout",
-        "pushers",
         "twin-towers",
         "islands"
       ]

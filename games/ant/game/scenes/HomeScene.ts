@@ -16,18 +16,19 @@ import { ThreeScene } from 'core/scene/ThreeScene';
 import { AntAudio } from '../audio/AntAudio';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { AntSave } from '../data/AntSave';
-import { LEVELS, pixelsOf } from '../data/Levels';
+import { LEVELS, pixelsOf, SPLIT_LEVELS } from '../data/Levels';
 import { PictureView, TRAY_TOP } from '../world/PictureView';
 import { LAYOUT } from '../world/Layout';
 import { floorColor, floorTexture } from './AntScene';
 import { COIN_BAR, DARK, fillCoinBar, framePlane, iconSprite, label, plainLabel, roundButton, tappable } from '../ui/UiParts';
 import { ShopKind, ShopPanel } from '../ui/ShopPanel';
+import { StickerBook } from '../ui/StickerBook';
 import { levelTier } from '../data/Shop';
 import { AntEvents } from '../data/AntEvents';
 
 /** Design units (720 x 1080). The bottom tabs (as UFO's), the ribbon, the PLAY button, the sound button. */
 const TABS = {
-    height: 108, rise: 14, barColor: 0x2b2d4d, focusColor: 0x4a6ef5, lightColor: 0x86a2ff, lightInset: 5,
+    height: 108, rise: 14, barColor: 0x6b4430, focusColor: 0xf3a35f, lightColor: 0xffd29a, lightInset: 5,
     icon: 70, focusIcon: 88, focusIconY: -18, labelY: 34, labelSize: 22,
 };
 const RIBBON = { y: 140, width: 400, height: 86, scale: 0.6, text: 36, textY: -6 };
@@ -41,11 +42,12 @@ const ARROWS = { size: 64, margin: 44, up: 60, latest: 54, latestDown: 76 };
  *  picture sits above the screen's middle (world units); the picture's sway. */
 const VIEW = { fov: 30, tiltDeg: 28, fill: 0.86, lift: 1.6, swayDeg: 3, swaySpeed: 0.5, bob: 0.25 };
 
-type Tab = 'boosts' | 'home' | 'deco';
-const TAB_ORDER: Tab[] = ['boosts', 'home', 'deco'];
+type Tab = 'boosts' | 'home' | 'book' | 'deco';
+const TAB_ORDER: Tab[] = ['boosts', 'home', 'book', 'deco'];
 const TAB_ICONS: Record<Tab, { frame: string; name: string }> = {
-    boosts: { frame: 'ItemIcon_Pot', name: 'POWER-UPS' },
+    boosts: { frame: 'ItemIcon_Energy_Blue', name: 'POWER-UPS' },
     home: { frame: 'Icon_MapPoint', name: 'HOME' },
+    book: { frame: 'ItemIcon_Book_1_Purple', name: 'STICKERS' },
     deco: { frame: 'ItemIcon_Shop', name: 'DECO' },
 };
 
@@ -83,6 +85,8 @@ export default class HomeScene extends ThreeScene {
     private readonly tabLight = framePlane('Menu_BottomBtn_TabFocus_Light', 230, TABS.height + TABS.rise - TABS.lightInset);
     private readonly tabs = new Map<Tab, { holder: PIXI.Container; icon: PIXI.Container; words: PIXI.Text }>();
     private readonly shops = new Map<ShopKind, ShopPanel>();
+    /** The STICKERS tab's page (made the first time it's opened). */
+    private book: StickerBook | null = null;
     private readonly coinsBar = new PIXI.Container();
     private readonly coinsText = label(COIN_BAR.textSize);
     private floor?: THREE.Mesh;
@@ -130,9 +134,12 @@ export default class HomeScene extends ThreeScene {
         AntSave.selected = index;
         this.ribbonText.text = `LEVEL ${index + 1}`;
         const tier = levelTier(index);
-        this.tierTag.visible = tier !== 'normal';
-        this.tierTag.text = tier === 'super' ? 'SUPER HARD' : 'HARD';
-        this.tierTag.style.fill = tier === 'super' ? 0xff4d6d : 0xff9f3a;
+        const split = SPLIT_LEVELS.has(index + 1);
+        // What makes it a challenge: its tier, and a split board.
+        const parts = [tier === 'super' ? 'SUPER HARD' : tier === 'hard' ? 'HARD' : '', split ? 'SPLIT BOARD' : ''].filter(Boolean);
+        this.tierTag.visible = parts.length > 0;
+        this.tierTag.text = parts.join(' · ');
+        this.tierTag.style.fill = tier === 'super' ? 0xff4d6d : tier === 'hard' ? 0xff9f3a : 0x6fc3ff;
         this.picture?.destroy();
         this.picture = undefined;
         const level = LEVELS[index];
@@ -226,8 +233,8 @@ export default class HomeScene extends ThreeScene {
         const back = PIXI.Sprite.from('Button_Round03_Dark');
         back.anchor.set(0.5);
         back.width = back.height = MUTE.size;
-        const on = PIXI.Sprite.from('PictoIcon_Sound');
-        const off = PIXI.Sprite.from('PictoIcon_Sound_Off');
+        const on = PIXI.Sprite.from('PictoIcon_Sound_Stroke');
+        const off = PIXI.Sprite.from('PictoIcon_Sound_Off_Stroke');
         for (const icon of [on, off]) {
             icon.anchor.set(0.5);
             icon.scale.set(MUTE.size * MUTE.icon);
@@ -261,8 +268,17 @@ export default class HomeScene extends ThreeScene {
         if (tab === this.tab) return;
         this.tab = tab;
         this.shops.forEach((shop) => { shop.visible = false; });
-        AntEvents.screen(tab === 'home' ? 'home' : `shop-${tab}`);
-        if (tab !== 'home') {
+        if (this.book) this.book.visible = false;
+        AntEvents.screen(tab === 'home' ? 'home' : tab === 'book' ? 'sticker-book' : `shop-${tab}`);
+        if (tab === 'book') {
+            if (!this.book) {
+                this.book = new StickerBook();
+                // Over the buttons, under the coins and the tabs.
+                this.ui.addChildAt(this.book, this.ui.getChildIndex(this.coinsBar));
+            }
+            this.book.visible = true;
+            this.book.refresh();
+        } else if (tab !== 'home') {
             let shop = this.shops.get(tab);
             if (!shop) {
                 shop = new ShopPanel(tab, () => this.onShopChange());
@@ -357,6 +373,7 @@ export default class HomeScene extends ThreeScene {
         this.placeTabs();
         this.coinsBar.position.set(screen.topLeft.x + COIN_BAR.left + COIN_BAR.icon / 2, top + COIN_BAR.top);
         this.shops.forEach((shop) => shop.reposition());
+        this.book?.reposition();
     }
 
     public update(delta: number): void {

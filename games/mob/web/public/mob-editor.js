@@ -72,9 +72,17 @@ const HELMET_KINDS = {
 /** What a house makes, how it's drawn here, and a new one's `need`. */
 const HOUSE_KINDS = {
     giant: { label: 'GIANT', wall: '#e8f1ff', roof: '#3d6dff', need: 16 },
-    truck: { label: 'TRUCK', wall: '#cfe0ff', roof: '#1f4fbf', need: 24 },
+    bomb: { label: 'BOMB', wall: '#ffd6d6', roof: '#f73636', need: 24 },
     saucer: { label: 'UFO', wall: '#ffe27a', roof: '#ffb31a', need: 40 },
     car: { label: 'RAMMER', wall: '#ffe3d6', roof: '#ff6a3d', need: 30 },
+    // The card units (the game's MobConfig CHARACTER_HOUSE): a batch of the card's unit per fill.
+    skeletons: { label: 'SKELETONS', wall: '#f4f1ea', roof: '#d9d4c7', need: 20 },
+    warriors: { label: 'WARRIORS', wall: '#d6dae2', roof: '#8a8f99', need: 22 },
+    golem: { label: 'GOLEM', wall: '#d8c3ad', roof: '#8a6f55', need: 34 },
+    bats: { label: 'BATS', wall: '#d9c6f5', roof: '#7a4fc0', need: 18 },
+    turtle: { label: 'TURTLE', wall: '#c6efd5', roof: '#3fae6a', need: 30 },
+    'giant-green': { label: 'ARMORED GIANT', wall: '#cdf5d6', roof: '#4cdc6a', need: 26 },
+    'giant-viking': { label: 'VIKING GIANT', wall: '#ffe0c7', roof: '#ff8a3d', need: 26 },
 };
 const LIST_NAMES = { gates: 'Gate', obstacles: 'Obstacle', spinners: 'Spinner', pushers: 'Pusher', pads: 'House', pushBlocks: 'PUSH block', helmets: 'Barrier', pipes: 'Pipe', grinders: 'Grinder', targets: 'Fort' };
 /** Hit-test order: smaller things on top. */
@@ -446,7 +454,7 @@ function buildLevelsTab() {
         polygonKind,
         el('span', { class: 'sep' }),
         tool('gates', 'Gate', 'Multiplier gate'),
-        tool('pads', 'House', 'A house: blues walking in make a giant, a truck or a gold UFO (pick which)'),
+        tool('pads', 'House', 'A house: blues walking in make what it makes (pick which: a giant, a bomb, a UFO, a rammer, or a card unit: skeletons, warriors, golem, bats, turtle, armored or viking giant)'),
         el('select', { title: 'What a new house makes', onchange: (e) => { state.houseKind = e.target.value; } },
             ...Object.entries(HOUSE_KINDS).map(([kind, info]) => el('option', { value: kind }, info.label.toLowerCase()))),
         tool('pushBlocks', 'PUSH', 'PUSH block'),
@@ -1105,7 +1113,8 @@ function pieces(data) {
         rect(p.x, p.z, p.width, p.depth, look.wall, isSelected('pads', i) ? COLORS.select : look.roof);
         rect(p.x, p.z - p.depth * 0.15, p.width, p.depth * 0.5, look.roof);
         rect(p.x, p.z + p.depth / 2 - 0.1, Math.min(p.width * 0.55, 1.6), 0.2, '#14183a');
-        text(`${look.label} ${p.need}`, p.x, p.z, 12);
+        // What it makes, and the blues per one (its own, else the unit's).
+        text(`${look.label} ${p.need ?? look.need}`, p.x, p.z, 12);
     });
     // PUSH blocks: the block, and its two stops.
     (data.pushBlocks ?? []).forEach((b, i) => {

@@ -9,7 +9,7 @@
 //                              and the solver's check; `master` tries a palette unsaved
 //   POST /api/save             { id, settings } -> writes levels/<id>.json, its preview, and pictures.json's settings
 //   POST /api/palette          { colors } -> saves the master palette and rebuilds every level that uses it
-//   POST /api/order            { levels: [ids] } -> levels/index.json
+//   POST /api/order            { levels: [ids], split?: [level numbers] } -> levels/index.json (the pacing kept)
 //   POST /api/upload           { id, filename, data (base64) } -> a new picture in raw-assets/pictures, pixelated, last
 //   POST /api/create           { id, width, height } -> a new empty level to draw (no picture), last
 //   POST /api/delete           { id } -> out of the game (the source picture moves to raw-assets/pictures/removed)
@@ -66,7 +66,7 @@ async function listLevels() {
             settings: { ...DEFAULT_SETTINGS, name: level.name, ...settings[id] }, source: sourceOf(id),
         });
     }
-    return { levels, palettes: PALETTES, master: await readMaster() };
+    return { levels, palettes: PALETTES, master: await readMaster(), pacing: { split: index.split ?? [], hiddenFrom: index.hiddenFrom ?? 8, lockedFrom: index.lockedFrom ?? 12 } };
 }
 
 /** Builds a level from its picture (none: drawn by hand) with `settings`; `save` writes the level, its preview and its
@@ -115,11 +115,17 @@ const api = {
         }
         return { rebuilt };
     },
-    'POST /api/order': async ({ levels }) => {
-        const known = (await readJson(INDEX, { levels: [] })).levels;
+    'POST /api/order': async ({ levels, split }) => {
+        const index = await readJson(INDEX, { levels: [] });
+        const known = index.levels;
         // Only reorders: every level stays, none is added by mistake.
         if (!Array.isArray(levels) || levels.length !== known.length || !levels.every((id) => known.includes(id))) throw new Error('Order must list every level once');
-        await writeJson(INDEX, { levels });
+        // The pacing (split levels: by number) stays as it is unless it's sent.
+        if (split !== undefined) {
+            if (!Array.isArray(split) || !split.every((k) => Number.isInteger(k) && k >= 1 && k <= levels.length)) throw new Error('Split: level numbers');
+            index.split = [...new Set(split)].sort((a, b) => a - b);
+        }
+        await writeJson(INDEX, { ...index, levels });
         return { ok: true };
     },
     'POST /api/upload': async ({ id, filename, data }) => {

@@ -20,7 +20,8 @@
       "x": 0,
       "z": -14,
       "width": 3.2,
-      "depth": 2.2
+      "depth": 2.2,
+      "kind": "golem"
     }
   ],
   "redRate": 4,
@@ -65,5 +66,15 @@
     }
   ],
   "kingAt": 100,
-  "redGiantEvery": 20
+  "redGiantEvery": 20,
+  "pushers": [
+    {
+      "x": 0,
+      "z": -18,
+      "width": 3.2,
+      "depth": 0.7,
+      "range": 3,
+      "seconds": 3.5
+    }
+  ]
 }

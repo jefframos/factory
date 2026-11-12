@@ -10,7 +10,7 @@
 //   - Grade all levels (the whole game, in the background: a minute or two).
 // Grading uses the editor's order and the level as it is now, saved or not.
 
-import { contextHash, gradeColour, gradeWord, levelHash } from './mob-grade-key.js';
+import { contextHash, gradeColour, gradeHolds, gradeWord, levelHash, loadoutKey } from './mob-grade-key.js';
 
 /** The robot players (game/sim/Grading.ts PROFILES), in the order shown. */
 const PROFILE_NAMES = {
@@ -75,12 +75,13 @@ export function createGrades({ el, api, toast, state, statusLine, onChange }) {
         const ids = order();
         const index = ids.indexOf(id);
         if (index < 0) return { grade, stale: 'it is in no zone now' };
-        if (index !== grade.index) return { grade, stale: `it moved: graded as level ${grade.index + 1}, now level ${index + 1}` };
         if (levelHash(state.levels.get(id)) !== grade.levelHash) return { grade, stale: 'it was edited since' };
-        if (settings && contextHash(index, ids.slice(0, index).map((other) => state.levels.get(other)), settings) !== grade.contextHash) {
-            return { grade, stale: 'the levels before it (rewards, houses) or the settings changed' };
-        }
-        return { grade, stale: null };
+        if (!settings) return { grade, stale: null };
+        const before = ids.slice(0, index).map((other) => state.levels.get(other));
+        if (gradeHolds(grade, state.levels.get(id), index, before, settings)) return { grade, stale: null };
+        // (A grade made before loadoutKey goes by its place; a newer one by what the player has there.)
+        if (!grade.loadoutKey && index !== grade.index) return { grade, stale: `it moved: graded as level ${grade.index + 1}, now level ${index + 1}` };
+        return { grade, stale: grade.loadoutKey ? 'what the player has by then changed (their story cards, or coins by more than a level or two\'s)' : 'the levels before it (rewards, houses) or the settings changed' };
     }
 
     /** The coloured badge with a level's grade (grey when it no longer holds; nothing if it's never been graded). */

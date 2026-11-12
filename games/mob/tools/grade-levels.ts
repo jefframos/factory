@@ -5,7 +5,9 @@
 //   node games/mob/tools/grade-run.mjs                 every level in the play order
 //   node games/mob/tools/grade-run.mjs first-steps …   just those (each graded where it is in the order)
 //   options: --changed (of all the levels, only those whose grade is missing or out of date: the level, those before it
-//            or the settings changed, or the grading itself did: --grader-hash, which grade-run.mjs passes),
+//            or the settings changed), --new-grader (with --changed: those graded by an older grader too, its code
+//            changed: --grader-hash, which grade-run.mjs passes; without it a code change doesn't regrade anything),
+//            --complete (all 6 profiles; by default a quick grade: QUICK_PROFILES, average, casual and newbie),
 //            --careers N (goes per profile, default 3), --workers N, --no-save, --json (progress lines for the editor),
 //            --state <file> (a JSON { zones?, levels?: { id: level } } used instead of what's on disk: the editor's
 //            unsaved order and level).
@@ -26,8 +28,8 @@ import * as path from 'path';
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
 import { BattleConfig } from '../game/data/MobConfig';
 import { PlayEntry, ZoneConfig, buildPlayList, loopedBattle } from '../game/data/LevelList';
-import { BattleRun, Go, MAX_TRIES, PROFILES, goScore, levelScore, loadoutAt, profileGrade, STRESS, stressRun, tryRun } from '../game/sim/Grading';
-import { contextHash, hashString, levelHash } from '../web/public/mob-grade-key.js';
+import { BattleRun, Go, MAX_TRIES, PROFILES, QUICK_PROFILES, goScore, levelScore, loadoutAt, profileGrade, STRESS, stressRun, tryRun } from '../game/sim/Grading';
+import { coinsAt, contextHash, gradeHolds, hashString, levelHash, loadoutKey } from '../web/public/mob-grade-key.js';
 
 interface Inputs { root: string; statePath?: string }
 /** A go: a level (its place in the play order) played by a profile, on its own luck. */
@@ -131,9 +133,12 @@ async function main(): Promise<void> {
     const careers = Math.max(1, Number(option('--careers') ?? 3));
     const workers = Math.max(1, Number(option('--workers') ?? Math.min(16, os.cpus().length - 2)));
     const named = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && ['--root', '--state', '--careers', '--workers', '--profiles', '--grader-hash'].includes(args[i - 1])));
-    // --profiles a,b: only those (for trying the robots out; a grade needs them all, so nothing's saved).
+    // --profiles a,b: only those (for trying the robots out; nothing's saved). Else a quick grade (QUICK_PROFILES), or
+    // with --complete all of them.
+    const complete = args.includes('--complete');
+    const newGrader = args.includes('--new-grader');
     const only = option('--profiles')?.split(',');
-    const profiles = only ? PROFILES.filter((p) => only.includes(p.id)) : PROFILES;
+    const profiles = only ? PROFILES.filter((p) => only.includes(p.id)) : complete ? PROFILES : PROFILES.filter((p) => QUICK_PROFILES.includes(p.id));
     if (only) args.push('--no-save');
     const { play, settings } = load(inputs);
     const say = (message: object): void => { if (json) console.log(`@@${JSON.stringify(message)}`); };
@@ -161,9 +166,12 @@ async function main(): Promise<void> {
         }
         const upToDate = (id: string, index: number): boolean => {
             const grade = stored[id];
-            return !!grade && grade.index === index && grade.levelHash === levelHash(play[index].config)
-                && grade.contextHash === contextHash(index, play.slice(0, index).map((e) => e.config), settings)
-                && (!graderHash || grade.graderHash === graderHash);
+            return gradeHolds(grade, play[index].config, index, play.slice(0, index).map((e) => e.config), settings)
+                // (The grader's code changed: only with --new-grader. A change to the battle or the robots doesn't
+                // regrade every untouched level on its own.)
+                && (!newGrader || !graderHash || grade.graderHash === graderHash)
+                // (A complete run grades again what only had a quick grade.)
+                && (!complete || grade.complete === true);
         };
         const changed = levels.filter(({ id, index }) => !upToDate(id, index));
         levels.splice(0, levels.length, ...changed);
@@ -175,7 +183,7 @@ async function main(): Promise<void> {
     }
     const total = jobs.length;
     say({ type: 'start', total, levels: levels.map((l) => l.id) });
-    if (!json) console.log(`Grading ${levels.length} level(s): ${profiles.length} profiles x ${careers} goes each, on ${workers} threads…`);
+    if (!json) console.log(`Grading ${levels.length} level(s), ${complete ? 'complete' : 'quick (--complete for all 6)'}: ${profiles.length} profiles x ${careers} goes each, on ${workers} threads…`);
 
     const goes = new Map<string, Go[]>();
     const left = new Map(levels.map((l) => [l.index, profilesAt(l.index).length * careers]));
@@ -193,9 +201,14 @@ async function main(): Promise<void> {
             index,
             levelHash: levelHash(entry.config),
             contextHash: contextHash(index, play.slice(0, index).map((e) => e.config), settings),
+            // What the player has there (moving the level a place or two keeps the grade unless this changes).
+            loadoutKey: loadoutKey(index, play.slice(0, index).map((e) => e.config), settings),
+            coins: coinsAt(play.slice(0, index).map((e) => e.config), settings),
             graderHash,
             score,
             at: new Date().toISOString(),
+            // All 6 profiles (--complete), or a quick grade's 3.
+            complete,
             careers,
             maxTries: MAX_TRIES,
             profiles: grades.map((p) => ({
@@ -342,8 +355,7 @@ function writeReport(root: string, play: PlayEntry[], settings: unknown, gradesF
     const at = new Date();
     const levels = play.map((entry, index) => {
         const grade = file.levels?.[entry.id];
-        const fresh = !!grade && grade.index === index && grade.levelHash === levelHash(entry.config)
-            && grade.contextHash === contextHash(index, play.slice(0, index).map((e) => e.config), settings);
+        const fresh = gradeHolds(grade, entry.config, index, play.slice(0, index).map((e) => e.config), settings);
         const config = loopedBattle(play, index).config;
         return {
             index, id: entry.id, name: config.name, kind: config.kind, zone: entry.zone.id, zoneName: entry.zone.name,
@@ -374,9 +386,13 @@ interface StoredGrade {
     index: number;
     levelHash: string;
     contextHash: string;
+    loadoutKey?: string;
+    coins?: number;
     /** The grading algorithm that made it (grade-run.mjs). */
     graderHash?: string;
     score: number;
     at: string;
+    /** Made by all 6 profiles (else a quick grade's 3). */
+    complete?: boolean;
     profiles: { id: string; score: number; firstWin: number; never: number; tries: number | null }[];
 }

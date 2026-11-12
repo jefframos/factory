@@ -35,7 +35,7 @@ import { ThreeScene } from 'core/scene/ThreeScene';
 import SetupThree from 'core/scene/SetupThree';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Board, Tile, dealDeck, dealSplit, hashString } from '../data/Board';
-import { LEVELS, LevelData, pixelsOf, deckOf } from '../data/Levels';
+import { LEVELS, LevelData, pixelsOf, deckOf, SPLIT_LEVELS, HIDDEN_FROM, LOCKED_FROM, FIRST_SPLIT } from '../data/Levels';
 import { AntSave } from '../data/AntSave';
 import { Background, FREE_DROP_CHANCE, currentBackground, levelReward, levelTier } from '../data/Shop';
 import { BOOSTERS, BoosterId } from '../ui/BoosterBelt';
@@ -48,7 +48,7 @@ import { LAYOUT } from '../world/Layout';
 import { vivid } from '../world/Vivid';
 import { AntHud } from '../ui/AntHud';
 import * as PIXI from 'pixi.js';
-import { label as kitLabel, roundButton } from '../ui/UiParts';
+import { iconSprite, label as kitLabel, roundButton } from '../ui/UiParts';
 import { AntAudio } from '../audio/AntAudio';
 import { RadialTransition } from '../ui/RadialTransition';
 import { AntEvents } from '../data/AntEvents';
@@ -61,25 +61,26 @@ export const floorColor = (): THREE.Color => new THREE.Color(currentBackground()
 const DEFAULT_COLUMNS = 4;
 /** Split levels: from which, how often after, how small each half's rack is drawn, where its middle is (world x, either
  *  side), its slots and columns. */
-const SPLIT = { from: 18, every: 3, scale: 0.8, x: 6.6, slots: 3, columns: 2 };
-const isSplit = (number: number): boolean => number >= SPLIT.from && (number - SPLIT.from) % SPLIT.every === 0;
+const SPLIT = { scale: 0.8, x: 6.6, slots: 3, columns: 2 };
+/** Which levels are split: levels/index.json's `split` (by level number: the pacing stays where it is when pictures move). */
+const isSplit = (number: number): boolean => SPLIT_LEVELS.has(number);
 /** The end, when every tile's taken and every ant sent (just ants walking home): they speed up to this, over this long. */
 const END_RUSH = { speed: 3, seconds: 0.6 };
 /** Obstacles: from which level, and which dealt tiles (k: their place in the deal). Hidden: from the second row on,
  *  every HIDDEN.every-th; locked: from the third row on, every LOCKED.every-th, opening once all but a row's tiles
  *  before it in the deal have been taken. */
-const HIDDEN = { level: 8, every: 3, offset: 1 };
-const LOCKED = { level: 12, every: 5, offset: 2 };
+const HIDDEN = { level: HIDDEN_FROM, every: 3, offset: 1 };
+const LOCKED = { level: LOCKED_FROM, every: 5, offset: 2 };
 /** Each mechanic's first appearance: its level, what the card says, — a power-up — which one (it's pointed out), and
  *  `when`: at the level's start, or once a tile's in a slot (pick up needs one to pick). */
 const INTRODUCTIONS: { level: number; key: string; booster?: BoosterId; name: string; text: string; when?: 'start' | 'slot' }[] = [
     { level: 3, key: 'slot', booster: 'slot', name: 'EXTRA SLOT', text: 'Every slot full? Tap this for a sixth one — once a level.' },
     { level: 4, key: 'shuffle', booster: 'shuffle', name: 'SHUFFLE', text: 'Mixes up every tile still waiting. Handy when the front row has nothing you can use.' },
-    { level: 6, key: 'pickup', booster: 'pickup', name: 'PICK UP', text: 'Tap it, then a tile in a slot: it goes back to the rack, with the ants it hasn\'t sent.', when: 'slot' },
-    { level: 8, key: 'hidden', name: 'HIDDEN TILES', text: 'Some tiles are face down. You\'ll see their colour when they reach the front row.' },
-    { level: 9, key: 'vacuum', booster: 'vacuum', name: 'VACUUM', text: 'Tap it, then a colour: every block of it comes off the picture, and its tiles go too.' },
-    { level: 12, key: 'locked', name: 'LOCKED TILES', text: 'A locked tile shows how many more tiles must go before it opens. Plan round it!' },
-    { level: SPLIT.from, key: 'split', name: 'SPLIT BOARD', text: 'Two anthills! Tiles on the left fetch only the left half\'s pixels, tiles on the right the right half\'s.' },
+    { level: 6, key: 'pickup', booster: 'pickup', name: 'HAMMER', text: 'Tap it, then a tile in a slot: it goes back to the rack, with the ants it hasn\'t sent.', when: 'slot' },
+    { level: HIDDEN_FROM, key: 'hidden', name: 'HIDDEN TILES', text: 'Some tiles are face down. You\'ll see their colour when they reach the front row.' },
+    { level: 9, key: 'vacuum', booster: 'vacuum', name: 'BOMB', text: 'Tap it, then a colour: every block of it comes off the picture, and its tiles go too.' },
+    { level: LOCKED_FROM, key: 'locked', name: 'LOCKED TILES', text: 'A locked tile shows how many more tiles must go before it opens. Plan round it!' },
+    { level: FIRST_SPLIT, key: 'split', name: 'SPLIT BOARD', text: 'Two anthills! Tiles on the left fetch only the left half\'s pixels, tiles on the right the right half\'s.' },
 ];
 
 /** A 'slot' introduction waits this long after the tile's put in (it hops onto the slot first). */
@@ -88,7 +89,7 @@ const INTRO_AFTER_TAP_MS = 700;
 /** What to tap, for a power-up waiting for its target. */
 const BOOSTER_HINTS: Partial<Record<BoosterId, string>> = {
     pickup: 'Tap a tile in a slot\nto put it back',
-    vacuum: 'Tap a colour\nto vacuum it all away',
+    vacuum: 'Tap a colour\nto blow it all away',
 };
 /** The tutorial: how long it waits after a tap before pointing at the next tile, how big its hole is (x a tile), and
  *  what it says. */
@@ -308,6 +309,8 @@ export default class AntScene extends ThreeScene {
 
     /** Sets up a level (also a restart): the picture, its dealt tiles, empty slots, no ants. */
     private loadLevel(index: number): void {
+        // Every level starts at normal speed (x2 is per level).
+        this.hud.resetSpeed();
         this.levelIndex = (index + LEVELS.length) % LEVELS.length;
         AntSave.selected = this.levelIndex;
         this.debug.level = this.levelIndex;
@@ -417,9 +420,13 @@ export default class AntScene extends ThreeScene {
         });
     }
 
-    /** An intro card's picture: the power-up's button, or the obstacle drawn small. */
+    /** An intro card's picture: the power-up's full-colour icon, big, or the obstacle drawn small. */
     private introPicture(key: string, booster?: BoosterId): PIXI.Container {
-        if (booster) return roundButton('Button_Round02_Blue', BOOSTERS.find((b) => b.id === booster)?.icon ?? 'PictoIcon_Plus_1', 110);
+        if (booster) {
+            const holder = new PIXI.Container();
+            holder.addChild(iconSprite(BOOSTERS.find((b) => b.id === booster)?.icon ?? 'Boost_Plus', 130));
+            return holder;
+        }
         const holder = new PIXI.Container();
         if (key === 'hidden') {
             holder.addChild(new PIXI.Graphics().beginFill(0x6b7088).drawRoundedRect(-54, -44, 108, 96, 22).endFill().beginFill(0x9aa1b8).drawRoundedRect(-54, -50, 108, 92, 22).endFill());
@@ -638,7 +645,7 @@ export default class AntScene extends ThreeScene {
                 });
             }
         }
-        this.hud.showMarkers(spots, 'PictoIcon_Hammer_Claw');
+        this.hud.showMarkers(spots, 'Boost_Hammer');
     }
 
     /** The waiting power-up put away (not spent): the game goes on. */

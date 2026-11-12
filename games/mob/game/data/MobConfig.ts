@@ -51,11 +51,11 @@ export function useField(config: BattleConfig): void {
 /** The shared feel: speeds, sizes, the cannon. The debug panel's sliders change these live. */
 export const TUNING = {
     /** Blue mobs a second at fire level 1, and how much each level adds (x level-1). */
-    fireRate: 5,
+    fireRate: 5.5,
     fireRatePerLevel: SETTINGS.upgrades.fire.perLevel,
     /** Units a second. */
-    blueSpeed: 4.2,
-    redSpeed: 3.2,
+    blueSpeed: 3.8,
+    redSpeed: 3.0,
     /** A mob's radius (world units): its spacing, and its reach in a fight (two radii). */
     radius: 0.4,
     /** The model's height on the field (applied live: the debug panel's Mob size). */
@@ -91,7 +91,7 @@ export const TUNING = {
     pushGiantWeight: 6,
     /** The cannon's energy: shots it holds at energy level 1, and how many more each level adds. Each shot uses one;
      *  empty, the cannon locks until it has fully recharged. */
-    energyCapacity: 40,
+    energyCapacity: 50,
     energyPerLevel: SETTINGS.upgrades.capacity.perLevel,
     /** Seconds to recharge from empty at recharge level 1, how much faster each level is, and the shortest it gets. */
     rechargeSeconds: 2,
@@ -306,7 +306,21 @@ export interface PushBlockConfig {
  * - `saucer` (the gold house): a gold saucer, flying straight at the enemy's main building, sucking up plain reds on its
  *   way, crashing into it for TUNING.saucerDamage.
  */
-export type HouseKind = 'giant' | 'bomb' | 'saucer' | 'car';
+/** The card units a house can make too: the card's own unit (its batch, look and pace), out of the house. */
+export const CHARACTER_HOUSES = ['skeletons', 'warriors', 'golem', 'bats', 'turtle', 'giant-green', 'giant-viking'] as const;
+export type CharacterHouse = (typeof CHARACTER_HOUSES)[number];
+export type HouseKind = 'giant' | 'bomb' | 'saucer' | 'car' | CharacterHouse;
+/** A card unit's house (none in ui/units.json: these are its settings): blues per batch, its floor pad's colour, its title. */
+export const CHARACTER_HOUSE: Record<CharacterHouse, { need: number; pad: string; title: string }> = {
+    skeletons: { need: 20, pad: '#d9d4c7', title: 'SKELETONS' },
+    warriors: { need: 22, pad: '#8a8f99', title: 'WARRIORS' },
+    golem: { need: 34, pad: '#8a6f55', title: 'GOLEM' },
+    bats: { need: 18, pad: '#7a4fc0', title: 'BATS' },
+    turtle: { need: 30, pad: '#3fae6a', title: 'TURTLE' },
+    'giant-green': { need: 26, pad: '#4cdc6a', title: 'ARMORED' },
+    'giant-viking': { need: 26, pad: '#ff8a3d', title: 'VIKING' },
+};
+export const isCharacterHouse = (kind: string | undefined): kind is CharacterHouse => (CHARACTER_HOUSES as readonly string[]).includes(kind ?? '');
 
 /** A helmet barrier: a span across the field at a z (`width` wide, centred on x); blues going through get a helmet. */
 export interface HelmetConfig {
@@ -381,6 +395,8 @@ export interface BattleConfig {
     redRamp: number;
     /** A red giant comes out of the base this often (seconds; 0 = never). */
     redGiantEvery?: number;
+    /** Can't be lost (the first level): a red reaching the line just vanishes. */
+    safe?: boolean;
     /** A boss level: once the enemy's HP left (all its targets') is down to this, it sends out the Giant King, once: a red
      *  giant in viking horns (a viking: double damage) with TUNING.kingHp times a red giant's hits. Unset: none. */
     kingAt?: number;
@@ -462,6 +478,14 @@ export interface UnitSettings {
     body?: number;
 }
 export const UNITS = unitsFile as Record<HouseKind, UnitSettings>;
+// The card units' houses: a floor pad in its colour; the unit's card stats at level 1.
+for (const kind of CHARACTER_HOUSES) {
+    const card = SETTINGS.cards[kind];
+    UNITS[kind] ??= {
+        style: 'pad', pad: CHARACTER_HOUSE[kind].pad, tint: '#ffffff', wall: '#e8f1ff', roof: CHARACTER_HOUSE[kind].pad,
+        need: CHARACTER_HOUSE[kind].need, hp: card?.hp?.[0], damage: card?.damage?.[0] ?? 10,
+    };
+}
 
 const hex = (colour: string | undefined, fallback: number): number => (colour ? parseInt(colour.replace('#', ''), 16) : fallback);
 

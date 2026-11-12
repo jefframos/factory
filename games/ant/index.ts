@@ -21,6 +21,7 @@ import { AntAudio } from './game/audio/AntAudio';
 import { RadialTransition } from './game/ui/RadialTransition';
 import { AntSave } from './game/data/AntSave';
 import { LEVELS } from './game/data/Levels';
+import { AntAds } from './game/data/AntAds';
 
 type PlatformConfigEntry = { gameId?: string; enableAds?: boolean };
 
@@ -56,6 +57,8 @@ export default class AntGame extends Game {
             PlatformHandler.GAME_ID = config?.gameId || '';
             PlatformHandler.ENABLE_VIDEO_ADS = config?.enableAds ?? true;
             await PlatformHandler.instance.initialize(await getPlatformInstance(platformName));
+            // The player's progress from the platform (YouTube Playables keeps only its own save).
+            await AntSave.init();
             PlatformHandler.instance.platform.startLoad();
             // The debug panels: only with ?dev=1 / ?debug=1 (as UFO's), not just for being on the dev server.
             DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'ant');
@@ -87,11 +90,11 @@ export default class AntGame extends Game {
     }
 
     /** Covers the screen (RadialTransition: where it's going), swaps the scene underneath, opens on it. */
-    private travel(title: string, subtitle: string, withPicture: boolean, swap: () => void): void {
+    private travel(title: string, subtitle: string, withPicture: boolean, swap: () => void, during?: () => Promise<void>): void {
         if (this.travelling) return;
         this.travelling = true;
         const level = LEVELS[Math.max(0, Math.min(AntSave.selected, LEVELS.length - 1))];
-        void RadialTransition.go(this, title, subtitle, withPicture ? level ?? null : null, swap).then(() => {
+        void RadialTransition.go(this, title, subtitle, withPicture ? level ?? null : null, swap, during).then(() => {
             this.travelling = false;
         });
     }
@@ -99,7 +102,8 @@ export default class AntGame extends Game {
     /** To the game, at the level the main screen shows (the transition shows its picture). */
     private playLevel(): void {
         const index = Math.max(0, Math.min(AntSave.selected, LEVELS.length - 1));
-        this.travel(`LEVEL ${index + 1}`, (LEVELS[index]?.name ?? '').toUpperCase(), true, () => this.showGame());
+        // A commercial break on the way in too (the screen covered), as between levels (AntAds: its pacing).
+        this.travel(`LEVEL ${index + 1}`, (LEVELS[index]?.name ?? '').toUpperCase(), true, () => this.showGame(), () => AntAds.between());
     }
 
     /** The debug panel's data tools (dev server, or ?dev=1): coins to spend, and a fresh start. */

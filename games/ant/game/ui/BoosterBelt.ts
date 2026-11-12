@@ -1,14 +1,15 @@
 // BoosterBelt.ts
 //
-// The item belt along the bottom of the screen, like the reference (shown once the first power-up's unlocked: AntHud): a blue checked cloth with round buttons on it, one
-// per power-up, each with a green count badge — the UI pack's blue round button and white icons (UiParts). A power-up
-// unlocks at its level (BOOSTERS): before that it's a dark button with a padlock and its level. The badge is how many
+// The item belt along the bottom of the screen, like the reference (shown once the first power-up's unlocked: AntHud): a
+// cream and peach checked cloth (the game's cozy colours) with round buttons on it, one per power-up — warm orange
+// circles with the pack's white icons (UiParts circleButton) — each with a green count badge. A power-up unlocks at its
+// level (BOOSTERS): before that it's a brown circle with a padlock and its level. The badge is how many
 // the player has (AntSave: bought in the power-ups' shop); none, a VIDEO badge instead (a rewarded video for one). Only the extra slot does something for now
 // (once a level); the others are there, waiting for their effect (tapping one gives a little bounce).
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
-import { buttonParts, framePlane, iconSprite, label, roundButton } from './UiParts';
+import { COZY, buttonParts, circleButton, iconSprite, label } from './UiParts';
 import { AntAudio } from '../audio/AntAudio';
 import { AntSave } from '../data/AntSave';
 
@@ -18,16 +19,19 @@ export type BoosterId = 'slot' | 'shuffle' | 'pickup' | 'vacuum';
  *  shuffle (the tiles not taken yet, mixed), pick up (a slot's tile back to the rack), vacuum (every block of a colour,
  *  gone). */
 export const BOOSTERS: { id: BoosterId; icon: string; unlock: number }[] = [
-    { id: 'slot', icon: 'PictoIcon_Plus_1', unlock: 3 },
-    { id: 'shuffle', icon: 'PictoIcon_Change', unlock: 4 },
-    { id: 'pickup', icon: 'PictoIcon_Hammer_Claw', unlock: 6 },
-    { id: 'vacuum', icon: 'PictoIcon_Bomb_1', unlock: 9 },
+    // (Their icons: library3d/2d/icons2, trimmed and made 160 px: raw-assets/images/ui{tps}/Boost_*.)
+    { id: 'slot', icon: 'Boost_Plus', unlock: 3 },
+    { id: 'shuffle', icon: 'Boost_Shuffle', unlock: 4 },
+    { id: 'pickup', icon: 'Boost_Hammer', unlock: 6 },
+    { id: 'vacuum', icon: 'Boost_Bomb', unlock: 9 },
 ];
 
 /** Design units (720 wide): a button's size, the gap between button middles, the cloth's height and checks, the badge. */
 const BUTTON = 80;
 const GAP = 124;
-const CLOTH = { height: 112, square: 22, light: 0x7397dc, dark: 0x6488d0, line: 0x2b2d4d };
+const CLOTH = { height: 112, square: 22, light: 0xf6e2c4, dark: 0xecd0a8, line: 0x9a6440 };
+/** A locked power-up's circle. */
+const LOCKED_COLOUR = 0x8a6447;
 const BADGE = { size: 30, x: 27, y: 25, color: 0x4cc23a, text: 18 };
 const LOCK = { icon: 34, iconY: -8, text: 13, textY: 22 };
 /** The VIDEO pill under a button with none left. */
@@ -65,15 +69,16 @@ export class BoosterBelt extends PIXI.Container {
 
     private buildButton(id: BoosterId, icon: string, unlock: number): BeltButton {
         const holder = new PIXI.Container();
-        const open = roundButton('Button_Round02_Blue', icon, BUTTON);
-        // Locked: the dark button, a padlock, and the level it opens at.
+        // (The icons are full colour: a light face under them.)
+        const open = circleButton(icon, BUTTON, COZY.powerFace, BUTTON * 0.72);
+        // Locked: a brown circle, a padlock, and the level it opens at.
         const locked = new PIXI.Container();
-        const dark = framePlane('Button_Round03_Dark', BUTTON, BUTTON, BUTTON / 110);
-        dark.position.set(-BUTTON / 2, -BUTTON / 2);
-        const padlock = iconSprite('Icon_Lock01_l', LOCK.icon);
+        const dark = circleButton('', BUTTON, LOCKED_COLOUR);
+        // (The small padlock: the big one shrunk this much in the game gets jagged.)
+        const padlock = iconSprite('Icon_Lock01_s', LOCK.icon);
         padlock.y = LOCK.iconY;
         const level = label(LOCK.text);
-        level.text = `LEVEL ${unlock}`;
+        level.text = `LVL ${unlock}`;
         level.y = LOCK.textY;
         locked.addChild(dark, padlock, level);
         // A green badge, bottom right, with how many are left.

@@ -1,13 +1,14 @@
 // IntroCard.ts
 //
-// A new mechanic's first appearance (AntScene): the screen dims and the pack's blue popup pops in — NEW POWER-UP! or
-// NEW OBSTACLE!, its picture, its name, a line or two of how it works, and GOT IT.
+// A new mechanic's first appearance (AntScene): the screen dims and a popup pops in (as Mob's, in the game's cozy colours:
+// a warm framed box with the moving pattern in it) — NEW POWER-UP! or NEW OBSTACLE!, its picture, its name, a line or
+// two of how it works, and GOT IT.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { AntAudio } from '../audio/AntAudio';
-import { DARK, buttonParts, dimmer, framePlane, label, plainLabel, tappable } from './UiParts';
+import { COZY, DARK, buttonParts, dimmer, label, plainLabel, popupBox, tappable } from './UiParts';
 
 /** Design units: the card, where its pieces sit (y from its middle). */
 const CARD = { width: 480, height: 460, scale: 0.9, headingY: -192, pictureY: -74, nameY: 26, textY: 96, textWidth: 400, buttonY: 178 };
@@ -19,8 +20,7 @@ export class IntroCard extends PIXI.Container {
     /** `heading` (NEW POWER-UP!), its `picture` (about 110 across, centred), `name`, `text`; `onDone` from GOT IT. */
     public constructor(heading: string, picture: PIXI.Container, name: string, text: string, private readonly onDone: () => void) {
         super();
-        const back = framePlane('Popup04_Topber_Single', CARD.width, CARD.height, CARD.scale);
-        back.position.set(-CARD.width / 2, -CARD.height / 2);
+        const back = popupBox(CARD.width, CARD.height);
         const title = label(30);
         title.text = heading;
         title.y = CARD.headingY;
@@ -51,7 +51,7 @@ export class IntroCard extends PIXI.Container {
     public reposition(): void {
         const screen = Game.overlayScreenData;
         if (!screen) return;
-        this.dim.clear().beginFill(0x10123a, 0.6).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
+        this.dim.clear().beginFill(COZY.dim, 0.6).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
         this.panel.position.set(screen.center.x, screen.center.y);
     }
 

@@ -20,7 +20,7 @@
 //     (`cardForget`) — the giant, the truck and the car where they're needed most, the UFO straight away.
 
 import { Battle, BLUE, RED } from '../battle/Battle';
-import { ARENA, BattleConfig, TUNING, UNITS, needOf } from '../data/MobConfig';
+import { ARENA, BattleConfig, HouseKind, TUNING, UNITS, needOf } from '../data/MobConfig';
 import { CardKind, cardStat } from '../data/Settings';
 
 export interface Skill {
@@ -329,7 +329,7 @@ export class Robot {
             },
             giant: (team, _x, _z, kind, card) => {
                 if (team !== BLUE) return;
-                const unit = card === 'bomb' ? 'bomb' : kind === 3 ? 'car' : kind === -1 ? 'saucer' : 'giant';
+                const unit: HouseKind = card && card in UNITS ? (card as HouseKind) : kind === 3 ? 'car' : kind === -1 ? 'saucer' : 'giant';
                 made += UNITS[unit].damage * PROBE.house;
             },
         });

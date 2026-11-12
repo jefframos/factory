@@ -39,7 +39,7 @@ import { CrowdView } from '../battle/CrowdView';
 import { Arena } from '../battle/Arena';
 import { MobHud } from '../ui/MobHud';
 import { applyBend, bendDrop, updateBend } from '../services/Bend';
-import { CARD_KINDS, CardKind, SETTINGS, cardStat } from '../data/Settings';
+import { CARD_KINDS, CardKind, SETTINGS, cardStat, STORY_CARDS, storyCardsBy } from '../data/Settings';
 import { ArenaConfig, arenaBattle } from '../data/ArenaConfig';
 import { ARENAS_BY_ID, arenaFor } from '../data/Arenas';
 import { Ladder, Opponent, SkillId, opponentFor, tierBadge, tierFor } from '../data/ArenaLadder';
@@ -645,7 +645,6 @@ export default class MobScene extends ThreeScene {
             if (this.torndown) return;
             this.hud.showEnd({
                 won, reward, upgrades: this.upgradeViews(), coins: MobSave.coins, newCards, copies,
-                homeCall: !this.pinned.config && arenaFor(MobSave.battle + 1, MobSave.bestTrophies).open && !MobSave.arenaTutorial,
                 home: MobSave.homeOpen,
                 area: areaProgress(MobSave.selected),
                 finished: finished ? { zone: finished.zone, number: finished.number, total: finished.total } : null,
@@ -827,7 +826,7 @@ export default class MobScene extends ThreeScene {
     private charactersNeeded(): number[] {
         const kinds = new Set<CardKind>(this.cards.map((card) => card.kind));
         // A house making a character's unit (a bomb house).
-        for (const pad of this.battle.config.pads ?? []) if (pad.kind === 'bomb') kinds.add('bomb');
+        for (const pad of this.battle.config.pads ?? []) if (pad.kind && CHARACTER_CARDS[pad.kind as CardKind]) kinds.add(pad.kind as CardKind);
         if (this.duel) for (const kind of Object.keys(this.duel.opponent.cards) as CardKind[]) kinds.add(kind);
         return [...kinds].map((kind) => CHARACTER_CARDS[kind]?.look ?? 0).filter((look) => look > 0);
     }
@@ -835,21 +834,27 @@ export default class MobScene extends ThreeScene {
     /** The battle's cards: the player's battle deck (the CARDS tab's: up to DECK_SIZE; HAND of them in hand, the rest
      *  waiting their turn), none charged. */
     private dealCards(_config: BattleConfig): void {
-        const deck = MobSave.deck;
-        this.cards = deck.map((kind) => ({ kind, charge: 0 }));
+        this.cards = this.handKinds().map((kind) => ({ kind, charge: 0 }));
         this.showHand();
     }
 
+    /** What a battle deals: versus, both rows of the deck; the story, its first row (its story cards, as the player put
+     *  them). */
+    private handKinds(): CardKind[] {
+        return this.duel ? MobSave.deck : MobSave.storyDeck;
+    }
+
     /**
-     * A win: each unit with a house in the level gets its card, the first time (the end card reveals it). A level
-     * pinned by the URL or the editor gives nothing.
+     * A story win: the story cards its progress has reached (STORY_CARDS: one at level 5, 10, 15, 20), the first time (the
+     * end card reveals it; one missed is given at the next win). Houses don't give cards. A level pinned by the URL or
+     * the editor gives nothing.
      */
-    private unlockCards(config: BattleConfig): CardKind[] {
-        if (this.pinned.config) return [];
+    private unlockCards(_config: BattleConfig): CardKind[] {
+        if (this.pinned.config || this.duel) return [];
+        const won = Math.max(MobSave.battle, MobSave.selected + 1);
         const fresh: CardKind[] = [];
-        for (const pad of config.pads ?? []) {
-            const kind = (pad.kind ?? 'giant') as CardKind;
-            if (CARD_KINDS.includes(kind) && !fresh.includes(kind) && MobSave.unlockCard(kind)) {
+        for (const kind of storyCardsBy(won)) {
+            if (MobSave.unlockCard(kind)) {
                 fresh.push(kind);
                 MobEvents.cardUnlock(kind);
             }
@@ -1141,7 +1146,7 @@ export default class MobScene extends ThreeScene {
                 persist: false,
                 onChange: (on: boolean) => {
                     MobSave.setCard(kind, on);
-                    this.cards = MobSave.deck.map((k) => this.cards.find((card) => card.kind === k) ?? { kind: k, charge: 0 });
+                    this.cards = this.handKinds().map((k) => this.cards.find((card) => card.kind === k) ?? { kind: k, charge: 0 });
                     this.showHand();
                 },
             });

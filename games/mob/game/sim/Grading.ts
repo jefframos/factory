@@ -20,7 +20,7 @@
 import { Battle } from '../battle/Battle';
 import { BattleConfig, RETRY_EASE, UPGRADES, UpgradeKind, easedConfig, useField } from '../data/MobConfig';
 import { PlayEntry, loopedBattle } from '../data/LevelList';
-import { CARD_KINDS, CardKind, SETTINGS } from '../data/Settings';
+import { CARD_KINDS, CardKind, SETTINGS, storyCardsBy } from '../data/Settings';
 import { Robot, RobotCard, Skill } from './Robot';
 
 export const SKILLS: Record<'pro' | 'average' | 'casual' | 'newbie', Skill> = {
@@ -52,6 +52,10 @@ export const PROFILES: Profile[] = [
     { id: 'newbie', name: 'Newbie, never upgrades', skill: SKILLS.newbie, spend: 0, weight: 0.1, upTo: 10 },
 ];
 
+/** A quick grade's profiles (the default: about half the time): the players most like the real ones. A complete grade
+ *  (`--complete`) plays all of PROFILES. */
+export const QUICK_PROFILES = ['average', 'casual', 'newbie'];
+
 /** What a profile has at a level: its coins by then, what it spent, its upgrades' levels and its cards'. */
 export interface Loadout {
     coins: number;
@@ -69,11 +73,9 @@ export function loadoutAt(play: readonly PlayEntry[], index: number, spend: numb
     for (let k = 0; k < index; k++) {
         const config = loopedBattle(play, k).config;
         coins += config.reward;
-        for (const pad of config.pads ?? []) {
-            const kind = (pad.kind ?? 'giant') as CardKind;
-            if (CARD_KINDS.includes(kind)) owned.add(kind);
-        }
     }
+    // The story's cards, as its wins give them (STORY_CARDS): `index` levels won by battle `index`.
+    for (const kind of storyCardsBy(index)) owned.add(kind);
     const levels: Record<UpgradeKind, number> = { fire: 1, capacity: 1, recharge: 1 };
     const cards: Partial<Record<CardKind, number>> = Object.fromEntries([...owned].map((kind) => [kind, 1]));
     let budget = Math.floor(coins * Math.max(0, Math.min(1, spend)));
