@@ -10,6 +10,7 @@
         "mow",
         "tower",
         "mob",
+        "restaurant",
         "ufo"
     ],
     "names": {
@@ -22,6 +23,7 @@
         "mow": "Mow",
         "ufo": "UFO.io",
         "hex": "Hex Merge",
-        "tower": "Block Tower"
+        "tower": "Block Tower",
+        "restaurant": "Restaurant"
     }
 }
