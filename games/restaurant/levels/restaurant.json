@@ -1,0 +1,747 @@
+{
+  "name": "Restaurant",
+  "stages": [
+    "Food Truck",
+    "Small Diner",
+    "Diner",
+    "Restaurant"
+  ],
+  "customer": {
+    "outside": {
+      "x": 2,
+      "z": 14
+    },
+    "inside": {
+      "x": 2,
+      "z": 8
+    }
+  },
+  "stations": [
+    {
+      "id": "burger",
+      "kind": "burger",
+      "name": "Burger station",
+      "x": 0,
+      "z": 0,
+      "pieces": [
+        {
+          "role": "counter",
+          "model": "kitchencounter_straight_A",
+          "x": 1,
+          "z": 0,
+          "rotationY": 3.1416
+        },
+        {
+          "role": "counter",
+          "model": "kitchencounter_straight_A",
+          "x": -1,
+          "z": 0,
+          "rotationY": 3.1416
+        },
+        {
+          "role": "counter",
+          "model": "kitchencounter_straight_B",
+          "x": -1,
+          "z": -2.25,
+          "rotationY": 0
+        },
+        {
+          "role": "counter",
+          "model": "kitchencounter_straight_B",
+          "x": 1,
+          "z": -2.25,
+          "rotationY": 0
+        },
+        {
+          "role": "stove",
+          "model": "stove_single_countertop",
+          "x": -1,
+          "z": 0,
+          "rotationY": 3.1416
+        },
+        {
+          "role": "pan",
+          "x": -1,
+          "z": 0.1,
+          "rotationY": 3.1416
+        },
+        {
+          "role": "plate",
+          "x": 1,
+          "z": -0.15
+        },
+        {
+          "role": "served",
+          "x": 1,
+          "z": 0.8
+        },
+        {
+          "role": "customer",
+          "x": 1,
+          "z": 2.1
+        },
+        {
+          "role": "pile",
+          "piece": "bunBottom",
+          "x": 1.33,
+          "z": -1.75
+        },
+        {
+          "role": "pile",
+          "piece": "bunTop",
+          "x": 0,
+          "z": -1.75
+        },
+        {
+          "role": "pile",
+          "piece": "patty",
+          "x": -1.33,
+          "z": -1.75
+        },
+        {
+          "role": "pile",
+          "piece": "cheese",
+          "x": 1.33,
+          "z": -2.75
+        },
+        {
+          "role": "pile",
+          "piece": "lettuce",
+          "x": 0,
+          "z": -2.75
+        },
+        {
+          "role": "pile",
+          "piece": "tomato",
+          "x": -1.33,
+          "z": -2.75
+        },
+        {
+          "role": "decor",
+          "model": "ketchup",
+          "x": 1.75,
+          "z": -0.8
+        },
+        {
+          "role": "decor",
+          "model": "mustard",
+          "x": 1.75,
+          "z": 0.6
+        }
+      ],
+      "cameras": {
+        "order": {
+          "position": {
+            "x": 1,
+            "y": 4.5,
+            "z": -4.89
+          },
+          "target": {
+            "x": 1,
+            "y": 1.55,
+            "z": 1.6
+          },
+          "fov": 40
+        },
+        "bench": {
+          "position": {
+            "x": 0,
+            "y": 8.25,
+            "z": -7.52
+          },
+          "target": {
+            "x": 0,
+            "y": 1,
+            "z": -1.3
+          },
+          "fov": 40
+        }
+      }
+    }
+  ],
+  "setups": {
+    "room": {
+      "height": 3,
+      "thickness": 0.25,
+      "doorHeight": 2.4,
+      "tallDoorHeight": 2.8,
+      "windowHeight": 1.3
+    },
+    "truck": {
+      "height": 2.2,
+      "thickness": 0.18,
+      "doorHeight": 2,
+      "tallDoorHeight": 2.1,
+      "windowHeight": 1.5
+    }
+  },
+  "styles": {
+    "walls": {
+      "truck": {
+        "name": "Food truck",
+        "bottomColor": "#e8483f",
+        "topColor": "#fff4e4",
+        "bottomHeight": 0.9
+      },
+      "diner": {
+        "name": "Diner",
+        "bottomColor": "#b8794a",
+        "topColor": "#fbe9d0",
+        "bottomHeight": 1
+      },
+      "diner2": {
+        "name": "Diner (green)",
+        "bottomColor": "#4c9a6a",
+        "topColor": "#fdf3e1",
+        "bottomHeight": 1
+      },
+      "restaurant": {
+        "name": "Restaurant",
+        "bottomColor": "#2f4a7a",
+        "topColor": "#ffffff",
+        "bottomHeight": 1.1
+      }
+    },
+    "floors": {
+      "street": {
+        "name": "Street",
+        "colorA": "#6b6f78",
+        "colorB": "#71757e",
+        "scale": 2
+      },
+      "pavement": {
+        "name": "Pavement",
+        "colorA": "#d9d2c5",
+        "colorB": "#cdc5b6",
+        "scale": 1
+      },
+      "truck": {
+        "name": "Truck",
+        "colorA": "#e9e9e9",
+        "colorB": "#cfcfcf",
+        "scale": 1
+      },
+      "diner": {
+        "name": "Diner",
+        "colorA": "#fff4e4",
+        "colorB": "#d9a877",
+        "scale": 1
+      },
+      "diner2": {
+        "name": "Diner (checker)",
+        "colorA": "#ffffff",
+        "colorB": "#3a3f48",
+        "scale": 1
+      },
+      "restaurant": {
+        "name": "Restaurant",
+        "colorA": "#f4ede2",
+        "colorB": "#c9b9a0",
+        "scale": 1.5
+      }
+    },
+    "doors": {
+      "glass": {
+        "name": "Sliding glass",
+        "color": "#9fd8ff",
+        "opacity": 0.35
+      }
+    }
+  },
+  "floors": [
+    {
+      "x": 0,
+      "z": 4,
+      "width": 44,
+      "depth": 44,
+      "tileSize": 1,
+      "style": "street"
+    },
+    {
+      "x": 0,
+      "z": 3.2,
+      "width": 30,
+      "depth": 5,
+      "tileSize": 1,
+      "style": "pavement",
+      "until": 1,
+      "elevation": 0.004
+    },
+    {
+      "x": 0,
+      "z": -1.27,
+      "width": 5.2,
+      "depth": 5.25,
+      "tileSize": 0.5,
+      "style": "truck",
+      "until": 1,
+      "elevation": 0.008
+    },
+    {
+      "x": 0,
+      "z": 2.95,
+      "width": 12,
+      "depth": 15.1,
+      "tileSize": 1,
+      "style": "diner",
+      "from": 1,
+      "until": 2,
+      "elevation": 0.006
+    },
+    {
+      "x": 0,
+      "z": 3.2,
+      "width": 15,
+      "depth": 15.6,
+      "tileSize": 1,
+      "style": "diner2",
+      "from": 2,
+      "until": 3,
+      "elevation": 0.006
+    },
+    {
+      "x": 0,
+      "z": 3.7,
+      "width": 18,
+      "depth": 16.6,
+      "tileSize": 1,
+      "style": "restaurant",
+      "from": 3,
+      "elevation": 0.006
+    }
+  ],
+  "walls": [
+    {
+      "until": 1,
+      "style": "truck",
+      "setup": "truck",
+      "closed": true,
+      "points": [
+        {
+          "x": -2.6,
+          "z": -3.9
+        },
+        {
+          "x": 2.6,
+          "z": -3.9
+        },
+        {
+          "x": 2.6,
+          "z": 1.35
+        },
+        {
+          "x": -2.6,
+          "z": 1.35
+        }
+      ],
+      "openings": [
+        {
+          "kind": "window",
+          "minX": -2.35,
+          "maxX": 2.35,
+          "minZ": 1.2,
+          "maxZ": 1.5
+        }
+      ]
+    },
+    {
+      "from": 1,
+      "until": 2,
+      "style": "diner",
+      "setup": "room",
+      "closed": true,
+      "points": [
+        {
+          "x": -6,
+          "z": -4.6
+        },
+        {
+          "x": 6,
+          "z": -4.6
+        },
+        {
+          "x": 6,
+          "z": 10.5
+        },
+        {
+          "x": -6,
+          "z": 10.5
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "sliding": true,
+          "style": "glass",
+          "minX": 1,
+          "maxX": 3,
+          "minZ": 10.3,
+          "maxZ": 10.7
+        },
+        {
+          "kind": "window",
+          "minX": -6.2,
+          "maxX": -5.8,
+          "minZ": 3,
+          "maxZ": 7
+        },
+        {
+          "kind": "window",
+          "minX": 5.8,
+          "maxX": 6.2,
+          "minZ": 3,
+          "maxZ": 7
+        }
+      ]
+    },
+    {
+      "from": 2,
+      "until": 3,
+      "style": "diner2",
+      "setup": "room",
+      "closed": true,
+      "points": [
+        {
+          "x": -7.5,
+          "z": -4.6
+        },
+        {
+          "x": 7.5,
+          "z": -4.6
+        },
+        {
+          "x": 7.5,
+          "z": 11
+        },
+        {
+          "x": -7.5,
+          "z": 11
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "sliding": true,
+          "double": true,
+          "style": "glass",
+          "minX": 0.6,
+          "maxX": 3.4,
+          "minZ": 10.8,
+          "maxZ": 11.2
+        },
+        {
+          "kind": "window",
+          "minX": -7.7,
+          "maxX": -7.3,
+          "minZ": 1.5,
+          "maxZ": 4.5
+        },
+        {
+          "kind": "window",
+          "minX": -7.7,
+          "maxX": -7.3,
+          "minZ": 6.5,
+          "maxZ": 9.5
+        },
+        {
+          "kind": "window",
+          "minX": 7.3,
+          "maxX": 7.7,
+          "minZ": 1.5,
+          "maxZ": 4.5
+        },
+        {
+          "kind": "window",
+          "minX": 7.3,
+          "maxX": 7.7,
+          "minZ": 6.5,
+          "maxZ": 9.5
+        }
+      ]
+    },
+    {
+      "from": 3,
+      "style": "restaurant",
+      "setup": "room",
+      "closed": true,
+      "points": [
+        {
+          "x": -9,
+          "z": -4.6
+        },
+        {
+          "x": 9,
+          "z": -4.6
+        },
+        {
+          "x": 9,
+          "z": 12
+        },
+        {
+          "x": -9,
+          "z": 12
+        }
+      ],
+      "openings": [
+        {
+          "kind": "door",
+          "sliding": true,
+          "double": true,
+          "style": "glass",
+          "minX": 0.6,
+          "maxX": 3.4,
+          "minZ": 11.8,
+          "maxZ": 12.2
+        },
+        {
+          "kind": "window",
+          "minX": -7,
+          "maxX": -1,
+          "minZ": 11.8,
+          "maxZ": 12.2
+        },
+        {
+          "kind": "window",
+          "minX": 5,
+          "maxX": 8,
+          "minZ": 11.8,
+          "maxZ": 12.2
+        },
+        {
+          "kind": "window",
+          "minX": -9.2,
+          "maxX": -8.8,
+          "minZ": 2,
+          "maxZ": 9
+        },
+        {
+          "kind": "window",
+          "minX": 8.8,
+          "maxX": 9.2,
+          "minZ": 2,
+          "maxZ": 9
+        }
+      ]
+    }
+  ],
+  "props": [
+    {
+      "model": "table_round_A_small_decorated",
+      "x": -4.5,
+      "z": 4.5,
+      "rotationY": 0,
+      "from": 0,
+      "until": 1
+    },
+    {
+      "model": "chair_A",
+      "x": -3.6,
+      "z": 5.82,
+      "rotationY": 3.7416,
+      "from": 0,
+      "until": 1
+    },
+    {
+      "model": "chair_A",
+      "x": -5.4,
+      "z": 3.18,
+      "rotationY": 6.8832,
+      "from": 0,
+      "until": 1
+    },
+    {
+      "model": "menu",
+      "x": -3.2,
+      "z": 1.9,
+      "rotationY": 0.4,
+      "from": 0,
+      "until": 1
+    },
+    {
+      "model": "crate_buns",
+      "x": 3.4,
+      "z": -2.6,
+      "rotationY": 0.2,
+      "from": 0,
+      "until": 1
+    },
+    {
+      "model": "crate_tomatoes",
+      "x": 3.4,
+      "z": -1.4,
+      "rotationY": -0.15,
+      "from": 0,
+      "until": 1
+    },
+    {
+      "model": "crate_lettuce",
+      "x": 3.5,
+      "z": -0.2,
+      "rotationY": 0.1,
+      "from": 0,
+      "until": 1
+    },
+    {
+      "model": "table_round_A_decorated",
+      "x": -3.6,
+      "z": 5.4,
+      "rotationY": 0,
+      "from": 1
+    },
+    {
+      "model": "chair_A",
+      "x": -3.6,
+      "z": 7,
+      "rotationY": 3.1416,
+      "from": 1
+    },
+    {
+      "model": "chair_A",
+      "x": -2.21,
+      "z": 4.6,
+      "rotationY": 5.236,
+      "from": 1
+    },
+    {
+      "model": "chair_A",
+      "x": -4.99,
+      "z": 4.6,
+      "rotationY": 7.3304,
+      "from": 1
+    },
+    {
+      "model": "menu",
+      "x": -4.8,
+      "z": 1.6,
+      "rotationY": 0.5,
+      "from": 1
+    },
+    {
+      "model": "table_round_A_decorated",
+      "x": 3.9,
+      "z": 5.6,
+      "rotationY": 0,
+      "from": 2
+    },
+    {
+      "model": "chair_A",
+      "x": 4.52,
+      "z": 7.07,
+      "rotationY": 3.5416,
+      "from": 2
+    },
+    {
+      "model": "chair_A",
+      "x": 4.86,
+      "z": 4.32,
+      "rotationY": 5.636,
+      "from": 2
+    },
+    {
+      "model": "chair_A",
+      "x": 2.31,
+      "z": 5.4,
+      "rotationY": 7.7304,
+      "from": 2
+    },
+    {
+      "model": "table_round_A_decorated",
+      "x": -3.6,
+      "z": 8.6,
+      "rotationY": 0,
+      "from": 2
+    },
+    {
+      "model": "chair_A",
+      "x": -2.35,
+      "z": 9.59,
+      "rotationY": 4.0416,
+      "from": 2
+    },
+    {
+      "model": "chair_A",
+      "x": -3.37,
+      "z": 7.02,
+      "rotationY": 6.136,
+      "from": 2
+    },
+    {
+      "model": "chair_A",
+      "x": -5.09,
+      "z": 9.19,
+      "rotationY": 8.2304,
+      "from": 2
+    },
+    {
+      "model": "fridge_A_decorated",
+      "x": -5.2,
+      "z": -3.6,
+      "rotationY": 0,
+      "from": 2
+    },
+    {
+      "model": "table_round_A_decorated",
+      "x": -6.2,
+      "z": 4.2,
+      "rotationY": 0,
+      "from": 3
+    },
+    {
+      "model": "chair_A",
+      "x": -5.88,
+      "z": 5.77,
+      "rotationY": 3.3416,
+      "from": 3
+    },
+    {
+      "model": "chair_A",
+      "x": -5,
+      "z": 3.14,
+      "rotationY": 5.436,
+      "from": 3
+    },
+    {
+      "model": "chair_A",
+      "x": -7.72,
+      "z": 3.69,
+      "rotationY": 7.5304,
+      "from": 3
+    },
+    {
+      "model": "table_round_A_decorated",
+      "x": 6.4,
+      "z": 9.2,
+      "rotationY": 0,
+      "from": 3
+    },
+    {
+      "model": "chair_A",
+      "x": 7.83,
+      "z": 9.93,
+      "rotationY": 4.2416,
+      "from": 3
+    },
+    {
+      "model": "chair_A",
+      "x": 6.32,
+      "z": 7.6,
+      "rotationY": 6.336,
+      "from": 3
+    },
+    {
+      "model": "chair_A",
+      "x": 5.06,
+      "z": 10.07,
+      "rotationY": 8.4304,
+      "from": 3
+    },
+    {
+      "model": "shelf_papertowel_decorated",
+      "x": 5.2,
+      "z": -3.6,
+      "rotationY": 0,
+      "from": 3
+    }
+  ],
+  "areas": []
+}

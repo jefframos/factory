@@ -2,7 +2,112 @@
   "bundles": [
     {
       "name": "default",
-      "assets": []
+      "assets": [
+        {
+          "alias": [
+            "applause.mp3"
+          ],
+          "src": [
+            "applause.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "bubbles.wav"
+          ],
+          "src": [
+            "bubbles.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-gem-1.ogg"
+          ],
+          "src": [
+            "collect-gem-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-gem-2.ogg"
+          ],
+          "src": [
+            "collect-gem-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collect-gem-3.ogg"
+          ],
+          "src": [
+            "collect-gem-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "drop-1.ogg"
+          ],
+          "src": [
+            "drop-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "drop-2.ogg"
+          ],
+          "src": [
+            "drop-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "drop-3.ogg"
+          ],
+          "src": [
+            "drop-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "lose.wav"
+          ],
+          "src": [
+            "lose.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "tap.wav"
+          ],
+          "src": [
+            "tap.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-complete.ogg"
+          ],
+          "src": [
+            "ui-complete.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ui-error.ogg"
+          ],
+          "src": [
+            "ui-error.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "whoosh.wav"
+          ],
+          "src": [
+            "whoosh.mp3"
+          ]
+        }
+      ]
     }
   ]
 }

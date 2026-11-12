@@ -36,6 +36,7 @@ games/pizza/reports/playtests/
 games/bandit-controller/web/.thumbs/
 games/mow/web/.thumbs/
 games/ufo/web/.thumbs/
+games/restaurant/web/.thumbs/
 
 # i18n work files (npm run i18n:prepare) — temporary, applied into the locale files
 tools/i18n/pending/

@@ -1,0 +1,38 @@
+{
+  "days": [
+    { "customers": 3, "maxToppings": 1 },
+    { "customers": 3, "maxToppings": 2 },
+    { "customers": 4, "maxToppings": 2 },
+    { "customers": 4, "maxToppings": 3 },
+    { "customers": 5, "maxToppings": 3 }
+  ],
+  "stages": [
+    { "id": "truck", "name": "Food Truck", "goal": 60 },
+    { "id": "smallDiner", "name": "Small Diner", "goal": 120 },
+    { "id": "diner", "name": "Diner", "goal": 200 },
+    { "id": "restaurant", "name": "Restaurant", "goal": 320 }
+  ],
+  "cookSeconds": 2.2,
+  "pay": {
+    "base": 12,
+    "perTopping": 5
+  },
+  "customer": {
+    "height": 2.4,
+    "walkSpeed": 2.2
+  },
+  "market": [
+    { "id": "bun", "name": "Buns", "crate": "crate_buns", "icon": "food_ingredient_bun" },
+    { "id": "patty", "name": "Patties", "crate": "crate", "icon": "food_ingredient_burger_uncooked" },
+    { "id": "cheese", "name": "Cheese", "crate": "crate_cheese", "icon": "food_ingredient_cheese" },
+    { "id": "lettuce", "name": "Lettuce", "crate": "crate_lettuce", "icon": "food_ingredient_lettuce" },
+    { "id": "tomato", "name": "Tomatoes", "crate": "crate_tomatoes", "icon": "food_ingredient_tomato" },
+    { "id": "onion", "name": "Onions", "crate": "crate_onions", "icon": "food_ingredient_onion" },
+    { "id": "mushroom", "name": "Mushrooms", "crate": "crate_mushrooms", "icon": "food_ingredient_mushroom" },
+    { "id": "carrot", "name": "Carrots", "crate": "crate_carrots", "icon": "food_ingredient_carrot" },
+    { "id": "potato", "name": "Potatoes", "crate": "crate_potatoes", "icon": "food_ingredient_potato" },
+    { "id": "ham", "name": "Ham", "crate": "crate_ham", "icon": "food_ingredient_ham" },
+    { "id": "pepperoni", "name": "Pepperoni", "crate": "crate_pepperoni", "icon": "food_ingredient_pepperoni" },
+    { "id": "dough", "name": "Dough", "crate": "crate_dough", "icon": "food_ingredient_dough" }
+  ]
+}
