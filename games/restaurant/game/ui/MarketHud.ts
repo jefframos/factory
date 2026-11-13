@@ -1,8 +1,9 @@
 // MarketHud.ts
 //
-// The supermarket's 2D layer: the title, the shopping list (a strip of cards across the top: a picture of each
+// The supermarket's 2D layer: the title, the shopping list (a strip of cards across the bottom: a picture of each
 // item to buy, ticked once it's in the basket), a name tag under each crate (the scene hands their screen points), a
-// pointing hand (the first visit), a hint line, the "wrong item" card (TRY AGAIN) and the "all set" banner.
+// pointing hand (the first visit), a hint line (over the list), the "wrong item" card (TRY AGAIN) and the "all set" banner.
+// The list sits at the bottom so it never covers the cashier at the back of the shop; it shrinks to fit a narrow screen.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
@@ -13,7 +14,11 @@ import { MarketItem } from '../data/Settings';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
 
 const MARGIN = 28;
-const LIST = { y: 150, card: 112, height: 120, gap: 10, icon: 76 };
+/** The list's cards; its frame reaches `above` over its middle and `below` under it (its heading's on top). */
+const LIST = { card: 112, height: 120, gap: 10, icon: 76, above: 102, below: 74 };
+/** Of the screen's height: what the list (and the hint over it) takes at the bottom, the title at the top (the camera
+ *  frames the shop in between: MarketScene). */
+export const MARKET_HUD_SHARE = { top: 0.1, bottom: 0.27 };
 
 type Point = { x: number; y: number };
 
@@ -27,6 +32,8 @@ export class MarketHud extends PIXI.Container {
     private readonly hand = iconSprite('tutorial_hand_3', 110);
     private handBase: Point | null = null;
     private card: PIXI.Container | null = null;
+    /** The list's frame width (it's scaled down to fit the screen). */
+    private listWidth = 0;
 
     public constructor() {
         super();
@@ -44,8 +51,11 @@ export class MarketHud extends PIXI.Container {
         const screen = this.screen;
         if (!screen) return;
         this.title.position.set(screen.center.x, screen.topLeft.y + MARGIN + 20);
-        this.list.position.set(screen.center.x, screen.topLeft.y + LIST.y);
-        this.hint.position.set(screen.center.x, screen.topLeft.y + screen.height - 110);
+        const scale = this.listWidth ? Math.min(1, (screen.width - MARGIN * 2) / this.listWidth) : 1;
+        this.list.scale.set(scale);
+        const listY = screen.topLeft.y + screen.height - MARGIN - LIST.below * scale;
+        this.list.position.set(screen.center.x, listY);
+        this.hint.position.set(screen.center.x, listY - LIST.above * scale - 34);
         if (this.card) this.card.position.set(screen.center.x, screen.center.y);
     }
 
@@ -54,8 +64,8 @@ export class MarketHud extends PIXI.Container {
         this.list.removeChildren().forEach((c) => c.destroy({ children: true }));
         this.cards.clear();
         const total = items.length * LIST.card + (items.length - 1) * LIST.gap;
-        const back = framePlane('BasicFrame_Round20', total + 28, LIST.height + 56);
-        back.position.set(-total / 2 - 14, -LIST.height / 2 - 42);
+        const back = framePlane('BasicFrame_Round20', total + 28, LIST.above + LIST.below);
+        back.position.set(-total / 2 - 14, -LIST.above);
         const heading = label(26, WARM.cream);
         heading.text = 'SHOPPING LIST';
         heading.y = -LIST.height / 2 - 20;
@@ -73,6 +83,8 @@ export class MarketHud extends PIXI.Container {
             this.cards.set(item.id, { holder, check, icon });
         });
         this.tickList(new Set());
+        this.listWidth = total + 28;
+        this.reposition();
     }
 
     /** Ticks the items in the basket. */
@@ -99,8 +111,8 @@ export class MarketHud extends PIXI.Container {
             .to(icon.scale, { x: icon.scale.x * 0.7, y: icon.scale.y * 0.7, duration: 0.35, ease: 'power2.in' }, '<');
     }
 
-    /** A name tag under each crate (screen points; null: off screen). */
-    public setTags(tags: { item: MarketItem; at: Point | null }[]): void {
+    /** A name tag under each crate (screen points; null: off screen); each shrinks to fit `column` (screen px across). */
+    public setTags(tags: { item: MarketItem; at: Point | null }[], column = Infinity): void {
         if (this.tags.children.length !== tags.length) {
             this.tags.removeChildren().forEach((c) => c.destroy({ children: true }));
             for (const { item } of tags) {
@@ -110,9 +122,14 @@ export class MarketHud extends PIXI.Container {
             }
         }
         tags.forEach(({ at }, i) => {
-            const tag = this.tags.children[i];
+            const tag = this.tags.children[i] as PIXI.Container;
             tag.visible = Boolean(at);
-            if (at) tag.position.copyFrom(this.toLocal(new PIXI.Point(at.x, at.y)));
+            if (!at) return;
+            tag.position.copyFrom(this.toLocal(new PIXI.Point(at.x, at.y)));
+            // Its width at full size (in this layer), against the column's (screen px into this layer's units).
+            const room = column * 0.94 / (this.worldTransform.a || 1);
+            const full = tag.width / (tag.scale.x || 1);
+            tag.scale.set(Math.min(1, room / Math.max(1, full)));
         });
     }
 

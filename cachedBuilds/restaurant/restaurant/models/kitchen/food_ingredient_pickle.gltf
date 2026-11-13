@@ -1,0 +1,90 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.3.0",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 540,
+      "max": [
+        0.3400000035762787,
+        0.27696582674980164,
+        0.13222333788871765
+      ],
+      "min": [
+        -0.3400000035762787,
+        -0.001089836354367435,
+        -0.13222333788871765
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 540,
+      "bufferView": 0,
+      "byteOffset": 12
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 12960,
+      "byteStride": 24,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "food_ingredient_pickle.bin",
+      "byteLength": 12960
+    }
+  ],
+  "materials": [
+    {
+      "name": "#4f7d24",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.07818742179702069,
+          0.20507873637973145,
+          0.01764195448412081,
+          1
+        ],
+        "roughnessFactor": 0.8,
+        "metallicFactor": 0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "food_ingredient_pickle",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "mode": 4,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "food_ingredient_pickle",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}

@@ -119,7 +119,7 @@ export class DayEnd extends PIXI.Container {
     private burst(pay: number): void {
         const count = Math.min(10, 3 + Math.round(pay / 5));
         for (let i = 0; i < count; i++) {
-            const coin = iconSprite('ItemIcon_Money_Coin', 54);
+            const coin = iconSprite('ItemIcon_Money_Bill', 54);
             coin.position.set(0, CHEST.y - 30);
             this.card.addChild(coin);
             const angle = -Math.PI / 2 + (Math.random() - 0.5) * 2.2;

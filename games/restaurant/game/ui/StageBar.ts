@@ -26,7 +26,7 @@ export class StageBar extends PIXI.Container {
         this.title = label(Math.round(barHeight * 0.75));
         this.title.y = -barHeight / 2 - barHeight * 0.45;
         this.amount = label(Math.round(barHeight * 0.62));
-        const coin = iconSprite('Icon_Coin', barHeight * 1.5);
+        const coin = iconSprite('ItemIcon_Money_Bill', barHeight * 1.5);
         coin.x = -barWidth / 2;
         this.addChild(back, this.fill, this.amount, this.title, coin);
     }

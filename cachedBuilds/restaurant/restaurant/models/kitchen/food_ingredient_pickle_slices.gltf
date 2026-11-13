@@ -1,0 +1,194 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.3.0",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 300,
+      "max": [
+        0.29369646310806274,
+        0.08910568803548813,
+        0.29060739278793335
+      ],
+      "min": [
+        -0.3035356402397156,
+        -0.007039925549179316,
+        -0.2707797884941101
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 300,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 600,
+      "max": [
+        0.27946165204048157,
+        0.0883868932723999,
+        0.27562764286994934
+      ],
+      "min": [
+        -0.2892899215221405,
+        -0.006530402693897486,
+        -0.2558097839355469
+      ],
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 600,
+      "bufferView": 1,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 480,
+      "max": [
+        0.2186291664838791,
+        0.08446993678808212,
+        0.20819851756095886
+      ],
+      "min": [
+        -0.2284165322780609,
+        -0.003542481455951929,
+        -0.18841774761676788
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 480,
+      "bufferView": 2,
+      "byteOffset": 12
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 7200,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 7200,
+      "byteLength": 14400,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 21600,
+      "byteLength": 11520,
+      "byteStride": 24,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "food_ingredient_pickle_slices.bin",
+      "byteLength": 33120
+    }
+  ],
+  "materials": [
+    {
+      "name": "#4f7d24",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.07818742179702069,
+          0.20507873637973145,
+          0.01764195448412081,
+          1
+        ],
+        "roughnessFactor": 0.8,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "#b5cf62",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.46207699964472876,
+          0.623960391667596,
+          0.12213877222015301,
+          1
+        ],
+        "roughnessFactor": 0.8,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "#e3e6a6",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.7681511472425809,
+          0.7912979403281551,
+          0.3813260114221238,
+          1
+        ],
+        "roughnessFactor": 0.8,
+        "metallicFactor": 0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "food_ingredient_pickle_slices",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "mode": 4,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 2,
+            "NORMAL": 3
+          },
+          "mode": 4,
+          "material": 1
+        },
+        {
+          "attributes": {
+            "POSITION": 4,
+            "NORMAL": 5
+          },
+          "mode": 4,
+          "material": 2
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "food_ingredient_pickle_slices",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}

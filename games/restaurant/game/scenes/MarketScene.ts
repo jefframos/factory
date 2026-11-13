@@ -19,7 +19,7 @@ import { Customer } from '../world/Customers';
 import { SETTINGS, MarketItem } from '../data/Settings';
 import { RestaurantSave } from '../data/RestaurantSave';
 import { shoppingList } from '../data/Market';
-import { MarketHud } from '../ui/MarketHud';
+import { MARKET_HUD_SHARE, MarketHud } from '../ui/MarketHud';
 import { uiPress } from '../ui/UiParts';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
 import { MARKET_LAYOUT, buildMarketRoom, marketRoomModels } from '../world/MarketLayout';
@@ -30,16 +30,18 @@ const FOV = 40;
 /** The crates' grid (levels/market.json): its middle, columns, the gaps between crates (x, and z: room for the name tags). */
 const GRID = MARKET_LAYOUT.market.crates;
 /** The view: from the shopper's side (-z), tilted this far from overhead; room beside the grid (units); the shares of
- *  the screen's height the list (top) and the hint (bottom) take, the grid fitted between. */
-const VIEW = { tilt: 0.7, padX: 0.7, top: 0.27, bottom: 0.12 };
-/** Raw patties have no crate of their own: an empty crate with these on top. */
-const PATTY_CRATE = 'crate';
-const PATTIES_ON_TOP = 3;
+ *  the screen's height the title (top) and the list with its hint (bottom) take, the shop (the crates and the cashier
+ *  behind them) fitted between. */
+const VIEW = { tilt: 0.7, padX: 0.7, ...MARKET_HUD_SHARE };
+/** Always this many crates: everything on the list, the rest other produce at random (in shuffled spots). */
+const CRATES = 12;
+/** Raw patties, pickles: no crate of their own, an empty one with a few on top (settings.json market[].top). */
+const ON_TOP = 3;
 /** After the list's done, how long before the restaurant opens. */
 const DONE_SECONDS = 1.6;
 
 const MODELS = [
-    ...new Set([...SETTINGS.market.flatMap((item) => [item.crate, item.icon]), 'food_ingredient_burger_uncooked', ...marketRoomModels()]),
+    ...new Set([...SETTINGS.market.flatMap((item) => [item.crate, item.icon, ...(item.top ? [item.top] : [])]), ...marketRoomModels()]),
 ];
 
 interface Crate {
@@ -53,6 +55,12 @@ export default class MarketScene extends ThreeScene {
     private hud!: MarketHud;
     private readonly crates: Crate[] = [];
     private readonly list = shoppingList(RestaurantSave.orders);
+    /** Today's crates: the list's items and others to make CRATES, shuffled. */
+    private readonly stock = (() => {
+        const needed = SETTINGS.market.filter((item) => this.list.some((i) => i.id === item.id));
+        const others = SETTINGS.market.filter((item) => !needed.includes(item)).sort(() => Math.random() - 0.5);
+        return [...needed, ...others.slice(0, Math.max(0, CRATES - needed.length))].sort(() => Math.random() - 0.5);
+    })();
     private readonly basket = new Set<string>();
     private cashier: Customer | null = null;
     /** The market's floor, walls and props (levels/market.json). */
@@ -62,6 +70,10 @@ export default class MarketScene extends ThreeScene {
     private readonly hitMaterial = new THREE.MeshBasicMaterial({ visible: false });
     /** The grid's bounds on the floor: the camera frames them. */
     private readonly bounds = new THREE.Box3();
+    /** The cashier behind the crates (framed too). */
+    private readonly cashierBox = new THREE.Box3();
+    /** From one crate column to the next (world units): a name tag fits in that on screen. */
+    private columnStep = 1;
     /** Taps count (not loading, not on the wrong-item card, not done). */
     private playing = false;
     private gone = false;
@@ -124,16 +136,16 @@ export default class MarketScene extends ThreeScene {
     }
 
     private buildMarket(): void {
-        const items = SETTINGS.market;
-        // Each crate (raw patties: an empty one with patties on top), measured for the grid's spacing.
+        const items = this.stock;
+        // Each crate (raw patties, pickles: an empty one with them on top), measured for the grid's spacing.
         const holders = items.map((item) => {
             const holder = new THREE.Group();
             const crate = kitchenModel(item.crate);
             holder.add(crate);
-            if (item.crate === PATTY_CRATE) {
+            if (item.top) {
                 const top = sizeOf(crate).y;
-                for (let i = 0; i < PATTIES_ON_TOP; i++) {
-                    const patty = kitchenModel('food_ingredient_burger_uncooked');
+                for (let i = 0; i < ON_TOP; i++) {
+                    const patty = kitchenModel(item.top);
                     patty.scale.setScalar(0.8);
                     patty.position.set((i - 1) * 0.3, top * 0.75 + i * 0.05, (i % 2) * 0.15 - 0.05);
                     patty.rotation.y = i * 0.8;
@@ -160,6 +172,7 @@ export default class MarketScene extends ThreeScene {
             this.threeScene.add(box);
             this.crates.push({ item, holder, box, tagAt: holder.position.clone().add(new THREE.Vector3(0, 0, -size.z / 2 - 0.3)) });
         });
+        this.columnStep = stepX;
         const halfX = (GRID.columns * stepX) / 2;
         const halfZ = (rows * stepZ) / 2;
         this.bounds.set(new THREE.Vector3(GRID.x - halfX, 0, GRID.z - halfZ), new THREE.Vector3(GRID.x + halfX, size.y, GRID.z + halfZ));
@@ -171,6 +184,11 @@ export default class MarketScene extends ThreeScene {
         this.cashier = new Customer(this.threeScene, new THREE.Vector3(cashier.x, 0, cashier.z));
         this.cashier.root.rotation.y = cashier.rotationY ?? Math.PI;
         this.cashier.root.scale.setScalar(cashier.scale ?? 1);
+        // The camera frames the cashier too (the list's at the bottom, out of their way): a box round them from their
+        // height (a skinned mesh's own bounds aren't to be trusted).
+        const tall = SETTINGS.customer.height * (cashier.scale ?? 1);
+        const half = tall * 0.2;
+        this.cashierBox.set(new THREE.Vector3(cashier.x - half, 0, cashier.z - half), new THREE.Vector3(cashier.x + half, tall, cashier.z + half));
 
         bendAround(GRID.x, GRID.z);
         bendAll(this.threeScene);
@@ -263,24 +281,59 @@ export default class MarketScene extends ThreeScene {
 
     // ---------------------------------------------------------------- the camera
 
-    /** The crates framed (with room for the list above and the hint below), from the shopper's side. */
+    /**
+     * The shop framed from the shopper's side, tilted VIEW.tilt: the crates (padded VIEW.padX either side) and the cashier
+     * behind them, as big as they fit between the title (top) and the list (bottom). Measured by projecting their boxes'
+     * corners: the nearest distance where they fit, then the view slid up or down to sit them in that band.
+     */
     private fitCamera(): void {
         const camera = this.threeCamera;
         camera.aspect = window.innerWidth / Math.max(1, window.innerHeight);
-        const tan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-        const size = this.bounds.getSize(new THREE.Vector3());
-        const width = size.x + VIEW.padX * 2;
-        // The grid as seen (its depth, foreshortened, and the crates' height), in the share of the screen left for it.
-        const seen = size.z * Math.cos(VIEW.tilt) + size.y * Math.sin(VIEW.tilt);
-        const share = 1 - VIEW.top - VIEW.bottom;
-        const distance = Math.max(seen / share / 2 / tan, width / 2 / (tan * camera.aspect));
-        // The grid's middle sits that much lower on screen than the middle: aim that much further back.
-        const frameHeight = 2 * distance * tan;
-        const lower = ((VIEW.top - VIEW.bottom) / 2) * frameHeight;
-        const aim = this.bounds.getCenter(new THREE.Vector3()).setY(size.y / 2).add(new THREE.Vector3(0, 0, lower / Math.cos(VIEW.tilt)));
-        camera.position.copy(aim).add(new THREE.Vector3(0, Math.cos(VIEW.tilt), -Math.sin(VIEW.tilt)).multiplyScalar(distance));
-        camera.lookAt(aim);
         camera.updateProjectionMatrix();
+        const pad = new THREE.Vector3(VIEW.padX, 0, 0);
+        const boxes = [new THREE.Box3(this.bounds.min.clone().sub(pad), this.bounds.max.clone().add(pad)), this.cashierBox];
+        const corners = boxes.filter((b) => !b.isEmpty()).flatMap((b) => [0, 1, 2, 3, 4, 5, 6, 7].map((i) => new THREE.Vector3(
+            i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z)));
+        if (!corners.length) return;
+        const back = new THREE.Vector3(0, Math.cos(VIEW.tilt), -Math.sin(VIEW.tilt));
+        const up = new THREE.Vector3(0, Math.sin(VIEW.tilt), Math.cos(VIEW.tilt));
+        const aim = new THREE.Box3().setFromPoints(corners).getCenter(new THREE.Vector3());
+        // The band left for the shop, in NDC (y: -1 bottom, 1 top).
+        const low = -1 + 2 * VIEW.bottom;
+        const high = 1 - 2 * VIEW.top;
+        const place = (distance: number) => {
+            camera.position.copy(aim).addScaledVector(back, distance);
+            camera.lookAt(aim);
+            camera.updateMatrixWorld(true);
+            let minY = Infinity;
+            let maxY = -Infinity;
+            let maxX = 0;
+            for (const corner of corners) {
+                const p = corner.clone().project(camera);
+                minY = Math.min(minY, p.y);
+                maxY = Math.max(maxY, p.y);
+                maxX = Math.max(maxX, Math.abs(p.x));
+            }
+            return { minY, maxY, maxX };
+        };
+        let distance = 10;
+        for (let pass = 0; pass < 4; pass++) {
+            // The nearest distance it all fits (its height in the band, its width on screen).
+            let near = 1;
+            let far = 400;
+            for (let i = 0; i < 40; i++) {
+                const mid = (near + far) / 2;
+                const { minY, maxY, maxX } = place(mid);
+                if (maxY - minY <= high - low && maxX <= 0.98) far = mid;
+                else near = mid;
+            }
+            distance = far;
+            // Slid so its middle is the band's middle (moving the aim along the view's up moves it on screen).
+            const { minY, maxY } = place(distance);
+            const halfHeight = distance * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+            aim.addScaledVector(up, (((minY + maxY) / 2 - (low + high) / 2) / 1) * halfHeight);
+        }
+        place(distance);
     }
 
     // ---------------------------------------------------------------- frame
@@ -293,7 +346,12 @@ export default class MarketScene extends ThreeScene {
         bendAll(this.threeScene);
         if (this.crates.length) {
             this.threeCamera.updateMatrixWorld();
-            this.hud.setTags(this.crates.map(({ item, tagAt }) => ({ item, at: this.worldToScreen(tagAt) })));
+            // How wide a column is on screen (a name tag shrinks to fit it).
+            const first = this.crates[0].tagAt;
+            const a = this.worldToScreen(first);
+            const b = this.worldToScreen(first.clone().add(new THREE.Vector3(this.columnStep, 0, 0)));
+            const column = a && b ? Math.hypot(b.x - a.x, b.y - a.y) : Infinity;
+            this.hud.setTags(this.crates.map(({ item, tagAt }) => ({ item, at: this.worldToScreen(tagAt) })), column);
             const hint = this.nextHint();
             this.hud.pointAt(hint ? this.worldToScreen(hint) : null);
         }

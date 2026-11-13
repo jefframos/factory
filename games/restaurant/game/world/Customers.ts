@@ -22,13 +22,17 @@ const PALETTE = {
 };
 const PARTS: (keyof typeof PALETTE)[] = ['skin', 'top', 'bottom', 'shoes', 'hair'];
 /** How far the walk clip carries a model of PERSON_MODEL_HEIGHT per second (feet don't slide at this pace). */
-const CLIP_WALK_SPEED = 1.35;
+const CLIP_WALK_SPEED = 1.38;
 const BLEND_SPEED = 6;
 const TURN_SPEED = 8;
 /** A customer's own pace: a share of the setting's walking speed, at random. */
 const PACE = [0.85, 1.15];
-/** The sit clip's own seat height (its hips, from the model's feet), and, without a clip, how far behind the seat they stand. */
-const SIT_CLIP_HEIGHT = 0.45;
+/**
+ * The sit clip, in the model's own units (tools/build-people.mjs; measured on the skinned mesh): the underside of their
+ * bottom over the model's feet, and how far behind its origin it is (so the bottom, not the feet, goes over the seat).
+ */
+const SIT_CLIP = { bottom: 0.31, behind: 0.14 };
+/** Without a sit clip: how far behind the seat they stand. */
 const STAND_BACK = 0.45;
 
 const pick = <T>(list: readonly T[]): T => list[Math.floor(Math.random() * list.length)];
@@ -126,9 +130,11 @@ export class Customer {
         this.root.rotation.y = facing;
         if (this.sitAction) {
             this.seated = true;
-            this.root.position.set(seat.x, 0, seat.z);
-            // The clip's hips sit at the model's own sitting height: lifted to the seat's.
-            gsap.to(this.body.position, { y: Math.max(0, height - SIT_CLIP_HEIGHT), duration: 0.35, ease: 'power2.out' });
+            // Their bottom over the seat (the clip has it behind the model's origin), lifted to the seat's top.
+            const scale = this.body.scale.x;
+            const forward = SIT_CLIP.behind * scale;
+            this.root.position.set(seat.x + Math.sin(facing) * forward, 0, seat.z + Math.cos(facing) * forward);
+            gsap.to(this.body.position, { y: Math.max(0, height - SIT_CLIP.bottom * scale), duration: 0.35, ease: 'power2.out' });
         } else {
             this.root.position.set(seat.x - Math.sin(facing) * STAND_BACK, 0, seat.z - Math.cos(facing) * STAND_BACK);
         }

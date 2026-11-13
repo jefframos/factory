@@ -8,14 +8,15 @@
   ],
   "stages": [
     { "id": "truck", "name": "Food Truck", "goal": 60 },
-    { "id": "smallDiner", "name": "Small Diner", "goal": 120, "service": "seated", "firstDay": { "seats": 3, "customers": 4 } },
-    { "id": "diner", "name": "Diner", "goal": 200 },
-    { "id": "restaurant", "name": "Restaurant", "goal": 320 }
+    { "id": "smallDiner", "name": "Small Diner", "goal": 120, "service": "seated", "firstDay": { "seats": 3, "customers": 4 }, "toppings": ["cheese", "lettuce", "tomato", "pickles", "onion"], "iceCream": { "share": 0.3 } },
+    { "id": "diner", "name": "Diner", "goal": 200, "toppings": ["cheese", "lettuce", "tomato", "pickles", "onion"], "iceCream": { "share": 0.3 } },
+    { "id": "restaurant", "name": "Restaurant", "goal": 320, "toppings": ["cheese", "lettuce", "tomato", "pickles", "onion"], "iceCream": { "share": 0.3 } }
   ],
   "cookSeconds": 2.2,
   "pay": {
     "base": 12,
-    "perTopping": 5
+    "perTopping": 5,
+    "iceCream": 15
   },
   "customer": {
     "height": 2.4,
@@ -23,7 +24,8 @@
   },
   "market": [
     { "id": "bun", "name": "Buns", "crate": "crate_buns", "icon": "food_ingredient_bun" },
-    { "id": "patty", "name": "Patties", "crate": "crate", "icon": "food_ingredient_burger_uncooked" },
+    { "id": "patty", "name": "Patties", "crate": "crate", "icon": "food_ingredient_burger_uncooked", "top": "food_ingredient_burger_uncooked" },
+    { "id": "pickles", "name": "Pickles", "crate": "crate", "icon": "food_ingredient_pickle", "top": "food_ingredient_pickle" },
     { "id": "cheese", "name": "Cheese", "crate": "crate_cheese", "icon": "food_ingredient_cheese" },
     { "id": "lettuce", "name": "Lettuce", "crate": "crate_lettuce", "icon": "food_ingredient_lettuce" },
     { "id": "tomato", "name": "Tomatoes", "crate": "crate_tomatoes", "icon": "food_ingredient_tomato" },
@@ -125,6 +127,7 @@
       "wander": 9,
       "pauseMin": 0.5,
       "pauseMax": 3,
+      "restaurant": { "people": 12, "walkers": 4 },
       "palette": {
         "skin": [
           "#ffe0c4",

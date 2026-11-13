@@ -188,6 +188,36 @@ const KitchenFoodBurger = {
 }
 } as const;
 
+const KitchenFoodIcecreamConeChocolate = {
+  id: 'food_icecream_cone_chocolate',
+  path: 'kitchen/food_icecream_cone_chocolate',
+  fullPath: 'restaurant/models/kitchen/food_icecream_cone_chocolate.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIcecreamConeChocolate": "food_icecream_cone_chocolate"
+}
+} as const;
+
+const KitchenFoodIcecreamConeStrawberry = {
+  id: 'food_icecream_cone_strawberry',
+  path: 'kitchen/food_icecream_cone_strawberry',
+  fullPath: 'restaurant/models/kitchen/food_icecream_cone_strawberry.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIcecreamConeStrawberry": "food_icecream_cone_strawberry"
+}
+} as const;
+
+const KitchenFoodIcecreamConeVanilla = {
+  id: 'food_icecream_cone_vanilla',
+  path: 'kitchen/food_icecream_cone_vanilla',
+  fullPath: 'restaurant/models/kitchen/food_icecream_cone_vanilla.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIcecreamConeVanilla": "food_icecream_cone_vanilla"
+}
+} as const;
+
 const KitchenFoodIngredientBun = {
   id: 'food_ingredient_bun',
   path: 'kitchen/food_ingredient_bun',
@@ -328,6 +358,16 @@ const KitchenFoodIngredientOnion = {
 }
 } as const;
 
+const KitchenFoodIngredientOnionRings = {
+  id: 'food_ingredient_onion_rings',
+  path: 'kitchen/food_ingredient_onion_rings',
+  fullPath: 'restaurant/models/kitchen/food_ingredient_onion_rings.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientOnionRings": "food_ingredient_onion_rings"
+}
+} as const;
+
 const KitchenFoodIngredientPepperoni = {
   id: 'food_ingredient_pepperoni',
   path: 'kitchen/food_ingredient_pepperoni',
@@ -335,6 +375,26 @@ const KitchenFoodIngredientPepperoni = {
   format: 'gltf',
   nodes: {
   "FoodIngredientPepperoni": "food_ingredient_pepperoni"
+}
+} as const;
+
+const KitchenFoodIngredientPickle = {
+  id: 'food_ingredient_pickle',
+  path: 'kitchen/food_ingredient_pickle',
+  fullPath: 'restaurant/models/kitchen/food_ingredient_pickle.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientPickle": "food_ingredient_pickle"
+}
+} as const;
+
+const KitchenFoodIngredientPickleSlices = {
+  id: 'food_ingredient_pickle_slices',
+  path: 'kitchen/food_ingredient_pickle_slices',
+  fullPath: 'restaurant/models/kitchen/food_ingredient_pickle_slices.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientPickleSlices": "food_ingredient_pickle_slices"
 }
 } as const;
 
@@ -377,6 +437,56 @@ const KitchenFridgeADecorated = {
   "FridgeADecorated": "fridge_A_decorated",
   "FridgeADecoratedDoorBottom": "fridge_A_decorated_door_bottom",
   "FridgeADecoratedDoorTop": "fridge_A_decorated_door_top"
+}
+} as const;
+
+const KitchenIcecreamCone = {
+  id: 'icecream_cone',
+  path: 'kitchen/icecream_cone',
+  fullPath: 'restaurant/models/kitchen/icecream_cone.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamCone": "icecream_cone"
+}
+} as const;
+
+const KitchenIcecreamConeStacked = {
+  id: 'icecream_cone_stacked',
+  path: 'kitchen/icecream_cone_stacked',
+  fullPath: 'restaurant/models/kitchen/icecream_cone_stacked.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamConeStacked": "icecream_cone_stacked"
+}
+} as const;
+
+const KitchenIcecreamSoftserveIcecreamChocolate = {
+  id: 'icecream_softserve_icecream_chocolate',
+  path: 'kitchen/icecream_softserve_icecream_chocolate',
+  fullPath: 'restaurant/models/kitchen/icecream_softserve_icecream_chocolate.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamSoftserveIcecreamChocolate": "icecream_softserve_icecream_chocolate"
+}
+} as const;
+
+const KitchenIcecreamSoftserveIcecreamStrawberry = {
+  id: 'icecream_softserve_icecream_strawberry',
+  path: 'kitchen/icecream_softserve_icecream_strawberry',
+  fullPath: 'restaurant/models/kitchen/icecream_softserve_icecream_strawberry.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamSoftserveIcecreamStrawberry": "icecream_softserve_icecream_strawberry"
+}
+} as const;
+
+const KitchenIcecreamSoftserveIcecreamVanilla = {
+  id: 'icecream_softserve_icecream_vanilla',
+  path: 'kitchen/icecream_softserve_icecream_vanilla',
+  fullPath: 'restaurant/models/kitchen/icecream_softserve_icecream_vanilla.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamSoftserveIcecreamVanilla": "icecream_softserve_icecream_vanilla"
 }
 } as const;
 
@@ -1276,6 +1386,459 @@ const LibraryRestaurantChairStool = {
 }
 } as const;
 
+const LibraryRestaurantIcecreamMachine = {
+  id: 'restaurant-icecream-machine',
+  path: 'library/restaurant-icecream-machine/restaurant-icecream-machine',
+  fullPath: 'restaurant/models/library/restaurant-icecream-machine/restaurant-icecream-machine.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamMachine": "icecream_machine",
+  "IcecreamMachineHandleChocolate": "icecream_machine_handle_chocolate",
+  "IcecreamMachineHandleStrawberry": "icecream_machine_handle_strawberry",
+  "IcecreamMachineHandleVanilla": "icecream_machine_handle_vanilla"
+}
+} as const;
+
+const PeopleCrowd01 = {
+  id: 'crowd-01',
+  path: 'people/crowd-01',
+  fullPath: 'restaurant/models/people/crowd-01.glb',
+  format: 'glb',
+  nodes: {
+  "Skeleton": "Skeleton",
+  "Crowd01": "crowd-01",
+  "Root": "Root",
+  "Hips": "Hips",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToeBase": "LeftToeBase",
+  "Spine": "Spine",
+  "Spine1": "Spine1",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandMiddle1": "LeftHandMiddle1",
+  "LeftHandMiddle2": "LeftHandMiddle2",
+  "LeftHandPinky1": "LeftHandPinky1",
+  "LeftHandPinky2": "LeftHandPinky2",
+  "LeftHandProp": "LeftHandProp",
+  "LeftHandRing1": "LeftHandRing1",
+  "LeftHandRing2": "LeftHandRing2",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandMiddle1": "RightHandMiddle1",
+  "RightHandMiddle2": "RightHandMiddle2",
+  "RightHandPinky1": "RightHandPinky1",
+  "RightHandPinky2": "RightHandPinky2",
+  "RightHandProp": "RightHandProp",
+  "RightHandRing1": "RightHandRing1",
+  "RightHandRing2": "RightHandRing2",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToeBase": "RightToeBase"
+}
+} as const;
+
+const PeopleCrowd02 = {
+  id: 'crowd-02',
+  path: 'people/crowd-02',
+  fullPath: 'restaurant/models/people/crowd-02.glb',
+  format: 'glb',
+  nodes: {
+  "Skeleton": "Skeleton",
+  "Crowd02": "crowd-02",
+  "Root": "Root",
+  "Hips": "Hips",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToeBase": "LeftToeBase",
+  "Spine": "Spine",
+  "Spine1": "Spine1",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandMiddle1": "LeftHandMiddle1",
+  "LeftHandMiddle2": "LeftHandMiddle2",
+  "LeftHandPinky1": "LeftHandPinky1",
+  "LeftHandPinky2": "LeftHandPinky2",
+  "LeftHandProp": "LeftHandProp",
+  "LeftHandRing1": "LeftHandRing1",
+  "LeftHandRing2": "LeftHandRing2",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandMiddle1": "RightHandMiddle1",
+  "RightHandMiddle2": "RightHandMiddle2",
+  "RightHandPinky1": "RightHandPinky1",
+  "RightHandPinky2": "RightHandPinky2",
+  "RightHandProp": "RightHandProp",
+  "RightHandRing1": "RightHandRing1",
+  "RightHandRing2": "RightHandRing2",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToeBase": "RightToeBase"
+}
+} as const;
+
+const PeopleCrowd03 = {
+  id: 'crowd-03',
+  path: 'people/crowd-03',
+  fullPath: 'restaurant/models/people/crowd-03.glb',
+  format: 'glb',
+  nodes: {
+  "Skeleton": "Skeleton",
+  "Crowd03": "crowd-03",
+  "Root": "Root",
+  "Hips": "Hips",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToeBase": "LeftToeBase",
+  "Spine": "Spine",
+  "Spine1": "Spine1",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandMiddle1": "LeftHandMiddle1",
+  "LeftHandMiddle2": "LeftHandMiddle2",
+  "LeftHandPinky1": "LeftHandPinky1",
+  "LeftHandPinky2": "LeftHandPinky2",
+  "LeftHandProp": "LeftHandProp",
+  "LeftHandRing1": "LeftHandRing1",
+  "LeftHandRing2": "LeftHandRing2",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandMiddle1": "RightHandMiddle1",
+  "RightHandMiddle2": "RightHandMiddle2",
+  "RightHandPinky1": "RightHandPinky1",
+  "RightHandPinky2": "RightHandPinky2",
+  "RightHandProp": "RightHandProp",
+  "RightHandRing1": "RightHandRing1",
+  "RightHandRing2": "RightHandRing2",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToeBase": "RightToeBase"
+}
+} as const;
+
+const PeopleCrowd04 = {
+  id: 'crowd-04',
+  path: 'people/crowd-04',
+  fullPath: 'restaurant/models/people/crowd-04.glb',
+  format: 'glb',
+  nodes: {
+  "Skeleton": "Skeleton",
+  "Crowd04": "crowd-04",
+  "Root": "Root",
+  "Hips": "Hips",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToeBase": "LeftToeBase",
+  "Spine": "Spine",
+  "Spine1": "Spine1",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandMiddle1": "LeftHandMiddle1",
+  "LeftHandMiddle2": "LeftHandMiddle2",
+  "LeftHandPinky1": "LeftHandPinky1",
+  "LeftHandPinky2": "LeftHandPinky2",
+  "LeftHandProp": "LeftHandProp",
+  "LeftHandRing1": "LeftHandRing1",
+  "LeftHandRing2": "LeftHandRing2",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandMiddle1": "RightHandMiddle1",
+  "RightHandMiddle2": "RightHandMiddle2",
+  "RightHandPinky1": "RightHandPinky1",
+  "RightHandPinky2": "RightHandPinky2",
+  "RightHandProp": "RightHandProp",
+  "RightHandRing1": "RightHandRing1",
+  "RightHandRing2": "RightHandRing2",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToeBase": "RightToeBase"
+}
+} as const;
+
+const PeopleCrowd05 = {
+  id: 'crowd-05',
+  path: 'people/crowd-05',
+  fullPath: 'restaurant/models/people/crowd-05.glb',
+  format: 'glb',
+  nodes: {
+  "Skeleton": "Skeleton",
+  "Crowd05": "crowd-05",
+  "Root": "Root",
+  "Hips": "Hips",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToeBase": "LeftToeBase",
+  "Spine": "Spine",
+  "Spine1": "Spine1",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandMiddle1": "LeftHandMiddle1",
+  "LeftHandMiddle2": "LeftHandMiddle2",
+  "LeftHandPinky1": "LeftHandPinky1",
+  "LeftHandPinky2": "LeftHandPinky2",
+  "LeftHandProp": "LeftHandProp",
+  "LeftHandRing1": "LeftHandRing1",
+  "LeftHandRing2": "LeftHandRing2",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandMiddle1": "RightHandMiddle1",
+  "RightHandMiddle2": "RightHandMiddle2",
+  "RightHandPinky1": "RightHandPinky1",
+  "RightHandPinky2": "RightHandPinky2",
+  "RightHandProp": "RightHandProp",
+  "RightHandRing1": "RightHandRing1",
+  "RightHandRing2": "RightHandRing2",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToeBase": "RightToeBase"
+}
+} as const;
+
+const PeopleCrowd06 = {
+  id: 'crowd-06',
+  path: 'people/crowd-06',
+  fullPath: 'restaurant/models/people/crowd-06.glb',
+  format: 'glb',
+  nodes: {
+  "Skeleton": "Skeleton",
+  "Crowd06": "crowd-06",
+  "Root": "Root",
+  "Hips": "Hips",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToeBase": "LeftToeBase",
+  "Spine": "Spine",
+  "Spine1": "Spine1",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandMiddle1": "LeftHandMiddle1",
+  "LeftHandMiddle2": "LeftHandMiddle2",
+  "LeftHandPinky1": "LeftHandPinky1",
+  "LeftHandPinky2": "LeftHandPinky2",
+  "LeftHandProp": "LeftHandProp",
+  "LeftHandRing1": "LeftHandRing1",
+  "LeftHandRing2": "LeftHandRing2",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandMiddle1": "RightHandMiddle1",
+  "RightHandMiddle2": "RightHandMiddle2",
+  "RightHandPinky1": "RightHandPinky1",
+  "RightHandPinky2": "RightHandPinky2",
+  "RightHandProp": "RightHandProp",
+  "RightHandRing1": "RightHandRing1",
+  "RightHandRing2": "RightHandRing2",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToeBase": "RightToeBase"
+}
+} as const;
+
+const PeopleCrowd07 = {
+  id: 'crowd-07',
+  path: 'people/crowd-07',
+  fullPath: 'restaurant/models/people/crowd-07.glb',
+  format: 'glb',
+  nodes: {
+  "Skeleton": "Skeleton",
+  "Crowd07": "crowd-07",
+  "Root": "Root",
+  "Hips": "Hips",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToeBase": "LeftToeBase",
+  "Spine": "Spine",
+  "Spine1": "Spine1",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandMiddle1": "LeftHandMiddle1",
+  "LeftHandMiddle2": "LeftHandMiddle2",
+  "LeftHandPinky1": "LeftHandPinky1",
+  "LeftHandPinky2": "LeftHandPinky2",
+  "LeftHandProp": "LeftHandProp",
+  "LeftHandRing1": "LeftHandRing1",
+  "LeftHandRing2": "LeftHandRing2",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandMiddle1": "RightHandMiddle1",
+  "RightHandMiddle2": "RightHandMiddle2",
+  "RightHandPinky1": "RightHandPinky1",
+  "RightHandPinky2": "RightHandPinky2",
+  "RightHandProp": "RightHandProp",
+  "RightHandRing1": "RightHandRing1",
+  "RightHandRing2": "RightHandRing2",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToeBase": "RightToeBase"
+}
+} as const;
+
+const PeopleCrowd08 = {
+  id: 'crowd-08',
+  path: 'people/crowd-08',
+  fullPath: 'restaurant/models/people/crowd-08.glb',
+  format: 'glb',
+  nodes: {
+  "Skeleton": "Skeleton",
+  "Crowd08": "crowd-08",
+  "Root": "Root",
+  "Hips": "Hips",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToeBase": "LeftToeBase",
+  "Spine": "Spine",
+  "Spine1": "Spine1",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandMiddle1": "LeftHandMiddle1",
+  "LeftHandMiddle2": "LeftHandMiddle2",
+  "LeftHandPinky1": "LeftHandPinky1",
+  "LeftHandPinky2": "LeftHandPinky2",
+  "LeftHandProp": "LeftHandProp",
+  "LeftHandRing1": "LeftHandRing1",
+  "LeftHandRing2": "LeftHandRing2",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandMiddle1": "RightHandMiddle1",
+  "RightHandMiddle2": "RightHandMiddle2",
+  "RightHandPinky1": "RightHandPinky1",
+  "RightHandPinky2": "RightHandPinky2",
+  "RightHandProp": "RightHandProp",
+  "RightHandRing1": "RightHandRing1",
+  "RightHandRing2": "RightHandRing2",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToeBase": "RightToeBase"
+}
+} as const;
+
 const PeoplePeopleAnims = {
   id: 'people-anims',
   path: 'people/people-anims',
@@ -1769,6 +2332,9 @@ export const MODELS = {
     FloorKitchen: KitchenFloorKitchen,
     FloorKitchenStyleB: KitchenFloorKitchenStyleB,
     FoodBurger: KitchenFoodBurger,
+    FoodIcecreamConeChocolate: KitchenFoodIcecreamConeChocolate,
+    FoodIcecreamConeStrawberry: KitchenFoodIcecreamConeStrawberry,
+    FoodIcecreamConeVanilla: KitchenFoodIcecreamConeVanilla,
     FoodIngredientBun: KitchenFoodIngredientBun,
     FoodIngredientBunBottom: KitchenFoodIngredientBunBottom,
     FoodIngredientBunTop: KitchenFoodIngredientBunTop,
@@ -1783,11 +2349,19 @@ export const MODELS = {
     FoodIngredientLettuceSlice: KitchenFoodIngredientLettuceSlice,
     FoodIngredientMushroom: KitchenFoodIngredientMushroom,
     FoodIngredientOnion: KitchenFoodIngredientOnion,
+    FoodIngredientOnionRings: KitchenFoodIngredientOnionRings,
     FoodIngredientPepperoni: KitchenFoodIngredientPepperoni,
+    FoodIngredientPickle: KitchenFoodIngredientPickle,
+    FoodIngredientPickleSlices: KitchenFoodIngredientPickleSlices,
     FoodIngredientPotato: KitchenFoodIngredientPotato,
     FoodIngredientTomato: KitchenFoodIngredientTomato,
     FoodIngredientTomatoSlice: KitchenFoodIngredientTomatoSlice,
     FridgeADecorated: KitchenFridgeADecorated,
+    IcecreamCone: KitchenIcecreamCone,
+    IcecreamConeStacked: KitchenIcecreamConeStacked,
+    IcecreamSoftserveIcecreamChocolate: KitchenIcecreamSoftserveIcecreamChocolate,
+    IcecreamSoftserveIcecreamStrawberry: KitchenIcecreamSoftserveIcecreamStrawberry,
+    IcecreamSoftserveIcecreamVanilla: KitchenIcecreamSoftserveIcecreamVanilla,
     JarAMedium: KitchenJarAMedium,
     JarBSmall: KitchenJarBSmall,
     Ketchup: KitchenKetchup,
@@ -1873,9 +2447,18 @@ export const MODELS = {
     City2Tree07: LibraryCity2Tree07,
     FurnitureTableSmall: LibraryFurnitureTableSmall,
     PrototypeTableMediumLong: LibraryPrototypeTableMediumLong,
-    RestaurantChairStool: LibraryRestaurantChairStool
+    RestaurantChairStool: LibraryRestaurantChairStool,
+    RestaurantIcecreamMachine: LibraryRestaurantIcecreamMachine
   },
   People: {
+    Crowd01: PeopleCrowd01,
+    Crowd02: PeopleCrowd02,
+    Crowd03: PeopleCrowd03,
+    Crowd04: PeopleCrowd04,
+    Crowd05: PeopleCrowd05,
+    Crowd06: PeopleCrowd06,
+    Crowd07: PeopleCrowd07,
+    Crowd08: PeopleCrowd08,
     PeopleAnims: PeoplePeopleAnims,
     Person01: PeoplePerson01,
     Person02: PeoplePerson02,

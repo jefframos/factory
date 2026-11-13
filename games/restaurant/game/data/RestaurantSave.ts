@@ -11,6 +11,7 @@
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { Order, dealDay } from './Recipes';
 import { isLastStage, stageSettings } from './Settings';
+import { hasIceCreamMachine } from '../world/RestaurantLayout';
 
 const KEY = 'restaurant.save';
 
@@ -25,6 +26,8 @@ interface SaveData {
     /** Coins in the stage's bar. */
     progress: number;
     orders: Order[];
+    /** Whether they've served an ice cream right yet (till then, a hand shows each step at the machine). */
+    iceCreamLearned?: boolean;
 }
 
 /** A new player: day 1's orders (the kitchen's stocked for the first day). */
@@ -34,7 +37,8 @@ function fresh(): SaveData {
 
 /** Day `day`'s orders, at `stage`'s `stageDay`-th day: its first day can ask for its own number of customers. */
 function dealFor(day: number, stage: number, stageDay: number): Order[] {
-    return dealDay(day, stageDay === 0 ? stageSettings(stage).firstDay?.customers : undefined);
+    // Ice cream once the stage's room has its machine, from its second day (its first teaches what's new about it).
+    return dealDay(day, stage, stageDay === 0 ? stageSettings(stage).firstDay?.customers : undefined, stageDay > 0 && hasIceCreamMachine(stage));
 }
 
 function parse(text: string | null): SaveData {
@@ -48,6 +52,7 @@ function parse(text: string | null): SaveData {
             stageDay: Math.max(0, Math.floor(saved.stageDay ?? 0)),
             progress: Math.max(0, Math.floor(saved.progress ?? 0)),
             orders: saved.orders,
+            iceCreamLearned: saved.iceCreamLearned === true,
         };
     } catch {
         return fresh();
@@ -110,8 +115,19 @@ export const RestaurantSave = {
         return state.progress;
     },
 
+    get iceCreamLearned(): boolean {
+        return state.iceCreamLearned === true;
+    },
+
+    /** An ice cream served right: no more hints at the machine. */
+    learnIceCream(): void {
+        if (state.iceCreamLearned) return;
+        state.iceCreamLearned = true;
+        save();
+    },
+
     get orders(): Order[] {
-        return state.orders.map((o) => ({ toppings: [...o.toppings] }));
+        return state.orders.map((o) => ({ toppings: [...o.toppings], ...(o.iceCream ? { iceCream: o.iceCream } : {}) }));
     },
 
     /** Coins into the bar: each time it fills, the restaurant's upgraded (the rest carries on into the next bar; the last
@@ -139,6 +155,25 @@ export const RestaurantSave = {
         // As if just upgraded: the stage's first day, its orders dealt for it.
         state.stageDay = 0;
         state.orders = dealFor(state.day, state.stage, 0);
+        save();
+    },
+
+    /**
+     * The debug panel's minigames: a day set up to try one thing (`stage`, which of its days — 0 its first — and the
+     * orders), in the restaurant. It replaces the day the player was on (the stage's bar starts empty).
+     */
+    practice(stage: number, stageDay: number, orders: Order[]): void {
+        state.stage = Math.max(0, Math.floor(stage));
+        state.stageDay = Math.max(0, Math.floor(stageDay));
+        state.progress = 0;
+        state.orders = orders.map((o) => ({ ...o, toppings: [...o.toppings] }));
+        state.place = 'restaurant';
+        save();
+    },
+
+    /** Forgets that an ice cream was served right (its hints at the machine show again). */
+    forgetIceCream(): void {
+        state.iceCreamLearned = false;
         save();
     },
 

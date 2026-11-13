@@ -101,7 +101,7 @@ export function fillCoinBar(holder: PIXI.Container, amount: PIXI.Text): void {
     const bar = framePlane('ResourceBar_Single_Bg', COIN_BAR.width, COIN_BAR.height);
     bar.tint = COIN_BAR.color;
     bar.position.set(0, -COIN_BAR.height / 2);
-    const coin = iconSprite('ResourceBar_Single_Icon_Coin', COIN_BAR.icon);
+    const coin = iconSprite('ItemIcon_Money_Bill', COIN_BAR.icon);
     amount.anchor.set(0, 0.5);
     amount.position.set(COIN_BAR.textX, -1);
     holder.addChild(bar, coin, amount);

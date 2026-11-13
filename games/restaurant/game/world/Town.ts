@@ -9,11 +9,13 @@ import * as THREE from 'three';
 import { roadCellAt, roadCellKey, roadNetwork } from 'core/roads/RoadGrid';
 import { buildLawn, buildRoads } from 'core/town/Ground';
 import { Traffic, spreadCars } from 'core/town/Traffic';
-import { Crowd } from 'core/town/Crowd';
+import { Crowd, type CrowdArea, type CrowdPaths } from 'core/town/Crowd';
 import { shownAt } from 'core/rooms/Room';
 import { SETTINGS } from '../data/Settings';
 import { LAYOUT_DATA } from './RestaurantLayout';
-import { peopleAssets, townModel } from './Models';
+import { crowdAssets, townModel } from './Models';
+
+export type TownMode = 'restaurant' | 'delivery';
 
 /** Lawns sit a hair over the street floor, each a hair over the last (so overlapping ones don't flicker). */
 const LAWN_Y = 0.025;
@@ -39,7 +41,8 @@ export class Town {
     /** Resolves once the road tiles and cars are in (the people come straight away). */
     public readonly ready: Promise<void>;
 
-    public constructor(stage: number) {
+    /** `mode`: 'restaurant' (a few people about: settings.json town.people.restaurant), or 'delivery' (the whole town's). */
+    public constructor(stage: number, mode: TownMode = 'restaurant') {
         this.group.name = 'town';
         const layout = LAYOUT_DATA;
         const areas = layout.areas ?? [];
@@ -57,22 +60,62 @@ export class Town {
         // Roads (their models first), then the cars on them.
         this.ready = this.buildRoadsAndCars();
 
-        // People: wandering their areas, kept off the walls and the roads.
-        const assets = peopleAssets();
-        const crowdAreas = (layout.people?.areas ?? []).filter((area) => shownAt(area, stage, areas));
-        const paths = layout.people?.paths;
-        if (assets && (crowdAreas.length || paths?.walkers)) {
-            this.crowd = new Crowd({
-                settings: SETTINGS.town.people,
-                assets,
-                areas: crowdAreas,
-                paths,
-                canStand: (x, z) => !this.isRoad(x, z) && !this.nearWall(x, z) && !this.blocked(x, z),
-                isRoad: (x, z) => this.isRoad(x, z),
-                carNear: (ax, az, bx, bz, radius) => this.traffic?.anyNear(ax, az, bx, bz, radius) ?? false,
-            });
-            this.group.add(this.crowd.group);
+        // People: wandering their areas, kept off the walls and the roads (the light crowd models, loaded on the way).
+        let crowdAreas = (layout.people?.areas ?? []).filter((area) => shownAt(area, stage, areas));
+        const allPaths = layout.people?.paths;
+        let walkers = allPaths?.walkers ?? 0;
+        const cap = SETTINGS.town.people.restaurant;
+        if (mode === 'restaurant' && cap) {
+            crowdAreas = this.nearestPeople(crowdAreas, cap.people);
+            walkers = Math.min(walkers, cap.walkers);
         }
+        const paths = allPaths && { ...allPaths, walkers };
+        if (crowdAreas.length || walkers) void this.buildCrowd(crowdAreas, paths);
+    }
+
+    /**
+     * The crowd's areas trimmed to `max` people, the areas nearest the restaurant (the middle of its walls standing at this
+     * stage) first: the restaurant only needs a few people about; the delivery mode has the whole town's.
+     */
+    private nearestPeople(areas: CrowdArea[], max: number): CrowdArea[] {
+        const middle = { x: 0, z: 0 };
+        if (this.walls.length) {
+            const xs = this.walls.flatMap((w) => [w.ax, w.bx]);
+            const zs = this.walls.flatMap((w) => [w.az, w.bz]);
+            middle.x = (Math.min(...xs) + Math.max(...xs)) / 2;
+            middle.z = (Math.min(...zs) + Math.max(...zs)) / 2;
+        }
+        const byDistance = [...areas].sort((a, b) => Math.hypot(a.x - middle.x, a.z - middle.z) - Math.hypot(b.x - middle.x, b.z - middle.z));
+        const kept: CrowdArea[] = [];
+        let left = max;
+        for (const area of byDistance) {
+            if (left <= 0) break;
+            const count = Math.min(area.count, left);
+            kept.push({ ...area, count });
+            left -= count;
+        }
+        return kept;
+    }
+
+    private async buildCrowd(areas: CrowdArea[], paths: CrowdPaths | undefined): Promise<void> {
+        let assets;
+        try {
+            assets = await crowdAssets();
+        } catch (error) {
+            console.warn('[Town] no crowd models', error);
+            return;
+        }
+        if (this.gone) return;
+        this.crowd = new Crowd({
+            settings: SETTINGS.town.people,
+            assets,
+            areas,
+            paths,
+            canStand: (x, z) => !this.isRoad(x, z) && !this.nearWall(x, z) && !this.blocked(x, z),
+            isRoad: (x, z) => this.isRoad(x, z),
+            carNear: (ax, az, bx, bz, radius) => this.traffic?.anyNear(ax, az, bx, bz, radius) ?? false,
+        });
+        this.group.add(this.crowd.group);
     }
 
     private async buildRoadsAndCars(): Promise<void> {

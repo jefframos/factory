@@ -47,7 +47,7 @@ export const KITCHEN_MODELS = [
 ];
 
 /** What each pile shows (a raw patty pile, though it puts a cooked one on the plate). */
-const PILE_PART: Record<Piece, Part> = { patty: 'rawPatty', bunBottom: 'bunBottom', bunTop: 'bunTop', cheese: 'cheese', lettuce: 'lettuce', tomato: 'tomato' };
+const PILE_PART: Record<Piece, Part> = { patty: 'rawPatty', bunBottom: 'bunBottom', bunTop: 'bunTop', cheese: 'cheese', lettuce: 'lettuce', tomato: 'tomato', pickles: 'pickles', onion: 'onion' };
 /** How far the countertop stove's model sits into the counter under it (its bottom's 0.93 up: the counter's 1). */
 const STOVE_SINK = 0.07;
 /** The most pieces a pile shows. */
@@ -96,6 +96,11 @@ export class Kitchen {
         this.group.position.set(station.x, 0, station.z);
         parent.add(this.group);
         this.buildBenches();
+    }
+
+    /** Where a served dish goes on the counter (world, on the bench top). */
+    public get servedPoint(): THREE.Vector3 {
+        return new THREE.Vector3(this.servedPiece.x, this.benchTop, this.servedPiece.z).add(this.group.position);
     }
 
     /** Where the customer stands to order (world). */

@@ -1,0 +1,6 @@
+{
+    "$comment": "npm run models publishes compressed models; raw assets untouched (tools/models/shrink-textures.mjs). maxTextureSize: textures capped (the KayKit packs' 1024px colour atlases). meshopt: geometry gently quantised and meshopt-compressed (decoded by core/three/GLTFLoaders.ts in the game, web/public/gltf.js in the editor).",
+    "maxTextureSize": 512,
+    "meshopt": true,
+    "jpegQuality": 85
+}

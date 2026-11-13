@@ -8,16 +8,16 @@
   ],
   "customer": {
     "outside": {
-      "x": 3.25,
-      "z": 4
+      "x": 2.5,
+      "z": 6.75
     },
     "inside": {
-      "x": 1.25,
-      "z": 3.75
+      "x": 0.5,
+      "z": 5.75
     },
     "start": {
-      "x": 5.75,
-      "z": 3.75
+      "x": 6.25,
+      "z": 6.5
     }
   },
   "stations": [
@@ -168,7 +168,21 @@
           "fov": 40
         }
       },
-      "until": 1
+      "until": 1,
+      "customer": {
+        "outside": {
+          "x": 3.25,
+          "z": 4
+        },
+        "inside": {
+          "x": 1.25,
+          "z": 3.75
+        },
+        "start": {
+          "x": 5.75,
+          "z": 3.75
+        }
+      }
     },
     {
       "id": "burger-diner",
@@ -237,42 +251,56 @@
         {
           "role": "pile",
           "piece": "bunBottom",
-          "x": 1.33,
+          "x": 1.5,
           "z": -1.25,
           "rotationY": 0
         },
         {
           "role": "pile",
           "piece": "bunTop",
-          "x": 0,
+          "x": 0.5,
           "z": -1.25,
           "rotationY": 0
         },
         {
           "role": "pile",
           "piece": "patty",
-          "x": -1.33,
+          "x": -0.5,
+          "z": -1.25,
+          "rotationY": 0
+        },
+        {
+          "role": "pile",
+          "piece": "onion",
+          "x": -1.5,
           "z": -1.25,
           "rotationY": 0
         },
         {
           "role": "pile",
           "piece": "cheese",
-          "x": 1.33,
+          "x": 1.5,
           "z": -2.25,
           "rotationY": 0
         },
         {
           "role": "pile",
           "piece": "lettuce",
-          "x": 0,
+          "x": 0.5,
           "z": -2.25,
           "rotationY": 0
         },
         {
           "role": "pile",
           "piece": "tomato",
-          "x": -1.33,
+          "x": -0.5,
+          "z": -2.25,
+          "rotationY": 0
+        },
+        {
+          "role": "pile",
+          "piece": "pickles",
+          "x": -1.5,
           "z": -2.25,
           "rotationY": 0
         },
@@ -293,8 +321,8 @@
         "order": {
           "position": {
             "x": 0.6,
-            "y": 6.5,
-            "z": -1.5
+            "y": 5.75,
+            "z": -3.25
           },
           "target": {
             "x": 0.6,
@@ -306,18 +334,32 @@
         "bench": {
           "position": {
             "x": 0,
-            "y": 7.5,
-            "z": -3.2
+            "y": 8.5,
+            "z": -5
           },
           "target": {
             "x": 0,
             "y": 1,
-            "z": -0.4
+            "z": -1
           },
           "fov": 40
         }
       },
-      "from": 1
+      "from": 1,
+      "customer": {
+        "outside": {
+          "x": 0.5,
+          "z": 8.75
+        },
+        "inside": {
+          "x": 0.5,
+          "z": 5.75
+        },
+        "start": {
+          "x": 6.25,
+          "z": 8.75
+        }
+      }
     }
   ],
   "seats": [
@@ -675,8 +717,8 @@
       "openings": [
         {
           "kind": "window",
-          "minX": -2.35,
-          "maxX": 2.35,
+          "minX": -3.3,
+          "maxX": 3.3,
           "minZ": 1.2,
           "maxZ": 1.5,
           "bottom": 1.5
@@ -713,8 +755,8 @@
           "kind": "door",
           "sliding": true,
           "style": "glass",
-          "minX": -0.5,
-          "maxX": 1.5,
+          "minX": -1,
+          "maxX": 2,
           "minZ": 7.3,
           "maxZ": 7.7
         },
@@ -729,13 +771,14 @@
           "kind": "window",
           "minX": 5.8,
           "maxX": 6.2,
-          "minZ": 3,
-          "maxZ": 7
+          "minZ": 3.5,
+          "maxZ": 7.5,
+          "bottom": 1
         },
         {
           "kind": "window",
-          "minX": 2.75,
-          "maxX": 4.25,
+          "minX": 3,
+          "maxX": 4.5,
           "minZ": 7.225,
           "maxZ": 7.775,
           "bottom": 0.76
@@ -960,7 +1003,9 @@
       "style": "truck",
       "setup": "room",
       "openings": [],
-      "height": 0.9
+      "height": 0.9,
+      "from": 1,
+      "until": 2
     }
   ],
   "props": [
@@ -1208,49 +1253,65 @@
       "model": "library/prototype-table-medium-long/prototype-table-medium-long.gltf",
       "x": -4,
       "z": 2.75,
-      "rotationY": 0
+      "rotationY": 0,
+      "from": 1,
+      "until": 2
     },
     {
       "model": "library/prototype-table-medium-long/prototype-table-medium-long.gltf",
       "x": -1,
       "z": 2.75,
-      "rotationY": 0
+      "rotationY": 0,
+      "from": 1,
+      "until": 2
     },
     {
       "model": "library/prototype-table-medium-long/prototype-table-medium-long.gltf",
       "x": 2,
       "z": 2.75,
-      "rotationY": 0
+      "rotationY": 0,
+      "from": 1,
+      "until": 2
     },
     {
       "model": "library/prototype-table-medium-long/prototype-table-medium-long.gltf",
       "x": 5,
       "z": 2.75,
-      "rotationY": 0
+      "rotationY": 0,
+      "from": 1,
+      "until": 2
     },
     {
       "model": "library/restaurant-chair-stool/restaurant-chair-stool.gltf",
       "x": -1.5,
       "z": 3.75,
-      "rotationY": 0
+      "rotationY": 0,
+      "from": 1,
+      "until": 2
     },
     {
       "model": "library/restaurant-chair-stool/restaurant-chair-stool.gltf",
       "x": -0.25,
       "z": 3.75,
-      "rotationY": 0
+      "rotationY": 0,
+      "from": 1,
+      "until": 2
     },
     {
       "model": "library/restaurant-chair-stool/restaurant-chair-stool.gltf",
       "x": 1.25,
       "z": 3.75,
-      "rotationY": 0
+      "rotationY": 0,
+      "from": 1,
+      "until": 2
     },
     {
       "model": "library/restaurant-chair-stool/restaurant-chair-stool.gltf",
       "x": 2.75,
       "z": 3.75,
-      "rotationY": 0
+      "rotationY": 0,
+      "from": 1,
+      "until": 2
     },
     {
       "model": "library/city2-tree-04/city2-tree-04.glb",
@@ -5956,6 +6017,13 @@
         "halfX": 0.25,
         "halfZ": 0.25
       }
+    },
+    {
+      "model": "library/restaurant-icecream-machine/restaurant-icecream-machine.gltf",
+      "x": 4.75,
+      "z": -0.25,
+      "rotationY": -1.571,
+      "from": 1
     }
   ],
   "areas": [],
@@ -6463,28 +6531,6 @@
         }
       ],
       "color": "#82ca60",
-      "town": "city2"
-    },
-    {
-      "points": [
-        {
-          "x": -14.5,
-          "z": -4.25
-        },
-        {
-          "x": 9.5,
-          "z": -4.25
-        },
-        {
-          "x": 9.5,
-          "z": 8.75
-        },
-        {
-          "x": -14.5,
-          "z": 8.75
-        }
-      ],
-      "color": "#6fbb52",
       "town": "city2"
     },
     {

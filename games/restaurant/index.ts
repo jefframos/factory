@@ -20,6 +20,7 @@ import MarketScene from './game/scenes/MarketScene';
 import { curtain } from './game/ui/Curtain';
 import { SETTINGS } from './game/data/Settings';
 import { RestaurantSave } from './game/data/RestaurantSave';
+import { FLAVORS, Order, Topping, dealDay } from './game/data/Recipes';
 import { RestaurantAudio } from './game/audio/RestaurantAudio';
 
 type PlatformConfigEntry = { gameId?: string; enableAds?: boolean };
@@ -87,6 +88,31 @@ export default class RestaurantGame extends Game {
         const panel = DebugOverlay.instance.panel('Areas', { id: 'restaurant.areas' });
         // One per line (a list to pick from).
         for (const { name, go } of areas) panel.button(name, () => curtain(this, name, 'Debug jump', 'ItemIcon_Shop', go));
+
+        // Minigames: a day set up to try one thing at once (it replaces the day the player's on). New ones go in GAMES.
+        const stageOf = (id: string) => Math.max(0, SETTINGS.stages.findIndex((s) => s.id === id));
+        const burger = (toppings: Topping[]): Order => ({ toppings });
+        const games: { name: string; go: () => void }[] = [
+            {
+                // Every flavour, the machine's hints on (as a first time).
+                name: 'ICE CREAM (one of each flavour)',
+                go: () => {
+                    RestaurantSave.forgetIceCream();
+                    RestaurantSave.practice(stageOf('smallDiner'), 1, FLAVORS.map((iceCream) => ({ toppings: [], iceCream })));
+                },
+            },
+            { name: 'BURGERS: FOOD TRUCK QUEUE', go: () => RestaurantSave.practice(stageOf('truck'), 1, [burger(['cheese']), burger(['lettuce', 'tomato']), burger(['cheese', 'lettuce', 'tomato'])]) },
+            { name: 'BURGERS: NEW TOPPINGS (pickles, onion)', go: () => RestaurantSave.practice(stageOf('smallDiner'), 1, [burger(['pickles']), burger(['onion']), burger(['cheese', 'pickles', 'onion'])]) },
+            { name: 'SEATED: CLEARING PLATES (3 stools, 4 customers)', go: () => RestaurantSave.practice(stageOf('smallDiner'), 0, dealDay(RestaurantSave.day, stageOf('smallDiner'), SETTINGS.stages[stageOf('smallDiner')].firstDay?.customers)) },
+            { name: 'MIXED: BURGERS AND ICE CREAM', go: () => RestaurantSave.practice(stageOf('smallDiner'), 1, [burger(['cheese']), { toppings: [], iceCream: 'chocolate' }, burger(['pickles', 'tomato']), { toppings: [], iceCream: 'strawberry' }]) },
+        ];
+        const minigames = DebugOverlay.instance.panel('Minigames', { id: 'restaurant.minigames' });
+        for (const { name, go } of games) {
+            minigames.button(name, () => curtain(this, name.split(' (')[0], 'Minigame', 'ItemIcon_Meat', () => {
+                go();
+                this.showRestaurant();
+            }));
+        }
     }
 
     /** The restaurant, for the day the player's on; its day's card goes to the supermarket. */

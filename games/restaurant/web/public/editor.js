@@ -38,6 +38,7 @@ const SIZES = { food: 0.5, pan: 0.75, dish: 0.72, pileDish: 0.6 };
 const PILE_MODELS = {
     bunBottom: 'food_ingredient_bun_bottom', bunTop: 'food_ingredient_bun_top', patty: 'food_ingredient_burger_uncooked',
     cheese: 'food_ingredient_cheese_slice', lettuce: 'food_ingredient_lettuce_slice', tomato: 'food_ingredient_tomato_slice',
+    pickles: 'food_ingredient_pickle_slices', onion: 'food_ingredient_onion_rings',
 };
 const ROLES = ['counter', 'stove', 'pan', 'plate', 'served', 'customer', 'pile', 'decor'];
 const OPENING_KINDS = ['window', 'door', 'gap'];
@@ -389,7 +390,7 @@ function rebuild() {
     (layout.people?.areas ?? []).forEach((area, i) => shownAt(area) && buildPeopleArea(area, i));
     (layout.seats ?? []).forEach((seat, i) => shownAt(seat) && buildSeat(seat, i));
     (layout.stations ?? []).forEach((station, i) => shownAt(station) && buildStation(station, i));
-    if (layout.customer) buildPath();
+    if (wayIn()) buildPath();
     if (layout.market) buildMarket();
     if (selection && !pickables.has(keyOf(selection))) selection = null;
     attachGizmo();
@@ -877,21 +878,35 @@ function buildCamera(station, i, key) {
     register({ type: 'camera', i, key, part: 'target' }, aim);
 }
 
-/** The customers' way in: where they come from (start), outside and just inside the door. */
+/**
+ * The customers' way in shown: the station's at the stage being viewed (each stage's own: the food truck's and the diner's
+ * doors aren't the same; a station without one starts as a copy of the level's), else the level's (the market).
+ */
+function wayIn() {
+    const station = (layout.stations ?? []).find((s) => shownAt(s));
+    if (station && !station.customer && layout.customer) {
+        station.customer = structuredClone(layout.customer);
+        setDirty(true);
+    }
+    return station?.customer ?? layout.customer;
+}
+
+/** The customers' way in (wayIn): where they come from (start), outside and just inside the door. */
 function buildPath() {
+    const way = wayIn();
     // No start yet: one where the game would put it (6 on past outside, away from the door), to drag where you want. It's
     // in the layout now, so the level's marked unsaved (Save keeps it).
-    if (layout.customer && !layout.customer.start && layout.customer.outside && layout.customer.inside) {
-        const { outside, inside } = layout.customer;
+    if (way && !way.start && way.outside && way.inside) {
+        const { outside, inside } = way;
         const dx = outside.x - inside.x;
         const dz = outside.z - inside.z;
         const length = Math.hypot(dx, dz) || 1;
-        layout.customer.start = { x: round(outside.x + (dx / length) * 6), z: round(outside.z + (dz / length) * 6) };
+        way.start = { x: round(outside.x + (dx / length) * 6), z: round(outside.z + (dz / length) * 6) };
         setDirty(true);
         setTimeout(() => toast('Added the customers\' start point ("way in: start"): drag it where they should come from, then Save', 'warn'), 0);
     }
     for (const key of ['start', 'outside', 'inside']) {
-        const point = layout.customer?.[key];
+        const point = way?.[key];
         if (!point) continue;
         const group = new THREE.Group();
         const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.06, 24), new THREE.MeshBasicMaterial({ color: 0xf39a2d }));
@@ -976,7 +991,7 @@ function dataOf(sel) {
     if (sel.type === 'station') return layout.stations[sel.i];
     if (sel.type === 'piece') return layout.stations[sel.i]?.pieces[sel.j];
     if (sel.type === 'camera') return layout.stations[sel.i]?.cameras[sel.key];
-    if (sel.type === 'path') return layout.customer?.[sel.key];
+    if (sel.type === 'path') return wayIn()?.[sel.key];
     if (sel.type === 'crates') return layout.market?.crates;
     if (sel.type === 'cashier') return layout.market?.cashier;
     return null;
@@ -1517,7 +1532,7 @@ function renderOutline() {
                 outlineItem('🎥 bench camera', { type: 'camera', i, key: 'bench', part: 'position' }),
                 ...station.pieces.map((piece, j) => outlineItem(`${piece.role}${piece.piece ? ': ' + piece.piece : piece.model ? ': ' + modelName(piece.model) : ''}`, { type: 'piece', i, j })))),
         ])),
-        ...(layout.customer ? group('Way in', ['start', 'outside', 'inside'].map((key) => outlineItem(`🚶 ${key}`, { type: 'path', key }))) : []),
+        ...(wayIn() ? group(`Way in${(layout.stations ?? []).some((s) => shownAt(s)) ? ' (this stage\'s station)' : ''}`, ['start', 'outside', 'inside'].map((key) => outlineItem(`🚶 ${key}`, { type: 'path', key }))) : []),
         ...((layout.seats ?? []).length ? group('Seats', layout.seats.map((seat, i) => outlineItem(`🪑 seat ${i + 1}${seat.id ? ': ' + seat.id : ''}`, { type: 'seat', i }, rangeTag(seat), shownAt(seat)))) : []),
         ...(level === 'restaurant' ? group('Street', [
             ...(layout.lawns ?? []).map((lawn, i) => outlineItem(`🌱 lawn (${lawn.points.length} corners)`, { type: 'lawn', i }, rangeTag(lawn), shownAt(lawn))),

@@ -5,7 +5,9 @@
 // customers come and go), and props, each limited to the stages it's there for (`from` / `until`: 0 the food truck, 1
 // the small diner, 2 the diner, 3 the restaurant). Plus the restaurant's own:
 //   - `stages`: their names;
-//   - `customer`: the customers' way in (from outside, just in through the door; then the station's own spot);
+//   - `customer`: the customers' way in (from the street, outside the door, just in through it; then the station's own
+//     spot). Each station can have its own (`customer` on it: the food truck's and the diner's doors aren't the same);
+//     the level's is the fallback;
 //   - `stations`: where the food's made. A station (the burger one now; pizza, baking... later) is its pieces, each with a
 //     role — counters, the cooktop, the pan, the plate, where a served plate goes, where the customer stands, the
 //     ingredient piles, decoration — placed from the station's spot (x, z), and its camera shots: `order` (the customer
@@ -50,6 +52,13 @@ export interface CameraShot {
     fov: number;
 }
 
+/** The customers' way in: where they come from (`start`, off in the street), outside the door, just in. */
+export interface WayIn {
+    start?: Point;
+    outside: Point;
+    inside: Point;
+}
+
 export interface StationLayout extends StageRange {
     id: string;
     kind: 'burger';
@@ -58,6 +67,8 @@ export interface StationLayout extends StageRange {
     z: number;
     pieces: StationPiece[];
     cameras: { order: CameraShot; bench: CameraShot };
+    /** Its customers' way in (unset: the level's `customer`). */
+    customer?: WayIn;
 }
 
 /** A seat for a seated customer: where they sit, facing `rotationY` (toward their table), at `height` (the seat's top), and
@@ -74,8 +85,8 @@ export interface SeatLayout extends StageRange {
 export interface RestaurantLayout extends RoomLayout {
     name: string;
     stages: string[];
-    /** The customers' way in: where they come from (`start`, off in the street), outside the door, just in. */
-    customer: { start?: Point; outside: Point; inside: Point };
+    /** The customers' way in, for a station without its own. */
+    customer: WayIn;
     stations: StationLayout[];
     seats?: SeatLayout[];
     /** The street: road cells, the cars on them, lawns, and areas of people (all optional). */
@@ -97,15 +108,24 @@ const toVector = ({ x, z }: Point): THREE.Vector3 => new THREE.Vector3(x, 0, z);
 /** Without a start point, customers come from this far on past "outside" (away from the door). */
 const START_DISTANCE = 6;
 
-const outside = toVector(LAYOUT_DATA.customer.outside);
-const inside = toVector(LAYOUT_DATA.customer.inside);
+export interface CustomerPath {
+    start: THREE.Vector3;
+    outside: THREE.Vector3;
+    inside: THREE.Vector3;
+}
 
-/** The customers' way in: from their start (off in the street), to outside the door, in through it (then to the station's customer spot). */
-export const CUSTOMER_PATH = {
-    start: LAYOUT_DATA.customer.start ? toVector(LAYOUT_DATA.customer.start) : outside.clone().addScaledVector(outside.clone().sub(inside).setY(0).normalize(), START_DISTANCE),
-    outside,
-    inside,
-};
+/**
+ * The customers' way in at stage `stage` (its station's own, else the level's): from their start (off in the street), to
+ * outside the door, in through it (then to the station's customer spot).
+ */
+export function customerPath(stage: number): CustomerPath {
+    const station = LAYOUT_DATA.stations.find((s) => shownAt(s, stage, LAYOUT_DATA.areas ?? []));
+    const way = station?.customer ?? LAYOUT_DATA.customer;
+    const outside = toVector(way.outside);
+    const inside = toVector(way.inside);
+    const start = way.start ? toVector(way.start) : outside.clone().addScaledVector(outside.clone().sub(inside).setY(0).normalize(), START_DISTANCE);
+    return { start, outside, inside };
+}
 
 /** The station of `kind` at stage `stage`. */
 export function stationAt(stage: number, kind: StationLayout['kind'] = 'burger'): StationLayout {
@@ -124,6 +144,14 @@ export function roomModels(stage: number): string[] {
 
 /** The room at `stage` (its models loaded: roomModels). */
 export const buildRoom = (stage: number): Room => new Room(LAYOUT_DATA, stage, { instantiate: (model) => kitchenModel(model) });
+
+/** The ice cream machine's model (KayKit's, imported from the library): a prop of it makes the ice cream station. */
+export const ICE_CREAM_MACHINE = /icecream[-_]machine/i;
+
+/** Whether stage `stage`'s room has the ice cream machine (its customers can order ice cream). */
+export function hasIceCreamMachine(stage: number): boolean {
+    return LAYOUT_DATA.props.some((p) => ICE_CREAM_MACHINE.test(p.model) && shownAt(p, stage, LAYOUT_DATA.areas ?? []));
+}
 
 /** The seats at `stage` (the first `limit` of them, if given: a stage's first day can use fewer). */
 export function seatsAt(stage: number, limit?: number): SeatLayout[] {

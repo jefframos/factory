@@ -11,10 +11,10 @@ import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { COIN_BAR, DARK, WARM, fillCoinBar, framePlane, glossyButton, iconSprite, label, plainLabel, tappable } from './UiParts';
-import { foodIcon } from './Icons';
+import { foodIcon, modelIcon } from './Icons';
 import { DayEnd } from './DayEnd';
 import { StageBar } from './StageBar';
-import { Order, Part } from '../data/Recipes';
+import { CONE_MODEL, ICE_CREAM_MODELS, Order, PART_MODELS, Part, SWIRL_MODELS } from '../data/Recipes';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
 
 const MARGIN = 28;
@@ -128,10 +128,10 @@ export class RestaurantHud extends PIXI.Container {
 
     // ---------------------------------------------------------------- the order
 
-    /** The order as a row: the burger (big), then + and each topping. */
+    /** The order as a row: the burger (big), then + and each topping; or the ice cream cone (its flavour's). */
     private orderRow(order: Order, big: number, small: number): PIXI.Container {
         const row = new PIXI.Container();
-        const items: PIXI.DisplayObject[] = [foodIcon('burger', big)];
+        const items: PIXI.DisplayObject[] = [order.iceCream ? modelIcon(ICE_CREAM_MODELS[order.iceCream], big) : foodIcon('burger', big)];
         for (const topping of order.toppings) items.push(foodIcon(topping, small));
         let x = 0;
         const widths = items.map((item, i) => (i === 0 ? big : small));
@@ -174,34 +174,39 @@ export class RestaurantHud extends PIXI.Container {
         this.bubble.visible = false;
     }
 
-    /** The ticket at the top while cooking: the patty and the toppings, each ticked when it's on the plate. */
+    /**
+     * The ticket at the top while cooking: the buns, the patty and the toppings, each ticked when it's on the plate (an ice
+     * cream: the cone, then its flavour's swirl, ticked as they're done).
+     */
     public showTicket(order: Order): void {
         this.ticket.removeChildren().forEach((c) => c.destroy({ children: true }));
         this.ticketMarks = new Map();
-        const parts: Part[] = ['bunBottom', 'patty', ...order.toppings, 'bunTop'];
-        const width = parts.length * TICKET.icon + (parts.length - 1) * TICKET.gap + TICKET.pad * 2;
+        const items: { key: string; model: string }[] = order.iceCream
+            ? [{ key: 'cone', model: CONE_MODEL }, { key: order.iceCream, model: SWIRL_MODELS[order.iceCream] }]
+            : (['bunBottom', 'patty', ...order.toppings, 'bunTop'] as Part[]).map((part) => ({ key: part, model: PART_MODELS[part] }));
+        const width = items.length * TICKET.icon + (items.length - 1) * TICKET.gap + TICKET.pad * 2;
         const height = TICKET.icon + TICKET.pad * 2;
         const back = framePlane('BasicFrame_Round20', width, height);
         back.position.set(-width / 2, -height / 2);
         this.ticket.addChild(back);
-        parts.forEach((part, i) => {
+        items.forEach(({ key, model }, i) => {
             const x = -width / 2 + TICKET.pad + TICKET.icon / 2 + i * (TICKET.icon + TICKET.gap);
-            const icon = foodIcon(part, TICKET.icon);
+            const icon = modelIcon(model, TICKET.icon);
             icon.x = x;
             const mark = iconSprite('Icon_Check03_l', 40);
             mark.position.set(x + TICKET.icon / 2 - 10, TICKET.icon / 2 - 10);
             mark.visible = false;
-            this.ticketMarks.set(part, mark);
+            this.ticketMarks.set(key, mark);
             this.ticket.addChild(icon, mark);
         });
         this.ticket.visible = true;
         gsap.fromTo(this.ticket, { alpha: 0 }, { alpha: 1, duration: 0.25 });
     }
 
-    /** Ticks what's on the plate. */
-    public tickTicket(onPlate: readonly Part[]): void {
-        for (const [part, mark] of this.ticketMarks) {
-            const on = onPlate.includes(part as Part);
+    /** Ticks what's done (what's on the plate; an ice cream's cone and swirl). */
+    public tickTicket(done: readonly string[]): void {
+        for (const [key, mark] of this.ticketMarks) {
+            const on = done.includes(key);
             if (on && !mark.visible) gsap.fromTo(mark.scale, { x: 0.1, y: 0.1 }, { x: mark.scale.x || 1, y: mark.scale.y || 1, duration: 0.3, ease: 'back.out(3)' });
             mark.visible = on;
         }
@@ -288,7 +293,7 @@ export class RestaurantHud extends PIXI.Container {
             .to(face, { alpha: 0, duration: 0.3 }, 1.3);
         if (coins <= 0) return;
         const pay = new PIXI.Container();
-        const coin = iconSprite('Icon_Coin', 54);
+        const coin = iconSprite('ItemIcon_Money_Bill', 54);
         const text = label(44, 0xffe27a);
         text.text = `+${coins}`;
         text.anchor.set(0, 0.5);

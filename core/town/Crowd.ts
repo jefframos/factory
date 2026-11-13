@@ -72,7 +72,7 @@ export interface CrowdOptions {
 
 const STANDING_Y = 0.02;
 /** How far the walk clip carries a model of its own height per second: the feet don't slide at this speed. */
-const CLIP_WALK_SPEED = 1.35;
+const CLIP_WALK_SPEED = 1.38;
 const BLEND_SPEED = 6;
 const TURN_SPEED = 6;
 const SPAWN_TRIES = 60;

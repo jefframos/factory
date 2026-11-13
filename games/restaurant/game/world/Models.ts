@@ -1,7 +1,8 @@
 // Models.ts
 //
 // The 3D models: the kitchen's (KayKit Restaurant Bits: raw-assets/models/kitchen{m} → public/restaurant/models/kitchen,
-// one texture shared by all) and the people (the UFO game's skinned people and their walk / idle clips). Each is loaded
+// one texture shared by all) and the people (the characters Fun kit's skinned people and Dig's clips: tools/build-people.mjs;
+// the customers close up, a much lighter copy of each for the street's crowd). Each is loaded
 // once; a copy is handed out per use. The street's road tiles and cars (library/...: UFO's, core/town) load the same way. Copies are set so their bottom is at y 0 (x and z stay the model's own: KayKit
 // pieces are centred on them), and `sizeOf` tells how big one is.
 
@@ -68,9 +69,24 @@ export function sizeOf(object: THREE.Object3D): THREE.Vector3 {
     return new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
 }
 
-/** The people loaded (their models and clips), for a crowd (core/town/Crowd); null until loadModels has run. */
-export function peopleAssets(): { models: THREE.Object3D[]; walk: THREE.AnimationClip; idle: THREE.AnimationClip; modelHeight: number } | null {
-    return people ? { models: people.models, walk: people.walk, idle: people.idle, modelHeight: PERSON_MODEL_HEIGHT } : null;
+export interface CrowdModels { models: THREE.Object3D[]; walk: THREE.AnimationClip; idle: THREE.AnimationClip; modelHeight: number }
+let crowd: Promise<CrowdModels> | null = null;
+
+/**
+ * The street crowd's people (core/town/Crowd): the customers' outfits much lighter (crowd-0N.glb: tools/build-people.mjs),
+ * with the customers' clips. Loaded the first time a street has people (after loadModels: the clips are the customers').
+ */
+export function crowdAssets(): Promise<CrowdModels> {
+    if (!crowd) {
+        crowd = (async () => {
+            if (!people) throw new Error('people not loaded');
+            const files = Array.from({ length: PERSON_COUNT }, (_, i) => `crowd-0${i + 1}.glb`);
+            const models = await Promise.all(files.map((f) => loader.loadAsync(`${PEOPLE}${f}`)));
+            return { models: models.map((m) => m.scene), walk: people.walk, idle: people.idle, modelHeight: PERSON_MODEL_HEIGHT };
+        })();
+        crowd.catch(() => (crowd = null));
+    }
+    return crowd;
 }
 
 /** Town models (road tiles, cars): loaded once each by their layout name, a copy handed out per use. */
