@@ -20,6 +20,8 @@ interface SaveData {
     day: number;
     place: Place;
     stage: number;
+    /** Days played at this stage (0: its first day: settings.json stages[].firstDay). */
+    stageDay: number;
     /** Coins in the stage's bar. */
     progress: number;
     orders: Order[];
@@ -27,7 +29,12 @@ interface SaveData {
 
 /** A new player: day 1's orders (the kitchen's stocked for the first day). */
 function fresh(): SaveData {
-    return { day: 0, place: 'restaurant', stage: 0, progress: 0, orders: dealDay(0) };
+    return { day: 0, place: 'restaurant', stage: 0, stageDay: 0, progress: 0, orders: dealFor(0, 0, 0) };
+}
+
+/** Day `day`'s orders, at `stage`'s `stageDay`-th day: its first day can ask for its own number of customers. */
+function dealFor(day: number, stage: number, stageDay: number): Order[] {
+    return dealDay(day, stageDay === 0 ? stageSettings(stage).firstDay?.customers : undefined);
 }
 
 function parse(text: string | null): SaveData {
@@ -38,6 +45,7 @@ function parse(text: string | null): SaveData {
             day: Math.max(0, Math.floor(saved.day ?? 0)),
             place: saved.place === 'market' ? 'market' : 'restaurant',
             stage: Math.max(0, Math.floor(saved.stage ?? 0)),
+            stageDay: Math.max(0, Math.floor(saved.stageDay ?? 0)),
             progress: Math.max(0, Math.floor(saved.progress ?? 0)),
             orders: saved.orders,
         };
@@ -93,6 +101,11 @@ export const RestaurantSave = {
         return state.stage;
     },
 
+    /** Days played at this stage (0: its first). */
+    get stageDay(): number {
+        return state.stageDay;
+    },
+
     get progress(): number {
         return state.progress;
     },
@@ -114,6 +127,7 @@ export const RestaurantSave = {
             }
             state.progress -= goal;
             state.stage++;
+            state.stageDay = 0;
         }
         save();
     },
@@ -122,14 +136,19 @@ export const RestaurantSave = {
     setStage(stage: number): void {
         state.stage = Math.max(0, Math.floor(stage));
         state.progress = 0;
+        // As if just upgraded: the stage's first day, its orders dealt for it.
+        state.stageDay = 0;
+        state.orders = dealFor(state.day, state.stage, 0);
         save();
     },
 
     /** A day's over: its coins into the bar, the next day's orders dealt, and off to the supermarket. */
     endDay(earned: number): void {
+        const stageBefore = state.stage;
         RestaurantSave.addProgress(earned);
         state.day++;
-        state.orders = dealDay(state.day);
+        state.stageDay = state.stage === stageBefore ? state.stageDay + 1 : 0;
+        state.orders = dealFor(state.day, state.stage, state.stageDay);
         state.place = 'market';
         save();
     },

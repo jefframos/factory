@@ -2,7 +2,8 @@
 //
 // A customer: one of the UFO game's people (a random model, dressed in random colours as UFO's are), walking in from the
 // door to the counter, standing there while their order's made (idle), reacting to the dish (a happy hop, or a shake of
-// the head) and walking out again. Walk and idle are the people's own clips, blended; the walk's played at the speed
+// the head) and walking out again. Or, served seated, sitting down at a seat (the people's `sit` clip; without one they
+// stand at the seat, facing the table) and getting up again. Walk and idle are the people's own clips, blended; the walk's played at the speed
 // that keeps the feet from sliding.
 
 import * as THREE from 'three';
@@ -24,6 +25,11 @@ const PARTS: (keyof typeof PALETTE)[] = ['skin', 'top', 'bottom', 'shoes', 'hair
 const CLIP_WALK_SPEED = 1.35;
 const BLEND_SPEED = 6;
 const TURN_SPEED = 8;
+/** A customer's own pace: a share of the setting's walking speed, at random. */
+const PACE = [0.85, 1.15];
+/** The sit clip's own seat height (its hips, from the model's feet), and, without a clip, how far behind the seat they stand. */
+const SIT_CLIP_HEIGHT = 0.45;
+const STAND_BACK = 0.45;
 
 const pick = <T>(list: readonly T[]): T => list[Math.floor(Math.random() * list.length)];
 
@@ -59,15 +65,23 @@ export class Customer {
     private readonly mixer: THREE.AnimationMixer;
     private readonly walkAction: THREE.AnimationAction;
     private readonly idleAction: THREE.AnimationAction;
+    /** Sitting (null: the people have no sit clip). */
+    private readonly sitAction: THREE.AnimationAction | null;
+    private sitWeight = 0;
+    private seated = false;
     private readonly geometries: THREE.BufferGeometry[] = [];
     private path: THREE.Vector3[] = [];
     private arrived: (() => void) | null = null;
     /** Which way they face once they stop (radians round y; null: as they came). */
     private faceAt: number | null = null;
     private walkWeight = 0;
+    /** Their own walking pace (x the setting's), so a crowd doesn't march in step. */
+    public readonly pace = PACE[0] + Math.random() * (PACE[1] - PACE[0]);
+    /** Where they stand off their spot in the line: across it, along it (each picks their own). */
+    public readonly offset = { across: (Math.random() * 2 - 1), along: (Math.random() * 2 - 1) };
 
     public constructor(parent: THREE.Object3D, at: THREE.Vector3) {
-        const { model, walk, idle } = personModel(Math.floor(Math.random() * PERSON_COUNT));
+        const { model, walk, idle, sit } = personModel(Math.floor(Math.random() * PERSON_COUNT));
         model.traverse((child) => {
             if (!(child instanceof THREE.SkinnedMesh)) return;
             child.geometry = dressed(child.geometry);
@@ -85,11 +99,46 @@ export class Customer {
         this.mixer = new THREE.AnimationMixer(model);
         this.walkAction = this.mixer.clipAction(walk);
         this.idleAction = this.mixer.clipAction(idle);
-        this.walkAction.timeScale = SETTINGS.customer.walkSpeed / (CLIP_WALK_SPEED * scale);
+        this.walkAction.timeScale = (SETTINGS.customer.walkSpeed * this.pace) / (CLIP_WALK_SPEED * scale);
         this.walkAction.setEffectiveWeight(0);
         this.idleAction.time = Math.random() * idle.duration;
         this.walkAction.play();
         this.idleAction.play();
+        this.sitAction = sit ? this.mixer.clipAction(sit) : null;
+        if (this.sitAction) {
+            this.sitAction.setEffectiveWeight(0);
+            this.sitAction.play();
+        }
+    }
+
+    /** Whether they can really sit (the people have a sit clip). */
+    public get canSit(): boolean {
+        return this.sitAction !== null;
+    }
+
+    /**
+     * Sits down at a seat: on it (at `height`, the seat's top), facing `facing`, playing the sit clip. Without one: standing
+     * at the seat's back edge, facing the table. Call once they've walked there.
+     */
+    public sitAt(seat: THREE.Vector3, facing: number, height: number): void {
+        this.path = [];
+        this.faceAt = facing;
+        this.root.rotation.y = facing;
+        if (this.sitAction) {
+            this.seated = true;
+            this.root.position.set(seat.x, 0, seat.z);
+            // The clip's hips sit at the model's own sitting height: lifted to the seat's.
+            gsap.to(this.body.position, { y: Math.max(0, height - SIT_CLIP_HEIGHT), duration: 0.35, ease: 'power2.out' });
+        } else {
+            this.root.position.set(seat.x - Math.sin(facing) * STAND_BACK, 0, seat.z - Math.cos(facing) * STAND_BACK);
+        }
+    }
+
+    /** Up from the seat (back on their feet, ready to walk). */
+    public standUp(): void {
+        if (!this.seated) return;
+        this.seated = false;
+        gsap.to(this.body.position, { y: 0, duration: 0.3, ease: 'power2.in' });
     }
 
     /** The top of their head (world). */
@@ -128,7 +177,7 @@ export class Customer {
         if (target) {
             const to = target.clone().sub(this.root.position).setY(0);
             const distance = to.length();
-            const step = SETTINGS.customer.walkSpeed * dt;
+            const step = SETTINGS.customer.walkSpeed * this.pace * dt;
             if (distance <= step) {
                 this.root.position.copy(target);
                 this.path.shift();
@@ -146,8 +195,11 @@ export class Customer {
         }
         const weight = moving ? 1 : 0;
         this.walkWeight += Math.sign(weight - this.walkWeight) * Math.min(Math.abs(weight - this.walkWeight), BLEND_SPEED * dt);
+        const sit = this.seated && !moving ? 1 : 0;
+        this.sitWeight += Math.sign(sit - this.sitWeight) * Math.min(Math.abs(sit - this.sitWeight), BLEND_SPEED * dt);
         this.walkAction.setEffectiveWeight(this.walkWeight);
-        this.idleAction.setEffectiveWeight(1 - this.walkWeight);
+        this.sitAction?.setEffectiveWeight(this.sitWeight * (1 - this.walkWeight));
+        this.idleAction.setEffectiveWeight((1 - this.walkWeight) * (1 - this.sitWeight));
         this.mixer.update(dt);
     }
 

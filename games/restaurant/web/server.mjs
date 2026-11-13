@@ -155,6 +155,21 @@ function send(res, status, body) {
     res.end(JSON.stringify(body));
 }
 
+/** A core module as JavaScript (types stripped): the road solver the game and the editor share (core/roads/RoadGrid.ts). */
+const CORE_DIR = path.join(REPO_ROOT, 'core');
+async function serveCore(res, requestPath) {
+    const filePath = path.join(CORE_DIR, path.normalize(requestPath));
+    if (!filePath.startsWith(CORE_DIR)) return res.writeHead(403).end('Forbidden');
+    try {
+        const { transform } = await import('esbuild');
+        const { code } = await transform(await fs.readFile(filePath, 'utf-8'), { loader: 'ts', format: 'esm' });
+        res.writeHead(200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'no-store' });
+        return res.end(code);
+    } catch (error) {
+        return res.writeHead(404, { 'Content-Type': 'text/plain' }).end(String(error.message ?? error));
+    }
+}
+
 async function serveFile(res, baseDir, requestPath) {
     const filePath = path.join(baseDir, path.normalize(requestPath));
     if (!filePath.startsWith(baseDir)) {
@@ -234,6 +249,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
     try {
         if (url.pathname.startsWith('/api/')) return await handleApi(req, res, url);
+        if (url.pathname.startsWith('/core/') && url.pathname.endsWith('.ts')) return await serveCore(res, decodeURIComponent(url.pathname.slice('/core/'.length)));
         if (url.pathname.startsWith('/models/')) return await serveFile(res, MODELS_DIR, decodeURIComponent(url.pathname.slice('/models/'.length)));
         if (url.pathname.startsWith('/library-files/')) return await serveFile(res, LIBRARY_FILES, decodeURIComponent(url.pathname.slice('/library-files/'.length)));
         if (url.pathname.startsWith('/library-thumbs/')) return await serveFile(res, LIBRARY_THUMBS, decodeURIComponent(url.pathname.slice('/library-thumbs/'.length)));

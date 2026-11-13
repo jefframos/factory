@@ -5,6 +5,18 @@
 // customers' way in. A stage picker shows what's there at each stage (`from` / `until`). The Level picker switches to
 // the supermarket (levels/market.json: MarketScene's floor, walls and props, plus its crate grid and cashier).
 //
+// Walls are polygons: ✏️ Draw wall clicks their corners (the first one again closes the loop), a selected wall shows its
+// corners (drag) and the middle of each side (click: a new corner there). Openings — windows, doors, gaps — are cubes
+// that cut the walls they cross (core/rooms keeps them as world rects): 🪟 / 🚪 / ⬜ then click a wall to put one there;
+// select one to move it (a window up and down too) or size it.
+//
+// The street round it (the UFO game's city pieces, core/town in the game): 🛣 Roads paints road cells on the kit's tile
+// grid (core/roads/RoadGrid picks and turns each tile), the number of cars driving them, 🌱 lawns (polygons, drawn like
+// walls) and 🚶 people areas (rects people wander about in).
+//
+// 🪑 Seats (a stage served 'seated'): where a customer sits, the way they face (the arrow: toward their table), and
+// where their plate goes on the table (the white disc: drag it on its own); moving a seat moves its plate spot with it.
+//
 // Orbit with the mouse, click to select, drag the gizmo to move (W), turn (E) or size (R). Station cameras: Look
 // through, frame the shot inside the gold 720 x 1080 frame (the game's screen), Use this view. Save writes the file; the
 // game (Vite) reloads with it.
@@ -16,6 +28,7 @@ import { createGLTFLoader } from './gltf.js';
 import { api, el, toast, isModalOpen } from './shared.js';
 import { openModelPicker, setModelCatalog } from './modelPicker.js';
 import { openLibraryPicker } from './library.js';
+import { roadCellAt, roadCellKey, solveRoads } from '/core/roads/RoadGrid.ts';
 
 // Mirrors the game (Kitchen.ts's LAYOUT / STOVE_SINK, RestaurantLayout.ts's SHOT_ASPECT), so the editor shows what it builds.
 const SHOT_ASPECT = 720 / 1080;
@@ -43,6 +56,13 @@ let version = 0;
 let level = 'restaurant';
 /** settings.json's market goods (the supermarket's crates). */
 let marketItems = [];
+/** settings.json's street: the road kit (tile size, pieces), the cars, the people. */
+let town = null;
+/** Painting roads: on, and the stroke being dragged ({ erase, last }). */
+let roadMode = false;
+let roadStroke = null;
+/** The road grid's origin while there are no roads yet (it's saved with them). */
+let roadOrigin = { x: 0, z: 0 };
 let stage = 0;
 let stageNames = [];
 let selection = null;
@@ -52,6 +72,16 @@ let gameUrl = 'http://localhost:9001/?dev=1';
 const undoStack = [];
 /** Looking through a station camera: { station, key }. */
 let looking = null;
+/** Drawing a wall: its corners so far ({ points }), or null. */
+let drawing = null;
+/** Placing an opening on a wall: its kind ('window' / 'door' / 'gap'), or null. */
+let placing = null;
+/** The wall being drawn (its corners and the line to the pointer), over everything. */
+const draft = new THREE.Group();
+/** How an opening's cube looks, by kind (colour). */
+const OPENING_COLOURS = { window: 0x4fb6ff, door: 0xff9a3d, gap: 0x57d36b };
+/** A new opening's size along the wall, by kind (its height is the wall size's window / door height). */
+const OPENING_LENGTH = { window: 1.5, door: 1.2, gap: 1.6 };
 
 let renderer;
 let scene;
@@ -70,7 +100,9 @@ const viewport = document.getElementById('layoutViewport');
 async function start() {
     const config = await api('/api/config').catch(() => ({}));
     gameUrl = config.gameUrl ?? gameUrl;
-    marketItems = (await api('/api/settings').catch(() => ({}))).market ?? [];
+    const settings = await api('/api/settings').catch(() => ({}));
+    marketItems = settings.market ?? [];
+    town = settings.town ?? null;
     setModelCatalog(await api('/api/models'));
     setupViewport();
     bindUi();
@@ -144,7 +176,7 @@ function setupViewport() {
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
     Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 50 });
-    scene.add(sun, world);
+    scene.add(sun, world, draft);
     const grid = new THREE.GridHelper(40, 40, 0x000000, 0x000000);
     grid.material.opacity = 0.08;
     grid.material.transparent = true;
@@ -173,10 +205,22 @@ function setupViewport() {
 
     // A click (not a drag) selects.
     let down = null;
-    renderer.domElement.addEventListener('pointerdown', (event) => (down = { x: event.clientX, y: event.clientY }));
+    renderer.domElement.addEventListener('pointerdown', (event) => {
+        down = { x: event.clientX, y: event.clientY };
+        if (roadMode && event.button === 0) startRoadStroke(event);
+    });
+    window.addEventListener('pointerup', () => endRoadStroke());
     renderer.domElement.addEventListener('pointerup', (event) => {
         if (!down || Math.hypot(event.clientX - down.x, event.clientY - down.y) > 4 || gizmo.dragging) return;
-        pickAt(event);
+        if (event.button !== 0) return;
+        if (roadMode) return;
+        if (drawing) drawClick(event);
+        else if (placing) placeClick(event);
+        else pickAt(event);
+    });
+    renderer.domElement.addEventListener('pointermove', (event) => {
+        if (drawing) drawDraft(groundPoint(event));
+        if (roadStroke) moveRoadStroke(event);
     });
     new ResizeObserver(resize).observe(viewport);
     window.addEventListener('keydown', onKey);
@@ -214,9 +258,18 @@ function onKey(event) {
     else if (key === 'e') setMode('rotate');
     else if (key === 'r') setMode('scale');
     else if (key === 'f') focusSelection();
+    else if (key === 'b' && level === 'restaurant') setRoadMode(!roadMode);
     else if (key === 'd') duplicateSelection();
-    else if (key === 'delete' || key === 'backspace') removeSelection();
-    else if (key === 'escape') { if (looking) exitLook(); else select(null); }
+    else if ((key === 'delete' || key === 'backspace') && drawing) {
+        drawing.points.pop();
+        drawDraft();
+    } else if (key === 'delete' || key === 'backspace') removeSelection();
+    else if (key === 'enter' && drawing) finishDrawing(false);
+    else if (key === 'escape') {
+        if (drawing || placing || roadMode) stopTools();
+        else if (looking) exitLook();
+        else select(null);
+    }
 }
 
 function pickAt(event) {
@@ -229,7 +282,27 @@ function pickAt(event) {
         let object = hit.object;
         while (object && !object.userData.sel) object = object.parent;
         if (object?.userData.sel) {
-            select(object.userData.sel);
+            const sel = object.userData.sel;
+            if (sel.type === 'lawnMid') {
+                const lawn = layout.lawns[sel.i];
+                const a = lawn.points[sel.j];
+                const b = lawn.points[(sel.j + 1) % lawn.points.length];
+                edit(() => lawn.points.splice(sel.j + 1, 0, { x: round((a.x + b.x) / 2), z: round((a.z + b.z) / 2) }), { rebuildScene: false });
+                select({ type: 'lawnPoint', i: sel.i, j: sel.j + 1 });
+                rebuild();
+                return;
+            }
+            if (sel.type === 'mid') {
+                // A side's middle handle: a new corner there.
+                const wall = layout.walls[sel.i];
+                const a = wall.points[sel.j];
+                const b = wall.points[(sel.j + 1) % wall.points.length];
+                edit(() => wall.points.splice(sel.j + 1, 0, { x: round((a.x + b.x) / 2), z: round((a.z + b.z) / 2) }), { rebuildScene: false });
+                select({ type: 'point', i: sel.i, j: sel.j + 1 });
+                rebuild();
+                return;
+            }
+            select(sel);
             return;
         }
     }
@@ -311,6 +384,10 @@ function rebuild() {
     layout.floors.forEach((floor, i) => shownAt(floor) && buildFloor(floor, i));
     layout.walls.forEach((wall, i) => shownAt(wall) && buildWall(wall, i));
     layout.props.forEach((prop, i) => shownAt(prop) && buildProp(prop, i));
+    buildRoadTiles();
+    (layout.lawns ?? []).forEach((lawn, i) => shownAt(lawn) && buildLawn(lawn, i));
+    (layout.people?.areas ?? []).forEach((area, i) => shownAt(area) && buildPeopleArea(area, i));
+    (layout.seats ?? []).forEach((seat, i) => shownAt(seat) && buildSeat(seat, i));
     (layout.stations ?? []).forEach((station, i) => shownAt(station) && buildStation(station, i));
     if (layout.customer) buildPath();
     if (layout.market) buildMarket();
@@ -452,8 +529,10 @@ function buildWall(wall, i) {
         }
     }
     register({ type: 'wall', i }, holder);
-    // The selected wall's corners: handles to drag.
-    if (selection?.type === 'wall' && selection.i === i || selection?.type === 'point' && selection.i === i) {
+    // Each opening: a see-through cube where it cuts (click it to move or size it).
+    (wall.openings ?? []).forEach((opening, k) => buildOpening(wall, i, opening, k, setup));
+    // The selected wall's corners: handles to drag; and the middle of each side: click for a new corner there.
+    if (wallOf(selection) === i) {
         points.forEach((point, j) => {
             const handle = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffd36b, depthTest: false }));
             handle.renderOrder = 5;
@@ -462,7 +541,247 @@ function buildWall(wall, i) {
             group.add(handle);
             register({ type: 'point', i, j }, group);
         });
+        for (let s = 0; s < count; s++) {
+            const a = points[s];
+            const b = points[(s + 1) % points.length];
+            const handle = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 8), new THREE.MeshBasicMaterial({ color: 0x57d36b, depthTest: false }));
+            handle.renderOrder = 5;
+            handle.position.set((a.x + b.x) / 2, setup.height + 0.3, (a.z + b.z) / 2);
+            const group = new THREE.Group();
+            group.add(handle);
+            register({ type: 'mid', i, j: s }, group);
+        }
     }
+}
+
+// The street: road tiles (as the game lays them: core/town/Ground's buildRoads), lawns, people areas.
+function buildRoadTiles() {
+    const kit = town?.roadKit;
+    if (!kit || !layout.roads?.cells.length) return;
+    const group = new THREE.Group();
+    group.name = 'roads';
+    // The grid's origin: where cell (0, 0)'s middle is.
+    group.position.set(layout.roads.origin?.x ?? 0, 0, layout.roads.origin?.z ?? 0);
+    world.add(group);
+    for (const placed of solveRoads(layout.roads, kit)) {
+        const holder = new THREE.Group();
+        holder.position.set(placed.x, kit.elevation ?? 0.02, placed.z);
+        holder.rotation.y = placed.rotationY;
+        group.add(holder);
+        void loadModel(placed.model).then((source) => {
+            if (!source || !holder.parent) return;
+            const model = source.clone(true);
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const scale = kit.tile / Math.max(1e-4, size.x, size.z);
+            model.scale.multiplyScalar(scale);
+            model.position.set(-((box.min.x + box.max.x) / 2) * scale, -box.min.y * scale, -((box.min.z + box.max.z) / 2) * scale);
+            holder.add(model);
+        });
+    }
+}
+
+const lawnMaterial = new THREE.MeshStandardMaterial({ color: 0x7cc65a, roughness: 1 });
+function buildLawn(lawn, i) {
+    if (lawn.points.length < 3) return;
+    const shape = new THREE.Shape(lawn.points.map((point) => new THREE.Vector2(point.x, -point.z)));
+    const geometry = new THREE.ShapeGeometry(shape);
+    geometry.rotateX(-Math.PI / 2);
+    const selected = selection?.type?.startsWith('lawn') && selection.i === i;
+    const material = lawn.color ? new THREE.MeshStandardMaterial({ color: lawn.color, roughness: 1 }) : lawnMaterial;
+    const mesh = new THREE.Mesh(geometry, selected ? new THREE.MeshStandardMaterial({ color: lawn.color ?? 0x7cc65a, roughness: 1, emissive: 0x335522 }) : material);
+    mesh.receiveShadow = true;
+    const holder = new THREE.Group();
+    holder.position.y = 0.025 + i * 0.002;
+    holder.add(mesh);
+    register({ type: 'lawn', i }, holder);
+    if (!selected) return;
+    lawn.points.forEach((point, j) => {
+        const handle = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffd36b, depthTest: false }));
+        handle.renderOrder = 5;
+        handle.position.set(point.x, 0.3, point.z);
+        const group = new THREE.Group();
+        group.add(handle);
+        register({ type: 'lawnPoint', i, j }, group);
+        const next = lawn.points[(j + 1) % lawn.points.length];
+        const middle = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 8), new THREE.MeshBasicMaterial({ color: 0x57d36b, depthTest: false }));
+        middle.renderOrder = 5;
+        middle.position.set((point.x + next.x) / 2, 0.3, (point.z + next.z) / 2);
+        const middleGroup = new THREE.Group();
+        middleGroup.add(middle);
+        register({ type: 'lawnMid', i, j }, middleGroup);
+    });
+}
+
+/** A seat: a teal disc where they sit with an arrow the way they face, its number; and its plate spot on the table. */
+function buildSeat(seat, i) {
+    const selected = selection?.type?.startsWith('seat') && selection.i === i;
+    const group = new THREE.Group();
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.05, 24), new THREE.MeshBasicMaterial({ color: selected ? 0xffd36b : 0x2fd0c0, transparent: true, opacity: 0.85 }));
+    disc.position.y = (seat.height ?? 0.5) + 0.03;
+    const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.4, 12), new THREE.MeshBasicMaterial({ color: selected ? 0xffd36b : 0x2fd0c0 }));
+    // Pointing along the seat's facing (its local +z).
+    arrow.rotation.x = Math.PI / 2;
+    arrow.position.set(0, (seat.height ?? 0.5) + 0.06, 0.45);
+    const tag = labelSprite(`🪑 ${i + 1}`, '#bff7f0', 'rgba(20,110,100,0.85)');
+    tag.position.y = (seat.height ?? 0.5) + 0.7;
+    group.add(disc, arrow, tag);
+    group.position.set(seat.x, 0, seat.z);
+    group.rotation.y = seat.rotationY ?? 0;
+    register({ type: 'seat', i }, group);
+    // Its plate's spot: a white disc on the table, a line back to the seat.
+    const plateGroup = new THREE.Group();
+    const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 24), new THREE.MeshBasicMaterial({ color: selected ? 0xffffff : 0xdfe8ee, transparent: true, opacity: 0.9 }));
+    plateGroup.add(plate);
+    plateGroup.position.set(seat.plate.x, (seat.plate.y ?? 1) + 0.02, seat.plate.z);
+    register({ type: 'seatPlate', i }, plateGroup);
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(seat.x, (seat.height ?? 0.5) + 0.05, seat.z), new THREE.Vector3(seat.plate.x, (seat.plate.y ?? 1) + 0.03, seat.plate.z),
+    ]), new THREE.LineBasicMaterial({ color: 0x2fd0c0, transparent: true, opacity: 0.6 }));
+    world.add(line);
+}
+
+function addSeat() {
+    const { x, z } = dropPoint();
+    // Facing -z (toward the kitchen), its plate a step in front.
+    edit(() => (layout.seats ??= []).push({ x, z, rotationY: round(Math.PI), height: 0.5, plate: { x, z: round(z - 0.65), y: 1 } }));
+    select({ type: 'seat', i: layout.seats.length - 1 });
+}
+
+function buildPeopleArea(area, i) {
+    const selected = selection?.type === 'people' && selection.i === i;
+    const geometry = new THREE.BoxGeometry(area.width, 0.2, area.depth);
+    const box = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xb46cff, transparent: true, opacity: selected ? 0.3 : 0.15, depthWrite: false }));
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: selected ? 0xffd36b : 0xb46cff }));
+    const label = labelSprite(`🚶 ${area.count}`, '#ffffff', 'rgba(120,60,200,0.85)');
+    label.position.y = 1.2;
+    const group = new THREE.Group();
+    group.add(box, edges, label);
+    group.position.set(area.x, 0.1, area.z);
+    group.userData.base = { w: area.width, d: area.depth };
+    register({ type: 'people', i }, group);
+}
+
+// ---------------------------------------------------------------- roads
+
+function setRoadMode(on) {
+    stopTools();
+    roadMode = on && !!town?.roadKit;
+    if (on && !town?.roadKit) toast('settings.json has no town.roadKit', 'warn');
+    orbit.enableRotate = !roadMode;
+    document.getElementById('roadMode').classList.toggle('tool-on', roadMode);
+    if (roadMode) {
+        select(null);
+        document.getElementById('toolHint').hidden = false;
+        document.getElementById('toolHint').textContent = 'Drag on the ground: road tiles · Shift+drag: remove them · right drag: pan · B / Esc: done';
+    }
+}
+
+function roadCellUnder(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    const pointer = new THREE.Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(pointer, camera);
+    const hit = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), new THREE.Vector3());
+    const origin = layout.roads?.origin ?? roadOrigin;
+    return hit ? roadCellAt(hit.x - origin.x, hit.z - origin.z, town.roadKit.tile) : null;
+}
+
+/** Lays (or with `erase`, takes up) the road tile at a cell. */
+function paintRoad(cell, erase) {
+    layout.roads ??= { cells: [], ...(roadOrigin.x || roadOrigin.z ? { origin: { ...roadOrigin } } : {}) };
+    const cells = layout.roads.cells;
+    const at = cells.findIndex(([i, j]) => i === cell[0] && j === cell[1]);
+    if (erase && at >= 0) cells.splice(at, 1);
+    else if (!erase && at < 0) cells.push([cell[0], cell[1]]);
+    else return false;
+    return true;
+}
+
+function startRoadStroke(event) {
+    const cell = roadCellUnder(event);
+    if (!cell) return;
+    undoStack.push(JSON.stringify(layout));
+    roadStroke = { erase: event.shiftKey, last: roadCellKey(cell[0], cell[1]), changed: paintRoad(cell, event.shiftKey) };
+    if (roadStroke.changed) refreshRoads();
+}
+
+function moveRoadStroke(event) {
+    const cell = roadCellUnder(event);
+    if (!cell) return;
+    const key = roadCellKey(cell[0], cell[1]);
+    if (key === roadStroke.last) return;
+    roadStroke.last = key;
+    if (paintRoad(cell, roadStroke.erase)) {
+        roadStroke.changed = true;
+        refreshRoads();
+    }
+}
+
+function endRoadStroke() {
+    if (!roadStroke) return;
+    if (roadStroke.changed) {
+        if (!layout.roads.cells.length) delete layout.roads;
+        setDirty(true);
+        renderPanels();
+    } else {
+        undoStack.pop();
+    }
+    roadStroke = null;
+}
+
+/** Just the road tiles shown again (while painting: the rest stays). */
+function refreshRoads() {
+    const old = world.children.find((child) => child.name === 'roads');
+    if (old) world.remove(old);
+    buildRoadTiles();
+    renderStreetInfo();
+}
+
+function renderStreetInfo() {
+    const info = document.getElementById('streetInfo');
+    if (!info) return;
+    const cells = layout.roads?.cells.length ?? 0;
+    info.textContent = level === 'restaurant'
+        ? `${cells} road tiles (${town?.roadKit?.tile ?? '?'} units square) · ${(layout.lawns ?? []).length} lawns · ${(layout.people?.areas ?? []).reduce((sum, a) => sum + a.count, 0)} people`
+        : 'The street is the restaurant\'s (Level: Restaurant).';
+    const origin = layout.roads?.origin ?? roadOrigin;
+    document.getElementById('roadOriginX').value = origin.x;
+    document.getElementById('roadOriginZ').value = origin.z;
+    const cars = document.getElementById('carCount');
+    cars.value = layout.traffic?.count ?? 0;
+    cars.disabled = level !== 'restaurant';
+}
+
+function addPeopleArea() {
+    const { x, z } = dropPoint();
+    edit(() => (layout.people ??= { areas: [] }).areas.push({ x, z, width: 12, depth: 12, count: 6 }));
+    select({ type: 'people', i: layout.people.areas.length - 1 });
+}
+
+function startLawn() {
+    startDrawing('lawn');
+}
+
+/** An opening's cube: the rect it cuts, as tall as the hole it makes (a window from its bottom). */
+function buildOpening(wall, i, opening, k, setup) {
+    const [y0, y1] = holeHeights(opening, setup);
+    const w = Math.max(0.05, opening.maxX - opening.minX);
+    const d = Math.max(0.05, opening.maxZ - opening.minZ);
+    const h = Math.max(0.05, y1 - y0);
+    const selected = selection?.type === 'opening' && selection.i === i && selection.j === k;
+    const colour = OPENING_COLOURS[opening.kind] ?? 0xffffff;
+    const geometry = new THREE.BoxGeometry(w, h, d);
+    const cube = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: colour, transparent: true, opacity: selected ? 0.35 : 0.16, depthWrite: false }));
+    cube.renderOrder = 3;
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: selected ? 0xffd36b : colour, transparent: true, opacity: 0.9 }));
+    edges.renderOrder = 4;
+    const group = new THREE.Group();
+    group.add(cube, edges);
+    group.position.set((opening.minX + opening.maxX) / 2, (y0 + y1) / 2, (opening.minZ + opening.maxZ) / 2);
+    // Its size when built: the gizmo's scale is a multiple of it.
+    group.userData.base = { w, h, d };
+    register({ type: 'opening', i, j: k }, group);
 }
 
 function buildProp(prop, i) {
@@ -558,9 +877,20 @@ function buildCamera(station, i, key) {
     register({ type: 'camera', i, key, part: 'target' }, aim);
 }
 
-/** The customers' way in: outside and just inside the door. */
+/** The customers' way in: where they come from (start), outside and just inside the door. */
 function buildPath() {
-    for (const key of ['outside', 'inside']) {
+    // No start yet: one where the game would put it (6 on past outside, away from the door), to drag where you want. It's
+    // in the layout now, so the level's marked unsaved (Save keeps it).
+    if (layout.customer && !layout.customer.start && layout.customer.outside && layout.customer.inside) {
+        const { outside, inside } = layout.customer;
+        const dx = outside.x - inside.x;
+        const dz = outside.z - inside.z;
+        const length = Math.hypot(dx, dz) || 1;
+        layout.customer.start = { x: round(outside.x + (dx / length) * 6), z: round(outside.z + (dz / length) * 6) };
+        setDirty(true);
+        setTimeout(() => toast('Added the customers\' start point ("way in: start"): drag it where they should come from, then Save', 'warn'), 0);
+    }
+    for (const key of ['start', 'outside', 'inside']) {
         const point = layout.customer?.[key];
         if (!point) continue;
         const group = new THREE.Group();
@@ -637,6 +967,11 @@ function dataOf(sel) {
     if (!sel) return null;
     if (sel.type === 'floor') return layout.floors[sel.i];
     if (sel.type === 'wall' || sel.type === 'point') return layout.walls[sel.i];
+    if (sel.type === 'opening') return layout.walls[sel.i]?.openings?.[sel.j];
+    if (sel.type === 'lawn' || sel.type === 'lawnPoint') return layout.lawns?.[sel.i];
+    if (sel.type === 'people') return layout.people?.areas?.[sel.i];
+    if (sel.type === 'seat') return layout.seats?.[sel.i];
+    if (sel.type === 'seatPlate') return layout.seats?.[sel.i]?.plate;
     if (sel.type === 'prop') return layout.props[sel.i];
     if (sel.type === 'station') return layout.stations[sel.i];
     if (sel.type === 'piece') return layout.stations[sel.i]?.pieces[sel.j];
@@ -647,11 +982,14 @@ function dataOf(sel) {
     return null;
 }
 
-const wallOf = (sel) => (sel?.type === 'wall' || sel?.type === 'point' ? sel.i : null);
+const wallOf = (sel) => (['wall', 'point', 'opening'].includes(sel?.type) ? sel.i : null);
 
 function select(sel) {
     // A wall's corner handles show while it (or one of its corners) is selected: built again when that changes.
-    const wallChanged = wallOf(selection) !== wallOf(sel);
+    const lawnOf = (s) => (s?.type?.startsWith('lawn') ? s.i : null);
+    const wallChanged = wallOf(selection) !== wallOf(sel) || selection?.type === 'opening' || sel?.type === 'opening'
+        || lawnOf(selection) !== lawnOf(sel) || selection?.type === 'people' || sel?.type === 'people'
+        || selection?.type?.startsWith('seat') || sel?.type?.startsWith('seat');
     selection = sel;
     // A wall's corner handles show while it (or a corner) is selected.
     if (wallChanged) rebuild();
@@ -668,13 +1006,18 @@ function attachGizmo() {
     const mode = gizmo.mode;
     const type = selection.type;
     // What each thing can do: turning (props, pieces, floors), sizing (props).
-    const turns = ['prop', 'piece', 'floor', 'cashier'].includes(type);
-    const sizes = type === 'prop' || type === 'cashier';
+    const turns = ['prop', 'piece', 'floor', 'cashier', 'seat'].includes(type);
+    const sizes = type === 'prop' || type === 'cashier' || type === 'opening' || type === 'people';
     if ((mode === 'rotate' && !turns) || (mode === 'scale' && !sizes)) return;
     gizmo.attach(object);
     // Turning: round the vertical only. Moving: on the floor, but cameras and props (lifted off it) go up too.
     gizmo.showX = gizmo.showZ = mode !== 'rotate';
-    gizmo.showY = mode !== 'translate' || type === 'camera' || type === 'prop';
+    gizmo.showY = mode !== 'translate' || type === 'camera' || type === 'prop' || (type === 'opening' && dataOf(selection)?.kind === 'window');
+    if (type === 'people' || type === 'lawn' || type === 'lawnPoint' || (type === 'seat' && mode === 'translate')) gizmo.showY = false;
+    // A plate spot goes up and down too (the table's height).
+    if (type === 'seatPlate' && mode === 'translate') gizmo.showY = true;
+    // A gap is always the wall's full height: no sizing up and down.
+    if (type === 'opening' && mode === 'scale' && dataOf(selection)?.kind === 'gap') gizmo.showY = false;
 }
 
 const round = (value) => Math.round(value * 1000) / 1000;
@@ -739,6 +1082,56 @@ function syncFromGizmo() {
             s.setScalar(size);
             data.scale = round(size);
         }
+    } else if (sel.type === 'seat') {
+        // Moved: its plate spot comes with it (by the move since the drag began); turned: its facing.
+        const start = object.userData.dragFrom ?? (object.userData.dragFrom = { x: data.x, z: data.z });
+        const dx = round(p.x - start.x);
+        const dz = round(p.z - start.z);
+        if (dx || dz) {
+            data.plate.x = round(data.plate.x + dx);
+            data.plate.z = round(data.plate.z + dz);
+            start.x = p.x;
+            start.z = p.z;
+        }
+        data.x = round(p.x);
+        data.z = round(p.z);
+        data.rotationY = round(yawOf(object));
+    } else if (sel.type === 'seatPlate') {
+        data.x = round(p.x);
+        data.z = round(p.z);
+        data.y = round(Math.max(0, p.y - 0.02));
+    } else if (sel.type === 'people') {
+        const base = object.userData.base;
+        data.x = round(p.x);
+        data.z = round(p.z);
+        data.width = round(Math.max(1, base.w * object.scale.x));
+        data.depth = round(Math.max(1, base.d * object.scale.z));
+    } else if (sel.type === 'lawnPoint') {
+        data.points[sel.j] = { x: round(p.x), z: round(p.z) };
+    } else if (sel.type === 'lawn') {
+        const start = object.userData.dragFrom ?? (object.userData.dragFrom = { x: 0, z: 0 });
+        const dx = round(p.x - start.x);
+        const dz = round(p.z - start.z);
+        if (dx || dz) {
+            data.points = data.points.map((q) => ({ x: round(q.x + dx), z: round(q.z + dz) }));
+            start.x = p.x;
+            start.z = p.z;
+        }
+    } else if (sel.type === 'opening') {
+        // The cube's middle and size (its built size x the gizmo's scale) back into the rect, and a window's bottom and
+        // height (a door's height) from its y.
+        const base = object.userData.base;
+        const w = Math.max(0.1, base.w * object.scale.x);
+        const d = Math.max(0.1, base.d * object.scale.z);
+        const h = Math.max(0.1, base.h * object.scale.y);
+        Object.assign(data, { minX: round(p.x - w / 2), maxX: round(p.x + w / 2), minZ: round(p.z - d / 2), maxZ: round(p.z + d / 2) });
+        if (data.kind === 'window') {
+            data.bottom = round(Math.max(0, p.y - h / 2));
+            if (Math.abs(object.scale.y - 1) > 1e-3) data.height = round(h);
+        } else if (data.kind === 'door' && Math.abs(object.scale.y - 1) > 1e-3) {
+            data.height = round(h);
+        }
+        rebuildWallPreview(sel.i);
     } else if (sel.type === 'point') {
         data.points[sel.j] = { x: round(p.x), z: round(p.z) };
     } else if (sel.type === 'wall') {
@@ -814,6 +1207,30 @@ function duplicateSelection() {
     } else if (sel.type === 'floor') {
         edit(() => layout.floors.push({ ...structuredClone(layout.floors[sel.i]), x: layout.floors[sel.i].x + offset }));
         select({ type: 'floor', i: layout.floors.length - 1 });
+    } else if (sel.type === 'seat' || sel.type === 'seatPlate') {
+        const seat = structuredClone(layout.seats[sel.i]);
+        seat.x = round(seat.x + 1.25);
+        seat.plate.x = round(seat.plate.x + 1.25);
+        edit(() => layout.seats.push(seat));
+        select({ type: 'seat', i: layout.seats.length - 1 });
+    } else if (sel.type === 'people') {
+        const area = layout.people.areas[sel.i];
+        edit(() => layout.people.areas.push({ ...structuredClone(area), x: round(area.x + area.width + 1) }));
+        select({ type: 'people', i: layout.people.areas.length - 1 });
+    } else if (sel.type === 'lawn') {
+        const lawn = structuredClone(layout.lawns[sel.i]);
+        lawn.points = lawn.points.map((q) => ({ x: q.x + 1, z: q.z + 1 }));
+        edit(() => layout.lawns.push(lawn));
+        select({ type: 'lawn', i: layout.lawns.length - 1 });
+    } else if (sel.type === 'opening') {
+        // A copy beside it, along whichever way the cube is longer.
+        const o = structuredClone(layout.walls[sel.i].openings[sel.j]);
+        const alongX = o.maxX - o.minX >= o.maxZ - o.minZ;
+        const step = alongX ? o.maxX - o.minX + 0.5 : o.maxZ - o.minZ + 0.5;
+        if (alongX) Object.assign(o, { minX: round(o.minX + step), maxX: round(o.maxX + step) });
+        else Object.assign(o, { minZ: round(o.minZ + step), maxZ: round(o.maxZ + step) });
+        edit(() => layout.walls[sel.i].openings.push(o));
+        select({ type: 'opening', i: sel.i, j: layout.walls[sel.i].openings.length - 1 });
     } else if (sel.type === 'wall') {
         const wall = structuredClone(layout.walls[sel.i]);
         wall.points = wall.points.map((p) => ({ x: p.x + offset, z: p.z + offset }));
@@ -832,11 +1249,199 @@ function removeSelection() {
         const wall = layout.walls[sel.i];
         if (wall.points.length <= 2) return toast('A wall needs two corners at least', 'warn');
         edit(() => wall.points.splice(sel.j, 1));
-    } else if (sel.type === 'prop') edit(() => layout.props.splice(sel.i, 1));
+    } else if (sel.type === 'opening') edit(() => layout.walls[sel.i].openings.splice(sel.j, 1));
+    else if (sel.type === 'lawn') edit(() => layout.lawns.splice(sel.i, 1));
+    else if (sel.type === 'lawnPoint') {
+        const lawn = layout.lawns[sel.i];
+        if (lawn.points.length <= 3) return toast('A lawn needs three corners at least', 'warn');
+        edit(() => lawn.points.splice(sel.j, 1));
+    } else if (sel.type === 'people') edit(() => layout.people.areas.splice(sel.i, 1));
+    else if (sel.type === 'seat' || sel.type === 'seatPlate') edit(() => layout.seats.splice(sel.i, 1));
+    else if (sel.type === 'prop') edit(() => layout.props.splice(sel.i, 1));
     else if (sel.type === 'piece') edit(() => layout.stations[sel.i].pieces.splice(sel.j, 1));
     else return;
     selection = null;
     rebuild();
+}
+
+// ---------------------------------------------------------------- drawing walls, placing openings
+
+/** Where the pointer is on the floor (y 0), snapped when snapping's on. */
+function groundPoint(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    const pointer = new THREE.Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(pointer, camera);
+    const hit = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), new THREE.Vector3());
+    if (!hit) return null;
+    const s = snap ? SNAP : 0.01;
+    return { x: round(Math.round(hit.x / s) * s), z: round(Math.round(hit.z / s) * s) };
+}
+
+function showHint(text) {
+    const hint = document.getElementById('toolHint');
+    hint.hidden = !text;
+    hint.textContent = text ?? '';
+    document.getElementById('drawWall').classList.toggle('tool-on', drawing?.kind === 'wall');
+    document.getElementById('drawLawn').classList.toggle('tool-on', drawing?.kind === 'lawn');
+    document.querySelectorAll('[data-place]').forEach((b) => b.classList.toggle('tool-on', b.dataset.place === placing));
+}
+
+function stopTools() {
+    drawing = null;
+    placing = null;
+    if (roadMode) {
+        roadMode = false;
+        roadStroke = null;
+        orbit.enableRotate = true;
+        document.getElementById('roadMode').classList.remove('tool-on');
+    }
+    draft.clear();
+    showHint(null);
+}
+
+function startDrawing(kind = 'wall') {
+    stopTools();
+    select(null);
+    drawing = { points: [], kind };
+    showHint(kind === 'lawn' ? 'Click the lawn\'s corners. Click the first one again (or Enter) to finish · Backspace: undo a corner · Esc: cancel' : 'Click the corners. Click the first one again to close it · double-click / Enter: done · Backspace: undo a corner · Esc: cancel');
+}
+
+/** The wall being drawn: its corners, its sides, and a line on to the pointer. */
+function drawDraft(pointer) {
+    draft.clear();
+    if (!drawing) return;
+    const y = 0.06;
+    const points = drawing.points.map((p) => new THREE.Vector3(p.x, y, p.z));
+    if (pointer) points.push(new THREE.Vector3(pointer.x, y, pointer.z));
+    if (points.length >= 2) {
+        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), new THREE.LineBasicMaterial({ color: 0xffd36b, depthTest: false }));
+        line.renderOrder = 6;
+        draft.add(line);
+    }
+    drawing.points.forEach((p, j) => {
+        const dot = new THREE.Mesh(new THREE.SphereGeometry(j === 0 ? 0.22 : 0.15, 12, 8), new THREE.MeshBasicMaterial({ color: j === 0 ? 0x57d36b : 0xffd36b, depthTest: false }));
+        dot.renderOrder = 6;
+        dot.position.set(p.x, y, p.z);
+        draft.add(dot);
+    });
+}
+
+let lastDrawClick = 0;
+function drawClick(event) {
+    const point = groundPoint(event);
+    if (!point) return;
+    const points = drawing.points;
+    const now = performance.now();
+    const last = points[points.length - 1];
+    // A double-click: two clicks quickly on the same spot (not just two quick clicks).
+    const double = now - lastDrawClick < 350 && !!last && Math.hypot(point.x - last.x, point.z - last.z) < 0.3;
+    lastDrawClick = now;
+    // Back on the first corner: a closed loop.
+    if (points.length >= 3 && Math.hypot(point.x - points[0].x, point.z - points[0].z) < 0.35) return finishDrawing(true);
+    // A double-click: done (the second click's corner is the same one).
+    if (double && points.length >= 2) return finishDrawing(false);
+    if (!last || Math.hypot(point.x - last.x, point.z - last.z) > 0.05) points.push(point);
+    drawDraft(point);
+}
+
+function finishDrawing(closed) {
+    const points = drawing?.points ?? [];
+    const kind = drawing?.kind ?? 'wall';
+    stopTools();
+    if (kind === 'lawn') {
+        if (points.length < 3) return toast('A lawn needs three corners at least', 'warn');
+        edit(() => (layout.lawns ??= []).push({ points }));
+        select({ type: 'lawn', i: layout.lawns.length - 1 });
+        return;
+    }
+    if (points.length < 2) return toast('A wall needs two corners at least', 'warn');
+    edit(() => layout.walls.push({ points, closed, style: Object.keys(layout.styles.walls)[0], setup: Object.keys(layout.setups)[0], openings: [] }));
+    select({ type: 'wall', i: layout.walls.length - 1 });
+}
+
+function startPlacing(kind) {
+    stopTools();
+    placing = kind;
+    showHint(`Click on a wall to put a ${kind} there · Esc: cancel`);
+}
+
+/** Clicked a wall while placing: an opening there, on the side nearest the click, at the height clicked (a window). */
+function placeClick(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    const pointer = new THREE.Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(pointer, camera);
+    const walls = [...pickables.entries()].filter(([key]) => key.startsWith('wall:')).map(([, object]) => object);
+    const hit = raycaster.intersectObjects(walls, true)[0];
+    if (!hit) return toast('Click on a wall', 'warn');
+    let object = hit.object;
+    while (object && !object.userData.sel) object = object.parent;
+    const i = object.userData.sel.i;
+    const wall = layout.walls[i];
+    const setup = wallSetup(wall);
+    // The side nearest the click, and the point on it.
+    const count = wall.closed ? wall.points.length : wall.points.length - 1;
+    let best = null;
+    for (let s = 0; s < count; s++) {
+        const a = wall.points[s];
+        const b = wall.points[(s + 1) % wall.points.length];
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        const length = Math.hypot(dx, dz) || 1;
+        const t = THREE.MathUtils.clamp(((hit.point.x - a.x) * dx + (hit.point.z - a.z) * dz) / (length * length), 0, 1);
+        const px = a.x + dx * t;
+        const pz = a.z + dz * t;
+        const distance = Math.hypot(hit.point.x - px, hit.point.z - pz);
+        if (!best || distance < best.distance) best = { distance, px, pz, ux: dx / length, uz: dz / length, length, t };
+    }
+    const kind = placing;
+    const along = Math.min(OPENING_LENGTH[kind], best.length - 0.1);
+    // Kept on its side (not round the corner): its middle at least half its length from each end.
+    const u = THREE.MathUtils.clamp(best.t * best.length, along / 2, best.length - along / 2);
+    const cx = best.px + best.ux * (u - best.t * best.length);
+    const cz = best.pz + best.uz * (u - best.t * best.length);
+    // The rect: the opening's corners (along the side, through the wall and a little more), as world bounds.
+    const across = setup.thickness / 2 + 0.15;
+    const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sa, sc]) => ({
+        x: cx + best.ux * (sa * along) / 2 - best.uz * sc * across,
+        z: cz + best.uz * (sa * along) / 2 + best.ux * sc * across,
+    }));
+    const opening = {
+        kind,
+        minX: round(Math.min(...corners.map((c) => c.x))), maxX: round(Math.max(...corners.map((c) => c.x))),
+        minZ: round(Math.min(...corners.map((c) => c.z))), maxZ: round(Math.max(...corners.map((c) => c.z))),
+    };
+    if (kind === 'window') {
+        const height = Math.min(setup.windowHeight, setup.height);
+        opening.bottom = round(THREE.MathUtils.clamp(hit.point.y - height / 2, 0, setup.height - height));
+    }
+    stopTools();
+    edit(() => (wall.openings ??= []).push(opening));
+    select({ type: 'opening', i, j: wall.openings.length - 1 });
+}
+
+/** One wall shown again (its openings moved), without rebuilding everything (the gizmo stays on the cube). */
+function rebuildWallPreview(i) {
+    const old = pickables.get(`wall:${i}`);
+    if (!old) return;
+    world.remove(old);
+    old.traverse((child) => child.isMesh && child.geometry.dispose());
+    pickables.delete(`wall:${i}`);
+    // Build it alone (no cubes, no handles): only the wall's own meshes are swapped.
+    const wall = layout.walls[i];
+    const keep = new Map(pickables);
+    const before = new Set(world.children);
+    const savedSelection = selection;
+    selection = null;
+    buildWall({ ...wall, openings: wall.openings }, i);
+    selection = savedSelection;
+    // Drop what buildWall added besides the wall itself (its opening cubes, handles): the old ones stay in use.
+    for (const child of [...world.children]) {
+        if (before.has(child)) continue;
+        if (child.userData.sel?.type !== 'wall') world.remove(child);
+    }
+    for (const [key, object] of keep) if (key !== `wall:${i}`) pickables.set(key, object);
 }
 
 // ---------------------------------------------------------------- looking through a camera
@@ -887,6 +1492,7 @@ function exitLook() {
 function renderPanels() {
     renderOutline();
     renderInspector();
+    renderStreetInfo();
 }
 
 function outlineItem(label, sel, tag, shown = true) {
@@ -911,7 +1517,12 @@ function renderOutline() {
                 outlineItem('🎥 bench camera', { type: 'camera', i, key: 'bench', part: 'position' }),
                 ...station.pieces.map((piece, j) => outlineItem(`${piece.role}${piece.piece ? ': ' + piece.piece : piece.model ? ': ' + modelName(piece.model) : ''}`, { type: 'piece', i, j })))),
         ])),
-        ...(layout.customer ? group('Way in', ['outside', 'inside'].map((key) => outlineItem(`🚶 ${key}`, { type: 'path', key }))) : []),
+        ...(layout.customer ? group('Way in', ['start', 'outside', 'inside'].map((key) => outlineItem(`🚶 ${key}`, { type: 'path', key }))) : []),
+        ...((layout.seats ?? []).length ? group('Seats', layout.seats.map((seat, i) => outlineItem(`🪑 seat ${i + 1}${seat.id ? ': ' + seat.id : ''}`, { type: 'seat', i }, rangeTag(seat), shownAt(seat)))) : []),
+        ...(level === 'restaurant' ? group('Street', [
+            ...(layout.lawns ?? []).map((lawn, i) => outlineItem(`🌱 lawn (${lawn.points.length} corners)`, { type: 'lawn', i }, rangeTag(lawn), shownAt(lawn))),
+            ...(layout.people?.areas ?? []).map((area, i) => outlineItem(`🚶 ${area.count} people`, { type: 'people', i }, rangeTag(area), shownAt(area))),
+        ]) : []),
         ...group('Walls', layout.walls.map((wall, i) => outlineItem(`🧱 ${wall.style ?? 'wall'} (${wall.points.length} corners${wall.openings?.length ? `, ${wall.openings.length} openings` : ''})`, { type: 'wall', i }, rangeTag(wall), shownAt(wall)))),
         ...group('Floors', layout.floors.map((floor, i) => outlineItem(`▦ ${floor.style ?? 'floor'} ${floor.width}×${floor.depth}`, { type: 'floor', i }, rangeTag(floor), shownAt(floor)))),
         ...group('Props', layout.props.map((prop, i) => outlineItem(`🧊 ${modelName(prop.model).split('/').pop()}`, { type: 'prop', i }, rangeTag(prop), shownAt(prop)))),
@@ -1011,7 +1622,9 @@ function renderInspector() {
                     checkField('Sliding', o.sliding, (v) => (o.sliding = v || undefined)),
                     checkField('Double', o.double, (v) => (o.double = v || undefined)),
                     selectField('Door style', o.style ?? '', ['', ...Object.keys(layout.styles.doors ?? {})], (v) => (o.style = v || undefined))) : null,
-                el('button', { class: 'danger', onclick: () => edit(() => data.openings.splice(k, 1)) }, 'Remove opening'))),
+                el('div', { class: 'row' },
+                    el('button', { onclick: () => select({ type: 'opening', i: sel.i, j: k }) }, '◎ Select (move / size it)'),
+                    el('button', { class: 'danger', onclick: () => edit(() => data.openings.splice(k, 1)) }, 'Remove opening')))),
             el('button', { onclick: () => edit(() => {
                 const a = data.points[0];
                 const b = data.points[1] ?? a;
@@ -1019,7 +1632,60 @@ function renderInspector() {
                 const mz = (a.z + b.z) / 2;
                 (data.openings ??= []).push({ kind: 'window', minX: round(mx - 0.75), maxX: round(mx + 0.75), minZ: round(mz - 0.3), maxZ: round(mz + 0.3) });
             }) }, '＋ Opening (on the first side)'),
+            el('p', { class: 'muted small' }, 'Or 🪟 / 🚪 / ⬜ (left) and click on the wall where it goes.'),
             el('div', { class: 'row' }, remove));
+    } else if (sel.type === 'lawn' || sel.type === 'lawnPoint') {
+        parts.push(el('h3', {}, sel.type === 'lawnPoint' ? `Lawn corner ${sel.j + 1}` : 'Lawn'),
+            el('p', { class: 'muted small' }, 'Drag it (W) to move it whole, a gold corner to move that corner; a green middle handle adds a corner.'),
+            el('label', { class: 'field' }, el('span', {}, 'Colour'), (() => {
+                const input = el('input', { type: 'color', value: data.color ?? '#7cc65a' });
+                input.addEventListener('change', () => edit(() => (data.color = input.value === '#7cc65a' ? undefined : input.value)));
+                return input;
+            })()),
+            stageFields(data),
+            el('div', { class: 'row' }, el('button', { onclick: duplicateSelection }, 'Duplicate'), remove));
+    } else if (sel.type === 'seat' || sel.type === 'seatPlate') {
+        const seat = layout.seats[sel.i];
+        parts.push(el('h3', {}, `Seat ${sel.i + 1}${sel.type === 'seatPlate' ? ': its plate' : ''}`),
+            el('p', { class: 'muted small' }, 'Where a seated customer sits (a stage served "seated" in settings.json), facing the arrow (toward their table). Move / turn it (W / E): its plate spot (the white disc) comes along; drag the plate spot on its own, up and down too (the table\'s top).'),
+            numberField('X', seat.x, 0.25, (v) => (seat.x = v ?? 0)), numberField('Z', seat.z, 0.25, (v) => (seat.z = v ?? 0)),
+            numberField('Facing (°)', degrees(seat.rotationY), 15, (v) => (seat.rotationY = round(THREE.MathUtils.degToRad(v ?? 180)))),
+            numberField('Seat height (its top)', seat.height ?? 0.5, 0.05, (v) => (seat.height = Math.max(0, v ?? 0.5))),
+            el('h2', {}, 'Plate spot'),
+            numberField('Plate X', seat.plate.x, 0.05, (v) => (seat.plate.x = v ?? 0)), numberField('Plate Z', seat.plate.z, 0.05, (v) => (seat.plate.z = v ?? 0)),
+            numberField('Table top (y)', seat.plate.y ?? 1, 0.05, (v) => (seat.plate.y = v ?? 1)),
+            textField('Id (optional)', seat.id, (v) => (v ? (seat.id = v) : delete seat.id)),
+            stageFields(seat),
+            el('div', { class: 'row' },
+                el('button', { onclick: () => select({ type: sel.type === 'seat' ? 'seatPlate' : 'seat', i: sel.i }) }, sel.type === 'seat' ? '🍽 Its plate spot' : '🪑 The seat'),
+                el('button', { onclick: duplicateSelection }, 'Duplicate'), remove));
+    } else if (sel.type === 'people') {
+        parts.push(el('h3', {}, 'People'),
+            el('p', { class: 'muted small' }, 'An area people wander about in (they keep off walls and roads). Move it (W), size it (R).'),
+            numberField('How many', data.count, 1, (v) => (data.count = Math.max(0, Math.round(v ?? 0)))),
+            numberField('X', data.x, 0.25, (v) => (data.x = v ?? 0)), numberField('Z', data.z, 0.25, (v) => (data.z = v ?? 0)),
+            numberField('Width', data.width, 0.5, (v) => (data.width = Math.max(1, v ?? 1))), numberField('Depth', data.depth, 0.5, (v) => (data.depth = Math.max(1, v ?? 1))),
+            stageFields(data),
+            el('div', { class: 'row' }, el('button', { onclick: duplicateSelection }, 'Duplicate'), remove));
+    } else if (sel.type === 'opening') {
+        const wall = layout.walls[sel.i];
+        const setup = wallSetup(wall);
+        parts.push(el('h3', {}, `${data.kind[0].toUpperCase()}${data.kind.slice(1)} (wall ${sel.i + 1})`),
+            el('p', { class: 'muted small' }, 'A cube that cuts the walls it crosses. Move it (W) along the wall (a window up and down too), size it (R).'),
+            selectField('Kind', data.kind, OPENING_KINDS, (v) => (data.kind = v)),
+            numberField('X (middle)', round((data.minX + data.maxX) / 2), 0.1, (v) => { const w = data.maxX - data.minX; data.minX = round((v ?? 0) - w / 2); data.maxX = round((v ?? 0) + w / 2); }),
+            numberField('Z (middle)', round((data.minZ + data.maxZ) / 2), 0.1, (v) => { const d = data.maxZ - data.minZ; data.minZ = round((v ?? 0) - d / 2); data.maxZ = round((v ?? 0) + d / 2); }),
+            numberField('Width (x)', round(data.maxX - data.minX), 0.1, (v) => { const c = (data.minX + data.maxX) / 2; const w = Math.max(0.1, v ?? 1); data.minX = round(c - w / 2); data.maxX = round(c + w / 2); }),
+            numberField('Depth (z)', round(data.maxZ - data.minZ), 0.1, (v) => { const c = (data.minZ + data.maxZ) / 2; const d = Math.max(0.1, v ?? 1); data.minZ = round(c - d / 2); data.maxZ = round(c + d / 2); }),
+            data.kind === 'window' ? numberField(`Height (blank: ${setup.windowHeight})`, data.height, 0.1, (v) => (v === undefined ? delete data.height : (data.height = Math.max(0.1, v)))) : null,
+            data.kind === 'window' ? numberField('Bottom (blank: centred)', data.bottom, 0.1, (v) => (v === undefined ? delete data.bottom : (data.bottom = Math.max(0, v)))) : null,
+            data.kind === 'door' ? numberField(`Height (blank: ${setup.doorHeight})`, data.height, 0.1, (v) => (v === undefined ? delete data.height : (data.height = Math.max(0.2, v)))) : null,
+            data.kind === 'door' ? checkField('Sliding', data.sliding, (v) => (data.sliding = v || undefined)) : null,
+            data.kind === 'door' ? checkField('Double', data.double, (v) => (data.double = v || undefined)) : null,
+            data.kind === 'door' ? selectField('Door style', data.style ?? '', ['', ...Object.keys(layout.styles.doors ?? {})], (v) => (data.style = v || undefined)) : null,
+            el('div', { class: 'row' },
+                el('button', { onclick: () => select({ type: 'wall', i: sel.i }) }, '🧱 Its wall'),
+                el('button', { onclick: duplicateSelection }, 'Duplicate'), remove));
     } else if (sel.type === 'prop') {
         parts.push(el('h3', {}, modelName(data.model).split('/').pop()),
             el('button', { class: 'block', onclick: () => openModelPicker({ current: modelPath(data.model), onPick: (path) => edit(() => (data.model = modelName(path))) }) }, '🧊 Change model…'),
@@ -1066,7 +1732,7 @@ function renderInspector() {
             numberField('Field of view (°)', data.fov, 1, (v) => (data.fov = v ?? 40)));
     } else if (sel.type === 'path') {
         parts.push(el('h3', {}, `Way in: ${sel.key}`),
-            el('p', { class: 'muted small' }, sel.key === 'outside' ? 'Where customers appear and leave to.' : 'Just inside the door: then they walk to the station\'s customer spot.'),
+            el('p', { class: 'muted small' }, sel.key === 'start' ? 'Where customers come from and go back to (off in the street, out of sight).' : sel.key === 'outside' ? 'Outside the door: on their way in and out.' : 'Just inside the door: then they walk to the station\'s customer spot.'),
             numberField('X', data.x, 0.25, (v) => (data.x = v)), numberField('Z', data.z, 0.25, (v) => (data.z = v)));
     } else if (sel.type === 'crates') {
         parts.push(el('h3', {}, 'Crates'),
@@ -1150,6 +1816,31 @@ function bindUi() {
     document.getElementById('play').addEventListener('click', () => window.open(gameUrl, 'restaurant-game'));
     document.getElementById('addFloor').addEventListener('click', addFloor);
     document.getElementById('addWall').addEventListener('click', addWall);
+    document.getElementById('drawWall').addEventListener('click', () => (drawing?.kind === 'wall' ? stopTools() : startDrawing('wall')));
+    document.getElementById('drawLawn').addEventListener('click', () => (drawing?.kind === 'lawn' ? stopTools() : startLawn()));
+    document.getElementById('roadMode').addEventListener('click', () => setRoadMode(!roadMode));
+    document.getElementById('addPeople').addEventListener('click', addPeopleArea);
+    document.getElementById('addSeat').addEventListener('click', addSeat);
+    for (const axis of ['X', 'Z']) {
+        document.getElementById('roadOrigin' + axis).addEventListener('change', (event) => {
+            const value = round(Number(event.target.value) || 0);
+            const key = axis.toLowerCase();
+            if (!layout.roads) {
+                roadOrigin[key] = value;
+                return;
+            }
+            edit(() => {
+                layout.roads.origin = { ...(layout.roads.origin ?? { x: 0, z: 0 }), [key]: value };
+                if (!layout.roads.origin.x && !layout.roads.origin.z) delete layout.roads.origin;
+            });
+        });
+    }
+    document.getElementById('carCount').addEventListener('change', (event) => edit(() => {
+        const count = Math.max(0, Math.round(Number(event.target.value) || 0));
+        if (count) layout.traffic = { count };
+        else delete layout.traffic;
+    }, { rebuildScene: false }));
+    document.querySelectorAll('[data-place]').forEach((button) => button.addEventListener('click', () => (placing === button.dataset.place ? stopTools() : startPlacing(button.dataset.place))));
     document.getElementById('addProp').addEventListener('click', () => openModelPicker({ title: 'Add a prop', confirmLabel: 'Add', onPick: addProp }));
     document.getElementById('importProp').addEventListener('click', () => void openLibraryPicker({
         onImported: async (path) => {

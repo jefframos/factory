@@ -8,6 +8,12 @@
 //      the pan once it's done), tap each topping asked for, tap a top bun; TRASH starts the plate again, SERVE sends it;
 //   4. the camera comes back up, the plate slides across: right (bun, one patty, exactly the toppings, bun on top) and
 //      the customer's happy and pays, wrong and they're sad; then they walk out.
+// A stage served 'seated' (settings.json stages[].service: the small diner) goes another way:
+//   1. each customer takes a free seat (the layout's `seats`; all taken: they wait by the door) and sits down;
+//   2. after a moment a "!" bobs over them: tap them for their order (the bubble), then the bench as above;
+//   3. SERVE sends the plate onto their table; they eat (the food goes, bite by bite) and leave — the plate stays;
+//   4. tap the dirty plate (sparkles over it) to clear it: only then can the next customer sit there.
+//   The stage's first day can use fewer seats than there are customers (settings.json stages[].firstDay), to teach it.
 // After the day's customers, the day's card (stars for the happy ones, the coins made), and off to the
 // supermarket for the next day (`onDayDone`). The first day, a hand points at what to tap next.
 //
@@ -22,8 +28,10 @@ import SetupThree from 'core/scene/SetupThree';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { DebugOverlay } from 'core/debug/DebugOverlay';
 import { KITCHEN_MODELS, Kitchen, TargetKind } from '../world/Kitchen';
-import { CUSTOMER_PATH, CameraShot, SHOT_ASPECT, StationLayout, buildRoom, roomModels, stationAt } from '../world/RestaurantLayout';
+import { CUSTOMER_PATH, CameraShot, SHOT_ASPECT, SeatLayout, StationLayout, buildRoom, roomModels, seatsAt, stationAt } from '../world/RestaurantLayout';
+import { stageSettings } from '../data/Settings';
 import type { Room } from 'core/rooms/Room';
+import { Town } from '../world/Town';
 import { bendAll, bendAround } from '../world/Bend';
 import { Customer } from '../world/Customers';
 import { loadModels } from '../world/Models';
@@ -42,14 +50,74 @@ const REACT_SECONDS = 1.8;
  * (toward the door), this far apart (units). A served one steps this far to the side and walks out past the line;
  * walking out, they keep this far from anyone (and ease round them).
  */
-const QUEUE = { arriveGap: 0.6, spacing: 1.15, stepAside: 1.6, personalSpace: 0.8 };
+const QUEUE = { spacing: 1.15, stepAside: 1.6, personalSpace: 0.8 };
+/**
+ * Customers arriving: the first after `first` seconds, then one every `gap` seconds or so (each gap x 1 ± `noise`), and
+ * where each stands off their spot in the line: up to `across` either side and `along` nearer or further (at the counter:
+ * `counter` either side only, so they still face the cook).
+ */
+const ARRIVE = { first: [0.3, 1.2], gap: 2.2, noise: 0.55 };
+const SPOT_NOISE = { across: 0.28, along: 0.18, counter: 0.12 };
 
 type Phase = 'loading' | 'waiting' | 'ordering' | 'cooking' | 'serving' | 'leaving' | 'dayEnd';
+
+/**
+ * Seated service: once sat, how long before a customer wants to order (s, at random between); how long they eat (s);
+ * how far behind their seat they come up to it from; how close (screen px) a tap must be to a customer's "!" or a
+ * dirty plate; where waiting customers stand (from just inside the door, back toward it, this far apart).
+ */
+const SEATED = { readyAfter: [0.8, 2.2], eatSeconds: 5, approach: 0.7, tapRadius: 70, waitSpacing: 0.9 };
+
+/** A seated customer: who, their seat, what they'll order, and where they're at. */
+interface Diner {
+    customer: Customer;
+    order: Order;
+    seat: SeatState | null;
+    state: 'arriving' | 'waiting' | 'seating' | 'seated' | 'ready' | 'ordering' | 'served' | 'eating' | 'leaving';
+    marker: THREE.Sprite | null;
+}
+
+/** A seat: its layout, who's on it, and the plate left on its table (dirty, to clear). */
+interface SeatState {
+    def: SeatLayout;
+    diner: Diner | null;
+    plate: THREE.Object3D | null;
+    marker: THREE.Sprite | null;
+}
+
+/** A sign over something tappable: a bobbing word or symbol on a round badge. */
+function signSprite(text: string, color: string): THREE.Sprite {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 128;
+    const g = canvas.getContext('2d')!;
+    g.fillStyle = color;
+    g.beginPath();
+    g.arc(64, 64, 56, 0, Math.PI * 2);
+    g.fill();
+    g.lineWidth = 8;
+    g.strokeStyle = '#ffffff';
+    g.stroke();
+    g.fillStyle = '#ffffff';
+    g.font = 'bold 76px sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, 64, 70);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, depthTest: false }));
+    sprite.renderOrder = 10;
+    sprite.scale.setScalar(0.55);
+    return sprite;
+}
 
 export default class RestaurantScene extends ThreeScene {
     private kitchen: Kitchen | null = null;
     /** The restaurant round the kitchen, as it is at the player's stage (levels/restaurant.json). */
     private room: Room | null = null;
+    /** The street round it (roads, cars, lawns, people). */
+    private town: Town | null = null;
+    /** Debug: the camera high over the street instead of the station's shots. */
+    private overview = false;
     /** The burger station at the player's stage: its pieces and camera shots (levels/restaurant.json). */
     private station: StationLayout | null = null;
     private hud!: RestaurantHud;
@@ -70,6 +138,14 @@ export default class RestaurantScene extends ThreeScene {
     private gone = false;
     /** The dish was done last frame (its "ready" signs go on and off with it). */
     private dishWasReady = false;
+    /** Seated service (the stage's settings): its seats, its customers (in the order they came), who's waiting for a seat. */
+    private readonly seated = stageSettings(RestaurantSave.stage).service === 'seated';
+    private seats: SeatState[] = [];
+    private readonly diners: Diner[] = [];
+    private readonly waitingForSeat: Diner[] = [];
+    /** The seated customer whose order's being made. */
+    private diner: Diner | null = null;
+    private time = 0;
 
     /** `onDayDone`: the day's card closed (to the supermarket). */
     public constructor(game: Game, private readonly onDayDone: () => void = () => undefined) {
@@ -113,6 +189,9 @@ export default class RestaurantScene extends ThreeScene {
         if (this.gone) return;
         this.room = buildRoom(RestaurantSave.stage);
         this.threeScene.add(this.room.group);
+        // The street round it: roads, cars, lawns, people.
+        this.town = new Town(RestaurantSave.stage);
+        this.threeScene.add(this.town.group);
         this.station = stationAt(RestaurantSave.stage);
         this.kitchen = new Kitchen(this.threeScene, this.station);
         this.kitchen.onCooked = () => RestaurantAudio.play('pick', 1.3);
@@ -124,11 +203,19 @@ export default class RestaurantScene extends ThreeScene {
 
     private buildDebug(): void {
         const panel = DebugOverlay.instance.panel('Restaurant', { id: 'restaurant.debug' });
+        // For poking at it from the console (and headless tests): window.restaurant.
+        const query = new URLSearchParams(window.location.search);
+        if (query.has('dev') || query.has('debug')) (window as unknown as { restaurant: unknown }).restaurant = this;
         panel.button('+50 TO THE BAR', () => {
             RestaurantSave.addProgress(50);
             this.hud.stageBar.set(RestaurantSave.stage, RestaurantSave.progress);
         });
         panel.button('SKIP CUSTOMER (served right)', () => this.skipCustomer());
+        // A look at the whole street (roads, cars, lawns, people) from high up; again: back to the station.
+        panel.button('OVERVIEW CAMERA (toggle)', () => {
+            this.overview = !this.overview;
+            if (!this.overview) this.fitCamera();
+        });
         panel.button('END DAY', () => {
             if (this.phase !== 'dayEnd' && this.kitchen) this.endDay();
         });
@@ -149,13 +236,21 @@ export default class RestaurantScene extends ThreeScene {
         this.hud.banner(`DAY ${day + 1}`, `${this.orders.length} customers today`);
         this.phase = 'waiting';
         this.moveView(0);
-        // Everyone comes in, one after another, and lines up.
-        this.orders.forEach((_, k) => gsap.delayedCall(k * QUEUE.arriveGap, () => {
-            if (this.gone) return;
-            const customer = new Customer(this.threeScene, CUSTOMER_PATH.outside);
-            this.queue.push(customer);
-            this.sendToPlace(customer, [CUSTOMER_PATH.inside]);
-        }));
+        if (this.seated) {
+            this.startSeatedDay();
+            return;
+        }
+        // Everyone comes in from the street, one after another at uneven gaps, and lines up.
+        let at = ARRIVE.first[0] + Math.random() * (ARRIVE.first[1] - ARRIVE.first[0]);
+        this.orders.forEach(() => {
+            gsap.delayedCall(at, () => {
+                if (this.gone) return;
+                const customer = new Customer(this.threeScene, CUSTOMER_PATH.start);
+                this.queue.push(customer);
+                this.sendToPlace(customer, [CUSTOMER_PATH.outside, CUSTOMER_PATH.inside]);
+            });
+            at += ARRIVE.gap * (1 + (Math.random() * 2 - 1) * ARRIVE.noise);
+        });
     }
 
     /** Place `k` in the line (0: the counter), facing the cook: the station's customer spot, then back toward the door. */
@@ -165,11 +260,20 @@ export default class RestaurantScene extends ThreeScene {
         return spot.clone().addScaledVector(back, QUEUE.spacing * k);
     }
 
+    /** Their own spot near place `k`: a little off it, as people stand (at the counter only a little to the side). */
+    private spotFor(customer: Customer, k: number): THREE.Vector3 {
+        const spot = this.queueSpot(k);
+        const back = CUSTOMER_PATH.inside.clone().sub(this.kitchen!.customerSpot).setY(0).normalize();
+        const side = new THREE.Vector3(back.z, 0, -back.x);
+        if (k === 0) return spot.addScaledVector(side, customer.offset.across * SPOT_NOISE.counter);
+        return spot.addScaledVector(side, customer.offset.across * SPOT_NOISE.across).addScaledVector(back, customer.offset.along * SPOT_NOISE.along);
+    }
+
     /** `customer` to their place in the line (through `via` first); the one reaching the counter orders. */
     private sendToPlace(customer: Customer, via: THREE.Vector3[] = []): void {
         const k = this.queue.indexOf(customer);
         if (k < 0) return;
-        void customer.walkTo([...via, this.queueSpot(k)], Math.PI).then(() => {
+        void customer.walkTo([...via, this.spotFor(customer, k)], Math.PI).then(() => {
             if (!this.gone && this.queue[0] === customer && this.phase === 'waiting') this.takeOrder(customer);
         });
     }
@@ -189,7 +293,7 @@ export default class RestaurantScene extends ThreeScene {
         const front = this.queue[0];
         if (!front || !this.kitchen || !['waiting', 'ordering', 'cooking'].includes(this.phase)) return;
         if (this.customer !== front) {
-            front.root.position.copy(this.queueSpot(0));
+            front.root.position.copy(this.spotFor(front, 0));
             front.root.rotation.y = Math.PI;
             // (Their walk up's over: standing there now.)
             void front.walkTo([], Math.PI);
@@ -219,14 +323,27 @@ export default class RestaurantScene extends ThreeScene {
 
     private trash(): void {
         if (this.phase !== 'cooking' || !this.kitchen?.plateHasFood) return;
-        this.kitchen.trash();
+        // Into the trash can, if the layout has one (a prop whose model or id says trash); else just gone.
+        const bin = this.trashCan();
+        if (bin) this.kitchen.trashInto(bin);
+        else this.kitchen.trash();
         RestaurantAudio.play('drop', 0.8);
         this.hud.tickTicket([]);
+    }
+
+    /** The trash can in the room (a prop named trash / bin), if any. */
+    private trashCan(): THREE.Object3D | null {
+        let found: THREE.Object3D | null = null;
+        this.room?.group.traverse((child) => {
+            if (!found && child.parent === this.room!.group && /trash|(^|[^a-z])bin([^a-z]|$)/i.test(child.name)) found = child;
+        });
+        return found;
     }
 
     private serve(): void {
         const kitchen = this.kitchen;
         if (this.phase !== 'cooking' || !kitchen || !this.order || !this.customer) return;
+        // (Seated: this.customer is the diner being served.)
         if (!kitchen.plateHasFood) {
             RestaurantAudio.play('wrong');
             this.hud.showHint('The plate is empty!');
@@ -241,6 +358,16 @@ export default class RestaurantScene extends ThreeScene {
         this.hud.pointAt(null);
         this.moveView(0);
         RestaurantAudio.play('whoosh');
+        if (this.seated && this.diner?.seat) {
+            const diner = this.diner;
+            const seat = diner.seat!;
+            diner.state = 'served';
+            kitchen.serveTo(this.platePoint(seat.def), (plate) => {
+                seat.plate = plate;
+                if (!this.gone) this.reactSeated(diner, right, pay);
+            });
+            return;
+        }
         kitchen.serve(() => {
             if (!this.gone) this.react(right, pay);
         });
@@ -279,7 +406,7 @@ export default class RestaurantScene extends ThreeScene {
         const spot = this.queueSpot(0);
         const back = CUSTOMER_PATH.inside.clone().sub(spot).setY(0).normalize();
         const side = new THREE.Vector3(back.z, 0, -back.x).multiplyScalar(QUEUE.stepAside);
-        void customer.walkTo([spot.clone().add(side), CUSTOMER_PATH.inside.clone().add(side), CUSTOMER_PATH.outside]).then(() => {
+        void customer.walkTo([spot.clone().add(side), CUSTOMER_PATH.inside.clone().add(side), CUSTOMER_PATH.outside, CUSTOMER_PATH.start]).then(() => {
             this.leaving.splice(this.leaving.indexOf(customer), 1);
             customer.destroy();
         });
@@ -323,6 +450,205 @@ export default class RestaurantScene extends ThreeScene {
         this.hud.showDayEnd(day, happy, this.orders.length, this.pays, from, () => this.onDayDone());
     }
 
+    // ---------------------------------------------------------------- seated service
+
+    private startSeatedDay(): void {
+        // The stage's first day can use fewer seats (the rest stay empty).
+        const limit = RestaurantSave.stageDay === 0 ? stageSettings(RestaurantSave.stage).firstDay?.seats : undefined;
+        this.seats = seatsAt(RestaurantSave.stage, limit).map((def) => ({ def, diner: null, plate: null, marker: null }));
+        if (!this.seats.length) console.warn('[Restaurant] a seated stage with no seats: add some in the editor');
+        let at = ARRIVE.first[0] + Math.random() * (ARRIVE.first[1] - ARRIVE.first[0]);
+        this.orders.forEach((order) => {
+            gsap.delayedCall(at, () => {
+                if (this.gone) return;
+                const diner: Diner = { customer: new Customer(this.threeScene, CUSTOMER_PATH.start), order, seat: null, state: 'arriving', marker: null };
+                this.diners.push(diner);
+                void diner.customer.walkTo([CUSTOMER_PATH.outside, CUSTOMER_PATH.inside]).then(() => {
+                    if (!this.gone && diner.state === 'arriving') this.findSeat(diner);
+                });
+            });
+            at += ARRIVE.gap * (1 + (Math.random() * 2 - 1) * ARRIVE.noise);
+        });
+    }
+
+    private seatPoint(def: SeatLayout): THREE.Vector3 {
+        return new THREE.Vector3(def.x, 0, def.z);
+    }
+
+    /** Where a seat's plate goes (world: on the table). */
+    private platePoint(def: SeatLayout): THREE.Vector3 {
+        return new THREE.Vector3(def.plate.x, def.plate.y ?? 1, def.plate.z);
+    }
+
+    /** A free seat (no one on it, its table cleared) for `diner`, or the wait by the door. */
+    private findSeat(diner: Diner): void {
+        const seat = this.seats.find((s) => !s.diner && !s.plate);
+        if (!seat) {
+            diner.state = 'waiting';
+            if (!this.waitingForSeat.includes(diner)) this.waitingForSeat.push(diner);
+            this.lineUpWaiting();
+            return;
+        }
+        const waiting = this.waitingForSeat.indexOf(diner);
+        if (waiting >= 0) this.waitingForSeat.splice(waiting, 1);
+        seat.diner = diner;
+        diner.seat = seat;
+        diner.state = 'seating';
+        const { def } = seat;
+        // Up to the seat from behind it (the side away from the table), then down onto it.
+        const behind = this.seatPoint(def).add(new THREE.Vector3(-Math.sin(def.rotationY), 0, -Math.cos(def.rotationY)).multiplyScalar(SEATED.approach));
+        void diner.customer.walkTo([behind], def.rotationY).then(() => {
+            if (this.gone || diner.state !== 'seating') return;
+            diner.customer.sitAt(this.seatPoint(def), def.rotationY, def.height ?? 0.5);
+            diner.state = 'seated';
+            const wait = SEATED.readyAfter[0] + Math.random() * (SEATED.readyAfter[1] - SEATED.readyAfter[0]);
+            gsap.delayedCall(wait, () => {
+                if (this.gone || diner.state !== 'seated') return;
+                diner.state = 'ready';
+                diner.marker = signSprite('!', '#ff8a1f');
+                this.threeScene.add(diner.marker);
+                RestaurantAudio.play('pick', 1.2);
+            });
+        });
+        this.lineUpWaiting();
+    }
+
+    /** Those waiting for a seat: lined up just inside the door, back toward it. */
+    private lineUpWaiting(): void {
+        const back = CUSTOMER_PATH.outside.clone().sub(CUSTOMER_PATH.inside).setY(0).normalize();
+        this.waitingForSeat.forEach((diner, k) => {
+            const spot = CUSTOMER_PATH.inside.clone().addScaledVector(back, SEATED.waitSpacing * k);
+            spot.x += diner.customer.offset.across * 0.2;
+            void diner.customer.walkTo([spot]);
+        });
+    }
+
+    /** A ready customer tapped: their order (the bubble), then the bench. */
+    private takeSeatedOrder(diner: Diner): void {
+        if (this.phase !== 'waiting' || diner.state !== 'ready') return;
+        diner.state = 'ordering';
+        diner.marker?.removeFromParent();
+        diner.marker = null;
+        this.diner = diner;
+        this.customer = diner.customer;
+        this.order = diner.order;
+        this.phase = 'ordering';
+        RestaurantAudio.play('pick');
+        this.hud.showOrder(this.order, this.headOnScreen() ?? { x: 0, y: 0 });
+        gsap.delayedCall(ORDER_SECONDS, () => this.startCooking());
+    }
+
+    /** Their plate's on the table: happy (and pay) or not; then they eat it, or (wrong) just leave. */
+    private reactSeated(diner: Diner, right: boolean, pay: number): void {
+        this.results.push(right);
+        this.hud.setDay(RestaurantSave.day, this.results, this.orders.length);
+        if (right) {
+            diner.customer.cheer();
+            RestaurantAudio.play('happy');
+            this.dayCoins += pay;
+            this.pays.push(pay);
+            gsap.delayedCall(0.4, () => {
+                RestaurantAudio.play('coins');
+                this.hud.setCoins(this.dayCoins, true);
+            });
+        } else {
+            diner.customer.grumble();
+            RestaurantAudio.play('sad');
+        }
+        this.hud.react(right, this.worldToScreen(diner.customer.headTop) ?? { x: 0, y: 0 }, pay);
+        // The kitchen's free for the next order straight away.
+        this.diner = null;
+        this.customer = null;
+        this.order = null;
+        this.phase = 'waiting';
+        if (!right) {
+            gsap.delayedCall(REACT_SECONDS, () => this.dinerLeaves(diner));
+            return;
+        }
+        diner.state = 'eating';
+        // Bite by bite: the top piece first, the plate itself stays.
+        const plate = diner.seat?.plate;
+        const pieces = plate ? [...Kitchen.foodOn(plate)].reverse() : [];
+        const each = SEATED.eatSeconds / Math.max(1, pieces.length);
+        pieces.forEach((piece, i) => {
+            gsap.to(piece.scale, { x: 0.001, y: 0.001, z: 0.001, duration: each * 0.6, delay: 0.6 + i * each, ease: 'power1.in', onComplete: () => { piece.removeFromParent(); } });
+        });
+        gsap.delayedCall(0.6 + SEATED.eatSeconds + 0.4, () => this.dinerLeaves(diner));
+    }
+
+    /** Up and out (back to where they came from); their plate stays on the table, to clear. */
+    private dinerLeaves(diner: Diner): void {
+        if (this.gone || diner.state === 'leaving') return;
+        diner.state = 'leaving';
+        const seat = diner.seat;
+        if (seat) {
+            seat.diner = null;
+            // The dirty plate: sparkles over it until it's tapped.
+            if (seat.plate && !seat.marker) {
+                seat.marker = signSprite('✦', '#3fb8ff');
+                this.threeScene.add(seat.marker);
+            }
+        }
+        diner.customer.standUp();
+        const behind = seat ? this.seatPoint(seat.def).add(new THREE.Vector3(-Math.sin(seat.def.rotationY), 0, -Math.cos(seat.def.rotationY)).multiplyScalar(SEATED.approach)) : diner.customer.root.position.clone();
+        void diner.customer.walkTo([behind, CUSTOMER_PATH.inside, CUSTOMER_PATH.outside, CUSTOMER_PATH.start]).then(() => {
+            const k = this.diners.indexOf(diner);
+            if (k >= 0) this.diners.splice(k, 1);
+            diner.customer.destroy();
+        });
+    }
+
+    /** A dirty plate tapped: off the table (the seat's free again: the next one waiting sits there). */
+    private clearPlate(seat: SeatState): void {
+        const plate = seat.plate;
+        if (!plate) return;
+        seat.plate = null;
+        seat.marker?.removeFromParent();
+        seat.marker = null;
+        RestaurantAudio.play('pick', 1.4);
+        gsap.to(plate.position, { y: plate.position.y + 0.6, duration: 0.25, ease: 'power2.out' });
+        gsap.to(plate.scale, { x: 0.01, y: 0.01, z: 0.01, duration: 0.3, delay: 0.1, ease: 'back.in(2)', onComplete: () => { plate.removeFromParent(); } });
+        const next = this.waitingForSeat[0];
+        if (next) this.findSeat(next);
+    }
+
+    /** The day's done once everyone's been served, has gone, and every plate's cleared. */
+    private seatedDayDone(): boolean {
+        return this.results.length >= this.orders.length && this.diners.length === 0 && this.seats.every((s) => !s.plate);
+    }
+
+    /** A tap in the dining view: the nearest ready customer's "!" or dirty plate within reach. Whether it took it. */
+    private seatedTap(x: number, y: number): boolean {
+        let best: { score: number; act: () => void } | null = null;
+        const consider = (sprite: THREE.Sprite | null, act: () => void) => {
+            if (!sprite) return;
+            const at = this.worldToScreen(sprite.position);
+            if (!at) return;
+            const distance = Math.hypot(x - at.x, y - at.y);
+            if (distance <= SEATED.tapRadius && (!best || distance < best.score)) best = { score: distance, act };
+        };
+        for (const diner of this.diners) if (diner.state === 'ready') consider(diner.marker, () => this.takeSeatedOrder(diner));
+        for (const seat of this.seats) if (seat.plate) consider(seat.marker, () => this.clearPlate(seat));
+        // Also a tap on the customer themselves (their middle).
+        for (const diner of this.diners) {
+            if (diner.state !== 'ready') continue;
+            const at = this.worldToScreen(diner.customer.root.position.clone().setY(0.9));
+            if (at && Math.hypot(x - at.x, y - at.y) <= SEATED.tapRadius && (!best || Math.hypot(x - at.x, y - at.y) < best.score)) {
+                best = { score: Math.hypot(x - at.x, y - at.y), act: () => this.takeSeatedOrder(diner) };
+            }
+        }
+        const chosen = best as { score: number; act: () => void } | null;
+        chosen?.act();
+        return !!chosen;
+    }
+
+    /** The signs bob over their customers and plates. */
+    private updateSigns(): void {
+        const bob = Math.sin(this.time * 5) * 0.08;
+        for (const diner of this.diners) diner.marker?.position.copy(diner.customer.headTop).add(new THREE.Vector3(0, 0.35 + bob, 0));
+        for (const seat of this.seats) if (seat.marker && seat.plate) seat.marker.position.copy(seat.plate.position).add(new THREE.Vector3(0, 0.55 + bob, 0));
+    }
+
     // ---------------------------------------------------------------- taps on the benches
 
     private readonly onPointerDown = (event: PointerEvent): void => {
@@ -333,11 +659,16 @@ export default class RestaurantScene extends ThreeScene {
             return;
         }
         const kitchen = this.kitchen;
-        if (this.phase !== 'cooking' || !kitchen || this.view.t < 0.9) return;
-        // The target whose middle is nearest the tap on screen, within its radius (measured across the screen).
         const rect = SetupThree.renderer.domElement.getBoundingClientRect();
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
+        // Seated: in the dining view, a tap on a ready customer or a dirty plate.
+        if (this.seated && this.phase === 'waiting' && this.view.t < 0.1) {
+            this.seatedTap(x, y);
+            return;
+        }
+        if (this.phase !== 'cooking' || !kitchen || this.view.t < 0.9) return;
+        // The target whose middle is nearest the tap on screen, within its radius (measured across the screen).
         const across = new THREE.Vector3().setFromMatrixColumn(this.threeCamera.matrixWorld, 0);
         let best: { kind: TargetKind; score: number } | null = null;
         for (const target of kitchen.targets) {
@@ -386,7 +717,18 @@ export default class RestaurantScene extends ThreeScene {
     /** The first day: what to tap next (the hand), as a 3D point: bottom bun, patty, toppings, top bun. */
     private nextHint(): THREE.Vector3 | null {
         const kitchen = this.kitchen;
-        if (RestaurantSave.day > 0 || this.phase !== 'cooking' || !kitchen || !this.order || this.view.t < 0.99) return null;
+        if (this.seated && RestaurantSave.stageDay === 0 && this.phase === 'waiting' && this.view.t < 0.1) {
+            const ready = this.diners.find((d) => d.state === 'ready' && d.marker);
+            if (ready) return ready.marker!.position;
+            const dirty = this.seats.find((s) => s.plate && s.marker);
+            return dirty ? dirty.marker!.position : null;
+        }
+        if (this.seated && RestaurantSave.stageDay === 0 && this.phase === 'cooking') {
+            // The bench: as the first day's.
+        } else if (this.seated) {
+            return null;
+        }
+        if ((RestaurantSave.day > 0 && !(this.seated && RestaurantSave.stageDay === 0)) || this.phase !== 'cooking' || !kitchen || !this.order || this.view.t < 0.99) return null;
         const parts = kitchen.onPlate;
         if (!parts.length) return kitchen.targetPoint('bunBottom');
         if (!parts.includes('patty')) {
@@ -450,7 +792,14 @@ export default class RestaurantScene extends ThreeScene {
         const dt = Math.min(delta, 0.1);
         this.kitchen?.update(dt);
         // The doors open for the customers.
-        this.room?.update(dt, [...this.queue, ...this.leaving].map((c) => c.root.position));
+        this.time += dt;
+        this.room?.update(dt, [...this.queue, ...this.leaving, ...this.diners.map((d) => d.customer)].map((c) => c.root.position));
+        this.diners.forEach((d) => d.customer.update(dt));
+        if (this.seated) {
+            this.updateSigns();
+            if (this.phase === 'waiting' && this.seats.length && this.seatedDayDone()) this.endDay();
+        }
+        this.town?.update(dt);
         this.queue.forEach((c) => c.update(dt));
         this.leaving.forEach((c) => c.update(dt));
         this.keepApart(dt);
@@ -471,6 +820,12 @@ export default class RestaurantScene extends ThreeScene {
             const hint = this.nextHint();
             this.hud.pointAt(hint ? this.worldToScreen(hint) : null);
         }
+        if (this.overview) {
+            // Debug: high over the street, looking down at the restaurant.
+            const centre = this.station ? new THREE.Vector3(this.station.x, 0, this.station.z + 8) : new THREE.Vector3();
+            this.threeCamera.position.set(centre.x, 38, centre.z + 34);
+            this.threeCamera.lookAt(centre);
+        }
         super.update(delta);
     }
 
@@ -486,8 +841,17 @@ export default class RestaurantScene extends ThreeScene {
         gsap.killTweensOf(this.view);
         this.queue.forEach((c) => c.destroy());
         this.leaving.forEach((c) => c.destroy());
+        this.diners.forEach((d) => {
+            d.customer.destroy();
+            d.marker?.removeFromParent();
+        });
+        this.seats.forEach((s) => {
+            s.plate?.removeFromParent();
+            s.marker?.removeFromParent();
+        });
         this.kitchen?.destroy();
         this.room?.dispose();
+        this.town?.dispose();
         this.hud?.destroy();
         super.destroy();
     }

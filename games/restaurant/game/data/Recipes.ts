@@ -41,9 +41,9 @@ export function randomOrder(most = 3): Order {
 }
 
 /** Day `day`'s orders, dealt. */
-export function dealDay(day: number): Order[] {
+export function dealDay(day: number, customersOverride?: number): Order[] {
     const { customers, maxToppings } = daySettings(day);
-    return Array.from({ length: customers }, () => randomOrder(maxToppings));
+    return Array.from({ length: customersOverride ?? customers }, () => randomOrder(maxToppings));
 }
 
 /** What `orders` use, as the market's item ids: buns, patties, and every topping any of them asks for. */

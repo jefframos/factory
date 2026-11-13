@@ -540,6 +540,742 @@ const KitchenWallDoorway = {
 }
 } as const;
 
+const LibraryCasinoAssetsGlbCashMachine01 = {
+  id: 'casino-assets-glb-cash-machine-01',
+  path: 'library/casino-assets-glb-cash-machine-01/casino-assets-glb-cash-machine-01',
+  fullPath: 'restaurant/models/library/casino-assets-glb-cash-machine-01/casino-assets-glb-cash-machine-01.glb',
+  format: 'glb',
+  nodes: {
+  "CashMachine01": "Cash_Machine_01"
+}
+} as const;
+
+const LibraryCity2Ambulance01 = {
+  id: 'city2-ambulance-01',
+  path: 'library/city2-ambulance-01/city2-ambulance-01',
+  fullPath: 'restaurant/models/library/city2-ambulance-01/city2-ambulance-01.glb',
+  format: 'glb',
+  nodes: {
+  "Ambulance01": "Ambulance_01",
+  "Wheel169": "Wheel_169",
+  "Wheel170": "Wheel_170",
+  "Wheel171": "Wheel_171",
+  "Wheel172": "Wheel_172"
+}
+} as const;
+
+const LibraryCity2Bench01 = {
+  id: 'city2-bench-01',
+  path: 'library/city2-bench-01/city2-bench-01',
+  fullPath: 'restaurant/models/library/city2-bench-01/city2-bench-01.glb',
+  format: 'glb',
+  nodes: {
+  "Bench01": "Bench_01"
+}
+} as const;
+
+const LibraryCity2Bench02 = {
+  id: 'city2-bench-02',
+  path: 'library/city2-bench-02/city2-bench-02',
+  fullPath: 'restaurant/models/library/city2-bench-02/city2-bench-02.glb',
+  format: 'glb',
+  nodes: {
+  "Bench02": "Bench_02"
+}
+} as const;
+
+const LibraryCity2BuildingBusiness02 = {
+  id: 'city2-building-business-02',
+  path: 'library/city2-building-business-02/city2-building-business-02',
+  fullPath: 'restaurant/models/library/city2-building-business-02/city2-building-business-02.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingBusiness02": "Building_Business_02"
+}
+} as const;
+
+const LibraryCity2BuildingBusiness05 = {
+  id: 'city2-building-business-05',
+  path: 'library/city2-building-business-05/city2-building-business-05',
+  fullPath: 'restaurant/models/library/city2-building-business-05/city2-building-business-05.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingBusiness05": "Building_Business_05"
+}
+} as const;
+
+const LibraryCity2BuildingBusiness09 = {
+  id: 'city2-building-business-09',
+  path: 'library/city2-building-business-09/city2-building-business-09',
+  fullPath: 'restaurant/models/library/city2-building-business-09/city2-building-business-09.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingBusiness09": "Building_Business_09"
+}
+} as const;
+
+const LibraryCity2BuildingBusiness10 = {
+  id: 'city2-building-business-10',
+  path: 'library/city2-building-business-10/city2-building-business-10',
+  fullPath: 'restaurant/models/library/city2-building-business-10/city2-building-business-10.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingBusiness10": "Building_Business_10"
+}
+} as const;
+
+const LibraryCity2BuildingLiving03 = {
+  id: 'city2-building-living-03',
+  path: 'library/city2-building-living-03/city2-building-living-03',
+  fullPath: 'restaurant/models/library/city2-building-living-03/city2-building-living-03.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving03": "Building_Living_03"
+}
+} as const;
+
+const LibraryCity2BuildingLiving09 = {
+  id: 'city2-building-living-09',
+  path: 'library/city2-building-living-09/city2-building-living-09',
+  fullPath: 'restaurant/models/library/city2-building-living-09/city2-building-living-09.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving09": "Building_Living_09"
+}
+} as const;
+
+const LibraryCity2BuildingLiving12 = {
+  id: 'city2-building-living-12',
+  path: 'library/city2-building-living-12/city2-building-living-12',
+  fullPath: 'restaurant/models/library/city2-building-living-12/city2-building-living-12.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving12": "Building_Living_12"
+}
+} as const;
+
+const LibraryCity2BuildingLiving17 = {
+  id: 'city2-building-living-17',
+  path: 'library/city2-building-living-17/city2-building-living-17',
+  fullPath: 'restaurant/models/library/city2-building-living-17/city2-building-living-17.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving17": "Building_Living_17"
+}
+} as const;
+
+const LibraryCity2BuildingLiving19 = {
+  id: 'city2-building-living-19',
+  path: 'library/city2-building-living-19/city2-building-living-19',
+  fullPath: 'restaurant/models/library/city2-building-living-19/city2-building-living-19.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving19": "Building_Living_19"
+}
+} as const;
+
+const LibraryCity2BuildingLiving21 = {
+  id: 'city2-building-living-21',
+  path: 'library/city2-building-living-21/city2-building-living-21',
+  fullPath: 'restaurant/models/library/city2-building-living-21/city2-building-living-21.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving21": "Building_Living_21"
+}
+} as const;
+
+const LibraryCity2BuildingLiving27 = {
+  id: 'city2-building-living-27',
+  path: 'library/city2-building-living-27/city2-building-living-27',
+  fullPath: 'restaurant/models/library/city2-building-living-27/city2-building-living-27.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving27": "Building_Living_27"
+}
+} as const;
+
+const LibraryCity2BuildingLiving31 = {
+  id: 'city2-building-living-31',
+  path: 'library/city2-building-living-31/city2-building-living-31',
+  fullPath: 'restaurant/models/library/city2-building-living-31/city2-building-living-31.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving31": "Building_Living_31"
+}
+} as const;
+
+const LibraryCity2BuildingLiving44 = {
+  id: 'city2-building-living-44',
+  path: 'library/city2-building-living-44/city2-building-living-44',
+  fullPath: 'restaurant/models/library/city2-building-living-44/city2-building-living-44.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving44": "Building_Living_44"
+}
+} as const;
+
+const LibraryCity2BuildingLiving46 = {
+  id: 'city2-building-living-46',
+  path: 'library/city2-building-living-46/city2-building-living-46',
+  fullPath: 'restaurant/models/library/city2-building-living-46/city2-building-living-46.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingLiving46": "Building_Living_46"
+}
+} as const;
+
+const LibraryCity2BuildingService04 = {
+  id: 'city2-building-service-04',
+  path: 'library/city2-building-service-04/city2-building-service-04',
+  fullPath: 'restaurant/models/library/city2-building-service-04/city2-building-service-04.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingService04": "Building_Service_04"
+}
+} as const;
+
+const LibraryCity2BuildingService06 = {
+  id: 'city2-building-service-06',
+  path: 'library/city2-building-service-06/city2-building-service-06',
+  fullPath: 'restaurant/models/library/city2-building-service-06/city2-building-service-06.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingService06": "Building_Service_06"
+}
+} as const;
+
+const LibraryCity2BuildingService09 = {
+  id: 'city2-building-service-09',
+  path: 'library/city2-building-service-09/city2-building-service-09',
+  fullPath: 'restaurant/models/library/city2-building-service-09/city2-building-service-09.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingService09": "Building_Service_09"
+}
+} as const;
+
+const LibraryCity2BuildingService10 = {
+  id: 'city2-building-service-10',
+  path: 'library/city2-building-service-10/city2-building-service-10',
+  fullPath: 'restaurant/models/library/city2-building-service-10/city2-building-service-10.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingService10": "Building_Service_10"
+}
+} as const;
+
+const LibraryCity2BuildingSnack09 = {
+  id: 'city2-building-snack-09',
+  path: 'library/city2-building-snack-09/city2-building-snack-09',
+  fullPath: 'restaurant/models/library/city2-building-snack-09/city2-building-snack-09.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingSnack09": "Building_Snack_09"
+}
+} as const;
+
+const LibraryCity2BuildingSupermarket04 = {
+  id: 'city2-building-supermarket-04',
+  path: 'library/city2-building-supermarket-04/city2-building-supermarket-04',
+  fullPath: 'restaurant/models/library/city2-building-supermarket-04/city2-building-supermarket-04.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingSupermarket04": "Building_Supermarket_04"
+}
+} as const;
+
+const LibraryCity2BusStop01 = {
+  id: 'city2-bus-stop-01',
+  path: 'library/city2-bus-stop-01/city2-bus-stop-01',
+  fullPath: 'restaurant/models/library/city2-bus-stop-01/city2-bus-stop-01.glb',
+  format: 'glb',
+  nodes: {
+  "BusStop01": "Bus_Stop_01"
+}
+} as const;
+
+const LibraryCity2Car07 = {
+  id: 'city2-car-07',
+  path: 'library/city2-car-07/city2-car-07',
+  fullPath: 'restaurant/models/library/city2-car-07/city2-car-07.glb',
+  format: 'glb',
+  nodes: {
+  "Car07": "Car_07",
+  "Wheel269": "Wheel_269",
+  "Wheel270": "Wheel_270",
+  "Wheel271": "Wheel_271",
+  "Wheel272": "Wheel_272"
+}
+} as const;
+
+const LibraryCity2Car08 = {
+  id: 'city2-car-08',
+  path: 'library/city2-car-08/city2-car-08',
+  fullPath: 'restaurant/models/library/city2-car-08/city2-car-08.glb',
+  format: 'glb',
+  nodes: {
+  "Car08": "Car_08",
+  "Wheel037": "Wheel_037",
+  "Wheel038": "Wheel_038",
+  "Wheel039": "Wheel_039",
+  "Wheel040": "Wheel_040"
+}
+} as const;
+
+const LibraryCity2Car12 = {
+  id: 'city2-car-12',
+  path: 'library/city2-car-12/city2-car-12',
+  fullPath: 'restaurant/models/library/city2-car-12/city2-car-12.glb',
+  format: 'glb',
+  nodes: {
+  "Car12": "Car_12",
+  "Wheel013": "Wheel_013",
+  "Wheel014": "Wheel_014",
+  "Wheel015": "Wheel_015",
+  "Wheel016": "Wheel_016"
+}
+} as const;
+
+const LibraryCity2Car16 = {
+  id: 'city2-car-16',
+  path: 'library/city2-car-16/city2-car-16',
+  fullPath: 'restaurant/models/library/city2-car-16/city2-car-16.glb',
+  format: 'glb',
+  nodes: {
+  "Car16": "Car_16",
+  "Wheel161": "Wheel_161",
+  "Wheel162": "Wheel_162",
+  "Wheel163": "Wheel_163",
+  "Wheel164": "Wheel_164"
+}
+} as const;
+
+const LibraryCity2Car17 = {
+  id: 'city2-car-17',
+  path: 'library/city2-car-17/city2-car-17',
+  fullPath: 'restaurant/models/library/city2-car-17/city2-car-17.glb',
+  format: 'glb',
+  nodes: {
+  "Car17": "Car_17",
+  "Wheel121": "Wheel_121",
+  "Wheel122": "Wheel_122",
+  "Wheel123": "Wheel_123",
+  "Wheel124": "Wheel_124"
+}
+} as const;
+
+const LibraryCity2Car25 = {
+  id: 'city2-car-25',
+  path: 'library/city2-car-25/city2-car-25',
+  fullPath: 'restaurant/models/library/city2-car-25/city2-car-25.glb',
+  format: 'glb',
+  nodes: {
+  "Car25": "Car_25",
+  "Wheel265": "Wheel_265",
+  "Wheel266": "Wheel_266",
+  "Wheel267": "Wheel_267",
+  "Wheel268": "Wheel_268"
+}
+} as const;
+
+const LibraryCity2Car26 = {
+  id: 'city2-car-26',
+  path: 'library/city2-car-26/city2-car-26',
+  fullPath: 'restaurant/models/library/city2-car-26/city2-car-26.glb',
+  format: 'glb',
+  nodes: {
+  "Car26": "Car_26",
+  "Wheel141": "Wheel_141",
+  "Wheel142": "Wheel_142",
+  "Wheel143": "Wheel_143",
+  "Wheel144": "Wheel_144"
+}
+} as const;
+
+const LibraryCity2Car28 = {
+  id: 'city2-car-28',
+  path: 'library/city2-car-28/city2-car-28',
+  fullPath: 'restaurant/models/library/city2-car-28/city2-car-28.glb',
+  format: 'glb',
+  nodes: {
+  "Car28": "Car_28",
+  "Wheel105": "Wheel_105",
+  "Wheel106": "Wheel_106",
+  "Wheel107": "Wheel_107",
+  "Wheel108": "Wheel_108"
+}
+} as const;
+
+const LibraryCity2Car35 = {
+  id: 'city2-car-35',
+  path: 'library/city2-car-35/city2-car-35',
+  fullPath: 'restaurant/models/library/city2-car-35/city2-car-35.glb',
+  format: 'glb',
+  nodes: {
+  "Car35": "Car_35",
+  "Wheel061": "Wheel_061",
+  "Wheel062": "Wheel_062",
+  "Wheel063": "Wheel_063",
+  "Wheel064": "Wheel_064"
+}
+} as const;
+
+const LibraryCity2Car36 = {
+  id: 'city2-car-36',
+  path: 'library/city2-car-36/city2-car-36',
+  fullPath: 'restaurant/models/library/city2-car-36/city2-car-36.glb',
+  format: 'glb',
+  nodes: {
+  "Car36": "Car_36",
+  "Wheel081": "Wheel_081",
+  "Wheel082": "Wheel_082",
+  "Wheel083": "Wheel_083",
+  "Wheel084": "Wheel_084"
+}
+} as const;
+
+const LibraryCity2Car39 = {
+  id: 'city2-car-39',
+  path: 'library/city2-car-39/city2-car-39',
+  fullPath: 'restaurant/models/library/city2-car-39/city2-car-39.glb',
+  format: 'glb',
+  nodes: {
+  "Car39": "Car_39",
+  "Wheel109": "Wheel_109",
+  "Wheel110": "Wheel_110",
+  "Wheel111": "Wheel_111",
+  "Wheel112": "Wheel_112"
+}
+} as const;
+
+const LibraryCity2Car42 = {
+  id: 'city2-car-42',
+  path: 'library/city2-car-42/city2-car-42',
+  fullPath: 'restaurant/models/library/city2-car-42/city2-car-42.glb',
+  format: 'glb',
+  nodes: {
+  "Car42": "Car_42",
+  "Wheel157": "Wheel_157",
+  "Wheel158": "Wheel_158",
+  "Wheel159": "Wheel_159",
+  "Wheel160": "Wheel_160"
+}
+} as const;
+
+const LibraryCity2Car45 = {
+  id: 'city2-car-45',
+  path: 'library/city2-car-45/city2-car-45',
+  fullPath: 'restaurant/models/library/city2-car-45/city2-car-45.glb',
+  format: 'glb',
+  nodes: {
+  "Car45": "Car_45",
+  "Wheel245": "Wheel_245",
+  "Wheel246": "Wheel_246",
+  "Wheel247": "Wheel_247",
+  "Wheel248": "Wheel_248"
+}
+} as const;
+
+const LibraryCity2Fountain01 = {
+  id: 'city2-fountain-01',
+  path: 'library/city2-fountain-01/city2-fountain-01',
+  fullPath: 'restaurant/models/library/city2-fountain-01/city2-fountain-01.glb',
+  format: 'glb',
+  nodes: {
+  "Fountain01": "Fountain_01"
+}
+} as const;
+
+const LibraryCity2Hydrant01 = {
+  id: 'city2-hydrant-01',
+  path: 'library/city2-hydrant-01/city2-hydrant-01',
+  fullPath: 'restaurant/models/library/city2-hydrant-01/city2-hydrant-01.glb',
+  format: 'glb',
+  nodes: {
+  "Hydrant01": "Hydrant_01"
+}
+} as const;
+
+const LibraryCity2Lamppost01 = {
+  id: 'city2-lamppost-01',
+  path: 'library/city2-lamppost-01/city2-lamppost-01',
+  fullPath: 'restaurant/models/library/city2-lamppost-01/city2-lamppost-01.glb',
+  format: 'glb',
+  nodes: {
+  "Lamppost01": "Lamppost_01"
+}
+} as const;
+
+const LibraryCity2Road009 = {
+  id: 'city2-road-009',
+  path: 'library/city2-road-009/city2-road-009',
+  fullPath: 'restaurant/models/library/city2-road-009/city2-road-009.glb',
+  format: 'glb',
+  nodes: {
+  "Road009": "road_009"
+}
+} as const;
+
+const LibraryCity2Road010 = {
+  id: 'city2-road-010',
+  path: 'library/city2-road-010/city2-road-010',
+  fullPath: 'restaurant/models/library/city2-road-010/city2-road-010.glb',
+  format: 'glb',
+  nodes: {
+  "Road010": "road_010"
+}
+} as const;
+
+const LibraryCity2Road011 = {
+  id: 'city2-road-011',
+  path: 'library/city2-road-011/city2-road-011',
+  fullPath: 'restaurant/models/library/city2-road-011/city2-road-011.glb',
+  format: 'glb',
+  nodes: {
+  "Road011": "road_011"
+}
+} as const;
+
+const LibraryCity2Road012 = {
+  id: 'city2-road-012',
+  path: 'library/city2-road-012/city2-road-012',
+  fullPath: 'restaurant/models/library/city2-road-012/city2-road-012.glb',
+  format: 'glb',
+  nodes: {
+  "Road012": "road_012"
+}
+} as const;
+
+const LibraryCity2Road013 = {
+  id: 'city2-road-013',
+  path: 'library/city2-road-013/city2-road-013',
+  fullPath: 'restaurant/models/library/city2-road-013/city2-road-013.glb',
+  format: 'glb',
+  nodes: {
+  "Road013": "road_013"
+}
+} as const;
+
+const LibraryCity2Road022 = {
+  id: 'city2-road-022',
+  path: 'library/city2-road-022/city2-road-022',
+  fullPath: 'restaurant/models/library/city2-road-022/city2-road-022.glb',
+  format: 'glb',
+  nodes: {
+  "Road022": "road_022"
+}
+} as const;
+
+const LibraryCity2Road023 = {
+  id: 'city2-road-023',
+  path: 'library/city2-road-023/city2-road-023',
+  fullPath: 'restaurant/models/library/city2-road-023/city2-road-023.glb',
+  format: 'glb',
+  nodes: {
+  "Road023": "road_023"
+}
+} as const;
+
+const LibraryCity2Road025 = {
+  id: 'city2-road-025',
+  path: 'library/city2-road-025/city2-road-025',
+  fullPath: 'restaurant/models/library/city2-road-025/city2-road-025.glb',
+  format: 'glb',
+  nodes: {
+  "Road025": "road_025"
+}
+} as const;
+
+const LibraryCity2Road026 = {
+  id: 'city2-road-026',
+  path: 'library/city2-road-026/city2-road-026',
+  fullPath: 'restaurant/models/library/city2-road-026/city2-road-026.glb',
+  format: 'glb',
+  nodes: {
+  "Road026": "road_026"
+}
+} as const;
+
+const LibraryCity2Road029 = {
+  id: 'city2-road-029',
+  path: 'library/city2-road-029/city2-road-029',
+  fullPath: 'restaurant/models/library/city2-road-029/city2-road-029.glb',
+  format: 'glb',
+  nodes: {
+  "Road029": "road_029"
+}
+} as const;
+
+const LibraryCity2Stadium01 = {
+  id: 'city2-stadium-01',
+  path: 'library/city2-stadium-01/city2-stadium-01',
+  fullPath: 'restaurant/models/library/city2-stadium-01/city2-stadium-01.glb',
+  format: 'glb',
+  nodes: {
+  "Stadium01": "Stadium_01"
+}
+} as const;
+
+const LibraryCity2Statue01 = {
+  id: 'city2-statue-01',
+  path: 'library/city2-statue-01/city2-statue-01',
+  fullPath: 'restaurant/models/library/city2-statue-01/city2-statue-01.glb',
+  format: 'glb',
+  nodes: {
+  "Statue01": "Statue_01"
+}
+} as const;
+
+const LibraryCity2TrafficLight01 = {
+  id: 'city2-traffic-light-01',
+  path: 'library/city2-traffic-light-01/city2-traffic-light-01',
+  fullPath: 'restaurant/models/library/city2-traffic-light-01/city2-traffic-light-01.glb',
+  format: 'glb',
+  nodes: {
+  "TrafficLight01": "Traffic_Light_01"
+}
+} as const;
+
+const LibraryCity2TrashCan02 = {
+  id: 'city2-trash-can-02',
+  path: 'library/city2-trash-can-02/city2-trash-can-02',
+  fullPath: 'restaurant/models/library/city2-trash-can-02/city2-trash-can-02.glb',
+  format: 'glb',
+  nodes: {
+  "TrashCan02": "Trash_Can_02"
+}
+} as const;
+
+const LibraryCity2TrashCan03 = {
+  id: 'city2-trash-can-03',
+  path: 'library/city2-trash-can-03/city2-trash-can-03',
+  fullPath: 'restaurant/models/library/city2-trash-can-03/city2-trash-can-03.glb',
+  format: 'glb',
+  nodes: {
+  "TrashCan03": "Trash_Can_03"
+}
+} as const;
+
+const LibraryCity2TrashCan05 = {
+  id: 'city2-trash-can-05',
+  path: 'library/city2-trash-can-05/city2-trash-can-05',
+  fullPath: 'restaurant/models/library/city2-trash-can-05/city2-trash-can-05.glb',
+  format: 'glb',
+  nodes: {
+  "TrashCan05": "Trash_Can_05"
+}
+} as const;
+
+const LibraryCity2TrashCan08 = {
+  id: 'city2-trash-can-08',
+  path: 'library/city2-trash-can-08/city2-trash-can-08',
+  fullPath: 'restaurant/models/library/city2-trash-can-08/city2-trash-can-08.glb',
+  format: 'glb',
+  nodes: {
+  "TrashCan08": "Trash_Can_08"
+}
+} as const;
+
+const LibraryCity2Tree01 = {
+  id: 'city2-tree-01',
+  path: 'library/city2-tree-01/city2-tree-01',
+  fullPath: 'restaurant/models/library/city2-tree-01/city2-tree-01.glb',
+  format: 'glb',
+  nodes: {
+  "Tree01": "Tree_01"
+}
+} as const;
+
+const LibraryCity2Tree02 = {
+  id: 'city2-tree-02',
+  path: 'library/city2-tree-02/city2-tree-02',
+  fullPath: 'restaurant/models/library/city2-tree-02/city2-tree-02.glb',
+  format: 'glb',
+  nodes: {
+  "Tree02": "Tree_02"
+}
+} as const;
+
+const LibraryCity2Tree03 = {
+  id: 'city2-tree-03',
+  path: 'library/city2-tree-03/city2-tree-03',
+  fullPath: 'restaurant/models/library/city2-tree-03/city2-tree-03.glb',
+  format: 'glb',
+  nodes: {
+  "Tree03": "Tree_03"
+}
+} as const;
+
+const LibraryCity2Tree04 = {
+  id: 'city2-tree-04',
+  path: 'library/city2-tree-04/city2-tree-04',
+  fullPath: 'restaurant/models/library/city2-tree-04/city2-tree-04.glb',
+  format: 'glb',
+  nodes: {
+  "Tree04": "Tree_04"
+}
+} as const;
+
+const LibraryCity2Tree05 = {
+  id: 'city2-tree-05',
+  path: 'library/city2-tree-05/city2-tree-05',
+  fullPath: 'restaurant/models/library/city2-tree-05/city2-tree-05.glb',
+  format: 'glb',
+  nodes: {
+  "Tree05": "Tree_05"
+}
+} as const;
+
+const LibraryCity2Tree06 = {
+  id: 'city2-tree-06',
+  path: 'library/city2-tree-06/city2-tree-06',
+  fullPath: 'restaurant/models/library/city2-tree-06/city2-tree-06.glb',
+  format: 'glb',
+  nodes: {
+  "Tree06": "Tree_06"
+}
+} as const;
+
+const LibraryCity2Tree07 = {
+  id: 'city2-tree-07',
+  path: 'library/city2-tree-07/city2-tree-07',
+  fullPath: 'restaurant/models/library/city2-tree-07/city2-tree-07.glb',
+  format: 'glb',
+  nodes: {
+  "Tree07": "Tree_07"
+}
+} as const;
+
+const LibraryFurnitureTableSmall = {
+  id: 'furniture-table-small',
+  path: 'library/furniture-table-small/furniture-table-small',
+  fullPath: 'restaurant/models/library/furniture-table-small/furniture-table-small.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableSmall": "table_small"
+}
+} as const;
+
+const LibraryPrototypeTableMediumLong = {
+  id: 'prototype-table-medium-long',
+  path: 'library/prototype-table-medium-long/prototype-table-medium-long',
+  fullPath: 'restaurant/models/library/prototype-table-medium-long/prototype-table-medium-long.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableMediumLong": "table_medium_long"
+}
+} as const;
+
+const LibraryRestaurantChairStool = {
+  id: 'restaurant-chair-stool',
+  path: 'library/restaurant-chair-stool/restaurant-chair-stool',
+  fullPath: 'restaurant/models/library/restaurant-chair-stool/restaurant-chair-stool.gltf',
+  format: 'gltf',
+  nodes: {
+  "ChairStool": "chair_stool"
+}
+} as const;
+
 const PeoplePeopleAnims = {
   id: 'people-anims',
   path: 'people/people-anims',
@@ -1068,6 +1804,76 @@ export const MODELS = {
     TableRoundASmallDecorated: KitchenTableRoundASmallDecorated,
     Wall: KitchenWall,
     WallDoorway: KitchenWallDoorway
+  },
+  Library: {
+    CasinoAssetsGlbCashMachine01: LibraryCasinoAssetsGlbCashMachine01,
+    City2Ambulance01: LibraryCity2Ambulance01,
+    City2Bench01: LibraryCity2Bench01,
+    City2Bench02: LibraryCity2Bench02,
+    City2BuildingBusiness02: LibraryCity2BuildingBusiness02,
+    City2BuildingBusiness05: LibraryCity2BuildingBusiness05,
+    City2BuildingBusiness09: LibraryCity2BuildingBusiness09,
+    City2BuildingBusiness10: LibraryCity2BuildingBusiness10,
+    City2BuildingLiving03: LibraryCity2BuildingLiving03,
+    City2BuildingLiving09: LibraryCity2BuildingLiving09,
+    City2BuildingLiving12: LibraryCity2BuildingLiving12,
+    City2BuildingLiving17: LibraryCity2BuildingLiving17,
+    City2BuildingLiving19: LibraryCity2BuildingLiving19,
+    City2BuildingLiving21: LibraryCity2BuildingLiving21,
+    City2BuildingLiving27: LibraryCity2BuildingLiving27,
+    City2BuildingLiving31: LibraryCity2BuildingLiving31,
+    City2BuildingLiving44: LibraryCity2BuildingLiving44,
+    City2BuildingLiving46: LibraryCity2BuildingLiving46,
+    City2BuildingService04: LibraryCity2BuildingService04,
+    City2BuildingService06: LibraryCity2BuildingService06,
+    City2BuildingService09: LibraryCity2BuildingService09,
+    City2BuildingService10: LibraryCity2BuildingService10,
+    City2BuildingSnack09: LibraryCity2BuildingSnack09,
+    City2BuildingSupermarket04: LibraryCity2BuildingSupermarket04,
+    City2BusStop01: LibraryCity2BusStop01,
+    City2Car07: LibraryCity2Car07,
+    City2Car08: LibraryCity2Car08,
+    City2Car12: LibraryCity2Car12,
+    City2Car16: LibraryCity2Car16,
+    City2Car17: LibraryCity2Car17,
+    City2Car25: LibraryCity2Car25,
+    City2Car26: LibraryCity2Car26,
+    City2Car28: LibraryCity2Car28,
+    City2Car35: LibraryCity2Car35,
+    City2Car36: LibraryCity2Car36,
+    City2Car39: LibraryCity2Car39,
+    City2Car42: LibraryCity2Car42,
+    City2Car45: LibraryCity2Car45,
+    City2Fountain01: LibraryCity2Fountain01,
+    City2Hydrant01: LibraryCity2Hydrant01,
+    City2Lamppost01: LibraryCity2Lamppost01,
+    City2Road009: LibraryCity2Road009,
+    City2Road010: LibraryCity2Road010,
+    City2Road011: LibraryCity2Road011,
+    City2Road012: LibraryCity2Road012,
+    City2Road013: LibraryCity2Road013,
+    City2Road022: LibraryCity2Road022,
+    City2Road023: LibraryCity2Road023,
+    City2Road025: LibraryCity2Road025,
+    City2Road026: LibraryCity2Road026,
+    City2Road029: LibraryCity2Road029,
+    City2Stadium01: LibraryCity2Stadium01,
+    City2Statue01: LibraryCity2Statue01,
+    City2TrafficLight01: LibraryCity2TrafficLight01,
+    City2TrashCan02: LibraryCity2TrashCan02,
+    City2TrashCan03: LibraryCity2TrashCan03,
+    City2TrashCan05: LibraryCity2TrashCan05,
+    City2TrashCan08: LibraryCity2TrashCan08,
+    City2Tree01: LibraryCity2Tree01,
+    City2Tree02: LibraryCity2Tree02,
+    City2Tree03: LibraryCity2Tree03,
+    City2Tree04: LibraryCity2Tree04,
+    City2Tree05: LibraryCity2Tree05,
+    City2Tree06: LibraryCity2Tree06,
+    City2Tree07: LibraryCity2Tree07,
+    FurnitureTableSmall: LibraryFurnitureTableSmall,
+    PrototypeTableMediumLong: LibraryPrototypeTableMediumLong,
+    RestaurantChairStool: LibraryRestaurantChairStool
   },
   People: {
     PeopleAnims: PeoplePeopleAnims,

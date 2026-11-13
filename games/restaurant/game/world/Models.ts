@@ -2,7 +2,7 @@
 //
 // The 3D models: the kitchen's (KayKit Restaurant Bits: raw-assets/models/kitchen{m} → public/restaurant/models/kitchen,
 // one texture shared by all) and the people (the UFO game's skinned people and their walk / idle clips). Each is loaded
-// once; a copy is handed out per use. Copies are set so their bottom is at y 0 (x and z stay the model's own: KayKit
+// once; a copy is handed out per use. The street's road tiles and cars (library/...: UFO's, core/town) load the same way. Copies are set so their bottom is at y 0 (x and z stay the model's own: KayKit
 // pieces are centred on them), and `sizeOf` tells how big one is.
 
 import * as THREE from 'three';
@@ -23,7 +23,8 @@ export const modelUrl = (name: string): string => (name.includes('/') ? `./resta
 
 const loader = createGLTFLoader();
 const kitchen = new Map<string, THREE.Object3D>();
-let people: { models: THREE.Object3D[]; walk: THREE.AnimationClip; idle: THREE.AnimationClip } | null = null;
+/** The people's models and clips; `sit` only if people-anims.glb has one (a seated customer stands at their seat without it). */
+let people: { models: THREE.Object3D[]; walk: THREE.AnimationClip; idle: THREE.AnimationClip; sit: THREE.AnimationClip | null } | null = null;
 
 /** Loads every model named (models/kitchen/<name>.gltf) and the people. */
 export async function loadModels(names: readonly string[]): Promise<void> {
@@ -43,7 +44,7 @@ export async function loadModels(names: readonly string[]): Promise<void> {
         const walk = THREE.AnimationClip.findByName(anims.animations, 'walk');
         const idle = THREE.AnimationClip.findByName(anims.animations, 'idle');
         if (!walk || !idle) throw new Error('people-anims has no walk or idle');
-        people = { models: models.map((m) => m.scene), walk, idle };
+        people = { models: models.map((m) => m.scene), walk, idle, sit: THREE.AnimationClip.findByName(anims.animations, 'sit') ?? null };
     })();
     await Promise.all([...kitchenLoads, peopleLoad]);
 }
@@ -67,8 +68,25 @@ export function sizeOf(object: THREE.Object3D): THREE.Vector3 {
     return new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
 }
 
+/** The people loaded (their models and clips), for a crowd (core/town/Crowd); null until loadModels has run. */
+export function peopleAssets(): { models: THREE.Object3D[]; walk: THREE.AnimationClip; idle: THREE.AnimationClip; modelHeight: number } | null {
+    return people ? { models: people.models, walk: people.walk, idle: people.idle, modelHeight: PERSON_MODEL_HEIGHT } : null;
+}
+
+/** Town models (road tiles, cars): loaded once each by their layout name, a copy handed out per use. */
+const town = new Map<string, Promise<THREE.Object3D>>();
+export async function townModel(name: string): Promise<THREE.Object3D> {
+    let source = town.get(name);
+    if (!source) {
+        source = loader.loadAsync(modelUrl(name)).then((gltf) => gltf.scene);
+        town.set(name, source);
+        source.catch(() => town.delete(name));
+    }
+    return (await source).clone(true);
+}
+
 /** A copy of person `index` (skinned), and their clips. */
-export function personModel(index: number): { model: THREE.Object3D; walk: THREE.AnimationClip; idle: THREE.AnimationClip } {
+export function personModel(index: number): { model: THREE.Object3D; walk: THREE.AnimationClip; idle: THREE.AnimationClip; sit: THREE.AnimationClip | null } {
     if (!people) throw new Error('people not loaded');
-    return { model: cloneSkinned(people.models[index % people.models.length]), walk: people.walk, idle: people.idle };
+    return { model: cloneSkinned(people.models[index % people.models.length]), walk: people.walk, idle: people.idle, sit: people.sit };
 }

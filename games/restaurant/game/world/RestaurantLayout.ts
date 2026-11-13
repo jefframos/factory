@@ -11,12 +11,21 @@
 //     ingredient piles, decoration — placed from the station's spot (x, z), and its camera shots: `order` (the customer
 //     over the counter) and `bench` (the work top), each a position, a target and a field of view, framed for a
 //     720 x 1080 screen.
+//   - `seats`: where seated customers sit (a stage served 'seated': settings.json stages[].service) — each a spot, the way
+//     they face (toward their table), their sitting height, and `plate`: where their plate goes on the table (it stays
+//     there, dirty, until the player clears it).
+//   - the street round it (core/town, UFO's city pieces; settings.json town: the kit, the cars, the people's look):
+//     `roads` (road cells on the kit's tile grid), `traffic.count` (cars driving them), `lawns` (grass polygons) and
+//     `people` (areas, each filled with `count` people wandering about). Each can be limited to stages too.
 
 import * as THREE from 'three';
 import layoutJson from '../../levels/restaurant.json';
 import { Room, RoomLayout, StageRange, shownAt } from 'core/rooms/Room';
 import { kitchenModel } from './Models';
 import type { Piece } from '../data/Recipes';
+import type { RoadCells } from 'core/roads/RoadGrid';
+import type { LawnShape } from 'core/town/Ground';
+import type { CrowdArea, CrowdPaths } from 'core/town/Crowd';
 
 type Point = { x: number; z: number };
 type Point3 = { x: number; y: number; z: number };
@@ -51,11 +60,31 @@ export interface StationLayout extends StageRange {
     cameras: { order: CameraShot; bench: CameraShot };
 }
 
+/** A seat for a seated customer: where they sit, facing `rotationY` (toward their table), at `height` (the seat's top), and
+ *  where their plate goes (`plate`: on the table in front; `y` its top). */
+export interface SeatLayout extends StageRange {
+    id?: string;
+    x: number;
+    z: number;
+    rotationY: number;
+    height?: number;
+    plate: { x: number; z: number; y?: number };
+}
+
 export interface RestaurantLayout extends RoomLayout {
     name: string;
     stages: string[];
-    customer: { outside: Point; inside: Point };
+    /** The customers' way in: where they come from (`start`, off in the street), outside the door, just in. */
+    customer: { start?: Point; outside: Point; inside: Point };
     stations: StationLayout[];
+    seats?: SeatLayout[];
+    /** The street: road cells, the cars on them, lawns, and areas of people (all optional). */
+    /** Road cells; `origin`: where cell (0, 0)'s middle is (the grid lines up with the rest of the street). */
+    roads?: RoadCells & { origin?: { x: number; z: number } };
+    traffic?: { count: number };
+    lawns?: (LawnShape & StageRange)[];
+    /** People: areas they wander, and walkers on paths (waypoints, links; they wait at the kerb for cars). */
+    people?: { areas: (CrowdArea & StageRange)[]; paths?: CrowdPaths };
 }
 
 export const LAYOUT_DATA = layoutJson as unknown as RestaurantLayout;
@@ -65,10 +94,17 @@ export const SHOT_ASPECT = 720 / 1080;
 
 const toVector = ({ x, z }: Point): THREE.Vector3 => new THREE.Vector3(x, 0, z);
 
-/** The customers' way in: from outside, in through the door (then to the station's customer spot). */
+/** Without a start point, customers come from this far on past "outside" (away from the door). */
+const START_DISTANCE = 6;
+
+const outside = toVector(LAYOUT_DATA.customer.outside);
+const inside = toVector(LAYOUT_DATA.customer.inside);
+
+/** The customers' way in: from their start (off in the street), to outside the door, in through it (then to the station's customer spot). */
 export const CUSTOMER_PATH = {
-    outside: toVector(LAYOUT_DATA.customer.outside),
-    inside: toVector(LAYOUT_DATA.customer.inside),
+    start: LAYOUT_DATA.customer.start ? toVector(LAYOUT_DATA.customer.start) : outside.clone().addScaledVector(outside.clone().sub(inside).setY(0).normalize(), START_DISTANCE),
+    outside,
+    inside,
 };
 
 /** The station of `kind` at stage `stage`. */
@@ -88,3 +124,9 @@ export function roomModels(stage: number): string[] {
 
 /** The room at `stage` (its models loaded: roomModels). */
 export const buildRoom = (stage: number): Room => new Room(LAYOUT_DATA, stage, { instantiate: (model) => kitchenModel(model) });
+
+/** The seats at `stage` (the first `limit` of them, if given: a stage's first day can use fewer). */
+export function seatsAt(stage: number, limit?: number): SeatLayout[] {
+    const seats = (LAYOUT_DATA.seats ?? []).filter((s) => shownAt(s, stage, LAYOUT_DATA.areas ?? []));
+    return limit !== undefined ? seats.slice(0, limit) : seats;
+}

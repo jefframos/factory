@@ -8,7 +8,7 @@
   ],
   "stages": [
     { "id": "truck", "name": "Food Truck", "goal": 60 },
-    { "id": "smallDiner", "name": "Small Diner", "goal": 120 },
+    { "id": "smallDiner", "name": "Small Diner", "goal": 120, "service": "seated", "firstDay": { "seats": 3, "customers": 4 } },
     { "id": "diner", "name": "Diner", "goal": 200 },
     { "id": "restaurant", "name": "Restaurant", "goal": 320 }
   ],
@@ -34,5 +34,147 @@
     { "id": "ham", "name": "Ham", "crate": "crate_ham", "icon": "food_ingredient_ham" },
     { "id": "pepperoni", "name": "Pepperoni", "crate": "crate_pepperoni", "icon": "food_ingredient_pepperoni" },
     { "id": "dough", "name": "Dough", "crate": "crate_dough", "icon": "food_ingredient_dough" }
-  ]
+  ],
+  "town": {
+    "$comment": "The street round the restaurant (levels/restaurant.json: roads, lawns, people; drawn in the editor): the road kit (core/roads/RoadGrid: a road cell becomes the first piece fitting its road neighbours; open: its sides as modelled, n = -Z; models: the piece, then its variants), the traffic driving the roads (core/town/Traffic), and the people (core/town/Crowd). From the UFO game.",
+    "roadKit": {
+      "tile": 15,
+      "elevation": 0.02,
+      "roadY": 0.03,
+      "pieces": [
+        {
+          "open": [
+            "n",
+            "e",
+            "s",
+            "w"
+          ],
+          "models": [
+            "library/city2-road-012/city2-road-012.glb",
+            "library/city2-road-029/city2-road-029.glb"
+          ]
+        },
+        {
+          "open": [
+            "n",
+            "s",
+            "w"
+          ],
+          "models": [
+            "library/city2-road-011/city2-road-011.glb",
+            "library/city2-road-026/city2-road-026.glb"
+          ]
+        },
+        {
+          "open": [
+            "n",
+            "s"
+          ],
+          "models": [
+            "library/city2-road-009/city2-road-009.glb",
+            "library/city2-road-010/city2-road-010.glb",
+            "library/city2-road-022/city2-road-022.glb",
+            "library/city2-road-023/city2-road-023.glb"
+          ]
+        },
+        {
+          "open": [
+            "n",
+            "w"
+          ],
+          "models": [
+            "library/city2-road-013/city2-road-013.glb"
+          ]
+        },
+        {
+          "open": [
+            "s"
+          ],
+          "models": [
+            "library/city2-road-025/city2-road-025.glb"
+          ]
+        }
+      ]
+    },
+    "traffic": {
+      "models": [
+        "library/city2-car-07/city2-car-07.glb",
+        "library/city2-car-08/city2-car-08.glb",
+        "library/city2-car-12/city2-car-12.glb",
+        "library/city2-car-16/city2-car-16.glb",
+        "library/city2-car-17/city2-car-17.glb",
+        "library/city2-car-25/city2-car-25.glb",
+        "library/city2-car-26/city2-car-26.glb",
+        "library/city2-car-28/city2-car-28.glb",
+        "library/city2-car-35/city2-car-35.glb",
+        "library/city2-car-36/city2-car-36.glb",
+        "library/city2-car-39/city2-car-39.glb",
+        "library/city2-car-42/city2-car-42.glb",
+        "library/city2-car-45/city2-car-45.glb"
+      ],
+      "speed": 4.4,
+      "accel": 3.5,
+      "brake": 10,
+      "length": 4.2,
+      "lane": 1.75,
+      "gap": 1.8
+    },
+    "people": {
+      "speed": 1.4,
+      "height": 1.6,
+      "wander": 9,
+      "pauseMin": 0.5,
+      "pauseMax": 3,
+      "palette": {
+        "skin": [
+          "#ffe0c4",
+          "#f7cba4",
+          "#eab084",
+          "#d09060",
+          "#a86f45",
+          "#7d4e30",
+          "#5a3722"
+        ],
+        "top": [
+          "#e8483f",
+          "#f39a2d",
+          "#f5d547",
+          "#58b957",
+          "#2fa8a0",
+          "#3f86e0",
+          "#7b5be0",
+          "#e65fa8",
+          "#f4f1ea",
+          "#39414f"
+        ],
+        "bottom": [
+          "#2f4a7a",
+          "#4c6ea8",
+          "#39414f",
+          "#5b5148",
+          "#8a7a5c",
+          "#c9b48a",
+          "#6c7d4e",
+          "#7a3f3f"
+        ],
+        "shoes": [
+          "#f4f1ea",
+          "#2b2b2f",
+          "#c0392b",
+          "#2d6cc0",
+          "#8a5a33",
+          "#e6b422"
+        ],
+        "hair": [
+          "#1f1a17",
+          "#3a2a20",
+          "#5e3c23",
+          "#8f5a2c",
+          "#d9b160",
+          "#b5482a",
+          "#9a9a9a"
+        ]
+      }
+    }
+  }
 }

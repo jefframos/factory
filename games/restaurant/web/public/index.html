@@ -31,6 +31,11 @@
   .xyz { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
   .xyz input { width: 100%; }
   .swatch-row { display: flex; gap: 6px; align-items: center; }
+  /* What the current tool (drawing a wall, placing an opening) wants next. */
+  #toolHint { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 2; padding: 6px 12px;
+    border-radius: 8px; background: rgba(20, 24, 32, 0.88); color: #ffd36b; font-size: 13px; pointer-events: none; }
+  #toolHint[hidden] { display: none; }
+  button.tool-on { outline: 2px solid #ffd36b; }
 </style>
 <script type="importmap">
 { "imports": { "three": "/vendor/three/build/three.module.js", "three/addons/": "/vendor/three/examples/jsm/" } }
@@ -62,12 +67,32 @@
       <div class="row">
         <button id="addFloor">＋ Floor</button>
         <button id="addWall">＋ Wall</button>
+        <button id="drawWall" title="Click corners; click the first one to close it; double-click or Enter ends an open wall; Esc cancels">✏️ Draw wall</button>
+      </div>
+      <div class="row">
+        <button data-place="window" title="Then click on a wall">🪟 Window</button>
+        <button data-place="door" title="Then click on a wall">🚪 Door</button>
+        <button data-place="gap" title="Then click on a wall">⬜ Gap</button>
       </div>
       <div class="row">
         <button id="addProp" class="primary">🧊 Prop…</button>
         <button id="importProp">📚 Library…</button>
       </div>
+      <div class="row">
+        <button id="addSeat" title="Where a seated customer sits (a stage served 'seated'), facing their table, and their plate's spot on it">🪑 Seat</button>
+      </div>
       <div id="outline"></div>
+    </section>
+    <section class="card-section">
+      <h2>Street</h2>
+      <div class="row">
+        <button id="roadMode" title="Drag on the ground to lay road tiles; Shift+drag removes them (B)">🛣 Roads</button>
+        <button id="drawLawn" title="Click the lawn's corners; click the first one to close it">🌱 Lawn</button>
+        <button id="addPeople" title="An area people wander about in">🚶 People</button>
+      </div>
+      <label class="field"><span title="Where road cell (0, 0)'s middle is: lines the grid up with the rest of the street">Road grid origin</span><span class="xyz" style="grid-template-columns: 1fr 1fr"><input id="roadOriginX" type="number" step="0.25" title="x"><input id="roadOriginZ" type="number" step="0.25" title="z"></span></label>
+      <label class="field"><span>Cars on the roads</span><input id="carCount" type="number" min="0" step="1"></label>
+      <p class="muted small" id="streetInfo"></p>
     </section>
     <section class="card-section">
       <details>
@@ -92,6 +117,7 @@
       <button id="play">▶ Game</button>
     </div>
     <div id="layoutViewport">
+      <div id="toolHint" hidden></div>
       <div id="shotFrame" hidden></div>
       <div id="shotBar" hidden>
         <strong id="shotName"></strong>
@@ -115,8 +141,13 @@
           Delete: remove · D: duplicate · Ctrl+S: save · Ctrl+Z: undo · Esc: deselect<br><br>
           <b>Cameras</b>: select a station camera, <b>👁 Look through</b>, orbit / pan / zoom until the gold frame (the game's
           720 x 1080 screen) shows what you want, then <b>📸 Use this view</b>. Save: the game reloads with it.<br><br>
-          <b>Walls</b>: select one to drag the whole wall, or a corner handle to move that corner. Openings (doors,
-          windows, gaps) are rects in the inspector.
+          <b>Walls</b>: ✏️ Draw wall, then click corners (click the first one to close the loop; double-click or Enter ends
+          an open wall). Select a wall to drag it whole, a gold corner to move it, or a green middle handle to add a corner
+          there. <b>Openings</b>: 🪟 / 🚪 / ⬜ then click on a wall. Each opening is a cube that cuts the wall: select it, move it
+          (a window up and down too) or size it (W / R).<br><br>
+          <b>Street</b>: 🛣 Roads (B), then drag on the ground to lay road tiles (Shift+drag removes; the pieces fit
+          themselves), and set how many cars drive them. 🌱 Lawn: click its corners. 🚶 People: an area people wander
+          about in (move / size it, set how many).
         </p>
       </details>
     </section>

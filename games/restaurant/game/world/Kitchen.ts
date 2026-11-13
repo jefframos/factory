@@ -54,6 +54,10 @@ const STOVE_SINK = 0.07;
 const PILE = 3;
 /** How high a hop goes over its arc (units), how long it takes (s). */
 const HOP = { height: 0.45, seconds: 0.3 };
+/** Food thrown in the trash: how high it arcs, how far over the can it drops from, how long each takes, the gap between them, its spin. */
+const TOSS = { height: 0.9, dropFrom: 0.35, seconds: 0.55, stagger: 0.09, spin: 5 };
+/** A plate served to a seat: how long it takes to get there, how high it arcs. */
+const SERVE_TO = { seconds: 0.8, height: 1.2 };
 /** The most a plate holds. */
 const MAX_STACK = 8;
 
@@ -80,6 +84,8 @@ export class Kitchen {
     private plate!: THREE.Group;
     private stack: { part: Part; object: THREE.Object3D }[] = [];
     private stackTop = 0;
+    /** The stack's base on an empty plate (its rim). */
+    private plateBase = 0;
     /** The patty in the pan (raw till it's cooked), and how far along (s). */
     private inPan: { object: THREE.Object3D; cooked: boolean; time: number; arriving: boolean } | null = null;
     /** Called when a patty's done. */
@@ -191,7 +197,7 @@ export class Kitchen {
         this.plate.add(dish);
         this.group.add(this.plate);
         this.stack = [];
-        this.stackTop = sizeOf(dish).y * 0.7;
+        this.stackTop = this.plateBase = sizeOf(dish).y * 0.7;
         gsap.from(this.plate.scale, { x: 0.01, y: 0.01, z: 0.01, duration: 0.3, ease: 'back.out(2)' });
     }
 
@@ -332,6 +338,52 @@ export class Kitchen {
         });
     }
 
+    /**
+     * Everything off the plate into the trash can (`bin`: its object in the room): each piece in turn arcs up off the plate
+     * and drops in, the can bobs as it lands; the plate stays.
+     */
+    public trashInto(bin: THREE.Object3D): void {
+        bin.updateWorldMatrix(true, true);
+        const box = new THREE.Box3().setFromObject(bin);
+        const opening = new THREE.Vector3((box.min.x + box.max.x) / 2, box.max.y, (box.min.z + box.max.z) / 2);
+        const pieces = this.stack.map(({ object }) => object);
+        this.stack = [];
+        this.stackTop = this.plateBase;
+        // Top piece first: they come off the stack the way they'd be picked up.
+        pieces.reverse().forEach((object, i) => {
+            (object.userData.hop as gsap.core.Tween | undefined)?.kill();
+            // Out of the plate, into the kitchen's group, where it is now.
+            this.group.attach(object);
+            const from = object.position.clone();
+            const to = this.group.worldToLocal(opening.clone());
+            const above = to.clone().setY(to.y + TOSS.dropFrom);
+            const spin = (Math.random() < 0.5 ? -1 : 1) * TOSS.spin;
+            const start = object.rotation.clone();
+            const size = object.scale.x;
+            const state = { t: 0 };
+            gsap.to(state, {
+                t: 1, duration: TOSS.seconds, delay: i * TOSS.stagger, ease: 'power1.in',
+                onUpdate: () => {
+                    // An arc up and over to just above the can, then straight down into it.
+                    const t = state.t;
+                    object.position.lerpVectors(from, above, Math.min(1, t / 0.75));
+                    object.position.y += Math.sin(Math.min(1, t / 0.75) * Math.PI) * TOSS.height;
+                    if (t > 0.75) object.position.lerpVectors(above, to, (t - 0.75) / 0.25);
+                    object.rotation.set(start.x + spin * t * 0.5, start.y + spin * t, start.z);
+                    object.scale.setScalar(size * (t > 0.75 ? 1 - ((t - 0.75) / 0.25) * 0.7 : 1));
+                },
+                onComplete: () => {
+                    object.removeFromParent();
+                    // The can takes it: a little squash.
+                    const base = bin.userData.baseScale ?? (bin.userData.baseScale = bin.scale.clone());
+                    gsap.fromTo(bin.scale, { x: base.x * 1.08, y: base.y * 0.9, z: base.z * 1.08 }, { x: base.x, y: base.y, z: base.z, duration: 0.25, ease: 'back.out(3)' });
+                },
+            });
+        });
+        // The plate gives a little bounce as it's cleared.
+        gsap.fromTo(this.plate.scale, { x: 1.06, y: 0.94, z: 1.06 }, { x: 1, y: 1, z: 1, duration: 0.25, ease: 'back.out(3)' });
+    }
+
     /** Everything off the plate (it's wasted). */
     public trash(): void {
         this.dropPlate();
@@ -354,6 +406,36 @@ export class Kitchen {
     public serve(done: () => void): void {
         this.setReadyPulse(false);
         gsap.to(this.plate.position, { x: this.servedPiece.x, z: this.servedPiece.z, duration: 0.45, delay: 0.15, ease: 'power2.inOut', onComplete: done });
+    }
+
+    /**
+     * The plate off to a seated customer's table: out of the kitchen into the room, gliding in an arc to `to` (world: its
+     * spot on the table), where it stays (it's theirs now: `done` gets it). A fresh plate's laid at once.
+     */
+    public serveTo(to: THREE.Vector3, done: (plate: THREE.Object3D) => void): void {
+        this.setReadyPulse(false);
+        const plate = this.plate;
+        const room = this.group.parent;
+        if (room) room.attach(plate);
+        const from = plate.position.clone();
+        const state = { t: 0 };
+        gsap.to(state, {
+            t: 1, duration: SERVE_TO.seconds, delay: 0.1, ease: 'power1.inOut',
+            onUpdate: () => {
+                plate.position.lerpVectors(from, to, state.t);
+                plate.position.y += Math.sin(state.t * Math.PI) * SERVE_TO.height;
+            },
+            onComplete: () => {
+                gsap.fromTo(plate.scale, { x: 1.08, y: 0.9, z: 1.08 }, { x: 1, y: 1, z: 1, duration: 0.22, ease: 'back.out(3)' });
+                done(plate);
+            },
+        });
+        this.newPlate();
+    }
+
+    /** The food on a served plate: its pieces (the plate's own model is the first child). */
+    public static foodOn(plate: THREE.Object3D): THREE.Object3D[] {
+        return plate.children.slice(1);
     }
 
     /** The served plate gone (the customer took it), a fresh one in its place. */
