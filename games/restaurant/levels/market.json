@@ -1,0 +1,119 @@
+{
+  "name": "Supermarket",
+  "stages": [
+    "Supermarket"
+  ],
+  "market": {
+    "crates": {
+      "x": 0,
+      "z": 0,
+      "columns": 4,
+      "gapX": 0.6,
+      "gapZ": 1.1
+    },
+    "cashier": {
+      "x": 0,
+      "z": 6.75,
+      "rotationY": 3.141,
+      "scale": 2.022
+    }
+  },
+  "setups": {
+    "room": {
+      "height": 3.2,
+      "thickness": 0.25,
+      "doorHeight": 2.6,
+      "tallDoorHeight": 3,
+      "windowHeight": 1.6
+    }
+  },
+  "styles": {
+    "walls": {
+      "market": {
+        "name": "Supermarket",
+        "bottomColor": "#4c9a6a",
+        "topColor": "#f4f7f2",
+        "bottomHeight": 1
+      }
+    },
+    "floors": {
+      "market": {
+        "name": "Supermarket",
+        "colorA": "#7f6a43",
+        "colorB": "#937b53",
+        "scale": 1.5
+      }
+    },
+    "doors": {}
+  },
+  "floors": [
+    {
+      "x": 0,
+      "z": 0,
+      "width": 28,
+      "depth": 28,
+      "tileSize": 1,
+      "style": "market"
+    }
+  ],
+  "walls": [
+    {
+      "style": "market",
+      "setup": "room",
+      "closed": false,
+      "points": [
+        {
+          "x": -14,
+          "z": 8
+        },
+        {
+          "x": 14,
+          "z": 8
+        }
+      ],
+      "openings": []
+    }
+  ],
+  "props": [
+    {
+      "model": "fridge_A_decorated",
+      "x": -4.5,
+      "z": 7,
+      "rotationY": -3.142
+    },
+    {
+      "model": "shelf_papertowel_decorated",
+      "x": -2.2,
+      "z": 7.75,
+      "rotationY": -3.142
+    },
+    {
+      "model": "shelf_papertowel_decorated",
+      "x": 2.2,
+      "z": 7.5,
+      "rotationY": -3.142
+    },
+    {
+      "model": "fridge_A_decorated",
+      "x": 4.5,
+      "z": 7,
+      "rotationY": -3.142
+    },
+    {
+      "model": "library/furniture-table-small/furniture-table-small.gltf",
+      "x": 0,
+      "z": 5.25,
+      "rotationY": 0,
+      "height": 1.681
+    },
+    {
+      "model": "library/casino-assets-glb-cash-machine-01/casino-assets-glb-cash-machine-01.glb",
+      "x": 0,
+      "z": 5.25,
+      "rotationY": 0,
+      "elevation": 1.75,
+      "height": 0.688
+    }
+  ],
+  "areas": []
+}

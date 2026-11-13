@@ -79,6 +79,10 @@ Station cameras: select one, 👁 Look through, frame the shot in the gold 720 x
 this view. Save writes levels/restaurant.json; the running game reloads with it. Imported models: run `npm run models`
 before a build.
 
+Level: 🛒 Supermarket opens `levels/market.json` (MarketScene's room, same core/rooms format, one stage): its floor,
+walls and props (fridges, shelves), the crate grid (`market.crates`: its middle, columns, gaps — drag it; the game
+shuffles the crates each visit and frames its camera on the grid) and the cashier (`market.cashier`).
+
 ## Where it's going: stations and the editor (planned)
 
 The restaurant will be laid out in an editor, the way Dig's hub is (`games/dig/levels/hub.json`, edited in its Hub 3D /

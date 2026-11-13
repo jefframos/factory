@@ -1,6 +1,7 @@
 // Restaurant editor server — `npm run editor` with GAME=restaurant.
 //
-// Reads/writes games/restaurant/levels/restaurant.json (the layout the game loads: floors, walls with their windows and
+// Reads/writes games/restaurant/levels/restaurant.json and levels/market.json (`/api/layout?level=market`: the
+// supermarket's) — the layouts the game loads: floors, walls with their windows and
 // doors, props, the stations and their camera shots — Vite reloads the game when it's saved), lists the models under
 // public/restaurant/models, and serves the browser editor in ./public (as Dig's editor: three.js straight from
 // node_modules, no build step). Models can be imported from the 3D asset library (LIBRARY3D_DIR, default the repo's
@@ -15,7 +16,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const GAME_DIR = path.join(__dirname, '..');
-const LAYOUT_FILE = path.join(GAME_DIR, 'levels', 'restaurant.json');
+/** The layouts the editor edits (`?level=`): the restaurant, the supermarket. */
+const LEVELS = { restaurant: 'restaurant.json', market: 'market.json' };
+const layoutFile = (level) => path.join(GAME_DIR, 'levels', LEVELS[level] ?? LEVELS.restaurant);
 const SETTINGS_FILE = path.join(GAME_DIR, 'settings.json');
 const REPO_ROOT = path.join(GAME_DIR, '..', '..');
 const MODELS_DIR = path.join(REPO_ROOT, 'public', 'restaurant', 'models');
@@ -167,15 +170,16 @@ async function serveFile(res, baseDir, requestPath) {
     }
 }
 
-function validateLayout(layout) {
+function validateLayout(layout, level) {
     const problems = [];
-    for (const key of ['floors', 'walls', 'props', 'stations']) {
+    for (const key of ['floors', 'walls', 'props', ...(level === 'market' ? [] : ['stations'])]) {
         if (!Array.isArray(layout?.[key])) problems.push(`"${key}" must be an array`);
     }
     if (!layout?.styles || !layout?.setups) problems.push('Missing styles / setups');
     for (const station of layout?.stations ?? []) {
         if (!station.cameras?.order || !station.cameras?.bench) problems.push(`Station "${station.id}" needs its order and bench cameras`);
     }
+    if (level === 'market' && (!layout?.market?.crates || !layout?.market?.cashier)) problems.push('The market needs its crates and cashier');
     return problems;
 }
 
@@ -186,22 +190,25 @@ async function handleApi(req, res, url) {
     if (url.pathname === '/api/settings' && req.method === 'GET') {
         return send(res, 200, await readJson(SETTINGS_FILE, {}));
     }
+    const level = LEVELS[url.searchParams.get('level')] ? url.searchParams.get('level') : 'restaurant';
+    const file = layoutFile(level);
+    const fileName = `levels/${LEVELS[level]}`;
     if (url.pathname === '/api/layout' && req.method === 'GET') {
-        const layout = await readJson(LAYOUT_FILE, null);
-        if (!layout) return send(res, 500, { error: 'Could not read levels/restaurant.json' });
-        return send(res, 200, { layout, version: await fileVersion(LAYOUT_FILE) });
+        const layout = await readJson(file, null);
+        if (!layout) return send(res, 500, { error: `Could not read ${fileName}` });
+        return send(res, 200, { layout, version: await fileVersion(file) });
     }
     if (url.pathname === '/api/layout' && req.method === 'PUT') {
         const { layout, version } = await readBody(req);
-        const problems = validateLayout(layout);
+        const problems = validateLayout(layout, level);
         if (problems.length) return send(res, 400, { error: problems.join('; ') });
         // Changed on disk since this tab loaded it (another tab, a hand edit): refused, so nothing's lost.
-        const current = await fileVersion(LAYOUT_FILE);
+        const current = await fileVersion(file);
         if (version && current && version !== current) {
-            return send(res, 409, { error: 'levels/restaurant.json changed since it was loaded: reload the editor (your changes are still on screen: copy what you need)' });
+            return send(res, 409, { error: `${fileName} changed since it was loaded: reload the editor (your changes are still on screen: copy what you need)` });
         }
-        await writeJson(LAYOUT_FILE, layout);
-        return send(res, 200, { ok: true, version: await fileVersion(LAYOUT_FILE) });
+        await writeJson(file, layout);
+        return send(res, 200, { ok: true, version: await fileVersion(file) });
     }
     if (url.pathname === '/api/models' && req.method === 'GET') {
         return send(res, 200, await listModelsWithThumbs());
@@ -241,7 +248,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
     const address = `http://localhost:${PORT}`;
-    console.log(`[restaurant-editor] ${address}  (layout: ${LAYOUT_FILE})`);
+    console.log(`[restaurant-editor] ${address}  (layouts: ${Object.values(LEVELS).map((name) => `levels/${name}`).join(', ')})`);
     if (!process.env.NO_OPEN) {
         const opener = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start ""' : 'xdg-open';
         exec(`${opener} ${address}`);

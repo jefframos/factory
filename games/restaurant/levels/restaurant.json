@@ -36,20 +36,20 @@
           "model": "kitchencounter_straight_A",
           "x": -1,
           "z": 0,
-          "rotationY": 3.1416
+          "rotationY": 3.142
         },
         {
           "role": "counter",
           "model": "kitchencounter_straight_B",
           "x": -1,
-          "z": -2.25,
+          "z": -1.75,
           "rotationY": 0
         },
         {
           "role": "counter",
           "model": "kitchencounter_straight_B",
           "x": 1,
-          "z": -2.25,
+          "z": -1.75,
           "rotationY": 0
         },
         {
@@ -84,37 +84,43 @@
           "role": "pile",
           "piece": "bunBottom",
           "x": 1.33,
-          "z": -1.75
+          "z": -1.25,
+          "rotationY": 0
         },
         {
           "role": "pile",
           "piece": "bunTop",
           "x": 0,
-          "z": -1.75
+          "z": -1.25,
+          "rotationY": 0
         },
         {
           "role": "pile",
           "piece": "patty",
           "x": -1.33,
-          "z": -1.75
+          "z": -1.25,
+          "rotationY": 0
         },
         {
           "role": "pile",
           "piece": "cheese",
           "x": 1.33,
-          "z": -2.75
+          "z": -2.25,
+          "rotationY": 0
         },
         {
           "role": "pile",
           "piece": "lettuce",
           "x": 0,
-          "z": -2.75
+          "z": -2.25,
+          "rotationY": 0
         },
         {
           "role": "pile",
           "piece": "tomato",
           "x": -1.33,
-          "z": -2.75
+          "z": -2.25,
+          "rotationY": 0
         },
         {
           "role": "decor",
@@ -133,8 +139,8 @@
         "order": {
           "position": {
             "x": 1,
-            "y": 4.5,
-            "z": -4.89
+            "y": 3.25,
+            "z": -3.5
           },
           "target": {
             "x": 1,
@@ -147,12 +153,12 @@
           "position": {
             "x": 0,
             "y": 8.25,
-            "z": -7.52
+            "z": -6.5
           },
           "target": {
             "x": 0,
             "y": 1,
-            "z": -1.3
+            "z": -0.6
           },
           "fov": 40
         }
@@ -161,18 +167,18 @@
   ],
   "setups": {
     "room": {
-      "height": 3,
+      "height": 4,
       "thickness": 0.25,
-      "doorHeight": 2.4,
-      "tallDoorHeight": 2.8,
-      "windowHeight": 1.3
+      "doorHeight": 2.8,
+      "tallDoorHeight": 3.4,
+      "windowHeight": 2
     },
     "truck": {
-      "height": 2.2,
+      "height": 2.6,
       "thickness": 0.18,
       "doorHeight": 2,
       "tallDoorHeight": 2.1,
-      "windowHeight": 1.5
+      "windowHeight": 2
     }
   },
   "styles": {
@@ -269,13 +275,14 @@
     },
     {
       "x": 0,
-      "z": -1.27,
-      "width": 5.2,
-      "depth": 5.25,
+      "z": -2,
+      "width": 7,
+      "depth": 7,
       "tileSize": 0.5,
       "style": "truck",
       "until": 1,
-      "elevation": 0.008
+      "elevation": 0.008,
+      "rotationY": 0
     },
     {
       "x": 0,
@@ -318,19 +325,19 @@
       "closed": true,
       "points": [
         {
-          "x": -2.6,
-          "z": -3.9
+          "x": -3.5,
+          "z": -5.5
         },
         {
-          "x": 2.6,
-          "z": -3.9
+          "x": 3.5,
+          "z": -5.5
         },
         {
-          "x": 2.6,
+          "x": 3.5,
           "z": 1.35
         },
         {
-          "x": -2.6,
+          "x": -3.5,
           "z": 1.35
         }
       ],
@@ -340,9 +347,11 @@
           "minX": -2.35,
           "maxX": 2.35,
           "minZ": 1.2,
-          "maxZ": 1.5
+          "maxZ": 1.5,
+          "bottom": 1.5
         }
-      ]
+      ],
+      "height": 3.8
     },
     {
       "from": 1,
@@ -559,27 +568,30 @@
     },
     {
       "model": "crate_buns",
-      "x": 3.4,
-      "z": -2.6,
+      "x": 4.75,
+      "z": -3.25,
       "rotationY": 0.2,
       "from": 0,
-      "until": 1
+      "until": 1,
+      "height": 0.502
     },
     {
       "model": "crate_tomatoes",
-      "x": 3.4,
-      "z": -1.4,
+      "x": 4.75,
+      "z": -1.5,
       "rotationY": -0.15,
       "from": 0,
-      "until": 1
+      "until": 1,
+      "height": 0.673
     },
     {
       "model": "crate_lettuce",
-      "x": 3.5,
-      "z": -0.2,
+      "x": 4.75,
+      "z": 0.75,
       "rotationY": 0.1,
       "from": 0,
-      "until": 1
+      "until": 1,
+      "height": 0.643
     },
     {
       "model": "table_round_A_decorated",
@@ -741,6 +753,46 @@
       "z": -3.6,
       "rotationY": 0,
       "from": 3
+    },
+    {
+      "model": "library/city2-ambulance-01/city2-ambulance-01.glb",
+      "x": -11.75,
+      "z": 18.75,
+      "rotationY": 1.571,
+      "elevation": 3.25
+    },
+    {
+      "model": "library/city2-bench-01/city2-bench-01.glb",
+      "x": 3.5,
+      "z": 25,
+      "rotationY": 0
+    },
+    {
+      "model": "library/city2-building-living-44/city2-building-living-44.glb",
+      "x": -3.5,
+      "z": 29.75,
+      "rotationY": -1.571
+    },
+    {
+      "model": "library/city2-road-009/city2-road-009.glb",
+      "x": -10,
+      "z": 20.25,
+      "rotationY": -1.571,
+      "elevation": 0.05
+    },
+    {
+      "model": "library/city2-road-009/city2-road-009.glb",
+      "x": 5,
+      "z": 20.25,
+      "rotationY": -1.571,
+      "elevation": 0.05
+    },
+    {
+      "model": "library/city2-road-009/city2-road-009.glb",
+      "x": 20,
+      "z": 20.25,
+      "rotationY": -1.571,
+      "elevation": 0.05
     }
   ],
   "areas": []

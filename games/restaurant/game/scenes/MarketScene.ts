@@ -22,10 +22,13 @@ import { shoppingList } from '../data/Market';
 import { MarketHud } from '../ui/MarketHud';
 import { uiPress } from '../ui/UiParts';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
+import { MARKET_LAYOUT, buildMarketRoom, marketRoomModels } from '../world/MarketLayout';
+import type { Room } from 'core/rooms/Room';
+import { bendAll, bendAround } from '../world/Bend';
 
 const FOV = 40;
-/** The crates' grid: columns, the gaps between crates (x, and z: room for the name tags). */
-const GRID = { columns: 4, gapX: 0.6, gapZ: 1.1 };
+/** The crates' grid (levels/market.json): its middle, columns, the gaps between crates (x, and z: room for the name tags). */
+const GRID = MARKET_LAYOUT.market.crates;
 /** The view: from the shopper's side (-z), tilted this far from overhead; room beside the grid (units); the shares of
  *  the screen's height the list (top) and the hint (bottom) take, the grid fitted between. */
 const VIEW = { tilt: 0.7, padX: 0.7, top: 0.27, bottom: 0.12 };
@@ -36,8 +39,7 @@ const PATTIES_ON_TOP = 3;
 const DONE_SECONDS = 1.6;
 
 const MODELS = [
-    ...new Set(SETTINGS.market.flatMap((item) => [item.crate, item.icon])), 'food_ingredient_burger_uncooked',
-    'floor_kitchen_styleB', 'wall', 'fridge_A_decorated', 'shelf_papertowel_decorated',
+    ...new Set([...SETTINGS.market.flatMap((item) => [item.crate, item.icon]), 'food_ingredient_burger_uncooked', ...marketRoomModels()]),
 ];
 
 interface Crate {
@@ -53,6 +55,8 @@ export default class MarketScene extends ThreeScene {
     private readonly list = shoppingList(RestaurantSave.orders);
     private readonly basket = new Set<string>();
     private cashier: Customer | null = null;
+    /** The market's floor, walls and props (levels/market.json). */
+    private room: Room | null = null;
     private readonly raycaster = new THREE.Raycaster();
     private readonly pointer = new THREE.Vector2();
     private readonly hitMaterial = new THREE.MeshBasicMaterial({ visible: false });
@@ -148,7 +152,7 @@ export default class MarketScene extends ThreeScene {
             const column = spots[i] % GRID.columns;
             const row = Math.floor(spots[i] / GRID.columns);
             const holder = holders[i];
-            holder.position.set((column - (GRID.columns - 1) / 2) * stepX, 0, ((rows - 1) / 2 - row) * stepZ);
+            holder.position.set(GRID.x + (column - (GRID.columns - 1) / 2) * stepX, 0, GRID.z + ((rows - 1) / 2 - row) * stepZ);
             holder.rotation.y = (Math.random() - 0.5) * 0.12;
             this.threeScene.add(holder);
             const box = new THREE.Mesh(new THREE.BoxGeometry(size.x + 0.2, size.y + 0.4, size.z + 0.2), this.hitMaterial);
@@ -158,30 +162,18 @@ export default class MarketScene extends ThreeScene {
         });
         const halfX = (GRID.columns * stepX) / 2;
         const halfZ = (rows * stepZ) / 2;
-        this.bounds.set(new THREE.Vector3(-halfX, 0, -halfZ), new THREE.Vector3(halfX, size.y, halfZ));
+        this.bounds.set(new THREE.Vector3(GRID.x - halfX, 0, GRID.z - halfZ), new THREE.Vector3(GRID.x + halfX, size.y, GRID.z + halfZ));
 
-        // The floor, a back wall with fridges and shelves along it, and the cashier.
-        for (let x = -12; x <= 12; x += 4) {
-            for (let z = -12; z <= 12; z += 4) {
-                const tile = kitchenModel('floor_kitchen_styleB');
-                tile.position.set(x, -sizeOf(tile).y, z);
-                this.threeScene.add(tile);
-            }
-        }
-        const wallZ = halfZ + 2.2;
-        for (let x = -12; x <= 12; x += 4) {
-            const wall = kitchenModel('wall');
-            wall.position.set(x, 0, wallZ + 0.25);
-            this.threeScene.add(wall);
-        }
-        [-4.5, -2.2, 2.2, 4.5].forEach((x, i) => {
-            const thing = kitchenModel(i % 3 === 0 ? 'fridge_A_decorated' : 'shelf_papertowel_decorated');
-            thing.position.set(x, 0, wallZ - 0.6);
-            thing.rotation.y = Math.PI;
-            this.threeScene.add(thing);
-        });
-        this.cashier = new Customer(this.threeScene, new THREE.Vector3(0, 0, wallZ - 0.9));
-        this.cashier.root.rotation.y = Math.PI;
+        // The room (floor, walls, fridges and shelves: levels/market.json) and the cashier.
+        this.room = buildMarketRoom();
+        this.threeScene.add(this.room.group);
+        const { cashier } = MARKET_LAYOUT.market;
+        this.cashier = new Customer(this.threeScene, new THREE.Vector3(cashier.x, 0, cashier.z));
+        this.cashier.root.rotation.y = cashier.rotationY ?? Math.PI;
+        this.cashier.root.scale.setScalar(cashier.scale ?? 1);
+
+        bendAround(GRID.x, GRID.z);
+        bendAll(this.threeScene);
     }
 
     // ---------------------------------------------------------------- shopping
@@ -296,6 +288,9 @@ export default class MarketScene extends ThreeScene {
     public update(delta: number): void {
         const dt = Math.min(delta, 0.1);
         this.cashier?.update(dt);
+        this.room?.update(dt, []);
+        // (Crates hop and fly; anything new bends too.)
+        bendAll(this.threeScene);
         if (this.crates.length) {
             this.threeCamera.updateMatrixWorld();
             this.hud.setTags(this.crates.map(({ item, tagAt }) => ({ item, at: this.worldToScreen(tagAt) })));
@@ -320,6 +315,7 @@ export default class MarketScene extends ThreeScene {
         });
         this.hitMaterial.dispose();
         this.cashier?.destroy();
+        this.room?.dispose();
         this.hud?.destroy();
         super.destroy();
     }

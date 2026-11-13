@@ -24,6 +24,7 @@ import { DebugOverlay } from 'core/debug/DebugOverlay';
 import { KITCHEN_MODELS, Kitchen, TargetKind } from '../world/Kitchen';
 import { CUSTOMER_PATH, CameraShot, SHOT_ASPECT, StationLayout, buildRoom, roomModels, stationAt } from '../world/RestaurantLayout';
 import type { Room } from 'core/rooms/Room';
+import { bendAll, bendAround } from '../world/Bend';
 import { Customer } from '../world/Customers';
 import { loadModels } from '../world/Models';
 import { Order, matches, payFor } from '../data/Recipes';
@@ -36,8 +37,14 @@ const MOVE_SECONDS = 0.7;
 /** How long the order bubble shows before the camera drops to the bench; how long a reaction's watched. */
 const ORDER_SECONDS = 1.6;
 const REACT_SECONDS = 1.8;
+/**
+ * The queue: the day's customers all come in at once, this far apart (s), and line up behind the station's customer spot
+ * (toward the door), this far apart (units). A served one steps this far to the side and walks out past the line;
+ * walking out, they keep this far from anyone (and ease round them).
+ */
+const QUEUE = { arriveGap: 0.6, spacing: 1.15, stepAside: 1.6, personalSpace: 0.8 };
 
-type Phase = 'loading' | 'arriving' | 'ordering' | 'cooking' | 'serving' | 'leaving' | 'dayEnd';
+type Phase = 'loading' | 'waiting' | 'ordering' | 'cooking' | 'serving' | 'leaving' | 'dayEnd';
 
 export default class RestaurantScene extends ThreeScene {
     private kitchen: Kitchen | null = null;
@@ -46,7 +53,10 @@ export default class RestaurantScene extends ThreeScene {
     /** The burger station at the player's stage: its pieces and camera shots (levels/restaurant.json). */
     private station: StationLayout | null = null;
     private hud!: RestaurantHud;
+    /** The customer at the counter (ordering, waiting for their food, reacting). */
     private customer: Customer | null = null;
+    /** The day's customers still to be served, in order: the first at the counter (or walking up to it). */
+    private readonly queue: Customer[] = [];
     private readonly leaving: Customer[] = [];
     private readonly orders = RestaurantSave.orders;
     private order: Order | null = null;
@@ -106,6 +116,8 @@ export default class RestaurantScene extends ThreeScene {
         this.station = stationAt(RestaurantSave.stage);
         this.kitchen = new Kitchen(this.threeScene, this.station);
         this.kitchen.onCooked = () => RestaurantAudio.play('pick', 1.3);
+        bendAround(this.station.x, this.station.z);
+        bendAll(this.threeScene);
         this.fitCamera();
         this.startDay();
     }
@@ -116,6 +128,7 @@ export default class RestaurantScene extends ThreeScene {
             RestaurantSave.addProgress(50);
             this.hud.stageBar.set(RestaurantSave.stage, RestaurantSave.progress);
         });
+        panel.button('SKIP CUSTOMER (served right)', () => this.skipCustomer());
         panel.button('END DAY', () => {
             if (this.phase !== 'dayEnd' && this.kitchen) this.endDay();
         });
@@ -134,28 +147,64 @@ export default class RestaurantScene extends ThreeScene {
         const day = RestaurantSave.day;
         this.hud.setDay(day, this.results, this.orders.length);
         this.hud.banner(`DAY ${day + 1}`, `${this.orders.length} customers today`);
-        gsap.delayedCall(1.2, () => this.nextCustomer());
+        this.phase = 'waiting';
+        this.moveView(0);
+        // Everyone comes in, one after another, and lines up.
+        this.orders.forEach((_, k) => gsap.delayedCall(k * QUEUE.arriveGap, () => {
+            if (this.gone) return;
+            const customer = new Customer(this.threeScene, CUSTOMER_PATH.outside);
+            this.queue.push(customer);
+            this.sendToPlace(customer, [CUSTOMER_PATH.inside]);
+        }));
     }
 
-    private nextCustomer(): void {
-        if (this.gone || this.phase === 'dayEnd') return;
-        if (this.results.length >= this.orders.length) {
-            this.endDay();
-            return;
-        }
-        this.phase = 'arriving';
-        this.moveView(0);
-        const customer = new Customer(this.threeScene, CUSTOMER_PATH.outside);
+    /** Place `k` in the line (0: the counter), facing the cook: the station's customer spot, then back toward the door. */
+    private queueSpot(k: number): THREE.Vector3 {
+        const spot = this.kitchen!.customerSpot;
+        const back = CUSTOMER_PATH.inside.clone().sub(spot).setY(0).normalize();
+        return spot.clone().addScaledVector(back, QUEUE.spacing * k);
+    }
+
+    /** `customer` to their place in the line (through `via` first); the one reaching the counter orders. */
+    private sendToPlace(customer: Customer, via: THREE.Vector3[] = []): void {
+        const k = this.queue.indexOf(customer);
+        if (k < 0) return;
+        void customer.walkTo([...via, this.queueSpot(k)], Math.PI).then(() => {
+            if (!this.gone && this.queue[0] === customer && this.phase === 'waiting') this.takeOrder(customer);
+        });
+    }
+
+    /** The front of the line is at the counter: their order. */
+    private takeOrder(customer: Customer): void {
         this.customer = customer;
         this.order = this.orders[this.results.length];
-        // In through the door, up to the counter, facing the cook (-z).
-        void customer.walkTo([CUSTOMER_PATH.inside, this.kitchen!.customerSpot], Math.PI).then(() => {
-            if (this.gone || this.customer !== customer) return;
-            this.phase = 'ordering';
-            RestaurantAudio.play('pick');
-            this.hud.showOrder(this.order!, this.headOnScreen() ?? { x: 0, y: 0 });
-            gsap.delayedCall(ORDER_SECONDS, () => this.startCooking());
-        });
+        this.phase = 'ordering';
+        RestaurantAudio.play('pick');
+        this.hud.showOrder(this.order!, this.headOnScreen() ?? { x: 0, y: 0 });
+        gsap.delayedCall(ORDER_SECONDS, () => this.startCooking());
+    }
+
+    /** The debug panel: the customer at the front's done at once, served right (the line moves on). */
+    private skipCustomer(): void {
+        const front = this.queue[0];
+        if (!front || !this.kitchen || !['waiting', 'ordering', 'cooking'].includes(this.phase)) return;
+        if (this.customer !== front) {
+            front.root.position.copy(this.queueSpot(0));
+            front.root.rotation.y = Math.PI;
+            // (Their walk up's over: standing there now.)
+            void front.walkTo([], Math.PI);
+            this.customer = front;
+            this.order = this.orders[this.results.length];
+        }
+        this.phase = 'serving';
+        this.hud.hideOrder();
+        this.hud.hideTicket();
+        this.hud.setButtons(false);
+        this.hud.showHint(null);
+        this.hud.pointAt(null);
+        this.kitchen.trash();
+        this.moveView(0);
+        this.react(true, payFor(this.order!));
     }
 
     private startCooking(): void {
@@ -193,40 +242,71 @@ export default class RestaurantScene extends ThreeScene {
         this.moveView(0);
         RestaurantAudio.play('whoosh');
         kitchen.serve(() => {
-            if (this.gone) return;
-            const customer = this.customer!;
-            this.results.push(right);
-            this.hud.setDay(RestaurantSave.day, this.results, this.orders.length);
-            if (right) {
-                customer.cheer();
-                RestaurantAudio.play('happy');
-                this.dayCoins += pay;
-                this.pays.push(pay);
-                gsap.delayedCall(0.4, () => {
-                    RestaurantAudio.play('coins');
-                    this.hud.setCoins(this.dayCoins, true);
-                });
-            } else {
-                customer.grumble();
-                RestaurantAudio.play('sad');
-            }
-            this.hud.react(right, this.headOnScreen() ?? { x: 0, y: 0 }, pay);
-            gsap.delayedCall(REACT_SECONDS, () => this.customerLeaves());
+            if (!this.gone) this.react(right, pay);
         });
+    }
+
+    /** The customer at the counter takes their dish: happy (and pays) or not, then leaves. */
+    private react(right: boolean, pay: number): void {
+        const customer = this.customer!;
+        this.results.push(right);
+        this.hud.setDay(RestaurantSave.day, this.results, this.orders.length);
+        if (right) {
+            customer.cheer();
+            RestaurantAudio.play('happy');
+            this.dayCoins += pay;
+            this.pays.push(pay);
+            gsap.delayedCall(0.4, () => {
+                RestaurantAudio.play('coins');
+                this.hud.setCoins(this.dayCoins, true);
+            });
+        } else {
+            customer.grumble();
+            RestaurantAudio.play('sad');
+        }
+        this.hud.react(right, this.headOnScreen() ?? { x: 0, y: 0 }, pay);
+        gsap.delayedCall(REACT_SECONDS, () => this.customerLeaves());
     }
 
     private customerLeaves(): void {
         if (this.gone || !this.customer) return;
-        this.phase = 'leaving';
         const customer = this.customer;
         this.customer = null;
+        this.queue.splice(this.queue.indexOf(customer), 1);
         this.leaving.push(customer);
         this.kitchen?.clearServed();
-        void customer.walkTo([CUSTOMER_PATH.inside, CUSTOMER_PATH.outside]).then(() => {
+        // Out past the line: a step to its side, along it to the door, out.
+        const spot = this.queueSpot(0);
+        const back = CUSTOMER_PATH.inside.clone().sub(spot).setY(0).normalize();
+        const side = new THREE.Vector3(back.z, 0, -back.x).multiplyScalar(QUEUE.stepAside);
+        void customer.walkTo([spot.clone().add(side), CUSTOMER_PATH.inside.clone().add(side), CUSTOMER_PATH.outside]).then(() => {
             this.leaving.splice(this.leaving.indexOf(customer), 1);
             customer.destroy();
         });
-        gsap.delayedCall(0.9, () => this.nextCustomer());
+        if (this.results.length >= this.orders.length) {
+            gsap.delayedCall(0.9, () => {
+                if (!this.gone && this.phase !== 'dayEnd') this.endDay();
+            });
+            return;
+        }
+        // The line moves up; the new front orders once they're at the counter.
+        this.phase = 'waiting';
+        this.queue.forEach((c) => this.sendToPlace(c));
+    }
+
+    /** Walking out, a customer keeps clear of everyone else (eased aside, not through them). */
+    private keepApart(dt: number): void {
+        const everyone = [...this.queue, ...this.leaving];
+        for (const walker of this.leaving) {
+            for (const other of everyone) {
+                if (other === walker) continue;
+                const away = walker.root.position.clone().sub(other.root.position).setY(0);
+                const distance = away.length();
+                if (distance > 1e-3 && distance < QUEUE.personalSpace) {
+                    walker.root.position.addScaledVector(away.normalize(), Math.min(QUEUE.personalSpace - distance, 3 * dt));
+                }
+            }
+        }
     }
 
     private endDay(): void {
@@ -370,9 +450,12 @@ export default class RestaurantScene extends ThreeScene {
         const dt = Math.min(delta, 0.1);
         this.kitchen?.update(dt);
         // The doors open for the customers.
-        this.room?.update(dt, [this.customer, ...this.leaving].filter((c): c is Customer => Boolean(c)).map((c) => c.root.position));
-        this.customer?.update(dt);
+        this.room?.update(dt, [...this.queue, ...this.leaving].map((c) => c.root.position));
+        this.queue.forEach((c) => c.update(dt));
         this.leaving.forEach((c) => c.update(dt));
+        this.keepApart(dt);
+        // Food, dishes and customers come and go: they bend too.
+        bendAll(this.threeScene);
         if (this.kitchen) {
             this.threeCamera.updateMatrixWorld();
             if (this.phase === 'ordering') this.hud.placeOrder(this.headOnScreen());
@@ -401,7 +484,7 @@ export default class RestaurantScene extends ThreeScene {
         window.removeEventListener('pointerdown', this.onPointerDown);
         DebugOverlay.instance.removePanel('restaurant.debug');
         gsap.killTweensOf(this.view);
-        this.customer?.destroy();
+        this.queue.forEach((c) => c.destroy());
         this.leaving.forEach((c) => c.destroy());
         this.kitchen?.destroy();
         this.room?.dispose();

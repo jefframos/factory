@@ -194,10 +194,15 @@ function clipSegmentToRect(a: Vec2, b: Vec2, rect: { minX: number; maxX: number;
 function openingSpans(wall: StoreWallPlacement, setup: WallSetupConfig): WallOpeningSpan[] {
     const { points, closed } = wall;
     const segmentCount = closed ? points.length : points.length - 1;
+    // A door's own height (`height`) wins over the setup's; a window's own height and bottom (`height`, `bottom`) over
+    // the setup's (centred on the wall). Clamped to the wall.
     const doorTop = (opening: StoreWallOpening): number =>
-        opening.fitToCeiling ? setup.height : Math.min(opening.high ? setup.tallDoorHeight : setup.doorHeight, setup.height);
-    const windowHeight = Math.min(setup.windowHeight, setup.height);
-    const windowBottom = (setup.height - windowHeight) / 2;
+        opening.fitToCeiling ? setup.height : Math.min(opening.height ?? (opening.high ? setup.tallDoorHeight : setup.doorHeight), setup.height);
+    const windowY0 = (opening: StoreWallOpening): number => {
+        const height = Math.min(opening.height ?? setup.windowHeight, setup.height);
+        return THREE.MathUtils.clamp(opening.bottom ?? (setup.height - height) / 2, 0, setup.height - height);
+    };
+    const windowY1 = (opening: StoreWallOpening): number => Math.min(windowY0(opening) + Math.min(opening.height ?? setup.windowHeight, setup.height), setup.height);
 
     const spans: WallOpeningSpan[] = [];
     for (const opening of wall.openings ?? []) {
@@ -217,8 +222,8 @@ function openingSpans(wall: StoreWallPlacement, setup: WallSetupConfig): WallOpe
                     ...(opening.facing ? { facing: opening.facing } : {}),
                     u0: distance + clip[0] * length,
                     u1: distance + clip[1] * length,
-                    y0: opening.kind === 'window' ? windowBottom : 0,
-                    y1: opening.kind === 'window' ? windowBottom + windowHeight : opening.kind === 'door' ? doorTop(opening) : setup.height,
+                    y0: opening.kind === 'window' ? windowY0(opening) : 0,
+                    y1: opening.kind === 'window' ? windowY1(opening) : opening.kind === 'door' ? doorTop(opening) : setup.height,
                 });
             }
             distance += length;

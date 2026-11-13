@@ -2,7 +2,8 @@
 // RestaurantLayout.ts + core/rooms): checker floors, walls with their openings (windows, doors — sliding glass ones —
 // and gaps) in their two-band colours, props, the stations (the burger station's pieces: counters, cooktop, pan, plate,
 // serve spot, customer spot, ingredient piles, decoration) and each station's camera shots (order / bench), plus the
-// customers' way in. A stage picker shows what's there at each stage (`from` / `until`).
+// customers' way in. A stage picker shows what's there at each stage (`from` / `until`). The Level picker switches to
+// the supermarket (levels/market.json: MarketScene's floor, walls and props, plus its crate grid and cashier).
 //
 // Orbit with the mouse, click to select, drag the gizmo to move (W), turn (E) or size (R). Station cameras: Look
 // through, frame the shot inside the gold 720 x 1080 frame (the game's screen), Use this view. Save writes the file; the
@@ -38,6 +39,10 @@ const modelName = (path) => (path.startsWith('kitchen/') && path.endsWith('.gltf
 
 let layout;
 let version = 0;
+/** Which layout's open: 'restaurant' or 'market' (server.mjs's LEVELS). */
+let level = 'restaurant';
+/** settings.json's market goods (the supermarket's crates). */
+let marketItems = [];
 let stage = 0;
 let stageNames = [];
 let selection = null;
@@ -65,6 +70,7 @@ const viewport = document.getElementById('layoutViewport');
 async function start() {
     const config = await api('/api/config').catch(() => ({}));
     gameUrl = config.gameUrl ?? gameUrl;
+    marketItems = (await api('/api/settings').catch(() => ({}))).market ?? [];
     setModelCatalog(await api('/api/models'));
     setupViewport();
     bindUi();
@@ -72,9 +78,10 @@ async function start() {
 }
 
 async function reload() {
-    const result = await api('/api/layout');
+    const result = await api(`/api/layout?level=${level}`);
     layout = result.layout;
     version = result.version;
+    undoStack.length = 0;
     stageNames = layout.stages ?? ['Stage 1'];
     const stageSelect = document.getElementById('stage');
     stageSelect.replaceChildren(...stageNames.map((name, i) => el('option', { value: i }, `${i + 1}: ${name}`)));
@@ -113,7 +120,7 @@ function undo() {
 
 async function save() {
     try {
-        const result = await api('/api/layout', { method: 'PUT', body: JSON.stringify({ layout, version }) });
+        const result = await api(`/api/layout?level=${level}`, { method: 'PUT', body: JSON.stringify({ layout, version }) });
         version = result.version;
         setDirty(false);
         toast('Saved — the game reloads with it', 'good');
@@ -304,8 +311,9 @@ function rebuild() {
     layout.floors.forEach((floor, i) => shownAt(floor) && buildFloor(floor, i));
     layout.walls.forEach((wall, i) => shownAt(wall) && buildWall(wall, i));
     layout.props.forEach((prop, i) => shownAt(prop) && buildProp(prop, i));
-    layout.stations.forEach((station, i) => shownAt(station) && buildStation(station, i));
-    buildPath();
+    (layout.stations ?? []).forEach((station, i) => shownAt(station) && buildStation(station, i));
+    if (layout.customer) buildPath();
+    if (layout.market) buildMarket();
     if (selection && !pickables.has(keyOf(selection))) selection = null;
     attachGizmo();
     renderPanels();
@@ -372,14 +380,21 @@ function openingRange(a, b, opening) {
 
 function holeHeights(opening, setup) {
     if (opening.kind === 'gap') return [0, setup.height];
-    if (opening.kind === 'door') return [0, opening.fitToCeiling ? setup.height : Math.min(opening.high ? setup.tallDoorHeight : setup.doorHeight, setup.height)];
-    const windowHeight = Math.min(setup.windowHeight, setup.height);
-    const bottom = (setup.height - windowHeight) / 2;
+    if (opening.kind === 'door') return [0, opening.fitToCeiling ? setup.height : Math.min(opening.height ?? (opening.high ? setup.tallDoorHeight : setup.doorHeight), setup.height)];
+    // A window's own height and bottom win over its wall size's (centred) — as core/rooms' PolyWallBuilder.
+    const windowHeight = Math.min(opening.height ?? setup.windowHeight, setup.height);
+    const bottom = THREE.MathUtils.clamp(opening.bottom ?? (setup.height - windowHeight) / 2, 0, setup.height - windowHeight);
     return [bottom, bottom + windowHeight];
 }
 
-function buildWall(wall, i) {
+/** A wall's size: its setup, with its own height if it has one. */
+function wallSetup(wall) {
     const setup = layout.setups[wall.setup] ?? Object.values(layout.setups)[0];
+    return wall.height !== undefined ? { ...setup, height: wall.height } : setup;
+}
+
+function buildWall(wall, i) {
+    const setup = wallSetup(wall);
     const style = layout.styles.walls[wall.style] ?? Object.values(layout.styles.walls)[0];
     const holder = new THREE.Group();
     const bottomMaterial = new THREE.MeshStandardMaterial({ color: style.bottomColor, roughness: 0.8 });
@@ -558,6 +573,64 @@ function buildPath() {
     }
 }
 
+/**
+ * The supermarket: its crate grid (a handle to drag it all by; the crates in settings.json's order — the game shuffles
+ * them each visit) and the cashier. Laid out as MarketScene does: every cell the biggest crate's size plus the gaps.
+ */
+function buildMarket() {
+    const { crates, cashier } = layout.market;
+    const grid = new THREE.Group();
+    grid.position.set(crates.x, 0, crates.z);
+    const tag = labelSprite('crates (shuffled in the game)', '#b6f0c4');
+    tag.position.y = 2.4;
+    grid.add(tag);
+    register({ type: 'crates' }, grid);
+    void fillCrates(grid, crates);
+
+    const person = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.35, 1.6, 4, 12), new THREE.MeshStandardMaterial({ color: 0x4c9a6a, transparent: true, opacity: 0.6 }));
+    body.position.y = 1.15;
+    // Which way they face: a nose.
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.4, 12), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    nose.rotation.x = Math.PI / 2;
+    nose.position.set(0, 1.6, 0.45);
+    const name = labelSprite('cashier', '#b6f0c4');
+    name.position.y = 2.7;
+    person.add(body, nose, name);
+    person.position.set(cashier.x, 0, cashier.z);
+    person.rotation.y = cashier.rotationY ?? Math.PI;
+    person.scale.setScalar(cashier.scale ?? 1);
+    register({ type: 'cashier' }, person);
+}
+
+async function fillCrates(grid, crates) {
+    const items = marketItems.length ? marketItems : [{ crate: 'crate' }];
+    const sources = await Promise.all(items.map((item) => loadModel(item.crate)));
+    if (!grid.parent) return;
+    const size = new THREE.Vector3();
+    const boxes = sources.map((source) => (source ? new THREE.Box3().setFromObject(source) : null));
+    boxes.forEach((box) => box && size.max(box.getSize(new THREE.Vector3())));
+    if (size.lengthSq() < 1e-6) size.set(1, 0.6, 1);
+    const columns = Math.max(1, Math.round(crates.columns ?? 4));
+    const rows = Math.ceil(items.length / columns);
+    const stepX = size.x + (crates.gapX ?? 0.6);
+    const stepZ = size.z + (crates.gapZ ?? 1.1);
+    items.forEach((_, i) => {
+        const x = (i % columns - (columns - 1) / 2) * stepX;
+        const z = ((rows - 1) / 2 - Math.floor(i / columns)) * stepZ;
+        if (sources[i]) {
+            const model = sources[i].clone(true);
+            model.position.set(x, -boxes[i].min.y, z);
+            grid.add(model);
+        }
+    });
+    // The grid's bounds on the floor (what the game's camera frames): something to click between the crates too.
+    const area = new THREE.Mesh(new THREE.PlaneGeometry(columns * stepX, rows * stepZ), new THREE.MeshBasicMaterial({ color: 0x35b36a, transparent: true, opacity: 0.18, depthWrite: false }));
+    area.rotation.x = -Math.PI / 2;
+    area.position.y = 0.03;
+    grid.add(area);
+}
+
 // ---------------------------------------------------------------- selection + gizmo
 
 function dataOf(sel) {
@@ -568,7 +641,9 @@ function dataOf(sel) {
     if (sel.type === 'station') return layout.stations[sel.i];
     if (sel.type === 'piece') return layout.stations[sel.i]?.pieces[sel.j];
     if (sel.type === 'camera') return layout.stations[sel.i]?.cameras[sel.key];
-    if (sel.type === 'path') return layout.customer[sel.key];
+    if (sel.type === 'path') return layout.customer?.[sel.key];
+    if (sel.type === 'crates') return layout.market?.crates;
+    if (sel.type === 'cashier') return layout.market?.cashier;
     return null;
 }
 
@@ -593,8 +668,8 @@ function attachGizmo() {
     const mode = gizmo.mode;
     const type = selection.type;
     // What each thing can do: turning (props, pieces, floors), sizing (props).
-    const turns = ['prop', 'piece', 'floor'].includes(type);
-    const sizes = type === 'prop';
+    const turns = ['prop', 'piece', 'floor', 'cashier'].includes(type);
+    const sizes = type === 'prop' || type === 'cashier';
     if ((mode === 'rotate' && !turns) || (mode === 'scale' && !sizes)) return;
     gizmo.attach(object);
     // Turning: round the vertical only. Moving: on the floor, but cameras and props (lifted off it) go up too.
@@ -603,6 +678,16 @@ function attachGizmo() {
 }
 
 const round = (value) => Math.round(value * 1000) / 1000;
+
+/**
+ * An object's turn round the vertical, the full -180..180°. Not `rotation.y`: in three's XYZ Euler order that only spans
+ * ±90° — past it the gizmo's turn reads as x = z = 180° with y heading back to 0, so saving y alone snapped it back.
+ */
+const _forward = new THREE.Vector3();
+function yawOf(object) {
+    _forward.set(0, 0, 1).applyQuaternion(object.quaternion);
+    return Math.atan2(_forward.x, _forward.z);
+}
 
 /** The gizmo moved something: into the data (walls redraw as they go). */
 function syncFromGizmo() {
@@ -614,11 +699,11 @@ function syncFromGizmo() {
     if (sel.type === 'floor') {
         data.x = round(p.x);
         data.z = round(p.z);
-        data.rotationY = round(object.rotation.y);
+        data.rotationY = round(yawOf(object));
     } else if (sel.type === 'prop') {
         data.x = round(p.x);
         data.z = round(p.z);
-        data.rotationY = round(object.rotation.y);
+        data.rotationY = round(yawOf(object));
         if (Math.abs(p.y) > 1e-3 || data.elevation !== undefined) data.elevation = round(p.y);
         if (gizmo.mode === 'scale') {
             // Sizing: uniform (its height), and stretch across / along.
@@ -636,12 +721,24 @@ function syncFromGizmo() {
         const station = layout.stations[sel.i];
         data.x = round(p.x - station.x);
         data.z = round(p.z - station.z);
-        data.rotationY = round(object.rotation.y);
+        data.rotationY = round(yawOf(object));
     } else if (sel.type === 'camera') {
         data[sel.part] = { x: round(p.x), y: round(p.y), z: round(p.z) };
-    } else if (sel.type === 'path') {
+    } else if (sel.type === 'path' || sel.type === 'crates') {
         data.x = round(p.x);
         data.z = round(p.z);
+    } else if (sel.type === 'cashier') {
+        data.x = round(p.x);
+        data.z = round(p.z);
+        data.rotationY = round(yawOf(object));
+        if (gizmo.mode === 'scale') {
+            // Uniform: whichever handle was dragged sizes them all over.
+            const s = object.scale;
+            const was = data.scale ?? 1;
+            const size = Math.max(0.1, [s.x, s.y, s.z].reduce((most, v) => (Math.abs(v - was) > Math.abs(most - was) ? v : most), was));
+            s.setScalar(size);
+            data.scale = round(size);
+        }
     } else if (sel.type === 'point') {
         data.points[sel.j] = { x: round(p.x), z: round(p.z) };
     } else if (sel.type === 'wall') {
@@ -803,14 +900,18 @@ function renderOutline() {
     const host = document.getElementById('outline');
     const group = (title, items, extra) => [el('div', { class: 'group-title' }, el('h3', {}, title), extra ?? null), el('ul', { class: 'tree' }, ...items)];
     host.replaceChildren(
-        ...group('Stations', layout.stations.flatMap((station, i) => [
+        ...(layout.market ? group('Supermarket', [
+            outlineItem('🍅 crates', { type: 'crates' }),
+            outlineItem('🧑 cashier', { type: 'cashier' }),
+        ]) : []),
+        ...group('Stations', (layout.stations ?? []).flatMap((station, i) => [
             outlineItem(`🍔 ${station.name ?? station.id}`, { type: 'station', i }, rangeTag(station), shownAt(station)),
             el('li', { class: 'sub', style: { cursor: 'default' } }, el('ul', { class: 'tree' },
                 outlineItem('🎥 order camera', { type: 'camera', i, key: 'order', part: 'position' }),
                 outlineItem('🎥 bench camera', { type: 'camera', i, key: 'bench', part: 'position' }),
                 ...station.pieces.map((piece, j) => outlineItem(`${piece.role}${piece.piece ? ': ' + piece.piece : piece.model ? ': ' + modelName(piece.model) : ''}`, { type: 'piece', i, j })))),
         ])),
-        ...group('Way in', ['outside', 'inside'].map((key) => outlineItem(`🚶 ${key}`, { type: 'path', key }))),
+        ...(layout.customer ? group('Way in', ['outside', 'inside'].map((key) => outlineItem(`🚶 ${key}`, { type: 'path', key }))) : []),
         ...group('Walls', layout.walls.map((wall, i) => outlineItem(`🧱 ${wall.style ?? 'wall'} (${wall.points.length} corners${wall.openings?.length ? `, ${wall.openings.length} openings` : ''})`, { type: 'wall', i }, rangeTag(wall), shownAt(wall)))),
         ...group('Floors', layout.floors.map((floor, i) => outlineItem(`▦ ${floor.style ?? 'floor'} ${floor.width}×${floor.depth}`, { type: 'floor', i }, rangeTag(floor), shownAt(floor)))),
         ...group('Props', layout.props.map((prop, i) => outlineItem(`🧊 ${modelName(prop.model).split('/').pop()}`, { type: 'prop', i }, rangeTag(prop), shownAt(prop)))),
@@ -886,6 +987,7 @@ function renderInspector() {
         parts.push(el('h3', {}, sel.type === 'point' ? `Wall corner ${sel.j + 1}` : 'Wall'),
             selectField('Style', data.style, Object.keys(layout.styles.walls), (v) => (data.style = v)),
             selectField('Size', data.setup, Object.keys(layout.setups), (v) => (data.setup = v)),
+            numberField(`Height (blank: the size's ${wallSetup({ ...data, height: undefined }).height})`, data.height, 0.1, (v) => (v === undefined ? delete data.height : (data.height = Math.max(0.2, v)))),
             checkField('Closed loop', data.closed, (v) => (data.closed = v)),
             stageFields(data),
             el('h2', {}, 'Corners'),
@@ -901,6 +1003,10 @@ function renderInspector() {
                     ...['minX', 'maxX'].map((f) => el('input', { type: 'number', step: 0.1, value: o[f], title: f, onchange: (e) => edit(() => (o[f] = Number(e.target.value))) })), el('span', { class: 'muted small' }, 'x from / to')),
                 el('div', { class: 'xyz' },
                     ...['minZ', 'maxZ'].map((f) => el('input', { type: 'number', step: 0.1, value: o[f], title: f, onchange: (e) => edit(() => (o[f] = Number(e.target.value))) })), el('span', { class: 'muted small' }, 'z from / to')),
+                o.kind === 'window' ? el('div', {},
+                    numberField(`Window height (blank: ${wallSetup(data).windowHeight})`, o.height, 0.1, (v) => (v === undefined ? delete o.height : (o.height = Math.max(0.1, v)))),
+                    numberField('Window bottom y (blank: centred)', o.bottom, 0.1, (v) => (v === undefined ? delete o.bottom : (o.bottom = Math.max(0, v))))) : null,
+                o.kind === 'door' ? numberField(`Door height (blank: ${wallSetup(data).doorHeight})`, o.height, 0.1, (v) => (v === undefined ? delete o.height : (o.height = Math.max(0.2, v)))) : null,
                 o.kind === 'door' ? el('div', {},
                     checkField('Sliding', o.sliding, (v) => (o.sliding = v || undefined)),
                     checkField('Double', o.double, (v) => (o.double = v || undefined)),
@@ -962,6 +1068,18 @@ function renderInspector() {
         parts.push(el('h3', {}, `Way in: ${sel.key}`),
             el('p', { class: 'muted small' }, sel.key === 'outside' ? 'Where customers appear and leave to.' : 'Just inside the door: then they walk to the station\'s customer spot.'),
             numberField('X', data.x, 0.25, (v) => (data.x = v)), numberField('Z', data.z, 0.25, (v) => (data.z = v)));
+    } else if (sel.type === 'crates') {
+        parts.push(el('h3', {}, 'Crates'),
+            el('p', { class: 'muted small' }, 'The produce crates\' grid: drag it to move them all. The game shuffles which crate goes where each visit, and frames its camera on this grid.'),
+            numberField('X (middle)', data.x, 0.25, (v) => (data.x = v ?? 0)), numberField('Z (middle)', data.z, 0.25, (v) => (data.z = v ?? 0)),
+            numberField('Columns', data.columns, 1, (v) => (data.columns = Math.max(1, Math.round(v ?? 4)))),
+            numberField('Gap across (x)', data.gapX, 0.05, (v) => (data.gapX = Math.max(0, v ?? 0.6))),
+            numberField('Gap along (z: room for the name tags)', data.gapZ, 0.05, (v) => (data.gapZ = Math.max(0, v ?? 1.1))));
+    } else if (sel.type === 'cashier') {
+        parts.push(el('h3', {}, 'Cashier'),
+            numberField('X', data.x, 0.25, (v) => (data.x = v ?? 0)), numberField('Z', data.z, 0.25, (v) => (data.z = v ?? 0)),
+            numberField('Turn (°)', degrees(data.rotationY ?? Math.PI), 15, (v) => (data.rotationY = round(THREE.MathUtils.degToRad(v ?? 180)))),
+            numberField('Size (1: a customer\'s)', data.scale ?? 1, 0.05, (v) => (v === undefined || v === 1 ? delete data.scale : (data.scale = Math.max(0.1, v)))));
     }
     host.replaceChildren(...parts.filter(Boolean));
 }
@@ -1007,6 +1125,17 @@ function renderStyles() {
 // ---------------------------------------------------------------- UI wiring
 
 function bindUi() {
+    const levelSelect = document.getElementById('level');
+    levelSelect.addEventListener('change', () => {
+        if (dirty && !confirm('Unsaved changes on this level: switch anyway (they\'re lost)?')) {
+            levelSelect.value = level;
+            return;
+        }
+        if (looking) exitLook();
+        level = levelSelect.value;
+        stage = 0;
+        void reload().catch((error) => toast(`Could not open it: ${error.message}`, 'bad'));
+    });
     document.getElementById('stage').addEventListener('change', (event) => {
         stage = Number(event.target.value);
         rebuild();

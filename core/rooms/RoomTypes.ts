@@ -22,6 +22,10 @@ export interface StoreWallOpening {
     style?: string;
     /** Doors only: which way the door's front faces (world XZ unit vector). */
     facing?: { x: number; z: number };
+    /** Its own height (a door, a window); unset: the wall setup's. */
+    height?: number;
+    /** A window's own bottom, from the floor; unset: centred on the wall. */
+    bottom?: number;
 }
 
 export interface StoreWallPlacement {

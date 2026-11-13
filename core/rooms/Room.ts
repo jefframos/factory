@@ -52,6 +52,10 @@ export interface LayoutOpening {
     /** A door's style (layout.styles.doors). */
     style?: string;
     facing?: { x: number; z: number };
+    /** Its own height (a door, a window); unset: the wall size's. */
+    height?: number;
+    /** A window's own bottom (y from the floor); unset: centred on the wall. */
+    bottom?: number;
 }
 
 export interface LayoutWall extends StageRange {
@@ -61,6 +65,8 @@ export interface LayoutWall extends StageRange {
     /** Its look (layout.styles.walls) and size (layout.setups); unset: the first of each. */
     style?: string;
     setup?: string;
+    /** Its own height; unset: its size's (setup) height. */
+    height?: number;
 }
 
 export interface LayoutProp extends StageRange {
@@ -150,7 +156,8 @@ export class Room {
 
         for (const wall of layout.walls) {
             if (!shownAt(wall, stage, areas, wall.points[0])) continue;
-            const setup = first(layout.setups, wall.setup);
+            const sized = first(layout.setups, wall.setup);
+            const setup = sized && wall.height !== undefined ? { ...sized, height: wall.height } : sized;
             const style = first(layout.styles.walls, wall.style);
             if (!setup || !style) continue;
             const placement: StoreWallPlacement = {
@@ -160,6 +167,7 @@ export class Room {
                     kind: o.kind,
                     rect: { minX: o.minX, maxX: o.maxX, minZ: o.minZ, maxZ: o.maxZ },
                     double: o.double, high: o.high, sliding: o.sliding, fitToCeiling: o.fitToCeiling, style: o.style, facing: o.facing,
+                    height: o.height, bottom: o.bottom,
                 })),
                 style: wall.style,
                 setup: wall.setup,
