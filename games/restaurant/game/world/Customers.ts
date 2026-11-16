@@ -32,6 +32,8 @@ const PACE = [0.85, 1.15];
  * bottom over the model's feet, and how far behind its origin it is (so the bottom, not the feet, goes over the seat).
  */
 const SIT_CLIP = { bottom: 0.31, behind: 0.14 };
+/** The top of the head (hats and all) over the head bone (the people models' units). */
+const HEAD_ABOVE_BONE = 0.3;
 /** Without a sit clip: how far behind the seat they stand. */
 const STAND_BACK = 0.45;
 
@@ -74,6 +76,8 @@ export class Customer {
     private sitWeight = 0;
     private seated = false;
     private readonly geometries: THREE.BufferGeometry[] = [];
+    /** The skeleton's head bone (headTop follows it: standing, sitting, hopping). */
+    private readonly head: THREE.Object3D | null;
     private path: THREE.Vector3[] = [];
     private arrived: (() => void) | null = null;
     /** Which way they face once they stop (radians round y; null: as they came). */
@@ -97,6 +101,7 @@ export class Customer {
         const scale = SETTINGS.customer.height / PERSON_MODEL_HEIGHT;
         this.body.scale.setScalar(scale);
         this.body.add(model);
+        this.head = model.getObjectByName('Head') ?? null;
         this.root.add(this.body);
         this.root.position.copy(at);
         parent.add(this.root);
@@ -149,6 +154,11 @@ export class Customer {
 
     /** The top of their head (world). */
     public get headTop(): THREE.Vector3 {
+        // The head bone (where the head really is, sitting or not), up to the top of the head; without one, standing height.
+        if (this.head) {
+            this.head.updateWorldMatrix(true, false);
+            return this.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, HEAD_ABOVE_BONE * this.body.scale.x, 0));
+        }
         return this.root.position.clone().add(new THREE.Vector3(0, SETTINGS.customer.height * 1.02, 0));
     }
 

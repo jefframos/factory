@@ -211,6 +211,17 @@ export class Traffic {
         return ahead > 0 && ahead < length / 2 + gap + radius && side < radius * 2 + 0.2;
     }
 
+    /** Where each car is (world x, z) and which way it's going (a unit x, z): for something else on the road to bump into. */
+    public get carSpots(): { x: number; z: number; headingX: number; headingZ: number }[] {
+        return this.cars.map((car) => ({ x: car.position.x, z: car.position.y, headingX: car.heading.x, headingZ: car.heading.y }));
+    }
+
+    /** Car `index` (as carSpots lists them) brought to a stop (bumped into): it pulls away again as usual. */
+    public stopCar(index: number): void {
+        const car = this.cars[index];
+        if (car) car.speed = 0;
+    }
+
     public update(delta: number): void {
         const { speed, accel, brake } = this.config;
         const ahead = this.cars.map((car) => this.cars.filter((other) => other !== car && this.inFront(car, other)));

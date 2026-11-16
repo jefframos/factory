@@ -14,7 +14,8 @@ import { kitchenModel } from './Models';
 export interface MarketLayout extends RoomLayout {
     name: string;
     market: {
-        crates: { x: number; z: number; columns: number; gapX: number; gapZ: number };
+        /** `scale`: the crates' size (1: the models' own); the grid spreads out to fit. */
+        crates: { x: number; z: number; columns: number; gapX: number; gapZ: number; scale?: number };
         cashier: { x: number; z: number; rotationY?: number; scale?: number };
     };
 }

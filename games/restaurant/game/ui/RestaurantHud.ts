@@ -11,10 +11,13 @@ import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { COIN_BAR, DARK, WARM, fillCoinBar, framePlane, glossyButton, iconSprite, label, plainLabel, tappable } from './UiParts';
-import { foodIcon, modelIcon } from './Icons';
+import { foodIcon, modelIcon, pizzaIcon, sauceIcon, scoopIcon, sundaeIcon, sundaeToppingIcon } from './Icons';
 import { DayEnd } from './DayEnd';
 import { StageBar } from './StageBar';
-import { CONE_MODEL, ICE_CREAM_MODELS, Order, PART_MODELS, Part, SWIRL_MODELS } from '../data/Recipes';
+import { CONE_MODEL, ICE_CREAM_MODELS, Order, PART_MODELS, PIZZA_LAYER_MODELS, PIZZA_OVEN_MODEL, PIZZA_SOURCE_MODELS, Part, SWIRL_MODELS, pizzaRecipe } from '../data/Recipes';
+
+/** The ticket's picture of the pizza ordered (not a step: never ticked). */
+const PREVIEW = 'preview';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
 
 const MARGIN = 28;
@@ -39,6 +42,8 @@ export class RestaurantHud extends PIXI.Container {
     private readonly cookFill = new PIXI.Graphics();
     /** Over a finished dish: done, tap it. */
     private readonly readyBadge = new PIXI.Container();
+    /** The ready badge's arrow (pointing down at the dish). */
+    private readyArrow: PIXI.Graphics | null = null;
     private readonly hand = iconSprite('tutorial_hand_3', 110);
     private readonly trashButton = glossyButton(BUTTONS.width * 0.75, BUTTONS.height, 'TRASH', 'Button01_l_Gray');
     private readonly serveButton = glossyButton(BUTTONS.width, BUTTONS.height, 'SERVE', 'Button01_l_Green');
@@ -87,6 +92,9 @@ export class RestaurantHud extends PIXI.Container {
         this.dayText.position.set(screen.center.x, screen.topLeft.y + MARGIN + 18);
         this.pips.position.set(screen.center.x, screen.topLeft.y + MARGIN + 62);
         this.ticket.position.set(screen.center.x, screen.topLeft.y + TICKET.y);
+        // A long ticket (a big sundae: up to eight pictures) shrinks to fit the screen's width.
+        this.ticket.scale.set(1);
+        if (this.ticket.width > screen.width - MARGIN * 2) this.ticket.scale.set((screen.width - MARGIN * 2) / this.ticket.width);
         const bottom = screen.topLeft.y + screen.height - BUTTONS.bottom;
         this.hint.position.set(screen.center.x, bottom - BUTTONS.height / 2 - 40);
         this.trashButton.position.set(screen.center.x - BUTTONS.apart - 10, bottom);
@@ -131,8 +139,17 @@ export class RestaurantHud extends PIXI.Container {
     /** The order as a row: the burger (big), then + and each topping; or the ice cream cone (its flavour's). */
     private orderRow(order: Order, big: number, small: number): PIXI.Container {
         const row = new PIXI.Container();
-        const items: PIXI.DisplayObject[] = [order.iceCream ? modelIcon(ICE_CREAM_MODELS[order.iceCream], big) : foodIcon('burger', big)];
+        // A pizza: the pizza they want (its picture, toppings and all), then each topping on its own.
+        // A sundae: the one they want (its picture), then each scoop's flavour on its own (mint and vanilla look alike small).
+        const items: PIXI.DisplayObject[] = [
+            order.iceCream ? modelIcon(ICE_CREAM_MODELS[order.iceCream], big)
+                : order.pizza ? pizzaIcon(order.pizza, big)
+                    : order.sundae ? sundaeIcon(order.sundae, big)
+                        : foodIcon('burger', big),
+        ];
         for (const topping of order.toppings) items.push(foodIcon(topping, small));
+        for (const topping of order.pizza ?? []) items.push(modelIcon(PIZZA_SOURCE_MODELS[topping], small));
+        for (const flavor of order.sundae?.scoops ?? []) items.push(scoopIcon(flavor, small));
         let x = 0;
         const widths = items.map((item, i) => (i === 0 ? big : small));
         const total = widths.reduce((a, b) => a + b, 0) + BUBBLE.gap * (items.length - 1);
@@ -181,25 +198,42 @@ export class RestaurantHud extends PIXI.Container {
     public showTicket(order: Order): void {
         this.ticket.removeChildren().forEach((c) => c.destroy({ children: true }));
         this.ticketMarks = new Map();
-        const items: { key: string; model: string }[] = order.iceCream
+        // Each: its key (what tickTicket ticks), and its picture (a model's, or `icon`).
+        const sundae = order.sundae;
+        const items: { key: string; model: string; icon?: (size: number) => PIXI.Sprite }[] = order.iceCream
             ? [{ key: 'cone', model: CONE_MODEL }, { key: order.iceCream, model: SWIRL_MODELS[order.iceCream] }]
-            : (['bunBottom', 'patty', ...order.toppings, 'bunTop'] as Part[]).map((part) => ({ key: part, model: PART_MODELS[part] }));
+            : order.pizza
+                // A pizza: the pizza it should be (a picture, never ticked), its layers, then the oven (ticked when baked).
+                ? [{ key: PREVIEW, model: '' }, ...pizzaRecipe(order.pizza).map((layer) => ({ key: layer, model: layer === 'sauce' ? PIZZA_LAYER_MODELS.sauce : PIZZA_SOURCE_MODELS[layer] })), { key: 'baked', model: PIZZA_OVEN_MODEL }]
+                : sundae
+                    // A sundae: its picture (never ticked), its cone or bowl, each scoop, its sauce, its toppings.
+                    ? [
+                        { key: PREVIEW, model: '', icon: (size) => sundaeIcon(sundae, size) },
+                        { key: 'base', model: sundae.base === 'cone' ? 'icecream_cone' : 'icecream_bowl' },
+                        ...sundae.scoops.map((flavor, i) => ({ key: `scoop${i}`, model: '', icon: (size: number) => scoopIcon(flavor, size) })),
+                        ...(sundae.sauce ? [{ key: 'sauce', model: '', icon: (size: number) => sauceIcon(sundae.sauce!, size) }] : []),
+                        ...sundae.toppings.map((topping) => ({ key: `topping:${topping}`, model: '', icon: (size: number) => sundaeToppingIcon(topping, size) })),
+                    ]
+                    : (['bunBottom', 'patty', ...order.toppings, 'bunTop'] as Part[]).map((part) => ({ key: part, model: PART_MODELS[part] }));
         const width = items.length * TICKET.icon + (items.length - 1) * TICKET.gap + TICKET.pad * 2;
         const height = TICKET.icon + TICKET.pad * 2;
         const back = framePlane('BasicFrame_Round20', width, height);
         back.position.set(-width / 2, -height / 2);
         this.ticket.addChild(back);
-        items.forEach(({ key, model }, i) => {
+        items.forEach(({ key, model, icon: picture }, i) => {
             const x = -width / 2 + TICKET.pad + TICKET.icon / 2 + i * (TICKET.icon + TICKET.gap);
-            const icon = modelIcon(model, TICKET.icon);
+            const icon = picture ? picture(TICKET.icon) : key === PREVIEW && order.pizza ? pizzaIcon(order.pizza, TICKET.icon) : modelIcon(model, TICKET.icon);
             icon.x = x;
+            this.ticket.addChild(icon);
+            if (key === PREVIEW) return;
             const mark = iconSprite('Icon_Check03_l', 40);
             mark.position.set(x + TICKET.icon / 2 - 10, TICKET.icon / 2 - 10);
             mark.visible = false;
             this.ticketMarks.set(key, mark);
-            this.ticket.addChild(icon, mark);
+            this.ticket.addChild(mark);
         });
         this.ticket.visible = true;
+        this.reposition();
         gsap.fromTo(this.ticket, { alpha: 0 }, { alpha: 1, duration: 0.25 });
     }
 
@@ -226,7 +260,15 @@ export class RestaurantHud extends PIXI.Container {
         const words = label(26);
         words.text = 'TAP TO SERVE';
         words.y = -58;
-        this.readyBadge.addChild(glow, check, words);
+        // A big arrow over it all, pointing down at the dish (bouncing: see setReady).
+        const arrow = new PIXI.Graphics()
+            .lineStyle(6, 0x3a2408, 1)
+            .beginFill(0xffd23f)
+            .drawPolygon([-16, -64, 16, -64, 16, -26, 36, -26, 0, 8, -36, -26, -16, -26])
+            .endFill();
+        arrow.y = -96;
+        this.readyArrow = arrow;
+        this.readyBadge.addChild(glow, check, words, arrow);
         this.readyBadge.visible = false;
     }
 
@@ -248,7 +290,10 @@ export class RestaurantHud extends PIXI.Container {
         }
         if (at) {
             const local = this.toLocal(new PIXI.Point(at.x, at.y));
-            this.readyBadge.position.set(local.x, local.y + Math.sin(performance.now() / 180) * 8);
+            const time = performance.now();
+            this.readyBadge.position.set(local.x, local.y + Math.sin(time / 180) * 8);
+            // The arrow bounces down at it, more than the badge does.
+            if (this.readyArrow) this.readyArrow.y = -96 + Math.abs(Math.sin(time / 160)) * -22;
         }
     }
 
@@ -261,22 +306,26 @@ export class RestaurantHud extends PIXI.Container {
         this.cookFill.clear().beginFill(0xf5a33a).drawRoundedRect(-inner / 2, -COOK_BAR.height / 2 + 4, Math.max(6, inner * progress!), COOK_BAR.height - 8, 6).endFill();
     }
 
-    /** The hand pointing at `at` (null: hidden). */
-    public pointAt(at: Point | null): void {
+    /**
+     * The hand pointing at `at` (null: hidden): from below, pointing up (the benches), or `above` it pointing down (a
+     * customer, a plate on a table: so it doesn't cover them).
+     */
+    public pointAt(at: Point | null, above = false): void {
         this.hand.visible = Boolean(at);
         if (!at) {
             this.handBase = null;
-            gsap.killTweensOf(this.hand);
             return;
         }
         const local = this.toLocal(new PIXI.Point(at.x, at.y));
-        // Its fingertip (the sprite's top-left part) just below the spot; it bobs from there.
-        const base = { x: local.x + 30, y: local.y + 50 };
-        if (this.handBase && Math.hypot(this.handBase.x - base.x, this.handBase.y - base.y) < 2) return;
+        // Its fingertip (the sprite's top-left part) by the spot. From above it's flipped both ways: the fingertip at
+        // its bottom-right, the hand up and off to the left (clear of the "!" up on the right).
+        const base = above ? { x: local.x - 30, y: local.y - 50 } : { x: local.x + 30, y: local.y + 50 };
         this.handBase = base;
-        gsap.killTweensOf(this.hand);
-        this.hand.position.set(base.x, base.y);
-        gsap.to(this.hand, { y: base.y + 18, duration: 0.45, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        this.hand.scale.x = Math.abs(this.hand.scale.x) * (above ? -1 : 1);
+        this.hand.scale.y = Math.abs(this.hand.scale.y) * (above ? -1 : 1);
+        // Followed every frame (the spot moves: the camera, a bobbing head), bobbing away from it and back.
+        const bob = (Math.sin(performance.now() / 140) * 0.5 + 0.5) * 18;
+        this.hand.position.set(base.x, base.y + (above ? -bob : bob));
     }
 
     // ---------------------------------------------------------------- reactions

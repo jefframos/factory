@@ -153,11 +153,16 @@ interface WallOpeningSpan {
     style?: string;
     /** Doors only — see StoreWallOpening.facing. */
     facing?: { x: number; z: number };
+    /** No frame round it (StoreWallOpening.frame false). */
+    noFrame?: boolean;
     u0: number;
     u1: number;
     y0: number;
     y1: number;
 }
+
+/** How far a window's or door's frame reaches into its hole (world units): see PolyWallBuilder.frames(). */
+const FRAME_PAD = 0.015;
 
 /** Shortest opening (world units along the wall) that's kept — anything thinner is a rect just grazing the wall. */
 const MIN_OPENING_LENGTH = 0.05;
@@ -220,6 +225,7 @@ function openingSpans(wall: StoreWallPlacement, setup: WallSetupConfig): WallOpe
                     ...(opening.sliding ? { sliding: true } : {}),
                     ...(opening.style ? { style: opening.style } : {}),
                     ...(opening.facing ? { facing: opening.facing } : {}),
+                    ...(opening.frame === false ? { noFrame: true } : {}),
                     u0: distance + clip[0] * length,
                     u1: distance + clip[1] * length,
                     y0: opening.kind === 'window' ? windowY0(opening) : 0,
@@ -407,6 +413,85 @@ export class PolyWallBuilder {
             }
         }
         return boxes;
+    }
+
+    /**
+     * The frames round `wall`'s windows and doors (not gaps, not an opening with `frame: false`), as one mesh placed as
+     * build()'s is (relative to `origin`, standing on RoomHooks.floorY), or null when there are none. Each frame is trim
+     * just outside its hole (the hole keeps its size): two jambs and a head (none when the opening reaches the wall's
+     * top), and under a window a sill that sticks out a little further. It stands `frameDepth` proud of both faces, in
+     * the style's frameColor. An opening round a corner is framed straight across, from its start to its end.
+     */
+    public static frames(wall: StoreWallPlacement, origin: THREE.Vector3, setup: WallSetupConfig, style: WallStyleConfig): THREE.Mesh | null {
+        const width = setup.frameWidth ?? 0.12;
+        const depth = setup.thickness + (setup.frameDepth ?? 0.05) * 2;
+        const sillOut = 0.06;
+        // The trim reaches this far into the hole: its inner faces then sit in front of the wall's own cut faces instead
+        // of on them (the same plane flickers: z-fighting).
+        const pad = FRAME_PAD;
+        const bottom = RoomHooks.floorY - origin.y;
+        const positions: number[] = [];
+        const normals: number[] = [];
+        const matrix = new THREE.Matrix4();
+        const basis = new THREE.Matrix4();
+        /** A box `length` along `along`, `height` tall, `boxDepth` across the wall, its middle at (c, y) — cut along its length for the bend. */
+        const box = (c: Vec2, along: THREE.Vector3, across: THREE.Vector3, y: number, length: number, height: number, boxDepth: number): void => {
+            if (length < 1e-4 || height < 1e-4) {
+                return;
+            }
+            const geometry = new THREE.BoxGeometry(length, height, boxDepth, Math.max(1, RoomHooks.segmentsForSpan(length)), 1, 1).toNonIndexed();
+            basis.makeBasis(along, new THREE.Vector3(0, 1, 0), across);
+            matrix.makeTranslation(c.x - origin.x, bottom + y, c.z - origin.z).multiply(basis);
+            geometry.applyMatrix4(matrix);
+            positions.push(...(geometry.getAttribute('position').array as Float32Array));
+            normals.push(...(geometry.getAttribute('normal').array as Float32Array));
+            geometry.dispose();
+        };
+
+        for (const span of openingSpans(wall, setup)) {
+            if (span.kind === 'gap' || span.noFrame) {
+                continue;
+            }
+            const a = pointAlong(wall, span.u0);
+            const b = pointAlong(wall, span.u1);
+            const length = Math.hypot(b.x - a.x, b.z - a.z);
+            if (length < 1e-4) {
+                continue;
+            }
+            const along = new THREE.Vector3((b.x - a.x) / length, 0, (b.z - a.z) / length);
+            const across = new THREE.Vector3(-along.z, 0, along.x);
+            const window = span.kind === 'window';
+            // The trim's reach: down to the floor (a door) or under the sill (a window); up over the head, if there's room.
+            const head = span.y1 < setup.height - 1e-3;
+            const top = Math.min(setup.height, span.y1 + (head ? width : 0));
+            const low = window ? Math.max(0, span.y0 - width) : 0;
+            // The jambs, either side (each `pad` into the hole).
+            for (const [p, sign] of [[a, -1], [b, 1]] as [Vec2, number][]) {
+                const shift = sign * (width - pad) / 2;
+                const c = { x: p.x + along.x * shift, z: p.z + along.z * shift };
+                box(c, along, across, (low + top) / 2, width + pad, top - low, depth);
+            }
+            const middle = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
+            if (head) {
+                box(middle, along, across, (span.y1 - pad + top) / 2, length + width * 2, top - span.y1 + pad, depth);
+            }
+            if (window && span.y0 > 1e-3) {
+                const sillHeight = Math.min(width, span.y0);
+                box(middle, along, across, span.y0 + pad - (sillHeight + pad) / 2, length + width * 2 + sillOut * 2, sillHeight + pad, depth + sillOut * 2);
+            }
+        }
+        if (!positions.length) {
+            return null;
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+        const color = style.frameColor ? new THREE.Color(style.frameColor) : new THREE.Color(style.bottomColor).multiplyScalar(0.72);
+        const material = new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0 });
+        RoomHooks.applyMaterial(material);
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.name = 'wallFrames';
+        return mesh;
     }
 
     /**

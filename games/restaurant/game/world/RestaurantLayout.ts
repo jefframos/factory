@@ -22,8 +22,11 @@
 
 import * as THREE from 'three';
 import layoutJson from '../../levels/restaurant.json';
-import { Room, RoomLayout, StageRange, shownAt } from 'core/rooms/Room';
+import prefabsJson from '../../levels/prefabs.json';
+import { LayoutProp, Room, RoomLayout, StageRange, shownAt } from 'core/rooms/Room';
 import { kitchenModel } from './Models';
+import { blockModels, blockProps } from './CityBlocks';
+import type { BlockFill } from '../../web/public/cityfill.js';
 import type { Piece } from '../data/Recipes';
 import type { RoadCells } from 'core/roads/RoadGrid';
 import type { LawnShape } from 'core/town/Ground';
@@ -32,7 +35,7 @@ import type { CrowdArea, CrowdPaths } from 'core/town/Crowd';
 type Point = { x: number; z: number };
 type Point3 = { x: number; y: number; z: number };
 
-export type PieceRole = 'counter' | 'stove' | 'pan' | 'plate' | 'served' | 'customer' | 'pile' | 'decor';
+export type PieceRole = 'counter' | 'stove' | 'pan' | 'plate' | 'served' | 'customer' | 'pile' | 'piles' | 'decor';
 
 export interface StationPiece {
     role: PieceRole;
@@ -40,6 +43,13 @@ export interface StationPiece {
     model?: string;
     /** A pile's ingredient. */
     piece?: Piece;
+    /**
+     * `piles`: a grid of piles, one for each thing the stage's kitchen has (buns, patties, the stage's toppings), round
+     * this spot: `columns` across, `gapX` / `gapZ` apart (Kitchen.ts pileGrid).
+     */
+    columns?: number;
+    gapX?: number;
+    gapZ?: number;
     x: number;
     z: number;
     rotationY?: number;
@@ -75,6 +85,8 @@ export interface StationLayout extends StageRange {
  *  where their plate goes (`plate`: on the table in front; `y` its top). */
 export interface SeatLayout extends StageRange {
     id?: string;
+    /** The editor's group it moves with (its table's); the game ignores it. */
+    group?: string;
     x: number;
     z: number;
     rotationY: number;
@@ -89,16 +101,65 @@ export interface RestaurantLayout extends RoomLayout {
     customer: WayIn;
     stations: StationLayout[];
     seats?: SeatLayout[];
+    /** Prefabs placed (levels/prefabs.json: stations, table sets): unfolded into props and seats when it's read. */
+    instances?: PrefabInstance[];
     /** The street: road cells, the cars on them, lawns, and areas of people (all optional). */
     /** Road cells; `origin`: where cell (0, 0)'s middle is (the grid lines up with the rest of the street). */
     roads?: RoadCells & { origin?: { x: number; z: number } };
     traffic?: { count: number };
-    lawns?: (LawnShape & StageRange)[];
+    /** Lawns; one with `buildings` is a city block, filled with buildings along its sides (CityBlocks.ts). */
+    lawns?: (LawnShape & StageRange & { buildings?: BlockFill; water?: boolean })[];
     /** People: areas they wander, and walkers on paths (waypoints, links; they wait at the kerb for cars). */
     people?: { areas: (CrowdArea & StageRange)[]; paths?: CrowdPaths };
 }
 
-export const LAYOUT_DATA = layoutJson as unknown as RestaurantLayout;
+/**
+ * A prefab (levels/prefabs.json, shared by every level): a station or a table set made once — its props and seats,
+ * placed round its own middle (its front: +z) — and placed in a level as many times as wanted (`instances`: which one,
+ * where, turned how, at which stages). Editing it (the editor: unpack one, change it, save it as the prefab again)
+ * changes it everywhere. What a station has on it (its ingredients) isn't in it: that's the stage's (settings.json), laid
+ * out in the station's grids — the same prefab shows more at a bigger stage.
+ */
+export interface PrefabDef {
+    name?: string;
+    props: LayoutProp[];
+    seats?: SeatLayout[];
+}
+
+export interface PrefabInstance extends StageRange {
+    prefab: string;
+    x: number;
+    z: number;
+    rotationY?: number;
+}
+
+/** `layout` with its prefab instances unfolded into plain props and seats (turned, moved, at the instance's stages). */
+export function expandPrefabs<T extends RoomLayout & { seats?: SeatLayout[]; instances?: PrefabInstance[] }>(layout: T, prefabs: Record<string, PrefabDef>): T {
+    const props = [...layout.props];
+    const seats = [...(layout.seats ?? [])];
+    for (const instance of layout.instances ?? []) {
+        const prefab = prefabs[instance.prefab];
+        if (!prefab) {
+            console.warn(`[Restaurant] no prefab "${instance.prefab}"`);
+            continue;
+        }
+        const turn = instance.rotationY ?? 0;
+        const cos = Math.cos(turn);
+        const sin = Math.sin(turn);
+        // Turned round y as three.js turns things (rotation.y), then moved to the instance's spot.
+        const place = (x: number, z: number) => ({ x: instance.x + x * cos + z * sin, z: instance.z - x * sin + z * cos });
+        const range = { ...(instance.from !== undefined ? { from: instance.from } : {}), ...(instance.until !== undefined ? { until: instance.until } : {}) };
+        for (const prop of prefab.props) props.push({ ...prop, ...place(prop.x, prop.z), rotationY: (prop.rotationY ?? 0) + turn, ...range });
+        for (const seat of prefab.seats ?? []) {
+            seats.push({ ...seat, ...place(seat.x, seat.z), rotationY: seat.rotationY + turn, plate: { ...seat.plate, ...place(seat.plate.x, seat.plate.z) }, ...range });
+        }
+    }
+    return { ...layout, props, seats };
+}
+
+export const PREFABS = (prefabsJson as unknown as { prefabs: Record<string, PrefabDef> }).prefabs ?? {};
+/** The level, its prefab instances unfolded (everything below — the room, the stations, the seats — reads this). */
+export const LAYOUT_DATA = expandPrefabs(layoutJson as unknown as RestaurantLayout, PREFABS);
 
 /** The screen the camera shots are framed for (wider shows more; narrower pulls back to keep the width). */
 export const SHOT_ASPECT = 720 / 1080;
@@ -136,6 +197,10 @@ export function stationAt(stage: number, kind: StationLayout['kind'] = 'burger')
 
 /** The models stage `stage`'s props and stations use (to load before building it). */
 export function roomModels(stage: number): string[] {
+    return [...new Set([...propAndPieceModels(stage), ...blockModels(stage)])];
+}
+
+function propAndPieceModels(stage: number): string[] {
     const areas = LAYOUT_DATA.areas ?? [];
     const props = LAYOUT_DATA.props.filter((p) => shownAt(p, stage, areas)).map((p) => p.model);
     const pieces = LAYOUT_DATA.stations.filter((s) => shownAt(s, stage, areas)).flatMap((s) => s.pieces.map((p) => p.model ?? ''));
@@ -143,7 +208,8 @@ export function roomModels(stage: number): string[] {
 }
 
 /** The room at `stage` (its models loaded: roomModels). */
-export const buildRoom = (stage: number): Room => new Room(LAYOUT_DATA, stage, { instantiate: (model) => kitchenModel(model) });
+/** The room at `stage` (its models loaded: roomModels), its city blocks filled with buildings (CityBlocks.ts). */
+export const buildRoom = (stage: number): Room => new Room({ ...LAYOUT_DATA, props: [...LAYOUT_DATA.props, ...blockProps(stage)] }, stage, { instantiate: (model) => kitchenModel(model) });
 
 /** The ice cream machine's model (KayKit's, imported from the library): a prop of it makes the ice cream station. */
 export const ICE_CREAM_MACHINE = /icecream[-_]machine/i;
@@ -151,6 +217,32 @@ export const ICE_CREAM_MACHINE = /icecream[-_]machine/i;
 /** Whether stage `stage`'s room has the ice cream machine (its customers can order ice cream). */
 export function hasIceCreamMachine(stage: number): boolean {
     return LAYOUT_DATA.props.some((p) => ICE_CREAM_MACHINE.test(p.model) && shownAt(p, stage, LAYOUT_DATA.areas ?? []));
+}
+
+/**
+ * The pizza oven's model (KayKit's pizza_oven): a prop of it makes the pizza station. The pizza's made on the prop whose
+ * id is PIZZA_BOARD (a cutting board, say); without one, on a board beside the oven (world/Pizza.ts).
+ */
+export const PIZZA_OVEN = /pizza[-_]?oven/i;
+export const PIZZA_BOARD = 'pizzaBoard';
+
+/** Whether stage `stage`'s room has a pizza oven (its customers can order pizza). */
+export function hasPizzaOven(stage: number): boolean {
+    return LAYOUT_DATA.props.some((p) => PIZZA_OVEN.test(p.model) && shownAt(p, stage, LAYOUT_DATA.areas ?? []));
+}
+
+/**
+ * The sundae bar: the prop whose id is SUNDAE_FREEZER (any model — a big table, say — as big as the freezer it's drawn
+ * as: the game builds the freezer there, its six tubs set in its top) and the one whose id is SUNDAE_BAR (where the cones,
+ * bowls, sauces and toppings are and the sundae's made: world/Sundae.ts).
+ */
+export const SUNDAE_FREEZER = 'sundaeFreezer';
+export const SUNDAE_BAR = 'sundaeBar';
+
+/** Whether stage `stage`'s room has the sundae bar (both its props). */
+export function hasSundaeBar(stage: number): boolean {
+    const shown = (id: string) => LAYOUT_DATA.props.some((p) => p.id === id && shownAt(p, stage, LAYOUT_DATA.areas ?? []));
+    return shown(SUNDAE_FREEZER) && shown(SUNDAE_BAR);
 }
 
 /** The seats at `stage` (the first `limit` of them, if given: a stage's first day can use fewer). */

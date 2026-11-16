@@ -28,6 +28,7 @@ import { createGLTFLoader } from './gltf.js';
 import { api, el, toast, isModalOpen } from './shared.js';
 import { openModelPicker, setModelCatalog } from './modelPicker.js';
 import { openLibraryPicker } from './library.js';
+import { fillBlock } from './cityfill.js';
 import { roadCellAt, roadCellKey, solveRoads } from '/core/roads/RoadGrid.ts';
 
 // Mirrors the game (Kitchen.ts's LAYOUT / STOVE_SINK, RestaurantLayout.ts's SHOT_ASPECT), so the editor shows what it builds.
@@ -40,7 +41,23 @@ const PILE_MODELS = {
     cheese: 'food_ingredient_cheese_slice', lettuce: 'food_ingredient_lettuce_slice', tomato: 'food_ingredient_tomato_slice',
     pickles: 'food_ingredient_pickle_slices', onion: 'food_ingredient_onion_rings',
 };
-const ROLES = ['counter', 'stove', 'pan', 'plate', 'served', 'customer', 'pile', 'decor'];
+const ROLES = ['counter', 'stove', 'pan', 'plate', 'served', 'customer', 'pile', 'piles', 'decor'];
+
+/** What a `piles` grid shows at stage `stageIndex` (as the game's Kitchen: buns, patties, the stage's toppings). */
+function stockedAt(stageIndex) {
+    const stages = gameSettings.stages ?? [];
+    const toppings = stages[Math.min(stageIndex, stages.length - 1)]?.toppings ?? ['cheese', 'lettuce', 'tomato'];
+    return ['bunBottom', 'bunTop', 'patty', ...toppings];
+}
+
+/** A `piles` piece's grid (as Kitchen.ts pileGrid): `items` round its spot, `columns` across, the first row the front. */
+function pileGrid(grid, items) {
+    const columns = Math.max(1, Math.round(grid.columns ?? 3));
+    const rows = Math.ceil(items.length / columns);
+    const gapX = grid.gapX ?? 1;
+    const gapZ = grid.gapZ ?? 1;
+    return items.map((piece, i) => ({ piece, x: grid.x + ((columns - 1) / 2 - (i % columns)) * gapX, z: grid.z + ((rows - 1) / 2 - Math.floor(i / columns)) * gapZ }));
+}
 const OPENING_KINDS = ['window', 'door', 'gap'];
 const SNAP = 0.25;
 const ROTATE_SNAP = THREE.MathUtils.degToRad(15);
@@ -55,6 +72,12 @@ let layout;
 let version = 0;
 /** Which layout's open: 'restaurant' or 'market' (server.mjs's LEVELS). */
 let level = 'restaurant';
+/** levels/prefabs.json: the prefabs every level can place (its version, and whether it's been changed here). */
+let prefabs = {};
+let prefabsVersion = 0;
+let prefabsDirty = false;
+/** settings.json (each stage's toppings: what a station's ingredient grid shows). */
+let gameSettings = {};
 /** settings.json's market goods (the supermarket's crates). */
 let marketItems = [];
 /** settings.json's street: the road kit (tile size, pieces), the cars, the people. */
@@ -96,17 +119,125 @@ const modelCache = new Map();
 const pickables = new Map();
 const viewport = document.getElementById('layoutViewport');
 
+// ---------------------------------------------------------------- the session (where you were)
+
+/**
+ * Where you were in the editor, kept in this browser (localStorage): the level open, the gizmo's mode, snap, which
+ * folding panels are open, and per level the stage shown, what's selected and the camera. Saved as you go; a reload (or
+ * coming back to a level) picks up there. Nothing of it goes in the layout files.
+ */
+const SESSION_KEY = 'restaurant-editor.session';
+let session = { level: 'restaurant', mode: 'translate', snap: true, open: {}, levels: {} };
+let restoring = false;
+
+function loadSession() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(SESSION_KEY) ?? 'null');
+        if (saved && typeof saved === 'object') session = { ...session, ...saved, levels: saved.levels ?? {}, open: saved.open ?? {} };
+    } catch {
+        // No storage, or a broken copy: start fresh.
+    }
+}
+
+let sessionTimer = 0;
+/** Remembers where you are now (a moment later: drags and orbits don't write every frame). */
+function rememberSession() {
+    if (restoring || !layout) return;
+    clearTimeout(sessionTimer);
+    sessionTimer = setTimeout(writeSession, 250);
+}
+
+function writeSession() {
+    if (restoring || !layout || !camera) return;
+    const v = (p) => ({ x: round(p.x), y: round(p.y), z: round(p.z) });
+    session.level = level;
+    session.mode = gizmo?.mode ?? session.mode;
+    session.snap = snap;
+    session.levels[level] = {
+        stage,
+        selection: selection ? { ...selection } : null,
+        // (Looking through a station camera isn't where you were: the view before it is.)
+        camera: looking ? session.levels[level]?.camera ?? null : { position: v(camera.position), target: v(orbit.target) },
+    };
+    try {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    } catch {
+        // No storage (private mode): this tab only.
+    }
+}
+
+/** The level's stage, as you left it (before it's built). */
+function rememberedStage() {
+    const saved = session.levels[level]?.stage;
+    return Number.isInteger(saved) && saved >= 0 && saved < stageNames.length ? saved : 0;
+}
+
+/** The level's camera and selection, as you left them (once it's built). */
+function restoreLevelView() {
+    const saved = session.levels[level];
+    if (!saved) return;
+    restoring = true;
+    try {
+        const { camera: view, selection: sel } = saved;
+        if (view?.position && view?.target) {
+            camera.position.set(view.position.x, view.position.y, view.position.z);
+            orbit.target.set(view.target.x, view.target.y, view.target.z);
+            orbit.update();
+        }
+        // Still there (and shown at this stage)? (A selection from an older layout may not fit it: then nothing.)
+        let fits = false;
+        try {
+            fits = Boolean(sel && dataOf(sel) && pickables.has(keyOf(sel)));
+        } catch {
+            fits = false;
+        }
+        if (fits) select(sel);
+    } finally {
+        restoring = false;
+    }
+}
+
+/** The folding panels (Styles, help...): open or shut as you left them. */
+function bindFoldingPanels() {
+    document.querySelectorAll('details').forEach((details, i) => {
+        const key = details.querySelector('summary')?.textContent?.trim() || `details-${i}`;
+        if (key in session.open) details.open = Boolean(session.open[key]);
+        details.addEventListener('toggle', () => {
+            session.open[key] = details.open;
+            rememberSession();
+        });
+    });
+}
+
 // ---------------------------------------------------------------- start
 
 async function start() {
+    loadSession();
     const config = await api('/api/config').catch(() => ({}));
     gameUrl = config.gameUrl ?? gameUrl;
     const settings = await api('/api/settings').catch(() => ({}));
+    gameSettings = settings;
+    // The city blocks' buildings, measured (their previews draw once that's done).
+    void measureCityPool();
     marketItems = settings.market ?? [];
     town = settings.town ?? null;
     setModelCatalog(await api('/api/models'));
+    // The prefab library (every level's: stations, table sets).
+    const library = await api('/api/prefabs').catch(() => ({ prefabs: {}, version: 0 }));
+    prefabs = library.prefabs ?? {};
+    prefabsVersion = library.version ?? 0;
     setupViewport();
     bindUi();
+    // Back where you were: the level, the gizmo's mode and snap (then, once it's loaded, its stage, camera, selection).
+    const levelSelect = document.getElementById('level');
+    if ([...levelSelect.options].some((o) => o.value === session.level)) level = levelSelect.value = session.level;
+    snap = session.snap !== false;
+    document.getElementById('snap').checked = snap;
+    applySnap();
+    if (['translate', 'rotate', 'scale'].includes(session.mode)) setMode(session.mode);
+    bindFoldingPanels();
+    orbit.addEventListener('end', rememberSession);
+    window.addEventListener('pagehide', writeSession);
     await reload();
 }
 
@@ -116,6 +247,7 @@ async function reload() {
     version = result.version;
     undoStack.length = 0;
     stageNames = layout.stages ?? ['Stage 1'];
+    stage = rememberedStage();
     const stageSelect = document.getElementById('stage');
     stageSelect.replaceChildren(...stageNames.map((name, i) => el('option', { value: i }, `${i + 1}: ${name}`)));
     stageSelect.value = String(stage);
@@ -123,6 +255,8 @@ async function reload() {
     setDirty(false);
     rebuild();
     renderStyles();
+    restoreLevelView();
+    rememberSession();
 }
 
 function setDirty(value) {
@@ -133,8 +267,20 @@ function setDirty(value) {
 }
 
 /** Every change goes through here: undo point, the change, then everything's shown again. */
+/** An undo point: the level and the prefab library (saving a group as a prefab changes both). */
+function snapshot() {
+    return JSON.stringify({ layout, prefabs, prefabsDirty });
+}
+
+function restoreSnapshot(text) {
+    const saved = JSON.parse(text);
+    layout = saved.layout;
+    prefabs = saved.prefabs;
+    prefabsDirty = saved.prefabsDirty;
+}
+
 function edit(change, { rebuildScene = true } = {}) {
-    undoStack.push(JSON.stringify(layout));
+    undoStack.push(snapshot());
     if (undoStack.length > UNDO_LIMIT) undoStack.shift();
     change();
     setDirty(true);
@@ -145,7 +291,7 @@ function edit(change, { rebuildScene = true } = {}) {
 function undo() {
     const previous = undoStack.pop();
     if (!previous) return;
-    layout = JSON.parse(previous);
+    restoreSnapshot(previous);
     setDirty(true);
     rebuild();
     renderStyles();
@@ -153,6 +299,12 @@ function undo() {
 
 async function save() {
     try {
+        // The prefab library first (the level places them).
+        if (prefabsDirty) {
+            const saved = await api('/api/prefabs', { method: 'PUT', body: JSON.stringify({ prefabs, version: prefabsVersion }) });
+            prefabsVersion = saved.version;
+            prefabsDirty = false;
+        }
         const result = await api(`/api/layout?level=${level}`, { method: 'PUT', body: JSON.stringify({ layout, version }) });
         version = result.version;
         setDirty(false);
@@ -194,7 +346,7 @@ function setupViewport() {
     gizmo.addEventListener('dragging-changed', (event) => {
         orbit.enabled = !event.value;
         if (event.value) {
-            undoStack.push(JSON.stringify(layout));
+            undoStack.push(snapshot());
         } else {
             setDirty(true);
             rebuild();
@@ -246,6 +398,7 @@ function applySnap() {
 
 function setMode(mode) {
     gizmo.setMode(mode);
+    rememberSession();
     document.querySelectorAll('#modes button').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
     attachGizmo();
 }
@@ -261,6 +414,8 @@ function onKey(event) {
     else if (key === 'f') focusSelection();
     else if (key === 'b' && level === 'restaurant') setRoadMode(!roadMode);
     else if (key === 'd') duplicateSelection();
+    // G: from a grouped prop or seat to its group.
+    else if (key === 'g' && selection?.type !== 'group' && dataOf(selection)?.group) select({ type: 'group', key: dataOf(selection).group });
     else if ((key === 'delete' || key === 'backspace') && drawing) {
         drawing.points.pop();
         drawDraft();
@@ -389,6 +544,8 @@ function rebuild() {
     (layout.lawns ?? []).forEach((lawn, i) => shownAt(lawn) && buildLawn(lawn, i));
     (layout.people?.areas ?? []).forEach((area, i) => shownAt(area) && buildPeopleArea(area, i));
     (layout.seats ?? []).forEach((seat, i) => shownAt(seat) && buildSeat(seat, i));
+    buildGroups();
+    (layout.instances ?? []).forEach((instance, i) => shownAt(instance) && buildInstance(instance, i));
     (layout.stations ?? []).forEach((station, i) => shownAt(station) && buildStation(station, i));
     if (wayIn()) buildPath();
     if (layout.market) buildMarket();
@@ -480,15 +637,17 @@ function buildWall(wall, i) {
     const glass = new THREE.MeshStandardMaterial({ color: 0x9fd8ff, transparent: true, opacity: 0.3, depthWrite: false });
     const points = wall.points;
     const count = wall.closed ? points.length : points.length - 1;
-    const box = (a, dir, length, u0, u1, y0, y1, material) => {
+    const frameMaterial = new THREE.MeshStandardMaterial({ color: style.frameColor ? new THREE.Color(style.frameColor) : new THREE.Color(style.bottomColor).multiplyScalar(0.72), roughness: 0.7 });
+    const frameBox = (a, dir, u0, u1, y0, y1, depth, material) => {
         if (u1 - u0 < 1e-3 || y1 - y0 < 1e-3) return;
-        const mesh = new THREE.Mesh(new THREE.BoxGeometry(u1 - u0, y1 - y0, setup.thickness), material);
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(u1 - u0, y1 - y0, depth), material);
         const mid = (u0 + u1) / 2;
         mesh.position.set(a.x + dir.x * mid, (y0 + y1) / 2, a.z + dir.z * mid);
         mesh.rotation.y = Math.atan2(-dir.z, dir.x);
         mesh.castShadow = mesh.receiveShadow = true;
         holder.add(mesh);
     };
+    const box = (a, dir, length, u0, u1, y0, y1, material) => frameBox(a, dir, u0, u1, y0, y1, setup.thickness, material);
     for (let s = 0; s < count; s++) {
         const a = points[s];
         const b = points[(s + 1) % points.length];
@@ -521,6 +680,22 @@ function buildWall(wall, i) {
             for (const hole of covering) {
                 if (hole.opening.kind === 'window') box(a, dir, length, u0, u1, hole.ys[0], hole.ys[1], glass);
             }
+        }
+        // The frames round its windows and doors (as core/rooms' PolyWallBuilder.frames): jambs, a head, a window's sill.
+        for (const hole of holes.filter((h) => h.opening.kind !== 'gap' && h.opening.frame !== false)) {
+            const width = setup.frameWidth ?? 0.12;
+            const depth = setup.thickness + (setup.frameDepth ?? 0.05) * 2;
+            const window = hole.opening.kind === 'window';
+            const [y0, y1] = hole.ys;
+            const head = y1 < setup.height - 1e-3;
+            const top = Math.min(setup.height, y1 + (head ? width : 0));
+            const low = window ? Math.max(0, y0 - width) : 0;
+            // `pad` into the hole: the trim's inner faces sit in front of the wall's cut faces, not on them (z-fighting).
+            const pad = 0.015;
+            frameBox(a, dir, hole.u0 - width, hole.u0 + pad, low, top, depth, frameMaterial);
+            frameBox(a, dir, hole.u1 - pad, hole.u1 + width, low, top, depth, frameMaterial);
+            if (head) frameBox(a, dir, hole.u0 - width, hole.u1 + width, y1 - pad, top, depth, frameMaterial);
+            if (window && y0 > 1e-3) frameBox(a, dir, hole.u0 - width - 0.06, hole.u1 + width + 0.06, y0 - Math.min(width, y0), y0 + pad, depth + 0.12, frameMaterial);
         }
         // A door's leaf: a glass panel standing in the doorway (it slides open in the game).
         for (const hole of holes.filter((h) => h.opening.kind === 'door')) {
@@ -582,6 +757,39 @@ function buildRoadTiles() {
     }
 }
 
+/**
+ * City blocks: a lawn with `buildings` fills with buildings along its sides, facing out (cityfill.js — the game's own
+ * filling, so this is what it builds). The pool (settings.json town.city.buildings), each measured at its height once
+ * its model's in; null till then.
+ */
+let cityPool = null;
+async function measureCityPool() {
+    const buildings = gameSettings.town?.city?.buildings ?? [];
+    const measured = await Promise.all(buildings.map(async (b) => {
+        const source = await loadModel(b.model);
+        if (!source) return null;
+        const size = new THREE.Box3().setFromObject(source).getSize(new THREE.Vector3());
+        const scale = b.height / Math.max(1e-4, size.y);
+        return { model: b.model, kind: b.kind, height: b.height, width: size.x * scale, depth: size.z * scale };
+    }));
+    cityPool = measured.filter(Boolean);
+    if (layout) rebuild();
+}
+
+/** A block's buildings, as the game puts them (into the lawn's holder: clicking one picks the lawn). */
+function fillBlockPreview(lawn, holder) {
+    if (!lawn.buildings || !cityPool) return 0;
+    const buildings = fillBlock(lawn, cityPool);
+    for (const b of buildings) {
+        const spot = new THREE.Group();
+        spot.position.set(b.x, -holder.position.y, b.z);
+        spot.rotation.y = b.rotationY;
+        holder.add(spot);
+        void fillModel(spot, b.model, { height: b.height });
+    }
+    return buildings.length;
+}
+
 const lawnMaterial = new THREE.MeshStandardMaterial({ color: 0x7cc65a, roughness: 1 });
 function buildLawn(lawn, i) {
     if (lawn.points.length < 3) return;
@@ -595,6 +803,7 @@ function buildLawn(lawn, i) {
     const holder = new THREE.Group();
     holder.position.y = 0.025 + i * 0.002;
     holder.add(mesh);
+    fillBlockPreview(lawn, holder);
     register({ type: 'lawn', i }, holder);
     if (!selected) return;
     lawn.points.forEach((point, j) => {
@@ -615,6 +824,315 @@ function buildLawn(lawn, i) {
 }
 
 /** A seat: a teal disc where they sit with an arrow the way they face, its number; and its plate spot on the table. */
+// ---------------------------------------------------------------- groups
+
+/**
+ * Groups: props and seats that share a `group` name (a table, its chairs, what's on it and its seats) move and turn as
+ * one, by a ring round them (its label over them: click either). The game ignores `group`: it's the editor's only.
+ */
+const GROUP_RING = { radius: 2.1, color: 0xb98cff };
+
+/** The props and seats in group `name` (their indexes). */
+function groupMembers(name) {
+    return {
+        props: layout.props.flatMap((p, i) => (p.group === name ? [i] : [])),
+        seats: (layout.seats ?? []).flatMap((s, i) => (s.group === name ? [i] : [])),
+    };
+}
+
+/** Every group name, in the order they're first met. */
+function groupNames() {
+    return [...new Set([...layout.props, ...(layout.seats ?? [])].map((item) => item.group).filter(Boolean))];
+}
+
+/** A group's middle: its members' average spot (those shown at this stage, else all of them). */
+function groupCenter(name) {
+    const items = [...layout.props.filter((p) => p.group === name), ...(layout.seats ?? []).filter((s) => s.group === name)];
+    const shown = items.filter(shownAt);
+    const use = shown.length ? shown : items;
+    const sum = use.reduce((acc, item) => ({ x: acc.x + item.x, z: acc.z + item.z }), { x: 0, z: 0 });
+    return { x: sum.x / Math.max(1, use.length), z: sum.z / Math.max(1, use.length) };
+}
+
+/** A group's ring and label, for each group with something shown at this stage. */
+function buildGroups() {
+    for (const name of groupNames()) {
+        const { props, seats } = groupMembers(name);
+        if (![...props.map((i) => layout.props[i]), ...seats.map((i) => layout.seats[i])].some(shownAt)) continue;
+        const center = groupCenter(name);
+        const selected = selection?.type === 'group' && selection.key === name;
+        const handle = new THREE.Group();
+        const ring = new THREE.Mesh(new THREE.RingGeometry(GROUP_RING.radius - 0.12, GROUP_RING.radius, 48), new THREE.MeshBasicMaterial({ color: selected ? 0xffd36b : GROUP_RING.color, side: THREE.DoubleSide, depthTest: false, transparent: true, opacity: selected ? 0.95 : 0.6 }));
+        ring.rotation.x = -Math.PI / 2;
+        ring.renderOrder = 4;
+        const tag = labelSprite(`⬚ ${name}`, '#e6d8ff', 'rgba(70,40,120,0.85)');
+        tag.position.y = 2.7;
+        handle.add(ring, tag);
+        handle.position.set(center.x, 0.04, center.z);
+        // Where the drag starts from (the move and the turn are measured from here).
+        handle.userData.origin = center;
+        register({ type: 'group', key: name }, handle);
+    }
+}
+
+/** The group's members as they are now (where each is, which way it faces, a seat's plate spot). */
+function snapshotGroup(name) {
+    const { props, seats } = groupMembers(name);
+    return [
+        ...props.map((i) => ({ kind: 'prop', i, x: layout.props[i].x, z: layout.props[i].z, rotationY: layout.props[i].rotationY ?? 0 })),
+        ...seats.map((i) => {
+            const s = layout.seats[i];
+            return { kind: 'seat', i, x: s.x, z: s.z, rotationY: s.rotationY ?? 0, plate: s.plate ? { x: s.plate.x, z: s.plate.z } : null };
+        }),
+    ];
+}
+
+/** Every member (from `start`, a snapshot) turned by `turn` round `origin`, then moved by (dx, dz): in the data, and on screen. */
+function moveGroup(start, origin, dx, dz, turn) {
+    const cos = Math.cos(turn);
+    const sin = Math.sin(turn);
+    const place = (x, z) => {
+        const ox = x - origin.x;
+        const oz = z - origin.z;
+        return { x: round(origin.x + ox * cos + oz * sin + dx), z: round(origin.z - ox * sin + oz * cos + dz) };
+    };
+    for (const member of start) {
+        const spot = place(member.x, member.z);
+        const rotationY = round(member.rotationY + turn);
+        if (member.kind === 'prop') {
+            const prop = layout.props[member.i];
+            Object.assign(prop, spot, { rotationY });
+            const object = pickables.get(keyOf({ type: 'prop', i: member.i }));
+            if (object) {
+                object.position.x = spot.x;
+                object.position.z = spot.z;
+                object.rotation.y = rotationY;
+            }
+        } else {
+            const seat = layout.seats[member.i];
+            Object.assign(seat, spot, { rotationY });
+            if (member.plate) Object.assign(seat.plate, place(member.plate.x, member.plate.z));
+            const object = pickables.get(keyOf({ type: 'seat', i: member.i }));
+            if (object) {
+                object.position.x = spot.x;
+                object.position.z = spot.z;
+                object.rotation.y = rotationY;
+            }
+            const plate = pickables.get(keyOf({ type: 'seatPlate', i: member.i }));
+            if (plate && seat.plate) {
+                plate.position.x = seat.plate.x;
+                plate.position.z = seat.plate.z;
+            }
+        }
+    }
+}
+
+/** A name no group has yet: `base`, else `base 2`, `base 3`... */
+function freeGroupName(base) {
+    const taken = new Set(groupNames());
+    if (!taken.has(base)) return base;
+    for (let n = 2; ; n++) if (!taken.has(`${base} ${n}`)) return `${base} ${n}`;
+}
+
+/**
+ * A table (prop `i`) and what's round it — chairs, things on it, seats, within reach and there at the same stages, not
+ * in another group yet — made one group.
+ */
+function groupAroundTable(i) {
+    const table = layout.props[i];
+    const box = new THREE.Box3().setFromObject(pickables.get(keyOf({ type: 'prop', i })) ?? new THREE.Object3D());
+    const size = box.isEmpty() ? new THREE.Vector3(2, 0, 2) : box.getSize(new THREE.Vector3());
+    const reach = Math.max(size.x, size.z) / 2 + 1;
+    const same = (item) => item.from === table.from && item.until === table.until;
+    const near = (item) => Math.hypot(item.x - table.x, item.z - table.z) <= reach;
+    const name = freeGroupName(table.group ?? 'table');
+    edit(() => {
+        table.group = name;
+        layout.props.forEach((p, k) => {
+            if (k !== i && !p.group && same(p) && near(p)) p.group = name;
+        });
+        (layout.seats ?? []).forEach((s) => {
+            if (!s.group && same(s) && near(s)) s.group = name;
+        });
+    });
+    const { props, seats } = groupMembers(name);
+    toast(`Group "${name}": ${props.length} props, ${seats.length} seats`, 'good');
+    select({ type: 'group', key: name });
+}
+
+/** The group's members copied (a new group), `offset` along x. */
+function duplicateGroup(name, offset = 4) {
+    const copy = freeGroupName(`${name} copy`);
+    const { props, seats } = groupMembers(name);
+    edit(() => {
+        for (const i of props) layout.props.push({ ...structuredClone(layout.props[i]), group: copy, x: round(layout.props[i].x + offset) });
+        for (const i of seats) {
+            const seat = structuredClone(layout.seats[i]);
+            seat.group = copy;
+            seat.x = round(seat.x + offset);
+            if (seat.plate) seat.plate.x = round(seat.plate.x + offset);
+            layout.seats.push(seat);
+        }
+    });
+    select({ type: 'group', key: copy });
+}
+
+/** The group dropped (its members stay, ungrouped), or (`withMembers`) deleted with everything in it. */
+function ungroup(name, withMembers = false) {
+    edit(() => {
+        if (withMembers) {
+            layout.props = layout.props.filter((p) => p.group !== name);
+            if (layout.seats) layout.seats = layout.seats.filter((s) => s.group !== name);
+            return;
+        }
+        for (const item of [...layout.props, ...(layout.seats ?? [])]) if (item.group === name) delete item.group;
+    });
+    selection = null;
+    rebuild();
+}
+
+/** The Group field and buttons of a prop's or a seat's inspector. */
+function groupFields(data, sel) {
+    const isTable = sel.type === 'prop' && /table/i.test(data.model ?? '') && !/kitchentable|cuttingboard/i.test(data.model ?? '');
+    return el('div', { class: 'opening' },
+        textField('Group (moves with the rest of it)', data.group, (v) => (v ? (data.group = v) : delete data.group)),
+        data.group ? el('button', { class: 'block', onclick: () => select({ type: 'group', key: data.group }) }, `⬚ Select group "${data.group}" (G)`) : null,
+        isTable && !data.group ? el('button', { class: 'block primary', onclick: () => groupAroundTable(sel.i) }, '⬚ Group this table with its chairs, seats and things on it') : null);
+}
+
+// ---------------------------------------------------------------- prefabs
+
+/**
+ * Prefabs (levels/prefabs.json, every level's): a station or a table set, made once and placed many times
+ * (`layout.instances`: which, where, turned how, at which stages). A placed one shows as its props on a ring and moves
+ * and turns whole (W / E). To change one: Unpack it (a group of plain props again), change that, then the group's
+ * "Save as prefab" (the same name) — every place it's used changes. The game unfolds them when it reads the level
+ * (RestaurantLayout.ts expandPrefabs). What a station has on it (its ingredients) is the stage's, not the prefab's.
+ */
+const PREFAB_RING = { color: 0x5fd0ff };
+
+/** A prefab's world spot for its own (x, z) at `instance` (turned as three.js turns things, then moved). */
+function prefabPlace(instance, x, z) {
+    const turn = instance.rotationY ?? 0;
+    const cos = Math.cos(turn);
+    const sin = Math.sin(turn);
+    return { x: round(instance.x + x * cos + z * sin), z: round(instance.z - x * sin + z * cos) };
+}
+
+/** Its props and seats as plain ones (a group's, for Unpack). */
+function unfoldInstance(instance, group) {
+    const prefab = prefabs[instance.prefab];
+    if (!prefab) return { props: [], seats: [] };
+    const turn = instance.rotationY ?? 0;
+    const range = { ...(instance.from !== undefined ? { from: instance.from } : {}), ...(instance.until !== undefined ? { until: instance.until } : {}) };
+    return {
+        props: prefab.props.map((p) => ({ ...structuredClone(p), ...prefabPlace(instance, p.x, p.z), rotationY: round((p.rotationY ?? 0) + turn), ...range, group })),
+        seats: (prefab.seats ?? []).map((s) => ({ ...structuredClone(s), ...prefabPlace(instance, s.x, s.z), rotationY: round(s.rotationY + turn), plate: { ...s.plate, ...prefabPlace(instance, s.plate.x, s.plate.z) }, ...range, group })),
+    };
+}
+
+/** A placed prefab: its props (and seats' discs) as they'll stand, on a ring; click any of it to pick the whole. */
+function buildInstance(instance, i) {
+    const prefab = prefabs[instance.prefab];
+    const selected = selection?.type === 'instance' && selection.i === i;
+    const holder = new THREE.Group();
+    holder.position.set(instance.x, 0.04, instance.z);
+    holder.rotation.y = instance.rotationY ?? 0;
+    const ring = new THREE.Mesh(new THREE.RingGeometry(1.15, 1.3, 48), new THREE.MeshBasicMaterial({ color: selected ? 0xffd36b : PREFAB_RING.color, side: THREE.DoubleSide, depthTest: false, transparent: true, opacity: selected ? 0.95 : 0.55 }));
+    ring.rotation.x = -Math.PI / 2;
+    ring.renderOrder = 4;
+    // Its front (+z): a little arrow on the ring.
+    const front = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.36, 3), ring.material);
+    front.rotation.x = Math.PI / 2;
+    front.position.set(0, 0, 1.45);
+    front.renderOrder = 4;
+    const tag = labelSprite(prefab ? `◈ ${prefab.name ?? instance.prefab}` : `◈ missing prefab "${instance.prefab}"`, prefab ? '#cdefff' : '#ffb3b3', prefab ? 'rgba(20,80,110,0.85)' : 'rgba(120,20,20,0.85)');
+    tag.position.y = 2.9;
+    holder.add(ring, front, tag);
+    for (const prop of prefab?.props ?? []) {
+        const part = new THREE.Group();
+        const inner = new THREE.Group();
+        inner.scale.set(prop.stretch?.x ?? 1, 1, prop.stretch?.z ?? 1);
+        part.add(inner);
+        part.position.set(prop.x, (prop.elevation ?? 0) - 0.04, prop.z);
+        part.rotation.y = prop.rotationY ?? 0;
+        holder.add(part);
+        void fillModel(inner, prop.model, { height: prop.height, scale: prop.scale ?? 1 }).then(() => {
+            if (prop.id === 'sundaeFreezer') drawFreezer(inner);
+        });
+    }
+    for (const seat of prefab?.seats ?? []) {
+        const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.04, 20), new THREE.MeshBasicMaterial({ color: 0x2fd0c0, transparent: true, opacity: 0.7 }));
+        disc.position.set(seat.x, (seat.height ?? 0.5) + 0.03, seat.z);
+        holder.add(disc);
+    }
+    register({ type: 'instance', i }, holder);
+}
+
+/** A prefab placed at the middle of the view (at the stage shown on). */
+function addInstance(id) {
+    const { x, z } = dropPoint();
+    edit(() => (layout.instances ??= []).push({ prefab: id, x, z, rotationY: 0, ...(stage > 0 ? { from: stage } : {}) }));
+    select({ type: 'instance', i: layout.instances.length - 1 });
+}
+
+/** A placed prefab made a group of plain props and seats again (to change it; then the group's Save as prefab). */
+function unpackInstance(i) {
+    const instance = layout.instances[i];
+    const name = freeGroupName(instance.prefab);
+    edit(() => {
+        const { props, seats } = unfoldInstance(instance, name);
+        layout.props.push(...props);
+        (layout.seats ??= []).push(...seats);
+        // Remembered: which prefab it was and how it was turned (saving it again keeps its frame and its front).
+        (layout.groupFrames ??= {})[name] = { prefab: instance.prefab, rotationY: instance.rotationY ?? 0 };
+        layout.instances.splice(i, 1);
+    });
+    toast(`Unpacked: change group "${name}", then its Save as prefab updates "${instance.prefab}" everywhere`, 'good');
+    select({ type: 'group', key: name });
+}
+
+/**
+ * Group `name` saved as a prefab (a new one, or — the same name — one that's used elsewhere: they all change), and put
+ * back as a placed prefab where it was.
+ */
+function saveGroupAsPrefab(name) {
+    const frame = layout.groupFrames?.[name];
+    const id = prompt('Prefab name (an existing one is replaced, everywhere it\'s used)', frame?.prefab ?? name.replace(/\s+\d+$/, '').replace(/\s+(\w)/g, (_, c) => c.toUpperCase()));
+    if (!id) return;
+    const uses = (layout.instances ?? []).filter((inst) => inst.prefab === id).length;
+    if (prefabs[id] && !confirm(`Replace prefab "${id}"${uses ? ` (placed ${uses} more time${uses > 1 ? 's' : ''} in this level, and maybe in others)` : ''}?`)) return;
+    const { props, seats } = groupMembers(name);
+    const members = [...props.map((i) => layout.props[i]), ...seats.map((i) => layout.seats[i])];
+    if (!members.length) return;
+    // Its frame: the middle of everything in it, turned as it was placed (a new one: unturned).
+    const center = groupCenter(name);
+    const turn = frame?.rotationY ?? 0;
+    const local = (x, z) => {
+        const dx = x - center.x;
+        const dz = z - center.z;
+        const cos = Math.cos(-turn);
+        const sin = Math.sin(-turn);
+        return { x: round(dx * cos + dz * sin), z: round(-dx * sin + dz * cos) };
+    };
+    const strip = ({ from, until, group, ...rest }) => rest;
+    const first = members[0];
+    edit(() => {
+        prefabs[id] = {
+            name: prefabs[id]?.name ?? name.replace(/\s+\d+$/, ''),
+            props: props.map((i) => layout.props[i]).map((p) => ({ ...strip(structuredClone(p)), ...local(p.x, p.z), rotationY: round((p.rotationY ?? 0) - turn) })),
+            seats: seats.map((i) => layout.seats[i]).map((s) => ({ ...strip(structuredClone(s)), ...local(s.x, s.z), rotationY: round(s.rotationY - turn), plate: { ...s.plate, ...local(s.plate.x, s.plate.z) } })),
+        };
+        prefabsDirty = true;
+        layout.props = layout.props.filter((p) => p.group !== name);
+        if (layout.seats) layout.seats = layout.seats.filter((s) => s.group !== name);
+        if (layout.groupFrames) delete layout.groupFrames[name];
+        (layout.instances ??= []).push({ prefab: id, x: round(center.x), z: round(center.z), rotationY: round(turn), ...(first.from !== undefined ? { from: first.from } : {}), ...(first.until !== undefined ? { until: first.until } : {}) });
+    });
+    toast(`Prefab "${id}" saved${uses ? `: its ${uses} other place${uses > 1 ? 's' : ''} here changed too` : ''} (Save writes it)`, 'good');
+    select({ type: 'instance', i: layout.instances.length - 1 });
+}
+
 function buildSeat(seat, i) {
     const selected = selection?.type?.startsWith('seat') && selection.i === i;
     const group = new THREE.Group();
@@ -702,7 +1220,7 @@ function paintRoad(cell, erase) {
 function startRoadStroke(event) {
     const cell = roadCellUnder(event);
     if (!cell) return;
-    undoStack.push(JSON.stringify(layout));
+    undoStack.push(snapshot());
     roadStroke = { erase: event.shiftKey, last: roadCellKey(cell[0], cell[1]), changed: paintRoad(cell, event.shiftKey) };
     if (roadStroke.changed) refreshRoads();
 }
@@ -793,7 +1311,47 @@ function buildProp(prop, i) {
     holder.position.set(prop.x, prop.elevation ?? 0, prop.z);
     holder.rotation.y = prop.rotationY ?? 0;
     register({ type: 'prop', i }, holder);
-    void fillModel(inner, prop.model, { height: prop.height, scale: prop.scale ?? 1 });
+    void fillModel(inner, prop.model, { height: prop.height, scale: prop.scale ?? 1 }).then(() => {
+        // The sundae bar's freezer: the game draws a freezer where this prop is (its size), so does the editor.
+        if (prop.id === 'sundaeFreezer') drawFreezer(inner);
+    });
+}
+
+/**
+ * As the game's sundae bar (world/Sundae.ts FREEZER): a freezer box sized round its tubs — the stage's flavours, three
+ * across, each tub 0.8 x 0.5 (the kit's turned sideways, x 0.5), 0.06 apart — where its stand-in prop stands.
+ */
+const FREEZER_COLORS = { vanilla: '#f6ead0', chocolate: '#6b3f25', strawberry: '#f39bb1', mint: '#9fefc4', blueberry: '#b7a6ff', mango: '#ffc04a' };
+function drawFreezer(inner) {
+    if (!inner.parent) return;
+    inner.children.forEach((child) => (child.visible = false));
+    const stages = gameSettings.stages ?? [];
+    const flavors = stages[Math.min(stage, stages.length - 1)]?.sundae?.flavors ?? Object.keys(FREEZER_COLORS);
+    const solid = (w, h, d, x, y, z, color) => {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color, roughness: 0.6 }));
+        mesh.position.set(x, y, z);
+        mesh.castShadow = mesh.receiveShadow = true;
+        inner.add(mesh);
+    };
+    const h = 0.92;
+    const rim = 0.12;
+    const tubW = 0.8;
+    const tubD = 0.5;
+    const gap = 0.06;
+    const inset = rim + 0.04;
+    const columns = Math.min(3, Math.max(1, flavors.length));
+    const rows = Math.max(1, Math.ceil(flavors.length / columns));
+    // (In `inner`'s own units: what's added to it is stretched with it.)
+    const width = (columns * tubW + (columns - 1) * gap + inset * 2) / inner.scale.x;
+    const depth = (rows * tubD + (rows - 1) * gap + inset * 2) / inner.scale.z;
+    solid(width, h, depth, 0, h / 2, 0, '#eaf6fb');
+    solid(width + 0.01, 0.12, depth + 0.01, 0, h * 0.62, 0, '#7bbfdc');
+    solid(width - rim * 2, 0.02, depth - rim * 2, 0, h + 0.005, 0, '#2e3f4a');
+    flavors.forEach((flavor, k) => {
+        const column = k % columns;
+        const row = Math.floor(k / columns);
+        solid(tubW, 0.22, tubD, (column - (columns - 1) / 2) * (tubW + gap), h + 0.11, (row - (rows - 1) / 2) * (tubD + gap), FREEZER_COLORS[flavor] ?? '#dddddd');
+    });
 }
 
 /** A station: its spot (a marker to drag the whole station by), its pieces, its camera shots. */
@@ -828,6 +1386,20 @@ function buildPiece(station, piece, i, j) {
         void fillModel(holder, 'plate', { scale: SIZES.pileDish, y: BENCH_TOP });
         const food = PILE_MODELS[piece.piece];
         if (food) for (let k = 0; k < 3; k++) void fillModel(holder, food, { scale: SIZES.food, y: BENCH_TOP + 0.03 + k * 0.09 });
+    } else if (role === 'piles') {
+        // The grid: a pile of each thing this stage's kitchen has (the same station shows more at a bigger stage).
+        holder.rotation.y = 0;
+        for (const { piece: item, x, z } of pileGrid(piece, stockedAt(stage))) {
+            const spot = new THREE.Group();
+            spot.position.set(x - piece.x, 0, z - piece.z);
+            holder.add(spot);
+            void fillModel(spot, 'plate', { scale: SIZES.pileDish, y: BENCH_TOP });
+            const food = PILE_MODELS[item];
+            if (food) for (let k = 0; k < 3; k++) void fillModel(spot, food, { scale: SIZES.food, y: BENCH_TOP + 0.03 + k * 0.09 });
+        }
+        const tag = labelSprite('ingredients (the stage\'s)', '#ffe2a8');
+        tag.position.y = BENCH_TOP + 1;
+        holder.add(tag);
     } else if (role === 'served') {
         const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.04, 8, 24), new THREE.MeshBasicMaterial({ color: 0x35b36a }));
         ring.rotation.x = -Math.PI / 2;
@@ -952,10 +1524,13 @@ async function fillCrates(grid, crates) {
     const items = marketItems.length ? marketItems : [{ crate: 'crate' }];
     const sources = await Promise.all(items.map((item) => loadModel(item.crate)));
     if (!grid.parent) return;
+    // As MarketScene: each crate at `scale`, every cell the biggest one's size plus the gaps.
+    const scale = crates.scale ?? 1;
     const size = new THREE.Vector3();
     const boxes = sources.map((source) => (source ? new THREE.Box3().setFromObject(source) : null));
     boxes.forEach((box) => box && size.max(box.getSize(new THREE.Vector3())));
     if (size.lengthSq() < 1e-6) size.set(1, 0.6, 1);
+    size.multiplyScalar(scale);
     const columns = Math.max(1, Math.round(crates.columns ?? 4));
     const rows = Math.ceil(items.length / columns);
     const stepX = size.x + (crates.gapX ?? 0.6);
@@ -965,7 +1540,8 @@ async function fillCrates(grid, crates) {
         const z = ((rows - 1) / 2 - Math.floor(i / columns)) * stepZ;
         if (sources[i]) {
             const model = sources[i].clone(true);
-            model.position.set(x, -boxes[i].min.y, z);
+            model.scale.multiplyScalar(scale);
+            model.position.set(x, -boxes[i].min.y * scale, z);
             grid.add(model);
         }
     });
@@ -994,6 +1570,9 @@ function dataOf(sel) {
     if (sel.type === 'path') return wayIn()?.[sel.key];
     if (sel.type === 'crates') return layout.market?.crates;
     if (sel.type === 'cashier') return layout.market?.cashier;
+    // (A group's data: its name; its members are the props and seats with that `group`.)
+    if (sel.type === 'group') return groupNames().includes(sel.key) ? { name: sel.key } : null;
+    if (sel.type === 'instance') return layout.instances?.[sel.i] ?? null;
     return null;
 }
 
@@ -1012,6 +1591,7 @@ function select(sel) {
         attachGizmo();
         renderPanels();
     }
+    rememberSession();
 }
 
 function attachGizmo() {
@@ -1021,8 +1601,8 @@ function attachGizmo() {
     const mode = gizmo.mode;
     const type = selection.type;
     // What each thing can do: turning (props, pieces, floors), sizing (props).
-    const turns = ['prop', 'piece', 'floor', 'cashier', 'seat'].includes(type);
-    const sizes = type === 'prop' || type === 'cashier' || type === 'opening' || type === 'people';
+    const turns = ['prop', 'piece', 'floor', 'cashier', 'seat', 'group', 'instance'].includes(type);
+    const sizes = type === 'prop' || type === 'cashier' || type === 'crates' || type === 'opening' || type === 'people';
     if ((mode === 'rotate' && !turns) || (mode === 'scale' && !sizes)) return;
     gizmo.attach(object);
     // Turning: round the vertical only. Moving: on the floor, but cameras and props (lifted off it) go up too.
@@ -1082,9 +1662,31 @@ function syncFromGizmo() {
         data.rotationY = round(yawOf(object));
     } else if (sel.type === 'camera') {
         data[sel.part] = { x: round(p.x), y: round(p.y), z: round(p.z) };
-    } else if (sel.type === 'path' || sel.type === 'crates') {
+    } else if (sel.type === 'path') {
         data.x = round(p.x);
         data.z = round(p.z);
+    } else if (sel.type === 'crates') {
+        data.x = round(p.x);
+        data.z = round(p.z);
+        if (gizmo.mode === 'scale') {
+            // The handle's at 1 whatever the crates' size (it's in the models): sized by how far it's dragged from the
+            // size the drag began at. Uniform, as the cashier; let go and the grid's laid out again (its gaps kept).
+            const base = object.userData.baseScale ?? (object.userData.baseScale = data.scale ?? 1);
+            const s = object.scale;
+            const factor = Math.max(0.1 / base, [s.x, s.y, s.z].reduce((most, v) => (Math.abs(v - 1) > Math.abs(most - 1) ? v : most), 1));
+            s.setScalar(factor);
+            data.scale = round(base * factor);
+        }
+    } else if (sel.type === 'instance') {
+        // A placed prefab: where it is and how it's turned (the whole moves on screen with its ring).
+        data.x = round(p.x);
+        data.z = round(p.z);
+        data.rotationY = round(yawOf(object));
+    } else if (sel.type === 'group') {
+        // Every member, from where it was when the drag began: turned round the group's middle, then moved with it.
+        const origin = object.userData.origin;
+        const start = object.userData.start ?? (object.userData.start = snapshotGroup(sel.key));
+        moveGroup(start, origin, p.x - origin.x, p.z - origin.z, yawOf(object));
     } else if (sel.type === 'cashier') {
         data.x = round(p.x);
         data.z = round(p.z);
@@ -1202,7 +1804,7 @@ function addProp(path) {
 function addPiece(i, role) {
     const station = layout.stations[i];
     const piece = { role, x: 0, z: 0 };
-    if (['counter', 'decor', 'stove'].includes(role)) piece.model = role === 'counter' ? 'kitchencounter_straight_A' : role === 'stove' ? 'stove_single_countertop' : 'ketchup';
+    if (['counter', 'decor', 'stove'].includes(role)) piece.model = role === 'counter' ? 'kitchentable_A' : role === 'stove' ? 'stove_single_countertop' : 'ketchup';
     if (role === 'pile') piece.piece = 'cheese';
     edit(() => station.pieces.push(piece));
     select({ type: 'piece', i, j: station.pieces.length - 1 });
@@ -1212,6 +1814,16 @@ function duplicateSelection() {
     const sel = selection;
     if (!sel) return;
     const offset = 0.5;
+    if (sel.type === 'group') {
+        duplicateGroup(sel.key);
+        return;
+    }
+    if (sel.type === 'instance') {
+        const instance = layout.instances[sel.i];
+        edit(() => layout.instances.push({ ...structuredClone(instance), x: round(instance.x + 3) }));
+        select({ type: 'instance', i: layout.instances.length - 1 });
+        return;
+    }
     if (sel.type === 'prop') {
         edit(() => layout.props.push({ ...structuredClone(layout.props[sel.i]), x: layout.props[sel.i].x + offset }));
         select({ type: 'prop', i: layout.props.length - 1 });
@@ -1271,7 +1883,10 @@ function removeSelection() {
         if (lawn.points.length <= 3) return toast('A lawn needs three corners at least', 'warn');
         edit(() => lawn.points.splice(sel.j, 1));
     } else if (sel.type === 'people') edit(() => layout.people.areas.splice(sel.i, 1));
-    else if (sel.type === 'seat' || sel.type === 'seatPlate') edit(() => layout.seats.splice(sel.i, 1));
+    else if (sel.type === 'group') {
+        if (!confirm(`Delete group "${sel.key}" and everything in it? (Ctrl+Z brings it back)`)) return;
+        return ungroup(sel.key, true);
+    } else if (sel.type === 'instance') edit(() => layout.instances.splice(sel.i, 1)); else if (sel.type === 'seat' || sel.type === 'seatPlate') edit(() => layout.seats.splice(sel.i, 1));
     else if (sel.type === 'prop') edit(() => layout.props.splice(sel.i, 1));
     else if (sel.type === 'piece') edit(() => layout.stations[sel.i].pieces.splice(sel.j, 1));
     else return;
@@ -1299,6 +1914,7 @@ function showHint(text) {
     hint.textContent = text ?? '';
     document.getElementById('drawWall').classList.toggle('tool-on', drawing?.kind === 'wall');
     document.getElementById('drawLawn').classList.toggle('tool-on', drawing?.kind === 'lawn');
+    document.getElementById('drawBlock').classList.toggle('tool-on', drawing?.kind === 'block');
     document.querySelectorAll('[data-place]').forEach((b) => b.classList.toggle('tool-on', b.dataset.place === placing));
 }
 
@@ -1319,7 +1935,9 @@ function startDrawing(kind = 'wall') {
     stopTools();
     select(null);
     drawing = { points: [], kind };
-    showHint(kind === 'lawn' ? 'Click the lawn\'s corners. Click the first one again (or Enter) to finish · Backspace: undo a corner · Esc: cancel' : 'Click the corners. Click the first one again to close it · double-click / Enter: done · Backspace: undo a corner · Esc: cancel');
+    showHint(kind === 'lawn' ? 'Click the lawn\'s corners. Click the first one again (or Enter) to finish · Backspace: undo a corner · Esc: cancel'
+        : kind === 'block' ? 'City block: click its corners just inside the roads round it. Click the first one again (or Enter) to finish — it fills with buildings · Backspace: undo a corner · Esc: cancel'
+            : 'Click the corners. Click the first one again to close it · double-click / Enter: done · Backspace: undo a corner · Esc: cancel');
 }
 
 /** The wall being drawn: its corners, its sides, and a line on to the pointer. */
@@ -1364,9 +1982,11 @@ function finishDrawing(closed) {
     const points = drawing?.points ?? [];
     const kind = drawing?.kind ?? 'wall';
     stopTools();
-    if (kind === 'lawn') {
-        if (points.length < 3) return toast('A lawn needs three corners at least', 'warn');
-        edit(() => (layout.lawns ??= []).push({ points }));
+    if (kind === 'lawn' || kind === 'block') {
+        if (points.length < 3) return toast(`A ${kind === 'block' ? 'city block' : 'lawn'} needs three corners at least`, 'warn');
+        // A city block: a paved lawn, filled with buildings (mixed: change it in the inspector).
+        const lawn = kind === 'block' ? { points, color: '#cfcac0', buildings: { kind: 'mixed', seed: Math.floor(Math.random() * 1e6), setback: 1.5, gap: 1 } } : { points };
+        edit(() => (layout.lawns ??= []).push(lawn));
         select({ type: 'lawn', i: layout.lawns.length - 1 });
         return;
     }
@@ -1535,11 +2155,25 @@ function renderOutline() {
         ...(wayIn() ? group(`Way in${(layout.stations ?? []).some((s) => shownAt(s)) ? ' (this stage\'s station)' : ''}`, ['start', 'outside', 'inside'].map((key) => outlineItem(`🚶 ${key}`, { type: 'path', key }))) : []),
         ...((layout.seats ?? []).length ? group('Seats', layout.seats.map((seat, i) => outlineItem(`🪑 seat ${i + 1}${seat.id ? ': ' + seat.id : ''}`, { type: 'seat', i }, rangeTag(seat), shownAt(seat)))) : []),
         ...(level === 'restaurant' ? group('Street', [
-            ...(layout.lawns ?? []).map((lawn, i) => outlineItem(`🌱 lawn (${lawn.points.length} corners)`, { type: 'lawn', i }, rangeTag(lawn), shownAt(lawn))),
+            ...(layout.lawns ?? []).map((lawn, i) => outlineItem(lawn.buildings ? `🏙 city block (${{ living: 'homes', business: 'shops', mixed: 'mixed' }[lawn.buildings.kind ?? 'mixed']})` : `🌱 lawn (${lawn.points.length} corners)`, { type: 'lawn', i }, rangeTag(lawn), shownAt(lawn))),
             ...(layout.people?.areas ?? []).map((area, i) => outlineItem(`🚶 ${area.count} people`, { type: 'people', i }, rangeTag(area), shownAt(area))),
         ]) : []),
         ...group('Walls', layout.walls.map((wall, i) => outlineItem(`🧱 ${wall.style ?? 'wall'} (${wall.points.length} corners${wall.openings?.length ? `, ${wall.openings.length} openings` : ''})`, { type: 'wall', i }, rangeTag(wall), shownAt(wall)))),
         ...group('Floors', layout.floors.map((floor, i) => outlineItem(`▦ ${floor.style ?? 'floor'} ${floor.width}×${floor.depth}`, { type: 'floor', i }, rangeTag(floor), shownAt(floor)))),
+        // Prefabs placed (stations, table sets), and a pick of the library to place another.
+        ...(level === 'restaurant' ? group('Prefabs (stations, tables)', (layout.instances ?? []).map((instance, i) => outlineItem(
+            `◈ ${prefabs[instance.prefab]?.name ?? `missing: ${instance.prefab}`}`, { type: 'instance', i }, rangeTag(instance), shownAt(instance),
+        )), (() => {
+            const pick = el('select', { title: 'Place a prefab (at the middle of the view)' }, el('option', { value: '' }, '＋ Place…'), ...Object.entries(prefabs).map(([id, p]) => el('option', { value: id }, p.name ?? id)));
+            pick.addEventListener('change', () => pick.value && addInstance(pick.value));
+            return pick;
+        })()) : []),
+        // Groups first (a table and all round it): click one to move it whole.
+        ...(groupNames().length ? group('Groups', groupNames().map((name) => {
+            const { props, seats } = groupMembers(name);
+            const first = layout.props[props[0]] ?? layout.seats?.[seats[0]];
+            return outlineItem(`⬚ ${name} (${props.length + seats.length})`, { type: 'group', key: name }, first ? rangeTag(first) : '', [...props.map((i) => layout.props[i]), ...seats.map((i) => layout.seats[i])].some(shownAt));
+        })) : []),
         ...group('Props', layout.props.map((prop, i) => outlineItem(`🧊 ${modelName(prop.model).split('/').pop()}`, { type: 'prop', i }, rangeTag(prop), shownAt(prop)))),
     );
 }
@@ -1633,6 +2267,7 @@ function renderInspector() {
                     numberField(`Window height (blank: ${wallSetup(data).windowHeight})`, o.height, 0.1, (v) => (v === undefined ? delete o.height : (o.height = Math.max(0.1, v)))),
                     numberField('Window bottom y (blank: centred)', o.bottom, 0.1, (v) => (v === undefined ? delete o.bottom : (o.bottom = Math.max(0, v))))) : null,
                 o.kind === 'door' ? numberField(`Door height (blank: ${wallSetup(data).doorHeight})`, o.height, 0.1, (v) => (v === undefined ? delete o.height : (o.height = Math.max(0.2, v)))) : null,
+                o.kind !== 'gap' ? checkField('Frame round it', o.frame !== false, (v) => (v ? delete o.frame : (o.frame = false))) : null,
                 o.kind === 'door' ? el('div', {},
                     checkField('Sliding', o.sliding, (v) => (o.sliding = v || undefined)),
                     checkField('Double', o.double, (v) => (o.double = v || undefined)),
@@ -1650,13 +2285,26 @@ function renderInspector() {
             el('p', { class: 'muted small' }, 'Or 🪟 / 🚪 / ⬜ (left) and click on the wall where it goes.'),
             el('div', { class: 'row' }, remove));
     } else if (sel.type === 'lawn' || sel.type === 'lawnPoint') {
-        parts.push(el('h3', {}, sel.type === 'lawnPoint' ? `Lawn corner ${sel.j + 1}` : 'Lawn'),
+        parts.push(el('h3', {}, sel.type === 'lawnPoint' ? `${data.buildings ? 'City block' : 'Lawn'} corner ${sel.j + 1}` : data.buildings ? '🏙 City block' : 'Lawn'),
             el('p', { class: 'muted small' }, 'Drag it (W) to move it whole, a gold corner to move that corner; a green middle handle adds a corner.'),
             el('label', { class: 'field' }, el('span', {}, 'Colour'), (() => {
                 const input = el('input', { type: 'color', value: data.color ?? '#7cc65a' });
                 input.addEventListener('change', () => edit(() => (data.color = input.value === '#7cc65a' ? undefined : input.value)));
                 return input;
             })()),
+            // A city block: filled with buildings along its sides (cityfill.js — as the game fills it).
+            el('div', { class: 'opening' },
+                el('h2', {}, 'City block'),
+                checkField('Fill with buildings', Boolean(data.buildings), (v) => (v ? (data.buildings = { kind: 'mixed', seed: Math.floor(Math.random() * 1e6), setback: 1.5, gap: 1 }) : delete data.buildings)),
+                ...(data.buildings ? [
+                    el('p', { class: 'muted small' }, `${cityPool ? fillBlock(data, cityPool).length : '…'} buildings along its sides, facing out to the streets round it (settings.json town.city: which models). Draw the block's outline just inside its roads.`),
+                    selectField('Kind', data.buildings.kind ?? 'mixed', ['mixed', 'living', 'business'], (v) => (data.buildings.kind = v)),
+                    el('div', { class: 'row' },
+                        numberField('Seed', data.buildings.seed ?? 1, 1, (v) => (data.buildings.seed = Math.max(1, Math.round(v ?? 1)))),
+                        el('button', { title: 'Another mix of buildings', onclick: () => edit(() => (data.buildings.seed = Math.floor(Math.random() * 1e6))) }, '🎲')),
+                    numberField('In from the edge (setback)', data.buildings.setback ?? 1.5, 0.25, (v) => (data.buildings.setback = Math.max(0, v ?? 1.5))),
+                    numberField('Gap between them', data.buildings.gap ?? 1, 0.25, (v) => (data.buildings.gap = Math.max(0, v ?? 1))),
+                ] : [])),
             stageFields(data),
             el('div', { class: 'row' }, el('button', { onclick: duplicateSelection }, 'Duplicate'), remove));
     } else if (sel.type === 'seat' || sel.type === 'seatPlate') {
@@ -1670,6 +2318,7 @@ function renderInspector() {
             numberField('Plate X', seat.plate.x, 0.05, (v) => (seat.plate.x = v ?? 0)), numberField('Plate Z', seat.plate.z, 0.05, (v) => (seat.plate.z = v ?? 0)),
             numberField('Table top (y)', seat.plate.y ?? 1, 0.05, (v) => (seat.plate.y = v ?? 1)),
             textField('Id (optional)', seat.id, (v) => (v ? (seat.id = v) : delete seat.id)),
+            groupFields(seat, sel),
             stageFields(seat),
             el('div', { class: 'row' },
                 el('button', { onclick: () => select({ type: sel.type === 'seat' ? 'seatPlate' : 'seat', i: sel.i }) }, sel.type === 'seat' ? '🍽 Its plate spot' : '🪑 The seat'),
@@ -1695,6 +2344,7 @@ function renderInspector() {
             data.kind === 'window' ? numberField(`Height (blank: ${setup.windowHeight})`, data.height, 0.1, (v) => (v === undefined ? delete data.height : (data.height = Math.max(0.1, v)))) : null,
             data.kind === 'window' ? numberField('Bottom (blank: centred)', data.bottom, 0.1, (v) => (v === undefined ? delete data.bottom : (data.bottom = Math.max(0, v)))) : null,
             data.kind === 'door' ? numberField(`Height (blank: ${setup.doorHeight})`, data.height, 0.1, (v) => (v === undefined ? delete data.height : (data.height = Math.max(0.2, v)))) : null,
+            data.kind !== 'gap' ? checkField('Frame round it', data.frame !== false, (v) => (v ? delete data.frame : (data.frame = false))) : null,
             data.kind === 'door' ? checkField('Sliding', data.sliding, (v) => (data.sliding = v || undefined)) : null,
             data.kind === 'door' ? checkField('Double', data.double, (v) => (data.double = v || undefined)) : null,
             data.kind === 'door' ? selectField('Door style', data.style ?? '', ['', ...Object.keys(layout.styles.doors ?? {})], (v) => (data.style = v || undefined)) : null,
@@ -1710,7 +2360,46 @@ function renderInspector() {
             numberField('Height (fit)', data.height, 0.1, (v) => (v === undefined ? delete data.height : (data.height = v))),
             numberField('Scale (no height)', data.scale ?? 1, 0.1, (v) => (data.scale = v)),
             numberField('Lift off floor', data.elevation ?? 0, 0.05, (v) => (data.elevation = v)),
+            groupFields(data, sel),
             stageFields(data), el('div', { class: 'row' }, el('button', { onclick: duplicateSelection }, 'Duplicate'), remove));
+    } else if (sel.type === 'group') {
+        const name = sel.key;
+        const { props, seats } = groupMembers(name);
+        const center = groupCenter(name);
+        /** The whole group moved so its middle's at (x, z). */
+        const moveTo = (x, z) => moveGroup(snapshotGroup(name), center, round(x - center.x), round(z - center.z), 0);
+        parts.push(el('h3', {}, `⬚ ${name}`),
+            el('p', { class: 'muted small' }, `${props.length} props, ${seats.length} seats. Drag the ring (W) to move them all, turn it (E) to turn them round its middle. D: a copy. A prop's or a seat's Group field puts it in (or out); G jumps from one to its group.`),
+            textField('Name', name, (v) => {
+                const to = v && v !== name ? freeGroupName(v) : name;
+                for (const item of [...layout.props, ...(layout.seats ?? [])]) if (item.group === name) item.group = to;
+                selection = { type: 'group', key: to };
+            }),
+            numberField('X (middle)', round(center.x), 0.25, (v) => moveTo(v ?? center.x, center.z)),
+            numberField('Z (middle)', round(center.z), 0.25, (v) => moveTo(center.x, v ?? center.z)),
+            numberField('Turn by (°)', 0, 15, (v) => moveGroup(snapshotGroup(name), center, 0, 0, THREE.MathUtils.degToRad(v ?? 0))),
+            el('h2', {}, 'In it'),
+            el('ul', { class: 'tree' },
+                ...props.map((i) => outlineItem(`🧊 ${modelName(layout.props[i].model).split('/').pop()}`, { type: 'prop', i }, rangeTag(layout.props[i]), shownAt(layout.props[i]))),
+                ...seats.map((i) => outlineItem(`🪑 seat ${i + 1}`, { type: 'seat', i }, rangeTag(layout.seats[i]), shownAt(layout.seats[i])))),
+            el('button', { class: 'block primary', onclick: () => saveGroupAsPrefab(name) }, layout.groupFrames?.[name] ? `◈ Save as prefab "${layout.groupFrames[name].prefab}" (updates every one)` : '◈ Save as prefab (reuse it anywhere)'),
+            el('div', { class: 'row' },
+                el('button', { onclick: () => duplicateGroup(name) }, 'Duplicate'),
+                el('button', { onclick: () => ungroup(name) }, 'Ungroup'),
+                el('button', { class: 'danger', onclick: removeSelection }, 'Delete all')));
+    } else if (sel.type === 'instance') {
+        const prefab = prefabs[data.prefab];
+        const uses = (layout.instances ?? []).filter((inst) => inst.prefab === data.prefab).length;
+        parts.push(el('h3', {}, `◈ ${prefab?.name ?? data.prefab}`),
+            el('p', { class: 'muted small' }, prefab
+                ? `A prefab (levels/prefabs.json: ${prefab.props.length} props, ${(prefab.seats ?? []).length} seats), placed ${uses} time${uses > 1 ? 's' : ''} in this level. Move it (W), turn it (E: the arrow's its front). To change it: Unpack, edit the group, then its Save as prefab — every one changes. Its ingredients are the stage's (settings.json).`
+                : 'This prefab isn\'t in levels/prefabs.json.'),
+            selectField('Prefab', data.prefab, Object.keys(prefabs), (v) => (data.prefab = v)),
+            numberField('X (middle)', data.x, 0.25, (v) => (data.x = v ?? 0)), numberField('Z (middle)', data.z, 0.25, (v) => (data.z = v ?? 0)),
+            numberField('Turn (°)', degrees(data.rotationY), 15, (v) => (data.rotationY = round(THREE.MathUtils.degToRad(v ?? 0)))),
+            stageFields(data),
+            el('button', { class: 'block', onclick: () => unpackInstance(sel.i) }, '⬚ Unpack (to change it)'),
+            el('div', { class: 'row' }, el('button', { onclick: duplicateSelection }, 'Duplicate'), remove));
     } else if (sel.type === 'station') {
         parts.push(el('h3', {}, data.name ?? data.id),
             el('p', { class: 'muted small' }, 'Drag the blue ring to move the whole station; its pieces follow.'),
@@ -1731,6 +2420,11 @@ function renderInspector() {
                 ? el('button', { class: 'block', onclick: () => openModelPicker({ current: data.model ? modelPath(data.model) : null, onPick: (path) => edit(() => (data.model = modelName(path))) }) }, `🧊 ${data.model ? modelName(data.model) : 'Pick model…'}`)
                 : null,
             data.role === 'pile' ? selectField('Ingredient', data.piece, Object.keys(PILE_MODELS), (v) => (data.piece = v)) : null,
+            data.role === 'piles' ? el('div', { class: 'opening' },
+                el('p', { class: 'muted small' }, `A grid of piles: one for each thing the stage's kitchen has — buns, patties and the stage's toppings (settings.json stages[].toppings: ${stockedAt(stage).length} here). More toppings at a bigger stage: more rows.`),
+                numberField('Columns', data.columns ?? 3, 1, (v) => (data.columns = Math.max(1, Math.round(v ?? 3)))),
+                numberField('Gap across (x)', data.gapX ?? 1, 0.05, (v) => (data.gapX = Math.max(0.2, v ?? 1))),
+                numberField('Gap back (z)', data.gapZ ?? 1, 0.05, (v) => (data.gapZ = Math.max(0.2, v ?? 1)))) : null,
             numberField('X (from station)', data.x, 0.05, (v) => (data.x = v)), numberField('Z (from station)', data.z, 0.05, (v) => (data.z = v)),
             numberField('Turn (°)', degrees(data.rotationY), 15, (v) => (data.rotationY = round(THREE.MathUtils.degToRad(v ?? 0)))),
             el('div', { class: 'row' }, el('button', { onclick: duplicateSelection }, 'Duplicate'), remove));
@@ -1753,6 +2447,7 @@ function renderInspector() {
         parts.push(el('h3', {}, 'Crates'),
             el('p', { class: 'muted small' }, 'The produce crates\' grid: drag it to move them all. The game shuffles which crate goes where each visit, and frames its camera on this grid.'),
             numberField('X (middle)', data.x, 0.25, (v) => (data.x = v ?? 0)), numberField('Z (middle)', data.z, 0.25, (v) => (data.z = v ?? 0)),
+            numberField('Crate size (1: the models\')', data.scale ?? 1, 0.05, (v) => (v === undefined || v === 1 ? delete data.scale : (data.scale = Math.max(0.1, v)))),
             numberField('Columns', data.columns, 1, (v) => (data.columns = Math.max(1, Math.round(v ?? 4)))),
             numberField('Gap across (x)', data.gapX, 0.05, (v) => (data.gapX = Math.max(0, v ?? 0.6))),
             numberField('Gap along (z: room for the name tags)', data.gapZ, 0.05, (v) => (data.gapZ = Math.max(0, v ?? 1.1))));
@@ -1786,6 +2481,8 @@ function renderStyles() {
         el('h2', {}, 'Walls'),
         ...Object.entries(walls).map(([name, style]) => el('div', { class: 'opening' }, el('strong', {}, name),
             color('Bottom', style.bottomColor, (v) => (style.bottomColor = v)), color('Top', style.topColor, (v) => (style.topColor = v)),
+            // (Unset: the bottom band's colour, darker — the picker shows that till it's changed.)
+            color('Window / door frames', style.frameColor ?? `#${new THREE.Color(style.bottomColor).multiplyScalar(0.72).getHexString()}`, (v) => (style.frameColor = v)),
             numberField('Bottom band height', style.bottomHeight, 0.1, (v) => (style.bottomHeight = v ?? 1)))),
         add(walls, Object.values(walls)[0], 'wall'),
         el('h2', {}, 'Floors'),
@@ -1799,7 +2496,9 @@ function renderStyles() {
         add(doors, { color: '#9fd8ff', opacity: 0.35 }, 'door'),
         el('h2', {}, 'Wall sizes'),
         ...Object.entries(layout.setups).map(([name, setup]) => el('div', { class: 'opening' }, el('strong', {}, name),
-            ...['height', 'thickness', 'doorHeight', 'tallDoorHeight', 'windowHeight'].map((f) => numberField(f, setup[f], 0.05, (v) => (setup[f] = v ?? setup[f]))))),
+            ...['height', 'thickness', 'doorHeight', 'tallDoorHeight', 'windowHeight'].map((f) => numberField(f, setup[f], 0.05, (v) => (setup[f] = v ?? setup[f]))),
+            // The frames round windows and doors (blank: 0.12 wide, 0.05 out of each face).
+            ...[['frameWidth', 'frame width (blank 0.12)'], ['frameDepth', 'frame sticks out (blank 0.05)']].map(([f, label]) => numberField(label, setup[f], 0.01, (v) => (v === undefined ? delete setup[f] : (setup[f] = Math.max(0, v))))))),
     );
 }
 
@@ -1813,18 +2512,22 @@ function bindUi() {
             return;
         }
         if (looking) exitLook();
+        // Where you were on this level, kept for coming back; the other one opens where you left it.
+        clearTimeout(sessionTimer);
+        writeSession();
         level = levelSelect.value;
-        stage = 0;
         void reload().catch((error) => toast(`Could not open it: ${error.message}`, 'bad'));
     });
     document.getElementById('stage').addEventListener('change', (event) => {
         stage = Number(event.target.value);
         rebuild();
+        rememberSession();
     });
     document.querySelectorAll('#modes button').forEach((button) => button.addEventListener('click', () => setMode(button.dataset.mode)));
     document.getElementById('snap').addEventListener('change', (event) => {
         snap = event.target.checked;
         applySnap();
+        rememberSession();
     });
     document.getElementById('undo').addEventListener('click', undo);
     document.getElementById('save').addEventListener('click', () => void save());
@@ -1833,6 +2536,7 @@ function bindUi() {
     document.getElementById('addWall').addEventListener('click', addWall);
     document.getElementById('drawWall').addEventListener('click', () => (drawing?.kind === 'wall' ? stopTools() : startDrawing('wall')));
     document.getElementById('drawLawn').addEventListener('click', () => (drawing?.kind === 'lawn' ? stopTools() : startLawn()));
+    document.getElementById('drawBlock').addEventListener('click', () => (drawing?.kind === 'block' ? stopTools() : startDrawing('block')));
     document.getElementById('roadMode').addEventListener('click', () => setRoadMode(!roadMode));
     document.getElementById('addPeople').addEventListener('click', addPeopleArea);
     document.getElementById('addSeat').addEventListener('click', addSeat);

@@ -26,6 +26,8 @@ export interface StoreWallOpening {
     height?: number;
     /** A window's own bottom, from the floor; unset: centred on the wall. */
     bottom?: number;
+    /** Windows and doors: false for no frame round it (a plain hole). */
+    frame?: boolean;
 }
 
 export interface StoreWallPlacement {
@@ -55,6 +57,9 @@ export interface WallSetupConfig {
     doorHeight: number;
     tallDoorHeight: number;
     windowHeight: number;
+    /** The frame round a window or a door: how wide its trim is, how far it stands out of each face (unset: 0.12, 0.05). */
+    frameWidth?: number;
+    frameDepth?: number;
 }
 
 export interface WallStyleConfig {
@@ -65,6 +70,8 @@ export interface WallStyleConfig {
     bottomHeight: number;
     bottomOpacity?: number;
     topOpacity?: number;
+    /** Its windows' and doors' frames (unset: the bottom band's colour, darker). */
+    frameColor?: string;
 }
 
 export interface FloorCheckerConfig {

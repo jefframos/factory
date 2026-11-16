@@ -11,7 +11,7 @@ import settings from '../../settings.json';
 import type { TownRoadKit } from 'core/town/Ground';
 import type { TrafficSettings } from 'core/town/Traffic';
 import type { CrowdSettings } from 'core/town/Crowd';
-import type { Flavor, Topping } from './Recipes';
+import type { Flavor, PizzaTopping, ScoopFlavor, SundaeSauce, SundaeTopping, Topping } from './Recipes';
 
 export interface DaySettings {
     /** How many customers come that day. */
@@ -41,12 +41,50 @@ export interface StageSettings {
      * take a free seat — the layout's `seats` — and wait to be tapped; their plate stays on the table until it's cleared).
      */
     service?: 'counter' | 'seated';
+    /**
+     * Seated, with a wait at the door (the diner on): customers come one at a time and wait just inside the door till a
+     * seat's free (only one waits: the next comes once they've sat down or gone). After this many seconds waiting they
+     * get annoyed and leave (an unhappy customer). Unset: everyone comes in and they all wait as long as it takes.
+     */
+    patience?: number;
     /** The stage's first day: fewer seats (the rest stay empty) and how many customers come (e.g. one too many, to teach clearing). */
     firstDay?: { seats?: number; customers?: number };
     /** The toppings its customers order (unset: cheese, lettuce, tomato). Its station needs a pile of each (levels/restaurant.json). */
     toppings?: Topping[];
     /** Ice cream (a stage whose room has the ice cream machine; not on its first day): `share` of the orders are cones, of `flavors` (unset: all). */
     iceCream?: { share: number; flavors?: Flavor[] };
+    /**
+     * Pizza (a stage whose room has a pizza oven; not on its first day): `share` of the orders are pizzas, each with 0 to
+     * `maxToppings` (unset: 2) of `toppings` (unset: pepperoni, mushroom, onion, tomato).
+     */
+    pizza?: { share: number; toppings?: PizzaTopping[]; maxToppings?: number };
+    /**
+     * Sundaes (a stage whose room has the sundae bar — its freezer and bar props; not on its first day): `share` of the
+     * orders, each 1 to `maxScoops` scoops (unset: 2) of `flavors`, maybe one of `sauces`, 0 to `maxToppings` (unset: 1)
+     * of `toppings` (unset: all of each).
+     */
+    sundae?: { share: number; maxScoops?: number; maxToppings?: number; flavors?: ScoopFlavor[]; sauces?: SundaeSauce[]; toppings?: SundaeTopping[] };
+}
+
+/**
+ * The pizza delivery minigame: drive from outside the restaurant (`start`) to a house (one `houseDistance` away, min to
+ * max), drop its pizza, back for the next, `deliveries` times; each pays `pay` (into the restaurant's bar). The car: its
+ * model (`car`, fitted to `length`), top speed forward and back, how fast it gets up to speed and stops, how fast it turns
+ * (radians a second at speed); how near a stop counts as there.
+ */
+export interface DeliverySettings {
+    deliveries: number;
+    pay: number;
+    car: string;
+    start: { x: number; z: number; rotationY: number };
+    maxSpeed: number;
+    reverseSpeed: number;
+    accel: number;
+    brake: number;
+    turnRate: number;
+    length: number;
+    arriveRadius: number;
+    houseDistance: [number, number];
 }
 
 export interface RestaurantSettings {
@@ -55,15 +93,23 @@ export interface RestaurantSettings {
     /** The restaurant's stages, smallest first. */
     stages: StageSettings[];
     cookSeconds: number;
-    pay: { base: number; perTopping: number; iceCream?: number };
+    /** How long a pizza's in the oven (s). */
+    bakeSeconds?: number;
+    pay: { base: number; perTopping: number; iceCream?: number; pizza?: number; sundae?: number };
     customer: { height: number; walkSpeed: number };
     market: MarketItem[];
+    /** The pizza delivery minigame (scenes/DeliveryScene.ts). */
+    delivery: DeliverySettings;
     /** The street round the restaurant: the road kit, the traffic, the people (levels/restaurant.json says where). */
     /**
      * `people.restaurant`: the crowd while the game's in the restaurant (game/world/Town.ts 'restaurant' mode): at most
      * `people` wanderers (the areas nearest the restaurant first) and `walkers` on the paths. The delivery mode has them all.
      */
-    town: { roadKit: TownRoadKit; traffic: TrafficSettings; people: CrowdSettings & { restaurant?: { people: number; walkers: number } } };
+    town: {
+        roadKit: TownRoadKit; traffic: TrafficSettings; people: CrowdSettings & { restaurant?: { people: number; walkers: number } };
+        /** The buildings the city blocks fill with (CityBlocks.ts): each model, its kind, its height. */
+        city?: { buildings: { model: string; kind: 'living' | 'business'; height: number }[] };
+    };
 }
 
 export const SETTINGS = settings as unknown as RestaurantSettings;

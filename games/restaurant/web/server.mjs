@@ -19,6 +19,8 @@ const GAME_DIR = path.join(__dirname, '..');
 /** The layouts the editor edits (`?level=`): the restaurant, the supermarket. */
 const LEVELS = { restaurant: 'restaurant.json', market: 'market.json' };
 const layoutFile = (level) => path.join(GAME_DIR, 'levels', LEVELS[level] ?? LEVELS.restaurant);
+/** The prefabs (stations, table sets) every level can place: levels/prefabs.json. */
+const PREFABS_FILE = path.join(GAME_DIR, 'levels', 'prefabs.json');
 const SETTINGS_FILE = path.join(GAME_DIR, 'settings.json');
 const REPO_ROOT = path.join(GAME_DIR, '..', '..');
 const MODELS_DIR = path.join(REPO_ROOT, 'public', 'restaurant', 'models');
@@ -204,6 +206,23 @@ async function handleApi(req, res, url) {
     }
     if (url.pathname === '/api/settings' && req.method === 'GET') {
         return send(res, 200, await readJson(SETTINGS_FILE, {}));
+    }
+    if (url.pathname === '/api/prefabs' && req.method === 'GET') {
+        const library = await readJson(PREFABS_FILE, { prefabs: {} });
+        return send(res, 200, { prefabs: library.prefabs ?? {}, version: await fileVersion(PREFABS_FILE) });
+    }
+    if (url.pathname === '/api/prefabs' && req.method === 'PUT') {
+        const { prefabs, version } = await readBody(req);
+        if (!prefabs || typeof prefabs !== 'object') return send(res, 400, { error: '"prefabs" must be an object' });
+        for (const [id, prefab] of Object.entries(prefabs)) {
+            if (!Array.isArray(prefab?.props)) return send(res, 400, { error: `Prefab "${id}" needs its props` });
+        }
+        const current = await fileVersion(PREFABS_FILE);
+        if (version && current && version !== current) {
+            return send(res, 409, { error: 'levels/prefabs.json changed since it was loaded: reload the editor (your changes are still on screen: copy what you need)' });
+        }
+        await writeJson(PREFABS_FILE, { prefabs });
+        return send(res, 200, { ok: true, version: await fileVersion(PREFABS_FILE) });
     }
     const level = LEVELS[url.searchParams.get('level')] ? url.searchParams.get('level') : 'restaurant';
     const file = layoutFile(level);

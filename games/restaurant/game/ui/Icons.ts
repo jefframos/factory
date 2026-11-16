@@ -8,7 +8,9 @@ import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import SetupThree from 'core/scene/SetupThree';
 import { kitchenModel } from '../world/Models';
-import { PART_MODELS, Part } from '../data/Recipes';
+import { PART_MODELS, Part, PizzaTopping, ScoopFlavor, Sundae, SundaeSauce, SundaeTopping, pizzaRecipe } from '../data/Recipes';
+import { pizzaModel } from '../world/PizzaLook';
+import { sauceBowlModel, scoopModel, sundaeModel, toppingSourceModel } from '../world/SundaeLook';
 
 const SIZE = 192;
 const cache = new Map<string, PIXI.Texture>();
@@ -58,7 +60,7 @@ function snapshot(object: THREE.Object3D, elevation: number): PIXI.Texture {
 }
 
 /** Flat things (slices, buns' halves) are drawn from higher up, so their faces show. */
-const FLAT = /slice|bun_bottom|burger_(un)?cooked/;
+const FLAT = /slice|bun_bottom|burger_(un)?cooked|dough_base|tomato_sauce|grated|pieces/;
 
 /** A model's picture, centred, `size` across. */
 export function modelIcon(model: string, size: number): PIXI.Sprite {
@@ -76,6 +78,58 @@ export function modelIcon(model: string, size: number): PIXI.Sprite {
     sprite.width = sprite.height = size;
     return sprite;
 }
+
+/**
+ * The picture of a pizza with `toppings` (the customer's order): built as the station builds it (world/PizzaLook.ts),
+ * on a plate, from high up so its toppings show.
+ */
+export function pizzaIcon(toppings: readonly PizzaTopping[], size: number): PIXI.Sprite {
+    const key = `pizza:${[...toppings].sort().join(',')}`;
+    let texture = cache.get(key);
+    if (!texture) {
+        try {
+            const dish = new THREE.Group();
+            const plate = kitchenModel('plate');
+            plate.scale.setScalar(2);
+            const pizza = pizzaModel(pizzaRecipe(toppings));
+            pizza.position.y = 0.08;
+            dish.add(plate, pizza);
+            texture = snapshot(dish, 1.0);
+        } catch {
+            texture = PIXI.Texture.WHITE;
+        }
+        cache.set(key, texture);
+    }
+    const sprite = new PIXI.Sprite(texture);
+    sprite.anchor.set(0.5);
+    sprite.width = sprite.height = size;
+    return sprite;
+}
+
+/** A picture of whatever `build` makes (built and drawn once per `key`), `size` across, from `elevation` (radians) up. */
+export function objectIcon(key: string, build: () => THREE.Object3D, size: number, elevation = 0.6): PIXI.Sprite {
+    let texture = cache.get(key);
+    if (!texture) {
+        try {
+            texture = snapshot(build(), elevation);
+        } catch {
+            texture = PIXI.Texture.WHITE;
+        }
+        cache.set(key, texture);
+    }
+    const sprite = new PIXI.Sprite(texture);
+    sprite.anchor.set(0.5);
+    sprite.width = sprite.height = size;
+    return sprite;
+}
+
+/** The picture of a sundae (the customer's order): built as the sundae bar builds it (world/SundaeLook.ts). */
+export const sundaeIcon = (sundae: Sundae, size: number): PIXI.Sprite =>
+    objectIcon(`sundae:${sundae.base}:${[...sundae.scoops].sort().join(',')}:${sundae.sauce ?? ''}:${[...sundae.toppings].sort().join(',')}`, () => sundaeModel(sundae), size, 0.45);
+/** A scoop of `flavor`, a sauce's bowl, a topping's bowl (the ticket's pictures). */
+export const scoopIcon = (flavor: ScoopFlavor, size: number): PIXI.Sprite => objectIcon(`scoop:${flavor}`, () => scoopModel(flavor), size, 0.5);
+export const sauceIcon = (sauce: SundaeSauce, size: number): PIXI.Sprite => objectIcon(`sauce:${sauce}`, () => sauceBowlModel(sauce), size, 0.9);
+export const sundaeToppingIcon = (topping: SundaeTopping, size: number): PIXI.Sprite => objectIcon(`sundaeTopping:${topping}`, () => toppingSourceModel(topping), size, 0.8);
 
 /** A burger part's picture, or the whole burger's. */
 export const foodIcon = (id: Part | 'burger', size: number): PIXI.Sprite => modelIcon(id === 'burger' ? 'food_burger' : PART_MODELS[id], size);

@@ -13,7 +13,7 @@
 // and each frame where everyone who opens doors is (update).
 
 import * as THREE from 'three';
-import { PolyWallBuilder } from './PolyWallBuilder';
+import { PolyWallBuilder, type WallColliderBox } from './PolyWallBuilder';
 import { CheckerFloorBuilder } from './CheckerFloorBuilder';
 import RoomDoor from './RoomDoor';
 import { RoomHooks } from './RoomHooks';
@@ -56,6 +56,8 @@ export interface LayoutOpening {
     height?: number;
     /** A window's own bottom (y from the floor); unset: centred on the wall. */
     bottom?: number;
+    /** Windows and doors: false for no frame round it. */
+    frame?: boolean;
 }
 
 export interface LayoutWall extends StageRange {
@@ -73,6 +75,8 @@ export interface LayoutProp extends StageRange {
     /** The model's name (the game's `instantiate` makes it). */
     model: string;
     id?: string;
+    /** An editor's group it moves with (a table and its chairs); the room ignores it. */
+    group?: string;
     x: number;
     z: number;
     rotationY?: number;
@@ -137,6 +141,10 @@ export class Room {
     private readonly owned: THREE.Mesh[] = [];
     /** Props by id (the game finds its pieces: a station's counter, a table). */
     public readonly props = new Map<string, THREE.Object3D>();
+    /** Every prop placed, with its layout entry (what people walking about have to go round: see the game's walk grid). */
+    public readonly placed: { prop: LayoutProp; object: THREE.Object3D }[] = [];
+    /** The walls as solid boxes (doors and gaps left open: PolyWallBuilder.colliderBoxes), for walking round them. */
+    public readonly wallBoxes: WallColliderBox[] = [];
 
     public constructor(layout: RoomLayout, stage: number, options: RoomOptions) {
         const areas = layout.areas ?? [];
@@ -167,7 +175,7 @@ export class Room {
                     kind: o.kind,
                     rect: { minX: o.minX, maxX: o.maxX, minZ: o.minZ, maxZ: o.maxZ },
                     double: o.double, high: o.high, sliding: o.sliding, fitToCeiling: o.fitToCeiling, style: o.style, facing: o.facing,
-                    height: o.height, bottom: o.bottom,
+                    height: o.height, bottom: o.bottom, frame: o.frame,
                 })),
                 style: wall.style,
                 setup: wall.setup,
@@ -176,6 +184,14 @@ export class Room {
             mesh.castShadow = mesh.receiveShadow = shadows;
             this.owned.push(mesh);
             this.group.add(mesh);
+            this.wallBoxes.push(...PolyWallBuilder.colliderBoxes(placement, setup));
+            // Its windows' and doors' frames.
+            const frames = PolyWallBuilder.frames(placement, origin, setup, style);
+            if (frames) {
+                frames.castShadow = frames.receiveShadow = shadows;
+                this.owned.push(frames);
+                this.group.add(frames);
+            }
             // Its doors (a door opening's leaves), in their style.
             const openings = placement.openings ?? [];
             for (const frame of PolyWallBuilder.doorFrames(placement, setup)) {
@@ -195,6 +211,7 @@ export class Room {
                 if (child instanceof THREE.Mesh) child.castShadow = child.receiveShadow = shadows;
             });
             this.group.add(object);
+            this.placed.push({ prop, object });
             if (prop.id) this.props.set(prop.id, object);
         }
     }

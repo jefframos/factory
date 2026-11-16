@@ -27,9 +27,50 @@ The supermarket: a floor of produce crates and a shopping list (what the next da
 toppings; no quantities). Tap each crate on the list; a crate that isn't on it fails the run (TRY AGAIN, the list
 starts over). With the whole list in the basket the next day opens. The first day and the first supermarket visit, a hand points at what to tap next.
 
+Seated service (settings.json `stages[].service: "seated"`: the Small Diner, the Diner, the Restaurant): customers go to
+a free seat (the layout's `seats`, each on a chair at a table: a plain table with a menu, ketchup and mustard; the Diner
+two tables of 3, the Restaurant four of 4); a seat is free once its last plate's been cleared. Eaten, a plate turns
+dirty; the hand always points at a dirty plate, and at a finished dish. From the Diner on (`stages[].patience`, seconds)
+one customer at a time waits at the door with a patience bar over them: they sit as soon as a seat's free, and the next
+comes in once they have; out of patience, they leave annoyed (an unhappy customer). Without `patience` (the Small
+Diner) everyone comes in and they wait as long as it takes. When the station's order camera doesn't show every seat,
+the dining view frames them all.
+
+Pizza delivery (`game/scenes/DeliveryScene.ts`, settings.json `delivery`): after a day played with the pizza oven, before
+the supermarket (cook, deliver, shop). The town round the restaurant (Town in its 'delivery' mode, the level's buildings)
+and a city car (`delivery.car`, `world/DeliveryCar.ts`: a customer sat in it as Mow's / Dig's riders sit in their
+tractors, the pizza boxes on its roof) waiting outside the restaurant (`delivery.start`). A box hops onto the roof; the
+guide arrows (Mow's and Dig's: `world/GuideArrows.ts`, round the buildings on a car-sized walk grid) lead to a house
+(a glowing beacon at its door); there the box hops to the door (`delivery.pay` coins); back to the restaurant for the
+next — `delivery.deliveries` times, then the card (the coins into the restaurant's bar). Drive: drag anywhere (a
+joystick there: up to go, sideways to steer, down to back up) or the arrow keys / WASD. Stand-alone: Debug panel →
+Areas → PIZZA DELIVERY (its own panel: JUMP TO THE STOP, FINISH).
+
+The sundae bar (the Diner on: settings.json `stages[].sundae` — share, `maxScoops`, `maxToppings`, and the flavours,
+sauces, toppings it uses; `pay.sundae`): scooped ice cream, in a cone or a bowl, beside the soft-serve machine's simple
+cones (`game/world/Sundae.ts`, its look `game/world/SundaeLook.ts`). Two props make it: the one with Id `sundaeFreezer`
+(any model as big as the freezer: the game — and the editor — draw a freezer there, six tubs set in its top: vanilla,
+chocolate, strawberry, mint, blueberry, mango) and the one with Id `sundaeBar` (the cones, the bowls, the spot it's made
+on; behind, three sauces and four toppings). Tap a cone or a bowl, a tub per scoop (up to 3), a sauce, the toppings
+(sprinkles, cherry, cookie stick, waffle), then the sundae. Right when it's the base, the same scoops (any order), the
+sauce and exactly the toppings asked for; the bubble and the ticket show a picture of the sundae ordered.
+Debug panel → Minigames → SUNDAE BAR.
+
+Pizza (the Restaurant stage, from its second day: settings.json `stages[].pizza` — its share of the orders, its
+`toppings`, `maxToppings` — and `bakeSeconds`, `pay.pizza`): the customer's bubble shows the pizza they want (a picture
+built like the real one, then each topping), and it stays on the ticket while it's made. The camera turns to the oven
+and its tables (`game/world/Pizza.ts`, its look `game/world/PizzaLook.ts`). Tap the dough (rolled out on the board),
+the sauce, the cheese, each topping asked for (pepperoni, mushroom, onion, tomato, pickles; none: a cheese pizza), then
+the pizza: the oven door drops, it slides in and bakes (a ring over the oven), and comes back out browned. Tap it (or
+SERVE). Right when it's baked with exactly its recipe. The station is a `pizza_oven` prop in the layout (put it on a
+counter: `elevation` 1) and the board is the prop whose Id is `pizzaBoard`: a big kitchen table (a cutting board's put on
+it) with a second table behind it for the ingredients (two rows of four). Without a `pizzaBoard`, a board appears on the
+oven's left. The supermarket's list then asks for dough, tomatoes, cheese and the toppings. Debug panel → Minigames →
+PIZZA.
+
 The plan grows from here: each stage built bigger (a procedural room: floor, walls, doors), tables, new ingredients,
-table service (tap a customer to take the order, tap them again to serve), stations (a pizza oven: a pizza order sends
-the cook to the pizza zone), and later a delivery minigame. Debug panel (`?dev=1`): Areas jumps to any area.
+table service (tap a customer to take the order, tap them again to serve), more stations, and later a delivery
+minigame. Debug panel (`?dev=1`): Areas jumps to any area.
 
 ## Where things are
 
@@ -39,6 +80,8 @@ the cook to the pizza zone), and later a delivery minigame. Debug panel (`?dev=1
 - `game/ui/Curtain.ts`: the transition between the two.
 - `game/world/Kitchen.ts`: the set (KayKit Restaurant Bits: the bench, stove and pan, plate, toppings; the dining room)
   and the burger being built.
+- `game/world/IceCream.ts`, `game/world/Pizza.ts`: the ice cream machine's and the pizza oven's stations (each found
+  from its prop in the layout).
 - `game/world/Customers.ts`: the customers (UFO's people and their walk and idle).
 - `game/world/Models.ts`: loads the kitchen models and the people, hands out copies.
 - `game/data/Recipes.ts`: the ingredients and the orders.
@@ -78,6 +121,24 @@ spot, customer spot, piles, decor), the customers' way in, and styles (wall colo
 Station cameras: select one, 👁 Look through, frame the shot in the gold 720 x 1080 frame (the game's screen), 📸 Use
 this view. Save writes levels/restaurant.json; the running game reloads with it. Imported models: run `npm run models`
 before a build.
+
+City blocks (SimCity-style): a lawn with "Fill with buildings" (the editor's lawn inspector) is a city block — buildings
+stand along its sides facing out to the streets round it, picked by its kind (homes, shops / offices, mixed) and its seed
+(🎲 for another mix) from settings.json `town.city.buildings` (each at its height), `setback` in from its edge, `gap`
+apart, never over its edge or each other. Draw the roads, then each block's outline just inside them. The filling is
+`web/public/cityfill.js`, shared by the game (`game/world/CityBlocks.ts`: the buildings are props to the room — the
+delivery's houses among them) and the editor's preview. The delivery's streets have no people; the restaurant's few are
+round it.
+
+Prefabs (`levels/prefabs.json`, shared by every level): a station or a table set made once — the ice cream machine on
+its tables, the pizza station, the sundae bar, round tables of 3 and 4 seats — and placed as often as wanted (the
+level's `instances`: which, where, turned how, at which stages; the game unfolds them when it reads the level). In the
+editor a placed one shows on a blue ring (its arrow: its front) and moves / turns whole. To change one: Unpack it (a
+group again), edit the group, then the group's ◈ Save as prefab (the same name): every one changes. Any group can be saved
+as a new prefab, and the outline's Prefabs ＋ Place… puts one in. A station's ingredients aren't in its prefab: they're
+the stage's (settings.json — the burger station's `piles` grid: buns, patties and `stages[].toppings`; the pizza's
+toppings; the sundae bar's flavours, sauces, toppings), laid out in the station's grids, so the same station shows more
+at a bigger stage.
 
 Level: 🛒 Supermarket opens `levels/market.json` (MarketScene's room, same core/rooms format, one stage): its floor,
 walls and props (fridges, shelves), the crate grid (`market.crates`: its middle, columns, gaps — drag it; the game

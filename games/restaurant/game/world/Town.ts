@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { roadCellAt, roadCellKey, roadNetwork } from 'core/roads/RoadGrid';
 import { buildLawn, buildRoads } from 'core/town/Ground';
+import { buildWater } from './Water';
 import { Traffic, spreadCars } from 'core/town/Traffic';
 import { Crowd, type CrowdArea, type CrowdPaths } from 'core/town/Crowd';
 import { shownAt } from 'core/rooms/Room';
@@ -41,7 +42,7 @@ export class Town {
     /** Resolves once the road tiles and cars are in (the people come straight away). */
     public readonly ready: Promise<void>;
 
-    /** `mode`: 'restaurant' (a few people about: settings.json town.people.restaurant), or 'delivery' (the whole town's). */
+    /** `mode`: 'restaurant' (a few people about: settings.json town.people.restaurant), or 'delivery' (no people: the streets clear for the car). */
     public constructor(stage: number, mode: TownMode = 'restaurant') {
         this.group.name = 'town';
         const layout = LAYOUT_DATA;
@@ -51,9 +52,9 @@ export class Town {
         this.collectWalls(stage);
         this.collectBlockers(stage);
 
-        // Lawns.
+        // Lawns (and water: a lawn marked `water` — a pond, a lake, a river).
         (layout.lawns ?? []).filter((lawn) => shownAt(lawn, stage, areas, lawn.points[0])).forEach((lawn, i) => {
-            const mesh = buildLawn(lawn, LAWN_Y + i * LAWN_STEP);
+            const mesh = lawn.water ? buildWater(lawn.points, lawn.color, LAWN_Y + i * LAWN_STEP) : buildLawn(lawn, LAWN_Y + i * LAWN_STEP);
             if (mesh) this.group.add(mesh);
         });
 
@@ -70,12 +71,23 @@ export class Town {
             walkers = Math.min(walkers, cap.walkers);
         }
         const paths = allPaths && { ...allPaths, walkers };
-        if (crowdAreas.length || walkers) void this.buildCrowd(crowdAreas, paths);
+        // (The delivery has its streets clear: just the cars.)
+        if (mode !== 'delivery' && (crowdAreas.length || walkers)) void this.buildCrowd(crowdAreas, paths);
+    }
+
+    /** The traffic's cars (where, which way): for the delivery car to bump into. */
+    public get cars(): { x: number; z: number; headingX: number; headingZ: number }[] {
+        return this.traffic?.carSpots ?? [];
+    }
+
+    /** Traffic car `index` (as `cars` lists them) brought to a stop: bumped into. */
+    public stopCar(index: number): void {
+        this.traffic?.stopCar(index);
     }
 
     /**
      * The crowd's areas trimmed to `max` people, the areas nearest the restaurant (the middle of its walls standing at this
-     * stage) first: the restaurant only needs a few people about; the delivery mode has the whole town's.
+     * stage) first: the restaurant only needs a few people about (the delivery mode has none).
      */
     private nearestPeople(areas: CrowdArea[], max: number): CrowdArea[] {
         const middle = { x: 0, z: 0 };

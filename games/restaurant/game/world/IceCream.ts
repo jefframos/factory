@@ -2,7 +2,8 @@
 //
 // The ice cream station: the soft-serve machine the layout places (a prop whose model is KayKit's icecream_machine, with
 // its three handles: vanilla, chocolate, strawberry), and the making of a cone at it. Super simple:
-//   1. tap the stack of cones (on the machine's tray): a cone hops onto the tray, under the middle;
+//   1. tap the stack of cones (on the counter beside the machine, its left: the machine stands on a counter too): a cone
+//      hops onto the machine's tray, under the middle;
 //   2. tap a flavour's handle: the cone slides under its nozzle, the handle's pulled and the swirl grows on the cone;
 //   3. tap the cone (or SERVE) to serve it: it goes out on a plate (as a burger does), to the counter or the customer's
 //      table, where it's eaten (and the plate stays, to clear, as a burger's).
@@ -16,10 +17,15 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { kitchenModel } from './Models';
 import { CONE_MODEL, CONE_STACK_MODEL, FLAVORS, Flavor, SWIRL_MODELS } from '../data/Recipes';
-import type { CameraShot } from './RestaurantLayout';
+import { SHOT_ASPECT, type CameraShot } from './RestaurantLayout';
 
-/** In the machine model's space: the tray's top, how far forward a cone stands (under the nozzles), the cone stack's spot. */
-const TRAY = { y: 0.73, z: 0.72, stackX: -0.72, stackZ: 0.6 };
+/** In the machine model's space: the tray's top, how far forward a cone stands (under the nozzles); its half width. */
+const TRAY = { y: 0.73, z: 0.72, halfWidth: 1 };
+/**
+ * The stack of cones: not on the machine (it'd stand in its tray) but on the counter beside it, on its left (seen from
+ * the front) — `gap` (world units) out from the machine's side, `forward` toward its front (model units), at its foot.
+ */
+const STACK = { gap: 0.55, forward: 0.35 };
 /** A cone's size (x its model: the swirl then fits under the nozzle); where the swirl sits on it (its model's units). */
 const CONE = { scale: 0.85, swirlAt: 0.5 };
 /** The swirl coming out: how long (s), how far the handle's pulled (radians, toward the front). */
@@ -30,7 +36,7 @@ const SERVE = { plate: 0.72, seconds: 0.8, height: 1.2 };
 /** Tap reach round the stack, a handle, the cone (world units, across the screen). */
 const REACH = { stack: 0.45, handle: 0.32, cone: 0.4 };
 /** The camera on the machine: from its front, this far out and up, looking at its tray; field of view. */
-const SHOT = { out: 3.3, up: 1.25, aimUp: 1.1, fov: 46 };
+const SHOT = { out: 3.3, up: 1.25, aimUp: 1.1, fov: 46, margin: 0.9 };
 
 export type IceTarget = 'cones' | 'cone' | Flavor;
 
@@ -42,6 +48,8 @@ export class IceCreamStation {
     private readonly group = new THREE.Group();
     public readonly targets: { kind: IceTarget; at: THREE.Vector3; radius: number }[] = [];
     private readonly handles = new Map<Flavor, THREE.Object3D>();
+    /** Where the cone stack stands (the machine's space: on the counter beside it). */
+    private readonly stackAt: THREE.Vector3;
     /** The cone being made: its group, where it stands (x along the tray), its swirl's flavour once poured. */
     private cone: { object: THREE.Group; flavor: Flavor | null; landed: boolean; pouring: boolean } | null = null;
     /** Served cones' plates waiting at the counter (cleared when the customer goes). */
@@ -59,11 +67,13 @@ export class IceCreamStation {
         frame.matrixWorld.decompose(this.group.position, this.group.quaternion, this.group.scale);
         scene.add(this.group);
 
+        // The cone stack on the counter beside the machine (at the machine's foot: the counter top).
+        this.stackAt = new THREE.Vector3(-TRAY.halfWidth - STACK.gap / Math.max(1e-3, this.group.scale.x), 0, STACK.forward);
         const stack = kitchenModel(CONE_STACK_MODEL);
         stack.scale.setScalar(CONE.scale);
-        stack.position.set(TRAY.stackX, TRAY.y, TRAY.stackZ);
+        stack.position.copy(this.stackAt);
         this.group.add(stack);
-        this.addTarget('cones', new THREE.Vector3(TRAY.stackX, TRAY.y + 0.6, TRAY.stackZ), REACH.stack);
+        this.addTarget('cones', this.stackAt.clone().add(new THREE.Vector3(0, 0.6, 0)), REACH.stack);
         for (const [flavor, handle] of this.handles) {
             this.addTarget(flavor, new THREE.Vector3(handle.position.x, handle.position.y + 0.2, handle.position.z), REACH.handle);
         }
@@ -85,11 +95,18 @@ export class IceCreamStation {
         return this.targets.find((t) => t.kind === kind)!.at.clone();
     }
 
-    /** The camera on the machine: from its front, looking at the tray (framed as the stations' shots). */
+    /**
+     * The camera on the machine: from its front, looking between its tray and the cone stack beside it, back far enough
+     * that both fit across a 720 x 1080 screen (never nearer than SHOT.out).
+     */
     public get shot(): CameraShot {
-        const aim = this.group.localToWorld(new THREE.Vector3(0, SHOT.aimUp, TRAY.z));
+        const aim = this.group.localToWorld(new THREE.Vector3(this.stackAt.x / 2, SHOT.aimUp, TRAY.z));
         const front = new THREE.Vector3(0, 0, 1).applyQuaternion(this.group.quaternion).setY(0).normalize();
-        const position = aim.clone().addScaledVector(front, SHOT.out).add(new THREE.Vector3(0, SHOT.up, 0));
+        // From the machine's right side to past the stack (world units), and a margin.
+        const span = (TRAY.halfWidth - this.stackAt.x) * this.group.scale.x + SHOT.margin;
+        const across = Math.tan(THREE.MathUtils.degToRad(SHOT.fov / 2)) * SHOT_ASPECT;
+        const out = Math.max(SHOT.out, span / 2 / across);
+        const position = aim.clone().addScaledVector(front, out).add(new THREE.Vector3(0, out * (SHOT.up / SHOT.out), 0));
         return { position, target: aim, fov: SHOT.fov };
     }
 
@@ -133,8 +150,8 @@ export class IceCreamStation {
         const object = new THREE.Group();
         object.add(kitchenModel(CONE_MODEL));
         object.scale.setScalar(CONE.scale);
-        // Off the top of the stack, onto the tray under the middle.
-        object.position.set(TRAY.stackX, TRAY.y + 0.55, TRAY.stackZ);
+        // Off the top of the stack (on the counter beside the machine), onto the tray under the middle.
+        object.position.copy(this.stackAt).add(new THREE.Vector3(0, 0.55, 0));
         this.group.add(object);
         const cone = { object, flavor: null as Flavor | null, landed: false, pouring: false };
         this.cone = cone;

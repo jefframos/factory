@@ -6,10 +6,11 @@
   "market": {
     "crates": {
       "x": 0,
-      "z": 0,
+      "z": -2.5,
       "columns": 4,
-      "gapX": 0.6,
-      "gapZ": 1.1
+      "gapX": 0.5,
+      "gapZ": 1.55,
+      "scale": 1.25
     },
     "cashier": {
       "x": 0,
@@ -71,7 +72,8 @@
           "z": 8
         }
       ],
-      "openings": []
+      "openings": [],
+      "height": 11
     }
   ],
   "props": [

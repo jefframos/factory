@@ -9,13 +9,14 @@
 // A restaurant day's coins are only saved when the day ends (a reload mid-day plays it again from its start).
 
 import PlatformHandler from 'core/platforms/PlatformHandler';
-import { Order, dealDay } from './Recipes';
+import { Order, dealDay, pizzaFromSave } from './Recipes';
 import { isLastStage, stageSettings } from './Settings';
-import { hasIceCreamMachine } from '../world/RestaurantLayout';
+import { hasIceCreamMachine, hasPizzaOven, hasSundaeBar } from '../world/RestaurantLayout';
 
 const KEY = 'restaurant.save';
 
-export type Place = 'restaurant' | 'market';
+/** Where the player is: cooking, delivering pizzas (after a day with the pizza oven), or shopping for the next day. */
+export type Place = 'restaurant' | 'delivery' | 'market';
 
 interface SaveData {
     day: number;
@@ -28,6 +29,10 @@ interface SaveData {
     orders: Order[];
     /** Whether they've served an ice cream right yet (till then, a hand shows each step at the machine). */
     iceCreamLearned?: boolean;
+    /** The same for a pizza (a hand at each step at the oven). */
+    pizzaLearned?: boolean;
+    /** The same for a sundae (a hand at each step at the sundae bar). */
+    sundaeLearned?: boolean;
 }
 
 /** A new player: day 1's orders (the kitchen's stocked for the first day). */
@@ -37,8 +42,9 @@ function fresh(): SaveData {
 
 /** Day `day`'s orders, at `stage`'s `stageDay`-th day: its first day can ask for its own number of customers. */
 function dealFor(day: number, stage: number, stageDay: number): Order[] {
-    // Ice cream once the stage's room has its machine, from its second day (its first teaches what's new about it).
-    return dealDay(day, stage, stageDay === 0 ? stageSettings(stage).firstDay?.customers : undefined, stageDay > 0 && hasIceCreamMachine(stage));
+    // Ice cream once the stage's room has its machine, pizza once it has its oven: from its second day (its first
+    // teaches what's new about it).
+    return dealDay(day, stage, stageDay === 0 ? stageSettings(stage).firstDay?.customers : undefined, stageDay > 0 && hasIceCreamMachine(stage), stageDay > 0 && hasPizzaOven(stage), stageDay > 0 && hasSundaeBar(stage));
 }
 
 function parse(text: string | null): SaveData {
@@ -47,12 +53,14 @@ function parse(text: string | null): SaveData {
         if (!saved || !Array.isArray(saved.orders)) return fresh();
         return {
             day: Math.max(0, Math.floor(saved.day ?? 0)),
-            place: saved.place === 'market' ? 'market' : 'restaurant',
+            place: saved.place === 'market' || saved.place === 'delivery' ? saved.place : 'restaurant',
             stage: Math.max(0, Math.floor(saved.stage ?? 0)),
             stageDay: Math.max(0, Math.floor(saved.stageDay ?? 0)),
             progress: Math.max(0, Math.floor(saved.progress ?? 0)),
             orders: saved.orders,
             iceCreamLearned: saved.iceCreamLearned === true,
+            pizzaLearned: saved.pizzaLearned === true,
+            sundaeLearned: saved.sundaeLearned === true,
         };
     } catch {
         return fresh();
@@ -126,8 +134,28 @@ export const RestaurantSave = {
         save();
     },
 
+    get pizzaLearned(): boolean {
+        return state.pizzaLearned === true;
+    },
+
+    /** A pizza served right: no more hints at the oven. */
+    learnPizza(): void {
+        if (state.pizzaLearned) return;
+        state.pizzaLearned = true;
+        save();
+    },
+
     get orders(): Order[] {
-        return state.orders.map((o) => ({ toppings: [...o.toppings], ...(o.iceCream ? { iceCream: o.iceCream } : {}) }));
+        // (A pizza saved as its old kind — 'pepperoni' — comes back as its toppings.)
+        return state.orders.map((o) => {
+            const pizza = pizzaFromSave(o.pizza);
+            return {
+                toppings: [...o.toppings],
+                ...(o.iceCream ? { iceCream: o.iceCream } : {}),
+                ...(pizza ? { pizza } : {}),
+                ...(o.sundae ? { sundae: { ...o.sundae, scoops: [...o.sundae.scoops], toppings: [...o.sundae.toppings] } } : {}),
+            };
+        });
     },
 
     /** Coins into the bar: each time it fills, the restaurant's upgraded (the rest carries on into the next bar; the last
@@ -177,14 +205,46 @@ export const RestaurantSave = {
         save();
     },
 
-    /** A day's over: its coins into the bar, the next day's orders dealt, and off to the supermarket. */
+    get sundaeLearned(): boolean {
+        return state.sundaeLearned === true;
+    },
+
+    /** A sundae served right: no more hints at the sundae bar. */
+    learnSundae(): void {
+        if (state.sundaeLearned) return;
+        state.sundaeLearned = true;
+        save();
+    },
+
+    /** Forgets that a sundae was served right (its hints show again). */
+    forgetSundae(): void {
+        state.sundaeLearned = false;
+        save();
+    },
+
+    /** Forgets that a pizza was served right (its hints at the oven show again). */
+    forgetPizza(): void {
+        state.pizzaLearned = false;
+        save();
+    },
+
+    /**
+     * A day's over: its coins into the bar, the next day's orders dealt, and off to deliver pizzas (a day played with the
+     * pizza oven) or straight to the supermarket.
+     */
     endDay(earned: number): void {
         const stageBefore = state.stage;
         RestaurantSave.addProgress(earned);
         state.day++;
         state.stageDay = state.stage === stageBefore ? state.stageDay + 1 : 0;
         state.orders = dealFor(state.day, state.stage, state.stageDay);
-        state.place = 'market';
+        state.place = hasPizzaOven(stageBefore) ? 'delivery' : 'market';
+        save();
+    },
+
+    /** To the pizza delivery (the debug panel's areas: stand-alone); the day's orders stay. */
+    openDelivery(): void {
+        state.place = 'delivery';
         save();
     },
 

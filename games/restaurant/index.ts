@@ -17,10 +17,11 @@ import loaderConfig from './loader.config';
 import platformConfig from './platforms.config.json';
 import RestaurantScene from './game/scenes/RestaurantScene';
 import MarketScene from './game/scenes/MarketScene';
+import DeliveryScene from './game/scenes/DeliveryScene';
 import { curtain } from './game/ui/Curtain';
 import { SETTINGS } from './game/data/Settings';
 import { RestaurantSave } from './game/data/RestaurantSave';
-import { FLAVORS, Order, Topping, dealDay } from './game/data/Recipes';
+import { FLAVORS, Order, PizzaTopping, Topping, dealDay } from './game/data/Recipes';
 import { RestaurantAudio } from './game/audio/RestaurantAudio';
 
 type PlatformConfigEntry = { gameId?: string; enableAds?: boolean };
@@ -63,6 +64,7 @@ export default class RestaurantGame extends Game {
             RestaurantAudio.initialize(this.folderPath);
             this.buildDebug();
             if (RestaurantSave.place === 'market') this.showMarket();
+            else if (RestaurantSave.place === 'delivery') this.showDelivery();
             else this.showRestaurant();
             PlatformHandler.instance.platform.loadFinished();
             this.loaderScene.hide();
@@ -79,6 +81,8 @@ export default class RestaurantGame extends Game {
         const areas: { name: string; go: () => void }[] = [
             { name: 'RESTAURANT', go: () => { RestaurantSave.openRestaurant(); this.showRestaurant(); } },
             { name: 'SUPERMARKET', go: () => { RestaurantSave.openMarket(); this.showMarket(); } },
+            // Stand-alone: the delivery at the stage the player's on (its town and restaurant).
+            { name: 'PIZZA DELIVERY', go: () => { RestaurantSave.openDelivery(); this.showDelivery(); } },
             // Each stage of the restaurant (levels/restaurant.json's `from` / `until`).
             ...SETTINGS.stages.map((stage, i) => ({
                 name: `${i + 1}: ${stage.name.toUpperCase()}`,
@@ -101,6 +105,29 @@ export default class RestaurantGame extends Game {
                     RestaurantSave.practice(stageOf('smallDiner'), 1, FLAVORS.map((iceCream) => ({ toppings: [], iceCream })));
                 },
             },
+            {
+                // Every pizza, the oven's hints on (as a first time).
+                name: 'PIZZA (cheese, then toppings)',
+                go: () => {
+                    RestaurantSave.forgetPizza();
+                    const pizzas: PizzaTopping[][] = [[], ['pepperoni'], ['mushroom', 'onion'], ['tomato', 'pickles']];
+                    RestaurantSave.practice(stageOf('restaurant'), 1, pizzas.map((pizza) => ({ toppings: [], pizza })));
+                },
+            },
+            {
+                // Sundaes, simple to full (the bar's hints on, as a first time): a cone, a bowl with sauce, a full one.
+                name: 'SUNDAE BAR (cones and bowls)',
+                go: () => {
+                    RestaurantSave.forgetSundae();
+                    RestaurantSave.practice(stageOf('diner'), 1, [
+                        { toppings: [], sundae: { base: 'cone', scoops: ['vanilla'], sauce: null, toppings: [] } },
+                        { toppings: [], sundae: { base: 'bowl', scoops: ['chocolate', 'mint'], sauce: 'caramel', toppings: ['cherry'] } },
+                        { toppings: [], sundae: { base: 'bowl', scoops: ['strawberry', 'mango', 'blueberry'], sauce: 'chocolate', toppings: ['sprinkles', 'waffle'] } },
+                        { toppings: [], sundae: { base: 'cone', scoops: ['chocolate', 'chocolate'], sauce: 'caramel', toppings: ['cookie'] } },
+                    ]);
+                },
+            },
+            { name: 'MIXED: BURGERS, PIZZA AND ICE CREAM', go: () => RestaurantSave.practice(stageOf('restaurant'), 1, [{ toppings: [], pizza: ['pepperoni'] }, burger(['cheese', 'onion']), { toppings: [], iceCream: 'vanilla' }, { toppings: [], pizza: ['mushroom', 'tomato'] }]) },
             { name: 'BURGERS: FOOD TRUCK QUEUE', go: () => RestaurantSave.practice(stageOf('truck'), 1, [burger(['cheese']), burger(['lettuce', 'tomato']), burger(['cheese', 'lettuce', 'tomato'])]) },
             { name: 'BURGERS: NEW TOPPINGS (pickles, onion)', go: () => RestaurantSave.practice(stageOf('smallDiner'), 1, [burger(['pickles']), burger(['onion']), burger(['cheese', 'pickles', 'onion'])]) },
             { name: 'SEATED: CLEARING PLATES (3 stools, 4 customers)', go: () => RestaurantSave.practice(stageOf('smallDiner'), 0, dealDay(RestaurantSave.day, stageOf('smallDiner'), SETTINGS.stages[stageOf('smallDiner')].firstDay?.customers)) },
@@ -115,10 +142,22 @@ export default class RestaurantGame extends Game {
         }
     }
 
-    /** The restaurant, for the day the player's on; its day's card goes to the supermarket. */
+    /** The restaurant, for the day the player's on; its day's card goes on to the pizza delivery (a day with the oven) or the supermarket. */
     private showRestaurant(): void {
         const key = `restaurant-${this.scenes++}`;
         this.sceneManager.register<RestaurantScene>(key, RestaurantScene, this, () => {
+            if (RestaurantSave.place === 'delivery') curtain(this, 'PIZZA DELIVERY', 'Take the pizzas out', 'ItemIcon_Meat', () => this.showDelivery());
+            else curtain(this, 'SUPERMARKET', 'Shop for tomorrow', 'ItemIcon_Shop', () => this.showMarket());
+        });
+        this.sceneManager.changeScene(key);
+        this.sceneManager.resize();
+    }
+
+    /** The pizza delivery (drive the pizzas round the town); done, the supermarket. */
+    private showDelivery(): void {
+        const key = `delivery-${this.scenes++}`;
+        this.sceneManager.register<DeliveryScene>(key, DeliveryScene, this, () => {
+            RestaurantSave.openMarket();
             curtain(this, 'SUPERMARKET', 'Shop for tomorrow', 'ItemIcon_Shop', () => this.showMarket());
         });
         this.sceneManager.changeScene(key);

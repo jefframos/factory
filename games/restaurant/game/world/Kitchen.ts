@@ -40,10 +40,25 @@ export const LAYOUT = {
     tapRadius: { pile: 0.5, pan: 0.65, plate: 0.55 },
 };
 
+/**
+ * A `piles` piece's grid: `items` laid out round its spot, `columns` across (the first at its +x end), `gapX` / `gapZ`
+ * apart, the first row the front (+z). As the supermarket's crates: more ingredients, more rows.
+ */
+export function pileGrid(grid: StationPiece, items: readonly Piece[]): { piece: Piece; x: number; z: number }[] {
+    const columns = Math.max(1, Math.round(grid.columns ?? 3));
+    const rows = Math.ceil(items.length / columns);
+    const gapX = grid.gapX ?? 1;
+    const gapZ = grid.gapZ ?? 1;
+    return items.map((piece, i) => {
+        const column = i % columns;
+        const row = Math.floor(i / columns);
+        return { piece, x: grid.x + ((columns - 1) / 2 - column) * gapX, z: grid.z + ((rows - 1) / 2 - row) * gapZ };
+    });
+}
+
 /** The models the kitchen uses (Models.loadModels before building it). */
 export const KITCHEN_MODELS = [
-    ...Object.values(PART_MODELS), 'food_burger', 'plate', 'pan_A', 'stove_single_countertop', 'kitchencounter_straight_A',
-    'kitchencounter_straight_B',
+    ...Object.values(PART_MODELS), 'food_burger', 'plate', 'pan_A', 'stove_single_countertop', 'kitchentable_A',
 ];
 
 /** What each pile shows (a raw patty pile, though it puts a cooked one on the plate). */
@@ -92,7 +107,11 @@ export class Kitchen {
     public onCooked: (() => void) | null = null;
 
     /** `station`: the burger station's layout (levels/restaurant.json). */
-    public constructor(parent: THREE.Object3D, private readonly station: StationLayout) {
+    /**
+     * `stocked`: what this stage's kitchen has — the buns, the patties, the stage's toppings: a `piles` piece lays out a
+     * pile of each (the same station, more toppings at a bigger stage).
+     */
+    public constructor(parent: THREE.Object3D, private readonly station: StationLayout, private readonly stocked: readonly Piece[] = ['bunBottom', 'bunTop', 'patty']) {
         this.group.position.set(station.x, 0, station.z);
         parent.add(this.group);
         this.buildBenches();
@@ -145,18 +164,20 @@ export class Kitchen {
         this.panFloor = stoveTop + 0.06 * LAYOUT.pan;
         this.addTarget('pan', at(panPiece, stoveTop + 0.1), LAYOUT.tapRadius.pan);
 
-        // The piles, each on a little plate.
-        for (const piece of pieces.filter((p) => p.role === 'pile' && p.piece)) {
+        // The piles, each on a little plate: one per `pile` piece, and a `piles` piece's grid of what this stage uses.
+        const placed: { piece: Piece; x: number; z: number }[] = pieces.filter((p) => p.role === 'pile' && p.piece).map((p) => ({ piece: p.piece!, x: p.x, z: p.z }));
+        for (const grid of pieces.filter((p) => p.role === 'piles')) placed.push(...pileGrid(grid, this.stocked.filter((s) => !placed.some((p) => p.piece === s))));
+        for (const { piece, x, z } of placed) {
             const group = new THREE.Group();
-            group.position.copy(at(piece, this.benchTop));
+            group.position.set(x, this.benchTop, z);
             const dish = kitchenModel('plate');
             dish.scale.setScalar(LAYOUT.pileDish);
             group.add(dish);
             this.group.add(group);
-            const pile = { piece: piece.piece!, group, base: sizeOf(dish).y * 0.6 };
-            this.piles.set(piece.piece!, pile);
+            const pile = { piece, group, base: sizeOf(dish).y * 0.6 };
+            this.piles.set(piece, pile);
             this.fillPile(pile);
-            this.addTarget(piece.piece!, at(piece, this.benchTop + 0.2), LAYOUT.tapRadius.pile);
+            this.addTarget(piece, new THREE.Vector3(x, this.benchTop + 0.2, z), LAYOUT.tapRadius.pile);
         }
         // The plate, where a served one goes, and where the customer stands.
         this.platePiece = one('plate') ?? { role: 'plate', x: 0, z: 0 };

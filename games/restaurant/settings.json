@@ -1,41 +1,224 @@
 {
   "days": [
-    { "customers": 3, "maxToppings": 1 },
-    { "customers": 3, "maxToppings": 2 },
-    { "customers": 4, "maxToppings": 2 },
-    { "customers": 4, "maxToppings": 3 },
-    { "customers": 5, "maxToppings": 3 }
+    {
+      "customers": 3,
+      "maxToppings": 1
+    },
+    {
+      "customers": 3,
+      "maxToppings": 2
+    },
+    {
+      "customers": 4,
+      "maxToppings": 2
+    },
+    {
+      "customers": 4,
+      "maxToppings": 3
+    },
+    {
+      "customers": 5,
+      "maxToppings": 3
+    }
   ],
   "stages": [
-    { "id": "truck", "name": "Food Truck", "goal": 60 },
-    { "id": "smallDiner", "name": "Small Diner", "goal": 120, "service": "seated", "firstDay": { "seats": 3, "customers": 4 }, "toppings": ["cheese", "lettuce", "tomato", "pickles", "onion"], "iceCream": { "share": 0.3 } },
-    { "id": "diner", "name": "Diner", "goal": 200, "toppings": ["cheese", "lettuce", "tomato", "pickles", "onion"], "iceCream": { "share": 0.3 } },
-    { "id": "restaurant", "name": "Restaurant", "goal": 320, "toppings": ["cheese", "lettuce", "tomato", "pickles", "onion"], "iceCream": { "share": 0.3 } }
+    {
+      "id": "truck",
+      "name": "Food Truck",
+      "goal": 60
+    },
+    {
+      "id": "smallDiner",
+      "name": "Small Diner",
+      "goal": 120,
+      "service": "seated",
+      "firstDay": {
+        "seats": 3,
+        "customers": 4
+      },
+      "toppings": [
+        "cheese",
+        "lettuce",
+        "tomato",
+        "pickles",
+        "onion"
+      ],
+      "iceCream": {
+        "share": 0.3
+      }
+    },
+    {
+      "id": "diner",
+      "name": "Diner",
+      "goal": 200,
+      "service": "seated",
+      "patience": 18,
+      "toppings": [
+        "cheese",
+        "lettuce",
+        "tomato",
+        "pickles",
+        "onion"
+      ],
+      "iceCream": {
+        "share": 0.15
+      },
+      "sundae": {
+        "share": 0.25,
+        "maxScoops": 2,
+        "maxToppings": 1
+      }
+    },
+    {
+      "id": "restaurant",
+      "name": "Restaurant",
+      "goal": 320,
+      "service": "seated",
+      "patience": 16,
+      "toppings": [
+        "cheese",
+        "lettuce",
+        "tomato",
+        "pickles",
+        "onion"
+      ],
+      "iceCream": {
+        "share": 0.1
+      },
+      "sundae": {
+        "share": 0.2,
+        "maxScoops": 3,
+        "maxToppings": 2
+      },
+      "pizza": {
+        "share": 0.35,
+        "toppings": [
+          "pepperoni",
+          "mushroom",
+          "onion",
+          "tomato",
+          "pickles"
+        ],
+        "maxToppings": 2
+      }
+    }
   ],
   "cookSeconds": 2.2,
+  "bakeSeconds": 3,
   "pay": {
     "base": 12,
     "perTopping": 5,
-    "iceCream": 15
+    "iceCream": 15,
+    "pizza": 16,
+    "sundae": 14
   },
   "customer": {
     "height": 2.4,
     "walkSpeed": 2.2
   },
+  "delivery": {
+    "$comment": "The pizza delivery minigame (DeliveryScene): drive the car (car) from outside the restaurant (start: where it waits, facing rotationY) to a house, drop its pizza, back for the next — deliveries times; each pays pay coins (into the restaurant bar). The car: top speed, how fast it gets there and turns (radians a second at speed), its length (fitted to it), the driver and the boxes on its roof.",
+    "deliveries": 3,
+    "pay": 12,
+    "car": "library/city2-car-12/city2-car-12.glb",
+    "start": {
+      "x": 2,
+      "z": 18,
+      "rotationY": 1.5708
+    },
+    "maxSpeed": 14,
+    "reverseSpeed": 5,
+    "accel": 12,
+    "brake": 22,
+    "turnRate": 3.8,
+    "length": 4.2,
+    "arriveRadius": 3.6,
+    "houseDistance": [
+      30,
+      110
+    ]
+  },
   "market": [
-    { "id": "bun", "name": "Buns", "crate": "crate_buns", "icon": "food_ingredient_bun" },
-    { "id": "patty", "name": "Patties", "crate": "crate", "icon": "food_ingredient_burger_uncooked", "top": "food_ingredient_burger_uncooked" },
-    { "id": "pickles", "name": "Pickles", "crate": "crate", "icon": "food_ingredient_pickle", "top": "food_ingredient_pickle" },
-    { "id": "cheese", "name": "Cheese", "crate": "crate_cheese", "icon": "food_ingredient_cheese" },
-    { "id": "lettuce", "name": "Lettuce", "crate": "crate_lettuce", "icon": "food_ingredient_lettuce" },
-    { "id": "tomato", "name": "Tomatoes", "crate": "crate_tomatoes", "icon": "food_ingredient_tomato" },
-    { "id": "onion", "name": "Onions", "crate": "crate_onions", "icon": "food_ingredient_onion" },
-    { "id": "mushroom", "name": "Mushrooms", "crate": "crate_mushrooms", "icon": "food_ingredient_mushroom" },
-    { "id": "carrot", "name": "Carrots", "crate": "crate_carrots", "icon": "food_ingredient_carrot" },
-    { "id": "potato", "name": "Potatoes", "crate": "crate_potatoes", "icon": "food_ingredient_potato" },
-    { "id": "ham", "name": "Ham", "crate": "crate_ham", "icon": "food_ingredient_ham" },
-    { "id": "pepperoni", "name": "Pepperoni", "crate": "crate_pepperoni", "icon": "food_ingredient_pepperoni" },
-    { "id": "dough", "name": "Dough", "crate": "crate_dough", "icon": "food_ingredient_dough" }
+    {
+      "id": "bun",
+      "name": "Buns",
+      "crate": "crate_buns",
+      "icon": "food_ingredient_bun"
+    },
+    {
+      "id": "patty",
+      "name": "Patties",
+      "crate": "crate",
+      "icon": "food_ingredient_burger_uncooked",
+      "top": "food_ingredient_burger_uncooked"
+    },
+    {
+      "id": "pickles",
+      "name": "Pickles",
+      "crate": "crate",
+      "icon": "food_ingredient_pickle",
+      "top": "food_ingredient_pickle"
+    },
+    {
+      "id": "cheese",
+      "name": "Cheese",
+      "crate": "crate_cheese",
+      "icon": "food_ingredient_cheese"
+    },
+    {
+      "id": "lettuce",
+      "name": "Lettuce",
+      "crate": "crate_lettuce",
+      "icon": "food_ingredient_lettuce"
+    },
+    {
+      "id": "tomato",
+      "name": "Tomatoes",
+      "crate": "crate_tomatoes",
+      "icon": "food_ingredient_tomato"
+    },
+    {
+      "id": "onion",
+      "name": "Onions",
+      "crate": "crate_onions",
+      "icon": "food_ingredient_onion"
+    },
+    {
+      "id": "mushroom",
+      "name": "Mushrooms",
+      "crate": "crate_mushrooms",
+      "icon": "food_ingredient_mushroom"
+    },
+    {
+      "id": "carrot",
+      "name": "Carrots",
+      "crate": "crate_carrots",
+      "icon": "food_ingredient_carrot"
+    },
+    {
+      "id": "potato",
+      "name": "Potatoes",
+      "crate": "crate_potatoes",
+      "icon": "food_ingredient_potato"
+    },
+    {
+      "id": "ham",
+      "name": "Ham",
+      "crate": "crate_ham",
+      "icon": "food_ingredient_ham"
+    },
+    {
+      "id": "pepperoni",
+      "name": "Pepperoni",
+      "crate": "crate_pepperoni",
+      "icon": "food_ingredient_pepperoni"
+    },
+    {
+      "id": "dough",
+      "name": "Dough",
+      "crate": "crate_dough",
+      "icon": "food_ingredient_dough"
+    }
   ],
   "town": {
     "$comment": "The street round the restaurant (levels/restaurant.json: roads, lawns, people; drawn in the editor): the road kit (core/roads/RoadGrid: a road cell becomes the first piece fitting its road neighbours; open: its sides as modelled, n = -Z; models: the piece, then its variants), the traffic driving the roads (core/town/Traffic), and the people (core/town/Crowd). From the UFO game.",
@@ -127,7 +310,10 @@
       "wander": 9,
       "pauseMin": 0.5,
       "pauseMax": 3,
-      "restaurant": { "people": 12, "walkers": 4 },
+      "restaurant": {
+        "people": 12,
+        "walkers": 4
+      },
       "palette": {
         "skin": [
           "#ffe0c4",
@@ -178,6 +364,106 @@
           "#9a9a9a"
         ]
       }
+    },
+    "city": {
+      "$comment": "The city blocks (a lawn with `buildings` in levels/restaurant.json: drawn in the editor) fill with these, by kind (living: homes; business: shops, offices, services): each at its height, its width and depth from its model (web/public/cityfill.js).",
+      "buildings": [
+        {
+          "model": "library/city2-building-business-02/city2-building-business-02.glb",
+          "height": 22.8,
+          "kind": "business"
+        },
+        {
+          "model": "library/city2-building-business-05/city2-building-business-05.glb",
+          "height": 19.97,
+          "kind": "business"
+        },
+        {
+          "model": "library/city2-building-business-09/city2-building-business-09.glb",
+          "height": 19.43,
+          "kind": "business"
+        },
+        {
+          "model": "library/city2-building-business-10/city2-building-business-10.glb",
+          "height": 12.6,
+          "kind": "business"
+        },
+        {
+          "model": "library/city2-building-living-03/city2-building-living-03.glb",
+          "height": 7.83,
+          "kind": "living"
+        },
+        {
+          "model": "library/city2-building-living-09/city2-building-living-09.glb",
+          "height": 6.5,
+          "kind": "living"
+        },
+        {
+          "model": "library/city2-building-living-12/city2-building-living-12.glb",
+          "height": 8.89,
+          "kind": "living"
+        },
+        {
+          "model": "library/city2-building-living-17/city2-building-living-17.glb",
+          "height": 7.57,
+          "kind": "living"
+        },
+        {
+          "model": "library/city2-building-living-19/city2-building-living-19.glb",
+          "height": 8.79,
+          "kind": "living"
+        },
+        {
+          "model": "library/city2-building-living-21/city2-building-living-21.glb",
+          "height": 7.92,
+          "kind": "living"
+        },
+        {
+          "model": "library/city2-building-living-27/city2-building-living-27.glb",
+          "height": 9.35,
+          "kind": "living"
+        },
+        {
+          "model": "library/city2-building-living-31/city2-building-living-31.glb",
+          "height": 7.87,
+          "kind": "living"
+        },
+        {
+          "model": "library/city2-building-living-46/city2-building-living-46.glb",
+          "height": 22.02,
+          "kind": "living"
+        },
+        {
+          "model": "library/city2-building-service-04/city2-building-service-04.glb",
+          "height": 10.86,
+          "kind": "business"
+        },
+        {
+          "model": "library/city2-building-service-06/city2-building-service-06.glb",
+          "height": 11.34,
+          "kind": "business"
+        },
+        {
+          "model": "library/city2-building-service-09/city2-building-service-09.glb",
+          "height": 13.24,
+          "kind": "business"
+        },
+        {
+          "model": "library/city2-building-service-10/city2-building-service-10.glb",
+          "height": 7.39,
+          "kind": "business"
+        },
+        {
+          "model": "library/city2-building-snack-09/city2-building-snack-09.glb",
+          "height": 9.8,
+          "kind": "business"
+        },
+        {
+          "model": "library/city2-building-supermarket-04/city2-building-supermarket-04.glb",
+          "height": 7.22,
+          "kind": "business"
+        }
+      ]
     }
   }
 }

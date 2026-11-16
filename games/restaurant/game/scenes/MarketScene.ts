@@ -140,16 +140,20 @@ export default class MarketScene extends ThreeScene {
         // Each crate (raw patties, pickles: an empty one with them on top), measured for the grid's spacing.
         const holders = items.map((item) => {
             const holder = new THREE.Group();
+            // Sized inside the holder (its own scale's the pick hop's).
+            const sized = new THREE.Group();
+            sized.scale.setScalar(GRID.scale ?? 1);
+            holder.add(sized);
             const crate = kitchenModel(item.crate);
-            holder.add(crate);
+            const top = sizeOf(crate).y;
+            sized.add(crate);
             if (item.top) {
-                const top = sizeOf(crate).y;
                 for (let i = 0; i < ON_TOP; i++) {
                     const patty = kitchenModel(item.top);
                     patty.scale.setScalar(0.8);
                     patty.position.set((i - 1) * 0.3, top * 0.75 + i * 0.05, (i % 2) * 0.15 - 0.05);
                     patty.rotation.y = i * 0.8;
-                    holder.add(patty);
+                    sized.add(patty);
                 }
             }
             return holder;
