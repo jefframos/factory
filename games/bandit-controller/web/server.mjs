@@ -29,7 +29,7 @@ const UI_SOURCES = {
 };
 const SAFE_NAME = /^[\w.\- ]+$/;
 const PORT = process.env.EDITOR_PORT ? Number(process.env.EDITOR_PORT) : 4700;
-const GAME_URL = process.env.GAME_URL ?? 'http://localhost:9001/';
+const GAME_URL = process.env.GAME_URL ?? 'http://localhost:8000/';
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 
 const MIME_TYPES = {

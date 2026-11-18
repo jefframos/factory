@@ -5,7 +5,7 @@
 //
 // A block is a lawn (a polygon on the ground) with `buildings` on it: { kind, seed, setback, gap }. Along each of its
 // sides, buildings stand side by side facing out (to the street round it): each one picked from the pool (its kind's:
-// 'living' homes, 'business' shops and offices, 'mixed' both) by the block's seed, `setback` in from the side, `gap`
+// 'house' homes, 'tower' tall buildings, 'shop' commercial, 'mixed' all: BLOCK_KINDS) by the block's seed, `setback` in from the side, `gap`
 // apart, never over the block's edge or each other. The block's middle stays open (yards). A building model's front is
 // its -z (the town kit's): it's turned so that faces out.
 
@@ -56,9 +56,23 @@ function overlap(a, b) {
     return true;
 }
 
+/**
+ * The block kinds and the building kinds each takes: houses, (tall) buildings, commercial, or a mix of all. The old
+ * 'living' / 'business' blocks still read (homes; offices and shops).
+ */
+export const BLOCK_KINDS = {
+    mixed: { name: 'Mixed', takes: ['house', 'tower', 'shop'] },
+    house: { name: 'Houses', takes: ['house'] },
+    tower: { name: 'Buildings (tall: apartments, offices)', takes: ['tower'] },
+    shop: { name: 'Commercial (shops, services, snack bars)', takes: ['shop'] },
+    living: { name: 'Houses', takes: ['house'] },
+    business: { name: 'Offices and shops', takes: ['tower', 'shop'] },
+};
+
 /** Which pool entries a kind takes. */
 function ofKind(pool, kind) {
-    const list = pool.filter((b) => !kind || kind === 'mixed' || b.kind === kind);
+    const takes = (BLOCK_KINDS[kind] ?? BLOCK_KINDS.mixed).takes;
+    const list = pool.filter((b) => takes.includes(b.kind));
     return list.length ? list : pool;
 }
 

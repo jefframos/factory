@@ -10,7 +10,7 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
-import { COIN_BAR, DARK, WARM, fillCoinBar, framePlane, glossyButton, iconSprite, label, plainLabel, tappable } from './UiParts';
+import { COIN_BAR, DARK, WARM, TexBar, dot, fillCoinBar, framePlane, glossyButton, iconSprite, label, pill, plainLabel, shape, sizePill, tappable } from './UiParts';
 import { foodIcon, modelIcon, pizzaIcon, sauceIcon, scoopIcon, sundaeIcon, sundaeToppingIcon } from './Icons';
 import { DayEnd } from './DayEnd';
 import { StageBar } from './StageBar';
@@ -21,10 +21,12 @@ const PREVIEW = 'preview';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
 
 const MARGIN = 28;
+/** Room kept at the top right for the mute button (index.ts: always there). */
+const MUTE_ROOM = 84;
 const BUBBLE = { icon: 110, small: 74, gap: 10, pad: 22, lift: 40 };
 const TICKET = { icon: 70, gap: 12, pad: 16, y: 120 };
 const BUTTONS = { width: 230, height: 96, bottom: 90, apart: 140 };
-const COOK_BAR = { width: 120, height: 22 };
+const COOK_BAR = { width: 130, height: 28 };
 
 type Point = { x: number; y: number };
 
@@ -36,14 +38,17 @@ export class RestaurantHud extends PIXI.Container {
     private readonly bubble = new PIXI.Container();
     private readonly ticket = new PIXI.Container();
     private ticketMarks = new Map<string, PIXI.Sprite>();
+
     private readonly hint = label(30);
     private hintTimer: gsap.core.Tween | null = null;
     private readonly cookBar = new PIXI.Container();
-    private readonly cookFill = new PIXI.Graphics();
+    private readonly cookFill = new TexBar(COOK_BAR.width, COOK_BAR.height);
     /** Over a finished dish: done, tap it. */
     private readonly readyBadge = new PIXI.Container();
     /** The ready badge's arrow (pointing down at the dish). */
-    private readyArrow: PIXI.Graphics | null = null;
+    private readyArrow: PIXI.Container | null = null;
+    /** Over the pan when its patty's cooked: take it (the same yellow arrow, bouncing). */
+    private readonly panArrow = new PIXI.Container();
     private readonly hand = iconSprite('tutorial_hand_3', 110);
     private readonly trashButton = glossyButton(BUTTONS.width * 0.75, BUTTONS.height, 'TRASH', 'Button01_l_Gray');
     private readonly serveButton = glossyButton(BUTTONS.width, BUTTONS.height, 'SERVE', 'Button01_l_Green');
@@ -57,7 +62,7 @@ export class RestaurantHud extends PIXI.Container {
     public constructor(private readonly onTrash: () => void, private readonly onServe: () => void) {
         super();
         fillCoinBar(this.coins, this.coinText);
-        this.addChild(this.stageBar, this.coins, this.dayText, this.pips, this.bubble, this.ticket, this.cookBar, this.readyBadge, this.hint, this.trashButton, this.serveButton, this.hand);
+        this.addChild(this.stageBar, this.coins, this.dayText, this.pips, this.bubble, this.ticket, this.cookBar, this.hint, this.trashButton, this.serveButton, this.readyBadge, this.hand);
         this.buildCookBar();
         this.buildReadyBadge();
         tappable(this.trashButton, () => {
@@ -74,10 +79,7 @@ export class RestaurantHud extends PIXI.Container {
     }
 
     private buildCookBar(): void {
-        const back = framePlane('ResourceBar_Single_Bg', COOK_BAR.width, COOK_BAR.height);
-        back.tint = 0x3a2416;
-        back.position.set(-COOK_BAR.width / 2, -COOK_BAR.height / 2);
-        this.cookBar.addChild(back, this.cookFill);
+        this.cookBar.addChild(this.cookFill);
     }
 
     /** The screen's corners in this layer. */
@@ -99,7 +101,7 @@ export class RestaurantHud extends PIXI.Container {
         this.hint.position.set(screen.center.x, bottom - BUTTONS.height / 2 - 40);
         this.trashButton.position.set(screen.center.x - BUTTONS.apart - 10, bottom);
         this.serveButton.position.set(screen.center.x + BUTTONS.apart - 30, bottom);
-        this.stageBar.position.set(screen.topLeft.x + screen.width - MARGIN - 100, screen.topLeft.y + MARGIN + 34);
+        this.stageBar.position.set(screen.topLeft.x + screen.width - MARGIN - 100 - MUTE_ROOM, screen.topLeft.y + MARGIN + 34);
         this.card?.reposition();
     }
 
@@ -119,16 +121,17 @@ export class RestaurantHud extends PIXI.Container {
 
     /** "DAY n" and a pip per customer of the day: done ones green (served right) or red, the current one bigger. */
     public setDay(day: number, results: boolean[], total: number): void {
-        this.dayText.text = `DAY ${day + 1}`;
+        this.setPips(`DAY ${day + 1}`, results, total);
+    }
+
+    /** The top's words and its pips: one per `total`, the first `results` filled (green: right, red: wrong). */
+    public setPips(title: string, results: readonly boolean[], total: number): void {
+        this.dayText.text = title;
         this.pips.removeChildren().forEach((c) => c.destroy());
         const gap = 34;
         for (let i = 0; i < total; i++) {
             const done = i < results.length;
-            const pip = new PIXI.Graphics()
-                .lineStyle(4, DARK)
-                .beginFill(done ? (results[i] ? WARM.green : WARM.tomato) : WARM.cream)
-                .drawCircle(0, 0, i === results.length ? 12 : 10)
-                .endFill();
+            const pip = dot(i === results.length ? 12 : 10, done ? (results[i] ? WARM.green : WARM.tomato) : WARM.cream, DARK, 4);
             pip.x = (i - (total - 1) / 2) * gap;
             this.pips.addChild(pip);
         }
@@ -162,14 +165,23 @@ export class RestaurantHud extends PIXI.Container {
     }
 
     /** The customer's speech bubble (over `at`: their head on screen). */
-    public showOrder(order: Order, at: Point): void {
+    public showOrder(order: Order, at: Point, caller: PIXI.Sprite | null = null): void {
         this.bubble.removeChildren().forEach((c) => c.destroy({ children: true }));
-        const row = this.orderRow(order, BUBBLE.icon, BUBBLE.small);
+        let row: PIXI.Container = this.orderRow(order, BUBBLE.icon, BUBBLE.small);
+        // A phone order: who's calling, at the bubble's start (the row's middle stays the bubble's).
+        if (caller) {
+            const content = new PIXI.Container();
+            caller.width = caller.height = BUBBLE.icon;
+            caller.x = -row.width / 2 - BUBBLE.gap - BUBBLE.icon / 2;
+            content.addChild(caller, row);
+            content.pivot.x = -(BUBBLE.icon + BUBBLE.gap) / 2;
+            row = content;
+        }
         const width = row.width + BUBBLE.pad * 2;
         const height = BUBBLE.icon + BUBBLE.pad;
         const back = framePlane('BasicFrame_Round20', width, height);
         back.position.set(-width / 2, -height - BUBBLE.lift);
-        const tail = new PIXI.Graphics().beginFill(0xffffff).moveTo(-18, -BUBBLE.lift - 4).lineTo(18, -BUBBLE.lift - 4).lineTo(0, -BUBBLE.lift + 26).closePath().endFill();
+        const tail = shape('bubbleTail', [-18, -BUBBLE.lift - 4, 18, -BUBBLE.lift - 4, 0, -BUBBLE.lift + 26], 0xffffff);
         row.position.set(0, -BUBBLE.lift - height / 2);
         this.bubble.addChild(tail, back, row);
         this.bubble.visible = true;
@@ -253,23 +265,26 @@ export class RestaurantHud extends PIXI.Container {
     // ---------------------------------------------------------------- the bench
 
     private buildReadyBadge(): void {
-        const glow = iconSprite('Glow_Circle01', 150);
+        const glow = iconSprite('Glow_Circle01', 190);
         glow.tint = 0x7dff8a;
         glow.alpha = 0.8;
-        const check = iconSprite('Icon_Check03_l', 72);
+        const check = iconSprite('Icon_Check03_l', 96);
         const words = label(26);
         words.text = 'TAP TO SERVE';
-        words.y = -58;
+        words.y = -70;
         // A big arrow over it all, pointing down at the dish (bouncing: see setReady).
-        const arrow = new PIXI.Graphics()
-            .lineStyle(6, 0x3a2408, 1)
-            .beginFill(0xffd23f)
-            .drawPolygon([-16, -64, 16, -64, 16, -26, 36, -26, 0, 8, -36, -26, -16, -26])
-            .endFill();
-        arrow.y = -96;
+        const arrow = new PIXI.Container();
+        arrow.addChild(shape('readyArrow', [-20, -80, 20, -80, 20, -32, 44, -32, 0, 10, -44, -32, -20, -32], 0xffd23f, 0x3a2408, 6));
+        arrow.y = -112;
         this.readyArrow = arrow;
         this.readyBadge.addChild(glow, check, words, arrow);
         this.readyBadge.visible = false;
+    }
+
+    /** The phone orders minigame: no coins or upgrade bar (the pips count its boxes; the bubble, the ticket, the buttons and the rest stay). */
+    public phoneMode(): void {
+        // (The day's words and pips stay: they count the boxes — setPips.)
+        this.stageBar.visible = this.coins.visible = false;
     }
 
     public setButtons(on: boolean): void {
@@ -293,8 +308,22 @@ export class RestaurantHud extends PIXI.Container {
             const time = performance.now();
             this.readyBadge.position.set(local.x, local.y + Math.sin(time / 180) * 8);
             // The arrow bounces down at it, more than the badge does.
-            if (this.readyArrow) this.readyArrow.y = -96 + Math.abs(Math.sin(time / 160)) * -22;
+            if (this.readyArrow) this.readyArrow.y = -112 + Math.abs(Math.sin(time / 160)) * -22;
         }
+    }
+
+    /** The arrow over the pan (at `at`; null: hidden): its patty's cooked, take it. */
+    public setPanReady(at: Point | null): void {
+        if (!this.panArrow.children.length) {
+            this.panArrow.addChild(shape('readyArrow', [-20, -80, 20, -80, 20, -32, 44, -32, 0, 10, -44, -32, -20, -32], 0xffd23f, 0x3a2408, 6));
+            this.addChild(this.panArrow);
+        }
+        const on = Boolean(at);
+        if (on && !this.panArrow.visible) gsap.fromTo(this.panArrow.scale, { x: 0.3, y: 0.3 }, { x: 1, y: 1, duration: 0.3, ease: 'back.out(3)' });
+        this.panArrow.visible = on;
+        if (!at) return;
+        const local = this.toLocal(new PIXI.Point(at.x, at.y));
+        this.panArrow.position.set(local.x, local.y - 40 + Math.abs(Math.sin(performance.now() / 160)) * -22);
     }
 
     /** The pan's cooking bar over `at` (null: hidden). */
@@ -302,8 +331,7 @@ export class RestaurantHud extends PIXI.Container {
         this.cookBar.visible = progress !== null && Boolean(at);
         if (!this.cookBar.visible || !at) return;
         this.cookBar.position.copyFrom(this.toLocal(new PIXI.Point(at.x, at.y)));
-        const inner = COOK_BAR.width - 8;
-        this.cookFill.clear().beginFill(0xf5a33a).drawRoundedRect(-inner / 2, -COOK_BAR.height / 2 + 4, Math.max(6, inner * progress!), COOK_BAR.height - 8, 6).endFill();
+        this.cookFill.setShare(progress!);
     }
 
     /**
@@ -317,15 +345,18 @@ export class RestaurantHud extends PIXI.Container {
             return;
         }
         const local = this.toLocal(new PIXI.Point(at.x, at.y));
-        // Its fingertip (the sprite's top-left part) by the spot. From above it's flipped both ways: the fingertip at
-        // its bottom-right, the hand up and off to the left (clear of the "!" up on the right).
-        const base = above ? { x: local.x - 30, y: local.y - 50 } : { x: local.x + 30, y: local.y + 50 };
+        // Its fingertip (the sprite's top-left part) by the spot. From above: mirrored and turned a quarter (a hand coming
+        // down from the upper left, its fingertip at its lower right) — not flipped upside down — clear of the "!" on the
+        // right.
+        const base = above ? { x: local.x - 50, y: local.y - 30 } : { x: local.x + 30, y: local.y + 50 };
         this.handBase = base;
         this.hand.scale.x = Math.abs(this.hand.scale.x) * (above ? -1 : 1);
-        this.hand.scale.y = Math.abs(this.hand.scale.y) * (above ? -1 : 1);
+        this.hand.scale.y = Math.abs(this.hand.scale.y);
+        this.hand.rotation = above ? Math.PI / 2 : 0;
         // Followed every frame (the spot moves: the camera, a bobbing head), bobbing away from it and back.
         const bob = (Math.sin(performance.now() / 140) * 0.5 + 0.5) * 18;
-        this.hand.position.set(base.x, base.y + (above ? -bob : bob));
+        if (above) this.hand.position.set(base.x - bob * 0.6, base.y - bob * 0.6);
+        else this.hand.position.set(base.x, base.y + bob);
     }
 
     // ---------------------------------------------------------------- reactions

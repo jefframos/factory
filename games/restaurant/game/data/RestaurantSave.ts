@@ -16,7 +16,7 @@ import { hasIceCreamMachine, hasPizzaOven, hasSundaeBar } from '../world/Restaur
 const KEY = 'restaurant.save';
 
 /** Where the player is: cooking, delivering pizzas (after a day with the pizza oven), or shopping for the next day. */
-export type Place = 'restaurant' | 'delivery' | 'market';
+export type Place = 'restaurant' | 'phone' | 'delivery' | 'market';
 
 interface SaveData {
     day: number;
@@ -44,7 +44,11 @@ function fresh(): SaveData {
 function dealFor(day: number, stage: number, stageDay: number): Order[] {
     // Ice cream once the stage's room has its machine, pizza once it has its oven: from its second day (its first
     // teaches what's new about it).
-    return dealDay(day, stage, stageDay === 0 ? stageSettings(stage).firstDay?.customers : undefined, stageDay > 0 && hasIceCreamMachine(stage), stageDay > 0 && hasPizzaOven(stage), stageDay > 0 && hasSundaeBar(stage));
+    // A dish new at this stage (its station wasn't in the last stage's room) is shown on its first day too: one order.
+    const introduce = stageDay === 0 && stage > 0
+        ? ([['iceCream', hasIceCreamMachine], ['pizza', hasPizzaOven], ['sundae', hasSundaeBar]] as const).filter(([, has]) => has(stage) && !has(stage - 1)).map(([dish]) => dish)
+        : [];
+    return dealDay(day, stage, stageDay === 0 ? stageSettings(stage).firstDay?.customers : undefined, stageDay > 0 && hasIceCreamMachine(stage), stageDay > 0 && hasPizzaOven(stage), stageDay > 0 && hasSundaeBar(stage), introduce);
 }
 
 function parse(text: string | null): SaveData {
@@ -53,7 +57,7 @@ function parse(text: string | null): SaveData {
         if (!saved || !Array.isArray(saved.orders)) return fresh();
         return {
             day: Math.max(0, Math.floor(saved.day ?? 0)),
-            place: saved.place === 'market' || saved.place === 'delivery' ? saved.place : 'restaurant',
+            place: saved.place === 'market' || saved.place === 'delivery' || saved.place === 'phone' ? saved.place : 'restaurant',
             stage: Math.max(0, Math.floor(saved.stage ?? 0)),
             stageDay: Math.max(0, Math.floor(saved.stageDay ?? 0)),
             progress: Math.max(0, Math.floor(saved.progress ?? 0)),
@@ -158,6 +162,12 @@ export const RestaurantSave = {
         });
     },
 
+    /** Today's orders, corrected (the restaurant found some its kitchen can't make). */
+    replaceOrders(orders: readonly Order[]): void {
+        state.orders = orders.map((o) => ({ ...o, toppings: [...o.toppings] }));
+        save();
+    },
+
     /** Coins into the bar: each time it fills, the restaurant's upgraded (the rest carries on into the next bar; the last
      *  stage's just stays full). */
     addProgress(coins: number): void {
@@ -238,11 +248,18 @@ export const RestaurantSave = {
         state.day++;
         state.stageDay = state.stage === stageBefore ? state.stageDay + 1 : 0;
         state.orders = dealFor(state.day, state.stage, state.stageDay);
-        state.place = hasPizzaOven(stageBefore) ? 'delivery' : 'market';
+        // A day with the pizza oven: the phone orders (box the pizzas), then their delivery; else the supermarket.
+        state.place = hasPizzaOven(stageBefore) ? 'phone' : 'market';
         save();
     },
 
-    /** To the pizza delivery (the debug panel's areas: stand-alone); the day's orders stay. */
+    /** To the phone orders (the debug panel's areas: stand-alone); the day's orders stay. */
+    openPhone(): void {
+        state.place = 'phone';
+        save();
+    },
+
+    /** To the pizza delivery (after the phone orders, or the debug panel's areas: stand-alone); the day's orders stay. */
     openDelivery(): void {
         state.place = 'delivery';
         save();

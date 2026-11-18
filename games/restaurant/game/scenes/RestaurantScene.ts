@@ -38,13 +38,13 @@ import { PizzaStation, PizzaTarget } from '../world/Pizza';
 import { WalkGrid } from '../world/WalkGrid';
 import { MAX_SCOOPS, SundaeStation, SundaeTarget } from '../world/Sundae';
 import exclamationUrl from '../ui/images/icon_exclamation.png';
-import { stageSettings } from '../data/Settings';
+import { daySettings, stageSettings } from '../data/Settings';
 import type { Room } from 'core/rooms/Room';
 import { Town } from '../world/Town';
 import { bendAll, bendAround } from '../world/Bend';
 import { Customer } from '../world/Customers';
 import { kitchenModel, loadModels } from '../world/Models';
-import { CONE_MODEL, CONE_STACK_MODEL, ICE_CREAM_MODELS, Order, PIZZA_LAYER_MODELS, PIZZA_OVEN_MODEL, PIZZA_SOURCE_MODELS, SUNDAE_MODELS, SWIRL_MODELS, sundaeMatches, BASIC_TOPPINGS, BASIC_PIZZA_TOPPINGS, PIZZA_BASE, SCOOP_FLAVORS, SUNDAE_SAUCES, SUNDAE_TOPPINGS, matches, payFor, pizzaMatches, pizzaRecipe } from '../data/Recipes';
+import { CONE_MODEL, CONE_STACK_MODEL, ICE_CREAM_MODELS, Order, PIZZA_LAYER_MODELS, PIZZA_OVEN_MODEL, PIZZA_SOURCE_MODELS, SUNDAE_MODELS, SWIRL_MODELS, sundaeMatches, BASIC_TOPPINGS, BASIC_PIZZA_TOPPINGS, PIZZA_BASE, SCOOP_FLAVORS, SUNDAE_SAUCES, SUNDAE_TOPPINGS, Topping, matches, payFor, pizzaMatches, pizzaRecipe, randomOrder, randomPizza, randomSundae } from '../data/Recipes';
 import { RestaurantSave } from '../data/RestaurantSave';
 import { RestaurantHud } from '../ui/RestaurantHud';
 import { uiPress } from '../ui/UiParts';
@@ -373,7 +373,46 @@ export default class RestaurantScene extends ThreeScene {
         bendAround(this.station.x, this.station.z);
         bendAll(this.threeScene);
         this.fitCamera();
+        this.fitOrdersToKitchen(toppings);
         this.startDay();
+    }
+
+    /**
+     * Every order is one this kitchen can make — it can't be otherwise: a dish whose station isn't in the room (a save
+     * dealt for another stage, a station moved in the editor), or that asks for something the station doesn't stock,
+     * becomes one that can be made (the same dish from what's there, else a burger of the stage's toppings). Saved back.
+     */
+    private fitOrdersToKitchen(toppings: readonly Topping[]): void {
+        const stage = stageSettings(RestaurantSave.stage);
+        const { maxToppings } = daySettings(RestaurantSave.day);
+        const burger = () => randomOrder(maxToppings, toppings);
+        const pizzaToppings = stage.pizza?.toppings ?? BASIC_PIZZA_TOPPINGS;
+        const sundaeStock = { flavors: stage.sundae?.flavors ?? SCOOP_FLAVORS, sauces: stage.sundae?.sauces ?? SUNDAE_SAUCES, toppings: stage.sundae?.toppings ?? SUNDAE_TOPPINGS };
+        let changed = false;
+        this.orders.forEach((order, i) => {
+            let fixed: Order | null = null;
+            if (order.iceCream) {
+                if (!this.iceCream) fixed = burger();
+            } else if (order.pizza) {
+                if (!this.pizza) fixed = burger();
+                else if (order.pizza.some((t) => !pizzaToppings.includes(t))) fixed = { toppings: [], pizza: randomPizza(stage.pizza?.maxToppings ?? 2, pizzaToppings) };
+            } else if (order.sundae) {
+                const s = order.sundae;
+                const stocked = s.scoops.every((f) => sundaeStock.flavors.includes(f)) && (!s.sauce || sundaeStock.sauces.includes(s.sauce)) && s.toppings.every((t) => sundaeStock.toppings.includes(t));
+                if (!this.sundae) fixed = burger();
+                else if (!stocked) fixed = { toppings: [], sundae: randomSundae(stage.sundae ?? {}) };
+            } else if (order.toppings.some((t) => !toppings.includes(t))) {
+                fixed = burger();
+            }
+            if (fixed) {
+                this.orders[i] = fixed;
+                changed = true;
+            }
+        });
+        if (changed) {
+            console.warn('[Restaurant] orders the kitchen could not make were swapped for ones it can');
+            RestaurantSave.replaceOrders(this.orders);
+        }
     }
 
     private buildDebug(): void {
@@ -1135,6 +1174,11 @@ export default class RestaurantScene extends ThreeScene {
         if (next) this.findSeat(next);
     }
 
+    /** A plate left behind to clear: its customer's gone (its arrow's up), not one still being eaten from. */
+    private toClear(seat: SeatState): boolean {
+        return Boolean(seat.plate && seat.marker && !seat.diner);
+    }
+
     /** The day's done once everyone's been served, has gone, and every plate's cleared. */
     private seatedDayDone(): boolean {
         return this.results.length >= this.orders.length && this.diners.length === 0 && this.seats.every((s) => !s.plate);
@@ -1156,7 +1200,8 @@ export default class RestaurantScene extends ThreeScene {
             if (!best || distance < best.score) best = { score: distance, act };
         };
         const readyDiners = this.diners.filter((diner) => diner.state === 'ready');
-        const dirtySeats = this.seats.filter((seat) => seat.plate);
+        // (A plate's only to clear once its customer's gone: not while they're still eating from it.)
+        const dirtySeats = this.seats.filter((seat) => this.toClear(seat));
         for (const diner of readyDiners) tryBox(this.dinerBox(diner), () => this.takeSeatedOrder(diner));
         for (const seat of dirtySeats) tryBox(this.plateBox(seat), () => this.clearPlate(seat));
         if (!best) {
@@ -1372,7 +1417,12 @@ export default class RestaurantScene extends ThreeScene {
     private pizzaHint(): THREE.Vector3 | null {
         const pizza = this.pizza;
         const kind = this.order?.pizza;
-        if (!pizza || !kind || RestaurantSave.pizzaLearned || this.view.t < 0.99) return null;
+        if (!pizza || !kind || this.view.t < 0.99) return null;
+        // Everything on (and nothing else), not baked yet: always the hand on the pizza — tap it into the oven.
+        const all = pizzaRecipe(kind);
+        if (pizza.hasPizza && !pizza.inOven && !pizza.ready && pizza.layers.length === all.length && all.every((layer) => pizza.layers.includes(layer))) return pizza.targetPoint('pizza');
+        // The rest: only till they've served one right.
+        if (RestaurantSave.pizzaLearned) return null;
         if (!pizza.hasPizza) return pizza.targetPoint('dough');
         if (pizza.inOven) return null;
         if (pizza.ready) return pizzaMatches(kind, pizza.layers, true) ? pizza.dishPoint : null;
@@ -1420,7 +1470,7 @@ export default class RestaurantScene extends ThreeScene {
             this.hintAbove = true;
             const ready = this.diners.find((d) => d.state === 'ready');
             if (ready) return ready.customer.headTop;
-            const dirty = this.seats.find((s) => s.plate);
+            const dirty = this.seats.find((s) => this.toClear(s));
             return dirty ? dirty.plate!.position.clone().add(new THREE.Vector3(0, 0.1, 0)) : null;
         }
         if (this.seated && RestaurantSave.stageDay === 0 && this.phase === 'cooking') {
@@ -1432,7 +1482,8 @@ export default class RestaurantScene extends ThreeScene {
         const parts = kitchen.onPlate;
         if (!parts.length) return kitchen.targetPoint('bunBottom');
         if (!parts.includes('patty')) {
-            if (kitchen.pattyReady) return kitchen.targetPoint('pan');
+            // (A cooked patty has its own arrow over the pan: no hand on top of it.)
+            if (kitchen.pattyReady) return null;
             if (kitchen.panEmpty) return kitchen.targetPoint('patty');
             return null;
         }
@@ -1578,6 +1629,9 @@ export default class RestaurantScene extends ThreeScene {
             const pizza = this.making === 'pizza' ? this.pizza : null;
             if (pizza) this.hud.setCooking(this.phase === 'cooking' ? pizza.bakeProgress : null, this.worldToScreen(pizza.ovenPoint));
             else this.hud.setCooking(this.phase === 'cooking' ? this.kitchen.cookProgress : null, this.worldToScreen(this.kitchen.panPoint));
+            // A cooked patty in the pan (making a burger): the arrow over it, every time — take it.
+            const pattyDone = this.phase === 'cooking' && this.making === 'burger' && this.kitchen.pattyReady && this.view.t > 0.9;
+            this.hud.setPanReady(pattyDone ? this.worldToScreen(this.kitchen.panPoint) : null);
             // A finished dish: it bounces, a check over it, SERVE pulses (the first time: a word on it too).
             const ice = this.making === 'iceCream' ? this.iceCream : null;
             const sundae = this.making === 'sundae' && this.order?.sundae ? this.sundae : null;

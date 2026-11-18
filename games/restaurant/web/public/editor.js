@@ -28,7 +28,7 @@ import { createGLTFLoader } from './gltf.js';
 import { api, el, toast, isModalOpen } from './shared.js';
 import { openModelPicker, setModelCatalog } from './modelPicker.js';
 import { openLibraryPicker } from './library.js';
-import { fillBlock } from './cityfill.js';
+import { BLOCK_KINDS, fillBlock } from './cityfill.js';
 import { roadCellAt, roadCellKey, solveRoads } from '/core/roads/RoadGrid.ts';
 
 // Mirrors the game (Kitchen.ts's LAYOUT / STOVE_SINK, RestaurantLayout.ts's SHOT_ASPECT), so the editor shows what it builds.
@@ -92,7 +92,7 @@ let stageNames = [];
 let selection = null;
 let dirty = false;
 let snap = true;
-let gameUrl = 'http://localhost:9001/?dev=1';
+let gameUrl = 'http://localhost:8000/?dev=1';
 const undoStack = [];
 /** Looking through a station camera: { station, key }. */
 let looking = null;
@@ -347,7 +347,16 @@ function setupViewport() {
         orbit.enabled = !event.value;
         if (event.value) {
             undoStack.push(snapshot());
+            // A prop's size when the drag begins: the gizmo's scale is a multiple of it (not of what each move left).
+            const object = gizmo.object;
+            if (object && selection?.type === 'prop') {
+                const data = dataOf(selection);
+                const inner = object.children[0];
+                const height = inner ? new THREE.Box3().setFromObject(inner).getSize(new THREE.Vector3()).y / Math.max(1e-4, object.scale.y) : 1;
+                object.userData.scaleStart = { height, stretch: { x: data.stretch?.x ?? 1, z: data.stretch?.z ?? 1 } };
+            }
         } else {
+            if (gizmo.object) delete gizmo.object.userData.scaleStart;
             setDirty(true);
             rebuild();
         }
@@ -380,8 +389,26 @@ function setupViewport() {
     resize();
     renderer.setAnimationLoop(() => {
         orbit.update();
+        sizeHandles();
         renderer.render(scene, camera);
     });
+}
+
+/**
+ * Corner and side handles (walls, lawns, blocks, water) keep about the same size on screen however far the camera is:
+ * built 0.22 across, they were a pixel or two wide from a city block's height — too small to click.
+ */
+const HANDLE_TYPES = new Set(['point', 'mid', 'lawnPoint', 'lawnMid']);
+const HANDLE_SCREEN = 0.018;
+const _handleAt = new THREE.Vector3();
+function sizeHandles() {
+    for (const object of pickables.values()) {
+        if (!HANDLE_TYPES.has(object.userData.sel?.type)) continue;
+        for (const ball of object.children) {
+            ball.getWorldPosition(_handleAt);
+            ball.scale.setScalar(Math.max(1, (camera.position.distanceTo(_handleAt) * HANDLE_SCREEN) / 0.22));
+        }
+    }
 }
 
 function resize() {
@@ -434,6 +461,14 @@ function pickAt(event) {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(pointer, camera);
     const hits = raycaster.intersectObjects([...pickables.values()], true);
+    // A corner or middle handle wins over whatever's in front of it (a city block's buildings would hide its corners).
+    const selOf = (hit) => {
+        let object = hit.object;
+        while (object && !object.userData.sel) object = object.parent;
+        return object?.userData.sel;
+    };
+    const HANDLES = ['point', 'mid', 'lawnPoint', 'lawnMid', 'seatPlate'];
+    hits.sort((a, b) => Number(HANDLES.includes(selOf(b)?.type)) - Number(HANDLES.includes(selOf(a)?.type)));
     for (const hit of hits) {
         let object = hit.object;
         while (object && !object.userData.sel) object = object.parent;
@@ -712,8 +747,10 @@ function buildWall(wall, i) {
         points.forEach((point, j) => {
             const handle = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffd36b, depthTest: false }));
             handle.renderOrder = 5;
-            handle.position.set(point.x, setup.height + 0.3, point.z);
+            // The group at the corner (the gizmo shows there, and its position is the corner's), the ball over the wall.
+            handle.position.set(0, setup.height + 0.3, 0);
             const group = new THREE.Group();
+            group.position.set(point.x, 0, point.z);
             group.add(handle);
             register({ type: 'point', i, j }, group);
         });
@@ -782,7 +819,8 @@ function fillBlockPreview(lawn, holder) {
     const buildings = fillBlock(lawn, cityPool);
     for (const b of buildings) {
         const spot = new THREE.Group();
-        spot.position.set(b.x, -holder.position.y, b.z);
+        // (The holder's at the block's middle: the buildings from there.)
+        spot.position.set(b.x - holder.position.x, -holder.position.y, b.z - holder.position.z);
         spot.rotation.y = b.rotationY;
         holder.add(spot);
         void fillModel(spot, b.model, { height: b.height });
@@ -791,26 +829,40 @@ function fillBlockPreview(lawn, holder) {
 }
 
 const lawnMaterial = new THREE.MeshStandardMaterial({ color: 0x7cc65a, roughness: 1 });
+const WATER_COLOR = '#2f9df0';
+/**
+ * A lawn (grass, a city block's paving, or water: `water` — the game draws it as the UFO game's water), its handle at
+ * its middle (the gizmo shows there, on it: not at the map's origin), its buildings if it's a block.
+ */
 function buildLawn(lawn, i) {
     if (lawn.points.length < 3) return;
-    const shape = new THREE.Shape(lawn.points.map((point) => new THREE.Vector2(point.x, -point.z)));
+    const middle = { x: lawn.points.reduce((s, p) => s + p.x, 0) / lawn.points.length, z: lawn.points.reduce((s, p) => s + p.z, 0) / lawn.points.length };
+    const shape = new THREE.Shape(lawn.points.map((point) => new THREE.Vector2(point.x - middle.x, -(point.z - middle.z))));
     const geometry = new THREE.ShapeGeometry(shape);
     geometry.rotateX(-Math.PI / 2);
     const selected = selection?.type?.startsWith('lawn') && selection.i === i;
-    const material = lawn.color ? new THREE.MeshStandardMaterial({ color: lawn.color, roughness: 1 }) : lawnMaterial;
-    const mesh = new THREE.Mesh(geometry, selected ? new THREE.MeshStandardMaterial({ color: lawn.color ?? 0x7cc65a, roughness: 1, emissive: 0x335522 }) : material);
+    const base = lawn.color ?? (lawn.water ? WATER_COLOR : '#7cc65a');
+    const material = lawn.water
+        ? new THREE.MeshStandardMaterial({ color: base, roughness: 0.2, metalness: 0.1, emissive: selected ? 0x113355 : 0x000000 })
+        : selected ? new THREE.MeshStandardMaterial({ color: base, roughness: 1, emissive: 0x335522 })
+            : lawn.color ? new THREE.MeshStandardMaterial({ color: lawn.color, roughness: 1 }) : lawnMaterial;
+    const mesh = new THREE.Mesh(geometry, material);
     mesh.receiveShadow = true;
     const holder = new THREE.Group();
-    holder.position.y = 0.025 + i * 0.002;
+    holder.position.set(middle.x, 0.025 + i * 0.002, middle.z);
+    // Dragging it moves its corners by how far the handle's gone from here (syncFromGizmo).
+    holder.userData.dragFrom = { x: middle.x, z: middle.z };
     holder.add(mesh);
-    fillBlockPreview(lawn, holder);
+    if (!lawn.water) fillBlockPreview(lawn, holder);
     register({ type: 'lawn', i }, holder);
     if (!selected) return;
     lawn.points.forEach((point, j) => {
         const handle = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffd36b, depthTest: false }));
         handle.renderOrder = 5;
-        handle.position.set(point.x, 0.3, point.z);
+        // The group at the corner (the gizmo shows there, and its position is the corner's).
+        handle.position.set(0, 0.3, 0);
         const group = new THREE.Group();
+        group.position.set(point.x, 0, point.z);
         group.add(handle);
         register({ type: 'lawnPoint', i, j }, group);
         const next = lawn.points[(j + 1) % lawn.points.length];
@@ -1339,19 +1391,35 @@ function drawFreezer(inner) {
     const tubD = 0.5;
     const gap = 0.06;
     const inset = rim + 0.04;
-    const columns = Math.min(3, Math.max(1, flavors.length));
-    const rows = Math.max(1, Math.ceil(flavors.length / columns));
+    // Twice as wide as its tubs need (as the game's): the tubs in one half, the sauces and toppings in the other (the
+    // game puts those on the side nearer the bar; drawn here on its -x).
+    const sundae = stages[Math.min(stage, stages.length - 1)]?.sundae ?? {};
+    const items = (sundae.sauces ?? ['chocolate', 'caramel']).length + (sundae.toppings ?? ['sprinkles', 'cherry', 'cookie', 'waffle']).length;
+    const divider = 0.1;
+    const columns = Math.min(3, Math.max(1, flavors.length, items));
+    const rows = Math.max(1, Math.ceil(flavors.length / columns), Math.ceil(items / columns));
+    const half = columns * tubW + (columns - 1) * gap;
     // (In `inner`'s own units: what's added to it is stretched with it.)
-    const width = (columns * tubW + (columns - 1) * gap + inset * 2) / inner.scale.x;
+    const width = (half * 2 + divider + inset * 2) / inner.scale.x;
     const depth = (rows * tubD + (rows - 1) * gap + inset * 2) / inner.scale.z;
     solid(width, h, depth, 0, h / 2, 0, '#eaf6fb');
     solid(width + 0.01, 0.12, depth + 0.01, 0, h * 0.62, 0, '#7bbfdc');
     solid(width - rim * 2, 0.02, depth - rim * 2, 0, h + 0.005, 0, '#2e3f4a');
-    flavors.forEach((flavor, k) => {
-        const column = k % columns;
+    solid(divider, 0.1, depth - rim * 2, 0, h + 0.05, 0, '#7bbfdc');
+    const itemsX = -(divider + half) / 2;
+    const cell = (k, count) => {
         const row = Math.floor(k / columns);
-        solid(tubW, 0.22, tubD, (column - (columns - 1) / 2) * (tubW + gap), h + 0.11, (row - (rows - 1) / 2) * (tubD + gap), FREEZER_COLORS[flavor] ?? '#dddddd');
+        const inRow = Math.min(columns, count - row * columns);
+        return { x: (k % columns - (inRow - 1) / 2) * (tubW + gap), z: (row - (rows - 1) / 2) * (tubD + gap) };
+    };
+    flavors.forEach((flavor, k) => {
+        const at = cell(k, flavors.length);
+        solid(tubW, 0.22, tubD, -itemsX + at.x, h + 0.11, at.z, FREEZER_COLORS[flavor] ?? '#dddddd');
     });
+    for (let k = 0; k < items; k++) {
+        const at = cell(k, items);
+        solid(0.38, 0.16, 0.38, itemsX + at.x, h + 0.08, at.z, '#f4f0e8');
+    }
 }
 
 /** A station: its spot (a marker to drag the whole station by), its pieces, its camera shots. */
@@ -1644,13 +1712,17 @@ function syncFromGizmo() {
         data.rotationY = round(yawOf(object));
         if (Math.abs(p.y) > 1e-3 || data.elevation !== undefined) data.elevation = round(p.y);
         if (gizmo.mode === 'scale') {
-            // Sizing: uniform (its height), and stretch across / along.
+            // Sizing: uniform (its height), and stretch across / along — each from the size the drag began at (each move
+            // used to multiply onto the last one's result, so the stretch ran away).
             const s = object.scale;
-            const inner = object.children[0];
-            const box = new THREE.Box3().setFromObject(inner);
-            const size = box.getSize(new THREE.Vector3());
-            if (Math.abs(s.y - 1) > 1e-3) data.height = round(size.y);
-            if (Math.abs(s.x - s.y) > 1e-3 || Math.abs(s.z - s.y) > 1e-3) data.stretch = { x: round((data.stretch?.x ?? 1) * s.x / s.y), z: round((data.stretch?.z ?? 1) * s.z / s.y) };
+            const start = object.userData.scaleStart;
+            if (start) {
+                if (Math.abs(s.y - 1) > 1e-3) data.height = round(Math.max(0.02, start.height * s.y));
+                const x = start.stretch.x * s.x / s.y;
+                const z = start.stretch.z * s.z / s.y;
+                if (Math.abs(x - 1) > 1e-3 || Math.abs(z - 1) > 1e-3) data.stretch = { x: round(x), z: round(z) };
+                else delete data.stretch;
+            }
         }
     } else if (sel.type === 'station') {
         data.x = round(p.x);
@@ -1726,7 +1798,7 @@ function syncFromGizmo() {
     } else if (sel.type === 'lawnPoint') {
         data.points[sel.j] = { x: round(p.x), z: round(p.z) };
     } else if (sel.type === 'lawn') {
-        const start = object.userData.dragFrom ?? (object.userData.dragFrom = { x: 0, z: 0 });
+        const start = object.userData.dragFrom ?? (object.userData.dragFrom = { x: object.position.x, z: object.position.z });
         const dx = round(p.x - start.x);
         const dz = round(p.z - start.z);
         if (dx || dz) {
@@ -1915,6 +1987,7 @@ function showHint(text) {
     document.getElementById('drawWall').classList.toggle('tool-on', drawing?.kind === 'wall');
     document.getElementById('drawLawn').classList.toggle('tool-on', drawing?.kind === 'lawn');
     document.getElementById('drawBlock').classList.toggle('tool-on', drawing?.kind === 'block');
+    document.getElementById('drawWater').classList.toggle('tool-on', drawing?.kind === 'water');
     document.querySelectorAll('[data-place]').forEach((b) => b.classList.toggle('tool-on', b.dataset.place === placing));
 }
 
@@ -1936,6 +2009,7 @@ function startDrawing(kind = 'wall') {
     select(null);
     drawing = { points: [], kind };
     showHint(kind === 'lawn' ? 'Click the lawn\'s corners. Click the first one again (or Enter) to finish · Backspace: undo a corner · Esc: cancel'
+        : kind === 'water' ? 'Water: click its corners. Click the first one again (or Enter) to finish · Backspace: undo a corner · Esc: cancel'
         : kind === 'block' ? 'City block: click its corners just inside the roads round it. Click the first one again (or Enter) to finish — it fills with buildings · Backspace: undo a corner · Esc: cancel'
             : 'Click the corners. Click the first one again to close it · double-click / Enter: done · Backspace: undo a corner · Esc: cancel');
 }
@@ -1982,10 +2056,11 @@ function finishDrawing(closed) {
     const points = drawing?.points ?? [];
     const kind = drawing?.kind ?? 'wall';
     stopTools();
-    if (kind === 'lawn' || kind === 'block') {
-        if (points.length < 3) return toast(`A ${kind === 'block' ? 'city block' : 'lawn'} needs three corners at least`, 'warn');
-        // A city block: a paved lawn, filled with buildings (mixed: change it in the inspector).
-        const lawn = kind === 'block' ? { points, color: '#cfcac0', buildings: { kind: 'mixed', seed: Math.floor(Math.random() * 1e6), setback: 1.5, gap: 1 } } : { points };
+    if (kind === 'lawn' || kind === 'block' || kind === 'water') {
+        if (points.length < 3) return toast(`${kind === 'block' ? 'A city block' : kind === 'water' ? 'Water' : 'A lawn'} needs three corners at least`, 'warn');
+        // A city block: a paved lawn, filled with buildings (mixed: change it in the inspector); water: a lawn that's water.
+        const lawn = kind === 'block' ? { points, color: '#cfcac0', buildings: { kind: 'mixed', seed: Math.floor(Math.random() * 1e6), setback: 1.5, gap: 1 } }
+            : kind === 'water' ? { points, water: true } : { points };
         edit(() => (layout.lawns ??= []).push(lawn));
         select({ type: 'lawn', i: layout.lawns.length - 1 });
         return;
@@ -2139,8 +2214,29 @@ const rangeTag = (item) => (item.from === undefined && item.until === undefined 
 
 function renderOutline() {
     const host = document.getElementById('outline');
-    const group = (title, items, extra) => [el('div', { class: 'group-title' }, el('h3', {}, title), extra ?? null), el('ul', { class: 'tree' }, ...items)];
+    // A section: its title (click to fold it away or open it: remembered with the session), then its list.
+    const group = (title, items, extra) => {
+        const key = `outline:${title.split(' (')[0]}`;
+        const shut = session.open[key] === false;
+        const header = el('div', {
+            class: 'group-title',
+            style: { cursor: 'pointer', userSelect: 'none' },
+            title: shut ? 'Show' : 'Hide',
+            onclick: (event) => {
+                if (event.target.closest('select, button, input')) return;
+                session.open[key] = shut;
+                rememberSession();
+                renderOutline();
+            },
+        }, el('h3', {}, `${shut ? '▸' : '▾'} ${title} · ${items.length}`), extra ?? null);
+        return shut ? [header] : [header, el('ul', { class: 'tree' }, ...items)];
+    };
     host.replaceChildren(
+        // The street first: roads are painted with 🛣 Roads; here its blocks, lawns, water and people.
+        ...(level === 'restaurant' ? group('Street', [
+            ...(layout.lawns ?? []).map((lawn, i) => outlineItem(lawn.water ? '🌊 water' : lawn.buildings ? `🏙 city block (${{ living: 'homes', business: 'shops', mixed: 'mixed' }[lawn.buildings.kind ?? 'mixed']})` : `🌱 lawn (${lawn.points.length} corners)`, { type: 'lawn', i }, rangeTag(lawn), shownAt(lawn))),
+            ...(layout.people?.areas ?? []).map((area, i) => outlineItem(`🚶 ${area.count} people`, { type: 'people', i }, rangeTag(area), shownAt(area))),
+        ]) : []),
         ...(layout.market ? group('Supermarket', [
             outlineItem('🍅 crates', { type: 'crates' }),
             outlineItem('🧑 cashier', { type: 'cashier' }),
@@ -2154,10 +2250,6 @@ function renderOutline() {
         ])),
         ...(wayIn() ? group(`Way in${(layout.stations ?? []).some((s) => shownAt(s)) ? ' (this stage\'s station)' : ''}`, ['start', 'outside', 'inside'].map((key) => outlineItem(`🚶 ${key}`, { type: 'path', key }))) : []),
         ...((layout.seats ?? []).length ? group('Seats', layout.seats.map((seat, i) => outlineItem(`🪑 seat ${i + 1}${seat.id ? ': ' + seat.id : ''}`, { type: 'seat', i }, rangeTag(seat), shownAt(seat)))) : []),
-        ...(level === 'restaurant' ? group('Street', [
-            ...(layout.lawns ?? []).map((lawn, i) => outlineItem(lawn.buildings ? `🏙 city block (${{ living: 'homes', business: 'shops', mixed: 'mixed' }[lawn.buildings.kind ?? 'mixed']})` : `🌱 lawn (${lawn.points.length} corners)`, { type: 'lawn', i }, rangeTag(lawn), shownAt(lawn))),
-            ...(layout.people?.areas ?? []).map((area, i) => outlineItem(`🚶 ${area.count} people`, { type: 'people', i }, rangeTag(area), shownAt(area))),
-        ]) : []),
         ...group('Walls', layout.walls.map((wall, i) => outlineItem(`🧱 ${wall.style ?? 'wall'} (${wall.points.length} corners${wall.openings?.length ? `, ${wall.openings.length} openings` : ''})`, { type: 'wall', i }, rangeTag(wall), shownAt(wall)))),
         ...group('Floors', layout.floors.map((floor, i) => outlineItem(`▦ ${floor.style ?? 'floor'} ${floor.width}×${floor.depth}`, { type: 'floor', i }, rangeTag(floor), shownAt(floor)))),
         // Prefabs placed (stations, table sets), and a pick of the library to place another.
@@ -2209,9 +2301,41 @@ function stageFields(item) {
     const toIndex = (value) => (value === '—' ? undefined : Number(value.split(':')[0]) - 1);
     const fromValue = item.from === undefined ? '—' : options[item.from + 1];
     const untilValue = item.until === undefined ? '—' : options[item.until + 1] ?? '—';
+    // There for more stages than this one: moving it moves it in all of them. This splits off this stage's own copy.
+    const first = item.from ?? 0;
+    const last = (item.until ?? stageNames.length) - 1;
+    const shared = first < last && stage >= first && stage <= last;
     return el('div', {},
         selectField('From stage', fromValue, options, (v) => (v === '—' ? delete item.from : (item.from = toIndex(v)))),
-        selectField('Gone at stage', untilValue, options, (v) => (v === '—' ? delete item.until : (item.until = toIndex(v)))));
+        selectField('Gone at stage', untilValue, options, (v) => (v === '—' ? delete item.until : (item.until = toIndex(v)))),
+        shared ? el('div', { class: 'hint' }, `Shared by stages ${first + 1}–${last + 1}: moving it here moves it in all of them.`) : null,
+        shared ? el('button', { class: 'block', onclick: () => splitForStage(item) }, `✂ Own copy for stage ${stage + 1} only`) : null);
+}
+
+/**
+ * `item` (there for several stages) split in its list: it keeps only the stage shown, and copies take the stages before
+ * and after it — so it can be placed on its own here without moving the others.
+ */
+function splitForStage(item) {
+    const list = Object.values(layout).find((value) => Array.isArray(value) && value.includes(item));
+    if (!list) return;
+    edit(() => {
+        const first = item.from ?? 0;
+        const until = item.until ?? stageNames.length;
+        const at = list.indexOf(item);
+        const copy = (from, to) => {
+            const clone = structuredClone(item);
+            if (from > 0) clone.from = from; else delete clone.from;
+            if (to < stageNames.length) clone.until = to; else delete clone.until;
+            return clone;
+        };
+        const parts = [];
+        if (first < stage) parts.push(copy(first, stage));
+        if (stage + 1 < until) parts.push(copy(stage + 1, until));
+        if (stage > 0) item.from = stage; else delete item.from;
+        if (stage + 1 < stageNames.length) item.until = stage + 1; else delete item.until;
+        list.splice(at + 1, 0, ...parts);
+    });
 }
 
 function xyzField(label, point, onChange) {
@@ -2285,20 +2409,30 @@ function renderInspector() {
             el('p', { class: 'muted small' }, 'Or 🪟 / 🚪 / ⬜ (left) and click on the wall where it goes.'),
             el('div', { class: 'row' }, remove));
     } else if (sel.type === 'lawn' || sel.type === 'lawnPoint') {
-        parts.push(el('h3', {}, sel.type === 'lawnPoint' ? `${data.buildings ? 'City block' : 'Lawn'} corner ${sel.j + 1}` : data.buildings ? '🏙 City block' : 'Lawn'),
+        const what = data.water ? 'Water' : data.buildings ? 'City block' : 'Lawn';
+        const fallback = data.water ? WATER_COLOR : '#7cc65a';
+        parts.push(el('h3', {}, sel.type === 'lawnPoint' ? `${what} corner ${sel.j + 1}` : { Water: '🌊 Water', 'City block': '🏙 City block', Lawn: 'Lawn' }[what]),
             el('p', { class: 'muted small' }, 'Drag it (W) to move it whole, a gold corner to move that corner; a green middle handle adds a corner.'),
+            checkField('Water (a pond, a lake, a river)', Boolean(data.water), (v) => (v ? ((data.water = true), delete data.buildings) : delete data.water)),
             el('label', { class: 'field' }, el('span', {}, 'Colour'), (() => {
-                const input = el('input', { type: 'color', value: data.color ?? '#7cc65a' });
-                input.addEventListener('change', () => edit(() => (data.color = input.value === '#7cc65a' ? undefined : input.value)));
+                const input = el('input', { type: 'color', value: data.color ?? fallback });
+                input.addEventListener('change', () => edit(() => (data.color = input.value === fallback ? undefined : input.value)));
                 return input;
             })()),
-            // A city block: filled with buildings along its sides (cityfill.js — as the game fills it).
-            el('div', { class: 'opening' },
+            // A city block: filled with buildings along its sides (cityfill.js — as the game fills it). (Not water.)
+            data.water ? null : el('div', { class: 'opening' },
                 el('h2', {}, 'City block'),
                 checkField('Fill with buildings', Boolean(data.buildings), (v) => (v ? (data.buildings = { kind: 'mixed', seed: Math.floor(Math.random() * 1e6), setback: 1.5, gap: 1 }) : delete data.buildings)),
                 ...(data.buildings ? [
                     el('p', { class: 'muted small' }, `${cityPool ? fillBlock(data, cityPool).length : '…'} buildings along its sides, facing out to the streets round it (settings.json town.city: which models). Draw the block's outline just inside its roads.`),
-                    selectField('Kind', data.buildings.kind ?? 'mixed', ['mixed', 'living', 'business'], (v) => (data.buildings.kind = v)),
+                    // Houses, tall buildings, commercial, or a mix (settings.json town.city: each model's kind).
+                    (() => {
+                        const kinds = ['mixed', 'house', 'tower', 'shop'];
+                        const current = { living: 'house', business: 'tower' }[data.buildings.kind] ?? data.buildings.kind ?? 'mixed';
+                        const select = el('select', {}, ...kinds.map((k) => el('option', { value: k, selected: k === current }, BLOCK_KINDS[k].name)));
+                        select.addEventListener('change', () => edit(() => (data.buildings.kind = select.value)));
+                        return el('label', { class: 'field' }, el('span', {}, 'Buildings'), select);
+                    })(),
                     el('div', { class: 'row' },
                         numberField('Seed', data.buildings.seed ?? 1, 1, (v) => (data.buildings.seed = Math.max(1, Math.round(v ?? 1)))),
                         el('button', { title: 'Another mix of buildings', onclick: () => edit(() => (data.buildings.seed = Math.floor(Math.random() * 1e6))) }, '🎲')),
@@ -2537,6 +2671,7 @@ function bindUi() {
     document.getElementById('drawWall').addEventListener('click', () => (drawing?.kind === 'wall' ? stopTools() : startDrawing('wall')));
     document.getElementById('drawLawn').addEventListener('click', () => (drawing?.kind === 'lawn' ? stopTools() : startLawn()));
     document.getElementById('drawBlock').addEventListener('click', () => (drawing?.kind === 'block' ? stopTools() : startDrawing('block')));
+    document.getElementById('drawWater').addEventListener('click', () => (drawing?.kind === 'water' ? stopTools() : startDrawing('water')));
     document.getElementById('roadMode').addEventListener('click', () => setRoadMode(!roadMode));
     document.getElementById('addPeople').addEventListener('click', addPeopleArea);
     document.getElementById('addSeat').addEventListener('click', addSeat);

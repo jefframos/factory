@@ -7,7 +7,7 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
-import { COIN_BAR, WARM, fillCoinBar, framePlane, glossyButton, iconSprite, label, tappable } from './UiParts';
+import { COIN_BAR, WARM, fillCoinBar, glossyButton, iconSprite, label, panel, popupPanel, tappable } from './UiParts';
 import { modelIcon } from './Icons';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
 
@@ -38,7 +38,8 @@ export class DeliveryHud extends PIXI.Container {
         for (let i = 0; i < deliveries; i++) {
             const holder = new PIXI.Container();
             holder.x = (i - (deliveries - 1) / 2) * (PIPS.size + PIPS.gap);
-            const back = new PIXI.Graphics().beginFill(WARM.cream, 0.9).drawRoundedRect(-PIPS.size / 2, -PIPS.size / 2, PIPS.size, PIPS.size, 16).endFill();
+            const back = panel(PIPS.size, PIPS.size, 16, WARM.cream, 0.9);
+            back.position.set(-PIPS.size / 2, -PIPS.size / 2);
             const icon = modelIcon('pizzabox_closed', PIPS.size - 10);
             const check = iconSprite('Icon_Check03_l', 34);
             check.position.set(PIPS.size / 2 - 8, PIPS.size / 2 - 8);
@@ -146,24 +147,21 @@ export class DeliveryHud extends PIXI.Container {
         const shade = new PIXI.Graphics().beginFill(0x000000, 0.45).drawRect(-2000, -2000, 4000, 4000).endFill();
         shade.eventMode = 'static';
         const width = 520;
-        const height = 420;
-        const back = framePlane('BasicFrame_Round20', width, height);
-        back.position.set(-width / 2, -height / 2);
-        const heading = label(52);
-        heading.text = 'ALL DELIVERED!';
-        heading.y = -height / 2 + 60;
-        const box = modelIcon('pizzabox_stacked', 130);
-        box.y = -40;
+        const height = 500;
+        const back = popupPanel(width, height, 'ALL DELIVERED!');
+        const box = modelIcon('pizzabox_stacked', 140);
+        box.y = -60;
         const words = label(34, WARM.cream);
-        words.text = `${delivered} pizzas · +${coins} coins`;
-        words.y = 70;
+        words.text = `${delivered} ${delivered === 1 ? 'pizza' : 'pizzas'} · +${coins} coins`;
+        // (Its own row between the picture and the button: they used to overlap.)
+        words.y = 55;
         const button = glossyButton(300, 100, 'CONTINUE', 'Button01_l_Green');
-        button.y = height / 2 - 80;
+        button.y = height / 2 - 85;
         tappable(button, () => {
             RestaurantAudio.play('pick');
             gsap.to(card, { alpha: 0, duration: 0.2, onComplete: () => { card.destroy({ children: true }); this.card = null; onContinue(); } });
         });
-        card.addChild(shade, back, heading, box, words, button);
+        card.addChild(shade, back, box, words, button);
         this.card = card;
         this.addChild(card);
         this.reposition();

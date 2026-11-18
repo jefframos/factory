@@ -821,7 +821,7 @@ export default class UfoScene extends ThreeScene {
                 UfoProgress.wonLevel(this.missionIndex);
                 goToMission(this.missionIndex + 1);
             }
-            this.hud.showEnd({ title: 'WELL DONE!', outcome: 'win', coins: reward, coinsTotal: UfoProgress.coins, button: 'CONTINUE', area });
+            this.hud.showEnd({ title: 'WELL DONE!', outcome: 'win', coins: reward, coinsTotal: UfoProgress.coins, button: 'CONTINUE', area, doubleCoins: this.doubleCoinsFor(reward) });
         } else {
             this.hud.showEnd({ title: why ? 'TOO SLOW!' : 'TIME UP!', detail: why ?? mission.name.toUpperCase(), outcome: 'lose', button: 'TRY AGAIN', area });
         }
@@ -879,9 +879,26 @@ export default class UfoScene extends ThreeScene {
         } else {
             UfoProgress.openRankingOnHome = true;
         }
-        if (place === 1) this.hud.showEnd({ title: 'VICTORY!', outcome: 'win', results, button, starsWon, trophies, coinsWon });
-        else if (place <= 3) this.hud.showEnd({ title: nth, outcome: 'place', emblem: place === 2 ? 'ItemIcon_Medal_Silver_1' : 'ItemIcon_Medal_Bronze_1', results, button, starsWon, trophies, coinsWon });
-        else this.hud.showEnd({ title: nth, outcome: 'lose', results, button, trophies, coinsWon });
+        // Coins won (a versus match): double them for a rewarded ad.
+        const doubleCoins = coinsWon ? this.doubleCoinsFor(coinsWon) : undefined;
+        if (place === 1) this.hud.showEnd({ title: 'VICTORY!', outcome: 'win', results, button, starsWon, trophies, coinsWon, doubleCoins });
+        else if (place <= 3) this.hud.showEnd({ title: nth, outcome: 'place', emblem: place === 2 ? 'ItemIcon_Medal_Silver_1' : 'ItemIcon_Medal_Bronze_1', results, button, starsWon, trophies, coinsWon, doubleCoins });
+        else this.hud.showEnd({ title: nth, outcome: 'lose', results, button, trophies, coinsWon, doubleCoins });
+    }
+
+    /**
+     * The end screen's "x2 COINS" offer for `coins` won: a rewarded ad (the best-paying format), and the coins paid again
+     * if it's watched. None when the build has ads off.
+     */
+    private doubleCoinsFor(coins: number): (() => Promise<boolean>) | undefined {
+        if (!PlatformHandler.ENABLE_VIDEO_ADS || coins <= 0) return undefined;
+        PlatformHandler.instance.measure('reward', 'double-coins', 'visible');
+        return async () => {
+            PlatformHandler.instance.measure('reward', 'double-coins', 'interact');
+            const watched = await PlatformHandler.instance.platform.showRewardedVideo('ufo-double-coins').catch(() => false);
+            if (watched) UfoProgress.addCoins(coins);
+            return watched;
+        };
     }
 
     private checkBump(): void {

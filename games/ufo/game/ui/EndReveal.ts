@@ -40,20 +40,29 @@ export interface EndOptions {
     coinsWon?: number;
     /** A story level: how far through its area (complete: this win finished it), over the button. */
     area?: { view: AreaView; complete: boolean };
+    /**
+     * Coins were won: a "x2 COINS" button under the main one, for a rewarded ad. It calls this (the ad, and the coins
+     * paid again if it's watched: resolves true); then the amount doubles on screen. Once, whatever the answer.
+     */
+    doubleCoins?: () => Promise<boolean>;
 }
 
 const LOOK = {
-    win: { emblem: 'ItemIcon_Trophy_Gold', ribbon: 'Title_Ribbon01_Blue', rays: 0xffe07a },
-    place: { emblem: 'ItemIcon_Medal_Silver_1', ribbon: 'Title_Ribbon01_Blue', rays: 0x8fd8ff },
-    lose: { emblem: 'Image_Badge_Skull', ribbon: 'Title_Ribbon01_Red', rays: 0xff8a7a },
+    win: { emblem: 'ItemIcon_Trophy_Gold', ribbon: 'Title_Ribbon04_Purple', rays: 0xffe07a },
+    place: { emblem: 'ItemIcon_Medal_Silver_1', ribbon: 'Title_Ribbon04_Purple', rays: 0x8fd8ff },
+    lose: { emblem: 'Image_Badge_Skull', ribbon: 'Title_Ribbon04_Red', rays: 0xff8a7a },
 };
-const LAYOUT = { emblemY: -170, ribbonY: -82, detailY: -30, rowsY: -8, rowStep: 44, emblem: 170, rays: 480, ribbon: 380, buttonGap: 58 };
+/** Title_Ribbon04 art height (px): its borders scale so the banner keeps its look at LAYOUT.ribbonHeight. */
+const RIBBON_TEXTURE_HEIGHT = 143;
+const LAYOUT = { emblemY: -170, ribbonY: -82, detailY: -30, rowsY: -8, rowStep: 44, emblem: 170, rays: 480, ribbon: 420, ribbonHeight: 76, buttonGap: 58 };
 /** With coins: the title over a pile, its amount under. */
 const COIN_LAYOUT = { titleSize: 76, titleY: -250, pileY: -80, pile: 230, amountY: 60, amountSize: 58, buttonY: 210 };
 /** Lost, with no results to show: from the top, emblem on ribbon, the level, then the buttons. */
 const LOSE_LAYOUT = { emblemY: -140, emblem: 360, rays: 620, ribbonY: -14, ribbonWidth: 460, ribbonHeight: 86, ribbonScale: 0.6, titleSize: 42, titleY: -5, detailY: 62, buttonY: 142, homeY: 228, button: 290, home: 220, homeHeight: 68, homeIcon: 52, homeIconX: -62, homeWordsX: 22 };
 /** The coins flying up to the bar: how many, how far apart they set off, how long each takes, and their size. */
 const COIN_FLIGHT = { count: 12, gap: 0.07, seconds: 0.55, size: 44, spread: 90 };
+/** The "x2 COINS" offer (a rewarded ad): big, in the main slot, first; the main button (nextWidth/Height) goes under it by `gap`, `nextDelay` s later. */
+const DOUBLE = { width: 340, height: 96, gap: 100, icon: 62, iconX: -116, wordsX: 22, nextWidth: 210, nextHeight: 62, nextDelay: 1 };
 /** Stars for the ranking, under the results. */
 const STARS_WON = { y: 44, size: 58, gap: 66 };
 /** A match's trophies and coins, a line under that: its height, the icons' size, the gap between the two. */
@@ -74,6 +83,11 @@ export class EndReveal extends PIXI.Container {
     private readonly coinBarAmount = label(COIN_BAR.textSize);
     private readonly flyingCoins = new PIXI.Container();
     private areaBar: AreaBar | null = null;
+    /** The coins won, as shown (the big amount, or the versus line's): doubled after a rewarded ad. */
+    private coinsText: PIXI.Text | null = null;
+    private doublePulse: gsap.core.Tween | null = null;
+    /** The double-coins ad is up: nothing else takes taps (buttons popping in meanwhile stay off). */
+    private watchingAd = false;
     private emblemY = 0;
     /** Its height, for fitting it to the screen (more with the area bar). */
     private fitHeight = FIT.height;
@@ -101,12 +115,14 @@ export class EndReveal extends PIXI.Container {
         const ribbon = new PIXI.Container();
         ribbon.y = LAYOUT.ribbonY;
         const lost = options.outcome === 'lose' && !options.results?.length;
-        const ribbonBack = lost ? framePlane('Title_Ribbon04_Red', LOSE_LAYOUT.ribbonWidth, LOSE_LAYOUT.ribbonHeight, LOSE_LAYOUT.ribbonScale) : iconSprite(look.ribbon, LAYOUT.ribbon);
+        const ribbonBack = lost ? framePlane('Title_Ribbon04_Red', LOSE_LAYOUT.ribbonWidth, LOSE_LAYOUT.ribbonHeight, LOSE_LAYOUT.ribbonScale) : framePlane(look.ribbon, LAYOUT.ribbon, LAYOUT.ribbonHeight, LAYOUT.ribbonHeight / RIBBON_TEXTURE_HEIGHT);
+        // (The flat banner, stretched sideways; its top left at its position.)
+        if (!lost) ribbonBack.position.set(-LAYOUT.ribbon / 2, -LAYOUT.ribbonHeight / 2);
         const hasCoins = options.coins !== undefined;
         const title = label(hasCoins ? COIN_LAYOUT.titleSize : lost ? LOSE_LAYOUT.titleSize : 40, hasCoins ? 0xffd23f : 0xffffff);
         title.text = options.title;
         title.y = -8;
-        title.scale.set(Math.min(1, (hasCoins ? FIT.width - 20 : LAYOUT.ribbon * 0.72) / Math.max(title.width, 1)));
+        title.scale.set(Math.min(1, (hasCoins ? FIT.width - 20 : LAYOUT.ribbon * 0.6) / Math.max(title.width, 1)));
         ribbon.addChild(ribbonBack, title);
         let emblemSize: number = LAYOUT.emblem;
         if (lost) {
@@ -162,6 +178,7 @@ export class EndReveal extends PIXI.Container {
             amount.text = '0';
             amount.alpha = 0;
             this.content.addChild(amount);
+            this.coinsText = amount;
             const count = { value: 0 };
             tl.to(amount, { alpha: 1, duration: 0.15 }, at);
             tl.to(count, { value: options.coins, duration: 0.7, ease: 'power2.out', onUpdate: () => { amount.text = String(Math.round(count.value)); } }, at);
@@ -215,6 +232,7 @@ export class EndReveal extends PIXI.Container {
                 amount.anchor.set(0, 0.5);
                 amount.text = `+${options.coinsWon}`;
                 parts.push(this.pair(coin, amount));
+                this.coinsText = amount;
             }
             const width = parts.reduce((sum, part) => sum + part.width, 0) + REWARD_LINE.gap * (parts.length - 1);
             let x = -width / 2;
@@ -248,22 +266,66 @@ export class EndReveal extends PIXI.Container {
             at += 0.3;
         }
 
+        // Coins won and an ad to double them: that offer takes the main slot, big and first; the main button goes
+        // smaller under it and only shows a moment later.
+        const won = options.coins ?? options.coinsWon ?? 0;
+        const offerDouble = !!options.doubleCoins && won > 0;
         const button = new PIXI.Container();
-        button.addChild(...buttonParts(lost ? LOSE_LAYOUT.button : 270, 78, options.button, lost ? 'Button01_l_Sky' : 'Button01_l_Green'));
+        button.addChild(...(offerDouble
+            ? buttonParts(DOUBLE.nextWidth, DOUBLE.nextHeight, options.button, lost ? 'Button01_l_Sky' : 'Button01_l_Green')
+            : buttonParts(lost ? LOSE_LAYOUT.button : 270, 78, options.button, lost ? 'Button01_l_Sky' : 'Button01_l_Green')));
         tappable(button, onNext);
-        button.y = (lost ? LOSE_LAYOUT.buttonY : bottom + LAYOUT.buttonGap) + areaShift;
+        const slotY = (lost ? LOSE_LAYOUT.buttonY : bottom + LAYOUT.buttonGap) + areaShift;
+        button.y = offerDouble ? slotY + DOUBLE.gap : slotY;
+        const buttonAt = offerDouble ? at + DOUBLE.nextDelay : at;
         // (Between what's over it and the button.)
-        if (this.areaBar) this.areaBar.y = button.y - areaShift - LAYOUT.buttonGap + AREA.y;
+        if (this.areaBar) this.areaBar.y = slotY - areaShift - LAYOUT.buttonGap + AREA.y;
         button.scale.set(0);
         button.eventMode = 'none';
         this.content.addChild(button);
         tl.call(() => {
             if (options.outcome === 'win') this.throwConfetti();
         }, undefined, at);
-        tl.to(button.scale, { x: 1, y: 1, duration: 0.4, ease: 'back.out(2.4)' }, at + 0.15);
+        tl.to(button.scale, { x: 1, y: 1, duration: 0.4, ease: 'back.out(2.4)' }, buttonAt + 0.15);
         tl.call(() => {
-            button.eventMode = 'static';
-        }, undefined, at + 0.2);
+            if (!this.watchingAd) button.eventMode = 'static';
+        }, undefined, buttonAt + 0.2);
+        let underButton = button.y;
+        if (offerDouble && options.doubleCoins) {
+            const double = new PIXI.Container();
+            const [plane, words] = buttonParts(DOUBLE.width, DOUBLE.height, '▶ x2 COINS', 'Button01_l_Yellow');
+            words.x = DOUBLE.wordsX;
+            const coin = iconSprite('Icon_Coin', DOUBLE.icon);
+            coin.x = DOUBLE.iconX;
+            double.addChild(plane, words, coin);
+            double.y = slotY;
+            double.scale.set(0);
+            double.eventMode = 'none';
+            this.content.addChild(double);
+            this.fitHeight += DOUBLE.gap;
+            const askDouble = options.doubleCoins;
+            tappable(double, () => {
+                // Nothing else while the ad's up; once, whatever the answer.
+                double.eventMode = 'none';
+                button.eventMode = 'none';
+                this.watchingAd = true;
+                this.doublePulse?.kill();
+                gsap.to(double, { alpha: 0.5, duration: 0.15 });
+                void askDouble().catch(() => false).then((watched) => {
+                    if (this.destroyed) return;
+                    this.watchingAd = false;
+                    if (button.scale.x > 0) button.eventMode = 'static';
+                    gsap.to(double.scale, { x: 0, y: 0, duration: 0.25, ease: 'back.in(2)', onComplete: () => { double.visible = false; } });
+                    if (watched) this.showDoubled(won);
+                });
+            });
+            tl.to(double.scale, { x: 1, y: 1, duration: 0.4, ease: 'back.out(2.4)' }, at + 0.15);
+            tl.call(() => {
+                double.eventMode = 'static';
+                // A gentle pulse till it's tapped (its own tween: an endless one in the timeline would never end it).
+                this.doublePulse = gsap.to(double.scale, { x: 1.06, y: 1.06, duration: 0.45, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+            }, undefined, at + 0.55);
+        }
         if (onHome) {
             const home = new PIXI.Container();
             const [plane, words] = buttonParts(LOSE_LAYOUT.home, LOSE_LAYOUT.homeHeight, 'HOME', 'Button01_l_Gray');
@@ -272,15 +334,27 @@ export class EndReveal extends PIXI.Container {
             castle.x = LOSE_LAYOUT.homeIconX;
             home.addChild(plane, words, castle);
             tappable(home, onHome);
-            home.y = lost ? LOSE_LAYOUT.homeY + areaShift : button.y + LAYOUT.buttonGap + 30;
+            home.y = lost ? LOSE_LAYOUT.homeY + areaShift : underButton + LAYOUT.buttonGap + 30;
             home.scale.set(0);
             home.eventMode = 'none';
             this.content.addChild(home);
-            tl.to(home.scale, { x: 1, y: 1, duration: 0.4, ease: 'back.out(2.4)' }, at + 0.25);
+            tl.to(home.scale, { x: 1, y: 1, duration: 0.4, ease: 'back.out(2.4)' }, buttonAt + 0.25);
             tl.call(() => {
-                home.eventMode = 'static';
-            }, undefined, at + 0.3);
+                if (!this.watchingAd) home.eventMode = 'static';
+            }, undefined, buttonAt + 0.3);
         }
+    }
+
+    /** The ad was watched: the amount won doubles on screen (a pop), and (a story level's coins) the extra fly to the bar. */
+    private showDoubled(won: number): void {
+        const text = this.coinsText;
+        if (text) {
+            const coins = this.options.coins !== undefined;
+            text.text = coins ? String(won * 2) : `+${won * 2}`;
+            gsap.fromTo(text.scale, { x: 1.5, y: 1.5 }, { x: 1, y: 1, duration: 0.45, ease: 'back.out(3)' });
+        }
+        UfoAudio.milestone();
+        if (this.options.coins !== undefined) this.flyCoins(won, (this.options.coinsTotal ?? 0) + won);
     }
 
     /** An icon and its words beside it, as one, left-aligned at 0. */
@@ -385,6 +459,7 @@ export class EndReveal extends PIXI.Container {
     public override destroy(): void {
         this.timeline.kill();
         this.spin.kill();
+        this.doublePulse?.kill();
         this.confetti.children.forEach((piece) => gsap.killTweensOf(piece));
         this.flyingCoins.children.forEach((coin) => gsap.killTweensOf(coin));
         gsap.killTweensOf(this.coinBar.scale);

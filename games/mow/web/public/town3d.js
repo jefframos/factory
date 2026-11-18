@@ -76,7 +76,7 @@ let showTraffic = true;
 let peopleOn = false;
 /** 🔗 Link: the next waypoint clicked is linked to (or unlinked from) the selected one. */
 let linking = false;
-let gameUrl = 'http://localhost:9001/';
+let gameUrl = 'http://localhost:8000/';
 /** What this editor loads and saves (the town, or a Map shots diorama), and whether it's a diorama (no Play). */
 let townUrl = '/api/town';
 let diorama = false;

@@ -24,6 +24,8 @@ type PlatformConfigEntry = { gameId?: string; enableAds?: boolean; folderPath?: 
 const FONTS = ['Baloo2-ExtraBold'];
 /** The longest the loading screen waits for the town's models (a stuck load still lets the player in). */
 const MAX_SCENE_WAIT_MS = 20000;
+/** Minimum time between two interstitials (ms). */
+const INTERSTITIAL_GAP_MS = 60000;
 
 export default class UfoGame extends Game {
     private gameContainer = new PIXI.Container();
@@ -32,6 +34,7 @@ export default class UfoGame extends Game {
     private scenes = 0;
     /** A transition to another level is under way (a second tap doesn't start another). */
     private travelling = false;
+    private lastInterstitial = 0;
 
     public constructor() {
         super({ resolution: Math.min(2, devicePixelRatio), backgroundAlpha: 0 }, false);
@@ -110,12 +113,30 @@ export default class UfoGame extends Game {
         UfoAudio.whoosh();
         const transition = new RadialTransition(this);
         await transition.cover(travel.title.toUpperCase(), travel.subtitle);
+        await this.interstitial();
         travel.apply();
         const scene = travel.home ? this.buildHome() : this.buildScene();
         await Promise.race([scene.ready, new Promise((resolve) => window.setTimeout(resolve, MAX_SCENE_WAIT_MS))]);
         await transition.reveal();
         transition.destroy();
         this.travelling = false;
+    }
+
+    /**
+     * An interstitial ad while the travel cover hides the screen (next level, back to the menu, into a match). Spaced by
+     * INTERSTITIAL_GAP_MS so menu → level right after level → menu doesn't play two back to back; the platform may still
+     * skip one on its own frequency rules.
+     */
+    private async interstitial(): Promise<void> {
+        if (!PlatformHandler.ENABLE_VIDEO_ADS) return;
+        const now = Date.now();
+        if (now - this.lastInterstitial < INTERSTITIAL_GAP_MS) return;
+        this.lastInterstitial = now;
+        try {
+            await PlatformHandler.instance.platform.showCommercialBreak();
+        } catch (e) {
+            console.warn('[Ads] commercial break failed', e);
+        }
     }
 
     protected override update(delta: number): void {

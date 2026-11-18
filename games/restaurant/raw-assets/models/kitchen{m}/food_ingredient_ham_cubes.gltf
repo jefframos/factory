@@ -1,0 +1,142 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.3.0",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 36,
+      "max": [
+        0.10000000149011612,
+        0.11999999731779099,
+        0.10000000149011612
+      ],
+      "min": [
+        -0.10000000149011612,
+        1.3411045607369942e-9,
+        -0.10000000149011612
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 36,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 36,
+      "max": [
+        0.10249999910593033,
+        0.11749999970197678,
+        0.06499999761581421
+      ],
+      "min": [
+        -0.10249999910593033,
+        0.08250000327825546,
+        -0.005000000353902578
+      ],
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 36,
+      "bufferView": 1,
+      "byteOffset": 12
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 864,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 864,
+      "byteLength": 864,
+      "byteStride": 24,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "food_ingredient_ham_cubes.bin",
+      "byteLength": 1728
+    }
+  ],
+  "materials": [
+    {
+      "name": "#e88a8f",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.8069522576650873,
+          0.2541520943200296,
+          0.2746773120495699,
+          1
+        ],
+        "roughnessFactor": 0.8,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "#f8d6d2",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.9386857284565036,
+          0.6724431569510133,
+          0.6444796819634361,
+          1
+        ],
+        "roughnessFactor": 0.8,
+        "metallicFactor": 0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "food_ingredient_ham_cubes",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "mode": 4,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 2,
+            "NORMAL": 3
+          },
+          "mode": 4,
+          "material": 1
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "food_ingredient_ham_cubes",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}

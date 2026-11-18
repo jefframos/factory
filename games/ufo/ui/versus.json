@@ -12,7 +12,9 @@
   "arenas": [
     { "id": "town", "name": "Small Town", "level": "town", "rivals": 4, "seconds": 100, "afterLevel": 1, "trophies": 0, "coins": [60, 40, 25, 10], "colours": { "top": "#7ad66a", "bottom": "#3a9a48" } },
     { "id": "city", "name": "Big City", "level": "city2", "rivals": 5, "seconds": 150, "afterLevel": 1, "trophies": 150, "coins": [90, 60, 35, 15], "colours": { "top": "#6fb8ff", "bottom": "#2f6fd8" } },
-    { "id": "desert", "name": "Desert", "level": "desert", "rivals": 5, "seconds": 150, "afterLevel": 1, "trophies": 400, "coins": [120, 80, 45, 20], "colours": { "top": "#f0b860", "bottom": "#c47a2c" } }
+    { "id": "desert", "name": "Desert", "level": "desert", "rivals": 5, "seconds": 150, "afterLevel": 1, "trophies": 400, "coins": [120, 80, 45, 20], "colours": { "top": "#f0b860", "bottom": "#c47a2c" } },
+    { "id": "kingdom", "name": "Kingdom", "level": "medieval", "rivals": 5, "seconds": 180, "afterLevel": 1, "trophies": 650, "coins": [150, 100, 55, 25], "colours": { "top": "#b48cff", "bottom": "#5a3fbf" } },
+    { "id": "volcano", "name": "Volcano", "level": "volcano", "rivals": 5, "seconds": 160, "afterLevel": 1, "trophies": 950, "coins": [180, 120, 65, 30], "colours": { "top": "#ff8a3d", "bottom": "#b02a1a" } }
   ],
   "road": [
     { "trophies": 30, "reward": { "coins": 100 } },
@@ -27,6 +29,12 @@
     { "trophies": 560, "reward": { "alien": "cyclops-purple" } },
     { "trophies": 650, "reward": { "ufo": "black-neon" } },
     { "trophies": 750, "reward": { "coins": 800 } },
-    { "trophies": 850, "reward": { "ufo": "magma" } }
+    { "trophies": 850, "reward": { "ufo": "magma" } },
+    { "trophies": 950, "reward": { "coins": 900 } },
+    { "trophies": 1050, "reward": { "alien": "cyclops-red" } },
+    { "trophies": 1150, "reward": { "coins": 1000 } },
+    { "trophies": 1250, "reward": { "ufo": "ice" } },
+    { "trophies": 1400, "reward": { "coins": 1200 } },
+    { "trophies": 1550, "reward": { "ufo": "candy" } }
   ]
 }

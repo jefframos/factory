@@ -8,7 +8,7 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
-import { WARM, framePlane, glossyButton, iconSprite, label, plainLabel, tappable } from './UiParts';
+import { WARM, framePlane, glossyButton, iconSprite, label, panel, plainLabel, ribbonTitle, tappable, throwConfetti } from './UiParts';
 import { modelIcon } from './Icons';
 import { MarketItem } from '../data/Settings';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
@@ -23,7 +23,7 @@ export const MARKET_HUD_SHARE = { top: 0.1, bottom: 0.27 };
 type Point = { x: number; y: number };
 
 export class MarketHud extends PIXI.Container {
-    private readonly title = label(46);
+    private readonly title = ribbonTitle('SUPERMARKET', 44);
     private readonly list = new PIXI.Container();
     private readonly cards = new Map<string, { holder: PIXI.Container; check: PIXI.Sprite; icon: PIXI.Sprite }>();
     private readonly tags = new PIXI.Container();
@@ -37,7 +37,6 @@ export class MarketHud extends PIXI.Container {
 
     public constructor() {
         super();
-        this.title.text = 'SUPERMARKET';
         this.hint.visible = this.hand.visible = false;
         this.addChild(this.tags, this.title, this.list, this.hint, this.hand);
         this.reposition();
@@ -50,7 +49,7 @@ export class MarketHud extends PIXI.Container {
     public reposition(): void {
         const screen = this.screen;
         if (!screen) return;
-        this.title.position.set(screen.center.x, screen.topLeft.y + MARGIN + 20);
+        this.title.position.set(screen.center.x, screen.topLeft.y + MARGIN + 34);
         const scale = this.listWidth ? Math.min(1, (screen.width - MARGIN * 2) / this.listWidth) : 1;
         this.list.scale.set(scale);
         const listY = screen.topLeft.y + screen.height - MARGIN - LIST.below * scale;
@@ -74,7 +73,8 @@ export class MarketHud extends PIXI.Container {
             const holder = new PIXI.Container();
             holder.x = -total / 2 + LIST.card / 2 + i * (LIST.card + LIST.gap);
             holder.y = 12;
-            const card = new PIXI.Graphics().beginFill(WARM.cream).drawRoundedRect(-LIST.card / 2, -LIST.height / 2 + 8, LIST.card, LIST.height - 16, 18).endFill();
+            const card = panel(LIST.card, LIST.height - 16, 18, WARM.cream);
+            card.position.set(-LIST.card / 2, -LIST.height / 2 + 8);
             const icon = modelIcon(item.icon, LIST.icon);
             const check = iconSprite('Icon_Check03_l', 48);
             check.position.set(LIST.card / 2 - 16, LIST.height / 2 - 26);
@@ -142,6 +142,53 @@ export class MarketHud extends PIXI.Container {
         this.hintTimer = gsap.delayedCall(seconds, () => {
             this.hint.visible = false;
         });
+    }
+
+    /**
+     * The list's all in: ALL SET! — the screen dims, rays turn behind the ribbon, each thing bought pops in with its tick,
+     * confetti. (The scene moves on a moment later.)
+     */
+    public celebrate(items: readonly MarketItem[]): void {
+        const screen = this.screen;
+        const holder = new PIXI.Container();
+        holder.position.set(screen.center.x, screen.center.y);
+        const shade = new PIXI.Graphics().beginFill(0x0b0f1f, 0.78).drawRect(-3000, -3000, 6000, 6000).endFill();
+        shade.eventMode = 'static';
+        const rays = iconSprite('Image_Effect_Rotate', 640);
+        rays.tint = 0xffd36b;
+        rays.y = -40;
+        gsap.to(rays, { rotation: Math.PI * 2, duration: 7, repeat: -1, ease: 'none' });
+        const title = ribbonTitle('ALL SET!', 64);
+        title.y = -170;
+        const row = new PIXI.Container();
+        const size = 96;
+        const gap = 18;
+        items.forEach((item, i) => {
+            const cell = new PIXI.Container();
+            cell.x = (i - (items.length - 1) / 2) * (size + gap);
+            const back = panel(size, size, 22, WARM.cream);
+            back.position.set(-size / 2, -size / 2);
+            const icon = modelIcon(item.icon, size - 18);
+            const tick = iconSprite('Icon_Check03_l', 44);
+            tick.position.set(size / 2 - 12, size / 2 - 12);
+            cell.addChild(back, icon, tick);
+            cell.scale.set(0);
+            row.addChild(cell);
+            gsap.to(cell.scale, { x: 1, y: 1, duration: 0.35, delay: 0.35 + i * 0.12, ease: 'back.out(3)', onStart: () => RestaurantAudio.play('coins', 1 + i * 0.1) });
+        });
+        row.scale.set(Math.min(1, (screen.width - 60) / Math.max(1, items.length * (size + gap))));
+        row.y = 20;
+        const words = label(34, WARM.cream);
+        words.text = 'Everything for tomorrow!';
+        words.y = 130;
+        const confetti = new PIXI.Container();
+        holder.addChild(shade, rays, title, row, words, confetti);
+        this.addChild(holder);
+        throwConfetti(confetti, 0, 0, screen.width, screen.height, 120);
+        RestaurantAudio.play('day');
+        gsap.from(shade, { alpha: 0, duration: 0.3 });
+        gsap.from(title.scale, { x: 0.3, y: 0.3, duration: 0.45, ease: 'back.out(2.5)' });
+        gsap.from(words, { alpha: 0, duration: 0.3, delay: 0.5 });
     }
 
     /** A big message across the middle, briefly. */

@@ -8,6 +8,16 @@ export interface ModelDefinition {
   readonly nodes: Record<string, string>;
 }
 
+const KitchenBowl = {
+  id: 'bowl',
+  path: 'kitchen/bowl',
+  fullPath: 'restaurant/models/kitchen/bowl.gltf',
+  format: 'gltf',
+  nodes: {
+  "Bowl": "bowl"
+}
+} as const;
+
 const KitchenChairA = {
   id: 'chair_A',
   path: 'kitchen/chair_A',
@@ -288,6 +298,16 @@ const KitchenFoodIngredientCheese = {
 }
 } as const;
 
+const KitchenFoodIngredientCheeseGrated = {
+  id: 'food_ingredient_cheese_grated',
+  path: 'kitchen/food_ingredient_cheese_grated',
+  fullPath: 'restaurant/models/kitchen/food_ingredient_cheese_grated.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientCheeseGrated": "food_ingredient_cheese_grated"
+}
+} as const;
+
 const KitchenFoodIngredientCheeseSlice = {
   id: 'food_ingredient_cheese_slice',
   path: 'kitchen/food_ingredient_cheese_slice',
@@ -308,6 +328,16 @@ const KitchenFoodIngredientDough = {
 }
 } as const;
 
+const KitchenFoodIngredientDoughBase = {
+  id: 'food_ingredient_dough_base',
+  path: 'kitchen/food_ingredient_dough_base',
+  fullPath: 'restaurant/models/kitchen/food_ingredient_dough_base.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientDoughBase": "food_ingredient_dough_base"
+}
+} as const;
+
 const KitchenFoodIngredientHam = {
   id: 'food_ingredient_ham',
   path: 'kitchen/food_ingredient_ham',
@@ -315,6 +345,16 @@ const KitchenFoodIngredientHam = {
   format: 'gltf',
   nodes: {
   "FoodIngredientHam": "food_ingredient_ham"
+}
+} as const;
+
+const KitchenFoodIngredientHamCubes = {
+  id: 'food_ingredient_ham_cubes',
+  path: 'kitchen/food_ingredient_ham_cubes',
+  fullPath: 'restaurant/models/kitchen/food_ingredient_ham_cubes.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientHamCubes": "food_ingredient_ham_cubes"
 }
 } as const;
 
@@ -348,6 +388,16 @@ const KitchenFoodIngredientMushroom = {
 }
 } as const;
 
+const KitchenFoodIngredientMushroomPieces = {
+  id: 'food_ingredient_mushroom_pieces',
+  path: 'kitchen/food_ingredient_mushroom_pieces',
+  fullPath: 'restaurant/models/kitchen/food_ingredient_mushroom_pieces.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientMushroomPieces": "food_ingredient_mushroom_pieces"
+}
+} as const;
+
 const KitchenFoodIngredientOnion = {
   id: 'food_ingredient_onion',
   path: 'kitchen/food_ingredient_onion',
@@ -378,6 +428,16 @@ const KitchenFoodIngredientPepperoni = {
 }
 } as const;
 
+const KitchenFoodIngredientPepperoniSlices = {
+  id: 'food_ingredient_pepperoni_slices',
+  path: 'kitchen/food_ingredient_pepperoni_slices',
+  fullPath: 'restaurant/models/kitchen/food_ingredient_pepperoni_slices.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientPepperoniSlices": "food_ingredient_pepperoni_slices"
+}
+} as const;
+
 const KitchenFoodIngredientPickle = {
   id: 'food_ingredient_pickle',
   path: 'kitchen/food_ingredient_pickle',
@@ -395,6 +455,16 @@ const KitchenFoodIngredientPickleSlices = {
   format: 'gltf',
   nodes: {
   "FoodIngredientPickleSlices": "food_ingredient_pickle_slices"
+}
+} as const;
+
+const KitchenFoodIngredientPineappleChunks = {
+  id: 'food_ingredient_pineapple_chunks',
+  path: 'kitchen/food_ingredient_pineapple_chunks',
+  fullPath: 'restaurant/models/kitchen/food_ingredient_pineapple_chunks.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientPineappleChunks": "food_ingredient_pineapple_chunks"
 }
 } as const;
 
@@ -418,6 +488,16 @@ const KitchenFoodIngredientTomato = {
 }
 } as const;
 
+const KitchenFoodIngredientTomatoSauce = {
+  id: 'food_ingredient_tomato_sauce',
+  path: 'kitchen/food_ingredient_tomato_sauce',
+  fullPath: 'restaurant/models/kitchen/food_ingredient_tomato_sauce.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientTomatoSauce": "food_ingredient_tomato_sauce"
+}
+} as const;
+
 const KitchenFoodIngredientTomatoSlice = {
   id: 'food_ingredient_tomato_slice',
   path: 'kitchen/food_ingredient_tomato_slice',
@@ -425,6 +505,36 @@ const KitchenFoodIngredientTomatoSlice = {
   format: 'gltf',
   nodes: {
   "FoodIngredientTomatoSlice": "food_ingredient_tomato_slice"
+}
+} as const;
+
+const KitchenFoodPizzaCheesePlated = {
+  id: 'food_pizza_cheese_plated',
+  path: 'kitchen/food_pizza_cheese_plated',
+  fullPath: 'restaurant/models/kitchen/food_pizza_cheese_plated.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodPizzaCheesePlated": "food_pizza_cheese_plated"
+}
+} as const;
+
+const KitchenFoodPizzaMushroomPlated = {
+  id: 'food_pizza_mushroom_plated',
+  path: 'kitchen/food_pizza_mushroom_plated',
+  fullPath: 'restaurant/models/kitchen/food_pizza_mushroom_plated.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodPizzaMushroomPlated": "food_pizza_mushroom_plated"
+}
+} as const;
+
+const KitchenFoodPizzaPepperoniPlated = {
+  id: 'food_pizza_pepperoni_plated',
+  path: 'kitchen/food_pizza_pepperoni_plated',
+  fullPath: 'restaurant/models/kitchen/food_pizza_pepperoni_plated.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodPizzaPepperoniPlated": "food_pizza_pepperoni_plated"
 }
 } as const;
 
@@ -437,6 +547,86 @@ const KitchenFridgeADecorated = {
   "FridgeADecorated": "fridge_A_decorated",
   "FridgeADecoratedDoorBottom": "fridge_A_decorated_door_bottom",
   "FridgeADecoratedDoorTop": "fridge_A_decorated_door_top"
+}
+} as const;
+
+const KitchenIcecreamBowl = {
+  id: 'icecream_bowl',
+  path: 'kitchen/icecream_bowl',
+  fullPath: 'restaurant/models/kitchen/icecream_bowl.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowl": "icecream_bowl"
+}
+} as const;
+
+const KitchenIcecreamBowlCherries = {
+  id: 'icecream_bowl_cherries',
+  path: 'kitchen/icecream_bowl_cherries',
+  fullPath: 'restaurant/models/kitchen/icecream_bowl_cherries.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowlCherries": "icecream_bowl_cherries"
+}
+} as const;
+
+const KitchenIcecreamBowlCookiesticks = {
+  id: 'icecream_bowl_cookiesticks',
+  path: 'kitchen/icecream_bowl_cookiesticks',
+  fullPath: 'restaurant/models/kitchen/icecream_bowl_cookiesticks.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowlCookiesticks": "icecream_bowl_cookiesticks"
+}
+} as const;
+
+const KitchenIcecreamBowlIcecreamChocolate = {
+  id: 'icecream_bowl_icecream_chocolate',
+  path: 'kitchen/icecream_bowl_icecream_chocolate',
+  fullPath: 'restaurant/models/kitchen/icecream_bowl_icecream_chocolate.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowlIcecreamChocolate": "icecream_bowl_icecream_chocolate"
+}
+} as const;
+
+const KitchenIcecreamBowlIcecreamStrawberry = {
+  id: 'icecream_bowl_icecream_strawberry',
+  path: 'kitchen/icecream_bowl_icecream_strawberry',
+  fullPath: 'restaurant/models/kitchen/icecream_bowl_icecream_strawberry.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowlIcecreamStrawberry": "icecream_bowl_icecream_strawberry"
+}
+} as const;
+
+const KitchenIcecreamBowlIcecreamVanilla = {
+  id: 'icecream_bowl_icecream_vanilla',
+  path: 'kitchen/icecream_bowl_icecream_vanilla',
+  fullPath: 'restaurant/models/kitchen/icecream_bowl_icecream_vanilla.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowlIcecreamVanilla": "icecream_bowl_icecream_vanilla"
+}
+} as const;
+
+const KitchenIcecreamBowlWaffles = {
+  id: 'icecream_bowl_waffles',
+  path: 'kitchen/icecream_bowl_waffles',
+  fullPath: 'restaurant/models/kitchen/icecream_bowl_waffles.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowlWaffles": "icecream_bowl_waffles"
+}
+} as const;
+
+const KitchenIcecreamCherry = {
+  id: 'icecream_cherry',
+  path: 'kitchen/icecream_cherry',
+  fullPath: 'restaurant/models/kitchen/icecream_cherry.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamCherry": "icecream_cherry"
 }
 } as const;
 
@@ -457,6 +647,56 @@ const KitchenIcecreamConeStacked = {
   format: 'gltf',
   nodes: {
   "IcecreamConeStacked": "icecream_cone_stacked"
+}
+} as const;
+
+const KitchenIcecreamContainer = {
+  id: 'icecream_container',
+  path: 'kitchen/icecream_container',
+  fullPath: 'restaurant/models/kitchen/icecream_container.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamContainer": "icecream_container"
+}
+} as const;
+
+const KitchenIcecreamContainerIcecreamChocolate = {
+  id: 'icecream_container_icecream_chocolate',
+  path: 'kitchen/icecream_container_icecream_chocolate',
+  fullPath: 'restaurant/models/kitchen/icecream_container_icecream_chocolate.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamContainerIcecreamChocolate": "icecream_container_icecream_chocolate"
+}
+} as const;
+
+const KitchenIcecreamContainerIcecreamStrawberry = {
+  id: 'icecream_container_icecream_strawberry',
+  path: 'kitchen/icecream_container_icecream_strawberry',
+  fullPath: 'restaurant/models/kitchen/icecream_container_icecream_strawberry.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamContainerIcecreamStrawberry": "icecream_container_icecream_strawberry"
+}
+} as const;
+
+const KitchenIcecreamContainerIcecreamVanilla = {
+  id: 'icecream_container_icecream_vanilla',
+  path: 'kitchen/icecream_container_icecream_vanilla',
+  fullPath: 'restaurant/models/kitchen/icecream_container_icecream_vanilla.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamContainerIcecreamVanilla": "icecream_container_icecream_vanilla"
+}
+} as const;
+
+const KitchenIcecreamCookiestick = {
+  id: 'icecream_cookiestick',
+  path: 'kitchen/icecream_cookiestick',
+  fullPath: 'restaurant/models/kitchen/icecream_cookiestick.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamCookiestick": "icecream_cookiestick"
 }
 } as const;
 
@@ -487,6 +727,16 @@ const KitchenIcecreamSoftserveIcecreamVanilla = {
   format: 'gltf',
   nodes: {
   "IcecreamSoftserveIcecreamVanilla": "icecream_softserve_icecream_vanilla"
+}
+} as const;
+
+const KitchenIcecreamWaffle = {
+  id: 'icecream_waffle',
+  path: 'kitchen/icecream_waffle',
+  fullPath: 'restaurant/models/kitchen/icecream_waffle.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamWaffle": "icecream_waffle"
 }
 } as const;
 
@@ -540,6 +790,36 @@ const KitchenKitchencounterStraightB = {
 }
 } as const;
 
+const KitchenKitchentableA = {
+  id: 'kitchentable_A',
+  path: 'kitchen/kitchentable_A',
+  fullPath: 'restaurant/models/kitchen/kitchentable_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchentableA": "kitchentable_A"
+}
+} as const;
+
+const KitchenKitchentableALarge = {
+  id: 'kitchentable_A_large',
+  path: 'kitchen/kitchentable_A_large',
+  fullPath: 'restaurant/models/kitchen/kitchentable_A_large.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchentableALarge": "kitchentable_A_large"
+}
+} as const;
+
+const KitchenKitchentableB = {
+  id: 'kitchentable_B',
+  path: 'kitchen/kitchentable_B',
+  fullPath: 'restaurant/models/kitchen/kitchentable_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchentableB": "kitchentable_B"
+}
+} as const;
+
 const KitchenMenu = {
   id: 'menu',
   path: 'kitchen/menu',
@@ -570,6 +850,48 @@ const KitchenPanA = {
 }
 } as const;
 
+const KitchenPizzaboxClosed = {
+  id: 'pizzabox_closed',
+  path: 'kitchen/pizzabox_closed',
+  fullPath: 'restaurant/models/kitchen/pizzabox_closed.gltf',
+  format: 'gltf',
+  nodes: {
+  "PizzaboxClosed": "pizzabox_closed"
+}
+} as const;
+
+const KitchenPizzaboxOpen = {
+  id: 'pizzabox_open',
+  path: 'kitchen/pizzabox_open',
+  fullPath: 'restaurant/models/kitchen/pizzabox_open.gltf',
+  format: 'gltf',
+  nodes: {
+  "PizzaboxOpen": "pizzabox_open",
+  "PizzaboxLid": "pizzabox_lid"
+}
+} as const;
+
+const KitchenPizzaboxStacked = {
+  id: 'pizzabox_stacked',
+  path: 'kitchen/pizzabox_stacked',
+  fullPath: 'restaurant/models/kitchen/pizzabox_stacked.gltf',
+  format: 'gltf',
+  nodes: {
+  "PizzaboxStacked": "pizzabox_stacked"
+}
+} as const;
+
+const KitchenPizzaOven = {
+  id: 'pizza_oven',
+  path: 'kitchen/pizza_oven',
+  fullPath: 'restaurant/models/kitchen/pizza_oven.gltf',
+  format: 'gltf',
+  nodes: {
+  "PizzaOven": "pizza_oven",
+  "PizzaOvenDoor": "pizza_oven_door"
+}
+} as const;
+
 const KitchenPlate = {
   id: 'plate',
   path: 'kitchen/plate',
@@ -577,6 +899,16 @@ const KitchenPlate = {
   format: 'gltf',
   nodes: {
   "Plate": "plate"
+}
+} as const;
+
+const KitchenPlateDirty = {
+  id: 'plate_dirty',
+  path: 'kitchen/plate_dirty',
+  fullPath: 'restaurant/models/kitchen/plate_dirty.gltf',
+  format: 'gltf',
+  nodes: {
+  "PlateDirty": "plate_dirty"
 }
 } as const;
 
@@ -610,6 +942,16 @@ const KitchenStoveSingleCountertop = {
 }
 } as const;
 
+const KitchenTableRoundA = {
+  id: 'table_round_A',
+  path: 'kitchen/table_round_A',
+  fullPath: 'restaurant/models/kitchen/table_round_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableRoundA": "table_round_A"
+}
+} as const;
+
 const KitchenTableRoundADecorated = {
   id: 'table_round_A_decorated',
   path: 'kitchen/table_round_A_decorated',
@@ -617,6 +959,16 @@ const KitchenTableRoundADecorated = {
   format: 'gltf',
   nodes: {
   "TableRoundADecorated": "table_round_A_decorated"
+}
+} as const;
+
+const KitchenTableRoundASmall = {
+  id: 'table_round_A_small',
+  path: 'kitchen/table_round_A_small',
+  fullPath: 'restaurant/models/kitchen/table_round_A_small.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableRoundASmall": "table_round_A_small"
 }
 } as const;
 
@@ -1356,6 +1708,66 @@ const LibraryCity2Tree07 = {
 }
 } as const;
 
+const LibraryBroccoli = {
+  id: 'broccoli',
+  path: 'library/food-kit/broccoli',
+  fullPath: 'restaurant/models/library/food-kit/broccoli.glb',
+  format: 'glb',
+  nodes: {
+  "Broccoli": "broccoli"
+}
+} as const;
+
+const LibraryCarton = {
+  id: 'carton',
+  path: 'library/food-kit/carton',
+  fullPath: 'restaurant/models/library/food-kit/carton.glb',
+  format: 'glb',
+  nodes: {
+  "Carton": "carton"
+}
+} as const;
+
+const LibraryFish = {
+  id: 'fish',
+  path: 'library/food-kit/fish',
+  fullPath: 'restaurant/models/library/food-kit/fish.glb',
+  format: 'glb',
+  nodes: {
+  "Fish": "fish"
+}
+} as const;
+
+const LibraryPineapple = {
+  id: 'pineapple',
+  path: 'library/food-kit/pineapple',
+  fullPath: 'restaurant/models/library/food-kit/pineapple.glb',
+  format: 'glb',
+  nodes: {
+  "Pineapple": "pineapple"
+}
+} as const;
+
+const LibraryFurnitureTableMedium = {
+  id: 'furniture-table-medium',
+  path: 'library/furniture-table-medium/furniture-table-medium',
+  fullPath: 'restaurant/models/library/furniture-table-medium/furniture-table-medium.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableMedium": "table_medium"
+}
+} as const;
+
+const LibraryFurnitureTableMediumLong = {
+  id: 'furniture-table-medium-long',
+  path: 'library/furniture-table-medium-long/furniture-table-medium-long',
+  fullPath: 'restaurant/models/library/furniture-table-medium-long/furniture-table-medium-long.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableMediumLong": "table_medium_long"
+}
+} as const;
+
 const LibraryFurnitureTableSmall = {
   id: 'furniture-table-small',
   path: 'library/furniture-table-small/furniture-table-small',
@@ -1373,6 +1785,26 @@ const LibraryPrototypeTableMediumLong = {
   format: 'gltf',
   nodes: {
   "TableMediumLong": "table_medium_long"
+}
+} as const;
+
+const LibraryResourceFoodAppleRed = {
+  id: 'resource-food-apple-red',
+  path: 'library/resource-food-apple-red/resource-food-apple-red',
+  fullPath: 'restaurant/models/library/resource-food-apple-red/resource-food-apple-red.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodAppleRed": "Food_Apple_Red"
+}
+} as const;
+
+const LibraryResourceFoodBerryOrange = {
+  id: 'resource-food-berry-orange',
+  path: 'library/resource-food-berry-orange/resource-food-berry-orange',
+  fullPath: 'restaurant/models/library/resource-food-berry-orange/resource-food-berry-orange.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodBerryOrange": "Food_Berry_Orange"
 }
 } as const;
 
@@ -1396,6 +1828,16 @@ const LibraryRestaurantIcecreamMachine = {
   "IcecreamMachineHandleChocolate": "icecream_machine_handle_chocolate",
   "IcecreamMachineHandleStrawberry": "icecream_machine_handle_strawberry",
   "IcecreamMachineHandleVanilla": "icecream_machine_handle_vanilla"
+}
+} as const;
+
+const LibraryRestaurantWallOrderwindow = {
+  id: 'restaurant-wall-orderwindow',
+  path: 'library/restaurant-wall-orderwindow/restaurant-wall-orderwindow',
+  fullPath: 'restaurant/models/library/restaurant-wall-orderwindow/restaurant-wall-orderwindow.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallOrderwindow": "wall_orderwindow"
 }
 } as const;
 
@@ -2314,6 +2756,7 @@ const PeoplePerson08 = {
 // containing folder land in MODELS.Root.
 export const MODELS = {
   Kitchen: {
+    Bowl: KitchenBowl,
     ChairA: KitchenChairA,
     Crate: KitchenCrate,
     CrateBuns: KitchenCrateBuns,
@@ -2342,39 +2785,73 @@ export const MODELS = {
     FoodIngredientBurgerUncooked: KitchenFoodIngredientBurgerUncooked,
     FoodIngredientCarrot: KitchenFoodIngredientCarrot,
     FoodIngredientCheese: KitchenFoodIngredientCheese,
+    FoodIngredientCheeseGrated: KitchenFoodIngredientCheeseGrated,
     FoodIngredientCheeseSlice: KitchenFoodIngredientCheeseSlice,
     FoodIngredientDough: KitchenFoodIngredientDough,
+    FoodIngredientDoughBase: KitchenFoodIngredientDoughBase,
     FoodIngredientHam: KitchenFoodIngredientHam,
+    FoodIngredientHamCubes: KitchenFoodIngredientHamCubes,
     FoodIngredientLettuce: KitchenFoodIngredientLettuce,
     FoodIngredientLettuceSlice: KitchenFoodIngredientLettuceSlice,
     FoodIngredientMushroom: KitchenFoodIngredientMushroom,
+    FoodIngredientMushroomPieces: KitchenFoodIngredientMushroomPieces,
     FoodIngredientOnion: KitchenFoodIngredientOnion,
     FoodIngredientOnionRings: KitchenFoodIngredientOnionRings,
     FoodIngredientPepperoni: KitchenFoodIngredientPepperoni,
+    FoodIngredientPepperoniSlices: KitchenFoodIngredientPepperoniSlices,
     FoodIngredientPickle: KitchenFoodIngredientPickle,
     FoodIngredientPickleSlices: KitchenFoodIngredientPickleSlices,
+    FoodIngredientPineappleChunks: KitchenFoodIngredientPineappleChunks,
     FoodIngredientPotato: KitchenFoodIngredientPotato,
     FoodIngredientTomato: KitchenFoodIngredientTomato,
+    FoodIngredientTomatoSauce: KitchenFoodIngredientTomatoSauce,
     FoodIngredientTomatoSlice: KitchenFoodIngredientTomatoSlice,
+    FoodPizzaCheesePlated: KitchenFoodPizzaCheesePlated,
+    FoodPizzaMushroomPlated: KitchenFoodPizzaMushroomPlated,
+    FoodPizzaPepperoniPlated: KitchenFoodPizzaPepperoniPlated,
     FridgeADecorated: KitchenFridgeADecorated,
+    IcecreamBowl: KitchenIcecreamBowl,
+    IcecreamBowlCherries: KitchenIcecreamBowlCherries,
+    IcecreamBowlCookiesticks: KitchenIcecreamBowlCookiesticks,
+    IcecreamBowlIcecreamChocolate: KitchenIcecreamBowlIcecreamChocolate,
+    IcecreamBowlIcecreamStrawberry: KitchenIcecreamBowlIcecreamStrawberry,
+    IcecreamBowlIcecreamVanilla: KitchenIcecreamBowlIcecreamVanilla,
+    IcecreamBowlWaffles: KitchenIcecreamBowlWaffles,
+    IcecreamCherry: KitchenIcecreamCherry,
     IcecreamCone: KitchenIcecreamCone,
     IcecreamConeStacked: KitchenIcecreamConeStacked,
+    IcecreamContainer: KitchenIcecreamContainer,
+    IcecreamContainerIcecreamChocolate: KitchenIcecreamContainerIcecreamChocolate,
+    IcecreamContainerIcecreamStrawberry: KitchenIcecreamContainerIcecreamStrawberry,
+    IcecreamContainerIcecreamVanilla: KitchenIcecreamContainerIcecreamVanilla,
+    IcecreamCookiestick: KitchenIcecreamCookiestick,
     IcecreamSoftserveIcecreamChocolate: KitchenIcecreamSoftserveIcecreamChocolate,
     IcecreamSoftserveIcecreamStrawberry: KitchenIcecreamSoftserveIcecreamStrawberry,
     IcecreamSoftserveIcecreamVanilla: KitchenIcecreamSoftserveIcecreamVanilla,
+    IcecreamWaffle: KitchenIcecreamWaffle,
     JarAMedium: KitchenJarAMedium,
     JarBSmall: KitchenJarBSmall,
     Ketchup: KitchenKetchup,
     KitchencounterStraightA: KitchenKitchencounterStraightA,
     KitchencounterStraightB: KitchenKitchencounterStraightB,
+    KitchentableA: KitchenKitchentableA,
+    KitchentableALarge: KitchenKitchentableALarge,
+    KitchentableB: KitchenKitchentableB,
     Menu: KitchenMenu,
     Mustard: KitchenMustard,
     PanA: KitchenPanA,
+    PizzaboxClosed: KitchenPizzaboxClosed,
+    PizzaboxOpen: KitchenPizzaboxOpen,
+    PizzaboxStacked: KitchenPizzaboxStacked,
+    PizzaOven: KitchenPizzaOven,
     Plate: KitchenPlate,
+    PlateDirty: KitchenPlateDirty,
     ShelfPapertowelDecorated: KitchenShelfPapertowelDecorated,
     StoveSingle: KitchenStoveSingle,
     StoveSingleCountertop: KitchenStoveSingleCountertop,
+    TableRoundA: KitchenTableRoundA,
     TableRoundADecorated: KitchenTableRoundADecorated,
+    TableRoundASmall: KitchenTableRoundASmall,
     TableRoundASmallDecorated: KitchenTableRoundASmallDecorated,
     Wall: KitchenWall,
     WallDoorway: KitchenWallDoorway
@@ -2445,10 +2922,19 @@ export const MODELS = {
     City2Tree05: LibraryCity2Tree05,
     City2Tree06: LibraryCity2Tree06,
     City2Tree07: LibraryCity2Tree07,
+    Broccoli: LibraryBroccoli,
+    Carton: LibraryCarton,
+    Fish: LibraryFish,
+    Pineapple: LibraryPineapple,
+    FurnitureTableMedium: LibraryFurnitureTableMedium,
+    FurnitureTableMediumLong: LibraryFurnitureTableMediumLong,
     FurnitureTableSmall: LibraryFurnitureTableSmall,
     PrototypeTableMediumLong: LibraryPrototypeTableMediumLong,
+    ResourceFoodAppleRed: LibraryResourceFoodAppleRed,
+    ResourceFoodBerryOrange: LibraryResourceFoodBerryOrange,
     RestaurantChairStool: LibraryRestaurantChairStool,
-    RestaurantIcecreamMachine: LibraryRestaurantIcecreamMachine
+    RestaurantIcecreamMachine: LibraryRestaurantIcecreamMachine,
+    RestaurantWallOrderwindow: LibraryRestaurantWallOrderwindow
   },
   People: {
     Crowd01: PeopleCrowd01,

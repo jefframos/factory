@@ -20,7 +20,7 @@ const DEFAULT_CAMERA = { yaw: 0, pitch: 40, ortho: true, fov: 35 };
 const DIORAMA_MARGIN = 0.5;
 
 let host;
-let gameUrl = 'http://localhost:9001/';
+let gameUrl = 'http://localhost:8000/';
 let town;
 let shots = { zones: {} };
 /** The city whose shots these are (the editor's level picker): its level, and its whole-island zone (`map`). */

@@ -1,9 +1,9 @@
 // Pizza.ts
 //
-// The pizza station: the oven the layout places (a prop whose model is KayKit's pizza_oven: its door drops open) and a
-// board to make the pizza on — the prop whose id is PIZZA_BOARD (a big kitchen table: a cutting board's put on it; or a
-// cutting board on a counter), or without one a board beside the oven. Behind it (on a second table) rows of what goes
-// on a pizza: the dough, a bowl of tomato sauce, the cheese, then the toppings. Making one:
+// The pizza station: the oven the layout places (a prop whose model is KayKit's pizza_oven: its door drops open), a
+// cutting board on the counter right in front of it (the pizza flies in and out), the dough and a bowl of tomato sauce
+// on the board's right, and past them, on the next counter (the layout's PIZZA_BOARD table), the cheese and the toppings
+// in a grid two wide running back — each a little pile on a plate, as the burger station's. Making one:
 //   1. tap the dough: it's rolled out on the board;
 //   2. tap the sauce, the cheese, the order's topping (each hops onto it as its layer: the kit's layers stack as they are);
 //   3. tap the pizza (or the oven): the door drops, it slides in, the door shuts, it bakes (settings.json bakeSeconds:
@@ -21,22 +21,29 @@ import { kitchenModel } from './Models';
 import { SETTINGS } from '../data/Settings';
 import { PIZZA_LAYERS, PIZZA_LAYER_MODELS, PIZZA_SOURCE_MODELS, PizzaLayer } from '../data/Recipes';
 import { SHOT_ASPECT, type CameraShot } from './RestaurantLayout';
-import { pizzaLayerModel } from './PizzaLook';
+import { pizzaLayerModel, scatteredLayer } from './PizzaLook';
 
 /** In the oven model's space: its door (the kit's node name), how far it drops (radians), where a pizza sits inside,
  *  just outside the door, the middle of its front (the ring and the camera aim there). */
-const OVEN = { door: 'pizza_oven_door', open: 1.45, inside: new THREE.Vector3(-0.25, 0.42, 0.05), mouth: new THREE.Vector3(-0.25, 0.5, 1.5), front: new THREE.Vector3(-0.25, 1.05, 1.0), halfWidth: 1.5 };
+const OVEN = { depth: 2.35, door: 'pizza_oven_door', open: 1.45, inside: new THREE.Vector3(-0.25, 0.42, 0.05), mouth: new THREE.Vector3(-0.25, 0.5, 1.5), front: new THREE.Vector3(-0.25, 1.05, 1.0), halfWidth: 1.5 };
 /**
  * The pizza's size (x the kit's: its dough base is 1.75 across); the cutting board it's made on (x the model; on a board
  * prop that isn't a cutting board, one's put on it), and its gap from the oven when there's no board prop at all.
  */
-const PIZZA = { scale: 0.85, boardScale: 1.3, boardGap: 0.15 };
+const PIZZA = { scale: 0.85, boardScale: 1.3, boardGap: 0.15, frontGap: 0.12, leftShift: 0.35 };
 /**
- * The ingredients behind the board (on whatever's behind it: a second table): each one this big across (its model fitted
- * to it), in a grid of `columns` this far apart (`spacing` across, `rowGap` back), the first row this far behind the
- * board prop's back edge.
+ * The ingredients: each one this big across (its model fitted to it). The dough and the sauce on the board's right
+ * (`side` past its edge, at `sideRows` along it); the cheese and the toppings past them in a grid of `columns` (one more
+ * past `rows` deep) `gridGap` on, `spacing` apart, its first row `gridFront` from the board's middle, then back `rowGap`.
  */
-const SOURCES = { size: 0.62, columns: 4, spacing: 0.72, rowGap: 0.75, behind: 0.55 };
+/**
+ * A pile (as the burger station's): its plate this big across; a piece's size and how many (slices, chunks...), or a
+ * small whole one's and how many; how far round the middle they lie, how high the top one sits.
+ */
+const PILE = { plate: 0.6, piece: 0.2, pieces: 5, wholeSize: 0.24, whole: 3, spread: 0.13, stack: 0.07 };
+/** The grid's order (the cheese first; what's not in it, after). */
+const GRID_ORDER: PizzaLayer[] = ['cheese', 'pepperoni', 'ham', 'fish', 'onion', 'broccoli', 'pineapple', 'mushroom', 'tomato', 'pickles'];
+const SOURCES = { size: 0.62, columns: 2, rows: 4, spacing: 0.78, gridGap: 0.85, gridFront: 0.45, dough: 0.46, rowGap: 0.78, side: 0.45, sideRows: [0.3, -0.38] };
 /** Timings (s): a hop onto the pizza, the door, the slide in and out. */
 const TIME = { hop: 0.3, door: 0.25, slide: 0.45 };
 const HOP_HEIGHT = 0.45;
@@ -108,73 +115,68 @@ export class PizzaStation {
         frame.matrixWorld.decompose(this.ovenFrame.position, this.ovenFrame.quaternion, this.ovenFrame.scale);
         scene.add(this.ovenFrame, this.board);
 
-        // `back`: the board prop's back edge, `foot`: the work top under it (both from the pizza's spot, board units).
-        let back: number;
-        let foot: number;
-        if (boardProp) {
-            // The prop's top middle, turned as it is.
-            boardProp.updateWorldMatrix(true, true);
-            const turn = new THREE.Quaternion();
-            boardProp.matrixWorld.decompose(new THREE.Vector3(), turn, new THREE.Vector3());
-            const at = new THREE.Vector3().setFromMatrixPosition(boardProp.matrixWorld);
-            const frameMatrix = new THREE.Matrix4().compose(at, turn, new THREE.Vector3(1, 1, 1));
-            const box = boxIn(frameMatrix, boardProp);
-            const middle = box.getCenter(new THREE.Vector3());
-            this.board.position.copy(new THREE.Vector3(middle.x, box.max.y, middle.z).applyMatrix4(frameMatrix));
-            this.board.quaternion.copy(turn);
-            back = box.min.z - middle.z;
-            if (/cuttingboard/i.test(boardProp.name)) {
-                // A cutting board on a counter: the counter's under it.
-                foot = box.min.y - box.max.y;
-            } else {
-                // A table, say: a cutting board of our own on it, under the pizza (the table's top is the work top).
-                const made = kitchenModel('cuttingboard');
-                made.scale.setScalar(PIZZA.boardScale);
-                const thick = new THREE.Box3().setFromObject(made).getSize(new THREE.Vector3()).y;
-                made.position.y = -thick;
-                this.board.add(made);
-                this.board.position.y += thick;
-                foot = -thick;
-            }
-        } else {
-            // Beside the oven (on its left, seen from the front), at its base: a cutting board of our own.
-            const made = kitchenModel('cuttingboard');
-            made.scale.setScalar(PIZZA.boardScale);
-            const size = new THREE.Box3().setFromObject(made).getSize(new THREE.Vector3());
-            const side = OVEN.halfWidth * this.ovenFrame.scale.x + PIZZA.boardGap + size.x / 2;
-            const left = new THREE.Vector3(-1, 0, 0).applyQuaternion(this.ovenFrame.quaternion);
-            this.board.quaternion.copy(this.ovenFrame.quaternion);
-            this.board.position.copy(this.ovenFrame.position).addScaledVector(left, side);
-            made.position.copy(this.board.position);
-            made.quaternion.copy(this.board.quaternion);
-            scene.add(made);
-            this.own.push(made);
-            this.board.position.y += size.y;
-            back = -size.z / 2;
-            foot = -size.y;
-        }
+        // The board in front of the oven (the pizza flies in and out: it can be right there), a cutting board of our own on
+        // the counter there, a little to the oven's left; the dough and the sauce on its right. The cheese and toppings in a
+        // grid of two columns (three past eight of them) running back along the right of it, on the next counter.
+        // (`boardProp` — the layout's pizzaBoard — only marks that counter now: the board's always at the oven's front.)
+        void boardProp;
+        oven.updateWorldMatrix(true, true);
+        const ovenBox = new THREE.Box3().setFromObject(oven);
+        const ovenMiddle = ovenBox.getCenter(new THREE.Vector3());
+        const yaw = new THREE.Euler().setFromQuaternion(this.ovenFrame.quaternion, 'YXZ').y;
+        const turn = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0));
+        const front = new THREE.Vector3(0, 0, 1).applyQuaternion(turn);
+        const across = new THREE.Vector3(1, 0, 0).applyQuaternion(turn);
+        const made = kitchenModel('cuttingboard');
+        made.scale.setScalar(PIZZA.boardScale);
+        const madeSize = new THREE.Box3().setFromObject(made).getSize(new THREE.Vector3());
+        const thick = madeSize.y;
+        const halfWidth = madeSize.x / 2;
+        const ovenHalfDepth = (OVEN.depth / 2) * this.ovenFrame.scale.z;
+        this.board.quaternion.copy(turn);
+        this.board.position.copy(ovenMiddle)
+            .addScaledVector(front, ovenHalfDepth + PIZZA.frontGap + madeSize.z / 2)
+            .addScaledVector(across, -PIZZA.leftShift);
+        this.board.position.y = ovenBox.min.y + thick;
+        made.position.y = -thick;
+        this.board.add(made);
+        const foot = -thick;
         this.board.updateMatrixWorld(true);
 
-        // The ingredients in rows behind the board, on what's behind it (at the work top's height).
-        layers.forEach((layer, i) => {
+        const place = (layer: PizzaLayer, at: THREE.Vector3) => {
             const source = this.sourceModel(layer);
-            const column = i % SOURCES.columns;
-            const row = Math.floor(i / SOURCES.columns);
-            source.position.set((column - (SOURCES.columns - 1) / 2) * SOURCES.spacing, foot, back - SOURCES.behind - row * SOURCES.rowGap);
+            source.position.copy(at);
             this.board.add(source);
             this.sources.set(layer, source);
             this.addTarget(layer, this.board.localToWorld(source.position.clone().add(new THREE.Vector3(0, 0.3, 0))), REACH.source);
+        };
+        const side = halfWidth + SOURCES.side;
+        if (layers.includes('dough')) place('dough', new THREE.Vector3(side, foot, SOURCES.sideRows[0]));
+        if (layers.includes('sauce')) place('sauce', new THREE.Vector3(side, foot, SOURCES.sideRows[1]));
+        const rank = (layer: PizzaLayer) => (GRID_ORDER.includes(layer) ? GRID_ORDER.indexOf(layer) : GRID_ORDER.length);
+        const grid = layers.filter((layer) => layer !== 'dough' && layer !== 'sauce').sort((a, b) => rank(a) - rank(b));
+        const columns = grid.length > SOURCES.columns * SOURCES.rows ? SOURCES.columns + 1 : SOURCES.columns;
+        const firstColumn = side + SOURCES.gridGap;
+        grid.forEach((layer, i) => {
+            const column = i % columns;
+            const row = Math.floor(i / columns);
+            place(layer, new THREE.Vector3(firstColumn + column * SOURCES.spacing, foot, SOURCES.gridFront - row * SOURCES.rowGap));
         });
         this.addTarget('pizza', this.board.localToWorld(new THREE.Vector3(0, 0.1, 0)), REACH.pizza);
         this.addTarget('oven', this.ovenFrame.localToWorld(OVEN.front.clone()), REACH.oven);
     }
 
-    /** What's tapped for a layer: the ingredient itself, SOURCES.size across (the sauce: a bowl with sauce in it). */
+    /**
+     * What's tapped for a layer. As the burger station's piles: a little plate with a few of it on (its pieces, where it
+     * goes on a pizza as pieces — slices, chunks, florets, little fish; else a few small whole ones), PILE's sizes. The
+     * dough: a ball on its own; the sauce: a bowl with sauce in it.
+     */
     private sourceModel(layer: PizzaLayer): THREE.Object3D {
+        if (layer !== 'dough' && layer !== 'sauce') return this.pileModel(layer);
         const holder = new THREE.Group();
         const model = kitchenModel(PIZZA_SOURCE_MODELS[layer]);
         const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
-        const scale = SOURCES.size / Math.max(size.x, size.z, 1e-3);
+        const scale = (layer === 'dough' ? SOURCES.dough : SOURCES.size) / Math.max(size.x, size.z, 1e-3);
         model.scale.setScalar(scale);
         holder.add(model);
         if (layer === 'sauce') {
@@ -183,6 +185,32 @@ export class PizzaStation {
             sauce.scale.setScalar(scale * 0.5);
             sauce.position.y = size.y * scale * 0.55;
             holder.add(sauce);
+        }
+        return holder;
+    }
+
+    /** A plate with a few of `layer` on it, a little heap. */
+    private pileModel(layer: PizzaLayer): THREE.Object3D {
+        const holder = new THREE.Group();
+        const plate = kitchenModel('plate');
+        const plateSize = new THREE.Box3().setFromObject(plate).getSize(new THREE.Vector3());
+        plate.scale.setScalar(PILE.plate / Math.max(plateSize.x, plateSize.z, 1e-3));
+        holder.add(plate);
+        const top = plateSize.y * plate.scale.x * 0.6;
+        const pieces = scatteredLayer(layer);
+        const name = pieces ? PIZZA_LAYER_MODELS[layer] : PIZZA_SOURCE_MODELS[layer];
+        const count = pieces ? PILE.pieces : PILE.whole;
+        for (let i = 0; i < count; i++) {
+            const piece = kitchenModel(name);
+            const size = new THREE.Box3().setFromObject(piece).getSize(new THREE.Vector3());
+            piece.scale.setScalar((pieces ? PILE.piece : PILE.wholeSize) / Math.max(size.x, size.z, 1e-3));
+            // Round the plate's middle, the last one on top of the others.
+            const last = i === count - 1 && count > 2;
+            const angle = (i / Math.max(1, count - (last ? 1 : 0))) * Math.PI * 2 + 0.5;
+            const r = last ? 0 : PILE.spread;
+            piece.position.set(Math.cos(angle) * r, top + (last ? PILE.stack : 0), Math.sin(angle) * r);
+            piece.rotation.y = angle * 1.7;
+            holder.add(piece);
         }
         return holder;
     }

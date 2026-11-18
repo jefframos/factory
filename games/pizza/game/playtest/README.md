@@ -14,7 +14,7 @@ report at `games/pizza/reports/playtests/latest.md`:
 | `npm run playtest` | **Headless**: starts its own dev server on a free port (9100+), bot at 5x from a fresh save, ~8 min real for a full demo |
 | `npm run playtest:watch` | Same in a **visible window** (real GPU) — use the panel as usual; the window stays open after the report |
 | `npm run playtest -- --minutes 20 --speed 5 --style casual --label tomato` | Options (all optional) |
-| `npm run playtest -- --url http://localhost:9001` | Use the dev server you already have running |
+| `npm run playtest -- --url http://localhost:8000` | Use the dev server you already have running |
 
 ### Jump to a store level — `unlockTo`
 
@@ -26,7 +26,7 @@ test the diner, `?unlockTo=13` for every lucky machine.
 
 ```
 npm run playtest:watch -- --unlock-to 8 --minutes 15      # watch the restaurant run
-http://localhost:9001/?unlockTo=8                          # play it yourself
+http://localhost:8000/?unlockTo=8                          # play it yourself
 ```
 
 ### Start later in the game — scenarios
@@ -81,7 +81,7 @@ swing far more (39-51% walk-outs, once 6%, vs 8-17% at 5x). For quicker answers 
 
 | URL | What happens |
 |---|---|
-| `localhost:9001/?bot&fresh` | Bot plays from a **wiped save**, at 8x, for 40 game minutes or until the demo ends |
+| `localhost:8000/?bot&fresh` | Bot plays from a **wiped save**, at 8x, for 40 game minutes or until the demo ends |
 | `?bot=casual&fresh` | Same with a distracted-human style: slower decisions, smaller restocks, random pauses |
 | `?bot&fresh&speed=12&minutes=60` | Faster, longer (the panel shows the speed actually reached) |
 | `?bot` | Bot continues **your current save** (it will change it) |

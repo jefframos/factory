@@ -3,8 +3,11 @@
   "stages": [
     "Food Truck",
     "Small Diner",
+    "Small Diner+",
     "Diner",
-    "Restaurant"
+    "Diner+",
+    "Restaurant",
+    "Restaurant+"
   ],
   "customer": {
     "outside": {
@@ -292,7 +295,7 @@
         "y": 1
       },
       "from": 1,
-      "until": 2
+      "until": 3
     },
     {
       "x": -0.25,
@@ -305,7 +308,7 @@
         "y": 1
       },
       "from": 1,
-      "until": 2
+      "until": 3
     },
     {
       "x": 1.25,
@@ -318,7 +321,7 @@
         "y": 1
       },
       "from": 1,
-      "until": 2
+      "until": 3
     },
     {
       "x": 2.75,
@@ -331,7 +334,7 @@
         "y": 1
       },
       "from": 1,
-      "until": 2
+      "until": 3
     }
   ],
   "setups": {
@@ -591,7 +594,7 @@
       "tileSize": 1,
       "style": "diner",
       "from": 1,
-      "until": 2,
+      "until": 3,
       "elevation": 0.006
     },
     {
@@ -601,8 +604,8 @@
       "depth": 15.6,
       "tileSize": 1,
       "style": "diner2",
-      "from": 2,
-      "until": 3,
+      "from": 3,
+      "until": 5,
       "elevation": 0.006
     },
     {
@@ -612,7 +615,7 @@
       "depth": 16.6,
       "tileSize": 1,
       "style": "restaurant",
-      "from": 3,
+      "from": 5,
       "elevation": 0.006
     }
   ],
@@ -654,7 +657,7 @@
     },
     {
       "from": 1,
-      "until": 2,
+      "until": 3,
       "style": "diner",
       "setup": "room",
       "closed": true,
@@ -711,8 +714,8 @@
         },
         {
           "kind": "window",
-          "minX": -4,
-          "maxX": -2.5,
+          "minX": -3.75,
+          "maxX": -2.25,
           "minZ": 7.225,
           "maxZ": 7.775,
           "bottom": 0.76
@@ -720,8 +723,8 @@
       ]
     },
     {
-      "from": 2,
-      "until": 3,
+      "from": 3,
+      "until": 5,
       "style": "diner2",
       "setup": "room",
       "closed": true,
@@ -785,7 +788,7 @@
       ]
     },
     {
-      "from": 3,
+      "from": 5,
       "style": "restaurant",
       "setup": "room",
       "closed": true,
@@ -851,22 +854,6 @@
     {
       "points": [
         {
-          "x": -16,
-          "z": 8.75
-        },
-        {
-          "x": -12,
-          "z": 8.75
-        }
-      ],
-      "closed": false,
-      "style": "truck",
-      "setup": "room",
-      "openings": []
-    },
-    {
-      "points": [
-        {
           "x": -5.75,
           "z": 2
         },
@@ -881,11 +868,11 @@
       "openings": [],
       "height": 0.9,
       "from": 1,
-      "until": 2
+      "until": 3
     },
     {
-      "from": 2,
-      "until": 3,
+      "from": 3,
+      "until": 5,
       "style": "diner2",
       "setup": "divider",
       "closed": false,
@@ -919,7 +906,7 @@
       ]
     },
     {
-      "from": 3,
+      "from": 5,
       "style": "restaurant",
       "setup": "divider",
       "closed": false,
@@ -982,25 +969,18 @@
     },
     {
       "model": "chair_A",
-      "x": -3.6,
+      "x": -5.25,
       "z": 7,
-      "rotationY": 3.1416,
+      "rotationY": -3.142,
       "from": 1,
-      "until": 2
-    },
-    {
-      "model": "fridge_A_decorated",
-      "x": -5.2,
-      "z": -3.6,
-      "rotationY": 0,
-      "from": 2
+      "until": 3
     },
     {
       "model": "shelf_papertowel_decorated",
       "x": 5.2,
       "z": -3.6,
       "rotationY": 0,
-      "from": 3
+      "from": 5
     },
     {
       "model": "library/city2-ambulance-01/city2-ambulance-01.glb",
@@ -1049,7 +1029,7 @@
       "z": 2.75,
       "rotationY": 0,
       "from": 1,
-      "until": 2
+      "until": 3
     },
     {
       "model": "library/prototype-table-medium-long/prototype-table-medium-long.gltf",
@@ -1057,7 +1037,7 @@
       "z": 2.75,
       "rotationY": 0,
       "from": 1,
-      "until": 2
+      "until": 3
     },
     {
       "model": "library/prototype-table-medium-long/prototype-table-medium-long.gltf",
@@ -1065,7 +1045,8 @@
       "z": 2.75,
       "rotationY": 0,
       "from": 1,
-      "until": 2
+      "until": 3,
+      "elevation": -0.01
     },
     {
       "model": "library/prototype-table-medium-long/prototype-table-medium-long.gltf",
@@ -1073,7 +1054,7 @@
       "z": 2.75,
       "rotationY": 0,
       "from": 1,
-      "until": 2
+      "until": 3
     },
     {
       "model": "library/restaurant-chair-stool/restaurant-chair-stool.gltf",
@@ -1081,7 +1062,7 @@
       "z": 3.75,
       "rotationY": 0,
       "from": 1,
-      "until": 2
+      "until": 3
     },
     {
       "model": "library/restaurant-chair-stool/restaurant-chair-stool.gltf",
@@ -1089,7 +1070,7 @@
       "z": 3.75,
       "rotationY": 0,
       "from": 1,
-      "until": 2
+      "until": 3
     },
     {
       "model": "library/restaurant-chair-stool/restaurant-chair-stool.gltf",
@@ -1097,7 +1078,7 @@
       "z": 3.75,
       "rotationY": 0,
       "from": 1,
-      "until": 2
+      "until": 3
     },
     {
       "model": "library/restaurant-chair-stool/restaurant-chair-stool.gltf",
@@ -1105,7 +1086,7 @@
       "z": 3.75,
       "rotationY": 0,
       "from": 1,
-      "until": 2
+      "until": 3
     },
     {
       "model": "library/city2-traffic-light-01/city2-traffic-light-01.glb",
@@ -1848,20 +1829,24 @@
     {
       "points": [
         {
-          "x": -7.75,
-          "z": -7
+          "x": -9.125,
+          "z": -0.875
         },
         {
-          "x": -7.75,
-          "z": 7
+          "x": -9.125,
+          "z": 13.125
         },
         {
-          "x": -17.5,
-          "z": 6.75
+          "x": -18.875,
+          "z": 12.875
         },
         {
-          "x": -17.5,
-          "z": -7.25
+          "x": -18.875,
+          "z": -1.125
+        },
+        {
+          "x": -14,
+          "z": -1
         }
       ]
     },
@@ -1886,7 +1871,7 @@
       ],
       "color": "#cfcac0",
       "buildings": {
-        "kind": "living",
+        "kind": "house",
         "seed": 311,
         "setback": 1.5,
         "gap": 1
@@ -1913,7 +1898,7 @@
       ],
       "color": "#cfcac0",
       "buildings": {
-        "kind": "living",
+        "kind": "house",
         "seed": 527,
         "setback": 1.5,
         "gap": 1
@@ -1940,7 +1925,7 @@
       ],
       "color": "#cfcac0",
       "buildings": {
-        "kind": "mixed",
+        "kind": "tower",
         "seed": 845,
         "setback": 1.5,
         "gap": 1
@@ -1994,7 +1979,7 @@
     "areas": [
       {
         "x": 1,
-        "z": 21.25,
+        "z": 25.75,
         "width": 36,
         "depth": 5,
         "count": 3
@@ -2085,77 +2070,55 @@
   },
   "instances": [
     {
-      "prefab": "iceCream",
-      "x": 4.75,
-      "z": -0.917,
-      "rotationY": -1.571,
-      "from": 1
-    },
-    {
-      "prefab": "pizza",
-      "x": -6.1,
-      "z": 0,
-      "rotationY": 1.571,
-      "from": 3
-    },
-    {
-      "prefab": "sundae",
-      "x": -5.5,
-      "z": 0,
-      "rotationY": 1.571,
-      "from": 2,
-      "until": 3
-    },
-    {
       "prefab": "sundae",
       "x": 7.4,
       "z": -0.6,
       "rotationY": -1.5708,
-      "from": 3
+      "from": 5
     },
     {
       "prefab": "roundTable4",
       "x": 4.25,
       "z": 5.6,
       "rotationY": 0,
-      "from": 3
+      "from": 5
     },
     {
       "prefab": "roundTable4",
       "x": -6.5,
       "z": 9.25,
       "rotationY": 0,
-      "from": 3
+      "from": 5
     },
     {
       "prefab": "roundTable4",
       "x": -4,
       "z": 5.5,
       "rotationY": 0,
-      "from": 3
+      "from": 5
     },
     {
       "prefab": "roundTable4",
       "x": 6.75,
       "z": 9.75,
       "rotationY": 0,
-      "from": 3
+      "from": 5
     },
     {
       "prefab": "roundTable3",
-      "x": 3.25,
-      "z": 7,
+      "x": 2.5,
+      "z": 5.5,
       "rotationY": 0,
-      "from": 2,
-      "until": 3
+      "from": 3,
+      "until": 5
     },
     {
       "prefab": "roundTable3",
-      "x": -2.75,
-      "z": 6.75,
+      "x": -2.25,
+      "z": 5.5,
       "rotationY": 0,
-      "from": 2,
-      "until": 3
+      "from": 3,
+      "until": 5
     },
     {
       "prefab": "smallTable2",
@@ -2164,6 +2127,107 @@
       "rotationY": 0,
       "from": 0,
       "until": 1
+    },
+    {
+      "prefab": "iceCream",
+      "x": 4.75,
+      "z": 2.675,
+      "rotationY": 3.141,
+      "from": 1,
+      "until": 3
+    },
+    {
+      "prefab": "iceCream",
+      "x": 2.72,
+      "z": -0.6,
+      "rotationY": -1.5708,
+      "from": 3,
+      "until": 5
+    },
+    {
+      "prefab": "iceCream",
+      "x": 4.75,
+      "z": 1.75,
+      "rotationY": 3.141,
+      "from": 5
+    },
+    {
+      "prefab": "sundae",
+      "x": 6.6,
+      "z": -1,
+      "rotationY": -1.5708,
+      "from": 3,
+      "until": 5
+    },
+    {
+      "prefab": "pizza",
+      "x": -6.76,
+      "z": -1.25,
+      "rotationY": 1.571,
+      "from": 5
+    },
+    {
+      "prefab": "rectTable2",
+      "x": -3,
+      "z": 6.25,
+      "rotationY": 1.571,
+      "from": 2,
+      "until": 3
+    },
+    {
+      "prefab": "rectTable2",
+      "x": 3.75,
+      "z": 6.25,
+      "rotationY": 1.571,
+      "from": 2,
+      "until": 3
+    },
+    {
+      "prefab": "pizza",
+      "x": -4.05,
+      "z": -1.2,
+      "rotationY": 1.571,
+      "from": 2,
+      "until": 3
+    },
+    {
+      "prefab": "pizza",
+      "x": -5.06,
+      "z": -0.9,
+      "rotationY": 1.571,
+      "from": 3,
+      "until": 5
+    },
+    {
+      "prefab": "rectTable2",
+      "x": -4.25,
+      "z": 9,
+      "rotationY": 1.571,
+      "from": 4,
+      "until": 5
+    },
+    {
+      "prefab": "rectTable2",
+      "x": 4,
+      "z": 9,
+      "rotationY": 1.571,
+      "from": 4,
+      "until": 5
+    },
+    {
+      "prefab": "rectTable2",
+      "x": -7.6,
+      "z": 5.2,
+      "rotationY": 1.571,
+      "from": 6
+    },
+    {
+      "prefab": "rectTable2",
+      "x": -2,
+      "z": 9.6,
+      "rotationY": 0,
+      "from": 6
     }
-  ]
+  ],
+  "groupFrames": {}
 }

@@ -482,7 +482,7 @@ export class UfoTown {
         const [minX, maxX, minZ, maxZ] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
         // Far enough that the bend takes its edges below the horizon, even from as high as the camera ends up.
         const margin = Math.max(island.margin, 400);
-        const sea = createWater(island.water, maxX - minX + margin * 2, maxZ - minZ + margin * 2, shore, (minX + maxX) / 2, (minZ + maxZ) / 2);
+        const sea = createWater(island.water, maxX - minX + margin * 2, maxZ - minZ + margin * 2, shore, (minX + maxX) / 2, (minZ + maxZ) / 2, island.look);
         this.seaFree = sea.userData.free as () => void;
         this.sea = sea;
         sea.position.set((minX + maxX) / 2, -island.waterLevel, (minZ + maxZ) / 2);

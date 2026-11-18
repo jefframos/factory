@@ -38,7 +38,7 @@ Set `GAME=mow` in `.env`, then from the repo root:
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Dev server on `:9001` (`?dev=1` for the debug panels). |
+| `npm run dev` | Dev server on `:8000` (`?dev=1` for the debug panels). |
 | `npm run editor` | The town editor (see below), on `:4710`. |
 | `npm run build` | Production build. Local runs and unnamed builds use the mock platform. |
 | `npm run image` / `font` / `audio` / `models` | Rebuild asset bundles from `raw-assets/` (the `manifests/` folder must exist). |

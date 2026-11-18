@@ -33,6 +33,8 @@ uniform float time;
 uniform vec3 uShallow;
 uniform vec3 uMid;
 uniform vec3 uDeep;
+uniform vec3 uFoam;
+uniform float uLines;
 uniform sampler2D uShoreDistance;
 uniform vec2 uAreaMin;
 uniform vec2 uAreaSize;
@@ -50,11 +52,11 @@ void main() {
     float field = sin(p.x * 1.7 + sin(p.y * 1.3 + time * 0.13) * 1.6 + time * 0.09)
         + sin(p.y * 2.1 + sin(p.x * 1.1 - time * 0.11) * 1.8 - time * 0.07);
     float lines = 1.0 - smoothstep(0.0, 0.05, abs(fract(field * 1.6) - 0.5));
-    color += lines * 0.055 * (1.0 - out_ * 0.6);
+    color += lines * uLines * (1.0 - out_ * 0.6);
 
     // Foam at the shore, coming and going.
     float lap = 0.012 + 0.006 * sin(time * 0.9 + vWorldXZ.x * 0.14 + vWorldXZ.y * 0.11);
-    color = mix(color, vec3(0.92, 0.98, 1.0), (1.0 - smoothstep(lap * 0.5, lap, out_)) * 0.75);
+    color = mix(color, uFoam, (1.0 - smoothstep(lap * 0.5, lap, out_)) * 0.75);
 
     // The beam's light where it spills past the shore (its colour is linear; this shader writes straight to the screen).
     color = mix(color, pow(uBeamColor, vec3(0.4545)), beamLightAt(vec3(vWorldXZ.x, 0.0, vWorldXZ.y)));
@@ -93,8 +95,12 @@ function shoreDistanceTexture(shore: readonly Point[], minX: number, minZ: numbe
     return texture;
 }
 
+/** The sea's look: water (blue, foam) or lava (bright by the shore, cooling to dark crust out, glowing yellow rim). */
+export type SeaLook = 'water' | 'lava';
+
 /** `centreX`, `centreZ`: where the plane will be put. */
-export function createWater(color: string, width: number, depth: number, shore: readonly Point[], centreX: number, centreZ: number): THREE.Mesh {
+export function createWater(color: string, width: number, depth: number, shore: readonly Point[], centreX: number, centreZ: number, look: SeaLook = 'water'): THREE.Mesh {
+    const lava = look === 'lava';
     const base = new THREE.Color(color);
     const minX = centreX - width / 2;
     const minZ = centreZ - depth / 2;
@@ -102,9 +108,11 @@ export function createWater(color: string, width: number, depth: number, shore: 
     const material = new THREE.ShaderMaterial({
         uniforms: {
             time: { value: 0 },
-            uShallow: { value: tone(base, 0.95, 1.22, 1.12) },
-            uMid: { value: tone(base, 0.32, 0.72, 1.12) },
-            uDeep: { value: tone(base, 0.1, 0.24, 0.62) },
+            uShallow: { value: lava ? tone(base, 1.0, 1.25, 1.4) : tone(base, 0.95, 1.22, 1.12) },
+            uMid: { value: lava ? tone(base, 0.85, 0.5, 0.4) : tone(base, 0.32, 0.72, 1.12) },
+            uDeep: { value: lava ? tone(base, 0.38, 0.14, 0.1) : tone(base, 0.1, 0.24, 0.62) },
+            uFoam: { value: lava ? new THREE.Vector3(1.0, 0.86, 0.36) : new THREE.Vector3(0.92, 0.98, 1.0) },
+            uLines: { value: lava ? 0.16 : 0.055 },
             uShoreDistance: { value: distance },
             uAreaMin: { value: new THREE.Vector2(minX, minZ) },
             uAreaSize: { value: new THREE.Vector2(width, depth) },

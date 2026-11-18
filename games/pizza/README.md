@@ -25,7 +25,7 @@ Most design work needs **no code changes**. It happens in three places:
 |---|---|---|
 | Numbers & content: gates, buildings, shops, queues, farms, crops, stores, recipes, providers, drop tables, zones, particles, camera templates, entity meshes, ... | **Pizza web editor** (one tab per entity type) | `npm run editor` → http://localhost:4600 |
 | Layout: where things are, terrain, zones, spawn areas, triggers, props | **Tiled** — open `tiled/world.tiled-project`, edit `tiled/testMap1.tmx` | Tiled 1.12+ |
-| Playtesting & shortcuts | **The game with `?dev`** | `npm run dev` → http://localhost:9001/?dev |
+| Playtesting & shortcuts | **The game with `?dev`** | `npm run dev` → http://localhost:8000/?dev |
 
 `.env` must say `GAME=pizza` for both `dev` and `editor`.
 

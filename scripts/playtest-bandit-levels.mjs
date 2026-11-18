@@ -6,12 +6,12 @@
 //   npm run playtest:bandit [-- w5-07 w7-08]     # all levels, or only the given ids
 //
 // BOT_WAIT=5 pauses that many seconds before every trace (a player planning; sensors keep moving),
-// BOT_SPEED=4 runs game time faster, BOT_FROM=w6-01 resumes, BOT_URL overrides http://localhost:9001/,
+// BOT_SPEED=4 runs game time faster, BOT_FROM=w6-01 resumes, BOT_URL overrides http://localhost:8000/,
 // PLAYTEST_CHROME points at a Chrome/Chromium binary. Exits 1 if any level can't be completed.
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 
-const URL = process.env.BOT_URL ?? 'http://localhost:9001/';
+const URL = process.env.BOT_URL ?? 'http://localhost:8000/';
 const ONLY = process.argv.slice(2);
 const SPEED = Number(process.env.BOT_SPEED ?? 3);
 

@@ -1,0 +1,11 @@
+the small dinner after the truck will have two states, the normal one that is now, and a second step where we will have tables, it will be a table with 2 seats, not a rounded table, a rectangle one, that will be a progression, it will be the same dinner but with extra table
+when i update the dinner, force one of the first clients to order an ice cream to show the new mechanics of icecream
+i gave a plate to the last client and the game instantly showed me to click on that plate to clean, but the client havent finished to eat, that was odd
+the arrow should always show when the burguer is read, i green check could also help
+at the end of the day, let player tap as fast as it wants, it is odd tap and wait for the next tap to collect the money
+make the first supermarket to have 6 igrendients because is the tutorial one,
+when ice cream is available, you should have there some milk cartons and fruits as well (on the super market)
+nobody is asking for the simple icecream,
+the station positions are per area, i moved the baseic ice cream station from small dinner and also moved from the diner, i dont want that, each one have its own position
+on the bigger icecream station, the freezer area looks really good, instead 
+the sundae station, the freezer is really nice, i want to make the frezer twice wider, so one one side i have the items for the sundae and on the other the ice creams like we have atm

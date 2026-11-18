@@ -1,0 +1,6086 @@
+{
+  "name": "Volcano",
+  "ground": {
+    "x": 0,
+    "z": -3.75,
+    "width": 190,
+    "depth": 182.5,
+    "color": "#5a4642"
+  },
+  "island": {
+    "water": "#ff6a1a",
+    "waterLevel": 0.55,
+    "margin": 110,
+    "sideColor": "#3a2b28",
+    "sideDepth": 1.8,
+    "look": "lava",
+    "outline": [
+      {
+        "x": -82.5,
+        "z": -87.5
+      },
+      {
+        "x": -25,
+        "z": -95
+      },
+      {
+        "x": 42.5,
+        "z": -90
+      },
+      {
+        "x": 87.5,
+        "z": -75
+      },
+      {
+        "x": 95,
+        "z": -12.5
+      },
+      {
+        "x": 90,
+        "z": 57.5
+      },
+      {
+        "x": 62.5,
+        "z": 82.5
+      },
+      {
+        "x": -7.5,
+        "z": 87.5
+      },
+      {
+        "x": -72.5,
+        "z": 77.5
+      },
+      {
+        "x": -95,
+        "z": 37.5
+      },
+      {
+        "x": -95,
+        "z": -45
+      }
+    ]
+  },
+  "start": {
+    "x": 0,
+    "z": 57.5
+  },
+  "pavements": [
+    {
+      "id": "street-main",
+      "x": 0,
+      "z": 17.5,
+      "width": 147.5,
+      "depth": 8.75,
+      "color": "#6e5a54"
+    },
+    {
+      "id": "street-north",
+      "x": 0,
+      "z": -15,
+      "width": 8.75,
+      "depth": 57.5,
+      "color": "#6e5a54"
+    },
+    {
+      "id": "ruins",
+      "x": 0,
+      "z": -55,
+      "width": 37.5,
+      "depth": 25,
+      "color": "#7a625a"
+    },
+    {
+      "id": "street-south",
+      "x": 0,
+      "z": 40,
+      "width": 8.75,
+      "depth": 37.5,
+      "color": "#6e5a54"
+    }
+  ],
+  "props": [
+    {
+      "model": "town/library/inferno-tower-big-001/inferno-tower-big-001.glb",
+      "x": 0,
+      "z": -80,
+      "rotationY": 0,
+      "height": 50,
+      "collider": {
+        "halfX": 6.79,
+        "halfZ": 6.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": -16.25,
+      "z": -65,
+      "rotationY": 0,
+      "height": 8.75,
+      "collider": {
+        "halfX": 2.05,
+        "halfZ": 2.05
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": 16.25,
+      "z": -65,
+      "rotationY": 0,
+      "height": 8.75,
+      "collider": {
+        "halfX": 2.05,
+        "halfZ": 2.05
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": -16.25,
+      "z": -45,
+      "rotationY": 0,
+      "height": 8.75,
+      "collider": {
+        "halfX": 2.05,
+        "halfZ": 2.05
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": 16.25,
+      "z": -45,
+      "rotationY": 0,
+      "height": 8.75,
+      "collider": {
+        "halfX": 2.05,
+        "halfZ": 2.05
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-001/inferno-column-big-broken-001.glb",
+      "x": -10,
+      "z": -68.75,
+      "rotationY": 1.11,
+      "height": 5,
+      "collider": {
+        "halfX": 2.41,
+        "halfZ": 2.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-001/inferno-column-big-broken-001.glb",
+      "x": 10,
+      "z": -41.25,
+      "rotationY": 1.14,
+      "height": 5,
+      "collider": {
+        "halfX": 2.38,
+        "halfZ": 2.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": 20,
+      "z": -55,
+      "rotationY": 1,
+      "height": 4,
+      "collider": {
+        "halfX": 1.53,
+        "halfZ": 1.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-statue-knight-002/inferno-statue-knight-002.glb",
+      "x": -33.75,
+      "z": -57.5,
+      "rotationY": 1.57,
+      "height": 17.5,
+      "collider": {
+        "halfX": 3.48,
+        "halfZ": 4.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-well-small-001/inferno-well-small-001.glb",
+      "x": 0,
+      "z": -55,
+      "rotationY": 0,
+      "height": 3,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-brazier-002/inferno-brazier-002.glb",
+      "x": -7.5,
+      "z": -47.5,
+      "rotationY": 0,
+      "height": 2.75,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-brazier-002/inferno-brazier-002.glb",
+      "x": 7.5,
+      "z": -47.5,
+      "rotationY": 0,
+      "height": 2.75,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-brazier-002/inferno-brazier-002.glb",
+      "x": -7.5,
+      "z": -62.5,
+      "rotationY": 0,
+      "height": 2.75,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-brazier-002/inferno-brazier-002.glb",
+      "x": 7.5,
+      "z": -62.5,
+      "rotationY": 0,
+      "height": 2.75,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-brazier-002/inferno-brazier-002.glb",
+      "x": -5,
+      "z": -8.75,
+      "rotationY": 0,
+      "height": 2.75,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-brazier-002/inferno-brazier-002.glb",
+      "x": 5,
+      "z": -8.75,
+      "rotationY": 0,
+      "height": 2.75,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-brazier-002/inferno-brazier-002.glb",
+      "x": -5,
+      "z": 8.75,
+      "rotationY": 0,
+      "height": 2.75,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-brazier-002/inferno-brazier-002.glb",
+      "x": 5,
+      "z": 8.75,
+      "rotationY": 0,
+      "height": 2.75,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-chest-big-001/inferno-chest-big-001.glb",
+      "x": -11.25,
+      "z": -51.25,
+      "rotationY": 4.86,
+      "height": 2,
+      "collider": {
+        "halfX": 0.73,
+        "halfZ": 1.14
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gold-pile-big-001/inferno-gold-pile-big-001.glb",
+      "x": 11.25,
+      "z": -58.75,
+      "rotationY": 3.86,
+      "height": 1.25,
+      "collider": {
+        "halfX": 1.75,
+        "halfZ": 1.74
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gold-pile-small-001/inferno-gold-pile-small-001.glb",
+      "x": 12.5,
+      "z": -51.25,
+      "rotationY": 2.58,
+      "height": 0.63,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 1.07
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-001/inferno-vase-001.glb",
+      "x": -12.5,
+      "z": -58.75,
+      "rotationY": 2.29,
+      "height": 1.5,
+      "collider": {
+        "halfX": 0.98,
+        "halfZ": 0.98
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -13.75,
+      "z": -56.25,
+      "rotationY": 3.16,
+      "height": 1.75,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tavern-red/medieval-hexa-building-tavern-red.gltf",
+      "x": -62.5,
+      "z": 5.63,
+      "rotationY": 0,
+      "height": 12.5,
+      "collider": {
+        "halfX": 4.46,
+        "halfZ": 5.07
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-red/medieval-hexa-building-home-a-red.gltf",
+      "x": -45,
+      "z": 5.63,
+      "rotationY": 0,
+      "height": 8.75,
+      "collider": {
+        "halfX": 3.17,
+        "halfZ": 3.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-b-red/medieval-hexa-building-home-b-red.gltf",
+      "x": -27.5,
+      "z": 5.63,
+      "rotationY": 0,
+      "height": 11.25,
+      "collider": {
+        "halfX": 3.27,
+        "halfZ": 4.11
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-blacksmith-red/medieval-hexa-building-blacksmith-red.gltf",
+      "x": -10,
+      "z": 5.63,
+      "rotationY": 0,
+      "height": 8.75,
+      "collider": {
+        "halfX": 4.86,
+        "halfZ": 4.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-market-red/medieval-hexa-building-market-red.gltf",
+      "x": 25,
+      "z": 5.63,
+      "rotationY": 0,
+      "height": 7.5,
+      "collider": {
+        "halfX": 5.84,
+        "halfZ": 4.27
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-red/medieval-hexa-building-home-a-red.gltf",
+      "x": 42.5,
+      "z": 5.63,
+      "rotationY": 0,
+      "height": 8.75,
+      "collider": {
+        "halfX": 3.17,
+        "halfZ": 3.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-church-red/medieval-hexa-building-church-red.gltf",
+      "x": 60,
+      "z": 5.63,
+      "rotationY": 0,
+      "height": 16.25,
+      "collider": {
+        "halfX": 4.32,
+        "halfZ": 4.85
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-b-red/medieval-hexa-building-home-b-red.gltf",
+      "x": -62.5,
+      "z": 29.38,
+      "rotationY": 3.14,
+      "height": 11.25,
+      "collider": {
+        "halfX": 3.27,
+        "halfZ": 4.11
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-barracks-red/medieval-hexa-building-barracks-red.gltf",
+      "x": -45,
+      "z": 29.38,
+      "rotationY": 3.14,
+      "height": 11.25,
+      "collider": {
+        "halfX": 4.2,
+        "halfZ": 4.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-a-red/medieval-hexa-building-tower-a-red.gltf",
+      "x": -27.5,
+      "z": 29.38,
+      "rotationY": 3.14,
+      "height": 18.75,
+      "collider": {
+        "halfX": 3.61,
+        "halfZ": 4.19
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-red/medieval-hexa-building-home-a-red.gltf",
+      "x": -10,
+      "z": 29.38,
+      "rotationY": 3.14,
+      "height": 8.75,
+      "collider": {
+        "halfX": 3.17,
+        "halfZ": 3.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-lumbermill-red/medieval-hexa-building-lumbermill-red.gltf",
+      "x": 25,
+      "z": 29.38,
+      "rotationY": 3.14,
+      "height": 11.25,
+      "collider": {
+        "halfX": 3.83,
+        "halfZ": 3.33
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tavern-red/medieval-hexa-building-tavern-red.gltf",
+      "x": 42.5,
+      "z": 29.38,
+      "rotationY": 3.14,
+      "height": 12.5,
+      "collider": {
+        "halfX": 4.46,
+        "halfZ": 5.07
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-red/medieval-hexa-building-home-a-red.gltf",
+      "x": 60,
+      "z": 29.38,
+      "rotationY": 3.14,
+      "height": 8.75,
+      "collider": {
+        "halfX": 3.17,
+        "halfZ": 3.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-well-red/medieval-hexa-building-well-red.gltf",
+      "x": -37.5,
+      "z": 32.5,
+      "rotationY": 0,
+      "height": 4.38,
+      "collider": {
+        "halfX": 1.47,
+        "halfZ": 1.69
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-well-red/medieval-hexa-building-well-red.gltf",
+      "x": 32.5,
+      "z": 32.5,
+      "rotationY": 0,
+      "height": 4.38,
+      "collider": {
+        "halfX": 1.47,
+        "halfZ": 1.69
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-well-red/medieval-hexa-building-well-red.gltf",
+      "x": -55,
+      "z": 2.5,
+      "rotationY": 0,
+      "height": 4.38,
+      "collider": {
+        "halfX": 1.47,
+        "halfZ": 1.69
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-well-red/medieval-hexa-building-well-red.gltf",
+      "x": 50,
+      "z": 2.5,
+      "rotationY": 0,
+      "height": 4.38,
+      "collider": {
+        "halfX": 1.47,
+        "halfZ": 1.69
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-cliff-004/inferno-cliff-004.glb",
+      "x": 67.5,
+      "z": -50,
+      "rotationY": 0.6,
+      "height": 18.75,
+      "collider": {
+        "halfX": 17.56,
+        "halfZ": 17.23
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-003/inferno-crag-003.glb",
+      "x": -70,
+      "z": 47.5,
+      "rotationY": 1,
+      "height": 17.5,
+      "collider": {
+        "halfX": 6.04,
+        "halfZ": 6.33
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-big-004/inferno-rock-big-004.glb",
+      "x": 37.5,
+      "z": -67.5,
+      "rotationY": 0.4,
+      "height": 20,
+      "collider": {
+        "halfX": 8.41,
+        "halfZ": 7.97
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-big-001/inferno-rock-big-001.glb",
+      "x": -42.5,
+      "z": -75,
+      "rotationY": 2.6,
+      "height": 18.75,
+      "collider": {
+        "halfX": 6.87,
+        "halfZ": 6.71
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-axe-001/inferno-axe-001.glb",
+      "x": -47.5,
+      "z": -32.5,
+      "rotationY": 0.7,
+      "height": 15,
+      "collider": {
+        "halfX": 3.08,
+        "halfZ": 2.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-003/inferno-crag-003.glb",
+      "x": -56.52,
+      "z": 50.66,
+      "rotationY": 3.55,
+      "height": 14.48,
+      "collider": {
+        "halfX": 5.08,
+        "halfZ": 4.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-castle-red/medieval-hexa-building-castle-red.gltf",
+      "x": -78.76,
+      "z": -58.65,
+      "rotationY": 1.31,
+      "height": 16.58,
+      "collider": {
+        "halfX": 4.76,
+        "halfZ": 4.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-003/inferno-crag-003.glb",
+      "x": -16.75,
+      "z": 38.52,
+      "rotationY": 4.57,
+      "height": 13.95,
+      "collider": {
+        "halfX": 3.72,
+        "halfZ": 4.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-big-003/inferno-rock-big-003.glb",
+      "x": -70.98,
+      "z": -71.22,
+      "rotationY": 1.63,
+      "height": 12.23,
+      "collider": {
+        "halfX": 6.31,
+        "halfZ": 6.64
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-003/inferno-crag-003.glb",
+      "x": 18.81,
+      "z": 41.57,
+      "rotationY": 5.37,
+      "height": 15.53,
+      "collider": {
+        "halfX": 5.49,
+        "halfZ": 5.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-big-001/inferno-rock-big-001.glb",
+      "x": 27.42,
+      "z": -37.76,
+      "rotationY": 2.49,
+      "height": 18.09,
+      "collider": {
+        "halfX": 6.73,
+        "halfZ": 6.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": -17.12,
+      "z": 28.4,
+      "rotationY": 0.67,
+      "height": 12.99,
+      "collider": {
+        "halfX": 4.28,
+        "halfZ": 4.28
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-b-red/medieval-hexa-building-tower-b-red.gltf",
+      "x": -71.65,
+      "z": -18.83,
+      "rotationY": 4.33,
+      "height": 16.46,
+      "collider": {
+        "halfX": 4.88,
+        "halfZ": 4.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-b-red/medieval-hexa-building-tower-b-red.gltf",
+      "x": -17.63,
+      "z": -17.45,
+      "rotationY": 5.54,
+      "height": 17.2,
+      "collider": {
+        "halfX": 5.34,
+        "halfZ": 5.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-b-red/medieval-hexa-building-tower-b-red.gltf",
+      "x": -78.6,
+      "z": -1.84,
+      "rotationY": 0.7,
+      "height": 17.64,
+      "collider": {
+        "halfX": 5.45,
+        "halfZ": 5.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-big-003/inferno-rock-big-003.glb",
+      "x": -28.3,
+      "z": 56.73,
+      "rotationY": 1.8,
+      "height": 13.64,
+      "collider": {
+        "halfX": 8.06,
+        "halfZ": 8.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-big-001/inferno-rock-big-001.glb",
+      "x": -83.25,
+      "z": 22.35,
+      "rotationY": 2.84,
+      "height": 16.16,
+      "collider": {
+        "halfX": 5.48,
+        "halfZ": 5.21
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-big-003/inferno-rock-big-003.glb",
+      "x": 66.4,
+      "z": -5.77,
+      "rotationY": 2.17,
+      "height": 12.5,
+      "collider": {
+        "halfX": 8.65,
+        "halfZ": 8.74
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": -19.53,
+      "z": -28.39,
+      "rotationY": 5.93,
+      "height": 14.59,
+      "collider": {
+        "halfX": 4.39,
+        "halfZ": 4.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": 28.01,
+      "z": -21.88,
+      "rotationY": 3.08,
+      "height": 8.11,
+      "collider": {
+        "halfX": 3.9,
+        "halfZ": 4.16
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-well-small-001/inferno-well-small-001.glb",
+      "x": -72.61,
+      "z": 66.92,
+      "rotationY": 6.23,
+      "height": 3.81,
+      "collider": {
+        "halfX": 2.54,
+        "halfZ": 2.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-a-red/medieval-hexa-building-tower-a-red.gltf",
+      "x": 54.02,
+      "z": 33.45,
+      "rotationY": 1.73,
+      "height": 12.81,
+      "collider": {
+        "halfX": 3.22,
+        "halfZ": 2.89
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": -39.33,
+      "z": -43.68,
+      "rotationY": 1.68,
+      "height": 7.33,
+      "collider": {
+        "halfX": 1.89,
+        "halfZ": 1.89
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": 21.06,
+      "z": 68.9,
+      "rotationY": 1.96,
+      "height": 8.6,
+      "collider": {
+        "halfX": 3.95,
+        "halfZ": 3.86
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": 54.36,
+      "z": -21.83,
+      "rotationY": 0.87,
+      "height": 9.1,
+      "collider": {
+        "halfX": 4.47,
+        "halfZ": 4.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-well-small-001/inferno-well-small-001.glb",
+      "x": 50.89,
+      "z": 63.98,
+      "rotationY": 3.09,
+      "height": 4.88,
+      "collider": {
+        "halfX": 3.25,
+        "halfZ": 3.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": -58.96,
+      "z": -64.54,
+      "rotationY": 5.26,
+      "height": 9.49,
+      "collider": {
+        "halfX": 5.52,
+        "halfZ": 5.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": 82.49,
+      "z": 20.8,
+      "rotationY": 0.37,
+      "height": 8.49,
+      "collider": {
+        "halfX": 4.81,
+        "halfZ": 4.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": 36.23,
+      "z": 50.83,
+      "rotationY": 3.56,
+      "height": 6.39,
+      "collider": {
+        "halfX": 3.92,
+        "halfZ": 4.03
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-001/inferno-rock-mid-001.glb",
+      "x": -59.27,
+      "z": -32.52,
+      "rotationY": 1.96,
+      "height": 5.6,
+      "collider": {
+        "halfX": 6.15,
+        "halfZ": 6.13
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": 16.76,
+      "z": -32.62,
+      "rotationY": 3.8,
+      "height": 6.85,
+      "collider": {
+        "halfX": 2.25,
+        "halfZ": 2.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": 85.1,
+      "z": -29.02,
+      "rotationY": 0.57,
+      "height": 9.78,
+      "collider": {
+        "halfX": 4.67,
+        "halfZ": 4.73
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-well-small-001/inferno-well-small-001.glb",
+      "x": -32.16,
+      "z": -15.46,
+      "rotationY": 0.11,
+      "height": 4.18,
+      "collider": {
+        "halfX": 2.91,
+        "halfZ": 2.91
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": 64.68,
+      "z": -73.57,
+      "rotationY": 4.08,
+      "height": 8.38,
+      "collider": {
+        "halfX": 2.75,
+        "halfZ": 2.75
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-a-red/medieval-hexa-building-tower-a-red.gltf",
+      "x": 19.28,
+      "z": -24.18,
+      "rotationY": 4.65,
+      "height": 11.56,
+      "collider": {
+        "halfX": 2.71,
+        "halfZ": 2.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-well-small-001/inferno-well-small-001.glb",
+      "x": -43.59,
+      "z": 44.44,
+      "rotationY": 4.94,
+      "height": 4.13,
+      "collider": {
+        "halfX": 3.15,
+        "halfZ": 3.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-a-red/medieval-hexa-building-tower-a-red.gltf",
+      "x": 62.64,
+      "z": 40.18,
+      "rotationY": 0.81,
+      "height": 14.71,
+      "collider": {
+        "halfX": 4.33,
+        "halfZ": 4.32
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-a-red/medieval-hexa-building-tower-a-red.gltf",
+      "x": -68.25,
+      "z": -57.99,
+      "rotationY": 4.43,
+      "height": 13.71,
+      "collider": {
+        "halfX": 3.69,
+        "halfZ": 3.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-well-small-001/inferno-well-small-001.glb",
+      "x": -67.54,
+      "z": 58.54,
+      "rotationY": 0.31,
+      "height": 4.53,
+      "collider": {
+        "halfX": 3.62,
+        "halfZ": 3.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": 89.31,
+      "z": -13.49,
+      "rotationY": 2.97,
+      "height": 6.59,
+      "collider": {
+        "halfX": 1.79,
+        "halfZ": 1.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": -21.12,
+      "z": -88.44,
+      "rotationY": 0.3,
+      "height": 9.24,
+      "collider": {
+        "halfX": 3.97,
+        "halfZ": 4.09
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": -78.04,
+      "z": 12.23,
+      "rotationY": 4.27,
+      "height": 8.58,
+      "collider": {
+        "halfX": 2.68,
+        "halfZ": 2.68
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": 48.71,
+      "z": 70.47,
+      "rotationY": 0.35,
+      "height": 7.25,
+      "collider": {
+        "halfX": 2.18,
+        "halfZ": 2.18
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-a-red/medieval-hexa-building-tower-a-red.gltf",
+      "x": -61.09,
+      "z": -4.56,
+      "rotationY": 3.64,
+      "height": 12.09,
+      "collider": {
+        "halfX": 3.34,
+        "halfZ": 3.49
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-001/inferno-rock-mid-001.glb",
+      "x": -54.06,
+      "z": -44.68,
+      "rotationY": 1.66,
+      "height": 6.78,
+      "collider": {
+        "halfX": 6.19,
+        "halfZ": 6.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": 61.83,
+      "z": 73.28,
+      "rotationY": 5.83,
+      "height": 9.39,
+      "collider": {
+        "halfX": 5.47,
+        "halfZ": 5.28
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": 52.32,
+      "z": -79.94,
+      "rotationY": 6.11,
+      "height": 8.76,
+      "collider": {
+        "halfX": 3.46,
+        "halfZ": 3.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": -34.3,
+      "z": -29.86,
+      "rotationY": 3.09,
+      "height": 7.99,
+      "collider": {
+        "halfX": 2.84,
+        "halfZ": 2.99
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": 81.42,
+      "z": -72.94,
+      "rotationY": 0.28,
+      "height": 7.14,
+      "collider": {
+        "halfX": 2.08,
+        "halfZ": 2.08
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": 47.37,
+      "z": 75.73,
+      "rotationY": 2.42,
+      "height": 7.28,
+      "collider": {
+        "halfX": 2.41,
+        "halfZ": 2.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-well-small-001/inferno-well-small-001.glb",
+      "x": 69.75,
+      "z": 46.25,
+      "rotationY": 2.18,
+      "height": 4.74,
+      "collider": {
+        "halfX": 4.18,
+        "halfZ": 4.18
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": 78.08,
+      "z": 61.07,
+      "rotationY": 5.78,
+      "height": 8.05,
+      "collider": {
+        "halfX": 2.56,
+        "halfZ": 2.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-001/inferno-column-big-001.glb",
+      "x": 38.45,
+      "z": 77.08,
+      "rotationY": 5.1,
+      "height": 6.81,
+      "collider": {
+        "halfX": 2.08,
+        "halfZ": 2.08
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-pedestal-big-001/inferno-pedestal-big-001.glb",
+      "x": 37.5,
+      "z": -30,
+      "rotationY": 0.3,
+      "height": 3,
+      "collider": {
+        "halfX": 5.38,
+        "halfZ": 4.86
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stairs-middle-001/inferno-stairs-middle-001.glb",
+      "x": 40,
+      "z": -40,
+      "rotationY": 3.14,
+      "height": 3.25,
+      "collider": {
+        "halfX": 2.55,
+        "halfZ": 3.12
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": 7.85,
+      "z": 44.5,
+      "rotationY": 1.07,
+      "height": 2.02,
+      "collider": {
+        "halfX": 0.9,
+        "halfZ": 0.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": 39.56,
+      "z": -9.7,
+      "rotationY": 4.31,
+      "height": 4.64,
+      "collider": {
+        "halfX": 2.14,
+        "halfZ": 2.09
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": -1.56,
+      "z": 67.95,
+      "rotationY": 5.18,
+      "height": 3.21,
+      "collider": {
+        "halfX": 2.06,
+        "halfZ": 2.01
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": 6.21,
+      "z": 71.66,
+      "rotationY": 0.89,
+      "height": 5.09,
+      "collider": {
+        "halfX": 3.05,
+        "halfZ": 3.08
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -63.64,
+      "z": -21.89,
+      "rotationY": 4.78,
+      "height": 0.96,
+      "collider": {
+        "halfX": 1.09,
+        "halfZ": 1.07
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": -87.19,
+      "z": 5.32,
+      "rotationY": 3.91,
+      "height": 5.4,
+      "collider": {
+        "halfX": 3.27,
+        "halfZ": 3.27
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": -37.25,
+      "z": 72.95,
+      "rotationY": 2.31,
+      "height": 4.88,
+      "collider": {
+        "halfX": 2.4,
+        "halfZ": 2.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -35.13,
+      "z": -40.07,
+      "rotationY": 2.44,
+      "height": 0.9,
+      "collider": {
+        "halfX": 1.34,
+        "halfZ": 1.34
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-004/inferno-rock-mid-004.glb",
+      "x": -3.1,
+      "z": 77.78,
+      "rotationY": 2.58,
+      "height": 1.89,
+      "collider": {
+        "halfX": 4.05,
+        "halfZ": 4.21
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": 85.06,
+      "z": -6.65,
+      "rotationY": 0.98,
+      "height": 0.96,
+      "collider": {
+        "halfX": 1.23,
+        "halfZ": 1.27
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -50.71,
+      "z": 67.79,
+      "rotationY": 3.85,
+      "height": 1.92,
+      "collider": {
+        "halfX": 0.88,
+        "halfZ": 0.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-004/inferno-rock-mid-004.glb",
+      "x": 10.58,
+      "z": -30.2,
+      "rotationY": 3.68,
+      "height": 1.78,
+      "collider": {
+        "halfX": 3.78,
+        "halfZ": 3.95
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": -14.31,
+      "z": -37.62,
+      "rotationY": 2.21,
+      "height": 5.23,
+      "collider": {
+        "halfX": 3.11,
+        "halfZ": 3.16
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": 73.95,
+      "z": 32.05,
+      "rotationY": 5.16,
+      "height": 1.02,
+      "collider": {
+        "halfX": 1.24,
+        "halfZ": 1.31
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -18.09,
+      "z": 63.65,
+      "rotationY": 0.23,
+      "height": 1.14,
+      "collider": {
+        "halfX": 1.35,
+        "halfZ": 1.23
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-004/inferno-rock-mid-004.glb",
+      "x": -58.56,
+      "z": -75.42,
+      "rotationY": 4.6,
+      "height": 1.78,
+      "collider": {
+        "halfX": 3.33,
+        "halfZ": 2.91
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-001/inferno-rock-mid-001.glb",
+      "x": 56.57,
+      "z": 44.8,
+      "rotationY": 3.6,
+      "height": 2.77,
+      "collider": {
+        "halfX": 3.11,
+        "halfZ": 3.12
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -55.2,
+      "z": 66.27,
+      "rotationY": 0.86,
+      "height": 0.93,
+      "collider": {
+        "halfX": 1.38,
+        "halfZ": 1.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-004/inferno-rock-mid-004.glb",
+      "x": -79.55,
+      "z": -36.92,
+      "rotationY": 0.45,
+      "height": 1.64,
+      "collider": {
+        "halfX": 3.37,
+        "halfZ": 3.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-001/inferno-rock-mid-001.glb",
+      "x": -86.95,
+      "z": -54.43,
+      "rotationY": 1.72,
+      "height": 2.69,
+      "collider": {
+        "halfX": 2.58,
+        "halfZ": 2.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": -82.88,
+      "z": -10.77,
+      "rotationY": 1.78,
+      "height": 4.05,
+      "collider": {
+        "halfX": 2.31,
+        "halfZ": 2.21
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -39.79,
+      "z": 11.03,
+      "rotationY": 1.81,
+      "height": 0.8,
+      "collider": {
+        "halfX": 1.03,
+        "halfZ": 1.01
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": -59.61,
+      "z": 70.36,
+      "rotationY": 2.51,
+      "height": 3.07,
+      "collider": {
+        "halfX": 2.01,
+        "halfZ": 2.03
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -35.04,
+      "z": 80.17,
+      "rotationY": 1.37,
+      "height": 0.94,
+      "collider": {
+        "halfX": 0.99,
+        "halfZ": 1.1
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": -56.42,
+      "z": 42.97,
+      "rotationY": 2.55,
+      "height": 3.72,
+      "collider": {
+        "halfX": 1.79,
+        "halfZ": 1.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -58.38,
+      "z": 40.38,
+      "rotationY": 5.59,
+      "height": 1.42,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-004/inferno-rock-mid-004.glb",
+      "x": 9.9,
+      "z": -76.5,
+      "rotationY": 0.44,
+      "height": 1.41,
+      "collider": {
+        "halfX": 2.88,
+        "halfZ": 3.06
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-001/inferno-rock-mid-001.glb",
+      "x": -46.36,
+      "z": 74.37,
+      "rotationY": 4.85,
+      "height": 3.13,
+      "collider": {
+        "halfX": 2.97,
+        "halfZ": 2.96
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": -84.81,
+      "z": -25.33,
+      "rotationY": 1.81,
+      "height": 5.25,
+      "collider": {
+        "halfX": 2.64,
+        "halfZ": 2.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": 14.95,
+      "z": -69.76,
+      "rotationY": 3.51,
+      "height": 1.93,
+      "collider": {
+        "halfX": 0.8,
+        "halfZ": 0.83
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": -78.37,
+      "z": 35.76,
+      "rotationY": 4.57,
+      "height": 3.03,
+      "collider": {
+        "halfX": 1.65,
+        "halfZ": 1.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -54.03,
+      "z": 25.88,
+      "rotationY": 3.1,
+      "height": 1.57,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": 65.9,
+      "z": -22.69,
+      "rotationY": 3.57,
+      "height": 0.82,
+      "collider": {
+        "halfX": 1.14,
+        "halfZ": 1.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -25.22,
+      "z": 42.45,
+      "rotationY": 5.57,
+      "height": 0.99,
+      "collider": {
+        "halfX": 1.32,
+        "halfZ": 1.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": -54.03,
+      "z": 33.75,
+      "rotationY": 3.82,
+      "height": 4.51,
+      "collider": {
+        "halfX": 2.2,
+        "halfZ": 2.21
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -40.84,
+      "z": -25.62,
+      "rotationY": 5.35,
+      "height": 0.73,
+      "collider": {
+        "halfX": 1.08,
+        "halfZ": 1.07
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": -40.88,
+      "z": -37.09,
+      "rotationY": 3.99,
+      "height": 4.53,
+      "collider": {
+        "halfX": 2.23,
+        "halfZ": 2.22
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -52.7,
+      "z": -56.39,
+      "rotationY": 3.17,
+      "height": 1.42,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.49
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -38.51,
+      "z": -23.72,
+      "rotationY": 6.07,
+      "height": 1.28,
+      "collider": {
+        "halfX": 1.51,
+        "halfZ": 1.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -16.37,
+      "z": 9.64,
+      "rotationY": 5.51,
+      "height": 0.81,
+      "collider": {
+        "halfX": 1.21,
+        "halfZ": 1.21
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": 59.37,
+      "z": -74.86,
+      "rotationY": 1.59,
+      "height": 0.7,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.74
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": 78.82,
+      "z": 11.76,
+      "rotationY": 2.53,
+      "height": 3.28,
+      "collider": {
+        "halfX": 2.14,
+        "halfZ": 2.17
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": 43.92,
+      "z": 74.09,
+      "rotationY": 3.07,
+      "height": 1.82,
+      "collider": {
+        "halfX": 0.61,
+        "halfZ": 0.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-004/inferno-rock-mid-004.glb",
+      "x": 56.48,
+      "z": 55.4,
+      "rotationY": 0.39,
+      "height": 1.81,
+      "collider": {
+        "halfX": 3.61,
+        "halfZ": 3.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-001/inferno-rock-mid-001.glb",
+      "x": -12.56,
+      "z": -2.84,
+      "rotationY": 4.98,
+      "height": 3.04,
+      "collider": {
+        "halfX": 3.14,
+        "halfZ": 3.12
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": 70.02,
+      "z": 26.88,
+      "rotationY": 4.85,
+      "height": 4.62,
+      "collider": {
+        "halfX": 1.85,
+        "halfZ": 1.77
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -30.38,
+      "z": -28.64,
+      "rotationY": 2.49,
+      "height": 0.72,
+      "collider": {
+        "halfX": 1.06,
+        "halfZ": 1.07
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": 60.11,
+      "z": -25.86,
+      "rotationY": 6.18,
+      "height": 3.98,
+      "collider": {
+        "halfX": 2,
+        "halfZ": 2.12
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": -76.44,
+      "z": -25.5,
+      "rotationY": 0.91,
+      "height": 4.28,
+      "collider": {
+        "halfX": 2.56,
+        "halfZ": 2.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": -51.34,
+      "z": -29.74,
+      "rotationY": 1.67,
+      "height": 4.11,
+      "collider": {
+        "halfX": 1.6,
+        "halfZ": 1.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": 79.11,
+      "z": 53.09,
+      "rotationY": 2.79,
+      "height": 0.93,
+      "collider": {
+        "halfX": 1.16,
+        "halfZ": 1.08
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": 69.02,
+      "z": 7.87,
+      "rotationY": 1.5,
+      "height": 4.05,
+      "collider": {
+        "halfX": 2.1,
+        "halfZ": 1.98
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": -74.09,
+      "z": -10.29,
+      "rotationY": 1.08,
+      "height": 3.53,
+      "collider": {
+        "halfX": 2.27,
+        "halfZ": 2.23
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": -70.05,
+      "z": -31.08,
+      "rotationY": 2.72,
+      "height": 3.73,
+      "collider": {
+        "halfX": 2.29,
+        "halfZ": 2.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": 34.96,
+      "z": -50.96,
+      "rotationY": 1.55,
+      "height": 4.39,
+      "collider": {
+        "halfX": 1.83,
+        "halfZ": 2.02
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": -64.37,
+      "z": -41.67,
+      "rotationY": 0.4,
+      "height": 5.66,
+      "collider": {
+        "halfX": 3.24,
+        "halfZ": 3.11
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -53.49,
+      "z": -5.26,
+      "rotationY": 2.09,
+      "height": 0.75,
+      "collider": {
+        "halfX": 1.08,
+        "halfZ": 1.08
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": -49.61,
+      "z": -84.23,
+      "rotationY": 1.84,
+      "height": 5.17,
+      "collider": {
+        "halfX": 2.65,
+        "halfZ": 2.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": -22.72,
+      "z": -66.05,
+      "rotationY": 0.01,
+      "height": 4.9,
+      "collider": {
+        "halfX": 1.67,
+        "halfZ": 1.77
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": 45.18,
+      "z": 81.42,
+      "rotationY": 2.02,
+      "height": 1.46,
+      "collider": {
+        "halfX": 0.64,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": 63.52,
+      "z": -22.95,
+      "rotationY": 0.89,
+      "height": 1.96,
+      "collider": {
+        "halfX": 0.9,
+        "halfZ": 0.89
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": 55.71,
+      "z": -72.5,
+      "rotationY": 1.17,
+      "height": 3.66,
+      "collider": {
+        "halfX": 2.29,
+        "halfZ": 2.23
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": 55.31,
+      "z": 68.58,
+      "rotationY": 2.52,
+      "height": 4.32,
+      "collider": {
+        "halfX": 2.09,
+        "halfZ": 2.11
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -37.6,
+      "z": -50.7,
+      "rotationY": 4.12,
+      "height": 1,
+      "collider": {
+        "halfX": 1.28,
+        "halfZ": 1.32
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": 38.31,
+      "z": -14.45,
+      "rotationY": 1.44,
+      "height": 2.05,
+      "collider": {
+        "halfX": 0.77,
+        "halfZ": 0.72
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -25.97,
+      "z": 34.43,
+      "rotationY": 3.98,
+      "height": 2.18,
+      "collider": {
+        "halfX": 1,
+        "halfZ": 1
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": 40.21,
+      "z": -53.68,
+      "rotationY": 3.46,
+      "height": 3.92,
+      "collider": {
+        "halfX": 2.29,
+        "halfZ": 2.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -34.66,
+      "z": -87.5,
+      "rotationY": 0.36,
+      "height": 0.92,
+      "collider": {
+        "halfX": 1.24,
+        "halfZ": 1.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -27.15,
+      "z": -68.14,
+      "rotationY": 3.22,
+      "height": 1.51,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": -20.45,
+      "z": 44.82,
+      "rotationY": 0.81,
+      "height": 3.96,
+      "collider": {
+        "halfX": 2.64,
+        "halfZ": 2.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": 10.24,
+      "z": 1.74,
+      "rotationY": 4.62,
+      "height": 4.94,
+      "collider": {
+        "halfX": 1.92,
+        "halfZ": 1.83
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": 15.76,
+      "z": -40.04,
+      "rotationY": 0.6,
+      "height": 2.02,
+      "collider": {
+        "halfX": 0.91,
+        "halfZ": 0.92
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": 13.48,
+      "z": -14.73,
+      "rotationY": 2.72,
+      "height": 4.07,
+      "collider": {
+        "halfX": 2.5,
+        "halfZ": 2.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-001/inferno-rock-mid-001.glb",
+      "x": -80.08,
+      "z": -45.21,
+      "rotationY": 3.18,
+      "height": 2.86,
+      "collider": {
+        "halfX": 2.49,
+        "halfZ": 2.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -88.33,
+      "z": -23.93,
+      "rotationY": 3.38,
+      "height": 1.41,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-004/inferno-rock-mid-004.glb",
+      "x": 37.03,
+      "z": 59.49,
+      "rotationY": 1.32,
+      "height": 1.64,
+      "collider": {
+        "halfX": 3.32,
+        "halfZ": 3.01
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": 25.95,
+      "z": -54.23,
+      "rotationY": 4.01,
+      "height": 5,
+      "collider": {
+        "halfX": 3.01,
+        "halfZ": 3.03
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -79.23,
+      "z": 40.64,
+      "rotationY": 5.06,
+      "height": 1.5,
+      "collider": {
+        "halfX": 0.64,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": 53.47,
+      "z": 7.01,
+      "rotationY": 5.15,
+      "height": 4.34,
+      "collider": {
+        "halfX": 2.43,
+        "halfZ": 2.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -68.29,
+      "z": -13.55,
+      "rotationY": 2.14,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.64,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -23.96,
+      "z": 68.58,
+      "rotationY": 3.28,
+      "height": 1.41,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -77.04,
+      "z": 40.61,
+      "rotationY": 2.09,
+      "height": 2.19,
+      "collider": {
+        "halfX": 0.98,
+        "halfZ": 0.96
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -25.4,
+      "z": -27.09,
+      "rotationY": 5.24,
+      "height": 1.76,
+      "collider": {
+        "halfX": 0.79,
+        "halfZ": 0.78
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -74.4,
+      "z": 59.61,
+      "rotationY": 3.97,
+      "height": 1.06,
+      "collider": {
+        "halfX": 1.4,
+        "halfZ": 1.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -29.39,
+      "z": -87.68,
+      "rotationY": 2.24,
+      "height": 2.17,
+      "collider": {
+        "halfX": 1,
+        "halfZ": 0.99
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": -46.5,
+      "z": -65,
+      "rotationY": 5.98,
+      "height": 4.35,
+      "collider": {
+        "halfX": 2.39,
+        "halfZ": 2.27
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": 23.09,
+      "z": -73.11,
+      "rotationY": 0.45,
+      "height": 1.13,
+      "collider": {
+        "halfX": 1.46,
+        "halfZ": 1.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -53.83,
+      "z": -19.03,
+      "rotationY": 3.57,
+      "height": 1.23,
+      "collider": {
+        "halfX": 1.57,
+        "halfZ": 1.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -87.55,
+      "z": -45.91,
+      "rotationY": 3.22,
+      "height": 1.07,
+      "collider": {
+        "halfX": 1.16,
+        "halfZ": 1.01
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": 56.77,
+      "z": -32.41,
+      "rotationY": 0.1,
+      "height": 5.06,
+      "collider": {
+        "halfX": 2.47,
+        "halfZ": 2.27
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -82.17,
+      "z": -73.56,
+      "rotationY": 3.38,
+      "height": 1.21,
+      "collider": {
+        "halfX": 1.44,
+        "halfZ": 1.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb",
+      "x": -43.83,
+      "z": 51.49,
+      "rotationY": 4.43,
+      "height": 3.33,
+      "collider": {
+        "halfX": 1.98,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -53.33,
+      "z": 40.91,
+      "rotationY": 5.67,
+      "height": 1.26,
+      "collider": {
+        "halfX": 1.67,
+        "halfZ": 1.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -26.27,
+      "z": -41.4,
+      "rotationY": 1.14,
+      "height": 0.87,
+      "collider": {
+        "halfX": 1.22,
+        "halfZ": 1.21
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": 7.46,
+      "z": -10.82,
+      "rotationY": 1.03,
+      "height": 4.28,
+      "collider": {
+        "halfX": 2.06,
+        "halfZ": 2.03
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -13.49,
+      "z": -70.72,
+      "rotationY": 5.44,
+      "height": 0.88,
+      "collider": {
+        "halfX": 1.31,
+        "halfZ": 1.31
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": 21.62,
+      "z": -29.19,
+      "rotationY": 4.9,
+      "height": 3.9,
+      "collider": {
+        "halfX": 1.62,
+        "halfZ": 1.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-004/inferno-rock-mid-004.glb",
+      "x": 45.18,
+      "z": -79.22,
+      "rotationY": 5.46,
+      "height": 1.52,
+      "collider": {
+        "halfX": 3.42,
+        "halfZ": 3.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": 81.31,
+      "z": -36.62,
+      "rotationY": 2.21,
+      "height": 0.87,
+      "collider": {
+        "halfX": 1.29,
+        "halfZ": 1.28
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -34.22,
+      "z": -24.28,
+      "rotationY": 2.37,
+      "height": 0.84,
+      "collider": {
+        "halfX": 1.25,
+        "halfZ": 1.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -30.51,
+      "z": 35.14,
+      "rotationY": 5.31,
+      "height": 1.83,
+      "collider": {
+        "halfX": 0.83,
+        "halfZ": 0.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -79.13,
+      "z": -77.66,
+      "rotationY": 4.91,
+      "height": 1.83,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 0.68
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-001/inferno-rock-small-001.glb",
+      "x": -85.02,
+      "z": 32.81,
+      "rotationY": 4.08,
+      "height": 1.9,
+      "collider": {
+        "halfX": 0.87,
+        "halfZ": 0.86
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": 68.59,
+      "z": 60.99,
+      "rotationY": 1.76,
+      "height": 4.74,
+      "collider": {
+        "halfX": 2.29,
+        "halfZ": 2.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": 29.09,
+      "z": -73.57,
+      "rotationY": 3.45,
+      "height": 0.89,
+      "collider": {
+        "halfX": 1.17,
+        "halfZ": 1.19
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": 67.39,
+      "z": 30.44,
+      "rotationY": 0.6,
+      "height": 1.19,
+      "collider": {
+        "halfX": 1.58,
+        "halfZ": 1.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb",
+      "x": 41.85,
+      "z": 67.54,
+      "rotationY": 2.52,
+      "height": 3.59,
+      "collider": {
+        "halfX": 1.73,
+        "halfZ": 1.75
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-004/inferno-rock-mid-004.glb",
+      "x": 16.87,
+      "z": 54.21,
+      "rotationY": 5.55,
+      "height": 1.96,
+      "collider": {
+        "halfX": 4.37,
+        "halfZ": 4.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-crag-001/inferno-crag-001.glb",
+      "x": 10.77,
+      "z": 30.68,
+      "rotationY": 3.82,
+      "height": 4.55,
+      "collider": {
+        "halfX": 2.75,
+        "halfZ": 2.72
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-mid-001/inferno-rock-mid-001.glb",
+      "x": -26.12,
+      "z": -46.73,
+      "rotationY": 5.58,
+      "height": 2.84,
+      "collider": {
+        "halfX": 3.36,
+        "halfZ": 3.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": -31.92,
+      "z": 30.68,
+      "rotationY": 2.73,
+      "height": 2.25,
+      "collider": {
+        "halfX": 0.82,
+        "halfZ": 0.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 16.21,
+      "z": -84.96,
+      "rotationY": 3.16,
+      "height": 0.82,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": -80.29,
+      "z": -48.42,
+      "rotationY": 3.67,
+      "height": 0.67,
+      "collider": {
+        "halfX": 0.66,
+        "halfZ": 0.68
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": 9.42,
+      "z": 41.3,
+      "rotationY": 5.23,
+      "height": 0.6,
+      "collider": {
+        "halfX": 1.13,
+        "halfZ": 1.13
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -47.17,
+      "z": -2.66,
+      "rotationY": 1.66,
+      "height": 0.76,
+      "collider": {
+        "halfX": 0.88,
+        "halfZ": 0.86
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": -62.08,
+      "z": 40.29,
+      "rotationY": 3.66,
+      "height": 0.47,
+      "collider": {
+        "halfX": 0.89,
+        "halfZ": 0.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 89.37,
+      "z": -22.21,
+      "rotationY": 6.2,
+      "height": 0.69,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -6.26,
+      "z": -28.46,
+      "rotationY": 0.08,
+      "height": 1.26,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": -90.45,
+      "z": -33.62,
+      "rotationY": 0.43,
+      "height": 0.72,
+      "collider": {
+        "halfX": 0.69,
+        "halfZ": 0.71
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -77.62,
+      "z": 7.76,
+      "rotationY": 1.66,
+      "height": 1,
+      "collider": {
+        "halfX": 0.36,
+        "halfZ": 0.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": 15.83,
+      "z": -78.21,
+      "rotationY": 5.1,
+      "height": 0.61,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 11.91,
+      "z": 69.43,
+      "rotationY": 1.25,
+      "height": 0.67,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": 57.36,
+      "z": 10.5,
+      "rotationY": 3.55,
+      "height": 0.64,
+      "collider": {
+        "halfX": 0.88,
+        "halfZ": 0.89
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -48.73,
+      "z": -70.59,
+      "rotationY": 4.34,
+      "height": 1.12,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.49
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -87.75,
+      "z": -5.02,
+      "rotationY": 3.11,
+      "height": 0.57,
+      "collider": {
+        "halfX": 0.84,
+        "halfZ": 0.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": -6.81,
+      "z": 84.51,
+      "rotationY": 3.57,
+      "height": 1.27,
+      "collider": {
+        "halfX": 1.22,
+        "halfZ": 1.22
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": 75.47,
+      "z": -2.76,
+      "rotationY": 1.39,
+      "height": 1.13,
+      "collider": {
+        "halfX": 0.44,
+        "halfZ": 0.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": -68.57,
+      "z": 24.91,
+      "rotationY": 1.92,
+      "height": 0.63,
+      "collider": {
+        "halfX": 0.61,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": 20.36,
+      "z": 78.48,
+      "rotationY": 5.27,
+      "height": 2.73,
+      "collider": {
+        "halfX": 1.04,
+        "halfZ": 1.04
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -18.19,
+      "z": 76.66,
+      "rotationY": 2.76,
+      "height": 0.9,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": -49.2,
+      "z": -52.1,
+      "rotationY": 3.38,
+      "height": 0.67,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": 68.69,
+      "z": 11.23,
+      "rotationY": 2.57,
+      "height": 0.83,
+      "collider": {
+        "halfX": 0.59,
+        "halfZ": 0.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 42.2,
+      "z": -24.21,
+      "rotationY": 3.95,
+      "height": 0.62,
+      "collider": {
+        "halfX": 0.56,
+        "halfZ": 0.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -42.74,
+      "z": 71.42,
+      "rotationY": 0.7,
+      "height": 0.46,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 0.95
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -6.23,
+      "z": -24.72,
+      "rotationY": 3.1,
+      "height": 0.51,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.8
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": 70.94,
+      "z": -68.89,
+      "rotationY": 3.83,
+      "height": 0.62,
+      "collider": {
+        "halfX": 0.92,
+        "halfZ": 0.92
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -23.64,
+      "z": 25.56,
+      "rotationY": 5.58,
+      "height": 0.74,
+      "collider": {
+        "halfX": 0.99,
+        "halfZ": 0.97
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -22.79,
+      "z": 27.77,
+      "rotationY": 5.9,
+      "height": 0.49,
+      "collider": {
+        "halfX": 0.93,
+        "halfZ": 0.95
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -21.3,
+      "z": 1.11,
+      "rotationY": 0.84,
+      "height": 0.61,
+      "collider": {
+        "halfX": 0.91,
+        "halfZ": 0.91
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 89.07,
+      "z": 28.63,
+      "rotationY": 2.78,
+      "height": 0.64,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.49
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -91,
+      "z": 20.63,
+      "rotationY": 1.95,
+      "height": 0.62,
+      "collider": {
+        "halfX": 0.73,
+        "halfZ": 0.78
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -65.85,
+      "z": -6.04,
+      "rotationY": 5.02,
+      "height": 0.64,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 0.78
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -53.25,
+      "z": -77.43,
+      "rotationY": 4.51,
+      "height": 0.94,
+      "collider": {
+        "halfX": 0.64,
+        "halfZ": 0.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 40.6,
+      "z": -57.03,
+      "rotationY": 1.52,
+      "height": 0.75,
+      "collider": {
+        "halfX": 0.43,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 50.29,
+      "z": -32.63,
+      "rotationY": 3.05,
+      "height": 1.04,
+      "collider": {
+        "halfX": 0.83,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": -22.45,
+      "z": 70.8,
+      "rotationY": 3.37,
+      "height": 0.82,
+      "collider": {
+        "halfX": 0.7,
+        "halfZ": 0.75
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": 12.87,
+      "z": -81.28,
+      "rotationY": 4.06,
+      "height": 0.46,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 0.94
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -73.22,
+      "z": 30.97,
+      "rotationY": 5.8,
+      "height": 1.09,
+      "collider": {
+        "halfX": 1,
+        "halfZ": 0.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": 35.36,
+      "z": 37.13,
+      "rotationY": 0.66,
+      "height": 0.67,
+      "collider": {
+        "halfX": 0.68,
+        "halfZ": 0.69
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -50.57,
+      "z": -34.67,
+      "rotationY": 2.96,
+      "height": 0.78,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": 46.46,
+      "z": 1.82,
+      "rotationY": 2.65,
+      "height": 0.58,
+      "collider": {
+        "halfX": 1.09,
+        "halfZ": 1.08
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": 60.62,
+      "z": 49.42,
+      "rotationY": 3.89,
+      "height": 0.54,
+      "collider": {
+        "halfX": 1.05,
+        "halfZ": 1.05
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": -77.16,
+      "z": -83.47,
+      "rotationY": 4.26,
+      "height": 0.46,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.85
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": 63.35,
+      "z": 10.15,
+      "rotationY": 4.44,
+      "height": 2.51,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.85
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -38.6,
+      "z": -0.53,
+      "rotationY": 5.49,
+      "height": 0.57,
+      "collider": {
+        "halfX": 1.18,
+        "halfZ": 1.18
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": 48.2,
+      "z": 34.67,
+      "rotationY": 2.83,
+      "height": 0.76,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -24.01,
+      "z": -70.09,
+      "rotationY": 6.09,
+      "height": 0.86,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -91.13,
+      "z": -12.31,
+      "rotationY": 2.85,
+      "height": 0.55,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 0.73
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": 89.67,
+      "z": 10.53,
+      "rotationY": 5.09,
+      "height": 0.71,
+      "collider": {
+        "halfX": 0.69,
+        "halfZ": 0.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -0.39,
+      "z": -88.53,
+      "rotationY": 2.31,
+      "height": 1.12,
+      "collider": {
+        "halfX": 0.53,
+        "halfZ": 0.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 23.67,
+      "z": 36.09,
+      "rotationY": 0.08,
+      "height": 1.02,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -84.77,
+      "z": 42.75,
+      "rotationY": 3.72,
+      "height": 0.46,
+      "collider": {
+        "halfX": 0.93,
+        "halfZ": 0.94
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": 62.22,
+      "z": 57.52,
+      "rotationY": 0.92,
+      "height": 1.29,
+      "collider": {
+        "halfX": 1.32,
+        "halfZ": 1.32
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": 87.02,
+      "z": 13.18,
+      "rotationY": 5.72,
+      "height": 1.25,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": -69.36,
+      "z": -81.81,
+      "rotationY": 1.1,
+      "height": 1.47,
+      "collider": {
+        "halfX": 1.44,
+        "halfZ": 1.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 24.38,
+      "z": -12.88,
+      "rotationY": 4.05,
+      "height": 0.84,
+      "collider": {
+        "halfX": 0.74,
+        "halfZ": 0.78
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": 48.35,
+      "z": -50.19,
+      "rotationY": 2.73,
+      "height": 0.48,
+      "collider": {
+        "halfX": 0.88,
+        "halfZ": 0.87
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": -20.7,
+      "z": -6.54,
+      "rotationY": 5.19,
+      "height": 2.32,
+      "collider": {
+        "halfX": 0.86,
+        "halfZ": 0.86
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": 69.04,
+      "z": -71.22,
+      "rotationY": 0.2,
+      "height": 0.86,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": 59.38,
+      "z": -77.39,
+      "rotationY": 1.85,
+      "height": 0.51,
+      "collider": {
+        "halfX": 0.86,
+        "halfZ": 0.87
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -6.66,
+      "z": -3.32,
+      "rotationY": 2.43,
+      "height": 0.8,
+      "collider": {
+        "halfX": 1.07,
+        "halfZ": 1.05
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -27.78,
+      "z": -6.76,
+      "rotationY": 3.29,
+      "height": 0.98,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": 66.36,
+      "z": -29.2,
+      "rotationY": 5.05,
+      "height": 2.46,
+      "collider": {
+        "halfX": 0.87,
+        "halfZ": 0.87
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 6.87,
+      "z": 78.13,
+      "rotationY": 0.75,
+      "height": 0.84,
+      "collider": {
+        "halfX": 0.77,
+        "halfZ": 0.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": 54.27,
+      "z": 25.52,
+      "rotationY": 1.44,
+      "height": 1.04,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -37.2,
+      "z": 51.94,
+      "rotationY": 0.38,
+      "height": 0.88,
+      "collider": {
+        "halfX": 1.11,
+        "halfZ": 1.04
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": 31.46,
+      "z": -80.23,
+      "rotationY": 5.1,
+      "height": 1.29,
+      "collider": {
+        "halfX": 0.56,
+        "halfZ": 0.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -10.53,
+      "z": -89.57,
+      "rotationY": 2.85,
+      "height": 0.84,
+      "collider": {
+        "halfX": 0.73,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 44.52,
+      "z": -13.85,
+      "rotationY": 1.03,
+      "height": 0.86,
+      "collider": {
+        "halfX": 0.73,
+        "halfZ": 0.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": -90.21,
+      "z": -7.23,
+      "rotationY": 0.18,
+      "height": 0.47,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.75
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": -61.35,
+      "z": 45.24,
+      "rotationY": 6.12,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.8,
+        "halfZ": 0.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -6.53,
+      "z": -74.23,
+      "rotationY": 0.04,
+      "height": 0.58,
+      "collider": {
+        "halfX": 0.86,
+        "halfZ": 0.91
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": 12.5,
+      "z": -70.67,
+      "rotationY": 2.42,
+      "height": 0.9,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.64
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -16.21,
+      "z": 6.83,
+      "rotationY": 3.39,
+      "height": 1.02,
+      "collider": {
+        "halfX": 0.88,
+        "halfZ": 0.72
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": 75.16,
+      "z": -69.93,
+      "rotationY": 4.9,
+      "height": 0.72,
+      "collider": {
+        "halfX": 0.9,
+        "halfZ": 0.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -33.98,
+      "z": -66.39,
+      "rotationY": 1.28,
+      "height": 0.77,
+      "collider": {
+        "halfX": 1.02,
+        "halfZ": 1.01
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -43.16,
+      "z": 34.63,
+      "rotationY": 3.8,
+      "height": 0.59,
+      "collider": {
+        "halfX": 1.21,
+        "halfZ": 1.22
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 7.54,
+      "z": 0.05,
+      "rotationY": 6.21,
+      "height": 0.61,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -80.59,
+      "z": -27.68,
+      "rotationY": 0.16,
+      "height": 0.82,
+      "collider": {
+        "halfX": 0.93,
+        "halfZ": 0.83
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": 13.12,
+      "z": 81.17,
+      "rotationY": 5.04,
+      "height": 0.57,
+      "collider": {
+        "halfX": 0.99,
+        "halfZ": 1
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -63.54,
+      "z": -75.94,
+      "rotationY": 5.94,
+      "height": 1.05,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -29.29,
+      "z": 46.87,
+      "rotationY": 5.45,
+      "height": 1,
+      "collider": {
+        "halfX": 0.9,
+        "halfZ": 0.92
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": -89.31,
+      "z": -35.5,
+      "rotationY": 3.92,
+      "height": 0.78,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -89.85,
+      "z": 1.85,
+      "rotationY": 4.14,
+      "height": 0.73,
+      "collider": {
+        "halfX": 0.93,
+        "halfZ": 0.96
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": -8.74,
+      "z": -77.84,
+      "rotationY": 3.89,
+      "height": 0.7,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": 55.44,
+      "z": -8.88,
+      "rotationY": 3.91,
+      "height": 0.71,
+      "collider": {
+        "halfX": 1.06,
+        "halfZ": 1.06
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": -37.18,
+      "z": -67.01,
+      "rotationY": 1.84,
+      "height": 1.26,
+      "collider": {
+        "halfX": 1.13,
+        "halfZ": 1.13
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": 15.39,
+      "z": 63.81,
+      "rotationY": 4.67,
+      "height": 0.46,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 0.68
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": -65,
+      "z": 75.01,
+      "rotationY": 2.12,
+      "height": 1.21,
+      "collider": {
+        "halfX": 1.21,
+        "halfZ": 1.21
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": 73.46,
+      "z": 67.87,
+      "rotationY": 4.36,
+      "height": 1.29,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -69.66,
+      "z": -10.35,
+      "rotationY": 0.98,
+      "height": 1.04,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": 7.32,
+      "z": 37.01,
+      "rotationY": 4.01,
+      "height": 2.1,
+      "collider": {
+        "halfX": 0.82,
+        "halfZ": 0.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": -63.79,
+      "z": 43.01,
+      "rotationY": 2.29,
+      "height": 2.1,
+      "collider": {
+        "halfX": 0.82,
+        "halfZ": 0.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": -72.93,
+      "z": -4.94,
+      "rotationY": 0.38,
+      "height": 0.51,
+      "collider": {
+        "halfX": 0.92,
+        "halfZ": 0.91
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -47.54,
+      "z": -47.16,
+      "rotationY": 0.45,
+      "height": 1.18,
+      "collider": {
+        "halfX": 0.53,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -52.27,
+      "z": -52.11,
+      "rotationY": 1.6,
+      "height": 0.83,
+      "collider": {
+        "halfX": 0.74,
+        "halfZ": 0.87
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -86.79,
+      "z": -35.65,
+      "rotationY": 0.79,
+      "height": 0.6,
+      "collider": {
+        "halfX": 0.89,
+        "halfZ": 0.89
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": -20.09,
+      "z": 8.3,
+      "rotationY": 0.69,
+      "height": 0.75,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -58.35,
+      "z": -82.59,
+      "rotationY": 2.21,
+      "height": 1.25,
+      "collider": {
+        "halfX": 0.58,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": 23.95,
+      "z": -9.31,
+      "rotationY": 5.31,
+      "height": 0.71,
+      "collider": {
+        "halfX": 0.91,
+        "halfZ": 0.94
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 40.81,
+      "z": -17.55,
+      "rotationY": 1.86,
+      "height": 0.61,
+      "collider": {
+        "halfX": 0.44,
+        "halfZ": 0.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": 32.12,
+      "z": 69.77,
+      "rotationY": 1.64,
+      "height": 0.66,
+      "collider": {
+        "halfX": 0.33,
+        "halfZ": 0.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 38.58,
+      "z": 69.64,
+      "rotationY": 0.54,
+      "height": 0.96,
+      "collider": {
+        "halfX": 0.88,
+        "halfZ": 0.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -51.86,
+      "z": 31.38,
+      "rotationY": 3.78,
+      "height": 0.48,
+      "collider": {
+        "halfX": 0.98,
+        "halfZ": 0.99
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": -59.15,
+      "z": -11.71,
+      "rotationY": 0.46,
+      "height": 2.87,
+      "collider": {
+        "halfX": 1.06,
+        "halfZ": 1.06
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": -10.35,
+      "z": 68.56,
+      "rotationY": 4.27,
+      "height": 0.64,
+      "collider": {
+        "halfX": 0.64,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": -91.9,
+      "z": -15.63,
+      "rotationY": 0.43,
+      "height": 0.52,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 0.95
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": 42.89,
+      "z": 0.27,
+      "rotationY": 4.5,
+      "height": 0.7,
+      "collider": {
+        "halfX": 0.74,
+        "halfZ": 0.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": -29.73,
+      "z": 74.72,
+      "rotationY": 0.72,
+      "height": 0.65,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": -9.18,
+      "z": 57.9,
+      "rotationY": 4.54,
+      "height": 0.69,
+      "collider": {
+        "halfX": 0.61,
+        "halfZ": 0.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -82.54,
+      "z": 42.51,
+      "rotationY": 0.6,
+      "height": 1.08,
+      "collider": {
+        "halfX": 1,
+        "halfZ": 0.94
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -24.76,
+      "z": 80.36,
+      "rotationY": 3.49,
+      "height": 0.84,
+      "collider": {
+        "halfX": 0.75,
+        "halfZ": 0.64
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": 48.65,
+      "z": -13.55,
+      "rotationY": 2.95,
+      "height": 0.54,
+      "collider": {
+        "halfX": 0.91,
+        "halfZ": 0.94
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": -88.02,
+      "z": -38.31,
+      "rotationY": 3.38,
+      "height": 2.1,
+      "collider": {
+        "halfX": 0.7,
+        "halfZ": 0.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -30.13,
+      "z": 0.53,
+      "rotationY": 1.77,
+      "height": 0.52,
+      "collider": {
+        "halfX": 0.92,
+        "halfZ": 0.89
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -80.72,
+      "z": 44.24,
+      "rotationY": 4.63,
+      "height": 0.68,
+      "collider": {
+        "halfX": 0.78,
+        "halfZ": 0.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 8.67,
+      "z": -86,
+      "rotationY": 0.16,
+      "height": 1.1,
+      "collider": {
+        "halfX": 0.91,
+        "halfZ": 0.71
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": 54.79,
+      "z": 10.9,
+      "rotationY": 3.15,
+      "height": 1.28,
+      "collider": {
+        "halfX": 0.93,
+        "halfZ": 0.93
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": -1.57,
+      "z": 65.08,
+      "rotationY": 2.28,
+      "height": 0.68,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.49
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -77.78,
+      "z": 17.47,
+      "rotationY": 4.77,
+      "height": 0.83,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 55.68,
+      "z": -64.58,
+      "rotationY": 4.77,
+      "height": 0.97,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -3.71,
+      "z": -71.06,
+      "rotationY": 2.04,
+      "height": 1.01,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": 45.7,
+      "z": 68.07,
+      "rotationY": 1.27,
+      "height": 0.67,
+      "collider": {
+        "halfX": 0.75,
+        "halfZ": 0.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 31.52,
+      "z": 24.86,
+      "rotationY": 5.1,
+      "height": 1,
+      "collider": {
+        "halfX": 0.78,
+        "halfZ": 0.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": 19.46,
+      "z": -37.88,
+      "rotationY": 5.27,
+      "height": 2.18,
+      "collider": {
+        "halfX": 0.83,
+        "halfZ": 0.83
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": 16.53,
+      "z": -8.11,
+      "rotationY": 2.34,
+      "height": 0.76,
+      "collider": {
+        "halfX": 0.79,
+        "halfZ": 0.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": 6.64,
+      "z": -86.41,
+      "rotationY": 1.98,
+      "height": 0.51,
+      "collider": {
+        "halfX": 0.71,
+        "halfZ": 0.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -45.18,
+      "z": -82.1,
+      "rotationY": 2.9,
+      "height": 0.73,
+      "collider": {
+        "halfX": 0.63,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": 76.43,
+      "z": -2.73,
+      "rotationY": 1.66,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.43,
+        "halfZ": 0.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 69.71,
+      "z": -28.89,
+      "rotationY": 2.53,
+      "height": 0.72,
+      "collider": {
+        "halfX": 0.66,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": -46.6,
+      "z": -41.8,
+      "rotationY": 3.15,
+      "height": 0.55,
+      "collider": {
+        "halfX": 0.77,
+        "halfZ": 0.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 12.9,
+      "z": 46.69,
+      "rotationY": 3.88,
+      "height": 1.03,
+      "collider": {
+        "halfX": 0.94,
+        "halfZ": 0.93
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": 28.77,
+      "z": 58.81,
+      "rotationY": 3.42,
+      "height": 1.54,
+      "collider": {
+        "halfX": 1.39,
+        "halfZ": 1.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": 79.53,
+      "z": 43.42,
+      "rotationY": 2.52,
+      "height": 0.48,
+      "collider": {
+        "halfX": 0.92,
+        "halfZ": 0.92
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": 46.64,
+      "z": 37.98,
+      "rotationY": 3.17,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.74,
+        "halfZ": 0.77
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": -43.08,
+      "z": -32.83,
+      "rotationY": 2.49,
+      "height": 0.57,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 1.1
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 9.06,
+      "z": 50.04,
+      "rotationY": 1.95,
+      "height": 0.85,
+      "collider": {
+        "halfX": 0.66,
+        "halfZ": 0.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": 23.65,
+      "z": 76.33,
+      "rotationY": 6.09,
+      "height": 0.71,
+      "collider": {
+        "halfX": 0.59,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": -47.99,
+      "z": 11.24,
+      "rotationY": 5.19,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.93,
+        "halfZ": 0.93
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": 91.32,
+      "z": -2,
+      "rotationY": 1.9,
+      "height": 0.76,
+      "collider": {
+        "halfX": 1.03,
+        "halfZ": 1.01
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": -90.94,
+      "z": 35.73,
+      "rotationY": 3.18,
+      "height": 0.49,
+      "collider": {
+        "halfX": 0.71,
+        "halfZ": 0.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -66.2,
+      "z": -10.66,
+      "rotationY": 3.54,
+      "height": 0.54,
+      "collider": {
+        "halfX": 0.74,
+        "halfZ": 0.75
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -43.59,
+      "z": -13.34,
+      "rotationY": 0.37,
+      "height": 1.26,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -54.06,
+      "z": -88.11,
+      "rotationY": 4.39,
+      "height": 0.77,
+      "collider": {
+        "halfX": 1.04,
+        "halfZ": 1.02
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -53.45,
+      "z": -2.81,
+      "rotationY": 5.5,
+      "height": 0.58,
+      "collider": {
+        "halfX": 1.21,
+        "halfZ": 1.21
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": 14.2,
+      "z": -85.47,
+      "rotationY": 4.24,
+      "height": 1.34,
+      "collider": {
+        "halfX": 1.31,
+        "halfZ": 1.31
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 33.27,
+      "z": -2.98,
+      "rotationY": 2.86,
+      "height": 0.64,
+      "collider": {
+        "halfX": 0.56,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -61.96,
+      "z": -53.35,
+      "rotationY": 4.86,
+      "height": 0.96,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -73.4,
+      "z": 25.16,
+      "rotationY": 3.39,
+      "height": 0.6,
+      "collider": {
+        "halfX": 1.06,
+        "halfZ": 1.09
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": -18.48,
+      "z": 81,
+      "rotationY": 1.22,
+      "height": 1.47,
+      "collider": {
+        "halfX": 1.37,
+        "halfZ": 1.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -80.32,
+      "z": 8.28,
+      "rotationY": 4.82,
+      "height": 1.09,
+      "collider": {
+        "halfX": 0.67,
+        "halfZ": 0.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": -57.62,
+      "z": -80.63,
+      "rotationY": 1.63,
+      "height": 0.45,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": -24.34,
+      "z": -31.27,
+      "rotationY": 0.2,
+      "height": 0.71,
+      "collider": {
+        "halfX": 0.59,
+        "halfZ": 0.64
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": 65.28,
+      "z": 54.4,
+      "rotationY": 3.17,
+      "height": 2.83,
+      "collider": {
+        "halfX": 0.8,
+        "halfZ": 0.8
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": 87.24,
+      "z": -45.25,
+      "rotationY": 5,
+      "height": 0.55,
+      "collider": {
+        "halfX": 0.94,
+        "halfZ": 0.95
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": 48.26,
+      "z": -39.03,
+      "rotationY": 0.77,
+      "height": 1.22,
+      "collider": {
+        "halfX": 1.26,
+        "halfZ": 1.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -76.15,
+      "z": 17.46,
+      "rotationY": 1.71,
+      "height": 1.29,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.49
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": -84.02,
+      "z": -29.93,
+      "rotationY": 5.29,
+      "height": 2.64,
+      "collider": {
+        "halfX": 1.01,
+        "halfZ": 1.01
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -44.6,
+      "z": 57.74,
+      "rotationY": 1.25,
+      "height": 0.48,
+      "collider": {
+        "halfX": 0.9,
+        "halfZ": 0.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 18.3,
+      "z": -78.41,
+      "rotationY": 0.76,
+      "height": 1.05,
+      "collider": {
+        "halfX": 0.96,
+        "halfZ": 0.95
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 29.9,
+      "z": -45.79,
+      "rotationY": 3.21,
+      "height": 0.68,
+      "collider": {
+        "halfX": 0.53,
+        "halfZ": 0.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 9.68,
+      "z": 44.46,
+      "rotationY": 4.59,
+      "height": 0.83,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 0.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 62.35,
+      "z": -27.77,
+      "rotationY": 0.75,
+      "height": 0.83,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.75
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -9.42,
+      "z": 40.93,
+      "rotationY": 1.45,
+      "height": 0.87,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.71
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -4.55,
+      "z": 84.74,
+      "rotationY": 4.9,
+      "height": 0.47,
+      "collider": {
+        "halfX": 0.82,
+        "halfZ": 0.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": 87.32,
+      "z": 24.47,
+      "rotationY": 0.83,
+      "height": 0.73,
+      "collider": {
+        "halfX": 1.09,
+        "halfZ": 1.09
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -40.77,
+      "z": -40.66,
+      "rotationY": 4.75,
+      "height": 1.03,
+      "collider": {
+        "halfX": 0.36,
+        "halfZ": 0.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 29.62,
+      "z": 81.14,
+      "rotationY": 3.43,
+      "height": 0.85,
+      "collider": {
+        "halfX": 0.74,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -13.07,
+      "z": 65.96,
+      "rotationY": 0.06,
+      "height": 0.46,
+      "collider": {
+        "halfX": 0.7,
+        "halfZ": 0.73
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": 69.89,
+      "z": 65.37,
+      "rotationY": 0.85,
+      "height": 0.78,
+      "collider": {
+        "halfX": 1.03,
+        "halfZ": 1.04
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": 68.42,
+      "z": 69.97,
+      "rotationY": 3.6,
+      "height": 1.19,
+      "collider": {
+        "halfX": 0.53,
+        "halfZ": 0.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -27.7,
+      "z": -34.75,
+      "rotationY": 4.69,
+      "height": 0.57,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": 40.89,
+      "z": 0.5,
+      "rotationY": 4.55,
+      "height": 0.67,
+      "collider": {
+        "halfX": 0.36,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": 17.35,
+      "z": 6.09,
+      "rotationY": 0.53,
+      "height": 0.59,
+      "collider": {
+        "halfX": 1.18,
+        "halfZ": 1.19
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -21.77,
+      "z": 26.07,
+      "rotationY": 5.88,
+      "height": 1.08,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": -52.34,
+      "z": -60.28,
+      "rotationY": 0.02,
+      "height": 0.62,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.29
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": 10.55,
+      "z": -18.69,
+      "rotationY": 3.6,
+      "height": 1.18,
+      "collider": {
+        "halfX": 0.53,
+        "halfZ": 0.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -8.69,
+      "z": -27.69,
+      "rotationY": 4.97,
+      "height": 0.69,
+      "collider": {
+        "halfX": 0.75,
+        "halfZ": 0.83
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -49.63,
+      "z": 35.12,
+      "rotationY": 1.75,
+      "height": 0.82,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.95
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": 25.77,
+      "z": -87.53,
+      "rotationY": 4.32,
+      "height": 0.49,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 0.93
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -42.11,
+      "z": -63.13,
+      "rotationY": 1.41,
+      "height": 0.93,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.77
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -40.81,
+      "z": -0.1,
+      "rotationY": 3.76,
+      "height": 0.5,
+      "collider": {
+        "halfX": 1.02,
+        "halfZ": 1.03
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": 33.5,
+      "z": -78.79,
+      "rotationY": 4.54,
+      "height": 1.17,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": -73.52,
+      "z": -49.54,
+      "rotationY": 0.43,
+      "height": 0.78,
+      "collider": {
+        "halfX": 0.74,
+        "halfZ": 0.77
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -73.94,
+      "z": 10.02,
+      "rotationY": 2.32,
+      "height": 1.17,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": -21.81,
+      "z": 39.5,
+      "rotationY": 3.75,
+      "height": 0.82,
+      "collider": {
+        "halfX": 0.59,
+        "halfZ": 0.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 69.98,
+      "z": 11.36,
+      "rotationY": 1.61,
+      "height": 0.84,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 7.11,
+      "z": -13.8,
+      "rotationY": 5.09,
+      "height": 0.81,
+      "collider": {
+        "halfX": 0.63,
+        "halfZ": 0.73
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -42.05,
+      "z": 23.57,
+      "rotationY": 3.52,
+      "height": 1.27,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 72.9,
+      "z": -28.21,
+      "rotationY": 2,
+      "height": 0.86,
+      "collider": {
+        "halfX": 0.69,
+        "halfZ": 0.78
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": 23.56,
+      "z": -64.68,
+      "rotationY": 0.38,
+      "height": 0.72,
+      "collider": {
+        "halfX": 0.67,
+        "halfZ": 0.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": 48.47,
+      "z": -54.65,
+      "rotationY": 2.81,
+      "height": 0.61,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": 43.11,
+      "z": -52.57,
+      "rotationY": 4.72,
+      "height": 0.83,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -69.03,
+      "z": -40.36,
+      "rotationY": 1.78,
+      "height": 0.75,
+      "collider": {
+        "halfX": 0.94,
+        "halfZ": 0.93
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": -74.79,
+      "z": 25.89,
+      "rotationY": 3.25,
+      "height": 0.78,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": -36.32,
+      "z": -5.2,
+      "rotationY": 0.71,
+      "height": 0.72,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -58.89,
+      "z": -79.52,
+      "rotationY": 1.48,
+      "height": 0.84,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 24.23,
+      "z": 63.56,
+      "rotationY": 5.58,
+      "height": 0.93,
+      "collider": {
+        "halfX": 0.86,
+        "halfZ": 0.83
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": 38.15,
+      "z": 67.84,
+      "rotationY": 2.72,
+      "height": 2.52,
+      "collider": {
+        "halfX": 0.92,
+        "halfZ": 0.92
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 87.43,
+      "z": -22.02,
+      "rotationY": 3.06,
+      "height": 0.96,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": -6.4,
+      "z": 64.61,
+      "rotationY": 4.81,
+      "height": 2.39,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 0.72
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": -51.68,
+      "z": -37.61,
+      "rotationY": 0.31,
+      "height": 0.59,
+      "collider": {
+        "halfX": 1.08,
+        "halfZ": 1.11
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": 8.54,
+      "z": 26.24,
+      "rotationY": 4.58,
+      "height": 0.64,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": 65.11,
+      "z": 32.7,
+      "rotationY": 5.85,
+      "height": 0.75,
+      "collider": {
+        "halfX": 0.96,
+        "halfZ": 0.91
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": 50.32,
+      "z": 80.73,
+      "rotationY": 5.15,
+      "height": 2.64,
+      "collider": {
+        "halfX": 0.97,
+        "halfZ": 0.97
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -22.02,
+      "z": 64.38,
+      "rotationY": 2.89,
+      "height": 0.77,
+      "collider": {
+        "halfX": 0.92,
+        "halfZ": 0.84
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-008/inferno-mound-008.glb",
+      "x": 10.01,
+      "z": 75.46,
+      "rotationY": 4.05,
+      "height": 0.49,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 0.95
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -63.57,
+      "z": 41.15,
+      "rotationY": 2.27,
+      "height": 1.23,
+      "collider": {
+        "halfX": 0.58,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": 52.06,
+      "z": 72.75,
+      "rotationY": 4.19,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": -63.39,
+      "z": 61.95,
+      "rotationY": 0.39,
+      "height": 2.34,
+      "collider": {
+        "halfX": 0.84,
+        "halfZ": 0.84
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -61.66,
+      "z": -23.53,
+      "rotationY": 3.41,
+      "height": 0.69,
+      "collider": {
+        "halfX": 0.89,
+        "halfZ": 0.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 20.86,
+      "z": -76.83,
+      "rotationY": 2.23,
+      "height": 0.82,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 0.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": 26.16,
+      "z": 52.05,
+      "rotationY": 0.63,
+      "height": 1.11,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -56.63,
+      "z": -6.1,
+      "rotationY": 2.17,
+      "height": 0.86,
+      "collider": {
+        "halfX": 1.11,
+        "halfZ": 1.14
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": -32.28,
+      "z": 42.16,
+      "rotationY": 0.13,
+      "height": 2.41,
+      "collider": {
+        "halfX": 0.74,
+        "halfZ": 0.74
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": 35.71,
+      "z": 2.62,
+      "rotationY": 3.7,
+      "height": 0.82,
+      "collider": {
+        "halfX": 0.58,
+        "halfZ": 0.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -22.9,
+      "z": -72.69,
+      "rotationY": 5.55,
+      "height": 0.64,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.84
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": 46.35,
+      "z": -58.49,
+      "rotationY": 3.97,
+      "height": 0.47,
+      "collider": {
+        "halfX": 0.98,
+        "halfZ": 0.97
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": 75.6,
+      "z": 0.83,
+      "rotationY": 3.12,
+      "height": 0.75,
+      "collider": {
+        "halfX": 0.42,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -12.35,
+      "z": -10.05,
+      "rotationY": 3.81,
+      "height": 0.66,
+      "collider": {
+        "halfX": 0.88,
+        "halfZ": 0.86
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": -41.35,
+      "z": 68.39,
+      "rotationY": 2.57,
+      "height": 0.84,
+      "collider": {
+        "halfX": 0.84,
+        "halfZ": 0.86
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": -54.75,
+      "z": -85.7,
+      "rotationY": 2.14,
+      "height": 1.37,
+      "collider": {
+        "halfX": 1.38,
+        "halfZ": 1.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 19.34,
+      "z": 1.72,
+      "rotationY": 1.17,
+      "height": 0.97,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.87
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": 47.48,
+      "z": 43.92,
+      "rotationY": 5.95,
+      "height": 0.69,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -39.41,
+      "z": 50.28,
+      "rotationY": 3.16,
+      "height": 0.69,
+      "collider": {
+        "halfX": 0.71,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": -11.55,
+      "z": 34.07,
+      "rotationY": 5.95,
+      "height": 0.62,
+      "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": 7.81,
+      "z": -71.6,
+      "rotationY": 1.33,
+      "height": 0.64,
+      "collider": {
+        "halfX": 0.69,
+        "halfZ": 0.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": -56.21,
+      "z": 62.47,
+      "rotationY": 2.98,
+      "height": 1.39,
+      "collider": {
+        "halfX": 1.16,
+        "halfZ": 1.16
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 25.97,
+      "z": -79.03,
+      "rotationY": 6.01,
+      "height": 0.98,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.71
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": 6.47,
+      "z": -36.44,
+      "rotationY": 1.64,
+      "height": 1.46,
+      "collider": {
+        "halfX": 1.13,
+        "halfZ": 1.13
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": 34.96,
+      "z": -8.62,
+      "rotationY": 1.77,
+      "height": 1.26,
+      "collider": {
+        "halfX": 1.08,
+        "halfZ": 1.08
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 76.09,
+      "z": 32.41,
+      "rotationY": 2.86,
+      "height": 0.74,
+      "collider": {
+        "halfX": 0.64,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 26.18,
+      "z": -13.38,
+      "rotationY": 0.48,
+      "height": 0.81,
+      "collider": {
+        "halfX": 0.74,
+        "halfZ": 0.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 77.46,
+      "z": -12.29,
+      "rotationY": 3.87,
+      "height": 0.68,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -81.17,
+      "z": 40.82,
+      "rotationY": 2.91,
+      "height": 1.19,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": 4.51,
+      "z": 83.21,
+      "rotationY": 2.62,
+      "height": 0.9,
+      "collider": {
+        "halfX": 0.63,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -21.66,
+      "z": 69.43,
+      "rotationY": 0.08,
+      "height": 0.7,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 9.34,
+      "z": -17.44,
+      "rotationY": 5.68,
+      "height": 0.62,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -62.23,
+      "z": -79.53,
+      "rotationY": 4.22,
+      "height": 1.05,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -51.05,
+      "z": -79.81,
+      "rotationY": 4.05,
+      "height": 0.55,
+      "collider": {
+        "halfX": 0.82,
+        "halfZ": 0.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": -29.03,
+      "z": 70.69,
+      "rotationY": 6,
+      "height": 2.36,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -8.4,
+      "z": 69.31,
+      "rotationY": 1.05,
+      "height": 1.28,
+      "collider": {
+        "halfX": 0.58,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": -27.61,
+      "z": 81.47,
+      "rotationY": 4.68,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.7,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": 67.95,
+      "z": 51.6,
+      "rotationY": 1.79,
+      "height": 1.38,
+      "collider": {
+        "halfX": 1.2,
+        "halfZ": 1.2
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-003/inferno-grass-003.glb",
+      "x": -92.01,
+      "z": -35.89,
+      "rotationY": 4.52,
+      "height": 0.76,
+      "collider": {
+        "halfX": 0.68,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb",
+      "x": -13.03,
+      "z": -84.82,
+      "rotationY": 3.63,
+      "height": 2.68,
+      "collider": {
+        "halfX": 1,
+        "halfZ": 1
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": 89.37,
+      "z": 30.7,
+      "rotationY": 4.52,
+      "height": 0.57,
+      "collider": {
+        "halfX": 1,
+        "halfZ": 0.97
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -6.99,
+      "z": 80.84,
+      "rotationY": 2.59,
+      "height": 1.01,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -22.01,
+      "z": -4.74,
+      "rotationY": 1.7,
+      "height": 1.09,
+      "collider": {
+        "halfX": 0.68,
+        "halfZ": 0.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -90.52,
+      "z": -15.16,
+      "rotationY": 2.33,
+      "height": 1.01,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-grass-001/inferno-grass-001.glb",
+      "x": -76.96,
+      "z": -12.19,
+      "rotationY": 2.67,
+      "height": 0.87,
+      "collider": {
+        "halfX": 0.61,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-003/inferno-rock-small-003.glb",
+      "x": -15.91,
+      "z": 56.23,
+      "rotationY": 4.48,
+      "height": 0.58,
+      "collider": {
+        "halfX": 0.74,
+        "halfZ": 0.73
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-vase-002/inferno-vase-002.glb",
+      "x": -13.06,
+      "z": -41.4,
+      "rotationY": 6.07,
+      "height": 1.12,
+      "collider": {
+        "halfX": 0.44,
+        "halfZ": 0.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": 49.86,
+      "z": 10.43,
+      "rotationY": 3.63,
+      "height": 0.82,
+      "collider": {
+        "halfX": 0.75,
+        "halfZ": 0.68
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -16.52,
+      "z": 74.89,
+      "rotationY": 1.46,
+      "height": 0.68,
+      "collider": {
+        "halfX": 0.66,
+        "halfZ": 0.75
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-base-small-001/inferno-base-small-001.glb",
+      "x": 71.91,
+      "z": -22.11,
+      "rotationY": 0.41,
+      "height": 1.44,
+      "collider": {
+        "halfX": 1.38,
+        "halfZ": 1.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": -76.08,
+      "z": -7.62,
+      "rotationY": 1.66,
+      "height": 0.6,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-rock-small-002/inferno-rock-small-002.glb",
+      "x": 13.91,
+      "z": 77.51,
+      "rotationY": 1.92,
+      "height": 0.62,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 0.77
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-stone-small-001/inferno-stone-small-001.glb",
+      "x": -67.73,
+      "z": -3.16,
+      "rotationY": 0.37,
+      "height": 1.06,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 0.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-mound-005/inferno-mound-005.glb",
+      "x": 84.36,
+      "z": 47.43,
+      "rotationY": 3.67,
+      "height": 0.55,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 1.11
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-001/inferno-gem-001.glb",
+      "x": 5.71,
+      "z": 32.39,
+      "rotationY": 1.46,
+      "height": 0.55,
+      "collider": {
+        "halfX": 0.14,
+        "halfZ": 0.27
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-003/inferno-gem-003.glb",
+      "x": 31.75,
+      "z": 36.67,
+      "rotationY": 6.27,
+      "height": 0.68,
+      "collider": {
+        "halfX": 0.14,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gold-pile-big-001/inferno-gold-pile-big-001.glb",
+      "x": 88.22,
+      "z": 18.38,
+      "rotationY": 5.2,
+      "height": 0.87,
+      "collider": {
+        "halfX": 1.15,
+        "halfZ": 1.18
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-001/inferno-gem-001.glb",
+      "x": 70.79,
+      "z": -17.84,
+      "rotationY": 1.42,
+      "height": 0.59,
+      "collider": {
+        "halfX": 0.16,
+        "halfZ": 0.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-001/inferno-gem-001.glb",
+      "x": 35.28,
+      "z": 72.6,
+      "rotationY": 5.7,
+      "height": 0.67,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.29
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-003/inferno-gem-003.glb",
+      "x": -28.01,
+      "z": -85.18,
+      "rotationY": 0.13,
+      "height": 0.77,
+      "collider": {
+        "halfX": 0.18,
+        "halfZ": 0.18
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-001/inferno-gem-001.glb",
+      "x": 24.62,
+      "z": 76.89,
+      "rotationY": 1.62,
+      "height": 0.52,
+      "collider": {
+        "halfX": 0.12,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-001/inferno-gem-001.glb",
+      "x": -82.4,
+      "z": -48.94,
+      "rotationY": 5.02,
+      "height": 0.53,
+      "collider": {
+        "halfX": 0.18,
+        "halfZ": 0.28
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-001/inferno-gem-001.glb",
+      "x": -29.52,
+      "z": -90.38,
+      "rotationY": 2.65,
+      "height": 0.63,
+      "collider": {
+        "halfX": 0.33,
+        "halfZ": 0.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gold-pile-big-001/inferno-gold-pile-big-001.glb",
+      "x": -41.08,
+      "z": 37.54,
+      "rotationY": 5.77,
+      "height": 0.76,
+      "collider": {
+        "halfX": 1.04,
+        "halfZ": 1.02
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-001/inferno-gem-001.glb",
+      "x": 30.26,
+      "z": 77.59,
+      "rotationY": 5.76,
+      "height": 0.66,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.28
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-001/inferno-gem-001.glb",
+      "x": -17.26,
+      "z": -69.64,
+      "rotationY": 0.11,
+      "height": 0.56,
+      "collider": {
+        "halfX": 0.28,
+        "halfZ": 0.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-001/inferno-gem-001.glb",
+      "x": -23.02,
+      "z": 3.98,
+      "rotationY": 4.89,
+      "height": 0.56,
+      "collider": {
+        "halfX": 0.16,
+        "halfZ": 0.29
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gold-pile-big-001/inferno-gold-pile-big-001.glb",
+      "x": 49.29,
+      "z": 48.18,
+      "rotationY": 5.15,
+      "height": 0.75,
+      "collider": {
+        "halfX": 0.98,
+        "halfZ": 1
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-003/inferno-gem-003.glb",
+      "x": 14.45,
+      "z": -24.1,
+      "rotationY": 5.27,
+      "height": 0.74,
+      "collider": {
+        "halfX": 0.21,
+        "halfZ": 0.21
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gold-pile-big-001/inferno-gold-pile-big-001.glb",
+      "x": 46.76,
+      "z": -1.37,
+      "rotationY": 4.43,
+      "height": 0.88,
+      "collider": {
+        "halfX": 1.06,
+        "halfZ": 1.1
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-001/inferno-gem-001.glb",
+      "x": -82.93,
+      "z": 44.83,
+      "rotationY": 2,
+      "height": 0.64,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.33
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-003/inferno-gem-003.glb",
+      "x": 81.53,
+      "z": -1.45,
+      "rotationY": 3.19,
+      "height": 0.62,
+      "collider": {
+        "halfX": 0.13,
+        "halfZ": 0.14
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-001/inferno-gem-001.glb",
+      "x": 85.82,
+      "z": -61.74,
+      "rotationY": 1.05,
+      "height": 0.68,
+      "collider": {
+        "halfX": 0.28,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/inferno-gem-003/inferno-gem-003.glb",
+      "x": -14.69,
+      "z": 75.33,
+      "rotationY": 2.88,
+      "height": 0.71,
+      "collider": {
+        "halfX": 0.18,
+        "halfZ": 0.18
+      },
+      "fade": true
+    }
+  ],
+  "traffic": {
+    "waypoints": [],
+    "links": [],
+    "cars": []
+  },
+  "colliders": [],
+  "atms": [],
+  "wardrobes": [],
+  "sections": [],
+  "grassPatches": [],
+  "secrets": [],
+  "sounds": [],
+  "grassNoise": {
+    "centre": {
+      "x": 0,
+      "z": 0
+    },
+    "scale": 0.2,
+    "rings": [
+      {
+        "upTo": 999,
+        "mix": {}
+      }
+    ]
+  },
+  "people": {
+    "areas": [
+      {
+        "x": 0,
+        "z": 17.5,
+        "width": 125,
+        "depth": 5,
+        "count": 10
+      },
+      {
+        "x": 0,
+        "z": -55,
+        "width": 27.5,
+        "depth": 17.5,
+        "count": 5
+      }
+    ],
+    "waypoints": [
+      {
+        "id": "p0",
+        "x": -60,
+        "z": 20
+      },
+      {
+        "id": "p1",
+        "x": -45,
+        "z": 20
+      },
+      {
+        "id": "p2",
+        "x": -30,
+        "z": 20
+      },
+      {
+        "id": "p3",
+        "x": -15,
+        "z": 20
+      },
+      {
+        "id": "p4",
+        "x": 0,
+        "z": 20
+      },
+      {
+        "id": "p5",
+        "x": 15,
+        "z": 20
+      },
+      {
+        "id": "p6",
+        "x": 30,
+        "z": 20
+      },
+      {
+        "id": "p7",
+        "x": 45,
+        "z": 20
+      },
+      {
+        "id": "p8",
+        "x": 60,
+        "z": 20
+      },
+      {
+        "id": "pn",
+        "x": 0,
+        "z": -37.5
+      }
+    ],
+    "links": [
+      [
+        "p0",
+        "p1"
+      ],
+      [
+        "p1",
+        "p2"
+      ],
+      [
+        "p2",
+        "p3"
+      ],
+      [
+        "p3",
+        "p4"
+      ],
+      [
+        "p4",
+        "p5"
+      ],
+      [
+        "p5",
+        "p6"
+      ],
+      [
+        "p6",
+        "p7"
+      ],
+      [
+        "p7",
+        "p8"
+      ],
+      [
+        "p4",
+        "pn"
+      ]
+    ],
+    "walkers": 8
+  },
+  "soundSettings": {
+    "cars": {
+      "volume": 0.35,
+      "near": 3,
+      "far": 14
+    }
+  },
+  "goal": {
+    "model": "town/library/inferno-tower-big-001/inferno-tower-big-001.glb",
+    "radius": 8.5,
+    "name": "Dark Tower"
+  },
+  "round": {
+    "seconds": 170,
+    "rivals": 5
+  }
+}

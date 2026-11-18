@@ -15,9 +15,16 @@ const SCATTER: Partial<Record<PizzaLayer, { count: number; scale: number; turn: 
     onion: { count: 6, scale: 0.42, turn: 0 },
     tomato: { count: 5, scale: 0.42, turn: 0.6 },
     pickles: { count: 6, scale: 0.5, turn: 1.1 },
+    ham: { count: 7, scale: 1.0, turn: 0.3 },
+    broccoli: { count: 6, scale: 0.75, turn: 0.9 },
+    pineapple: { count: 7, scale: 0.9, turn: 1.6 },
+    fish: { count: 4, scale: 0.5, turn: 0.2 },
 };
 const SCATTER_Y = 0.235;
 const SCATTER_RADII = [0.5, 0.22, 0.56];
+
+/** Whether `layer` goes on a pizza as scattered pieces (its model's one piece: a slice, a chunk, a floret). */
+export const scatteredLayer = (layer: PizzaLayer): boolean => Boolean(SCATTER[layer]);
 
 /** One layer of a pizza, at its place on the dough base (the pizza's own units). */
 export function pizzaLayerModel(layer: PizzaLayer): THREE.Object3D {

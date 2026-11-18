@@ -7,18 +7,21 @@
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import SetupThree from 'core/scene/SetupThree';
-import { kitchenModel } from '../world/Models';
+import { kitchenModel, personModel } from '../world/Models';
 import { PART_MODELS, Part, PizzaTopping, ScoopFlavor, Sundae, SundaeSauce, SundaeTopping, pizzaRecipe } from '../data/Recipes';
 import { pizzaModel } from '../world/PizzaLook';
 import { sauceBowlModel, scoopModel, sundaeModel, toppingSourceModel } from '../world/SundaeLook';
 
-const SIZE = 192;
+/** The snapshots' size (px): drawn at up to twice their size on a big screen. */
+const SIZE = 320;
 const cache = new Map<string, PIXI.Texture>();
 
-function snapshot(object: THREE.Object3D, elevation: number): PIXI.Texture {
+/** `frame`: the part of its bounds to fill the picture with (unset: all of it; a portrait: the head and shoulders). */
+function snapshot(object: THREE.Object3D, elevation: number, frame?: (box: THREE.Box3) => THREE.Box3): PIXI.Texture {
     const renderer = SetupThree.renderer;
     object.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(object);
+    const whole = new THREE.Box3().setFromObject(object);
+    const box = frame ? frame(whole) : whole;
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     object.position.sub(center);
@@ -92,6 +95,9 @@ export function pizzaIcon(toppings: readonly PizzaTopping[], size: number): PIXI
             const plate = kitchenModel('plate');
             plate.scale.setScalar(2);
             const pizza = pizzaModel(pizzaRecipe(toppings));
+            // Each layer a hair over the one under it: the kit's sauce sits right on the dough's top, and in the
+            // picture's flat (orthographic) view they fought — the sauce showed on half the pizza.
+            pizza.children.forEach((layer, i) => (layer.position.y += i * 0.025));
             pizza.position.y = 0.08;
             dish.add(plate, pizza);
             texture = snapshot(dish, 1.0);
@@ -133,3 +139,28 @@ export const sundaeToppingIcon = (topping: SundaeTopping, size: number): PIXI.Sp
 
 /** A burger part's picture, or the whole burger's. */
 export const foodIcon = (id: Part | 'burger', size: number): PIXI.Sprite => modelIcon(id === 'burger' ? 'food_burger' : PART_MODELS[id], size);
+
+/**
+ * A customer's portrait (person `index`, as the restaurant's customers look): their head and shoulders, from the front.
+ * Drawn once per person (the models must be loaded: Models.loadModels loads the people too).
+ */
+export function portraitIcon(index: number, size: number): PIXI.Sprite {
+    const key = `portrait:${index}`;
+    let texture = cache.get(key);
+    if (!texture) {
+        try {
+            const person = personModel(index).model;
+            texture = snapshot(person, 0.12, (box) => {
+                const height = box.max.y - box.min.y;
+                return new THREE.Box3(new THREE.Vector3(box.min.x, box.max.y - height * 0.36, box.min.z), box.max.clone());
+            });
+        } catch {
+            texture = PIXI.Texture.WHITE;
+        }
+        cache.set(key, texture);
+    }
+    const sprite = new PIXI.Sprite(texture);
+    sprite.anchor.set(0.5);
+    sprite.width = sprite.height = size;
+    return sprite;
+}

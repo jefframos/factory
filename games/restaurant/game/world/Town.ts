@@ -243,6 +243,12 @@ export class Town {
                     child.geometry.dispose();
                     (child.material as THREE.Material).dispose();
                 }
+                // Water owns its geometry, material and edge texture.
+                if (child.userData.free) {
+                    child.userData.free();
+                    child.geometry.dispose();
+                    (child.material as THREE.Material).dispose();
+                }
             }
         });
         this.group.removeFromParent();

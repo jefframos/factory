@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev          # Start dev server on :9001 (reads GAME from .env)
+npm run dev          # Start dev server on :8000 (reads GAME from .env)
 npm run build        # Build current game to /dist
 npm run build-all    # Build all platform variants
 npm run assets       # Process all asset bundles (images, fonts, audio, JSON)

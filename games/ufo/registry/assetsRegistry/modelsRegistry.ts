@@ -1311,140 +1311,6 @@ const TownCity2Tree07 = {
 }
 } as const;
 
-const TownDesertPlantsBigSagebrush = {
-  id: 'desert-plants-big-sagebrush',
-  path: 'town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush',
-  fullPath: 'ufo/models/town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb',
-  format: 'glb',
-  nodes: {
-  "World": "world",
-  "Geometry0": "geometry_0"
-}
-} as const;
-
-const TownDesertPlantsCaliforniaFanPalm = {
-  id: 'desert-plants-california-fan-palm',
-  path: 'town/library/desert-plants-california-fan-palm/desert-plants-california-fan-palm',
-  fullPath: 'ufo/models/town/library/desert-plants-california-fan-palm/desert-plants-california-fan-palm.glb',
-  format: 'glb',
-  nodes: {
-  "World": "world",
-  "Geometry0": "geometry_0"
-}
-} as const;
-
-const TownDesertPlantsCenturyPlantAgave = {
-  id: 'desert-plants-century-plant-agave',
-  path: 'town/library/desert-plants-century-plant-agave/desert-plants-century-plant-agave',
-  fullPath: 'ufo/models/town/library/desert-plants-century-plant-agave/desert-plants-century-plant-agave.glb',
-  format: 'glb',
-  nodes: {
-  "World": "world",
-  "Geometry0": "geometry_0"
-}
-} as const;
-
-const TownDesertPlantsDatePalm = {
-  id: 'desert-plants-date-palm',
-  path: 'town/library/desert-plants-date-palm/desert-plants-date-palm',
-  fullPath: 'ufo/models/town/library/desert-plants-date-palm/desert-plants-date-palm.glb',
-  format: 'glb',
-  nodes: {
-  "World": "world",
-  "Geometry0": "geometry_0"
-}
-} as const;
-
-const TownDesertPlantsDeadDesertSnag = {
-  id: 'desert-plants-dead-desert-snag',
-  path: 'town/library/desert-plants-dead-desert-snag/desert-plants-dead-desert-snag',
-  fullPath: 'ufo/models/town/library/desert-plants-dead-desert-snag/desert-plants-dead-desert-snag.glb',
-  format: 'glb',
-  nodes: {
-  "AuxScene": "AuxScene",
-  "World": "world",
-  "Geometry0": "geometry_0"
-}
-} as const;
-
-const TownDesertPlantsGoldenBarrelCactus = {
-  id: 'desert-plants-golden-barrel-cactus',
-  path: 'town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus',
-  fullPath: 'ufo/models/town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus.glb',
-  format: 'glb',
-  nodes: {
-  "World": "world",
-  "Geometry0": "geometry_0"
-}
-} as const;
-
-const TownDesertPlantsHedgehogCactusCluster = {
-  id: 'desert-plants-hedgehog-cactus-cluster',
-  path: 'town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster',
-  fullPath: 'ufo/models/town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster.glb',
-  format: 'glb',
-  nodes: {
-  "World": "world",
-  "Geometry0": "geometry_0"
-}
-} as const;
-
-const TownDesertPlantsJoshuaTree = {
-  id: 'desert-plants-joshua-tree',
-  path: 'town/library/desert-plants-joshua-tree/desert-plants-joshua-tree',
-  fullPath: 'ufo/models/town/library/desert-plants-joshua-tree/desert-plants-joshua-tree.glb',
-  format: 'glb',
-  nodes: {
-  "AuxScene": "AuxScene",
-  "World": "world",
-  "Geometry0": "geometry_0"
-}
-} as const;
-
-const TownDesertPlantsOcotillo = {
-  id: 'desert-plants-ocotillo',
-  path: 'town/library/desert-plants-ocotillo/desert-plants-ocotillo',
-  fullPath: 'ufo/models/town/library/desert-plants-ocotillo/desert-plants-ocotillo.glb',
-  format: 'glb',
-  nodes: {
-  "World": "world",
-  "Geometry0": "geometry_0"
-}
-} as const;
-
-const TownDesertPlantsOrganPipeCactus = {
-  id: 'desert-plants-organ-pipe-cactus',
-  path: 'town/library/desert-plants-organ-pipe-cactus/desert-plants-organ-pipe-cactus',
-  fullPath: 'ufo/models/town/library/desert-plants-organ-pipe-cactus/desert-plants-organ-pipe-cactus.glb',
-  format: 'glb',
-  nodes: {
-  "World": "world",
-  "Geometry0": "geometry_0"
-}
-} as const;
-
-const TownDesertPlantsPricklyPearCactus = {
-  id: 'desert-plants-prickly-pear-cactus',
-  path: 'town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus',
-  fullPath: 'ufo/models/town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus.glb',
-  format: 'glb',
-  nodes: {
-  "World": "world",
-  "Geometry0": "geometry_0"
-}
-} as const;
-
-const TownDesertPlantsSaguaroCactus = {
-  id: 'desert-plants-saguaro-cactus',
-  path: 'town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus',
-  fullPath: 'ufo/models/town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb',
-  format: 'glb',
-  nodes: {
-  "World": "world",
-  "Geometry0": "geometry_0"
-}
-} as const;
-
 const TownFurnitureCactusMediumA = {
   id: 'furniture-cactus-medium-a',
   path: 'town/library/furniture-cactus-medium-a/furniture-cactus-medium-a',
@@ -1452,6 +1318,36 @@ const TownFurnitureCactusMediumA = {
   format: 'gltf',
   nodes: {
   "CactusMediumA": "cactus_medium_A"
+}
+} as const;
+
+const TownFurnitureCactusMediumB = {
+  id: 'furniture-cactus-medium-b',
+  path: 'town/library/furniture-cactus-medium-b/furniture-cactus-medium-b',
+  fullPath: 'ufo/models/town/library/furniture-cactus-medium-b/furniture-cactus-medium-b.gltf',
+  format: 'gltf',
+  nodes: {
+  "CactusMediumB": "cactus_medium_B"
+}
+} as const;
+
+const TownFurnitureCactusSmallA = {
+  id: 'furniture-cactus-small-a',
+  path: 'town/library/furniture-cactus-small-a/furniture-cactus-small-a',
+  fullPath: 'ufo/models/town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf',
+  format: 'gltf',
+  nodes: {
+  "CactusSmallA": "cactus_small_A"
+}
+} as const;
+
+const TownFurnitureCactusSmallB = {
+  id: 'furniture-cactus-small-b',
+  path: 'town/library/furniture-cactus-small-b/furniture-cactus-small-b',
+  fullPath: 'ufo/models/town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf',
+  format: 'gltf',
+  nodes: {
+  "CactusSmallB": "cactus_small_B"
 }
 } as const;
 
@@ -1524,6 +1420,450 @@ const TownHalloweenWagonHay = {
 }
 } as const;
 
+const TownInfernoAxe001 = {
+  id: 'inferno-axe-001',
+  path: 'town/library/inferno-axe-001/inferno-axe-001',
+  fullPath: 'ufo/models/town/library/inferno-axe-001/inferno-axe-001.glb',
+  format: 'glb',
+  nodes: {
+  "Axe001": "Axe_001"
+}
+} as const;
+
+const TownInfernoBaseSmall001 = {
+  id: 'inferno-base-small-001',
+  path: 'town/library/inferno-base-small-001/inferno-base-small-001',
+  fullPath: 'ufo/models/town/library/inferno-base-small-001/inferno-base-small-001.glb',
+  format: 'glb',
+  nodes: {
+  "BaseSmall001": "BaseSmall_001"
+}
+} as const;
+
+const TownInfernoBrazier002 = {
+  id: 'inferno-brazier-002',
+  path: 'town/library/inferno-brazier-002/inferno-brazier-002',
+  fullPath: 'ufo/models/town/library/inferno-brazier-002/inferno-brazier-002.glb',
+  format: 'glb',
+  nodes: {
+  "Brazier002": "Brazier_002",
+  "Coal002007": "Coal_002.007",
+  "Spike001008": "Spike_001.008"
+}
+} as const;
+
+const TownInfernoChestBig001 = {
+  id: 'inferno-chest-big-001',
+  path: 'town/library/inferno-chest-big-001/inferno-chest-big-001',
+  fullPath: 'ufo/models/town/library/inferno-chest-big-001/inferno-chest-big-001.glb',
+  format: 'glb',
+  nodes: {
+  "ChestBig001": "ChestBig_001",
+  "GoldPile002": "GoldPile_002",
+  "Lid002": "Lid_002"
+}
+} as const;
+
+const TownInfernoCliff004 = {
+  id: 'inferno-cliff-004',
+  path: 'town/library/inferno-cliff-004/inferno-cliff-004',
+  fullPath: 'ufo/models/town/library/inferno-cliff-004/inferno-cliff-004.glb',
+  format: 'glb',
+  nodes: {
+  "Cliff004": "Cliff_004"
+}
+} as const;
+
+const TownInfernoColumnBig001 = {
+  id: 'inferno-column-big-001',
+  path: 'town/library/inferno-column-big-001/inferno-column-big-001',
+  fullPath: 'ufo/models/town/library/inferno-column-big-001/inferno-column-big-001.glb',
+  format: 'glb',
+  nodes: {
+  "ColumnBig001": "ColumnBig_001"
+}
+} as const;
+
+const TownInfernoColumnBigBroken001 = {
+  id: 'inferno-column-big-broken-001',
+  path: 'town/library/inferno-column-big-broken-001/inferno-column-big-broken-001',
+  fullPath: 'ufo/models/town/library/inferno-column-big-broken-001/inferno-column-big-broken-001.glb',
+  format: 'glb',
+  nodes: {
+  "ColumnBigBroken001": "ColumnBigBroken_001"
+}
+} as const;
+
+const TownInfernoColumnBigBroken002 = {
+  id: 'inferno-column-big-broken-002',
+  path: 'town/library/inferno-column-big-broken-002/inferno-column-big-broken-002',
+  fullPath: 'ufo/models/town/library/inferno-column-big-broken-002/inferno-column-big-broken-002.glb',
+  format: 'glb',
+  nodes: {
+  "ColumnBigBroken002": "ColumnBigBroken_002"
+}
+} as const;
+
+const TownInfernoCrag001 = {
+  id: 'inferno-crag-001',
+  path: 'town/library/inferno-crag-001/inferno-crag-001',
+  fullPath: 'ufo/models/town/library/inferno-crag-001/inferno-crag-001.glb',
+  format: 'glb',
+  nodes: {
+  "Crag001": "Crag_001"
+}
+} as const;
+
+const TownInfernoCrag003 = {
+  id: 'inferno-crag-003',
+  path: 'town/library/inferno-crag-003/inferno-crag-003',
+  fullPath: 'ufo/models/town/library/inferno-crag-003/inferno-crag-003.glb',
+  format: 'glb',
+  nodes: {
+  "Crag003": "Crag_003"
+}
+} as const;
+
+const TownInfernoGem001 = {
+  id: 'inferno-gem-001',
+  path: 'town/library/inferno-gem-001/inferno-gem-001',
+  fullPath: 'ufo/models/town/library/inferno-gem-001/inferno-gem-001.glb',
+  format: 'glb',
+  nodes: {
+  "Gem001": "Gem_001"
+}
+} as const;
+
+const TownInfernoGem003 = {
+  id: 'inferno-gem-003',
+  path: 'town/library/inferno-gem-003/inferno-gem-003',
+  fullPath: 'ufo/models/town/library/inferno-gem-003/inferno-gem-003.glb',
+  format: 'glb',
+  nodes: {
+  "Gem003": "Gem_003"
+}
+} as const;
+
+const TownInfernoGoldPileBig001 = {
+  id: 'inferno-gold-pile-big-001',
+  path: 'town/library/inferno-gold-pile-big-001/inferno-gold-pile-big-001',
+  fullPath: 'ufo/models/town/library/inferno-gold-pile-big-001/inferno-gold-pile-big-001.glb',
+  format: 'glb',
+  nodes: {
+  "GoldPileBig001": "GoldPileBig_001"
+}
+} as const;
+
+const TownInfernoGoldPileSmall001 = {
+  id: 'inferno-gold-pile-small-001',
+  path: 'town/library/inferno-gold-pile-small-001/inferno-gold-pile-small-001',
+  fullPath: 'ufo/models/town/library/inferno-gold-pile-small-001/inferno-gold-pile-small-001.glb',
+  format: 'glb',
+  nodes: {
+  "GoldPileSmall001": "GoldPileSmall_001"
+}
+} as const;
+
+const TownInfernoGrass001 = {
+  id: 'inferno-grass-001',
+  path: 'town/library/inferno-grass-001/inferno-grass-001',
+  fullPath: 'ufo/models/town/library/inferno-grass-001/inferno-grass-001.glb',
+  format: 'glb',
+  nodes: {
+  "Grass001": "Grass_001"
+}
+} as const;
+
+const TownInfernoGrass003 = {
+  id: 'inferno-grass-003',
+  path: 'town/library/inferno-grass-003/inferno-grass-003',
+  fullPath: 'ufo/models/town/library/inferno-grass-003/inferno-grass-003.glb',
+  format: 'glb',
+  nodes: {
+  "Grass003": "Grass_003"
+}
+} as const;
+
+const TownInfernoMound005 = {
+  id: 'inferno-mound-005',
+  path: 'town/library/inferno-mound-005/inferno-mound-005',
+  fullPath: 'ufo/models/town/library/inferno-mound-005/inferno-mound-005.glb',
+  format: 'glb',
+  nodes: {
+  "Mound005": "Mound_005"
+}
+} as const;
+
+const TownInfernoMound008 = {
+  id: 'inferno-mound-008',
+  path: 'town/library/inferno-mound-008/inferno-mound-008',
+  fullPath: 'ufo/models/town/library/inferno-mound-008/inferno-mound-008.glb',
+  format: 'glb',
+  nodes: {
+  "Mound008": "Mound_008"
+}
+} as const;
+
+const TownInfernoPedestalBig001 = {
+  id: 'inferno-pedestal-big-001',
+  path: 'town/library/inferno-pedestal-big-001/inferno-pedestal-big-001',
+  fullPath: 'ufo/models/town/library/inferno-pedestal-big-001/inferno-pedestal-big-001.glb',
+  format: 'glb',
+  nodes: {
+  "PedestalBig001": "PedestalBig_001"
+}
+} as const;
+
+const TownInfernoRockBig001 = {
+  id: 'inferno-rock-big-001',
+  path: 'town/library/inferno-rock-big-001/inferno-rock-big-001',
+  fullPath: 'ufo/models/town/library/inferno-rock-big-001/inferno-rock-big-001.glb',
+  format: 'glb',
+  nodes: {
+  "RockBig001": "RockBig_001"
+}
+} as const;
+
+const TownInfernoRockBig003 = {
+  id: 'inferno-rock-big-003',
+  path: 'town/library/inferno-rock-big-003/inferno-rock-big-003',
+  fullPath: 'ufo/models/town/library/inferno-rock-big-003/inferno-rock-big-003.glb',
+  format: 'glb',
+  nodes: {
+  "RockBig003": "RockBig_003"
+}
+} as const;
+
+const TownInfernoRockBig004 = {
+  id: 'inferno-rock-big-004',
+  path: 'town/library/inferno-rock-big-004/inferno-rock-big-004',
+  fullPath: 'ufo/models/town/library/inferno-rock-big-004/inferno-rock-big-004.glb',
+  format: 'glb',
+  nodes: {
+  "RockBig004": "RockBig_004"
+}
+} as const;
+
+const TownInfernoRockMid001 = {
+  id: 'inferno-rock-mid-001',
+  path: 'town/library/inferno-rock-mid-001/inferno-rock-mid-001',
+  fullPath: 'ufo/models/town/library/inferno-rock-mid-001/inferno-rock-mid-001.glb',
+  format: 'glb',
+  nodes: {
+  "RockMid001": "RockMid_001"
+}
+} as const;
+
+const TownInfernoRockMid002 = {
+  id: 'inferno-rock-mid-002',
+  path: 'town/library/inferno-rock-mid-002/inferno-rock-mid-002',
+  fullPath: 'ufo/models/town/library/inferno-rock-mid-002/inferno-rock-mid-002.glb',
+  format: 'glb',
+  nodes: {
+  "RockMid002": "RockMid_002"
+}
+} as const;
+
+const TownInfernoRockMid003 = {
+  id: 'inferno-rock-mid-003',
+  path: 'town/library/inferno-rock-mid-003/inferno-rock-mid-003',
+  fullPath: 'ufo/models/town/library/inferno-rock-mid-003/inferno-rock-mid-003.glb',
+  format: 'glb',
+  nodes: {
+  "RockMid003": "RockMid_003"
+}
+} as const;
+
+const TownInfernoRockMid004 = {
+  id: 'inferno-rock-mid-004',
+  path: 'town/library/inferno-rock-mid-004/inferno-rock-mid-004',
+  fullPath: 'ufo/models/town/library/inferno-rock-mid-004/inferno-rock-mid-004.glb',
+  format: 'glb',
+  nodes: {
+  "RockMid004": "RockMid_004"
+}
+} as const;
+
+const TownInfernoRockSmall001 = {
+  id: 'inferno-rock-small-001',
+  path: 'town/library/inferno-rock-small-001/inferno-rock-small-001',
+  fullPath: 'ufo/models/town/library/inferno-rock-small-001/inferno-rock-small-001.glb',
+  format: 'glb',
+  nodes: {
+  "RockSmall001": "RockSmall_001"
+}
+} as const;
+
+const TownInfernoRockSmall002 = {
+  id: 'inferno-rock-small-002',
+  path: 'town/library/inferno-rock-small-002/inferno-rock-small-002',
+  fullPath: 'ufo/models/town/library/inferno-rock-small-002/inferno-rock-small-002.glb',
+  format: 'glb',
+  nodes: {
+  "RockSmall002": "RockSmall_002"
+}
+} as const;
+
+const TownInfernoRockSmall003 = {
+  id: 'inferno-rock-small-003',
+  path: 'town/library/inferno-rock-small-003/inferno-rock-small-003',
+  fullPath: 'ufo/models/town/library/inferno-rock-small-003/inferno-rock-small-003.glb',
+  format: 'glb',
+  nodes: {
+  "RockSmall003": "RockSmall_003"
+}
+} as const;
+
+const TownInfernoStairsMiddle001 = {
+  id: 'inferno-stairs-middle-001',
+  path: 'town/library/inferno-stairs-middle-001/inferno-stairs-middle-001',
+  fullPath: 'ufo/models/town/library/inferno-stairs-middle-001/inferno-stairs-middle-001.glb',
+  format: 'glb',
+  nodes: {
+  "StairsMiddle001": "StairsMiddle_001"
+}
+} as const;
+
+const TownInfernoStatueKnight002 = {
+  id: 'inferno-statue-knight-002',
+  path: 'town/library/inferno-statue-knight-002/inferno-statue-knight-002',
+  fullPath: 'ufo/models/town/library/inferno-statue-knight-002/inferno-statue-knight-002.glb',
+  format: 'glb',
+  nodes: {
+  "StatueKnight002": "StatueKnight_002"
+}
+} as const;
+
+const TownInfernoStoneSmall001 = {
+  id: 'inferno-stone-small-001',
+  path: 'town/library/inferno-stone-small-001/inferno-stone-small-001',
+  fullPath: 'ufo/models/town/library/inferno-stone-small-001/inferno-stone-small-001.glb',
+  format: 'glb',
+  nodes: {
+  "StoneSmall001": "StoneSmall_001"
+}
+} as const;
+
+const TownInfernoTowerBig001 = {
+  id: 'inferno-tower-big-001',
+  path: 'town/library/inferno-tower-big-001/inferno-tower-big-001',
+  fullPath: 'ufo/models/town/library/inferno-tower-big-001/inferno-tower-big-001.glb',
+  format: 'glb',
+  nodes: {
+  "TowerBig001": "TowerBig_001"
+}
+} as const;
+
+const TownInfernoVase001 = {
+  id: 'inferno-vase-001',
+  path: 'town/library/inferno-vase-001/inferno-vase-001',
+  fullPath: 'ufo/models/town/library/inferno-vase-001/inferno-vase-001.glb',
+  format: 'glb',
+  nodes: {
+  "Vase001": "Vase_001"
+}
+} as const;
+
+const TownInfernoVase002 = {
+  id: 'inferno-vase-002',
+  path: 'town/library/inferno-vase-002/inferno-vase-002',
+  fullPath: 'ufo/models/town/library/inferno-vase-002/inferno-vase-002.glb',
+  format: 'glb',
+  nodes: {
+  "Vase002": "Vase_002"
+}
+} as const;
+
+const TownInfernoWellSmall001 = {
+  id: 'inferno-well-small-001',
+  path: 'town/library/inferno-well-small-001/inferno-well-small-001',
+  fullPath: 'ufo/models/town/library/inferno-well-small-001/inferno-well-small-001.glb',
+  format: 'glb',
+  nodes: {
+  "WellSmall001": "WellSmall_001"
+}
+} as const;
+
+const TownMedievalHexaBarrel = {
+  id: 'medieval-hexa-barrel',
+  path: 'town/library/medieval-hexa-barrel/medieval-hexa-barrel',
+  fullPath: 'ufo/models/town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf',
+  format: 'gltf',
+  nodes: {
+  "Barrel": "barrel"
+}
+} as const;
+
+const TownMedievalHexaBucketWater = {
+  id: 'medieval-hexa-bucket-water',
+  path: 'town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water',
+  fullPath: 'ufo/models/town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf',
+  format: 'gltf',
+  nodes: {
+  "BucketWater": "bucket_water"
+}
+} as const;
+
+const TownMedievalHexaBuildingArcheryrangeBlue = {
+  id: 'medieval-hexa-building-archeryrange-blue',
+  path: 'town/library/medieval-hexa-building-archeryrange-blue/medieval-hexa-building-archeryrange-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-archeryrange-blue/medieval-hexa-building-archeryrange-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingArcheryrangeBlue": "building_archeryrange_blue"
+}
+} as const;
+
+const TownMedievalHexaBuildingBarracksBlue = {
+  id: 'medieval-hexa-building-barracks-blue',
+  path: 'town/library/medieval-hexa-building-barracks-blue/medieval-hexa-building-barracks-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-barracks-blue/medieval-hexa-building-barracks-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingBarracksBlue": "building_barracks_blue"
+}
+} as const;
+
+const TownMedievalHexaBuildingBarracksGreen = {
+  id: 'medieval-hexa-building-barracks-green',
+  path: 'town/library/medieval-hexa-building-barracks-green/medieval-hexa-building-barracks-green',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-barracks-green/medieval-hexa-building-barracks-green.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingBarracksGreen": "building_barracks_green"
+}
+} as const;
+
+const TownMedievalHexaBuildingBarracksRed = {
+  id: 'medieval-hexa-building-barracks-red',
+  path: 'town/library/medieval-hexa-building-barracks-red/medieval-hexa-building-barracks-red',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-barracks-red/medieval-hexa-building-barracks-red.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingBarracksRed": "building_barracks_red"
+}
+} as const;
+
+const TownMedievalHexaBuildingBlacksmithBlue = {
+  id: 'medieval-hexa-building-blacksmith-blue',
+  path: 'town/library/medieval-hexa-building-blacksmith-blue/medieval-hexa-building-blacksmith-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-blacksmith-blue/medieval-hexa-building-blacksmith-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingBlacksmithBlue": "building_blacksmith_blue"
+}
+} as const;
+
+const TownMedievalHexaBuildingBlacksmithRed = {
+  id: 'medieval-hexa-building-blacksmith-red',
+  path: 'town/library/medieval-hexa-building-blacksmith-red/medieval-hexa-building-blacksmith-red',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-blacksmith-red/medieval-hexa-building-blacksmith-red.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingBlacksmithRed": "building_blacksmith_red"
+}
+} as const;
+
 const TownMedievalHexaBuildingBlacksmithYellow = {
   id: 'medieval-hexa-building-blacksmith-yellow',
   path: 'town/library/medieval-hexa-building-blacksmith-yellow/medieval-hexa-building-blacksmith-yellow',
@@ -1531,6 +1871,66 @@ const TownMedievalHexaBuildingBlacksmithYellow = {
   format: 'gltf',
   nodes: {
   "BuildingBlacksmithYellow": "building_blacksmith_yellow"
+}
+} as const;
+
+const TownMedievalHexaBuildingCastleBlue = {
+  id: 'medieval-hexa-building-castle-blue',
+  path: 'town/library/medieval-hexa-building-castle-blue/medieval-hexa-building-castle-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-castle-blue/medieval-hexa-building-castle-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingCastleBlue": "building_castle_blue"
+}
+} as const;
+
+const TownMedievalHexaBuildingCastleGreen = {
+  id: 'medieval-hexa-building-castle-green',
+  path: 'town/library/medieval-hexa-building-castle-green/medieval-hexa-building-castle-green',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-castle-green/medieval-hexa-building-castle-green.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingCastleGreen": "building_castle_green"
+}
+} as const;
+
+const TownMedievalHexaBuildingCastleRed = {
+  id: 'medieval-hexa-building-castle-red',
+  path: 'town/library/medieval-hexa-building-castle-red/medieval-hexa-building-castle-red',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-castle-red/medieval-hexa-building-castle-red.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingCastleRed": "building_castle_red"
+}
+} as const;
+
+const TownMedievalHexaBuildingChurchBlue = {
+  id: 'medieval-hexa-building-church-blue',
+  path: 'town/library/medieval-hexa-building-church-blue/medieval-hexa-building-church-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-church-blue/medieval-hexa-building-church-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingChurchBlue": "building_church_blue"
+}
+} as const;
+
+const TownMedievalHexaBuildingChurchGreen = {
+  id: 'medieval-hexa-building-church-green',
+  path: 'town/library/medieval-hexa-building-church-green/medieval-hexa-building-church-green',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-church-green/medieval-hexa-building-church-green.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingChurchGreen": "building_church_green"
+}
+} as const;
+
+const TownMedievalHexaBuildingChurchRed = {
+  id: 'medieval-hexa-building-church-red',
+  path: 'town/library/medieval-hexa-building-church-red/medieval-hexa-building-church-red',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-church-red/medieval-hexa-building-church-red.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingChurchRed": "building_church_red"
 }
 } as const;
 
@@ -1544,6 +1944,56 @@ const TownMedievalHexaBuildingChurchYellow = {
 }
 } as const;
 
+const TownMedievalHexaBuildingDestroyed = {
+  id: 'medieval-hexa-building-destroyed',
+  path: 'town/library/medieval-hexa-building-destroyed/medieval-hexa-building-destroyed',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-destroyed/medieval-hexa-building-destroyed.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingDestroyed": "building_destroyed"
+}
+} as const;
+
+const TownMedievalHexaBuildingGrain = {
+  id: 'medieval-hexa-building-grain',
+  path: 'town/library/medieval-hexa-building-grain/medieval-hexa-building-grain',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-grain/medieval-hexa-building-grain.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingGrain": "building_grain"
+}
+} as const;
+
+const TownMedievalHexaBuildingHomeABlue = {
+  id: 'medieval-hexa-building-home-a-blue',
+  path: 'town/library/medieval-hexa-building-home-a-blue/medieval-hexa-building-home-a-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-home-a-blue/medieval-hexa-building-home-a-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingHomeABlue": "building_home_A_blue"
+}
+} as const;
+
+const TownMedievalHexaBuildingHomeAGreen = {
+  id: 'medieval-hexa-building-home-a-green',
+  path: 'town/library/medieval-hexa-building-home-a-green/medieval-hexa-building-home-a-green',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-home-a-green/medieval-hexa-building-home-a-green.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingHomeAGreen": "building_home_A_green"
+}
+} as const;
+
+const TownMedievalHexaBuildingHomeARed = {
+  id: 'medieval-hexa-building-home-a-red',
+  path: 'town/library/medieval-hexa-building-home-a-red/medieval-hexa-building-home-a-red',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-home-a-red/medieval-hexa-building-home-a-red.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingHomeARed": "building_home_A_red"
+}
+} as const;
+
 const TownMedievalHexaBuildingHomeAYellow = {
   id: 'medieval-hexa-building-home-a-yellow',
   path: 'town/library/medieval-hexa-building-home-a-yellow/medieval-hexa-building-home-a-yellow',
@@ -1554,6 +2004,36 @@ const TownMedievalHexaBuildingHomeAYellow = {
 }
 } as const;
 
+const TownMedievalHexaBuildingHomeBBlue = {
+  id: 'medieval-hexa-building-home-b-blue',
+  path: 'town/library/medieval-hexa-building-home-b-blue/medieval-hexa-building-home-b-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-home-b-blue/medieval-hexa-building-home-b-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingHomeBBlue": "building_home_B_blue"
+}
+} as const;
+
+const TownMedievalHexaBuildingHomeBGreen = {
+  id: 'medieval-hexa-building-home-b-green',
+  path: 'town/library/medieval-hexa-building-home-b-green/medieval-hexa-building-home-b-green',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-home-b-green/medieval-hexa-building-home-b-green.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingHomeBGreen": "building_home_B_green"
+}
+} as const;
+
+const TownMedievalHexaBuildingHomeBRed = {
+  id: 'medieval-hexa-building-home-b-red',
+  path: 'town/library/medieval-hexa-building-home-b-red/medieval-hexa-building-home-b-red',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-home-b-red/medieval-hexa-building-home-b-red.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingHomeBRed": "building_home_B_red"
+}
+} as const;
+
 const TownMedievalHexaBuildingHomeBYellow = {
   id: 'medieval-hexa-building-home-b-yellow',
   path: 'town/library/medieval-hexa-building-home-b-yellow/medieval-hexa-building-home-b-yellow',
@@ -1561,6 +2041,60 @@ const TownMedievalHexaBuildingHomeBYellow = {
   format: 'gltf',
   nodes: {
   "BuildingHomeBYellow": "building_home_B_yellow"
+}
+} as const;
+
+const TownMedievalHexaBuildingLumbermillGreen = {
+  id: 'medieval-hexa-building-lumbermill-green',
+  path: 'town/library/medieval-hexa-building-lumbermill-green/medieval-hexa-building-lumbermill-green',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-lumbermill-green/medieval-hexa-building-lumbermill-green.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingLumbermillGreen": "building_lumbermill_green",
+  "BuildingLumbermillSawGreen": "building_lumbermill_saw_green",
+  "BuildingLumbermillTopGreen": "building_lumbermill_top_green"
+}
+} as const;
+
+const TownMedievalHexaBuildingLumbermillRed = {
+  id: 'medieval-hexa-building-lumbermill-red',
+  path: 'town/library/medieval-hexa-building-lumbermill-red/medieval-hexa-building-lumbermill-red',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-lumbermill-red/medieval-hexa-building-lumbermill-red.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingLumbermillRed": "building_lumbermill_red",
+  "BuildingLumbermillSawRed": "building_lumbermill_saw_red",
+  "BuildingLumbermillTopRed": "building_lumbermill_top_red"
+}
+} as const;
+
+const TownMedievalHexaBuildingMarketBlue = {
+  id: 'medieval-hexa-building-market-blue',
+  path: 'town/library/medieval-hexa-building-market-blue/medieval-hexa-building-market-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-market-blue/medieval-hexa-building-market-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingMarketBlue": "building_market_blue"
+}
+} as const;
+
+const TownMedievalHexaBuildingMarketGreen = {
+  id: 'medieval-hexa-building-market-green',
+  path: 'town/library/medieval-hexa-building-market-green/medieval-hexa-building-market-green',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-market-green/medieval-hexa-building-market-green.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingMarketGreen": "building_market_green"
+}
+} as const;
+
+const TownMedievalHexaBuildingMarketRed = {
+  id: 'medieval-hexa-building-market-red',
+  path: 'town/library/medieval-hexa-building-market-red/medieval-hexa-building-market-red',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-market-red/medieval-hexa-building-market-red.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingMarketRed": "building_market_red"
 }
 } as const;
 
@@ -1584,6 +2118,56 @@ const TownMedievalHexaBuildingMineYellow = {
 }
 } as const;
 
+const TownMedievalHexaBuildingScaffolding = {
+  id: 'medieval-hexa-building-scaffolding',
+  path: 'town/library/medieval-hexa-building-scaffolding/medieval-hexa-building-scaffolding',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-scaffolding/medieval-hexa-building-scaffolding.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingScaffolding": "building_scaffolding"
+}
+} as const;
+
+const TownMedievalHexaBuildingStageA = {
+  id: 'medieval-hexa-building-stage-a',
+  path: 'town/library/medieval-hexa-building-stage-a/medieval-hexa-building-stage-a',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-stage-a/medieval-hexa-building-stage-a.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingStageA": "building_stage_A"
+}
+} as const;
+
+const TownMedievalHexaBuildingTavernBlue = {
+  id: 'medieval-hexa-building-tavern-blue',
+  path: 'town/library/medieval-hexa-building-tavern-blue/medieval-hexa-building-tavern-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-tavern-blue/medieval-hexa-building-tavern-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingTavernBlue": "building_tavern_blue"
+}
+} as const;
+
+const TownMedievalHexaBuildingTavernGreen = {
+  id: 'medieval-hexa-building-tavern-green',
+  path: 'town/library/medieval-hexa-building-tavern-green/medieval-hexa-building-tavern-green',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-tavern-green/medieval-hexa-building-tavern-green.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingTavernGreen": "building_tavern_green"
+}
+} as const;
+
+const TownMedievalHexaBuildingTavernRed = {
+  id: 'medieval-hexa-building-tavern-red',
+  path: 'town/library/medieval-hexa-building-tavern-red/medieval-hexa-building-tavern-red',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-tavern-red/medieval-hexa-building-tavern-red.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingTavernRed": "building_tavern_red"
+}
+} as const;
+
 const TownMedievalHexaBuildingTavernYellow = {
   id: 'medieval-hexa-building-tavern-yellow',
   path: 'town/library/medieval-hexa-building-tavern-yellow/medieval-hexa-building-tavern-yellow',
@@ -1591,6 +2175,28 @@ const TownMedievalHexaBuildingTavernYellow = {
   format: 'gltf',
   nodes: {
   "BuildingTavernYellow": "building_tavern_yellow"
+}
+} as const;
+
+const TownMedievalHexaBuildingTowerABlue = {
+  id: 'medieval-hexa-building-tower-a-blue',
+  path: 'town/library/medieval-hexa-building-tower-a-blue/medieval-hexa-building-tower-a-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-tower-a-blue/medieval-hexa-building-tower-a-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingTowerABlue": "building_tower_A_blue",
+  "BuildingTowerATopBlue": "building_tower_A_top_blue"
+}
+} as const;
+
+const TownMedievalHexaBuildingTowerARed = {
+  id: 'medieval-hexa-building-tower-a-red',
+  path: 'town/library/medieval-hexa-building-tower-a-red/medieval-hexa-building-tower-a-red',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-tower-a-red/medieval-hexa-building-tower-a-red.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingTowerARed": "building_tower_A_red",
+  "BuildingTowerATopRed": "building_tower_A_top_red"
 }
 } as const;
 
@@ -1605,6 +2211,70 @@ const TownMedievalHexaBuildingTowerAYellow = {
 }
 } as const;
 
+const TownMedievalHexaBuildingTowerBBlue = {
+  id: 'medieval-hexa-building-tower-b-blue',
+  path: 'town/library/medieval-hexa-building-tower-b-blue/medieval-hexa-building-tower-b-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-tower-b-blue/medieval-hexa-building-tower-b-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingTowerBBlue": "building_tower_B_blue",
+  "BuildingTowerBTopBlue": "building_tower_B_top_blue"
+}
+} as const;
+
+const TownMedievalHexaBuildingTowerBRed = {
+  id: 'medieval-hexa-building-tower-b-red',
+  path: 'town/library/medieval-hexa-building-tower-b-red/medieval-hexa-building-tower-b-red',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-tower-b-red/medieval-hexa-building-tower-b-red.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingTowerBRed": "building_tower_B_red",
+  "BuildingTowerBTopRed": "building_tower_B_top_red"
+}
+} as const;
+
+const TownMedievalHexaBuildingTowerCatapultBlue = {
+  id: 'medieval-hexa-building-tower-catapult-blue',
+  path: 'town/library/medieval-hexa-building-tower-catapult-blue/medieval-hexa-building-tower-catapult-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-tower-catapult-blue/medieval-hexa-building-tower-catapult-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingTowerCatapultBlue": "building_tower_catapult_blue",
+  "CatapultTurretBlue": "catapult_turret_blue",
+  "CatapultArmBlue": "catapult_arm_blue"
+}
+} as const;
+
+const TownMedievalHexaBuildingWellBlue = {
+  id: 'medieval-hexa-building-well-blue',
+  path: 'town/library/medieval-hexa-building-well-blue/medieval-hexa-building-well-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-well-blue/medieval-hexa-building-well-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingWellBlue": "building_well_blue"
+}
+} as const;
+
+const TownMedievalHexaBuildingWellGreen = {
+  id: 'medieval-hexa-building-well-green',
+  path: 'town/library/medieval-hexa-building-well-green/medieval-hexa-building-well-green',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-well-green/medieval-hexa-building-well-green.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingWellGreen": "building_well_green"
+}
+} as const;
+
+const TownMedievalHexaBuildingWellRed = {
+  id: 'medieval-hexa-building-well-red',
+  path: 'town/library/medieval-hexa-building-well-red/medieval-hexa-building-well-red',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-well-red/medieval-hexa-building-well-red.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingWellRed": "building_well_red"
+}
+} as const;
+
 const TownMedievalHexaBuildingWellYellow = {
   id: 'medieval-hexa-building-well-yellow',
   path: 'town/library/medieval-hexa-building-well-yellow/medieval-hexa-building-well-yellow',
@@ -1612,6 +2282,30 @@ const TownMedievalHexaBuildingWellYellow = {
   format: 'gltf',
   nodes: {
   "BuildingWellYellow": "building_well_yellow"
+}
+} as const;
+
+const TownMedievalHexaBuildingWindmillBlue = {
+  id: 'medieval-hexa-building-windmill-blue',
+  path: 'town/library/medieval-hexa-building-windmill-blue/medieval-hexa-building-windmill-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-windmill-blue/medieval-hexa-building-windmill-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingWindmillBlue": "building_windmill_blue",
+  "BuildingWindmillTopBlue": "building_windmill_top_blue",
+  "BuildingWindmillTopFanBlue": "building_windmill_top_fan_blue"
+}
+} as const;
+
+const TownMedievalHexaBuildingWindmillGreen = {
+  id: 'medieval-hexa-building-windmill-green',
+  path: 'town/library/medieval-hexa-building-windmill-green/medieval-hexa-building-windmill-green',
+  fullPath: 'ufo/models/town/library/medieval-hexa-building-windmill-green/medieval-hexa-building-windmill-green.gltf',
+  format: 'gltf',
+  nodes: {
+  "BuildingWindmillGreen": "building_windmill_green",
+  "BuildingWindmillTopGreen": "building_windmill_top_green",
+  "BuildingWindmillTopFanGreen": "building_windmill_top_fan_green"
 }
 } as const;
 
@@ -1627,6 +2321,268 @@ const TownMedievalHexaBuildingWindmillYellow = {
 }
 } as const;
 
+const TownMedievalHexaCrateABig = {
+  id: 'medieval-hexa-crate-a-big',
+  path: 'town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big',
+  fullPath: 'ufo/models/town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf',
+  format: 'gltf',
+  nodes: {
+  "CrateABig": "crate_A_big"
+}
+} as const;
+
+const TownMedievalHexaCrateBSmall = {
+  id: 'medieval-hexa-crate-b-small',
+  path: 'town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small',
+  fullPath: 'ufo/models/town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf',
+  format: 'gltf',
+  nodes: {
+  "CrateBSmall": "crate_B_small"
+}
+} as const;
+
+const TownMedievalHexaCrateLongA = {
+  id: 'medieval-hexa-crate-long-a',
+  path: 'town/library/medieval-hexa-crate-long-a/medieval-hexa-crate-long-a',
+  fullPath: 'ufo/models/town/library/medieval-hexa-crate-long-a/medieval-hexa-crate-long-a.gltf',
+  format: 'gltf',
+  nodes: {
+  "CrateLongA": "crate_long_A"
+}
+} as const;
+
+const TownMedievalHexaFlagBlue = {
+  id: 'medieval-hexa-flag-blue',
+  path: 'town/library/medieval-hexa-flag-blue/medieval-hexa-flag-blue',
+  fullPath: 'ufo/models/town/library/medieval-hexa-flag-blue/medieval-hexa-flag-blue.gltf',
+  format: 'gltf',
+  nodes: {
+  "FlagBlue": "flag_blue"
+}
+} as const;
+
+const TownMedievalHexaFlagRed = {
+  id: 'medieval-hexa-flag-red',
+  path: 'town/library/medieval-hexa-flag-red/medieval-hexa-flag-red',
+  fullPath: 'ufo/models/town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf',
+  format: 'gltf',
+  nodes: {
+  "FlagRed": "flag_red"
+}
+} as const;
+
+const TownMedievalHexaHillSingleA = {
+  id: 'medieval-hexa-hill-single-a',
+  path: 'town/library/medieval-hexa-hill-single-a/medieval-hexa-hill-single-a',
+  fullPath: 'ufo/models/town/library/medieval-hexa-hill-single-a/medieval-hexa-hill-single-a.gltf',
+  format: 'gltf',
+  nodes: {
+  "HillSingleA": "hill_single_A"
+}
+} as const;
+
+const TownMedievalHexaPallet = {
+  id: 'medieval-hexa-pallet',
+  path: 'town/library/medieval-hexa-pallet/medieval-hexa-pallet',
+  fullPath: 'ufo/models/town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf',
+  format: 'gltf',
+  nodes: {
+  "Pallet": "pallet"
+}
+} as const;
+
+const TownMedievalHexaResourceLumber = {
+  id: 'medieval-hexa-resource-lumber',
+  path: 'town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber',
+  fullPath: 'ufo/models/town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf',
+  format: 'gltf',
+  nodes: {
+  "ResourceLumber": "resource_lumber"
+}
+} as const;
+
+const TownMedievalHexaResourceStone = {
+  id: 'medieval-hexa-resource-stone',
+  path: 'town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone',
+  fullPath: 'ufo/models/town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf',
+  format: 'gltf',
+  nodes: {
+  "ResourceStone": "resource_stone"
+}
+} as const;
+
+const TownMedievalHexaRockSingleA = {
+  id: 'medieval-hexa-rock-single-a',
+  path: 'town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a',
+  fullPath: 'ufo/models/town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf',
+  format: 'gltf',
+  nodes: {
+  "RockSingleA": "rock_single_A"
+}
+} as const;
+
+const TownMedievalHexaRockSingleB = {
+  id: 'medieval-hexa-rock-single-b',
+  path: 'town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b',
+  fullPath: 'ufo/models/town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf',
+  format: 'gltf',
+  nodes: {
+  "RockSingleB": "rock_single_B"
+}
+} as const;
+
+const TownMedievalHexaRockSingleC = {
+  id: 'medieval-hexa-rock-single-c',
+  path: 'town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c',
+  fullPath: 'ufo/models/town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf',
+  format: 'gltf',
+  nodes: {
+  "RockSingleC": "rock_single_C"
+}
+} as const;
+
+const TownMedievalHexaSack = {
+  id: 'medieval-hexa-sack',
+  path: 'town/library/medieval-hexa-sack/medieval-hexa-sack',
+  fullPath: 'ufo/models/town/library/medieval-hexa-sack/medieval-hexa-sack.gltf',
+  format: 'gltf',
+  nodes: {
+  "Sack": "sack"
+}
+} as const;
+
+const TownMedievalHexaTarget = {
+  id: 'medieval-hexa-target',
+  path: 'town/library/medieval-hexa-target/medieval-hexa-target',
+  fullPath: 'ufo/models/town/library/medieval-hexa-target/medieval-hexa-target.gltf',
+  format: 'gltf',
+  nodes: {
+  "Target": "target"
+}
+} as const;
+
+const TownMedievalHexaTent = {
+  id: 'medieval-hexa-tent',
+  path: 'town/library/medieval-hexa-tent/medieval-hexa-tent',
+  fullPath: 'ufo/models/town/library/medieval-hexa-tent/medieval-hexa-tent.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tent": "tent"
+}
+} as const;
+
+const TownMedievalHexaTreeSingleA = {
+  id: 'medieval-hexa-tree-single-a',
+  path: 'town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a',
+  fullPath: 'ufo/models/town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf',
+  format: 'gltf',
+  nodes: {
+  "TreeSingleA": "tree_single_A"
+}
+} as const;
+
+const TownMedievalHexaTreeSingleB = {
+  id: 'medieval-hexa-tree-single-b',
+  path: 'town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b',
+  fullPath: 'ufo/models/town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf',
+  format: 'gltf',
+  nodes: {
+  "TreeSingleB": "tree_single_B"
+}
+} as const;
+
+const TownMedievalHexaTreesALarge = {
+  id: 'medieval-hexa-trees-a-large',
+  path: 'town/library/medieval-hexa-trees-a-large/medieval-hexa-trees-a-large',
+  fullPath: 'ufo/models/town/library/medieval-hexa-trees-a-large/medieval-hexa-trees-a-large.gltf',
+  format: 'gltf',
+  nodes: {
+  "TreesALarge": "trees_A_large"
+}
+} as const;
+
+const TownMedievalHexaTreesAMedium = {
+  id: 'medieval-hexa-trees-a-medium',
+  path: 'town/library/medieval-hexa-trees-a-medium/medieval-hexa-trees-a-medium',
+  fullPath: 'ufo/models/town/library/medieval-hexa-trees-a-medium/medieval-hexa-trees-a-medium.gltf',
+  format: 'gltf',
+  nodes: {
+  "TreesAMedium": "trees_A_medium"
+}
+} as const;
+
+const TownMedievalHexaTreesASmall = {
+  id: 'medieval-hexa-trees-a-small',
+  path: 'town/library/medieval-hexa-trees-a-small/medieval-hexa-trees-a-small',
+  fullPath: 'ufo/models/town/library/medieval-hexa-trees-a-small/medieval-hexa-trees-a-small.gltf',
+  format: 'gltf',
+  nodes: {
+  "TreesASmall": "trees_A_small"
+}
+} as const;
+
+const TownMedievalHexaTreesBLarge = {
+  id: 'medieval-hexa-trees-b-large',
+  path: 'town/library/medieval-hexa-trees-b-large/medieval-hexa-trees-b-large',
+  fullPath: 'ufo/models/town/library/medieval-hexa-trees-b-large/medieval-hexa-trees-b-large.gltf',
+  format: 'gltf',
+  nodes: {
+  "TreesBLarge": "trees_B_large"
+}
+} as const;
+
+const TownMedievalHexaTreesBMedium = {
+  id: 'medieval-hexa-trees-b-medium',
+  path: 'town/library/medieval-hexa-trees-b-medium/medieval-hexa-trees-b-medium',
+  fullPath: 'ufo/models/town/library/medieval-hexa-trees-b-medium/medieval-hexa-trees-b-medium.gltf',
+  format: 'gltf',
+  nodes: {
+  "TreesBMedium": "trees_B_medium"
+}
+} as const;
+
+const TownMedievalHexaWallStraight = {
+  id: 'medieval-hexa-wall-straight',
+  path: 'town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight',
+  fullPath: 'ufo/models/town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallStraight": "wall_straight"
+}
+} as const;
+
+const TownMedievalHexaWallStraightGate = {
+  id: 'medieval-hexa-wall-straight-gate',
+  path: 'town/library/medieval-hexa-wall-straight-gate/medieval-hexa-wall-straight-gate',
+  fullPath: 'ufo/models/town/library/medieval-hexa-wall-straight-gate/medieval-hexa-wall-straight-gate.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallStraightGate": "wall_straight_gate",
+  "WallStraightGateDoorLeft": "wall_straight_gate_door_left",
+  "WallStraightGateDoorRight": "wall_straight_gate_door_right"
+}
+} as const;
+
+const TownMedievalHexaWeaponrack = {
+  id: 'medieval-hexa-weaponrack',
+  path: 'town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack',
+  fullPath: 'ufo/models/town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf',
+  format: 'gltf',
+  nodes: {
+  "Weaponrack": "weaponrack"
+}
+} as const;
+
+const TownMedievalHexaWheelbarrow = {
+  id: 'medieval-hexa-wheelbarrow',
+  path: 'town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow',
+  fullPath: 'ufo/models/town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf',
+  format: 'gltf',
+  nodes: {
+  "Wheelbarrow": "wheelbarrow"
+}
+} as const;
+
 const TownMixedBag1IdolA = {
   id: 'mixed-bag-1-idol-a',
   path: 'town/library/mixed-bag-1-idol-a/mixed-bag-1-idol-a',
@@ -1634,6 +2590,166 @@ const TownMixedBag1IdolA = {
   format: 'gltf',
   nodes: {
   "IdolA": "idol_A"
+}
+} as const;
+
+const TownNatureCactus1 = {
+  id: 'nature-cactus-1',
+  path: 'town/library/nature-cactus-1/nature-cactus-1',
+  fullPath: 'ufo/models/town/library/nature-cactus-1/nature-cactus-1.glb',
+  format: 'glb',
+  nodes: {
+  "Cactus1": "Cactus_1"
+}
+} as const;
+
+const TownNatureCactus2 = {
+  id: 'nature-cactus-2',
+  path: 'town/library/nature-cactus-2/nature-cactus-2',
+  fullPath: 'ufo/models/town/library/nature-cactus-2/nature-cactus-2.glb',
+  format: 'glb',
+  nodes: {
+  "Cactus2": "Cactus_2"
+}
+} as const;
+
+const TownNatureCactus3 = {
+  id: 'nature-cactus-3',
+  path: 'town/library/nature-cactus-3/nature-cactus-3',
+  fullPath: 'ufo/models/town/library/nature-cactus-3/nature-cactus-3.glb',
+  format: 'glb',
+  nodes: {
+  "Cactus3": "Cactus_3"
+}
+} as const;
+
+const TownNatureCactus4 = {
+  id: 'nature-cactus-4',
+  path: 'town/library/nature-cactus-4/nature-cactus-4',
+  fullPath: 'ufo/models/town/library/nature-cactus-4/nature-cactus-4.glb',
+  format: 'glb',
+  nodes: {
+  "Cactus4": "Cactus_4"
+}
+} as const;
+
+const TownNatureCactus5 = {
+  id: 'nature-cactus-5',
+  path: 'town/library/nature-cactus-5/nature-cactus-5',
+  fullPath: 'ufo/models/town/library/nature-cactus-5/nature-cactus-5.glb',
+  format: 'glb',
+  nodes: {
+  "Cactus5": "Cactus_5"
+}
+} as const;
+
+const TownNatureCactusflower1 = {
+  id: 'nature-cactusflower-1',
+  path: 'town/library/nature-cactusflower-1/nature-cactusflower-1',
+  fullPath: 'ufo/models/town/library/nature-cactusflower-1/nature-cactusflower-1.glb',
+  format: 'glb',
+  nodes: {
+  "CactusFlower1": "CactusFlower_1"
+}
+} as const;
+
+const TownNatureCactusflowers2 = {
+  id: 'nature-cactusflowers-2',
+  path: 'town/library/nature-cactusflowers-2/nature-cactusflowers-2',
+  fullPath: 'ufo/models/town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb',
+  format: 'glb',
+  nodes: {
+  "CactusFlowers2": "CactusFlowers_2"
+}
+} as const;
+
+const TownNatureCactusflowers3 = {
+  id: 'nature-cactusflowers-3',
+  path: 'town/library/nature-cactusflowers-3/nature-cactusflowers-3',
+  fullPath: 'ufo/models/town/library/nature-cactusflowers-3/nature-cactusflowers-3.glb',
+  format: 'glb',
+  nodes: {
+  "CactusFlowers3": "CactusFlowers_3"
+}
+} as const;
+
+const TownNatureCactusflowers4 = {
+  id: 'nature-cactusflowers-4',
+  path: 'town/library/nature-cactusflowers-4/nature-cactusflowers-4',
+  fullPath: 'ufo/models/town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb',
+  format: 'glb',
+  nodes: {
+  "CactusFlowers4": "CactusFlowers_4"
+}
+} as const;
+
+const TownNatureCactusflowers5 = {
+  id: 'nature-cactusflowers-5',
+  path: 'town/library/nature-cactusflowers-5/nature-cactusflowers-5',
+  fullPath: 'ufo/models/town/library/nature-cactusflowers-5/nature-cactusflowers-5.glb',
+  format: 'glb',
+  nodes: {
+  "CactusFlowers5": "CactusFlowers_5"
+}
+} as const;
+
+const TownNatureCommontreeDead1 = {
+  id: 'nature-commontree-dead-1',
+  path: 'town/library/nature-commontree-dead-1/nature-commontree-dead-1',
+  fullPath: 'ufo/models/town/library/nature-commontree-dead-1/nature-commontree-dead-1.glb',
+  format: 'glb',
+  nodes: {
+  "CommonTreeDead1": "CommonTree_Dead_1"
+}
+} as const;
+
+const TownNatureCommontreeDead3 = {
+  id: 'nature-commontree-dead-3',
+  path: 'town/library/nature-commontree-dead-3/nature-commontree-dead-3',
+  fullPath: 'ufo/models/town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb',
+  format: 'glb',
+  nodes: {
+  "CommonTreeDead3": "CommonTree_Dead_3"
+}
+} as const;
+
+const TownNatureCommontreeDead4 = {
+  id: 'nature-commontree-dead-4',
+  path: 'town/library/nature-commontree-dead-4/nature-commontree-dead-4',
+  fullPath: 'ufo/models/town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb',
+  format: 'glb',
+  nodes: {
+  "CommonTreeDead4": "CommonTree_Dead_4"
+}
+} as const;
+
+const TownNaturePalmtree1 = {
+  id: 'nature-palmtree-1',
+  path: 'town/library/nature-palmtree-1/nature-palmtree-1',
+  fullPath: 'ufo/models/town/library/nature-palmtree-1/nature-palmtree-1.glb',
+  format: 'glb',
+  nodes: {
+  "PalmTree1": "PalmTree_1"
+}
+} as const;
+
+const TownNaturePalmtree2 = {
+  id: 'nature-palmtree-2',
+  path: 'town/library/nature-palmtree-2/nature-palmtree-2',
+  fullPath: 'ufo/models/town/library/nature-palmtree-2/nature-palmtree-2.glb',
+  format: 'glb',
+  nodes: {
+  "PalmTree2": "PalmTree_2"
+}
+} as const;
+
+const TownNaturePalmtree3 = {
+  id: 'nature-palmtree-3',
+  path: 'town/library/nature-palmtree-3/nature-palmtree-3',
+  fullPath: 'ufo/models/town/library/nature-palmtree-3/nature-palmtree-3.glb',
+  format: 'glb',
+  nodes: {
+  "PalmTree3": "PalmTree_3"
 }
 } as const;
 
@@ -1903,36 +3019,147 @@ export const MODELS = {
     City2Tree05: TownCity2Tree05,
     City2Tree06: TownCity2Tree06,
     City2Tree07: TownCity2Tree07,
-    DesertPlantsBigSagebrush: TownDesertPlantsBigSagebrush,
-    DesertPlantsCaliforniaFanPalm: TownDesertPlantsCaliforniaFanPalm,
-    DesertPlantsCenturyPlantAgave: TownDesertPlantsCenturyPlantAgave,
-    DesertPlantsDatePalm: TownDesertPlantsDatePalm,
-    DesertPlantsDeadDesertSnag: TownDesertPlantsDeadDesertSnag,
-    DesertPlantsGoldenBarrelCactus: TownDesertPlantsGoldenBarrelCactus,
-    DesertPlantsHedgehogCactusCluster: TownDesertPlantsHedgehogCactusCluster,
-    DesertPlantsJoshuaTree: TownDesertPlantsJoshuaTree,
-    DesertPlantsOcotillo: TownDesertPlantsOcotillo,
-    DesertPlantsOrganPipeCactus: TownDesertPlantsOrganPipeCactus,
-    DesertPlantsPricklyPearCactus: TownDesertPlantsPricklyPearCactus,
-    DesertPlantsSaguaroCactus: TownDesertPlantsSaguaroCactus,
     FurnitureCactusMediumA: TownFurnitureCactusMediumA,
+    FurnitureCactusMediumB: TownFurnitureCactusMediumB,
+    FurnitureCactusSmallA: TownFurnitureCactusSmallA,
+    FurnitureCactusSmallB: TownFurnitureCactusSmallB,
     HalloweenCrypt: TownHalloweenCrypt,
     HalloweenPostSkull: TownHalloweenPostSkull,
     HalloweenSignBoth: TownHalloweenSignBoth,
     HalloweenSkull: TownHalloweenSkull,
     HalloweenWagon: TownHalloweenWagon,
     HalloweenWagonHay: TownHalloweenWagonHay,
+    InfernoAxe001: TownInfernoAxe001,
+    InfernoBaseSmall001: TownInfernoBaseSmall001,
+    InfernoBrazier002: TownInfernoBrazier002,
+    InfernoChestBig001: TownInfernoChestBig001,
+    InfernoCliff004: TownInfernoCliff004,
+    InfernoColumnBig001: TownInfernoColumnBig001,
+    InfernoColumnBigBroken001: TownInfernoColumnBigBroken001,
+    InfernoColumnBigBroken002: TownInfernoColumnBigBroken002,
+    InfernoCrag001: TownInfernoCrag001,
+    InfernoCrag003: TownInfernoCrag003,
+    InfernoGem001: TownInfernoGem001,
+    InfernoGem003: TownInfernoGem003,
+    InfernoGoldPileBig001: TownInfernoGoldPileBig001,
+    InfernoGoldPileSmall001: TownInfernoGoldPileSmall001,
+    InfernoGrass001: TownInfernoGrass001,
+    InfernoGrass003: TownInfernoGrass003,
+    InfernoMound005: TownInfernoMound005,
+    InfernoMound008: TownInfernoMound008,
+    InfernoPedestalBig001: TownInfernoPedestalBig001,
+    InfernoRockBig001: TownInfernoRockBig001,
+    InfernoRockBig003: TownInfernoRockBig003,
+    InfernoRockBig004: TownInfernoRockBig004,
+    InfernoRockMid001: TownInfernoRockMid001,
+    InfernoRockMid002: TownInfernoRockMid002,
+    InfernoRockMid003: TownInfernoRockMid003,
+    InfernoRockMid004: TownInfernoRockMid004,
+    InfernoRockSmall001: TownInfernoRockSmall001,
+    InfernoRockSmall002: TownInfernoRockSmall002,
+    InfernoRockSmall003: TownInfernoRockSmall003,
+    InfernoStairsMiddle001: TownInfernoStairsMiddle001,
+    InfernoStatueKnight002: TownInfernoStatueKnight002,
+    InfernoStoneSmall001: TownInfernoStoneSmall001,
+    InfernoTowerBig001: TownInfernoTowerBig001,
+    InfernoVase001: TownInfernoVase001,
+    InfernoVase002: TownInfernoVase002,
+    InfernoWellSmall001: TownInfernoWellSmall001,
+    MedievalHexaBarrel: TownMedievalHexaBarrel,
+    MedievalHexaBucketWater: TownMedievalHexaBucketWater,
+    MedievalHexaBuildingArcheryrangeBlue: TownMedievalHexaBuildingArcheryrangeBlue,
+    MedievalHexaBuildingBarracksBlue: TownMedievalHexaBuildingBarracksBlue,
+    MedievalHexaBuildingBarracksGreen: TownMedievalHexaBuildingBarracksGreen,
+    MedievalHexaBuildingBarracksRed: TownMedievalHexaBuildingBarracksRed,
+    MedievalHexaBuildingBlacksmithBlue: TownMedievalHexaBuildingBlacksmithBlue,
+    MedievalHexaBuildingBlacksmithRed: TownMedievalHexaBuildingBlacksmithRed,
     MedievalHexaBuildingBlacksmithYellow: TownMedievalHexaBuildingBlacksmithYellow,
+    MedievalHexaBuildingCastleBlue: TownMedievalHexaBuildingCastleBlue,
+    MedievalHexaBuildingCastleGreen: TownMedievalHexaBuildingCastleGreen,
+    MedievalHexaBuildingCastleRed: TownMedievalHexaBuildingCastleRed,
+    MedievalHexaBuildingChurchBlue: TownMedievalHexaBuildingChurchBlue,
+    MedievalHexaBuildingChurchGreen: TownMedievalHexaBuildingChurchGreen,
+    MedievalHexaBuildingChurchRed: TownMedievalHexaBuildingChurchRed,
     MedievalHexaBuildingChurchYellow: TownMedievalHexaBuildingChurchYellow,
+    MedievalHexaBuildingDestroyed: TownMedievalHexaBuildingDestroyed,
+    MedievalHexaBuildingGrain: TownMedievalHexaBuildingGrain,
+    MedievalHexaBuildingHomeABlue: TownMedievalHexaBuildingHomeABlue,
+    MedievalHexaBuildingHomeAGreen: TownMedievalHexaBuildingHomeAGreen,
+    MedievalHexaBuildingHomeARed: TownMedievalHexaBuildingHomeARed,
     MedievalHexaBuildingHomeAYellow: TownMedievalHexaBuildingHomeAYellow,
+    MedievalHexaBuildingHomeBBlue: TownMedievalHexaBuildingHomeBBlue,
+    MedievalHexaBuildingHomeBGreen: TownMedievalHexaBuildingHomeBGreen,
+    MedievalHexaBuildingHomeBRed: TownMedievalHexaBuildingHomeBRed,
     MedievalHexaBuildingHomeBYellow: TownMedievalHexaBuildingHomeBYellow,
+    MedievalHexaBuildingLumbermillGreen: TownMedievalHexaBuildingLumbermillGreen,
+    MedievalHexaBuildingLumbermillRed: TownMedievalHexaBuildingLumbermillRed,
+    MedievalHexaBuildingMarketBlue: TownMedievalHexaBuildingMarketBlue,
+    MedievalHexaBuildingMarketGreen: TownMedievalHexaBuildingMarketGreen,
+    MedievalHexaBuildingMarketRed: TownMedievalHexaBuildingMarketRed,
     MedievalHexaBuildingMarketYellow: TownMedievalHexaBuildingMarketYellow,
     MedievalHexaBuildingMineYellow: TownMedievalHexaBuildingMineYellow,
+    MedievalHexaBuildingScaffolding: TownMedievalHexaBuildingScaffolding,
+    MedievalHexaBuildingStageA: TownMedievalHexaBuildingStageA,
+    MedievalHexaBuildingTavernBlue: TownMedievalHexaBuildingTavernBlue,
+    MedievalHexaBuildingTavernGreen: TownMedievalHexaBuildingTavernGreen,
+    MedievalHexaBuildingTavernRed: TownMedievalHexaBuildingTavernRed,
     MedievalHexaBuildingTavernYellow: TownMedievalHexaBuildingTavernYellow,
+    MedievalHexaBuildingTowerABlue: TownMedievalHexaBuildingTowerABlue,
+    MedievalHexaBuildingTowerARed: TownMedievalHexaBuildingTowerARed,
     MedievalHexaBuildingTowerAYellow: TownMedievalHexaBuildingTowerAYellow,
+    MedievalHexaBuildingTowerBBlue: TownMedievalHexaBuildingTowerBBlue,
+    MedievalHexaBuildingTowerBRed: TownMedievalHexaBuildingTowerBRed,
+    MedievalHexaBuildingTowerCatapultBlue: TownMedievalHexaBuildingTowerCatapultBlue,
+    MedievalHexaBuildingWellBlue: TownMedievalHexaBuildingWellBlue,
+    MedievalHexaBuildingWellGreen: TownMedievalHexaBuildingWellGreen,
+    MedievalHexaBuildingWellRed: TownMedievalHexaBuildingWellRed,
     MedievalHexaBuildingWellYellow: TownMedievalHexaBuildingWellYellow,
+    MedievalHexaBuildingWindmillBlue: TownMedievalHexaBuildingWindmillBlue,
+    MedievalHexaBuildingWindmillGreen: TownMedievalHexaBuildingWindmillGreen,
     MedievalHexaBuildingWindmillYellow: TownMedievalHexaBuildingWindmillYellow,
+    MedievalHexaCrateABig: TownMedievalHexaCrateABig,
+    MedievalHexaCrateBSmall: TownMedievalHexaCrateBSmall,
+    MedievalHexaCrateLongA: TownMedievalHexaCrateLongA,
+    MedievalHexaFlagBlue: TownMedievalHexaFlagBlue,
+    MedievalHexaFlagRed: TownMedievalHexaFlagRed,
+    MedievalHexaHillSingleA: TownMedievalHexaHillSingleA,
+    MedievalHexaPallet: TownMedievalHexaPallet,
+    MedievalHexaResourceLumber: TownMedievalHexaResourceLumber,
+    MedievalHexaResourceStone: TownMedievalHexaResourceStone,
+    MedievalHexaRockSingleA: TownMedievalHexaRockSingleA,
+    MedievalHexaRockSingleB: TownMedievalHexaRockSingleB,
+    MedievalHexaRockSingleC: TownMedievalHexaRockSingleC,
+    MedievalHexaSack: TownMedievalHexaSack,
+    MedievalHexaTarget: TownMedievalHexaTarget,
+    MedievalHexaTent: TownMedievalHexaTent,
+    MedievalHexaTreeSingleA: TownMedievalHexaTreeSingleA,
+    MedievalHexaTreeSingleB: TownMedievalHexaTreeSingleB,
+    MedievalHexaTreesALarge: TownMedievalHexaTreesALarge,
+    MedievalHexaTreesAMedium: TownMedievalHexaTreesAMedium,
+    MedievalHexaTreesASmall: TownMedievalHexaTreesASmall,
+    MedievalHexaTreesBLarge: TownMedievalHexaTreesBLarge,
+    MedievalHexaTreesBMedium: TownMedievalHexaTreesBMedium,
+    MedievalHexaWallStraight: TownMedievalHexaWallStraight,
+    MedievalHexaWallStraightGate: TownMedievalHexaWallStraightGate,
+    MedievalHexaWeaponrack: TownMedievalHexaWeaponrack,
+    MedievalHexaWheelbarrow: TownMedievalHexaWheelbarrow,
     MixedBag1IdolA: TownMixedBag1IdolA,
+    NatureCactus1: TownNatureCactus1,
+    NatureCactus2: TownNatureCactus2,
+    NatureCactus3: TownNatureCactus3,
+    NatureCactus4: TownNatureCactus4,
+    NatureCactus5: TownNatureCactus5,
+    NatureCactusflower1: TownNatureCactusflower1,
+    NatureCactusflowers2: TownNatureCactusflowers2,
+    NatureCactusflowers3: TownNatureCactusflowers3,
+    NatureCactusflowers4: TownNatureCactusflowers4,
+    NatureCactusflowers5: TownNatureCactusflowers5,
+    NatureCommontreeDead1: TownNatureCommontreeDead1,
+    NatureCommontreeDead3: TownNatureCommontreeDead3,
+    NatureCommontreeDead4: TownNatureCommontreeDead4,
+    NaturePalmtree1: TownNaturePalmtree1,
+    NaturePalmtree2: TownNaturePalmtree2,
+    NaturePalmtree3: TownNaturePalmtree3,
     PrototypeBarrelA: TownPrototypeBarrelA,
     SurvivalKitRockSandA: TownSurvivalKitRockSandA,
     SurvivalKitRockSandB: TownSurvivalKitRockSandB,

@@ -45,7 +45,7 @@ let dirty = false;
 let selection = null; // { type: 'station' | 'prop' | 'buildable' | 'start', index }
 let showBought = false;
 let snap = true;
-let gameUrl = 'http://localhost:9001/';
+let gameUrl = 'http://localhost:8000/';
 let dig = { zones: [], finds: [] };
 const undoStack = [];
 

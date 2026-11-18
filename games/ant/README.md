@@ -98,7 +98,7 @@ Set `GAME=ant` in `.env`, then from the repo root:
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Dev server on `:9001`. |
+| `npm run dev` | Dev server on `:8000`. |
 | `npm run build` | Production build. |
 | `npm run editor` | The **level editor** on `:4720` (see below). |
 | `npm run ant:pixelate` | Turns every picture in `raw-assets/pictures` into a level (see below). `npm run ant:pixelate -- mushroom` does one. |

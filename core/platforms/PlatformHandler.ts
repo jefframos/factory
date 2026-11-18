@@ -2,6 +2,7 @@ import { Signal } from "signals";
 import SoundManager from "core/audio/SoundManager";
 import { DevGuiManager } from "core/utils/DevGuiManager";
 import { IPlatformConnection } from "./IPlatformConnection";
+import { PauseBlocker } from "./PauseBlocker";
 
 /**
  * An analytics event's action. Any string works; these carry special meaning (Poki's game events,
@@ -44,8 +45,15 @@ export default class PlatformHandler {
         this._platform = value;
     }
 
+    /** Blocks all input while the platform has the game paused (not a game's own pause menu). */
+    public readonly pauseBlocker = new PauseBlocker();
+
     public async initialize(platform: IPlatformConnection): Promise<void> {
         this.platform = platform;
+
+        this.pauseBlocker.install();
+        this.onPause.add(() => this.pauseBlocker.block());
+        this.onResume.add(() => this.pauseBlocker.unblock());
 
         await this.platform.initialize();
 

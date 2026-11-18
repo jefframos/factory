@@ -119,7 +119,7 @@ export function startWorldEditor({ game, port, title, settingsFile, api, sharedP
     const audioDir = path.join(gameDir, 'raw-assets', 'audio');
     const importRawDir = path.join(gameDir, 'raw-assets', 'models', 'town{m}', 'library');
     const importPublicDir = path.join(modelsDir, 'town', 'library');
-    const gameUrl = process.env.GAME_URL ?? 'http://localhost:9001/';
+    const gameUrl = process.env.GAME_URL ?? 'http://localhost:8000/';
     let libraryCache = null;
 
     /** A level's file from `?level=` (every json in levels/ is a level). */

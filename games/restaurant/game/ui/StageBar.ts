@@ -6,11 +6,11 @@
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
-import { framePlane, iconSprite, label } from './UiParts';
+import { TexBar, iconSprite, label } from './UiParts';
 import { isLastStage, stageSettings } from '../data/Settings';
 
 export class StageBar extends PIXI.Container {
-    private readonly fill = new PIXI.Graphics();
+    private readonly bar: TexBar;
     private readonly title: PIXI.Text;
     private readonly amount: PIXI.Text;
     private readonly inner: number;
@@ -19,16 +19,14 @@ export class StageBar extends PIXI.Container {
 
     public constructor(private readonly barWidth: number, private readonly barHeight: number) {
         super();
-        const back = framePlane('ResourceBar_Single_Bg', barWidth, barHeight);
-        back.tint = 0x3a2416;
-        back.position.set(-barWidth / 2, -barHeight / 2);
+        this.bar = new TexBar(barWidth, barHeight);
         this.inner = barWidth - 10;
         this.title = label(Math.round(barHeight * 0.75));
         this.title.y = -barHeight / 2 - barHeight * 0.45;
         this.amount = label(Math.round(barHeight * 0.62));
         const coin = iconSprite('ItemIcon_Money_Bill', barHeight * 1.5);
         coin.x = -barWidth / 2;
-        this.addChild(back, this.fill, this.amount, this.title, coin);
+        this.addChild(this.bar, this.amount, this.title, coin);
     }
 
     /** The bar at `progress` coins of stage `stage`. */
@@ -50,9 +48,7 @@ export class StageBar extends PIXI.Container {
         this.shown = progress;
         const goal = stageSettings(this.stage).goal;
         const share = Math.max(0, Math.min(1, progress / goal));
-        const height = this.barHeight - 10;
-        this.fill.clear();
-        if (share > 0) this.fill.beginFill(0xffc93c).drawRoundedRect(-this.inner / 2, -height / 2, Math.max(height, this.inner * share), height, height / 2).endFill();
+        this.bar.setShare(share);
         this.amount.text = isLastStage(this.stage) && progress >= goal ? 'MAX' : `${Math.floor(progress)}/${goal}`;
     }
 }

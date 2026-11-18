@@ -191,7 +191,7 @@ export default defineConfig({
         ? { host: '127.0.0.1', open: false, hmr: false, watch: { ignored: ['**/*'] } }
         : {
             host: '0.0.0.0',
-            port: 9001,
+            port: 8000,
             open: true,
         },
 });

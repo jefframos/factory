@@ -8,7 +8,7 @@
 // VERSUS (as Mob's arena screen): the arena's own island instead (← / → through the arenas, a padlock and what it takes
 // on one not open yet), its name on the ribbon, the player's strip and the bar to the next arena under it, the trophy
 // road's button, PLAY ONLINE (the matchmaking window, then the match). A new arena gets its NEW ARENA moment. The first
-// time versus is open, a spotlight walks the player to it: the VERSUS tab, then PLAY ONLINE.
+// time versus is open, a red exclamation badge marks the VERSUS tab, then PLAY ONLINE, till the first match (no forced walk-through).
 //
 // With `home.baked` the island and the saucer are images (BakedView.ts), smooth where the live 3D is jagged: the two sit on
 // the PIXI layer over the three canvas, which goes on drawing only the live sea. The view doesn't swing then; the saucer's
@@ -29,7 +29,6 @@ import { AREA_BAR, AreaBar } from '../ui/AreaBar';
 import { ArenaUnlocked } from '../ui/ArenaUnlocked';
 import { Matchmaking } from '../ui/Matchmaking';
 import { Overlay } from '../ui/Overlay';
-import { Spotlight } from '../ui/Spotlight';
 import { TrophyRoad } from '../ui/TrophyRoad';
 import { VersusHome } from '../ui/VersusHome';
 import { ShopKind, UfoProgress } from '../data/UfoProgress';
@@ -161,9 +160,13 @@ export default class HomeScene extends ThreeScene {
     private readonly islands = new Map<string, { level: Level; town: UfoTown }>();
     private matchmaking: Matchmaking | null = null;
     private overlay: Overlay | TrophyRoad | null = null;
-    private spotlight: Spotlight | null = null;
+    /** Versus is open and not tried yet: exclamation badges on the VERSUS tab and on PLAY ONLINE (just a nudge). */
+    private readonly versusTabAlert = alertBadge();
+    private readonly playAlert = alertBadge();
     /** The versus tutorial's step, while it's on. */
-    private tutorialStep: 'tab' | 'play' | null = null;
+    private get versusNew(): boolean {
+        return versusOpen() && !UfoProgress.versusTutorial;
+    }
     public ready: Promise<void> = Promise.resolve();
 
     /** `onPlay`: the level's button; `onCompetition`: the ranking's (without versus); `onVersus`: a match in an arena. */
@@ -419,13 +422,11 @@ export default class HomeScene extends ThreeScene {
         this.refreshCoins();
         this.refreshTabIcons();
         this.applyTab();
-        // Versus just opened (and not tried): its tutorial.
-        if (versusOpen() && !UfoProgress.versusTutorial) {
-            this.tutorialStep = this.tab === 'versus' ? 'play' : 'tab';
-            gsap.delayedCall(0.5, () => {
-                if (!this.destroyedScene && this.tutorialStep === 'tab') this.showTutorialStep();
-            });
-        }
+        this.play.addChild(this.playAlert);
+        this.playAlert.position.set(PLAY.width / 2 - 22, -PLAY.height / 2 + 10);
+        this.tabs.get('versus')?.holder.addChild(this.versusTabAlert);
+        this.versusTabAlert.position.set(TABS.icon * 0.42, -TABS.icon * 0.42);
+        this.refreshAlerts();
         this.refreshMedal();
         this.resize();
     }
@@ -475,6 +476,7 @@ export default class HomeScene extends ThreeScene {
             const needs = arenaNeeds(arena, UfoProgress.levelsWon, UfoProgress.bestTrophies);
             this.arenaLockWords.text = `ARENA ${this.arenaIndex + 1}/${ARENAS.length}\n${needs?.level ? `WIN LEVEL ${needs.level} TO OPEN` : `REACH ${needs?.trophies ?? 0} TROPHIES`}`;
         }
+        this.refreshAlerts();
         this.resize();
         if (versus) gsap.delayedCall(0.3, () => this.arenaMoments());
     }
@@ -498,6 +500,10 @@ export default class HomeScene extends ThreeScene {
             gsap.fromTo(this.arenaLock, { x: this.arenaLock.x - 14 }, { x: this.arenaLock.x, duration: 0.4, ease: 'elastic.out(1.2, 0.3)' });
             UfoAudio.bump();
             return;
+        }
+        if (!UfoProgress.versusTutorial) {
+            UfoProgress.finishVersusTutorial();
+            this.refreshAlerts();
         }
         this.findMatch();
     }
@@ -538,7 +544,6 @@ export default class HomeScene extends ThreeScene {
             return;
         }
         this.trophiesPop();
-        if (this.tutorialStep === 'play' && !this.spotlight) this.showTutorialStep();
     }
 
     /** Back from a match: how the trophies changed, floating up off the strip. */
@@ -556,33 +561,11 @@ export default class HomeScene extends ThreeScene {
         UfoAudio.milestone();
     }
 
-    /** The versus tutorial's step on screen: a spotlight on the VERSUS tab, then on PLAY ONLINE. */
-    private showTutorialStep(): void {
-        this.closeSpotlight();
-        if (this.tutorialStep === 'tab') {
-            const tab = this.tabs.get('versus');
-            if (!tab) return;
-            this.spotlight = new Spotlight(tab.holder, 'VERSUS MODE IS OPEN!\nTAP VERSUS', () => {
-                this.closeSpotlight();
-                this.tutorialStep = 'play';
-                this.openTab('versus');
-            });
-        } else if (this.tutorialStep === 'play') {
-            this.spotlight = new Spotlight(this.play, 'PLAY YOUR FIRST\nVERSUS MATCH!', () => {
-                this.closeSpotlight();
-                this.tutorialStep = null;
-                UfoProgress.finishVersusTutorial();
-                this.refreshMedal();
-                this.findMatch();
-            });
-        }
-        if (this.spotlight) this.ui.addChild(this.spotlight);
-        this.refreshMedal();
-    }
-
-    private closeSpotlight(): void {
-        this.spotlight?.destroy({ children: true });
-        this.spotlight = null;
+    /** The versus badges: on the tab while elsewhere, on PLAY ONLINE while on versus (an open arena), till the first match. */
+    private refreshAlerts(): void {
+        const fresh = this.versusNew;
+        this.versusTabAlert.visible = fresh && this.tab !== 'versus';
+        this.playAlert.visible = fresh && this.tab === 'versus' && !this.arenaLocked;
     }
 
     private openOverlay(overlay: Overlay | TrophyRoad): void {
@@ -593,7 +576,7 @@ export default class HomeScene extends ThreeScene {
     }
 
     private openRoad(): void {
-        if (this.overlay || this.tutorialStep) return;
+        if (this.overlay) return;
         this.openOverlay(new TrophyRoad((step) => this.claimRoad(step), () => {
             this.overlay = null;
             this.versusHome?.refresh();
@@ -675,8 +658,7 @@ export default class HomeScene extends ThreeScene {
     }
 
     private refreshMedal(): void {
-        // (Not while the versus tutorial's pointing somewhere else.)
-        this.medalHand.visible = !UfoProgress.rankingSeen && !this.tutorialStep;
+        this.medalHand.visible = !UfoProgress.rankingSeen;
         this.medalAlert.visible = !UfoProgress.rankingSeen || anyClaimable();
     }
 
@@ -684,7 +666,11 @@ export default class HomeScene extends ThreeScene {
         UfoProgress.markRankingSeen();
         this.refreshMedal();
         if (this.rankingPanel) return;
-        this.rankingPanel = new RankingPanel(() => this.closeRanking());
+        // PLAY ONLINE (versus open): the ranking closes onto the VERSUS tab.
+        this.rankingPanel = new RankingPanel(() => this.closeRanking(), versusOpen() ? () => {
+            this.closeRanking();
+            this.openTab('versus');
+        } : undefined);
         this.ui.addChild(this.rankingPanel);
         this.rankingPanel.reposition();
     }
@@ -866,7 +852,6 @@ export default class HomeScene extends ThreeScene {
         this.versusHome?.update(step);
         this.matchmaking?.update(step);
         this.overlay?.update(step);
-        this.spotlight?.update(step);
         this.placeCamera();
         if (this.bakedUfo) {
             this.bakedUfo.y = this.bakedUfoY + Math.sin(this.time * BAKED_BOB.speed) * BAKED_BOB.height;
@@ -887,6 +872,7 @@ export default class HomeScene extends ThreeScene {
         window.removeEventListener('keydown', this.startSound, true);
         DebugOverlay.instance.removePanel(DEBUG_PANEL);
         gsap.killTweensOf(this.play.scale);
+        gsap.killTweensOf([this.versusTabAlert.scale, this.playAlert.scale]);
         gsap.killTweensOf([this.medalRays, this.medalIcon, this.medalHand]);
         if (this.shine) gsap.killTweensOf(this.shine);
         if (this.glow) gsap.killTweensOf(this.glow);
@@ -909,4 +895,15 @@ export default class HomeScene extends ThreeScene {
         });
         super.destroy();
     }
+}
+
+/** A red circle with an exclamation mark, gently bouncing: something new to look at there. */
+function alertBadge(): PIXI.Container {
+    const badge = new PIXI.Container();
+    const circle = iconSprite('Alert_Circle_l_Bg', MEDAL.alert);
+    circle.tint = 0xff3b4e;
+    badge.addChild(circle, iconSprite('Alert_Circle_Icon_Exclamation', MEDAL.alert * 0.55));
+    badge.visible = false;
+    gsap.to(badge.scale, { x: 1.15, y: 1.15, duration: 0.5, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+    return badge;
 }

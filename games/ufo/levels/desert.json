@@ -2,45 +2,177 @@
   "name": "Desert",
   "ground": {
     "x": 0,
-    "z": -5,
-    "width": 92,
-    "depth": 86,
+    "z": -7.25,
+    "width": 200,
+    "depth": 184,
     "color": "#ead39a"
   },
   "island": {
     "water": "#2fb4e8",
     "waterLevel": 0.55,
-    "margin": 90,
+    "margin": 110,
     "sideColor": "#c9a265",
     "sideDepth": 1.6,
     "outline": [
       {
-        "x": -40.0,
-        "z": -48.0
+        "x": 94.17,
+        "z": -7.25
       },
       {
-        "x": 44.0,
-        "z": -48.0
+        "x": 94.38,
+        "z": 6.2
       },
       {
-        "x": 46.0,
-        "z": -38.0
+        "x": 83.98,
+        "z": 17.31
       },
       {
-        "x": 46.0,
-        "z": 38.0
+        "x": 70.33,
+        "z": 25
       },
       {
-        "x": -38.0,
-        "z": 38.0
+        "x": 61.32,
+        "z": 32.84
       },
       {
-        "x": -46.0,
-        "z": 26.0
+        "x": 56.15,
+        "z": 43.29
       },
       {
-        "x": -46.0,
-        "z": -42.0
+        "x": 48.42,
+        "z": 52.73
+      },
+      {
+        "x": 35.86,
+        "z": 56.08
+      },
+      {
+        "x": 22.26,
+        "z": 54.4
+      },
+      {
+        "x": 10.72,
+        "z": 53.65
+      },
+      {
+        "x": 0,
+        "z": 56.38
+      },
+      {
+        "x": -11.69,
+        "z": 59.19
+      },
+      {
+        "x": -23.96,
+        "z": 59.12
+      },
+      {
+        "x": -36.96,
+        "z": 58.03
+      },
+      {
+        "x": -52.49,
+        "z": 57.77
+      },
+      {
+        "x": -69.14,
+        "z": 54.97
+      },
+      {
+        "x": -79.87,
+        "z": 44.97
+      },
+      {
+        "x": -79.21,
+        "z": 29.07
+      },
+      {
+        "x": -71.37,
+        "z": 13.62
+      },
+      {
+        "x": -66.35,
+        "z": 2.21
+      },
+      {
+        "x": -68.2,
+        "z": -7.25
+      },
+      {
+        "x": -71.55,
+        "z": -17.45
+      },
+      {
+        "x": -70.64,
+        "z": -27.91
+      },
+      {
+        "x": -66.53,
+        "z": -37.76
+      },
+      {
+        "x": -62.84,
+        "z": -48.34
+      },
+      {
+        "x": -58.66,
+        "z": -60.04
+      },
+      {
+        "x": -50.33,
+        "z": -69.59
+      },
+      {
+        "x": -37.95,
+        "z": -74.29
+      },
+      {
+        "x": -25.21,
+        "z": -77.07
+      },
+      {
+        "x": -13.29,
+        "z": -82.77
+      },
+      {
+        "x": 0,
+        "z": -89.74
+      },
+      {
+        "x": 14.59,
+        "z": -90.15
+      },
+      {
+        "x": 26.28,
+        "z": -80.04
+      },
+      {
+        "x": 32.77,
+        "z": -65.13
+      },
+      {
+        "x": 37.72,
+        "z": -53.97
+      },
+      {
+        "x": 45.67,
+        "z": -48.36
+      },
+      {
+        "x": 56.05,
+        "z": -43.9
+      },
+      {
+        "x": 65.65,
+        "z": -37.35
+      },
+      {
+        "x": 74.71,
+        "z": -29.1
+      },
+      {
+        "x": 85.22,
+        "z": -19.4
       }
     ],
     "deck": {
@@ -58,144 +190,144 @@
   },
   "start": {
     "x": 0,
-    "z": 24
+    "z": 34.8
   },
   "pavements": [
     {
       "id": "street-main",
       "x": 0,
-      "z": -4,
-      "width": 80,
-      "depth": 7,
+      "z": -5.8,
+      "width": 116,
+      "depth": 10.15,
       "color": "#d9b97a"
     },
     {
       "id": "plaza",
       "x": 0,
-      "z": -24,
-      "width": 22,
-      "depth": 18,
+      "z": -34.8,
+      "width": 31.9,
+      "depth": 26.1,
       "color": "#dcbd82"
     },
     {
       "id": "street-north",
       "x": 0,
-      "z": -13.5,
-      "width": 7,
-      "depth": 12,
+      "z": -19.57,
+      "width": 10.15,
+      "depth": 17.4,
       "color": "#d9b97a"
     },
     {
       "id": "camp",
-      "x": -24,
-      "z": 24,
-      "width": 18,
-      "depth": 12,
+      "x": -34.8,
+      "z": 34.8,
+      "width": 26.1,
+      "depth": 17.4,
       "color": "#e2c68c"
     }
   ],
   "props": [
     {
       "model": "town/library/medieval-hexa-building-tavern-yellow/medieval-hexa-building-tavern-yellow.gltf",
-      "x": -28,
-      "z": -12.77,
+      "x": -40.6,
+      "z": -18.52,
       "rotationY": 3.1416,
-      "height": 10,
+      "height": 12.5,
       "collider": {
-        "halfX": 3.57,
-        "halfZ": 4.05
+        "halfX": 4.46,
+        "halfZ": 5.06
       },
       "fade": true
     },
     {
       "model": "town/library/medieval-hexa-building-market-yellow/medieval-hexa-building-market-yellow.gltf",
-      "x": -13,
-      "z": -12.02,
+      "x": -18.85,
+      "z": -17.43,
       "rotationY": 3.1416,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 4.67,
-        "halfZ": 3.42
+        "halfX": 5.84,
+        "halfZ": 4.28
       },
       "fade": true
     },
     {
       "model": "town/library/medieval-hexa-building-blacksmith-yellow/medieval-hexa-building-blacksmith-yellow.gltf",
-      "x": 13,
-      "z": -12.42,
+      "x": 18.85,
+      "z": -18.01,
       "rotationY": 3.1416,
-      "height": 7,
+      "height": 8.75,
       "collider": {
-        "halfX": 3.89,
-        "halfZ": 3.76
+        "halfX": 4.86,
+        "halfZ": 4.7
       },
       "fade": true
     },
     {
       "model": "town/library/medieval-hexa-building-home-b-yellow/medieval-hexa-building-home-b-yellow.gltf",
-      "x": 28,
-      "z": -11.86,
+      "x": 40.6,
+      "z": -17.2,
       "rotationY": 3.1416,
-      "height": 9,
+      "height": 11.25,
       "collider": {
-        "halfX": 2.61,
-        "halfZ": 3.28
+        "halfX": 3.26,
+        "halfZ": 4.1
       },
       "fade": true
     },
     {
       "model": "town/library/medieval-hexa-building-home-a-yellow/medieval-hexa-building-home-a-yellow.gltf",
-      "x": -30,
-      "z": 3.21,
-      "rotationY": 0.0,
-      "height": 7,
+      "x": -43.5,
+      "z": 4.65,
+      "rotationY": 0,
+      "height": 8.75,
       "collider": {
-        "halfX": 2.53,
-        "halfZ": 2.73
+        "halfX": 3.16,
+        "halfZ": 3.41
       },
       "fade": true
     },
     {
       "model": "town/library/medieval-hexa-building-home-b-yellow/medieval-hexa-building-home-b-yellow.gltf",
-      "x": -16,
-      "z": 3.86,
-      "rotationY": 0.0,
-      "height": 9,
+      "x": -23.2,
+      "z": 5.6,
+      "rotationY": 0,
+      "height": 11.25,
       "collider": {
-        "halfX": 2.61,
-        "halfZ": 3.28
+        "halfX": 3.26,
+        "halfZ": 4.1
       },
       "fade": true
     },
     {
       "model": "town/library/medieval-hexa-building-home-a-yellow/medieval-hexa-building-home-a-yellow.gltf",
-      "x": 15,
-      "z": 3.21,
-      "rotationY": 0.0,
-      "height": 7,
+      "x": 21.75,
+      "z": 4.65,
+      "rotationY": 0,
+      "height": 8.75,
       "collider": {
-        "halfX": 2.53,
-        "halfZ": 2.73
+        "halfX": 3.16,
+        "halfZ": 3.41
       },
       "fade": true
     },
     {
       "model": "town/library/medieval-hexa-building-home-a-yellow/medieval-hexa-building-home-a-yellow.gltf",
-      "x": 30,
-      "z": 3.21,
-      "rotationY": 0.0,
-      "height": 7,
+      "x": 43.5,
+      "z": 4.65,
+      "rotationY": 0,
+      "height": 8.75,
       "collider": {
-        "halfX": 2.53,
-        "halfZ": 2.73
+        "halfX": 3.16,
+        "halfZ": 3.41
       },
       "fade": true
     },
     {
       "model": "town/library/medieval-hexa-building-well-yellow/medieval-hexa-building-well-yellow.gltf",
       "x": 0,
-      "z": -24,
-      "rotationY": 0.0,
+      "z": -34.8,
+      "rotationY": 0,
       "height": 3.5,
       "collider": {
         "halfX": 1.17,
@@ -206,67 +338,55 @@
     {
       "model": "town/library/medieval-hexa-building-church-yellow/medieval-hexa-building-church-yellow.gltf",
       "x": 0,
-      "z": -33.91,
+      "z": -49.17,
       "rotationY": 3.1416,
-      "height": 14,
+      "height": 17.5,
       "collider": {
-        "halfX": 3.72,
-        "halfZ": 4.18
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/medieval-hexa-building-windmill-yellow/medieval-hexa-building-windmill-yellow.gltf",
-      "x": 34,
-      "z": -32,
-      "rotationY": 2.3562,
-      "height": 13,
-      "collider": {
-        "halfX": 3.09,
-        "halfZ": 4.27
+        "halfX": 4.65,
+        "halfZ": 5.23
       },
       "fade": true
     },
     {
       "model": "town/library/medieval-hexa-building-tower-a-yellow/medieval-hexa-building-tower-a-yellow.gltf",
-      "x": 36,
-      "z": 16,
+      "x": 52.2,
+      "z": 23.2,
       "rotationY": -1.5708,
-      "height": 16,
+      "height": 20,
       "collider": {
-        "halfX": 3.58,
-        "halfZ": 3.08
+        "halfX": 4.47,
+        "halfZ": 3.85
       },
       "fade": true
     },
     {
       "model": "town/library/medieval-hexa-building-mine-yellow/medieval-hexa-building-mine-yellow.gltf",
-      "x": -34,
-      "z": -32,
+      "x": -49.3,
+      "z": -46.4,
       "rotationY": 0.7854,
-      "height": 8,
+      "height": 10,
       "collider": {
-        "halfX": 5.74,
-        "halfZ": 4.8
+        "halfX": 7.18,
+        "halfZ": 6
       },
       "fade": true
     },
     {
       "model": "town/library/city-builder-watertower/city-builder-watertower.gltf",
-      "x": 22,
-      "z": 26,
-      "rotationY": 0.0,
-      "height": 12,
+      "x": 31.9,
+      "z": 37.7,
+      "rotationY": 0,
+      "height": 15,
       "collider": {
-        "halfX": 3.8,
-        "halfZ": 3.8
+        "halfX": 4.75,
+        "halfZ": 4.75
       },
       "fade": true
     },
     {
       "model": "town/library/survival-kit-tent-canvas/survival-kit-tent-canvas.glb",
-      "x": -30,
-      "z": 22,
+      "x": -43.5,
+      "z": 31.9,
       "rotationY": 0.4,
       "height": 2.6,
       "collider": {
@@ -277,8 +397,8 @@
     },
     {
       "model": "town/library/survival-kit-tent-canvas/survival-kit-tent-canvas.glb",
-      "x": -22,
-      "z": 27,
+      "x": -31.9,
+      "z": 39.15,
       "rotationY": -0.3,
       "height": 2.6,
       "collider": {
@@ -289,8 +409,8 @@
     },
     {
       "model": "town/library/survival-kit-tent-canvas/survival-kit-tent-canvas.glb",
-      "x": -16,
-      "z": 20,
+      "x": -23.2,
+      "z": 29,
       "rotationY": 1.2,
       "height": 2.6,
       "collider": {
@@ -301,9 +421,9 @@
     },
     {
       "model": "town/library/survival-kit-tent-canvas/survival-kit-tent-canvas.glb",
-      "x": -28,
-      "z": 29,
-      "rotationY": 2.0,
+      "x": -40.6,
+      "z": 42.05,
+      "rotationY": 2,
       "height": 2.6,
       "collider": {
         "halfX": 1.26,
@@ -313,8 +433,8 @@
     },
     {
       "model": "town/library/halloween-wagon-hay/halloween-wagon-hay.gltf",
-      "x": -36,
-      "z": 12,
+      "x": -52.2,
+      "z": 17.4,
       "rotationY": 1.5708,
       "height": 3,
       "collider": {
@@ -325,8 +445,8 @@
     },
     {
       "model": "town/library/halloween-wagon/halloween-wagon.gltf",
-      "x": 8,
-      "z": 1.2,
+      "x": 11.6,
+      "z": 1.74,
       "rotationY": 1.5708,
       "height": 2.5,
       "collider": {
@@ -337,8 +457,8 @@
     },
     {
       "model": "town/library/halloween-wagon/halloween-wagon.gltf",
-      "x": -38,
-      "z": -12,
+      "x": -55.1,
+      "z": -17.4,
       "rotationY": 0.3,
       "height": 2.5,
       "collider": {
@@ -349,8 +469,8 @@
     },
     {
       "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
-      "x": -24.21,
-      "z": 16.58,
+      "x": -35.1,
+      "z": 24.04,
       "rotationY": 2.045,
       "height": 1.1,
       "collider": {
@@ -361,8 +481,8 @@
     },
     {
       "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
-      "x": -20.51,
-      "z": 16.04,
+      "x": -29.74,
+      "z": 23.26,
       "rotationY": 1.1488,
       "height": 1.1,
       "collider": {
@@ -373,8 +493,8 @@
     },
     {
       "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
-      "x": -8.53,
-      "z": -9.49,
+      "x": -12.37,
+      "z": -13.76,
       "rotationY": 0.1178,
       "height": 1.1,
       "collider": {
@@ -385,8 +505,8 @@
     },
     {
       "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
-      "x": 5.92,
-      "z": -10.02,
+      "x": 8.58,
+      "z": -14.53,
       "rotationY": 0.285,
       "height": 1.1,
       "collider": {
@@ -397,8 +517,8 @@
     },
     {
       "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
-      "x": 20.91,
-      "z": -9.11,
+      "x": 30.32,
+      "z": -13.21,
       "rotationY": 0.3889,
       "height": 1.1,
       "collider": {
@@ -409,8 +529,8 @@
     },
     {
       "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
-      "x": -35.33,
-      "z": -24.85,
+      "x": -51.23,
+      "z": -36.03,
       "rotationY": 2.9773,
       "height": 1.1,
       "collider": {
@@ -421,8 +541,8 @@
     },
     {
       "model": "town/library/survival-kit-signpost/survival-kit-signpost.glb",
-      "x": -6,
-      "z": 15,
+      "x": -8.7,
+      "z": 21.75,
       "rotationY": 0.2,
       "height": 1.8,
       "collider": {
@@ -433,8 +553,8 @@
     },
     {
       "model": "town/library/halloween-sign-both/halloween-sign-both.gltf",
-      "x": 6,
-      "z": 2.5,
+      "x": 8.7,
+      "z": 3.63,
       "rotationY": 0,
       "height": 2,
       "collider": {
@@ -445,8 +565,8 @@
     },
     {
       "model": "town/library/halloween-post-skull/halloween-post-skull.gltf",
-      "x": 40,
-      "z": -4,
+      "x": 58,
+      "z": -5.8,
       "rotationY": -1.5708,
       "height": 2.6,
       "collider": {
@@ -457,8 +577,8 @@
     },
     {
       "model": "town/library/halloween-post-skull/halloween-post-skull.gltf",
-      "x": -40,
-      "z": -4,
+      "x": -58,
+      "z": -5.8,
       "rotationY": 1.5708,
       "height": 2.6,
       "collider": {
@@ -469,20 +589,8 @@
     },
     {
       "model": "town/library/halloween-skull/halloween-skull.gltf",
-      "x": 38,
-      "z": 30,
-      "rotationY": 3.626,
-      "height": 0.8,
-      "collider": {
-        "halfX": 0.35,
-        "halfZ": 0.34
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/halloween-skull/halloween-skull.gltf",
-      "x": -12,
-      "z": 34,
+      "x": -17.4,
+      "z": 49.3,
       "rotationY": 2.4924,
       "height": 0.8,
       "collider": {
@@ -492,203 +600,239 @@
       "fade": true
     },
     {
-      "model": "town/library/halloween-skull/halloween-skull.gltf",
-      "x": 28,
-      "z": -44,
-      "rotationY": 6.134,
-      "height": 0.8,
-      "collider": {
-        "halfX": 0.35,
-        "halfZ": 0.34
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": -38.09,
-      "z": 22.96,
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": -55.23,
+      "z": 33.29,
       "rotationY": 1.8197,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
+        "halfX": 0.51,
+        "halfZ": 0.51
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": 24.73,
-      "z": 10.52,
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": 35.86,
+      "z": 15.25,
       "rotationY": 1.5337,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
+        "halfX": 0.31,
+        "halfZ": 0.31
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": -17.81,
-      "z": 32.45,
+      "model": "town/library/nature-cactus-1/nature-cactus-1.glb",
+      "x": -25.82,
+      "z": 47.05,
       "rotationY": 0.7418,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
+        "halfX": 0.73,
+        "halfZ": 0.73
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": 31.54,
-      "z": -19.53,
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": 45.73,
+      "z": -28.32,
       "rotationY": 4.3687,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
+        "halfX": 0.56,
+        "halfZ": 0.56
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": 13.79,
-      "z": -39.27,
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": 20,
+      "z": -56.94,
       "rotationY": 4.4076,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
+        "halfX": 0.41,
+        "halfZ": 0.41
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": 12.36,
-      "z": 33.46,
+      "model": "town/library/nature-cactus-1/nature-cactus-1.glb",
+      "x": 17.92,
+      "z": 48.52,
       "rotationY": 5.1643,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
+        "halfX": 0.69,
+        "halfZ": 0.69
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": 22.53,
-      "z": -33.91,
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": 32.67,
+      "z": -49.17,
       "rotationY": 1.5558,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
+        "halfX": 0.4,
+        "halfZ": 0.4
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": -9.16,
-      "z": 23.97,
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": -13.28,
+      "z": 34.76,
       "rotationY": 0.5063,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
+        "halfX": 0.53,
+        "halfZ": 0.53
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": 32.27,
-      "z": 30.7,
+      "model": "town/library/nature-cactus-1/nature-cactus-1.glb",
+      "x": 46.79,
+      "z": 44.52,
       "rotationY": 0.9483,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
+        "halfX": 0.73,
+        "halfZ": 0.73
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": 1.3,
-      "z": 4.17,
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": 1.89,
+      "z": 6.05,
       "rotationY": 4.2487,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
+        "halfX": 0.6,
+        "halfZ": 0.6
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": -8.49,
-      "z": -35.92,
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": -12.31,
+      "z": -52.08,
       "rotationY": 3.9854,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
+        "halfX": 0.61,
+        "halfZ": 0.61
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": -24.46,
-      "z": -31.34,
+      "model": "town/library/nature-cactus-1/nature-cactus-1.glb",
+      "x": -35.47,
+      "z": -45.44,
       "rotationY": 2.1366,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
+        "halfX": 0.71,
+        "halfZ": 0.71
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": -37.58,
-      "z": -43.98,
-      "rotationY": 0.9504,
-      "height": 6,
-      "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": 9.58,
-      "z": -32.41,
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": 13.89,
+      "z": -46.99,
       "rotationY": 1.585,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
+        "halfX": 0.31,
+        "halfZ": 0.31
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": -28.44,
-      "z": -42.2,
+      "model": "town/library/nature-cactus-1/nature-cactus-1.glb",
+      "x": -41.24,
+      "z": -61.19,
       "rotationY": 5.9752,
-      "height": 6,
+      "height": 7.5,
       "collider": {
-        "halfX": 0.34,
-        "halfZ": 0.34
+        "halfX": 0.65,
+        "halfZ": 0.65
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-saguaro-cactus/desert-plants-saguaro-cactus.glb",
-      "x": 3.63,
-      "z": -41.89,
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": 5.26,
+      "z": -60.74,
       "rotationY": 3.3182,
-      "height": 6,
+      "height": 7.5,
+      "collider": {
+        "halfX": 0.49,
+        "halfZ": 0.49
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": 58.28,
+      "z": 33.84,
+      "rotationY": 4.3743,
+      "height": 6.25,
+      "collider": {
+        "halfX": 0.38,
+        "halfZ": 0.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": -20.75,
+      "z": -38.57,
+      "rotationY": 5.0989,
+      "height": 6.25,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": 29.22,
+      "z": -38.15,
+      "rotationY": 3.2524,
+      "height": 6.25,
+      "collider": {
+        "halfX": 0.31,
+        "halfZ": 0.31
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": -17.59,
+      "z": -60.52,
+      "rotationY": 0.1755,
+      "height": 6.25,
+      "collider": {
+        "halfX": 0.33,
+        "halfZ": 0.33
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": 19.56,
+      "z": 39.09,
+      "rotationY": 4.9154,
+      "height": 6.25,
       "collider": {
         "halfX": 0.34,
         "halfZ": 0.34
@@ -696,623 +840,311 @@
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-joshua-tree/desert-plants-joshua-tree.glb",
-      "x": 40.19,
-      "z": 23.34,
-      "rotationY": 4.3743,
-      "height": 5,
-      "collider": {
-        "halfX": 0.55,
-        "halfZ": 0.55
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-joshua-tree/desert-plants-joshua-tree.glb",
-      "x": -14.31,
-      "z": -26.6,
-      "rotationY": 5.0989,
-      "height": 5,
-      "collider": {
-        "halfX": 0.55,
-        "halfZ": 0.55
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-joshua-tree/desert-plants-joshua-tree.glb",
-      "x": 20.15,
-      "z": -26.31,
-      "rotationY": 3.2524,
-      "height": 5,
-      "collider": {
-        "halfX": 0.55,
-        "halfZ": 0.55
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-joshua-tree/desert-plants-joshua-tree.glb",
-      "x": -12.13,
-      "z": -41.74,
-      "rotationY": 0.1755,
-      "height": 5,
-      "collider": {
-        "halfX": 0.55,
-        "halfZ": 0.55
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-joshua-tree/desert-plants-joshua-tree.glb",
-      "x": 13.49,
-      "z": 26.96,
-      "rotationY": 4.9154,
-      "height": 5,
-      "collider": {
-        "halfX": 0.55,
-        "halfZ": 0.55
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-joshua-tree/desert-plants-joshua-tree.glb",
-      "x": 39.62,
-      "z": -13.12,
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": 57.45,
+      "z": -19.02,
       "rotationY": 2.522,
-      "height": 5,
+      "height": 6.25,
       "collider": {
-        "halfX": 0.55,
-        "halfZ": 0.55
+        "halfX": 0.43,
+        "halfZ": 0.43
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-joshua-tree/desert-plants-joshua-tree.glb",
-      "x": 27.43,
-      "z": 32.46,
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": 39.77,
+      "z": 47.07,
       "rotationY": 4.1297,
-      "height": 5,
+      "height": 6.25,
       "collider": {
-        "halfX": 0.55,
-        "halfZ": 0.55
+        "halfX": 0.43,
+        "halfZ": 0.43
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus.glb",
-      "x": 39.55,
-      "z": 6.67,
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": 57.35,
+      "z": 9.67,
       "rotationY": 3.3086,
       "height": 2,
       "collider": {
-        "halfX": 0.88,
-        "halfZ": 0.71
+        "halfX": 0.22,
+        "halfZ": 0.67
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus.glb",
-      "x": 31.23,
-      "z": 20.44,
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": 45.28,
+      "z": 29.64,
       "rotationY": 1.326,
       "height": 2,
       "collider": {
-        "halfX": 0.71,
-        "halfZ": 0.88
+        "halfX": 0.57,
+        "halfZ": 0.2
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus.glb",
-      "x": -20.85,
-      "z": -21.15,
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": -30.23,
+      "z": -30.67,
       "rotationY": 1.5114,
       "height": 2,
       "collider": {
-        "halfX": 0.71,
-        "halfZ": 0.88
+        "halfX": 0.66,
+        "halfZ": 0.15
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus.glb",
-      "x": 34.44,
-      "z": -16.4,
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": 49.94,
+      "z": -23.78,
       "rotationY": 2.8787,
       "height": 2,
       "collider": {
-        "halfX": 0.88,
-        "halfZ": 0.71
+        "halfX": 0.21,
+        "halfZ": 0.57
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus.glb",
-      "x": 7.0,
-      "z": 26.54,
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": 10.15,
+      "z": 38.48,
       "rotationY": 2.6429,
       "height": 2,
       "collider": {
-        "halfX": 0.88,
-        "halfZ": 0.71
+        "halfX": 0.41,
+        "halfZ": 0.63
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus.glb",
-      "x": 25.13,
-      "z": -30.56,
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": 36.44,
+      "z": -44.31,
       "rotationY": 2.975,
       "height": 2,
       "collider": {
-        "halfX": 0.88,
-        "halfZ": 0.71
+        "halfX": 0.16,
+        "halfZ": 0.57
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus.glb",
-      "x": 4.66,
-      "z": 17.17,
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": 6.76,
+      "z": 24.9,
       "rotationY": 0.6667,
       "height": 2,
       "collider": {
-        "halfX": 0.88,
-        "halfZ": 0.71
+        "halfX": 0.49,
+        "halfZ": 0.58
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus.glb",
-      "x": -4.77,
-      "z": 3.78,
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": -6.92,
+      "z": 5.48,
       "rotationY": 3.1765,
       "height": 2,
       "collider": {
-        "halfX": 0.88,
-        "halfZ": 0.71
+        "halfX": 0.09,
+        "halfZ": 0.57
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus.glb",
-      "x": 1.02,
-      "z": 10.03,
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": 1.48,
+      "z": 14.54,
       "rotationY": 2.8422,
       "height": 2,
       "collider": {
-        "halfX": 0.88,
-        "halfZ": 0.71
+        "halfX": 0.3,
+        "halfZ": 0.66
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus.glb",
-      "x": -21.79,
-      "z": -38.3,
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": -31.6,
+      "z": -55.53,
       "rotationY": 4.2064,
       "height": 2,
       "collider": {
-        "halfX": 0.71,
-        "halfZ": 0.88
+        "halfX": 0.53,
+        "halfZ": 0.34
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus.glb",
-      "x": -29.03,
-      "z": 11.86,
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": -42.09,
+      "z": 17.2,
       "rotationY": 4.1485,
       "height": 2,
       "collider": {
-        "halfX": 0.71,
-        "halfZ": 0.88
+        "halfX": 0.61,
+        "halfZ": 0.44
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-prickly-pear-cactus/desert-plants-prickly-pear-cactus.glb",
-      "x": 39.27,
-      "z": -26.87,
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": 56.94,
+      "z": -38.96,
       "rotationY": 5.9848,
       "height": 2,
       "collider": {
-        "halfX": 0.88,
+        "halfX": 0.23,
+        "halfZ": 0.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-b/furniture-cactus-medium-b.gltf",
+      "x": -37.06,
+      "z": -27.78,
+      "rotationY": 4.5374,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": -7.25,
+      "z": -61.76,
+      "rotationY": 2.0829,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.63,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-b/furniture-cactus-medium-b.gltf",
+      "x": -53.07,
+      "z": 47.62,
+      "rotationY": 4.9534,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.63,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": -28.55,
+      "z": -59.32,
+      "rotationY": 4.8946,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-b/furniture-cactus-medium-b.gltf",
+      "x": -27.96,
+      "z": -49.14,
+      "rotationY": 2.6531,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.72,
         "halfZ": 0.71
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus.glb",
-      "x": -25.56,
-      "z": -19.16,
-      "rotationY": 4.5374,
-      "height": 1.2,
-      "collider": {
-        "halfX": 0.57,
-        "halfZ": 0.56
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus.glb",
-      "x": -5.0,
-      "z": -42.59,
-      "rotationY": 2.0829,
-      "height": 1.2,
-      "collider": {
-        "halfX": 0.57,
-        "halfZ": 0.56
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus.glb",
-      "x": -36.6,
-      "z": 32.84,
-      "rotationY": 4.9534,
-      "height": 1.2,
-      "collider": {
-        "halfX": 0.57,
-        "halfZ": 0.56
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus.glb",
-      "x": -19.69,
-      "z": -40.91,
-      "rotationY": 4.8946,
-      "height": 1.2,
-      "collider": {
-        "halfX": 0.57,
-        "halfZ": 0.56
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus.glb",
-      "x": -19.28,
-      "z": -33.89,
-      "rotationY": 2.6531,
-      "height": 1.2,
-      "collider": {
-        "halfX": 0.56,
-        "halfZ": 0.57
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus.glb",
-      "x": 35.21,
-      "z": 0.51,
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": 51.05,
+      "z": 0.74,
       "rotationY": 4.4009,
       "height": 1.2,
       "collider": {
-        "halfX": 0.57,
-        "halfZ": 0.56
+        "halfX": 0.58,
+        "halfZ": 0.58
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus.glb",
-      "x": -35.92,
-      "z": 29.19,
+      "model": "town/library/furniture-cactus-medium-b/furniture-cactus-medium-b.gltf",
+      "x": -52.08,
+      "z": 42.33,
       "rotationY": 3.9863,
       "height": 1.2,
       "collider": {
-        "halfX": 0.57,
-        "halfZ": 0.56
+        "halfX": 0.75,
+        "halfZ": 0.75
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus.glb",
-      "x": 25.34,
-      "z": -37.47,
-      "rotationY": 5.3798,
-      "height": 1.2,
-      "collider": {
-        "halfX": 0.57,
-        "halfZ": 0.56
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus.glb",
-      "x": -15.79,
-      "z": -20.21,
+      "model": "town/library/furniture-cactus-medium-b/furniture-cactus-medium-b.gltf",
+      "x": -22.9,
+      "z": -29.3,
       "rotationY": 4.7721,
       "height": 1.2,
       "collider": {
-        "halfX": 0.57,
-        "halfZ": 0.56
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus.glb",
-      "x": -40.47,
-      "z": -24.46,
-      "rotationY": 0.0964,
-      "height": 1.2,
-      "collider": {
-        "halfX": 0.56,
+        "halfX": 0.55,
         "halfZ": 0.57
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus.glb",
-      "x": 15.77,
-      "z": 32.63,
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": -58.68,
+      "z": -35.47,
+      "rotationY": 0.0964,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-b/furniture-cactus-medium-b.gltf",
+      "x": 22.87,
+      "z": 47.31,
       "rotationY": 2.1533,
       "height": 1.2,
       "collider": {
-        "halfX": 0.57,
-        "halfZ": 0.56
+        "halfX": 0.73,
+        "halfZ": 0.74
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-golden-barrel-cactus/desert-plants-golden-barrel-cactus.glb",
-      "x": 28.67,
-      "z": 23.9,
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": 41.57,
+      "z": 34.65,
       "rotationY": 4.2131,
       "height": 1.2,
       "collider": {
-        "halfX": 0.57,
-        "halfZ": 0.56
+        "halfX": 0.63,
+        "halfZ": 0.63
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-ocotillo/desert-plants-ocotillo.glb",
-      "x": 21.05,
-      "z": 7.29,
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": 30.52,
+      "z": 10.57,
       "rotationY": 4.4987,
       "height": 4,
-      "collider": {
-        "halfX": 0.37,
-        "halfZ": 0.37
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-ocotillo/desert-plants-ocotillo.glb",
-      "x": 10.7,
-      "z": 13.24,
-      "rotationY": 5.1033,
-      "height": 4,
-      "collider": {
-        "halfX": 0.37,
-        "halfZ": 0.37
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-ocotillo/desert-plants-ocotillo.glb",
-      "x": 15.36,
-      "z": 10.08,
-      "rotationY": 1.4448,
-      "height": 4,
-      "collider": {
-        "halfX": 0.37,
-        "halfZ": 0.37
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-ocotillo/desert-plants-ocotillo.glb",
-      "x": -41.72,
-      "z": 18.22,
-      "rotationY": 4.7015,
-      "height": 4,
-      "collider": {
-        "halfX": 0.37,
-        "halfZ": 0.37
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-ocotillo/desert-plants-ocotillo.glb",
-      "x": 20.43,
-      "z": -20.26,
-      "rotationY": 3.5674,
-      "height": 4,
-      "collider": {
-        "halfX": 0.37,
-        "halfZ": 0.37
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-ocotillo/desert-plants-ocotillo.glb",
-      "x": -40.95,
-      "z": -39.27,
-      "rotationY": 1.6887,
-      "height": 4,
-      "collider": {
-        "halfX": 0.37,
-        "halfZ": 0.37
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb",
-      "x": 14.76,
-      "z": -21.31,
-      "rotationY": 3.2455,
-      "height": 1.4,
-      "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.6
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb",
-      "x": -32.05,
-      "z": 25.71,
-      "rotationY": 1.2519,
-      "height": 1.4,
-      "collider": {
-        "halfX": 0.6,
-        "halfZ": 0.61
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb",
-      "x": 40.16,
-      "z": 29.03,
-      "rotationY": 0.11,
-      "height": 1.4,
-      "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.6
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb",
-      "x": -19.43,
-      "z": -27.63,
-      "rotationY": 5.9413,
-      "height": 1.4,
-      "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.6
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb",
-      "x": -24.3,
-      "z": 1.35,
-      "rotationY": 0.8906,
-      "height": 1.4,
-      "collider": {
-        "halfX": 0.6,
-        "halfZ": 0.61
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb",
-      "x": -0.7,
-      "z": -8.84,
-      "rotationY": 1.8972,
-      "height": 1.4,
-      "collider": {
-        "halfX": 0.6,
-        "halfZ": 0.61
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb",
-      "x": -41.85,
-      "z": 14.56,
-      "rotationY": 5.2723,
-      "height": 1.4,
-      "collider": {
-        "halfX": 0.6,
-        "halfZ": 0.61
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb",
-      "x": -9.0,
-      "z": 33.91,
-      "rotationY": 3.7019,
-      "height": 1.4,
-      "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.6
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb",
-      "x": -33.46,
-      "z": 21.1,
-      "rotationY": 1.7946,
-      "height": 1.4,
-      "collider": {
-        "halfX": 0.6,
-        "halfZ": 0.61
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb",
-      "x": 36.59,
-      "z": -24.55,
-      "rotationY": 1.6696,
-      "height": 1.4,
-      "collider": {
-        "halfX": 0.6,
-        "halfZ": 0.61
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb",
-      "x": -10.64,
-      "z": 30.58,
-      "rotationY": 5.556,
-      "height": 1.4,
-      "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.6
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb",
-      "x": 4.14,
-      "z": 12.13,
-      "rotationY": 0.3109,
-      "height": 1.4,
-      "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.6
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb",
-      "x": -16.99,
-      "z": 13.64,
-      "rotationY": 6.1342,
-      "height": 1.4,
-      "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.6
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-big-sagebrush/desert-plants-big-sagebrush.glb",
-      "x": -8.87,
-      "z": -30.95,
-      "rotationY": 1.0157,
-      "height": 1.4,
-      "collider": {
-        "halfX": 0.6,
-        "halfZ": 0.61
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-dead-desert-snag/desert-plants-dead-desert-snag.glb",
-      "x": -25.84,
-      "z": -36.92,
-      "rotationY": 2.1486,
-      "height": 3.5,
       "collider": {
         "halfX": 0.25,
         "halfZ": 0.25
@@ -1320,9 +1152,225 @@
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-dead-desert-snag/desert-plants-dead-desert-snag.glb",
-      "x": -23.86,
-      "z": -22.86,
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": 15.51,
+      "z": 19.2,
+      "rotationY": 5.1033,
+      "height": 4,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": 22.27,
+      "z": 14.62,
+      "rotationY": 1.4448,
+      "height": 4,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": -60.49,
+      "z": 26.42,
+      "rotationY": 4.7015,
+      "height": 4,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": 29.62,
+      "z": -29.38,
+      "rotationY": 3.5674,
+      "height": 4,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-3/nature-cactusflowers-3.glb",
+      "x": 21.4,
+      "z": -30.9,
+      "rotationY": 3.2455,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.21,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": -46.47,
+      "z": 37.28,
+      "rotationY": 1.2519,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": -28.17,
+      "z": -40.06,
+      "rotationY": 5.9413,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.35,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-3/nature-cactusflowers-3.glb",
+      "x": -35.23,
+      "z": 1.96,
+      "rotationY": 0.8906,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.42,
+        "halfZ": 0.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": -1.01,
+      "z": -12.82,
+      "rotationY": 1.8972,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-3/nature-cactusflowers-3.glb",
+      "x": -60.68,
+      "z": 21.11,
+      "rotationY": 5.2723,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.43,
+        "halfZ": 0.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": -13.05,
+      "z": 49.17,
+      "rotationY": 3.7019,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-3/nature-cactusflowers-3.glb",
+      "x": -48.52,
+      "z": 30.6,
+      "rotationY": 1.7946,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.43,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": 53.06,
+      "z": -35.6,
+      "rotationY": 1.6696,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.42,
+        "halfZ": 0.27
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-3/nature-cactusflowers-3.glb",
+      "x": -15.43,
+      "z": 44.34,
+      "rotationY": 5.556,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": 6,
+      "z": 17.59,
+      "rotationY": 0.3109,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-3/nature-cactusflowers-3.glb",
+      "x": -24.64,
+      "z": 19.78,
+      "rotationY": 6.1342,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.23,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": -12.86,
+      "z": -44.88,
+      "rotationY": 1.0157,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-1/nature-commontree-dead-1.glb",
+      "x": -37.47,
+      "z": -53.53,
+      "rotationY": 2.1486,
+      "height": 3.5,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 0.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-1/nature-commontree-dead-1.glb",
+      "x": -34.6,
+      "z": -33.15,
       "rotationY": 1.5611,
       "height": 3.5,
       "collider": {
@@ -1332,369 +1380,345 @@
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-dead-desert-snag/desert-plants-dead-desert-snag.glb",
-      "x": 31.32,
-      "z": -42.3,
-      "rotationY": 0.2026,
-      "height": 3.5,
-      "collider": {
-        "halfX": 0.25,
-        "halfZ": 0.25
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-dead-desert-snag/desert-plants-dead-desert-snag.glb",
-      "x": 35.27,
-      "z": 6.35,
+      "model": "town/library/nature-commontree-dead-1/nature-commontree-dead-1.glb",
+      "x": 51.14,
+      "z": 9.21,
       "rotationY": 1.9087,
       "height": 3.5,
       "collider": {
-        "halfX": 0.25,
-        "halfZ": 0.25
+        "halfX": 0.33,
+        "halfZ": 0.33
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-dead-desert-snag/desert-plants-dead-desert-snag.glb",
-      "x": -9.4,
-      "z": -26.56,
+      "model": "town/library/nature-commontree-dead-1/nature-commontree-dead-1.glb",
+      "x": -13.63,
+      "z": -38.51,
       "rotationY": 3.7766,
       "height": 3.5,
       "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-3/nature-cactusflowers-3.glb",
+      "x": -59.62,
+      "z": -29.7,
+      "rotationY": 2.8946,
+      "height": 4.5,
+      "collider": {
         "halfX": 0.25,
         "halfZ": 0.25
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-organ-pipe-cactus/desert-plants-organ-pipe-cactus.glb",
-      "x": -41.12,
-      "z": -20.48,
-      "rotationY": 2.8946,
-      "height": 4.5,
-      "collider": {
-        "halfX": 0.22,
-        "halfZ": 0.22
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-organ-pipe-cactus/desert-plants-organ-pipe-cactus.glb",
-      "x": -22.95,
-      "z": -41.34,
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": -33.28,
+      "z": -59.94,
       "rotationY": 2.124,
       "height": 4.5,
       "collider": {
-        "halfX": 0.22,
-        "halfZ": 0.22
+        "halfX": 0.38,
+        "halfZ": 0.38
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-organ-pipe-cactus/desert-plants-organ-pipe-cactus.glb",
-      "x": -6.67,
-      "z": 9.24,
+      "model": "town/library/nature-cactusflowers-3/nature-cactusflowers-3.glb",
+      "x": -9.67,
+      "z": 13.4,
       "rotationY": 1.2446,
       "height": 4.5,
       "collider": {
-        "halfX": 0.22,
-        "halfZ": 0.22
+        "halfX": 0.27,
+        "halfZ": 0.27
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-organ-pipe-cactus/desert-plants-organ-pipe-cactus.glb",
-      "x": 39.47,
-      "z": -19.69,
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": 57.23,
+      "z": -28.55,
       "rotationY": 5.1522,
       "height": 4.5,
       "collider": {
-        "halfX": 0.22,
-        "halfZ": 0.22
+        "halfX": 0.36,
+        "halfZ": 0.36
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-organ-pipe-cactus/desert-plants-organ-pipe-cactus.glb",
-      "x": -22.61,
-      "z": -26.73,
+      "model": "town/library/nature-cactusflowers-3/nature-cactusflowers-3.glb",
+      "x": -32.78,
+      "z": -38.76,
       "rotationY": 4.7782,
       "height": 4.5,
       "collider": {
-        "halfX": 0.22,
-        "halfZ": 0.22
+        "halfX": 0.25,
+        "halfZ": 0.25
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-organ-pipe-cactus/desert-plants-organ-pipe-cactus.glb",
-      "x": -24.11,
-      "z": 31.98,
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": -34.96,
+      "z": 46.37,
       "rotationY": 0.8917,
       "height": 4.5,
       "collider": {
-        "halfX": 0.22,
-        "halfZ": 0.22
+        "halfX": 0.4,
+        "halfZ": 0.4
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster.glb",
-      "x": -39.32,
-      "z": 7.83,
+      "model": "town/library/nature-cactusflower-1/nature-cactusflower-1.glb",
+      "x": -57.01,
+      "z": 11.35,
       "rotationY": 2.3789,
       "height": 0.9,
       "collider": {
-        "halfX": 0.65,
-        "halfZ": 0.61
+        "halfX": 1.31,
+        "halfZ": 1.31
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster.glb",
-      "x": -12.04,
-      "z": 20.08,
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -17.46,
+      "z": 29.12,
       "rotationY": 5.1648,
       "height": 0.9,
       "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.65
+        "halfX": 0.46,
+        "halfZ": 0.46
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster.glb",
-      "x": 26.19,
-      "z": 15.8,
+      "model": "town/library/nature-cactusflower-1/nature-cactusflower-1.glb",
+      "x": 37.98,
+      "z": 22.91,
       "rotationY": 0.2554,
       "height": 0.9,
       "collider": {
-        "halfX": 0.65,
-        "halfZ": 0.61
+        "halfX": 1.14,
+        "halfZ": 1.13
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster.glb",
-      "x": -19.98,
-      "z": 11.9,
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -28.97,
+      "z": 17.26,
       "rotationY": 1.9885,
       "height": 0.9,
       "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.65
+        "halfX": 0.46,
+        "halfZ": 0.46
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster.glb",
-      "x": -18.85,
-      "z": -43.71,
+      "model": "town/library/nature-cactusflower-1/nature-cactusflower-1.glb",
+      "x": -27.33,
+      "z": -63.38,
       "rotationY": 4.7479,
       "height": 0.9,
       "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.65
+        "halfX": 0.95,
+        "halfZ": 0.97
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster.glb",
-      "x": 37.23,
-      "z": -42.11,
-      "rotationY": 1.4694,
-      "height": 0.9,
-      "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.65
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster.glb",
-      "x": -2.08,
-      "z": 30.63,
+      "model": "town/library/nature-cactusflower-1/nature-cactusflower-1.glb",
+      "x": -3.02,
+      "z": 44.41,
       "rotationY": 5.9936,
       "height": 0.9,
       "collider": {
-        "halfX": 0.65,
-        "halfZ": 0.61
+        "halfX": 1.16,
+        "halfZ": 1.15
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster.glb",
-      "x": 9.01,
-      "z": -18.43,
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": 13.06,
+      "z": -26.72,
       "rotationY": 2.0078,
       "height": 0.9,
       "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.65
+        "halfX": 0.46,
+        "halfZ": 0.46
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster.glb",
-      "x": -11.6,
-      "z": 17.02,
+      "model": "town/library/nature-cactusflower-1/nature-cactusflower-1.glb",
+      "x": -16.82,
+      "z": 24.68,
       "rotationY": 0.4965,
       "height": 0.9,
       "collider": {
-        "halfX": 0.65,
-        "halfZ": 0.61
+        "halfX": 1.26,
+        "halfZ": 1.25
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster.glb",
-      "x": 10.11,
-      "z": 8.58,
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": 14.66,
+      "z": 12.44,
       "rotationY": 4.6997,
       "height": 0.9,
       "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.65
+        "halfX": 0.35,
+        "halfZ": 0.35
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster.glb",
-      "x": -10.67,
-      "z": 13.57,
+      "model": "town/library/nature-cactusflower-1/nature-cactusflower-1.glb",
+      "x": -15.47,
+      "z": 19.68,
       "rotationY": 1.2515,
       "height": 0.9,
       "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.65
+        "halfX": 1.17,
+        "halfZ": 1.17
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-hedgehog-cactus-cluster/desert-plants-hedgehog-cactus-cluster.glb",
-      "x": 25.91,
-      "z": 6.96,
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": 37.57,
+      "z": 10.09,
       "rotationY": 6.2264,
       "height": 0.9,
       "collider": {
-        "halfX": 0.65,
-        "halfZ": 0.61
+        "halfX": 0.37,
+        "halfZ": 0.37
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-century-plant-agave/desert-plants-century-plant-agave.glb",
-      "x": 26.8,
-      "z": 21.56,
+      "model": "town/library/nature-cactusflowers-5/nature-cactusflowers-5.glb",
+      "x": 38.86,
+      "z": 31.26,
       "rotationY": 5.7452,
       "height": 1.8,
       "collider": {
-        "halfX": 0.68,
-        "halfZ": 0.61
+        "halfX": 0.38,
+        "halfZ": 0.56
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-century-plant-agave/desert-plants-century-plant-agave.glb",
-      "x": 39.73,
-      "z": 1.49,
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": 57.61,
+      "z": 2.16,
       "rotationY": 5.8445,
       "height": 1.8,
       "collider": {
-        "halfX": 0.68,
-        "halfZ": 0.61
+        "halfX": 0.28,
+        "halfZ": 0.51
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-century-plant-agave/desert-plants-century-plant-agave.glb",
-      "x": 10.08,
-      "z": -27.02,
+      "model": "town/library/nature-cactusflowers-5/nature-cactusflowers-5.glb",
+      "x": 14.62,
+      "z": -39.18,
       "rotationY": 2.3167,
       "height": 1.8,
       "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.68
+        "halfX": 0.5,
+        "halfZ": 0.47
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-century-plant-agave/desert-plants-century-plant-agave.glb",
-      "x": 12.74,
-      "z": -28.13,
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": 18.47,
+      "z": -40.79,
       "rotationY": 0.0715,
       "height": 1.8,
       "collider": {
-        "halfX": 0.68,
-        "halfZ": 0.61
+        "halfX": 0.1,
+        "halfZ": 0.54
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-century-plant-agave/desert-plants-century-plant-agave.glb",
-      "x": 5.59,
-      "z": -16.14,
+      "model": "town/library/nature-cactusflowers-5/nature-cactusflowers-5.glb",
+      "x": 8.11,
+      "z": -23.4,
       "rotationY": 2.6166,
       "height": 1.8,
       "collider": {
-        "halfX": 0.68,
-        "halfZ": 0.61
+        "halfX": 0.38,
+        "halfZ": 0.56
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-century-plant-agave/desert-plants-century-plant-agave.glb",
-      "x": -41.51,
-      "z": 26.33,
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": -60.19,
+      "z": 38.18,
       "rotationY": 2.6625,
       "height": 1.8,
       "collider": {
-        "halfX": 0.68,
-        "halfZ": 0.61
+        "halfX": 0.3,
+        "halfZ": 0.5
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-century-plant-agave/desert-plants-century-plant-agave.glb",
-      "x": 4.33,
-      "z": 5.97,
+      "model": "town/library/nature-cactusflowers-5/nature-cactusflowers-5.glb",
+      "x": 6.28,
+      "z": 8.66,
       "rotationY": 5.7164,
       "height": 1.8,
       "collider": {
-        "halfX": 0.68,
-        "halfZ": 0.61
+        "halfX": 0.4,
+        "halfZ": 0.55
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-century-plant-agave/desert-plants-century-plant-agave.glb",
-      "x": -29.75,
-      "z": -21.9,
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": -43.14,
+      "z": -31.75,
       "rotationY": 3.2745,
       "height": 1.8,
       "collider": {
-        "halfX": 0.68,
-        "halfZ": 0.61
+        "halfX": 0.13,
+        "halfZ": 0.54
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-century-plant-agave/desert-plants-century-plant-agave.glb",
-      "x": 10.11,
-      "z": 20.32,
+      "model": "town/library/nature-cactusflowers-5/nature-cactusflowers-5.glb",
+      "x": 14.66,
+      "z": 29.46,
       "rotationY": 1.007,
       "height": 1.8,
       "collider": {
-        "halfX": 0.61,
-        "halfZ": 0.68
+        "halfX": 0.55,
+        "halfZ": 0.4
       },
       "fade": true
     },
     {
       "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
-      "x": 21.63,
-      "z": -41.03,
+      "x": 31.36,
+      "z": -59.49,
       "rotationY": 5.2666,
       "height": 2,
       "collider": {
@@ -1705,8 +1729,8 @@
     },
     {
       "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
-      "x": -28.13,
-      "z": 17.49,
+      "x": -40.79,
+      "z": 25.36,
       "rotationY": 5.847,
       "height": 2,
       "collider": {
@@ -1717,8 +1741,8 @@
     },
     {
       "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
-      "x": -36.5,
-      "z": -16.63,
+      "x": -52.92,
+      "z": -24.11,
       "rotationY": 4.7512,
       "height": 2,
       "collider": {
@@ -1729,8 +1753,8 @@
     },
     {
       "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
-      "x": -22.91,
-      "z": 6.94,
+      "x": -33.22,
+      "z": 10.06,
       "rotationY": 0.14,
       "height": 2,
       "collider": {
@@ -1741,8 +1765,8 @@
     },
     {
       "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
-      "x": -41.78,
-      "z": -16.31,
+      "x": -60.58,
+      "z": -23.65,
       "rotationY": 0.6683,
       "height": 2,
       "collider": {
@@ -1753,8 +1777,8 @@
     },
     {
       "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
-      "x": -16.78,
-      "z": -40.22,
+      "x": -24.33,
+      "z": -58.32,
       "rotationY": 5.588,
       "height": 2,
       "collider": {
@@ -1765,8 +1789,8 @@
     },
     {
       "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
-      "x": -13.82,
-      "z": 14.47,
+      "x": -20.04,
+      "z": 20.98,
       "rotationY": 4.3675,
       "height": 2,
       "collider": {
@@ -1777,8 +1801,8 @@
     },
     {
       "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
-      "x": 29.01,
-      "z": 11.51,
+      "x": 42.06,
+      "z": 16.69,
       "rotationY": 1.6713,
       "height": 2,
       "collider": {
@@ -1789,8 +1813,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
-      "x": -13.03,
-      "z": -32.94,
+      "x": -18.89,
+      "z": -47.76,
       "rotationY": 0.1805,
       "height": 1.5,
       "collider": {
@@ -1801,8 +1825,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
-      "x": 9.94,
-      "z": -41.58,
+      "x": 14.41,
+      "z": -60.29,
       "rotationY": 2.5945,
       "height": 1.5,
       "collider": {
@@ -1813,8 +1837,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
-      "x": -12.87,
-      "z": 10.96,
+      "x": -18.66,
+      "z": 15.89,
       "rotationY": 3.3796,
       "height": 1.5,
       "collider": {
@@ -1825,8 +1849,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
-      "x": -23.81,
-      "z": 23.25,
+      "x": -34.52,
+      "z": 33.71,
       "rotationY": 0.5711,
       "height": 1.5,
       "collider": {
@@ -1837,8 +1861,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
-      "x": -35.21,
-      "z": 17.46,
+      "x": -51.05,
+      "z": 25.32,
       "rotationY": 4.3804,
       "height": 1.5,
       "collider": {
@@ -1849,8 +1873,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
-      "x": 21.38,
-      "z": 14.73,
+      "x": 31,
+      "z": 21.36,
       "rotationY": 4.0608,
       "height": 1.5,
       "collider": {
@@ -1861,8 +1885,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
-      "x": 22.97,
-      "z": 1.18,
+      "x": 33.31,
+      "z": 1.71,
       "rotationY": 0.792,
       "height": 1.5,
       "collider": {
@@ -1873,8 +1897,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
-      "x": 19.21,
-      "z": -36.06,
+      "x": 27.85,
+      "z": -52.29,
       "rotationY": 6.0468,
       "height": 1.5,
       "collider": {
@@ -1885,8 +1909,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
-      "x": -8.48,
-      "z": 17.7,
+      "x": -12.3,
+      "z": 25.67,
       "rotationY": 4.357,
       "height": 1.5,
       "collider": {
@@ -1897,8 +1921,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
-      "x": 10.78,
-      "z": -36.37,
+      "x": 15.63,
+      "z": -52.74,
       "rotationY": 2.6363,
       "height": 1.5,
       "collider": {
@@ -1909,8 +1933,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-b/survival-kit-rock-sand-b.glb",
-      "x": -31.72,
-      "z": 32.79,
+      "x": -45.99,
+      "z": 47.55,
       "rotationY": 2.2335,
       "height": 2.5,
       "collider": {
@@ -1921,8 +1945,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-b/survival-kit-rock-sand-b.glb",
-      "x": 14.86,
-      "z": -32.7,
+      "x": 21.55,
+      "z": -47.41,
       "rotationY": 5.01,
       "height": 2.5,
       "collider": {
@@ -1933,8 +1957,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-b/survival-kit-rock-sand-b.glb",
-      "x": 25.83,
-      "z": -21.9,
+      "x": 37.45,
+      "z": -31.75,
       "rotationY": 0.0106,
       "height": 2.5,
       "collider": {
@@ -1945,8 +1969,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-b/survival-kit-rock-sand-b.glb",
-      "x": 33.34,
-      "z": 25.04,
+      "x": 48.34,
+      "z": 36.31,
       "rotationY": 3.2789,
       "height": 2.5,
       "collider": {
@@ -1957,8 +1981,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-b/survival-kit-rock-sand-b.glb",
-      "x": -15.28,
-      "z": 26.45,
+      "x": -22.16,
+      "z": 38.35,
       "rotationY": 0.7173,
       "height": 2.5,
       "collider": {
@@ -1969,20 +1993,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-b/survival-kit-rock-sand-b.glb",
-      "x": 41.25,
-      "z": 33.85,
-      "rotationY": 5.8124,
-      "height": 2.5,
-      "collider": {
-        "halfX": 1.89,
-        "halfZ": 1.87
-      },
-      "fade": true
-    },
-    {
-      "model": "town/library/survival-kit-rock-sand-b/survival-kit-rock-sand-b.glb",
-      "x": -40.51,
-      "z": 2.75,
+      "x": -58.74,
+      "z": 3.99,
       "rotationY": 3.6221,
       "height": 2.5,
       "collider": {
@@ -1993,8 +2005,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-c/survival-kit-rock-sand-c.glb",
-      "x": 15.95,
-      "z": 20.0,
+      "x": 23.13,
+      "z": 29,
       "rotationY": 6.2219,
       "height": 3.5,
       "collider": {
@@ -2005,8 +2017,8 @@
     },
     {
       "model": "town/library/survival-kit-rock-sand-c/survival-kit-rock-sand-c.glb",
-      "x": 2.65,
-      "z": 33.77,
+      "x": 3.84,
+      "z": 48.97,
       "rotationY": 3.6095,
       "height": 3.5,
       "collider": {
@@ -2016,35 +2028,491 @@
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-date-palm/desert-plants-date-palm.glb",
-      "x": -9,
-      "z": -18,
+      "model": "town/library/nature-palmtree-3/nature-palmtree-3.glb",
+      "x": -13.05,
+      "z": -26.1,
       "rotationY": 3.8948,
-      "height": 8,
+      "height": 10,
       "collider": {
-        "halfX": 0.6,
-        "halfZ": 0.6
+        "halfX": 1.21,
+        "halfZ": 1.21
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-california-fan-palm/desert-plants-california-fan-palm.glb",
-      "x": 9,
-      "z": -18,
+      "model": "town/library/nature-palmtree-2/nature-palmtree-2.glb",
+      "x": 13.05,
+      "z": -26.1,
       "rotationY": 5.0966,
-      "height": 9,
+      "height": 11.25,
       "collider": {
-        "halfX": 0.6,
-        "halfZ": 0.6
+        "halfX": 1.61,
+        "halfZ": 1.61
       },
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-date-palm/desert-plants-date-palm.glb",
-      "x": -9,
-      "z": -30,
+      "model": "town/library/nature-palmtree-1/nature-palmtree-1.glb",
+      "x": -13.05,
+      "z": -43.5,
       "rotationY": 0.377,
-      "height": 8,
+      "height": 10,
+      "collider": {
+        "halfX": 0.98,
+        "halfZ": 0.98
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-palmtree-2/nature-palmtree-2.glb",
+      "x": 13.05,
+      "z": -43.5,
+      "rotationY": 4.2502,
+      "height": 11.25,
+      "collider": {
+        "halfX": 1.69,
+        "halfZ": 1.69
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-well-yellow/medieval-hexa-building-well-yellow.gltf",
+      "x": -66,
+      "z": 30,
+      "rotationY": 2.4,
+      "height": 4,
+      "collider": {
+        "halfX": 2.03,
+        "halfZ": 2.05
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-b/survival-kit-rock-sand-b.glb",
+      "x": 70,
+      "z": -4,
+      "rotationY": 3.89,
+      "height": 7,
+      "collider": {
+        "halfX": 7.44,
+        "halfZ": 7.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-tent-canvas/survival-kit-tent-canvas.glb",
+      "x": 44,
+      "z": 44,
+      "rotationY": 0.5,
+      "height": 3,
+      "collider": {
+        "halfX": 1.97,
+        "halfZ": 1.98
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-1/nature-cactus-1.glb",
+      "x": 53.76,
+      "z": 7.44,
+      "rotationY": 4.58,
+      "height": 6.9,
+      "collider": {
+        "halfX": 0.53,
+        "halfZ": 0.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": -24.58,
+      "z": 16.21,
+      "rotationY": 5.02,
+      "height": 1.85,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.23
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
+      "x": 51.49,
+      "z": 11.83,
+      "rotationY": 5,
+      "height": 2.01,
+      "collider": {
+        "halfX": 1.08,
+        "halfZ": 1.11
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": 10.15,
+      "z": -78.81,
+      "rotationY": 4.75,
+      "height": 0.87,
+      "collider": {
+        "halfX": 0.35,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflower-1/nature-cactusflower-1.glb",
+      "x": 10.68,
+      "z": -81.34,
+      "rotationY": 5.01,
+      "height": 0.92,
+      "collider": {
+        "halfX": 1.18,
+        "halfZ": 1.19
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": -38.39,
+      "z": -61.2,
+      "rotationY": 5.17,
+      "height": 2.17,
+      "collider": {
+        "halfX": 0.69,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": -15.12,
+      "z": -75.66,
+      "rotationY": 5.48,
+      "height": 2.27,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": 20.17,
+      "z": 24.28,
+      "rotationY": 2.59,
+      "height": 5.68,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": -60,
+      "z": 12.81,
+      "rotationY": 1.53,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.56,
+        "halfZ": 0.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": -62.27,
+      "z": -16.03,
+      "rotationY": 5.78,
+      "height": 1.53,
+      "collider": {
+        "halfX": 0.27,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -67.67,
+      "z": 51.62,
+      "rotationY": 3.23,
+      "height": 0.97,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 0.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": 26.98,
+      "z": -56.27,
+      "rotationY": 2.64,
+      "height": 4.83,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.34
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": 7.74,
+      "z": -59.04,
+      "rotationY": 3.41,
+      "height": 4.98,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": -25.64,
+      "z": -43.51,
+      "rotationY": 1,
+      "height": 1.42,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
+      "x": 48.72,
+      "z": -20.47,
+      "rotationY": 4.89,
+      "height": 2.07,
+      "collider": {
+        "halfX": 1.04,
+        "halfZ": 1.08
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": -59.22,
+      "z": -37.9,
+      "rotationY": 5.58,
+      "height": 3.78,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -25.97,
+      "z": 11.59,
+      "rotationY": 0.36,
+      "height": 0.96,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -41.39,
+      "z": -69.24,
+      "rotationY": 5.74,
+      "height": 1.04,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": -61.72,
+      "z": -13.52,
+      "rotationY": 0.18,
+      "height": 5.66,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": 19.54,
+      "z": 18.94,
+      "rotationY": 3.58,
+      "height": 0.87,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": 15.54,
+      "z": -73.93,
+      "rotationY": 4.14,
+      "height": 1.03,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": 24.69,
+      "z": -27.8,
+      "rotationY": 3.32,
+      "height": 1.11,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": 6.31,
+      "z": -77.68,
+      "rotationY": 0.84,
+      "height": 0.87,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflower-1/nature-cactusflower-1.glb",
+      "x": -43.83,
+      "z": -59.84,
+      "rotationY": 2.16,
+      "height": 1.07,
+      "collider": {
+        "halfX": 1.52,
+        "halfZ": 1.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -20.8,
+      "z": -27.14,
+      "rotationY": 3.83,
+      "height": 0.83,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": -8.38,
+      "z": -53.07,
+      "rotationY": 6.18,
+      "height": 3.53,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": 20.76,
+      "z": 13.72,
+      "rotationY": 1.75,
+      "height": 2.08,
+      "collider": {
+        "halfX": 0.69,
+        "halfZ": 0.23
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": -19.39,
+      "z": 28.02,
+      "rotationY": 3.98,
+      "height": 5.07,
+      "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": -69.43,
+      "z": 49.3,
+      "rotationY": 1.97,
+      "height": 1.99,
+      "collider": {
+        "halfX": 0.64,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-1/nature-cactus-1.glb",
+      "x": -5.1,
+      "z": -81.17,
+      "rotationY": 4.52,
+      "height": 6.94,
+      "collider": {
+        "halfX": 0.56,
+        "halfZ": 0.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": 33.09,
+      "z": -39.18,
+      "rotationY": 3.72,
+      "height": 2.27,
+      "collider": {
+        "halfX": 0.42,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
+      "x": 84.47,
+      "z": 9.38,
+      "rotationY": 4.78,
+      "height": 1.92,
+      "collider": {
+        "halfX": 0.88,
+        "halfZ": 0.92
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": 25.16,
+      "z": 46.93,
+      "rotationY": 4.96,
+      "height": 2.23,
+      "collider": {
+        "halfX": 0.74,
+        "halfZ": 0.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": 22.81,
+      "z": 52.09,
+      "rotationY": 6.12,
+      "height": 1.36,
       "collider": {
         "halfX": 0.6,
         "halfZ": 0.6
@@ -2052,14 +2520,2354 @@
       "fade": true
     },
     {
-      "model": "town/library/desert-plants-california-fan-palm/desert-plants-california-fan-palm.glb",
-      "x": 9,
-      "z": -30,
-      "rotationY": 4.2502,
-      "height": 9,
+      "model": "town/library/nature-cactusflower-1/nature-cactusflower-1.glb",
+      "x": -61.43,
+      "z": 43.46,
+      "rotationY": 0.13,
+      "height": 0.88,
+      "collider": {
+        "halfX": 1.02,
+        "halfZ": 1.01
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": -7.94,
+      "z": -67.36,
+      "rotationY": 4.84,
+      "height": 4.2,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflower-1/nature-cactusflower-1.glb",
+      "x": 5.58,
+      "z": 23.07,
+      "rotationY": 2.76,
+      "height": 0.83,
+      "collider": {
+        "halfX": 1.12,
+        "halfZ": 1.11
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -43.26,
+      "z": -63.78,
+      "rotationY": 5.49,
+      "height": 1.1,
       "collider": {
         "halfX": 0.6,
         "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
+      "x": 6.12,
+      "z": -79.84,
+      "rotationY": 5.13,
+      "height": 2.07,
+      "collider": {
+        "halfX": 1.19,
+        "halfZ": 1.21
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": 27.28,
+      "z": -64.14,
+      "rotationY": 0.08,
+      "height": 4.7,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": -32.43,
+      "z": -62.34,
+      "rotationY": 2.92,
+      "height": 1.57,
+      "collider": {
+        "halfX": 0.16,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": 41.16,
+      "z": 29.14,
+      "rotationY": 5.52,
+      "height": 1.25,
+      "collider": {
+        "halfX": 0.68,
+        "halfZ": 0.68
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -39.93,
+      "z": -36.84,
+      "rotationY": 3.17,
+      "height": 0.98,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": 5.2,
+      "z": -57.42,
+      "rotationY": 1.77,
+      "height": 4.56,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": -23.71,
+      "z": -26.53,
+      "rotationY": 5.55,
+      "height": 6.23,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": -13.62,
+      "z": -77.21,
+      "rotationY": 4.4,
+      "height": 2.16,
+      "collider": {
+        "halfX": 0.71,
+        "halfZ": 0.33
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": 66.91,
+      "z": -16.74,
+      "rotationY": 4.29,
+      "height": 4.76,
+      "collider": {
+        "halfX": 0.31,
+        "halfZ": 0.31
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -37.13,
+      "z": 5.21,
+      "rotationY": 1.09,
+      "height": 0.86,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": -10.78,
+      "z": -65.36,
+      "rotationY": 0.41,
+      "height": 2.04,
+      "collider": {
+        "halfX": 0.37,
+        "halfZ": 0.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": 34.28,
+      "z": 8.3,
+      "rotationY": 3.6,
+      "height": 1.71,
+      "collider": {
+        "halfX": 0.28,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflower-1/nature-cactusflower-1.glb",
+      "x": 41.78,
+      "z": -41.62,
+      "rotationY": 0.01,
+      "height": 0.82,
+      "collider": {
+        "halfX": 0.86,
+        "halfZ": 0.84
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": 53.23,
+      "z": 40.55,
+      "rotationY": 6.07,
+      "height": 1.78,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": 63.08,
+      "z": 11.28,
+      "rotationY": 0.09,
+      "height": 3.85,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": 88.06,
+      "z": -9.89,
+      "rotationY": 3.65,
+      "height": 1.63,
+      "collider": {
+        "halfX": 0.27,
+        "halfZ": 0.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": -19.7,
+      "z": -68.76,
+      "rotationY": 6.01,
+      "height": 5.48,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-1/nature-cactus-1.glb",
+      "x": -13.08,
+      "z": -69.25,
+      "rotationY": 4.15,
+      "height": 5.07,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": 37.46,
+      "z": -34.84,
+      "rotationY": 3.43,
+      "height": 1.64,
+      "collider": {
+        "halfX": 0.19,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": -26.24,
+      "z": 20.93,
+      "rotationY": 5.41,
+      "height": 1.25,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 0.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -58.54,
+      "z": 7.72,
+      "rotationY": 2.21,
+      "height": 0.99,
+      "collider": {
+        "halfX": 0.53,
+        "halfZ": 0.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": 42.62,
+      "z": -22.47,
+      "rotationY": 3.9,
+      "height": 1.4,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
+      "x": -6.68,
+      "z": 25.44,
+      "rotationY": 0.63,
+      "height": 2.17,
+      "collider": {
+        "halfX": 1.34,
+        "halfZ": 1.33
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": 9.96,
+      "z": -84.56,
+      "rotationY": 2.51,
+      "height": 1.97,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": 23.59,
+      "z": 32.58,
+      "rotationY": 3.57,
+      "height": 1.11,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": -26.52,
+      "z": 10.41,
+      "rotationY": 2.76,
+      "height": 1.63,
+      "collider": {
+        "halfX": 0.22,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": 47.55,
+      "z": -13.42,
+      "rotationY": 5.42,
+      "height": 1.27,
+      "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -62.25,
+      "z": -41.08,
+      "rotationY": 2.23,
+      "height": 0.9,
+      "collider": {
+        "halfX": 0.49,
+        "halfZ": 0.49
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": -56.02,
+      "z": -33.19,
+      "rotationY": 0.22,
+      "height": 1.7,
+      "collider": {
+        "halfX": 0.21,
+        "halfZ": 0.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": -52.38,
+      "z": -26.46,
+      "rotationY": 4.81,
+      "height": 1.62,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.31
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": 33.13,
+      "z": -26.36,
+      "rotationY": 0.99,
+      "height": 3.8,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflower-1/nature-cactusflower-1.glb",
+      "x": 27.19,
+      "z": -46.6,
+      "rotationY": 5.11,
+      "height": 0.81,
+      "collider": {
+        "halfX": 1.09,
+        "halfZ": 1.09
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": 7.51,
+      "z": -76.77,
+      "rotationY": 3.02,
+      "height": 2.19,
+      "collider": {
+        "halfX": 0.21,
+        "halfZ": 0.73
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": -66.61,
+      "z": -9.77,
+      "rotationY": 3.19,
+      "height": 1.24,
+      "collider": {
+        "halfX": 0.22,
+        "halfZ": 0.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": -47.68,
+      "z": -28.3,
+      "rotationY": 1.41,
+      "height": 4.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": -60.38,
+      "z": 33.09,
+      "rotationY": 6.09,
+      "height": 1.95,
+      "collider": {
+        "halfX": 0.22,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": -70.61,
+      "z": 46.1,
+      "rotationY": 3.6,
+      "height": 1.44,
+      "collider": {
+        "halfX": 0.23,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": -64.13,
+      "z": 36.25,
+      "rotationY": 3.24,
+      "height": 4.88,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
+      "x": -55.03,
+      "z": -34.84,
+      "rotationY": 1.54,
+      "height": 1.63,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 0.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": -15.27,
+      "z": 53.02,
+      "rotationY": 1.94,
+      "height": 4.57,
+      "collider": {
+        "halfX": 0.28,
+        "halfZ": 0.28
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": -12.81,
+      "z": 30.73,
+      "rotationY": 3.28,
+      "height": 1.37,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": -38.14,
+      "z": 2.95,
+      "rotationY": 2.53,
+      "height": 2.11,
+      "collider": {
+        "halfX": 0.49,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": 59.67,
+      "z": -5.34,
+      "rotationY": 2.12,
+      "height": 1.08,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": 1.76,
+      "z": -62.56,
+      "rotationY": 4.12,
+      "height": 6.39,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": 16.58,
+      "z": -81.5,
+      "rotationY": 3.71,
+      "height": 2.14,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": 73.43,
+      "z": 11.25,
+      "rotationY": 3.43,
+      "height": 2.28,
+      "collider": {
+        "halfX": 0.33,
+        "halfZ": 0.75
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": 74.74,
+      "z": 8.8,
+      "rotationY": 1.67,
+      "height": 0.8,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.34
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
+      "x": 54.83,
+      "z": -38.11,
+      "rotationY": 0.86,
+      "height": 1.87,
+      "collider": {
+        "halfX": 1.16,
+        "halfZ": 1.16
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": 8.72,
+      "z": -84.79,
+      "rotationY": 6.1,
+      "height": 1.63,
+      "collider": {
+        "halfX": 0.35,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
+      "x": -21.43,
+      "z": -65.77,
+      "rotationY": 5.86,
+      "height": 2.02,
+      "collider": {
+        "halfX": 1.19,
+        "halfZ": 1.17
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": -24.96,
+      "z": -68.82,
+      "rotationY": 5.87,
+      "height": 6.07,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -25.78,
+      "z": -22.64,
+      "rotationY": 2.93,
+      "height": 1.01,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": -35.2,
+      "z": 48.12,
+      "rotationY": 4.83,
+      "height": 3.54,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": -32.32,
+      "z": 2.19,
+      "rotationY": 0.17,
+      "height": 1.7,
+      "collider": {
+        "halfX": 0.14,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": -10.98,
+      "z": -18.64,
+      "rotationY": 0.62,
+      "height": 2.09,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 0.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": 41.46,
+      "z": 12.09,
+      "rotationY": 1.54,
+      "height": 1.99,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.09
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": 63.13,
+      "z": -23.27,
+      "rotationY": 6.24,
+      "height": 6.35,
+      "collider": {
+        "halfX": 0.35,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": 12,
+      "z": 14.92,
+      "rotationY": 0.68,
+      "height": 1.88,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-1/nature-commontree-dead-1.glb",
+      "x": -1.77,
+      "z": 22.34,
+      "rotationY": 0.21,
+      "height": 3.19,
+      "collider": {
+        "halfX": 0.26,
+        "halfZ": 0.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -20.67,
+      "z": 54.66,
+      "rotationY": 4.32,
+      "height": 0.9,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": -41.68,
+      "z": -28.19,
+      "rotationY": 3.76,
+      "height": 4.55,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": 33.04,
+      "z": -55.68,
+      "rotationY": 2.26,
+      "height": 4.98,
+      "collider": {
+        "halfX": 0.44,
+        "halfZ": 0.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": 16.71,
+      "z": -54.09,
+      "rotationY": 4.32,
+      "height": 0.93,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -56.11,
+      "z": 7.28,
+      "rotationY": 3.89,
+      "height": 1.08,
+      "collider": {
+        "halfX": 0.59,
+        "halfZ": 0.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": 3.53,
+      "z": 10.85,
+      "rotationY": 1.34,
+      "height": 5.14,
+      "collider": {
+        "halfX": 0.28,
+        "halfZ": 0.28
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
+      "x": -34.13,
+      "z": -44.24,
+      "rotationY": 5.96,
+      "height": 1.63,
+      "collider": {
+        "halfX": 0.92,
+        "halfZ": 0.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -63.15,
+      "z": 52.72,
+      "rotationY": 3.96,
+      "height": 0.99,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": 77.87,
+      "z": 9.14,
+      "rotationY": 1.5,
+      "height": 1.07,
+      "collider": {
+        "halfX": 0.44,
+        "halfZ": 0.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": 58.04,
+      "z": -30.53,
+      "rotationY": 2.07,
+      "height": 0.9,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": 52.27,
+      "z": 5.91,
+      "rotationY": 5.81,
+      "height": 1.47,
+      "collider": {
+        "halfX": 0.24,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-1/nature-cactus-1.glb",
+      "x": -60.84,
+      "z": 18.42,
+      "rotationY": 5.32,
+      "height": 5.98,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": 34.87,
+      "z": -13.45,
+      "rotationY": 5.45,
+      "height": 4.51,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": 54.71,
+      "z": -20.03,
+      "rotationY": 5.06,
+      "height": 5.5,
+      "collider": {
+        "halfX": 0.32,
+        "halfZ": 0.32
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": -16.87,
+      "z": 2.33,
+      "rotationY": 1.32,
+      "height": 4.99,
+      "collider": {
+        "halfX": 0.26,
+        "halfZ": 0.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": 45.38,
+      "z": 17.03,
+      "rotationY": 5.86,
+      "height": 2.13,
+      "collider": {
+        "halfX": 0.31,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-1/nature-commontree-dead-1.glb",
+      "x": 29.39,
+      "z": 45.24,
+      "rotationY": 5.3,
+      "height": 3.71,
+      "collider": {
+        "halfX": 0.43,
+        "halfZ": 0.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": -13.15,
+      "z": 0.86,
+      "rotationY": 5.73,
+      "height": 2.01,
+      "collider": {
+        "halfX": 0.36,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": 54.54,
+      "z": -16.79,
+      "rotationY": 4.7,
+      "height": 1.01,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": 54.94,
+      "z": -24.11,
+      "rotationY": 4.73,
+      "height": 0.95,
+      "collider": {
+        "halfX": 0.37,
+        "halfZ": 0.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-3/nature-cactus-3.glb",
+      "x": 65.6,
+      "z": 21.46,
+      "rotationY": 2.62,
+      "height": 5.8,
+      "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": -23.4,
+      "z": -63.17,
+      "rotationY": 1.01,
+      "height": 2.23,
+      "collider": {
+        "halfX": 0.58,
+        "halfZ": 0.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": -6.79,
+      "z": 7.5,
+      "rotationY": 1.11,
+      "height": 1.7,
+      "collider": {
+        "halfX": 0.56,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": -52.83,
+      "z": 1.48,
+      "rotationY": 2.51,
+      "height": 1.74,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 0.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflower-1/nature-cactusflower-1.glb",
+      "x": -13.96,
+      "z": -74.13,
+      "rotationY": 0.1,
+      "height": 0.93,
+      "collider": {
+        "halfX": 1.05,
+        "halfZ": 1.04
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": 15.16,
+      "z": 34.7,
+      "rotationY": 2.94,
+      "height": 0.86,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -20.96,
+      "z": -57.66,
+      "rotationY": 1.18,
+      "height": 1.01,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": 66.61,
+      "z": 9.52,
+      "rotationY": 2.47,
+      "height": 1.07,
+      "collider": {
+        "halfX": 0.58,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": 75.32,
+      "z": 16.73,
+      "rotationY": 0.11,
+      "height": 4.75,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": -8.07,
+      "z": 8.02,
+      "rotationY": 1.47,
+      "height": 1.56,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.1
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": 15.31,
+      "z": -63.12,
+      "rotationY": 6.14,
+      "height": 2,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": -40.11,
+      "z": 45.91,
+      "rotationY": 3.09,
+      "height": 5.12,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": 25.5,
+      "z": 43.09,
+      "rotationY": 2.73,
+      "height": 1.27,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": -21.79,
+      "z": -35.78,
+      "rotationY": 5.1,
+      "height": 1.01,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": 63.38,
+      "z": 14.51,
+      "rotationY": 3.18,
+      "height": 1.3,
+      "collider": {
+        "halfX": 0.23,
+        "halfZ": 0.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": -16.52,
+      "z": -54.35,
+      "rotationY": 2.44,
+      "height": 1.18,
+      "collider": {
+        "halfX": 0.64,
+        "halfZ": 0.64
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": 70.57,
+      "z": 17.88,
+      "rotationY": 2.85,
+      "height": 1.22,
+      "collider": {
+        "halfX": 0.59,
+        "halfZ": 0.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": -8.49,
+      "z": 45.39,
+      "rotationY": 2.76,
+      "height": 1.53,
+      "collider": {
+        "halfX": 0.22,
+        "halfZ": 0.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
+      "x": 1.29,
+      "z": -77.39,
+      "rotationY": 6.21,
+      "height": 1.73,
+      "collider": {
+        "halfX": 0.83,
+        "halfZ": 0.8
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": 38.94,
+      "z": -45,
+      "rotationY": 5.09,
+      "height": 5.3,
+      "collider": {
+        "halfX": 0.32,
+        "halfZ": 0.32
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-1/nature-commontree-dead-1.glb",
+      "x": 23.04,
+      "z": 44.62,
+      "rotationY": 0.87,
+      "height": 4.08,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": -39.95,
+      "z": -46.32,
+      "rotationY": 1.01,
+      "height": 1.45,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.27
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": 2.54,
+      "z": 18.69,
+      "rotationY": 3.22,
+      "height": 1.57,
+      "collider": {
+        "halfX": 0.09,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": -40.29,
+      "z": 22.22,
+      "rotationY": 5.24,
+      "height": 5.06,
+      "collider": {
+        "halfX": 0.33,
+        "halfZ": 0.33
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": 21.84,
+      "z": 16.11,
+      "rotationY": 1.85,
+      "height": 5.18,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": 75.12,
+      "z": -21.07,
+      "rotationY": 0.74,
+      "height": 1.65,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 0.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-1/nature-cactus-1.glb",
+      "x": 31.65,
+      "z": -36.04,
+      "rotationY": 1.73,
+      "height": 7.6,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": 1.12,
+      "z": -83.16,
+      "rotationY": 3,
+      "height": 2.06,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 0.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": 38.69,
+      "z": 13.42,
+      "rotationY": 1.19,
+      "height": 1.54,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": 33.76,
+      "z": -29.39,
+      "rotationY": 3.73,
+      "height": 5.12,
+      "collider": {
+        "halfX": 0.35,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -10.94,
+      "z": 6.04,
+      "rotationY": 1.52,
+      "height": 0.87,
+      "collider": {
+        "halfX": 0.35,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-5/nature-cactus-5.glb",
+      "x": 18.49,
+      "z": 34.96,
+      "rotationY": 0.09,
+      "height": 2.39,
+      "collider": {
+        "halfX": 0.2,
+        "halfZ": 0.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": -17.37,
+      "z": 9.42,
+      "rotationY": 0.64,
+      "height": 4.79,
+      "collider": {
+        "halfX": 0.42,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-2/nature-cactusflowers-2.glb",
+      "x": -57.43,
+      "z": 29.23,
+      "rotationY": 3.15,
+      "height": 1.76,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-1/nature-commontree-dead-1.glb",
+      "x": 36.52,
+      "z": -26.94,
+      "rotationY": 0.12,
+      "height": 3.43,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": -50.71,
+      "z": 21.27,
+      "rotationY": 2.16,
+      "height": 4.17,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": -1.27,
+      "z": -59.54,
+      "rotationY": 5.13,
+      "height": 4.94,
+      "collider": {
+        "halfX": 0.31,
+        "halfZ": 0.31
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-2/nature-cactus-2.glb",
+      "x": 86.06,
+      "z": -1.53,
+      "rotationY": 2.24,
+      "height": 6.73,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": -5.61,
+      "z": 17.45,
+      "rotationY": 5.55,
+      "height": 4.36,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflowers-4/nature-cactusflowers-4.glb",
+      "x": 31.92,
+      "z": -42.46,
+      "rotationY": 0.77,
+      "height": 1.52,
+      "collider": {
+        "halfX": 0.35,
+        "halfZ": 0.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-a/furniture-cactus-small-a.gltf",
+      "x": -0.69,
+      "z": 51.19,
+      "rotationY": 3.31,
+      "height": 1.16,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -45.11,
+      "z": 13.09,
+      "rotationY": 3.31,
+      "height": 0.86,
+      "collider": {
+        "halfX": 0.38,
+        "halfZ": 0.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-small-b/furniture-cactus-small-b.gltf",
+      "x": -53.84,
+      "z": -60.88,
+      "rotationY": 6.15,
+      "height": 0.98,
+      "collider": {
+        "halfX": 0.42,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-1/nature-commontree-dead-1.glb",
+      "x": -19.29,
+      "z": -51.05,
+      "rotationY": 5.32,
+      "height": 4.49,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": -60.55,
+      "z": -33.8,
+      "rotationY": 5.05,
+      "height": 1.82,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.23
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-1/nature-commontree-dead-1.glb",
+      "x": -18.29,
+      "z": 39.59,
+      "rotationY": 5.12,
+      "height": 3.37,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.34
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": 11.54,
+      "z": -59.85,
+      "rotationY": 5.57,
+      "height": 4.11,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": -27.09,
+      "z": -18.39,
+      "rotationY": 2.4,
+      "height": 4.6,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactus-4/nature-cactus-4.glb",
+      "x": -29.46,
+      "z": -58.62,
+      "rotationY": 3.05,
+      "height": 1.65,
+      "collider": {
+        "halfX": 0.1,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-3/nature-commontree-dead-3.glb",
+      "x": 65.72,
+      "z": 7.12,
+      "rotationY": 4.28,
+      "height": 4.68,
+      "collider": {
+        "halfX": 0.25,
+        "halfZ": 0.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/furniture-cactus-medium-a/furniture-cactus-medium-a.gltf",
+      "x": -26.12,
+      "z": 49.79,
+      "rotationY": 6.16,
+      "height": 2.08,
+      "collider": {
+        "halfX": 1.04,
+        "halfZ": 1
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-cactusflower-1/nature-cactusflower-1.glb",
+      "x": -50.46,
+      "z": -25.82,
+      "rotationY": 4.9,
+      "height": 0.95,
+      "collider": {
+        "halfX": 1.14,
+        "halfZ": 1.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/nature-commontree-dead-4/nature-commontree-dead-4.glb",
+      "x": 17.37,
+      "z": 15.28,
+      "rotationY": 1.74,
+      "height": 4.97,
+      "collider": {
+        "halfX": 0.26,
+        "halfZ": 0.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-skull/halloween-skull.gltf",
+      "x": 36.43,
+      "z": 26.25,
+      "rotationY": 2.33,
+      "height": 0.84,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-skull/halloween-skull.gltf",
+      "x": -15.52,
+      "z": 15.87,
+      "rotationY": 3.27,
+      "height": 0.79,
+      "collider": {
+        "halfX": 0.38,
+        "halfZ": 0.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-skull/halloween-skull.gltf",
+      "x": -15.93,
+      "z": -75.03,
+      "rotationY": 6.07,
+      "height": 0.71,
+      "collider": {
+        "halfX": 0.37,
+        "halfZ": 0.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": 59.22,
+      "z": -35.6,
+      "rotationY": 2.36,
+      "height": 1.18,
+      "collider": {
+        "halfX": 0.71,
+        "halfZ": 0.71
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": -43.61,
+      "z": -66.16,
+      "rotationY": 5.74,
+      "height": 1.76,
+      "collider": {
+        "halfX": 1.38,
+        "halfZ": 1.34
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-skull/halloween-skull.gltf",
+      "x": -2.5,
+      "z": 1.41,
+      "rotationY": 0.21,
+      "height": 0.79,
+      "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": 38.89,
+      "z": -23.05,
+      "rotationY": 2.64,
+      "height": 1.23,
+      "collider": {
+        "halfX": 0.96,
+        "halfZ": 0.92
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-skull/halloween-skull.gltf",
+      "x": -2.69,
+      "z": -67.48,
+      "rotationY": 0.82,
+      "height": 0.83,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-c/survival-kit-rock-sand-c.glb",
+      "x": 32.04,
+      "z": -17.15,
+      "rotationY": 3.75,
+      "height": 3.13,
+      "collider": {
+        "halfX": 2.53,
+        "halfZ": 2.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-skull/halloween-skull.gltf",
+      "x": 90.17,
+      "z": -8.7,
+      "rotationY": 5.45,
+      "height": 0.79,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-skull/halloween-skull.gltf",
+      "x": 19.34,
+      "z": 28.34,
+      "rotationY": 4.66,
+      "height": 0.72,
+      "collider": {
+        "halfX": 0.32,
+        "halfZ": 0.33
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": -11.47,
+      "z": -60.14,
+      "rotationY": 1.2,
+      "height": 1.1,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": -37.07,
+      "z": 7.71,
+      "rotationY": 2.68,
+      "height": 1.03,
+      "collider": {
+        "halfX": 0.59,
+        "halfZ": 0.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": -48.63,
+      "z": -32.38,
+      "rotationY": 3.77,
+      "height": 1.8,
+      "collider": {
+        "halfX": 1.43,
+        "halfZ": 1.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": -32.91,
+      "z": 51.59,
+      "rotationY": 5.22,
+      "height": 1.13,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": -59.43,
+      "z": 41.02,
+      "rotationY": 4.37,
+      "height": 1.75,
+      "collider": {
+        "halfX": 1.21,
+        "halfZ": 1.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": -17.28,
+      "z": -36.45,
+      "rotationY": 2.33,
+      "height": 1.03,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-b/survival-kit-rock-sand-b.glb",
+      "x": -11.27,
+      "z": -56.16,
+      "rotationY": 5.08,
+      "height": 2.32,
+      "collider": {
+        "halfX": 2.25,
+        "halfZ": 2.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": 48.02,
+      "z": -33.08,
+      "rotationY": 3.17,
+      "height": 1.04,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-b/survival-kit-rock-sand-b.glb",
+      "x": -73.32,
+      "z": 30.77,
+      "rotationY": 2.15,
+      "height": 2.1,
+      "collider": {
+        "halfX": 2.19,
+        "halfZ": 2.19
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": -12.89,
+      "z": 40.6,
+      "rotationY": 2.28,
+      "height": 1.1,
+      "collider": {
+        "halfX": 0.66,
+        "halfZ": 0.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": -24.02,
+      "z": 51.52,
+      "rotationY": 5.91,
+      "height": 1.47,
+      "collider": {
+        "halfX": 1.11,
+        "halfZ": 1.04
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": -44.14,
+      "z": 12.47,
+      "rotationY": 2.25,
+      "height": 1.12,
+      "collider": {
+        "halfX": 0.67,
+        "halfZ": 0.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": 34.52,
+      "z": 30.37,
+      "rotationY": 1.99,
+      "height": 1.23,
+      "collider": {
+        "halfX": 0.89,
+        "halfZ": 0.94
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-skull/halloween-skull.gltf",
+      "x": 22.55,
+      "z": -64.36,
+      "rotationY": 6.14,
+      "height": 0.79,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-skull/halloween-skull.gltf",
+      "x": -58.87,
+      "z": -33.64,
+      "rotationY": 2.35,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-skull/halloween-skull.gltf",
+      "x": 41.8,
+      "z": -30.45,
+      "rotationY": 5.76,
+      "height": 0.77,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": 58.2,
+      "z": 4.44,
+      "rotationY": 6.27,
+      "height": 1.16,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": 13.15,
+      "z": 34.93,
+      "rotationY": 1.82,
+      "height": 1.89,
+      "collider": {
+        "halfX": 1.24,
+        "halfZ": 1.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-b/survival-kit-rock-sand-b.glb",
+      "x": 11.09,
+      "z": -75.49,
+      "rotationY": 6.13,
+      "height": 3.29,
+      "collider": {
+        "halfX": 2.84,
+        "halfZ": 2.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": 36.11,
+      "z": -52.28,
+      "rotationY": 1.46,
+      "height": 1.16,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": -47.57,
+      "z": -23.81,
+      "rotationY": 4.74,
+      "height": 1.04,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": 23.3,
+      "z": 49.01,
+      "rotationY": 0.05,
+      "height": 1.25,
+      "collider": {
+        "halfX": 0.78,
+        "halfZ": 0.69
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": -22.33,
+      "z": 53.92,
+      "rotationY": 0.11,
+      "height": 1.15,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": 27.08,
+      "z": -59.35,
+      "rotationY": 1.73,
+      "height": 1.29,
+      "collider": {
+        "halfX": 0.79,
+        "halfZ": 0.87
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": 18.02,
+      "z": 36.77,
+      "rotationY": 6.04,
+      "height": 1.17,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": -37.14,
+      "z": 53.85,
+      "rotationY": 1.23,
+      "height": 1.9,
+      "collider": {
+        "halfX": 1.32,
+        "halfZ": 1.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-skull/halloween-skull.gltf",
+      "x": 5.49,
+      "z": 3.88,
+      "rotationY": 1.09,
+      "height": 0.87,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": 89.28,
+      "z": 0.71,
+      "rotationY": 2,
+      "height": 1.71,
+      "collider": {
+        "halfX": 1.24,
+        "halfZ": 1.31
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-skull/halloween-skull.gltf",
+      "x": 46.03,
+      "z": 45.58,
+      "rotationY": 3.13,
+      "height": 0.81,
+      "collider": {
+        "halfX": 0.36,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": -65.41,
+      "z": -32.12,
+      "rotationY": 2.6,
+      "height": 1.68,
+      "collider": {
+        "halfX": 1.32,
+        "halfZ": 1.27
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": -53.42,
+      "z": 39.82,
+      "rotationY": 3.86,
+      "height": 1.96,
+      "collider": {
+        "halfX": 1.56,
+        "halfZ": 1.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-b/survival-kit-rock-sand-b.glb",
+      "x": 38.15,
+      "z": 44.1,
+      "rotationY": 4.88,
+      "height": 2.06,
+      "collider": {
+        "halfX": 1.78,
+        "halfZ": 1.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": 28.5,
+      "z": -49.11,
+      "rotationY": 5.49,
+      "height": 1.08,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-c/survival-kit-rock-sand-c.glb",
+      "x": -68.8,
+      "z": 40.15,
+      "rotationY": 0.54,
+      "height": 4.78,
+      "collider": {
+        "halfX": 3.84,
+        "halfZ": 3.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": -23.8,
+      "z": -54.28,
+      "rotationY": 5.38,
+      "height": 1.16,
+      "collider": {
+        "halfX": 0.69,
+        "halfZ": 0.69
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": -57.4,
+      "z": 48.2,
+      "rotationY": 2.13,
+      "height": 1.35,
+      "collider": {
+        "halfX": 1.03,
+        "halfZ": 1.06
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": -6.4,
+      "z": -72.97,
+      "rotationY": 3.89,
+      "height": 1.55,
+      "collider": {
+        "halfX": 1.24,
+        "halfZ": 1.23
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-skull/halloween-skull.gltf",
+      "x": -52.71,
+      "z": 13.61,
+      "rotationY": 3.1,
+      "height": 0.82,
+      "collider": {
+        "halfX": 0.37,
+        "halfZ": 0.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": 4.48,
+      "z": 20.09,
+      "rotationY": 0.75,
+      "height": 1.82,
+      "collider": {
+        "halfX": 1.45,
+        "halfZ": 1.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/halloween-skull/halloween-skull.gltf",
+      "x": 16.87,
+      "z": 28.95,
+      "rotationY": 3.84,
+      "height": 0.78,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": 8.1,
+      "z": 48.65,
+      "rotationY": 2.02,
+      "height": 1.79,
+      "collider": {
+        "halfX": 1.31,
+        "halfZ": 1.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": 48.46,
+      "z": -22.6,
+      "rotationY": 2.67,
+      "height": 1.14,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": 62.89,
+      "z": -8.96,
+      "rotationY": 0.55,
+      "height": 1.13,
+      "collider": {
+        "halfX": 0.66,
+        "halfZ": 0.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": 26.39,
+      "z": 50.18,
+      "rotationY": 5.53,
+      "height": 1.08,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": -31.51,
+      "z": -25.02,
+      "rotationY": 4.55,
+      "height": 1.79,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 1.21
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": 67.86,
+      "z": 10.16,
+      "rotationY": 4.41,
+      "height": 1.04,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": 13.81,
+      "z": -84.75,
+      "rotationY": 6.25,
+      "height": 1.95,
+      "collider": {
+        "halfX": 1.21,
+        "halfZ": 1.06
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/prototype-barrel-a/prototype-barrel-a.gltf",
+      "x": 72.32,
+      "z": -16.25,
+      "rotationY": 4.98,
+      "height": 1.14,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/survival-kit-rock-sand-a/survival-kit-rock-sand-a.glb",
+      "x": -0.25,
+      "z": 20.52,
+      "rotationY": 5.33,
+      "height": 1.27,
+      "collider": {
+        "halfX": 0.99,
+        "halfZ": 1.01
       },
       "fade": true
     }
@@ -2080,40 +4888,40 @@
       "id": "sea-north",
       "sound": "ocean-ambient",
       "x": 0,
-      "z": -53.0,
-      "width": 110,
-      "depth": 10,
-      "fade": 10,
+      "z": -95.25,
+      "width": 200,
+      "depth": 12,
+      "fade": 14,
       "volume": 0.15
     },
     {
       "id": "sea-south",
       "sound": "ocean-ambient",
       "x": 0,
-      "z": 43.0,
-      "width": 110,
-      "depth": 10,
-      "fade": 10,
+      "z": 78.75,
+      "width": 200,
+      "depth": 12,
+      "fade": 14,
       "volume": 0.15
     },
     {
       "id": "sea-west",
       "sound": "ocean-ambient",
-      "x": -51.0,
-      "z": -5,
-      "width": 10,
-      "depth": 96,
-      "fade": 10,
+      "x": -96,
+      "z": -7.25,
+      "width": 12,
+      "depth": 190,
+      "fade": 14,
       "volume": 0.15
     },
     {
       "id": "sea-east",
       "sound": "ocean-ambient",
-      "x": 51.0,
-      "z": -5,
-      "width": 10,
-      "depth": 96,
-      "fade": 10,
+      "x": 96,
+      "z": -7.25,
+      "width": 12,
+      "depth": 190,
+      "fade": 14,
       "volume": 0.15
     }
   ],
@@ -2134,66 +4942,66 @@
     "areas": [
       {
         "x": 0,
-        "z": -24,
-        "width": 16,
-        "depth": 12,
-        "count": 5
+        "z": -34.8,
+        "width": 23.2,
+        "depth": 17.4,
+        "count": 7
       },
       {
-        "x": -24,
-        "z": 24,
-        "width": 14,
-        "depth": 9,
-        "count": 4
+        "x": -34.8,
+        "z": 34.8,
+        "width": 20.3,
+        "depth": 13.05,
+        "count": 6
       },
       {
         "x": 0,
-        "z": -4,
-        "width": 60,
-        "depth": 4,
-        "count": 6
+        "z": -5.8,
+        "width": 87,
+        "depth": 5.8,
+        "count": 8
       }
     ],
     "waypoints": [
       {
         "id": "p0",
-        "x": -36,
-        "z": -2
+        "x": -52.2,
+        "z": -2.9
       },
       {
         "id": "p1",
-        "x": -24,
-        "z": -2
+        "x": -34.8,
+        "z": -2.9
       },
       {
         "id": "p2",
-        "x": -12,
-        "z": -2
+        "x": -17.4,
+        "z": -2.9
       },
       {
         "id": "p3",
         "x": 0,
-        "z": -2
+        "z": -2.9
       },
       {
         "id": "p4",
-        "x": 12,
-        "z": -2
+        "x": 17.4,
+        "z": -2.9
       },
       {
         "id": "p5",
-        "x": 24,
-        "z": -2
+        "x": 34.8,
+        "z": -2.9
       },
       {
         "id": "p6",
-        "x": 36,
-        "z": -2
+        "x": 52.2,
+        "z": -2.9
       },
       {
         "id": "pn",
         "x": 0,
-        "z": -18
+        "z": -26.1
       }
     ],
     "links": [
@@ -2237,7 +5045,7 @@
   },
   "goal": {
     "model": "town/library/city-builder-watertower/city-builder-watertower.gltf",
-    "radius": 4.5,
+    "radius": 5.63,
     "name": "Water Tower"
   },
   "round": {

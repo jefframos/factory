@@ -18,7 +18,7 @@ import { kitchenModel, loadModels, sizeOf } from '../world/Models';
 import { Customer } from '../world/Customers';
 import { SETTINGS, MarketItem } from '../data/Settings';
 import { RestaurantSave } from '../data/RestaurantSave';
-import { shoppingList } from '../data/Market';
+import { servesDish, shoppingList } from '../data/Market';
 import { MARKET_HUD_SHARE, MarketHud } from '../ui/MarketHud';
 import { uiPress } from '../ui/UiParts';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
@@ -35,10 +35,19 @@ const GRID = MARKET_LAYOUT.market.crates;
 const VIEW = { tilt: 0.7, padX: 0.7, ...MARKET_HUD_SHARE };
 /** Always this many crates: everything on the list, the rest other produce at random (in shuffled spots). */
 const CRATES = 12;
+/** The first visit (the tutorial's): just this many. */
+const FIRST_CRATES = 6;
+/** Up to this day (0-based: the 3rd market), FIRST_CRATES; a few days more, MID_CRATES (3 x 3); then CRATES. */
+const EARLY_DAYS = 3;
+const MID_CRATES = 9;
+/** The crate grids there are (crates, columns): every row full. The smallest that holds the list and its decoys. */
+const GRIDS: [number, number][] = [[6, 3], [8, 4], [9, 3], [12, 4], [15, 5], [16, 4]];
+/** At least this many crates that aren't on the list (or half the list, if more). */
+const MIN_DECOYS = 2;
 /** Raw patties, pickles: no crate of their own, an empty one with a few on top (settings.json market[].top). */
 const ON_TOP = 3;
 /** After the list's done, how long before the restaurant opens. */
-const DONE_SECONDS = 1.6;
+const DONE_SECONDS = 3.2;
 
 const MODELS = [
     ...new Set([...SETTINGS.market.flatMap((item) => [item.crate, item.icon, ...(item.top ? [item.top] : [])]), ...marketRoomModels()]),
@@ -57,10 +66,28 @@ export default class MarketScene extends ThreeScene {
     private readonly list = shoppingList(RestaurantSave.orders);
     /** Today's crates: the list's items and others to make CRATES, shuffled. */
     private readonly stock = (() => {
-        const needed = SETTINGS.market.filter((item) => this.list.some((i) => i.id === item.id));
-        const others = SETTINGS.market.filter((item) => !needed.includes(item)).sort(() => Math.random() - 0.5);
-        return [...needed, ...others.slice(0, Math.max(0, CRATES - needed.length))].sort(() => Math.random() - 0.5);
+        // The first visit is the tutorial's: fewer crates (FIRST_CRATES). Items for a dish (milk, fruit: `with`) are only
+        // on the floor once the restaurant serves it.
+        // The first days (to day EARLY_DAYS): a 2 x 3 grid; then more.
+        const count = RestaurantSave.day <= EARLY_DAYS ? FIRST_CRATES : RestaurantSave.day <= EARLY_DAYS + 3 ? MID_CRATES : CRATES;
+        const sold = SETTINGS.market.filter((item) => !item.with || servesDish(item.with, RestaurantSave.stage));
+        const needed = sold.filter((item) => this.list.some((i) => i.id === item.id));
+        const others = sold.filter((item) => !needed.includes(item)).sort(() => Math.random() - 0.5);
+        // (Dish items first among the others: once there's ice cream, its milk and fruit are always about.)
+        others.sort((a, b) => Number(Boolean(b.with)) - Number(Boolean(a.with)));
+        // Always some that aren't on the list (else there's nothing to get wrong), and a full grid: no gaps.
+        const decoys = Math.max(MIN_DECOYS, Math.ceil(needed.length / 2));
+        const want = Math.max(count, needed.length + decoys);
+        const fits = GRIDS.filter(([size]) => size <= sold.length);
+        const grid = fits.find(([size]) => size >= want) ?? fits[fits.length - 1] ?? [sold.length, 3];
+        const size = Math.max(grid[0], needed.length);
+        return [...needed, ...others.slice(0, Math.max(0, size - needed.length))].sort(() => Math.random() - 0.5);
     })();
+    /** The grid's columns: the full grid this many crates make (GRIDS); never a broken last row. */
+    private get columns(): number {
+        const n = this.stock.length;
+        return GRIDS.find(([size]) => size === n)?.[1] ?? (n <= 4 ? n : n % 3 === 0 ? 3 : 4);
+    }
     private readonly basket = new Set<string>();
     private cashier: Customer | null = null;
     /** The market's floor, walls and props (levels/market.json). */
@@ -148,27 +175,32 @@ export default class MarketScene extends ThreeScene {
             const top = sizeOf(crate).y;
             sized.add(crate);
             if (item.top) {
-                for (let i = 0; i < ON_TOP; i++) {
-                    const patty = kitchenModel(item.top);
-                    patty.scale.setScalar(0.8);
-                    patty.position.set((i - 1) * 0.3, top * 0.75 + i * 0.05, (i % 2) * 0.15 - 0.05);
-                    patty.rotation.y = i * 0.8;
-                    sized.add(patty);
+                // ON_TOP of them (or the item's topCount, at its topScale: small fruit, more of it), a little heap.
+                const count = item.topCount ?? ON_TOP;
+                const spread = count > ON_TOP ? 0.42 : 0.3;
+                for (let i = 0; i < count; i++) {
+                    const piece = kitchenModel(item.top);
+                    piece.scale.setScalar(item.topScale ?? 0.8);
+                    const angle = (i / count) * Math.PI * 2 + 0.4;
+                    const r = count > ON_TOP ? spread * (i % 2 ? 1 : 0.55) : 0;
+                    piece.position.set(count > ON_TOP ? Math.cos(angle) * r : (i - 1) * spread, top * 0.75 + (count > ON_TOP ? (i % 3) * 0.04 : i * 0.05), count > ON_TOP ? Math.sin(angle) * r : (i % 2) * 0.15 - 0.05);
+                    piece.rotation.y = i * 0.8;
+                    sized.add(piece);
                 }
             }
             return holder;
         });
         const size = holders.reduce((most, h) => most.max(sizeOf(h)), new THREE.Vector3());
-        const rows = Math.ceil(items.length / GRID.columns);
+        const rows = Math.ceil(items.length / this.columns);
         const stepX = size.x + GRID.gapX;
         const stepZ = size.z + GRID.gapZ;
         // Shuffled, so the list's items aren't always in the same spots.
         const spots = items.map((_, i) => i).sort(() => Math.random() - 0.5);
         items.forEach((item, i) => {
-            const column = spots[i] % GRID.columns;
-            const row = Math.floor(spots[i] / GRID.columns);
+            const column = spots[i] % this.columns;
+            const row = Math.floor(spots[i] / this.columns);
             const holder = holders[i];
-            holder.position.set(GRID.x + (column - (GRID.columns - 1) / 2) * stepX, 0, GRID.z + ((rows - 1) / 2 - row) * stepZ);
+            holder.position.set(GRID.x + (column - (this.columns - 1) / 2) * stepX, 0, GRID.z + ((rows - 1) / 2 - row) * stepZ);
             holder.rotation.y = (Math.random() - 0.5) * 0.12;
             this.threeScene.add(holder);
             const box = new THREE.Mesh(new THREE.BoxGeometry(size.x + 0.2, size.y + 0.4, size.z + 0.2), this.hitMaterial);
@@ -177,7 +209,7 @@ export default class MarketScene extends ThreeScene {
             this.crates.push({ item, holder, box, tagAt: holder.position.clone().add(new THREE.Vector3(0, 0, -size.z / 2 - 0.3)) });
         });
         this.columnStep = stepX;
-        const halfX = (GRID.columns * stepX) / 2;
+        const halfX = (this.columns * stepX) / 2;
         const halfZ = (rows * stepZ) / 2;
         this.bounds.set(new THREE.Vector3(GRID.x - halfX, 0, GRID.z - halfZ), new THREE.Vector3(GRID.x + halfX, size.y, GRID.z + halfZ));
 
@@ -268,7 +300,7 @@ export default class MarketScene extends ThreeScene {
         gsap.delayedCall(0.6, () => {
             if (this.gone) return;
             RestaurantAudio.play('happy');
-            this.hud.banner('ALL SET!', 'Everything for tomorrow');
+            this.hud.celebrate(this.list);
         });
         gsap.delayedCall(DONE_SECONDS + 0.6, () => {
             if (!this.gone) this.onDone();

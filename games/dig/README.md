@@ -27,7 +27,7 @@ From the repo root, with `GAME=dig` in `.env`:
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Dev server on `:9001`. Add `?dev=1` for the mine MAP button and the debug panels. |
+| `npm run dev` | Dev server on `:8000`. Add `?dev=1` for the mine MAP button and the debug panels. |
 | `npm run build` / `npm run build:cached` | Production build / build into `cachedBuilds/dig`. Local and cached builds use the **mock platform** (see Platforms). |
 | `npm run editor` | The level / data editor (see Editor). |
 | `npm run image` | Rebuild the UI atlas after adding images to `raw-assets/images/ui{tps}/`. |

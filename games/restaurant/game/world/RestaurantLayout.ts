@@ -23,7 +23,7 @@
 import * as THREE from 'three';
 import layoutJson from '../../levels/restaurant.json';
 import prefabsJson from '../../levels/prefabs.json';
-import { LayoutProp, Room, RoomLayout, StageRange, shownAt } from 'core/rooms/Room';
+import { LayoutOpening, LayoutProp, Room, RoomLayout, StageRange, shownAt } from 'core/rooms/Room';
 import { kitchenModel } from './Models';
 import { blockModels, blockProps } from './CityBlocks';
 import type { BlockFill } from '../../web/public/cityfill.js';
@@ -209,7 +209,45 @@ function propAndPieceModels(stage: number): string[] {
 
 /** The room at `stage` (its models loaded: roomModels). */
 /** The room at `stage` (its models loaded: roomModels), its city blocks filled with buildings (CityBlocks.ts). */
-export const buildRoom = (stage: number): Room => new Room({ ...LAYOUT_DATA, props: [...LAYOUT_DATA.props, ...blockProps(stage)] }, stage, { instantiate: (model) => kitchenModel(model) });
+export const buildRoom = (stage: number, extra?: { wall: number; opening: LayoutOpening }[]): Room => {
+    // `extra`: openings cut for this build only (the phone orders' window behind the pizza station), wall by its index.
+    const walls = extra?.length
+        ? LAYOUT_DATA.walls.map((wall, i) => {
+            const cut = extra.filter((e) => e.wall === i).map((e) => e.opening);
+            return cut.length ? { ...wall, openings: [...(wall.openings ?? []), ...cut] } : wall;
+        })
+        : LAYOUT_DATA.walls;
+    return new Room({ ...LAYOUT_DATA, walls, props: [...LAYOUT_DATA.props, ...blockProps(stage)] }, stage, { instantiate: (model) => kitchenModel(model) });
+};
+
+/**
+ * Where a ray along the floor from `from` (going `direction`) first meets a wall shown at `stage`: the wall's index, the
+ * point, the side it's on (the segment's direction); null if it meets none within `reach`.
+ */
+export function wallAhead(stage: number, from: Point, direction: Point, reach = 12): { wall: number; at: Point; along: Point } | null {
+    let best: { wall: number; at: Point; along: Point; t: number } | null = null;
+    LAYOUT_DATA.walls.forEach((wall, i) => {
+        if (!shownAt(wall, stage, LAYOUT_DATA.areas ?? [])) return;
+        const points = wall.points;
+        const count = wall.closed ? points.length : points.length - 1;
+        for (let k = 0; k < count; k++) {
+            const a = points[k];
+            const b = points[(k + 1) % points.length];
+            const ex = b.x - a.x, ez = b.z - a.z;
+            const denominator = direction.x * ez - direction.z * ex;
+            if (Math.abs(denominator) < 1e-6) continue;
+            const t = ((a.x - from.x) * ez - (a.z - from.z) * ex) / denominator;
+            const u = ((a.x - from.x) * direction.z - (a.z - from.z) * direction.x) / denominator;
+            if (t <= 0 || t > reach || u < 0 || u > 1) continue;
+            if (!best || t < best.t) {
+                const length = Math.hypot(ex, ez) || 1;
+                best = { wall: i, at: { x: from.x + direction.x * t, z: from.z + direction.z * t }, along: { x: ex / length, z: ez / length }, t };
+            }
+        }
+    });
+    const found = best as { wall: number; at: Point; along: Point; t: number } | null;
+    return found ? { wall: found.wall, at: found.at, along: found.along } : null;
+}
 
 /** The ice cream machine's model (KayKit's, imported from the library): a prop of it makes the ice cream station. */
 export const ICE_CREAM_MACHINE = /icecream[-_]machine/i;

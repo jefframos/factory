@@ -109,8 +109,8 @@ export function randomSundae(options: { maxScoops?: number; maxToppings?: number
 }
 
 /** What can go on a pizza over its cheese. A topping's id is its market item's (settings.json market). */
-export type PizzaTopping = 'pepperoni' | 'mushroom' | 'onion' | 'tomato' | 'pickles';
-export const PIZZA_TOPPINGS: PizzaTopping[] = ['pepperoni', 'mushroom', 'onion', 'tomato', 'pickles'];
+export type PizzaTopping = 'pepperoni' | 'ham' | 'mushroom' | 'onion' | 'tomato' | 'pickles' | 'broccoli' | 'pineapple' | 'fish';
+export const PIZZA_TOPPINGS: PizzaTopping[] = ['pepperoni', 'ham', 'mushroom', 'onion', 'tomato', 'pickles', 'broccoli', 'pineapple', 'fish'];
 /** A stage's pizza toppings when settings.json doesn't say. */
 export const BASIC_PIZZA_TOPPINGS: PizzaTopping[] = ['pepperoni', 'mushroom', 'onion', 'tomato'];
 /** What goes on a pizza, in the order it's made (bottom up): the base, then the toppings. */
@@ -133,6 +133,14 @@ export const PIZZA_LAYER_MODELS: Record<PizzaLayer, string> = {
     tomato: 'food_ingredient_tomato_slice',
     /** Made by tools/make-pickles.mjs (the kit has none). */
     pickles: 'food_ingredient_pickle_slices',
+    /**
+     * Broccoli and fish: Kenney's Food Kit's (the pizza game's; small, scattered: florets, anchovies). Ham and pineapple
+     * as pieces (a cube, a chunk) aren't in any kit: made by tools/make-toppings.mjs.
+     */
+    ham: 'food_ingredient_ham_cubes',
+    broccoli: 'library/food-kit/broccoli.glb',
+    pineapple: 'food_ingredient_pineapple_chunks',
+    fish: 'library/food-kit/fish.glb',
 };
 /** Where each layer comes from on the table (what the player taps). The sauce's is a bowl (with sauce in it). */
 export const PIZZA_SOURCE_MODELS: Record<PizzaLayer, string> = {
@@ -144,6 +152,11 @@ export const PIZZA_SOURCE_MODELS: Record<PizzaLayer, string> = {
     onion: 'food_ingredient_onion',
     tomato: 'food_ingredient_tomato',
     pickles: 'food_ingredient_pickle',
+    ham: 'food_ingredient_ham',
+    /** Kenney's Food Kit (the pizza game's models: models/library/food-kit). */
+    broccoli: 'library/food-kit/broccoli.glb',
+    pineapple: 'library/food-kit/pineapple.glb',
+    fish: 'library/food-kit/fish.glb',
 };
 export const PIZZA_OVEN_MODEL = 'pizza_oven';
 
@@ -196,9 +209,12 @@ export function randomOrder(most = 3, toppings: readonly Topping[] = BASIC_TOPPI
  * Day `day`'s orders, dealt, from the stage's toppings. `iceCream`: the stage has its machine (and it's not the stage's
  * first day): settings.json stages[].iceCream's share of them are cones. `sundae`, the same with its sundae bar
  * (stages[].sundae: scooped cones and bowls). `pizza`, the same with its oven:
- * stages[].pizza's share are pizzas.
+ * stages[].pizza's share are pizzas. Each dish that's on gets at least one order a day (a share's roll can miss them all
+ * on a short day). `introduce`: dishes new at this stage, on its first day: one order each, early (the 2nd customer on),
+ * so the new station's shown straight away.
  */
-export function dealDay(day: number, stage: number, customersOverride?: number, iceCream = false, pizza = false, sundae = false): Order[] {
+export function dealDay(day: number, stage: number, customersOverride?: number, iceCream = false, pizza = false, sundae = false,
+    introduce: readonly ('iceCream' | 'pizza' | 'sundae')[] = []): Order[] {
     const { customers, maxToppings } = daySettings(day);
     const settings = stageSettings(stage);
     const toppings = settings.toppings ?? BASIC_TOPPINGS;
@@ -206,13 +222,37 @@ export function dealDay(day: number, stage: number, customersOverride?: number, 
     const pizzas = pizza ? settings.pizza : undefined;
     const sundaes = sundae ? settings.sundae : undefined;
     const pick = <T>(list: readonly T[]): T => list[Math.floor(Math.random() * list.length)];
-    return Array.from({ length: customersOverride ?? customers }, () => {
+    const make = {
+        iceCream: (): Order => ({ toppings: [], iceCream: pick(settings.iceCream?.flavors ?? FLAVORS) }),
+        pizza: (): Order => ({ toppings: [], pizza: randomPizza(settings.pizza?.maxToppings ?? 2, settings.pizza?.toppings ?? BASIC_PIZZA_TOPPINGS) }),
+        sundae: (): Order => ({ toppings: [], sundae: randomSundae(settings.sundae ?? {}) }),
+    };
+    const orders = Array.from({ length: customersOverride ?? customers }, (): Order => {
         const roll = Math.random();
-        if (cones && roll < cones.share) return { toppings: [], iceCream: pick(cones.flavors ?? FLAVORS) };
-        if (pizzas && roll < (cones?.share ?? 0) + pizzas.share) return { toppings: [], pizza: randomPizza(pizzas.maxToppings ?? 2, pizzas.toppings ?? BASIC_PIZZA_TOPPINGS) };
-        if (sundaes && roll < (cones?.share ?? 0) + (pizzas?.share ?? 0) + sundaes.share) return { toppings: [], sundae: randomSundae(sundaes) };
+        if (cones && roll < cones.share) return make.iceCream();
+        if (pizzas && roll < (cones?.share ?? 0) + pizzas.share) return make.pizza();
+        if (sundaes && roll < (cones?.share ?? 0) + (pizzas?.share ?? 0) + sundaes.share) return make.sundae();
         return randomOrder(maxToppings, toppings);
     });
+    const isBurger = (order: Order) => !order.iceCream && !order.pizza && !order.sundae;
+    const has = { iceCream: (o: Order) => Boolean(o.iceCream), pizza: (o: Order) => Boolean(o.pizza), sundae: (o: Order) => Boolean(o.sundae) };
+    // New dishes on the stage's first day: early on (the 2nd, 3rd... customer), in place of a burger.
+    let slot = Math.min(1, orders.length - 1);
+    for (const dish of introduce) {
+        if (!settings[dish] || orders.some(has[dish])) continue;
+        while (slot < orders.length && !isBurger(orders[slot])) slot++;
+        if (slot >= orders.length) break;
+        orders[slot++] = make[dish]();
+    }
+    // Every dish that's on: at least one a day (in place of a random burger, while burgers are left).
+    const on = [cones && 'iceCream', pizzas && 'pizza', sundaes && 'sundae'].filter(Boolean) as ('iceCream' | 'pizza' | 'sundae')[];
+    for (const dish of on) {
+        if (orders.some(has[dish])) continue;
+        const burgers = orders.map((o, i) => (isBurger(o) ? i : -1)).filter((i) => i >= 0);
+        if (burgers.length < 2) break;
+        orders[burgers[Math.floor(Math.random() * burgers.length)]] = make[dish]();
+    }
+    return orders;
 }
 
 /**
@@ -220,12 +260,16 @@ export function dealDay(day: number, stage: number, customersOverride?: number, 
  * pizza's dough, tomatoes (its sauce), cheese and its topping.
  */
 export function ingredientsFor(orders: readonly Order[]): string[] {
-    // (The ice cream machine's always stocked: cones aren't on the list.)
+    // (Cones and tubs are always stocked: ice cream asks for milk, a sundae's cherry for the cherries.)
     const used = new Set<string>();
     for (const order of orders) {
         if (order.pizza) {
             ['dough', 'tomato', 'cheese', ...order.pizza].forEach((id) => used.add(id));
-        } else if (!order.iceCream && !order.sundae) {
+        } else if (order.iceCream || order.sundae) {
+            // Ice cream's made with milk; a sundae's cherry on top, from the fruit crate.
+            used.add('milk');
+            if (order.sundae?.toppings.includes('cherry')) used.add('cherries');
+        } else {
             used.add('bun');
             used.add('patty');
             order.toppings.forEach((t) => used.add(t));

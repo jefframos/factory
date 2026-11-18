@@ -1,0 +1,142 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.3.0",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 72,
+      "max": [
+        0.15712812542915344,
+        0.11999999731779099,
+        0.19999998807907104
+      ],
+      "min": [
+        -0.11999999731779099,
+        1.3411045607369942e-9,
+        -0.11999999731779099
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 72,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 36,
+      "max": [
+        0.170118510723114,
+        0.12250000238418579,
+        0.2150000035762787
+      ],
+      "min": [
+        -0.11999999731779099,
+        -0.0024999999441206455,
+        0.04750000312924385
+      ],
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 36,
+      "bufferView": 1,
+      "byteOffset": 12
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 1728,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1728,
+      "byteLength": 864,
+      "byteStride": 24,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "food_ingredient_pineapple_chunks.bin",
+      "byteLength": 2592
+    }
+  ],
+  "materials": [
+    {
+      "name": "#ffe26a",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1,
+          0.76052450467022,
+          0.14412847084818123,
+          1
+        ],
+        "roughnessFactor": 0.8,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "#d9a636",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.6938717612856897,
+          0.3813260114221238,
+          0.036889450395083165,
+          1
+        ],
+        "roughnessFactor": 0.8,
+        "metallicFactor": 0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "food_ingredient_pineapple_chunks",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "mode": 4,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 2,
+            "NORMAL": 3
+          },
+          "mode": 4,
+          "material": 1
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "food_ingredient_pineapple_chunks",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}

@@ -18,7 +18,8 @@ const HEADER = { strip: 96, stripColor: 0x3f6bf5, title: 34, titleY: 48 };
 const TABS = { zone: 96, zoneColor: 0x34365a, zoneScale: 0.7, width: 640, height: 62, trackColor: 0x1c1d33, trackY: 48, button: 72, words: 26, slide: 0.18, badge: 34, badgeX: 74, badgeY: -26 };
 const LIST = { top: 16, ends: 22, width: 672, rowHeight: 88, rowGap: 8, dots: 40, avatar: 62, rankX: 44, avatarX: 112, nameX: 158, nameWidth: 340, starX: -118, starsX: -92, star: 40, medal: 62 };
 const REWARD = { rowHeight: 104, rowGap: 8, iconX: 56, icon: 64, titleX: 104, titleY: -18, titleSize: 22, progressY: 18, buttonWidth: 158, buttonHeight: 68, buttonX: -92, coin: 30, check: 56 };
-const BOTTOM = { y: 62, back: 260, height: 84 };
+/** The bottom buttons: BACK alone, or a narrower BACK beside PLAY ONLINE (their widths and the gap). */
+const BOTTOM = { y: 62, back: 260, height: 84, pairBack: 210, play: 320, gap: 20 };
 const MEDALS = ['ItemIcon_Medal_Gold_1', 'ItemIcon_Medal_Silver_1', 'ItemIcon_Medal_Bronze_1'];
 const TIMER_EVERY = 20;
 
@@ -40,11 +41,12 @@ export class RankingPanel extends PIXI.Container {
     private readonly ends = label(22);
     private readonly list = new PIXI.Container();
     private readonly backButton = new PIXI.Container();
+    private readonly playButton: PIXI.Container | null = null;
     private tab: Tab = 'daily';
     private timer = 0;
 
-    /** `onClose`: back to the home screen. (Its matches are played from the VERSUS tab.) */
-    public constructor(private readonly onClose: () => void) {
+    /** `onClose`: back to the home screen. `onPlayOnline` (versus open): a PLAY ONLINE button beside BACK, to the VERSUS tab. */
+    public constructor(private readonly onClose: () => void, onPlayOnline?: () => void) {
         super();
         this.back.tint = BACK;
         this.back.anchor.set(0.5);
@@ -54,9 +56,15 @@ export class RankingPanel extends PIXI.Container {
         this.title.text = 'RANKING';
         fillCoinBar(this.coinBar, this.coins);
         this.buildTabs();
-        this.backButton.addChild(...buttonParts(BOTTOM.back, BOTTOM.height, 'BACK', 'Button01_l_Gray'));
+        this.backButton.addChild(...buttonParts(onPlayOnline ? BOTTOM.pairBack : BOTTOM.back, BOTTOM.height, 'BACK', 'Button01_l_Gray'));
         tappable(this.backButton, () => this.onClose());
         this.addChild(this.back, this.pattern, this.strip, this.title, this.coinBar, this.zone, this.tabs, this.ends, this.list, this.backButton);
+        if (onPlayOnline) {
+            this.playButton = new PIXI.Container();
+            this.playButton.addChild(...buttonParts(BOTTOM.play, BOTTOM.height, 'PLAY ONLINE', 'Button01_l_Green'));
+            tappable(this.playButton, onPlayOnline);
+            this.addChild(this.playButton);
+        }
         this.show('daily');
     }
 
@@ -239,7 +247,13 @@ export class RankingPanel extends PIXI.Container {
         this.ends.position.set(screen.center.x, zoneY + TABS.zone + LIST.ends);
         this.list.position.set(screen.center.x, zoneY + TABS.zone + LIST.top);
         const bottomY = top + screen.height - BOTTOM.y;
-        this.backButton.position.set(screen.center.x, bottomY);
+        if (this.playButton) {
+            const pairLeft = screen.center.x - (BOTTOM.pairBack + BOTTOM.gap + BOTTOM.play) / 2;
+            this.backButton.position.set(pairLeft + BOTTOM.pairBack / 2, bottomY);
+            this.playButton.position.set(pairLeft + BOTTOM.pairBack + BOTTOM.gap + BOTTOM.play / 2, bottomY);
+        } else {
+            this.backButton.position.set(screen.center.x, bottomY);
+        }
     }
 
     public override destroy(): void {

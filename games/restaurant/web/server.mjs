@@ -34,7 +34,7 @@ const IMPORT_RAW_DIR = path.join(GAME_DIR, 'raw-assets', 'models', 'library{m}')
 const IMPORT_PUBLIC_DIR = path.join(MODELS_DIR, 'library');
 const SAFE_NAME = /^[\w.\- ]+$/;
 const PORT = process.env.EDITOR_PORT ? Number(process.env.EDITOR_PORT) : 4730;
-const GAME_URL = process.env.GAME_URL ?? 'http://localhost:9001/?dev=1';
+const GAME_URL = process.env.GAME_URL ?? 'http://localhost:8000/?dev=1';
 
 const MIME_TYPES = {
     '.html': 'text/html; charset=utf-8',

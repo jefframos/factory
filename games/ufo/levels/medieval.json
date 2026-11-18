@@ -1,0 +1,8195 @@
+{
+  "name": "Kingdom",
+  "ground": {
+    "x": 0,
+    "z": -5.6,
+    "width": 240.8,
+    "depth": 235.2,
+    "color": "#8cc063"
+  },
+  "island": {
+    "water": "#2fa8e8",
+    "waterLevel": 0.55,
+    "margin": 110,
+    "sideColor": "#7b6a4e",
+    "sideDepth": 1.6,
+    "outline": [
+      {
+        "x": -103.6,
+        "z": -114.8
+      },
+      {
+        "x": 0,
+        "z": -123.19999999999999
+      },
+      {
+        "x": 103.6,
+        "z": -114.8
+      },
+      {
+        "x": 120.39999999999999,
+        "z": -42
+      },
+      {
+        "x": 117.6,
+        "z": 56
+      },
+      {
+        "x": 98,
+        "z": 103.6
+      },
+      {
+        "x": 14,
+        "z": 112
+      },
+      {
+        "x": -84,
+        "z": 106.39999999999999
+      },
+      {
+        "x": -117.6,
+        "z": 61.599999999999994
+      },
+      {
+        "x": -120.39999999999999,
+        "z": -42
+      }
+    ],
+    "deck": {
+      "width": 2.4,
+      "color": "#a07850",
+      "pilingColor": "#5e4230",
+      "pilingSpacing": 2.6
+    },
+    "fence": {
+      "color": "#7a5634",
+      "height": 0.95,
+      "inset": 0.45,
+      "spacing": 1.6
+    }
+  },
+  "start": {
+    "x": 0,
+    "z": 78.4
+  },
+  "pavements": [
+    {
+      "id": "street-main",
+      "x": 0,
+      "z": 28,
+      "width": 196,
+      "depth": 9.799999999999999,
+      "color": "#c9b48c"
+    },
+    {
+      "id": "street-north",
+      "x": 0,
+      "z": -8.399999999999999,
+      "width": 9.799999999999999,
+      "depth": 64.39999999999999,
+      "color": "#c9b48c"
+    },
+    {
+      "id": "square",
+      "x": 0,
+      "z": 28,
+      "width": 33.599999999999994,
+      "depth": 25.2,
+      "color": "#d2bf98"
+    },
+    {
+      "id": "street-south",
+      "x": 0,
+      "z": 58.8,
+      "width": 9.799999999999999,
+      "depth": 36.4,
+      "color": "#c9b48c"
+    },
+    {
+      "id": "courtyard",
+      "x": 0,
+      "z": -72.8,
+      "width": 47.599999999999994,
+      "depth": 30.799999999999997,
+      "color": "#bfae8c"
+    }
+  ],
+  "props": [
+    {
+      "model": "town/library/medieval-hexa-building-castle-blue/medieval-hexa-building-castle-blue.gltf",
+      "x": 0,
+      "z": -84,
+      "rotationY": 0,
+      "height": 44.8,
+      "collider": {
+        "halfX": 9.45,
+        "halfZ": 10.8
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": -36.4,
+      "z": -44.8,
+      "rotationY": 0,
+      "height": 6.16,
+      "collider": {
+        "halfX": 4.76,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": -36.4,
+      "z": -112,
+      "rotationY": 0,
+      "height": 6.16,
+      "collider": {
+        "halfX": 4.76,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": -25.2,
+      "z": -44.8,
+      "rotationY": 0,
+      "height": 6.16,
+      "collider": {
+        "halfX": 4.76,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": -25.2,
+      "z": -112,
+      "rotationY": 0,
+      "height": 6.16,
+      "collider": {
+        "halfX": 4.76,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": -14,
+      "z": -44.8,
+      "rotationY": 0,
+      "height": 6.16,
+      "collider": {
+        "halfX": 4.76,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": -14,
+      "z": -112,
+      "rotationY": 0,
+      "height": 6.16,
+      "collider": {
+        "halfX": 4.76,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight-gate/medieval-hexa-wall-straight-gate.gltf",
+      "x": -2.8,
+      "z": -44.8,
+      "rotationY": 0,
+      "height": 7.95,
+      "collider": {
+        "halfX": 4.78,
+        "halfZ": 2.14
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": -2.8,
+      "z": -112,
+      "rotationY": 0,
+      "height": 6.16,
+      "collider": {
+        "halfX": 4.76,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": 8.4,
+      "z": -44.8,
+      "rotationY": 0,
+      "height": 6.16,
+      "collider": {
+        "halfX": 4.76,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": 8.4,
+      "z": -112,
+      "rotationY": 0,
+      "height": 6.16,
+      "collider": {
+        "halfX": 4.76,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": 19.6,
+      "z": -44.8,
+      "rotationY": 0,
+      "height": 6.16,
+      "collider": {
+        "halfX": 4.76,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": 19.6,
+      "z": -112,
+      "rotationY": 0,
+      "height": 6.16,
+      "collider": {
+        "halfX": 4.76,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": 30.8,
+      "z": -44.8,
+      "rotationY": 0,
+      "height": 6.16,
+      "collider": {
+        "halfX": 4.76,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": 30.8,
+      "z": -112,
+      "rotationY": 0,
+      "height": 6.16,
+      "collider": {
+        "halfX": 4.76,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": -42,
+      "z": -106.4,
+      "rotationY": 1.57,
+      "height": 6.16,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 4.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": 42,
+      "z": -106.4,
+      "rotationY": 1.57,
+      "height": 6.16,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 4.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": -42,
+      "z": -95.2,
+      "rotationY": 1.57,
+      "height": 6.16,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 4.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": 42,
+      "z": -95.2,
+      "rotationY": 1.57,
+      "height": 6.16,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 4.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": -42,
+      "z": -84,
+      "rotationY": 1.57,
+      "height": 6.16,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 4.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": 42,
+      "z": -84,
+      "rotationY": 1.57,
+      "height": 6.16,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 4.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": -42,
+      "z": -72.8,
+      "rotationY": 1.57,
+      "height": 6.16,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 4.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": 42,
+      "z": -72.8,
+      "rotationY": 1.57,
+      "height": 6.16,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 4.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": -42,
+      "z": -61.6,
+      "rotationY": 1.57,
+      "height": 6.16,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 4.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": 42,
+      "z": -61.6,
+      "rotationY": 1.57,
+      "height": 6.16,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 4.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": -42,
+      "z": -50.4,
+      "rotationY": 1.57,
+      "height": 6.16,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 4.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wall-straight/medieval-hexa-wall-straight.gltf",
+      "x": 42,
+      "z": -50.4,
+      "rotationY": 1.57,
+      "height": 6.16,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 4.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-b-blue/medieval-hexa-building-tower-b-blue.gltf",
+      "x": -42,
+      "z": -112,
+      "rotationY": 0,
+      "height": 22.4,
+      "collider": {
+        "halfX": 4.59,
+        "halfZ": 5.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-b-blue/medieval-hexa-building-tower-b-blue.gltf",
+      "x": 42,
+      "z": -112,
+      "rotationY": 0,
+      "height": 22.4,
+      "collider": {
+        "halfX": 4.59,
+        "halfZ": 5.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-b-blue/medieval-hexa-building-tower-b-blue.gltf",
+      "x": -42,
+      "z": -44.8,
+      "rotationY": 0,
+      "height": 22.4,
+      "collider": {
+        "halfX": 4.59,
+        "halfZ": 5.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-b-blue/medieval-hexa-building-tower-b-blue.gltf",
+      "x": 42,
+      "z": -44.8,
+      "rotationY": 0,
+      "height": 22.4,
+      "collider": {
+        "halfX": 4.59,
+        "halfZ": 5.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-catapult-blue/medieval-hexa-building-tower-catapult-blue.gltf",
+      "x": -30.8,
+      "z": -70,
+      "rotationY": 0,
+      "height": 12.6,
+      "collider": {
+        "halfX": 2.54,
+        "halfZ": 3.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-catapult-blue/medieval-hexa-building-tower-catapult-blue.gltf",
+      "x": 30.8,
+      "z": -70,
+      "rotationY": 0,
+      "height": 12.6,
+      "collider": {
+        "halfX": 2.54,
+        "halfZ": 3.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-blue/medieval-hexa-flag-blue.gltf",
+      "x": -11.2,
+      "z": -61.6,
+      "rotationY": 1.57,
+      "height": 4.2,
+      "collider": {
+        "halfX": 1.7,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-blue/medieval-hexa-flag-blue.gltf",
+      "x": 11.2,
+      "z": -61.6,
+      "rotationY": 1.57,
+      "height": 4.2,
+      "collider": {
+        "halfX": 1.7,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": -19.6,
+      "z": -56,
+      "rotationY": 0,
+      "height": 1.54,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": 19.6,
+      "z": -56,
+      "rotationY": 0,
+      "height": 1.54,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": -33.6,
+      "z": -100.8,
+      "rotationY": 0,
+      "height": 1.54,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": 33.6,
+      "z": -100.8,
+      "rotationY": 0,
+      "height": 1.54,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": -19.6,
+      "z": -50.4,
+      "rotationY": 0,
+      "height": 1.96,
+      "collider": {
+        "halfX": 0.69,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": 19.6,
+      "z": -50.4,
+      "rotationY": 0.4,
+      "height": 1.68,
+      "collider": {
+        "halfX": 0.94,
+        "halfZ": 0.94
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tavern-blue/medieval-hexa-building-tavern-blue.gltf",
+      "x": -84,
+      "z": 14,
+      "rotationY": 0,
+      "height": 14,
+      "collider": {
+        "halfX": 4.99,
+        "halfZ": 5.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-blue/medieval-hexa-building-home-a-blue.gltf",
+      "x": -65.8,
+      "z": 14,
+      "rotationY": 0,
+      "height": 9.8,
+      "collider": {
+        "halfX": 3.55,
+        "halfZ": 3.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-b-green/medieval-hexa-building-home-b-green.gltf",
+      "x": -47.6,
+      "z": 14,
+      "rotationY": 0,
+      "height": 12.6,
+      "collider": {
+        "halfX": 3.66,
+        "halfZ": 4.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-blacksmith-blue/medieval-hexa-building-blacksmith-blue.gltf",
+      "x": -29.4,
+      "z": 14,
+      "rotationY": 0,
+      "height": 9.8,
+      "collider": {
+        "halfX": 5.45,
+        "halfZ": 5.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-market-green/medieval-hexa-building-market-green.gltf",
+      "x": 25.2,
+      "z": 14,
+      "rotationY": 0,
+      "height": 8.4,
+      "collider": {
+        "halfX": 6.54,
+        "halfZ": 4.78
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-green/medieval-hexa-building-home-a-green.gltf",
+      "x": 43.4,
+      "z": 14,
+      "rotationY": 0,
+      "height": 9.8,
+      "collider": {
+        "halfX": 3.55,
+        "halfZ": 3.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-church-blue/medieval-hexa-building-church-blue.gltf",
+      "x": 61.6,
+      "z": 14,
+      "rotationY": 0,
+      "height": 19.6,
+      "collider": {
+        "halfX": 5.21,
+        "halfZ": 5.85
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-b-blue/medieval-hexa-building-home-b-blue.gltf",
+      "x": 79.8,
+      "z": 14,
+      "rotationY": 0,
+      "height": 12.6,
+      "collider": {
+        "halfX": 3.66,
+        "halfZ": 4.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tavern-green/medieval-hexa-building-tavern-green.gltf",
+      "x": -84,
+      "z": 42,
+      "rotationY": 3.14,
+      "height": 14,
+      "collider": {
+        "halfX": 4.99,
+        "halfZ": 5.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-blue/medieval-hexa-building-home-a-blue.gltf",
+      "x": -65.8,
+      "z": 42,
+      "rotationY": 3.14,
+      "height": 9.8,
+      "collider": {
+        "halfX": 3.55,
+        "halfZ": 3.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tavern-blue/medieval-hexa-building-tavern-blue.gltf",
+      "x": -47.6,
+      "z": 42,
+      "rotationY": 3.14,
+      "height": 14,
+      "collider": {
+        "halfX": 4.99,
+        "halfZ": 5.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-blue/medieval-hexa-building-home-a-blue.gltf",
+      "x": -29.4,
+      "z": 42,
+      "rotationY": 3.14,
+      "height": 9.8,
+      "collider": {
+        "halfX": 3.55,
+        "halfZ": 3.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-b-green/medieval-hexa-building-home-b-green.gltf",
+      "x": 25.2,
+      "z": 42,
+      "rotationY": 3.14,
+      "height": 12.6,
+      "collider": {
+        "halfX": 3.66,
+        "halfZ": 4.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-blacksmith-blue/medieval-hexa-building-blacksmith-blue.gltf",
+      "x": 43.4,
+      "z": 42,
+      "rotationY": 3.14,
+      "height": 9.8,
+      "collider": {
+        "halfX": 5.45,
+        "halfZ": 5.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-market-green/medieval-hexa-building-market-green.gltf",
+      "x": 61.6,
+      "z": 42,
+      "rotationY": 3.14,
+      "height": 8.4,
+      "collider": {
+        "halfX": 6.54,
+        "halfZ": 4.78
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-green/medieval-hexa-building-home-a-green.gltf",
+      "x": 79.8,
+      "z": 42,
+      "rotationY": 3.14,
+      "height": 9.8,
+      "collider": {
+        "halfX": 3.55,
+        "halfZ": 3.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-church-blue/medieval-hexa-building-church-blue.gltf",
+      "x": -72.6,
+      "z": -7,
+      "rotationY": 0,
+      "height": 19.6,
+      "collider": {
+        "halfX": 5.21,
+        "halfZ": 5.85
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-b-blue/medieval-hexa-building-home-b-blue.gltf",
+      "x": -52.73,
+      "z": -7,
+      "rotationY": 0,
+      "height": 12.6,
+      "collider": {
+        "halfX": 3.66,
+        "halfZ": 4.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tavern-green/medieval-hexa-building-tavern-green.gltf",
+      "x": -28.99,
+      "z": -7,
+      "rotationY": 0,
+      "height": 14,
+      "collider": {
+        "halfX": 4.99,
+        "halfZ": 5.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-blue/medieval-hexa-building-home-a-blue.gltf",
+      "x": 32.23,
+      "z": -7,
+      "rotationY": 0,
+      "height": 9.8,
+      "collider": {
+        "halfX": 3.55,
+        "halfZ": 3.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tavern-blue/medieval-hexa-building-tavern-blue.gltf",
+      "x": 53.91,
+      "z": -7,
+      "rotationY": 0,
+      "height": 14,
+      "collider": {
+        "halfX": 4.99,
+        "halfZ": 5.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-blue/medieval-hexa-building-home-a-blue.gltf",
+      "x": -73.69,
+      "z": 63,
+      "rotationY": 3.14,
+      "height": 9.8,
+      "collider": {
+        "halfX": 3.55,
+        "halfZ": 3.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-b-green/medieval-hexa-building-home-b-green.gltf",
+      "x": -52.81,
+      "z": 63,
+      "rotationY": 3.14,
+      "height": 12.6,
+      "collider": {
+        "halfX": 3.66,
+        "halfZ": 4.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-blacksmith-blue/medieval-hexa-building-blacksmith-blue.gltf",
+      "x": -31.21,
+      "z": 63,
+      "rotationY": 3.14,
+      "height": 9.8,
+      "collider": {
+        "halfX": 5.45,
+        "halfZ": 5.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-market-green/medieval-hexa-building-market-green.gltf",
+      "x": 31.55,
+      "z": 63,
+      "rotationY": 3.14,
+      "height": 8.4,
+      "collider": {
+        "halfX": 6.54,
+        "halfZ": 4.78
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-green/medieval-hexa-building-home-a-green.gltf",
+      "x": 53.57,
+      "z": 63,
+      "rotationY": 3.14,
+      "height": 9.8,
+      "collider": {
+        "halfX": 3.55,
+        "halfZ": 3.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-well-blue/medieval-hexa-building-well-blue.gltf",
+      "x": 0,
+      "z": 28,
+      "rotationY": 0,
+      "height": 4.9,
+      "collider": {
+        "halfX": 1.64,
+        "halfZ": 1.89
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-long-a/medieval-hexa-crate-long-a.gltf",
+      "x": -11.2,
+      "z": 19.6,
+      "rotationY": 4.39,
+      "height": 1.26,
+      "collider": {
+        "halfX": 1.13,
+        "halfZ": 1.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-long-a/medieval-hexa-crate-long-a.gltf",
+      "x": 11.2,
+      "z": 36.4,
+      "rotationY": 4.53,
+      "height": 1.26,
+      "collider": {
+        "halfX": 0.97,
+        "halfZ": 1.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-long-a/medieval-hexa-crate-long-a.gltf",
+      "x": -12.6,
+      "z": 36.4,
+      "rotationY": 3.65,
+      "height": 1.26,
+      "collider": {
+        "halfX": 1.6,
+        "halfZ": 1.31
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-long-a/medieval-hexa-crate-long-a.gltf",
+      "x": 12.6,
+      "z": 19.6,
+      "rotationY": 5.96,
+      "height": 1.26,
+      "collider": {
+        "halfX": 1.58,
+        "halfZ": 1.12
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-windmill-green/medieval-hexa-building-windmill-green.gltf",
+      "x": -86.8,
+      "z": -19.6,
+      "rotationY": 0.4,
+      "height": 19.6,
+      "collider": {
+        "halfX": 7.74,
+        "halfZ": 6.8
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-lumbermill-green/medieval-hexa-building-lumbermill-green.gltf",
+      "x": 86.8,
+      "z": -28,
+      "rotationY": 4.71,
+      "height": 14,
+      "collider": {
+        "halfX": 4.14,
+        "halfZ": 4.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-grain/medieval-hexa-building-grain.gltf",
+      "x": -67.2,
+      "z": -56,
+      "rotationY": 1.57,
+      "height": 1.68,
+      "collider": {
+        "halfX": 3.79,
+        "halfZ": 3.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-grain/medieval-hexa-building-grain.gltf",
+      "x": -89.6,
+      "z": -61.6,
+      "rotationY": 3.14,
+      "height": 1.68,
+      "collider": {
+        "halfX": 3.4,
+        "halfZ": 3.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-grain/medieval-hexa-building-grain.gltf",
+      "x": -67.2,
+      "z": -75.6,
+      "rotationY": 4.71,
+      "height": 1.68,
+      "collider": {
+        "halfX": 3.79,
+        "halfZ": 3.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-grain/medieval-hexa-building-grain.gltf",
+      "x": -92.4,
+      "z": -84,
+      "rotationY": 1.57,
+      "height": 1.68,
+      "collider": {
+        "halfX": 3.79,
+        "halfZ": 3.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-grain/medieval-hexa-building-grain.gltf",
+      "x": -56,
+      "z": 70,
+      "rotationY": 3.14,
+      "height": 1.68,
+      "collider": {
+        "halfX": 3.4,
+        "halfZ": 3.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-grain/medieval-hexa-building-grain.gltf",
+      "x": -78.4,
+      "z": 72.8,
+      "rotationY": 0,
+      "height": 1.68,
+      "collider": {
+        "halfX": 3.4,
+        "halfZ": 3.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-scaffolding/medieval-hexa-building-scaffolding.gltf",
+      "x": 72.8,
+      "z": 70,
+      "rotationY": 0.3,
+      "height": 8.4,
+      "collider": {
+        "halfX": 6.7,
+        "halfZ": 7.08
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-stage-a/medieval-hexa-building-stage-a.gltf",
+      "x": 33.6,
+      "z": 47.6,
+      "rotationY": 0,
+      "height": 1.68,
+      "collider": {
+        "halfX": 2.61,
+        "halfZ": 2.18
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-archeryrange-blue/medieval-hexa-building-archeryrange-blue.gltf",
+      "x": 61.6,
+      "z": 64.4,
+      "rotationY": 3.14,
+      "height": 12.6,
+      "collider": {
+        "halfX": 4.99,
+        "halfZ": 4.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-barracks-blue/medieval-hexa-building-barracks-blue.gltf",
+      "x": 89.6,
+      "z": 47.6,
+      "rotationY": 4.71,
+      "height": 14,
+      "collider": {
+        "halfX": 5.68,
+        "halfZ": 5.22
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-target/medieval-hexa-target.gltf",
+      "x": 42,
+      "z": 84,
+      "rotationY": 3.14,
+      "height": 2.24,
+      "collider": {
+        "halfX": 0.75,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-target/medieval-hexa-target.gltf",
+      "x": 47.6,
+      "z": 84,
+      "rotationY": 3.14,
+      "height": 2.24,
+      "collider": {
+        "halfX": 0.75,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-target/medieval-hexa-target.gltf",
+      "x": 53.2,
+      "z": 84,
+      "rotationY": 3.14,
+      "height": 2.24,
+      "collider": {
+        "halfX": 0.75,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-target/medieval-hexa-target.gltf",
+      "x": 58.8,
+      "z": 84,
+      "rotationY": 3.14,
+      "height": 2.24,
+      "collider": {
+        "halfX": 0.75,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tent/medieval-hexa-tent.gltf",
+      "x": -39.2,
+      "z": 81.2,
+      "rotationY": 1.12,
+      "height": 4.2,
+      "collider": {
+        "halfX": 2.38,
+        "halfZ": 2.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tent/medieval-hexa-tent.gltf",
+      "x": -28,
+      "z": 89.6,
+      "rotationY": 1.34,
+      "height": 4.2,
+      "collider": {
+        "halfX": 2.14,
+        "halfZ": 2.14
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tent/medieval-hexa-tent.gltf",
+      "x": -47.6,
+      "z": 92.4,
+      "rotationY": 0.74,
+      "height": 4.2,
+      "collider": {
+        "halfX": 2.52,
+        "halfZ": 2.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-windmill-blue/medieval-hexa-building-windmill-blue.gltf",
+      "x": 101.98,
+      "z": -38.26,
+      "rotationY": 0.78,
+      "height": 20.27,
+      "collider": {
+        "halfX": 8.12,
+        "halfZ": 8.12
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-church-green/medieval-hexa-building-church-green.gltf",
+      "x": -75.3,
+      "z": 96.25,
+      "rotationY": 4.29,
+      "height": 18.94,
+      "collider": {
+        "halfX": 7.21,
+        "halfZ": 6.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-castle-green/medieval-hexa-building-castle-green.gltf",
+      "x": 24.12,
+      "z": -25.58,
+      "rotationY": 5.12,
+      "height": 16.11,
+      "collider": {
+        "halfX": 4.91,
+        "halfZ": 4.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-a-blue/medieval-hexa-building-tower-a-blue.gltf",
+      "x": 42.97,
+      "z": 53.34,
+      "rotationY": 1.06,
+      "height": 18.2,
+      "collider": {
+        "halfX": 5.26,
+        "halfZ": 5.04
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-windmill-blue/medieval-hexa-building-windmill-blue.gltf",
+      "x": -78.04,
+      "z": -85.88,
+      "rotationY": 5.56,
+      "height": 18.66,
+      "collider": {
+        "halfX": 7.53,
+        "halfZ": 7.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-a-blue/medieval-hexa-building-tower-a-blue.gltf",
+      "x": -106.92,
+      "z": 2.04,
+      "rotationY": 0.37,
+      "height": 17.64,
+      "collider": {
+        "halfX": 4.59,
+        "halfZ": 4.91
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-a-blue/medieval-hexa-building-tower-a-blue.gltf",
+      "x": -61.56,
+      "z": -63.83,
+      "rotationY": 1.26,
+      "height": 18.68,
+      "collider": {
+        "halfX": 5.07,
+        "halfZ": 4.69
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-castle-green/medieval-hexa-building-castle-green.gltf",
+      "x": -12.01,
+      "z": 6.44,
+      "rotationY": 4.27,
+      "height": 15.34,
+      "collider": {
+        "halfX": 4.72,
+        "halfZ": 4.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-tower-a-blue/medieval-hexa-building-tower-a-blue.gltf",
+      "x": 52.68,
+      "z": -95.22,
+      "rotationY": 4.4,
+      "height": 20.86,
+      "collider": {
+        "halfX": 5.67,
+        "halfZ": 5.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-castle-green/medieval-hexa-building-castle-green.gltf",
+      "x": -110.36,
+      "z": -32.87,
+      "rotationY": 2.25,
+      "height": 14.53,
+      "collider": {
+        "halfX": 4.65,
+        "halfZ": 4.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-castle-green/medieval-hexa-building-castle-green.gltf",
+      "x": 99.31,
+      "z": -101.05,
+      "rotationY": 0.96,
+      "height": 14.29,
+      "collider": {
+        "halfX": 4.55,
+        "halfZ": 4.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-barracks-green/medieval-hexa-building-barracks-green.gltf",
+      "x": 66.77,
+      "z": -45.54,
+      "rotationY": 3.63,
+      "height": 15.58,
+      "collider": {
+        "halfX": 8.11,
+        "halfZ": 8.32
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-destroyed/medieval-hexa-building-destroyed.gltf",
+      "x": -108.01,
+      "z": 55.8,
+      "rotationY": 3.89,
+      "height": 3.92,
+      "collider": {
+        "halfX": 3.38,
+        "halfZ": 3.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tent/medieval-hexa-tent.gltf",
+      "x": -68.11,
+      "z": 6.02,
+      "rotationY": 5.04,
+      "height": 2.73,
+      "collider": {
+        "halfX": 1.48,
+        "halfZ": 1.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-scaffolding/medieval-hexa-building-scaffolding.gltf",
+      "x": 74.53,
+      "z": -4.89,
+      "rotationY": 1.43,
+      "height": 4.45,
+      "collider": {
+        "halfX": 3.43,
+        "halfZ": 3.17
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-green/medieval-hexa-building-home-a-green.gltf",
+      "x": -50.61,
+      "z": -37.05,
+      "rotationY": 4.92,
+      "height": 3.1,
+      "collider": {
+        "halfX": 1.42,
+        "halfZ": 1.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-market-blue/medieval-hexa-building-market-blue.gltf",
+      "x": -60.25,
+      "z": -18,
+      "rotationY": 3.7,
+      "height": 3.15,
+      "collider": {
+        "halfX": 3.03,
+        "halfZ": 2.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-small/medieval-hexa-trees-a-small.gltf",
+      "x": -28.2,
+      "z": 0.64,
+      "rotationY": 1.9,
+      "height": 3.5,
+      "collider": {
+        "halfX": 2.43,
+        "halfZ": 2.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-well-green/medieval-hexa-building-well-green.gltf",
+      "x": 96.56,
+      "z": -69.8,
+      "rotationY": 3.1,
+      "height": 3.99,
+      "collider": {
+        "halfX": 1.4,
+        "halfZ": 1.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-destroyed/medieval-hexa-building-destroyed.gltf",
+      "x": -14.95,
+      "z": -34.8,
+      "rotationY": 3.3,
+      "height": 3.25,
+      "collider": {
+        "halfX": 2.4,
+        "halfZ": 2.13
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-market-blue/medieval-hexa-building-market-blue.gltf",
+      "x": 29.16,
+      "z": -57.93,
+      "rotationY": 0.98,
+      "height": 3.84,
+      "collider": {
+        "halfX": 3.48,
+        "halfZ": 3.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tent/medieval-hexa-tent.gltf",
+      "x": 63.29,
+      "z": -114.38,
+      "rotationY": 3.36,
+      "height": 3.2,
+      "collider": {
+        "halfX": 1.62,
+        "halfZ": 1.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-market-blue/medieval-hexa-building-market-blue.gltf",
+      "x": 13.02,
+      "z": -33.05,
+      "rotationY": 2.56,
+      "height": 3.94,
+      "collider": {
+        "halfX": 3.8,
+        "halfZ": 3.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-well-green/medieval-hexa-building-well-green.gltf",
+      "x": -59.45,
+      "z": 0.99,
+      "rotationY": 3.05,
+      "height": 3.52,
+      "collider": {
+        "halfX": 1.29,
+        "halfZ": 1.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-market-blue/medieval-hexa-building-market-blue.gltf",
+      "x": -81.15,
+      "z": -71.39,
+      "rotationY": 2.23,
+      "height": 3.4,
+      "collider": {
+        "halfX": 3.15,
+        "halfZ": 3.28
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-small/medieval-hexa-trees-a-small.gltf",
+      "x": 26.99,
+      "z": -102.06,
+      "rotationY": 3.1,
+      "height": 3.86,
+      "collider": {
+        "halfX": 2.19,
+        "halfZ": 2.2
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-green/medieval-hexa-building-home-a-green.gltf",
+      "x": 47.24,
+      "z": -10.95,
+      "rotationY": 5.34,
+      "height": 4.41,
+      "collider": {
+        "halfX": 2.33,
+        "halfZ": 2.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-scaffolding/medieval-hexa-building-scaffolding.gltf",
+      "x": 51.31,
+      "z": 9.58,
+      "rotationY": 3.51,
+      "height": 4.7,
+      "collider": {
+        "halfX": 3.9,
+        "halfZ": 4.08
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-home-a-green/medieval-hexa-building-home-a-green.gltf",
+      "x": 23.98,
+      "z": -99.27,
+      "rotationY": 5.84,
+      "height": 3.31,
+      "collider": {
+        "halfX": 1.64,
+        "halfZ": 1.68
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-well-green/medieval-hexa-building-well-green.gltf",
+      "x": 102.15,
+      "z": -21.44,
+      "rotationY": 4.52,
+      "height": 3.02,
+      "collider": {
+        "halfX": 1.34,
+        "halfZ": 1.22
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tent/medieval-hexa-tent.gltf",
+      "x": -93.74,
+      "z": 45.28,
+      "rotationY": 0.01,
+      "height": 2.7,
+      "collider": {
+        "halfX": 1.15,
+        "halfZ": 1.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-small/medieval-hexa-trees-a-small.gltf",
+      "x": -43.03,
+      "z": 36.91,
+      "rotationY": 4.96,
+      "height": 3.07,
+      "collider": {
+        "halfX": 2.05,
+        "halfZ": 2.04
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-small/medieval-hexa-trees-a-small.gltf",
+      "x": 89.92,
+      "z": 67.71,
+      "rotationY": 0.95,
+      "height": 4.04,
+      "collider": {
+        "halfX": 3.09,
+        "halfZ": 3.09
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-well-green/medieval-hexa-building-well-green.gltf",
+      "x": 42.75,
+      "z": -17.5,
+      "rotationY": 1.47,
+      "height": 3.41,
+      "collider": {
+        "halfX": 1.43,
+        "halfZ": 1.27
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-scaffolding/medieval-hexa-building-scaffolding.gltf",
+      "x": 64.54,
+      "z": -86.17,
+      "rotationY": 2.22,
+      "height": 4.87,
+      "collider": {
+        "halfX": 4.51,
+        "halfZ": 4.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-market-blue/medieval-hexa-building-market-blue.gltf",
+      "x": -101.34,
+      "z": -12.64,
+      "rotationY": 3.61,
+      "height": 3.19,
+      "collider": {
+        "halfX": 3.04,
+        "halfZ": 2.74
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-small/medieval-hexa-trees-a-small.gltf",
+      "x": 88.17,
+      "z": -36.66,
+      "rotationY": 0.68,
+      "height": 3.6,
+      "collider": {
+        "halfX": 2.78,
+        "halfZ": 2.78
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-small/medieval-hexa-trees-a-small.gltf",
+      "x": -46.23,
+      "z": 104.14,
+      "rotationY": 3.08,
+      "height": 4,
+      "collider": {
+        "halfX": 2.31,
+        "halfZ": 2.33
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-market-blue/medieval-hexa-building-market-blue.gltf",
+      "x": -107.17,
+      "z": -18.31,
+      "rotationY": 5.43,
+      "height": 3.96,
+      "collider": {
+        "halfX": 3.73,
+        "halfZ": 3.8
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-market-blue/medieval-hexa-building-market-blue.gltf",
+      "x": -31.16,
+      "z": 100.54,
+      "rotationY": 0.06,
+      "height": 3.94,
+      "collider": {
+        "halfX": 3.2,
+        "halfZ": 2.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-scaffolding/medieval-hexa-building-scaffolding.gltf",
+      "x": 99.2,
+      "z": 9.26,
+      "rotationY": 1.53,
+      "height": 4.9,
+      "collider": {
+        "halfX": 3.51,
+        "halfZ": 3.19
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tent/medieval-hexa-tent.gltf",
+      "x": 20.1,
+      "z": 101.81,
+      "rotationY": 5,
+      "height": 2.8,
+      "collider": {
+        "halfX": 1.48,
+        "halfZ": 1.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-scaffolding/medieval-hexa-building-scaffolding.gltf",
+      "x": 78.32,
+      "z": 91.06,
+      "rotationY": 2.54,
+      "height": 4.07,
+      "collider": {
+        "halfX": 3.67,
+        "halfZ": 3.75
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-small/medieval-hexa-trees-a-small.gltf",
+      "x": -52.45,
+      "z": -80.04,
+      "rotationY": 3.08,
+      "height": 4.05,
+      "collider": {
+        "halfX": 2.35,
+        "halfZ": 2.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tent/medieval-hexa-tent.gltf",
+      "x": 67.75,
+      "z": -101.39,
+      "rotationY": 3.37,
+      "height": 3.21,
+      "collider": {
+        "halfX": 1.63,
+        "halfZ": 1.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-destroyed/medieval-hexa-building-destroyed.gltf",
+      "x": 80.63,
+      "z": -95.62,
+      "rotationY": 1.07,
+      "height": 4.34,
+      "collider": {
+        "halfX": 3.5,
+        "halfZ": 3.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-destroyed/medieval-hexa-building-destroyed.gltf",
+      "x": -70.76,
+      "z": 81.01,
+      "rotationY": 2.02,
+      "height": 3.88,
+      "collider": {
+        "halfX": 3.06,
+        "halfZ": 3.24
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-market-blue/medieval-hexa-building-market-blue.gltf",
+      "x": -65.85,
+      "z": 67.64,
+      "rotationY": 2.94,
+      "height": 3.75,
+      "collider": {
+        "halfX": 3.29,
+        "halfZ": 2.68
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-market-blue/medieval-hexa-building-market-blue.gltf",
+      "x": 37.41,
+      "z": 101.9,
+      "rotationY": 0.82,
+      "height": 3.77,
+      "collider": {
+        "halfX": 3.57,
+        "halfZ": 3.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-scaffolding/medieval-hexa-building-scaffolding.gltf",
+      "x": 107.01,
+      "z": -68.21,
+      "rotationY": 3.51,
+      "height": 4.52,
+      "collider": {
+        "halfX": 3.74,
+        "halfZ": 3.92
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-building-market-blue/medieval-hexa-building-market-blue.gltf",
+      "x": 20.83,
+      "z": -6.37,
+      "rotationY": 6.23,
+      "height": 3.71,
+      "collider": {
+        "halfX": 2.99,
+        "halfZ": 2.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-small/medieval-hexa-trees-a-small.gltf",
+      "x": -46.15,
+      "z": -13.1,
+      "rotationY": 3.52,
+      "height": 3.89,
+      "collider": {
+        "halfX": 2.76,
+        "halfZ": 2.77
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-large/medieval-hexa-trees-b-large.gltf",
+      "x": 93.16,
+      "z": -16.74,
+      "rotationY": 4.43,
+      "height": 6.47,
+      "collider": {
+        "halfX": 1.6,
+        "halfZ": 1.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-large/medieval-hexa-trees-a-large.gltf",
+      "x": 52.76,
+      "z": -25.42,
+      "rotationY": 0.54,
+      "height": 6.29,
+      "collider": {
+        "halfX": 2.27,
+        "halfZ": 2.27
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 65.36,
+      "z": -21.54,
+      "rotationY": 0.12,
+      "height": 7.92,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 98.92,
+      "z": -25.64,
+      "rotationY": 5.98,
+      "height": 6.4,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 53.58,
+      "z": -84.48,
+      "rotationY": 5.72,
+      "height": 6.9,
+      "collider": {
+        "halfX": 0.68,
+        "halfZ": 0.68
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-medium/medieval-hexa-trees-a-medium.gltf",
+      "x": 66.18,
+      "z": -15.61,
+      "rotationY": 1.46,
+      "height": 6.47,
+      "collider": {
+        "halfX": 1.22,
+        "halfZ": 1.22
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-large/medieval-hexa-trees-b-large.gltf",
+      "x": 108.02,
+      "z": -1.38,
+      "rotationY": 5.01,
+      "height": 6.76,
+      "collider": {
+        "halfX": 1.68,
+        "halfZ": 1.68
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-medium/medieval-hexa-trees-a-medium.gltf",
+      "x": 58.86,
+      "z": -106.97,
+      "rotationY": 3.77,
+      "height": 7.17,
+      "collider": {
+        "halfX": 1.72,
+        "halfZ": 1.72
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 72.21,
+      "z": -70.75,
+      "rotationY": 4.31,
+      "height": 7.62,
+      "collider": {
+        "halfX": 0.58,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 88.65,
+      "z": -9.27,
+      "rotationY": 0.81,
+      "height": 6.48,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 86.04,
+      "z": 2.59,
+      "rotationY": 3.93,
+      "height": 5.8,
+      "collider": {
+        "halfX": 0.59,
+        "halfZ": 0.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 79.75,
+      "z": -51.24,
+      "rotationY": 4.02,
+      "height": 6.72,
+      "collider": {
+        "halfX": 0.68,
+        "halfZ": 0.68
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-medium/medieval-hexa-trees-a-medium.gltf",
+      "x": 110.32,
+      "z": -27.14,
+      "rotationY": 3.9,
+      "height": 6.94,
+      "collider": {
+        "halfX": 1.69,
+        "halfZ": 1.69
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 84.03,
+      "z": -39.29,
+      "rotationY": 4.35,
+      "height": 5.89,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 64.02,
+      "z": -72.53,
+      "rotationY": 5.75,
+      "height": 7.38,
+      "collider": {
+        "halfX": 0.73,
+        "halfZ": 0.73
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-medium/medieval-hexa-trees-b-medium.gltf",
+      "x": 101.69,
+      "z": -91.38,
+      "rotationY": 1.59,
+      "height": 7.32,
+      "collider": {
+        "halfX": 1.46,
+        "halfZ": 1.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 110.71,
+      "z": -14.74,
+      "rotationY": 5.99,
+      "height": 7.8,
+      "collider": {
+        "halfX": 0.69,
+        "halfZ": 0.69
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-large/medieval-hexa-trees-b-large.gltf",
+      "x": 75.57,
+      "z": -29,
+      "rotationY": 3.17,
+      "height": 6.23,
+      "collider": {
+        "halfX": 1.26,
+        "halfZ": 1.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 63.18,
+      "z": -30.74,
+      "rotationY": 1.37,
+      "height": 6.06,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 96.75,
+      "z": -55.87,
+      "rotationY": 4.85,
+      "height": 5.84,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-medium/medieval-hexa-trees-a-medium.gltf",
+      "x": 82.73,
+      "z": -107.48,
+      "rotationY": 6.2,
+      "height": 6.99,
+      "collider": {
+        "halfX": 1.28,
+        "halfZ": 1.28
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 90.43,
+      "z": -2.06,
+      "rotationY": 1.66,
+      "height": 6.43,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 0.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-medium/medieval-hexa-trees-b-medium.gltf",
+      "x": 86.76,
+      "z": -82.26,
+      "rotationY": 4.31,
+      "height": 7.18,
+      "collider": {
+        "halfX": 1.85,
+        "halfZ": 1.85
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 116.55,
+      "z": -39.14,
+      "rotationY": 0.29,
+      "height": 6.16,
+      "collider": {
+        "halfX": 0.44,
+        "halfZ": 0.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 107.89,
+      "z": -48.06,
+      "rotationY": 2.89,
+      "height": 7.1,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 103.63,
+      "z": -9.71,
+      "rotationY": 4.3,
+      "height": 6.55,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 86.15,
+      "z": -13.33,
+      "rotationY": 6.27,
+      "height": 6.96,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 0.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-large/medieval-hexa-trees-a-large.gltf",
+      "x": 60.66,
+      "z": 2.71,
+      "rotationY": 3.41,
+      "height": 5.39,
+      "collider": {
+        "halfX": 1.74,
+        "halfZ": 1.74
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 102.75,
+      "z": -48.89,
+      "rotationY": 0.45,
+      "height": 7.53,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 0.72
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 89.44,
+      "z": -104.36,
+      "rotationY": 5.23,
+      "height": 7.39,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 0.72
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 59.23,
+      "z": -17.23,
+      "rotationY": 3.91,
+      "height": 6.66,
+      "collider": {
+        "halfX": 0.68,
+        "halfZ": 0.68
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-medium/medieval-hexa-trees-a-medium.gltf",
+      "x": 89.34,
+      "z": -44.81,
+      "rotationY": 3.06,
+      "height": 6.47,
+      "collider": {
+        "halfX": 1.18,
+        "halfZ": 1.18
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 114.75,
+      "z": -20.08,
+      "rotationY": 2.84,
+      "height": 8.16,
+      "collider": {
+        "halfX": 0.73,
+        "halfZ": 0.73
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-large/medieval-hexa-trees-a-large.gltf",
+      "x": 59.35,
+      "z": -64.28,
+      "rotationY": 1.85,
+      "height": 5.68,
+      "collider": {
+        "halfX": 1.85,
+        "halfZ": 1.85
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-large/medieval-hexa-trees-a-large.gltf",
+      "x": -90.67,
+      "z": 54.27,
+      "rotationY": 1.79,
+      "height": 5.15,
+      "collider": {
+        "halfX": 1.61,
+        "halfZ": 1.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -109.8,
+      "z": 23,
+      "rotationY": 1.42,
+      "height": 8.19,
+      "collider": {
+        "halfX": 0.66,
+        "halfZ": 0.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-large/medieval-hexa-trees-b-large.gltf",
+      "x": -99.7,
+      "z": 40.94,
+      "rotationY": 0.39,
+      "height": 6.06,
+      "collider": {
+        "halfX": 1.57,
+        "halfZ": 1.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-medium/medieval-hexa-trees-a-medium.gltf",
+      "x": -50.86,
+      "z": 53.89,
+      "rotationY": 2.12,
+      "height": 6.45,
+      "collider": {
+        "halfX": 1.52,
+        "halfZ": 1.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -88.2,
+      "z": 36.83,
+      "rotationY": 4.75,
+      "height": 6.78,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -75.38,
+      "z": 46.63,
+      "rotationY": 1.07,
+      "height": 6.45,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -69.23,
+      "z": 60.11,
+      "rotationY": 0.82,
+      "height": 6.12,
+      "collider": {
+        "halfX": 0.63,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -114.52,
+      "z": 2.98,
+      "rotationY": 1.21,
+      "height": 6.64,
+      "collider": {
+        "halfX": 0.61,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-large/medieval-hexa-trees-b-large.gltf",
+      "x": -92.8,
+      "z": 8.71,
+      "rotationY": 1.79,
+      "height": 6.57,
+      "collider": {
+        "halfX": 1.55,
+        "halfZ": 1.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -59.72,
+      "z": -4.38,
+      "rotationY": 2.22,
+      "height": 6.59,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -57.32,
+      "z": 47.31,
+      "rotationY": 3.74,
+      "height": 7.98,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -51.96,
+      "z": 4.47,
+      "rotationY": 1.25,
+      "height": 6.38,
+      "collider": {
+        "halfX": 0.58,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -93.39,
+      "z": -2.01,
+      "rotationY": 2.85,
+      "height": 6.22,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -101.14,
+      "z": 61.48,
+      "rotationY": 5.09,
+      "height": 6.64,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -71.11,
+      "z": 42.13,
+      "rotationY": 6.18,
+      "height": 7.18,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -64.88,
+      "z": -1.42,
+      "rotationY": 6.12,
+      "height": 6.83,
+      "collider": {
+        "halfX": 0.56,
+        "halfZ": 0.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-large/medieval-hexa-trees-b-large.gltf",
+      "x": -75.84,
+      "z": 54.89,
+      "rotationY": 4.69,
+      "height": 6.5,
+      "collider": {
+        "halfX": 1.31,
+        "halfZ": 1.31
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -101.97,
+      "z": 28.17,
+      "rotationY": 2.6,
+      "height": 6.48,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-medium/medieval-hexa-trees-b-medium.gltf",
+      "x": -82.11,
+      "z": 3.97,
+      "rotationY": 3.19,
+      "height": 7.6,
+      "collider": {
+        "halfX": 1.56,
+        "halfZ": 1.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -73.5,
+      "z": 5.74,
+      "rotationY": 2.68,
+      "height": 8.08,
+      "collider": {
+        "halfX": 0.78,
+        "halfZ": 0.78
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -57.98,
+      "z": 17.37,
+      "rotationY": 4.85,
+      "height": 6.62,
+      "collider": {
+        "halfX": 0.43,
+        "halfZ": 0.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 36.68,
+      "z": -67.17,
+      "rotationY": 2.31,
+      "height": 8.19,
+      "collider": {
+        "halfX": 0.68,
+        "halfZ": 0.68
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-large/medieval-hexa-trees-b-large.gltf",
+      "x": -43.87,
+      "z": -25.03,
+      "rotationY": 1.41,
+      "height": 5.88,
+      "collider": {
+        "halfX": 1.34,
+        "halfZ": 1.34
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 109.96,
+      "z": 51.38,
+      "rotationY": 2.51,
+      "height": 7.36,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-medium/medieval-hexa-trees-b-medium.gltf",
+      "x": 77.5,
+      "z": -62.44,
+      "rotationY": 4.37,
+      "height": 7.03,
+      "collider": {
+        "halfX": 1.76,
+        "halfZ": 1.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -38.7,
+      "z": 101.15,
+      "rotationY": 5.98,
+      "height": 7.28,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 96.34,
+      "z": 52.75,
+      "rotationY": 1.02,
+      "height": 5.7,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -65.93,
+      "z": -98.62,
+      "rotationY": 1.9,
+      "height": 6.59,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -41.91,
+      "z": -11.7,
+      "rotationY": 2.93,
+      "height": 6.29,
+      "collider": {
+        "halfX": 0.43,
+        "halfZ": 0.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-large/medieval-hexa-trees-b-large.gltf",
+      "x": -57.76,
+      "z": 98.74,
+      "rotationY": 0.36,
+      "height": 6.31,
+      "collider": {
+        "halfX": 1.62,
+        "halfZ": 1.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 94.32,
+      "z": -8.05,
+      "rotationY": 2.54,
+      "height": 7.62,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 77.04,
+      "z": -81.48,
+      "rotationY": 2.15,
+      "height": 6.3,
+      "collider": {
+        "halfX": 0.63,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 10.56,
+      "z": 88.62,
+      "rotationY": 0.33,
+      "height": 6.8,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 94.2,
+      "z": 39.77,
+      "rotationY": 5.02,
+      "height": 6.23,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 35.19,
+      "z": -89.27,
+      "rotationY": 0.73,
+      "height": 6.12,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-large/medieval-hexa-trees-b-large.gltf",
+      "x": -59.95,
+      "z": -43.9,
+      "rotationY": 5.4,
+      "height": 5.88,
+      "collider": {
+        "halfX": 1.66,
+        "halfZ": 1.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 11.78,
+      "z": 49.87,
+      "rotationY": 3.44,
+      "height": 7.95,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-large/medieval-hexa-trees-b-large.gltf",
+      "x": 41.18,
+      "z": 0.02,
+      "rotationY": 3.86,
+      "height": 6.62,
+      "collider": {
+        "halfX": 1.88,
+        "halfZ": 1.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-medium/medieval-hexa-trees-b-medium.gltf",
+      "x": -90.8,
+      "z": -104.1,
+      "rotationY": 5.72,
+      "height": 6.48,
+      "collider": {
+        "halfX": 1.76,
+        "halfZ": 1.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -82.2,
+      "z": -6.09,
+      "rotationY": 0.06,
+      "height": 7.41,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-large/medieval-hexa-trees-b-large.gltf",
+      "x": -27.09,
+      "z": -23.17,
+      "rotationY": 2.14,
+      "height": 6.38,
+      "collider": {
+        "halfX": 1.76,
+        "halfZ": 1.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 56.03,
+      "z": -56.99,
+      "rotationY": 5.77,
+      "height": 6.62,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -102.54,
+      "z": -28.48,
+      "rotationY": 4.61,
+      "height": 7.94,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-medium/medieval-hexa-trees-a-medium.gltf",
+      "x": 101.96,
+      "z": -79.05,
+      "rotationY": 1.7,
+      "height": 7.29,
+      "collider": {
+        "halfX": 1.38,
+        "halfZ": 1.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-large/medieval-hexa-trees-a-large.gltf",
+      "x": -9.42,
+      "z": -99.71,
+      "rotationY": 0.46,
+      "height": 5.36,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 1.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-medium/medieval-hexa-trees-a-medium.gltf",
+      "x": -94.94,
+      "z": -42.04,
+      "rotationY": 2.54,
+      "height": 6.89,
+      "collider": {
+        "halfX": 1.64,
+        "halfZ": 1.64
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -58.27,
+      "z": -56.27,
+      "rotationY": 2.49,
+      "height": 6.96,
+      "collider": {
+        "halfX": 0.7,
+        "halfZ": 0.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 62.78,
+      "z": -7.29,
+      "rotationY": 2.07,
+      "height": 7.43,
+      "collider": {
+        "halfX": 0.73,
+        "halfZ": 0.73
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-medium/medieval-hexa-trees-b-medium.gltf",
+      "x": 56.31,
+      "z": -75.38,
+      "rotationY": 1.81,
+      "height": 6.52,
+      "collider": {
+        "halfX": 1.54,
+        "halfZ": 1.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 12.79,
+      "z": -94.54,
+      "rotationY": 4.64,
+      "height": 6.92,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -56.98,
+      "z": 41.95,
+      "rotationY": 4.8,
+      "height": 8.15,
+      "collider": {
+        "halfX": 0.63,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -25.54,
+      "z": 73.66,
+      "rotationY": 3.49,
+      "height": 7.36,
+      "collider": {
+        "halfX": 0.68,
+        "halfZ": 0.68
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -21.98,
+      "z": 63.86,
+      "rotationY": 1.89,
+      "height": 6.65,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -17.32,
+      "z": -27.15,
+      "rotationY": 5.56,
+      "height": 6.73,
+      "collider": {
+        "halfX": 0.69,
+        "halfZ": 0.69
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-medium/medieval-hexa-trees-b-medium.gltf",
+      "x": -77.5,
+      "z": -41.42,
+      "rotationY": 4.76,
+      "height": 6.54,
+      "collider": {
+        "halfX": 1.34,
+        "halfZ": 1.34
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -44.18,
+      "z": -7.29,
+      "rotationY": 5.67,
+      "height": 7.62,
+      "collider": {
+        "halfX": 0.77,
+        "halfZ": 0.77
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -62.98,
+      "z": -88.34,
+      "rotationY": 4.29,
+      "height": 6.33,
+      "collider": {
+        "halfX": 0.49,
+        "halfZ": 0.49
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 83.51,
+      "z": -5.3,
+      "rotationY": 5.13,
+      "height": 6.13,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-large/medieval-hexa-trees-b-large.gltf",
+      "x": 104.81,
+      "z": 28.31,
+      "rotationY": 2.46,
+      "height": 5.74,
+      "collider": {
+        "halfX": 1.62,
+        "halfZ": 1.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -105.55,
+      "z": -74.67,
+      "rotationY": 0.77,
+      "height": 6.37,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 22.05,
+      "z": -17.67,
+      "rotationY": 5.98,
+      "height": 0.41,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 105.17,
+      "z": 68.16,
+      "rotationY": 3.15,
+      "height": 0.86,
+      "collider": {
+        "halfX": 1.2,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -85.71,
+      "z": -114.18,
+      "rotationY": 0.65,
+      "height": 0.55,
+      "collider": {
+        "halfX": 0.44,
+        "halfZ": 0.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": -34.12,
+      "z": -90.58,
+      "rotationY": 4.04,
+      "height": 0.93,
+      "collider": {
+        "halfX": 0.77,
+        "halfZ": 0.78
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": -8.21,
+      "z": -114.77,
+      "rotationY": 5.17,
+      "height": 1.06,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 14.03,
+      "z": -23.38,
+      "rotationY": 5.48,
+      "height": 1.25,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -92.81,
+      "z": 74.88,
+      "rotationY": 2.23,
+      "height": 0.68,
+      "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": -99.58,
+      "z": -27.66,
+      "rotationY": 0.89,
+      "height": 0.9,
+      "collider": {
+        "halfX": 0.74,
+        "halfZ": 0.75
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -116.37,
+      "z": 8.43,
+      "rotationY": 3.58,
+      "height": 0.54,
+      "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": 50.1,
+      "z": 78.59,
+      "rotationY": 0.3,
+      "height": 1.01,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -40.91,
+      "z": 102.46,
+      "rotationY": 3.82,
+      "height": 0.61,
+      "collider": {
+        "halfX": 0.36,
+        "halfZ": 0.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -6.25,
+      "z": -36.81,
+      "rotationY": 0.45,
+      "height": 0.6,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.34
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": -27.23,
+      "z": 104.69,
+      "rotationY": 1.23,
+      "height": 0.88,
+      "collider": {
+        "halfX": 0.96,
+        "halfZ": 1.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -64.69,
+      "z": -100.76,
+      "rotationY": 4.87,
+      "height": 0.63,
+      "collider": {
+        "halfX": 0.31,
+        "halfZ": 0.31
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": -65.48,
+      "z": -18.66,
+      "rotationY": 1.03,
+      "height": 0.92,
+      "collider": {
+        "halfX": 1.16,
+        "halfZ": 0.97
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": 68.3,
+      "z": 11.68,
+      "rotationY": 1.69,
+      "height": 2.75,
+      "collider": {
+        "halfX": 1.13,
+        "halfZ": 0.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 22.68,
+      "z": 90.07,
+      "rotationY": 1.93,
+      "height": 0.89,
+      "collider": {
+        "halfX": 0.99,
+        "halfZ": 1.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": -112.07,
+      "z": 7.55,
+      "rotationY": 2.99,
+      "height": 0.36,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": -94.22,
+      "z": 77.2,
+      "rotationY": 5.08,
+      "height": 1.03,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 9.49,
+      "z": 52,
+      "rotationY": 3.14,
+      "height": 0.45,
+      "collider": {
+        "halfX": 0.32,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": 25.81,
+      "z": 93.3,
+      "rotationY": 1.62,
+      "height": 0.52,
+      "collider": {
+        "halfX": 0.31,
+        "halfZ": 0.31
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": -18.04,
+      "z": 10.57,
+      "rotationY": 2.26,
+      "height": 1.06,
+      "collider": {
+        "halfX": 1.3,
+        "halfZ": 1.21
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 9.52,
+      "z": -102.6,
+      "rotationY": 6.22,
+      "height": 0.48,
+      "collider": {
+        "halfX": 0.37,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": 113.01,
+      "z": 6.84,
+      "rotationY": 2.72,
+      "height": 2.63,
+      "collider": {
+        "halfX": 0.63,
+        "halfZ": 1.06
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": 2.21,
+      "z": -98.07,
+      "rotationY": 1.36,
+      "height": 0.65,
+      "collider": {
+        "halfX": 0.33,
+        "halfZ": 0.33
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 21.8,
+      "z": -105,
+      "rotationY": 2.1,
+      "height": 1.09,
+      "collider": {
+        "halfX": 1.39,
+        "halfZ": 1.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": 3.57,
+      "z": -107.78,
+      "rotationY": 3.87,
+      "height": 1.05,
+      "collider": {
+        "halfX": 0.88,
+        "halfZ": 0.87
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": 38.28,
+      "z": -101.15,
+      "rotationY": 1.98,
+      "height": 2.65,
+      "collider": {
+        "halfX": 1.07,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": 112.61,
+      "z": 31.6,
+      "rotationY": 0.69,
+      "height": 1.02,
+      "collider": {
+        "halfX": 1.17,
+        "halfZ": 1.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": 76.14,
+      "z": 47.11,
+      "rotationY": 5.68,
+      "height": 0.99,
+      "collider": {
+        "halfX": 1.08,
+        "halfZ": 1.23
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": -4.53,
+      "z": 103.32,
+      "rotationY": 0.1,
+      "height": 1.05,
+      "collider": {
+        "halfX": 1.52,
+        "halfZ": 0.84
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": -1.67,
+      "z": -100.17,
+      "rotationY": 4.45,
+      "height": 1.27,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": 48.6,
+      "z": -14.41,
+      "rotationY": 1.61,
+      "height": 1.08,
+      "collider": {
+        "halfX": 0.61,
+        "halfZ": 0.71
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -47.26,
+      "z": -74.04,
+      "rotationY": 0.13,
+      "height": 0.67,
+      "collider": {
+        "halfX": 0.32,
+        "halfZ": 0.32
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": 15.18,
+      "z": 104.05,
+      "rotationY": 0.74,
+      "height": 0.36,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": -78.44,
+      "z": -98.43,
+      "rotationY": 0.96,
+      "height": 2.74,
+      "collider": {
+        "halfX": 1.04,
+        "halfZ": 0.83
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": 45.82,
+      "z": 95.87,
+      "rotationY": 6,
+      "height": 1.12,
+      "collider": {
+        "halfX": 0.59,
+        "halfZ": 0.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -99.35,
+      "z": 13.56,
+      "rotationY": 5.48,
+      "height": 0.59,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": -94.6,
+      "z": 83.85,
+      "rotationY": 3.46,
+      "height": 0.98,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": -94.81,
+      "z": 0.9,
+      "rotationY": 1.32,
+      "height": 1.15,
+      "collider": {
+        "halfX": 0.36,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 23.05,
+      "z": -11.99,
+      "rotationY": 0.97,
+      "height": 1.11,
+      "collider": {
+        "halfX": 0.43,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 38.23,
+      "z": 88.08,
+      "rotationY": 5.34,
+      "height": 1.3,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": 111.05,
+      "z": 35.16,
+      "rotationY": 2.67,
+      "height": 0.67,
+      "collider": {
+        "halfX": 0.38,
+        "halfZ": 0.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": -34.02,
+      "z": -92.97,
+      "rotationY": 3.96,
+      "height": 0.48,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 54.35,
+      "z": 49.85,
+      "rotationY": 1.4,
+      "height": 0.4,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": 13.74,
+      "z": 12.56,
+      "rotationY": 6.01,
+      "height": 1.08,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 91.35,
+      "z": 14.5,
+      "rotationY": 6.25,
+      "height": 0.88,
+      "collider": {
+        "halfX": 1.24,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": -59.75,
+      "z": 83.94,
+      "rotationY": 5.65,
+      "height": 0.34,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 55.12,
+      "z": 101.06,
+      "rotationY": 4.2,
+      "height": 0.46,
+      "collider": {
+        "halfX": 0.58,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": -49.05,
+      "z": -4.45,
+      "rotationY": 3.7,
+      "height": 1.08,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": -91.98,
+      "z": -90.98,
+      "rotationY": 5.95,
+      "height": 0.45,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 72.02,
+      "z": -81.27,
+      "rotationY": 1.91,
+      "height": 0.91,
+      "collider": {
+        "halfX": 0.99,
+        "halfZ": 1.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": -65.01,
+      "z": -115.12,
+      "rotationY": 2.82,
+      "height": 2.32,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.95
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": -88.17,
+      "z": -32.68,
+      "rotationY": 5.62,
+      "height": 1.06,
+      "collider": {
+        "halfX": 1.6,
+        "halfZ": 1.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": -76.59,
+      "z": 11.94,
+      "rotationY": 1.39,
+      "height": 1.11,
+      "collider": {
+        "halfX": 0.32,
+        "halfZ": 0.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 77.99,
+      "z": -1.32,
+      "rotationY": 1.25,
+      "height": 1.17,
+      "collider": {
+        "halfX": 0.38,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": -112.83,
+      "z": -46.58,
+      "rotationY": 2.92,
+      "height": 0.4,
+      "collider": {
+        "halfX": 0.36,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": -68.69,
+      "z": -45.17,
+      "rotationY": 2.24,
+      "height": 1.17,
+      "collider": {
+        "halfX": 0.7,
+        "halfZ": 0.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": 59.31,
+      "z": 101.45,
+      "rotationY": 0.74,
+      "height": 0.58,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 84.63,
+      "z": -19.8,
+      "rotationY": 4.11,
+      "height": 1.05,
+      "collider": {
+        "halfX": 1.41,
+        "halfZ": 1.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": 14.12,
+      "z": -102.05,
+      "rotationY": 0.86,
+      "height": 0.35,
+      "collider": {
+        "halfX": 0.79,
+        "halfZ": 0.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": 93.83,
+      "z": 95.24,
+      "rotationY": 4.29,
+      "height": 0.55,
+      "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": 22.64,
+      "z": 62.55,
+      "rotationY": 1.29,
+      "height": 0.59,
+      "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -100.34,
+      "z": 77.99,
+      "rotationY": 1.81,
+      "height": 0.79,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 0.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": 21.44,
+      "z": 62.86,
+      "rotationY": 5.32,
+      "height": 0.52,
+      "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": -77.49,
+      "z": -29.58,
+      "rotationY": 4.6,
+      "height": 0.93,
+      "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 70.26,
+      "z": -16.61,
+      "rotationY": 1.3,
+      "height": 1.1,
+      "collider": {
+        "halfX": 0.35,
+        "halfZ": 0.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": 113.5,
+      "z": 28.05,
+      "rotationY": 0.94,
+      "height": 2.49,
+      "collider": {
+        "halfX": 0.94,
+        "halfZ": 0.77
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 19.26,
+      "z": -15.76,
+      "rotationY": 2.97,
+      "height": 0.45,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": -26.74,
+      "z": -90.41,
+      "rotationY": 0.8,
+      "height": 2.3,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": 42.45,
+      "z": -28.29,
+      "rotationY": 2.28,
+      "height": 0.91,
+      "collider": {
+        "halfX": 1.11,
+        "halfZ": 1.05
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": -21.57,
+      "z": 53.73,
+      "rotationY": 2.41,
+      "height": 0.99,
+      "collider": {
+        "halfX": 1.46,
+        "halfZ": 1.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": 22.08,
+      "z": 78.89,
+      "rotationY": 5.87,
+      "height": 2.68,
+      "collider": {
+        "halfX": 0.64,
+        "halfZ": 1.09
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": 20.23,
+      "z": -53.39,
+      "rotationY": 2.29,
+      "height": 2.39,
+      "collider": {
+        "halfX": 0.86,
+        "halfZ": 0.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 85.91,
+      "z": 91.86,
+      "rotationY": 6.24,
+      "height": 0.47,
+      "collider": {
+        "halfX": 0.35,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -8.62,
+      "z": 88.46,
+      "rotationY": 5.64,
+      "height": 0.59,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": -73.95,
+      "z": -60.03,
+      "rotationY": 1.86,
+      "height": 0.33,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -106.94,
+      "z": -88.76,
+      "rotationY": 5.07,
+      "height": 0.51,
+      "collider": {
+        "halfX": 0.37,
+        "halfZ": 0.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": -53.43,
+      "z": 36.64,
+      "rotationY": 3.8,
+      "height": 1.15,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 47.87,
+      "z": 81.42,
+      "rotationY": 3.02,
+      "height": 0.92,
+      "collider": {
+        "halfX": 1.34,
+        "halfZ": 0.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 47.81,
+      "z": 97.69,
+      "rotationY": 5.48,
+      "height": 1.21,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": 9.45,
+      "z": -17.99,
+      "rotationY": 2.36,
+      "height": 2.74,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 0.95
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": -59.85,
+      "z": 6.6,
+      "rotationY": 0.97,
+      "height": 0.92,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -51.13,
+      "z": -40.21,
+      "rotationY": 0.99,
+      "height": 0.55,
+      "collider": {
+        "halfX": 0.43,
+        "halfZ": 0.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 86.83,
+      "z": 87.27,
+      "rotationY": 0.52,
+      "height": 0.89,
+      "collider": {
+        "halfX": 1.37,
+        "halfZ": 1.13
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -67.48,
+      "z": -44.22,
+      "rotationY": 3.18,
+      "height": 0.59,
+      "collider": {
+        "halfX": 0.35,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": 96.88,
+      "z": 100.97,
+      "rotationY": 1.55,
+      "height": 1.03,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": -104.56,
+      "z": 19.6,
+      "rotationY": 0.68,
+      "height": 1.19,
+      "collider": {
+        "halfX": 1,
+        "halfZ": 0.98
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": 105.52,
+      "z": 9.81,
+      "rotationY": 6.27,
+      "height": 1.06,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 76.48,
+      "z": -90.64,
+      "rotationY": 5.11,
+      "height": 1.08,
+      "collider": {
+        "halfX": 1.25,
+        "halfZ": 1.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -34.52,
+      "z": -83.56,
+      "rotationY": 0.51,
+      "height": 0.75,
+      "collider": {
+        "halfX": 0.43,
+        "halfZ": 0.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": -41.22,
+      "z": 49.91,
+      "rotationY": 3.99,
+      "height": 0.84,
+      "collider": {
+        "halfX": 1.19,
+        "halfZ": 1.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -99.52,
+      "z": -53.45,
+      "rotationY": 6.14,
+      "height": 0.53,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.34
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": 80.44,
+      "z": 62.93,
+      "rotationY": 1.96,
+      "height": 0.63,
+      "collider": {
+        "halfX": 0.35,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 78.36,
+      "z": -11,
+      "rotationY": 4.08,
+      "height": 0.93,
+      "collider": {
+        "halfX": 1.27,
+        "halfZ": 1.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": -89.93,
+      "z": -95.47,
+      "rotationY": 4.62,
+      "height": 1.03,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -26.51,
+      "z": -73.43,
+      "rotationY": 0.76,
+      "height": 0.68,
+      "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 32.89,
+      "z": -95.4,
+      "rotationY": 1.94,
+      "height": 1.24,
+      "collider": {
+        "halfX": 0.43,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 66.61,
+      "z": -6.72,
+      "rotationY": 1.15,
+      "height": 1.18,
+      "collider": {
+        "halfX": 0.42,
+        "halfZ": 0.49
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": -54.75,
+      "z": 82.65,
+      "rotationY": 4.08,
+      "height": 1.27,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 11.4,
+      "z": -91.64,
+      "rotationY": 1.4,
+      "height": 1,
+      "collider": {
+        "halfX": 0.89,
+        "halfZ": 1.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": -69.67,
+      "z": -106.3,
+      "rotationY": 5.28,
+      "height": 0.97,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -12.17,
+      "z": 13.73,
+      "rotationY": 1.45,
+      "height": 0.79,
+      "collider": {
+        "halfX": 0.37,
+        "halfZ": 0.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -101.41,
+      "z": 13.96,
+      "rotationY": 3.97,
+      "height": 0.67,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 0.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": 1.86,
+      "z": 108.25,
+      "rotationY": 2.88,
+      "height": 2.79,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 1.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": 9.39,
+      "z": 75.11,
+      "rotationY": 1.76,
+      "height": 0.54,
+      "collider": {
+        "halfX": 0.36,
+        "halfZ": 0.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": 54.85,
+      "z": -60.42,
+      "rotationY": 2.71,
+      "height": 0.33,
+      "collider": {
+        "halfX": 0.7,
+        "halfZ": 0.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 95.8,
+      "z": -77.75,
+      "rotationY": 0.1,
+      "height": 0.42,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": 37.29,
+      "z": -35.95,
+      "rotationY": 3,
+      "height": 0.34,
+      "collider": {
+        "halfX": 0.61,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -18.42,
+      "z": -14.23,
+      "rotationY": 0.54,
+      "height": 0.63,
+      "collider": {
+        "halfX": 0.37,
+        "halfZ": 0.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": 53.12,
+      "z": 58.54,
+      "rotationY": 1.25,
+      "height": 0.98,
+      "collider": {
+        "halfX": 0.53,
+        "halfZ": 0.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": 3.43,
+      "z": -120.54,
+      "rotationY": 5.65,
+      "height": 0.6,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": 76.9,
+      "z": 53.38,
+      "rotationY": 4.45,
+      "height": 0.99,
+      "collider": {
+        "halfX": 0.68,
+        "halfZ": 0.75
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 77.34,
+      "z": 7.2,
+      "rotationY": 2.33,
+      "height": 0.98,
+      "collider": {
+        "halfX": 1.41,
+        "halfZ": 1.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": 71.07,
+      "z": -2.14,
+      "rotationY": 0.77,
+      "height": 1.03,
+      "collider": {
+        "halfX": 0.86,
+        "halfZ": 0.86
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": 32.83,
+      "z": -77.68,
+      "rotationY": 0.67,
+      "height": 0.95,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": -49.59,
+      "z": -59.18,
+      "rotationY": 4.66,
+      "height": 2.25,
+      "collider": {
+        "halfX": 0.92,
+        "halfZ": 0.23
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": 117.05,
+      "z": -29.82,
+      "rotationY": 5.48,
+      "height": 0.32,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 0.72
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -8.03,
+      "z": -115.75,
+      "rotationY": 1.59,
+      "height": 0.61,
+      "collider": {
+        "halfX": 0.27,
+        "halfZ": 0.27
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": 98.62,
+      "z": -5.61,
+      "rotationY": 2.26,
+      "height": 0.33,
+      "collider": {
+        "halfX": 0.74,
+        "halfZ": 0.74
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": -92.84,
+      "z": -75.66,
+      "rotationY": 4.67,
+      "height": 1.04,
+      "collider": {
+        "halfX": 1.21,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": -112.76,
+      "z": 30.99,
+      "rotationY": 2.82,
+      "height": 2.55,
+      "collider": {
+        "halfX": 0.53,
+        "halfZ": 1.05
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": -30.09,
+      "z": 82.35,
+      "rotationY": 5.59,
+      "height": 0.98,
+      "collider": {
+        "halfX": 1.46,
+        "halfZ": 1.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 33.15,
+      "z": -102.97,
+      "rotationY": 4.27,
+      "height": 0.46,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": 116.01,
+      "z": 37.16,
+      "rotationY": 4.84,
+      "height": 0.99,
+      "collider": {
+        "halfX": 0.44,
+        "halfZ": 0.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 28.17,
+      "z": 96.93,
+      "rotationY": 0.96,
+      "height": 1.13,
+      "collider": {
+        "halfX": 0.44,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 63.33,
+      "z": 49.64,
+      "rotationY": 4.31,
+      "height": 1.24,
+      "collider": {
+        "halfX": 0.44,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 69.51,
+      "z": -9.82,
+      "rotationY": 5.96,
+      "height": 1.03,
+      "collider": {
+        "halfX": 1.57,
+        "halfZ": 1.11
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": -109.16,
+      "z": 12.78,
+      "rotationY": 0.03,
+      "height": 0.46,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.49
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": 21.49,
+      "z": 105.16,
+      "rotationY": 3.78,
+      "height": 1,
+      "collider": {
+        "halfX": 0.56,
+        "halfZ": 0.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": -104.54,
+      "z": -97.87,
+      "rotationY": 4.19,
+      "height": 2.77,
+      "collider": {
+        "halfX": 1.09,
+        "halfZ": 0.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": -44.74,
+      "z": -3.05,
+      "rotationY": 5.91,
+      "height": 1.07,
+      "collider": {
+        "halfX": 0.98,
+        "halfZ": 1.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": 26.53,
+      "z": -93.51,
+      "rotationY": 0.97,
+      "height": 0.7,
+      "collider": {
+        "halfX": 0.41,
+        "halfZ": 0.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": 50.69,
+      "z": -47.25,
+      "rotationY": 5.58,
+      "height": 0.54,
+      "collider": {
+        "halfX": 0.43,
+        "halfZ": 0.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": 99.6,
+      "z": -20.37,
+      "rotationY": 3.37,
+      "height": 0.75,
+      "collider": {
+        "halfX": 0.38,
+        "halfZ": 0.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": -96.04,
+      "z": 20.81,
+      "rotationY": 3.1,
+      "height": 1.25,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": 35.96,
+      "z": -64.53,
+      "rotationY": 4.67,
+      "height": 0.65,
+      "collider": {
+        "halfX": 0.29,
+        "halfZ": 0.29
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": -103.29,
+      "z": -101.35,
+      "rotationY": 2.08,
+      "height": 1.05,
+      "collider": {
+        "halfX": 0.83,
+        "halfZ": 0.86
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": 6.9,
+      "z": -12.54,
+      "rotationY": 5.81,
+      "height": 2.77,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 1.11
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -24.39,
+      "z": 5.26,
+      "rotationY": 4.58,
+      "height": 0.75,
+      "collider": {
+        "halfX": 0.36,
+        "halfZ": 0.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": 40.79,
+      "z": 64.15,
+      "rotationY": 2.84,
+      "height": 0.65,
+      "collider": {
+        "halfX": 0.35,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": 66.53,
+      "z": 53.98,
+      "rotationY": 2.01,
+      "height": 1.15,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": -87.98,
+      "z": 91,
+      "rotationY": 4,
+      "height": 1.26,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": -12.06,
+      "z": -36.43,
+      "rotationY": 4.17,
+      "height": 1.09,
+      "collider": {
+        "halfX": 0.87,
+        "halfZ": 0.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 93.57,
+      "z": 59.09,
+      "rotationY": 0.26,
+      "height": 1.18,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": -62.69,
+      "z": 60.5,
+      "rotationY": 1.09,
+      "height": 0.33,
+      "collider": {
+        "halfX": 0.71,
+        "halfZ": 0.71
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": -88.49,
+      "z": 68.67,
+      "rotationY": 5.44,
+      "height": 1.23,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": -52.7,
+      "z": 20.71,
+      "rotationY": 3.98,
+      "height": 1.07,
+      "collider": {
+        "halfX": 0.61,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": -36.19,
+      "z": -73.46,
+      "rotationY": 4.28,
+      "height": 0.45,
+      "collider": {
+        "halfX": 0.56,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": 44.55,
+      "z": 100.55,
+      "rotationY": 3.04,
+      "height": 0.57,
+      "collider": {
+        "halfX": 0.35,
+        "halfZ": 0.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -95.35,
+      "z": -49.59,
+      "rotationY": 1.08,
+      "height": 0.67,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": -97.19,
+      "z": -94.8,
+      "rotationY": 4.64,
+      "height": 1.27,
+      "collider": {
+        "halfX": 0.32,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 68.32,
+      "z": 15.02,
+      "rotationY": 5.76,
+      "height": 0.43,
+      "collider": {
+        "halfX": 0.49,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -8.27,
+      "z": 80.82,
+      "rotationY": 4.87,
+      "height": 0.6,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -64.46,
+      "z": 81.59,
+      "rotationY": 3.07,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.3,
+        "halfZ": 0.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -12.94,
+      "z": 93.79,
+      "rotationY": 4.66,
+      "height": 0.72,
+      "collider": {
+        "halfX": 0.32,
+        "halfZ": 0.32
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": 16.1,
+      "z": 74.65,
+      "rotationY": 6.25,
+      "height": 0.91,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": 47.22,
+      "z": 58.97,
+      "rotationY": 5.13,
+      "height": 0.96,
+      "collider": {
+        "halfX": 0.73,
+        "halfZ": 0.77
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -56.28,
+      "z": 13.67,
+      "rotationY": 3.02,
+      "height": 0.8,
+      "collider": {
+        "halfX": 0.38,
+        "halfZ": 0.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -77.51,
+      "z": -36.48,
+      "rotationY": 2.97,
+      "height": 0.69,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.34
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": 50.99,
+      "z": 15.06,
+      "rotationY": 4.22,
+      "height": 0.35,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 5.49,
+      "z": 91.94,
+      "rotationY": 5.02,
+      "height": 0.99,
+      "collider": {
+        "halfX": 1.05,
+        "halfZ": 1.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": 17.34,
+      "z": 1.51,
+      "rotationY": 1.85,
+      "height": 2.64,
+      "collider": {
+        "halfX": 1.09,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": -67.6,
+      "z": -66.39,
+      "rotationY": 1.4,
+      "height": 1.15,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": -86.25,
+      "z": -77.17,
+      "rotationY": 4.08,
+      "height": 0.46,
+      "collider": {
+        "halfX": 0.58,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -71.83,
+      "z": -105.27,
+      "rotationY": 5.98,
+      "height": 0.64,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.34
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": -9.42,
+      "z": 92.43,
+      "rotationY": 3.29,
+      "height": 2.45,
+      "collider": {
+        "halfX": 0.35,
+        "halfZ": 1.01
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -87.42,
+      "z": -79.27,
+      "rotationY": 1.96,
+      "height": 0.76,
+      "collider": {
+        "halfX": 0.42,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": -80.8,
+      "z": 59.77,
+      "rotationY": 0.85,
+      "height": 0.41,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": -18.85,
+      "z": 0.78,
+      "rotationY": 5.75,
+      "height": 1.13,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": -69.78,
+      "z": -101.05,
+      "rotationY": 5.77,
+      "height": 2.58,
+      "collider": {
+        "halfX": 0.7,
+        "halfZ": 1.02
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": 0.59,
+      "z": -103.93,
+      "rotationY": 5.75,
+      "height": 0.98,
+      "collider": {
+        "halfX": 1.02,
+        "halfZ": 1.23
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": 69.67,
+      "z": 46.52,
+      "rotationY": 0.13,
+      "height": 0.94,
+      "collider": {
+        "halfX": 0.66,
+        "halfZ": 0.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": 96.16,
+      "z": 3.46,
+      "rotationY": 0.98,
+      "height": 0.71,
+      "collider": {
+        "halfX": 0.42,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": 77.81,
+      "z": -69.46,
+      "rotationY": 4.79,
+      "height": 0.95,
+      "collider": {
+        "halfX": 1.12,
+        "halfZ": 0.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 48.53,
+      "z": 90.82,
+      "rotationY": 0.57,
+      "height": 0.9,
+      "collider": {
+        "halfX": 1.38,
+        "halfZ": 1.18
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": 87.2,
+      "z": -89.85,
+      "rotationY": 5.54,
+      "height": 0.33,
+      "collider": {
+        "halfX": 0.74,
+        "halfZ": 0.74
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 73.74,
+      "z": -79.8,
+      "rotationY": 2.47,
+      "height": 0.43,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 22.85,
+      "z": 35.76,
+      "rotationY": 0.16,
+      "height": 1.26,
+      "collider": {
+        "halfX": 0.49,
+        "halfZ": 0.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 109.22,
+      "z": -32.29,
+      "rotationY": 5.74,
+      "height": 1.11,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": -64.58,
+      "z": -12.28,
+      "rotationY": 0,
+      "height": 0.91,
+      "collider": {
+        "halfX": 0.49,
+        "halfZ": 1.04
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": -83.07,
+      "z": 48.48,
+      "rotationY": 1.3,
+      "height": 1.18,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 113.78,
+      "z": -6.96,
+      "rotationY": 1.76,
+      "height": 0.94,
+      "collider": {
+        "halfX": 0.86,
+        "halfZ": 1.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": 65.96,
+      "z": 91.58,
+      "rotationY": 0.04,
+      "height": 1.19,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": -98.11,
+      "z": -98.43,
+      "rotationY": 3.3,
+      "height": 1.04,
+      "collider": {
+        "halfX": 0.75,
+        "halfZ": 0.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -65.52,
+      "z": -79.52,
+      "rotationY": 3.23,
+      "height": 0.55,
+      "collider": {
+        "halfX": 0.34,
+        "halfZ": 0.34
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": -36.32,
+      "z": 89.11,
+      "rotationY": 4.12,
+      "height": 1.05,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": -72.23,
+      "z": 87.87,
+      "rotationY": 1.3,
+      "height": 1.08,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": -99.61,
+      "z": 33.66,
+      "rotationY": 2.15,
+      "height": 0.33,
+      "collider": {
+        "halfX": 0.73,
+        "halfZ": 0.73
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": 72.11,
+      "z": 43.52,
+      "rotationY": 3.31,
+      "height": 1.07,
+      "collider": {
+        "halfX": 0.77,
+        "halfZ": 0.69
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": -9.01,
+      "z": 83.23,
+      "rotationY": 0.85,
+      "height": 0.43,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -20.11,
+      "z": -93.42,
+      "rotationY": 2.77,
+      "height": 0.51,
+      "collider": {
+        "halfX": 0.37,
+        "halfZ": 0.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 72.64,
+      "z": -78.74,
+      "rotationY": 4.22,
+      "height": 0.43,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": 109.55,
+      "z": -20.35,
+      "rotationY": 1.99,
+      "height": 0.56,
+      "collider": {
+        "halfX": 0.42,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 25.38,
+      "z": 1.16,
+      "rotationY": 4.14,
+      "height": 1,
+      "collider": {
+        "halfX": 1.31,
+        "halfZ": 1.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": 5.25,
+      "z": -118.71,
+      "rotationY": 4.88,
+      "height": 1.04,
+      "collider": {
+        "halfX": 1.26,
+        "halfZ": 0.74
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": -47.66,
+      "z": 34.61,
+      "rotationY": 5.57,
+      "height": 0.35,
+      "collider": {
+        "halfX": 0.79,
+        "halfZ": 0.79
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": 89.06,
+      "z": 36.73,
+      "rotationY": 2.31,
+      "height": 1.03,
+      "collider": {
+        "halfX": 1.25,
+        "halfZ": 1.2
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": -5.51,
+      "z": 90.75,
+      "rotationY": 2.65,
+      "height": 1.05,
+      "collider": {
+        "halfX": 0.86,
+        "halfZ": 0.82
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": 35.49,
+      "z": -27.66,
+      "rotationY": 4.16,
+      "height": 1.05,
+      "collider": {
+        "halfX": 0.58,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 60.4,
+      "z": 89.55,
+      "rotationY": 2.68,
+      "height": 1.22,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 81.8,
+      "z": 86.71,
+      "rotationY": 4.24,
+      "height": 1.3,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 14.57,
+      "z": 97.24,
+      "rotationY": 2.01,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.43,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": -15.5,
+      "z": 61.02,
+      "rotationY": 0.15,
+      "height": 0.45,
+      "collider": {
+        "halfX": 0.38,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": 60.87,
+      "z": -54.59,
+      "rotationY": 2.46,
+      "height": 1.03,
+      "collider": {
+        "halfX": 0.86,
+        "halfZ": 0.85
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": 30.9,
+      "z": 74.05,
+      "rotationY": 5.82,
+      "height": 0.64,
+      "collider": {
+        "halfX": 0.37,
+        "halfZ": 0.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": 18.44,
+      "z": 73.91,
+      "rotationY": 5.81,
+      "height": 0.78,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": -8.48,
+      "z": 79.79,
+      "rotationY": 6.14,
+      "height": 0.92,
+      "collider": {
+        "halfX": 0.42,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": 99.57,
+      "z": -71.41,
+      "rotationY": 5.04,
+      "height": 2.62,
+      "collider": {
+        "halfX": 1.08,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": 23.29,
+      "z": 97.08,
+      "rotationY": 0.91,
+      "height": 0.92,
+      "collider": {
+        "halfX": 0.75,
+        "halfZ": 0.77
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": -18.6,
+      "z": 103.76,
+      "rotationY": 0.23,
+      "height": 0.36,
+      "collider": {
+        "halfX": 0.69,
+        "halfZ": 0.69
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": -94.69,
+      "z": 60.68,
+      "rotationY": 4.96,
+      "height": 0.97,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": 97.88,
+      "z": 56.13,
+      "rotationY": 2.52,
+      "height": 2.58,
+      "collider": {
+        "halfX": 0.78,
+        "halfZ": 0.98
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": 15.44,
+      "z": 8.74,
+      "rotationY": 4.81,
+      "height": 2.3,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 0.28
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": -24.52,
+      "z": 77.51,
+      "rotationY": 5.96,
+      "height": 1,
+      "collider": {
+        "halfX": 1.53,
+        "halfZ": 1.08
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": 55.33,
+      "z": 90,
+      "rotationY": 2.49,
+      "height": 1.01,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": 58.62,
+      "z": -69.85,
+      "rotationY": 1.1,
+      "height": 0.53,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 0.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": -50.06,
+      "z": 3.24,
+      "rotationY": 5.94,
+      "height": 1.25,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": 26.03,
+      "z": 84.35,
+      "rotationY": 1.8,
+      "height": 0.35,
+      "collider": {
+        "halfX": 0.67,
+        "halfZ": 0.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": -88.25,
+      "z": 82.34,
+      "rotationY": 4.03,
+      "height": 2.26,
+      "collider": {
+        "halfX": 0.83,
+        "halfZ": 0.72
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": -98.07,
+      "z": 18.31,
+      "rotationY": 6.17,
+      "height": 0.34,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": -97.98,
+      "z": 12.95,
+      "rotationY": 2.78,
+      "height": 0.46,
+      "collider": {
+        "halfX": 0.47,
+        "halfZ": 0.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": -51.09,
+      "z": -65.9,
+      "rotationY": 0.28,
+      "height": 2.56,
+      "collider": {
+        "halfX": 0.49,
+        "halfZ": 1.06
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": -30.9,
+      "z": -17.5,
+      "rotationY": 2.58,
+      "height": 1.03,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": -113,
+      "z": 46.33,
+      "rotationY": 1.55,
+      "height": 0.91,
+      "collider": {
+        "halfX": 0.64,
+        "halfZ": 1.28
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -25.95,
+      "z": 55.8,
+      "rotationY": 6.21,
+      "height": 0.51,
+      "collider": {
+        "halfX": 0.31,
+        "halfZ": 0.31
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": 91.27,
+      "z": 64.27,
+      "rotationY": 0.76,
+      "height": 0.6,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": -16.35,
+      "z": 1.11,
+      "rotationY": 4.36,
+      "height": 1.13,
+      "collider": {
+        "halfX": 0.58,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": 111.33,
+      "z": -43.3,
+      "rotationY": 4.82,
+      "height": 0.91,
+      "collider": {
+        "halfX": 1.09,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": 17.35,
+      "z": -95.61,
+      "rotationY": 5.79,
+      "height": 1.04,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.81
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": 49.46,
+      "z": 38.13,
+      "rotationY": 1.77,
+      "height": 0.78,
+      "collider": {
+        "halfX": 0.39,
+        "halfZ": 0.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 68.52,
+      "z": 8.09,
+      "rotationY": 3.83,
+      "height": 1.27,
+      "collider": {
+        "halfX": 0.53,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": -60.48,
+      "z": 73.05,
+      "rotationY": 0.64,
+      "height": 0.32,
+      "collider": {
+        "halfX": 0.71,
+        "halfZ": 0.71
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": -93.86,
+      "z": 34.23,
+      "rotationY": 3.86,
+      "height": 0.32,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 0.72
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": -106.4,
+      "z": 45.28,
+      "rotationY": 1.1,
+      "height": 0.96,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-b-small/medieval-hexa-crate-b-small.gltf",
+      "x": -58.34,
+      "z": 66.01,
+      "rotationY": 6.02,
+      "height": 0.62,
+      "collider": {
+        "halfX": 0.32,
+        "halfZ": 0.32
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": -37.36,
+      "z": 93.43,
+      "rotationY": 2.91,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": -61.29,
+      "z": 41.23,
+      "rotationY": 4.35,
+      "height": 0.95,
+      "collider": {
+        "halfX": 1.2,
+        "halfZ": 0.86
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-crate-a-big/medieval-hexa-crate-a-big.gltf",
+      "x": -98.49,
+      "z": 73.24,
+      "rotationY": 4.63,
+      "height": 1.17,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": -22.17,
+      "z": 9.6,
+      "rotationY": 1.14,
+      "height": 1.01,
+      "collider": {
+        "halfX": 1.2,
+        "halfZ": 1.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": 85.19,
+      "z": 56.59,
+      "rotationY": 4.16,
+      "height": 1.2,
+      "collider": {
+        "halfX": 0.96,
+        "halfZ": 0.99
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-pallet/medieval-hexa-pallet.gltf",
+      "x": -32.34,
+      "z": -39.49,
+      "rotationY": 5.35,
+      "height": 0.34,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.76
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": -52.7,
+      "z": -40.2,
+      "rotationY": 1.89,
+      "height": 0.47,
+      "collider": {
+        "halfX": 0.57,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-wheelbarrow/medieval-hexa-wheelbarrow.gltf",
+      "x": -107.84,
+      "z": -53.83,
+      "rotationY": 1.08,
+      "height": 1.09,
+      "collider": {
+        "halfX": 1.38,
+        "halfZ": 1.1
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": -115.09,
+      "z": -53.7,
+      "rotationY": 2.37,
+      "height": 0.42,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": 109.25,
+      "z": -17.52,
+      "rotationY": 2.85,
+      "height": 1.11,
+      "collider": {
+        "halfX": 0.56,
+        "halfZ": 0.56
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 90.51,
+      "z": -65.39,
+      "rotationY": 5.33,
+      "height": 0.49,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": -95.34,
+      "z": -52.06,
+      "rotationY": 2.62,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.56,
+        "halfZ": 0.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": 26.44,
+      "z": 58.02,
+      "rotationY": 0.76,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.4,
+        "halfZ": 0.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-weaponrack/medieval-hexa-weaponrack.gltf",
+      "x": 49.24,
+      "z": -85.54,
+      "rotationY": 1.51,
+      "height": 1.28,
+      "collider": {
+        "halfX": 0.32,
+        "halfZ": 0.47
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-lumber/medieval-hexa-resource-lumber.gltf",
+      "x": 99.17,
+      "z": -13.88,
+      "rotationY": 0.12,
+      "height": 0.8,
+      "collider": {
+        "halfX": 1.17,
+        "halfZ": 0.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": -56.34,
+      "z": 90.1,
+      "rotationY": 4.72,
+      "height": 1.03,
+      "collider": {
+        "halfX": 0.42,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": -95.89,
+      "z": -65.38,
+      "rotationY": 1.2,
+      "height": 1.06,
+      "collider": {
+        "halfX": 0.78,
+        "halfZ": 0.84
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -115.42,
+      "z": 40.6,
+      "rotationY": 1.46,
+      "height": 0.51,
+      "collider": {
+        "halfX": 0.32,
+        "halfZ": 0.32
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-flag-red/medieval-hexa-flag-red.gltf",
+      "x": -33.12,
+      "z": -18.93,
+      "rotationY": 0.74,
+      "height": 2.46,
+      "collider": {
+        "halfX": 0.83,
+        "halfZ": 0.87
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-bucket-water/medieval-hexa-bucket-water.gltf",
+      "x": -27.31,
+      "z": -30.77,
+      "rotationY": 5.84,
+      "height": 0.59,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 87.2,
+      "z": 84.3,
+      "rotationY": 1.33,
+      "height": 0.5,
+      "collider": {
+        "halfX": 0.59,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-barrel/medieval-hexa-barrel.gltf",
+      "x": 102.51,
+      "z": 2.88,
+      "rotationY": 3.29,
+      "height": 0.92,
+      "collider": {
+        "halfX": 0.42,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-resource-stone/medieval-hexa-resource-stone.gltf",
+      "x": 65.64,
+      "z": -75.61,
+      "rotationY": 1.44,
+      "height": 0.94,
+      "collider": {
+        "halfX": 0.59,
+        "halfZ": 0.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-sack/medieval-hexa-sack.gltf",
+      "x": 104.59,
+      "z": 19.74,
+      "rotationY": 3.98,
+      "height": 0.44,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -2.52,
+      "z": -51.76,
+      "rotationY": 4.1,
+      "height": 1.17,
+      "collider": {
+        "halfX": 1.36,
+        "halfZ": 1.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 67.64,
+      "z": -56.31,
+      "rotationY": 5.63,
+      "height": 1.57,
+      "collider": {
+        "halfX": 1.65,
+        "halfZ": 1.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -89.41,
+      "z": -45.49,
+      "rotationY": 4.12,
+      "height": 0.56,
+      "collider": {
+        "halfX": 1.39,
+        "halfZ": 1.4
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 19.25,
+      "z": 98.22,
+      "rotationY": 1.37,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.33,
+        "halfZ": 1.33
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -70.68,
+      "z": 45.3,
+      "rotationY": 2.39,
+      "height": 0.65,
+      "collider": {
+        "halfX": 1.65,
+        "halfZ": 1.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-hill-single-a/medieval-hexa-hill-single-a.gltf",
+      "x": 88.59,
+      "z": -54.85,
+      "rotationY": 3.79,
+      "height": 2.27,
+      "collider": {
+        "halfX": 4.32,
+        "halfZ": 4.13
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 14.66,
+      "z": 62.68,
+      "rotationY": 4.09,
+      "height": 1.17,
+      "collider": {
+        "halfX": 1.22,
+        "halfZ": 1.22
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -10.35,
+      "z": -31.7,
+      "rotationY": 0.73,
+      "height": 0.54,
+      "collider": {
+        "halfX": 1.37,
+        "halfZ": 1.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 94.42,
+      "z": -61.99,
+      "rotationY": 4.69,
+      "height": 1.18,
+      "collider": {
+        "halfX": 0.91,
+        "halfZ": 0.91
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -83.36,
+      "z": -35.23,
+      "rotationY": 2.33,
+      "height": 1.16,
+      "collider": {
+        "halfX": 1.23,
+        "halfZ": 1.23
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -107.12,
+      "z": -24.22,
+      "rotationY": 2.18,
+      "height": 1.36,
+      "collider": {
+        "halfX": 1.42,
+        "halfZ": 1.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -55.94,
+      "z": -81.58,
+      "rotationY": 0.57,
+      "height": 0.55,
+      "collider": {
+        "halfX": 1.37,
+        "halfZ": 1.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": 79.5,
+      "z": 49.11,
+      "rotationY": 2.58,
+      "height": 0.59,
+      "collider": {
+        "halfX": 1.47,
+        "halfZ": 1.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -106.81,
+      "z": 41.75,
+      "rotationY": 1.98,
+      "height": 0.93,
+      "collider": {
+        "halfX": 1.01,
+        "halfZ": 1.06
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 80.81,
+      "z": -86.69,
+      "rotationY": 1.44,
+      "height": 1.14,
+      "collider": {
+        "halfX": 0.96,
+        "halfZ": 0.96
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-hill-single-a/medieval-hexa-hill-single-a.gltf",
+      "x": -101.09,
+      "z": -47.97,
+      "rotationY": 3.2,
+      "height": 1.92,
+      "collider": {
+        "halfX": 3.07,
+        "halfZ": 2.32
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -108.59,
+      "z": 31.23,
+      "rotationY": 3.59,
+      "height": 0.52,
+      "collider": {
+        "halfX": 1.26,
+        "halfZ": 1.23
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 47.04,
+      "z": 87.11,
+      "rotationY": 2.27,
+      "height": 1.4,
+      "collider": {
+        "halfX": 1.48,
+        "halfZ": 1.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-hill-single-a/medieval-hexa-hill-single-a.gltf",
+      "x": 70.93,
+      "z": 84.42,
+      "rotationY": 6.22,
+      "height": 2.12,
+      "collider": {
+        "halfX": 3.4,
+        "halfZ": 2.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -69.27,
+      "z": -88.95,
+      "rotationY": 3.53,
+      "height": 0.59,
+      "collider": {
+        "halfX": 1.39,
+        "halfZ": 1.37
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -106.48,
+      "z": 14.28,
+      "rotationY": 2.4,
+      "height": 1.54,
+      "collider": {
+        "halfX": 1.63,
+        "halfZ": 1.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": 81.37,
+      "z": -44.55,
+      "rotationY": 0.69,
+      "height": 0.92,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 1.09
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 97.51,
+      "z": 58.42,
+      "rotationY": 2.17,
+      "height": 1.13,
+      "collider": {
+        "halfX": 1.18,
+        "halfZ": 1.18
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 44.47,
+      "z": 85.89,
+      "rotationY": 0.09,
+      "height": 1.18,
+      "collider": {
+        "halfX": 0.96,
+        "halfZ": 0.96
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 93.86,
+      "z": -108.47,
+      "rotationY": 2.72,
+      "height": 1.54,
+      "collider": {
+        "halfX": 1.52,
+        "halfZ": 1.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 35.95,
+      "z": 6.77,
+      "rotationY": 4.22,
+      "height": 1.41,
+      "collider": {
+        "halfX": 1.43,
+        "halfZ": 1.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -14.34,
+      "z": 82.17,
+      "rotationY": 4.29,
+      "height": 1.45,
+      "collider": {
+        "halfX": 1.44,
+        "halfZ": 1.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -50.41,
+      "z": -17.49,
+      "rotationY": 2.48,
+      "height": 1.06,
+      "collider": {
+        "halfX": 1.27,
+        "halfZ": 1.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -113.05,
+      "z": 19.1,
+      "rotationY": 4.92,
+      "height": 0.52,
+      "collider": {
+        "halfX": 1.08,
+        "halfZ": 1.12
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -46.82,
+      "z": -39.23,
+      "rotationY": 2.87,
+      "height": 0.98,
+      "collider": {
+        "halfX": 1.06,
+        "halfZ": 0.98
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": 87.46,
+      "z": -111.28,
+      "rotationY": 1.53,
+      "height": 0.93,
+      "collider": {
+        "halfX": 0.77,
+        "halfZ": 0.87
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 63.6,
+      "z": 79.19,
+      "rotationY": 4.49,
+      "height": 1.37,
+      "collider": {
+        "halfX": 1.23,
+        "halfZ": 1.23
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -27.87,
+      "z": 57.31,
+      "rotationY": 4.56,
+      "height": 0.55,
+      "collider": {
+        "halfX": 1.1,
+        "halfZ": 1.14
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -49.74,
+      "z": -99.23,
+      "rotationY": 4.58,
+      "height": 1.23,
+      "collider": {
+        "halfX": 1.04,
+        "halfZ": 1.04
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": 10.71,
+      "z": 44.22,
+      "rotationY": 5.62,
+      "height": 0.66,
+      "collider": {
+        "halfX": 1.67,
+        "halfZ": 1.66
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -60.81,
+      "z": -102.58,
+      "rotationY": 3.73,
+      "height": 0.51,
+      "collider": {
+        "halfX": 1.27,
+        "halfZ": 1.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -107.27,
+      "z": -38.47,
+      "rotationY": 1.22,
+      "height": 0.87,
+      "collider": {
+        "halfX": 0.92,
+        "halfZ": 0.97
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-hill-single-a/medieval-hexa-hill-single-a.gltf",
+      "x": -19.78,
+      "z": 85.95,
+      "rotationY": 3.9,
+      "height": 2.33,
+      "collider": {
+        "halfX": 4.39,
+        "halfZ": 4.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -53.94,
+      "z": 41.35,
+      "rotationY": 0.78,
+      "height": 0.93,
+      "collider": {
+        "halfX": 1.11,
+        "halfZ": 1.11
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -53.07,
+      "z": 10.08,
+      "rotationY": 1.88,
+      "height": 0.63,
+      "collider": {
+        "halfX": 1.4,
+        "halfZ": 1.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 62.83,
+      "z": -57.97,
+      "rotationY": 5.24,
+      "height": 1.39,
+      "collider": {
+        "halfX": 1.42,
+        "halfZ": 1.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 82,
+      "z": -48.01,
+      "rotationY": 4.95,
+      "height": 1,
+      "collider": {
+        "halfX": 0.9,
+        "halfZ": 0.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": 91.42,
+      "z": -62.73,
+      "rotationY": 1.37,
+      "height": 0.97,
+      "collider": {
+        "halfX": 0.92,
+        "halfZ": 1.01
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -28.99,
+      "z": 67.8,
+      "rotationY": 0.02,
+      "height": 0.87,
+      "collider": {
+        "halfX": 0.8,
+        "halfZ": 0.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": 69.4,
+      "z": -27.38,
+      "rotationY": 2.45,
+      "height": 0.58,
+      "collider": {
+        "halfX": 1.47,
+        "halfZ": 1.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -101.13,
+      "z": 51.9,
+      "rotationY": 5.59,
+      "height": 0.55,
+      "collider": {
+        "halfX": 1.39,
+        "halfZ": 1.39
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -39.59,
+      "z": 7.08,
+      "rotationY": 3.68,
+      "height": 0.65,
+      "collider": {
+        "halfX": 1.61,
+        "halfZ": 1.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -103.26,
+      "z": 64.73,
+      "rotationY": 1.23,
+      "height": 0.91,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 1.01
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -22.32,
+      "z": 20.2,
+      "rotationY": 0.04,
+      "height": 0.51,
+      "collider": {
+        "halfX": 0.97,
+        "halfZ": 0.93
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": 100.71,
+      "z": 0.48,
+      "rotationY": 0.36,
+      "height": 0.53,
+      "collider": {
+        "halfX": 1.24,
+        "halfZ": 1.21
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": 5.19,
+      "z": 88.66,
+      "rotationY": 3.34,
+      "height": 0.51,
+      "collider": {
+        "halfX": 1.09,
+        "halfZ": 1.06
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": 28.48,
+      "z": -94.84,
+      "rotationY": 1.8,
+      "height": 0.83,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": 47.97,
+      "z": 95.28,
+      "rotationY": 4.14,
+      "height": 0.99,
+      "collider": {
+        "halfX": 1.14,
+        "halfZ": 1.17
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 76.18,
+      "z": -41.61,
+      "rotationY": 1.63,
+      "height": 1.19,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 0.95
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -102.9,
+      "z": -62.86,
+      "rotationY": 1.2,
+      "height": 0.6,
+      "collider": {
+        "halfX": 1.38,
+        "halfZ": 1.41
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -68.87,
+      "z": -41.22,
+      "rotationY": 5.9,
+      "height": 1.56,
+      "collider": {
+        "halfX": 1.52,
+        "halfZ": 1.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-hill-single-a/medieval-hexa-hill-single-a.gltf",
+      "x": 94.79,
+      "z": 83.63,
+      "rotationY": 4.86,
+      "height": 2.37,
+      "collider": {
+        "halfX": 3.16,
+        "halfZ": 3.99
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -14.06,
+      "z": -4.4,
+      "rotationY": 2.74,
+      "height": 0.89,
+      "collider": {
+        "halfX": 1.01,
+        "halfZ": 0.96
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -39.56,
+      "z": 88.04,
+      "rotationY": 2.1,
+      "height": 0.98,
+      "collider": {
+        "halfX": 1.11,
+        "halfZ": 1.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -22.32,
+      "z": 16.87,
+      "rotationY": 0.31,
+      "height": 0.61,
+      "collider": {
+        "halfX": 1.39,
+        "halfZ": 1.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -26.61,
+      "z": -78.36,
+      "rotationY": 3.59,
+      "height": 0.88,
+      "collider": {
+        "halfX": 1.02,
+        "halfZ": 0.97
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-hill-single-a/medieval-hexa-hill-single-a.gltf",
+      "x": 95.88,
+      "z": 70.9,
+      "rotationY": 2.66,
+      "height": 1.76,
+      "collider": {
+        "halfX": 3.31,
+        "halfZ": 3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -10.27,
+      "z": -91.2,
+      "rotationY": 0.68,
+      "height": 0.94,
+      "collider": {
+        "halfX": 1.13,
+        "halfZ": 1.11
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": 78.53,
+      "z": 20.46,
+      "rotationY": 6.24,
+      "height": 1.06,
+      "collider": {
+        "halfX": 1,
+        "halfZ": 0.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": 68.66,
+      "z": -63.62,
+      "rotationY": 5.76,
+      "height": 1.15,
+      "collider": {
+        "halfX": 1.35,
+        "halfZ": 1.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -113.89,
+      "z": -7.15,
+      "rotationY": 0.48,
+      "height": 0.83,
+      "collider": {
+        "halfX": 0.97,
+        "halfZ": 0.92
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -73.46,
+      "z": 69.74,
+      "rotationY": 1.43,
+      "height": 1.08,
+      "collider": {
+        "halfX": 0.97,
+        "halfZ": 1.08
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 110.76,
+      "z": 57.6,
+      "rotationY": 4.5,
+      "height": 1.14,
+      "collider": {
+        "halfX": 1.02,
+        "halfZ": 1.02
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 37,
+      "z": -54.61,
+      "rotationY": 2.68,
+      "height": 1.04,
+      "collider": {
+        "halfX": 1.05,
+        "halfZ": 1.05
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -37.25,
+      "z": 1.5,
+      "rotationY": 5.55,
+      "height": 0.64,
+      "collider": {
+        "halfX": 1.62,
+        "halfZ": 1.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 58.77,
+      "z": -81.63,
+      "rotationY": 3.12,
+      "height": 1.26,
+      "collider": {
+        "halfX": 0.97,
+        "halfZ": 0.97
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": 56.56,
+      "z": 80.59,
+      "rotationY": 3.42,
+      "height": 1.1,
+      "collider": {
+        "halfX": 1.19,
+        "halfZ": 1.11
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -74.71,
+      "z": -57.07,
+      "rotationY": 1.57,
+      "height": 1.56,
+      "collider": {
+        "halfX": 1.17,
+        "halfZ": 1.17
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-hill-single-a/medieval-hexa-hill-single-a.gltf",
+      "x": 16.49,
+      "z": 89.35,
+      "rotationY": 1.62,
+      "height": 1.93,
+      "collider": {
+        "halfX": 2.32,
+        "halfZ": 3.08
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": 43.26,
+      "z": 65.41,
+      "rotationY": 0.65,
+      "height": 0.57,
+      "collider": {
+        "halfX": 1.44,
+        "halfZ": 1.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 87.47,
+      "z": -61.12,
+      "rotationY": 0.07,
+      "height": 1.05,
+      "collider": {
+        "halfX": 0.84,
+        "halfZ": 0.84
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -32.29,
+      "z": -52.49,
+      "rotationY": 6.18,
+      "height": 0.65,
+      "collider": {
+        "halfX": 1.31,
+        "halfZ": 1.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -77.83,
+      "z": 8.33,
+      "rotationY": 3.15,
+      "height": 0.84,
+      "collider": {
+        "halfX": 0.76,
+        "halfZ": 0.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -30.82,
+      "z": 92.72,
+      "rotationY": 4.76,
+      "height": 1.05,
+      "collider": {
+        "halfX": 0.87,
+        "halfZ": 0.99
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 56.37,
+      "z": -69.83,
+      "rotationY": 3.04,
+      "height": 1.07,
+      "collider": {
+        "halfX": 0.88,
+        "halfZ": 0.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-hill-single-a/medieval-hexa-hill-single-a.gltf",
+      "x": 16.29,
+      "z": 82.74,
+      "rotationY": 0.38,
+      "height": 1.69,
+      "collider": {
+        "halfX": 3.12,
+        "halfZ": 2.72
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -50.9,
+      "z": -53.84,
+      "rotationY": 6.24,
+      "height": 1.14,
+      "collider": {
+        "halfX": 1.07,
+        "halfZ": 0.94
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -28.45,
+      "z": -98.53,
+      "rotationY": 3.66,
+      "height": 1.14,
+      "collider": {
+        "halfX": 1.17,
+        "halfZ": 1.17
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 93.78,
+      "z": 8.29,
+      "rotationY": 5.53,
+      "height": 1.5,
+      "collider": {
+        "halfX": 1.59,
+        "halfZ": 1.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 115.83,
+      "z": -24.44,
+      "rotationY": 1.84,
+      "height": 1.25,
+      "collider": {
+        "halfX": 1.15,
+        "halfZ": 1.15
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-hill-single-a/medieval-hexa-hill-single-a.gltf",
+      "x": 96.46,
+      "z": -50.81,
+      "rotationY": 0.82,
+      "height": 1.85,
+      "collider": {
+        "halfX": 3.45,
+        "halfZ": 3.49
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 2.7,
+      "z": 86.92,
+      "rotationY": 2.07,
+      "height": 1.22,
+      "collider": {
+        "halfX": 1.24,
+        "halfZ": 1.24
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": 8.13,
+      "z": -27.68,
+      "rotationY": 5.04,
+      "height": 0.81,
+      "collider": {
+        "halfX": 0.84,
+        "halfZ": 0.9
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": 17.05,
+      "z": 4.95,
+      "rotationY": 4.84,
+      "height": 0.99,
+      "collider": {
+        "halfX": 0.88,
+        "halfZ": 0.98
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-hill-single-a/medieval-hexa-hill-single-a.gltf",
+      "x": 28.49,
+      "z": -79.24,
+      "rotationY": 6.16,
+      "height": 2.31,
+      "collider": {
+        "halfX": 3.85,
+        "halfZ": 3.01
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": 30.71,
+      "z": -17.19,
+      "rotationY": 2.14,
+      "height": 0.64,
+      "collider": {
+        "halfX": 1.58,
+        "halfZ": 1.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -90.73,
+      "z": -3.87,
+      "rotationY": 4.27,
+      "height": 1.25,
+      "collider": {
+        "halfX": 1.25,
+        "halfZ": 1.25
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -70.53,
+      "z": -20.39,
+      "rotationY": 1.87,
+      "height": 0.69,
+      "collider": {
+        "halfX": 1.53,
+        "halfZ": 1.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": 64.32,
+      "z": -103.31,
+      "rotationY": 1.83,
+      "height": 0.96,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 1.03
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -19.43,
+      "z": 2.97,
+      "rotationY": 4.28,
+      "height": 0.54,
+      "collider": {
+        "halfX": 1.27,
+        "halfZ": 1.3
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": 47.96,
+      "z": -55.01,
+      "rotationY": 0.67,
+      "height": 0.55,
+      "collider": {
+        "halfX": 1.39,
+        "halfZ": 1.38
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 47.78,
+      "z": -17.56,
+      "rotationY": 5.23,
+      "height": 1.55,
+      "collider": {
+        "halfX": 1.58,
+        "halfZ": 1.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -84.2,
+      "z": 78.01,
+      "rotationY": 2.73,
+      "height": 0.58,
+      "collider": {
+        "halfX": 1.38,
+        "halfZ": 1.36
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -57.8,
+      "z": -92.26,
+      "rotationY": 0.12,
+      "height": 0.82,
+      "collider": {
+        "halfX": 0.81,
+        "halfZ": 0.73
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": 34.96,
+      "z": -104.64,
+      "rotationY": 3.88,
+      "height": 1.13,
+      "collider": {
+        "halfX": 1.35,
+        "halfZ": 1.35
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -49.79,
+      "z": 47.8,
+      "rotationY": 4.04,
+      "height": 1.2,
+      "collider": {
+        "halfX": 1.26,
+        "halfZ": 1.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -92.48,
+      "z": -92.74,
+      "rotationY": 0.69,
+      "height": 1.2,
+      "collider": {
+        "halfX": 1.27,
+        "halfZ": 1.27
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -18.82,
+      "z": 92.33,
+      "rotationY": 0.41,
+      "height": 1.45,
+      "collider": {
+        "halfX": 1.43,
+        "halfZ": 1.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -56.12,
+      "z": -23.17,
+      "rotationY": 0.28,
+      "height": 0.55,
+      "collider": {
+        "halfX": 1.24,
+        "halfZ": 1.21
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -95.45,
+      "z": -24.79,
+      "rotationY": 2.86,
+      "height": 0.53,
+      "collider": {
+        "halfX": 1.19,
+        "halfZ": 1.16
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -107.97,
+      "z": 34.34,
+      "rotationY": 1.71,
+      "height": 0.93,
+      "collider": {
+        "halfX": 0.84,
+        "halfZ": 0.93
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -74.47,
+      "z": 16.37,
+      "rotationY": 3.64,
+      "height": 0.52,
+      "collider": {
+        "halfX": 1.27,
+        "halfZ": 1.26
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -115.65,
+      "z": -35.02,
+      "rotationY": 3.24,
+      "height": 0.89,
+      "collider": {
+        "halfX": 0.87,
+        "halfZ": 0.78
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": 78.93,
+      "z": -114.19,
+      "rotationY": 3.3,
+      "height": 1.09,
+      "collider": {
+        "halfX": 0.94,
+        "halfZ": 0.94
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": 24.08,
+      "z": 94.44,
+      "rotationY": 0.9,
+      "height": 0.66,
+      "collider": {
+        "halfX": 1.66,
+        "halfZ": 1.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-hill-single-a/medieval-hexa-hill-single-a.gltf",
+      "x": -64.04,
+      "z": 55.37,
+      "rotationY": 5.86,
+      "height": 1.99,
+      "collider": {
+        "halfX": 3.7,
+        "halfZ": 3.28
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -8.72,
+      "z": 43.01,
+      "rotationY": 0.51,
+      "height": 0.65,
+      "collider": {
+        "halfX": 1.59,
+        "halfZ": 1.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -8.46,
+      "z": -2.41,
+      "rotationY": 4.52,
+      "height": 1.23,
+      "collider": {
+        "halfX": 1.08,
+        "halfZ": 1.08
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": 73.33,
+      "z": 36.36,
+      "rotationY": 3.08,
+      "height": 1.04,
+      "collider": {
+        "halfX": 0.99,
+        "halfZ": 0.88
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": -103.09,
+      "z": -78.88,
+      "rotationY": 5.1,
+      "height": 0.69,
+      "collider": {
+        "halfX": 1.6,
+        "halfZ": 1.63
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -46.7,
+      "z": -31.56,
+      "rotationY": 1.07,
+      "height": 1.56,
+      "collider": {
+        "halfX": 1.59,
+        "halfZ": 1.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-b/medieval-hexa-rock-single-b.gltf",
+      "x": -34.06,
+      "z": 10.14,
+      "rotationY": 1.69,
+      "height": 0.99,
+      "collider": {
+        "halfX": 0.88,
+        "halfZ": 0.98
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-c/medieval-hexa-rock-single-c.gltf",
+      "x": -27.59,
+      "z": -84.93,
+      "rotationY": 5.44,
+      "height": 1.13,
+      "collider": {
+        "halfX": 1.2,
+        "halfZ": 1.2
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-rock-single-a/medieval-hexa-rock-single-a.gltf",
+      "x": 105.49,
+      "z": -54.69,
+      "rotationY": 5.42,
+      "height": 0.65,
+      "collider": {
+        "halfX": 1.64,
+        "halfZ": 1.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-hill-single-a/medieval-hexa-hill-single-a.gltf",
+      "x": 21.46,
+      "z": -92.97,
+      "rotationY": 1.06,
+      "height": 2.13,
+      "collider": {
+        "halfX": 3.69,
+        "halfZ": 4.02
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -9.91,
+      "z": 54.51,
+      "rotationY": 3.25,
+      "height": 7.15,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -52.9,
+      "z": -21.79,
+      "rotationY": 5.04,
+      "height": 8.2,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -81.55,
+      "z": 64.81,
+      "rotationY": 4.51,
+      "height": 7.29,
+      "collider": {
+        "halfX": 0.61,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 95.41,
+      "z": -66.77,
+      "rotationY": 2.97,
+      "height": 6.51,
+      "collider": {
+        "halfX": 0.43,
+        "halfZ": 0.43
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-medium/medieval-hexa-trees-a-medium.gltf",
+      "x": 53.26,
+      "z": 72.36,
+      "rotationY": 3.75,
+      "height": 6.92,
+      "collider": {
+        "halfX": 1.65,
+        "halfZ": 1.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 7.69,
+      "z": -53.08,
+      "rotationY": 5.64,
+      "height": 7.43,
+      "collider": {
+        "halfX": 0.61,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -19.76,
+      "z": 73.84,
+      "rotationY": 5,
+      "height": 7.69,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 33.86,
+      "z": 17.53,
+      "rotationY": 0.71,
+      "height": 6.01,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-medium/medieval-hexa-trees-b-medium.gltf",
+      "x": -35.96,
+      "z": -33.49,
+      "rotationY": 1.35,
+      "height": 6.71,
+      "collider": {
+        "halfX": 1.57,
+        "halfZ": 1.57
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -49.18,
+      "z": 19.36,
+      "rotationY": 2.95,
+      "height": 6.65,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -24.09,
+      "z": -12.3,
+      "rotationY": 4.76,
+      "height": 6.17,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -23.34,
+      "z": 44.83,
+      "rotationY": 5.74,
+      "height": 7.22,
+      "collider": {
+        "halfX": 0.58,
+        "halfZ": 0.58
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 25.12,
+      "z": 69.4,
+      "rotationY": 5.06,
+      "height": 8.25,
+      "collider": {
+        "halfX": 0.61,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -33.31,
+      "z": 89.59,
+      "rotationY": 1.89,
+      "height": 6.72,
+      "collider": {
+        "halfX": 0.61,
+        "halfZ": 0.61
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 15.33,
+      "z": -0.61,
+      "rotationY": 2.18,
+      "height": 6.13,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 106.36,
+      "z": 21.53,
+      "rotationY": 2.48,
+      "height": 6.3,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 106.73,
+      "z": -74.5,
+      "rotationY": 4.49,
+      "height": 7.87,
+      "collider": {
+        "halfX": 0.67,
+        "halfZ": 0.67
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 55.67,
+      "z": 97.59,
+      "rotationY": 1.08,
+      "height": 5.63,
+      "collider": {
+        "halfX": 0.44,
+        "halfZ": 0.44
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 16.73,
+      "z": 48.1,
+      "rotationY": 1.54,
+      "height": 7.66,
+      "collider": {
+        "halfX": 0.45,
+        "halfZ": 0.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -23.48,
+      "z": -0.27,
+      "rotationY": 3.24,
+      "height": 6.83,
+      "collider": {
+        "halfX": 0.53,
+        "halfZ": 0.53
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -49.56,
+      "z": -42.9,
+      "rotationY": 3.89,
+      "height": 6.12,
+      "collider": {
+        "halfX": 0.51,
+        "halfZ": 0.51
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -102.57,
+      "z": 11.15,
+      "rotationY": 0.68,
+      "height": 6.54,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -89.62,
+      "z": -69.28,
+      "rotationY": 5.61,
+      "height": 6.31,
+      "collider": {
+        "halfX": 0.64,
+        "halfZ": 0.64
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -12.66,
+      "z": 102.19,
+      "rotationY": 6.03,
+      "height": 5.99,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 72.16,
+      "z": 4.94,
+      "rotationY": 6,
+      "height": 6.79,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -58.23,
+      "z": -26.74,
+      "rotationY": 3.8,
+      "height": 6.15,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -6.52,
+      "z": -117.85,
+      "rotationY": 1.11,
+      "height": 6.71,
+      "collider": {
+        "halfX": 0.52,
+        "halfZ": 0.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-medium/medieval-hexa-trees-a-medium.gltf",
+      "x": 84.5,
+      "z": -71.54,
+      "rotationY": 3.48,
+      "height": 6.65,
+      "collider": {
+        "halfX": 1.45,
+        "halfZ": 1.45
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -70.18,
+      "z": 18.11,
+      "rotationY": 2.36,
+      "height": 5.8,
+      "collider": {
+        "halfX": 0.48,
+        "halfZ": 0.48
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 67.8,
+      "z": -1.81,
+      "rotationY": 6.01,
+      "height": 5.66,
+      "collider": {
+        "halfX": 0.5,
+        "halfZ": 0.5
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-b-medium/medieval-hexa-trees-b-medium.gltf",
+      "x": 109.8,
+      "z": 15.17,
+      "rotationY": 3.08,
+      "height": 7.35,
+      "collider": {
+        "halfX": 1.52,
+        "halfZ": 1.52
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-trees-a-medium/medieval-hexa-trees-a-medium.gltf",
+      "x": -55.24,
+      "z": -107.7,
+      "rotationY": 0.45,
+      "height": 7.48,
+      "collider": {
+        "halfX": 1.71,
+        "halfZ": 1.71
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -61.26,
+      "z": -85.14,
+      "rotationY": 2.59,
+      "height": 5.91,
+      "collider": {
+        "halfX": 0.59,
+        "halfZ": 0.59
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": 26.8,
+      "z": -90.1,
+      "rotationY": 4.94,
+      "height": 6.59,
+      "collider": {
+        "halfX": 0.46,
+        "halfZ": 0.46
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": 91.38,
+      "z": -71.83,
+      "rotationY": 4.95,
+      "height": 8.36,
+      "collider": {
+        "halfX": 0.72,
+        "halfZ": 0.72
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -107.08,
+      "z": 63.15,
+      "rotationY": 3.38,
+      "height": 7.27,
+      "collider": {
+        "halfX": 0.62,
+        "halfZ": 0.62
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-a/medieval-hexa-tree-single-a.gltf",
+      "x": -74.64,
+      "z": -102.58,
+      "rotationY": 2.97,
+      "height": 6.34,
+      "collider": {
+        "halfX": 0.42,
+        "halfZ": 0.42
+      },
+      "fade": true
+    },
+    {
+      "model": "town/library/medieval-hexa-tree-single-b/medieval-hexa-tree-single-b.gltf",
+      "x": -22.96,
+      "z": -36.1,
+      "rotationY": 3.38,
+      "height": 6.22,
+      "collider": {
+        "halfX": 0.54,
+        "halfZ": 0.54
+      },
+      "fade": true
+    }
+  ],
+  "traffic": {
+    "waypoints": [],
+    "links": [],
+    "cars": []
+  },
+  "colliders": [],
+  "atms": [],
+  "wardrobes": [],
+  "sections": [],
+  "grassPatches": [],
+  "secrets": [],
+  "sounds": [
+    {
+      "id": "sea-north",
+      "sound": "ocean-ambient",
+      "x": 0,
+      "z": -128.2,
+      "width": 260.79999999999995,
+      "depth": 10,
+      "fade": 12,
+      "volume": 0.15
+    },
+    {
+      "id": "sea-south",
+      "sound": "ocean-ambient",
+      "x": 0,
+      "z": 117,
+      "width": 260.79999999999995,
+      "depth": 10,
+      "fade": 12,
+      "volume": 0.15
+    },
+    {
+      "id": "sea-west",
+      "sound": "ocean-ambient",
+      "x": -125.39999999999999,
+      "z": -5.6,
+      "width": 10,
+      "depth": 255.2,
+      "fade": 12,
+      "volume": 0.15
+    },
+    {
+      "id": "sea-east",
+      "sound": "ocean-ambient",
+      "x": 125.39999999999999,
+      "z": -5.6,
+      "width": 10,
+      "depth": 255.2,
+      "fade": 12,
+      "volume": 0.15
+    }
+  ],
+  "grassNoise": {
+    "centre": {
+      "x": 0,
+      "z": 0
+    },
+    "scale": 0.2,
+    "rings": [
+      {
+        "upTo": 999,
+        "mix": {}
+      }
+    ]
+  },
+  "people": {
+    "areas": [
+      {
+        "x": 0,
+        "z": 28,
+        "width": 168,
+        "depth": 5.6,
+        "count": 12
+      },
+      {
+        "x": 0,
+        "z": 28,
+        "width": 25.2,
+        "depth": 16.799999999999997,
+        "count": 6
+      },
+      {
+        "x": 0,
+        "z": -70,
+        "width": 36.4,
+        "depth": 19.599999999999998,
+        "count": 5
+      }
+    ],
+    "waypoints": [
+      {
+        "id": "p0",
+        "x": -84,
+        "z": 30.8
+      },
+      {
+        "id": "p1",
+        "x": -67.2,
+        "z": 30.8
+      },
+      {
+        "id": "p2",
+        "x": -50.4,
+        "z": 30.8
+      },
+      {
+        "id": "p3",
+        "x": -33.6,
+        "z": 30.8
+      },
+      {
+        "id": "p4",
+        "x": -16.8,
+        "z": 30.8
+      },
+      {
+        "id": "p5",
+        "x": 0,
+        "z": 30.8
+      },
+      {
+        "id": "p6",
+        "x": 16.8,
+        "z": 30.8
+      },
+      {
+        "id": "p7",
+        "x": 33.6,
+        "z": 30.8
+      },
+      {
+        "id": "p8",
+        "x": 50.4,
+        "z": 30.8
+      },
+      {
+        "id": "p9",
+        "x": 67.2,
+        "z": 30.8
+      },
+      {
+        "id": "p10",
+        "x": 84,
+        "z": 30.8
+      },
+      {
+        "id": "pn",
+        "x": 0,
+        "z": -56
+      }
+    ],
+    "links": [
+      [
+        "p0",
+        "p1"
+      ],
+      [
+        "p1",
+        "p2"
+      ],
+      [
+        "p2",
+        "p3"
+      ],
+      [
+        "p3",
+        "p4"
+      ],
+      [
+        "p4",
+        "p5"
+      ],
+      [
+        "p5",
+        "p6"
+      ],
+      [
+        "p6",
+        "p7"
+      ],
+      [
+        "p7",
+        "p8"
+      ],
+      [
+        "p8",
+        "p9"
+      ],
+      [
+        "p9",
+        "p10"
+      ],
+      [
+        "p5",
+        "pn"
+      ]
+    ],
+    "walkers": 8
+  },
+  "soundSettings": {
+    "cars": {
+      "volume": 0.35,
+      "near": 3,
+      "far": 14
+    }
+  },
+  "goal": {
+    "model": "town/library/medieval-hexa-building-castle-blue/medieval-hexa-building-castle-blue.gltf",
+    "radius": 12,
+    "name": "Castle"
+  },
+  "round": {
+    "seconds": 180,
+    "rivals": 5
+  }
+}

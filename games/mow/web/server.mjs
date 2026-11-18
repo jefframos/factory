@@ -51,7 +51,7 @@ const AUDIO_DIR = path.join(REPO_ROOT, 'games', 'mow', 'raw-assets', 'audio');
 const MAP_RAW_DIR = path.join(REPO_ROOT, 'games', 'mow', 'raw-assets', 'non-preload', 'map');
 const MAP_PUBLIC_DIR = path.join(REPO_ROOT, 'public', 'mow', 'images', 'non-preload', 'map');
 const PORT = process.env.EDITOR_PORT ? Number(process.env.EDITOR_PORT) : 4710;
-const GAME_URL = process.env.GAME_URL ?? 'http://localhost:9001/';
+const GAME_URL = process.env.GAME_URL ?? 'http://localhost:8000/';
 
 const MIME_TYPES = {
     '.html': 'text/html; charset=utf-8',

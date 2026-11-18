@@ -13,14 +13,6 @@
         },
         {
           "alias": [
-            "clog-theme.wav"
-          ],
-          "src": [
-            "clog-theme.mp3"
-          ]
-        },
-        {
-          "alias": [
             "footstep_wood_000.ogg"
           ],
           "src": [
@@ -145,6 +137,14 @@
           ],
           "src": [
             "Tap.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "With-You-Everet-Almond.mp3"
+          ],
+          "src": [
+            "With-You-Everet-Almond.mp3"
           ]
         }
       ]

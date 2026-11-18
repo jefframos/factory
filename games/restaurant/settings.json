@@ -48,6 +48,27 @@
       }
     },
     {
+      "id": "smallDinerTables",
+      "name": "Small Diner+",
+      "goal": 160,
+      "service": "seated",
+      "toppings": [
+        "cheese",
+        "lettuce",
+        "tomato",
+        "pickles",
+        "onion"
+      ],
+      "iceCream": {
+        "share": 0.2
+      },
+      "pizza": {
+        "share": 0.3,
+        "toppings": [],
+        "maxToppings": 0
+      }
+    },
+    {
       "id": "diner",
       "name": "Diner",
       "goal": 200,
@@ -66,6 +87,43 @@
       "sundae": {
         "share": 0.25,
         "maxScoops": 2,
+        "maxToppings": 1
+      },
+      "pizza": {
+        "share": 0.2,
+        "toppings": [
+          "pepperoni"
+        ],
+        "maxToppings": 1
+      }
+    },
+    {
+      "id": "dinerPlus",
+      "name": "Diner+",
+      "goal": 260,
+      "service": "seated",
+      "patience": 17,
+      "toppings": [
+        "cheese",
+        "lettuce",
+        "tomato",
+        "pickles",
+        "onion"
+      ],
+      "iceCream": {
+        "share": 0.12
+      },
+      "sundae": {
+        "share": 0.25,
+        "maxScoops": 3,
+        "maxToppings": 1
+      },
+      "pizza": {
+        "share": 0.2,
+        "toppings": [
+          "pepperoni",
+          "mushroom"
+        ],
         "maxToppings": 1
       }
     },
@@ -101,6 +159,43 @@
         ],
         "maxToppings": 2
       }
+    },
+    {
+      "id": "restaurantPlus",
+      "name": "Restaurant+",
+      "goal": 450,
+      "service": "seated",
+      "patience": 14,
+      "toppings": [
+        "cheese",
+        "lettuce",
+        "tomato",
+        "pickles",
+        "onion"
+      ],
+      "iceCream": {
+        "share": 0.08
+      },
+      "sundae": {
+        "share": 0.2,
+        "maxScoops": 3,
+        "maxToppings": 2
+      },
+      "pizza": {
+        "share": 0.35,
+        "toppings": [
+          "pepperoni",
+          "ham",
+          "mushroom",
+          "onion",
+          "tomato",
+          "pickles",
+          "broccoli",
+          "pineapple",
+          "fish"
+        ],
+        "maxToppings": 3
+      }
     }
   ],
   "cookSeconds": 2.2,
@@ -115,6 +210,18 @@
   "customer": {
     "height": 2.4,
     "walkSpeed": 2.2
+  },
+  "phone": {
+    "toppings": [
+      "pepperoni",
+      "ham",
+      "mushroom",
+      "onion",
+      "broccoli",
+      "pineapple",
+      "fish"
+    ],
+    "maxToppings": 2
   },
   "delivery": {
     "$comment": "The pizza delivery minigame (DeliveryScene): drive the car (car) from outside the restaurant (start: where it waits, facing rotationY) to a house, drop its pizza, back for the next — deliveries times; each pays pay coins (into the restaurant bar). The car: top speed, how fast it gets there and turns (radians a second at speed), its length (fitted to it), the driver and the boxes on its roof.",
@@ -218,6 +325,73 @@
       "name": "Dough",
       "crate": "crate_dough",
       "icon": "food_ingredient_dough"
+    },
+    {
+      "id": "milk",
+      "name": "Milk",
+      "crate": "crate",
+      "icon": "library/food-kit/carton.glb",
+      "top": "library/food-kit/carton.glb",
+      "topCount": 5,
+      "topScale": 1.5,
+      "with": "iceCream"
+    },
+    {
+      "id": "cherries",
+      "name": "Cherries",
+      "crate": "crate",
+      "icon": "icecream_cherry",
+      "top": "icecream_cherry",
+      "topCount": 7,
+      "topScale": 1.8,
+      "with": "iceCream"
+    },
+    {
+      "id": "apples",
+      "name": "Apples",
+      "crate": "crate",
+      "icon": "library/resource-food-apple-red/resource-food-apple-red.gltf",
+      "top": "library/resource-food-apple-red/resource-food-apple-red.gltf",
+      "topCount": 5,
+      "topScale": 0.9,
+      "with": "iceCream"
+    },
+    {
+      "id": "oranges",
+      "name": "Oranges",
+      "crate": "crate",
+      "icon": "library/resource-food-berry-orange/resource-food-berry-orange.gltf",
+      "top": "library/resource-food-berry-orange/resource-food-berry-orange.gltf",
+      "topCount": 7,
+      "topScale": 1.7,
+      "with": "iceCream"
+    },
+    {
+      "id": "fish",
+      "name": "Fish",
+      "crate": "crate",
+      "icon": "library/food-kit/fish.glb",
+      "top": "library/food-kit/fish.glb",
+      "topCount": 4,
+      "topScale": 1.3
+    },
+    {
+      "id": "pineapple",
+      "name": "Pineapple",
+      "crate": "crate",
+      "icon": "library/food-kit/pineapple.glb",
+      "top": "library/food-kit/pineapple.glb",
+      "topCount": 4,
+      "topScale": 1.5
+    },
+    {
+      "id": "broccoli",
+      "name": "Broccoli",
+      "crate": "crate",
+      "icon": "library/food-kit/broccoli.glb",
+      "top": "library/food-kit/broccoli.glb",
+      "topCount": 5,
+      "topScale": 1.6
     }
   ],
   "town": {
@@ -366,102 +540,102 @@
       }
     },
     "city": {
-      "$comment": "The city blocks (a lawn with `buildings` in levels/restaurant.json: drawn in the editor) fill with these, by kind (living: homes; business: shops, offices, services): each at its height, its width and depth from its model (web/public/cityfill.js).",
+      "$comment": "The city blocks (a lawn with `buildings` in levels/restaurant.json: drawn in the editor) fill with these, by kind: house (homes), tower (tall buildings: apartments, offices), shop (commercial: shops, services, snack bars, supermarkets). Each at its height, its width and depth from its model (web/public/cityfill.js).",
       "buildings": [
         {
           "model": "library/city2-building-business-02/city2-building-business-02.glb",
           "height": 22.8,
-          "kind": "business"
+          "kind": "tower"
         },
         {
           "model": "library/city2-building-business-05/city2-building-business-05.glb",
           "height": 19.97,
-          "kind": "business"
+          "kind": "tower"
         },
         {
           "model": "library/city2-building-business-09/city2-building-business-09.glb",
           "height": 19.43,
-          "kind": "business"
+          "kind": "tower"
         },
         {
           "model": "library/city2-building-business-10/city2-building-business-10.glb",
           "height": 12.6,
-          "kind": "business"
+          "kind": "tower"
         },
         {
           "model": "library/city2-building-living-03/city2-building-living-03.glb",
           "height": 7.83,
-          "kind": "living"
+          "kind": "house"
         },
         {
           "model": "library/city2-building-living-09/city2-building-living-09.glb",
           "height": 6.5,
-          "kind": "living"
+          "kind": "house"
         },
         {
           "model": "library/city2-building-living-12/city2-building-living-12.glb",
           "height": 8.89,
-          "kind": "living"
+          "kind": "house"
         },
         {
           "model": "library/city2-building-living-17/city2-building-living-17.glb",
           "height": 7.57,
-          "kind": "living"
+          "kind": "house"
         },
         {
           "model": "library/city2-building-living-19/city2-building-living-19.glb",
           "height": 8.79,
-          "kind": "living"
+          "kind": "house"
         },
         {
           "model": "library/city2-building-living-21/city2-building-living-21.glb",
           "height": 7.92,
-          "kind": "living"
+          "kind": "house"
         },
         {
           "model": "library/city2-building-living-27/city2-building-living-27.glb",
           "height": 9.35,
-          "kind": "living"
+          "kind": "house"
         },
         {
           "model": "library/city2-building-living-31/city2-building-living-31.glb",
           "height": 7.87,
-          "kind": "living"
+          "kind": "house"
         },
         {
           "model": "library/city2-building-living-46/city2-building-living-46.glb",
           "height": 22.02,
-          "kind": "living"
+          "kind": "tower"
         },
         {
           "model": "library/city2-building-service-04/city2-building-service-04.glb",
           "height": 10.86,
-          "kind": "business"
+          "kind": "shop"
         },
         {
           "model": "library/city2-building-service-06/city2-building-service-06.glb",
           "height": 11.34,
-          "kind": "business"
+          "kind": "shop"
         },
         {
           "model": "library/city2-building-service-09/city2-building-service-09.glb",
           "height": 13.24,
-          "kind": "business"
+          "kind": "shop"
         },
         {
           "model": "library/city2-building-service-10/city2-building-service-10.glb",
           "height": 7.39,
-          "kind": "business"
+          "kind": "shop"
         },
         {
           "model": "library/city2-building-snack-09/city2-building-snack-09.glb",
           "height": 9.8,
-          "kind": "business"
+          "kind": "shop"
         },
         {
           "model": "library/city2-building-supermarket-04/city2-building-supermarket-04.glb",
           "height": 7.22,
-          "kind": "business"
+          "kind": "shop"
         }
       ]
     }

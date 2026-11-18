@@ -5,22 +5,22 @@
       "props": [
         {
           "model": "library/restaurant-icecream-machine/restaurant-icecream-machine.gltf",
-          "x": 0.667,
-          "z": 0,
+          "x": 0.722,
+          "z": 0.166,
           "rotationY": 0,
           "elevation": 1,
           "height": 1.7
         },
         {
-          "model": "kitchentable_A",
-          "x": 0.667,
-          "z": 0,
+          "model": "library/prototype-table-medium-long/prototype-table-medium-long.gltf",
+          "x": 0.722,
+          "z": -0.084,
           "rotationY": 0
         },
         {
-          "model": "kitchentable_A",
-          "x": -1.333,
-          "z": 0,
+          "model": "library/prototype-table-medium-long/prototype-table-medium-long.gltf",
+          "x": -1.445,
+          "z": -0.082,
           "rotationY": 0
         }
       ],
@@ -32,29 +32,35 @@
         {
           "model": "kitchentable_A_large",
           "id": "pizzaBoard",
-          "x": 1.4,
-          "z": 0.5,
+          "x": 1.78,
+          "z": 1.16,
           "rotationY": 0
         },
         {
           "model": "kitchentable_A_large",
-          "x": 1.4,
-          "z": -1.5,
+          "x": 1.78,
+          "z": -0.84,
           "rotationY": 0
         },
         {
-          "model": "kitchentable_A",
-          "x": -1.4,
-          "z": 0.5,
+          "model": "kitchentable_A_large",
+          "x": -1.22,
+          "z": 1.16,
           "rotationY": 0
         },
         {
           "model": "pizza_oven",
-          "x": -1.4,
-          "z": 0.5,
+          "x": -1.12,
+          "z": -0.74,
           "rotationY": 0,
           "elevation": 1,
           "height": 1.6
+        },
+        {
+          "model": "kitchentable_A_large",
+          "x": -1.22,
+          "z": -0.74,
+          "rotationY": 0
         }
       ],
       "seats": []
@@ -65,15 +71,15 @@
         {
           "model": "kitchentable_A_large",
           "id": "sundaeFreezer",
-          "x": 1.3,
+          "x": 0,
           "z": 0,
           "rotationY": 0
         },
         {
           "model": "kitchentable_B",
           "id": "sundaeBar",
-          "x": -1.3,
-          "z": 0,
+          "x": 0,
+          "z": 1.95,
           "rotationY": 0
         }
       ],
@@ -310,6 +316,78 @@
         }
       ],
       "seats": []
+    },
+    "rectTable2": {
+      "name": "Rectangle table (2 seats)",
+      "props": [
+        {
+          "model": "library/furniture-table-medium/furniture-table-medium.gltf",
+          "x": 0,
+          "z": 0,
+          "rotationY": 0,
+          "stretch": {
+            "x": 0.85,
+            "z": 0.6
+          }
+        },
+        {
+          "model": "menu",
+          "x": -0.55,
+          "z": 0,
+          "rotationY": 1.571,
+          "elevation": 1
+        },
+        {
+          "model": "ketchup",
+          "x": 0.55,
+          "z": 0.12,
+          "rotationY": 0,
+          "elevation": 1
+        },
+        {
+          "model": "mustard",
+          "x": 0.55,
+          "z": -0.12,
+          "rotationY": 0,
+          "elevation": 1
+        },
+        {
+          "model": "chair_A",
+          "x": 0,
+          "z": 1.05,
+          "rotationY": 3.1416
+        },
+        {
+          "model": "chair_A",
+          "x": 0,
+          "z": -1.05,
+          "rotationY": 0
+        }
+      ],
+      "seats": [
+        {
+          "x": 0,
+          "z": 1.05,
+          "rotationY": 3.1416,
+          "height": 0.55,
+          "plate": {
+            "x": 0,
+            "z": 0.32,
+            "y": 1
+          }
+        },
+        {
+          "x": 0,
+          "z": -1.05,
+          "rotationY": 0,
+          "height": 0.55,
+          "plate": {
+            "x": 0,
+            "z": -0.32,
+            "y": 1
+          }
+        }
+      ]
     }
   }
 }

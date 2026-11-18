@@ -3,11 +3,12 @@
 // The sundae bar: scooped ice cream, in a cone or a bowl (the soft-serve machine's cones are world/IceCream.ts). Two props
 // in the layout make it:
 //   - the freezer (id SUNDAE_FREEZER: any model as big as the freezer — the editor shows a freezer there too): the game
-//     hides it and builds a freezer in its place — a box at counter height, its top open, six tubs of ice cream set in
-//     it (two rows of three: vanilla, chocolate, strawberry; mint, blueberry, mango);
-//   - the bar (id SUNDAE_BAR: a kitchen table, say): at the front the stack of cones, the stack of bowls and the spot
-//     the sundae's made on; behind, the sauces (chocolate, caramel, strawberry: bowls of them) and the toppings
-//     (sprinkles, cherries, cookie sticks, waffles: bowls of them), in rows.
+//     hides it and builds a freezer in its place — a box at counter height, its top open, twice as wide as its tubs
+//     need: in one half the tubs of ice cream (rows of three: vanilla, chocolate, strawberry; mint, blueberry, mango), in
+//     the other (the side nearer the bar) the sauces (chocolate, caramel: bowls of them) and the toppings (sprinkles,
+//     cherries, cookie sticks, waffles: bowls of them), in the same grid;
+//   - the bar (id SUNDAE_BAR: a kitchen table, say): the stack of cones, the stack of bowls and the spot the sundae's
+//     made on.
 // Making one: tap the cones or the bowls (one hops onto the spot), tap a tub for each scoop (up to MAX_SCOOPS), a sauce
 // (one), the toppings (each once), then the sundae (or SERVE). TRASH starts it again. Taps work as the other stations':
 // a spot and a radius, the nearest on screen. It looks as world/SundaeLook.ts builds it (rebuilt as it grows).
@@ -26,11 +27,12 @@ export const MAX_SCOOPS = 3;
  * The freezer: sized round its tubs (not its stand-in prop: that's only where it stands) — each tub `tub` x the kit's
  * (1 x 1.6), turned its long side across, `gap` apart, `pad` from the rim; its body's height, the rim, the colours.
  */
-const FREEZER = { height: 0.92, rim: 0.12, rimHeight: 0.1, body: '#eaf6fb', trim: '#7bbfdc', well: '#2e3f4a', tub: 0.5, gap: 0.06, pad: 0.04 };
+const FREEZER = { height: 0.92, rim: 0.12, rimHeight: 0.1, body: '#eaf6fb', trim: '#7bbfdc', well: '#2e3f4a', tub: 0.5, gap: 0.06, pad: 0.04, divider: 0.1 };
 /** The sundae on the bar (x the kit's); the bar's things: each this big across; the rows' depth (x the bar's). */
 /** The sundae's size (x the kit's) — the stacks of cones and bowls on the bar are this size too. */
 const SUNDAE = { scale: 0.55 };
-const BAR = { size: 0.42, frontRow: 0.24, backRows: [-0.08, -0.33], columns: 4 };
+/** The sauce and topping bowls: this big across (in the freezer's well); where the cones, bowls and sundae spot are on the bar (x its depth). */
+const BAR = { size: 0.42, middleRow: 0.05 };
 const HOP = { seconds: 0.3, height: 0.45 };
 /** A served sundae's plate (x the plate model), the arc to where it's served. */
 const SERVE = { plate: 0.8, seconds: 0.8, height: 1.2 };
@@ -108,24 +110,27 @@ export class SundaeStation {
         private readonly scene: THREE.Object3D, freezerProp: THREE.Object3D, barProp: THREE.Object3D,
         private readonly stock: { flavors: readonly ScoopFlavor[]; sauces: readonly SundaeSauce[]; toppings: readonly SundaeTopping[] } = { flavors: SCOOP_FLAVORS, sauces: SUNDAE_SAUCES, toppings: SUNDAE_TOPPINGS },
     ) {
-        // The freezer, where its stand-in prop is (that's hidden).
+        // The freezer, where its stand-in prop is (that's hidden); the bar: its top's middle.
         const fz = propFrame(freezerProp);
         freezerProp.visible = false;
         this.freezer.position.copy(fz.position);
         this.freezer.quaternion.copy(fz.turn);
         scene.add(this.freezer);
-        this.buildFreezer();
-
-        // The bar: its top's middle.
         const bz = propFrame(barProp);
         this.bar.position.copy(bz.position).add(new THREE.Vector3(0, bz.top, 0));
         this.bar.quaternion.copy(bz.turn);
         scene.add(this.bar);
         this.bar.updateMatrixWorld(true);
+        // The freezer's two halves: the sauces and toppings on the side nearer the bar, the tubs on the other.
+        this.freezer.updateMatrixWorld(true);
+        const barSide = this.freezer.worldToLocal(this.bar.position.clone()).x < 0 ? -1 : 1;
+        this.buildFreezer(barSide);
+
         const width = bz.size.x;
         const depth = bz.size.z;
-        // Front row: the cones, the bowls, then the spot the sundae's made on.
-        const front = depth * BAR.frontRow;
+        // On the bar (its middle row: the sauces and toppings are in the freezer now): the cones, the bowls, then the
+        // spot the sundae's made on.
+        const front = depth * BAR.middleRow;
         // The stacks of cones and bowls at the sundae's own size: the one that hops onto the spot is the size it was.
         const cones = kitchenModel('icecream_cone_stacked');
         cones.scale.setScalar(SUNDAE.scale);
@@ -140,32 +145,31 @@ export class SundaeStation {
         this.addSource(bowls, new THREE.Vector3(-width * 0.12, 0, front), { kind: 'base', base: 'bowl' });
         this.build = new THREE.Vector3(width * 0.2, 0, front);
         this.targets.push({ target: { kind: 'sundae' }, at: this.bar.localToWorld(this.build.clone().add(new THREE.Vector3(0, 0.45, 0))), radius: REACH.sundae });
-        // Behind: the sauces, then the toppings, in rows.
-        const back: { model: THREE.Object3D; target: SundaeTarget }[] = [
+    }
+
+    /**
+     * The freezer box, twice as wide as its tubs need: one half the stage's tubs (three across), the other (`itemsSide`:
+     * -1 its -x, 1 its +x) the sauces and toppings, set in its well the same way. Its body, a rim round its open top, a
+     * divider between the halves, the dark well.
+     */
+    private buildFreezer(itemsSide: number): void {
+        const flavors = this.stock.flavors;
+        const items: { model: THREE.Object3D; target: SundaeTarget }[] = [
             ...this.stock.sauces.map((sauce) => ({ model: sauceBowlModel(sauce), target: { kind: 'sauce', sauce } as SundaeTarget })),
             ...this.stock.toppings.map((topping) => ({ model: toppingSourceModel(topping), target: { kind: 'topping', topping } as SundaeTarget })),
         ];
-        const columns = Math.max(BAR.columns, Math.ceil(back.length / BAR.backRows.length));
-        back.forEach(({ model, target }, i) => {
-            const row = Math.floor(i / columns);
-            const inRow = Math.min(columns, back.length - row * columns);
-            const column = i % columns;
-            const x = (column - (inRow - 1) / 2) * (width * 0.9 / columns);
-            this.addSource(fitted(model, BAR.size), new THREE.Vector3(x, 0, depth * BAR.backRows[Math.min(row, BAR.backRows.length - 1)]), target);
-        });
-    }
-
-    /** The freezer box, just big enough for the stage's tubs (three across): its body, a rim round its open top, the dark well, the tubs. */
-    private buildFreezer(): void {
-        const flavors = this.stock.flavors;
-        const columns = Math.min(3, Math.max(1, flavors.length));
-        const rows = Math.max(1, Math.ceil(flavors.length / columns));
-        // A tub turned its long side across: 1.6 x 1 (the kit's), at FREEZER.tub.
+        const columns = Math.min(3, Math.max(1, flavors.length, items.length));
+        const rows = Math.max(1, Math.ceil(flavors.length / columns), Math.ceil(items.length / columns));
+        // A tub turned its long side across: 1.6 x 1 (the kit's), at FREEZER.tub. The items sit in cells as big.
         const tubW = 1.6 * FREEZER.tub;
         const tubD = 1.0 * FREEZER.tub;
         const inset = FREEZER.rim + FREEZER.pad;
-        const width = columns * tubW + (columns - 1) * FREEZER.gap + inset * 2;
+        const half = columns * tubW + (columns - 1) * FREEZER.gap;
+        const width = half * 2 + FREEZER.divider + inset * 2;
         const depth = rows * tubD + (rows - 1) * FREEZER.gap + inset * 2;
+        // Each half's middle along x.
+        const itemsX = itemsSide * (FREEZER.divider + half) / 2;
+        const tubsX = -itemsX;
         const material = (color: string) => new THREE.MeshStandardMaterial({ color, roughness: 0.6 });
         const box = (w: number, h: number, d: number, x: number, y: number, z: number, color: string) => {
             const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material(color));
@@ -186,19 +190,33 @@ export class SundaeStation {
         box(width, FREEZER.rimHeight, r, 0, top, -depth / 2 + r / 2, FREEZER.trim);
         box(r, FREEZER.rimHeight, depth - r * 2, width / 2 - r / 2, top, 0, FREEZER.trim);
         box(r, FREEZER.rimHeight, depth - r * 2, -width / 2 + r / 2, top, 0, FREEZER.trim);
-        // The tubs: the stage's flavours, three across and as many rows as they need, close together.
+        // The divider between the halves.
+        box(FREEZER.divider, FREEZER.rimHeight, depth - r * 2, 0, top, 0, FREEZER.trim);
         const stepW = tubW + FREEZER.gap;
         const stepD = tubD + FREEZER.gap;
-        flavors.forEach((flavor, i) => {
-            const column = i % columns;
+        const cell = (i: number, count: number) => {
             const row = Math.floor(i / columns);
+            const inRow = Math.min(columns, count - row * columns);
+            return { x: (i % columns - (inRow - 1) / 2) * stepW, z: (row - (rows - 1) / 2) * stepD };
+        };
+        this.freezer.updateMatrixWorld(true);
+        // The tubs: the stage's flavours, three across and as many rows as they need, close together.
+        flavors.forEach((flavor, i) => {
+            const at = cell(i, flavors.length);
             const tub = tubModel(flavor);
             tub.scale.setScalar(FREEZER.tub);
             tub.rotation.y = Math.PI / 2;
-            tub.position.set((column - (columns - 1) / 2) * stepW, h, (row - (rows - 1) / 2) * stepD);
+            tub.position.set(tubsX + at.x, h, at.z);
             this.freezer.add(tub);
-            this.freezer.updateMatrixWorld(true);
             this.targets.push({ target: { kind: 'tub', flavor }, at: this.freezer.localToWorld(tub.position.clone().add(new THREE.Vector3(0, 0.3, 0))), radius: REACH.tub });
+        });
+        // The sauces and toppings: bowls of them in the other half, in the same grid.
+        items.forEach(({ model, target }, i) => {
+            const at = cell(i, items.length);
+            const item = fitted(model, BAR.size);
+            item.position.set(itemsX + at.x, h, at.z);
+            this.freezer.add(item);
+            this.targets.push({ target, at: this.freezer.localToWorld(item.position.clone().add(new THREE.Vector3(0, 0.28, 0))), radius: REACH.source });
         });
     }
 

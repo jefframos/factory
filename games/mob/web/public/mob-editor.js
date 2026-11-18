@@ -174,7 +174,7 @@ function distanceToSegment(px, pz, [ax, az], [bx, bz]) {
 // ------------------------------------------------------------------ state
 
 const state = {
-    gameUrl: 'http://localhost:9001/',
+    gameUrl: 'http://localhost:8000/',
     themes: [],
     zones: { zones: [] },
     levels: new Map(),

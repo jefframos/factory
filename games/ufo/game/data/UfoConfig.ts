@@ -34,6 +34,8 @@ export interface Pavement extends Point {
 
 export interface Island {
     water: string;
+    /** The sea's look (Water.ts): water, or lava (the volcano arena). */
+    look?: 'water' | 'lava';
     waterLevel: number;
     margin: number;
     sideColor: string;

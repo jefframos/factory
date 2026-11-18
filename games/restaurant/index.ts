@@ -18,21 +18,26 @@ import platformConfig from './platforms.config.json';
 import RestaurantScene from './game/scenes/RestaurantScene';
 import MarketScene from './game/scenes/MarketScene';
 import DeliveryScene from './game/scenes/DeliveryScene';
+import PhoneScene from './game/scenes/PhoneScene';
 import { curtain } from './game/ui/Curtain';
 import { SETTINGS } from './game/data/Settings';
 import { RestaurantSave } from './game/data/RestaurantSave';
 import { FLAVORS, Order, PizzaTopping, Topping, dealDay } from './game/data/Recipes';
 import { RestaurantAudio } from './game/audio/RestaurantAudio';
+import { muteButton } from './game/ui/UiParts';
 
 type PlatformConfigEntry = { gameId?: string; enableAds?: boolean };
 
 const FONTS = ['Baloo2-ExtraBold'];
+/** The mute button: its size and its margin from the screen's top right corner. */
+const MUTE = { size: 64, margin: 22 };
 
 export default class RestaurantGame extends Game {
     private readonly gameContainer = new PIXI.Container();
     private sceneManager!: SceneManager;
     private readonly loaderScene: HtmlLoader;
     private scenes = 0;
+    private mute: PIXI.Container | null = null;
 
     public constructor() {
         super({ resolution: Math.min(2, devicePixelRatio), backgroundAlpha: 0 }, false);
@@ -61,10 +66,15 @@ export default class RestaurantGame extends Game {
                 document.fonts.add(await face.load());
             }));
             await PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`);
+            // The mute button: top right, over every scene (its layer's the game's, not a scene's).
+            this.mute = muteButton(MUTE.size);
+            this.popupLayer.addChild(this.mute);
+            this.placeMute();
             RestaurantAudio.initialize(this.folderPath);
             this.buildDebug();
             if (RestaurantSave.place === 'market') this.showMarket();
             else if (RestaurantSave.place === 'delivery') this.showDelivery();
+            else if (RestaurantSave.place === 'phone') this.showPhone();
             else this.showRestaurant();
             PlatformHandler.instance.platform.loadFinished();
             this.loaderScene.hide();
@@ -83,6 +93,8 @@ export default class RestaurantGame extends Game {
             { name: 'SUPERMARKET', go: () => { RestaurantSave.openMarket(); this.showMarket(); } },
             // Stand-alone: the delivery at the stage the player's on (its town and restaurant).
             { name: 'PIZZA DELIVERY', go: () => { RestaurantSave.openDelivery(); this.showDelivery(); } },
+            // Stand-alone: the phone orders (box the pizzas) at the stage the player's on (needs its pizza oven).
+            { name: 'PHONE ORDERS (box pizzas)', go: () => { RestaurantSave.openPhone(); this.showPhone(); } },
             // Each stage of the restaurant (levels/restaurant.json's `from` / `until`).
             ...SETTINGS.stages.map((stage, i) => ({
                 name: `${i + 1}: ${stage.name.toUpperCase()}`,
@@ -146,8 +158,20 @@ export default class RestaurantGame extends Game {
     private showRestaurant(): void {
         const key = `restaurant-${this.scenes++}`;
         this.sceneManager.register<RestaurantScene>(key, RestaurantScene, this, () => {
-            if (RestaurantSave.place === 'delivery') curtain(this, 'PIZZA DELIVERY', 'Take the pizzas out', 'ItemIcon_Meat', () => this.showDelivery());
+            if (RestaurantSave.place === 'phone') curtain(this, 'PHONE ORDERS', 'Box the pizzas for delivery', 'ItemIcon_Meat', () => this.showPhone());
+            else if (RestaurantSave.place === 'delivery') curtain(this, 'PIZZA DELIVERY', 'Take the pizzas out', 'ItemIcon_Meat', () => this.showDelivery());
             else curtain(this, 'SUPERMARKET', 'Shop for tomorrow', 'ItemIcon_Shop', () => this.showMarket());
+        });
+        this.sceneManager.changeScene(key);
+        this.sceneManager.resize();
+    }
+
+    /** The phone orders (make the pizzas called in, box them); done, their delivery. */
+    private showPhone(): void {
+        const key = `phone-${this.scenes++}`;
+        this.sceneManager.register<PhoneScene>(key, PhoneScene, this, () => {
+            RestaurantSave.openDelivery();
+            curtain(this, 'PIZZA DELIVERY', 'Take the pizzas out', 'ItemIcon_Meat', () => this.showDelivery());
         });
         this.sceneManager.changeScene(key);
         this.sceneManager.resize();
@@ -183,8 +207,16 @@ export default class RestaurantGame extends Game {
         this.sceneManager?.fixedUpdate(delta);
     }
 
+    /** The mute button in the top right corner. */
+    private placeMute(): void {
+        const screen = Game.overlayScreenData;
+        if (!this.mute || !screen) return;
+        this.mute.position.set(screen.topRight.x - MUTE.margin - MUTE.size / 2, screen.topRight.y + MUTE.margin + MUTE.size / 2);
+    }
+
     protected override onResize(): void {
         super.onResize();
+        this.placeMute();
         this.sceneManager?.resize();
     }
 }

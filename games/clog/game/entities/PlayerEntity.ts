@@ -220,12 +220,10 @@ export class PlayerEntity implements ISimEntity {
     /** Held-boost switch for the pointer-follow control scheme (see PointerFollowInput) and AI-controlled entities (see BotController) — boosted for exactly as long as it's held, with real drain/recharge via manualBoostMeter below, unlike the timed tap-start burst above. */
     setBoosting(held: boolean): void {
         if (this.isRealPlayer && held !== this.manualBoostHeld) {
-            if (held) {
-                SoundManager.instance.setLayerVolume(Assets.BoostLoop.layer, Assets.BoostLoop.volume);
-                void SoundManager.instance.playBackgroundSound(Assets.BoostLoop.soundId, 0, Assets.BoostLoop.layer);
-            } else {
-                SoundManager.instance.stopLayer(Assets.BoostLoop.layer, 150);
-            }
+            // The gameplay ambient swells while boosting, then eases back (Assets.BoostLoop).
+            const ambient = Assets.AmbientSound.Gameplay;
+            if (held) SoundManager.instance.setLayerVolume(ambient.layer, Assets.BoostLoop.volume, Assets.BoostLoop.fadeInMs);
+            else SoundManager.instance.setLayerVolume(ambient.layer, ambient.masterVolume, Assets.BoostLoop.fadeOutMs);
         }
         this.manualBoostHeld = held;
     }
@@ -700,8 +698,8 @@ export class PlayerEntity implements ISimEntity {
 
     private teardownVisuals(): void {
         if (this.isRealPlayer) ShopStorage.onEquipChanged.remove(this.applyEquippedSkin, this);
-        // Guards against a stuck boost hum if this entity is torn down (death) mid-boost — setBoosting(false) is never coming.
-        if (this.isRealPlayer && this.manualBoostHeld) SoundManager.instance.stopLayer(Assets.BoostLoop.layer);
+        // Torn down (death) mid-boost — setBoosting(false) is never coming: the ambient back to its own volume.
+        if (this.isRealPlayer && this.manualBoostHeld) SoundManager.instance.setLayerVolume(Assets.AmbientSound.Gameplay.layer, Assets.AmbientSound.Gameplay.masterVolume);
         this.invincibilityShield?.dispose();
         this.shadow.destroy();
         this.mergeQueue.destroy();

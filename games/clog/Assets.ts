@@ -70,8 +70,9 @@ export default class Assets {
      */
     static readonly AmbientSound = {
         Music: {
-            // Original procedurally-synthesized loop (no third-party music) — safe for YouTube Playables.
-            soundId: 'clog-theme',
+            // "With You" by Everet Almond (library3d/sounds). The old clog-theme (its source not on record) is kept in
+            // library3d/sounds, out of the game.
+            soundId: 'With-You-Everet-Almond',
             layer: 'music',
             masterVolume: 0.035,
             duckedVolume: 0.015,
@@ -84,17 +85,18 @@ export default class Assets {
     }
 
     /**
-     * Boost isn't a one-shot — it's a hum that should loop for as long as the
-     * boost is actually held, then stop (see PlayerEntity.setBoosting()).
-     * Played through the same named-layer loop mechanism as AmbientSound
-     * above (SoundManager.instance.playBackgroundSound(..., 0, layer) /
-     * .stopLayer(layer, fadeMs)) rather than Sounds/tryToPlaySound, which is
-     * fire-and-forget and can't be stopped mid-play.
+     * Boost's sound: while it's held, the gameplay ambient (the ocean) swells
+     * to `volume`, fading in over `fadeInMs`; let go, it eases back to its own
+     * volume over `fadeOutMs` (see PlayerEntity.setBoosting()). It's the
+     * ambient layer turned up — not a second loop of the same sound: the
+     * sound manager has one player per sound, so a second "boost" loop of
+     * ocean-ambient doubled it (too loud) and stopping it stopped the ambient
+     * too.
      */
     static readonly BoostLoop = {
-        soundId: 'ocean-ambient',
-        layer: 'boost',
-        volume: 0.08,
+        volume: 0.065,
+        fadeInMs: 200,
+        fadeOutMs: 350,
     }
 
     /**

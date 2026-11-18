@@ -29,6 +29,11 @@ export interface MarketItem {
     icon: string;
     /** A crate with no produce of its own (the plain 'crate'): this model, a few of them, on top (raw patties, pickles). */
     top?: string;
+    /** How many of `top` (unset: 3) and their scale (unset: 0.8): small fruit, more of it. */
+    topCount?: number;
+    topScale?: number;
+    /** Only sold once the restaurant serves this dish (ice cream's milk and fruit). */
+    with?: 'iceCream' | 'sundae';
 }
 
 export interface StageSettings {
@@ -98,6 +103,8 @@ export interface RestaurantSettings {
     pay: { base: number; perTopping: number; iceCream?: number; pizza?: number; sundae?: number };
     customer: { height: number; walkSpeed: number };
     market: MarketItem[];
+    /** The phone orders minigame (scenes/PhoneScene.ts): toppings its pizzas can have on top of the stage's, and how many. */
+    phone?: { toppings?: PizzaTopping[]; maxToppings?: number };
     /** The pizza delivery minigame (scenes/DeliveryScene.ts). */
     delivery: DeliverySettings;
     /** The street round the restaurant: the road kit, the traffic, the people (levels/restaurant.json says where). */
@@ -108,7 +115,7 @@ export interface RestaurantSettings {
     town: {
         roadKit: TownRoadKit; traffic: TrafficSettings; people: CrowdSettings & { restaurant?: { people: number; walkers: number } };
         /** The buildings the city blocks fill with (CityBlocks.ts): each model, its kind, its height. */
-        city?: { buildings: { model: string; kind: 'living' | 'business'; height: number }[] };
+        city?: { buildings: { model: string; kind: 'house' | 'tower' | 'shop'; height: number }[] };
     };
 }
 

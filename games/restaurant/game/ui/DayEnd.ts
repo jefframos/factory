@@ -10,14 +10,17 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
-import { WARM, framePlane, glossyButton, iconSprite, label, tappable } from './UiParts';
+import { WARM, glossyButton, iconSprite, label, popupPanel, ribbonTitle, tappable, throwConfetti } from './UiParts';
 import { StageBar } from './StageBar';
 import { isLastStage, stageSettings } from '../data/Settings';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
 
-const CARD = { width: 560, height: 820 };
-const CHEST = { size: 230, y: 20 };
-const BAR = { width: 420, height: 40, y: 230 };
+/** The card (the pack's popup, its header band the title), and where things sit on it (from its middle). */
+const CARD = { width: 600, height: 900, stars: -285, starSize: 74, starGap: 84, tap: 120, button: 350 };
+const CHEST = { size: 220, y: -40 };
+/** The UPGRADE! screen: its ribbon, the star, the stage's name, the line under it, TAP TO CONTINUE (from the middle). */
+const UPGRADE = { title: -360, star: -70, name: 175, sub: 240, tap: 340 };
+const BAR = { width: 440, height: 44, y: 235 };
 
 export class DayEnd extends PIXI.Container {
     private readonly card = new PIXI.Container();
@@ -27,7 +30,11 @@ export class DayEnd extends PIXI.Container {
     private readonly bar = new StageBar(BAR.width, BAR.height);
     private readonly button = glossyButton(380, 100, 'SUPERMARKET', 'Button01_l_Green');
     private next = 0;
+    /** The bar's filling (pump()); tips tapped meanwhile wait in `queued`. */
     private busy = false;
+    private readonly queued: number[] = [];
+    private finished = false;
+    private chestScale = 1;
     private stage: number;
     private progress: number;
 
@@ -43,15 +50,10 @@ export class DayEnd extends PIXI.Container {
         shade.on('pointertap', () => this.tap());
         this.addChild(shade, this.card);
 
-        const back = framePlane('BasicFrame_Round20', CARD.width, CARD.height);
-        back.position.set(-CARD.width / 2, -CARD.height / 2);
-        const title = label(56);
-        title.text = `DAY ${day + 1} DONE!`;
-        title.y = -CARD.height / 2 + 60;
-        this.card.addChild(back, title);
+        this.card.addChild(popupPanel(CARD.width, CARD.height, `DAY ${day + 1} DONE!`));
         for (let i = 0; i < total; i++) {
-            const star = iconSprite('Icon_Star_On', 70);
-            star.position.set((i - (total - 1) / 2) * 80, -CARD.height / 2 + 140);
+            const star = iconSprite('Icon_Star_On', CARD.starSize);
+            star.position.set((i - (total - 1) / 2) * CARD.starGap, CARD.stars);
             if (i >= happy) {
                 star.tint = 0x6b5a4c;
                 star.alpha = 0.55;
@@ -67,10 +69,11 @@ export class DayEnd extends PIXI.Container {
         gsap.to(this.glow, { rotation: Math.PI * 2, duration: 8, repeat: -1, ease: 'none' });
         this.chest = iconSprite(happy === total && total > 0 ? 'ItemIcon_Chest_Gold' : 'ItemIcon_Chest_Wood', CHEST.size);
         this.chest.y = CHEST.y;
-        this.tapText.y = CHEST.y + CHEST.size / 2 + 10;
+        this.chestScale = this.chest.scale.x;
+        this.tapText.y = CARD.tap;
         this.bar.y = BAR.y;
         this.bar.set(this.stage, this.progress);
-        this.button.y = CARD.height / 2 - 80;
+        this.button.y = CARD.button;
         this.button.visible = false;
         tappable(this.button, () => {
             RestaurantAudio.play('click');
@@ -99,20 +102,39 @@ export class DayEnd extends PIXI.Container {
         this.card.scale.set(Math.min(1, (screen.height - 40) / CARD.height));
     }
 
-    /** A tap anywhere: the chest's next tip out, into the bar. */
+    /**
+     * A tap anywhere: the chest's next tip out, into the bar. As fast as the player likes: each tap's coins burst out
+     * at once and join the bar's queue (it fills them in order, quicker while there's a backlog).
+     */
     private tap(): void {
-        if (this.busy || this.next >= this.pays.length) return;
-        this.busy = true;
+        if (this.next >= this.pays.length) return;
         const pay = this.pays[this.next++];
-        RestaurantAudio.play('pick', 0.9 + this.next * 0.08);
-        gsap.fromTo(this.chest.scale, { x: this.chest.scale.x * 1.2, y: this.chest.scale.y * 0.8 }, { x: this.chest.scale.x, y: this.chest.scale.y, duration: 0.35, ease: 'back.out(3)' });
+        RestaurantAudio.play('pick', 0.9 + Math.min(this.next, 12) * 0.08);
+        gsap.killTweensOf(this.chest.scale);
+        this.chest.scale.set(this.chestScale);
+        gsap.fromTo(this.chest.scale, { x: this.chestScale * 1.2, y: this.chestScale * 0.8 }, { x: this.chestScale, y: this.chestScale, duration: 0.3, ease: 'back.out(3)' });
         const left = this.pays.length - this.next;
         this.tapText.text = left ? `TAP!  x${left}` : '';
         this.burst(pay);
-        gsap.delayedCall(0.45, () => void this.fillBar(pay).then(() => {
-            this.busy = false;
-            if (this.next >= this.pays.length) this.finish();
-        }));
+        gsap.delayedCall(0.45, () => {
+            this.queued.push(pay);
+            void this.pump();
+        });
+    }
+
+    /** The bar fills the queued tips one after another (an UPGRADE! in between waits for its tap). */
+    private async pump(): Promise<void> {
+        if (this.busy) return;
+        this.busy = true;
+        while (this.queued.length) {
+            const pay = this.queued.shift()!;
+            await this.fillBar(pay, this.queued.length ? 0.15 : 0.45);
+        }
+        this.busy = false;
+        if (this.next >= this.pays.length && !this.finished) {
+            this.finished = true;
+            this.finish();
+        }
     }
 
     /** Coins flying from the chest to the bar. */
@@ -132,14 +154,14 @@ export class DayEnd extends PIXI.Container {
     }
 
     /** `coins` into the bar: filled up to its goal, UPGRADE! (the next stage's bar), the rest into that one. */
-    private async fillBar(coins: number): Promise<void> {
+    private async fillBar(coins: number, seconds = 0.45): Promise<void> {
         while (coins > 0) {
             const goal = stageSettings(this.stage).goal;
             const room = goal - this.progress;
             const add = Math.min(coins, room);
             this.progress += add;
             coins -= add;
-            await this.bar.fillTo(this.progress, 0.45);
+            await this.bar.fillTo(this.progress, seconds);
             if (this.progress < goal) return;
             if (isLastStage(this.stage)) return;
             this.stage++;
@@ -150,31 +172,40 @@ export class DayEnd extends PIXI.Container {
     }
 
     /** UPGRADE!: the restaurant's new stage, until tapped. */
+    /**
+     * UPGRADE!, on its own over everything (the day's card hidden meanwhile: nothing under it to read through): a dark
+     * screen, the ribbon, the star in its rays, the new stage's name, confetti; until tapped.
+     */
     private upgrade(): Promise<void> {
         return new Promise((resolve) => {
             RestaurantAudio.play('day');
             const holder = new PIXI.Container();
-            const shade = new PIXI.Graphics().beginFill(0x000000, 0.6).drawRect(-3000, -3000, 6000, 6000).endFill();
+            holder.position.copyFrom(this.card.position);
+            holder.scale.copyFrom(this.card.scale);
+            this.card.visible = false;
+            const shade = new PIXI.Graphics().beginFill(0x0b0f1f, 0.88).drawRect(-3000, -3000, 6000, 6000).endFill();
             shade.eventMode = 'static';
-            const glow = iconSprite('Image_Effect_Rotate', 640);
+            const glow = iconSprite('Image_Effect_Rotate', 720);
             glow.tint = 0xffd36b;
+            glow.y = UPGRADE.star;
             gsap.to(glow, { rotation: Math.PI * 2, duration: 6, repeat: -1, ease: 'none' });
-            const star = iconSprite('ItemIcon_Star_Gold', 260);
-            star.y = -40;
-            const title = label(84, 0xffe27a);
-            title.text = 'UPGRADE!';
-            title.y = -260;
-            const name = label(56);
+            const star = iconSprite('ItemIcon_Star_Gold', 280);
+            star.y = UPGRADE.star;
+            const title = ribbonTitle('UPGRADE!', 62);
+            title.y = UPGRADE.title;
+            const name = label(60);
             name.text = stageSettings(this.stage).name.toUpperCase();
-            name.y = 150;
-            const sub = label(30, WARM.cream);
+            name.y = UPGRADE.name;
+            const sub = label(32, WARM.cream);
             sub.text = 'Your restaurant is growing!';
-            sub.y = 210;
+            sub.y = UPGRADE.sub;
             const tap = label(28, 0xc9e3ff);
             tap.text = 'TAP TO CONTINUE';
-            tap.y = 300;
-            holder.addChild(shade, glow, star, title, name, sub, tap);
-            this.card.addChild(holder);
+            tap.y = UPGRADE.tap;
+            const confetti = new PIXI.Container();
+            holder.addChild(shade, glow, star, title, name, sub, tap, confetti);
+            this.addChild(holder);
+            throwConfetti(confetti, 0, 0, 700, 1100, 120);
             gsap.from(star.scale, { x: 0.1, y: 0.1, duration: 0.5, ease: 'back.out(2.5)' });
             gsap.from([title.scale, name.scale], { x: 0.3, y: 0.3, duration: 0.4, delay: 0.15, ease: 'back.out(2.5)' });
             gsap.to(tap, { alpha: 0.3, duration: 0.6, yoyo: true, repeat: -1 });
@@ -184,6 +215,7 @@ export class DayEnd extends PIXI.Container {
                     RestaurantAudio.play('click');
                     gsap.killTweensOf([glow, tap]);
                     holder.destroy({ children: true });
+                    this.card.visible = true;
                     resolve();
                 });
             });
