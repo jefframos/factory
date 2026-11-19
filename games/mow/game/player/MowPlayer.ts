@@ -24,17 +24,23 @@ import { MowProgress, Look } from '../data/MowProgress';
 import hatFits from '../../ui/hatfits.json';
 import { GripDef, MOW, ToolDef } from '../data/MowConfig';
 import { BendService } from '../services/BendService';
-import { addHandle, buildMower, handleOf, pushAhead, toolGrip, REEL_WHEEL } from './MowerModel';
+import { addHandle, buildMower, playerHandle, REEL_WHEEL } from './MowerModel';
+import { loadPeople, personCopy, dress, PERSON_HEIGHT, PERSON_MODEL_HEIGHT } from '../farm/People';
+import ModelLoaderManager from 'core/three/ModelLoaderManager';
 
 const HALF_EXTENTS = new THREE.Vector3(0.4, 0.9, 0.4);
 /** The character rig is authored in FBX units; same scale as dig's miner. */
-const CHARACTER_SCALE = 0.0075;
+export const CHARACTER_SCALE = 0.0075;
 /** The player's size against the town (MowDesign.playerScale). */
 export const playerScale = (): number => MOW.playerScale ?? 1;
-/** Must match CharacterBody's HAT_SINK: ui/hatfits.json (bandit-controller's editor format) measures from the head top. */
-const HAT_SINK = 0.03;
-/** CharacterBody's HAT_WIDTH_FIT: hatfits.json scales are the hat width as a fraction of the head. */
-const HAT_WIDTH_FIT = 1.05;
+/**
+ * The player is a person (farm/People.ts, the restaurant game's people, as the customers are): this one, in these
+ * colours, the wardrobe's colour on their top. Their head, in the model's own units: its size and how far its top is
+ * over the head bone (ui/hatfits.json places hats as fractions of the head from its top).
+ */
+const PLAYER_PERSON = 0;
+const PLAYER_OUTFIT = { skin: '#f7cba4', bottom: '#2f4a7a', shoes: '#f4f1ea', hair: '#5e3c23' };
+const HEAD = { size: 0.36, top: 0.27 };
 type HatFit = { x: number; y: number; z: number; scale: number; rotationY: number };
 const HAT_FITS = hatFits as { default: HatFit; hats: Record<string, Partial<HatFit>> };
 const UP = new THREE.Vector3(0, 1, 0);
@@ -84,6 +90,11 @@ export default class MowPlayer extends Entity {
     public drag = 1;
     /** Sat on the tractor (TractorRide): no tool in the hands, it cuts from the tractor (`ridePoint`). */
     public riding = false;
+    /**
+     * Off the grass (the farm test's dens): the player walks in without the mower, which stays parked where it was
+     * left until they come back out.
+     */
+    public onFoot = false;
     /** Where the tractor cuts (set by the scene: TractorRide.cutPoint). */
     public ridePoint?: (out: THREE.Vector3) => THREE.Vector3;
     /** The ground's height at (x, z) (set by the scene: the pavements and road tiles), so the mower rolls on top of them. */
@@ -120,65 +131,99 @@ export default class MowPlayer extends Entity {
         this.addComponent(new FacingComponent());
     }
 
-    /** Loads the rig and its clips; movement already works before this resolves. */
+    /** The person's meshes with their undressed geometry (dressed again by applyLook()), and the hat on their head. */
+    private personMeshes: { mesh: THREE.SkinnedMesh; source: THREE.BufferGeometry }[] = [];
+    private hat?: THREE.Object3D;
+    private hatToken = 0;
+
+    /**
+     * Loads the player — a person (farm/People.ts) with the people's clips (idle, walk, run, sit) — and dresses them;
+     * movement already works before this resolves. The hands' rest and the grip (fingers closed, arms held) come from
+     * the same rig and clips, so the mower's hold pose (holdPose()) and the steering wheel work as before.
+     */
     public async loadCharacter(): Promise<void> {
         const config = getPlayerConfig();
+        const people = await loadPeople();
         const character = new ThirdPersonCharacter({ walkSpeed: config.walkSpeed, runSpeedMultiplier: config.runSpeedMultiplier });
-        const anim = config.animations;
-        const clip = (id: string) => modelUrl(MODELS.Characters[id as keyof typeof MODELS.Characters].fullPath);
-        await character.loadMesh(modelUrl(MODELS.Characters.CharacterMedium.fullPath));
+        const { model, meshes } = personCopy(people, PLAYER_PERSON, { ...PLAYER_OUTFIT, top: MowProgress.look.color });
+        this.personMeshes = meshes;
+        character.body.usePerson(model);
+        // The hands' rest: the bind pose, before any clip has posed them.
         for (const side of ['Left', 'Right']) {
             const hand = character.body.getBone(`${side}Hand`);
             if (hand) this.handRest.set(hand, hand.quaternion.clone());
         }
-        await character.registerAnimation('idle', clip(anim.idle));
+        const animator = character.animator;
+        animator.registerClip('idle', people.clips.idle);
         for (const side of ['Left', 'Right']) {
             character.body.getBone(`${side}Hand`)?.traverse((bone) => {
-                const grip = /(Thumb|Index|Middle|Ring|Pinky)\d$/.test(bone.name) ? character.animator.firstFrameRotation('idle', bone.name) : undefined;
+                const grip = /(Thumb|Index|Middle|Ring|Pinky)\d$/.test(bone.name) ? animator.firstFrameRotation('idle', bone.name) : undefined;
                 if (grip) this.fingerGrip.set(bone, grip);
             });
             for (const name of ['Shoulder', 'Arm', 'ForeArm']) {
                 const bone = character.body.getBone(`${side}${name}`);
-                if (bone) this.armFrozen.set(bone, character.animator.firstFrameRotation('idle', bone.name) ?? bone.quaternion.clone());
+                if (bone) this.armFrozen.set(bone, animator.firstFrameRotation('idle', bone.name) ?? bone.quaternion.clone());
             }
         }
-        await character.registerAnimation('walk', clip(anim.walk));
-        await character.registerAnimation('run', clip(anim.run));
+        animator.registerClip('walk', people.clips.walk);
+        animator.registerClip('run', people.clips.run);
         // Sat on the tractor (TractorRide -> CharacterBody.sitNow(): straight into the loop).
-        await character.registerAnimation(SITTING_STATE, clip('Sitting'));
+        if (people.clips.sit) animator.registerClip(SITTING_STATE, people.clips.sit);
         character.setUp(config.idleToWalkSpeed, config.walkToRunSpeed);
-        // Dressed in the wardrobe's look (applyLook() also rebuilds the head at the rig's natural scale).
-        character.container.scale.setScalar(CHARACTER_SCALE * playerScale());
-        this.applyLook(MowProgress.look, character);
+        character.container.scale.setScalar((PERSON_HEIGHT * playerScale()) / PERSON_MODEL_HEIGHT);
         if (this.destroyed) {
             character.destroy();
             return;
         }
         this.threeScene.add(character.container);
         this.loaded = character;
+        this.applyLook(MowProgress.look, character);
         this.addComponent(new CharacterVisualComponent(character));
     }
 
-    /** Dresses the player: body colour, face and hat (the wardrobe's look, as in Dig; a new player wears no hat). */
+    /**
+     * Dresses the player from the wardrobe: its colour on their top, its hat on their head (placed by ui/hatfits.json,
+     * as fractions of the head from its top). The wardrobe's faces don't show on a person (they have their own).
+     */
     public applyLook(look: Readonly<Look>, character = this.loaded): void {
         if (!character) return;
-        // The head cube cancels the head bone's scale as measured when it's built, so it has to be rebuilt at the
-        // rig's natural scale, then the player shrinks back.
-        const scale = character.container.scale.x;
-        character.container.scale.setScalar(1);
-        character.container.updateMatrixWorld(true);
-        character.applyCharacterView({ color: look.color, headShape: 'cube', face: look.face });
+        dress(this.personMeshes, { ...PLAYER_OUTFIT, top: look.color });
+        this.hat?.removeFromParent();
+        this.hat = undefined;
+        const token = ++this.hatToken;
         const model = MODELS.Hats[look.hat as keyof typeof MODELS.Hats];
-        if (!model) {
-            character.body.setHat(undefined);
-        } else {
-            // Same placement table as Dig (ui/hatfits.json), keyed by the hat's file name.
-            const name = model.fullPath.split('/').pop()!.replace(/\.[^.]+$/, '');
-            const fit = { ...HAT_FITS.default, ...HAT_FITS.hats[name] };
-            character.body.setHat({ model, scale: fit.scale / HAT_WIDTH_FIT, offsetX: fit.x, offsetY: fit.y + HAT_SINK, offsetZ: fit.z, rotationDeg: fit.rotationY });
-        }
-        character.container.scale.setScalar(scale);
-        character.container.updateMatrixWorld(true);
+        if (!model) return;
+        const name = model.fullPath.split('/').pop()!.replace(/\.[^.]+$/, '');
+        const fit = { ...HAT_FITS.default, ...HAT_FITS.hats[name] };
+        void ModelLoaderManager.instance.loadModel(modelUrl(model.fullPath)).then((object) => {
+            const head = character.body.getBone('Head');
+            if (token !== this.hatToken || !head || this.destroyed) return;
+            object.traverse((child) => {
+                if (child instanceof THREE.Mesh) [child.material].flat().forEach((material) => BendService.applyBend(material));
+            });
+            // Sized and centred in the model's units: its width the fit's share of the head, its bottom at 0.
+            const box = new THREE.Box3().setFromObject(object);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            object.position.set(-center.x, -box.min.y, -center.z);
+            const hat = new THREE.Group();
+            const sized = new THREE.Group();
+            sized.add(object);
+            sized.scale.setScalar((fit.scale * HEAD.size) / Math.max(size.x, size.z, 1e-3));
+            sized.rotation.y = THREE.MathUtils.degToRad(fit.rotationY);
+            hat.add(sized);
+            // Over the head (the person's own frame), then held by the head bone so it moves with it.
+            const container = character.container;
+            container.updateMatrixWorld(true);
+            const top = container.worldToLocal(head.getWorldPosition(new THREE.Vector3()));
+            top.add(new THREE.Vector3(fit.x * HEAD.size, HEAD.top + fit.y * HEAD.size, fit.z * HEAD.size));
+            hat.position.copy(container.localToWorld(top));
+            hat.quaternion.copy(container.quaternion);
+            hat.scale.copy(container.scale);
+            hat.updateMatrixWorld(true);
+            head.attach(hat);
+            this.hat = hat;
+        }).catch((error) => console.warn('[MowPlayer] hat', look.hat, error));
     }
 
     /**
@@ -190,10 +235,9 @@ export default class MowPlayer extends Entity {
         this.toolDef = tool;
         this.tool.clear();
         const model = buildMower(tool, (material) => BendService.applyBend(material));
-        const { grip, gripZ } = handleOf(tool);
+        // The mower at its own size (never stretched); its handle reaching up to the player's hands, whatever their size.
+        const { grip, gripZ } = playerHandle(tool, playerScale());
         addHandle(model, tool, grip, gripZ, this.handleMaterial);
-        // Its length and height with the player (the hands reach its handle); its width is what it cuts.
-        model.group.scale.set(1, playerScale(), playerScale());
         this.tool.add(model.group);
         this.reel = model.reel;
     }
@@ -202,7 +246,23 @@ export default class MowPlayer extends Entity {
     public cutPoint(out = new THREE.Vector3()): THREE.Vector3 {
         if (this.riding && this.ridePoint) return this.ridePoint(out);
         const tool = this.toolDef ?? MowProgress.tool;
-        return out.copy(this.transform.position).addScaledVector(this.facing(), pushAhead(tool) * playerScale()).setY(0);
+        return out.copy(this.transform.position).addScaledVector(this.facing(), playerHandle(tool, playerScale()).ahead).setY(0);
+    }
+
+    /** The chest bone's place in the world (the backpack hangs behind it), or null before the character has loaded. */
+    public chestPoint(out = new THREE.Vector3()): THREE.Vector3 | null {
+        const body = this.loaded?.body;
+        if (!body) return null;
+        this.chestBone ??= body.getBone('Chest') ?? body.getBone('Spine2') ?? body.getBone('Spine1');
+        return this.chestBone ? this.chestBone.getWorldPosition(out) : null;
+    }
+
+    /** The bone the backpack follows (looked up once). */
+    private chestBone?: THREE.Object3D;
+
+    /** The way the character faces, on the ground (a copy). */
+    public heading(out = new THREE.Vector3()): THREE.Vector3 {
+        return out.copy(this.facing());
     }
 
     /** The way the character faces (on the ground). */
@@ -224,11 +284,13 @@ export default class MowPlayer extends Entity {
         // A ridden mower is the tractor (TractorRide), never in the hands: on foot the hands are free.
         this.tool.visible = !tool.ride;
         if (tool.ride) return;
+        // Parked (the player's on foot): it stays where it was left, the hands free.
+        if (this.onFoot && !changed) return;
         const forward = this.facing();
         const left = this.left.crossVectors(UP, forward);
-        const grip = toolGrip(tool);
-        // The grip's along / up with the player's size (the mower's length and height are); across, its width isn't.
-        const gripAt = this.gripAt.copy(this.transform.position).addScaledVector(forward, grip.forward * playerScale()).setY(grip.height * playerScale());
+        // The grip, grown with the player (the handle was built to it: playerHandle()).
+        const { grip } = playerHandle(tool, playerScale());
+        const gripAt = this.gripAt.copy(this.transform.position).addScaledVector(forward, grip.forward).setY(grip.height);
         const container = this.loaded?.container;
         if (container) this.tool.quaternion.copy(container.quaternion);
         this.cutPoint(this.tool.position);
@@ -239,13 +301,13 @@ export default class MowPlayer extends Entity {
         if (this.reel && !changed) {
             const at = this.tool.position;
             const moved = (at.x - this.lastToolAt.x) * forward.x + (at.z - this.lastToolAt.z) * forward.z;
-            this.reel.rotation.x += moved / Math.max(0.05, (tool.size[1] / 2) * REEL_WHEEL * playerScale()) * 3;
+            this.reel.rotation.x += moved / Math.max(0.05, (tool.size[1] / 2) * REEL_WHEEL) * 3;
         }
         this.lastToolAt.copy(this.tool.position);
         if (container) {
             // The hands reach the bar moved by the grip's offset (x outward for each hand); the bar stays put.
             const offset = grip.offset;
-            const out = grip.spread + (offset?.x ?? 0);
+            const out = grip.spread + (offset?.x ?? 0) * playerScale();
             const lift = (offset?.y ?? 0) * playerScale();
             const ahead = (offset?.z ?? 0) * playerScale();
             this.handTarget.copy(gripAt).addScaledVector(left, out).addScaledVector(forward, ahead).setY(gripAt.y + lift);

@@ -215,9 +215,11 @@ export function randomOrder(most = 3, toppings: readonly Topping[] = BASIC_TOPPI
  */
 export function dealDay(day: number, stage: number, customersOverride?: number, iceCream = false, pizza = false, sundae = false,
     introduce: readonly ('iceCream' | 'pizza' | 'sundae')[] = []): Order[] {
-    const { customers, maxToppings } = daySettings(day);
+    const { customers, maxToppings, toppings: dayToppings, introduce: newToppings } = daySettings(day);
     const settings = stageSettings(stage);
-    const toppings = settings.toppings ?? BASIC_TOPPINGS;
+    // (The day can keep to fewer of the stage's toppings: day 1's simple start.)
+    const stageToppings = settings.toppings ?? BASIC_TOPPINGS;
+    const toppings = dayToppings ? stageToppings.filter((t) => dayToppings.includes(t)) : stageToppings;
     const cones = iceCream ? settings.iceCream : undefined;
     const pizzas = pizza ? settings.pizza : undefined;
     const sundaes = sundae ? settings.sundae : undefined;
@@ -243,6 +245,14 @@ export function dealDay(day: number, stage: number, customersOverride?: number, 
         while (slot < orders.length && !isBurger(orders[slot])) slot++;
         if (slot >= orders.length) break;
         orders[slot++] = make[dish]();
+    }
+    // A topping new today: the 2nd customer's burger has it (the ticket marks it NEW!).
+    for (const topping of newToppings ?? []) {
+        if (!toppings.includes(topping) || orders.some((o) => o.toppings.includes(topping))) continue;
+        const k = orders.findIndex((o, i) => i >= Math.min(1, orders.length - 1) && isBurger(o));
+        if (k < 0) continue;
+        const kept = orders[k].toppings.filter((t) => t !== topping).slice(0, Math.max(0, maxToppings - 1));
+        orders[k] = { toppings: [...kept, topping].sort((a, b) => TOPPINGS.indexOf(a) - TOPPINGS.indexOf(b)) };
     }
     // Every dish that's on: at least one a day (in place of a random burger, while burgers are left).
     const on = [cones && 'iceCream', pizzas && 'pizza', sundaes && 'sundae'].filter(Boolean) as ('iceCream' | 'pizza' | 'sundae')[];

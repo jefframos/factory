@@ -242,6 +242,267 @@
         "order": {
           "position": {
             "x": 0.6,
+            "y": 5.5,
+            "z": -2
+          },
+          "target": {
+            "x": 0.6,
+            "y": 0.8,
+            "z": 3
+          },
+          "fov": 60
+        },
+        "bench": {
+          "position": {
+            "x": 0,
+            "y": 8.5,
+            "z": -5
+          },
+          "target": {
+            "x": 0,
+            "y": 1,
+            "z": -1
+          },
+          "fov": 40
+        }
+      },
+      "from": 1,
+      "customer": {
+        "outside": {
+          "x": 0.5,
+          "z": 12
+        },
+        "inside": {
+          "x": 0.5,
+          "z": 6.75
+        },
+        "start": {
+          "x": 6.25,
+          "z": 12
+        }
+      },
+      "until": 3
+    },
+    {
+      "id": "burger-diner-2",
+      "kind": "burger",
+      "name": "Burger station (diner)",
+      "x": 2.75,
+      "z": 0,
+      "pieces": [
+        {
+          "role": "counter",
+          "model": "kitchentable_A",
+          "x": 1,
+          "z": 0,
+          "rotationY": 3.1416
+        },
+        {
+          "role": "counter",
+          "model": "kitchentable_A",
+          "x": -1,
+          "z": 0,
+          "rotationY": 3.142
+        },
+        {
+          "role": "counter",
+          "model": "kitchentable_A",
+          "x": -1,
+          "z": -1.75,
+          "rotationY": 0
+        },
+        {
+          "role": "counter",
+          "model": "kitchentable_A",
+          "x": 1,
+          "z": -1.75,
+          "rotationY": 0
+        },
+        {
+          "role": "stove",
+          "model": "stove_single_countertop",
+          "x": -1,
+          "z": 0,
+          "rotationY": 3.1416
+        },
+        {
+          "role": "pan",
+          "x": -1,
+          "z": 0.1,
+          "rotationY": 3.1416
+        },
+        {
+          "role": "plate",
+          "x": 1,
+          "z": -0.15
+        },
+        {
+          "role": "served",
+          "x": 1,
+          "z": 0.8
+        },
+        {
+          "role": "customer",
+          "x": 1.75,
+          "z": 2.75,
+          "rotationY": 0
+        },
+        {
+          "role": "decor",
+          "model": "ketchup",
+          "x": 1.75,
+          "z": -0.8
+        },
+        {
+          "role": "decor",
+          "model": "mustard",
+          "x": 1.75,
+          "z": -0.5,
+          "rotationY": 0
+        },
+        {
+          "role": "piles",
+          "x": 0,
+          "z": -1.75,
+          "columns": 4,
+          "gapX": 1,
+          "gapZ": 1
+        }
+      ],
+      "cameras": {
+        "order": {
+          "position": {
+            "x": 0.663,
+            "y": 7.25,
+            "z": 1.25
+          },
+          "target": {
+            "x": 0.663,
+            "y": 0.5,
+            "z": 6.75
+          },
+          "fov": 70
+        },
+        "bench": {
+          "position": {
+            "x": 2.75,
+            "y": 5.75,
+            "z": -4
+          },
+          "target": {
+            "x": 2.75,
+            "y": 0.8,
+            "z": -0.75
+          },
+          "fov": 55
+        }
+      },
+      "from": 3,
+      "customer": {
+        "outside": {
+          "x": 0.5,
+          "z": 12
+        },
+        "inside": {
+          "x": 0.5,
+          "z": 6.75
+        },
+        "start": {
+          "x": 6.25,
+          "z": 12
+        }
+      },
+      "until": 5
+    },
+    {
+      "id": "burger-restaurant",
+      "kind": "burger",
+      "name": "Burger station (diner)",
+      "x": 0,
+      "z": 0,
+      "pieces": [
+        {
+          "role": "counter",
+          "model": "kitchentable_A",
+          "x": 1,
+          "z": 0,
+          "rotationY": 3.1416
+        },
+        {
+          "role": "counter",
+          "model": "kitchentable_A",
+          "x": -1,
+          "z": 0,
+          "rotationY": 3.142
+        },
+        {
+          "role": "counter",
+          "model": "kitchentable_A",
+          "x": -1,
+          "z": -1.75,
+          "rotationY": 0
+        },
+        {
+          "role": "counter",
+          "model": "kitchentable_A",
+          "x": 1,
+          "z": -1.75,
+          "rotationY": 0
+        },
+        {
+          "role": "stove",
+          "model": "stove_single_countertop",
+          "x": -1,
+          "z": 0,
+          "rotationY": 3.1416
+        },
+        {
+          "role": "pan",
+          "x": -1,
+          "z": 0.1,
+          "rotationY": 3.1416
+        },
+        {
+          "role": "plate",
+          "x": 1,
+          "z": -0.15
+        },
+        {
+          "role": "served",
+          "x": 1,
+          "z": 0.8
+        },
+        {
+          "role": "customer",
+          "x": 1,
+          "z": 2.75,
+          "rotationY": 0
+        },
+        {
+          "role": "decor",
+          "model": "ketchup",
+          "x": 1.75,
+          "z": -0.8
+        },
+        {
+          "role": "decor",
+          "model": "mustard",
+          "x": 1.75,
+          "z": 0.6
+        },
+        {
+          "role": "piles",
+          "x": 0,
+          "z": -1.75,
+          "columns": 4,
+          "gapX": 1,
+          "gapZ": 1
+        }
+      ],
+      "cameras": {
+        "order": {
+          "position": {
+            "x": 0.6,
             "y": 5.75,
             "z": -3.25
           },
@@ -266,7 +527,7 @@
           "fov": 40
         }
       },
-      "from": 1,
+      "from": 5,
       "customer": {
         "outside": {
           "x": 0.5,
@@ -334,7 +595,8 @@
         "y": 1
       },
       "from": 1,
-      "until": 3
+      "until": 3,
+      "group": "table"
     }
   ],
   "setups": {
@@ -559,14 +821,6 @@
     },
     {
       "x": 0,
-      "z": 4,
-      "width": 44,
-      "depth": 44,
-      "tileSize": 1,
-      "style": "street"
-    },
-    {
-      "x": 0,
       "z": 3.2,
       "width": 30,
       "depth": 5,
@@ -587,26 +841,28 @@
       "rotationY": 0
     },
     {
-      "x": 0,
+      "x": -0.5,
       "z": 2.95,
-      "width": 12,
+      "width": 14.5,
       "depth": 15.1,
       "tileSize": 1,
       "style": "diner",
       "from": 1,
       "until": 3,
-      "elevation": 0.006
+      "elevation": 0.006,
+      "rotationY": 0
     },
     {
-      "x": 0,
-      "z": 3.2,
-      "width": 15,
-      "depth": 15.6,
+      "x": -0.75,
+      "z": 1.25,
+      "width": 16.5,
+      "depth": 19.5,
       "tileSize": 1,
       "style": "diner2",
       "from": 3,
       "until": 5,
-      "elevation": 0.006
+      "elevation": 0.006,
+      "rotationY": 0
     },
     {
       "x": 0,
@@ -663,7 +919,7 @@
       "closed": true,
       "points": [
         {
-          "x": -6,
+          "x": -7.75,
           "z": -4.6
         },
         {
@@ -675,7 +931,7 @@
           "z": 7.5
         },
         {
-          "x": -6,
+          "x": -7.75,
           "z": 7.5
         }
       ],
@@ -730,20 +986,28 @@
       "closed": true,
       "points": [
         {
-          "x": -7.5,
-          "z": -4.6
+          "x": -8.75,
+          "z": -7
         },
         {
           "x": 7.5,
-          "z": -4.6
+          "z": -7
         },
         {
           "x": 7.5,
           "z": 11
         },
         {
-          "x": -7.5,
+          "x": -4.75,
           "z": 11
+        },
+        {
+          "x": -4.75,
+          "z": 5.5
+        },
+        {
+          "x": -8.75,
+          "z": 2.75
         }
       ],
       "openings": [
@@ -759,24 +1023,27 @@
         },
         {
           "kind": "window",
-          "minX": -7.7,
-          "maxX": -7.3,
-          "minZ": 1.5,
-          "maxZ": 4.5
+          "minX": -8.95,
+          "maxX": -8.55,
+          "minZ": -4,
+          "maxZ": -1,
+          "bottom": 1.25
         },
         {
           "kind": "window",
-          "minX": -7.7,
-          "maxX": -7.3,
+          "minX": -4.95,
+          "maxX": -4.55,
           "minZ": 6.5,
-          "maxZ": 9.5
+          "maxZ": 9.5,
+          "bottom": 1
         },
         {
           "kind": "window",
           "minX": 7.3,
           "maxX": 7.7,
-          "minZ": 1.5,
-          "maxZ": 4.5
+          "minZ": -1,
+          "maxZ": 2,
+          "bottom": 0.75
         },
         {
           "kind": "window",
@@ -854,18 +1121,26 @@
     {
       "points": [
         {
-          "x": -5.75,
+          "x": -7,
           "z": 2
         },
         {
-          "x": 5.75,
+          "x": 6.5,
           "z": 2
         }
       ],
       "closed": false,
       "style": "truck",
       "setup": "room",
-      "openings": [],
+      "openings": [
+        {
+          "kind": "gap",
+          "minX": -4.05,
+          "maxX": -2.45,
+          "minZ": 1.725,
+          "maxZ": 2.275
+        }
+      ],
       "height": 0.9,
       "from": 1,
       "until": 3
@@ -878,7 +1153,7 @@
       "closed": false,
       "points": [
         {
-          "x": -7.5,
+          "x": -9.25,
           "z": 2.8
         },
         {
@@ -901,9 +1176,10 @@
           "minZ": 2.5,
           "maxZ": 3.1,
           "frame": false,
-          "height": 1.3
+          "height": 2.2
         }
-      ]
+      ],
+      "height": 1.8
     },
     {
       "from": 5,
@@ -1018,14 +1294,14 @@
     },
     {
       "model": "library/city2-trash-can-08/city2-trash-can-08.glb",
-      "x": 1.5,
-      "z": -3.5,
+      "x": -3,
+      "z": -6.25,
       "rotationY": 0,
       "height": 1.385
     },
     {
       "model": "library/prototype-table-medium-long/prototype-table-medium-long.gltf",
-      "x": -4,
+      "x": -5.5,
       "z": 2.75,
       "rotationY": 0,
       "from": 1,
@@ -1046,15 +1322,7 @@
       "rotationY": 0,
       "from": 1,
       "until": 3,
-      "elevation": -0.01
-    },
-    {
-      "model": "library/prototype-table-medium-long/prototype-table-medium-long.gltf",
-      "x": 5,
-      "z": 2.75,
-      "rotationY": 0,
-      "from": 1,
-      "until": 3
+      "group": "table"
     },
     {
       "model": "library/restaurant-chair-stool/restaurant-chair-stool.gltf",
@@ -1086,7 +1354,8 @@
       "z": 3.75,
       "rotationY": 0,
       "from": 1,
-      "until": 3
+      "until": 3,
+      "group": "table"
     },
     {
       "model": "library/city2-traffic-light-01/city2-traffic-light-01.glb",
@@ -1111,6 +1380,40 @@
         "halfX": 0.3,
         "halfZ": 0.3
       }
+    },
+    {
+      "model": "library/restaurant-icecream-machine/restaurant-icecream-machine.gltf",
+      "x": 4.25,
+      "z": 2.75,
+      "rotationY": 3.141,
+      "elevation": 1,
+      "height": 1.7,
+      "from": 1,
+      "until": 3,
+      "group": "iceCream"
+    },
+    {
+      "model": "library/prototype-table-medium-long/prototype-table-medium-long.gltf",
+      "x": 5,
+      "z": 2.75,
+      "rotationY": 3.141,
+      "from": 1,
+      "until": 3,
+      "group": "iceCream"
+    },
+    {
+      "model": "library/city2-tree-01/city2-tree-01.glb",
+      "x": -13.25,
+      "z": 8.25,
+      "rotationY": 0
+    },
+    {
+      "model": "library/city2-tree-01/city2-tree-01.glb",
+      "x": 7.75,
+      "z": 4,
+      "rotationY": 0,
+      "height": 2.688,
+      "elevation": 0
     }
   ],
   "areas": [],
@@ -1829,24 +2132,20 @@
     {
       "points": [
         {
-          "x": -9.125,
-          "z": -0.875
+          "x": -9,
+          "z": -16.75
         },
         {
           "x": -9.125,
-          "z": 13.125
+          "z": 10.75
         },
         {
-          "x": -18.875,
-          "z": 12.875
+          "x": -16.75,
+          "z": 10.5
         },
         {
-          "x": -18.875,
-          "z": -1.125
-        },
-        {
-          "x": -14,
-          "z": -1
+          "x": -16.75,
+          "z": -16.5
         }
       ]
     },
@@ -1988,81 +2287,77 @@
     "paths": {
       "waypoints": [
         {
-          "id": "city2-p65",
-          "x": -16.5,
-          "z": -16.25
+          "id": "far-walk-0",
+          "x": -40,
+          "z": 26.6
         },
         {
-          "id": "city2-p66",
-          "x": -2.5,
-          "z": -16.25
+          "id": "far-walk-1",
+          "x": -28,
+          "z": 26.6
         },
         {
-          "id": "city2-p67",
-          "x": 11.5,
-          "z": -16.25
+          "id": "far-walk-2",
+          "x": -16,
+          "z": 26.6
         },
         {
-          "id": "city2-p68",
-          "x": 11.5,
-          "z": -2.25
+          "id": "far-walk-3",
+          "x": -4,
+          "z": 26.6
         },
         {
-          "id": "city2-p69",
-          "x": 11.5,
-          "z": 11.75
+          "id": "far-walk-4",
+          "x": 8,
+          "z": 26.6
         },
         {
-          "id": "city2-p70",
-          "x": -2.5,
-          "z": 11.75
+          "id": "far-walk-5",
+          "x": 20,
+          "z": 26.6
         },
         {
-          "id": "city2-p71",
-          "x": -16.5,
-          "z": 11.75
+          "id": "far-walk-6",
+          "x": 32,
+          "z": 26.6
         },
         {
-          "id": "city2-p72",
-          "x": -16.5,
-          "z": -2.25
+          "id": "far-walk-7",
+          "x": 44,
+          "z": 26.6
         }
       ],
       "links": [
         [
-          "city2-p65",
-          "city2-p66"
+          "far-walk-0",
+          "far-walk-1"
         ],
         [
-          "city2-p66",
-          "city2-p67"
+          "far-walk-1",
+          "far-walk-2"
         ],
         [
-          "city2-p67",
-          "city2-p68"
+          "far-walk-2",
+          "far-walk-3"
         ],
         [
-          "city2-p68",
-          "city2-p69"
+          "far-walk-3",
+          "far-walk-4"
         ],
         [
-          "city2-p69",
-          "city2-p70"
+          "far-walk-4",
+          "far-walk-5"
         ],
         [
-          "city2-p70",
-          "city2-p71"
+          "far-walk-5",
+          "far-walk-6"
         ],
         [
-          "city2-p71",
-          "city2-p72"
-        ],
-        [
-          "city2-p72",
-          "city2-p65"
+          "far-walk-6",
+          "far-walk-7"
         ]
       ],
-      "walkers": 42
+      "walkers": 12
     }
   },
   "traffic": {
@@ -2071,9 +2366,9 @@
   "instances": [
     {
       "prefab": "sundae",
-      "x": 7.4,
+      "x": 7,
       "z": -0.6,
-      "rotationY": -1.5708,
+      "rotationY": -1.571,
       "from": 5
     },
     {
@@ -2092,7 +2387,7 @@
     },
     {
       "prefab": "roundTable4",
-      "x": -4,
+      "x": -2.25,
       "z": 5.5,
       "rotationY": 0,
       "from": 5
@@ -2106,16 +2401,16 @@
     },
     {
       "prefab": "roundTable3",
-      "x": 2.5,
-      "z": 5.5,
+      "x": 2.75,
+      "z": 8,
       "rotationY": 0,
       "from": 3,
       "until": 5
     },
     {
       "prefab": "roundTable3",
-      "x": -2.25,
-      "z": 5.5,
+      "x": -0.25,
+      "z": 5.25,
       "rotationY": 0,
       "from": 3,
       "until": 5
@@ -2130,34 +2425,10 @@
     },
     {
       "prefab": "iceCream",
-      "x": 4.75,
-      "z": 2.675,
-      "rotationY": 3.141,
-      "from": 1,
-      "until": 3
-    },
-    {
-      "prefab": "iceCream",
-      "x": 2.72,
-      "z": -0.6,
-      "rotationY": -1.5708,
-      "from": 3,
-      "until": 5
-    },
-    {
-      "prefab": "iceCream",
-      "x": 4.75,
+      "x": 4,
       "z": 1.75,
       "rotationY": 3.141,
       "from": 5
-    },
-    {
-      "prefab": "sundae",
-      "x": 6.6,
-      "z": -1,
-      "rotationY": -1.5708,
-      "from": 3,
-      "until": 5
     },
     {
       "prefab": "pizza",
@@ -2168,7 +2439,7 @@
     },
     {
       "prefab": "rectTable2",
-      "x": -3,
+      "x": -2.5,
       "z": 6.25,
       "rotationY": 1.571,
       "from": 2,
@@ -2176,7 +2447,7 @@
     },
     {
       "prefab": "rectTable2",
-      "x": 3.75,
+      "x": 3.25,
       "z": 6.25,
       "rotationY": 1.571,
       "from": 2,
@@ -2184,7 +2455,7 @@
     },
     {
       "prefab": "pizza",
-      "x": -4.05,
+      "x": -6.25,
       "z": -1.2,
       "rotationY": 1.571,
       "from": 2,
@@ -2192,7 +2463,7 @@
     },
     {
       "prefab": "pizza",
-      "x": -5.06,
+      "x": -6.75,
       "z": -0.9,
       "rotationY": 1.571,
       "from": 3,
@@ -2200,8 +2471,8 @@
     },
     {
       "prefab": "rectTable2",
-      "x": -4.25,
-      "z": 9,
+      "x": -2.75,
+      "z": 10,
       "rotationY": 1.571,
       "from": 4,
       "until": 5
@@ -2216,7 +2487,7 @@
     },
     {
       "prefab": "rectTable2",
-      "x": -7.6,
+      "x": -7.25,
       "z": 5.2,
       "rotationY": 1.571,
       "from": 6
@@ -2227,7 +2498,28 @@
       "z": 9.6,
       "rotationY": 0,
       "from": 6
+    },
+    {
+      "prefab": "iceCream",
+      "x": 2.25,
+      "z": -6,
+      "rotationY": -0.001,
+      "from": 3,
+      "until": 5
+    },
+    {
+      "prefab": "sundae",
+      "x": 5.5,
+      "z": -4.999,
+      "rotationY": 0,
+      "from": 3,
+      "until": 5
     }
   ],
-  "groupFrames": {}
+  "groupFrames": {
+    "iceCream": {
+      "prefab": "iceCream",
+      "rotationY": 3.141
+    }
+  }
 }

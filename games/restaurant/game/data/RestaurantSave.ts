@@ -10,7 +10,7 @@
 
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { Order, dealDay, pizzaFromSave } from './Recipes';
-import { isLastStage, stageSettings } from './Settings';
+import { SETTINGS, isLastStage, stageSettings } from './Settings';
 import { hasIceCreamMachine, hasPizzaOven, hasSundaeBar } from '../world/RestaurantLayout';
 
 const KEY = 'restaurant.save';
@@ -33,6 +33,16 @@ interface SaveData {
     pizzaLearned?: boolean;
     /** The same for a sundae (a hand at each step at the sundae bar). */
     sundaeLearned?: boolean;
+    /** Ingredients and dishes the player's been shown (a ticket marks the others NEW! the first time). */
+    seen?: string[];
+    /** Whether they've finished a phone-orders session (its step hints stop then). */
+    phoneLearned?: boolean;
+}
+
+/** How much of stage `stage`'s bar coins past a full bar may fill (settings.json carryOver). */
+export function carryRoom(stage: number): number {
+    const share = SETTINGS.carryOver;
+    return share === undefined ? Infinity : Math.floor(Math.max(0, share) * stageSettings(stage).goal);
 }
 
 /** A new player: day 1's orders (the kitchen's stocked for the first day). */
@@ -65,6 +75,8 @@ function parse(text: string | null): SaveData {
             iceCreamLearned: saved.iceCreamLearned === true,
             pizzaLearned: saved.pizzaLearned === true,
             sundaeLearned: saved.sundaeLearned === true,
+            phoneLearned: saved.phoneLearned === true,
+            seen: Array.isArray(saved.seen) ? saved.seen.filter((s): s is string => typeof s === 'string') : [],
         };
     } catch {
         return fresh();
@@ -142,6 +154,18 @@ export const RestaurantSave = {
         return state.pizzaLearned === true;
     },
 
+    /** Whether they've done a phone-orders session (till then, the hand shows each step there, pizza learned or not). */
+    get phoneLearned(): boolean {
+        return state.phoneLearned === true;
+    },
+
+    /** The first phone orders all boxed: no more step hints there. */
+    learnPhone(): void {
+        if (state.phoneLearned) return;
+        state.phoneLearned = true;
+        save();
+    },
+
     /** A pizza served right: no more hints at the oven. */
     learnPizza(): void {
         if (state.pizzaLearned) return;
@@ -162,6 +186,21 @@ export const RestaurantSave = {
         });
     },
 
+    /** Whether the player's been shown `key` (an ingredient, a dish) before. */
+    hasSeen(key: string): boolean {
+        return (state.seen ?? []).includes(key);
+    },
+
+    /** `keys` shown now (the next time, no NEW!). */
+    markSeen(keys: readonly string[]): void {
+        const seen = new Set(state.seen ?? []);
+        const before = seen.size;
+        keys.forEach((k) => seen.add(k));
+        if (seen.size === before) return;
+        state.seen = [...seen];
+        save();
+    },
+
     /** Today's orders, corrected (the restaurant found some its kitchen can't make). */
     replaceOrders(orders: readonly Order[]): void {
         state.orders = orders.map((o) => ({ ...o, toppings: [...o.toppings] }));
@@ -179,9 +218,11 @@ export const RestaurantSave = {
                 state.progress = goal;
                 break;
             }
-            state.progress -= goal;
+            // Past the goal: into the next stage's bar, only as much as settings.json carryOver lets (0: none).
+            const left = state.progress - goal;
             state.stage++;
             state.stageDay = 0;
+            state.progress = Math.min(left, carryRoom(state.stage));
         }
         save();
     },

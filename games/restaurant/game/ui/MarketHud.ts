@@ -8,12 +8,14 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
-import { WARM, framePlane, glossyButton, iconSprite, label, panel, plainLabel, ribbonTitle, tappable, throwConfetti } from './UiParts';
+import { WARM, framePlane, glossyButton, iconSprite, label, panel, plainLabel, ribbonTitle, spinForever, tappable, throwConfetti } from './UiParts';
 import { modelIcon } from './Icons';
 import { MarketItem } from '../data/Settings';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
 
 const MARGIN = 28;
+/** ALL SET!: at most this many bought things in a row (more: two rows). */
+const CELEBRATE_ROW = 5;
 /** The list's cards; its frame reaches `above` over its middle and `below` under it (its heading's on top). */
 const LIST = { card: 112, height: 120, gap: 10, icon: 76, above: 102, below: 74 };
 /** Of the screen's height: what the list (and the hint over it) takes at the bottom, the title at the top (the camera
@@ -157,15 +159,21 @@ export class MarketHud extends PIXI.Container {
         const rays = iconSprite('Image_Effect_Rotate', 640);
         rays.tint = 0xffd36b;
         rays.y = -40;
-        gsap.to(rays, { rotation: Math.PI * 2, duration: 7, repeat: -1, ease: 'none' });
+        spinForever(rays, 7);
         const title = ribbonTitle('ALL SET!', 64);
         title.y = -170;
         const row = new PIXI.Container();
         const size = 96;
         const gap = 18;
+        // More than CELEBRATE_ROW: two rows (the second centred under the first), not one long strip shrunk to fit.
+        const perRow = items.length > CELEBRATE_ROW ? Math.ceil(items.length / 2) : items.length;
+        const rows = Math.ceil(items.length / perRow);
         items.forEach((item, i) => {
             const cell = new PIXI.Container();
-            cell.x = (i - (items.length - 1) / 2) * (size + gap);
+            const r = Math.floor(i / perRow);
+            const inRow = Math.min(perRow, items.length - r * perRow);
+            cell.x = (i % perRow - (inRow - 1) / 2) * (size + gap);
+            cell.y = (r - (rows - 1) / 2) * (size + gap);
             const back = panel(size, size, 22, WARM.cream);
             back.position.set(-size / 2, -size / 2);
             const icon = modelIcon(item.icon, size - 18);
@@ -176,11 +184,11 @@ export class MarketHud extends PIXI.Container {
             row.addChild(cell);
             gsap.to(cell.scale, { x: 1, y: 1, duration: 0.35, delay: 0.35 + i * 0.12, ease: 'back.out(3)', onStart: () => RestaurantAudio.play('coins', 1 + i * 0.1) });
         });
-        row.scale.set(Math.min(1, (screen.width - 60) / Math.max(1, items.length * (size + gap))));
-        row.y = 20;
+        row.scale.set(Math.min(1, (screen.width - 60) / Math.max(1, perRow * (size + gap))));
+        row.y = 20 + (rows - 1) * 20;
         const words = label(34, WARM.cream);
         words.text = 'Everything for tomorrow!';
-        words.y = 130;
+        words.y = 130 + (rows - 1) * (size + gap) * 0.75;
         const confetti = new PIXI.Container();
         holder.addChild(shade, rays, title, row, words, confetti);
         this.addChild(holder);
@@ -221,7 +229,7 @@ export class MarketHud extends PIXI.Container {
         const title = label(58, 0xff7a66);
         title.text = 'WRONG ITEM!';
         title.y = -height / 2 + 62;
-        const face = iconSprite('Emoji_Sample_2', 110);
+        const face = iconSprite('Emoji_Sample_7', 110);
         face.position.set(70, -30);
         const picture = modelIcon(item.icon, 120);
         picture.position.set(-70, -30);

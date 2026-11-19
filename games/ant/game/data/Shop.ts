@@ -4,6 +4,7 @@
 // colours) and frames (the picture's tray: its board and its border) — with their prices. The free ones are what a new
 // player has (AntSave). The shops (ui/ShopPanel.ts) sell from here; the scenes dress themselves with what's in use.
 
+import PlatformHandler from 'core/platforms/PlatformHandler';
 import { AntSave, DecoKind } from './AntSave';
 import type { BoosterId } from '../ui/BoosterBelt';
 
@@ -37,6 +38,8 @@ export interface Background {
     light: number;
     dark: number;
     price: number;
+    /** Unlocked by watching a rewarded video (the card shows the video icon); `price` only where there are no ads. */
+    video?: boolean;
 }
 
 export interface Frame {
@@ -46,6 +49,8 @@ export interface Frame {
     board: number;
     border: number;
     price: number;
+    /** Unlocked by watching a rewarded video (the card shows the video icon); `price` only where there are no ads. */
+    video?: boolean;
 }
 
 export const BACKGROUNDS: Background[] = [
@@ -61,6 +66,11 @@ export const BACKGROUNDS: Background[] = [
     { id: 'ocean', name: 'Ocean', light: 0x9fd4dd, dark: 0x8bc8d3, price: 300 },
     { id: 'berry', name: 'Berry', light: 0xe2b3d3, dark: 0xd7a0c6, price: 300 },
     { id: 'night', name: 'Night', light: 0x5d6390, dark: 0x515783, price: 400 },
+    // Rewarded videos (the highest-paying format on YouTube): one video, yours.
+    { id: 'bubblegum', name: 'Bubblegum', light: 0xffd1ea, dark: 0xb9e6ff, price: 300, video: true },
+    { id: 'meadow', name: 'Meadow', light: 0xd9f5a6, dark: 0xb8e986, price: 300, video: true },
+    { id: 'sunset', name: 'Sunset', light: 0xffd59e, dark: 0xf7a8b8, price: 350, video: true },
+    { id: 'galaxy', name: 'Galaxy', light: 0x4b3f8c, dark: 0x2f2a6b, price: 450, video: true },
 ];
 
 export const FRAMES: Frame[] = [
@@ -76,7 +86,25 @@ export const FRAMES: Frame[] = [
     { id: 'cherry', name: 'Cherry', board: 0xfdeaea, border: 0xd9485f, price: 300 },
     { id: 'slate', name: 'Slate', board: 0xeceff3, border: 0x6b7280, price: 350 },
     { id: 'navy', name: 'Navy', board: 0xe6e8f4, border: 0x4f5a8c, price: 400 },
+    // Rewarded videos.
+    { id: 'candy', name: 'Candy', board: 0xfff0f7, border: 0xff7eb6, price: 300, video: true },
+    { id: 'lime', name: 'Lime', board: 0xf4fde6, border: 0x8fd14f, price: 300, video: true },
+    { id: 'royal', name: 'Royal', board: 0xf1ecff, border: 0x7b4fe0, price: 350, video: true },
+    { id: 'ruby', name: 'Ruby', board: 0xfff1f1, border: 0xc8102e, price: 450, video: true },
 ];
+
+/** Rewarded videos can be offered (the platform's ads on). */
+export function videosOn(): boolean {
+    return PlatformHandler.ENABLE_VIDEO_ADS;
+}
+
+/** A deco item unlocked by a video (not for coins), here and now. */
+export function byVideo(item: Background | Frame): boolean {
+    return item.video === true && videosOn();
+}
+
+/** The main screen's FREE COINS: this many for a rewarded video. */
+export const VIDEO_COINS = 50;
 
 export function decoOf(kind: DecoKind): (Background | Frame)[] {
     return kind === 'background' ? BACKGROUNDS : FRAMES;

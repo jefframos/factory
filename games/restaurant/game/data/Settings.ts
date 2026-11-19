@@ -18,6 +18,10 @@ export interface DaySettings {
     customers: number;
     /** The most toppings one order asks for (1 to 3). */
     maxToppings: number;
+    /** Only these of the stage's toppings this day (unset: all): day 1 keeps it simple. */
+    toppings?: Topping[];
+    /** Toppings new this day: one order asks for each (the ticket marks it NEW!). */
+    introduce?: Topping[];
 }
 
 export interface MarketItem {
@@ -92,11 +96,24 @@ export interface DeliverySettings {
     houseDistance: [number, number];
 }
 
+/**
+ * Serving fast: a right dish served within its time (from when cooking starts) earns `bonus` coins more and the green
+ * face. The time: the dish's own (`burger`, `pizza`, `iceCream`, `sundae`, seconds) and `perItem` for each topping
+ * (a sundae: each extra scoop, its sauce, each topping).
+ */
+export interface SpeedSettings { bonus: number; burger: number; pizza: number; iceCream: number; sundae: number; perItem: number }
+
 export interface RestaurantSettings {
     /** Day 1, 2, ...; past the last, the last one's. */
     days: DaySettings[];
     /** The restaurant's stages, smallest first. */
     stages: StageSettings[];
+    /**
+     * Of the next stage's goal, how much the coins past a full bar may fill (0: none — each stage starts empty, so its
+     * first day teaches from scratch and it lasts more than a day). Unset: all of it.
+     */
+    carryOver?: number;
+    speed?: SpeedSettings;
     cookSeconds: number;
     /** How long a pizza's in the oven (s). */
     bakeSeconds?: number;

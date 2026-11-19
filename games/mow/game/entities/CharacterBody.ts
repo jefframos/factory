@@ -156,6 +156,16 @@ export default class CharacterBody {
         }
     }
 
+    /**
+     * Uses an already-built model as the body (a person: farm/People.ts), its own materials kept (vertex colours, the
+     * bend already on them), driven by a new mixer. Its clips are registered with animator.registerClip().
+     */
+    public usePerson(object: THREE.Object3D): void {
+        this.container.add(object);
+        this.mixer = new THREE.AnimationMixer(object);
+        this.animator.setMixer(this.mixer);
+    }
+
     /** See FALLBACK_COLOR's own doc — swaps every mesh straight onto a brand-new flat-color material, same recipe the cube player uses, instead of patching whatever the FBX itself shipped with. */
     private applyFallbackMaterial(object: THREE.Object3D): void {
         object.traverse((child) => {

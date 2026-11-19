@@ -477,8 +477,9 @@ export class MowHud extends PIXI.Container {
      */
     public celebrate(name: string, bonus: number, section: number): void {
         // The section's banner first; as it goes, its stars fly down to the town icon and its pip lights up (held
-        // dark till they land), or (no miniature baked) the drawn map's flight.
+        // dark till they land), or (no miniature baked) the drawn map's flight. Without the town meter: the banner only.
         this.showBanner(name, bonus);
+        if (this.townMeterHidden) return;
         if (this.miniatureReady) this.miniature.holdPips();
         gsap.delayedCall(BANNER.hold, () => {
             if (this.destroyed) return;
@@ -587,6 +588,17 @@ export class MowHud extends PIXI.Container {
         this.setChildIndex(shine.rays, this.getChildIndex(this.miniature));
         this.newCityRays = shine;
         this.reposition();
+    }
+
+    /** No town meter (the corner miniature and its map): the farm test, where the player's level is the progress. */
+    private townMeterHidden = false;
+
+    public hideTownMeter(): void {
+        this.townMeterHidden = true;
+        for (const target of [this.miniature, this.mapHolder]) {
+            target.renderable = false;
+            target.eventMode = 'none';
+        }
     }
 
     /** The miniature's blown-up view back to its corner, if it's up. */
@@ -1213,8 +1225,8 @@ export class MowHud extends PIXI.Container {
             if (shown && was === false) UiAnim.popIn(target);
         };
         reveal(this.mapButton, map, this.unlocked.map);
-        reveal(this.miniature, map, this.unlocked.map);
-        reveal(this.mapHolder, map, this.unlocked.map);
+        reveal(this.miniature, map && !this.townMeterHidden, this.unlocked.map);
+        reveal(this.mapHolder, map && !this.townMeterHidden, this.unlocked.map);
         reveal(this.trophiesButton, trophy, this.unlocked.trophy);
         this.unlocked = { map, trophy };
     }

@@ -999,7 +999,7 @@ export default class AntScene extends ThreeScene {
             }
             // The last level: no next one yet — a card says more are coming, then the main screen.
             const last = this.levelIndex === LEVELS.length - 1;
-            this.hud.celebrate(this.level, reward, drop, () => (last ? this.allDone() : this.travelTo(this.levelIndex + 1)));
+            this.hud.celebrate(this.level, reward, drop, () => (last ? this.allDone() : this.travelTo(this.levelIndex + 1)), () => this.onHome());
             return;
         }
         // Nothing can move: no ant out, and on every side no slot has anything of its colour to fetch, and there's no free

@@ -1,5 +1,5 @@
 // Tractor tab: the tractor the ridden mowers use (ui/mow.json `tractor`, read by TractorRide.ts): mounted in the
-// sections not restored yet. The preview puts the player (the game's rig in its Sitting clip) on the seat exactly as
+// sections not restored yet. The preview puts the player (the game's person in the people's sit clip) on the seat exactly as
 // the game does — tractor stood on the floor at `height`, turned by `rotationY`, the player's feet at `seat` — and
 // marks the exhaust, where it cuts and where the hands hold the steering wheel (`steer`). "Puff" plays the smoke. Saves only the tractor section of mow.json
 // (PUT /api/mow/tractor); each ridden mower's price, stats, colour and size (`rideScale`) are its entry in `tools`.
@@ -9,10 +9,10 @@ import { createGLTFLoader } from './gltf.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { api, el, toast } from './shared.js';
 
-/** Same as MowPlayer: the rig is authored in FBX units. */
-const CHARACTER_SCALE = 0.0075;
-const CHARACTER = 'characters/default/characterMedium.glb';
-const SIT_CLIP = 'characters/default/Sitting.glb';
+/** Same as MowPlayer / farm/People.ts: the player's person and their size (in the tractor's frame, at playerScale 1: the game scales both together). */
+const PERSON = 'people/person-01.glb';
+const PEOPLE_ANIMS = 'people/people-anims.glb';
+const PERSON_SCALE = 1.6 / 1.83;
 const DEG = Math.PI / 180;
 
 /** [path in the tractor config, label, step, min, max] */
@@ -234,17 +234,17 @@ async function loadTractor() {
     place();
 }
 
-/** The game's rig in its Sitting clip (the game's CharacterBody swaps the head for a cube; the bare rig is close enough to place the seat). */
+/** The game's player (a person) in the people's sit clip. */
 async function loadPlayer() {
     try {
-        const [rig, sit] = await Promise.all([createGLTFLoader().loadAsync(`/models/${CHARACTER}`).then((gltf) => gltf.scene), createGLTFLoader().loadAsync(`/models/${SIT_CLIP}`)]);
-        rig.scale.setScalar(CHARACTER_SCALE);
+        const [rig, anims] = await Promise.all([createGLTFLoader().loadAsync(`/models/${PERSON}`).then((gltf) => gltf.scene), createGLTFLoader().loadAsync(`/models/${PEOPLE_ANIMS}`)]);
+        rig.scale.setScalar(PERSON_SCALE);
         rig.traverse((node) => {
-            if (node.isMesh) node.material = new THREE.MeshStandardMaterial({ color: 0x42a5f5, roughness: 0.7 });
+            if (node.isSkinnedMesh) node.frustumCulled = false;
         });
         seatHolder.add(rig);
         mixer = new THREE.AnimationMixer(rig);
-        const clip = sit.animations[0];
+        const clip = THREE.AnimationClip.findByName(anims.animations, 'sit');
         if (clip) mixer.clipAction(clip).play();
         place();
     } catch (error) {

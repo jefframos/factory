@@ -4,10 +4,12 @@
 // holding a grass type and whether it has been cut. Where grass grows: each section's rect (`fill`), with the
 // level's grass patches painted over it (a type, `auto`, or `none` to carve it away), never under a collider. Which
 // grass (`auto`): one seeded noise over the whole town, read through rings around `grassNoise.centre` — the further
-// out, the tougher the mix (like dig's depth zones), so a new section placed further away is harder by itself. Drawn as one small tuft per cell in InstancedMeshes, one per CHUNK x CHUNK cells, so cutting only
-// rewrites the touched instances (no geometry rebuilt). The tuft is the library's KayKit grass (TUFT_MODEL, its shape
-// only: the colours are the game's), swapped in once loaded; a few crossed blades until then. Uncut tufts stand at
-// their type's height and colour; a cut one is gone.
+// out, the tougher the mix (like dig's depth zones), so a new section placed further away is harder by itself.
+// Drawn as one clump of blades per uncut cell (GrassBlades.ts: curved blades, a root-to-tip gradient, swaying in the
+// wind and parted by the player and the mower) in InstancedMeshes, one per CHUNK x CHUNK cells. Only what's left
+// standing is drawn: a cut cell's instance is swapped out (the chunk's last one takes its slot, the count drops), a
+// chunk with nothing left isn't drawn at all, chunks out of view are culled (a bounding sphere with room for the
+// bend and the sway), and chunks far from the player get the lighter clump (FAR_CLUMP).
 //
 // The lawn itself is each district's ground (a plane under its grass), drawn by a cheap shader: a pixel-noise grass
 // pattern (speckles and clumps in world space, so it never stretches) over the ground colour, and the cut cells —
@@ -33,13 +35,21 @@
 // difference). Restored districts stay mowed.
 
 import * as THREE from 'three';
-import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { MOW, TOWN, DistrictDef, GrassDef, GrassPatch, TreasureDef, canCutGrass, lawnLift, pastCorner } from '../data/MowConfig';
 import { BendService } from '../services/BendService';
+import { bladeMaterial, clumpGeometry, FAR_CLUMP, NEAR_CLUMP, setPushers } from './GrassBlades';
 
 const CHUNK = 16;
-/** The tuft's shape (KayKit Forest grass). */
-const TUFT_MODEL = './mow/models/town/nature/Grass_1_A_Singlesided_Color1.gltf';
+/** Chunks further than this from the player (world units, to their middle) get the lighter clump. */
+const LOD_DISTANCE = 15;
+/** Room round a chunk's bounds for culling: the sway, and the world bend pulling far ground into view. */
+const CULL_MARGIN = 3;
+/** A clump's spread (world units across) per cell size, and its random extra. */
+const CLUMP_SPREAD = 1.6;
+const CLUMP_SPREAD_JITTER = 0.35;
+/** Parting the grass: round the player's feet, and round the mower's cutting point (past its reach). */
+const PUSH_PLAYER = 0.6;
+const PUSH_TOOL_EXTRA = 0.35;
 /** The ground's grass noise: "pixels" per world unit. */
 const GRASS_PIXELS = 12;
 /** Width of the fixed stripes (cells cut without a heading), in cells. */
@@ -64,56 +74,6 @@ function valueNoise(seed: number): (x: number, z: number) => number {
         const b = hash(x0, z0 + 1) + (hash(x0 + 1, z0 + 1) - hash(x0, z0 + 1)) * fx;
         return a + (b - a) * fz;
     };
-}
-
-/** A tuft is never shorter than this x its width (shorter grass sinks into the ground instead). */
-const MIN_TUFT_ASPECT = 0.75;
-
-/** A tuft: three thin blades crossing at the root, 1 unit tall, about 1 unit across; darker at the root. */
-function tuftGeometry(): THREE.BufferGeometry {
-    const positions: number[] = [];
-    const colors: number[] = [];
-    const blades = [
-        { angle: 0, lean: 0.12, offset: [0, 0] },
-        { angle: Math.PI / 3, lean: -0.1, offset: [0.12, 0.08] },
-        { angle: (2 * Math.PI) / 3, lean: 0.08, offset: [-0.1, 0.1] },
-    ];
-    for (const { angle, lean, offset } of blades) {
-        const dx = Math.cos(angle) * 0.22;
-        const dz = Math.sin(angle) * 0.22;
-        const tipX = offset[0] + Math.cos(angle + Math.PI / 2) * lean;
-        const tipZ = offset[1] + Math.sin(angle + Math.PI / 2) * lean;
-        positions.push(offset[0] - dx, 0, offset[1] - dz, offset[0] + dx, 0, offset[1] + dz, tipX, 1, tipZ);
-        colors.push(0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 1, 1, 1);
-    }
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    geometry.computeVertexNormals();
-    return geometry;
-}
-
-/**
- * A model's first mesh as a tuft: based at 0, 1 unit tall, 1 unit across its wider side, centred, and darker at the
- * root (vertex colours: the instances tint it).
- */
-function asTuft(source: THREE.BufferGeometry): THREE.BufferGeometry {
-    const geometry = source.clone();
-    for (const name of Object.keys(geometry.attributes)) {
-        if (name !== 'position' && name !== 'normal') geometry.deleteAttribute(name);
-    }
-    geometry.computeBoundingBox();
-    const box = geometry.boundingBox!;
-    const size = box.getSize(new THREE.Vector3());
-    const across = Math.max(size.x, size.z) || 1;
-    geometry.translate(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2);
-    geometry.scale(1 / across, 1 / (size.y || 1), 1 / across);
-    const position = geometry.getAttribute('position');
-    const colors = new Float32Array(position.count * 3);
-    for (let i = 0; i < position.count; i++) colors.fill(0.55 + 0.45 * position.getY(i), i * 3, i * 3 + 3);
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    geometry.computeBoundingSphere();
-    return geometry;
 }
 
 /** Whether (x, z) is inside a patch (turned by its rotationY; `round` = the ellipse in its rect). */
@@ -171,6 +131,11 @@ const TREASURE_SPACING = 5;
 
 interface Chunk {
     mesh: THREE.InstancedMesh;
+    /** Instance -> cell, for the live (uncut) instances 0..mesh.count - 1. */
+    cells: Int32Array;
+    /** Its middle on the ground (for the level of detail). */
+    x: number;
+    z: number;
 }
 
 export class GrassField {
@@ -195,8 +160,13 @@ export class GrassField {
     /** Per cut cell: its shade from the mower's heading (0 = none: the fixed bands). Not saved. */
     private readonly shades: Float32Array;
     private readonly chunks: Chunk[] = [];
-    /** Resolves once the library tuft is in (or failed: the plain one stays). */
-    public readonly ready: Promise<void>;
+    /** Resolves once the grass can be drawn (at once: it's built in code). */
+    public readonly ready: Promise<void> = Promise.resolve();
+    private readonly nearGeometry = clumpGeometry(NEAR_CLUMP);
+    private readonly farGeometry = clumpGeometry(FAR_CLUMP, 11);
+    private readonly bladeMaterial = bladeMaterial();
+    private readonly swap = new THREE.Matrix4();
+    private readonly swapColor = new THREE.Color();
     private readonly dirty = new Set<number>();
     /** Per district: cells with grass, and how many are cut. */
     public readonly totals: number[];
@@ -244,7 +214,6 @@ export class GrassField {
         if (saved) this.load(saved);
         this.buildGrounds();
         this.buildChunks();
-        this.ready = this.loadTuft();
         threeScene.add(this.group);
     }
 
@@ -297,25 +266,6 @@ export class GrassField {
         }
     }
 
-    /** Swaps every chunk's tuft for the library's grass once it has loaded. */
-    private async loadTuft(): Promise<void> {
-        try {
-            const model = await ModelLoaderManager.instance.loadModel(TUFT_MODEL);
-            let source: THREE.BufferGeometry | undefined;
-            model.traverse((child) => {
-                if (!source && child instanceof THREE.Mesh) source = child.geometry;
-            });
-            if (!source) return;
-            const tuft = asTuft(source);
-            for (const chunk of this.chunks) {
-                chunk.mesh.geometry = tuft;
-                chunk.mesh.computeBoundingSphere();
-            }
-        } catch (error) {
-            console.warn('[GrassField] the grass model did not load; keeping the plain tufts', error);
-        }
-    }
-
     /** The ground's look (see the file's header): pixel-noise grass, and the mowed cells from cutMap. */
     private grassShader(material: THREE.MeshStandardMaterial): void {
         const uniforms = {
@@ -350,9 +300,6 @@ export class GrassField {
     }
 
     private buildChunks(): void {
-        const geometry = tuftGeometry();
-        const material = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
-        BendService.applyBend(material);
         const perX = Math.ceil(this.width / CHUNK);
         const perZ = Math.ceil(this.depth / CHUNK);
         for (let cz = 0; cz < perZ; cz++) {
@@ -364,52 +311,76 @@ export class GrassField {
                     }
                 }
                 if (!cells.length) continue;
-                const mesh = new THREE.InstancedMesh(geometry, material, cells.length);
-                const chunk = this.chunks.length;
-                this.chunks.push({ mesh });
-                cells.forEach((i, n) => {
-                    this.instanceOf[i] = n;
-                    this.chunkOf[i] = chunk;
+                // Room for every grass cell of the chunk (grass can grow back); only the uncut ones are live.
+                const mesh = new THREE.InstancedMesh(this.nearGeometry, this.bladeMaterial, cells.length);
+                mesh.count = 0;
+                mesh.setColorAt(0, this.color.setRGB(1, 1, 1));
+                const index = this.chunks.length;
+                const middle = this.center(Math.min(this.width - 1, cx * CHUNK + CHUNK / 2), Math.min(this.depth - 1, cz * CHUNK + CHUNK / 2));
+                const chunk: Chunk = { mesh, cells: new Int32Array(cells.length), x: middle.x, z: middle.z };
+                this.chunks.push(chunk);
+                for (const i of cells) {
+                    this.chunkOf[i] = index;
                     this.writeInstance(i);
-                });
+                }
+                // Culled by the chunk's square (not its instances: they come and go), with room for the bend and sway.
+                const half = (CHUNK * this.cell) / 2;
+                mesh.boundingSphere = new THREE.Sphere(new THREE.Vector3(middle.x, 0.5, middle.z), Math.SQRT2 * half + CULL_MARGIN);
                 mesh.instanceMatrix.needsUpdate = true;
                 if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-                mesh.computeBoundingSphere();
+                mesh.visible = mesh.count > 0;
                 this.group.add(mesh);
             }
         }
     }
 
-    /** Places one cell's tuft: standing in its colour, or a stub in its cut colour (striped). */
+    /**
+     * Places one cell's clump: standing (at its type's height, in its colour), or — cut — taken out of the drawing
+     * (the chunk's last live instance moves into its slot). Its texel in cutMap follows either way.
+     */
     private writeInstance(i: number): void {
         const chunk = this.chunks[this.chunkOf[i]];
-        const n = this.instanceOf[i];
+        const mesh = chunk.mesh;
         const type = this.types[i] - 1;
-        const grass = MOW.grass[type];
         const ix = i % this.width;
+        const cut = this.cutFlags[i] === 1;
+        this.dirty.add(this.chunkOf[i]);
+        this.writeCutTexel(i, type, ix, cut);
+        let n = this.instanceOf[i];
+        if (cut) {
+            if (n < 0) return;
+            const last = mesh.count - 1;
+            if (n !== last) {
+                const moved = chunk.cells[last];
+                mesh.getMatrixAt(last, this.swap);
+                mesh.setMatrixAt(n, this.swap);
+                mesh.getColorAt(last, this.swapColor);
+                mesh.setColorAt(n, this.swapColor);
+                chunk.cells[n] = moved;
+                this.instanceOf[moved] = n;
+            }
+            mesh.count = last;
+            this.instanceOf[i] = -1;
+            return;
+        }
+        if (n < 0) {
+            n = mesh.count++;
+            chunk.cells[n] = i;
+            this.instanceOf[i] = n;
+        }
+        const grass = MOW.grass[type];
         const iz = Math.floor(i / this.width);
         const { x, z } = this.center(ix, iz);
         const j = this.jitter[i];
-        const cut = this.cutFlags[i] === 1;
         this.position.set(x + (j - 0.5) * this.cell * 0.4, 0.02 + lawnLift(), z + (0.5 - j) * this.cell * 0.4);
-        this.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), j * Math.PI * 2);
-        const spread = this.cell * (1.35 + j * 0.3);
-        // A cut tuft is gone: the ground shows the mowed lawn there (cutMap).
-        if (cut) this.scale.set(0, 0, 0);
-        else {
-            // Short grass keeps its blades' shape (squashed flat they look like boomerangs): taller, sunk into the
-            // ground so only the visible height shows above it.
-            const visible = grass.height * this.grassScales[this.districtOf[i]] * (0.85 + j * 0.3);
-            const height = Math.max(visible, spread * MIN_TUFT_ASPECT);
-            this.position.y += visible - height;
-            this.scale.set(spread, height, spread);
-        }
+        this.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), j * Math.PI * 2 * 7);
+        const spread = this.cell * (CLUMP_SPREAD + j * CLUMP_SPREAD_JITTER);
+        const height = grass.height * this.grassScales[this.districtOf[i]] * (0.8 + j * 0.4);
+        this.scale.set(spread, height, spread);
         this.matrix.compose(this.position, this.quaternion, this.scale);
-        chunk.mesh.setMatrixAt(n, this.matrix);
-        this.color.copy(this.uncutColors[type]).multiplyScalar(0.88 + j * 0.24);
-        chunk.mesh.setColorAt(n, this.color);
-        this.dirty.add(this.chunkOf[i]);
-        this.writeCutTexel(i, type, ix, cut);
+        mesh.setMatrixAt(n, this.matrix);
+        this.color.copy(this.uncutColors[type]).multiplyScalar(0.9 + j * 0.2);
+        mesh.setColorAt(n, this.color);
     }
 
     /** A cell's texel in cutMap: its cut colour in the stripe's shade, alpha = cut. */
@@ -502,6 +473,26 @@ export class GrassField {
             result.color = this.uncutColors[lastType].clone();
         }
         return result;
+    }
+
+    /** Whether uncut grass tougher than `power` stands within `radius` of (x, z) (in an open section). */
+    public toughAt(x: number, z: number, radius: number, power: number, canCut: (district: number) => boolean): boolean {
+        const r2 = radius * radius;
+        const minIx = Math.max(0, Math.floor((x - radius - this.minX) / this.cell));
+        const maxIx = Math.min(this.width - 1, Math.floor((x + radius - this.minX) / this.cell));
+        const minIz = Math.max(0, Math.floor((z - radius - this.minZ) / this.cell));
+        const maxIz = Math.min(this.depth - 1, Math.floor((z + radius - this.minZ) / this.cell));
+        for (let iz = minIz; iz <= maxIz; iz++) {
+            for (let ix = minIx; ix <= maxIx; ix++) {
+                const i = ix + iz * this.width;
+                if (!this.types[i] || this.cutFlags[i]) continue;
+                const d = this.districtOf[i];
+                if (d < 0 || !canCut(d) || MOW.grass[this.types[i] - 1].resistance <= power) continue;
+                const c = this.center(ix, iz);
+                if ((c.x - x) ** 2 + (c.z - z) ** 2 <= r2) return true;
+            }
+        }
+        return false;
     }
 
     // ---------------------------------------------------------------- treasures
@@ -686,8 +677,12 @@ export class GrassField {
         return out;
     }
 
-    /** Uploads the chunks changed since the last call; call once per frame. */
-    public update(): void {
+    /**
+     * Uploads the chunks changed since the last call, and sets who parts the grass (`player`: their feet; `tool`: the
+     * mower's cutting point and `toolRadius`, its half width) and each chunk's detail by its distance from the player.
+     * Call once per frame.
+     */
+    public update(player?: THREE.Vector3, tool?: THREE.Vector3, toolRadius = 0): void {
         if (this.cutMapDirty) {
             this.cutMap.needsUpdate = true;
             this.cutMapDirty = false;
@@ -696,8 +691,16 @@ export class GrassField {
             const mesh = this.chunks[chunk].mesh;
             mesh.instanceMatrix.needsUpdate = true;
             if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+            mesh.visible = mesh.count > 0;
         }
         this.dirty.clear();
+        setPushers(player, PUSH_PLAYER, tool, toolRadius + PUSH_TOOL_EXTRA);
+        if (!player) return;
+        for (const chunk of this.chunks) {
+            const far = Math.hypot(chunk.x - player.x, chunk.z - player.z) > LOD_DISTANCE;
+            const geometry = far ? this.farGeometry : this.nearGeometry;
+            if (chunk.mesh.geometry !== geometry) chunk.mesh.geometry = geometry;
+        }
     }
 
     // ---------------------------------------------------------------- save
@@ -745,5 +748,8 @@ export class GrassField {
     public destroy(): void {
         this.group.removeFromParent();
         for (const chunk of this.chunks) chunk.mesh.dispose();
+        this.nearGeometry.dispose();
+        this.farGeometry.dispose();
+        this.bladeMaterial.dispose();
     }
 }

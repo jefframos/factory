@@ -6,13 +6,15 @@
 //   'boosts' — the power-ups (one section): each card one more of a power-up for its price (how many you have on it);
 //              one not unlocked yet is dark, with a padlock and its level.
 //   'deco'   — BACKGROUNDS (the floor's checker) and FRAMES (the picture's tray): green, in use; blue, yours (tap to
-//              use it); dark, its price (tap to buy).
+//              use it); dark, its price (tap to buy) — or, for a video one, FREE with the video icon (tap: a rewarded
+//              video, then it's yours).
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { AntSave, DecoKind } from '../data/AntSave';
-import { BOOSTER_PRICES, Background, Frame, decoOf } from '../data/Shop';
+import { BOOSTER_PRICES, Background, Frame, byVideo, decoOf } from '../data/Shop';
+import { AntAds } from '../data/AntAds';
 import { AntAudio } from '../audio/AntAudio';
 import { AntEvents } from '../data/AntEvents';
 import { BOOSTERS, BoosterId } from './BoosterBelt';
@@ -37,6 +39,8 @@ const CARD = {
 };
 const NAME_COLOR = { mine: COZY.ink, locked: 0xfff3e2 };
 const PRICE = { coin: 34, coinX: -36, textX: -12, size: 26 };
+/** A video item's status: the green pill, the video icon, FREE. */
+const VIDEO = { width: 150, height: 44, icon: 34, iconX: -40, textX: 14, size: 24 };
 const COUNT = { x: 72, y: -104, size: 26 };
 const ROOM_BELOW = 20;
 const TABS_HEIGHT = 108;
@@ -60,6 +64,8 @@ interface Cell {
     check: PIXI.Sprite;
     use: PIXI.Text;
     price: PIXI.Container;
+    /** A video item not owned yet: the video icon and FREE. */
+    video: PIXI.Container;
     count: PIXI.Text;
 }
 
@@ -136,7 +142,9 @@ export class ShopPanel extends PIXI.Container {
             for (const { id, icon } of BOOSTERS) this.addCell(id, BOOSTER_NAMES[id], 'boosts', this.boosterPicture(icon));
         } else {
             for (const kindOf of ['background', 'frame'] as DecoKind[]) {
-                for (const item of decoOf(kindOf)) {
+                // The free one first, then the video ones (seen first: the best-paying ad), then the rest.
+                const rank = (item: Background | Frame): number => (item.price === 0 ? 0 : byVideo(item) ? 1 : 2);
+                for (const item of [...decoOf(kindOf)].sort((a, b) => rank(a) - rank(b))) {
                     const picture = kindOf === 'background' ? backgroundPreview(item as Background, GRID.picture) : framePreview(item as Frame, GRID.picture);
                     this.addCell(item.id, item.name, kindOf, picture);
                 }
@@ -216,11 +224,21 @@ export class ShopPanel extends PIXI.Container {
         amount.position.set(PRICE.textX, -1);
         amount.text = String(this.priceOf(section, id));
         price.addChild(coin, amount);
-        for (const mark of [lock, check, use, price]) mark.y = statusY;
+        const video = new PIXI.Container();
+        const pill = framePlane('BasicFrame_Round20', VIDEO.width, VIDEO.height);
+        pill.tint = COZY.green;
+        pill.position.set(-VIDEO.width / 2, -VIDEO.height / 2);
+        const film = iconSprite('ItemIcon_Video', VIDEO.icon);
+        film.x = VIDEO.iconX;
+        const free = label(VIDEO.size);
+        free.text = 'FREE';
+        free.position.set(VIDEO.textX, -1);
+        video.addChild(pill, film, free);
+        for (const mark of [lock, check, use, price, video]) mark.y = statusY;
         // How many of a power-up you have.
         const count = label(COUNT.size);
         count.position.set(COUNT.x, COUNT.y);
-        holder.addChild(outer, inner, picture, words, lock, check, use, price, count);
+        holder.addChild(outer, inner, picture, words, lock, check, use, price, video, count);
         holder.eventMode = 'static';
         holder.cursor = 'pointer';
         holder.on('pointerdown', (event: PIXI.FederatedPointerEvent) => this.startDrag(event));
@@ -228,7 +246,7 @@ export class ShopPanel extends PIXI.Container {
         holder.on('pointerupoutside', () => this.endDrag());
         holder.on('pointertap', () => this.tapCell(id, section));
         this.grid.addChild(holder);
-        this.cells.push({ id, section, holder, outer, inner, picture, name: words, lock, check, use, price, count });
+        this.cells.push({ id, section, holder, outer, inner, picture, name: words, lock, check, use, price, video, count });
     }
 
     /** A power-up's picture on its card: its full-colour icon alone, big (no button round it). */
@@ -284,6 +302,9 @@ export class ShopPanel extends PIXI.Container {
             AntSave.use(section, id);
             AntEvents.deco(`${section}-${id}`, 'use');
             AntAudio.play('click');
+        } else if (this.isVideo(section, id)) {
+            void this.watchFor(cell);
+            return;
         } else {
             if (!AntSave.spend(this.priceOf(section, id))) return this.refuse(cell);
             AntSave.own(section, id);
@@ -291,6 +312,32 @@ export class ShopPanel extends PIXI.Container {
             AntEvents.deco(`${section}-${id}`, 'buy');
             AntAudio.play('win');
         }
+        gsap.fromTo(cell.holder.scale, { x: 0.85, y: 0.85 }, { x: 1, y: 1, duration: 0.4, ease: 'back.out(3)' });
+        this.refresh();
+        this.onChange();
+    }
+
+    /** A deco item that's unlocked by a rewarded video (and ads are on). */
+    private isVideo(section: Section, id: string): boolean {
+        if (section === 'boosts') return false;
+        const item = decoOf(section).find((each) => each.id === id);
+        return !!item && byVideo(item);
+    }
+
+    /** A video item tapped: the rewarded video; watched through, it's theirs and in use. */
+    private watching = false;
+    private async watchFor(cell: Cell): Promise<void> {
+        if (this.watching || cell.section === 'boosts') return;
+        this.watching = true;
+        const { id, section } = cell;
+        AntEvents.deco(`${section}-${id}`, 'video');
+        const watched = await AntAds.rewarded(`deco-${section}-${id}`);
+        this.watching = false;
+        if (this.destroyed || !watched) return;
+        AntSave.own(section, id);
+        AntSave.use(section, id);
+        AntEvents.deco(`${section}-${id}`, 'use');
+        AntAudio.play('win');
         gsap.fromTo(cell.holder.scale, { x: 0.85, y: 0.85 }, { x: 1, y: 1, duration: 0.4, ease: 'back.out(3)' });
         this.refresh();
         this.onChange();
@@ -319,7 +366,7 @@ export class ShopPanel extends PIXI.Container {
                 cell.name.style.fill = locked ? NAME_COLOR.locked : NAME_COLOR.mine;
                 cell.lock.visible = locked;
                 cell.price.visible = !locked;
-                cell.check.visible = cell.use.visible = false;
+                cell.check.visible = cell.use.visible = cell.video.visible = false;
                 const have = AntSave.boosters(id as BoosterId);
                 cell.count.visible = !locked && have > 0;
                 cell.count.text = `x${have}`;
@@ -334,7 +381,9 @@ export class ShopPanel extends PIXI.Container {
             cell.name.style.fill = mine ? NAME_COLOR.mine : NAME_COLOR.locked;
             cell.lock.visible = false;
             cell.count.visible = false;
-            cell.price.visible = !mine;
+            const video = !mine && this.isVideo(section, id);
+            cell.price.visible = !mine && !video;
+            cell.video.visible = video;
             cell.check.visible = using;
             cell.use.visible = mine && !using;
         }

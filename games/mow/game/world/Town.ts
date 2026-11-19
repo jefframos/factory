@@ -22,10 +22,10 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
-import { CITY, MOW, TOWN, lawnLift, openedBy, AtmLook, AtmSpot, ColliderCube, DeckDef, DistrictDef, TownProp } from '../data/MowConfig';
+import { CITY, MOW, TOWN, lawnLift, openedBy, farmTest, AtmLook, AtmSpot, ColliderCube, DeckDef, DistrictDef, TownProp } from '../data/MowConfig';
 import { MowProgress } from '../data/MowProgress';
 import { BendService, OcclusionFadeConfig, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
-import { createWaterMaterial } from '../builders/WaterMaterial';
+import { createSeaWater } from '../builders/SeaWater';
 import { CanvasArt } from '../ui/CanvasArt';
 import { setWalkabilityQuery, clearWalkabilityQuery } from './TileWalkability';
 import { ShorePoint, bounds, containsPoint, edgeDistance, insetPolygon, inwardNormals, shoreOutline } from './Shore';
@@ -447,6 +447,46 @@ function fenceSign(text: string, x: number, z: number): THREE.Sprite {
     return sign;
 }
 
+/** The farm test's station squares (as the upgrade pads'): the square's size, and each kind's title on it. */
+const STATION_SQUARE = 2.6;
+const STATION_TITLES: Record<StationKind, string> = { atm: 'SELL GRASS', wardrobe: 'WARDROBE' };
+
+/**
+ * A station's floor square in the upgrade pads' style (UpgradePads.ts): a dark wash in a thick white outline, its title
+ * across the top and its icon (cash, a heart) in the middle. Drawn again by `redraw` once the atlas is up.
+ */
+function stationSquare(kind: StationKind, icon: string): { texture: THREE.CanvasTexture; redraw: () => void } {
+    const size = 384;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const texture = CanvasArt.texture(canvas);
+    const draw = () => {
+        const g = canvas.getContext('2d')!;
+        g.clearRect(0, 0, size, size);
+        const outline = () => {
+            g.beginPath();
+            g.roundRect(18, 18, size - 36, size - 36, 64);
+        };
+        outline();
+        g.fillStyle = 'rgba(25, 35, 30, 0.38)';
+        g.fill();
+        outline();
+        g.lineWidth = 26;
+        g.strokeStyle = 'rgba(20, 30, 20, 0.45)';
+        g.stroke();
+        outline();
+        g.lineWidth = 16;
+        g.strokeStyle = '#ffffff';
+        g.stroke();
+        CanvasArt.text(g, STATION_TITLES[kind], size / 2, 82, 50, '#ffffff', size - 90);
+        CanvasArt.drawIcon(g, icon, size / 2, 230, 170);
+        texture.needsUpdate = true;
+    };
+    draw();
+    return { texture, redraw: () => { CanvasArt.forgetIcon(icon); draw(); } };
+}
+
 export class Town {
     private readonly group = new THREE.Group();
     /** The sea round the island (buildIsland()). */
@@ -483,6 +523,10 @@ export class Town {
     public bodyRadius = BODY_RADIUS;
     /** Obstacles that move (the cars: Traffic.blockers()), only for walking: the guide's route ignores them. */
     public movingBlockers?: () => readonly Box[];
+    /** Extra solid boxes (the farm test's den fences): they block walking, and no grass grows under them. Set before the grass. */
+    public extraSolids: Box[] = [];
+    /** Extra bare ground (the farm test's pads and den floors): no grass, walkable. Set before the grass. */
+    public extraBare: Box[] = [];
     /** Resolves once every model has loaded (or failed: the town still plays without one). */
     public readonly ready: Promise<void>;
     /** Resolves once the models near the player's start (NEAR_LOAD) and the stations are in: enough to play. */
@@ -659,17 +703,11 @@ export class Town {
         const { minX, maxX, minZ, maxZ } = bounds(shore);
         const seaWidth = maxX - minX + island.margin * 2;
         const seaDepth = maxZ - minZ + island.margin * 2;
-        const geometry = new THREE.PlaneGeometry(seaWidth, seaDepth, BendService.segmentsForSpan(seaWidth), BendService.segmentsForSpan(seaDepth));
-        geometry.rotateX(-Math.PI / 2);
-        const material = createWaterMaterial(island.water, -island.waterLevel);
-        const sea = new THREE.Mesh(geometry, material);
+        // The UFO game's sea (SeaWater.ts): bright by the shore, deep blue out, drifting wave lines, foam at the edge.
+        const sea = createSeaWater(island.water, seaWidth, seaDepth, shore, (minX + maxX) / 2, (minZ + maxZ) / 2, -island.waterLevel);
         this.sea = sea;
-        sea.position.set((minX + maxX) / 2, 0, (minZ + maxZ) / 2);
         sea.frustumCulled = false;
         sea.renderOrder = -1;
-        sea.onBeforeRender = () => {
-            material.uniforms.time.value = performance.now() / 1000;
-        };
         this.group.add(sea);
 
         const fence = island.fence;
@@ -885,7 +923,26 @@ export class Town {
         pad.rotation.x = -Math.PI / 2;
         pad.position.y = padY();
         pad.renderOrder = 1;
-        group.add(pad);
+        if (farmTest()) {
+            // The farm test: a square like the upgrade pads' (its title, its icon), not the coloured disc. Kept
+            // upright to the camera (not turned with the station), so its words read.
+            const square = stationSquare(kind, look.icon);
+            this.redraws.push(square.redraw);
+            const material = new THREE.MeshBasicMaterial({ map: square.texture, transparent: true, depthWrite: false });
+            material.polygonOffset = true;
+            material.polygonOffsetFactor = -3;
+            material.polygonOffsetUnits = -3;
+            BendService.applyBend(material);
+            const geometry = new THREE.PlaneGeometry(STATION_SQUARE, STATION_SQUARE, 6, 6);
+            geometry.rotateX(-Math.PI / 2);
+            const floor = new THREE.Mesh(geometry, material);
+            floor.position.y = padY();
+            floor.rotation.y = -(spot.rotationY ?? 0);
+            floor.renderOrder = 2;
+            group.add(floor);
+        } else {
+            group.add(pad);
+        }
         this.loads.push(this.loadModel(look.model, look.height).then((object) => {
             if (!object) return;
             this.settle(object, 0, 0, -look.back);
@@ -1166,13 +1223,26 @@ export class Town {
         const pad = 0.25;
         const under = (b: Box) => Math.abs(x - b.x) <= b.halfX + pad && Math.abs(z - b.z) <= b.halfZ + pad;
         return (!TOWN.grassOverPavement && TOWN.pavements.some((p) => Math.abs(x - p.x) <= p.width / 2 + pad && Math.abs(z - p.z) <= p.depth / 2 + pad))
-            || this.propBoxes.some(under) || STATION_KINDS.some((kind) => this.boxes[kind].some(under));
+            || this.propBoxes.some(under) || STATION_KINDS.some((kind) => this.boxes[kind].some(under))
+            || this.extraSolids.some(under) || this.extraBare.some((b) => Math.abs(x - b.x) <= b.halfX && Math.abs(z - b.z) <= b.halfZ)
+            || this.onRoadTile(x, z);
+    }
+
+    /** The road builder's tiles (TOWN.roads, MowDesign.roadKit's grid), by cell: no grass grows on them. */
+    private roadTiles?: Set<string>;
+
+    private onRoadTile(x: number, z: number): boolean {
+        const tile = MOW.roadKit?.tile;
+        if (!tile || !TOWN.roads?.cells.length) return false;
+        this.roadTiles ??= new Set(TOWN.roads.cells.map(([i, j]) => `${i},${j}`));
+        return this.roadTiles.has(`${Math.round(x / tile)},${Math.round(z / tile)}`);
     }
 
     /** Obstacles to walk around (for the guide's route): props, the ATMs that are there, closed fences. */
     public get blockers(): readonly Box[] {
         return [
             ...this.propBoxes,
+            ...this.extraSolids,
             ...STATION_KINDS.flatMap((kind) => this.boxes[kind].filter((_, i) => this.shown(kind, i))),
             ...this.separatorBoxes.filter((b, d): b is Box => !!b && !this.open[d]),
         ];
@@ -1239,6 +1309,7 @@ export class Town {
         for (const kind of STATION_KINDS) this.groups[kind].forEach((group) => gsap.killTweensOf(group.scale));
         this.wardrobeAlerts.forEach((alert) => gsap.killTweensOf(alert.position));
         this.separators.forEach((fence) => fence && gsap.killTweensOf(fence.position));
+        (this.sea?.userData.free as (() => void) | undefined)?.();
         this.group.removeFromParent();
     }
 }

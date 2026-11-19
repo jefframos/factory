@@ -32,6 +32,7 @@ import { kitchenModel, loadModels } from '../world/Models';
 import { bendAll, bendAround } from '../world/Bend';
 import { SETTINGS } from '../data/Settings';
 import { RestaurantSave } from '../data/RestaurantSave';
+import { Track } from '../data/Track';
 import { DeliveryHud, STICK } from '../ui/DeliveryHud';
 import { uiPress } from '../ui/UiParts';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
@@ -311,6 +312,7 @@ export default class DeliveryScene extends ThreeScene {
     /** Every pizza's there and the car's back: the card (the coins into the restaurant's bar), then on. */
     private finish(): void {
         if (this.phase === 'done') return;
+        Track.event('delivery', RestaurantSave.day, 'complete');
         this.phase = 'done';
         this.setTarget(null);
         if (this.car) this.car.speed = 0;
@@ -442,6 +444,8 @@ export default class DeliveryScene extends ThreeScene {
         const car = this.car;
         if (car) {
             const driving = this.phase === 'toHouse' || this.phase === 'toRestaurant';
+            // The engine: idling, louder with speed.
+            RestaurantAudio.loop('car', this.phase !== 'done', 0.35 + 0.65 * Math.min(1, Math.abs(car.speed) / this.config.maxSpeed));
             car.update(dt, driving ? this.input() : { direction: null, push: 0 }, this.grid);
             // Into the traffic: a bump (it stops; this car's knocked back).
             const bumped = car.bump(this.town?.cars ?? [], this.grid);
@@ -478,6 +482,7 @@ export default class DeliveryScene extends ThreeScene {
     }
 
     public destroy(): void {
+        RestaurantAudio.stopLoops();
         this.gone = true;
         window.removeEventListener('pointerdown', this.onPointerDown);
         window.removeEventListener('pointermove', this.onPointerMove);

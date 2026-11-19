@@ -20,10 +20,11 @@ import { LEVELS, pixelsOf, SPLIT_LEVELS } from '../data/Levels';
 import { PictureView, TRAY_TOP } from '../world/PictureView';
 import { LAYOUT } from '../world/Layout';
 import { floorColor, floorTexture } from './AntScene';
-import { COIN_BAR, DARK, fillCoinBar, framePlane, iconSprite, label, plainLabel, roundButton, tappable } from '../ui/UiParts';
+import { COIN_BAR, DARK, buttonParts, fillCoinBar, framePlane, iconSprite, label, plainLabel, roundButton, tappable } from '../ui/UiParts';
 import { ShopKind, ShopPanel } from '../ui/ShopPanel';
 import { StickerBook } from '../ui/StickerBook';
-import { levelTier } from '../data/Shop';
+import { VIDEO_COINS, levelTier, videosOn } from '../data/Shop';
+import { AntAds } from '../data/AntAds';
 import { AntEvents } from '../data/AntEvents';
 
 /** Design units (720 x 1080). The bottom tabs (as UFO's), the ribbon, the PLAY button, the sound button. */
@@ -36,6 +37,8 @@ const PLAY = { width: 380, height: 104, up: 96, textSize: 54 };
 const PLAY_SLICE = { side: 82, height: 194 };
 const SHINE = { glowWidth: 1.35, glowHeight: 2.2, glowColor: 0xffd23f, glowFrom: 0.3, glowTo: 0.75, glowSeconds: 0.9, band: 90, tilt: 0.35, sweep: 0.75, wait: 1.5, alpha: 0.85, corner: 0.32 };
 const MUTE = { size: 56, margin: 16, y: 48, icon: 0.55 / 128 };
+/** FREE COINS (a rewarded video), centred just above PLAY: its size, the gap to PLAY, the video icon, the words. */
+const FREE_COINS = { width: 250, height: 80, gap: 22, icon: 58, iconX: -72, textX: 12, text: 40, coin: 42, pulse: 1.07 };
 /** The level arrows: their size, how far in from the screen's sides, how far above the middle; the latest button under the right one. */
 const ARROWS = { size: 64, margin: 44, up: 60, latest: 54, latestDown: 76 };
 /** The camera: field of view, tilt from straight down, how much of the screen's width the tray fills, and how far the
@@ -89,6 +92,9 @@ export default class HomeScene extends ThreeScene {
     private book: StickerBook | null = null;
     private readonly coinsBar = new PIXI.Container();
     private readonly coinsText = label(COIN_BAR.textSize);
+    /** +50 coins for a rewarded video (when ads are on). */
+    private readonly freeCoins = new PIXI.Container();
+    private watching = false;
     private floor?: THREE.Mesh;
     private tab: Tab = 'home';
     /** The picture and the stand it sways on. */
@@ -187,7 +193,8 @@ export default class HomeScene extends ThreeScene {
         for (const tab of TAB_ORDER) this.addTab(tab);
         fillCoinBar(this.coinsBar, this.coinsText);
         this.refreshCoins();
-        this.ui.addChild(this.ribbon, this.prev, this.next, this.latest, this.play, this.mute, this.coinsBar, this.tabBar);
+        this.buildFreeCoins();
+        this.ui.addChild(this.ribbon, this.prev, this.next, this.latest, this.play, this.freeCoins, this.mute, this.coinsBar, this.tabBar);
     }
 
     /** The pack's big PLAY: a tapered yellow button, dark words with no outline, a gold glow breathing and a shine sweeping. */
@@ -226,6 +233,42 @@ export default class HomeScene extends ThreeScene {
         this.play.hitArea = new PIXI.Rectangle(-PLAY.width / 2, -PLAY.height / 2, PLAY.width, PLAY.height);
         tappable(this.play, () => this.onPlay());
         gsap.to(this.play.scale, { x: 1.03, y: 1.03, duration: 0.7, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+    }
+
+    /** Above PLAY, centred: the video icon and +50, a green pill pulsing — a rewarded video for coins. None without ads. */
+    private buildFreeCoins(): void {
+        this.freeCoins.visible = videosOn();
+        if (!this.freeCoins.visible) return;
+        const pill = new PIXI.Container();
+        pill.addChild(...buttonParts(FREE_COINS.width, FREE_COINS.height, '', 'Button01_l_Green'));
+        const film = iconSprite('ItemIcon_Video', FREE_COINS.icon);
+        film.x = FREE_COINS.iconX;
+        const words = label(FREE_COINS.text);
+        words.text = `+${VIDEO_COINS}`;
+        words.position.set(FREE_COINS.textX, -3);
+        const coin = iconSprite('Icon_Coin', FREE_COINS.coin);
+        coin.position.set(words.x + words.width / 2 + FREE_COINS.coin / 2 + 4, -3);
+        this.freeCoins.addChild(pill, film, words, coin);
+        gsap.to(this.freeCoins.scale, { x: FREE_COINS.pulse, y: FREE_COINS.pulse, duration: 0.6, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+        tappable(this.freeCoins, () => void this.watchForCoins());
+    }
+
+    private async watchForCoins(): Promise<void> {
+        if (this.watching) return;
+        this.watching = true;
+        this.freeCoins.alpha = 0.6;
+        AntEvents.reward('coins', 'interact');
+        const watched = await AntAds.rewarded('home-coins');
+        this.watching = false;
+        if (this.freeCoins.destroyed) return;
+        this.freeCoins.alpha = 1;
+        if (!watched) return;
+        AntSave.addCoins(VIDEO_COINS);
+        AntEvents.reward('coins', 'complete');
+        AntAudio.play('win');
+        this.refreshCoins();
+        this.shops.forEach((shop) => shop.refresh());
+        gsap.fromTo(this.coinsBar.scale, { x: 1.25, y: 1.25 }, { x: 1, y: 1, duration: 0.4, ease: 'back.out(3)' });
     }
 
     /** Sound on / off (SoundManager's saved mute), top right as in UFO. */
@@ -372,6 +415,7 @@ export default class HomeScene extends ThreeScene {
         this.play.position.set(screen.center.x, top + screen.height - TABS.height - PLAY.up);
         this.placeTabs();
         this.coinsBar.position.set(screen.topLeft.x + COIN_BAR.left + COIN_BAR.icon / 2, top + COIN_BAR.top);
+        this.freeCoins.position.set(screen.center.x, this.play.y - PLAY.height / 2 - FREE_COINS.gap - FREE_COINS.height / 2);
         this.shops.forEach((shop) => shop.reposition());
         this.book?.reposition();
     }
@@ -387,7 +431,7 @@ export default class HomeScene extends ThreeScene {
     }
 
     public destroy(): void {
-        gsap.killTweensOf([this.play.scale, this.stand.scale, this.ribbon.scale]);
+        gsap.killTweensOf([this.play.scale, this.stand.scale, this.ribbon.scale, this.freeCoins.scale, this.coinsBar.scale]);
         if (this.shine) gsap.killTweensOf(this.shine);
         if (this.glow) gsap.killTweensOf(this.glow);
         this.tabs.forEach(({ icon }) => gsap.killTweensOf([icon, icon.scale]));

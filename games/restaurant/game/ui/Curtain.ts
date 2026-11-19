@@ -10,12 +10,15 @@ import { Game } from 'core/Game';
 import { WARM, iconSprite, label } from './UiParts';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
 
-const SECONDS = { drop: 0.45, hold: 0.6, lift: 0.45 };
+const SECONDS = { drop: 0.4, hold: 0.35, lift: 0.4 };
 
 let busy = false;
 
-/** Covers the screen (`title`, `subtitle`, a pack `icon`), calls `swap`, and uncovers it. */
-export function curtain(game: Game, title: string, subtitle: string, icon: string, swap: () => void): void {
+/**
+ * Covers the screen (`title`, `subtitle`, a pack `icon`), calls `swap`, and uncovers it. `whileCovered`: something to
+ * wait for while the screen's covered, before the swap (a commercial break: index.ts).
+ */
+export function curtain(game: Game, title: string, subtitle: string, icon: string, swap: () => void, whileCovered?: () => Promise<void>): void {
     if (busy) return;
     busy = true;
     const screen = Game.overlayScreenData;
@@ -44,14 +47,26 @@ export function curtain(game: Game, title: string, subtitle: string, icon: strin
     holder.y = top - height - 60;
     game.popupLayer.addChild(holder);
     RestaurantAudio.play('whoosh');
-    gsap.timeline({
+    const timeline = gsap.timeline({
         onComplete: () => {
             holder.destroy({ children: true });
             busy = false;
         },
-    })
+    });
+    timeline
         .to(holder, { y: top, duration: SECONDS.drop, ease: 'bounce.out' })
-        .add(() => swap())
+        .add(() => {
+            if (!whileCovered) {
+                swap();
+                return;
+            }
+            // Held covered till it's done (an ad, say); then the swap and the lift.
+            timeline.pause();
+            void whileCovered().catch(() => undefined).finally(() => {
+                swap();
+                timeline.resume();
+            });
+        })
         .to({}, { duration: SECONDS.hold })
         .add(() => RestaurantAudio.play('whoosh', 1.2))
         .to(holder, { y: top - height - 60, duration: SECONDS.lift, ease: 'power2.in' });

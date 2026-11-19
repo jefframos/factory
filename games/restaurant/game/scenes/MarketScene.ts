@@ -18,6 +18,7 @@ import { kitchenModel, loadModels, sizeOf } from '../world/Models';
 import { Customer } from '../world/Customers';
 import { SETTINGS, MarketItem } from '../data/Settings';
 import { RestaurantSave } from '../data/RestaurantSave';
+import { Track } from '../data/Track';
 import { servesDish, shoppingList } from '../data/Market';
 import { MARKET_HUD_SHARE, MarketHud } from '../ui/MarketHud';
 import { uiPress } from '../ui/UiParts';
@@ -286,6 +287,7 @@ export default class MarketScene extends ThreeScene {
         this.hud.showHint(null);
         gsap.delayedCall(0.35, () => {
             if (this.gone) return;
+            Track.event('market', RestaurantSave.day, 'fail');
             this.hud.showWrong(crate.item, () => {
                 this.basket.clear();
                 this.hud.tickList(this.basket);
@@ -297,6 +299,7 @@ export default class MarketScene extends ThreeScene {
     /** The whole list's in the basket: off to the restaurant. */
     private finish(): void {
         this.playing = false;
+        Track.event('market', RestaurantSave.day, 'complete');
         gsap.delayedCall(0.6, () => {
             if (this.gone) return;
             RestaurantAudio.play('happy');

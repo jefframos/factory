@@ -22,6 +22,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { RestaurantAudio } from '../audio/RestaurantAudio';
 import { BASIC_PIZZA_TOPPINGS, PIZZA_BASE, PIZZA_LAYER_MODELS, PIZZA_OVEN_MODEL, PIZZA_SOURCE_MODELS, PizzaTopping, pizzaMatches, pizzaRecipe, randomPizza } from '../data/Recipes';
 import { RestaurantSave } from '../data/RestaurantSave';
+import { Track } from '../data/Track';
 import { SETTINGS, stageSettings } from '../data/Settings';
 import { PhoneHud } from '../ui/PhoneHud';
 import { RestaurantHud } from '../ui/RestaurantHud';
@@ -497,6 +498,9 @@ export default class PhoneScene extends ThreeScene {
     private finish(): void {
         if (this.gone || this.phase === 'done' || !this.boxesHud) return;
         this.phase = 'done';
+        Track.event('phone', RestaurantSave.day, 'complete');
+        // The first session's done: its step hints stop from now on.
+        RestaurantSave.learnPhone();
         this.hud?.showHint(null);
         RestaurantAudio.play('happy');
         this.boxesHud.showDone(this.orders.length, () => {
@@ -514,12 +518,13 @@ export default class PhoneScene extends ThreeScene {
         if (this.phase !== 'making') return null;
         const order = this.orders[this.current];
         // (A baked pizza has its own badge and arrow.)
-        if (pizza.ready || pizza.inOven || !pizza.hasPizza && RestaurantSave.pizzaLearned) return null;
+        if (pizza.ready || pizza.inOven || !pizza.hasPizza && RestaurantSave.phoneLearned) return null;
         const missing = pizzaRecipe(order).find((layer) => !pizza.layers.includes(layer));
         // Everything on (and nothing else): always the hand on the pizza — tap it into the oven.
         if (pizza.hasPizza && !missing && pizza.layers.length === pizzaRecipe(order).length) return pizza.targetPoint('pizza');
         // Till they've made one right: each step.
-        if (RestaurantSave.pizzaLearned) return null;
+        // (Every step, the whole first session: its own tutorial, even when the pizza's known from the restaurant.)
+        if (RestaurantSave.phoneLearned) return null;
         if (!pizza.hasPizza) return pizza.targetPoint('dough');
         return missing ? pizza.targetPoint(missing) : null;
     }
@@ -550,9 +555,10 @@ export default class PhoneScene extends ThreeScene {
             if (ready !== this.wasReady) {
                 this.wasReady = ready;
                 pizza.setReadyPulse(ready);
-                if (ready) RestaurantAudio.play('coins', 1.3);
+                if (ready) RestaurantAudio.play('ding');
             }
             hud.setReady(ready ? this.worldToScreen(pizza.dishPoint) : null);
+            RestaurantAudio.loop('oven', pizza.inOven);
             const hint = this.hint();
             hud.pointAt(hint ? this.worldToScreen(hint) : null);
         }
@@ -567,6 +573,7 @@ export default class PhoneScene extends ThreeScene {
     }
 
     public destroy(): void {
+        RestaurantAudio.stopLoops();
         this.gone = true;
         window.removeEventListener('pointerdown', this.onPointerDown);
         DebugOverlay.instance.removePanel('restaurant.phone');

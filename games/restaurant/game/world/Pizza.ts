@@ -21,7 +21,7 @@ import { kitchenModel } from './Models';
 import { SETTINGS } from '../data/Settings';
 import { PIZZA_LAYERS, PIZZA_LAYER_MODELS, PIZZA_SOURCE_MODELS, PizzaLayer } from '../data/Recipes';
 import { SHOT_ASPECT, type CameraShot } from './RestaurantLayout';
-import { pizzaLayerModel, scatteredLayer } from './PizzaLook';
+import { pizzaLayerModel, pizzaPile } from './PizzaLook';
 
 /** In the oven model's space: its door (the kit's node name), how far it drops (radians), where a pizza sits inside,
  *  just outside the door, the middle of its front (the ring and the camera aim there). */
@@ -30,17 +30,12 @@ const OVEN = { depth: 2.35, door: 'pizza_oven_door', open: 1.45, inside: new THR
  * The pizza's size (x the kit's: its dough base is 1.75 across); the cutting board it's made on (x the model; on a board
  * prop that isn't a cutting board, one's put on it), and its gap from the oven when there's no board prop at all.
  */
-const PIZZA = { scale: 0.85, boardScale: 1.3, boardGap: 0.15, frontGap: 0.12, leftShift: 0.35 };
+const PIZZA = { scale: 0.85, boardScale: 1.3, boardGap: 0.15, frontGap: 0.32, leftShift: 0.35 };
 /**
  * The ingredients: each one this big across (its model fitted to it). The dough and the sauce on the board's right
  * (`side` past its edge, at `sideRows` along it); the cheese and the toppings past them in a grid of `columns` (one more
  * past `rows` deep) `gridGap` on, `spacing` apart, its first row `gridFront` from the board's middle, then back `rowGap`.
  */
-/**
- * A pile (as the burger station's): its plate this big across; a piece's size and how many (slices, chunks...), or a
- * small whole one's and how many; how far round the middle they lie, how high the top one sits.
- */
-const PILE = { plate: 0.6, piece: 0.2, pieces: 5, wholeSize: 0.24, whole: 3, spread: 0.13, stack: 0.07 };
 /** The grid's order (the cheese first; what's not in it, after). */
 const GRID_ORDER: PizzaLayer[] = ['cheese', 'pepperoni', 'ham', 'fish', 'onion', 'broccoli', 'pineapple', 'mushroom', 'tomato', 'pickles'];
 const SOURCES = { size: 0.62, columns: 2, rows: 4, spacing: 0.78, gridGap: 0.85, gridFront: 0.45, dough: 0.46, rowGap: 0.78, side: 0.45, sideRows: [0.3, -0.38] };
@@ -172,7 +167,7 @@ export class PizzaStation {
      * dough: a ball on its own; the sauce: a bowl with sauce in it.
      */
     private sourceModel(layer: PizzaLayer): THREE.Object3D {
-        if (layer !== 'dough' && layer !== 'sauce') return this.pileModel(layer);
+        if (layer !== 'dough' && layer !== 'sauce') return pizzaPile(layer);
         const holder = new THREE.Group();
         const model = kitchenModel(PIZZA_SOURCE_MODELS[layer]);
         const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
@@ -185,32 +180,6 @@ export class PizzaStation {
             sauce.scale.setScalar(scale * 0.5);
             sauce.position.y = size.y * scale * 0.55;
             holder.add(sauce);
-        }
-        return holder;
-    }
-
-    /** A plate with a few of `layer` on it, a little heap. */
-    private pileModel(layer: PizzaLayer): THREE.Object3D {
-        const holder = new THREE.Group();
-        const plate = kitchenModel('plate');
-        const plateSize = new THREE.Box3().setFromObject(plate).getSize(new THREE.Vector3());
-        plate.scale.setScalar(PILE.plate / Math.max(plateSize.x, plateSize.z, 1e-3));
-        holder.add(plate);
-        const top = plateSize.y * plate.scale.x * 0.6;
-        const pieces = scatteredLayer(layer);
-        const name = pieces ? PIZZA_LAYER_MODELS[layer] : PIZZA_SOURCE_MODELS[layer];
-        const count = pieces ? PILE.pieces : PILE.whole;
-        for (let i = 0; i < count; i++) {
-            const piece = kitchenModel(name);
-            const size = new THREE.Box3().setFromObject(piece).getSize(new THREE.Vector3());
-            piece.scale.setScalar((pieces ? PILE.piece : PILE.wholeSize) / Math.max(size.x, size.z, 1e-3));
-            // Round the plate's middle, the last one on top of the others.
-            const last = i === count - 1 && count > 2;
-            const angle = (i / Math.max(1, count - (last ? 1 : 0))) * Math.PI * 2 + 0.5;
-            const r = last ? 0 : PILE.spread;
-            piece.position.set(Math.cos(angle) * r, top + (last ? PILE.stack : 0), Math.sin(angle) * r);
-            piece.rotation.y = angle * 1.7;
-            holder.add(piece);
         }
         return holder;
     }

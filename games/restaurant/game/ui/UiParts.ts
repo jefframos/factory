@@ -8,7 +8,8 @@ import gsap from 'gsap';
 import SoundToggleButton from 'core/ui/SoundToggleButton';
 
 export const FONT = 'Baloo2-ExtraBold, Arial Rounded MT Bold, sans-serif';
-export const DARK = 0x3a1e10;
+/** Words' outline: black (the pack's look; the old brown read muddy). */
+export const DARK = 0x0d0d14;
 
 /** The game's warm colours. */
 export const WARM = { cream: 0xfff4e4, peach: 0xf3d2a8, tan: 0xd9a877, brown: 0x8a5530, tomato: 0xf2674e, green: 0x4cb860, ink: 0x5a3a22 };
@@ -211,10 +212,7 @@ const SLICES: Record<string, [number, number, number, number]> = {
     ResourceBar_Single_Bg: [11, 11, 11, 11],
     // The pack's bar (a dark track, a black outline) and its fills; the popup with a header band; the title ribbon; the
     // small dark round button (tools/ui-kit/README.md).
-    Slider_Basic02_Bg: [10, 24, 10, 10],
-    Slider_Basic02_Fill_Yellow: [4, 4, 3, 9],
-    Slider_Basic02_Fill_Green: [4, 4, 3, 9],
-    Slider_Basic02_Fill_Blue: [4, 4, 3, 9],
+    Slider_Basic03_Bg_Single: [10, 23, 10, 14],
     Popup08_Topbar_Divided_Single: [45, 149, 46, 58],
     Title_Ribbon04_Red: [150, 0, 150, 0],
     Button_Round03_Dark: [20, 19, 20, 21],
@@ -288,8 +286,8 @@ export function fillCoinBar(holder: PIXI.Container, amount: PIXI.Text): void {
 
 // ---------------------------------------------------------------- the pack's bar, panel, ribbon, confetti, mute
 
-/** The bar's art: its track's height, its fill's, how far in the fill sits (the pack's pixels). */
-const BAR_ART = { height: 43, fill: 35, inset: 4 };
+/** The bar's art: the pack's navy track's height (px); how far in the fill sits (x the bar's height); the fills' colours. */
+const BAR_ART = { height: 48, inset: 0.16, colors: { Yellow: 0xffc93c, Green: 0x55d66a, Blue: 0x4aa8ff } };
 
 /**
  * A bar as the pack draws it (the upgrade bar, the oven's timer, the coins' pill — all the same): a dark track with a
@@ -303,14 +301,14 @@ export class TexBar extends PIXI.Container {
 
     public constructor(width: number, height: number, fill: 'Yellow' | 'Green' | 'Blue' = 'Yellow') {
         super();
-        const art = Math.min(1, (height / BAR_ART.height) * 1.4);
-        const back = framePlane('Slider_Basic02_Bg', width, height, art);
+        // The pack's navy track (its black outline built in); the fill a glossy pill of our own (baked: sharp), inside it.
+        const back = framePlane('Slider_Basic03_Bg_Single', width, height, Math.min(1, (height / BAR_ART.height) * 1.3));
         back.position.set(-width / 2, -height / 2);
-        const inset = Math.max(3, BAR_ART.inset * (height / BAR_ART.height));
+        const inset = Math.max(3, Math.round(height * BAR_ART.inset));
         this.fillHeight = height - inset * 2;
-        this.fillScale = Math.min(1, (this.fillHeight / BAR_ART.fill) * 1.1);
+        this.fillScale = 1;
         this.inner = width - inset * 2;
-        this.fill = framePlane(`Slider_Basic02_Fill_${fill}`, this.inner, this.fillHeight, this.fillScale);
+        this.fill = pill(this.fillHeight, BAR_ART.colors[fill], { shine: true });
         this.fill.position.set(-width / 2 + inset, -height / 2 + inset);
         this.addChild(back, this.fill);
         this.setShare(0);
@@ -320,7 +318,7 @@ export class TexBar extends PIXI.Container {
     public setShare(share: number): void {
         const s = Math.max(0, Math.min(1, share));
         this.fill.visible = s > 0;
-        this.fill.width = Math.max(this.fillHeight * 0.9, this.inner * s) / this.fillScale;
+        sizePill(this.fill, this.inner * s);
     }
 }
 
@@ -361,6 +359,12 @@ export function ribbonTitle(text: string, size = 46): PIXI.Container & { words: 
 
 const CONFETTI = [0xff5a5a, 0xffd23f, 0x4cd06a, 0x4aa8ff, 0xc77dff, 0xff9f43];
 
+/** Turns `object` round and round, forever — till it's destroyed (then its tween stops too: none left on a gone object). */
+export function spinForever(object: PIXI.DisplayObject, seconds: number): void {
+    const tween = gsap.to(object, { rotation: Math.PI * 2, duration: seconds, repeat: -1, ease: 'none' });
+    object.once('destroyed', () => tween.kill());
+}
+
 /** Confetti over `parent`: falling from above a `width` x `height` area round (x, y), till it's gone. */
 export function throwConfetti(parent: PIXI.Container, x: number, y: number, width: number, height: number, count = 90): void {
     for (let i = 0; i < count; i++) {
@@ -372,11 +376,13 @@ export function throwConfetti(parent: PIXI.Container, x: number, y: number, widt
         piece.position.set(x + (Math.random() - 0.5) * width, y - height / 2 - 20 - Math.random() * height * 0.4);
         piece.rotation = Math.random() * Math.PI;
         parent.addChild(piece);
-        gsap.to(piece, {
+        const tween = gsap.to(piece, {
             y: y + height / 2 + 40, x: piece.x + (Math.random() - 0.5) * 160, rotation: piece.rotation + 4 + Math.random() * 8,
             duration: 1.8 + Math.random() * 1.6, ease: 'power1.in', delay: Math.random() * 0.5,
             onComplete: () => piece.destroy(),
         });
+        // (The screen it's on can go first: the tween stops with it, not on a destroyed piece.)
+        piece.once('destroyed', () => tween.kill());
     }
 }
 

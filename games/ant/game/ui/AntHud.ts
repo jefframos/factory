@@ -26,7 +26,7 @@ const PAUSE = { size: 64, margin: 46 };
 /** The x2 button: the pack's glossy button, green, yellow while it's on. */
 const SPEED = { width: 116, height: 58, x: 74 };
 /** The celebration card: its size, and where its pieces sit (y, from its middle). */
-const WIN = { width: 500, height: 660, headingY: -275, starsY: -200, star: 64, middleStar: 84, picture: 210, pictureY: -40, nameY: 108, coinsY: 166, nextY: 252 };
+const WIN = { width: 500, height: 660, headingY: -275, starsY: -200, star: 64, middleStar: 84, picture: 210, pictureY: -40, nameY: 108, coinsY: 166, nextY: 252, next: 230, menu: 170, menuX: -125, nextX: 95 };
 /** The coins won: the coin bar shown over the dim, the coins flying up to it (how many, how far apart, how long). */
 /** The tag under the title on a hard / super hard level (design.txt). */
 const TIER_TAG: Record<LevelTier, { text: string; color: number } | null> = {
@@ -359,7 +359,7 @@ export class AntHud extends PIXI.Container {
      * over it, and the card pops in — LEVEL COMPLETE!, three gold stars landing one after another, the finished picture,
      * the coins won (`reward`) and a free power-up (`drop`, if one dropped) — and then the coins fly up to the coin bar, which counts up to the player's coins; NEXT.
      */
-    public celebrate(level: LevelData, reward: number, drop: BoosterId | null, onNext: () => void): void {
+    public celebrate(level: LevelData, reward: number, drop: BoosterId | null, onNext: () => void, onMenu?: () => void): void {
         this.card.removeChildren().forEach((child) => child.destroy({ children: true }));
         // The popups' box (a warm frame, the moving pattern in it), over the bright celebration screen.
         const back = popupBox(WIN.width, WIN.height);
@@ -414,12 +414,22 @@ export class AntHud extends PIXI.Container {
         }
         AntAudio.play('win');
         AntAudio.play('applause');
-        const next = button('NEXT', 'Button01_l_Green', 280, () => {
+        const next = button('NEXT', 'Button01_l_Green', onMenu ? WIN.next : 280, () => {
             this.hideResult();
             onNext();
         });
         next.y = WIN.nextY;
         this.card.addChild(back, heading, picture, stars, name, coins, free, next);
+        // MENU (to the main screen, an interstitial on the way: AntAds.menu), smaller, left of NEXT.
+        if (onMenu) {
+            const menu = button('MENU', 'Button01_l_Sky', WIN.menu, () => {
+                this.hideResult();
+                onMenu();
+            });
+            menu.position.set(WIN.menuX, WIN.nextY);
+            next.x = WIN.nextX;
+            this.card.addChild(menu);
+        }
         this.dim.visible = true;
         this.card.visible = true;
         gsap.fromTo(this.card.scale, { x: 0.5, y: 0.5 }, { x: 1, y: 1, duration: 0.5, ease: 'back.out(1.8)' });

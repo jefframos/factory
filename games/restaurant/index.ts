@@ -15,7 +15,7 @@ import * as PIXI from 'pixi.js';
 
 import loaderConfig from './loader.config';
 import platformConfig from './platforms.config.json';
-import RestaurantScene from './game/scenes/RestaurantScene';
+import RestaurantScene, { ADS_AFTER_DAY } from './game/scenes/RestaurantScene';
 import MarketScene from './game/scenes/MarketScene';
 import DeliveryScene from './game/scenes/DeliveryScene';
 import PhoneScene from './game/scenes/PhoneScene';
@@ -24,7 +24,10 @@ import { SETTINGS } from './game/data/Settings';
 import { RestaurantSave } from './game/data/RestaurantSave';
 import { FLAVORS, Order, PizzaTopping, Topping, dealDay } from './game/data/Recipes';
 import { RestaurantAudio } from './game/audio/RestaurantAudio';
-import { muteButton } from './game/ui/UiParts';
+import { label, muteButton } from './game/ui/UiParts';
+import { Beats, clock } from './game/data/Beats';
+import { Track } from './game/data/Track';
+import { Gameplay } from './game/data/Gameplay';
 
 type PlatformConfigEntry = { gameId?: string; enableAds?: boolean };
 
@@ -38,6 +41,8 @@ export default class RestaurantGame extends Game {
     private readonly loaderScene: HtmlLoader;
     private scenes = 0;
     private mute: PIXI.Container | null = null;
+    /** The playtest clock (?dev=1 only). */
+    private timer: PIXI.Text | null = null;
 
     public constructor() {
         super({ resolution: Math.min(2, devicePixelRatio), backgroundAlpha: 0 }, false);
@@ -57,6 +62,7 @@ export default class RestaurantGame extends Game {
             PlatformHandler.ENABLE_VIDEO_ADS = config?.enableAds ?? true;
             await PlatformHandler.instance.initialize(await getPlatformInstance(platformName));
             await RestaurantSave.init();
+            Track.event('session', 'boot', 'start');
             PlatformHandler.instance.platform.startLoad();
             DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'restaurant');
             this.stageContainer.addChild(this.gameContainer);
@@ -70,7 +76,15 @@ export default class RestaurantGame extends Game {
             this.mute = muteButton(MUTE.size);
             this.popupLayer.addChild(this.mute);
             this.placeMute();
+            // Playtesting (?dev=1): the session's clock and its last beat, bottom left, over every scene.
+            if (Game.debugParams.dev || Game.debugParams.debug) {
+                this.timer = label(22);
+                this.timer.anchor.set(0, 1);
+                this.popupLayer.addChild(this.timer);
+            }
             RestaurantAudio.initialize(this.folderPath);
+            // The soundtrack (Redding Rainbow), quiet, through every scene (it starts on the first tap, as browsers need).
+            RestaurantAudio.music();
             this.buildDebug();
             if (RestaurantSave.place === 'market') this.showMarket();
             else if (RestaurantSave.place === 'delivery') this.showDelivery();
@@ -156,11 +170,12 @@ export default class RestaurantGame extends Game {
 
     /** The restaurant, for the day the player's on; its day's card goes on to the pizza delivery (a day with the oven) or the supermarket. */
     private showRestaurant(): void {
+        Gameplay.arm();
         const key = `restaurant-${this.scenes++}`;
         this.sceneManager.register<RestaurantScene>(key, RestaurantScene, this, () => {
-            if (RestaurantSave.place === 'phone') curtain(this, 'PHONE ORDERS', 'Box the pizzas for delivery', 'ItemIcon_Meat', () => this.showPhone());
-            else if (RestaurantSave.place === 'delivery') curtain(this, 'PIZZA DELIVERY', 'Take the pizzas out', 'ItemIcon_Meat', () => this.showDelivery());
-            else curtain(this, 'SUPERMARKET', 'Shop for tomorrow', 'ItemIcon_Shop', () => this.showMarket());
+            if (RestaurantSave.place === 'phone') curtain(this, 'PHONE ORDERS', 'Box the pizzas for delivery', 'ItemIcon_Meat', () => this.showPhone(), () => this.adBreak());
+            else if (RestaurantSave.place === 'delivery') curtain(this, 'PIZZA DELIVERY', 'Take the pizzas out', 'ItemIcon_Meat', () => this.showDelivery(), () => this.adBreak());
+            else curtain(this, 'SUPERMARKET', 'Shop for tomorrow', 'ItemIcon_Shop', () => this.showMarket(), () => this.adBreak());
         });
         this.sceneManager.changeScene(key);
         this.sceneManager.resize();
@@ -168,10 +183,12 @@ export default class RestaurantGame extends Game {
 
     /** The phone orders (make the pizzas called in, box them); done, their delivery. */
     private showPhone(): void {
+        Gameplay.arm();
+        Track.event('phone', RestaurantSave.day, 'start');
         const key = `phone-${this.scenes++}`;
         this.sceneManager.register<PhoneScene>(key, PhoneScene, this, () => {
             RestaurantSave.openDelivery();
-            curtain(this, 'PIZZA DELIVERY', 'Take the pizzas out', 'ItemIcon_Meat', () => this.showDelivery());
+            curtain(this, 'PIZZA DELIVERY', 'Take the pizzas out', 'ItemIcon_Meat', () => this.showDelivery(), () => this.adBreak());
         });
         this.sceneManager.changeScene(key);
         this.sceneManager.resize();
@@ -179,10 +196,12 @@ export default class RestaurantGame extends Game {
 
     /** The pizza delivery (drive the pizzas round the town); done, the supermarket. */
     private showDelivery(): void {
+        Gameplay.arm();
+        Track.event('delivery', RestaurantSave.day, 'start');
         const key = `delivery-${this.scenes++}`;
         this.sceneManager.register<DeliveryScene>(key, DeliveryScene, this, () => {
             RestaurantSave.openMarket();
-            curtain(this, 'SUPERMARKET', 'Shop for tomorrow', 'ItemIcon_Shop', () => this.showMarket());
+            curtain(this, 'SUPERMARKET', 'Shop for tomorrow', 'ItemIcon_Shop', () => this.showMarket(), () => this.adBreak());
         });
         this.sceneManager.changeScene(key);
         this.sceneManager.resize();
@@ -190,21 +209,45 @@ export default class RestaurantGame extends Game {
 
     /** The supermarket; done shopping, the next day opens. */
     private showMarket(): void {
+        Gameplay.arm();
+        Track.event('market', RestaurantSave.day, 'start');
         const key = `market-${this.scenes++}`;
         this.sceneManager.register<MarketScene>(key, MarketScene, this, () => {
             RestaurantSave.openRestaurant();
-            curtain(this, `DAY ${RestaurantSave.day + 1}`, 'Open for business!', 'ItemIcon_Meat', () => this.showRestaurant());
+            curtain(this, `DAY ${RestaurantSave.day + 1}`, 'Open for business!', 'ItemIcon_Meat', () => this.showRestaurant(), () => this.adBreak());
         });
         this.sceneManager.changeScene(key);
         this.sceneManager.resize();
     }
 
     protected override update(delta: number): void {
+        Track.tick();
+        if (this.timer) {
+            const screen = Game.overlayScreenData;
+            const last = Beats.all[Beats.all.length - 1];
+            this.timer.text = `${clock(Beats.elapsed)}${last ? `  ·  ${clock(last.at)} ${last.name}` : ''}`;
+            if (screen) this.timer.position.set(screen.bottomLeft.x + 12, screen.bottomLeft.y - 10);
+        }
         this.sceneManager?.update(delta);
     }
 
     protected override fixedUpdate(delta: number): void {
         this.sceneManager?.fixedUpdate(delta);
+    }
+
+    /**
+     * A commercial break while the curtain covers the screen between places, once the first days are done (after
+     * ADS_AFTER_DAY): gameplay off for it (it starts again on the player's first tap in the next screen: Gameplay.arm);
+     * the platform decides whether one actually plays (its own frequency).
+     */
+    private async adBreak(): Promise<void> {
+        Gameplay.stop();
+        if (!PlatformHandler.ENABLE_VIDEO_ADS || RestaurantSave.day < ADS_AFTER_DAY) return;
+        try {
+            await PlatformHandler.instance.platform.showCommercialBreak();
+        } catch (error) {
+            console.warn('[Ads] commercial break failed', error);
+        }
     }
 
     /** The mute button in the top right corner. */

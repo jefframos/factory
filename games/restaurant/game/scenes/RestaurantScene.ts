@@ -38,21 +38,26 @@ import { PizzaStation, PizzaTarget } from '../world/Pizza';
 import { WalkGrid } from '../world/WalkGrid';
 import { MAX_SCOOPS, SundaeStation, SundaeTarget } from '../world/Sundae';
 import exclamationUrl from '../ui/images/icon_exclamation.png';
-import { daySettings, stageSettings } from '../data/Settings';
+import { SETTINGS, daySettings, stageSettings } from '../data/Settings';
 import type { Room } from 'core/rooms/Room';
 import { Town } from '../world/Town';
 import { bendAll, bendAround } from '../world/Bend';
 import { Customer } from '../world/Customers';
 import { kitchenModel, loadModels } from '../world/Models';
-import { CONE_MODEL, CONE_STACK_MODEL, ICE_CREAM_MODELS, Order, PIZZA_LAYER_MODELS, PIZZA_OVEN_MODEL, PIZZA_SOURCE_MODELS, SUNDAE_MODELS, SWIRL_MODELS, sundaeMatches, BASIC_TOPPINGS, BASIC_PIZZA_TOPPINGS, PIZZA_BASE, SCOOP_FLAVORS, SUNDAE_SAUCES, SUNDAE_TOPPINGS, Topping, matches, payFor, pizzaMatches, pizzaRecipe, randomOrder, randomPizza, randomSundae } from '../data/Recipes';
+import { CONE_MODEL, CONE_STACK_MODEL, FLAVORS, ICE_CREAM_MODELS, Order, PIZZA_LAYER_MODELS, PIZZA_OVEN_MODEL, PIZZA_SOURCE_MODELS, SUNDAE_MODELS, SWIRL_MODELS, sundaeMatches, BASIC_TOPPINGS, BASIC_PIZZA_TOPPINGS, PIZZA_BASE, SCOOP_FLAVORS, SUNDAE_SAUCES, SUNDAE_TOPPINGS, Topping, matches, payFor, pizzaMatches, pizzaRecipe, randomOrder, randomPizza, randomSundae } from '../data/Recipes';
 import { RestaurantSave } from '../data/RestaurantSave';
+import PlatformHandler from 'core/platforms/PlatformHandler';
+import { Track } from '../data/Track';
 import { RestaurantHud } from '../ui/RestaurantHud';
 import { uiPress } from '../ui/UiParts';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
 
-const MOVE_SECONDS = 0.7;
+const MOVE_SECONDS = 0.55;
 /** How long the order bubble shows before the camera drops to the bench; how long a reaction's watched. */
-const ORDER_SECONDS = 1.6;
+/** How long the order shows before the camera goes to the station (s): short, the player is waiting to cook. */
+const ORDER_SECONDS = 1.1;
+/** Ads (the ×2 TIPS offer here; the breaks between scenes in index.ts) only after this many days are done. */
+export const ADS_AFTER_DAY = 3;
 const REACT_SECONDS = 1.8;
 /** A tap while the order's on its way to the station: the camera's move this many times faster. */
 const HURRY = 4;
@@ -67,9 +72,9 @@ const QUEUE = { spacing: 1.15, stepAside: 1.6, personalSpace: 0.8 };
  * where each stands off their spot in the line: up to `across` either side and `along` nearer or further (at the counter:
  * `counter` either side only, so they still face the cook).
  */
-const ARRIVE = { first: [0.3, 1.2], gap: 2.2, noise: 0.55 };
+const ARRIVE = { first: [0.2, 0.8], gap: 1.6, noise: 0.5 };
 /** The day's first customer is already in place (at the counter, or sat at a table): how long till they order (s). */
-const START_ORDER_DELAY = 0.8;
+const START_ORDER_DELAY = 0.5;
 const SPOT_NOISE = { across: 0.28, along: 0.18, counter: 0.12 };
 /** The ice cream's models (loaded with the kitchen's). */
 const ICE_MODELS = [CONE_MODEL, CONE_STACK_MODEL, ...Object.values(SWIRL_MODELS), ...Object.values(ICE_CREAM_MODELS)];
@@ -284,6 +289,12 @@ export default class RestaurantScene extends ThreeScene {
     private diningShot: CameraShot | null = null;
     /** The order bubble's wait before the station (a tap cuts it short), and the camera's move (a tap speeds it up). */
     private orderWait: gsap.core.Tween | null = null;
+    /** Testing a station (the debug panel): orders of its own, no customer (startTest). */
+    private testing = false;
+    /** The counter's first customer of the day, at the window, waiting for the player's tap to order (null: none). */
+    private awaitingFirst: Customer | null = null;
+    /** When this dish's cooking started (this.time): the speed bonus's clock. */
+    private cookStart = 0;
     private viewMove: gsap.core.Tween | null = null;
     /** The hand's coming at the hint from above (the dining room) rather than from below (the benches). */
     private hintAbove = false;
@@ -430,6 +441,13 @@ export default class RestaurantScene extends ThreeScene {
             this.overview = !this.overview;
             if (!this.overview) this.fitCamera();
         });
+        // Testing a station: straight to it with an order of its own (no customer, nothing paid); serve it and the next
+        // one comes. Each only if this area has the station.
+        panel.button('TEST: BURGER STATION', () => this.startTest('burger'));
+        panel.button('TEST: ICE CREAM STATION', () => this.startTest('iceCream'));
+        panel.button('TEST: PIZZA STATION', () => this.startTest('pizza'));
+        panel.button('TEST: SUNDAE STATION', () => this.startTest('sundae'));
+        panel.button('TEST: STOP (back to the day)', () => this.stopTest());
         panel.button('END DAY', () => {
             if (this.phase !== 'dayEnd' && this.kitchen) this.endDay();
         });
@@ -447,7 +465,8 @@ export default class RestaurantScene extends ThreeScene {
         this.pays = [];
         const day = RestaurantSave.day;
         this.hud.setDay(day, this.results, this.orders.length);
-        this.hud.banner(`DAY ${day + 1}`, `${this.orders.length} customers today`);
+        this.hud.banner(`DAY ${day + 1}`, `Serve ${this.orders.length} customers right: ${'★'.repeat(Math.min(3, this.orders.length))}`);
+        Track.event('day', day + 1, 'start');
         this.phase = 'waiting';
         this.moveView(0);
         if (this.seated) {
@@ -461,9 +480,8 @@ export default class RestaurantScene extends ThreeScene {
             first.root.position.copy(this.spotFor(first, 0));
             first.root.rotation.y = Math.PI;
             void first.walkTo([], Math.PI);
-            gsap.delayedCall(START_ORDER_DELAY, () => {
-                if (!this.gone && this.queue[0] === first && this.phase === 'waiting') this.takeOrder(first);
-            });
+            // They wait for the player's tap (the hand on them): that tap's the day's start, and gameplay's (Gameplay).
+            this.awaitingFirst = first;
         }
         // The rest come in from the street, one after another at uneven gaps, and line up.
         let at = ARRIVE.first[0] + Math.random() * (ARRIVE.first[1] - ARRIVE.first[0]);
@@ -552,7 +570,12 @@ export default class RestaurantScene extends ThreeScene {
         // An ice cream's made at the machine, a pizza at the oven (the camera turns to it); the rest at the bench.
         this.making = this.order!.iceCream && this.iceCream ? 'iceCream' : this.order!.pizza && this.pizza ? 'pizza' : this.order!.sundae && this.sundae ? 'sundae' : 'burger';
         this.hud.hideOrder();
-        this.hud.showTicket(this.order!);
+        this.cookStart = this.time;
+        // New to the player (from day 2: day 1 is all new): NEW! on the ticket, once.
+        const keys = this.freshKeys(this.order!);
+        const fresh = RestaurantSave.day > 0 ? keys.filter((k) => !RestaurantSave.hasSeen(k)) : [];
+        RestaurantSave.markSeen(keys);
+        this.hud.showTicket(this.order!, fresh);
         this.hud.tickTicket([]);
         this.moveView(1, () => this.hud.setButtons(true));
         RestaurantAudio.play('whoosh');
@@ -593,6 +616,102 @@ export default class RestaurantScene extends ThreeScene {
         this.hud.tickTicket([]);
     }
 
+    /**
+     * A right dish served within its time (settings.json speed: the dish's own and per topping, from when cooking
+     * started): the bonus coins; else 0.
+     */
+    private speedBonus(right: boolean): number {
+        const speed = SETTINGS.speed;
+        const order = this.order;
+        if (!right || !speed || !order) return 0;
+        const items = order.iceCream ? 0
+            : order.pizza ? order.pizza.length
+                : order.sundae ? order.sundae.scoops.length - 1 + (order.sundae.sauce ? 1 : 0) + order.sundae.toppings.length
+                    : order.toppings.length;
+        const base = order.iceCream ? speed.iceCream : order.pizza ? speed.pizza : order.sundae ? speed.sundae : speed.burger;
+        return this.time - this.cookStart <= base + items * speed.perItem ? speed.bonus : 0;
+    }
+
+    /** What an order's ticket shows that can be new to the player: its toppings, its pizza's, its ice cream, a sundae. */
+    private freshKeys(order: Order): string[] {
+        if (order.iceCream) return ['cone', order.iceCream];
+        if (order.pizza) return ['pizza', ...order.pizza];
+        if (order.sundae) return ['sundae'];
+        return [...order.toppings];
+    }
+
+    // ---------------------------------------------------------------- testing a station (the debug panel)
+
+    /**
+     * A station tested on its own: an order for it (this stage's ingredients), the camera on it, cooking at once — no
+     * customer, no pay. The day's customers wait meanwhile (taps on them only count when the kitchen's free).
+     */
+    private startTest(kind: 'burger' | 'iceCream' | 'pizza' | 'sundae'): void {
+        if (!this.kitchen || this.phase === 'dayEnd') return;
+        const there = { burger: true, iceCream: Boolean(this.iceCream), pizza: Boolean(this.pizza), sundae: Boolean(this.sundae) }[kind];
+        if (!there) {
+            this.hud.showHint(`No ${kind === 'iceCream' ? 'ice cream' : kind} station in this area`);
+            return;
+        }
+        if (this.phase === 'cooking') this.trash();
+        this.orderWait?.kill();
+        this.hud.setReady(null);
+        const stage = stageSettings(RestaurantSave.stage);
+        const pick = <T>(list: readonly T[]): T => list[Math.floor(Math.random() * list.length)];
+        const order: Order = kind === 'iceCream' ? { toppings: [], iceCream: pick(stage.iceCream?.flavors ?? FLAVORS) }
+            : kind === 'pizza' ? { toppings: [], pizza: randomPizza(stage.pizza?.maxToppings ?? 2, stage.pizza?.toppings ?? BASIC_PIZZA_TOPPINGS) }
+                : kind === 'sundae' ? { toppings: [], sundae: randomSundae(stage.sundae ?? {}) }
+                    : randomOrder(daySettings(RestaurantSave.day).maxToppings, stage.toppings ?? BASIC_TOPPINGS);
+        this.testing = true;
+        this.order = order;
+        this.phase = 'ordering';
+        this.startCooking();
+    }
+
+    /** The test dish served: right or not (a word for it), cleared, and the next test order at the same station. */
+    private serveTest(): void {
+        const order = this.order;
+        const kitchen = this.kitchen;
+        if (!order || !kitchen || this.phase !== 'cooking') return;
+        let right: boolean;
+        if (this.making === 'iceCream') {
+            if (!this.iceCream?.ready) return;
+            right = this.iceCream.flavor === order.iceCream;
+        } else if (this.making === 'pizza') {
+            if (!this.pizza?.ready || !order.pizza) return;
+            right = pizzaMatches(order.pizza, this.pizza.layers, this.pizza.baked);
+        } else if (this.making === 'sundae') {
+            const made = this.sundae?.made;
+            if (!order.sundae || !made || !this.sundae?.complete(order.sundae)) return;
+            right = sundaeMatches(order.sundae, made);
+        } else {
+            if (!kitchen.dishReady) return;
+            right = matches(order, kitchen.onPlate);
+        }
+        RestaurantAudio.play(right ? 'happy' : 'sad');
+        this.hud.showHint(right ? 'Right! Next test order...' : 'Not the order! Next one...', 1.4);
+        this.trash();
+        this.hud.setReady(null);
+        const kind = this.making;
+        gsap.delayedCall(0.9, () => {
+            if (!this.gone && this.testing) this.startTest(kind);
+        });
+    }
+
+    /** Back to the day: the test dish cleared, the camera back on the customers. */
+    private stopTest(): void {
+        if (!this.testing) return;
+        this.testing = false;
+        if (this.phase === 'cooking') this.trash();
+        this.order = null;
+        this.phase = 'waiting';
+        this.hud.setButtons(false);
+        this.hud.hideTicket();
+        this.hud.setReady(null);
+        this.hud.showHint(null);
+        this.moveView(0);
+    }
+
     /** The trash can in the room (a prop named trash / bin), if any. */
     private trashCan(): THREE.Object3D | null {
         let found: THREE.Object3D | null = null;
@@ -603,6 +722,10 @@ export default class RestaurantScene extends ThreeScene {
     }
 
     private serve(): void {
+        if (this.testing) {
+            this.serveTest();
+            return;
+        }
         const kitchen = this.kitchen;
         if (this.phase !== 'cooking' || !kitchen || !this.order || !this.customer) return;
         // (Seated: this.customer is the diner being served.)
@@ -738,7 +861,7 @@ export default class RestaurantScene extends ThreeScene {
             this.hud.showHint(why[result] ?? null);
             return;
         }
-        RestaurantAudio.play('pick', 0.9 + Math.random() * 0.2);
+        RestaurantAudio.play(target.kind === 'tub' ? 'scoop' : 'pick', 0.9 + Math.random() * 0.2);
         gsap.delayedCall(0.33, () => {
             if (this.phase !== 'cooking' || this.making !== 'sundae' || !this.order?.sundae) return;
             RestaurantAudio.play('drop');
@@ -803,6 +926,10 @@ export default class RestaurantScene extends ThreeScene {
     /** The customer at the counter takes their dish: happy (and pays) or not, then leaves. */
     private react(right: boolean, pay: number): void {
         const customer = this.customer!;
+        const bonus = this.speedBonus(right);
+        pay += bonus;
+        Track.event('dish', this.making, bonus ? 'fast' : right ? 'complete' : 'fail');
+        if (!this.testing) Track.event('dish', this.making, bonus ? 'fast' : right ? 'complete' : 'fail');
         this.results.push(right);
         this.hud.setDay(RestaurantSave.day, this.results, this.orders.length);
         if (right) {
@@ -818,7 +945,8 @@ export default class RestaurantScene extends ThreeScene {
             customer.grumble();
             RestaurantAudio.play('sad');
         }
-        this.hud.react(right, this.headOnScreen() ?? { x: 0, y: 0 }, pay);
+        this.hud.react(bonus ? 'fast' : right ? 'right' : 'wrong', this.headOnScreen() ?? { x: 0, y: 0 }, pay, bonus);
+        Track.event('tutorial', 'first-serve', 'complete', true);
         gsap.delayedCall(REACT_SECONDS, () => this.customerLeaves());
     }
 
@@ -868,6 +996,8 @@ export default class RestaurantScene extends ThreeScene {
 
     private endDay(): void {
         this.phase = 'dayEnd';
+        Track.event('day', RestaurantSave.day + 1, 'complete');
+        if (this.results.length && this.results.every(Boolean)) Track.event('day', RestaurantSave.day + 1, 'perfect');
         this.hud.setButtons(false);
         this.hud.hideTicket();
         this.hud.hideOrder();
@@ -877,7 +1007,18 @@ export default class RestaurantScene extends ThreeScene {
         const from = { stage: RestaurantSave.stage, progress: RestaurantSave.progress };
         RestaurantSave.endDay(this.dayCoins);
         RestaurantAudio.play('day');
-        this.hud.showDayEnd(day, happy, this.orders.length, this.pays, from, () => this.onDayDone());
+        // The button names where the day goes on to (the save's place now: the phone orders after a pizza day).
+        const next = RestaurantSave.place === 'phone' ? 'PHONE ORDERS' : RestaurantSave.place === 'delivery' ? 'DELIVERY' : 'SUPERMARKET';
+        // ×2 TIPS (a rewarded ad): only once the first days are behind them (ADS_FROM_DAY), with tips to double.
+        const tips = this.pays.reduce((sum, pay) => sum + pay, 0);
+        const doubleTips = PlatformHandler.ENABLE_VIDEO_ADS && day + 1 > ADS_AFTER_DAY && tips > 0 ? async () => {
+            Track.event('reward', 'double-tips', 'interact');
+            const watched = await PlatformHandler.instance.platform.showRewardedVideo('restaurant-double-tips').catch(() => false);
+            if (watched) RestaurantSave.addProgress(tips);
+            return watched;
+        } : undefined;
+        if (doubleTips) Track.event('reward', 'double-tips', 'visible');
+        this.hud.showDayEnd(day, happy, this.orders.length, this.pays, from, () => this.onDayDone(), next, doubleTips);
     }
 
     // ---------------------------------------------------------------- seated service
@@ -983,6 +1124,7 @@ export default class RestaurantScene extends ThreeScene {
     }
 
     private giveUp(diner: Diner): void {
+        Track.event('customer', 'left', 'fail');
         const k = this.waitingForSeat.indexOf(diner);
         if (k >= 0) this.waitingForSeat.splice(k, 1);
         diner.patience?.bar.dispose();
@@ -993,7 +1135,7 @@ export default class RestaurantScene extends ThreeScene {
         diner.customer.grumble();
         RestaurantAudio.play('sad');
         // (Seen only from the dining room: at the bench, just the sound and the day's tally.)
-        if (this.view.t < 0.5) this.hud.react(false, this.worldToScreen(diner.customer.headTop) ?? { x: 0, y: 0 }, 0);
+        if (this.view.t < 0.5) this.hud.react('wrong', this.worldToScreen(diner.customer.headTop) ?? { x: 0, y: 0 }, 0);
         gsap.delayedCall(0.6, () => {
             if (this.gone) return;
             void diner.customer.walkTo(this.routeVia(diner.customer, [this.path.outside, this.path.start])).then(() => {
@@ -1084,6 +1226,8 @@ export default class RestaurantScene extends ThreeScene {
 
     /** Their plate's on the table: happy (and pay) or not; then they eat it, or (wrong) just leave. */
     private reactSeated(diner: Diner, right: boolean, pay: number): void {
+        const bonus = this.speedBonus(right);
+        pay += bonus;
         this.results.push(right);
         this.hud.setDay(RestaurantSave.day, this.results, this.orders.length);
         if (right) {
@@ -1099,7 +1243,7 @@ export default class RestaurantScene extends ThreeScene {
             diner.customer.grumble();
             RestaurantAudio.play('sad');
         }
-        this.hud.react(right, this.worldToScreen(diner.customer.headTop) ?? { x: 0, y: 0 }, pay);
+        this.hud.react(bonus ? 'fast' : right ? 'right' : 'wrong', this.worldToScreen(diner.customer.headTop) ?? { x: 0, y: 0 }, pay, bonus);
         // The kitchen's free for the next order straight away.
         this.diner = null;
         this.customer = null;
@@ -1115,10 +1259,15 @@ export default class RestaurantScene extends ThreeScene {
         const pieces = plate ? [...Kitchen.foodOn(plate)].reverse() : [];
         const each = SEATED.eatSeconds / Math.max(1, pieces.length);
         pieces.forEach((piece, i) => {
-            gsap.to(piece.scale, { x: 0.001, y: 0.001, z: 0.001, duration: each * 0.6, delay: 0.6 + i * each, ease: 'power1.in', onComplete: () => { piece.removeFromParent(); } });
+            gsap.to(piece.scale, {
+                x: 0.001, y: 0.001, z: 0.001, duration: each * 0.6, delay: 0.6 + i * each, ease: 'power1.in',
+                onStart: () => RestaurantAudio.play('munch', 0.9 + Math.random() * 0.25),
+                onComplete: () => { piece.removeFromParent(); },
+            });
         });
         gsap.delayedCall(0.6 + SEATED.eatSeconds + 0.4, () => {
-            // Eaten: a dirty plate left (to clear).
+            // Eaten (a satisfied burp): a dirty plate left (to clear).
+            if (!this.gone) RestaurantAudio.play('burp', 0.95 + Math.random() * 0.15);
             if (plate && !this.gone) this.makeDirty(plate);
             this.dinerLeaves(diner);
         });
@@ -1181,7 +1330,8 @@ export default class RestaurantScene extends ThreeScene {
 
     /** The day's done once everyone's been served, has gone, and every plate's cleared. */
     private seatedDayDone(): boolean {
-        return this.results.length >= this.orders.length && this.diners.length === 0 && this.seats.every((s) => !s.plate);
+        // (Customers on their way out don't hold it up: once the last plate's cleared, the day's done.)
+        return this.results.length >= this.orders.length && this.diners.every((d) => d.state === 'leaving') && this.seats.every((s) => !s.plate);
     }
 
     /**
@@ -1258,6 +1408,13 @@ export default class RestaurantScene extends ThreeScene {
         // A HUD button's press isn't a tap on the bench under it.
         if (uiPress.taken) {
             uiPress.taken = false;
+            return;
+        }
+        // The counter's first customer, waiting for the player: a tap (anywhere) takes their order.
+        if (this.awaitingFirst && this.phase === 'waiting') {
+            const first = this.awaitingFirst;
+            this.awaitingFirst = null;
+            if (this.queue[0] === first) this.takeOrder(first);
             return;
         }
         // Tapping while the order shows (or the camera's on its way to the station): get there faster.
@@ -1374,7 +1531,7 @@ export default class RestaurantScene extends ThreeScene {
             this.hud.showHint(why[result] ?? null);
             return;
         }
-        RestaurantAudio.play(kind === 'cones' ? 'pick' : 'sizzle', 0.9 + Math.random() * 0.2);
+        RestaurantAudio.play(kind === 'cones' ? 'pick' : 'machine', 0.9 + Math.random() * 0.2);
         gsap.delayedCall(kind === 'cones' ? 0.33 : 1.2, () => {
             if (this.phase !== 'cooking' || this.making !== 'iceCream') return;
             RestaurantAudio.play('drop');
@@ -1460,12 +1617,23 @@ export default class RestaurantScene extends ThreeScene {
         this.hintAbove = false;
         // A finished dish has its own arrow (the ready badge's, bouncing over it): no hand on top of it.
         if (this.phase === 'cooking' && this.readyDishPoint()) return null;
+        // The counter's first customer waiting for a tap: the hand on them (from above).
+        if (this.awaitingFirst && this.phase === 'waiting') {
+            this.hintAbove = true;
+            return this.awaitingFirst.headTop;
+        }
         if (this.phase === 'cooking' && this.making === 'iceCream') return this.iceCreamHint();
         if (this.phase === 'cooking' && this.making === 'pizza') return this.pizzaHint();
         if (this.phase === 'cooking' && this.making === 'sundae') return this.sundaeHint();
         if (this.seated && this.phase === 'waiting' && this.view.t < 0.1) {
             // The tutorial hand: only a stage's first day (the rest of the time the in-game helpers do it — the "!" over
             // a customer, the arrow over a dirty plate). From above, pointing down at the head / the plate.
+            // Everyone's been served: the hand on what's left to clear, every day (the day ends when it's done).
+            const leftover = this.results.length >= this.orders.length ? this.seats.find((s) => this.toClear(s)) : undefined;
+            if (leftover) {
+                this.hintAbove = true;
+                return leftover.plate!.position.clone().add(new THREE.Vector3(0, 0.1, 0));
+            }
             if (RestaurantSave.stageDay !== 0) return null;
             this.hintAbove = true;
             const ready = this.diners.find((d) => d.state === 'ready');
@@ -1631,6 +1799,8 @@ export default class RestaurantScene extends ThreeScene {
             else this.hud.setCooking(this.phase === 'cooking' ? this.kitchen.cookProgress : null, this.worldToScreen(this.kitchen.panPoint));
             // A cooked patty in the pan (making a burger): the arrow over it, every time — take it.
             const pattyDone = this.phase === 'cooking' && this.making === 'burger' && this.kitchen.pattyReady && this.view.t > 0.9;
+            RestaurantAudio.loop('sizzle', this.phase !== 'dayEnd' && !this.kitchen.panEmpty);
+            RestaurantAudio.loop('oven', Boolean(this.pizza?.inOven));
             this.hud.setPanReady(pattyDone ? this.worldToScreen(this.kitchen.panPoint) : null);
             // A finished dish: it bounces, a check over it, SERVE pulses (the first time: a word on it too).
             const ice = this.making === 'iceCream' ? this.iceCream : null;
@@ -1642,7 +1812,8 @@ export default class RestaurantScene extends ThreeScene {
                 else if (pizza) pizza.setReadyPulse(ready);
                 else if (sundae) sundae.setReadyPulse(ready);
                 else this.kitchen.setReadyPulse(ready);
-                if (ready) RestaurantAudio.play('coins', 1.3);
+                // (A pizza out of the oven: its ding.)
+                if (ready) RestaurantAudio.play(pizza ? 'ding' : 'coins', pizza ? 1 : 1.3);
             }
             this.hud.setReady(ready ? this.worldToScreen(ice ? ice.dishPoint : pizza ? pizza.dishPoint : sundae ? sundae.dishPoint : this.kitchen.platePoint) : null);
             const hint = this.nextHint();
@@ -1663,6 +1834,7 @@ export default class RestaurantScene extends ThreeScene {
     }
 
     public destroy(): void {
+        RestaurantAudio.stopLoops();
         this.gone = true;
         window.removeEventListener('pointerdown', this.onPointerDown);
         DebugOverlay.instance.removePanel('restaurant.debug');

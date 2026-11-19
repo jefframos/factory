@@ -2,11 +2,18 @@
   "days": [
     {
       "customers": 3,
-      "maxToppings": 1
+      "maxToppings": 1,
+      "toppings": [
+        "cheese",
+        "lettuce"
+      ]
     },
     {
       "customers": 3,
-      "maxToppings": 2
+      "maxToppings": 2,
+      "introduce": [
+        "tomato"
+      ]
     },
     {
       "customers": 4,
@@ -198,6 +205,7 @@
       }
     }
   ],
+  "carryOver": 0,
   "cookSeconds": 2.2,
   "bakeSeconds": 3,
   "pay": {
@@ -639,5 +647,13 @@
         }
       ]
     }
+  },
+  "speed": {
+    "bonus": 3,
+    "burger": 8,
+    "pizza": 11,
+    "iceCream": 6,
+    "sundae": 9,
+    "perItem": 1.6
   }
 }

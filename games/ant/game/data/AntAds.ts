@@ -31,6 +31,22 @@ export const AntAds = {
         }
     },
 
+    /**
+     * Going to the main screen from a level (the win card's MENU, the pause popup's HOME), the screen covered: a
+     * commercial break once breaks have started (ADS.from) — the platform still caps how often one really plays. It
+     * counts as the next level start's too (that one doesn't come straight after).
+     */
+    async menu(): Promise<void> {
+        if (AntSave.level < ADS.from) return;
+        sinceBreak = 0;
+        AntEvents.playing(false);
+        try {
+            await PlatformHandler.instance.platform?.showCommercialBreak();
+        } catch {
+            // No ad: on we go.
+        }
+    },
+
     /** A rewarded video (`reward`: what it's for, for the platform); true if it was watched through. */
     async rewarded(reward: string): Promise<boolean> {
         AntEvents.playing(false);

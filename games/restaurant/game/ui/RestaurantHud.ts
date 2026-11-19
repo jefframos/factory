@@ -10,8 +10,8 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
-import { COIN_BAR, DARK, WARM, TexBar, dot, fillCoinBar, framePlane, glossyButton, iconSprite, label, pill, plainLabel, shape, sizePill, tappable } from './UiParts';
-import { foodIcon, modelIcon, pizzaIcon, sauceIcon, scoopIcon, sundaeIcon, sundaeToppingIcon } from './Icons';
+import { COIN_BAR, DARK, WARM, TexBar, dot, fillCoinBar, panel, framePlane, glossyButton, iconSprite, label, pill, plainLabel, shape, sizePill, tappable } from './UiParts';
+import { foodIcon, modelIcon, pizzaIcon, pizzaLayerIcon, sauceIcon, scoopIcon, sundaeIcon, sundaeToppingIcon } from './Icons';
 import { DayEnd } from './DayEnd';
 import { StageBar } from './StageBar';
 import { CONE_MODEL, ICE_CREAM_MODELS, Order, PART_MODELS, PIZZA_LAYER_MODELS, PIZZA_OVEN_MODEL, PIZZA_SOURCE_MODELS, Part, SWIRL_MODELS, pizzaRecipe } from '../data/Recipes';
@@ -21,10 +21,14 @@ const PREVIEW = 'preview';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
 
 const MARGIN = 28;
-/** Room kept at the top right for the mute button (index.ts: always there). */
-const MUTE_ROOM = 84;
+/** How far down the HUD's top rows reach (the coins and day, then the dots and the upgrade bar): nothing goes over them. */
+const TOP_ROWS = 120;
+/** Room at the top right for the mute button (index.ts: always there), and the coins' size there. */
+const MUTE_ROOM = 100;
+const COINS_SCALE = 0.8;
 const BUBBLE = { icon: 110, small: 74, gap: 10, pad: 22, lift: 40 };
-const TICKET = { icon: 70, gap: 12, pad: 16, y: 120 };
+/** The ticket: its pictures, the gaps, its padding, how far down (under the day's dots and the upgrade bar: never over them). */
+const TICKET = { icon: 70, gap: 12, pad: 16, y: 168 };
 const BUTTONS = { width: 230, height: 96, bottom: 90, apart: 140 };
 const COOK_BAR = { width: 130, height: 28 };
 
@@ -90,7 +94,10 @@ export class RestaurantHud extends PIXI.Container {
     public reposition(): void {
         const screen = this.screen;
         if (!screen) return;
-        this.coins.position.set(screen.topLeft.x + MARGIN + COIN_BAR.icon / 2, screen.topLeft.y + MARGIN + 22);
+        // The coins at the top right, smaller, just left of the mute button (index.ts's: MUTE_ROOM); the upgrade bar at the
+        // top left; the day in the middle.
+        this.coins.scale.set(COINS_SCALE);
+        this.coins.position.set(screen.topLeft.x + screen.width - MUTE_ROOM - (COIN_BAR.width + COIN_BAR.icon / 2) * COINS_SCALE, screen.topLeft.y + MARGIN + 22);
         this.dayText.position.set(screen.center.x, screen.topLeft.y + MARGIN + 18);
         this.pips.position.set(screen.center.x, screen.topLeft.y + MARGIN + 62);
         this.ticket.position.set(screen.center.x, screen.topLeft.y + TICKET.y);
@@ -101,7 +108,7 @@ export class RestaurantHud extends PIXI.Container {
         this.hint.position.set(screen.center.x, bottom - BUTTONS.height / 2 - 40);
         this.trashButton.position.set(screen.center.x - BUTTONS.apart - 10, bottom);
         this.serveButton.position.set(screen.center.x + BUTTONS.apart - 30, bottom);
-        this.stageBar.position.set(screen.topLeft.x + screen.width - MARGIN - 100 - MUTE_ROOM, screen.topLeft.y + MARGIN + 34);
+        this.stageBar.position.set(screen.topLeft.x + MARGIN + 18 + 100, screen.topLeft.y + MARGIN + 34);
         this.card?.reposition();
     }
 
@@ -116,7 +123,7 @@ export class RestaurantHud extends PIXI.Container {
         const state = { value: this.shownCoins };
         this.shownCoins = amount;
         gsap.to(state, { value: amount, duration: 0.6, ease: 'power1.out', onUpdate: () => { this.coinText.text = String(Math.round(state.value)); } });
-        gsap.fromTo(this.coins.scale, { x: 1.15, y: 1.15 }, { x: 1, y: 1, duration: 0.4, ease: 'back.out(3)' });
+        gsap.fromTo(this.coins.scale, { x: COINS_SCALE * 1.15, y: COINS_SCALE * 1.15 }, { x: COINS_SCALE, y: COINS_SCALE, duration: 0.4, ease: 'back.out(3)' });
     }
 
     /** "DAY n" and a pip per customer of the day: done ones green (served right) or red, the current one bigger. */
@@ -151,7 +158,7 @@ export class RestaurantHud extends PIXI.Container {
                         : foodIcon('burger', big),
         ];
         for (const topping of order.toppings) items.push(foodIcon(topping, small));
-        for (const topping of order.pizza ?? []) items.push(modelIcon(PIZZA_SOURCE_MODELS[topping], small));
+        for (const topping of order.pizza ?? []) items.push(pizzaLayerIcon(topping, small));
         for (const flavor of order.sundae?.scoops ?? []) items.push(scoopIcon(flavor, small));
         let x = 0;
         const widths = items.map((item, i) => (i === 0 ? big : small));
@@ -196,6 +203,9 @@ export class RestaurantHud extends PIXI.Container {
         // Kept on screen.
         const half = this.bubble.width / 2 + 10;
         local.x = Math.max(screen.topLeft.x + half, Math.min(screen.topLeft.x + screen.width - half, local.x));
+        // And under the top rows (the coins, the day's dots, the upgrade bar): its top no higher than TOP_ROWS.
+        const above = BUBBLE.icon + BUBBLE.pad + BUBBLE.lift;
+        local.y = Math.max(screen.topLeft.y + TOP_ROWS + above, local.y);
         this.bubble.position.copyFrom(local);
     }
 
@@ -207,7 +217,7 @@ export class RestaurantHud extends PIXI.Container {
      * The ticket at the top while cooking: the buns, the patty and the toppings, each ticked when it's on the plate (an ice
      * cream: the cone, then its flavour's swirl, ticked as they're done).
      */
-    public showTicket(order: Order): void {
+    public showTicket(order: Order, fresh: readonly string[] = []): void {
         this.ticket.removeChildren().forEach((c) => c.destroy({ children: true }));
         this.ticketMarks = new Map();
         // Each: its key (what tickTicket ticks), and its picture (a model's, or `icon`).
@@ -216,7 +226,7 @@ export class RestaurantHud extends PIXI.Container {
             ? [{ key: 'cone', model: CONE_MODEL }, { key: order.iceCream, model: SWIRL_MODELS[order.iceCream] }]
             : order.pizza
                 // A pizza: the pizza it should be (a picture, never ticked), its layers, then the oven (ticked when baked).
-                ? [{ key: PREVIEW, model: '' }, ...pizzaRecipe(order.pizza).map((layer) => ({ key: layer, model: layer === 'sauce' ? PIZZA_LAYER_MODELS.sauce : PIZZA_SOURCE_MODELS[layer] })), { key: 'baked', model: PIZZA_OVEN_MODEL }]
+                ? [{ key: PREVIEW, model: '' }, ...pizzaRecipe(order.pizza).map((layer) => ({ key: layer, model: '', icon: (size: number) => pizzaLayerIcon(layer, size) })), { key: 'baked', model: PIZZA_OVEN_MODEL }]
                 : sundae
                     // A sundae: its picture (never ticked), its cone or bowl, each scoop, its sauce, its toppings.
                     ? [
@@ -243,6 +253,18 @@ export class RestaurantHud extends PIXI.Container {
             mark.visible = false;
             this.ticketMarks.set(key, mark);
             this.ticket.addChild(mark);
+            // Something the player hasn't had before: a NEW! tag over it, pulsing.
+            if (fresh.includes(key)) {
+                const tag = new PIXI.Container();
+                const back = panel(64, 28, 12, WARM.tomato);
+                back.position.set(-32, -14);
+                const words = label(18);
+                words.text = 'NEW!';
+                tag.addChild(back, words);
+                tag.position.set(x, -TICKET.icon / 2 - 14);
+                this.ticket.addChild(tag);
+                gsap.to(tag.scale, { x: 1.15, y: 1.15, duration: 0.4, yoyo: true, repeat: 7, ease: 'sine.inOut' });
+            }
         });
         this.ticket.visible = true;
         this.reposition();
@@ -362,11 +384,25 @@ export class RestaurantHud extends PIXI.Container {
     // ---------------------------------------------------------------- reactions
 
     /** The customer's face over their head (happy or sad), and the coins it paid flying up. */
-    public react(happy: boolean, at: Point, coins: number): void {
+    /**
+     * The customer's face over them: green (sunglasses) for a right dish served fast, blue for right, red for wrong; the
+     * coins it paid flying up (a fast one: FAST! +bonus over the face).
+     */
+    public react(mood: 'fast' | 'right' | 'wrong', at: Point, coins: number, bonus = 0): void {
         const local = this.toLocal(new PIXI.Point(at.x, at.y));
-        const face = iconSprite(happy ? 'Emoji_Sample_1' : 'Emoji_Sample_2', 130);
+        const face = iconSprite(mood === 'fast' ? 'Emoji_Sample_6' : mood === 'right' ? 'Emoji_Sample_1' : 'Emoji_Sample_7', 130);
         face.position.set(local.x, local.y - 60);
         this.addChild(face);
+        if (mood === 'fast' && bonus > 0) {
+            const fast = label(40, 0x7dff8a);
+            fast.text = `FAST! +${bonus}`;
+            fast.position.set(local.x, local.y - 150);
+            this.addChild(fast);
+            gsap.timeline({ onComplete: () => fast.destroy() })
+                .from(fast.scale, { x: 0.2, y: 0.2, duration: 0.3, ease: 'back.out(3)' })
+                .to(fast, { y: fast.y - 50, duration: 1.2, ease: 'power1.out' }, 0)
+                .to(fast, { alpha: 0, duration: 0.3 }, 1.2);
+        }
         gsap.timeline({ onComplete: () => face.destroy() })
             .from(face.scale, { x: 0.1, y: 0.1, duration: 0.35, ease: 'back.out(3)' })
             .to(face, { y: face.y - 40, duration: 1.2, ease: 'power1.out' }, 0)
@@ -401,7 +437,7 @@ export class RestaurantHud extends PIXI.Container {
         this.addChild(holder);
         gsap.timeline({ onComplete: () => holder.destroy({ children: true }) })
             .from(holder.scale, { x: 0.3, y: 0.3, duration: 0.4, ease: 'back.out(2)' })
-            .to(holder, { alpha: 0, duration: 0.35 }, 1.6);
+            .to(holder, { alpha: 0, duration: 0.3 }, 1.25);
     }
 
     // ---------------------------------------------------------------- the day's end
@@ -419,9 +455,9 @@ export class RestaurantHud extends PIXI.Container {
     }
 
     /** The day's end (DayEnd: the chest of tips into the bar, then the supermarket). */
-    public showDayEnd(day: number, happy: number, total: number, pays: number[], from: { stage: number; progress: number }, onNext: () => void): void {
+    public showDayEnd(day: number, happy: number, total: number, pays: number[], from: { stage: number; progress: number }, onNext: () => void, next = 'SUPERMARKET', doubleTips?: () => Promise<boolean>): void {
         this.card?.destroy();
-        const card = new DayEnd(day, happy, total, pays, from, onNext);
+        const card = new DayEnd(day, happy, total, pays, from, onNext, next, doubleTips);
         this.addChild(card);
         this.card = card;
     }

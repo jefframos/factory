@@ -4,7 +4,7 @@
 // in the layout make it:
 //   - the freezer (id SUNDAE_FREEZER: any model as big as the freezer — the editor shows a freezer there too): the game
 //     hides it and builds a freezer in its place — a box at counter height, its top open, twice as wide as its tubs
-//     need: in one half the tubs of ice cream (rows of three: vanilla, chocolate, strawberry; mint, blueberry, mango), in
+//     need: in one half the tubs of ice cream (rows of two, three deep), in
 //     the other (the side nearer the bar) the sauces (chocolate, caramel: bowls of them) and the toppings (sprinkles,
 //     cherries, cookie sticks, waffles: bowls of them), in the same grid;
 //   - the bar (id SUNDAE_BAR: a kitchen table, say): the stack of cones, the stack of bowls and the spot the sundae's
@@ -27,7 +27,7 @@ export const MAX_SCOOPS = 3;
  * The freezer: sized round its tubs (not its stand-in prop: that's only where it stands) — each tub `tub` x the kit's
  * (1 x 1.6), turned its long side across, `gap` apart, `pad` from the rim; its body's height, the rim, the colours.
  */
-const FREEZER = { height: 0.92, rim: 0.12, rimHeight: 0.1, body: '#eaf6fb', trim: '#7bbfdc', well: '#2e3f4a', tub: 0.5, gap: 0.06, pad: 0.04, divider: 0.1 };
+const FREEZER = { height: 0.92, rim: 0.12, rimHeight: 0.1, body: '#eaf6fb', trim: '#7bbfdc', well: '#2e3f4a', tub: 0.5, gap: 0.06, pad: 0.04, divider: 0.1, columns: 2 };
 /** The sundae on the bar (x the kit's); the bar's things: each this big across; the rows' depth (x the bar's). */
 /** The sundae's size (x the kit's) — the stacks of cones and bowls on the bar are this size too. */
 const SUNDAE = { scale: 0.55 };
@@ -158,7 +158,8 @@ export class SundaeStation {
             ...this.stock.sauces.map((sauce) => ({ model: sauceBowlModel(sauce), target: { kind: 'sauce', sauce } as SundaeTarget })),
             ...this.stock.toppings.map((topping) => ({ model: toppingSourceModel(topping), target: { kind: 'topping', topping } as SundaeTarget })),
         ];
-        const columns = Math.min(3, Math.max(1, flavors.length, items.length));
+        // Two across in each half (rows as they need: six of each, three deep): the station near square, not a long strip.
+        const columns = Math.min(FREEZER.columns, Math.max(1, flavors.length, items.length));
         const rows = Math.max(1, Math.ceil(flavors.length / columns), Math.ceil(items.length / columns));
         // A tub turned its long side across: 1.6 x 1 (the kit's), at FREEZER.tub. The items sit in cells as big.
         const tubW = 1.6 * FREEZER.tub;

@@ -112,6 +112,11 @@ export default class AnimatorController {
             releaseObjectURL(resolvedUrl);
         }
     }
+    /** Registers a clip already loaded (the people's clips, from one file of many: farm/People.ts). */
+    registerClip(id: string, clip: THREE.AnimationClip): void {
+        this.animations[id] = clip;
+    }
+
     registerAnimatorBoard(initialState: string) {
         this.animatorBoard = new AnimatorBoard(initialState, this);
     }

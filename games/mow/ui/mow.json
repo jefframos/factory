@@ -8,7 +8,8 @@
     "max": 5
   },
   "cell": 0.5,
-  "playerScale": 0.75,
+  "playerScale": 1.6,
+  "bend": 0,
   "seed": 4242,
   "clippingPrice": 0.2,
   "chewSec": [
@@ -16,8 +17,16 @@
     1.6,
     3
   ],
-  "music": { "$comment": "The soundtrack (a file in raw-assets/audio, without its extension) and its volume (0-1); a level's soundSettings.music overrides it (the editor's Sounds).", "sound": "Somnia-Variation-3-relax-and-sleep-Reed-Mathis", "volume": 0.18 },
-  "cutSound": { "$comment": "The grass cut's sound (edited in the editor's Mowers tab): each cut picks a volume (0-1) and a pitch (1 = as recorded) between these two.", "volume": [0.07, 0.1], "pitch": [1.35, 1.7] },
+  "music": {
+    "$comment": "The soundtrack (a file in raw-assets/audio, without its extension) and its volume (0-1); a level's soundSettings.music overrides it (the editor's Sounds).",
+    "sound": "Somnia-Variation-3-relax-and-sleep-Reed-Mathis",
+    "volume": 0.18
+  },
+  "cutSound": {
+    "$comment": "The grass cut's sound (edited in the editor's Mowers tab): each cut picks a volume (0-1) and a pitch (1 = as recorded) between these two.",
+    "volume": [0.07, 0.1],
+    "pitch": [1.35, 1.7]
+  },
   "roadKit": {
     "$comment": "The road builder's pieces (core/roads/RoadGrid.ts): a level's road cells (levels/*.json roads) become these, each the first piece fitting its road neighbours (open: its sides as modelled, n = -Z), turned to fit; models: the piece, then its variants (the editor cycles them). tile: their size; elevation: their base; roadY: the asphalt (the cars' wheels).",
     "tile": 15,
@@ -32,7 +41,21 @@
     ]
   },
   "traffic": {
-    "models": ["town/library/city2-car-07/city2-car-07.glb", "town/library/city2-car-08/city2-car-08.glb", "town/library/city2-car-12/city2-car-12.glb", "town/library/city2-car-16/city2-car-16.glb", "town/library/city2-car-17/city2-car-17.glb", "town/library/city2-car-25/city2-car-25.glb", "town/library/city2-car-26/city2-car-26.glb", "town/library/city2-car-28/city2-car-28.glb", "town/library/city2-car-35/city2-car-35.glb", "town/library/city2-car-36/city2-car-36.glb", "town/library/city2-car-39/city2-car-39.glb", "town/library/city2-car-42/city2-car-42.glb", "town/library/city2-car-45/city2-car-45.glb"],
+    "models": [
+      "town/library/city2-car-07/city2-car-07.glb",
+      "town/library/city2-car-08/city2-car-08.glb",
+      "town/library/city2-car-12/city2-car-12.glb",
+      "town/library/city2-car-16/city2-car-16.glb",
+      "town/library/city2-car-17/city2-car-17.glb",
+      "town/library/city2-car-25/city2-car-25.glb",
+      "town/library/city2-car-26/city2-car-26.glb",
+      "town/library/city2-car-28/city2-car-28.glb",
+      "town/library/city2-car-35/city2-car-35.glb",
+      "town/library/city2-car-36/city2-car-36.glb",
+      "town/library/city2-car-39/city2-car-39.glb",
+      "town/library/city2-car-42/city2-car-42.glb",
+      "town/library/city2-car-45/city2-car-45.glb"
+    ],
     "speed": 4.4,
     "accel": 3.5,
     "brake": 10,
@@ -43,18 +66,18 @@
     "gap": 1.8
   },
   "grass": [
-    { "id": "grass", "name": "Grass", "height": 0.32, "color": "#5cbf4a", "cutColor": "#9bdc6e", "resistance": 1, "value": 1 },
-    { "id": "tallgrass", "name": "Tall Grass", "height": 0.7, "color": "#3e9b3c", "cutColor": "#8ccf62", "resistance": 2, "value": 2 },
-    { "id": "weeds", "name": "Thick Weeds", "height": 0.85, "color": "#557a2a", "cutColor": "#86b55a", "resistance": 3, "value": 4 },
-    { "id": "brambles", "name": "Brambles", "height": 0.95, "color": "#3f6b2a", "cutColor": "#7fa956", "resistance": 4, "value": 7 },
-    { "id": "thicket", "name": "Thicket", "height": 1.05, "color": "#2f5a26", "cutColor": "#729f4c", "resistance": 5, "value": 11 }
+    { "id": "grass", "name": "Grass", "height": 0.46, "color": "#74d24a", "cutColor": "#9bdc6e", "resistance": 1, "value": 1 },
+    { "id": "tallgrass", "name": "Tall Grass", "height": 0.82, "color": "#3fb84e", "cutColor": "#8ccf62", "resistance": 2, "value": 2 },
+    { "id": "weeds", "name": "Thick Weeds", "height": 0.95, "color": "#9cb83a", "cutColor": "#86b55a", "resistance": 3, "value": 4 },
+    { "id": "brambles", "name": "Brambles", "height": 1.05, "color": "#5f9a3a", "cutColor": "#7fa956", "resistance": 4, "value": 7 },
+    { "id": "thicket", "name": "Thicket", "height": 1.15, "color": "#2e8a5a", "cutColor": "#729f4c", "resistance": 5, "value": 11 }
   ],
   "tools": [
-    { "id": "scissors", "name": "Reel Mower", "width": 0.6, "speed": 3.4, "power": 1, "capacity": 100, "price": 0, "size": [0.63, 0.3, 0.3], "color": "#3f9a4a", "reel": true, "grip": { "forward": 0.59, "height": 0.95, "spread": 0.2, "hand": { "x": 0, "y": 63, "z": 0 }, "offset": { "x": 0, "y": 0.13, "z": 0 } }, "gap": 0.93 },
-    { "id": "widereel", "name": "Wide Reel Mower", "width": 1.1, "speed": 3.7, "power": 2, "capacity": 450, "price": 15, "size": [0.95, 0.34, 0.34], "color": "#e0473a", "reel": true, "grip": { "forward": 0.59, "height": 0.95, "spread": 0.2, "hand": { "x": 0, "y": 63, "z": 0 }, "offset": { "x": 0, "y": 0.13, "z": 0 } }, "gap": 0.93 },
-    { "id": "pushmower", "name": "Push Mower", "width": 1.6, "speed": 4.1, "power": 2, "capacity": 650, "price": 90, "size": [0.8, 0.45, 1.05], "color": "#2f8fff", "engine": true, "grip": { "forward": 0.62, "height": 0.95, "spread": 0.2, "hand": { "x": 0, "y": 84, "z": 0 }, "offset": { "x": 0, "y": 0.115, "z": 0 } }, "gap": 0.87 },
-    { "id": "poweredmower", "name": "Powered Mower", "width": 2.2, "speed": 4.5, "power": 3, "capacity": 1000, "price": 300, "size": [1.1, 0.52, 1.35], "color": "#f2b230", "engine": true, "grip": { "forward": 0.62, "height": 0.95, "spread": 0.2, "hand": { "x": 0, "y": 84, "z": 0 }, "offset": { "x": 0, "y": 0.115, "z": 0 } }, "gap": 0.87 },
-    { "id": "promower", "name": "Pro Mower", "width": 2.8, "speed": 4.9, "power": 3, "capacity": 1600, "price": 900, "size": [1.4, 0.6, 1.65], "color": "#a56bff", "engine": true, "grip": { "forward": 0.62, "height": 0.95, "spread": 0.2, "hand": { "x": 0, "y": 84, "z": 0 }, "offset": { "x": 0, "y": 0.115, "z": 0 } }, "gap": 0.87 },
+    { "id": "scissors", "name": "Reel Mower", "width": 0.6, "speed": 3.4, "power": 1, "capacity": 100, "price": 0, "size": [0.63, 0.46, 0.1], "color": "#3f9a4a", "reel": true, "grip": { "forward": 0.45, "height": 0.92, "spread": 0.26, "hand": { "x": 0, "y": 63, "z": 0 }, "offset": { "x": -0.045, "y": 0.045, "z": -0.11 } }, "gap": 0.7 },
+    { "id": "widereel", "name": "Wide Reel Mower", "width": 1.1, "speed": 3.7, "power": 2, "capacity": 450, "price": 15, "size": [0.95, 0.34, 0.34], "color": "#e0473a", "reel": true, "grip": {"forward": 0.45, "height": 0.92, "spread": 0.26, "hand": {"x": 0, "y": 63, "z": 0}, "offset": {"x": -0.045, "y": 0.045, "z": -0.11}}, "gap": 0.79 },
+    { "id": "pushmower", "name": "Push Mower", "width": 1.6, "speed": 4.1, "power": 2, "capacity": 650, "price": 90, "size": [0.8, 0.45, 1.05], "color": "#2f8fff", "engine": true, "grip": {"forward": 0.45, "height": 0.92, "spread": 0.26, "hand": {"x": 0, "y": 63, "z": 0}, "offset": {"x": -0.045, "y": 0.045, "z": -0.11}}, "gap": 0.7 },
+    { "id": "poweredmower", "name": "Powered Mower", "width": 2.2, "speed": 4.5, "power": 3, "capacity": 1000, "price": 300, "size": [1.1, 0.52, 1.35], "color": "#f2b230", "engine": true, "grip": {"forward": 0.45, "height": 0.92, "spread": 0.26, "hand": {"x": 0, "y": 63, "z": 0}, "offset": {"x": -0.045, "y": 0.045, "z": -0.11}}, "gap": 0.7 },
+    { "id": "promower", "name": "Pro Mower", "width": 2.8, "speed": 4.9, "power": 3, "capacity": 1600, "price": 900, "size": [1.4, 0.6, 1.65], "color": "#a56bff", "engine": true, "grip": {"forward": 0.45, "height": 0.92, "spread": 0.26, "hand": {"x": 0, "y": 63, "z": 0}, "offset": {"x": -0.045, "y": 0.045, "z": -0.11}}, "gap": 0.7 },
     { "id": "lawntractor", "name": "Lawn Tractor", "width": 3.4, "speed": 5.3, "power": 4, "capacity": 2300, "price": 5000, "size": [2.4, 1.1, 1.8], "color": "#4cc95a", "engine": true, "ride": true, "rideScale": 1.07, "tint": "#4cc95a" },
     { "id": "turbo", "name": "Turbo Mower", "width": 4.2, "speed": 5.8, "power": 5, "capacity": 3800, "price": 16500, "size": [2.9, 1.25, 2.1], "color": "#2f8fff", "engine": true, "ride": true, "rideScale": 1.18, "tint": "#2f8fff" },
     { "id": "mega", "name": "Mega Mower", "width": 5, "speed": 6.2, "power": 6, "capacity": 6000, "price": 36000, "size": [3.4, 1.4, 2.4], "color": "#e8352b", "engine": true, "ride": true, "rideScale": 1.3, "tint": "#e8352b" }

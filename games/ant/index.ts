@@ -138,7 +138,7 @@ export default class AntGame extends Game {
     private showGame(): void {
         this.atHome = false;
         const key = `ant-${this.scenes++}`;
-        this.sceneManager.register<AntScene>(key, AntScene, this, () => this.travel('HOME', '', false, () => this.showHome()));
+        this.sceneManager.register<AntScene>(key, AntScene, this, () => this.travel('HOME', '', false, () => this.showHome(), () => AntAds.menu()));
         this.sceneManager.changeScene(key);
         this.sceneManager.resize();
     }

@@ -21,6 +21,22 @@
         },
         {
           "alias": [
+            "burp.ogg"
+          ],
+          "src": [
+            "burp.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "car-engine.ogg"
+          ],
+          "src": [
+            "car-engine.mp3"
+          ]
+        },
+        {
+          "alias": [
             "collect-gem-1.ogg"
           ],
           "src": [
@@ -69,10 +85,90 @@
         },
         {
           "alias": [
+            "icecream-machine.ogg"
+          ],
+          "src": [
+            "icecream-machine.mp3"
+          ]
+        },
+        {
+          "alias": [
             "lose.wav"
           ],
           "src": [
             "lose.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "munch-01.ogg"
+          ],
+          "src": [
+            "munch-01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "munch-02.ogg"
+          ],
+          "src": [
+            "munch-02.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "munch-13.ogg"
+          ],
+          "src": [
+            "munch-13.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "munch-18.ogg"
+          ],
+          "src": [
+            "munch-18.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "oven-ding.ogg"
+          ],
+          "src": [
+            "oven-ding.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "oven-hum.ogg"
+          ],
+          "src": [
+            "oven-hum.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "redding-rainbow.ogg"
+          ],
+          "src": [
+            "redding-rainbow.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "scoop.ogg"
+          ],
+          "src": [
+            "scoop.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "sizzle-loop.ogg"
+          ],
+          "src": [
+            "sizzle-loop.mp3"
           ]
         },
         {

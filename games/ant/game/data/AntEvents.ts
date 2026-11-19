@@ -101,8 +101,13 @@ export const AntEvents = {
         measure('booster', id, action);
     },
 
-    deco(id: string, action: 'buy' | 'use'): void {
+    deco(id: string, action: 'buy' | 'use' | 'video'): void {
         measure('deco', id, action);
+    },
+
+    /** A rewarded video for something outside a level (the main screen's coins): offered tap, watched through. */
+    reward(what: string, action: 'interact' | 'complete'): void {
+        measure('reward', what, action);
     },
 
     screen(name: string): void {

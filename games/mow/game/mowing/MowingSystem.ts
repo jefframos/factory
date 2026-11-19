@@ -18,7 +18,7 @@ import { MowProgress } from '../data/MowProgress';
 import type MowPlayer from '../player/MowPlayer';
 import type { MowEffects } from '../vfx/MowEffects';
 import { MowAudio } from '../audio/MowAudio';
-import { GrassDef, SecretDef, TreasureDef } from '../data/MowConfig';
+import { GrassDef, SecretDef, TreasureDef, farmTest } from '../data/MowConfig';
 import type { SecretPatches } from '../world/SecretPatches';
 
 /** Below this the stick / keys count as not moving. */
@@ -77,7 +77,17 @@ export class MowingSystem {
         }
         // A ridden mower cuts grass only from the tractor (in the sections not restored yet).
         if (MowProgress.tool.ride && !this.player.riding) return;
-        if (MowProgress.full) return;
+        // On foot (the mower parked): nothing is cut.
+        if (this.player.onFoot) return;
+        if (MowProgress.full) {
+            // A full bag cuts nothing, but (the farm test) grass tougher than the mower still stands in the way: the
+            // way to a place is mowed, not walked.
+            if (farmTest() && this.grass.toughAt(this.point.x, this.point.z, MowProgress.width / 2, MowProgress.power, this.canMow)) {
+                this.player.drag = WALL_DRAG;
+                this.wall = this.point;
+            }
+            return;
+        }
         const result = this.grass.cutCapsule(feet.x, feet.z, this.point.x, this.point.z, MowProgress.width / 2, MowProgress.power,
             // Sharp Blades: tough grass takes less contact to chew through.
             delta * MowProgress.chewRate, this.canMow);

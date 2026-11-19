@@ -7,9 +7,10 @@
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import SetupThree from 'core/scene/SetupThree';
+import { BendService } from 'core/services/BendService';
 import { kitchenModel, personModel } from '../world/Models';
-import { PART_MODELS, Part, PizzaTopping, ScoopFlavor, Sundae, SundaeSauce, SundaeTopping, pizzaRecipe } from '../data/Recipes';
-import { pizzaModel } from '../world/PizzaLook';
+import { PART_MODELS, PIZZA_LAYER_MODELS, PIZZA_SOURCE_MODELS, Part, PizzaLayer, PizzaTopping, ScoopFlavor, Sundae, SundaeSauce, SundaeTopping, pizzaRecipe } from '../data/Recipes';
+import { pizzaModel, pizzaPile } from '../world/PizzaLook';
 import { sauceBowlModel, scoopModel, sundaeModel, toppingSourceModel } from '../world/SundaeLook';
 
 /** The snapshots' size (px): drawn at up to twice their size on a big screen. */
@@ -43,7 +44,12 @@ function snapshot(object: THREE.Object3D, elevation: number, frame?: (box: THREE
     renderer.setRenderTarget(target);
     renderer.setClearColor(0x000000, 0);
     renderer.clear();
+    // No world bend in a picture: a material that's been in the bent kitchen curves down away from the bend's centre,
+    // here as anywhere — the pizza's sauce dipped under its dough halfway across (a straight line through it).
+    const bend = BendService.uniforms.uBendStrength.value;
+    BendService.uniforms.uBendStrength.value = 0;
     renderer.render(scene, camera);
+    BendService.uniforms.uBendStrength.value = bend;
     const pixels = new Uint8Array(SIZE * SIZE * 4);
     renderer.readRenderTargetPixels(target, 0, 0, SIZE, SIZE, pixels);
     renderer.setRenderTarget(previousTarget);
@@ -95,9 +101,6 @@ export function pizzaIcon(toppings: readonly PizzaTopping[], size: number): PIXI
             const plate = kitchenModel('plate');
             plate.scale.setScalar(2);
             const pizza = pizzaModel(pizzaRecipe(toppings));
-            // Each layer a hair over the one under it: the kit's sauce sits right on the dough's top, and in the
-            // picture's flat (orthographic) view they fought — the sauce showed on half the pizza.
-            pizza.children.forEach((layer, i) => (layer.position.y += i * 0.025));
             pizza.position.y = 0.08;
             dish.add(plate, pizza);
             texture = snapshot(dish, 1.0);
@@ -127,6 +130,16 @@ export function objectIcon(key: string, build: () => THREE.Object3D, size: numbe
     sprite.anchor.set(0.5);
     sprite.width = sprite.height = size;
     return sprite;
+}
+
+/**
+ * A pizza ingredient's picture, as the station shows it: the cheese and toppings as their plate piles (the ham: its
+ * cubes, not a whole leg), the dough a ball, the sauce its layer.
+ */
+export function pizzaLayerIcon(layer: PizzaLayer, size: number): PIXI.Sprite {
+    if (layer === 'dough') return modelIcon(PIZZA_SOURCE_MODELS.dough, size);
+    if (layer === 'sauce') return modelIcon(PIZZA_LAYER_MODELS.sauce, size);
+    return objectIcon(`pizzaPile:${layer}`, () => pizzaPile(layer), size, 0.95);
 }
 
 /** The picture of a sundae (the customer's order): built as the sundae bar builds it (world/SundaeLook.ts). */

@@ -369,6 +369,126 @@ export interface TownLevel {
     roads?: RoadCells;
     /** How loud and how far the traffic is heard. */
     soundSettings?: SoundSettings;
+    /** The farm test (the starter level only): upgrade pads fed with grass instead of the shop, and dens to find. */
+    farm?: FarmTestDef;
+    /**
+     * Where people and trucks come from (placed in the editor): rects on the ground they pop in at, as if arriving from
+     * somewhere, and pop out at again when they leave.
+     */
+    spawns?: SpawnArea[];
+}
+
+/** An upgrade pad: stand on it and the bag's grass pours in; paid in full, the upgrade happens there and then. */
+export interface UpgradePadDef {
+    kind: 'tool' | 'capacity';
+    x: number;
+    z: number;
+    /** Which way the stand is from the square: behind it (north) turned by this (radians; -1.5708: east). */
+    rotationY?: number;
+    /** Only there once this section is open. */
+    section?: string;
+}
+
+/** A den hidden in the grass (a mock for now): mowed up to its entrance, it opens. */
+export interface DenDef {
+    id: string;
+    name: string;
+    x: number;
+    z: number;
+    width: number;
+    depth: number;
+    /** The gap in its fence, on its south side, this wide. */
+    gate: number;
+}
+
+export interface FarmTestDef {
+    pads: UpgradePadDef[];
+    dens: DenDef[];
+    eggs: EggLoopDef;
+    levels: LevelsDef;
+    trucks?: TruckDockDef;
+    /**
+     * The trucks' path (placed in the editor: 🚚 Truck path point): they pop in at its first point, drive point to
+     * point, park at the last (by the dock) and drive it back. Without one: from a `trucks` spawn area over the roads.
+     */
+    truckPath?: { x: number; z: number }[];
+}
+
+/** A spawn area: a rect people (customers) or trucks pop in at, and out at when they leave. */
+export interface SpawnArea {
+    id: string;
+    kind: 'people' | 'trucks';
+    x: number;
+    z: number;
+    width: number;
+    depth: number;
+}
+
+/**
+ * The den's truck dock: its square inside the den (x, z: world), bought with money and a level like a hen. Once open,
+ * trucks come along the level's roads (pavements whose id starts with `road`) from a `trucks` spawn area, park at the
+ * road nearest the square, and ask for a big load of trays; handed over on the square, they pay `trayPrice` a tray
+ * (onto the den's cash square) and drive back.
+ */
+export interface TruckDockDef {
+    x: number;
+    z: number;
+    price: number;
+    level: number;
+    wants: [number, number];
+    trayPrice: number;
+    /** Seconds between one truck leaving and the next arriving. */
+    everySec: number;
+    /** Where the truck's cash lands (its own square and pile, world); unset: just north of the dock's square. */
+    cash?: { x: number; z: number };
+    /** The truck's model (under models/) and its length in the world. */
+    model: string;
+    length: number;
+    speed: number;
+}
+
+/**
+ * The chicken den's loop: hens lay eggs on the floor in front of their nests, the player carries them to the packing
+ * machine, which packs trays out onto its grid; trays carried to the SELL counter go to the customers, whose cash
+ * piles up on the cash square to be picked up — and buys more hens.
+ */
+export interface EggLoopDef {
+    /** Den goods (eggs and trays) the backpack holds. */
+    carryMax: number;
+    /** A hen lays an egg every this many seconds, onto its floor pile (at most floorMax eggs there). */
+    layEverySec: number;
+    floorMax: number;
+    /** The machine packs eggsPerTray eggs into a tray every packSec, holding at most machineMax eggs. */
+    eggsPerTray: number;
+    packSec: number;
+    machineMax: number;
+    /** The trays' grid by the machine: its slots (each holds two trays, one on the other). */
+    traySlots: number;
+    /** Cash per tray sold. */
+    trayPrice: number;
+    /** Trays a customer asks for (lowest, highest), how many wait at most, and how soon the next one comes. */
+    wants: [number, number];
+    queue: number;
+    customerEverySec: number;
+    /** The nests, in order: the first is free (it comes with the den), the others cost money and a level. */
+    hens: { price: number; level: number }[];
+}
+
+/** The player's level: XP needed for each next level (level 2, 3, ...; past the list each takes `growth` x more), and what gives XP. */
+export interface LevelsDef {
+    next: number[];
+    growth: number;
+    xp: {
+        /** One XP per this many clippings mowed. */
+        clippingsPerXp: number;
+        upgrade: number;
+        denFound: number;
+        areaRestored: number;
+        egg: number;
+        tray: number;
+        traySold: number;
+        hen: number;
+    };
 }
 
 /**
@@ -486,6 +606,11 @@ export interface MowDesign {
     playerScale?: number;
     clippingPrice: number;
     /**
+     * The world's curve (BendService: ground dropping away from the player, per unit squared). 0 = flat: anything
+     * bent is drawn somewhere other than where it's culled and where the labels are placed (they don't bend).
+     */
+    bend?: number;
+    /**
      * Seconds of contact to chew through one cell of grass n powers too tough (entry n - 1); grass more powers too
      * tough than it has entries can't be cut at all (a lock until a better mower).
      */
@@ -601,6 +726,12 @@ export const CITIES: CityDef[] = cities.cities;
 export const PRESTIGE_BONUS: number = cities.prestigeBonus;
 /** The localStorage key holding the city being played (MowProgress writes it on travel). */
 export const CURRENT_CITY_KEY = 'mow.city';
+
+/** The farm test's setup, when the level being played has one. */
+export const farmTest = (): FarmTestDef | undefined => TOWN.farm;
+
+/** Grass (clippings) an upgrade pad takes for something priced in money (the old shop's prices, at the selling rate). */
+export const grassFor = (price: number): number => Math.ceil(price / MOW.clippingPrice);
 
 const LEVELS: Record<string, unknown> = { tutorial, town, city2 };
 

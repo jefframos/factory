@@ -32,6 +32,19 @@ export function handleOf(tool: ToolDef): { grip: GripDef; gripZ: number } {
     return { grip, gripZ: grip.forward - pushAhead(tool) };
 }
 
+/**
+ * The handle for a player of size `scale`, the mower itself staying its own size (`size` is in world units: it isn't
+ * stretched with the player): the grip (forward, height and the hands' spread) grown with the player, how far ahead of
+ * the feet the mower's middle is (the gap grows with the player, the mower's half length doesn't), and the grip along
+ * the mower's frame.
+ */
+export function playerHandle(tool: ToolDef, scale: number): { grip: GripDef; gripZ: number; ahead: number } {
+    const base = toolGrip(tool);
+    const grip = { ...base, forward: base.forward * scale, height: base.height * scale, spread: base.spread * scale };
+    const ahead = (tool.gap ?? TOOL_GAP) * scale + tool.size[2] / 2;
+    return { grip, gripZ: grip.forward - ahead, ahead };
+}
+
 /** A reel mower: its barrel's blades, and the wheels' size against the barrel. */
 export const REEL_BLADES = 5;
 export const REEL_WHEEL = 1.35;

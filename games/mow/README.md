@@ -32,6 +32,58 @@ mower rolls on top of pavements and road tiles (`Town.surfaceAt()`), its handle 
 
 ---
 
+## Farm test (current experiment)
+
+The starter level (`levels/tutorial.json`) is the whole game: `levels/cities.json` lists only it (id `farmtest`, its
+own save). Backups of the originals: `levels/tutorial.backup.json`, `levels/cities.backup.json`, `ui/mow.backup.json`.
+Everything below is switched on by the level's `farm` block, so other levels are untouched.
+
+- **Upgrade pads, no shop** (`world/UpgradePads.ts`): a white-outlined square on the floor (what it upgrades, an up
+  arrow, the grass still needed, filling green as it's paid) with the next mower (or a sack: a bigger bag) turning on
+  a stand beside it. Standing on it pours the bag's grass in; paid in full, the upgrade happens at once. Prices are
+  the old shop's, in grass (`grassFor()`: price / `clippingPrice`); payments are saved per pad kind. The level has no
+  ATMs (the ATM code is still there). A pad visit counts as a sale (the first wardrobe still comes after one).
+- **The backpack** (`player/Backpack.ts`): a rucksack on the player's back (following the chest bone), turning from
+  canvas to grass green as the bag fills (pulsing when full), with what they carry stacked on it: the bag's grass as
+  bales (one per tenth of the bag), eggs, trays. Riding a mower, it sits on the
+  back of the mower. Grass poured into a pad flies out as bales.
+- **A bigger island**: after the Front Yard and the Starting Park, **The Wilds** (62 x 51) to the north, its grass
+  getting tougher the further out (`grassNoise` rings). With a full bag, grass tougher than the mower is a wall: the
+  way to a place has to be mowed.
+- **The Chicken Den** (`world/ChickenDen.ts`, tuned by `farm.eggs`): deep in the Wilds' west inside a hedge of
+  brambles; mowed up to its gate, it opens with its first hen. Inside, the player walks without the mower (parked at
+  the gate). Hens (the library's chick, `animals/animal-chick.glb`) lay eggs onto the floor in front of their nests
+  (a limit each); walk up to pick them up; drop them on the packing machine's dashed square; it packs trays out onto
+  its grid; pick the trays up; customers (`farm/Customers.ts`) queue outside the west fence — stand on SELL to hand
+  them trays; their cash lands on the cash square; pick it up; buy the next hen on its nest's square (money and a
+  level).
+- **Trucks** (`farm.trucks`, `farm/Trucks.ts`, `farm/Roads.ts`): the den's truck dock (a square inside the den by its
+  east fence) is bought like a hen (money and a level). Then a truck pops in at a `trucks` spawn area, drives the
+  roads laid with the editor's road builder (🛣 Roads, B: the shared core/roads/RoadGrid tiles, as in the UFO and
+  restaurant games; no grass grows on them) over their network on the right-hand lane to the tile nearest the dock,
+  parks and asks for a big load of trays; handed over on the dock's square, it pays onto the den's cash square and
+  drives back on the other lane. (Without road tiles, pavements whose id starts with `road` are driven instead.)
+- **Spawn areas** (the level's `spawns`, placed in the editor: 🧍 People / 🚚 Truck spawn area): rects where the den's
+  customers and the trucks pop in, as if arriving from somewhere, and pop out when they leave.
+- **ATMs are back** (no shop: standing on one sells the bag for money), so grass is never stuck once the upgrades
+  are done. The ATM and the wardrobe have squares in the upgrade pads' style (SELL GRASS, WARDROBE).
+- **The sea** is the UFO game's (`builders/SeaWater.ts`): bright by the shore, deep blue out, drifting wave lines, foam.
+- **No world curve** (`bend` in ui/mow.json, 0): bent things were drawn away from where they're culled and where their
+  labels sit (popping at the edges, labels off their things).
+- **Levels** (`farm.levels`, the badge top-left: `ui/LevelBadge.ts`): XP from mowing, upgrades, areas, the den, eggs,
+  trays, sales and hens. Levels gate the hens (and, next, the cow area). The town meter (bottom-right) is hidden here.
+- **Animals**: the pizza game's pets pack is in the 3D library (`library3d/files/animals`) and the chick, cow and pig
+  in `raw-assets/models/animals{m}` (`farm/FarmModels.ts` loads them with their clips).
+  The customers are the restaurant game's people (`farm/People.ts`, `raw-assets/models/people{m}`: eight dressed in
+  random colours, with their walk / idle / run / sit clips), 1.6 x `playerScale` tall.
+- **The player is one of those people too** (everywhere, not just the farm test: `MowPlayer.loadCharacter()`), driven
+  by the same CharacterBody state graph with the people's clips (`AnimatorController.registerClip()`,
+  `CharacterBody.usePerson()`); the mower hold (arm IK, closed fingers) and the steering wheel use the same bones. The
+  wardrobe's colour dresses their top and its hat sits on their head (ui/hatfits.json, `HEAD` in MowPlayer); its faces
+  don't show on a person.
+
+The editor doesn't know the `farm` block: saving the level from the editor may drop it.
+
 ## Running it
 
 Set `GAME=mow` in `.env`, then from the repo root:
@@ -182,7 +234,7 @@ player has ever claimed something, a hand points at it too. Its reward waits in 
 the footer pays everything waiting (found treasures, and the bonus of an area with all its treasures found), the coins
 flying into the money. A secret chest pays at once instead, its coins flying from the player.
 
-**Grass size** — a section's `grassScale` (default 1; "Grass size ×" in the editor) multiplies its tufts' height and
+**Grass size** — a section's `grassScale` (default 1; "Grass size ×" in the editor) multiplies its blades' height and
 the contact needed to chew through grass too tough: under 1 an easier section, over 1 a harder one.
 Clippings per cell stay the same.
 
@@ -225,7 +277,8 @@ games/mow/
   game/
     scenes/MowScene.ts  the game: town, grass, player, stations, restoration, guide, mower sound, footsteps
     audio/              MowAudio (sound cues), EngineSound (the synthesised reel / electric / petrol mower voices and the cars), SpatialAudio (sound zones and cars placed in 3D)
-    world/GrassField.ts the vegetation: a cell grid over the sections, instanced tufts per 16x16 chunk, the mowed-lawn
+    world/GrassBlades.ts the blades: a clump of curved blades per cell (near / far detail), the wind and push shader
+    world/GrassField.ts the vegetation: a cell grid over the sections, instanced blade clumps per 16x16 chunk (only the uncut drawn), the mowed-lawn
                         ground shader (pixel-noise grass + a cut map), cut states, resistance
     world/Town.ts       builds levels/town.json: ground, island (deck, sides, sea, fence), pavements, props, ATMs,
                         fences, flowers; walkability, "no grass here", surfaceAt (ground height / kind)

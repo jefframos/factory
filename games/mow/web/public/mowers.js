@@ -1,5 +1,7 @@
 // Mowers tab: the walked tools (ui/mow.json `tools` without `ride`: the reel mower and the push mowers), to fit the
-// hands. The preview builds each one as MowPlayer.ts does — the placeholder mower in the tool's size and colour
+// hands. The player is the game's: a person (the restaurant's people, farm/People.ts: person-01 with the people's idle /
+// walk / run clips) at the game's size (ui/mow.json `playerScale`), the mower at its own size, the grip, the gap and the
+// hands' offset grown with the player — as MowPlayer.ts / MowerModel.ts playerHandle() do. The preview builds each one as MowPlayer.ts does — the placeholder mower in the tool's size and colour
 // (MowerModel.ts: a reel mower's bladed barrel between two wheels, or a long deck on four wheels with its engine on top) `gap` ahead of the feet, with its push handle (rails from the deck's
 // back corners, or the reel's axle, up to a crossbar at the grip) — and poses the player's arms the same way (each arm
 // aimed at its hand's spot, `spread` off the middle of the grip, over the idle or walk clip; the hands turned by
@@ -13,10 +15,16 @@ import { createGLTFLoader } from './gltf.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { api, el, toast } from './shared.js';
 
-/** Same as MowPlayer. */
-const CHARACTER_SCALE = 0.0075;
-const CHARACTER = 'characters/default/characterMedium.glb';
-const CLIPS = { idle: 'characters/default/idle.glb', walk: 'characters/default/Walking.glb' };
+/** Same as MowPlayer / farm/People.ts: the player's person, their colours (the first wardrobe colour on the top), size. */
+const PERSON = 'people/person-01.glb';
+const PEOPLE_ANIMS = 'people/people-anims.glb';
+const CLIPS = { idle: 'idle', walk: 'walk', run: 'run' };
+const PERSON_HEIGHT = 1.6;
+const PERSON_MODEL_HEIGHT = 1.83;
+const OUTFIT = ['#f7cba4', '#42a5f5', '#2f4a7a', '#f4f1ea', '#5e3c23'];
+const PART_SCALE = 16;
+/** Where the elbows point while holding the handle (MowPlayer's ELBOW_POLE): back, out to the side, a little down. */
+const ELBOW_POLE = { forward: -1, out: 0.7, up: -0.5 };
 const TOOL_GAP = 0.7;
 const GRIP = { forward: 0.42, height: 0.95, spread: 0.2 };
 const REEL_BLADES = 5;
@@ -71,7 +79,12 @@ let mixer;
 let rig;
 const actions = {};
 let clipName = 'idle';
+/** The game's player size (ui/mow.json `playerScale`). */
+let playerScale = 1;
 const handRest = new Map();
+/** As MowPlayer: the arms frozen in the idle clip's first frame before the IK, the fingers closed round the bar. */
+const armFrozen = new Map();
+const fingerGrip = new Map();
 const toolGroup = new THREE.Group();
 const handMarkers = [0, 1].map(() => new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffd54f, depthTest: false })));
 const handleMaterial = new THREE.MeshStandardMaterial({ color: 0x3a3a40, roughness: 0.6 });
@@ -85,6 +98,7 @@ export async function initMowersTab(container) {
     host = container;
     const mow = await api('/api/mow');
     cutSound = { volume: [...mow.cutSound.volume], pitch: [...mow.cutSound.pitch] };
+    playerScale = mow.playerScale ?? 1;
     tools = mow.tools.filter((tool) => !tool.ride).map((tool) => ({
         ...tool,
         grip: { ...GRIP, ...tool.grip, hand: { x: 0, y: 0, z: 0, ...tool.grip?.hand }, offset: { x: 0, y: 0, z: 0, ...tool.grip?.offset }, mirror: tool.grip?.mirror !== false },
@@ -169,14 +183,30 @@ function buildLayout() {
             slider.addEventListener('input', () => apply(slider.value));
             return el('label', { class: 'field' }, el('span', {}, label), el('div', { style: { display: 'flex', gap: '6px', alignItems: 'center', minWidth: '0' } }, slider, number));
         })));
+    // The whole mower (handle, crossbar and the hands' spots) back or forward: the grip and the gap moved together, the
+    // hands' turn and offset kept.
+    const move = (delta) => {
+        current.grip.forward = Math.max(0, Number((current.grip.forward + delta).toFixed(3)));
+        current.gap = Math.max(0, Number((current.gap + delta).toFixed(3)));
+        touch();
+        buildLayout();
+        buildTool();
+    };
+    const moveSection = el('section', { class: 'card-section' },
+        el('h2', {}, 'Move the whole mower'),
+        el('p', { class: 'muted small' }, `Slides the mower, its handle and the hands' spots back or forward together (the grip's "Ahead of the feet" and the gap move by the same amount).`),
+        el('div', { style: { display: 'flex', gap: '6px' } },
+            ...[['« Back', -0.1], ['‹ Back', -0.02], ['Forward ›', 0.02], ['Forward »', 0.1]].map(([label, delta]) =>
+                el('button', { style: { flex: '1' }, onclick: () => move(delta) }, label))));
     const clipButtons = Object.keys(CLIPS).map((name) => el('button', { class: name === clipName ? 'primary' : '', onclick: () => { playClip(name); buildLayout(); } },
-        name === 'idle' ? '🧍 Idle' : '🚶 Walk'));
+        { idle: '🧍 Idle', walk: '🚶 Walk', run: '🏃 Run' }[name]));
     host.replaceChildren(
         el('aside', { class: 'sidebar left' },
             el('section', { class: 'card-section' }, el('h2', {}, 'Tool'), el('label', { class: 'field' }, el('span', {}, 'Walked tool'), picker),
                 el('p', { class: 'muted' }, current.reel ? 'Reel mower: the handle runs from the barrel\'s axle to the crossbar at the grip.' : 'Pushed: the crossbar sits at the grip.'),
                 el('label', { class: 'field check' }, el('input', { type: 'checkbox', checked: current.grip.mirror, onchange: (event) => { current.grip.mirror = event.target.checked; touch(); } }),
                     el('span', {}, 'Right hand mirrors the left hand\'s turn'))),
+            moveSection,
             cutSoundSection(),
             ...sections),
         el('div', { class: 'stage-area' },
@@ -186,7 +216,7 @@ function buildLayout() {
                 el('span', { class: 'spacer' }),
                 el('span', { id: 'mowers-status' })),
             el('div', { id: 'mowersViewport', style: { position: 'relative', flex: '1', minHeight: '0', overflow: 'hidden' } }),
-            el('div', { class: 'hint-bar' }, 'Drag to orbit, wheel to zoom. The player faces +Z (the blue axis). The yellow dots are where the hands go: fit the grip so they sit on the crossbar, then turn the hands round it.')),
+            el('div', { class: 'hint-bar' }, `Drag to orbit, wheel to zoom. The player faces +Z (the blue axis), at the game's size (playerScale ${playerScale}: the grip, gap and offsets are in units of it; the mower is its own size). The yellow dots are where the hands go: fit the grip so they sit on the crossbar, then turn the hands round it.`)),
     );
     const viewport = host.querySelector('#mowersViewport');
     if (renderer) {
@@ -233,13 +263,13 @@ function setupViewport(viewport) {
     const sun = new THREE.DirectionalLight(0xffffff, 1.8);
     sun.position.set(4, 8, 6);
     scene.add(sun);
-    scene.add(new THREE.GridHelper(8, 32, 0x4a4038, 0x3a322c), new THREE.AxesHelper(1.2));
+    scene.add(new THREE.GridHelper(8 * playerScale, 32, 0x4a4038, 0x3a322c), new THREE.AxesHelper(1.2 * playerScale));
     scene.add(toolGroup, ...handMarkers);
-    handMarkers.forEach((marker) => { marker.renderOrder = 10; });
+    handMarkers.forEach((marker) => { marker.renderOrder = 10; marker.scale.setScalar(playerScale); });
     camera = new THREE.PerspectiveCamera(40, 1, 0.05, 200);
-    camera.position.set(2.6, 1.9, 2.4);
+    camera.position.set(2.6 * playerScale, 1.9 * playerScale, 2.4 * playerScale);
     controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 0.6, 0.6);
+    controls.target.set(0, 0.6 * playerScale, 0.6 * playerScale);
     controls.update();
     new ResizeObserver(resize).observe(host);
     resize();
@@ -270,15 +300,21 @@ function tube(a, b) {
     return mesh;
 }
 
+/** As MowerModel.playerHandle(): the grip grown with the player (forward, height, the hands' spread), the mower not. */
+function scaledGrip(tool) {
+    const { grip } = tool;
+    return { ...grip, forward: grip.forward * playerScale, height: grip.height * playerScale, spread: grip.spread * playerScale };
+}
+
 /** As MowPlayer.showTool() + syncTool(), with the player at the origin facing +Z. */
 function buildTool() {
     toolGroup.traverse((node) => node.geometry?.dispose());
     toolGroup.clear();
     const tool = current;
     const [width, height, length] = tool.size;
-    const { grip } = tool;
+    const grip = scaledGrip(tool);
     const body = new THREE.MeshStandardMaterial({ color: tool.color, roughness: 0.5 });
-    const ahead = tool.gap + length / 2;
+    const ahead = tool.gap * playerScale + length / 2;
     toolGroup.position.set(0, 0, ahead);
     let base;
     if (tool.reel) {
@@ -355,24 +391,75 @@ function buildTool() {
     handMarkers[1].position.set(-grip.spread, grip.height, grip.forward);
 }
 
-/** The game's rig over the idle / walk clip; its arms are posed each frame (holdPose). */
+/** A person's geometry with each part in OUTFIT's colour (as farm/People.ts dressed()). */
+function dressed(source) {
+    const from = source.getAttribute('color');
+    if (!from) return source;
+    const choice = OUTFIT.map((hex) => new THREE.Color(hex));
+    const colors = new Float32Array(from.count * 3);
+    for (let i = 0; i < from.count; i++) {
+        const part = Math.round(from.getW(i) * PART_SCALE);
+        if (part === 0) colors.set([from.getX(i), from.getY(i), from.getZ(i)], i * 3);
+        else {
+            const shade = from.getX(i) * 2;
+            const color = choice[part - 1];
+            colors.set([color.r * shade, color.g * shade, color.b * shade], i * 3);
+        }
+    }
+    const geometry = new THREE.BufferGeometry();
+    for (const [name, attribute] of Object.entries(source.attributes)) geometry.setAttribute(name, attribute);
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setIndex(source.index);
+    return geometry;
+}
+
+/** The track's first rotation for a bone in a clip (as AnimatorController.firstFrameRotation()). */
+function firstFrame(clip, boneName) {
+    const track = clip?.tracks.find((t) => t.name === `${boneName}.quaternion`);
+    return track ? new THREE.Quaternion().fromArray(track.values, 0) : undefined;
+}
+
+/** The game's player (a person, as MowPlayer.loadCharacter()) over the idle / walk / run clip; its arms are posed each frame (holdPose). */
 async function loadPlayer() {
     try {
         const loader = createGLTFLoader();
-        const [loaded, idle, walk] = await Promise.all([loader.loadAsync(`/models/${CHARACTER}`).then((gltf) => gltf.scene), loader.loadAsync(`/models/${CLIPS.idle}`), loader.loadAsync(`/models/${CLIPS.walk}`)]);
-        rig = loaded;
-        rig.scale.setScalar(CHARACTER_SCALE);
+        const [person, anims] = await Promise.all([loader.loadAsync(`/models/${PERSON}`), loader.loadAsync(`/models/${PEOPLE_ANIMS}`)]);
+        rig = person.scene;
         rig.traverse((node) => {
-            if (node.isMesh) node.material = new THREE.MeshStandardMaterial({ color: 0x42a5f5, roughness: 0.7 });
+            if (!node.isSkinnedMesh) return;
+            node.geometry = dressed(node.geometry);
+            node.frustumCulled = false;
+            node.material = [node.material].flat().map((material) => {
+                const copy = material.clone();
+                copy.vertexColors = true;
+                return copy;
+            });
+            if (node.material.length === 1) node.material = node.material[0];
         });
+        rig.scale.setScalar((PERSON_HEIGHT * playerScale) / PERSON_MODEL_HEIGHT);
+        // The hands' rest: the bind pose, before any clip.
         for (const side of ['Left', 'Right']) {
             const hand = bone(`${side}Hand`);
             if (hand) handRest.set(hand, hand.quaternion.clone());
         }
+        const clip = (name) => THREE.AnimationClip.findByName(anims.animations, name);
+        const idle = clip(CLIPS.idle);
+        for (const side of ['Left', 'Right']) {
+            bone(`${side}Hand`)?.traverse((node) => {
+                const grip = /(Thumb|Index|Middle|Ring|Pinky)\d$/.test(node.name) ? firstFrame(idle, node.name) : undefined;
+                if (grip) fingerGrip.set(node, grip);
+            });
+            for (const name of ['Shoulder', 'Arm', 'ForeArm']) {
+                const node = bone(`${side}${name}`);
+                if (node) armFrozen.set(node, firstFrame(idle, node.name) ?? node.quaternion.clone());
+            }
+        }
         scene.add(rig);
         mixer = new THREE.AnimationMixer(rig);
-        if (idle.animations[0]) actions.idle = mixer.clipAction(idle.animations[0]);
-        if (walk.animations[0]) actions.walk = mixer.clipAction(walk.animations[0]);
+        for (const [key, name] of Object.entries(CLIPS)) {
+            const found = clip(name);
+            if (found) actions[key] = mixer.clipAction(found);
+        }
         playClip(clipName);
     } catch (error) {
         console.warn('[mowers] player preview failed', error);
@@ -407,20 +494,27 @@ const aimTurn = new THREE.Quaternion();
 const aimWorld = new THREE.Quaternion();
 const aimParent = new THREE.Quaternion();
 
-/** As MowPlayer.holdPose(): each arm aimed so its hand reaches its marker, the hand kept in its rest rotation. */
+const ik = { shoulder: new THREE.Vector3(), elbow: new THREE.Vector3(), hand: new THREE.Vector3(), dir: new THREE.Vector3(), bend: new THREE.Vector3(), reach: new THREE.Vector3() };
+const FORWARD = new THREE.Vector3(0, 0, 1);
+const LEFT = new THREE.Vector3(1, 0, 0);
+
+/**
+ * As MowPlayer.holdPose(): the arms frozen in the idle's first frame, then each solved as a two-bone IK chain pinned at
+ * its hand's spot (the elbow toward ELBOW_POLE), the hand turned by the grip on its rest pose, the fingers closed.
+ */
 function holdPose() {
     if (!rig) return;
+    for (const [node, frozen] of armFrozen) node.quaternion.copy(frozen);
     rig.updateMatrixWorld(true);
     const offset = current.grip.offset;
     [['Left', handMarkers[0].position, 1], ['Right', handMarkers[1].position, -1]].forEach(([side, marker, out]) => {
-        // As MowPlayer: the hands reach the bar's spot moved by the grip's offset (x outward for each hand).
-        const target = marker.clone().add(new THREE.Vector3(offset.x * out, offset.y, offset.z));
+        // As MowPlayer: the hands reach the bar's spot moved by the grip's offset (x outward for each hand), grown with the player.
+        const target = marker.clone().add(new THREE.Vector3(offset.x * out, offset.y, offset.z).multiplyScalar(playerScale));
         const arm = bone(`${side}Arm`);
         const fore = bone(`${side}ForeArm`);
         const hand = bone(`${side}Hand`);
         if (!arm || !fore || !hand) return;
-        aim(arm, fore, target);
-        aim(fore, hand, target);
+        solveArm(arm, fore, hand, target, out);
         const rest = handRest.get(hand);
         if (rest) {
             // As MowPlayer: the grip's turn on top of the rest pose, mirrored for the right hand unless turned off.
@@ -431,6 +525,23 @@ function holdPose() {
             hand.updateMatrixWorld(true);
         }
     });
+    for (const [finger, grip] of fingerGrip) finger.quaternion.copy(grip);
+}
+
+/** As MowPlayer.solveArm(): shoulder fixed, the arm's lengths kept, the hand on `target`, the elbow toward the pole. */
+function solveArm(arm, fore, hand, target, out) {
+    const shoulder = arm.getWorldPosition(ik.shoulder);
+    const upper = fore.getWorldPosition(ik.elbow).distanceTo(shoulder);
+    const lower = hand.getWorldPosition(ik.hand).distanceTo(ik.elbow);
+    const dir = ik.dir.copy(target).sub(shoulder);
+    const reach = THREE.MathUtils.clamp(dir.length(), Math.abs(upper - lower) + 1e-4, upper + lower - 1e-4);
+    dir.normalize();
+    const cos = THREE.MathUtils.clamp((upper * upper + reach * reach - lower * lower) / (2 * upper * reach), -1, 1);
+    const bend = ik.bend.copy(FORWARD).multiplyScalar(ELBOW_POLE.forward).addScaledVector(LEFT, ELBOW_POLE.out * out).addScaledVector(UP, ELBOW_POLE.up);
+    bend.addScaledVector(dir, -bend.dot(dir)).normalize();
+    const elbow = ik.elbow.copy(shoulder).addScaledVector(dir, upper * cos).addScaledVector(bend, upper * Math.sqrt(1 - cos * cos));
+    aim(arm, fore, elbow);
+    aim(fore, hand, ik.reach.copy(shoulder).addScaledVector(dir, reach));
 }
 
 function aim(boneNode, toward, target) {

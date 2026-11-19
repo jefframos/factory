@@ -10,14 +10,18 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
-import { WARM, glossyButton, iconSprite, label, popupPanel, ribbonTitle, tappable, throwConfetti } from './UiParts';
+import { WARM, glossyButton, iconSprite, label, popupPanel, ribbonTitle, spinForever, tappable, throwConfetti } from './UiParts';
 import { StageBar } from './StageBar';
 import { isLastStage, stageSettings } from '../data/Settings';
 import { RestaurantAudio } from '../audio/RestaurantAudio';
+import { carryRoom } from '../data/RestaurantSave';
+import { Track } from '../data/Track';
 
 /** The card (the pack's popup, its header band the title), and where things sit on it (from its middle). */
 const CARD = { width: 600, height: 900, stars: -285, starSize: 74, starGap: 84, tap: 120, button: 350 };
 const CHEST = { size: 220, y: -40 };
+/** ×2 TIPS beside the next step's button: each this wide, this far either side of the middle. */
+const DOUBLE = { width: 260, apart: 140 };
 /** The UPGRADE! screen: its ribbon, the star, the stage's name, the line under it, TAP TO CONTINUE (from the middle). */
 const UPGRADE = { title: -360, star: -70, name: 175, sub: 240, tap: 340 };
 const BAR = { width: 440, height: 44, y: 235 };
@@ -28,8 +32,12 @@ export class DayEnd extends PIXI.Container {
     private readonly glow = iconSprite('Image_Effect_Rotate', 420);
     private readonly tapText = label(40);
     private readonly bar = new StageBar(BAR.width, BAR.height);
-    private readonly button = glossyButton(380, 100, 'SUPERMARKET', 'Button01_l_Green');
+    private readonly button: ReturnType<typeof glossyButton>;
     private next = 0;
+    /** Pointing at the chest while there are tips in it. */
+    private readonly hand = iconSprite('tutorial_hand_3', 120);
+    /** After an upgrade: how many more coins may go into the new stage's bar (null: no upgrade yet). */
+    private carryLeft: number | null = null;
     /** The bar's filling (pump()); tips tapped meanwhile wait in `queued`. */
     private busy = false;
     private readonly queued: number[] = [];
@@ -41,8 +49,14 @@ export class DayEnd extends PIXI.Container {
     /**
      * `pays`: each happy customer's coins (a tap each); `from`: the bar before them; `onNext`: SUPERMARKET.
      */
-    public constructor(day: number, happy: number, total: number, private readonly pays: number[], from: { stage: number; progress: number }, onNext: () => void) {
+    /**
+     * `next`: the button's words — where the day goes on to (PHONE ORDERS after a pizza day, else SUPERMARKET).
+     * `doubleTips`: with it, once the tips are in, a ×2 TIPS button beside it: a rewarded ad (it says whether it was
+     * watched, and saves the coins) — the bar fills by the day's tips again.
+     */
+    public constructor(day: number, happy: number, total: number, private readonly pays: number[], from: { stage: number; progress: number }, onNext: () => void, next = 'SUPERMARKET', private readonly doubleTips?: () => Promise<boolean>) {
         super();
+        this.button = glossyButton(380, 100, next, 'Button01_l_Green');
         this.stage = from.stage;
         this.progress = from.progress;
         const shade = new PIXI.Graphics().beginFill(0x000000, 0.5).drawRect(-3000, -3000, 6000, 6000).endFill();
@@ -63,10 +77,11 @@ export class DayEnd extends PIXI.Container {
             this.card.addChild(star);
         }
 
+        this.hand.visible = false;
         this.glow.y = CHEST.y;
         this.glow.alpha = 0.6;
         this.glow.tint = 0xffe08a;
-        gsap.to(this.glow, { rotation: Math.PI * 2, duration: 8, repeat: -1, ease: 'none' });
+        spinForever(this.glow, 8);
         this.chest = iconSprite(happy === total && total > 0 ? 'ItemIcon_Chest_Gold' : 'ItemIcon_Chest_Wood', CHEST.size);
         this.chest.y = CHEST.y;
         this.chestScale = this.chest.scale.x;
@@ -79,12 +94,16 @@ export class DayEnd extends PIXI.Container {
             RestaurantAudio.play('click');
             onNext();
         });
-        this.card.addChild(this.glow, this.chest, this.tapText, this.bar, this.button);
+        this.card.addChild(this.glow, this.chest, this.tapText, this.bar, this.button, this.hand);
 
         if (pays.length) {
             this.tapText.text = `TAP!  x${pays.length}`;
             gsap.to(this.tapText.scale, { x: 1.12, y: 1.12, duration: 0.45, yoyo: true, repeat: -1, ease: 'sine.inOut' });
             gsap.to(this.chest, { rotation: 0.06, duration: 0.12, yoyo: true, repeat: -1, repeatDelay: 0.9, ease: 'sine.inOut' });
+            // The hand on the chest, the whole time there are tips in it to tap out.
+            this.hand.position.set(CHEST.size * 0.28 + 30, CHEST.y + CHEST.size * 0.18 + 50);
+            this.hand.visible = true;
+            gsap.to(this.hand, { x: this.hand.x + 16, y: this.hand.y + 16, duration: 0.45, yoyo: true, repeat: -1, ease: 'sine.inOut' });
         } else {
             this.tapText.text = 'No tips today...';
             this.glow.visible = false;
@@ -114,6 +133,7 @@ export class DayEnd extends PIXI.Container {
         this.chest.scale.set(this.chestScale);
         gsap.fromTo(this.chest.scale, { x: this.chestScale * 1.2, y: this.chestScale * 0.8 }, { x: this.chestScale, y: this.chestScale, duration: 0.3, ease: 'back.out(3)' });
         const left = this.pays.length - this.next;
+        if (!left) this.hand.visible = false;
         this.tapText.text = left ? `TAP!  x${left}` : '';
         this.burst(pay);
         gsap.delayedCall(0.45, () => {
@@ -155,6 +175,11 @@ export class DayEnd extends PIXI.Container {
 
     /** `coins` into the bar: filled up to its goal, UPGRADE! (the next stage's bar), the rest into that one. */
     private async fillBar(coins: number, seconds = 0.45): Promise<void> {
+        // (After an upgrade this day: only what's left of the carry-over.)
+        if (this.carryLeft !== null) {
+            coins = Math.min(coins, this.carryLeft);
+            this.carryLeft -= coins;
+        }
         while (coins > 0) {
             const goal = stageSettings(this.stage).goal;
             const room = goal - this.progress;
@@ -166,8 +191,30 @@ export class DayEnd extends PIXI.Container {
             if (isLastStage(this.stage)) return;
             this.stage++;
             this.progress = 0;
+            // Only as much carries into the new stage as the save lets (settings.json carryOver): the rest's gone, this
+            // tip's and the ones still to tap.
+            const carry = carryRoom(this.stage);
+            coins = Math.min(coins, carry);
+            this.carryLeft = carry - coins;
             await this.upgrade();
             this.bar.set(this.stage, 0);
+            this.wrapUp();
+            return;
+        }
+    }
+
+    /**
+     * Upgraded: the day's done with the chest — the tips left in it would only go nowhere (the new stage's bar starts
+     * empty: settings.json carryOver), so they're not offered; the next step's button instead.
+     */
+    private wrapUp(): void {
+        this.next = this.pays.length;
+        this.queued.length = 0;
+        this.tapText.text = 'UPGRADED!';
+        this.hand.visible = false;
+        if (!this.finished) {
+            this.finished = true;
+            this.finish();
         }
     }
 
@@ -177,6 +224,7 @@ export class DayEnd extends PIXI.Container {
      * screen, the ribbon, the star in its rays, the new stage's name, confetti; until tapped.
      */
     private upgrade(): Promise<void> {
+        Track.event('stage', stageSettings(this.stage).id, 'start');
         return new Promise((resolve) => {
             RestaurantAudio.play('day');
             const holder = new PIXI.Container();
@@ -188,7 +236,7 @@ export class DayEnd extends PIXI.Container {
             const glow = iconSprite('Image_Effect_Rotate', 720);
             glow.tint = 0xffd36b;
             glow.y = UPGRADE.star;
-            gsap.to(glow, { rotation: Math.PI * 2, duration: 6, repeat: -1, ease: 'none' });
+            spinForever(glow, 6);
             const star = iconSprite('ItemIcon_Star_Gold', 280);
             star.y = UPGRADE.star;
             const title = ribbonTitle('UPGRADE!', 62);
@@ -223,16 +271,56 @@ export class DayEnd extends PIXI.Container {
     }
 
     private finish(): void {
+        gsap.killTweensOf(this.hand);
+        this.hand.visible = false;
         gsap.killTweensOf(this.tapText.scale);
         gsap.killTweensOf(this.chest);
         this.chest.rotation = 0;
         this.chest.alpha = 0.6;
         this.button.visible = true;
         gsap.from(this.button.scale, { x: 0.3, y: 0.3, duration: 0.35, ease: 'back.out(2.5)' });
+        this.offerDouble();
+    }
+
+    /** ×2 TIPS (a rewarded ad), beside the next step's button: the day's tips into the bar again. */
+    private offerDouble(): void {
+        const tips = this.pays.reduce((sum, pay) => sum + pay, 0);
+        const ask = this.doubleTips;
+        if (!ask || tips <= 0) return;
+        const double = glossyButton(DOUBLE.width, 100, '▶ x2 TIPS', 'Button01_l_Yellow');
+        double.position.set(-DOUBLE.apart, CARD.button);
+        this.button.x = DOUBLE.apart;
+        this.button.scale.set(DOUBLE.width / 380);
+        this.card.addChild(double);
+        gsap.from(double.scale, { x: 0.3, y: 0.3, duration: 0.35, ease: 'back.out(2.5)' });
+        const pulse = gsap.to(double.scale, { x: 1.06, y: 1.06, duration: 0.45, yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 0.4 });
+        double.once('destroyed', () => pulse.kill());
+        tappable(double, () => {
+            double.eventMode = 'none';
+            this.button.eventMode = 'none';
+            pulse.kill();
+            double.alpha = 0.5;
+            void ask().catch(() => false).then(async (watched) => {
+                if (this.destroyed) return;
+                double.visible = false;
+                if (watched) {
+                    RestaurantAudio.play('coins');
+                    this.tapText.text = `x2 TIPS! +${tips}`;
+                    this.burst(tips);
+                    // (Fresh coins into the bar as it is now: not capped as an upgrade's leftovers are.)
+                    this.carryLeft = null;
+                    await this.fillBar(tips);
+                }
+                if (this.destroyed) return;
+                this.button.eventMode = 'static';
+                this.button.x = 0;
+                this.button.scale.set(1);
+            });
+        });
     }
 
     public override destroy(): void {
-        gsap.killTweensOf([this.glow, this.tapText.scale, this.chest]);
+        gsap.killTweensOf([this.glow, this.tapText.scale, this.chest, this.hand]);
         super.destroy({ children: true });
     }
 }

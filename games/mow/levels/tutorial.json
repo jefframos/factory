@@ -3,9 +3,9 @@
   "name": "Tutorial Town",
   "ground": {
     "x": 0,
-    "z": 5,
-    "width": 26,
-    "depth": 32,
+    "z": -21.5,
+    "width": 68,
+    "depth": 85,
     "color": "#8c9a7c"
   },
   "island": {
@@ -16,12 +16,20 @@
     "sideDepth": 1.6,
     "outline": [
       {
-        "x": -13,
-        "z": -11
+        "x": -34,
+        "z": -64
+      },
+      {
+        "x": 34,
+        "z": -64
+      },
+      {
+        "x": 34,
+        "z": -5
       },
       {
         "x": 13,
-        "z": -11
+        "z": -5
       },
       {
         "x": 13,
@@ -30,6 +38,14 @@
       {
         "x": -13,
         "z": 21
+      },
+      {
+        "x": -13,
+        "z": -5
+      },
+      {
+        "x": -34,
+        "z": -5
       }
     ],
     "deck": {
@@ -73,6 +89,22 @@
       "width": 21,
       "depth": 1.5,
       "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-4",
+      "x": -5.5,
+      "z": -40.25,
+      "width": 4,
+      "depth": 40,
+      "color": "#ae7e47"
+    },
+    {
+      "id": "pavement-5",
+      "x": -28,
+      "z": -30,
+      "width": 6,
+      "depth": 2,
+      "color": "#d8ccb0"
     }
   ],
   "atm": {
@@ -89,10 +121,15 @@
   },
   "atms": [
     {
-      "x": -8.25,
-      "z": 10.25,
-      "rotationY": 1.5708,
-      "appearsWhenFull": true
+      "x": -6.5,
+      "z": 12.75,
+      "rotationY": 1.5708
+    },
+    {
+      "x": 18.5,
+      "z": -26,
+      "rotationY": 0,
+      "section": "wilds"
     }
   ],
   "wardrobe": {
@@ -109,8 +146,8 @@
   },
   "wardrobes": [
     {
-      "x": -8.75,
-      "z": 13.25,
+      "x": -6.5,
+      "z": 16.25,
       "rotationY": 1.5708,
       "appearsAfterSales": 1
     }
@@ -218,72 +255,6 @@
       }
     },
     {
-      "model": "town/city/firehydrant.gltf",
-      "x": 8,
-      "z": 13.1,
-      "rotationY": 0,
-      "height": 1,
-      "collider": {
-        "halfX": 0.3,
-        "halfZ": 0.3
-      }
-    },
-    {
-      "model": "town/nature/Bush_1_C_Color1.gltf",
-      "x": 9.3,
-      "z": 13,
-      "rotationY": 0.8,
-      "height": 1.1,
-      "collider": {
-        "halfX": 0.75,
-        "halfZ": 0.75
-      }
-    },
-    {
-      "model": "town/nature/Bush_4_A_Color1.gltf",
-      "x": -6.75,
-      "z": 16,
-      "rotationY": 0,
-      "height": 1.1,
-      "collider": {
-        "halfX": 0.75,
-        "halfZ": 0.75
-      }
-    },
-    {
-      "model": "town/nature/Bush_1_C_Color1.gltf",
-      "x": 6.75,
-      "z": 15.75,
-      "rotationY": 0.6,
-      "height": 1.1,
-      "collider": {
-        "halfX": 0.8,
-        "halfZ": 0.8
-      }
-    },
-    {
-      "model": "town/nature/Bush_4_A_Color1.gltf",
-      "x": -7.5,
-      "z": 18.25,
-      "rotationY": 1.1,
-      "height": 1.1,
-      "collider": {
-        "halfX": 0.9,
-        "halfZ": 0.9
-      }
-    },
-    {
-      "model": "town/nature/Bush_1_C_Color1.gltf",
-      "x": 7.25,
-      "z": 18.25,
-      "rotationY": 0,
-      "height": 1.1,
-      "collider": {
-        "halfX": 0.8,
-        "halfZ": 0.8
-      }
-    },
-    {
       "model": "town/nature/Tree_1_A_Color1.gltf",
       "x": -9.5,
       "z": 18.5,
@@ -328,6 +299,192 @@
         "halfX": 0.15,
         "halfZ": 0.15
       }
+    },
+    {
+      "model": "town/nature/Tree_1_A_Color1.gltf",
+      "x": -24,
+      "z": -15,
+      "rotationY": 0.3,
+      "height": 5.6,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_3_A_Color1.gltf",
+      "x": 21,
+      "z": -14,
+      "rotationY": 1.2,
+      "height": 5.2,
+      "collider": {
+        "halfX": 0.7,
+        "halfZ": 0.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_1_A_Color1.gltf",
+      "x": 26,
+      "z": -31,
+      "rotationY": 2,
+      "height": 5.8,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_3_A_Color1.gltf",
+      "x": 9,
+      "z": -45,
+      "rotationY": 0.6,
+      "height": 5,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_1_A_Color1.gltf",
+      "x": -12,
+      "z": -53,
+      "rotationY": 1.6,
+      "height": 5.4,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_3_A_Color1.gltf",
+      "x": -27,
+      "z": -47,
+      "rotationY": 0.2,
+      "height": 5.6,
+      "collider": {
+        "halfX": 0.75,
+        "halfZ": 0.7
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_1_A_Color1.gltf",
+      "x": 15,
+      "z": -56,
+      "rotationY": 2.4,
+      "height": 5.2,
+      "collider": {
+        "halfX": 0.55,
+        "halfZ": 0.55
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_3_A_Color1.gltf",
+      "x": 25,
+      "z": -48,
+      "rotationY": 1,
+      "height": 5,
+      "collider": {
+        "halfX": 0.65,
+        "halfZ": 0.65
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_1_A_Color1.gltf",
+      "x": 13,
+      "z": -31.75,
+      "rotationY": 0.9,
+      "height": 5.4,
+      "collider": {
+        "halfX": 0.6,
+        "halfZ": 0.6
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Tree_3_A_Color1.gltf",
+      "x": -12,
+      "z": -43,
+      "rotationY": 2.8,
+      "height": 5.6,
+      "collider": {
+        "halfX": 0.75,
+        "halfZ": 0.75
+      },
+      "fade": true
+    },
+    {
+      "model": "town/nature/Bush_1_C_Color1.gltf",
+      "x": -12,
+      "z": -18,
+      "rotationY": 0.4,
+      "height": 1.1,
+      "collider": {
+        "halfX": 0.8,
+        "halfZ": 0.8
+      }
+    },
+    {
+      "model": "town/nature/Bush_4_A_Color1.gltf",
+      "x": 21.5,
+      "z": -19,
+      "rotationY": 1.1,
+      "height": 1.1,
+      "collider": {
+        "halfX": 0.9,
+        "halfZ": 0.9
+      }
+    },
+    {
+      "model": "town/nature/Bush_4_A_Color1.gltf",
+      "x": 5,
+      "z": -51,
+      "rotationY": 0.2,
+      "height": 1.1,
+      "collider": {
+        "halfX": 0.85,
+        "halfZ": 0.85
+      }
+    },
+    {
+      "model": "town/nature/Bush_4_A_Color1.gltf",
+      "x": -19,
+      "z": -55,
+      "rotationY": 0.8,
+      "height": 1.1,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 0.95
+      }
+    },
+    {
+      "model": "town/nature/Bush_1_C_Color1.gltf",
+      "x": 28,
+      "z": -40,
+      "rotationY": 1.5,
+      "height": 1.1,
+      "collider": {
+        "halfX": 0.8,
+        "halfZ": 0.8
+      }
+    },
+    {
+      "model": "town/nature/Bush_4_A_Color1.gltf",
+      "x": -29,
+      "z": -24,
+      "rotationY": 0.6,
+      "height": 1.1,
+      "collider": {
+        "halfX": 0.95,
+        "halfZ": 0.95
+      }
     }
   ],
   "grassNoise": {
@@ -338,58 +495,62 @@
     "scale": 0.2,
     "rings": [
       {
-        "upTo": 8,
+        "upTo": 13,
         "mix": {
           "grass": 1
         }
       },
       {
-        "upTo": 13,
-        "mix": {
-          "grass": 0.75,
-          "tallgrass": 0.25
-        }
-      },
-      {
         "upTo": 22,
         "mix": {
-          "grass": 0.5,
-          "tallgrass": 0.38,
-          "weeds": 0.12
+          "grass": 0.6,
+          "tallgrass": 0.4
         }
       },
       {
         "upTo": 30,
         "mix": {
           "grass": 0.3,
-          "tallgrass": 0.35,
-          "weeds": 0.25,
+          "tallgrass": 0.5,
+          "weeds": 0.2
+        }
+      },
+      {
+        "upTo": 40,
+        "mix": {
+          "tallgrass": 0.45,
+          "weeds": 0.45,
           "brambles": 0.1
         }
       },
       {
-        "upTo": 38,
+        "upTo": 52,
         "mix": {
-          "grass": 0.2,
-          "tallgrass": 0.3,
-          "weeds": 0.25,
-          "brambles": 0.17,
-          "thicket": 0.08
+          "weeds": 0.45,
+          "brambles": 0.4,
+          "thicket": 0.15
         }
       },
       {
         "upTo": 999,
         "mix": {
-          "grass": 0.15,
-          "tallgrass": 0.25,
-          "weeds": 0.25,
-          "brambles": 0.2,
-          "thicket": 0.15
+          "brambles": 0.5,
+          "thicket": 0.5
         }
       }
     ]
   },
-  "grassPatches": [],
+  "grassPatches": [
+    {
+      "x": -17,
+      "z": -29.5,
+      "width": 24,
+      "depth": 19,
+      "rotationY": 0,
+      "shape": "round",
+      "grass": "brambles"
+    }
+  ],
   "sections": [
     {
       "id": "yard",
@@ -431,6 +592,28 @@
         "width": 20,
         "rotationY": 0
       }
+    },
+    {
+      "id": "wilds",
+      "name": "The Wilds",
+      "x": 0,
+      "z": -35.25,
+      "width": 62,
+      "depth": 51.5,
+      "completeAt": 0.97,
+      "bonus": 500,
+      "ground": "#4a7432",
+      "restoredGround": "#68a643",
+      "fill": "auto",
+      "separator": {
+        "x": 0,
+        "z": -9.5,
+        "width": 26,
+        "rotationY": 0
+      },
+      "onUnlock": {
+        "pan": false
+      }
     }
   ],
   "sounds": [
@@ -457,5 +640,163 @@
     "waypoints": [],
     "links": [],
     "cars": []
-  }
+  },
+  "farm": {
+    "pads": [
+      {
+        "kind": "tool",
+        "x": 6.2,
+        "z": 12.6,
+        "rotationY": -1.5708
+      },
+      {
+        "kind": "capacity",
+        "x": 6.2,
+        "z": 16.4,
+        "rotationY": -1.5708
+      },
+      {
+        "kind": "tool",
+        "x": 11,
+        "z": -26,
+        "section": "wilds"
+      },
+      {
+        "kind": "capacity",
+        "x": 14.5,
+        "z": -26,
+        "section": "wilds"
+      }
+    ],
+    "dens": [
+      {
+        "id": "chicken",
+        "name": "Chicken Den",
+        "x": -17,
+        "z": -30,
+        "width": 16,
+        "depth": 11,
+        "gate": 2.4
+      }
+    ],
+    "eggs": {
+      "carryMax": 12,
+      "layEverySec": 2.5,
+      "floorMax": 8,
+      "eggsPerTray": 4,
+      "packSec": 1.2,
+      "machineMax": 24,
+      "traySlots": 6,
+      "trayPrice": 10,
+      "wants": [
+        1,
+        3
+      ],
+      "queue": 3,
+      "customerEverySec": 4,
+      "hens": [
+        {
+          "price": 0,
+          "level": 1
+        },
+        {
+          "price": 40,
+          "level": 2
+        },
+        {
+          "price": 80,
+          "level": 3
+        },
+        {
+          "price": 150,
+          "level": 4
+        },
+        {
+          "price": 250,
+          "level": 5
+        },
+        {
+          "price": 400,
+          "level": 6
+        },
+        {
+          "price": 600,
+          "level": 7
+        },
+        {
+          "price": 900,
+          "level": 8
+        }
+      ]
+    },
+    "levels": {
+      "next": [
+        30,
+        60,
+        100,
+        150,
+        220,
+        300
+      ],
+      "growth": 1.35,
+      "xp": {
+        "clippingsPerXp": 25,
+        "upgrade": 10,
+        "denFound": 25,
+        "areaRestored": 20,
+        "egg": 1,
+        "tray": 2,
+        "traySold": 3,
+        "hen": 15
+      }
+    },
+    "trucks": {
+      "x": -10.1,
+      "z": -26.4,
+      "price": 120,
+      "level": 3,
+      "wants": [
+        6,
+        10
+      ],
+      "trayPrice": 15,
+      "everySec": 12,
+      "model": "town/library/city2-truck-01/city2-truck-01.glb",
+      "length": 6,
+      "speed": 6,
+      "cash": {
+        "x": -10.1,
+        "z": -28.2
+      }
+    },
+    "truckPath": [
+      {
+        "x": -5.5,
+        "z": -58.5
+      },
+      {
+        "x": -5.5,
+        "z": -26
+      }
+    ]
+  },
+  "spawns": [
+    {
+      "id": "people-1",
+      "kind": "people",
+      "x": -27.5,
+      "z": -13,
+      "width": 3,
+      "depth": 3
+    },
+    {
+      "id": "people-2",
+      "kind": "people",
+      "x": -29,
+      "z": -45,
+      "width": 3,
+      "depth": 3
+    }
+  ],
+  "colliders": []
 }

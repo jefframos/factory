@@ -1396,7 +1396,7 @@ function drawFreezer(inner) {
     const sundae = stages[Math.min(stage, stages.length - 1)]?.sundae ?? {};
     const items = (sundae.sauces ?? ['chocolate', 'caramel']).length + (sundae.toppings ?? ['sprinkles', 'cherry', 'cookie', 'waffle']).length;
     const divider = 0.1;
-    const columns = Math.min(3, Math.max(1, flavors.length, items));
+    const columns = Math.min(2, Math.max(1, flavors.length, items));
     const rows = Math.max(1, Math.ceil(flavors.length / columns), Math.ceil(items / columns));
     const half = columns * tubW + (columns - 1) * gap;
     // (In `inner`'s own units: what's added to it is stretched with it.)
@@ -2565,7 +2565,10 @@ function renderInspector() {
     } else if (sel.type === 'camera') {
         const station = layout.stations[sel.i];
         parts.push(el('h3', {}, `${station.name ?? station.id}: ${sel.key} camera`),
-            el('p', { class: 'muted small' }, sel.key === 'order' ? 'The customer ordering over the counter.' : 'The work top while cooking.'),
+            el('p', { class: 'muted small' }, sel.key === 'order' ? 'The customer ordering over the counter (seated: the dining room).' : 'The work top while cooking.'),
+            // The cameras are the station's: a station shared by several stages has the same cameras in all of them —
+            // its own copy for this stage first, then frame it (the warning and the button, as for anything shared).
+            stageFields(station),
             el('button', { class: 'primary block', onclick: () => lookThrough(sel.i, sel.key) }, '👁 Look through (frame it, then Use this view)'),
             el('div', { class: 'row' },
                 el('button', { onclick: () => select({ ...sel, part: 'position' }) }, '🎥 Move camera'),

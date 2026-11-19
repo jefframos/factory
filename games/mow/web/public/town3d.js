@@ -168,6 +168,7 @@ async function reload() {
     town.grassPatches ??= [];
     town.sounds ??= [];
     town.secrets ??= [];
+    town.spawns ??= [];
     town.colliders ??= [];
     town.traffic ??= { waypoints: [], links: [], cars: [] };
     if (peopleOn) {
@@ -240,6 +241,11 @@ function buildLayout() {
                     el('button', { class: 'block', onclick: () => addPavement() }, '⬜ Pavement'),
                     el('button', { class: 'block town-only', onclick: () => addSound() }, '🔊 Sound zone'),
                     el('button', { class: 'block town-only', onclick: () => addSecret() }, '🤫 Secret patch (chest)'),
+                    el('button', { class: 'block town-only', onclick: () => addFarmPad('tool') }, '⬆ Mower upgrade station'),
+                    el('button', { class: 'block town-only', onclick: () => addFarmPad('capacity') }, '🎒 Bag upgrade station'),
+                    el('button', { class: 'block town-only', onclick: () => addTruckPoint() }, '🚚 Truck path point'),
+                    el('button', { class: 'block town-only', onclick: () => addSpawn('people') }, '🧍 People spawn area'),
+                    el('button', { class: 'block town-only', onclick: () => addSpawn('trucks') }, '🚚 Truck spawn area'),
                     el('button', { class: 'block town-only', onclick: () => addCollider() }, '🧊 Collider cube'),
                     el('button', { class: 'block town-only', onclick: () => addWaypoint() }, '🚦 Traffic waypoint'),
                     el('button', { class: 'block town-only', onclick: () => addSection() }, '🗺 Section (next to unlock)'))),
@@ -289,6 +295,14 @@ function buildLayout() {
                 el('h2', {}, 'Secrets'),
                 el('p', { class: 'muted small' }, 'Secret patches (gold boxes): a clump of lush grass anywhere in town; mowing it through gives up a chest worth its reward. A twinkle shows over it when the player is near.'),
                 el('ul', { id: 'townSecretList', class: 'list' })),
+            el('section', { class: 'card-section town-only' },
+                el('h2', {}, 'Farm'),
+                el('p', { class: 'muted small' }, 'The farm test\'s pieces: upgrade stations (stand on the square, the grass pours in; the stand is behind it, turned with it), the dens (brown yards, gate south) and the truck dock (inside the den, by the road).'),
+                el('ul', { id: 'townFarmList', class: 'list' })),
+            el('section', { class: 'card-section town-only' },
+                el('h2', {}, 'Spawn areas'),
+                el('p', { class: 'muted small' }, 'Where people (the den\'s customers) and trucks pop in, as if arriving from somewhere, and pop out when they leave. Trucks drive the roads: pavements whose id starts with "road" (asphalt, no grass), joining their spawn area to the den\'s truck dock.'),
+                el('ul', { id: 'townSpawnList', class: 'list' })),
             peopleOn ? el('section', { class: 'card-section' },
                 el('h2', {}, 'People'),
                 el('p', { class: 'muted small' }, 'Wander areas: people hang around in them, on the ground or on a roof (the dots show where they can stand). Street paths: walkers follow them, and wait for cars where one crosses a road. Alt+click another point links or unlinks it.'),
@@ -781,8 +795,13 @@ function rebuildGrass() {
 // ---------------------------------------------------------------- entities
 
 const keyOf = (sel) => `${sel.type}:${sel.index}`;
-const LISTS = { collider: 'colliders', prop: 'props', atm: 'atms', wardrobe: 'wardrobes', pavement: 'pavements', section: 'sections', patch: 'grassPatches', sound: 'sounds', secret: 'secrets' };
-const listOf = (type) => (type === 'peopleArea' ? town.people?.areas ?? null : type === 'peoplePoint' ? town.people?.waypoints ?? null : type === 'waypoint' ? town.traffic.waypoints : type === 'road' ? town.roads?.cells ?? null : LISTS[type] ? town[LISTS[type]] : null);
+const LISTS = { collider: 'colliders', prop: 'props', atm: 'atms', wardrobe: 'wardrobes', pavement: 'pavements', section: 'sections', patch: 'grassPatches', sound: 'sounds', secret: 'secrets', spawn: 'spawns' };
+const FARM_LISTS = { pad: 'pads', den: 'dens' };
+const listOf = (type) => (type === 'peopleArea' ? town.people?.areas ?? null : type === 'peoplePoint' ? town.people?.waypoints ?? null : type === 'waypoint' ? town.traffic.waypoints : type === 'road' ? town.roads?.cells ?? null
+    : FARM_LISTS[type] ? town.farm?.[FARM_LISTS[type]] ?? null : type === 'dock' ? (town.farm?.trucks ? [town.farm.trucks] : null)
+    : type === 'truckPoint' ? town.farm?.truckPath ?? null
+    : type === 'truckCash' ? (town.farm?.trucks ? [(town.farm.trucks.cash ??= { x: town.farm.trucks.x, z: town.farm.trucks.z - 1.8 })] : null)
+    : LISTS[type] ? town[LISTS[type]] : null);
 const hex = (color) => `#${color.toString(16).padStart(6, '0')}`;
 const grassColor = (id) => (id === 'none' ? '#c9b48a' : id === 'auto' ? '#9be37a' : (mow.grass.find((g) => g.id === id)?.color ?? '#5cbf4a'));
 const grassName = (id) => (id === 'none' ? 'no grass' : id === 'auto' ? 'noise' : (mow.grass.find((g) => g.id === id)?.name ?? id));
@@ -885,6 +904,16 @@ function rebuildEntities() {
     if (!diorama) {
         town.sounds.forEach((zone, index) => addHolder({ type: 'sound', index }, buildSound(zone)));
         town.secrets.forEach((secret, index) => addHolder({ type: 'secret', index }, buildSecret(secret)));
+        town.spawns.forEach((spawn, index) => addHolder({ type: 'spawn', index }, buildSpawn(spawn)));
+        // The farm test's pieces (levels with a `farm` block): its upgrade pads, dens and truck dock.
+        (town.farm?.pads ?? []).forEach((pad, index) => addHolder({ type: 'pad', index }, buildFarmPad(pad)));
+        (town.farm?.dens ?? []).forEach((den, index) => addHolder({ type: 'den', index }, buildDen(den)));
+        if (town.farm?.trucks) {
+            addHolder({ type: 'dock', index: 0 }, buildDock(town.farm.trucks));
+            addHolder({ type: 'truckCash', index: 0 }, buildTruckCash(listOf('truckCash')[0]));
+        }
+        (town.farm?.truckPath ?? []).forEach((point, index) => addHolder({ type: 'truckPoint', index }, buildTruckPoint(point, index)));
+        refreshTruckLine();
         town.colliders.forEach((cube, index) => addHolder({ type: 'collider', index }, buildCollider(cube)));
         if (showTraffic) town.traffic.waypoints.forEach((point, index) => addHolder({ type: 'waypoint', index }, buildWaypoint(point)));
         addHolder({ type: 'start', index: 0 }, buildStart());
@@ -973,6 +1002,129 @@ function buildSecret(secret) {
     const label = labelSprite(`🤫 ${secret.id}
 chest $${secret.reward}`, '#ffe27a');
     label.position.y = 2;
+    holder.add(fill, edge, label);
+    return holder;
+}
+
+/** A spawn area: a translucent rect (cyan for people, orange for trucks), its outline and its label. */
+function buildSpawn(spawn) {
+    const holder = new THREE.Group();
+    holder.position.set(spawn.x, 0, spawn.z);
+    const trucks = spawn.kind === 'trucks';
+    const fill = plane(spawn.width, spawn.depth, trucks ? '#ffb74d' : '#4fe3ff', 0.2, 0.45);
+    const edge = outline(trucks ? 0xffb74d : 0x4fe3ff);
+    edge.scale.set(spawn.width, spawn.depth, 1);
+    edge.position.y = 0.21;
+    const label = labelSprite(`${trucks ? '🚚 trucks' : '🧍 people'}
+${spawn.id}`, trucks ? '#ffd9a8' : '#bff4ff');
+    label.position.y = 2;
+    holder.add(fill, edge, label);
+    return holder;
+}
+
+/**
+ * A farm upgrade pad (the game's UpgradePads): its square (2.6 across, white edge), its stand (STAND_BACK behind it,
+ * turned with it), and what it upgrades.
+ */
+function buildFarmPad(pad) {
+    const holder = new THREE.Group();
+    holder.position.set(pad.x, 0, pad.z);
+    holder.rotation.y = pad.rotationY ?? 0;
+    const tool = pad.kind === 'tool';
+    const fill = plane(2.6, 2.6, tool ? '#3f8cff' : '#f2a33a', 0.08, 0.35);
+    const edge = outline(0xffffff);
+    edge.scale.set(2.6, 2.6, 1);
+    edge.position.y = 0.09;
+    const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.6, 0.7, 16), new THREE.MeshStandardMaterial({ color: tool ? 0x3f8cff : 0xf2a33a }));
+    stand.position.set(0, 0.35, -2.1);
+    const section = town.sections.find((s) => s.id === pad.section);
+    const label = labelSprite(`${tool ? '⬆ MOWER' : '🎒 BAG'} station${section ? `\nwith ${section.name}` : ''}`, tool ? '#9ec8ff' : '#ffd59a');
+    label.position.set(0, 2.2, -2.1);
+    holder.add(fill, edge, stand, label);
+    return holder;
+}
+
+/** A den (the game's ChickenDen): its yard (width x depth), its gate on the south side, its name. */
+function buildDen(den) {
+    const holder = new THREE.Group();
+    holder.position.set(den.x, 0, den.z);
+    const fill = plane(den.width, den.depth, '#7a5b44', 0.06, 0.6);
+    const edge = outline(0xc98a4b);
+    edge.scale.set(den.width, den.depth, 1);
+    edge.position.y = 0.07;
+    const gate = new THREE.Mesh(new THREE.BoxGeometry(den.gate ?? 2.4, 0.3, 0.4), new THREE.MeshBasicMaterial({ color: 0x9cff6a }));
+    gate.position.set(0, 0.15, den.depth / 2);
+    gate.raycast = () => {};
+    const label = labelSprite(`🐔 ${den.name}\ngate on the south side`, '#ffd59a');
+    label.position.y = 3;
+    holder.add(fill, edge, gate, label);
+    return holder;
+}
+
+/** A point of the trucks' path: an orange post with its number (the first: where they pop in; the last: where they park). */
+function buildTruckPoint(point, index) {
+    const holder = new THREE.Group();
+    holder.position.set(point.x, 0, point.z);
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.2, 12), new THREE.MeshStandardMaterial({ color: 0xffb74d, emissive: 0xffb74d, emissiveIntensity: 0.35 }));
+    post.position.y = 0.6;
+    const count = town.farm.truckPath.length;
+    const label = labelSprite(index === 0 ? '🚚 1 · trucks come in' : index === count - 1 ? `🚚 ${index + 1} · they park` : `🚚 ${index + 1}`, '#ffd59a');
+    label.position.y = 2;
+    holder.add(post, label);
+    return holder;
+}
+
+/** The trucks' path drawn point to point (not selectable: its points are). */
+let truckLine = null;
+function refreshTruckLine() {
+    const points = town.farm?.truckPath ?? [];
+    if (!truckLine) {
+        truckLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffb74d }));
+        truckLine.raycast = () => {};
+        truckLine.renderOrder = 5;
+    }
+    // (Back in the scene if it was made again.)
+    if (truckLine.parent !== scene) scene.add(truckLine);
+    truckLine.geometry.setFromPoints(points.map((p) => new THREE.Vector3(p.x, 0.35, p.z)));
+    truckLine.visible = points.length > 1;
+}
+
+/** A point on the trucks' path: after the selected one, else at the end (a new path starts at the view's middle). */
+function addTruckPoint() {
+    if (!town.farm) return toast('This level has no farm (its `farm` block).', 'bad');
+    touch();
+    town.farm.truckPath ??= [];
+    const path = town.farm.truckPath;
+    const at = selection?.type === 'truckPoint' ? selection.index + 1 : path.length;
+    path.splice(at, 0, dropPoint());
+    rebuildAll();
+    select({ type: 'truckPoint', index: at });
+}
+
+/** Where the truck's money lands (its own cash square and pile). */
+function buildTruckCash(cash) {
+    const holder = new THREE.Group();
+    holder.position.set(cash.x, 0, cash.z);
+    const fill = plane(1.5, 1.5, '#5fc85a', 0.09, 0.5);
+    const edge = outline(0x4fe3ff);
+    edge.scale.set(1.5, 1.5, 1);
+    edge.position.y = 0.1;
+    const label = labelSprite('💵 Truck cash', '#c8ffb0');
+    label.position.y = 1.8;
+    holder.add(fill, edge, label);
+    return holder;
+}
+
+/** The den's truck dock: its square (inside the den, by the road) and its price. */
+function buildDock(dock) {
+    const holder = new THREE.Group();
+    holder.position.set(dock.x, 0, dock.z);
+    const fill = plane(1.6, 1.6, '#4fe3ff', 0.09, 0.45);
+    const edge = outline(0x4fe3ff);
+    edge.scale.set(1.6, 1.6, 1);
+    edge.position.y = 0.1;
+    const label = labelSprite(`🚚 Truck dock\n$${dock.price} · level ${dock.level}`, '#bff4ff');
+    label.position.y = 2.4;
     holder.add(fill, edge, label);
     return holder;
 }
@@ -1207,9 +1359,9 @@ function attachGizmo() {
 // toFixed drops float noise (0.69 * 1 → 0.6900000000000001) so town.json stays readable.
 const round = (value, step = 0.001) => Number((Math.round(value / step) * step).toFixed(4));
 /** Things that turn (the rest only move / resize). */
-const TURNS = new Set(['prop', 'atm', 'wardrobe', 'patch', 'separator']);
+const TURNS = new Set(['prop', 'atm', 'wardrobe', 'patch', 'separator', 'pad']);
 /** Things whose size is width x depth (scaling changes those, not a height). */
-const SIZED = new Set(['pavement', 'section', 'patch', 'sound', 'pen', 'secret', 'collider', 'peopleArea']);
+const SIZED = new Set(['pavement', 'section', 'patch', 'sound', 'pen', 'secret', 'collider', 'peopleArea', 'spawn', 'den']);
 
 /** The gizmo moved/turned the holder: write it back into the data. */
 function syncFromGizmo() {
@@ -1223,6 +1375,7 @@ function syncFromGizmo() {
     }
     data.x = round(holder.position.x);
     data.z = round(holder.position.z);
+    if (selection.type === 'truckPoint') refreshTruckLine();
     if (TURNS.has(selection.type)) data.rotationY = round(holder.rotation.y, 0.0001);
     // The rest of the selection moves by as much (a turn is the gizmo's one only).
     const start = moveStarts.get(keyOf(selection));
@@ -1403,6 +1556,24 @@ function addCollider() {
     added('collider');
 }
 
+/** A new farm upgrade pad of `kind` ('tool': the next mower, 'capacity': a bigger bag); the level needs a `farm` block. */
+function addFarmPad(kind) {
+    if (!town.farm) return toast('This level has no farm (its `farm` block): upgrade stations are the farm test\'s.', 'bad');
+    touch();
+    town.farm.pads ??= [];
+    town.farm.pads.push({ kind, ...dropPoint() });
+    added('pad');
+}
+
+/** A new spawn area of `kind` ('people' or 'trucks'). */
+function addSpawn(kind) {
+    touch();
+    let n = town.spawns.length + 1;
+    while (town.spawns.some((s) => s.id === `${kind}-${n}`)) n++;
+    town.spawns.push({ id: `${kind}-${n}`, kind, ...dropPoint(), width: kind === 'trucks' ? 4 : 3, depth: kind === 'trucks' ? 6 : 3 });
+    added('spawn');
+}
+
 function addSecret() {
     touch();
     let n = town.secrets.length + 1;
@@ -1454,7 +1625,7 @@ function duplicateSelection() {
     const data = entityData(selection);
     touch();
     const copy = { ...structuredClone(data), x: data.x + 1, z: data.z + 1 };
-    if (selection.type === 'pavement' || selection.type === 'sound' || selection.type === 'secret') copy.id = `${data.id}-copy`;
+    if (selection.type === 'pavement' || selection.type === 'sound' || selection.type === 'secret' || selection.type === 'spawn') copy.id = `${data.id}-copy`;
     listOf(selection.type).push(copy);
     added(selection.type);
 }
@@ -2146,6 +2317,12 @@ function renderLists() {
     host.querySelector('#townColliderList').replaceChildren(...town.colliders.map((cube, i) => listItem('collider', i, `🧊 Cube ${i + 1}`,
         [cube.solid ? 'solid' : 'walk through', cube.fades ? `fades ${fileName(cube.fades)}` : ''].filter(Boolean).join(' · '))));
     host.querySelector('#townSecretList').replaceChildren(...town.secrets.map((s, i) => listItem('secret', i, `🤫 ${s.id}`, `$${s.reward} · ${s.width}×${s.depth}`)));
+    host.querySelector('#townFarmList').replaceChildren(
+        ...(town.farm?.pads ?? []).map((pad, i) => listItem('pad', i, pad.kind === 'tool' ? '⬆ Mower station' : '🎒 Bag station', pad.section ? `with ${pad.section}` : 'from the start')),
+        ...(town.farm?.dens ?? []).map((den, i) => listItem('den', i, `🐔 ${den.name}`, `${den.width}×${den.depth}`)),
+        ...(town.farm?.trucks ? [listItem('dock', 0, '🚚 Truck dock', `$${town.farm.trucks.price} · level ${town.farm.trucks.level}`), listItem('truckCash', 0, '💵 Truck cash', '')] : []),
+        ...(town.farm?.truckPath ?? []).map((point, i, all) => listItem('truckPoint', i, `🚚 Path point ${i + 1}`, i === 0 ? 'trucks come in' : i === all.length - 1 ? 'they park' : '')));
+    host.querySelector('#townSpawnList').replaceChildren(...town.spawns.map((s, i) => listItem('spawn', i, `${s.kind === 'trucks' ? '🚚' : '🧍'} ${s.id}`, `${s.kind} · ${s.width}×${s.depth}`)));
     host.querySelector('#townSoundList').replaceChildren(...town.sounds.map((s, i) => listItem('sound', i, `🔊 ${s.id}`, `${s.sound} · ${s.volume}`)));
     renderSoundSettings();
     host.querySelector('#townPropList').replaceChildren(...town.props.map((p, i) => listItem('prop', i, titleCase(fileName(p.model)), p.model.split('/').slice(0, -1).join('/'))));
@@ -2275,7 +2452,7 @@ function renderInspector() {
     const titles = {
         prop: () => titleCase(fileName(data.model)), atm: () => `ATM ${selection.index + 1}`, wardrobe: () => `Wardrobe ${selection.index + 1}`, pavement: () => data.id,
         section: () => data.name, patch: () => `Grass patch: ${grassName(data.grass)}`, start: () => 'Player start',
-        collider: () => `Collider cube ${selection.index + 1}`, sound: () => `Sound zone: ${data.id}`, waypoint: () => `Waypoint ${data.id}`, peopleArea: () => `Wander area ${selection.index + 1}`, peoplePoint: () => `Street path point ${data.id}`, secret: () => `Secret patch: ${data.id}`, pen: () => `${town.sections[selection.index].name} pen`, centre: () => 'Grass noise centre', shore: () => `Shore point ${selection.index + 1}`, separator: () => `${town.sections[selection.index].name} separator`,
+        collider: () => `Collider cube ${selection.index + 1}`, sound: () => `Sound zone: ${data.id}`, waypoint: () => `Waypoint ${data.id}`, peopleArea: () => `Wander area ${selection.index + 1}`, peoplePoint: () => `Street path point ${data.id}`, secret: () => `Secret patch: ${data.id}`, spawn: () => `Spawn area: ${data.id}`, pad: () => (data.kind === 'tool' ? 'Mower upgrade station' : 'Bag upgrade station'), den: () => `Den: ${data.name}`, dock: () => 'Truck dock', truckPoint: () => `Truck path point ${selection.index + 1}`, truckCash: () => 'Truck cash square', pen: () => `${town.sections[selection.index].name} pen`, centre: () => 'Grass noise centre', shore: () => `Shore point ${selection.index + 1}`, separator: () => `${town.sections[selection.index].name} separator`,
     };
     const rows = [
         el('div', { class: 'inspector-title' }, titles[type](), el('span', { class: 'tag' }, type)),
@@ -2355,6 +2532,41 @@ function renderInspector() {
                 else delete d.fades;
             })),
             el('p', { class: 'muted small' }, 'While the player is in or touching this cube, that prop goes see-through. Once any cube names a prop, only cubes fade it.'));
+    }
+    if (type === 'pad') {
+        rows.push(
+            selectField('Upgrades', data.kind, [['tool', 'The next mower'], ['capacity', 'A bigger bag']], (v) => edit((d) => { d.kind = v; })),
+            selectField('There', data.section ?? '', [['', 'From the start'], ...town.sections.map((sec) => [sec.id, `With ${sec.name}`])], (v) => edit((d) => { if (v) d.section = v; else delete d.section; })),
+            el('p', { class: 'muted small' }, 'Standing on the square pours the bag\'s grass in; paid in full, the upgrade happens. The stand (the next mower or the bag) is behind the square: turn it to put it at a side.'));
+    }
+    if (type === 'den') {
+        rows.push(
+            textField('Name', data.name, (v) => edit((d) => { d.name = v || d.name; })),
+            numberField('Gate width', data.gate ?? 2.4, 0.2, (v) => edit((d) => { d.gate = Math.max(1, v); })),
+            el('p', { class: 'muted small' }, 'Its hen house runs along the back (north), the packing machine and the sell counter inside; the customers\' path outside its west fence. Mowed up to its gate, it opens. Put tough grass round it (a grass patch) so it has to be mowed to.'));
+    }
+    if (type === 'truckCash') {
+        rows.push(el('p', { class: 'muted small' }, 'A loaded truck pays here: its own pile of notes (the customers\' is by the counter). Keep it inside the den, near the dock.'));
+    }
+    if (type === 'truckPoint') {
+        rows.push(el('p', { class: 'muted small' }, 'The trucks\' path (orange): they pop in at point 1, drive point to point and park at the last (by the den\'s truck dock), then drive it back and pop out at point 1. "🚚 Truck path point" adds one after the selected point. Lay a pavement under it for the road.'));
+    }
+    if (type === 'dock') {
+        rows.push(
+            numberField('Price ($)', data.price, 10, (v) => edit((d) => { d.price = Math.max(0, Math.round(v)); })),
+            numberField('Level', data.level, 1, (v) => edit((d) => { d.level = Math.max(1, Math.round(v)); })),
+            numberField('$ a tray', data.trayPrice, 1, (v) => edit((d) => { d.trayPrice = Math.max(1, Math.round(v)); })),
+            numberField('Trays wanted (least)', data.wants[0], 1, (v) => edit((d) => { d.wants = [Math.max(1, Math.round(v)), Math.max(Math.round(v), d.wants[1])]; })),
+            numberField('Trays wanted (most)', data.wants[1], 1, (v) => edit((d) => { d.wants = [Math.min(d.wants[0], Math.round(v)), Math.max(1, Math.round(v))]; })),
+            el('p', { class: 'muted small' }, 'Keep it inside the den, by its fence: trucks park at the last point of the trucks\' path (🚚 Truck path point), so put that just outside the fence here.'));
+    }
+    if (type === 'spawn') {
+        rows.push(
+            textField('Id', data.id, (v) => edit((d) => { d.id = v || d.id; })),
+            selectField('Who', data.kind, [['people', 'People (customers)'], ['trucks', 'Trucks']], (v) => edit((d) => { d.kind = v; })),
+            el('p', { class: 'muted small' }, data.kind === 'trucks'
+                ? 'Trucks pop in here and drive the roads (pavements named road-...) to the den\'s truck dock, and back. Keep it on (or next to) a road.'
+                : 'Customers pop in somewhere in here and walk to the den\'s counter, and back. With several, each picks one at random.'));
     }
     if (type === 'secret') {
         rows.push(
