@@ -21,6 +21,7 @@ import type MowPlayer from './MowPlayer';
 import { playerScale } from './MowPlayer';
 import type { MowEffects } from '../vfx/MowEffects';
 import { MowAudio } from '../audio/MowAudio';
+import { MOUNT, MowerBlades } from './MowerBlades';
 
 const MODEL_BASE = './mow/models/';
 /** Wheel radius the spin is worked out from (world units, at the tractor's base height). */
@@ -49,11 +50,17 @@ export class TractorRide {
 
     /** `unfinished(x, z)`: whether that spot is in an open section not restored yet (where the tractor is ridden). */
     public constructor(threeScene: THREE.Scene, private readonly player: MowPlayer, private readonly effects: MowEffects,
-        private readonly unfinished: (x: number, z: number) => boolean) {
+        private readonly unfinished: (x: number, z: number) => boolean,
+        private readonly canMount: (x: number, z: number) => boolean = () => true) {
         this.holder.visible = false;
         threeScene.add(this.holder);
         void this.load();
     }
+
+    /** The blades at the tractor's front (MowerBlades), in its frame: their level across the cutting width. */
+    private readonly blades = new MowerBlades((material) => BendService.applyBend(material));
+    /** The tractor model's front edge (holder units, at the base height). */
+    private front = 1;
 
     public get isRiding(): boolean {
         return this.riding;
@@ -95,6 +102,9 @@ export class TractorRide {
             this.paintedMaps.clear();
             this.lookFor = undefined;
             this.holder.add(model);
+            this.holder.add(this.blades.group);
+            // Its front edge in the holder's frame (the blades mount past it).
+            this.front = new THREE.Box3().setFromObject(model).max.z;
         } catch (error) {
             console.warn(`[TractorRide] could not load ${config.model}`, error);
         }
@@ -161,6 +171,34 @@ export class TractorRide {
     /** Built wheels' radius (holder units, at the base height), for their spin. */
     private wheelRadius?: number;
 
+    /**
+     * A copy of the tractor as `tool` looks (its paint; its own materials, bent with the world): the Mower station's
+     * stand shows the next driven mower with it. Undefined if the model can't load.
+     */
+    public static async copy(tool: ToolDef): Promise<THREE.Object3D | undefined> {
+        try {
+            const model = (await ModelLoaderManager.instance.loadModel(`${MODEL_BASE}${MOW.tractor.model}`)).clone(true);
+            const paint = toolPaint(tool);
+            model.traverse((child) => {
+                if (!(child instanceof THREE.Mesh)) return;
+                child.material = (Array.isArray(child.material) ? child.material : [child.material]).map((source) => {
+                    const material = source.clone();
+                    BendService.applyBend(material);
+                    if (paint && material instanceof THREE.MeshStandardMaterial) {
+                        if (material.map) material.map = TractorRide.paintedTexture(material.map, paint) ?? material.map;
+                        else if (isBodyMaterial(material)) material.color.set(paint === 'grey' ? 0x8c8c8c : paint);
+                    }
+                    return material;
+                });
+                if ((child.material as THREE.Material[]).length === 1) child.material = (child.material as THREE.Material[])[0];
+            });
+            model.rotation.y = MOW.tractor.rotationY;
+            return model;
+        } catch {
+            return undefined;
+        }
+    }
+
     /** A copy of `map` (same settings) repainted (paintPixels): grey, or a colour. */
     private static paintedTexture(map: THREE.Texture, paint: string): THREE.Texture | undefined {
         const image = map.image as CanvasImageSource & { width: number; height: number };
@@ -206,7 +244,9 @@ export class TractorRide {
     /** Call after the world has updated (the character has placed itself for this frame). */
     public update(delta: number): void {
         const position = this.player.transform.position;
-        const ride = MowProgress.tool.ride === true && this.unfinished(position.x, position.z);
+        // Mounted only where the tractor fits (out of a den's gate: on foot until clear of its posts, never wedged).
+        const wants = MowProgress.tool.ride === true && this.unfinished(position.x, position.z);
+        const ride = wants && (this.riding || this.canMount(position.x, position.z));
         this.updateLook();
         if (ride !== this.riding) this.setRiding(ride);
         // Mounted before the character had loaded (riding from the first frame, now it's ridden everywhere): seat it
@@ -218,6 +258,17 @@ export class TractorRide {
         if (this.riding) {
             this.place(delta);
             this.holdWheel();
+            // In the holder's units (it's scaled to the mower, so a placed level sits the same on every tractor): where the
+            // Tractor tab put this level, else across the cut against its front (an out-front deck).
+            const placed = MOW.tractor.blades?.[MowProgress.bladesLevel];
+            if (placed) {
+                this.blades.set(MowProgress.bladesLevel, placed.width);
+                this.blades.group.position.set(placed.x, placed.y, placed.z);
+            } else {
+                this.blades.set(MowProgress.bladesLevel, MowProgress.width / this.scale);
+                this.blades.group.position.set(0, MOUNT.lift / this.scale, this.front + this.blades.radius * MOUNT.ahead);
+            }
+            this.blades.spin(delta, Math.hypot(position.x - this.lastPosition.x, position.z - this.lastPosition.z) > 1e-3);
         }
         this.lastPosition.copy(position);
     }
@@ -290,6 +341,7 @@ export class TractorRide {
     }
 
     public destroy(): void {
+        this.blades.dispose();
         this.holder.removeFromParent();
     }
 }

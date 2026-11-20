@@ -8,10 +8,10 @@
 // (SAVE_VERSION): a save from another version starts a new game. Fields added later get their defaults (load()).
 
 import { Signal } from 'signals';
-import { MOW, CITY, CITIES, CityDef, CURRENT_CITY_KEY, PRESTIGE_BONUS, ToolDef, UpgradeDef, UpgradeId, WardrobeItem, setCity, grassFor, farmTest } from './MowConfig';
+import { MOW, CITY, CITIES, CityDef, CURRENT_CITY_KEY, PRESTIGE_BONUS, ToolDef, UpgradeDef, UpgradeId, WardrobeItem, setCity, grassFor, farmTest, nicePrice } from './MowConfig';
 
-/** The farm test's upgrade pads (UpgradePads): the next mower, the next bag size. */
-export type PadKind = 'tool' | 'capacity';
+/** The farm test's upgrade pads (UpgradePads): the next mower, the next bag size, the next blades. */
+export type PadKind = 'tool' | 'capacity' | 'blades';
 
 export type LookKind = 'colors' | 'faces' | 'hats';
 /** The wardrobe's kinds (its section in ui/mow.json also has a $comment: never walk its keys). */
@@ -27,7 +27,7 @@ export interface Look {
 const cityKey = (city: string): string => `mow.save.${city}`;
 const GLOBAL_KEY = 'mow.global';
 /** Bump when a change can't carry old saves over: a save from another version starts a new game. */
-const SAVE_VERSION = 4;
+const SAVE_VERSION = 6;
 /** What's the player's, not the city's (kept across cities: the wardrobe, the cities finished, the analytics). */
 const GLOBAL_FIELDS = ['owned', 'look', 'freeLooksOffered', 'sent', 'completed', 'carried', 'allCitiesOpen'] as const;
 /** The claim key of the rewards left unclaimed in cities travelled from (SaveData.carried). */
@@ -72,10 +72,19 @@ interface SaveData {
     densFound: string[];
     /** Farm test: the player's experience (their level follows from it: levelFor()). */
     xp: number;
+    /**
+     * Where the player last stood somewhere stable, once past the tutorial (the first area restored and left): the game
+     * starts them there again. None: the level's start.
+     */
+    lastPosition?: { x: number; z: number };
+    /** Money already poured into things bought a bit at a time (a hen, the conveyor, the dock, an area), by key. */
+    paid?: Record<string, number>;
+    /** Areas bought (DistrictDef.unlock), by id. */
+    bought?: string[];
     /** Farm test: den goods in the backpack. */
-    goods: { eggs: number; trays: number };
+    goods: { eggs: number; trays: number; goldTrays?: number };
     /** Farm test: the chicken den — hens owned, eggs on each nest's floor, eggs in the machine, trays on its grid, cash on its square. */
-    den: { hens: number; floor: number[]; machine: number; trays: number; cash: number; dock?: boolean; truckCash?: number };
+    den: { hens: number; floor: number[]; machine: number; trays: number; cash: number; dock?: boolean; truckCash?: number; belt?: boolean; helper?: boolean; truckHelper?: boolean; gold?: boolean; goldBelt?: boolean; goldMachine?: number; goldTrays?: number; tutorial?: boolean };
 }
 
 /** The claim key of an area's bonus (all its treasures found). */
@@ -155,7 +164,9 @@ export const MowProgress = {
     upgradePrice(upgrade: UpgradeDef): number | undefined {
         const level = this.upgradeLevel(upgrade.id);
         if (level >= upgrade.maxLevel) return undefined;
-        return Math.round(upgrade.basePrice * Math.pow(upgrade.growth, level) / 5) * 5;
+        const listed = upgrade.prices?.[level];
+        if (listed !== undefined) return nicePrice(listed);
+        return nicePrice(upgrade.basePrice * Math.pow(upgrade.growth, level));
     },
 
     /** Cutting width: the tool's plus the Cutting Width upgrade. */
@@ -166,8 +177,16 @@ export const MowProgress = {
     get speed(): number {
         return this.tool.speed * (1 + upgradeDef('speed').perLevel * this.upgradeLevel('speed'));
     },
+    /**
+     * Cutting power: the mower's own plus the blades' level (README_PROGRESSION.md: the blades are what cut tougher
+     * grass; the mower is how wide, fast and big).
+     */
     get power(): number {
-        return this.tool.power;
+        return this.tool.power + this.upgradeLevel('blades');
+    },
+    /** The Blades upgrade's level (the blades under the mower: MowerBlades). */
+    get bladesLevel(): number {
+        return this.upgradeLevel('blades');
     },
     /** Share added to every sale (the Money Gain boost). */
     get moneyBonus(): number {
@@ -251,10 +270,10 @@ export const MowProgress = {
     padCost(kind: PadKind): number | undefined {
         if (kind === 'tool') {
             const next = this.nextTool;
-            return next ? grassFor(next.price) : undefined;
+            return next ? nicePrice(grassFor(next.price)) : undefined;
         }
-        const price = this.upgradePrice(upgradeDef('capacity'));
-        return price === undefined ? undefined : grassFor(price);
+        const price = this.upgradePrice(upgradeDef(kind));
+        return price === undefined ? undefined : nicePrice(grassFor(price));
     },
 
     /** Grass already in a pad toward its next upgrade. */
@@ -276,10 +295,33 @@ export const MowProgress = {
         if (upgraded) {
             state.padPaid[kind] = 0;
             if (kind === 'tool') state.toolLevel++;
-            else state.upgrades.capacity = this.upgradeLevel('capacity') + 1;
+            else state.upgrades[kind] = this.upgradeLevel(kind) + 1;
         }
         if (used > 0 || upgraded) this.changed();
         return { used, upgraded };
+    },
+
+    /** Where the player last stood somewhere stable (past the tutorial), or undefined. */
+    get lastPosition(): { x: number; z: number } | undefined {
+        return state.lastPosition;
+    },
+
+    /** Remembers where the player stands (saved with the rest, a moment later). */
+    setLastPosition(x: number, z: number): void {
+        const at = { x: Math.round(x * 100) / 100, z: Math.round(z * 100) / 100 };
+        if (state.lastPosition && state.lastPosition.x === at.x && state.lastPosition.z === at.z) return;
+        state.lastPosition = at;
+        this.changed();
+    },
+
+    /** Debug: a pad's next upgrade for free (the next mower, blades or bag). Whether there was one. */
+    grant(kind: PadKind): boolean {
+        if (this.padCost(kind) === undefined) return false;
+        state.padPaid[kind] = 0;
+        if (kind === 'tool') state.toolLevel++;
+        else state.upgrades[kind] = this.upgradeLevel(kind) + 1;
+        this.changed();
+        return true;
     },
 
     /** A visit to a pad that took grass counts as a sale (what the wardrobe waits for: appearsAfterSales). */
@@ -327,23 +369,23 @@ export const MowProgress = {
         if (after > before) this.levelUpListeners.forEach((listener) => listener(after));
     },
 
-    get goods(): Readonly<{ eggs: number; trays: number }> {
+    get goods(): Readonly<{ eggs: number; trays: number; goldTrays?: number }> {
         return state.goods;
     },
 
     /** Den goods in the backpack (eggs and trays together). */
     get goodsCount(): number {
-        return state.goods.eggs + state.goods.trays;
+        return state.goods.eggs + state.goods.trays + (state.goods.goldTrays ?? 0);
     },
 
     /** Puts den goods in (or, negative, takes them out of) the backpack. */
-    carry(kind: 'eggs' | 'trays', amount: number): void {
-        state.goods[kind] = Math.max(0, state.goods[kind] + amount);
+    carry(kind: 'eggs' | 'trays' | 'goldTrays', amount: number): void {
+        state.goods[kind] = Math.max(0, (state.goods[kind] ?? 0) + amount);
         this.changed();
     },
 
     /** The chicken den's state (changed through denChanged()). */
-    get den(): { hens: number; floor: number[]; machine: number; trays: number; cash: number; dock?: boolean; truckCash?: number } {
+    get den(): { hens: number; floor: number[]; machine: number; trays: number; cash: number; dock?: boolean; truckCash?: number; belt?: boolean; helper?: boolean; truckHelper?: boolean; gold?: boolean; goldBelt?: boolean; goldMachine?: number; goldTrays?: number; tutorial?: boolean } {
         return state.den;
     },
 
@@ -357,6 +399,56 @@ export const MowProgress = {
         state.money -= amount;
         this.changed();
         return true;
+    },
+
+    /** All the money that can pay for things: carried first, then the den's cash piles (customers', trucks'). */
+    get payable(): number {
+        return state.money + state.den.cash + (state.den.truckCash ?? 0);
+    },
+
+    /** Takes up to `amount` to pay with: from the money carried first, then the den's piles. Returns what it took. */
+    takePayment(amount: number): number {
+        let left = Math.max(0, amount);
+        const from = (have: number, take: (n: number) => void) => {
+            const n = Math.min(have, left);
+            if (n > 0) take(n);
+            left -= n;
+        };
+        from(state.money, (n) => (state.money -= n));
+        from(state.den.cash, (n) => (state.den.cash -= n));
+        from(state.den.truckCash ?? 0, (n) => (state.den.truckCash = (state.den.truckCash ?? 0) - n));
+        const taken = amount - left;
+        if (taken > 0) this.changed();
+        return taken;
+    },
+
+    /** Money already poured into `key` (a hen, the conveyor, the dock, an area). */
+    paid(key: string): number {
+        return state.paid?.[key] ?? 0;
+    },
+
+    /** Pours `amount` more into `key`. */
+    addPaid(key: string, amount: number): void {
+        state.paid ??= {};
+        state.paid[key] = (state.paid[key] ?? 0) + amount;
+        this.changed();
+    },
+
+    /** `key` is bought: what was poured into it goes. */
+    clearPaid(key: string): void {
+        if (state.paid) delete state.paid[key];
+        this.changed();
+    },
+
+    /** Whether an area that's bought to open (DistrictDef.unlock) has been bought. */
+    areaBought(id: string): boolean {
+        return state.bought?.includes(id) ?? false;
+    },
+
+    buyArea(id: string): void {
+        state.bought ??= [];
+        if (!state.bought.includes(id)) state.bought.push(id);
+        this.changed();
     },
 
     denFound(id: string): boolean {

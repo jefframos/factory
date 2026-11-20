@@ -97,7 +97,38 @@ export interface TractorConfig {
      * by `hand` (degrees, like a mower's grip). None: the hands stay as the sitting pose has them.
      */
     steer?: { x: number; y: number; z: number; spread: number; hand?: { x: number; y: number; z: number } };
+    /**
+     * Where the bag rides (in its frame, x rideScale: the same spot on every tractor; the rucksack's bottom middle there).
+     * Edited in the Tractor tab. None: behind the seat.
+     */
+    bag?: { x: number; y: number; z: number };
+    /**
+     * Where each blade level's blades sit on it (index = the Blades level; in its frame, x rideScale: the same on every
+     * tractor): their middle, and `width`, how far across they span. Edited in the Tractor tab (pick a level, place it).
+     * A level without one: against the front, across the cut.
+     */
+    blades?: ({ x: number; y: number; z: number; width: number } | null)[];
 }
+
+/**
+ * A level of the blades under the mower (ui/mow.json `bladeLevels`, one per level of the Blades upgrade, from level 0):
+ * how many side by side across the cut, and how long each is (1 = its full share of the cutting width). They're the
+ * cutting power: each level is one more (MowProgress.power). README_PROGRESSION.md, "Blades".
+ */
+export interface BladeLevelDef {
+    count: number;
+    size: number;
+    /**
+     * How they're laid out: `alternate` (the default: `count` across, neighbours staggered ahead / behind) or `grid`
+     * (`rows` x `cols`, evenly spaced: 1 x 4 is four in a straight line, 2 x 2 a square). In a grid `count` is ignored.
+     */
+    layout?: 'alternate' | 'grid';
+    rows?: number;
+    cols?: number;
+}
+
+/** How many blades a level has (a grid's rows x cols, else its count). */
+export const bladeCount = (look: BladeLevelDef): number => (look.layout === 'grid' ? Math.max(1, look.rows ?? 1) * Math.max(1, look.cols ?? 1) : look.count);
 
 export type UpgradeId = 'capacity' | 'speed' | 'money' | 'width' | 'blades';
 
@@ -112,6 +143,8 @@ export interface UpgradeDef {
     maxLevel: number;
     basePrice: number;
     growth: number;
+    /** Each level's price one by one (level n: prices[n]), instead of basePrice x growth^n. */
+    prices?: number[];
 }
 
 export interface DistrictDef {
@@ -168,8 +201,19 @@ export interface DistrictDef {
      * instead, so the section can be finished with the mower that cuts it. None = no cap.
      */
     maxGrass?: string;
+    /**
+     * Clumps of another grass over its fill (`grass`, usually the next tougher one: one step tougher only chews slowly),
+     * covering about `share` of it, shaped by the town's grass noise (grassNoise.scale) — the spots that keep a lawn of
+     * one grass type from looking flat. They may be tougher than `maxGrass`.
+     */
+    spots?: { grass: string; share: number };
     /** The camera's distance multiplier while it's the section being worked on (default 1; under 1 = closer). */
     zoom?: number;
+    /**
+     * Bought to open (the farm test): once the part before it is restored, a square at (x, z) takes money (poured in a
+     * bit at a time, kept between visits) and needs `level`; paid, the area opens. None: it opens by itself.
+     */
+    unlock?: { price: number; level: number; x: number; z: number };
 }
 
 /**
@@ -189,6 +233,8 @@ export interface AtmSpot {
      * sell there; it pops up in the park when there is). Once anything's been sold, it's always there.
      */
     appearsWhenFull?: boolean;
+    /** It only appears once this den (an id) has been found (the ATM: once the Chicken Den's open). */
+    afterDen?: string;
 }
 
 /** A station kind's look (the ATMs', the wardrobes'): the model (path under models/, fitted to `height`), how far behind the pad, the label's height. */
@@ -333,6 +379,18 @@ export interface PartDef {
     name: string;
 }
 
+/** A shape cube: its middle on the ground (x, z; lifted by `y`), its size, its turn, its colour. */
+export interface ShapeCube {
+    x: number;
+    z: number;
+    y?: number;
+    width: number;
+    depth: number;
+    height: number;
+    rotationY?: number;
+    color: string;
+}
+
 export interface TownLevel {
     id: string;
     name: string;
@@ -345,6 +403,11 @@ export interface TownLevel {
     grassOverPavement?: boolean;
     /** Collider cubes placed by hand (the editor): for a model its bounds fit badly (a stadium). */
     colliders?: ColliderCube[];
+    /**
+     * Plain coloured boxes (placed in the editor: ⬛ Shape cube), unlit so a dark one reads as a hole: the inside of a
+     * tunnel the customers come out of, a doorway, anything that hides where things pop in. Not solid.
+     */
+    shapes?: ShapeCube[];
     parts?: PartDef[];
     ground: { x: number; z: number; width: number; depth: number; color: string };
     island?: IslandDef;
@@ -372,6 +435,11 @@ export interface TownLevel {
     /** The farm test (the starter level only): upgrade pads fed with grass instead of the shop, and dens to find. */
     farm?: FarmTestDef;
     /**
+     * Places the player walks without the mower (it's parked, nothing's cut: the customers' path, a market...), as in a
+     * den. Drawn in the editor (🚶 No-mower area).
+     */
+    footAreas?: { x: number; z: number; width: number; depth: number }[];
+    /**
      * Where people and trucks come from (placed in the editor): rects on the ground they pop in at, as if arriving from
      * somewhere, and pop out at again when they leave.
      */
@@ -380,13 +448,20 @@ export interface TownLevel {
 
 /** An upgrade pad: stand on it and the bag's grass pours in; paid in full, the upgrade happens there and then. */
 export interface UpgradePadDef {
-    kind: 'tool' | 'capacity';
+    kind: 'tool' | 'capacity' | 'blades';
     x: number;
     z: number;
     /** Which way the stand is from the square: behind it (north) turned by this (radians; -1.5708: east). */
     rotationY?: number;
     /** Only there once this section is open. */
     section?: string;
+    /**
+     * Only there once the bag has been full (the first station: the player starts with none around, mows, fills the bag,
+     * and the mower station pops up). Once anything's been upgraded it stays.
+     */
+    appearsWhenFull?: boolean;
+    /** Only there once the player has this mower (tool level): the bag station with the push mower, the blades with the tractor. */
+    afterTool?: number;
 }
 
 /** A den hidden in the grass (a mock for now): mowed up to its entrance, it opens. */
@@ -399,6 +474,52 @@ export interface DenDef {
     depth: number;
     /** The gap in its fence, on its south side, this wide. */
     gate: number;
+    /**
+     * Where its parts are, placed in the editor (den-local: from its middle, +Z toward the gate); a part left out goes
+     * where the den's own layout puts it (ChickenDen layout()). The gold machine's are planned: shown in the editor only.
+     */
+    parts?: DenParts;
+}
+
+/** A point in a den (from its middle, +Z toward the gate); a square's own size (`w` across, `d` deep), set in the editor. */
+export interface DenPoint {
+    x: number;
+    z: number;
+    w?: number;
+    d?: number;
+}
+
+export interface DenParts {
+    /** Each hen's egg spot (where its eggs pile up and are picked up), by hen. */
+    eggs?: (DenPoint | null)[];
+    /**
+     * The conveyor belt's path, start to end (drawn in the editor: the start, points in between, the end): eggs from the
+     * egg spots join it where it passes nearest and ride it to its end, into the packing machine. Its buy square is at
+     * the start. None: along the front of the egg spots to the EGGS drop.
+     */
+    belt?: DenPoint[];
+    /** Where the conveyor's buy square is (none: at the belt's start). */
+    beltBuy?: DenPoint;
+    /** The helper's hire square (none: by the packs), and the trucks' helper's (none: by the truck dock). */
+    helperHire?: DenPoint;
+    truckHelperHire?: DenPoint;
+    /** The gold machine's buy square (none: in front of it), and the gold belt's (none: at the belt's start). */
+    goldBuy?: DenPoint;
+    goldBeltBuy?: DenPoint;
+    /** The gold belt's path, packing machine to gold machine (drawn in the editor; none: a straight run between them). */
+    goldBelt?: DenPoint[];
+    /** The packing machine, the square eggs are dropped on (EGGS), and its grid of packs (out). */
+    machine?: DenPoint;
+    input?: DenPoint;
+    grid?: DenPoint;
+    /** The sell counter, its SELL square, and the cash square. */
+    counter?: DenPoint;
+    sell?: DenPoint;
+    cash?: DenPoint;
+    /** Planned (the editor only, for laying out the conveyor line): the gold machine, its drop square and its grid. */
+    goldMachine?: DenPoint;
+    goldInput?: DenPoint;
+    goldGrid?: DenPoint;
 }
 
 export interface FarmTestDef {
@@ -411,7 +532,25 @@ export interface FarmTestDef {
      * The trucks' path (placed in the editor: 🚚 Truck path point): they pop in at its first point, drive point to
      * point, park at the last (by the dock) and drive it back. Without one: from a `trucks` spawn area over the roads.
      */
-    truckPath?: { x: number; z: number }[];
+    truckPath?: TruckPathPoint[];
+    /**
+     * The customers' way (the editor's 🧍 points): in from the first point through the rest to the queue at the counter,
+     * and out from the counter along `peopleOut`, popping out at its last point (2+ points each; without them: a
+     * `people` spawn area and straight up the den's path).
+     */
+    peopleIn?: { x: number; z: number }[];
+    peopleOut?: { x: number; z: number }[];
+}
+
+/**
+ * A point of the trucks' path (the editor's 🚚 Truck path points): they come in at the first, drive point to point to
+ * the one marked `park` (they stop there, by the dock, and load; the next ones queue behind), then drive on through the
+ * rest and pop out at the last. No point marked: they park at the last and drive back the same way.
+ */
+export interface TruckPathPoint {
+    x: number;
+    z: number;
+    park?: boolean;
 }
 
 /** A spawn area: a rect people (customers) or trucks pop in at, and out at when they leave. */
@@ -444,6 +583,10 @@ export interface TruckDockDef {
     /** The truck's model (under models/) and its length in the world. */
     model: string;
     length: number;
+    /** Its trucks' models, taken in turn (small cargo trucks now; container trucks later): `model` without. */
+    models?: string[];
+    /** The most trucks on their way in at once (the parked one and those queuing behind it; default 3). */
+    queue?: number;
     speed: number;
 }
 
@@ -462,8 +605,36 @@ export interface EggLoopDef {
     eggsPerTray: number;
     packSec: number;
     machineMax: number;
-    /** The trays' grid by the machine: its slots (each holds two trays, one on the other). */
+    /** The packs' grid by the machine: its slots, two across (4: a 2 x 2). */
     traySlots: number;
+    /** How many packs pile up on each slot (default 2): the grid holds traySlots x trayLayers. */
+    trayLayers?: number;
+    /**
+     * The conveyor belt (eggs from the egg spots straight into the packing machine): bought on its square at its start
+     * once every hen is owned, for `price` and `level`. Eggs ride it at `speed` (units a second), `spacing` apart, each
+     * egg spot sending one every `takeSec`.
+     */
+    belt?: { price: number; level: number; speed: number; spacing: number; takeSec: number };
+    /**
+     * The first helper (a worker in a cap and uniform), hired on its square once the conveyor runs: carries up to
+     * `carry` packs from the grids (gold first) to the customers at SELL, then takes the cash pile to the player.
+     */
+    helper?: { price: number; level: number; carry: number; walkSpeed: number };
+    /**
+     * The trucks' helper, hired on its square once the truck dock's open: packs from the fullest grid to the parked
+     * truck, and the truck's cash pile to the player.
+     */
+    truckHelper?: { price: number; level: number; carry: number; walkSpeed: number };
+    /**
+     * The gold machine (bought once the helper's hired): packs dropped on its square become gold packs, one every
+     * `packSec`, onto its grid (`slots` x `layers`); it holds `max` packs. A gold pack sells for `trayPrice`.
+     */
+    gold?: { price: number; level: number; packSec: number; max: number; slots: number; layers: number; trayPrice: number };
+    /**
+     * The belt linking the two machines (bought once the gold machine's there): every pack packed rides it into the gold
+     * machine — no more packs on the packing grid, no more dropping them in by hand: everything's gold.
+     */
+    goldBelt?: { price: number; level: number; speed: number; spacing: number };
     /** Cash per tray sold. */
     trayPrice: number;
     /** Trays a customer asks for (lowest, highest), how many wait at most, and how soon the next one comes. */
@@ -625,6 +796,8 @@ export interface MowDesign {
     grass: GrassDef[];
     tools: ToolDef[];
     upgrades: UpgradeDef[];
+    /** The blades' look at each level of the Blades upgrade (the last one stands for any past it). */
+    bladeLevels: BladeLevelDef[];
     /** The shop's BOOSTS tab opens with this mower (tool level). */
     boostsUnlockToolLevel: number;
     tractor: TractorConfig;
@@ -648,8 +821,10 @@ export function partName(part: string): string {
 }
 
 /** Whether section `d` is open: its part is the first, or every section of the part before it is restored. */
-export function sectionOpen(d: number, restored: (id: string) => boolean): boolean {
-    const { opensAfter } = MOW.districts[d];
+export function sectionOpen(d: number, restored: (id: string) => boolean, bought: (id: string) => boolean = () => true): boolean {
+    const { opensAfter, unlock, id } = MOW.districts[d];
+    // Bought to open: not before its square's paid.
+    if (unlock && !bought(id)) return false;
     if (opensAfter) return goalCount(restored) >= opensAfter;
     if (TOWN.openAll) return true;
     const index = partsInOrder().indexOf(partOf(d));
@@ -699,6 +874,23 @@ export function chewReach(): number {
     return MOW.chewSec.length;
 }
 
+/** Whether section `d`'s unlock square is up: it's bought to open, not bought yet, and the part before it is restored. */
+export function sectionUnlockable(d: number, restored: (id: string) => boolean, bought: (id: string) => boolean): boolean {
+    const district = MOW.districts[d];
+    return !!district.unlock && !bought(district.id) && sectionOpen(d, restored, () => true);
+}
+
+/**
+ * A price made readable: two significant figures in steps of half the second one (247430 -> 245000, 1234 -> 1250),
+ * at least steps of 5 (87 -> 85). Incremental prices otherwise read like 247430.
+ */
+export function nicePrice(value: number): number {
+    if (value <= 0) return 0;
+    const digits = Math.floor(Math.log10(value));
+    const step = Math.max(5, Math.pow(10, digits - 1) / 2);
+    return Math.max(step, Math.round(value / step) * step);
+}
+
 /** Whether a mower of `power` can cut `grass` at all (at once, or chewing through it). */
 export function canCutGrass(grass: GrassDef, power: number): boolean {
     return grass.resistance - power <= chewReach();
@@ -707,6 +899,17 @@ export function canCutGrass(grass: GrassDef, power: number): boolean {
 /** The first mower (shop order) that can cut `grass` at all. */
 export function firstToolFor(grass: GrassDef): ToolDef | undefined {
     return MOW.tools.find((tool) => canCutGrass(grass, tool.power));
+}
+
+/**
+ * The blade level (Blades upgrade) a mower of `toolPower` needs to cut `grass` at full speed, or undefined when no
+ * level reaches it (power = the mower's own + the blade level: MowProgress.power).
+ */
+export function bladesFor(grass: GrassDef, toolPower: number): number | undefined {
+    const max = MOW.upgrades.find((u) => u.id === 'blades')?.maxLevel ?? 0;
+    // Full speed: power above the grass's toughness (as tough as the power, it's cut but labours).
+    const level = Math.max(0, grass.resistance - toolPower + 1);
+    return level <= max ? level : undefined;
 }
 
 /** A city (levels/cities.json): its level and map shot, whether travelling on keeps the gear, or not playable yet. */

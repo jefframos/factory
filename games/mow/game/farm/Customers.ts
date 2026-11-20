@@ -67,6 +67,9 @@ export class Customer {
     public readonly target = new THREE.Vector3();
     /** Points to walk through before `target` (the path's end, on the way in or out). */
     public route: THREE.Vector3[] = [];
+    /** With an in path: how far along it their place in the queue is (Customers.walkTo()), and the way they face there. */
+    public arc = 0;
+    public readonly face = new THREE.Vector3();
     /** Where they popped in (and pop out again). */
     public readonly home = new THREE.Vector3();
     public state: State = 'arriving';
@@ -77,6 +80,9 @@ export class Customer {
     private walkWeight = 0;
     private readonly geometries: THREE.BufferGeometry[] = [];
     private readonly bubble: THREE.Sprite;
+    /** The rig's head bone: the bubble follows it sideways (the clips lean the head off the model's middle). */
+    private head?: THREE.Object3D;
+    private static readonly headAt = new THREE.Vector3();
     private readonly canvas = document.createElement('canvas');
     private readonly texture: THREE.CanvasTexture;
     private drawn = '';
@@ -87,6 +93,9 @@ export class Customer {
         const scale = (PERSON_HEIGHT * playerScale()) / PERSON_MODEL_HEIGHT;
         model.scale.setScalar(scale);
         this.root.add(model);
+        model.traverse((node) => {
+            if (!this.head && (node as THREE.Bone).isBone && /head$/i.test(node.name)) this.head = node;
+        });
         this.mixer = new THREE.AnimationMixer(model);
         this.walkAction = this.mixer.clipAction(source.clips.walk);
         this.idleAction = this.mixer.clipAction(source.clips.idle);
@@ -136,7 +145,15 @@ export class Customer {
         this.walkAction.setEffectiveWeight(this.walkWeight);
         this.idleAction.setEffectiveWeight(1 - this.walkWeight);
         this.mixer.update(delta);
-        // The bubble stays upright whichever way they turn (a sprite), at their head.
+        // The bubble stays upright whichever way they turn (a sprite), right over their head (the bone, as animated).
+        if (this.head) {
+            this.root.updateWorldMatrix(true, false);
+            this.head.updateWorldMatrix(true, false);
+            const at = this.root.worldToLocal(this.head.getWorldPosition(Customer.headAt));
+            // (Unscaled by the pop-in: the root's own scale's in worldToLocal.)
+            this.bubble.position.x = at.x;
+            this.bubble.position.z = at.z;
+        }
         this.drawBubble();
         return walking;
     }
@@ -177,15 +194,60 @@ export class Customers {
     private readonly gone = new Set<Customer>();
 
     /**
+     * With an in path: the way in (its points, then the counter's place) and how far along it each point is. The queue
+     * runs back along it from the counter, a place every `gap`: someone further back stops at their place on the way.
+     */
+    private readonly way?: { points: THREE.Vector3[]; at: number[]; length: number; gap: number };
+
+    /**
      * `slots`: the queue's places, the counter's first; `entry`: the path's end (they come and go through it);
      * `from()`: where one pops in (a `people` spawn area; the path's end without one); `facing`: the way the one at the
      * counter looks (toward it).
      */
     public constructor(threeScene: THREE.Scene, private readonly slots: THREE.Vector3[], private readonly entry: THREE.Vector3,
         private readonly from: () => THREE.Vector3, private readonly facing: THREE.Vector3,
-        private readonly config: { wants: [number, number]; queue: number; everySec: number }) {
+        private readonly config: { wants: [number, number]; queue: number; everySec: number },
+        private readonly paths?: { in: THREE.Vector3[]; out: THREE.Vector3[] }) {
         threeScene.add(this.group);
+        if (paths) {
+            const points = [...paths.in.map((p) => p.clone()), slots[0].clone()];
+            const at = [0];
+            for (let i = 1; i < points.length; i++) at.push(at[i - 1] + points[i].distanceTo(points[i - 1]));
+            const gap = slots.length > 1 ? slots[1].distanceTo(slots[0]) : 1.5;
+            this.way = { points, at, length: at[at.length - 1], gap };
+        }
         void loadPeople().then((source) => (this.source = source)).catch((error) => console.warn('[Customers] people', error));
+    }
+
+    /** The point `arc` along the way in (before its start: on back along its first stretch), and the way it heads there. */
+    private wayPoint(arc: number, out: THREE.Vector3, heading: THREE.Vector3): THREE.Vector3 {
+        const { points, at } = this.way!;
+        let i = 1;
+        while (i < points.length - 1 && at[i] < arc) i++;
+        const a = points[i - 1];
+        const b = points[i];
+        const span = Math.max(1e-6, at[i] - at[i - 1]);
+        heading.subVectors(b, a).setY(0).normalize();
+        return out.copy(a).lerp(b, (arc - at[i - 1]) / span);
+    }
+
+    /**
+     * Sends `customer` to place `index` in the queue: straight to its slot, or (with an in path) on along the path to
+     * its place there, through the path's corners between where they're headed now (`from`, along it) and there.
+     */
+    private walkTo(customer: Customer, index: number, from: number): void {
+        if (!this.way) {
+            customer.target.copy(this.slots[index]);
+            return;
+        }
+        const arc = this.way.length - index * this.way.gap;
+        // The corners still ahead of them, then those past where they were headed up to the new place.
+        const corners = this.way.points.filter((_, i) => this.way!.at[i] > from + 1e-3 && this.way!.at[i] < arc - 1e-3);
+        customer.route.push(...corners.map((p) => p.clone()));
+        this.wayPoint(arc, customer.target, customer.face);
+        customer.arc = arc;
+        // The one at the counter looks at it; the rest along the way (at the one ahead).
+        if (index === 0) customer.face.copy(this.facing);
     }
 
     /** The one at the counter, if they're there and still want trays. */
@@ -204,11 +266,18 @@ export class Customers {
         customer.got++;
         if (customer.got < customer.wants) return false;
         customer.state = 'leaving';
-        customer.route = [this.entry.clone()];
-        customer.target.copy(customer.home);
+        if (this.paths) {
+            // Out along the out path, popping out at its end.
+            const out = this.paths.out;
+            customer.route = out.slice(0, -1).map((p) => p.clone());
+            customer.target.copy(out[out.length - 1]);
+        } else {
+            customer.route = [this.entry.clone()];
+            customer.target.copy(customer.home);
+        }
         this.queue.splice(this.queue.indexOf(customer), 1);
         this.leaving.push(customer);
-        this.queue.forEach((other, i) => other.target.copy(this.slots[i]));
+        this.queue.forEach((other, i) => this.walkTo(other, i, other.arc));
         return true;
     }
 
@@ -217,13 +286,15 @@ export class Customers {
         if (this.source && this.timer <= 0 && this.queue.length < this.config.queue) {
             this.timer = this.config.everySec;
             const [low, high] = this.config.wants;
-            const customer = new Customer(this.group, this.source, this.from(), low + Math.floor(Math.random() * (high - low + 1)));
-            customer.route = [this.entry.clone()];
-            customer.target.copy(this.slots[this.queue.length]);
+            const start = this.paths ? this.paths.in[0].clone() : this.from();
+            const customer = new Customer(this.group, this.source, start, low + Math.floor(Math.random() * (high - low + 1)));
+            // With an in path: along it only as far as their place in the queue (walkTo() adds the corners on the way).
+            customer.route = this.paths ? [] : [this.entry.clone()];
+            this.walkTo(customer, this.queue.length, 0);
             this.queue.push(customer);
         }
         for (const customer of this.queue) {
-            const walking = customer.update(delta, this.facing);
+            const walking = customer.update(delta, this.way ? customer.face : this.facing);
             if (!walking && customer.state === 'arriving') customer.state = 'waiting';
         }
         for (let i = this.leaving.length - 1; i >= 0; i--) {

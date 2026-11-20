@@ -33,7 +33,7 @@ import { FindToasts, Find, flyCoins, flyItem } from './FindToasts';
 import { TownMiniature, REVEAL_SEC } from './TownMiniature';
 import { CitiesPanel, CitiesMode, CITIES_PANEL_SIZE } from './CitiesPanel';
 import { MowProgress } from '../data/MowProgress';
-import { CityDef, MOW, TOWN, ToolDef, UpgradeDef, CITY, goalCount, goalSection } from '../data/MowConfig';
+import { CityDef, MOW, TOWN, ToolDef, UpgradeDef, CITY, farmTest, goalCount, goalSection } from '../data/MowConfig';
 import { ModelIcons } from './ModelIcons';
 import { tabbedBlock, TabSpec } from './TabBar';
 import { t, names, Localization } from '../i18n/Localization';
@@ -56,6 +56,10 @@ const BUTTON_SIZE = 64;
 /** The language button (off for now: the game's only in English; the browser's language still picks at boot). */
 const SHOW_LANGUAGE_BUTTON = false;
 const PROGRESS = { width: 360, height: 18 };
+/** With the player's level bar on top (the farm test): the area's bar under it, this far down and this much smaller. */
+const AREA_UNDER_LEVEL = { y: 104, scale: 0.72 };
+/** Under the level bar: the gap from its bottom to the area's name. */
+const AREA_GAP = 8;
 /** The area bar's reward disc at its end: its size. */
 const REWARD = { size: 38 };
 const SHOP = { width: 840, height: 580 };
@@ -789,6 +793,8 @@ export class MowHud extends PIXI.Container {
         this.trophiesButton.addChild(this.trophiesHand);
         this.tappable(this.trophiesButton, () => this.toggleTrophies());
         this.corner.addChild(this.trophiesButton);
+        // The farm game has no Trophies panel: a trophy found pays at once.
+        this.trophiesButton.visible = !farmTest();
     }
 
     private toggleTrophies(): void {
@@ -1319,6 +1325,33 @@ export class MowHud extends PIXI.Container {
         };
     }
 
+    /** A panel that stops play is open (the map, Trophies, the language, the cities): gameplay waits for it to close. */
+    public get playStopped(): boolean {
+        return this.mapPanel.visible || this.trophies.visible || this.language.visible || this.cities.visible;
+    }
+
+    /** The player's level bar is on top (the farm test): the area's bar goes under it, smaller. */
+    private underLevel = false;
+
+    /** The room at the very top between the buttons (left) and the money (right), and its middle line: the level bar's place. */
+    public levelSlot(): { left: number; right: number; y: number } {
+        const button = SHOW_LANGUAGE_BUTTON ? this.languageButton : this.mute;
+        return { left: button.x + BUTTON_SIZE / 2 + 10, right: this.corner.x - 10, y: this.mute.y };
+    }
+
+    public setUnderLevel(on: boolean): void {
+        this.underLevel = on;
+        this.reposition();
+    }
+
+    /** The level bar's part clear of its badge on screen (left, right, its bottom): the area's bar lines up under it. */
+    private levelSpan?: { left: number; right: number; bottom: number };
+
+    public alignUnderLevel(span: { left: number; right: number; bottom: number }): void {
+        this.levelSpan = span;
+        this.reposition();
+    }
+
     public reposition(): void {
         const screen = Game.overlayScreenData;
         if (!screen) return;
@@ -1328,14 +1361,25 @@ export class MowHud extends PIXI.Container {
         this.corner.position.set(screen.topLeft.x + screen.width - 16 - CORNER_WIDTH * cornerScale, screen.topLeft.y + 36);
         this.mute.position.set(screen.topLeft.x + 20 + BUTTON_SIZE / 2, screen.topLeft.y + 20 + BUTTON_SIZE / 2);
         this.languageButton.position.set(this.mute.x + BUTTON_SIZE + 12, this.mute.y);
-        this.progress.position.set(screen.center.x, screen.topLeft.y + 120);
+        // The area's bar: under the player's level bar when there is one (smaller: the level's the main one), else at the top.
+        this.progress.scale.set(this.underLevel ? AREA_UNDER_LEVEL.scale : 1);
+        this.progress.position.set(screen.center.x, screen.topLeft.y + (this.underLevel ? AREA_UNDER_LEVEL.y : 120));
+        const span = this.underLevel ? this.levelSpan : undefined;
+        if (span) {
+            // Exactly under the level bar's part clear of the badge: the bar and its reward coin as wide as it, the name
+            // over the bar (the bar runs -width/2..width/2, the coin past its right end).
+            const reach = REWARD.size - 6;
+            const scale = (span.right - span.left) / (PROGRESS.width + reach);
+            this.progress.scale.set(scale);
+            this.progress.position.set((span.left + span.right) / 2 - (reach / 2) * scale, span.bottom + AREA_GAP + 14 * scale);
+        }
         if (this.goal) {
             // Between the buttons on the left and the money on the right, smaller if it has to.
             const room = Math.min(screen.center.x - ((SHOW_LANGUAGE_BUTTON ? this.languageButton : this.mute).x + BUTTON_SIZE / 2), this.corner.x - screen.center.x) - 8;
             this.goal.scale.set(Math.min(1, room / GOAL_TIMELINE_HALF_WIDTH));
             this.goal.position.set(screen.center.x, screen.topLeft.y + 52);
         }
-        this.combo.position.set(screen.center.x, screen.topLeft.y + 205);
+        this.combo.position.set(screen.center.x, span ? this.progress.y + 80 : screen.topLeft.y + (this.underLevel ? AREA_UNDER_LEVEL.y + 80 : 205));
         // The map hangs right-aligned under the trophy (its origin is its centre).
         this.mapHome.set(screen.topLeft.x + screen.width - 20 - this.townMap.panelWidth / 2, this.corner.y + 190 + this.townMap.panelHeight / 2);
         if (!this.mapFlying) this.mapHolder.position.copyFrom(this.mapHome);

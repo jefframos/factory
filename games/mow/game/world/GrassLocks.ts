@@ -1,14 +1,16 @@
 // GrassLocks.ts
 //
 // Dig's padlocks (HardBlockMarkers) for the lawn: a badge floating over grass near the player that the mower can't
-// cut at all (GrassField.blockedSpots: on the wall's edge, one per few cells), showing the mower it takes (its icon,
-// rendered from its model: ModelIcons.toolCanvas) with a padlock in the corner, so "this needs a better mower" reads
-// before the player even pushes into it. Rescanned a few times a second around the player (and at once after an
+// cut at all (GrassField.blockedSpots: on the wall's edge, one per few cells), showing the blades it takes (the cutting
+// power is the blades' level: README_PROGRESSION.md; rendered from MowerBlades: ModelIcons.bladesCanvas) — or, when no
+// blades reach it, the mower it takes — with a padlock in the corner, so "this needs bigger blades" reads before the
+// player even pushes into it. Rescanned a few times a second around the player (and at once after an
 // upgrade, when the locks go). `bump()` makes the lock nearest a point hop, when the player pushes into the wall.
 
 import * as THREE from 'three';
 import { GrassField } from './GrassField';
-import { ToolDef, firstToolFor } from '../data/MowConfig';
+import { ToolDef, bladesFor, firstToolFor } from '../data/MowConfig';
+import { MowProgress } from '../data/MowProgress';
 import { ModelIcons } from '../ui/ModelIcons';
 import { CanvasArt } from '../ui/CanvasArt';
 import { BendService } from '../services/BendService';
@@ -134,14 +136,15 @@ export class GrassLocks {
         for (let i = 0; i < this.sprites.length; i++) {
             const spot = found[i];
             const sprite = this.sprites[i];
-            const tool = spot ? firstToolFor(spot.grass) : undefined;
-            if (!spot || !tool) {
+            const blades = spot ? bladesFor(spot.grass, MowProgress.tool.power) : undefined;
+            const tool = spot && blades === undefined ? firstToolFor(spot.grass) : undefined;
+            if (!spot || (blades === undefined && !tool)) {
                 this.spots[i] = null;
                 sprite.visible = false;
                 continue;
             }
             this.spots[i] = { x: spot.x, z: spot.z, y: spot.top + LIFT };
-            sprite.material = this.materialFor(tool);
+            sprite.material = blades !== undefined ? this.bladesMaterial(blades) : this.materialFor(tool!);
             sprite.visible = true;
         }
     }
@@ -157,6 +160,25 @@ export class GrassLocks {
         material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
         this.materials.set(tool.id, material);
         void ModelIcons.toolCanvas(tool).then((icon) => {
+            if (!icon) return;
+            drawBadge(canvas, icon);
+            texture.needsUpdate = true;
+        });
+        return material;
+    }
+
+    /** The badge for a blade level: the plain padlock at first, the blades drawn in once their icon is rendered. */
+    private bladesMaterial(level: number): THREE.SpriteMaterial {
+        const key = `blades:${level}`;
+        let material = this.materials.get(key);
+        if (material) return material;
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = BADGE;
+        drawBadge(canvas);
+        const texture = CanvasArt.texture(canvas);
+        material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
+        this.materials.set(key, material);
+        void ModelIcons.bladesCanvas(level).then((icon) => {
             if (!icon) return;
             drawBadge(canvas, icon);
             texture.needsUpdate = true;

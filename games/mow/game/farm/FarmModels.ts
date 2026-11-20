@@ -10,10 +10,10 @@ import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js
 import { createGLTFLoader } from 'core/three/GLTFLoaders';
 import { BendService } from '../services/BendService';
 
-export type FarmItem = 'bale' | 'egg' | 'tray' | 'cash';
+export type FarmItem = 'bale' | 'egg' | 'tray' | 'goldTray' | 'cash';
 
 /** Each item's height when stacked (world units). */
-export const ITEM_HEIGHT: Record<FarmItem, number> = { bale: 0.2, egg: 0.27, tray: 0.17, cash: 0.06 };
+export const ITEM_HEIGHT: Record<FarmItem, number> = { bale: 0.2, egg: 0.27, tray: 0.17, goldTray: 0.17, cash: 0.06 };
 
 const materials = new Map<string, THREE.MeshStandardMaterial>();
 function material(color: number, roughness = 0.8): THREE.MeshStandardMaterial {
@@ -67,19 +67,29 @@ function egg(): THREE.Mesh {
     return new THREE.Mesh(shell, material(0xfff0d0, 0.5));
 }
 
-/** A cardboard tray with six eggs, sitting on y = 0. */
-function tray(): THREE.Group {
+/** A cardboard tray with six eggs, sitting on y = 0 (`gold`: a red tray of golden eggs, the gold machine's). */
+function tray(gold = false): THREE.Group {
     const group = new THREE.Group();
-    group.add(mesh(geometry('tray', () => new THREE.BoxGeometry(0.5, 0.06, 0.36)), material(0xe2c48e), 0, 0.03, 0));
+    group.add(mesh(geometry('tray', () => new THREE.BoxGeometry(0.5, 0.06, 0.36)), material(gold ? 0xc0392b : 0xe2c48e), 0, 0.03, 0));
     const small = geometry('tray-egg', () => {
         const g = new THREE.SphereGeometry(0.075, 10, 8);
         g.scale(1, 1.2, 1);
         return g;
     });
     for (let i = 0; i < 6; i++) {
-        group.add(mesh(small, material(0xfff0d0, 0.5), -0.155 + (i % 3) * 0.155, 0.11, i < 3 ? -0.085 : 0.085));
+        group.add(mesh(small, gold ? goldEggMaterial() : material(0xfff0d0, 0.5), -0.155 + (i % 3) * 0.155, 0.11, i < 3 ? -0.085 : 0.085));
     }
     return group;
+}
+
+let goldEgg: THREE.MeshStandardMaterial | undefined;
+/** The golden eggs' shine. */
+function goldEggMaterial(): THREE.MeshStandardMaterial {
+    if (!goldEgg) {
+        goldEgg = new THREE.MeshStandardMaterial({ color: 0xffe23a, metalness: 0.25, roughness: 0.3, emissive: 0x8a6a00, emissiveIntensity: 0.45 });
+        BendService.applyBend(goldEgg);
+    }
+    return goldEgg;
 }
 
 /** A bundle of notes, sitting on y = 0. */
@@ -96,6 +106,7 @@ export function farmItem(kind: FarmItem): THREE.Object3D {
         case 'bale': return bale();
         case 'egg': return egg();
         case 'tray': return tray();
+        case 'goldTray': return tray(true);
         case 'cash': return cash();
     }
 }

@@ -4,7 +4,7 @@
 // gem hits — the stone one de-boomed and trimmed with ffmpeg into dig-hit — a short rock crackle on a break, stone / metal / gem pickups landing in the backpack, stone
 // footsteps, the build sting, the UI set), wooden hub footsteps from pizza, the celebration set from down (cheers,
 // applause, sparkle, whoosh, the reveal sting) and bandit-controller's purchase set (ka-ching, fanfare, shine, star). Files: raw-assets/audio (`npm run audio` packs them).
-// The soundtrack (the city's: cityMusic(), set in the editor's Sounds — by default Reed Mathis' "Somnia Variation 3")
+// The soundtrack (the city's: cityMusic(), set in the editor's Sounds — by default Benjamin Andrews' "Redding Rainbow")
 // loops quietly under everything on SoundManager's "music" layer, loaded on the first input (startMusic(): it's the
 // biggest file, kept out of the initial download) and faded in; another city's crossfades in when travelling.
 // Respects mute (SoundManager) and goes quiet while the page or platform is paused.

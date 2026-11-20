@@ -6,7 +6,7 @@
 // anything we want to read there uses them, and an event's name says what happened.
 //
 //   category     what                         action     when
-//   session      new | returning              start      the player's first input this session (new: their first ever)
+//   session      new | returning              start      the player's first move this session (new: their first ever)
 //   playtime     min-<n>                      complete   n minutes of active play this session
 //   playtime     <cityId>-min-<n>             complete   n minutes of active play in that city this session
 //   mode         calm | rush                  start      with session/start: which mode is played (GameMode)
@@ -35,6 +35,16 @@
 //   city         <cityId>                     complete   a city finished: its goal, or every area (once per player each)
 //   travel       <fromId>-to-<toId>           complete   a city's PLAY in the cities panel
 //   settings     lang-<code>                  complete   a language picked
+//   level        <nn>                         complete   a player level reached (the farm game; once per player each)
+//   unlock       <districtId>                 complete   an area bought on its unlock square (level + cash)
+//   den          <denId>-found                complete   a den reached and opened (once per player each)
+//   den          <denId>-<what>               complete   bought in a den: hen-<nn>, dock, belt, helper, truck-helper,
+//                                                        gold, gold-belt; tutorial: its first-visit lesson done
+//                                                        (once per player each)
+//
+// Gameplay (Gameplay.ts: the platform's gameplayStart / gameplayStop): starts on the player's first move, stops while a
+// panel that stops play is open (the map, Trophies, the language, the cities), starts again on the next move once it's
+// closed (MowScene.updateGameplay()). playtime counts only while it's on.
 //
 // Add an event here (and to the table) rather than calling PlatformHandler.measure() directly.
 
@@ -191,6 +201,21 @@ export const GameAnalytics = {
 
     languagePicked(code: string): void {
         send('settings', `lang-${code}`, 'complete');
+    },
+
+    /** A player level reached (the farm game), once per player each. */
+    levelReached(level: number): void {
+        if (MowProgress.once(`level-${level}`)) send('level', pad(level), 'complete');
+    },
+
+    /** An area bought on its unlock square. */
+    areaBought(districtId: string): void {
+        send('unlock', districtId, 'complete');
+    },
+
+    /** A den's milestone: found, or something bought in it (hen-<nn>, dock, belt, helper…), once per player each. */
+    den(denId: string, what: string): void {
+        if (MowProgress.once(`den-${denId}-${what}`)) send('den', `${denId}-${what}`, 'complete');
     },
 };
 

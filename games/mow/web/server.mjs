@@ -311,6 +311,32 @@ async function handleApi(req, res, url) {
         await writeMow(design);
         return send(res, 200, { ok: true });
     }
+    if (url.pathname === '/api/mow/blade-levels' && req.method === 'PUT') {
+        // The Tractor tab: the blade levels (how many blades side by side, and their size). Their count is the Blades
+        // upgrade's levels: its maxLevel follows, and a level past its price list gets one (the last x 2.5).
+        const levels = await readBody(req);
+        const num = (v) => typeof v === 'number' && Number.isFinite(v);
+        if (!Array.isArray(levels) || !levels.length || !levels.every((l) => num(l?.count) && l.count >= 1 && num(l?.size) && l.size > 0)) {
+            return send(res, 400, { error: 'Invalid blade levels' });
+        }
+        const design = await readJson(MOW_FILE, null);
+        if (!design) return send(res, 500, { error: 'Could not read mow.json' });
+        design.bladeLevels = levels.map((l) => {
+            const level = { count: Math.round(l.count), size: l.size };
+            if (l.layout === 'grid') Object.assign(level, { layout: 'grid', rows: Math.max(1, Math.round(num(l.rows) ? l.rows : 1)), cols: Math.max(1, Math.round(num(l.cols) ? l.cols : 1)) });
+            return level;
+        });
+        const blades = design.upgrades?.find((u) => u.id === 'blades');
+        if (blades) {
+            blades.maxLevel = levels.length - 1;
+            if (Array.isArray(blades.prices)) {
+                while (blades.prices.length < blades.maxLevel) blades.prices.push(Math.round((blades.prices[blades.prices.length - 1] ?? blades.basePrice) * 2.5 / 5) * 5);
+                blades.prices.length = blades.maxLevel;
+            }
+        }
+        await writeMow(design);
+        return send(res, 200, { ok: true });
+    }
     if (url.pathname === '/api/mow/cut-sound' && req.method === 'PUT') {
         // The Mowers tab: the grass cut's volume and pitch ranges.
         const { volume, pitch } = await readBody(req);

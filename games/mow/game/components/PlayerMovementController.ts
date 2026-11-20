@@ -170,10 +170,13 @@ export default class PlayerMovementController extends Component {
             // instead of stopping dead — same axis-independent resolution RigidBody's own
             // push-out uses.
             const position = this.entity.transform.position;
-            if (velocityX !== 0 && !isWalkable(position.x + velocityX * delta, position.z)) {
+            // Already somewhere not walkable (the footprint grew, something moved in): never stuck — every move is let
+            // through until the player's clear again; only then do walls stop them.
+            const free = isWalkable(position.x, position.z);
+            if (free && velocityX !== 0 && !isWalkable(position.x + velocityX * delta, position.z)) {
                 velocityX = 0;
             }
-            if (velocityZ !== 0 && !isWalkable(position.x, position.z + velocityZ * delta)) {
+            if (free && velocityZ !== 0 && !isWalkable(position.x, position.z + velocityZ * delta)) {
                 velocityZ = 0;
             }
 

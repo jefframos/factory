@@ -222,10 +222,14 @@ export class GrassField {
     private generate(isBlocked: (x: number, z: number) => boolean): void {
         const typeNoise = valueNoise(MOW.seed + 17);
         const jitterNoise = valueNoise(MOW.seed + 3);
+        const spotNoise = valueNoise(MOW.seed + 29);
         MOW.districts.forEach((district, d) => {
             // `maxGrass`: nothing tougher grows here.
             const cap = district.maxGrass ? MOW.grass.findIndex((g) => g.id === district.maxGrass) : -1;
             const maxType = cap >= 0 ? cap : MOW.grass.length - 1;
+            // `spots`: clumps of another grass over the fill, where the noise is highest (the same shapes the town's noise makes).
+            const spotType = district.spots ? MOW.grass.findIndex((g) => g.id === district.spots!.grass) : -1;
+            const spotOver = 1 - (district.spots?.share ?? 0);
             for (let iz = 0; iz < this.depth; iz++) {
                 for (let ix = 0; ix < this.width; ix++) {
                     const { x, z } = this.center(ix, iz);
@@ -233,11 +237,15 @@ export class GrassField {
                     if (pastCorner(district, x, z)) continue;
                     const i = ix + iz * this.width;
                     if (this.types[i] || isBlocked(x, z)) continue;
+                    // A no-mower area (TownLevel.footAreas) is bare ground, as a bare patch.
+                    if ((TOWN.footAreas ?? []).some((a) => Math.abs(x - a.x) <= a.width / 2 && Math.abs(z - a.z) <= a.depth / 2)) continue;
                     // The last patch over the cell wins over the section's fill.
                     const patch = TOWN.grassPatches.reduce<GrassPatch | undefined>((found, p) => (inPatch(p, x, z) ? p : found), undefined);
                     const kind = patch ? patch.grass : (district.fill ?? 'auto');
                     if (kind === 'none') continue;
-                    const type = Math.min(maxType, kind === 'auto' ? autoType(x, z, typeNoise) : Math.max(0, MOW.grass.findIndex((g) => g.id === kind)));
+                    // A patch is its own grass all over (not capped by the section's maxGrass, no spots on it); the fill is capped.
+                    let type = patch ? Math.max(0, MOW.grass.findIndex((g) => g.id === patch.grass)) : Math.min(maxType, kind === 'auto' ? autoType(x, z, typeNoise) : Math.max(0, MOW.grass.findIndex((g) => g.id === kind)));
+                    if (!patch && spotType >= 0 && spotNoise(x * TOWN.grassNoise.scale, z * TOWN.grassNoise.scale) >= spotOver) type = spotType;
                     this.types[i] = type + 1;
                     this.districtOf[i] = d;
                     this.jitter[i] = jitterNoise(ix * 0.9, iz * 0.9);

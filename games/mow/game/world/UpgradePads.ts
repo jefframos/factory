@@ -2,16 +2,19 @@
 //
 // The farm test's upgrade stations (TOWN.farm.pads), in place of the shop: a square marked on the floor (a thick
 // white outline, what it upgrades, the grass still needed, filling up green as it's paid) with the next thing on a
-// little stand behind it — the next mower turning slowly, or the player's rucksack for the bigger bag. Standing on the square pours
+// little stand behind it — the next mower turning slowly, the player's rucksack for the bigger bag, or the next blades
+// (spinning: MowerBlades) for sharper ones. Standing on the square pours
 // the bag's grass in (clumps flying from the player's pile onto the stand); paid in full, the upgrade happens at once
 // (MowProgress.deposit) and the stand shows the one after. No menus.
 
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { BendService } from '../services/BendService';
-import { MOW, UpgradePadDef } from '../data/MowConfig';
+import { MOW, UpgradePadDef, bladeCount } from '../data/MowConfig';
 import { MowProgress, PadKind } from '../data/MowProgress';
 import { buildMower } from '../player/MowerModel';
+import { TractorRide } from '../player/TractorRide';
+import { MowerBlades, bladeLook } from '../player/MowerBlades';
 import { rucksackPicture } from '../player/Backpack';
 import { CanvasArt } from '../ui/CanvasArt';
 import type { Box } from './GuidePath';
@@ -46,6 +49,8 @@ interface Pad {
     drawn: string;
     built: string;
     visible: boolean;
+    /** The Blades pad's blades on the stand (spun each frame). */
+    blades?: MowerBlades;
 }
 
 const kindOf = (def: UpgradePadDef): PadKind => def.kind;
@@ -61,6 +66,13 @@ function offer(kind: PadKind): { title: string; name: string; key: string } {
     if (kind === 'tool') {
         const next = MowProgress.nextTool;
         return { title: 'MOWER', name: next ? next.name.toUpperCase() : 'MAX', key: `tool:${MowProgress.toolLevel}` };
+    }
+    if (kind === 'blades') {
+        const level = MowProgress.bladesLevel + 1;
+        const look = bladeLook(level);
+        const count = bladeCount(look);
+        const size = look.size;
+        return { title: 'BLADES', name: count > 1 ? `${count} BLADES` : size >= 1 ? 'BIG BLADE' : 'BLADE', key: `blades:${MowProgress.bladesLevel}` };
     }
     const capacity = MOW.upgrades.find((u) => u.id === 'capacity')!;
     return { title: 'BIGGER BAG', name: `BAG +${capacity.perLevel}`, key: `capacity:${MowProgress.upgradeLevel('capacity')}` };
@@ -143,8 +155,12 @@ export class UpgradePads {
         };
     }
 
+    /** Its section's open, the mower it waits for is had, and (the first station) the bag has been full. */
     private shownNow(def: UpgradePadDef): boolean {
-        return !def.section || this.isOpen(def.section);
+        if (def.section && !this.isOpen(def.section)) return false;
+        if (def.afterTool !== undefined && MowProgress.toolLevel < def.afterTool) return false;
+        if (def.appearsWhenFull && !(MowProgress.full || MowProgress.toolLevel > 0 || MowProgress.padPaid('tool') > 0)) return false;
+        return true;
     }
 
     private material<T extends THREE.Material>(material: T): T {
@@ -179,7 +195,7 @@ export class UpgradePads {
         drum.position.y = STAND_HEIGHT / 2;
         stand.add(drum);
         const top = new THREE.Mesh(new THREE.CylinderGeometry(STAND_RADIUS * 1.05, STAND_RADIUS * 1.05, 0.08, 16),
-            this.material(new THREE.MeshStandardMaterial({ color: def.kind === 'tool' ? 0x3f8cff : 0xf2a33a, roughness: 0.5 })));
+            this.material(new THREE.MeshStandardMaterial({ color: def.kind === 'tool' ? 0x3f8cff : def.kind === 'blades' ? 0xe0402f : 0xf2a33a, roughness: 0.5 })));
         top.position.y = STAND_HEIGHT;
         stand.add(top);
         const shown = new THREE.Group();
@@ -295,18 +311,41 @@ export class UpgradePads {
         pad.labelTexture.needsUpdate = true;
     }
 
-    /** The thing on the stand: the next mower, or a sack (none at the top). */
+    /** The thing on the stand: the next mower, a sack, or the next blades (none at the top). */
     private buildShown(pad: Pad, maxed: boolean): void {
         pad.shown.clear();
+        pad.blades?.dispose();
+        pad.blades = undefined;
         if (maxed) return;
         const prepare = (material: THREE.Material) => BendService.applyBend(material);
         let object: THREE.Object3D;
-        if (pad.def.kind === 'tool') {
+        if (pad.def.kind === 'tool' && MowProgress.nextTool!.ride) {
+            // A driven mower: the tractor itself (its model, in its paint), as it'll be ridden.
+            const next = MowProgress.nextTool!;
+            const holder = new THREE.Group();
+            pad.shown.add(holder);
+            void TractorRide.copy(next).then((tractor) => {
+                if (!tractor || pad.built !== offer('tool').key) return;
+                const box = new THREE.Box3().setFromObject(tractor);
+                const size = box.getSize(new THREE.Vector3());
+                tractor.position.sub(box.getCenter(new THREE.Vector3())).setY(-box.min.y);
+                holder.add(tractor);
+                holder.scale.setScalar((SHOWN_SIZE * 1.3) / Math.max(size.x, size.y, size.z, 1e-3));
+            });
+            return;
+        } else if (pad.def.kind === 'tool') {
             const next = MowProgress.nextTool!;
             object = buildMower(next, prepare).group;
+        } else if (pad.def.kind === 'blades') {
+            // The next blades, a little tilted toward the player so they read from above, spinning (update()).
+            pad.blades = new MowerBlades(prepare);
+            pad.blades.set(MowProgress.bladesLevel + 1, 1);
+            object = new THREE.Group();
+            object.add(pad.blades.group);
+            object.rotation.x = 0.5;
         } else {
-            // The player's own rucksack (Backpack.ts), full.
-            object = rucksackPicture();
+            // The player's own rucksack (Backpack.ts) in the next bag's colour: what they'll wear.
+            object = rucksackPicture(MowProgress.upgradeLevel('capacity') + 1);
         }
         const box = new THREE.Box3().setFromObject(object);
         const size = box.getSize(new THREE.Vector3());
@@ -346,6 +385,7 @@ export class UpgradePads {
     public update(delta: number, player: THREE.Vector3): void {
         for (const pad of this.pads) {
             pad.shown.rotation.y += delta * 0.9;
+            pad.blades?.spin(delta, true);
             const visible = this.shownNow(pad.def);
             if (visible && !pad.visible) {
                 pad.visible = true;

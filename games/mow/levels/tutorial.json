@@ -2,9 +2,9 @@
   "id": "tutorial",
   "name": "Tutorial Town",
   "ground": {
-    "x": 0,
+    "x": 31.5,
     "z": -21.5,
-    "width": 68,
+    "width": 131,
     "depth": 85,
     "color": "#8c9a7c"
   },
@@ -20,11 +20,11 @@
         "z": -64
       },
       {
-        "x": 34,
+        "x": 97,
         "z": -64
       },
       {
-        "x": 34,
+        "x": 97,
         "z": -5
       },
       {
@@ -92,18 +92,18 @@
     },
     {
       "id": "pavement-4",
-      "x": -5.5,
-      "z": -40.25,
-      "width": 4,
-      "depth": 40,
+      "x": -5.25,
+      "z": -50.5,
+      "width": 6.5,
+      "depth": 52,
       "color": "#ae7e47"
     },
     {
       "id": "pavement-5",
-      "x": -28,
-      "z": -30,
-      "width": 6,
-      "depth": 2,
+      "x": -29.75,
+      "z": -26,
+      "width": 10,
+      "depth": 3.5,
       "color": "#d8ccb0"
     }
   ],
@@ -123,13 +123,16 @@
     {
       "x": -6.5,
       "z": 12.75,
-      "rotationY": 1.5708
+      "rotationY": 1.5708,
+      "section": "wilds",
+      "afterDen": "chicken"
     },
     {
-      "x": 18.5,
-      "z": -26,
+      "x": -24.25,
+      "z": -21.75,
       "rotationY": 0,
-      "section": "wilds"
+      "section": "wilds",
+      "afterDen": "chicken"
     }
   ],
   "wardrobe": {
@@ -149,14 +152,15 @@
       "x": -6.5,
       "z": 16.25,
       "rotationY": 1.5708,
-      "appearsAfterSales": 1
+      "appearsAfterSales": 1,
+      "section": "wilds"
     }
   ],
   "props": [
     {
       "model": "town/nature/Tree_1_A_Color1.gltf",
-      "x": -5.5,
-      "z": -4.5,
+      "x": -9.5,
+      "z": -7.25,
       "rotationY": 0,
       "height": 5.76,
       "collider": {
@@ -167,8 +171,8 @@
     },
     {
       "model": "town/nature/Tree_3_A_Color1.gltf",
-      "x": 5.75,
-      "z": -4.75,
+      "x": 9.5,
+      "z": -7.5,
       "rotationY": 2.1,
       "height": 5.12,
       "collider": {
@@ -176,28 +180,6 @@
         "halfZ": 0.7
       },
       "fade": true
-    },
-    {
-      "model": "town/city/bench.gltf",
-      "x": -3,
-      "z": -1.75,
-      "rotationY": 0,
-      "height": 0.55,
-      "collider": {
-        "halfX": 1.1,
-        "halfZ": 0.4
-      }
-    },
-    {
-      "model": "town/city/bench.gltf",
-      "x": 3.25,
-      "z": 1.75,
-      "rotationY": 3.1416,
-      "height": 0.55,
-      "collider": {
-        "halfX": 1.1,
-        "halfZ": 0.4
-      }
     },
     {
       "model": "town/city/streetlight_old_double.gltf",
@@ -245,8 +227,8 @@
     },
     {
       "model": "town/city/firehydrant.gltf",
-      "x": -9,
-      "z": -8.5,
+      "x": -10.25,
+      "z": -1.25,
       "rotationY": 0,
       "height": 1,
       "collider": {
@@ -444,7 +426,7 @@
     },
     {
       "model": "town/nature/Bush_4_A_Color1.gltf",
-      "x": 5,
+      "x": 21.25,
       "z": -51,
       "rotationY": 0.2,
       "height": 1.1,
@@ -478,13 +460,104 @@
     {
       "model": "town/nature/Bush_4_A_Color1.gltf",
       "x": -29,
-      "z": -24,
+      "z": -38.25,
       "rotationY": 0.6,
       "height": 1.1,
       "collider": {
         "halfX": 0.95,
         "halfZ": 0.95
       }
+    },
+    {
+      "model": "town/library/city2-tunnel-01/city2-tunnel-01.glb",
+      "x": -5,
+      "z": -73.75,
+      "rotationY": 0,
+      "height": 7.09,
+      "collider": {
+        "halfX": 21.5,
+        "halfZ": 8.4
+      },
+      "elevation": -0.9,
+      "stretch": {
+        "x": 1.15,
+        "z": 1
+      }
+    },
+    {
+      "model": "town/library/city2-road-tunnel-001/city2-road-tunnel-001.glb",
+      "x": 24.25,
+      "z": -66.25,
+      "rotationY": 0,
+      "height": 2.78,
+      "collider": {
+        "halfX": 1.85,
+        "halfZ": 2.25
+      }
+    },
+    {
+      "model": "town/library/kenney-watercraft-ship-cargo-c/kenney-watercraft-ship-cargo-c.glb",
+      "x": -36.25,
+      "z": -47,
+      "rotationY": 0,
+      "height": 2.78,
+      "collider": {
+        "halfX": 1.5,
+        "halfZ": 5.2
+      },
+      "elevation": -0.7
+    },
+    {
+      "model": "town/library/kenney-watercraft-ship-cargo-b/kenney-watercraft-ship-cargo-b.glb",
+      "x": -42.25,
+      "z": -48,
+      "rotationY": 0,
+      "height": 4.5,
+      "collider": {
+        "halfX": 1.9,
+        "halfZ": 6.65
+      },
+      "elevation": -0.85
+    },
+    {
+      "model": "town/library/city2-cargo-ship-01/city2-cargo-ship-01.glb",
+      "x": -36.5,
+      "z": -73.25,
+      "rotationY": 0,
+      "height": 9.22,
+      "collider": {
+        "halfX": 0.15,
+        "halfZ": 17.45
+      },
+      "elevation": -1.95
+    },
+    {
+      "model": "town/library/city2-road-tunnel-001/city2-road-tunnel-001.glb",
+      "x": -36,
+      "z": -26,
+      "rotationY": 1.5708,
+      "height": 4.31,
+      "collider": {
+        "halfX": 2.25,
+        "halfZ": 2.35
+      },
+      "elevation": -0.6,
+      "stretch": {
+        "x": 0.81,
+        "z": 0.65
+      }
+    },
+    {
+      "model": "town/library/city2-building-business-05/city2-building-business-05.glb",
+      "x": -45.5,
+      "z": -24.25,
+      "rotationY": 0,
+      "height": 42.08,
+      "collider": {
+        "halfX": 10.8,
+        "halfZ": 9.5
+      },
+      "elevation": -1.15
     }
   ],
   "grassNoise": {
@@ -549,6 +622,24 @@
       "rotationY": 0,
       "shape": "round",
       "grass": "brambles"
+    },
+    {
+      "x": 70,
+      "z": -18,
+      "width": 18,
+      "depth": 14,
+      "rotationY": 0,
+      "shape": "round",
+      "grass": "drygrass"
+    },
+    {
+      "x": 84,
+      "z": -46,
+      "width": 15,
+      "depth": 12,
+      "rotationY": 0,
+      "shape": "round",
+      "grass": "firebrush"
     }
   ],
   "sections": [
@@ -560,37 +651,41 @@
       "width": 8,
       "depth": 7,
       "completeAt": 0.97,
-      "bonus": 65,
+      "bonus": 150,
       "ground": "#557f38",
       "restoredGround": "#72b04a",
       "fill": "grass",
       "grassScale": 0.6,
-      "zoom": 0.72,
       "pen": {
         "x": 0,
         "z": 13.75,
         "width": 20.5,
         "depth": 11.5
-      }
+      },
+      "maxGrass": "grass"
     },
     {
       "id": "park",
       "name": "Starting Park",
-      "maxGrass": "tallgrass",
+      "maxGrass": "grass",
       "x": 0,
       "z": 0,
       "width": 20,
       "depth": 16,
       "completeAt": 0.92,
-      "bonus": 160,
+      "bonus": 600,
       "ground": "#4f7d35",
       "restoredGround": "#6fae47",
-      "fill": "auto",
+      "fill": "grass",
       "separator": {
         "x": 0,
         "z": 8,
         "width": 20,
         "rotationY": 0
+      },
+      "spots": {
+        "grass": "tallgrass",
+        "share": 0.45
       }
     },
     {
@@ -601,10 +696,10 @@
       "width": 62,
       "depth": 51.5,
       "completeAt": 0.97,
-      "bonus": 500,
+      "bonus": 3000,
       "ground": "#4a7432",
       "restoredGround": "#68a643",
-      "fill": "auto",
+      "fill": "tallgrass",
       "separator": {
         "x": 0,
         "z": -9.5,
@@ -613,6 +708,38 @@
       },
       "onUnlock": {
         "pan": false
+      },
+      "maxGrass": "tallgrass",
+      "spots": {
+        "grass": "weeds",
+        "share": 0.35
+      }
+    },
+    {
+      "id": "section-4",
+      "name": "Section 4",
+      "x": 64.5,
+      "z": -33,
+      "width": 62,
+      "depth": 51.5,
+      "fill": "weeds",
+      "completeAt": 0.97,
+      "bonus": 8000,
+      "ground": "#4a7432",
+      "restoredGround": "#68a643",
+      "onUnlock": {
+        "pan": false
+      },
+      "maxGrass": "weeds",
+      "spots": {
+        "grass": "brambles",
+        "share": 0.35
+      },
+      "unlock": {
+        "price": 5000,
+        "level": 10,
+        "x": 28,
+        "z": -33
       }
     }
   ],
@@ -646,14 +773,30 @@
       {
         "kind": "tool",
         "x": 6.2,
-        "z": 12.6,
-        "rotationY": -1.5708
+        "z": 10.4,
+        "rotationY": -1.5708,
+        "appearsWhenFull": true
+      },
+      {
+        "kind": "blades",
+        "x": -5.75,
+        "z": 10.25,
+        "rotationY": 1.5708,
+        "afterTool": 2
       },
       {
         "kind": "capacity",
-        "x": 6.2,
-        "z": 16.4,
-        "rotationY": -1.5708
+        "x": 6.25,
+        "z": 14.5,
+        "rotationY": -1.5708,
+        "afterTool": 1
+      },
+      {
+        "kind": "blades",
+        "x": 7.5,
+        "z": -26,
+        "section": "wilds",
+        "afterTool": 2
       },
       {
         "kind": "tool",
@@ -673,20 +816,136 @@
         "id": "chicken",
         "name": "Chicken Den",
         "x": -17,
-        "z": -30,
-        "width": 16,
-        "depth": 11,
-        "gate": 2.4
+        "z": -31.75,
+        "width": 16.5,
+        "depth": 15,
+        "gate": 2.4,
+        "parts": {
+          "goldGrid": {
+            "x": 7,
+            "z": -0.25
+          },
+          "counter": {
+            "x": -7.45,
+            "z": 5.75
+          },
+          "sell": {
+            "x": -6.15,
+            "z": 5.75
+          },
+          "cash": {
+            "x": -6.25,
+            "z": 3.75
+          },
+          "machine": {
+            "x": -7.25,
+            "z": -1.5
+          },
+          "input": {
+            "x": -5.75,
+            "z": -1.75
+          },
+          "grid": {
+            "x": -7,
+            "z": 0
+          },
+          "eggs": [
+            {
+              "x": -5.906,
+              "z": -4.5
+            },
+            {
+              "x": -4.219,
+              "z": -4.5
+            },
+            {
+              "x": -2.531,
+              "z": -4.5
+            },
+            {
+              "x": -0.844,
+              "z": -4.5
+            },
+            {
+              "x": 0.844,
+              "z": -4.5
+            },
+            {
+              "x": 2.531,
+              "z": -4.5
+            },
+            {
+              "x": 4.21875,
+              "z": -4.5
+            },
+            {
+              "x": 5.90625,
+              "z": -4.5
+            }
+          ],
+          "goldMachine": {
+            "x": 7.25,
+            "z": -2
+          },
+          "goldInput": {
+            "x": 5.75,
+            "z": -2
+          },
+          "belt": [
+            {
+              "x": 6.31,
+              "z": -3.55
+            },
+            {
+              "x": -5.75,
+              "z": -3.55
+            },
+            {
+              "x": -7.25,
+              "z": -1.75
+            }
+          ],
+          "beltBuy": {
+            "x": -0.25,
+            "z": -2.25
+          },
+          "goldBelt": [
+            {
+              "x": -7,
+              "z": -1.25
+            },
+            {
+              "x": 6.75,
+              "z": -2
+            }
+          ],
+          "goldBeltBuy": {
+            "x": 4,
+            "z": -2
+          },
+          "helperHire": {
+            "x": -4.5,
+            "z": 5.75
+          },
+          "goldBuy": {
+            "x": 7.25,
+            "z": -2
+          },
+          "truckHelperHire": {
+            "x": 6.9,
+            "z": 1.75
+          }
+        }
       }
     ],
     "eggs": {
-      "carryMax": 12,
+      "carryMax": 20,
       "layEverySec": 2.5,
       "floorMax": 8,
       "eggsPerTray": 4,
       "packSec": 1.2,
-      "machineMax": 24,
-      "traySlots": 6,
+      "machineMax": 60,
+      "traySlots": 4,
       "trayPrice": 10,
       "wants": [
         1,
@@ -727,7 +986,42 @@
           "price": 900,
           "level": 8
         }
-      ]
+      ],
+      "trayLayers": 5,
+      "belt": {
+        "price": 1200,
+        "level": 8,
+        "speed": 1.6,
+        "spacing": 0.38,
+        "takeSec": 0.45
+      },
+      "helper": {
+        "price": 2500,
+        "level": 9,
+        "carry": 4,
+        "walkSpeed": 1.3
+      },
+      "gold": {
+        "price": 5000,
+        "level": 10,
+        "packSec": 1.5,
+        "max": 12,
+        "slots": 4,
+        "layers": 5,
+        "trayPrice": 35
+      },
+      "goldBelt": {
+        "price": 9000,
+        "level": 12,
+        "speed": 1.4,
+        "spacing": 0.75
+      },
+      "truckHelper": {
+        "price": 4000,
+        "level": 11,
+        "carry": 6,
+        "walkSpeed": 1.3
+      }
     },
     "levels": {
       "next": [
@@ -762,41 +1056,120 @@
       "trayPrice": 15,
       "everySec": 12,
       "model": "town/library/city2-truck-01/city2-truck-01.glb",
-      "length": 6,
+      "length": 4.2,
       "speed": 6,
       "cash": {
         "x": -10.1,
         "z": -28.2
-      }
+      },
+      "models": [
+        "town/library/city2-car-16/city2-car-16.glb",
+        "town/library/city2-car-09/city2-car-09.glb"
+      ],
+      "queue": 3
     },
     "truckPath": [
       {
-        "x": -5.5,
-        "z": -58.5
+        "x": -7.4,
+        "z": -73
       },
       {
-        "x": -5.5,
-        "z": -26
+        "x": -7.4,
+        "z": -28,
+        "park": true
+      },
+      {
+        "x": -3,
+        "z": -28
+      },
+      {
+        "x": -3.5,
+        "z": -73
+      }
+    ],
+    "peopleIn": [
+      {
+        "x": -35.2,
+        "z": -26.75
+      },
+      {
+        "x": -30,
+        "z": -26.75
+      },
+      {
+        "x": -26.35,
+        "z": -26.75
+      }
+    ],
+    "peopleOut": [
+      {
+        "x": -27.5,
+        "z": -24.75
+      },
+      {
+        "x": -32,
+        "z": -25
+      },
+      {
+        "x": -35.2,
+        "z": -25.25
       }
     ]
   },
   "spawns": [
     {
-      "id": "people-1",
+      "id": "people-tunnel",
       "kind": "people",
-      "x": -27.5,
-      "z": -13,
-      "width": 3,
-      "depth": 3
-    },
-    {
-      "id": "people-2",
-      "kind": "people",
-      "x": -29,
-      "z": -45,
-      "width": 3,
-      "depth": 3
+      "x": -35.2,
+      "z": -26,
+      "width": 1.2,
+      "depth": 1.8
     }
   ],
-  "colliders": []
+  "colliders": [
+    {
+      "x": -25,
+      "z": -29.75,
+      "width": 1.5,
+      "depth": 2,
+      "solid": true
+    }
+  ],
+  "shapes": [
+    {
+      "x": -37.3,
+      "z": -26,
+      "y": -0.6,
+      "width": 1.8,
+      "depth": 2.9,
+      "height": 2.3,
+      "color": "#0b0b10"
+    },
+    {
+      "x": -35.5,
+      "z": -26,
+      "width": 0.5,
+      "depth": 4.5,
+      "height": 3.2,
+      "color": "#0b0b10",
+      "rotationY": 0
+    },
+    {
+      "x": -5.25,
+      "z": -70.25,
+      "width": 6,
+      "depth": 0.5,
+      "height": 2.6,
+      "color": "#0b0b10",
+      "rotationY": 0
+    }
+  ],
+  "footAreas": [
+    {
+      "x": -28.75,
+      "z": -28.5,
+      "width": 8,
+      "depth": 14.5
+    }
+  ]
 }

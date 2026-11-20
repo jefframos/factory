@@ -13,6 +13,7 @@ import { paintBody, paintPixels } from '../utils/Paint';
 import SetupThree from 'core/scene/SetupThree';
 import { MOW, ToolDef, toolPaint } from '../data/MowConfig';
 import { addHandle, buildMower, handleOf } from '../player/MowerModel';
+import { MowerBlades } from '../player/MowerBlades';
 
 /** Render size: about twice the largest size an icon is shown at, so it stays crisp. */
 const SIZE = 256;
@@ -147,6 +148,18 @@ export const ModelIcons = {
             model.group.rotation.y = -0.5;
             const holder = new THREE.Group();
             holder.add(model.group);
+            return holder;
+        });
+    },
+
+    /** The blades of Blades level `level` (MowerBlades), seen from above at a slant: the padlocks' picture. */
+    bladesCanvas(level: number): Promise<HTMLCanvasElement | undefined> {
+        return this.objectCanvas(`blades:${level}`, () => {
+            const blades = new MowerBlades();
+            blades.set(level, 1);
+            const holder = new THREE.Group();
+            holder.add(blades.group);
+            holder.rotation.x = 0.9;
             return holder;
         });
     },

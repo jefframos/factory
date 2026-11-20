@@ -41,6 +41,9 @@ export interface Box {
 const MODEL_BASE = './mow/models/';
 /** The player's footprint radius for walking. */
 const BODY_RADIUS = 0.35;
+/** The island's fence is cut where a pavement crosses it: checked every FENCE_CUT_STEP along it, the pavement grown by FENCE_CUT_MARGIN. */
+const FENCE_CUT_STEP = 0.2;
+const FENCE_CUT_MARGIN = 0.15;
 /** Kept off the island's perimeter fence (its posts and rails), beyond the fence's inset. */
 const ISLAND_FENCE_CLEARANCE = 0.2;
 /** ATM pads: radius (standing inside uses it). */
@@ -317,6 +320,9 @@ const STATION_KINDS: StationKind[] = ['atm', 'wardrobe'];
 const stationLook = (kind: StationKind): AtmLook => (kind === 'atm' ? TOWN.atm : TOWN.wardrobe);
 const stationSpots = (kind: StationKind): AtmSpot[] => (kind === 'atm' ? TOWN.atms : TOWN.wardrobes ?? []);
 
+/** Half the size of a station's square (its pad in front of the model): kept clear of grass. */
+const STATION_PAD_HALF = 1.3;
+
 /** The box a station blocks (its model, `back` behind the pad). */
 function stationBox(spot: AtmSpot, look: AtmLook): Box {
     const turn = spot.rotationY ?? 0;
@@ -502,6 +508,11 @@ export class Town {
         atm: stationSpots('atm').map((spot) => stationBox(spot, stationLook('atm'))),
         wardrobe: stationSpots('wardrobe').map((spot) => stationBox(spot, stationLook('wardrobe'))),
     };
+    /** Each station's square in front of it (where the player stands to use it): no grass on it. */
+    private readonly padBoxes: Record<StationKind, Box[]> = {
+        atm: stationSpots('atm').map((spot) => ({ x: spot.x, z: spot.z, halfX: STATION_PAD_HALF, halfZ: STATION_PAD_HALF })),
+        wardrobe: stationSpots('wardrobe').map((spot) => ({ x: spot.x, z: spot.z, halfX: STATION_PAD_HALF, halfZ: STATION_PAD_HALF })),
+    };
     /** Per section: its pen (DistrictDef.pen) still stands (the player is kept inside it), and its fence. */
     private readonly penned: boolean[];
     private readonly pens: (THREE.Group | undefined)[] = [];
@@ -597,6 +608,7 @@ export class Town {
                 road ? asphaltTexture() : pavingTexture(), road ? STONE_TILE : PAVING_TILE);
         });
         this.buildIsland();
+        this.buildShapes();
     }
 
     /** The town's ground: BEND_SEGMENT cells over the shore's bounds, the ones whose middle is inside `area`. */
@@ -636,6 +648,52 @@ export class Town {
      * A box from a to b on the ground (`extend` past both ends), cut along its length so it curves with the bend.
      * With `tile`, its texture runs along the length and up the height, repeating every `tile` units.
      */
+    /** The level's shape cubes (TownLevel.shapes): unlit boxes in their colour (a dark one reads as a hole). */
+    private buildShapes(): void {
+        for (const shape of TOWN.shapes ?? []) {
+            const material = new THREE.MeshBasicMaterial({ color: shape.color });
+            BendService.applyBend(material);
+            const box = new THREE.Mesh(new THREE.BoxGeometry(shape.width, shape.height, shape.depth), material);
+            box.position.set(shape.x, (shape.y ?? 0) + shape.height / 2, shape.z);
+            box.rotation.y = shape.rotationY ?? 0;
+            this.group.add(box);
+        }
+    }
+
+    /** Whether (x, z) is on a pavement (its rect, turned by its rotationY), grown by `margin`. */
+    private onPavement(x: number, z: number, margin: number): boolean {
+        return TOWN.pavements.some((p) => {
+            const turn = (p as { rotationY?: number }).rotationY ?? 0;
+            const dx = x - p.x;
+            const dz = z - p.z;
+            const lx = dx * Math.cos(turn) - dz * Math.sin(turn);
+            const lz = dx * Math.sin(turn) + dz * Math.cos(turn);
+            return Math.abs(lx) <= p.width / 2 + margin && Math.abs(lz) <= p.depth / 2 + margin;
+        });
+    }
+
+    /** The stretches of a to b that aren't over a pavement (a road running off the island cuts the fence there). */
+    private offPavement(a: ShorePoint, b: ShorePoint): [ShorePoint, ShorePoint][] {
+        const length = Math.hypot(b.x - a.x, b.z - a.z);
+        const steps = Math.max(1, Math.ceil(length / FENCE_CUT_STEP));
+        const runs: [ShorePoint, ShorePoint][] = [];
+        let start: ShorePoint | null = null;
+        let last: ShorePoint = a;
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const p = { x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t };
+            const open = !this.onPavement(p.x, p.z, FENCE_CUT_MARGIN);
+            if (open && !start) start = p;
+            if (!open && start) {
+                runs.push([start, last]);
+                start = null;
+            }
+            last = p;
+        }
+        if (start) runs.push([start, b]);
+        return runs.filter(([p, q]) => Math.hypot(q.x - p.x, q.z - p.z) > 0.05);
+    }
+
     private beam(a: ShorePoint, b: ShorePoint, y: number, height: number, thickness: number, material: THREE.Material, extend = 0, tile = 0): void {
         const length = Math.hypot(b.x - a.x, b.z - a.z) + extend * 2;
         const geometry = new THREE.BoxGeometry(length, height, thickness, Math.max(1, Math.ceil(length / BEND_SEGMENT)), 1, 1);
@@ -717,13 +775,16 @@ export class Town {
         const rail = this.material(fence.color);
         const kerbMaterial = fence.kerbColor ? this.material(fence.kerbColor) : null;
         // Two rails on posts (on a kerb, if it has one), edge by edge.
-        line.forEach((p, i) => {
-            const q = line[(i + 1) % line.length];
-            if (kerbMaterial) this.beam(p, q, top + kerb / 2, kerb, 0.4, kerbMaterial, 0.2);
-            this.beam(p, q, top + fence.height, 0.08, 0.1, rail, 0.05);
-            this.beam(p, q, top + kerb + (fence.height - kerb) * 0.45, 0.06, 0.08, rail, 0.04);
+        // Cut wherever a pavement runs to the edge (a road off the island: into a tunnel, onto a bridge).
+        line.forEach((edgeStart, i) => {
+            const edgeEnd = line[(i + 1) % line.length];
+            for (const [p, q] of this.offPavement(edgeStart, edgeEnd)) {
+                if (kerbMaterial) this.beam(p, q, top + kerb / 2, kerb, 0.4, kerbMaterial, 0.2);
+                this.beam(p, q, top + fence.height, 0.08, 0.1, rail, 0.05);
+                this.beam(p, q, top + kerb + (fence.height - kerb) * 0.45, 0.06, 0.08, rail, 0.04);
+            }
         });
-        const posts = Town.alongEdges(line, fence.spacing);
+        const posts = Town.alongEdges(line, fence.spacing).filter((p) => !this.onPavement(p.x, p.z, FENCE_CUT_MARGIN));
         const postHeight = fence.height - kerb + 0.04;
         const postMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.14, postHeight, 0.14), rail, posts.length);
         const matrix = new THREE.Matrix4();
@@ -901,6 +962,7 @@ export class Town {
         // The first ATM, in the tutorial: not in the yard (its bag fills there on purpose: the first purchases), in the
         // park when it's full. In a city it's there from the start.
         if (CITY.keepGear && spot.appearsWhenFull && MowProgress.timesSold === 0 && !(MowProgress.full && MowProgress.isRestored(MOW.districts[0].id))) return false;
+        if (spot.afterDen && !MowProgress.denFound(spot.afterDen)) return false;
         const section = spot.section;
         if (!section) return true;
         const d = MOW.districts.findIndex((district) => district.id === section);
@@ -1223,7 +1285,7 @@ export class Town {
         const pad = 0.25;
         const under = (b: Box) => Math.abs(x - b.x) <= b.halfX + pad && Math.abs(z - b.z) <= b.halfZ + pad;
         return (!TOWN.grassOverPavement && TOWN.pavements.some((p) => Math.abs(x - p.x) <= p.width / 2 + pad && Math.abs(z - p.z) <= p.depth / 2 + pad))
-            || this.propBoxes.some(under) || STATION_KINDS.some((kind) => this.boxes[kind].some(under))
+            || this.propBoxes.some(under) || STATION_KINDS.some((kind) => this.boxes[kind].some(under) || this.padBoxes[kind].some(under))
             || this.extraSolids.some(under) || this.extraBare.some((b) => Math.abs(x - b.x) <= b.halfX && Math.abs(z - b.z) <= b.halfZ)
             || this.onRoadTile(x, z);
     }
@@ -1256,6 +1318,16 @@ export class Town {
         const r = this.bodyRadius;
         const locked = this.lockedRects();
         return (x, z) => !this.standable(x, z, r, locked);
+    }
+
+    /**
+     * Whether a footprint `r` round (x, z) is clear (on the island, out of the locked sections, off every obstacle):
+     * where the tractor can be mounted without wedging the player into a fence or a gate post.
+     */
+    public fits(x: number, z: number, r: number): boolean {
+        if (!this.standable(x, z, r, this.lockedRects())) return false;
+        const hits = (b: Box) => Math.abs(x - b.x) <= b.halfX + r && Math.abs(z - b.z) <= b.halfZ + r;
+        return !this.blockers.some(hits) && !(this.movingBlockers?.() ?? []).some(hits);
     }
 
     /** Free to roam: the whole island inside its fence, off obstacles, out of the locked sections. */

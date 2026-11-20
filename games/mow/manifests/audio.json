@@ -389,6 +389,14 @@
         },
         {
           "alias": [
+            "redding-rainbow.ogg"
+          ],
+          "src": [
+            "redding-rainbow.mp3"
+          ]
+        },
+        {
+          "alias": [
             "reveal.ogg"
           ],
           "src": [

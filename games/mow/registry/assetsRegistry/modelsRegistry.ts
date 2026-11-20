@@ -3312,6 +3312,20 @@ const TownCity2Car08 = {
 }
 } as const;
 
+const TownCity2Car09 = {
+  id: 'city2-car-09',
+  path: 'town/library/city2-car-09/city2-car-09',
+  fullPath: 'mow/models/town/library/city2-car-09/city2-car-09.glb',
+  format: 'glb',
+  nodes: {
+  "Car09": "Car_09",
+  "Wheel033": "Wheel_033",
+  "Wheel034": "Wheel_034",
+  "Wheel035": "Wheel_035",
+  "Wheel036": "Wheel_036"
+}
+} as const;
+
 const TownCity2Car12 = {
   id: 'city2-car-12',
   path: 'town/library/city2-car-12/city2-car-12',
@@ -3466,6 +3480,16 @@ const TownCity2Car45 = {
 }
 } as const;
 
+const TownCity2CargoShip01 = {
+  id: 'city2-cargo-ship-01',
+  path: 'town/library/city2-cargo-ship-01/city2-cargo-ship-01',
+  fullPath: 'mow/models/town/library/city2-cargo-ship-01/city2-cargo-ship-01.glb',
+  format: 'glb',
+  nodes: {
+  "CargoShip01": "Cargo_Ship_01"
+}
+} as const;
+
 const TownCity2Fountain01 = {
   id: 'city2-fountain-01',
   path: 'town/library/city2-fountain-01/city2-fountain-01',
@@ -3613,6 +3637,16 @@ const TownCity2Road029 = {
   format: 'glb',
   nodes: {
   "Road029": "road_029"
+}
+} as const;
+
+const TownCity2RoadTunnel001 = {
+  id: 'city2-road-tunnel-001',
+  path: 'town/library/city2-road-tunnel-001/city2-road-tunnel-001',
+  fullPath: 'mow/models/town/library/city2-road-tunnel-001/city2-road-tunnel-001.glb',
+  format: 'glb',
+  nodes: {
+  "RoadTunnel001": "road_tunnel_001"
 }
 } as const;
 
@@ -3776,6 +3810,16 @@ const TownCity2Truck02 = {
 }
 } as const;
 
+const TownCity2Tunnel01 = {
+  id: 'city2-tunnel-01',
+  path: 'town/library/city2-tunnel-01/city2-tunnel-01',
+  fullPath: 'mow/models/town/library/city2-tunnel-01/city2-tunnel-01.glb',
+  format: 'glb',
+  nodes: {
+  "Tunnel01": "Tunnel_01"
+}
+} as const;
+
 const TownHalloweenCrypt = {
   id: 'halloween-crypt',
   path: 'town/library/halloween-crypt/halloween-crypt',
@@ -3783,6 +3827,28 @@ const TownHalloweenCrypt = {
   format: 'gltf',
   nodes: {
   "Crypt": "crypt"
+}
+} as const;
+
+const TownKenneyWatercraftShipCargoB = {
+  id: 'kenney-watercraft-ship-cargo-b',
+  path: 'town/library/kenney-watercraft-ship-cargo-b/kenney-watercraft-ship-cargo-b',
+  fullPath: 'mow/models/town/library/kenney-watercraft-ship-cargo-b/kenney-watercraft-ship-cargo-b.glb',
+  format: 'glb',
+  nodes: {
+  "ShipCargoB": "ship-cargo-b",
+  "CargoA": "cargo-a",
+  "CargoB": "cargo-b"
+}
+} as const;
+
+const TownKenneyWatercraftShipCargoC = {
+  id: 'kenney-watercraft-ship-cargo-c',
+  path: 'town/library/kenney-watercraft-ship-cargo-c/kenney-watercraft-ship-cargo-c',
+  fullPath: 'mow/models/town/library/kenney-watercraft-ship-cargo-c/kenney-watercraft-ship-cargo-c.glb',
+  format: 'glb',
+  nodes: {
+  "ShipCargoC": "ship-cargo-c"
 }
 } as const;
 
@@ -4288,6 +4354,7 @@ export const MODELS = {
     City2Bush01: TownCity2Bush01,
     City2Car07: TownCity2Car07,
     City2Car08: TownCity2Car08,
+    City2Car09: TownCity2Car09,
     City2Car12: TownCity2Car12,
     City2Car16: TownCity2Car16,
     City2Car17: TownCity2Car17,
@@ -4299,6 +4366,7 @@ export const MODELS = {
     City2Car39: TownCity2Car39,
     City2Car42: TownCity2Car42,
     City2Car45: TownCity2Car45,
+    City2CargoShip01: TownCity2CargoShip01,
     City2Fountain01: TownCity2Fountain01,
     City2Hydrant01: TownCity2Hydrant01,
     City2Lamp04: TownCity2Lamp04,
@@ -4314,6 +4382,7 @@ export const MODELS = {
     City2Road025: TownCity2Road025,
     City2Road026: TownCity2Road026,
     City2Road029: TownCity2Road029,
+    City2RoadTunnel001: TownCity2RoadTunnel001,
     City2Stadium01: TownCity2Stadium01,
     City2Statue01: TownCity2Statue01,
     City2TrafficLight01: TownCity2TrafficLight01,
@@ -4329,7 +4398,10 @@ export const MODELS = {
     City2Tree07: TownCity2Tree07,
     City2Truck01: TownCity2Truck01,
     City2Truck02: TownCity2Truck02,
+    City2Tunnel01: TownCity2Tunnel01,
     HalloweenCrypt: TownHalloweenCrypt,
+    KenneyWatercraftShipCargoB: TownKenneyWatercraftShipCargoB,
+    KenneyWatercraftShipCargoC: TownKenneyWatercraftShipCargoC,
     MixedBag1IdolA: TownMixedBag1IdolA,
     Bush1AColor1: TownBush1AColor1,
     Bush1CColor1: TownBush1CColor1,

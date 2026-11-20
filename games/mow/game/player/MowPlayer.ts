@@ -25,6 +25,7 @@ import hatFits from '../../ui/hatfits.json';
 import { GripDef, MOW, ToolDef } from '../data/MowConfig';
 import { BendService } from '../services/BendService';
 import { addHandle, buildMower, playerHandle, REEL_WHEEL } from './MowerModel';
+import { MOUNT, MowerBlades } from './MowerBlades';
 import { loadPeople, personCopy, dress, PERSON_HEIGHT, PERSON_MODEL_HEIGHT } from '../farm/People';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 
@@ -234,13 +235,18 @@ export default class MowPlayer extends Entity {
     private showTool(tool: ToolDef): void {
         this.toolDef = tool;
         this.tool.clear();
+        this.blades.set(-1, 0);
         const model = buildMower(tool, (material) => BendService.applyBend(material));
         // The mower at its own size (never stretched); its handle reaching up to the player's hands, whatever their size.
         const { grip, gripZ } = playerHandle(tool, playerScale());
         addHandle(model, tool, grip, gripZ, this.handleMaterial);
         this.tool.add(model.group);
+        // (The walked mowers keep their blades hidden: they show from the tractor on.)
         this.reel = model.reel;
     }
+
+    /** The blades under the walked mower (MowerBlades): their level and the cutting width (README_PROGRESSION.md). */
+    private readonly blades = new MowerBlades((material) => BendService.applyBend(material));
 
     /** Where the tool cuts: on the ground in front, the middle of the mower. */
     public cutPoint(out = new THREE.Vector3()): THREE.Vector3 {
@@ -303,6 +309,12 @@ export default class MowPlayer extends Entity {
             const moved = (at.x - this.lastToolAt.x) * forward.x + (at.z - this.lastToolAt.z) * forward.z;
             this.reel.rotation.x += moved / Math.max(0.05, (tool.size[1] / 2) * REEL_WHEEL) * 3;
         }
+        // The blades: the Blades level across the cutting width, spinning faster while it moves.
+        this.blades.set(MowProgress.bladesLevel, MowProgress.width);
+        // Against its front edge (a reel mower's front is its wheels' rim: its own length is only the roller's).
+        const front = tool.reel ? (tool.size[1] / 2) * REEL_WHEEL : tool.size[2] / 2;
+        this.blades.group.position.set(0, MOUNT.lift, front + this.blades.radius * MOUNT.ahead);
+        this.blades.spin(1 / 60, this.tool.position.distanceToSquared(this.lastToolAt) > 1e-6);
         this.lastToolAt.copy(this.tool.position);
         if (container) {
             // The hands reach the bar moved by the grip's offset (x outward for each hand); the bar stays put.

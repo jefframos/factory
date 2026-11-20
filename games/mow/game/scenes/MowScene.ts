@@ -42,6 +42,7 @@ import MowPlayer, { playerScale } from '../player/MowPlayer';
 import { Backpack } from '../player/Backpack';
 import { UpgradePads } from '../world/UpgradePads';
 import { ChickenDen } from '../world/ChickenDen';
+import { AreaUnlocks } from '../world/AreaUnlocks';
 import { LevelBadge } from '../ui/LevelBadge';
 import { farmItem } from '../farm/FarmModels';
 import { GrassField } from '../world/GrassField';
@@ -55,7 +56,8 @@ import { isRush } from '../data/GameMode';
 import { MowHud, ShopHint, CELEBRATION_SEC } from '../ui/MowHud';
 import { RARITY_COLORS } from '../ui/TrophiesPanel';
 import { MowEffects } from '../vfx/MowEffects';
-import { CITIES, CITY, CityDef, MOW, NEXT_CITY, TOWN, goalCount, goalSection, partName, sectionOpen, SecretDef, TreasureDef, firstToolFor, SECRET_CHEST_MODEL, farmTest } from '../data/MowConfig';
+import { CITIES, CITY, CityDef, MOW, NEXT_CITY, TOWN, goalCount, goalSection, partName, sectionOpen, SecretDef, TreasureDef, firstToolFor, bladesFor, bladeCount, SECRET_CHEST_MODEL, farmTest } from '../data/MowConfig';
+import { bladeLook } from '../player/MowerBlades';
 import { TreasureBeacons } from '../world/TreasureBeacons';
 import { SecretPatches } from '../world/SecretPatches';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
@@ -74,7 +76,7 @@ export const MOW_CAMERA = {
     yawDeg: 0,
     pitchDeg: 55,
     // Closer since the player's smaller (MowDesign.playerScale).
-    distance: 14.5,
+    distance: 9.5,
     followSpeed: 8,
     /** How fast the distance eases to a new section's `zoom`. */
     zoomSpeed: 1.5,
@@ -166,6 +168,19 @@ export function addTownLights(threeScene: THREE.Scene): void {
     threeScene.add(sun);
 }
 
+/** The player's level bar (LevelBadge): how far under the top buttons' middle line, and the badge's half width (its origin is the badge's middle). */
+/** A frame's step this long (world units) counts as the player moving (gameplay starts). */
+const GAMEPLAY_MOVE = 0.002;
+const LEVEL_DROP = 6;
+/** The tractor's footprint must have this much room round it to be mounted. */
+const MOUNT_CLEARANCE = 0.1;
+/** How often the player's stable position is saved (s), and the clear ground round them it takes (no grass too tough). */
+const POSITION_SAVE_SEC = 2;
+const POSITION_CLEAR = 0.6;
+/** The level bar grows to fill the room at the top, up to this. */
+const LEVEL_MAX_SCALE = 1.1;
+const LEVEL_BADGE_HALF = 39;
+
 export default class MowScene extends ThreeScene {
     private readonly world = new World();
     private player!: MowPlayer;
@@ -228,6 +243,8 @@ export default class MowScene extends ThreeScene {
     private combo: Combo | null = null;
     /** The farm test (TOWN.farm): the upgrade pads fed with grass, the dens to find, the bag's grass on the back. */
     private pads?: UpgradePads;
+    /** The squares that open the next areas (bought with money and a level: DistrictDef.unlock). */
+    private areaUnlocks?: AreaUnlocks;
     private readonly dens: ChickenDen[] = [];
     private backpack?: Backpack;
     private levelBadge?: LevelBadge;
@@ -255,7 +272,7 @@ export default class MowScene extends ThreeScene {
         // The world's curve (ui/mow.json `bend`; 0: flat, nothing pops in at the edges, labels sit on their things).
         BendService.uniforms.uBendStrength.value = MOW.bend ?? 0.002;
         this.buildLights();
-        const open = (d: number) => sectionOpen(d, (id) => MowProgress.isRestored(id));
+        const open = (d: number) => sectionOpen(d, (id) => MowProgress.isRestored(id), (id) => MowProgress.areaBought(id));
         this.town = new Town(this.threeScene, open, (d) => MowProgress.isRestored(MOW.districts[d].id));
         this.traffic = new Traffic(this.threeScene, this.town.readyNear);
         this.town.movingBlockers = () => this.traffic.blockers();
@@ -286,13 +303,17 @@ export default class MowScene extends ThreeScene {
         this.secrets = new SecretPatches(this.threeScene, (id) => MowProgress.secretFound(id));
 
         this.player = this.world.add(new MowPlayer(this, this.threeScene));
-        this.player.transform.position.set(MOW.start.x, 0, MOW.start.z);
+        // Back where they last stood (once past the tutorial: savePosition()), else the level's start.
+        const last = MowProgress.isRestored(MOW.districts[0].id) ? MowProgress.lastPosition : undefined;
+        this.player.transform.position.set(last?.x ?? MOW.start.x, 0, last?.z ?? MOW.start.z);
         this.characterReady = this.player.loadCharacter().catch((error) => console.error('[MowScene] character failed to load', error));
         // Things picked up fly into the backpack (the farm test), else to the player.
         this.effects = new MowEffects(this.threeScene, 0.5, () => (this.backpack ? this.backpack.top(new THREE.Vector3()) : this.player.pickupPoint(new THREE.Vector3())));
         // Ridden everywhere once owned (paths, restored sections, the ATMs' pads): it's the reward, not just a mowing tool.
         // (Not in a den: the player walks in there.)
-        this.tractor = new TractorRide(this.threeScene, this.player, this.effects, (x, z) => !this.inDen(x, z));
+        // Ridden everywhere but in the dens and the no-mower areas, and mounted only where it fits (never wedged at a gate).
+        this.tractor = new TractorRide(this.threeScene, this.player, this.effects, (x, z) => !this.inDen(x, z) && !this.inFootArea(x, z),
+            (x, z) => this.town.fits(x, z, MOW.tractor.bodyRadius + MOUNT_CLEARANCE));
         this.player.ridePoint = (out) => this.tractor.cutPoint(out);
         // On pavement: what's drawn there (a road piece's sidewalks stand higher than its asphalt).
         this.player.groundAt = (x, z) => (this.town.surfaceAt(x, z).kind === 'pavement' ? this.town.topAt(x, z) : 0);
@@ -306,15 +327,28 @@ export default class MowScene extends ThreeScene {
         this.mowing = new MowingSystem(this.grass, this.player, this.effects, (d) => this.town.isOpen(d), () => {
             this.combo?.end();
             // (The farm test has no ATMs: the grass goes into the upgrade stations.)
-            this.hud.say(farmTest() ? 'BAG FULL! Upgrade with it, or sell it at an ATM' : t('bagFull'), 0xff8a7a);
+            // The farm game: just "BAG FULL!" (the "!" on the bag, the stations and the den say the rest).
+            this.hud.say(farmTest() ? t('bagFullFloat') : t('bagFull'), 0xff8a7a);
             this.hud.flashBag();
-            this.effects.floatText(this.player.pickupPoint(new THREE.Vector3()).setY(2.4), t('bagFullFloat'), '#ff8a7a');
+            if (!farmTest()) this.effects.floatText(this.player.pickupPoint(new THREE.Vector3()).setY(2.4), t('bagFullFloat'), '#ff8a7a');
             GameAnalytics.bagFull();
             GameAnalytics.tutorialStep('bag-full');
             // The first ATM waits for this (appearsWhenFull): it pops up now, and the arrows lead to it.
             this.town.revealStations();
         }, (grass) => {
             GameAnalytics.blocked(grass.id);
+            // The cutting power is the blades' (README_PROGRESSION.md): the blades it takes, else the mower.
+            const blades = bladesFor(grass, MowProgress.tool.power);
+            if (blades !== undefined) {
+                const look = bladeLook(blades);
+                const count = bladeCount(look);
+                const size = look.size;
+                const what = count > 1 ? `${count} BLADES` : size >= 1 ? 'A BIG BLADE' : 'A BLADE';
+                const at = (this.mowing.wall ?? this.player.transform.position).clone().setY(2.2);
+                this.effects.floatText(at, `NEEDS ${what}`, '#ff8a7a');
+                this.hud.say(`${names.grass(grass)} needs ${what.toLowerCase()}: feed the Blades station`, 0xffd9a8);
+                return;
+            }
             const tool = firstToolFor(grass);
             if (tool) {
                 const at = (this.mowing.wall ?? this.player.transform.position).clone().setY(2.2);
@@ -420,15 +454,14 @@ export default class MowScene extends ThreeScene {
         panel.button('ADD $100', () => MowProgress.addMoney(100));
         panel.button('ADD $1000', () => MowProgress.addMoney(1000));
         panel.button('FILL BAG', () => MowProgress.addClippings(MowProgress.capacity - MowProgress.clippings));
-        // This city counted as finished (its bonus too): the next one opens, the cities panel shows it.
-        panel.button('UNLOCK NEXT CITY', () => {
-            MowProgress.completeCity();
-            if (!CITY.keepGear) this.showNewCity();
-            this.hud.openCities('select');
+        // The player's level (the farm test: it unlocks the egg production, the hens, the truck dock...): the XP the next one takes.
+        panel.monitor('Level', () => {
+            const level = MowProgress.levelFor(MowProgress.xp);
+            return `${level.level} (${Math.floor(level.into)}/${level.need} XP)`;
         });
-        panel.button('UNLOCK ALL CITIES', () => {
-            MowProgress.openAllCities();
-            this.hud.openCities('select');
+        panel.button('LEVEL UP', () => {
+            const level = MowProgress.levelFor(MowProgress.xp);
+            MowProgress.addXp(Math.max(1, Math.ceil(level.need - level.into)));
         });
         // Session only: a goal locked by its count (restoring areas opens it for good).
         panel.button('OPEN ALL AREAS HERE', () => {
@@ -436,8 +469,8 @@ export default class MowScene extends ThreeScene {
                 if (!this.town.isOpen(d)) this.town.unlock(d);
             });
         });
-        panel.button('RESET THIS CITY', () => {
-            if (!window.confirm(`Reset ${CITY.name} (its money, gear and grass)?`)) return;
+        panel.button('RESET MAP', () => {
+            if (!window.confirm('Reset the map (its money, gear and grass)?')) return;
             MowProgress.resetCity();
             void this.restart();
         });
@@ -450,6 +483,19 @@ export default class MowScene extends ThreeScene {
         panel.button('RESET SAVE', () => {
             if (window.confirm('Reset all Mow Town progress?')) MowProgress.reset();
         });
+
+        // The mowing progression (README_PROGRESSION.md): each button is that station's next upgrade, free, with its fanfare.
+        const upgrades = DebugOverlay.instance.panel('Upgrades', { id: 'mow.upgrades' });
+        upgrades.monitor('Mower', () => `${MowProgress.toolLevel + 1}/${MOW.tools.length} ${MowProgress.tool.name}`);
+        upgrades.monitor('Blades', () => `level ${MowProgress.bladesLevel} (power ${MowProgress.power})`);
+        upgrades.monitor('Bag', () => `level ${MowProgress.upgradeLevel('capacity')} (${MowProgress.capacity})`);
+        const grant = (kind: PadKind) => {
+            if (!MowProgress.grant(kind)) return;
+            this.padUpgraded(kind, this.player.transform.position.clone().setY(1));
+        };
+        upgrades.button('MOWER: NEXT', () => grant('tool'));
+        upgrades.button('BLADES: NEXT', () => grant('blades'));
+        upgrades.button('BAG: NEXT', () => grant('capacity'));
     }
 
     // ---------------------------------------------------------------- frame
@@ -459,12 +505,14 @@ export default class MowScene extends ThreeScene {
         if (Gameplay.active) GameAnalytics.playTime(delta);
         this.world.update(delta);
         this.world.lateUpdate(delta);
+        this.updateGameplay();
         this.player.syncTool();
         this.tractor.update(delta);
         this.town.bodyRadius = this.tractor.isRiding ? MOW.tractor.bodyRadius : 0.35;
         // The grass parts round the player and in front of the mower (not a parked one, nor a ridden mower on foot).
         const mowing = !this.player.onFoot && (!MowProgress.tool.ride || this.player.riding);
         this.grass.update(this.player.transform.position, mowing ? this.player.cutPoint(this.toolPoint) : undefined, MowProgress.width / 2);
+        this.savePosition(delta);
         this.beacons.update(delta, this.player.transform.position);
         this.secrets.update(delta, this.player.transform.position, (at) => this.effects.sparkle(at, SECRET_GLINT, 0.4));
         if (this.mowing.wall) this.locks.bump(this.mowing.wall);
@@ -497,6 +545,7 @@ export default class MowScene extends ThreeScene {
         this.updateRelief(delta);
         this.updateStations();
         this.pads?.update(delta, this.player.transform.position);
+        this.areaUnlocks?.update(delta, this.player.transform.position);
         this.checkRestoration();
         this.updateDistrictBar();
         const position = this.player.transform.position;
@@ -616,28 +665,48 @@ export default class MowScene extends ThreeScene {
     }
 
     /**
-     * The tutorial's first hat: on a wardrobe's pad with no hat bought yet, the wardrobe is locked onto the cheapest
-     * one (the hand on it, no closing, the player held there) and any money short of it is quietly added — it never
-     * blocks. Bought: the wardrobe is free again and the game carries on.
+     * Every POSITION_SAVE_SEC: once the tutorial's done (the first area restored) and the player's out of it, where they
+     * stand is remembered if it's stable — clear ground (nothing solid, no grass too tough for the mower round them),
+     * not mid-teleport. The next session starts there.
      */
-    private updateForcedHat(onWardrobe: boolean): void {
-        const hat = MowProgress.starterHat;
-        const forced = onWardrobe && !!hat && !MowProgress.boughtFirstHat;
+    private savePosition(delta: number): void {
+        this.positionTimer -= delta;
+        if (this.positionTimer > 0) return;
+        this.positionTimer = POSITION_SAVE_SEC;
+        const first = MOW.districts[0];
+        if (!first || !MowProgress.isRestored(first.id)) return;
+        const { x, z } = this.player.transform.position;
+        if (Math.abs(x - first.x) <= first.width / 2 && Math.abs(z - first.z) <= first.depth / 2) return;
+        if (this.town.isBlocked(x, z) || this.grass.toughAt(x, z, POSITION_CLEAR, MowProgress.power, (d) => this.town.isOpen(d))) return;
+        MowProgress.setLastPosition(x, z);
+    }
+
+    private positionTimer = 0;
+
+    /**
+     * The wardrobe has no tutorial (no first hat forced, no arrows to it): it's just there to visit. Kept as a hook for
+     * the analytics' hat step.
+     */
+    private updateForcedHat(_onWardrobe: boolean): void {
+        const forced = false;
         if (forced === this.hatForced) return;
         this.hatForced = forced;
         const controller = this.player.movementController;
-        if (forced) {
-            if (MowProgress.money < hat.price) MowProgress.addMoney(hat.price - MowProgress.money);
-            GameAnalytics.tutorialStep('wardrobe');
-        } else if (MowProgress.boughtFirstHat) {
-            GameAnalytics.tutorialStep('hat');
-        }
-        this.hud.setWardrobeForced(forced ? hat.id : undefined);
+        if (MowProgress.boughtFirstHat) GameAnalytics.tutorialStep('hat');
+        this.hud.setWardrobeForced(undefined);
         if (controller) controller.enabled = !forced;
     }
 
+    /** Was in a den last frame (walking in sells the bag). */
+    private wasInDen = false;
+
     /** Sells the bag now (so the save is right), then plays it out: clippings tossed into the ATM, cash landing. */
     private sell(atm: number): void {
+        this.sellInto(this.town.atmModelAt(atm));
+    }
+
+    /** Sells the bag, the clippings tossed into `bin` (an ATM, or over the player's head walking into a den). */
+    private sellInto(bin: THREE.Vector3): void {
         const earned = MowProgress.sell();
         if (earned <= 0) return;
         GameAnalytics.sold(MowProgress.timesSold);
@@ -645,7 +714,6 @@ export default class MowScene extends ThreeScene {
         // A station waiting for this many sales pops in (the first wardrobe, with the second).
         this.town.revealStations();
         this.hud.holdSale(earned);
-        const bin = this.town.atmModelAt(atm);
         let paid = 0;
         for (let k = 0; k < SELL_TOSSES; k++) {
             const share = k === SELL_TOSSES - 1 ? earned - paid : Math.floor(earned / SELL_TOSSES);
@@ -716,12 +784,18 @@ export default class MowScene extends ThreeScene {
         this.effects.reveal(at.clone().setY(0.6), () => {
             if (!MowProgress.findTreasure(treasure.id)) return;
             GameAnalytics.treasureFound(treasure.id);
-            this.hud.treasureFound({
+            const find = {
                 title: t('treasureFoundTitle'),
                 color: RARITY_COLORS[treasure.rarity],
                 name: names.treasure(treasure).toUpperCase(),
                 model: `./mow/models/${treasure.model}`,
+            };
+            // The farm game: a trophy pays at once (no Trophies panel to claim it in).
+            if (farmTest()) this.hud.secretFound({ ...find, title: 'TROPHY!' }, treasure.reward, () => {
+                GameAnalytics.treasureClaimed(treasure.id);
+                return MowProgress.claimTreasure(treasure.id);
             }, this.playerOnScreen());
+            else this.hud.treasureFound(find, this.playerOnScreen());
         }, model);
     }
 
@@ -885,7 +959,7 @@ export default class MowScene extends ThreeScene {
                 });
             }
             // Whatever this opens: the next area, or (its part done) every area of the next part at once.
-            const opened = MOW.districts.map((_, e) => e).filter((e) => !this.town.isOpen(e) && sectionOpen(e, (id) => MowProgress.isRestored(id)));
+            const opened = MOW.districts.map((_, e) => e).filter((e) => !this.town.isOpen(e) && sectionOpen(e, (id) => MowProgress.isRestored(id), (id) => MowProgress.areaBought(id)));
             new Set(opened.filter((e) => MOW.districts[e].part).map((e) => MOW.districts[e].part!)).forEach((part) => GameAnalytics.partOpened(part));
             if (opened.length) {
                 for (const e of opened) {
@@ -908,7 +982,7 @@ export default class MowScene extends ThreeScene {
             // The goal (or, a city without one, the last one): the city's done (its next unlocked), told after its celebration
             // — the tutorial's with the cities panel (only on from there), a city's with NEW CITY AVAILABLE over the town
             // icon (play on, go when ready).
-            if (goal ? goal === district : MOW.districts.every((other) => MowProgress.isRestored(other.id))) {
+            if (!farmTest() && (goal ? goal === district : MOW.districts.every((other) => MowProgress.isRestored(other.id)))) {
                 MowProgress.completeCity();
                 GameAnalytics.cityCompleted(CITY.id);
                 gsap.delayedCall(CELEBRATION_SEC + 0.4, () => {
@@ -951,6 +1025,9 @@ export default class MowScene extends ThreeScene {
             } else {
                 target = this.pads.nearest(here, 'tool');
             }
+        } else if (this.pads && this.bladesWanted()) {
+            // The area's grass is too tough for the blades, and the bag pays for the next ones: to the Blades station.
+            target = this.pads.nearest(here, 'blades');
         } else if (this.pads) {
             // (No ATMs, no shop: the rest of the guide as usual.)
             target = this.guideOn();
@@ -966,9 +1043,6 @@ export default class MowScene extends ThreeScene {
         } else if (MowProgress.toolLevel > 0 && firstUpgrade && affordableUpgrade) {
             target = atmAt;
             hint = 'capacity';
-        } else if (!MowProgress.boughtFirstHat && this.town.nearestWardrobe(this.player.transform.position)) {
-            // The first wardrobe is out (the second sale): go and get the first hat.
-            target = this.town.nearestWardrobe(this.player.transform.position);
         } else if (this.fresh.size) {
             // The nearest of the newly opened areas.
             const p = this.player.transform.position;
@@ -985,10 +1059,19 @@ export default class MowScene extends ThreeScene {
         this.guide.update(delta, this.player.transform.position, target, target ? area : undefined);
     }
 
+    /**
+     * Whether the area being worked on grows grass tougher than the cutting power (its `maxGrass`: the grid's areas get
+     * one grass type tougher each, README_PROGRESSION.md) and the bag holds what the next blades take.
+     */
+    private bladesWanted(): boolean {
+        const district = MOW.districts[this.currentDistrict()];
+        const grass = district?.maxGrass ? MOW.grass.find((g) => g.id === district.maxGrass) : undefined;
+        return !!grass && grass.resistance >= MowProgress.power && MowProgress.clippings >= UpgradePads.left('blades');
+    }
+
     /** The guide's later steps (the first hat, a newly opened area), or null. */
     private guideOn(): THREE.Vector3 | null {
-        const wardrobe = this.town.nearestWardrobe(this.player.transform.position);
-        if (!MowProgress.boughtFirstHat && wardrobe) return wardrobe;
+        // (No arrows to the wardrobe: it has no tutorial.)
         if (!this.fresh.size) return null;
         const p = this.player.transform.position;
         const d = [...this.fresh].sort((a, b) => Math.hypot(MOW.districts[a].x - p.x, MOW.districts[a].z - p.z) - Math.hypot(MOW.districts[b].x - p.x, MOW.districts[b].z - p.z))[0];
@@ -1008,6 +1091,12 @@ export default class MowScene extends ThreeScene {
         this.backpack = new Backpack(this.threeScene, this.player);
         this.pads = new UpgradePads(this.threeScene, farm.pads, sectionOpenById,
             (to) => this.pour(to), (kind, at) => this.padUpgraded(kind, at));
+        this.areaUnlocks = new AreaUnlocks(this.threeScene, {
+            restored: (id) => MowProgress.isRestored(id),
+            onBought: (d) => this.areaBought(d),
+            say: (text, color) => this.hud.say(text, color),
+            pour: (to) => this.effects.toss(this.backpack?.top(new THREE.Vector3()) ?? this.player.pickupPoint(new THREE.Vector3()), to, new THREE.Color(0x5fc85a), 0, () => MowAudio.play('coins'), farmItem('cash')),
+        });
         const xp = farm.levels.xp;
         for (const den of farm.dens) {
             this.dens.push(new ChickenDen(this.threeScene, den, farm.eggs, MowProgress.denFound(den.id), {
@@ -1019,6 +1108,7 @@ export default class MowScene extends ThreeScene {
         }
         this.levelBadge = new LevelBadge();
         this.game.uiLayer.addChild(this.levelBadge);
+        this.hud.setUnderLevel(true);
         MowProgress.levelUpListeners.push(this.onLevelUp);
         this.resize();
     }
@@ -1042,6 +1132,7 @@ export default class MowScene extends ThreeScene {
     /** A new level: said big, a fanfare, confetti round the player. */
     private readonly onLevelUp = (level: number): void => {
         if (this.sceneDestroyed) return;
+        GameAnalytics.levelReached(level);
         MowAudio.play('buyFanfare');
         MowAudio.play('cheer');
         this.hud.say(`LEVEL ${level}!`, 0xffe27a);
@@ -1055,13 +1146,30 @@ export default class MowScene extends ThreeScene {
         return this.dens.some((den) => den.inside(x, z));
     }
 
+    /** In one of the level's no-mower areas (TownLevel.footAreas: the mower's parked there, as in a den). */
+    private inFootArea(x: number, z: number): boolean {
+        return (TOWN.footAreas ?? []).some((a) => Math.abs(x - a.x) <= a.width / 2 && Math.abs(z - a.z) <= a.depth / 2);
+    }
+
+    /** An area's unlock square paid in full: it opens (its fence goes, the camera may pan), with a fanfare. */
+    private areaBought(d: number): void {
+        const district = MOW.districts[d];
+        if (!this.town.isOpen(d)) this.town.unlock(d);
+        this.fresh.add(d);
+        MowAudio.play('buyFanfare');
+        MowAudio.play('sparkle');
+        this.hud.say(t('districtUnlocked', { name: names.district(district).toUpperCase() }), 0x8fe3ff);
+        if (district.onUnlock?.pan) this.pan = { to: this.town.sectionCentre(district), time: 0 };
+        this.giveXp(farmTest()?.levels.xp.upgrade ?? 0);
+    }
+
     /** Each frame: the backpack follows the player, the dens run, a den mowed up to opens, the mower parks in a den. */
     private updateFarm(delta: number): void {
         if (!this.pads) return;
         const position = this.player.transform.position;
         const fill = MowProgress.capacity > 0 ? MowProgress.clippings / MowProgress.capacity : 0;
         const goods = MowProgress.goods;
-        this.backpack?.update(delta, fill, goods.eggs, goods.trays, playerScale(), this.player.riding, MowProgress.tool.rideScale ?? 1);
+        this.backpack?.update(delta, fill, goods.eggs, goods.trays, playerScale(), this.player.riding, MowProgress.tool.rideScale ?? 1, goods.goldTrays ?? 0);
         const level = MowProgress.levelFor(MowProgress.xp);
         this.levelBadge?.set(level.level, level.into, level.need);
         // A pad visit counts as a sale: the first wardrobe pops in after one (appearsAfterSales).
@@ -1070,7 +1178,11 @@ export default class MowScene extends ThreeScene {
             den.update(delta, position);
             if (!den.isOpen && den.reached(position.x, position.z)) this.denFound(den);
         }
-        const onFoot = this.inDen(position.x, position.z);
+        // Walking into a den with grass in the bag: it's turned into money there and then.
+        const inDen = this.inDen(position.x, position.z);
+        if (inDen && !this.wasInDen && MowProgress.clippings > 0) this.sellInto(position.clone().setY(1.2));
+        this.wasInDen = inDen;
+        const onFoot = inDen || this.inFootArea(position.x, position.z);
         if (onFoot !== this.player.onFoot) {
             this.player.onFoot = onFoot;
             // A puff where the mower is left (or picked up again).
@@ -1097,12 +1209,14 @@ export default class MowScene extends ThreeScene {
     private padUpgraded(kind: PadKind, at: THREE.Vector3): void {
         MowAudio.play('buyFanfare');
         MowAudio.play('buyShine');
-        const text = kind === 'tool' ? `${MowProgress.tool.name.toUpperCase()}!` : 'BIGGER BAG!';
+        const text = kind === 'tool' ? `${MowProgress.tool.name.toUpperCase()}!` : kind === 'blades' ? 'SHARPER BLADES!' : 'BIGGER BAG!';
         this.effects.floatText(at.clone().setY(at.y + 2.2), text, '#ffe27a');
         this.hud.say(text, 0x9cff9c);
         this.effects.smoke(at.clone(), 8, 1, new THREE.Color(0xfff2a0), 0.8);
         CONFETTI.forEach((color) => this.effects.burst(at.clone(), color, 5, 5));
         this.onBought();
+        if (kind === 'tool') GameAnalytics.toolBought(MowProgress.toolLevel, MowProgress.tool.id);
+        else GameAnalytics.upgradeBought(kind, MowProgress.upgradeLevel(kind));
         this.giveXp(farmTest()?.levels.xp.upgrade ?? 0);
         // Things waiting on a sale (the first wardrobe) come out now.
         this.town.revealStations();
@@ -1111,7 +1225,9 @@ export default class MowScene extends ThreeScene {
     /** Mowed up to a den's gate: it opens, with a fanfare. */
     private denFound(den: ChickenDen): void {
         den.open();
+        this.town.revealStations();
         if (!MowProgress.findDen(den.def.id)) return;
+        GameAnalytics.den(den.def.id, 'found');
         this.giveXp(farmTest()?.levels.xp.denFound ?? 0);
         MowAudio.play('buyFanfare');
         MowAudio.play('sparkle');
@@ -1198,10 +1314,27 @@ export default class MowScene extends ThreeScene {
         this.afterFirstInput();
         // Every city's first play (one travelled to mid-session too: the session's already started).
         GameAnalytics.cityStarted(CITY.id);
-        if (Gameplay.started) return;
-        GameAnalytics.sessionStart(MowProgress.once('first-session'));
-        Gameplay.start();
+        // (Gameplay itself starts on the first move: updateGameplay().)
+        this.inputSeen = true;
     };
+
+    /** The first input happened (before it, nothing the player does moves them). */
+    private inputSeen = false;
+    /** Where the player was last frame (updateGameplay()); NaN: not yet. */
+    private readonly gameplayLast = new THREE.Vector3(NaN, 0, 0);
+
+    /**
+     * The platform's gameplay: on with the player's first move (the session starts then), off while a panel that stops
+     * play is open (MowHud: the map, Trophies, the language, the cities), on again with the next move once it's closed.
+     */
+    private updateGameplay(): void {
+        const position = this.player.transform.position;
+        const moved = Number.isFinite(this.gameplayLast.x) && this.gameplayLast.distanceToSquared(position) > GAMEPLAY_MOVE * GAMEPLAY_MOVE;
+        this.gameplayLast.copy(position);
+        if (Gameplay.active || !moved || !this.inputSeen || this.hud.playStopped) return;
+        if (!Gameplay.started) GameAnalytics.sessionStart(MowProgress.once('first-session'));
+        Gameplay.start();
+    }
 
     /**
      * What waits for the first input, kept out of the initial download: the soundtrack, the ambience loops (SpatialAudio)
@@ -1218,7 +1351,17 @@ export default class MowScene extends ThreeScene {
         this.hud?.reposition();
         // The level: top-left, under the sound and language buttons.
         const screen = Game.overlayScreenData;
-        if (this.levelBadge && screen) this.levelBadge.position.set(screen.topLeft.x + 56, screen.topLeft.y + 132);
+        // The player's level: at the very top, between the buttons and the money, as big as fits there (the area's bar
+        // sits under it, smaller: MowHud).
+        if (this.levelBadge && screen) {
+            const slot = this.hud.levelSlot();
+            const scale = Math.min(LEVEL_MAX_SCALE, (slot.right - slot.left) / LevelBadge.width);
+            this.levelBadge.scale.set(scale);
+            this.levelBadge.position.set((slot.left + slot.right) / 2 - (LevelBadge.width / 2 - LEVEL_BADGE_HALF) * scale, slot.y + LEVEL_DROP);
+            // The area's bar lines up under the level bar (clear of the badge), as wide as it.
+            const span = LevelBadge.barSpan;
+            this.hud.alignUnderLevel({ left: this.levelBadge.x + span.from * scale, right: this.levelBadge.x + span.to * scale, bottom: this.levelBadge.y + span.bottom * scale });
+        }
     }
 
     public destroy(): void {
@@ -1227,6 +1370,7 @@ export default class MowScene extends ThreeScene {
         window.removeEventListener('keydown', this.onFirstInput, true);
         MowProgress.saveNow();
         DebugOverlay.instance.removePanel('mow.progress');
+        DebugOverlay.instance.removePanel('mow.upgrades');
         Localization.onLocaleChange.remove(this.onLocaleChange, this);
         this.engine.stop();
         this.spatial?.destroy();
@@ -1241,6 +1385,7 @@ export default class MowScene extends ThreeScene {
         this.town?.destroy();
         this.tractor?.destroy();
         this.pads?.destroy();
+        this.areaUnlocks?.destroy();
         this.dens.forEach((den) => den.destroy());
         this.backpack?.destroy();
         this.levelBadge?.destroy();
