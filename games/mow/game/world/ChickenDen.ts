@@ -1279,6 +1279,7 @@ export class ChickenDen {
         den.floor[i]--;
         MowProgress.denChanged();
         MowProgress.carry('eggs', 1);
+        GameAnalytics.den(this.def.id, 'egg');
         this.refreshNests();
         this.hooks.xp('egg');
         this.hooks.effects.pickup(this.world(this.nests[i].egg.x, 0.15, this.nests[i].egg.z), new THREE.Color(0xfff0d0), () => this.sound('item'), farmItem('egg'));
@@ -1309,6 +1310,7 @@ export class ChickenDen {
         den.trays--;
         MowProgress.denChanged();
         MowProgress.carry('trays', 1);
+        GameAnalytics.den(this.def.id, 'pack');
         this.hooks.effects.pickup(this.world(grid.x, 0.2, grid.z), new THREE.Color(0xe2c48e), () => this.sound('item'), farmItem('tray'));
     }
 
@@ -1321,6 +1323,7 @@ export class ChickenDen {
         this.sellTimer = SELL_TRAY_SEC;
         MowProgress.carry(gold ? 'goldTrays' : 'trays', -1);
         this.handOver(gold ? 'goldTray' : 'tray', this.hooks.carryPoint());
+        GameAnalytics.den(this.def.id, 'sale');
     }
 
     /** What each customer's packs are worth so far (gold ones more): paid all at once with their last. */

@@ -686,7 +686,8 @@
       "spots": {
         "grass": "tallgrass",
         "share": 0.45
-      }
+      },
+      "part": "after-yard"
     },
     {
       "id": "wilds",
@@ -713,7 +714,8 @@
       "spots": {
         "grass": "weeds",
         "share": 0.35
-      }
+      },
+      "part": "after-yard"
     },
     {
       "id": "section-4",

@@ -27,7 +27,7 @@ export interface Look {
 const cityKey = (city: string): string => `mow.save.${city}`;
 const GLOBAL_KEY = 'mow.global';
 /** Bump when a change can't carry old saves over: a save from another version starts a new game. */
-const SAVE_VERSION = 6;
+const SAVE_VERSION = 7;
 /** What's the player's, not the city's (kept across cities: the wardrobe, the cities finished, the analytics). */
 const GLOBAL_FIELDS = ['owned', 'look', 'freeLooksOffered', 'sent', 'completed', 'carried', 'allCitiesOpen'] as const;
 /** The claim key of the rewards left unclaimed in cities travelled from (SaveData.carried). */
@@ -691,6 +691,11 @@ export const MowProgress = {
     },
 
     /** True the first time `key` is passed, ever (saved): one-time analytics events. */
+    /** Whether `once(key)` already happened (without marking it). */
+    sentBefore(key: string): boolean {
+        return state.sent.includes(key);
+    },
+
     once(key: string): boolean {
         if (state.sent.includes(key)) return false;
         state.sent.push(key);

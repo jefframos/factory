@@ -125,6 +125,9 @@ that has them has three, side by side:
 
 ### Opening the next areas: bought with level and cash
 
+Finishing the Front Yard (the tutorial) opens the **Park and the Wilds together** (both `part: "after-yard"` in the
+level): the player picks where to mow. Stations and the wardrobe tied to the Wilds come out then too.
+
 The areas after the Wilds open when they're **bought**, not on their own:
 1. Once the part before is restored, the area's **unlock square** appears (`sections[].unlock`: price, level, x, z;
    placed in the editor).
@@ -411,6 +414,29 @@ From the video, the things that make it feel good:
 - A **new area** opens with a burst: new floor, new squares to buy.
 
 ---
+
+## Analytics: the progression funnel
+
+The farm game's progress export (Poki) holds only the progression, like mob's levels, so it shows time and drop-off
+per step:
+- `step / <nn>-<name>`: **start** when the step becomes the goal (also at each session's start while it still is),
+  **complete** when done. The `lefts` column is where players quit. Steps, in play order (`FARM_STEPS` in
+  game/analytics/GameAnalytics.ts): move, first-cut, bag-full, station, mower-01, yard-done, bag-01, mower-02,
+  blades-01, park-done, mower-03, den-found, den-egg, den-pack, den-sale, den-lesson, hen-02, trucks, wilds-done,
+  mower-04, belt, helper, gold, section-4-bought, truck-helper, gold-belt, mower-05, section-4-done, mower-06.
+- `level / <nn>` complete: player levels. `session / new | returning` start: the base.
+- Everything else uses non-progress actions and lands in Poki's other exports:
+  - trophies: `treasure / <id> / found`
+  - the wardrobe: `shop / <item> / bought | equip`
+  - playtime: `playtime / min-<n> / reached`
+  - upgrade levels and more hens: `bought`
+  - panels and tabs: `interact`
+- Gameplay (gameplayStart / gameplayStop) starts on the first move, stops while the map or another panel is open, and
+  starts again on the next move.
+- Save version 7: this layout starts everyone on fresh data.
+
+Read an export with `node games/mow/data/funnel.mjs <progress-events.csv>` (older exports are mapped from their old
+event names).
 
 ## Where it stands now (farm test)
 
