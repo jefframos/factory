@@ -75,6 +75,12 @@ export const FARM_STEPS = [
     'move', 'first-cut', 'bag-full', 'station', 'mower-01', 'yard-done', 'bag-01', 'mower-02', 'blades-01', 'park-done',
     'mower-03', 'den-found', 'den-egg', 'den-pack', 'den-sale', 'den-lesson', 'hen-02', 'trucks', 'wilds-done', 'mower-04',
     'belt', 'helper', 'gold', 'section-4-bought', 'truck-helper', 'gold-belt', 'mower-05', 'section-4-done', 'mower-06',
+    // (Save 8: the economy rework. New steps go on the end so the numbers before never change; section-4-bought no
+    // longer happens: areas open by restoring or a level.)
+    'power-up', 'strawberry-farm-found', 'strawberry-farm-plot-02', 'strawberry-farm-dock', 'strawberry-farm-picker',
+    'strawberry-farm-helper', 'strawberry-farm-boatHelper', 'section-5-done', 'mower-07', 'cows-found', 'cows-cow-02',
+    'cows-dock', 'cows-belt', 'cows-helper', 'cows-truck-helper', 'section-6-done', 'section-7-done', 'mower-08',
+    'section-8-done', 'mower-09', 'section-9-done', 'mower-10', 'chest-opened',
 ] as const;
 
 /** A step's event value: `<nn>-<name>`. */
@@ -132,7 +138,11 @@ const TUTORIAL_AS_STEP: Partial<Record<string, string>> = { move: 'move', cut: '
 export const TUTORIAL = ['move', 'cut', 'bag-full', 'sell', 'first-mower', 'first-upgrade', 'park-restored', 'wardrobe', 'hat', 'yard-restored'] as const;
 export type TutorialStep = (typeof TUTORIAL)[number];
 
-const PLAYTIME_MINUTES = [1, 2, 3, 5, 8, 12, 20, 30];
+// (The first run is 90+ minutes now: marks up to three hours.)
+/** The POWER-UPS panel's tracks (the first bought is a funnel step). */
+const POWER_UP_IDS = new Set(['speed', 'money', 'grass', 'bag', 'width', 'chew', 'farm']);
+
+const PLAYTIME_MINUTES = [1, 2, 3, 5, 8, 12, 20, 30, 45, 60, 75, 90, 120, 150, 180];
 
 function send(category: string, what: string | number, action: string): void {
     // The farm game: only its funnel in the progress export (anything else gets a non-progress action).
@@ -237,6 +247,8 @@ export const GameAnalytics = {
     upgradeBought(upgradeId: string, level: number): void {
         // The farm game: the first bag and blades are steps; every level is also sent as `upgrade` (the detail).
         if (farmTest() && level === 1) stepOf(`${upgradeId === 'capacity' ? 'bag' : upgradeId}-01`);
+        // The first power-up bought (any of them).
+        if (farmTest() && POWER_UP_IDS.has(upgradeId)) stepOf('power-up');
         send('upgrade', farmTest() ? `${upgradeId}-${pad(level)}` : `${CITY.id}-${upgradeId}-${pad(level)}`, farmTest() ? 'bought' : 'complete');
     },
 
@@ -306,6 +318,22 @@ export const GameAnalytics = {
     },
 
     /** A player level reached (the farm game), once per player each. */
+    /** A locked chest: found, opened (its video watched), or its video not watched. */
+    chest(what: 'found' | 'opened' | 'no-video', id: string): void {
+        if (what === 'opened') stepOf('chest-opened');
+        send('chest', `${what}-${id}`, 'complete');
+    },
+
+    /** A special skin tone unlocked by its video (or the video not watched). */
+    skin(what: 'unlocked' | 'no-video', id: string): void {
+        send('skin', `${what}-${id.replace('#', '')}`, 'complete');
+    },
+
+    /** SELL x2 used (free, or after its video), or its video not watched. */
+    sellDouble(what: 'free' | 'video' | 'no-video'): void {
+        send('sell-x2', what, 'complete');
+    },
+
     levelReached(level: number): void {
         if (MowProgress.once(`level-${level}`)) send('level', pad(level), 'complete');
     },
@@ -318,8 +346,10 @@ export const GameAnalytics = {
     /** A den's milestone: found, or something bought in it (hen-<nn>, dock, belt, helper…), once per player each. */
     den(denId: string, what: string): void {
         // The farm game's funnel has the den's milestones (found, the first egg / pack / sale, the lesson, the 2nd hen,
-        // the trucks, the belt, the helpers, the gold machine and belt); the rest (more hens) as `den`.
-        const asStep = DEN_STEPS[what] ?? what;
+        // the trucks, the belt, the helpers, the gold machine and belt); the rest (more hens) as `den`. The other shops
+        // (the barn, the crop farms) are steps by their own id (`cows-belt`, `strawberry-farm-picker`), never the den's.
+        const chicken = denId === farmTest()?.dens[0]?.id;
+        const asStep = chicken ? DEN_STEPS[what] ?? what : `${denId}-${what}`;
         if (stepOf(asStep)) return;
         if (MowProgress.once(`den-${denId}-${what}`)) send('den', `${denId}-${what}`, 'bought');
     },

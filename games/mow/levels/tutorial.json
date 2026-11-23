@@ -230,15 +230,7 @@
       "halfZ": 0.45
     }
   },
-  "wardrobes": [
-    {
-      "x": -6.5,
-      "z": 11,
-      "rotationY": 1.5708,
-      "appearsAfterSales": 1,
-      "section": "wilds"
-    }
-  ],
+  "wardrobes": [],
   "props": [
     {
       "model": "town/nature/Tree_1_A_Color1.gltf",
@@ -685,9 +677,9 @@
       "id": "yard",
       "name": "Front Yard",
       "x": 0,
-      "z": 15,
+      "z": 14.5,
       "width": 10,
-      "depth": 7,
+      "depth": 7.5,
       "completeAt": 0.97,
       "bonus": 150,
       "ground": "#557f38",
@@ -695,7 +687,7 @@
       "fill": "grass",
       "grassScale": 0.6,
       "pen": {
-        "x": -0.5,
+        "x": 0.5,
         "z": 13.75,
         "width": 20.5,
         "depth": 11.5
@@ -984,7 +976,7 @@
     "pads": [
       {
         "kind": "tool",
-        "x": 6.2,
+        "x": 6.75,
         "z": 10.4,
         "rotationY": -1.5708,
         "appearsWhenFull": true
@@ -1222,7 +1214,7 @@
             "z": 1.75
           }
         },
-        "level": 6
+        "level": 7
       }
     ],
     "eggs": {

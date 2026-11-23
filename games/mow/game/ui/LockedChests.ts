@@ -9,11 +9,9 @@ import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { UiKit } from './UiKit';
 import { UiAnim } from './UiAnim';
-import { ModelIcons } from './ModelIcons';
 import { MowAudio } from '../audio/MowAudio';
 import { shortMoney } from '../data/MowConfig';
 
-const CHEST_MODEL = './mow/models/treasures/chest.glb';
 const BUTTON = 96;
 const CARD = { width: 520, height: 470 };
 
@@ -36,16 +34,13 @@ function tappable(target: PIXI.Container, onTap: () => void): void {
     });
 }
 
-/** A chest picture (the treasure's model drawn as an icon) fitted to `size`. */
+/** The chest (the kit's wooden chest icon) fitted to `size`. */
 function chestPicture(size: number): PIXI.Container {
     const holder = new PIXI.Container();
-    void ModelIcons.get(CHEST_MODEL).then((texture) => {
-        if (!texture || holder.destroyed) return;
-        const sprite = new PIXI.Sprite(texture);
-        sprite.anchor.set(0.5);
-        sprite.scale.set(size / Math.max(texture.width, texture.height, 1));
-        holder.addChild(sprite);
-    });
+    const sprite = PIXI.Sprite.from('ItemIcon_Chest_Wood');
+    sprite.anchor.set(0.5);
+    sprite.scale.set(size / Math.max(sprite.texture.width, sprite.texture.height, 1));
+    holder.addChild(sprite);
     return holder;
 }
 
@@ -97,6 +92,9 @@ export class LockedChestPanel extends PIXI.Container {
     private readonly reward = text('', 52, 0xffe27a);
     private readonly openLabel = text('OPEN', 34, 0xffffff, 0x1d5a1d);
     private busy = false;
+    private chest!: PIXI.Container;
+    /** The cash bursting out of an opened chest (over the card). */
+    private readonly burst = new PIXI.Container();
 
     public constructor(private readonly onOpen: () => void, private readonly onLater: () => void) {
         super();
@@ -110,6 +108,7 @@ export class LockedChestPanel extends PIXI.Container {
         const chest = chestPicture(190);
         chest.y = -40;
         UiAnim.pulse(chest, 0.04, 0.8);
+        this.chest = chest;
         this.reward.y = 92;
         const open = new PIXI.Container();
         open.position.set(0, CARD.height / 2 - 78);
@@ -127,7 +126,7 @@ export class LockedChestPanel extends PIXI.Container {
         const later = text('LATER', 24, 0xdddddd);
         later.position.set(CARD.width / 2 - 70, -CARD.height / 2 + 52);
         tappable(later, () => this.onLater());
-        this.card.addChild(back, title, chest, this.reward, open, later);
+        this.card.addChild(back, title, chest, this.reward, open, later, this.burst);
         this.addChild(this.dim, this.card);
         this.visible = false;
     }
@@ -149,6 +148,37 @@ export class LockedChestPanel extends PIXI.Container {
 
     public hide(): void {
         this.visible = false;
+    }
+
+    /**
+     * The chest opens: it jolts, a pile of bills bursts up out of it and hangs a moment, then `done` (the scene closes
+     * the panel and the cash flies to the player in the world).
+     */
+    public playOpen(done: () => void): void {
+        this.setBusy(true);
+        gsap.killTweensOf(this.chest.scale);
+        gsap.timeline()
+            .to(this.chest.scale, { x: 1.25, y: 0.8, duration: 0.1 })
+            .to(this.chest.scale, { x: 1, y: 1, duration: 0.35, ease: 'back.out(3)' });
+        UiAnim.punch(this.reward as unknown as PIXI.Container, 0.3);
+        MowAudio.play('buyCash');
+        for (let i = 0; i < 14; i++) {
+            const bill = PIXI.Sprite.from('ItemIcon_Money_Bill');
+            bill.anchor.set(0.5);
+            bill.scale.set(54 / Math.max(bill.texture.width, bill.texture.height, 1));
+            bill.position.set(this.chest.x, this.chest.y - 20);
+            bill.rotation = (Math.random() - 0.5) * 1.2;
+            this.burst.addChild(bill);
+            const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.4;
+            const r = 110 + Math.random() * 90;
+            gsap.to(bill, { x: this.chest.x + Math.cos(a) * r, y: this.chest.y - 20 + Math.sin(a) * r * 0.8, rotation: bill.rotation * 2, duration: 0.45, delay: i * 0.025, ease: 'back.out(1.8)' });
+        }
+        gsap.delayedCall(0.85, () => {
+            if (this.destroyed) return;
+            this.burst.children.forEach((child) => gsap.killTweensOf(child));
+            this.burst.removeChildren().forEach((child) => child.destroy());
+            done();
+        });
     }
 
     /** While its video plays: OPEN says so and can't be tapped again. */

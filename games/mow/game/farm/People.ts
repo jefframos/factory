@@ -27,7 +27,8 @@ export const PALETTE = {
 };
 export type Part = keyof typeof PALETTE;
 const PARTS: Part[] = ['skin', 'top', 'bottom', 'shoes', 'hair'];
-export type Outfit = Record<Part, string>;
+/** Each part's colour, and (optionally) a pattern on the top: `kind:#hex` (dressed()). */
+export type Outfit = Record<Part, string> & { pattern?: string };
 
 const pick = <T>(list: readonly T[]): T => list[Math.floor(Math.random() * list.length)];
 
@@ -36,18 +37,55 @@ export function randomOutfit(): Outfit {
     return Object.fromEntries(PARTS.map((part) => [part, pick(PALETTE[part])])) as Outfit;
 }
 
-/** `source` (a person's geometry) with each part in the outfit's colour. */
+/**
+ * A pattern on the top (the wardrobe's PATTERNS): its kind and second colour, as `kind:#hex` — stripes across it, a
+ * band over the chest, two-tone (the lower half), or sleeves. Painted per vertex (the people have no textures), so it
+ * comes out soft and chunky, like a knit.
+ */
+type PatternKind = 'stripes' | 'band' | 'twotone' | 'sleeves';
+const TOP_PART = PARTS.indexOf('top') + 1;
+
+/** Whether a top's vertex (its height `t` 0..1 up the top, its side `side` 0..1 out from the middle) takes the second colour. */
+function patterned(kind: PatternKind, t: number, side: number): boolean {
+    switch (kind) {
+        case 'stripes': return Math.floor(t * 7) % 2 === 1;
+        case 'band': return t > 0.45 && t < 0.72;
+        case 'twotone': return t < 0.5;
+        case 'sleeves': return side > 0.55;
+    }
+}
+
+/** `source` (a person's geometry) with each part in the outfit's colour (and the top's pattern, if it has one). */
 export function dressed(source: THREE.BufferGeometry, outfit: Outfit): THREE.BufferGeometry {
     const choice = PARTS.map((part) => new THREE.Color(outfit[part]));
     const from = source.getAttribute('color');
     if (!from) return source;
+    // The pattern: its kind, its colour, and the top's extent (to place it up and across the top).
+    const [kind, second] = (outfit.pattern ?? '').split(':') as [PatternKind | '', string | undefined];
+    const pattern = kind && second ? { kind, color: new THREE.Color(second) } : undefined;
+    const position = source.getAttribute('position');
+    let minY = Infinity;
+    let maxY = -Infinity;
+    let maxX = 1e-6;
+    if (pattern && position) {
+        for (let i = 0; i < from.count; i++) {
+            if (Math.round(from.getW(i) * PART_SCALE) !== TOP_PART) continue;
+            minY = Math.min(minY, position.getY(i));
+            maxY = Math.max(maxY, position.getY(i));
+            maxX = Math.max(maxX, Math.abs(position.getX(i)));
+        }
+    }
     const colors = new Float32Array(from.count * 3);
     for (let i = 0; i < from.count; i++) {
         const part = Math.round(from.getW(i) * PART_SCALE);
         if (part === 0) colors.set([from.getX(i), from.getY(i), from.getZ(i)], i * 3);
         else {
             const shade = from.getX(i) * 2;
-            const color = choice[part - 1];
+            let color = choice[part - 1];
+            if (pattern && position && part === TOP_PART && maxY > minY) {
+                const t = (position.getY(i) - minY) / (maxY - minY);
+                if (patterned(pattern.kind, t, Math.abs(position.getX(i)) / maxX)) color = pattern.color;
+            }
             colors.set([color.r * shade, color.g * shade, color.b * shade], i * 3);
         }
     }

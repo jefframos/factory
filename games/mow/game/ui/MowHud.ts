@@ -62,7 +62,8 @@ const AREA_UNDER_LEVEL = { y: 104, scale: 0.72 };
 const AREA_GAP = 8;
 /** The area bar's reward disc at its end: its size. */
 const REWARD = { size: 38 };
-const SHOP = { width: 840, height: 580 };
+/** (The farm test's POWER-UPS list takes the same panel, taller to fit its seven rows: POWER_ROW.) */
+const SHOP = farmTest() ? { width: 840, height: 800 } : { width: 840, height: 580 };
 /** Shop rows: frame left, text, buy button right. */
 const ROW = { width: 776, frameX: -336, textX: -280, textWidth: 470, buttonX: 300, buttonWidth: 150 };
 /** The tabs' content block (y = its top edge), and the GEAR tab's rows. */
@@ -70,7 +71,7 @@ const BLOCK = { top: -170, width: 800, height: 432, tabWidth: 170, tabHeight: 48
 const GEAR_Y = { timeline: -110, tool: 28, bag: 146 };
 const BOOST_ROW = { firstY: -116, step: 90, height: 82 };
 /** The farm test's POWER-UPS panel (the shop's frame, no tabs): its rows, the button opening it. */
-const POWER_ROW = { firstY: -214, step: 70, height: 66 };
+const POWER_ROW = { firstY: -SHOP.height / 2 + 112, step: 92, height: 86 };
 /** What the POWER-UPS panel offers, in order (the blades are a station on the farm, so not here). */
 const POWER_UPS: readonly UpgradeId[] = ['speed', 'money', 'grass', 'bag', 'width', 'chew', 'farm'];
 const POWER_BUTTON_SIZE = 84;
@@ -82,7 +83,7 @@ const nextMilestone = (boost: UpgradeDef, level: number): string => {
     return next ? `  ·  x2 at ${next}` : '';
 };
 /** POWER-UPS comes with this player level (the chicken den's: when money starts coming in). */
-const POWER_UPS_LEVEL = 6;
+const POWER_UPS_LEVEL = 7;
 const FOOTER_Y = 238;
 /** The mower timeline: node sizes (the goal bigger), its width, line colours. */
 const TIMELINE = { node: 60, goal: 78, width: 680 };
@@ -128,6 +129,39 @@ const PANEL_MAP_WIDTH = 440;
 const RIBBON_OVERHANG = 44;
 const PANEL_TOP_GAP = 40;
 const CLOSE_SIZE = 56;
+
+/** White, keeping each pixel's alpha (a sticker's outline), and a soft dark copy (its shadow). */
+const WHITE_SHAPE = [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0];
+const SHADOW_SHAPE = [0, 0, 0, 0, 0.08, 0, 0, 0, 0, 0.06, 0, 0, 0, 0, 0.1, 0, 0, 0, 0.35, 0];
+
+/**
+ * An icon as a sticker: the full-colour icon on a thick white outline (copies of it round about, painted white), a
+ * soft shadow under, nothing behind it (no button shape): the HUD's MAP and WARDROBE buttons.
+ */
+function sticker(frame: string, size: number, stroke = 6): PIXI.Container {
+    const holder = new PIXI.Container();
+    const copy = () => {
+        const sprite = PIXI.Sprite.from(frame);
+        sprite.anchor.set(0.5);
+        sprite.scale.set(size / Math.max(sprite.texture.width, sprite.texture.height, 1));
+        return sprite;
+    };
+    const ring = (offsetY: number, matrix: number[]) => {
+        const group = new PIXI.Container();
+        for (let i = 0; i < 16; i++) {
+            const a = (i / 16) * Math.PI * 2;
+            const sprite = copy();
+            sprite.position.set(Math.cos(a) * stroke, Math.sin(a) * stroke + offsetY);
+            group.addChild(sprite);
+        }
+        const filter = new PIXI.ColorMatrixFilter();
+        filter.matrix = matrix as PIXI.ColorMatrix;
+        group.filters = [filter];
+        return group;
+    };
+    holder.addChild(ring(5, SHADOW_SHAPE), ring(0, WHITE_SHAPE), copy());
+    return holder;
+}
 
 /** A kit image fitted to `size` (keeps aspect). */
 function icon(screen: string, id: string, size: number): PIXI.Container {
@@ -227,6 +261,9 @@ export class MowHud extends PIXI.Container {
     private powerOpen = false;
     private readonly powerButton = new PIXI.Container();
     private readonly powerAlert = new PIXI.Container();
+    /** The farm test's wardrobe button (beside POWER-UPS): the wardrobe at any time, a "!" while something new's affordable. */
+    private readonly wardrobeButton = new PIXI.Container();
+    private readonly wardrobeAlert = new PIXI.Container();
     private shopTitle?: PIXI.Text;
     public readonly moveHint = new MoveHint();
     /** Money from a sale still landing: shown as not yet earned until releaseSale(). */
@@ -255,6 +292,7 @@ export class MowHud extends PIXI.Container {
         this.trophiesHolder.addChild(this.trophies);
         this.buildTrophiesButton();
         this.buildPowerButton();
+        this.buildWardrobeButton();
         this.languageHolder.addChild(this.language);
         this.addClose(this.language, LANGUAGE_SIZE, () => this.toggleLanguage());
         this.toast.alpha = 0;
@@ -424,11 +462,9 @@ export class MowHud extends PIXI.Container {
             this.reposition();
         });
 
-        const back = icon('hud', 'muteButton', MAP_BUTTON_SIZE);
-        const map = PIXI.Sprite.from('ItemIcon_Map');
-        map.anchor.set(0.5);
-        map.scale.set((MAP_BUTTON_SIZE * 0.66) / Math.max(map.texture.width, map.texture.height, 1));
-        this.mapButton.addChild(back, map);
+        // A sticker (the map icon on a white outline, nothing behind it), bottom left.
+        this.mapButton.addChild(sticker('ItemIcon_Map', MAP_BUTTON_SIZE * 0.82));
+        this.mapButton.hitArea = new PIXI.Rectangle(-MAP_BUTTON_SIZE / 2, -MAP_BUTTON_SIZE / 2, MAP_BUTTON_SIZE, MAP_BUTTON_SIZE);
         this.tappable(this.mapButton, () => this.toggleMap());
 
         // The panel: a dim (a tap on it closes), the drawn map big in the middle, its close button.
@@ -1184,15 +1220,11 @@ export class MowHud extends PIXI.Container {
 
     // ---------------------------------------------------------------- power-ups (the farm test)
 
-    /** The POWER-UPS button (where the trophy is elsewhere): the MAP button's round kit back, a star, a bouncing "!" while one's affordable. */
+    /** The POWER-UPS button: a gold star sticker, a bouncing "!" while one's affordable; bottom left above the wardrobe. */
     private buildPowerButton(): void {
         const size = POWER_BUTTON_SIZE;
-        this.powerButton.position.set(CORNER_WIDTH - size / 2, 150);
-        const back = icon('hud', 'muteButton', size);
-        const star = PIXI.Sprite.from('ItemIcon_Star_Gold');
-        star.anchor.set(0.5);
-        star.scale.set((size * 0.66) / Math.max(star.texture.width, star.texture.height, 1));
-        this.powerButton.addChild(back, star);
+        // A sticker (the gold star on a white outline, nothing behind it), bottom left above the wardrobe (reposition()).
+        this.powerButton.addChild(sticker('ItemIcon_Star_Gold', size * 0.82));
         this.powerButton.hitArea = new PIXI.Rectangle(-size / 2, -size / 2, size, size);
         const alert = icon('hud', 'alert', 34);
         this.powerAlert.addChild(alert);
@@ -1204,15 +1236,37 @@ export class MowHud extends PIXI.Container {
             MowAudio.play('toggle');
             this.setPowerOpen(!this.powerOpen);
         });
-        this.corner.addChild(this.powerButton);
+        this.addChild(this.powerButton);
         this.powerButton.visible = false;
+    }
+
+    /** The wardrobe button: a shirt sticker and its "!"; bottom left, above the MAP button. */
+    private buildWardrobeButton(): void {
+        const size = POWER_BUTTON_SIZE;
+        // A sticker (a shirt on a white outline, nothing behind it), bottom left above the map (reposition()).
+        this.wardrobeButton.addChild(sticker('ItemIcon_Gear_Armor_Top', size * 0.82));
+        this.wardrobeButton.hitArea = new PIXI.Rectangle(-size / 2, -size / 2, size, size);
+        const alert = icon('hud', 'alert', 34);
+        this.wardrobeAlert.addChild(alert);
+        this.wardrobeAlert.position.set(size / 2 - 6, -size / 2 + 6);
+        gsap.to(alert, { y: -8, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+        this.wardrobeAlert.visible = false;
+        this.wardrobeButton.addChild(this.wardrobeAlert);
+        this.tappable(this.wardrobeButton, () => {
+            MowAudio.play('toggle');
+            if (!this.wardrobeOpen) this.setPowerOpen(false);
+            this.setWardrobeOpen(!this.wardrobeOpen);
+        });
+        this.addChild(this.wardrobeButton);
+        this.wardrobeButton.visible = false;
     }
 
     /** Opens / closes POWER-UPS (over whatever the player's doing; the ATM shop can't open over it). */
     private setPowerOpen(open: boolean): void {
         if (open === this.powerOpen || this.shopForced) return;
         if (open) {
-            // (Over an open ATM shop: that one closes first.)
+            // (Over an open ATM shop or the wardrobe: they close first.)
+            this.setWardrobeOpen(false);
             this.showShop(false);
             this.powerOpen = true;
             GameAnalytics.panelOpened('powerups');
@@ -1225,6 +1279,11 @@ export class MowHud extends PIXI.Container {
 
     /** The POWER-UPS button: shown once there's money to spend (the farm test only), its "!" while one's affordable. */
     private refreshPowerButton(): void {
+        // The wardrobe: with the MAP button (the yard done: the very start stays simple); its "!" with something new affordable.
+        const wardrobe = !!farmTest() && !!this.unlocked?.map;
+        if (wardrobe && !this.wardrobeButton.visible) UiAnim.popIn(this.wardrobeButton);
+        this.wardrobeButton.visible = wardrobe;
+        this.wardrobeAlert.visible = wardrobe && MowProgress.wardrobeHasNews && !this.wardrobeOpen;
         const shown = !!farmTest() && MowProgress.levelFor(MowProgress.xp).level >= POWER_UPS_LEVEL;
         if (shown && !this.powerButton.visible) UiAnim.popIn(this.powerButton);
         this.powerButton.visible = shown;
@@ -1501,6 +1560,10 @@ export class MowHud extends PIXI.Container {
         // The miniature hangs right-aligned under the trophy too (its origin is its centre), unless it's up celebrating.
         if (!this.miniature.celebrating) this.miniature.position.copyFrom(this.miniatureHome);
         this.mapButton.position.set(screen.topLeft.x + 20 + MAP_BUTTON_SIZE / 2, screen.topLeft.y + screen.height - 20 - MAP_BUTTON_SIZE / 2);
+        // The wardrobe above it (the farm test).
+        this.wardrobeButton.position.set(this.mapButton.x, this.mapButton.y - MAP_BUTTON_SIZE - 14);
+        // POWER-UPS above the wardrobe.
+        this.powerButton.position.set(this.mapButton.x, this.wardrobeButton.y - MAP_BUTTON_SIZE - 14);
         this.mapDim.clear().beginFill(0x000000, 0.55).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
         const mapScale = Math.min(1, (screen.height * 0.85) / (this.panelMap.panelHeight + RIBBON_OVERHANG), (screen.width - 24) / (this.panelMap.panelWidth + CLOSE_SIZE / 2));
         this.panelMapHolder.scale.set(mapScale);

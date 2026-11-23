@@ -29,6 +29,14 @@ const WHEEL_RADIUS = 0.4;
 /** Built wheels (buildWheels()) this much bigger than the tyres they stand in for. */
 const WHEEL_GROW = 1.08;
 
+/** Where a tractor of `rideScale` sits between the smallest ridden mower (0) and the biggest (1). */
+function rideBlend(rideScale: number): number {
+    const sizes = MOW.tools.filter((tool) => tool.ride).map((tool) => tool.rideScale ?? 1);
+    const low = Math.min(...sizes);
+    const high = Math.max(...sizes);
+    return high > low ? Math.min(1, Math.max(0, (rideScale - low) / (high - low))) : 0;
+}
+
 export class TractorRide {
     private readonly holder = new THREE.Group();
     /** The model, fitted to the base height (the holder scales it per mower). */
@@ -302,8 +310,19 @@ export class TractorRide {
         const container = this.player.character?.container;
         if (!steer || !container) return;
         container.updateMatrixWorld(true);
-        const middle = this.wheelLeft.set(steer.x, steer.y, steer.z).multiplyScalar(this.scale).applyQuaternion(container.quaternion).add(this.holder.position);
-        const side = this.wheelSide.set(steer.spread * this.scale, 0, 0).applyQuaternion(container.quaternion);
+        // The grip, from the seat: on the smallest tractor the yellow dots (`steer`: on its wheel, scaled with the
+        // tractor); on the biggest the pink ones (`steerBig`: where the hands are from the seat at the driver's own
+        // size, exactly as the Tractor tab shows them, the driver not growing); in a straight line between by size.
+        const seat = MOW.tractor.seat;
+        const big = MOW.tractor.steerBig;
+        const t = big ? rideBlend(MowProgress.tool.rideScale ?? 1) : 0;
+        const body = playerScale();
+        const reach = (a: number, s0: number, b: number | undefined) => (a - s0) * this.scale * (1 - t) + ((b ?? a) - s0) * body * t;
+        const middle = this.wheelLeft.set(seat.x, seat.y, seat.z).multiplyScalar(this.scale)
+            .add(this.wheelSide.set(reach(steer.x, seat.x, big?.x), reach(steer.y, seat.y, big?.y), reach(steer.z, seat.z, big?.z)))
+            .applyQuaternion(container.quaternion).add(this.holder.position);
+        const spread = steer.spread * this.scale * (1 - t) + (big?.spread ?? steer.spread) * body * t;
+        const side = this.wheelSide.set(spread, 0, 0).applyQuaternion(container.quaternion);
         this.wheelRight.copy(middle).sub(side);
         middle.add(side);
         this.player.holdWheel(middle, this.wheelRight, steer.hand);

@@ -43,6 +43,12 @@ const FIELDS = [
         ['steer.hand.y', 'Hand turn Y (°)', 1, -180, 180],
         ['steer.hand.z', 'Hand turn Z (°)', 1, -180, 180],
     ]],
+    ['Hands on the biggest tractor (pink dots: where the hands sit from the seat, as shown)', [
+        ['steerBig.x', 'Left / right', 0.01, -2, 2],
+        ['steerBig.y', 'Up / down', 0.01, 0, 4],
+        ['steerBig.z', 'Back / front', 0.01, -2, 2],
+        ['steerBig.spread', 'Hands apart (each side)', 0.01, 0, 1],
+    ]],
     ['Smoke puff (getting on / off)', [
         ['smoke.count', 'Puffs', 1, 1, 60],
         ['smoke.size', 'Size', 0.05, 0.1, 4],
@@ -87,6 +93,15 @@ const handMarkers = [0, 1].map(() => {
     marker.renderOrder = 10;
     return marker;
 });
+/**
+ * Where the hands hold on the biggest tractor (steerBig ± spread, pink): the game blends from the yellow dots (the
+ * smallest tractor) to these by each tractor's size.
+ */
+const bigHandMarkers = [0, 1].map(() => {
+    const marker = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 8), new THREE.MeshBasicMaterial({ color: 0xff5fd2, depthTest: false, transparent: true }));
+    marker.renderOrder = 10;
+    return marker;
+});
 const exhaustMarker = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 8), new THREE.MeshBasicMaterial({ color: 0xff7043 }));
 /** Where it cuts: a line from under the tractor to `cutAhead`. */
 const cutMarker = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 1), new THREE.MeshBasicMaterial({ color: 0x5fd35a }));
@@ -102,6 +117,8 @@ export async function initTractorTab(container) {
     // Older configs have no steering wheel: one in front of the seat to start from.
     tractor.steer ??= { x: 0, y: tractor.seat.y + 0.3, z: tractor.seat.z + 0.6, spread: 0.17, hand: { x: 0, y: 63, z: 0 } };
     tractor.steer.hand ??= { x: 0, y: 0, z: 0 };
+    // The biggest tractor's grip starts where the base one is.
+    tractor.steerBig ??= { x: tractor.steer.x, y: tractor.steer.y, z: tractor.steer.z, spread: tractor.steer.spread };
     // Where the bag rides without one (the game's default: behind the seat).
     tractor.bag ??= { x: 0, y: 0.74, z: -1.2 };
     tractor.blades ??= [];
@@ -387,7 +404,7 @@ function setupViewport(viewport) {
     sun.position.set(4, 8, 6);
     scene.add(sun);
     scene.add(new THREE.GridHelper(8, 32, 0x4a4038, 0x3a322c), new THREE.AxesHelper(1.2));
-    scene.add(tractorHolder, seatHolder, exhaustMarker, cutMarker, bladesHolder, bagMarker, ...handMarkers);
+    scene.add(tractorHolder, seatHolder, exhaustMarker, cutMarker, bladesHolder, bagMarker, ...handMarkers, ...bigHandMarkers);
     camera = new THREE.PerspectiveCamera(40, 1, 0.05, 200);
     camera.position.set(3.2, 2.6, 3.6);
     controls = new OrbitControls(camera, renderer.domElement);
@@ -433,6 +450,7 @@ function place() {
     seatHolder.position.set(tractor.seat.x, tractor.seat.y, tractor.seat.z);
     exhaustMarker.position.set(tractor.exhaust.x, tractor.exhaust.y, tractor.exhaust.z);
     handMarkers.forEach((marker, i) => marker.position.set(tractor.steer.x + (i ? -1 : 1) * tractor.steer.spread, tractor.steer.y, tractor.steer.z));
+    bigHandMarkers.forEach((marker, i) => marker.position.set(tractor.steerBig.x + (i ? -1 : 1) * tractor.steerBig.spread, tractor.steerBig.y, tractor.steerBig.z));
     cutMarker.scale.z = Math.max(0.01, tractor.cutAhead);
     cutMarker.position.set(0, 0.03, tractor.cutAhead / 2);
     bagMarker.position.set(tractor.bag.x, tractor.bag.y, tractor.bag.z);

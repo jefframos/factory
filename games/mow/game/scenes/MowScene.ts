@@ -843,6 +843,7 @@ export default class MowScene extends ThreeScene {
             // The farm game: a locked chest waits on the HUD for a video to open it.
             if (farmTest() && treasure.locked) {
                 MowProgress.addLockedChest(treasure.id, treasure.reward);
+                GameAnalytics.chest('found', treasure.id);
                 this.hud.say('LOCKED CHEST FOUND! OPEN IT ON THE LEFT', 0xffe27a);
                 MowAudio.play('reveal');
                 return;
@@ -1379,6 +1380,7 @@ export default class MowScene extends ThreeScene {
     private async sellDouble(): Promise<void> {
         if (this.sellX2Busy || MowProgress.clippings <= 0) return;
         if (MowProgress.freeSellsLeft > 0) {
+            GameAnalytics.sellDouble('free');
             MowProgress.useFreeSell();
             this.sellHere(2);
             return;
@@ -1396,6 +1398,7 @@ export default class MowScene extends ThreeScene {
         }
         this.sellX2Busy = false;
         if (this.sceneDestroyed) return;
+        GameAnalytics.sellDouble(watched ? 'video' : 'no-video');
         if (watched) this.sellHere(2);
         else this.hud.say('NO VIDEO RIGHT NOW', 0xff9a8a);
     }
@@ -1427,19 +1430,41 @@ export default class MowScene extends ThreeScene {
         this.chestBusy = false;
         if (this.sceneDestroyed) return;
         this.lockedChestPanel?.setBusy(false);
+        const chestId = MowProgress.lockedChests[0]?.id ?? 'chest';
         if (!watched) {
+            GameAnalytics.chest('no-video', chestId);
             this.hud.say('NO VIDEO RIGHT NOW', 0xff9a8a);
             return;
         }
+        GameAnalytics.chest('opened', chestId);
         const paid = MowProgress.openLockedChest();
+        // The chest bursts (the panel), then its cash rains in round the player and flies into their backpack.
+        this.lockedChestPanel?.playOpen(() => {
+            if (this.sceneDestroyed) return;
+            if (MowProgress.lockedChests.length) this.showLockedChest();
+            else this.lockedChestPanel?.hide();
+            this.cashToPlayer(paid);
+        });
+    }
+
+    /** Cash raining in round the player and flying into them (a chest's money), then what it was worth. */
+    private cashToPlayer(paid: number): void {
         const at = this.player.transform.position;
-        this.effects.floatText(at.clone().setY(2.6), `+${shortMoney(paid)}`, '#ffe27a');
-        CONFETTI.forEach((color) => this.effects.burst(new THREE.Vector3(at.x, 0.3, at.z), color, 6, 5));
-        this.hud.say(`CHEST OPENED! +${shortMoney(paid)}`, 0x9cff9c);
-        MowAudio.play('buyCash');
-        MowAudio.play('cheer');
-        if (MowProgress.lockedChests.length) this.showLockedChest();
-        else this.lockedChestPanel?.hide();
+        const into = this.backpack ? this.backpack.top(new THREE.Vector3()) : this.player.pickupPoint(new THREE.Vector3());
+        for (let i = 0; i < 16; i++) {
+            const a = (i / 16) * Math.PI * 2 + Math.random() * 0.3;
+            const r = 2.2 + Math.random() * 1.4;
+            const from = new THREE.Vector3(at.x + Math.cos(a) * r, 2.2 + Math.random() * 1.6, at.z + Math.sin(a) * r);
+            this.effects.toss(from, into, new THREE.Color(0x5fc85a), i * 0.04, () => MowAudio.play('coins'), farmItem('cash'));
+        }
+        gsap.delayedCall(0.9, () => {
+            if (this.sceneDestroyed) return;
+            const now = this.player.transform.position;
+            this.effects.floatText(now.clone().setY(2.6), `+${shortMoney(paid)}`, '#ffe27a');
+            CONFETTI.forEach((color) => this.effects.burst(new THREE.Vector3(now.x, 0.3, now.z), color, 6, 5));
+            this.hud.say(`CHEST OPENED! +${shortMoney(paid)}`, 0x9cff9c);
+            MowAudio.play('cheer');
+        });
     }
 
     /** The bag sold where the player stands, at `multiplier`: bales fly up off the backpack, the money counts up. */

@@ -116,6 +116,12 @@ export interface TractorConfig {
      */
     steer?: { x: number; y: number; z: number; spread: number; hand?: { x: number; y: number; z: number } };
     /**
+     * The hands' spot on the biggest tractor (the same frame as `steer`; the Tractor tab's pink dots). Each tractor's
+     * grip is `steer` blended toward this by its size, from the smallest ridden mower (all `steer`) to the biggest
+     * (all this). None: `steer` on every tractor.
+     */
+    steerBig?: { x: number; y: number; z: number; spread: number };
+    /**
      * Where the bag rides (in its frame, x rideScale: the same spot on every tractor; the rucksack's bottom middle there).
      * Edited in the Tractor tab. None: behind the seat.
      */
@@ -329,6 +335,19 @@ export interface WardrobeCatalog {
     colors: WardrobeItem[];
     faces: WardrobeItem[];
     hats: WardrobeItem[];
+    /** Trousers colours (the TROUSERS tab). */
+    bottoms: WardrobeItem[];
+    /** Patterns on the top (the PATTERNS tab): ids `kind:#hex` (stripes, band, twotone, sleeves; the second colour), '' plain. */
+    patterns: WardrobeItem[];
+    /** Skin tones (the row over the wardrobe's tabs): all free; a `video` one is unlocked once by a rewarded video. */
+    skins?: SkinTone[];
+}
+
+export interface SkinTone {
+    /** Colour hex. */
+    id: string;
+    /** A special one (green, blue): a rewarded video unlocks it, once. */
+    video?: boolean;
 }
 
 /** A model in the town (dig's hub prop format, so the editor places both the same way). */

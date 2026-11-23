@@ -27,6 +27,8 @@ const OVERLAP = 8;
 export interface TabSpec {
     id: string;
     label: string;
+    /** A picture instead of the label (the wardrobe's: hat, shirt, pattern, trousers); made once per draw. */
+    icon?: () => PIXI.Container;
     /** Something new to see there (an affordable boost): the kit's bobbing "!" on the tab's corner. */
     alert?: boolean;
     /** A short green tag on the tab's corner (the wardrobe's "FREE" for an unclaimed gift); it bobs like the alert. */
@@ -89,10 +91,17 @@ function tabButton(tab: TabSpec, x: number, width: number, height: number, activ
         // The kit's lit rim round the arch, in gold: "this one".
         button.addChild(sliced('Menu_BottomBtn_TabFocus_Light', [16, 22, 16, 2], ACCENT, 0, -height, width, height));
     }
-    const label = UiKit.fit(UiKit.text('wardrobe', 'tabLabel', { text: tab.label }), width - 24);
-    label.anchor.set(0.5);
-    label.position.set(width / 2, -height / 2 + 3);
-    button.addChild(label);
+    if (tab.icon) {
+        const icon = tab.icon();
+        icon.position.set(width / 2, -height / 2 + 3);
+        if (!active) icon.alpha = 0.85;
+        button.addChild(icon);
+    } else {
+        const label = UiKit.fit(UiKit.text('wardrobe', 'tabLabel', { text: tab.label }), width - 24);
+        label.anchor.set(0.5);
+        label.position.set(width / 2, -height / 2 + 3);
+        button.addChild(label);
+    }
     if (tab.alert && !active) {
         // On the corner, like the HUD's achievements "!"; its bob dies with the panel (UiAnim.kill on the parent).
         const alert = PIXI.Sprite.from(UiKit.imageName('hud', 'alert'));

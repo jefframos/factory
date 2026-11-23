@@ -13,21 +13,26 @@ import { MOW, CITY, CITIES, CityDef, CURRENT_CITY_KEY, PRESTIGE_BONUS, ToolDef, 
 /** The farm test's upgrade pads (UpgradePads): the next mower, the next bag size, the next blades. */
 export type PadKind = 'tool' | 'capacity' | 'blades';
 
-export type LookKind = 'colors' | 'faces' | 'hats';
+export type LookKind = 'colors' | 'faces' | 'hats' | 'bottoms' | 'patterns';
 /** The wardrobe's kinds (its section in ui/mow.json also has a $comment: never walk its keys). */
-export const LOOK_KINDS: LookKind[] = ['colors', 'faces', 'hats'];
+export const LOOK_KINDS: LookKind[] = ['colors', 'faces', 'hats', 'bottoms', 'patterns'];
 
 /** What the player wears. */
 export interface Look {
     color: string;
     face: string;
     hat: string;
+    /** Skin tone (colour hex; unset: the player's own). */
+    skin?: string;
+    /** Trousers colour (unset: the player's own), and the top's pattern (`kind:#hex`; unset or '': plain). */
+    bottom?: string;
+    pattern?: string;
 }
 
 const cityKey = (city: string): string => `mow.save.${city}`;
 const GLOBAL_KEY = 'mow.global';
 /** Bump when a change can't carry old saves over: a save from another version starts a new game. */
-const SAVE_VERSION = 7;
+const SAVE_VERSION = 8;
 /** What's the player's, not the city's (kept across cities: the wardrobe, the cities finished, the analytics). */
 const GLOBAL_FIELDS = ['owned', 'look', 'freeLooksOffered', 'sent', 'completed', 'carried', 'allCitiesOpen'] as const;
 /** The claim key of the rewards left unclaimed in cities travelled from (SaveData.carried). */
@@ -108,6 +113,8 @@ interface SaveData {
     freeLooksOffered: boolean;
     /** Treasures found (ids), and rewards claimed (treasure ids, and `area:<section id>` for an area's bonus). */
     treasuresFound: string[];
+    /** Special skin tones unlocked by a video (ids). */
+    skinsUnlocked?: string[];
     /** Locked chests found and not opened yet (the farm test): what each holds. */
     lockedChests?: { id: string; reward: number }[];
     treasuresClaimed: string[];
@@ -161,7 +168,7 @@ const starterLook = (): Look => ({ color: MOW.wardrobe.colors[0].id, face: MOW.w
 const fresh = (): SaveData => ({
     version: SAVE_VERSION, money: 0, toolLevel: 0, upgrades: {}, clippings: 0, cut: '',
     stats: { cells: 0, earned: 0, sells: 0 }, sent: [],
-    owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, freeLooksOffered: false,
+    owned: { colors: [], faces: [], hats: [], bottoms: [], patterns: [] }, look: starterLook(), wardrobeBudget: 0, freeLooksOffered: false,
     treasuresFound: [], treasuresClaimed: [], secretsFound: [], completed: [], carried: 0, allCitiesOpen: false,
     padPaid: {}, densFound: [], growthCleared: [], freeSells: 0, barn: freshBarn(), xp: 0, goods: { eggs: 0, trays: 0 }, den: { hens: 0, floor: [], machine: 0, trays: 0, cash: 0 },
     // The city's areas the tutorial already did (startRestored).
@@ -683,8 +690,10 @@ export const MowProgress = {
 
     /** Something in the wardrobe became affordable since it was last opened (its "!"), or a gift waits there after the first hat. */
     get wardrobeHasNews(): boolean {
-        if (this.boughtFirstHat && LOOK_KINDS.some((kind) => this.unclaimedFreeLook(kind))) return true;
-        return LOOK_KINDS.some((kind) => MOW.wardrobe[kind].some((item) =>
+        // (Faces aren't in the wardrobe any more: they don't show on the people models.)
+        const shown = LOOK_KINDS.filter((kind) => kind !== 'faces');
+        if (this.boughtFirstHat && shown.some((kind) => this.unclaimedFreeLook(kind))) return true;
+        return shown.some((kind) => MOW.wardrobe[kind].some((item) =>
             !item.free && !this.ownsLook(kind, item) && item.price <= state.money && item.price > state.wardrobeBudget));
     },
 
@@ -720,6 +729,22 @@ export const MowProgress = {
     },
 
     /** Starter looks (price 0) are free. */
+    /** Whether a skin tone can be worn: every plain one; a special one once its video's been watched. */
+    skinUnlocked(skin: { id: string; video?: boolean }): boolean {
+        return !skin.video || (state.skinsUnlocked ?? []).includes(skin.id);
+    },
+
+    unlockSkin(id: string): void {
+        if (!(state.skinsUnlocked ??= []).includes(id)) state.skinsUnlocked.push(id);
+        this.changed();
+    },
+
+    /** Wears a skin tone (the scene re-dresses the player: MowPlayer.applyLook). */
+    wearSkin(id: string): void {
+        state.look.skin = id;
+        this.changed();
+    },
+
     ownsLook(kind: LookKind, item: WardrobeItem): boolean {
         return item.price === 0 || state.owned[kind].includes(item.id);
     },
@@ -735,6 +760,8 @@ export const MowProgress = {
         }
         if (kind === 'colors') state.look.color = item.id;
         else if (kind === 'faces') state.look.face = item.id;
+        else if (kind === 'bottoms') state.look.bottom = item.id;
+        else if (kind === 'patterns') state.look.pattern = item.id;
         else state.look.hat = item.id;
         this.changed();
         return true;

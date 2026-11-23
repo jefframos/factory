@@ -41,6 +41,10 @@ export const playerScale = (): number => MOW.playerScale ?? 1;
  */
 const PLAYER_PERSON = 0;
 const PLAYER_OUTFIT = { skin: '#f7cba4', bottom: '#2f4a7a', shoes: '#f4f1ea', hair: '#5e3c23' };
+/** The player's outfit from the wardrobe: the top's colour and pattern, the trousers, the skin (else the player's own). */
+const playerOutfit = (look: Readonly<Look>) => ({
+    ...PLAYER_OUTFIT, top: look.color, skin: look.skin ?? PLAYER_OUTFIT.skin, bottom: look.bottom ?? PLAYER_OUTFIT.bottom, pattern: look.pattern || undefined,
+});
 const HEAD = { size: 0.36, top: 0.27 };
 type HatFit = { x: number; y: number; z: number; scale: number; rotationY: number };
 const HAT_FITS = hatFits as { default: HatFit; hats: Record<string, Partial<HatFit>> };
@@ -147,7 +151,7 @@ export default class MowPlayer extends Entity {
         const config = getPlayerConfig();
         const people = await loadPeople();
         const character = new ThirdPersonCharacter({ walkSpeed: config.walkSpeed, runSpeedMultiplier: config.runSpeedMultiplier });
-        const { model, meshes } = personCopy(people, PLAYER_PERSON, { ...PLAYER_OUTFIT, top: MowProgress.look.color });
+        const { model, meshes } = personCopy(people, PLAYER_PERSON, playerOutfit(MowProgress.look));
         this.personMeshes = meshes;
         character.body.usePerson(model);
         // The hands' rest: the bind pose, before any clip has posed them.
@@ -189,7 +193,7 @@ export default class MowPlayer extends Entity {
      */
     public applyLook(look: Readonly<Look>, character = this.loaded): void {
         if (!character) return;
-        dress(this.personMeshes, { ...PLAYER_OUTFIT, top: look.color });
+        dress(this.personMeshes, playerOutfit(look));
         this.hat?.removeFromParent();
         this.hat = undefined;
         const token = ++this.hatToken;
