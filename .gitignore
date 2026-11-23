@@ -43,3 +43,6 @@ tools/i18n/pending/
 
 # Game recorder (npm run record): videos
 recordings/
+
+# Icon masters: kept locally only.
+WIP/Game Icon Masters.psd
