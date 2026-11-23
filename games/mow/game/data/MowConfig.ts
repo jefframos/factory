@@ -150,7 +150,7 @@ export interface BladeLevelDef {
 /** How many blades a level has (a grid's rows x cols, else its count). */
 export const bladeCount = (look: BladeLevelDef): number => (look.layout === 'grid' ? Math.max(1, look.rows ?? 1) * Math.max(1, look.cols ?? 1) : look.count);
 
-export type UpgradeId = 'capacity' | 'speed' | 'money' | 'width' | 'blades' | 'grass' | 'chew' | 'farm';
+export type UpgradeId = 'capacity' | 'speed' | 'money' | 'width' | 'blades' | 'grass' | 'chew' | 'farm' | 'bag';
 
 export interface UpgradeDef {
     id: UpgradeId;
@@ -609,6 +609,10 @@ export interface FarmTestDef {
 export interface CropDef {
     id: string;
     name: string;
+    /** Its model (under models/: the pizza game's food, e.g. farm/strawberry.glb): growing on the plots, carried, sold. */
+    model?: string;
+    /** How big a ripe one stands on its plot (world units; it grows to this). */
+    size?: number;
     growSec: number;
     perPick: number;
     price: number;
@@ -648,6 +652,11 @@ export interface CropFarmDef {
     boatHelper?: BarnHelperDef;
     peopleIn?: { x: number; z: number }[];
     peopleOut?: { x: number; z: number }[];
+    /**
+     * The cruise ship its customers come off (world: where it lies, its turn and length), and its `gangway`: where they
+     * step ashore (then along `peopleIn`, if drawn, else straight to the counter; back the same way).
+     */
+    cruise?: { x: number; z: number; rotationY?: number; length?: number; gangway?: { x: number; z: number } };
     /** Its pieces placed in the editor (farm-local); `plots`: the first plot's middle (the rest follow it in rows). */
     parts?: Partial<Record<CropFarmPartKey, DenPoint>>;
 }

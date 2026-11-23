@@ -1344,6 +1344,16 @@ const CharactersWatering = {
 }
 } as const;
 
+const FarmApple = {
+  id: 'apple',
+  path: 'farm/apple',
+  fullPath: 'mow/models/farm/apple.glb',
+  format: 'glb',
+  nodes: {
+  "Apple": "apple"
+}
+} as const;
+
 const FarmBarrel = {
   id: 'barrel',
   path: 'farm/barrel',
@@ -1351,6 +1361,26 @@ const FarmBarrel = {
   format: 'glb',
   nodes: {
   "Barrel": "barrel"
+}
+} as const;
+
+const FarmCabbage = {
+  id: 'cabbage',
+  path: 'farm/cabbage',
+  fullPath: 'mow/models/farm/cabbage.glb',
+  format: 'glb',
+  nodes: {
+  "Cabbage": "cabbage"
+}
+} as const;
+
+const FarmCarrot = {
+  id: 'carrot',
+  path: 'farm/carrot',
+  fullPath: 'mow/models/farm/carrot.glb',
+  format: 'glb',
+  nodes: {
+  "Carrot": "carrot"
 }
 } as const;
 
@@ -1374,6 +1404,16 @@ const FarmCheese = {
 }
 } as const;
 
+const FarmCorn = {
+  id: 'corn',
+  path: 'farm/corn',
+  fullPath: 'mow/models/farm/corn.glb',
+  format: 'glb',
+  nodes: {
+  "Corn": "corn"
+}
+} as const;
+
 const FarmJarDMedium = {
   id: 'jar_D_medium',
   path: 'farm/jar_D_medium',
@@ -1384,6 +1424,46 @@ const FarmJarDMedium = {
 }
 } as const;
 
+const FarmPatchDirt = {
+  id: 'patch-dirt',
+  path: 'farm/plots/patch-dirt',
+  fullPath: 'mow/models/farm/plots/patch-dirt.glb',
+  format: 'glb',
+  nodes: {
+  "PatchDirt": "patch-dirt"
+}
+} as const;
+
+const FarmPatchGrass = {
+  id: 'patch-grass',
+  path: 'farm/plots/patch-grass',
+  fullPath: 'mow/models/farm/plots/patch-grass.glb',
+  format: 'glb',
+  nodes: {
+  "PatchGrass": "patch-grass"
+}
+} as const;
+
+const FarmPlant = {
+  id: 'plant',
+  path: 'farm/plots/plant',
+  fullPath: 'mow/models/farm/plots/plant.glb',
+  format: 'glb',
+  nodes: {
+  "Plant": "plant"
+}
+} as const;
+
+const FarmPumpkin = {
+  id: 'pumpkin',
+  path: 'farm/pumpkin',
+  fullPath: 'mow/models/farm/pumpkin.glb',
+  format: 'glb',
+  nodes: {
+  "Pumpkin": "pumpkin"
+}
+} as const;
+
 const FarmStrawberry = {
   id: 'strawberry',
   path: 'farm/strawberry',
@@ -1391,6 +1471,26 @@ const FarmStrawberry = {
   format: 'glb',
   nodes: {
   "Strawberry": "strawberry"
+}
+} as const;
+
+const FarmTomato = {
+  id: 'tomato',
+  path: 'farm/tomato',
+  fullPath: 'mow/models/farm/tomato.glb',
+  format: 'glb',
+  nodes: {
+  "Tomato": "tomato"
+}
+} as const;
+
+const FarmWatermelon = {
+  id: 'watermelon',
+  path: 'farm/watermelon',
+  fullPath: 'mow/models/farm/watermelon.glb',
+  format: 'glb',
+  nodes: {
+  "Slice": "slice"
 }
 } as const;
 
@@ -3540,6 +3640,16 @@ const TownCity2CargoShip01 = {
 }
 } as const;
 
+const TownCity2CruiseShip01 = {
+  id: 'city2-cruise-ship-01',
+  path: 'town/library/city2-cruise-ship-01/city2-cruise-ship-01',
+  fullPath: 'mow/models/town/library/city2-cruise-ship-01/city2-cruise-ship-01.glb',
+  format: 'glb',
+  nodes: {
+  "CruiseShip01": "Cruise_Ship_01"
+}
+} as const;
+
 const TownCity2Fountain01 = {
   id: 'city2-fountain-01',
   path: 'town/library/city2-fountain-01/city2-fountain-01',
@@ -4300,11 +4410,21 @@ export const MODELS = {
     Watering: CharactersWatering
   },
   Farm: {
+    Apple: FarmApple,
     Barrel: FarmBarrel,
+    Cabbage: FarmCabbage,
+    Carrot: FarmCarrot,
     Carton: FarmCarton,
     Cheese: FarmCheese,
+    Corn: FarmCorn,
     JarDMedium: FarmJarDMedium,
-    Strawberry: FarmStrawberry
+    PatchDirt: FarmPatchDirt,
+    PatchGrass: FarmPatchGrass,
+    Plant: FarmPlant,
+    Pumpkin: FarmPumpkin,
+    Strawberry: FarmStrawberry,
+    Tomato: FarmTomato,
+    Watermelon: FarmWatermelon
   },
   Hats: {
     AmericanHat: HatsAmericanHat,
@@ -4485,6 +4605,7 @@ export const MODELS = {
     City2Car42: TownCity2Car42,
     City2Car45: TownCity2Car45,
     City2CargoShip01: TownCity2CargoShip01,
+    City2CruiseShip01: TownCity2CruiseShip01,
     City2Fountain01: TownCity2Fountain01,
     City2Hydrant01: TownCity2Hydrant01,
     City2Lamp04: TownCity2Lamp04,

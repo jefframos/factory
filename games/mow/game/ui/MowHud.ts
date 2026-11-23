@@ -70,9 +70,9 @@ const BLOCK = { top: -170, width: 800, height: 432, tabWidth: 170, tabHeight: 48
 const GEAR_Y = { timeline: -110, tool: 28, bag: 146 };
 const BOOST_ROW = { firstY: -116, step: 90, height: 82 };
 /** The farm test's POWER-UPS panel (the shop's frame, no tabs): its rows, the button opening it. */
-const POWER_ROW = { firstY: -200, step: 80, height: 74 };
+const POWER_ROW = { firstY: -214, step: 70, height: 66 };
 /** What the POWER-UPS panel offers, in order (the blades are a station on the farm, so not here). */
-const POWER_UPS: readonly UpgradeId[] = ['speed', 'money', 'grass', 'width', 'chew', 'farm'];
+const POWER_UPS: readonly UpgradeId[] = ['speed', 'money', 'grass', 'bag', 'width', 'chew', 'farm'];
 const POWER_BUTTON_SIZE = 84;
 /** Level bars past this many levels draw as one bar toward the next milestone. */
 const LONG_TRACK = 30;
@@ -151,6 +151,8 @@ export class MowHud extends PIXI.Container {
     private trophiesHand?: PIXI.Container;
     private readonly moneyText = UiKit.text('hud', 'money', { money: 0 });
     private readonly bagText = UiKit.text('hud', 'backpack', { count: 0, capacity: 0 });
+    /** The bag's worth in money (the farm test), under its count. */
+    private readonly bagValueText = new PIXI.Text('', new PIXI.TextStyle({ fontFamily: UiKit.fontFamily('primary'), fontSize: 19, fill: 0xffe27a, stroke: 0x1d140e, strokeThickness: 5, lineJoin: 'round' }));
     private readonly barFill = new PIXI.Container();
     private readonly fullTag = new PIXI.Container();
     private bagRow!: PIXI.Container;
@@ -295,6 +297,12 @@ export class MowHud extends PIXI.Container {
         this.corner.addChild(money);
         const bag = this.pill('backpackIcon', this.bagText, 62);
         this.bagRow = bag;
+        // What the bag's worth (the farm test: grass is money once sold or poured), in gold under its count.
+        if (farmTest()) {
+            this.bagValueText.anchor.set(0, 0.5);
+            this.bagValueText.position.set(ICON_SIZE + 8, 30);
+            bag.addChild(this.bagValueText);
+        }
         const bar = new PIXI.Container();
         bar.position.set(BAR_X, -2);
         bar.addChild(UiKit.image('hud', 'barBack', BAR_WIDTH, BAR_HEIGHT), this.barFill);
@@ -1376,7 +1384,9 @@ export class MowHud extends PIXI.Container {
         const count = Math.floor(MowProgress.clippings);
         const capacity = MowProgress.capacity;
         const full = MowProgress.full;
+        // The bag: how full, and what it's worth in money (what it sells for, what it pours into a station).
         this.bagText.text = `${shortNumber(count)}/${shortNumber(capacity)}`;
+        this.bagValueText.text = count > 0 ? `worth ${shortMoney(MowProgress.bagValue)}` : '';
         UiKit.fit(this.bagText, BAR_X - BAR_WIDTH / 2 - (ICON_SIZE + 8) - 6);
         this.bagText.style.fill = full ? 0xff7a6a : 0xffffff;
         this.barFill.removeChildren().forEach((child) => child.destroy({ children: true }));

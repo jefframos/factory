@@ -821,6 +821,8 @@ const listOf = (type) => (type === 'peopleArea' ? town.people?.areas ?? null : t
     : type === 'cowTruckPoint' ? town.farm?.cowDen?.truckPath ?? null
     : type === 'cropFarm' ? town.farm?.cropFarms ?? null
     : type === 'cropDock' ? (town.farm?.cropFarms ?? []).map((farm) => farm.harbour ?? null)
+    : type === 'cruise' ? (town.farm?.cropFarms ?? []).map((farm) => farm.cruise ?? null)
+    : type === 'gangway' ? (town.farm?.cropFarms ?? []).map((farm) => farm.cruise?.gangway ?? null)
     : type === 'peopleInPoint' ? town.farm?.peopleIn ?? null
     : type === 'peopleOutPoint' ? town.farm?.peopleOut ?? null
     : type === 'truckCash' ? (town.farm?.trucks ? [(town.farm.trucks.cash ??= { x: town.farm.trucks.x, z: town.farm.trucks.z - 1.8 })] : null)
@@ -835,6 +837,7 @@ function entityData(sel) {
     if (FARM_PART_SETS[sel.type]) return farmPartData(sel.type, sel.index);
     if (sel.type === 'cowBeltPoint') return cowBeltData(sel.index);
     if (BOAT_WAYS[sel.type]) return boatPointData(sel.type, sel.index);
+    if (CROP_PEOPLE[sel.type]) return cropPeopleData(sel.type, sel.index);
     if (sel.type === 'areaUnlock') return town.sections[sel.index]?.unlock ?? null;
     if (sel.type === 'beltPoint' || sel.type === 'goldBeltPoint') return beltPointData(sel.index, BELT_KEYS[sel.type]);
     if (sel.type === 'start') return town.start;
@@ -970,6 +973,13 @@ function rebuildEntities() {
         (town.farm?.cropFarms ?? []).forEach((farm, index) => {
             addHolder({ type: 'cropFarm', index }, buildDen(farm, '🍓'));
             FARM_PART_SETS.cropPart.parts.forEach((_, i) => addHolder({ type: 'cropPart', index: index * DEN_SLOTS + i }, buildFarmPart('cropPart', farm, i)));
+            if (farm.cruise) {
+                addHolder({ type: 'cruise', index }, buildCruise(farm.cruise));
+                if (farm.cruise.gangway) addHolder({ type: 'gangway', index }, buildGangway(farm.cruise.gangway));
+            }
+            for (const way of Object.values(CROP_PEOPLE)) {
+                (farm[way.key] ?? []).forEach((point, i, all) => addHolder({ type: way.type, index: index * DEN_SLOTS + i }, buildPeopleWayPoint(way, point, i, all.length)));
+            }
             if (farm.harbour) {
                 addHolder({ type: 'cropDock', index }, buildDock(farm.harbour, '⚓ Harbour drop point'));
                 for (const type of ['boatPoint', 'boatOutPoint']) {
@@ -1486,8 +1496,9 @@ function buildBoatPoint(type, point, i, count) {
     const color = type === 'boatPoint' ? 0x4fa3ff : 0x9fd2ff;
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 1.2, 12), new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.35 }));
     post.position.y = 0.6;
+    const dock = point.park || (type === 'boatPoint' && i === count - 1);
     const text = type === 'boatPoint'
-        ? (i === 0 ? '⛵ 1 · boats come in' : i === count - 1 ? `⛵ ${i + 1} · they dock` : `⛵ ${i + 1}`)
+        ? (i === 0 ? '⛵ 1 · boats come in' : dock ? `⛵ ${i + 1} · they dock, load` : i === count - 1 ? `⛵ ${i + 1} · they leave` : `⛵ ${i + 1}`)
         : (i === 0 ? '⛵ out 1 · from the dock' : i === count - 1 ? `⛵ out ${i + 1} · gone` : `⛵ out ${i + 1}`);
     const label = labelSprite(text, '#cfe6ff');
     label.position.y = 2;
@@ -1509,6 +1520,55 @@ function addBoatPoint(type, index) {
     rebuildAll();
 }
 
+/** A crop farm's customers' ways (farm.peopleIn / peopleOut: off the cruise ship's gangway to its queue, and back). */
+const CROP_PEOPLE = {
+    cropPeopleIn: { key: 'peopleIn', type: 'cropPeopleIn', color: 0x6ad1ff, first: 'off the ship', last: 'then to the queue' },
+    cropPeopleOut: { key: 'peopleOut', type: 'cropPeopleOut', color: 0xd58cff, first: 'from the counter', last: 'back aboard' },
+};
+function cropPeopleData(type, index) {
+    const farm = town.farm?.cropFarms?.[Math.floor(index / DEN_SLOTS)];
+    return farm?.[CROP_PEOPLE[type].key]?.[index % DEN_SLOTS] ?? null;
+}
+function addCropPeoplePoint(type, index) {
+    const farm = town.farm.cropFarms[Math.floor(index / DEN_SLOTS)];
+    const key = CROP_PEOPLE[type].key;
+    touch();
+    const path = farm[key];
+    const after = index % DEN_SLOTS;
+    const a = path[after];
+    const b = path[after + 1];
+    path.splice(after + 1, 0, b ? { x: round((a.x + b.x) / 2), z: round((a.z + b.z) / 2) } : { x: round(a.x + 1.5), z: a.z });
+    selection = { type, index: index + 1 };
+    rebuildAll();
+}
+
+/** A crop farm's cruise ship: its outline (length x 8, turned) and name; its passengers come ashore at the gangway. */
+function buildCruise(cruise) {
+    const holder = new THREE.Group();
+    holder.position.set(cruise.x, 0, cruise.z);
+    holder.rotation.y = cruise.rotationY ?? 0;
+    const length = cruise.length ?? 36;
+    const fill = plane(8, length, '#ffffff', 0.12, 0.25);
+    const edge = outline(0xffffff);
+    edge.scale.set(8, length, 1);
+    edge.position.y = 0.13;
+    const label = labelSprite('🛳 Cruise ship · its customers come off it', '#ffffff');
+    label.position.y = 6;
+    holder.add(fill, edge, label);
+    return holder;
+}
+
+function buildGangway(point) {
+    const holder = new THREE.Group();
+    holder.position.set(point.x, 0, point.z);
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.4, 12), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.3 }));
+    post.position.y = 0.7;
+    const label = labelSprite('🛳 Gangway · customers step ashore', '#ffffff');
+    label.position.y = 2.2;
+    holder.add(post, label);
+    return holder;
+}
+
 /** The barn's belt and the harbours' boat paths, drawn point to point (not selectable: their points are). */
 const farmLines = [];
 function refreshFarmLines() {
@@ -1527,6 +1587,8 @@ function refreshFarmLines() {
     for (const farm of town.farm?.cropFarms ?? []) {
         draw(farm.harbour?.path ?? [], 0x4fa3ff, 0.4);
         draw(farm.harbour?.out ?? [], 0x9fd2ff, 0.4);
+        draw(farm.peopleIn ?? [], 0x6ad1ff, 0.3);
+        draw(farm.peopleOut ?? [], 0xd58cff, 0.3);
     }
 }
 
@@ -1969,7 +2031,7 @@ function attachGizmo() {
 // toFixed drops float noise (0.69 * 1 → 0.6900000000000001) so town.json stays readable.
 const round = (value, step = 0.001) => Number((Math.round(value / step) * step).toFixed(4));
 /** Things that turn (the rest only move / resize). */
-const TURNS = new Set(['shape', 'prop', 'atm', 'wardrobe', 'patch', 'separator', 'pad']);
+const TURNS = new Set(['shape', 'prop', 'atm', 'wardrobe', 'patch', 'separator', 'pad', 'cruise']);
 /** Things whose size is width x depth (scaling changes those, not a height). */
 const SIZED = new Set(['shape', 'footArea', 'pavement', 'section', 'patch', 'sound', 'pen', 'secret', 'collider', 'peopleArea', 'spawn', 'den', 'cowDen', 'cropFarm']);
 
@@ -1993,7 +2055,7 @@ function syncFromGizmo() {
         setDirty(true);
         return;
     }
-    if (BOAT_WAYS[selection.type]) {
+    if (BOAT_WAYS[selection.type] || CROP_PEOPLE[selection.type]) {
         data.x = round(holder.position.x);
         data.z = round(holder.position.z);
         refreshFarmLines();
@@ -2958,7 +3020,13 @@ function renderLists() {
         ...(town.farm?.pads ?? []).map((pad, i) => listItem('pad', i, pad.kind === 'tool' ? '⬆ Mower station' : pad.kind === 'blades' ? '🔪 Blades station' : '🎒 Bag station', pad.section ? `with ${pad.section}` : 'from the start')),
         ...(town.farm?.dens ?? []).map((den, i) => listItem('den', i, `🐔 ${den.name}`, `${den.width}×${den.depth}`)),
         ...(town.farm?.cropFarms ?? []).map((farm, i) => listItem('cropFarm', i, `🍓 ${farm.name}`, `${farm.width}×${farm.depth}`)),
-        ...(town.farm?.cropFarms ?? []).flatMap((farm, i) => (farm.harbour ? [listItem('cropDock', i, '⚓ Harbour drop point', farm.name)] : [])),
+        ...(town.farm?.cropFarms ?? []).flatMap((farm, i) => [
+            ...(farm.harbour ? [listItem('cropDock', i, '⚓ Harbour drop point', farm.name)] : []),
+            ...(farm.harbour?.path ?? []).map((point, k, all) => listItem('boatPoint', i * DEN_SLOTS + k, `⛵ Boat path ${k + 1}`, point.park ? 'they dock' : k === 0 ? 'boats come in' : k === all.length - 1 ? 'they leave' : '')),
+            ...(farm.cruise ? [listItem('cruise', i, '🛳 Cruise ship', farm.name), ...(farm.cruise.gangway ? [listItem('gangway', i, '🛳 Gangway', '')] : [])] : []),
+            ...(farm.peopleIn ?? []).map((_, k) => listItem('cropPeopleIn', i * DEN_SLOTS + k, `🧍 Farm in point ${k + 1}`, '')),
+            ...(farm.peopleOut ?? []).map((_, k) => listItem('cropPeopleOut', i * DEN_SLOTS + k, `🧍 Farm out point ${k + 1}`, '')),
+        ]),
         ...(town.farm?.trucks ? [listItem('dock', 0, '🚚 Truck dock', `$${town.farm.trucks.price} · level ${town.farm.trucks.level}`), listItem('truckCash', 0, '💵 Truck cash', '')] : []),
         ...(town.farm?.truckPath ?? []).map((point, i, all) => listItem('truckPoint', i, `🚚 Path point ${i + 1}`, i === 0 ? 'trucks come in' : i === all.length - 1 ? 'they park' : '')),
         ...PEOPLE_WAYS.flatMap((way) => (town.farm?.[way.key] ?? []).map((point, i, all) => listItem(way.type, i, `🧍 ${way.key === 'peopleIn' ? 'In' : 'Out'} point ${i + 1}`, i === 0 ? way.first : i === all.length - 1 ? way.last : ''))));
@@ -3097,7 +3165,8 @@ function renderInspector() {
         collider: () => `Collider cube ${selection.index + 1}`, sound: () => `Sound zone: ${data.id}`, waypoint: () => `Waypoint ${data.id}`, peopleArea: () => `Wander area ${selection.index + 1}`, peoplePoint: () => `Street path point ${data.id}`, secret: () => `Secret patch: ${data.id}`, spawn: () => `Spawn area: ${data.id}`, pad: () => (data.kind === 'tool' ? 'Mower upgrade station' : data.kind === 'blades' ? 'Blades upgrade station' : 'Bag upgrade station'), den: () => `Den: ${data.name}`, footArea: () => `No-mower area ${selection.index + 1}`, shape: () => `Shape cube ${selection.index + 1}`, areaUnlock: () => `Unlock square: ${town.sections[selection.index].name}`, beltPoint: () => `Conveyor belt point ${(selection.index % DEN_SLOTS) + 1}`, goldBeltPoint: () => `Gold belt point ${(selection.index % DEN_SLOTS) + 1}`, denPart: () => {
             const { egg, part } = denSlotInfo(selection.index % DEN_SLOTS);
             return part ? part.label : `Hen ${egg + 1}'s egg spot`;
-        }, dock: () => 'Truck dock', cowDen: () => `Cow barn: ${data.name}`, cropFarm: () => `Crop farm: ${data.name}`, cropDock: () => 'Harbour drop point',
+        }, dock: () => 'Truck dock', cowDen: () => `Cow barn: ${data.name}`, cropFarm: () => `Crop farm: ${data.name}`, cropDock: () => 'Harbour drop point', cruise: () => 'Cruise ship', gangway: () => 'Cruise ship gangway',
+        cropPeopleIn: () => `Farm customers in: point ${selection.index % DEN_SLOTS + 1}`, cropPeopleOut: () => `Farm customers out: point ${selection.index % DEN_SLOTS + 1}`,
         cowPart: () => farmPartOf('cowPart', selection.index)?.part.label ?? 'Barn part', cropPart: () => farmPartOf('cropPart', selection.index)?.part.label ?? 'Farm part',
         cowBeltPoint: () => `Barn belt point ${selection.index + 1}`, boatPoint: () => `Boats in: point ${selection.index % DEN_SLOTS + 1}`, boatOutPoint: () => `Boats out: point ${selection.index % DEN_SLOTS + 1}`, cowDock: () => 'Cow barn truck dock', cowTruckPoint: () => `Cow trucks point ${selection.index + 1}`, truckPoint: () => `Truck path point ${selection.index + 1}`, peopleInPoint: () => `Customers in point ${selection.index + 1}`, peopleOutPoint: () => `Customers out point ${selection.index + 1}`, truckCash: () => 'Truck cash square', pen: () => `${town.sections[selection.index].name} pen`, centre: () => 'Grass noise centre', shore: () => `Shore point ${selection.index + 1}`, separator: () => `${town.sections[selection.index].name} separator`,
     };
@@ -3229,14 +3298,54 @@ function renderInspector() {
             textField('Name', data.name, (v) => edit((d) => { d.name = v || d.name; })),
             numberField('Gate width', data.gate ?? 2.4, 0.2, (v) => edit((d) => { d.gate = Math.max(1, v); })),
             numberField('Opens at level', data.level ?? 0, 1, (v) => edit((d) => { const level = Math.max(0, Math.round(v)); if (level > 1) d.level = level; else delete d.level; })),
-            el('p', { class: 'muted small' }, `A crop farm growing "${data.crop}" (ui/mow.json crops): plots along the back, its machine and fresh crate, the counter by the east fence (customers outside it), and its harbour. Place its pieces (their markers), the harbour's drop point and the boats' paths.`));
+            el('p', { class: 'muted small' }, `A crop farm growing "${data.crop}" (ui/mow.json crops): plots along the back, its machine and fresh crate, the counter by the east fence (customers outside it), and its harbour. Place its pieces (their markers), the harbour's drop point and the boats' path (one path like the trucks': mark where they dock).`),
+            ...(data.cruise ? [] : [el('button', { class: 'block', onclick: () => edit((d) => {
+                d.cruise = { x: round(d.x + d.width / 2 + 20), z: d.z, rotationY: 0, length: 36, gangway: { x: round(d.x + d.width / 2 + 6), z: d.z } };
+            }) }, '🛳 Add a cruise ship (its customers come off it)')]),
+            ...(data.peopleIn?.length >= 2 ? [] : [el('button', { class: 'block', onclick: () => edit((d) => {
+                const start = d.cruise?.gangway ?? { x: d.x + d.width / 2 + 6, z: d.z + d.depth / 2 + 3 };
+                const queue = { x: round(d.x + d.width / 2 + 1.1), z: round(d.z + d.depth / 2 + 0.4) };
+                d.peopleIn = [{ ...start }, queue];
+                d.peopleOut = [{ ...queue }, { ...start }];
+            }) }, '🧍 Draw the customers\' ways (in and out)')]));
     }
     if (type === 'cropDock') {
         rows.push(el('p', { class: 'muted small' }, 'Where the boats dock: the player (or the boat helper) loads them standing here. Put it on the shore by the water, the boats\' in path ending beside it. Bought like the trucks\' dock (its price and level in the level: farm.cropFarms[].harbour).'));
     }
+    if (CROP_PEOPLE[type]) {
+        const farm = town.farm.cropFarms[Math.floor(selection.index / DEN_SLOTS)];
+        const key = CROP_PEOPLE[type].key;
+        rows.push(
+            el('p', { class: 'muted small' }, key === 'peopleIn'
+                ? 'The customers\' way in: they step off the cruise ship at point 1 (put it at the gangway) and walk point to point to the queue.'
+                : 'The customers\' way out: from the counter back through these points to the ship, gone at the last.'),
+            el('div', { class: 'row' },
+                el('button', { onclick: () => addCropPeoplePoint(type, selection.index) }, '+ Point after this'),
+                el('button', { onclick: () => {
+                    if ((farm[key]?.length ?? 0) <= 2) return toast('A way needs 2 points at least.', 'bad');
+                    touch();
+                    farm[key].splice(selection.index % DEN_SLOTS, 1);
+                    selection = null;
+                    rebuildAll();
+                } }, '− Remove this point')));
+    }
+    if (type === 'cruise') {
+        rows.push(
+            numberField('Length', data.length ?? 36, 1, (v) => edit((d) => { d.length = Math.max(8, round(v)); })),
+            el('p', { class: 'muted small' }, 'The cruise ship the farm\'s customers come off: put it in the water by the farm (W to move, E to turn). They step ashore at its gangway (the white post).'));
+    }
+    if (type === 'gangway') {
+        rows.push(el('p', { class: 'muted small' }, 'Where the cruise ship\'s passengers step ashore (and go back aboard): on the shore beside the ship. They walk the farm\'s customers\' way from here, if one\'s drawn.'));
+    }
     if (BOAT_WAYS[type]) {
         const farm = town.farm.cropFarms[Math.floor(selection.index / DEN_SLOTS)];
         const key = BOAT_WAYS[type];
+        if (type === 'boatPoint') {
+            rows.push(checkField('They dock here', Boolean(data.park), (on) => edit((d) => {
+                farm.harbour.path.forEach((point) => delete point.park);
+                if (on) d.park = true;
+            })));
+        }
         rows.push(
             el('p', { class: 'muted small' }, type === 'boatPoint'
                 ? 'The boats\' way in: they appear at point 1 (out at sea) and sail point to point, docking at the last (beside the drop point).'

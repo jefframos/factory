@@ -24,7 +24,7 @@ import { CropDef, CropFarmDef, BarnHelperDef, DenPoint, MOW, shortMoney } from '
 import { CropFarmState, MowProgress } from '../data/MowProgress';
 import { CanvasArt } from '../ui/CanvasArt';
 import { GameAnalytics } from '../analytics/GameAnalytics';
-import { CropItem, farmItem, FarmItem, ITEM_HEIGHT, itemHeight } from '../farm/FarmModels';
+import { CropItem, farmItem, FarmItem, farmProp, ITEM_HEIGHT, itemHeight } from '../farm/FarmModels';
 import { Customers, Customer, OrderItem, stockDemand } from '../farm/Customers';
 import { Trucks } from '../farm/Trucks';
 import { spawnPoint } from '../farm/Roads';
@@ -130,7 +130,19 @@ interface Plot {
     berries: THREE.Group[];
     buy: THREE.Mesh;
     buyDrawn: string;
+    /** The pizza game's plot patches once loaded: tilled dirt (owned), a grass patch (not yet). */
+    dirt?: THREE.Object3D;
+    wild?: THREE.Object3D;
+    /** Its plants are the crop's model (loaded): they grow as a whole and go one by one as they're picked. */
+    modelled?: boolean;
 }
+
+/** The pizza game's plot patches and ship (under models/). */
+const PLOT_DIRT = 'farm/plots/patch-dirt.glb';
+const PLOT_GRASS = 'farm/plots/patch-grass.glb';
+const CRUISE_SHIP = 'town/library/city2-cruise-ship-01/city2-cruise-ship-01.glb';
+/** A crop's ripe size on its plot when its def doesn't say (world units). */
+const CROP_SIZE = 0.8;
 
 export class CropFarm {
     private readonly group = new THREE.Group();
@@ -194,6 +206,7 @@ export class CropFarm {
         this.buildMachine();
         this.buildCounter();
         this.buildHarbour();
+        this.buildCruise();
         this.buildHireSquares();
         this.sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: signTexture(def.name.toUpperCase(), !found, this.levelLocked ? def.level : undefined), depthWrite: false }));
         this.sign.position.set(0, 2.7, this.layoutOf.hd);
@@ -389,6 +402,60 @@ export class CropFarm {
             buy.visible = false;
             this.plots.push({ soil: ground, plants, berries, buy, buyDrawn: '' });
         }
+        this.loadPlotModels();
+    }
+
+    /**
+     * The pizza game's look, as it loads: each plot a patch of tilled dirt (a grass patch until it's bought), its
+     * plants the crop itself (the strawberry...) growing from small to full — the drawn soil and leaves until then.
+     */
+    private loadPlotModels(): void {
+        const place = (object: THREE.Object3D, at: { x: number; z: number }) => {
+            object.position.set(at.x, 0.02, at.z);
+            this.group.add(object);
+            return object;
+        };
+        this.plots.forEach((plot, i) => {
+            const at = this.layoutOf.plots[i];
+            void farmProp(PLOT_DIRT, 0.4, PLOT).then((model) => {
+                if (!model || !this.group.parent) return;
+                plot.dirt = place(model, at);
+                plot.soil.visible = false;
+                this.refreshPlots();
+            });
+            void farmProp(PLOT_GRASS, 0.4, PLOT).then((model) => {
+                if (!model || !this.group.parent) return;
+                plot.wild = place(model, at);
+                this.refreshPlots();
+            });
+        });
+        const model = this.crop.model;
+        if (!model) return;
+        const size = this.crop.size ?? CROP_SIZE;
+        this.plots.forEach((plot) => {
+            plot.plants.forEach((plant) => {
+                void farmProp(model, size, size).then((crop) => {
+                    if (!crop || !this.group.parent) return;
+                    plant.clear();
+                    crop.rotation.y = Math.random() * Math.PI * 2;
+                    plant.add(crop);
+                    plot.modelled = true;
+                });
+            });
+        });
+    }
+
+    /** The cruise ship its customers come off (lying where the level puts it). */
+    private buildCruise(): void {
+        const cruise = this.def.cruise;
+        if (!cruise) return;
+        void farmProp(CRUISE_SHIP, 40, cruise.length ?? 36).then((ship) => {
+            if (!ship || !this.group.parent) return;
+            const at = this.local(cruise.x, cruise.z);
+            ship.position.set(at.x, 0, at.z);
+            ship.rotation.y = cruise.rotationY ?? 0;
+            this.group.add(ship);
+        });
     }
 
     /** The machine (a red pot on a stove for jam), its fruit square and grid; the fresh crate's grid; their counter. */
@@ -518,7 +585,11 @@ export class CropFarm {
         const paths = ins.length >= 2 && outs.length >= 2
             ? { in: ins.map((p) => new THREE.Vector3(p.x, 0, p.z)), out: outs.map((p) => new THREE.Vector3(p.x, 0, p.z)) }
             : undefined;
-        this.customers = new Customers(this.threeScene, slots, entry, () => spawnPoint('people', entry) ?? entry.clone(), new THREE.Vector3(-1, 0, 0),
+        const gangway = def.cruise ? (def.cruise.gangway ?? { x: def.cruise.x, z: def.cruise.z }) : undefined;
+        const from = gangway
+            ? () => new THREE.Vector3(gangway.x + (Math.random() - 0.5) * 1.2, 0, gangway.z + (Math.random() - 0.5) * 1.2)
+            : () => spawnPoint('people', entry) ?? entry.clone();
+        this.customers = new Customers(this.threeScene, slots, entry, from, new THREE.Vector3(-1, 0, 0),
             { wants: def.wants, queue: def.queue, everySec: def.customerEverySec, items: [this.cropItem, this.productItem] }, paths);
         if (!this.state.tutorial) this.customers.firstOnes = 2;
     }
@@ -526,8 +597,13 @@ export class CropFarm {
     private startBoats(): void {
         const harbour = this.def.harbour;
         if (!harbour || this.boats || harbour.path.length < 2) return;
-        const path = harbour.path.map((p) => new THREE.Vector3(p.x, 0, p.z));
-        const out = (harbour.out ?? []).map((p) => new THREE.Vector3(p.x, 0, p.z));
+        // One path, like the trucks': in to the point marked "park" (else the last), out through the rest.
+        const all = harbour.path.map((p) => new THREE.Vector3(p.x, 0, p.z));
+        const marked = harbour.path.findIndex((p) => p.park);
+        const park = marked > 0 ? marked : all.length - 1;
+        const path = all.slice(0, park + 1);
+        const rest = all.slice(park);
+        const out = rest.length >= 2 ? rest : (harbour.out ?? []).map((p) => new THREE.Vector3(p.x, 0, p.z));
         const end = path[path.length - 1];
         const before = path[path.length - 2];
         this.boats = new Trucks(this.threeScene, harbour, path, out, harbour.parkFacing ?? Math.atan2(end.x - before.x, end.z - before.z),
@@ -542,6 +618,10 @@ export class CropFarm {
             const owned = i < farm.plots;
             plot.plants.forEach((plant) => (plant.visible = owned && this.opened));
             (plot.soil.material as THREE.MeshStandardMaterial).color.setHex(owned ? SOIL : 0x8f7a60);
+            // The pizza patches: tilled dirt when owned, grass until then.
+            if (plot.dirt) plot.dirt.visible = owned;
+            if (plot.wild) plot.wild.visible = !owned;
+            if (plot.dirt || plot.wild) plot.soil.visible = !(owned ? plot.dirt : plot.wild);
             const next = this.opened && i === farm.plots;
             plot.buy.visible = next;
             if (!next) return;
@@ -564,9 +644,16 @@ export class CropFarm {
             if (i >= farm.plots) return;
             const ripe = (farm.left[i] ?? 0) > 0;
             const grow = ripe ? 1 : 0.35 + 0.65 * Math.min(1, (farm.grown[i] ?? 0) / this.crop.growSec);
+            const left = Math.max(1, Math.ceil(((farm.left[i] ?? 0) / this.crop.perPick) * 4));
             plot.plants.forEach((plant, k) => {
+                if (plot.modelled) {
+                    // The crop itself: growing from small to full; ripe, it bobs, and goes one by one as it's picked.
+                    plant.visible = !ripe || k < left;
+                    plant.scale.setScalar((ripe ? 1 : 0.25 + 0.65 * grow) * (ripe ? 1 + Math.sin(this.time * 3 + i + k) * 0.04 : 1));
+                    return;
+                }
                 plant.scale.setScalar(grow * (ripe ? 1 + Math.sin(this.time * 3 + i + k) * 0.03 : 1));
-                plot.berries[k].visible = ripe && k < Math.max(1, Math.ceil(((farm.left[i] ?? 0) / this.crop.perPick) * 4));
+                plot.berries[k].visible = ripe && k < left;
             });
         });
     }

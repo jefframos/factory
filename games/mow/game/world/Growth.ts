@@ -236,6 +236,21 @@ export class Growth {
         return result;
     }
 
+    /** Whether a bush, tree or rock `power` can clear (or chew) stands within `radius` of (x, z), in a section `canCut` allows. */
+    public mowableNear(x: number, z: number, radius: number, power: number, canCut: (district: number) => boolean): boolean {
+        for (const item of this.items) {
+            if (item.cleared || item.def.resistance - power >= 2 || !canCut(item.district)) continue;
+            const reach = radius + item.radius;
+            if ((item.x - x) ** 2 + (item.z - z) ** 2 <= reach * reach) return true;
+        }
+        return false;
+    }
+
+    /** How many of a section's own bushes, trees and rocks still stand (the hand-placed ones don't count). */
+    public standingIn(district: number): number {
+        return this.items.filter((item) => item.district === district && !item.cleared && !item.fixed).length;
+    }
+
     /** The ids cleared (for the save). */
     public get clearedIds(): number[] {
         return this.items.filter((item) => item.cleared).map((item) => item.id);

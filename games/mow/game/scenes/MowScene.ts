@@ -90,8 +90,11 @@ export const MOW_CAMERA = {
 
 /** Mowing (the farm test): the camera goes this much further out per unit of cut width past the first mower's. */
 const ZOOM_PER_WIDTH = 0.17;
-/** Past an open area's edge by more than this (world units), the mower's parked: the player walks. */
-const OFF_GRASS_MARGIN = 2.5;
+/**
+ * Grass near the player (refreshNearGrass): checked every `everySec`; on foot the mower comes out once cuttable grass
+ * is within its reach + `take`; out, it stays while some is within its reach + `keep` (world units).
+ */
+const NEAR_GRASS = { everySec: 0.2, take: 0.5, keep: 3.5 };
 /** SELL x2 shows from this mower on (the Lawn Tractor: the first upgrades come first). */
 const SELL_X2_TOOL_LEVEL = 2;
 const REFERENCE_ASPECT = Game.DESIGN_WIDTH / Game.DESIGN_HEIGHT;
@@ -272,6 +275,8 @@ export default class MowScene extends ThreeScene {
     private lockedChestButton?: LockedChestButton;
     private lockedChestPanel?: LockedChestPanel;
     private chestBusy = false;
+    /** Areas told they still have growth standing (said once each). */
+    private readonly growthTold = new Set<number>();
     /** Clippings mowed toward the next XP point. */
     private mowedForXp = 0;
     /** When the last poured clump's sound played (they're many: not every one). */
@@ -343,7 +348,7 @@ export default class MowScene extends ThreeScene {
         // Ridden everywhere once owned (paths, restored sections, the ATMs' pads): it's the reward, not just a mowing tool.
         // (Not in a den: the player walks in there.)
         // Ridden everywhere but in the dens and the no-mower areas, and mounted only where it fits (never wedged at a gate).
-        this.tractor = new TractorRide(this.threeScene, this.player, this.effects, (x, z) => !this.inDen(x, z) && !this.inFootArea(x, z),
+        this.tractor = new TractorRide(this.threeScene, this.player, this.effects, (x, z) => this.mowableAt(x, z),
             (x, z) => this.town.fits(x, z, MOW.tractor.bodyRadius + MOUNT_CLEARANCE));
         this.player.ridePoint = (out) => this.tractor.cutPoint(out);
         // On pavement: what's drawn there (a road piece's sidewalks stand higher than its asphalt).
@@ -539,6 +544,7 @@ export default class MowScene extends ThreeScene {
         this.world.lateUpdate(delta);
         this.updateGameplay();
         this.player.syncTool();
+        this.refreshNearGrass(delta);
         this.tractor.update(delta);
         this.town.bodyRadius = this.tractor.isRiding ? MOW.tractor.bodyRadius : 0.35;
         // The grass parts round the player and in front of the mower (not a parked one, nor a ridden mower on foot).
@@ -983,6 +989,15 @@ export default class MowScene extends ThreeScene {
         MOW.districts.forEach((district, d) => {
             if (!this.town.isOpen(d) || MowProgress.isRestored(district.id)) return;
             if (this.grass.progress(d) < district.completeAt) return;
+            // Its bushes, trees and rocks too (the blades it takes are the gate: README_PROGRESSION.md). Said once.
+            const standing = this.growth?.standingIn(d) ?? 0;
+            if (standing > 0) {
+                if (!this.growthTold.has(d)) {
+                    this.growthTold.add(d);
+                    this.hud.say(`${standing} MORE TO CLEAR: BUSHES, TREES, ROCKS`, 0xffd9a8);
+                }
+                return;
+            }
             // Nothing is lost with the stragglers: treasures still hidden there pop out too.
             for (const { treasure, at } of this.grass.takeTreasures(d)) this.findTreasure(treasure, at);
             this.grass.cutAll(d);
@@ -1060,8 +1075,10 @@ export default class MowScene extends ThreeScene {
         const name = nextDistrict.part ? partName(nextDistrict.part) : names.district(nextDistrict);
         gsap.delayedCall(delay, () => {
             if (this.sceneDestroyed) return;
-            // The farm test shows every new area (the camera glides over and back); elsewhere when it asks.
-            if (nextDistrict.onUnlock?.pan || farmTest()) this.pan = { to: this.town.sectionCentre(nextDistrict), time: 0 };
+            // The farm test shows every new area (the camera glides over and back), but not the first ones after the yard
+            // (the start keeps its pace) nor one that says not to; elsewhere when it asks.
+            const quiet = opened.some((e) => MOW.districts[e].part === 'after-yard' || MOW.districts[e].onUnlock?.pan === false);
+            if (nextDistrict.onUnlock?.pan || (farmTest() && !quiet)) this.pan = { to: this.town.sectionCentre(nextDistrict), time: 0 };
             this.hud.say(t('districtUnlocked', { name: name.toUpperCase() }), 0x8fe3ff);
             // Uplifting: the victory fanfare with a shimmer (dig's "reveal" read as an error here).
             MowAudio.play('buyFanfare');
@@ -1259,6 +1276,40 @@ export default class MowScene extends ThreeScene {
         this.openSections(1.2);
     };
 
+    /**
+     * Where the mower's used (the tractor ridden, a walked mower pushed): over an open area that still has grass to
+     * cut (not restored, or grown back), a margin past its edge so crossing between two areas doesn't hop off and on;
+     * never in a den or a no-mower area. Everywhere else (restored lawns, the harbour, paths, decks) the player walks.
+     */
+    private mowableAt(x: number, z: number): boolean {
+        if (this.inDen(x, z) || this.inFootArea(x, z)) return false;
+        if (!farmTest()) return true;
+        return this.nearGrass;
+    }
+
+    /** Whether there's grass to mow near the player (refreshNearGrass(): with the mower out, a bit further). */
+    private nearGrass = true;
+    private nearGrassTimer = 0;
+
+    /**
+     * A few times a second: is there grass (or a bush, tree, rock) the mower can cut near the player? With the mower out
+     * it stays out while some is within NEAR_GRASS.keep past its reach; on foot it comes out once some is within its
+     * reach (+ NEAR_GRASS.take): a gap between the two so it doesn't flicker at the edge. Only cells near the player are
+     * looked at (GrassField.mowableNear).
+     */
+    private refreshNearGrass(delta: number): void {
+        if (!farmTest()) return;
+        this.nearGrassTimer -= delta;
+        if (this.nearGrassTimer > 0) return;
+        this.nearGrassTimer = NEAR_GRASS.everySec;
+        const at = this.player.transform.position;
+        const power = MowProgress.power;
+        const reach = MowProgress.width / 2 + (MowProgress.tool.ride ? MOW.tractor.cutAhead * (MowProgress.tool.rideScale ?? 1) : 1);
+        const radius = reach + (this.nearGrass ? NEAR_GRASS.keep : NEAR_GRASS.take);
+        const open = (d: number) => this.town.isOpen(d);
+        this.nearGrass = this.grass.mowableNear(at.x, at.z, radius, power, open) || !!this.growth?.mowableNear(at.x, at.z, radius, power, open);
+    }
+
     /** Whether (x, z) is inside a den (on foot there). */
     private inDen(x: number, z: number): boolean {
         return this.dens.some((den) => den.inside(x, z));
@@ -1311,12 +1362,8 @@ export default class MowScene extends ThreeScene {
         const inDen = this.inDen(position.x, position.z);
         if (inDen && !this.wasInDen && MowProgress.clippings > 0) this.sellInto(position.clone().setY(1.2));
         this.wasInDen = inDen;
-        // On foot off the mowable ground too: in a den, a no-mower area, or anywhere outside an open area (the harbour,
-        // the paths between areas): the mower's parked where the grass ends.
-        // (With a margin, so crossing the gap between two areas doesn't hop off and on.)
-        const onGrass = MOW.districts.some((d, i) => this.town.isOpen(i)
-            && Math.abs(position.x - d.x) <= d.width / 2 + OFF_GRASS_MARGIN && Math.abs(position.z - d.z) <= d.depth / 2 + OFF_GRASS_MARGIN);
-        const onFoot = inDen || this.inFootArea(position.x, position.z) || !onGrass;
+        // On foot off the mowable ground (mowableAt(): the tractor follows the same rule).
+        const onFoot = !this.mowableAt(position.x, position.z);
         if (onFoot !== this.player.onFoot) {
             this.player.onFoot = onFoot;
             // A puff where the mower is left (or picked up again).

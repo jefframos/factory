@@ -488,6 +488,31 @@ export class GrassField {
         return result;
     }
 
+    /**
+     * Whether uncut grass `power` can cut (or chew) stands within `radius` of (x, z), in a section `canCut` allows: a
+     * scan of the cells in that square only (cheap; MowScene asks a few times a second whether the mower's needed).
+     */
+    public mowableNear(x: number, z: number, radius: number, power: number, canCut: (district: number) => boolean): boolean {
+        const r2 = radius * radius;
+        const minIx = Math.max(0, Math.floor((x - radius - this.minX) / this.cell));
+        const maxIx = Math.min(this.width - 1, Math.floor((x + radius - this.minX) / this.cell));
+        const minIz = Math.max(0, Math.floor((z - radius - this.minZ) / this.cell));
+        const maxIz = Math.min(this.depth - 1, Math.floor((z + radius - this.minZ) / this.cell));
+        for (let iz = minIz; iz <= maxIz; iz++) {
+            const cz = this.minZ + (iz + 0.5) * this.cell - z;
+            for (let ix = minIx; ix <= maxIx; ix++) {
+                const i = ix + iz * this.width;
+                if (!this.types[i] || this.cutFlags[i]) continue;
+                const cx = this.minX + (ix + 0.5) * this.cell - x;
+                if (cx * cx + cz * cz > r2) continue;
+                const d = this.districtOf[i];
+                if (d < 0 || !canCut(d) || !canCutGrass(MOW.grass[this.types[i] - 1], power)) continue;
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Whether uncut grass tougher than `power` stands within `radius` of (x, z) (in an open section). */
     public toughAt(x: number, z: number, radius: number, power: number, canCut: (district: number) => boolean): boolean {
         const r2 = radius * radius;

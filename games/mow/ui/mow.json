@@ -73,27 +73,28 @@
     { "id": "firebrush", "name": "Fire Brush", "height": 1.25, "color": "#d8442f", "cutColor": "#bd8f62", "resistance": 7, "value": 24 }
   ],
   "tools": [
-    { "id": "scissors", "name": "Reel Mower", "width": 0.9, "speed": 3.6, "power": 2, "capacity": 50, "price": 0, "size": [0.9, 0.46, 0.24], "color": "#3f9a4a", "reel": true, "grip": { "forward": 0.45, "height": 0.92, "spread": 0.26, "hand": { "x": 0, "y": 63, "z": 0 }, "offset": { "x": -0.045, "y": 0.045, "z": -0.11 } }, "gap": 0.7 },
+    { "id": "scissors", "name": "Reel Mower", "width": 0.9, "speed": 3.6, "power": 2, "capacity": 250, "price": 0, "size": [0.9, 0.46, 0.24], "color": "#3f9a4a", "reel": true, "grip": { "forward": 0.45, "height": 0.92, "spread": 0.26, "hand": { "x": 0, "y": 63, "z": 0 }, "offset": { "x": -0.045, "y": 0.045, "z": -0.11 } }, "gap": 0.7 },
     { "id": "pushmower", "name": "Push Mower", "width": 1.5, "speed": 4.4, "power": 2, "capacity": 300, "price": 20, "size": [0.71, 0.76, 1.02], "color": "#e8352b", "engine": true, "grip": { "forward": 0.45, "height": 0.86, "spread": 0.26, "hand": { "x": 0, "y": 63, "z": 0 }, "offset": { "x": -0.045, "y": 0.015, "z": -0.11 } }, "gap": 0.55 },
     { "id": "lawntractor", "name": "Lawn Tractor", "width": 1.8, "speed": 4.3, "power": 2, "capacity": 700, "price": 60, "size": [2.4, 1.1, 1.8], "color": "#4cc95a", "engine": true, "ride": true, "rideScale": 0.85, "tint": "#4cc95a" },
     { "id": "bigtractor", "name": "Big Tractor", "width": 2.4, "speed": 4.7, "power": 2, "capacity": 1400, "price": 400, "size": [2.7, 1.2, 2], "color": "#2f8fff", "engine": true, "ride": true, "rideScale": 1, "tint": "#2f8fff" },
     { "id": "turbo", "name": "Turbo Tractor", "width": 3, "speed": 5.1, "power": 2, "capacity": 2600, "price": 2500, "size": [3, 1.3, 2.2], "color": "#e8352b", "engine": true, "ride": true, "rideScale": 1.15, "tint": "#e8352b" },
-    { "id": "mega", "name": "Mega Tractor", "width": 3.7, "speed": 5.5, "power": 2, "capacity": 4500, "price": 15000, "size": [3.4, 1.45, 2.45], "color": "#f2b230", "engine": true, "ride": true, "rideScale": 1.3, "tint": "#f2b230" },
-    { "id": "monster", "name": "Monster Tractor", "width": 4.4, "speed": 5.9, "power": 2, "capacity": 7500, "price": 90000, "size": [3.8, 1.6, 2.7], "color": "#a56bff", "engine": true, "ride": true, "rideScale": 1.45, "tint": "#a56bff" },
+    { "id": "mega", "name": "Mega Tractor", "width": 3.7, "speed": 5.5, "power": 2, "capacity": 4500, "price": 20000, "size": [3.4, 1.45, 2.45], "color": "#f2b230", "engine": true, "ride": true, "rideScale": 1.3, "tint": "#f2b230" },
+    { "id": "monster", "name": "Monster Tractor", "width": 4.4, "speed": 5.9, "power": 2, "capacity": 7500, "price": 120000, "size": [3.8, 1.6, 2.7], "color": "#a56bff", "engine": true, "ride": true, "rideScale": 1.45, "tint": "#a56bff" },
     { "id": "giant", "name": "Giant Tractor", "width": 5.2, "speed": 6.3, "power": 2, "capacity": 12000, "price": 600000, "size": [4.2, 1.75, 3], "color": "#21b6a8", "engine": true, "ride": true, "rideScale": 1.6, "tint": "#21b6a8" },
-    { "id": "titan", "name": "Titan Tractor", "width": 6, "speed": 6.7, "power": 2, "capacity": 18000, "price": 5000000, "size": [4.6, 1.9, 3.3], "color": "#2b2b33", "engine": true, "ride": true, "rideScale": 1.75, "tint": "#3a3a46" },
-    { "id": "colossus", "name": "Colossus Tractor", "width": 6.8, "speed": 7.1, "power": 2, "capacity": 26000, "price": 60000000, "size": [5, 2.05, 3.6], "color": "#f2f2f2", "engine": true, "ride": true, "rideScale": 1.9, "tint": "#f4f4f8" },
-    { "id": "behemoth", "name": "Behemoth Tractor", "width": 7.6, "speed": 7.5, "power": 2, "capacity": 38000, "price": 1500000000, "size": [5.4, 2.2, 3.9], "color": "#ff5fa2", "engine": true, "ride": true, "rideScale": 2.05, "tint": "#ff5fa2" }
+    { "id": "titan", "name": "Titan Tractor", "width": 6, "speed": 6.7, "power": 2, "capacity": 18000, "price": 3000000, "size": [4.6, 1.9, 3.3], "color": "#2b2b33", "engine": true, "ride": true, "rideScale": 1.75, "tint": "#3a3a46" },
+    { "id": "colossus", "name": "Colossus Tractor", "width": 6.8, "speed": 7.1, "power": 2, "capacity": 26000, "price": 15000000, "size": [5, 2.05, 3.6], "color": "#f2f2f2", "engine": true, "ride": true, "rideScale": 1.9, "tint": "#f4f4f8" },
+    { "id": "behemoth", "name": "Behemoth Tractor", "width": 7.6, "speed": 7.5, "power": 2, "capacity": 38000, "price": 80000000, "size": [5.4, 2.2, 3.9], "color": "#ff5fa2", "engine": true, "ride": true, "rideScale": 2.05, "tint": "#ff5fa2" }
   ],
   "upgrades": [
     { "id": "capacity", "tab": "gear", "name": "Capacity", "icon": "ItemIcon_Bag_Brown", "perLevel": 0.25, "share": true, "maxLevel": 40, "basePrice": 15, "growth": 1.45 },
-    { "id": "speed", "tab": "boosts", "name": "Speed", "icon": "ItemIcon_Gear_Boots", "perLevel": 0.03, "maxLevel": 25, "basePrice": 50, "growth": 1.3 },
-    { "id": "money", "tab": "boosts", "name": "Money Gain", "icon": "ItemIcon_Money_Coin", "perLevel": 0.1, "maxLevel": 200, "basePrice": 50, "growth": 1.18, "milestones": [10, 25, 50, 100, 150, 200] },
-    { "id": "grass", "tab": "boosts", "name": "Grass Gain", "icon": "ItemIcon_Clover_Green", "perLevel": 0.1, "maxLevel": 200, "basePrice": 50, "growth": 1.18, "milestones": [10, 25, 50, 100, 150, 200] },
-    { "id": "width", "tab": "boosts", "name": "Cutting Width", "icon": "ItemIcon_Gear_Sword", "perLevel": 0.1, "maxLevel": 20, "basePrice": 100, "growth": 1.35 },
-    { "id": "chew", "tab": "boosts", "name": "Sharp Edge", "icon": "ItemIcon_Star_Gold", "perLevel": 0.1, "maxLevel": 20, "basePrice": 150, "growth": 1.35 },
-    { "id": "farm", "tab": "boosts", "name": "Farm Speed", "icon": "ItemIcon_Heart_Red", "perLevel": 0.05, "maxLevel": 100, "basePrice": 500, "growth": 1.2, "milestones": [10, 25, 50, 100] },
-    { "id": "blades", "tab": "boosts", "name": "Blades", "icon": "ItemIcon_Gear_Sword", "perLevel": 0.2, "maxLevel": 12, "basePrice": 15, "growth": 3, "prices": [15, 100, 700, 4000, 20000, 100000, 500000, 2500000, 15000000, 120000000, 1200000000, 15000000000] }
+    { "id": "speed", "tab": "boosts", "name": "Speed", "icon": "ItemIcon_Gear_Boots", "perLevel": 0.03, "maxLevel": 25, "basePrice": 150, "growth": 1.5 },
+    { "id": "money", "tab": "boosts", "name": "Money Gain", "icon": "ItemIcon_Money_Coin", "perLevel": 0.1, "maxLevel": 200, "basePrice": 2000, "growth": 1.6, "milestones": [25, 50, 100, 150, 200] },
+    { "id": "grass", "tab": "boosts", "name": "Grass Gain", "icon": "ItemIcon_Clover_Green", "perLevel": 0.1, "maxLevel": 200, "basePrice": 2000, "growth": 1.6, "milestones": [25, 50, 100, 150, 200] },
+    { "id": "bag", "tab": "boosts", "name": "Bag Size", "icon": "ItemIcon_Bag_Brown", "perLevel": 0.2, "maxLevel": 100, "basePrice": 800, "growth": 1.45, "milestones": [25, 50, 100] },
+    { "id": "width", "tab": "boosts", "name": "Cutting Width", "icon": "ItemIcon_Gear_Sword", "perLevel": 0.1, "maxLevel": 20, "basePrice": 400, "growth": 1.55 },
+    { "id": "chew", "tab": "boosts", "name": "Sharp Edge", "icon": "ItemIcon_Star_Gold", "perLevel": 0.1, "maxLevel": 20, "basePrice": 300, "growth": 1.4 },
+    { "id": "farm", "tab": "boosts", "name": "Farm Speed", "icon": "ItemIcon_Heart_Red", "perLevel": 0.05, "maxLevel": 100, "basePrice": 5000, "growth": 1.5, "milestones": [25, 50, 100] },
+    { "id": "blades", "tab": "boosts", "name": "Blades", "icon": "ItemIcon_Gear_Sword", "perLevel": 0.2, "maxLevel": 12, "basePrice": 15, "growth": 3, "prices": [15,  100,  700,  5000,  40000,  250000,  1000000,  3000000,  8000000,  25000000,  100000000,  500000000] }
   ],
   "bladeLevels": [
     { "count": 1, "size": 0.3 },
@@ -111,8 +112,8 @@
     { "count": 15, "size": 1, "layout": "grid", "rows": 5, "cols": 3 }
   ],
   "crops": [
-    { "id": "strawberry", "name": "Strawberries", "growSec": 8, "perPick": 3, "price": 15, "color": "#e8323f", "leaf": "#3fa34d",
-      "product": { "id": "jam", "name": "Jam", "per": 4, "sec": 1.8, "max": 40, "price": 80, "color": "#b5162e", "lid": "#f2f2f2", "shape": "jar" } }
+    { "id": "strawberry", "name": "Strawberries", "model": "farm/strawberry.glb", "size": 0.8, "growSec": 8, "perPick": 3, "price": 40, "color": "#e8323f", "leaf": "#3fa34d",
+      "product": { "id": "jam", "name": "Jam", "per": 4, "sec": 1.8, "max": 40, "price": 250, "color": "#b5162e", "lid": "#f2f2f2", "shape": "jar" } }
   ],
   "growth": [
     { "id": "bush", "name": "Bush", "kind": "bush", "resistance": 6, "value": 60, "height": 1.3, "radius": 0.6, "chewSec": 0.5, "color": "#4f9a3a", "cutColor": "#6b4f3a", "models": ["town/nature/Bush_1_A_Color1.gltf", "town/nature/Bush_2_A_Color1.gltf"] },

@@ -173,7 +173,9 @@ export class UpgradePads {
     private shownNow(def: UpgradePadDef): boolean {
         if (def.section && !this.isOpen(def.section)) return false;
         if (def.afterTool !== undefined && MowProgress.toolLevel < def.afterTool) return false;
-        if (def.appearsWhenFull && !(MowProgress.full || MowProgress.toolLevel > 0 || MowProgress.padPaid('tool') > 0)) return false;
+        // The first station: out once the bag's worth its upgrade (or full), the player still mowing meanwhile.
+        const affordable = MowProgress.pourable >= (MowProgress.padCost('tool') ?? Infinity);
+        if (def.appearsWhenFull && !(affordable || MowProgress.full || MowProgress.toolLevel > 0 || MowProgress.padPaid('tool') > 0)) return false;
         return true;
     }
 

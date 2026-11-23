@@ -66,7 +66,6 @@ function mesh(geo: THREE.BufferGeometry, mat: THREE.Material, x = 0, y = 0, z = 
 const ITEM_MODELS: Record<string, { path: string; height: number; width: number }> = {
     milk: { path: 'farm/carton.glb', height: 0.34, width: 0.24 },
     cheese: { path: 'farm/cheese.glb', height: 0.2, width: 0.42 },
-    'crop:strawberry': { path: 'farm/strawberry.glb', height: 0.24, width: 0.26 },
     'product:strawberry': { path: 'farm/jar_D_medium.gltf', height: 0.27, width: 0.26 },
 };
 const itemTemplates = new Map<string, THREE.Object3D>();
@@ -98,6 +97,10 @@ function loadFitted(path: string, height: number, width: number): Promise<THREE.
 
 /** Loads the item models once (the scene calls it as the farm builds); items made after it use them. */
 export function preloadFarmModels(): Promise<void> {
+    // Each crop's fruit is its own model (crops[].model), carried at a fruit's size.
+    for (const crop of MOW.crops ?? []) {
+        if (crop.model && !ITEM_MODELS[`crop:${crop.id}`]) ITEM_MODELS[`crop:${crop.id}`] = { path: crop.model, height: 0.24, width: 0.26 };
+    }
     preloading ??= Promise.all(Object.entries(ITEM_MODELS).map(([kind, spec]) => loadFitted(spec.path, spec.height, spec.width)
         .then((template) => void itemTemplates.set(kind, template))
         .catch((error) => console.warn('[FarmModels] item model', spec.path, error)))).then(() => undefined);

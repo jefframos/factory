@@ -77,6 +77,9 @@ export interface BarnState {
     truckHelper?: boolean;
 }
 
+/** Running on foot, at most this fast (world units a second; the boost on top counts half: footSpeed). */
+const FOOT_SPEED = 4.6;
+
 /** SELL x2 (the dig game's phone): its first sales are free, then each takes a rewarded video. */
 const SELL_X2_FREE = 2;
 
@@ -258,6 +261,13 @@ export const MowProgress = {
         return this.tool.speed * this.boostFactor('speed');
     },
     /**
+     * On foot (the mower parked: dens, farms, the harbour): a running pace, not the tractor's. At most FOOT_SPEED, and
+     * the Speed boost counts half.
+     */
+    get footSpeed(): number {
+        return Math.min(this.tool.speed, FOOT_SPEED) * (1 + (this.boostFactor('speed') - 1) * 0.5);
+    },
+    /**
      * Cutting power: the mower's own plus the blades' level (README_PROGRESSION.md: the blades are what cut tougher
      * grass; the mower is how wide, fast and big).
      */
@@ -304,12 +314,14 @@ export const MowProgress = {
     get capacity(): number {
         const def = upgradeDef('capacity');
         const level = this.upgradeLevel('capacity');
-        return Math.round(def.share ? this.tool.capacity * (1 + def.perLevel * level) : this.tool.capacity + def.perLevel * level);
+        // The station's levels, times the Bag Size power-up.
+        const base = def.share ? this.tool.capacity * (1 + def.perLevel * level) : this.tool.capacity + def.perLevel * level;
+        return Math.round(base * this.boostFactor('bag'));
     },
     /** What the next Capacity level adds to the bag now. */
     get capacityStep(): number {
         const def = upgradeDef('capacity');
-        return Math.round(def.share ? this.tool.capacity * def.perLevel : def.perLevel);
+        return Math.round((def.share ? this.tool.capacity * def.perLevel : def.perLevel) * this.boostFactor('bag'));
     },
     get full(): boolean {
         return state.clippings >= this.capacity;

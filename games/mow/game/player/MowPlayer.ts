@@ -128,7 +128,8 @@ export default class MowPlayer extends Entity {
             centerOffset: new THREE.Vector3(0, HALF_EXTENTS.y, 0),
             layer: Layers.Player,
         }));
-        this.addComponent(new PlayerMovementController(() => MowProgress.speed * this.drag, this.inputHost));
+        // On foot (the mower parked) a running pace; with the mower (or riding) its own speed.
+        this.addComponent(new PlayerMovementController(() => (this.onFoot ? MowProgress.footSpeed : MowProgress.speed) * this.drag, this.inputHost));
         this.addComponent(new FacingComponent());
     }
 
