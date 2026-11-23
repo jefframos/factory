@@ -27,9 +27,27 @@ export interface GrassDef {
     value: number;
 }
 
+/**
+ * What grows past grass (ui/mow.json `growth`): a bush to dig out or a tree to chop down, on the same ladder as the
+ * grass (its `resistance` the cutting power it takes, `value` its clippings), placed per section (DistrictDef.growth).
+ */
+export interface GrowthDef extends GrassDef {
+    kind: 'bush' | 'tree' | 'rock';
+    /** Its models (under models/): one picked per plant. */
+    models: string[];
+    /** How wide it stands (its solid core is part of it), at its height. */
+    radius: number;
+    /** Seconds of chewing to clear it with a mower as tough as it (more power: quicker; one short: much slower). */
+    chewSec: number;
+    /** A colour multiplied into its model's (a darker dense bush, an older tree). */
+    tint?: string;
+}
+
 export interface ToolDef {
     id: string;
     name: string;
+    /** The camera's distance (x the section's zoom) while mowing with it (the farm test); unset: from its cut width. */
+    cameraZoom?: number;
     /** Cutting width (world units). */
     width: number;
     /** Walking speed. */
@@ -125,12 +143,14 @@ export interface BladeLevelDef {
     layout?: 'alternate' | 'grid';
     rows?: number;
     cols?: number;
+    /** The saw's colour at this level (else MowerBlades' own progression: steel, bronze, copper... gold, ruby, diamond). */
+    color?: string;
 }
 
 /** How many blades a level has (a grid's rows x cols, else its count). */
 export const bladeCount = (look: BladeLevelDef): number => (look.layout === 'grid' ? Math.max(1, look.rows ?? 1) * Math.max(1, look.cols ?? 1) : look.count);
 
-export type UpgradeId = 'capacity' | 'speed' | 'money' | 'width' | 'blades';
+export type UpgradeId = 'capacity' | 'speed' | 'money' | 'width' | 'blades' | 'grass' | 'chew' | 'farm';
 
 export interface UpgradeDef {
     id: UpgradeId;
@@ -145,6 +165,10 @@ export interface UpgradeDef {
     growth: number;
     /** Each level's price one by one (level n: prices[n]), instead of basePrice x growth^n. */
     prices?: number[];
+    /** `perLevel` is a share of the mower's own (the bag: +25% of the mower's bag a level), not an amount. */
+    share?: boolean;
+    /** Levels at which the whole effect doubles (an incremental's milestones: POWER-UPS' money tracks). */
+    milestones?: number[];
 }
 
 export interface DistrictDef {
@@ -197,6 +221,11 @@ export interface DistrictDef {
      */
     grassScale?: number;
     /**
+     * Clippings a cell here gives, times its grass's `value` (default 1): over 1 a richer section (the Front Yard: x2,
+     * so clearing it pays for the first two mowers).
+     */
+    valueScale?: number;
+    /**
      * The toughest grass that grows in it (a grass id): anything tougher (the noise's, a patch's) grows as this one
      * instead, so the section can be finished with the mower that cuts it. None = no cap.
      */
@@ -214,6 +243,14 @@ export interface DistrictDef {
      * bit at a time, kept between visits) and needs `level`; paid, the area opens. None: it opens by itself.
      */
     unlock?: { price: number; level: number; x: number; z: number };
+    /**
+     * Opens at this player level too, even before the part before it is restored (so nobody's stuck on an area they
+     * can't finish): restored OR this level, whichever comes first. Until then a fence runs all round it with a sign
+     * saying both. None: only when the part before it is restored.
+     */
+    openLevel?: number;
+    /** What grows here past its grass (Growth.ts): a type from ui/mow.json `growth` and how many per square unit. */
+    growth?: { type: string; density: number }[];
 }
 
 /**
@@ -263,6 +300,8 @@ export interface TreasureDef {
     /** Cash claimed in the Trophies panel. */
     reward: number;
     rarity: Rarity;
+    /** A locked chest (the farm test): found, it waits on the HUD until a rewarded video opens it (LockedChests). */
+    locked?: boolean;
 }
 
 export interface TreasuresDef {
@@ -474,6 +513,8 @@ export interface DenDef {
     depth: number;
     /** The gap in its fence, on its south side, this wide. */
     gate: number;
+    /** The player level it opens at: below it, its gate is boarded up and its sign says the level. Unset: any level. */
+    level?: number;
     /**
      * Where its parts are, placed in the editor (den-local: from its middle, +Z toward the gate); a part left out goes
      * where the den's own layout puts it (ChickenDen layout()). The gold machine's are planned: shown in the editor only.
@@ -522,12 +563,24 @@ export interface DenParts {
     goldGrid?: DenPoint;
 }
 
+/** Restored areas growing some grass back (the farm test): `share` of each one's cells every `everySec` of play. */
+export interface RegrowDef {
+    everySec: number;
+    share: number;
+}
+
 export interface FarmTestDef {
+    /** Restored areas grow some grass back now and then, at their value (a field to come back to). */
+    regrow?: RegrowDef;
     pads: UpgradePadDef[];
     dens: DenDef[];
     eggs: EggLoopDef;
     levels: LevelsDef;
     trucks?: TruckDockDef;
+    /** The farm's second shop: the cow barn (CowDen). */
+    cowDen?: CowDenDef;
+    /** The crop farms (CropFarm.ts): plots of a crop, its machine, a counter, and a harbour its boats come to. */
+    cropFarms?: CropFarmDef[];
     /**
      * The trucks' path (placed in the editor: 🚚 Truck path point): they pop in at its first point, drive point to
      * point, park at the last (by the dock) and drive it back. Without one: from a `trucks` spawn area over the roads.
@@ -547,10 +600,133 @@ export interface FarmTestDef {
  * the one marked `park` (they stop there, by the dock, and load; the next ones queue behind), then drive on through the
  * rest and pop out at the last. No point marked: they park at the last and drive back the same way.
  */
+/**
+ * A crop (ui/mow.json `crops`): plots of it ripen every `growSec` (sped up by Farm Speed), giving `perPick` fresh ones
+ * (sold at `price`); its machine turns `product.per` of them into one product every `product.sec`. Its look: the fruit
+ * in `color` on `leaf` green plants; the product a jar (or a box) of `product.color` with a `product.lid` top.
+ * Another crop is another entry here and a farm in the level (`farm.cropFarms`).
+ */
+export interface CropDef {
+    id: string;
+    name: string;
+    growSec: number;
+    perPick: number;
+    price: number;
+    color: string;
+    leaf: string;
+    product: { id: string; name: string; per: number; sec: number; max: number; price: number; color: string; lid?: string; shape?: 'jar' | 'box' };
+}
+
+/**
+ * A crop farm (the level's `farm.cropFarms`): a fenced yard (gate south) of `plots` (the first free, the rest bought
+ * with money and a level, `cols` to a row) growing `crop`, its machine (the product) and fresh crate, a counter on its
+ * east side (customers from the people spawn areas, or `peopleIn` / `peopleOut`), and its `harbour`: a drop point on
+ * the shore that boats sail to along their own path (`path` in, parking at its end; `out` away), bought like the trucks'
+ * dock. Its helpers make it run alone: the `picker` (ripe plots to the machine and the crate), the counter's `helper`
+ * and the `boatHelper` (to the docked boat); each takes its cash to the player.
+ */
+export interface CropFarmDef {
+    id: string;
+    name: string;
+    crop: string;
+    x: number;
+    z: number;
+    width: number;
+    depth: number;
+    gate: number;
+    level?: number;
+    /** Of each of its goods, the backpack holds this many. */
+    carryMax: number;
+    plots: { price: number; level: number }[];
+    cols?: number;
+    wants: [number, number];
+    queue: number;
+    customerEverySec: number;
+    harbour?: TruckDockDef & { path: TruckPathPoint[]; out?: TruckPathPoint[]; parkFacing?: number };
+    picker?: BarnHelperDef;
+    helper?: BarnHelperDef;
+    boatHelper?: BarnHelperDef;
+    peopleIn?: { x: number; z: number }[];
+    peopleOut?: { x: number; z: number }[];
+    /** Its pieces placed in the editor (farm-local); `plots`: the first plot's middle (the rest follow it in rows). */
+    parts?: Partial<Record<CropFarmPartKey, DenPoint>>;
+}
+
 export interface TruckPathPoint {
     x: number;
     z: number;
     park?: boolean;
+}
+
+/**
+ * The cow barn (CowDen): where it is and its gate and level (as a den), its loop (CowLoopDef), its own truck dock and
+ * path, and its customers' paths in and out (2+ points each; without, they come from the people spawn areas).
+ */
+/** The cow barn's own parts (placed in the editor, barn-local): each machine, its MILK square and its grid. */
+export interface BarnParts {
+    butterMachine?: DenPoint;
+    butterInput?: DenPoint;
+    butterGrid?: DenPoint;
+    cheeseMachine?: DenPoint;
+    cheeseInput?: DenPoint;
+    cheeseGrid?: DenPoint;
+}
+
+/** A place a farm piece goes (placed in the editor, farm-local), by key: see CropFarm layout(). */
+export type CropFarmPartKey = 'plots' | 'machine' | 'input' | 'grid' | 'fresh' | 'counter' | 'sell' | 'cash' | 'pickerHire' | 'helperHire' | 'boatHelperHire';
+
+export interface CowDenDef extends DenDef {
+    /** Its parts placed in the editor (barn-local): the den's (counter, sell, cash, belt, its buy and hire squares) and its machines'. */
+    parts?: DenParts & BarnParts;
+    loop: CowLoopDef;
+    trucks?: TruckDockDef;
+    truckPath?: TruckPathPoint[];
+    peopleIn?: { x: number; z: number }[];
+    peopleOut?: { x: number; z: number }[];
+}
+
+/** One of the barn's machines: milk it takes per thing made, seconds per thing, milk it holds, its grid's layers, a thing's price. */
+export interface DairyMachineDef {
+    milkPer: number;
+    sec: number;
+    max: number;
+    layers?: number;
+    price: number;
+}
+
+/** The cow barn's loop: the cows (milk on their spots), the butter churn and the cheese press, the orders, the belt. */
+export interface CowLoopDef {
+    /** Of each good (milk, butter, cheese), the backpack holds this many. */
+    carryMax: number;
+    milkEverySec: number;
+    floorMax: number;
+    /** Milk waiting on the first stall's spot on the first visit (unset: a full spot). */
+    startMilk?: number;
+    /** The stalls, in order: the first free, the others bought (money and a level). */
+    cows: { price: number; level: number }[];
+    butter: DairyMachineDef;
+    cheese: DairyMachineDef;
+    /** Goods a customer orders (lowest, highest: butter, cheese or a mix), how many queue, how soon the next comes. */
+    wants: [number, number];
+    queue: number;
+    customerEverySec: number;
+    /** The conveyor belt (every cow owned): bought on its square; milk rides it to the machines, split between them. */
+    belt?: { price: number; level: number; speed: number; spacing: number; takeSec: number };
+    /**
+     * Helpers (hired on their squares): the counter's (after the belt: butter and cheese to the customers) and the
+     * trucks' (after the dock: to the parked truck). Each also takes its cash square's money to the player. With both,
+     * the barn runs on its own.
+     */
+    helper?: BarnHelperDef;
+    truckHelper?: BarnHelperDef;
+}
+
+export interface BarnHelperDef {
+    price: number;
+    level: number;
+    /** Goods carried at once. */
+    carry: number;
+    walkSpeed: number;
 }
 
 /** A spawn area: a rect people (customers) or trucks pop in at, and out at when they leave. */
@@ -596,6 +772,8 @@ export interface TruckDockDef {
  * piles up on the cash square to be picked up — and buys more hens.
  */
 export interface EggLoopDef {
+    /** The eggs already waiting on the first hen's spot on the first visit (the lesson). Unset: a full spot (floorMax). */
+    startEggs?: number;
     /** Den goods (eggs and trays) the backpack holds. */
     carryMax: number;
     /** A hen lays an egg every this many seconds, onto its floor pile (at most floorMax eggs there). */
@@ -649,6 +827,8 @@ export interface EggLoopDef {
 export interface LevelsDef {
     next: number[];
     growth: number;
+    /** The floor arrows guide the player up to this level; past it they're gone (by then the player knows the way). Unset: always. */
+    guideUntil?: number;
     xp: {
         /** One XP per this many clippings mowed. */
         clippingsPerXp: number;
@@ -798,6 +978,10 @@ export interface MowDesign {
     upgrades: UpgradeDef[];
     /** The blades' look at each level of the Blades upgrade (the last one stands for any past it). */
     bladeLevels: BladeLevelDef[];
+    /** What grows past grass: bushes, then trees (Growth.ts). */
+    growth?: GrowthDef[];
+    /** What the crop farms grow (CropFarm.ts): each a crop, its fresh price and what its machine makes of it. */
+    crops?: CropDef[];
     /** The shop's BOOSTS tab opens with this mower (tool level). */
     boostsUnlockToolLevel: number;
     tractor: TractorConfig;
@@ -820,11 +1004,15 @@ export function partName(part: string): string {
     return TOWN.parts?.find((entry) => entry.id === part)?.name ?? MOW.districts.find((_, d) => partOf(d) === part)?.name ?? part;
 }
 
-/** Whether section `d` is open: its part is the first, or every section of the part before it is restored. */
-export function sectionOpen(d: number, restored: (id: string) => boolean, bought: (id: string) => boolean = () => true): boolean {
-    const { opensAfter, unlock, id } = MOW.districts[d];
+/**
+ * Whether section `d` is open: its part is the first, or every section of the part before it is restored, or (with an
+ * `openLevel`) the player's `level` has reached it.
+ */
+export function sectionOpen(d: number, restored: (id: string) => boolean, bought: (id: string) => boolean = () => true, level = 0): boolean {
+    const { opensAfter, unlock, id, openLevel } = MOW.districts[d];
     // Bought to open: not before its square's paid.
     if (unlock && !bought(id)) return false;
+    if (openLevel && level >= openLevel) return true;
     if (opensAfter) return goalCount(restored) >= opensAfter;
     if (TOWN.openAll) return true;
     const index = partsInOrder().indexOf(partOf(d));
@@ -935,6 +1123,41 @@ export const farmTest = (): FarmTestDef | undefined => TOWN.farm;
 
 /** Grass (clippings) an upgrade pad takes for something priced in money (the old shop's prices, at the selling rate). */
 export const grassFor = (price: number): number => Math.ceil(price / MOW.clippingPrice);
+
+/**
+ * The farm test's hand-placed trees and bushes inside an area (library nature models): choppable growth (Growth: a
+ * tree or a bush, once the blades are up to it) instead of fixed props. Ones outside every area stay scenery.
+ */
+export function choppableKind(prop: TownProp): 'tree' | 'bush' | undefined {
+    if (!TOWN.farm) return undefined;
+    const kind = /\/nature\/Tree_/.test(prop.model) ? 'tree' : /\/nature\/Bush_/.test(prop.model) ? 'bush' : undefined;
+    if (!kind) return undefined;
+    return districtAt(prop.x, prop.z) >= 0 ? kind : undefined;
+}
+
+/** The area (district index) whose rectangle holds (x, z), or -1. */
+export const districtAt = (x: number, z: number): number =>
+    MOW.districts.findIndex((d) => Math.abs(x - d.x) <= d.width / 2 && Math.abs(z - d.z) <= d.depth / 2);
+
+/** A number as the game shows it: whole to 999, then 6.8k, 12.3k, 450k, 4.5M, 20B, 1.2T (bigger numbers are coming). */
+export function shortNumber(value: number): string {
+    const v = Math.floor(Math.max(0, value));
+    if (v < 1000) return `${v}`;
+    const units: [number, string][] = [[1e15, 'Q'], [1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'k']];
+    for (const [size, suffix] of units) {
+        if (v >= size) {
+            const n = v / size;
+            return `${n >= 100 ? Math.floor(n) : Math.floor(n * 10) / 10}${suffix}`;
+        }
+    }
+    return `${v}`;
+}
+
+/** Money as the game shows it: $999, then $6.8k, $4.5M, $20B... */
+export const shortMoney = (value: number): string => `$${shortNumber(value)}`;
+
+/** A district's money per clipping: the selling price times its area value (DistrictDef.valueScale). */
+export const worthPerClipping = (district: number): number => MOW.clippingPrice * (MOW.districts[district]?.valueScale ?? 1);
 
 const LEVELS: Record<string, unknown> = { tutorial, town, city2 };
 

@@ -1,0 +1,67 @@
+ok, add more bag levels, a lot more, i completed the bag on the first area, really fast, i dont know if you adjusted the prices yet as well, but i need some escalation of prices and instead of breaking a value with 6,828 for example, do 6.8k to simplify and imply that larger values will be used, it is confusing money and grass so shaw we add the atm back? because everything cost money, uness they are distincly different, the grass and the money, so it is clear that are different currencies, see what i mean?, overall, it is looking and feeling very satysfying, if player is not on the grass area, mowable area, unmount the player, on the dem for example, you dont need to level lock the helpers, the egg dem player should be able to fully automated quite quick, player should be able to drop the items to a drop sell area, so if player have where to unload, right now it can only unload if player wants to buy at that moment, im having broken numbers when im adding money to stuff, like 1531,880000000000005, that cant happen, im stuck with a lot of cheese atm. mechanically the cow barn work, but it piles up faster than the demand, so if there is a lot of stock, can you scale the orders as well, i dont want to see everything full filled at all times, this is happening nowthe cheese drop is too close to the sell area, on the egg den i can position the stations and setup the belt, i cant for the cow, you can increase the tresholds for completion, for something like 98% because now player will have tractors and the area is larger, the queue of trucks can be about 5 instead of capping in 3, definettly needs increase the bag a lot, im testing max out mower and it fills up every few seconds, that can also be incremental, could also be powerup, the game needs to guarantee that wont be soft locked, also, add more random treasures, and some treasures will be locked chests, that will show on the hud, and player will have a screen that will show the chest and watch a video to open, that contains money mostly (for now) and it is a reawarded ad
+
+Gameplay Feedback & Improvements
+Progression & Economy
+- Add significantly more bag upgrade levels. I completed the bag upgrades in the first area very quickly.
+- Review and increase upgrade prices to create a better sense of progression and escalation.
+- Make prices scale more aggressively as the player progresses through the areas.
+- Simplify large numbers using abbreviations:
+  - 6,828 → 6.8k
+  - 153,000 → 153k
+  - This will make larger values easier to read and imply that the economy will scale to much bigger numbers.
+- I'm not sure if the prices have been adjusted yet, but the economy needs more progression.
+- I'm also seeing floating-point precision issues when adding money, for example 1531,880000000000005. This needs to be fixed so currency values are always clean and properly rounded.
+Currencies & ATM
+- Money and grass are currently confusing because both seem to be used as currencies.
+- Should we bring the ATM back?
+- If everything costs money, we need to make the distinction between money and grass much clearer.
+- Ideally, they should have clearly different purposes and visual representations so players immediately understand that they are separate currencies.
+Bag Capacity & Mowing
+- Bag capacity definitely needs to increase significantly.
+- I'm testing with a max-level mower, and the bag fills up every few seconds.
+- Bag capacity should continue scaling incrementally with upgrades.
+- Consider adding power-ups that temporarily increase bag capacity or improve collection efficiency.
+- Make sure the player always has a way to unload their inventory and cannot get soft-locked.
+Player Movement & Helpers
+- If the player is not in a grass/mowable area, unmount them from the mower.
+  - For example, when entering the egg den, the player shouldn't remain mounted.
+- Helpers shouldn't be level-locked in the egg den.
+- The egg den should become fully automated relatively quickly, allowing the player to focus on other activities.
+Selling & Inventory Management
+- Add a dedicated drop-off/sell area where players can unload items.
+- Currently, the player can only unload items when they actively want to buy something, which is limiting.
+- Players should always have somewhere to drop off and sell their collected items, independently of whether they're making a purchase.
+Cow Barn & Production Balance
+- The cow barn mechanics work, but production is accumulating much faster than demand.
+- Scale customer orders based on available stock and production capacity.
+- Avoid having all orders fulfilled all the time. There should be a healthy balance between supply and demand.
+- Currently, I can end up with huge amounts of cheese sitting in stock. I'm already stuck with a lot of cheese.
+- Increase the order queue capacity to around 5 trucks instead of capping it at 3.
+- Increase the completion thresholds to approximately 98%.
+  - The player will eventually have tractors and larger areas to manage, so the current thresholds may become too restrictive.
+Cow Barn Customisation & Layout
+- In the egg den, I can freely position stations and configure the conveyor belt.
+- I can't do the same in the cow barn.
+- Bring the same station positioning and conveyor belt setup functionality to the cow barn.
+Selling Area & Item Placement
+- The cheese drop-off point is currently too close to the selling area.
+- Adjust the positioning to give the player more room and make the two areas easier to distinguish.
+Treasures & Random Rewards
+- Add more random treasures throughout the game.
+- Introduce locked treasure chests as a new type of reward.
+- Locked chests should:
+  - Appear on the HUD when discovered.
+  - Be accessible through a dedicated chest screen.
+  - Offer the player the option to watch a video to unlock them.
+  - Contain mostly money rewards for now.
+- This should be implemented as a rewarded ad mechanic.
+Overall Feedback
+- Overall, the game is looking and feeling very satisfying.
+- The core gameplay loop feels good, but progression, economy balancing, automation, and inventory management need further tuning.
+- The biggest priorities are:
+  1. Significantly increase bag capacity and upgrade progression.
+  2. Improve economy scaling and currency clarity.
+  3. Balance production against customer demand, especially in the cow barn.
+  4. Ensure players always have a way to unload inventory and cannot get soft-locked.
+  5. Expand automation and customisation options.
+  6. Add more treasures and rewarded-ad chest opportunities.

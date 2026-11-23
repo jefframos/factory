@@ -44,17 +44,27 @@ changing colour**.
 |---|-------|------|-----------------|-----------|-----|
 | 1 | Reel Mower | manual (pushed, no engine) | the start | 0.9 | 100 |
 | 2 | Push Mower (red) | motorized (pushed, engine) | 100 (the first full bag) | 1.5 | 300 |
-| 3 | Lawn Tractor (green, x0.85) | driven | 600 | 1.8 | 700 |
+| 3 | Lawn Tractor (green, x0.85) | driven | 250 | 1.8 | 700 |
 | 4 | Big Tractor (blue, x1) | driven, bigger | 2,500 | 2.4 | 1,400 |
 | 5 | Turbo Tractor (red, x1.15) | driven, bigger | 8,000 | 3.0 | 2,600 |
 | 6 | Mega Tractor (gold, x1.3) | driven, bigger | 22,500 | 3.7 | 4,500 |
 | 7 | Monster Tractor (purple, x1.45) | driven, bigger | 60,000 | 4.4 | 7,500 |
+| 8 | Giant Tractor (teal, x1.6) | driven, bigger | 150,000 | 5.2 | 12,000 |
+| 9 | Titan Tractor (black, x1.75) | driven, bigger | 325,000 | 6.0 | 18,000 |
+| 10 | Colossus Tractor (white, x1.9) | driven, bigger | 700,000 | 6.8 | 26,000 |
+| 11 | Behemoth Tractor (pink, x2.05) | driven, bigger | 1,500,000 | 7.6 | 38,000 |
 
 - The **Push Mower** comes with the **first full bag** (100 grass, the reel's bag): the first upgrade is quick. It's
   faster and cuts much wider.
-- The **Lawn Tractor** comes early in the second area. It starts small (x0.85, the seated player and the bag on its
+- The **Lawn Tractor** comes **right after the first zone**: 250 grass, less than one Push Mower bag (300). What's
+  left in the bag from the Front Yard plus a short stretch of the park buys it. Riding is the fun part, so it comes
+  quickly. It starts small (x0.85, the seated player and the bag on its
   back in proportion), and each tractor after it is bigger.
 - From then on every mower is the tractor again, **bigger** (its `rideScale`) and **repainted** (its `tint`).
+- **The camera pulls back with the mower** while mowing: further out the wider it cuts (+0.17 of the view per unit of
+  cut width past the reel's: the Lawn Tractor about 1.15x, the Monster about 1.6x, the Colossus about 2x; a mower's own
+  `cameraZoom` overrides it). Every upgrade shows more of the map being cleared. In a den (or a no-mower area) it
+  eases back to the standard view, where there's more to see up close.
 - Every mower has the **same base power (2)**. The mower never decides what grass can be cut: the blades do.
 - The reel and the push mower keep their blades **hidden**. The blades show from the tractor on, when the Blades
   station comes in.
@@ -75,8 +85,17 @@ cutting power**:
 | 4 | 4 blades | 6 | Thicket | 15,000 |
 | 5 | 5 blades | 7 | Dry Grass (orange) | 40,000 |
 | 6 | 6 blades | 8 | Fire Brush (red) | 100,000 |
+| 7 | 6 blades (2 x 3) | 9 | Bushes, Dense Bushes, Young Trees | 250,000 |
+| 8 | 8 blades (2 x 4) | 10 | Trees; Big Trees laboured | 350,000 |
+| 9 | 9 blades (3 x 3) | 11 | Big Trees at full speed | 700,000 |
+| 10 | 10 blades (2 x 5) | 12 | Giant Trees at full speed; Rocks laboured | 1,100,000 |
+| 11 | 12 blades (3 x 4) | 13 | Rocks at full speed; Boulders laboured | 2,000,000 |
+| 12 | 15 blades (3 x 5) | 14 | Boulders at full speed | 3,750,000 |
 
 - **Cutting power = the mower's power (2) + the blades level.**
+- **A full bag doesn't stop the mower:** it keeps cutting and chewing everything it can (grass, bushes, trees), so it
+  never gets boxed in on the way to sell and the area still gets done; what doesn't fit in the bag is lost. Only
+  growth two or more powers too tough is a wall, full bag or not.
 - Full speed takes power **above** the grass's toughness. Grass exactly as tough as the power is cut, but it labours.
   That's why every mower has power 2: the first area's grass (toughness 1) goes down at full speed from the start.
 - Grass **one power too tough** still goes down, but slowly: the mower chews through it (`chewSec`, 1.2 s a cell).
@@ -92,7 +111,7 @@ The grid is incremental, so the grass is too. Each area grows **one grass type**
 
 | Area | Grass | Toughness (power needed) | Clippings a cell | Blades it takes |
 |------|-------|--------------------------|------------------|-----------------|
-| 1. Front Yard | Grass (short: grassScale 0.6) | 1 | 1 | 1 small (the start) |
+| 1. Front Yard | Grass (short: grassScale 0.6) | 1 | 2 (valueScale 2) | 1 small (the start) |
 | 2. Starting Park | Grass (full height) | 1 | 1 | 1 small |
 | 3. The Wilds (the Chicken Den) | Tall Grass | 2 | 2 | 1 big |
 | 4. next area | Thick Weeds | 3 | 4 | 2 |
@@ -107,38 +126,120 @@ Brush field: patches only far better blades get through.
 evens out the ground it covers with its grass. The area's own fill is still capped by `maxGrass`.
 
 The first two areas are the same grass (the yard's just shorter): they're where the player gets the three kinds of
-mower, before the blades come in. From the Wilds on, every area is one grass type tougher.
+mower, before the blades come in. The yard's grass gives **twice the clippings** (its section's `valueScale` 2):
+about 450 for clearing it, which pays for the Push Mower (100) and the Lawn Tractor (250), so the player leaves the
+first zone riding. From the Wilds on, every area is one grass type tougher.
 
 A new area therefore asks for **the next blades** (and pays for them with its richer grass), while the mower is what
 makes clearing it quick. The rhythm per area: arrive, hit the wall of tougher grass, feed the Blades station, see the
 new blades on the mower, mow it all.
 
+### After grass: bushes, then trees (built)
+
+Grass is only the start of what the mower clears. The ladder keeps going, so the game stays incremental all the way:
+
+1. **Grass** of every kind, each area's taller and a different colour (the table above).
+2. **Bushes:** dense clumps that have to be **dug out**. Much tougher than any grass, they take the higher blades and
+   chew slowly at first. A cleared bush leaves a hole of earth and gives far more clippings.
+3. **Trees:** the top of the ladder. **Chopped down** by the biggest mowers with the most blades: the tree shakes, falls
+   and leaves a stump. Each one pays a lot.
+
+Bushes and trees are **part of the mower progression**, not a separate tool: the same blades and power decide what can
+be cleared, and a new area full of bushes (then trees) asks for the next blades just like tougher grass does. Every
+step looks different (colour, height, shape), so the player sees the progress on screen.
+
+| Growth | Toughness | Clippings | Where | Clears at full speed with |
+|---|---|---|---|---|
+| Bush | 6 | 60 | Section 5 | blades 5 (power 7) |
+| Dense Bush (darker) | 7 | 110 | Sections 5, 6 | blades 6 |
+| Young Tree | 8 | 200 | Sections 6, 7 | blades 7 |
+| Tree | 9 | 380 | Section 7 | blades 8 |
+| Big Tree (paler, tall) | 10 | 700 | Sections 7, 8 | blades 9 (blades 8 labours) |
+| Giant Tree (pale, very tall) | 11 | 1,200 | Sections 8, 9 | blades 10 |
+| Rock (breaks into rubble) | 12 | 1,600 | Sections 8, 9 | blades 11 |
+| Boulder (big, grey) | 13 | 2,600 | Section 9 | blades 12 |
+
+How they work (`game/world/Growth.ts`):
+- **Solid** until cleared: the player walks round them, the mower stops at them.
+- **Chewed by power**, like grass: more power than it takes clears it quickly, as much labours, one short chews slowly
+  (it shakes, chips fly, the mower's held back), two or more short is a wall and says the blades it takes.
+- **Cleared:** a bush squashes into the ground leaving a patch of earth; a tree falls over away from the mower and
+  sinks, leaving a stump. Its clippings go into the bag (a full bag still clears them, nothing bagged).
+- **Placed per area:** the area's `growth` (a type and how many per square unit), scattered at seeded spots (the same
+  every game), off props, pavements, dens and stations, spaced apart. Restoring an area clears what's left of it.
+- **In the data:** the types are `growth` in ui/mow.json (models from the KayKit forest pack, a tint each); each area's
+  `growth` list is in the level.
+
+Grass per area from section 5 on: section 5 brambles (thicket spots), section 6 thicket (dry grass spots), section 7
+dry grass (fire brush spots), sections 8 and 9 fire brush.
+
+Rocks are cleared like the rest: chewed by power; when one goes it jolts, crumbles down and leaves a few bits of
+rubble.
+
+### After the last mower: stations pay money, and the power-up cards (planned)
+
+Once the last mower (and the last blades, the biggest bag) is bought, there's nothing left to upgrade with grass:
+
+- **The upgrade stations just give money.** Grass poured into them is paid out as cash, so mowing always pays.
+- **A power-up zone** opens: a square to stand on that offers **3 cards**, exactly like the UFO game does. Pick one:
+  each card **improves a few attributes** at once (for example: cut width, speed, bag size, money per clipping, chewing
+  speed on tough growth). New cards come after a while or for a price, so there's always another boost to chase.
+
+### POWER-UPS: spending the money (built)
+
+The money the dens, the barn and the ATMs earn has its own place to go: a **POWER-UPS** button on the HUD (under the
+money and bag pills, with a "!" while one's affordable; it shows from the first mower). It opens a list like an
+incremental game's, each row a track with its level, its effect now → next and a BUY button (MAX at the top):
+
+| Power-up | Each level | Levels | First price (x per level) |
+|---|---|---|---|
+| Speed | +4% walking / driving speed | 25 | $80 (x1.4) |
+| Money Gain | +10% money: grass sold and every den / barn payout | 30 | $100 (x1.45) |
+| Grass Gain | +10% clippings from every cut (grass and growth) | 30 | $100 (x1.45) |
+| Cutting Width | +0.1 cut width | 25 | $120 (x1.45) |
+| Sharp Edge | +15% chewing speed on tough grass and growth | 20 | $150 (x1.45) |
+| Farm Speed | +8% to the dens: laying, milking, packing, making | 25 | $200 (x1.5) |
+
+The blades stay a grass station (they're the mowing progression); power-ups are all money. The camera zooms out with
+the mower, not with Cutting Width. Tuned in ui/mow.json `upgrades` (tab `boosts`).
+
 ### Where they're bought: three stations
 
-Upgrades are bought at **stations**: squares on the floor fed with the bag's grass (no money, no menus). Each area
-that has them has three, side by side:
+Upgrades are bought at **stations**: squares on the floor fed with the bag's grass (no money, no menus). A visit's pour
+takes time by its size: about 100 grass or less goes in at once (a quarter of a second), more takes longer, never over
+1.6 s, so early upgrades happen the moment the player steps on. Each area that has them has three, side by side:
 
 - **Mower:** the next mower on its stand (a driven one: the tractor itself, in its colour).
 - **Blades:** the next blades on the stand, spinning.
 - **Bag:** a bigger bag, in the next bag's colour. Each bag level has its own colour (tan, green, blue, red, purple,
   orange...), and the player wears it: what the station shows is what they'll carry.
 
-### Opening the next areas: bought with level and cash
+### Opening the next areas: restored OR a level (never stuck)
 
 Finishing the Front Yard (the tutorial) opens the **Park and the Wilds together** (both `part: "after-yard"` in the
 level): the player picks where to mow. Stations and the wardrobe tied to the Wilds come out then too.
 
-The areas after the Wilds open when they're **bought**, not on their own:
-1. Once the part before is restored, the area's **unlock square** appears (`sections[].unlock`: price, level, x, z;
-   placed in the editor).
-2. Its money **pours in a bit at a time**: from the money the player carries first, then the den's cash piles. It's
-   kept between visits, so the player can drop money there whenever they pass.
-3. With the level reached and the price paid, the area opens.
+Every area after that opens on **whichever comes first**:
+- the area before it is **restored**, or
+- the player reaches its **level** (`sections[].openLevel`, set in the level).
 
-There's no "city complete" any more: the map just carries on, area after area.
+So a player who can't finish an area (grass too tough, a bush wall) still gets the next one by levelling up. Nothing
+to pay. When it opens, the camera glides over to show it, and it's said.
 
-**Section 4:** $5,000 and level 10, from the Wilds' east edge. The island, with its deck and fence, now reaches round
-it.
+Until then a **white fence runs all round it**, with a sign on its side facing the way in saying both ways:
+"RESTORE THE WILDS / OR REACH LEVEL 10".
+
+| Area | Opens when | Grows |
+|---|---|---|
+| Section 4 (east of the Wilds) | the Wilds restored, or level 10 | thick weeds (brambles spots) |
+| Section 5 (north of section 4) | section 4 restored, or level 13 | brambles; bushes, dense bushes |
+| Section 6 (west, the Wilds' mirror) | section 5 restored, or level 15 | thicket; dense bushes, young trees; **the Cow Barn** |
+| Section 7 (north-east) | section 6 restored, or level 17 | dry grass; young trees, trees, big trees |
+| Section 8 (end zone, bigger) | section 7 restored, or level 19 | fire brush; trees, big trees, giant trees, rocks |
+| Section 9 (the last end zone) | section 8 restored, or level 21 | fire brush; giant trees, rocks, boulders |
+
+The island (its deck and fence) wraps every area. There's no "city complete" any more: the map just carries on, area
+after area.
 
 **Never stuck:**
 - Everything bought with money pours in a bit at a time, from carried money first and then the den's piles, and stays
@@ -152,15 +253,16 @@ Nothing is offered until the player has something to spend:
 
 1. **The start:** no stations around, easy short grass in the yard, the reel mower.
 2. **The bag fills:** the **Mower station** pops up.
-3. **The Push Mower is bought:** the **Bag station** appears.
-4. **The Lawn Tractor is bought:** the **Blades station** appears (the Wilds' tall grass needs the big blade).
+3. **The Lawn Tractor is bought** (the second mower): the **Bag station** and the **Blades station** appear (the
+   Wilds' tall grass needs the big blade). Until then the only station is the Mower's, so the first two upgrades are
+   the focus.
 5. **The Wilds open:** the **wardrobe** comes out. The **ATM** (grass to money) waits until the **Chicken Den** is
    found too (`afterDen: "chicken"`). No selling or dressing up before: the start is only mowing and upgrading.
    - **No wardrobe tutorial:** no forced first hat and no arrows to it. It's just there to visit.
 
 Once the Front Yard is done and the player has left it, where they stand is saved every 2 s, but only on clear
-ground: nothing solid there and no grass too tough to cut. The next session starts there. A full bag shows a red "!"
-over the backpack in the world.
+ground: nothing solid there and no grass too tough to cut. The next session starts there. A full bag shows a red "! FULL"
+badge on the backpack in the world.
 
 In the level: a pad's `appearsWhenFull` (the first station) and `afterTool` (the mower it waits for); the ATM and the
 wardrobe's `section` (`wilds`); an ATM's `afterDen` (a den id it waits for). No-mower areas (🚶) are bare ground too,
@@ -196,7 +298,16 @@ like a bare patch: no grass grows in them. Station squares (pads, ATMs, wardrobe
 Every shop follows the same pattern; the chicken den is the first and the template.
 
 ### 1. Found
-Mowed up to (its gate), it opens with its first producer (the first hen).
+A shop **opens at a player level** (the den's `level`, 6 for the Chicken Den: players reached 5 too early). Players who reach it early got swamped
+by it, so until that level:
+- its **gate is boarded up**, with a big padlock on the boards;
+- its sign says **REACH LEVEL 6**;
+- it can't be entered.
+
+At the level the **camera glides over to show it** (the player waits a moment): the padlock flies off spinning, the
+boards sink into the ground, the sign pops up without its level, confetti, a fanfare, and "CHICKEN DEN UNLOCKED! MOW
+YOUR WAY TO IT". Then the camera glides back and the player has control again. Mowed up to its gate, it opens with its
+first producer (the first hen). The level is set in the editor (den: "Opens at level").
 
 ### 2. Manual: the player does every step
 The loop for eggs:
@@ -231,9 +342,43 @@ Once a shop is fully automated, it **always generates money**: it keeps working 
 
 - Each shop's income is **incremental**: the next shop gives **much more money** than the one before.
 - **Shop 1: Chicken Den.** Eggs, gold eggs.
-- **Shop 2: Cows.** Milk, cheese, butter. Same pattern: manual first, then belts, machines and helpers automate it.
-  Opening it needs **enough level and enough money**.
-- **Shop 3+:** in the next areas of the grid, similar pattern, more money again.
+- **Shop 2: Cows.** Milk, then butter or cheese. Same pattern: manual first, then belts (and later helpers) automate
+  it. Opening it needs **enough level**.
+- **Shop 3: Crops (planned).** Wheat that grows by itself, sold as wheat or turned into bread. The same pattern again:
+  the belt splits the wheat between selling it raw and the bakery; customers and trucks order wheat, bread or both.
+- **Shop 4+:** in the next areas of the grid, similar pattern, more money again.
+
+### The Cow Barn (built)
+
+In section 6 (the Wilds' mirror), opening at **level 16**, boarded up until then like the chicken den
+(`farm.cowDen` in the level; `game/world/CowDen.ts`):
+
+1. **Cows** (the library cow) stand in stalls along a red barn at the back. Each puts a **milk bottle** on its spot
+   every 3 s (8 at most there). The first cow is free; 5 more cost money and a level ($2,000 at 16 up to $15,000 at 20).
+2. **Pick the milk up** and choose where it goes:
+   - the **butter churn** (west): 2 milk make a block of **butter** ($60);
+   - the **cheese press** (east): 3 milk make a **cheese** wheel ($90).
+   Each has its own MILK square and its own grid of what it's made.
+3. **Customers** come out of the people tunnel and queue at the counter on the barn's **east** side. Each orders
+   **butter, cheese or a mix** (their bubble shows each and how many).
+4. **Trucks** come along their own path on the **west** side and park by the dock ($15,000, level 18), ordering a big
+   mix the same way.
+5. Each side pays onto **its own cash pile**.
+6. **The conveyor belt** ($25,000, level 20, once every cow's owned): the milk rides it along the stalls, round behind
+   the machines, and is **split between the churn and the press**, taking turns (a full one skipped).
+
+The first visit is short, as in the chicken den: the first spot is full of milk, the machines make at once and hand
+the goods straight to a player standing at them, and the first customers each want one thing.
+
+In the editor: the barn's yard (move, resize, name, gate, level), its truck dock and its trucks' path points (move;
+"They park here"). Its truck road and the customers' walk from the tunnel are placeholder pavements (`road-cows`,
+`path-cows`) to be laid properly.
+
+### SELL x2 (from the dig game)
+
+While the bag is full (from the Lawn Tractor on), a **SELL x2** button shows bottom right: a pile of cash on a turning
+shine, a video badge. Tapping it sells the whole bag right there at **double** the money. The first two are free (a
+FREE tag, the hand on the first); after that each is a rewarded video (a closed or failed video sells nothing).
 
 ---
 
@@ -241,6 +386,8 @@ Once a shop is fully automated, it **always generates money**: it keeps working 
 
 - XP from mowing, upgrades, finding and opening shops, producing and selling.
 - Levels gate what can be bought: producers, automation, shops, and the next area.
+- **The floor arrows guide only up to level 4** (`farm.levels.guideUntil`). Past it they're gone: by then the player
+  knows the loop (mow, fill up, feed the stations), and the arrows would only nag.
 - Shown top-left (level badge and XP bar).
 
 ---
@@ -327,14 +474,20 @@ to the boats (coming: boats to fill for big cash).
 
 The order bubble follows the person's head bone, so it stays over the head while they walk and idle.
 
-### The den's first visit: a pointing hand
+### The den's first visit: short, one trip each way
 
-The first time in the den, a hand points at the next step. It follows what is going on, so it never gets stuck:
-1. The first hen's eggs on the floor.
-2. Eggs carried: the machine's EGGS square. While the machine packs, the hand waits on the grid.
-3. A pack ready on the grid: the grid.
-4. Packs carried: SELL.
-5. The customer paid: the cash square.
+Playtests showed the first visit had too much walking back and forth for eggs, and people got bored. Now it's one
+pick-up, one drop, one sale:
+1. **Lots of eggs are already waiting** on the first hen's spot (`farm.eggs.startEggs`, a full spot by default: 8).
+   One walk over them picks them all up.
+2. **Drop them on the packer** (its EGGS square). During the lesson it packs **at once** (a pack every 0.15 s) and
+   hands the packs **straight into the player's backpack** while they stand by it. No trip to the packs grid.
+3. **The first customers each want 1 pack**, as many as the waiting eggs make (8 eggs = 2 packs = 2 customers).
+   After them, customers ask for 1–3 as usual.
+4. **Take the cash.**
+
+A hand points at the next step all the way, following what's going on so it never gets stuck: the eggs, the EGGS
+square, SELL, then the cash square.
 
 Taking that first cash ends the lesson (`den.tutorial`), and only then does the truck dock's buy square pop in. Older
 saves that are further along (trucks, belt or a second hen) skip it.
@@ -460,4 +613,15 @@ the level bar's track.
 
 **Music:** Benjamin Andrews' "Redding Rainbow", low (`music.volume` 0.12 in ui/mow.json).
 
-Not built yet: passive income, the Cow shop, the boats, the grid of areas.
+Also built: the den opening at a level (boarded gate below it), and the short first visit (eggs waiting, instant
+packing into the backpack, first customers wanting one pack).
+
+Also built: areas opening when the one before is restored or at a level (fenced with a sign until then), the island
+round every area, bushes and trees (sections 5–7), blades 8 and 9, three more tractors, the Cow Barn (butter and
+cheese, its belt splitting the milk, customers and trucks ordering a mix), SELL x2.
+
+Also built: the two end zones (sections 8 and 9: giant trees, rocks, boulders), blades 10 to 12, the Behemoth, the
+POWER-UPS panel.
+
+Not built yet: passive income, the cows' helpers, the crops shop (wheat, bread), the boats, the grid of areas beyond
+section 9, stations paying money after the last mower, the power-up card zone.

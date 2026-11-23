@@ -1,8 +1,13 @@
 // ChickenDen.ts
 //
 // The farm test's chicken den (TOWN.farm.dens, tuned by TOWN.farm.eggs): a fenced yard of bare earth deep in the grass
-// with a gate on its south side. It's there from the start but out of reach (tough grass all round it); mowed up to its
-// gate, it opens (open()) and the first hen is in. Inside, the player walks without the mower. The loop:
+// with a gate on its south side. It's there from the start but out of reach (tough grass all round it), and below its
+// level (DenDef.level) its gate is boarded up with a padlock, its sign saying the level it opens at: players reaching it
+// early aren't swamped by it. At that level the boards drop (and it's said); mowed up to its gate, it opens (open())
+// and the first hen is in. Inside, the player walks without the mower.
+// The first visit is short (the lesson): the first hen's spot is already full of eggs (EggLoopDef.startEggs), the
+// packer packs at once and hands the packs straight to the player standing at it, and the first customers each want
+// one pack — pick up once, drop once, serve. The loop:
 //   - Hens (the library's chick) sit on nests in front of a hen house along the back. Each lays an egg every
 //     layEverySec onto the floor in front of its nest, up to floorMax there.
 //   - Walking up to a nest's eggs picks them up into the backpack (up to carryMax den goods).
@@ -29,12 +34,12 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { BendService } from '../services/BendService';
-import { DenDef, DenPoint, EggLoopDef, TOWN, TruckDockDef, TruckPathPoint } from '../data/MowConfig';
+import { DenDef, DenPoint, EggLoopDef, TOWN, TruckDockDef, TruckPathPoint, shortMoney } from '../data/MowConfig';
 import { MowProgress } from '../data/MowProgress';
 import { CanvasArt } from '../ui/CanvasArt';
 import { GameAnalytics } from '../analytics/GameAnalytics';
 import { Animal, farmItem, ITEM_HEIGHT } from '../farm/FarmModels';
-import { Customers } from '../farm/Customers';
+import { Customers, stockDemand } from '../farm/Customers';
 import { Trucks } from '../farm/Trucks';
 import { spawnPoint, truckRoutes } from '../farm/Roads';
 import type { MowEffects } from '../vfx/MowEffects';
@@ -79,6 +84,9 @@ const EGG_SCALE = 1.6;
  * The packing machine's grid of packs: 2 across (traySlots / 2 rows: 4 slots, a 2 x 2), each slot this big, the packs
  * on it drawn this much bigger than carried ones; they pile up on their slots (EggLoopDef.trayLayers high).
  */
+/** The lesson (the first visit): a pack every this many seconds, handed to a player within this of the EGGS square. */
+const LESSON_PACK_SEC = 0.15;
+const LESSON_REACH = 2.5;
 const GRID_COLS = 2;
 const GRID_CELL = 0.95;
 const GRID_TRAY_SCALE = 1.45;
@@ -142,7 +150,7 @@ function layout(def: DenDef, hens: number, slots: number): Layout {
 }
 
 /** A floor square: an outline (dashed or not) with a word or an icon, on a dark wash. */
-function squareTexture(width: number, height: number, color: string, opts: { text?: string; icon?: string; egg?: boolean; dashed?: boolean; sub?: string; subColor?: string }): THREE.CanvasTexture {
+export function squareTexture(width: number, height: number, color: string, opts: { text?: string; icon?: string; egg?: boolean; dashed?: boolean; sub?: string; subColor?: string }): THREE.CanvasTexture {
     const scale = 128;
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(width * scale);
@@ -175,13 +183,21 @@ function squareTexture(width: number, height: number, color: string, opts: { tex
     return CanvasArt.texture(canvas);
 }
 
-function signTexture(name: string, locked: boolean): THREE.CanvasTexture {
+/** The sign's size in the world (its width; its height follows the picture). */
+const SIGN_WIDTH = 4.2;
+
+export function signTexture(name: string, locked: boolean, level?: number): THREE.CanvasTexture {
     const canvas = document.createElement('canvas');
     canvas.width = 448;
-    canvas.height = 96;
+    canvas.height = level ? 150 : 96;
     const g = canvas.getContext('2d')!;
-    CanvasArt.plaque(g, 6, 6, 436, 84, 20);
-    if (locked) {
+    CanvasArt.plaque(g, 6, 6, 436, canvas.height - 12, 20);
+    if (level) {
+        // Not open yet: the padlock, its name, and the level it opens at.
+        CanvasArt.drawIcon(g, 'Icon_Lock03', 54, 75, 64);
+        CanvasArt.text(g, name, 256, 50, 38, '#ffe27a', 320);
+        CanvasArt.text(g, `REACH LEVEL ${level}`, 256, 104, 40, '#ff8a7a', 320);
+    } else if (locked) {
         CanvasArt.drawIcon(g, 'Icon_Lock03', 50, 48, 52);
         CanvasArt.text(g, name, 250, 50, 40, '#ffe27a', 330);
     } else {
@@ -225,7 +241,24 @@ export interface DenHooks {
     carryPoint: () => THREE.Vector3;
     say: (text: string, color: number) => void;
     xp: (kind: 'egg' | 'tray' | 'traySold' | 'hen') => void;
+    /**
+     * The den's level reached: show it (the camera glides over to `at`, holds, glides back). Returns the seconds until
+     * the camera's there (the opening plays then).
+     */
+    showUnlock?: (at: THREE.Vector3) => number;
 }
+
+/**
+ * Unloading: standing on SELL with goods nobody in the queue wants (or nobody there) for this long, they go back onto
+ * their grid one by one (stock the helpers sell later): the player always has somewhere to put things down.
+ */
+const UNLOAD_WAIT = 0.6;
+const UNLOAD_SEC = 0.08;
+/** The conveyor is offered once this many hens are in (automation comes early: the den should run alone soon). */
+const BELT_AFTER_HENS = 4;
+
+/** Confetti over a den opening at its level. */
+const UNLOCK_CONFETTI = [0xff5a6e, 0xffd23f, 0x4fc3ff, 0x9cff6a, 0xc36bff, 0xffffff].map((c) => new THREE.Color(c));
 
 export class ChickenDen {
     private readonly group = new THREE.Group();
@@ -257,9 +290,14 @@ export class ChickenDen {
     private dropTimer = 0;
     private trayTimer = 0;
     private sellTimer = 0;
+    private unloadWait = 0;
     private packTimer = 0;
     private shownTrays = -1;
     private shownCash = -1;
+    /** The boards and padlock across the gate while it's below its level (gone at the level: dropGate()). */
+    private gateBoards?: THREE.Group;
+    /** Where the player is (den-local), for the lesson's packer handing packs straight over. */
+    private playerAt = { x: 1e6, z: 1e6 };
     /**
      * Buying (a hen, the conveyor, the dock: pourInto()): money still to pour this frame (a fraction carried over), the
      * square told about once per visit (level / money short), and whether the player stood on one this frame.
@@ -287,16 +325,14 @@ export class ChickenDen {
         this.group.add(this.trayStack);
         this.cashPile.position.set(this.layoutOf.cash.x, 0.06, this.layoutOf.cash.z);
         this.group.add(this.cashPile);
-        this.sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: signTexture(def.name.toUpperCase(), !found), depthWrite: false }));
-        this.sign.scale.set(4.2, 0.9, 1);
+        this.sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: signTexture(def.name.toUpperCase(), !found, this.levelLocked ? def.level : undefined), depthWrite: false }));
+        this.fitSign();
         this.sign.position.set(0, 2.5, this.layoutOf.hd);
         // Over the floor squares (they're transparent too, drawn in order): last.
         this.sign.renderOrder = 20;
         this.group.add(this.sign);
-        this.redraws.push(() => {
-            this.sign.material.map = signTexture(def.name.toUpperCase(), !this.opened);
-            this.sign.material.needsUpdate = true;
-        });
+        this.redraws.push(() => this.redrawSign());
+        if (this.levelLocked) this.buildGateBoards();
         window.setTimeout(() => this.redraws.forEach((redraw) => redraw()), 1500);
         threeScene.add(this.group);
         if (dock) {
@@ -323,6 +359,105 @@ export class ChickenDen {
 
     private readonly threeScene: THREE.Scene;
     private gridDecal?: THREE.Mesh;
+
+    // ---------------------------------------------------------------- the level it opens at
+
+    /** Not open yet and below its level (DenDef.level): boarded up, can't be reached. */
+    public get levelLocked(): boolean {
+        return !this.opened && MowProgress.level < (this.def.level ?? 0);
+    }
+
+    /** What stands in its gate while it's below its level (world): the scene keeps the player out with it. */
+    public gateBox(): Box {
+        return { x: this.def.x, z: this.def.z + this.layoutOf.hd, halfX: this.def.gate / 2 + 0.1, halfZ: 0.3 };
+    }
+
+    private redrawSign(): void {
+        this.sign.material.map = signTexture(this.def.name.toUpperCase(), !this.opened, this.levelLocked ? this.def.level : undefined);
+        this.sign.material.needsUpdate = true;
+        this.fitSign();
+    }
+
+    /** The sign sized to its picture (taller while it says the level). */
+    private fitSign(): void {
+        const image = this.sign.material.map?.image as { width: number; height: number } | undefined;
+        const ratio = image ? image.height / image.width : 96 / 448;
+        this.sign.scale.set(SIGN_WIDTH, SIGN_WIDTH * ratio, 1);
+    }
+
+    /** Boards nailed across the gate, crossed by two more, and a big padlock hung on them. */
+    private buildGateBoards(): void {
+        const boards = new THREE.Group();
+        const wood = this.material(0x8a5a32);
+        const width = this.def.gate + 0.2;
+        for (const y of [0.35, 0.8, 1.25]) this.box(width, 0.22, 0.1, wood, 0, y, 0, boards);
+        for (const turn of [0.5, -0.5]) this.box(width * 1.05, 0.16, 0.08, wood, 0, 0.8, 0.07, boards).rotation.z = turn;
+        const lock = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.lockTexture(), depthWrite: false }));
+        lock.scale.set(1, 1, 1);
+        lock.position.set(0, 0.85, 0.3);
+        lock.renderOrder = 20;
+        boards.add(lock);
+        this.redraws.push(() => {
+            lock.material.map = this.lockTexture();
+            lock.material.needsUpdate = true;
+        });
+        boards.position.set(0, 0, this.layoutOf.hd);
+        this.group.add(boards);
+        this.gateBoards = boards;
+    }
+
+    private lockTexture(): THREE.CanvasTexture {
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 128;
+        CanvasArt.drawIcon(canvas.getContext('2d')!, 'Icon_Lock03', 64, 64, 112);
+        return CanvasArt.texture(canvas);
+    }
+
+    /** The level's reached: the boards drop into the ground, the sign drops the level, and it's said. */
+    private dropGate(): void {
+        const boards = this.gateBoards;
+        if (!boards) return;
+        this.gateBoards = undefined;
+        // The camera goes to show it (the scene takes control a moment); the opening plays once it's there.
+        const gate = this.gate(new THREE.Vector3());
+        const delay = this.hooks.showUnlock?.(gate) ?? 0;
+        gsap.delayedCall(delay, () => this.playUnlock(boards, gate));
+    }
+
+    /**
+     * The opening, for the camera: the padlock flies off spinning, the boards sink into the ground, the sign pops up
+     * without its level, confetti and a puff at the gate, a fanfare, and it's said.
+     */
+    private playUnlock(boards: THREE.Group, gate: THREE.Vector3): void {
+        // (The scene gone meanwhile: nothing to show.)
+        if (!boards.parent || !this.group.parent) return;
+        const lock = boards.children.find((child) => child instanceof THREE.Sprite) as THREE.Sprite | undefined;
+        if (lock) {
+            lock.removeFromParent();
+            this.group.add(lock);
+            lock.position.set(0, 0.85, this.layoutOf.hd + 0.3);
+            gsap.to(lock.position, { y: 3.2, duration: 0.6, ease: 'power2.out' });
+            gsap.to(lock.material, { rotation: Math.PI * 2, duration: 0.6 });
+            gsap.to(lock.material, { opacity: 0, duration: 0.35, delay: 0.45, onComplete: () => void lock.removeFromParent() });
+        }
+        gsap.to(boards.position, { y: -1.6, duration: 0.9, delay: 0.25, ease: 'power2.in', onComplete: () => void boards.removeFromParent() });
+        this.redrawSign();
+        const to = this.sign.scale.clone();
+        this.sign.scale.multiplyScalar(0.1);
+        gsap.to(this.sign.scale, { x: to.x, y: to.y, duration: 0.7, delay: 0.3, ease: 'back.out(2)' });
+        const effects = this.hooks.effects;
+        effects.smoke(gate.clone().setY(0.6), 10, 1.2, new THREE.Color(0xfff2a0), 1.2);
+        for (let wave = 0; wave < 3; wave++) {
+            gsap.delayedCall(0.3 + wave * 0.2, () => {
+                UNLOCK_CONFETTI.forEach((color) => effects.burst(new THREE.Vector3(gate.x + (Math.random() - 0.5) * 3, 0.5, gate.z + (Math.random() - 0.5) * 2), color, 5, 6));
+            });
+        }
+        this.hooks.say(`${this.def.name.toUpperCase()} UNLOCKED! MOW YOUR WAY TO IT`, 0x9cff6a);
+        MowAudio.play('buyFanfare');
+        MowAudio.play('sparkle');
+        MowAudio.play('cheer');
+    }
 
     // ---------------------------------------------------------------- the helper, the gold machine and its belt
 
@@ -437,7 +572,7 @@ export class ChickenDen {
             if (drawn === square.drawn) continue;
             square.drawn = drawn;
             const material = square.mesh.material as THREE.MeshBasicMaterial;
-            material.map = squareTexture(square.w, square.d, '#ffffff', { text: `$${left}`, sub: short ? `LEVEL ${offer.level}` : offer.label, subColor: short ? '#ff8a7a' : '#9cff6a' });
+            material.map = squareTexture(square.w, square.d, '#ffffff', { text: shortMoney(left), sub: short ? `LEVEL ${offer.level}` : offer.label, subColor: short ? '#ff8a7a' : '#9cff6a' });
             material.needsUpdate = true;
         }
         const gold = !!den.gold;
@@ -510,10 +645,10 @@ export class ChickenDen {
         const at = new THREE.Vector3(dock.x - this.def.x, 0, dock.z - this.def.z);
         this.truckHelper = new DenHelper(this.group, at.clone().add(new THREE.Vector3(0, 0, -1)), helper.carry, helper.walkSpeed, {
             pickSpot: () => this.helperPickSpot(),
-            take: (kind) => this.helperTake(kind),
+            take: (kind) => this.helperTake(kind as 'goldTray' | 'tray'),
             sellSpot: () => at.clone(),
             cashSpot: () => new THREE.Vector3(this.truckCash.x, 0, this.truckCash.z),
-            serve: (kind, from) => this.handOverTruck(kind, from.clone().add(this.group.position)),
+            serve: (kind, from) => this.handOverTruck(kind as 'goldTray' | 'tray', from.clone().add(this.group.position)),
             cashWaiting: () => MowProgress.den.truckCash ?? 0,
             collect: () => {
                 const den = MowProgress.den;
@@ -554,10 +689,10 @@ export class ChickenDen {
         const { sell } = this.layoutOf;
         this.helper = new DenHelper(this.group, new THREE.Vector3(sell.x + 1, 0, sell.z), helper.carry, helper.walkSpeed, {
             pickSpot: () => this.helperPickSpot(),
-            take: (kind) => this.helperTake(kind),
+            take: (kind) => this.helperTake(kind as 'goldTray' | 'tray'),
             sellSpot: () => new THREE.Vector3(this.layoutOf.sell.x, 0, this.layoutOf.sell.z),
             cashSpot: () => new THREE.Vector3(this.layoutOf.cash.x, 0, this.layoutOf.cash.z),
-            serve: (kind, from) => this.handOver(kind, from.clone().add(this.group.position)),
+            serve: (kind, from) => this.handOver(kind as 'goldTray' | 'tray', from.clone().add(this.group.position)),
             cashWaiting: () => MowProgress.den.cash,
             collect: () => {
                 const den = MowProgress.den;
@@ -633,7 +768,7 @@ export class ChickenDen {
         if ((den.goldMachine ?? 0) > 0 && (den.goldTrays ?? 0) < room) {
             this.goldTimer += delta;
             this.goldBody.position.x = this.layoutOf.goldMachine.x + Math.sin(this.goldTimer * 40) * 0.015;
-            if (this.goldTimer >= gold.packSec) {
+            if (this.goldTimer >= gold.packSec / MowProgress.farmSpeed) {
                 this.goldTimer = 0;
                 den.goldMachine = (den.goldMachine ?? 0) - 1;
                 den.goldTrays = (den.goldTrays ?? 0) + 1;
@@ -683,8 +818,9 @@ export class ChickenDen {
         return out.set(this.def.x, 0, this.def.z + this.def.depth / 2);
     }
 
-    /** The player is at the gate (mowed their way up to it), or already in. */
+    /** The player is at the gate (mowed their way up to it), or already in; never while it's below its level. */
     public reached(x: number, z: number): boolean {
+        if (this.levelLocked) return false;
         const { hw, hd } = this.layoutOf;
         const atGate = Math.abs(x - this.def.x) <= this.def.gate / 2 + 0.4 && Math.abs(z - (this.def.z + hd)) <= 0.9;
         return atGate || (Math.abs(x - this.def.x) < hw && Math.abs(z - this.def.z) < hd);
@@ -937,6 +1073,13 @@ export class ChickenDen {
         const paths = this.customerPaths;
         this.customers = new Customers(threeScene, slots, entry, () => spawnPoint('people') ?? entry.clone(), new THREE.Vector3(1, 0, 0),
             { wants: this.config.wants, queue: this.config.queue, everySec: this.config.customerEverySec }, paths);
+        // The lesson: the first customers want one pack each, as many as the waiting eggs make.
+        if (!this.tutorialDone) this.customers.firstOnes = Math.max(1, Math.floor(this.startEggs / this.config.eggsPerTray));
+    }
+
+    /** The eggs waiting on the first hen's spot on the first visit (EggLoopDef.startEggs, else a full spot). */
+    private get startEggs(): number {
+        return this.config.startEggs ?? this.config.floorMax;
     }
 
     /** The customers' paths in and out (TownLevel farm.peopleIn / peopleOut, 2+ points each), or undefined. */
@@ -999,7 +1142,7 @@ export class ChickenDen {
                     nest.buyDrawn = key;
                     const material = nest.buy.material as THREE.MeshBasicMaterial;
                     material.map = squareTexture(1.4, 1.4, '#ffffff', {
-                        text: `$${left}`, sub: short ? `LEVEL ${hen.level}` : 'NEW HEN', subColor: short ? '#ff8a7a' : '#9cff6a',
+                        text: shortMoney(left), sub: short ? `LEVEL ${hen.level}` : 'NEW HEN', subColor: short ? '#ff8a7a' : '#9cff6a',
                     });
                     material.needsUpdate = true;
                 }
@@ -1025,7 +1168,7 @@ export class ChickenDen {
         const material = square.material as THREE.MeshBasicMaterial;
         material.map = open
             ? squareTexture(1.6, 1.6, '#4fe3ff', { text: 'TRUCK' })
-            : squareTexture(1.6, 1.6, '#ffffff', { text: `$${Math.ceil(dock.price - MowProgress.paid('dock'))}`, sub: short ? `LEVEL ${dock.level}` : 'TRUCKS', subColor: short ? '#ff8a7a' : '#9cff6a' });
+            : squareTexture(1.6, 1.6, '#ffffff', { text: shortMoney(Math.ceil(dock.price - MowProgress.paid('dock'))), sub: short ? `LEVEL ${dock.level}` : 'TRUCKS', subColor: short ? '#ff8a7a' : '#9cff6a' });
         material.needsUpdate = true;
     }
 
@@ -1111,11 +1254,13 @@ export class ChickenDen {
         this.opened = true;
         const den = MowProgress.den;
         if (den.hens < 1) den.hens = 1;
+        // The lesson: the first hen's spot already full of eggs (one pick-up is all the first customers need).
+        if (!this.tutorialDone) den.floor[0] = Math.max(den.floor[0] ?? 0, this.startEggs);
         MowProgress.denChanged();
-        this.sign.material.map = signTexture(this.def.name.toUpperCase(), false);
-        this.sign.material.needsUpdate = true;
+        this.redrawSign();
+        const to = this.sign.scale.clone();
         this.sign.scale.set(0.1, 0.02, 1);
-        gsap.to(this.sign.scale, { x: 4.2, y: 0.9, duration: 0.7, ease: 'back.out(2)' });
+        gsap.to(this.sign.scale, { x: to.x, y: to.y, duration: 0.7, ease: 'back.out(2)' });
         this.refreshNests();
         this.popIn(this.nests[0].hen.object);
         this.startCustomers(this.threeScene);
@@ -1141,8 +1286,15 @@ export class ChickenDen {
     }
 
     /** Each frame: hens lay, the machine packs, customers come, and whatever square the player's on does its thing. */
+    /** The market's hunger from the stock waiting (bigger orders, more often, with a big pile: stockDemand()). */
+    private readonly marketDemand = (): number => stockDemand(MowProgress.den.trays + (MowProgress.den.goldTrays ?? 0));
+
     public update(delta: number, player: THREE.Vector3): void {
+        if (this.customers) this.customers.demand = this.marketDemand;
+        if (this.trucks) this.trucks.demand = this.marketDemand;
         this.playerNear = Math.hypot(player.x - this.def.x, player.z - this.def.z) <= SOUND_RANGE + Math.max(this.def.width, this.def.depth) / 2;
+        this.playerAt = this.local(player.x, player.z);
+        if (this.gateBoards && !this.levelLocked) this.dropGate();
         // (Set again by any buy square stood on this frame: pourInto().)
         this.onPour = false;
         for (const nest of this.nests) nest.hen.update(delta);
@@ -1192,7 +1344,7 @@ export class ChickenDen {
         if (left > 0 && MowProgress.payable <= 0) {
             if (this.pourTold !== key) {
                 this.pourTold = key;
-                this.hooks.say(`$${Math.ceil(left)} TO GO`, 0xffd9a8);
+                this.hooks.say(`${shortMoney(Math.ceil(left))} TO GO`, 0xffd9a8);
             }
             return false;
         }
@@ -1224,7 +1376,7 @@ export class ChickenDen {
             if (i >= den.hens) return;
             nest.layTimer -= delta;
             if (nest.layTimer > 0) return;
-            nest.layTimer = this.config.layEverySec;
+            nest.layTimer = this.config.layEverySec / MowProgress.farmSpeed;
             if ((den.floor[i] ?? 0) >= this.config.floorMax) return;
             den.floor[i] = (den.floor[i] ?? 0) + 1;
             MowProgress.denChanged();
@@ -1254,9 +1406,22 @@ export class ChickenDen {
         this.packTimer += delta;
         // Working: a little shudder.
         this.machineBody.position.x = this.layoutOf.machine.x + Math.sin(this.packTimer * 40) * 0.015;
-        if (this.packTimer < this.config.packSec) return;
+        // The lesson: packed at once, and (the player at the machine, with room) straight into their backpack.
+        const lesson = !this.tutorialDone;
+        if (this.packTimer < (lesson ? LESSON_PACK_SEC : this.config.packSec / MowProgress.farmSpeed)) return;
         this.packTimer = 0;
         den.machine -= this.config.eggsPerTray;
+        const { machine, input } = this.layoutOf;
+        const atMachine = Math.hypot(this.playerAt.x - input.x, this.playerAt.z - input.z) <= LESSON_REACH;
+        if (lesson && !toBelt && atMachine && MowProgress.goodsCount < this.config.carryMax) {
+            MowProgress.carry('trays', 1);
+            MowProgress.denChanged();
+            GameAnalytics.den(this.def.id, 'pack');
+            this.hooks.xp('tray');
+            this.hooks.effects.pickup(this.world(machine.x, 1, machine.z), new THREE.Color(0xe2c48e), () => this.sound('item'), farmItem('tray'));
+            this.machineBody.position.x = machine.x;
+            return;
+        }
         if (toBelt) {
             const pack = farmItem('tray');
             pack.scale.setScalar(GRID_TRAY_SCALE);
@@ -1319,7 +1484,22 @@ export class ChickenDen {
         this.sellTimer -= delta;
         const customer = this.customers?.front;
         const gold = (MowProgress.goods.goldTrays ?? 0) > 0;
-        if (this.sellTimer > 0 || !customer || (!gold && MowProgress.goods.trays <= 0) || !this.onSquare(p, this.layoutOf.sell)) return;
+        const onSell = this.onSquare(p, this.layoutOf.sell);
+        const carrying = gold || MowProgress.goods.trays > 0;
+        // Nobody to sell to: unload onto the grids instead (after a moment).
+        this.unloadWait = onSell && carrying && !customer ? this.unloadWait + delta : 0;
+        if (this.unloadWait >= UNLOAD_WAIT && this.sellTimer <= 0) {
+            this.sellTimer = UNLOAD_SEC;
+            const den = MowProgress.den;
+            MowProgress.carry(gold ? 'goldTrays' : 'trays', -1);
+            if (gold) den.goldTrays = (den.goldTrays ?? 0) + 1;
+            else den.trays++;
+            MowProgress.denChanged();
+            const grid = gold ? this.layoutOf.goldGrid : this.layoutOf.grid;
+            this.hooks.effects.toss(this.hooks.carryPoint(), this.world(grid.x, 0.3, grid.z), new THREE.Color(0xe2c48e), 0, () => this.sound('item'), farmItem(gold ? 'goldTray' : 'tray'));
+            return;
+        }
+        if (this.sellTimer > 0 || !customer || !carrying || !onSell) return;
         this.sellTimer = SELL_TRAY_SEC;
         MowProgress.carry(gold ? 'goldTrays' : 'trays', -1);
         this.handOver(gold ? 'goldTray' : 'tray', this.hooks.carryPoint());
@@ -1352,6 +1532,8 @@ export class ChickenDen {
 
     /** A customer pays: notes fly from the counter onto the cash square. */
     private pay(amount: number): void {
+        // Money Gain boosts the den's takings too.
+        amount = MowProgress.farmPay(amount);
         const den = MowProgress.den;
         den.cash += amount;
         MowProgress.denChanged();
@@ -1393,7 +1575,7 @@ export class ChickenDen {
         for (let i = 0; i < bundles; i++) {
             this.hooks.effects.pickup(this.world(cash.x, 0.2 + i * 0.05, cash.z), new THREE.Color(0x5fc85a), () => this.sound('coins'), farmItem('cash'));
         }
-        this.hooks.effects.floatText(this.world(cash.x, 1.8, cash.z), `+$${amount}`, '#ffe27a');
+        this.hooks.effects.floatText(this.world(cash.x, 1.8, cash.z), `+${shortMoney(amount)}`, '#ffe27a');
     }
 
     /** On the next nest's square: with the money and the level, the money pours in and a new hen pops onto the nest. */
@@ -1645,7 +1827,7 @@ export class ChickenDen {
         const square = this.beltSquare;
         if (!config || !square) return;
         const den = MowProgress.den;
-        const offered = this.opened && !den.belt && den.hens >= this.config.hens.length;
+        const offered = this.opened && !den.belt && den.hens >= Math.min(BELT_AFTER_HENS, this.config.hens.length);
         square.visible = offered;
         if (!offered) return;
         const short = MowProgress.level < config.level;
@@ -1654,7 +1836,7 @@ export class ChickenDen {
         if (key === this.beltDrawn) return;
         this.beltDrawn = key;
         const material = square.material as THREE.MeshBasicMaterial;
-        material.map = squareTexture(1.6, 1.6, '#ffffff', { text: `$${left}`, sub: short ? `LEVEL ${config.level}` : 'CONVEYOR', subColor: short ? '#ff8a7a' : '#9cff6a' });
+        material.map = squareTexture(1.6, 1.6, '#ffffff', { text: shortMoney(left), sub: short ? `LEVEL ${config.level}` : 'CONVEYOR', subColor: short ? '#ff8a7a' : '#9cff6a' });
         material.needsUpdate = true;
     }
 
@@ -1729,6 +1911,7 @@ export class ChickenDen {
 
     /** A truck's payment: from `from` onto its own cash square by the dock. */
     private payFrom(from: THREE.Vector3, amount: number): void {
+        amount = MowProgress.farmPay(amount);
         const den = MowProgress.den;
         den.truckCash = (den.truckCash ?? 0) + amount;
         MowProgress.denChanged();

@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { BendService } from '../services/BendService';
-import { MOW, UpgradePadDef, bladeCount } from '../data/MowConfig';
+import { MOW, UpgradePadDef, bladeCount, shortMoney, shortNumber } from '../data/MowConfig';
 import { MowProgress, PadKind } from '../data/MowProgress';
 import { buildMower } from '../player/MowerModel';
 import { TractorRide } from '../player/TractorRide';
@@ -27,9 +27,19 @@ const STAND_HEIGHT = 0.7;
 /** The thing on the stand fits in this (world units), floating this high over the stand's top. */
 const SHOWN_SIZE = 1.25;
 const SHOWN_LIFT = 0.45;
-/** Grass a second poured into a pad: at least MIN_RATE, else the whole price in about FILL_SEC. */
-const MIN_RATE = 45;
+/**
+ * How long a visit's pour takes (what's poured: the bag, or what the pad still needs if that's less), by its size, so
+ * early upgrades are quick and nobody walks off before it's done: POUR.secondsPer per grass, never under POUR.least
+ * (about 100 grass or less: at once) nor over FILL_SEC; at least MIN_RATE a second.
+ */
+const MIN_RATE = 9;
 const FILL_SEC = 1.6;
+const POUR = { secondsPer: 1 / 80, least: 0.25 };
+/**
+ * After an upgrade a pad rests this long (seconds) before it takes anything again: the player sees what they got and
+ * can walk off before the next one starts eating their money.
+ */
+const UPGRADE_PAUSE = 3;
 /** A clump flies from the pile every this many seconds while pouring. */
 const TOSS_SEC = 0.06;
 const FLOOR_Y = 0.1;
@@ -51,6 +61,8 @@ interface Pad {
     visible: boolean;
     /** The Blades pad's blades on the stand (spun each frame). */
     blades?: MowerBlades;
+    /** Seconds left of its rest after an upgrade (it takes nothing until then: UPGRADE_PAUSE). */
+    pause: number;
 }
 
 const kindOf = (def: UpgradePadDef): PadKind => def.kind;
@@ -75,7 +87,7 @@ function offer(kind: PadKind): { title: string; name: string; key: string } {
         return { title: 'BLADES', name: count > 1 ? `${count} BLADES` : size >= 1 ? 'BIG BLADE' : 'BLADE', key: `blades:${MowProgress.bladesLevel}` };
     }
     const capacity = MOW.upgrades.find((u) => u.id === 'capacity')!;
-    return { title: 'BIGGER BAG', name: `BAG +${capacity.perLevel}`, key: `capacity:${MowProgress.upgradeLevel('capacity')}` };
+    return { title: 'BIGGER BAG', name: `BAG +${shortNumber(MowProgress.capacityStep)}`, key: `capacity:${MowProgress.upgradeLevel('capacity')}:${MowProgress.toolLevel}` };
 }
 
 /** A small grass tuft (the price's unit), centred on (x, y), `size` tall. */
@@ -129,6 +141,8 @@ export class UpgradePads {
     private tookAny = false;
     private carry = 0;
     private tossTimer = 0;
+    /** This visit's pour pace (grass a second; 0: worked out when it starts). */
+    private rate = 0;
 
     /**
      * `isOpen(section)`: whether a pad's section is open (a pad with none is always there). `onPour(to)`: a clump of
@@ -217,7 +231,7 @@ export class UpgradePads {
         const visible = this.shownNow(def);
         group.visible = visible;
         this.group.add(group);
-        const pad: Pad = { def, group, canvas, texture, shown, label, labelCanvas, labelTexture, drawn: '', built: '', visible };
+        const pad: Pad = { def, group, canvas, texture, shown, label, labelCanvas, labelTexture, drawn: '', built: '', visible, pause: 0 };
         this.refresh(pad);
         // The kit's font may not be in yet: drawn again in a moment.
         window.setTimeout(() => {
@@ -234,7 +248,7 @@ export class UpgradePads {
         const cost = MowProgress.padCost(kind);
         const paid = MowProgress.padPaid(kind);
         const { title, name, key } = offer(kind);
-        const drawn = `${key}|${cost}|${Math.floor(paid)}`;
+        const drawn = `${key}|${cost}|${shortMoney(Math.max(0, Math.ceil((cost ?? 0) - paid)))}`;
         if (drawn !== pad.drawn) {
             pad.drawn = drawn;
             this.drawFloor(pad, title, cost, paid);
@@ -292,14 +306,8 @@ export class UpgradePads {
             return;
         }
         drawUpArrow(g, size / 2, 172, 92);
-        const left = Math.max(0, Math.ceil(cost - paid));
-        const text = String(left);
-        g.font = CanvasArt.font(96);
-        const width = Math.min(size - 150, g.measureText(text).width);
-        const tuft = 70;
-        const startX = size / 2 - (width + tuft + 14) / 2;
-        drawTuft(g, startX + tuft / 2, 296, tuft);
-        CanvasArt.text(g, text, startX + tuft + 14 + width / 2, 300, 96, '#ffffff', size - 150);
+        // What's left, in money (the bag's grass counts at its value, then the money carried).
+        CanvasArt.text(g, shortMoney(Math.max(0, Math.ceil(cost - paid))), size / 2, 300, 96, '#ffe27a', size - 110);
         pad.texture.needsUpdate = true;
     }
 
@@ -375,7 +383,7 @@ export class UpgradePads {
         return best < Infinity ? out : null;
     }
 
-    /** Grass still needed for a pad's next upgrade (Infinity at the top). */
+    /** Money still needed for a pad's next upgrade (Infinity at the top). */
     public static left(kind: PadKind): number {
         const cost = MowProgress.padCost(kind);
         return cost === undefined ? Infinity : cost - MowProgress.padPaid(kind);
@@ -384,6 +392,7 @@ export class UpgradePads {
     /** Each frame: the stands turn, pads of sections just opened pop in, and the one stood on takes the bag's grass. */
     public update(delta: number, player: THREE.Vector3): void {
         for (const pad of this.pads) {
+            pad.pause = Math.max(0, pad.pause - delta);
             pad.shown.rotation.y += delta * 0.9;
             pad.blades?.spin(delta, true);
             const visible = this.shownNow(pad.def);
@@ -402,16 +411,23 @@ export class UpgradePads {
             this.tookAny = false;
             this.carry = 0;
             this.tossTimer = 0;
+            this.rate = 0;
         }
         if (i < 0) return;
         const pad = this.pads[i];
         const kind = kindOf(pad.def);
         const cost = MowProgress.padCost(kind);
-        if (cost === undefined || MowProgress.clippings <= 0) return;
-        this.carry += Math.max(MIN_RATE, cost / FILL_SEC) * delta;
-        const amount = Math.floor(this.carry);
+        if (cost === undefined || MowProgress.pourable <= 0 || pad.pause > 0) return;
+        // The pour's pace, set as it starts (and again after an upgrade): its size over the time it should take.
+        if (this.rate <= 0) {
+            const amount = Math.min(MowProgress.pourable, cost - MowProgress.padPaid(kind));
+            const seconds = Math.min(FILL_SEC, Math.max(POUR.least, amount * POUR.secondsPer));
+            this.rate = Math.max(MIN_RATE, amount / seconds);
+        }
+        this.carry += this.rate * delta;
+        const amount = this.carry;
         if (amount <= 0) return;
-        this.carry -= amount;
+        this.carry = 0;
         const { used, upgraded } = MowProgress.deposit(kind, amount);
         if (used > 0) this.tookAny = true;
         const off = standOffset(pad.def);
@@ -423,9 +439,11 @@ export class UpgradePads {
         }
         this.refresh(pad);
         if (upgraded) {
+            pad.pause = UPGRADE_PAUSE;
             this.onUpgrade(kind, standTop);
             // Whatever else shows this kind (another pad of it) follows on its next refresh.
             this.carry = 0;
+            this.rate = 0;
         }
     }
 

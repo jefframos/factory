@@ -44,7 +44,7 @@ let cutBuffers;
 
 /** [path in the tool, label, step, min, max] */
 const FIELDS = [
-    ['Grip (where the hands hold it)', [
+    ["Grip (the player's hands: the same on every mower)", [
         ['grip.forward', 'Ahead of the feet', 0.01, 0, 1.5],
         ['grip.height', 'Height', 0.01, 0.3, 1.6],
         ['grip.spread', 'Hands apart (each)', 0.01, 0, 0.5],
@@ -99,9 +99,14 @@ export async function initMowersTab(container) {
     const mow = await api('/api/mow');
     cutSound = { volume: [...mow.cutSound.volume], pitch: [...mow.cutSound.pitch] };
     playerScale = mow.playerScale ?? 1;
-    tools = mow.tools.filter((tool) => !tool.ride).map((tool) => ({
+    // The hands are the player's: one grip (the first mower's) shared by every walked mower — editing it on any mower
+    // edits it for all, and each mower's handle reaches it (the game holds every walked mower this way too).
+    const walked = mow.tools.filter((tool) => !tool.ride);
+    const first = walked.find((tool) => tool.grip)?.grip;
+    const grip = { ...GRIP, ...first, hand: { x: 0, y: 0, z: 0, ...first?.hand }, offset: { x: 0, y: 0, z: 0, ...first?.offset }, mirror: first?.mirror !== false };
+    tools = walked.map((tool) => ({
         ...tool,
-        grip: { ...GRIP, ...tool.grip, hand: { x: 0, y: 0, z: 0, ...tool.grip?.hand }, offset: { x: 0, y: 0, z: 0, ...tool.grip?.offset }, mirror: tool.grip?.mirror !== false },
+        grip,
         gap: tool.gap ?? TOOL_GAP,
         size: [...tool.size],
     }));
@@ -183,18 +188,16 @@ function buildLayout() {
             slider.addEventListener('input', () => apply(slider.value));
             return el('label', { class: 'field' }, el('span', {}, label), el('div', { style: { display: 'flex', gap: '6px', alignItems: 'center', minWidth: '0' } }, slider, number));
         })));
-    // The whole mower (handle, crossbar and the hands' spots) back or forward: the grip and the gap moved together, the
-    // hands' turn and offset kept.
+    // This mower back or forward (its gap): the hands stay where they are (they're the player's), the handle reaches them.
     const move = (delta) => {
-        current.grip.forward = Math.max(0, Number((current.grip.forward + delta).toFixed(3)));
         current.gap = Math.max(0, Number((current.gap + delta).toFixed(3)));
         touch();
         buildLayout();
         buildTool();
     };
     const moveSection = el('section', { class: 'card-section' },
-        el('h2', {}, 'Move the whole mower'),
-        el('p', { class: 'muted small' }, `Slides the mower, its handle and the hands' spots back or forward together (the grip's "Ahead of the feet" and the gap move by the same amount).`),
+        el('h2', {}, 'Move this mower'),
+        el('p', { class: 'muted small' }, `Slides this mower back or forward (its gap). The hands stay put: they're the player's, shared by every mower, and the handle reaches them.`),
         el('div', { style: { display: 'flex', gap: '6px' } },
             ...[['« Back', -0.1], ['‹ Back', -0.02], ['Forward ›', 0.02], ['Forward »', 0.1]].map(([label, delta]) =>
                 el('button', { style: { flex: '1' }, onclick: () => move(delta) }, label))));

@@ -33,7 +33,7 @@ import { FindToasts, Find, flyCoins, flyItem } from './FindToasts';
 import { TownMiniature, REVEAL_SEC } from './TownMiniature';
 import { CitiesPanel, CitiesMode, CITIES_PANEL_SIZE } from './CitiesPanel';
 import { MowProgress } from '../data/MowProgress';
-import { CityDef, MOW, TOWN, ToolDef, UpgradeDef, CITY, farmTest, goalCount, goalSection } from '../data/MowConfig';
+import { CityDef, MOW, TOWN, ToolDef, UpgradeDef, UpgradeId, CITY, farmTest, goalCount, goalSection, shortMoney, shortNumber } from '../data/MowConfig';
 import { ModelIcons } from './ModelIcons';
 import { tabbedBlock, TabSpec } from './TabBar';
 import { t, names, Localization } from '../i18n/Localization';
@@ -69,6 +69,20 @@ const ROW = { width: 776, frameX: -336, textX: -280, textWidth: 470, buttonX: 30
 const BLOCK = { top: -170, width: 800, height: 432, tabWidth: 170, tabHeight: 48 };
 const GEAR_Y = { timeline: -110, tool: 28, bag: 146 };
 const BOOST_ROW = { firstY: -116, step: 90, height: 82 };
+/** The farm test's POWER-UPS panel (the shop's frame, no tabs): its rows, the button opening it. */
+const POWER_ROW = { firstY: -200, step: 80, height: 74 };
+/** What the POWER-UPS panel offers, in order (the blades are a station on the farm, so not here). */
+const POWER_UPS: readonly UpgradeId[] = ['speed', 'money', 'grass', 'width', 'chew', 'farm'];
+const POWER_BUTTON_SIZE = 84;
+/** Level bars past this many levels draw as one bar toward the next milestone. */
+const LONG_TRACK = 30;
+/** "· x2 at 25" after a milestone track's effect, or nothing. */
+const nextMilestone = (boost: UpgradeDef, level: number): string => {
+    const next = boost.milestones?.find((m) => m > level);
+    return next ? `  ·  x2 at ${next}` : '';
+};
+/** POWER-UPS comes with this player level (the chicken den's: when money starts coming in). */
+const POWER_UPS_LEVEL = 6;
 const FOOTER_Y = 238;
 /** The mower timeline: node sizes (the goal bigger), its width, line colours. */
 const TIMELINE = { node: 60, goal: 78, width: 680 };
@@ -207,6 +221,11 @@ export class MowHud extends PIXI.Container {
     private shopKey = '';
     private hint: ShopHint = null;
     private tab: 'gear' | 'boosts' = 'gear';
+    /** The farm test's POWER-UPS: the shop's panel opened from its HUD button, listing the money boosts. */
+    private powerOpen = false;
+    private readonly powerButton = new PIXI.Container();
+    private readonly powerAlert = new PIXI.Container();
+    private shopTitle?: PIXI.Text;
     public readonly moveHint = new MoveHint();
     /** Money from a sale still landing: shown as not yet earned until releaseSale(). */
     private heldMoney = 0;
@@ -233,6 +252,7 @@ export class MowHud extends PIXI.Container {
         this.addClose(this.trophies, TROPHIES_SIZE, () => this.toggleTrophies());
         this.trophiesHolder.addChild(this.trophies);
         this.buildTrophiesButton();
+        this.buildPowerButton();
         this.languageHolder.addChild(this.language);
         this.addClose(this.language, LANGUAGE_SIZE, () => this.toggleLanguage());
         this.toast.alpha = 0;
@@ -330,7 +350,7 @@ export class MowHud extends PIXI.Container {
         icon.scale.set((REWARD.size * 0.62) / Math.max(icon.width / icon.scale.x, icon.height / icon.scale.y, 1));
         this.progressReward.addChild(disc, icon);
         if (!done) {
-            const amount = UiKit.text('hud', 'toast', { text: `+$${bonus.toLocaleString('en-US')}` }, { fontSize: 15, strokeThickness: 4, fill: 0xffe27a });
+            const amount = UiKit.text('hud', 'toast', { text: `+${shortMoney(bonus)}` }, { fontSize: 15, strokeThickness: 4, fill: 0xffe27a });
             amount.anchor.set(0.5, 0);
             amount.y = REWARD.size / 2 - 2;
             this.progressReward.addChild(amount);
@@ -667,7 +687,7 @@ export class MowHud extends PIXI.Container {
         gsap.to(banner, { alpha: 1, duration: 0.2 });
         gsap.to(banner.scale, { x: 1, y: 1, duration: 0.5, ease: 'back.out(2)' });
         UiAnim.staggerPop(stars, 0.25, 0.12);
-        UiAnim.countUp(reward, 0, bonus, (value) => `+$${value.toLocaleString('en-US')}`, 1, 0.35);
+        UiAnim.countUp(reward, 0, bonus, (value) => `+${shortMoney(value)}`, 1, 0.35);
         UiAnim.confetti(this.celebration, 0, -40, 90, 1.2);
         gsap.to(banner, { alpha: 0, duration: BANNER.out, delay: BANNER.hold });
         gsap.to(banner.scale, { x: 1.15, y: 1.15, duration: BANNER.out, delay: BANNER.hold, onComplete: () => {
@@ -708,7 +728,7 @@ export class MowHud extends PIXI.Container {
             UiAnim.punch(this.comboText as unknown as PIXI.Container, 0.35);
             this.comboShown = multiplier;
         }
-        this.comboPot.text = `+$${Math.round(pot).toLocaleString('en-US')}`;
+        this.comboPot.text = `+${shortMoney(pot)}`;
         const width = 200;
         // Gold, going orange then red as it runs out.
         const color = timeShare > 0.5 ? 0xffd86b : timeShare > 0.25 ? 0xff9a3c : 0xff5a4a;
@@ -828,7 +848,7 @@ export class MowHud extends PIXI.Container {
 
     /** A secret chest found: its toast, and it pays at once, `claim()`'s coins flying from the player (`from`, on screen). */
     public secretFound(find: Find, amount: number, claim: () => number, from: PIXI.IPointData): void {
-        this.findToasts.show({ ...find, name: `${find.name}  +$${amount.toLocaleString('en-US')}` });
+        this.findToasts.show({ ...find, name: `${find.name}  +${shortMoney(amount)}` });
         this.payOut(claim, amount, this.toLocal(from));
     }
 
@@ -906,16 +926,23 @@ export class MowHud extends PIXI.Container {
         const title = UiKit.text('upgrades', 'title');
         title.text = t('titleShop');
         title.y = -SHOP.height / 2 - 5;
+        this.shopTitle = title;
         this.shop.addChild(frame, ribbon, title, this.shopBody);
-        this.shopClose = this.addClose(this.shop, SHOP, () => this.setShopOpen(false));
+        this.shopClose = this.addClose(this.shop, SHOP, () => (this.powerOpen ? this.setPowerOpen(false) : this.setShopOpen(false)));
         this.shop.visible = false;
         this.shopHolder.addChild(this.shop);
     }
 
     /** Opens / closes the shop (the scene calls this as the player steps on / off the pad; not while it's forced). */
     public setShopOpen(open: boolean): void {
-        if (this.shopForced || open === this.shopOpen) return;
+        if (this.shopForced || this.powerOpen) return;
+        this.showShop(open);
+    }
+
+    private showShop(open: boolean): void {
+        if (open === this.shopOpen) return;
         this.shopOpen = open;
+        if (this.shopTitle) this.shopTitle.text = this.powerOpen ? t('titlePowerUps') : t('titleShop');
         this.shop.visible = open;
         if (!open) return;
         this.renderShop();
@@ -981,6 +1008,10 @@ export class MowHud extends PIXI.Container {
         this.shopKey = this.shopState();
         UiAnim.kill(this.shopBody);
         this.shopBody.removeChildren().forEach((child) => child.destroy({ children: true }));
+        if (this.powerOpen) {
+            this.renderPowerUps();
+            return;
+        }
         if (!MowProgress.boostsUnlocked) this.tab = 'gear';
         this.shopBody.addChild(this.shopTabs());
         if (this.tab === 'boosts') this.renderBoosts();
@@ -1033,8 +1064,8 @@ export class MowHud extends PIXI.Container {
         const bag = this.offer(
             GEAR_Y.bag,
             icon('hud', 'backpackIcon', 60),
-            bagPrice !== undefined ? t('bagSize', { amount: capacity.perLevel }) : t('bagMax'),
-            t(bagPrice !== undefined ? 'bagHolds' : 'bagMaxInfo', { capacity: MowProgress.capacity + (bagPrice !== undefined ? capacity.perLevel : 0) }),
+            bagPrice !== undefined ? t('bagSize', { amount: MowProgress.capacityStep }) : t('bagMax'),
+            t(bagPrice !== undefined ? 'bagHolds' : 'bagMaxInfo', { capacity: MowProgress.capacity + (bagPrice !== undefined ? MowProgress.capacityStep : 0) }),
             bagPrice,
             () => {
                 if (!MowProgress.buyUpgrade(capacity)) return false;
@@ -1085,7 +1116,7 @@ export class MowHud extends PIXI.Container {
             const node = new PIXI.Container();
             node.x = x(i);
             node.addChild(UiKit.image('upgrades', toolFrame(i, i <= owned), size, size), mowerArt(tool, size * 0.72));
-            const price = `$${tool.price.toLocaleString('en-US')}`;
+            const price = shortMoney(tool.price);
             const label = UiKit.text('upgrades', 'nodeLabel', {
                 text: i < owned ? '' : i === owned ? t('now') : goal ? t('goalPrice', { price: tool.price.toLocaleString('en-US') }) : price,
             });
@@ -1111,9 +1142,19 @@ export class MowHud extends PIXI.Container {
      * An upgrade path (the bag's, a boost's) as a segmented bar under its row's text: one segment per level, owned
      * green, the next gold and pulsing, the rest grey.
      */
-    private levelBar(owned: number, count: number, y: number): PIXI.Container {
+    private levelBar(owned: number, count: number, y: number, milestones?: number[]): PIXI.Container {
         const bar = new PIXI.Container();
         bar.position.set(ROW.textX, y);
+        if (count > LONG_TRACK) {
+            // A long track (POWER-UPS' money ones): one bar filling toward the next milestone (or the cap).
+            const marks = [...(milestones ?? []), count].filter((m) => m <= count).sort((a, b) => a - b);
+            const next = marks.find((m) => m > owned) ?? count;
+            const from = [0, ...marks].filter((m) => m <= owned).pop() ?? 0;
+            const share = owned >= count ? 1 : (owned - from) / Math.max(1, next - from);
+            bar.addChild(new PIXI.Graphics().beginFill(LINE_TODO).drawRoundedRect(0, -BAG_BAR.height / 2, BAG_BAR.width, BAG_BAR.height, 4).endFill());
+            if (share > 0) bar.addChild(new PIXI.Graphics().beginFill(LINE_DONE).drawRoundedRect(0, -BAG_BAR.height / 2, Math.max(BAG_BAR.height, BAG_BAR.width * share), BAG_BAR.height, 4).endFill());
+            return bar;
+        }
         const gap = count > 16 ? 2 : 3;
         const width = (BAG_BAR.width - gap * (count - 1)) / count;
         for (let i = 0; i < count; i++) {
@@ -1126,12 +1167,75 @@ export class MowHud extends PIXI.Container {
         return bar;
     }
 
+    /** POWER-UPS: a row per power-up, no tabs (the panel's whole inside). */
+    private renderPowerUps(): void {
+        POWER_UPS.map((id) => MOW.upgrades.find((u) => u.id === id))
+            .filter((boost): boost is UpgradeDef => !!boost)
+            .forEach((boost, i) => this.shopBody.addChild(this.boostRow(boost, POWER_ROW.firstY + i * POWER_ROW.step, POWER_ROW.height)));
+    }
+
+    // ---------------------------------------------------------------- power-ups (the farm test)
+
+    /** The POWER-UPS button (where the trophy is elsewhere): the MAP button's round kit back, a star, a bouncing "!" while one's affordable. */
+    private buildPowerButton(): void {
+        const size = POWER_BUTTON_SIZE;
+        this.powerButton.position.set(CORNER_WIDTH - size / 2, 150);
+        const back = icon('hud', 'muteButton', size);
+        const star = PIXI.Sprite.from('ItemIcon_Star_Gold');
+        star.anchor.set(0.5);
+        star.scale.set((size * 0.66) / Math.max(star.texture.width, star.texture.height, 1));
+        this.powerButton.addChild(back, star);
+        this.powerButton.hitArea = new PIXI.Rectangle(-size / 2, -size / 2, size, size);
+        const alert = icon('hud', 'alert', 34);
+        this.powerAlert.addChild(alert);
+        this.powerAlert.position.set(size / 2 - 6, -size / 2 + 6);
+        gsap.to(alert, { y: -8, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+        this.powerAlert.visible = false;
+        this.powerButton.addChild(this.powerAlert);
+        this.tappable(this.powerButton, () => {
+            MowAudio.play('toggle');
+            this.setPowerOpen(!this.powerOpen);
+        });
+        this.corner.addChild(this.powerButton);
+        this.powerButton.visible = false;
+    }
+
+    /** Opens / closes POWER-UPS (over whatever the player's doing; the ATM shop can't open over it). */
+    private setPowerOpen(open: boolean): void {
+        if (open === this.powerOpen || this.shopForced) return;
+        if (open) {
+            // (Over an open ATM shop: that one closes first.)
+            this.showShop(false);
+            this.powerOpen = true;
+            GameAnalytics.panelOpened('powerups');
+            this.showShop(true);
+        } else {
+            this.showShop(false);
+            this.powerOpen = false;
+        }
+    }
+
+    /** The POWER-UPS button: shown once there's money to spend (the farm test only), its "!" while one's affordable. */
+    private refreshPowerButton(): void {
+        const shown = !!farmTest() && MowProgress.levelFor(MowProgress.xp).level >= POWER_UPS_LEVEL;
+        if (shown && !this.powerButton.visible) UiAnim.popIn(this.powerButton);
+        this.powerButton.visible = shown;
+        this.powerAlert.visible = shown && MowProgress.canAffordAny(POWER_UPS);
+    }
+
     /** One boost: its icon, name and level, its effect now -> next, and the buy button (MAX at the top). */
-    private boostRow(boost: UpgradeDef, y: number): PIXI.Container {
+    private boostRow(boost: UpgradeDef, y: number, height: number = BOOST_ROW.height): PIXI.Container {
         const level = MowProgress.upgradeLevel(boost.id);
         const price = MowProgress.upgradePrice(boost);
-        // Width is in world units, the rest a share.
-        const effect = (lv: number) => (boost.id === 'width' ? `+${(boost.perLevel * lv).toFixed(2)}` : `+${Math.round(boost.perLevel * lv * 100)}%`);
+        // Width is in world units, a track with milestones its whole multiplier, the rest a share.
+        const effect = (lv: number) => {
+            if (boost.id === 'width') return `+${(boost.perLevel * lv).toFixed(2)}`;
+            if (boost.milestones) {
+                const factor = MowProgress.factorAt(boost, lv);
+                return `x${factor >= 100 ? Math.round(factor) : Math.round(factor * 10) / 10}`;
+            }
+            return `+${Math.round(boost.perLevel * lv * 100)}%`;
+        };
         const art = PIXI.Sprite.from(boost.icon);
         art.anchor.set(0.5);
         art.scale.set(50 / Math.max(art.texture.width, art.texture.height, 1));
@@ -1139,7 +1243,7 @@ export class MowHud extends PIXI.Container {
             y,
             art,
             names.upgrade(boost).toUpperCase(),
-            `${t('upgradeLevel', { level, max: boost.maxLevel })}  ·  ${price === undefined ? effect(level) : `${effect(level)}  →  ${effect(level + 1)}`}`,
+            `${t('upgradeLevel', { level, max: boost.maxLevel })}  ·  ${price === undefined ? effect(level) : `${effect(level)}  →  ${effect(level + 1)}`}${nextMilestone(boost, level)}`,
             price,
             () => {
                 if (!MowProgress.buyUpgrade(boost)) return false;
@@ -1148,11 +1252,11 @@ export class MowHud extends PIXI.Container {
             },
             false,
             undefined,
-            BOOST_ROW.height,
+            height,
             6,
         );
         // Its levels, like the bag's: owned green, the next gold.
-        row.addChild(this.levelBar(level, boost.maxLevel, 27));
+        row.addChild(this.levelBar(level, boost.maxLevel, 27, boost.milestones));
         return row;
     }
 
@@ -1182,7 +1286,7 @@ export class MowHud extends PIXI.Container {
         }
         const affordable = MowProgress.money >= price;
         button.addChild(UiKit.image('upgrades', affordable ? 'buyButton' : 'lockedButton', ROW.buttonWidth, 60),
-            UiKit.fit(UiKit.text('upgrades', 'buyLabel', { price: price.toLocaleString('en-US') }), ROW.buttonWidth - 20));
+            UiKit.fit(UiKit.text('upgrades', 'buyLabel', { price: shortMoney(price).slice(1) }), ROW.buttonWidth - 20));
         if (affordable) UiAnim.pulse(button, 0.05, 0.6);
         this.tappable(button, () => {
             if (buy()) {
@@ -1253,6 +1357,7 @@ export class MowHud extends PIXI.Container {
 
     private refresh(): void {
         this.refreshUnlocks();
+        this.refreshPowerButton();
         const waiting = MowProgress.hasUnclaimedTreasure && this.treasuresFlying === 0;
         this.trophiesAlert.visible = waiting;
         if (this.trophiesHand) this.trophiesHand.visible = waiting && !MowProgress.claimedAnyTreasure && !this.trophies.visible;
@@ -1261,7 +1366,7 @@ export class MowHud extends PIXI.Container {
         const money = MowProgress.money - this.heldMoney;
         // The wardrobe's prices turn red / white with the money (not while a sale is still landing).
         if (this.wardrobeOpen && this.heldMoney === 0 && money !== this.lastMoney) this.wardrobe.refresh();
-        this.moneyText.text = `$${money.toLocaleString('en-US')}`;
+        this.moneyText.text = shortMoney(money);
         if (this.lastMoney >= 0 && money > this.lastMoney) {
             gsap.killTweensOf(this.moneyText.scale);
             this.moneyText.scale.set(1);
@@ -1271,7 +1376,7 @@ export class MowHud extends PIXI.Container {
         const count = Math.floor(MowProgress.clippings);
         const capacity = MowProgress.capacity;
         const full = MowProgress.full;
-        this.bagText.text = `${count}/${capacity}`;
+        this.bagText.text = `${shortNumber(count)}/${shortNumber(capacity)}`;
         UiKit.fit(this.bagText, BAR_X - BAR_WIDTH / 2 - (ICON_SIZE + 8) - 6);
         this.bagText.style.fill = full ? 0xff7a6a : 0xffffff;
         this.barFill.removeChildren().forEach((child) => child.destroy({ children: true }));
@@ -1327,7 +1432,7 @@ export class MowHud extends PIXI.Container {
 
     /** A panel that stops play is open (the map, Trophies, the language, the cities): gameplay waits for it to close. */
     public get playStopped(): boolean {
-        return this.mapPanel.visible || this.trophies.visible || this.language.visible || this.cities.visible;
+        return this.mapPanel.visible || this.trophies.visible || this.language.visible || this.cities.visible || this.powerOpen;
     }
 
     /** The player's level bar is on top (the farm test): the area's bar goes under it, smaller. */

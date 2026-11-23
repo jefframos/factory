@@ -297,7 +297,7 @@ export const GameAnalytics = {
     },
 
     /** A panel opened by the player (the map, the town's big view, Trophies), once per player each. */
-    panelOpened(panel: 'map' | 'town' | 'trophies' | 'cities'): void {
+    panelOpened(panel: 'map' | 'town' | 'trophies' | 'cities' | 'powerups'): void {
         if (MowProgress.once(`panel-${panel}`)) send('panel', panel, 'interact');
     },
 

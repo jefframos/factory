@@ -4,7 +4,7 @@
 // point (MowPlayer.cutPoint) and all the way back to the player's feet, is cut — what the tool's power handles
 // (GrassField.cutCapsule), so no grass is left trapped between the player and the tool. Each cut cell's
 // clippings go into the container (MowProgress.addClippings); a full container stops the cutting (the player has to
-// sell): said once, the moment it fills (walking on with it full says nothing more: the FULL tag and the arrows to
+// sell; the farm test cuts on regardless, nothing bagged, so nobody's boxed in by grass they could cut): said once, the moment it fills (walking on with it full says nothing more: the FULL tag and the arrows to
 // SELL already do). Grass a few powers too tough (`chewSec` in ui/mow.json) resists, like dig's rock: the mower is held back (the player's `drag`)
 // while it chews through, throwing chips with each hit, until it gives; tougher still is a wall until a better mower
 // (with a hint now and then). Grass as tough as the tool's power is cut, but it labours: slower by its share of the
@@ -14,12 +14,14 @@
 
 import * as THREE from 'three';
 import { GrassField } from '../world/GrassField';
+import { FIXED_BONUS } from '../world/Growth';
 import { MowProgress } from '../data/MowProgress';
 import type MowPlayer from '../player/MowPlayer';
 import type { MowEffects } from '../vfx/MowEffects';
 import { MowAudio } from '../audio/MowAudio';
-import { GrassDef, SecretDef, TreasureDef, farmTest } from '../data/MowConfig';
+import { MOW, GrassDef, SecretDef, TreasureDef, farmTest, worthPerClipping } from '../data/MowConfig';
 import type { SecretPatches } from '../world/SecretPatches';
+import type { Growth } from '../world/Growth';
 
 /** Below this the stick / keys count as not moving. */
 const MOVE_THRESHOLD = 0.2;
@@ -61,6 +63,9 @@ export class MowingSystem {
         private readonly onSecret?: (secret: SecretDef, at: THREE.Vector3) => void,
     ) {}
 
+    /** The bushes and trees (Growth.ts): chewed by the same sweep. */
+    public growth?: Growth;
+
     public fixedUpdate(delta: number): void {
         this.hintCooldown = Math.max(0, this.hintCooldown - delta);
         this.chewHit = Math.max(0, this.chewHit - delta);
@@ -79,18 +84,14 @@ export class MowingSystem {
         if (MowProgress.tool.ride && !this.player.riding) return;
         // On foot (the mower parked): nothing is cut.
         if (this.player.onFoot) return;
-        if (MowProgress.full) {
-            // A full bag cuts nothing, but (the farm test) grass tougher than the mower still stands in the way: the
-            // way to a place is mowed, not walked.
-            if (farmTest() && this.grass.toughAt(this.point.x, this.point.z, MowProgress.width / 2, MowProgress.power, this.canMow)) {
-                this.player.drag = WALL_DRAG;
-                this.wall = this.point;
-            }
-            return;
-        }
+        // A full bag cuts nothing (grass or growth) until it's emptied at a station or an ATM: that's the loop. (Grass
+        // never holds the mower back while it's full: the drag stays off, so nobody's boxed in.)
+        if (MowProgress.full) return;
+        const wasFull = MowProgress.full;
         const result = this.grass.cutCapsule(feet.x, feet.z, this.point.x, this.point.z, MowProgress.width / 2, MowProgress.power,
             // Sharp Blades: tough grass takes less contact to chew through.
             delta * MowProgress.chewRate, this.canMow);
+        this.cutGrowth(feet, delta, wasFull);
         if (result.cells === 0 && result.chewing) {
             this.player.drag = CHEW_DRAG;
             if (this.chewHit <= 0) {
@@ -109,7 +110,9 @@ export class MowingSystem {
         if (result.cells === 0) return;
         if (result.hard) this.player.drag = 1 - (1 - LOAD_DRAG) * (result.hard / result.cells);
         for (let i = 0; i < result.cells; i++) MowProgress.recordCut();
-        const bagged = MowProgress.addClippings(result.clippings);
+        // Grass Gain: more clippings from the same cut.
+        const gain = MowProgress.grassGain;
+        const bagged = MowProgress.addClippings(Math.round(result.clippings * gain), result.worth * gain);
         MowProgress.grassChanged();
         if (result.at && result.color) {
             const chips = Math.min(MAX_CHIPS, result.cells * CHIPS_PER_CELL);
@@ -118,7 +121,48 @@ export class MowingSystem {
         MowAudio.play('cut');
         this.onCut(result.cells, bagged);
         for (const { treasure, at } of result.found ?? []) this.onTreasure(treasure, at);
-        if (MowProgress.full) this.onFull();
+        // (Said once, as it fills.)
+        if (!wasFull && MowProgress.full) this.onFull();
+    }
+
+    /**
+     * The bushes and trees in the sweep: cleared ones bagged (a burst of leaves, a crunch), one being chewed holds the
+     * mower back (chips), one too tough is a wall (the hint saying the blades it takes).
+     */
+    private cutGrowth(feet: THREE.Vector3, delta: number, wasFull: boolean): void {
+        const grown = this.growth?.cut(feet.x, feet.z, this.point.x, this.point.z, MowProgress.width / 2, MowProgress.power,
+            delta * MowProgress.chewRate, this.canMow);
+        if (!grown) return;
+        if (grown.chewing) {
+            this.player.drag = CHEW_DRAG;
+            if (this.chewHit <= 0) {
+                this.chewHit = CHEW_HIT_SEC;
+                this.effects.burst(grown.chewing.at, grown.chewing.color, 6, 3.5);
+                MowAudio.play('cut');
+            }
+        } else if (grown.blocked) {
+            this.player.drag = WALL_DRAG;
+            this.wall = this.point;
+            const blocked = grown.blocked;
+            this.hint(() => this.onBlocked(blocked));
+        }
+        if (!grown.cleared.length) return;
+        let value = 0;
+        let worth = 0;
+        // A hand-placed tree or bush pays a lump at the best area open now (it's in an early one, cut much later).
+        const best = Math.max(...MOW.districts.map((_, d) => (this.canMow(d) ? worthPerClipping(d) : 0)));
+        for (const { id, def, at, district, fixed } of grown.cleared) {
+            value += def.value;
+            worth += fixed ? def.value * Math.max(best, worthPerClipping(district)) * FIXED_BONUS : def.value * worthPerClipping(district);
+            MowProgress.clearGrowth(id);
+            this.effects.burst(at, new THREE.Color(def.color), 18, 5);
+            this.effects.burst(at, new THREE.Color(def.cutColor), 8, 3);
+        }
+        const bagged = MowProgress.addClippings(Math.round(value * MowProgress.grassGain), worth * MowProgress.grassGain);
+        MowAudio.play('cut');
+        MowAudio.play('item');
+        this.onCut(0, bagged);
+        if (!wasFull && MowProgress.full) this.onFull();
     }
 
     private hint(say: () => void): void {

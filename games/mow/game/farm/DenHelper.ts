@@ -1,7 +1,8 @@
 // DenHelper.ts
 //
-// A hired helper in a den (EggLoopDef.helper / truckHelper): one of the people (People.ts) in the den's uniform (a blue
-// shirt, dark trousers) with a backpack (the player's rucksack, in blue) the packs stack on. Its job, round and round:
+// A hired helper in a den or the barn (EggLoopDef.helper / truckHelper, CowLoopDef.helper / truckHelper): one of the
+// people (People.ts) in the den's uniform (a blue shirt, dark trousers) with a backpack (the player's rucksack, in blue)
+// the goods (any farm item) stack on. Its job, round and round:
 //   1. walk to the grid with the most packs on it (the packing machine's or the gold machine's) and pick up to `carry`;
 //   2. walk to where they go (the SELL square: the customer at the counter; or the truck dock: the parked truck) and
 //      hand them over one at a time (paid the usual way: onto a cash square);
@@ -12,7 +13,7 @@
 import * as THREE from 'three';
 import { playerScale } from '../player/MowPlayer';
 import { bagColor, buildRucksack } from '../player/Backpack';
-import { farmItem, FarmItem, ITEM_HEIGHT } from './FarmModels';
+import { farmItem, FarmItem, ITEM_HEIGHT, itemHeight } from './FarmModels';
 import { loadPeople, People, PERSON_COUNT, PERSON_HEIGHT, PERSON_MODEL_HEIGHT, personCopy, randomOutfit } from './People';
 
 const CLIP_WALK_SPEED = 1.38;
@@ -33,14 +34,14 @@ type Job = 'toPick' | 'picking' | 'toSell' | 'selling' | 'toCash' | 'waiting';
 
 export interface DenHelperHooks {
     /** Where packs can be picked up now (den-local) and of what kind (the grid with the most); null: none. */
-    pickSpot(): { at: THREE.Vector3; kind: 'goldTray' | 'tray' } | null;
+    pickSpot(): { at: THREE.Vector3; kind: FarmItem } | null;
     /** Takes one pack of `kind` off its grid; false if there's none. */
-    take(kind: 'goldTray' | 'tray'): boolean;
+    take(kind: FarmItem): boolean;
     /** The SELL square and the cash square (world). */
     sellSpot(): THREE.Vector3;
     cashSpot(): THREE.Vector3;
     /** Hands a pack of `kind` from `from` (world) to the customer at the counter; false if no one's there to take it. */
-    serve(kind: 'goldTray' | 'tray', from: THREE.Vector3): boolean;
+    serve(kind: FarmItem, from: THREE.Vector3): boolean;
     /** Money on the cash square; takes it all from `from` (the player's now). */
     cashWaiting(): number;
     collect(from: THREE.Vector3): void;
@@ -58,7 +59,7 @@ export class DenHelper {
     private job: Job = 'waiting';
     private timer = 0;
     /** What it carries (kinds, bottom up) and their drawn stack. */
-    private readonly carried: ('goldTray' | 'tray')[] = [];
+    private readonly carried: (FarmItem)[] = [];
     private readonly stack = new THREE.Group();
     private gone = false;
 
@@ -100,14 +101,17 @@ export class DenHelper {
 
     /** The top of what it carries (world): packs fly from here. */
     private hands(out = new THREE.Vector3()): THREE.Vector3 {
-        return out.copy(this.position).setY(this.stack.position.y + this.carried.length * ITEM_HEIGHT.tray);
+        const height = this.carried.reduce((sum, kind) => sum + itemHeight(kind), 0);
+        return out.copy(this.position).setY(this.stack.position.y + height);
     }
 
     private redrawStack(): void {
         this.stack.clear();
-        this.carried.forEach((kind, i) => {
-            const item = farmItem(kind as FarmItem);
-            item.position.y = i * ITEM_HEIGHT.tray;
+        let y = 0;
+        this.carried.forEach((kind) => {
+            const item = farmItem(kind);
+            item.position.y = y;
+            y += itemHeight(kind);
             this.stack.add(item);
         });
     }

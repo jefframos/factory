@@ -11,7 +11,7 @@ import gsap from 'gsap';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { BendService } from '../services/BendService';
 import { TruckDockDef } from '../data/MowConfig';
-import { drawOrderBubble } from './Customers';
+import { drawOrderBubble, Order, OrderItem, randomOrder } from './Customers';
 
 const TURN_SPEED = 3;
 /** Its bubble, over the cab. */
@@ -65,6 +65,8 @@ class Truck {
     public wants = 0;
     public got = 0;
     public gone = false;
+    /** What it wants of several goods (the cows' trucks), else a count of trays. */
+    public order?: Order;
 
     public constructor(parent: THREE.Object3D, model: string, length: number, wants: number) {
         this.wants = wants;
@@ -109,10 +111,10 @@ class Truck {
     }
 
     public drawBubble(): void {
-        const key = this.state === 'leaving' ? 'happy' : `${this.wants - this.got}`;
+        const key = this.state === 'leaving' ? 'happy' : this.order ? this.order.map((line) => `${line.item}${line.left}`).join(',') : `${this.wants - this.got}`;
         if (key !== this.drawn) {
             this.drawn = key;
-            drawOrderBubble(this.canvas, this.wants - this.got, this.state === 'leaving');
+            drawOrderBubble(this.canvas, this.wants - this.got, this.state === 'leaving', this.order);
             this.texture.needsUpdate = true;
         }
         this.bubble.visible = this.state === 'parked' || (this.state === 'leaving' && this.s < 4);
@@ -141,13 +143,15 @@ export class Trucks {
     private readonly leaving: Truck[] = [];
     private timer = 1;
     private nextModel = 0;
+    /** How hungry the market is (Customers.demand): bigger loads, more often, with a big stock waiting. */
+    public demand: () => number = () => 1;
 
     /**
      * `path`: from where they pop in to where they park (its last point); `out`: from the park point on to where they
      * pop out; `parkFacing`: the way a parked one faces (radians round y).
      */
     public constructor(threeScene: THREE.Scene, private readonly config: TruckDockDef, path: THREE.Vector3[], out: THREE.Vector3[],
-        private readonly parkFacing: number) {
+        private readonly parkFacing: number, private readonly items?: readonly OrderItem[]) {
         this.inWay = way(path);
         this.outWay = way(out.length >= 2 ? out : [...path].reverse());
         threeScene.add(this.group);
@@ -176,10 +180,19 @@ export class Trucks {
         return out.set(truck.root.position.x + Math.sin(truck.heading) * back, truck.height * 0.55, truck.root.position.z + Math.cos(truck.heading) * back);
     }
 
-    /** A tray reached the parked truck: counted; true when that was the last (it pays, then drives on out). */
-    public give(): boolean {
+    /** Whether the parked truck still wants `item` (an order of several goods), or anything (a count of trays). */
+    public wantsItem(item?: OrderItem): boolean {
         const truck = this.front;
         if (!truck) return false;
+        return !truck.order || truck.order.some((line) => line.item === item && line.left > 0);
+    }
+
+    /** A tray (or, an order of goods, an `item`) reached the parked truck: counted; true when that was the last (it pays, then drives on out). */
+    public give(item?: OrderItem): boolean {
+        const truck = this.front;
+        if (!truck) return false;
+        const line = item ? truck.order?.find((entry) => entry.item === item && entry.left > 0) : undefined;
+        if (line) line.left--;
         truck.got++;
         if (truck.got < truck.wants) return false;
         truck.state = 'leaving';
@@ -198,7 +211,8 @@ export class Trucks {
         const models = this.config.models?.length ? this.config.models : [this.config.model];
         const model = models[this.nextModel++ % models.length];
         const [low, high] = this.config.wants;
-        const truck = new Truck(this.group, model, this.length, low + Math.floor(Math.random() * (high - low + 1)));
+        const truck = new Truck(this.group, model, this.length, Math.round((low + Math.floor(Math.random() * (high - low + 1))) * Math.max(1, this.demand())));
+        if (this.items?.length) truck.order = randomOrder(this.items, truck.wants);
         truck.heading = along(this.inWay, 0, truck.root.position);
         truck.root.rotation.y = truck.heading;
         this.queue.push(truck);
@@ -210,7 +224,7 @@ export class Trucks {
         const last = this.queue[this.queue.length - 1];
         const startClear = !last || last.s > this.length + QUEUE_GAP;
         if (this.timer <= 0 && this.queue.length < (this.config.queue ?? 3) && startClear && this.inWay.total > 0) {
-            this.timer = this.config.everySec;
+            this.timer = this.config.everySec / Math.max(1, this.demand());
             this.arrive();
         }
         // On the way in: each up to the park point, or a gap behind the one ahead, easing to a stop.

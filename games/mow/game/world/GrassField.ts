@@ -35,7 +35,7 @@
 // difference). Restored districts stay mowed.
 
 import * as THREE from 'three';
-import { MOW, TOWN, DistrictDef, GrassDef, GrassPatch, TreasureDef, canCutGrass, lawnLift, pastCorner } from '../data/MowConfig';
+import { MOW, TOWN, DistrictDef, GrassDef, GrassPatch, TreasureDef, canCutGrass, lawnLift, pastCorner, worthPerClipping } from '../data/MowConfig';
 import { BendService } from '../services/BendService';
 import { bladeMaterial, clumpGeometry, FAR_CLUMP, NEAR_CLUMP, setPushers } from './GrassBlades';
 
@@ -110,8 +110,10 @@ function autoType(x: number, z: number, noise: (x: number, z: number) => number)
 export interface CutResult {
     /** Cells cut this call. */
     cells: number;
-    /** Clippings they give. */
+    /** Clippings they give (the bag's load: the grass's own value). */
     clippings: number;
+    /** What those clippings are worth (money before boosts: their area's value, DistrictDef.valueScale). */
+    worth: number;
     /** Cut cells whose grass was as tough as the tool's power (it labours through those: MowingSystem's LOAD_DRAG). */
     hard?: number;
     /** Grass too tough being chewed (not through yet): where and its colour (the chips). */
@@ -187,6 +189,8 @@ export class GrassField {
     private readonly cutColors = MOW.grass.map((g) => new THREE.Color(g.cutColor));
     /** Per district: its grassScale (tuft height and chew effort). */
     private readonly grassScales = MOW.districts.map((d) => d.grassScale ?? 1);
+    /** Per district: money per clipping (the selling price times its area value, DistrictDef.valueScale). */
+    private readonly worthScales = MOW.districts.map((_, d) => worthPerClipping(d));
 
     /** `isBlocked`: cells under obstacles (trees, benches, buildings) get no grass. `saved`: cut cells from a save. */
     public constructor(threeScene: THREE.Scene, isBlocked: (x: number, z: number) => boolean, saved?: string) {
@@ -415,7 +419,7 @@ export class GrassField {
      */
     public cutCapsule(ax: number, az: number, bx: number, bz: number, radius: number, power: number, delta: number,
         canCut: (district: number) => boolean): CutResult {
-        const result: CutResult = { cells: 0, clippings: 0 };
+        const result: CutResult = { cells: 0, clippings: 0, worth: 0 };
         const r2 = radius * radius;
         const minIx = Math.max(0, Math.floor((Math.min(ax, bx) - radius - this.minX) / this.cell));
         const maxIx = Math.min(this.width - 1, Math.floor((Math.max(ax, bx) + radius - this.minX) / this.cell));
@@ -471,6 +475,7 @@ export class GrassField {
                 result.cells++;
                 if (short >= 0) result.hard = (result.hard ?? 0) + 1;
                 result.clippings += grass.value;
+                result.worth += grass.value * this.worthScales[d];
                 sumX += x;
                 sumZ += z;
                 lastType = this.types[i] - 1;
@@ -648,6 +653,13 @@ export class GrassField {
             clippings += MOW.grass[this.types[i] - 1].value;
         }
         return clippings;
+    }
+
+    /** Grows `share` of a district's cells back (its own grass, wherever it was cut); returns how many. */
+    public regrowShare(district: number, share: number): number {
+        const before = this.cutCounts[district];
+        this.regrow(district, Math.round(this.totals[district] * share), Infinity);
+        return before - this.cutCounts[district];
     }
 
     /** A district's restored share (0..1). */

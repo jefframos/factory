@@ -816,6 +816,11 @@ const FARM_LISTS = { pad: 'pads', den: 'dens' };
 const listOf = (type) => (type === 'peopleArea' ? town.people?.areas ?? null : type === 'peoplePoint' ? town.people?.waypoints ?? null : type === 'waypoint' ? town.traffic.waypoints : type === 'road' ? town.roads?.cells ?? null
     : FARM_LISTS[type] ? town.farm?.[FARM_LISTS[type]] ?? null : type === 'dock' ? (town.farm?.trucks ? [town.farm.trucks] : null)
     : type === 'truckPoint' ? town.farm?.truckPath ?? null
+    : type === 'cowDen' ? (town.farm?.cowDen ? [town.farm.cowDen] : null)
+    : type === 'cowDock' ? (town.farm?.cowDen?.trucks ? [town.farm.cowDen.trucks] : null)
+    : type === 'cowTruckPoint' ? town.farm?.cowDen?.truckPath ?? null
+    : type === 'cropFarm' ? town.farm?.cropFarms ?? null
+    : type === 'cropDock' ? (town.farm?.cropFarms ?? []).map((farm) => farm.harbour ?? null)
     : type === 'peopleInPoint' ? town.farm?.peopleIn ?? null
     : type === 'peopleOutPoint' ? town.farm?.peopleOut ?? null
     : type === 'truckCash' ? (town.farm?.trucks ? [(town.farm.trucks.cash ??= { x: town.farm.trucks.x, z: town.farm.trucks.z - 1.8 })] : null)
@@ -827,6 +832,9 @@ const grassName = (id) => (id === 'none' ? 'no grass' : id === 'auto' ? 'noise' 
 function entityData(sel) {
     if (!sel) return null;
     if (sel.type === 'denPart') return denPartData(sel.index);
+    if (FARM_PART_SETS[sel.type]) return farmPartData(sel.type, sel.index);
+    if (sel.type === 'cowBeltPoint') return cowBeltData(sel.index);
+    if (BOAT_WAYS[sel.type]) return boatPointData(sel.type, sel.index);
     if (sel.type === 'areaUnlock') return town.sections[sel.index]?.unlock ?? null;
     if (sel.type === 'beltPoint' || sel.type === 'goldBeltPoint') return beltPointData(sel.index, BELT_KEYS[sel.type]);
     if (sel.type === 'start') return town.start;
@@ -947,6 +955,29 @@ function rebuildEntities() {
         }
         (town.farm?.truckPath ?? []).forEach((point, index) => addHolder({ type: 'truckPoint', index }, buildTruckPoint(point, index)));
         refreshTruckLine();
+        // The cow barn (the game's CowDen): its yard, its truck dock, its trucks' path.
+        const cowDen = town.farm?.cowDen;
+        if (cowDen) {
+            addHolder({ type: 'cowDen', index: 0 }, buildDen(cowDen, '🐄'));
+            if (cowDen.trucks) addHolder({ type: 'cowDock', index: 0 }, buildDock(cowDen.trucks, '🐄 Truck dock'));
+            (cowDen.truckPath ?? []).forEach((point, index, all) => addHolder({ type: 'cowTruckPoint', index }, buildCowTruckPoint(point, index, all.length)));
+        }
+        // The barn's parts and belt; the crop farms (their yard, parts, harbour drop point, boat paths).
+        if (cowDen) {
+            FARM_PART_SETS.cowPart.parts.forEach((_, i) => addHolder({ type: 'cowPart', index: i }, buildFarmPart('cowPart', cowDen, i)));
+            cowBeltPoints(cowDen).forEach((_, i, all) => addHolder({ type: 'cowBeltPoint', index: i }, buildCowBeltPoint(cowDen, i, all.length)));
+        }
+        (town.farm?.cropFarms ?? []).forEach((farm, index) => {
+            addHolder({ type: 'cropFarm', index }, buildDen(farm, '🍓'));
+            FARM_PART_SETS.cropPart.parts.forEach((_, i) => addHolder({ type: 'cropPart', index: index * DEN_SLOTS + i }, buildFarmPart('cropPart', farm, i)));
+            if (farm.harbour) {
+                addHolder({ type: 'cropDock', index }, buildDock(farm.harbour, '⚓ Harbour drop point'));
+                for (const type of ['boatPoint', 'boatOutPoint']) {
+                    (farm.harbour[BOAT_WAYS[type]] ?? []).forEach((point, i, all) => addHolder({ type, index: index * DEN_SLOTS + i }, buildBoatPoint(type, point, i, all.length)));
+                }
+            }
+        });
+        refreshFarmLines();
         for (const way of PEOPLE_WAYS) (town.farm?.[way.key] ?? []).forEach((point, index, all) => addHolder({ type: way.type, index }, buildPeopleWayPoint(way, point, index, all.length)));
         refreshPeopleLines();
         town.colliders.forEach((cube, index) => addHolder({ type: 'collider', index }, buildCollider(cube)));
@@ -1136,7 +1167,19 @@ function buildFarmPad(pad) {
 }
 
 /** A den (the game's ChickenDen): its yard (width x depth), its gate on the south side, its name. */
-function buildDen(den) {
+/** A point of the cow barn's trucks' path: an orange post with its number (the park point marked). */
+function buildCowTruckPoint(point, index, count) {
+    const holder = new THREE.Group();
+    holder.position.set(point.x, 0, point.z);
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.2, 12), new THREE.MeshStandardMaterial({ color: 0xffb74d, emissive: 0xffb74d, emissiveIntensity: 0.35 }));
+    post.position.y = 0.6;
+    const label = labelSprite(`🐄🚚 ${index + 1}${point.park ? ' · park' : index === 0 ? ' · in' : index === count - 1 ? ' · out' : ''}`, '#ffd59a');
+    label.position.y = 2;
+    holder.add(post, label);
+    return holder;
+}
+
+function buildDen(den, icon = '🐔') {
     const holder = new THREE.Group();
     holder.position.set(den.x, 0, den.z);
     const fill = plane(den.width, den.depth, '#7a5b44', 0.06, 0.6);
@@ -1146,7 +1189,7 @@ function buildDen(den) {
     const gate = new THREE.Mesh(new THREE.BoxGeometry(den.gate ?? 2.4, 0.3, 0.4), new THREE.MeshBasicMaterial({ color: 0x9cff6a }));
     gate.position.set(0, 0.15, den.depth / 2);
     gate.raycast = () => {};
-    const label = labelSprite(`🐔 ${den.name}\ngate on the south side`, '#ffd59a');
+    const label = labelSprite(`${icon} ${den.name}\ngate on the south side${den.level ? ` · level ${den.level}` : ''}`, '#ffd59a');
     label.position.y = 3;
     holder.add(fill, edge, gate, label);
     return holder;
@@ -1263,6 +1306,228 @@ function buildDenPart(den, slot) {
     label.scale.multiplyScalar(0.7);
     holder.add(label);
     return holder;
+}
+
+// ---------------------------------------------------------------- the barn's and the crop farms' parts (game: CowDen / CropFarm layout())
+
+/** A part's marker, as a den part's: a box (machines, counters) or a square (sized ones take their own size). */
+function drawPartMarker(holder, part, at) {
+    if (part.box) {
+        const [w, h, d] = part.box;
+        const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: part.color }));
+        box.position.y = h / 2;
+        holder.add(box);
+    } else {
+        const w = part.sized && at.w ? at.w : part.square[0];
+        const d = part.sized && at.d ? at.d : part.square[1];
+        const fill = plane(w, d, `#${part.color.toString(16).padStart(6, '0')}`, 0.09, 0.45);
+        const edge = outline(part.color);
+        edge.scale.set(w, d, 1);
+        edge.position.y = 0.1;
+        holder.add(fill, edge);
+    }
+    const label = labelSprite(part.label, '#cfeaff');
+    label.position.y = part.box ? part.box[1] + 0.8 : 1.3;
+    label.scale.multiplyScalar(0.7);
+    holder.add(label);
+}
+
+/** The cow barn's parts where its own layout puts them (as CowDen layout(): keep the two in step). */
+function cowPartDefaults(den) {
+    const hw = den.width / 2;
+    const hd = den.depth / 2;
+    return {
+        butterMachine: { x: -2.6, z: 0.9 }, butterInput: { x: -2.6, z: 3.0 }, butterGrid: { x: -4.6, z: 0.9 },
+        cheeseMachine: { x: 2.6, z: 0.9 }, cheeseInput: { x: 2.6, z: 3.0 }, cheeseGrid: { x: 4.6, z: 0.9 },
+        counter: { x: hw - 0.55, z: 0.6 }, sell: { x: hw - 1.85, z: 0.6 }, cash: { x: hw - 1.85, z: hd - 1.35 },
+        beltBuy: { x: 0, z: -hd + 4.4 + 1.6 }, helperHire: { x: hw - 1.85, z: 3.4 }, truckHelperHire: { x: -hw + 3.4, z: 4.6 },
+    };
+}
+
+/** A crop farm's parts where its own layout puts them (as CropFarm layout(): keep the two in step). */
+function cropPartDefaults(farm) {
+    const hw = farm.width / 2;
+    const hd = farm.depth / 2;
+    const cols = Math.max(1, farm.cols ?? 4);
+    const rows = Math.ceil((farm.plots?.length ?? 1) / cols);
+    const middle = -hd + 1.2 + rows * 3 + 1.2;
+    const dock = farm.harbour ? { x: farm.harbour.x - farm.x - 2.2, z: farm.harbour.z - farm.z } : { x: 0, z: 0 };
+    return {
+        plots: { x: -(cols * 2.4 + (cols - 1) * 0.6) / 2 + 1.2, z: -hd + 2.4 },
+        machine: { x: 2.6, z: middle }, input: { x: 2.6, z: middle + 2 }, grid: { x: 5.3, z: middle }, fresh: { x: -2.6, z: middle },
+        counter: { x: hw - 0.55, z: middle }, sell: { x: hw - 1.85, z: middle }, cash: { x: hw - 1.85, z: hd - 1.35 },
+        pickerHire: { x: -hw + 1.8, z: hd - 1.4 }, helperHire: { x: hw - 1.85, z: Math.min(hd - 3.2, middle + 2.6) }, boatHelperHire: dock,
+    };
+}
+
+/** The farms whose parts are placed like a den's: what they are, their parts, and where those go by default. */
+const FARM_PART_SETS = {
+    cowPart: {
+        name: 'cow barn',
+        dens: () => (town.farm?.cowDen ? [town.farm.cowDen] : []),
+        defaults: cowPartDefaults,
+        parts: [
+            { key: 'butterMachine', label: '🧈 Butter churn', color: 0xb07a45, box: [1.2, 1.2, 1.2] },
+            { key: 'butterInput', label: 'MILK drop (butter)', color: 0xffffff, square: [1.6, 1.5], sized: true },
+            { key: 'butterGrid', label: 'BUTTER out (2 x 2)', color: 0xffe066, square: [1.9, 1.9] },
+            { key: 'cheeseMachine', label: '🧀 Cheese press', color: 0xe08a2c, box: [1.3, 1.1, 1.0] },
+            { key: 'cheeseInput', label: 'MILK drop (cheese)', color: 0xffffff, square: [1.6, 1.5], sized: true },
+            { key: 'cheeseGrid', label: 'CHEESE out (2 x 2)', color: 0xffb347, square: [1.9, 1.9] },
+            { key: 'counter', label: 'Sell counter', color: 0x8a5a32, box: [0.8, 0.85, 2.2] },
+            { key: 'sell', label: 'SELL square', color: 0x4fe3ff, square: [1.5, 2], sized: true },
+            { key: 'cash', label: 'Cash square', color: 0x5fc85a, square: [1.5, 1.5], sized: true },
+            { key: 'beltBuy', label: 'Conveyor buy square', color: 0xffffff, square: [1.8, 1.4], sized: true },
+            { key: 'helperHire', label: 'Hire helper square', color: 0x2f6fd8, square: [1.6, 1.6], sized: true },
+            { key: 'truckHelperHire', label: 'Hire truck helper square', color: 0x2f6fd8, square: [1.6, 1.6], sized: true },
+        ],
+    },
+    cropPart: {
+        name: 'farm',
+        dens: () => town.farm?.cropFarms ?? [],
+        defaults: cropPartDefaults,
+        parts: [
+            { key: 'plots', label: '🌱 First plot (the rest follow in rows)', color: 0x6b4a2e, square: [2.4, 2.4] },
+            { key: 'machine', label: '🍯 Machine', color: 0x9aa3ad, box: [1.3, 1.4, 1.0] },
+            { key: 'input', label: 'FRUIT drop (machine)', color: 0xffffff, square: [1.6, 1.5], sized: true },
+            { key: 'grid', label: 'PRODUCT out (2 x 2)', color: 0xc0182e, square: [1.9, 1.9] },
+            { key: 'fresh', label: 'FRESH crate (2 x 2)', color: 0xe8323f, square: [1.9, 1.9] },
+            { key: 'counter', label: 'Sell counter', color: 0x8a5a32, box: [0.8, 0.85, 2.2] },
+            { key: 'sell', label: 'SELL square', color: 0x4fe3ff, square: [1.5, 2], sized: true },
+            { key: 'cash', label: 'Cash square', color: 0x5fc85a, square: [1.5, 1.5], sized: true },
+            { key: 'pickerHire', label: 'Hire picker square', color: 0x2f6fd8, square: [1.6, 1.6], sized: true },
+            { key: 'helperHire', label: 'Hire helper square', color: 0x2f6fd8, square: [1.6, 1.6], sized: true },
+            { key: 'boatHelperHire', label: 'Hire boat helper square', color: 0x2f6fd8, square: [1.6, 1.6], sized: true },
+        ],
+    },
+};
+
+const farmPartOf = (type, index) => {
+    const set = FARM_PART_SETS[type];
+    const den = set?.dens()[Math.floor(index / DEN_SLOTS)];
+    const part = set?.parts[index % DEN_SLOTS];
+    return den && part ? { set, den, part } : null;
+};
+
+/** A part's point in den.parts (made from the layout the first time it's touched: then it's the farm's own). */
+function farmPartData(type, index) {
+    const found = farmPartOf(type, index);
+    if (!found) return null;
+    const { set, den, part } = found;
+    den.parts ??= {};
+    return (den.parts[part.key] ??= { ...set.defaults(den)[part.key] });
+}
+
+function buildFarmPart(type, den, i) {
+    const set = FARM_PART_SETS[type];
+    const part = set.parts[i];
+    const at = den.parts?.[part.key] ?? set.defaults(den)[part.key];
+    const holder = new THREE.Group();
+    holder.position.set(den.x + at.x, 0, den.z + at.z);
+    drawPartMarker(holder, part, at);
+    return holder;
+}
+
+/** The barn's belt as the game takes it: the drawn one (2+ points), else along the milk spots and round behind the machines. */
+function cowBeltPoints(den) {
+    if ((den.parts?.belt?.length ?? 0) >= 2) return den.parts.belt;
+    const hw = den.width / 2;
+    const hd = den.depth / 2;
+    const rowZ = -hd + 4.4 + 0.95;
+    const backZ = (den.parts?.butterMachine?.z ?? 0.9) - 1.2;
+    return [{ x: -hw + 1.2, z: rowZ }, { x: hw - 1.5, z: rowZ }, { x: hw - 1.5, z: backZ }, { x: 0, z: backZ }];
+}
+
+function cowBeltData(index) {
+    const den = town.farm?.cowDen;
+    if (!den) return null;
+    den.parts ??= {};
+    if ((den.parts.belt?.length ?? 0) < 2) den.parts.belt = cowBeltPoints(den).map((p) => ({ ...p }));
+    return den.parts.belt[index] ?? null;
+}
+
+function buildCowBeltPoint(den, i, count) {
+    const point = cowBeltPoints(den)[i];
+    const holder = new THREE.Group();
+    holder.position.set(den.x + point.x, 0, den.z + point.z);
+    const color = i === 0 ? 0x5fd35a : i === count - 1 ? 0xff7043 : 0xb0b8c4;
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.5, 12), new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.25 }));
+    post.position.y = 0.25;
+    const drawn = (den.parts?.belt?.length ?? 0) >= 2;
+    const label = labelSprite(i === 0 ? `🐄 Belt 1 · start${drawn ? '' : ' (default)'}` : i === count - 1 ? `🐄 Belt ${i + 1} · split to the machines` : `🐄 Belt ${i + 1}`, '#e6ecf5');
+    label.position.y = 1.1;
+    label.scale.multiplyScalar(0.6);
+    holder.add(post, label);
+    return holder;
+}
+
+function addCowBeltPoint(after) {
+    const den = town.farm.cowDen;
+    touch();
+    den.parts ??= {};
+    if ((den.parts.belt?.length ?? 0) < 2) den.parts.belt = cowBeltPoints(den).map((p) => ({ ...p }));
+    const path = den.parts.belt;
+    const a = path[after];
+    const b = path[after + 1];
+    path.splice(after + 1, 0, b ? { x: round((a.x + b.x) / 2), z: round((a.z + b.z) / 2) } : { x: round(a.x + 1), z: a.z });
+    selection = { type: 'cowBeltPoint', index: after + 1 };
+    rebuildAll();
+}
+
+/** A harbour's boat path point (in: `path`, to the drop point; out: `out`, away): a blue post with its number. */
+const BOAT_WAYS = { boatPoint: 'path', boatOutPoint: 'out' };
+function boatPointData(type, index) {
+    const farm = town.farm?.cropFarms?.[Math.floor(index / DEN_SLOTS)];
+    return farm?.harbour?.[BOAT_WAYS[type]]?.[index % DEN_SLOTS] ?? null;
+}
+
+function buildBoatPoint(type, point, i, count) {
+    const holder = new THREE.Group();
+    holder.position.set(point.x, 0, point.z);
+    const color = type === 'boatPoint' ? 0x4fa3ff : 0x9fd2ff;
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 1.2, 12), new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.35 }));
+    post.position.y = 0.6;
+    const text = type === 'boatPoint'
+        ? (i === 0 ? '⛵ 1 · boats come in' : i === count - 1 ? `⛵ ${i + 1} · they dock` : `⛵ ${i + 1}`)
+        : (i === 0 ? '⛵ out 1 · from the dock' : i === count - 1 ? `⛵ out ${i + 1} · gone` : `⛵ out ${i + 1}`);
+    const label = labelSprite(text, '#cfe6ff');
+    label.position.y = 2;
+    holder.add(post, label);
+    return holder;
+}
+
+function addBoatPoint(type, index) {
+    const farm = town.farm.cropFarms[Math.floor(index / DEN_SLOTS)];
+    const key = BOAT_WAYS[type];
+    touch();
+    farm.harbour[key] ??= [];
+    const path = farm.harbour[key];
+    const after = index % DEN_SLOTS;
+    const a = path[after];
+    const b = path[after + 1];
+    path.splice(after + 1, 0, b ? { x: round((a.x + b.x) / 2), z: round((a.z + b.z) / 2) } : { x: round(a.x + 3), z: a.z });
+    selection = { type, index: index + 1 };
+    rebuildAll();
+}
+
+/** The barn's belt and the harbours' boat paths, drawn point to point (not selectable: their points are). */
+const farmLines = [];
+function refreshFarmLines() {
+    farmLines.forEach((line) => line.removeFromParent());
+    farmLines.length = 0;
+    const draw = (points, color, y) => {
+        if (points.length < 2) return;
+        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points.map((p) => new THREE.Vector3(p.x, y, p.z))), new THREE.LineBasicMaterial({ color }));
+        line.raycast = () => {};
+        line.renderOrder = 5;
+        scene.add(line);
+        farmLines.push(line);
+    };
+    const cow = town.farm?.cowDen;
+    if (cow) draw(cowBeltPoints(cow).map((p) => ({ x: cow.x + p.x, z: cow.z + p.z })), 0xd0d6de, 0.35);
+    for (const farm of town.farm?.cropFarms ?? []) {
+        draw(farm.harbour?.path ?? [], 0x4fa3ff, 0.4);
+        draw(farm.harbour?.out ?? [], 0x9fd2ff, 0.4);
+    }
 }
 
 // ---------------------------------------------------------------- a den's conveyor belt (den.parts.belt, den-local; ChickenDen beltPath())
@@ -1461,14 +1726,14 @@ function buildTruckCash(cash) {
 }
 
 /** The den's truck dock: its square (inside the den, by the road) and its price. */
-function buildDock(dock) {
+function buildDock(dock, name = '🚚 Truck dock') {
     const holder = new THREE.Group();
     holder.position.set(dock.x, 0, dock.z);
     const fill = plane(1.6, 1.6, '#4fe3ff', 0.09, 0.45);
     const edge = outline(0x4fe3ff);
     edge.scale.set(1.6, 1.6, 1);
     edge.position.y = 0.1;
-    const label = labelSprite(`🚚 Truck dock\n$${dock.price} · level ${dock.level}`, '#bff4ff');
+    const label = labelSprite(`${name}\n$${dock.price} · level ${dock.level}`, '#bff4ff');
     label.position.y = 2.4;
     holder.add(fill, edge, label);
     return holder;
@@ -1706,7 +1971,7 @@ const round = (value, step = 0.001) => Number((Math.round(value / step) * step).
 /** Things that turn (the rest only move / resize). */
 const TURNS = new Set(['shape', 'prop', 'atm', 'wardrobe', 'patch', 'separator', 'pad']);
 /** Things whose size is width x depth (scaling changes those, not a height). */
-const SIZED = new Set(['shape', 'footArea', 'pavement', 'section', 'patch', 'sound', 'pen', 'secret', 'collider', 'peopleArea', 'spawn', 'den']);
+const SIZED = new Set(['shape', 'footArea', 'pavement', 'section', 'patch', 'sound', 'pen', 'secret', 'collider', 'peopleArea', 'spawn', 'den', 'cowDen', 'cropFarm']);
 
 /** The gizmo moved/turned the holder: write it back into the data. */
 function syncFromGizmo() {
@@ -1715,6 +1980,23 @@ function syncFromGizmo() {
     if (!data || !holder) return;
     if (gizmo.getMode() === 'scale') {
         holder.scale.set(Math.max(0.05, holder.scale.x), Math.max(0.05, holder.scale.y), Math.max(0.05, holder.scale.z));
+        setDirty(true);
+        return;
+    }
+    if (FARM_PART_SETS[selection.type] || selection.type === 'cowBeltPoint') {
+        // Farm-local: from the barn's (or the crop farm's) middle.
+        const den = selection.type === 'cowBeltPoint' ? town.farm.cowDen : farmPartOf(selection.type, selection.index)?.den;
+        if (!den) return;
+        data.x = round(holder.position.x - den.x);
+        data.z = round(holder.position.z - den.z);
+        refreshFarmLines();
+        setDirty(true);
+        return;
+    }
+    if (BOAT_WAYS[selection.type]) {
+        data.x = round(holder.position.x);
+        data.z = round(holder.position.z);
+        refreshFarmLines();
         setDirty(true);
         return;
     }
@@ -2675,6 +2957,8 @@ function renderLists() {
     host.querySelector('#townFarmList').replaceChildren(
         ...(town.farm?.pads ?? []).map((pad, i) => listItem('pad', i, pad.kind === 'tool' ? '⬆ Mower station' : pad.kind === 'blades' ? '🔪 Blades station' : '🎒 Bag station', pad.section ? `with ${pad.section}` : 'from the start')),
         ...(town.farm?.dens ?? []).map((den, i) => listItem('den', i, `🐔 ${den.name}`, `${den.width}×${den.depth}`)),
+        ...(town.farm?.cropFarms ?? []).map((farm, i) => listItem('cropFarm', i, `🍓 ${farm.name}`, `${farm.width}×${farm.depth}`)),
+        ...(town.farm?.cropFarms ?? []).flatMap((farm, i) => (farm.harbour ? [listItem('cropDock', i, '⚓ Harbour drop point', farm.name)] : [])),
         ...(town.farm?.trucks ? [listItem('dock', 0, '🚚 Truck dock', `$${town.farm.trucks.price} · level ${town.farm.trucks.level}`), listItem('truckCash', 0, '💵 Truck cash', '')] : []),
         ...(town.farm?.truckPath ?? []).map((point, i, all) => listItem('truckPoint', i, `🚚 Path point ${i + 1}`, i === 0 ? 'trucks come in' : i === all.length - 1 ? 'they park' : '')),
         ...PEOPLE_WAYS.flatMap((way) => (town.farm?.[way.key] ?? []).map((point, i, all) => listItem(way.type, i, `🧍 ${way.key === 'peopleIn' ? 'In' : 'Out'} point ${i + 1}`, i === 0 ? way.first : i === all.length - 1 ? way.last : ''))));
@@ -2813,7 +3097,9 @@ function renderInspector() {
         collider: () => `Collider cube ${selection.index + 1}`, sound: () => `Sound zone: ${data.id}`, waypoint: () => `Waypoint ${data.id}`, peopleArea: () => `Wander area ${selection.index + 1}`, peoplePoint: () => `Street path point ${data.id}`, secret: () => `Secret patch: ${data.id}`, spawn: () => `Spawn area: ${data.id}`, pad: () => (data.kind === 'tool' ? 'Mower upgrade station' : data.kind === 'blades' ? 'Blades upgrade station' : 'Bag upgrade station'), den: () => `Den: ${data.name}`, footArea: () => `No-mower area ${selection.index + 1}`, shape: () => `Shape cube ${selection.index + 1}`, areaUnlock: () => `Unlock square: ${town.sections[selection.index].name}`, beltPoint: () => `Conveyor belt point ${(selection.index % DEN_SLOTS) + 1}`, goldBeltPoint: () => `Gold belt point ${(selection.index % DEN_SLOTS) + 1}`, denPart: () => {
             const { egg, part } = denSlotInfo(selection.index % DEN_SLOTS);
             return part ? part.label : `Hen ${egg + 1}'s egg spot`;
-        }, dock: () => 'Truck dock', truckPoint: () => `Truck path point ${selection.index + 1}`, peopleInPoint: () => `Customers in point ${selection.index + 1}`, peopleOutPoint: () => `Customers out point ${selection.index + 1}`, truckCash: () => 'Truck cash square', pen: () => `${town.sections[selection.index].name} pen`, centre: () => 'Grass noise centre', shore: () => `Shore point ${selection.index + 1}`, separator: () => `${town.sections[selection.index].name} separator`,
+        }, dock: () => 'Truck dock', cowDen: () => `Cow barn: ${data.name}`, cropFarm: () => `Crop farm: ${data.name}`, cropDock: () => 'Harbour drop point',
+        cowPart: () => farmPartOf('cowPart', selection.index)?.part.label ?? 'Barn part', cropPart: () => farmPartOf('cropPart', selection.index)?.part.label ?? 'Farm part',
+        cowBeltPoint: () => `Barn belt point ${selection.index + 1}`, boatPoint: () => `Boats in: point ${selection.index % DEN_SLOTS + 1}`, boatOutPoint: () => `Boats out: point ${selection.index % DEN_SLOTS + 1}`, cowDock: () => 'Cow barn truck dock', cowTruckPoint: () => `Cow trucks point ${selection.index + 1}`, truckPoint: () => `Truck path point ${selection.index + 1}`, peopleInPoint: () => `Customers in point ${selection.index + 1}`, peopleOutPoint: () => `Customers out point ${selection.index + 1}`, truckCash: () => 'Truck cash square', pen: () => `${town.sections[selection.index].name} pen`, centre: () => 'Grass noise centre', shore: () => `Shore point ${selection.index + 1}`, separator: () => `${town.sections[selection.index].name} separator`,
     };
     const rows = [
         el('div', { class: 'inspector-title' }, titles[type](), el('span', { class: 'tag' }, type)),
@@ -2900,11 +3186,82 @@ function renderInspector() {
             selectField('There', data.section ?? '', [['', 'From the start'], ...town.sections.map((sec) => [sec.id, `With ${sec.name}`])], (v) => edit((d) => { if (v) d.section = v; else delete d.section; })),
             el('p', { class: 'muted small' }, 'Standing on the square pours the bag\'s grass in; paid in full, the upgrade happens. The stand (the next mower or the bag) is behind the square: turn it to put it at a side.'));
     }
+    if (type === 'cowDen') {
+        rows.push(
+            textField('Name', data.name, (v) => edit((d) => { d.name = v || d.name; })),
+            numberField('Gate width', data.gate ?? 2.8, 0.2, (v) => edit((d) => { d.gate = Math.max(1, v); })),
+            numberField('Opens at level', data.level ?? 0, 1, (v) => edit((d) => { const level = Math.max(0, Math.round(v)); if (level > 1) d.level = level; else delete d.level; })),
+            el('p', { class: 'muted small' }, 'The cow barn: stalls along the back (north), the butter churn west and the cheese press east, the customers\' counter by the east fence, the truck dock by the west fence. Its loop is farm.cowDen.loop in the level.'));
+    }
+    if (FARM_PART_SETS[type]) {
+        const { set, den, part } = farmPartOf(type, selection.index);
+        if (part.sized) {
+            rows.push(
+                numberField('Width', data.w ?? part.square[0], 0.1, (v) => edit((d) => { d.w = Math.max(0.6, round(v)); })),
+                numberField('Depth', data.d ?? part.square[1], 0.1, (v) => edit((d) => { d.d = Math.max(0.6, round(v)); })));
+        }
+        rows.push(
+            el('p', { class: 'muted small' }, `In the ${set.name} "${den.name}": X / Z are from its middle (+Z toward the gate), so it moves with it. The game puts it here. Drag it (W) or type it.`),
+            el('button', { class: 'block', onclick: () => edit(() => { delete den.parts?.[part.key]; }) }, '↺ Back to its own layout'));
+    }
+    if (type === 'cowBeltPoint') {
+        const den = town.farm.cowDen;
+        rows.push(
+            el('p', { class: 'muted small' }, `The barn's conveyor (X / Z from its middle): from point 1 (its start) through the points in between to the last, where the milk is split between the churn and the press. Milk joins it from each cow's spot where it passes nearest.`),
+            el('div', { class: 'row' },
+                el('button', { onclick: () => addCowBeltPoint(selection.index) }, '+ Point after this'),
+                el('button', { onclick: () => {
+                    if ((den.parts?.belt?.length ?? 0) <= 2) return toast('A belt needs a start and an end (2 points at least).', 'bad');
+                    touch();
+                    den.parts.belt.splice(selection.index, 1);
+                    selection = null;
+                    rebuildAll();
+                } }, '− Remove this point')),
+            el('button', { class: 'block', onclick: () => {
+                touch();
+                if (den.parts) delete den.parts.belt;
+                selection = null;
+                rebuildAll();
+            } }, '↺ Back to the default path'));
+    }
+    if (type === 'cropFarm') {
+        rows.push(
+            textField('Name', data.name, (v) => edit((d) => { d.name = v || d.name; })),
+            numberField('Gate width', data.gate ?? 2.4, 0.2, (v) => edit((d) => { d.gate = Math.max(1, v); })),
+            numberField('Opens at level', data.level ?? 0, 1, (v) => edit((d) => { const level = Math.max(0, Math.round(v)); if (level > 1) d.level = level; else delete d.level; })),
+            el('p', { class: 'muted small' }, `A crop farm growing "${data.crop}" (ui/mow.json crops): plots along the back, its machine and fresh crate, the counter by the east fence (customers outside it), and its harbour. Place its pieces (their markers), the harbour's drop point and the boats' paths.`));
+    }
+    if (type === 'cropDock') {
+        rows.push(el('p', { class: 'muted small' }, 'Where the boats dock: the player (or the boat helper) loads them standing here. Put it on the shore by the water, the boats\' in path ending beside it. Bought like the trucks\' dock (its price and level in the level: farm.cropFarms[].harbour).'));
+    }
+    if (BOAT_WAYS[type]) {
+        const farm = town.farm.cropFarms[Math.floor(selection.index / DEN_SLOTS)];
+        const key = BOAT_WAYS[type];
+        rows.push(
+            el('p', { class: 'muted small' }, type === 'boatPoint'
+                ? 'The boats\' way in: they appear at point 1 (out at sea) and sail point to point, docking at the last (beside the drop point).'
+                : 'The boats\' way out: from the dock on through these points, gone at the last.'),
+            el('div', { class: 'row' },
+                el('button', { onclick: () => addBoatPoint(type, selection.index) }, '+ Point after this'),
+                el('button', { onclick: () => {
+                    if ((farm.harbour[key]?.length ?? 0) <= 2) return toast('A path needs 2 points at least.', 'bad');
+                    touch();
+                    farm.harbour[key].splice(selection.index % DEN_SLOTS, 1);
+                    selection = null;
+                    rebuildAll();
+                } }, '− Remove this point')));
+    }
+    if (type === 'cowTruckPoint') {
+        rows.push(
+            checkField('They park here', Boolean(data.park), (on) => edit((d) => { if (on) d.park = true; else delete d.park; })),
+            el('p', { class: 'muted small' }, 'The cow barn\'s trucks: in from point 1 to the park point (by its dock), then on out through the rest. Add or remove points in the level (farm.cowDen.truckPath).'));
+    }
     if (type === 'den') {
         rows.push(
             textField('Name', data.name, (v) => edit((d) => { d.name = v || d.name; })),
             numberField('Gate width', data.gate ?? 2.4, 0.2, (v) => edit((d) => { d.gate = Math.max(1, v); })),
-            el('p', { class: 'muted small' }, 'Its hen house runs along the back (north), the packing machine and the sell counter inside; the customers\' path outside its west fence. Mowed up to its gate, it opens. Put tough grass round it (a grass patch) so it has to be mowed to.'));
+            numberField('Opens at level', data.level ?? 0, 1, (v) => edit((d) => { const level = Math.max(0, Math.round(v)); if (level > 1) d.level = level; else delete d.level; })),
+            el('p', { class: 'muted small' }, 'Its hen house runs along the back (north), the packing machine and the sell counter inside; the customers\' path outside its west fence. Below its level its gate is boarded up (its sign says the level); from then, mowed up to its gate, it opens. Put tough grass round it (a grass patch) so it has to be mowed to.'));
     }
     if (type === 'beltPoint' || type === 'goldBeltPoint') {
         const key = BELT_KEYS[type];
@@ -3044,6 +3401,11 @@ function renderInspector() {
                 const scale = Math.round(Math.min(3, Math.max(0.2, v || 1)) * 100) / 100;
                 if (scale === 1) delete d.grassScale;
                 else d.grassScale = scale;
+            })),
+            numberField('Clippings ×', data.valueScale ?? 1, 0.25, (v) => edit((d) => {
+                const scale = Math.round(Math.min(10, Math.max(0.25, v || 1)) * 100) / 100;
+                if (scale === 1) delete d.valueScale;
+                else d.valueScale = scale;
             })),
             numberField('City goal: opens after N areas (0: no)', data.opensAfter ?? 0, 1, (v) => edit((d) => {
                 const count = Math.max(0, Math.round(v || 0));

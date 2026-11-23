@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { BendService } from '../services/BendService';
-import { MOW, sectionUnlockable } from '../data/MowConfig';
+import { MOW, sectionUnlockable, shortMoney } from '../data/MowConfig';
 import { MowProgress } from '../data/MowProgress';
 import { GameAnalytics } from '../analytics/GameAnalytics';
 import { CanvasArt } from '../ui/CanvasArt';
@@ -113,7 +113,7 @@ export class AreaUnlocks {
         CanvasArt.text(g, 'UNLOCK', s / 2, 86, 50, '#ffffff', s - 100);
         CanvasArt.text(g, district.name.toUpperCase(), s / 2, 150, 44, '#ffe27a', s - 90);
         CanvasArt.drawIcon(g, 'ItemIcon_Money_Bill', s / 2 - 110, 262, 84);
-        CanvasArt.text(g, `$${left.toLocaleString('en-US')}`, s / 2 + 40, 266, 78, '#ffffff', s - 200);
+        CanvasArt.text(g, shortMoney(left), s / 2 + 40, 266, 78, '#ffffff', s - 200);
         if (short) CanvasArt.text(g, `LEVEL ${unlock.level}`, s / 2, 360, 52, '#ff8a7a', s - 100);
         square.texture.needsUpdate = true;
     }
@@ -155,7 +155,7 @@ export class AreaUnlocks {
         if (left > 0 && MowProgress.payable <= 0) {
             if (this.told !== on.d) {
                 this.told = on.d;
-                this.hooks.say(`$${Math.ceil(left).toLocaleString('en-US')} TO GO: COME BACK WITH MORE`, 0xffd9a8);
+                this.hooks.say(`${shortMoney(Math.ceil(left))} TO GO: COME BACK WITH MORE`, 0xffd9a8);
             }
             return;
         }

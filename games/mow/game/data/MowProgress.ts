@@ -34,6 +34,54 @@ const GLOBAL_FIELDS = ['owned', 'look', 'freeLooksOffered', 'sent', 'completed',
 export const CARRIED_KEY = 'carried';
 const SAVE_DELAY_MS = 800;
 
+/** The cow barn (CowDen): what's kept of it. */
+/** A crop farm's state (CropFarm). */
+export interface CropFarmState {
+    /** Plots owned (the first free). */
+    plots: number;
+    /** Each plot: seconds grown toward ripe, and the ripe fruit left on it (0: still growing). */
+    grown: number[];
+    left: number[];
+    /** Fresh fruit in the crate, fruit in the machine, products on its grid. */
+    fresh: number;
+    machineIn: number;
+    made: number;
+    /** Cash on its customers' square, and on its harbour's. */
+    cash: number;
+    boatCash: number;
+    dock?: boolean;
+    picker?: boolean;
+    helper?: boolean;
+    boatHelper?: boolean;
+    tutorial?: boolean;
+}
+
+export interface BarnState {
+    cows: number;
+    /** Milk on each stall's spot. */
+    floor: number[];
+    /** Milk in the butter churn and the cheese press, and what's out on their grids. */
+    butterIn: number;
+    cheeseIn: number;
+    butter: number;
+    cheese: number;
+    /** Cash on its customers' square, and on its trucks' square. */
+    cash: number;
+    truckCash: number;
+    /** Its belt and its truck dock bought, its first visit's lesson done. */
+    belt?: boolean;
+    dock?: boolean;
+    tutorial?: boolean;
+    /** Its counter helper and its trucks' helper hired. */
+    helper?: boolean;
+    truckHelper?: boolean;
+}
+
+/** SELL x2 (the dig game's phone): its first sales are free, then each takes a rewarded video. */
+const SELL_X2_FREE = 2;
+
+const freshBarn = (): BarnState => ({ cows: 0, floor: [], butterIn: 0, cheeseIn: 0, butter: 0, cheese: 0, cash: 0, truckCash: 0 });
+
 interface SaveData {
     version: number;
     money: number;
@@ -57,6 +105,8 @@ interface SaveData {
     freeLooksOffered: boolean;
     /** Treasures found (ids), and rewards claimed (treasure ids, and `area:<section id>` for an area's bonus). */
     treasuresFound: string[];
+    /** Locked chests found and not opened yet (the farm test): what each holds. */
+    lockedChests?: { id: string; reward: number }[];
     treasuresClaimed: string[];
     /** Secret patches mowed through (ids): their chest found and paid. */
     secretsFound: string[];
@@ -70,6 +120,14 @@ interface SaveData {
     padPaid: Partial<Record<PadKind, number>>;
     /** Farm test: dens reached (ids). */
     densFound: string[];
+    /** Bushes and trees cleared (Growth's ids). */
+    growthCleared: number[];
+    /** SELL x2 sales taken for free so far (the first SELL_X2_FREE skip the video). */
+    freeSells: number;
+    /** What the bag's clippings are worth (money, before boosts): each area's grass at its own value. */
+    bagWorth?: number;
+    /** Seconds of play toward the next regrow of restored areas (TOWN.farm.regrow). */
+    regrowClock?: number;
     /** Farm test: the player's experience (their level follows from it: levelFor()). */
     xp: number;
     /**
@@ -82,7 +140,11 @@ interface SaveData {
     /** Areas bought (DistrictDef.unlock), by id. */
     bought?: string[];
     /** Farm test: den goods in the backpack. */
-    goods: { eggs: number; trays: number; goldTrays?: number };
+    goods: { eggs: number; trays: number; goldTrays?: number; milk?: number; butter?: number; cheese?: number; crops?: Record<string, number> };
+    /** Farm test: the crop farms (CropFarm), by id. */
+    cropFarms?: Record<string, CropFarmState>;
+    /** Farm test: the cow barn (CowDen) — cows owned, milk on each stall's spot, in each machine, out on each grid, cash. */
+    barn: BarnState;
     /** Farm test: the chicken den — hens owned, eggs on each nest's floor, eggs in the machine, trays on its grid, cash on its square. */
     den: { hens: number; floor: number[]; machine: number; trays: number; cash: number; dock?: boolean; truckCash?: number; belt?: boolean; helper?: boolean; truckHelper?: boolean; gold?: boolean; goldBelt?: boolean; goldMachine?: number; goldTrays?: number; tutorial?: boolean };
 }
@@ -98,7 +160,7 @@ const fresh = (): SaveData => ({
     stats: { cells: 0, earned: 0, sells: 0 }, sent: [],
     owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, freeLooksOffered: false,
     treasuresFound: [], treasuresClaimed: [], secretsFound: [], completed: [], carried: 0, allCitiesOpen: false,
-    padPaid: {}, densFound: [], xp: 0, goods: { eggs: 0, trays: 0 }, den: { hens: 0, floor: [], machine: 0, trays: 0, cash: 0 },
+    padPaid: {}, densFound: [], growthCleared: [], freeSells: 0, barn: freshBarn(), xp: 0, goods: { eggs: 0, trays: 0 }, den: { hens: 0, floor: [], machine: 0, trays: 0, cash: 0 },
     // The city's areas the tutorial already did (startRestored).
     restored: MOW.districts.filter((district) => district.startRestored).map((district) => district.id),
 });
@@ -120,13 +182,15 @@ function load(): SaveData {
     const own = Object.fromEntries(GLOBAL_FIELDS.filter((field) => field in global).map((field) => [field, global[field]]));
     const saved = { ...city, ...own } as Partial<SaveData>;
     return {
-        ...fresh(), ...saved, upgrades: { ...saved.upgrades }, padPaid: { ...saved.padPaid }, goods: { ...fresh().goods, ...saved.goods },
+        ...fresh(), ...saved, upgrades: { ...saved.upgrades }, padPaid: { ...saved.padPaid }, goods: { ...fresh().goods, ...saved.goods }, barn: { ...freshBarn(), ...saved.barn },
         den: { ...fresh().den, ...saved.den }, stats: { ...fresh().stats, ...saved.stats },
         owned: { ...fresh().owned, ...saved.owned }, look: { ...starterLook(), ...saved.look },
     };
 }
 
 let state = load();
+// (Older saves could hold a fraction of a dollar.)
+state.money = Math.round(state.money);
 let saveTimer: number | undefined;
 let wiped = false;
 let cutProvider: (() => string) | undefined;
@@ -169,13 +233,29 @@ export const MowProgress = {
         return nicePrice(upgrade.basePrice * Math.pow(upgrade.growth, level));
     },
 
+    /**
+     * A boost's whole effect as a multiplier: 1 + perLevel x level, doubled at each milestone reached (POWER-UPS'
+     * money tracks).
+     */
+    boostFactor(id: UpgradeId): number {
+        const def = upgradeDef(id);
+        const level = this.upgradeLevel(id);
+        return MowProgress.factorAt(def, level);
+    },
+
+    /** A boost's multiplier at `level` (what boostFactor() is at that level). */
+    factorAt(def: UpgradeDef, level: number): number {
+        const doubled = (def.milestones ?? []).filter((m) => level >= m).length;
+        return (1 + def.perLevel * level) * Math.pow(2, doubled);
+    },
+
     /** Cutting width: the tool's plus the Cutting Width upgrade. */
     get width(): number {
         return this.tool.width + upgradeDef('width').perLevel * this.upgradeLevel('width');
     },
     /** Walking speed: the tool's, times the Speed upgrade. */
     get speed(): number {
-        return this.tool.speed * (1 + upgradeDef('speed').perLevel * this.upgradeLevel('speed'));
+        return this.tool.speed * this.boostFactor('speed');
     },
     /**
      * Cutting power: the mower's own plus the blades' level (README_PROGRESSION.md: the blades are what cut tougher
@@ -190,11 +270,27 @@ export const MowProgress = {
     },
     /** Share added to every sale (the Money Gain boost). */
     get moneyBonus(): number {
-        return upgradeDef('money').perLevel * this.upgradeLevel('money');
+        return this.boostFactor('money') - 1;
     },
-    /** How fast tough grass is chewed through (1 = base; the Sharp Blades boost). */
+    /** How fast tough grass (and growth) is chewed through (1 = base; the blades' level and the Sharp Edge boost). */
     get chewRate(): number {
-        return 1 + upgradeDef('blades').perLevel * this.upgradeLevel('blades');
+        return (1 + upgradeDef('blades').perLevel * this.upgradeLevel('blades')) * this.boostFactor('chew');
+    },
+    /** Clippings per cut, as a multiplier (1 = base; the Grass Gain boost). */
+    get grassGain(): number {
+        return this.boostFactor('grass');
+    },
+    /** How fast the dens work: laying, milking, packing, making (1 = base; the Farm Speed boost). */
+    get farmSpeed(): number {
+        return this.boostFactor('farm');
+    },
+    /** A den's payout with the Money Gain boost on it. */
+    farmPay(amount: number): number {
+        return Math.round(amount * (1 + this.moneyBonus));
+    },
+    /** A power-up the money covers (the POWER-UPS button's "!"): `ids` are the ones on offer. */
+    canAffordAny(ids: readonly UpgradeId[]): boolean {
+        return ids.some((id) => state.money >= (this.upgradePrice(upgradeDef(id)) ?? Infinity));
     },
     /** Whether the shop's BOOSTS tab is open (with the mower that unlocks it). */
     get boostsUnlocked(): boolean {
@@ -206,7 +302,14 @@ export const MowProgress = {
     },
     /** Container size: the tool's plus the Capacity upgrade. */
     get capacity(): number {
-        return this.tool.capacity + upgradeDef('capacity').perLevel * this.upgradeLevel('capacity');
+        const def = upgradeDef('capacity');
+        const level = this.upgradeLevel('capacity');
+        return Math.round(def.share ? this.tool.capacity * (1 + def.perLevel * level) : this.tool.capacity + def.perLevel * level);
+    },
+    /** What the next Capacity level adds to the bag now. */
+    get capacityStep(): number {
+        const def = upgradeDef('capacity');
+        return Math.round(def.share ? this.tool.capacity * def.perLevel : def.perLevel);
     },
     get full(): boolean {
         return state.clippings >= this.capacity;
@@ -219,14 +322,33 @@ export const MowProgress = {
         return MOW.upgrades.some((u) => state.money >= (this.upgradePrice(u) ?? Infinity));
     },
 
-    /** Adds up to `amount` clippings; returns how many fitted. */
-    addClippings(amount: number): number {
+    /**
+     * Adds up to `amount` clippings worth `worth` in all (money before boosts; by default at the plain selling price);
+     * returns how many fitted (the worth taken in the same share).
+     */
+    addClippings(amount: number, worth = amount * MOW.clippingPrice): number {
         const fits = Math.max(0, Math.min(amount, this.capacity - state.clippings));
         if (fits > 0) {
             state.clippings += fits;
+            state.bagWorth = this.bagWorth + (amount > 0 ? worth * (fits / amount) : 0);
             this.changed();
         }
         return fits;
+    },
+
+    /** What the bag's clippings are worth before boosts (older saves: at the plain selling price). */
+    get bagWorth(): number {
+        return state.bagWorth ?? state.clippings * MOW.clippingPrice;
+    },
+
+    /** What the bag sells for (boosts on), and what it counts for poured into a station. */
+    get bagValue(): number {
+        return this.bagWorth * (1 + this.moneyBonus) * (1 + this.prestige);
+    },
+
+    /** Money a station can take right now: the bag at its value, then the money carried. */
+    get pourable(): number {
+        return this.bagValue + state.money;
     },
 
     /** A grass cell was cut (the counter only: its clippings go through addClippings). */
@@ -234,11 +356,12 @@ export const MowProgress = {
         state.stats.cells++;
     },
 
-    /** Sells the container; returns the money earned. */
-    sell(): number {
-        const earned = Math.round(state.clippings * MOW.clippingPrice * (1 + this.moneyBonus) * (1 + this.prestige));
+    /** Sells the container (at `multiplier`: SELL x2's double); returns the money earned. */
+    sell(multiplier = 1): number {
+        const earned = Math.round(this.bagValue * multiplier);
         if (state.clippings <= 0) return 0;
         state.clippings = 0;
+        state.bagWorth = 0;
         state.money += earned;
         state.stats.earned += earned;
         state.stats.sells++;
@@ -266,30 +389,41 @@ export const MowProgress = {
 
     // ---------------------------------------------------------------- upgrade pads (farm test)
 
-    /** The grass a pad's next upgrade takes in all, or undefined when there's nothing left to buy there. */
+    /** The money a pad's next upgrade takes in all, or undefined when there's nothing left to buy there. */
     padCost(kind: PadKind): number | undefined {
         if (kind === 'tool') {
             const next = this.nextTool;
-            return next ? nicePrice(grassFor(next.price)) : undefined;
+            return next ? nicePrice(next.price) : undefined;
         }
-        const price = this.upgradePrice(upgradeDef(kind));
-        return price === undefined ? undefined : nicePrice(grassFor(price));
+        return this.upgradePrice(upgradeDef(kind));
     },
 
-    /** Grass already in a pad toward its next upgrade. */
+    /** Money already in a pad toward its next upgrade. */
     padPaid(kind: PadKind): number {
         return state.padPaid[kind] ?? 0;
     },
 
     /**
-     * Pours up to `amount` of the bag's grass into a pad. Returns how much went in, and whether that paid the upgrade
-     * in full (it's applied then: the next mower, or a bag level, the pad starting over on the one after).
+     * Pours up to `amount` (money) into a pad: the bag's grass first, at its value, then the money carried. Returns how
+     * much went in, and whether that paid the upgrade in full (it's applied then: the next mower, or a bag level, the
+     * pad starting over on the one after).
      */
     deposit(kind: PadKind, amount: number): { used: number; upgraded: boolean } {
         const cost = this.padCost(kind);
         if (cost === undefined) return { used: 0, upgraded: false };
-        const used = Math.max(0, Math.min(amount, state.clippings, cost - this.padPaid(kind)));
-        state.clippings -= used;
+        const wanted = Math.max(0, Math.min(amount, cost - this.padPaid(kind)));
+        const value = this.bagValue;
+        const fromBag = Math.min(wanted, value);
+        if (fromBag > 0) {
+            // The bag's grass goes in the same share as its value.
+            const keep = value - fromBag > 1e-6 ? 1 - fromBag / value : 0;
+            state.clippings *= keep;
+            state.bagWorth = this.bagWorth * keep;
+        }
+        // (Whole dollars: a fraction left over goes in as a dollar.)
+        const fromMoney = Math.min(Math.ceil(Math.max(0, wanted - fromBag) - 1e-9), Math.floor(state.money));
+        state.money -= fromMoney;
+        const used = fromBag + fromMoney;
         state.padPaid[kind] = this.padPaid(kind) + used;
         const upgraded = state.padPaid[kind]! >= cost;
         if (upgraded) {
@@ -369,7 +503,7 @@ export const MowProgress = {
         if (after > before) this.levelUpListeners.forEach((listener) => listener(after));
     },
 
-    get goods(): Readonly<{ eggs: number; trays: number; goldTrays?: number }> {
+    get goods(): Readonly<{ eggs: number; trays: number; goldTrays?: number; milk?: number; butter?: number; cheese?: number }> {
         return state.goods;
     },
 
@@ -379,14 +513,42 @@ export const MowProgress = {
     },
 
     /** Puts den goods in (or, negative, takes them out of) the backpack. */
-    carry(kind: 'eggs' | 'trays' | 'goldTrays', amount: number): void {
+    carry(kind: 'eggs' | 'trays' | 'goldTrays' | 'milk' | 'butter' | 'cheese', amount: number): void {
         state.goods[kind] = Math.max(0, (state.goods[kind] ?? 0) + amount);
         this.changed();
+    },
+
+    /** A crop farm's state (made on first use; changed through denChanged()). */
+    cropFarm(id: string): CropFarmState {
+        state.cropFarms ??= {};
+        return (state.cropFarms[id] ??= { plots: 0, grown: [], left: [], fresh: 0, machineIn: 0, made: 0, cash: 0, boatCash: 0 });
+    },
+
+    /** How many of a crop farm's goods (`crop:<id>`, `product:<id>`) the player carries. */
+    carried(kind: string): number {
+        return state.goods.crops?.[kind] ?? 0;
+    },
+
+    carryItem(kind: string, amount: number): void {
+        state.goods.crops ??= {};
+        state.goods.crops[kind] = Math.max(0, (state.goods.crops[kind] ?? 0) + amount);
+        this.changed();
+    },
+
+    /** The crop goods carried (for the backpack). */
+    get carriedCrops(): { kind: `crop:${string}` | `product:${string}`; count: number }[] {
+        return Object.entries(state.goods.crops ?? {}).filter(([, count]) => count > 0)
+            .map(([kind, count]) => ({ kind: kind as `crop:${string}` | `product:${string}`, count }));
     },
 
     /** The chicken den's state (changed through denChanged()). */
     get den(): { hens: number; floor: number[]; machine: number; trays: number; cash: number; dock?: boolean; truckCash?: number; belt?: boolean; helper?: boolean; truckHelper?: boolean; gold?: boolean; goldBelt?: boolean; goldMachine?: number; goldTrays?: number; tutorial?: boolean } {
         return state.den;
+    },
+
+    /** The cow barn's state (changed through denChanged()). */
+    get barn(): BarnState {
+        return state.barn;
     },
 
     denChanged(): void {
@@ -449,6 +611,44 @@ export const MowProgress = {
         state.bought ??= [];
         if (!state.bought.includes(id)) state.bought.push(id);
         this.changed();
+    },
+
+    /**
+     * Play time toward the next regrow of restored areas: true (and the clock starts over) once `everySec` has passed.
+     * (Saved with whatever saves next: no save of its own every frame.)
+     */
+    regrowDue(delta: number, everySec: number): boolean {
+        state.regrowClock = (state.regrowClock ?? 0) + delta;
+        if (state.regrowClock < everySec) return false;
+        state.regrowClock = 0;
+        this.scheduleSave();
+        return true;
+    },
+
+    /** SELL x2 sales still free (no video). */
+    get freeSellsLeft(): number {
+        return Math.max(0, SELL_X2_FREE - state.freeSells);
+    },
+
+    /** SELL x2's very first sale: free, and the hand points at it. */
+    get firstFreeSell(): boolean {
+        return state.freeSells === 0;
+    },
+
+    useFreeSell(): void {
+        state.freeSells++;
+        this.scheduleSave();
+    },
+
+    /** A bush or tree cleared (Growth's id). */
+    isGrowthCleared(id: number): boolean {
+        return state.growthCleared.includes(id);
+    },
+
+    clearGrowth(id: number): void {
+        if (state.growthCleared.includes(id)) return;
+        state.growthCleared.push(id);
+        this.scheduleSave();
     },
 
     denFound(id: string): boolean {
@@ -542,6 +742,27 @@ export const MowProgress = {
         return true;
     },
 
+    /** Locked chests waiting to be opened (LockedChests). */
+    get lockedChests(): readonly { id: string; reward: number }[] {
+        return state.lockedChests ?? [];
+    },
+
+    addLockedChest(id: string, reward: number): void {
+        (state.lockedChests ??= []).push({ id, reward });
+        this.changed();
+    },
+
+    /** Opens the first waiting chest: its money is the player's (boosted like any other). Returns what it paid. */
+    openLockedChest(): number {
+        const chest = state.lockedChests?.shift();
+        if (!chest) return 0;
+        const paid = Math.round(chest.reward * (1 + this.moneyBonus) * (1 + this.prestige));
+        state.money += paid;
+        state.stats.earned += paid;
+        this.changed();
+        return paid;
+    },
+
     /** The treasures of an area (a section id), and how many of them are found. */
     areaTreasures(areaId: string): { total: number; found: number } {
         const items = MOW.treasures.items.filter((item) => item.area === areaId);
@@ -630,7 +851,8 @@ export const MowProgress = {
     },
 
     addMoney(amount: number): void {
-        state.money += amount;
+        // Whole dollars only (fractions come from the bag's worth and boosts).
+        state.money = Math.round(state.money + amount);
         this.changed();
     },
 

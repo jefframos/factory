@@ -12,6 +12,7 @@ import gsap from 'gsap';
 import { playerScale } from '../player/MowPlayer';
 import { CanvasArt } from '../ui/CanvasArt';
 import { loadPeople, People, PERSON_COUNT, PERSON_HEIGHT, PERSON_MODEL_HEIGHT, personCopy, randomOutfit } from './People';
+import { CropItem, cropOf } from './FarmModels';
 
 /** How far the walk clip carries a model of PERSON_MODEL_HEIGHT a second (feet don't slide at this pace). */
 const CLIP_WALK_SPEED = 1.38;
@@ -24,11 +25,99 @@ const BUBBLE = { above: 0.45, width: 0.95, height: 0.76 };
 
 type State = 'arriving' | 'waiting' | 'leaving' | 'gone';
 
+/** What an order can ask for (the cows' goods; eggs are the default tray). */
+export type OrderItem = 'butter' | 'cheese' | CropItem;
+
+/** An order of several goods: each one and how many are still wanted. */
+export type Order = { item: OrderItem; left: number }[];
+
+/** A random order of `total` of `items` (each unit one of them): one kind or a mix. */
+/** A den's demand from its stock: 1 with little waiting, up to 4 with a lot (every `per` more waiting, +1). */
+export const stockDemand = (stock: number, per = 8): number => Math.min(4, 1 + Math.max(0, stock) / per);
+
+export function randomOrder(items: readonly OrderItem[], total: number): Order {
+    const counts = new Map<OrderItem, number>();
+    for (let i = 0; i < total; i++) {
+        const item = items[Math.floor(Math.random() * items.length)];
+        counts.set(item, (counts.get(item) ?? 0) + 1);
+    }
+    return [...counts].map(([item, left]) => ({ item, left }));
+}
+
+/** A small picture of `item` on a bubble, centred on (x, y). */
+function drawItem(g: CanvasRenderingContext2D, item: OrderItem, x: number, y: number): void {
+    g.lineWidth = 3;
+    g.strokeStyle = '#6b4a20';
+    if (item.startsWith('crop:')) {
+        // A fruit: a plump drop in the crop's colour, a green cap.
+        const crop = cropOf(item as CropItem);
+        g.fillStyle = crop?.color ?? '#e8323f';
+        g.beginPath();
+        g.moveTo(x, y + 16);
+        g.bezierCurveTo(x - 22, y + 2, x - 16, y - 14, x, y - 10);
+        g.bezierCurveTo(x + 16, y - 14, x + 22, y + 2, x, y + 16);
+        g.fill();
+        g.stroke();
+        g.fillStyle = crop?.leaf ?? '#3fa34d';
+        g.beginPath();
+        g.moveTo(x - 10, y - 12);
+        g.lineTo(x, y - 18);
+        g.lineTo(x + 10, y - 12);
+        g.lineTo(x, y - 8);
+        g.closePath();
+        g.fill();
+        return;
+    }
+    if (item.startsWith('product:')) {
+        // Its product: a jar in its colour, a lid and a label.
+        const def = cropOf(item as CropItem)?.product;
+        g.fillStyle = def?.color ?? '#c0182e';
+        g.beginPath();
+        g.roundRect(x - 15, y - 10, 30, 28, 6);
+        g.fill();
+        g.stroke();
+        g.fillStyle = '#faf3e0';
+        g.fillRect(x - 15, y, 30, 9);
+        g.fillStyle = def?.lid ?? '#f2f2f2';
+        g.beginPath();
+        g.roundRect(x - 17, y - 17, 34, 9, 3);
+        g.fill();
+        g.stroke();
+        return;
+    }
+    if (item === 'butter') {
+        g.fillStyle = '#ffe066';
+        g.beginPath();
+        g.roundRect(x - 20, y - 11, 40, 22, 5);
+        g.fill();
+        g.stroke();
+        g.fillStyle = '#f7f3e6';
+        g.fillRect(x - 5, y - 10, 10, 20);
+        return;
+    }
+    // A cheese wedge with holes.
+    g.fillStyle = '#ffc94a';
+    g.beginPath();
+    g.moveTo(x - 20, y + 12);
+    g.lineTo(x + 20, y + 12);
+    g.lineTo(x + 20, y - 4);
+    g.lineTo(x - 20, y - 14);
+    g.closePath();
+    g.fill();
+    g.stroke();
+    g.fillStyle = '#e8a52c';
+    for (const [hx, hy, r] of [[-8, 2, 4], [6, 5, 3], [12, -3, 2.5]]) {
+        g.beginPath();
+        g.arc(x + hx, y + hy, r, 0, Math.PI * 2);
+        g.fill();
+    }
+}
+
 /**
- * An order bubble on `canvas` (160 x 128): white with a tail, a tray of eggs and how many (`left`), or a heart (`happy`).
- * The customers' and the trucks'.
+ * An order bubble on `canvas` (160 x 128): white with a tail, a tray of eggs and how many (`left`), or a heart (`happy`);
+ * with an `order`, each of its goods and how many (a mix side by side). The customers' and the trucks'.
  */
-export function drawOrderBubble(canvas: HTMLCanvasElement, left: number, happy: boolean): void {
+export function drawOrderBubble(canvas: HTMLCanvasElement, left: number, happy: boolean, order?: Order): void {
     const g = canvas.getContext('2d')!;
     g.clearRect(0, 0, canvas.width, canvas.height);
     g.fillStyle = '#ffffff';
@@ -43,6 +132,25 @@ export function drawOrderBubble(canvas: HTMLCanvasElement, left: number, happy: 
     g.stroke();
     if (happy) {
         CanvasArt.drawIcon(g, 'ItemIcon_Heart_Red', 80, 51, 64);
+        return;
+    }
+    const wanted = order?.filter((line) => line.left > 0);
+    if (wanted?.length) {
+        // One good: its picture and count; two: each smaller, side by side.
+        if (wanted.length === 1) {
+            drawItem(g, wanted[0].item, 52, 51);
+            CanvasArt.text(g, `x${wanted[0].left}`, 116, 52, 42, '#ffffff', 56);
+            return;
+        }
+        wanted.slice(0, 2).forEach((line, i) => {
+            const x = 22 + i * 70;
+            g.save();
+            g.translate(x + 14, 51);
+            g.scale(0.7, 0.7);
+            drawItem(g, line.item, 0, 0);
+            g.restore();
+            CanvasArt.text(g, `${line.left}`, x + 46, 52, 34, '#ffffff', 34);
+        });
         return;
     }
     g.fillStyle = '#e2c48e';
@@ -74,6 +182,8 @@ export class Customer {
     public readonly home = new THREE.Vector3();
     public state: State = 'arriving';
     public got = 0;
+    /** What they want of several goods (the cows' customers), else a count of trays (`wants`). */
+    public order?: Order;
     private readonly mixer: THREE.AnimationMixer;
     private readonly walkAction: THREE.AnimationAction;
     private readonly idleAction: THREE.AnimationAction;
@@ -160,10 +270,10 @@ export class Customer {
 
     private drawBubble(): void {
         const happy = this.state === 'leaving';
-        const key = happy ? 'happy' : `${this.wants - this.got}`;
+        const key = happy ? 'happy' : this.order ? this.order.map((line) => `${line.item}${line.left}`).join(',') : `${this.wants - this.got}`;
         if (key === this.drawn) return;
         this.drawn = key;
-        drawOrderBubble(this.canvas, this.wants - this.got, happy);
+        drawOrderBubble(this.canvas, this.wants - this.got, happy, this.order);
         this.texture.needsUpdate = true;
     }
 
@@ -206,7 +316,7 @@ export class Customers {
      */
     public constructor(threeScene: THREE.Scene, private readonly slots: THREE.Vector3[], private readonly entry: THREE.Vector3,
         private readonly from: () => THREE.Vector3, private readonly facing: THREE.Vector3,
-        private readonly config: { wants: [number, number]; queue: number; everySec: number },
+        private readonly config: { wants: [number, number]; queue: number; everySec: number; items?: readonly OrderItem[] },
         private readonly paths?: { in: THREE.Vector3[]; out: THREE.Vector3[] }) {
         threeScene.add(this.group);
         if (paths) {
@@ -261,8 +371,16 @@ export class Customers {
         return out.copy(customer.position).setY(0.6 * PERSON_HEIGHT * playerScale());
     }
 
-    /** A tray reached `customer`: counted; true when that was their last (they pay, then go). */
-    public give(customer: Customer): boolean {
+    /** Whether `customer` still wants `item` (an order of several goods), or anything (a count). */
+    public wantsItem(customer: Customer, item?: OrderItem): boolean {
+        if (!customer.order) return customer.got < customer.wants;
+        return customer.order.some((line) => line.item === item && line.left > 0);
+    }
+
+    /** A tray (or, an order of goods, an `item`) reached `customer`: counted; true when that was their last (they pay, then go). */
+    public give(customer: Customer, item?: OrderItem): boolean {
+        const line = item ? customer.order?.find((entry) => entry.item === item && entry.left > 0) : undefined;
+        if (line) line.left--;
         customer.got++;
         if (customer.got < customer.wants) return false;
         customer.state = 'leaving';
@@ -281,13 +399,27 @@ export class Customers {
         return true;
     }
 
+    /** The next this many customers want exactly one (the den's lesson: one pack each). */
+    public firstOnes = 0;
+
+    /**
+     * How hungry the market is (1 = as configured): the den sets it from its stock (stockDemand()), so a big pile
+     * brings bigger orders, more often, and the stock goes down instead of piling up for ever.
+     */
+    public demand: () => number = () => 1;
+
     public update(delta: number): void {
         this.timer -= delta;
         if (this.source && this.timer <= 0 && this.queue.length < this.config.queue) {
-            this.timer = this.config.everySec;
+            const demand = Math.max(1, this.demand());
+            this.timer = this.config.everySec / demand;
             const [low, high] = this.config.wants;
             const start = this.paths ? this.paths.in[0].clone() : this.from();
-            const customer = new Customer(this.group, this.source, start, low + Math.floor(Math.random() * (high - low + 1)));
+            const wants = this.firstOnes > 0 ? 1 : Math.round((low + Math.floor(Math.random() * (high - low + 1))) * demand);
+            if (this.firstOnes > 0) this.firstOnes--;
+            const customer = new Customer(this.group, this.source, start, wants);
+            // Several goods on offer (the cows'): a random mix of them, as many in all.
+            if (this.config.items?.length) customer.order = randomOrder(this.config.items, wants);
             // With an in path: along it only as far as their place in the queue (walkTo() adds the corners on the way).
             customer.route = this.paths ? [] : [this.entry.clone()];
             this.walkTo(customer, this.queue.length, 0);

@@ -1344,6 +1344,56 @@ const CharactersWatering = {
 }
 } as const;
 
+const FarmBarrel = {
+  id: 'barrel',
+  path: 'farm/barrel',
+  fullPath: 'mow/models/farm/barrel.glb',
+  format: 'glb',
+  nodes: {
+  "Barrel": "barrel"
+}
+} as const;
+
+const FarmCarton = {
+  id: 'carton',
+  path: 'farm/carton',
+  fullPath: 'mow/models/farm/carton.glb',
+  format: 'glb',
+  nodes: {
+  "Carton": "carton"
+}
+} as const;
+
+const FarmCheese = {
+  id: 'cheese',
+  path: 'farm/cheese',
+  fullPath: 'mow/models/farm/cheese.glb',
+  format: 'glb',
+  nodes: {
+  "Wedge": "wedge"
+}
+} as const;
+
+const FarmJarDMedium = {
+  id: 'jar_D_medium',
+  path: 'farm/jar_D_medium',
+  fullPath: 'mow/models/farm/jar_D_medium.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarDMedium": "jar_D_medium"
+}
+} as const;
+
+const FarmStrawberry = {
+  id: 'strawberry',
+  path: 'farm/strawberry',
+  fullPath: 'mow/models/farm/strawberry.glb',
+  format: 'glb',
+  nodes: {
+  "Strawberry": "strawberry"
+}
+} as const;
+
 const HatsAmericanHat = {
   id: 'American_Hat',
   path: 'hats/American_Hat',
@@ -3830,6 +3880,37 @@ const TownHalloweenCrypt = {
 }
 } as const;
 
+const TownKenneyWatercraftBoatFishingSmall = {
+  id: 'kenney-watercraft-boat-fishing-small',
+  path: 'town/library/kenney-watercraft-boat-fishing-small/kenney-watercraft-boat-fishing-small',
+  fullPath: 'mow/models/town/library/kenney-watercraft-boat-fishing-small/kenney-watercraft-boat-fishing-small.glb',
+  format: 'glb',
+  nodes: {
+  "BoatFishingSmall": "boat-fishing-small"
+}
+} as const;
+
+const TownKenneyWatercraftBoatRowLarge = {
+  id: 'kenney-watercraft-boat-row-large',
+  path: 'town/library/kenney-watercraft-boat-row-large/kenney-watercraft-boat-row-large',
+  fullPath: 'mow/models/town/library/kenney-watercraft-boat-row-large/kenney-watercraft-boat-row-large.glb',
+  format: 'glb',
+  nodes: {
+  "BoatRowLarge": "boat-row-large",
+  "Paddles": "paddles"
+}
+} as const;
+
+const TownKenneyWatercraftBoatTugA = {
+  id: 'kenney-watercraft-boat-tug-a',
+  path: 'town/library/kenney-watercraft-boat-tug-a/kenney-watercraft-boat-tug-a',
+  fullPath: 'mow/models/town/library/kenney-watercraft-boat-tug-a/kenney-watercraft-boat-tug-a.glb',
+  format: 'glb',
+  nodes: {
+  "BoatTugA": "boat-tug-a"
+}
+} as const;
+
 const TownKenneyWatercraftShipCargoB = {
   id: 'kenney-watercraft-ship-cargo-b',
   path: 'town/library/kenney-watercraft-ship-cargo-b/kenney-watercraft-ship-cargo-b',
@@ -3949,6 +4030,36 @@ const TownGrass2ASinglesidedColor1 = {
   format: 'gltf',
   nodes: {
   "Grass2ASinglesidedColor1": "Grass_2_A_Singlesided_Color1"
+}
+} as const;
+
+const TownRock1AColor1 = {
+  id: 'Rock_1_A_Color1',
+  path: 'town/nature/Rock_1_A_Color1',
+  fullPath: 'mow/models/town/nature/Rock_1_A_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Rock1AColor1": "Rock_1_A_Color1"
+}
+} as const;
+
+const TownRock1EColor1 = {
+  id: 'Rock_1_E_Color1',
+  path: 'town/nature/Rock_1_E_Color1',
+  fullPath: 'mow/models/town/nature/Rock_1_E_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Rock1EColor1": "Rock_1_E_Color1"
+}
+} as const;
+
+const TownRock1JColor1 = {
+  id: 'Rock_1_J_Color1',
+  path: 'town/nature/Rock_1_J_Color1',
+  fullPath: 'mow/models/town/nature/Rock_1_J_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Rock1JColor1": "Rock_1_J_Color1"
 }
 } as const;
 
@@ -4188,6 +4299,13 @@ export const MODELS = {
     Walking: CharactersWalking,
     Watering: CharactersWatering
   },
+  Farm: {
+    Barrel: FarmBarrel,
+    Carton: FarmCarton,
+    Cheese: FarmCheese,
+    JarDMedium: FarmJarDMedium,
+    Strawberry: FarmStrawberry
+  },
   Hats: {
     AmericanHat: HatsAmericanHat,
     ArmorHat: HatsArmorHat,
@@ -4400,6 +4518,9 @@ export const MODELS = {
     City2Truck02: TownCity2Truck02,
     City2Tunnel01: TownCity2Tunnel01,
     HalloweenCrypt: TownHalloweenCrypt,
+    KenneyWatercraftBoatFishingSmall: TownKenneyWatercraftBoatFishingSmall,
+    KenneyWatercraftBoatRowLarge: TownKenneyWatercraftBoatRowLarge,
+    KenneyWatercraftBoatTugA: TownKenneyWatercraftBoatTugA,
     KenneyWatercraftShipCargoB: TownKenneyWatercraftShipCargoB,
     KenneyWatercraftShipCargoC: TownKenneyWatercraftShipCargoC,
     MixedBag1IdolA: TownMixedBag1IdolA,
@@ -4412,6 +4533,9 @@ export const MODELS = {
     FlaxFlowerB: TownFlaxFlowerB,
     Grass1ASinglesidedColor1: TownGrass1ASinglesidedColor1,
     Grass2ASinglesidedColor1: TownGrass2ASinglesidedColor1,
+    Rock1AColor1: TownRock1AColor1,
+    Rock1EColor1: TownRock1EColor1,
+    Rock1JColor1: TownRock1JColor1,
     Tree1AColor1: TownTree1AColor1,
     Tree2AColor1: TownTree2AColor1,
     Tree3AColor1: TownTree3AColor1,

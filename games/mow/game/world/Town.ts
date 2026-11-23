@@ -22,7 +22,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
-import { CITY, MOW, TOWN, lawnLift, openedBy, farmTest, AtmLook, AtmSpot, ColliderCube, DeckDef, DistrictDef, TownProp } from '../data/MowConfig';
+import { CITY, MOW, TOWN, lawnLift, openedBy, farmTest, AtmLook, AtmSpot, ColliderCube, DeckDef, DistrictDef, TownProp, choppableKind } from '../data/MowConfig';
 import { MowProgress } from '../data/MowProgress';
 import { BendService, OcclusionFadeConfig, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 import { createSeaWater } from '../builders/SeaWater';
@@ -439,17 +439,24 @@ function onPenSide(x: number, z: number): boolean {
 }
 
 /** A padlock plaque saying `text`, floating over (x, z). */
-function fenceSign(text: string, x: number, z: number): THREE.Sprite {
+function fenceSign(text: string, x: number, z: number, second?: string): THREE.Sprite {
     const canvas = document.createElement('canvas');
     canvas.width = 384;
-    canvas.height = 96;
+    canvas.height = second ? 150 : 96;
     const g = canvas.getContext('2d')!;
-    CanvasArt.plaque(g, 6, 6, 372, 84, 20);
-    CanvasArt.drawIcon(g, 'Icon_Lock03', 48, 48, 52);
-    CanvasArt.text(g, text, 220, 50, 30, '#ffe27a', 290);
+    CanvasArt.plaque(g, 6, 6, 372, canvas.height - 12, 20);
+    CanvasArt.drawIcon(g, 'Icon_Lock03', 48, canvas.height / 2, 52);
+    if (second) {
+        // Two ways in: what to restore, or the level that opens it anyway.
+        CanvasArt.text(g, text, 220, 48, 28, '#ffe27a', 290);
+        CanvasArt.text(g, second, 220, 102, 28, '#9cff6a', 290);
+    } else {
+        CanvasArt.text(g, text, 220, 50, 30, '#ffe27a', 290);
+    }
     const sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: CanvasArt.texture(canvas), depthWrite: false }));
-    sign.scale.set(4.2, 1.05, 1);
+    sign.scale.set(4.2, 4.2 * (canvas.height / 384), 1);
     sign.position.set(x, 2.1, z);
+    sign.renderOrder = 20;
     return sign;
 }
 
@@ -555,13 +562,17 @@ export class Town {
         // where the player starts: the near ones (and the stations) first — all the loading screen waits for
         // (readyNear) — the rest once they're in, so they don't compete for the download.
         for (const prop of TOWN.props) {
-            if (prop.collider) this.propBoxes.push({ x: prop.x, z: prop.z, halfX: prop.collider.halfX, halfZ: prop.collider.halfZ });
+            if (!prop.collider) continue;
+            const box = { x: prop.x, z: prop.z, halfX: prop.collider.halfX, halfZ: prop.collider.halfZ };
+            // A choppable tree or bush (Growth's: solid until it's cut down) leaves only its patch bare of grass.
+            if (choppableKind(prop)) this.extraBare.push(box);
+            else this.propBoxes.push(box);
         }
         for (const cube of TOWN.colliders ?? []) {
             if (cube.solid) this.propBoxes.push({ x: cube.x, z: cube.z, halfX: cube.width / 2, halfZ: cube.depth / 2 });
         }
         const away = (prop: TownProp) => Math.hypot(prop.x - TOWN.start.x, prop.z - TOWN.start.z);
-        const props = [...TOWN.props].sort((a, b) => away(a) - away(b));
+        const props = TOWN.props.filter((prop) => !choppableKind(prop)).sort((a, b) => away(a) - away(b));
         props.filter((prop) => away(prop) <= NEAR_LOAD).forEach((prop) => this.placeProp(prop));
         for (const kind of STATION_KINDS) stationSpots(kind).forEach((spot) => this.buildStation(kind, spot));
         this.buildSeparators();
@@ -1122,20 +1133,46 @@ export class Town {
         const white = this.material(0xffffff);
         const post = new THREE.BoxGeometry(0.2, 1.2, 0.2);
         MOW.districts.forEach((district, d) => {
-            const line = district.separator;
-            if (!line || d === 0) return;
+            // Every locked area gets its fence all round (not only those with a separator line): you can see it's shut.
+            if (d === 0 || (!district.separator && this.open[d])) return;
+            const line = district.separator && this.onEdge(district, district.separator) ? district.separator : undefined;
             const fence = fenceAround(district, white, post);
+            // Its sign: on its separator line, else on its side nearest the way in (the sections before it).
+            const at = line ?? this.signSpot(d);
             // No sign where it's a pen's side (the first area's fence: a plaque there only distracts a beginner).
             const before = openedBy(d);
-            if (district.opensAfter) fence.add(fenceSign(`RESTORE ${district.opensAfter} AREAS`, line.x, line.z));
-            else if (before && !onPenSide(line.x, line.z)) fence.add(fenceSign(`RESTORE THE ${before.toUpperCase()}`, line.x, line.z));
+            const orLevel = district.openLevel ? `OR REACH LEVEL ${district.openLevel}` : undefined;
+            if (district.opensAfter) fence.add(fenceSign(`RESTORE ${district.opensAfter} AREAS`, at.x, at.z));
+            else if (before && !onPenSide(at.x, at.z)) fence.add(fenceSign(`RESTORE THE ${before.toUpperCase()}`, at.x, at.z, orLevel));
+            else if (orLevel) fence.add(fenceSign(`REACH LEVEL ${district.openLevel}`, at.x, at.z));
             fence.visible = !this.open[d];
             this.group.add(fence);
             this.separators[d] = fence;
+            if (!line) return;
             const sideways = Math.abs(Math.sin(line.rotationY ?? 0)) > 0.5;
             const half = line.width / 2;
             this.separatorBoxes[d] = { x: line.x, z: line.z, halfX: sideways ? 0.25 : half, halfZ: sideways ? half : 0.25 };
         });
+    }
+
+    /** Whether a separator line lies on (or by) its section's edge (one copied from another section doesn't). */
+    private onEdge(district: DistrictDef, line: { x: number; z: number }): boolean {
+        const slack = 1.5;
+        return Math.abs(line.x - district.x) <= district.width / 2 + slack && Math.abs(line.z - district.z) <= district.depth / 2 + slack;
+    }
+
+    /** Where a locked section's sign goes: the middle of its side facing the sections before it (their middle). */
+    private signSpot(d: number): { x: number; z: number } {
+        const district = MOW.districts[d];
+        const before = MOW.districts.slice(0, d);
+        const towards = before.length
+            ? before.reduce((sum, b) => ({ x: sum.x + b.x / before.length, z: sum.z + b.z / before.length }), { x: 0, z: 0 })
+            : TOWN.start;
+        const dx = towards.x - district.x;
+        const dz = towards.z - district.z;
+        // The side the way in crosses first (scaled to the rect's shape).
+        if (Math.abs(dx) / district.width > Math.abs(dz) / district.depth) return { x: district.x + Math.sign(dx) * district.width / 2, z: district.z };
+        return { x: district.x, z: district.z + Math.sign(dz) * district.depth / 2 };
     }
 
     /**

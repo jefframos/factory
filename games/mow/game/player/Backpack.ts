@@ -12,10 +12,11 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { BendService } from '../services/BendService';
-import { farmItem, FarmItem, ITEM_HEIGHT } from '../farm/FarmModels';
+import { farmItem, FarmItem, ITEM_HEIGHT, itemHeight } from '../farm/FarmModels';
 import type MowPlayer from './MowPlayer';
 import { MowProgress } from '../data/MowProgress';
 import { MOW } from '../data/MowConfig';
+import { CanvasArt } from '../ui/CanvasArt';
 
 /** The bag (at the player's size 1): width, height, depth; how far behind the chest; how far down from it. */
 const BAG = { width: 0.46, height: 0.5, depth: 0.28, back: 0.16, down: 0.2 };
@@ -30,8 +31,11 @@ const BAG_COLORS = [0xd8b98a, 0x4fc23a, 0x3a8cf0, 0xe8473a, 0x9a5cf0, 0xf2a33a, 
 const FLASH = new THREE.Color(0xffffff);
 /** The bag's colour at Bag level `level`. */
 export const bagColor = (level: number): THREE.Color => BAG_COLORS[Math.max(0, Math.min(level, BAG_COLORS.length - 1))];
-/** The full bag's "!": on the bag itself (its middle's height, out on its back), its size (in the bag's units, x the player's size). */
-const ALERT = { height: 0.55, out: 0.12, size: 0.26 };
+/**
+ * The full bag's badge ("! FULL"): on the bag itself (its middle's height, out on its back), its height (in the bag's
+ * units, x the player's size) and its width over its height (the picture's).
+ */
+const ALERT = { height: 0.55, out: 0.12, size: 0.3, aspect: 256 / 112 };
 /** The flap and pocket are this much darker than the body. */
 const TRIM_SHADE = 0.72;
 
@@ -70,6 +74,13 @@ export function rucksackPicture(level: number): THREE.Group {
     return buildRucksack(body, trim);
 }
 
+/** The cows' goods carried (CowDen). */
+export interface Dairy {
+    milk: number;
+    butter: number;
+    cheese: number;
+}
+
 interface Layer {
     kind: FarmItem;
     count: number;
@@ -88,28 +99,43 @@ export class Backpack {
     private time = 0;
     private topY = BAG.height;
     private readonly chest = new THREE.Vector3();
-    /** The "!" over a full bag. */
+    /** The "! FULL" badge on a full bag. */
     private readonly alert: THREE.Sprite;
 
-    /** A round red badge with a white "!" (drawn once), over everything. */
+    /**
+     * A red pill with a white edge: a white disc with a red "!", then FULL in the kit's font, over everything. Drawn
+     * again a moment later (the font may not have loaded yet the first time).
+     */
     private static alertSprite(): THREE.Sprite {
         const canvas = document.createElement('canvas');
-        canvas.width = canvas.height = 128;
-        const g = canvas.getContext('2d')!;
-        g.fillStyle = '#ff4b3a';
-        g.beginPath();
-        g.arc(64, 64, 54, 0, Math.PI * 2);
-        g.fill();
-        g.lineWidth = 9;
-        g.strokeStyle = '#ffffff';
-        g.stroke();
-        g.fillStyle = '#ffffff';
-        g.font = 'bold 84px sans-serif';
-        g.textAlign = 'center';
-        g.textBaseline = 'middle';
-        g.fillText('!', 64, 70);
+        canvas.width = 256;
+        canvas.height = 112;
         const texture = new THREE.CanvasTexture(canvas);
         texture.colorSpace = THREE.SRGBColorSpace;
+        const draw = () => {
+            const g = canvas.getContext('2d')!;
+            g.clearRect(0, 0, canvas.width, canvas.height);
+            g.beginPath();
+            g.roundRect(6, 6, 244, 100, 50);
+            g.fillStyle = '#ff4b3a';
+            g.fill();
+            g.lineWidth = 9;
+            g.strokeStyle = '#ffffff';
+            g.stroke();
+            g.beginPath();
+            g.arc(56, 56, 34, 0, Math.PI * 2);
+            g.fillStyle = '#ffffff';
+            g.fill();
+            g.fillStyle = '#ff4b3a';
+            g.font = 'bold 56px sans-serif';
+            g.textAlign = 'center';
+            g.textBaseline = 'middle';
+            g.fillText('!', 56, 60);
+            CanvasArt.text(g, 'FULL', 162, 58, 54, '#ffffff', 150, '#9e1f14');
+            texture.needsUpdate = true;
+        };
+        draw();
+        window.setTimeout(draw, 1500);
         const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true }));
         sprite.renderOrder = 15;
         return sprite;
@@ -135,13 +161,22 @@ export class Backpack {
     }
 
     /** What's stacked on top now, bottom to top. */
-    private layers(fill: number, eggs: number, trays: number, goldTrays = 0): Layer[] {
+    private layers(fill: number, eggs: number, trays: number, goldTrays = 0, dairy?: Dairy, crops: { kind: FarmItem; count: number }[] = []): Layer[] {
         const layers: Layer[] = [];
         const bales = fill <= 0 ? 0 : Math.max(1, Math.ceil(Math.min(1, fill) * MAX_BALES));
         for (let i = 0; i < bales; i++) layers.push({ kind: 'bale', count: 1 });
         for (let left = eggs; left > 0; left -= EGGS_PER_LAYER) layers.push({ kind: 'egg', count: Math.min(EGGS_PER_LAYER, left) });
         for (let i = 0; i < trays; i++) layers.push({ kind: 'tray', count: 1 });
         for (let i = 0; i < goldTrays; i++) layers.push({ kind: 'goldTray', count: 1 });
+        // The cows' goods: milk bottles two a layer, butter and cheese one a layer.
+        for (let left = dairy?.milk ?? 0; left > 0; left -= EGGS_PER_LAYER) layers.push({ kind: 'milk', count: Math.min(EGGS_PER_LAYER, left) });
+        for (let i = 0; i < (dairy?.butter ?? 0); i++) layers.push({ kind: 'butter', count: 1 });
+        for (let i = 0; i < (dairy?.cheese ?? 0); i++) layers.push({ kind: 'cheese', count: 1 });
+        // The crop farms' goods: fresh fruit two a layer, products one a layer.
+        for (const { kind, count } of crops) {
+            const per = kind.startsWith('crop:') ? EGGS_PER_LAYER : 1;
+            for (let left = count; left > 0; left -= per) layers.push({ kind, count: Math.min(per, left) });
+        }
         return layers.slice(0, MAX_LAYERS);
     }
 
@@ -151,13 +186,13 @@ export class Backpack {
         layers.forEach((layer, i) => {
             for (let n = 0; n < layer.count; n++) {
                 const item = farmItem(layer.kind);
-                const spread = layer.kind === 'egg' ? (n - (layer.count - 1) / 2) * 0.22 : 0;
+                const spread = layer.kind === 'egg' || layer.kind === 'milk' || layer.kind.startsWith('crop:') ? (n - (layer.count - 1) / 2) * 0.22 : 0;
                 // A little stagger, so the tower looks stacked by hand.
                 item.position.set(spread + Math.sin(i * 2.3) * 0.02, y, Math.cos(i * 1.7) * 0.02);
                 item.rotation.y = layer.kind === 'egg' ? 0 : Math.sin(i * 1.3) * 0.12;
                 this.stack.add(item);
             }
-            y += ITEM_HEIGHT[layer.kind];
+            y += itemHeight(layer.kind);
         });
         this.topY = BAG.height + 0.06 + y;
     }
@@ -166,9 +201,10 @@ export class Backpack {
      * Each frame: on the player's back (or, `riding` with `rideScale`, behind the seat), facing their way, with the
      * bag's `fill` (0..1) and the den goods carried. `scale`: the player's size.
      */
-    public update(delta: number, fill: number, eggs: number, trays: number, scale: number, riding: boolean, rideScale: number, goldTrays = 0): void {
+    public update(delta: number, fill: number, eggs: number, trays: number, scale: number, riding: boolean, rideScale: number, goldTrays = 0, dairy?: Dairy,
+        crops: { kind: FarmItem; count: number }[] = []): void {
         this.time += delta;
-        const layers = this.layers(fill, eggs, trays, goldTrays);
+        const layers = this.layers(fill, eggs, trays, goldTrays, dairy, crops);
         const key = layers.map((l) => `${l.kind}${l.count}`).join(',');
         if (key !== this.key) {
             this.key = key;
@@ -185,11 +221,12 @@ export class Backpack {
         if (fill >= 1) this.color.lerp(FLASH, (Math.sin(this.time * 8) * 0.5 + 0.5) * 0.45);
         this.body.color.copy(this.color);
         this.trim.color.copy(this.color).multiplyScalar(TRIM_SHADE);
-        // Full: a small "!" pulsing on the bag (its back, the side away from the player).
+        // Full: a "! FULL" badge pulsing on the bag (its back, the side away from the player).
         this.alert.visible = fill >= 1;
         if (this.alert.visible) {
             this.alert.position.set(0, BAG.height * ALERT.height, -(BAG.depth / 2 + ALERT.out));
-            this.alert.scale.setScalar(ALERT.size * (1 + Math.max(0, Math.sin(this.time * 6)) * 0.12));
+            const pulse = ALERT.size * (1 + Math.max(0, Math.sin(this.time * 6)) * 0.12);
+            this.alert.scale.set(pulse * ALERT.aspect, pulse, 1);
         }
         const swell = 1 + this.shownFill * 0.12;
         this.bag.scale.set(swell, 1, 1 + this.shownFill * 0.25);

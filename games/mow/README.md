@@ -48,8 +48,7 @@ Everything below is switched on by the level's `farm` block, so other levels are
   bales (one per tenth of the bag), eggs, trays. Riding a mower, it sits on the
   back of the mower. Grass poured into a pad flies out as bales.
 - **A bigger island**: after the Front Yard and the Starting Park, **The Wilds** (62 x 51) to the north, its grass
-  getting tougher the further out (`grassNoise` rings). With a full bag, grass tougher than the mower is a wall: the
-  way to a place has to be mowed.
+  getting tougher the further out (`grassNoise` rings). A full bag doesn't stop the mower: it cuts on (nothing bagged), so it never gets boxed in.
 - **The Chicken Den** (`world/ChickenDen.ts`, tuned by `farm.eggs`): deep in the Wilds' west inside a hedge of
   brambles; mowed up to its gate, it opens with its first hen. Inside, the player walks without the mower (parked at
   the gate). Hens (the library's chick, `animals/animal-chick.glb`) lay eggs onto the floor in front of their nests

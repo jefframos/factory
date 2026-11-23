@@ -2,10 +2,10 @@
   "id": "tutorial",
   "name": "Tutorial Town",
   "ground": {
-    "x": 31.5,
-    "z": -21.5,
-    "width": 131,
-    "depth": 85,
+    "x": 29.5,
+    "z": -71.375,
+    "width": 265,
+    "depth": 184.75,
     "color": "#8c9a7c"
   },
   "island": {
@@ -16,15 +16,47 @@
     "sideDepth": 1.6,
     "outline": [
       {
-        "x": -34,
+        "x": -103,
         "z": -64
       },
       {
-        "x": 97,
+        "x": 28.5,
         "z": -64
       },
       {
-        "x": 97,
+        "x": 28.5,
+        "z": -89.75
+      },
+      {
+        "x": -100,
+        "z": -89.75
+      },
+      {
+        "x": -100,
+        "z": -163.75
+      },
+      {
+        "x": 31,
+        "z": -163.75
+      },
+      {
+        "x": 31,
+        "z": -118.25
+      },
+      {
+        "x": 162,
+        "z": -118.25
+      },
+      {
+        "x": 162,
+        "z": -59.75
+      },
+      {
+        "x": 97.5,
+        "z": -59.75
+      },
+      {
+        "x": 97.5,
         "z": -5
       },
       {
@@ -44,7 +76,7 @@
         "z": -5
       },
       {
-        "x": -34,
+        "x": -103,
         "z": -5
       }
     ],
@@ -83,14 +115,6 @@
       "color": "#d8ccb0"
     },
     {
-      "id": "path-east-west",
-      "x": 0,
-      "z": 0,
-      "width": 21,
-      "depth": 1.5,
-      "color": "#d8ccb0"
-    },
-    {
       "id": "pavement-4",
       "x": -5.25,
       "z": -50.5,
@@ -105,6 +129,30 @@
       "width": 10,
       "depth": 3.5,
       "color": "#d8ccb0"
+    },
+    {
+      "id": "pavement-4-copy",
+      "x": -65,
+      "z": -51,
+      "width": 6.5,
+      "depth": 52,
+      "color": "#ae7e47"
+    },
+    {
+      "id": "road-cows",
+      "x": -65,
+      "z": -44.4,
+      "width": 6.4,
+      "depth": 32,
+      "color": "#5b5f66"
+    },
+    {
+      "id": "path-cows",
+      "x": -39.2,
+      "z": -26,
+      "width": 7.6,
+      "depth": 2.4,
+      "color": "#c9b48a"
     }
   ],
   "atm": {
@@ -122,7 +170,7 @@
   "atms": [
     {
       "x": -6.5,
-      "z": 12.75,
+      "z": 16.5,
       "rotationY": 1.5708,
       "section": "wilds",
       "afterDen": "chicken"
@@ -130,6 +178,41 @@
     {
       "x": -24.25,
       "z": -21.75,
+      "rotationY": 0,
+      "section": "wilds",
+      "afterDen": "chicken"
+    },
+    {
+      "x": -0.25,
+      "z": -20.75,
+      "rotationY": 0,
+      "section": "wilds",
+      "afterDen": "chicken"
+    },
+    {
+      "x": 40,
+      "z": -47,
+      "rotationY": 0,
+      "section": "wilds",
+      "afterDen": "chicken"
+    },
+    {
+      "x": 85.25,
+      "z": -101.5,
+      "rotationY": 0,
+      "section": "wilds",
+      "afterDen": "chicken"
+    },
+    {
+      "x": -27.5,
+      "z": -106.5,
+      "rotationY": 0,
+      "section": "wilds",
+      "afterDen": "chicken"
+    },
+    {
+      "x": -91.75,
+      "z": -48.75,
       "rotationY": 0,
       "section": "wilds",
       "afterDen": "chicken"
@@ -150,7 +233,7 @@
   "wardrobes": [
     {
       "x": -6.5,
-      "z": 16.25,
+      "z": 11,
       "rotationY": 1.5708,
       "appearsAfterSales": 1,
       "section": "wilds"
@@ -201,28 +284,6 @@
       "collider": {
         "halfX": 0.2,
         "halfZ": 0.2
-      }
-    },
-    {
-      "model": "town/city/streetlight.gltf",
-      "x": -2.5,
-      "z": -8.35,
-      "rotationY": 1.5708,
-      "height": 5,
-      "collider": {
-        "halfX": 0.15,
-        "halfZ": 0.15
-      }
-    },
-    {
-      "model": "town/city/streetlight.gltf",
-      "x": 2.5,
-      "z": -8.35,
-      "rotationY": 1.5708,
-      "height": 5,
-      "collider": {
-        "halfX": 0.15,
-        "halfZ": 0.15
       }
     },
     {
@@ -485,20 +546,9 @@
       }
     },
     {
-      "model": "town/library/city2-road-tunnel-001/city2-road-tunnel-001.glb",
-      "x": 24.25,
-      "z": -66.25,
-      "rotationY": 0,
-      "height": 2.78,
-      "collider": {
-        "halfX": 1.85,
-        "halfZ": 2.25
-      }
-    },
-    {
       "model": "town/library/kenney-watercraft-ship-cargo-c/kenney-watercraft-ship-cargo-c.glb",
-      "x": -36.25,
-      "z": -47,
+      "x": 99.75,
+      "z": -14.75,
       "rotationY": 0,
       "height": 2.78,
       "collider": {
@@ -508,21 +558,9 @@
       "elevation": -0.7
     },
     {
-      "model": "town/library/kenney-watercraft-ship-cargo-b/kenney-watercraft-ship-cargo-b.glb",
-      "x": -42.25,
-      "z": -48,
-      "rotationY": 0,
-      "height": 4.5,
-      "collider": {
-        "halfX": 1.9,
-        "halfZ": 6.65
-      },
-      "elevation": -0.85
-    },
-    {
       "model": "town/library/city2-cargo-ship-01/city2-cargo-ship-01.glb",
-      "x": -36.5,
-      "z": -73.25,
+      "x": 100,
+      "z": -41,
       "rotationY": 0,
       "height": 9.22,
       "collider": {
@@ -548,16 +586,20 @@
       }
     },
     {
-      "model": "town/library/city2-building-business-05/city2-building-business-05.glb",
-      "x": -45.5,
-      "z": -24.25,
+      "model": "town/library/city2-tunnel-01/city2-tunnel-01.glb",
+      "x": -64.5,
+      "z": -74.25,
       "rotationY": 0,
-      "height": 42.08,
+      "height": 7.09,
       "collider": {
-        "halfX": 10.8,
-        "halfZ": 9.5
+        "halfX": 21.5,
+        "halfZ": 8.4
       },
-      "elevation": -1.15
+      "elevation": -0.9,
+      "stretch": {
+        "x": 1.15,
+        "z": 1
+      }
     }
   ],
   "grassNoise": {
@@ -640,6 +682,15 @@
       "rotationY": 0,
       "shape": "round",
       "grass": "firebrush"
+    },
+    {
+      "x": 0,
+      "z": -12.25,
+      "width": 15.5,
+      "depth": 10,
+      "rotationY": 0,
+      "shape": "round",
+      "grass": "grass"
     }
   ],
   "sections": [
@@ -648,7 +699,7 @@
       "name": "Front Yard",
       "x": 0,
       "z": 15,
-      "width": 8,
+      "width": 10,
       "depth": 7,
       "completeAt": 0.97,
       "bonus": 150,
@@ -657,12 +708,13 @@
       "fill": "grass",
       "grassScale": 0.6,
       "pen": {
-        "x": 0,
+        "x": -0.5,
         "z": 13.75,
         "width": 20.5,
         "depth": 11.5
       },
-      "maxGrass": "grass"
+      "maxGrass": "grass",
+      "valueScale": 2
     },
     {
       "id": "park",
@@ -687,7 +739,8 @@
         "grass": "tallgrass",
         "share": 0.45
       },
-      "part": "after-yard"
+      "part": "after-yard",
+      "valueScale": 1
     },
     {
       "id": "wilds",
@@ -695,8 +748,8 @@
       "x": 0,
       "z": -35.25,
       "width": 62,
-      "depth": 51.5,
-      "completeAt": 0.97,
+      "depth": 52,
+      "completeAt": 0.98,
       "bonus": 3000,
       "ground": "#4a7432",
       "restoredGround": "#68a643",
@@ -715,17 +768,18 @@
         "grass": "weeds",
         "share": 0.35
       },
-      "part": "after-yard"
+      "part": "after-yard",
+      "valueScale": 1
     },
     {
       "id": "section-4",
       "name": "Section 4",
-      "x": 64.5,
-      "z": -33,
+      "x": 63.5,
+      "z": -35,
       "width": 62,
-      "depth": 51.5,
+      "depth": 52,
       "fill": "weeds",
-      "completeAt": 0.97,
+      "completeAt": 0.98,
       "bonus": 8000,
       "ground": "#4a7432",
       "restoredGround": "#68a643",
@@ -737,12 +791,181 @@
         "grass": "brambles",
         "share": 0.35
       },
-      "unlock": {
-        "price": 5000,
-        "level": 10,
-        "x": 28,
-        "z": -33
-      }
+      "openLevel": 10,
+      "valueScale": 2.5
+    },
+    {
+      "id": "section-5",
+      "name": "Section 5",
+      "x": 62.5,
+      "z": -89.5,
+      "width": 62,
+      "depth": 52,
+      "fill": "brambles",
+      "completeAt": 0.98,
+      "bonus": 20000,
+      "ground": "#4a7432",
+      "restoredGround": "#68a643",
+      "onUnlock": {
+        "pan": false
+      },
+      "openLevel": 13,
+      "maxGrass": "brambles",
+      "spots": {
+        "grass": "thicket",
+        "share": 0.35
+      },
+      "growth": [
+        {
+          "type": "bush",
+          "density": 0.05
+        },
+        {
+          "type": "densebush",
+          "density": 0.015
+        }
+      ],
+      "valueScale": 6
+    },
+    {
+      "id": "section-6",
+      "name": "Section 6",
+      "x": -69,
+      "z": -35.25,
+      "width": 62,
+      "depth": 52,
+      "fill": "thicket",
+      "completeAt": 0.98,
+      "bonus": 50000,
+      "ground": "#4a7432",
+      "restoredGround": "#68a643",
+      "onUnlock": {
+        "pan": false
+      },
+      "openLevel": 15,
+      "maxGrass": "thicket",
+      "spots": {
+        "grass": "drygrass",
+        "share": 0.3
+      },
+      "growth": [
+        {
+          "type": "densebush",
+          "density": 0.03
+        },
+        {
+          "type": "sapling",
+          "density": 0.02
+        }
+      ],
+      "valueScale": 16
+    },
+    {
+      "id": "section-7",
+      "name": "Section 7",
+      "x": 128,
+      "z": -88.5,
+      "width": 62,
+      "depth": 52,
+      "fill": "drygrass",
+      "completeAt": 0.98,
+      "bonus": 125000,
+      "ground": "#4a7432",
+      "restoredGround": "#68a643",
+      "onUnlock": {
+        "pan": false
+      },
+      "openLevel": 17,
+      "maxGrass": "drygrass",
+      "spots": {
+        "grass": "firebrush",
+        "share": 0.3
+      },
+      "growth": [
+        {
+          "type": "sapling",
+          "density": 0.012
+        },
+        {
+          "type": "tree",
+          "density": 0.02
+        },
+        {
+          "type": "bigtree",
+          "density": 0.008
+        }
+      ],
+      "valueScale": 40
+    },
+    {
+      "id": "section-8",
+      "name": "Section 8",
+      "x": -3,
+      "z": -126.75,
+      "width": 62,
+      "depth": 68,
+      "fill": "firebrush",
+      "completeAt": 0.98,
+      "bonus": 312500,
+      "ground": "#4a7432",
+      "restoredGround": "#68a643",
+      "onUnlock": {
+        "pan": false
+      },
+      "openLevel": 19,
+      "maxGrass": "firebrush",
+      "growth": [
+        {
+          "type": "tree",
+          "density": 0.012
+        },
+        {
+          "type": "bigtree",
+          "density": 0.012
+        },
+        {
+          "type": "gianttree",
+          "density": 0.008
+        },
+        {
+          "type": "rock",
+          "density": 0.01
+        }
+      ],
+      "valueScale": 100
+    },
+    {
+      "id": "section-9",
+      "name": "Section 9",
+      "x": -66,
+      "z": -126.75,
+      "width": 62,
+      "depth": 68,
+      "fill": "firebrush",
+      "completeAt": 0.98,
+      "bonus": 781250,
+      "ground": "#4a7432",
+      "restoredGround": "#68a643",
+      "onUnlock": {
+        "pan": false
+      },
+      "openLevel": 21,
+      "maxGrass": "firebrush",
+      "growth": [
+        {
+          "type": "gianttree",
+          "density": 0.012
+        },
+        {
+          "type": "rock",
+          "density": 0.012
+        },
+        {
+          "type": "boulder",
+          "density": 0.009
+        }
+      ],
+      "valueScale": 250
     }
   ],
   "sounds": [
@@ -781,36 +1004,110 @@
       },
       {
         "kind": "blades",
-        "x": -5.75,
-        "z": 10.25,
-        "rotationY": 1.5708,
-        "afterTool": 2
-      },
-      {
-        "kind": "capacity",
-        "x": 6.25,
-        "z": 14.5,
-        "rotationY": -1.5708,
-        "afterTool": 1
-      },
-      {
-        "kind": "blades",
-        "x": 7.5,
-        "z": -26,
+        "x": -5.5,
+        "z": -12.75,
         "section": "wilds",
-        "afterTool": 2
+        "afterTool": 2,
+        "rotationY": 0
       },
       {
         "kind": "tool",
-        "x": 11,
-        "z": -26,
-        "section": "wilds"
+        "x": 0,
+        "z": -15,
+        "section": "wilds",
+        "rotationY": 0
       },
       {
         "kind": "capacity",
-        "x": 14.5,
-        "z": -26,
-        "section": "wilds"
+        "x": 5.5,
+        "z": -12.75,
+        "section": "wilds",
+        "afterTool": 2,
+        "rotationY": 0
+      },
+      {
+        "kind": "blades",
+        "x": 34.25,
+        "z": -55,
+        "section": "section-4",
+        "rotationY": 0
+      },
+      {
+        "kind": "tool",
+        "x": 39.75,
+        "z": -57.25,
+        "section": "section-4",
+        "rotationY": 0
+      },
+      {
+        "kind": "capacity",
+        "x": 45.25,
+        "z": -55,
+        "section": "section-4",
+        "rotationY": 0
+      },
+      {
+        "kind": "blades",
+        "x": 80.25,
+        "z": -109.5,
+        "section": "section-5",
+        "rotationY": 0
+      },
+      {
+        "kind": "tool",
+        "x": 85.75,
+        "z": -111.75,
+        "section": "section-5",
+        "rotationY": 0
+      },
+      {
+        "kind": "capacity",
+        "x": 91.25,
+        "z": -109.5,
+        "section": "section-5",
+        "rotationY": 0
+      },
+      {
+        "kind": "blades",
+        "x": -97.75,
+        "z": -55,
+        "section": "section-6",
+        "rotationY": 0
+      },
+      {
+        "kind": "tool",
+        "x": -92.25,
+        "z": -57.25,
+        "section": "section-6",
+        "rotationY": 0
+      },
+      {
+        "kind": "capacity",
+        "x": -86.75,
+        "z": -55,
+        "section": "section-6",
+        "rotationY": 0
+      },
+      {
+        "kind": "blades",
+        "x": -32.5,
+        "z": -94.25,
+        "section": "section-8",
+        "rotationY": 0
+      },
+      {
+        "kind": "tool",
+        "x": -27,
+        "z": -96.5,
+        "section": "section-8",
+        "rotationY": 0
+      },
+      {
+        "kind": "capacity",
+        "x": -21.5,
+        "z": -94.25,
+        "section": "section-8",
+        "rotationY": 0
       }
     ],
     "dens": [
@@ -937,7 +1234,8 @@
             "x": 6.9,
             "z": 1.75
           }
-        }
+        },
+        "level": 6
       }
     ],
     "eggs": {
@@ -992,14 +1290,14 @@
       "trayLayers": 5,
       "belt": {
         "price": 1200,
-        "level": 8,
+        "level": 0,
         "speed": 1.6,
         "spacing": 0.38,
         "takeSec": 0.45
       },
       "helper": {
         "price": 2500,
-        "level": 9,
+        "level": 0,
         "carry": 4,
         "walkSpeed": 1.3
       },
@@ -1020,7 +1318,7 @@
       },
       "truckHelper": {
         "price": 4000,
-        "level": 11,
+        "level": 0,
         "carry": 6,
         "walkSpeed": 1.3
       }
@@ -1044,7 +1342,8 @@
         "tray": 2,
         "traySold": 3,
         "hen": 15
-      }
+      },
+      "guideUntil": 4
     },
     "trucks": {
       "x": -10.1,
@@ -1068,7 +1367,7 @@
         "town/library/city2-car-16/city2-car-16.glb",
         "town/library/city2-car-09/city2-car-09.glb"
       ],
-      "queue": 3
+      "queue": 5
     },
     "truckPath": [
       {
@@ -1115,6 +1414,311 @@
       {
         "x": -35.2,
         "z": -25.25
+      }
+    ],
+    "cowDen": {
+      "id": "cows",
+      "name": "Cow Barn",
+      "x": -52,
+      "z": -31.75,
+      "width": 18,
+      "depth": 15,
+      "gate": 2.8,
+      "level": 16,
+      "loop": {
+        "carryMax": 20,
+        "milkEverySec": 3,
+        "floorMax": 8,
+        "cows": [
+          {
+            "price": 0,
+            "level": 1
+          },
+          {
+            "price": 2000,
+            "level": 16
+          },
+          {
+            "price": 3500,
+            "level": 17
+          },
+          {
+            "price": 6000,
+            "level": 18
+          },
+          {
+            "price": 9500,
+            "level": 19
+          },
+          {
+            "price": 15000,
+            "level": 20
+          }
+        ],
+        "butter": {
+          "milkPer": 2,
+          "sec": 1.6,
+          "max": 40,
+          "layers": 4,
+          "price": 60
+        },
+        "cheese": {
+          "milkPer": 3,
+          "sec": 2.2,
+          "max": 40,
+          "layers": 4,
+          "price": 90
+        },
+        "wants": [
+          1,
+          3
+        ],
+        "queue": 3,
+        "customerEverySec": 5,
+        "belt": {
+          "price": 25000,
+          "level": 0,
+          "speed": 1.6,
+          "spacing": 0.45,
+          "takeSec": 0.45
+        },
+        "helper": {
+          "price": 40000,
+          "level": 0,
+          "carry": 4,
+          "walkSpeed": 1.3
+        },
+        "truckHelper": {
+          "price": 30000,
+          "level": 0,
+          "carry": 6,
+          "walkSpeed": 1.3
+        }
+      },
+      "trucks": {
+        "x": -59.9,
+        "z": -29.25,
+        "cash": {
+          "x": -59.9,
+          "z": -27.35
+        },
+        "price": 15000,
+        "level": 18,
+        "wants": [
+          6,
+          10
+        ],
+        "trayPrice": 0,
+        "everySec": 14,
+        "model": "town/library/city2-truck-01/city2-truck-01.glb",
+        "models": [
+          "town/library/city2-car-16/city2-car-16.glb",
+          "town/library/city2-car-09/city2-car-09.glb"
+        ],
+        "length": 4.2,
+        "speed": 6,
+        "queue": 5
+      },
+      "truckPath": [
+        {
+          "x": -63.5,
+          "z": -60
+        },
+        {
+          "x": -63.5,
+          "z": -29.25,
+          "park": true
+        },
+        {
+          "x": -66.5,
+          "z": -29.25
+        },
+        {
+          "x": -66.5,
+          "z": -60
+        }
+      ],
+      "peopleIn": [
+        {
+          "x": -35.6,
+          "z": -24.5
+        },
+        {
+          "x": -41.9,
+          "z": -24.5
+        }
+      ],
+      "peopleOut": [
+        {
+          "x": -41.9,
+          "z": -23.6
+        },
+        {
+          "x": -35.6,
+          "z": -23.6
+        }
+      ],
+      "parts": {
+        "belt": [
+          {
+            "x": -7.8,
+            "z": -2.1499999999999995
+          },
+          {
+            "x": 7.5,
+            "z": -2.1499999999999995
+          },
+          {
+            "x": 7.5,
+            "z": -0.29999999999999993
+          },
+          {
+            "x": -1.5,
+            "z": -0.3
+          }
+        ],
+        "cheeseMachine": {
+          "x": 0.25,
+          "z": 0.9
+        },
+        "cheeseInput": {
+          "x": 0.25,
+          "z": 3
+        },
+        "cheeseGrid": {
+          "x": 2,
+          "z": 0.9
+        }
+      }
+    },
+    "regrow": {
+      "everySec": 1200,
+      "share": 0.25
+    },
+    "cropFarms": [
+      {
+        "id": "strawberry-farm",
+        "name": "Strawberry Farm",
+        "crop": "strawberry",
+        "x": 80,
+        "z": -20,
+        "width": 18,
+        "depth": 15,
+        "gate": 2.4,
+        "level": 10,
+        "carryMax": 20,
+        "cols": 4,
+        "plots": [
+          {
+            "price": 0,
+            "level": 10
+          },
+          {
+            "price": 500,
+            "level": 10
+          },
+          {
+            "price": 1000,
+            "level": 10
+          },
+          {
+            "price": 2000,
+            "level": 11
+          },
+          {
+            "price": 3500,
+            "level": 11
+          },
+          {
+            "price": 6000,
+            "level": 12
+          },
+          {
+            "price": 10000,
+            "level": 12
+          },
+          {
+            "price": 16000,
+            "level": 13
+          }
+        ],
+        "wants": [
+          1,
+          3
+        ],
+        "queue": 3,
+        "customerEverySec": 5,
+        "harbour": {
+          "x": 95.5,
+          "z": -26,
+          "price": 2500,
+          "level": 11,
+          "wants": [
+            6,
+            12
+          ],
+          "trayPrice": 0,
+          "everySec": 15,
+          "cash": {
+            "x": 95.5,
+            "z": -23.6
+          },
+          "model": "town/library/kenney-watercraft-boat-tug-a/kenney-watercraft-boat-tug-a.glb",
+          "models": [
+            "town/library/kenney-watercraft-boat-tug-a/kenney-watercraft-boat-tug-a.glb",
+            "town/library/kenney-watercraft-boat-fishing-small/kenney-watercraft-boat-fishing-small.glb"
+          ],
+          "length": 4,
+          "speed": 5,
+          "queue": 5,
+          "path": [
+            {
+              "x": 150,
+              "z": -46
+            },
+            {
+              "x": 122,
+              "z": -35
+            },
+            {
+              "x": 101.5,
+              "z": -26
+            }
+          ],
+          "out": [
+            {
+              "x": 101.5,
+              "z": -26
+            },
+            {
+              "x": 116,
+              "z": -8
+            },
+            {
+              "x": 150,
+              "z": 6
+            }
+          ],
+          "parkFacing": 3.1416
+        },
+        "picker": {
+          "price": 5000,
+          "level": 0,
+          "carry": 6,
+          "walkSpeed": 1.3
+        },
+        "helper": {
+          "price": 8000,
+          "level": 0,
+          "carry": 4,
+          "walkSpeed": 1.3
+        },
+        "boatHelper": {
+          "price": 10000,
+          "level": 0,
+          "carry": 6,
+          "walkSpeed": 1.3
+        }
       }
     ]
   },
@@ -1168,10 +1772,10 @@
   ],
   "footAreas": [
     {
-      "x": -28.75,
-      "z": -28.5,
-      "width": 8,
-      "depth": 14.5
+      "x": -33.75,
+      "z": -27.5,
+      "width": 19,
+      "depth": 7.5
     }
   ]
 }

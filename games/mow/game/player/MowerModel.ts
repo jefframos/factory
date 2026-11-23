@@ -8,7 +8,7 @@
 //   other    a long low deck on four wheels, a dark skirt under it, the engine — a cylinder with a cap — in its middle
 
 import * as THREE from 'three';
-import { GripDef, ToolDef } from '../data/MowConfig';
+import { GripDef, MOW, ToolDef } from '../data/MowConfig';
 
 /** The push handle: tube radius, and how far the crossbar runs past each hand. */
 export const HANDLE_RADIUS = 0.035;
@@ -20,8 +20,12 @@ const TOOL_GAP = 0.7;
 /** Where the hands hold a pushed tool's handle, without the tool's `grip`. */
 const GRIP: GripDef = { forward: 0.42, height: 0.95, spread: 0.2 };
 
-/** Where the hands hold a tool (its `grip`, or the default). */
-export const toolGrip = (tool: ToolDef): GripDef => tool.grip ?? GRIP;
+/**
+ * Where the hands hold a walked tool. The hands are the player's, not the mower's: every walked mower is held the way
+ * the first one is (its `grip`, placed in the editor), and each mower's handle is built to reach them, so a bigger
+ * mower never pulls the arms out of shape. (`tool` kept for the callers: any walked tool gets the same grip.)
+ */
+export const toolGrip = (_tool: ToolDef): GripDef => MOW.tools.find((t) => !t.ride && t.grip)?.grip ?? GRIP;
 
 /** How far ahead of the feet a pushed tool's middle is. */
 export const pushAhead = (tool: ToolDef): number => (tool.gap ?? TOOL_GAP) + tool.size[2] / 2;
