@@ -91,7 +91,7 @@ export abstract class ThreeScene extends GameScene {
             // The canvas kept to the window (a missed resize event: a frame grown after a cold boot); the scene lays
             // itself out again when it changed.
             if (SetupThree.syncSize(this.threeCamera)) this.resize();
-            SetupThree.renderer.render(this.threeScene, this.threeCamera);
+            for (let i = 0; i < SetupThree.testDraws; i++) SetupThree.renderer.render(this.threeScene, this.threeCamera);
         }
     }
 

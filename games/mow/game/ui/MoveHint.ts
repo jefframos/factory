@@ -6,6 +6,8 @@
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
+import { UiKit } from './UiKit';
+import { t } from '../i18n/Localization';
 
 const LOOP_SEC = 3;
 const PATH_WIDTH = 100;
@@ -31,7 +33,10 @@ export class MoveHint extends PIXI.Container {
             track.lineStyle(3, 0xffffff, 0.45).moveTo(a.x, a.y).lineTo(b.x, b.y);
         }
         this.hand.width = this.hand.height = HAND_SIZE;
-        this.addChild(track, this.hand);
+        const label = new PIXI.Text(t('dragToMow'), new PIXI.TextStyle({ fontFamily: UiKit.fontFamily('primary'), fontSize: 40, fill: 0xffffff, stroke: 0x1d140e, strokeThickness: 8, lineJoin: 'round' }));
+        label.anchor.set(0.5);
+        label.y = -PATH_HEIGHT - 22;
+        this.addChild(track, this.hand, label);
         this.visible = false;
     }
 

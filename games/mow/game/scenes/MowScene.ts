@@ -48,8 +48,17 @@ import { Growth } from '../world/Growth';
 import { AreaUnlocks } from '../world/AreaUnlocks';
 import { LevelBadge } from '../ui/LevelBadge';
 import { SellX2Button } from '../ui/SellX2Button';
+import { TractorOffer } from '../ui/TractorOffer';
+import type { TractorKind } from '../data/TractorSkins';
+import { watchRewardedVideo } from '../ads/RewardedVideo';
 import { LockedChestButton, LockedChestPanel } from '../ui/LockedChests';
+import { EdgeArrow } from '../ui/EdgeArrow';
 import PlatformHandler from 'core/platforms/PlatformHandler';
+import { SaveStorage } from 'core/platforms/SaveStorage';
+import SetupThree from 'core/scene/SetupThree';
+import { MOW_CAMERA, cameraDistance, screenToWorld } from '../config/CameraConfig';
+import { addTownLights } from '../world/TownLight';
+import { burnDebugTime, updateQuality } from '../config/Quality';
 import { farmItem, preloadFarmModels } from '../farm/FarmModels';
 import { GrassField } from '../world/GrassField';
 import { Town } from '../world/Town';
@@ -62,31 +71,20 @@ import { isRush } from '../data/GameMode';
 import { MowHud, ShopHint, CELEBRATION_SEC } from '../ui/MowHud';
 import { RARITY_COLORS } from '../ui/TrophiesPanel';
 import { MowEffects } from '../vfx/MowEffects';
-import { CITIES, CITY, CityDef, MOW, NEXT_CITY, TOWN, goalCount, goalSection, partName, sectionOpen, SecretDef, TreasureDef, firstToolFor, bladesFor, bladeCount, SECRET_CHEST_MODEL, farmTest, worthPerClipping, shortMoney } from '../data/MowConfig';
+import { CITIES, CITY, CityDef, MOW, NEXT_CITY, TOWN, goalCount, goalSection, partName, sectionOpen, SecretDef, TreasureDef, firstToolFor, bladesFor, bladeCount, SECRET_CHEST_MODEL, farmTest, worthPerClipping, shortMoney, UpgradePadDef } from '../data/MowConfig';
 import { bladeLook } from '../player/MowerBlades';
 import { TreasureBeacons } from '../world/TreasureBeacons';
 import { SecretPatches } from '../world/SecretPatches';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { MowProgress, PadKind } from '../data/MowProgress';
 import { Gameplay } from '../data/Gameplay';
-import { MowAudio } from '../audio/MowAudio';
-import { EngineSound, MowerVoice } from '../audio/EngineSound';
+import { CUT_SETS, MowAudio } from '../audio/MowAudio';
+import { EngineSound, TRACTOR_LEVEL, MowerVoice } from '../audio/EngineSound';
 import { SpatialAudio } from '../audio/SpatialAudio';
 import { GrassLocks } from '../world/GrassLocks';
 import { Traffic } from '../world/Traffic';
 import { GameAnalytics } from '../analytics/GameAnalytics';
 import { t, names, Localization } from '../i18n/Localization';
-
-/** Top-down, slightly angled. yaw 0 = camera south of the player looking north (-Z). */
-export const MOW_CAMERA = {
-    yawDeg: 0,
-    pitchDeg: 55,
-    // Closer since the player's smaller (MowDesign.playerScale).
-    distance: 9.5,
-    followSpeed: 8,
-    /** How fast the distance eases to a new section's `zoom`. */
-    zoomSpeed: 1.5,
-};
 
 /** Mowing (the farm test): the camera goes this much further out per unit of cut width past the first mower's. */
 const ZOOM_PER_WIDTH = 0.17;
@@ -95,8 +93,20 @@ const ZOOM_PER_WIDTH = 0.17;
  * is within its reach + `take`; out, it stays while some is within its reach + `keep` (world units).
  */
 const NEAR_GRASS = { everySec: 0.2, take: 0.5, keep: 3.5 };
+/** An area opening without the camera's trip is told this soon (seconds), over the celebration. */
+const QUIET_UNLOCK_SEC = 1.1;
+/** The frame rate told is the average of the play between these (seconds: the first few still load). */
+const FPS_FROM_SEC = 5;
+const FPS_AFTER_SEC = 30;
 /** SELL x2 shows from this mower on (the Lawn Tractor: the first upgrades come first). */
-const SELL_X2_TOOL_LEVEL = 2;
+const SELL_X2_TOOL_LEVEL = 1;
+/**
+ * A tractor skin offered for a video while driving (seconds of play with its menu there): first the gift (free, this soon,
+ * till it's taken), then how long each stays, the wait before the next, and the wait after the gift.
+ */
+const TRACTOR_OFFER = { gift: 4, stays: 35, wait: 75, afterGift: 40 };
+/** Around the player, this much is never cut by the camera's near plane (world units: the tall trees, the buildings). */
+const NEAR_ROOM = 20;
 const REFERENCE_ASPECT = Game.DESIGN_WIDTH / Game.DESIGN_HEIGHT;
 const MAX_FRAME_SEC = 0.1;
 /** Metres walked per footstep sound. */
@@ -143,7 +153,7 @@ const CONFETTI = [0xff5a6e, 0xffd23f, 0x4fc3ff, 0x9cff6a, 0xc36bff, 0xffffff].ma
 function cameraOffset(camera: THREE.PerspectiveCamera, zoom: number): THREE.Vector3 {
     const yaw = THREE.MathUtils.degToRad(MOW_CAMERA.yawDeg);
     const pitch = THREE.MathUtils.degToRad(MOW_CAMERA.pitchDeg);
-    const distance = MOW_CAMERA.distance * zoom * Math.max(1, REFERENCE_ASPECT / camera.aspect);
+    const distance = cameraDistance() * zoom * Math.max(1, REFERENCE_ASPECT / camera.aspect);
     const horizontal = distance * Math.cos(pitch);
     return new THREE.Vector3(horizontal * Math.sin(yaw), distance * Math.sin(pitch), horizontal * Math.cos(yaw));
 }
@@ -175,14 +185,6 @@ export function flowerSpots(district: (typeof MOW.districts)[number], isLawn: (x
     return spots;
 }
 
-/** The town's light: sky and ground fill, and the sun (MowScene, and the map snapshots in the same light). */
-export function addTownLights(threeScene: THREE.Scene): void {
-    threeScene.add(new THREE.HemisphereLight(0xffffff, 0x5a7a4a, 1.6));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.5);
-    sun.position.set(6, 14, 8);
-    threeScene.add(sun);
-}
-
 /** The player's level bar (LevelBadge): how far under the top buttons' middle line, and the badge's half width (its origin is the badge's middle). */
 /** A frame's step this long (world units) counts as the player moving (gameplay starts). */
 const GAMEPLAY_MOVE = 0.002;
@@ -194,7 +196,6 @@ const POSITION_SAVE_SEC = 2;
 const POSITION_CLEAR = 0.6;
 /** The level bar grows to fill the room at the top, up to this. */
 const LEVEL_MAX_SCALE = 1.1;
-const LEVEL_BADGE_HALF = 39;
 
 export default class MowScene extends ThreeScene {
     private readonly world = new World();
@@ -271,10 +272,17 @@ export default class MowScene extends ThreeScene {
     /** The dig game's SELL x2: the full bag sold right here at double (a rewarded video, after the free ones). */
     private sellX2?: SellX2Button;
     private sellX2Busy = false;
+    /** A paint or a part for the tractor, for a video: the card, the seconds till it comes or goes, what's next. */
+    private tractorOffer?: TractorOffer;
+    private tractorOfferTimer = TRACTOR_OFFER.gift;
+    private tractorOfferKind: TractorKind = 'paints';
+    private tractorOfferBusy = false;
     /** Locked chests: the HUD's chest button (how many wait) and the panel opening one (a rewarded video). */
     private lockedChestButton?: LockedChestButton;
     private lockedChestPanel?: LockedChestPanel;
     private chestBusy = false;
+    /** The edge-of-screen arrow to the first station. */
+    private edgeArrow?: EdgeArrow;
     /** Areas told they still have growth standing (said once each). */
     private readonly growthTold = new Set<number>();
     /** Clippings mowed toward the next XP point. */
@@ -319,7 +327,7 @@ export default class MowScene extends ThreeScene {
         MowProgress.setCutProvider(() => this.grass.save());
         // What grows past grass (bushes, trees): solid until cleared (walked round like the cars).
         this.growth = new Growth(this.threeScene, (x, z) => this.town.isBlocked(x, z), (id) => MowProgress.isGrowthCleared(id),
-            (d) => MowProgress.isRestored(MOW.districts[d].id));
+            (d) => MowProgress.isRestored(MOW.districts[d].id), (d) => this.town.isOpen(d));
         const growth = this.growth;
         this.town.movingBlockers = () => [...this.traffic.blockers(), ...growth.blockers()];
         // Districts restored in an earlier session look restored again (all mowed, even if the level's grass changed);
@@ -521,6 +529,23 @@ export default class MowScene extends ThreeScene {
             if (window.confirm('Reset all Mow Town progress?')) MowProgress.reset();
         });
 
+        // Trying sounds out while playing (nothing's kept: the editor's Mowers tab saves each grass's sound, the volume and the pitch).
+        const sounds = DebugOverlay.instance.panel('Sounds', { id: 'mow.sounds', persist: false });
+        const BY_GRASS = 'by grass';
+        const trying = {
+            set: BY_GRASS,
+            volume: (MOW.cutSound.volume[0] + MOW.cutSound.volume[1]) / 2,
+            pitch: (MOW.cutSound.pitch[0] + MOW.cutSound.pitch[1]) / 2,
+        };
+        sounds.select(trying, 'set', [BY_GRASS, ...Object.keys(CUT_SETS)], { label: 'Cut Sound', style: 'dropdown', onChange: () => void MowAudio.tryCutSet(trying.set === BY_GRASS ? undefined : trying.set) });
+        const spread = (range: [number, number], middle: number, by: number) => {
+            range[0] = middle * (1 - by);
+            range[1] = middle * (1 + by);
+        };
+        sounds.slider(trying, 'volume', 0.02, 1, 0.01, 'Cut Volume').onChange(() => spread(MOW.cutSound.volume, trying.volume, 0.15));
+        sounds.slider(trying, 'pitch', 0.4, 2, 0.02, 'Cut Pitch').onChange(() => spread(MOW.cutSound.pitch, trying.pitch, 0.1));
+        sounds.slider(TRACTOR_LEVEL, 'volume', 0, 4, 0.05, 'Tractor Volume');
+
         // The mowing progression (README_PROGRESSION.md): each button is that station's next upgrade, free, with its fanfare.
         const upgrades = DebugOverlay.instance.panel('Upgrades', { id: 'mow.upgrades' });
         upgrades.monitor('Mower', () => `${MowProgress.toolLevel + 1}/${MOW.tools.length} ${MowProgress.tool.name}`);
@@ -537,7 +562,29 @@ export default class MowScene extends ThreeScene {
 
     // ---------------------------------------------------------------- frame
 
+    /** The frames counted for the frame-rate event (measureFps()): how many, over how long; sent once. */
+    private readonly fps = { last: 0, frames: 0, ms: 0, sent: false };
+
+    /** The average frame rate over the play between FPS_FROM_SEC and FPS_AFTER_SEC, told once (GameAnalytics.performance()). */
+    private measureFps(): void {
+        const fps = this.fps;
+        const now = performance.now();
+        const ms = now - fps.last;
+        fps.last = now;
+        // (Not a load, a hidden tab, nor the menus.)
+        if (fps.sent || !Gameplay.active || ms <= 0 || ms > 250) return;
+        fps.ms += ms;
+        if (fps.ms < FPS_FROM_SEC * 1000) return;
+        fps.frames++;
+        if (fps.ms < FPS_AFTER_SEC * 1000) return;
+        fps.sent = true;
+        GameAnalytics.performance(fps.frames / (FPS_AFTER_SEC - FPS_FROM_SEC), SetupThree.adaptive?.scale ?? 1);
+    }
+
     public update(delta: number): void {
+        this.measureFps();
+        updateQuality(this.game);
+        burnDebugTime();
         delta = Math.min(delta, MAX_FRAME_SEC);
         if (Gameplay.active) GameAnalytics.playTime(delta);
         this.world.update(delta);
@@ -564,6 +611,7 @@ export default class MowScene extends ThreeScene {
         this.updateMoveHint();
         this.updateMiniatureClose();
         this.updateFarm(delta);
+        this.updateTractorOffer(delta);
         // The starting mower's small bag full in the yard (about half way: FIRST_BUY_AT as a backstop), or a save past
         // the yard without a mower: the first purchases (firstBuys()) — a better mower, then the bag it needed.
         const yardDone = MowProgress.isRestored(MOW.districts[0].id);
@@ -599,13 +647,25 @@ export default class MowScene extends ThreeScene {
     /** What the camera follows: the player, or a newly opened section while a pan runs (the player waits meanwhile). */
     private cameraGoal(delta: number, position: THREE.Vector3): THREE.Vector3 {
         const pan = this.pan;
-        if (!pan) return position;
+        if (!pan) return this.shiftedGoal(position);
         pan.time += delta;
         const controller = this.player.movementController;
         const showing = pan.time >= PAN.delay && pan.time < PAN.delay + PAN.glide + PAN.hold;
         if (controller) controller.enabled = !showing;
         if (pan.time >= PAN.delay + PAN.glide * 2 + PAN.hold) this.pan = null;
         return showing ? pan.to : position;
+    }
+
+    private readonly shifted = new THREE.Vector3();
+
+    /** What to look at so the player's where the HUD wants them (hud.viewShift(): beside an open wardrobe), else the player. */
+    private shiftedGoal(position: THREE.Vector3): THREE.Vector3 {
+        const shift = this.hud.viewShift();
+        if (!shift.x && !shift.y) return position;
+        // The world the screen spans round the player, in height; on the ground, a way up or down the screen is longer.
+        const span = 2 * cameraOffset(this.threeCamera, this.zoom).length() * Math.tan(THREE.MathUtils.degToRad(this.threeCamera.fov / 2));
+        const { x, z } = screenToWorld(-shift.x * span * this.threeCamera.aspect, (-shift.y * span) / Math.sin(THREE.MathUtils.degToRad(MOW_CAMERA.pitchDeg)));
+        return this.shifted.set(position.x + x, position.y, position.z + z);
     }
 
     /** The first section not restored yet sets the zoom (the small Front Yard is seen closer), even while selling. */
@@ -625,7 +685,16 @@ export default class MowScene extends ThreeScene {
     }
 
     private placeCamera(): void {
-        this.threeCamera.position.copy(this.followTarget).add(cameraOffset(this.threeCamera, this.zoom));
+        const offset = cameraOffset(this.threeCamera, this.zoom);
+        // Far away (a narrow field of view), nothing's near it: a near plane further out keeps the depth fine enough for
+        // the floor's layers not to flicker.
+        const near = Math.max(0.1, (offset.length() - NEAR_ROOM) / 2);
+        if (this.threeCamera.fov !== MOW_CAMERA.fovDeg || Math.abs(this.threeCamera.near - near) > near * 0.05) {
+            this.threeCamera.fov = MOW_CAMERA.fovDeg;
+            this.threeCamera.near = near;
+            this.threeCamera.updateProjectionMatrix();
+        }
+        this.threeCamera.position.copy(this.followTarget).add(offset);
         this.threeCamera.lookAt(this.followTarget);
     }
 
@@ -1007,7 +1076,6 @@ export default class MowScene extends ThreeScene {
             this.grass.setRestored(d);
             this.town.bloom(flowerSpots(district, (x, z) => this.grass.isLawn(x, z, d)), true);
             MowProgress.restore(district.id, district.bonus);
-            this.giveXp(farmTest()?.levels.xp.areaRestored ?? 0);
             this.town.releasePen(d);
             GameAnalytics.districtRestored(district.id);
             if (d === 0 && CITY.keepGear) GameAnalytics.tutorialStep('yard-restored');
@@ -1026,22 +1094,17 @@ export default class MowScene extends ThreeScene {
                     });
                 }
             }
-            MowAudio.play('applause');
+            // One thing at a time: the banner, a cheer, a puff of confetti; a level gained with it and what opens come after.
             MowAudio.play('cheer');
             this.hud.celebrate(names.district(district).toUpperCase(), district.bonus, d);
             MowAudio.play('complete');
-            for (let i = 0; i < 8; i++) {
+            this.giveXp(farmTest()?.levels.xp.areaRestored ?? 0);
+            for (let i = 0; i < 4; i++) {
                 const at = new THREE.Vector3(district.x + (Math.random() - 0.5) * district.width, 0.5, district.z + (Math.random() - 0.5) * district.depth);
                 this.effects.smoke(at, 3, 1, new THREE.Color(0xfff2a0), 0.8);
             }
-            // Confetti round the player, in waves.
-            for (let wave = 0; wave < 4; wave++) {
-                gsap.delayedCall(wave * 0.18, () => {
-                    if (this.sceneDestroyed) return;
-                    const at = this.player.transform.position;
-                    CONFETTI.forEach((color) => this.effects.burst(new THREE.Vector3(at.x + (Math.random() - 0.5) * 3, 0, at.z + (Math.random() - 0.5) * 3), color, 4, 5));
-                });
-            }
+            const player = this.player.transform.position;
+            CONFETTI.forEach((color) => this.effects.burst(new THREE.Vector3(player.x + (Math.random() - 0.5) * 3, 0, player.z + (Math.random() - 0.5) * 3), color, 3, 4));
             // Whatever this opens: the next area, or (its part done) every area of the next part at once.
             this.openSections(CELEBRATION_SEC + 0.2);
             // The goal (or, a city without one, the last one): the city's done (its next unlocked), told after its celebration
@@ -1074,15 +1137,17 @@ export default class MowScene extends ThreeScene {
         }
         const nextDistrict = MOW.districts[opened[0]];
         const name = nextDistrict.part ? partName(nextDistrict.part) : names.district(nextDistrict);
-        gsap.delayedCall(delay, () => {
+        // The farm test shows every new area (the camera glides over and back), but not the first ones after the yard
+        // (the start keeps its pace: said at once, while the banner's still up) nor one that says not to; elsewhere when
+        // it asks.
+        const quiet = opened.some((e) => MOW.districts[e].part === 'after-yard' || MOW.districts[e].onUnlock?.pan === false);
+        gsap.delayedCall(farmTest() && quiet ? Math.min(delay, QUIET_UNLOCK_SEC) : delay, () => {
             if (this.sceneDestroyed) return;
-            // The farm test shows every new area (the camera glides over and back), but not the first ones after the yard
-            // (the start keeps its pace) nor one that says not to; elsewhere when it asks.
-            const quiet = opened.some((e) => MOW.districts[e].part === 'after-yard' || MOW.districts[e].onUnlock?.pan === false);
             if (nextDistrict.onUnlock?.pan || (farmTest() && !quiet)) this.pan = { to: this.town.sectionCentre(nextDistrict), time: 0 };
             this.hud.say(t('districtUnlocked', { name: name.toUpperCase() }), 0x8fe3ff);
-            // Uplifting: the victory fanfare with a shimmer (dig's "reveal" read as an error here).
-            MowAudio.play('buyFanfare');
+            // Uplifting: the victory fanfare with a shimmer (dig's "reveal" read as an error here); just the shimmer while an
+            // area's being celebrated.
+            if (!this.hud.celebrating) MowAudio.play('buyFanfare');
             MowAudio.play('sparkle');
         });
     }
@@ -1187,7 +1252,7 @@ export default class MowScene extends ThreeScene {
         };
         this.backpack = new Backpack(this.threeScene, this.player);
         this.pads = new UpgradePads(this.threeScene, farm.pads, sectionOpenById,
-            (to) => this.pour(to), (kind, at) => this.padUpgraded(kind, at));
+            (to) => this.pour(to), (kind, at) => this.padUpgraded(kind, at), (def, at) => this.padAppeared(def, at));
         this.areaUnlocks = new AreaUnlocks(this.threeScene, {
             restored: (id) => MowProgress.isRestored(id),
             onBought: (d) => this.areaBought(d),
@@ -1238,10 +1303,16 @@ export default class MowScene extends ThreeScene {
         this.levelBadge = new LevelBadge();
         this.game.uiLayer.addChild(this.levelBadge);
         this.sellX2 = new SellX2Button(() => void this.sellDouble());
-        this.game.uiLayer.addChild(this.sellX2);
+        // Behind the HUD (its panels open over it).
+        this.game.uiLayer.addChildAt(this.sellX2, this.game.uiLayer.getChildIndex(this.hud));
+        this.tractorOffer = new TractorOffer(() => void this.takeTractorOffer());
+        this.game.uiLayer.addChildAt(this.tractorOffer, this.game.uiLayer.getChildIndex(this.hud));
         this.lockedChestButton = new LockedChestButton(() => this.showLockedChest());
         this.lockedChestPanel = new LockedChestPanel(() => void this.openLockedChest(), () => this.lockedChestPanel?.hide());
-        this.game.uiLayer.addChild(this.lockedChestButton, this.lockedChestPanel);
+        this.edgeArrow = new EdgeArrow();
+        this.game.uiLayer.addChildAt(this.edgeArrow, this.game.uiLayer.getChildIndex(this.hud));
+        this.game.uiLayer.addChildAt(this.lockedChestButton, this.game.uiLayer.getChildIndex(this.hud));
+        this.game.uiLayer.addChild(this.lockedChestPanel);
         this.hud.setUnderLevel(true);
         MowProgress.levelUpListeners.push(this.onLevelUp);
         this.resize();
@@ -1267,6 +1338,11 @@ export default class MowScene extends ThreeScene {
     private readonly onLevelUp = (level: number): void => {
         if (this.sceneDestroyed) return;
         GameAnalytics.levelReached(level);
+        // With an area done: its banner's enough (the level badge shows it), and what opens is shown after it.
+        if (this.hud.celebrating) {
+            this.openSections(CELEBRATION_SEC + 0.2);
+            return;
+        }
         MowAudio.play('buyFanfare');
         MowAudio.play('cheer');
         this.hud.say(`LEVEL ${level}!`, 0xffe27a);
@@ -1284,7 +1360,8 @@ export default class MowScene extends ThreeScene {
      */
     private mowableAt(x: number, z: number): boolean {
         if (this.inDen(x, z) || this.inFootArea(x, z)) return false;
-        if (!farmTest()) return true;
+        // (A walked mower stays in the hands: only a driven one is left behind where there's nothing to cut.)
+        if (!farmTest() || !MowProgress.tool.ride) return true;
         return this.nearGrass;
     }
 
@@ -1309,6 +1386,36 @@ export default class MowScene extends ThreeScene {
         const radius = reach + (this.nearGrass ? NEAR_GRASS.keep : NEAR_GRASS.take);
         const open = (d: number) => this.town.isOpen(d);
         this.nearGrass = this.grass.mowableNear(at.x, at.z, radius, power, open) || !!this.growth?.mowableNear(at.x, at.z, radius, power, open);
+    }
+
+    /** The first station is out (the Push Mower can be paid): said, with a fanfare, a puff and confetti where it stands. */
+    private padAppeared(def: UpgradePadDef, at: THREE.Vector3): void {
+        if (!def.appearsWhenFull || MowProgress.toolLevel > 0) return;
+        const next = MowProgress.nextTool;
+        if (!next) return;
+        this.hud.say(`${names.tool(next).toUpperCase()} READY!`, 0xffe27a);
+        MowAudio.play('quest');
+        MowAudio.play('sparkle');
+        this.effects.smoke(at.clone().setY(0.6), 8, 1, new THREE.Color(0xfff2a0), 0.8);
+        CONFETTI.forEach((color) => this.effects.burst(at.clone().setY(0.4), color, 4, 4));
+    }
+
+    /** The arrow at the screen's edge to the first station, while it waits out of view. */
+    private updateEdgeArrow(): void {
+        const arrow = this.edgeArrow;
+        const screen = Game.overlayScreenData;
+        if (!arrow || !screen) return;
+        const at = this.pads?.firstStation() ?? null;
+        const area = { x: screen.topLeft.x, y: screen.topLeft.y, width: screen.width, height: screen.height };
+        if (!at) {
+            arrow.point(null, area);
+            return;
+        }
+        const seen = at.project(this.threeCamera);
+        const view = Game.renderer.screen;
+        // (Behind the camera the projection is mirrored.)
+        const side = seen.z > 1 ? -1 : 1;
+        arrow.point(this.game.uiLayer.toLocal(new PIXI.Point(((seen.x * side + 1) / 2) * view.width, ((1 - seen.y * side) / 2) * view.height)), area);
     }
 
     /** Whether (x, z) is inside a den (on foot there). */
@@ -1347,6 +1454,7 @@ export default class MowScene extends ThreeScene {
         this.sellX2?.setShown(MowProgress.full && MowProgress.toolLevel >= SELL_X2_TOOL_LEVEL && !this.sellX2Busy,
             MowProgress.freeSellsLeft > 0, MowProgress.firstFreeSell);
         this.lockedChestButton?.setWaiting(MowProgress.lockedChests.length);
+        this.updateEdgeArrow();
         // A pad visit counts as a sale: the first wardrobe pops in after one (appearsAfterSales).
         this.town.revealStations();
         for (const den of this.dens) {
@@ -1370,6 +1478,70 @@ export default class MowScene extends ThreeScene {
             // A puff where the mower is left (or picked up again).
             this.effects.smoke(this.player.cutPoint(new THREE.Vector3()).setY(0.3), 4, 0.6, new THREE.Color(0xffffff), 0.6);
             MowAudio.play('whoosh');
+        }
+    }
+
+    /** The tractor's skins offered while driving it, once its menu's there (TRACTOR_OFFER): a paint, then a part, and so on, one at a time. */
+    private updateTractorOffer(delta: number): void {
+        const card = this.tractorOffer;
+        if (!card || this.tractorOfferBusy || !Gameplay.active || !this.hud.tractorMenu) return;
+        const offered = card.offered;
+        // Got meanwhile (in the tractor's panel): not offered any more.
+        if (offered && MowProgress.ownsTractor(offered.kind, offered.item)) this.tractorOfferTimer = 0;
+        else if (this.hud.panelOpen || (!offered && !this.tractor.isRiding)) return;
+        this.tractorOfferTimer -= delta;
+        if (this.tractorOfferTimer > 0) return;
+        const gift = MowProgress.tractorGift();
+        if (offered) {
+            // (A gift waits for them.)
+            if (offered.item === gift?.item) return;
+            card.hide();
+            this.tractorOfferTimer = offered.item.free ? TRACTOR_OFFER.afterGift : TRACTOR_OFFER.wait;
+            return;
+        }
+        if (gift) {
+            card.offer(gift.kind, gift.item);
+            GameAnalytics.tractorOffer(gift.kind, gift.item.id, 'visible');
+            return;
+        }
+        const first = this.tractorOfferKind;
+        const other: TractorKind = first === 'paints' ? 'parts' : 'paints';
+        this.tractorOfferKind = other;
+        this.tractorOfferTimer = TRACTOR_OFFER.stays;
+        for (const kind of [first, other]) {
+            const item = MowProgress.tractorToOffer(kind);
+            if (!item) continue;
+            card.offer(kind, item);
+            GameAnalytics.tractorOffer(kind, item.id, 'visible');
+            return;
+        }
+    }
+
+    /** The offered skin tapped: its video, then it's the player's and on the tractor. */
+    private async takeTractorOffer(): Promise<void> {
+        const offered = this.tractorOffer?.offered;
+        if (!offered || this.tractorOfferBusy) return;
+        const { kind, item } = offered;
+        this.tractorOfferBusy = true;
+        GameAnalytics.tractorOffer(kind, item.id, 'interact');
+        const watched = !!item.free || (await watchRewardedVideo(`tractor ${item.id}`));
+        this.tractorOfferBusy = false;
+        if (this.sceneDestroyed) return;
+        GameAnalytics.tractorOffer(kind, item.id, item.free ? 'gift' : watched ? 'unlocked' : 'no-video');
+        if (!watched) {
+            this.hud.say('NO VIDEO RIGHT NOW', 0xff9a8a);
+            return;
+        }
+        this.tractorOffer?.hide();
+        this.tractorOfferTimer = item.free ? TRACTOR_OFFER.afterGift : TRACTOR_OFFER.wait;
+        MowProgress.unlockTractor(kind, item);
+        this.hud.say(`${item.name.toUpperCase()} UNLOCKED!`, 0x9cff9c);
+        MowAudio.play('buyStar');
+        MowAudio.play('buyFanfare');
+        const at = this.player.transform.position.clone().setY(1);
+        CONFETTI.forEach((color) => this.effects.burst(at.clone(), color, 5, 5));
+        for (let i = 0; i < 12; i++) {
+            this.effects.sparkle(at.clone().add(new THREE.Vector3((Math.random() - 0.5) * 2, Math.random(), (Math.random() - 0.5) * 2)), new THREE.Color(0xfff2a0), 0.5);
         }
     }
 
@@ -1575,11 +1747,7 @@ export default class MowScene extends ThreeScene {
 
     /** Whether `city` has been played (it has a save). */
     private visited(city: string): boolean {
-        try {
-            return window.localStorage.getItem(`mow.save.${city}`) !== null;
-        } catch {
-            return false;
-        }
+        return SaveStorage.getItem(`mow.save.${city}`) !== null;
     }
 
     /**
@@ -1637,7 +1805,10 @@ export default class MowScene extends ThreeScene {
     private afterFirstInput(): void {
         if (this.sceneDestroyed || this.spatial) return;
         this.spatial = new SpatialAudio();
-        MowAudio.startMusic();
+        // (The music, over 2 MB, after the cut's sounds: they're what the first seconds are about.)
+        void MowAudio.essentials().then(() => {
+            if (!this.sceneDestroyed) MowAudio.startMusic();
+        });
         this.loadTreasureModels();
     }
 
@@ -1649,7 +1820,9 @@ export default class MowScene extends ThreeScene {
         // sits under it, smaller: MowHud).
         if (this.levelBadge && screen) {
         // SELL x2: bottom right, clear of the corner.
-        if (this.sellX2 && screen) this.sellX2.position.set(screen.topLeft.x + screen.width - 90, screen.topLeft.y + screen.height - 170);
+        if (this.sellX2 && screen) this.sellX2.position.set(screen.topLeft.x + screen.width - 108, screen.topLeft.y + screen.height - 112);
+        // A tractor skin offered: over SELL x2.
+        if (this.tractorOffer && screen) this.tractorOffer.position.set(screen.topLeft.x + screen.width - 100, screen.topLeft.y + screen.height - 310);
         // Locked chests: their button on the left under the corner; their panel over the whole screen.
         if (this.lockedChestButton && screen) this.lockedChestButton.position.set(screen.topLeft.x + 70, screen.topLeft.y + 330);
         if (this.lockedChestPanel && screen) {
@@ -1659,10 +1832,10 @@ export default class MowScene extends ThreeScene {
             const slot = this.hud.levelSlot();
             const scale = Math.min(LEVEL_MAX_SCALE, (slot.right - slot.left) / LevelBadge.width);
             this.levelBadge.scale.set(scale);
-            this.levelBadge.position.set((slot.left + slot.right) / 2 - (LevelBadge.width / 2 - LEVEL_BADGE_HALF) * scale, slot.y + LEVEL_DROP);
-            // The area's bar lines up under the level bar (clear of the badge), as wide as it.
+            this.levelBadge.position.set((slot.left + slot.right) / 2 - (LevelBadge.width / 2 - LevelBadge.badgeHalf) * scale, slot.y + LEVEL_DROP);
+            // The area's bar lines up under the level bar, as wide as it.
             const span = LevelBadge.barSpan;
-            this.hud.alignUnderLevel({ left: this.levelBadge.x + span.from * scale, right: this.levelBadge.x + span.to * scale, bottom: this.levelBadge.y + span.bottom * scale });
+            this.hud.alignUnderLevel({ left: this.levelBadge.x + span.from * scale, right: this.levelBadge.x + span.to * scale, y: this.levelBadge.y + span.y * scale, covered: span.covered });
         }
     }
 
@@ -1673,6 +1846,7 @@ export default class MowScene extends ThreeScene {
         MowProgress.saveNow();
         DebugOverlay.instance.removePanel('mow.progress');
         DebugOverlay.instance.removePanel('mow.upgrades');
+        DebugOverlay.instance.removePanel('mow.sounds');
         Localization.onLocaleChange.remove(this.onLocaleChange, this);
         this.engine.stop();
         this.spatial?.destroy();
@@ -1693,6 +1867,8 @@ export default class MowScene extends ThreeScene {
         this.backpack?.destroy();
         this.levelBadge?.destroy();
         this.sellX2?.destroy();
+        this.tractorOffer?.destroy();
+        this.edgeArrow?.destroy();
         this.lockedChestButton?.destroy();
         this.lockedChestPanel?.destroy();
         MowProgress.levelUpListeners.splice(MowProgress.levelUpListeners.indexOf(this.onLevelUp) >>> 0, 1);

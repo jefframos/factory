@@ -4,7 +4,9 @@ import SoundManager from 'core/audio/SoundManager';
 import { Game } from 'core/Game';
 import HtmlLoader from 'core/loader/HtmlLoader';
 import PlatformHandler from 'core/platforms/PlatformHandler';
+import { SaveStorage } from 'core/platforms/SaveStorage';
 import { getPlatformInstance } from 'core/platforms/PlatformFactory';
+import { COLOR_GRADE, ColorGrade } from 'core/scene/ColorGrade';
 import { SceneManager } from 'core/scene/SceneManager';
 import { DebugOverlay } from 'core/debug/DebugOverlay';
 import * as PIXI from 'pixi.js';
@@ -38,6 +40,7 @@ export default class UfoGame extends Game {
 
     public constructor() {
         super({ resolution: Math.min(2, devicePixelRatio), backgroundAlpha: 0 }, false);
+        ColorGrade.install();
         this.loaderScene = new HtmlLoader(loaderConfig);
         PIXI.Ticker.shared.maxFPS = 60;
         this.folderPath = 'ufo';
@@ -54,6 +57,9 @@ export default class UfoGame extends Game {
             PlatformHandler.GAME_ID = config?.gameId || '';
             PlatformHandler.ENABLE_VIDEO_ADS = config?.enableAds ?? true;
             await PlatformHandler.instance.initialize(await getPlatformInstance(platformName));
+            // The save, from the platform's own storage, before anything's built on it.
+            await SaveStorage.load(UfoProgress.saveKeys);
+            UfoProgress.begin();
             PlatformHandler.instance.platform.startLoad();
             UfoAudio.initialize(this.folderPath);
             this.stageContainer.addChild(this.gameContainer);
@@ -64,6 +70,7 @@ export default class UfoGame extends Game {
             }));
             await PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`);
             DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'ufo');
+            DebugOverlay.instance.panel('Look', { id: 'ufo.look', persist: false }).slider(COLOR_GRADE.vibrance, 'value', 0, 1.2, 0.05, 'Vibrance');
             // A new player: the tutorial, then straight on into the first level; the main screen once that's won.
             const playFirst = levelInAddress() || !UfoProgress.tutorialDone || UfoProgress.levelsWon === 0;
             if (!levelInAddress() && !UfoProgress.tutorialDone) goToTutorial();

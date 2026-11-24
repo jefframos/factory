@@ -5,7 +5,8 @@
 // `price`), bought with coins.
 
 import { AVATARS, AvatarLook, usernameFrom } from './Profile';
-import { LOOKS, currentMissionIndex, eraseMissionSave } from './UfoConfig';
+import { SaveStorage } from 'core/platforms/SaveStorage';
+import { LOOKS, MISSION_KEY, beginMissions, currentMissionIndex, eraseMissionSave } from './UfoConfig';
 
 export type ShopKind = 'ufo' | 'alien';
 export type ShopSection = 'classics' | 'specials';
@@ -44,7 +45,7 @@ interface Saved {
 
 function load(): Saved {
     try {
-        const saved = JSON.parse(window.localStorage.getItem(KEY) ?? '{}') as Partial<Saved>;
+        const saved = JSON.parse(SaveStorage.getItem(KEY) ?? '{}') as Partial<Saved>;
         return {
             coins: saved.coins ?? 0, ufos: saved.ufos ?? [], aliens: saved.aliens ?? [], ufo: saved.ufo, alien: saved.alien, tutorialDone: saved.tutorialDone, rankingSeen: saved.rankingSeen, username: saved.username, avatar: saved.avatar, stars: saved.stars, claimed: saved.claimed,
             levelsWon: saved.levelsWon, trophies: saved.trophies, bestTrophies: saved.bestTrophies, versusPlayed: saved.versusPlayed, versusWins: saved.versusWins, arenasSeen: saved.arenasSeen, road: saved.road, versusTutorial: saved.versusTutorial,
@@ -54,27 +55,44 @@ function load(): Saved {
     }
 }
 
-const state = load();
-// A save from before levels won were counted: the level it's up to says how many were.
-state.levelsWon = Math.max(state.levelsWon ?? 0, currentMissionIndex());
-// What's in the data as worn at the start is owned from the start.
-if (!state.ufos.includes(LOOKS.ufo)) state.ufos.push(LOOKS.ufo);
-if (!state.aliens.includes(LOOKS.alien)) state.aliens.push(LOOKS.alien);
-if (state.ufo && LOOKS.ufos.some((style) => style.id === state.ufo)) LOOKS.ufo = state.ufo;
-if (state.alien && LOOKS.aliens.some((style) => style.id === state.alien)) LOOKS.alien = state.alien;
+/** What everyone starts in (the data's, before what's worn is put on). */
+const STARTERS: Record<ShopKind, string> = { ufo: LOOKS.ufo, alien: LOOKS.alien };
+
+let state = begun();
+/** The save's been read from the platform (begin()): till then nothing's written, or a new game's would go over it. */
+let ready = false;
+
+/** The save, what it's missing filled in, and what's worn put on. */
+function begun(): Saved {
+    const saved = load();
+    // A save from before levels won were counted: the level it's up to says how many were.
+    saved.levelsWon = Math.max(saved.levelsWon ?? 0, currentMissionIndex());
+    // What's in the data as worn at the start is owned from the start.
+    if (!saved.ufos.includes(STARTERS.ufo)) saved.ufos.push(STARTERS.ufo);
+    if (!saved.aliens.includes(STARTERS.alien)) saved.aliens.push(STARTERS.alien);
+    LOOKS.ufo = saved.ufo && LOOKS.ufos.some((style) => style.id === saved.ufo) ? saved.ufo : STARTERS.ufo;
+    LOOKS.alien = saved.alien && LOOKS.aliens.some((style) => style.id === saved.alien) ? saved.alien : STARTERS.alien;
+    return saved;
+}
 
 function save(): void {
-    try {
-        window.localStorage.setItem(KEY, JSON.stringify(state));
-    } catch {
-        // No storage: it lasts this session.
-    }
+    if (ready) SaveStorage.setItem(KEY, JSON.stringify(state));
 }
 
 const ownedOf = (kind: ShopKind): string[] => (kind === 'ufo' ? state.ufos : state.aliens);
 const stylesOf = (kind: ShopKind) => (kind === 'ufo' ? LOOKS.ufos : LOOKS.aliens);
 
 export const UfoProgress = {
+    /** Every key the save's in (SaveStorage.load() at boot). */
+    saveKeys: [KEY, MISSION_KEY],
+
+    /** At boot, the platform's storage read: the save as it is there, and from now on it's kept. */
+    begin(): void {
+        beginMissions();
+        state = begun();
+        ready = true;
+    },
+
     get coins(): number {
         return state.coins;
     },
@@ -227,11 +245,7 @@ export const UfoProgress = {
 
     /** Forgets everything and starts over, from the tutorial (the debug panel's). */
     eraseAndRestart(): void {
-        try {
-            window.localStorage.removeItem(KEY);
-        } catch {
-            // No storage: nothing was kept.
-        }
+        SaveStorage.removeItem(KEY);
         eraseMissionSave();
         const url = new URL(window.location.href);
         url.searchParams.delete('city');
@@ -246,6 +260,12 @@ export const UfoProgress = {
     /** A section's styles, in the order they're listed. */
     inSection(kind: ShopKind, section: ShopSection) {
         return stylesOf(kind).filter((style) => (section === 'specials') === Boolean(style.price));
+    },
+
+    /** A section's styles as the shop shows them: the starter, the one-off designs, then the recolours (each in its listed order). */
+    shopOrder(kind: ShopKind, section: ShopSection) {
+        const rank = (style: { id: string; pieces: readonly unknown[] }) => (style.id === STARTERS[kind] ? 0 : this.isFancy(kind, style) ? 1 : 2);
+        return [...this.inSection(kind, section)].sort((a, b) => rank(a) - rank(b));
     },
 
     priceOf(kind: ShopKind, id: string): number {
@@ -280,14 +300,33 @@ export const UfoProgress = {
         return this.inSection(kind, 'classics').some((style) => !this.isOwned(kind, style.id));
     },
 
+    /** One with a shape of its own, not a recolour: a ship with pieces on it, an alien that's not one of a family of colours. */
+    isFancy(kind: ShopKind, style: { id: string; pieces: readonly unknown[] }): boolean {
+        if (kind === 'ufo') return style.pieces.length > 0;
+        return !/^(googly|classic-grey|cyclops|robot)(-|$)/.test(style.id);
+    },
+
+    /** A classic that's still locked, at random (an offer's); none left: undefined. */
+    randomLocked(kind: ShopKind) {
+        const locked = this.inSection(kind, 'classics').filter((style) => !this.isOwned(kind, style.id));
+        // (The shaped ships and the one-off aliens first: worth more than another colour of one they've seen.)
+        const special = locked.filter((style) => this.isFancy(kind, style));
+        const from = special.length ? special : locked;
+        return from.length ? from[Math.floor(Math.random() * from.length)] : undefined;
+    },
+
+    /** Gives that style and wears it (its video's been watched). */
+    unlock(kind: ShopKind, id: string): void {
+        if (!this.isOwned(kind, id)) ownedOf(kind).push(id);
+        this.wear(kind, id);
+    },
+
     /** Unlocks a random locked classic (the video's been watched) and wears it; its id, or null if there's none left. */
     unlockRandom(kind: ShopKind): string | null {
-        const locked = this.inSection(kind, 'classics').filter((style) => !this.isOwned(kind, style.id));
-        if (!locked.length) return null;
-        const { id } = locked[Math.floor(Math.random() * locked.length)];
-        ownedOf(kind).push(id);
-        this.wear(kind, id);
-        return id;
+        const style = this.randomLocked(kind);
+        if (!style) return null;
+        this.unlock(kind, style.id);
+        return style.id;
     },
 
     /** Buys a special and wears it; whether it could be paid for. */

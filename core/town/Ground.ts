@@ -6,6 +6,7 @@
 // with a world bend; the game bends their materials its own way.
 
 import * as THREE from 'three';
+import { ColorGrade } from 'core/scene/ColorGrade';
 import { RoadCells, RoadKit, solveRoads } from 'core/roads/RoadGrid';
 import { subdivideObject, subdivideOwn } from './Subdivide';
 
@@ -33,6 +34,7 @@ export function grassMaterial(color: string = LAWN_COLOR): THREE.MeshStandardMat
     const material = new THREE.MeshStandardMaterial({ color, roughness: 1 });
     material.customProgramCacheKey = () => 'town-grass';
     material.onBeforeCompile = (shader) => {
+        ColorGrade.apply(shader);
         shader.uniforms.uGrassPixels = { value: GRASS_PIXELS };
         shader.vertexShader = shader.vertexShader
             .replace('#include <common>', '#include <common>\nvarying vec2 vGrassXZ;')

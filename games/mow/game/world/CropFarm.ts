@@ -561,6 +561,8 @@ export class CropFarm {
     }
 
     private fitSign(): void {
+        // Only while it's locked: open, its name over it is just more text.
+        this.sign.visible = !this.opened && (this.levelLocked || !this.def.level);
         const image = this.sign.material.map?.image as HTMLCanvasElement | undefined;
         const aspect = image ? image.width / Math.max(1, image.height) : 3;
         this.sign.scale.set(1.1 * aspect, 1.1, 1);

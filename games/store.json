@@ -11,6 +11,7 @@
         "tower",
         "mob",
         "restaurant",
+        "wall",
         "ufo"
     ],
     "names": {
@@ -24,6 +25,7 @@
         "ufo": "UFO.io",
         "hex": "Hex Merge",
         "tower": "Block Tower",
-        "restaurant": "Restaurant"
+        "restaurant": "Restaurant",
+        "wall": "Break a Wall!"
     }
 }

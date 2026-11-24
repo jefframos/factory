@@ -32,15 +32,15 @@ const REEL_WHEEL = 1.35;
 const HANDLE_RADIUS = 0.035;
 const BAR_OVERHANG = 0.12;
 const UP = new THREE.Vector3(0, 1, 0);
-/** The cut's sound files (MowAudio's `cut`), and how Test plays them: this many, this far apart (seconds). */
-const CUT_FILES = [1, 2, 3, 4, 5].map((i) => `/audio/hit-gem-${i}.ogg`);
-const CUT_TEST = { count: 6, gap: 0.14 };
+/** The cut's sounds to choose from (raw-assets/audio/cut-<set>-<n>), by set; and how Test plays them: this many, this far apart (seconds). */
+const cutSets = {};
+const CUT_TEST = { count: 14, gap: 0.12 };
 /** [which range, its label, step, top of the slider] */
 const CUT_FIELDS = [['volume', 'Volume', 0.01, 1], ['pitch', 'Pitch', 0.01, 3]];
 /** The grass cut's sound being edited, and what Test plays it with (made on the first Test: browsers need the click). */
 let cutSound;
 let audio;
-let cutBuffers;
+const cutBuffers = {};
 
 /** [path in the tool, label, step, min, max] */
 const FIELDS = [
@@ -97,7 +97,11 @@ export const hasUnsavedMowerChanges = () => dirty;
 export async function initMowersTab(container) {
     host = container;
     const mow = await api('/api/mow');
-    cutSound = { volume: [...mow.cutSound.volume], pitch: [...mow.cutSound.pitch] };
+    cutSound = { grass: mow.grass.map(({ id, name, cutSound: set, cutPitch }) => ({ id, name, cutSound: set ?? '', cutPitch: cutPitch ?? 1 })), volume: [...mow.cutSound.volume], pitch: [...mow.cutSound.pitch] };
+    for (const id of await api('/api/sounds')) {
+        const set = /^cut-(.+)-\d+$/.exec(id)?.[1];
+        if (set) (cutSets[set] ??= []).push(id);
+    }
     playerScale = mow.playerScale ?? 1;
     // The hands are the player's: one grip (the first mower's) shared by every walked mower — editing it on any mower
     // edits it for all, and each mower's handle reaches it (the game holds every walked mower this way too).
@@ -122,14 +126,22 @@ export function refreshMowersTab() {
 }
 
 /** A few cuts, each at a volume and a pitch from the ranges, as the game picks them. */
-async function testCutSound() {
+async function testCutSound(grass = cutSound.grass[0]) {
     audio ??= new AudioContext();
-    cutBuffers ??= await Promise.all(CUT_FILES.map(async (file) => audio.decodeAudioData(await (await fetch(file)).arrayBuffer())));
+    const load = async (id) => {
+        for (const type of ['ogg', 'wav', 'mp3']) {
+            const found = await fetch(`/audio/${id}.${type}`);
+            if (found.ok) return audio.decodeAudioData(await found.arrayBuffer());
+        }
+        throw new Error(`${id}: no file`);
+    };
+    const buffers = await (cutBuffers[grass.cutSound] ??= Promise.all((cutSets[grass.cutSound] ?? []).map(load)));
+    if (!buffers.length) return;
     const pick = ([min, max]) => min + Math.random() * (max - min);
     for (let i = 0; i < CUT_TEST.count; i++) {
         const source = audio.createBufferSource();
-        source.buffer = cutBuffers[Math.floor(Math.random() * cutBuffers.length)];
-        source.playbackRate.value = Math.max(0.01, pick(cutSound.pitch));
+        source.buffer = buffers[Math.floor(Math.random() * buffers.length)];
+        source.playbackRate.value = Math.max(0.01, pick(cutSound.pitch) * grass.cutPitch);
         const gain = audio.createGain();
         gain.gain.value = pick(cutSound.volume);
         source.connect(gain).connect(audio.destination);
@@ -154,10 +166,29 @@ function cutSoundSection() {
         slider.addEventListener('input', () => apply(slider.value));
         return el('label', { class: 'field' }, el('span', {}, `${label} ${end}`), el('div', { style: { display: 'flex', gap: '6px', alignItems: 'center', minWidth: '0' } }, slider, number));
     }));
+    // Each grass: its set of sounds, its pitch, and a test.
+    const grassRows = cutSound.grass.map((grass) => {
+        const picker = el('select', { style: { flex: '1', minWidth: '0' } }, ...Object.keys(cutSets).map((set) => el('option', { value: set }, set)));
+        picker.value = grass.cutSound;
+        picker.addEventListener('change', () => {
+            grass.cutSound = picker.value;
+            touch();
+            void testCutSound(grass);
+        });
+        const pitch = el('input', { type: 'number', step: 0.01, min: 0.2, max: 3, value: grass.cutPitch, title: 'Pitch', style: { width: '64px', flex: 'none' } });
+        pitch.addEventListener('input', () => {
+            const parsed = Number(pitch.value);
+            if (!Number.isFinite(parsed) || parsed <= 0) return;
+            grass.cutPitch = parsed;
+            touch();
+        });
+        return el('label', { class: 'field' }, el('span', {}, grass.name), el('div', { style: { display: 'flex', gap: '6px', alignItems: 'center', minWidth: '0' } },
+            picker, pitch, el('button', { style: { flex: 'none' }, onclick: () => void testCutSound(grass) }, '▶')));
+    });
     return el('section', { class: 'card-section' }, el('h2', {}, 'Grass cut sound'),
-        el('p', { class: 'muted small' }, 'Each cut picks a volume and a pitch between these (pitch 1 = as recorded). Saved with the mowers.'),
-        ...rows,
-        el('button', { class: 'block', onclick: () => void testCutSound() }, '▶ Test'));
+        el('p', { class: 'muted small' }, "Each grass: its sound and pitch (1 = as recorded). Below, for them all: each cut picks a volume and a pitch between these. Saved with the mowers."),
+        ...grassRows,
+        ...rows);
 }
 
 const get = (path) => path.split('.').reduce((value, key) => value?.[key], current);

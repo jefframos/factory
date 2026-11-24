@@ -663,6 +663,48 @@
         }
       }
     },
+    "map": {
+      "label": "Town map",
+      "elements": {
+        "panel": {
+          "type": "image",
+          "image": "Popup01_Basic_White_Bg",
+          "slice": [
+            45,
+            45,
+            46,
+            61
+          ],
+          "tint": "#35508f",
+          "sliceScale": 0.6
+        },
+        "ribbon": {
+          "type": "image",
+          "image": "Title_Ribbon01_Green",
+          "slice": [
+            150,
+            0,
+            150,
+            0
+          ],
+          "tint": "#ffffff",
+          "w": 740,
+          "h": 143,
+          "sliceScale": 1
+        },
+        "barBack": {
+          "type": "image",
+          "image": "ResourceBar_Single_Bg",
+          "slice": [
+            10,
+            10,
+            10,
+            10
+          ],
+          "tint": "#14203f"
+        }
+      }
+    },
     "wardrobe": {
       "label": "Wardrobe",
       "elements": {
@@ -742,6 +784,50 @@
             20,
             20,
             20
+          ],
+          "tint": "#ffffff"
+        },
+        "cardBuy": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Blue",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "cardPoor": {
+          "type": "image",
+          "image": "ItemFrame01_Single_Navy",
+          "slice": [
+            20,
+            20,
+            20,
+            20
+          ],
+          "tint": "#ffffff"
+        },
+        "buyButton": {
+          "type": "image",
+          "image": "Button01_s_Green",
+          "slice": [
+            30,
+            40,
+            30,
+            40
+          ],
+          "tint": "#ffffff"
+        },
+        "poorButton": {
+          "type": "image",
+          "image": "Button01_s_Gray",
+          "slice": [
+            30,
+            40,
+            30,
+            40
           ],
           "tint": "#ffffff"
         },
@@ -1080,6 +1166,60 @@
             20
           ],
           "tint": "#2b3240"
+        }
+      }
+    },
+    "chest": {
+      "label": "Locked chest",
+      "elements": {
+        "panel": {
+          "type": "image",
+          "image": "Popup01_Basic_White_Bg",
+          "slice": [
+            45,
+            45,
+            46,
+            61
+          ],
+          "tint": "#4a3496",
+          "sliceScale": 0.6
+        },
+        "ribbon": {
+          "type": "image",
+          "image": "Title_Ribbon01_Yellow",
+          "slice": [
+            150,
+            0,
+            150,
+            0
+          ],
+          "tint": "#ffffff",
+          "w": 700,
+          "h": 143,
+          "sliceScale": 1
+        },
+        "rewardBack": {
+          "type": "image",
+          "image": "ResourceBar_Single_Bg",
+          "slice": [
+            10,
+            10,
+            10,
+            10
+          ],
+          "tint": "#1f144a"
+        },
+        "openButton": {
+          "type": "image",
+          "image": "Button01_l_Green",
+          "slice": [
+            38,
+            42,
+            38,
+            70
+          ],
+          "tint": "#ffffff",
+          "sliceScale": 0.55
         }
       }
     },

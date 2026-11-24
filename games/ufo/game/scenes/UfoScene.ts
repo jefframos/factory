@@ -25,8 +25,9 @@ import { DebugOverlay } from 'core/debug/DebugOverlay';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import { CAMERA, DESIGN, LOOKS, Level, Mission, Prop, UFO, areaProgress, currentArena, currentLevel, currentMission, currentMissionIndex, goToMission, levelTitle, missionUpTo } from '../data/UfoConfig';
-import { arenaById, coinsFor, currentMatchPlayers, rivalsNow, trophiesFor } from '../data/Versus';
+import { arenaById, coinsFor, currentMatchPlayers, rivalsNow, roadTrophiesFor, trophiesFor } from '../data/Versus';
 import type { AreaView } from '../ui/AreaBar';
+import type { EndShip } from '../ui/EndReveal';
 import { UfoProgress } from '../data/UfoProgress';
 import { awardRound } from '../data/Ranking';
 import { SpatialAudio } from '../audio/SpatialAudio';
@@ -36,6 +37,8 @@ import { Rival } from '../player/Rival';
 import { Directed, RivalDirector } from '../player/RivalDirector';
 import { Saucer } from '../player/Saucer';
 import { UfoHud } from '../ui/UfoHud';
+import { OfferLook, RewardOffer } from '../ui/RewardOffer';
+import { Snapshots } from '../ui/Snapshots';
 import type { PlayerLook } from '../ui/UiParts';
 import { Cars } from '../world/Cars';
 import { HomeArrows } from '../world/HomeArrows';
@@ -88,6 +91,25 @@ const SOLO_WIN = 30;
 const RACE_PACE = 0.85;
 /** The markers at the screen's edge for rivals out of view: only this many, the nearest, and only within this far. */
 const MARKERS = { most: 3, range: 110 };
+
+/**
+ * The rewarded offers in a story level (the tutorial too), each once a level: a new ship and a new alien (while the player's
+ * new: so many levels won), and a size boost (the saucer this many times bigger). When they come in: seconds of play (in the tutorial, from
+ * the first thing eaten). And lost on time, this many seconds more, once.
+ */
+const OFFERS = { shipFrom: 3, alienFrom: 6, looksUntilWon: 5, boostFrom: 9, boost: 1.4, extraSeconds: 30 };
+
+/** Until this many levels are won, a win goes straight on to the next level (the main screen loses new players); then, home. */
+const STRAIGHT_ON_UNTIL = 5;
+/** How many looks there are to pick from on the won screen. */
+const LOOKS_OFFERED = 3;
+
+/** A ship's or an alien's picture. */
+function lookPicture(kind: 'ufo' | 'alien', id: string): Promise<PIXI.Texture | null> {
+    const ufo = kind === 'ufo' ? LOOKS.ufos.find((style) => style.id === id) : undefined;
+    const alien = kind === 'alien' ? LOOKS.aliens.find((style) => style.id === id) : undefined;
+    return ufo ? Snapshots.ufo(ufo) : alien ? Snapshots.alien(alien) : Promise.resolve(null);
+}
 
 type Phase = 'menu' | 'intro' | 'playing' | 'ended';
 
@@ -177,6 +199,11 @@ export default class UfoScene extends ThreeScene {
     private phase: Phase = 'intro';
     /** The quit box is up: the round's paused under it. */
     private quitAsked = false;
+    /** A rewarded video's up: paused too. */
+    private watchingAd = false;
+    private offers: { offer: RewardOffer; from: number; name: string }[] = [];
+    private offerClock = 0;
+    private extraTimeUsed = false;
     /** The intro: how far along, where the rivals wait and where they go, and the camera's angle while it lasts. */
     private introTime = 0;
     private introDone = false;
@@ -246,6 +273,7 @@ export default class UfoScene extends ThreeScene {
             // A new player's first level: no way out to the main screen till it's won (it opens after it).
             this.hud.hideHome();
         }
+        this.buildOffers();
         this.startIntro();
         this.game.uiLayer.addChild(this.hud);
         this.buildInput();
@@ -328,7 +356,8 @@ export default class UfoScene extends ThreeScene {
             // Never more than the town has.
             const wanted = mission.points ?? Math.round((total * (mission.share ?? 0.5)) / TARGET_ROUND) * TARGET_ROUND;
             this.target = Math.max(TARGET_ROUND, Math.min(wanted, total));
-            hud.setBanner([{ text: 'EAT EVERYTHING', green: true }, { text: ' UNTIL YOU GET ' }, { text: `${this.target} POINTS`, green: true }, { text: '!' }]);
+            if (mission.tutorial) hud.setBanner([{ text: 'EAT THINGS: GET ' }, { text: `${this.target} POINTS`, green: true }, { text: '!' }]);
+            else hud.setBanner([{ text: 'EAT EVERYTHING', green: true }, { text: ' UNTIL YOU GET ' }, { text: `${this.target} POINTS`, green: true }, { text: '!' }]);
         } else if (mission.type === 'race') {
             const total = this.town.items.reduce((sum, item) => sum + pointsOf(item), 0);
             const wanted = mission.points ?? Math.round((total * (mission.share ?? 0.3)) / TARGET_ROUND) * TARGET_ROUND;
@@ -382,6 +411,11 @@ export default class UfoScene extends ThreeScene {
         this.travel({ title: 'HOME', subtitle: '', home: true, apply: () => goToMission(currentMissionIndex()) });
     }
 
+    /** A story level won by a player still new: on to the next level, not home. */
+    private get goesStraightOn(): boolean {
+        return !!this.mission && !this.mission.tutorial && this.missionWon && UfoProgress.levelsWon < STRAIGHT_ON_UNTIL;
+    }
+
     /** The end screen's button: home (a mission won: the next one's up), or a mission lost, again. */
     private onEndButton(): void {
         const { mission } = this;
@@ -393,6 +427,11 @@ export default class UfoScene extends ThreeScene {
         }
         if (mission && !this.missionWon) {
             this.travel({ title: mission.name, subtitle: levelTitle(mission.level).toUpperCase(), apply: () => goToMission(this.missionIndex) });
+            return;
+        }
+        if (this.goesStraightOn) {
+            const next = missionUpTo();
+            this.travel({ title: next.name, subtitle: levelTitle(next.level).toUpperCase(), apply: () => goToMission(currentMissionIndex()) });
             return;
         }
         const next = mission && !mission.tutorial ? this.missionIndex + 1 : currentMissionIndex();
@@ -412,10 +451,13 @@ export default class UfoScene extends ThreeScene {
         // The players the matchmaking found, else made-up names.
         const players = this.arena ? currentMatchPlayers() : [];
         const first = Math.floor(Math.random() * RIVAL_NAMES.length);
+        const ships = LOOKS.ufos.filter(({ id }) => id !== LOOKS.ufo).sort(() => Math.random() - 0.5);
+        const crews = LOOKS.aliens.filter(({ id }) => id !== LOOKS.alien).sort(() => Math.random() - 0.5);
         for (let i = 0; i < count; i++) {
             const at = this.town.findOpenSpot(taken, SPAWN_APART);
-            const ufo = LOOKS.ufos[(i + 1) % LOOKS.ufos.length];
-            const alien = LOOKS.aliens[(i + 1) % LOOKS.aliens.length];
+            // (Any of them, each rival another: they show what there is to have.)
+            const ufo = ships[i % ships.length];
+            const alien = crews[i % crews.length];
             const player = players[i];
             const color = player?.color ?? PLAYER_COLORS[(i + 1) % PLAYER_COLORS.length];
             const saucer = new Saucer(this.threeScene, at.x, at.y, { look: () => ({ ufo, alien }), throwsLight: false, beamColor: color });
@@ -505,8 +547,8 @@ export default class UfoScene extends ThreeScene {
     }
 
     public update(delta: number): void {
-        // (Paused while the quit box asks.)
-        if (this.quitAsked) return;
+        // (Paused while the quit box asks, or a rewarded video plays.)
+        if (this.quitAsked || this.watchingAd) return;
         delta = Math.min(delta, MAX_FRAME_SEC);
         const playing = this.phase === 'playing';
         const saucers = this.contestants.map(({ saucer }) => saucer);
@@ -546,6 +588,7 @@ export default class UfoScene extends ThreeScene {
         if (playing) {
             this.updateHints();
             this.updateBanner(delta);
+            this.updateOffers(delta);
             this.checkEnd(delta);
         }
         super.update(delta);
@@ -821,9 +864,13 @@ export default class UfoScene extends ThreeScene {
                 UfoProgress.wonLevel(this.missionIndex);
                 goToMission(this.missionIndex + 1);
             }
-            this.hud.showEnd({ title: 'WELL DONE!', outcome: 'win', coins: reward, coinsTotal: UfoProgress.coins, button: 'CONTINUE', area, doubleCoins: this.doubleCoinsFor(reward) });
+            const straightOn = mission.tutorial || this.goesStraightOn;
+            this.hud.showEnd({
+                title: 'WELL DONE!', outcome: 'win', coins: reward, coinsTotal: UfoProgress.coins, button: straightOn ? 'NEXT LEVEL' : 'CONTINUE', area, doubleCoins: this.doubleCoinsFor(reward),
+                ships: this.endShips(), home: this.goesStraightOn,
+            });
         } else {
-            this.hud.showEnd({ title: why ? 'TOO SLOW!' : 'TIME UP!', detail: why ?? mission.name.toUpperCase(), outcome: 'lose', button: 'TRY AGAIN', area });
+            this.hud.showEnd({ title: why ? 'TOO SLOW!' : 'TIME UP!', detail: why ?? mission.name.toUpperCase(), outcome: 'lose', button: 'TRY AGAIN', area, extraTime: why ? undefined : this.extraTimeOffer() });
         }
     }
 
@@ -895,9 +942,140 @@ export default class UfoScene extends ThreeScene {
         PlatformHandler.instance.measure('reward', 'double-coins', 'visible');
         return async () => {
             PlatformHandler.instance.measure('reward', 'double-coins', 'interact');
-            const watched = await PlatformHandler.instance.platform.showRewardedVideo('ufo-double-coins').catch(() => false);
+            const watched = await PlatformHandler.instance.platform.showRewardedVideo('ufo-double-coins').then((result) => result !== false).catch(() => false);
             if (watched) UfoProgress.addCoins(coins);
             return watched;
+        };
+    }
+
+    // ---------------------------------------------------------------- rewarded videos while playing
+
+    /** A story level's offers (OFFERS), hidden until updateOffers() brings them in. None when the build has ads off. */
+    private buildOffers(): void {
+        if (!this.mission || !PlatformHandler.ENABLE_VIDEO_ADS) return;
+        if (UfoProgress.levelsWon < OFFERS.looksUntilWon) {
+            this.addLookOffer('ufo', 'new-ship', { words: 'NEW SHIP', outer: 0x2f6fe0, inner: 0x8ec6ff }, OFFERS.shipFrom);
+            this.addLookOffer('alien', 'new-alien', { words: 'NEW ALIEN', outer: 0x1f9a6a, inner: 0x9df0b4 }, OFFERS.alienFrom);
+        }
+        this.addOffer('size-boost', { words: 'BIGGER!', outer: 0x7a35d8, inner: 0xcf9bff, picture: 'UpArrow_Green' }, OFFERS.boostFrom, () => {
+            this.saucer.boost(OFFERS.boost);
+            UfoAudio.milestone();
+            this.hud.say('BIGGER!');
+        }, true);
+    }
+
+    /** A ship or an alien that's still locked, for a video: worn at once. */
+    private addLookOffer(kind: 'ufo' | 'alien', name: string, card: Omit<OfferLook, 'picture'>, from: number): void {
+        const locked = UfoProgress.randomLocked(kind);
+        if (!locked) return;
+        this.addOffer(name, { ...card, picture: lookPicture(kind, locked.id) }, from, () => {
+            UfoProgress.unlock(kind, locked.id);
+            void this.saucer.applyLook();
+            UfoAudio.win();
+            this.hud.say(`${locked.name.toUpperCase()} UNLOCKED!`);
+        });
+    }
+
+    private addOffer(name: string, look: OfferLook, from: number, give: () => void, right = false): void {
+        const offer: RewardOffer = new RewardOffer(look, () => {
+            if (this.watchingAd || this.phase !== 'playing') return;
+            void this.watch(name).then((watched) => {
+                if (this.hud.destroyed) return;
+                if (!watched) {
+                    this.sayTimer = SAY_EVERY;
+                    this.hud.say('NO VIDEO RIGHT NOW');
+                    return;
+                }
+                this.offers = this.offers.filter((entry) => entry.offer !== offer);
+                offer.show(false);
+                this.sayTimer = SAY_EVERY;
+                give();
+            });
+        });
+        this.offers.push({ offer, from, name });
+        this.hud.addOffer(offer, right);
+    }
+
+    /** The offers come in one after another (the tutorial's after the first thing eaten: flying comes first). */
+    private updateOffers(delta: number): void {
+        if (this.mission?.tutorial && !this.bannerStarted) return;
+        this.offerClock += delta;
+        for (const { offer, from, name } of this.offers) {
+            if (offer.shown || this.offerClock < from) continue;
+            offer.show(true);
+            PlatformHandler.instance.measure('reward', name, 'visible');
+        }
+    }
+
+    /** A rewarded video, the level paused under it; whether it was watched. */
+    private async watch(name: string): Promise<boolean> {
+        this.watchingAd = true;
+        PlatformHandler.instance.measure('reward', name, 'interact');
+        const playing = this.phase === 'playing';
+        if (playing) void PlatformHandler.instance.platform.gameplayStop();
+        this.input.set(0, 0);
+        UfoAudio.setHum(0, this.saucer.radius);
+        UfoAudio.setSucking(false);
+        const watched = await PlatformHandler.instance.platform.showRewardedVideo(`ufo-${name}`).then((result) => result !== false).catch(() => false);
+        this.watchingAd = false;
+        if (this.hud.destroyed) return false;
+        if (watched) PlatformHandler.instance.measure('reward', name, 'complete');
+        if (playing) void PlatformHandler.instance.platform.gameplayStart();
+        return watched;
+    }
+
+    /**
+     * Looks to pick for the next level, on the won screen: a ship and an alien for a video each (the shaped ones first), and
+     * the cheapest special of either that can be paid for now (a price out of reach is only a dead card), else one more ship.
+     */
+    private endShips(): EndShip[] {
+        const card = (kind: 'ufo' | 'alien', style: { id: string; name: string }, price?: number): EndShip => ({
+            kind, name: style.name, picture: lookPicture(kind, style.id), price, coins: () => UfoProgress.coins,
+            pick: async () => {
+                if (UfoProgress.isOwned(kind, style.id)) UfoProgress.wear(kind, style.id);
+                else if (price !== undefined) return UfoProgress.buy(kind, style.id);
+                else {
+                    if (!(await this.watch(kind === 'ufo' ? 'end-ship' : 'end-alien'))) return false;
+                    UfoProgress.unlock(kind, style.id);
+                }
+                return true;
+            },
+        });
+        const kinds = ['ufo', 'alien'] as const;
+        const shuffled = (kind: 'ufo' | 'alien') => UfoProgress.inSection(kind, 'classics').filter(({ id }) => !UfoProgress.isOwned(kind, id))
+            .sort(() => Math.random() - 0.5).sort((a, b) => Number(UfoProgress.isFancy(kind, b)) - Number(UfoProgress.isFancy(kind, a)));
+        const videos = PlatformHandler.ENABLE_VIDEO_ADS;
+        const [ships, aliens] = kinds.map((kind) => (videos ? shuffled(kind) : []));
+        const special = kinds.flatMap((kind) => UfoProgress.inSection(kind, 'specials').map((style) => ({ kind, style, price: UfoProgress.priceOf(kind, style.id) })))
+            .filter(({ kind, style, price }) => !UfoProgress.isOwned(kind, style.id) && roadTrophiesFor(kind, style.id) === null && price <= UfoProgress.coins)
+            .sort((a, b) => a.price - b.price)[0];
+        const cards: EndShip[] = [];
+        if (ships[0]) cards.push(card('ufo', ships[0]));
+        if (aliens[0]) cards.push(card('alien', aliens[0]));
+        if (special) cards.push(card(special.kind, special.style, special.price));
+        for (const [kind, left] of [['ufo', ships.slice(1)], ['alien', aliens.slice(1)]] as const) {
+            for (const style of left) if (cards.length < LOOKS_OFFERED) cards.push(card(kind, style));
+        }
+        if (videos && cards.some(({ price }) => price === undefined)) PlatformHandler.instance.measure('reward', 'end-look', 'visible');
+        return cards;
+    }
+
+    /** The lost screen's "+N SEC": a video, and the level carries on where it was. Once a level. */
+    private extraTimeOffer(): { seconds: number; ask: () => Promise<boolean> } | undefined {
+        if (!PlatformHandler.ENABLE_VIDEO_ADS || this.extraTimeUsed) return undefined;
+        PlatformHandler.instance.measure('reward', 'extra-time', 'visible');
+        return {
+            seconds: OFFERS.extraSeconds,
+            ask: async () => {
+                const watched = await this.watch('extra-time');
+                if (!watched || this.hud.destroyed) return false;
+                this.extraTimeUsed = true;
+                this.clock = OFFERS.extraSeconds;
+                this.hud.hideEnd();
+                this.phase = 'playing';
+                void PlatformHandler.instance.platform.gameplayStart();
+                return true;
+            },
         };
     }
 

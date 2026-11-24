@@ -1,8 +1,7 @@
 // WardrobePanel.ts
 //
-// The wardrobe's panel (Dig's, the same catalogue and assets): COLORS / FACES / HATS tabs over a paged 3x3 grid.
-// Each card shows the item (a colour swatch, the face on a head in the current colour, or the hat's model), and
-// whether it's worn, owned or its price. Tapping buys it if needed (MowProgress.wearLook) and puts it on straight
+// The wardrobe's panel (Dig's, the same catalogue and assets): its tabs over a paged 3x2 grid of big cards.
+// Each card (LookCard) shows the item (a shirt, trousers, or the hat's model) and where it stands. Tapping buys it if needed (MowProgress.wearLook) and puts it on straight
 // away. Catalogue and prices: ui/mow.json `wardrobe`; styles: ui/uikit.json (screen "wardrobe").
 // While the tutorial's first hat is forced (setForcedItem) the panel stays on that hat, the hand on it, the rest dimmed.
 
@@ -13,6 +12,7 @@ import { UiKit } from './UiKit';
 import { BakedShape } from './BakedShape';
 import { UiAnim } from './UiAnim';
 import { tabbedBlock, tagBadge } from './TabBar';
+import { LOOK_CARD, lookCard } from './LookCard';
 import { ModelIcons } from './ModelIcons';
 import { MOW, WardrobeItem } from '../data/MowConfig';
 import { MowProgress, LookKind } from '../data/MowProgress';
@@ -22,72 +22,66 @@ import { MowAudio } from '../audio/MowAudio';
 import { watchRewardedVideo } from '../ads/RewardedVideo';
 import { GameAnalytics } from '../analytics/GameAnalytics';
 
-// Same frame and card size as the collection (CollectionPanel), so both panels scale and read alike.
-const WIDTH = 760;
-/** (Taller than the collection's by the skin row: SKIN_ROW.) */
-const HEIGHT = 748;
+const WIDTH = 700;
+const HEIGHT = 812;
 /** Frame size, for the HUD to fit the panel on screen. */
 export const WARDROBE_SIZE = { width: WIDTH, height: HEIGHT };
-/** Cards are wide (filling the panel's width), so prices and labels fit. */
-const CARD = 118;
-const CARD_W = 212;
-const GAP = 14;
-/** Row pitch of the 3x3 grid. */
-const ROW = 128;
+/** The cards' pictures. */
+const ART = { size: 128, clothes: 148 };
+const ROW = LOOK_CARD.height + LOOK_CARD.gap;
 /** The tabs and the content block under them (TabBar): the block's top edge, size and the tabs' size. */
-const BLOCK = { top: -HEIGHT / 2 + 240, width: WIDTH - 48, height: HEIGHT - 266, tabWidth: 92, tabHeight: 76 };
+const BLOCK = { top: -HEIGHT / 2 + 228, width: WIDTH - 44, height: HEIGHT - 248, tabWidth: 146, tabHeight: 84 };
 /** The skin tones' row: between the title and the tabs; each swatch this big, this far apart. */
-const SKIN_ROW = { y: -HEIGHT / 2 + 96, size: 25, step: 66 };
+const SKIN_ROW = { y: -HEIGHT / 2 + 88, size: 28, step: 64 };
 /** The first card row's centre: just inside the block's top. */
-const FIRST_ROW_Y = BLOCK.top + 18 + CARD / 2;
-const PER_PAGE = 9;
+const FIRST_ROW_Y = BLOCK.top + 16 + LOOK_CARD.height / 2;
+const PER_PAGE = 6;
 // (Faces are left out: they don't show on the people models.)
 const TABS: [LookKind, StringId][] = [['hats', 'tabHats'], ['colors', 'tabColors'], ['patterns', 'tabPatterns'], ['bottoms', 'tabTrousers']];
+/** The HATS tab's straw hat (pale, to stand out on the gold tab). */
+const HAT_TAB = '#ffe9a8';
 const FACE_BASE = './mow/images/non-preload/';
 
 const hex = (color: string): number => new THREE.Color(color).getHex();
 
-/** A T-shirt's outline (`size` across, centred): the neck, the shoulders, the sleeves out and down, the body. */
-function shirtShape(g: PIXI.Graphics, size: number): PIXI.Graphics {
-    const p = (x: number, y: number): [number, number] => [x * size, y * size];
-    g.moveTo(...p(-0.16, -0.46));
-    g.lineTo(...p(-0.5, -0.28));
-    g.lineTo(...p(-0.4, -0.04));
-    g.lineTo(...p(-0.29, -0.11));
-    g.lineTo(...p(-0.29, 0.46));
-    g.lineTo(...p(0.29, 0.46));
-    g.lineTo(...p(0.29, -0.11));
-    g.lineTo(...p(0.4, -0.04));
-    g.lineTo(...p(0.5, -0.28));
-    g.lineTo(...p(0.16, -0.46));
-    g.quadraticCurveTo(...p(0, -0.3), ...p(-0.16, -0.46));
-    return g;
-}
-
 /**
- * A T-shirt picture in `top`, its pattern (`kind:#hex`) on it in the second colour (clipped to the shirt), a dark
- * outline over all: the PATTERNS cards and tab, and (plain) the COLORS tab.
+ * A piece of clothing (raw-assets/images/ui{tps}/Wardrobe_<name>_*, drawn in the kit's icon style): its shape in `color`,
+ * `marks` on it (clipped to the shape: drawn `size` across, centred), and the dark outline, shading and seams over all.
  */
-function shirtPicture(top: string, pattern: string, size: number): PIXI.Container {
+function clothes(name: 'Shirt' | 'Trousers' | 'Hat', color: string, size: number, marks?: PIXI.Graphics): PIXI.Container {
     const holder = new PIXI.Container();
-    holder.addChild(shirtShape(new PIXI.Graphics().beginFill(hex(top)), size).endFill());
-    const [kind, second] = pattern.split(':');
-    if (kind && second) {
-        const marks = new PIXI.Graphics().beginFill(hex(second));
-        const w = size;
-        const top0 = -0.46 * size;
-        const h = 0.92 * size;
-        if (kind === 'stripes') for (let i = 1; i < 7; i += 2) marks.drawRect(-w / 2, top0 + (h * i) / 7, w, h / 7);
-        else if (kind === 'band') marks.drawRect(-w / 2, top0 + h * 0.3, w, h * 0.24);
-        else if (kind === 'twotone') marks.drawRect(-w / 2, top0 + h * 0.5, w, h * 0.5);
-        else if (kind === 'sleeves') marks.drawRect(-w / 2, top0, w * 0.21, h * 0.5).drawRect(w * 0.29, top0, w * 0.21, h * 0.5);
-        marks.endFill();
-        const mask = shirtShape(new PIXI.Graphics().beginFill(0xffffff), size).endFill();
+    const layer = (part: 'Base' | 'Lines') => {
+        const sprite = PIXI.Sprite.from(`Wardrobe_${name}_${part}`);
+        sprite.anchor.set(0.5);
+        sprite.scale.set(size / Math.max(sprite.texture.width, sprite.texture.height, 1));
+        return sprite;
+    };
+    const shape = layer('Base');
+    shape.tint = hex(color);
+    holder.addChild(shape);
+    if (marks) {
+        const mask = layer('Base');
         marks.mask = mask;
         holder.addChild(mask, marks);
     }
-    holder.addChild(shirtShape(new PIXI.Graphics().lineStyle(Math.max(3, size / 16), 0x1d140e), size));
+    holder.addChild(layer('Lines'));
     return holder;
+}
+
+/** A T-shirt in `top`, its pattern (`kind:#hex`) on it in the second colour. */
+function shirtPicture(top: string, pattern: string, size: number): PIXI.Container {
+    const [kind, second] = pattern.split(':');
+    if (!kind || !second) return clothes('Shirt', top, size);
+    const marks = new PIXI.Graphics().beginFill(hex(second));
+    const w = size;
+    const top0 = -0.4 * size;
+    const h = 0.8 * size;
+    if (kind === 'stripes') for (let i = 1; i < 7; i += 2) marks.drawRect(-w / 2, top0 + (h * i) / 7, w, h / 7);
+    else if (kind === 'band') marks.drawRect(-w / 2, top0 + h * 0.34, w, h * 0.24);
+    else if (kind === 'twotone') marks.drawRect(-w / 2, top0 + h * 0.5, w, h * 0.5);
+    else if (kind === 'sleeves') marks.drawRect(-w / 2, top0, w * 0.258, h * 0.6).drawRect(w * 0.242, top0, w * 0.258, h * 0.6);
+    marks.endFill();
+    return clothes('Shirt', top, size, marks);
 }
 
 /** One of the kit's bordered picto icons (white, a dark outline: PictoBorder) fitted to `size`, tinted `tint` (the outline stays dark). */
@@ -99,48 +93,17 @@ function picto(frame: string, size: number, tint?: string): PIXI.Sprite {
     return sprite;
 }
 
-/**
- * A pair of trousers in the picto icons' style (white, a thick dark outline with round corners, a belt line),
- * `size` tall, tinted `color`: the TROUSERS tab, to sit with the kit's clothes and hat icons.
- */
-function trousersPicture(color: string, size: number): PIXI.Container {
-    const shape = (g: PIXI.Graphics) => {
-        const p = (x: number, y: number): [number, number] => [x * size, y * size];
-        g.moveTo(...p(-0.27, -0.4)).lineTo(...p(0.27, -0.4)).lineTo(...p(0.31, 0.4)).lineTo(...p(0.07, 0.4))
-            .lineTo(...p(0, -0.06)).lineTo(...p(-0.07, 0.4)).lineTo(...p(-0.31, 0.4)).closePath();
-        return g;
-    };
-    const stroke = Math.max(4, size / 9);
-    const holder = new PIXI.Container();
-    holder.addChild(shape(new PIXI.Graphics().lineStyle({ width: stroke, color: 0x1d140e, join: PIXI.LINE_JOIN.ROUND }).beginFill(hex(color))).endFill());
-    holder.addChild(new PIXI.Graphics().lineStyle({ width: stroke * 0.6, color: 0x1d140e, cap: PIXI.LINE_CAP.ROUND })
-        .moveTo(-0.27 * size, -0.25 * size).lineTo(0.27 * size, -0.25 * size));
-    return holder;
-}
-
-/** The clothes picto with stripes over it (clipped to its shape): the PATTERNS tab. */
-function patternPicto(size: number): PIXI.Container {
-    const holder = new PIXI.Container();
-    holder.addChild(picto('PictoIcon_Clothes', size));
-    const stripes = new PIXI.Graphics().beginFill(0x2f6fd8, 0.75);
-    for (let i = 0; i < 5; i++) stripes.drawRect(-size / 2, -size / 2 + size * (0.25 + i * 0.16), size, size * 0.07);
-    stripes.endFill();
-    const mask = picto('PictoIcon_Clothes', size * 0.86);
-    stripes.mask = mask;
-    holder.addChild(mask, stripes);
-    return holder;
-}
-
 /** A pattern's card: the worn colour's T-shirt with the pattern on it. */
-const patternSwatch = (id: string, top: string): PIXI.Container => shirtPicture(top, id, 78);
+const patternSwatch = (id: string, top: string): PIXI.Container => shirtPicture(top, id, ART.clothes);
 
 /** The tabs' pictures (a hat's model, the worn shirt, a striped one, the worn trousers), about `size` across. */
 function tabIcon(kind: LookKind, size: number): PIXI.Container {
     const look = MowProgress.look;
-    if (kind === 'colors') return picto('PictoIcon_Clothes', size, look.color);
-    if (kind === 'patterns') return patternPicto(size);
-    if (kind === 'bottoms') return trousersPicture(look.bottom ?? MOW.wardrobe.bottoms[0]?.id ?? '#2f4a7a', size);
-    return picto('PictoIcon_Hat', size);
+    const clothesSize = size * 1.15;
+    if (kind === 'colors') return shirtPicture(look.color, '', clothesSize);
+    if (kind === 'patterns') return shirtPicture('#ffffff', 'stripes:#2f6fd8', clothesSize);
+    if (kind === 'bottoms') return clothes('Trousers', look.bottom ?? MOW.wardrobe.bottoms[0]?.id ?? '#2f4a7a', clothesSize);
+    return clothes('Hat', HAT_TAB, clothesSize);
 }
 
 export class WardrobePanel extends PIXI.Container {
@@ -192,15 +155,15 @@ export class WardrobePanel extends PIXI.Container {
         const shown = this.items.slice(this.page * PER_PAGE, (this.page + 1) * PER_PAGE);
         shown.forEach((item, i) => {
             const card = this.card(item);
-            card.position.set(((i % 3) - 1) * (CARD_W + GAP), FIRST_ROW_Y + Math.floor(i / 3) * ROW);
+            card.position.set(((i % 3) - 1) * (LOOK_CARD.width + LOOK_CARD.gap), FIRST_ROW_Y + Math.floor(i / 3) * ROW);
             this.body.addChild(card);
         });
         if (pages > 1 && !this.forcedItem) {
             const y = BLOCK.top + BLOCK.height - 44;
-            const label = UiKit.text('wardrobe', 'page', { page: this.page + 1, pages });
+            const label = UiKit.text('wardrobe', 'page', { page: this.page + 1, pages }, { fontSize: 28, strokeThickness: 6 });
             label.anchor.set(0.5);
             label.y = y;
-            this.body.addChild(label, this.arrow('arrowLeft', -140, y, -1, pages), this.arrow('arrowRight', 140, y, 1, pages));
+            this.body.addChild(label, this.arrow('arrowLeft', -150, y, -1, pages), this.arrow('arrowRight', 150, y, 1, pages));
         }
     }
 
@@ -214,7 +177,7 @@ export class WardrobePanel extends PIXI.Container {
         const skins = MOW.wardrobe.skins ?? [];
         const worn = MowProgress.look.skin ?? skins[1]?.id;
         // The face picto (in the worn tone) before the swatches: this row is the skin (the row and it centred together).
-        const label = picto('PictoIcon_Face', 54, worn);
+        const label = picto('PictoIcon_Face', 60, worn);
         label.anchor.set(1, 0.5);
         const shift = (label.width + 24) / 2;
         label.x = -((skins.length - 1) / 2) * SKIN_ROW.step - SKIN_ROW.size - 20 + shift;
@@ -229,7 +192,7 @@ export class WardrobePanel extends PIXI.Container {
             if (locked) {
                 const video = PIXI.Sprite.from('ItemIcon_Video');
                 video.anchor.set(0.5);
-                video.scale.set(30 / Math.max(video.texture.width, video.texture.height, 1));
+                video.scale.set(36 / Math.max(video.texture.width, video.texture.height, 1));
                 video.position.set(SKIN_ROW.size * 0.7, -SKIN_ROW.size * 0.7);
                 swatch.addChild(video);
                 UiAnim.pulse(swatch, 0.05, 0.7);
@@ -270,7 +233,7 @@ export class WardrobePanel extends PIXI.Container {
             tabWidth: BLOCK.tabWidth,
             tabHeight: BLOCK.tabHeight,
             tabs: TABS.map(([kind, label]) => ({
-                id: kind, label: t(label), icon: () => tabIcon(kind, 50), badge: MowProgress.freeLookBadge(kind) ? t('free') : undefined,
+                id: kind, label: t(label), icon: () => tabIcon(kind, 60), badge: MowProgress.freeLookBadge(kind) ? t('free') : undefined,
             })),
             active: this.tab,
             onSelect: (id) => {
@@ -288,7 +251,10 @@ export class WardrobePanel extends PIXI.Container {
 
     private arrow(id: string, x: number, y: number, step: number, pages: number): PIXI.Container {
         const arrow = UiKit.sprite('wardrobe', id);
-        arrow.scale.set(44 / Math.max(arrow.height, 1));
+        // (Its touch area much bigger than it: a thumb's.)
+        const height = Math.max(arrow.height, 1);
+        arrow.hitArea = new PIXI.Rectangle(-height, -height * 0.7, height * 2, height * 1.4);
+        arrow.scale.set(58 / height);
         arrow.position.set(x, y);
         this.tappable(arrow, () => {
             this.page = (this.page + step + pages) % pages;
@@ -306,32 +272,18 @@ export class WardrobePanel extends PIXI.Container {
     }
 
     private card(item: WardrobeItem): PIXI.Container {
-        const card = new PIXI.Container();
         const worn = this.worn(item);
         const owned = MowProgress.ownsLook(this.tab, item);
-        card.addChild(UiKit.image('wardrobe', worn ? 'cardWorn' : 'card', CARD_W, CARD));
-        const art = this.art(item);
-        art.y = -8;
-        card.addChild(art);
-
-        let status: PIXI.DisplayObject;
-        if (worn || owned) {
-            status = UiKit.text('wardrobe', 'owned', { text: worn ? t('wearing') : t('owned') });
-        } else if (item.free) {
-            // A gift: "FREE" instead of a price; on a return visit (freeLookBadge) it also wears the tag and pulses.
-            status = UiKit.text('wardrobe', 'owned', { text: t('free') }, { fill: 0x7dff8f });
-            if (MowProgress.freeLookBadge(this.tab) && !this.forcedItem) {
-                card.addChild(tagBadge(t('free'), CARD_W / 2 - 28, -CARD / 2 + 10));
-                UiAnim.pulse(card, 0.05, 0.6);
-            }
-        } else {
-            const affordable = MowProgress.money >= item.price;
-            status = UiKit.text('wardrobe', 'price', { price: item.price.toLocaleString('en-US') }, affordable ? {} : { fill: 0xff8a7a });
+        const card = lookCard({
+            art: this.art(item), worn, owned, affordable: !!item.free || MowProgress.money >= item.price, price: item.price, free: item.free,
+            // The card that takes the hat off.
+            status: this.tab === 'hats' && !item.id ? t('noHat') : undefined,
+        });
+        // A gift: "FREE" instead of a price; on a return visit (freeLookBadge) it also wears the tag and pulses.
+        if (!worn && !owned && item.free && MowProgress.freeLookBadge(this.tab) && !this.forcedItem) {
+            card.addChild(tagBadge(t('free'), LOOK_CARD.width / 2 - 28, -LOOK_CARD.height / 2 + 10));
+            UiAnim.pulse(card, 0.05, 0.6);
         }
-        (status as PIXI.Text).anchor.set(0.5, 1);
-        status.y = CARD / 2 - 4;
-        UiKit.fit(status as PIXI.Text, CARD_W - 16);
-        card.addChild(status);
         if (this.forcedItem && item.id !== this.forcedItem) {
             card.alpha = 0.35;
             return card;
@@ -349,18 +301,17 @@ export class WardrobePanel extends PIXI.Container {
         const holder = new PIXI.Container();
         holder.eventMode = 'none';
         const hand = PIXI.Sprite.from('handHud');
-        hand.width = hand.height = 72;
-        hand.position.set(20 - 72 * 0.22, 10 - 72 * 0.16);
+        hand.width = hand.height = 96;
+        hand.position.set(20 - 96 * 0.22, 10 - 96 * 0.16);
         holder.addChild(hand);
         gsap.to(holder, { y: 10, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
         return holder;
     }
 
-    /** The item itself: a swatch, a face on a head in the current colour, or the hat's model. */
+    /** The item itself: a shirt or trousers in its colour, a face on a head, or the hat's model. */
     private art(item: WardrobeItem): PIXI.Container {
-        if (this.tab === 'colors' || this.tab === 'bottoms') {
-            return BakedShape.disc(30, { fill: hex(item.id), rim: 0xffffff, rimWidth: 4 });
-        }
+        if (this.tab === 'colors') return shirtPicture(item.id, '', ART.clothes);
+        if (this.tab === 'bottoms') return clothes('Trousers', item.id, ART.clothes);
         if (this.tab === 'patterns') return patternSwatch(item.id, MowProgress.look.color);
         if (this.tab === 'faces') {
             const head = new PIXI.Container();
@@ -371,8 +322,19 @@ export class WardrobePanel extends PIXI.Container {
             head.addChild(face);
             return head;
         }
+        if (!item.id) {
+            // No hat: a faint one, crossed out.
+            const none = new PIXI.Container();
+            const hat = clothes('Hat', '#c9ced8', ART.size);
+            hat.alpha = 0.55;
+            const ban = PIXI.Sprite.from('Wardrobe_None');
+            ban.anchor.set(0.5);
+            ban.scale.set(ART.size / Math.max(ban.texture.width, ban.texture.height, 1));
+            none.addChild(hat, ban);
+            return none;
+        }
         const model = MODELS.Hats[item.id as keyof typeof MODELS.Hats];
-        return model ? ModelIcons.sprite(`./${model.fullPath}`, CARD * 0.66) : new PIXI.Container();
+        return model ? ModelIcons.tightSprite(`./${model.fullPath}`, ART.size) : new PIXI.Container();
     }
 
     private choose(item: WardrobeItem, card: PIXI.Container): void {

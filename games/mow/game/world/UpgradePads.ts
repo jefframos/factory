@@ -2,7 +2,8 @@
 //
 // The farm test's upgrade stations (TOWN.farm.pads), in place of the shop: a square marked on the floor (a thick
 // white outline, what it upgrades, the grass still needed, filling up green as it's paid) with the next thing on a
-// little stand behind it — the next mower turning slowly, the player's rucksack for the bigger bag, or the next blades
+// little stand behind it — the next mower turning slowly (a tractor in the player's own paint and part, with a green arrow
+// up beside it: bigger is what's new), the player's rucksack for the bigger bag, or the next blades
 // (spinning: MowerBlades) for sharper ones. Standing on the square pours
 // the bag's grass in (clumps flying from the player's pile onto the stand); paid in full, the upgrade happens at once
 // (MowProgress.deposit) and the stand shows the one after. No menus.
@@ -13,7 +14,8 @@ import { BendService } from '../services/BendService';
 import { MOW, UpgradePadDef, bladeCount, shortMoney, shortNumber } from '../data/MowConfig';
 import { MowProgress, PadKind } from '../data/MowProgress';
 import { buildMower } from '../player/MowerModel';
-import { TractorRide } from '../player/TractorRide';
+import { dressedTractor, freeDressed } from '../player/TractorDress';
+import { screenToWorld } from '../config/CameraConfig';
 import { MowerBlades, bladeLook } from '../player/MowerBlades';
 import { rucksackPicture } from '../player/Backpack';
 import { CanvasArt } from '../ui/CanvasArt';
@@ -21,6 +23,8 @@ import type { Box } from './GuidePath';
 
 /** The square on the floor (world units across), and how far behind its middle the stand is. */
 const PAD_SIZE = 2.6;
+/** The title over each stand (the upgrade's name). Off: the square's words are enough. */
+const SHOW_TITLES: boolean = false;
 const STAND_BACK = 2.1;
 const STAND_RADIUS = 0.55;
 const STAND_HEIGHT = 0.7;
@@ -35,11 +39,15 @@ const SHOWN_LIFT = 0.45;
 const MIN_RATE = 9;
 const FILL_SEC = 1.6;
 const POUR = { secondsPer: 1 / 80, least: 0.25 };
+/** The first station's arrow: how high over its square, and its size. */
+const POINTER = { height: 2.6, radius: 0.42 };
+/** The arrow up beside the next mower: its size, where it is from the stand's middle as seen on the screen, and its bob. */
+const UP_ARROW = { size: 0.78, right: 0.98, nearer: 0.45, y: STAND_HEIGHT + SHOWN_LIFT + 0.55, bob: 0.07, speed: 2 };
 /**
  * After an upgrade a pad rests this long (seconds) before it takes anything again: the player sees what they got and
  * can walk off before the next one starts eating their money.
  */
-const UPGRADE_PAUSE = 3;
+const UPGRADE_PAUSE = 0.5;
 /** A clump flies from the pile every this many seconds while pouring. */
 const TOSS_SEC = 0.06;
 const FLOOR_Y = 0.1;
@@ -61,6 +69,10 @@ interface Pad {
     visible: boolean;
     /** The Blades pad's blades on the stand (spun each frame). */
     blades?: MowerBlades;
+    /** The Mower pad's arrow up beside what's on its stand (while there's a next one). */
+    upArrow?: THREE.Sprite;
+    /** The first station's arrow (bobbing over its square while the Push Mower can be paid and hasn't been). */
+    pointer?: THREE.Group;
     /** Seconds left of its rest after an upgrade (it takes nothing until then: UPGRADE_PAUSE). */
     pause: number;
 }
@@ -77,7 +89,7 @@ const standOffset = (def: UpgradePadDef): { x: number; z: number } => {
 function offer(kind: PadKind): { title: string; name: string; key: string } {
     if (kind === 'tool') {
         const next = MowProgress.nextTool;
-        return { title: 'MOWER', name: next ? next.name.toUpperCase() : 'MAX', key: `tool:${MowProgress.toolLevel}` };
+        return { title: 'MOWER', name: next ? next.name.toUpperCase() : 'MAX', key: `tool:${MowProgress.toolLevel}:${MowProgress.tractorLook.paints}:${MowProgress.tractorLook.parts}` };
     }
     if (kind === 'blades') {
         const level = MowProgress.bladesLevel + 1;
@@ -133,6 +145,29 @@ function drawUpArrow(g: CanvasRenderingContext2D, x: number, y: number, size: nu
     g.fill();
 }
 
+/** The upgrade sign: a fat green arrow up, a white rim and a dark line round it. */
+function upArrowTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 256;
+    const g = canvas.getContext('2d')!;
+    const points: [number, number][] = [[128, 34], [218, 128], [168, 128], [168, 220], [88, 220], [88, 128], [38, 128]];
+    g.beginPath();
+    points.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+    g.closePath();
+    g.lineJoin = 'round';
+    for (const [width, color] of [[58, '#17451a'], [40, '#ffffff'], [14, '#2fbf3a']] as const) {
+        g.lineWidth = width;
+        g.strokeStyle = color;
+        g.stroke();
+    }
+    const fill = g.createLinearGradient(0, 30, 0, 224);
+    fill.addColorStop(0, '#8dff6a');
+    fill.addColorStop(1, '#2fbf3a');
+    g.fillStyle = fill;
+    g.fill();
+    return CanvasArt.texture(canvas);
+}
+
 export class UpgradePads {
     private readonly group = new THREE.Group();
     private readonly pads: Pad[];
@@ -150,7 +185,8 @@ export class UpgradePads {
      */
     public constructor(threeScene: THREE.Scene, defs: UpgradePadDef[], private readonly isOpen: (section: string) => boolean,
         private readonly onPour: (to: THREE.Vector3) => void,
-        private readonly onUpgrade: (kind: PadKind, at: THREE.Vector3) => void) {
+        private readonly onUpgrade: (kind: PadKind, at: THREE.Vector3) => void,
+        private readonly onAppear: (def: UpgradePadDef, at: THREE.Vector3) => void = () => {}) {
         this.pads = defs.map((def) => this.build(def));
         threeScene.add(this.group);
     }
@@ -225,6 +261,7 @@ export class UpgradePads {
         const labelTexture = CanvasArt.texture(labelCanvas);
         const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTexture, depthWrite: false }));
         label.scale.set(2.6, 0.65, 1);
+        label.visible = SHOW_TITLES;
         // Over the floor squares (transparent too, drawn in order).
         label.renderOrder = 20;
         label.position.set(off.x, STAND_HEIGHT + SHOWN_LIFT + SHOWN_SIZE + 0.35, off.z);
@@ -234,6 +271,13 @@ export class UpgradePads {
         group.visible = visible;
         this.group.add(group);
         const pad: Pad = { def, group, canvas, texture, shown, label, labelCanvas, labelTexture, drawn: '', built: '', visible, pause: 0 };
+        if (def.appearsWhenFull) pad.pointer = this.buildPointer(group);
+        if (def.kind === 'tool') {
+            pad.upArrow = new THREE.Sprite(new THREE.SpriteMaterial({ map: upArrowTexture(), depthWrite: false }));
+            pad.upArrow.scale.setScalar(UP_ARROW.size);
+            pad.upArrow.renderOrder = 21;
+            stand.add(pad.upArrow);
+        }
         this.refresh(pad);
         // The kit's font may not be in yet: drawn again in a moment.
         window.setTimeout(() => {
@@ -323,6 +367,7 @@ export class UpgradePads {
 
     /** The thing on the stand: the next mower, a sack, or the next blades (none at the top). */
     private buildShown(pad: Pad, maxed: boolean): void {
+        freeDressed(pad.shown);
         pad.shown.clear();
         pad.blades?.dispose();
         pad.blades = undefined;
@@ -330,18 +375,24 @@ export class UpgradePads {
         const prepare = (material: THREE.Material) => BendService.applyBend(material);
         let object: THREE.Object3D;
         if (pad.def.kind === 'tool' && MowProgress.nextTool!.ride) {
-            // A driven mower: the tractor itself (its model, in its paint), as it'll be ridden.
+            // A driven mower: the tractor itself, dressed as the player's is (in its own colour if they've no paint on).
             const next = MowProgress.nextTool!;
             const holder = new THREE.Group();
             pad.shown.add(holder);
-            void TractorRide.copy(next).then((tractor) => {
-                if (!tractor || pad.built !== offer('tool').key) return;
-                const box = new THREE.Box3().setFromObject(tractor);
+            const { key } = offer('tool');
+            void dressedTractor(next, MowProgress.tractorLook, prepare).then((tractor) => {
+                // (Something else is on the stand by now.)
+                if (pad.built !== key || holder.parent !== pad.shown) {
+                    freeDressed(tractor);
+                    return;
+                }
+                // Its size is the model's alone (a part on it doesn't make it smaller).
+                const box = new THREE.Box3().setFromObject(tractor.children[0]);
                 const size = box.getSize(new THREE.Vector3());
                 tractor.position.sub(box.getCenter(new THREE.Vector3())).setY(-box.min.y);
                 holder.add(tractor);
                 holder.scale.setScalar((SHOWN_SIZE * 1.3) / Math.max(size.x, size.y, size.z, 1e-3));
-            });
+            }).catch(() => undefined);
             return;
         } else if (pad.def.kind === 'tool') {
             const next = MowProgress.nextTool!;
@@ -364,6 +415,34 @@ export class UpgradePads {
         holder.add(object);
         holder.scale.setScalar(SHOWN_SIZE / Math.max(size.x, size.y, size.z, 1e-3));
         pad.shown.add(holder);
+    }
+
+    private bob = 0;
+    private arrowTime = 0;
+
+    /** The first mower can be paid, and hasn't been. */
+    private get firstReady(): boolean {
+        return MowProgress.toolLevel === 0 && MowProgress.pourable >= UpgradePads.left('tool');
+    }
+
+    /** The first station's square while it's waiting for the player (its arrow's up), or null. */
+    public firstStation(out = new THREE.Vector3()): THREE.Vector3 | null {
+        const pad = this.firstReady ? this.pads.find((entry) => entry.def.appearsWhenFull && entry.visible) : undefined;
+        return pad ? out.set(pad.def.x, 0.5, pad.def.z) : null;
+    }
+
+    /** A gold arrow pointing down (over the first station's square). */
+    private buildPointer(group: THREE.Group): THREE.Group {
+        const gold = this.material(new THREE.MeshBasicMaterial({ color: 0xffc62e }));
+        const pointer = new THREE.Group();
+        const head = new THREE.Mesh(new THREE.ConeGeometry(POINTER.radius, POINTER.radius * 1.5, 4), gold);
+        head.rotation.x = Math.PI;
+        const shaft = new THREE.Mesh(new THREE.BoxGeometry(POINTER.radius * 0.7, POINTER.radius * 1.4, POINTER.radius * 0.7), gold);
+        shaft.position.y = POINTER.radius * 1.3;
+        pointer.add(head, shaft);
+        pointer.visible = false;
+        group.add(pointer);
+        return pointer;
     }
 
     /** The pad whose square is under (x, z) (and is there), or -1. */
@@ -393,16 +472,30 @@ export class UpgradePads {
 
     /** Each frame: the stands turn, pads of sections just opened pop in, and the one stood on takes the bag's grass. */
     public update(delta: number, player: THREE.Vector3): void {
+        this.arrowTime += delta * UP_ARROW.speed;
         for (const pad of this.pads) {
             pad.pause = Math.max(0, pad.pause - delta);
             pad.shown.rotation.y += delta * 0.9;
             pad.blades?.spin(delta, true);
+            if (pad.upArrow) {
+                // Beside it as seen on the screen (it faces the camera; the tractor turns under it).
+                const beside = screenToWorld(UP_ARROW.right, UP_ARROW.nearer);
+                pad.upArrow.position.set(beside.x, UP_ARROW.y + Math.sin(this.arrowTime) * UP_ARROW.bob, beside.z);
+                pad.upArrow.visible = MowProgress.padCost('tool') !== undefined;
+            }
             const visible = this.shownNow(pad.def);
             if (visible && !pad.visible) {
                 pad.visible = true;
                 pad.group.visible = true;
                 pad.group.scale.setScalar(0.01);
                 gsap.to(pad.group.scale, { x: 1, y: 1, z: 1, duration: 0.6, delay: 0.4, ease: 'back.out(2)' });
+                this.onAppear(pad.def, new THREE.Vector3(pad.def.x, 0, pad.def.z));
+            }
+            if (pad.pointer) {
+                pad.pointer.visible = pad.visible && this.firstReady;
+                this.bob += delta;
+                pad.pointer.position.y = POINTER.height + Math.sin(this.bob * 5) * 0.25;
+                pad.pointer.rotation.y += delta * 2;
             }
             if (pad.visible) this.refresh(pad);
         }

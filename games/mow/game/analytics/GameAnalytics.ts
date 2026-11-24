@@ -22,6 +22,10 @@
 //   shop         bought-<hat|face|color>-<id> complete   a wardrobe item bought with cash
 //   shop         equip-<hat|face|color>-<id>  complete   an owned wardrobe item put on
 //   tab          wardrobe-<tab> | atm-<tab>   complete   a panel tab opened by the player (once per player each)
+//   tractor      button                       visible    its button's there (once per player)
+//   tractor      <paints|parts>-<id>          bought | unlocked (by a video) | no-video | gift | equip   a skin in its panel
+//   tractor-offer <paints|parts>-<id>         visible | interact | unlocked | no-video | gift   one offered while playing
+//   fps-min      <n>-<speed>-<touch|desktop>  reached    with each playtime mark: how fast that device draws
 //   gift         colors | faces               visible    a wardrobe gift's FREE badge seen (once per player each)
 //   gift         <kind>-badge | <kind>-unbadged complete a wardrobe gift claimed, after its badge showed or before
 //   sell         <cityId>-count-<n>           complete   the city's nth sale, for the first 10
@@ -81,7 +85,12 @@ export const FARM_STEPS = [
     'strawberry-farm-helper', 'strawberry-farm-boatHelper', 'section-5-done', 'mower-07', 'cows-found', 'cows-cow-02',
     'cows-dock', 'cows-belt', 'cows-helper', 'cows-truck-helper', 'section-6-done', 'section-7-done', 'mower-08',
     'section-8-done', 'mower-09', 'section-9-done', 'mower-10', 'chest-opened',
+    // (The tractor's skins: its panel opened, the first one worn.)
+    'tractor-menu', 'tractor-skin',
 ] as const;
+
+/** The mowers' steps are numbered as when the Reel Mower was the first (mower-02 is still the Lawn Tractor; mower-01, the Push Mower, is now the start and never sent). */
+const MOWER_STEP = 1;
 
 /** A step's event value: `<nn>-<name>`. */
 const stepId = (index: number): string => `${String(index + 1).padStart(2, '0')}-${FARM_STEPS[index]}`;
@@ -152,6 +161,8 @@ function send(category: string, what: string | number, action: string): void {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 let playSeconds = 0;
+/** How fast this device draws (performance()), once it's known: sent with each playtime mark after. */
+let deviceSpeed = '';
 let nextMinute = 0;
 /** The same, in the city being played (from 0 again in each city this session). */
 const cityPlay = new Map<string, { seconds: number; next: number }>();
@@ -179,6 +190,8 @@ export const GameAnalytics = {
         playSeconds += delta;
         while (nextMinute < PLAYTIME_MINUTES.length && playSeconds >= PLAYTIME_MINUTES[nextMinute] * 60) {
             send('playtime', `min-${PLAYTIME_MINUTES[nextMinute]}`, farmTest() ? 'reached' : 'complete');
+            // (So the export tells whether the slow devices leave sooner.)
+            if (deviceSpeed) send('fps-min', `${PLAYTIME_MINUTES[nextMinute]}-${deviceSpeed}`, 'reached');
             if (MODE !== 'calm') send('mode', `${MODE}-min-${PLAYTIME_MINUTES[nextMinute]}`, 'complete');
             nextMinute++;
         }
@@ -225,7 +238,7 @@ export const GameAnalytics = {
     },
 
     /** A panel's tab opened by the player (wardrobe colors / faces / hats, ATM mowers / boosts), once per player each. */
-    tabOpened(panel: 'wardrobe' | 'atm', tab: string): void {
+    tabOpened(panel: 'wardrobe' | 'tractor' | 'atm', tab: string): void {
         if (MowProgress.once(`tab-${panel}-${tab}`)) send('tab', `${panel}-${tab}`, 'interact');
     },
 
@@ -240,7 +253,7 @@ export const GameAnalytics = {
     },
 
     toolBought(level: number, toolId: string): void {
-        if (farmTest() && stepOf(`mower-${pad(level)}`)) return;
+        if (farmTest() && stepOf(`mower-${pad(level + MOWER_STEP)}`)) return;
         send('tool', `${CITY.id}-${pad(level)}-${toolId}`, 'complete');
     },
 
@@ -309,7 +322,7 @@ export const GameAnalytics = {
     },
 
     /** A panel opened by the player (the map, the town's big view, Trophies), once per player each. */
-    panelOpened(panel: 'map' | 'town' | 'trophies' | 'cities' | 'powerups'): void {
+    panelOpened(panel: 'map' | 'town' | 'trophies' | 'cities' | 'powerups' | 'tractor'): void {
         if (MowProgress.once(`panel-${panel}`)) send('panel', panel, 'interact');
     },
 
@@ -318,6 +331,21 @@ export const GameAnalytics = {
     },
 
     /** A player level reached (the farm game), once per player each. */
+    /**
+     * How it runs, once a session (after FPS_AFTER_SEC of play): the frame rate's group, touch or desktop, and how big
+     * the canvas would be uncapped; and, if it was lowered, the resolution it's at (AdaptiveResolution, percent).
+     */
+    performance(fps: number, resolution: number): void {
+        const speed = fps < 30 ? 'under-30' : fps < 45 ? '30-45' : fps < 55 ? '45-55' : '55-plus';
+        const ratio = Math.min(2, window.devicePixelRatio || 1);
+        const megapixels = (window.innerWidth * window.innerHeight * ratio * ratio) / 1e6;
+        const size = megapixels < 1 ? 'small' : megapixels <= 2.1 ? 'hd' : megapixels <= 4 ? 'qhd' : '4k';
+        const touch = window.matchMedia?.('(pointer: coarse)').matches ? 'touch' : 'desktop';
+        deviceSpeed = `${speed}-${touch}`;
+        send('fps', `${speed}-${touch}-${size}`, 'complete');
+        if (resolution < 1) send('resolution', `${Math.round(resolution * 100)}-${touch}`, 'complete');
+    },
+
     /** A locked chest: found, opened (its video watched), or its video not watched. */
     chest(what: 'found' | 'opened' | 'no-video', id: string): void {
         if (what === 'opened') stepOf('chest-opened');
@@ -327,6 +355,28 @@ export const GameAnalytics = {
     /** A special skin tone unlocked by its video (or the video not watched). */
     skin(what: 'unlocked' | 'no-video', id: string): void {
         send('skin', `${what}-${id.replace('#', '')}`, 'complete');
+    },
+
+    /** The tractor's skins as funnel steps: its panel opened, the first skin worn. */
+    tractorStep(what: 'menu' | 'skin'): void {
+        if (farmTest()) stepOf(`tractor-${what}`);
+    },
+
+    /** A tractor skin in its panel: bought, unlocked (by its video), its video not watched, or an owned one put on. */
+    tractor(kind: string, id: string, what: 'bought' | 'unlocked' | 'no-video' | 'equip' | 'gift'): void {
+        if (what !== 'no-video' && id) this.tractorStep('skin');
+        send('tractor', `${kind}-${id || 'none'}`, what);
+    },
+
+    /** A tractor skin offered while playing: seen, tapped, unlocked (its video watched) or its video not watched. */
+    tractorOffer(kind: string, id: string, what: 'visible' | 'interact' | 'unlocked' | 'no-video' | 'gift'): void {
+        if (what === 'unlocked' || what === 'gift') this.tractorStep('skin');
+        send('tractor-offer', `${kind}-${id}`, what);
+    },
+
+    /** The tractor's button is there (the first time). */
+    tractorButton(): void {
+        send('tractor', 'button', 'visible');
     },
 
     /** SELL x2 used (free, or after its video), or its video not watched. */
@@ -359,5 +409,5 @@ export const GameAnalytics = {
 function lookId(kind: string, id: string): string {
     const prefix = kind === 'hats' ? 'hat' : kind === 'faces' ? 'face' : 'color';
     const name = id.split('/').pop()!.replace(/\.[^.]+$/, '').replace('#', '');
-    return `${prefix}-${name}`;
+    return `${prefix}-${name || 'none'}`;
 }

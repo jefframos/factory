@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { AdaptiveResolution } from './AdaptiveResolution';
 export default class SetupThree {
     static renderer: THREE.WebGLRenderer;
     static container: HTMLElement;
@@ -19,13 +20,36 @@ export default class SetupThree {
         this.container = container;
 
         // Create a Three.js Renderer
-        this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false });
+        this.renderer = new THREE.WebGLRenderer({ alpha: !this.OPAQUE, antialias: false, powerPreference: 'high-performance' });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.sortObjects = true;
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.setPixelRatio(this.getCurrentPixelRatio());
         // Append canvas to container
         this.container.appendChild(this.renderer.domElement);
 
+    }
+
+    /** The most pixels the 3D is drawn at (1080p's): a bigger screen stretches it, a 4K one costing no more. (The UI isn't capped.) */
+    static MAX_PIXELS = 1920 * 1080;
+    /** The highest pixel ratio, whatever the device's. */
+    static MAX_PIXEL_RATIO = 2;
+    /** Never drawn under this, however big the screen or slow the device. */
+    static MIN_PIXEL_RATIO = 0.5;
+    /** The resolution lowered while the device can't keep up (AdaptiveResolution): set by the games that want it. */
+    static adaptive: AdaptiveResolution | null = null;
+    /** Set before anything's built by a game whose 3D covers the page: its canvas needs no blending over it. */
+    static OPAQUE = false;
+    /** The 3D drawn this many times a frame (a debug panel's slow graphics card). */
+    static testDraws = 1;
+    /** A pixel ratio forced instead (the debug panel's test switch); 0: none. */
+    static forcedPixelRatio = 0;
+
+    /** The pixel ratio to draw at now: the device's, capped (MAX_PIXEL_RATIO, MAX_PIXELS), less what `adaptive` takes off. */
+    static getCurrentPixelRatio(): number {
+        if (this.forcedPixelRatio > 0) return this.forcedPixelRatio;
+        const area = Math.max(1, window.innerWidth * window.innerHeight);
+        const full = Math.min(window.devicePixelRatio || 1, this.MAX_PIXEL_RATIO, Math.sqrt(this.MAX_PIXELS / area));
+        return Math.max(this.MIN_PIXEL_RATIO, full * (this.adaptive?.scale ?? 1));
     }
 
     static ForceResize(camera: THREE.PerspectiveCamera) {
@@ -66,6 +90,10 @@ export default class SetupThree {
         const width = window.innerWidth;
         const height = window.innerHeight;
         if (!this.renderer || width <= 0 || height <= 0) return false;
+        // (Once a frame, just before it's drawn: a canvas resized after is cleared.)
+        if (!updateCamera) this.adaptive?.frame(performance.now());
+        const ratio = this.getCurrentPixelRatio();
+        if (Math.abs(this.renderer.getPixelRatio() - ratio) > 1e-3) this.renderer.setPixelRatio(ratio);
         const now = this.renderer.getSize(this.size);
         const changed = now.x !== width || now.y !== height;
         if (changed) this.renderer.setSize(width, height);

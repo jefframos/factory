@@ -37,7 +37,10 @@ interface Item {
     x: number;
     z: number;
     radius: number;
-    object: THREE.Group;
+    /** Its model's holder, made when its area opens (build()); the hand-placed ones' from the start. */
+    object?: THREE.Group;
+    scale: number;
+    turn: number;
     /** Seconds of chewing so far. */
     chew: number;
     cleared: boolean;
@@ -46,6 +49,8 @@ interface Item {
     fixed?: { model: string; height: number };
 }
 
+/** Growth built in a frame, as an area opens (the rest wait for the next frames). */
+const BUILD_PER_FRAME = 8;
 /** Hand-placed trees and bushes take ids from here (the scattered ones count up from 0: saves keep both apart). */
 const FIXED_ID_BASE = 100000;
 /** A hand-placed one pays this many times its clippings' worth (MowingSystem: a lump worth going back for). */
@@ -76,13 +81,20 @@ export class Growth {
     /** Each type's model, sized and painted once (copies share its materials). */
     private readonly templates = new Map<string, Promise<THREE.Object3D | null>>();
     private readonly color = new THREE.Color();
+    /** The sections whose growth is built (or queued), and what's still to build, a few a frame. */
+    private readonly built = new Set<number>();
+    private readonly pending: Item[] = [];
+    private started = false;
 
     /**
      * `isBlocked(x, z)`: where nothing may grow (Town.isBlocked). `cleared(id)`: already cleared (a save).
-     * `restored(d)`: a restored section (all its growth gone).
+     * `restored(d)`: a restored section (all its growth gone). `open(d)`: an open section.
+     *
+     * Where everything grows is worked out here (the same every game: saves go by the ids), but a section's models are
+     * only made once it's open (update()): hundreds of trees behind a fence cost every player's start and every frame.
      */
     public constructor(threeScene: THREE.Scene, isBlocked: (x: number, z: number) => boolean, cleared: (id: number) => boolean,
-        restored: (district: number) => boolean) {
+        restored: (district: number) => boolean, private readonly open: (district: number) => boolean) {
         const types = new Map((MOW.growth ?? []).map((def) => [def.id, def]));
         let id = 0;
         MOW.districts.forEach((district, d) => {
@@ -99,16 +111,9 @@ export class Growth {
                     const turn = random() * Math.PI * 2;
                     const radius = def.radius * scale;
                     if (isBlocked(x, z) || this.items.some((item) => Math.hypot(item.x - x, item.z - z) < SPACING + (item.radius + radius) * 0.5)) continue;
-                    const item: Item = { id: id++, def, district: d, x, z, radius, object: new THREE.Group(), chew: 0, cleared: cleared(id - 1) || restored(d), shake: 0 };
+                    const itemId = id++;
+                    this.items.push({ id: itemId, def, district: d, x, z, radius, scale, turn, chew: 0, cleared: cleared(itemId) || restored(d), shake: 0 });
                     placed++;
-                    item.object.position.set(x, lawnLift(), z);
-                    item.object.rotation.y = turn;
-                    item.object.scale.setScalar(scale);
-                    item.object.visible = !item.cleared;
-                    this.group.add(item.object);
-                    this.items.push(item);
-                    if (!item.cleared) void this.fill(item);
-                    else this.addRemains(item, def.kind);
                 }
             }
         });
@@ -133,17 +138,45 @@ export class Growth {
             const half = Math.max(prop.collider?.halfX ?? 0, prop.collider?.halfZ ?? 0);
             const radius = half > 0 ? half / SOLID : def.radius;
             const item: Item = {
-                id: itemId, def, district: districtAt(prop.x, prop.z), x: prop.x, z: prop.z, radius, object: new THREE.Group(),
+                id: itemId, def, district: districtAt(prop.x, prop.z), x: prop.x, z: prop.z, radius, scale: 1, turn: prop.rotationY ?? 0,
                 chew: 0, cleared: cleared(itemId), shake: 0, fixed: { model: prop.model, height: prop.height ?? def.height },
             };
-            item.object.position.set(prop.x, lawnLift(), prop.z);
-            item.object.rotation.y = prop.rotationY ?? 0;
-            item.object.visible = !item.cleared;
-            this.group.add(item.object);
             this.items.push(item);
-            if (!item.cleared) void this.fill(item);
-            else this.addRemains(item, def.kind);
+            // (Scenery from the very start, whether its area's open or not.)
+            this.build(item, false);
         }
+    }
+
+    /** Makes an item's model (`grow`: popping up, its area just opened), or what's left of a cleared one. */
+    private build(item: Item, grow: boolean): void {
+        if (item.object) return;
+        const object = (item.object = new THREE.Group());
+        object.position.set(item.x, lawnLift(), item.z);
+        object.rotation.y = item.turn;
+        object.scale.setScalar(item.scale);
+        object.visible = !item.cleared;
+        this.group.add(object);
+        if (item.cleared) {
+            this.addRemains(item, item.def.kind);
+            return;
+        }
+        void this.fill(item);
+        if (!grow) return;
+        object.scale.setScalar(0.01);
+        gsap.to(object.scale, { x: item.scale, y: item.scale, z: item.scale, duration: 0.5, ease: 'back.out(1.6)' });
+    }
+
+    /** Queues the growth of sections that have opened (they block from now on), and builds a few of the queue. */
+    private buildOpened(): void {
+        MOW.districts.forEach((_, d) => {
+            if (this.built.has(d) || !this.open(d)) return;
+            this.built.add(d);
+            this.pending.push(...this.items.filter((item) => item.district === d && !item.object));
+            this.refreshBoxes();
+        });
+        // Those open as the game loads just stand there; those opening in play grow up.
+        for (const item of this.pending.splice(0, BUILD_PER_FRAME)) this.build(item, this.started);
+        if (!this.pending.length) this.started = true;
     }
 
     /** A type's model (its first: a type lists several, picked by the item's id), its height the type's. */
@@ -174,6 +207,8 @@ export class Growth {
                 object.position.set(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2);
                 holder.add(object);
                 holder.scale.setScalar(height / Math.max(size.y, 1e-3));
+                // See-through while it hides the player.
+                BendService.applyOcclusionFadeUpright(holder);
                 return holder;
             }).catch((error) => {
                 console.warn('[Growth] model', path, error);
@@ -186,11 +221,12 @@ export class Growth {
 
     private async fill(item: Item): Promise<void> {
         const template = item.fixed ? await this.load(item.fixed.model, item.fixed.height) : await this.template(item.def, item.id);
-        if (template && !item.cleared) item.object.add(template.clone(true));
+        if (template && !item.cleared) item.object?.add(template.clone(true));
     }
 
     private refreshBoxes(): void {
-        this.boxes = this.items.filter((item) => !item.cleared).map((item) => ({ x: item.x, z: item.z, halfX: item.radius * SOLID, halfZ: item.radius * SOLID }));
+        // (A closed section's are behind its fence: nothing to walk into, and the fewer boxes the better.)
+        this.boxes = this.items.filter((item) => !item.cleared && (item.fixed || this.built.has(item.district))).map((item) => ({ x: item.x, z: item.z, halfX: item.radius * SOLID, halfZ: item.radius * SOLID }));
     }
 
     /** What stands in the way (the growth not cleared yet). */
@@ -216,10 +252,9 @@ export class Growth {
             if (dx * dx + dz * dz > reach * reach) continue;
             const short = item.def.resistance - power;
             if (short >= 2) {
-                // (A hand-placed one far out of reach stays quiet, like the scenery it was: no "needs blades 7" for a
-                // new player; it speaks up once the blades are one step from it.)
-                const quiet = !!item.fixed && short > 2;
-                if (!quiet && (!result.blocked || item.def.resistance > result.blocked.resistance)) result.blocked = item.def;
+                // (A hand-placed one stays quiet, like the scenery it was, until the blades can chew it: half the players
+                // at blades 2 were being told a bush takes four.)
+                if (!item.fixed && (!result.blocked || item.def.resistance > result.blocked.resistance)) result.blocked = item.def;
                 continue;
             }
             item.chew += delta;
@@ -274,6 +309,9 @@ export class Growth {
     private clear(item: Item, fromX: number, fromZ: number, animate: boolean): void {
         item.cleared = true;
         const object = item.object;
+        // (Not built yet: build() only puts down what's left of it.)
+        if (!object) return;
+        gsap.killTweensOf(object.scale);
         const tree = item.def.kind === 'tree';
         this.addRemains(item, item.def.kind);
         if (!animate) {
@@ -331,8 +369,9 @@ export class Growth {
 
     /** Each frame: what's being chewed shakes. */
     public update(delta: number): void {
+        this.buildOpened();
         for (const item of this.items) {
-            if (item.shake <= 0 || item.cleared) continue;
+            if (item.shake <= 0 || item.cleared || !item.object) continue;
             item.shake = Math.max(0, item.shake - delta);
             const wobble = item.shake > 0 ? Math.sin(performance.now() / 30 + item.id) * 0.05 : 0;
             item.object.rotation.z = wobble;
@@ -342,9 +381,11 @@ export class Growth {
 
     public destroy(): void {
         for (const item of this.items) {
+            if (!item.object) continue;
             gsap.killTweensOf(item.object.scale);
             gsap.killTweensOf(item.object.position);
         }
+        this.pending.length = 0;
         this.group.removeFromParent();
     }
 }

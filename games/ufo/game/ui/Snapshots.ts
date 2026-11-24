@@ -9,6 +9,7 @@ import { buildPiece, placePiece } from 'core/pieces/Pieces';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import SetupThree from 'core/scene/SetupThree';
 import { AlienStyle, MODEL_BASE, UfoStyle } from '../data/UfoConfig';
+import { bendUniforms } from '../services/Bend';
 import { applyPop, popStyle, removePop } from '../player/PopMaterial';
 import { loadSaucerModel, saucerTexture } from '../player/Saucer';
 
@@ -47,7 +48,12 @@ function snapshot(object: THREE.Object3D): PIXI.Texture | null {
     renderer.setRenderTarget(target);
     renderer.setClearColor(0x000000, 0);
     renderer.clear();
+    // The saucers' look curves with the world round the player (PopMaterial): off here, or, taken while the player's far from
+    // the origin, the picture's bent right out of its frame.
+    const bend = bendUniforms.uBendStrength.value;
+    bendUniforms.uBendStrength.value = 0;
     renderer.render(scene, camera);
+    bendUniforms.uBendStrength.value = bend;
     const pixels = new Uint8Array(SIZE * SIZE * 4);
     renderer.readRenderTargetPixels(target, 0, 0, SIZE, SIZE, pixels);
     renderer.setRenderTarget(previousTarget);

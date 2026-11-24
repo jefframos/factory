@@ -7,6 +7,7 @@
 // Tall things standing between the camera and the saucer fade out (fadeBlocking()).
 
 import * as THREE from 'three';
+import { ColorGrade } from 'core/scene/ColorGrade';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { FLAT_HEIGHT, Level, MODEL_BASE, Pavement, Point, Prop, SOLID_CUBE_HEIGHT, UFO } from '../data/UfoConfig';
 import { BendCuller, applyBend, bendObject, bendSegments } from '../services/Bend';
@@ -217,6 +218,7 @@ function grassMaterial(color: string): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color, roughness: 1 });
     material.customProgramCacheKey = () => 'ufo-grass';
     material.onBeforeCompile = (shader) => {
+        ColorGrade.apply(shader);
         shader.uniforms.uGrassPixels = { value: GRASS_PIXELS };
         shader.vertexShader = shader.vertexShader
             .replace('#include <common>', '#include <common>\nvarying vec2 vGrassXZ;')

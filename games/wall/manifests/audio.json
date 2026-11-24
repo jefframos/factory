@@ -1,0 +1,353 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "boom.mp3"
+          ],
+          "src": [
+            "boom.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "break-1.ogg"
+          ],
+          "src": [
+            "break-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "break-2.ogg"
+          ],
+          "src": [
+            "break-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "break-3.ogg"
+          ],
+          "src": [
+            "break-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "claim.ogg"
+          ],
+          "src": [
+            "claim.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "coins-1.ogg"
+          ],
+          "src": [
+            "coins-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "coins-2.ogg"
+          ],
+          "src": [
+            "coins-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collapse-1.wav"
+          ],
+          "src": [
+            "collapse-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "collapse-2.wav"
+          ],
+          "src": [
+            "collapse-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "error.ogg"
+          ],
+          "src": [
+            "error.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-glass-1.ogg"
+          ],
+          "src": [
+            "hit-glass-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-glass-2.ogg"
+          ],
+          "src": [
+            "hit-glass-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-glass-3.ogg"
+          ],
+          "src": [
+            "hit-glass-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-glass-4.ogg"
+          ],
+          "src": [
+            "hit-glass-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-glass-5.ogg"
+          ],
+          "src": [
+            "hit-glass-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-metal-1.ogg"
+          ],
+          "src": [
+            "hit-metal-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-metal-2.ogg"
+          ],
+          "src": [
+            "hit-metal-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-metal-3.ogg"
+          ],
+          "src": [
+            "hit-metal-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-metal-4.ogg"
+          ],
+          "src": [
+            "hit-metal-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-metal-5.ogg"
+          ],
+          "src": [
+            "hit-metal-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-pick-1.ogg"
+          ],
+          "src": [
+            "hit-pick-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-pick-2.ogg"
+          ],
+          "src": [
+            "hit-pick-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-pick-3.ogg"
+          ],
+          "src": [
+            "hit-pick-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-pick-4.ogg"
+          ],
+          "src": [
+            "hit-pick-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-pick-5.ogg"
+          ],
+          "src": [
+            "hit-pick-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-soft-1.ogg"
+          ],
+          "src": [
+            "hit-soft-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-soft-2.ogg"
+          ],
+          "src": [
+            "hit-soft-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-soft-3.ogg"
+          ],
+          "src": [
+            "hit-soft-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-soft-4.ogg"
+          ],
+          "src": [
+            "hit-soft-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-soft-5.ogg"
+          ],
+          "src": [
+            "hit-soft-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-stone-1.ogg"
+          ],
+          "src": [
+            "hit-stone-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-stone-2.ogg"
+          ],
+          "src": [
+            "hit-stone-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-stone-3.ogg"
+          ],
+          "src": [
+            "hit-stone-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-stone-4.ogg"
+          ],
+          "src": [
+            "hit-stone-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-stone-5.ogg"
+          ],
+          "src": [
+            "hit-stone-5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-wood-1.ogg"
+          ],
+          "src": [
+            "hit-wood-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-wood-2.ogg"
+          ],
+          "src": [
+            "hit-wood-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hit-wood-3.ogg"
+          ],
+          "src": [
+            "hit-wood-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "swing-1.wav"
+          ],
+          "src": [
+            "swing-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "swing-2.wav"
+          ],
+          "src": [
+            "swing-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "swing-3.wav"
+          ],
+          "src": [
+            "swing-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "swing-4.wav"
+          ],
+          "src": [
+            "swing-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "tool.ogg"
+          ],
+          "src": [
+            "tool.mp3"
+          ]
+        }
+      ]
+    }
+  ]
+}

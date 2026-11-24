@@ -2,13 +2,15 @@
 //
 // The player's saved state: money, the tool owned, upgrade levels, the clippings in the container, which grass has
 // been cut (from the grass field, as a compact string), which districts are restored, and the wardrobe (owned and worn
-// looks). Two localStorage entries, saved shortly after any change: the city's own (`mow.save.<city>`: its gear,
+// looks). Two entries in the platform's storage (SaveStorage), saved shortly after any change and as the game's left: the city's own (`mow.save.<city>`: its gear,
 // money, grass, areas, trophies and secrets — each city is played from scratch, prestige-style) and the player's
 // (`mow.global`: the wardrobe, the cities finished — their bonus — and the one-time analytics). Versioned
 // (SAVE_VERSION): a save from another version starts a new game. Fields added later get their defaults (load()).
 
 import { Signal } from 'signals';
-import { MOW, CITY, CITIES, CityDef, CURRENT_CITY_KEY, PRESTIGE_BONUS, ToolDef, UpgradeDef, UpgradeId, WardrobeItem, setCity, grassFor, farmTest, nicePrice } from './MowConfig';
+import { SaveStorage } from 'core/platforms/SaveStorage';
+import { MOW, CITY, CITIES, CityDef, CURRENT_CITY_KEY, PRESTIGE_BONUS, ToolDef, UpgradeDef, UpgradeId, WardrobeItem, currentCity, setCity, grassFor, farmTest, nicePrice } from './MowConfig';
+import { TRACTOR_ITEMS, TRACTOR_KINDS, TractorItem, TractorKind, TractorLook } from './TractorSkins';
 
 /** The farm test's upgrade pads (UpgradePads): the next mower, the next bag size, the next blades. */
 export type PadKind = 'tool' | 'capacity' | 'blades';
@@ -32,12 +34,12 @@ export interface Look {
 const cityKey = (city: string): string => `mow.save.${city}`;
 const GLOBAL_KEY = 'mow.global';
 /** Bump when a change can't carry old saves over: a save from another version starts a new game. */
-const SAVE_VERSION = 8;
+const SAVE_VERSION = 9;
 /** What's the player's, not the city's (kept across cities: the wardrobe, the cities finished, the analytics). */
-const GLOBAL_FIELDS = ['owned', 'look', 'freeLooksOffered', 'sent', 'completed', 'carried', 'allCitiesOpen'] as const;
+const GLOBAL_FIELDS = ['owned', 'look', 'tractorOwned', 'tractorLook', 'freeLooksOffered', 'sent', 'completed', 'carried', 'allCitiesOpen'] as const;
 /** The claim key of the rewards left unclaimed in cities travelled from (SaveData.carried). */
 export const CARRIED_KEY = 'carried';
-const SAVE_DELAY_MS = 800;
+const SAVE_DELAY_MS = 2000;
 
 /** The cow barn (CowDen): what's kept of it. */
 /** A crop farm's state (CropFarm). */
@@ -107,6 +109,10 @@ interface SaveData {
     /** Bought wardrobe items, by kind. */
     owned: Record<LookKind, string[]>;
     look: Look;
+    /** The tractor's skins: owned (`paints:bee`), worn, and the money when its panel was last opened (undefined: never). */
+    tractorOwned?: string[];
+    tractorLook?: TractorLook;
+    tractorBudget?: number;
     /** Money when the wardrobe was last opened: things that became affordable since get its "!". */
     wardrobeBudget: number;
     /** The wardrobe was opened again after the first hat: an unclaimed gift (free colour / face) now shows its FREE badge. */
@@ -162,6 +168,8 @@ interface SaveData {
 /** The claim key of an area's bonus (all its treasures found). */
 export const areaBonusKey = (areaId: string): string => `area:${areaId}`;
 
+const NO_TRACTOR_LOOK: TractorLook = { paints: '', parts: '' };
+
 /** A new player: the first colour and face, no hat. */
 const starterLook = (): Look => ({ color: MOW.wardrobe.colors[0].id, face: MOW.wardrobe.faces[0].id, hat: '' });
 
@@ -177,8 +185,10 @@ const fresh = (): SaveData => ({
 
 function read(key: string): Partial<SaveData> | undefined {
     try {
-        const raw = window.localStorage.getItem(key);
+        const raw = SaveStorage.getItem(key);
         const saved = raw ? (JSON.parse(raw) as Partial<SaveData>) : undefined;
+        // Version 8 still had the Reel Mower as the first: every mower's one lower now.
+        if (saved?.version === 8) return { ...saved, version: SAVE_VERSION, ...(saved.toolLevel === undefined ? {} : { toolLevel: Math.max(0, saved.toolLevel - 1) }) };
         return saved?.version === SAVE_VERSION ? saved : undefined;
     } catch {
         // A broken save starts fresh.
@@ -203,11 +213,25 @@ let state = load();
 state.money = Math.round(state.money);
 let saveTimer: number | undefined;
 let wiped = false;
+/** The save's been read from the platform (begin()): till then nothing's written, or a new game's would go over it. */
+let ready = false;
 let cutProvider: (() => string) | undefined;
 
 const upgradeDef = (id: UpgradeId): UpgradeDef => MOW.upgrades.find((u) => u.id === id)!;
 
 export const MowProgress = {
+    /** Every key the save's in (SaveStorage.load() at boot). */
+    saveKeys: [GLOBAL_KEY, CURRENT_CITY_KEY, ...CITIES.map((city) => cityKey(city.id))],
+
+    /** At boot, the platform's storage read: the save, as it is there, and from now on it's kept (as the game's left too). */
+    begin(): void {
+        setCity(currentCity());
+        state = load();
+        state.money = Math.round(state.money);
+        ready = true;
+        SaveStorage.saveOnLeave(() => this.saveNow());
+    },
+
     /** Fires after any change to money, tools, upgrades or the container. */
     onChange: new Signal(),
 
@@ -767,6 +791,72 @@ export const MowProgress = {
         return true;
     },
 
+    // ---------------------------------------------------------------- the tractor's skins
+
+    /** What the tractor wears. */
+    get tractorLook(): Readonly<TractorLook> {
+        return state.tractorLook ?? NO_TRACTOR_LOOK;
+    },
+
+    ownsTractor(kind: TractorKind, item: TractorItem): boolean {
+        return !item.id || (state.tractorOwned ?? []).includes(`${kind}:${item.id}`);
+    },
+
+    /** Buys (if needed: a gift costs nothing, a video's is never sold) and puts on a skin; false if it can't be had. */
+    wearTractor(kind: TractorKind, item: TractorItem): boolean {
+        if (!this.ownsTractor(kind, item)) {
+            if (item.video) return false;
+            if (!item.free) {
+                if (state.money < item.price) return false;
+                state.money -= item.price;
+            }
+            this.ownTractor(kind, item);
+        }
+        state.tractorLook = { ...this.tractorLook, [kind]: item.id };
+        this.changed();
+        return true;
+    },
+
+    /** A skin won (a rewarded video's): owned and put on. */
+    unlockTractor(kind: TractorKind, item: TractorItem): void {
+        this.ownTractor(kind, item);
+        this.wearTractor(kind, item);
+    },
+
+    ownTractor(kind: TractorKind, item: TractorItem): void {
+        if (!this.ownsTractor(kind, item)) (state.tractorOwned ??= []).push(`${kind}:${item.id}`);
+    },
+
+    /** The gift (a free skin) not claimed yet, if any. */
+    tractorGift(): { kind: TractorKind; item: TractorItem } | undefined {
+        for (const kind of TRACTOR_KINDS) {
+            const item = TRACTOR_ITEMS[kind].find((entry) => entry.free && !this.ownsTractor(kind, entry));
+            if (item) return { kind, item };
+        }
+        return undefined;
+    },
+
+    /** One to offer for a video: any not owned, the ones only a video gives first. */
+    tractorToOffer(kind: TractorKind): TractorItem | undefined {
+        const locked = TRACTOR_ITEMS[kind].filter((item) => !item.free && !this.ownsTractor(kind, item));
+        const videos = locked.filter((item) => item.video);
+        const from = videos.length ? videos : locked;
+        return from[Math.floor(Math.random() * from.length)];
+    },
+
+    /** Its panel's "!": a gift in it, or something that's become affordable since it was last opened (or it never was). */
+    get tractorHasNews(): boolean {
+        const budget = state.tractorBudget;
+        if (budget === undefined) return true;
+        return TRACTOR_KINDS.some((kind) => TRACTOR_ITEMS[kind].some((item) => !this.ownsTractor(kind, item)
+            && (item.free || (!item.video && item.price <= state.money && item.price > budget))));
+    },
+
+    markTractorSeen(): void {
+        state.tractorBudget = state.money;
+        this.scheduleSave();
+    },
+
     // ---------------------------------------------------------------- treasures
 
     treasureFound(id: string): boolean {
@@ -937,15 +1027,16 @@ export const MowProgress = {
         }
         this.saveNow();
         try {
-            if (!window.localStorage.getItem(cityKey(city.id)) && CITY.keepGear && city === CITIES[CITIES.indexOf(CITY) + 1]) {
+            if (!SaveStorage.getItem(cityKey(city.id)) && CITY.keepGear && city === CITIES[CITIES.indexOf(CITY) + 1]) {
                 const carried: Partial<SaveData> = { version: SAVE_VERSION, money: state.money, toolLevel: state.toolLevel, upgrades: state.upgrades };
-                window.localStorage.setItem(cityKey(city.id), JSON.stringify(carried));
+                SaveStorage.setItem(cityKey(city.id), JSON.stringify(carried));
             }
-            window.localStorage.setItem(CURRENT_CITY_KEY, city.id);
+            SaveStorage.setItem(CURRENT_CITY_KEY, city.id);
         } catch {
             // No storage: played unsaved.
         }
         window.clearTimeout(saveTimer);
+        saveTimer = undefined;
         cutProvider = undefined;
         setCity(city);
         state = load();
@@ -979,13 +1070,16 @@ export const MowProgress = {
         this.scheduleSave();
     },
 
+    /** Saves in a moment. (Not put off by the next change: mowing never stops changing things, and it would never save.) */
     scheduleSave(): void {
-        window.clearTimeout(saveTimer);
+        if (saveTimer !== undefined) return;
         saveTimer = window.setTimeout(() => this.saveNow(), SAVE_DELAY_MS);
     },
 
     saveNow(): void {
-        if (wiped) return;
+        window.clearTimeout(saveTimer);
+        saveTimer = undefined;
+        if (wiped || !ready) return;
         if (cutProvider) state.cut = cutProvider();
         try {
             const city: Partial<SaveData> = { ...state };
@@ -994,8 +1088,8 @@ export const MowProgress = {
                 (global as Record<string, unknown>)[field] = state[field];
                 delete (city as Record<string, unknown>)[field];
             }
-            window.localStorage.setItem(cityKey(CITY.id), JSON.stringify(city));
-            window.localStorage.setItem(GLOBAL_KEY, JSON.stringify(global));
+            SaveStorage.setItem(cityKey(CITY.id), JSON.stringify(city));
+            SaveStorage.setItem(GLOBAL_KEY, JSON.stringify(global));
         } catch {
             // Storage full or blocked: keep playing unsaved.
         }
@@ -1013,9 +1107,10 @@ export const MowProgress = {
      */
     resetCity(): void {
         window.clearTimeout(saveTimer);
+        saveTimer = undefined;
         cutProvider = undefined;
         try {
-            window.localStorage.removeItem(cityKey(CITY.id));
+            SaveStorage.removeItem(cityKey(CITY.id));
         } catch {
             // No storage: nothing saved to remove.
         }
@@ -1029,9 +1124,9 @@ export const MowProgress = {
         window.clearTimeout(saveTimer);
         wiped = true;
         // Every city and the player's own (debug: a brand-new game, from the tutorial).
-        for (const city of CITIES) window.localStorage.removeItem(cityKey(city.id));
-        window.localStorage.removeItem(GLOBAL_KEY);
-        window.localStorage.removeItem(CURRENT_CITY_KEY);
+        for (const city of CITIES) SaveStorage.removeItem(cityKey(city.id));
+        SaveStorage.removeItem(GLOBAL_KEY);
+        SaveStorage.removeItem(CURRENT_CITY_KEY);
         window.location.reload();
     },
 };

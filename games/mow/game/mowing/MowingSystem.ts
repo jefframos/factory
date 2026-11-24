@@ -97,7 +97,7 @@ export class MowingSystem {
             if (this.chewHit <= 0) {
                 this.chewHit = CHEW_HIT_SEC;
                 this.effects.burst(result.chewing.at, result.chewing.color, 5, 3);
-                MowAudio.play('cut');
+                MowAudio.cut(result.chewing.grass);
             }
         } else if (result.cells === 0 && result.blocked) {
             this.player.drag = WALL_DRAG;
@@ -118,7 +118,7 @@ export class MowingSystem {
             const chips = Math.min(MAX_CHIPS, result.cells * CHIPS_PER_CELL);
             this.effects.burst(result.at, result.color, chips, 2.2);
         }
-        MowAudio.play('cut');
+        if (result.grass) MowAudio.cut(result.grass);
         this.onCut(result.cells, bagged);
         for (const { treasure, at } of result.found ?? []) this.onTreasure(treasure, at);
         // (Said once, as it fills.)

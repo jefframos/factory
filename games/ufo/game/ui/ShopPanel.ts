@@ -99,7 +99,7 @@ export class ShopPanel extends PIXI.Container {
         this.buildUnlock();
         this.addChild(this.back, this.pattern, this.gridMask, this.grid, this.strip, this.title, this.zone, this.tabs, this.unlock);
         for (const section of SECTION_ORDER) {
-            UfoProgress.inSection(kind, section).forEach((style) => this.addCell(style.id, style.name, section));
+            UfoProgress.shopOrder(kind, section).forEach((style) => this.addCell(style.id, style.name, section));
         }
         this.back.on('pointerdown', (event: PIXI.FederatedPointerEvent) => this.startDrag(event));
         this.back.on('globalpointermove', (event: PIXI.FederatedPointerEvent) => this.moveDrag(event));
@@ -261,7 +261,7 @@ export class ShopPanel extends PIXI.Container {
     private async tryUnlock(): Promise<void> {
         if (this.watching || !UfoProgress.anyClassicLocked(this.kind)) return;
         this.watching = true;
-        const rewarded = await PlatformHandler.instance.platform.showRewardedVideo('ufo-unlock-random').catch(() => false);
+        const rewarded = await PlatformHandler.instance.platform.showRewardedVideo('ufo-unlock-random').then((result) => result !== false).catch(() => false);
         this.watching = false;
         if (this.destroyed || !rewarded) return;
         const id = UfoProgress.unlockRandom(this.kind);

@@ -409,6 +409,12 @@ export class Saucer {
         this.targetRadius = Math.max(cap, this.targetRadius * (1 - shrink * delta));
     }
 
+    /** Bigger at once, by this factor (a rewarded boost). */
+    public boost(factor: number): void {
+        this.targetRadius *= factor;
+        this.milestone();
+    }
+
     public grow(amount: number): void {
         this.targetRadius = Math.sqrt(this.targetRadius * this.targetRadius + UFO.growth * amount);
         this.swellGoal = 1;

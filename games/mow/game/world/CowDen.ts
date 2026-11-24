@@ -597,6 +597,8 @@ export class CowDen {
     }
 
     private fitSign(): void {
+        // Only while it's locked: open, its name over it is just more text.
+        this.sign.visible = !this.opened && (this.levelLocked || !this.def.level);
         const image = this.sign.material.map?.image as { width: number; height: number } | undefined;
         const ratio = image ? image.height / image.width : 96 / 448;
         this.sign.scale.set(4.2, 4.2 * ratio, 1);

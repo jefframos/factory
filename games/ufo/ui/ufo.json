@@ -216,7 +216,23 @@
             "saucer-classic",
             "saucer-steel",
             "saucer-rust",
-            "saucer-blue"
+            "saucer-blue",
+            "saucer-kitty",
+            "saucer-bunny",
+            "saucer-bee",
+            "saucer-froggy",
+            "saucer-ladybug",
+            "saucer-donut",
+            "saucer-shark",
+            "saucer-rocket",
+            "saucer-devil",
+            "saucer-birthday",
+            "saucer-viking",
+            "saucer-santa",
+            "saucer-saturn",
+            "saucer-king",
+            "saucer-unicorn",
+            "saucer-angel"
         ]
     },
     "rivals": {

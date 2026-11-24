@@ -1,7 +1,8 @@
 {
   "tutorial": {
     "level": "town",
-    "type": "all",
+    "type": "points",
+    "points": 120,
     "seconds": 0,
     "rivals": 0,
     "reward": 100

@@ -12,6 +12,8 @@ import { UiAnim } from './UiAnim';
 import { MowAudio } from '../audio/MowAudio';
 
 const SIZE = { width: 112, height: 116, shine: 180 };
+/** Drawn this much bigger than that. */
+const SCALE = 1.4;
 
 export class SellX2Button extends PIXI.Container {
     private readonly body = new PIXI.Container();
@@ -48,6 +50,8 @@ export class SellX2Button extends PIXI.Container {
         const label = new PIXI.Text('SELL x2', new PIXI.TextStyle({
             fontFamily: UiKit.fontFamily('primary'), fontSize: 24, fill: 0x9cff9c, stroke: 0x1d140e, strokeThickness: 6, lineJoin: 'round',
         }));
+        // (Sharp at its scale.)
+        label.resolution = 2 * SCALE;
         label.anchor.set(0.5);
         label.y = SIZE.height / 2 - 12;
         this.video = PIXI.Sprite.from('ItemIcon_Video');
@@ -108,11 +112,15 @@ export class SellX2Button extends PIXI.Container {
         if (show === this.shown) return;
         this.shown = show;
         this.visible = show;
-        if (show) UiAnim.popIn(this);
+        if (!show) return;
+        // From its own scale (hidden half-way through popping in, it would stay small).
+        gsap.killTweensOf([this, this.scale]);
+        this.scale.set(SCALE);
+        UiAnim.popIn(this);
     }
 
     public override destroy(): void {
-        gsap.killTweensOf(this);
+        gsap.killTweensOf([this, this.scale]);
         this.children.forEach((child) => gsap.killTweensOf(child));
         super.destroy({ children: true });
     }

@@ -2,20 +2,53 @@
 
 ## Description
 
-Mow an overgrown town back to life: cut the grass, cash in your clippings, buy bigger mowers and restore every district.
+Mow an overgrown island, from a simple push mower to a giant tractor! Fill your bag with grass, upgrade your mower, blades and bag, and cut through ever tougher grass, bushes, trees and rocks. Open up new areas and build your own farms: chickens, strawberries and cows, with helpers that keep them running while you mow.
 
 ## Controls
 
-- **Move:** WASD or arrow keys; on touch screens, the on-screen joystick. Walking over grass mows it.
-- **Sell:** walk onto an ATM's pad to empty your bag for cash; the shop opens there too.
-- **Shop and menus:** tap or click the buttons and tabs.
+- **Move:** WASD or arrow keys; on touch screens, the on-screen joystick. Moving over grass mows it.
+- **Upgrade:** stand on a station's square to pour in your grass and buy the next mower, blades or bag.
+- **Farms:** walk up to things to pick them up, and stand on the marked squares to drop them off, sell and hire helpers.
+- **Menus:** tap or click the buttons (map, wardrobe, power-ups, chests).
 
 ---
 
-A casual mowing / city-restoration game for web portals (Poki, CrazyGames, YouTube Playables): walk, and the grass
-in front of you is cut. Fill your container, empty it for cash, buy better mowers and upgrades, restore each district
-of an overgrown town and unlock the next. Design: the Mow Town GDD (MVP scope: the Starting Park and the
-Residential Street).
+A casual mowing and farm game for web portals (Poki, CrazyGames, YouTube Playables): move, and the grass in front of you
+is cut. There are no shop menus for the main upgrades: everything is bought by standing on squares in the world.
+
+**The loop:** mow until the bag is full, pour the grass into a station for the next upgrade (later: sell it for money at an ATM),
+restore the area, go on to the next one, whose grass is a step tougher and worth more.
+
+**The progression:**
+
+- **Mowers:** 10 of them. The Push Mower is the start; from the Lawn Tractor (the first upgrade) on they're driven, each
+  bigger, wider and in a new colour, up to the Behemoth. The camera pulls back as they grow.
+- **Blades:** 12 levels, seen spinning under the mower. They decide what can be cut: each type of grass takes one more.
+- **Bag:** bigger, in a new colour each level. A full bag stops the mowing until it's emptied.
+- **Areas:** nine, with seven types of grass, tougher and tougher. The Park and the Wilds open together after the Yard; each one after that opens
+  when the one before is restored, or at a player level, so nobody gets stuck.
+
+| Area | Grass | Also there | Opens at level (or the one before restored) |
+|---|---|---|---|
+| Yard | Grass (short) | the start | |
+| Park | Grass | | after the Yard |
+| Wilds | Tall Grass | **Chicken Den** (level 6) | after the Yard |
+| Field | Thick Weeds | **Strawberry Farm** (level 10) and its harbour | 10 |
+| Brambles | Brambles | bushes | 13 |
+| Thicket | Thicket | **Cow Barn** (level 16), bushes, young trees | 15 |
+| Plains | Dry Grass | trees | 17 |
+| Hills | Fire Brush | big and giant trees, rocks | 19 |
+| Ridge | Fire Brush | giant trees, rocks, boulders | 21 |
+
+- **Farms:** each starts by hand (pick up the goods, feed a machine, serve the customers, collect the cash), then
+  conveyors, helpers, trucks and boats are bought until it runs on its own. The den makes eggs and golden eggs; the
+  strawberry farm sells to customers, boats and a cruise ship's passengers; the barn makes butter and cheese.
+- **Player level:** XP from mowing, upgrades, areas and the farms. Levels open farms, their parts and areas.
+- **Money:** from selling grass, the farms, treasures found in the grass and locked chests. It buys farm parts,
+  **power-ups** (speed, money, grass, bag size, cutting width, sharp edge, farm speed), and hats and clothes.
+- **Rewarded videos (optional):** selling a full bag for double, opening locked chests, special skin colours.
+
+The numbers and the reasons behind them: [README_PROGRESSION.md](README_PROGRESSION.md).
 
 Built on the factory's engine (`core/`) and the engine-level parts of `games/dig` (character, movement, physics,
 UI kit, audio, localization, platforms). The town is built from the 3D library (KayKit City Builder Bits, KayKit
@@ -32,23 +65,22 @@ mower rolls on top of pavements and road tiles (`Town.surfaceAt()`), its handle 
 
 ---
 
-## Farm test (current experiment)
+## The farm game (the current game)
 
-The starter level (`levels/tutorial.json`) is the whole game: `levels/cities.json` lists only it (id `farmtest`, its
+Called "farm test" in the code. The starter level (`levels/tutorial.json`) is the whole game: `levels/cities.json` lists only it (id `farmtest`, its
 own save). Backups of the originals: `levels/tutorial.backup.json`, `levels/cities.backup.json`, `ui/mow.backup.json`.
 Everything below is switched on by the level's `farm` block, so other levels are untouched.
 
 - **Upgrade pads, no shop** (`world/UpgradePads.ts`): a white-outlined square on the floor (what it upgrades, an up
-  arrow, the grass still needed, filling green as it's paid) with the next mower (or a sack: a bigger bag) turning on
-  a stand beside it. Standing on it pours the bag's grass in; paid in full, the upgrade happens at once. Prices are
-  the old shop's, in grass (`grassFor()`: price / `clippingPrice`); payments are saved per pad kind. The level has no
-  ATMs (the ATM code is still there). A pad visit counts as a sale (the first wardrobe still comes after one).
+  arrow, the money still needed, filling green as it's paid) with the next mower, blades or bag on a stand beside it.
+  Standing on it pours in the bag's grass, at its value, then the money carried; paid in full, the upgrade happens at
+  once. Payments are saved per pad kind. The name over the stand is off (`SHOW_TITLES`).
 - **The backpack** (`player/Backpack.ts`): a rucksack on the player's back (following the chest bone), turning from
   canvas to grass green as the bag fills (pulsing when full), with what they carry stacked on it: the bag's grass as
   bales (one per tenth of the bag), eggs, trays. Riding a mower, it sits on the
   back of the mower. Grass poured into a pad flies out as bales.
 - **A bigger island**: after the Front Yard and the Starting Park, **The Wilds** (62 x 51) to the north, its grass
-  getting tougher the further out (`grassNoise` rings). A full bag doesn't stop the mower: it cuts on (nothing bagged), so it never gets boxed in.
+  its own tougher grass, and six more areas past it (the table above). A full bag stops the mowing (grass, bushes and trees) until it's emptied.
 - **The Chicken Den** (`world/ChickenDen.ts`, tuned by `farm.eggs`): deep in the Wilds' west inside a hedge of
   brambles; mowed up to its gate, it opens with its first hen. Inside, the player walks without the mower (parked at
   the gate). Hens (the library's chick, `animals/animal-chick.glb`) lay eggs onto the floor in front of their nests
@@ -69,8 +101,8 @@ Everything below is switched on by the level's `farm` block, so other levels are
 - **The sea** is the UFO game's (`builders/SeaWater.ts`): bright by the shore, deep blue out, drifting wave lines, foam.
 - **No world curve** (`bend` in ui/mow.json, 0): bent things were drawn away from where they're culled and where their
   labels sit (popping at the edges, labels off their things).
-- **Levels** (`farm.levels`, the badge top-left: `ui/LevelBadge.ts`): XP from mowing, upgrades, areas, the den, eggs,
-  trays, sales and hens. Levels gate the hens (and, next, the cow area). The town meter (bottom-right) is hidden here.
+- **Levels** (`farm.levels`, the badge and bar at the top: `ui/LevelBadge.ts`, the area's thinner bar under it): XP from mowing, upgrades, areas, the den, eggs,
+  trays, sales and hens. Levels gate the farms, their parts and the areas. The town meter (bottom-right) is hidden here.
 - **Animals**: the pizza game's pets pack is in the 3D library (`library3d/files/animals`) and the chick, cow and pig
   in `raw-assets/models/animals{m}` (`farm/FarmModels.ts` loads them with their clips).
   The customers are the restaurant game's people (`farm/People.ts`, `raw-assets/models/people{m}`: eight dressed in
@@ -81,7 +113,7 @@ Everything below is switched on by the level's `farm` block, so other levels are
   wardrobe's colour dresses their top and its hat sits on their head (ui/hatfits.json, `HEAD` in MowPlayer); its faces
   don't show on a person.
 
-The editor doesn't know the `farm` block: saving the level from the editor may drop it.
+The `farm` block (stations, dens, farms, their levels and paths) is edited in the editor's Town tab.
 
 ## Running it
 
@@ -103,7 +135,10 @@ save.
 
 ---
 
-## How it plays
+## How it plays (the older town game)
+
+> This is the game the farm game grew out of (`levels/town.json`: a shop at the ATMs, six sections). Mowing, finds, the
+> map and the wardrobe work the same there; upgrades, areas and the HUD are as described above.
 
 1. **Mow** — move (WASD / arrows / joystick); everything in a circle the tool's width across, just in front of you,
    is cut when your tool's power is enough. Grass up to 3 powers too tough **resists** (like dig's rock): the mower is
@@ -138,6 +173,10 @@ save.
    **Gifts** (dig's): one colour (red) and one face (Cool) are `free` in the catalogue. Claimed on the first visit, nothing
    more; still unclaimed when the player comes back after the first hat (`freeLooksOffered` in the save), their tabs
    and cards get a green FREE badge (and the wardrobe its "!") until taken.
+   The **tractor** has its own panel (its sticker button over the wardrobe's, from the Lawn Tractor on): PAINT (patterns over its
+   body) and PARTS (horns, wings, rockets…), one of each, bought, free, or for a rewarded video; while driving, a card offers
+   a locked one for a video (NEW PAINT, then NEW PART: `TRACTOR_OFFER` in MowScene). Data and prices: `ui/tractor.json`; tiles:
+   `raw-assets/non-preload/tractor/`; drawn by `player/TractorDress.ts`. Analytics: `tractor` and `tractor-offer`.
 5. **Restore** — each section shows its restored % at the top, with a pop and a chime at 25 / 50 / 75%. At its goal
    (97%) the last stragglers are cleared, flowers spring up, a banner celebrates it (rays, its name, RESTORED!, the
    bonus counting up, confetti), and the next section opens: its fence sinks, its ATMs pop in, and the camera can

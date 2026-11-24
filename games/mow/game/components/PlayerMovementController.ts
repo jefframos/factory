@@ -33,6 +33,7 @@ import AnalogInput from 'core/io/AnalogInput';
 import KeyboardInputMovement from 'core/io/KeyboardInputMovement';
 import PointerFollowInput from 'core/io/PointerFollowInput';
 import { isWalkable } from '../world/TileWalkability';
+import { screenToWorld } from '../config/CameraConfig';
 
 /** Below this, an on-screen drag from the joystick's own center — or the gap between the pointer and the player's on-screen anchor in desktop pointer-follow mode — is ignored. */
 const POINTER_FOLLOW_DEADZONE = 8;
@@ -88,13 +89,13 @@ export default class PlayerMovementController extends Component {
 
         this.keyboardInput = new KeyboardInputMovement();
         this.keyboardInput.onMove.add(({ direction, magnitude }: { direction: PIXI.Point; magnitude: number }) => {
-            this.moveInput.set(direction.x * magnitude, direction.y * magnitude);
+            this.pushToward(direction.x * magnitude, direction.y * magnitude);
         });
 
         //if (PIXI.isMobile.any) {
         this.analogInput = new AnalogInput(this.inputHost);
         this.analogInput.onMove.add(({ direction, magnitude }: { direction: PIXI.Point; magnitude: number }) => {
-            this.moveInput.set(magnitude > 0 ? direction.x * magnitude : 0, magnitude > 0 ? direction.y * magnitude : 0);
+            this.pushToward(magnitude > 0 ? direction.x * magnitude : 0, magnitude > 0 ? direction.y * magnitude : 0);
         });
         // } else {
         //     this.pointerFollowInput = new PointerFollowInput(this.inputHost);
@@ -132,10 +133,16 @@ export default class PlayerMovementController extends Component {
         const dist = Math.hypot(dx, dy);
 
         if (dist > POINTER_FOLLOW_DEADZONE) {
-            this.moveInput.set(dx / dist, dy / dist);
+            this.pushToward(dx / dist, dy / dist);
         } else {
             this.moveInput.set(0, 0);
         }
+    }
+
+    /** The move input from a push on the screen (right, down), whichever way the camera's turned. */
+    private pushToward(right: number, down: number): void {
+        const { x, z } = screenToWorld(right, down);
+        this.moveInput.set(x, z);
     }
 
     /** Drives the player from code instead of input — see scriptedInput. (0, 0) stands still; clearScriptedInput() hands control back. */

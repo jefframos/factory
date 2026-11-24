@@ -338,13 +338,19 @@ async function handleApi(req, res, url) {
         return send(res, 200, { ok: true });
     }
     if (url.pathname === '/api/mow/cut-sound' && req.method === 'PUT') {
-        // The Mowers tab: the grass cut's volume and pitch ranges.
-        const { volume, pitch } = await readBody(req);
+        // The Mowers tab: each grass's cut sound (its set and pitch), and the cut's volume and pitch ranges.
+        const { grass = [], volume, pitch } = await readBody(req);
         const range = (r) => Array.isArray(r) && r.length === 2 && r.every((v) => typeof v === 'number' && Number.isFinite(v) && v >= 0);
         if (!range(volume) || !range(pitch)) return send(res, 400, { error: 'Invalid cut sound' });
         const design = await readJson(MOW_FILE, null);
         if (!design) return send(res, 500, { error: 'Could not read mow.json' });
         const sorted = (r) => [Math.min(...r), Math.max(...r)];
+        for (const { id, cutSound, cutPitch } of grass) {
+            const def = design.grass.find((g) => g.id === id);
+            if (!def || typeof cutSound !== 'string' || !/^[\w-]+$/.test(cutSound) || !Number.isFinite(cutPitch) || cutPitch <= 0) continue;
+            def.cutSound = cutSound;
+            def.cutPitch = cutPitch;
+        }
         design.cutSound = { ...design.cutSound, volume: sorted(volume), pitch: sorted(pitch) };
         await writeMow(design);
         return send(res, 200, { ok: true });

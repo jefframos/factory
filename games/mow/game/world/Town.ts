@@ -25,6 +25,7 @@ import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { CITY, MOW, TOWN, lawnLift, openedBy, farmTest, AtmLook, AtmSpot, ColliderCube, DeckDef, DistrictDef, TownProp, choppableKind } from '../data/MowConfig';
 import { MowProgress } from '../data/MowProgress';
 import { BendService, OcclusionFadeConfig, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
+import { UP_LIGHT } from './TownLight';
 import { createSeaWater } from '../builders/SeaWater';
 import { CanvasArt } from '../ui/CanvasArt';
 import { setWalkabilityQuery, clearWalkabilityQuery } from './TileWalkability';
@@ -63,6 +64,11 @@ const PAVEMENT_STEP = 0.012;
 const PAVEMENT_STACK = 0.06;
 /** Each pavement layer over the one before (later ones on top, never fighting for depth). */
 const pavementStep = (): number => Math.min(PAVEMENT_STEP, PAVEMENT_STACK / Math.max(1, TOWN.pavements.length));
+/**
+ * What's on top is drawn first (the grass and the things, then the lawns, the pavements, the ground, the sea), so what's
+ * under it isn't worked out at all. GrassField has its own two.
+ */
+export const ORDER = { grass: -1, lawn: 1, pavement: 2, ground: 3, sea: 4 };
 /** Props this close to the player's start (world units) load first; the rest after (the constructor). */
 const NEAR_LOAD = 24;
 /** topAt()'s cache cell (world units). */
@@ -77,8 +83,10 @@ const DECK_Y = GROUND_Y + 0.03;
 /** One deck plank's width; the plank texture holds PLANKS of them. */
 const PLANK = 0.42;
 const PLANKS = 4;
+/** Whether the world curves at all (ui/mow.json `bend`): flat, nothing's cut up (the ground alone was 237,000 triangles). */
+const CURVED = (MOW.bend ?? 0.002) !== 0;
 /** Flat things are cut into pieces this small (world units) so they curve with the bend instead of cutting through it. */
-const BEND_SEGMENT = 0.5;
+const BEND_SEGMENT = CURVED ? 0.5 : Infinity;
 /** Models flatter than this (the road tiles) get cut up too, into pieces this small (the bend's own guide: BendService). */
 const FLAT_HEIGHT = 0.3;
 const FLAT_SEGMENT = 1;
@@ -145,6 +153,8 @@ const flowerParts = (() => {
 })();
 /** Trees and buildings: the whole model dithers out while the camera->player line runs through it. */
 const FADE: OcclusionFadeConfig = { ...STRUCTURE_OCCLUSION_FADE, radius: 0.4 };
+/** Props this tall can hide the player: they fade, set to (`fade`) or not. */
+const TALL_HEIGHT = 1.6;
 /** How close counts as touching a collider cube (past the player's own footprint): a solid one stops them right there. */
 const CUBE_TOUCH = 0.15;
 
@@ -596,15 +606,23 @@ export class Town {
         return material;
     }
 
+    /** One for what faces straight up (the ground, the pavements): unlit, as the light there is (UP_LIGHT). */
+    private upMaterial(color: number | string, map: THREE.Texture | null = null): THREE.MeshBasicMaterial {
+        const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(UP_LIGHT), map });
+        BendService.applyBend(material);
+        return material;
+    }
+
     /** A flat slab on the ground, subdivided so it follows the world bend (`map` repeating every `tile` units). */
     private slab(x: number, z: number, width: number, depth: number, color: number | string, y: number, map: THREE.Texture | null = null, tile = 1): void {
-        const geometry = new THREE.PlaneGeometry(width, depth, Math.ceil(width / BEND_SEGMENT), Math.ceil(depth / BEND_SEGMENT));
+        const geometry = new THREE.PlaneGeometry(width, depth, Math.max(1, Math.ceil(width / BEND_SEGMENT)), Math.max(1, Math.ceil(depth / BEND_SEGMENT)));
         if (map) {
             const uv = geometry.getAttribute('uv');
             for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * width) / tile, (uv.getY(i) * depth) / tile);
         }
         geometry.rotateX(-Math.PI / 2);
-        const mesh = new THREE.Mesh(geometry, this.material(color, map));
+        const mesh = new THREE.Mesh(geometry, this.upMaterial(color, map));
+        mesh.renderOrder = ORDER.pavement;
         mesh.position.set(x, y, z);
         this.group.add(mesh);
     }
@@ -622,8 +640,21 @@ export class Town {
         this.buildShapes();
     }
 
-    /** The town's ground: BEND_SEGMENT cells over the shore's bounds, the ones whose middle is inside `area`. */
+    /** The town's ground: `area` filled (a flat world), or BEND_SEGMENT cells over the shore's bounds, the ones whose middle is inside it. */
     private groundCells(area: readonly ShorePoint[], color: string): void {
+        if (!CURVED) {
+            // Drawn in x / y, then laid flat (its y becomes -z).
+            const flat = new THREE.ShapeGeometry(new THREE.Shape(area.map((p) => new THREE.Vector2(p.x, -p.z))));
+            flat.rotateX(-Math.PI / 2);
+            const at = flat.getAttribute('position');
+            const uv = flat.getAttribute('uv');
+            for (let i = 0; i < at.count; i++) uv.setXY(i, at.getX(i) / GROUND_TILE, at.getZ(i) / GROUND_TILE);
+            const ground = new THREE.Mesh(flat, this.upMaterial(color, groundTexture()));
+            ground.position.y = GROUND_Y;
+            ground.renderOrder = ORDER.ground;
+            this.group.add(ground);
+            return;
+        }
         const { minX, maxX, minZ, maxZ } = bounds(this.shore);
         const cols = Math.ceil((maxX - minX) / BEND_SEGMENT);
         const rows = Math.ceil((maxZ - minZ) / BEND_SEGMENT);
@@ -652,7 +683,9 @@ export class Town {
         for (let i = 0; i < uvs.length / 2; i++) uvs.set([positions[i * 3] / GROUND_TILE, positions[i * 3 + 2] / GROUND_TILE], i * 2);
         geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
         geometry.setIndex(index);
-        this.group.add(new THREE.Mesh(geometry, this.material(color, groundTexture())));
+        const ground = new THREE.Mesh(geometry, this.upMaterial(color, groundTexture()));
+        ground.renderOrder = ORDER.ground;
+        this.group.add(ground);
     }
 
     /**
@@ -776,7 +809,7 @@ export class Town {
         const sea = createSeaWater(island.water, seaWidth, seaDepth, shore, (minX + maxX) / 2, (minZ + maxZ) / 2, -island.waterLevel);
         this.sea = sea;
         sea.frustumCulled = false;
-        sea.renderOrder = -1;
+        sea.renderOrder = ORDER.sea;
         this.group.add(sea);
 
         const fence = island.fence;
@@ -855,9 +888,9 @@ export class Town {
         geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
         geometry.setIndex(index);
         geometry.computeVertexNormals();
-        const planks = new THREE.MeshStandardMaterial({ map: plankTexture(deck.color), roughness: 0.9 });
-        BendService.applyBend(planks);
-        this.group.add(new THREE.Mesh(geometry, planks));
+        const planks = new THREE.Mesh(geometry, this.upMaterial('#ffffff', plankTexture(deck.color)));
+        planks.renderOrder = ORDER.pavement;
+        this.group.add(planks);
 
         // The trim board along the shore, and the pilings just outside it.
         const wood = this.material(deck.pilingColor);
@@ -898,7 +931,7 @@ export class Town {
         // Faded by the cubes naming it, when there are any.
         const cubes = (TOWN.colliders ?? []).filter((cube) => cube.fades === prop.model);
         const fadeWhen = cubes.length ? () => this.touching(cubes) : undefined;
-        this.loads.push(this.loadModel(prop.model, prop.height, prop.fade || cubes.length > 0, prop.stretch, fadeWhen).then((object) => {
+        this.loads.push(this.loadModel(prop.model, prop.height, prop.fade || prop.height >= TALL_HEIGHT || cubes.length > 0, prop.stretch, fadeWhen).then((object) => {
             if (!object) return;
             object.rotation.y = prop.rotationY;
             this.settle(object, prop.x, prop.elevation ?? 0, prop.z);
@@ -934,7 +967,7 @@ export class Town {
             const size = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
             if (size.y > 1e-4) object.scale.multiplyScalar(height / size.y);
             if (stretch) object.scale.multiply(new THREE.Vector3(stretch.x, 1, stretch.z));
-            if (height < FLAT_HEIGHT) {
+            if (CURVED && height < FLAT_HEIGHT) {
                 object.updateMatrixWorld(true);
                 object.traverse((child) => {
                     if (child instanceof THREE.Mesh) child.geometry = subdividedOnce(child.geometry, child.getWorldScale(new THREE.Vector3()));
@@ -998,7 +1031,7 @@ export class Town {
         pad.renderOrder = 1;
         if (farmTest()) {
             // The farm test: a square like the upgrade pads' (its title, its icon), not the coloured disc. Kept
-            // upright to the camera (not turned with the station), so its words read.
+            // lined up with the world (not turned with the station), like the other squares.
             const square = stationSquare(kind, look.icon);
             this.redraws.push(square.redraw);
             const material = new THREE.MeshBasicMaterial({ map: square.texture, transparent: true, depthWrite: false });
@@ -1248,7 +1281,8 @@ export class Town {
                 material.flatShading = true;
                 const mesh = new THREE.InstancedMesh(part.geometry, material, spots.length);
                 if (!part.colour) spots.forEach((spot, i) => mesh.setColorAt(i, spot.colour));
-                mesh.frustumCulled = false;
+                // (Culled by where they all are: they grow from nothing.)
+                mesh.boundingSphere = new THREE.Sphere(centre.clone(), reach + 1);
                 this.group.add(mesh);
                 parts.push({ mesh, spots });
             }

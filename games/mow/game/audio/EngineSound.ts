@@ -41,11 +41,16 @@ const ELECTRIC = {
     air: { idle: 0.02, full: 0.06 },
 };
 const TRACTOR = {
-    pitch: { idle: 42, full: 70 },
-    cutoff: { idle: 320, full: 820 },
+    // (High enough, and with enough over it, for laptop and phone speakers: they play next to nothing under 100 Hz.)
+    pitch: { idle: 56, full: 92 },
+    cutoff: { idle: 520, full: 1250 },
     chug: { idle: 8, full: 15 },
-    volume: { idle: 0.03, full: 0.05 },
+    volume: { idle: 0.07, full: 0.12 },
+    /** The exhaust's puffs (noise, in time with the chug), against the engine. */
+    exhaust: { freq: 420, level: 1.1 },
 };
+/** The tractor's loudness over TRACTOR.volume (the debug panel's Sounds). */
+export const TRACTOR_LEVEL = { volume: 1 };
 /** A town car going by: a smoother, higher engine than the tractor's, with tyre roar on the road. */
 const CAR = {
     pitch: { idle: 55, full: 95 },
@@ -227,8 +232,10 @@ function tractor(ctx: BaseAudioContext, out: GainNode): Pick<Running, 'sources' 
     sub.frequency.value = TRACTOR.pitch.idle / 2;
     lfo.frequency.value = TRACTOR.chug.idle;
     sub.connect(gain(ctx, 0.4)).connect(filter);
+    const puffs = noiseSource(ctx);
+    puffs.connect(band(ctx, 'bandpass', TRACTOR.exhaust.freq, 0.9)).connect(gain(ctx, TRACTOR.exhaust.level)).connect(chug);
     return {
-        sources: [saw, sub, lfo],
+        sources: [saw, sub, lfo, puffs],
         follow: (k) => {
             const t = ctx.currentTime;
             const pitch = lerp(TRACTOR.pitch, k);
@@ -236,7 +243,7 @@ function tractor(ctx: BaseAudioContext, out: GainNode): Pick<Running, 'sources' 
             sub.frequency.setTargetAtTime(pitch / 2, t, GLIDE);
             filter.frequency.setTargetAtTime(lerp(TRACTOR.cutoff, k), t, GLIDE);
             lfo.frequency.setTargetAtTime(lerp(TRACTOR.chug, k), t, GLIDE);
-            level.gain.setTargetAtTime(lerp(TRACTOR.volume, k), t, GLIDE);
+            level.gain.setTargetAtTime(lerp(TRACTOR.volume, k) * TRACTOR_LEVEL.volume, t, GLIDE);
         },
     };
 }

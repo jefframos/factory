@@ -9,23 +9,29 @@
 // Only the upper part of a blade moves (by its height squared), and a blade bent far sinks a little so it doesn't
 // stretch. The displacement is worked out in world space and turned back into the instance's own frame (its rotation
 // and scale come from its instance matrix), so the world bend (BendService) still applies after it.
-// Lighting: every blade's normal points up (like the ground under it), both faces lit the same, so the blades match
-// the lawn and read through their colour gradient rather than noisy per-blade shading.
+// Lighting: every blade is lit as the ground under it (straight up: UP_LIGHT, so it's an unlit material), both faces the
+// same, so the blades match the lawn and read through their colour gradient rather than noisy per-blade shading.
 //
-// Cheap to draw: two clumps, a full one near the player and a lighter one further away (GrassField picks per chunk).
+// Cheap to draw: two clumps, a full one near the player and a lighter one further away (GrassField picks per chunk); on
+// low quality (phones) both have fewer, wider blades with fewer segments, and plainer gusts.
 
 import * as THREE from 'three';
 import { BendService } from '../services/BendService';
+import { ColorGrade } from 'core/scene/ColorGrade';
+import { QUALITY } from '../config/Quality';
+import { UP_LIGHT } from './TownLight';
 
 export interface ClumpLook {
     /** Blades in a clump, and segments per blade (the last ends in a point). */
     blades: number;
     segments: number;
+    /** Their width, times the usual (fewer blades cover as much). */
+    wide?: number;
 }
 
 /** Near the player: full blades. Far: fewer, plainer ones (mostly off screen anyway). */
-export const NEAR_CLUMP: ClumpLook = { blades: 9, segments: 4 };
-export const FAR_CLUMP: ClumpLook = { blades: 5, segments: 2 };
+export const NEAR_CLUMP: ClumpLook = QUALITY.low ? { blades: 6, segments: 2, wide: 1.35 } : { blades: 9, segments: 4 };
+export const FAR_CLUMP: ClumpLook = QUALITY.low ? { blades: 4, segments: 1, wide: 1.6 } : { blades: 5, segments: 2 };
 
 /** Root and tip brightness (times the grass type's colour, per instance). */
 const ROOT_SHADE = 0.4;
@@ -42,8 +48,7 @@ function seeded(seed: number): () => number {
 
 /**
  * A clump of blades in a unit space: roots inside a disc of radius ~0.45 round the origin, at most 1 tall. Each blade
- * is a strip narrowing to its tip, bowed forward (its lean grows with the height squared). Normals all up; vertex
- * colours carry the root-to-tip gradient and each blade's own shade.
+ * is a strip narrowing to its tip, bowed forward (its lean grows with the height squared). Vertex colours carry the root-to-tip gradient and each blade's own shade.
  */
 export function clumpGeometry(look: ClumpLook, seed = 7): THREE.BufferGeometry {
     const random = seeded(seed);
@@ -58,7 +63,7 @@ export function clumpGeometry(look: ClumpLook, seed = 7): THREE.BufferGeometry {
         const rootX = Math.cos(around) * ring;
         const rootZ = Math.sin(around) * ring;
         const height = 0.62 + random() * 0.38 - ring * 0.25;
-        const width = 0.09 + random() * 0.06;
+        const width = (0.09 + random() * 0.06) * (look.wide ?? 1);
         const facing = random() * Math.PI * 2;
         // Across the blade (its width) and the way it bows (its face's normal).
         const sideX = Math.cos(facing);
@@ -93,7 +98,6 @@ export function clumpGeometry(look: ClumpLook, seed = 7): THREE.BufferGeometry {
     }
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(new Array(positions.length).fill(0).map((_, i) => (i % 3 === 1 ? 1 : 0)), 3));
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     geometry.setIndex(indices);
     geometry.computeBoundingSphere();
@@ -138,6 +142,9 @@ const VERTEX_HEAD = /* glsl */ `
     }
 `;
 
+/** Low quality's gusts: crossing waves instead of noise. */
+const GUST_PLAIN = '0.5 + 0.26 * sin(gRoot.x * 0.21 - uTime * 0.8) + 0.26 * sin(gRoot.z * 0.17 + gRoot.x * 0.06 + uTime * 0.55)';
+
 const VERTEX_BODY = /* glsl */ `
     vGust = 0.0;
     #ifdef USE_INSTANCING
@@ -149,7 +156,7 @@ const VERTEX_BODY = /* glsl */ `
         vec2 gDir = uWind.xy;
         // A wave rolling across the field, gusts drifting with the wind, a flutter on top.
         float gWave = sin(dot(gRoot.xz, gDir) * 0.45 - uTime * 2.1) * 0.5 + 0.5;
-        float gGust = smoothstep(0.3, 0.95, grassNoise(gRoot.xz * 0.07 - gDir * uTime * 0.9));
+        float gGust = smoothstep(0.3, 0.95, ${QUALITY.low ? GUST_PLAIN : 'grassNoise(gRoot.xz * 0.07 - gDir * uTime * 0.9)'});
         vec2 gSway = gDir * uWind.z * (0.3 + 0.7 * gGust) * (0.55 + 0.45 * gWave);
         gSway += vec2(sin(uTime * 3.1 + gRoot.x * 2.3 + gRoot.z), cos(uTime * 2.7 + gRoot.z * 2.1 - gRoot.x)) * 0.045;
         gSway += grassPush(gRoot.xz, uPushA) + grassPush(gRoot.xz, uPushB);
@@ -165,11 +172,12 @@ const VERTEX_BODY = /* glsl */ `
     #endif
 `;
 
-/** The blades' material: vertex-coloured Lambert (the instance colour is the grass type's), moved by the wind. */
-export function bladeMaterial(): THREE.MeshLambertMaterial {
-    const material = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+/** The blades' material: vertex-coloured, unlit (the instance colour is the grass type's), moved by the wind. */
+export function bladeMaterial(): THREE.MeshBasicMaterial {
+    const material = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
     material.customProgramCacheKey = () => 'mow-grass-blades';
     material.onBeforeCompile = (shader) => {
+        ColorGrade.apply(shader);
         shader.uniforms.uTime = BendService.uniforms.uTime;
         shader.uniforms.uWind = uniforms.uWind;
         shader.uniforms.uPushA = uniforms.uPushA;
@@ -179,10 +187,8 @@ export function bladeMaterial(): THREE.MeshLambertMaterial {
             .replace('#include <begin_vertex>', `#include <begin_vertex>\n${VERTEX_BODY}`);
         shader.fragmentShader = shader.fragmentShader
             .replace('#include <common>', '#include <common>\nvarying float vGust;')
-            // Both faces lit as the ground is (the normal stays up, not flipped for the back face).
-            .replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\nnormal = normalize(vNormal);')
             // A gust brightens the tips it passes (a sheen running over the field).
-            .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb += vec3(0.16, 0.2, 0.05) * vGust;');
+            .replace('#include <color_fragment>', `#include <color_fragment>\ndiffuseColor.rgb = (diffuseColor.rgb + vec3(0.16, 0.2, 0.05) * vGust) * ${UP_LIGHT.toFixed(4)};`);
     };
     // The world bend after the wind (it rewrites the projection; the wind moved `transformed` before it).
     BendService.applyBend(material);

@@ -7,7 +7,7 @@
 // up to the goal, the next mower's offer, the bag's capacity with its levels, and the goal along the bottom) and a
 // BOOSTS tab once the first mower is bought (speed, money gain, cutting width, sharp blades); the guide's hand sits
 // on the button it's pointing at. Both modes (GameMode): a pop by the bar at each quarter of a section (milestone())
-// and a big banner when one is restored (celebrate(): rays, ribbon, the bonus counting up, confetti). Rush mode: the
+// and a big banner when one is restored (celebrate(): ribbon, stars, the bonus counting up). Rush mode: the
 // combo meter under the bar (setCombo()). The town under the trophy: a small icon of its miniature (TownMiniature,
 // baked from the 3D world), whole, with the town's % and a star under it — when a section is restored, after its
 // banner, it flies to the middle, big, under a dark veil that drains to the new % (the town's name on a ribbon over
@@ -27,6 +27,9 @@ import { BakedShape } from './BakedShape';
 import { MoveHint } from './MoveHint';
 import { LanguagePanel, LANGUAGE_SIZE } from './LanguagePanel';
 import { WardrobePanel, WARDROBE_SIZE } from './WardrobePanel';
+import { TractorPanel, TRACTOR_PANEL_SIZE } from './TractorPanel';
+import { TractorButton } from './TractorButton';
+import { iconSticker } from './Sticker';
 import { TrophiesPanel, TROPHIES_SIZE } from './TrophiesPanel';
 import { TownMap } from './TownMap';
 import { FindToasts, Find, flyCoins, flyItem } from './FindToasts';
@@ -36,6 +39,7 @@ import { MowProgress } from '../data/MowProgress';
 import { CityDef, MOW, TOWN, ToolDef, UpgradeDef, UpgradeId, CITY, farmTest, goalCount, goalSection, shortMoney, shortNumber } from '../data/MowConfig';
 import { ModelIcons } from './ModelIcons';
 import { tabbedBlock, TabSpec } from './TabBar';
+import { HudBar, hexBadge } from './HudBar';
 import { t, names, Localization } from '../i18n/Localization';
 import { LOCALE_FLAG_CODE } from '../i18n/config';
 import { MowAudio } from '../audio/MowAudio';
@@ -45,9 +49,8 @@ import { Gameplay } from '../data/Gameplay';
 const PILL_WIDTH = 210;
 const PILL_HEIGHT = 46;
 const ICON_SIZE = 58;
-const BAR_WIDTH = 72;
-const BAR_X = 186;
-const BAR_HEIGHT = 18;
+/** The bag's pill: its height, where its words and bar run (from, to), the line of each, and its colours (full: the bar's red). */
+const BAG = { y: 64, height: 64, from: ICON_SIZE + 8, to: 224, textY: -13, barY: 15, barHeight: 20, fill: 0x2fd92a, full: 0xff4a3d };
 /** The money / bag column's width: it hangs from the top-right corner. */
 const CORNER_WIDTH = ICON_SIZE / 2 + PILL_WIDTH - 8;
 /** The money / bag / trophy corner's size on a portrait screen. */
@@ -55,13 +58,10 @@ const CORNER_PORTRAIT_SCALE = 0.82;
 const BUTTON_SIZE = 64;
 /** The language button (off for now: the game's only in English; the browser's language still picks at boot). */
 const SHOW_LANGUAGE_BUTTON = false;
-const PROGRESS = { width: 360, height: 18 };
-/** With the player's level bar on top (the farm test): the area's bar under it, this far down and this much smaller. */
-const AREA_UNDER_LEVEL = { y: 104, scale: 0.72 };
-/** Under the level bar: the gap from its bottom to the area's name. */
-const AREA_GAP = 8;
-/** The area bar's reward disc at its end: its size. */
-const REWARD = { size: 38 };
+/** The area's bar, under the level's (LevelBadge) and thinner (it matters less); alone (no level) it's at the top. */
+const PROGRESS = { width: 264, height: 20, fill: 0x2fd92a, y: 120 };
+/** The area bar's reward badge over its end: its size. */
+const REWARD = { size: 32 };
 /** (The farm test's POWER-UPS list takes the same panel, taller to fit its seven rows: POWER_ROW.) */
 const SHOP = farmTest() ? { width: 840, height: 800 } : { width: 840, height: 580 };
 /** Shop rows: frame left, text, buy button right. */
@@ -75,6 +75,8 @@ const POWER_ROW = { firstY: -SHOP.height / 2 + 112, step: 92, height: 86 };
 /** What the POWER-UPS panel offers, in order (the blades are a station on the farm, so not here). */
 const POWER_UPS: readonly UpgradeId[] = ['speed', 'money', 'grass', 'bag', 'width', 'chew', 'farm'];
 const POWER_BUTTON_SIZE = 84;
+/** The tractor's button comes this long after the wardrobe's (seconds). */
+const TRACTOR_BUTTON_DELAY = 1.5;
 /** Level bars past this many levels draw as one bar toward the next milestone. */
 const LONG_TRACK = 30;
 /** "· x2 at 25" after a milestone track's effect, or nothing. */
@@ -82,7 +84,7 @@ const nextMilestone = (boost: UpgradeDef, level: number): string => {
     const next = boost.milestones?.find((m) => m > level);
     return next ? `  ·  x2 at ${next}` : '';
 };
-/** POWER-UPS comes with this player level (the chicken den's: when money starts coming in). */
+/** POWER-UPS comes with this player level (the one after the chicken den's: its money's coming in). */
 const POWER_UPS_LEVEL = 7;
 const FOOTER_Y = 238;
 /** The mower timeline: node sizes (the goal bigger), its width, line colours. */
@@ -99,8 +101,10 @@ const toolFrame = (index: number, owned: boolean): string => (owned ? TOOL_FRAME
 function mowerArt(tool: ToolDef, size: number): PIXI.Container {
     return ModelIcons.toolSprite(tool, size);
 }
-/** The RESTORED! banner: held up, then going; the town's fill follows it. */
-const BANNER = { hold: 2.8, out: 0.4 };
+/** A restored section's banner: held up, then going; the town's fill follows it. */
+const BANNER = { hold: 1.8, out: 0.3 };
+/** Messages that came while the banner was up: one after another once it's gone, this far apart (seconds). */
+const HELD_SAY_SEC = 1.6;
 const BANNER_SEC = BANNER.hold + BANNER.out;
 /** The drawn map's flight (no miniatures baked): out, the fill starting once it's there, back home. */
 const MAP_FLIGHT = { out: 0.35, back: 1.35, home: 0.35 };
@@ -125,43 +129,12 @@ const REVEAL_WIDTH = 560;
 const REVEAL_SHARE = 0.5;
 const MAP_BUTTON_SIZE = 84;
 /** The MAP button's map: drawn this wide (at its size, so it stays crisp; only ever scaled down to fit). */
-const PANEL_MAP_WIDTH = 440;
+const PANEL_MAP_WIDTH = 600;
+/** The wardrobe: on a tall screen its top (a share of the height), the player shown over it; on a wide one beside the player. */
+const WARDROBE_VIEW = { top: 0.35, playerAt: 0.25, wideFrom: 1.2, gap: 60, playerLeft: 0.14 };
 const RIBBON_OVERHANG = 44;
 const PANEL_TOP_GAP = 40;
 const CLOSE_SIZE = 56;
-
-/** White, keeping each pixel's alpha (a sticker's outline), and a soft dark copy (its shadow). */
-const WHITE_SHAPE = [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0];
-const SHADOW_SHAPE = [0, 0, 0, 0, 0.08, 0, 0, 0, 0, 0.06, 0, 0, 0, 0, 0.1, 0, 0, 0, 0.35, 0];
-
-/**
- * An icon as a sticker: the full-colour icon on a thick white outline (copies of it round about, painted white), a
- * soft shadow under, nothing behind it (no button shape): the HUD's MAP and WARDROBE buttons.
- */
-function sticker(frame: string, size: number, stroke = 6): PIXI.Container {
-    const holder = new PIXI.Container();
-    const copy = () => {
-        const sprite = PIXI.Sprite.from(frame);
-        sprite.anchor.set(0.5);
-        sprite.scale.set(size / Math.max(sprite.texture.width, sprite.texture.height, 1));
-        return sprite;
-    };
-    const ring = (offsetY: number, matrix: number[]) => {
-        const group = new PIXI.Container();
-        for (let i = 0; i < 16; i++) {
-            const a = (i / 16) * Math.PI * 2;
-            const sprite = copy();
-            sprite.position.set(Math.cos(a) * stroke, Math.sin(a) * stroke + offsetY);
-            group.addChild(sprite);
-        }
-        const filter = new PIXI.ColorMatrixFilter();
-        filter.matrix = matrix as PIXI.ColorMatrix;
-        group.filters = [filter];
-        return group;
-    };
-    holder.addChild(ring(5, SHADOW_SHAPE), ring(0, WHITE_SHAPE), copy());
-    return holder;
-}
 
 /** A kit image fitted to `size` (keeps aspect). */
 function icon(screen: string, id: string, size: number): PIXI.Container {
@@ -186,8 +159,9 @@ export class MowHud extends PIXI.Container {
     private readonly moneyText = UiKit.text('hud', 'money', { money: 0 });
     private readonly bagText = UiKit.text('hud', 'backpack', { count: 0, capacity: 0 });
     /** The bag's worth in money (the farm test), under its count. */
-    private readonly bagValueText = new PIXI.Text('', new PIXI.TextStyle({ fontFamily: UiKit.fontFamily('primary'), fontSize: 19, fill: 0xffe27a, stroke: 0x1d140e, strokeThickness: 5, lineJoin: 'round' }));
-    private readonly barFill = new PIXI.Container();
+    private readonly bagBar = new HudBar(BAG.to - BAG.from, BAG.barHeight, BAG.fill);
+    private readonly bagValueIcon = PIXI.Sprite.from(UiKit.imageName('hud', 'moneyIcon'));
+    private readonly bagValueText = new PIXI.Text('', new PIXI.TextStyle({ fontFamily: UiKit.fontFamily('primary'), fontSize: 23, fill: 0xffe27a, stroke: 0x1d140e, strokeThickness: 5, lineJoin: 'round' }));
     private readonly fullTag = new PIXI.Container();
     private bagRow!: PIXI.Container;
     private bagFull = false;
@@ -195,8 +169,8 @@ export class MowHud extends PIXI.Container {
     private readonly progress = new PIXI.Container();
     /** The city's goal counted down (GoalTimeline), while it's not restored. */
     private goal?: GoalTimeline;
-    private readonly progressText = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 22, strokeThickness: 5 });
-    private readonly progressFill = new PIXI.Container();
+    private readonly progressText = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 13, strokeThickness: 3, letterSpacing: 0.5 });
+    private readonly progressBar = new HudBar(PROGRESS.width, PROGRESS.height, PROGRESS.fill);
     /** The section-complete banner (celebrate()) and rush mode's combo meter (setCombo()). */
     private readonly celebration = new PIXI.Container();
     private readonly combo = new PIXI.Container();
@@ -236,6 +210,11 @@ export class MowHud extends PIXI.Container {
     private readonly wardrobe: WardrobePanel;
     private readonly wardrobeHolder = new PIXI.Container();
     private wardrobeOpen = false;
+    /** The tractor's panel (its paints and parts), in the wardrobe's place; its button once there's a tractor. */
+    private readonly tractorPanel: TractorPanel;
+    private tractorOpen = false;
+    private tractorReady = false;
+    private readonly tractorButton: TractorButton;
     /** The Trophies button (under the pills: the treasures found, by area), its "!", and its panel. */
     private readonly trophiesButton = new PIXI.Container();
     private readonly trophiesAlert = new PIXI.Container();
@@ -286,7 +265,16 @@ export class MowHud extends PIXI.Container {
         this.buildShop();
         this.wardrobe = new WardrobePanel(onWear, (text, color) => this.say(text, color));
         this.wardrobeClose = this.addClose(this.wardrobe, WARDROBE_SIZE, () => this.setWardrobeOpen(false));
-        this.wardrobeHolder.addChild(this.wardrobe);
+        this.tractorPanel = new TractorPanel((text, color) => this.say(text, color));
+        this.addClose(this.tractorPanel, TRACTOR_PANEL_SIZE, () => this.setTractorOpen(false));
+        // (Their tops level: it's shorter.)
+        this.tractorPanel.y = (TRACTOR_PANEL_SIZE.height - WARDROBE_SIZE.height) / 2;
+        this.wardrobeHolder.addChild(this.wardrobe, this.tractorPanel);
+        this.tractorButton = new TractorButton(POWER_BUTTON_SIZE, () => {
+            if (!this.tractorOpen) this.setPowerOpen(false);
+            this.setTractorOpen(!this.tractorOpen);
+        });
+        this.addChild(this.tractorButton);
         this.trophies = new TrophiesPanel((keys, from) => this.claimTrophies(keys, from), isOpen);
         this.addClose(this.trophies, TROPHIES_SIZE, () => this.toggleTrophies());
         this.trophiesHolder.addChild(this.trophies);
@@ -315,10 +303,10 @@ export class MowHud extends PIXI.Container {
 
     // ---------------------------------------------------------------- corner (money, bag)
 
-    private pill(iconId: string, label: PIXI.Text, y: number): PIXI.Container {
+    private pill(iconId: string, label: PIXI.Text, y: number, height = PILL_HEIGHT): PIXI.Container {
         const row = new PIXI.Container();
         row.y = y;
-        const back = UiKit.image('hud', 'pill', PILL_WIDTH, PILL_HEIGHT);
+        const back = UiKit.image('hud', 'pill', PILL_WIDTH, height);
         back.position.set(ICON_SIZE / 2 + PILL_WIDTH / 2 - 8, 0);
         back.alpha = 0.85;
         const symbol = icon('hud', iconId, ICON_SIZE);
@@ -333,23 +321,25 @@ export class MowHud extends PIXI.Container {
         const money = this.pill('moneyIcon', this.moneyText, 0);
         this.moneyIcon = money.getChildAt(1) as PIXI.Container;
         this.corner.addChild(money);
-        const bag = this.pill('backpackIcon', this.bagText, 62);
+        // The bag: its count (and, the farm test, what it's worth at the other end) over its bar.
+        const bag = this.pill('backpackIcon', this.bagText, BAG.y, BAG.height);
         this.bagRow = bag;
-        // What the bag's worth (the farm test: grass is money once sold or poured), in gold under its count.
+        this.bagText.y = BAG.textY;
+        this.bagBar.position.set(BAG.from, BAG.barY);
+        bag.addChild(this.bagBar);
         if (farmTest()) {
-            this.bagValueText.anchor.set(0, 0.5);
-            this.bagValueText.position.set(ICON_SIZE + 8, 30);
-            bag.addChild(this.bagValueText);
+            this.bagValueText.anchor.set(1, 0.5);
+            this.bagValueText.position.set(BAG.to, BAG.textY);
+            this.bagValueIcon.anchor.set(1, 0.5);
+            this.bagValueIcon.scale.set(26 / Math.max(this.bagValueIcon.texture.width, this.bagValueIcon.texture.height, 1));
+            this.bagValueIcon.y = BAG.textY;
+            bag.addChild(this.bagValueText, this.bagValueIcon);
         }
-        const bar = new PIXI.Container();
-        bar.position.set(BAR_X, -2);
-        bar.addChild(UiKit.image('hud', 'barBack', BAR_WIDTH, BAR_HEIGHT), this.barFill);
-        bag.addChild(bar);
-        const fullLabel = UiKit.fit(UiKit.text('hud', 'toast', { text: t('bagFullTag') }, { fontSize: 20, fill: 0xff7a6a, strokeThickness: 5 }), BAR_WIDTH + 30);
+        // Full: said on its bar.
+        const fullLabel = UiKit.fit(UiKit.text('hud', 'toast', { text: t('bagFullTag') }, { fontSize: 18, strokeThickness: 5 }), BAG.to - BAG.from - 10);
         this.fullTag.addChild(fullLabel);
-        this.fullTag.position.set(BAR_X, -PILL_HEIGHT / 2 - 6);
+        this.fullTag.position.set((BAG.from + BAG.to) / 2, BAG.barY - 1);
         this.fullTag.visible = false;
-        gsap.to(this.fullTag, { y: this.fullTag.y - 6, duration: 0.4, ease: 'sine.inOut', yoyo: true, repeat: -1 });
         bag.addChild(this.fullTag);
         this.corner.addChild(bag);
     }
@@ -357,12 +347,11 @@ export class MowHud extends PIXI.Container {
     // ---------------------------------------------------------------- district progress
 
     private buildProgress(): void {
-        const bar = new PIXI.Container();
-        bar.y = 28;
-        bar.addChild(UiKit.image('hud', 'barBack', PROGRESS.width, PROGRESS.height), this.progressFill);
-        // What finishing it pays, at the bar's end: a gold coin disc and the bonus under it (a check once restored).
-        this.progressReward.position.set(PROGRESS.width / 2 + REWARD.size / 2 - 6, bar.y);
-        this.progress.addChild(this.progressText, bar, this.progressReward);
+        this.progressBar.x = -PROGRESS.width / 2;
+        this.progressText.y = -1;
+        // What finishing it pays, over the bar's end: a gold badge (green, a check, once restored).
+        this.progressReward.position.set(PROGRESS.width / 2 - 4, 0);
+        this.progress.addChild(this.progressBar, this.progressText, this.progressReward);
     }
 
     private buildGoal(): void {
@@ -390,17 +379,12 @@ export class MowHud extends PIXI.Container {
         const popped = this.rewardKey !== '' && done;
         this.rewardKey = key;
         this.progressReward.removeChildren().forEach((child) => child.destroy({ children: true }));
-        const disc = BakedShape.disc(REWARD.size / 2, { fill: done ? 0x4fc35a : 0xffc53a, rim: 0xffffff, rimWidth: 3, rimAlpha: 0.95 });
+        const disc = done ? hexBadge(REWARD.size, 0x2c9a3c, 0x4fd05a) : hexBadge(REWARD.size, 0xe8951c, 0xffd34d);
         const icon = done ? UiKit.sprite('hud', 'check') : PIXI.Sprite.from(UiKit.imageName('hud', 'moneyIcon'));
         if (icon instanceof PIXI.Sprite) icon.anchor.set(0.5);
-        icon.scale.set((REWARD.size * 0.62) / Math.max(icon.width / icon.scale.x, icon.height / icon.scale.y, 1));
+        icon.y = -1;
+        icon.scale.set((REWARD.size * 0.56) / Math.max(icon.width / icon.scale.x, icon.height / icon.scale.y, 1));
         this.progressReward.addChild(disc, icon);
-        if (!done) {
-            const amount = UiKit.text('hud', 'toast', { text: `+${shortMoney(bonus)}` }, { fontSize: 15, strokeThickness: 4, fill: 0xffe27a });
-            amount.anchor.set(0.5, 0);
-            amount.y = REWARD.size / 2 - 2;
-            this.progressReward.addChild(amount);
-        }
         if (popped) UiAnim.punch(this.progressReward, 0.5);
     }
 
@@ -412,23 +396,17 @@ export class MowHud extends PIXI.Container {
         this.district = index;
         const district = MOW.districts[index];
         const percent = Math.floor(share * 100);
-        this.progressText.text = t('districtProgress', { name: names.district(district).toUpperCase(), percent });
-        this.drawReward(district.bonus, MowProgress.isRestored(district.id));
-        UiKit.fit(this.progressText, PROGRESS.width + 40);
-        this.progressFill.removeChildren().forEach((child) => child.destroy({ children: true }));
-        if (share > 0) {
-            const inner = PROGRESS.width - 4;
-            const width = Math.max(PROGRESS.height - 4, inner * Math.min(1, share));
-            const fill = UiKit.image('hud', 'barFill', width, PROGRESS.height - 4);
-            fill.x = -inner / 2 + width / 2;
-            this.progressFill.addChild(fill);
+        const words = t('districtProgress', { name: names.district(district).toUpperCase(), percent });
+        if (words !== this.progressText.text) {
+            this.progressText.text = words;
+            UiKit.fit(this.progressText, PROGRESS.width - this.covered - REWARD.size / 2 - 16);
         }
+        this.drawReward(district.bonus, MowProgress.isRestored(district.id));
+        this.progressBar.setShare(share);
     }
 
     /** A quarter of a section done: the percentage pops out of the bar, which jumps. */
     public milestone(percent: number): void {
-        gsap.killTweensOf(this.progress.scale);
-        this.progress.scale.set(1);
         UiAnim.punch(this.progress, 0.2);
         // In its own pill under the bar's middle (clear of the name over the bar and the reward at its end).
         const pop = new PIXI.Container();
@@ -437,7 +415,7 @@ export class MowHud extends PIXI.Container {
         const width = label.width + 36;
         const height = 44;
         pop.addChild(new BakedShape(Math.ceil(width), height, height / 2, { fill: 0x1d2633, fillAlpha: 0.9, rim: 0xffffff, rimWidth: 3, rimAlpha: 0.9 }), label);
-        pop.position.set(0, 28 + PROGRESS.height / 2 + 6 + height / 2);
+        pop.position.set(0, PROGRESS.height / 2 + 8 + height / 2);
         pop.scale.set(0.3);
         this.progress.addChild(pop);
         UiAnim.sparkBurst(this.progress, pop.x, pop.y, 0x9cff9c, 60);
@@ -463,7 +441,7 @@ export class MowHud extends PIXI.Container {
         });
 
         // A sticker (the map icon on a white outline, nothing behind it), bottom left.
-        this.mapButton.addChild(sticker('ItemIcon_Map', MAP_BUTTON_SIZE * 0.82));
+        this.mapButton.addChild(iconSticker('ItemIcon_Map', MAP_BUTTON_SIZE * 0.82));
         this.mapButton.hitArea = new PIXI.Rectangle(-MAP_BUTTON_SIZE / 2, -MAP_BUTTON_SIZE / 2, MAP_BUTTON_SIZE, MAP_BUTTON_SIZE);
         this.tappable(this.mapButton, () => this.toggleMap());
 
@@ -539,7 +517,7 @@ export class MowHud extends PIXI.Container {
     }
 
     /**
-     * A section restored: first the banner (rays, its name on a ribbon, RESTORED!, its bonus counting up, confetti),
+     * A section restored: first the banner (its name on a ribbon, three stars, its bonus counting up, a little confetti),
      * then, as it goes, the town filling up (TownMiniature.celebrate(), or the drawn map's flight: flyMap()). Takes
      * CELEBRATION_SEC: the scene shows the next area after it.
      */
@@ -699,42 +677,63 @@ export class MowHud extends PIXI.Container {
         return Math.max(1, Math.min(REVEAL_WIDTH / MINIATURE_WIDTH, (screen.width * REVEAL_SHARE) / MINIATURE_WIDTH, (screen.height * REVEAL_SHARE) / height));
     }
 
+    /** The banner's end (while it's up), and the messages waiting for it. */
+    private bannerOver?: gsap.core.Tween;
+    private readonly held: { message: string; color: number }[] = [];
+
+    /** A restored section's banner is up. */
+    public get celebrating(): boolean {
+        return this.bannerOver !== undefined;
+    }
+
+    /** The waiting messages, one after another. */
+    private sayHeld(): void {
+        if (this.destroyed || this.celebrating) return;
+        const next = this.held.shift();
+        if (!next) return;
+        this.say(next.message, next.color);
+        if (this.held.length) gsap.delayedCall(HELD_SAY_SEC, () => this.sayHeld());
+    }
+
     private showBanner(name: string, bonus: number): void {
         UiAnim.kill(this.celebration);
         this.celebration.removeChildren().forEach((child) => child.destroy({ children: true }));
+        // Small, and up where the messages go (they wait for it: say()): the player and what just opened stay in sight.
         const banner = new PIXI.Container();
-        UiAnim.rays(banner, 300, 0xfff0a0, 0.6, 10);
-        const ribbon = UiKit.sprite('upgrades', 'ribbon', 0.62);
-        const title = UiKit.text('upgrades', 'title', {}, { fontSize: 40 });
+        const ribbon = UiKit.sprite('upgrades', 'ribbon', 0.46);
+        const title = UiKit.text('upgrades', 'title', {}, { fontSize: 32 });
         title.anchor.set(0.5);
         title.text = name;
-        UiKit.fit(title, 480);
-        title.y = -5;
-        const restored = UiKit.text('hud', 'toast', { text: t('restored') }, { fontSize: 64, strokeThickness: 10, fill: 0xffe27a });
-        restored.anchor.set(0.5);
-        restored.y = -100;
-        const reward = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 46, strokeThickness: 8, fill: 0x9cff9c });
+        UiKit.fit(title, 330);
+        title.y = -4;
+        const reward = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 36, strokeThickness: 7, fill: 0x9cff9c });
         reward.anchor.set(0.5);
-        reward.y = 92;
+        reward.y = 60;
+        reward.visible = bonus > 0;
         const stars = [-1, 0, 1].map((side) => {
             const star = PIXI.Sprite.from('ItemIcon_Star_Gold');
             star.anchor.set(0.5);
-            star.scale.set((side === 0 ? 92 : 70) / Math.max(star.texture.width, star.texture.height, 1));
-            star.position.set(side * 210, side === 0 ? -182 : -150);
-            star.rotation = side * 0.25;
+            star.scale.set((side === 0 ? 62 : 48) / Math.max(star.texture.width, star.texture.height, 1));
+            star.position.set(side * 58, side === 0 ? -58 : -50);
+            star.rotation = side * 0.2;
             return star;
         });
-        banner.addChild(ribbon, title, restored, reward, ...stars);
+        banner.addChild(ribbon, title, reward, ...stars);
         this.celebration.addChild(banner);
+        this.bannerOver?.kill();
+        this.bannerOver = gsap.delayedCall(BANNER_SEC, () => {
+            this.bannerOver = undefined;
+            this.sayHeld();
+        });
         banner.scale.set(0.3);
         banner.alpha = 0;
         gsap.to(banner, { alpha: 1, duration: 0.2 });
-        gsap.to(banner.scale, { x: 1, y: 1, duration: 0.5, ease: 'back.out(2)' });
-        UiAnim.staggerPop(stars, 0.25, 0.12);
-        UiAnim.countUp(reward, 0, bonus, (value) => `+${shortMoney(value)}`, 1, 0.35);
-        UiAnim.confetti(this.celebration, 0, -40, 90, 1.2);
+        gsap.to(banner.scale, { x: 1, y: 1, duration: 0.45, ease: 'back.out(2)' });
+        UiAnim.staggerPop(stars, 0.2, 0.1);
+        UiAnim.countUp(reward, 0, bonus, (value) => `+${shortMoney(value)}`, 0.7, 0.3);
+        UiAnim.confetti(this.celebration, 0, -30, 22, 1);
         gsap.to(banner, { alpha: 0, duration: BANNER.out, delay: BANNER.hold });
-        gsap.to(banner.scale, { x: 1.15, y: 1.15, duration: BANNER.out, delay: BANNER.hold, onComplete: () => {
+        gsap.to(banner.scale, { x: 0.9, y: 0.9, duration: BANNER.out, delay: BANNER.hold, onComplete: () => {
             if (banner.destroyed) return;
             UiAnim.kill(banner);
             banner.destroy({ children: true });
@@ -1012,16 +1011,51 @@ export class MowHud extends PIXI.Container {
     }
 
     /** Opens / closes the wardrobe (the scene calls this as the player steps on / off a wardrobe's pad). */
+    /** How far the player should be from the middle of the screen (shares of its width and height): clear of the open wardrobe (or the tractor's panel). */
+    public viewShift(): { x: number; y: number } {
+        const screen = Game.overlayScreenData;
+        if ((!this.wardrobeOpen && !this.tractorOpen) || !screen) return { x: 0, y: 0 };
+        return screen.width / screen.height >= WARDROBE_VIEW.wideFrom ? { x: -WARDROBE_VIEW.playerLeft, y: 0 } : { x: 0, y: WARDROBE_VIEW.playerAt - 0.5 };
+    }
+
     public setWardrobeOpen(open: boolean): void {
         if (open === this.wardrobeOpen) return;
         this.wardrobeOpen = open;
         this.wardrobe.visible = open;
         if (!open) return;
+        this.setTractorOpen(false);
         // Seen first: a return visit after the first hat badges the gifts before the panel draws.
         MowProgress.markWardrobeSeen();
         this.wardrobe.refresh();
         UiAnim.popIn(this.wardrobe);
         MowAudio.play('open');
+    }
+
+    /** Opens / closes the tractor's panel (its button). */
+    public setTractorOpen(open: boolean): void {
+        if (open === this.tractorOpen) return;
+        this.tractorOpen = open;
+        this.tractorPanel.visible = open;
+        if (open) {
+            this.setWardrobeOpen(false);
+            GameAnalytics.panelOpened('tractor');
+            GameAnalytics.tractorStep('menu');
+            MowProgress.markTractorSeen();
+            this.tractorPanel.refresh();
+            UiAnim.popIn(this.tractorPanel);
+            MowAudio.play('open');
+        }
+        this.refreshPowerButton();
+    }
+
+    /** The tractor can be dressed: its button's there. */
+    public get tractorMenu(): boolean {
+        return this.tractorButton.visible;
+    }
+
+    /** A panel's open over the game (nothing else should come up meanwhile). */
+    public get panelOpen(): boolean {
+        return this.playStopped || this.wardrobeOpen || this.tractorOpen || this.shopOpen;
     }
 
     /**
@@ -1224,7 +1258,7 @@ export class MowHud extends PIXI.Container {
     private buildPowerButton(): void {
         const size = POWER_BUTTON_SIZE;
         // A sticker (the gold star on a white outline, nothing behind it), bottom left above the wardrobe (reposition()).
-        this.powerButton.addChild(sticker('ItemIcon_Star_Gold', size * 0.82));
+        this.powerButton.addChild(iconSticker('ItemIcon_Star_Gold', size * 0.82));
         this.powerButton.hitArea = new PIXI.Rectangle(-size / 2, -size / 2, size, size);
         const alert = icon('hud', 'alert', 34);
         this.powerAlert.addChild(alert);
@@ -1244,7 +1278,7 @@ export class MowHud extends PIXI.Container {
     private buildWardrobeButton(): void {
         const size = POWER_BUTTON_SIZE;
         // A sticker (a shirt on a white outline, nothing behind it), bottom left above the map (reposition()).
-        this.wardrobeButton.addChild(sticker('ItemIcon_Gear_Armor_Top', size * 0.82));
+        this.wardrobeButton.addChild(iconSticker('ItemIcon_Gear_Armor_Top', size * 0.82));
         this.wardrobeButton.hitArea = new PIXI.Rectangle(-size / 2, -size / 2, size, size);
         const alert = icon('hud', 'alert', 34);
         this.wardrobeAlert.addChild(alert);
@@ -1267,6 +1301,7 @@ export class MowHud extends PIXI.Container {
         if (open) {
             // (Over an open ATM shop or the wardrobe: they close first.)
             this.setWardrobeOpen(false);
+            this.setTractorOpen(false);
             this.showShop(false);
             this.powerOpen = true;
             GameAnalytics.panelOpened('powerups');
@@ -1281,9 +1316,24 @@ export class MowHud extends PIXI.Container {
     private refreshPowerButton(): void {
         // The wardrobe: with the MAP button (the yard done: the very start stays simple); its "!" with something new affordable.
         const wardrobe = !!farmTest() && !!this.unlocked?.map;
-        if (wardrobe && !this.wardrobeButton.visible) UiAnim.popIn(this.wardrobeButton);
+        if (wardrobe && !this.wardrobeButton.visible) {
+            UiAnim.popIn(this.wardrobeButton);
+            // (The tractor's comes a moment after it.)
+            gsap.delayedCall(TRACTOR_BUTTON_DELAY, () => {
+                if (this.destroyed) return;
+                this.tractorReady = true;
+                this.refreshPowerButton();
+            });
+        }
         this.wardrobeButton.visible = wardrobe;
         this.wardrobeAlert.visible = wardrobe && MowProgress.wardrobeHasNews && !this.wardrobeOpen;
+        // The tractor's: once there's one, after the map and the wardrobe; the first time ever, what it's for.
+        const tractor = wardrobe && this.tractorReady && !!MowProgress.tool.ride;
+        if (tractor && !this.tractorButton.visible && MowProgress.once('tractor-menu')) {
+            this.say('CUSTOMIZE YOUR TRACTOR!', 0xffe27a);
+            GameAnalytics.tractorButton();
+        }
+        this.tractorButton.set(tractor, MowProgress.tractorHasNews && !this.tractorOpen);
         const shown = !!farmTest() && MowProgress.levelFor(MowProgress.xp).level >= POWER_UPS_LEVEL;
         if (shown && !this.powerButton.visible) UiAnim.popIn(this.powerButton);
         this.powerButton.visible = shown;
@@ -1433,6 +1483,7 @@ export class MowHud extends PIXI.Container {
         const money = MowProgress.money - this.heldMoney;
         // The wardrobe's prices turn red / white with the money (not while a sale is still landing).
         if (this.wardrobeOpen && this.heldMoney === 0 && money !== this.lastMoney) this.wardrobe.refresh();
+        if (this.tractorOpen && this.heldMoney === 0 && money !== this.lastMoney) this.tractorPanel.refresh();
         this.moneyText.text = shortMoney(money);
         if (this.lastMoney >= 0 && money > this.lastMoney) {
             gsap.killTweensOf(this.moneyText.scale);
@@ -1445,21 +1496,17 @@ export class MowHud extends PIXI.Container {
         const full = MowProgress.full;
         // The bag: how full, and what it's worth in money (what it sells for, what it pours into a station).
         this.bagText.text = `${shortNumber(count)}/${shortNumber(capacity)}`;
-        this.bagValueText.text = count > 0 ? `worth ${shortMoney(MowProgress.bagValue)}` : '';
-        UiKit.fit(this.bagText, BAR_X - BAR_WIDTH / 2 - (ICON_SIZE + 8) - 6);
+        const worth = farmTest() && count > 0 ? shortMoney(MowProgress.bagValue) : '';
+        if (worth !== this.bagValueText.text) this.bagValueText.text = worth;
+        this.bagValueIcon.visible = worth !== '';
+        this.bagValueIcon.x = BAG.to - this.bagValueText.width - 1;
+        UiKit.fit(this.bagText, (worth ? this.bagValueIcon.x - 30 : BAG.to) - BAG.from);
         this.bagText.style.fill = full ? 0xff7a6a : 0xffffff;
-        this.barFill.removeChildren().forEach((child) => child.destroy({ children: true }));
-        const fraction = Math.min(1, count / Math.max(1, capacity));
-        if (fraction > 0) {
-            const inner = BAR_WIDTH - 4;
-            const width = Math.max(BAR_HEIGHT - 4, inner * fraction);
-            const fill = UiKit.image('hud', full ? 'barFull' : 'barFill', width, BAR_HEIGHT - 4);
-            fill.x = -inner / 2 + width / 2;
-            this.barFill.addChild(fill);
-        }
+        this.bagBar.setShare(count / Math.max(1, capacity));
         if (full !== this.bagFull) {
             this.bagFull = full;
             this.fullTag.visible = full;
+            this.bagBar.setColor(full ? BAG.full : BAG.fill);
             gsap.killTweensOf(this.bagRow.scale);
             this.bagRow.scale.set(1);
             if (full) {
@@ -1473,6 +1520,11 @@ export class MowHud extends PIXI.Container {
 
     /** A short centre-screen message. */
     public say(message: string, color = 0xffffff): void {
+        // (Under an area's banner they'd pile up: they wait for it.)
+        if (this.celebrating) {
+            this.held.push({ message, color });
+            return;
+        }
         gsap.killTweensOf(this.toast);
         gsap.killTweensOf(this.toast.scale);
         this.toast.text = message;
@@ -1518,11 +1570,18 @@ export class MowHud extends PIXI.Container {
         this.reposition();
     }
 
-    /** The level bar's part clear of its badge on screen (left, right, its bottom): the area's bar lines up under it. */
-    private levelSpan?: { left: number; right: number; bottom: number };
+    /** Where the level bar wants the area's on screen (its ends, its middle line, what the badge covers of it unscaled). */
+    private levelSpan?: { left: number; right: number; y: number; covered: number };
+    /** How much of the area's bar (its left end) the level's badge covers. */
+    private covered = 0;
 
-    public alignUnderLevel(span: { left: number; right: number; bottom: number }): void {
+    public alignUnderLevel(span: { left: number; right: number; y: number; covered: number }): void {
         this.levelSpan = span;
+        this.covered = span.covered;
+        this.progressBar.setFrom(span.covered);
+        // Its words in the middle of what's left in sight (the badge at one end, the reward at the other).
+        this.progressText.x = (span.covered - REWARD.size / 2 + 4) / 2;
+        UiKit.fit(this.progressText, PROGRESS.width - this.covered - REWARD.size / 2 - 16);
         this.reposition();
     }
 
@@ -1535,17 +1594,13 @@ export class MowHud extends PIXI.Container {
         this.corner.position.set(screen.topLeft.x + screen.width - 16 - CORNER_WIDTH * cornerScale, screen.topLeft.y + 36);
         this.mute.position.set(screen.topLeft.x + 20 + BUTTON_SIZE / 2, screen.topLeft.y + 20 + BUTTON_SIZE / 2);
         this.languageButton.position.set(this.mute.x + BUTTON_SIZE + 12, this.mute.y);
-        // The area's bar: under the player's level bar when there is one (smaller: the level's the main one), else at the top.
-        this.progress.scale.set(this.underLevel ? AREA_UNDER_LEVEL.scale : 1);
-        this.progress.position.set(screen.center.x, screen.topLeft.y + (this.underLevel ? AREA_UNDER_LEVEL.y : 120));
+        // The area's bar: under the player's level bar when there is one (as wide as it), else at the top.
+        this.progress.scale.set(1);
+        this.progress.position.set(screen.center.x, screen.topLeft.y + PROGRESS.y);
         const span = this.underLevel ? this.levelSpan : undefined;
         if (span) {
-            // Exactly under the level bar's part clear of the badge: the bar and its reward coin as wide as it, the name
-            // over the bar (the bar runs -width/2..width/2, the coin past its right end).
-            const reach = REWARD.size - 6;
-            const scale = (span.right - span.left) / (PROGRESS.width + reach);
-            this.progress.scale.set(scale);
-            this.progress.position.set((span.left + span.right) / 2 - (reach / 2) * scale, span.bottom + AREA_GAP + 14 * scale);
+            this.progress.scale.set((span.right - span.left) / PROGRESS.width);
+            this.progress.position.set((span.left + span.right) / 2, span.y);
         }
         if (this.goal) {
             // Between the buttons on the left and the money on the right, smaller if it has to.
@@ -1553,7 +1608,7 @@ export class MowHud extends PIXI.Container {
             this.goal.scale.set(Math.min(1, room / GOAL_TIMELINE_HALF_WIDTH));
             this.goal.position.set(screen.center.x, screen.topLeft.y + 52);
         }
-        this.combo.position.set(screen.center.x, span ? this.progress.y + 80 : screen.topLeft.y + (this.underLevel ? AREA_UNDER_LEVEL.y + 80 : 205));
+        this.combo.position.set(screen.center.x, span ? this.progress.y + 80 : screen.topLeft.y + 205);
         // The map hangs right-aligned under the trophy (its origin is its centre).
         this.mapHome.set(screen.topLeft.x + screen.width - 20 - this.townMap.panelWidth / 2, this.corner.y + 190 + this.townMap.panelHeight / 2);
         if (!this.mapFlying) this.mapHolder.position.copyFrom(this.mapHome);
@@ -1562,15 +1617,16 @@ export class MowHud extends PIXI.Container {
         this.mapButton.position.set(screen.topLeft.x + 20 + MAP_BUTTON_SIZE / 2, screen.topLeft.y + screen.height - 20 - MAP_BUTTON_SIZE / 2);
         // The wardrobe above it (the farm test).
         this.wardrobeButton.position.set(this.mapButton.x, this.mapButton.y - MAP_BUTTON_SIZE - 14);
-        // POWER-UPS above the wardrobe.
-        this.powerButton.position.set(this.mapButton.x, this.wardrobeButton.y - MAP_BUTTON_SIZE - 14);
+        // The tractor's above that, POWER-UPS above both.
+        this.tractorButton.position.set(this.mapButton.x, this.wardrobeButton.y - MAP_BUTTON_SIZE - 14);
+        this.powerButton.position.set(this.mapButton.x, this.tractorButton.y - MAP_BUTTON_SIZE - 14);
         this.mapDim.clear().beginFill(0x000000, 0.55).drawRect(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height).endFill();
         const mapScale = Math.min(1, (screen.height * 0.85) / (this.panelMap.panelHeight + RIBBON_OVERHANG), (screen.width - 24) / (this.panelMap.panelWidth + CLOSE_SIZE / 2));
         this.panelMapHolder.scale.set(mapScale);
         // The close button keeps its usual size on the scaled-up map.
         this.mapClose?.scale.set(1 / mapScale);
-        this.panelMapHolder.position.set(screen.center.x, screen.center.y);
-        this.celebration.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.36);
+        this.panelMapHolder.position.set(screen.center.x, screen.center.y + (RIBBON_OVERHANG / 2) * mapScale);
+        this.celebration.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.26);
         this.toast.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.24);
         // The finds' toasts stack down on the left, under the area's bar (clear of its name on a narrow screen).
         this.findToasts.position.set(screen.topLeft.x + 20, this.progress.y + 60);
@@ -1581,9 +1637,16 @@ export class MowHud extends PIXI.Container {
         const shopScale = Math.min(1, room / (SHOP.height + RIBBON_OVERHANG), (screen.width - 24) / (SHOP.width + CLOSE_SIZE / 2));
         this.shopHolder.scale.set(shopScale);
         this.shopHolder.position.set(screen.center.x, top + (RIBBON_OVERHANG + SHOP.height / 2) * shopScale);
-        const wardrobeScale = Math.min(1, room / (WARDROBE_SIZE.height + RIBBON_OVERHANG), (screen.width - 24) / (WARDROBE_SIZE.width + CLOSE_SIZE / 2));
+        // The wardrobe leaves the player in sight, trying things on (viewShift(): the camera moves them clear of it).
+        const wide = screen.width / screen.height >= WARDROBE_VIEW.wideFrom;
+        const wardrobeTop = wide ? screen.topLeft.y + 40 : screen.topLeft.y + screen.height * WARDROBE_VIEW.top;
+        const wardrobeRoom = screen.topLeft.y + screen.height - 16 - wardrobeTop;
+        const wardrobeWidth = wide ? screen.width / 2 - WARDROBE_VIEW.gap - 16 : screen.width - 24;
+        const wardrobeScale = Math.min(1.1, wardrobeRoom / (WARDROBE_SIZE.height + RIBBON_OVERHANG), wardrobeWidth / (WARDROBE_SIZE.width + CLOSE_SIZE / 2));
         this.wardrobeHolder.scale.set(wardrobeScale);
-        this.wardrobeHolder.position.set(screen.center.x, top + (RIBBON_OVERHANG + WARDROBE_SIZE.height / 2) * wardrobeScale);
+        this.wardrobeHolder.position.set(
+            wide ? screen.center.x + WARDROBE_VIEW.gap + (WARDROBE_SIZE.width / 2) * wardrobeScale : screen.center.x,
+            wardrobeTop + (RIBBON_OVERHANG + WARDROBE_SIZE.height / 2) * wardrobeScale);
         const trophiesScale = Math.min(1, (screen.height - 94) / (TROPHIES_SIZE.height + RIBBON_OVERHANG), (screen.width - 24) / (TROPHIES_SIZE.width + CLOSE_SIZE / 2));
         this.trophiesHolder.scale.set(trophiesScale);
         const citiesScale = Math.min(1, (screen.height - 60) / (CITIES_PANEL_SIZE.height + 60), (screen.width - 20) / CITIES_PANEL_SIZE.width);

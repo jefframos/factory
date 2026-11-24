@@ -16,6 +16,19 @@ export interface EndResult extends PlayerLook {
     you: boolean;
 }
 
+/** A ship or an alien to pick for the next level, on the won screen. */
+export interface EndShip {
+    kind: 'ufo' | 'alien';
+    name: string;
+    picture: Promise<PIXI.Texture | null>;
+    /** In coins; without one it's for a rewarded video. */
+    price?: number;
+    /** The player's coins now (a priced one's: whether it can be paid for). */
+    coins: () => number;
+    /** Picks it (its video, or its coins, the first time; then it's just worn): whether it's worn now. */
+    pick: () => Promise<boolean>;
+}
+
 export interface EndOptions {
     /** On the ribbon. */
     title: string;
@@ -45,6 +58,15 @@ export interface EndOptions {
      * paid again if it's watched: resolves true); then the amount doubles on screen. Once, whatever the answer.
      */
     doubleCoins?: () => Promise<boolean>;
+    /**
+     * Lost on time: "+N SEC" in the main slot, for a rewarded ad. It calls this (the ad; watched, the scene takes this
+     * screen away and the level carries on).
+     */
+    extraTime?: { seconds: number; ask: () => Promise<boolean> };
+    /** Won: ships and aliens to pick from for the next level, over the button. */
+    ships?: readonly EndShip[];
+    /** A button home as well (a won level's main button goes on to the next). */
+    home?: boolean;
 }
 
 const LOOK = {
@@ -69,6 +91,12 @@ const STARS_WON = { y: 44, size: 58, gap: 66 };
 const REWARD_LINE = { y: 46, icon: 50, text: 40, gap: 46 };
 /** The area bar: its scale (it's wider than the rest), how far under what's over it, and the room it adds. */
 const AREA = { scale: 0.68, y: 66, room: 130 };
+/** The ships to pick from: the words over them, the cards, how far under what's over it, and the room it all takes. */
+const SHIPS = {
+    room: 178, y: -14, yUnderArea: 34, words: 30, card: { width: 136, height: 160, gap: 14, y: 106 }, inset: 9, strip: 44, inner: { ufo: 0x8ec6ff, alien: 0x9df0b4 },
+    picture: 96, pictureY: -26, name: 17, nameY: 22, statusY: 58, icon: 38, text: 25,
+    look: { ufo: 0x2f6fe0, alien: 0x1f9a6a, worn: 0x3bd62a },
+};
 const ROWS_SHOWN = 5;
 const ROW_WIDTH = ROW.width + 90;
 /** The whole thing's height and width: scaled down to fit a small screen. */
@@ -83,6 +111,10 @@ export class EndReveal extends PIXI.Container {
     private readonly coinBarAmount = label(COIN_BAR.textSize);
     private readonly flyingCoins = new PIXI.Container();
     private areaBar: AreaBar | null = null;
+    /** Everything that can be tapped: off while an ad's up. */
+    private readonly buttons: PIXI.Container[] = [];
+    /** Coins spent on a ship here (the bar's still counting up what was won). */
+    private spent = 0;
     /** The coins won, as shown (the big amount, or the versus line's): doubled after a rewarded ad. */
     private coinsText: PIXI.Text | null = null;
     private doublePulse: gsap.core.Tween | null = null;
@@ -259,10 +291,23 @@ export class EndReveal extends PIXI.Container {
             this.areaBar = bar;
             this.content.addChild(bar);
             areaShift = AREA.room;
-            this.fitHeight = FIT.height + AREA.room;
+            this.fitHeight += AREA.room;
             const barAt = at;
             tl.to(bar, { alpha: 1, duration: 0.3 }, barAt);
             tl.call(() => bar.play(0.1), undefined, barAt);
+            at += 0.3;
+        }
+
+        // Ships to pick from for the next level.
+        if (options.ships?.length) {
+            const picker = this.shipPicker(options.ships);
+            picker.y = bottom + LAYOUT.buttonGap + areaShift - SHIPS.card.height / 2 + (areaShift ? SHIPS.yUnderArea : SHIPS.y);
+            const room = SHIPS.room + (areaShift ? SHIPS.yUnderArea - SHIPS.y : 0);
+            areaShift += room;
+            this.fitHeight += room;
+            picker.scale.set(0);
+            this.content.addChild(picker);
+            tl.to(picker.scale, { x: 1, y: 1, duration: 0.4, ease: 'back.out(2)' }, at);
             at += 0.3;
         }
 
@@ -270,16 +315,19 @@ export class EndReveal extends PIXI.Container {
         // smaller under it and only shows a moment later.
         const won = options.coins ?? options.coinsWon ?? 0;
         const offerDouble = !!options.doubleCoins && won > 0;
+        const offer = offerDouble && options.doubleCoins ? { words: '▶ x2 COINS', icon: 'Icon_Coin', ask: options.doubleCoins }
+            : options.extraTime ? { words: `▶ +${options.extraTime.seconds} SEC`, icon: 'Icon_Timer', ask: options.extraTime.ask } : null;
         const button = new PIXI.Container();
-        button.addChild(...(offerDouble
+        button.addChild(...(offer
             ? buttonParts(DOUBLE.nextWidth, DOUBLE.nextHeight, options.button, lost ? 'Button01_l_Sky' : 'Button01_l_Green')
             : buttonParts(lost ? LOSE_LAYOUT.button : 270, 78, options.button, lost ? 'Button01_l_Sky' : 'Button01_l_Green')));
         tappable(button, onNext);
         const slotY = (lost ? LOSE_LAYOUT.buttonY : bottom + LAYOUT.buttonGap) + areaShift;
-        button.y = offerDouble ? slotY + DOUBLE.gap : slotY;
-        const buttonAt = offerDouble ? at + DOUBLE.nextDelay : at;
+        button.y = offer ? slotY + DOUBLE.gap : slotY;
+        const buttonAt = offer ? at + DOUBLE.nextDelay : at;
         // (Between what's over it and the button.)
         if (this.areaBar) this.areaBar.y = slotY - areaShift - LAYOUT.buttonGap + AREA.y;
+        this.buttons.push(button);
         button.scale.set(0);
         button.eventMode = 'none';
         this.content.addChild(button);
@@ -291,19 +339,19 @@ export class EndReveal extends PIXI.Container {
             if (!this.watchingAd) button.eventMode = 'static';
         }, undefined, buttonAt + 0.2);
         let underButton = button.y;
-        if (offerDouble && options.doubleCoins) {
+        if (offer) {
             const double = new PIXI.Container();
-            const [plane, words] = buttonParts(DOUBLE.width, DOUBLE.height, '▶ x2 COINS', 'Button01_l_Yellow');
+            const [plane, words] = buttonParts(DOUBLE.width, DOUBLE.height, offer.words, 'Button01_l_Yellow');
             words.x = DOUBLE.wordsX;
-            const coin = iconSprite('Icon_Coin', DOUBLE.icon);
+            const coin = iconSprite(offer.icon, DOUBLE.icon);
             coin.x = DOUBLE.iconX;
             double.addChild(plane, words, coin);
             double.y = slotY;
             double.scale.set(0);
             double.eventMode = 'none';
             this.content.addChild(double);
+            this.buttons.push(double);
             this.fitHeight += DOUBLE.gap;
-            const askDouble = options.doubleCoins;
             tappable(double, () => {
                 // Nothing else while the ad's up; once, whatever the answer.
                 double.eventMode = 'none';
@@ -311,12 +359,12 @@ export class EndReveal extends PIXI.Container {
                 this.watchingAd = true;
                 this.doublePulse?.kill();
                 gsap.to(double, { alpha: 0.5, duration: 0.15 });
-                void askDouble().catch(() => false).then((watched) => {
+                void offer.ask().catch(() => false).then((watched) => {
                     if (this.destroyed) return;
                     this.watchingAd = false;
                     if (button.scale.x > 0) button.eventMode = 'static';
                     gsap.to(double.scale, { x: 0, y: 0, duration: 0.25, ease: 'back.in(2)', onComplete: () => { double.visible = false; } });
-                    if (watched) this.showDoubled(won);
+                    if (watched && offerDouble) this.showDoubled(won);
                 });
             });
             tl.to(double.scale, { x: 1, y: 1, duration: 0.4, ease: 'back.out(2.4)' }, at + 0.15);
@@ -334,7 +382,9 @@ export class EndReveal extends PIXI.Container {
             castle.x = LOSE_LAYOUT.homeIconX;
             home.addChild(plane, words, castle);
             tappable(home, onHome);
-            home.y = lost ? LOSE_LAYOUT.homeY + areaShift : underButton + LAYOUT.buttonGap + 30;
+            this.buttons.push(home);
+            if (!lost) this.fitHeight += LAYOUT.buttonGap + 30;
+            home.y = lost ? LOSE_LAYOUT.homeY + areaShift + (offer ? DOUBLE.gap : 0) : underButton + LAYOUT.buttonGap + 30;
             home.scale.set(0);
             home.eventMode = 'none';
             this.content.addChild(home);
@@ -343,6 +393,98 @@ export class EndReveal extends PIXI.Container {
                 if (!this.watchingAd) home.eventMode = 'static';
             }, undefined, buttonAt + 0.3);
         }
+    }
+
+    /** The ships, in a row under a line of words. Tapped: its video or its coins, then it's worn (and the rest can still be). */
+    private shipPicker(ships: readonly EndShip[]): PIXI.Container {
+        const holder = new PIXI.Container();
+        const words = label(SHIPS.words, 0xffe066);
+        words.text = 'GET A NEW LOOK!';
+        holder.addChild(words);
+        const { width, height, gap, y } = SHIPS.card;
+        const cards: { back: PIXI.NineSlicePlane; offer: PIXI.Container; check: PIXI.Sprite; kind: EndShip['kind']; mine: boolean; worn: boolean }[] = [];
+        ships.forEach((ship, i) => {
+            const card = new PIXI.Container();
+            card.position.set((i - (ships.length - 1) / 2) * (width + gap), y);
+            const back = framePlane('CardFrame03_n_Bg', width, height, 0.75);
+            back.position.set(-width / 2, -height / 2);
+            back.tint = SHIPS.look[ship.kind];
+            const innerWidth = width - SHIPS.inset * 2;
+            const innerHeight = height - SHIPS.inset - SHIPS.strip;
+            const inner = framePlane('CardFrame03_n_InnerBg', innerWidth, innerHeight, 0.75);
+            inner.position.set(-innerWidth / 2, -height / 2 + SHIPS.inset);
+            inner.tint = SHIPS.inner[ship.kind];
+            const picture = new PIXI.Sprite(PIXI.Texture.EMPTY);
+            picture.anchor.set(0.5);
+            picture.y = SHIPS.pictureY;
+            const name = label(SHIPS.name);
+            name.text = ship.name.toUpperCase();
+            name.scale.set(Math.min(1, (innerWidth - 6) / Math.max(name.width, 1)));
+            name.y = SHIPS.nameY;
+            void ship.picture.then((texture) => {
+                if (!texture || picture.destroyed) return;
+                picture.texture = texture;
+                fitSprite(picture, SHIPS.picture);
+            });
+            // What it takes: a video, or its coins.
+            const offer = new PIXI.Container();
+            offer.y = SHIPS.statusY;
+            if (ship.price) {
+                const amount = label(SHIPS.text, ship.coins() >= ship.price ? 0xffe066 : 0xff9a8a);
+                amount.text = String(ship.price);
+                const coin = iconSprite('Icon_Coin', SHIPS.icon * 0.85);
+                const span = SHIPS.icon + amount.width;
+                coin.x = -span / 2 + SHIPS.icon / 2;
+                amount.x = span / 2 - amount.width / 2;
+                offer.addChild(coin, amount);
+            } else {
+                offer.addChild(iconSprite('ItemIcon_Video', SHIPS.icon));
+            }
+            const check = iconSprite('Icon_Check03_l', SHIPS.icon);
+            check.y = SHIPS.statusY;
+            check.visible = false;
+            card.addChild(back, inner, picture, name, offer, check);
+            card.hitArea = new PIXI.Rectangle(-width / 2, -height / 2, width, height);
+            const entry = { back, offer, check, kind: ship.kind, mine: false, worn: false };
+            cards.push(entry);
+            tappable(card, () => {
+                if (this.watchingAd) return;
+                const buying = !entry.mine && ship.price !== undefined;
+                if (buying && ship.coins() < (ship.price ?? 0)) {
+                    UfoAudio.bump();
+                    gsap.fromTo(card, { rotation: -0.06 }, { rotation: 0, duration: 0.3, ease: 'elastic.out(1.2, 0.3)' });
+                    return;
+                }
+                // Nothing else while its ad's up.
+                this.watchingAd = true;
+                const wereOn = this.buttons.filter((button) => button.eventMode === 'static');
+                wereOn.forEach((button) => { button.eventMode = 'none'; });
+                void ship.pick().catch(() => false).then((worn) => {
+                    if (this.destroyed) return;
+                    this.watchingAd = false;
+                    // (Those that came in meanwhile too.)
+                    this.buttons.forEach((button) => { if (wereOn.includes(button) || button.scale.x > 0) button.eventMode = 'static'; });
+                    if (!worn) return;
+                    if (buying) {
+                        this.spent += ship.price ?? 0;
+                        this.coinBarAmount.text = String(ship.coins());
+                    }
+                    entry.mine = true;
+                    entry.worn = true;
+                    // (One ship and one alien at a time.)
+                    for (const other of cards) {
+                        if (other !== entry && other.kind === entry.kind) other.worn = false;
+                        other.back.tint = other.worn ? SHIPS.look.worn : SHIPS.look[other.kind];
+                        other.check.visible = other.worn;
+                        other.offer.visible = !other.mine;
+                    }
+                    UfoAudio.win();
+                    gsap.fromTo(card.scale, { x: 1.25, y: 1.25 }, { x: 1, y: 1, duration: 0.45, ease: 'back.out(3)' });
+                });
+            });
+            holder.addChild(card);
+        });
+        return holder;
     }
 
     /** The ad was watched: the amount won doubles on screen (a pop), and (a story level's coins) the extra fly to the bar. */
@@ -417,7 +559,7 @@ export class EndReveal extends PIXI.Container {
                 y: to.y, duration: COIN_FLIGHT.seconds, delay, ease: 'power2.in',
                 onComplete: () => {
                     coin.visible = false;
-                    this.coinBarAmount.text = String(start + Math.round((won * (i + 1)) / COIN_FLIGHT.count));
+                    this.coinBarAmount.text = String(start + Math.round((won * (i + 1)) / COIN_FLIGHT.count) - this.spent);
                     UfoAudio.eat(0.05);
                     gsap.fromTo(this.coinBar.scale, { x: 1.14, y: 1.14 }, { x: 1, y: 1, duration: 0.18, ease: 'power2.out' });
                 },

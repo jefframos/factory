@@ -15,6 +15,7 @@ import { UfoAudio } from '../audio/UfoAudio';
 import { BakedShape } from './BakedShape';
 import { DARK } from './UiParts';
 import { EndOptions, EndReveal } from './EndReveal';
+import type { RewardOffer } from './RewardOffer';
 import { PlayerLook, PlayerRow, ROW, buttonParts, fitPill, framePlane, iconSprite, label, pill, placeScale, strokedArrow, tappable } from './UiParts';
 
 export { label };
@@ -35,6 +36,8 @@ const MUTE_ICON = 0.55 / 128;
 const MARGIN = 16;
 const COLORS = { back: 0x10123a, fill: 0x59e6c8, rim: 0xffffff, you: 0xffe27a, danger: 0xff5a5a, safe: 0x5fe87a, neutral: 0xe8ecf4, markerIcon: 0x10123a };
 const MESSAGE_SECONDS = 1.3;
+/** The rewarded offers: down the left and the right, the first this share of the screen's height down, this far apart (before the scale) and in from the edge. */
+const OFFERS = { at: 0.4, step: 190, x: 78, scale: 0.82 };
 const BOARD = { rows: 6, gap: 4, narrowScale: 0.8 };
 /** Below this width the leaderboard's smaller, in the top right corner, and the clock and size shrink to fit beside it. */
 const NARROW = 760;
@@ -92,7 +95,7 @@ const POP = { rise: 70, seconds: 0.8, most: 18 };
 const ARROW = { size: 30, edge: 28, top: 222 };
 const BAR_GREEN = 0x49e04d;
 /** The goal's line: its size, its important words' colour, how much its pulse swells. */
-const BANNER = { fontSize: 24, green: 0x6dff5a, pulse: 1.08 };
+const BANNER = { fontSize: 24, green: 0x6dff5a, pulse: 1.08, under: 44, gap: 10, padX: 24 };
 /** A hunter's arrow: its stroke goes this colour. */
 const HUNTER_STROKE = 0xff2a2a;
 /** The clock's icon: its size, and how far left of the bar's middle: over its left end, so it stays on a phone's screen. */
@@ -176,6 +179,9 @@ export class UfoHud extends PIXI.Container {
     private readonly markers = new PIXI.Container();
     private readonly markerPool: Marker[] = [];
     private end: EndReveal | null = null;
+    private readonly offers = new PIXI.Container();
+    private readonly offersLeft = new PIXI.Container();
+    private readonly offersRight = new PIXI.Container();
     private share = -1;
     private label = '';
     private timerIcon!: PIXI.Sprite;
@@ -212,11 +218,12 @@ export class UfoHud extends PIXI.Container {
             this.board.addChild(row);
         }
         this.board.visible = false;
+        this.offers.addChild(this.offersLeft, this.offersRight);
         this.buildMute();
         this.buildHome();
         this.buildQuitAsk();
         this.addChild(this.tags, this.sizeBar, this.pops, this.arrows, this.bar, this.ring, this.kills, this.bannerPill, this.bannerRow, this.callout, this.calloutSkull,
-            this.messagePill, this.message, this.hintPill, this.hintText, this.moveHint, this.markers, this.board, this.mute, this.home, this.quitAsk);
+            this.messagePill, this.message, this.hintPill, this.hintText, this.moveHint, this.markers, this.offers, this.board, this.mute, this.home, this.quitAsk);
         this.setProgress(0, 'TOWN');
         this.reposition();
     }
@@ -365,8 +372,22 @@ export class UfoHud extends PIXI.Container {
         gsap.killTweensOf(this.bannerRow.scale);
         this.bannerRow.scale.set(1);
         this.bannerRow.scale.set(Math.min(1, (screen.width - 56) / Math.max(this.bannerRow.width, 1)));
-        this.bannerRow.position.set(screen.center.x, screen.topLeft.y + MARGIN + RING.bannerY);
+        this.bannerRow.position.set(screen.center.x, this.bannerY(screen));
         fitPill(this.bannerPill, this.bannerRow);
+    }
+
+    /**
+     * How far down the goal's line goes: right under the points bar if what's at the sides there (the ring and the kills on
+     * the left, the home button on the right) leaves it room or isn't shown; else under all that.
+     */
+    private bannerY(screen: NonNullable<typeof Game.overlayScreenData>): number {
+        const low = screen.topLeft.y + MARGIN + RING.bannerY;
+        if (!this.missionMode) return low;
+        const left = this.ring.visible || this.kills.visible ? this.ring.x + RING.size / 2 + BANNER.gap : screen.topLeft.x;
+        const right = this.home.visible || this.mute.y > this.bar.y ? this.mute.x - MUTE_SIZE / 2 - BANNER.gap : screen.topLeft.x + screen.width;
+        const half = this.bannerRow.width / 2 + BANNER.padX;
+        if (screen.center.x - half < left || screen.center.x + half > right) return low;
+        return this.bar.y + (BAR.height / 2) * this.bar.scale.y + BANNER.under;
     }
 
     /** The bar under the saucer: its place on screen (in the HUD's space; null hides it), how far to the next size, and which size. */
@@ -722,7 +743,14 @@ export class UfoHud extends PIXI.Container {
         this.end?.update(dt);
     }
 
+    /** An offer of a rewarded video, under the ones already there (the looks' on the left, the boost's on the right). */
+    public addOffer(offer: RewardOffer, right = false): void {
+        (right ? this.offersRight : this.offersLeft).addChild(offer);
+        this.reposition();
+    }
+
     public showEnd(options: EndOptions): void {
+        this.offers.visible = false;
         this.hint(null);
         this.showMoveHand(false);
         gsap.killTweensOf([this.message, this.messagePill]);
@@ -741,9 +769,23 @@ export class UfoHud extends PIXI.Container {
         this.arrows.visible = false;
         this.home.visible = false;
         this.quitAsk.visible = false;
-        // Lost: going home's an option. (Won, the main button already goes there.)
-        this.end = new EndReveal(options, this.onRestart, options.outcome === 'lose' && this.homeAllowed ? this.onHome : undefined);
+        // Lost, or won with the main button going on to the next level: going home's an option.
+        this.end = new EndReveal(options, this.onRestart, (options.outcome === 'lose' || options.home) && this.homeAllowed ? this.onHome : undefined);
         this.addChild(this.end);
+        this.reposition();
+    }
+
+    /** The end screen goes and the level's HUD comes back: it carries on (extra time). */
+    public hideEnd(): void {
+        this.end?.destroy();
+        this.end = null;
+        for (const part of [this.markers, this.tags, this.bar, this.arrows, this.offers]) part.visible = true;
+        this.ring.visible = this.kills.visible = this.missionMode;
+        for (const part of [this.bannerRow, this.bannerPill]) {
+            part.visible = true;
+            part.alpha = 0;
+        }
+        this.home.visible = this.homeAllowed;
         this.reposition();
     }
 
@@ -790,6 +832,11 @@ export class UfoHud extends PIXI.Container {
         if (this.roundKills && !this.missionMode) this.kills.position.set(middle - 14, this.bar.y + (BAR.height / 2) * fit + 26);
         this.callout.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.3);
         this.end?.place(screen.center.x, screen.center.y, screen.width, screen.height);
+        for (const [column, x] of [[this.offersLeft, screen.topLeft.x + OFFERS.x], [this.offersRight, screen.topLeft.x + screen.width - OFFERS.x]] as const) {
+            column.scale.set(OFFERS.scale);
+            column.position.set(x, screen.topLeft.y + screen.height * OFFERS.at);
+            column.children.forEach((offer, i) => offer.position.set(0, i * OFFERS.step));
+        }
         this.placeQuitAsk(screen);
     }
 

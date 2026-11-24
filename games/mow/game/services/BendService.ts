@@ -69,6 +69,46 @@ export interface OcclusionPart {
     box: THREE.Box3;
 }
 
+/** An upright model for BendService.applyOcclusionFadeUpright(): its base and top (in a mesh's local space), its radius per height. */
+interface UprightOccluder {
+    base: THREE.Vector3;
+    top: THREE.Vector3;
+    width: number;
+}
+
+/** How see-through it goes. */
+const UPRIGHT_MIN_OPACITY = 0.3;
+const UPRIGHT_HEAD = /* glsl */ `
+    uniform vec3 uOccCameraPos;
+    uniform vec3 uOccPlayerPos;
+    uniform vec3 uOccBase;
+    uniform vec3 uOccTop;
+    uniform float uOccWidth;
+    varying float vOccAlpha;
+`;
+/** On the ground, along the way from the player to the camera: where the line goes into and out of the cylinder. */
+const UPRIGHT_ALPHA = /* glsl */ `
+    {
+        vec3 _occBase = (modelMatrix * vec4(uOccBase, 1.0)).xyz;
+        vec3 _occTop = (modelMatrix * vec4(uOccTop, 1.0)).xyz;
+        float _occRadius = distance(_occBase, _occTop) * uOccWidth;
+        vec2 _occWay = uOccCameraPos.xz - uOccPlayerPos.xz;
+        float _occFar = max(length(_occWay), 0.001);
+        _occWay /= _occFar;
+        float _occRise = (uOccCameraPos.y - uOccPlayerPos.y) / _occFar;
+        vec2 _occTo = _occBase.xz - uOccPlayerPos.xz;
+        float _occAlong = dot(_occTo, _occWay);
+        float _occOff = abs(_occTo.x * _occWay.y - _occTo.y * _occWay.x);
+        float _occReach = sqrt(max(_occRadius * _occRadius - _occOff * _occOff, 0.0));
+        // Near enough to the line sideways; not all behind the player; and the line not over its top by then.
+        float _occSide = 1.0 - smoothstep(_occRadius, _occRadius + 0.5, _occOff);
+        float _occFront = smoothstep(0.15, 0.6, _occAlong + _occReach);
+        float _occLineY = uOccPlayerPos.y + _occRise * max(0.0, _occAlong - _occReach);
+        float _occUnder = 1.0 - smoothstep(0.0, 0.6, _occLineY - _occTop.y);
+        vOccAlpha = mix(1.0, ${UPRIGHT_MIN_OPACITY.toFixed(3)}, _occSide * _occFront * _occUnder);
+    }
+`;
+
 /** A ready-made 'bounds' config for buildings, walls, gates, shops and big map props — see OcclusionFadeConfig.test. */
 export const STRUCTURE_OCCLUSION_FADE: OcclusionFadeConfig = {
     test: 'bounds',
@@ -79,9 +119,23 @@ export const STRUCTURE_OCCLUSION_FADE: OcclusionFadeConfig = {
     dither: true,
 };
 
-/** applyOcclusionFadeToObject(): points sampled along the camera->player line, and how far toward the player they go (short of 1, so a wall right BEHIND the player never counts). */
-const BOUNDS_SAMPLES = 12;
-const BOUNDS_SAMPLE_END = 0.92;
+/**
+ * applyOcclusionFadeToObject(): points sampled along the player->camera line, every STEP world units from START off the
+ * player (so a wall right BEHIND the player never counts). In world units, not shares of the line: the camera can be very
+ * far (a narrow field of view), and past the last one the line is over everything.
+ */
+const BOUNDS_SAMPLES = 18;
+const BOUNDS_SAMPLE_START = 0.75;
+const BOUNDS_SAMPLE_STEP = 0.75;
+
+/** The `i`th of those points. */
+function boundsSample(i: number, camera: THREE.Vector3, player: THREE.Vector3, out: THREE.Vector3): THREE.Vector3 {
+    const share = (BOUNDS_SAMPLE_START + i * BOUNDS_SAMPLE_STEP) / Math.max(1e-3, camera.distanceTo(player));
+    return out.lerpVectors(player, camera, Math.min(1, share));
+}
+
+/** applyOcclusionFadeUpright(): the share of the model's width that counts as in the way. */
+const UPRIGHT_WIDTH = 0.8;
 
 /**
  * Radial world-bend: the ground curves away from the player in all directions.
@@ -123,6 +177,8 @@ export class BendService {
      * segments keep that under ~0.0005 at the default strength (vs 0.2 for one 20-unit span).
      */
     public static segmentsForSpan(length: number): number {
+        // (A flat world: nothing to curve.)
+        if (BendService.uniforms.uBendStrength.value === 0) return 1;
         return Math.min(BEND_MAX_SEGMENTS, Math.max(1, Math.ceil(length / BEND_SEGMENT_LENGTH)));
     }
 
@@ -346,12 +402,12 @@ export class BendService {
      * `perVertex`, the geometry's own OCCLUSION_ALPHA_ATTRIBUTE (see applyOcclusionFadeToParts()),
      * so different parts of ONE mesh can fade differently.
      */
-    private static patchOcclusionMaterial(material: THREE.Material, uOccAlpha: { value: number }, dither: boolean, perVertex = false): void {
+    private static patchOcclusionMaterial(material: THREE.Material, uOccAlpha: { value: number }, dither: boolean, perVertex = false, upright?: UprightOccluder): void {
         if (BendService.occludedMaterials.has(material)) {
             return;
         }
         BendService.occludedMaterials.add(material);
-        BendService.tagProgramCacheKey(material, `occlusion:${dither ? 'dither' : 'blend'}${perVertex ? ':vertex' : ''}`);
+        BendService.tagProgramCacheKey(material, `occlusion:${dither ? 'dither' : 'blend'}${upright ? ':upright' : perVertex ? ':vertex' : ''}`);
 
         // Dithered discard needs no blending at all — leave the material opaque. The smooth
         // path still needs alpha blending, same as every other *Fade method in this file.
@@ -393,7 +449,14 @@ export class BendService {
                 perVertex ? 'varying float vOccAlpha;\n#define uOccAlpha vOccAlpha' : 'uniform float uOccAlpha;',
                 bayerFn,
             ].join('\n') + '\n' + shader.fragmentShader;
-            if (perVertex) {
+            if (upright) {
+                shader.uniforms.uOccCameraPos = BendService.uniforms.uOccCameraPos;
+                shader.uniforms.uOccPlayerPos = BendService.uniforms.uOccPlayerPos;
+                shader.uniforms.uOccBase = { value: upright.base };
+                shader.uniforms.uOccTop = { value: upright.top };
+                shader.uniforms.uOccWidth = { value: upright.width };
+                shader.vertexShader = UPRIGHT_HEAD + shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>\n${UPRIGHT_ALPHA}`);
+            } else if (perVertex) {
                 shader.vertexShader = `attribute float ${OCCLUSION_ALPHA_ATTRIBUTE};\nvarying float vOccAlpha;\n` + shader.vertexShader;
                 shader.vertexShader = shader.vertexShader.replace(
                     '#include <begin_vertex>',
@@ -472,8 +535,8 @@ export class BendService {
 
     /**
      * OcclusionFadeConfig.test 'bounds' — the whole of `root` (every mesh under it) fades
-     * together, driven by ONE test per frame: how close the camera->player line (sampled up to
-     * BOUNDS_SAMPLE_END of the way, so a wall right behind the player never counts) comes to
+     * together, driven by ONE test per frame: how close the camera->player line (sampled from
+     * BOUNDS_SAMPLE_START off the player, so a wall right behind them never counts) comes to
      * `root`'s world bounding box — 0 when it passes through it. Needed for big props: a
      * building's top-center (what the 'point' test uses) can be several units from the line
      * while the building still hides the player completely.
@@ -539,7 +602,7 @@ export class BendService {
             player.addVectors(BendService.uniforms.uOccPlayerPos.value, playerPointOffset);
             let closest = Infinity;
             for (let i = 0; i <= BOUNDS_SAMPLES && closest > 0; i++) {
-                sample.lerpVectors(cam, player, (i / BOUNDS_SAMPLES) * BOUNDS_SAMPLE_END);
+                boundsSample(i, cam, player, sample);
                 closest = Math.min(closest, worldBox.distanceToPoint(sample));
             }
             const t = THREE.MathUtils.smoothstep(closest, radius, radius + fadeWidth);
@@ -552,6 +615,33 @@ export class BendService {
                 update(renderer);
             };
         }
+    }
+
+    /**
+     * The fade for upright things drawn many times over from one template (trees, bushes): every copy shares the
+     * template's materials, so the test is in the vertex shader, from the copy's own matrix — an upright cylinder as tall
+     * and (nearly) as wide as the model, faded while the player->camera line goes through it. No work per copy or frame.
+     *
+     * `root` is the template, parentless, its base at y = 0 and centred, its materials its own.
+     */
+    public static applyOcclusionFadeUpright(root: THREE.Object3D): void {
+        root.updateWorldMatrix(true, true);
+        const box = new THREE.Box3().setFromObject(root);
+        if (box.isEmpty()) return;
+        const size = box.getSize(new THREE.Vector3());
+        const middle = box.getCenter(new THREE.Vector3());
+        root.traverse((child) => {
+            if (!(child instanceof THREE.Mesh)) return;
+            const toLocal = child.matrixWorld.clone().invert();
+            // Each mesh's own copy of where the whole model's base and top are, so all its meshes fade together.
+            const upright: UprightOccluder = {
+                base: new THREE.Vector3(middle.x, box.min.y, middle.z).applyMatrix4(toLocal),
+                top: new THREE.Vector3(middle.x, box.max.y, middle.z).applyMatrix4(toLocal),
+                width: (((size.x + size.z) / 4) * UPRIGHT_WIDTH) / Math.max(1e-3, size.y),
+            };
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            materials.forEach((material) => BendService.patchOcclusionMaterial(material, { value: 1 }, true, true, upright));
+        });
     }
 
     /**
@@ -603,7 +693,7 @@ export class BendService {
 
             const cam = BendService.uniforms.uOccCameraPos.value;
             player.addVectors(BendService.uniforms.uOccPlayerPos.value, playerPointOffset);
-            samples.forEach((sample, i) => sample.lerpVectors(cam, player, (i / BOUNDS_SAMPLES) * BOUNDS_SAMPLE_END));
+            samples.forEach((sample, i) => boundsSample(i, cam, player, sample));
 
             let changed = false;
             parts.forEach((part, index) => {

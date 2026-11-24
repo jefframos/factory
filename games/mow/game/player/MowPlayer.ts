@@ -26,7 +26,7 @@ import { GripDef, MOW, ToolDef } from '../data/MowConfig';
 import { BendService } from '../services/BendService';
 import { addHandle, buildMower, playerHandle, REEL_WHEEL } from './MowerModel';
 import { MOUNT, MowerBlades } from './MowerBlades';
-import { loadPeople, personCopy, dress, PERSON_HEIGHT, PERSON_MODEL_HEIGHT } from '../farm/People';
+import { loadPerson, personCopy, dress, PERSON_HEIGHT, PERSON_MODEL_HEIGHT } from '../farm/People';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 
 const HALF_EXTENTS = new THREE.Vector3(0.4, 0.9, 0.4);
@@ -149,9 +149,10 @@ export default class MowPlayer extends Entity {
      */
     public async loadCharacter(): Promise<void> {
         const config = getPlayerConfig();
-        const people = await loadPeople();
+        // (Only their own model: the other people come once the game is up.)
+        const people = await loadPerson(PLAYER_PERSON);
         const character = new ThirdPersonCharacter({ walkSpeed: config.walkSpeed, runSpeedMultiplier: config.runSpeedMultiplier });
-        const { model, meshes } = personCopy(people, PLAYER_PERSON, playerOutfit(MowProgress.look));
+        const { model, meshes } = personCopy(people, 0, playerOutfit(MowProgress.look));
         this.personMeshes = meshes;
         character.body.usePerson(model);
         // The hands' rest: the bind pose, before any clip has posed them.

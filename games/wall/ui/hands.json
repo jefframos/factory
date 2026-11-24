@@ -1,0 +1,290 @@
+{
+  "$comment": "The hands' poses (from There Is Rope's posable.json, its player-hands; model raw-assets/models/player{m}/hands.glb, the WebXR generic hands). Each turn is a finger bone's, degrees XYZ from rest in the model's own axes, the right hand's (the left is mirrored). `turn` and `offset`: how the hand sits on its grip point (the fist's centre; x right, y up, z toward the viewer), degrees and metres. `fist`: a tight one to punch with.",
+  "bones": {
+    "Hand": "wrist",
+    "ThumbProximal": "thumb_1",
+    "ThumbIntermediate": "thumb_2",
+    "ThumbDistal": "thumb_3",
+    "IndexProximal": "index_1",
+    "IndexIntermediate": "index_2",
+    "IndexDistal": "index_3",
+    "MiddleProximal": "middle_1",
+    "MiddleIntermediate": "middle_2",
+    "MiddleDistal": "middle_3",
+    "RingProximal": "ring_1",
+    "RingIntermediate": "ring_2",
+    "RingDistal": "ring_3",
+    "LittleProximal": "pinky_1",
+    "LittleIntermediate": "pinky_2",
+    "LittleDistal": "pinky_3"
+  },
+  "poses": {
+    "open": {
+      "turn": [
+        88.9,
+        -1.6,
+        6.7
+      ],
+      "offset": [
+        0.037,
+        0.0097,
+        0.0921
+      ],
+      "bones": {
+        "IndexProximal": [
+          1.1,
+          0.2,
+          -9.6
+        ],
+        "IndexIntermediate": [
+          1.8,
+          0.5,
+          -15.7
+        ],
+        "IndexDistal": [
+          1.2,
+          0.3,
+          -10.5
+        ],
+        "MiddleProximal": [
+          1.2,
+          0.3,
+          -10.5
+        ],
+        "MiddleIntermediate": [
+          1.6,
+          0.4,
+          -14
+        ],
+        "MiddleDistal": [
+          1.3,
+          0.3,
+          -11.4
+        ],
+        "RingProximal": [
+          0.8,
+          0.2,
+          -7
+        ],
+        "RingIntermediate": [
+          1.4,
+          0.3,
+          -12.2
+        ],
+        "RingDistal": [
+          1.1,
+          0.2,
+          -9.6
+        ],
+        "LittleProximal": [
+          0.1,
+          0,
+          -0.9
+        ],
+        "LittleIntermediate": [
+          1,
+          0.2,
+          -8.7
+        ],
+        "LittleDistal": [
+          0.9,
+          0.2,
+          -7.9
+        ],
+        "ThumbProximal": [
+          -22.1,
+          -0.5,
+          -4.4
+        ],
+        "ThumbIntermediate": [
+          2,
+          0.6,
+          -17.5
+        ],
+        "ThumbDistal": [
+          1.9,
+          0.6,
+          -17.1
+        ]
+      }
+    },
+    "tool": {
+      "turn": [
+        113,
+        -14,
+        6.7
+      ],
+      "offset": [
+        0.034,
+        0.005,
+        0.067
+      ],
+      "bones": {
+        "MiddleIntermediate": [
+          1.6,
+          0.4,
+          -66
+        ],
+        "IndexDistal": [
+          1.2,
+          0.3,
+          -13
+        ],
+        "MiddleDistal": [
+          1.3,
+          0.3,
+          -38
+        ],
+        "RingDistal": [
+          1.1,
+          0.2,
+          -30
+        ],
+        "IndexIntermediate": [
+          0,
+          0.5,
+          -80
+        ],
+        "MiddleProximal": [
+          1.2,
+          0.3,
+          -38
+        ],
+        "IndexProximal": [
+          1.1,
+          0.2,
+          -23
+        ],
+        "RingProximal": [
+          11,
+          0.2,
+          -42
+        ],
+        "LittleProximal": [
+          8,
+          -9,
+          -27
+        ],
+        "RingIntermediate": [
+          15,
+          0.3,
+          -70
+        ],
+        "LittleDistal": [
+          0.9,
+          0.2,
+          -42
+        ],
+        "LittleIntermediate": [
+          1,
+          0.2,
+          -55
+        ],
+        "ThumbDistal": [
+          -42,
+          63,
+          0
+        ],
+        "ThumbProximal": [
+          21,
+          51,
+          11
+        ],
+        "ThumbIntermediate": [
+          -11,
+          0,
+          0
+        ]
+      }
+    },
+    "fist": {
+      "turn": [
+        113,
+        -14,
+        6.7
+      ],
+      "offset": [
+        0.03,
+        0,
+        0.075
+      ],
+      "bones": {
+        "IndexProximal": [
+          0,
+          0,
+          -74
+        ],
+        "IndexIntermediate": [
+          0,
+          0,
+          -98
+        ],
+        "IndexDistal": [
+          0,
+          0,
+          -58
+        ],
+        "MiddleProximal": [
+          0,
+          0,
+          -74
+        ],
+        "MiddleIntermediate": [
+          0,
+          0,
+          -98
+        ],
+        "MiddleDistal": [
+          0,
+          0,
+          -58
+        ],
+        "RingProximal": [
+          0,
+          0,
+          -74
+        ],
+        "RingIntermediate": [
+          0,
+          0,
+          -98
+        ],
+        "RingDistal": [
+          0,
+          0,
+          -58
+        ],
+        "LittleProximal": [
+          0,
+          0,
+          -74
+        ],
+        "LittleIntermediate": [
+          0,
+          0,
+          -98
+        ],
+        "LittleDistal": [
+          0,
+          0,
+          -58
+        ],
+        "ThumbProximal": [
+          -3,
+          63,
+          -5
+        ],
+        "ThumbIntermediate": [
+          -3,
+          14,
+          -5
+        ],
+        "ThumbDistal": [
+          -45,
+          7,
+          -35
+        ]
+      }
+    }
+  }
+}

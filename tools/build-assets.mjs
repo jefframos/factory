@@ -11,6 +11,7 @@ import audio from './pack/audio.mjs';
 import font from './pack/font.mjs';
 import json from './pack/json.mjs';
 import manifest from './pack/manifest.mjs';
+import { subsetFonts } from './font/subset-fonts.mjs';
 
 const GAME = process.env.GAME;
 
@@ -76,6 +77,7 @@ async function buildAllAssets() {
 
     await assetpack.run();
     await fontPack.run();
+    await subsetFonts(GAME);
 }
 
 buildAllAssets();

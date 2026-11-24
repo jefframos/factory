@@ -1,0 +1,23 @@
+{
+  "$comment": "How strong each effect is (0: off, 1: as designed, up to 2): the game's defaults. Tune them in the debug Effects panel (?debug=1) and paste its COPY over `amounts`.",
+  "amounts": {
+    "quake": 1,
+    "steps": 0.5,
+    "tilt": 0,
+    "hitStop": 1,
+    "flash": 0.4,
+    "numbers": 1,
+    "words": 1,
+    "barJolt": 0,
+    "pieces": 1,
+    "piecesAtYou": 0.6,
+    "dust": 0.8,
+    "tremble": 0.6,
+    "crewPieces": 1,
+    "crewFlips": 1,
+    "light": 1,
+    "color": 1,
+    "handBob": 1,
+    "vibration": 1
+  }
+}

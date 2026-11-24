@@ -4,6 +4,7 @@
 import { Game } from 'core/Game';
 import HtmlLoader from 'core/loader/HtmlLoader';
 import PlatformHandler from 'core/platforms/PlatformHandler';
+import { SaveStorage } from 'core/platforms/SaveStorage';
 import { getPlatformInstance } from 'core/platforms/PlatformFactory';
 import { SceneManager } from 'core/scene/SceneManager';
 import { DebugOverlay } from 'core/debug/DebugOverlay';
@@ -13,10 +14,16 @@ import * as PIXI from 'pixi.js';
 import loaderConfig from './loader.config';
 import platformConfig from './platforms.config.json';
 import fontManifest from './manifests/fonts.json';
-import MowScene, { MOW_CAMERA } from './game/scenes/MowScene';
+import MowScene from './game/scenes/MowScene';
+import { MOW_CAMERA } from './game/config/CameraConfig';
+import { COLOR_GRADE, ColorGrade } from 'core/scene/ColorGrade';
 import TownSnapshotScene, { SNAPSHOT_PARAM } from './game/debug/TownSnapshotScene';
 import { Localization } from './game/i18n/Localization';
 import { MowAudio } from './game/audio/MowAudio';
+import { MowProgress } from './game/data/MowProgress';
+import { markStarted } from './game/utils/AfterStart';
+import { applyQuality, buildQualityPanel, capFrames } from './game/config/Quality';
+import SetupThree from 'core/scene/SetupThree';
 
 type PlatformConfigEntry = { className?: string; folder?: string; gameId?: string; enableAds?: boolean };
 
@@ -50,6 +57,9 @@ export default class MowGame extends Game {
             PlatformHandler.ENABLE_VIDEO_ADS = config?.enableAds ?? true;
             const plat = await getPlatformInstance(platformName);
             await PlatformHandler.instance.initialize(plat);
+            // The save, from the platform's own storage, before anything's built on it.
+            await SaveStorage.load(MowProgress.saveKeys);
+            MowProgress.begin();
 
             PlatformHandler.instance.platform.startLoad();
             // The language (saved choice, else the browser's) before any UI is built.
@@ -67,8 +77,11 @@ export default class MowGame extends Game {
             await Promise.race([scene.ready, new Promise((resolve) => window.setTimeout(resolve, MAX_SCENE_WAIT_MS))]);
             PlatformHandler.instance.platform.loadFinished();
             this.loaderScene.hide();
-            // The game is up: the sound effects come down behind it (kept out of the initial download).
+            capFrames(this);
+            // The game is up: the sound effects come down behind it (kept out of the initial download), then the models
+            // the first seconds don't need.
             MowAudio.loadInBackground();
+            void MowAudio.essentials().then(markStarted);
         } catch (error) {
             console.error('Failed to initialize platform:', error);
         }
@@ -86,18 +99,26 @@ export default class MowGame extends Game {
     }
 
     private startGame(): { ready: Promise<void> } {
+        ColorGrade.install();
         // The editor's "Map snapshots": bake the town map's miniatures instead of playing (TownSnapshotScene).
         if (new URLSearchParams(window.location.search).has(SNAPSHOT_PARAM)) {
             const snapshots = this.sceneManager.register<TownSnapshotScene>('mapshots', TownSnapshotScene, this);
             this.sceneManager.changeScene('mapshots');
             return snapshots;
         }
+        SetupThree.OPAQUE = true;
+        applyQuality();
         DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'mow');
         const camera = DebugOverlay.instance.panel('Camera', { id: 'mow.camera' });
         camera.slider(MOW_CAMERA, 'yawDeg', -180, 180, 1, 'Yaw');
         camera.slider(MOW_CAMERA, 'pitchDeg', 20, 89, 1, 'Pitch');
         camera.slider(MOW_CAMERA, 'distance', 6, 40, 0.5, 'Distance');
+        camera.slider(MOW_CAMERA, 'fovDeg', 15, 100, 1, 'Field of View');
+        camera.toggle(MOW_CAMERA, 'keepFraming', { label: 'FOV Keeps Framing' });
         camera.slider(MOW_CAMERA, 'followSpeed', 1, 20, 0.5, 'Follow Speed');
+        buildQualityPanel();
+        const look = DebugOverlay.instance.panel('Look', { id: 'mow.look', persist: false });
+        look.slider(COLOR_GRADE.vibrance, 'value', 0, 1.2, 0.05, 'Vibrance');
 
         return this.buildScene();
     }

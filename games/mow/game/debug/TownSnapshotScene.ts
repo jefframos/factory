@@ -25,7 +25,8 @@ import { CITY, MOW, TOWN, TownLevel, goalSection, goalZone } from '../data/MowCo
 import { Town } from '../world/Town';
 import { GrassField } from '../world/GrassField';
 import { BendService } from '../services/BendService';
-import { addTownLights, flowerSpots } from '../scenes/MowScene';
+import { flowerSpots } from '../scenes/MowScene';
+import { addTownLights } from '../world/TownLight';
 
 /** The query parameter that starts the bake (its value: the editor server's URL). */
 export const SNAPSHOT_PARAM = 'mapshots';

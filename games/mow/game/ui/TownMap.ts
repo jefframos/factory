@@ -37,16 +37,19 @@ const PAD = 8;
 const LABEL_ROOM = 30;
 /** The panel's padding round the map, room for its ribbon on top, and for the town's % and bar under it. */
 const PANEL_PAD = 24;
-const PANEL_TOP = 40;
-const PANEL_BOTTOM = 82;
-const PANEL_BAR = { width: 300, height: 24 };
+const PANEL_TOP = 56;
+const PANEL_BOTTOM = 92;
+const PANEL_BAR = { width: 460, height: 44 };
 /** The panel's secret chests row (only with secrets in the level): its room, and each chest icon's size and gap. */
 const SECRETS_ROOM = 86;
 const CHEST = { size: 40, gap: 10 };
 /** A section's name (panel) only when its rectangle has room for it (pixels). */
 const NAME_MIN = { width: 64, height: 34 };
-/** World units of sea round the island's outline. */
+/** World units of sea round the island's outline (the panel: room for its coast and foam, so it sits framed in the sea). */
 const SEA = 3;
+const PANEL_SEA = 13;
+/** The panel's look: the dark rim round the map, the sea's foam, the coast, and the locked lawns. */
+const PANEL_LOOK = { rim: 0x14203f, foam: 0x63bdf0, wave: 0x79c8f5, land: 0xb3bd8d, locked: 0x5f7360, waves: 40 };
 const FILL = 0x8fe36a;
 const FILL_EDGE = 0xd8ffb0;
 /** Locked lawns: their own green, this dark (still lawn, not road, but clearly not open yet). */
@@ -123,10 +126,11 @@ export class TownMap extends PIXI.Container {
         const outline = TOWN.island?.outline;
         const xs = outline?.length ? outline.map((p) => p.x) : [TOWN.ground.x - TOWN.ground.width / 2, TOWN.ground.x + TOWN.ground.width / 2];
         const zs = outline?.length ? outline.map((p) => p.z) : [TOWN.ground.z - TOWN.ground.depth / 2, TOWN.ground.z + TOWN.ground.depth / 2];
-        this.minX = Math.min(...xs) - SEA;
-        this.minZ = Math.min(...zs) - SEA;
-        const spanX = Math.max(...xs) + SEA - this.minX;
-        const spanZ = Math.max(...zs) + SEA - this.minZ;
+        const sea = this.panel ? PANEL_SEA : SEA;
+        this.minX = Math.min(...xs) - sea;
+        this.minZ = Math.min(...zs) - sea;
+        const spanX = Math.max(...xs) + sea - this.minX;
+        const spanZ = Math.max(...zs) + sea - this.minZ;
         this.scaleOf = this.mapWidth / spanX;
         const mapHeight = spanZ * this.scaleOf;
 
@@ -135,12 +139,14 @@ export class TownMap extends PIXI.Container {
         if (this.panel) {
             this.panelWidth = this.mapWidth + PANEL_PAD * 2;
             this.panelHeight = mapHeight + PANEL_TOP + PANEL_BOTTOM + (TOWN.secrets?.length ? SECRETS_ROOM : 0);
-            const frame = UiKit.image('upgrades', 'panel', this.panelWidth, this.panelHeight);
-            const ribbon = UiKit.sprite('upgrades', 'ribbon', 0.55);
-            ribbon.y = -this.panelHeight / 2;
-            const title = UiKit.text('upgrades', 'title');
+            const frame = UiKit.image('map', 'panel', this.panelWidth, this.panelHeight);
+            // (Narrower than the panel: clear of the close button on its corner.)
+            const ribbon = UiKit.sprite('map', 'ribbon', 0.6);
+            ribbon.y = -this.panelHeight / 2 + 2;
+            const title = UiKit.text('upgrades', 'title', {}, { fontSize: 32 });
             title.text = Localization.getString('titleTownMap', undefined, 'TOWN MAP');
-            title.y = -this.panelHeight / 2 - 5;
+            UiKit.fit(title, 280);
+            title.y = -this.panelHeight / 2 - 4;
             this.addChild(frame, ribbon, title);
             map.position.set(-this.mapWidth / 2, -this.panelHeight / 2 + PANEL_TOP);
         } else {
@@ -156,11 +162,25 @@ export class TownMap extends PIXI.Container {
 
         // Sea, the island (a soft shadow under it, its deck as a rim) and its roads.
         const water = hex(TOWN.island?.water, 0x3aa6e8);
-        const sea = new PIXI.Graphics()
-            .lineStyle(2 * k, shade(water, 0.7), 1)
-            .beginFill(water).drawRoundedRect(0, 0, this.mapWidth, mapHeight, 9 * k).endFill();
+        const water1 = new PIXI.Graphics();
+        if (this.panel) {
+            water1.beginFill(PANEL_LOOK.rim).drawRoundedRect(-5, -5, this.mapWidth + 10, mapHeight + 10, 20).endFill()
+                .beginFill(water).drawRoundedRect(0, 0, this.mapWidth, mapHeight, 16).endFill();
+            this.drawWaves(water1, mapHeight);
+        } else {
+            water1.lineStyle(2 * k, shade(water, 0.7), 1).beginFill(water).drawRoundedRect(0, 0, this.mapWidth, mapHeight, 9 * k).endFill();
+        }
         const land = new PIXI.Graphics();
-        if (outline?.length) {
+        if (outline?.length && this.panel) {
+            // Foam, a dark rim, the coast, and the ground: one over the other, their corners rounded.
+            const points = outline.flatMap((p) => [this.mapX(p.x), this.mapY(p.z)]);
+            const band = (width: number, color: number) => land
+                .lineStyle({ width, color, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND }).drawPolygon(points).lineStyle(0);
+            band(22, PANEL_LOOK.foam);
+            band(13, OUTLINE);
+            band(9, hex(TOWN.island?.deck?.color, 0xc9925a));
+            land.beginFill(PANEL_LOOK.land).drawPolygon(points).endFill();
+        } else if (outline?.length) {
             const points = outline.flatMap((p) => [this.mapX(p.x), this.mapY(p.z)]);
             land.beginFill(0x000000, 0.22).drawPolygon(points.map((v, i) => v + (i % 2 ? 3 * k : 1.5 * k))).endFill();
             land.lineStyle(3 * k, hex(TOWN.island?.deck?.color, 0xb98352), 1, 1).beginFill(hex(TOWN.ground.color, 0x8c9a7c));
@@ -170,7 +190,7 @@ export class TownMap extends PIXI.Container {
         }
         const roads = new PIXI.Graphics();
         TOWN.pavements.forEach((p) => roads.beginFill(hex(p.color, 0x4a4f57)).drawRect(...this.rectOf(p)).endFill());
-        map.addChild(sea, land, roads);
+        map.addChild(water1, land, roads);
 
         const labels = new PIXI.Container();
         TOWN.sections.forEach((def) => {
@@ -196,17 +216,17 @@ export class TownMap extends PIXI.Container {
                 // The name (and under it the %, or the badge) in the middle.
                 // A long name on a narrow section wraps (one word a line) rather than shrinking to nothing.
                 view.name = UiKit.text('hud', 'toast', { text: names.district(def).toUpperCase() },
-                    { fontSize: 15, strokeThickness: 4, align: 'center', leading: -3, breakWords: false });
+                    { fontSize: 18, strokeThickness: 5, align: 'center', leading: -3, breakWords: false });
                 view.name.anchor.set(0.5);
                 if (view.name.width > w - 8) {
                     view.name.style.wordWrap = true;
                     view.name.style.wordWrapWidth = w - 8;
                 }
                 UiKit.fit(view.name, w - 6);
-                const below = 10 + 10;
+                const below = 34;
                 const top = y + h / 2 - (view.name.height + below) / 2;
                 view.name.position.set(x + w / 2, top + view.name.height / 2);
-                view.percent = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 14, strokeThickness: 4, fill: 0xe8ffd8 });
+                view.percent = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 22, strokeThickness: 5, fill: 0xe8ffd8 });
                 view.percent.anchor.set(0.5);
                 view.percent.position.set(x + w / 2, top + view.name.height + below / 2 + 2);
                 view.badge.y = view.percent.y + 2;
@@ -230,13 +250,13 @@ export class TownMap extends PIXI.Container {
 
         // The town's %: under the map (compact), or over a bar (panel).
         if (this.panel) {
-            this.label = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 24, strokeThickness: 6 });
+            this.label = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 26, strokeThickness: 6 });
             this.label.anchor.set(0.5);
-            const barY = -this.panelHeight / 2 + PANEL_TOP + mapHeight + PANEL_BOTTOM / 2 + 14;
-            this.label.position.set(0, barY - 30);
+            const barY = -this.panelHeight / 2 + PANEL_TOP + mapHeight + PANEL_BOTTOM / 2 - 6;
+            this.label.position.set(0, barY - 2);
             const bar = new PIXI.Container();
             bar.y = barY;
-            bar.addChild(UiKit.image('hud', 'barBack', PANEL_BAR.width, PANEL_BAR.height), this.barFill);
+            bar.addChild(UiKit.image('map', 'barBack', PANEL_BAR.width, PANEL_BAR.height), this.barFill);
             this.addChild(bar, this.label);
             if (TOWN.secrets?.length) {
                 this.secretsLabel = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 18, strokeThickness: 5, fill: 0xffe27a });
@@ -262,7 +282,7 @@ export class TownMap extends PIXI.Container {
     /** The lock / check's size for a section (map pixels). */
     private badgeSize(view: SectionView): number {
         const room = Math.min(view.rect.width, view.rect.height) * (view.name ? 0.4 : 0.7);
-        return Math.max(12, Math.min(24 * Math.min(this.k, 1.2), room));
+        return Math.max(12, Math.min(this.panel ? 34 : 24 * Math.min(this.k, 1.2), room));
     }
 
     private mapX(x: number): number {
@@ -368,11 +388,37 @@ export class TownMap extends PIXI.Container {
         });
     }
 
+    /** The panel's sea: little waves scattered over it (the same every time; the land covers those under it). */
+    private drawWaves(g: PIXI.Graphics, height: number): void {
+        const random = (i: number) => {
+            const v = Math.sin(i * 127.1) * 43758.5453;
+            return v - Math.floor(v);
+        };
+        for (let i = 0; i < PANEL_LOOK.waves; i++) {
+            const x = 18 + random(i + 1) * (this.mapWidth - 48);
+            const y = 14 + random(i + 77) * (height - 28);
+            g.lineStyle({ width: 2, color: PANEL_LOOK.wave, cap: PIXI.LINE_CAP.ROUND }).moveTo(x, y).quadraticCurveTo(x + 6, y - 5, x + 12, y);
+        }
+        g.lineStyle(0);
+    }
+
     private drawBase(view: SectionView): void {
         const { x, y, width, height } = view.rect;
         const lawn = hex(view.def.ground, 0x557f38);
-        view.base.clear().beginFill(view.open ? lawn : shade(lawn, LOCKED_SHADE)).drawRoundedRect(x, y, width, height, this.corner).endFill();
-        if (view.name) view.name.alpha = view.open ? 1 : 0.6;
+        if (this.panel) {
+            // A tile with a darker lip under it; an open lawn's mown in stripes.
+            const color = view.open ? shade(lawn, 1.25) : PANEL_LOOK.locked;
+            view.base.clear().beginFill(shade(color, 0.65)).drawRoundedRect(x, y + 4, width, height, this.corner).endFill()
+                .beginFill(color).drawRoundedRect(x, y, width, height, this.corner).endFill();
+            if (view.open && width >= NAME_MIN.width) {
+                view.base.beginFill(0xffffff, 0.09);
+                for (let at = 5; at + 14 < width; at += 28) view.base.drawRect(x + at, y + 3, 14, height - 6);
+                view.base.endFill();
+            }
+        } else {
+            view.base.clear().beginFill(view.open ? lawn : shade(lawn, LOCKED_SHADE)).drawRoundedRect(x, y, width, height, this.corner).endFill();
+        }
+        if (view.name) view.name.alpha = view.open ? 1 : 0.85;
     }
 
     /** The lock (locked), the check (restored), or nothing (its % says how far it's got). */
@@ -424,7 +470,7 @@ export class TownMap extends PIXI.Container {
             const working = i === this.current && view.open && !view.restored;
             const { x, y, width, height } = view.rect;
             view.outline.clear()
-                .lineStyle((working ? 3 : 1.5) * Math.sqrt(this.k), working ? GOLD : OUTLINE, working ? 0.6 + 0.4 * Math.sin(this.time * 6) : 0.55)
+                .lineStyle(working ? 3 * Math.sqrt(Math.min(this.k, 2)) : this.panel ? 0 : 1.5 * Math.sqrt(this.k), working ? GOLD : OUTLINE, working ? 0.6 + 0.4 * Math.sin(this.time * 6) : 0.55)
                 .drawRoundedRect(x, y, width, height, this.corner);
             const percent = Math.floor(view.shown * 100);
             if (view.percent && percent !== view.percentShown) {
@@ -437,7 +483,7 @@ export class TownMap extends PIXI.Container {
         if (percent !== this.percentShown) {
             this.percentShown = percent;
             this.label.text = t('townProgress', { percent });
-            UiKit.fit(this.label, this.panelWidth - 24);
+            UiKit.fit(this.label, this.panel ? PANEL_BAR.width - 30 : this.panelWidth - 24);
             if (this.panel) this.drawBar(share);
         }
         this.updateSecrets();

@@ -3,6 +3,7 @@
 // The game's settings (ui/ufo.json: the editor's UFO tab) and its levels (levels/*.json: the editor's Town tab, in the
 // shape the shared world editor saves). `?city=<level>` plays another level, which is what the editor's ▶ Play opens.
 
+import { SaveStorage } from 'core/platforms/SaveStorage';
 import { RoadCells, RoadKit, roadNetwork, solveRoads } from 'core/roads/RoadGrid';
 import type { Piece } from 'core/pieces/Pieces';
 import data from '../../ui/ufo.json';
@@ -428,13 +429,13 @@ function withRoads(level: Level): Level {
 }
 
 const levelPath = (name: string) => `../../levels/${name}.json`;
-const MISSION_KEY = 'ufo.mission';
+export const MISSION_KEY = 'ufo.mission';
 
 export const AREAS = areas.areas as Area[];
 
 function savedMission(): number {
     try {
-        return Math.max(0, Math.min(MISSIONS.length - 1, Number(window.localStorage.getItem(MISSION_KEY)) || 0));
+        return Math.max(0, Math.min(MISSIONS.length - 1, Number(SaveStorage.getItem(MISSION_KEY)) || 0));
     } catch {
         return 0;
     }
@@ -475,6 +476,14 @@ let mission: Mission | null = askedLevel ? null : MISSIONS[missionIndex];
 /** The level being played. */
 let levelName = askedLevel ?? mission?.level ?? 'town';
 
+/** At boot, the platform's storage read: the level the player's up to, as it's saved there. */
+export function beginMissions(): void {
+    missionIndex = savedMission();
+    if (askedLevel) return;
+    mission = MISSIONS[missionIndex];
+    levelName = mission.level;
+}
+
 export const currentMission = (): Mission | null => mission;
 
 /** The mission the player's up to, for the menu's button. */
@@ -486,11 +495,7 @@ export function goToMission(index: number): void {
     missionIndex = ((index % MISSIONS.length) + MISSIONS.length) % MISSIONS.length;
     mission = MISSIONS[missionIndex];
     levelName = mission.level;
-    try {
-        window.localStorage.setItem(MISSION_KEY, String(missionIndex));
-    } catch {
-        // No storage: it starts from the first next time.
-    }
+    SaveStorage.setItem(MISSION_KEY, String(missionIndex));
 }
 
 /** Plays the tutorial from now on (the caller builds a fresh scene). */
@@ -502,11 +507,7 @@ export function goToTutorial(): void {
 
 /** Forgets which level the player's up to. */
 export function eraseMissionSave(): void {
-    try {
-        window.localStorage.removeItem(MISSION_KEY);
-    } catch {
-        // No storage: nothing was kept.
-    }
+    SaveStorage.removeItem(MISSION_KEY);
 }
 
 export const currentMissionIndex = (): number => missionIndex;

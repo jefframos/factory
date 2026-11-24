@@ -6,6 +6,7 @@
 // sections. The cities (levels/cities.json, CITIES) are each their own level; which one is played is saved
 // (MowProgress, CURRENT_CITY_KEY) and read here, before anything is built: travelling reloads the game into it.
 
+import { SaveStorage } from 'core/platforms/SaveStorage';
 import { RoadCells, RoadKit, roadNetwork, solveRoads } from 'core/roads/RoadGrid';
 import data from '../../ui/mow.json';
 import cities from '../../levels/cities.json';
@@ -25,6 +26,9 @@ export interface GrassDef {
     resistance: number;
     /** Clippings per cell. */
     value: number;
+    /** The set of sounds its cut plays (raw-assets/audio/cut-<set>-<n>: CUT_SETS), and its pitch, times MowDesign.cutSound's. */
+    cutSound?: string;
+    cutPitch?: number;
 }
 
 /**
@@ -1143,7 +1147,7 @@ export interface CityDef {
 export const CITIES: CityDef[] = cities.cities;
 /** Each finished city (not the tutorial) adds this to every sale's money, in every city after (prestige). */
 export const PRESTIGE_BONUS: number = cities.prestigeBonus;
-/** The localStorage key holding the city being played (MowProgress writes it on travel). */
+/** The saved key (SaveStorage) holding the city being played (MowProgress writes it on travel). */
 export const CURRENT_CITY_KEY = 'mow.city';
 
 /** The farm test's setup, when the level being played has one. */
@@ -1189,13 +1193,13 @@ export const worthPerClipping = (district: number): number => MOW.clippingPrice 
 
 const LEVELS: Record<string, unknown> = { tutorial, town, city2 };
 
-function currentCity(): CityDef {
+/** The city being played, by the save (and the address). */
+export function currentCity(): CityDef {
     let id: string | null = null;
     try {
         // `?city=<id>` (the editor's ▶ Play, testing): that city, from now on.
         const asked = new URLSearchParams(window.location.search).get('city');
-        if (asked && CITIES.some((city) => city.id === asked)) window.localStorage.setItem(CURRENT_CITY_KEY, asked);
-        id = window.localStorage.getItem(CURRENT_CITY_KEY);
+        id = asked && CITIES.some((city) => city.id === asked) ? asked : SaveStorage.getItem(CURRENT_CITY_KEY);
     } catch {
         // No storage: the first city.
     }

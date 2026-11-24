@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { createGLTFLoader } from 'core/three/GLTFLoaders';
 import { BendService } from '../services/BendService';
+import { afterStart } from '../utils/AfterStart';
 
 const PEOPLE = './mow/models/people/';
 export const PERSON_COUNT = 8;
@@ -102,19 +103,46 @@ export interface People {
 }
 
 let people: Promise<People> | null = null;
+let clips: Promise<People['clips']> | null = null;
+const persons = new Map<number, Promise<THREE.Object3D>>();
 
-/** The people's models and clips (loaded once). */
-export function loadPeople(): Promise<People> {
-    if (!people) {
-        const loader = createGLTFLoader();
-        people = (async () => {
-            const files = Array.from({ length: PERSON_COUNT }, (_, i) => `person-0${i + 1}.glb`);
-            const [anims, ...models] = await Promise.all([loader.loadAsync(`${PEOPLE}people-anims.glb`), ...files.map((f) => loader.loadAsync(`${PEOPLE}${f}`))]);
+function loadClips(): Promise<People['clips']> {
+    if (!clips) {
+        clips = createGLTFLoader().loadAsync(`${PEOPLE}people-anims.glb`).then((anims) => {
             const find = (name: string) => THREE.AnimationClip.findByName(anims.animations, name);
             const walk = find('walk');
             const idle = find('idle');
             if (!walk || !idle) throw new Error('people-anims has no walk or idle');
-            return { models: models.map((m) => m.scene), clips: { walk, idle, run: find('run') ?? walk, sit: find('sit') ?? null } };
+            return { walk, idle, run: find('run') ?? walk, sit: find('sit') ?? null };
+        });
+        clips.catch(() => (clips = null));
+    }
+    return clips;
+}
+
+function loadModel(index: number): Promise<THREE.Object3D> {
+    let found = persons.get(index);
+    if (!found) {
+        found = createGLTFLoader().loadAsync(`${PEOPLE}person-0${index + 1}.glb`).then((gltf) => gltf.scene);
+        found.catch(() => persons.delete(index));
+        persons.set(index, found);
+    }
+    return found;
+}
+
+/** One person (the player's) and the clips: all the loading screen waits for. Its model is the only one in `models`. */
+export async function loadPerson(index: number): Promise<People> {
+    const [own, model] = await Promise.all([loadClips(), loadModel(index)]);
+    return { models: [model], clips: own };
+}
+
+/** All the people's models and clips (loaded once, once the game is up: customers and helpers). */
+export function loadPeople(): Promise<People> {
+    if (!people) {
+        people = (async () => {
+            await afterStart();
+            const [own, ...models] = await Promise.all([loadClips(), ...Array.from({ length: PERSON_COUNT }, (_, i) => loadModel(i))]);
+            return { models, clips: own };
         })();
         people.catch(() => (people = null));
     }

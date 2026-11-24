@@ -14,17 +14,35 @@ import SoundManager, { SoundAsset } from 'core/audio/SoundManager';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { Howler } from 'howler';
 import audioManifest from '../../manifests/audio.json';
-import { MOW, MUSIC_TRACKS, TOWN, cityMusic } from '../data/MowConfig';
+import { GrassDef, MOW, MUSIC_TRACKS, TOWN, cityMusic } from '../data/MowConfig';
 
 const five = (name: string) => [1, 2, 3, 4, 5].map((i) => `${name}-${i}`);
+
+/**
+ * The grass cut's sounds: every cut-<set>-<n> in raw-assets/audio, by set. Each grass has its own (GrassDef.cutSound); a set
+ * none uses isn't downloaded (it's there to try out: the debug panel's Sounds, the editor's Mowers tab). Drop files of your
+ * own in as cut-mine-1.wav, cut-mine-2.wav... and run `npm run audio` to have them listed too.
+ */
+export const CUT_SETS: Record<string, string[]> = {};
+for (const bundle of audioManifest.bundles) {
+    for (const asset of bundle.assets) {
+        const id = asset.alias[0].replace(/\.[^.]+$/, '');
+        const set = /^cut-(.+)-\d+$/.exec(id)?.[1];
+        if (set) (CUT_SETS[set] ??= []).push(id);
+    }
+}
+const ALL_CUTS = new Set(Object.values(CUT_SETS).flat());
+const cutIds = (set: string): string[] => CUT_SETS[set] ?? Object.values(CUT_SETS)[0] ?? [];
+const USED_CUTS = new Set(MOW.grass.flatMap((grass) => cutIds(grass.cutSound ?? '')));
 
 const SOUNDS = {
     // digging
     // dig-hit = there-is-rope's stone hit with the low boom cut and the tail trimmed (a crisp tick, not a pound);
     // the pickaxe and up play it higher (sharper), the shovel lower (duller).
     hitPick: { soundId: five('dig-hit'), volumeMinMax: [0.2, 0.26], pitchMinMax: [1.08, 1.22] },
-    // Mowing: a short, bright swish per cut (a placeholder from the collect sounds, pitched up).
-    cut: { soundId: five('hit-gem'), volumeMinMax: MOW.cutSound.volume, pitchMinMax: MOW.cutSound.pitch },
+    // Mowing (CUT_SETS): several variants, so ten a second don't sound like a machine.
+    // This is the first grass's; tougher grass has its own (MowAudio.cut()).
+    cut: { soundId: cutIds(MOW.grass[0].cutSound ?? ''), volumeMinMax: MOW.cutSound.volume, pitchMinMax: MOW.cutSound.pitch },
     hitStone: { soundId: five('dig-hit'), volumeMinMax: [0.22, 0.28], pitchMinMax: [0.88, 1.0] },
     // Soft ground (dirt, gravel): a low, gritty crunch instead of the stone tick. Placeholder: the stone footsteps
     // pitched down. To use real dirt-dig sounds, add dig-dirt-1..5 to raw-assets/audio (`npm run audio`) and switch
@@ -81,6 +99,10 @@ export type Cue = keyof typeof SOUNDS;
 /** The soundtrack's layer, its fade in (the first), and the crossfade to another city's. */
 const MUSIC = { layer: 'music', fadeInMs: 4000, crossfadeMs: 1500 };
 
+/** The first minute's cues, downloaded before the rest (which comes in the manifest's order): the cut above all. */
+const FIRST_CUES: Cue[] = ['cut', 'whoosh', 'coins', 'buyFanfare', 'buyShine', 'quest', 'item', 'click', 'sparkle', 'cheer', 'complete'];
+/** The scene's other downloads wait this long at most for the cut's sounds (essentials()). */
+const ESSENTIALS_MS = 4000;
 /** Sound effects downloaded at once in the background (loadInBackground()). */
 const BACKGROUND_LOADS = 3;
 
@@ -122,7 +144,7 @@ export class MowAudio {
         }
         SoundLoadManager.instance.setUpManifests([manifest], ['default']);
         this.ids = manifest.bundles.flatMap((bundle) => bundle.assets.map((asset) => asset.alias[0].replace(/\.[^.]+$/, '')))
-            .filter((id) => !AMBIENT_LOOPS.has(id) && !MUSIC_TRACKS.has(id));
+            .filter((id) => !AMBIENT_LOOPS.has(id) && !MUSIC_TRACKS.has(id) && (!ALL_CUTS.has(id) || USED_CUTS.has(id)));
         this.ready = true;
         document.addEventListener('visibilitychange', this.syncPause);
         PlatformHandler.instance.onPause.add(this.onPause);
@@ -156,11 +178,47 @@ export class MowAudio {
     public static loadInBackground(): void {
         if (this.loading) return;
         this.loading = true;
-        const queue = [...this.ids];
+        const first = FIRST_CUES.flatMap((cue) => SOUNDS[cue].soundId as string | string[]).filter((id) => this.ids.includes(id));
+        const queue = [...new Set([...first, ...this.ids])];
         const next = async (): Promise<void> => {
             for (let id = queue.shift(); id; id = queue.shift()) await SoundLoadManager.instance.loadSoundByName(id).catch(() => undefined);
         };
         for (let i = 0; i < BACKGROUND_LOADS; i++) void next();
+    }
+
+    /** Resolves once the cut's sounds are in (or after ESSENTIALS_MS): what else is waiting to download starts then. */
+    public static async essentials(): Promise<void> {
+        const started = performance.now();
+        while (!this.loaded('cut') && performance.now() - started < ESSENTIALS_MS) await new Promise((resolve) => window.setTimeout(resolve, 60));
+    }
+
+    /** Debug: one set of cut sounds (CUT_SETS) for every grass, from its download on; undefined: each grass's own. */
+    public static async tryCutSet(set: string | undefined): Promise<void> {
+        if (set) await Promise.all(cutIds(set).map((id) => SoundLoadManager.instance.loadSoundByName(id).catch(() => undefined)));
+        this.triedCutSet = set;
+    }
+
+    private static triedCutSet: string | undefined;
+
+    /** `grass` cut (or chewed): its own sounds; the first grass's until they're in. Sharing the cut's cooldown. */
+    public static cut(grass: GrassDef): void {
+        const ids = cutIds(this.triedCutSet ?? grass.cutSound ?? MOW.grass[0].cutSound ?? '');
+        if (!ids.every((id) => SoundLoadManager.instance.getSound(id)?.isLoaded)) {
+            this.play('cut');
+            return;
+        }
+        if (!this.ready || this.isPaused() || SoundManager.instance.isMuted || !this.rested('cut')) return;
+        const { volume, pitch } = MOW.cutSound;
+        const scale = this.triedCutSet ? 1 : grass.cutPitch ?? 1;
+        SoundManager.instance.tryToPlaySound({ soundId: ids, volumeMinMax: volume, pitchMinMax: [pitch[0] * scale, pitch[1] * scale] });
+    }
+
+    /** Whether `cue` may play again (its cooldown's over): if so, it starts anew. */
+    private static rested(cue: Cue): boolean {
+        const now = performance.now();
+        if (now - (this.lastPlayed.get(cue) ?? -Infinity) < (COOLDOWN_MS[cue] ?? DEFAULT_COOLDOWN_MS)) return false;
+        this.lastPlayed.set(cue, now);
+        return true;
     }
 
     /** Every file of `cue` is in (its variants load together). */
@@ -171,9 +229,7 @@ export class MowAudio {
 
     public static play(cue: Cue): void {
         if (!this.ready || this.isPaused() || SoundManager.instance.isMuted || !this.loaded(cue)) return;
-        const now = performance.now();
-        if (now - (this.lastPlayed.get(cue) ?? -Infinity) < (COOLDOWN_MS[cue] ?? DEFAULT_COOLDOWN_MS)) return;
-        this.lastPlayed.set(cue, now);
+        if (!this.rested(cue)) return;
         SoundManager.instance.tryToPlaySound(SOUNDS[cue]);
     }
 

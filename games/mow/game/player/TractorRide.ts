@@ -6,7 +6,7 @@
 // its front (cutPoint); on foot with a ridden mower, nothing is cut. One model (`tractor`: dig's tractor — look, seat,
 // exhaust, smoke, edited in the editor's Tractor tab) for every ridden mower, painted like dig's vehicles (the
 // mower's `greyscale` / `tint`: the grey Digger, the purple Tractor, the Red Tractor; utils/Paint.ts) and scaled by
-// its `rideScale`.
+// its `rideScale`; and dressed in what the player picked for it (a paint, a part: MowProgress.tractorLook, TractorDress).
 //
 // The tractor follows the player's body (its position and facing); the seat offset moves the body up / back into it
 // after the character has placed itself for the frame.
@@ -14,14 +14,17 @@
 import * as THREE from 'three';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { BendService } from '../services/BendService';
-import { MOW, ToolDef, toolPaint } from '../data/MowConfig';
+import { MOW, toolPaint } from '../data/MowConfig';
 import { isBodyMaterial, paintPixels } from '../utils/Paint';
 import { MowProgress } from '../data/MowProgress';
 import type MowPlayer from './MowPlayer';
 import { playerScale } from './MowPlayer';
+import { afterStart } from '../utils/AfterStart';
 import type { MowEffects } from '../vfx/MowEffects';
 import { MowAudio } from '../audio/MowAudio';
 import { MOUNT, MowerBlades } from './MowerBlades';
+import { buildPart, fitTractor, freePart, paintTile, wrapBody } from './TractorDress';
+import { tractorPaint, tractorPart } from '../data/TractorSkins';
 
 const MODEL_BASE = './mow/models/';
 /** Wheel radius the spin is worked out from (world units, at the tractor's base height). */
@@ -49,7 +52,10 @@ export class TractorRide {
     private colorMap?: THREE.Texture;
     private readonly paintedMaps = new Map<string, THREE.Texture | undefined>();
     private riding = false;
-    private lookFor?: ToolDef;
+    /** The look it has (the mower, the paint and the part), and the part on it. */
+    private lookFor = '';
+    private part?: THREE.Object3D;
+    private partId = '';
     private exhaustTimer = 0;
     private readonly lastPosition = new THREE.Vector3();
     private readonly seat = new THREE.Vector3();
@@ -83,6 +89,8 @@ export class TractorRide {
     private async load(): Promise<void> {
         const config = MOW.tractor;
         try {
+            // Not ridden yet: it can wait until the game is up.
+            if (!MowProgress.tool.ride) await afterStart();
             const model = await ModelLoaderManager.instance.loadModel(`${MODEL_BASE}${config.model}`);
             model.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
@@ -97,18 +105,14 @@ export class TractorRide {
                 }
                 if (/wheel/i.test(child.name)) this.wheels.push(child);
             });
-            const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
-            if (size.y > 1e-4) model.scale.multiplyScalar(config.height / size.y);
-            model.rotation.y = config.rotationY;
-            model.updateMatrixWorld(true);
-            model.position.y = -new THREE.Box3().setFromObject(model).min.y;
-            model.updateMatrixWorld(true);
+            fitTractor(model);
+            wrapBody(model);
             // No wheels of its own to turn (the lawn tractor's four tyres are one mesh): spinning ones in their place.
             if (!this.wheels.length) this.buildWheels(model);
             this.model = model;
             this.colorMap = this.materials.find((m) => m.map)?.map ?? undefined;
             this.paintedMaps.clear();
-            this.lookFor = undefined;
+            this.lookFor = '';
             this.holder.add(model);
             this.holder.add(this.blades.group);
             // Its front edge in the holder's frame (the blades mount past it).
@@ -179,34 +183,6 @@ export class TractorRide {
     /** Built wheels' radius (holder units, at the base height), for their spin. */
     private wheelRadius?: number;
 
-    /**
-     * A copy of the tractor as `tool` looks (its paint; its own materials, bent with the world): the Mower station's
-     * stand shows the next driven mower with it. Undefined if the model can't load.
-     */
-    public static async copy(tool: ToolDef): Promise<THREE.Object3D | undefined> {
-        try {
-            const model = (await ModelLoaderManager.instance.loadModel(`${MODEL_BASE}${MOW.tractor.model}`)).clone(true);
-            const paint = toolPaint(tool);
-            model.traverse((child) => {
-                if (!(child instanceof THREE.Mesh)) return;
-                child.material = (Array.isArray(child.material) ? child.material : [child.material]).map((source) => {
-                    const material = source.clone();
-                    BendService.applyBend(material);
-                    if (paint && material instanceof THREE.MeshStandardMaterial) {
-                        if (material.map) material.map = TractorRide.paintedTexture(material.map, paint) ?? material.map;
-                        else if (isBodyMaterial(material)) material.color.set(paint === 'grey' ? 0x8c8c8c : paint);
-                    }
-                    return material;
-                });
-                if ((child.material as THREE.Material[]).length === 1) child.material = (child.material as THREE.Material[])[0];
-            });
-            model.rotation.y = MOW.tractor.rotationY;
-            return model;
-        } catch {
-            return undefined;
-        }
-    }
-
     /** A copy of `map` (same settings) repainted (paintPixels): grey, or a colour. */
     private static paintedTexture(map: THREE.Texture, paint: string): THREE.Texture | undefined {
         const image = map.image as CanvasImageSource & { width: number; height: number };
@@ -226,11 +202,13 @@ export class TractorRide {
         return painted;
     }
 
-    /** The current mower's look: its paint (toolPaint) and its size. */
+    /** The current mower's look: its paint (the one the player put on it, else toolPaint), its part and its size. */
     private updateLook(): void {
         const tool = MowProgress.tool;
-        if (tool === this.lookFor || !this.model) return;
-        this.lookFor = tool;
+        const look = MowProgress.tractorLook;
+        const lookFor = `${tool.id}|${look.paints}|${look.parts}`;
+        if (lookFor === this.lookFor || !this.model) return;
+        this.lookFor = lookFor;
         const paint = toolPaint(tool);
         if (paint && !this.paintedMaps.has(paint) && this.colorMap) this.paintedMaps.set(paint, TractorRide.paintedTexture(this.colorMap, paint));
         const map = (paint ? this.paintedMaps.get(paint) : undefined) ?? this.colorMap;
@@ -245,9 +223,48 @@ export class TractorRide {
             if (!paint) material.color.copy(original);
             else if (paint === 'grey') material.color.setRGB(0.55, 0.55, 0.55);
             else material.color.set(paint);
+            this.setTile(material, null);
         }
+        const worn = tractorPaint(look.paints);
+        if (worn) {
+            void paintTile(worn).then((tile) => {
+                if (!tile || this.lookFor !== lookFor) return;
+                for (const material of this.bodyColors.keys()) {
+                    material.color.set(0xffffff);
+                    this.setTile(material, tile);
+                }
+            });
+        }
+        void this.setPart(look.parts);
         this.holder.scale.setScalar(this.scale);
     }
+
+    /** A body material's pattern, or none. */
+    private setTile(material: THREE.MeshStandardMaterial, tile: THREE.Texture | null): void {
+        if (material.map === tile) return;
+        // (A program with a texture and one without aren't the same.)
+        material.needsUpdate = !material.map !== !tile;
+        material.map = tile;
+    }
+
+    /** The part on it ('' none). */
+    private async setPart(id: string): Promise<void> {
+        if (id === this.partId) return;
+        this.partId = id;
+        if (this.part) freePart(this.part);
+        this.part = undefined;
+        const part = tractorPart(id);
+        if (!part) return;
+        const built = await buildPart(part, (material) => BendService.applyBend(material));
+        if (this.partId !== id || this.destroyed) {
+            freePart(built);
+            return;
+        }
+        this.part = built;
+        this.holder.add(built);
+    }
+
+    private destroyed = false;
 
     /** Call after the world has updated (the character has placed itself for this frame). */
     public update(delta: number): void {
@@ -360,6 +377,8 @@ export class TractorRide {
     }
 
     public destroy(): void {
+        this.destroyed = true;
+        if (this.part) freePart(this.part);
         this.blades.dispose();
         this.holder.removeFromParent();
     }

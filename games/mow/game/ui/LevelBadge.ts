@@ -1,87 +1,71 @@
 // LevelBadge.ts
 //
-// The farm test's player level on the HUD, the most important bar on screen (top centre, big): the 2D library's level
-// slider (library3d/2d, Layer Lab: Slider_Level02 — a blue shield badge with the level on it, a dark rounded track and
-// a blue fill, "into / need" written over it), copied into the UI atlas (raw-assets/images/ui{tps}). Nine-sliced at
-// half scale, so it stays sharp at any size. A level up pops the badge and flashes the bar.
+// The farm test's player level on the HUD (top centre): the kit's blue shield with the level on it, over the left end of
+// the level's bar ("into / need" on it); the area's thinner bar goes under that, clear of the shield (MowHud's, lined up
+// by barSpan). A level up pops the badge and flashes the bar.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
+import { HudBar } from './HudBar';
 import { UiKit } from './UiKit';
 
-/** The bar (screen px, the badge overlapping its left end), the badge's size, the fill's inset inside the track. */
-const BAR = { width: 300, height: 36, inset: 6 };
-const BADGE = 78;
-/** Nine-slices: drawn at this share of their source size (the source is 2x: sharp on high-DPI screens). */
-const SLICE_SCALE = 0.5;
-const FRAMES = { badge: 'Slider_Level02_Icon_Badge_Blue', track: 'Slider_Level02_Bg_Single', fill: 'Slider_Level02_Fill01_Blue' };
-const RIM = 0x1d140e;
-
-/** A nine-slice of `frame` (corners `l, t, r, b` in source px) `width` x `height` on screen, its left middle at the origin. */
-function sliced(frame: string, corners: [number, number, number, number], width: number, height: number): PIXI.NineSlicePlane {
-    const plane = new PIXI.NineSlicePlane(PIXI.Texture.from(frame), ...corners);
-    plane.width = width / SLICE_SCALE;
-    plane.height = height / SLICE_SCALE;
-    plane.scale.set(SLICE_SCALE);
-    plane.y = -height / 2;
-    return plane;
-}
+/** The shield's size; the bar's width (from the shield's middle), its height and what the shield covers of it. */
+const BADGE = 72;
+const BAR = { width: 300, height: 38, covered: 32 };
+/** Where the area's bar goes: its left end (clear of the shield) and its middle line, under the level's. */
+const AREA = { from: 36, y: 36 };
+const STROKE = { number: 0x1f49a8, amount: 0x0c0c12 };
 
 export class LevelBadge extends PIXI.Container {
     private readonly badge = new PIXI.Container();
     private readonly number: PIXI.Text;
-    private readonly fill: PIXI.NineSlicePlane;
     private readonly amount: PIXI.Text;
-    private readonly track: PIXI.Container;
+    private readonly bar = new HudBar(BAR.width, BAR.height);
+    private readonly track = new PIXI.Container();
     private shown = -1;
-    private share = -1;
 
     public constructor() {
         super();
-        const style = (size: number) => new PIXI.TextStyle({
-            fontFamily: UiKit.fontFamily('primary'), fontSize: size, fill: 0xffffff, stroke: RIM, strokeThickness: 6, lineJoin: 'round',
+        const style = (size: number, stroke: number) => new PIXI.TextStyle({
+            fontFamily: UiKit.fontFamily('primary'), fontSize: size, fill: 0xffffff, stroke, strokeThickness: 7, lineJoin: 'round',
         });
-        // The track runs right from under the badge's middle.
-        this.track = new PIXI.Container();
-        this.track.addChild(sliced(FRAMES.track, [12, 20, 12, 20], BAR.width, BAR.height));
-        const innerHeight = BAR.height - BAR.inset * 2;
-        this.fill = sliced(FRAMES.fill, [1, 10, 4, 10], BAR.width - BAR.inset * 2, innerHeight);
-        this.fill.position.set(BAR.inset, -innerHeight / 2);
-        this.track.addChild(this.fill);
-        this.amount = new PIXI.Text('', style(22));
+        this.bar.setFrom(BAR.covered);
+        this.amount = new PIXI.Text('', style(25, STROKE.amount));
         this.amount.anchor.set(0.5);
-        this.amount.position.set(BAR.width / 2 + BADGE * 0.2, 1);
-        this.track.addChild(this.amount);
-        this.addChild(this.track);
+        this.amount.position.set((BAR.covered + BAR.width) / 2, -2);
+        this.track.addChild(this.bar, this.amount);
 
-        const shield = PIXI.Sprite.from(FRAMES.badge);
+        const shield = PIXI.Sprite.from('Slider_Level02_Icon_Badge_Blue');
         shield.anchor.set(0.5);
-        shield.width = BADGE;
-        shield.height = BADGE * (107 / 102);
-        this.number = new PIXI.Text('1', style(38));
+        shield.scale.set(BADGE / Math.max(shield.texture.width, shield.texture.height, 1));
+        this.number = new PIXI.Text('1', style(34, STROKE.number));
         this.number.anchor.set(0.5);
-        this.number.y = 1;
+        this.number.y = -2;
         this.badge.addChild(shield, this.number);
-        this.addChild(this.badge);
+        this.addChild(this.track, this.badge);
     }
 
-    /** Its full width (the badge's left edge to the bar's right end), for centring it. */
+    /** Its full width (the shield's left edge to the bar's right end) and the shield's half, for centring it (its origin is the shield's middle). */
     public static get width(): number {
         return BADGE / 2 + BAR.width;
     }
 
-    /** The bar's part clear of the badge (from the badge's right edge to the bar's end) and the bar's bottom, unscaled from its origin. */
-    public static get barSpan(): { from: number; to: number; bottom: number } {
-        return { from: BADGE / 2, to: BAR.width, bottom: BAR.height / 2 };
+    public static get badgeHalf(): number {
+        return BADGE / 2;
+    }
+
+    /** Where the area's bar goes, unscaled from its origin: its ends, its middle line, and what the shield covers of it. */
+    public static get barSpan(): { from: number; to: number; y: number; covered: number } {
+        return { from: AREA.from, to: BAR.width, y: AREA.y, covered: 0 };
     }
 
     /** The level and the XP into it (`into` of `need`). */
     public set(level: number, into: number, need: number): void {
-        const share = Math.max(0, Math.min(1, into / Math.max(1, need)));
         if (level !== this.shown) {
             const up = this.shown > 0 && level > this.shown;
             this.shown = level;
             this.number.text = String(level);
+            UiKit.fit(this.number, BADGE * 0.7);
             if (up) {
                 gsap.killTweensOf(this.badge.scale);
                 this.badge.scale.set(1.5);
@@ -89,13 +73,9 @@ export class LevelBadge extends PIXI.Container {
                 gsap.fromTo(this.track, { alpha: 0.4 }, { alpha: 1, duration: 0.5 });
             }
         }
-        this.amount.text = `${Math.floor(into)}/${Math.ceil(need)}`;
-        if (Math.abs(share - this.share) < 0.001) return;
-        this.share = share;
-        // The fill from the track's left, at least its rounded ends' width (hidden while empty).
-        const full = BAR.width - BAR.inset * 2;
-        this.fill.visible = share > 0;
-        this.fill.width = Math.max(10, full * share) / SLICE_SCALE;
+        const amount = `${Math.floor(into)}/${Math.ceil(need)}`;
+        if (this.amount.text !== amount) this.amount.text = amount;
+        this.bar.setShare(into / Math.max(1, need));
     }
 
     public override destroy(): void {

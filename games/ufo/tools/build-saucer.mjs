@@ -62,6 +62,22 @@ const RECOLOURED = [
     { name: 'saucer-magma', from: 'BaseColor1.png', hull: [0.3, 0.1, 0.14], panels: [1, 0.45, 0.05], details: [1, 0.9, 0.2], shade: 0.43 },
     { name: 'saucer-ice', from: 'BaseColor1.png', hull: [0.7, 0.95, 1], panels: [1, 1, 1], details: [0.15, 0.55, 1], shade: 0.43 },
     { name: 'saucer-candy', from: 'BaseColor1.png', hull: [1, 0.65, 0.85], panels: [0.6, 0.9, 1], details: [1, 0.97, 0.5], shade: 0.43 },
+    { name: 'saucer-kitty', from: 'BaseColor1.png', hull: [1, 0.62, 0.78], panels: [1, 0.9, 0.95], details: [1, 0.4, 0.6], shade: 0.43 },
+    { name: 'saucer-bunny', from: 'BaseColor1.png', hull: [0.97, 0.97, 1], panels: [1, 0.75, 0.85], details: [1, 0.45, 0.6], shade: 0.43 },
+    { name: 'saucer-bee', from: 'BaseColor1.png', hull: [1, 0.78, 0.06], panels: [0.12, 0.1, 0.1], details: [1, 1, 0.8], shade: 0.43 },
+    { name: 'saucer-froggy', from: 'BaseColor1.png', hull: [0.25, 0.85, 0.25], panels: [0.75, 1, 0.45], details: [1, 0.95, 0.4], shade: 0.43 },
+    { name: 'saucer-ladybug', from: 'BaseColor1.png', hull: [0.95, 0.1, 0.1], panels: [0.95, 0.1, 0.1], details: [0.1, 0.08, 0.1], shade: 0.43 },
+    { name: 'saucer-donut', from: 'BaseColor1.png', hull: [0.86, 0.58, 0.28], panels: [0.95, 0.72, 0.42], details: [1, 0.9, 0.7], shade: 0.43 },
+    { name: 'saucer-shark', from: 'BaseColor1.png', hull: [0.35, 0.55, 0.75], panels: [0.92, 0.96, 1], details: [1, 1, 1], shade: 0.43 },
+    { name: 'saucer-rocket', from: 'BaseColor1.png', hull: [0.92, 0.94, 1], panels: [1, 0.35, 0.1], details: [0.2, 0.6, 1], shade: 0.43 },
+    { name: 'saucer-devil', from: 'BaseColor1.png', hull: [0.82, 0.06, 0.1], panels: [0.16, 0.08, 0.14], details: [1, 0.75, 0.1], shade: 0.43 },
+    { name: 'saucer-birthday', from: 'BaseColor1.png', hull: [1, 0.75, 0.88], panels: [0.55, 0.85, 1], details: [1, 1, 0.7], shade: 0.43 },
+    { name: 'saucer-viking', from: 'BaseColor1.png', hull: [0.55, 0.32, 0.14], panels: [0.78, 0.8, 0.86], details: [1, 0.78, 0.2], shade: 0.43 },
+    { name: 'saucer-santa', from: 'BaseColor1.png', hull: [0.86, 0.08, 0.1], panels: [1, 1, 1], details: [0.1, 0.7, 0.3], shade: 0.43 },
+    { name: 'saucer-saturn', from: 'BaseColor1.png', hull: [0.95, 0.62, 0.3], panels: [0.6, 0.35, 0.78], details: [1, 0.9, 0.6], shade: 0.43 },
+    { name: 'saucer-king', from: 'BaseColor1.png', hull: [1, 0.78, 0.1], panels: [0.55, 0.12, 0.85], details: [1, 0.25, 0.35], shade: 0.43 },
+    { name: 'saucer-unicorn', from: 'BaseColor1.png', hull: [0.97, 0.92, 1], panels: [0.75, 0.88, 1], details: [1, 0.7, 0.9], shade: 0.43 },
+    { name: 'saucer-angel', from: 'BaseColor1.png', hull: [1, 0.97, 0.9], panels: [1, 0.85, 0.35], details: [1, 1, 1], shade: 0.43 },
 ];
 
 function loadFbx() {

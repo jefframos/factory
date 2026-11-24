@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { createGLTFLoader } from 'core/three/GLTFLoaders';
 import { BendService } from '../services/BendService';
+import { afterStart } from '../utils/AfterStart';
 import { MOW } from '../data/MowConfig';
 
 type BaseItem = 'bale' | 'egg' | 'tray' | 'goldTray' | 'cash' | 'milk' | 'butter' | 'cheese';
@@ -73,7 +74,8 @@ let preloading: Promise<void> | undefined;
 
 /** A model (under ./mow/models/) fitted: its base on y = 0, centred, `height` tall at most and `width` across at most. */
 function loadFitted(path: string, height: number, width: number): Promise<THREE.Object3D> {
-    return createGLTFLoader().loadAsync(`./mow/models/${path}`).then((gltf) => {
+    // (Once the game is up: nothing on a farm is needed before.)
+    return afterStart().then(() => createGLTFLoader().loadAsync(`./mow/models/${path}`)).then((gltf) => {
         const model = gltf.scene;
         model.traverse((child) => {
             if (!(child instanceof THREE.Mesh)) return;
@@ -292,7 +294,7 @@ export class Animal {
     private static source(path: string): Promise<AnimalSource> {
         let found = animalSources.get(path);
         if (!found) {
-            found = createGLTFLoader().loadAsync(`./mow/models/${path}`).then((gltf) => ({ scene: gltf.scene, clips: gltf.animations }));
+            found = afterStart().then(() => createGLTFLoader().loadAsync(`./mow/models/${path}`)).then((gltf) => ({ scene: gltf.scene, clips: gltf.animations }));
             animalSources.set(path, found);
         }
         return found;

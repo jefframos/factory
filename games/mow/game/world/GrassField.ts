@@ -37,24 +37,30 @@
 import * as THREE from 'three';
 import { MOW, TOWN, DistrictDef, GrassDef, GrassPatch, TreasureDef, canCutGrass, lawnLift, pastCorner, worthPerClipping } from '../data/MowConfig';
 import { BendService } from '../services/BendService';
+import { ColorGrade } from 'core/scene/ColorGrade';
+import { worldToScreen } from '../config/CameraConfig';
 import { bladeMaterial, clumpGeometry, FAR_CLUMP, NEAR_CLUMP, setPushers } from './GrassBlades';
+import { UP_LIGHT } from './TownLight';
 
-const CHUNK = 16;
+/** (Small, so little is drawn past the screen's edges.) */
+const CHUNK = 10;
 /** Chunks further than this from the player (world units, to their middle) get the lighter clump. */
 const LOD_DISTANCE = 15;
 /** Room round a chunk's bounds for culling: the sway, and the world bend pulling far ground into view. */
-const CULL_MARGIN = 3;
+const CULL_MARGIN = (MOW.bend ?? 0.002) !== 0 ? 3 : 1;
 /** A clump's spread (world units across) per cell size, and its random extra. */
 const CLUMP_SPREAD = 1.6;
 const CLUMP_SPREAD_JITTER = 0.35;
 /** Parting the grass: round the player's feet, and round the mower's cutting point (past its reach). */
 const PUSH_PLAYER = 0.6;
 const PUSH_TOOL_EXTRA = 0.35;
+/** Drawn first, so what's under it isn't worked out (Town's ORDER). */
+const DRAW_ORDER = { grass: -1, lawn: 1 };
 /** The ground's grass noise: "pixels" per world unit. */
 const GRASS_PIXELS = 12;
 /** Width of the fixed stripes (cells cut without a heading), in cells. */
 const STRIPE = 4;
-/** A cut cell's shade by the mower's heading then: up / down the screen (-z / +z), left / right (-x / +x). */
+/** A cut cell's shade by the mower's heading then: up / down the screen, left / right. */
 const PATH_SHADES = { up: 0.86, down: 1.12, left: 0.93, right: 1.05 };
 
 /** Seeded 2D value noise in [0, 1). */
@@ -117,11 +123,13 @@ export interface CutResult {
     /** Cut cells whose grass was as tough as the tool's power (it labours through those: MowingSystem's LOAD_DRAG). */
     hard?: number;
     /** Grass too tough being chewed (not through yet): where and its colour (the chips). */
-    chewing?: { at: THREE.Vector3; color: THREE.Color };
+    chewing?: { at: THREE.Vector3; color: THREE.Color; grass: GrassDef };
     /** The toughest grass met that the tool can't cut at all (for the hint), if any. */
     blocked?: GrassDef;
     /** Where cutting happened (the average of the cut cells), for particles. */
     at?: THREE.Vector3;
+    /** The toughest grass cut. */
+    grass?: GrassDef;
     /** The colour of what was cut. */
     color?: THREE.Color;
     /** Treasures whose cells were cut this call: found (and where). */
@@ -266,20 +274,21 @@ export class GrassField {
     /** Each district's ground: a plane under its grass, in its overgrown colour (brightens on restore). */
     private buildGrounds(): void {
         for (const district of MOW.districts) {
-            const material = new THREE.MeshStandardMaterial({ color: district.ground, roughness: 1 });
+            const material = new THREE.MeshBasicMaterial({ color: district.ground });
             this.grassShader(material);
             BendService.applyBend(material);
-            const geometry = new THREE.PlaneGeometry(district.width, district.depth, Math.ceil(district.width), Math.ceil(district.depth));
+            const geometry = new THREE.PlaneGeometry(district.width, district.depth, BendService.segmentsForSpan(district.width), BendService.segmentsForSpan(district.depth));
             geometry.rotateX(-Math.PI / 2);
             const ground = new THREE.Mesh(geometry, material);
             ground.position.set(district.x, 0.01 + lawnLift(), district.z);
+            ground.renderOrder = DRAW_ORDER.lawn;
             this.grounds.push(ground);
             this.group.add(ground);
         }
     }
 
     /** The ground's look (see the file's header): pixel-noise grass, and the mowed cells from cutMap. */
-    private grassShader(material: THREE.MeshStandardMaterial): void {
+    private grassShader(material: THREE.MeshBasicMaterial): void {
         const uniforms = {
             uCutMap: { value: this.cutMap },
             uGridMin: { value: new THREE.Vector2(this.minX, this.minZ) },
@@ -288,6 +297,7 @@ export class GrassField {
         };
         material.customProgramCacheKey = () => 'mow-grass-ground';
         material.onBeforeCompile = (shader) => {
+            ColorGrade.apply(shader);
             Object.assign(shader.uniforms, uniforms);
             shader.vertexShader = shader.vertexShader
                 .replace('#include <common>', '#include <common>\nvarying vec2 vGrassXZ;')
@@ -307,7 +317,7 @@ export class GrassField {
                     float clump = grassHash(floor(vGrassXZ * 1.3));
                     float shade = (0.86 + grain * 0.16 + blade * 0.16) * (0.94 + clump * 0.1);
                     vec4 mowed = texture2D(uCutMap, (vGrassXZ - uGridMin) / uGridSize);
-                    diffuseColor.rgb = mix(diffuseColor.rgb, mowed.rgb, mowed.a) * shade;`);
+                    diffuseColor.rgb = mix(diffuseColor.rgb, mowed.rgb, mowed.a) * shade * ${UP_LIGHT.toFixed(4)};`);
         };
     }
 
@@ -341,6 +351,9 @@ export class GrassField {
                 mesh.instanceMatrix.needsUpdate = true;
                 if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
                 mesh.visible = mesh.count > 0;
+                mesh.renderOrder = DRAW_ORDER.grass;
+                // (Hundreds of them, never moved.)
+                mesh.matrixAutoUpdate = false;
                 this.group.add(mesh);
             }
         }
@@ -429,9 +442,10 @@ export class GrassField {
         const abz = bz - az;
         const length2 = abx * abx + abz * abz;
         // The heading (feet -> tool) sets the stripe's shade, by its main axis.
-        const heading = length2 < 1e-6 ? 0 : Math.abs(abz) >= Math.abs(abx)
-            ? (abz < 0 ? PATH_SHADES.up : PATH_SHADES.down)
-            : (abx < 0 ? PATH_SHADES.left : PATH_SHADES.right);
+        const way = worldToScreen(abx, abz);
+        const heading = length2 < 1e-6 ? 0 : Math.abs(way.down) >= Math.abs(way.right)
+            ? (way.down < 0 ? PATH_SHADES.up : PATH_SHADES.down)
+            : (way.right < 0 ? PATH_SHADES.left : PATH_SHADES.right);
         /** Squared distance from (x, z) to the segment. */
         const distance2 = (x: number, z: number) => {
             const t = length2 > 0 ? Math.min(1, Math.max(0, ((x - ax) * abx + (z - az) * abz) / length2)) : 0;
@@ -459,7 +473,7 @@ export class GrassField {
                 if (short > 0) {
                     this.damage[i] += delta;
                     if (this.damage[i] < MOW.chewSec[short - 1] * this.grassScales[d]) {
-                        result.chewing ??= { at: new THREE.Vector3(x, 0.4, z), color: this.uncutColors[this.types[i] - 1].clone() };
+                        result.chewing ??= { at: new THREE.Vector3(x, 0.4, z), color: this.uncutColors[this.types[i] - 1].clone(), grass };
                         continue;
                     }
                 }
@@ -479,6 +493,7 @@ export class GrassField {
                 sumX += x;
                 sumZ += z;
                 lastType = this.types[i] - 1;
+                if (!result.grass || grass.resistance > result.grass.resistance) result.grass = grass;
             }
         }
         if (result.cells > 0) {
@@ -708,7 +723,7 @@ export class GrassField {
     /** The ground of a district in its restored colour. */
     public setRestored(district: number): void {
         const ground = this.grounds[district];
-        (ground.material as THREE.MeshStandardMaterial).color.set(MOW.districts[district].restoredGround);
+        (ground.material as THREE.MeshBasicMaterial).color.set(MOW.districts[district].restoredGround);
     }
 
     /** Uncut cells of a district left, as points (for showing the last patches), at most `max`. */

@@ -5,6 +5,7 @@ import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { ensureFolderExists } from '../folderUtils/folderUtils.mjs';
 import font from '../pack/font.mjs';
+import { subsetFonts } from './subset-fonts.mjs';
 
 // .env picks the game, even over a GAME left set in the terminal (dotenv alone never overrides one).
 process.env.GAME = dotenv.config().parsed?.GAME ?? process.env.GAME;
@@ -47,5 +48,7 @@ if (WATCH) {
     });
 } else {
     await pack.run();
+    // Only the characters the game can show (subset-fonts.mjs).
+    await subsetFonts(GAME);
     console.log('✅ Built font assets');
 }

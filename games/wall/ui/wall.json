@@ -1,0 +1,109 @@
+{
+  "$comment": "Everything the wall game plays by (distances in world units, the wall's cells `cell` across; times in seconds). wall: its size (a portrait block, the same on every screen), `breakShare`: the share of its cells that brings it down (its HP is that share, so the bar and the hole are the same thing), `noise`: how much the weak lines steer a hit, `gap`: how far behind the next gate is (even, and farther than the camera's off the wall, so it's walked through). camera: upright, the wall's between the bar at the top and the cards, `clear` off both (the HUD's units), taking at most `tall` of the screen's height; on a wide screen (from its `aspect` on) the share it takes and how far up it stands (`floorAt`); `side`: the frame seen each side of it on a narrow one. wallHp: by number (past the list: the last x `hpGrowth`^n). wallMaterials: wall by wall; round again (from `roundFrom`) after the last, in other colours. materials: `look` (the pattern), colours, `core`: the colour of its deepest layers, `dust`, `chip`: debris size, `hit`: its sound, `cash`: what its damage pays (1 if not given), `room`: the colour of the dark behind it (and a touch of the grey round it), `accent`: of the lights on its gate. punch: the damage, and PUNCH HARDER: the first level's free (after wall 1), each next costs `cost` x `costGrowth`^n, `mult` its effect level by level (the last repeats). bricks: what a wall brings (base + perWall x its number). crew: helpers; each copy costs x `crewGrowth` more; there from wall `wall` on (ever reached); `dps`: damage a second each; `every`: seconds between one's hits; `size`: how big; `z`: how far from the wall it stands; `style`: leap (headbutts) or throw; `shows`: how many are drawn. crewBoosts: the crew's own boosts: from `at` copies on, x `mult`, for `bricks` (+ `typeBricks` for each place down the list). boosts: the others, there from a wall or a number of copies on. weak: the weak spot (from wall `wall`): `mult` its hit, `radius` around it that counts (of the screen's height), hit again within `window` the combo goes up a step (`combo`, `comboSteps` of them to start with). shows: from which wall (ever reached) on the boosts' row and the wardrobe's button are there. medal: the one behind the wall, from wall `wall` on; a wall down brings its number of them. rewind: from wall `wall` (reached): back to wall 1 without cash, bricks or crew, PUNCH HARDER and boosts kept, all damage + `perMedal` for each medal, for good. tools: a new one with every PUNCH HARDER level from `from` on: the types in turn, in the next colour (tiers, for the metal; `glow`: it shines) every `perTier` levels; `bite`: how a hit spreads (wide: across the face, deep: into it).",
+  "wall": { "cell": 0.36, "cols": 13, "rows": 20, "depth": 5, "breakShare": 0.5, "noise": 1.3, "gap": 18 },
+  "camera": { "fov": 42, "tall": 0.68, "clear": 14, "wide": { "aspect": 1.15, "tall": 0.75, "floorAt": 0.15 }, "side": 0.16, "rollDeg": -1.5, "pitchDrop": 0.7 },
+  "wallHp": [20, 65, 190, 480, 1150, 2600, 5800, 12500, 27000, 57000],
+  "hpGrowth": 2.05,
+  "roundFrom": 4,
+  "wallMaterials": [
+    "cardboard", "wood", "plaster", "concrete", "concrete", "brick", "brick", "stone", "stone", "iron", "iron", "obsidian", "obsidian",
+    "gold", "gold", "ice", "ice", "magma", "magma", "candy", "candy", "circuit", "circuit", "crystal", "crystal", "moon", "moon"
+  ],
+  "materials": {
+    "cardboard": { "name": "Cardboard", "look": "boxes", "colors": ["#dba25a", "#cf954c", "#e6b06a", "#f3d9a0"], "core": ["#b07f3c", "#a27334"], "room": "#2f67ad", "accent": "#7df3ff", "dust": "#e6cfa6", "chip": 0.85, "hit": "soft" },
+    "wood": { "name": "Wood", "look": "planks", "colors": ["#b86a2c", "#a65a20", "#c97a3a", "#85481a"], "core": ["#78421a", "#6a3814"], "room": "#1f8a78", "accent": "#c8ff6a", "dust": "#d8b48a", "chip": 1.0, "hit": "wood" },
+    "plaster": { "name": "Plaster", "look": "concrete", "colors": ["#fff1d6", "#ffe6bd", "#fff8ea"], "core": ["#e09a5a", "#cf884a"], "room": "#b04a7a", "accent": "#ffd24a", "dust": "#fff8ec", "chip": 0.8, "hit": "soft" },
+    "concrete": { "name": "Concrete", "look": "concrete", "colors": ["#aebcd0", "#9aaac2", "#c3cfdf"], "core": ["#8a6f8f", "#7a6080"], "room": "#b8622a", "accent": "#ffe14a", "dust": "#d8d4ca", "chip": 0.75, "hit": "stone" },
+    "brick": { "name": "Brick", "look": "brick", "colors": ["#d8512f", "#c44424", "#e66440", "#b53a1c"], "core": ["#a0603a", "#8f5230"], "room": "#1f78a8", "accent": "#6fe3ff", "dust": "#d9a28c", "chip": 0.95, "hit": "stone" },
+    "stone": { "name": "Stone", "look": "stone", "colors": ["#7f93bd", "#6b80ae", "#90a4cc", "#5d719e"], "core": ["#4a4f86", "#404578"], "room": "#7a3fb0", "accent": "#ff8cf0", "dust": "#b5bbc6", "chip": 1.1, "hit": "stone" },
+    "iron": { "name": "Iron", "look": "iron", "colors": ["#5588c0", "#4676ad", "#6a9dd4"], "core": ["#2f4470", "#283b63"], "room": "#a83a4a", "accent": "#ffb04a", "dust": "#a9b8c9", "chip": 1.2, "hit": "metal" },
+    "obsidian": { "name": "Obsidian", "look": "veins", "colors": ["#4a2f8a", "#3f2678", "#5a3aa0", "#8a5ae0"], "core": ["#ff4f9a", "#e03a88"], "room": "#17905a", "accent": "#8dffb0", "dust": "#a58bd6", "chip": 1.0, "hit": "glass" },
+    "gold": { "name": "Gold", "look": "brick", "colors": ["#ffc12a", "#f5ae14", "#ffd24a", "#e59a0c"], "core": ["#fff2a0", "#ffe56a"], "room": "#4a3fc0", "accent": "#b08cff", "dust": "#ffe9a8", "chip": 1.05, "hit": "metal", "cash": 1.5 },
+    "ice": { "name": "Ice", "look": "veins", "colors": ["#8fdcff", "#74cdfa", "#aae8ff", "#f4fdff"], "core": ["#3f9ae8", "#2f86d8"], "room": "#2446c0", "accent": "#9be8ff", "dust": "#e2f6ff", "chip": 1.1, "hit": "glass" },
+    "magma": { "name": "Magma", "look": "veins", "colors": ["#5a3436", "#4c2a2c", "#683e3e", "#ff7a1f"], "core": ["#ffa02e", "#ff6a10"], "room": "#2c4a80", "accent": "#ff8a3a", "dust": "#ffb27a", "chip": 1.15, "hit": "stone" },
+    "candy": { "name": "Candy", "look": "stripes", "colors": ["#ff78b8", "#ffffff", "#ff4f9f", "#ffc2de"], "core": ["#8a4a2a", "#784022"], "room": "#14a0b8", "accent": "#fff27a", "dust": "#ffd6e8", "chip": 0.95, "hit": "stone" },
+    "circuit": { "name": "Circuit", "look": "circuit", "colors": ["#12885a", "#0f754c", "#189c68", "#ffd84a"], "core": ["#5affc0", "#3ee8a4"], "room": "#6a2fb0", "accent": "#ff5ad0", "dust": "#8fe0bd", "chip": 0.95, "hit": "metal" },
+    "crystal": { "name": "Crystal", "look": "stone", "colors": ["#f04ce8", "#d83cd8", "#ff6cf6", "#b840e0"], "core": ["#fff0ff", "#ffd0ff"], "room": "#0f8290", "accent": "#8affea", "dust": "#f6c0f2", "chip": 1.15, "hit": "glass" },
+    "moon": { "name": "Moon Rock", "look": "concrete", "colors": ["#d4d8ff", "#bcc2f5", "#e8eaff"], "core": ["#5a68ff", "#4452f0"], "room": "#4030a8", "accent": "#8fa0ff", "dust": "#f0f1f8", "chip": 1.1, "hit": "stone" }
+  },
+  "punch": { "damage": 1, "mult": [2, 2, 2, 1.5], "cost": 130, "costGrowth": 2.6 },
+  "cash": { "perDamage": 1, "wallBonus": 0.25 },
+  "bricks": { "base": 2, "perWall": 0.7 },
+  "crewGrowth": 1.16,
+  "crew": [
+    { "id": "chick", "name": "Chick", "plural": "Chicks", "wall": 3, "cost": 45, "dps": 1, "every": 1.3, "size": 0.46, "z": 1.75, "style": "leap", "shows": 5 },
+    { "id": "beaver", "name": "Beaver", "plural": "Beavers", "wall": 5, "cost": 320, "dps": 6, "every": 1.6, "size": 0.5, "z": 1.35, "style": "leap", "shows": 4 },
+    { "id": "hog", "name": "Hog", "plural": "Hogs", "wall": 7, "cost": 2200, "dps": 32, "every": 1.9, "size": 0.56, "z": 0.95, "style": "leap", "shows": 3 },
+    { "id": "monkey", "name": "Monkey", "plural": "Monkeys", "wall": 9, "cost": 14000, "dps": 170, "every": 1.5, "size": 0.54, "z": 1.9, "style": "throw", "shows": 3 },
+    { "id": "cow", "name": "Cow", "plural": "Cows", "wall": 12, "cost": 95000, "dps": 900, "every": 2.1, "size": 0.62, "z": 0.8, "style": "leap", "shows": 2 },
+    { "id": "panda", "name": "Panda", "plural": "Pandas", "wall": 15, "cost": 650000, "dps": 5500, "every": 2.3, "size": 0.66, "z": 0.75, "style": "leap", "shows": 2 },
+    { "id": "elephant", "name": "Elephant", "plural": "Elephants", "wall": 18, "cost": 4500000, "dps": 32000, "every": 2.6, "size": 0.74, "z": 0.8, "style": "leap", "shows": 1 },
+    { "id": "giraffe", "name": "Giraffe", "plural": "Giraffes", "wall": 21, "cost": 32000000, "dps": 190000, "every": 2.4, "size": 0.78, "z": 0.7, "style": "leap", "shows": 1 }
+  ],
+  "crewBoosts": {
+    "typeBricks": 2,
+    "tiers": [
+      { "at": 1, "mult": 2, "bricks": 3 },
+      { "at": 5, "mult": 2, "bricks": 5 },
+      { "at": 15, "mult": 2, "bricks": 9 },
+      { "at": 30, "mult": 1.5, "bricks": 14 },
+      { "at": 50, "mult": 1.5, "bricks": 20 },
+      { "at": 75, "mult": 1.25, "bricks": 28 },
+      { "at": 100, "mult": 1.25, "bricks": 36 }
+    ]
+  },
+  "boosts": [
+    { "id": "high-five", "title": "HIGH FIVE", "what": "PUNCHES", "value": "+10% OF CREW", "icon": "Wall_fists", "crew": "chick", "count": 5, "bricks": 4, "effect": { "punchFromCrew": 0.1 } },
+    { "id": "lucky", "title": "LUCKY", "what": "CASH", "value": "+25%", "icon": "ItemIcon_Clover_Green", "wall": 4, "bricks": 4, "effect": { "cash": 1.25 } },
+    { "id": "sharp-eye", "title": "SHARP EYE", "what": "WEAK SPOT", "value": "x8 DAMAGE", "icon": "ItemIcon_Damage", "wall": 6, "bricks": 6, "effect": { "weak": 1.6 } },
+    { "id": "team-spirit", "title": "TEAM SPIRIT", "what": "ALL CREW", "value": "x1.5 DAMAGE", "icon": "ItemIcon_Heart_Red", "crew": "beaver", "count": 5, "bricks": 8, "effect": { "crew": 1.5 } },
+    { "id": "long-combo", "title": "LONG COMBO", "what": "COMBO", "value": "UP TO x6", "icon": "ItemIcon_Energy_Blue", "wall": 8, "bricks": 8, "effect": { "combo": 4 } },
+    { "id": "high-five-2", "title": "HIGH TEN", "what": "PUNCHES", "value": "+20% OF CREW", "icon": "Wall_fists", "crew": "hog", "count": 5, "bricks": 12, "effect": { "punchFromCrew": 0.2 } },
+    { "id": "lucky-2", "title": "VERY LUCKY", "what": "CASH", "value": "+50%", "icon": "ItemIcon_Clover_Green", "wall": 11, "bricks": 14, "effect": { "cash": 1.5 } },
+    { "id": "team-spirit-2", "title": "TEAM SONG", "what": "ALL CREW", "value": "x2 DAMAGE", "icon": "ItemIcon_Heart_Red", "crew": "monkey", "count": 5, "bricks": 18, "effect": { "crew": 2 } },
+    { "id": "iron-fists", "title": "IRON FISTS", "what": "PUNCHES", "value": "x2 DAMAGE", "icon": "Wall_fists", "wall": 13, "bricks": 18, "effect": { "punch": 2 } },
+    { "id": "lucky-3", "title": "SO LUCKY", "what": "CASH", "value": "x2", "icon": "ItemIcon_Clover_Green", "wall": 16, "bricks": 26, "effect": { "cash": 2 } },
+    { "id": "team-spirit-3", "title": "TEAM PARTY", "what": "ALL CREW", "value": "x2 DAMAGE", "icon": "ItemIcon_Heart_Red", "crew": "panda", "count": 5, "bricks": 30, "effect": { "crew": 2 } },
+    { "id": "iron-fists-2", "title": "STEEL FISTS", "what": "PUNCHES", "value": "x3 DAMAGE", "icon": "Wall_fists", "wall": 19, "bricks": 34, "effect": { "punch": 3 } }
+  ],
+  "shows": { "boosts": 4, "wardrobe": 4 },
+  "weak": { "wall": 5, "mult": 5, "radius": 0.07, "window": 2.2, "combo": [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6], "comboSteps": 6, "after": 2.5, "again": 0.3, "stays": 6, "drift": 0.3 },
+  "medal": { "wall": 6 },
+  "rewind": { "wall": 16, "perMedal": 0.1 },
+  "tools": {
+    "from": 2,
+    "perTier": 3,
+    "fists": { "bite": { "wide": 1, "deep": 1 } },
+    "types": [
+      { "id": "hammer", "name": "Hammer", "model": "hammer", "bite": { "wide": 1.35, "deep": 0.7 },
+        "hold": { "rotation": [0, 90, 0], "scale": 0.4, "contact": [0.27, 0.42, 0] },
+        "swing": { "windup": 0.06, "strike": 0.06, "follow": 0.05, "recover": 0.18, "raise": 75, "windupReach": 0.75, "hitAngle": 16, "followThrough": 6 } },
+      { "id": "axe", "name": "Axe", "model": "axe", "bite": { "wide": 1.15, "deep": 1.1 },
+        "hold": { "rotation": [0, -90, 0], "scale": 0.37, "contact": [-0.4, 0.55, 0] },
+        "swing": { "windup": 0.06, "strike": 0.06, "follow": 0.05, "recover": 0.18, "raise": 78, "windupReach": 0.75, "hitAngle": 16, "followThrough": 6 } },
+      { "id": "pickaxe", "name": "Pickaxe", "model": "pickaxe", "bite": { "wide": 0.85, "deep": 1.6 },
+        "hold": { "rotation": [0, 90, 0], "scale": 0.32, "contact": [0.7, 0.85, 0] },
+        "swing": { "windup": 0.06, "strike": 0.06, "follow": 0.05, "recover": 0.18, "raise": 80, "windupReach": 0.75, "hitAngle": 16, "followThrough": 5 } },
+      { "id": "mace", "name": "Mace", "model": "mace", "bite": { "wide": 1.5, "deep": 0.9 },
+        "hold": { "rotation": [0, 90, 0], "scale": 0.32, "contact": [0.32, 0.75, 0] },
+        "swing": { "windup": 0.07, "strike": 0.06, "follow": 0.05, "recover": 0.2, "raise": 85, "windupReach": 0.75, "hitAngle": 18, "followThrough": 6 } },
+      { "id": "battleaxe", "name": "Battle Axe", "model": "battleaxe", "bite": { "wide": 1.3, "deep": 1.3 },
+        "hold": { "rotation": [0, 90, 0], "scale": 0.3, "contact": [0.55, 0.9, 0] },
+        "swing": { "windup": 0.07, "strike": 0.06, "follow": 0.05, "recover": 0.2, "raise": 82, "windupReach": 0.75, "hitAngle": 18, "followThrough": 6 } },
+      { "id": "warhammer", "name": "War Hammer", "model": "warhammer", "bite": { "wide": 1.5, "deep": 1.2 },
+        "hold": { "rotation": [0, 90, 0], "scale": 0.3, "contact": [0.54, 0.95, 0] },
+        "swing": { "windup": 0.07, "strike": 0.06, "follow": 0.05, "recover": 0.2, "raise": 85, "windupReach": 0.75, "hitAngle": 18, "followThrough": 6 } }
+    ],
+    "tiers": [
+      { "id": "stone", "name": "Stone", "color": "#9a968f", "glow": 0 },
+      { "id": "copper", "name": "Copper", "color": "#e8803c", "glow": 0 },
+      { "id": "iron", "name": "Iron", "color": "#b9cbe0", "glow": 0 },
+      { "id": "gold", "name": "Gold", "color": "#ffc21f", "glow": 0.4 },
+      { "id": "emerald", "name": "Emerald", "color": "#23d975", "glow": 0.7 },
+      { "id": "sapphire", "name": "Sapphire", "color": "#2f7bff", "glow": 0.8 },
+      { "id": "ruby", "name": "Ruby", "color": "#ff2f55", "glow": 0.8 },
+      { "id": "amethyst", "name": "Amethyst", "color": "#b04cff", "glow": 0.9 },
+      { "id": "cosmic", "name": "Cosmic", "color": "#54f5ff", "glow": 1.3 }
+    ]
+  }
+}

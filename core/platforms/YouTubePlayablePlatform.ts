@@ -26,6 +26,9 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
 
     private saveData: Record<string, string> = {};
 
+    /** The save was read (or there was none). If it couldn't be, nothing's written: it would wipe the player's progress. */
+    private couldLoad = true;
+
     private first = false;
 
     private isPlayablesEnv(): boolean {
@@ -100,23 +103,36 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
         if (window.ytgame?.game?.loadData) {
             log("loadData available - requesting save state");
 
+            const raw = await this.loadRaw();
+            this.couldLoad = raw !== null;
             try {
                 // loadData() is typed as Promise<string> (see ytgame.d.ts) — always a
                 // serialized string per the SDK's own contract, never a pre-parsed object.
-                const raw = await window.ytgame.game.loadData();
-                log("loadData result", raw);
-
                 this.saveData = raw ? JSON.parse(raw) : {};
-
                 log("saveData parsed", this.saveData);
             }
             catch (e) {
-                log("loadData failed", e);
+                // A broken save: a new one.
+                console.warn("[YT_PLATFORM] the save can't be read", e);
                 this.saveData = {};
             }
         } else {
             log("loadData not available");
         }
+    }
+
+    /** The save's text ("" for a new player), tried a few times; null if it can't be had. */
+    private async loadRaw(): Promise<string | null> {
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                return (await window.ytgame!.game.loadData()) ?? "";
+            }
+            catch (e) {
+                console.warn("[YT_PLATFORM] loadData failed", e);
+                await new Promise((resolve) => setTimeout(resolve, 400));
+            }
+        }
+        return null;
     }
 
     // -------------------------
@@ -229,6 +245,7 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
 
     /** Never rejects — failures are reported and the next write retries with fresh data. */
     private async flushSaveData(): Promise<void> {
+        if (!this.couldLoad) return;
         try {
             await window.ytgame?.game?.saveData?.(
                 JSON.stringify(this.saveData)

@@ -233,30 +233,6 @@
   "wardrobes": [],
   "props": [
     {
-      "model": "town/nature/Tree_1_A_Color1.gltf",
-      "x": -9.5,
-      "z": -7.25,
-      "rotationY": 0,
-      "height": 5.76,
-      "collider": {
-        "halfX": 0.6,
-        "halfZ": 0.6
-      },
-      "fade": true
-    },
-    {
-      "model": "town/nature/Tree_3_A_Color1.gltf",
-      "x": 9.5,
-      "z": -7.5,
-      "rotationY": 2.1,
-      "height": 5.12,
-      "collider": {
-        "halfX": 0.65,
-        "halfZ": 0.7
-      },
-      "fade": true
-    },
-    {
       "model": "town/city/streetlight_old_double.gltf",
       "x": -10.6,
       "z": 9,
@@ -288,30 +264,6 @@
         "halfX": 0.3,
         "halfZ": 0.3
       }
-    },
-    {
-      "model": "town/nature/Tree_1_A_Color1.gltf",
-      "x": -9.5,
-      "z": 18.5,
-      "rotationY": 0.4,
-      "height": 5.2,
-      "collider": {
-        "halfX": 0.6,
-        "halfZ": 0.55
-      },
-      "fade": true
-    },
-    {
-      "model": "town/nature/Tree_3_A_Color1.gltf",
-      "x": 9.5,
-      "z": 18.5,
-      "rotationY": 2.2,
-      "height": 4.8,
-      "collider": {
-        "halfX": 0.6,
-        "halfZ": 0.65
-      },
-      "fade": true
     },
     {
       "model": "town/city/streetlight.gltf",
@@ -675,13 +627,13 @@
   "sections": [
     {
       "id": "yard",
-      "name": "Front Yard",
+      "name": "Yard",
       "x": 0,
       "z": 14.5,
       "width": 10,
       "depth": 7.5,
-      "completeAt": 0.97,
-      "bonus": 150,
+      "completeAt": 0.9,
+      "bonus": 15,
       "ground": "#557f38",
       "restoredGround": "#72b04a",
       "fill": "grass",
@@ -697,14 +649,14 @@
     },
     {
       "id": "park",
-      "name": "Starting Park",
+      "name": "Park",
       "maxGrass": "grass",
       "x": 0,
       "z": 0,
       "width": 20,
       "depth": 16,
       "completeAt": 0.92,
-      "bonus": 600,
+      "bonus": 50,
       "ground": "#4f7d35",
       "restoredGround": "#6fae47",
       "fill": "grass",
@@ -723,13 +675,13 @@
     },
     {
       "id": "wilds",
-      "name": "The Wilds",
+      "name": "Wilds",
       "x": 0,
       "z": -35.25,
       "width": 62,
       "depth": 52,
       "completeAt": 0.98,
-      "bonus": 3000,
+      "bonus": 600,
       "ground": "#4a7432",
       "restoredGround": "#68a643",
       "fill": "tallgrass",
@@ -752,7 +704,7 @@
     },
     {
       "id": "section-4",
-      "name": "Section 4",
+      "name": "Field",
       "x": 63.5,
       "z": -35,
       "width": 62,
@@ -775,7 +727,7 @@
     },
     {
       "id": "section-5",
-      "name": "Section 5",
+      "name": "Brambles",
       "x": 62.5,
       "z": -89.5,
       "width": 62,
@@ -808,7 +760,7 @@
     },
     {
       "id": "section-6",
-      "name": "Section 6",
+      "name": "Thicket",
       "x": -69,
       "z": -35.25,
       "width": 62,
@@ -841,7 +793,7 @@
     },
     {
       "id": "section-7",
-      "name": "Section 7",
+      "name": "Plains",
       "x": 128,
       "z": -88.5,
       "width": 62,
@@ -878,7 +830,7 @@
     },
     {
       "id": "section-8",
-      "name": "Section 8",
+      "name": "Hills",
       "x": -3,
       "z": -126.75,
       "width": 62,
@@ -915,7 +867,7 @@
     },
     {
       "id": "section-9",
-      "name": "Section 9",
+      "name": "Ridge",
       "x": -66,
       "z": -126.75,
       "width": 62,
@@ -982,11 +934,25 @@
         "appearsWhenFull": true
       },
       {
+        "kind": "capacity",
+        "x": 6.75,
+        "z": 14.5,
+        "rotationY": -1.5708,
+        "afterTool": 1
+      },
+      {
+        "kind": "blades",
+        "x": -6.75,
+        "z": 10.4,
+        "rotationY": 1.5708,
+        "afterTool": 1
+      },
+      {
         "kind": "blades",
         "x": -5.5,
         "z": -12.75,
         "section": "wilds",
-        "afterTool": 2,
+        "afterTool": 1,
         "rotationY": 0
       },
       {
@@ -1001,7 +967,7 @@
         "x": 5.5,
         "z": -12.75,
         "section": "wilds",
-        "afterTool": 2,
+        "afterTool": 1,
         "rotationY": 0
       },
       {
@@ -1214,7 +1180,7 @@
             "z": 1.75
           }
         },
-        "level": 7
+        "level": 6
       }
     ],
     "eggs": {

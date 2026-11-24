@@ -512,7 +512,8 @@ export class PerformanceDiagnostics {
         switches.select(this.settings, 'pixelRatio', { Auto: 0, '2.0': 2, '1.5': 1.5, '1.0': 1, '0.75': 0.75, '0.5': 0.5 }, {
             label: 'Pixel Ratio',
             onChange: () => {
-                renderer?.setPixelRatio(this.settings.pixelRatio || SetupThree.getCurrentPixelRatio());
+                SetupThree.forcedPixelRatio = this.settings.pixelRatio;
+                renderer?.setPixelRatio(SetupThree.getCurrentPixelRatio());
                 this.resetStats();
             },
         });
