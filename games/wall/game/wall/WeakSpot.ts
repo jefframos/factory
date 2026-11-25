@@ -14,7 +14,8 @@ const FRONT = 0.35;
 /** Kept this far from the wall's edges. */
 const EDGE = 0.55;
 
-function texture(draw: (context: CanvasRenderingContext2D, middle: number) => void): THREE.CanvasTexture {
+/** What a mark's drawn with (TapMarks' too). */
+export function markTexture(draw: (context: CanvasRenderingContext2D, middle: number) => void): THREE.CanvasTexture {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = 128;
     draw(canvas.getContext('2d')!, 64);
@@ -23,7 +24,7 @@ function texture(draw: (context: CanvasRenderingContext2D, middle: number) => vo
     return made;
 }
 
-function ring(context: CanvasRenderingContext2D, middle: number, radius: number, width: number, color: string): void {
+export function ring(context: CanvasRenderingContext2D, middle: number, radius: number, width: number, color: string): void {
     context.strokeStyle = color;
     context.lineWidth = width;
     context.beginPath();
@@ -31,7 +32,13 @@ function ring(context: CanvasRenderingContext2D, middle: number, radius: number,
     context.stroke();
 }
 
-function sprite(map: THREE.Texture): THREE.Sprite {
+/** An orange ring with nothing in it. */
+export const openRing = (): THREE.CanvasTexture => markTexture((context, m) => {
+    ring(context, m, 46, 15, 'rgba(80,25,0,0.75)');
+    ring(context, m, 46, 9, '#ff8a1e');
+});
+
+export function markSprite(map: THREE.Texture): THREE.Sprite {
     const made = new THREE.Sprite(new THREE.SpriteMaterial({ map, transparent: true, depthTest: false, depthWrite: false }));
     made.renderOrder = 10;
     made.visible = false;
@@ -46,13 +53,15 @@ export class WeakSpot {
     private readonly target: THREE.Sprite;
     private readonly closing: THREE.Sprite;
     private readonly drift = new THREE.Vector2();
+    private readonly full: THREE.Texture;
+    private readonly open = openRing();
     /** Seconds until it shows, and it's been there. */
     private wait = WEAK.after;
     private shownFor = 0;
     private clock = 0;
 
     public constructor() {
-        this.target = sprite(texture((context, m) => {
+        this.target = markSprite(markTexture((context, m) => {
             const glow = context.createRadialGradient(m, m, 4, m, m, 62);
             glow.addColorStop(0, 'rgba(255,250,210,1)');
             glow.addColorStop(0.25, 'rgba(255,214,90,0.85)');
@@ -68,7 +77,8 @@ export class WeakSpot {
             context.fill();
             ring(context, m, 14, 4, '#ffffff');
         }));
-        this.closing = sprite(texture((context, m) => {
+        this.full = this.target.material.map!;
+        this.closing = markSprite(markTexture((context, m) => {
             ring(context, m, 56, 11, 'rgba(70,25,0,0.7)');
             ring(context, m, 56, 6, '#fff27a');
         }));
@@ -81,6 +91,11 @@ export class WeakSpot {
 
     public get position(): THREE.Vector3 {
         return this.target.position;
+    }
+
+    /** Only its ring (on an enemy: its face is to be seen). */
+    public setOpen(open: boolean): void {
+        this.target.material.map = open ? this.open : this.full;
     }
 
     /** Hit: the combo's step now. */

@@ -13,15 +13,7 @@ const CrewBeaver = {
   path: 'crew/beaver',
   fullPath: 'wall/models/crew/beaver.glb',
   format: 'glb',
-  nodes: {
-  "Root": "root",
-  "LegBackLeft": "leg-back-left",
-  "LegBackRight": "leg-back-right",
-  "LegFrontLeft": "leg-front-left",
-  "LegFrontRight": "leg-front-right",
-  "Body": "body",
-  "Tail": "tail"
-}
+  nodes: {}
 } as const;
 
 const CrewChick = {
@@ -29,14 +21,7 @@ const CrewChick = {
   path: 'crew/chick',
   fullPath: 'wall/models/crew/chick.glb',
   format: 'glb',
-  nodes: {
-  "Root": "root",
-  "LegFrontRight": "leg-front-right",
-  "LegFrontLeft": "leg-front-left",
-  "Body": "body",
-  "WingLeft": "wing-left",
-  "WingRight": "wing-right"
-}
+  nodes: {}
 } as const;
 
 const CrewCow = {
@@ -44,15 +29,7 @@ const CrewCow = {
   path: 'crew/cow',
   fullPath: 'wall/models/crew/cow.glb',
   format: 'glb',
-  nodes: {
-  "Root": "root",
-  "LegFrontRight": "leg-front-right",
-  "LegFrontLeft": "leg-front-left",
-  "LegBackRight": "leg-back-right",
-  "LegBackLeft": "leg-back-left",
-  "Body": "body",
-  "Group": "Group"
-}
+  nodes: {}
 } as const;
 
 const CrewElephant = {
@@ -60,15 +37,7 @@ const CrewElephant = {
   path: 'crew/elephant',
   fullPath: 'wall/models/crew/elephant.glb',
   format: 'glb',
-  nodes: {
-  "Root": "root",
-  "Body": "body",
-  "Tail": "tail",
-  "LegBackLeft": "leg-back-left",
-  "LegFrontLeft": "leg-front-left",
-  "LegBackRight": "leg-back-right",
-  "LegFrontRight": "leg-front-right"
-}
+  nodes: {}
 } as const;
 
 const CrewGiraffe = {
@@ -76,14 +45,7 @@ const CrewGiraffe = {
   path: 'crew/giraffe',
   fullPath: 'wall/models/crew/giraffe.glb',
   format: 'glb',
-  nodes: {
-  "Root": "root",
-  "Body": "body",
-  "LegBackLeft": "leg-back-left",
-  "LegBackRight": "leg-back-right",
-  "LegFrontLeft": "leg-front-left",
-  "LegFrontRight": "leg-front-right"
-}
+  nodes: {}
 } as const;
 
 const CrewHog = {
@@ -91,14 +53,7 @@ const CrewHog = {
   path: 'crew/hog',
   fullPath: 'wall/models/crew/hog.glb',
   format: 'glb',
-  nodes: {
-  "Root": "root",
-  "Body": "body",
-  "LegBackLeft": "leg-back-left",
-  "LegBackRight": "leg-back-right",
-  "LegFrontLeft": "leg-front-left",
-  "LegFrontRight": "leg-front-right"
-}
+  nodes: {}
 } as const;
 
 const CrewMonkey = {
@@ -106,15 +61,7 @@ const CrewMonkey = {
   path: 'crew/monkey',
   fullPath: 'wall/models/crew/monkey.glb',
   format: 'glb',
-  nodes: {
-  "Root": "root",
-  "LegFrontLeft": "leg-front-left",
-  "LegFrontRight": "leg-front-right",
-  "LegBackRight": "leg-back-right",
-  "LegBackLeft": "leg-back-left",
-  "Body": "body",
-  "Tail": "tail"
-}
+  nodes: {}
 } as const;
 
 const CrewPanda = {
@@ -122,14 +69,7 @@ const CrewPanda = {
   path: 'crew/panda',
   fullPath: 'wall/models/crew/panda.glb',
   format: 'glb',
-  nodes: {
-  "Root": "root",
-  "Body": "body",
-  "LegBackLeft": "leg-back-left",
-  "LegBackRight": "leg-back-right",
-  "LegFrontLeft": "leg-front-left",
-  "LegFrontRight": "leg-front-right"
-}
+  nodes: {}
 } as const;
 
 const EnemiesBat = {
@@ -185,9 +125,7 @@ const PlayerAxe = {
   path: 'player/axe',
   fullPath: 'wall/models/player/axe.glb',
   format: 'glb',
-  nodes: {
-  "Axe": "axe"
-}
+  nodes: {}
 } as const;
 
 const PlayerBattleaxe = {
@@ -195,9 +133,7 @@ const PlayerBattleaxe = {
   path: 'player/battleaxe',
   fullPath: 'wall/models/player/battleaxe.glb',
   format: 'glb',
-  nodes: {
-  "AxeB": "axe_B"
-}
+  nodes: {}
 } as const;
 
 const PlayerBoxing = {
@@ -210,14 +146,28 @@ const PlayerBoxing = {
 }
 } as const;
 
+const PlayerFlame = {
+  id: 'flame',
+  path: 'player/flame',
+  fullPath: 'wall/models/player/flame.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const PlayerGreatsword = {
+  id: 'greatsword',
+  path: 'player/greatsword',
+  fullPath: 'wall/models/player/greatsword.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
 const PlayerHammer = {
   id: 'hammer',
   path: 'player/hammer',
   fullPath: 'wall/models/player/hammer.glb',
   format: 'glb',
-  nodes: {
-  "Hammer": "hammer"
-}
+  nodes: {}
 } as const;
 
 const PlayerHands = {
@@ -286,9 +236,7 @@ const PlayerMace = {
   path: 'player/mace',
   fullPath: 'wall/models/player/mace.glb',
   format: 'glb',
-  nodes: {
-  "HammerB": "hammer_B"
-}
+  nodes: {}
 } as const;
 
 const PlayerPickaxe = {
@@ -296,9 +244,23 @@ const PlayerPickaxe = {
   path: 'player/pickaxe',
   fullPath: 'wall/models/player/pickaxe.glb',
   format: 'glb',
-  nodes: {
-  "Pickaxe": "pickaxe"
-}
+  nodes: {}
+} as const;
+
+const PlayerSaber = {
+  id: 'saber',
+  path: 'player/saber',
+  fullPath: 'wall/models/player/saber.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const PlayerSword = {
+  id: 'sword',
+  path: 'player/sword',
+  fullPath: 'wall/models/player/sword.glb',
+  format: 'glb',
+  nodes: {}
 } as const;
 
 const PlayerWarhammer = {
@@ -306,9 +268,7 @@ const PlayerWarhammer = {
   path: 'player/warhammer',
   fullPath: 'wall/models/player/warhammer.glb',
   format: 'glb',
-  nodes: {
-  "HammerD": "hammer_D"
-}
+  nodes: {}
 } as const;
 
 // Grouped by top-level raw-assets/models folder (the '{...}' tag stripped) — e.g.
@@ -337,10 +297,14 @@ export const MODELS = {
     Axe: PlayerAxe,
     Battleaxe: PlayerBattleaxe,
     Boxing: PlayerBoxing,
+    Flame: PlayerFlame,
+    Greatsword: PlayerGreatsword,
     Hammer: PlayerHammer,
     Hands: PlayerHands,
     Mace: PlayerMace,
     Pickaxe: PlayerPickaxe,
+    Saber: PlayerSaber,
+    Sword: PlayerSword,
     Warhammer: PlayerWarhammer
   }
 } as const;

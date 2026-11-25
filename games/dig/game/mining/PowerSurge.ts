@@ -8,7 +8,7 @@
 //
 // Not saved: a reload ends it. The clock only runs while gameplay is active (DigScene), so a menu doesn't eat it.
 
-import { DIG, ToolDef } from '../data/DigConfig';
+import { DIG, ToolDef, toolAt } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
 
 let tool: ToolDef | undefined;
@@ -58,7 +58,7 @@ export const PowerSurge = {
     nextTool(): ToolDef {
         const config = DIG.chests.power;
         const floor = Math.max(0, DIG.tools.findIndex((t) => t.id === config.tool));
-        return DIG.tools[Math.min(DIG.tools.length - 1, Math.max(floor, DigProgress.toolLevel + 1))];
+        return toolAt(Math.max(floor, DigProgress.toolLevel + 1));
     },
 
     /** Starts (or restarts) a surge; returns its tool. */

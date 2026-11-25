@@ -10,25 +10,27 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { BendService } from '../services/BendService';
-import { PadKind } from '../data/DigConfig';
+import { PadKind, animalKind } from '../data/DigConfig';
+import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { DigProgress } from '../data/DigProgress';
 import { HUB, HubPad } from '../data/HubData';
 import { dressedTractor, freeDressed } from '../player/TractorDress';
 import { MowerBlades } from '../player/MowerBlades';
+import { rucksackPicture } from '../player/Backpack';
 import { shortMoney, shortNumber } from '../utils/Numbers';
 import { t, names } from '../i18n/Localization';
 import { CanvasArt } from '../ui/CanvasArt';
 import type { Box } from './GuidePath';
 
 /** The square on the floor (world units across), and how far behind its middle the stand is. */
-const PAD_SIZE = 2.6;
+const PAD_SIZE = 3.3;
 /** The title over each stand (the next one's name). */
 const SHOW_TITLES: boolean = true;
-const STAND_BACK = 2.1;
-const STAND_RADIUS = 0.55;
-const STAND_HEIGHT = 0.7;
+const STAND_BACK = 2.55;
+const STAND_RADIUS = 0.72;
+const STAND_HEIGHT = 0.75;
 /** The thing on the stand fits in this (world units), floating this high over the stand's top. */
-const SHOWN_SIZE = 1.25;
+const SHOWN_SIZE = 1.65;
 const SHOWN_LIFT = 0.45;
 /**
  * How long a visit's pour takes (what's poured: the bag, or what the pad still needs if that's less), by its size, so
@@ -41,7 +43,7 @@ const POUR = { secondsPer: 1 / 80, least: 0.25 };
 /** The first station's arrow: how high over its square, and its size. */
 const POINTER = { height: 2.6, radius: 0.42 };
 /** The arrow up beside the next mower: its size, where it is from the stand's middle as seen on the screen, and its bob. */
-const UP_ARROW = { size: 0.78, right: 0.98, nearer: 0.45, y: STAND_HEIGHT + SHOWN_LIFT + 0.55, bob: 0.07, speed: 2 };
+const UP_ARROW = { size: 0.95, right: 1.3, nearer: 0.45, y: STAND_HEIGHT + SHOWN_LIFT + 0.55, bob: 0.07, speed: 2 };
 /**
  * After an upgrade a pad rests this long (seconds) before it takes anything again: the player sees what they got and
  * can walk off before the next one starts eating their money.
@@ -78,35 +80,6 @@ interface Pad {
 
 const kindOf = (def: HubPad): PadKind => def.kind;
 
-/** Bags' colours, level by level. */
-const BAG_COLORS = [0xb98a5a, 0x4cc95a, 0x2f8fff, 0xe8352b, 0xf2b230, 0xa56bff, 0x21b6a8];
-
-/** A rucksack: its body, a flap, a pocket and a strap, in the next level's colour. */
-function bagModel(level: number, prepare: (material: THREE.Material) => void): THREE.Object3D {
-    const color = new THREE.Color(BAG_COLORS[level % BAG_COLORS.length]);
-    const make = (shade: THREE.Color) => {
-        const material = new THREE.MeshStandardMaterial({ color: shade, roughness: 0.8 });
-        prepare(material);
-        return material;
-    };
-    const body = make(color);
-    const dark = make(color.clone().multiplyScalar(0.62));
-    const brass = make(new THREE.Color(0xf2c230));
-    const bag = new THREE.Group();
-    const add = (geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number) => {
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(x, y, z);
-        bag.add(mesh);
-        return mesh;
-    };
-    add(new THREE.CapsuleGeometry(0.36, 0.34, 6, 14), body, 0, 0.5, 0).scale.z = 0.72;
-    add(new THREE.SphereGeometry(0.39, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), dark, 0, 0.66, 0.02).scale.z = 0.78;
-    add(new THREE.BoxGeometry(0.4, 0.28, 0.16), dark, 0, 0.34, 0.26);
-    add(new THREE.BoxGeometry(0.1, 0.1, 0.06), brass, 0, 0.58, 0.31);
-    add(new THREE.TorusGeometry(0.11, 0.035, 8, 16), dark, 0, 1.05, 0);
-    for (const side of [-1, 1]) add(new THREE.CapsuleGeometry(0.1, 0.22, 4, 8), dark, side * 0.38, 0.36, 0);
-    return bag;
-}
 
 /** Where a pad's stand is from the square's middle: behind it (-Z) turned by its rotationY. */
 const standOffset = (def: HubPad): { x: number; z: number } => {
@@ -119,8 +92,10 @@ function offer(kind: PadKind): { title: string; name: string; key: string } {
     if (kind === 'tool') {
         const next = DigProgress.nextTool;
         const look = DigProgress.tractorLook;
-        return { title: t('padTractor'), name: next ? names.tool(next).toUpperCase() : t('maxLabel'), key: `tool:${DigProgress.toolLevel}:${look.paints}:${look.parts}` };
+        return { title: t('padTractor'), name: names.tool(next).toUpperCase(), key: `tool:${DigProgress.toolLevel}:${look.colors}:${look.paints}:${look.parts}` };
     }
+    if (kind === 'animals') return { title: t('padAnimals'), name: names.animal(animalKind(DigProgress.animals)).toUpperCase(), key: `animals:${DigProgress.animals}` };
+    if (kind === 'portal') return { title: t('padPortal'), name: '', key: `portal:${DigProgress.prestige}` };
     if (kind === 'blades') return { title: t('padBlades'), name: t('padPower', { power: DigProgress.tool.power + DigProgress.bladesLevel + 1 }), key: `blades:${DigProgress.bladesLevel}` };
     return { title: t('padBag'), name: t('padBagMore', { count: shortNumber(DigProgress.capacityStep) }), key: `capacity:${DigProgress.backpackLevel}:${DigProgress.toolLevel}` };
 }
@@ -192,15 +167,15 @@ export class UpgradePads {
 
     /** The stands: solid. */
     public static boxes(): Box[] {
-        return HUB.pads.map((def) => {
+        return HUB.pads.filter((def) => def.kind !== 'portal').map((def) => {
             const off = standOffset(def);
             return { x: def.x + off.x, z: def.z + off.z, halfX: STAND_RADIUS, halfZ: STAND_RADIUS };
         });
     }
 
-    /** The tractor it waits for is had. */
+    /** The tractor (or the level) it waits for is had. */
     private shownNow(def: HubPad): boolean {
-        return DigProgress.toolLevel >= (def.afterTool ?? 0);
+        return DigProgress.padThere(def.kind);
     }
 
     private material<T extends THREE.Material>(material: T): T {
@@ -235,7 +210,7 @@ export class UpgradePads {
         drum.position.y = STAND_HEIGHT / 2;
         stand.add(drum);
         const top = new THREE.Mesh(new THREE.CylinderGeometry(STAND_RADIUS * 1.05, STAND_RADIUS * 1.05, 0.08, 16),
-            this.material(new THREE.MeshStandardMaterial({ color: def.kind === 'tool' ? 0x3f8cff : def.kind === 'blades' ? 0xe0402f : 0xf2a33a, roughness: 0.5 })));
+            this.material(new THREE.MeshStandardMaterial({ color: def.kind === 'tool' ? 0x3f8cff : def.kind === 'blades' ? 0xe0402f : def.kind === 'animals' ? 0x4fc23a : 0xf2a33a, roughness: 0.5 })));
         top.position.y = STAND_HEIGHT;
         stand.add(top);
         const shown = new THREE.Group();
@@ -255,6 +230,9 @@ export class UpgradePads {
         label.position.set(off.x, STAND_HEIGHT + SHOWN_LIFT + SHOWN_SIZE + 0.35, off.z);
         group.add(label);
 
+        // (The portal's stands behind its pad: no stand.)
+        stand.visible = def.kind !== 'portal';
+        if (def.kind === 'portal') label.visible = false;
         const visible = this.shownNow(def);
         group.visible = visible;
         this.group.add(group);
@@ -291,7 +269,7 @@ export class UpgradePads {
             const first = pad.built === '';
             pad.built = key;
             this.buildShown(pad, cost === undefined);
-            this.drawLabel(pad, cost === undefined ? 'MAX' : name);
+            this.drawLabel(pad, cost === undefined ? t('padMax') : name);
             if (!first) {
                 pad.shown.scale.setScalar(0.01);
                 gsap.to(pad.shown.scale, { x: 1, y: 1, z: 1, duration: 0.6, ease: 'back.out(2.2)' });
@@ -335,7 +313,7 @@ export class UpgradePads {
 
         CanvasArt.text(g, title, size / 2, 82, 50, '#ffffff', size - 90);
         if (cost === undefined) {
-            CanvasArt.text(g, 'MAX', size / 2, size / 2 + 20, 110, '#ffe27a', size - 90);
+            CanvasArt.text(g, pad.def.kind === 'portal' ? t('padOpen') : t('padMax'), size / 2, size / 2 + 20, 110, '#ffe27a', size - 90);
             pad.texture.needsUpdate = true;
             return;
         }
@@ -359,16 +337,36 @@ export class UpgradePads {
         pad.shown.clear();
         pad.blades?.dispose();
         pad.blades = undefined;
-        if (maxed) return;
+        if (maxed || pad.def.kind === 'portal') return;
         const prepare = (material: THREE.Material) => BendService.applyBend(material);
         let object: THREE.Object3D;
+        if (pad.def.kind === 'animals') {
+            const holder = new THREE.Group();
+            pad.shown.add(holder);
+            const { key } = offer('animals');
+            void ModelLoaderManager.instance.loadModel(`./dig/models/animals/${animalKind(DigProgress.animals).id}.glb`).then((animal) => {
+                // (Another's on the stand by now.)
+                if (pad.built !== key || holder.parent !== pad.shown) return;
+                animal.traverse((child) => {
+                    if (!(child instanceof THREE.Mesh)) return;
+                    const material = new THREE.MeshLambertMaterial({ vertexColors: true });
+                    prepare(material);
+                    child.material = material;
+                });
+                const box = new THREE.Box3().setFromObject(animal);
+                const size = box.getSize(new THREE.Vector3());
+                animal.position.sub(box.getCenter(new THREE.Vector3())).setY(-box.min.y);
+                holder.add(animal);
+                holder.scale.setScalar(SHOWN_SIZE / Math.max(size.x, size.y, size.z, 1e-3));
+            }).catch(() => undefined);
+            return;
+        }
         if (pad.def.kind === 'tool') {
             // The tractor itself, dressed as the player's is (in its own colour if they've no paint on).
-            const next = DigProgress.nextTool!;
             const holder = new THREE.Group();
             pad.shown.add(holder);
             const { key } = offer('tool');
-            void dressedTractor(next, DigProgress.tractorLook, prepare).then((tractor) => {
+            void dressedTractor(DigProgress.tractorLook, prepare).then((tractor) => {
                 // (Something else is on the stand by now.)
                 if (pad.built !== key || holder.parent !== pad.shown) {
                     freeDressed(tractor);
@@ -390,7 +388,8 @@ export class UpgradePads {
             object.add(pad.blades.group);
             object.rotation.x = 0.5;
         } else {
-            object = bagModel(DigProgress.backpackLevel + 1, prepare);
+            // The miner's own rucksack in the next level's colour: what they'll wear.
+            object = rucksackPicture(DigProgress.backpackLevel + 1);
         }
         const box = new THREE.Box3().setFromObject(object);
         const size = box.getSize(new THREE.Vector3());

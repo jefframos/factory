@@ -11,13 +11,17 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
-import { BoostDef, CREW, CrewDef, SHOWS, punchCost, punchMult, short, toolAt } from '../data/WallConfig';
+import { BoostDef, CREW, CrewDef, NUDGE, SHOWS, punchCost, punchMult, short, toolAt } from '../data/WallConfig';
+import { WallAnalytics } from '../analytics/WallAnalytics';
 import { WallProgress } from '../data/WallProgress';
+import { HIT_PILL } from './HitPill';
 import { flag, frame, sprite, text, write } from './parts';
 
 /** (As many as fit, and the next one peeking in.) */
 const CARD = { size: 124, height: 164, gap: 11, side: 14, margin: 32, icon: 80 };
-const BADGE = { width: 222, height: 104, gap: 11, shown: 3, icon: 62 };
+const BADGE = { width: 222, height: 104, gap: 11, shown: 3, upright: 2, icon: 62 };
+/** What a hit does (HitPill): this far over PUNCH HARDER's card. */
+const HIT_GAP = 26;
 /** Between the cards and the row above; on a wide screen the cards are this much bigger. */
 const ROW_GAP = 22;
 const WIDE_SCALE = 1;
@@ -27,7 +31,7 @@ const BAR = { height: 14, thumb: 8, below: 13 };
 /** PUNCH HARDER's card, on its own: bigger than the others. The panel the others are in: round them, and off it. */
 const PUNCH = { scale: 1.17, gap: 26, down: 20 };
 /** What's spent flies from its bar to what's bought, and what's won to its bar: how many, how big, how long (seconds), and how many at most at once. */
-const FLY = { spent: 4, won: 7, size: 50, seconds: 0.42, every: 0.045, most: 30 };
+const FLY = { spent: 4, won: 7, free: 10, size: 50, seconds: 0.42, every: 0.045, most: 30 };
 const MONEY = 'ItemIcon_Money_Bill';
 const BRICK = 'Wall_brick';
 const PANEL = { pad: 11, top: 13, foot: 26, color: 0x15162a, alpha: 0.55 };
@@ -41,6 +45,8 @@ const STRIP = { width: CARD.size - 22, height: 36, y: 55 };
 const WRIGGLE = { every: 1.7, seconds: 0.5, turn: 0.13, grow: 0.07 };
 const HOLD = { after: 0.35, every: 0.11 };
 const DRAG = 14;
+/** The mark on what can be bought: its size, how far in from its card's corner, how high it hops. */
+const ALERT = { size: 30, in: 14, down: 12, hop: 6 };
 type Frame = 'Blue' | 'Green' | 'Purple' | 'Yellow' | 'Navy' | 'Gray';
 
 export interface TrayActions {
@@ -67,7 +73,8 @@ interface Look {
     share: number;
     /** A flag on its top edge. */
     tail?: string;
-    locked?: boolean;
+    /** An exclamation mark on its corner. */
+    alert?: boolean;
 }
 
 const itemFrame = (color: Frame, width: number, height: number) => frame(`ItemFrame02_Single_${color}`, [25, 28, 25, 27], width, height);
@@ -96,7 +103,6 @@ class Card extends PIXI.Container {
     private readonly picture = new PIXI.Container();
     private readonly icon = new PIXI.Sprite();
     private readonly metal = new PIXI.Sprite();
-    private readonly lock = sprite('Icon_Lock01_s', 42);
     private readonly corner = frame('BasicFrame_Round12', [12, 12, 12, 12], 56, 32, 0.8);
     private readonly count = text('', 23, 0xffffff);
     private readonly effect = text('', 25, 0xffec82, 0x100e18, 6);
@@ -105,8 +111,8 @@ class Card extends PIXI.Container {
     private readonly price = text('', 29, 0xffffff, 0x100e18, 7);
     private readonly tailText = text('', 21, 0xffffff);
     private readonly tail = flag(this.tailText, 88);
+    private readonly alert = sprite('Icon_Exclamation', ALERT.size);
     private shown = '';
-    public locked = false;
     private can = false;
     private clock = Math.random() * WRIGGLE.every;
 
@@ -118,7 +124,7 @@ class Card extends PIXI.Container {
         this.metal.anchor.set(0.5);
         this.picture.y = PICTURE_Y;
         this.picture.addChild(this.icon, this.metal);
-        this.lock.y = PICTURE_Y;
+        this.price.y = STRIP.y - 2;
         this.corner.tint = 0x0a1446;
         this.corner.alpha = 0.38;
         this.corner.position.set(-CARD.size / 2 + 7, -CARD.height / 2 + 9);
@@ -129,7 +135,7 @@ class Card extends PIXI.Container {
         this.strip.y += STRIP.y;
         this.fill.y += STRIP.y;
         this.tail.y = -CARD.height / 2;
-        this.addChild(this.focus, this.back, this.glow, this.picture, this.lock, this.corner, this.count, this.effect, this.strip, this.fill, this.price, this.tail);
+        this.addChild(this.focus, this.back, this.glow, this.picture, this.corner, this.count, this.effect, this.strip, this.fill, this.price, this.tail, this.alert);
     }
 
     public set(look: Look): void {
@@ -147,25 +153,20 @@ class Card extends PIXI.Container {
             this.metal.scale.copyFrom(this.icon.scale);
             this.metal.tint = PIXI.utils.string2hex(look.tint);
         }
-        this.icon.tint = look.locked ? 0x0e1020 : 0xffffff;
-        this.icon.alpha = look.locked ? 0.75 : 1;
-        this.locked = !!look.locked;
-        this.lock.visible = this.locked;
         this.corner.visible = this.count.visible = !!look.count;
         write(this.count, look.count, 48);
         write(this.effect, look.effect, CARD.size - 20);
         // (Full, it's the button.)
-        this.strip.visible = !look.locked;
-        this.fill.visible = !look.locked && look.share > 0.01;
+        this.fill.visible = look.share > 0.01;
         this.fill.width = Math.max(26, STRIP.width * look.share);
         this.fill.tint = look.can ? 0xffc21f : 0xf08a2a;
         this.fill.alpha = look.can ? 1 : 0.85;
         write(this.price, look.price, CARD.size - 28);
-        this.price.y = look.locked ? STRIP.y - 8 : STRIP.y - 2;
         // (Under the flag, if it has one.)
         this.corner.y = -CARD.height / 2 + (look.tail ? 20 : 9);
         this.count.y = -CARD.height / 2 + (look.tail ? 35 : 24);
         this.tail.visible = !!look.tail;
+        this.alert.visible = !!look.alert;
         if (look.tail) write(this.tailText, look.tail, 72);
         this.focus.visible = look.can;
         if (look.can !== this.can) {
@@ -180,6 +181,7 @@ class Card extends PIXI.Container {
         this.picture.rotation = turn;
         this.picture.scale.set(grow);
         if (this.can) this.focus.alpha = 0.65 + 0.35 * Math.sin(this.clock * 5);
+        if (this.alert.visible) this.alert.position.set(CARD.size / 2 - ALERT.in, -CARD.height / 2 + ALERT.down - Math.abs(Math.sin(this.clock * 5)) * ALERT.hop);
         if (this.tail.visible) this.tail.y = -CARD.height / 2 + Math.sin(this.clock * 4) * 2;
     }
 
@@ -264,6 +266,12 @@ class Badge extends PIXI.Container {
         this.focus.alpha = 0.65 + 0.35 * Math.sin(this.clock * 5);
     }
 
+    public bump(to: number): void {
+        gsap.killTweensOf(this.scale);
+        this.scale.set(to);
+        gsap.to(this.scale, { x: 1, y: 1, duration: 0.35, ease: 'back.out(3)' });
+    }
+
     public refuse(): void {
         refuse(this);
     }
@@ -329,6 +337,11 @@ export class Tray extends PIXI.Container {
     private held?: { card: Card; buy: () => boolean; x: number; y: number; scroll: number; time: number; bought: boolean; dragged: boolean };
     private readonly stopListening: () => void;
     private dirty = true;
+    /** How long something's been there to buy, left. */
+    private left_ = 0;
+    /** What the hand points at, if it's the nudge. */
+    private nudged?: Card | Badge;
+    private pulse = 0;
 
     public constructor(private readonly actions: TrayActions) {
         super();
@@ -381,6 +394,7 @@ export class Tray extends PIXI.Container {
                 const { boost } = badge;
                 if (!boost) return;
                 if (this.actions.boost(boost)) {
+                    this.tell(badge);
                     this.spent(BRICK, boost.bricks, badge);
                 } else {
                     badge.refuse();
@@ -425,11 +439,12 @@ export class Tray extends PIXI.Container {
         const before = WallProgress.cash;
         const done = buy();
         if (done) {
+            this.tell(card);
             card.bought();
             this.spent(MONEY, before - WallProgress.cash, card);
         } else {
             card.refuse();
-            if (!card.locked) this.lacking(this.cash);
+            this.lacking(this.cash);
         }
         return done;
     }
@@ -449,7 +464,10 @@ export class Tray extends PIXI.Container {
         label.position.set(bar.x + 14, bar.y + 34);
         this.addChild(label);
         gsap.to(label, { y: label.y + 26, duration: 0.8, ease: 'power1.out' });
-        gsap.to(label, { alpha: 0, duration: 0.3, delay: 0.5, onComplete: () => label.destroy() });
+        gsap.to(label, { alpha: 0, duration: 0.3, delay: 0.5, onComplete: () => {
+            gsap.killTweensOf(label);
+            label.destroy();
+        } });
     }
 
     /** Where PUNCH HARDER's card is, and one of the crew's (the HUD's units). */
@@ -458,6 +476,13 @@ export class Tray extends PIXI.Container {
     }
     public crewAt(kind: number): PIXI.Point {
         return this.toLocal(new PIXI.Point(0, 0), this.crew[kind]);
+    }
+
+    /** Where what a hit does goes: over PUNCH HARDER's card. */
+    public get hitSpot(): PIXI.Point {
+        const { x, y } = this.cards;
+        const scale = this.wide ? this.cards.scale.x : 1;
+        return new PIXI.Point(x + this.punchBox.x * scale, y + (this.punchBox.y - (CARD.height * this.punchBox.scale.y) / 2) * scale - HIT_GAP - HIT_PILL.height / 2);
     }
 
     /** Upright, how far up the screen it comes now (the HUD's units): nothing to buy yet, the cards, the boosts over them. */
@@ -471,6 +496,12 @@ export class Tray extends PIXI.Container {
         const apart = () => new PIXI.Point(from.x + (Math.random() - 0.5) * 300, from.y + (Math.random() - 0.5) * 260);
         this.fly(MONEY, FLY.won, apart, new PIXI.Point(this.cash.x - PILL.cash / 2 + 12, this.cash.y), 0.25, () => this.jolt(this.cash, 1.1));
         this.fly(BRICK, Math.round(FLY.won * 0.6), apart, new PIXI.Point(this.bricks.x - PILL.bricks / 2 + 12, this.bricks.y), 0.35, () => this.jolt(this.bricks, 1.1));
+    }
+
+    /** Free cash: a burst of bills from (x, y) to its bar. */
+    public gotCash(from: PIXI.Point): void {
+        const apart = () => new PIXI.Point(from.x + (Math.random() - 0.5) * 120, from.y + (Math.random() - 0.5) * 90);
+        this.fly(MONEY, FLY.free, apart, new PIXI.Point(this.cash.x - PILL.cash / 2 + 12, this.cash.y), 0.05, () => this.jolt(this.cash, 1.12));
     }
 
     /** Not enough of it: its bar shakes, red. */
@@ -562,6 +593,8 @@ export class Tray extends PIXI.Container {
         const first = WallProgress.rewinds === 0;
         const point = first && level === 1 && WallProgress.canPunchHarder ? this.punch
             : first && WallProgress.owned(chick.id) === 1 && WallProgress.cash >= WallProgress.costOf(chick) ? this.crew[0] : undefined;
+        // (The nudge has it.)
+        if (this.nudged) return;
         this.hand.visible = !!point;
         if (point) {
             const box = point === this.punch ? this.punchBox : this.list;
@@ -569,30 +602,62 @@ export class Tray extends PIXI.Container {
         }
     }
 
+    private kindOf(card: Card | Badge): string {
+        return card instanceof Badge ? 'boost' : card === this.punch ? 'punch' : 'crew';
+    }
+
+    /** Bought: was it what the hand points at? */
+    private tell(card: Card | Badge): void {
+        this.left_ = 0;
+        if (this.nudged === card) WallAnalytics.nudge(this.kindOf(card), 'bought');
+    }
+
+    /** Left unbought long enough: the hand at the best of it (a boost, PUNCH HARDER, the newest of the crew). */
+    private nudge(delta: number): void {
+        const badge = this.badges.find((one) => one.visible && one.boost && WallProgress.bricks >= one.boost.bricks);
+        const crew = CREW.map((def, i) => ({ def, card: this.crew[i] })).reverse().find(({ def, card }) => card.visible && WallProgress.cash >= WallProgress.costOf(def));
+        const punch = this.punch.visible && WallProgress.canPunchHarder ? this.punch : undefined;
+        const best = badge ?? punch ?? crew?.card;
+        this.left_ = best && WallProgress.best >= NUDGE.wall ? this.left_ + delta : 0;
+        const on = this.left_ > NUDGE.after ? best : undefined;
+        if (on !== this.nudged) {
+            this.nudged = on;
+            this.hand.visible = !!on;
+            this.pulse = 0;
+            if (on) WallAnalytics.nudge(this.kindOf(on), 'visible');
+            this.dirty = true;
+            // (In sight.)
+            if (on === crew?.card && crew) this.setScroll(this.order.indexOf(crew.card) * (CARD.size + CARD.gap) - CARD.gap);
+        }
+        if (!on) return;
+        const at = this.cards.toLocal(new PIXI.Point(0, 0), on);
+        this.hand.position.set(at.x + 26, at.y + 10);
+        this.pulse -= delta;
+        if (this.pulse > 0) return;
+        this.pulse = 1.6;
+        on.bump(1.1);
+    }
+
     private refreshCrew(): void {
         CREW.forEach((def, i) => {
             const card = this.crew[i];
             const open = WallProgress.best >= def.wall;
-            const next = !open && (i === 0 || WallProgress.best >= CREW[i - 1].wall);
-            // (The first one's teased once there's something to buy at all.)
-            card.visible = open || (next && this.punch.visible);
-            if (!card.visible) return;
-            if (!open) {
-                card.set({ frame: 'Navy', icon: `Wall_${def.id}`, count: '', effect: '', price: `WALL ${def.wall}`, can: false, share: 0, locked: true });
-                return;
-            }
+            // (The one to come: NextHelper.)
+            card.visible = open;
+            if (!open) return;
             const owned = WallProgress.owned(def.id);
             const cost = WallProgress.costOf(def);
             const can = WallProgress.cash >= cost;
             card.set({
                 frame: can ? 'Green' : 'Blue',
                 icon: `Wall_${def.id}`,
-                count: owned ? `x${owned}` : '',
+                count: owned ? `LV${owned}` : '',
                 effect: `+${short(WallProgress.dpsEach(def))}/s`,
                 price: `$${short(cost)}`,
                 can,
                 share: WallProgress.cash / cost,
                 tail: owned ? undefined : 'NEW!',
+                alert: can,
             });
         });
     }
@@ -601,17 +666,15 @@ export class Tray extends PIXI.Container {
         const there = WallProgress.boostsThere;
         this.badges.forEach((badge, i) => {
             const boost = there[i];
-            badge.visible = !!boost;
+            badge.visible = !!boost && (this.wide || i < BADGE.upright);
             if (boost) badge.set(boost);
             else badge.boost = undefined;
         });
     }
 
-    /** The cards in order: the newest of the crew first, the one to come last. */
+    /** The cards in order: the newest of the crew first. */
     private arrange(): void {
-        const open = this.crew.filter((card, i) => card.visible && WallProgress.best >= CREW[i].wall).reverse();
-        const coming = this.crew.filter((card, i) => card.visible && WallProgress.best < CREW[i].wall);
-        const order = [...open, ...coming];
+        const order = this.crew.filter((card) => card.visible).reverse();
         const same = order.length === this.order.length && order.every((card, i) => card === this.order[i]);
         if (same) return;
         const added = order.filter((card) => !this.order.includes(card));
@@ -666,7 +729,9 @@ export class Tray extends PIXI.Container {
         const cards = this.order.length * step - CARD.gap;
         const room = width - CARD.side * 2;
         const fits = own + cards <= room;
-        const start = fits ? center.x - (own + cards) / 2 : topLeft.x + CARD.side;
+        // (From the left once there are boosts: they're beside what a hit does, over the cards.)
+        const boosts = WallProgress.best >= SHOWS.boosts;
+        const start = fits && !boosts ? center.x - (own + cards) / 2 : topLeft.x + CARD.side;
         this.punchBox.position.set(start + (CARD.size * PUNCH.scale) / 2, bottom + PUNCH.down - (CARD.height * PUNCH.scale) / 2);
         this.left = start + own;
         this.listWidth = (fits ? own + cards : room) - own;
@@ -683,6 +748,8 @@ export class Tray extends PIXI.Container {
         this.listMask.clear().beginFill(0xffffff).drawRect(edge, top - 60, end - edge, CARD.height + 140).endFill();
         this.arrows.forEach((arrow) => (arrow.y = this.listY));
         this.scrollBar.position.set(this.left, bottom + BAR.below);
+        const row = bottom - CARD.height - PANEL.top - ROW_GAP - BADGE.height / 2;
+        this.badges.forEach((badge, i) => badge.position.set(start + CARD.size * PUNCH.scale + PUNCH.gap / 2 + BADGE.width / 2 + i * (BADGE.width + BADGE.gap), row));
     }
 
     // ---------------------------------------------------------------- frame
@@ -698,6 +765,7 @@ export class Tray extends PIXI.Container {
             }
         }
         if (this.dirty) this.refresh();
+        this.nudge(delta);
         this.punch.update(delta);
         this.order.forEach((card) => card.update(delta));
         this.badges.forEach((badge) => badge.visible && badge.update(delta));
@@ -722,7 +790,6 @@ export class Tray extends PIXI.Container {
         const screen = Game.overlayScreenData;
         if (!screen) return;
         const { topLeft, width, height, center } = screen;
-        const bottom = topLeft.y + height - CARD.margin;
         const right = topLeft.x + width;
         this.wide = width > height * 1.15;
         this.screenRight = right;
@@ -731,7 +798,7 @@ export class Tray extends PIXI.Container {
         this.cards.position.set(0, 0);
         if (this.wide) {
             const columns = CARD.size * 2 + CARD.gap + 6;
-            this.cards.position.set(right - columns * WIDE_SCALE - 24, topLeft.y + 128);
+            this.cards.position.set(right - columns * WIDE_SCALE - 24, topLeft.y + 156);
             this.left = 0;
             this.listWidth = columns;
             this.punchBox.position.set(CARD.size / 2, CARD.height / 2);
@@ -746,8 +813,6 @@ export class Tray extends PIXI.Container {
         } else {
             this.punchBox.scale.set(PUNCH.scale);
             this.placeRow();
-            const row = bottom - CARD.height - PANEL.top - ROW_GAP - BADGE.height / 2;
-            this.badges.forEach((badge, i) => badge.position.set(center.x - 360 + CARD.side + 2 + BADGE.width / 2 + i * (BADGE.width + BADGE.gap), row));
             // The money at the top, between the sound and the wardrobe.
             const bars = PILL.cash + PILL.gap + PILL.bricks;
             this.cash.position.set(center.x - 8 - bars / 2 + PILL.cash / 2, topLeft.y + PILL.y);

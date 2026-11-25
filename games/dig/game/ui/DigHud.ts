@@ -1,52 +1,52 @@
 // DigHud.ts
 //
-// The on-screen UI (GDD §15), built from the UI kit (ui/uikit.json, bandit-controller's kit): money and
-// backpack pills with a fill bar in the top-right (the achievements and MAP under them; mute and settings
-// top-left), the phone (sell the full backpack from anywhere at x2, for a
-// rewarded video — see updatePhone()), the current tool chip, short centre messages
-// ("Backpack full!", "SOLD! +$42"), the find banner, and the hub stations' panels, open while the
-// miner stands on their pad: the ATM's upgrades — a GEAR tab (the next tool and the next backpack, each with a
-// buy button; once the Tractor is owned it says so) and a BOOSTS tab (the repeatable boost tracks), the MAP
-// button (under the achievements: the mines opened, travelling between them, opening the next — MinesPanel), the collection (CollectionPanel) and the wardrobe (WardrobePanel). The panels sit in the bottom
-// half of the screen (shrunk to fit), so the miner stays in view, and each has a close button that keeps
-// it shut until the miner steps off the pad.
+// The on-screen UI, built from the UI kit (ui/uikit.json, bandit-controller's kit): the player's level and its bar at the top
+// (LevelBadge); money and backpack pills with a fill bar in the top-right (the achievements and MAP under them; mute and
+// settings top-left); bottom-left the POWER-UPS star (the boosts, from a level on) and the tractor's sticker (its paints and
+// parts: TractorPanel); the phone (sell the full backpack from anywhere at x2, for a rewarded video — see updatePhone());
+// short centre messages ("Backpack full!", "SOLD! +$42"), and the hub stations' panels, open while the miner
+// stands on their pad: the collection (CollectionPanel) and the wardrobe (WardrobePanel). Upgrades have no panel: they're
+// bought on the hub's pads (UpgradePads). The panels sit in the bottom half of the screen (shrunk to fit), so the miner stays
+// in view, and each has a close button that keeps it shut until the miner steps off the pad.
 //
-// A full backpack shows on its pill (a bobbing "FULL!" tag, the pill and the SELL button pulsing) for as long as it
-// stays full. The tutorial's first purchases are forced (setForced: the first bag, the first tool, the first hat): the
-// screen dims, the upgrade panel (or the wardrobe on its hat) opens with no close button and the hand on what to buy,
-// and nothing else can be tapped until it's bought.
+// A full backpack shows on its pill (a bobbing "FULL!" tag, the pill pulsing) for as long as it stays full. The tutorial's
+// first hat is forced (setForced): the screen dims, the wardrobe opens on it with no close button and the hand on it, and
+// nothing else can be tapped until it's bought.
+//
+// The progress changes many times a second on a tractor: the HUD's drawn again once a frame at most (tick()).
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { UiKit } from './UiKit';
 import { UiAnim, type UiTween } from './UiAnim';
-import { tabbedBlock, tagBadge, type TabSpec } from './TabBar';
+import { tagBadge } from './TabBar';
+import { LevelBadge } from './LevelBadge';
+import { TractorButton } from './TractorButton';
+import { TractorPanel, TRACTOR_PANEL_SIZE } from './TractorPanel';
+import { iconSticker } from './Sticker';
 import { DigProgress, COLLECTION_REWARD } from '../data/DigProgress';
 import { CollectionPanel, COLLECTION_SIZE } from './CollectionPanel';
 import { WardrobePanel, WARDROBE_SIZE } from './WardrobePanel';
-import { FindBanner, FIND_BANNER_SIZE } from './FindBanner';
 import { AchievementsPanel, ACHIEVEMENTS_SIZE } from './AchievementsPanel';
-import { RewardPopup, flyCoin, coinCount, COIN_STAGGER } from './RewardPopup';
+import { flyCoin, coinCount, COIN_STAGGER } from './FlyCoin';
 import { LanguagePanel, LANGUAGE_SIZE } from './LanguagePanel';
 import { MinesPanel, MINES_SIZE } from './MinesPanel';
 import { MoveHint } from './MoveHint';
 import { ModelIcons } from './ModelIcons';
-import { BoostDef, DIG, PRESTIGE_TOOL_LEVEL, Rarity, ToolDef, toolPaint } from '../data/DigConfig';
-import { RARITY_COLORS } from './CollectionPanel';
+import { BoostDef, DIG, PerkDef, Rarity, ToolDef } from '../data/DigConfig';
+import { UpgradeList, UPGRADE_LIST_SIZE, UpgradeRow, levelInfo } from './UpgradeList';
 import SoundToggleButton from 'core/ui/SoundToggleButton';
 import { HUB, rateLabel, type StationKind } from '../data/HubData';
 
-/** A tutorial purchase the HUD won't let go of (DigScene decides when). */
-export type ForcedBuy = 'backpack' | 'tool' | 'hat';
 import { t, names, type StringId, Localization } from '../i18n/Localization';
 import { LOCALE_FLAG_CODE } from '../i18n/config';
+import { shortMoney, shortNumber } from '../utils/Numbers';
 import { DigAudio } from '../audio/DigAudio';
 import { Gameplay } from '../data/Gameplay';
 import { GameAnalytics } from '../analytics/GameAnalytics';
 
-/** The upgrade panel's title outline: green under the ATM's ribbon, purple under the boost machine's. */
-const UPGRADE_TITLE_STROKE = 0x1d5a12;
+/** POWER-UPS' title outline. */
 const BOOST_TITLE_STROKE = 0x4a1d6e;
 const PILL_WIDTH = 210;
 const PILL_HEIGHT = 46;
@@ -65,39 +65,22 @@ const MUTE_SIZE = 64;
 const GUIDE_WIDTH = 420;
 /** The power surge countdown pill (setPower). */
 const POWER_TIMER = { width: 340, height: 74 };
-/** The NEW MINE call to action in the bottom-left corner: the gem pack's size and the rays behind it. */
-const NEW_MINE_CTA = { icon: 120, rays: 130, label: 170 };
+/** What medals are drawn as. */
+const MEDAL = 'ItemIcon_Trophy_Gold';
 /** The achievements button, under the money / backpack pills: just the memo pad icon, no button shape. */
 const ACHIEVEMENTS_BUTTON = 84;
-/** DigProgress.once key: the achievements panel was opened with a claim waiting (the first claim's hand is done). */
-const ACHIEVEMENT_HINT = 'hint-achievements';
 /** The SELL x2 offer: a pile of cash (no button shape) over the tool chip, a rotating shine behind it. */
 const PHONE = { width: 112, height: 116, shine: 180 };
 /** The phone only shows with this many tool upgrades bought (the Steel Pickaxe). */
 const PHONE_TOOL_LEVEL = 2;
-const UPGRADE_SIZE = { width: 760, height: 580 };
-/** Tool timeline in the upgrade panel: node size and the tractor's (the goal) bigger node. */
-const NODE_SIZE = 60;
-const GOAL_SIZE = 78;
-const TIMELINE_WIDTH = 600;
-const LINE_DONE = 0x5fd35a;
-/** The segmented upgrade bar under the backpack's offer and each boost's text. */
-const LEVEL_BAR = { width: 400, height: 9 };
-const LINE_TODO = 0x4a5263;
-/** GEAR tab layout (y): the tool timeline, the tool offer, the backpack offer. */
-const GEAR_Y = { timeline: -110, tool: 28, bag: 146 };
-/** The panel's tabs and the content block under them (TabBar): the block's top edge and size, the tabs' size. */
-const PANEL_BLOCK = { top: -170, width: 720, height: 432, tabWidth: 170, tabHeight: 48 };
-/** The line along the bottom of the upgrade panel, inside the content block. */
-const PANEL_FOOTER_Y = 238;
-/** BOOSTS tab: one compact row per boost, from FIRST_Y every STEP. */
-const BOOST_ROW = { firstY: -110, step: 94, height: 86 };
-/** The "open a new mine?" confirmation. */
-const NEW_MINE_SIZE = { width: 560, height: 400 };
+/** The stickers at the bottom left (POWER-UPS, the tractor), and the tractor's, this long after its first one's bought. */
+const STICKER = { size: 92, gap: 16, margin: 24 };
+/** On a screen narrower than this the level goes under the corners, not between them. */
+const WIDE = 900;
+/** The rebirth's confirmation. */
+const REBIRTH_SIZE = { width: 560, height: 400 };
 /** The rewarded tractor offer: taller than the new-mine card, for the tractor on its shine. */
 const TRACTOR_OFFER_SIZE = { width: 560, height: 520 };
-/** Offer rows: frame left, name + details, buy button right. */
-const OFFER = { frameX: -296, textX: -240, textWidth: 400, buttonX: 266, buttonWidth: 150, rowWidth: 696 };
 /** How far a panel's title ribbon sticks out above its frame. */
 const RIBBON_OVERHANG = 44;
 /** Gap between the screen middle (where the miner is) and the top of a panel's ribbon. */
@@ -138,16 +121,9 @@ function vignetteTexture(): PIXI.Texture {
     return PIXI.Texture.from(canvas);
 }
 
-/** What a tool does, for its offer. */
-function toolDetail(tool: ToolDef): string {
-    if (tool.vehicle) return t('toolPowerRide', { power: tool.power, area: tool.area });
-    if (tool.area > 1) return t('toolPowerWide', { power: tool.power, area: tool.area });
-    return (tool.depth ?? 1) > 1 ? t('toolPowerDeep', { power: tool.power, depth: tool.depth! }) : t('toolPower', { power: tool.power });
-}
-
-/** A tool's picture: its atlas icon, or for a vehicle a render of the tractor's model (grey for the Digger, red for the Red Tractor). */
+/** A tool's picture: its atlas icon, or a tractor as it looks now. */
 function toolArt(tool: ToolDef, size: number): PIXI.Sprite {
-    return tool.vehicle ? ModelIcons.sprite(`./dig/models/${DIG.tractor.model}`, size, false, toolPaint(tool)) : toolIcon(tool.icon, size);
+    return tool.vehicle ? ModelIcons.tractorSprite(tool, DigProgress.tractorLook, size) : toolIcon(tool.icon, size);
 }
 
 function toolIcon(iconId: string, size: number): PIXI.Sprite {
@@ -163,7 +139,6 @@ export class DigHud extends PIXI.Container {
     /** The money pill's icon: where reward coins fly to. */
     private moneyIcon?: PIXI.Container;
     private moneyIconScale = 1;
-    private readonly rewardPopup: RewardPopup;
     private readonly backpackText = UiKit.text('hud', 'backpack', { count: 0, capacity: 0 });
     private readonly barFill = new PIXI.Container();
     private readonly toolChip = new PIXI.Container();
@@ -172,24 +147,17 @@ export class DigHud extends PIXI.Container {
     private readonly guide = new PIXI.Container();
     private readonly guideText = UiKit.text('hud', 'guide', { text: '' });
     private guideShown: string | null = null;
-    /** The guide says an upgrade is affordable: the hand points at its buy button in the ATM panel. */
-    private buyHint = false;
-    /** The upgrade panel's open tab (BOOSTS once unlocked: DigProgress.boostsUnlocked). */
-    private tab: 'gear' | 'boosts' = 'gear';
-    /**
-     * The hub's boost machine is out (DigScene sets it): boosts are sold there (its panel is BOOSTS only) and the
-     * ATM's panel is GEAR only. Without one, the ATM has both tabs.
-     */
-    public boostMachine = false;
-    private readonly panelRibbon = UiKit.sprite('upgrades', 'ribbon', 0.55);
-    private readonly boostRibbon = UiKit.sprite('upgrades', 'ribbonPurple', 0.55);
-    private readonly panelTitle = UiKit.text('upgrades', 'title');
-    /** "Open a new mine?" — asked before the reset (a full-screen confirmation). */
-    private readonly newMineConfirm = new PIXI.Container();
+    private readonly levelBadge = new LevelBadge();
+    private readonly powerButton = new PIXI.Container();
+    private readonly powerAlert = new PIXI.Container();
+    private readonly tractorPanel: TractorPanel;
+    private readonly tractorButton: TractorButton;
+    /** Something changed since it was last drawn (tick()). */
+    private changed = false;
+    /** A rebirth: asked before the reset (a full-screen confirmation). */
+    private readonly rebirthConfirm = new PIXI.Container();
     private readonly tractorConfirm = new PIXI.Container();
     private readonly tractorBadge = new PIXI.Container();
-    /** panelKey() when the upgrade panel was last built (see refresh()). */
-    private renderedPanelKey = '';
     /** "Drag to move" (a brand-new game only; DigScene shows / hides it). */
     public readonly moveHint = new MoveHint();
     private readonly phone = new PIXI.Container();
@@ -198,33 +166,26 @@ export class DigHud extends PIXI.Container {
     private phoneVideo!: PIXI.Sprite;
     private phoneFree!: PIXI.Container;
     private phoneHand!: PIXI.Container;
-    private readonly panel = new PIXI.Container();
-    private readonly panelBody = new PIXI.Container();
-    private panelOpen = false;
+    /** POWER-UPS, and the medals' perks (and REBIRTH). */
+    private readonly panel: UpgradeList;
+    private readonly perks: UpgradeList;
+    private readonly perksButton = new PIXI.Container();
+    private readonly perksAlert = new PIXI.Container();
+    private readonly wardrobeButton = new PIXI.Container();
+    private readonly wardrobeAlert = new PIXI.Container();
     private readonly collection: CollectionPanel;
-    /** Coins flying in from a Trophy Room claim (killed with the HUD). */
+    /** Coins flying in from a reward (killed with the HUD). */
     private claimTweens: UiTween[] = [];
     private readonly wardrobe: WardrobePanel;
     private readonly achievements: AchievementsPanel;
     private readonly achievementsButton = new PIXI.Container();
-    private readonly achievementsAlert = new PIXI.Container();
-    /** While a tier waits to be claimed: a turning shine behind the memo pad, which pulses over a "CLAIM" label. */
-    private readonly achievementsShine = PIXI.Sprite.from('Image_Effect_Rotate');
-    private readonly achievementsBody = new PIXI.Container();
-    private readonly achievementsLabel = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 22, fill: 0xffe27a, strokeThickness: 6 });
-    /** The first claim ever: a hand points at the button until the panel has been opened (ACHIEVEMENT_HINT). */
-    private achievementsHand?: PIXI.Container;
-    private achievementsReady = false;
     /** The mines (MAP button): shown once a second mine exists or can be opened; "!" when one can. */
     private readonly mines: MinesPanel;
     private readonly mapButton = new PIXI.Container();
     private readonly mapAlert = new PIXI.Container();
-    /** Bottom-left, big and bouncy: "open your next mine" (only while one can be opened). */
-    private readonly newMineCta = new PIXI.Container();
     /** The gear next to mute: opens the settings menu (the language list). */
     private readonly settings = new PIXI.Container();
     private readonly language = new LanguagePanel();
-    public readonly findBanner: FindBanner;
     private station: StationKind | null = null;
     private readonly slots: PanelSlot[] = [];
     private lastMoney = -1;
@@ -238,12 +199,9 @@ export class DigHud extends PIXI.Container {
     private bagRow!: PIXI.Container;
     private readonly fullTag = new PIXI.Container();
     private bagFull = false;
-    /** The first upgrade must be bought: the screen is dimmed, taps are caught, the upgrade panel can't be closed. */
-    private forced: ForcedBuy | null = null;
     private readonly blocker = new PIXI.Graphics();
     /** A power surge's screen edge: a pulsing rainbow glow, the star feeling (setPower). */
     private readonly powerVignette = new PIXI.Sprite(vignetteTexture());
-    private readonly forcedTitle = UiKit.text('hud', 'toast', { text: '' });
     /** The panels' close buttons (hidden while a purchase is forced). */
     private readonly closeButtons: PIXI.Container[] = [];
     /** A power surge's countdown (setPower): the lent tool's name over a draining bar, near the top. */
@@ -251,50 +209,64 @@ export class DigHud extends PIXI.Container {
     private readonly powerText = UiKit.text('hud', 'toast', { text: '' }, { fontSize: 26, fill: 0x8fe9ff, strokeThickness: 6 });
     private readonly powerBar = new PIXI.Graphics();
     private powerShown: string | null = null;
-    private readonly onChange = () => this.refresh();
+    private readonly onChange = () => {
+        this.changed = true;
+    };
 
     /**
      * `onBuy` runs after a purchase so the scene can react (swap the tool in hand); `onSell` when the phone
      * is tapped; `onWear` after the wardrobe changes the miner's look.
      */
     public constructor(private readonly onBuy: () => void, private readonly onSell: () => void, onWear: () => void,
-        /** The player confirmed opening a new mine (the scene resets and rebuilds it). */
-        private readonly onNewMine: () => void,
+        /** The player confirmed a rebirth (the scene starts over). */
+        private readonly onRebirth: () => void,
         /** The player chose another mine to go to (the scene rebuilds it). */
         onTravel: (index: number) => void) {
         super();
         this.buildCorner();
         this.toast.alpha = 0;
-        this.buildPanel();
+        this.panel = new UpgradeList({
+            title: t('titlePowerUps'), ribbon: 'ribbonPurple', stroke: BOOST_TITLE_STROKE, currency: { prefix: '$' },
+            rows: () => DIG.boosts.map((boost) => this.boostRow(boost)), footer: () => t('boostsHint'),
+            notEnough: () => this.say(t('notEnoughCash'), 0xff8a7a),
+            bought: (id) => {
+                GameAnalytics.boostBought(id, DigProgress.boostLevel(id as BoostDef['id']));
+                this.onBuy();
+            },
+        });
+        this.perks = new UpgradeList({
+            title: t('titlePerks'), ribbon: 'ribbon', stroke: 0x1d5a12, currency: { icon: MEDAL },
+            purse: () => shortNumber(DigProgress.medals),
+            rows: () => DIG.rebirth.perks.map((perk) => this.perkRow(perk)),
+            footer: () => (DigProgress.prestige > 0 ? t('rebirthHint') : t('rebirthLocked')),
+            action: { label: () => t('rebirthButton', { medals: shortNumber(DigProgress.runMedals) }), enabled: () => DigProgress.canRebirth, tap: () => this.showRebirthConfirm() },
+            notEnough: () => this.say(t('notEnoughMedals'), 0xff8a7a),
+            bought: (id) => GameAnalytics.perkBought(id, DigProgress.perkLevel(id as PerkDef['id'])),
+        });
         this.wardrobe = new WardrobePanel(onWear, (text, color) => this.say(text, color));
-        this.achievements = new AchievementsPanel((achievement, level, reward, decor, hat) => {
-            this.rewardPopup.show(achievement, level, achievement.tiers.length, reward,
-                decor && achievement.decor ? t('decorAdded', { decor: names.decor({ id: achievement.id, decor: achievement.decor }) })
-                    : hat ? t('hatWaiting', { hat: names.look(hat) }) : undefined);
-        });
-        this.rewardPopup = new RewardPopup({
-            moneyTarget: () => (this.moneyIcon ? this.toLocal(this.moneyIcon.getGlobalPosition()) : new PIXI.Point()),
-            hold: (amount) => this.holdSale(amount, 0),
-            release: (amount) => this.releaseSale(amount, 0),
-            punchMoney: () => {
-                if (!this.moneyIcon) return;
-                gsap.killTweensOf(this.moneyIcon.scale);
-                this.moneyIcon.scale.set(this.moneyIconScale);
-                UiAnim.punch(this.moneyIcon, 0.25);
-            },
-            center: () => {
-                const screen = Game.overlayScreenData;
-                return screen ? new PIXI.Point(screen.center.x, screen.topLeft.y + screen.height * 0.36) : new PIXI.Point();
-            },
-        });
-        this.findBanner = new FindBanner((id, from) => this.claimReward(id, from));
-        this.collection = new CollectionPanel((id, from) => this.claimReward(id, from));
+        this.achievements = new AchievementsPanel();
+        this.collection = new CollectionPanel();
         this.buildAchievementsButton();
         this.mines = new MinesPanel((index) => {
             this.closeStationPanel();
             onTravel(index);
-        }, () => this.showNewMineConfirm());
+        });
         this.buildMapButton();
+        this.tractorPanel = new TractorPanel((text, color) => this.say(text, color));
+        this.tractorButton = new TractorButton(STICKER.size, () => this.toggleTractor());
+        this.sticker(this.powerButton, this.powerAlert, 'ItemIcon_Star_Gold', () => this.toggleOverlay(this.panel, () => {
+            GameAnalytics.panelOpened('powerups');
+            this.panel.refresh();
+        }));
+        this.sticker(this.perksButton, this.perksAlert, MEDAL, () => this.toggleOverlay(this.perks, () => {
+            GameAnalytics.panelOpened('perks');
+            this.perks.refresh();
+        }));
+        this.sticker(this.wardrobeButton, this.wardrobeAlert, 'ItemIcon_Gear_Armor_Top', () => this.toggleOverlay(this.wardrobe, () => {
+            // Marked first: a return visit badges the free looks in this very refresh.
+            DigProgress.markWardrobeSeen();
+            this.wardrobe.refresh();
+        }));
         this.guide.addChild(UiKit.image('hud', 'pill', 420, 50), this.guideText);
         this.guide.visible = false;
         this.buildBlocker();
@@ -304,17 +276,20 @@ export class DigHud extends PIXI.Container {
         this.powerTimer.visible = false;
         this.powerVignette.visible = false;
         this.powerVignette.eventMode = 'none';
-        this.addChild(this.tractorBadge, this.powerVignette, this.corner, this.toolChip, this.buildPhone(), this.buildNewMineCta(), this.buildMute(), this.buildSettings(), this.guide, this.powerTimer, this.moveHint, this.blocker, this.forcedTitle,
-            this.slot(this.panel, UPGRADE_SIZE),
+        this.addChild(this.tractorBadge, this.powerVignette, this.corner, this.toolChip, this.levelBadge, this.perksButton, this.powerButton, this.tractorButton, this.wardrobeButton, this.buildPhone(), this.buildMute(), this.guide, this.powerTimer, this.moveHint, this.blocker,
+            this.slot(this.panel, UPGRADE_LIST_SIZE, true),
+            this.slot(this.perks, UPGRADE_LIST_SIZE, true),
+            this.slot(this.tractorPanel, TRACTOR_PANEL_SIZE),
             this.slot(this.collection, COLLECTION_SIZE),
             this.slot(this.wardrobe, WARDROBE_SIZE),
             this.slot(this.achievements, ACHIEVEMENTS_SIZE, true),
             this.slot(this.language, LANGUAGE_SIZE, true),
             this.slot(this.mines, MINES_SIZE, true),
-            this.buildNewMineConfirm(),
+            this.rebirthConfirm,
             this.tractorConfirm,
-            this.findBanner, this.toast, this.rewardPopup);
+            this.toast);
         this.tractorConfirm.visible = false;
+        this.rebirthConfirm.visible = false;
         this.tractorBadge.visible = false;
         DigProgress.onChange.add(this.onChange);
         this.refresh();
@@ -344,13 +319,13 @@ export class DigHud extends PIXI.Container {
 
     /** The close button: hides the open panel; it stays shut until the miner leaves the pad (setStationPanel). */
     private closeStationPanel(): void {
-        if (this.forced) return;
         this.toolChip.visible = true;
         this.achievements.visible = false;
         this.language.visible = false;
         this.mines.visible = false;
-        this.setUpgradePanel(false);
-        this.updateNewMineCta();
+        this.panel.visible = false;
+        this.perks.visible = false;
+        this.tractorPanel.visible = false;
         this.collection.visible = false;
         this.wardrobe.visible = false;
     }
@@ -465,7 +440,7 @@ export class DigHud extends PIXI.Container {
     /** The phone shows while the backpack is full, once PHONE_TOOL_LEVEL tool upgrades are owned — and nothing else is up. */
     private updatePhone(): void {
         const show = DigProgress.backpackCount >= DigProgress.capacity && DigProgress.toolLevel >= PHONE_TOOL_LEVEL
-            && !this.phoneBusy && this.forced === null && this.station === null && !this.achievements.visible && !this.language.visible;
+            && !this.phoneBusy && this.station === null && !this.overlayOpen;
         if (show === this.phone.visible) return;
         this.phone.visible = show;
         if (!show) return;
@@ -481,77 +456,48 @@ export class DigHud extends PIXI.Container {
     public setPhoneBusy(busy: boolean): void {
         this.phoneBusy = busy;
         this.updatePhone();
-        this.updateNewMineCta();
     }
 
-    /**
-     * The memo pad under the pills (no button shape: the icon reads on its own). While a tier is ready to claim it
-     * gets the phone's treatment (setAchievementsReady): a turning gold shine, a pulse, "CLAIM" under it and the pizza
-     * game's "!" bobbing on it.
-     */
+    /** The memo pad under the pills (no button shape: the icon reads on its own). Achievements pay by themselves: it's to look at them. */
     private buildAchievementsButton(): void {
         this.achievementsButton.position.set(CORNER_WIDTH - ACHIEVEMENTS_BUTTON / 2, 150);
-        const shine = this.achievementsShine;
-        shine.anchor.set(0.5);
-        shine.scale.set((ACHIEVEMENTS_BUTTON * 1.9) / Math.max(shine.texture.width, shine.texture.height, 1));
-        shine.tint = 0xfff2a0;
-        shine.alpha = 0.85;
-        shine.eventMode = 'none';
-        shine.visible = false;
-        gsap.to(shine, { rotation: Math.PI * 2, duration: 6, ease: 'none', repeat: -1 });
-        this.achievementsLabel.text = t('claim');
-        UiKit.fit(this.achievementsLabel, ACHIEVEMENTS_BUTTON + 16);
-        this.achievementsLabel.anchor.set(0.5);
-        this.achievementsLabel.y = ACHIEVEMENTS_BUTTON / 2 + 4;
-        this.achievementsLabel.visible = false;
-        this.achievementsBody.addChild(icon('hud', 'achievementsIcon', ACHIEVEMENTS_BUTTON), this.achievementsLabel);
-        this.achievementsButton.addChild(shine, this.achievementsBody);
+        this.achievementsButton.addChild(icon('hud', 'achievementsIcon', ACHIEVEMENTS_BUTTON));
         // The icon alone is the button: an invisible square keeps the whole of it tappable.
         this.achievementsButton.hitArea = new PIXI.Rectangle(-ACHIEVEMENTS_BUTTON / 2, -ACHIEVEMENTS_BUTTON / 2, ACHIEVEMENTS_BUTTON, ACHIEVEMENTS_BUTTON);
-        const alert = icon('hud', 'alert', 36);
-        this.achievementsAlert.addChild(alert);
-        this.achievementsAlert.position.set(ACHIEVEMENTS_BUTTON / 2 - 8, -ACHIEVEMENTS_BUTTON / 2 + 10);
-        gsap.to(alert, { y: -8, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
-        this.achievementsAlert.visible = false;
-        this.achievementsButton.addChild(this.achievementsAlert);
         this.achievementsButton.eventMode = 'static';
         this.achievementsButton.cursor = 'pointer';
         this.achievementsButton.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         this.achievementsButton.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
             event.stopPropagation();
             UiAnim.punch(this.achievementsButton, 0.12);
-            // The first claim's hand has done its job once the panel opens with something to claim.
-            if (this.achievementsReady && DigProgress.once(ACHIEVEMENT_HINT) && this.achievementsHand) {
-                UiAnim.kill(this.achievementsHand);
-                this.achievementsHand.destroy({ children: true });
-                this.achievementsHand = undefined;
-            }
             this.toggleAchievements();
         });
         this.corner.addChild(this.achievementsButton);
     }
 
-    /** A tier is ready to claim (or not any more): the button's shine, pulse, label and "!" — and, the first time, the hand. */
-    private setAchievementsReady(ready: boolean): void {
-        if (ready === this.achievementsReady) return;
-        this.achievementsReady = ready;
-        this.achievementsAlert.visible = ready;
-        this.achievementsShine.visible = ready;
-        this.achievementsLabel.visible = ready;
-        gsap.killTweensOf(this.achievementsBody.scale);
-        this.achievementsBody.scale.set(1);
-        if (ready) {
-            UiAnim.popIn(this.achievementsBody);
-            UiAnim.pulse(this.achievementsBody, 0.08, 0.55);
+    /** Achievements reached: paid at once, their cash flying off the memo pad, and said. */
+    public payAchievements(): void {
+        let reward = 0;
+        let hat: string | undefined;
+        let title = '';
+        for (let again = true; again;) {
+            again = false;
+            for (const achievement of DIG.achievements) {
+                const paid = DigProgress.claimAchievement(achievement.id);
+                if (!paid) continue;
+                GameAnalytics.achievementClaimed(achievement.id, DigProgress.achievementLevel(achievement.id));
+                reward += paid.reward;
+                hat ??= paid.hat;
+                title ||= names.achievement(achievement).toUpperCase();
+                again = true;
+            }
         }
-        if (ready && !this.achievementsHand && !DigProgress.hasOnce(ACHIEVEMENT_HINT)) {
-            // Mirrored, reaching in from the left: clear of the "CLAIM" label under the pad and of the screen's right
-            // edge (the corner sits on it).
-            this.achievementsHand = this.pointingHand(-ACHIEVEMENTS_BUTTON * 0.3, 0);
-            this.achievementsHand.scale.x = -1;
-            this.achievementsButton.addChild(this.achievementsHand);
-        }
-        if (this.achievementsHand) this.achievementsHand.visible = ready;
+        if (reward <= 0) return;
+        this.holdSale(reward, 0);
+        DigAudio.play('buyCash');
+        this.flyCash(reward, this.achievementsButton.getGlobalPosition());
+        UiAnim.punch(this.achievementsButton, 0.35);
+        this.say(hat ? t('hatWaiting', { hat: names.look(hat) }) : `${t('achievementTitle')} ${title}  +${shortMoney(reward)}`, 0xffe27a);
     }
 
     /** The MAP button under the achievements, drawn like it (the kit's map icon alone, no button shape); "!" when a new mine can be opened. */
@@ -580,55 +526,6 @@ export class DigHud extends PIXI.Container {
         this.corner.addChild(this.mapButton);
     }
 
-    /**
-     * The NEW MINE call to action, bottom-left: the kit's gem pack bouncing (jump, squash on landing, a wiggle), purple
-     * rays turning behind it, a bobbing "!" and a pulsing "NEW MINE!" — hard to ignore. Opens the confirmation.
-     */
-    private buildNewMineCta(): PIXI.Container {
-        const cta = this.newMineCta;
-        UiAnim.rays(cta, NEW_MINE_CTA.rays, 0xd38bff, 0.95, 6);
-        const jumper = new PIXI.Container();
-        const gems = PIXI.Sprite.from('ShopItem_s_GemPack_1');
-        gems.anchor.set(0.5, 1);
-        gems.scale.set(NEW_MINE_CTA.icon / Math.max(gems.texture.width, gems.texture.height, 1));
-        gems.y = gems.height / 2;
-        jumper.addChild(gems);
-        const alert = icon('hud', 'alert', 40);
-        alert.position.set(NEW_MINE_CTA.icon / 2 - 6, -NEW_MINE_CTA.icon / 2 + 6);
-        gsap.to(alert, { y: alert.y - 8, duration: 0.4, ease: 'sine.inOut', yoyo: true, repeat: -1 });
-        jumper.addChild(alert);
-        const label = UiKit.fit(UiKit.text('hud', 'toast', { text: t('newMineCta') }, { fontSize: 28, fill: 0xffe27a, strokeThickness: 7 }), NEW_MINE_CTA.label);
-        label.y = NEW_MINE_CTA.icon / 2 + 26;
-        UiAnim.pulse(label, 0.08, 0.45);
-        cta.addChild(jumper, label);
-        // Jump, land with a squash, a little wiggle, a rest — and again.
-        const hop = gsap.timeline({ repeat: -1, repeatDelay: 0.5 });
-        hop.to(jumper, { y: -30, duration: 0.26, ease: 'power2.out' })
-            .to(jumper, { y: 0, duration: 0.24, ease: 'power2.in' })
-            .to(jumper.scale, { x: 1.18, y: 0.82, duration: 0.07, ease: 'power1.out', yoyo: true, repeat: 1 })
-            .to(jumper, { rotation: 0.14, duration: 0.07, ease: 'sine.inOut', yoyo: true, repeat: 3 }, '+=0.05');
-        cta.visible = false;
-        cta.eventMode = 'static';
-        cta.cursor = 'pointer';
-        cta.hitArea = new PIXI.Circle(0, 0, NEW_MINE_CTA.icon * 0.7);
-        cta.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
-        cta.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
-            event.stopPropagation();
-            UiAnim.punch(jumper, 0.2);
-            this.showNewMineConfirm();
-        });
-        return cta;
-    }
-
-    /** The NEW MINE button shows while a new mine can be opened and nothing else is up. */
-    private updateNewMineCta(): void {
-        const show = DigProgress.canOpenNewMine && this.forced === null && this.station === null && !this.achievements.visible
-            && !this.language.visible && !this.mines.visible && !this.newMineConfirm.visible && !this.tractorConfirm.visible;
-        if (show === this.newMineCta.visible) return;
-        this.newMineCta.visible = show;
-        if (show) UiAnim.popIn(this.newMineCta);
-    }
-
     /** Opens/closes the achievements (centred over the game, like the language list). */
     private toggleAchievements(): void {
         this.toggleOverlay(this.achievements, () => this.achievements.refresh());
@@ -636,7 +533,6 @@ export class DigHud extends PIXI.Container {
 
     /** Opens an overlay panel opened from the HUD (closing whatever else is open), or closes it if it's showing. */
     private toggleOverlay(panel: PIXI.Container, refresh: () => void): void {
-        if (this.forced) return;
         if (panel.visible) {
             this.closeStationPanel();
             return;
@@ -647,9 +543,119 @@ export class DigHud extends PIXI.Container {
         Gameplay.stop();
         refresh();
         panel.visible = true;
-        this.updateNewMineCta();
+        this.updatePhone();
         UiAnim.popIn(panel);
         DigAudio.play('open');
+    }
+
+    /** A panel opened from the HUD is up. */
+    private get overlayOpen(): boolean {
+        return this.achievements.visible || this.language.visible || this.mines.visible || this.panel.visible || this.perks.visible || this.tractorPanel.visible || this.wardrobe.visible;
+    }
+
+    /** Any panel at all is up (nothing's offered meanwhile). */
+    public get busy(): boolean {
+        return this.station === 'collection' || this.overlayOpen || this.rebirthConfirm.visible || this.tractorConfirm.visible;
+    }
+
+    /** The tractor can be dressed: its button's there. */
+    public get tractorMenu(): boolean {
+        return this.tractorButton.visible;
+    }
+
+    private toggleTractor(): void {
+        this.toggleOverlay(this.tractorPanel, () => {
+            GameAnalytics.panelOpened('tractor');
+            DigProgress.markTractorSeen();
+            this.tractorPanel.refresh();
+        });
+        this.refreshStickers();
+    }
+
+    /** A sticker button (a picture on a white outline, nothing behind it) with a bouncing "!". */
+    private sticker(button: PIXI.Container, alert: PIXI.Container, frame: string, onTap: () => void): void {
+        const { size } = STICKER;
+        button.addChild(iconSticker(frame, size * 0.82));
+        button.hitArea = new PIXI.Rectangle(-size / 2, -size / 2, size, size);
+        const mark = icon('hud', 'alert', 34);
+        alert.addChild(mark);
+        alert.position.set(size / 2 - 6, -size / 2 + 6);
+        gsap.to(mark, { y: -8, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+        button.addChild(alert);
+        button.visible = false;
+        button.eventMode = 'static';
+        button.cursor = 'pointer';
+        // Taps on HUD buttons must not also start the movement joystick underneath.
+        button.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
+        button.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
+            event.stopPropagation();
+            DigAudio.play('toggle');
+            onTap();
+        });
+    }
+
+    private showSticker(button: PIXI.Container, shown: boolean): void {
+        if (shown && !button.visible) UiAnim.popIn(button);
+        button.visible = shown;
+    }
+
+    /** A power-up's row: its effect now and next. */
+    private boostRow(boost: BoostDef): UpgradeRow {
+        const level = DigProgress.boostLevel(boost.id);
+        const price = DigProgress.boostPrice(boost);
+        const effect = (at: number) => {
+            const value = DigProgress.boostEffect(boost, at);
+            return value < 10 ? `+${Math.round(value * 100)}%` : `x${shortNumber(1 + value)}`;
+        };
+        return {
+            id: boost.id, icon: boost.icon, name: t(`boost_${boost.id}` as StringId), level, max: boost.maxLevel,
+            toward: boost.milestones?.find((milestone) => milestone > level),
+            info: levelInfo(level, boost.maxLevel, effect(level), price === undefined ? undefined : effect(level + 1)),
+            price, affordable: price !== undefined && DigProgress.money >= price, buy: () => DigProgress.buyBoost(boost),
+        };
+    }
+
+    /** A perk's row. */
+    private perkRow(perk: PerkDef): UpgradeRow {
+        const level = DigProgress.perkLevel(perk.id);
+        const price = DigProgress.perkCost(perk);
+        const effect = (at: number) => {
+            if (perk.id === 'tools' || perk.id === 'blades' || perk.id === 'crew') return `+${at}`;
+            if (perk.id === 'luck' || perk.id === 'speed') return `+${Math.round(perk.per * at * 100)}%`;
+            const factor = Math.pow(perk.per, at);
+            return perk.id === 'portal' ? `-${Math.round((1 - factor) * 100)}%` : `x${factor < 10 ? factor.toFixed(2) : shortNumber(factor)}`;
+        };
+        return {
+            id: perk.id, icon: perk.icon, name: names.perk(perk), level, max: perk.max,
+            info: `${t(`perk_what_${perk.id}` as StringId)}  ·  ${price === undefined ? effect(level) : `${effect(level)}  →  ${effect(level + 1)}`}`,
+            price, affordable: price !== undefined && DigProgress.medals >= price, buy: () => DigProgress.buyPerk(perk),
+        };
+    }
+
+    /** The stickers at the bottom left: there from a level (POWER-UPS) and from the first tractor, each with its "!". */
+    private refreshStickers(): void {
+        const power = DigProgress.boostsUnlocked;
+        if (power && !this.powerButton.visible) {
+            if (DigProgress.once('power-ups')) this.say(t('powerUpsOpen'), 0xffe27a);
+        }
+        this.showSticker(this.powerButton, power);
+        this.powerAlert.visible = power && DigProgress.canAffordBoost && !this.panel.visible;
+        // (A tractor of their own, and the tutorial's first pieces done: one new thing at a time.)
+        const tractor = DigProgress.hasTractor && DigProgress.backpackLevel > 0;
+        if (tractor && !this.tractorButton.visible && DigProgress.once('tractor-menu')) this.say(t('tractorMenuOpen'), 0xffe27a);
+        this.tractorButton.set(tractor, DigProgress.tractorHasNews && !this.tractorPanel.visible);
+        this.showSticker(this.wardrobeButton, DigProgress.backpackLevel > 0 || DigProgress.rebirths > 0);
+        this.wardrobeAlert.visible = DigProgress.wardrobeHasNews && !this.wardrobe.visible;
+        const perks = DigProgress.prestige > 0 || DigProgress.rebirths > 0;
+        this.showSticker(this.perksButton, perks);
+        this.perksAlert.visible = perks && (DigProgress.canAffordPerk || (DigProgress.canRebirth && DigProgress.rebirths === 0)) && !this.perks.visible;
+    }
+
+    /** Once a frame: what changed since the last one is drawn. */
+    public tick(): void {
+        if (!this.changed) return;
+        this.changed = false;
+        this.refresh();
     }
 
     /** Shows the language list (the HUD was just rebuilt for a new language: keep it open). */
@@ -713,25 +719,6 @@ export class DigHud extends PIXI.Container {
         this.refresh();
     }
 
-    /**
-     * The hub's income by the money: appears (with a pop and a line on screen) with the first piece that earns, and
-     * pops again whenever it goes up.
-     */
-    private refreshIncome(): void {
-        const rate = DigProgress.hubIncome;
-        if (rate === this.incomeShown) return;
-        const first = this.incomeShown === 0;
-        this.incomeShown = rate;
-        this.incomeText.visible = rate > 0;
-        if (rate <= 0) return;
-        this.incomeText.text = rateLabel(rate);
-        gsap.killTweensOf(this.incomeText.scale);
-        this.incomeText.scale.set(1);
-        UiAnim.punch(this.incomeText as unknown as PIXI.Container, 0.35);
-        // After the build's own message.
-        if (first && this.lastMoney >= 0) window.setTimeout(() => this.say(t('baseEarns', { rate: rateLabel(rate) }), 0x8fffa0), 1800);
-    }
-
     /** "SOLD! +$X", counting up over the sale. */
     public saySold(earned: number, duration: number): void {
         this.say(t('sold', { amount: 0 }), 0x9cff9c);
@@ -741,9 +728,12 @@ export class DigHud extends PIXI.Container {
     }
 
     private refresh(): void {
-        this.refreshIncome();
+        const { level, into, need } = DigProgress.levelNow;
+        this.levelBadge.set(level, into, need);
+        this.refreshStickers();
         const money = DigProgress.money - this.heldMoney;
-        this.moneyText.text = `$${money}`;
+        this.moneyText.text = shortMoney(money);
+        UiKit.fit(this.moneyText, PILL_WIDTH - ICON_SIZE - 14);
         if (this.lastMoney >= 0 && money > this.lastMoney) {
             // A sale punches many times in a row: restart from rest so the scale never drifts.
             gsap.killTweensOf(this.moneyText.scale);
@@ -758,7 +748,6 @@ export class DigHud extends PIXI.Container {
         // Only worth showing with something to sell (and not while a sale is still flying).
         this.setBagFull(DigProgress.backpackCount >= capacity);
         this.updatePhone();
-        this.updateNewMineCta();
         this.backpackText.text = `${count}/${capacity}`;
         // Shrinks to the gap before the fill bar ("100/200" would run into it).
         UiKit.fit(this.backpackText, BAR_X - BAR_WIDTH / 2 - (ICON_SIZE + 8) - 6);
@@ -773,6 +762,8 @@ export class DigHud extends PIXI.Container {
             this.barFill.addChild(fill);
         }
 
+        // (On foot: a tractor's on its sticker.)
+        this.toolChip.renderable = !DigProgress.hasTractor;
         this.toolChip.removeChildren().forEach((child) => child.destroy({ children: true }));
         const tool = DigProgress.tool;
         const name = UiKit.text('hud', 'toolName', { name: names.tool(tool).toUpperCase() });
@@ -787,19 +778,14 @@ export class DigHud extends PIXI.Container {
 
         // Rebuilt only when what they show changes — not on every coin of a sale landing, which used to
         // recreate the buy buttons mid-tap (flicker, taps lost).
-        if (this.panelOpen && this.panelKey() !== this.renderedPanelKey) {
-            this.renderPanel();
-        }
-        if (this.station === 'wardrobe' && this.heldMoney === 0) {
+        if (this.panel.visible && this.heldMoney === 0 && this.panel.stale) this.panel.refresh();
+        if (this.perks.visible && this.perks.stale) this.perks.refresh();
+        if (this.tractorPanel.visible && this.heldMoney === 0 && this.tractorPanel.stale) this.tractorPanel.refresh();
+        if (this.wardrobe.visible && this.heldMoney === 0) {
             this.wardrobe.refresh();
         }
-        // During the tutorial (until the first hub piece) just the "!": the shine, pulse, CLAIM and hand would
-        // compete with the guide.
-        const claimable = DigProgress.claimableAchievements > 0;
-        this.setAchievementsReady(claimable && (HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id)));
-        this.achievementsAlert.visible = claimable;
-        this.mapButton.visible = DigProgress.prestige > 0 || DigProgress.canOpenNewMine;
-        this.mapAlert.visible = DigProgress.canOpenNewMine;
+        this.mapButton.visible = DigProgress.prestige > 0;
+        this.mapAlert.visible = false;
         if (this.mines.visible && this.heldMoney === 0) this.mines.refresh();
         // Not while money is still landing (a sale, a reward): rebuilding the panel on every coin is wasted work and
         // kills its tweens mid-flight. It catches up when the last coin lands (heldMoney back to 0).
@@ -809,19 +795,22 @@ export class DigHud extends PIXI.Container {
     }
 
     /**
-     * A reward claimed (a find, or COLLECTION_REWARD) from the find banner on the spot or in the Trophy Room: paid
-     * now, then its cash flies from the CLAIM button (`from`, on screen) into the money icon, the counter climbing as each coin lands.
+     * A find's reward (or the collection's), the moment it's dug up: paid now, then its cash flies
+     * from `from` (on screen) into the money icon, the counter climbing as each coin lands.
      */
-    private claimReward(id: string, from: PIXI.Point): void {
+    public claimReward(id: string, from: PIXI.Point): void {
         const amount = DigProgress.unclaimedFor(id);
         if (amount <= 0) return;
         // Held back first, so the counter doesn't jump before the coins land.
         this.holdSale(amount, 0);
         DigProgress.claimReward(id);
         if (id !== COLLECTION_REWARD) GameAnalytics.findClaimed(id);
-        GameAnalytics.tutorialStep('claim');
-        DigAudio.play('confirm');
         DigAudio.play('buyCash');
+        this.flyCash(amount, from);
+    }
+
+    /** `amount`, held back already, flies in as coins from `from` (on screen): the counter climbs as each lands. */
+    private flyCash(amount: number, from: PIXI.Point): void {
         const start = this.toLocal(from);
         const target = () => (this.moneyIcon ? this.toLocal(this.moneyIcon.getGlobalPosition()) : new PIXI.Point());
         const coins = coinCount(amount);
@@ -863,92 +852,44 @@ export class DigHud extends PIXI.Container {
         this.blocker.visible = false;
         this.blocker.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
         this.blocker.on('pointertap', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
-        this.forcedTitle.visible = false;
     }
 
     /** The dim layer is up while a purchase is forced or the new-mine question is asked. */
     private updateBlocker(): void {
-        const on = this.forced !== null || this.newMineConfirm.visible || this.tractorConfirm.visible;
+        const on = this.rebirthConfirm.visible || this.tractorConfirm.visible;
         if (on && !this.blocker.visible) gsap.fromTo(this.blocker, { alpha: 0 }, { alpha: 1, duration: 0.3 });
         this.blocker.visible = on;
     }
 
-    /**
-     * A tutorial purchase is forced (the scene decides which and when; null = none): dims the game, opens the upgrade
-     * panel (the bag, the tool) or the wardrobe (the hat) with the hand on it and no way to close it, and shuts the
-     * other menus. Off again once bought, leaving open whatever the miner stands on.
-     */
-    public setForced(kind: ForcedBuy | null): void {
-        if (kind === this.forced) return;
-        const was = this.forced;
-        this.forced = kind;
-        this.updateBlocker();
-        this.forcedTitle.visible = kind !== null;
-        this.closeButtons.forEach((close) => (close.visible = kind === null));
-        if (kind) {
-            this.achievements.visible = false;
-            this.language.visible = false;
-            this.mines.visible = false;
-            this.collection.visible = false;
-            this.toolChip.visible = false;
-            this.forcedTitle.text = t(kind === 'hat' ? 'firstHatTitle' : kind === 'backpack' ? 'firstBagTitle' : 'firstUpgradeTitle');
-            this.forcedTitle.scale.set(1);
-            UiKit.fit(this.forcedTitle, GUIDE_WIDTH + 120);
-            UiAnim.punch(this.forcedTitle, 0.2);
-            DigAudio.play('quest');
-        }
-        // Re-rendered so the hand shows (or goes); opened if it wasn't, closed unless the miner is on the ATM pad.
-        if (this.panelOpen) this.renderPanel();
-        this.setUpgradePanel(kind === 'backpack' || kind === 'tool' || (kind === null && (this.station === 'atm' || this.station === 'boost')));
-        this.wardrobe.setForcedItem(kind === 'hat' ? DigProgress.starterHat?.id : undefined);
-        const wardrobe = kind === 'hat' || (kind === null && this.station === 'wardrobe');
-        if (wardrobe && !this.wardrobe.visible) UiAnim.popIn(this.wardrobe);
-        this.wardrobe.visible = wardrobe;
-        if (!kind) this.toolChip.visible = this.station === null && !this.achievements.visible && !this.language.visible;
-        this.updatePhone();
-        this.updateNewMineCta();
+    private closeOverlays(): void {
+        this.achievements.visible = false;
+        this.language.visible = false;
+        this.mines.visible = false;
+        this.panel.visible = false;
+        this.perks.visible = false;
+        this.tractorPanel.visible = false;
+        this.wardrobe.visible = false;
     }
 
-    /** Opens the panel of the station the miner stands on (null = none): ATM upgrades, boosts, collection, wardrobe. */
+    /** Opens the panel of the station the miner stands on (null = none): collection, wardrobe (the ATM has none). */
     public setStationPanel(kind: StationKind | null): void {
         if (kind === this.station) return;
         this.station = kind;
-        // While a purchase is forced only its panel shows (setForced).
-        if (this.forced) return;
         // The open panel fills the bottom of the screen, where the tool chip sits.
         this.toolChip.visible = kind === null && !this.achievements.visible && !this.language.visible;
-        if (kind !== null) {
-            this.achievements.visible = false;
-            this.language.visible = false;
-            this.mines.visible = false;
-        }
-        // Straight from one machine's pad to the other's: same panel, other contents.
-        if (this.panelOpen && (kind === 'atm' || kind === 'boost')) this.renderPanel();
-        this.setUpgradePanel(kind === 'atm' || kind === 'boost');
+        if (kind !== null) this.closeOverlays();
         this.updatePhone();
-        this.updateNewMineCta();
         this.collection.visible = kind === 'collection';
-        this.wardrobe.visible = kind === 'wardrobe';
         if (kind === 'collection') {
             this.collection.refresh(DigProgress.unseenFinds);
             DigProgress.markFindsSeen();
             UiAnim.popIn(this.collection);
             DigAudio.play('open');
-        } else if (kind === 'wardrobe') {
-            // Marked first: a return visit after the first hat badges the free looks in this very refresh.
-            DigProgress.markWardrobeSeen();
-            this.wardrobe.refresh();
-            UiAnim.popIn(this.wardrobe);
-            DigAudio.play('open');
         }
     }
 
     /** The guide's line (null hides it); pops in when it changes so the new step gets noticed. */
-    public setGuide(text: string | null, buy = false): void {
-        if (buy !== this.buyHint) {
-            this.buyHint = buy;
-            if (this.panelOpen) this.renderPanel();
-        }
+    public setGuide(text: string | null): void {
         if (text === this.guideShown) return;
         // A new step (not the first one, nor the guide finishing): a soft "quest" chime.
         if (text !== null && this.guideShown !== null) DigAudio.play('quest');
@@ -1009,314 +950,70 @@ export class DigHud extends PIXI.Container {
         gsap.to(this.toast, { alpha: 0, duration: 0.5, delay: 1.6 });
     }
 
-    // ---------------------------------------------------------------- upgrade panel
+    // ---------------------------------------------------------------- POWER-UPS
 
-    private buildPanel(): void {
-        const frame = UiKit.image('upgrades', 'panel', UPGRADE_SIZE.width, UPGRADE_SIZE.height);
-        // The boost machine's panel wears its own colours (renderPanel swaps them): purple ribbon, BOOSTS.
-        for (const ribbon of [this.panelRibbon, this.boostRibbon]) ribbon.y = -UPGRADE_SIZE.height / 2;
-        this.boostRibbon.visible = false;
-        this.panelTitle.y = -UPGRADE_SIZE.height / 2 - 5;
-        this.panel.addChild(frame, this.panelRibbon, this.boostRibbon, this.panelTitle, this.panelBody);
-        this.panel.visible = false;
-    }
-
-    /** Opens/closes the upgrade panel (the scene calls this as the miner steps on/off the pad). */
-    public setUpgradePanel(open: boolean): void {
-        if (open === this.panelOpen) return;
-        this.panelOpen = open;
-        this.panel.visible = open;
-        if (open) {
-            this.renderPanel();
-            UiAnim.popIn(this.panel);
-            DigAudio.play('open');
-        }
-    }
-
-    /**
-     * The tool path as a timeline (shovel ... tractor, owned / next / later), the next tool's offer under it,
-     * the backpack, and a line on where the path ends.
-     */
-    /**
-     * Which tabs the upgrade panel has: GEAR only (a forced purchase, or the ATM while there's a boost machine),
-     * BOOSTS only (the boost machine), or both (the ATM in a hub without one).
-     */
-    private get panelMode(): 'gear' | 'boosts' | 'both' {
-        if (this.forced) return 'gear';
-        if (this.station === 'boost') return 'boosts';
-        return this.boostMachine ? 'gear' : 'both';
-    }
-
-    /** What the upgrade panel shows, as a key: levels, what's affordable, the guide's hand. */
-    private panelKey(): string {
-        const money = DigProgress.money;
-        const tool = DigProgress.nextTool;
-        const bag = DigProgress.nextBackpack;
-        const boosts = DIG.boosts.map((b) => `${DigProgress.boostLevel(b.id)}${money >= (DigProgress.boostPrice(b) ?? Infinity) ? '+' : ''}`);
-        return [DigProgress.toolLevel, DigProgress.capacity, !!tool && money >= DigProgress.priceOf(tool), !!bag && money >= DigProgress.priceOf(bag), this.buyHint, this.forced,
-            this.tab, this.panelMode, DigProgress.boostsUnlocked, DigProgress.prestige, ...boosts].join('|');
-    }
-
-    private renderPanel(): void {
-        this.renderedPanelKey = this.panelKey();
-        // The buy buttons pulse: stop that before destroying them (see AchievementsPanel.refresh()).
-        UiAnim.kill(this.panelBody);
-        this.panelBody.removeChildren().forEach((child) => child.destroy({ children: true }));
-        // A forced purchase is always on GEAR; BOOSTS only once unlocked; each machine its own tab.
-        const mode = this.panelMode;
-        const boostMachine = mode === 'boosts';
-        this.panelRibbon.visible = !boostMachine;
-        this.boostRibbon.visible = boostMachine;
-        this.panelTitle.text = boostMachine ? t('tabBoosts') : t('titleUpgrades');
-        this.panelTitle.style.stroke = boostMachine ? BOOST_TITLE_STROKE : UPGRADE_TITLE_STROKE;
-        if (mode === 'boosts') this.tab = 'boosts';
-        else if (mode === 'gear' || !DigProgress.boostsUnlocked) this.tab = 'gear';
-        this.panelBody.addChild(this.panelTabs());
-        if (this.tab === 'boosts') {
-            this.renderBoosts();
-            return;
-        }
-        const tool = DigProgress.nextTool;
-        const bag = DigProgress.nextBackpack;
-        // The last tool owned: the tool row offers a new mine instead.
-        this.panelBody.addChild(tool ? this.offer(
-            GEAR_Y.tool,
-            toolArt(tool, 64),
-            names.tool(tool).toUpperCase(),
-            toolDetail(tool),
-            DigProgress.priceOf(tool),
-            () => {
-                if (!DigProgress.buyTool()) return false;
-                GameAnalytics.toolBought(DigProgress.toolLevel, DigProgress.tool.id);
-                return true;
-            },
-            { frame: toolFrame(tool, false), rarity: tool.rarity, disabled: this.forced === 'backpack' },
-        ) : this.offer(
-            GEAR_Y.tool,
-            toolArt(DigProgress.tool, 64),
-            names.tool(DigProgress.tool).toUpperCase(),
-            DigProgress.canOpenNewMine ? t('maxedOpenMine') : t('tractorOwnedInfo'),
-            undefined,
-            () => false,
-            { frame: toolFrame(DigProgress.tool, true), rarity: DigProgress.tool.rarity },
-        ));
-        const bagRow = this.offer(
-            GEAR_Y.bag,
-            icon('hud', 'backpackIcon', 64),
-            bag ? t('backpackSize', { capacity: bag.capacity }) : t('biggestBackpack'),
-            bag ? t('backpackHolds', { capacity: bag.capacity }) : t('nothingLeft'),
-            bag ? DigProgress.priceOf(bag) : undefined,
-            () => {
-                if (!DigProgress.buyBackpack()) return false;
-                GameAnalytics.backpackBought(DigProgress.backpackLevel, DigProgress.capacity);
-                return true;
-            },
-            { disabled: this.forced === 'tool' },
-        );
-        bagRow.addChild(this.levelBar(DigProgress.backpackLevel, DIG.backpack.length - 1, 38));
-        this.panelBody.addChild(bagRow);
-        // After the offer rows, so its labels (the goal's price) draw over the tool row's top edge, not under it.
-        this.panelBody.addChild(this.timeline(GEAR_Y.timeline));
-        // Guide: the hand on the buy button of the upgrade the money covers (the tool first).
-        if (this.buyHint || this.forced) {
-            const money = DigProgress.money;
-            const row = this.forced === 'backpack' ? GEAR_Y.bag : this.forced === 'tool' ? GEAR_Y.tool
-                : tool && money >= DigProgress.priceOf(tool) ? GEAR_Y.tool : bag && money >= DigProgress.priceOf(bag) ? GEAR_Y.bag : undefined;
-            if (row !== undefined) this.panelBody.addChild(this.pointingHand(OFFER.buttonX, row));
-        }
-        const goal = DIG.tools[DIG.tools.length - 1];
-        this.panelFooter(!DigProgress.nextTool ? t('tractorRiding') : t('tractorGoal', { tool: names.tool(goal).toUpperCase(), area: goal.area, speed: goal.rideSpeed ?? DIG.tractor.speedMultiplier }));
-    }
-
-    /** A line along the bottom of the upgrade panel. */
-    private panelFooter(text: string): void {
-        const footer = UiKit.text('upgrades', 'itemInfo', { text });
-        footer.anchor.set(0.5);
-        footer.y = PANEL_FOOTER_Y;
-        UiKit.fit(footer, PANEL_BLOCK.width - 30);
-        this.panelBody.addChild(footer);
-    }
-
-    /**
-     * The tabs over the content block (TabBar), per panelMode: GEAR, and BOOSTS once unlocked (not while a purchase is
-     * forced — that stays on GEAR); the boost machine's is BOOSTS alone.
-     */
-    private panelTabs(): PIXI.Container {
-        const mode = this.panelMode;
-        const tabs: TabSpec[] = [];
-        if (mode !== 'boosts') tabs.push({ id: 'gear', label: t('tabGear') });
-        if (mode === 'boosts' || (mode === 'both' && DigProgress.boostsUnlocked)) tabs.push({ id: 'boosts', label: t('tabBoosts'), alert: mode === 'both' && DigProgress.canAffordBoost });
-        const block = tabbedBlock({
-            width: PANEL_BLOCK.width,
-            height: PANEL_BLOCK.height,
-            tabWidth: PANEL_BLOCK.tabWidth,
-            tabHeight: PANEL_BLOCK.tabHeight,
-            tabs,
-            active: this.tab,
-            onSelect: (id) => {
-                this.tab = id as 'gear' | 'boosts';
-                GameAnalytics.tabOpened('atm', id);
-                DigAudio.play('tab');
-                this.renderPanel();
-            },
-        });
-        block.y = PANEL_BLOCK.top;
-        return block;
-    }
-
-    /**
-     * The BOOSTS tab: a row per boost track, and along the bottom what's kept for good — the new mines' bonus and the
-     * hub's (its pieces and finished sets) — or, with neither yet, what boosts are.
-     */
-    private renderBoosts(): void {
-        DIG.boosts.forEach((boost, i) => this.panelBody.addChild(this.boostRow(boost, BOOST_ROW.firstY + i * BOOST_ROW.step)));
-        const mines = DigProgress.prestige;
-        const percent = (n: number) => Math.round(n * 100);
-        const parts: string[] = [];
-        const sell = percent((1 + DIG.prestige.sellBonus * mines) * (1 + DigProgress.hubBonus('sell')) - 1);
-        const dig = percent((1 + DIG.prestige.digBonus * mines) * (1 + DigProgress.hubBonus('dig')) - 1);
-        const move = percent(DigProgress.hubBonus('move'));
-        const beam = DigProgress.hubBonus('beam');
-        if (sell > 0) parts.push(t('perk_sell', { n: sell }));
-        if (dig > 0) parts.push(t('perk_dig', { n: dig }));
-        if (move > 0) parts.push(t('perk_move', { n: move }));
-        if (beam > 0) parts.push(t('perk_beam', { n: beam }));
-        this.panelFooter(parts.length ? t('foreverBonus', { list: parts.join(' · ') }) : t('boostsHint'));
-    }
-
-    /** One boost: its icon, name and level, its effect now -> next, and the buy button (MAX at the top). */
-    private boostRow(boost: BoostDef, y: number): PIXI.Container {
-        const row = new PIXI.Container();
-        row.y = y;
-        row.addChild(UiKit.image('upgrades', 'rowBack', OFFER.rowWidth, BOOST_ROW.height));
-        const frame = UiKit.image('upgrades', 'itemFrame', 70, 70);
-        frame.x = OFFER.frameX;
-        const art = PIXI.Sprite.from(boost.icon);
-        art.anchor.set(0.5);
-        art.scale.set(50 / Math.max(art.texture.width, art.texture.height, 1));
-        art.x = OFFER.frameX;
-        const level = DigProgress.boostLevel(boost.id);
-        const name = UiKit.fit(UiKit.text('upgrades', 'itemName', {
-            name: t(`boost_${boost.id}` as StringId).toUpperCase(),
-        }), OFFER.textWidth);
-        name.anchor.set(0, 0.5);
-        name.position.set(OFFER.textX, -20);
-        const percent = (value: number) => `+${Math.round(value * 100)}%`;
-        const now = percent(DigProgress.boostEffect(boost));
-        const price = DigProgress.boostPrice(boost);
-        const info = UiKit.fit(UiKit.text('upgrades', 'itemInfo', {
-            text: `${t('boostLevel', { level, max: boost.maxLevel })}  ·  ${price === undefined ? now : `${now}  →  ${percent(DigProgress.boostEffect(boost, level + 1))}`}`,
-        }), OFFER.textWidth);
-        info.anchor.set(0, 0.5);
-        info.position.set(OFFER.textX, 7);
-        row.addChild(frame, art, name, info, this.levelBar(level, boost.maxLevel, 30));
-
-        const button = new PIXI.Container();
-        button.position.set(OFFER.buttonX, 0);
-        row.addChild(button);
-        if (price === undefined) {
-            button.addChild(UiKit.image('upgrades', 'lockedButton', OFFER.buttonWidth, 60), UiKit.text('upgrades', 'maxLabel'));
-            return row;
-        }
-        const affordable = DigProgress.money >= price;
-        button.addChild(UiKit.image('upgrades', affordable ? 'buyButton' : 'lockedButton', OFFER.buttonWidth, 60),
-            UiKit.fit(UiKit.text('upgrades', 'buyLabel', { price: price.toLocaleString('en-US') }), OFFER.buttonWidth - 20));
-        button.eventMode = 'static';
-        button.cursor = 'pointer';
-        if (affordable) UiAnim.pulse(button, 0.05, 0.6);
-        button.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
-            event.stopPropagation();
-            if (DigProgress.buyBoost(boost)) {
-                GameAnalytics.boostBought(boost.id, DigProgress.boostLevel(boost.id));
-                this.say(t('upgraded'), 0x9cff9c);
-                DigAudio.play('buyCash');
-                DigAudio.play('buyShine');
-                this.onBuy();
-            } else {
-                this.say(t('notEnoughCash'), 0xff8a7a);
-                DigAudio.play('error');
-                UiAnim.shake(button, 8, 0.35);
-            }
-        });
-        return row;
-    }
-
-    /** "Open a new mine?": what resets, what stays, the bonus — YES / NO. Built once, shown by showNewMineConfirm(). */
-    private buildNewMineConfirm(): PIXI.Container {
-        this.newMineConfirm.visible = false;
-        return this.newMineConfirm;
-    }
-
-    private showNewMineConfirm(): void {
-        const box = this.newMineConfirm;
+    /** A rebirth: what it pays, what goes, what stays — and whether to. */
+    private showRebirthConfirm(): void {
+        const box = this.rebirthConfirm;
         UiAnim.kill(box);
         box.removeChildren().forEach((child) => child.destroy({ children: true }));
-        const { width, height } = NEW_MINE_SIZE;
+        const { width, height } = REBIRTH_SIZE;
         const frame = UiKit.image('upgrades', 'panel', width, height);
         frame.eventMode = 'static';
         frame.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
-        const ribbon = UiKit.sprite('upgrades', 'ribbonPurple', 0.55);
+        const ribbon = UiKit.sprite('upgrades', 'ribbon', 0.55);
         ribbon.y = -height / 2;
-        const next = DigProgress.prestige + 1;
-        const title = UiKit.fit(UiKit.text('upgrades', 'title', {}, {}), 260);
-        title.text = t('newMineTitle', { mine: next + 1 });
+        const title = UiKit.text('upgrades', 'title');
+        title.text = t('rebirthTitle');
         UiKit.fit(title, 260);
         title.y = -height / 2 - 5;
         box.addChild(frame, ribbon, title);
-        const lines: [string, number][] = [
-            [t('newMineBonus', { sell: Math.round(DIG.prestige.sellBonus * next * 100), dig: Math.round(DIG.prestige.digBonus * next * 100) }), 0x9cff9c],
-            [t('newMineResets'), 0xff9a8a],
-            [t('newMineKeeps'), 0xffffff],
+        const lines: [string, number, number][] = [
+            [t('rebirthPays', { medals: shortNumber(DigProgress.runMedals) }), 0xffe27a, 34],
+            [t('rebirthLoses'), 0xff9a8a, 22],
+            [t('rebirthKeeps'), 0x9cff9c, 22],
         ];
-        lines.forEach(([text, color], i) => {
-            const line = UiKit.text('upgrades', 'itemInfo', { text }, { fill: color, wordWrap: true, wordWrapWidth: width - 80, align: 'center' });
+        lines.forEach(([text, fill, fontSize], i) => {
+            const line = UiKit.text('upgrades', 'itemInfo', { text }, { fill, fontSize, wordWrap: true, wordWrapWidth: width - 70, align: 'center' });
             line.anchor.set(0.5);
-            line.y = -95 + i * 62;
+            line.y = -100 + i * 66;
             box.addChild(line);
         });
         const button = (label: string, image: string, x: number, onTap: () => void) => {
-            const b = new PIXI.Container();
-            b.position.set(x, height / 2 - 70);
-            b.addChild(UiKit.image('upgrades', image, 190, 64), UiKit.fit(UiKit.text('upgrades', 'buyLabel', { price: '' }, {}), 170));
-            (b.getChildAt(1) as PIXI.Text).text = label;
-            UiKit.fit(b.getChildAt(1) as PIXI.Text, 170);
-            b.eventMode = 'static';
-            b.cursor = 'pointer';
-            b.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
-            b.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
+            const made = new PIXI.Container();
+            made.position.set(x, height / 2 - 66);
+            const text = UiKit.text('upgrades', 'buyLabel', { price: '' });
+            text.text = label;
+            UiKit.fit(text, 180);
+            made.addChild(UiKit.image('upgrades', image, 200, 66), text);
+            made.eventMode = 'static';
+            made.cursor = 'pointer';
+            made.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
+            made.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
                 event.stopPropagation();
+                box.visible = false;
+                this.updateBlocker();
                 onTap();
             });
-            box.addChild(b);
-            return b;
+            box.addChild(made);
+            return made;
         };
-        UiAnim.pulse(button(t('newMineGo'), 'buyButton', 110, () => {
-            this.hideNewMineConfirm();
+        UiAnim.pulse(button(t('rebirthGo'), 'buyButton', 115, () => {
             this.closeStationPanel();
             DigAudio.play('buyFanfare');
-            this.onNewMine();
+            this.onRebirth();
         }), 0.05, 0.6);
-        button(t('cancel'), 'lockedButton', -110, () => {
-            DigAudio.play('close');
-            this.hideNewMineConfirm();
-        });
+        button(t('cancel'), 'lockedButton', -115, () => DigAudio.play('close'));
+        this.closeStationPanel();
         box.visible = true;
         this.updateBlocker();
-        this.updateNewMineCta();
         UiAnim.popIn(box);
         DigAudio.play('open');
-        GameAnalytics.newMineOffered();
-    }
-
-    private hideNewMineConfirm(): void {
-        this.newMineConfirm.visible = false;
-        this.updateBlocker();
-        this.updateNewMineCta();
+        GameAnalytics.rebirthOffered();
     }
 
     public get canOfferTractor(): boolean {
-        return this.forced === null && this.station === null && !this.achievements.visible
-            && !this.language.visible && !this.mines.visible && !this.newMineConfirm.visible && !this.tractorConfirm.visible;
+        return this.station === null && !this.overlayOpen && !this.rebirthConfirm.visible && !this.tractorConfirm.visible;
     }
 
     public showTractorOffer(onWatch: () => void, onSkip: () => void): void {
@@ -1408,7 +1105,6 @@ export class DigHud extends PIXI.Container {
         box.interactiveChildren = true;
         box.visible = true;
         this.updateBlocker();
-        this.updateNewMineCta();
         UiAnim.popIn(box);
         DigAudio.play('open');
     }
@@ -1448,87 +1144,6 @@ export class DigHud extends PIXI.Container {
         UiAnim.kill(this.tractorConfirm);
         this.tractorConfirm.visible = false;
         this.updateBlocker();
-        this.updateNewMineCta();
-    }
-
-    /** Every tool on a line: owned ones lit with a check, the next one pulsing, the rest dimmed with their price; the last (the tractor) bigger. */
-    private timeline(y: number): PIXI.Container {
-        const row = new PIXI.Container();
-        row.y = y;
-        const owned = DigProgress.toolLevel;
-        const count = DIG.tools.length;
-        const step = TIMELINE_WIDTH / (count - 1);
-        const x = (i: number) => -TIMELINE_WIDTH / 2 + i * step;
-        const line = new PIXI.Graphics();
-        line.lineStyle(6, LINE_TODO).moveTo(x(0), 0).lineTo(x(count - 1), 0);
-        line.lineStyle(6, LINE_DONE).moveTo(x(0), 0).lineTo(x(owned), 0);
-        row.addChild(line);
-        DIG.tools.forEach((tool, i) => {
-            const goal = i === count - 1;
-            const size = goal ? GOAL_SIZE : NODE_SIZE;
-            const node = new PIXI.Container();
-            node.x = x(i);
-            node.addChild(UiKit.image('upgrades', toolFrame(tool, i <= owned), size, size), toolArt(tool, size * 0.72));
-            const label = UiKit.text('upgrades', 'nodeLabel', {
-                text: i < owned ? '' : i === owned ? t('now') : goal ? t('goalPrice', { price: DigProgress.priceOf(tool).toLocaleString('en-US') }) : `$${DigProgress.priceOf(tool).toLocaleString('en-US')}`,
-            });
-            label.anchor.set(0.5, 0);
-            label.y = size / 2 + 4;
-            UiKit.fit(label, step + 6);
-            if (i < owned) {
-                const check = icon('hud', 'check', 26);
-                check.y = size / 2 + 16;
-                node.addChild(check);
-            }
-            if (i === owned) label.style.fill = RARITY_COLORS[tool.rarity];
-            else if (goal) label.style.fill = RARITY_COLORS.legendary;
-            else if (i === owned + 1) label.style.fill = 0xffd86b;
-            node.addChild(label);
-            if (i > owned) node.alpha = i === owned + 1 || goal ? 1 : 0.6;
-            if (i === owned + 1) UiAnim.pulse(node, 0.08, 0.7);
-            // The tool that opens the next mine says so over its node, on turning purple rays (the goal stays the last tool).
-            if (i === PRESTIGE_TOOL_LEVEL && !goal) {
-                UiAnim.rays(node, size * 0.95, 0xb57bff, 0.9, 6);
-                node.addChild(this.newMineBadge(size));
-            }
-            row.addChild(node);
-        });
-        return row;
-    }
-
-    /** Over the timeline node of the tool that opens the next mine: the new mine's gems and "NEW MINE", glowing purple. */
-    private newMineBadge(nodeSize: number): PIXI.Container {
-        const badge = new PIXI.Container();
-        badge.y = -nodeSize / 2 - 16;
-        const gems = PIXI.Sprite.from('ShopItem_s_GemPack_1');
-        gems.anchor.set(0.5);
-        gems.scale.set(30 / Math.max(gems.texture.width, gems.texture.height, 1));
-        const label = UiKit.fit(UiKit.text('hud', 'toast', { text: t('newMineTag') }, { fontSize: 18, fill: 0xd7a6ff, strokeThickness: 5 }), 96);
-        label.anchor.set(0, 0.5);
-        gems.x = -label.width / 2 - 4;
-        label.x = gems.x + 18;
-        badge.addChild(gems, label);
-        gsap.to(badge, { y: badge.y - 4, duration: 0.6, ease: 'sine.inOut', yoyo: true, repeat: -1 });
-        return badge;
-    }
-
-    /**
-     * An upgrade path (the backpack's, a boost's) as a little segmented bar under its row's text: one segment per
-     * upgrade, owned ones green, the next one gold and pulsing, the rest grey.
-     */
-    private levelBar(owned: number, count: number, y: number): PIXI.Container {
-        const bar = new PIXI.Container();
-        bar.position.set(OFFER.textX, y);
-        const gap = count > 16 ? 2 : 3;
-        const width = (LEVEL_BAR.width - gap * (count - 1)) / count;
-        for (let i = 0; i < count; i++) {
-            const color = i < owned ? LINE_DONE : i === owned ? 0xffd86b : LINE_TODO;
-            const segment = new PIXI.Graphics().beginFill(color).drawRoundedRect(-width / 2, -LEVEL_BAR.height / 2, width, LEVEL_BAR.height, 3).endFill();
-            segment.x = width / 2 + i * (width + gap);
-            if (i === owned) UiAnim.pulse(segment, 0.25, 0.5);
-            bar.addChild(segment);
-        }
-        return bar;
     }
 
     /** The handHud pointing hand, fingertip on (x, y) and tapping at it (same art as the move hint). */
@@ -1545,76 +1160,6 @@ export class DigHud extends PIXI.Container {
         return holder;
     }
 
-    /**
-     * `look.frame` swaps the icon frame (a tool's rarity / grey); `look.rarity` names it in its colour after the title;
-     * `look.disabled` dims the row and leaves its button dead (the other offer while a purchase is forced).
-     */
-    private offer(y: number, symbol: PIXI.Container, title: string, detail: string, price: number | undefined, buy: () => boolean,
-        look: { frame?: string; rarity?: Rarity; disabled?: boolean } = {}): PIXI.Container {
-        const row = new PIXI.Container();
-        row.y = y;
-        row.addChild(UiKit.image('upgrades', 'rowBack', OFFER.rowWidth, 104));
-        const frame = UiKit.image('upgrades', look.frame ?? 'itemFrame', 86, 86);
-        frame.x = OFFER.frameX;
-        symbol.x = OFFER.frameX;
-        // The name and its rarity tag share the text column: the name shrinks to leave the tag room, so neither
-        // reaches the button.
-        const tag = look.rarity ? UiKit.text('upgrades', 'rarityTag', { text: names.rarity(look.rarity) }, { fill: RARITY_COLORS[look.rarity] }) : undefined;
-        const tagRoom = tag ? tag.width + 12 : 0;
-        const name = UiKit.fit(UiKit.text('upgrades', 'itemName', { name: title }), OFFER.textWidth - tagRoom);
-        name.anchor.set(0, 0.5);
-        name.position.set(OFFER.textX, -14);
-        const info = UiKit.fit(UiKit.text('upgrades', 'itemInfo', { text: detail }), OFFER.textWidth);
-        info.anchor.set(0, 0.5);
-        info.position.set(OFFER.textX, 16);
-        row.addChild(frame, symbol, name, info);
-        if (tag) {
-            tag.anchor.set(0, 0.5);
-            tag.position.set(name.x + name.width + 12, name.y + 1);
-            row.addChild(tag);
-        }
-
-        const button = new PIXI.Container();
-        button.position.set(OFFER.buttonX, 0);
-        if (price === undefined) {
-            button.addChild(UiKit.image('upgrades', 'lockedButton', OFFER.buttonWidth, 64), UiKit.text('upgrades', 'maxLabel'));
-            row.addChild(button);
-            return row;
-        }
-        if (look.disabled) {
-            row.alpha = 0.35;
-            button.addChild(UiKit.image('upgrades', 'lockedButton', OFFER.buttonWidth, 64),
-                UiKit.fit(UiKit.text('upgrades', 'buyLabel', { price: price.toLocaleString('en-US') }), OFFER.buttonWidth - 20));
-            row.addChild(button);
-            return row;
-        }
-        const affordable = DigProgress.money >= price;
-        button.addChild(UiKit.image('upgrades', affordable ? 'buyButton' : 'lockedButton', OFFER.buttonWidth, 64),
-            UiKit.fit(UiKit.text('upgrades', 'buyLabel', { price: price.toLocaleString('en-US') }), OFFER.buttonWidth - 20));
-        button.eventMode = 'static';
-        button.cursor = 'pointer';
-        if (affordable) {
-            UiAnim.pulse(button, 0.05, 0.6);
-        }
-        button.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
-            event.stopPropagation();
-            if (buy()) {
-                this.say(t('upgraded'), 0x9cff9c);
-                // A purchase is a big deal: ka-ching + fanfare, and a sparkle on top for a new tool.
-                DigAudio.play('buyCash');
-                DigAudio.play('buyFanfare');
-                if (look.rarity) DigAudio.play('buyShine');
-                this.onBuy();
-            } else {
-                this.say(t('notEnoughCash'), 0xff8a7a);
-                DigAudio.play('error');
-                UiAnim.shake(button, 8, 0.35);
-            }
-        });
-        row.addChild(button);
-        return row;
-    }
-
     public reposition(): void {
         const screen = Game.overlayScreenData;
         if (!screen) return;
@@ -1623,13 +1168,17 @@ export class DigHud extends PIXI.Container {
         this.mute.position.set(screen.topLeft.x + 20 + MUTE_SIZE / 2, screen.topLeft.y + 20 + MUTE_SIZE / 2);
         this.settings.position.set(this.mute.x + MUTE_SIZE + 12, this.mute.y);
         this.toolChip.position.set(screen.topLeft.x + screen.width - 20 - TOOL_PILL_WIDTH / 2, screen.topLeft.y + screen.height - 40 - TOOL_SIZE / 2 - 26);
-        this.toast.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.16);
+        this.toast.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.19);
         // The right edge, a little above the middle: in sight, clear of the miner (centre), the panels (bottom
         // half) and the tool chip (bottom-right corner).
         // Bottom-right, standing on the tool chip.
         this.phone.position.set(this.toolChip.x, this.toolChip.y - TOOL_SIZE / 2 - 16 - PHONE.height / 2);
-        // Far enough in that the "NEW MINE!" label (wider than the icon) keeps a margin from the screen edge.
-        this.newMineCta.position.set(screen.topLeft.x + 28 + NEW_MINE_CTA.label / 2, screen.topLeft.y + screen.height - 70 - NEW_MINE_CTA.icon / 2);
+        // The stickers up the left edge.
+        const stickerX = screen.topLeft.x + STICKER.margin + STICKER.size / 2;
+        const stickerY = screen.topLeft.y + screen.height - STICKER.margin - STICKER.size / 2;
+        this.tractorButton.position.set(stickerX, stickerY);
+        [this.wardrobeButton, this.powerButton, this.perksButton].forEach((button, i) => button.position.set(stickerX, stickerY - (STICKER.size + STICKER.gap) * (i + 1)));
+        this.levelBadge.position.set(screen.center.x - LevelBadge.width / 2 + LevelBadge.badgeHalf, screen.topLeft.y + (screen.width < WIDE ? 128 : 48));
         this.guide.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.24);
         this.powerTimer.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.25);
         this.moveHint.position.set(screen.center.x, screen.topLeft.y + screen.height * 0.72);
@@ -1638,7 +1187,6 @@ export class DigHud extends PIXI.Container {
         this.powerVignette.width = screen.width;
         this.powerVignette.height = screen.height;
         this.blocker.hitArea = new PIXI.Rectangle(screen.topLeft.x, screen.topLeft.y, screen.width, screen.height);
-        this.forcedTitle.position.set(screen.center.x, screen.center.y - 10);
         // Station panels: in the bottom half, under the miner, shrunk to fit what's there.
         const top = screen.center.y + PANEL_TOP_GAP;
         const room = screen.topLeft.y + screen.height - 16 - top;
@@ -1651,11 +1199,10 @@ export class DigHud extends PIXI.Container {
             slot.holder.position.set(screen.center.x, y);
         }
         // At the bottom of the screen, under the miner (the card's own height plus a margin up from the edge).
-        this.newMineConfirm.position.set(screen.center.x, screen.center.y);
-        this.newMineConfirm.scale.set(Math.min(1, (screen.width - 24) / NEW_MINE_SIZE.width, (screen.height - 80) / (NEW_MINE_SIZE.height + RIBBON_OVERHANG)));
-        this.tractorConfirm.position.copyFrom(this.newMineConfirm.position);
+        this.rebirthConfirm.position.set(screen.center.x, screen.center.y);
+        this.rebirthConfirm.scale.set(Math.min(1, (screen.width - 24) / REBIRTH_SIZE.width, (screen.height - 80) / (REBIRTH_SIZE.height + RIBBON_OVERHANG)));
+        this.tractorConfirm.position.copyFrom(this.rebirthConfirm.position);
         this.tractorConfirm.scale.set(Math.min(1, (screen.width - 24) / TRACTOR_OFFER_SIZE.width, (screen.height - 80) / (TRACTOR_OFFER_SIZE.height + RIBBON_OVERHANG)));
-        this.findBanner.position.set(screen.center.x, screen.topLeft.y + screen.height - FIND_BANNER_SIZE.height / 2 - 30);
     }
 
     public override destroy(): void {

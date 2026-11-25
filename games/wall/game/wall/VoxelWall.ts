@@ -350,7 +350,8 @@ export class VoxelWall {
 
     /** A hit of `damage` at `point` (the wall's space): the cells it takes, what falls with them included. */
     public hit(point: THREE.Vector3, damage: number, bite: Bite): { cells: Cell[]; fallen: Cell[] } {
-        this.carry += (damage / this.hp) * this.toBreak;
+        // (A touch more: three thirds are a whole.)
+        this.carry += (damage / this.hp) * this.toBreak + 1e-4;
         const count = Math.min(Math.floor(this.carry), this.toBreak - this.gone);
         this.carry -= Math.floor(this.carry);
         if (count <= 0) return { cells: [], fallen: [] };

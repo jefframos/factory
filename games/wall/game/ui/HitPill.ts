@@ -1,17 +1,19 @@
 // HitPill.ts
 //
-// What a hit does now: the tool in hand and the damage, everything counted (the combo too, while there's one). It jumps as it
-// grows. Tapped, a bubble says where it comes from: the tool's own, the boosts, the medals, the crew's share, the combo.
+// Over PUNCH HARDER's card: what a hit does now, the tool in hand and the damage, everything counted (the combo too, while there's one). It jumps as it
+// grows. Tapped, a bubble says where it comes from: the tool's own, the boosts, the medals, the crew's share, the combo;
+// the next tap, anywhere, closes it.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
-import { short } from '../data/WallConfig';
+import { hitNumber, short } from '../data/WallConfig';
 import { WallProgress } from '../data/WallProgress';
 import { toolArt } from './Wardrobe';
 import { fit, frame, sprite, text, write } from './parts';
 
 export const HIT_PILL = { width: 132, height: 46 };
 const COLOR = { back: 0x1c1d33, plain: 0xffffff, combo: 0xffe14a };
+const SAME_TAP_MS = 80;
 const BUBBLE = { width: 250, row: 38, pad: 18, seconds: 4 };
 
 export class HitPill extends PIXI.Container {
@@ -21,6 +23,7 @@ export class HitPill extends PIXI.Container {
     private tool = '';
     private shown = 0;
     private bubbleFor = 0;
+    private closedAt = -Infinity;
     private combo = 1;
 
     public constructor() {
@@ -40,8 +43,8 @@ export class HitPill extends PIXI.Container {
         // (Not a punch too.)
         this.on('pointerdown', (event: PIXI.FederatedPointerEvent) => {
             event.stopPropagation();
-            if (this.bubble.visible) this.hideBubble();
-            else this.showBubble();
+            // (Closed by this very tap, it stays closed.)
+            if (performance.now() - this.closedAt > SAME_TAP_MS) this.showBubble();
         });
     }
 
@@ -55,7 +58,7 @@ export class HitPill extends PIXI.Container {
             this.icon.addChild(toolArt(tool, 54));
         }
         const damage = WallProgress.damage * combo;
-        const label = short(damage < 10 ? Math.round(damage * 10) / 10 : Math.round(damage));
+        const label = hitNumber(damage);
         if (label !== this.value.text) {
             write(this.value, label, HIT_PILL.width - 56);
             if (damage > this.shown) this.jump();
@@ -73,16 +76,25 @@ export class HitPill extends PIXI.Container {
         gsap.to(this.scale, { x: 1, y: 1, duration: 0.35, ease: 'back.out(3)' });
     }
 
+    /** Any tap, anywhere. */
+    private readonly onTap = (): void => {
+        this.closedAt = performance.now();
+        this.hideBubble();
+    };
+
     private hideBubble(): void {
         this.bubble.visible = false;
+        window.removeEventListener('pointerdown', this.onTap, true);
     }
 
     /** Where it comes from, row by row. */
     private showBubble(): void {
         const { tool, boosts, medals, crew } = WallProgress.damageParts;
+        const { frenzy } = WallProgress;
         const rows: [string, string, string][] = [['Wall_fists', WallProgress.tool.name.toUpperCase(), short(tool)]];
         if (boosts > 1) rows.push(['ItemIcon_Star_Gold', 'BOOSTS', `x${short(boosts)}`]);
         if (medals > 1) rows.push(['ItemIcon_Trophy_Gold', 'REWINDS', `x${short(medals)}`]);
+        if (frenzy > 1) rows.push(['ItemIcon_Energy_Blue', 'FRENZY', `x${short(frenzy)}`]);
         if (crew > 0) rows.push(['Wall_chick', 'CREW', `+${short(crew)}`]);
         if (this.combo > 1) rows.push(['ItemIcon_Energy_Blue', 'COMBO', `x${short(this.combo)}`]);
         this.bubble.removeChildren().forEach((child) => child.destroy({ children: true }));
@@ -106,10 +118,17 @@ export class HitPill extends PIXI.Container {
             number.position.set(BUBBLE.width / 2 - 20, y);
             this.bubble.addChild(art, words, number);
         });
-        this.bubble.position.set(-HIT_PILL.width / 2 + BUBBLE.width / 2 - 4, HIT_PILL.height / 2 + height / 2 + 8);
+        this.bubble.position.set(-HIT_PILL.width / 2 + BUBBLE.width / 2 - 4, -HIT_PILL.height / 2 - height / 2 - 8);
         this.bubble.visible = true;
+        // (Not the tap that's opening it.)
+        window.setTimeout(() => !this.destroyed && this.bubble.visible && window.addEventListener('pointerdown', this.onTap, true));
         this.bubbleFor = BUBBLE.seconds;
         gsap.killTweensOf(this.bubble.scale);
         gsap.fromTo(this.bubble.scale, { x: 0.6, y: 0.6 }, { x: 1, y: 1, duration: 0.25, ease: 'back.out(2)' });
+    }
+
+    public override destroy(options?: boolean | PIXI.IDestroyOptions): void {
+        window.removeEventListener('pointerdown', this.onTap, true);
+        super.destroy(options);
     }
 }

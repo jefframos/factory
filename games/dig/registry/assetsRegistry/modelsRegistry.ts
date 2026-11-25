@@ -8,6 +8,130 @@ export interface ModelDefinition {
   readonly nodes: Record<string, string>;
 }
 
+const AnimalsBeaver = {
+  id: 'beaver',
+  path: 'animals/beaver',
+  fullPath: 'dig/models/animals/beaver.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "root",
+  "LegBackLeft": "leg-back-left",
+  "LegBackRight": "leg-back-right",
+  "LegFrontLeft": "leg-front-left",
+  "LegFrontRight": "leg-front-right",
+  "Body": "body",
+  "Tail": "tail"
+}
+} as const;
+
+const AnimalsChick = {
+  id: 'chick',
+  path: 'animals/chick',
+  fullPath: 'dig/models/animals/chick.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "root",
+  "LegFrontRight": "leg-front-right",
+  "LegFrontLeft": "leg-front-left",
+  "Body": "body",
+  "WingLeft": "wing-left",
+  "WingRight": "wing-right"
+}
+} as const;
+
+const AnimalsCow = {
+  id: 'cow',
+  path: 'animals/cow',
+  fullPath: 'dig/models/animals/cow.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "root",
+  "LegFrontRight": "leg-front-right",
+  "LegFrontLeft": "leg-front-left",
+  "LegBackRight": "leg-back-right",
+  "LegBackLeft": "leg-back-left",
+  "Body": "body",
+  "Group": "Group"
+}
+} as const;
+
+const AnimalsElephant = {
+  id: 'elephant',
+  path: 'animals/elephant',
+  fullPath: 'dig/models/animals/elephant.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "root",
+  "Body": "body",
+  "Tail": "tail",
+  "LegBackLeft": "leg-back-left",
+  "LegFrontLeft": "leg-front-left",
+  "LegBackRight": "leg-back-right",
+  "LegFrontRight": "leg-front-right"
+}
+} as const;
+
+const AnimalsGiraffe = {
+  id: 'giraffe',
+  path: 'animals/giraffe',
+  fullPath: 'dig/models/animals/giraffe.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "root",
+  "Body": "body",
+  "LegBackLeft": "leg-back-left",
+  "LegBackRight": "leg-back-right",
+  "LegFrontLeft": "leg-front-left",
+  "LegFrontRight": "leg-front-right"
+}
+} as const;
+
+const AnimalsHog = {
+  id: 'hog',
+  path: 'animals/hog',
+  fullPath: 'dig/models/animals/hog.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "root",
+  "Body": "body",
+  "LegBackLeft": "leg-back-left",
+  "LegBackRight": "leg-back-right",
+  "LegFrontLeft": "leg-front-left",
+  "LegFrontRight": "leg-front-right"
+}
+} as const;
+
+const AnimalsMonkey = {
+  id: 'monkey',
+  path: 'animals/monkey',
+  fullPath: 'dig/models/animals/monkey.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "root",
+  "LegFrontLeft": "leg-front-left",
+  "LegFrontRight": "leg-front-right",
+  "LegBackRight": "leg-back-right",
+  "LegBackLeft": "leg-back-left",
+  "Body": "body",
+  "Tail": "tail"
+}
+} as const;
+
+const AnimalsPanda = {
+  id: 'panda',
+  path: 'animals/panda',
+  fullPath: 'dig/models/animals/panda.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "root",
+  "Body": "body",
+  "LegBackLeft": "leg-back-left",
+  "LegBackRight": "leg-back-right",
+  "LegFrontLeft": "leg-front-left",
+  "LegFrontRight": "leg-front-right"
+}
+} as const;
+
 const CharactersCharacterMedium = {
   id: 'characterMedium',
   path: 'characters/default/characterMedium',
@@ -1736,25 +1860,6 @@ const HubKenneyHolidayKitBench = {
 }
 } as const;
 
-const HubLawnTractor = {
-  id: 'lawn-tractor',
-  path: 'hub/lawn-tractor/lawn-tractor',
-  fullPath: 'dig/models/hub/lawn-tractor/lawn-tractor.glb',
-  format: 'glb',
-  nodes: {
-  "SketchfabModel": "Sketchfab_model",
-  "Root": "root",
-  "GLTFSceneRootNode": "GLTF_SceneRootNode",
-  "Truck0020": "Truck.002_0",
-  "Object4": "Object_4",
-  "Object5": "Object_5",
-  "Truck0061": "Truck.006_1",
-  "Object7": "Object_7",
-  "Object8": "Object_8",
-  "Object9": "Object_9"
-}
-} as const;
-
 const HubResourceGemsPileLarge = {
   id: 'resource-gems-pile-large',
   path: 'hub/resource-gems-pile-large/resource-gems-pile-large',
@@ -2692,6 +2797,16 @@ const ToolsWrenchB = {
 // raw-assets/models/characters{m}/... becomes MODELS.Characters.<name>. Files with no
 // containing folder land in MODELS.Root.
 export const MODELS = {
+  Animals: {
+    Beaver: AnimalsBeaver,
+    Chick: AnimalsChick,
+    Cow: AnimalsCow,
+    Elephant: AnimalsElephant,
+    Giraffe: AnimalsGiraffe,
+    Hog: AnimalsHog,
+    Monkey: AnimalsMonkey,
+    Panda: AnimalsPanda
+  },
   Characters: {
     CharacterMedium: CharactersCharacterMedium,
     Digging: CharactersDigging,
@@ -2768,7 +2883,6 @@ export const MODELS = {
     HolidayCarpetRoundLarge: HubHolidayCarpetRoundLarge,
     KenneyCarKitTractorShovel: HubKenneyCarKitTractorShovel,
     KenneyHolidayKitBench: HubKenneyHolidayKitBench,
-    LawnTractor: HubLawnTractor,
     ResourceGemsPileLarge: HubResourceGemsPileLarge,
     RestaurantWallDecorated: HubRestaurantWallDecorated,
     RpgToolsTorch: HubRpgToolsTorch,

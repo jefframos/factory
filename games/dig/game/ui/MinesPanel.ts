@@ -1,15 +1,14 @@
 // MinesPanel.ts
 //
-// Opened from the HUD's MAP button: every mine the player has opened, one row each — its number, its tool and
-// backpack and the cash waiting there — with GO to travel to it (the one being played says HERE). Under them, the
-// next mine: OPEN once the newest mine has its Tractor (asks first: the HUD's confirmation), otherwise locked with
-// what it takes. Each mine keeps its own run (DigProgress.mine()); the looks, hub, collection and the new-mine bonus
-// are shared. Shows the newest MAX_ROWS mines. Styles: the upgrade panel's (ui/uikit.json screen "upgrades").
+// Opened from the HUD's MAP button: every dungeon the player has reached this run, one row each — its number, its name, how much
+// its rock is worth and how hard it is — with GO to travel to it (the one being played says HERE). Under them, the next one: its
+// portal's price. The gear goes along. Shows the newest MAX_ROWS. Styles: the upgrade panel's (ui/uikit.json screen "upgrades").
 
 import * as PIXI from 'pixi.js';
 import { UiKit } from './UiKit';
 import { UiAnim } from './UiAnim';
-import { DIG, PRESTIGE_TOOL_LEVEL } from '../data/DigConfig';
+import { DIG } from '../data/DigConfig';
+import { shortMoney, shortNumber } from '../utils/Numbers';
 import { DigProgress } from '../data/DigProgress';
 import { t, names } from '../i18n/Localization';
 
@@ -31,8 +30,8 @@ const BUTTON = { x: ROW.width / 2 - 82, width: 140, height: 60 };
 export class MinesPanel extends PIXI.Container {
     private readonly body = new PIXI.Container();
 
-    /** `onTravel` with the mine to go to; `onOpenNew` to ask about opening the next one. */
-    public constructor(private readonly onTravel: (index: number) => void, private readonly onOpenNew: () => void) {
+    /** `onTravel` with the dungeon to go to. */
+    public constructor(private readonly onTravel: (index: number) => void) {
         super();
         const frame = UiKit.image('upgrades', 'panel', WIDTH, HEIGHT);
         // Purple, like the NEW MINE gems: the mines have their own colour, not the upgrades' green.
@@ -57,49 +56,36 @@ export class MinesPanel extends PIXI.Container {
         let y = -HEIGHT / 2 + HEADER + ROW.step / 2;
         for (let i = first; i < count; i++, y += ROW.step) this.body.addChild(this.mineRow(i, y));
         this.body.addChild(this.nextRow(count, y));
-        const mines = DigProgress.prestige;
-        const footer = UiKit.fit(UiKit.text('upgrades', 'itemInfo', {
-            text: mines > 0
-                ? t('mineBonus', { mine: mines + 1, sell: Math.round(DIG.prestige.sellBonus * mines * 100), dig: Math.round(DIG.prestige.digBonus * mines * 100) })
-                : t('minesHint'),
-        }), WIDTH - 50);
+        const footer = UiKit.fit(UiKit.text('upgrades', 'itemInfo', { text: t('dungeonsHint') }), WIDTH - 50);
         footer.anchor.set(0.5);
         footer.y = HEIGHT / 2 - 32;
         this.body.addChild(footer);
     }
 
-    /** A mine's row: "#n", its tool / backpack / cash, GO (or HERE for the one being played). */
+    /** A dungeon's row: "#n", its name, what it's worth and how hard it is, GO (or HERE for the one being played). */
     private mineRow(index: number, y: number): PIXI.Container {
-        const mine = DigProgress.mine(index);
         const here = index === DigProgress.currentMine;
-        const tool = DIG.tools[Math.min(mine.toolLevel, DIG.tools.length - 1)];
-        const capacity = DigProgress.capacityAt(mine.toolLevel, mine.backpackLevel);
         const row = this.rowBase(y, `#${index + 1}`);
-        this.texts(row, t('mineName', { mine: index + 1 }) + (mine.toolLevel >= PRESTIGE_TOOL_LEVEL ? `  ${t('mineMaxed')}` : ''),
-            t('mineInfo', { tool: names.tool(tool), capacity, money: mine.money.toLocaleString('en-US') }));
+        this.texts(row, names.theme(DigProgress.themeFor(index).name).toUpperCase(), this.info(index));
         row.addChild(here ? this.button(t('mineHere'), 'lockedButton') : this.button(t('mineGo'), 'buyButton', () => this.onTravel(index)));
         return row;
     }
 
-    /** The next mine: OPEN once the newest has its Tractor, otherwise locked with what it takes. */
+    private info(index: number): string {
+        const { value, power } = DIG.dungeons;
+        return t('dungeonInfo', { value: shortNumber(Math.pow(value, index)), power: 1 + power * index });
+    }
+
+    /** The next dungeon: its portal's price. */
     private nextRow(index: number, y: number): PIXI.Container {
-        const ready = DigProgress.canOpenNewMine;
         const row = this.rowBase(y, `#${index + 1}`);
-        const bonus = DigProgress.prestige + 1;
-        this.texts(row, t('newMineTitle', { mine: index + 1 }), ready
-            ? t('newMineInfo', { sell: Math.round(DIG.prestige.sellBonus * bonus * 100), dig: Math.round(DIG.prestige.digBonus * bonus * 100) })
-            : t('mineLocked', { tool: names.tool(DIG.tools[PRESTIGE_TOOL_LEVEL]), mine: index }));
-        if (ready) {
-            const open = this.button(t('newMineGo'), 'buyButton', () => this.onOpenNew());
-            UiAnim.pulse(open, 0.05, 0.6);
-            row.addChild(open);
-        } else {
-            row.alpha = 0.55;
-            const lock = UiKit.sprite('wardrobe', 'lockIcon');
-            lock.scale.set(40 / Math.max(lock.height, 1));
-            lock.x = BUTTON.x;
-            row.addChild(lock);
-        }
+        const cost = DigProgress.currentMine === DigProgress.prestige ? DigProgress.padCost('portal') : undefined;
+        this.texts(row, t('portalTo', { n: index + 1 }), cost === undefined ? this.info(index) : t('portalPrice', { price: shortMoney(cost).slice(1) }));
+        row.alpha = 0.55;
+        const lock = UiKit.sprite('wardrobe', 'lockIcon');
+        lock.scale.set(40 / Math.max(lock.height, 1));
+        lock.x = BUTTON.x;
+        row.addChild(lock);
         return row;
     }
 

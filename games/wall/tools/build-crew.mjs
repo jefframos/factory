@@ -3,7 +3,7 @@
 // `npm run image` (GAME=wall).
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { dedup, flatten, join, prune, weld } from '@gltf-transform/functions';
+import { dedup, flatten, join, prune, quantize, weld } from '@gltf-transform/functions';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -40,7 +40,7 @@ async function crew(name) {
     }
     const plain = doc.createMaterial('crew').setRoughnessFactor(0.8).setMetallicFactor(0);
     for (const mesh of root.listMeshes()) for (const primitive of mesh.listPrimitives()) primitive.setMaterial(plain);
-    await doc.transform(dedup(), flatten(), join({ keepNamed: false, keepMeshes: false }), weld(), prune());
+    await doc.transform(dedup(), flatten(), join({ keepNamed: false, keepMeshes: false }), weld(), prune(), quantize({ quantizePosition: 13, quantizeNormal: 8, quantizeColor: 8 }));
     await io.write(`${models}/crew{m}/${name}.glb`, doc);
     return doc;
 }
@@ -156,7 +156,7 @@ for (const name of CREW) {
     console.log(name, list.length);
     await icon(name, list, [12, 26, 0]);
 }
-for (const tool of ['hammer', 'axe', 'pickaxe', 'mace', 'battleaxe', 'warhammer']) {
+for (const tool of ['hammer', 'axe', 'pickaxe', 'mace', 'battleaxe', 'warhammer', 'sword', 'saber', 'greatsword', 'flame']) {
     await icon(tool, triangles(await io.read(`${models}/player{m}/${tool}.glb`)), [10, 20, -38]);
 }
 const brick = [0.87, 0.42, 0.27];

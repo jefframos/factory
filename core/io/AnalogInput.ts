@@ -21,6 +21,8 @@ export default class AnalogInput {
      * was treated as continuing the current drag regardless of pointerId.
      */
     private activePointerId: number | null = null;
+    /** It's a finger driving it (not a mouse). */
+    private byTouch = false;
     /** See setExclusionZone. */
     private exclusionZone: ((clientX: number, clientY: number) => boolean) | null = null;
 
@@ -74,7 +76,39 @@ export default class AnalogInput {
         this.container.on('pointerup', this.onPointerUp);
         this.container.on('pointerupoutside', this.onPointerUp);
         this.container.on('pointermove', this.onPointerMove);
+        // Pixi only hears of a release over the page: a finger sliding off the screen's edge is cancelled by the browser
+        // (or just gone), which it doesn't pass on. Caught here, so the stick never stays pushed.
+        window.addEventListener('pointerup', this.onNativeEnd, true);
+        window.addEventListener('pointercancel', this.onNativeEnd, true);
+        window.addEventListener('touchend', this.onTouchEnd, true);
+        window.addEventListener('touchcancel', this.onTouchEnd, true);
+        window.addEventListener('blur', this.release);
+        document.addEventListener('visibilitychange', this.onHidden);
     }
+
+    /** The finger (or mouse) driving the stick let go, or was taken by the browser (an edge swipe). */
+    private readonly onNativeEnd = (e: PointerEvent): void => {
+        if (this.active && e.pointerId === this.activePointerId) this.release();
+    };
+
+    /** No finger's left on the screen: whichever drove the stick is gone too. */
+    private readonly onTouchEnd = (e: TouchEvent): void => {
+        if (this.active && this.byTouch && e.touches.length === 0) this.release();
+    };
+
+    private readonly onHidden = (): void => {
+        if (document.hidden) this.release();
+    };
+
+    /** Lets go of the stick. */
+    private readonly release = (): void => {
+        if (!this.active) return;
+        this.active = false;
+        this.activePointerId = null;
+        this.bg.visible = false;
+        this.knob.visible = false;
+        this.onMove.dispatch({ direction: new PIXI.Point(0, 0), magnitude: 0 });
+    };
 
     private onPointerDown = (e: PIXI.FederatedPointerEvent) => {
         // Bail before touching any state — a second finger landing on a DOM
@@ -88,13 +122,15 @@ export default class AnalogInput {
         if (this.exclusionZone?.(e.clientX, e.clientY)) return;
         // A drag is already running under a different finger — ignore a
         // second pointer's down entirely rather than re-centering onto it.
-        if (this.active && e.pointerId !== this.activePointerId) return;
+        // (Unless it's the only one down: the first one's end was never heard of.)
+        if (this.active && e.pointerId !== this.activePointerId && !e.isPrimary) return;
 
         const globalPos = new PIXI.Point(e.global.x, e.global.y);
         const local = this.container.toLocal(globalPos);
 
         this.active = true;
         this.activePointerId = e.pointerId;
+        this.byTouch = e.pointerType === 'touch';
         this.center.copyFrom(local);
         this.bg.position.copyFrom(this.center);
         this.knob.position.copyFrom(this.center);
@@ -104,6 +140,11 @@ export default class AnalogInput {
 
     private onPointerMove = (e: PIXI.FederatedPointerEvent) => {
         if (!this.active || e.pointerId !== this.activePointerId) return;
+        // (A mouse let go of outside the window comes back with no button down.)
+        if (e.pointerType === 'mouse' && e.buttons === 0) {
+            this.release();
+            return;
+        }
 
         const globalPos = new PIXI.Point(e.global.x, e.global.y);
         const local = this.container.toLocal(globalPos);
@@ -130,12 +171,7 @@ export default class AnalogInput {
         // if any of its events even reach this far) shouldn't end a drag
         // that's actually being driven by a different, still-down finger.
         if (this.active && e.pointerId !== this.activePointerId) return;
-
-        this.active = false;
-        this.activePointerId = null;
-        this.bg.visible = false;
-        this.knob.visible = false;
-        this.onMove.dispatch({ direction: new PIXI.Point(0, 0), magnitude: 0 });
+        this.release();
     };
 
     /**
@@ -152,12 +188,7 @@ export default class AnalogInput {
     /** Disables/re-enables the touch drag area — e.g. while the boot menu is up and there's no live player to move yet. Force-hides and resets an in-progress drag so disabling mid-touch can't leave the graphic stuck visible. */
     public setEnabled(enabled: boolean): void {
         this.container.eventMode = enabled ? 'static' : 'none';
-        if (!enabled) {
-            this.active = false;
-            this.activePointerId = null;
-            this.bg.visible = false;
-            this.knob.visible = false;
-        }
+        if (!enabled) this.release();
     }
 
     public destroy() {
@@ -165,6 +196,12 @@ export default class AnalogInput {
         this.container.off('pointerup', this.onPointerUp);
         this.container.off('pointerupoutside', this.onPointerUp);
         this.container.off('pointermove', this.onPointerMove);
+        window.removeEventListener('pointerup', this.onNativeEnd, true);
+        window.removeEventListener('pointercancel', this.onNativeEnd, true);
+        window.removeEventListener('touchend', this.onTouchEnd, true);
+        window.removeEventListener('touchcancel', this.onTouchEnd, true);
+        window.removeEventListener('blur', this.release);
+        document.removeEventListener('visibilitychange', this.onHidden);
         this.bg.destroy();
         this.knob.destroy();
     }

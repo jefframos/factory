@@ -27,6 +27,7 @@ export interface LookItem {
     tips?: string;
     nails?: string;
     rough?: number;
+    /** Boxing gloves over the hands (the tool: the scene's), and their cuffs. */
     boxing?: string;
     band?: string;
     kind?: string;

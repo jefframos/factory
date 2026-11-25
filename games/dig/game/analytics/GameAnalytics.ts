@@ -12,16 +12,21 @@
 //   tutorial     campaign                          start      a brand-new game's first input
 //   tutorial     <nn>-<step>                       complete   each tutorial step, once per player, in order (TUTORIAL):
 //                                                             the last one reached is where a player stopped
-//   tutorial     campaign                          complete   the tutorial's end (the first hub piece built)
+//   tutorial     campaign                          complete   the tutorial's end (the first animal called)
 //   forced       backpack | tool | hat             visible    a forced tutorial purchase's screen appears (once)
 //   upgrade      tool-<nn>-<toolId>                complete   a tool bought (nn = its level)
 //   upgrade      bag-<nn>-<capacity>               complete   a backpack bought (nn = its level)
 //   upgrade      blades-<nn>                       complete   sharper blades (nn = their level)
 //   upgrade      count-<n>                         complete   the player's nth upgrade, for the first 10
+//   chest-gift   <miner|tractor>-<kind>           free | video   a chest's cosmetic shown on the card (tapped: skin-offer)
 //   level        <nn>                              complete   the player's level nn reached
-//   panel        powerups | tractor                interact   POWER-UPS or the tractor's panel opened
+//   upgrade      animal-<nn>                       complete   the nn-th animal called
+//   dungeon      portal-<nn>                       complete   dungeon nn's portal paid for
+//   rebirth      <nn>                              visible | complete   the nn-th rebirth's question / done
+//   perk         <id>-<nn>                         complete   a medal perk's level nn
+//   panel        powerups | tractor | perks                interact   POWER-UPS or the tractor's panel opened
 //   tractor-skin <kind>-<id>                       bought | gift | unlocked | no-video | equip   in the tractor's panel
-//   skin-offer   <kind>-<id>                       visible | interact | gift | unlocked | no-video   a skin offered while driving
+//   skin-offer   tractor-<kind>-<id> | <look>      visible | interact | gift | unlocked | no-video   a cosmetic offered for a video
 //   shop         hat-<id> | face-<id> | color-<nn> bought     a wardrobe item bought with cash (colours by their
 //                                                             place in wardrobe.colors, 01 = the first)
 //   shop         hat-<id> | face-<id> | color-<nn> equip      an owned wardrobe item put on
@@ -54,8 +59,6 @@
 //   phone        sell-x2-free                      visible / interact / complete   the same for the first free
 //                                                             sales (no video; the first with the hand)
 //   boost        <boostId>-<nn>                    complete   a boost level bought (nn = the level reached)
-//   prestige     mine-<n>                          visible    "open mine #n?" asked (the confirmation shows)
-//   prestige     mine-<n>                          complete   mine #n opened (a fresh run there, the bonus up everywhere)
 //   travel       mine-<n>                          complete   the player went back (or on) to mine #n from the MAP
 //   ad           commercial-break                  start      a commercial break starts (after a BUY tap only)
 //   ad           commercial-break                  complete   it ended (played, skipped by the platform or failed)
@@ -91,7 +94,7 @@ import { DIG } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
 
 /** The tutorial steps, in the order a new player meets them (the funnel). */
-export const TUTORIAL = ['move', 'dig', 'bag-full', 'sell', 'tool-upgrade', 'bag-upgrade', 'wardrobe', 'hat', 'find', 'claim', 'build'] as const;
+export const TUTORIAL = ['move', 'dig', 'bag-full', 'sell', 'tool-upgrade', 'bag-upgrade', 'blades', 'find', 'animal'] as const;
 export type TutorialStep = (typeof TUTORIAL)[number];
 
 const PLAYTIME_MINUTES = [1, 2, 3, 5, 8, 12, 20, 30, 45, 60];
@@ -161,7 +164,7 @@ export const GameAnalytics = {
         }
     },
 
-    /** A tutorial step done: sent once per player. The last step ('build') also completes the tutorial. */
+    /** A tutorial step done: sent once per player. The last step ('animal') also completes the tutorial. */
     tutorialStep(step: TutorialStep): void {
         if (!DigProgress.once(`tutorial-${step}`)) return;
         send('tutorial', `${pad(TUTORIAL.indexOf(step) + 1)}-${step}`, 'complete');
@@ -194,7 +197,27 @@ export const GameAnalytics = {
         send('level', pad(level), 'complete');
     },
 
-    panelOpened(panel: 'powerups' | 'tractor'): void {
+    animalCalled(count: number): void {
+        send('upgrade', `animal-${pad(count)}`, 'complete');
+    },
+
+    /** Dungeon n's portal paid for. */
+    portalOpened(n: number): void {
+        send('dungeon', `portal-${pad(n)}`, 'complete');
+    },
+
+    /** The rebirth's confirmation shows; it's done (the n-th); a perk bought. */
+    rebirthOffered(): void {
+        send('rebirth', pad(DigProgress.rebirths + 1), 'visible');
+    },
+    reborn(n: number): void {
+        send('rebirth', pad(n), 'complete');
+    },
+    perkBought(id: string, level: number): void {
+        send('perk', `${id}-${pad(level)}`, 'complete');
+    },
+
+    panelOpened(panel: 'powerups' | 'tractor' | 'perks'): void {
         send('panel', panel, 'interact');
     },
 
@@ -202,8 +225,8 @@ export const GameAnalytics = {
     tractor(kind: string, id: string, action: 'bought' | 'gift' | 'unlocked' | 'no-video' | 'equip'): void {
         send('tractor-skin', `${kind}-${id || 'none'}`, action);
     },
-    skinOffer(kind: string, id: string, action: 'visible' | 'interact' | 'gift' | 'unlocked' | 'no-video'): void {
-        send('skin-offer', `${kind}-${id}`, action);
+    skinOffer(who: string, kind: string, id: string, action: 'visible' | 'interact' | 'gift' | 'unlocked' | 'no-video'): void {
+        send('skin-offer', who === 'tractor' ? `tractor-${kind}-${id}` : lookId(kind, id), action);
     },
 
     backpackBought(level: number, capacity: number): void {
@@ -311,16 +334,6 @@ export const GameAnalytics = {
         send('boost', `${boostId}-${pad(level)}`, 'complete');
     },
 
-    /** The new-mine confirmation shows (for the mine it would open). */
-    newMineOffered(): void {
-        send('prestige', `mine-${DigProgress.prestige + 2}`, 'visible');
-    },
-
-    /** Call after DigProgress.openNewMine(): `mine` is the new mine's number. */
-    newMineOpened(): void {
-        send('prestige', `mine-${DigProgress.prestige + 1}`, 'complete');
-    },
-
     /** Call after DigProgress.travelTo(): the mine arrived at. */
     travelled(): void {
         send('travel', `mine-${DigProgress.currentMine + 1}`, 'complete');
@@ -337,6 +350,11 @@ export const GameAnalytics = {
     /** The power chest faded in ahead of the miner, the `count`th time this session (5 = 5 or more). */
     powerChestShown(count: number): void {
         send('chest', `power-shown-${Math.min(count, 5)}`, 'visible');
+    },
+
+    /** A chest's cosmetic: shown, then worn or kept. */
+    chestGift(who: string, kind: string, action: 'free' | 'video'): void {
+        send('chest-gift', `${who}-${kind}`, action);
     },
 
     /** A buried chest dug up, `zoneId` where. */

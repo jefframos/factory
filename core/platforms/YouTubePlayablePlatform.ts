@@ -11,6 +11,17 @@ declare global {
     }
 }
 
+/** The SDK's answer is waited for this long (ms): one that never comes must not hold up the boot or every later save. */
+const LOAD_WAIT_MS = 4000;
+const SAVE_WAIT_MS = 6000;
+
+function within<T>(promise: Promise<T>, ms: number, what: string): Promise<T> {
+    return new Promise((resolve, reject) => {
+        const timer = window.setTimeout(() => reject(new Error(`${what}: no answer in ${ms} ms`)), ms);
+        promise.then(resolve, reject).finally(() => window.clearTimeout(timer));
+    });
+}
+
 function log(event: string, ...args: any[]) {
     //console.log(`[YT_PLATFORM] ${event}`, ...args);
 }
@@ -26,8 +37,12 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
 
     private saveData: Record<string, string> = {};
 
-    /** The save was read (or there was none). If it couldn't be, nothing's written: it would wipe the player's progress. */
-    private couldLoad = true;
+    /** The save was read (or there was none). Till it is, nothing's written: it would wipe the player's progress. */
+    private couldLoad = false;
+
+    /** initialize() is done; and there's a save that couldn't be read at boot, so it's not to be written over. */
+    private booted = false;
+    private keepCloud = false;
 
     private first = false;
 
@@ -118,14 +133,16 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
             }
         } else {
             log("loadData not available");
+            this.couldLoad = true;
         }
+        this.booted = true;
     }
 
     /** The save's text ("" for a new player), tried a few times; null if it can't be had. */
     private async loadRaw(): Promise<string | null> {
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
-                return (await window.ytgame!.game.loadData()) ?? "";
+                return (await within(window.ytgame!.game.loadData(), LOAD_WAIT_MS, "loadData")) ?? "";
             }
             catch (e) {
                 console.warn("[YT_PLATFORM] loadData failed", e);
@@ -243,13 +260,25 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
         return this.flushQueued;
     }
 
+    /**
+     * The save couldn't be read at boot: tried again with each write. Nothing saved there (a new player): written from now
+     * on. Something: left alone (what's being played is a new game, and would go over it).
+     */
+    private async loadLate(): Promise<boolean> {
+        if (!this.booted || this.keepCloud) return false;
+        const raw = await this.loadRaw();
+        if (raw === null) return false;
+        this.keepCloud = raw !== "" && raw !== "{}";
+        this.couldLoad = !this.keepCloud;
+        return this.couldLoad;
+    }
+
     /** Never rejects — failures are reported and the next write retries with fresh data. */
     private async flushSaveData(): Promise<void> {
-        if (!this.couldLoad) return;
+        if (!this.couldLoad && !(await this.loadLate())) return;
         try {
-            await window.ytgame?.game?.saveData?.(
-                JSON.stringify(this.saveData)
-            );
+            const saved = window.ytgame?.game?.saveData?.(JSON.stringify(this.saveData));
+            if (saved) await within(saved, SAVE_WAIT_MS, "saveData");
         } catch (e) {
             console.warn("[YT_PLATFORM] saveData failed", e);
         }

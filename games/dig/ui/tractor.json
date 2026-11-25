@@ -1,5 +1,28 @@
 {
-  "$comment": "The tractor's skins (TractorPanel): paints (a tile over its body: raw-assets/non-preload/tractor/<id>.png, `scale` world units across at its base height) and parts (pieces in its frame at that height, the nose toward +z; one worn at a time). price in cash, or free, or video: a rewarded video. Every locked one can also come up while playing (TractorOffer).",
+  "$comment": "The tractor's skins (TractorPanel): colors (plain: body = hood and roof, frame = cab and fenders; the first is what it comes with), paints (a tile over its body: raw-assets/non-preload/tractor/<id>.png, `scale` world units across at its base height) and parts (pieces in its frame at that height, the nose toward +z; one worn at a time). price in cash, or free, or video: a rewarded video. Every locked one can also come up while playing (TractorOffer).",
+  "colors": [
+    {"id": "", "name": "Classic", "price": 0, "body": "#f8b81c", "frame": "#3a3e46"},
+    {"id": "red", "name": "Red", "price": 120, "body": "#e23a2e", "frame": "#3a3e46"},
+    {"id": "green", "name": "Green", "price": 120, "body": "#3fae3a", "frame": "#f2c230"},
+    {"id": "blue", "name": "Blue", "price": 180, "body": "#2f7de0", "frame": "#e8edf4"},
+    {"id": "orange", "name": "Orange", "price": 180, "body": "#f2762e", "frame": "#3a3e46"},
+    {"id": "white", "name": "White", "price": 250, "body": "#f1efe8", "frame": "#c8372d"},
+    {"id": "black", "name": "Black", "price": 400, "body": "#24262c", "frame": "#e0a92e"},
+    {"id": "pink", "name": "Pink", "price": 400, "body": "#f06bb4", "frame": "#fbe3ef"},
+    {"id": "purple", "name": "Purple", "price": 600, "body": "#8a4fe0", "frame": "#c9b3f2"},
+    {"id": "teal", "name": "Teal", "price": 600, "body": "#1fa99b", "frame": "#e9f5ee"},
+    {"id": "sky", "name": "Sky", "price": 900, "body": "#6cc4f5", "frame": "#ffffff"},
+    {"id": "lime", "name": "Lime", "price": 900, "body": "#9bdc3a", "frame": "#3a3e46"},
+    {"id": "navy", "name": "Navy", "price": 1500, "body": "#22336e", "frame": "#f2b230"},
+    {"id": "crimson", "name": "Crimson", "price": 1500, "body": "#8e1a2b", "frame": "#e9d9c3"},
+    {"id": "mint", "name": "Mint", "price": 2500, "body": "#9fe8c4", "frame": "#4b6f63"},
+    {"id": "chocolate", "name": "Chocolate", "price": 2500, "body": "#6b4326", "frame": "#e8c79a"},
+    {"id": "lavender", "name": "Lavender", "price": 5000, "body": "#c3a6f0", "frame": "#6e58a8"},
+    {"id": "steel", "name": "Steel", "price": 8000, "body": "#9aa6b5", "frame": "#4b5563"},
+    {"id": "copper", "name": "Copper", "price": 15000, "body": "#c9703a", "frame": "#3b2a22"},
+    {"id": "bronze", "name": "Bronze", "price": 30000, "body": "#a9793a", "frame": "#2f2a26"},
+    {"id": "silver", "name": "Silver", "price": 80000, "body": "#dfe5ec", "frame": "#8f9bab"}
+  ],
   "paints": [
     {"id": "bee", "name": "Bumble Bee", "price": 60, "scale": 0.5},
     {"id": "racing", "name": "Racing Stripes", "price": 100, "scale": 0.9},
@@ -131,7 +154,7 @@
       {"name": "box", "shape": "box", "color": "#3aa9ff", "x": 0.175, "y": 1.264, "z": 0.285, "rx": 0, "ry": 2.594, "rz": 0.3, "sx": 0.168, "sy": 0.036, "sz": 0.6},
       {"name": "box", "shape": "box", "color": "#4fd65a", "x": -0.336, "y": 1.264, "z": 0.564, "rx": 0, "ry": 4.689, "rz": 0.3, "sx": 0.168, "sy": 0.036, "sz": 0.6}
     ] },
-    { "id": "flag", "name": "Pirate Flag", "price": 10000, "pieces": [
+    { "id": "flag", "name": "Pirate Flag", "price": 10000, "at": {"x": 0, "y": 0.1, "z": -0.02}, "pieces": [
       {"name": "cylinder", "shape": "cylinder", "color": "#8a5a2e", "x": 0.42, "y": 1.22, "z": -0.95, "rx": 0, "ry": 0, "rz": 0, "sx": 0.05, "sy": 1.3, "sz": 0.05},
       {"name": "sphere", "shape": "sphere", "color": "#ffd23a", "x": 0.42, "y": 1.88, "z": -0.95, "rx": 0, "ry": 0, "rz": 0, "sx": 0.1, "sy": 0.1, "sz": 0.1},
       {"name": "box", "shape": "box", "color": "#1c1b22", "x": 0.42, "y": 1.66, "z": -1.2, "rx": 0, "ry": 0, "rz": 0, "sx": 0.03, "sy": 0.36, "sz": 0.5},
@@ -200,7 +223,7 @@
       {"name": "cylinder", "shape": "cylinder", "color": "#e8edf5", "x": -0.48, "y": 1.04, "z": 0.34, "rx": 0, "ry": 0, "rz": 0, "sx": 0.14, "sy": 0.34, "sz": 0.14},
       {"name": "cone", "shape": "cone", "color": "#ff8a1f", "x": -0.48, "y": 1.34, "z": 0.34, "rx": 0, "ry": 0, "rz": 0, "sx": 0.13, "sy": 0.28, "sz": 0.13, "glow": 0.9}
     ] },
-    { "id": "wings", "name": "Angel Wings", "price": 0, "video": true, "pieces": [
+    { "id": "wings", "name": "Angel Wings", "price": 0, "video": true, "at": {"x": 0, "y": 0.72, "z": -0.05}, "pieces": [
       {"name": "sphere", "shape": "sphere", "color": "#ffffff", "x": 0.7, "y": 1.0, "z": -0.45, "rx": 0, "ry": 0.3, "rz": 0.6, "sx": 0.95, "sy": 0.26, "sz": 0.14, "glow": 0.1},
       {"name": "sphere", "shape": "sphere", "color": "#f3f7ff", "x": 0.68, "y": 0.86, "z": -0.5, "rx": 0, "ry": 0.3, "rz": 0.32, "sx": 0.78, "sy": 0.22, "sz": 0.12, "glow": 0.1},
       {"name": "sphere", "shape": "sphere", "color": "#e6eeff", "x": 0.62, "y": 0.74, "z": -0.54, "rx": 0, "ry": 0.3, "rz": 0.05, "sx": 0.58, "sy": 0.18, "sz": 0.1, "glow": 0.1},
@@ -228,7 +251,7 @@
       {"name": "cylinder", "shape": "cylinder", "color": "#ffd23a", "x": -0.12, "y": 1.24, "z": 0.4, "rx": 1.571, "ry": 0, "rz": 0, "sx": 0.1, "sy": 0.3, "sz": 0.1},
       {"name": "cylinder", "shape": "cylinder", "color": "#ffd23a", "x": 0.12, "y": 1.24, "z": 0.4, "rx": 1.571, "ry": 0, "rz": 0, "sx": 0.1, "sy": 0.3, "sz": 0.1}
     ] },
-    { "id": "rockets", "name": "Rocket Boosters", "price": 0, "video": true, "pieces": [
+    { "id": "rockets", "name": "Rocket Boosters", "price": 0, "video": true, "at": {"x": 0, "y": 1.1, "z": 0}, "pieces": [
       {"name": "cylinder", "shape": "cylinder", "color": "#e8ebf2", "x": 0.56, "y": 0.82, "z": -0.62, "rx": 1.571, "ry": 0, "rz": 0, "sx": 0.24, "sy": 0.6, "sz": 0.24},
       {"name": "cone", "shape": "cone", "color": "#ff4b3a", "x": 0.56, "y": 0.82, "z": -0.2, "rx": 1.571, "ry": 0, "rz": 0, "sx": 0.24, "sy": 0.26, "sz": 0.24},
       {"name": "torus", "shape": "torus", "color": "#ff4b3a", "x": 0.56, "y": 0.82, "z": -0.55, "rx": 0, "ry": 0, "rz": 0, "sx": 0.34, "sy": 0.34, "sz": 0.2},

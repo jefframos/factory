@@ -2,9 +2,7 @@
 //
 // Opened from the HUD's trophy button: one row per achievement (ui/dig.json `achievements`) — its icon in a
 // frame coloured by level, the name and level ("Lv 2/4"), the current goal ("Dig 500 blocks") with a
-// progress bar, the reward, and a button: CLAIM (with the "!" when ready) pays the tier and moves on to the
-// next; the last tier also unlocks the achievement's decor in the hub. Styles: ui/uikit.json (screen
-// "achievements").
+// progress bar, the reward, and how far along it is. Nothing's claimed here: they pay by themselves as they're reached (DigHud.payAchievements). Styles: ui/uikit.json (screen "achievements").
 
 import * as PIXI from 'pixi.js';
 import { UiKit } from './UiKit';
@@ -12,8 +10,6 @@ import { UiAnim } from './UiAnim';
 import { AchievementDef, DIG } from '../data/DigConfig';
 import { DigProgress } from '../data/DigProgress';
 import { t, names } from '../i18n/Localization';
-import { DigAudio } from '../audio/DigAudio';
-import { GameAnalytics } from '../analytics/GameAnalytics';
 
 const WIDTH = 760;
 const ROW_HEIGHT = 150;
@@ -34,8 +30,7 @@ const LEVEL_FRAMES = ['frameLevel0', 'frameLevel1', 'frameLevel2', 'frameLevel3'
 export class AchievementsPanel extends PIXI.Container {
     private readonly body = new PIXI.Container();
 
-    /** `onClaimed` after a level is claimed: the HUD plays the reward popup and flies the cash in. */
-    public constructor(private readonly onClaimed: (achievement: AchievementDef, level: number, reward: number, decor: boolean, hat?: string) => void) {
+    public constructor() {
         super();
         const frame = UiKit.image('achievements', 'panel', WIDTH, HEIGHT);
         const ribbon = UiKit.sprite('achievements', 'ribbon', 0.55);
@@ -73,7 +68,6 @@ export class AchievementsPanel extends PIXI.Container {
         const done = level >= tiers;
         const tier = achievement.tiers[Math.min(level, tiers - 1)];
         const value = DigProgress.achievementStat(achievement.stat);
-        const ready = DigProgress.canClaim(achievement.id);
 
         row.addChild(UiKit.image('achievements', 'rowBack', WIDTH - 32, ROW_HEIGHT - 12));
         const iconX = -WIDTH / 2 + 30 + ICON_FRAME / 2;
@@ -108,7 +102,7 @@ export class AchievementsPanel extends PIXI.Container {
         const progress = done ? 1 : Math.min(1, value / tier.goal);
         if (progress > 0) {
             const width = Math.max(14, (BAR_WIDTH - 4) * progress);
-            const fill = UiKit.image('achievements', done || ready ? 'barDone' : 'barFill', width, 18);
+            const fill = UiKit.image('achievements', done ? 'barDone' : 'barFill', width, 18);
             fill.x = -(BAR_WIDTH - 4) / 2 + width / 2;
             bar.addChild(fill);
         }
@@ -120,47 +114,24 @@ export class AchievementsPanel extends PIXI.Container {
         rewardText.position.set(TEXT_X, 46);
         row.addChild(bar, rewardText);
 
-        row.addChild(this.button(achievement, done, ready));
+        row.addChild(this.mark(done, progress));
         return row;
     }
 
-    private button(achievement: AchievementDef, done: boolean, ready: boolean): PIXI.Container {
-        const button = new PIXI.Container();
-        button.x = BUTTON.x;
-        const image = done ? 'buttonDone' : ready ? 'buttonClaim' : 'buttonLocked';
-        button.addChild(UiKit.image('achievements', image, BUTTON.width, BUTTON.height));
+    /** Done, or how far along. */
+    private mark(done: boolean, progress: number): PIXI.Container {
+        const mark = new PIXI.Container();
+        mark.x = BUTTON.x;
+        mark.addChild(UiKit.image('achievements', done ? 'buttonDone' : 'buttonLocked', BUTTON.width, BUTTON.height));
         if (done) {
             const check = PIXI.Sprite.from(UiKit.imageName('hud', 'check'));
             check.anchor.set(0.5);
             check.scale.set(34 / Math.max(check.texture.width, check.texture.height, 1));
             check.y = -3;
-            button.addChild(check);
+            mark.addChild(check);
         } else {
-            button.addChild(UiKit.fit(UiKit.text('achievements', 'buttonLabel', { text: ready ? t('claim') : t('locked') }), BUTTON.width - 20));
+            mark.addChild(UiKit.fit(UiKit.text('achievements', 'buttonLabel', { text: `${Math.floor(progress * 100)}%` }), BUTTON.width - 20));
         }
-        if (!ready) {
-            if (!done) button.alpha = 0.7;
-            return button;
-        }
-        // The pizza game's "!" over a claimable reward.
-        const alert = PIXI.Sprite.from(UiKit.imageName('hud', 'alert'));
-        alert.anchor.set(0.5, 1);
-        alert.scale.set(34 / Math.max(alert.texture.height, 1));
-        alert.position.set(BUTTON.width / 2 - 8, -BUTTON.height / 2 + 12);
-        button.addChild(alert);
-        UiAnim.pulse(button, 0.06, 0.6);
-        button.eventMode = 'static';
-        button.cursor = 'pointer';
-        button.on('pointerdown', (event: PIXI.FederatedPointerEvent) => event.stopPropagation());
-        button.on('pointertap', (event: PIXI.FederatedPointerEvent) => {
-            event.stopPropagation();
-            const claimed = DigProgress.claimAchievement(achievement.id);
-            if (claimed) DigAudio.play('confirm');
-            if (!claimed) return;
-            GameAnalytics.achievementClaimed(achievement.id, DigProgress.achievementLevel(achievement.id));
-            this.onClaimed(achievement, DigProgress.achievementLevel(achievement.id), claimed.reward, claimed.decor, claimed.hat);
-            this.refresh();
-        });
-        return button;
+        return mark;
     }
 }

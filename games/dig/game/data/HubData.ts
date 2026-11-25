@@ -43,7 +43,7 @@ export interface HubProp {
 }
 
 /**
- * atm = sells the backpack (and pays out the hub's income); collection = the artifact totem; wardrobe = looks. Upgrades are
+ * atm = sells the backpack; collection = the artifact totem; wardrobe = looks. Upgrades are
  * the pads' (HubPad), boosts the HUD's POWER-UPS.
  */
 export type StationKind = 'atm' | 'collection' | 'wardrobe';
@@ -120,8 +120,9 @@ export interface HubBuildable extends HubProp {
 export interface HubPad extends HubPoint {
     kind: PadKind;
     rotationY?: number;
-    /** It's there from this tool level on. */
+    /** It's there from this tool level on; and from this player level. */
     afterTool?: number;
+    level?: number;
 }
 
 export interface HubDesign {
@@ -131,8 +132,8 @@ export interface HubDesign {
     props: HubProp[];
     stations: HubStation[];
     pads: HubPad[];
-    /** The level totem: where it stands, and how tall each of its pieces is. */
-    totem?: HubPoint & { height: number };
+    /** The portal to the next dungeon. */
+    portal?: HubPoint;
     buildables?: HubBuildable[];
     trophyTables?: HubTrophyTable[];
     achievementDecor?: HubAchievementDecor[];

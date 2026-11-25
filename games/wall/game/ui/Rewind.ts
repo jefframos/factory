@@ -195,7 +195,7 @@ export class MedalFly extends PIXI.Container {
                 this.arrived(left === 0 ? count - each * (many - 1) : each, left === 0);
                 this.sparkle(to, 3, 90, 26);
                 WallAudio.play('coins', 0.45, 1.1 + i * 0.05);
-                if (left === 0) gsap.delayedCall(0.6, () => !this.destroyed && this.destroy({ children: true }));
+                if (left === 0) gsap.delayedCall(0.8, () => !this.destroyed && this.destroy({ children: true }));
             } });
         }
     }
@@ -314,21 +314,23 @@ export class RewindPopup extends PIXI.Container {
             this.body.addChild(strip);
             const label = text(title, 27, color, 0x1a0838, 6);
             label.anchor.set(0, 0.5);
-            fit(label, 150);
-            add(label, -PANEL.width / 2 + 56, y);
-            const step = ITEM.size + ITEM.gap;
+            // (Four of them, closer; the words in what's left.)
+            const step = ITEM.size + (items.length > 3 ? 6 : ITEM.gap);
+            const left = -PANEL.width / 2 + 52;
+            fit(label, Math.min(150, PANEL.width / 2 - 92 - (items.length - 1) * step - ITEM.size / 2 - 12 - left));
+            add(label, left, y);
             items.forEach(([art, name], i) => {
                 const x = PANEL.width / 2 - 92 - (items.length - 1 - i) * step;
                 add(frameAt('ItemFrame02_Single_' + (color === COLORS.keep ? 'Green' : 'Gray'), ITEM.size), x, y - 14);
                 add(art, x, y - 16);
                 const words = text(name, 20, 0xffffff, 0x1a0838, 5);
-                fit(words, ITEM.size + 12);
+                fit(words, ITEM.size + (items.length > 3 ? 2 : 12));
                 add(words, x, y + 48);
             });
         };
         const picto = sprite('PictoIcon_Clothes', 62);
-        row('YOU KEEP', COLORS.keep, top + 568, [[toolArt(WallProgress.tool.base === 'fists' ? { base: 'fists' } : WallProgress.tool, 68), 'PUNCH'], [sprite('ItemIcon_Star_Gold', 66), 'BOOSTS'], [picto, 'LOOKS']]);
-        row('YOU RESET', 0xff8a9a, top + 734, [[sprite('ItemIcon_Money_Bill', 66), 'CASH'], [sprite('Wall_brick', 66), 'BRICKS'], [sprite('Wall_chick', 66), 'CREW']]);
+        row('YOU KEEP', COLORS.keep, top + 568, [[sprite('ItemIcon_Badge_Gold', 66), 'MEDALS'], [sprite('ItemIcon_Star_Gold', 66), 'BOOSTS'], [picto, 'LOOKS']]);
+        row('YOU RESET', 0xff8a9a, top + 734, [[toolArt(WallProgress.tool.base === 'fists' ? { base: 'fists' } : WallProgress.tool, 68), 'PUNCH'], [sprite('ItemIcon_Money_Bill', 66), 'CASH'], [sprite('Wall_brick', 66), 'BRICKS'], [sprite('Wall_chick', 66), 'CREW']]);
         // The button, or how far off it is.
         this.bar = undefined;
         if (can) {

@@ -39,6 +39,7 @@ export class HandModel {
     private readonly wrist: THREE.Object3D;
     private readonly find: (name: string) => THREE.Object3D | undefined;
     private readonly poses = new Map<PoseName, Resolved>();
+    private readonly grips = new Map<number, Resolved>();
     private from: Resolved;
     private to: Resolved;
     private mix = 1;
@@ -97,9 +98,27 @@ export class HandModel {
         return out.copy(this.wrist.position).applyQuaternion(this.fist.quaternion).multiplyScalar(this.fist.scale.x).add(this.fist.position);
     }
 
-    /** The fingers ease into a pose, about 1 / `speed` seconds. */
-    public pose(name: PoseName, speed = 12): void {
-        const to = this.poses.get(name)!;
+    /** Between the pose for a thick handle and a closed fist (0 to 1): for a thinner one. */
+    private gripped(closed: number): Resolved {
+        const open = this.poses.get('tool')!;
+        if (closed <= 0) return open;
+        const key = Math.round(closed * 100);
+        let made = this.grips.get(key);
+        if (!made) {
+            const fist = this.poses.get('fist')!;
+            made = {
+                bones: new Map([...open.bones].map(([bone, turn]) => [bone, turn.clone().slerp(fist.bones.get(bone)!, closed)])),
+                wristTurn: open.wristTurn.clone().slerp(fist.wristTurn, closed),
+                wristAt: open.wristAt.clone().lerp(fist.wristAt, closed),
+            };
+            this.grips.set(key, made);
+        }
+        return made;
+    }
+
+    /** The fingers ease into a pose, about 1 / `speed` seconds (a tool's: `closed` round its handle, 0 for a thick one). */
+    public pose(name: PoseName, closed = 0, speed = 12): void {
+        const to = name === 'tool' ? this.gripped(closed) : this.poses.get(name)!;
         if (to === this.to) return;
         this.from = this.to;
         this.to = to;

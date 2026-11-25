@@ -2,7 +2,7 @@
 //
 // Big numbers, short: 1234 -> 1.2K.
 
-const UNITS = ['', 'K', 'M', 'B', 'T'];
+const UNITS = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc', 'Ud', 'Dd', 'Td'];
 
 export function shortNumber(value: number): string {
     if (value < 1000) return String(Math.round(value));

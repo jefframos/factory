@@ -115,6 +115,8 @@ export interface ToolDef {
     width: number;
     /** The bag it comes with (items; the capacity upgrade and boost add to it). */
     capacity: number;
+    /** Past the last tractor: which of them it is (MK 2, 3...). */
+    mark?: number;
     /** A tractor's size (1 = the base height), and how much faster than the first it chews. */
     rideScale?: number;
     rate?: number;
@@ -141,12 +143,14 @@ export interface TractorDef {
     height: number;
     /** Its body: half across, behind and ahead of its middle. All of it digs. */
     body: { side: number; back: number; front: number };
-    /** What the rock stops: a circle round its middle, and one round its nose (that far ahead). Always inside what digs. */
-    collide: { radius: number; nose: number; noseRadius: number };
+    /** What the rock stops: a circle round its middle, and one at its blades. Always inside what digs. */
+    collide: { radius: number; noseRadius: number };
     /** Turns the model so its front faces +Z (the miner's forward). */
     rotationY: number;
-    /** Where the miner sits: the seat's top, and (unscaled) how far their feet are from it. */
+    /** Where the miner's feet go at the base size, and how far over them they sit (that doesn't grow with the tractor). */
     seat: { x: number; y: number; z: number; lift: number };
+    /** Where parts (ui/tractor.json) go: off the frame they were made in. */
+    partsAt: { x: number; y: number; z: number };
     /** Its blades: how high, and how far past its front (a share of a blade's radius). */
     blades: { lift: number; ahead: number };
     /** Walking speed multiplier while riding. */
@@ -179,7 +183,7 @@ export interface AchievementDef {
 }
 
 /** What a boost track changes (DigProgress applies it). */
-export type BoostId = 'digSpeed' | 'sellPrice' | 'oreLuck' | 'moveSpeed' | 'bagSize' | 'width';
+export type BoostId = 'digSpeed' | 'sellPrice' | 'oreLuck' | 'moveSpeed' | 'bagSize' | 'width' | 'animalPower' | 'xpGain';
 
 /**
  * A repeatable upgrade track (the HUD's POWER-UPS), level 0..maxLevel, each level `perLevel` more:
@@ -197,26 +201,63 @@ export interface BoostDef {
     maxLevel: number;
     basePrice: number;
     growth: number;
+    /** Its whole effect doubles at each of these levels. */
+    milestones?: number[];
 }
 
-/** Opening a new mine (prestige): everything but the cosmetics, hub and collection resets, for a lasting bonus per mine. */
+/** A dungeon's layout: its seed is the first one's + seedStep x its number. */
 export interface PrestigeDef {
-    /** Extra sell value per new mine opened. */
-    sellBonus: number;
-    /** Extra dig speed per new mine opened. */
-    digBonus: number;
-    /** Each new mine's terrain seed is the base seed + this x the mine number (a new layout, finds buried again). */
     seedStep: number;
-    /** The tool (id) that opens the next mine; tools after it are extras. */
-    tool: string;
-    /** Each mine after the first, tools, backpacks and boosts cost this much more (DigProgress.priceOf). */
-    priceStep: number;
 }
 
-/** The hub's pieces earn money while playing (their `income`, levels/hub.json), piling up at the ATM. */
-export interface HubIncomeDef {
-    /** It stops piling up at this many minutes of income. */
-    capMinutes: number;
+/** Dungeon n (from 0): rock takes `power` x n more, what's in it is worth x `value` ^ n, XP x `xp` ^ n; the portal's price. */
+export interface DungeonsDef {
+    power: number;
+    value: number;
+    xp: number;
+    portal: { price: number; growth: number };
+}
+
+export interface AnimalDef {
+    id: string;
+    name: string;
+    size: number;
+}
+
+/** The crew of animals (ui/dig.json animals says what each is). */
+export interface AnimalsDef {
+    price: number;
+    growth: number;
+    perKind: number;
+    shown: number;
+    every: number;
+    bite: number;
+    biteGrowth: number;
+    radius: number;
+    reach: number;
+    kinds: AnimalDef[];
+}
+
+export type PerkId = 'cash' | 'dig' | 'animals' | 'tools' | 'blades' | 'bag' | 'crew' | 'xp' | 'luck' | 'speed' | 'portal';
+
+/** Something bought with medals, for good. */
+export interface PerkDef {
+    id: PerkId;
+    name: string;
+    icon: string;
+    per: number;
+    max: number;
+    cost: number;
+    growth: number;
+}
+
+/** Rebirth: what it pays in medals, and what they buy. */
+export interface RebirthDef {
+    from: number;
+    div: number;
+    power: number;
+    zones: number;
+    perks: PerkDef[];
 }
 
 /**
@@ -235,8 +276,8 @@ export interface MineTheme {
     hubWalls?: [string, string];
 }
 
-/** A pad's upgrade: the next tractor, sharper blades (digging power) or a bigger bag. */
-export type PadKind = 'tool' | 'blades' | 'capacity';
+/** A pad's upgrade: the next tractor, sharper blades (digging power), a bigger bag, the next animal, the way to the next dungeon. */
+export type PadKind = 'tool' | 'blades' | 'capacity' | 'animals' | 'portal';
 
 /** The blades drawn at a Blades level (MowerBlades). */
 export interface BladeLevelDef {
@@ -262,8 +303,6 @@ export interface LevelsDef {
     cash: { base: number; power: number };
     /** POWER-UPS comes at this level. */
     powerUps: number;
-    /** The hub's totem: a piece more every `every` levels, up to `pieces`, each +sell for good. */
-    totem: { every: number; pieces: number; sell: number };
 }
 
 export interface DigDesign {
@@ -271,7 +310,7 @@ export interface DigDesign {
         radius: number; blockHeight: number; seed: number; bedrockBlock: string; zoneWobble: number;
         /** Zones' heights ramp up over this many blocks at their borders. */
         zoneRamp: number;
-        /** Rock this near the miner is drawn. */
+        /** Rock this near the miner is drawn, to begin with (then as far as the camera sees). */
         viewRange: number;
         /** Colour multiplied over the bedrock block: near black, so the mine's end reads as "no further", not as rock. */
         bedrockTint?: string;
@@ -291,15 +330,19 @@ export interface DigDesign {
     tools: ToolDef[];
     /** The tractor's digging: seconds a block takes at just enough power, x falloff a power over; a power short (locked past the list). */
     digging: { chewSec: number; falloff: number; shortSec: number[] };
-    upgrades: { blades: { prices: number[] }; capacity: { perLevel: number; maxLevel: number; basePrice: number; growth: number } };
+    upgrades: { blades: { prices: number[]; growth: number }; capacity: { perLevel: number; maxLevel: number; basePrice: number; growth: number } };
     bladeLevels: BladeLevelDef[];
     lava: { slow: number };
+    /** Past the last tractor: the same again, better (MK 2, 3...). */
+    toolMarks: { price: number; rate: number; capacity: number };
+    dungeons: DungeonsDef;
+    animals: AnimalsDef;
+    rebirth: RebirthDef;
     levels: LevelsDef;
     tractor: TractorDef;
     achievements: AchievementDef[];
     boosts: BoostDef[];
     prestige: PrestigeDef;
-    hubIncome: HubIncomeDef;
     mineThemes: MineTheme[];
     /**
      * What a find pays when claimed (DigProgress.findPayout): its rarity's base cash x (1 + perZone x the zone it was
@@ -368,13 +411,23 @@ export type ChestKind = 'power' | 'cash';
 
 export const DIG: DigDesign = data as unknown as DigDesign;
 
-/** The level of the tool that opens the next mine (DIG.prestige.tool; the last tool if it's missing). */
-const prestigeTool = DIG.tools.findIndex((t) => t.id === DIG.prestige.tool);
-export const PRESTIGE_TOOL_LEVEL = prestigeTool >= 0 ? prestigeTool : DIG.tools.length - 1;
+/** The tool at a level: past the last one, it again and again, better each time (toolMarks). */
+export function toolAt(level: number): ToolDef {
+    const last = DIG.tools.length - 1;
+    if (level <= last) return DIG.tools[Math.max(0, level)];
+    const mark = level - last;
+    const tool = DIG.tools[last];
+    const { price, rate, capacity } = DIG.toolMarks;
+    return {
+        ...tool, id: `${tool.id}${mark + 1}`, mark: mark + 1, price: Math.round(tool.price * Math.pow(price, mark)),
+        rate: (tool.rate ?? 1) * Math.pow(rate, mark), capacity: Math.round(tool.capacity * Math.pow(capacity, mark)),
+    };
+}
 
-/** How a tool's vehicle is painted: 'grey', a colour, or undefined for its own colours. */
-export function toolPaint(tool: ToolDef): string | undefined {
-    return tool.tint ?? (tool.greyscale ? 'grey' : undefined);
+/** The kind of the n-th animal (from 0). */
+export function animalKind(n: number): AnimalDef {
+    const { kinds, perKind } = DIG.animals;
+    return kinds[Math.min(kinds.length - 1, Math.floor(n / perKind))];
 }
 
 /** Material index 0 is air in the terrain grid, so a cell's material is DIG.materials[value - 1]. */

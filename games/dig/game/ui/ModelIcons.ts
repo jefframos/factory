@@ -11,7 +11,7 @@ import type { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createGLTFLoader } from 'core/three/GLTFLoaders';
 import { paintBody, paintPixels } from '../utils/Paint';
 import SetupThree from 'core/scene/SetupThree';
-import { ToolDef, toolPaint } from '../data/DigConfig';
+import type { ToolDef } from '../data/DigConfig';
 import { MowerBlades } from '../player/MowerBlades';
 import { dressedTractor, freeDressed } from '../player/TractorDress';
 import type { TractorLook } from '../data/TractorSkins';
@@ -179,12 +179,12 @@ export const ModelIcons = {
         });
     },
 
-    /** The tractor in `tool`'s colour wearing `look` (its paint and part), filling the picture, as a canvas. */
-    tractorCanvas(tool: ToolDef, look: TractorLook): Promise<HTMLCanvasElement | undefined> {
-        const key = `tractor:${look.paints || toolPaint(tool)}|${look.parts}`;
+    /** The tractor wearing `look` (its colour, paint and part), filling the picture, as a canvas (every tractor's alike). */
+    tractorCanvas(_tool: ToolDef, look: TractorLook): Promise<HTMLCanvasElement | undefined> {
+        const key = `tractor:${look.paints ? `p${look.paints}` : `c${look.colors}`}|${look.parts}`;
         let promise = cache.get(key);
         if (!promise) {
-            promise = dressedTractor(tool, look).then((tractor) => {
+            promise = dressedTractor(look).then((tractor) => {
                 const canvas = snapshot(tractor, undefined, true);
                 freeDressed(tractor);
                 // Not cached when the renderer isn't up yet: tried again next time.

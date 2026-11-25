@@ -14,7 +14,7 @@ const AFTER = { won: 0.75, lost: 1.1 };
 /** Where they stand: across the gate, two rows. */
 /** Debug's line-up: how small, how far apart. */
 const LINE_UP = { size: 0.31, across: 1.18, up: 2.25 };
-const ROWS = { x: 1.5, z: -0.5, back: 0.75 };
+const ROWS = { x: 1.15, z: -0.5, back: 0.75 };
 
 export interface FightActions {
     /** It's over: on to the next wall. */

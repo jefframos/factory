@@ -16,8 +16,9 @@ const FOLDERS: Record<string, Partial<Record<Effect, string>>> = {
         quake: 'Shake as a wall falls',
         steps: 'Steps while walking on',
         tilt: 'Tilted view',
+        fightCamera: 'Closer in a fight',
     },
-    Screen: { flash: 'Flash as a wall falls', hitStop: 'Freeze on a big hit', numbers: 'Numbers', words: 'Big words', barJolt: 'Bar jolt', vibration: 'Vibration' },
+    Screen: { flash: 'Flash as a wall falls', hitStop: 'Freeze on a big hit', numbers: 'Numbers', words: 'Big words', floaters: 'Floating cash, chests and bolts', frenzyGlow: 'Glow round the screen in a frenzy', barJolt: 'Bar jolt', vibration: 'Vibration' },
     Look: { light: 'Light', color: 'Colour (the next wall)' },
     World: { impact: 'Impact light', tileFlash: 'Hit tiles flash', pieces: 'Pieces', piecesAtYou: 'Pieces fly at you', dust: 'Dust', tremble: 'Wall trembles', crewPieces: 'Crew pieces', crewFlips: 'Crew flips', handBob: 'Hands bob', toolSnap: 'Tools snap to the hit (off: they swing)' },
 };

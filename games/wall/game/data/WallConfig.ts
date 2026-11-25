@@ -18,9 +18,6 @@ export interface MaterialDef {
     chip: number;
     hit: HitSound;
     cash?: number;
-    /** The colour of what's round it, and of the lights on its gate. */
-    room: string;
-    accent: string;
     /** Round again after the last one: its colours turned this much round the wheel (0 to 1). */
     hue?: number;
 }
@@ -34,6 +31,8 @@ export interface ToolDef {
     model?: string;
     tint?: string;
     glow?: number;
+    /** Its cuffs' (boxing gloves). */
+    band?: string;
     hold?: HoldPose;
     swing?: SwingSettings;
 }
@@ -85,14 +84,39 @@ export const WALL = data.wall;
 export const CAMERA = data.camera;
 const MATERIALS = data.materials as unknown as Record<string, MaterialDef>;
 /** The types of tool (not the fists). */
-export const TOOL_TYPES = data.tools.types as unknown as (Omit<ToolDef, 'base'> & { model: string })[];
+export const TOOL_TYPES = data.tools.types as unknown as (Omit<ToolDef, 'base'> & { model: string; own?: { id: string; name: string; color: string; band: string }[] })[];
 export const FISTS: ToolDef = { id: 'fists', base: 'fists', name: 'Fists', bite: data.tools.fists.bite };
 const PUNCH = data.punch;
 export const CASH = data.cash;
+export const FLOATING = data.floating;
+export const AWAY = data.away;
+export const NUDGE = data.nudge;
 export const CREW = data.crew as unknown as CrewDef[];
+export const CREW_ROWS = data.crewRows;
 export const WEAK = data.weak;
 export const MEDAL = data.medal;
 export const SHOWS = data.shows;
+
+export type PowerId = 'hands' | 'auto';
+export interface PowerDef {
+    id: PowerId;
+    name: string;
+    /** On its card. */
+    short: string;
+    what: string;
+    wall: number;
+    seconds: number;
+    charge: number;
+    perSecond?: number;
+}
+export const POWERS = data.powers as PowerDef[];
+
+/** Wall `n`'s room: its colour, and its lights'. */
+export function roomAt(n: number): { room: string; accent: string } {
+    const { every, list, boss } = data.rooms;
+    const { room, accent } = list[Math.floor((n - 1) / every) % list.length];
+    return { room, accent: isBossWall(n) ? boss : accent };
+}
 export const REWIND = data.rewind;
 
 /** A kind of enemy. */
@@ -153,7 +177,10 @@ export function switchEnemies(): void {
     }
 }
 
-export const isBossWall = (n: number): boolean => enemiesOn && n % ENEMIES.boss.every === 0;
+export const isBossWall = (n: number): boolean => enemiesOn && n >= ENEMIES.boss.from && (n - ENEMIES.boss.from) % ENEMIES.boss.every === 0;
+
+/** The `i`th boss's wall (from 0). */
+export const bossWall = (i: number): number => ENEMIES.boss.from + i * ENEMIES.boss.every;
 
 /** What waits behind a wall. */
 export function fightAt(n: number): 'boss' | 'minions' | undefined {
@@ -164,7 +191,7 @@ export function fightAt(n: number): 'boss' | 'minions' | undefined {
 }
 
 /** Which boss a wall's is (from 0). */
-export const bossNumber = (n: number): number => Math.max(1, Math.round(n / ENEMIES.boss.every)) - 1;
+export const bossNumber = (n: number): number => Math.max(0, Math.round((n - ENEMIES.boss.from) / ENEMIES.boss.every));
 
 /** The `i`th boss (from 0), in a run after `rewinds`: the kinds in turn, each bigger than the last, in the next colour every so often. */
 export function bossAt(i: number, rewinds: number): EnemyKind {
@@ -228,13 +255,20 @@ export function punchDamage(level: number): number {
 
 /** What the next PUNCH HARDER level (after `level`) multiplies by, and its price (the first is free). */
 export const punchMult = (level: number): number => PUNCH.mult[Math.min(level, PUNCH.mult.length - 1)];
-export const punchCost = (level: number): number => (level === 0 ? 0 : Math.round(PUNCH.cost * Math.pow(PUNCH.costGrowth, level - 1)));
+export function punchCost(level: number): number {
+    const { costs, costGrowth } = PUNCH;
+    if (level === 0) return 0;
+    return costs[level - 1] ?? Math.round(costs[costs.length - 1] * Math.pow(costGrowth, level - costs.length));
+}
+
+/** What's given to those who don't buy. */
+export const AUTO = data.auto;
 
 /** One more of the crew, with `owned` of them already. */
 export const crewCost = (def: CrewDef, owned: number): number => Math.round(def.cost * Math.pow(data.crewGrowth, owned));
 
 /** The medals wall `n` brings as it comes down. */
-export const medalsOf = (n: number): number => (n >= MEDAL.wall ? n : 0);
+export const medalsOf = (n: number): number => (n >= MEDAL.wall && (n - MEDAL.wall) % MEDAL.every === 0 && !fightAt(n) && !isBossWall(n + 1) ? n * MEDAL.times : 0);
 
 /** The bricks wall `n` brings as it comes down. */
 export const bricksOf = (n: number): number => Math.floor(data.bricks.base + data.bricks.perWall * n);
@@ -255,18 +289,43 @@ export const BOOSTS: BoostDef[] = [
     ...(data.boosts as BoostDef[]),
 ];
 
-/** The tool a PUNCH HARDER level brings: the types in turn, in the next colour every so often. */
-export function toolAt(level: number): ToolDef {
-    const { from, perTier, tiers } = data.tools;
-    if (level < from) return FISTS;
-    const n = level - from;
-    const type = TOOL_TYPES[n % TOOL_TYPES.length];
-    const place = Math.floor(n / perTier);
-    const tier = tiers[Math.min(place, tiers.length - 1)];
-    // (Past the last colour it's only better.)
-    const plus = Math.max(0, Math.floor((n - perTier * tiers.length) / TOOL_TYPES.length) + (n >= perTier * tiers.length ? 1 : 0));
-    return { ...type, id: `${tier.id}-${type.id}${plus ? `-${plus}` : ''}`, base: type.id, name: `${tier.name} ${type.name}${plus ? ` +${plus}` : ''}`, tint: tier.color, glow: tier.glow };
+/** How many-eth tool it is at a PUNCH HARDER level (from 0; -1: the fists): the first ones are kept for some levels, then one a level. */
+function toolPlace(level: number): number {
+    const { from, levels } = data.tools;
+    let left = level - from;
+    if (left < 0) return -1;
+    for (let i = 0; i < levels.length; i++) {
+        if (left < levels[i]) return i;
+        left -= levels[i];
+    }
+    return levels.length + left;
 }
+
+/** The `n`th tool (from 0): the types in turn, in the next colour every so often. */
+function toolNumber(n: number): ToolDef {
+    if (n < 0) return FISTS;
+    const { perTier, tiers } = data.tools;
+    // (The first type twice to start with, in two colours; from then on they go round.)
+    const turn = n === 0 ? 0 : n - 1;
+    const type = TOOL_TYPES[turn % TOOL_TYPES.length];
+    const tier = tiers[Math.min(Math.floor(n / perTier), tiers.length - 1)];
+    // (Past the last colour it's only better.)
+    const over = n - perTier * tiers.length;
+    const plus = over < 0 ? 0 : Math.floor(over / TOOL_TYPES.length) + 1;
+    const more = plus ? ` +${plus}` : '';
+    const last = plus ? `-${plus}` : '';
+    if (type.own) {
+        const { id, name, color, band } = type.own[Math.min(n === 0 ? 0 : Math.floor(turn / TOOL_TYPES.length) + 1, type.own.length - 1)];
+        return { ...type, id: `${id}-${type.id}${last}`, base: type.id, name: `${name}${more}`, tint: color, band, glow: 0 };
+    }
+    return { ...type, id: `${tier.id}-${type.id}${last}`, base: type.id, name: `${tier.name} ${type.name}${more}`, tint: tier.color, glow: tier.glow };
+}
+
+/** The tool at a PUNCH HARDER level. */
+export const toolAt = (level: number): ToolDef => toolNumber(toolPlace(level));
+
+/** The tools to come after a level's, the soonest first. */
+export const toolsAfter = (level: number, count: number): ToolDef[] => Array.from({ length: count }, (_, i) => toolNumber(toolPlace(level) + 1 + i));
 
 /** The level a tool first comes with. */
 export function toolLevel(id: string): number {
@@ -277,9 +336,9 @@ export function toolLevel(id: string): number {
 
 /** Every tool had by a level: the fists first, each kind and colour once. */
 export function toolsUpTo(level: number): ToolDef[] {
-    const { from, perTier, tiers } = data.tools;
-    const last = Math.min(level, from + perTier * tiers.length - 1);
-    return [FISTS, ...Array.from({ length: Math.max(0, last - from + 1) }, (_, i) => toolAt(from + i))];
+    const { perTier, tiers } = data.tools;
+    const last = Math.min(toolPlace(level), perTier * tiers.length - 1);
+    return [FISTS, ...Array.from({ length: last + 1 }, (_, i) => toolNumber(i))];
 }
 
 /** 1234 -> 1.23K: three figures, as few letters as it takes. */
@@ -290,6 +349,9 @@ export function short(value: number): string {
     const scaled = value / Math.pow(1000, power);
     return `${scaled < 10 ? scaled.toFixed(2) : scaled < 100 ? scaled.toFixed(1) : Math.floor(scaled)}${units[power]}`;
 }
+
+/** A hit's damage as it's shown: off the hit and on the HUD, the same. */
+export const hitNumber = (damage: number): string => short(damage < 10 ? Math.round(damage * 10) / 10 : Math.round(damage));
 
 /** Seeded random in [0, 1). */
 export function seededRandom(seed: number): () => number {

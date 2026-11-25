@@ -8,14 +8,16 @@
 // and the thrown things one each.
 
 import * as THREE from 'three';
-import { CREW, CrewDef, hash } from '../data/WallConfig';
+import { CREW, CREW_ROWS, CrewDef, hash } from '../data/WallConfig';
 import { WallProgress } from '../data/WallProgress';
 import { fx } from '../config/Effects';
 import { WALL_WIDTH } from '../wall/Tunnel';
 
 const MAX_SHOWN = CREW.reduce((sum, def) => sum + def.shows, 0);
-/** Where they stand along the wall, one after another. */
-const SPOTS = [-0.78, 0.78, -0.46, 0.46, -0.14, 0.18];
+/** Each kind has its own row (`z`), spread evenly along the wall (its share each side; less the nearer the eyes it is: a narrow screen sees less there), the rows out of step; a little off each. */
+const ROW = { along: 0.96, nearer: 0.048, step: 0.05, x: 0.06, z: 0.3 };
+/** The row by the wall. */
+const NEAREST = Math.min(...CREW.map(({ z }) => z));
 const LEAP = { seconds: 0.24, perUnit: 0.03, arc: 0.5 };
 const BACK = { seconds: 0.42, arc: 1.1 };
 const DROP = { height: 5, seconds: 0.45 };
@@ -27,6 +29,8 @@ type Phase = 'drop' | 'wait' | 'leap' | 'back';
 
 interface Member {
     kind: number;
+    /** The how many-eth of its kind. */
+    n: number;
     home: THREE.Vector3;
     at: THREE.Vector3;
     target: THREE.Vector3;
@@ -109,14 +113,31 @@ export class Crew {
         });
     }
 
+    /** Where one stands. */
+    private homeOf(kind: number, n: number): THREE.Vector3 {
+        const def = CREW[kind];
+        const { away, spread, width } = CREW_ROWS;
+        const z = NEAREST + away + (def.z - NEAREST) * spread;
+        // (The first by the middle, the next ones to and fro from it.)
+        const middle = (def.shows - 1) / 2;
+        const out = Math.ceil(n / 2) * (n % 2 ? 1 : -1) * (kind % 2 ? 1 : -1);
+        const place = (((Math.round(middle) + out) % def.shows) + def.shows) % def.shows;
+        const along = ((place - middle) / Math.max(1, middle)) * (ROW.along - ROW.nearer * z) * width + (kind % 2 ? ROW.step : -ROW.step) + (hash(kind, n, 2, 77) - 0.5) * ROW.x;
+        return new THREE.Vector3(along * (WALL_WIDTH / 2), 0, z + (hash(kind, n, 3, 77) - 0.5) * ROW.z);
+    }
+
+    /** Debug: all of them to where they stand now (the rows were moved). */
+    public replace(): void {
+        for (const member of this.members) member.home.copy(this.homeOf(member.kind, member.n));
+    }
+
     private add(kind: number, n: number, atOnce: boolean): void {
         const def = CREW[kind];
         const own = hash(kind, n, 1, 77);
-        const along = SPOTS[(n + kind * 2) % SPOTS.length] + (hash(kind, n, 2, 77) - 0.5) * 0.14;
-        const home = new THREE.Vector3(along * (WALL_WIDTH / 2), 0, def.z + (hash(kind, n, 3, 77) - 0.5) * 0.35);
+        const home = this.homeOf(kind, n);
         this.members.push({
-            kind, home, at: home.clone(), target: new THREE.Vector3(), phase: atOnce ? 'wait' : 'drop', time: 0, wait: own * def.every,
-            seconds: 1, yaw: Math.PI, yawTo: Math.PI, squash: 0, flip: 0, own,
+            kind, n, home, at: home.clone(), target: new THREE.Vector3(), phase: atOnce ? 'wait' : 'drop', time: 0, wait: own * def.every,
+            seconds: LEAP.seconds, yaw: Math.PI, yawTo: Math.PI, squash: 0, flip: 0, own,
         });
     }
 
@@ -215,7 +236,8 @@ export class Crew {
         member.flip = 0;
         member.squash = 1;
         member.at.copy(member.home);
-        member.wait = Math.max(0.05, def.every - LEAP.seconds - BACK.seconds) * (0.85 + Math.random() * 0.3) + extra;
+        // (Less what its way there took: the farther ones hit as often.)
+        member.wait = Math.max(0.05, def.every - member.seconds - BACK.seconds) * (0.85 + Math.random() * 0.3) + extra;
         // Back to the wall, side on, or a look at the player.
         member.yawTo = Math.random() < 0.35 ? (Math.random() - 0.5) * 0.9 : Math.PI + (Math.random() - 0.5) * 1.6;
     }

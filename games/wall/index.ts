@@ -14,6 +14,7 @@ import * as PIXI from 'pixi.js';
 
 import loaderConfig from './loader.config';
 import platformConfig from './platforms.config.json';
+import { WallAnalytics } from './game/analytics/WallAnalytics';
 import { WallAudio } from './game/audio/WallAudio';
 import { WallProgress } from './game/data/WallProgress';
 import WallScene from './game/scenes/WallScene';
@@ -52,11 +53,15 @@ export default class WallGame extends Game {
             WallAudio.initialize(this.folderPath);
             this.stageContainer.addChild(this.gameContainer);
             this.sceneManager = new SceneManager(this.gameContainer);
-            await Promise.all(FONTS.map(async (family) => {
-                const face = new FontFace(family, `url(./${this.folderPath}/fonts/${family}.woff2) format('woff2')`);
-                document.fonts.add(await face.load());
-            }));
-            await PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`);
+            // (None waits on another.)
+            WallScene.preload();
+            await Promise.all([
+                ...FONTS.map(async (family) => {
+                    const face = new FontFace(family, `url(./${this.folderPath}/fonts/${family}.woff2) format('woff2')`);
+                    document.fonts.add(await face.load());
+                }),
+                PIXI.Assets.load(`${this.folderPath}/images/ui.webp.json`),
+            ]);
             DebugOverlay.instance.initialize(Boolean(Game.debugParams.dev || Game.debugParams.debug), 'wall');
             // Phones: lighting without shine, and a resolution that starts lower and climbs if it can.
             const phone = !!window.matchMedia?.('(pointer: coarse)').matches;
@@ -69,6 +74,9 @@ export default class WallGame extends Game {
             await Promise.race([scene.ready, new Promise((resolve) => window.setTimeout(resolve, MAX_SCENE_WAIT_MS))]);
             PlatformHandler.instance.platform.loadFinished();
             this.loaderScene.hide();
+            WallAnalytics.loaded(performance.now() / 1000);
+            // The sounds, behind it.
+            WallAudio.loadInBackground();
         } catch (error) {
             console.error('Failed to start:', error);
         }

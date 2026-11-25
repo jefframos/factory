@@ -139,7 +139,11 @@ const slug = (text: string): string => text.toLowerCase().replace(/[^a-z0-9]+/g,
 export const names = {
     material: (def: { id: string; name: string }) => Localization.getString(`material_${def.id}`, undefined, def.name),
     zone: (def: { id: string; name: string }) => Localization.getString(`zone_${def.id}`, undefined, def.name),
-    tool: (def: { id: string; name: string }) => Localization.getString(`tool_${def.id}`, undefined, def.name),
+    tool: (def: { id: string; name: string; mark?: number }) => (def.mark
+        ? `${Localization.getString(`tool_${def.id.replace(/\d+$/, '')}`, undefined, def.name)} MK ${def.mark}`
+        : Localization.getString(`tool_${def.id}`, undefined, def.name)),
+    animal: (def: { id: string; name: string }) => Localization.getString(`animal_${def.id}`, undefined, def.name),
+    perk: (def: { id: string; name: string }) => Localization.getString(`perk_name_${def.id}`, undefined, def.name),
     find: (def: { id: string; name: string }) => Localization.getString(`find_${def.id}`, undefined, def.name),
     achievement: (def: { id: string; name: string }) => Localization.getString(`achv_${def.id}`, undefined, def.name),
     achievementGoal: (def: { id: string; describe: string }, goal: string) => Localization.getString(`achv_${def.id}_goal`, { goal }, def.describe),

@@ -5,6 +5,22 @@
       "assets": [
         {
           "alias": [
+            "applause.mp3"
+          ],
+          "src": [
+            "applause.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "beat.mp3"
+          ],
+          "src": [
+            "beat.mp3"
+          ]
+        },
+        {
+          "alias": [
             "boom.mp3"
           ],
           "src": [
@@ -45,6 +61,14 @@
         },
         {
           "alias": [
+            "clear.mp3"
+          ],
+          "src": [
+            "clear.mp3"
+          ]
+        },
+        {
+          "alias": [
             "coins-1.ogg"
           ],
           "src": [
@@ -73,6 +97,14 @@
           ],
           "src": [
             "collapse-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "combo.mp3"
+          ],
+          "src": [
+            "combo.mp3"
           ]
         },
         {
@@ -309,6 +341,14 @@
         },
         {
           "alias": [
+            "music.mp3"
+          ],
+          "src": [
+            "music.mp3"
+          ]
+        },
+        {
+          "alias": [
             "swing-1.wav"
           ],
           "src": [
@@ -345,6 +385,14 @@
           ],
           "src": [
             "tool.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "win.mp3"
+          ],
+          "src": [
+            "win.mp3"
           ]
         }
       ]

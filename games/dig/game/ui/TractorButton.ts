@@ -62,7 +62,7 @@ export class TractorButton extends PIXI.Container {
         if (!shown) return;
         const tool = DigProgress.tool;
         const look = DigProgress.tractorLook;
-        const wearing = `${tool.id}|${look.paints}|${look.parts}`;
+        const wearing = `${look.colors}|${look.paints}|${look.parts}`;
         if (wearing === this.wearing) return;
         this.wearing = wearing;
         void ModelIcons.tractorCanvas(tool, look).then((canvas) => {

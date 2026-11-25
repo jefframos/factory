@@ -13,5 +13,7 @@
 | `hit-wood` | `raw-assets/audio/` | Feel NiceVibrations samples (library3d/sounds) | Unity Asset Store EULA: inside the game only |
 | The crew's models | `raw-assets/models/crew{m}/` | library3d `animals` (its License.txt names no author) | check before release |
 | `break`, `collapse`, `boom` | `raw-assets/audio/` | library3d/sounds (dig, ragdoll-impacts, down) | check before release |
+| `music`, `combo`, `beat`, `clear`, `win` | `raw-assets/audio/` (made by `tools/build-music.py`, `build-jingles.py`) | ours | ours |
+| `applause` | `raw-assets/audio/` | as Mow's and our other games' | check before release |
 | UI sprites | `raw-assets/images/ui{tps}/` | Layer Lab kit (as Mow's) | as Mow's |
 | Baloo 2 | `raw-assets/fonts/` | Ek Type | SIL Open Font License 1.1 |

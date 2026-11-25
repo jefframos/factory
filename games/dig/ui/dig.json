@@ -254,11 +254,10 @@
       "price": 12,
       "icon": "tractor",
       "vehicle": true,
-      "rideScale": 1.15,
+      "rideScale": 0.74,
       "rideSpeed": 0.95,
       "capacity": 70,
       "rate": 1,
-      "tint": "#4cc95a",
       "rarity": "common"
     },
     {
@@ -273,11 +272,10 @@
       "price": 150,
       "icon": "tractor",
       "vehicle": true,
-      "rideScale": 1.25,
+      "rideScale": 0.82,
       "rideSpeed": 1.02,
       "capacity": 140,
       "rate": 1.1,
-      "tint": "#2f8fff",
       "rarity": "rare"
     },
     {
@@ -292,11 +290,10 @@
       "price": 800,
       "icon": "tractor",
       "vehicle": true,
-      "rideScale": 1.35,
+      "rideScale": 0.9,
       "rideSpeed": 1.1,
       "capacity": 260,
       "rate": 1.2,
-      "tint": "#e8352b",
       "rarity": "rare"
     },
     {
@@ -311,11 +308,10 @@
       "price": 4000,
       "icon": "tractor",
       "vehicle": true,
-      "rideScale": 1.45,
+      "rideScale": 0.98,
       "rideSpeed": 1.18,
       "capacity": 440,
       "rate": 1.3,
-      "tint": "#f2b230",
       "rarity": "epic"
     },
     {
@@ -330,11 +326,10 @@
       "price": 16000,
       "icon": "tractor",
       "vehicle": true,
-      "rideScale": 1.56,
+      "rideScale": 1.06,
       "rideSpeed": 1.26,
       "capacity": 560,
       "rate": 1.4,
-      "tint": "#a56bff",
       "rarity": "epic"
     },
     {
@@ -349,11 +344,10 @@
       "price": 60000,
       "icon": "tractor",
       "vehicle": true,
-      "rideScale": 1.67,
+      "rideScale": 1.14,
       "rideSpeed": 1.34,
       "capacity": 720,
       "rate": 1.5,
-      "tint": "#21b6a8",
       "rarity": "legendary"
     },
     {
@@ -368,11 +362,10 @@
       "price": 200000,
       "icon": "tractor",
       "vehicle": true,
-      "rideScale": 1.78,
+      "rideScale": 1.22,
       "rideSpeed": 1.42,
       "capacity": 900,
       "rate": 1.6,
-      "tint": "#3a3a46",
       "rarity": "legendary"
     },
     {
@@ -387,11 +380,10 @@
       "price": 600000,
       "icon": "tractor",
       "vehicle": true,
-      "rideScale": 1.9,
+      "rideScale": 1.3,
       "rideSpeed": 1.5,
       "capacity": 1100,
       "rate": 1.8,
-      "tint": "#ff5a1f",
       "rarity": "legendary"
     }
   ],
@@ -1101,30 +1093,34 @@
     ]
   },
   "tractor": {
-    "$comment": "The ridden tractor: height at its base size (parts and paints are in that frame), x a tool's rideScale. body = its half width, its back and its front (base frame): all of it digs. seat: where the miner sits, y the seat's top, lift added unscaled (the sitting pose's hips). cut: past the blades.",
-    "model": "hub/lawn-tractor/lawn-tractor.glb",
-    "height": 1.1,
+    "$comment": "The ridden tractor: height at its base size (parts and paints are in that frame), x a tool's rideScale. body = its half width, its back and its front (base frame): all of it digs. seat: where their feet go, lift how far over them they sit (that part never grows). partsAt: where the skins parts go.",
+    "model": "hub/kenney-car-kit-tractor-shovel/kenney-car-kit-tractor-shovel.glb",
+    "height": 1.7,
     "rotationY": 0,
     "body": {
-      "side": 0.6,
-      "back": 1.05,
-      "front": 1.05
+      "side": 0.93,
+      "back": 1.28,
+      "front": 0.88
     },
     "collide": {
-      "radius": 0.6,
-      "nose": 0.72,
+      "radius": 0.74,
       "noseRadius": 0.5
     },
     "seat": {
       "x": 0,
-      "y": 0.73,
-      "z": -0.4,
-      "lift": -0.39
+      "y": 1.24,
+      "z": -0.35,
+      "lift": 0.39
     },
     "speedMultiplier": 1.2,
     "blades": {
       "lift": 0.14,
-      "ahead": 0.3
+      "ahead": 0.45
+    },
+    "partsAt": {
+      "x": 0,
+      "y": -0.05,
+      "z": -0.17
     },
     "smoke": {
       "count": 16,
@@ -1132,11 +1128,11 @@
       "color": "#d9d3c9"
     },
     "exhaust": {
-      "x": 0.3,
-      "y": 1.05,
-      "z": 0.45,
+      "x": 0.32,
+      "y": 1.55,
+      "z": -0.55,
       "interval": 0.28,
-      "size": 0.32
+      "size": 0.35
     }
   },
   "achievements": [
@@ -1175,9 +1171,7 @@
           "goal": 120000,
           "reward": 70000
         }
-      ],
-      "decor": "Digger Banner",
-      "decorAt": 4
+      ]
     },
     {
       "id": "orehunter",
@@ -1214,9 +1208,7 @@
           "goal": 25000,
           "reward": 80000
         }
-      ],
-      "decor": "Gem Pile",
-      "decorAt": 4
+      ]
     },
     {
       "id": "tycoon",
@@ -1253,9 +1245,7 @@
           "goal": 5000000,
           "reward": 250000
         }
-      ],
-      "decor": "Neon Sign",
-      "decorAt": 4
+      ]
     },
     {
       "id": "collector",
@@ -1292,16 +1282,14 @@
           "goal": 72,
           "reward": 70000
         }
-      ],
-      "decor": "Gold Display",
-      "decorAt": 4
+      ]
     },
     {
       "id": "champion",
       "name": "Champion",
       "stat": "claims",
       "icon": "ItemIcon_Star_Gold",
-      "describe": "Claim {goal} achievement levels",
+      "describe": "Reach {goal} achievement levels",
       "tiers": [
         {
           "goal": 15,
@@ -1313,71 +1301,107 @@
   ],
   "boosts": [
     {
-      "id": "digSpeed",
-      "name": "Dig Speed",
-      "icon": "ToolIcon_drill",
-      "perLevel": 0.03,
-      "maxLevel": 20,
-      "basePrice": 60,
-      "growth": 1.4
-    },
-    {
       "id": "sellPrice",
       "name": "Sell Price",
       "icon": "ItemIcon_Money_Coin",
       "perLevel": 0.06,
-      "maxLevel": 25,
+      "maxLevel": 250,
       "basePrice": 80,
-      "growth": 1.4
+      "growth": 1.38,
+      "milestones": [
+        25,
+        50,
+        100,
+        150,
+        200
+      ]
     },
     {
-      "id": "oreLuck",
-      "name": "Ore Luck",
-      "icon": "ItemIcon_Star_Gold",
-      "perLevel": 0.04,
-      "maxLevel": 20,
-      "basePrice": 100,
-      "growth": 1.4
-    },
-    {
-      "id": "moveSpeed",
-      "name": "Move Speed",
-      "icon": "ItemIcon_Gear_Boots",
-      "perLevel": 0.02,
-      "maxLevel": 20,
-      "basePrice": 50,
-      "growth": 1.4
+      "id": "digSpeed",
+      "name": "Dig Speed",
+      "icon": "ToolIcon_drill",
+      "perLevel": 0.03,
+      "maxLevel": 40,
+      "basePrice": 60,
+      "growth": 1.55
     },
     {
       "id": "bagSize",
       "name": "Bag Size",
       "icon": "ItemIcon_Bag_Brown",
       "perLevel": 0.1,
-      "maxLevel": 25,
+      "maxLevel": 250,
       "basePrice": 90,
-      "growth": 1.45
+      "growth": 1.42,
+      "milestones": [
+        25,
+        50,
+        100,
+        150,
+        200
+      ]
+    },
+    {
+      "id": "animalPower",
+      "name": "Animal Power",
+      "icon": "ItemIcon_Heart_Red",
+      "perLevel": 0.1,
+      "maxLevel": 250,
+      "basePrice": 120,
+      "growth": 1.42,
+      "milestones": [
+        25,
+        50,
+        100,
+        150,
+        200
+      ]
+    },
+    {
+      "id": "oreLuck",
+      "name": "Ore Luck",
+      "icon": "ItemIcon_Star_Gold",
+      "perLevel": 0.03,
+      "maxLevel": 40,
+      "basePrice": 100,
+      "growth": 1.55
+    },
+    {
+      "id": "xpGain",
+      "name": "XP Gain",
+      "icon": "ItemIcon_Trophy_Gold",
+      "perLevel": 0.08,
+      "maxLevel": 100,
+      "basePrice": 150,
+      "growth": 1.5,
+      "milestones": [
+        25,
+        50,
+        100
+      ]
     },
     {
       "id": "width",
       "name": "Digging Width",
       "icon": "ItemIcon_Gear_Sword",
-      "perLevel": 0.05,
-      "maxLevel": 16,
+      "perLevel": 0.04,
+      "maxLevel": 20,
       "basePrice": 150,
+      "growth": 1.8
+    },
+    {
+      "id": "moveSpeed",
+      "name": "Move Speed",
+      "icon": "ItemIcon_Gear_Boots",
+      "perLevel": 0.02,
+      "maxLevel": 25,
+      "basePrice": 50,
       "growth": 1.6
     }
   ],
   "prestige": {
-    "$comment": "tool: the tool that lets the player open the next mine (later tools are extras). priceStep: each mine after the first, tools, backpacks and boosts cost this much more (mine #2 x1.15, mine #3 x1.30...): the hub's perks and income, kept from mine to mine, would otherwise make each new run easier.",
-    "sellBonus": 0.25,
-    "digBonus": 0.1,
-    "seedStep": 7919,
-    "tool": "tractor",
-    "priceStep": 0.15
-  },
-  "hubIncome": {
-    "$comment": "Hub pieces earn their `income` ($ a second, levels/hub.json) while playing, x the new mines' sell bonus. It piles up at the ATM (collected on stepping on its pad), up to capMinutes of income.",
-    "capMinutes": 15
+    "$comment": "Each dungeon has its own layout: its seed is the first one's + seedStep x its number.",
+    "seedStep": 7919
   },
   "mineThemes": [
     {
@@ -1465,7 +1489,7 @@
     "$comment": "Cash chests are buried per zone and pay immediately. Power is a fixed, seeded tractor offer per mine, unlocked on reaching offer.zone and revealed within revealDistance. Dig a path and step within triggerDistance to choose a rewarded video or Not yet. A completed video grants seconds of stronger digging and auto-cash, consuming the offer for that mine. Skip/failure allows retry after leaving and re-entering; no early or recurring automatic power chests.",
     "beaconRange": 16,
     "power": {
-      "model": "hub/lawn-tractor/lawn-tractor.glb",
+      "model": "hub/kenney-car-kit-tractor-shovel/kenney-car-kit-tractor-shovel.glb",
       "size": 1.3,
       "tool": "digger",
       "seconds": 30,
@@ -1534,11 +1558,12 @@
         700000,
         1800000,
         4500000
-      ]
+      ],
+      "growth": 2.05
     },
     "capacity": {
       "perLevel": 0.2,
-      "maxLevel": 24,
+      "maxLevel": 400,
       "basePrice": 20,
       "growth": 1.9
     }
@@ -1546,7 +1571,10 @@
   "bladeLevels": [
     {
       "count": 1,
-      "size": 0.6
+      "size": 0.6,
+      "layout": "grid",
+      "rows": 1,
+      "cols": 1
     },
     {
       "count": 2,
@@ -1556,8 +1584,11 @@
       "cols": 2
     },
     {
-      "count": 3,
-      "size": 1.5
+      "count": 2,
+      "size": 1.1,
+      "layout": "grid",
+      "rows": 1,
+      "cols": 2
     },
     {
       "count": 3,
@@ -1567,48 +1598,57 @@
       "cols": 3
     },
     {
-      "count": 4,
-      "size": 1.4
-    },
-    {
-      "count": 4,
-      "size": 1,
+      "count": 3,
+      "size": 1.15,
       "layout": "grid",
-      "rows": 2,
-      "cols": 2
-    },
-    {
-      "count": 5,
-      "size": 1.3
-    },
-    {
-      "count": 6,
-      "size": 1,
-      "layout": "grid",
-      "rows": 2,
+      "rows": 1,
       "cols": 3
     },
     {
-      "count": 6,
-      "size": 1.3
-    },
-    {
-      "count": 8,
+      "count": 4,
       "size": 1,
       "layout": "grid",
-      "rows": 2,
+      "rows": 1,
       "cols": 4
     },
     {
-      "count": 10,
+      "count": 4,
+      "size": 1.15,
+      "layout": "grid",
+      "rows": 1,
+      "cols": 4
+    },
+    {
+      "count": 5,
       "size": 1,
       "layout": "grid",
-      "rows": 2,
+      "rows": 1,
       "cols": 5
+    },
+    {
+      "count": 5,
+      "size": 1.15,
+      "layout": "grid",
+      "rows": 1,
+      "cols": 5
+    },
+    {
+      "count": 6,
+      "size": 1.05,
+      "layout": "grid",
+      "rows": 1,
+      "cols": 6
+    },
+    {
+      "count": 6,
+      "size": 1.25,
+      "layout": "grid",
+      "rows": 1,
+      "cols": 6
     }
   ],
   "levels": {
-    "$comment": "The player's level (shared by every mine). next: XP from level 1, 2...; then x growth. xp: per block x its minPower, per upgrade, zone, find, hub piece, chest. cash: a level pays cash.base x level ^ cash.power. powerUps: POWER-UPS comes at this level. totem: a piece more every `every` levels (up to `pieces`), each +sell for good.",
+    "$comment": "The player's level (shared by every mine). next: XP from level 1, 2...; then x growth. xp: per block x its minPower, per upgrade, zone, find, hub piece, chest. cash: a level pays cash.base x level ^ cash.power. powerUps: POWER-UPS comes at this level. (The portal's level is its pad's: levels/hub.json.)",
     "next": [
       14,
       45,
@@ -1625,18 +1665,191 @@
       "upgrade": 10,
       "zone": 30,
       "find": 18,
-      "build": 15,
+      "build": 0,
       "chest": 8
     },
     "cash": {
       "base": 10,
       "power": 2
     },
-    "powerUps": 3,
-    "totem": {
-      "every": 2,
-      "pieces": 10,
-      "sell": 0.04
+    "powerUps": 3
+  },
+  "dungeons": {
+    "$comment": "The portal leads to the next dungeon, the gear kept: there everything's exponential. Dungeon n (from 0): rock takes power x n more, its worth, the finds' and the chests' x value ^ n, XP x xp ^ n. portal: what it costs to open the way on from dungeon n: price x growth ^ n.",
+    "power": 6,
+    "value": 60,
+    "xp": 2,
+    "portal": {
+      "price": 30000,
+      "growth": 80
     }
+  },
+  "toolMarks": {
+    "$comment": "Past the last tractor: the same one again, MK 2, 3...: price x price, its speed at digging x rate, its bag x capacity, each time.",
+    "price": 3.1,
+    "rate": 1.18,
+    "capacity": 1.4
+  },
+  "animals": {
+    "$comment": "The crew: the pad calls the next animal; perKind of each kind, then the next kind. Each runs about the miner and headbutts a block every `every` seconds: `bite` seconds of a tractor's chewing (x biteGrowth a kind). shown: the newest so many are seen (they do the others' work too). The n-th costs price x growth ^ n. radius: how far from the miner they stand, reach: how far off they dig.",
+    "price": 90,
+    "growth": 1.68,
+    "perKind": 3,
+    "shown": 10,
+    "every": 1.5,
+    "bite": 0.5,
+    "biteGrowth": 1.36,
+    "radius": 2.4,
+    "reach": 5.5,
+    "kinds": [
+      {
+        "id": "chick",
+        "name": "Chick",
+        "size": 0.5
+      },
+      {
+        "id": "beaver",
+        "name": "Beaver",
+        "size": 0.56
+      },
+      {
+        "id": "hog",
+        "name": "Hog",
+        "size": 0.62
+      },
+      {
+        "id": "monkey",
+        "name": "Monkey",
+        "size": 0.64
+      },
+      {
+        "id": "cow",
+        "name": "Cow",
+        "size": 0.74
+      },
+      {
+        "id": "panda",
+        "name": "Panda",
+        "size": 0.8
+      },
+      {
+        "id": "elephant",
+        "name": "Elephant",
+        "size": 0.92
+      },
+      {
+        "id": "giraffe",
+        "name": "Giraffe",
+        "size": 0.98
+      }
+    ]
+  },
+  "rebirth": {
+    "$comment": "Rebirth: back to the first dungeon with nothing (the level, the totem, the looks and the medals' perks kept), for medals: ((deepest - from) / div) ^ power, deepest counting every zone of every dungeon (7 each). It's there from the second dungeon on. perks: bought with medals for good, level n costs cost x growth ^ n. cash, dig, bag, xp, animals: x per a level (compounding); speed, luck: +per; tools, blades, crew: what a run starts with; portal: its price x per.",
+    "from": 3,
+    "div": 2.5,
+    "power": 1.6,
+    "zones": 7,
+    "perks": [
+      {
+        "id": "cash",
+        "name": "Golden Touch",
+        "icon": "ItemIcon_Money_Bill",
+        "per": 1.5,
+        "max": 100,
+        "cost": 1,
+        "growth": 1.45
+      },
+      {
+        "id": "dig",
+        "name": "Iron Teeth",
+        "icon": "ToolIcon_drill",
+        "per": 1.15,
+        "max": 60,
+        "cost": 1,
+        "growth": 1.5
+      },
+      {
+        "id": "animals",
+        "name": "Wild Pack",
+        "icon": "ItemIcon_Heart_Red",
+        "per": 1.4,
+        "max": 60,
+        "cost": 1,
+        "growth": 1.5
+      },
+      {
+        "id": "tools",
+        "name": "Head Start",
+        "icon": "ToolIcon_pickaxe",
+        "per": 1,
+        "max": 8,
+        "cost": 2,
+        "growth": 1.9
+      },
+      {
+        "id": "blades",
+        "name": "Sharp Memory",
+        "icon": "ItemIcon_Gear_Sword",
+        "per": 1,
+        "max": 30,
+        "cost": 2,
+        "growth": 1.6
+      },
+      {
+        "id": "bag",
+        "name": "Deep Pockets",
+        "icon": "ItemIcon_Bag_Brown",
+        "per": 1.25,
+        "max": 60,
+        "cost": 1,
+        "growth": 1.5
+      },
+      {
+        "id": "crew",
+        "name": "Old Friends",
+        "icon": "ItemIcon_Heart_Red",
+        "per": 1,
+        "max": 24,
+        "cost": 2,
+        "growth": 1.5
+      },
+      {
+        "id": "xp",
+        "name": "Fast Learner",
+        "icon": "ItemIcon_Trophy_Gold",
+        "per": 1.25,
+        "max": 40,
+        "cost": 2,
+        "growth": 1.55
+      },
+      {
+        "id": "luck",
+        "name": "Rich Veins",
+        "icon": "ItemIcon_Star_Gold",
+        "per": 0.05,
+        "max": 20,
+        "cost": 2,
+        "growth": 1.7
+      },
+      {
+        "id": "speed",
+        "name": "Quick Wheels",
+        "icon": "ItemIcon_Gear_Boots",
+        "per": 0.04,
+        "max": 15,
+        "cost": 2,
+        "growth": 1.8
+      },
+      {
+        "id": "portal",
+        "name": "Portal Key",
+        "icon": "ItemIcon_Map",
+        "per": 0.85,
+        "max": 12,
+        "cost": 4,
+        "growth": 1.9
+      }
+    ]
   }
 }

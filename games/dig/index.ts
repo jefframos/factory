@@ -4,6 +4,8 @@
 import { Game } from 'core/Game';
 import HtmlLoader from 'core/loader/HtmlLoader';
 import PlatformHandler from 'core/platforms/PlatformHandler';
+import { SaveStorage } from 'core/platforms/SaveStorage';
+import { DigProgress } from './game/data/DigProgress';
 import { ScreenFade } from './game/ui/ScreenFade';
 import { getPlatformInstance } from 'core/platforms/PlatformFactory';
 import { SceneManager } from 'core/scene/SceneManager';
@@ -50,6 +52,9 @@ export default class DigGame extends Game {
             await PlatformHandler.instance.initialize(plat);
 
             PlatformHandler.instance.platform.startLoad();
+            // The save, from the platform's storage (YouTube keeps nothing else).
+            await SaveStorage.load(DigProgress.saveKeys);
+            DigProgress.begin();
             // Everything the UI needs, together (none waits on another): the language (saved choice, else the
             // browser's), the sound list, the fonts and the UI atlas — before any UI is built.
             await Promise.all([

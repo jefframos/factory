@@ -2,8 +2,8 @@
 //
 // What the walls stand in: a row of gates. Each is a steel frame round the wall (its edge: nothing past it breaks) in a wall
 // of big blocks that runs off both sides of any screen, lights up its posts; the next one stands WALL.gap behind it, where the
-// next wall waits in the dark (the scene's fog). It's grey, so the walls stand out, the lights and the dark in the
-// wall's room's colour (its material's), blended to the next's as the player walks on. There are two, the same: the player walks through the first to the second, and then
+// next wall waits in the dark (the scene's fog). It's dark, so the walls stand out, in the
+// room's colour (another every so many walls: wall.json `rooms`), blended to the next's as the player walks on. There are two, the same: the player walks through the first to the second, and then
 // everything's moved back by a gap, which nobody sees. The floor's lines are evenly spaced within a gap for the same reason.
 //
 // And the medal: from some wall on (ui/wall.json `medal`), a golden one turns in the light between the wall and the next
@@ -20,10 +20,9 @@ const FRAME = { thick: 0.34, front: 0.14, back: -1.9, light: 0.09 };
 const BLOCK = { size: 0.95, reach: 16.5, top: 14.5, z: -0.42, jitter: 0.07, vary: 0.3 };
 const LINES = { every: 2, width: 0.09, from: 18, reach: 34 };
 /**
- * What doesn't break: grey, so the walls stand out, with only a touch of the room's colour (how saturated, how light, in
- * linear colour). The dark behind has more of it.
+ * What doesn't break: dark, so the walls stand out, in the room's colour (how saturated, how light, in linear colour).
  */
-const ROOM = { block: [0.07, 0.115], frame: [0.06, 0.26], beam: [0.06, 0.17], floor: [0.1, 0.07], line: [0.1, 0.045], dark: [0.4, 0.02] } as const;
+const ROOM = { block: [0.36, 0.105], frame: [0.2, 0.25], beam: [0.24, 0.16], floor: [0.32, 0.065], line: [0.32, 0.042], dark: [0.45, 0.02] } as const;
 const MEDAL = { z: -3.4, y: WALL_HEIGHT * 0.5, size: 1.25, spin: 1.9, layers: 9, thick: 0.2, edge: 0xc9761a, bob: 0.12, rays: 6.4, glow: 5.2 };
 
 /** What's over a boss's gate: spikes, the skull's size and how far up it is, its light. */
@@ -179,9 +178,9 @@ export class Tunnel {
     }
 
     /** The room's colour and its lights': at once, or over some time (blended as it's updated). */
-    public setRoom(room: string, accent: string, hue = 0, atOnce = false): void {
-        vivid(this.roomTo.set(room).offsetHSL(hue, 0, 0));
-        this.accentTo.set(accent).offsetHSL(hue, 0, 0);
+    public setRoom({ room, accent }: { room: string; accent: string }, atOnce = false): void {
+        vivid(this.roomTo.set(room));
+        this.accentTo.set(accent);
         if (!atOnce) return;
         this.room.copy(this.roomTo);
         this.accent.copy(this.accentTo);

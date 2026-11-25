@@ -32,6 +32,8 @@ export interface HoldPose {
     rotation: Vec3;
     scale: number;
     contact: Vec3;
+    /** Half its handle's thickness, in the mesh (the fingers close to it). */
+    grip?: number;
 }
 
 /** A hand in the swing frame: its centre, its pitch and roll (radians). */

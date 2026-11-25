@@ -1,6 +1,6 @@
 // TractorPanel.ts
 //
-// The tractor's panel (the wardrobe's twin, in its place on the screen): its PAINT and PARTS tabs over a paged 3x2 grid of
+// The tractor's panel (the wardrobe's twin, in its place on the screen): its COLORS, PAINT and PARTS tabs over a paged 3x2 grid of
 // cards (LookCard), each showing the tractor wearing it. Tapping one puts it on straight away, bought first if it has to be,
 // or after its rewarded video. What there is and what it costs: ui/tractor.json (TractorSkins).
 
@@ -12,7 +12,7 @@ import { tabbedBlock } from './TabBar';
 import { ModelIcons } from './ModelIcons';
 import { LOOK_CARD, lookCard } from './LookCard';
 import { DigProgress } from '../data/DigProgress';
-import { TRACTOR_ITEMS, TRACTOR_KINDS, TractorItem, TractorKind } from '../data/TractorSkins';
+import { NO_TRACTOR_LOOK, TRACTOR_ITEMS, TRACTOR_KINDS, TractorItem, TractorKind } from '../data/TractorSkins';
 import { t, type StringId } from '../i18n/Localization';
 import { DigAudio } from '../audio/DigAudio';
 import { watchRewardedVideo } from '../ads/RewardedVideo';
@@ -22,18 +22,18 @@ const WIDTH = 700;
 const HEIGHT = 744;
 export const TRACTOR_PANEL_SIZE = { width: WIDTH, height: HEIGHT };
 /** The content block under the tabs: its top edge and size, and the tabs'. */
-const BLOCK = { top: -HEIGHT / 2 + 160, width: WIDTH - 44, height: HEIGHT - 180, tabWidth: 220, tabHeight: 84 };
+const BLOCK = { top: -HEIGHT / 2 + 160, width: WIDTH - 44, height: HEIGHT - 180, tabWidth: 206, tabHeight: 84 };
 const FIRST_ROW_Y = BLOCK.top + 16 + LOOK_CARD.height / 2;
 const PER_PAGE = 6;
 const ART = 150;
 const TAB_ART = 72;
-const TAB_LABELS: Record<TractorKind, StringId> = { paints: 'tabPaint', parts: 'tabParts' };
+const TAB_LABELS: Record<TractorKind, StringId> = { colors: 'tabColors', paints: 'tabPaint', parts: 'tabParts' };
 /** What the tabs show it wearing. */
-const TAB_LOOKS: Record<TractorKind, string> = { paints: 'flames', parts: 'eyes' };
+const TAB_LOOKS: Record<TractorKind, string> = { colors: 'red', paints: 'flames', parts: 'eyes' };
 
 export class TractorPanel extends PIXI.Container {
     private readonly body = new PIXI.Container();
-    private tab: TractorKind = 'paints';
+    private tab: TractorKind = 'colors';
     private page = 0;
     private watching = false;
 
@@ -54,7 +54,20 @@ export class TractorPanel extends PIXI.Container {
         this.visible = false;
     }
 
+    /** What's affordable or worn has changed since it was drawn. */
+    public get stale(): boolean {
+        return this.key() !== this.drawn;
+    }
+
+    private drawn = '';
+
+    private key(): string {
+        const { colors, paints, parts } = DigProgress.tractorLook;
+        return `${colors}|${paints}|${parts}|${TRACTOR_ITEMS[this.tab].map((item) => (DigProgress.ownsTractor(this.tab, item) ? 'o' : DigProgress.money >= item.price ? '+' : '-')).join('')}`;
+    }
+
     public refresh(): void {
+        this.drawn = this.key();
         // (The old cards' tweens first: one left on a destroyed sprite stalls every other animation.)
         UiAnim.kill(this.body);
         this.body.removeChildren().forEach((child) => child.destroy({ children: true }));
@@ -119,7 +132,7 @@ export class TractorPanel extends PIXI.Container {
         const card = lookCard({
             art: ModelIcons.tractorSprite(DigProgress.tool, { ...NOTHING, [this.tab]: item.id }, ART),
             name: item.name.toUpperCase(),
-            worn: DigProgress.tractorLook[this.tab] === item.id,
+            worn: this.worn(this.tab, item),
             owned,
             affordable: !!item.free || !!item.video || DigProgress.money >= item.price,
             price: item.price,
@@ -131,9 +144,15 @@ export class TractorPanel extends PIXI.Container {
         return card;
     }
 
+    /** It's on (a plain colour isn't, under a pattern). */
+    private worn(kind: TractorKind, item: TractorItem): boolean {
+        const look = DigProgress.tractorLook;
+        return look[kind] === item.id && !(kind === 'colors' && look.paints);
+    }
+
     private async choose(item: TractorItem, card: PIXI.Container): Promise<void> {
         const kind = this.tab;
-        if (this.watching || DigProgress.tractorLook[kind] === item.id) return;
+        if (this.watching || this.worn(kind, item)) return;
         if (DigProgress.ownsTractor(kind, item)) {
             DigProgress.wearTractor(kind, item);
             GameAnalytics.tractor(kind, item.id, 'equip');
@@ -177,4 +196,4 @@ export class TractorPanel extends PIXI.Container {
     }
 }
 
-const NOTHING = { paints: '', parts: '' };
+const NOTHING = NO_TRACTOR_LOOK;

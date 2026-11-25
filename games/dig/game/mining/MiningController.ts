@@ -39,6 +39,7 @@ const MESSAGE_COOLDOWN_SEC = 2.5;
 const CELL_REACH = 0.36;
 /** A block the tractor breaks throws this many chips; grinding on one sounds this often; chewed blocks remembered. */
 const CARVE_CHIPS = 7;
+const BITE_CHIPS = 6;
 const GRIND_SEC = 0.22;
 const CHEWED_MOST = 400;
 /** Rocks (ores) already flying to the miner: more than this and the next ones go straight in. */
@@ -127,7 +128,7 @@ export class MiningController {
             this.idle(delta);
             return;
         }
-        if (material.minPower > tool.power) {
+        if (DigProgress.rockPower(material) > tool.power) {
             this.effects.setCrack(null, 0);
             this.tooHard(ix, iz, material);
             this.idle(delta);
@@ -152,16 +153,48 @@ export class MiningController {
 
     /** A block too hard for what's digging: said, and its lock jumps. */
     private tooHard(ix: number, iz: number, material: MaterialDef): void {
-        const needs = DigProgress.hasTractor ? t('needsBlades', { level: material.minPower - DigProgress.tool.power }) : names.tool(DIG.tools[1]);
+        const needs = DigProgress.hasTractor ? t('needsBlades', { level: DigProgress.rockPower(material) - DigProgress.tool.power }) : names.tool(DIG.tools[1]);
         if (this.hint(t('needsTool', { material: names.material(material), tool: needs }))) this.onTooHard(ix, iz, needs);
     }
 
     /** Seconds the tractor takes on a block (Infinity: it can't). */
     private chewSeconds(material: MaterialDef): number {
         const { chewSec, falloff, shortSec } = DIG.digging;
-        const over = PowerSurge.power - material.minPower;
+        const over = PowerSurge.power - DigProgress.rockPower(material);
         const seconds = over >= 0 ? chewSec * Math.pow(falloff, over) : shortSec[-over - 1] ?? Infinity;
         return seconds / PowerSurge.digRate;
+    }
+
+    /**
+     * An animal's hit on a block: `seconds` of chewing, what's left over going on to its neighbours. Whether anything gave.
+     * (Nothing's broken for nothing: not with the bag full.)
+     */
+    public bite(ix: number, iz: number, seconds: number): boolean {
+        let left = seconds;
+        let gave = false;
+        for (const [cx, cz] of [[ix, iz], [ix + 1, iz], [ix - 1, iz], [ix, iz + 1], [ix, iz - 1]]) {
+            if (left <= 0 || (!PowerSurge.active && DigProgress.backpackCount >= DigProgress.capacity)) break;
+            const material = this.terrain.material(cx, cz);
+            const takes = material ? this.chewSeconds(material) : Infinity;
+            if (!material || !Number.isFinite(takes)) continue;
+            const index = this.terrain.index(cx, cz);
+            const need = (1 - (this.chewed.get(index) ?? 0)) * takes;
+            gave = true;
+            if (left < need) {
+                this.chewed.set(index, 1 - (need - left) / takes);
+                return gave;
+            }
+            left -= need;
+            this.chewed.delete(index);
+            this.breakCell(cx, cz, material, BITE_CHIPS);
+        }
+        return gave;
+    }
+
+    /** An animal can dig there (something it can break). */
+    public bitable(ix: number, iz: number): boolean {
+        const material = this.terrain.material(ix, iz);
+        return !!material && Number.isFinite(this.chewSeconds(material));
     }
 
     /** Everything under the tractor and its blades, a little further each step, while it's being driven. */
@@ -284,7 +317,7 @@ export class MiningController {
     /** One hit on a cell; true when it broke. */
     private hitCell(ix: number, iz: number, power: number): boolean {
         const material = this.terrain.material(ix, iz);
-        if (!material || material.minPower > power) return false;
+        if (!material || DigProgress.rockPower(material) > power) return false;
         const index = this.terrain.index(ix, iz);
         const total = (this.damage.get(index) ?? 0) + power;
         this.terrain.cellCenter(ix, iz, this.center);
@@ -309,7 +342,7 @@ export class MiningController {
         const rich = this.terrain.isRich(ix, iz);
         this.terrain.remove(ix, iz);
         DigProgress.recordBlock(material.ore);
-        this.dug += material.minPower * DIG.levels.xp.block;
+        this.dug += material.minPower * DIG.levels.xp.block * DigProgress.xpFactor;
         if (this.dug >= 1) {
             DigProgress.addXp(Math.floor(this.dug));
             this.dug -= Math.floor(this.dug);
@@ -330,14 +363,13 @@ export class MiningController {
     }
 
     /**
-     * Every new player finds their first artifact early: once they've bought their first hat (the tutorial's first
-     * cosmetic, DigScene) and dug DIG.firstFindAfterBlocks
+     * Every new player finds their first artifact early: once they've had their first bigger bag and dug DIG.firstFindAfterBlocks
      * blocks, the block being dug
      * gives up the first find (the topsoil's first), and its buried copy leaves the rock.
      */
     private forcedFirstFind(): FindDef | undefined {
         // Only once: the find counts when its pop-out lands, and more blocks can break before that.
-        if (this.firstFindGiven || DigProgress.totalFinds > 0 || !DigProgress.boughtFirstHat
+        if (this.firstFindGiven || DigProgress.totalFinds > 0 || DigProgress.backpackLevel === 0
             || DigProgress.achievementStat('blocks') < DIG.firstFindAfterBlocks) return undefined;
         this.firstFindGiven = true;
         const first = DIG.finds[0];
@@ -362,7 +394,7 @@ export class MiningController {
             const from = at.clone().setY(0.8);
             const arrive = () => {
                 if (PowerSurge.active) {
-                    const amount = Math.max(1, Math.round(material.value * DigProgress.sellMultiplier));
+                    const amount = Math.max(1, Math.round(DigProgress.itemValue(material.id) * DigProgress.sellMultiplier));
                     DigProgress.addEarned(amount);
                     this.onSurgeCash(amount);
                     DigAudio.play(GEMS.has(material.id) ? 'collectGem' : material.ore ? 'collectMetal' : 'collectStone');

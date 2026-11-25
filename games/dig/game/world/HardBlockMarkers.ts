@@ -10,6 +10,7 @@ import { VoxelTerrain, AIR } from './VoxelTerrain';
 import { PowerSurge } from '../mining/PowerSurge';
 import { CanvasArt } from '../ui/CanvasArt';
 import { DIG } from '../data/DigConfig';
+import { DigProgress } from '../data/DigProgress';
 import { BendService } from '../services/BendService';
 
 /** Blocks this far (in cells) around the miner get their lock. */
@@ -105,7 +106,7 @@ export class HardBlockMarkers {
         for (let iz = pz - RANGE; iz <= pz + RANGE; iz++) {
             for (let ix = px - RANGE; ix <= px + RANGE; ix++) {
                 const material = terrain.material(ix, iz);
-                if (!material || material.minPower <= power) continue;
+                if (!material || DigProgress.rockPower(material) <= power) continue;
                 // Only blocks the miner can walk up to: on a tunnel edge.
                 const exposed = terrain.cellValue(ix + 1, iz) === AIR || terrain.cellValue(ix - 1, iz) === AIR
                     || terrain.cellValue(ix, iz + 1) === AIR || terrain.cellValue(ix, iz - 1) === AIR;

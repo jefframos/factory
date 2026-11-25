@@ -1,5 +1,5 @@
 {
-  "$comment": "The wardrobe: what the player's hands wear, tab by tab (the first of each is worn to start with). How it's got, from a wall (ever reached) on: `wall` (it's theirs), `buy` (for sale, for `priceShare` of that wall's HP), `video` (for a rewarded one); none: from the start. skin: `color`. sleeve: `pattern` (plain, stripes, hoops, checks, dots, stars, flames, camo, hearts, zigzag, leopard, tiger, bolts, plaid, scales, rainbow, space, bare: the arm's skin, ink: bare with tattoos), `colors`, `cuff`. gloves: `palm`, `fingers` (the first joint), `tips` (the second), `nails` (the last): a colour or none (skin); `rough`: how dull; `boxing`: boxing gloves over the hands, `band` their cuffs' colour. rings: `kind` (band, gems, knuckles, spikes), `color`. wrist: `kind` (sweatband, bracelet, watch, spikes), `color`, `second`. offers: cards while playing, with something not had yet (what comes up to `ahead` walls on): the first once wall `fromWall` is reached (a gift), then `wait` seconds after the last (`afterTaken` if it was taken), there for `stays`; `gift`, `buy`, `video`: how likely each is (a sale at `sale` of the price, only if there's the money; videos after `videoAfter` seconds of play, and only for `videoSlots`: few are taken).",
+  "$comment": "The wardrobe: what the player's hands wear, tab by tab (the first of each is worn to start with). How it's got, from a wall (ever reached) on: `wall` (it's theirs), `buy` (for sale, for `priceShare` of that wall's HP), `video` (for a rewarded one); none: from the start. skin: `color`. sleeve: `pattern` (plain, stripes, hoops, checks, dots, stars, flames, camo, hearts, zigzag, leopard, tiger, bolts, plaid, scales, rainbow, space, bare: the arm's skin, ink: bare with tattoos), `colors`, `cuff`. gloves: `palm`, `fingers` (the first joint), `tips` (the second), `nails` (the last): a colour or none (skin); `rough`: how dull. rings: `kind` (band, gems, knuckles, spikes), `color`. wrist: `kind` (sweatband, bracelet, watch, spikes), `color`, `second`. offers: cards while playing, with something not had yet (what comes up to `ahead` walls on): the first once wall `fromWall` is reached (a gift), then `wait` seconds after the last (`afterTaken` if it was taken), there for `stays`; `gift`, `buy`, `video`: how likely each is (a sale at `sale` of the price, only if there's the money; videos after `videoAfter` seconds of play, and only for `videoSlots`: few are taken).",
   "priceShare": 0.8,
   "offers": { "fromWall": 5, "wait": 50, "afterTaken": 75, "stays": 24, "ahead": 3, "sale": 0.6, "videoAfter": 300, "gift": 0.45, "buy": 0.4, "video": 0.15, "videoSlots": ["sleeve", "gloves"] },
   "tabs": [
@@ -77,23 +77,17 @@
       { "id": "rubber", "name": "RUBBER GLOVES", "palm": "#ffd93b", "fingers": "#ffd93b", "tips": "#ffd93b", "nails": "#ffd93b", "rough": 0.35, "buy": 8 },
       { "id": "bee", "name": "BEE GLOVES", "palm": "#1c1c22", "fingers": "#ffd93b", "tips": "#1c1c22", "nails": "#ffd93b", "video": 8 },
       { "id": "ninja", "name": "NINJA GLOVES", "palm": "#16161c", "fingers": "#16161c", "tips": "#c8202f", "buy": 9 },
-      { "id": "boxing", "name": "BOXING GLOVES", "boxing": "#d8302f", "band": "#ffffff", "wall": 10 },
       { "id": "clown", "name": "CLOWN GLOVES", "palm": "#ffffff", "fingers": "#ffffff", "tips": "#ff3d5a", "nails": "#ff3d5a", "video": 10 },
-      { "id": "boxing-pink", "name": "PINK BOXING GLOVES", "boxing": "#ff6fae", "band": "#ffffff", "video": 11 },
       { "id": "racing", "name": "RACING GLOVES", "palm": "#e0402f", "fingers": "#ffffff", "tips": "#e0402f", "nails": "#23232a", "wall": 12 },
       { "id": "wool", "name": "WOOL GLOVES", "palm": "#3a9ad8", "fingers": "#ffffff", "tips": "#3a9ad8", "nails": "#ffffff", "buy": 13 },
       { "id": "skeleton", "name": "SKELETON GLOVES", "palm": "#1c1c22", "fingers": "#f2efe4", "tips": "#1c1c22", "nails": "#f2efe4", "video": 13 },
       { "id": "neon", "name": "NEON GLOVES", "palm": "#b6ff3a", "fingers": "#b6ff3a", "tips": "#16161c", "nails": "#16161c", "rough": 0.4, "buy": 14 },
-      { "id": "boxing-green", "name": "GREEN BOXING GLOVES", "boxing": "#2fae4f", "band": "#ffe14a", "buy": 16 },
       { "id": "lava", "name": "LAVA GLOVES", "palm": "#2a1a18", "fingers": "#2a1a18", "tips": "#ff6a1f", "nails": "#ff6a1f", "video": 17 },
       { "id": "frost", "name": "FROST GLOVES", "palm": "#bfeaff", "fingers": "#bfeaff", "tips": "#ffffff", "nails": "#ffffff", "rough": 0.35, "wall": 18 },
-      { "id": "boxing-blue", "name": "BLUE BOXING GLOVES", "boxing": "#2f62d8", "band": "#ffd84a", "wall": 19 },
       { "id": "polish-gold", "name": "GOLD NAILS", "nails": "#ffc62e", "video": 19 },
       { "id": "royal", "name": "ROYAL GLOVES", "palm": "#6a2f9c", "fingers": "#6a2f9c", "tips": "#ffc62e", "nails": "#ffc62e", "wall": 21 },
       { "id": "gauntlet", "name": "GAUNTLETS", "palm": "#9aa7b8", "fingers": "#c3cedb", "tips": "#9aa7b8", "nails": "#c3cedb", "rough": 0.3, "buy": 22 },
-      { "id": "boxing-black", "name": "BLACK BOXING GLOVES", "boxing": "#202028", "band": "#ff3d5a", "video": 23 },
-      { "id": "golden", "name": "GOLDEN GLOVES", "palm": "#ffc62e", "fingers": "#ffc62e", "tips": "#ffe48a", "nails": "#ffe48a", "rough": 0.3, "buy": 25 },
-      { "id": "boxing-gold", "name": "GOLD BOXING GLOVES", "boxing": "#ffc62e", "band": "#23232a", "wall": 27 }
+      { "id": "golden", "name": "GOLDEN GLOVES", "palm": "#ffc62e", "fingers": "#ffc62e", "tips": "#ffe48a", "nails": "#ffe48a", "rough": 0.3, "buy": 25 }
     ] },
     { "id": "rings", "name": "RINGS", "items": [
       { "id": "none", "name": "NONE" },

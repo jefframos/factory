@@ -54,6 +54,19 @@ export default class DigPlayer extends Entity {
         return out.copy(this.transform.position).setY(1.2);
     }
 
+    /** The chest bone's place in the world (the backpack hangs behind it), or null before the character has loaded. */
+    public chestPoint(out: THREE.Vector3): THREE.Vector3 | null {
+        const character = this.loaded;
+        if (!character) return null;
+        this.chest ??= character.body.getBone('Chest') ?? character.body.getBone('Spine2') ?? character.body.getBone('Spine1') ?? character.body.getBone('Spine');
+        if (!this.chest) return null;
+        // (Where it is this frame, moved into the seat and all.)
+        character.container.updateWorldMatrix(false, true);
+        return this.chest.getWorldPosition(out);
+    }
+
+    private chest?: THREE.Object3D;
+
     public get movementController(): PlayerMovementController {
         return this.getComponent(PlayerMovementController)!;
     }

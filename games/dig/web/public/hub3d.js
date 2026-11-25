@@ -23,9 +23,7 @@ const STATION_RADIUS = 1.3;
 const STATION_MODEL_OFFSET = STATION_RADIUS + 0.25;
 const BUILD_RADIUS = 0.9;
 const STATIONS = {
-    atm: { label: 'Upgrade shop (ATM)', color: 0x3fd16b, model: 'mine/atm-01.glb', height: 2.1, pedestal: 0 },
-    // The ATM recoloured (the game hue-rotates its texture; here it's just tinted): sells boosts, and the backpack.
-    boost: { label: 'Boost machine', color: 0xa66bff, model: 'mine/atm-01.glb', height: 2.1, pedestal: 0, tint: 0xc9a6ff },
+    atm: { label: 'ATM (sells the bag)', color: 0x3fd16b, model: 'mine/atm-01.glb', height: 2.1, pedestal: 0 },
     collection: { label: 'Collection totem', color: 0xf4b400, model: 'mine/idol-a.glb', height: 1.4, pedestal: 0.8 },
     wardrobe: { label: 'Wardrobe', color: 0xe266c8, model: 'hub/cute-furniture-glb-closet-02/cute-furniture-glb-closet-02.glb', height: 2.2, pedestal: 0 },
 };
@@ -965,7 +963,7 @@ function renderInspector() {
             ['upgrade:3', 'After the 3rd upgrade'], ['upgrade:4', 'After the 4th upgrade'], ['mines:2', 'From mine #2'], ['powerChest|upgrade:3', 'After the first power chest (or the 3rd upgrade)'], ['mines:3', 'From mine #3'], ['firstFind', 'After the first find'], ['firstBuild', 'After the first buildable'],
             ['upgrades:1', 'After 1 upgrade (tool or backpack)'], ['upgrades:2', 'After 2 upgrades'], ['upgrades:3', 'After 3 upgrades'],
             ['upgrades:3|sells:4', 'After 3 upgrades or selling 4 times'], ['sells:3', 'After selling 3 times'],
-            ['boosts', 'Once boosts unlock (the first hat)'],
+            ['level:5', 'At player level 5'], ['level:8', 'At player level 8'],
             ...level.areas.filter((a) => a.id !== data.id).flatMap((a) => [
                 [`built:${a.id}`, `After "${a.name}" is fully built`],
                 [`half:${a.id}`, `After half of "${a.name}" is built`],

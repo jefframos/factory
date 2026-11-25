@@ -11,7 +11,7 @@ import { WallAudio } from '../audio/WallAudio';
 import { Gameplay } from '../ads/Gameplay';
 import { WallAnalytics } from '../analytics/WallAnalytics';
 import { LOOK_TABS, Look, LookItem, SlotId, gainLook, lookPrice, lookState, lookWall, newLooks, wornIn, wornLook } from '../data/Looks';
-import { short, toolAt, toolLevel, toolsUpTo } from '../data/WallConfig';
+import { short, toolAt, toolsAfter, toolLevel, toolsUpTo } from '../data/WallConfig';
 import { WallProgress } from '../data/WallProgress';
 import { frame, sprite, text } from './parts';
 
@@ -99,6 +99,11 @@ export class Wardrobe extends PIXI.Container {
         this.grid.mask = this.gridMask;
         this.panel.addChild(this.title, this.close, this.tabs, this.gridMask, this.grid, this.bar);
         this.addChild(this.backdrop, this.panel);
+    }
+
+    /** The tab it's at. */
+    public get shows(): string {
+        return this.tab;
     }
 
     public setOpen(open: boolean): void {
@@ -248,7 +253,7 @@ export class Wardrobe extends PIXI.Container {
             });
             return card;
         };
-        const coming = Array.from({ length: COMING }, (_, i) => toolAt(level + 1 + i)).filter(({ id }) => !had.some((tool) => tool.id === id) && id !== 'fists');
+        const coming = toolsAfter(level, COMING).filter(({ id }) => !had.some((tool) => tool.id === id) && id !== 'fists');
         return [
             add(newest, '', pick === '', true, 'NEWEST'),
             ...had.map((tool) => add(tool, tool.id, pick === tool.id, true, tool.name.toUpperCase())),

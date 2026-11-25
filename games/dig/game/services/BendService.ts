@@ -110,6 +110,8 @@ export class BendService {
         uGround: { value: null as THREE.Texture | null },
         uGroundHalf: { value: 1 },
         uGroundMax: { value: 0 },
+        /** How vivid everything bent is drawn (1: as it is), before the fog. */
+        uVibrance: { value: 1.1 },
     };
 
     /** The ground's height at a point, as the shaders lift things (setGround()); 0 without one. */
@@ -742,6 +744,13 @@ export class BendService {
             shader.uniforms.uGround = BendService.uniforms.uGround;
             shader.uniforms.uGroundHalf = BendService.uniforms.uGroundHalf;
             shader.uniforms.uGroundMax = BendService.uniforms.uGroundMax;
+            shader.uniforms.uVibrance = BendService.uniforms.uVibrance;
+            shader.fragmentShader = `uniform float uVibrance;
+${shader.fragmentShader}`.replace(
+                '#include <tonemapping_fragment>',
+                `gl_FragColor.rgb = max( vec3( 0.0 ), mix( vec3( dot( gl_FragColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) ) ), gl_FragColor.rgb, uVibrance ) );
+                #include <tonemapping_fragment>`,
+            );
 
             shader.vertexShader = `
                 uniform vec3  uBendOrigin;

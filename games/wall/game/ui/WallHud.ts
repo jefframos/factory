@@ -9,11 +9,16 @@ import gsap from 'gsap';
 import { Game } from 'core/Game';
 import { WallAnalytics } from '../analytics/WallAnalytics';
 import { fx } from '../config/Effects';
-import { HIT_PILL, HitPill } from './HitPill';
+import { Floater, FloaterActions, FloaterKind } from './Floater';
+import { Frenzy } from './Frenzy';
+import { HitPill } from './HitPill';
 import { HudBar } from './HudBar';
 import { LookOffer } from './LookOffer';
-import { SHOWS, short } from '../data/WallConfig';
+import { FLOATING, SHOWS, short } from '../data/WallConfig';
 import { MedalFly, RewindButton, RewindPopup, RewindShow, rewindKnown } from './Rewind';
+import { POWER, PowerButton } from './PowerButton';
+import { Powers } from '../data/Powers';
+import { NEXT_HELPER, NextHelper } from './NextHelper';
 import { TRAY_TOP, Tray, TrayActions } from './Tray';
 import { WallAudio } from '../audio/WallAudio';
 import { WallProgress } from '../data/WallProgress';
@@ -28,15 +33,24 @@ export const BAR_FOOT = BAR.y + BAR.height / 2;
 const GIFT = { held: 1.15, flies: 0.5 };
 /** A boss's time: under the bar. And the button that calls it back. */
 const TIMER = { width: 300, height: 28, below: 40 };
+/** A frenzy's time under the bar (and under a boss's). */
+const UNDER = { frenzy: 46, timed: 88 };
+/** The next helper: under the rewind button (and under what rewinding's brought), or in its place till it's there. */
+const HELPER = { under: 108, won: 156, up: 59 };
 const RETRY = { width: 330, height: 92, up: 62, wideUp: 90 };
 /** The bar's name is this wide at most (its life's beside it). */
-const TITLE_WIDTH = 245;
+const TITLE_WIDTH = 225;
+/** The wall's number, on a shield (Mow's): over the bar's left end. */
+const WALL_BADGE = { size: 76, in: 6, covers: 38, stroke: 0x1f49a8 };
 const FLOATS = 14;
 const BUTTON_SIZE = 58;
 const WARDROBE_SIZE = 82;
 
 export class WallHud extends PIXI.Container {
     private readonly title = text('', 26, 0xffffff);
+    /** The wall's number, always there. */
+    private readonly badge = new PIXI.Container();
+    private readonly number = text('', 34, 0xffffff, WALL_BADGE.stroke, 7);
     private readonly life = text('', 21, 0xffffff, 0x100e18, 6);
     private readonly bar = new HudBar(BAR.width, BAR.height, BAR.color);
     private readonly barBack: PIXI.Container;
@@ -49,6 +63,10 @@ export class WallHud extends PIXI.Container {
     public readonly rewindShow = new RewindShow();
     private readonly rewindButton: RewindButton;
     private readonly offer: LookOffer;
+    private readonly floater: Floater;
+    private readonly frenzy = new Frenzy();
+    private readonly nextHelper = new NextHelper();
+    private readonly powers = Powers.all.map((power) => new PowerButton(power, (words, sub) => this.announce(words, sub, 1)));
     private readonly hitPill = new HitPill();
     private readonly wardrobeButton = new PIXI.Container();
     private wardrobeDot?: PIXI.Container;
@@ -73,22 +91,27 @@ export class WallHud extends PIXI.Container {
     private fightOn = false;
     private clock = 0;
 
-    public constructor(actions: TrayActions & { rewind(): void; flaunt(): void; retryBoss(): void }, looks: WardrobeActions) {
+    public constructor(actions: TrayActions & { rewind(): void; flaunt(): void; retryBoss(): void; floater: FloaterActions }, looks: WardrobeActions) {
         super();
         this.flash.tint = 0xfff0dc;
         this.flash.alpha = 0;
         this.flash.eventMode = 'none';
         this.barBack = new PIXI.Container();
         this.bar.x = -BAR.width / 2;
+        this.bar.setFrom(WALL_BADGE.covers);
+        const badge = sprite('Slider_Level02_Icon_Badge_Blue', WALL_BADGE.size);
+        this.number.y = -2;
+        this.badge.x = -BAR.width / 2 + WALL_BADGE.in;
+        this.badge.addChild(badge, this.number);
         this.barBack.addChild(this.bar, this.title, this.life);
-        // (Its name on the left, its life on the right.)
+        // (In a fight, whose it is after the number, and their life on the right; a wall's life in the middle.)
         this.title.anchor.set(0, 0.5);
-        this.title.position.set(-BAR.width / 2 + 20, -2);
-        this.life.anchor.set(1, 0.5);
-        this.life.position.set(BAR.width / 2 - 16, -2);
-        this.skull.x = -BAR.width / 2 + 26;
+        this.title.position.set(-BAR.width / 2 + WALL_BADGE.in + WALL_BADGE.size / 2 + 8, -2);
+        this.life.anchor.set(0.5);
+        this.life.y = -2;
+        this.skull.x = BAR.width / 2 - 14;
         this.skull.visible = false;
-        this.barBack.addChild(this.skull);
+        this.barBack.addChild(this.skull, this.badge);
         this.timerBar.x = -TIMER.width / 2;
         this.timer.addChild(this.timerBar, this.timerText);
         this.timer.visible = false;
@@ -112,6 +135,7 @@ export class WallHud extends PIXI.Container {
             this.announce(`${name}!`, 'NEW LOOK', 1.1);
             actions.flaunt();
         });
+        this.floater = new Floater(actions.floater);
         this.rewindPopup = new RewindPopup(() => actions.rewind(), (open) => (this.tray.visible = !open));
         this.rewindButton = new RewindButton(() => {
             WallAnalytics.buttonTapped('rewind');
@@ -148,7 +172,7 @@ export class WallHud extends PIXI.Container {
         this.tap.visible = false;
 
         this.sound = this.soundButton();
-        this.addChild(this.flash, this.barBack, ...this.floats, this.timer, this.combo, this.banner, this.tap, this.retry, this.hitPill, this.tray, this.sound, this.wardrobeButton, this.rewindButton, this.offer, this.wardrobe, this.rewindPopup, this.rewindShow);
+        this.addChild(this.frenzy.glow, this.flash, this.floater, this.barBack, ...this.floats, this.timer, this.frenzy, this.combo, this.banner, this.tap, this.retry, this.tray, this.hitPill, this.sound, this.wardrobeButton, this.rewindButton, this.nextHelper, ...this.powers, this.offer, this.wardrobe, this.rewindPopup, this.rewindShow);
         [this.barBack, this.combo, this.banner, this.tap].forEach((child) => (child.eventMode = 'none'));
         this.reposition();
     }
@@ -183,26 +207,31 @@ export class WallHud extends PIXI.Container {
 
     // ---------------------------------------------------------------- the wall
 
-    public setWall(number: number, material: string): void {
-        write(this.title, `WALL ${number}  ${material.toUpperCase()}`, TITLE_WIDTH);
+    public setWall(number: number): void {
+        write(this.number, String(number), WALL_BADGE.size - 22);
+        gsap.killTweensOf(this.badge.scale);
+        this.badge.scale.set(1.35);
+        gsap.to(this.badge.scale, { x: 1, y: 1, duration: 0.45, ease: 'back.out(2.4)' });
     }
 
     /** The life left, and all of it (a wall's, an enemy's), on the bar. */
     public setLife(left: number, total: number): void {
         // (Never 0 while there's any.)
         const shown = left > 0 ? Math.max(1, Math.ceil(left)) : 0;
-        write(this.life, `${short(shown)} / ${short(Math.ceil(total))}`, BAR.width - TITLE_WIDTH - 50);
+        write(this.life, `${short(shown)} / ${short(Math.ceil(total))}`, this.fightOn ? BAR.width - TITLE_WIDTH - 60 : BAR.width - 120);
     }
 
     /** A fight: what's on the bar, the boss's time (seconds, and its share), whether it can be called back; none. */
     public setFight(fight?: { title: string; boss: boolean; seconds?: number; timeShare?: number; retry: boolean }): void {
         this.fightOn = !!fight;
         this.skull.visible = !!fight?.boss;
-        this.title.x = -BAR.width / 2 + (fight?.boss ? 56 : 20);
+        this.title.visible = !!fight;
+        this.life.anchor.x = fight ? 1 : 0.5;
+        this.life.x = fight ? BAR.width / 2 - (fight.boss ? 48 : 18) : 14;
         this.timer.visible = fight?.seconds !== undefined && !this.busy;
         this.retry.visible = !!fight?.retry && !this.busy;
         if (!fight) return;
-        write(this.title, fight.title, TITLE_WIDTH - (fight.boss ? 30 : 0));
+        write(this.title, fight.title, TITLE_WIDTH - (fight.boss ? 45 : 20));
         if (fight.seconds === undefined) return;
         this.timerBar.setShare(fight.timeShare ?? 1);
         write(this.timerText, String(Math.max(0, Math.ceil(fight.seconds))));
@@ -286,13 +315,19 @@ export class WallHud extends PIXI.Container {
 
     // ---------------------------------------------------------------- frame
 
-    /** Something given: big in the middle in a burst of light, then off to its card. */
-    public showGift(icon: string, words: string, sub: string, to: () => PIXI.Point): void {
+    /** Something given: big in the middle in a burst of light, then off to its card (`tint`: a tool's metal's colour). */
+    public showGift(icon: string, words: string, sub: string, to: () => PIXI.Point, tint?: string): void {
         const screen = Game.overlayScreenData;
         if (!screen) return;
         const from = new PIXI.Point(screen.center.x, screen.topLeft.y + screen.height * 0.47);
         const rays = sprite('Image_Effect_Rotate', 520);
         const big = sprite(icon, 210);
+        if (tint) {
+            const metal = PIXI.Sprite.from(`${icon}_metal`);
+            metal.anchor.set(0.5);
+            metal.tint = PIXI.utils.string2hex(tint);
+            big.addChild(metal);
+        }
         const size = big.scale.x;
         const show = new PIXI.Container();
         show.eventMode = 'none';
@@ -314,8 +349,31 @@ export class WallHud extends PIXI.Container {
             big.scale.set(size * (1 - 0.62 * t));
         }, onComplete: () => {
             WallAudio.play('claim');
+            // (The rays turn on past this: on something gone, that throws every frame.)
+            gsap.killTweensOf([rays, big, big.scale]);
             show.destroy({ children: true });
         } });
+    }
+
+    /** One floats across: now (debug), or in a moment. */
+    public floatNow(kind: FloaterKind): void {
+        this.floater.appear(kind);
+    }
+    public floatSoon(kind: FloaterKind): void {
+        this.floater.bring(kind);
+    }
+
+    /** Free cash got, at (x, y). */
+    public gotCash(amount: number, at: PIXI.Point): void {
+        this.float(`+${short(amount)}`, at.x, at.y, 0xbaff8c, 1.5);
+        this.tray.gotCash(at);
+        WallAudio.play('coins', 1, 1.15);
+    }
+
+    public startFrenzy(): void {
+        this.frenzy.start();
+        this.announce('FRENZY!', `ALL DAMAGE x${FLOATING.frenzy.mult}`, 1);
+        WallAudio.play('tool', 1, 1.2);
     }
 
     /** Medals won, from (x, y) to the button that counts them. */
@@ -355,6 +413,8 @@ export class WallHud extends PIXI.Container {
         this.tray.update(delta);
         // (From the first upgrade on: there's something to see it grow by.)
         this.hitPill.visible = WallProgress.best > 1 && !this.wardrobe.isOpen && !this.rewindPopup.isOpen;
+        this.hitPill.position.copyFrom(this.tray.hitSpot);
+        this.powers.forEach((button) => button.update(delta, !this.busy));
         if (this.hitPill.visible) this.hitPill.update(delta, this.combo.visible ? this.comboShown : 1);
         this.wardrobe.update();
         this.showNews();
@@ -369,6 +429,12 @@ export class WallHud extends PIXI.Container {
         if (this.rewindButton.visible) this.rewindButton.update(delta, this.barShare, this.flying > 0);
         this.rewindPopup.update(delta);
         this.offer.update(delta, this.playing && !this.busy);
+        this.floater.update(delta, this.playing, !this.busy);
+        this.frenzy.update(delta, this.playing || this.fightOn, !this.busy);
+        this.frenzy.y = this.barBack.y + (this.timer.visible ? UNDER.timed : UNDER.frenzy);
+        this.nextHelper.update(!this.busy);
+        const below = this.rewindButton.visible ? (WallProgress.medalMult > 1 ? HELPER.won : HELPER.under) : -HELPER.up;
+        this.nextHelper.position.set(this.rewindButton.x, this.rewindButton.y + below + NEXT_HELPER.height / 2);
         this.rewindShow.update(delta);
     }
 
@@ -383,12 +449,13 @@ export class WallHud extends PIXI.Container {
         const barY = topLeft.y + (wide ? BAR.wideY : BAR.y);
         this.barBack.position.set(screen.center.x, barY);
         this.timer.position.set(screen.center.x, barY + TIMER.below);
-        // (Left of the wall's bar; on a wide screen, by the bricks.)
-        this.hitPill.position.set(wide ? topLeft.x + 24 + 124 + 24 + HIT_PILL.width / 2 : screen.center.x - BAR.width / 2 - 8 - HIT_PILL.width / 2 + 4, wide ? topLeft.y + 114 : barY);
+        this.frenzy.reposition(screen.center.x, barY + UNDER.frenzy);
         this.retry.position.set(screen.center.x, topLeft.y + screen.height - (wide ? RETRY.wideUp : TRAY_TOP + RETRY.up));
         this.rewindPopup.reposition();
-        // (Across from the rewind button; on a wide screen, by the cards.)
-        this.offer.position.set(wide ? topLeft.x + screen.width - 290 - 24 - 110 : topLeft.x + screen.width - 102, topLeft.y + (wide ? 250 : 262));
+        // Down the right side (on a wide screen, by the cards): the power-ups, and under them what's offered.
+        const side = topLeft.x + screen.width - (wide ? 290 + 24 + 80 : 66);
+        this.powers.forEach((button, i) => button.position.set(side, topLeft.y + (wide ? 160 : 182) + i * POWER.every));
+        this.offer.position.set(wide ? side - 20 : topLeft.x + screen.width - 96, topLeft.y + (wide ? 160 : 182) + this.powers.length * POWER.every + 72);
         this.rewindShow.reposition();
         this.rewindButton.position.set(topLeft.x + (wide ? 24 : 16) + 60, topLeft.y + (wide ? 640 : 206));
         this.tray.reposition();

@@ -2,13 +2,14 @@
 
 ## Description
 
-Dig through a block mine, fill your backpack with rock, ore and gems, sell it and buy better tools to go deeper.
+Dig through a block mine with a pickaxe, then with ever bigger tractors! Pile rock, ore and gems on your back, upgrade your tractor, blades and bag, dress your tractor up, and push out to the lava fields of the volcano.
 
 ## Controls
 
 - **Move:** WASD or arrow keys; on touch screens, the on-screen joystick; on desktop you can also click and drag.
 - **Dig:** walk into rock; the miner swings automatically.
-- **Sell:** walk onto the ATM's pad; upgrades are bought there and at the boost machine.
+- **Upgrade:** stand on a station's square to pour in what you've dug (and your money).
+- **Sell:** walk onto the ATM's pad.
 - **Menus:** tap or click the buttons and tabs.
 
 ---
@@ -53,7 +54,7 @@ games/dig/
     mining/             MiningController (pushing into rock digs it)
     player/             DigPlayer (the miner), TractorRide (the Digger / Tractor vehicles)
     ui/                 DigHud and every panel (upgrades, wardrobe, collection, achievements, mines, language),
-                        TabBar, FindBanner, RewardPopup, ScreenFade
+                        TabBar, ChestGift, CosmeticOffer, UpgradeList, ScreenFade
     data/               DigConfig (typed ui/dig.json), DigProgress (the save), HubData, Gameplay
     analytics/          GameAnalytics (every event the game sends)
     audio/              DigAudio (sound cues), EngineSound (synthesised tractor engine)
@@ -73,52 +74,58 @@ games/dig/
 ## How the game works
 
 ### The core loop
-1. **Dig** — walk out of the hub and push into rock; the miner swings automatically. Each rock has a durability
-   and a minimum tool power (`materials` in `dig.json`). Rock the current tool can't dig shows a **padlock**.
-2. **Fill the backpack** — each broken block drops items that fly into the bag. A full bag is called out on screen,
-   pulses in the HUD, and after a couple of tries at digging the guide's arrows lead back to the ATM.
-3. **Sell** — stand on the ATM pad or the boost machine's (or tap the **SELL x2** cash pile for a rewarded video, once it unlocks). The first two
-   SELL x2 taps are free (`PHONE_FREE_SELLS` in `DigProgress`, save field `freeSells`): a FREE tag replaces the video
-   badge, and the first one also gets the pointing hand. Analytics item `sell-x2-free`.
-4. **Upgrade** — at the ATM: **GEAR** (the next tool, the next bag); at the **boost machine** (the ATM in purple,
-   star icon): **BOOSTS** (repeatable levels). A hub without a `boost` station has both tabs on the ATM.
+1. **Dig** — walk out of the hub and push into rock: the pickaxe swings by itself; on a tractor, everything its body and its
+   blades touch is chewed at once (`MiningController.carve()`, `digging` in `dig.json`), so no rock it can dig ever holds it.
+   Digging power = the tool's 2 plus the blades' level. A block takes `chewSec` at just enough power, x `falloff` a power
+   over; one power short, it's chewed slowly (`shortSec`); more than that it's locked (a **padlock**).
+2. **Fill the backpack** — what's dug flies onto a pile on the miner's back (`player/Backpack.ts`, Mow's rucksack): little
+   blocks of what's in it, the ores on top, as high as the bag is full.
+3. **Upgrade** — on the hub's **pads** (`world/UpgradePads.ts`, `levels/hub.json` `pads`), no shop: the next **tractor**, sharper
+   **blades**, a **bigger bag** (the last two from the first tractor on). Standing on one pours in the bag, at what it sells
+   for, then the money.
+4. **Sell** — the ATM turns the bag into money (or the **SELL x2** pile, for a video; its first two are free) for **POWER-UPS**
+   (the star bottom-left, from level 3: dig speed, sell price, ore luck, move speed, bag size, digging width), the hub's
+   pieces and looks.
 
 ### Progression
-- **Tools** (`tools`): Shovel → Pickaxe (3 wide: the first, forced upgrade is a big step) → Steel Pickaxe (3 wide, 2
-  deep) → Power Drill → Mega Drill (3 wide, 2 deep)
-  → **Digger** (a grey tractor you ride) → **Tractor** → **Red Tractor** ($100,000, 5 wide: the long goal the hub's
-  income helps pay for). Vehicles are ridden outside the hub, faster, with an engine; a vehicle's `tint` repaints the
-  tractor model (`utils/Paint.ts`, like the Digger's `greyscale`).
-- **Backpack** (`backpack`): 10 → 500 slots in 16 tiers (the first, forced
-  upgrade more than quadruples it: 10 → 45, then 60 / 75 / 90 / 110 / 130), sized so a trip is mostly digging, not walking.
-- **Boosts** (`boosts`): Dig Speed, Sell Price, Ore Luck, Move Speed — 20 levels each, cost ×1.3 per level. They
-  unlock with the first hat (right after the wardrobe), the Steel Pickaxe or a new mine; that reveals the hub's
-  `boost-corner` area (reveal rule `boosts`) with the **boost machine** next to the ATM. No guide step for it: its
-  "!" (a boost affordable) is all it gets. It sells the backpack too (hub cash is collected at the ATM only).
-- **Zones**: rings around the hub — Topsoil, Stone Layer, The Deep, Lost Ruins, Obsidian Depths — each with its own
-  rock (tinted so they read apart — warm sand gravel against cool slate stone), ores and floor colour, and a
-  `fog` colour the far view fades into (eased across borders, also the horizon/background). Ore nuggets and gems
-  glow softly (breathing) and twinkle now and then, so valuable blocks stand out from plain rock. Lighting is a cool
-  sky fill plus a warm sun, so block sides stay readable from above. The mine ends in a noisy round wall of black bedrock.
-  Amethyst is a rare purple gem in the obsidian.
+- **Tools** (`tools`): the Pickaxe, then (from the first upgrade, $12) eight tractors: each wider (`width` 2.2 to 5), a little
+  bigger (`rideScale`), faster, with a bigger bag. Ridden outside the hub (`player/TractorRide.ts`). One model
+  (Kenney's tractor, its bucket off; its gold hood and roof and its blue-grey frame are split off its palette to take a colour each: `TractorDress.wrapBody`).
+- **Blades** (`upgrades.blades`, `bladeLevels`): +1 power a level, seen at the tractor's front, a row of saws.
+- **Bag** (`upgrades.capacity`): +20% of the tractor's own bag a level.
+- **The tractor's looks** (`ui/tractor.json`): plain colours (yellow and dark grey to begin with), Mow's paints and parts, in its panel (the tractor sticker, bottom-left) or (the miner's looks too)
+  offered for a video while driving.
+- **Levels** (`levels`): XP from blocks, upgrades, zones, finds, chests and hub pieces; shared by every mine. A level pays cash;
+  levels open POWER-UPS (3) and the portal (5).
+- **Zones**: seven rings round the hub: Topsoil, Stone Layer, The Deep, Lost Ruins, Obsidian Depths, **Magma Fields**, **Volcano
+  Heart**. The far ones stand higher (`height`, ramped over `terrain.zoneRamp`: the shaders lift everything bent,
+  `BendService.setGround`; the game itself stays flat) and have pools of **lava** (`lava`, `world/LavaPools.ts`): slow to drive
+  through. The mine is 144 blocks to its edge; only the chunks in view are drawn.
 
-### Mines (prestige)
-Once the newest mine has its Tractor ($15,000, painted purple, `prestige.tool`; marked "NEW MINE" on the ATM's tool timeline — the
-Red Tractor after it stays the goal), the HUD shows a bouncing **NEW MINE!** button (and the MAP gets a "!").
-Opening a mine gives a **fresh run** there (shovel, small bag, no cash or boosts) in a new layout and colour theme
-(`mineThemes`), and every mine gets the bonus (`prestige`: +25% cash, +10% dig speed per mine). The **MAP** button
-lists every mine with GO to travel back and forth — each keeps its own cash, tools, bags, boosts, tunnels and
-collection; looks, hub, achievements and the bonus are shared. Switching plays a screen fade with the mine's name.
-Each mine after the first prices its tools, backpacks and boosts `prestige.priceStep` higher (mine #2 x1.15, #3
-x1.30…: `DigProgress.priceOf`), since the hub's perks and income come along; the first mine pays the listed prices.
+### Dungeons and the portal
+At level 5 the **portal** appears at the back of the hub (`world/Portal.ts`, `levels/hub.json` `portal`; seen through while the miner's
+behind it, as walls and the ATM are): paid for on its pad, it leads to the
+next dungeon, **the gear and the money going along** (the bag is sold on the way). Every dungeon is the same mine in a new layout and
+theme, and **exponential** (`dungeons` in `dig.json`): dungeon n's rock takes 6 n more power, its worth (and the finds', the chests'
+and the levels' cash) is x 60^n, its XP x 2^n. Tractors past the last one come as MK 2, 3... (`toolMarks`), the blades never end.
+The MAP button goes back and forth between the dungeons reached; each keeps its tunnels and finds (`MineSnapshot`).
+
+### Animals
+The **ANIMALS** pad (from the second tractor) calls the next one (`animals`): three of each of eight kinds, then on and on. They run
+along round the miner and headbutt blocks (`player/Crew.ts`, the Wall game's models): real digging, at the power and speed the
+tractor has (`MiningController.bite`). The newest ten are drawn and do the others' work too. Not in the hub, nor with the bag full.
+
+### Rebirth
+From the second dungeon on, the **MEDALS** sticker (`rebirth`): starting over in dungeon 1 with nothing pays medals by how deep the
+run got, spent there on eleven perks kept for good (cash, digging, animals, what a run starts with...). The level and the looks
+are kept. POWER-UPS and perks are both `ui/UpgradeList.ts`.
 
 ### Finds and the collection
 18 buried artifacts per mine (`finds`). Buried ones near the miner give off sparkles in their rarity colour. Digging
-one up shows a banner with a **CLAIM button right there** (`ui/FindBanner.ts`): the reward is paid on the spot and
-the coins fly into the money, so digging goes on. The first find has the pointing hand on CLAIM; a banner left alone
-claims itself (5 s, 12 s for the first find). Only taps on the button are taken, so the banner never blocks moving.
-Anything still unclaimed (an old save, a tab closed mid-banner) waits in the Trophy Room: the totem gets a "!", and
-the collection panel has a CLAIM button on each card with a reward (and on the footer for a completed collection).
+one up pays at once, no popup: its name and cash float over the miner and the coins fly into the money. Nothing's ever claimed and nothing stops play:
+what's picked up is money, paid at once. A cash **chest** also brings a cosmetic not owned yet, for the miner or their tractor, on the
+HUD's card (`ui/CosmeticOffer`), free or for a video in turn (the first free): tapped, it's worn; left, it goes (at most one every 20 s:
+`GIFT_GAP_MS` in DigScene, picked by `DigProgress.cosmeticToGive`). What an old save had waiting is paid as it loads.
 Payouts grow with
 rarity and depth (`findPayout`); the first find of a mine always pays at least the next upgrade.
 
@@ -180,38 +187,19 @@ in them never arrived. Now the bucket is one number, a time stamp drops its what
 
 ### Achievements
 Digger, Ore Hunter, Tycoon, Collector — 7 tiers each, shared across mines; tier 4 adds a trophy to the hub.
-**Champion** (claim 15 levels) unlocks the Crown hat. Claiming dims the screen until the coins land. During the
-tutorial a ready tier only shows the "!" on the button; its shine, pulse, CLAIM label and first-claim hand wait until
-the first hub piece is built, so they don't compete with the guide.
+**Champion** (reach 15 levels) unlocks the Crown hat. They pay by themselves as they're reached (`DigHud.payAchievements`, from the end
+of the tutorial on): the cash flies off the memo pad and a line says which. The panel's only to look at.
 
-### Hub rooms and perks
-The hub is shared by every mine, so what's built there is kept for good — a small second prestige layer. Each
-buildable has an **income** (`income`, $ a second) and a **perk** (`perk` in `levels/hub.json`: `sell` / `dig` /
-`move` as a fraction, `beam` in blocks of treasure-beam range). Its price tag has no words: a short vertical list — the
-price, then a row for each ("+$0.3/s" by a bill, "+3%" by the stat's icon). The income piles up while playing (x the new mines' sell bonus,
-up to `hubIncome.capMinutes`) and waits over the ATM ("$252 / +$0.4/s"); stepping onto the ATM's pad collects it.
-Every few seconds each earning piece pops "+$N" over itself while the miner is near, and from the first one the HUD
-shows the base's $/s by the money. Each piece earns about its price / 600 a second (the whole hub ~$34/s). Each reveal area's buildables are a **set**: buying them all adds the area's
-`bonus` ("SET COMPLETE!", analytics `hub / set-<area>`). The rooms aren't named to the player (a new room just says
-"NEW FURNITURE TO BUILD!") and open one at a time with the tools, so new things to buy keep coming: the first room
-(it appears with the first upgrade after the wardrobe, $50–250, so the tutorial ends on its build step a moment
-after the first relic is claimed), then with the Power Drill ($500–900), the Mega Drill ($1,500–2,500) and the Digger
-($4,000–5,000) — each piece about 20–40% of the next tool then. The whole hub's perks are worth about one new mine (+28% cash,
-+17% dig, +13% move, +4 beam range); the BOOSTS tab's footer adds up everything kept forever (hub + mines). The
-perks apply in `DigProgress` (`sellMultiplier`, `hitInterval`, `moveMultiplier`, `beaconRange`), so a new perk stat
-goes there too. A room for later mines: an area with the reveal rule `mines:<n>`.
+### The hub
+Only stations: the pads, the ATM, the portal. The furniture to buy, the trophy room and the wardrobe's closet are out (they
+confused players; the old layout is `levels/hub.backup.json`, and the code for buildables and areas is still there for a level that
+has them). The wardrobe is a sticker on the HUD, like the tractor's. The language button is hidden (`DigHud.buildSettings`).
 
-### The tutorial (first mine only)
-Driven by the progress alone, so a reload lands back in the right step:
-move → dig → bag full → sell → **forced Pickaxe** → **forced first bag** → wardrobe appears → **forced first hat**
-(the Mining Helmet; money topped up if short) → first relic (claimed on its banner, on the spot) → first hub piece (the
-last sale is topped up to the cheapest one's price; the arrows lead to the nearest piece the money covers). Forced purchases dim the screen, stop the miner and point at BUY. The guide's
-gold floor arrows follow the real walking route (A* over the dug tunnels) and draw over the rock. Its priorities:
-nothing during a power surge (it resumes after); a full backpack back to the ATM once the miner has pushed into rock
-with it twice; then the tutorial step (or, after it, the relic hunt when that's on). Out in the rock the arrows stay
-quiet so digging isn't interrupted: only a full backpack and the first upgrade lead from there. The wardrobe and the
-first build are pointed at only once the miner is back in the hub. The Trophy Room is never pointed at: rewards are
-claimed on the find banner, so it's there for completing the collection (its totem still shows a "!" for new finds).
+### The tutorial (first dungeon)
+Driven by the progress alone, so a reload lands back in the right step: move -> dig -> bag full -> the first tractor on its pad ->
+the bigger bag -> the blades -> the first animal (then it's over: `DigProgress.tutorialOver`). No menus, nothing forced. The guide's gold
+floor arrows follow the real walking route (A* over the dug tunnels): to whatever pad can be paid, to the ATM with a full bag, and
+later to the portal once it can be paid. Nothing during a power surge.
 
 **Free looks:** one colour (red `#ff5252`) and one face (Cool) are `free: true` in `wardrobe` — claimed for nothing,
 their card says FREE. Claimed on the hat visit, nothing more happens. Still unclaimed after the first hat, the wardrobe
@@ -237,9 +225,9 @@ went with a big tutorial drop-off, so the treasure beams alone lead to relics fo
 hub piece is built.
 
 ### Saving
-One localStorage entry (`dig.save`), written shortly after any change. It carries a **version**
+One entry in the platform's storage (`dig.save`, core/platforms/SaveStorage), written shortly after any change. It carries a **version**
 (`SAVE_VERSION` in `data/DigProgress.ts`): a save from another version starts a new game. **Bump it when a change
-can't carry old saves over** (it's at 3). The language and mute choices are stored separately and survive.
+can't carry old saves over** (it's at 5: dungeons, animals and rebirth). The language and mute choices are stored separately and survive.
 
 ---
 
@@ -252,18 +240,21 @@ Every tuning value lives here, not in code. Main sections:
 | `terrain` | map radius, block height, seed, bedrock look (`bedrockTint`), the round edge (`edge`), zone wobble |
 | `materials` | each rock / ore: durability, minPower, value, drops, model, `tint`, gem `decorTint` |
 | `zones` | the rings: start distance, fill rock, patches, ores, tunnel `floor` colour, far-view `fog` colour |
-| `tools` | the tool path: power, hit interval, `area` / `depth`, price, `vehicle` / `greyscale` / `rideSpeed` |
-| `backpack` | bag tiers: capacity and price |
-| `boosts`, `boostsUnlockToolLevel` | the boost tracks |
-| `prestige`, `mineThemes` | new-mine bonus and each mine's colours (rock tints, floors, hub floor and walls) |
+| `tools` | the pickaxe and the tractors: width, size, speed, bag, price, colour |
+| `digging`, `upgrades`, `bladeLevels` | how fast blades chew, the pads' blades and bag, how the blades look |
+| `levels` | XP, what a level pays |
+| `lava` | how slow it is |
+| `dungeons`, `toolMarks`, `animals`, `rebirth` | see above |
+| `boosts` | POWER-UPS |
+| `prestige`, `mineThemes` | each dungeon's layout seed and colours (rock tints, floors, hub floor and walls) |
 | `finds`, `findPayout`, `collectionReward`, `firstFindAfterBlocks` | artifacts and what they pay |
 | `relicHunt` | the guided relics after the tutorial: on/off, how many, how far one may be before it's moved closer |
 | `chests`, `richOre` | power / cash chests (count per zone, surge tool and length, rewards, beacon range) and rich veins |
 | `wardrobe` | colours, faces, hats and prices (the Crown is `unlock: "achievement"`; `free: true` = a gift look) |
 | `achievements` | tiers, rewards, the hub decoration (`decor`, `decorAt`) or hat (`hat`) |
-| `tractor` | the ridden vehicle's model, seat, speed, smoke, `bodyRadius` (its footprint against rock) |
+| `tractor` | the tractor's model, seat, smoke, `body` (all of it digs), `collide`, where blades and parts go |
 
-The hub layout is `levels/hub.json` (edit it in the editor's Hub tabs). Reveal-area rules (`reveal`) say when each
+The hub layout is `levels/hub.json` (edit it in the editor's Hub tabs; its `pads` and `portal` are kept, but edited by hand). Reveal-area rules (`reveal`) say when each
 part of the hub appears: `start`, `upgrades:<n>`, `upgrade:<n>` (tool level), `mines:<n>`, `firstFind`,
 `upgradeAfter:<area>`, `built:<area>`… Pieces' perks and rooms' set bonuses are edited in the Hub 3D inspector.
 

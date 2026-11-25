@@ -11,8 +11,8 @@
 
 import * as THREE from 'three';
 import { DIG, FindDef } from '../data/DigConfig';
+import { hubRects } from '../data/HubData';
 import { DigProgress } from '../data/DigProgress';
-import { HUB, hubRects } from '../data/HubData';
 import { AIR, BEDROCK, VoxelTerrain } from './VoxelTerrain';
 import { GameAnalytics } from '../analytics/GameAnalytics';
 
@@ -38,7 +38,7 @@ export class RelicHunt {
     public get guiding(): boolean {
         const hunt = DIG.relicHunt;
         const count = DigProgress.collectedCount;
-        const tutorialOver = (HUB.buildables ?? []).some((b) => DigProgress.isBuilt(b.id));
+        const tutorialOver = DigProgress.tutorialOver;
         return hunt.enabled && count >= 1 && count <= hunt.guided + 1 && tutorialOver;
     }
 
@@ -70,7 +70,7 @@ export class RelicHunt {
         if (this.hunted && this.cell >= 0 && this.terrain.cells[this.cell] === AIR) this.dug = true;
         if (!this.guiding) return;
         // Named once the Trophy Room has nothing waiting: claiming a relic reveals the next one.
-        if (!this.hunted && !DigProgress.hasUnclaimed && DigProgress.collectedCount <= DIG.relicHunt.guided) this.name();
+        if (!this.hunted && DigProgress.collectedCount <= DIG.relicHunt.guided) this.name();
         if (this.hunted && !this.dug && this.terrain.findCell(this.hunted) !== this.cell && !this.inHub(player)) this.place(player);
     }
 
@@ -131,7 +131,7 @@ export class RelicHunt {
     private diggable(ix: number, iz: number): boolean {
         const value = this.terrain.cellValue(ix, iz);
         const material = this.terrain.material(ix, iz);
-        return value !== AIR && value !== BEDROCK && !!material && material.minPower <= DigProgress.power;
+        return value !== AIR && value !== BEDROCK && !!material && DigProgress.rockPower(material) <= DigProgress.power;
     }
 
     /** A diggable block holding nothing yet, with rock all round (so the relic starts hidden, like a buried one). */

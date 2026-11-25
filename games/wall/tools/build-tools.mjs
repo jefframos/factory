@@ -3,7 +3,7 @@
 // node games/wall/tools/build-tools.mjs, then build-crew.mjs (the icons), then `npm run models` and `npm run image` (GAME=wall).
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { dedup, prune, weld } from '@gltf-transform/functions';
+import { dedup, prune, quantize, weld } from '@gltf-transform/functions';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -13,7 +13,7 @@ const repo = path.resolve(here, '../../..');
 const kit = `${repo}/library3d/files/KayKit_Bits_Bundle2_1.0/KayKit_Bits_Bundle2_1.0`;
 const rpg = `${kit}/KayKit RPG Tools Bits 1.0/Assets/gltf`;
 const fantasy = `${kit}/KayKit Fantasy Weapons Bits 1.0/Assets/gltf`;
-/** `head`: everything above this is metal, whatever its colour; else what's greyish blue is. */
+/** `head`: everything above this is metal, whatever its colour; else what's greyish blue is. `thick`: its handle so many times as thick; `lift`: all of it up. */
 const TOOLS = {
     hammer: { file: `${rpg}/hammer.gltf` },
     axe: { file: `${rpg}/axe.gltf` },
@@ -21,10 +21,14 @@ const TOOLS = {
     mace: { file: `${fantasy}/hammer_B.gltf` },
     battleaxe: { file: `${fantasy}/axe_B.gltf` },
     warhammer: { file: `${fantasy}/hammer_D.gltf`, head: 0.69 },
+    sword: { file: `${fantasy}/sword_B.gltf`, thick: 1.45, lift: 0.16 },
+    saber: { file: `${fantasy}/sword_C.gltf`, thick: 1.45, lift: 0.18 },
+    greatsword: { file: `${fantasy}/sword_G.gltf`, thick: 1.7, lift: 0.18 },
+    flame: { file: `${fantasy}/sword_F.gltf`, head: 0.5, thick: 1.35, lift: 0.2 },
 };
 const linear = (v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
-for (const [name, { file, head }] of Object.entries(TOOLS)) {
+for (const [name, { file, head, thick = 1, lift = 0 }] of Object.entries(TOOLS)) {
     const doc = await io.read(file);
     const buffer = doc.getRoot().listBuffers()[0];
     for (const mesh of doc.getRoot().listMeshes()) for (const primitive of mesh.listPrimitives()) {
@@ -48,14 +52,20 @@ for (const [name, { file, head }] of Object.entries(TOOLS)) {
         const values = metals.map((i) => colors[i * 4]).sort((a, b) => a - b);
         const top = values[Math.floor(values.length * 0.9)] ?? 1;
         for (const i of metals) for (let k = 0; k < 3; k++) colors[i * 4 + k] = linear(Math.min(1, 0.35 + 0.6 * (colors[i * 4 + k] / top)));
+        // (The handle, thicker for the hand; and all of it up a little, for the hand to be clear of the guard.)
+        if (thick !== 1 || lift) for (let i = 0; i < position.getCount(); i++) {
+            const [x, y, z] = position.getElement(i, []);
+            const handle = colors[i * 4 + 3] < 0.5 && Math.abs(x) < 0.11 && Math.abs(z) < 0.11 && y < 0.24 && y > -0.36;
+            position.setElement(i, [handle ? x * thick : x, y + lift, handle ? z * thick : z]);
+        }
         primitive.setAttribute('COLOR_0', doc.createAccessor().setType('VEC4').setArray(colors).setBuffer(buffer));
         for (const semantic of ['TEXCOORD_0', 'TANGENT']) primitive.setAttribute(semantic, null);
-        material.setBaseColorTexture(null).setMetallicRoughnessTexture(null).setNormalTexture(null).setBaseColorFactor([1, 1, 1, 1]).setMetallicFactor(0).setRoughnessFactor(0.7).setAlphaMode('OPAQUE');
+        material.setBaseColorTexture(null).setEmissiveTexture(null).setMetallicRoughnessTexture(null).setNormalTexture(null).setBaseColorFactor([1, 1, 1, 1]).setMetallicFactor(0).setRoughnessFactor(0.7).setAlphaMode('OPAQUE');
         const min = position.getMin([]).map((v) => v.toFixed(2));
         const max = position.getMax([]).map((v) => v.toFixed(2));
         console.log(name, 'metal', metals.length, 'of', uv.getCount(), min.join(), max.join());
     }
-    await doc.transform(dedup(), weld(), prune());
+    await doc.transform(dedup(), weld(), prune(), quantize({ quantizePosition: 13, quantizeNormal: 8, quantizeColor: 8 }));
     await io.write(`${here}/../raw-assets/models/player{m}/${name}.glb`, doc);
 }
 

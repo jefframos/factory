@@ -16,26 +16,38 @@
 //                                                          beaten, or out of time or rewound away from
 //   minions    <nn>                     start, complete, fail   wall nn's minions (fail: rewound away from)
 //
-// ITEMS (one category for each family; the action says how it was got or what was done with it)
-//   punch      lv-<nn>                  gift, bought       a PUNCH HARDER level (given: lv-01, and lv-02 to 05 at
-//                                                          walls 4, 6, 8, 10 if they hadn't been bought)
+// ITEMS (one category for each family; the action says how it was got or what was done with it; a level, a tool, a number of the
+// crew: once per player, the first time ever, so counts are players)
+//   punch      lv-<nn>                  gift, bought       a PUNCH HARDER level (gift: given at its wall, or bought for who
+//                                                          leaves their money lying)
 //   tool       <nn>-<tier>-<type>       unlocked, equip    a new tool (nn: the level it comes with), one picked
 //   crew       <n>-<id>-<nn>            gift, bought       the 1st, 5th, 10th, 25th... of one of the crew (once per player)
 //   boost      <id>                     bought
 //   look       <slot>-<id>              bought, unlocked, gift, no-video, equip   for cash, for a video, for nothing, its
 //                                                          video not watched, an owned one put on (wardrobe and offers alike)
 //
-// OFFERS AND BUTTONS (visible / interact pairs)
+// OFFERS AND BUTTONS (visible / interact pairs; marked * once a session each: interact over visible is the share that took it)
 //   offer      <gift|buy|video>-<slot>-<id>   visible, interact   a card while playing (what came of it: `look`)
-//   button     wardrobe | rewind        visible, interact  there (once a session), tapped
-//   panel      wardrobe-<tab> | rewind-ready | rewind-early   visible   shown (once a session)
+//   floating   cash | frenzy *          visible, interact  one drifted across, was tapped
+//   floating   chest | double           visible, interact, no-video   each one, for a video; tapped; its video not watched
+//   nudge      boost | punch | crew *   visible, bought    the hand pointed at something left unbought, and it was bought
+//   power      hands | auto             visible, used, video, no-video   its button there (once a session), set off charged, for a
+//                                                          video, its video not watched
+//   away       earned                   gift               back after a while: what the crew earned
+//   button     wardrobe | rewind *      visible, interact  there, tapped
+//   panel      wardrobe-<tab> | rewind-ready | rewind-early *   visible   shown
 //
 // THE REST
 //   playtime   min-<nn>                 reached            minutes of play this session (only while gameplay's on)
 //   combo      <nn>                     reached            a longer one than any this session (3 and up)
+//   load       <under-3|3-5|5-8|8-15|over-15>-<touch|desktop>   reached   how long to the first screen (seconds)
+//   fps        <under-30|30-45|45-55|55-plus>-<touch|desktop>   complete  the frame rate between 10 and 40 s of play
+//   fps-min    <nn>-<speed>-<touch|desktop>   reached      with each playtime mark: how fast that device draws
+//   resolution <percent>-<touch|desktop>     complete      the 3D's, if it was lowered (with fps)
 //
 // (From the build where the first PUNCH HARDER and the first chick are given, steps 03 and 05 do themselves: 18 bought-punch
 // and 19 bought-helper are the first ones really bought.)
+// Nothing can flood it: but for PROGRESSION, an event goes out at most once a second and 20 times a session (send()).
 // The steps' numbers are their place here: new ones go on the end once this has been released.
 
 import PlatformHandler from 'core/platforms/PlatformHandler';
@@ -48,7 +60,7 @@ const STEPS = [
     'wall-08', 'wall-10', 'wall-12', 'rewind',
 ] as const;
 /** Added since: numbered on from those, started as they're done (they've no place in the order). */
-const EXTRA = ['bought-punch', 'bought-helper'] as const;
+const EXTRA = ['bought-punch', 'bought-helper', 'first-power', 'first-fight', 'first-boss'] as const;
 export type Step = (typeof STEPS)[number] | (typeof EXTRA)[number];
 
 /** How a look was got, or what was done with it. */
@@ -61,10 +73,32 @@ const stepName = (index: number) => `${two(index + 1)}-${ALL[index]}`;
 let seconds = 0;
 let comboBest = 2;
 let begun = false;
+let deviceSpeed = '';
+const touch = () => (window.matchMedia?.('(pointer: coarse)').matches ? 'touch' : 'desktop');
 /** What happened before the first click (a gift handed out as it loads, a button seen): sent right after the session's start. */
 const early: [string, string, AnalyticsAction][] = [];
 
+/** PROGRESSION: always sent (each start has its end). Everything else: never twice within a moment, and at most so often a session. */
+const PROGRESSION = ['session', 'mode', 'step', 'wall', 'run', 'boss', 'minions'];
+const GUARD = { apartMs: 1000, most: 20 };
+const sent = new Map<string, { at: number; times: number; told?: boolean }>();
+
+/** Whether it's one too many (told in the console, once: something's calling it over and over). */
+function tooMany(event: string): boolean {
+    const now = performance.now();
+    const before = sent.get(event);
+    if (before && (now - before.at < GUARD.apartMs || before.times >= GUARD.most)) {
+        if (!before.told) console.warn(`[WallAnalytics] ${event}: too often, not sent`);
+        before.told = true;
+        before.at = now;
+        return true;
+    }
+    sent.set(event, { at: now, times: (before?.times ?? 0) + 1 });
+    return false;
+}
+
 function send(category: string, what: string, action: AnalyticsAction): void {
+    if (!PROGRESSION.includes(category) && tooMany(`${category} ${what} ${action}`)) return;
     if (begun) PlatformHandler.instance.measure(category, what, action);
     else early.push([category, what, action]);
 }
@@ -76,12 +110,15 @@ const startedStep = new Set<number>();
 /** Once per player. */
 const once = (key: string) => WallProgress.markStep(key);
 
-function shownOnce(category: string, what: string): void {
-    const key = `${category}-${what}`;
+/** Once a session. */
+function sendOnce(category: string, what: string, action: AnalyticsAction): void {
+    const key = `${category}-${what}-${action}`;
     if (seen.has(key)) return;
     seen.add(key);
-    send(category, what, 'visible');
+    send(category, what, action);
 }
+
+const shownOnce = (category: string, what: string) => sendOnce(category, what, 'visible');
 
 /** (Once a session each.) */
 function stepStart(index: number): void {
@@ -112,7 +149,7 @@ export const WallAnalytics = {
         if (once('run-01')) send('run', '01', 'start');
         this.wallStart(WallProgress.wall);
         nextStep();
-        early.splice(0).forEach((event) => send(...event));
+        early.splice(0).forEach((event) => PlatformHandler.instance.measure(...event));
     },
 
     step(step: Step): void {
@@ -152,13 +189,13 @@ export const WallAnalytics = {
 
     /** `given`: it was free. */
     punch(level: number, given = false): void {
-        send('punch', `lv-${two(level)}`, given ? 'gift' : 'bought');
+        if (once(`punch-${level}`)) send('punch', `lv-${two(level)}`, given ? 'gift' : 'bought');
         this.step('punch-harder');
         if (!given) this.step('bought-punch');
     },
 
     tool(level: number, id: string): void {
-        send('tool', `${two(level)}-${id}`, 'unlocked');
+        if (once(`tool-${id}`)) send('tool', `${two(level)}-${id}`, 'unlocked');
     },
 
     holdTool(level: number, id: string): void {
@@ -189,13 +226,49 @@ export const WallAnalytics = {
         send('offer', `${kind}-${slot}-${id}`, action);
     },
 
+    floater(kind: string, action: 'visible' | 'interact' | 'no-video'): void {
+        // (For a video: each one. The others: whether they saw one this session, and took one.)
+        if (kind === 'chest' || kind === 'double') send('floating', kind, action);
+        else sendOnce('floating', kind, action);
+    },
+
+    powerShown(id: string): void {
+        shownOnce('power', id);
+    },
+    power(id: string, how: 'used' | 'video' | 'no-video'): void {
+        if (how !== 'no-video') this.step('first-power');
+        send('power', id, how);
+    },
+
+    nudge(what: string, action: 'visible' | 'bought'): void {
+        // (Once a session each: seen, bought.)
+        sendOnce('nudge', what, action);
+    },
+
+    /** The first screen's up, after so many seconds. */
+    loaded(after: number): void {
+        const group = after < 3 ? 'under-3' : after < 5 ? '3-5' : after < 8 ? '5-8' : after < 15 ? '8-15' : 'over-15';
+        send('load', `${group}-${touch()}`, 'reached');
+    },
+
+    /** How it runs (once a session), and the 3D's resolution if it was lowered. */
+    performance(fps: number, resolution: number): void {
+        deviceSpeed = `${fps < 30 ? 'under-30' : fps < 45 ? '30-45' : fps < 55 ? '45-55' : '55-plus'}-${touch()}`;
+        send('fps', deviceSpeed, 'complete');
+        if (resolution < 1) send('resolution', `${Math.round(resolution * 100)}-${touch()}`, 'complete');
+    },
+
+    away(): void {
+        send('away', 'earned', 'gift');
+    },
+
     /** A button's there. */
     buttonShown(what: 'wardrobe' | 'rewind'): void {
         shownOnce('button', what);
     },
 
     buttonTapped(what: 'wardrobe' | 'rewind'): void {
-        send('button', what, 'interact');
+        sendOnce('button', what, 'interact');
     },
 
     panel(what: string): void {
@@ -216,6 +289,8 @@ export const WallAnalytics = {
         const before = Math.floor(seconds / 60);
         seconds += delta;
         const minutes = Math.floor(seconds / 60);
-        if (minutes > before) send('playtime', `min-${two(minutes)}`, 'reached');
+        if (minutes <= before) return;
+        send('playtime', `min-${two(minutes)}`, 'reached');
+        if (deviceSpeed) send('fps-min', `${two(minutes)}-${deviceSpeed}`, 'reached');
     },
 };

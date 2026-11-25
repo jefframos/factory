@@ -18,7 +18,7 @@ import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import type World from '../ecs/World';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
-import { BendService } from '../services/BendService';
+import { BendService, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 import { PolyWallBuilder } from '../builders/PolyWallBuilder';
 import { CheckerFloorBuilder } from '../builders/CheckerFloorBuilder';
 import type { StoreWallPlacement, WallSetupConfig, WallStyleConfig, FloorCheckerConfig } from './RoomTypes';
@@ -399,9 +399,8 @@ export class HubRoom {
             });
             this.building = null;
         }
-        // The pads' stands and the totem: solid.
+        // The pads' stands: solid.
         for (const box of UpgradePads.boxes()) this.collider(box.x, box.z, box.halfX, 0.6, box.halfZ, null);
-        if (HUB.totem) this.collider(HUB.totem.x, HUB.totem.z, 0.7, 1, 0.7, null);
         // Earned decorations' colliders now, before their models load.
         this.refreshRewards(false);
         DigProgress.onChange.add(this.onProgress);
@@ -754,6 +753,11 @@ export class HubRoom {
         for (const [mesh, material] of parts.solid) mesh.material = material;
     }
 
+    /** Something else solid (the portal, once it's there). */
+    public addSolid(box: Box): void {
+        this.collider(box.x, box.z, box.halfX, 1, box.halfZ, null);
+    }
+
     /** Adds to the scene, or to `area`'s group (hidden until revealed). */
     private add<T extends THREE.Object3D>(object: T, area: AreaState | null = this.building): T {
         (area ? area.group : this.threeScene).add(object);
@@ -889,6 +893,8 @@ export class HubRoom {
             object.updateMatrixWorld(true);
             const bounds = new THREE.Box3().setFromObject(object);
             object.position.set(x, elevation - bounds.min.y, z);
+            // (See-through while the miner's behind it.)
+            if (essential) BendService.applyOcclusionFadeToObject(object, STRUCTURE_OCCLUSION_FADE);
             return this.add(object, area);
         } catch (error) {
             console.warn(`[HubRoom] could not load prop ${model}`, error);

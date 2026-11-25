@@ -3,8 +3,8 @@
 // The tractors (every tool after the pickaxe; ui/dig.json `tractor`): outside the hub the miner rides theirs — a smoke puff,
 // it appears under them, they're sat in its seat at once (no animation while riding, no tool) and drive, the wheels and the
 // blades turning and the exhaust puffing while it moves; back inside the hub another puff and it's gone, the miner on foot.
-// One model (a lawn tractor) for all of them: each in its colour and a little bigger (rideScale), dressed in what the player
-// picked for it (a paint, a part: DigProgress.tractorLook, TractorDress), with its blades (their level) across its front,
+// One model (the mine's tractor, its bucket off) for all of them, each a little bigger (rideScale), dressed in what the player
+// picked for it (a colour, a paint, a part; yellow and dark grey to begin with: DigProgress.tractorLook, TractorDress), with its blades (their level) across its front,
 // as wide as what it digs. All of it digs (digs(): MiningController), so no rock ever holds it.
 //
 // The tractor follows the miner's body (its position and facing); the seat offset moves the body up / back into it after
@@ -15,7 +15,7 @@
 import * as THREE from 'three';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { BendService } from '../services/BendService';
-import { DIG, ToolDef, toolPaint } from '../data/DigConfig';
+import { DIG, ToolDef } from '../data/DigConfig';
 import { isBodyMaterial } from '../utils/Paint';
 import { DigProgress } from '../data/DigProgress';
 import { hubRects } from '../data/HubData';
@@ -25,15 +25,13 @@ import { DigAudio } from '../audio/DigAudio';
 import { EngineSound } from '../audio/EngineSound';
 import { PowerSurge } from '../mining/PowerSurge';
 import { MowerBlades } from './MowerBlades';
-import { buildPart, fitTractor, freePart, paintTile, wrapBody } from './TractorDress';
+import { buildPart, fitTractor, freePart, isWheel, paintTile, regionColor, wrapBody } from './TractorDress';
 import { tractorPaint, tractorPart } from '../data/TractorSkins';
 
 const MODEL_BASE = './dig/models/';
 /** The star glow: how strongly the paint glows, and how fast it goes round the rainbow (turns a second). */
 const STAR_GLOW = 0.55;
 const STAR_SPIN = 0.7;
-/** Built wheels this much bigger than the tyres they stand in for. */
-const WHEEL_GROW = 1.08;
 /** The body digs this much past its own edges (world units), and the blades' past theirs. */
 const REACH = 0.22;
 /** A tractor's size eases to a new one's (a surge's): per second. */
@@ -49,11 +47,11 @@ export interface DigArea {
 export class TractorRide {
     private readonly holder = new THREE.Group();
     private model?: THREE.Object3D;
-    private readonly wheels: THREE.Object3D[] = [];
-    private wheelRadius = 0.25;
+    /** The wheels, and each one's radius (at the base height). */
+    private readonly wheels: { wheel: THREE.Object3D; radius: number }[] = [];
     private readonly materials: THREE.MeshStandardMaterial[] = [];
-    /** The body's materials and their own colours (updateLook() repaints them). */
-    private readonly bodyColors = new Map<THREE.MeshStandardMaterial, THREE.Color>();
+    /** The body's and the frame's materials (updateLook() paints them). */
+    private readonly bodywork: THREE.MeshStandardMaterial[] = [];
     private readonly blades = new MowerBlades((material) => BendService.applyBend(material));
     private riding = false;
     private loadStarted = false;
@@ -106,21 +104,28 @@ export class TractorRide {
 
     /** The circles the rock stops (off its middle, in the world): always inside what it digs. */
     public circles(): [number, number, number][] {
-        const { radius, nose, noseRadius } = DIG.tractor.collide;
+        const { radius, noseRadius } = DIG.tractor.collide;
         const scale = this.scale;
+        const nose = this.bladesEdge(0.5) - noseRadius * scale;
         this.forward(this.ahead);
-        return [[0, 0, radius * scale], [this.ahead.x * nose * scale, this.ahead.z * nose * scale, noseRadius * scale]];
+        return [[0, 0, radius * scale], [this.ahead.x * nose, this.ahead.z * nose, noseRadius * scale]];
     }
 
     /** What it digs: all of its body, and its blades across its front. */
     public get digs(): DigArea {
         const { body, collide } = DIG.tractor;
-        const scale = this.scale;
+        const { scale } = this;
         return {
             side: Math.max(PowerSurge.width / 2, Math.max(body.side, collide.radius) * scale + REACH),
             back: body.back * scale,
-            front: Math.max(body.front * scale + this.blades.radius * scale, (collide.nose + collide.noseRadius) * scale) + REACH,
+            front: this.bladesEdge(1) + REACH,
         };
+    }
+
+    /** How far ahead its blades are, `share` of the way from their middles to their edge (world units). */
+    private bladesEdge(share: number): number {
+        const { body, blades } = DIG.tractor;
+        return (body.front + this.blades.radius * (blades.ahead + share)) * this.scale;
     }
 
     /** Starts the model's download, once. */
@@ -134,21 +139,24 @@ export class TractorRide {
         const config = DIG.tractor;
         try {
             const model = await ModelLoaderManager.instance.loadModel(`${MODEL_BASE}${config.model}`);
+            fitTractor(model);
+            wrapBody(model);
             model.traverse((child) => {
+                if (isWheel(child) && child instanceof THREE.Mesh) {
+                    const size = new THREE.Box3().setFromObject(child).getSize(new THREE.Vector3());
+                    this.wheels.push({ wheel: child, radius: Math.max(0.05, size.y / 2) });
+                }
                 if (!(child instanceof THREE.Mesh)) return;
                 child.material = Array.isArray(child.material) ? child.material.map((m) => m.clone()) : child.material.clone();
                 (Array.isArray(child.material) ? child.material : [child.material]).forEach((m) => {
                     BendService.applyBend(m);
                     if (!(m instanceof THREE.MeshStandardMaterial)) return;
                     this.materials.push(m);
-                    if (isBodyMaterial(m)) this.bodyColors.set(m, m.color.clone());
+                    if (isBodyMaterial(m)) this.bodywork.push(m);
                 });
                 // (The game's flat under it: lifted with the ground, its own bounds aren't where it's drawn.)
                 child.frustumCulled = false;
             });
-            fitTractor(model);
-            wrapBody(model);
-            this.buildWheels(model);
             this.model = model;
             this.lookFor = '';
             this.holder.add(model, this.blades.group);
@@ -157,72 +165,21 @@ export class TractorRide {
         }
     }
 
-    /**
-     * Four spinning wheels in place of the model's tyres (one mesh, all four): its vertices split by corner, each corner's
-     * box a wheel — a faceted tyre, a light hub and a bolt bar on it, so the turn shows.
-     */
-    private buildWheels(model: THREE.Object3D): void {
-        let tyres: THREE.Mesh | undefined;
-        let most = 0;
-        model.traverse((child) => {
-            if (!(child instanceof THREE.Mesh)) return;
-            const material = Array.isArray(child.material) ? child.material[0] : child.material;
-            const count = child.geometry.getAttribute('position')?.count ?? 0;
-            if (/tire|tyre|wheel/i.test(material?.name ?? '') && count > most) {
-                most = count;
-                tyres = child;
-            }
-        });
-        if (!tyres) return;
-        const toModel = new THREE.Matrix4().copy(model.matrixWorld).invert().multiply(tyres.matrixWorld);
-        const position = tyres.geometry.getAttribute('position');
-        const points = Array.from({ length: position.count }, (_, i) => new THREE.Vector3().fromBufferAttribute(position, i).applyMatrix4(toModel));
-        const centre = new THREE.Box3().setFromPoints(points).getCenter(new THREE.Vector3());
-        const corners = [0, 1, 2, 3].map(() => new THREE.Box3());
-        for (const point of points) corners[(point.x > centre.x ? 1 : 0) + (point.z > centre.z ? 2 : 0)].expandByPoint(point);
-        tyres.visible = false;
-        const tyreMaterial = new THREE.MeshStandardMaterial({ color: 0x2a2624, roughness: 0.9, flatShading: true });
-        const hubMaterial = new THREE.MeshStandardMaterial({ color: 0xd8d4cc, roughness: 0.6, flatShading: true });
-        [tyreMaterial, hubMaterial].forEach((material) => BendService.applyBend(material));
-        let radii = 0;
-        for (const box of corners) {
-            if (box.isEmpty()) continue;
-            const size = box.getSize(new THREE.Vector3());
-            const radius = (Math.max(size.y, size.z) / 2) * WHEEL_GROW;
-            const width = size.x * WHEEL_GROW;
-            const wheel = new THREE.Group();
-            box.getCenter(wheel.position);
-            const tyre = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, width, 14), tyreMaterial);
-            tyre.rotation.z = Math.PI / 2;
-            const hub = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.5, radius * 0.5, width * 1.06, 10), hubMaterial);
-            hub.rotation.z = Math.PI / 2;
-            const bar = new THREE.Mesh(new THREE.BoxGeometry(width * 1.1, radius * 0.16, radius * 0.8), tyreMaterial);
-            wheel.add(tyre, hub, bar);
-            model.add(wheel);
-            this.wheels.push(wheel);
-            radii += radius;
-        }
-        if (this.wheels.length) this.wheelRadius = (radii / this.wheels.length) * model.scale.x;
-    }
-
     /** The tractor's colour, or the paint the player put on it, and the part. */
     private updateLook(): void {
-        const { tool } = this;
         const look = DigProgress.tractorLook;
-        const lookFor = `${tool.id}|${look.paints}|${look.parts}`;
+        const lookFor = `${look.colors}|${look.paints}|${look.parts}`;
         if (lookFor === this.lookFor || !this.model) return;
         this.lookFor = lookFor;
-        const tint = toolPaint(tool);
-        for (const [material, original] of this.bodyColors) {
-            if (tint) material.color.set(tint);
-            else material.color.copy(original);
+        for (const material of this.bodywork) {
+            material.color.set(regionColor(material, look));
             this.setTile(material, null);
         }
         const worn = tractorPaint(look.paints);
         if (worn) {
             void paintTile(worn).then((tile) => {
                 if (!tile || this.lookFor !== lookFor) return;
-                for (const material of this.bodyColors.keys()) {
+                for (const material of this.bodywork) {
                     material.color.set(0xffffff);
                     this.setTile(material, tile);
                 }
@@ -330,19 +287,18 @@ export class TractorRide {
         this.holder.position.set(feet.x, 0, feet.z);
         this.holder.quaternion.copy(container.quaternion);
         this.holder.scale.setScalar(size);
-        this.seat.set(config.seat.x * size, config.seat.y * size + config.seat.lift, config.seat.z * size).applyQuaternion(container.quaternion);
+        this.seat.set(config.seat.x * size, (config.seat.y + config.seat.lift) * size - config.seat.lift, config.seat.z * size).applyQuaternion(container.quaternion);
         container.position.add(this.seat);
         const moved = Math.hypot(feet.x - this.lastPosition.x, feet.z - this.lastPosition.z);
 
         // The blades: their level, across what it digs, low against its front.
-        this.blades.set(DigProgress.bladesLevel, PowerSurge.width / size);
+        this.blades.set(DigProgress.bladesLevel, PowerSurge.width / this.scale);
         this.blades.group.position.set(0, config.blades.lift / size, config.body.front + this.blades.radius * config.blades.ahead);
         this.blades.spin(delta, moved > 1e-3);
 
         // Revs with the speed.
         this.engine.update(delta > 0 ? moved / delta / (5 * Math.max(0.5, this.player.speedMultiplier)) : 0);
-        const spin = moved / (this.wheelRadius * size);
-        for (const wheel of this.wheels) wheel.rotation.x += spin;
+        for (const { wheel, radius } of this.wheels) wheel.rotation.x += moved / (radius * size);
         if (moved <= 1e-3) return;
         this.exhaustTimer -= delta;
         if (this.exhaustTimer > 0) return;

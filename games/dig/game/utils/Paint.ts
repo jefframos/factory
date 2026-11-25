@@ -1,6 +1,6 @@
 // Paint.ts
 //
-// Repaints RGBA pixels for a ridden mower's tractor (ToolDef greyscale / tint, see toolPaint; after dig's Paint.ts):
+// The tractor's paint: which of it is bodywork (isBodyMaterial, regionOf), and repainting RGBA pixels:
 // 'grey' desaturates (the Digger); a colour keeps each pixel's brightness and gives it that colour, so the shading
 // stays. Only the bodywork is painted: the palette's mid-tone, unsaturated swatches (the tractor's blue-grey). The tyres
 // and dark parts, near-white highlights and the coloured trim (gold) keep their own colours.
@@ -20,15 +20,22 @@ const smooth = (edge0: number, edge1: number, x: number) => {
     return t * t * (3 - 2 * t);
 };
 
-/**
- * A model in plain colours (no textures to repaint): its body — the colourful materials, not tyres, seat or trim —
- * painted `paint` (a colour, or 'grey'); `original` gives a material's own colour back when `paint` is undefined.
- * Returns whether it had any such part (the ridden mower's tractor, in game: TractorRide, and its shop icon).
- */
+/** The tractor's two painted regions: its body (hood and roof) and its frame (cab and fenders). */
+export type BodyRegion = 'body' | 'frame';
+
+/** The tractor's bodywork (TractorDress.wrapBody() marks it, `userData.region`): what takes a colour or a pattern. */
 export function isBodyMaterial(material: THREE.Material): material is THREE.MeshStandardMaterial {
-    if (!(material instanceof THREE.MeshStandardMaterial) || material.map) return false;
-    const hsl = material.color.getHSL({ h: 0, s: 0, l: 0 });
-    return hsl.s > 0.4 && hsl.l > 0.15;
+    return material instanceof THREE.MeshStandardMaterial && !!material.userData.region;
+}
+
+/** The region a palette colour (0..255) of the tractor's is: the gold swatches its body, the mid blue-grey ones its frame. */
+export function regionOf(r: number, g: number, b: number): BodyRegion | undefined {
+    const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+    const max = Math.max(r, g, b);
+    const saturation = max ? (max - Math.min(r, g, b)) / max : 0;
+    if (luma > 88 && luma < 215 && saturation < 0.35) return 'frame';
+    // (Gold: red over green over blue, vivid.)
+    return saturation > 0.6 && r > g && g > b * 1.6 && g > r * 0.6 && luma > 90 ? 'body' : undefined;
 }
 
 /** Paints the body materials of `object` (isBodyMaterial()) `paint`: a colour, or 'grey'. Returns whether any were. */

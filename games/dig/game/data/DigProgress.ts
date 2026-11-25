@@ -2,13 +2,15 @@
 //
 // The player's saved state (GDD §15 persistence): money, tool and backpack levels, what's in the
 // backpack, finds collected (and which the player has looked at in the collection), the deepest zone
-// reached, the wardrobe (owned and worn looks), and which terrain cells have been dug. One localStorage entry, saved shortly after any
+// reached, the wardrobe (owned and worn looks), and which terrain cells have been dug. One entry in the platform's storage
+// (SaveStorage: YouTube throws localStorage away), saved shortly after any
 // change so a burst of digging writes once. Versioned (SAVE_VERSION): a save from another version starts a new game.
 
 import { Signal } from 'signals';
+import { SaveStorage } from 'core/platforms/SaveStorage';
 import { HUB, hubBonus, type HubStat } from './HubData';
-import { AchievementDef, AchievementStat, BoostDef, BoostId, DIG, MaterialDef, PadKind, PRESTIGE_TOOL_LEVEL, FindDef, MineTheme, ToolDef, WardrobeItem } from './DigConfig';
-import { TRACTOR_ITEMS, TRACTOR_KINDS, TractorItem, TractorKind, TractorLook } from './TractorSkins';
+import { AchievementDef, AchievementStat, BoostDef, BoostId, DIG, MaterialDef, PadKind, PerkDef, PerkId, FindDef, MineTheme, ToolDef, WardrobeItem, animalKind, toolAt } from './DigConfig';
+import { NO_TRACTOR_LOOK, TRACTOR_ITEMS, TRACTOR_KINDS, TractorItem, TractorKind, TractorLook } from './TractorSkins';
 
 export type LookKind = 'colors' | 'faces' | 'hats';
 
@@ -19,7 +21,10 @@ export interface Look {
     hat: string;
 }
 
-/** What addFind() reports, for the find banner. */
+/** Something to wear, out of a chest: the miner's or their tractor's. */
+export type Cosmetic = { who: 'miner'; kind: LookKind; item: WardrobeItem } | { who: 'tractor'; kind: TractorKind; item: TractorItem };
+
+/** What addFind() reports. */
 export interface FindResult {
     /** Never found one of these before. */
     first: boolean;
@@ -28,19 +33,11 @@ export interface FindResult {
 }
 
 /**
- * One mine's own run: its cash, tools, backpacks (and what's in them), boosts, tunnels and its collection (every mine
- * has the same finds to dig up again). The mine being played keeps these in the top-level save fields; the others
- * wait here until the player travels back (travelTo()).
+ * What's a dungeon's own: its tunnels and its collection (every one has the same finds to dig up again). The one being
+ * played keeps these in the top-level save fields; the others wait here until the player travels back (travelTo()). The gear
+ * and the money go along with the player.
  */
 export interface MineSnapshot {
-    money: number;
-    toolLevel: number;
-    backpackLevel: number;
-    /** The blades' level, and what's been paid into each pad toward its next upgrade. */
-    bladesLevel?: number;
-    padPaid?: Partial<Record<PadKind, number>>;
-    backpack: Record<string, number>;
-    boosts: Partial<Record<BoostId, number>>;
     dug: string;
     /** Finds collected in this mine, by id (missing in saves from before collections were per mine). */
     found?: Record<string, number>;
@@ -58,11 +55,12 @@ const SAVE_KEY = 'dig.save';
  * The save format's version: a save written by any other version (or none — every save before versioning) is
  * dropped and the player starts a new game (load()). Bump it when a change can't carry old saves over.
  */
-const SAVE_VERSION = 4;
+const SAVE_VERSION = 5;
 const SAVE_DELAY_MS = 800;
 /** Saved at least this often while things keep changing (a tractor never stops digging). */
 const SAVE_AT_MOST_MS = 5000;
-const NO_TRACTOR_LOOK: TractorLook = { paints: '', parts: '' };
+/** A chest's cosmetic is one of this many cheapest not owned yet. */
+const GIFT_FROM = 8;
 /** The phone's first sales are free (the first with the hand on it); after these it asks for a rewarded video. */
 const PHONE_FREE_SELLS = 2;
 
@@ -74,6 +72,13 @@ interface SaveData {
     backpackLevel: number;
     bladesLevel: number;
     padPaid: Partial<Record<PadKind, number>>;
+    /** Animals called so far this run. */
+    animals: number;
+    /** Rebirths; medals to spend and ever; the perks' levels. */
+    rebirths: number;
+    medals: number;
+    medalsEver: number;
+    perks: Partial<Record<PerkId, number>>;
     /** The player's experience (their level follows: levelFor), shared by every mine. */
     xp: number;
     /** The tractor's skins: owned (`paints:bee`), worn, and the money when its panel was last opened. */
@@ -86,6 +91,7 @@ interface SaveData {
     /** Finds the player has looked at in the collection (the totem shows "!" for the rest). */
     seen: string[];
     collectionDone: boolean;
+    /** The deepest zone reached this run, counting every dungeon's (rebirth.zones each). */
     deepestZone: number;
     /** Bought wardrobe items, by kind. */
     owned: Record<LookKind, string[]>;
@@ -102,7 +108,7 @@ interface SaveData {
     /** Hub buildables bought so far (levels/hub.json `buildables`), by id. */
     built: string[];
     /** Counters the achievements read (finds come from `found`). */
-    stats: { blocks: number; ores: number; earned: number; sells: number };
+    stats: { blocks: number; ores: number; earned: number; sells: number; finds: number };
     /** Total upgrades (tools + backpacks + blades) bought when each hub area appeared — for 'upgradeAfter:<area>' reveals. */
     revealedAt: Record<string, number>;
     /** Achievement tiers claimed, by achievement id. */
@@ -126,20 +132,21 @@ interface SaveData {
     mines: MineSnapshot[];
     /** Seconds of active play, all sessions together (the analytics' time stamps: GameAnalytics). */
     playSeconds: number;
-    /** The hub's income piled up at the ATM, not collected yet (shared by every mine, like the hub). */
-    hubCash: number;
 }
 
-/** A price rounded to look like one: to $1 under $100, $5 under $1,000, $50 under $10,000, $500 above. */
+/** A price rounded to look like one: to $1 under $100, then to two figures or so. */
 function tidyPrice(price: number): number {
-    const step = price < 100 ? 1 : price < 1000 ? 5 : price < 10000 ? 50 : 500;
+    const step = price < 100 ? 1 : 5 * Math.pow(10, Math.floor(Math.log10(price)) - 2);
     return Math.round(price / step) * step;
 }
 
 /** The tier (1-based) that unlocks an achievement's hub decoration. */
 const decorTier = (achievement: AchievementDef): number => achievement.decorAt ?? achievement.tiers.length;
 
-export const PAD_KINDS: PadKind[] = ['tool', 'capacity', 'blades'];
+export const PAD_KINDS: PadKind[] = ['tool', 'capacity', 'blades', 'animals', 'portal'];
+/** The pads the early find's pay covers one of. */
+const GEAR_PADS: PadKind[] = ['tool', 'capacity', 'blades'];
+const perkDef = (id: PerkId): PerkDef => DIG.rebirth.perks.find((perk) => perk.id === id)!;
 const materials = new Map<string, MaterialDef>(DIG.materials.map((material) => [material.id, material]));
 
 /** A boost's definition (ui/dig.json boosts). */
@@ -150,14 +157,14 @@ const starterLook = (): Look => ({ color: DIG.wardrobe.colors[0].id, face: DIG.w
 
 const fresh = (): SaveData => ({
     version: SAVE_VERSION,
-    money: 0, toolLevel: 0, backpackLevel: 0, bladesLevel: 0, padPaid: {}, xp: 0, tractorOwned: [], tractorLook: { ...NO_TRACTOR_LOOK },
+    money: 0, toolLevel: 0, backpackLevel: 0, bladesLevel: 0, padPaid: {}, animals: 0, rebirths: 0, medals: 0, medalsEver: 0, perks: {}, xp: 0, tractorOwned: [], tractorLook: { ...NO_TRACTOR_LOOK },
     backpack: {}, found: {}, seen: [], collectionDone: false, deepestZone: 0,
     owned: { colors: [], faces: [], hats: [] }, look: starterLook(), wardrobeBudget: 0, wardrobeVisited: false, freeLooksOffered: false, freeSells: 0, dug: '', built: [],
-    stats: { blocks: 0, ores: 0, earned: 0, sells: 0 }, achievements: {}, revealedAt: {}, sent: [],
-    boosts: {}, prestige: 0, currentMine: 0, mines: [], crownEarned: false, unclaimed: {}, playSeconds: 0, hubCash: 0,
+    stats: { blocks: 0, ores: 0, earned: 0, sells: 0, finds: 0 }, achievements: {}, revealedAt: {}, sent: [],
+    boosts: {}, prestige: 0, currentMine: 0, mines: [], crownEarned: false, unclaimed: {}, playSeconds: 0,
 });
 
-const freshMine = (): MineSnapshot => ({ money: 0, toolLevel: 0, backpackLevel: 0, bladesLevel: 0, padPaid: {}, backpack: {}, boosts: {}, dug: '', found: {}, seen: [], collectionDone: false, unclaimed: {} });
+const freshMine = (): MineSnapshot => ({ dug: '', found: {}, seen: [], collectionDone: false, unclaimed: {} });
 
 /**
  * The saved game, or a new one when there's none, it's broken, or it was written by another SAVE_VERSION (the
@@ -165,7 +172,7 @@ const freshMine = (): MineSnapshot => ({ money: 0, toolLevel: 0, backpackLevel: 
  */
 function load(): SaveData {
     try {
-        const raw = window.localStorage.getItem(SAVE_KEY);
+        const raw = SaveStorage.getItem(SAVE_KEY);
         if (raw) {
             const saved = JSON.parse(raw) as Partial<SaveData>;
             if (saved.version !== SAVE_VERSION) {
@@ -173,7 +180,7 @@ function load(): SaveData {
                 return fresh();
             }
             // Fields added within this version fill in from fresh().
-            return { ...fresh(), ...saved, boosts: { ...saved.boosts }, unclaimed: { ...saved.unclaimed }, stats: { ...fresh().stats, ...saved.stats }, revealedAt: { ...saved.revealedAt }, look: { ...starterLook(), ...saved.look }, owned: { ...fresh().owned, ...saved.owned } };
+            return { ...fresh(), ...saved, boosts: { ...saved.boosts }, unclaimed: { ...saved.unclaimed }, stats: { ...fresh().stats, ...saved.stats }, tractorLook: { ...NO_TRACTOR_LOOK, ...saved.tractorLook }, revealedAt: { ...saved.revealedAt }, look: { ...starterLook(), ...saved.look }, owned: { ...fresh().owned, ...saved.owned } };
         }
     } catch {
         // A broken save starts fresh.
@@ -186,9 +193,26 @@ let saveTimer: number | undefined;
 let lastSave = 0;
 /** Set once the data is wiped: nothing may be saved again before the page reloads. */
 let wiped = false;
+/** The save's been read from the platform (begin()): till then nothing's written, or a new game would go over it. */
+let ready = false;
 let dugProvider: (() => string) | undefined;
 
 export const DigProgress = {
+    /** Every key the save's in (SaveStorage.load() at boot). */
+    saveKeys: [SAVE_KEY],
+
+    /** Reads the save again, now that the platform's storage is in (boot, before anything's built); saved as the game's left. */
+    begin(): void {
+        Object.assign(state, load());
+        ready = true;
+        // (Rewards that waited to be claimed, in an older save: paid.)
+        for (const mine of [state, ...state.mines.filter((one) => one)]) {
+            state.money += Object.values(mine.unclaimed ?? {}).reduce((sum, amount) => sum + amount, 0);
+            mine.unclaimed = {};
+        }
+        SaveStorage.saveOnLeave(() => this.saveNow());
+    },
+
     /** Fires after any change to money, tools, backpack levels or contents. */
     onChange: new Signal(),
 
@@ -196,13 +220,13 @@ export const DigProgress = {
         return state.money;
     },
     get tool(): ToolDef {
-        return DIG.tools[Math.min(state.toolLevel, DIG.tools.length - 1)];
+        return toolAt(state.toolLevel);
     },
     get toolLevel(): number {
         return state.toolLevel;
     },
-    get nextTool(): ToolDef | undefined {
-        return DIG.tools[state.toolLevel + 1];
+    get nextTool(): ToolDef {
+        return toolAt(state.toolLevel + 1);
     },
     get backpackLevel(): number {
         return state.backpackLevel;
@@ -212,8 +236,7 @@ export const DigProgress = {
     },
     /** The bag with a tool and a Bigger Bag level (the Bag Size boost counted). */
     capacityAt(toolLevel: number, bagLevel: number): number {
-        const tool = DIG.tools[Math.min(toolLevel, DIG.tools.length - 1)];
-        return Math.round(tool.capacity * (1 + DIG.upgrades.capacity.perLevel * bagLevel) * (1 + this.boostEffect(boostDef('bagSize'))));
+        return Math.round(toolAt(toolLevel).capacity * (1 + DIG.upgrades.capacity.perLevel * bagLevel) * (1 + this.boostEffect(boostDef('bagSize'))) * this.perkFactor('bag'));
     },
     /** What the next Bigger Bag level adds to the bag. */
     get capacityStep(): number {
@@ -230,9 +253,9 @@ export const DigProgress = {
     get width(): number {
         return this.tool.width * (1 + this.boostEffect(boostDef('width')));
     },
-    /** What a swing's speed is worth to the tractor's blades: the boost, the new mines and the hub. */
+    /** What a swing's speed is worth to the tractor's blades: the boost and the perk. */
     get digRate(): number {
-        return (this.tool.rate ?? 1) / (1 - this.boostEffect(boostDef('digSpeed'))) * (1 + DIG.prestige.digBonus * state.prestige) * (1 + this.hubBonus('dig'));
+        return (this.tool.rate ?? 1) / (1 - this.boostEffect(boostDef('digSpeed'))) * this.perkFactor('dig');
     },
     get backpackCount(): number {
         return Object.values(state.backpack).reduce((sum, count) => sum + count, 0);
@@ -272,21 +295,30 @@ export const DigProgress = {
 
     // ---------------------------------------------------------------- the pads
 
-    /** A pad is there: the tractors' always, the others from the first tractor on. */
+    /** A pad is there: from its tool level, or player level, on. */
     padThere(kind: PadKind): boolean {
-        return state.toolLevel >= (HUB.pads.find((pad) => pad.kind === kind)?.afterTool ?? 0);
+        const pad = HUB.pads.find((entry) => entry.kind === kind);
+        return !!pad && state.toolLevel >= (pad.afterTool ?? 0) && this.level >= (pad.level ?? 0);
     },
 
     /** What a pad's next upgrade costs (undefined at the top). */
     padCost(kind: PadKind): number | undefined {
-        if (kind === 'tool') return this.nextTool ? this.priceOf(this.nextTool) : undefined;
+        if (kind === 'tool') return this.nextTool.price;
         if (kind === 'blades') {
-            const price = DIG.upgrades.blades.prices[state.bladesLevel];
-            return price === undefined ? undefined : this.priceOf({ price });
+            const { prices, growth: more } = DIG.upgrades.blades;
+            const past = state.bladesLevel - (prices.length - 1);
+            return past <= 0 ? prices[state.bladesLevel] : tidyPrice(prices[prices.length - 1] * Math.pow(more, past));
+        }
+        if (kind === 'animals') return tidyPrice(DIG.animals.price * Math.pow(DIG.animals.growth, state.animals));
+        if (kind === 'portal') {
+            // (Open already, from a dungeon that isn't the last reached.)
+            if (state.currentMine < state.prestige) return undefined;
+            const { price, growth: more } = DIG.dungeons.portal;
+            return tidyPrice(price * Math.pow(more, state.prestige) * this.perkFactor('portal'));
         }
         const { maxLevel, basePrice, growth } = DIG.upgrades.capacity;
         if (state.backpackLevel >= maxLevel) return undefined;
-        return tidyPrice(basePrice * Math.pow(growth, state.backpackLevel) * this.priceFactor);
+        return tidyPrice(basePrice * Math.pow(growth, state.backpackLevel));
     },
 
     /** Money already in a pad toward its next upgrade; what's still needed (Infinity at the top). */
@@ -300,7 +332,7 @@ export const DigProgress = {
 
     /** The bag's worth as sold now; everything that can be poured into a pad: the bag and the money. */
     get bagValue(): number {
-        return Math.floor(Object.entries(state.backpack).reduce((sum, [id, count]) => sum + (materials.get(id)?.value ?? 0) * count, 0) * this.sellMultiplier);
+        return Math.floor(Object.entries(state.backpack).reduce((sum, [id, count]) => sum + this.itemValue(id) * count, 0) * this.sellMultiplier);
     },
     get pourable(): number {
         return this.bagValue + state.money;
@@ -327,10 +359,10 @@ export const DigProgress = {
     /** Items out of the bag worth `amount` at least (cheapest first), turned to money. */
     cashItems(amount: number): void {
         let worth = 0;
-        const held = Object.keys(state.backpack).filter((id) => state.backpack[id] > 0).sort((a, b) => (materials.get(a)?.value ?? 0) - (materials.get(b)?.value ?? 0));
+        const held = Object.keys(state.backpack).filter((id) => state.backpack[id] > 0).sort((a, b) => this.itemValue(a) - this.itemValue(b));
         for (const id of held) {
             if (worth >= amount) break;
-            const each = (materials.get(id)?.value ?? 0) * this.sellMultiplier;
+            const each = this.itemValue(id) * this.sellMultiplier;
             const count = Math.min(state.backpack[id], each > 0 ? Math.ceil((amount - worth) / each) : state.backpack[id]);
             worth += each * count;
             state.backpack[id] -= count;
@@ -345,6 +377,8 @@ export const DigProgress = {
         state.padPaid[kind] = 0;
         if (kind === 'tool') state.toolLevel++;
         else if (kind === 'blades') state.bladesLevel++;
+        else if (kind === 'animals') state.animals++;
+        else if (kind === 'portal') this.openDungeon();
         else state.backpackLevel++;
     },
 
@@ -388,22 +422,16 @@ export const DigProgress = {
     addXp(amount: number): void {
         if (amount <= 0) return;
         const before = this.level;
-        state.xp += amount;
+        state.xp += amount * (1 + this.boostEffect(boostDef('xpGain'))) * this.perkFactor('xp');
         const after = this.level;
         for (let level = before + 1; level <= after; level++) {
-            const cash = tidyPrice(DIG.levels.cash.base * Math.pow(level, DIG.levels.cash.power));
+            const cash = tidyPrice(DIG.levels.cash.base * Math.pow(level, DIG.levels.cash.power) * this.valueFactor);
             state.money += cash;
             state.stats.earned += cash;
             this.levelUpListeners.forEach((listener) => listener(level, cash));
         }
         if (after > before) this.changed();
         else this.scheduleSave();
-    },
-
-    /** The totem's pieces so far, and what they add to everything sold. */
-    get totemPieces(): number {
-        const { every, pieces } = DIG.levels.totem;
-        return Math.min(pieces, Math.floor(this.level / every));
     },
 
     // ---------------------------------------------------------------- the tractor's skins
@@ -424,7 +452,8 @@ export const DigProgress = {
             }
             this.ownTractor(kind, item);
         }
-        state.tractorLook = { ...state.tractorLook, [kind]: item.id };
+        // (A plain colour's seen: no pattern over it.)
+        state.tractorLook = { ...state.tractorLook, ...(kind === 'colors' ? { paints: '' } : {}), [kind]: item.id };
         this.changed();
         return true;
     },
@@ -436,18 +465,52 @@ export const DigProgress = {
         if (!this.ownsTractor(kind, item)) state.tractorOwned.push(`${kind}:${item.id}`);
     },
     /** A free skin not claimed yet. */
-    tractorGift(): { kind: TractorKind; item: TractorItem } | undefined {
+    tractorGift(): Cosmetic | undefined {
         for (const kind of TRACTOR_KINDS) {
             const item = TRACTOR_ITEMS[kind].find((entry) => entry.free && !this.ownsTractor(kind, entry));
-            if (item) return { kind, item };
+            if (item) return { who: 'tractor', kind, item };
         }
         return undefined;
     },
-    /** One of a kind not owned, for an offer. */
-    tractorToOffer(kind: TractorKind): TractorItem | undefined {
-        const locked = TRACTOR_ITEMS[kind].filter((item) => !item.free && !this.ownsTractor(kind, item));
-        return locked[Math.floor(Math.random() * locked.length)];
+    /** A cosmetic not owned, for a video: the tractor's or the miner's (the other's, if there's none left of those). */
+    cosmeticToOffer(who: Cosmetic['who']): Cosmetic | undefined {
+        const miner: Cosmetic[] = (Object.keys(DIG.wardrobe) as LookKind[]).flatMap((kind) => DIG.wardrobe[kind]
+            .filter((item) => !item.free && !item.unlock && !this.ownsLook(kind, item)).map((item) => ({ who: 'miner' as const, kind, item })));
+        const tractor: Cosmetic[] = this.hasTractor ? TRACTOR_KINDS.flatMap((kind) => TRACTOR_ITEMS[kind]
+            .filter((item) => !item.free && !this.ownsTractor(kind, item)).map((item) => ({ who: 'tractor' as const, kind, item }))) : [];
+        const list = who === 'tractor' ? (tractor.length ? tractor : miner) : miner.length ? miner : tractor;
+        return list[Math.floor(Math.random() * list.length)];
     },
+    /** It's theirs already. */
+    ownsCosmetic(gift: Cosmetic): boolean {
+        return gift.who === 'tractor' ? this.ownsTractor(gift.kind, gift.item) : this.ownsLook(gift.kind, gift.item);
+    },
+    /** A cosmetic for a chest to give, not owned yet: the miner's or (once there's one) the tractor's, one of the cheaper ones; none left: undefined. */
+    cosmeticToGive(): Cosmetic | undefined {
+        const pick = <T extends Cosmetic>(list: T[]): T | undefined => {
+            const cheapest = list.sort((a, b) => a.item.price - b.item.price).slice(0, GIFT_FROM);
+            return cheapest[Math.floor(Math.random() * cheapest.length)];
+        };
+        // (Not what's a gift already, earned, or a video's.)
+        const miner = pick((Object.keys(DIG.wardrobe) as LookKind[]).flatMap((kind) => DIG.wardrobe[kind]
+            .filter((item) => item.price > 0 && !item.free && !item.unlock && !this.ownsLook(kind, item)).map((item) => ({ who: 'miner' as const, kind, item }))));
+        const tractor = this.hasTractor ? pick(TRACTOR_KINDS.flatMap((kind) => TRACTOR_ITEMS[kind]
+            .filter((item) => !item.free && !item.video && !this.ownsTractor(kind, item)).map((item) => ({ who: 'tractor' as const, kind, item })))) : undefined;
+        return Math.random() < 0.5 ? tractor ?? miner : miner ?? tractor;
+    },
+
+    /** Gives a chest's cosmetic, and puts it on if `wear`. */
+    giveCosmetic(gift: Cosmetic, wear: boolean): void {
+        if (gift.who === 'tractor') {
+            this.ownTractor(gift.kind, gift.item);
+            if (wear) this.wearTractor(gift.kind, gift.item);
+        } else {
+            if (!this.ownsLook(gift.kind, gift.item)) state.owned[gift.kind].push(gift.item.id);
+            if (wear) this.wearLook(gift.kind, gift.item);
+        }
+        this.changed();
+    },
+
     /** Something for it became affordable since its panel was last opened (or it never was). */
     get tractorHasNews(): boolean {
         const budget = state.tractorBudget;
@@ -494,7 +557,7 @@ export const DigProgress = {
      */
     sellAll(multiplier = 1): number {
         let earned = 0;
-        for (const [id, count] of Object.entries(state.backpack)) earned += (materials.get(id)?.value ?? 0) * count;
+        for (const [id, count] of Object.entries(state.backpack)) earned += this.itemValue(id) * count;
         earned = Math.round(earned * multiplier * this.sellMultiplier);
         state.backpack = {};
         state.money += earned;
@@ -510,21 +573,22 @@ export const DigProgress = {
      */
     findPayout(find: FindDef, zone: number): number {
         const rules = DIG.findPayout;
-        const raw = rules.rarity[find.rarity] * (1 + rules.perZone * zone);
+        const raw = rules.rarity[find.rarity] * (1 + rules.perZone * zone) * this.valueFactor;
         let amount = Math.max(rules.roundTo, Math.round(raw / rules.roundTo) * rules.roundTo);
         if (this.collectedCount === 0) {
-            const next = Math.min(...PAD_KINDS.map((kind) => this.padCost(kind) ?? Infinity));
+            const next = Math.min(...GEAR_PADS.map((kind) => this.padCost(kind) ?? Infinity));
             if (Number.isFinite(next)) amount = Math.max(amount, next);
         }
         return amount;
     },
 
     /**
-     * A find was dug up: it joins the collection, and its `amount` (findPayout) waits in the Trophy Room to be claimed
-     * (claimReward) — as does the collection reward when it was the last one missing.
+     * A find was dug up: it joins the collection, and its `amount` (findPayout) is there to be paid (claimReward, at once: the
+     * HUD) — as is the collection reward when it was the last one missing.
      */
     addFind(find: FindDef, amount: number): FindResult {
         const first = !state.found[find.id];
+        state.stats.finds++;
         state.found[find.id] = (state.found[find.id] ?? 0) + 1;
         state.unclaimed[find.id] = (state.unclaimed[find.id] ?? 0) + amount;
         const completed = !state.collectionDone && this.collectedCount === DIG.finds.length;
@@ -541,10 +605,6 @@ export const DigProgress = {
         return state.unclaimed[id] ?? 0;
     },
 
-    /** Anything waiting to be claimed in this mine's Trophy Room (the totem's "!"). */
-    get hasUnclaimed(): boolean {
-        return Object.values(state.unclaimed).some((amount) => amount > 0);
-    },
 
     /** Pays a waiting reward (a find id or COLLECTION_REWARD); returns what it paid (0 if nothing was waiting). */
     claimReward(id: string): number {
@@ -656,14 +716,9 @@ export const DigProgress = {
         return true;
     },
 
-    /** Tool and backpack upgrades bought, together, in every mine (the hub's reveal areas count them). */
+    /** Upgrades bought on the pads this run, together. */
     get upgradesBought(): number {
-        let total = 0;
-        for (let i = 0; i <= state.prestige; i++) {
-            const mine = this.mine(i);
-            total += mine.toolLevel + mine.backpackLevel + (mine.bladesLevel ?? 0);
-        }
-        return total;
+        return state.toolLevel + state.backpackLevel + state.bladesLevel + state.animals;
     },
 
     // ---------------------------------------------------------------- boosts and new mines
@@ -686,7 +741,7 @@ export const DigProgress = {
     boostPrice(boost: BoostDef): number | undefined {
         const level = this.boostLevel(boost.id);
         if (level >= boost.maxLevel) return undefined;
-        return Math.round(boost.basePrice * Math.pow(boost.growth, level) * this.priceFactor / 5) * 5;
+        return tidyPrice(boost.basePrice * Math.pow(boost.growth, level));
     },
 
     buyBoost(boost: BoostDef): boolean {
@@ -701,7 +756,9 @@ export const DigProgress = {
     /** A boost's effect at `level` (default: its current one), as the fraction the HUD shows (0.18 = +18%). */
     boostEffect(boost: BoostDef, level?: number): number {
         const at = level ?? this.boostLevel(boost.id);
-        return boost.id === 'digSpeed' ? 1 - Math.pow(1 - boost.perLevel, at) : boost.perLevel * at;
+        if (boost.id === 'digSpeed') return 1 - Math.pow(1 - boost.perLevel, at);
+        const doubled = (boost.milestones ?? []).filter((milestone) => at >= milestone).length;
+        return (1 + boost.perLevel * at) * Math.pow(2, doubled) - 1;
     },
 
     /** The hub's bonus to a stat (HubData.hubBonus): its pieces' perks and finished sets, shared by every mine. */
@@ -709,24 +766,24 @@ export const DigProgress = {
         return hubBonus(stat, (id) => state.built.includes(id));
     },
 
-    /** Multiplier on everything sold: the Sell Price boost, every new mine opened and the hub. */
+    /** Multiplier on everything sold: the Sell Price boost and the perk. */
     get sellMultiplier(): number {
-        return (1 + this.boostEffect(boostDef('sellPrice'))) * (1 + DIG.prestige.sellBonus * state.prestige) * (1 + this.hubBonus('sell')) * (1 + DIG.levels.totem.sell * this.totemPieces);
+        return (1 + this.boostEffect(boostDef('sellPrice'))) * this.perkFactor('cash');
     },
 
-    /** Seconds between hits with the current tool: the Dig Speed boost, every new mine opened and the hub make it shorter. */
+    /** Seconds between hits with the current tool: the Dig Speed boost and the perk make it shorter. */
     get hitInterval(): number {
-        return this.tool.hitInterval * (1 - this.boostEffect(boostDef('digSpeed'))) / (1 + DIG.prestige.digBonus * state.prestige) / (1 + this.hubBonus('dig'));
+        return this.tool.hitInterval * (1 - this.boostEffect(boostDef('digSpeed'))) / this.perkFactor('dig');
     },
 
     /** Chance an ore block drops one more item (the Ore Luck boost). */
     get oreLuck(): number {
-        return this.boostEffect(boostDef('oreLuck'));
+        return this.boostEffect(boostDef('oreLuck')) + this.perkSum('luck');
     },
 
     /** Multiplier on walking (and riding) speed: the Move Speed boost and the hub. */
     get moveMultiplier(): number {
-        return (1 + this.boostEffect(boostDef('moveSpeed'))) * (1 + this.hubBonus('move'));
+        return (1 + this.boostEffect(boostDef('moveSpeed'))) * (1 + this.perkSum('speed'));
     },
 
     /** Blocks around the miner where buried treasure shows its beam: chests.beaconRange, plus the hub's. */
@@ -736,7 +793,7 @@ export const DigProgress = {
 
     /** The current mine's terrain seed: every mine has its own layout. */
     get mineSeed(): number {
-        return DIG.terrain.seed + DIG.prestige.seedStep * state.currentMine;
+        return DIG.terrain.seed + DIG.prestige.seedStep * (state.currentMine + state.rebirths * 101);
     },
 
     /** The current mine's colours: the first theme for the first mine, then the others in turn. */
@@ -767,11 +824,6 @@ export const DigProgress = {
         return state.mines[index] ?? freshMine();
     },
 
-    /** A new mine can be opened: the newest mine has its last tool (the Tractor). */
-    get canOpenNewMine(): boolean {
-        return this.mine(state.prestige).toolLevel >= PRESTIGE_TOOL_LEVEL;
-    },
-
     /** The current mine's run, as saved for later: its tunnels read from the terrain (not cheap: on leaving only). */
     snapshot(): MineSnapshot {
         return this.liveRun(dugProvider ? dugProvider() : state.dug);
@@ -779,26 +831,19 @@ export const DigProgress = {
 
     liveRun(dug: string): MineSnapshot {
         return {
-            money: state.money, toolLevel: state.toolLevel, backpackLevel: state.backpackLevel,
-            bladesLevel: state.bladesLevel, padPaid: { ...state.padPaid },
-            backpack: { ...state.backpack }, boosts: { ...state.boosts }, dug,
+            dug,
             found: { ...state.found }, seen: [...state.seen], collectionDone: state.collectionDone,
             unclaimed: { ...state.unclaimed },
         };
     },
 
-    /** Leaves the current mine for mine `index` (its run goes back into the live fields); the scene then rebuilds. */
+    /** Leaves the current mine for mine `index` (what's its own goes back into the live fields); the scene then rebuilds. */
     switchMine(index: number): void {
+        // (The bag's sold at what it's worth here.)
+        if (this.backpackCount > 0) this.sellAll();
         state.mines[state.currentMine] = this.snapshot();
         state.currentMine = index;
         const mine = state.mines[index] ?? freshMine();
-        state.money = mine.money;
-        state.toolLevel = mine.toolLevel;
-        state.backpackLevel = mine.backpackLevel;
-        state.bladesLevel = mine.bladesLevel ?? 0;
-        state.padPaid = { ...mine.padPaid };
-        state.backpack = { ...mine.backpack };
-        state.boosts = { ...mine.boosts };
         state.dug = mine.dug;
         state.found = { ...mine.found };
         state.seen = [...(mine.seen ?? [])];
@@ -817,18 +862,125 @@ export const DigProgress = {
         return true;
     },
 
-    /**
-     * Opens a new mine (prestige) and goes there: a fresh run (no cash, the shovel, the smallest backpack, no boosts,
-     * no tunnels) in a new layout, and every mine's bonus goes up. The mines left behind stay as they are (travelTo());
-     * the looks, hub pieces, collection, achievements and stats are shared by all.
-     */
-    openNewMine(): boolean {
-        if (!this.canOpenNewMine) return false;
+    /** The portal's paid: the next dungeon's open (the way there, through it: travelTo). */
+    openDungeon(): void {
         state.prestige++;
         state.mines[state.prestige] = freshMine();
-        this.switchMine(state.prestige);
+    },
+
+    // ---------------------------------------------------------------- dungeons, animals, rebirth
+
+    /** How many times the first dungeon's everything's worth here. */
+    get valueFactor(): number {
+        return Math.pow(DIG.dungeons.value, state.currentMine);
+    },
+    /** What an item sells for here (before the bonuses). */
+    itemValue(id: string): number {
+        return (materials.get(id)?.value ?? 0) * this.valueFactor;
+    },
+    /** The digging power a rock takes here. */
+    rockPower(material: MaterialDef): number {
+        return material.minPower + DIG.dungeons.power * state.currentMine;
+    },
+    /** How much more XP blocks give here. */
+    get xpFactor(): number {
+        return Math.pow(DIG.dungeons.xp, state.currentMine);
+    },
+
+    /** Animals called so far. */
+    get animals(): number {
+        return state.animals;
+    },
+    /** Seconds of a tractor's chewing all of them do in one hit each, shared among those shown. */
+    get animalBite(): number {
+        const { bite, biteGrowth, kinds, shown } = DIG.animals;
+        let total = 0;
+        for (let n = 0; n < state.animals; n++) total += bite * Math.pow(biteGrowth, kinds.indexOf(animalKind(n)));
+        return (total / Math.max(1, Math.min(shown, state.animals))) * (1 + this.boostEffect(boostDef('animalPower'))) * this.perkFactor('animals');
+    },
+
+    /** The first minutes' teaching is over: an animal's been called (or it's been through it all before). */
+    get tutorialOver(): boolean {
+        return state.animals > 0 || state.rebirths > 0;
+    },
+
+    perkLevel(id: PerkId): number {
+        return state.perks[id] ?? 0;
+    },
+    /** A perk's effect, compounding (x) or added up. */
+    perkFactor(id: PerkId): number {
+        return Math.pow(perkDef(id).per, this.perkLevel(id));
+    },
+    perkSum(id: PerkId): number {
+        return perkDef(id).per * this.perkLevel(id);
+    },
+    /** A perk's next level's price in medals (undefined at the top). */
+    perkCost(perk: PerkDef): number | undefined {
+        const level = this.perkLevel(perk.id);
+        return level >= perk.max ? undefined : Math.round(perk.cost * Math.pow(perk.growth, level));
+    },
+    buyPerk(perk: PerkDef): boolean {
+        const cost = this.perkCost(perk);
+        if (cost === undefined || state.medals < cost) return false;
+        state.medals -= cost;
+        state.perks[perk.id] = this.perkLevel(perk.id) + 1;
+        this.changed();
         return true;
     },
+    get canAffordPerk(): boolean {
+        return DIG.rebirth.perks.some((perk) => state.medals >= (this.perkCost(perk) ?? Infinity));
+    },
+
+    get medals(): number {
+        return state.medals;
+    },
+    get medalsEver(): number {
+        return state.medalsEver;
+    },
+    get rebirths(): number {
+        return state.rebirths;
+    },
+    /** What a rebirth would pay now. */
+    get runMedals(): number {
+        const { from, div, power } = DIG.rebirth;
+        return Math.max(0, Math.floor(Math.pow(Math.max(0, state.deepestZone - from) / div, power)));
+    },
+    /** Rebirth's there: a second dungeon's been opened this run, and it pays. */
+    get canRebirth(): boolean {
+        return state.prestige > 0 && this.runMedals > 0;
+    },
+
+    /** Back to the first dungeon with nothing but what's kept (the level, the looks, the medals and their perks). */
+    rebirth(): number {
+        if (!this.canRebirth) return 0;
+        const paid = this.runMedals;
+        state.medals += paid;
+        state.medalsEver += paid;
+        state.rebirths++;
+        state.money = 0;
+        state.toolLevel = this.perkLevel('tools');
+        state.bladesLevel = this.perkLevel('blades');
+        state.animals = this.perkLevel('crew');
+        state.backpackLevel = 0;
+        state.backpack = {};
+        state.boosts = {};
+        state.padPaid = {};
+        state.prestige = 0;
+        state.currentMine = 0;
+        state.mines = [];
+        state.deepestZone = 0;
+        state.dug = '';
+        state.found = {};
+        state.seen = [];
+        state.collectionDone = false;
+        state.unclaimed = {};
+        // (Each run's own layouts; the old tunnels mustn't be written over them before the scene's rebuilt.)
+        dugProvider = undefined;
+        this.changed();
+        this.saveNow();
+        return paid;
+    },
+
     get timesSold(): number {
         return state.stats.sells;
     },
@@ -877,14 +1029,9 @@ export const DigProgress = {
         return state.stats[stat];
     },
 
-    /** Kinds of find collected, added up over every mine (each mine has its own collection). */
+    /** Finds dug up, ever. */
     get totalFinds(): number {
-        let total = 0;
-        for (let i = 0; i <= state.prestige; i++) {
-            const found = i === state.currentMine ? state.found : state.mines[i]?.found ?? {};
-            total += DIG.finds.filter((find) => found[find.id]).length;
-        }
-        return total;
+        return state.stats.finds;
     },
 
     /** Tiers claimed so far (= the tier being worked on; tiers.length when complete). */
@@ -896,11 +1043,6 @@ export const DigProgress = {
         const achievement = DIG.achievements.find((a) => a.id === id);
         const level = this.achievementLevel(id);
         return !!achievement && level < achievement.tiers.length && this.achievementStat(achievement.stat) >= achievement.tiers[level].goal;
-    },
-
-    /** Achievements with a tier ready to claim (the HUD button's "!"). */
-    get claimableAchievements(): number {
-        return DIG.achievements.filter((a) => this.canClaim(a.id)).length;
     },
 
     /** The last tier was claimed: its decoration stands in the hub. */
@@ -939,25 +1081,13 @@ export const DigProgress = {
         return true;
     },
 
-    /** Records reaching a zone; returns true when it's deeper than ever before. */
+    /** Records reaching a zone here; returns true when it's deeper than any this run. */
     reachZone(zone: number): boolean {
-        if (zone <= state.deepestZone) return false;
-        state.deepestZone = zone;
+        const step = state.currentMine * DIG.rebirth.zones + zone;
+        if (step <= state.deepestZone) return false;
+        state.deepestZone = step;
         this.changed();
         return true;
-    },
-
-    /**
-     * What a tool or backpack costs in the mine being played: its price, x (1 + prestige.priceStep) for every mine
-     * before this one (the first mine pays the listed prices), rounded to a tidy number.
-     */
-    priceOf(def: { price: number }): number {
-        return state.currentMine === 0 ? def.price : tidyPrice(def.price * this.priceFactor);
-    },
-
-    /** How much more things cost in the mine being played than in the first (1 there). */
-    get priceFactor(): number {
-        return 1 + DIG.prestige.priceStep * state.currentMine;
     },
 
     addMoney(amount: number): void {
@@ -977,7 +1107,7 @@ export const DigProgress = {
         const cash = DIG.chests.cash;
         const base = cash.reward[Math.min(zone, cash.reward.length - 1)] ?? 0;
         const roll = 1 + (Math.random() * 2 - 1) * cash.spread;
-        return Math.max(5, Math.round((base * roll * this.sellMultiplier) / 5) * 5);
+        return Math.max(5, Math.round((base * roll * this.valueFactor * this.sellMultiplier) / 5) * 5);
     },
 
     /** Seconds of active play, all sessions together. */
@@ -988,35 +1118,6 @@ export const DigProgress = {
     /** Adds active play time (every frame: saved along with the next change, not on its own). */
     addPlayTime(delta: number): void {
         state.playSeconds += delta;
-        // The hub's income piles up while playing (saved with the next save, like the play time).
-        const perSecond = this.hubIncome;
-        if (perSecond > 0) state.hubCash = Math.min(perSecond * 60 * DIG.hubIncome.capMinutes, state.hubCash + perSecond * delta);
-    },
-
-    /** What the hub earns a second: its pieces' `income`, x the new mines' sell bonus. */
-    get hubIncome(): number {
-        const base = (HUB.buildables ?? []).reduce((sum, b) => sum + (state.built.includes(b.id) ? b.income ?? 0 : 0), 0);
-        return base * (1 + DIG.prestige.sellBonus * state.prestige);
-    },
-
-    /** The pile at the ATM has reached hubIncome.capMinutes of income: it earns nothing more until collected. */
-    get hubCashFull(): boolean {
-        const cap = this.hubIncome * 60 * DIG.hubIncome.capMinutes;
-        return cap > 0 && state.hubCash >= cap - 0.01;
-    },
-
-    /** The hub's income waiting at the ATM, in whole dollars. */
-    get hubCash(): number {
-        return Math.floor(state.hubCash);
-    },
-
-    /** Takes the hub's income waiting at the ATM into the money; returns how much (0 = nothing yet). */
-    collectHubCash(): number {
-        const amount = Math.floor(state.hubCash);
-        if (amount <= 0) return 0;
-        state.hubCash -= amount;
-        this.addEarned(amount);
-        return amount;
     },
 
     /** Marks the terrain changed (a block dug) so it's included in the next save. */
@@ -1039,13 +1140,13 @@ export const DigProgress = {
     },
 
     saveNow(): void {
-        if (wiped) return;
+        if (wiped || !ready) return;
         lastSave = performance.now();
         if (dugProvider) {
             state.dug = dugProvider();
         }
         try {
-            window.localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+            SaveStorage.setItem(SAVE_KEY, JSON.stringify(state));
         } catch {
             // Storage full or blocked: keep playing unsaved.
         }
@@ -1055,7 +1156,7 @@ export const DigProgress = {
     reset(): void {
         window.clearTimeout(saveTimer);
         wiped = true;
-        window.localStorage.removeItem(SAVE_KEY);
+        SaveStorage.removeItem(SAVE_KEY);
         window.location.reload();
     },
 

@@ -6,7 +6,7 @@
 // the browser's away), shortly after any change and as the game's left.
 
 import { SaveStorage } from 'core/platforms/SaveStorage';
-import { BOOSTS, BoostDef, CREW, CrewDef, REWIND, SHOWS, WEAK, bricksOf, crewCost, givenLevel, ToolDef, punchCost, punchDamage, toolAt, toolsUpTo, medalsOf } from './WallConfig';
+import { AUTO, AWAY, BOOSTS, BoostDef, CREW, CrewDef, REWIND, SHOWS, WEAK, bricksOf, crewCost, givenLevel, ToolDef, punchCost, punchDamage, toolAt, toolsUpTo, medalsOf, wallAt } from './WallConfig';
 
 const KEY = 'wall.save';
 const VERSION = 1;
@@ -49,9 +49,13 @@ interface SaveData {
     farming: boolean;
     offers: number;
     playSec: number;
+    /** Fights won (the first have circles on the minions). */
+    fights: number;
+    /** When it was last saved (ms since 1970). */
+    at: number;
 }
 
-const fresh = (): SaveData => ({ version: VERSION, wall: 1, cash: 0, punch: 0, best: 1, bricks: 0, crew: {}, boosts: [], medals: 0, runMedals: 0, rewinds: 0, steps: [], played: false, worn: {}, seen: {}, held: '', looks: [], fight: false, farming: false, offers: 0, playSec: 0 });
+const fresh = (): SaveData => ({ version: VERSION, wall: 1, cash: 0, punch: 0, best: 1, bricks: 0, crew: {}, boosts: [], medals: 0, runMedals: 0, rewinds: 0, steps: [], played: false, worn: {}, seen: {}, held: '', looks: [], fight: false, farming: false, offers: 0, playSec: 0, fights: 0, at: 0 });
 
 function read(): SaveData {
     try {
@@ -68,6 +72,10 @@ function read(): SaveData {
 
 let state = fresh();
 let ready = false;
+/** All damage, times this, for now (Frenzy). Not saved. */
+let frenzy = 1;
+/** What the crew earned while they were away, till it's paid. */
+let awayCash = 0;
 let timer: number | undefined;
 let wallState: (() => WallState | undefined) | undefined;
 const listeners = new Set<() => void>();
@@ -114,6 +122,7 @@ export const WallProgress = {
         state = read();
         totals = undefined;
         ready = true;
+        awayCash = this.earnedAway(state.at ? (Date.now() - state.at) / 1000 : 0);
         SaveStorage.saveOnLeave(() => this.saveNow());
     },
 
@@ -201,12 +210,19 @@ export const WallProgress = {
     /** What a plain hit does. */
     get damage(): number {
         const { punch, punchFromCrew } = boostTotals();
-        return punchDamage(state.punch) * punch * this.medalMult + this.crewDps * punchFromCrew;
+        return punchDamage(state.punch) * punch * this.medalMult * frenzy + this.crewDps * punchFromCrew;
     },
     /** What a plain hit's made of: the tool's level, the boosts (times), the medals (times), the crew's share (added). */
     get damageParts(): { tool: number; boosts: number; medals: number; crew: number } {
         const { punch, punchFromCrew } = boostTotals();
         return { tool: punchDamage(state.punch), boosts: punch, medals: this.medalMult, crew: this.crewDps * punchFromCrew };
+    },
+    get frenzy(): number {
+        return frenzy;
+    },
+    setFrenzy(mult: number): void {
+        frenzy = mult;
+        changed();
     },
     get cashMult(): number {
         return boostTotals().cash;
@@ -249,6 +265,21 @@ export const WallProgress = {
         changed();
     },
 
+    // ---------------------------------------------------------------- away
+
+    earnedAway(seconds: number): number {
+        if (seconds < AWAY.after) return 0;
+        const { hp, material } = wallAt(state.wall);
+        return Math.floor(Math.min(this.crewDps * seconds * AWAY.share, hp * AWAY.mostWalls) * this.cashMult * (material.cash ?? 1));
+    },
+    /** What the crew earned meanwhile: once. */
+    takeAway(): number {
+        const earned = awayCash;
+        awayCash = 0;
+        this.addCash(earned);
+        return earned;
+    },
+
     /** Debug. */
     addBricks(amount: number): void {
         state.bricks += amount;
@@ -277,7 +308,7 @@ export const WallProgress = {
     /** One of them's damage a second. */
     dpsEach(def: CrewDef): number {
         const { crewAll, crewOf } = boostTotals();
-        return def.dps * crewAll * (crewOf[def.id] ?? 1) * this.medalMult;
+        return def.dps * crewAll * (crewOf[def.id] ?? 1) * this.medalMult * frenzy;
     },
 
     /** All of the crew's damage a second. */
@@ -304,6 +335,38 @@ export const WallProgress = {
         state.crew[def.id] = 1;
         changed();
         return true;
+    },
+
+    /** One of the crew for those who haven't hired that kind by its wall (auto.crew): whose. */
+    giveCrew(): CrewDef | undefined {
+        if (state.rewinds > 0) return undefined;
+        for (const { wall, id } of AUTO.crew) {
+            const def = CREW.find((entry) => entry.id === id);
+            if (def && state.wall >= wall && this.giveFirst(def)) return def;
+        }
+        return undefined;
+    },
+
+    /** Money lying about, spent for those who don't (auto.buys*): whether a tool's level was bought, and who was hired. */
+    autoBuy(): { punch: boolean; hired: CrewDef[] } {
+        const hired: CrewDef[] = [];
+        if (state.wall > AUTO.buysUntil) return { punch: false, hired };
+        const enough = (cost: number) => state.cash >= cost * AUTO.buysAfter;
+        const punch = state.punch > 0 && enough(punchCost(state.punch)) && this.punchHarder();
+        const best = [...CREW].reverse();
+        while (hired.length < AUTO.hires) {
+            const def = best.find((one) => state.best >= one.wall && enough(this.costOf(one)));
+            if (!def || !this.hire(def)) break;
+            hired.push(def);
+        }
+        return { punch, hired };
+    },
+
+    /** A boost bought for those who leave their bricks (auto.boosts*): which. */
+    autoBoost(): BoostDef | undefined {
+        if (state.wall > AUTO.boostsUntil) return undefined;
+        const boost = this.boostsThere[0];
+        return boost && state.bricks >= boost.bricks * AUTO.boostsAfter && this.buyBoost(boost) ? boost : undefined;
     },
 
     // ---------------------------------------------------------------- boosts
@@ -341,11 +404,11 @@ export const WallProgress = {
         return state.wall >= REWIND.wall;
     },
 
-    /** Back to wall 1: cash, bricks and crew gone; PUNCH HARDER, the boosts and the medals kept. */
+    /** Back to wall 1 with the first tool: cash, bricks, crew and PUNCH HARDER's levels gone; the boosts and the medals kept. */
     rewind(): boolean {
         if (!this.canRewind) return false;
         state.medals += state.runMedals;
-        Object.assign(state, { runMedals: 0, wall: 1, cash: 0, bricks: 0, crew: {}, state: undefined, fight: false, farming: false, rewinds: state.rewinds + 1 });
+        Object.assign(state, { runMedals: 0, wall: 1, punch: REWIND.punch, held: '', cash: 0, bricks: 0, crew: {}, state: undefined, fight: false, farming: false, rewinds: state.rewinds + 1 });
         changed();
         return true;
     },
@@ -385,7 +448,8 @@ export const WallProgress = {
 
     /** The next tool, if it hasn't been bought by the wall it's given at; false if not. */
     giveTool(): boolean {
-        const level = givenLevel(state.wall);
+        // (Only the first time up: after a rewind the medals make the going easy.)
+        const level = state.rewinds > 0 ? 0 : givenLevel(state.wall);
         if (state.punch >= level) return false;
         state.punch = level;
         if (state.held !== 'fists') state.held = '';
@@ -409,10 +473,16 @@ export const WallProgress = {
         state.farming = on;
         changed();
     },
-    /** A boss beaten: bricks and medals more. */
-    bossReward(bricks: number, medals: number): void {
+    get fights(): number {
+        return state.fights;
+    },
+    countFight(): void {
+        state.fights++;
+        changed();
+    },
+    /** A boss beaten: bricks more. */
+    bossReward(bricks: number): void {
         state.bricks += bricks;
-        state.runMedals += medals;
         changed();
     },
 
@@ -435,6 +505,8 @@ export const WallProgress = {
         if (!ready) return;
         try {
             state.state = wallState?.() ?? state.state;
+            // (What's waiting to be paid isn't lost if they leave before the first click.)
+            if (awayCash === 0) state.at = Date.now();
             SaveStorage.setItem(KEY, JSON.stringify(state));
         } catch (error) {
             console.warn('[WallProgress] could not save', error);

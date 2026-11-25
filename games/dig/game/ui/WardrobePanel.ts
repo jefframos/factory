@@ -44,6 +44,25 @@ const hex = (color: string): number => new THREE.Color(color).getHex();
 /** Achievement levels the Champion (the Crown's achievement) wants. */
 const crownGoal = (): number => DIG.achievements.find((a) => a.hat)?.tiers.at(-1)?.goal ?? 0;
 
+/** An item itself: a swatch, a face on a head in the current colour, or the hat's model; `size`: a hat's (the rest to match). */
+export function lookArt(kind: LookKind, item: WardrobeItem, size: number): PIXI.Container {
+    const scale = size / (CARD * 0.66);
+    if (kind === 'colors') {
+        return new PIXI.Graphics().lineStyle(4 * scale, 0xffffff).beginFill(hex(item.id)).drawCircle(0, 0, 30 * scale).endFill();
+    }
+    if (kind === 'faces') {
+        const head = new PIXI.Container();
+        head.addChild(new PIXI.Graphics().lineStyle(3 * scale, 0x1d140e).beginFill(hex(DigProgress.look.color)).drawRoundedRect(-32 * scale, -32 * scale, 64 * scale, 64 * scale, 10 * scale).endFill());
+        const face = PIXI.Sprite.from(`${FACE_BASE}${item.id}`);
+        face.anchor.set(0.5);
+        face.width = face.height = 58 * scale;
+        head.addChild(face);
+        return head;
+    }
+    const model = MODELS.Hats[item.id as keyof typeof MODELS.Hats];
+    return model ? ModelIcons.sprite(`./${model.fullPath}`, size) : new PIXI.Container();
+}
+
 export class WardrobePanel extends PIXI.Container {
     private readonly body = new PIXI.Container();
     private tab: LookKind = 'hats';
@@ -150,7 +169,7 @@ export class WardrobePanel extends PIXI.Container {
         const worn = this.worn(item);
         const owned = DigProgress.ownsLook(this.tab, item);
         card.addChild(UiKit.image('wardrobe', worn ? 'cardWorn' : 'card', CARD_W, CARD));
-        const art = this.art(item);
+        const art = lookArt(this.tab, item, CARD * 0.66);
         art.y = -8;
         card.addChild(art);
 
@@ -200,24 +219,6 @@ export class WardrobePanel extends PIXI.Container {
         holder.addChild(hand);
         gsap.to(holder, { y: 10, duration: 0.45, ease: 'sine.inOut', yoyo: true, repeat: -1 });
         return holder;
-    }
-
-    /** The item itself: a swatch, a face on a head in the current colour, or the hat's model. */
-    private art(item: WardrobeItem): PIXI.Container {
-        if (this.tab === 'colors') {
-            return new PIXI.Graphics().lineStyle(4, 0xffffff).beginFill(hex(item.id)).drawCircle(0, 0, 30).endFill();
-        }
-        if (this.tab === 'faces') {
-            const head = new PIXI.Container();
-            head.addChild(new PIXI.Graphics().lineStyle(3, 0x1d140e).beginFill(hex(DigProgress.look.color)).drawRoundedRect(-32, -32, 64, 64, 10).endFill());
-            const face = PIXI.Sprite.from(`${FACE_BASE}${item.id}`);
-            face.anchor.set(0.5);
-            face.width = face.height = 58;
-            head.addChild(face);
-            return head;
-        }
-        const model = MODELS.Hats[item.id as keyof typeof MODELS.Hats];
-        return model ? ModelIcons.sprite(`./${model.fullPath}`, CARD * 0.66) : new PIXI.Container();
     }
 
     private choose(item: WardrobeItem, card: PIXI.Container): void {

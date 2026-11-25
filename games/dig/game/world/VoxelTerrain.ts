@@ -15,7 +15,7 @@
 // The far zones stand higher (zones `height`): everything bent is lifted over it (BendService.setGround), the game itself
 // stays flat. Some have pools of lava (`lava`): open ground (air) that glows and slows (LavaPools draws it).
 //
-// Drawing: every 8x8 chunk near the miner (terrain.viewRange) is ONE merged mesh (all blocks share the Block Bits
+// Drawing: every 8x8 chunk near the miner (viewRange) is ONE merged mesh (all blocks share the Block Bits
 // texture), plus one for its decor; the rest isn't drawn until they come near. Blocks on a tunnel edge are drawn whole;
 // buried blocks only add their top face — all the camera ever sees of them — which keeps the big mine cheap. Removing a
 // block rebuilds its chunk (and the neighbour chunk when it sits on a border).
@@ -172,6 +172,8 @@ export class VoxelTerrain {
     private readonly ground = new Float32Array(GROUND_SIZE * GROUND_SIZE);
     private readonly lavaPools: LavaPools;
     private viewIn = 0;
+    /** Rock this near the miner is drawn (the scene's: as far as the camera sees). */
+    public viewRange = DIG.terrain.viewRange;
     /** Bumped on every dug block (the debug map redraws when it changes). */
     public changed = 0;
     private readonly zoneNoise: (x: number, z: number) => number;
@@ -318,6 +320,37 @@ export class VoxelTerrain {
         }
         return model;
     }
+
+    /** A little block of a material, `size` across, its gem or nugget on it if it's an ore (the backpack's pile); undefined till it's loaded. */
+    public blockPiece(material: MaterialDef, size: number): THREE.Object3D | undefined {
+        const model = this.models.blocks.get(material.block);
+        if (!model || !this.models.blockMaterial) return undefined;
+        let geometry = this.pieces.get(material.id);
+        if (!geometry) {
+            const builder = new MeshBuilder();
+            builder.add(model.full, 0, 0, 0, 1.12, undefined, this.tints[materialValue(material.id)]);
+            geometry = builder.build();
+            this.pieces.set(material.id, geometry);
+        }
+        const block = new THREE.Mesh(geometry, this.models.blockMaterial);
+        block.scale.set(size, size / this.blockHeight, size);
+        const holder = new THREE.Group();
+        holder.add(block);
+        const gem = material.ore ? this.pickupModel(material) : undefined;
+        if (gem) {
+            gem.scale.multiplyScalar((size * 1.05) / PICKUP_SIZE);
+            gem.position.set(0, size * 0.75, -size * 0.35);
+            holder.add(gem);
+        }
+        return holder;
+    }
+
+    /** Grows as models come in (what's made of them is made again). */
+    public get piecesReady(): number {
+        return this.models.blocks.size + this.models.pickups.size;
+    }
+
+    private readonly pieces = new Map<string, THREE.BufferGeometry>();
 
     /** A fresh copy of a find's model (undefined until the models have loaded). */
     public findModel(find: FindDef): THREE.Object3D | undefined {
@@ -783,7 +816,7 @@ export class VoxelTerrain {
 
     /** The chunks come near are drawn, those left far behind let go. */
     private lookAround(): void {
-        const range = DIG.terrain.viewRange;
+        const range = this.viewRange;
         for (const chunk of [...this.chunks.keys()]) {
             if (this.chunkAway(chunk) <= range + VIEW_SPARE) continue;
             this.dropChunk(chunk);
