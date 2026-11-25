@@ -24,12 +24,15 @@ import { Gameplay } from '../ads/Gameplay';
 import { WallAnalytics } from '../analytics/WallAnalytics';
 import { buildEffectsPanel, fx } from '../config/Effects';
 import { Crew } from '../crew/Crew';
-import { BoostDef, CAMERA, CASH, CREW, CrewDef, TOOL_TYPES, MEDAL, WALL, WEAK, short, toolAt, medalsOf, wallAt } from '../data/WallConfig';
+import { BoostDef, CAMERA, CASH, CREW, CrewDef, TOOL_TYPES, MEDAL, WALL, WEAK, ENEMIES, bossAt, bossKind, bossNumber, enemiesOn, enemyModels, fightAt, fightModels, isBossWall, short, switchEnemies, toolAt, toolsUpTo, medalsOf, wallAt } from '../data/WallConfig';
 import { wornLook } from '../data/Looks';
+import { ModelQueue, ModelWant } from '../data/ModelQueue';
 import { WallProgress } from '../data/WallProgress';
 import { Hands, ToolLook } from '../player/Hands';
 import { TRAY_TOP } from '../ui/Tray';
 import { BAR_FOOT, WallHud } from '../ui/WallHud';
+import { Enemies, Enemy } from '../enemies/Enemies';
+import { Fight } from '../enemies/Fight';
 import { Debris } from '../wall/Debris';
 import { Bite, Cell, VoxelWall } from '../wall/VoxelWall';
 import { HitMark } from '../wall/HitMark';
@@ -37,6 +40,8 @@ import { Tunnel, WALL_HEIGHT, WALL_WIDTH } from '../wall/Tunnel';
 import { WeakSpot } from '../wall/WeakSpot';
 
 const MODELS = './wall/models/player/';
+/** The models got ahead: the fights (so many, within so many walls), the tools, the crew (by wall); looked into every so often (seconds). */
+const MODELS_AHEAD = { walls: 6, fights: 2, tools: 2, crew: 2, every: 1 };
 const CREW_MODELS = './wall/models/crew/';
 /** The dark the next gate stands in (the fog: from a little past the wall, to all dark past the next one). */
 const DARK = { from: 2.5, to: 1.45 };
@@ -57,12 +62,20 @@ const HIT_STOP = { big: 0.03, collapse: 0.09 };
 const BIG_HIT = 0.2;
 /** After a wall: its burst, then the player walks through to the next one (`bob`: its steps, how many and how high). */
 const ADVANCE = { wait: 0.6, seconds: 1.35, steps: 4, bob: 0.16 };
+/** A gift's been seen after this long (seconds). */
+const GIFT_SEEN_SEC = 2.2;
+/** A boss that got away has been seen to after this long (seconds). */
+const LOST_SEEN_SEC = 2.6;
 /** New looks are held up this long (seconds). */
 const FLAUNT_SEC = 1.7;
 /** The hands rest no lower than this share of the screen's height (and so, with nothing to buy yet). */
 const HANDS_LOWEST = 0.1;
+/** This much lower in a fight. */
+const HANDS_FIGHT = 0.075;
 /** The mark a hit leaves: how far off the wall it's drawn, the smallest, its colours. */
 const MARK = { front: 0.16, least: 0.45, plain: 0xffffff, big: 0xffe14a, weak: 0xff8a3a };
+/** What flies off an enemy. */
+const ENEMY_DUST = new THREE.Color(0xe8dcc0);
 const MAX_FRAME_SEC = 0.1;
 
 interface Landing {
@@ -71,6 +84,8 @@ interface Landing {
     y: number;
     /** It was aimed at the weak spot. */
     weak: boolean;
+    /** It was aimed at one of the enemies. */
+    enemy?: Enemy;
 }
 
 export default class WallScene extends ThreeScene {
@@ -84,8 +99,16 @@ export default class WallScene extends ThreeScene {
     private readonly sun = new THREE.DirectionalLight(LIGHT.sun, LIGHT.strength);
     private readonly weak = new WeakSpot();
     private readonly crew = new Crew({
-        target: (x, out) => (this.phase === 'playing' ? this.wall.spotNear(x, 0.4 + 5 * Math.random() ** 1.6, 4, out) : null),
+        target: (x, out) => {
+            if (this.phase === 'fighting') return this.fight.enemies.target(x, out);
+            return this.phase === 'playing' ? this.wall.spotNear(x, 0.4 + 5 * Math.random() ** 1.6, 4, out) : null;
+        },
         hit: (def, at, damage) => this.crewHit(def, at, damage),
+    });
+    private readonly fight = new Fight(new Enemies(), {
+        won: (boss) => this.fightWon(boss),
+        lost: () => this.bossLost(),
+        bossComes: (name) => this.bossComes(name),
     });
     private flauntFor = 0;
     private crewSound = 0;
@@ -94,13 +117,19 @@ export default class WallScene extends ThreeScene {
     /** The next one, waiting in the dark; and the way there walked (0 to 1). */
     private next!: VoxelWall;
     private walked = 0;
-    private phase: 'playing' | 'falling' | 'advancing' = 'playing';
+    private phase: 'playing' | 'falling' | 'fighting' | 'advancing' | 'previewing' = 'playing';
+    /** Debug: the boss looked at, after how many rewinds. */
+    private readonly look = { boss: 0, rewinds: 0 };
     private landings: Landing[] = [];
     private time = 0;
     private stopFor = 0;
     private started = false;
     private destroyed_ = false;
     private modelsReady: Promise<void> = Promise.resolve();
+    /** The models that come once there's something to see (not asked for until then), and whether it's being played yet. */
+    private readonly models = new ModelQueue(() => this.wantedModels());
+    private modelsWait = Infinity;
+    private begun = false;
     /** The camera's place. */
     private readonly home = new THREE.Vector3();
     private readonly raycaster = new THREE.Raycaster();
@@ -117,7 +146,9 @@ export default class WallScene extends ThreeScene {
         this.threeScene.fog = new THREE.Fog(0, 1, 100);
         this.sun.position.set(-3.5, 6.5, 10);
         this.threeScene.add(this.around, this.sun);
-        this.threeScene.add(this.tunnel.group, this.mark.group, this.debris.group, this.crew.group, this.weak.group);
+        this.threeScene.add(this.tunnel.group, this.mark.group, this.debris.group, this.crew.group, this.fight.enemies.group, this.weak.group);
+        // (What was behind it isn't any more: switched off since.)
+        if (WallProgress.fighting && !fightAt(WallProgress.wall)) WallProgress.nextWall();
         this.buildWall();
         this.game.uiLayer.addChild(this.tapZone);
         this.tapZone.eventMode = 'static';
@@ -128,6 +159,7 @@ export default class WallScene extends ThreeScene {
             boost: (boost) => this.buyBoost(boost),
             rewind: () => this.rewind(),
             flaunt: () => this.flaunt(),
+            retryBoss: () => this.retryBoss(),
         }, {
             changed: () => this.dress(),
             show: (on) => this.hands.show(on),
@@ -136,6 +168,8 @@ export default class WallScene extends ThreeScene {
         this.game.uiLayer.addChild(this.hud);
         const medal = new PIXI.Sprite(PIXI.Texture.from('ItemIcon_Badge_Gold'));
         this.tunnel.setMedal(this.game.app.renderer.extract.canvas(medal) as HTMLCanvasElement);
+        const skull = new PIXI.Sprite(PIXI.Texture.from('ItemIcon_Skull'));
+        this.tunnel.setSkull(this.game.app.renderer.extract.canvas(skull) as HTMLCanvasElement);
         this.showWall();
         this.modelsReady = this.loadModels();
         this.hands.wearLook(wornLook());
@@ -152,6 +186,11 @@ export default class WallScene extends ThreeScene {
         this.resize();
         this.hud.setTapHint(WallProgress.wall === 1 && this.wall.share >= 1);
         this.placeTapHint();
+        // (Left in the middle of a fight: its wall's down.)
+        if (WallProgress.fighting) {
+            this.wall.collapse();
+            this.startFight();
+        }
     }
 
     // ---------------------------------------------------------------- walls
@@ -183,6 +222,7 @@ export default class WallScene extends ThreeScene {
     private showWall(): void {
         this.hud.setWall(WallProgress.wall, wallAt(WallProgress.wall).material.name);
         this.hud.setShare(this.wall.share);
+        this.tunnel.setBoss(isBossWall(WallProgress.wall), isBossWall(WallProgress.wall + 1));
         this.tunnel.showMedal(this.phase === 'playing' && WallProgress.wall >= MEDAL.wall);
     }
 
@@ -205,20 +245,161 @@ export default class WallScene extends ThreeScene {
             this.debris.throw(new THREE.Vector3((Math.random() - 0.5) * WALL_WIDTH * 0.7, 1 + Math.random() * 3, 0.2), COIN, 0.17, 1.25);
         }
         WallProgress.addCash(bonus);
-        const bricks = WallProgress.nextWall();
+        // Something behind it: it's still this wall till that's beaten.
+        const fight = fightAt(number);
+        const bricks = fight ? 0 : WallProgress.nextWall();
+        if (fight) WallProgress.startFight();
         WallAnalytics.wallDown(number);
         this.hud.tray.won(this.toHud(0, 0.1));
         this.hud.setShare(0);
         this.hud.flashScreen(0.75, 0.35);
-        this.hud.announce(`WALL ${number} DESTROYED!`, `+$${short(bonus)}   +${bricks} BRICKS`, 0.95);
+        this.hud.announce(`WALL ${number} DESTROYED!`, bricks ? `+$${short(bonus)}   +${bricks} BRICKS` : `+$${short(bonus)}`, 0.95);
         this.stopFor = HIT_STOP.collapse * fx('hitStop');
         this.shake = 1;
         WallAudio.play('collapse');
         WallAudio.play('boom');
         gsap.delayedCall(0.25, () => WallAudio.play('coins'));
         this.vibrate(60);
-        gsap.delayedCall(ADVANCE.wait, () => !this.destroyed_ && this.advance());
+        gsap.delayedCall(ADVANCE.wait, () => {
+            if (this.destroyed_) return;
+            if (fight) this.startFight();
+            else this.advance();
+        });
     }
+
+    // ---------------------------------------------------------------- what's behind some of them
+
+    private startFight(): void {
+        this.phase = 'fighting';
+        this.landings = [];
+        const number = WallProgress.wall;
+        const kind = fightAt(number);
+        if (!kind) return;
+        this.fight.start(number, WallProgress.farming);
+        if (!WallProgress.farming) WallAnalytics.fight(kind, number, 'start');
+        if (kind === 'minions') this.hud.announce('ENEMIES!', 'PUNCH THEM', 0.8);
+        this.showFight();
+    }
+
+    private bossComes(name: string): void {
+        WallAudio.play('boom', 1, 0.8);
+        this.hud.announce(`${name}!`, `BEAT IT IN ${ENEMIES.boss.seconds} SECONDS`, 1.5);
+    }
+
+    /** Its time's up: it's gone, its minions come till it's called back. */
+    private bossLost(): void {
+        WallAnalytics.fight('boss', WallProgress.wall, 'fail');
+        this.weak.reset();
+        this.puffs(0xd8b0ff, 6);
+        WallAudio.play('error');
+        this.hud.announce('IT GOT AWAY!', 'GET STRONGER AND TRY AGAIN', 1.6);
+        // (And that's one way to.)
+        this.offerRewind(LOST_SEEN_SEC);
+    }
+
+    private retryBoss(): void {
+        if (this.phase !== 'fighting' || !this.fight.farming || this.hud.busy) return;
+        WallProgress.setFarming(false);
+        WallAnalytics.fight('boss', WallProgress.wall, 'start');
+        this.puffs(0xd8b0ff, 4);
+        this.fight.retry();
+        this.showFight();
+    }
+
+    /** All beaten: what that's worth, and on to the next wall. */
+    private fightWon(boss: boolean): void {
+        const number = WallProgress.wall;
+        WallAnalytics.fight(boss ? 'boss' : 'minions', number, 'complete');
+        this.weak.reset();
+        this.hud.setFight();
+        this.phase = 'falling';
+        this.landings = [];
+        let words = '';
+        if (boss) {
+            const { cash, bricks, medals } = ENEMIES.boss;
+            const bonus = Math.round(wallAt(number).hp * cash * this.cashMult());
+            WallProgress.addCash(bonus);
+            WallProgress.bossReward(bricks, number >= MEDAL.wall ? medals : 0);
+            words = `+$${short(bonus)}   +${bricks} BRICKS`;
+            this.hud.tray.won(this.toHud(0, 0.1));
+            this.hud.flashScreen(0.5, 0.3);
+            WallAudio.play('collapse');
+            this.shake = 0.8;
+            this.vibrate(60);
+        } else {
+            this.hud.tray.won(this.toHud(0, -0.1));
+        }
+        WallProgress.nextWall();
+        WallAudio.play('coins');
+        this.hud.announce(boss ? `${bossKind(number, WallProgress.rewinds).name} BEATEN!` : 'CLEAR!', words, boss ? 1.4 : 0.6);
+        gsap.delayedCall(boss ? 1 : 0.35, () => {
+            if (!this.destroyed_) this.advance();
+        });
+    }
+
+    private puffs(color: number, count: number): void {
+        for (let i = 0; i < count; i++) this.debris.puff(new THREE.Vector3((Math.random() - 0.5) * 3, 0.6 + Math.random() * 3.4, -0.4 + Math.random() * 0.6), color, 2.4 + Math.random() * 2, 0.6);
+    }
+
+    /** The fight on the HUD. */
+    private showFight(): void {
+        const { fight } = this;
+        if (!fight.on) return;
+        const timed = fight.kind === 'boss' && !fight.farming;
+        this.hud.setFight({ title: fight.title, boss: fight.kind === 'boss', retry: fight.farming, ...(timed ? { seconds: fight.timeLeft, timeShare: fight.timeShare } : {}) });
+        this.hud.setShare(fight.share);
+    }
+
+    /** A hit on one of the enemies, at a spot on the screen. */
+    private landOnEnemy(entry: Landing): void {
+        const enemy = entry.enemy?.alive ? entry.enemy : this.fight.enemies.pick(entry.x, entry.y, this.threeCamera)?.enemy;
+        if (!enemy) return;
+        const weak = entry.weak && this.weak.visible;
+        const combo = this.weak.left > 0 ? WallProgress.comboMult(this.weak.combo) : 1;
+        this.strikeEnemy(enemy, WallProgress.damage * combo * (weak ? WallProgress.weakMult : 1), weak, entry);
+        const tool = WallProgress.tool;
+        WallAudio.play(tool.base === 'fists' ? 'hit-soft' : 'hit-wood', weak ? 1.2 : 1);
+        this.vibrate(weak ? 22 : 12);
+        if (weak) {
+            const step = this.weak.hit();
+            WallAudio.play('hit-glass', 1.2, 1.2 + Math.min(8, step) * 0.08);
+            WallAnalytics.step('weak-spot');
+            WallAnalytics.combo(step);
+        }
+    }
+
+    /** Damage to one, by the player (at a spot on the screen) or the crew. */
+    private strikeEnemy(enemy: Enemy, damage: number, weak: boolean, by?: { x: number; y: number }): void {
+        const middle = enemy.middle(new THREE.Vector3());
+        const { dealt, killed } = this.fight.damage(enemy, damage, !!by);
+        const pay = dealt * CASH.perDamage * this.cashMult() + (killed && !enemy.spec.boss ? enemy.spec.hp * ENEMIES.minions.cash * this.cashMult() : 0);
+        WallProgress.addCash(pay);
+        const color = ENEMY_DUST;
+        if (by) {
+            // (Where the hand was, on its front.)
+            this.raycaster.setFromCamera(this.ndc.set(by.x, by.y), this.threeCamera);
+            const { origin, direction } = this.raycaster.ray;
+            const at = origin.clone().addScaledVector(direction, (MARK.front - origin.z) / direction.z);
+            this.mark.show(at, Math.max(MARK.least, enemy.spec.height * 0.22), weak ? MARK.weak : MARK.plain);
+            for (let i = 0; i < (weak ? 8 : 4); i++) this.debris.throw(at, color, 0.12, 0.9, at);
+            const spot = this.toHud(by.x, by.y);
+            this.hud.float(short(Math.max(1, dealt)), spot.x, spot.y, weak ? 0xff8a3a : 0xffffff, weak ? 1.6 : 1);
+        } else {
+            this.debris.puff(middle.clone().setZ(middle.z + enemy.spec.height * 0.4), 0xfff0d8, 0.9, 0.3);
+            if (this.crewNumber <= 0) {
+                this.crewNumber = CREW_EVERY.number;
+                const on = middle.clone().project(this.threeCamera);
+                const spot = this.toHud(on.x, on.y);
+                this.hud.float(short(Math.max(1, dealt)), spot.x, spot.y, 0xa8e6ff, 0.62);
+            }
+        }
+        if (!killed) return;
+        WallAudio.play('break', enemy.spec.boss ? 1.2 : 0.7);
+        for (let i = 0; i < (enemy.spec.boss ? 60 : 12); i++) this.debris.throw(middle, i % 3 ? color : COIN, enemy.spec.boss ? 0.22 : 0.14, 1.1, middle);
+        this.debris.puff(middle, 0xfff0d8, enemy.spec.height * 1.8, 0.55);
+        if (enemy.spec.boss) this.stopFor = HIT_STOP.collapse * fx('hitStop');
+    }
+
 
     /** Through the gate, to the next wall (the crew runs along); there, everything's moved back by a gap. */
     private advance(): void {
@@ -241,7 +422,8 @@ export default class WallScene extends ThreeScene {
         const at = this.tunnel.takeMedal();
         if (!at) return;
         at.project(this.threeCamera);
-        this.hud.flyMedals(this.toHud(at.x, at.y), medalsOf(WallProgress.wall - 1));
+        const number = WallProgress.wall - 1;
+        this.hud.flyMedals(this.toHud(at.x, at.y), medalsOf(number) + (isBossWall(number) ? ENEMIES.boss.medals : 0));
         WallAnalytics.step('first-medal');
     }
 
@@ -254,9 +436,23 @@ export default class WallScene extends ThreeScene {
         this.phase = 'playing';
         this.showWall();
         WallAnalytics.wallStart(WallProgress.wall);
-        if (this.handOut()) return;
-        // The first time it's there to do (each time round): what it is.
-        if (WallProgress.canRewind && WallProgress.markStep(`rewind-offer-${WallProgress.rewinds}`) && WallProgress.rewinds < 2) this.hud.rewindPopup.setOpen(true);
+        const given = this.handOut();
+        // (Once any gift's been seen.)
+        const wait = given ? GIFT_SEEN_SEC : 0;
+        const number = WallProgress.wall;
+        if (isBossWall(number)) gsap.delayedCall(wait, () => {
+            if (!this.destroyed_ && this.phase === 'playing' && WallProgress.wall === number) this.hud.announce('BOSS GATE!', `${bossKind(number, WallProgress.rewinds).name} IS BEHIND IT`, 1.3);
+        });
+        // (Not at a boss's gate: there's the boss to see first.)
+        else this.offerRewind(wait);
+    }
+
+    /** Rewinding, the first time ever it's there to do: what it is, in a while. (From then on it's the player's to choose.) */
+    private offerRewind(wait: number): void {
+        if (!WallProgress.canRewind || WallProgress.rewinds > 0 || !WallProgress.markStep('rewind-offer-0')) return;
+        gsap.delayedCall(wait, () => {
+            if (!this.destroyed_ && WallProgress.canRewind && !this.hud.busy) this.hud.rewindPopup.setOpen(true);
+        });
     }
 
     // ---------------------------------------------------------------- hitting
@@ -277,6 +473,8 @@ export default class WallScene extends ThreeScene {
     private readonly onFirst = (): void => {
         this.stopFirst();
         Gameplay.begin();
+        WallAnalytics.begin();
+        this.begun = true;
     };
 
     private stopFirst(): void {
@@ -285,17 +483,19 @@ export default class WallScene extends ThreeScene {
     }
 
     private punchAt(x: number, y: number): void {
-        if (this.phase !== 'playing' || this.hud.busy) return;
+        if ((this.phase !== 'playing' && this.phase !== 'fighting') || this.hud.busy) return;
         if (!this.started) {
             this.started = true;
             this.hud.setTapHint(false);
         }
-        WallAnalytics.begin();
+        WallAnalytics.step('first-hit');
         WallAudio.play('swing');
         // On the weak spot, or within the wall.
         const weak = this.onWeakSpot(x, y);
-        const at = weak ? this.weak.position.clone().project(this.threeCamera) : this.onWall(x, y);
-        this.landings.push({ inSec: this.hands.punch(at.x, at.y), x: at.x, y: at.y, weak });
+        // (One of the enemies: the one there, or the nearest.)
+        const enemy = this.phase === 'fighting' && !weak ? this.fight.enemies.pick(x, y, this.threeCamera) : null;
+        const at = weak ? this.weak.position.clone().project(this.threeCamera) : (enemy ?? this.onWall(x, y));
+        this.landings.push({ inSec: this.hands.punch(at.x, at.y), x: at.x, y: at.y, weak, enemy: enemy?.enemy });
     }
 
     /** A spot on the screen (-1..1) near enough to the weak spot. */
@@ -320,9 +520,12 @@ export default class WallScene extends ThreeScene {
     }
 
     /** A hit lands: the cells there go. */
-    private land({ x, y, weak }: Landing): void {
-        if (this.phase !== 'playing') return;
+    private land(entry: Landing): void {
+        const { x, y } = entry;
+        let { weak } = entry;
         this.threeCamera.updateMatrixWorld();
+        if (this.phase === 'fighting') this.landOnEnemy(entry);
+        if (this.phase !== 'playing') return;
         this.raycaster.setFromCamera(this.ndc.set(x, y), this.threeCamera);
         const ray = this.raycaster.ray;
         ray.origin.sub(this.wall.group.position);
@@ -384,7 +587,18 @@ export default class WallScene extends ThreeScene {
 
     /** One of the crew's hits lands. */
     private crewHit(def: CrewDef, at: THREE.Vector3, damage: number): void {
-        if (this.phase !== 'playing' || this.hud.busy) return;
+        if (this.hud.busy) return;
+        if (this.phase === 'fighting') {
+            const enemy = this.fight.enemies.nearest(at);
+            if (!enemy) return;
+            this.strikeEnemy(enemy, damage, false);
+            if (this.crewSound <= 0) {
+                this.crewSound = CREW_EVERY.sound;
+                WallAudio.play('hit-soft', 0.28, 1.25 - def.size * 0.35);
+            }
+            return;
+        }
+        if (this.phase !== 'playing') return;
         const point = at.clone();
         point.z = Math.min(point.z, -0.1);
         const before = this.wall.share;
@@ -425,8 +639,8 @@ export default class WallScene extends ThreeScene {
     // ---------------------------------------------------------------- buying
 
     /**
-     * What's given: the first PUNCH HARDER (wall 1 down), the first chick (its wall reached), the first tool (if it hasn't been
-     * bought by some wall). `quietly`: no show (the start).
+     * What's given: the first PUNCH HARDER (wall 1 down), the first chick (its wall reached), a tool (at some walls, if it
+     * hasn't been bought by then). `quietly`: no show (the start).
      */
     private handOut(quietly = false): boolean {
         if (WallProgress.giftWaiting && WallProgress.punchHarder()) {
@@ -502,17 +716,28 @@ export default class WallScene extends ThreeScene {
     }
 
     private rewind(): void {
-        if (this.phase !== 'playing' || !WallProgress.canRewind) return;
+        if ((this.phase !== 'playing' && this.phase !== 'fighting') || !WallProgress.canRewind) return;
         const { wall, runMedals, medalMult } = WallProgress;
         this.weak.reset();
         this.landings = [];
         this.hud.rewindShow.play(wall, runMedals, medalMult, WallProgress.multAfterRewind, () => {
             // (Out of sight; the wall holds while the show's on.)
             if (!WallProgress.rewind()) return;
+            // (A fight left for it.)
+            if (this.phase === 'fighting' && this.fight.kind && !this.fight.farming) WallAnalytics.fight(this.fight.kind, wall, 'fail');
             WallAnalytics.rewind(WallProgress.rewinds);
             this.crew.refresh(true);
+            this.fight.stop();
+            this.hud.setFight();
+            this.phase = 'playing';
             this.remakeWall();
-        }, () => this.hud.announce('LET\'S GO AGAIN!', `ALL DAMAGE x${short(WallProgress.medalMult)}`, 1.2));
+        }, () => void this.rewound());
+    }
+
+    /** It's done: a break, and off again. */
+    private async rewound(): Promise<void> {
+        await Gameplay.commercialBreak();
+        if (!this.destroyed_) this.hud.announce('LET\'S GO AGAIN!', `ALL DAMAGE x${short(WallProgress.medalMult)}`, 1.2);
     }
 
     /** The wall it's at now, anew. */
@@ -541,21 +766,70 @@ export default class WallScene extends ThreeScene {
 
     private async loadModels(): Promise<void> {
         try {
-            const loader = createGLTFLoader();
-            const [hands, boxing, ...tools] = await Promise.all([
-                loader.loadAsync(`${MODELS}hands.glb`),
-                ModelLoaderManager.instance.loadModel(`${MODELS}boxing.glb`),
-                ...TOOL_TYPES.map(async (tool) => [tool.id, await ModelLoaderManager.instance.loadModel(`${MODELS}${tool.model}.glb`)] as const),
-            ]);
+            const [hands] = await Promise.all([createGLTFLoader().loadAsync(`${MODELS}hands.glb`), this.models.now(this.modelsInSight())]);
             if (this.destroyed_) return;
-            this.hands.setModels(hands, new Map(tools), boxing);
-            // (The crew after: there's none to see for a while.)
-            await Promise.all(CREW.map(async ({ id }) => this.crew.setModel(id, await ModelLoaderManager.instance.loadModel(`${CREW_MODELS}${id}.glb`))));
+            this.hands.setModels(hands);
         } catch (error) {
             // (The wall still breaks without them.)
             console.warn('[WallScene] the hands could not load', error);
         }
+        // (The rest, from now on.)
+        this.modelsWait = 0;
     }
+
+    /** The models there's no beginning without: what's in hand, what's on it, who's being fought. */
+    private modelsInSight(): ModelWant[] {
+        const { tool, fighting, wall, rewinds } = WallProgress;
+        return [
+            ...this.toolWant(tool.base),
+            ...(wornLook().gloves.boxing ? [this.gloveWant] : []),
+            ...(fighting ? this.enemyWants(fightModels(wall, rewinds)) : []),
+        ];
+    }
+
+    /**
+     * The models to get, the soonest seen first: who's in the crew; then, once it's being played, the next enemies, the next
+     * tools, what the wardrobe shows, the next of the crew and the enemies after those. Nothing that's further off.
+     */
+    private wantedModels(): ModelWant[] {
+        if (this.destroyed_) return [];
+        const { wall, rewinds, punchLevel } = WallProgress;
+        const crew = (there: (def: CrewDef) => boolean) => CREW.filter(there).map(({ id }) => this.crewWant(id));
+        const wants = [...this.modelsInSight(), ...crew((def) => WallProgress.owned(def.id) > 0)];
+        if (!this.begun) return wants;
+        const fights: string[][] = [];
+        for (let n = wall; n <= wall + MODELS_AHEAD.walls && fights.length < MODELS_AHEAD.fights; n++) {
+            const models = fightModels(n, rewinds);
+            if (models.length) fights.push(models);
+        }
+        const tools = Array.from({ length: MODELS_AHEAD.tools }, (_, i) => toolAt(punchLevel + 1 + i));
+        return [
+            ...wants,
+            ...this.enemyWants(fights[0] ?? []),
+            ...tools.flatMap(({ base }) => this.toolWant(base)),
+            this.gloveWant,
+            ...toolsUpTo(punchLevel).flatMap(({ base }) => this.toolWant(base)),
+            ...crew((def) => def.wall <= wall + MODELS_AHEAD.crew),
+            ...this.enemyWants(fights.slice(1).flat()),
+        ];
+    }
+
+    private enemyWants(ids: string[]): ModelWant[] {
+        return ids.map((id) => ({ key: `enemy ${id}`, get: () => this.fight.enemies.load(id) }));
+    }
+
+    private crewWant(id: string): ModelWant {
+        return { key: `crew ${id}`, get: async () => this.crew.setModel(id, await ModelLoaderManager.instance.loadModel(`${CREW_MODELS}${id}.glb`)) };
+    }
+
+    /** (None for the fists.) */
+    private toolWant(base: string | undefined): ModelWant[] {
+        const type = TOOL_TYPES.find(({ id }) => id === base);
+        if (!type) return [];
+        return [{ key: `tool ${type.id}`, get: async () => this.hands.addTool(type.id, await ModelLoaderManager.instance.loadModel(`${MODELS}${type.model}.glb`)) }];
+    }
+
+    private readonly gloveWant: ModelWant = { key: 'boxing', get: async () => this.hands.setGlove(await ModelLoaderManager.instance.loadModel(`${MODELS}boxing.glb`)) };
 
     // ---------------------------------------------------------------- frame
 
@@ -572,7 +846,9 @@ export default class WallScene extends ThreeScene {
     private handsFloor(): number | undefined {
         if (this.threeCamera.aspect >= CAMERA.wide.aspect) return undefined;
         const height = Game.overlayScreenData?.height ?? Game.DESIGN_HEIGHT;
-        return Math.max(HANDS_LOWEST, (this.hud.tray.topNow + CAMERA.clear) / height);
+        const floor = Math.max(HANDS_LOWEST, (this.hud.tray.topNow + CAMERA.clear) / height);
+        // (Out of the way of what's on the floor.)
+        return this.phase === 'fighting' ? Math.max(HANDS_LOWEST, floor - HANDS_FIGHT) : floor;
     }
 
     private placeCamera(): void {
@@ -605,6 +881,11 @@ export default class WallScene extends ThreeScene {
         const landing = this.landings.filter((entry) => (entry.inSec -= step) <= 0);
         this.landings = this.landings.filter((entry) => entry.inSec > 0);
         landing.forEach((entry) => this.land(entry));
+        this.modelsWait -= delta;
+        if (this.modelsWait <= 0) {
+            this.modelsWait = MODELS_AHEAD.every;
+            void this.models.check();
+        }
         this.hands.setFloor(this.handsFloor());
         this.hands.update(delta);
         this.debris.update(step);
@@ -612,13 +893,19 @@ export default class WallScene extends ThreeScene {
         this.wall.updateFlash(delta);
         this.crewSound -= delta;
         this.crewNumber -= delta;
-        this.crew.update(step, this.phase === 'playing' && this.wall.share > 0 && !this.hud.busy, this.phase === 'advancing');
+        if (this.phase === 'fighting') {
+            this.fight.update(this.hud.busy ? 0 : step);
+            if (this.phase === 'fighting') this.showFight();
+        } else this.fight.enemies.update(step);
+        const toHit = this.phase === 'playing' ? this.wall.share > 0 : this.phase === 'fighting' && this.fight.enemies.alive.length > 0;
+        this.crew.update(step, toHit && !this.hud.busy, this.phase === 'advancing');
         this.tunnel.update(delta);
         (this.threeScene.fog as THREE.Fog).color.copy(this.tunnel.dark);
         this.around.intensity = LIGHT.around * fx('light');
         this.sun.intensity = LIGHT.strength * fx('light');
-        const weakOn = this.phase === 'playing' && WallProgress.best >= WEAK.wall;
-        this.weak.update(delta, weakOn, () => this.wall.spotNear((Math.random() - 0.5) * WALL_WIDTH * 0.7, WALL_HEIGHT * (0.25 + Math.random() * 0.6), 3, new THREE.Vector3()));
+        const fighting = this.phase === 'fighting' && this.fight.bossThere;
+        const weakOn = (this.phase === 'playing' || fighting) && WallProgress.best >= WEAK.wall;
+        this.weak.update(delta, weakOn, () => fighting ? this.fight.weakAt(new THREE.Vector3()) : this.wall.spotNear((Math.random() - 0.5) * WALL_WIDTH * 0.7, WALL_HEIGHT * (0.25 + Math.random() * 0.6), 3, new THREE.Vector3()));
         this.showCombo();
         if (Gameplay.active) WallAnalytics.played(delta);
         this.hud.playing = this.started && this.phase === 'playing';
@@ -628,6 +915,7 @@ export default class WallScene extends ThreeScene {
             if (this.flauntFor <= 0 && !this.hud.wardrobe.isOpen) this.hands.show(false);
         }
         if (this.phase === 'playing') this.wall.update(this.time);
+        this.showLife();
         this.updateCamera(delta);
         this.hud.update(delta);
         super.update(delta);
@@ -641,10 +929,23 @@ export default class WallScene extends ThreeScene {
         renderer.autoClear = true;
     }
 
+    /** The wall's life, or that of what's behind it, on the bar. */
+    private showLife(): void {
+        if (this.phase === 'fighting') {
+            const { left, total } = this.fight.life;
+            this.hud.setLife(left, total);
+        } else if (this.phase === 'playing' || this.phase === 'falling') {
+            this.hud.setLife(this.wall.down ? 0 : this.wall.share * this.wall.hp, this.wall.hp);
+        } else if (this.phase === 'previewing') {
+            const hp = wallAt((this.look.boss + 1) * ENEMIES.boss.every).hp * ENEMIES.boss.hp;
+            this.hud.setLife(hp, hp);
+        } else this.hud.setLife(this.wall.hp, this.wall.hp);
+    }
+
     private readonly comboAt = new THREE.Vector3();
 
     private showCombo(): void {
-        const mult = this.weak.left > 0 && this.phase === 'playing' ? WallProgress.comboMult(this.weak.combo) : 1;
+        const mult = this.weak.left > 0 && (this.phase === 'playing' || this.phase === 'fighting') ? WallProgress.comboMult(this.weak.combo) : 1;
         if (mult <= 1 || !this.weak.visible) {
             if (mult <= 1) this.hud.setCombo(1);
             return;
@@ -702,7 +1003,68 @@ export default class WallScene extends ThreeScene {
             this.remakeWall();
         });
         panel.button('BRING IT DOWN', () => this.phase === 'playing' && this.bringDown());
+        panel.button('NEXT BOSS GATE', () => {
+            if (this.phase !== 'playing' || !enemiesOn) return;
+            WallProgress.skipTo((Math.floor(WallProgress.wall / ENEMIES.boss.every) + 1) * ENEMIES.boss.every);
+            this.remakeWall();
+        });
+        panel.button('KILL ALL ENEMIES', () => this.phase === 'fighting' && this.fight.killAll());
+        this.buildBossDebug();
+        panel.button(enemiesOn ? 'ENEMIES: ON (switch off, reloads)' : 'ENEMIES: OFF (switch on, reloads)', () => {
+            switchEnemies();
+            WallProgress.saveNow();
+            window.location.reload();
+        });
         panel.button('NEW GAME', () => WallProgress.reset());
+    }
+
+    /** Debug: the bosses, one after another or all together, as they grow and change colour. */
+    private buildBossDebug(): void {
+        if (!enemiesOn) return;
+        const { look } = this;
+        const panel = DebugOverlay.instance.panel('Bosses', { id: 'wall.bosses', persist: false });
+        const show = (step: number): boolean => {
+            if (this.phase !== 'playing' && this.phase !== 'previewing') return false;
+            look.boss = Math.max(0, look.boss + step);
+            this.phase = 'previewing';
+            this.weak.reset();
+            this.landings = [];
+            this.wall.group.visible = false;
+            this.tunnel.showMedal(false);
+            const kind = this.fight.preview(look.boss, look.rewinds);
+            void this.models.now(this.enemyWants(enemyModels(kind)));
+            this.hud.setFight({ title: kind.name, boss: true, retry: false });
+            this.hud.setShare(1);
+            return true;
+        };
+        const wall = () => (look.boss + 1) * ENEMIES.boss.every;
+        panel.monitor('Boss', () => `${look.boss + 1}: ${bossAt(look.boss, look.rewinds).name} (wall ${wall()})`);
+        panel.monitor('Height', () => {
+            const { pair, height } = bossAt(look.boss, look.rewinds);
+            return `${(pair ?? [{ height }]).map((one) => one.height.toFixed(1)).join(' and ')} (the gate's ${WALL_HEIGHT.toFixed(1)})`;
+        });
+        panel.monitor('Health', () => short(wallAt(wall()).hp * ENEMIES.boss.hp));
+        panel.buttons([
+            { label: '< BEFORE', action: () => void show(-1) },
+            { label: 'SHOW', action: () => void show(0) },
+            { label: 'NEXT >', action: () => void show(1) },
+        ]);
+        panel.slider(look, 'rewinds', 0, 10, 1, 'After rewinds');
+        panel.button('LINE UP 12 (from this one)', () => {
+            if (!show(0)) return;
+            this.fight.lineUp(look.boss, look.rewinds);
+            void this.models.now(this.enemyWants(Array.from({ length: 12 }, (_, i) => enemyModels(bossAt(look.boss + i, look.rewinds))).flat()));
+        });
+        panel.button('BACK TO THE GAME', () => {
+            if (this.phase !== 'previewing') return;
+            this.fight.stop();
+            this.hud.setFight();
+            this.wall.group.visible = true;
+            this.phase = 'playing';
+            this.showWall();
+        });
+        look.boss = bossNumber(Math.max(ENEMIES.boss.every, WallProgress.wall));
+        look.rewinds = WallProgress.rewinds;
     }
 
     public destroy(): void {

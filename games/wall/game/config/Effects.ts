@@ -19,7 +19,7 @@ const FOLDERS: Record<string, Partial<Record<Effect, string>>> = {
     },
     Screen: { flash: 'Flash as a wall falls', hitStop: 'Freeze on a big hit', numbers: 'Numbers', words: 'Big words', barJolt: 'Bar jolt', vibration: 'Vibration' },
     Look: { light: 'Light', color: 'Colour (the next wall)' },
-    World: { impact: 'Impact light', tileFlash: 'Hit tiles flash', pieces: 'Pieces', piecesAtYou: 'Pieces fly at you', dust: 'Dust', tremble: 'Wall trembles', crewPieces: 'Crew pieces', crewFlips: 'Crew flips', handBob: 'Hands bob' },
+    World: { impact: 'Impact light', tileFlash: 'Hit tiles flash', pieces: 'Pieces', piecesAtYou: 'Pieces fly at you', dust: 'Dust', tremble: 'Wall trembles', crewPieces: 'Crew pieces', crewFlips: 'Crew flips', handBob: 'Hands bob', toolSnap: 'Tools snap to the hit (off: they swing)' },
 };
 
 const amounts: Record<Effect, number> = { ...data.amounts };

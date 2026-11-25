@@ -19,6 +19,7 @@
     "crewFlips": 1,
     "light": 1,
     "color": 1,
+    "toolSnap": 1,
     "handBob": 1,
     "vibration": 1
   }

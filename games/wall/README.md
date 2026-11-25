@@ -15,7 +15,8 @@ skip walls, new game) and **Effects** (a switch and a strength for every effect,
   crew runs along.
 - **27 walls, 15 materials** (cardboard, wood, plaster, concrete ... moon rock), then round again from concrete in other
   colours, for as long as it goes.
-- **PUNCH HARDER.** The first level's given after wall 1; from level 2 each one brings another tool: six types in turn, in the
+- **PUNCH HARDER.** The first level's given after wall 1; levels 2 to 5 are given at walls 4, 6, 8 and 10 to
+  who hasn't bought them by then; from level 2 each one brings another tool: six types in turn, in the
   next of nine colours every three levels (stone, copper, iron, gold, emerald ...).
 - **The wardrobe** (top right). Skin, shirt, gloves, rings, wrist and the tool held; things come with the walls, are bought,
   or are for a video (`ui/looks.json`). While playing, cards come up with something new (a gift, a sale, a video): taken, it's worn.
@@ -24,12 +25,18 @@ skip walls, new game) and **Effects** (a switch and a strength for every effect,
 - **Boosts** (bricks, which walls bring). Each of the crew's at 1, 5, 15, 30... copies, and others: hits that add some of the
   crew's damage, cash, the weak spot, a longer combo.
 - **The weak spot** (from wall 5). x5, and hit again within 2.2 s each time, a combo on every hit up to x4.
+- **Enemies and bosses** (`ui/wall.json` `enemies`; `on`: false and there are none at all, `?enemies=0` or 1 and the debug panel try
+  it either way). Minions behind every third wall (3, 6, 9, 12 ...) and a boss behind every tenth, whose gate says so: dark red with a
+  skull on it, spikes, a skull and a red light over it. Punch them, the crew does too; a boss has the weak spot on it and 30 seconds.
+  Its time up it's gone, and minions come, wave after wave (they pay), until FIGHT BOSS! calls it back. Each boss is bigger than the one before, and the
+  colours (the skeletons' bones, the others' hue) change every two bosses and with each rewind; some are a pair (the debug Bosses panel shows them all). A wall's only done once
+  what's behind it is. Models: Mob's (`tools/build-enemies.mjs`), got one at a time as their walls come near.
 - **Medals** (from wall 6): a golden one turns behind each wall; the wall down, it flies to the Rewind button (a wall's number
   of them). **REWIND** (from wall 10) cashes them in: back to wall 1 with all damage up for good (+20% each); PUNCH HARDER,
-  boosts and looks are kept. Its popup says so, opens by itself the first times, and its show spins the clock back.
+  boosts and looks are kept. Its popup says so, opens by itself the first time ever, and its show spins the clock back.
 - **The save** (SaveStorage) and **the events** (`game/analytics/WallAnalytics.ts`: the table of them all).
 - **Gameplay and ads** (`game/ads/Gameplay.ts`): gameplayStart on the first click, stop while the wardrobe, the rewind popup or an
-  ad is open; a commercial break as either opens; rewarded videos.
+  ad is open; a commercial break as either opens, as the wardrobe closes and after a rewind; rewarded videos.
 
 ## Where
 
@@ -42,8 +49,10 @@ skip walls, new game) and **Effects** (a switch and a strength for every effect,
 | `game/data/` | `WallConfig` (the numbers, typed), `WallProgress` (the save, and what follows from it) |
 | `game/wall/` | `VoxelWall` (the grid, hits, what's drawn), `Tunnel` (the gates, the medal), `WeakSpot`, `Debris` |
 | `game/crew/Crew.ts` | The helpers: one InstancedMesh a kind |
+| `game/data/ModelQueue` | The models after the first screen, one at a time, the soonest needed first (`wantedModels` in the scene: the next enemies, tools, boxing glove, crew). The loading screen waits only for the hands and what is on or in them |
+| `game/enemies/` | `Enemies` (how they look and move), `Fight` (the waves, the boss's time, calling it back) |
 | `game/player/` | The hands over everything: punches, tools, There Is Rope's tool swing; `HandDress`: what they wear |
-| `game/ui/` | `WallHud` (bar, numbers, words), `Tray` (what's bought: the Layer Lab pack's item cards), `Wardrobe` |
+| `game/ui/` | `WallHud` (bar, numbers, words), `Tray` (what's bought: the Layer Lab pack's item cards), `Wardrobe`, `HitPill` (what a hit does now, and where it comes from) |
 | `tools/build-tools.mjs`, `tools/build-crew.mjs` | Make the tools' and the crew's models, and the tray's icons, from the library |
 
 ## Pacing

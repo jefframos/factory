@@ -6,7 +6,7 @@
 import data from '../../ui/wall.json';
 import type { HoldPose, SwingSettings } from '../player/swing';
 
-export type MaterialLook = 'concrete' | 'brick' | 'stone' | 'iron' | 'veins' | 'stripes' | 'circuit' | 'boxes' | 'planks';
+export type MaterialLook = 'concrete' | 'brick' | 'stone' | 'iron' | 'veins' | 'stripes' | 'circuit' | 'boxes' | 'planks' | 'gate';
 export type HitSound = 'soft' | 'wood' | 'stone' | 'metal' | 'glass';
 
 export interface MaterialDef {
@@ -84,8 +84,6 @@ export interface BoostDef {
 export const WALL = data.wall;
 export const CAMERA = data.camera;
 const MATERIALS = data.materials as unknown as Record<string, MaterialDef>;
-/** The level the first tool comes with, and the wall it's given at if it hasn't been bought by then. */
-export const FIRST_TOOL = { level: data.tools.from, givenAt: data.punch.toolGivenAt };
 /** The types of tool (not the fists). */
 export const TOOL_TYPES = data.tools.types as unknown as (Omit<ToolDef, 'base'> & { model: string })[];
 export const FISTS: ToolDef = { id: 'fists', base: 'fists', name: 'Fists', bite: data.tools.fists.bite };
@@ -97,11 +95,118 @@ export const MEDAL = data.medal;
 export const SHOWS = data.shows;
 export const REWIND = data.rewind;
 
+/** A kind of enemy. */
+export interface EnemyKind {
+    name: string;
+    model: string;
+    height: number;
+    float?: number;
+    pace?: number;
+    tint?: number;
+    /** Its colours this much brighter. */
+    bright?: number;
+    /** The biggest it gets (a boss). */
+    most?: number;
+    /** How it takes another colour: its bones only, or all of it turned to another hue (`base`: its own; `sat`: at least this vivid). */
+    paint?: 'bone' | 'hue';
+    base?: number;
+    sat?: number;
+    /** The colour it's in, if it's not its own (bossAt says). */
+    coat?: Coat;
+    /** Two of them: where each stands, and how many colours on. */
+    pair?: EnemyKind[];
+    x?: number;
+    next?: number;
+}
+
+/** A colour over an enemy's own. */
+export interface Coat {
+    how: 'bone' | 'hue';
+    hue: number;
+    base: number;
+    sat: number;
+    dark: number;
+}
+
+const kindOf = (kind: Record<string, unknown>): EnemyKind => ({ ...(kind as unknown as EnemyKind), tint: kind.tint ? Number(`0x${String(kind.tint).slice(1)}`) : undefined });
+export const ENEMIES = data.enemies;
+const BOSSES = (data.enemies.boss.kinds as Record<string, unknown>[]).map(kindOf);
+const MINIONS = (data.enemies.minions.kinds as Record<string, unknown>[]).map(kindOf);
+const ENEMIES_KEY = 'wall.debug.enemies';
+
+/** Enemies and bosses at all: the config's, or tried the other way (?enemies=0 or 1, the debug panel's switch). */
+export const enemiesOn: boolean = (() => {
+    try {
+        const asked = /[?&]enemies=([01])/.exec(window.location.search)?.[1] ?? (/[?&](debug|dev)\b/.test(window.location.search) ? localStorage.getItem(ENEMIES_KEY) : null);
+        return asked === null || asked === undefined ? data.enemies.on : asked === '1';
+    } catch {
+        return data.enemies.on;
+    }
+})();
+
+/** Debug: the other way round, from the next load on. */
+export function switchEnemies(): void {
+    try {
+        localStorage.setItem(ENEMIES_KEY, enemiesOn ? '0' : '1');
+    } catch {
+        // Not kept, then.
+    }
+}
+
+export const isBossWall = (n: number): boolean => enemiesOn && n % ENEMIES.boss.every === 0;
+
+/** What waits behind a wall. */
+export function fightAt(n: number): 'boss' | 'minions' | undefined {
+    if (!enemiesOn) return undefined;
+    if (isBossWall(n)) return 'boss';
+    const { every, from } = ENEMIES.minions;
+    return n >= from && (n - from) % every === 0 ? 'minions' : undefined;
+}
+
+/** Which boss a wall's is (from 0). */
+export const bossNumber = (n: number): number => Math.max(1, Math.round(n / ENEMIES.boss.every)) - 1;
+
+/** The `i`th boss (from 0), in a run after `rewinds`: the kinds in turn, each bigger than the last, in the next colour every so often. */
+export function bossAt(i: number, rewinds: number): EnemyKind {
+    const { grow, growRun, colorEvery, colors } = ENEMIES.boss;
+    const step = Math.floor(i / colorEvery) + rewinds;
+    const kind = BOSSES[(i + rewinds) % BOSSES.length];
+    const dressed = (one: EnemyKind): EnemyKind => {
+        const { hue, dark = 1 } = colors[(step + (one.next ?? 0)) % colors.length] as { hue?: number; dark?: number };
+        const coat = hue === undefined || !one.paint ? undefined : { how: one.paint, hue, base: one.base ?? 0, sat: one.sat ?? 0, dark };
+        return { ...one, coat, height: Math.min(one.most ?? Infinity, one.height * (1 + grow * i + growRun * rewinds)) };
+    };
+    const { name } = colors[step % colors.length];
+    return { ...dressed(kind), name: name ? `${name} ${kind.name}` : kind.name, pair: kind.pair?.map(dressed) };
+}
+
+export const bossKind = (n: number, rewinds: number): EnemyKind => bossAt(bossNumber(n), rewinds);
+
+/** The minions behind a wall: the kinds in turn, door by door (a boss's are those of the door before it). */
+export function minionKind(n: number): EnemyKind {
+    let doors = 0;
+    for (let wall = 1; wall <= n; wall++) if (fightAt(wall) === 'minions') doors++;
+    return MINIONS[Math.max(0, doors - 1) % MINIONS.length];
+}
+
+/** The models a kind takes (a pair's are two). */
+export const enemyModels = ({ model, pair }: EnemyKind): string[] => pair?.map((one) => one.model) ?? [model];
+
+/** The models what's behind a wall takes (a boss's minions too, in case it gets away); none if there's nothing. */
+export function fightModels(n: number, rewinds: number): string[] {
+    const kind = fightAt(n);
+    if (!kind) return [];
+    const minions = enemyModels(minionKind(n));
+    return kind === 'boss' ? [...enemyModels(bossKind(n, rewinds)), ...minions] : minions;
+}
+
 /** The `n`th wall (from 1): its HP and what it's made of. */
 export function wallAt(n: number): { hp: number; material: MaterialDef } {
     const { wallHp, wallMaterials, hpGrowth, roundFrom } = data;
     const last = wallHp[wallHp.length - 1];
     const hp = wallHp[n - 1] ?? last * Math.pow(hpGrowth, n - wallHp.length);
+    // (A boss's is always the same: there's no mistaking it.)
+    if (isBossWall(n)) return { hp: Math.round(hp), material: MATERIALS[ENEMIES.boss.material] };
     // (Round again without the weakest ones.)
     const over = n - 1 - wallMaterials.length;
     const again = wallMaterials.slice(roundFrom - 1);
@@ -110,6 +215,9 @@ export function wallAt(n: number): { hp: number; material: MaterialDef } {
     if (round === 0) return { hp: Math.round(hp), material };
     return { hp: Math.round(hp), material: { ...material, name: `${material.name} ${'+'.repeat(Math.min(5, round))}`, hue: (round * 0.31) % 1 } };
 }
+
+/** The PUNCH HARDER level a player has at a wall, given if it hasn't been bought (0: none). */
+export const givenLevel = (wall: number): number => data.punch.given.reduce((level, gift) => (wall >= gift.wall ? Math.max(level, gift.level) : level), 0);
 
 /** What a hit does at a PUNCH HARDER level. */
 export function punchDamage(level: number): number {

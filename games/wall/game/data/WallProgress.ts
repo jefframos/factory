@@ -6,7 +6,7 @@
 // the browser's away), shortly after any change and as the game's left.
 
 import { SaveStorage } from 'core/platforms/SaveStorage';
-import { BOOSTS, BoostDef, CREW, CrewDef, FIRST_TOOL, REWIND, SHOWS, WEAK, bricksOf, crewCost, ToolDef, punchCost, punchDamage, toolAt, toolsUpTo, medalsOf } from './WallConfig';
+import { BOOSTS, BoostDef, CREW, CrewDef, REWIND, SHOWS, WEAK, bricksOf, crewCost, givenLevel, ToolDef, punchCost, punchDamage, toolAt, toolsUpTo, medalsOf } from './WallConfig';
 
 const KEY = 'wall.save';
 const VERSION = 1;
@@ -44,11 +44,14 @@ interface SaveData {
     held: string;
     /** Looks got other than with a wall (`slot:id`), offers shown, and seconds played. */
     looks: string[];
+    /** The wall's down and what's behind it isn't; the boss got away (its minions are there). */
+    fight: boolean;
+    farming: boolean;
     offers: number;
     playSec: number;
 }
 
-const fresh = (): SaveData => ({ version: VERSION, wall: 1, cash: 0, punch: 0, best: 1, bricks: 0, crew: {}, boosts: [], medals: 0, runMedals: 0, rewinds: 0, steps: [], played: false, worn: {}, seen: {}, held: '', looks: [], offers: 0, playSec: 0 });
+const fresh = (): SaveData => ({ version: VERSION, wall: 1, cash: 0, punch: 0, best: 1, bricks: 0, crew: {}, boosts: [], medals: 0, runMedals: 0, rewinds: 0, steps: [], played: false, worn: {}, seen: {}, held: '', looks: [], fight: false, farming: false, offers: 0, playSec: 0 });
 
 function read(): SaveData {
     try {
@@ -200,6 +203,11 @@ export const WallProgress = {
         const { punch, punchFromCrew } = boostTotals();
         return punchDamage(state.punch) * punch * this.medalMult + this.crewDps * punchFromCrew;
     },
+    /** What a plain hit's made of: the tool's level, the boosts (times), the medals (times), the crew's share (added). */
+    get damageParts(): { tool: number; boosts: number; medals: number; crew: number } {
+        const { punch, punchFromCrew } = boostTotals();
+        return { tool: punchDamage(state.punch), boosts: punch, medals: this.medalMult, crew: this.crewDps * punchFromCrew };
+    },
     get cashMult(): number {
         return boostTotals().cash;
     },
@@ -248,6 +256,7 @@ export const WallProgress = {
     },
     skipTo(wall: number): void {
         state.wall = wall;
+        state.fight = state.farming = false;
         state.best = Math.max(state.best, wall);
         state.state = undefined;
         state.runMedals = 0;
@@ -336,7 +345,7 @@ export const WallProgress = {
     rewind(): boolean {
         if (!this.canRewind) return false;
         state.medals += state.runMedals;
-        Object.assign(state, { runMedals: 0, wall: 1, cash: 0, bricks: 0, crew: {}, state: undefined, rewinds: state.rewinds + 1 });
+        Object.assign(state, { runMedals: 0, wall: 1, cash: 0, bricks: 0, crew: {}, state: undefined, fight: false, farming: false, rewinds: state.rewinds + 1 });
         changed();
         return true;
     },
@@ -374,13 +383,37 @@ export const WallProgress = {
         return true;
     },
 
-    /** The first tool, if it hasn't been bought by the wall it's given at; false if not. */
+    /** The next tool, if it hasn't been bought by the wall it's given at; false if not. */
     giveTool(): boolean {
-        if (state.wall < FIRST_TOOL.givenAt || state.punch >= FIRST_TOOL.level) return false;
-        state.punch = FIRST_TOOL.level;
+        const level = givenLevel(state.wall);
+        if (state.punch >= level) return false;
+        state.punch = level;
         if (state.held !== 'fists') state.held = '';
         changed();
         return true;
+    },
+
+    /** The wall's down, and something's behind it: it's still that wall's till that's beaten. */
+    startFight(): void {
+        state.fight = true;
+        state.state = undefined;
+        changed();
+    },
+    get fighting(): boolean {
+        return state.fight;
+    },
+    get farming(): boolean {
+        return state.farming;
+    },
+    setFarming(on: boolean): void {
+        state.farming = on;
+        changed();
+    },
+    /** A boss beaten: bricks and medals more. */
+    bossReward(bricks: number, medals: number): void {
+        state.bricks += bricks;
+        state.runMedals += medals;
+        changed();
     },
 
     /** On to the next wall, with this one's bricks (how many: the answer). */
@@ -389,6 +422,7 @@ export const WallProgress = {
         state.bricks += bricks;
         state.runMedals += medalsOf(state.wall);
         state.wall++;
+        state.fight = state.farming = false;
         state.best = Math.max(state.best, state.wall);
         state.state = undefined;
         changed();

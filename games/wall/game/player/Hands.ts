@@ -13,7 +13,7 @@ import { fx } from '../config/Effects';
 import { Look } from '../data/Looks';
 import { HandDress, paintMetal } from './HandDress';
 import { HandModel, Side } from './HandModel';
-import { HandPose, HoldPose, SHOULDER, SwingSettings, Vec3, contactInHand, swingDuration, swingLands, swingPose } from './swing';
+import { HandPose, HoldPose, SHOULDER, SNAP, SwingSettings, Vec3, contactInHand, snapDuration, snapLands, snapPose, swingDuration, swingLands, swingPose } from './swing';
 
 export interface ToolLook {
     id: string;
@@ -71,9 +71,12 @@ export class Hands {
     public readonly camera = new THREE.PerspectiveCamera(FOV, 1, 0.02, 10);
     private readonly arms: Arm[] = [];
     private readonly tools = new Map<string, THREE.Object3D>();
+    private glove?: THREE.Object3D;
     private tool?: ToolLook;
     private contact: Vec3 = [0, 0, 0];
     private swingTime = -1;
+    /** This hit's a snap, not a swing. */
+    private snaps = false;
     private swingFrom: HandPose | null = null;
     private readonly swingTarget = new THREE.Vector3();
     private clock = 0;
@@ -106,15 +109,15 @@ export class Hands {
         this.scene.add(key);
     }
 
-    /** The models, loaded: the hands (both in one), each tool's by id, a boxing glove (the left one). */
-    public setModels(hands: GLTF, tools: Map<string, THREE.Object3D>, boxing?: THREE.Object3D): void {
+    /** The hands, loaded (both in one). */
+    public setModels(hands: GLTF): void {
         const sleeveShape = new THREE.CylinderGeometry(ARM.elbow, ARM.wrist, 1, 18, 1, true).translate(0, 0.5, 0);
         const cuffShape = new THREE.CylinderGeometry(ARM.cuff, ARM.cuff, ARM.cuffLength, 18).translate(0, ARM.cuffLength / 2, 0);
         for (const side of [1, -1] as Side[]) {
             const hand = new HandModel(hands.scene, side, this.scene);
             const sleeve = new THREE.Mesh(sleeveShape);
             const cuff = new THREE.Mesh(cuffShape);
-            const dress = new HandDress(hand, sleeve, cuff, boxing);
+            const dress = new HandDress(hand, sleeve, cuff, this.glove);
             this.scene.add(sleeve, cuff, dress.wrist);
             const arm: Arm = {
                 hand, dress, sleeve, cuff, time: -1, target: new THREE.Vector3(), at: new THREE.Vector3(), turn: new THREE.Quaternion(),
@@ -125,14 +128,25 @@ export class Hands {
             hand.pose('fist');
             this.ready(arm, arm.at, arm.turn);
         }
-        for (const [id, model] of tools) {
-            model.visible = false;
-            this.arms[0].hand.fist.add(model);
-            this.tools.set(id, model);
-        }
+        for (const model of this.tools.values()) this.arms[0].hand.fist.add(model);
         if (this.look) this.wearLook(this.look);
         if (this.pending) this.wear(this.pending);
         this.pending = undefined;
+    }
+
+    /** A tool's model, loaded (in the hand, if it's the one it holds). */
+    public addTool(id: string, model: THREE.Object3D): void {
+        model.visible = false;
+        this.tools.set(id, model);
+        this.arms[0]?.hand.fist.add(model);
+        if (this.tool?.base === id) this.wear(this.tool);
+    }
+
+    /** A boxing glove's, loaded (the left one). */
+    public setGlove(model: THREE.Object3D): void {
+        this.glove = model;
+        this.arms.forEach(({ dress }) => dress.setGlove(model));
+        if (this.look) this.wearLook(this.look);
     }
 
     /** A tool in the right hand (undefined: bare). `at once`: no swap (the start). */
@@ -164,7 +178,7 @@ export class Hands {
     /** The right hand in a look, as a picture `size` across (its pixels, upside down as WebGL has them). */
     public picture(renderer: THREE.WebGLRenderer, look: Look, size: number): ImageData | null {
         const arm = this.arms[0];
-        if (!arm || !this.look) return null;
+        if (!arm || !this.look || (look.gloves.boxing && !this.glove)) return null;
         const worn = this.look;
         const { hand } = arm;
         const tool = this.tool && this.tools.get(this.tool.base);
@@ -234,7 +248,9 @@ export class Hands {
             this.swingTarget.copy(this.spot);
             this.swingTime = 0;
             this.swingFrom = null;
-            return swingLands(this.tool.swing);
+            this.arms[0].startTurn.copy(this.arms[0].turn);
+            this.snaps = fx('toolSnap') > 0;
+            return this.snaps ? snapLands : swingLands(this.tool.swing);
         }
         // In turn; the one that's free if the other isn't back yet.
         const arm = this.arms[this.next];
@@ -341,7 +357,7 @@ export class Hands {
         const tool = this.tool!;
         this.ready(arm, this.readyAt, this.readyTurn);
         if (this.swingTime >= 0) this.swingTime += delta;
-        if (this.swingTime < 0 || this.swingTime > swingDuration(tool.swing)) {
+        if (this.swingTime < 0 || this.swingTime > (this.snaps ? snapDuration : swingDuration(tool.swing))) {
             this.swingTime = -1;
             const follow = 1 - Math.exp(-delta * 14);
             arm.at.lerp(this.readyAt, follow);
@@ -362,10 +378,17 @@ export class Hands {
         const target = inFrame(this.swingTarget);
         const ready: HandPose = { pos: inFrame(this.readyAt), pitch: pitchOf(this.readyTurn), roll: 0.15 };
         this.swingFrom ??= { pos: inFrame(arm.at), pitch: pitchOf(arm.turn), roll: 0 };
-        const pose = swingPose(tool.swing, this.contact, target, this.swingFrom, ready, this.swingTime);
+        const pose = (this.snaps ? snapPose : swingPose)(tool.swing, this.contact, target, this.swingFrom, ready, this.swingTime);
         arm.at.set(...pose.pos).applyQuaternion(this.quaternion).add(this.shoulder);
         this.euler.set(pose.pitch, yaw, pose.roll, 'YXZ');
         arm.turn.setFromEuler(this.euler);
+        if (!this.snaps) return;
+        // (Its own turn while it only stirs; eased back to it after.)
+        const back = this.swingTime - snapLands - SNAP.hold;
+        if (this.swingTime < SNAP.stir) {
+            this.euler.set(SNAP.pitch * easeOut(this.swingTime / SNAP.stir), 0, 0);
+            arm.turn.copy(arm.startTurn).multiply(this.quaternion2.setFromEuler(this.euler));
+        } else if (back > 0) arm.turn.slerp(this.readyTurn, easeInOut(Math.min(1, back / SNAP.back)));
     }
 
     /** The sleeve from the wrist off the bottom of the screen. */

@@ -26,14 +26,17 @@ const LINES = { every: 2, width: 0.09, from: 18, reach: 34 };
 const ROOM = { block: [0.07, 0.115], frame: [0.06, 0.26], beam: [0.06, 0.17], floor: [0.1, 0.07], line: [0.1, 0.045], dark: [0.4, 0.02] } as const;
 const MEDAL = { z: -3.4, y: WALL_HEIGHT * 0.5, size: 1.25, spin: 1.9, layers: 9, thick: 0.2, edge: 0xc9761a, bob: 0.12, rays: 6.4, glow: 5.2 };
 
+/** What's over a boss's gate: spikes, the skull's size and how far up it is, its light. */
+const BOSS_MARK = { spikes: 9, skull: 0.72, up: 0.62, glow: 3.6 };
+
 /** A picture cut out and thick: layers of it, the ones inside dark gold. */
-function thickPicture(canvas: HTMLCanvasElement): THREE.Group {
+function thickPicture(canvas: HTMLCanvasElement, edge: THREE.ColorRepresentation = MEDAL.edge): THREE.Group {
     const group = new THREE.Group();
     const map = new THREE.CanvasTexture(canvas);
     map.colorSpace = THREE.SRGBColorSpace;
     const plane = new THREE.PlaneGeometry((2 * canvas.width) / Math.max(canvas.width, canvas.height), (2 * canvas.height) / Math.max(canvas.width, canvas.height));
     const face = new THREE.MeshBasicMaterial({ map, alphaTest: 0.5, side: THREE.DoubleSide, fog: false });
-    const inside = new THREE.MeshBasicMaterial({ map, color: MEDAL.edge, alphaTest: 0.5, side: THREE.DoubleSide, fog: false });
+    const inside = new THREE.MeshBasicMaterial({ map, color: edge, alphaTest: 0.5, side: THREE.DoubleSide, fog: false });
     for (let i = 0; i < MEDAL.layers; i++) {
         const t = i / (MEDAL.layers - 1);
         const mesh = new THREE.Mesh(plane, i === 0 || i === MEDAL.layers - 1 ? face : inside);
@@ -79,6 +82,7 @@ export class Tunnel {
     private readonly rays = light(true);
     private readonly glow = light(false);
     private time = 0;
+    private markTime = 0;
     private readonly paints = Object.fromEntries(Object.keys(ROOM).map((part) => [part, new THREE.MeshLambertMaterial()])) as Record<keyof typeof ROOM, THREE.MeshLambertMaterial>;
     private readonly lights = new THREE.MeshBasicMaterial({ fog: false });
     private readonly room = new THREE.Color();
@@ -88,6 +92,10 @@ export class Tunnel {
 
     /** The dark between the gates (the fog, the sky). */
     public readonly dark = new THREE.Color();
+
+    /** The boss's marks over each gate (this one's, the next's). */
+    private readonly marks: THREE.Group[] = [];
+    private readonly markGlows: THREE.Sprite[] = [];
 
     public constructor() {
         const gate = new THREE.Group();
@@ -99,6 +107,7 @@ export class Tunnel {
         const next = gate.clone();
         next.position.z = -WALL.gap;
         this.group.add(gate, next);
+        for (const z of [0, -WALL.gap]) this.buildMark(z);
         this.buildLines();
         this.rays.scale.setScalar(MEDAL.rays);
         this.glow.scale.setScalar(MEDAL.glow);
@@ -189,6 +198,47 @@ export class Tunnel {
         this.lights.color.copy(this.accent);
     }
 
+    /** Over a boss's gate: spikes along the beam, a red light, and the skull (setSkull). */
+    private buildMark(z: number): void {
+        const mark = new THREE.Group();
+        const spike = new THREE.ConeGeometry(0.17, 0.62, 6).translate(0, 0.31, 0);
+        const bone = new THREE.MeshLambertMaterial({ color: 0xf3e3c0 });
+        for (let i = 0; i < BOSS_MARK.spikes; i++) {
+            const along = (i / (BOSS_MARK.spikes - 1)) * 2 - 1;
+            if (Math.abs(along) < 0.22) continue;
+            const mesh = new THREE.Mesh(spike, bone);
+            mesh.position.set(along * (WALL_WIDTH / 2 + 0.1), WALL_HEIGHT + FRAME.thick, 0.05);
+            mesh.rotation.z = -along * 0.3;
+            mark.add(mesh);
+        }
+        const glow = light(false);
+        glow.material.color.set(0xff2a1a);
+        glow.scale.setScalar(BOSS_MARK.glow);
+        glow.position.set(0, WALL_HEIGHT + BOSS_MARK.up, 0.2);
+        mark.add(glow);
+        mark.position.z = z;
+        mark.visible = false;
+        this.marks.push(mark);
+        this.markGlows.push(glow);
+        this.group.add(mark);
+    }
+
+    /** The skull over a boss's gate, its picture. */
+    public setSkull(canvas: HTMLCanvasElement): void {
+        for (const mark of this.marks) {
+            const skull = thickPicture(canvas, 0x6a5a48);
+            skull.scale.setScalar(BOSS_MARK.skull);
+            skull.position.set(0, WALL_HEIGHT + BOSS_MARK.up, 0.45);
+            mark.add(skull);
+        }
+    }
+
+    /** A boss's gate here, and at the next one. */
+    public setBoss(here: boolean, next: boolean): void {
+        this.marks[0].visible = here;
+        this.marks[1].visible = next;
+    }
+
     /** Its picture, once it's there. */
     public setMedal(canvas: HTMLCanvasElement): void {
         this.coin.add(thickPicture(canvas));
@@ -216,6 +266,8 @@ export class Tunnel {
             }
             this.paint();
         }
+        this.markTime += delta;
+        this.markGlows.forEach((glow) => glow.scale.setScalar(BOSS_MARK.glow * (1 + 0.14 * Math.sin(this.markTime * 4))));
         if (!this.medal.visible) return;
         this.time += delta;
         this.coin.rotation.y = this.time * MEDAL.spin;

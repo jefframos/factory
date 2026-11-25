@@ -222,11 +222,17 @@ export class HandDress {
     private extras: THREE.Object3D[] = [];
     private shown = '';
 
-    public constructor(private readonly hand: HandModel, private readonly sleeve: THREE.Mesh, private readonly cuff: THREE.Mesh, private readonly glove?: THREE.Object3D) {
+    public constructor(private readonly hand: HandModel, private readonly sleeve: THREE.Mesh, private readonly cuff: THREE.Mesh, private glove?: THREE.Object3D) {
         hand.mesh.material = this.skin;
         sleeve.material = this.sleeveMaterial;
         cuff.material = new THREE.MeshStandardMaterial({ roughness: 0.9 });
         this.placeGlove();
+    }
+
+    /** A boxing glove's model, loaded (seen from the next look worn). */
+    public setGlove(glove: THREE.Object3D): void {
+        this.glove = glove;
+        this.shown = '';
     }
 
     public wear(look: Look): void {

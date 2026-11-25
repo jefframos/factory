@@ -43,7 +43,9 @@ export class RewindButton extends PIXI.Container {
     private readonly fill = frame('BasicFrame_Round12', [12, 12, 12, 12], BUTTON.size - 8, 24, 0.8);
     private readonly pillText = text('', 20, 0xffffff, 0x100e18, 5);
     private readonly ready = flag(text('READY!', 23, 0xffffff), 104);
-    private readonly mult = text('', 27, 0xe6c8ff, 0x2a0f5c, 7);
+    /** What rewinding's brought so far: a trophy, and all damage. */
+    private readonly won = new PIXI.Container();
+    private readonly mult = text('', 27, 0xffe14a, 0x2a0f5c, 7);
     private clock = 0;
     private shown = -1;
 
@@ -71,8 +73,15 @@ export class RewindButton extends PIXI.Container {
         this.pill.y = BUTTON.size / 2 + BUTTON.below;
         this.pill.addChild(edge, inside, this.fill, this.pillText);
         this.ready.y = BUTTON.size / 2 + 12;
-        this.mult.y = BUTTON.size / 2 + 60;
-        this.addChild(this.focus, back, glow, this.medal, this.count, corner, turn, this.pill, this.ready, this.mult);
+        const strip = frame('BasicFrame_Round12', [12, 12, 12, 12], BUTTON.size, 40);
+        strip.tint = 0x3a1a8c;
+        const trophy = sprite('ItemIcon_Trophy_Gold', 50);
+        trophy.position.set(-BUTTON.size / 2 + 20, -3);
+        this.mult.x = 18;
+        this.mult.y = -2;
+        this.won.addChild(strip, trophy, this.mult);
+        this.won.y = BUTTON.size / 2 + 64;
+        this.addChild(this.focus, back, glow, this.medal, this.count, corner, turn, this.pill, this.ready, this.won);
         this.eventMode = 'static';
         this.cursor = 'pointer';
         this.on('pointerdown', (event: PIXI.FederatedPointerEvent) => {
@@ -109,7 +118,8 @@ export class RewindButton extends PIXI.Container {
         this.medal.rotation = can ? Math.sin(this.clock * 9) * 0.08 : 0;
         this.medal.scale.set(this.medalScale * (can ? 1.05 + 0.06 * Math.sin(this.clock * 6) : 1));
         // What it's brought so far.
-        write(this.mult, WallProgress.medalMult > 1 ? `x${short(WallProgress.medalMult)}` : '', 110);
+        this.won.visible = WallProgress.medalMult > 1;
+        if (this.won.visible) write(this.mult, `x${short(WallProgress.medalMult)}`, BUTTON.size - 52);
     }
 }
 
@@ -380,6 +390,7 @@ export class RewindShow extends PIXI.Container {
     private readonly clock = new Clock(150);
     private readonly count = text('', 84, 0xffffff, 0x2a0f5c, 14);
     private readonly gain = text('', 46, 0xe6c8ff, 0x2a0f5c, 9);
+    private readonly trophy = sprite('ItemIcon_Trophy_Gold', 150);
     private readonly mult = text('', 128, 0xffe14a, 0x7a3a00, 18);
     private readonly middle = new PIXI.Container();
     private ticked = 0;
@@ -394,8 +405,9 @@ export class RewindShow extends PIXI.Container {
         this.rays.y = -70;
         this.count.y = 170;
         this.gain.y = 160;
-        this.mult.y = 250;
-        this.middle.addChild(this.rays, this.clock, this.count, this.gain, this.mult);
+        this.mult.position.set(70, 250);
+        this.trophy.y = 250;
+        this.middle.addChild(this.rays, this.clock, this.count, this.gain, this.mult, this.trophy);
         this.addChild(this.cover, this.middle);
     }
 
@@ -404,7 +416,7 @@ export class RewindShow extends PIXI.Container {
         this.visible = true;
         this.reposition();
         this.alpha = 0;
-        this.gain.visible = this.mult.visible = false;
+        this.gain.visible = this.mult.visible = this.trophy.visible = false;
         this.count.visible = true;
         this.clock.speed = 0.4;
         this.ticked = wall;
@@ -425,7 +437,9 @@ export class RewindShow extends PIXI.Container {
         // What it brought.
         timeline.call(() => {
             this.count.visible = false;
-            this.gain.visible = this.mult.visible = true;
+            this.gain.visible = this.mult.visible = this.trophy.visible = true;
+            write(this.mult, `x${short(after)}`);
+            this.trophy.x = -this.mult.width / 2 - 20;
             write(this.gain, `${short(medals)} MEDALS   ALL DAMAGE`, 640);
             this.clock.speed = 0.3;
             WallAudio.play('boom');

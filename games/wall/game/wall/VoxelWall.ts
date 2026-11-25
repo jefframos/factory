@@ -32,6 +32,21 @@ const WHITE = new THREE.Color(1, 1, 1);
 /** Strain: from this share of its HP on, it trembles. */
 const STRAIN_FROM = 0.3;
 
+/** The boss gate's skull (its top first): bone, eyes. */
+const SKULL = [
+    '..#######..',
+    '.#########.',
+    '###########',
+    '##ooo#ooo##',
+    '##ooo#ooo##',
+    '##.oo#oo.##',
+    '.####.####.',
+    '..###.###..',
+    '..#######..',
+    '..#.#.#.#..',
+    '..#.#.#.#..',
+];
+
 export interface Cell {
     position: THREE.Vector3;
     color: THREE.Color;
@@ -216,6 +231,14 @@ export class VoxelWall {
                 // Upright ones, a dark gap and the odd knot.
                 if (x % 4 === 3) return this.palette[3];
                 return hash(x, y, 8, this.seed) < 0.03 ? this.palette[3] : this.palette[Math.min(2, Math.floor(hash(Math.floor(x / 4), Math.floor(y / 9), 2, this.seed) * 3))];
+            }
+            case 'gate': {
+                // Plates, and a great skull on them.
+                const row = SKULL[SKULL.length - 1 - (y - Math.round((WALL.rows - SKULL.length) / 2))];
+                const mark = row?.[x - Math.round((this.cols - SKULL[0].length) / 2)];
+                if (mark === '#') return this.palette[2];
+                if (mark === 'o') return this.palette[3];
+                return x % 4 === 0 || y % 4 === 0 ? this.palette[1] : this.palette[0];
             }
             case 'stripes':
                 // Slanting ones.

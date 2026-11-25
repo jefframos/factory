@@ -1,8 +1,8 @@
 {
-  "$comment": "Everything the wall game plays by (distances in world units, the wall's cells `cell` across; times in seconds). wall: its size (a portrait block, the same on every screen), `breakShare`: the share of its cells that brings it down (its HP is that share, so the bar and the hole are the same thing), `noise`: how much the weak lines steer a hit, `gap`: how far behind the next gate is (even, and farther than the camera's off the wall, so it's walked through). camera: upright, the wall's between the bar at the top and the cards, `clear` off both (the HUD's units), taking at most `tall` of the screen's height; on a wide screen (from its `aspect` on) the share it takes and how far up it stands (`floorAt`); `side`: the frame seen each side of it on a narrow one. wallHp: by number (past the list: the last x `hpGrowth`^n). wallMaterials: wall by wall; round again (from `roundFrom`) after the last, in other colours. materials: `look` (the pattern), colours, `core`: the colour of its deepest layers, `dust`, `chip`: debris size, `hit`: its sound, `cash`: what its damage pays (1 if not given), `room`: the colour of the dark behind it (and a touch of the grey round it), `accent`: of the lights on its gate. punch: the damage, and PUNCH HARDER: the first level's given (after wall 1), and those up to the first tool at wall `toolGivenAt` if they haven't been bought by then, each next costs `cost` x `costGrowth`^n, `mult` its effect level by level (the last repeats). bricks: what a wall brings (base + perWall x its number). crew: helpers (the first of the first kind's given when its wall's reached); each copy costs x `crewGrowth` more; there from wall `wall` on (ever reached); `dps`: damage a second each; `every`: seconds between one's hits; `size`: how big; `z`: how far from the wall it stands; `style`: leap (headbutts) or throw; `shows`: how many are drawn. crewBoosts: the crew's own boosts: from `at` copies on, x `mult`, for `bricks` (+ `typeBricks` for each place down the list). boosts: the others, there from a wall or a number of copies on. weak: the weak spot (from wall `wall`): `mult` its hit, `radius` around it that counts (of the screen's height), hit again within `window` the combo goes up a step (`combo`, `comboSteps` of them to start with). shows: from which wall (ever reached) on the boosts' row and the wardrobe's button are there. medal: the one behind the wall, from wall `wall` on; a wall down brings its number of them. rewind: from wall `wall` (reached): back to wall 1 without cash, bricks or crew, PUNCH HARDER and boosts kept, all damage + `perMedal` for each medal, for good. tools: a new one with every PUNCH HARDER level from `from` on: the types in turn, in the next colour (tiers, for the metal; `glow`: it shines) every `perTier` levels; `bite`: how a hit spreads (wide: across the face, deep: into it).",
+  "$comment": "Everything the wall game plays by (distances in world units, the wall's cells `cell` across; times in seconds). wall: its size (a portrait block, the same on every screen), `breakShare`: the share of its cells that brings it down (its HP is that share, so the bar and the hole are the same thing), `noise`: how much the weak lines steer a hit, `gap`: how far behind the next gate is (even, and farther than the camera's off the wall, so it's walked through). camera: upright, the wall's between the bar at the top and the cards, `clear` off both (the HUD's units), taking at most `tall` of the screen's height; on a wide screen (from its `aspect` on) the share it takes and how far up it stands (`floorAt`); `side`: the frame seen each side of it on a narrow one. wallHp: by number (past the list: the last x `hpGrowth`^n). wallMaterials: wall by wall; round again (from `roundFrom`) after the last, in other colours. materials: `look` (the pattern), colours, `core`: the colour of its deepest layers, `dust`, `chip`: debris size, `hit`: its sound, `cash`: what its damage pays (1 if not given), `room`: the colour of the dark behind it (and a touch of the grey round it), `accent`: of the lights on its gate. punch: the damage, and PUNCH HARDER: the first level's given (after wall 1), and later ones at the walls in `given` (a tool each) to players who haven't bought up to that level by then, each next costs `cost` x `costGrowth`^n, `mult` its effect level by level (the last repeats). bricks: what a wall brings (base + perWall x its number). crew: helpers (the first of the first kind's given when its wall's reached); each copy costs x `crewGrowth` more; there from wall `wall` on (ever reached); `dps`: damage a second each; `every`: seconds between one's hits; `size`: how big; `z`: how far from the wall it stands; `style`: leap (headbutts) or throw; `shows`: how many are drawn. crewBoosts: the crew's own boosts: from `at` copies on, x `mult`, for `bricks` (+ `typeBricks` for each place down the list). boosts: the others, there from a wall or a number of copies on. weak: the weak spot (from wall `wall`): `mult` its hit, `radius` around it that counts (of the screen's height), hit again within `window` the combo goes up a step (`combo`, `comboSteps` of them to start with). shows: from which wall (ever reached) on the boosts' row and the wardrobe's button are there. medal: the one behind the wall, from wall `wall` on; a wall down brings its number of them. enemies: what waits behind some walls (`on`: false, and there's nothing: the game as it was without them; ?enemies=0 or 1 tries it, and so does the debug panel). boss: behind every `every`th wall, which is of `material`; `hp`: a share of the wall's, `seconds` to beat it in; beaten, `cash` (x the wall's HP), `bricks` and `medals` more; kinds in turn (with each rewind, from the next), each boss bigger than the one before (`grow`, and `growRun` for each rewind, at most `most`) and, every `colorEvery` bosses and with each rewind, in the next of `colors`: `paint` bone only the bones, `hue` all of it turned to that hue (from its own, `base`; at least this vivid, `sat`). `pair`: two of them, half the health each (`x` along the gate, `next` colours on). minions: behind every `every`th wall, from wall `from` (not a boss's); `count` of them (one more every `more` walls, at most `most`), `hp` each (a share of the wall's), `cash` for one (x its HP); kinds in turn. farm: the minions that come while a boss that got away isn't called back. rewind: from wall `wall` (reached): back to wall 1 without cash, bricks or crew, PUNCH HARDER and boosts kept, all damage + `perMedal` for each medal, for good. tools: a new one with every PUNCH HARDER level from `from` on: the types in turn, in the next colour (tiers, for the metal; `glow`: it shines) every `perTier` levels; `bite`: how a hit spreads (wide: across the face, deep: into it).",
   "wall": { "cell": 0.36, "cols": 13, "rows": 20, "depth": 5, "breakShare": 0.5, "noise": 1.3, "gap": 18 },
   "camera": { "fov": 42, "tall": 0.68, "clear": 14, "wide": { "aspect": 1.15, "tall": 0.75, "floorAt": 0.15 }, "side": 0.16, "rollDeg": -1.5, "pitchDrop": 0.7 },
-  "wallHp": [10, 20, 42, 90, 200, 440, 1000, 2300, 4800, 10500],
+  "wallHp": [10, 20, 28, 55, 200, 440, 1000, 2300, 4800, 10500],
   "hpGrowth": 2.1,
   "roundFrom": 4,
   "wallMaterials": [
@@ -24,9 +24,10 @@
     "candy": { "name": "Candy", "look": "stripes", "colors": ["#ff78b8", "#ffffff", "#ff4f9f", "#ffc2de"], "core": ["#8a4a2a", "#784022"], "room": "#14a0b8", "accent": "#fff27a", "dust": "#ffd6e8", "chip": 0.95, "hit": "stone" },
     "circuit": { "name": "Circuit", "look": "circuit", "colors": ["#12885a", "#0f754c", "#189c68", "#ffd84a"], "core": ["#5affc0", "#3ee8a4"], "room": "#6a2fb0", "accent": "#ff5ad0", "dust": "#8fe0bd", "chip": 0.95, "hit": "metal" },
     "crystal": { "name": "Crystal", "look": "stone", "colors": ["#f04ce8", "#d83cd8", "#ff6cf6", "#b840e0"], "core": ["#fff0ff", "#ffd0ff"], "room": "#0f8290", "accent": "#8affea", "dust": "#f6c0f2", "chip": 1.15, "hit": "glass" },
+    "bossgate": { "name": "Boss Gate", "look": "gate", "colors": ["#5a1420", "#4a0f1a", "#fff1d2", "#ff3a2e"], "core": ["#2a0a10", "#22080d"], "room": "#6a0f1a", "accent": "#ff3a2e", "dust": "#c98a80", "chip": 1.15, "hit": "metal" },
     "moon": { "name": "Moon Rock", "look": "concrete", "colors": ["#d4d8ff", "#bcc2f5", "#e8eaff"], "core": ["#5a68ff", "#4452f0"], "room": "#4030a8", "accent": "#8fa0ff", "dust": "#f0f1f8", "chip": 1.1, "hit": "stone" }
   },
-  "punch": { "toolGivenAt": 4, "damage": 1, "mult": [2, 2, 2, 1.5], "cost": 45, "costGrowth": 2.5 },
+  "punch": { "given": [{ "wall": 4, "level": 2 }, { "wall": 6, "level": 3 }, { "wall": 8, "level": 4 }, { "wall": 10, "level": 5 }], "damage": 1, "mult": [2, 2, 2, 1.5], "cost": 45, "costGrowth": 2.5 },
   "cash": { "perDamage": 1, "wallBonus": 0.8 },
   "bricks": { "base": 2, "perWall": 0.7 },
   "crewGrowth": 1.16,
@@ -69,6 +70,41 @@
   "shows": { "boosts": 4, "wardrobe": 4 },
   "weak": { "wall": 5, "mult": 5, "radius": 0.07, "window": 2.2, "combo": [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6], "comboSteps": 6, "after": 2.5, "again": 0.3, "stays": 6, "drift": 0.3 },
   "medal": { "wall": 6 },
+  "enemies": {
+    "on": true,
+    "boss": {
+      "every": 10, "hp": 0.7, "seconds": 30, "cash": 1, "bricks": 6, "medals": 3, "material": "bossgate",
+      "kinds": [
+        { "name": "BONE KING", "model": "skeleton-warrior", "height": 3.5, "most": 6.2, "pace": 0.8, "paint": "bone" },
+        { "name": "EMBERHEAD", "model": "stone-monster", "height": 2.9, "most": 4.9, "float": 0.14, "paint": "hue", "base": 8 },
+        { "name": "BONE TWINS", "pair": [
+          { "model": "skeleton-warrior", "height": 2.9, "most": 4.2, "pace": 0.8, "paint": "bone", "x": -1.05 },
+          { "model": "skeleton-minion", "height": 2.7, "most": 4.0, "pace": 0.9, "paint": "bone", "x": 1.1, "next": 1 }
+        ] },
+        { "name": "SPIKESHELL", "model": "turtle", "height": 2.5, "most": 3.3, "pace": 0.7, "float": 0.4, "paint": "hue", "base": 322 },
+        { "name": "OLD GOLEM", "model": "golem", "height": 4.2, "most": 6.6, "pace": 0.6, "bright": 1.8, "paint": "hue", "base": 40, "sat": 0.5 },
+        { "name": "FIRE AND SPIKE", "pair": [
+          { "model": "stone-monster", "height": 1.9, "most": 2.6, "float": 0.75, "paint": "hue", "base": 8, "x": -1.0 },
+          { "model": "turtle", "height": 1.6, "most": 1.9, "float": 0.25, "paint": "hue", "base": 322, "x": 1.15, "next": 1 }
+        ] }
+      ],
+      "grow": 0.09, "growRun": 0.07, "colorEvery": 2,
+      "colors": [
+        { "name": "" }, { "name": "PURPLE", "hue": 270 }, { "name": "CRIMSON", "hue": 352 }, { "name": "FROST", "hue": 198 },
+        { "name": "GOLDEN", "hue": 46 }, { "name": "TOXIC", "hue": 96 }, { "name": "SHADOW", "hue": 250, "dark": 0.5 }, { "name": "ROSE", "hue": 328 }
+      ]
+    },
+    "minions": {
+      "every": 3, "from": 3, "count": 3, "more": 8, "most": 5, "hp": 0.08, "cash": 0.5,
+      "kinds": [
+        { "name": "SKELETONS", "model": "skeleton-minion", "height": 2.3, "pace": 1 },
+        { "name": "BATS", "model": "bat", "height": 1.15, "float": 1.5, "bright": 2 },
+        { "name": "EMBERS", "model": "stone-monster", "height": 1.6, "float": 0.35 },
+        { "name": "SPIKERS", "model": "turtle", "height": 1.5, "pace": 1, "float": 0.75 }
+      ]
+    },
+    "farm": { "count": 3, "hp": 0.04, "wait": 0.8 }
+  },
   "rewind": { "wall": 10, "perMedal": 0.2 },
   "tools": {
     "from": 2,

@@ -5,16 +5,20 @@
 //
 // PROGRESSION (start / complete only: Poki's progress export, which also gives the time each took and where players leave)
 //   category   what                     action             when
-//   session    new | returning          start              the first hit this session
+//   session    new | returning          start              the first click this session (everything else comes after it)
+//   mode       enemies | plain          start              with it: played with enemies and bosses, or without
 //   step       <nn>-<name>              start, complete    the first minutes' funnel: it's the next one (the furthest done +
 //                                                          1; again each session: a retry), it's done (once per player)
 //   wall       <nn>                     start, complete    a wall reached for the first time ever (start again each session
 //                                                          it's still that one), and down
 //   run        <nn>                     start, complete    from wall 1 to a rewind (01: the first)
+//   boss       <nn>                     start, complete, fail   wall nn's boss: each try begins (again if it's reloaded), and ends
+//                                                          beaten, or out of time or rewound away from
+//   minions    <nn>                     start, complete, fail   wall nn's minions (fail: rewound away from)
 //
 // ITEMS (one category for each family; the action says how it was got or what was done with it)
-//   punch      lv-<nn>                  gift, bought       a PUNCH HARDER level (given: lv-01, and lv-02 at wall 4
-//                                                          if it hadn't been bought)
+//   punch      lv-<nn>                  gift, bought       a PUNCH HARDER level (given: lv-01, and lv-02 to 05 at
+//                                                          walls 4, 6, 8, 10 if they hadn't been bought)
 //   tool       <nn>-<tier>-<type>       unlocked, equip    a new tool (nn: the level it comes with), one picked
 //   crew       <n>-<id>-<nn>            gift, bought       the 1st, 5th, 10th, 25th... of one of the crew (once per player)
 //   boost      <id>                     bought
@@ -36,7 +40,7 @@
 
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import type { AnalyticsAction } from 'core/platforms/PlatformHandler';
-import { CREW } from '../data/WallConfig';
+import { CREW, enemiesOn } from '../data/WallConfig';
 import { WallProgress } from '../data/WallProgress';
 
 const STEPS = [
@@ -54,10 +58,17 @@ const COUNTS = [1, 5, 10, 25, 50, 100];
 const two = (n: number) => String(n).padStart(2, '0');
 const ALL: readonly Step[] = [...STEPS, ...EXTRA];
 const stepName = (index: number) => `${two(index + 1)}-${ALL[index]}`;
-const send = (category: string, what: string, action: AnalyticsAction) => PlatformHandler.instance.measure(category, what, action);
 let seconds = 0;
 let comboBest = 2;
 let begun = false;
+/** What happened before the first click (a gift handed out as it loads, a button seen): sent right after the session's start. */
+const early: [string, string, AnalyticsAction][] = [];
+
+function send(category: string, what: string, action: AnalyticsAction): void {
+    if (begun) PlatformHandler.instance.measure(category, what, action);
+    else early.push([category, what, action]);
+}
+
 /** Shown already this session, and the steps started. */
 const seen = new Set<string>();
 const startedStep = new Set<number>();
@@ -91,16 +102,17 @@ function nextStep(): void {
 export const WallAnalytics = {
     // ---------------------------------------------------------------- progression
 
-    /** The first hit this session. */
+    /** The first click this session (gameplay's start). */
     begin(): void {
         if (begun) return;
         begun = true;
         send('session', WallProgress.played ? 'returning' : 'new', 'start');
+        send('mode', enemiesOn ? 'enemies' : 'plain', 'start');
         WallProgress.markPlayed();
         if (once('run-01')) send('run', '01', 'start');
         this.wallStart(WallProgress.wall);
         nextStep();
-        this.step('first-hit');
+        early.splice(0).forEach((event) => send(...event));
     },
 
     step(step: Step): void {
@@ -122,6 +134,11 @@ export const WallAnalytics = {
         if (once(`down-${number}`)) send('wall', two(number), 'complete');
         const step = `wall-${two(number)}` as Step;
         if (ALL.includes(step)) this.step(step);
+    },
+
+    /** A fight behind a wall. */
+    fight(kind: 'boss' | 'minions', number: number, action: 'start' | 'complete' | 'fail'): void {
+        send(kind, two(number), action);
     },
 
     /** Rewound, for the nth time: that run's over, the next begins. */

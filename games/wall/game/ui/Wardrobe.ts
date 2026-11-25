@@ -105,6 +105,8 @@ export class Wardrobe extends PIXI.Container {
         if (open === this.isOpen) return;
         this.isOpen = open;
         this.visible = open;
+        // (A break as it closes too: before it's let go, so play isn't started only to be stopped.)
+        if (!open) void Gameplay.commercialBreak();
         Gameplay.setBlocked('wardrobe', open);
         this.actions.show(open);
         this.onToggle(open);
@@ -199,6 +201,8 @@ export class Wardrobe extends PIXI.Container {
     /** A look tapped: worn; bought first, or after its video. */
     private pickLook(slot: SlotId, item: LookItem, owned: boolean): boolean {
         if (owned) {
+            // (On already: nothing new.)
+            if (wornIn(slot).id === item.id) return true;
             WallProgress.wear(slot, item.id);
             WallAnalytics.look(slot, item.id, 'equip');
             return true;
@@ -237,6 +241,7 @@ export class Wardrobe extends PIXI.Container {
             const card = this.card(art, worn, owned, label);
             this.tappable(card, () => {
                 if (!owned) return false;
+                if (WallProgress.heldPick === id) return true;
                 WallProgress.hold(id);
                 WallAnalytics.holdTool(toolLevel(tool.id), tool.id);
                 return true;

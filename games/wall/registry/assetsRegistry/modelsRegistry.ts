@@ -132,6 +132,54 @@ const CrewPanda = {
 }
 } as const;
 
+const EnemiesBat = {
+  id: 'bat',
+  path: 'enemies/bat',
+  fullPath: 'wall/models/enemies/bat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const EnemiesGolem = {
+  id: 'golem',
+  path: 'enemies/golem',
+  fullPath: 'wall/models/enemies/golem.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const EnemiesSkeletonMinion = {
+  id: 'skeleton-minion',
+  path: 'enemies/skeleton-minion',
+  fullPath: 'wall/models/enemies/skeleton-minion.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const EnemiesSkeletonWarrior = {
+  id: 'skeleton-warrior',
+  path: 'enemies/skeleton-warrior',
+  fullPath: 'wall/models/enemies/skeleton-warrior.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const EnemiesStoneMonster = {
+  id: 'stone-monster',
+  path: 'enemies/stone-monster',
+  fullPath: 'wall/models/enemies/stone-monster.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const EnemiesTurtle = {
+  id: 'turtle',
+  path: 'enemies/turtle',
+  fullPath: 'wall/models/enemies/turtle.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
 const PlayerAxe = {
   id: 'axe',
   path: 'player/axe',
@@ -276,6 +324,14 @@ export const MODELS = {
     Hog: CrewHog,
     Monkey: CrewMonkey,
     Panda: CrewPanda
+  },
+  Enemies: {
+    Bat: EnemiesBat,
+    Golem: EnemiesGolem,
+    SkeletonMinion: EnemiesSkeletonMinion,
+    SkeletonWarrior: EnemiesSkeletonWarrior,
+    StoneMonster: EnemiesStoneMonster,
+    Turtle: EnemiesTurtle
   },
   Player: {
     Axe: PlayerAxe,
